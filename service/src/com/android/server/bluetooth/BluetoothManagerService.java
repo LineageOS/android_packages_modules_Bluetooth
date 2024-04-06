@@ -41,7 +41,6 @@ import static com.android.modules.utils.build.SdkLevel.isAtLeastV;
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.NonNull;
-import android.annotation.RequiresPermission;
 import android.app.ActivityManager;
 import android.app.BroadcastOptions;
 import android.bluetooth.BluetoothAdapter;
@@ -423,7 +422,6 @@ class BluetoothManagerService {
     private static final Object ON_SATELLITE_MODE_CHANGED_TOKEN = new Object();
     private static final Object ON_SWITCH_USER_TOKEN = new Object();
 
-    @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)
     Unit onAirplaneModeChanged(boolean isAirplaneModeOn) {
         mHandler.postDelayed(
                 () ->
@@ -437,7 +435,6 @@ class BluetoothManagerService {
     }
 
     // TODO(b/289584302): Update to private once use_new_satellite_mode is enabled
-    @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)
     Unit onSatelliteModeChanged(boolean isSatelliteModeOn) {
         mHandler.postDelayed(
                 () ->
@@ -450,7 +447,6 @@ class BluetoothManagerService {
         return Unit.INSTANCE;
     }
 
-    @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)
     void onSwitchUser(UserHandle userHandle) {
         mHandler.postDelayed(
                 () ->
@@ -492,7 +488,6 @@ class BluetoothManagerService {
         }
     }
 
-    @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)
     private void handleAirplaneModeChanged(boolean isAirplaneModeOn) {
         synchronized (this) {
             if (isBluetoothPersistedStateOn()) {
@@ -1066,7 +1061,6 @@ class BluetoothManagerService {
      * Will call startBrEdr() if bluetooth classic should be on and will call stopBle if bluetooth
      * BLE should be off
      */
-    @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)
     private void continueFromBleOnState() {
         mAdapterLock.readLock().lock();
         try {
@@ -1101,11 +1095,6 @@ class BluetoothManagerService {
      * Inform BluetoothAdapter instances that BREDR part is down and turn off all service and stack
      * if no LE app needs it
      */
-    @RequiresPermission(
-            allOf = {
-                android.Manifest.permission.BLUETOOTH_CONNECT,
-                android.Manifest.permission.BLUETOOTH_PRIVILEGED,
-            })
     private void sendBrEdrDownCallback() {
         mAdapterLock.readLock().lock();
         try {
@@ -1209,7 +1198,6 @@ class BluetoothManagerService {
         return true;
     }
 
-    @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)
     void unbindAndFinish() {
         Log.d(TAG, "unbindAndFinish(): mAdapter=" + mAdapter + " isBinding=" + isBinding());
 
@@ -1808,11 +1796,6 @@ class BluetoothManagerService {
             }
         }
 
-        @RequiresPermission(
-                allOf = {
-                    android.Manifest.permission.BLUETOOTH_CONNECT,
-                    android.Manifest.permission.BLUETOOTH_PRIVILEGED
-                })
         private void restartForNewUser(UserHandle unusedNewUser) {
             mAdapterLock.readLock().lock();
             try {
@@ -1964,7 +1947,6 @@ class BluetoothManagerService {
         }
     }
 
-    @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
     private void handleEnable(boolean quietMode) {
         mQuietEnable = quietMode;
 
@@ -2005,7 +1987,6 @@ class BluetoothManagerService {
         return true;
     }
 
-    @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
     private void handleDisable() {
         mAdapterLock.readLock().lock();
         try {
@@ -2046,11 +2027,6 @@ class BluetoothManagerService {
         return false;
     }
 
-    @RequiresPermission(
-            allOf = {
-                android.Manifest.permission.BLUETOOTH_CONNECT,
-                android.Manifest.permission.BLUETOOTH_PRIVILEGED,
-            })
     private void bluetoothStateChangeHandler(int prevState, int newState) {
         if (prevState == newState) { // No change. Nothing to do.
             return;
@@ -2176,11 +2152,6 @@ class BluetoothManagerService {
         }
     }
 
-    @RequiresPermission(
-            allOf = {
-                android.Manifest.permission.BLUETOOTH_CONNECT,
-                android.Manifest.permission.BLUETOOTH_PRIVILEGED,
-            })
     private void recoverBluetoothServiceFromError(boolean clearBle) {
         Log.e(TAG, "recoverBluetoothServiceFromError");
         boolean repeatAirplaneRunnable = false;
