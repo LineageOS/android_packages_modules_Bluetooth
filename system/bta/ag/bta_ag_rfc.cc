@@ -29,7 +29,6 @@
 #include "bta/ag/bta_ag_int.h"
 #include "bta/include/bta_sec_api.h"
 #include "internal_include/bt_trace.h"
-#include "osi/include/osi.h"
 #include "stack/include/main_thread.h"
 #include "stack/include/port_api.h"
 #include "types/raw_address.h"
@@ -73,7 +72,7 @@ const tBTA_AG_PORT_CBACK bta_ag_mgmt_cback_tbl[] = {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_ag_port_cback(UNUSED_ATTR uint32_t code, uint16_t port_handle,
+static void bta_ag_port_cback(uint32_t /* code */, uint16_t port_handle,
                               uint16_t handle) {
   tBTA_AG_SCB* p_scb = bta_ag_scb_by_idx(handle);
   if (p_scb != nullptr) {
@@ -360,8 +359,7 @@ void bta_ag_rfc_do_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_ag_rfc_do_close(tBTA_AG_SCB* p_scb,
-                         UNUSED_ATTR const tBTA_AG_DATA& data) {
+void bta_ag_rfc_do_close(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /* data */) {
   log::info("p_scb->conn_handle: 0x{:04x}", p_scb->conn_handle);
   if (p_scb->conn_handle) {
     RFCOMM_RemoveConnection(p_scb->conn_handle);

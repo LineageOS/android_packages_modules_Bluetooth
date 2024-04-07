@@ -31,10 +31,8 @@
 #include "bta/ag/bta_ag_int.h"
 #include "bta/include/bta_hfp_api.h"
 #include "internal_include/bt_target.h"
-#include "os/log.h"
 #include "osi/include/alarm.h"
 #include "osi/include/compat.h"
-#include "osi/include/osi.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/btm_api.h"
 #include "types/raw_address.h"
@@ -354,9 +352,8 @@ bool bta_ag_scb_open(tBTA_AG_SCB* p_curr_scb) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_ag_collision_cback(UNUSED_ATTR tBTA_SYS_CONN_STATUS status,
-                            tBTA_SYS_ID id, UNUSED_ATTR uint8_t app_id,
-                            const RawAddress& peer_addr) {
+void bta_ag_collision_cback(tBTA_SYS_CONN_STATUS /* status */, tBTA_SYS_ID id,
+                            uint8_t /* app_id */, const RawAddress& peer_addr) {
   /* Check if we have opening scb for the peer device. */
   uint16_t handle = bta_ag_idx_by_bdaddr(&peer_addr);
   tBTA_AG_SCB* p_scb = bta_ag_scb_by_idx(handle);

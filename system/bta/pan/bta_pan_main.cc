@@ -28,7 +28,6 @@
 #include "bta/pan/bta_pan_int.h"
 #include "include/check.h"
 #include "internal_include/bt_target.h"
-#include "osi/include/osi.h"  // UNUSED_ATTR
 #include "stack/include/bt_hdr.h"
 
 using namespace bluetooth;
@@ -217,9 +216,7 @@ void bta_pan_api_enable(tBTA_PAN_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_pan_api_disable(UNUSED_ATTR tBTA_PAN_DATA* p_data) {
-  bta_pan_disable();
-}
+void bta_pan_api_disable(tBTA_PAN_DATA* /* p_data */) { bta_pan_disable(); }
 
 /*******************************************************************************
  *

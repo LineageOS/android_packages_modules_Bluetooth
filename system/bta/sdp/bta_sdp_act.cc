@@ -550,7 +550,7 @@ static void bta_create_raw_sdp_record(bluetooth_sdp_record* record,
 }
 
 /** Callback from btm after search is completed */
-static void bta_sdp_search_cback(UNUSED_ATTR const RawAddress& bd_addr,
+static void bta_sdp_search_cback(const RawAddress& /* bd_addr */,
                                  tSDP_RESULT result, const void* user_data) {
   tBTA_SDP_STATUS status = BTA_SDP_FAILURE;
   int count = 0;
