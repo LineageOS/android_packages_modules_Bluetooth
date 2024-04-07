@@ -17,11 +17,10 @@
 #pragma once
 
 #include "bta/dm/bta_dm_int.h"
-#include "osi/include/osi.h"
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
 
 void bta_dm_process_remove_device_no_callback(const RawAddress& bd_addr);
 
 tBTA_DM_PEER_DEVICE* find_connected_device(const RawAddress& bd_addr,
-                                           UNUSED_ATTR tBT_TRANSPORT transport);
+                                           tBT_TRANSPORT /* transport */);

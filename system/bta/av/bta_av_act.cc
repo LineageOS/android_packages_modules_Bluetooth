@@ -37,7 +37,7 @@
 #include "device/include/interop.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
-#include "osi/include/osi.h"  // UNUSED_ATTR
+#include "osi/include/osi.h"  // UINT_TO_PTR PTR_TO_UINT
 #include "osi/include/properties.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/bt_hdr.h"
@@ -197,7 +197,7 @@ static void bta_av_del_sdp_rec(uint32_t* p_sdp_handle) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_av_avrc_sdp_cback(UNUSED_ATTR uint16_t status) {
+static void bta_av_avrc_sdp_cback(uint16_t /* status */) {
   BT_HDR_RIGID* p_msg = (BT_HDR_RIGID*)osi_malloc(sizeof(BT_HDR_RIGID));
 
   p_msg->event = BTA_AV_SDP_AVRC_DISC_EVT;
@@ -215,7 +215,7 @@ static void bta_av_avrc_sdp_cback(UNUSED_ATTR uint16_t status) {
  *
  ******************************************************************************/
 static void bta_av_rc_ctrl_cback(uint8_t handle, uint8_t event,
-                                 UNUSED_ATTR uint16_t result,
+                                 uint16_t /* result */,
                                  const RawAddress* peer_addr) {
   uint16_t msg_event = 0;
 
@@ -771,7 +771,7 @@ void bta_av_rc_meta_rsp(tBTA_AV_CB* p_cb, tBTA_AV_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_av_rc_free_rsp(UNUSED_ATTR tBTA_AV_CB* p_cb, tBTA_AV_DATA* p_data) {
+void bta_av_rc_free_rsp(tBTA_AV_CB* /* p_cb */, tBTA_AV_DATA* p_data) {
   osi_free_and_reset((void**)&p_data->api_meta_rsp.p_pkt);
 }
 
@@ -784,8 +784,7 @@ void bta_av_rc_free_rsp(UNUSED_ATTR tBTA_AV_CB* p_cb, tBTA_AV_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_av_rc_free_browse_msg(UNUSED_ATTR tBTA_AV_CB* p_cb,
-                               tBTA_AV_DATA* p_data) {
+void bta_av_rc_free_browse_msg(tBTA_AV_CB* /* p_cb */, tBTA_AV_DATA* p_data) {
   if (p_data->rc_msg.opcode == AVRC_OP_BROWSE) {
     osi_free_and_reset((void**)&p_data->rc_msg.msg.browse.p_browse_pkt);
   }
@@ -1408,7 +1407,7 @@ void bta_av_conn_chg(tBTA_AV_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_av_disable(tBTA_AV_CB* p_cb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
+void bta_av_disable(tBTA_AV_CB* p_cb, tBTA_AV_DATA* /* p_data */) {
   BT_HDR_RIGID hdr;
   bool disabling_in_progress = false;
   uint16_t xx;
@@ -1438,7 +1437,6 @@ void bta_av_disable(tBTA_AV_CB* p_cb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
   // would come first before API_DISABLE if there is no connections, and it is
   // no needed to setup this disabling flag.
   p_cb->disabling = disabling_in_progress;
-
 }
 
 /*******************************************************************************
@@ -1680,7 +1678,7 @@ void bta_av_sig_chg(tBTA_AV_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_av_signalling_timer(UNUSED_ATTR tBTA_AV_DATA* p_data) {
+void bta_av_signalling_timer(tBTA_AV_DATA* p_data) {
   tBTA_AV_HNDL hndl = p_data->hdr.layer_specific;
   tBTA_AV_SCB* p_scb = bta_av_hndl_to_scb(hndl);
 
@@ -2068,7 +2066,7 @@ uint16_t bta_avk_get_cover_art_psm() {
   return 0x0000;
 }
 
-void bta_av_rc_disc_done_all(UNUSED_ATTR tBTA_AV_DATA* p_data) {
+void bta_av_rc_disc_done_all(tBTA_AV_DATA* /* p_data */) {
   tBTA_AV_CB* p_cb = &bta_av_cb;
   tBTA_AV_SCB* p_scb = NULL;
   tBTA_AV_LCB* p_lcb;
@@ -2258,7 +2256,7 @@ void bta_av_rc_disc_done_all(UNUSED_ATTR tBTA_AV_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_av_rc_disc_done(UNUSED_ATTR tBTA_AV_DATA* p_data) {
+void bta_av_rc_disc_done(tBTA_AV_DATA* p_data) {
   tBTA_AV_CB* p_cb = &bta_av_cb;
   tBTA_AV_SCB* p_scb = NULL;
   tBTA_AV_LCB* p_lcb;

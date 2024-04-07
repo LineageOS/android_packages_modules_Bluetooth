@@ -31,7 +31,6 @@
 #include "internal_include/bt_target.h"
 #include "main/shim/dumpsys.h"
 #include "os/log.h"
-#include "osi/include/osi.h"  // UNUSED_ATTR
 #include "stack/include/btm_api.h"
 #include "types/hci_role.h"
 #include "types/raw_address.h"
@@ -326,7 +325,7 @@ void bta_sys_sco_close(tBTA_SYS_ID id, uint8_t app_id,
  * Returns          void
  *
  ******************************************************************************/
-void bta_sys_sco_use(UNUSED_ATTR tBTA_SYS_ID id, uint8_t app_id,
+void bta_sys_sco_use(tBTA_SYS_ID /* id */, uint8_t app_id,
                      const RawAddress& peer_addr) {
   /* AV streaming need to be suspended before SCO is connected. */
   if (bta_sys_cb.p_sco_cb) {
@@ -345,7 +344,7 @@ void bta_sys_sco_use(UNUSED_ATTR tBTA_SYS_ID id, uint8_t app_id,
  * Returns          void
  *
  ******************************************************************************/
-void bta_sys_sco_unuse(UNUSED_ATTR tBTA_SYS_ID id, uint8_t app_id,
+void bta_sys_sco_unuse(tBTA_SYS_ID /* id */, uint8_t app_id,
                        const RawAddress& peer_addr) {
   if ((bta_sys_cb.p_sco_cb)) {
     uint8_t num_sco_links = BTM_GetNumScoLinks();

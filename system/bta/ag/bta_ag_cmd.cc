@@ -39,10 +39,8 @@
 #include "device/include/interop.h"
 #include "internal_include/bt_target.h"
 #include "internal_include/bt_trace.h"
-#include "os/log.h"
 #include "os/system_properties.h"
 #include "osi/include/compat.h"
-#include "osi/include/osi.h"  // UNUSED_ATTR
 #include "stack/btm/btm_sco_hfp_hal.h"
 #include "stack/include/port_api.h"
 
@@ -421,7 +419,7 @@ static bool bta_ag_parse_cmer(char* p_s, char* p_end, bool* p_enabled) {
  digit
  *
  ******************************************************************************/
-static uint8_t bta_ag_parse_chld(UNUSED_ATTR tBTA_AG_SCB* p_scb, char* p_s) {
+static uint8_t bta_ag_parse_chld(tBTA_AG_SCB* /* p_scb */, char* p_s) {
   uint8_t retval = 0;
 
   if (!isdigit(p_s[0])) {
@@ -1935,8 +1933,7 @@ bool bta_ag_is_sco_open_allowed(tBTA_AG_SCB* p_scb, const std::string event) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_ag_send_ring(tBTA_AG_SCB* p_scb,
-                      UNUSED_ATTR const tBTA_AG_DATA& data) {
+void bta_ag_send_ring(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /* data */) {
   if ((p_scb->conn_service == BTA_AG_HFP) &&
       p_scb->callsetup_ind != BTA_AG_CALLSETUP_INCOMING) {
     log::warn("don't send RING, conn_service={}, callsetup_ind={}",
