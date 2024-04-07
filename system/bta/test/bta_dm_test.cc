@@ -268,7 +268,7 @@ TEST_F(BtaDmTest, bta_dm_set_encryption) {
 }
 
 void bta_dm_encrypt_cback(const RawAddress* bd_addr, tBT_TRANSPORT transport,
-                          UNUSED_ATTR void* p_ref_data, tBTM_STATUS result);
+                          void* /* p_ref_data */, tBTM_STATUS result);
 
 TEST_F(BtaDmTest, bta_dm_encrypt_cback) {
   const tBT_TRANSPORT transport{BT_TRANSPORT_LE};

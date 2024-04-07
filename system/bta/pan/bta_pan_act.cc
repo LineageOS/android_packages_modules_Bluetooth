@@ -33,7 +33,6 @@
 #include "internal_include/bt_target.h"  // PAN_INCLUDED
 #include "osi/include/allocator.h"
 #include "osi/include/fixed_queue.h"
-#include "osi/include/osi.h"  // UNUSED_ATTR
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/pan_api.h"
@@ -443,7 +442,7 @@ void bta_pan_open(tBTA_PAN_SCB* p_scb, tBTA_PAN_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_pan_api_close(tBTA_PAN_SCB* p_scb, UNUSED_ATTR tBTA_PAN_DATA* p_data) {
+void bta_pan_api_close(tBTA_PAN_SCB* p_scb, tBTA_PAN_DATA* /* p_data */) {
   tBTA_PAN_CONN* p_buf = (tBTA_PAN_CONN*)osi_malloc(sizeof(tBTA_PAN_CONN));
 
   PAN_Disconnect(p_scb->handle);
@@ -541,7 +540,7 @@ void bta_pan_conn_close(tBTA_PAN_SCB* p_scb, tBTA_PAN_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_pan_rx_path(tBTA_PAN_SCB* p_scb, UNUSED_ATTR tBTA_PAN_DATA* p_data) {
+void bta_pan_rx_path(tBTA_PAN_SCB* p_scb, tBTA_PAN_DATA* /* p_data */) {
   /* if data path configured for rx pull */
   if ((bta_pan_cb.flow_mask & BTA_PAN_RX_MASK) == BTA_PAN_RX_PULL) {
     /* if we can accept data */
@@ -565,7 +564,7 @@ void bta_pan_rx_path(tBTA_PAN_SCB* p_scb, UNUSED_ATTR tBTA_PAN_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_pan_tx_path(tBTA_PAN_SCB* p_scb, UNUSED_ATTR tBTA_PAN_DATA* p_data) {
+void bta_pan_tx_path(tBTA_PAN_SCB* p_scb, tBTA_PAN_DATA* /* p_data */) {
   bta_pan_pm_conn_busy(p_scb);
   /* call application callout function for tx path */
   bta_pan_co_tx_path(p_scb->handle, p_scb->app_id);
@@ -627,7 +626,7 @@ void bta_pan_write_buf(tBTA_PAN_SCB* p_scb, tBTA_PAN_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_pan_free_buf(UNUSED_ATTR tBTA_PAN_SCB* p_scb, tBTA_PAN_DATA* p_data) {
+void bta_pan_free_buf(tBTA_PAN_SCB* /* p_scb */, tBTA_PAN_DATA* p_data) {
   osi_free(p_data);
 }
 

@@ -40,7 +40,6 @@
 #include "internal_include/bt_target.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
-#include "osi/include/osi.h"  // UNUSED_ATTR
 #include "osi/include/properties.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/bt_hdr.h"
@@ -387,7 +386,7 @@ void tBTA_AV_SCB::SetAvdtpVersion(uint16_t avdtp_version) {
 
 /*******************************************************************************
  ******************************************************************************/
-void bta_av_conn_cback(UNUSED_ATTR uint8_t handle, const RawAddress& bd_addr,
+void bta_av_conn_cback(uint8_t /* handle */, const RawAddress& bd_addr,
                        uint8_t event, tAVDT_CTRL* p_data, uint8_t scb_index) {
   uint16_t evt = 0;
   tBTA_AV_SCB* p_scb = NULL;
@@ -427,9 +426,9 @@ void bta_av_conn_cback(UNUSED_ATTR uint8_t handle, const RawAddress& bd_addr,
  * Returns          void
  *
  ******************************************************************************/
-static void bta_av_a2dp_report_cback(UNUSED_ATTR uint8_t handle,
-                                     UNUSED_ATTR AVDT_REPORT_TYPE type,
-                                     UNUSED_ATTR tAVDT_REPORT_DATA* p_data) {
+static void bta_av_a2dp_report_cback(uint8_t /* handle */,
+                                     AVDT_REPORT_TYPE /* type */,
+                                     tAVDT_REPORT_DATA* /* p_data */) {
   /* Do not need to handle report data for now.
    * This empty function is here for conformance reasons. */
 }
@@ -821,7 +820,7 @@ static void bta_av_ci_data(tBTA_AV_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_av_rpc_conn(UNUSED_ATTR tBTA_AV_DATA* p_data) {}
+static void bta_av_rpc_conn(tBTA_AV_DATA* /* p_data */) {}
 
 /*******************************************************************************
  *
@@ -920,7 +919,7 @@ void bta_av_restore_switch(void) {
  * Returns          (BTA_SYS_ROLE_CHANGE, new_role, hci_status, p_bda)
  *
  ******************************************************************************/
-static void bta_av_sys_rs_cback(UNUSED_ATTR tBTA_SYS_CONN_STATUS status,
+static void bta_av_sys_rs_cback(tBTA_SYS_CONN_STATUS /* status */,
                                 tHCI_ROLE new_role, tHCI_STATUS hci_status,
                                 const RawAddress& peer_addr) {
   int i;
@@ -1005,9 +1004,8 @@ static void bta_av_sys_rs_cback(UNUSED_ATTR tBTA_SYS_CONN_STATUS status,
  *
  ******************************************************************************/
 static void bta_av_sco_chg_cback(tBTA_SYS_CONN_STATUS status,
-                                 uint8_t num_sco_links,
-                                 UNUSED_ATTR uint8_t app_id,
-                                 UNUSED_ATTR const RawAddress& peer_addr) {
+                                 uint8_t num_sco_links, uint8_t /* app_id */,
+                                 const RawAddress& peer_addr) {
   tBTA_AV_SCB* p_scb;
   int i;
   tBTA_AV_API_STOP stop;

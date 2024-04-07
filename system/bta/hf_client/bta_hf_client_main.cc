@@ -26,7 +26,6 @@
 #include "bta/include/utl.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
-#include "osi/include/osi.h"  // UNUSED_ATTR
 #include "stack/include/bt_hdr.h"
 #include "stack/include/btm_api.h"
 #include "stack/include/sdp_api.h"
@@ -371,8 +370,8 @@ static void bta_hf_client_collision_timer_cback(void* data) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_hf_client_collision_cback(UNUSED_ATTR tBTA_SYS_CONN_STATUS status,
-                                   tBTA_SYS_ID id, UNUSED_ATTR uint8_t app_id,
+void bta_hf_client_collision_cback(tBTA_SYS_CONN_STATUS /* status */,
+                                   tBTA_SYS_ID id, uint8_t /* app_id */,
                                    const RawAddress& peer_addr) {
   tBTA_HF_CLIENT_CB* client_cb = bta_hf_client_find_cb_by_bda(peer_addr);
   if (client_cb != NULL && client_cb->state == BTA_HF_CLIENT_OPENING_ST) {

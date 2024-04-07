@@ -32,7 +32,6 @@
 #include "bta/sys/bta_sys.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
-#include "osi/include/osi.h"  // UNUSED_ATTR
 #include "stack/include/bt_hdr.h"
 #include "stack/include/main_thread.h"
 #include "types/raw_address.h"
@@ -260,8 +259,8 @@ void BTA_HhSendCtrl(uint8_t dev_handle, tBTA_HH_TRANS_CTRL_TYPE c_type) {
  * Returns          void
  *
  ******************************************************************************/
-void BTA_HhSendData(uint8_t dev_handle,
-                    UNUSED_ATTR const tAclLinkSpec& link_spec, BT_HDR* p_data) {
+void BTA_HhSendData(uint8_t dev_handle, const tAclLinkSpec& /* link_spec */,
+                    BT_HDR* p_data) {
   if (p_data->layer_specific != BTA_HH_RPTT_OUTPUT) {
     log::error(
         "ERROR! Wrong report type! Write Command only valid for output "

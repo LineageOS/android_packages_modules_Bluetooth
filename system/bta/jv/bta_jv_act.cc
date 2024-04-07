@@ -38,7 +38,6 @@
 #include "internal_include/bt_trace.h"
 #include "os/logging/log_adapter.h"
 #include "osi/include/allocator.h"
-#include "osi/include/osi.h"  // UNUSED_ATTR
 #include "osi/include/properties.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/avct_api.h"  // AVCT_PSM
@@ -794,7 +793,7 @@ void bta_jv_free_scn(int32_t type /* One of BTA_JV_CONN_TYPE_ */,
  * Returns      void
  *
  ******************************************************************************/
-static void bta_jv_start_discovery_cback(UNUSED_ATTR const RawAddress& bd_addr,
+static void bta_jv_start_discovery_cback(const RawAddress& bd_addr,
                                          tSDP_RESULT result,
                                          const void* user_data) {
   if (!bta_jv_cb.sdp_cb.sdp_active) {
