@@ -21,7 +21,6 @@
 
 #include <shared_mutex>
 
-#include "base/logging.h"
 #include "com_android_bluetooth.h"
 #include "hardware/bt_has.h"
 

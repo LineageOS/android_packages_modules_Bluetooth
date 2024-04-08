@@ -20,7 +20,6 @@
 
 #include <future>
 
-#include "base/logging.h"  // LOG() stdout and android log
 #include "btif/include/btif_api.h"
 #include "os/log.h"  // android log only
 #include "stack/include/sdp_api.h"

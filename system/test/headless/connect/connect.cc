@@ -27,7 +27,6 @@
 #include <future>
 #include <string>
 
-#include "base/logging.h"  // LOG() stdout and android log
 #include "btif/include/stack_manager_t.h"
 #include "os/log.h"  // android log only
 #include "stack/include/acl_api.h"

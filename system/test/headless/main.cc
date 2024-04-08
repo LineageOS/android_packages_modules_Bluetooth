@@ -26,7 +26,6 @@
 #include <iostream>
 #include <unordered_map>
 
-#include "base/logging.h"     // LOG() stdout and android log
 #include "os/log.h"           // android log only
 #include "test/headless/adapter/adapter.h"
 #include "test/headless/connect/connect.h"

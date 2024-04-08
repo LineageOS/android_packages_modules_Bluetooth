@@ -18,7 +18,6 @@
 
 #include "test/headless/sdp/sdp_db.h"
 
-#include "base/logging.h"  // LOG() stdout and android log
 #include "stack/include/sdp_api.h"
 #include "types/bluetooth/uuid.h"
 
