@@ -2181,12 +2181,12 @@ void DumpsysHid(int fd) {
   for (unsigned i = 0; i < BTIF_HH_MAX_HID; i++) {
     const btif_hh_device_t* p_dev = &btif_hh_cb.devices[i];
     if (p_dev->link_spec.addrt.bda != RawAddress::kEmpty) {
-      LOG_DUMPSYS(fd, "  %u: addr:%s fd:%d state:%s ready:%s thread_id:%d", i,
-                  p_dev->link_spec.ToRedactedStringForLogging().c_str(),
-                  p_dev->fd,
-                  bthh_connection_state_text(p_dev->dev_status).c_str(),
-                  (p_dev->ready_for_data) ? ("T") : ("F"),
-                  static_cast<int>(p_dev->hh_poll_thread_id));
+      LOG_DUMPSYS(
+          fd, "  %u: addr:%s fd:%d state:%s ready:%s thread_id:%d handle:%d", i,
+          p_dev->link_spec.ToRedactedStringForLogging().c_str(), p_dev->fd,
+          bthh_connection_state_text(p_dev->dev_status).c_str(),
+          (p_dev->ready_for_data) ? ("T") : ("F"),
+          static_cast<int>(p_dev->hh_poll_thread_id), p_dev->dev_handle);
     }
   }
   for (unsigned i = 0; i < BTIF_HH_MAX_ADDED_DEV; i++) {
