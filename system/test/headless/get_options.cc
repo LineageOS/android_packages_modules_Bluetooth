@@ -24,7 +24,6 @@
 #include <sstream>
 #include <string>
 
-#include "include/check.h"
 #include "os/log.h"
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"

@@ -41,7 +41,6 @@
 #include "hal/link_clocker.h"
 #include "hardware/bt_gatt_types.h"
 #include "hci/controller_interface.h"
-#include "include/check.h"
 #include "internal_include/bt_trace.h"
 #include "main/shim/entry.h"
 #include "os/log.h"

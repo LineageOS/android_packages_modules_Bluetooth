@@ -27,7 +27,6 @@
 
 #include "avdt_api.h"
 #include "avdt_int.h"
-#include "include/check.h"
 #include "internal_include/bt_target.h"
 #include "l2c_api.h"
 #include "l2cdefs.h"

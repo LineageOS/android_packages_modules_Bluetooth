@@ -21,7 +21,6 @@
 #include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
 
-#include "check.h"
 #include "hci/controller_interface.h"
 #include "main/shim/entry.h"
 

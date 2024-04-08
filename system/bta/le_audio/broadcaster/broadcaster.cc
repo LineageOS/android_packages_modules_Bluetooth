@@ -31,7 +31,6 @@
 #include "bta_le_audio_api.h"
 #include "common/strings.h"
 #include "hci/controller_interface.h"
-#include "include/check.h"
 #include "internal_include/stack_config.h"
 #include "main/shim/entry.h"
 #include "os/log.h"

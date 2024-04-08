@@ -27,7 +27,6 @@
 
 #include <bluetooth/log.h>
 
-#include "include/check.h"
 #include "osi/include/future.h"
 
 // Mocked compile conditionals, if any

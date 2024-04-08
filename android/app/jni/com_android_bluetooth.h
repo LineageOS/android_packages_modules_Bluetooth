@@ -124,7 +124,8 @@ private:
     JNIEnv *mCallbackEnv;
     const char *mName;
 
-    DISALLOW_COPY_AND_ASSIGN(CallbackEnv);
+    CallbackEnv(const CallbackEnv&) = delete;
+    void operator=(const CallbackEnv&) = delete;
 };
 
 const bt_interface_t* getBluetoothInterface();

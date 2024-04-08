@@ -36,7 +36,6 @@
 #include "btif_sock_sco.h"
 #include "btif_sock_thread.h"
 #include "btif_uid.h"
-#include "include/check.h"
 #include "os/log.h"
 #include "osi/include/osi.h"  // INVALID_FD
 #include "osi/include/thread.h"

@@ -27,7 +27,6 @@
 
 #include "common/stop_watch_legacy.h"
 #include "hal_version_manager.h"
-#include "include/check.h"
 
 namespace bluetooth {
 namespace audio {

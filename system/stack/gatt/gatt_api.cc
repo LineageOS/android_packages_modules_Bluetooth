@@ -1438,6 +1438,14 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr,
     } else {
       log::verbose("Connecting without tcb address: {}",
                    ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+
+      if (p_reg->direct_connect_request.count(bd_addr) == 0) {
+        p_reg->direct_connect_request.insert(bd_addr);
+      } else {
+        log::warn(" {} already added to gatt_if {} direct conn list",
+                  ADDRESS_TO_LOGGABLE_CSTR(bd_addr), gatt_if);
+      }
+
       ret = acl_create_le_connection_with_id(gatt_if, bd_addr, addr_type);
     }
 

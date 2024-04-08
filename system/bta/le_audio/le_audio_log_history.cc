@@ -17,7 +17,6 @@
 #include "le_audio_log_history.h"
 
 #include <bluetooth/log.h>
-#include <check.h>
 
 #include <cstdint>
 #include <memory>
