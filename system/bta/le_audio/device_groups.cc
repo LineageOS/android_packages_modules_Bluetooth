@@ -83,23 +83,28 @@ bool LeAudioDeviceGroup::IsAnyDeviceConnected(void) const {
 
 int LeAudioDeviceGroup::Size(void) const { return leAudioDevices_.size(); }
 
-int LeAudioDeviceGroup::NumOfConnected(LeAudioContextType context_type) const {
-  if (leAudioDevices_.empty()) return 0;
-
-  bool check_context_type = (context_type != LeAudioContextType::RFU);
-  AudioContexts type_set(context_type);
-
+int LeAudioDeviceGroup::NumOfConnected() const {
   /* return number of connected devices from the set*/
   return std::count_if(
-      leAudioDevices_.begin(), leAudioDevices_.end(),
-      [type_set, check_context_type](auto& iter) {
+      leAudioDevices_.begin(), leAudioDevices_.end(), [](auto& iter) {
         auto dev = iter.lock();
         if (dev) {
-          if (dev->conn_id_ == GATT_INVALID_CONN_ID) return false;
-          if (dev->GetConnectionState() != DeviceConnectState::CONNECTED)
-            return false;
-          if (!check_context_type) return true;
-          return dev->GetSupportedContexts().test_any(type_set);
+          return (dev->conn_id_ != GATT_INVALID_CONN_ID) &&
+                 (dev->GetConnectionState() == DeviceConnectState::CONNECTED);
+        }
+        return false;
+      });
+}
+
+int LeAudioDeviceGroup::NumOfConnected(LeAudioContextType context_type) const {
+  /* return number of connected devices from the set with supported context */
+  return std::count_if(
+      leAudioDevices_.begin(), leAudioDevices_.end(), [&](auto& iter) {
+        auto dev = iter.lock();
+        if (dev) {
+          return (dev->conn_id_ != GATT_INVALID_CONN_ID) &&
+                 (dev->GetConnectionState() == DeviceConnectState::CONNECTED) &&
+                 dev->GetSupportedContexts().test(context_type);
         }
         return false;
       });
