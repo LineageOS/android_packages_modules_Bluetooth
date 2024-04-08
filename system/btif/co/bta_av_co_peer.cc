@@ -18,7 +18,6 @@
 #include <bluetooth/log.h>
 
 #include "bta/include/bta_av_api.h"
-#include "include/check.h"
 
 using namespace bluetooth;
 

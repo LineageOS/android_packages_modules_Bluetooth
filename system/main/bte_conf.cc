@@ -25,7 +25,6 @@
 #include <memory>
 
 #include "bta/include/bta_api.h"
-#include "include/check.h"
 #include "osi/include/compat.h"  // strlcpy
 #include "osi/include/config.h"
 #include "stack/include/hcidefs.h"

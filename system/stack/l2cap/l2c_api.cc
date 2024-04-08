@@ -36,7 +36,6 @@
 #include "common/init_flags.h"
 #include "hal/snoop_logger.h"
 #include "hci/controller_interface.h"
-#include "include/check.h"
 #include "internal_include/bt_target.h"
 #include "internal_include/bt_trace.h"
 #include "main/shim/dumpsys.h"

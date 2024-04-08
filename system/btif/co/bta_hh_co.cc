@@ -33,7 +33,6 @@
 #include "bta_hh_api.h"
 #include "btif_hh.h"
 #include "hci/controller_interface.h"
-#include "include/check.h"
 #include "main/shim/entry.h"
 #include "osi/include/allocator.h"
 #include "osi/include/compat.h"

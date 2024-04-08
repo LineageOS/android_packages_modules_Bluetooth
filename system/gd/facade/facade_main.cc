@@ -36,7 +36,6 @@
 #include "facade/grpc_root_server.h"
 #include "hal/hci_hal_host.h"
 #include "hal/snoop_logger.h"
-#include "include/check.h"
 #include "os/log.h"
 #include "os/parameter_provider.h"
 #include "os/system_properties.h"

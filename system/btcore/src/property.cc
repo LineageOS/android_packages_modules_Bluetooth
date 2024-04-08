@@ -22,7 +22,6 @@
 #include <string.h>
 
 #include "btcore/include/device_class.h"
-#include "check.h"
 #include "osi/include/allocator.h"
 #include "osi/include/compat.h"
 #include "types/bluetooth/uuid.h"

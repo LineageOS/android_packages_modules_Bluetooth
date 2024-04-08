@@ -23,8 +23,6 @@
 #include <endian.h>
 #include <string.h>
 
-#include "check.h"
-
 using namespace bluetooth;
 
 typedef struct _bt_device_class_t {

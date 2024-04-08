@@ -18,7 +18,6 @@
 
 #include <bluetooth/log.h>
 
-#include "include/check.h"
 #include "internal_include/bt_trace.h"
 
 namespace bluetooth {

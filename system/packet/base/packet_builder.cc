@@ -18,7 +18,6 @@
 
 #include <bluetooth/log.h>
 
-#include "check.h"
 #include "packet.h"
 
 namespace bluetooth {

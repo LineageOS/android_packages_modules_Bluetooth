@@ -29,7 +29,6 @@
 
 #include "gatt_int.h"
 #include "hardware/bt_gatt_types.h"
-#include "include/check.h"
 #include "internal_include/bt_target.h"
 #include "internal_include/bt_trace.h"
 #include "os/log.h"

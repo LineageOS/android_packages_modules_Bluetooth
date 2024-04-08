@@ -34,7 +34,6 @@
 #include "btif/include/btif_avrcp_audio_track.h"
 #include "btif/include/btif_util.h"  // CASE_RETURN_STR
 #include "common/message_loop_thread.h"
-#include "include/check.h"
 #include "os/log.h"
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"

@@ -19,7 +19,6 @@ source_set("BluetoothOsSources_chromeos") {
     "chromeos/system_properties.cc",
     "chromeos/wakelock_native.cc",
     "system_properties_common.cc",
-    "syslog.cc",
   ]
 
   configs += [
@@ -39,7 +38,6 @@ source_set("BluetoothOsSources_linux") {
     "linux/system_properties.cc",
     "linux/wakelock_native.cc",
     "system_properties_common.cc",
-    "syslog.cc",
   ]
 
   configs += [

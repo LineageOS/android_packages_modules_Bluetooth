@@ -32,7 +32,6 @@
 #include "bta_gatt_queue.h"
 #include "bta_vc_api.h"
 #include "devices.h"
-#include "include/check.h"
 #include "internal_include/bt_trace.h"
 #include "os/log.h"
 #include "osi/include/osi.h"

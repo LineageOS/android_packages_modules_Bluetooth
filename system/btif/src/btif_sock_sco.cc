@@ -26,7 +26,6 @@
 #include <cstdint>
 #include <mutex>
 
-#include "include/check.h"
 #include "include/hardware/bt_sock.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"

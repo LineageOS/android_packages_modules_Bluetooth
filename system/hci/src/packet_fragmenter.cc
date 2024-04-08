@@ -27,7 +27,6 @@
 
 #include "hci/include/buffer_allocator.h"
 #include "hci/include/hci_layer.h"
-#include "include/check.h"
 #include "internal_include/bt_target.h"
 #include "os/log.h"
 #include "stack/include/bt_hdr.h"

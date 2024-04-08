@@ -45,7 +45,6 @@
 #include "common/metrics.h"
 #include "common/repeating_timer.h"
 #include "common/time_util.h"
-#include "include/check.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/fixed_queue.h"

@@ -39,7 +39,6 @@
 
 #include "btcore/include/module.h"
 #include "btif/include/btif_storage.h"
-#include "check.h"
 #include "device/include/interop_config.h"
 #include "device/include/interop_database.h"
 #include "os/log.h"
