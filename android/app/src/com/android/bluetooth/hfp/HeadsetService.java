@@ -1900,12 +1900,25 @@ public class HeadsetService extends ProfileService {
                 if (currentPolicy != null && currentPolicy.getActiveDevicePolicyAfterConnection()
                         == BluetoothSinkAudioPolicy.POLICY_NOT_ALLOWED) {
                     /**
-                     * If the active device was set because of the pick up audio policy
-                     * and the connecting policy is NOT_ALLOWED, then after the call is
-                     * terminated, we must de-activate this device.
-                     * If there is a fallback mechanism, we should follow it.
+                     * If the active device was set because of the pick up audio policy and the
+                     * connecting policy is NOT_ALLOWED, then after the call is terminated, we must
+                     * de-activate this device. If there is a fallback mechanism, we should follow
+                     * it to set fallback device be active.
                      */
                     removeActiveDevice();
+                    if (Flags.sinkAudioPolicyHandover()) {
+                        BluetoothDevice fallbackDevice = getFallbackDevice();
+                        if (fallbackDevice != null
+                                && getConnectionState(fallbackDevice)
+                                        == BluetoothProfile.STATE_CONNECTED) {
+                            Log.d(
+                                    TAG,
+                                    "BluetoothSinkAudioPolicy set fallbackDevice="
+                                            + fallbackDevice
+                                            + " active");
+                            setActiveDevice(fallbackDevice);
+                        }
+                    }
                 }
             }
         }
