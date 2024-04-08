@@ -208,7 +208,7 @@ impl HidHost {
 
     pub fn disconnect(&self, addr: &mut RawAddress) -> BtStatus {
         let ffi_addr = cast_to_ffi_address!(addr as *mut RawAddress);
-        BtStatus::from(ccall!(self, disconnect, ffi_addr))
+        BtStatus::from(ccall!(self, disconnect, ffi_addr, true))
     }
 
     pub fn virtual_unplug(&self, addr: &mut RawAddress) -> BtStatus {
