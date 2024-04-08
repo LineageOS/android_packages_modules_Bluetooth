@@ -26,7 +26,6 @@
 #include "btif/include/stack_manager_t.h"
 #include "hal/snoop_logger.h"
 #include "hci/controller_interface_mock.h"
-#include "include/check.h"
 #include "osi/include/allocator.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/include/bt_psm_types.h"

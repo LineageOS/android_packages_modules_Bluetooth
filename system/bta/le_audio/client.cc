@@ -44,7 +44,6 @@
 #include "content_control_id_keeper.h"
 #include "devices.h"
 #include "hci/controller_interface.h"
-#include "include/check.h"
 #include "internal_include/bt_trace.h"
 #include "internal_include/stack_config.h"
 #include "le_audio_health_status.h"

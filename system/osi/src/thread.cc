@@ -32,7 +32,6 @@
 #include <atomic>
 #include <cerrno>
 
-#include "check.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/compat.h"

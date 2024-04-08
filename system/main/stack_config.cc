@@ -22,7 +22,6 @@
 
 #include <bluetooth/log.h>
 
-#include "include/check.h"
 #include "os/log.h"
 #include "osi/include/future.h"
 

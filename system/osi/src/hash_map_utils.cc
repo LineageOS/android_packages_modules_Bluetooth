@@ -24,7 +24,6 @@
 #include <map>
 #include <string>
 
-#include "check.h"
 #include "osi/include/allocator.h"
 #include "osi/include/osi.h"
 

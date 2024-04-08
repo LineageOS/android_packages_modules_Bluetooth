@@ -38,7 +38,6 @@
 #include "common/init_flags.h"
 #include "common/strings.h"
 #include "device/include/interop.h"
-#include "include/check.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/dumpsys.h"
 #include "os/logging/log_adapter.h"

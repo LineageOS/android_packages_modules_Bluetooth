@@ -33,7 +33,6 @@
 #include "a2dp_sbc_decoder.h"
 #include "a2dp_sbc_encoder.h"
 #include "embdrv/sbc/encoder/include/sbc_encoder.h"
-#include "include/check.h"
 #include "internal_include/bt_trace.h"
 #include "osi/include/osi.h"
 #include "stack/include/bt_hdr.h"

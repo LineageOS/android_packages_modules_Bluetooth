@@ -33,8 +33,6 @@
 #include <sstream>
 #include <type_traits>
 
-#include "check.h"
-
 using namespace bluetooth;
 
 void section_t::Set(std::string key, std::string value) {

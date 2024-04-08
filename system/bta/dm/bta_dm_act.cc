@@ -45,7 +45,6 @@
 #include "btif/include/btif_dm.h"
 #include "btif/include/stack_manager_t.h"
 #include "hci/controller_interface.h"
-#include "include/check.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/acl_api.h"
 #include "main/shim/btm_api.h"
