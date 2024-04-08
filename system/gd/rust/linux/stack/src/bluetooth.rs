@@ -1412,7 +1412,7 @@ impl IBluetooth for Bluetooth {
                     if self.uuid_helper.is_profile_enabled(&p) {
                         match p {
                             Profile::Hid | Profile::Hogp => {
-                                self.hh.as_ref().unwrap().disconnect(&mut addr.unwrap());
+                                self.hh.as_ref().unwrap().disconnect(&mut addr.unwrap(), true);
                             }
 
                             Profile::A2dpSink | Profile::A2dpSource => {
