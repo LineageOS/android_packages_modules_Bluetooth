@@ -280,7 +280,7 @@ void BTA_AvOffloadStart(tBTA_AV_HNDL hndl) {
  *
  ******************************************************************************/
 void BTA_AvStop(tBTA_AV_HNDL handle, bool suspend) {
-  log::info("bta_handle=0x{:x} suspend={}", handle, logbool(suspend));
+  log::info("bta_handle=0x{:x} suspend={}", handle, suspend);
 
   tBTA_AV_API_STOP* p_buf =
       (tBTA_AV_API_STOP*)osi_malloc(sizeof(tBTA_AV_API_STOP));
@@ -310,8 +310,8 @@ void BTA_AvStop(tBTA_AV_HNDL handle, bool suspend) {
 void BTA_AvReconfig(tBTA_AV_HNDL hndl, bool suspend, uint8_t sep_info_idx,
                     uint8_t* p_codec_info, uint8_t num_protect,
                     const uint8_t* p_protect_info) {
-  log::info("bta_handle=0x{:x} suspend={} sep_info_idx={}", hndl,
-            logbool(suspend), sep_info_idx);
+  log::info("bta_handle=0x{:x} suspend={} sep_info_idx={}", hndl, suspend,
+            sep_info_idx);
 
   tBTA_AV_API_RCFG* p_buf =
       (tBTA_AV_API_RCFG*)osi_malloc(sizeof(tBTA_AV_API_RCFG) + num_protect);

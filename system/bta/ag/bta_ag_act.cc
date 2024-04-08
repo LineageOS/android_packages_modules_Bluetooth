@@ -862,8 +862,7 @@ void bta_ag_setcodec(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
   tBTA_AG_VAL val = {};
   const bool aptx_voice = is_hfp_aptx_voice_enabled() &&
                           (codec_type == BTA_AG_SCO_APTX_SWB_SETTINGS_Q0);
-  log::verbose("aptx_voice={}, codec_type={:#x}", logbool(aptx_voice),
-               codec_type);
+  log::verbose("aptx_voice={}, codec_type={:#x}", aptx_voice, codec_type);
 
   val.hdr.handle = bta_ag_scb_to_idx(p_scb);
 

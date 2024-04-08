@@ -56,18 +56,6 @@ std::string loghex(std::array<T, N> array) {
 }
 
 /**
- * Obtains the string representation of a boolean value.
- *
- * @param value the boolean value to use
- * @return the string representation of the boolean value: "true" or "false"
- */
-inline std::string logbool(bool value) {
-  std::stringstream tmp;
-  tmp << std::boolalpha << value;
-  return tmp.str();
-}
-
-/**
  * Append a field name to a string.
  *
  * The field names are added to the string with "|" in between.
