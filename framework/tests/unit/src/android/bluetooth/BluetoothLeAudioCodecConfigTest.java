@@ -16,20 +16,28 @@
 
 package android.bluetooth;
 
-import androidx.test.filters.SmallTest;
-import junit.framework.TestCase;
+import androidx.test.runner.AndroidJUnit4;
+
+import com.google.common.truth.Expect;
+
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.runner.RunWith;
 
 /** Unit test cases for {@link BluetoothLeAudioCodecConfig}. */
-public class BluetoothLeAudioCodecConfigTest extends TestCase {
+@RunWith(AndroidJUnit4.class)
+public class BluetoothLeAudioCodecConfigTest {
+
+    @Rule public Expect expect = Expect.create();
+
     private int[] mCodecTypeArray =
             new int[] {
                 BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_LC3,
                 BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_INVALID,
             };
 
-    @SmallTest
+    @Test
     public void testBluetoothLeAudioCodecConfig_valid_get_methods() {
-
         for (int codecIdx = 0; codecIdx < mCodecTypeArray.length; codecIdx++) {
             int codecType = mCodecTypeArray[codecIdx];
 
@@ -37,13 +45,13 @@ public class BluetoothLeAudioCodecConfigTest extends TestCase {
                     buildBluetoothLeAudioCodecConfig(codecType);
 
             if (codecType == BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_LC3) {
-                assertEquals("LC3", leAudioCodecConfig.getCodecName());
+                expect.that(leAudioCodecConfig.getCodecName()).isEqualTo("LC3");
             }
             if (codecType == BluetoothLeAudioCodecConfig.SOURCE_CODEC_TYPE_INVALID) {
-                assertEquals("INVALID CODEC", leAudioCodecConfig.getCodecName());
+                expect.that(leAudioCodecConfig.getCodecName()).isEqualTo("INVALID CODEC");
             }
 
-            assertEquals(codecType, leAudioCodecConfig.getCodecType());
+            expect.that(leAudioCodecConfig.getCodecType()).isEqualTo(codecType);
         }
     }
 
