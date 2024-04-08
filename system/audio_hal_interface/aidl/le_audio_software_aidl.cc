@@ -19,6 +19,7 @@
 
 #include "le_audio_software_aidl.h"
 
+#include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
 
 #include <atomic>
@@ -340,6 +341,9 @@ bool LeAudioTransport::IsRequestCompletedAfterUpdate(
 }
 
 StartRequestState LeAudioTransport::GetStartRequestState(void) {
+  if (IS_FLAG_ENABLED(leaudio_start_request_state_mutex_check)) {
+    std::lock_guard<std::mutex> guard(start_request_state_mutex_);
+  }
   return start_request_state_;
 }
 void LeAudioTransport::ClearStartRequestState(void) {
