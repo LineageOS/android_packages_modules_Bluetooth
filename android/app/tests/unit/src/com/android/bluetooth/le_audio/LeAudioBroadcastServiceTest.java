@@ -66,6 +66,7 @@ import java.util.concurrent.TimeoutException;
 @RunWith(AndroidJUnit4.class)
 public class LeAudioBroadcastServiceTest {
     private static final int TIMEOUT_MS = 1000;
+    private static final int CREATE_BROADCAST_TIMEOUT_MS = 6000;
 
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
@@ -428,6 +429,61 @@ public class LeAudioBroadcastServiceTest {
 
         Assert.assertFalse(mOnBroadcastStartedCalled);
         Assert.assertTrue(mOnBroadcastStartFailedCalled);
+    }
+
+    @Test
+    public void testCreateBroadcastTimeout() {
+        mSetFlagsRule.enableFlags(Flags.FLAG_LEAUDIO_BROADCAST_DESTROY_AFTER_TIMEOUT);
+
+        int broadcastId = 243;
+        byte[] code = {0x00, 0x01, 0x00, 0x02};
+
+        mService.mBroadcastCallbacks.register(mCallbacks);
+
+        BluetoothLeAudioContentMetadata.Builder meta_builder =
+                new BluetoothLeAudioContentMetadata.Builder();
+        meta_builder.setLanguage("deu");
+        meta_builder.setProgramInfo("Public broadcast info");
+        BluetoothLeAudioContentMetadata meta = meta_builder.build();
+        BluetoothLeBroadcastSettings settings = buildBroadcastSettingsFromMetadata(meta, code, 1);
+        mService.createBroadcast(settings);
+
+        // Test data with only one subgroup
+        int[] expectedQualityArray = {settings.getSubgroupSettings().get(0).getPreferredQuality()};
+        byte[][] expectedDataArray = {
+            settings.getSubgroupSettings().get(0).getContentMetadata().getRawMetadata()
+        };
+
+        verify(mLeAudioBroadcasterNativeInterface, times(1))
+                .createBroadcast(
+                        eq(true),
+                        eq(TEST_BROADCAST_NAME),
+                        eq(code),
+                        eq(settings.getPublicBroadcastMetadata().getRawMetadata()),
+                        eq(expectedQualityArray),
+                        eq(expectedDataArray));
+
+        // Check if broadcast is started automatically when created
+        LeAudioStackEvent create_event =
+                new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_BROADCAST_CREATED);
+        create_event.valueInt1 = broadcastId;
+        create_event.valueBool1 = true;
+        mService.messageFromNative(create_event);
+
+        // Verify if broadcast is auto-started on start
+        verify(mLeAudioBroadcasterNativeInterface, times(1)).startBroadcast(eq(broadcastId));
+        Assert.assertTrue(mOnBroadcastStartedCalled);
+
+        // Notify initial paused state
+        LeAudioStackEvent state_event =
+                new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_BROADCAST_STATE);
+        state_event.valueInt1 = broadcastId;
+        state_event.valueInt2 = LeAudioStackEvent.BROADCAST_STATE_PAUSED;
+        mService.messageFromNative(state_event);
+
+        // Check if broadcast is destroyed after timeout
+        verify(mLeAudioBroadcasterNativeInterface, timeout(CREATE_BROADCAST_TIMEOUT_MS).times(1))
+                .destroyBroadcast(eq(broadcastId));
     }
 
     @Test
