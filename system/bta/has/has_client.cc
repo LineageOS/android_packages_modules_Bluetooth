@@ -37,7 +37,6 @@
 #include "gap_api.h"
 #include "gatt_api.h"
 #include "has_types.h"
-#include "include/check.h"
 #include "internal_include/bt_trace.h"
 #include "os/log.h"
 #include "osi/include/properties.h"

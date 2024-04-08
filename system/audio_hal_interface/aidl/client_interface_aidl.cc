@@ -26,7 +26,6 @@
 #include <vector>
 
 #include "bta/ag/bta_ag_int.h"
-#include "include/check.h"
 
 namespace bluetooth {
 namespace audio {

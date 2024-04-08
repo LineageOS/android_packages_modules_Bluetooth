@@ -26,7 +26,6 @@
 #include "a2dp_aac.h"
 #include "a2dp_aac_encoder.h"
 #include "common/time_util.h"
-#include "include/check.h"
 #include "internal_include/bt_target.h"
 #include "mmc/codec_client/codec_client.h"
 #include "mmc/proto/mmc_config.pb.h"

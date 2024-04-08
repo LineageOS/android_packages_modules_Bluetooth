@@ -27,7 +27,6 @@
 #include "a2dp_vendor.h"
 #include "a2dp_vendor_opus.h"
 #include "common/time_util.h"
-#include "include/check.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/osi.h"

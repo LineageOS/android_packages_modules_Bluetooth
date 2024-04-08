@@ -32,7 +32,6 @@
 
 #include "common/init_flags.h"
 #include "device_iot_config_int.h"
-#include "include/check.h"
 #include "internal_include/bt_target.h"
 #include "os/log.h"
 #include "osi/include/alarm.h"

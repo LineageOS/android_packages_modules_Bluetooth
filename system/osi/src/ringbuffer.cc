@@ -21,7 +21,6 @@
 #include <bluetooth/log.h>
 #include <stdlib.h>
 
-#include "check.h"
 #include "osi/include/allocator.h"
 
 using namespace bluetooth;

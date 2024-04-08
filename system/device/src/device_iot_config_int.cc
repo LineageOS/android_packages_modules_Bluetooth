@@ -33,7 +33,6 @@
 #include "btif/include/btif_common.h"
 #include "common/init_flags.h"
 #include "device/include/device_iot_config.h"
-#include "include/check.h"
 #include "os/log.h"
 #include "osi/include/alarm.h"
 #include "osi/include/config.h"

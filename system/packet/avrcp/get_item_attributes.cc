@@ -16,8 +16,6 @@
 
 #include "get_item_attributes.h"
 
-#include "include/check.h"
-
 namespace bluetooth {
 namespace avrcp {
 

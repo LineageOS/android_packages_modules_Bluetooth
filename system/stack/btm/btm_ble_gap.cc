@@ -40,7 +40,6 @@
 #include "common/time_util.h"
 #include "hci/controller.h"
 #include "hci/controller_interface.h"
-#include "include/check.h"
 #include "main/shim/acl_api.h"
 #include "main/shim/entry.h"
 #include "osi/include/allocator.h"

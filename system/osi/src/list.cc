@@ -2,7 +2,6 @@
 
 #include <bluetooth/log.h>
 
-#include "check.h"
 #include "osi/include/allocator.h"
 #include "osi/include/osi.h"
 

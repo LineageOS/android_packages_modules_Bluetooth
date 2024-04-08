@@ -28,7 +28,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "check.h"
 #include "os/log.h"
 
 #define RANDOM_PATH "/dev/urandom"

@@ -23,8 +23,6 @@
 
 #include <mutex>
 
-#include "include/check.h"
-
 struct quiesce_t {
   thread_t* thread;
 };
