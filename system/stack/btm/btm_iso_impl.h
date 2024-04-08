@@ -24,7 +24,6 @@
 
 #include "base/functional/bind.h"
 #include "base/functional/callback.h"
-#include "base/logging.h"
 #include "btm_dev.h"
 #include "btm_iso_api.h"
 #include "common/time_util.h"

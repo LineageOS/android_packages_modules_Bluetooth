@@ -24,7 +24,6 @@
 #include <functional>
 
 // Original included files, if any
-#include "base/logging.h"
 #include "device/include/esco_parameters.h"
 
 // Mocked compile conditionals, if any

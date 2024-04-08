@@ -33,7 +33,6 @@
 #include <mutex>
 #include <string>
 
-#include "base/logging.h"
 #include "common/metrics.h"
 #include "os/log.h"
 #include "osi/include/osi.h"

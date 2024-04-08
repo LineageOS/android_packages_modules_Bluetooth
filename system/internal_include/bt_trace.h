@@ -21,16 +21,6 @@
 #include <stdint.h>
 
 #ifdef __cplusplus
-extern "C" {
-#endif
-
-static const char BTE_LOGMSG_MODULE[] = "bte_logmsg_module";
-
-#ifdef __cplusplus
-}
-#endif
-
-#ifdef __cplusplus
 
 #include <bluetooth/log.h>
 
@@ -97,4 +87,4 @@ inline std::string& AppendField(std::string* p_result, bool append,
   return *p_result;
 }
 
-#endif
+#endif  // __cplusplus
