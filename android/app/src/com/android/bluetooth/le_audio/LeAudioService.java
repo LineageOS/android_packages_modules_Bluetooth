@@ -2607,6 +2607,11 @@ public class LeAudioService extends ProfileService {
     void transitionFromBroadcastToUnicast() {
         if (mUnicastGroupIdDeactivatedForBroadcastTransition == LE_AUDIO_GROUP_ID_INVALID) {
             Log.d(TAG, "No deactivated group due for broadcast transmission");
+            // Notify audio manager
+            if (mBroadcastDescriptors.values().stream()
+                    .noneMatch(d -> d.mState.equals(LeAudioStackEvent.BROADCAST_STATE_STREAMING))) {
+                updateBroadcastActiveDevice(null, mActiveBroadcastAudioDevice, false);
+            }
             return;
         }
 
@@ -3031,22 +3036,7 @@ public class LeAudioService extends ProfileService {
                     notifyPlaybackStopped(broadcastId,
                             BluetoothStatusCodes.REASON_LOCAL_APP_REQUEST);
 
-
-                    /* Restore the Unicast stream from before the Broadcast was started. */
-                    if (mUnicastGroupIdDeactivatedForBroadcastTransition
-                            != LE_AUDIO_GROUP_ID_INVALID) {
-                        transitionFromBroadcastToUnicast();
-                    } else {
-                        // Notify audio manager
-                        if (mBroadcastDescriptors.values().stream()
-                                .noneMatch(
-                                        d ->
-                                                d.mState.equals(
-                                                        LeAudioStackEvent
-                                                                .BROADCAST_STATE_STREAMING))) {
-                            updateBroadcastActiveDevice(null, mActiveBroadcastAudioDevice, false);
-                        }
-                    }
+                    transitionFromBroadcastToUnicast();
                     destroyBroadcast(broadcastId);
                     break;
                 case LeAudioStackEvent.BROADCAST_STATE_CONFIGURING:
@@ -3068,21 +3058,7 @@ public class LeAudioService extends ProfileService {
                         bassClientService.suspendReceiversSourceSynchronization(broadcastId);
                     }
 
-                    /* Restore the Unicast stream from before the Broadcast was started. */
-                    if (mUnicastGroupIdDeactivatedForBroadcastTransition
-                            != LE_AUDIO_GROUP_ID_INVALID) {
-                        transitionFromBroadcastToUnicast();
-                    } else {
-                        // Notify audio manager
-                        if (mBroadcastDescriptors.values().stream()
-                                .noneMatch(
-                                        d ->
-                                                d.mState.equals(
-                                                        LeAudioStackEvent
-                                                                .BROADCAST_STATE_STREAMING))) {
-                            updateBroadcastActiveDevice(null, mActiveBroadcastAudioDevice, false);
-                        }
-                    }
+                    transitionFromBroadcastToUnicast();
                     break;
                 case LeAudioStackEvent.BROADCAST_STATE_STOPPING:
                     Log.d(TAG, "Broadcast broadcastId: " + broadcastId + " stopping.");
@@ -4382,11 +4358,16 @@ public class LeAudioService extends ProfileService {
                 return;
             }
 
-            if (mActiveBroadcastAudioDevice != null) {
-                updateBroadcastActiveDevice(null, mActiveBroadcastAudioDevice, false);
-            }
+            if (Flags.leaudioBroadcastDestroyAfterTimeout()) {
+                transitionFromBroadcastToUnicast();
+                destroyBroadcast(mBroadcastId);
+            } else {
+                if (mActiveBroadcastAudioDevice != null) {
+                    updateBroadcastActiveDevice(null, mActiveBroadcastAudioDevice, false);
+                }
 
-            notifyBroadcastStartFailed(BluetoothStatusCodes.ERROR_TIMEOUT);
+                notifyBroadcastStartFailed(BluetoothStatusCodes.ERROR_TIMEOUT);
+            }
         }
     }
 
