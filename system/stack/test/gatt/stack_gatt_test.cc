@@ -129,6 +129,7 @@ TEST_F(StackGattTest, lifecycle_tGATT_REG) {
     memset(reg0.get(), 0, sizeof(tGATT_REG));
     // Restore the complex structure after memset
     memset(&reg1.name, 0, sizeof(std::string));
+    memset(&reg1.direct_connect_request, 0, sizeof(std::set<RawAddress>));
     reg1 = {};
     ASSERT_EQ(0, memcmp(reg0.get(), &reg1, actual_sizeof_tGATT_REG()));
   }
