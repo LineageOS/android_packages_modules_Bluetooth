@@ -1069,33 +1069,37 @@ void log_classic_pairing_command_complete(EventView event_view, std::unique_ptr<
   switch (op_code) {
     case OpCode::READ_LOCAL_OOB_DATA: {
       auto read_local_oob_data_complete_view = ReadLocalOobDataCompleteView::Create(std::move(command_complete_view));
-      log::assert_that(
-          read_local_oob_data_complete_view.IsValid(),
-          "assert failed: read_local_oob_data_complete_view.IsValid()");
+      if (!read_local_oob_data_complete_view.IsValid()) {
+        log::warn("read_local_oob_data_complete_view is not valid.");
+        return;
+      }
       status = read_local_oob_data_complete_view.GetStatus();
       break;
     }
     case OpCode::WRITE_SIMPLE_PAIRING_MODE: {
       auto write_simple_pairing_mode_complete_view = WriteSimplePairingModeCompleteView::Create(std::move(command_complete_view));
-      log::assert_that(
-          write_simple_pairing_mode_complete_view.IsValid(),
-          "assert failed: write_simple_pairing_mode_complete_view.IsValid()");
+      if (!write_simple_pairing_mode_complete_view.IsValid()) {
+        log::warn("write_simple_pairing_mode_complete_view is not valid.");
+        return;
+      }
       status = write_simple_pairing_mode_complete_view.GetStatus();
       break;
     }
     case OpCode::WRITE_SECURE_CONNECTIONS_HOST_SUPPORT: {
       auto write_secure_connections_host_support_complete_view = WriteSecureConnectionsHostSupportCompleteView::Create(std::move(command_complete_view));
-      log::assert_that(
-          write_secure_connections_host_support_complete_view.IsValid(),
-          "assert failed: write_secure_connections_host_support_complete_view.IsValid()");
+      if (!write_secure_connections_host_support_complete_view.IsValid()) {
+        log::warn("write_secure_connections_host_support_complete_view is not valid.");
+        return;
+      }
       status = write_secure_connections_host_support_complete_view.GetStatus();
       break;
     }
     case OpCode::READ_ENCRYPTION_KEY_SIZE: {
       auto read_encryption_key_size_complete_view = ReadEncryptionKeySizeCompleteView::Create(std::move(command_complete_view));
-      log::assert_that(
-          read_encryption_key_size_complete_view.IsValid(),
-          "assert failed: read_encryption_key_size_complete_view.IsValid()");
+      if (!read_encryption_key_size_complete_view.IsValid()) {
+        log::warn("read_encryption_key_size_complete_view is not valid.");
+        return;
+      }
       status = read_encryption_key_size_complete_view.GetStatus();
       connection_handle = read_encryption_key_size_complete_view.GetConnectionHandle();
       value = read_encryption_key_size_complete_view.GetKeySize();
@@ -1103,105 +1107,121 @@ void log_classic_pairing_command_complete(EventView event_view, std::unique_ptr<
     }
     case OpCode::LINK_KEY_REQUEST_REPLY: {
       auto link_key_request_reply_complete_view = LinkKeyRequestReplyCompleteView::Create(std::move(command_complete_view));
-      log::assert_that(
-          link_key_request_reply_complete_view.IsValid(),
-          "assert failed: link_key_request_reply_complete_view.IsValid()");
+      if (!link_key_request_reply_complete_view.IsValid()) {
+        log::warn("link_key_request_reply_complete_view is not valid.");
+        return;
+      }
       status = link_key_request_reply_complete_view.GetStatus();
       auto link_key_request_reply_view = LinkKeyRequestReplyView::Create(std::move(security_command_view));
-      log::assert_that(
-          link_key_request_reply_view.IsValid(),
-          "assert failed: link_key_request_reply_view.IsValid()");
+      if (!link_key_request_reply_view.IsValid()) {
+        log::warn("link_key_request_reply_view is not valid.");
+        return;
+      }
       address = link_key_request_reply_view.GetBdAddr();
       break;
     }
     case OpCode::LINK_KEY_REQUEST_NEGATIVE_REPLY: {
       auto link_key_request_negative_reply_complete_view = LinkKeyRequestNegativeReplyCompleteView::Create(std::move(command_complete_view));
-      log::assert_that(
-          link_key_request_negative_reply_complete_view.IsValid(),
-          "assert failed: link_key_request_negative_reply_complete_view.IsValid()");
+      if (!link_key_request_negative_reply_complete_view.IsValid()) {
+        log::warn("link_key_request_negative_reply_complete_view is not valid.");
+        return;
+      }
       status = link_key_request_negative_reply_complete_view.GetStatus();
       auto link_key_request_negative_reply_view = LinkKeyRequestNegativeReplyView::Create(std::move(security_command_view));
-      log::assert_that(
-          link_key_request_negative_reply_view.IsValid(),
-          "assert failed: link_key_request_negative_reply_view.IsValid()");
+      if (!link_key_request_negative_reply_view.IsValid()) {
+        log::warn("link_key_request_negative_reply_view is not valid.");
+        return;
+      }
       address = link_key_request_negative_reply_view.GetBdAddr();
       break;
     }
     case OpCode::IO_CAPABILITY_REQUEST_REPLY: {
       auto io_capability_request_reply_complete_view = IoCapabilityRequestReplyCompleteView::Create(std::move(command_complete_view));
-      log::assert_that(
-          io_capability_request_reply_complete_view.IsValid(),
-          "assert failed: io_capability_request_reply_complete_view.IsValid()");
+      if (!io_capability_request_reply_complete_view.IsValid()) {
+        log::warn("io_capability_request_reply_complete_view is not valid.");
+        return;
+      }
       status = io_capability_request_reply_complete_view.GetStatus();
       auto io_capability_request_reply_view = IoCapabilityRequestReplyView::Create(std::move(security_command_view));
-      log::assert_that(
-          io_capability_request_reply_view.IsValid(),
-          "assert failed: io_capability_request_reply_view.IsValid()");
+      if (!io_capability_request_reply_view.IsValid()) {
+        log::warn("io_capability_request_reply_view is not valid.");
+        return;
+      }
       address = io_capability_request_reply_view.GetBdAddr();
       break;
     }
     case OpCode::IO_CAPABILITY_REQUEST_NEGATIVE_REPLY: {
       auto io_capability_request_negative_reply_complete_view = IoCapabilityRequestNegativeReplyCompleteView::Create(std::move(command_complete_view));
-      log::assert_that(
-          io_capability_request_negative_reply_complete_view.IsValid(),
-          "assert failed: io_capability_request_negative_reply_complete_view.IsValid()");
+      if (!io_capability_request_negative_reply_complete_view.IsValid()) {
+        log::warn("io_capability_request_negative_reply_complete_view is not valid.");
+        return;
+      }
       status = io_capability_request_negative_reply_complete_view.GetStatus();
       auto io_capability_request_negative_reply_view = IoCapabilityRequestNegativeReplyView::Create(std::move(security_command_view));
-      log::assert_that(
-          io_capability_request_negative_reply_view.IsValid(),
-          "assert failed: io_capability_request_negative_reply_view.IsValid()");
+      if (!io_capability_request_negative_reply_view.IsValid()) {
+        log::warn("io_capability_request_negative_reply_view is not valid.");
+        return;
+      }
       address = io_capability_request_negative_reply_view.GetBdAddr();
       break;
     }
     case OpCode::USER_CONFIRMATION_REQUEST_REPLY: {
       auto user_confirmation_request_reply_complete_view = UserConfirmationRequestReplyCompleteView::Create(std::move(command_complete_view));
-      log::assert_that(
-          user_confirmation_request_reply_complete_view.IsValid(),
-          "assert failed: user_confirmation_request_reply_complete_view.IsValid()");
+      if (!user_confirmation_request_reply_complete_view.IsValid()) {
+        log::warn("user_confirmation_request_reply_complete_view is not valid.");
+        return;
+      }
       status = user_confirmation_request_reply_complete_view.GetStatus();
       auto user_confirmation_request_reply_view = UserConfirmationRequestReplyView::Create(std::move(security_command_view));
-      log::assert_that(
-          user_confirmation_request_reply_view.IsValid(),
-          "assert failed: user_confirmation_request_reply_view.IsValid()");
+      if (!user_confirmation_request_reply_view.IsValid()) {
+        log::warn("user_confirmation_request_reply_view is not valid.");
+        return;
+      }
       address = user_confirmation_request_reply_view.GetBdAddr();
       break;
     }
     case OpCode::USER_CONFIRMATION_REQUEST_NEGATIVE_REPLY: {
       auto user_confirmation_request_negative_reply_complete_view = UserConfirmationRequestNegativeReplyCompleteView::Create(std::move(command_complete_view));
-      log::assert_that(
-          user_confirmation_request_negative_reply_complete_view.IsValid(),
-          "assert failed: user_confirmation_request_negative_reply_complete_view.IsValid()");
+      if (!user_confirmation_request_negative_reply_complete_view.IsValid()) {
+        log::warn("user_confirmation_request_negative_reply_complete_view is not valid.");
+        return;
+      }
       status = user_confirmation_request_negative_reply_complete_view.GetStatus();
       auto user_confirmation_request_negative_reply_view = UserConfirmationRequestNegativeReplyView::Create(std::move(security_command_view));
-      log::assert_that(
-          user_confirmation_request_negative_reply_view.IsValid(),
-          "assert failed: user_confirmation_request_negative_reply_view.IsValid()");
+      if (!user_confirmation_request_negative_reply_view.IsValid()) {
+        log::warn("user_confirmation_request_negative_reply_view is not valid.");
+        return;
+      }
       address = user_confirmation_request_negative_reply_view.GetBdAddr();
       break;
     }
     case OpCode::USER_PASSKEY_REQUEST_REPLY: {
       auto user_passkey_request_reply_complete_view = UserPasskeyRequestReplyCompleteView::Create(std::move(command_complete_view));
-      log::assert_that(
-          user_passkey_request_reply_complete_view.IsValid(),
-          "assert failed: user_passkey_request_reply_complete_view.IsValid()");
+      if (!user_passkey_request_reply_complete_view.IsValid()) {
+        log::warn("user_passkey_request_reply_complete_view is not valid.");
+        return;
+      }
       status = user_passkey_request_reply_complete_view.GetStatus();
       auto user_passkey_request_reply_view = UserPasskeyRequestReplyView::Create(std::move(security_command_view));
-      log::assert_that(
-          user_passkey_request_reply_view.IsValid(),
-          "assert failed: user_passkey_request_reply_view.IsValid()");
+      if (!user_passkey_request_reply_view.IsValid()) {
+        log::warn("user_passkey_request_reply_view is not valid.");
+        return;
+      }
       address = user_passkey_request_reply_view.GetBdAddr();
       break;
     }
     case OpCode::USER_PASSKEY_REQUEST_NEGATIVE_REPLY: {
       auto user_passkey_request_negative_reply_complete_view = UserPasskeyRequestNegativeReplyCompleteView::Create(std::move(command_complete_view));
-      log::assert_that(
-          user_passkey_request_negative_reply_complete_view.IsValid(),
-          "assert failed: user_passkey_request_negative_reply_complete_view.IsValid()");
+      if (!user_passkey_request_negative_reply_complete_view.IsValid()) {
+        log::warn("user_passkey_request_negative_reply_complete_view is not valid.");
+        return;
+      }
       status = user_passkey_request_negative_reply_complete_view.GetStatus();
       auto user_passkey_request_negative_reply_view = UserPasskeyRequestNegativeReplyView::Create(std::move(security_command_view));
-      log::assert_that(
-          user_passkey_request_negative_reply_view.IsValid(),
-          "assert failed: user_passkey_request_negative_reply_view.IsValid()");
+      if (!user_passkey_request_negative_reply_view.IsValid()) {
+        log::warn("user_passkey_request_negative_reply_view is not valid.");
+        return;
+      }
       address = user_passkey_request_negative_reply_view.GetBdAddr();
       break;
     }
