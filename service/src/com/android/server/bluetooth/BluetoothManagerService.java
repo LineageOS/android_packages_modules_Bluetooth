@@ -472,14 +472,12 @@ class BluetoothManagerService {
                 }
             }
 
-            int st = mState.get();
+            int currentState = mState.get();
 
             Log.d(
                     TAG,
-                    "handleAirplaneModeChanged(isAirplaneModeOn="
-                            + isAirplaneModeOn
-                            + ") | current state="
-                            + BluetoothAdapter.nameForState(st));
+                    ("handleAirplaneModeChanged(" + isAirplaneModeOn + "):")
+                            + (" currentState=" + BluetoothAdapter.nameForState(currentState)));
 
             if (isAirplaneModeOn) {
                 // Clear registered LE apps to force shut-off
@@ -490,7 +488,7 @@ class BluetoothManagerService {
                 }
 
                 // If state is BLE_ON make sure we trigger stopBle
-                if (st == STATE_BLE_ON) {
+                if (currentState == STATE_BLE_ON) {
                     mAdapterLock.readLock().lock();
                     try {
                         if (mAdapter != null) {
@@ -504,12 +502,12 @@ class BluetoothManagerService {
                     } finally {
                         mAdapterLock.readLock().unlock();
                     }
-                } else if (st == STATE_ON) {
+                } else if (currentState == STATE_ON) {
                     sendDisableMsg(ENABLE_DISABLE_REASON_AIRPLANE_MODE);
                 }
             } else if (mEnableExternal) {
                 sendEnableMsg(mQuietEnableExternal, ENABLE_DISABLE_REASON_AIRPLANE_MODE);
-            } else if (st != STATE_ON) {
+            } else if (currentState != STATE_ON) {
                 autoOnSetupTimer();
             }
         }
