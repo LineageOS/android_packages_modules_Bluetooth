@@ -12,8 +12,6 @@ filegroup {
     name: "LibBluetoothSources",
     srcs: [
         "bte_conf.cc",
-        "bte_init_cpp_logging.cc",
-        "bte_logmsg.cc",
         "stack_config.cc",
     ],
 }

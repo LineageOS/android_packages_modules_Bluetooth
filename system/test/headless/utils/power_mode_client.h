@@ -24,7 +24,6 @@
 #include <future>
 #include <mutex>
 
-#include "base/logging.h"  // LOG() stdout and android log
 #include "bta/dm/bta_dm_int.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_status.h"

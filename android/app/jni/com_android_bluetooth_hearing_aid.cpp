@@ -16,7 +16,6 @@
 
 #define LOG_TAG "BluetoothHearingAidServiceJni"
 
-#include "base/logging.h"
 #include "com_android_bluetooth.h"
 #include "hardware/bt_hearing_aid.h"
 

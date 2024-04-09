@@ -425,11 +425,6 @@ BENCHMARK_F(BM_LibChromeThread, sequential_execution)(State& state) {
 };
 
 int main(int argc, char** argv) {
-  // Disable LOG() output from libchrome
-  logging::LoggingSettings log_settings;
-  log_settings.logging_dest = logging::LoggingDestination::LOG_NONE;
-  bluetooth::log::assert_that(logging::InitLogging(log_settings),
-                              "Failed to set up logging");
   ::benchmark::Initialize(&argc, argv);
   if (::benchmark::ReportUnrecognizedArguments(argc, argv)) {
     return 1;

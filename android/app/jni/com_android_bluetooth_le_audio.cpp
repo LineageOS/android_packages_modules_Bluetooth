@@ -1079,7 +1079,7 @@ jobject prepareBluetoothLeBroadcastMetadataObject(
     env->SetByteArrayRegion(
         code.get(), 0, nativeCodeSize,
         (const jbyte*)broadcast_metadata.broadcast_code->data());
-    CHECK(!env->ExceptionCheck());
+    log::assert_that(!env->ExceptionCheck(), "assert failed: !env->ExceptionCheck()");
   }
 
   ScopedLocalRef<jstring> broadcast_name(
