@@ -28,7 +28,6 @@
 
 #include "gtest/gtest.h"
 #include "module_dumper.h"
-#include "module_state_dumper.h"
 #include "os/handler.h"
 #include "os/thread.h"
 #include "stack/include/main_thread.h"

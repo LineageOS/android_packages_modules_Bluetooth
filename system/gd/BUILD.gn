@@ -59,7 +59,6 @@ static_library("libbluetooth_gd") {
   sources = [
     "module.cc",
     "module_dumper.cc",
-    "module_state_dumper.cc",
     "stack_manager.cc",
   ]
 
