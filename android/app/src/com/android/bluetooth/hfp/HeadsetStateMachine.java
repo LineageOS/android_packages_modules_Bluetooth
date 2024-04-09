@@ -46,6 +46,7 @@ import android.util.Log;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
@@ -586,7 +587,8 @@ public class HeadsetStateMachine extends StateMachine {
                                 BluetoothProtoEnums.RESULT_FAILURE,
                                 BluetoothProfile.STATE_DISCONNECTED,
                                 BluetoothProfile.STATE_DISCONNECTED,
-                                BluetoothProtoEnums.REASON_NATIVE_LAYER_REJECTED);
+                                BluetoothProtoEnums.REASON_NATIVE_LAYER_REJECTED,
+                                MetricsLogger.getInstance().getRemoteDeviceInfoProto(mDevice));
                         break;
                     }
                     transitionTo(mConnecting);
@@ -654,7 +656,8 @@ public class HeadsetStateMachine extends StateMachine {
                                 BluetoothProtoEnums.RESULT_FAILURE,
                                 BluetoothProfile.STATE_DISCONNECTED,
                                 BluetoothProfile.STATE_DISCONNECTED,
-                                BluetoothProtoEnums.REASON_INCOMING_CONN_REJECTED);
+                                BluetoothProtoEnums.REASON_INCOMING_CONN_REJECTED,
+                                MetricsLogger.getInstance().getRemoteDeviceInfoProto(mDevice));
                     }
                     break;
                 case HeadsetHalConstants.CONNECTION_STATE_DISCONNECTING:
@@ -681,7 +684,8 @@ public class HeadsetStateMachine extends StateMachine {
                         result,
                         mPrevState.getConnectionStateInt(),
                         BluetoothProfile.STATE_DISCONNECTED,
-                        BluetoothProtoEnums.REASON_UNEXPECTED_STATE);
+                        BluetoothProtoEnums.REASON_UNEXPECTED_STATE,
+                        MetricsLogger.getInstance().getRemoteDeviceInfoProto(mDevice));
             }
         }
     }
@@ -1324,7 +1328,8 @@ public class HeadsetStateMachine extends StateMachine {
                         BluetoothProtoEnums.RESULT_SUCCESS,
                         mPrevState.getConnectionStateInt(),
                         BluetoothProfile.STATE_CONNECTED,
-                        BluetoothProtoEnums.REASON_SUCCESS);
+                        BluetoothProtoEnums.REASON_SUCCESS,
+                        MetricsLogger.getInstance().getRemoteDeviceInfoProto(mDevice));
             }
         }
     }
