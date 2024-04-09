@@ -1559,8 +1559,7 @@ tBTM_STATUS btm_sec_l2cap_access_req_by_requirement(
   log::debug(
       "Checking l2cap access requirements peer:{} security:0x{:x} "
       "is_initiator:{}",
-      ADDRESS_TO_LOGGABLE_CSTR(bd_addr), security_required,
-      logbool(is_originator).c_str());
+      ADDRESS_TO_LOGGABLE_CSTR(bd_addr), security_required, is_originator);
 
   tBTM_STATUS rc = BTM_SUCCESS;
   bool chk_acp_auth_done = false;
@@ -1581,8 +1580,7 @@ tBTM_STATUS btm_sec_l2cap_access_req_by_requirement(
       log::warn(
           "Policy requires mode 4 level 4, but local_support_for_sc={}, "
           "rmt_support_for_sc={}, failing connection",
-          local_supports_sc,
-          logbool(p_dev_rec->SupportsSecureConnections()).c_str());
+          local_supports_sc, p_dev_rec->SupportsSecureConnections());
       if (p_callback) {
         (*p_callback)(&bd_addr, transport, (void*)p_ref_data,
                       BTM_MODE4_LEVEL4_NOT_SUPPORTED);
@@ -1932,8 +1930,7 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr,
       log::debug(
           "Secure Connection only mode unsupported local_SC_support:{} "
           "remote_SC_support:{}",
-          logbool(local_supports_sc).c_str(),
-          logbool(p_dev_rec->SupportsSecureConnections()).c_str());
+          local_supports_sc, p_dev_rec->SupportsSecureConnections());
       if (p_callback)
         (*p_callback)(&bd_addr, transport, (void*)p_ref_data,
                       BTM_MODE4_LEVEL4_NOT_SUPPORTED);
@@ -2631,8 +2628,7 @@ void btm_io_capabilities_req(RawAddress p) {
       log::debug(
           "SC only service, local_support_for_sc:{}, remote_support_for_sc:{} "
           "-> fail pairing",
-          logbool(local_supports_sc).c_str(),
-          logbool(p_dev_rec->SupportsSecureConnections()).c_str());
+          local_supports_sc, p_dev_rec->SupportsSecureConnections());
       err_code = HCI_ERR_PAIRING_NOT_ALLOWED;
     }
   }
@@ -3882,8 +3878,7 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle,
   /* After connection is established we perform security if we do not know */
   /* the name, or if we are originator because some procedure can have */
   /* been scheduled while connection was down */
-  log::debug("Is connection locally initiated:{}",
-             logbool(p_dev_rec->is_originator).c_str());
+  log::debug("Is connection locally initiated:{}", p_dev_rec->is_originator);
   if (!(p_dev_rec->sec_rec.sec_flags & BTM_SEC_NAME_KNOWN) ||
       p_dev_rec->is_originator) {
     res = btm_sec_execute_procedure(p_dev_rec);

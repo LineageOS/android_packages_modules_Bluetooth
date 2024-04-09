@@ -839,8 +839,7 @@ void BtaAvCo::GetPeerEncoderParameters(
   log::verbose(
       "peer_address={} peer_mtu={} is_peer_edr={} peer_supports_3mbps={}",
       ADDRESS_TO_LOGGABLE_CSTR(peer_address), p_peer_params->peer_mtu,
-      logbool(p_peer_params->is_peer_edr),
-      logbool(p_peer_params->peer_supports_3mbps));
+      p_peer_params->is_peer_edr, p_peer_params->peer_supports_3mbps);
 }
 
 const tA2DP_ENCODER_INTERFACE* BtaAvCo::GetSourceEncoderInterface() {

@@ -160,9 +160,10 @@ typedef struct {
 
   std::string ToString() const {
     return base::StringPrintf(
-        "peer:%s sys_name:%s app_id:%hhu state:%s new:request:%s",
+        "peer:%s sys_name:%s app_id:%hhu state:%s new_request:%s",
         ADDRESS_TO_LOGGABLE_CSTR(peer_bdaddr), BtaIdSysText(id).c_str(), app_id,
-        bta_sys_conn_status_text(state).c_str(), logbool(new_request).c_str());
+        bta_sys_conn_status_text(state).c_str(),
+        new_request ? "true" : "false");
   }
 
 } tBTA_DM_SRVCS;

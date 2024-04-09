@@ -317,7 +317,7 @@ int RFCOMM_RemoveConnection(uint16_t handle) {
       kBtmLogTag, bd_addr, "Connection closed",
       base::StringPrintf("handle:%hu scn:%hhu dlci:%hhu is_server:%s", handle,
                          p_port->scn, p_port->dlci,
-                         logbool(p_port->is_server).c_str()));
+                         p_port->is_server ? "true" : "false"));
 
   p_port->state = PORT_CONNECTION_STATE_CLOSING;
 
@@ -358,7 +358,7 @@ int RFCOMM_RemoveServer(uint16_t handle) {
       kBtmLogTag, bd_addr, "Server stopped",
       base::StringPrintf("handle:%hu scn:%hhu dlci:%hhu is_server:%s", handle,
                          p_port->scn, p_port->dlci,
-                         logbool(p_port->is_server).c_str()));
+                         p_port->is_server ? "true" : "false"));
 
   /* this port will be deallocated after closing */
   p_port->keep_port_handle = false;

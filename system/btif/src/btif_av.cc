@@ -1781,7 +1781,7 @@ bool BtifAvStateMachine::StateIdle::ProcessEvent(uint32_t event, void* p_data) {
   log::verbose("Peer {} : event={} flags={} active_peer={}",
                ADDRESS_TO_LOGGABLE_CSTR(peer_.PeerAddress()),
                BtifAvEvent::EventName(event), peer_.FlagsToString(),
-               logbool(peer_.IsActivePeer()));
+               peer_.IsActivePeer());
 
   switch (event) {
     case BTA_AV_ENABLE_EVT:
@@ -2097,7 +2097,7 @@ bool BtifAvStateMachine::StateOpening::ProcessEvent(uint32_t event,
   log::verbose("Peer {} : event={} flags={} active_peer={}",
                ADDRESS_TO_LOGGABLE_CSTR(peer_.PeerAddress()),
                BtifAvEvent::EventName(event), peer_.FlagsToString(),
-               logbool(peer_.IsActivePeer()));
+               peer_.IsActivePeer());
 
   switch (event) {
     case BTIF_AV_STOP_STREAM_REQ_EVT:
@@ -2404,7 +2404,7 @@ bool BtifAvStateMachine::StateOpened::ProcessEvent(uint32_t event,
   log::verbose("Peer {} : event={} flags={} active_peer={}",
                ADDRESS_TO_LOGGABLE_CSTR(peer_.PeerAddress()),
                BtifAvEvent::EventName(event), peer_.FlagsToString(),
-               logbool(peer_.IsActivePeer()));
+               peer_.IsActivePeer());
 
   if ((event == BTA_AV_REMOTE_CMD_EVT) &&
       peer_.CheckFlags(BtifAvPeer::kFlagRemoteSuspend) &&
@@ -2643,7 +2643,7 @@ bool BtifAvStateMachine::StateStarted::ProcessEvent(uint32_t event,
   log::verbose("Peer {} : event={} flags={} active_peer={}",
                ADDRESS_TO_LOGGABLE_CSTR(peer_.PeerAddress()),
                BtifAvEvent::EventName(event), peer_.FlagsToString(),
-               logbool(peer_.IsActivePeer()));
+               peer_.IsActivePeer());
 
   switch (event) {
     case BTIF_AV_ACL_DISCONNECTED:
@@ -2883,7 +2883,7 @@ bool BtifAvStateMachine::StateClosing::ProcessEvent(uint32_t event,
   log::verbose("Peer {} : event={} flags={} active_peer={}",
                ADDRESS_TO_LOGGABLE_CSTR(peer_.PeerAddress()),
                BtifAvEvent::EventName(event), peer_.FlagsToString(),
-               logbool(peer_.IsActivePeer()));
+               peer_.IsActivePeer());
 
   switch (event) {
     case BTIF_AV_SUSPEND_STREAM_REQ_EVT:
