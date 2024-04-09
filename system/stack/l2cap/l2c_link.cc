@@ -432,7 +432,7 @@ void l2c_link_timeout(tL2C_LCB* p_lcb) {
   tBTM_STATUS rc;
 
   log::debug("L2CAP - l2c_link_timeout() link state:{} is_bonding:{}",
-             link_state_text(p_lcb->link_state), logbool(p_lcb->IsBonding()));
+             link_state_text(p_lcb->link_state), p_lcb->IsBonding());
 
   /* If link was connecting or disconnecting, clear all channels and drop the
    * LCB */

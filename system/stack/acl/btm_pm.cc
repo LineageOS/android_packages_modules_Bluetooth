@@ -796,7 +796,7 @@ void process_ssr_event(tHCI_STATUS status, uint16_t handle,
   log::debug(
       "Notified sniff subrating registered clients cnt:{} peer:{} use_ssr:{} "
       "status:{}",
-      cnt, ADDRESS_TO_LOGGABLE_CSTR(bd_addr), logbool(use_ssr).c_str(),
+      cnt, ADDRESS_TO_LOGGABLE_CSTR(bd_addr), use_ssr,
       hci_error_code_text(status).c_str());
 }
 

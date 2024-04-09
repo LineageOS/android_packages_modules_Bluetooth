@@ -322,7 +322,7 @@ std::string PacketTypeToString(uint8_t packet_type) {
 }
 
 void EnableBtQualityReport(bool is_enable) {
-  log::info("is_enable: {}", logbool(is_enable));
+  log::info("is_enable: {}", is_enable);
 
   char bqr_prop_evtmask[PROPERTY_VALUE_MAX] = {0};
   char bqr_prop_interval_ms[PROPERTY_VALUE_MAX] = {0};
