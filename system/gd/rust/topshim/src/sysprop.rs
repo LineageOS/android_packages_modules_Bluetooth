@@ -65,6 +65,7 @@ pub fn get_i32(prop: PropertyI32) -> i32 {
 pub enum PropertyBool {
     // bluetooth.core.le
     LeAdvMonRtlQuirk,
+    LeAdvMonQcaQuirk,
 }
 
 impl Into<(CString, bool)> for PropertyBool {
@@ -72,6 +73,7 @@ impl Into<(CString, bool)> for PropertyBool {
     fn into(self) -> (CString, bool) {
         let (key, default_value) = match self {
             PropertyBool::LeAdvMonRtlQuirk => ("bluetooth.core.le.adv_mon_rtl_quirk", false),
+            PropertyBool::LeAdvMonQcaQuirk => ("bluetooth.core.le.adv_mon_qca_quirk", false),
         };
 
         (CString::new(key).expect("CString::new failed on sysprop key"), default_value)
