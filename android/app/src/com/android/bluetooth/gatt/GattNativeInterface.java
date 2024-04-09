@@ -304,8 +304,10 @@ public class GattNativeInterface {
     private native void gattServerRegisterAppNative(long appUuidLsb, long appUuidMsb,
             boolean eattSupport);
     private native void gattServerUnregisterAppNative(int serverIf);
-    private native void gattServerConnectNative(int serverIf, String address, boolean isDirect,
-            int transport);
+
+    private native void gattServerConnectNative(
+            int serverIf, String address, int addressType, boolean isDirect, int transport);
+
     private native void gattServerDisconnectNative(int serverIf, String address, int connId);
     private native void gattServerSetPreferredPhyNative(int clientIf, String address, int txPhy,
             int rxPhy, int phyOptions);
@@ -533,12 +535,10 @@ public class GattNativeInterface {
         gattServerUnregisterAppNative(serverIf);
     }
 
-    /**
-     * Connect to a remote device as a GATT server role
-     */
-    public void gattServerConnect(int serverIf, String address, boolean isDirect,
-            int transport) {
-        gattServerConnectNative(serverIf, address, isDirect, transport);
+    /** Connect to a remote device as a GATT server role */
+    public void gattServerConnect(
+            int serverIf, String address, int addressType, boolean isDirect, int transport) {
+        gattServerConnectNative(serverIf, address, addressType, isDirect, transport);
     }
 
     /**
