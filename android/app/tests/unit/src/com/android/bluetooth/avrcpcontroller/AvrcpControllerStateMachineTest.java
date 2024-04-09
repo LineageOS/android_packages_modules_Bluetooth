@@ -17,6 +17,8 @@ package com.android.bluetooth.avrcpcontroller;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 
+import static com.google.common.truth.Truth.assertThat;
+
 import static org.mockito.Mockito.*;
 
 import android.bluetooth.BluetoothAdapter;
@@ -29,6 +31,7 @@ import android.content.res.Resources;
 import android.media.AudioManager;
 import android.os.Bundle;
 import android.os.Looper;
+import android.platform.test.flag.junit.SetFlagsRule;
 import android.support.v4.media.MediaMetadataCompat;
 import android.support.v4.media.session.MediaControllerCompat;
 import android.support.v4.media.session.MediaSessionCompat;
@@ -44,6 +47,7 @@ import com.android.bluetooth.R;
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.a2dpsink.A2dpSinkService;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.flags.Flags;
 
 import org.hamcrest.core.IsInstanceOf;
 import org.junit.After;
@@ -68,6 +72,10 @@ public class AvrcpControllerStateMachineTest {
     private static final int CONNECT_TIMEOUT_TEST_MILLIS = 1000;
     private static final int KEY_DOWN = 0;
     private static final int KEY_UP = 1;
+    private static final int UUID_START = 0;
+    private static final int UUID_LENGTH = 25;
+
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
     private BluetoothAdapter mAdapter;
 
@@ -135,6 +143,7 @@ public class AvrcpControllerStateMachineTest {
         // Set up device and state machine under test
         mTestDevice = mAdapter.getRemoteDevice(mTestAddress);
         mAvrcpStateMachine = makeStateMachine(mTestDevice);
+
         setActiveDevice(mTestDevice);
     }
 
@@ -461,6 +470,27 @@ public class AvrcpControllerStateMachineTest {
         verify(mAvrcpControllerService).removeStateMachine(eq(mAvrcpStateMachine));
     }
 
+    /** Get the root of the device */
+    @Test
+    public void testGetDeviceRootNode_flagRandomDeviceIdDisabled_rootNodeMatchesUuidFormat() {
+        setUpConnectedState(true, true);
+        final String rootName = "__ROOT__" + mTestDevice.getAddress().toString();
+        // Get the root of the device
+        BrowseTree.BrowseNode results = mAvrcpStateMachine.findNode(rootName);
+        Assert.assertEquals(rootName, results.getID());
+    }
+
+    /** Get the root of the device */
+    @Test
+    public void testGetDeviceRootNode_flagRandomDeviceIdEnabled_rootNodeMatchesUuidFormat() {
+        mSetFlagsRule.enableFlags(Flags.FLAG_RANDOMIZE_DEVICE_LEVEL_MEDIA_IDS);
+        setUpConnectedState(true, true);
+        final String rootName = "__ROOT__" + mTestDevice.getAddress().toString();
+        // Get the root of the device
+        BrowseTree.BrowseNode results = mAvrcpStateMachine.mBrowseTree.mRootNode;
+        assertThat((results.getID()).substring(UUID_START, UUID_LENGTH)).isEqualTo(rootName);
+    }
+
     /**
      * Test to make sure the state machine is tracking the correct device
      */
@@ -716,12 +746,8 @@ public class AvrcpControllerStateMachineTest {
     @FlakyTest
     public void testBrowsingCommands() {
         setUpConnectedState(true, true);
-        final String rootName = "__ROOT__" + mTestDevice.getAddress().toString();
         final String playerName = "Player 1";
-
-        //Get the root of the device
-        BrowseTree.BrowseNode results = mAvrcpStateMachine.findNode(rootName);
-        Assert.assertEquals(rootName, results.getID());
+        BrowseTree.BrowseNode results = mAvrcpStateMachine.mBrowseTree.mRootNode;
 
         //Request fetch the list of players
         BrowseTree.BrowseNode playerNodes = mAvrcpStateMachine.findNode(results.getID());
@@ -764,14 +790,13 @@ public class AvrcpControllerStateMachineTest {
     @Test
     public void testAvailablePlayersChanged() {
         setUpConnectedState(true, true);
-        final String rootName = "__ROOT__" + mTestDevice.getAddress().toString();
 
         // Send an available players have changed event
         mAvrcpStateMachine.sendMessage(
                 AvrcpControllerStateMachine.MESSAGE_PROCESS_AVAILABLE_PLAYER_CHANGED);
 
         // Verify we've uncached our browse root and made the call to fetch new players
-        Assert.assertFalse(mAvrcpStateMachine.findNode(rootName).isCached());
+        Assert.assertFalse(mAvrcpStateMachine.mBrowseTree.mRootNode.isCached());
         verify(mNativeInterface, timeout(ASYNC_CALL_TIMEOUT_MILLIS).times(1))
                 .getPlayerList(eq(mTestAddress), eq(0), eq(19));
     }
@@ -783,7 +808,6 @@ public class AvrcpControllerStateMachineTest {
     @Test
     public void testAvailablePlayersReceived_AddressedPlayerExists() {
         setUpConnectedState(true, true);
-        final String rootName = "__ROOT__" + mTestDevice.getAddress().toString();
 
         // Set an addressed player that will be in the available players set. A new player triggers
         // a now playing list download, so send back nothing.
@@ -801,7 +825,7 @@ public class AvrcpControllerStateMachineTest {
                 AvrcpControllerStateMachine.MESSAGE_PROCESS_AVAILABLE_PLAYER_CHANGED);
 
         // Verify we've uncached our browse root and made the call to fetch new players
-        Assert.assertFalse(mAvrcpStateMachine.findNode(rootName).isCached());
+        Assert.assertFalse(mAvrcpStateMachine.mBrowseTree.mRootNode.isCached());
         verify(mNativeInterface, timeout(ASYNC_CALL_TIMEOUT_MILLIS).times(1))
                 .getPlayerList(eq(mTestAddress), eq(0), eq(19));
 
@@ -821,7 +845,7 @@ public class AvrcpControllerStateMachineTest {
 
         // Verify we processed the first players properly. Note the addressed player should always
         // be in the available player set.
-        Assert.assertTrue(mAvrcpStateMachine.findNode(rootName).isCached());
+        Assert.assertTrue(mAvrcpStateMachine.mBrowseTree.mRootNode.isCached());
         SparseArray<AvrcpPlayer> players = mAvrcpStateMachine.getAvailablePlayers();
         Assert.assertTrue(players.contains(mAvrcpStateMachine.getAddressedPlayerId()));
         Assert.assertEquals(testPlayers.size(), players.size());
@@ -846,14 +870,13 @@ public class AvrcpControllerStateMachineTest {
     @Test
     public void testAvailablePlayersReceived_AddressedPlayerDoesNotExist() {
         setUpConnectedState(true, true);
-        final String rootName = "__ROOT__" + mTestDevice.getAddress().toString();
 
         // Send an available players have changed event
         mAvrcpStateMachine.sendMessage(
                 AvrcpControllerStateMachine.MESSAGE_PROCESS_AVAILABLE_PLAYER_CHANGED);
 
         // Verify we've uncached our browse root and made the call to fetch new players
-        Assert.assertFalse(mAvrcpStateMachine.findNode(rootName).isCached());
+        Assert.assertFalse(mAvrcpStateMachine.mBrowseTree.mRootNode.isCached());
         verify(mNativeInterface, timeout(ASYNC_CALL_TIMEOUT_MILLIS).times(1))
                 .getPlayerList(eq(mTestAddress), eq(0), eq(19));
 
@@ -874,7 +897,7 @@ public class AvrcpControllerStateMachineTest {
         // Verify we processed the players properly. Note the addressed player is currently the
         // default player and is not in the available player set sent. This means we'll have an
         // extra player at ID -1.
-        Assert.assertTrue(mAvrcpStateMachine.findNode(rootName).isCached());
+        Assert.assertTrue(mAvrcpStateMachine.mBrowseTree.mRootNode.isCached());
         SparseArray<AvrcpPlayer> players = mAvrcpStateMachine.getAvailablePlayers();
         Assert.assertTrue(players.contains(mAvrcpStateMachine.getAddressedPlayerId()));
         Assert.assertEquals(testPlayers.size() + 1, players.size());
@@ -899,11 +922,8 @@ public class AvrcpControllerStateMachineTest {
     @Test
     public void testAddressedPlayerChangedToNewKnownPlayer() {
         setUpConnectedState(true, true);
-        final String rootName = "__ROOT__" + mTestDevice.getAddress().toString();
-
-        //Get the root of the device
-        BrowseTree.BrowseNode results = mAvrcpStateMachine.findNode(rootName);
-        Assert.assertEquals(rootName, results.getID());
+        // Get the root of the device
+        BrowseTree.BrowseNode results = mAvrcpStateMachine.mBrowseTree.mRootNode;
 
         //Request fetch the list of players
         BrowseTree.BrowseNode playerNodes = mAvrcpStateMachine.findNode(results.getID());
@@ -962,11 +982,9 @@ public class AvrcpControllerStateMachineTest {
     @Test
     public void testAddressedPlayerChangedToUnknownPlayer() {
         setUpConnectedState(true, true);
-        final String rootName = "__ROOT__" + mTestDevice.getAddress().toString();
 
-        //Get the root of the device
-        BrowseTree.BrowseNode rootNode = mAvrcpStateMachine.findNode(rootName);
-        Assert.assertEquals(rootName, rootNode.getID());
+        // Get the root of the device
+        BrowseTree.BrowseNode rootNode = mAvrcpStateMachine.mBrowseTree.mRootNode;
 
         //Request fetch the list of players
         BrowseTree.BrowseNode playerNodes = mAvrcpStateMachine.findNode(rootNode.getID());
@@ -1009,7 +1027,6 @@ public class AvrcpControllerStateMachineTest {
     @Test
     public void testAddressedPlayerChangedToSamePlayerId() {
         setUpConnectedState(true, true);
-        final String rootName = "__ROOT__" + mTestDevice.getAddress().toString();
 
         // Set the addressed player so we can change to the same one
         mAvrcpStateMachine.sendMessage(
@@ -1021,9 +1038,8 @@ public class AvrcpControllerStateMachineTest {
                 AvrcpControllerStateMachine.MESSAGE_PROCESS_GET_FOLDER_ITEMS_OUT_OF_RANGE);
         TestUtils.waitForLooperToFinishScheduledTask(mAvrcpStateMachine.getHandler().getLooper());
 
-        //Get the root of the device
-        BrowseTree.BrowseNode rootNode = mAvrcpStateMachine.findNode(rootName);
-        Assert.assertEquals(rootName, rootNode.getID());
+        // Get the root of the device
+        BrowseTree.BrowseNode rootNode = mAvrcpStateMachine.mBrowseTree.mRootNode;
 
         //Request fetch the list of players
         BrowseTree.BrowseNode playerNodes = mAvrcpStateMachine.findNode(rootNode.getID());
@@ -1080,12 +1096,10 @@ public class AvrcpControllerStateMachineTest {
     @Test
     public void testPlayWhileBrowsing() {
         setUpConnectedState(true, true);
-        final String rootName = "__ROOT__" + mTestDevice.getAddress().toString();
         final String playerName = "Player 1";
 
-        //Get the root of the device
-        BrowseTree.BrowseNode results = mAvrcpStateMachine.findNode(rootName);
-        Assert.assertEquals(rootName, results.getID());
+        // Get the root of the device
+        BrowseTree.BrowseNode results = mAvrcpStateMachine.mBrowseTree.mRootNode;
 
         //Request fetch the list of players
         BrowseTree.BrowseNode playerNodes = mAvrcpStateMachine.findNode(results.getID());
@@ -2083,12 +2097,11 @@ public class AvrcpControllerStateMachineTest {
      */
     @Test
     public void testBrowseRequestWhileDisconnected_requestDropped() {
-        final String rootName = "__ROOT__" + mTestDevice.getAddress().toString();
         setUpConnectedState(true, false);
         sendAudioFocusUpdate(AudioManager.AUDIOFOCUS_GAIN);
         clearInvocations(mAvrcpControllerService);
         clearInvocations(mNativeInterface);
-        BrowseTree.BrowseNode deviceRoot = mAvrcpStateMachine.findNode(rootName);
+        BrowseTree.BrowseNode deviceRoot = mAvrcpStateMachine.mBrowseTree.mRootNode;
         mAvrcpStateMachine.requestContents(deviceRoot);
         TestUtils.waitForLooperToFinishScheduledTask(mAvrcpStateMachine.getHandler().getLooper());
         verifyNoMoreInteractions(mAvrcpControllerService);
@@ -2101,12 +2114,11 @@ public class AvrcpControllerStateMachineTest {
      */
     @Test
     public void testBrowseRequestWhileDisconnectedThenRequestWhileConnected_secondRequestSent() {
-        final String rootName = "__ROOT__" + mTestDevice.getAddress().toString();
         setUpConnectedState(true, false);
         sendAudioFocusUpdate(AudioManager.AUDIOFOCUS_GAIN);
         clearInvocations(mAvrcpControllerService);
         clearInvocations(mNativeInterface);
-        BrowseTree.BrowseNode deviceRoot = mAvrcpStateMachine.findNode(rootName);
+        BrowseTree.BrowseNode deviceRoot = mAvrcpStateMachine.mBrowseTree.mRootNode;
         mAvrcpStateMachine.requestContents(deviceRoot);
         // issues a player list fetch
         mAvrcpStateMachine.connect(StackEvent.connectionStateChanged(true, true));
