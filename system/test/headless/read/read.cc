@@ -18,7 +18,6 @@
 
 #include "test/headless/read/read.h"
 
-#include "base/logging.h"  // LOG() stdout and android log
 #include "os/log.h"        // android log only
 #include "test/headless/get_options.h"
 #include "test/headless/headless.h"

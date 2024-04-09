@@ -1209,7 +1209,7 @@ void bta_av_stream_chg(tBTA_AV_SCB* p_scb, bool started) {
   uint8_t started_msk = BTA_AV_HNDL_TO_MSK(p_scb->hdi);
 
   log::verbose("peer {} started:{} started_msk:0x{:x}",
-               ADDRESS_TO_LOGGABLE_CSTR(p_scb->PeerAddress()), logbool(started),
+               ADDRESS_TO_LOGGABLE_CSTR(p_scb->PeerAddress()), started,
                started_msk);
 
   if (started) {

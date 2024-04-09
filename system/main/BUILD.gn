@@ -46,8 +46,6 @@ target(lib_type, "bluetooth") {
   # Platform specific
   sources = [
     "bte_conf.cc",
-    "bte_init_cpp_logging.cc",
-    "bte_logmsg.cc",
     "stack_config.cc",
   ]
 

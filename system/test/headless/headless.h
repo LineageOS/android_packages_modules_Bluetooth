@@ -21,7 +21,6 @@
 
 #include <unordered_map>
 
-#include "base/logging.h"  // LOG() stdout and android log
 #include "include/hardware/bluetooth.h"
 #include "test/headless/bt_stack_info.h"
 #include "test/headless/get_options.h"

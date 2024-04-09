@@ -20,7 +20,6 @@
 
 #include <future>
 
-#include "base/logging.h"     // LOG() stdout and android log
 #include "bta/dm/bta_dm_int.h"
 #include "bta/include/bta_api.h"
 #include "os/log.h"

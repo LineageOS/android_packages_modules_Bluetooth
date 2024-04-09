@@ -102,6 +102,12 @@ namespace {
 
 constexpr char kBtmLogTag[] = "SCAN";
 
+constexpr uint8_t BLE_EVT_CONNECTABLE_BIT = 0;
+constexpr uint8_t BLE_EVT_SCANNABLE_BIT = 1;
+constexpr uint8_t BLE_EVT_DIRECTED_BIT = 2;
+constexpr uint8_t BLE_EVT_SCAN_RESPONSE_BIT = 3;
+constexpr uint8_t BLE_EVT_LEGACY_BIT = 4;
+
 class AdvertisingCache {
  public:
   /* Set the data to |data| for device |addr_type, addr| */

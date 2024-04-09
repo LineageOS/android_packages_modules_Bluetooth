@@ -18,9 +18,9 @@
 #define LOG_TAG "BluetoothVolumeControlServiceJni"
 
 #include <string.h>
+
 #include <shared_mutex>
 
-#include "base/logging.h"
 #include "com_android_bluetooth.h"
 #include "hardware/bt_vc.h"
 

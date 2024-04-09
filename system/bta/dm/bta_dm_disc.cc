@@ -281,7 +281,7 @@ static void bta_dm_search_start(tBTA_DM_API_SEARCH& search) {
   get_btm_client_interface().db.BTM_ClearInqDb(nullptr);
   /* save search params */
   bta_dm_search_cb.p_device_search_cback = search.p_cback;
-  bta_dm_search_cb.services = search.services;
+  bta_dm_search_cb.services = 0; /* device search, do not discover services */
 
   const tBTM_STATUS btm_status =
       BTM_StartInquiry(bta_dm_inq_results_cb, bta_dm_inq_cmpl_cb);
@@ -2345,9 +2345,9 @@ void bta_dm_disc_acl_down(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
 void bta_dm_disc_stop() { bta_dm_disc_reset(); }
 
 void bta_dm_disc_start_device_discovery(tBTA_DM_SEARCH_CBACK* p_cback) {
-  bta_dm_search_sm_execute(BTA_DM_API_SEARCH_EVT,
-                           std::make_unique<tBTA_DM_MSG>(tBTA_DM_API_SEARCH{
-                               .services = 0, .p_cback = p_cback}));
+  bta_dm_search_sm_execute(
+      BTA_DM_API_SEARCH_EVT,
+      std::make_unique<tBTA_DM_MSG>(tBTA_DM_API_SEARCH{.p_cback = p_cback}));
 }
 
 void bta_dm_disc_stop_device_discovery() {

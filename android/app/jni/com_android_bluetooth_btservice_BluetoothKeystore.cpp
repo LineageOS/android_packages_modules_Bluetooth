@@ -16,7 +16,6 @@
 
 #define LOG_TAG "BluetoothKeystoreServiceJni"
 
-#include "base/logging.h"
 #include "com_android_bluetooth.h"
 #include "hardware/bt_keystore.h"
 

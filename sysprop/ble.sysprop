@@ -24,3 +24,11 @@ prop {
     access: Readonly
     prop_name: "bluetooth.ble.random_address_rotation_interval_max"
 }
+
+prop {
+    api_name: "allow_enc_with_bredr"
+    type: Boolean
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.ble.allow_enc_with_bredr"
+}

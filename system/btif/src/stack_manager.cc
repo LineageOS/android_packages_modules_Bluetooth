@@ -193,7 +193,6 @@ static bool get_stack_is_running() { return stack_is_running; }
 
 // Internal functions
 extern const module_t bt_utils_module;
-extern const module_t bte_logmsg_module;
 extern const module_t btif_config_module;
 extern const module_t gd_shim_module;
 extern const module_t interop_module;
@@ -208,7 +207,6 @@ struct module_lookup {
 };
 
 const struct module_lookup module_table[] = {
-    {BTE_LOGMSG_MODULE, &bte_logmsg_module},
     {BTIF_CONFIG_MODULE, &btif_config_module},
     {GD_SHIM_MODULE, &gd_shim_module},
     {INTEROP_MODULE, &interop_module},
@@ -310,8 +308,6 @@ static void event_start_up_stack(bluetooth::core::CoreInterface* interface,
 
   bta_sys_init();
 
-  module_init(get_local_module(BTE_LOGMSG_MODULE));
-
   btif_init_ok();
   BTA_dm_init();
   bta_dm_enable(btif_dm_sec_evt, btif_dm_acl_evt);
@@ -373,8 +369,6 @@ static void event_shut_down_stack(ProfileStopCallback stopProfiles) {
   module_shut_down(get_local_module(DEVICE_IOT_CONFIG_MODULE));
 
   future_await(local_hack_future);
-
-  module_clean_up(get_local_module(BTE_LOGMSG_MODULE));
 
   gatt_free();
   l2c_free();

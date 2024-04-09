@@ -21,16 +21,6 @@
 #include <stdint.h>
 
 #ifdef __cplusplus
-extern "C" {
-#endif
-
-static const char BTE_LOGMSG_MODULE[] = "bte_logmsg_module";
-
-#ifdef __cplusplus
-}
-#endif
-
-#ifdef __cplusplus
 
 #include <bluetooth/log.h>
 
@@ -66,18 +56,6 @@ std::string loghex(std::array<T, N> array) {
 }
 
 /**
- * Obtains the string representation of a boolean value.
- *
- * @param value the boolean value to use
- * @return the string representation of the boolean value: "true" or "false"
- */
-inline std::string logbool(bool value) {
-  std::stringstream tmp;
-  tmp << std::boolalpha << value;
-  return tmp.str();
-}
-
-/**
  * Append a field name to a string.
  *
  * The field names are added to the string with "|" in between.
@@ -97,4 +75,4 @@ inline std::string& AppendField(std::string* p_result, bool append,
   return *p_result;
 }
 
-#endif
+#endif  // __cplusplus

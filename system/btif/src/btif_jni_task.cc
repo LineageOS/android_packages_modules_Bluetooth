@@ -28,7 +28,10 @@
 #include "common/postable_context.h"
 #include "include/hardware/bluetooth.h"
 #include "osi/include/allocator.h"
-#include "stack/include/bt_types.h"
+
+/* BTIF Events */
+#define BT_EVT_BTIF 0xA000
+#define BT_EVT_CONTEXT_SWITCH_EVT (0x0001 | BT_EVT_BTIF)
 
 using base::PlatformThread;
 using namespace bluetooth;
