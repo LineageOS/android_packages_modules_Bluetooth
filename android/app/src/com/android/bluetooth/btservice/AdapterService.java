@@ -1113,9 +1113,7 @@ public class AdapterService extends Service {
                         + " receivers.");
         for (int i = 0; i < n; i++) {
             try {
-                mRemoteCallbacks
-                        .getBroadcastItem(i)
-                        .onBluetoothStateChange(prevState, newState);
+                mRemoteCallbacks.getBroadcastItem(i).onBluetoothStateChange(prevState, newState);
             } catch (RemoteException e) {
                 Log.d(TAG, "updateAdapterState() - Callback #" + i + " failed (" + e + ")");
             }
@@ -1254,9 +1252,7 @@ public class AdapterService extends Service {
                     mBluetoothQualityReportReadyCallbacks
                             .getBroadcastItem(i)
                             .onBluetoothQualityReportReady(
-                                    device,
-                                    bluetoothQualityReport,
-                                    BluetoothStatusCodes.SUCCESS);
+                                    device, bluetoothQualityReport, BluetoothStatusCodes.SUCCESS);
                 } catch (RemoteException e) {
                     Log.d(
                             TAG,
@@ -2526,16 +2522,16 @@ public class AdapterService extends Service {
             final int callingUid = Binder.getCallingUid();
             final long token = Binder.clearCallingIdentity();
             try {
-                checkConnect =
-                        CompatChanges.isChangeEnabled(ENFORCE_CONNECT, callingUid);
+                checkConnect = CompatChanges.isChangeEnabled(ENFORCE_CONNECT, callingUid);
             } finally {
                 Binder.restoreCallingIdentity(token);
             }
             if (service == null
                     || !callerIsSystemOrActiveOrManagedUser(
                             service, TAG, "getProfileConnectionState")
-                    || (checkConnect && !Utils.checkConnectPermissionForDataDelivery(
-                            service, source, "AdapterService getProfileConnectionState"))) {
+                    || (checkConnect
+                            && !Utils.checkConnectPermissionForDataDelivery(
+                                    service, source, "AdapterService getProfileConnectionState"))) {
                 return BluetoothProfile.STATE_DISCONNECTED;
             }
 
@@ -5984,60 +5980,60 @@ public class AdapterService extends Service {
             long idleTime,
             long energyUsed,
             UidTraffic[] data) {
-            // Energy is product of mA, V and ms. If the chipset doesn't
-            // report it, we have to compute it from time
-            if (energyUsed == 0) {
-                try {
+        // Energy is product of mA, V and ms. If the chipset doesn't
+        // report it, we have to compute it from time
+        if (energyUsed == 0) {
+            try {
                 final long txMah = Math.multiplyExact(txTime, getTxCurrentMa());
-                    final long rxMah = Math.multiplyExact(rxTime, getRxCurrentMa());
-                    final long idleMah = Math.multiplyExact(idleTime, getIdleCurrentMa());
-                    energyUsed =
-                            (long)
-                                    (Math.addExact(Math.addExact(txMah, rxMah), idleMah)
-                                            * getOperatingVolt());
-                } catch (ArithmeticException e) {
-                    Log.wtf(TAG, "overflow in bluetooth energy callback", e);
-                    // Energy is already 0 if the exception was thrown.
-                }
+                final long rxMah = Math.multiplyExact(rxTime, getRxCurrentMa());
+                final long idleMah = Math.multiplyExact(idleTime, getIdleCurrentMa());
+                energyUsed =
+                        (long)
+                                (Math.addExact(Math.addExact(txMah, rxMah), idleMah)
+                                        * getOperatingVolt());
+            } catch (ArithmeticException e) {
+                Log.wtf(TAG, "overflow in bluetooth energy callback", e);
+                // Energy is already 0 if the exception was thrown.
+            }
+        }
+
+        synchronized (mEnergyInfoLock) {
+            mStackReportedState = ctrlState;
+            long totalTxTimeMs;
+            long totalRxTimeMs;
+            long totalIdleTimeMs;
+            long totalEnergy;
+            try {
+                totalTxTimeMs = Math.addExact(mTxTimeTotalMs, txTime);
+                totalRxTimeMs = Math.addExact(mRxTimeTotalMs, rxTime);
+                totalIdleTimeMs = Math.addExact(mIdleTimeTotalMs, idleTime);
+                totalEnergy = Math.addExact(mEnergyUsedTotalVoltAmpSecMicro, energyUsed);
+            } catch (ArithmeticException e) {
+                // This could be because we accumulated a lot of time, or we got a very strange
+                // value from the controller (more likely). Discard this data.
+                Log.wtf(TAG, "overflow in bluetooth energy callback", e);
+                totalTxTimeMs = mTxTimeTotalMs;
+                totalRxTimeMs = mRxTimeTotalMs;
+                totalIdleTimeMs = mIdleTimeTotalMs;
+                totalEnergy = mEnergyUsedTotalVoltAmpSecMicro;
             }
 
-            synchronized (mEnergyInfoLock) {
-                mStackReportedState = ctrlState;
-                long totalTxTimeMs;
-                long totalRxTimeMs;
-                long totalIdleTimeMs;
-                long totalEnergy;
-                try {
-                    totalTxTimeMs = Math.addExact(mTxTimeTotalMs, txTime);
-                    totalRxTimeMs = Math.addExact(mRxTimeTotalMs, rxTime);
-                    totalIdleTimeMs = Math.addExact(mIdleTimeTotalMs, idleTime);
-                    totalEnergy = Math.addExact(mEnergyUsedTotalVoltAmpSecMicro, energyUsed);
-                } catch (ArithmeticException e) {
-                    // This could be because we accumulated a lot of time, or we got a very strange
-                    // value from the controller (more likely). Discard this data.
-                    Log.wtf(TAG, "overflow in bluetooth energy callback", e);
-                    totalTxTimeMs = mTxTimeTotalMs;
-                    totalRxTimeMs = mRxTimeTotalMs;
-                    totalIdleTimeMs = mIdleTimeTotalMs;
-                    totalEnergy = mEnergyUsedTotalVoltAmpSecMicro;
-                }
+            mTxTimeTotalMs = totalTxTimeMs;
+            mRxTimeTotalMs = totalRxTimeMs;
+            mIdleTimeTotalMs = totalIdleTimeMs;
+            mEnergyUsedTotalVoltAmpSecMicro = totalEnergy;
 
-                mTxTimeTotalMs = totalTxTimeMs;
-                mRxTimeTotalMs = totalRxTimeMs;
-                mIdleTimeTotalMs = totalIdleTimeMs;
-                mEnergyUsedTotalVoltAmpSecMicro = totalEnergy;
-
-                for (UidTraffic traffic : data) {
-                    UidTraffic existingTraffic = mUidTraffic.get(traffic.getUid());
-                    if (existingTraffic == null) {
-                        mUidTraffic.put(traffic.getUid(), traffic);
-                    } else {
-                        existingTraffic.addRxBytes(traffic.getRxBytes());
-                        existingTraffic.addTxBytes(traffic.getTxBytes());
-                    }
+            for (UidTraffic traffic : data) {
+                UidTraffic existingTraffic = mUidTraffic.get(traffic.getUid());
+                if (existingTraffic == null) {
+                    mUidTraffic.put(traffic.getUid(), traffic);
+                } else {
+                    existingTraffic.addRxBytes(traffic.getRxBytes());
+                    existingTraffic.addTxBytes(traffic.getTxBytes());
                 }
-                mEnergyInfoLock.notifyAll();
             }
+            mEnergyInfoLock.notifyAll();
+        }
     }
 
     void energyInfoCallback(
