@@ -469,8 +469,10 @@ class BluetoothManagerService {
             AutoOnFeature.pause();
         }
 
-        // If currentState is BLE_ON make sure we trigger stopBle
-        if (currentState == STATE_BLE_ON) {
+        if (currentState == STATE_ON) {
+            sendDisableMsg(reason);
+        } else if (currentState == STATE_BLE_ON) {
+            // If currentState is BLE_ON make sure we trigger stopBle
             mAdapterLock.readLock().lock();
             try {
                 if (mAdapter != null) {
@@ -484,8 +486,6 @@ class BluetoothManagerService {
             } finally {
                 mAdapterLock.readLock().unlock();
             }
-        } else if (currentState == STATE_ON) {
-            sendDisableMsg(reason);
         }
     }
 
