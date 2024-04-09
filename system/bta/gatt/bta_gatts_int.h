@@ -111,6 +111,7 @@ typedef struct {
   tGATT_IF server_if;
   tBTM_BLE_CONN_TYPE connection_type;
   tBT_TRANSPORT transport;
+  tBT_DEVICE_TYPE remote_addr_type;
 } tBTA_GATTS_API_OPEN;
 
 typedef struct {

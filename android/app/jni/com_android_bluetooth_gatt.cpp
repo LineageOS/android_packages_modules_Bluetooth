@@ -1935,11 +1935,12 @@ static void gattServerUnregisterAppNative(JNIEnv* /* env */,
 
 static void gattServerConnectNative(JNIEnv* env, jobject /* object */,
                                     jint server_if, jstring address,
-                                    jboolean is_direct, jint transport) {
+                                    jint addr_type, jboolean is_direct,
+                                    jint transport) {
   if (!sGattIf) return;
 
   RawAddress bd_addr = str2addr(env, address);
-  sGattIf->server->connect(server_if, bd_addr, is_direct, transport);
+  sGattIf->server->connect(server_if, bd_addr, addr_type, is_direct, transport);
 }
 
 static void gattServerDisconnectNative(JNIEnv* env, jobject /* object */,
@@ -2823,7 +2824,7 @@ static int register_com_android_bluetooth_gatt_(JNIEnv* env) {
        (void*)gattServerRegisterAppNative},
       {"gattServerUnregisterAppNative", "(I)V",
        (void*)gattServerUnregisterAppNative},
-      {"gattServerConnectNative", "(ILjava/lang/String;ZI)V",
+      {"gattServerConnectNative", "(ILjava/lang/String;IZI)V",
        (void*)gattServerConnectNative},
       {"gattServerDisconnectNative", "(ILjava/lang/String;I)V",
        (void*)gattServerDisconnectNative},

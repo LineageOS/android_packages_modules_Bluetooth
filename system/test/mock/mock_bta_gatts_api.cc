@@ -62,7 +62,8 @@ void BTA_GATTS_HandleValueIndication(uint16_t /* conn_id */,
   inc_func_call_count(__func__);
 }
 void BTA_GATTS_Open(tGATT_IF /* server_if */,
-                    const RawAddress& /* remote_bda */, bool /* is_direct */,
+                    const RawAddress& /* remote_bda */,
+                    tBLE_ADDR_TYPE /* addr_type */, bool /* is_direct */,
                     tBT_TRANSPORT /* transport */) {
   inc_func_call_count(__func__);
 }

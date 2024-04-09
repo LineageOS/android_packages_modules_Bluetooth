@@ -473,12 +473,16 @@ public class GattServiceBinderTest {
     public void serverConnect() {
         int serverIf = 1;
         String address = REMOTE_DEVICE_ADDRESS;
+        int addressType = BluetoothDevice.ADDRESS_TYPE_RANDOM;
         boolean isDirect = true;
         int transport = 2;
 
-        mBinder.serverConnect(serverIf, address, isDirect, transport, mAttributionSource);
+        mBinder.serverConnect(
+                serverIf, address, addressType, isDirect, transport, mAttributionSource);
 
-        verify(mService).serverConnect(serverIf, address, isDirect, transport, mAttributionSource);
+        verify(mService)
+                .serverConnect(
+                        serverIf, address, addressType, isDirect, transport, mAttributionSource);
     }
 
     @Test
