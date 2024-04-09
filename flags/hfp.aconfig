@@ -76,3 +76,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "sink_audio_policy_handover"
+    namespace: "bluetooth"
+    description: "If sink audio policy makes device active for call, then resume past active device"
+    bug: "333562819"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
