@@ -65,7 +65,6 @@ inline std::string bta_dm_event_text(const tBTA_DM_EVT& event) {
 
 /* data type for BTA_DM_API_SEARCH_EVT */
 typedef struct {
-  tBTA_SERVICE_MASK services;
   tBTA_DM_SEARCH_CBACK* p_cback;
 } tBTA_DM_API_SEARCH;
 
