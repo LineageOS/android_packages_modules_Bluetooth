@@ -20,7 +20,6 @@
 
 #include <future>
 
-#include "base/logging.h"  // LOG() stdout and android log
 #include "os/log.h"        // android log only
 #include "stack/include/sdp_api.h"
 #include "test/headless/get_options.h"

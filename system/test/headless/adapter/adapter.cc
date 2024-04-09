@@ -20,7 +20,6 @@
 
 #include <bluetooth/log.h>
 
-#include "base/logging.h"  // LOG() stdout and android log
 #include "gd/os/log.h"
 #include "test/headless/headless.h"
 #include "test/headless/interface.h"

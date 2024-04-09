@@ -22,7 +22,6 @@
 #include <future>
 #include <memory>
 
-#include "base/logging.h"  // LOG() stdout and android log
 #include "btm_status.h"
 #include "hci_error_code.h"
 #include "include/macros.h"

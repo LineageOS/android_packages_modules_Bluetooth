@@ -23,7 +23,6 @@
 #include <memory>
 #include <mutex>
 
-#include "base/logging.h"  // LOG() stdout and android log
 #include "test/headless/interface.h"
 #include "test/headless/log.h"
 
