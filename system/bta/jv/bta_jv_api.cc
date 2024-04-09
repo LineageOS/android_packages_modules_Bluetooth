@@ -106,7 +106,7 @@ void BTA_JvDisable(void) {
  *                  If the SCN/PSM reported is 0, that means all resources are
  *                  exhausted.
  * Parameters
- *   conn_type      one of BTA_JV_CONN_TYPE_
+ *   conn_type      one of BTA_JV_CONN_TYPE
  *   user_data      Any uservalue - will be returned in the resulting event.
  *   channel        Only used for RFCOMM - to try to allocate a specific RFCOMM
  *                  channel.
@@ -114,7 +114,8 @@ void BTA_JvDisable(void) {
  * Returns          void
  *
  ******************************************************************************/
-void BTA_JvGetChannelId(int conn_type, uint32_t id, int32_t channel) {
+void BTA_JvGetChannelId(tBTA_JV_CONN_TYPE conn_type, uint32_t id,
+                        int32_t channel) {
   log::verbose("conn_type:{}, id:{}, channel:{}", conn_type, id, channel);
 
   if (conn_type != BTA_JV_CONN_TYPE_RFCOMM &&
@@ -135,7 +136,7 @@ void BTA_JvGetChannelId(int conn_type, uint32_t id, int32_t channel) {
  *                  by an application running over RFCOMM.
  * Parameters
  *   channel        The channel to free
- *   conn_type      one of BTA_JV_CONN_TYPE_
+ *   conn_type      one of BTA_JV_CONN_TYPE
  *
  * Returns          tBTA_JV_STATUS::SUCCESS, if the request is being processed.
  *                  tBTA_JV_STATUS::FAILURE, otherwise.
@@ -279,7 +280,8 @@ tBTA_JV_STATUS BTA_JvL2capClose(uint32_t handle) {
  * Returns          void
  *
  ******************************************************************************/
-void BTA_JvL2capStartServer(int conn_type, tBTA_SEC sec_mask, tBTA_JV_ROLE role,
+void BTA_JvL2capStartServer(tBTA_JV_CONN_TYPE conn_type, tBTA_SEC sec_mask,
+                            tBTA_JV_ROLE role,
                             std::unique_ptr<tL2CAP_ERTM_INFO> ertm_info,
                             uint16_t local_psm, uint16_t rx_mtu,
                             std::unique_ptr<tL2CAP_CFG_INFO> cfg,
