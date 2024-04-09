@@ -1952,7 +1952,7 @@ void btm_process_remote_name(const RawAddress* bda, const BD_NAME bdn,
       log::info(
           "RNR received expected name bd_addr:{} hci_status:{} le_link:{}",
           rem_name.bd_addr.ToRedactedStringForLogging(),
-          hci_status_code_text(hci_status), logbool(on_le_link));
+          hci_status_code_text(hci_status), on_le_link);
 
       if (on_le_link && hci_status == HCI_ERR_UNSPECIFIED) {
         btm_ble_cancel_remote_name(btm_cb.btm_inq_vars.remname_bda);
@@ -1984,7 +1984,7 @@ void btm_process_remote_name(const RawAddress* bda, const BD_NAME bdn,
     } else {
       log::warn("RNR received UNKNOWN name bd_addr:{} hci_status:{} le_link:{}",
                 rem_name.bd_addr.ToRedactedStringForLogging(),
-                hci_status_code_text(hci_status), logbool(on_le_link));
+                hci_status_code_text(hci_status), on_le_link);
     }
   } else {
     log::info(
@@ -1992,8 +1992,8 @@ void btm_process_remote_name(const RawAddress* bda, const BD_NAME bdn,
         "le_link:{} rnr_active:{}",
         rem_name.bd_addr.ToRedactedStringForLogging(),
         btm_cb.btm_inq_vars.remname_bda.ToRedactedStringForLogging(),
-        hci_status_code_text(hci_status), logbool(on_le_link),
-        logbool(btm_cb.btm_inq_vars.remname_active));
+        hci_status_code_text(hci_status), on_le_link,
+        btm_cb.btm_inq_vars.remname_active);
   }
 }
 

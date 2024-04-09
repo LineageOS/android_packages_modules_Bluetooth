@@ -194,10 +194,10 @@ static void bta_ag_sco_disc_cback(uint16_t sco_idx) {
   log::debug("sco_idx: 0x{:x} sco.state:{}", sco_idx,
              sco_state_text(static_cast<tSCO_STATE>(bta_ag_cb.sco.state)));
   log::debug("scb[0] in_use:{} sco_idx: 0x{:x} sco state:{}",
-             logbool(bta_ag_cb.scb[0].in_use), bta_ag_cb.scb[0].sco_idx,
+             bta_ag_cb.scb[0].in_use, bta_ag_cb.scb[0].sco_idx,
              sco_state_text(static_cast<tSCO_STATE>(bta_ag_cb.scb[0].state)));
   log::debug("scb[1] in_use:{} sco_idx:0x{:x} sco state:{}",
-             logbool(bta_ag_cb.scb[1].in_use), bta_ag_cb.scb[1].sco_idx,
+             bta_ag_cb.scb[1].in_use, bta_ag_cb.scb[1].sco_idx,
              sco_state_text(static_cast<tSCO_STATE>(bta_ag_cb.scb[1].state)));
 
   /* match callback to scb */
@@ -215,7 +215,7 @@ static void bta_ag_sco_disc_cback(uint16_t sco_idx) {
         (bta_ag_cb.sco.p_curr_scb->is_aptx_swb_codec == true) &&
         (bta_ag_cb.sco.p_curr_scb->inuse_codec ==
          BTA_AG_SCO_APTX_SWB_SETTINGS_Q0);
-    log::verbose("aptx_voice={}, inuse_codec={:#x}", logbool(aptx_voice),
+    log::verbose("aptx_voice={}, inuse_codec={:#x}", aptx_voice,
                  bta_ag_cb.sco.p_curr_scb->inuse_codec);
 
     /* Restore settings */
@@ -740,9 +740,9 @@ void bta_ag_codec_negotiate(tBTA_AG_SCB* p_scb) {
                             &p_scb->peer_addr) ||
        p_scb->is_aptx_swb_codec);
   log::verbose(
-      "aptx_voice={}, is_aptx_swb_codec={}, Q0 codec supported={}",
-      logbool(aptx_voice), logbool(p_scb->is_aptx_swb_codec),
-      logbool(p_scb->peer_codecs & BTA_AG_SCO_APTX_SWB_SETTINGS_Q0_MASK));
+      "aptx_voice={}, is_aptx_swb_codec={}, Q0 codec supported={}", aptx_voice,
+      p_scb->is_aptx_swb_codec,
+      (p_scb->peer_codecs & BTA_AG_SCO_APTX_SWB_SETTINGS_Q0_MASK) != 0);
 
   if (((p_scb->codec_updated || p_scb->codec_fallback) &&
        (p_scb->features & BTA_AG_FEAT_CODEC) &&
@@ -760,7 +760,7 @@ void bta_ag_codec_negotiate(tBTA_AG_SCB* p_scb) {
         p_scb->is_aptx_swb_codec = true;
       }
       log::verbose("Sending +QCS, sco_codec={}, is_aptx_swb_codec={}",
-                   p_scb->sco_codec, logbool(p_scb->is_aptx_swb_codec));
+                   p_scb->sco_codec, p_scb->is_aptx_swb_codec);
       /* Send +QCS to the peer */
       bta_ag_send_qcs(p_scb, NULL);
     } else {
@@ -769,7 +769,7 @@ void bta_ag_codec_negotiate(tBTA_AG_SCB* p_scb) {
         p_scb->is_aptx_swb_codec = false;
       }
       log::verbose("Sending +BCS, sco_codec={}, is_aptx_swb_codec={}",
-                   p_scb->sco_codec, logbool(p_scb->is_aptx_swb_codec));
+                   p_scb->sco_codec, p_scb->is_aptx_swb_codec);
       /* Send +BCS to the peer */
       bta_ag_send_bcs(p_scb);
     }
@@ -1511,7 +1511,7 @@ void bta_ag_sco_conn_close(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /* data */) {
                           p_scb->codec_fallback &&
                           (p_scb->sco_codec == BTA_AG_SCO_APTX_SWB_SETTINGS_Q0);
   log::verbose("aptx_voice={}, codec_fallback={:#x}, sco_codec={:#x}",
-               logbool(aptx_voice), p_scb->codec_fallback, p_scb->sco_codec);
+               aptx_voice, p_scb->codec_fallback, p_scb->sco_codec);
 
   /* codec_fallback is set when AG is initiator and connection failed for mSBC.
    * OR if codec is msbc and T2 settings failed, then retry Safe T1 settings

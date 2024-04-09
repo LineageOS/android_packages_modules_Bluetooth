@@ -1249,7 +1249,7 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type,
         bool swb_supported = hfp_hal_interface::get_swb_supported();
         const bool aptx_voice =
             is_hfp_aptx_voice_enabled() && p_scb->is_aptx_swb_codec;
-        log::verbose("BTA_AG_AT_BAC_EVT aptx_voice={}", logbool(aptx_voice));
+        log::verbose("BTA_AG_AT_BAC_EVT aptx_voice={}", aptx_voice);
 
         if (swb_supported && (p_scb->peer_codecs & BTM_SCO_CODEC_LC3) &&
             !(p_scb->disabled_codecs & BTM_SCO_CODEC_LC3)) {

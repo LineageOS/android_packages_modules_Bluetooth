@@ -204,7 +204,7 @@ bool tBTM_SEC_CB::IsDeviceBonded(const RawAddress bd_addr) {
     is_bonded = true;
   }
   log::debug("Device record bonded check peer:{} is_bonded:{}",
-             ADDRESS_TO_LOGGABLE_CSTR(bd_addr), logbool(is_bonded).c_str());
+             ADDRESS_TO_LOGGABLE_CSTR(bd_addr), is_bonded);
   return is_bonded;
 }
 
@@ -319,8 +319,8 @@ bool tBTM_SEC_CB::AddService(bool is_originator, const char* p_name,
   log::debug(
       "[{}]: id:{}, is_orig:{} psm:0x{:04x} proto_id:{} chan_id:{}  : "
       "sec:0x{:x} service_name:[{}] (up to {} chars saved)",
-      index, service_id, logbool(is_originator).c_str(), psm, mx_proto_id,
-      mx_chan_id, p_srec->security_flags, p_name, BT_MAX_SERVICE_NAME_LEN);
+      index, service_id, is_originator, psm, mx_proto_id, mx_chan_id,
+      p_srec->security_flags, p_name, BT_MAX_SERVICE_NAME_LEN);
 
   return (record_allocated);
 }
