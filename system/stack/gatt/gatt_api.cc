@@ -1501,6 +1501,15 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr,
 }
 
 bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr,
+                  tBLE_ADDR_TYPE addr_type, tBTM_BLE_CONN_TYPE connection_type,
+                  tBT_TRANSPORT transport, bool opportunistic) {
+  constexpr uint8_t kPhyLe1M = 0x01;  // From the old controller shim.
+  uint8_t phy = kPhyLe1M;
+  return GATT_Connect(gatt_if, bd_addr, addr_type, connection_type, transport,
+                      opportunistic, phy);
+}
+
+bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr,
                   tBTM_BLE_CONN_TYPE connection_type, tBT_TRANSPORT transport,
                   bool opportunistic, uint8_t initiating_phys) {
   return GATT_Connect(gatt_if, bd_addr, BLE_ADDR_PUBLIC, connection_type,

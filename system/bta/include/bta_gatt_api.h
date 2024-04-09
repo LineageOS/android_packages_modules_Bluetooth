@@ -1017,13 +1017,16 @@ void BTA_GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id, tGATT_STATUS status,
  *
  * Parameters       server_if: server interface.
  *                  remote_bda: remote device BD address.
+ *                  addr_type: remote device address type
  *                  is_direct: direct connection or background auto connection
+ *                  transport: transport to use in this connection
  *
  * Returns          void
  *
  ******************************************************************************/
 void BTA_GATTS_Open(tGATT_IF server_if, const RawAddress& remote_bda,
-                    bool is_direct, tBT_TRANSPORT transport);
+                    tBLE_ADDR_TYPE addr_type, bool is_direct,
+                    tBT_TRANSPORT transport);
 
 /*******************************************************************************
  *

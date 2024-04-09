@@ -1406,10 +1406,11 @@ impl GattServer {
         &self,
         server_if: i32,
         addr: &RawAddress,
+        addr_type: u8,
         is_direct: bool,
         transport: i32,
     ) -> BtStatus {
-        BtStatus::from(ccall!(self, connect, server_if, addr, is_direct, transport))
+        BtStatus::from(ccall!(self, connect, server_if, addr, addr_type, is_direct, transport))
     }
 
     pub fn disconnect(&self, server_if: i32, addr: &RawAddress, conn_id: i32) -> BtStatus {

@@ -1192,6 +1192,9 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr,
                   bool opportunistic, uint8_t initiating_phys);
 bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr,
                   tBLE_ADDR_TYPE addr_type, tBTM_BLE_CONN_TYPE connection_type,
+                  tBT_TRANSPORT transport, bool opportunistic);
+bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr,
+                  tBLE_ADDR_TYPE addr_type, tBTM_BLE_CONN_TYPE connection_type,
                   tBT_TRANSPORT transport, bool opportunistic,
                   uint8_t initiating_phys);
 
