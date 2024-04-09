@@ -461,6 +461,34 @@ class BluetoothManagerService {
                 0);
     }
 
+    private void forceToOffFromModeChange(int currentState, int reason) {
+        // Clear registered LE apps to force shut-off
+        clearBleApps();
+
+        if (!AirplaneModeListener.hasUserToggledApm(mCurrentUserContext)) {
+            AutoOnFeature.pause();
+        }
+
+        // If currentState is BLE_ON make sure we trigger stopBle
+        if (currentState == STATE_BLE_ON) {
+            mAdapterLock.readLock().lock();
+            try {
+                if (mAdapter != null) {
+                    addActiveLog(reason, false);
+                    mAdapter.stopBle(mContext.getAttributionSource());
+                    mEnable = false;
+                    mEnableExternal = false;
+                }
+            } catch (RemoteException e) {
+                Log.e(TAG, "Unable to call stopBle", e);
+            } finally {
+                mAdapterLock.readLock().unlock();
+            }
+        } else if (currentState == STATE_ON) {
+            sendDisableMsg(reason);
+        }
+    }
+
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)
     private void handleAirplaneModeChanged(boolean isAirplaneModeOn) {
         synchronized (this) {
@@ -480,31 +508,7 @@ class BluetoothManagerService {
                             + (" currentState=" + BluetoothAdapter.nameForState(currentState)));
 
             if (isAirplaneModeOn) {
-                // Clear registered LE apps to force shut-off
-                clearBleApps();
-
-                if (!AirplaneModeListener.hasUserToggledApm(mCurrentUserContext)) {
-                    AutoOnFeature.pause();
-                }
-
-                // If state is BLE_ON make sure we trigger stopBle
-                if (currentState == STATE_BLE_ON) {
-                    mAdapterLock.readLock().lock();
-                    try {
-                        if (mAdapter != null) {
-                            addActiveLog(ENABLE_DISABLE_REASON_AIRPLANE_MODE, false);
-                            mAdapter.stopBle(mContext.getAttributionSource());
-                            mEnable = false;
-                            mEnableExternal = false;
-                        }
-                    } catch (RemoteException e) {
-                        Log.e(TAG, "Unable to call stopBle", e);
-                    } finally {
-                        mAdapterLock.readLock().unlock();
-                    }
-                } else if (currentState == STATE_ON) {
-                    sendDisableMsg(ENABLE_DISABLE_REASON_AIRPLANE_MODE);
-                }
+                forceToOffFromModeChange(currentState, ENABLE_DISABLE_REASON_AIRPLANE_MODE);
             } else if (mEnableExternal) {
                 sendEnableMsg(mQuietEnableExternal, ENABLE_DISABLE_REASON_AIRPLANE_MODE);
             } else if (currentState != STATE_ON) {
