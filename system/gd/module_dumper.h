@@ -27,12 +27,11 @@ class ModuleRegistry;
 
 class ModuleDumper {
  public:
-  ModuleDumper(int fd, const ModuleRegistry& module_registry, const char* title)
-      : fd_(fd), module_registry_(module_registry), title_(title) {}
+  ModuleDumper(int /*fd*/, const ModuleRegistry& module_registry, const char* title)
+      : module_registry_(module_registry), title_(title) {}
   void DumpState(std::string* output, std::ostringstream& oss) const;
 
  private:
-  const int fd_{-1};
   const ModuleRegistry& module_registry_;
   const std::string title_;
 };

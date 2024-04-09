@@ -35,9 +35,6 @@ class StateDumperTestModule : public Module, public ModuleMainloop {
   std::string ToString() const override;
 
   DumpsysDataFinisher GetDumpsysData(flatbuffers::FlatBufferBuilder* builder) const override;
-  void GetDumpsysData() const override;
-  void GetDumpsysData(int fd) const override;
-  void GetDumpsysData(std::ostringstream& oss) const override;
 
  private:
   struct PrivateImpl;

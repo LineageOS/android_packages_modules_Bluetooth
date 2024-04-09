@@ -57,12 +57,6 @@ DumpsysDataFinisher Module::GetDumpsysData(flatbuffers::FlatBufferBuilder* /* bu
   return EmptyDumpsysDataFinisher;
 }
 
-void Module::GetDumpsysData(int /* fd */) const {}
-
-void Module::GetDumpsysData() const {}
-
-void Module::GetDumpsysData(std::ostringstream& /* oss */) const {}
-
 Module* ModuleRegistry::Get(const ModuleFactory* module) const {
   auto instance = started_modules_.find(module);
   log::assert_that(
