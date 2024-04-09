@@ -28,7 +28,6 @@
 
 #include "gtest/gtest.h"
 #include "module_dumper.h"
-#include "module_state_dumper.h"
 #include "os/handler.h"
 #include "os/thread.h"
 #include "stack/include/main_thread.h"
@@ -70,20 +69,6 @@ DumpsysDataFinisher StateDumperTestModule::GetDumpsysData(
     flatbuffers::FlatBufferBuilder* /* builder */) const {
   log::info("flatbuffers");
   return EmptyDumpsysDataFinisher;
-}
-
-void StateDumperTestModule::GetDumpsysData() const {
-  log::info("void");
-}
-
-void StateDumperTestModule::GetDumpsysData(int fd) const {
-  log::info("fd");
-  dprintf(fd, "GetDumpsysData(int fd)");
-}
-
-void StateDumperTestModule::GetDumpsysData(std::ostringstream& oss) const {
-  log::info("oss");
-  oss << "GetDumpsysData(std::ostringstream& oss)";
 }
 
 //
