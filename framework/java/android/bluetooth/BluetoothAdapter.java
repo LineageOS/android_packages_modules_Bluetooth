@@ -4022,7 +4022,7 @@ public final class BluetoothAdapter {
      * @see IBluetoothOobDataCallback for interface definition.
      * @hide
      */
-    public static class WrappedOobDataCallback extends IBluetoothOobDataCallback.Stub {
+    private static class WrappedOobDataCallback extends IBluetoothOobDataCallback.Stub {
         private final OobDataCallback mCallback;
         private final Executor mExecutor;
 
@@ -4038,35 +4038,12 @@ public final class BluetoothAdapter {
             mExecutor = executor;
         }
 
-        /**
-         * Wrapper function to relay to the {@link OobDataCallback#onOobData}
-         *
-         * @param transport - whether the {@link OobData} is generated for LE or Classic.
-         * @param oobData - data generated in the host stack(LE) or controller (Classic)
-         * @hide
-         */
         public void onOobData(@Transport int transport, @NonNull OobData oobData) {
-            mExecutor.execute(
-                    new Runnable() {
-                        public void run() {
-                            mCallback.onOobData(transport, oobData);
-                        }
-                    });
+            mExecutor.execute(() -> mCallback.onOobData(transport, oobData));
         }
 
-        /**
-         * Wrapper function to relay to the {@link OobDataCallback#onError}
-         *
-         * @param errorCode - the code describing the type of error that occurred.
-         * @hide
-         */
         public void onError(@OobError int errorCode) {
-            mExecutor.execute(
-                    new Runnable() {
-                        public void run() {
-                            mCallback.onError(errorCode);
-                        }
-                    });
+            mExecutor.execute(() -> mCallback.onError(errorCode));
         }
     }
 
