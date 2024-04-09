@@ -459,23 +459,24 @@ public class AdapterService extends Service {
 
         @Override
         public void handleMessage(Message msg) {
-            verboseLog("handleMessage() - Message: " + msg.what);
+            Log.v(TAG, "handleMessage() - Message: " + msg.what);
 
             switch (msg.what) {
                 case MESSAGE_PROFILE_SERVICE_STATE_CHANGED:
-                    verboseLog("handleMessage() - MESSAGE_PROFILE_SERVICE_STATE_CHANGED");
+                    Log.v(TAG, "handleMessage() - MESSAGE_PROFILE_SERVICE_STATE_CHANGED");
                     processProfileServiceStateChanged((ProfileService) msg.obj, msg.arg1);
                     break;
                 case MESSAGE_PROFILE_SERVICE_REGISTERED:
-                    verboseLog("handleMessage() - MESSAGE_PROFILE_SERVICE_REGISTERED");
+                    Log.v(TAG, "handleMessage() - MESSAGE_PROFILE_SERVICE_REGISTERED");
                     registerProfileService((ProfileService) msg.obj);
                     break;
                 case MESSAGE_PROFILE_SERVICE_UNREGISTERED:
-                    verboseLog("handleMessage() - MESSAGE_PROFILE_SERVICE_UNREGISTERED");
+                    Log.v(TAG, "handleMessage() - MESSAGE_PROFILE_SERVICE_UNREGISTERED");
                     unregisterProfileService((ProfileService) msg.obj);
                     break;
                 case MESSAGE_PREFERRED_AUDIO_PROFILES_AUDIO_FRAMEWORK_TIMEOUT:
-                    errorLog(
+                    Log.e(
+                            TAG,
                             "handleMessage() - "
                                     + "MESSAGE_PREFERRED_PROFILE_CHANGE_AUDIO_FRAMEWORK_TIMEOUT");
                     int groupId = (int) msg.obj;
@@ -616,7 +617,7 @@ public class AdapterService extends Service {
             })
     public void onCreate() {
         super.onCreate();
-        debugLog("onCreate()");
+        Log.d(TAG, "onCreate()");
         if (!Flags.fastBindToApp()) {
             init();
             return;
@@ -635,7 +636,7 @@ public class AdapterService extends Service {
     }
 
     private void init() {
-        debugLog("init()");
+        Log.d(TAG, "init()");
         Config.init(this);
         initMetricsLogger();
         mDeviceConfigListener.start();
@@ -660,9 +661,12 @@ public class AdapterService extends Service {
             mAdapterProperties = new AdapterProperties(this);
             mAdapterStateMachine = new AdapterState(this, mLooper);
         }
+        boolean isCommonCriteriaMode =
+                getNonNullSystemService(DevicePolicyManager.class)
+                        .isCommonCriteriaModeEnabled(null);
         mBluetoothKeystoreService =
                 new BluetoothKeystoreService(
-                        BluetoothKeystoreNativeInterface.getInstance(), isCommonCriteriaMode());
+                        BluetoothKeystoreNativeInterface.getInstance(), isCommonCriteriaMode);
         mBluetoothKeystoreService.start();
         int configCompareResult = mBluetoothKeystoreService.getCompareResult();
 
@@ -678,7 +682,7 @@ public class AdapterService extends Service {
                 this,
                 mAdapterProperties,
                 mUserManager.isGuestUser(),
-                isCommonCriteriaMode(),
+                isCommonCriteriaMode,
                 configCompareResult,
                 getInitFlags(),
                 isAtvDevice,
@@ -775,21 +779,21 @@ public class AdapterService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
-        debugLog("onBind()");
+        Log.d(TAG, "onBind()");
         return mBinder;
     }
 
     @Override
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
     public boolean onUnbind(Intent intent) {
-        debugLog("onUnbind() - calling cleanup");
+        Log.d(TAG, "onUnbind() - calling cleanup");
         cleanup();
         return super.onUnbind(intent);
     }
 
     @Override
     public void onDestroy() {
-        debugLog("onDestroy()");
+        Log.d(TAG, "onDestroy()");
         if (!isMock()) {
             // TODO(b/27859763)
             Log.i(TAG, "Force exit to cleanup internal state in Bluetooth stack");
@@ -963,7 +967,7 @@ public class AdapterService extends Service {
                 android.Manifest.permission.UPDATE_DEVICE_STATS,
             })
     void bringUpBle() {
-        debugLog("bleOnProcessStart()");
+        Log.d(TAG, "bleOnProcessStart()");
 
         if (getResources()
                 .getBoolean(R.bool.config_bluetooth_reload_supported_profiles_when_enabled)) {
@@ -982,7 +986,7 @@ public class AdapterService extends Service {
         mRemoteDevices.reset();
         mAdapterProperties.init(mRemoteDevices);
 
-        debugLog("bleOnProcessStart() - Make Bond State Machine");
+        Log.d(TAG, "bleOnProcessStart() - Make Bond State Machine");
         mBondStateMachine = BondStateMachine.make(this, mAdapterProperties, mRemoteDevices);
 
         mNativeInterface.getCallbacks().init(mBondStateMachine, mRemoteDevices);
@@ -1014,7 +1018,7 @@ public class AdapterService extends Service {
 
     void stateChangeCallback(int status) {
         if (status == AbstractionLayer.BT_STATE_OFF) {
-            debugLog("stateChangeCallback: disableNative() completed");
+            Log.d(TAG, "stateChangeCallback: disableNative() completed");
             mAdapterStateMachine.sendMessage(AdapterState.BLE_STOPPED);
         } else if (status == AbstractionLayer.BT_STATE_ON) {
             mAdapterStateMachine.sendMessage(AdapterState.BLE_STARTED);
@@ -1024,7 +1028,7 @@ public class AdapterService extends Service {
     }
 
     void startProfileServices() {
-        debugLog("startCoreServices()");
+        Log.d(TAG, "startCoreServices()");
         int[] supportedProfileServices = Config.getSupportedProfiles();
         // TODO(b/228875190): GATT is assumed supported. If we support no other profiles then just
         // move on to BREDR_STARTED. Note that configuring GATT to NOT supported will cause adapter
@@ -1052,7 +1056,7 @@ public class AdapterService extends Service {
                         && GattService.class
                                 .getSimpleName()
                                 .equals(mRunningProfiles.get(0).getName()))) {
-            debugLog("stopProfileServices() - No profiles services to stop or already stopped.");
+            Log.d(TAG, "stopProfileServices() - No profiles services to stop or already stopped.");
             mAdapterStateMachine.sendMessage(AdapterState.BREDR_STOPPED);
         } else {
             setAllProfileServiceStates(supportedProfileServices, BluetoothAdapter.STATE_OFF);
@@ -1072,7 +1076,7 @@ public class AdapterService extends Service {
     private void stopGattProfileService() {
         mAdapterProperties.onBleDisable();
         if (mRunningProfiles.size() == 0) {
-            debugLog("stopGattProfileService() - No profiles services to stop.");
+            Log.d(TAG, "stopGattProfileService() - No profiles services to stop.");
             mAdapterStateMachine.sendMessage(AdapterState.BLE_STOPPED);
         }
 
@@ -1124,7 +1128,8 @@ public class AdapterService extends Service {
 
         // Only BluetoothManagerService should be registered
         int n = mRemoteCallbacks.beginBroadcast();
-        debugLog(
+        Log.d(
+                TAG,
                 "updateAdapterState() - Broadcasting state "
                         + BluetoothAdapter.nameForState(newState)
                         + " to "
@@ -1136,7 +1141,7 @@ public class AdapterService extends Service {
                         .getBroadcastItem(i)
                         .onBluetoothStateChange(prevState, newState);
             } catch (RemoteException e) {
-                debugLog("updateAdapterState() - Callback #" + i + " failed (" + e + ")");
+                Log.d(TAG, "updateAdapterState() - Callback #" + i + " failed (" + e + ")");
             }
         }
         mRemoteCallbacks.finishBroadcast();
@@ -1262,7 +1267,8 @@ public class AdapterService extends Service {
             BluetoothDevice device, BluetoothQualityReport bluetoothQualityReport) {
         synchronized (mBluetoothQualityReportReadyCallbacks) {
             int n = mBluetoothQualityReportReadyCallbacks.beginBroadcast();
-            debugLog(
+            Log.d(
+                    TAG,
                     "bluetoothQualityReportReadyCallback() - "
                             + "Broadcasting Bluetooth Quality Report to "
                             + n
@@ -1276,7 +1282,8 @@ public class AdapterService extends Service {
                                     bluetoothQualityReport,
                                     BluetoothStatusCodes.SUCCESS);
                 } catch (RemoteException e) {
-                    debugLog(
+                    Log.d(
+                            TAG,
                             "bluetoothQualityReportReadyCallback() - Callback #"
                                     + i
                                     + " failed ("
@@ -1293,7 +1300,8 @@ public class AdapterService extends Service {
     void switchBufferSizeCallback(boolean isLowLatencyBufferSize) {
         List<BluetoothDevice> activeDevices = getActiveDevices(BluetoothProfile.A2DP);
         if (activeDevices.size() != 1) {
-            errorLog(
+            Log.e(
+                    TAG,
                     "Cannot switch buffer size. The number of A2DP active devices is "
                             + activeDevices.size());
             return;
@@ -1320,7 +1328,8 @@ public class AdapterService extends Service {
     void switchCodecCallback(boolean isLowLatencyBufferSize) {
         List<BluetoothDevice> activeDevices = getActiveDevices(BluetoothProfile.A2DP);
         if (activeDevices.size() != 1) {
-            errorLog(
+            Log.e(
+                    TAG,
                     "Cannot switch buffer size. The number of A2DP active devices is "
                             + activeDevices.size());
             return;
@@ -1330,9 +1339,9 @@ public class AdapterService extends Service {
 
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
     void cleanup() {
-        debugLog("cleanup()");
+        Log.d(TAG, "cleanup()");
         if (mCleaningUp) {
-            errorLog("cleanup() - Service already starting to cleanup, ignoring request...");
+            Log.e(TAG, "cleanup() - Service already starting to cleanup, ignoring request...");
             return;
         }
 
@@ -1376,7 +1385,7 @@ public class AdapterService extends Service {
         }
 
         if (mNativeAvailable) {
-            debugLog("cleanup() - Cleaning up adapter native");
+            Log.d(TAG, "cleanup() - Cleaning up adapter native");
             mNativeInterface.cleanup();
             mNativeAvailable = false;
         }
@@ -1390,7 +1399,7 @@ public class AdapterService extends Service {
         }
 
         if (mBluetoothKeystoreService != null) {
-            debugLog("cleanup(): mBluetoothKeystoreService.cleanup()");
+            Log.d(TAG, "cleanup(): mBluetoothKeystoreService.cleanup()");
             mBluetoothKeystoreService.cleanup();
         }
 
@@ -1589,14 +1598,21 @@ public class AdapterService extends Service {
         ParcelUuid[] remoteDeviceUuids = getRemoteUuids(device);
         ParcelUuid[] localDeviceUuids = mAdapterProperties.getUuids();
         if (remoteDeviceUuids == null || remoteDeviceUuids.length == 0) {
-            Log.e(TAG, "isProfileSupported(device=" + device + ", profile="
-                    + BluetoothProfile.getProfileName(profile) + "): remote device Uuids Empty");
+            Log.e(
+                    TAG,
+                    "isProfileSupported("
+                            + ("device=" + device)
+                            + (", profile=" + BluetoothProfile.getProfileName(profile) + "):")
+                            + " remote device Uuids Empty");
         }
 
-        Log.v(TAG, "isProfileSupported(device=" + device + ", profile="
-                + BluetoothProfile.getProfileName(profile) + "): local_uuids="
-                + Arrays.toString(localDeviceUuids) + ", remote_uuids="
-                + Arrays.toString(remoteDeviceUuids));
+        Log.v(
+                TAG,
+                "isProfileSupported("
+                        + ("device=" + device)
+                        + (", profile=" + BluetoothProfile.getProfileName(profile) + "):")
+                        + (" local_uuids=" + Arrays.toString(localDeviceUuids))
+                        + (", remote_uuids=" + Arrays.toString(remoteDeviceUuids)));
 
         if (profile == BluetoothProfile.HEADSET) {
             return (Utils.arrayContains(localDeviceUuids, BluetoothUuid.HSP_AG)
@@ -2452,7 +2468,7 @@ public class AdapterService extends Service {
                 return false;
             }
 
-            service.debugLog("cancelDiscovery");
+            Log.d(TAG, "cancelDiscovery");
             return service.mNativeInterface.cancelDiscovery();
         }
 
@@ -4465,7 +4481,8 @@ public class AdapterService extends Service {
     private void sendPreferredAudioProfilesCallbackToApps(
             BluetoothDevice device, Bundle preferredAudioProfiles, int status) {
         int n = mPreferredAudioProfilesCallbacks.beginBroadcast();
-        debugLog(
+        Log.d(
+                TAG,
                 "sendPreferredAudioProfilesCallbackToApps() - Broadcasting audio profile "
                         + ("change callback to device: " + device)
                         + (" and status=" + status)
@@ -4476,7 +4493,8 @@ public class AdapterService extends Service {
                         .getBroadcastItem(i)
                         .onPreferredAudioProfilesChanged(device, preferredAudioProfiles, status);
             } catch (RemoteException e) {
-                debugLog(
+                Log.d(
+                        TAG,
                         "sendPreferredAudioProfilesCallbackToApps() - Callback #"
                                 + i
                                 + " failed ("
@@ -4509,7 +4527,7 @@ public class AdapterService extends Service {
         // Enforce the user restriction for disallowing Bluetooth if it was set.
         if (mUserManager.hasUserRestrictionForUser(
                 UserManager.DISALLOW_BLUETOOTH, UserHandle.SYSTEM)) {
-            debugLog("enable() called when Bluetooth was disallowed");
+            Log.d(TAG, "enable() called when Bluetooth was disallowed");
             return;
         }
         if (Flags.fastBindToApp()) {
@@ -4523,7 +4541,7 @@ public class AdapterService extends Service {
     }
 
     void disable() {
-        debugLog("disable() called with mRunningProfiles.size() = " + mRunningProfiles.size());
+        Log.d(TAG, "disable() called with mRunningProfiles.size() = " + mRunningProfiles.size());
         mAdapterStateMachine.sendMessage(AdapterState.USER_TURN_OFF);
     }
 
@@ -4557,7 +4575,7 @@ public class AdapterService extends Service {
 
     boolean startDiscovery(AttributionSource attributionSource) {
         UserHandle callingUser = Binder.getCallingUserHandle();
-        debugLog("startDiscovery");
+        Log.d(TAG, "startDiscovery");
         String callingPackage = attributionSource.getPackageName();
         mAppOps.checkPackage(Binder.getCallingUid(), callingPackage);
         boolean isQApp = Utils.checkCallerTargetSdk(this, callingPackage, Build.VERSION_CODES.Q);
@@ -4761,12 +4779,12 @@ public class AdapterService extends Service {
     }
 
     public boolean isQuietModeEnabled() {
-        debugLog("isQuietModeEnabled() - Enabled = " + mQuietmode);
+        Log.d(TAG, "isQuietModeEnabled() - Enabled = " + mQuietmode);
         return mQuietmode;
     }
 
     public void updateUuids() {
-        debugLog("updateUuids() - Updating UUIDs for bonded devices");
+        Log.d(TAG, "updateUuids() - Updating UUIDs for bonded devices");
         BluetoothDevice[] bondedDevices = getBondedDevices();
         if (bondedDevices == null) {
             return;
@@ -5793,17 +5811,18 @@ public class AdapterService extends Service {
 
     boolean isMediaProfileConnected() {
         if (mA2dpService != null && mA2dpService.getConnectedDevices().size() > 0) {
-            debugLog("isMediaProfileConnected. A2dp is connected");
+            Log.d(TAG, "isMediaProfileConnected. A2dp is connected");
             return true;
         } else if (mHearingAidService != null
                 && mHearingAidService.getConnectedDevices().size() > 0) {
-            debugLog("isMediaProfileConnected. HearingAid is connected");
+            Log.d(TAG, "isMediaProfileConnected. HearingAid is connected");
             return true;
         } else if (mLeAudioService != null && mLeAudioService.getConnectedDevices().size() > 0) {
-            debugLog("isMediaProfileConnected. LeAudio is connected");
+            Log.d(TAG, "isMediaProfileConnected. LeAudio is connected");
             return true;
         } else {
-            debugLog(
+            Log.d(
+                    TAG,
                     "isMediaProfileConnected: no Media connected."
                             + (" A2dp=" + mA2dpService)
                             + (" HearingAid=" + mHearingAidService)
@@ -5930,7 +5949,7 @@ public class AdapterService extends Service {
             case BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE:
                 return AbstractionLayer.BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE;
         }
-        // errorLog("Incorrect scan mode in convertScanModeToHal");
+        // Log.e(TAG, "Incorrect scan mode in convertScanModeToHal");
         return -1;
     }
 
@@ -5943,7 +5962,7 @@ public class AdapterService extends Service {
             case AbstractionLayer.BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE:
                 return BluetoothAdapter.SCAN_MODE_CONNECTABLE_DISCOVERABLE;
         }
-        // errorLog("Incorrect scan mode in convertScanModeFromHal");
+        // Log.e(TAG, "Incorrect scan mode in convertScanModeFromHal");
         return -1;
     }
 
@@ -5972,7 +5991,7 @@ public class AdapterService extends Service {
     boolean releaseWakeLock(String lockName) {
         synchronized (this) {
             if (mWakeLock == null) {
-                errorLog("Repeated wake lock release; aborting release: " + lockName);
+                Log.e(TAG, "Repeated wake lock release; aborting release: " + lockName);
                 return false;
             }
 
@@ -5995,7 +6014,7 @@ public class AdapterService extends Service {
             // report it, we have to compute it from time
             if (energyUsed == 0) {
                 try {
-                    final long txMah = Math.multiplyExact(txTime, getTxCurrentMa());
+                final long txMah = Math.multiplyExact(txTime, getTxCurrentMa());
                     final long rxMah = Math.multiplyExact(rxTime, getRxCurrentMa());
                     final long idleMah = Math.multiplyExact(idleTime, getIdleCurrentMa());
                     energyUsed =
@@ -6063,7 +6082,8 @@ public class AdapterService extends Service {
             energyInfoCallbackInternal(
                     status, ctrlState, txTime, rxTime, idleTime, energyUsed, data);
         }
-        verboseLog(
+        Log.v(
+                TAG,
                 "energyInfoCallback()"
                         + (" status = " + status)
                         + (" txTime = " + txTime)
@@ -6133,7 +6153,7 @@ public class AdapterService extends Service {
             return;
         }
 
-        verboseLog("dumpsys arguments, check for protobuf output: " + TextUtils.join(" ", args));
+        Log.v(TAG, "dumpsys arguments, check for protobuf output: " + TextUtils.join(" ", args));
         if (args[0].equals("--proto-bin")) {
             dumpMetrics(fd);
             return;
@@ -6182,7 +6202,7 @@ public class AdapterService extends Service {
         BluetoothMetricsProto.BluetoothLog.Builder metricsBuilder =
                 BluetoothMetricsProto.BluetoothLog.newBuilder();
         byte[] nativeMetricsBytes = mNativeInterface.dumpMetrics();
-        debugLog("dumpMetrics: native metrics size is " + nativeMetricsBytes.length);
+        Log.d(TAG, "dumpMetrics: native metrics size is " + nativeMetricsBytes.length);
         if (nativeMetricsBytes.length > 0) {
             try {
                 metricsBuilder.mergeFrom(nativeMetricsBytes);
@@ -6197,28 +6217,12 @@ public class AdapterService extends Service {
             profile.dumpProto(metricsBuilder);
         }
         byte[] metricsBytes = Base64.encode(metricsBuilder.build().toByteArray(), Base64.DEFAULT);
-        debugLog("dumpMetrics: combined metrics size is " + metricsBytes.length);
+        Log.d(TAG, "dumpMetrics: combined metrics size is " + metricsBytes.length);
         try (FileOutputStream protoOut = new FileOutputStream(fd)) {
             protoOut.write(metricsBytes);
         } catch (IOException e) {
-            errorLog("dumpMetrics: error writing combined protobuf to fd, " + e.getMessage());
+            Log.e(TAG, "dumpMetrics: error writing combined protobuf to fd, " + e.getMessage());
         }
-    }
-
-    private void debugLog(String msg) {
-        Log.d(TAG, msg);
-    }
-
-    private void verboseLog(String msg) {
-        Log.v(TAG, msg);
-    }
-
-    private void errorLog(String msg) {
-        Log.e(TAG, msg);
-    }
-
-    private boolean isCommonCriteriaMode() {
-        return getNonNullSystemService(DevicePolicyManager.class).isCommonCriteriaModeEnabled(null);
     }
 
     @SuppressLint("AndroidFrameworkRequiresPermission")
