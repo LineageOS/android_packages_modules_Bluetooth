@@ -465,7 +465,9 @@ class BluetoothManagerService {
         // Clear registered LE apps to force shut-off
         clearBleApps();
 
-        if (!AirplaneModeListener.hasUserToggledApm(mCurrentUserContext)) {
+        if (reason == ENABLE_DISABLE_REASON_SATELLITE_MODE
+                || !AirplaneModeListener.hasUserToggledApm(mCurrentUserContext)) {
+            // AirplaneMode can have a state where it does not impact the AutoOnFeature
             AutoOnFeature.pause();
         }
 
@@ -518,14 +520,15 @@ class BluetoothManagerService {
     }
 
     private void handleSatelliteModeChanged(boolean isSatelliteModeOn) {
-        if (shouldBluetoothBeOn(isSatelliteModeOn) && getState() != STATE_ON) {
+        final int currentState = mState.get();
+
+        if (shouldBluetoothBeOn(isSatelliteModeOn) && currentState != STATE_ON) {
             sendEnableMsg(mQuietEnableExternal, ENABLE_DISABLE_REASON_SATELLITE_MODE);
-        } else if (!shouldBluetoothBeOn(isSatelliteModeOn) && getState() != STATE_OFF) {
-            AutoOnFeature.pause();
-            sendDisableMsg(ENABLE_DISABLE_REASON_SATELLITE_MODE);
+        } else if (!shouldBluetoothBeOn(isSatelliteModeOn) && currentState != STATE_OFF) {
+            forceToOffFromModeChange(currentState, ENABLE_DISABLE_REASON_SATELLITE_MODE);
         } else if (!isSatelliteModeOn
                 && !shouldBluetoothBeOn(isSatelliteModeOn)
-                && getState() != STATE_ON) {
+                && currentState != STATE_ON) {
             autoOnSetupTimer();
         }
     }
