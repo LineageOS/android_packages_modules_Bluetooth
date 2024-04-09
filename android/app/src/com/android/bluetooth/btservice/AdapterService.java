@@ -4517,7 +4517,7 @@ public class AdapterService extends Service {
             mHandler.post(() -> init());
         }
 
-        debugLog("enable() - Enable called with quiet mode status =  " + quietMode);
+        Log.i(TAG, "enable() - Enable called with quiet mode status =  " + quietMode);
         mQuietmode = quietMode;
         mAdapterStateMachine.sendMessage(AdapterState.BLE_TURN_ON);
     }
