@@ -470,30 +470,28 @@ struct eatt_impl {
   }
 
   void eatt_l2cap_error_cb(uint16_t lcid, uint16_t reason) {
-    log::info("cid: {} reason {}", loghex(lcid), loghex(reason));
-
-    /*TODO: provide address in the L2CAP callback */
-
     EattChannel* channel = find_channel_by_cid(lcid);
     if (!channel) {
-      log::error("Unknown lcid");
+      log::error("Unknown cid: {}, reason: {}", loghex(lcid), loghex(reason));
       return;
     }
 
     eatt_device* eatt_dev = find_device_by_address(channel->bda_);
-
     switch (channel->state_) {
       case EattChannelState::EATT_CHANNEL_PENDING:
-        log::error("Connecting failed");
+        log::warn("Channel for cid: {} is not extablished, reason: {}",
+                  loghex(lcid), loghex(reason));
         remove_channel_by_cid(eatt_dev, lcid);
         break;
       case EattChannelState::EATT_CHANNEL_RECONFIGURING:
         /* Just go back to open state */
-        log::error("Reconfig failed");
+        log::error("Reconfig failed fo cid: {}, reason: {}", loghex(lcid),
+                   loghex(reason));
         channel->EattChannelSetState(EattChannelState::EATT_CHANNEL_OPENED);
         break;
       default:
-        log::error("Invalid state: {}", static_cast<uint8_t>(channel->state_));
+        log::error("cid: {}, reason: {}, invalid state: {}", loghex(lcid),
+                   loghex(reason), static_cast<uint8_t>(channel->state_));
         break;
     }
 
