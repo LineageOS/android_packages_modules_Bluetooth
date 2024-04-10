@@ -229,12 +229,14 @@ class BluetoothManagerService {
         private int mReason;
         private String mPackageName;
         private boolean mEnable;
+        private boolean mIsBle;
         private long mTimestamp;
 
-        ActiveLog(int reason, String packageName, boolean enable, long timestamp) {
+        ActiveLog(int reason, String packageName, boolean enable, boolean isBle, long timestamp) {
             mReason = reason;
             mPackageName = packageName;
             mEnable = enable;
+            mIsBle = isBle;
             mTimestamp = timestamp;
             Log.d(TAG, this.toString());
         }
@@ -242,11 +244,10 @@ class BluetoothManagerService {
         @Override
         public String toString() {
             return timeToLog(mTimestamp)
-                    + (mEnable ? "  Enabled " : " Disabled ")
-                    + " due to "
-                    + getEnableDisableReasonString(mReason)
-                    + " by "
-                    + mPackageName;
+                    + ("\tPackage [" + mPackageName + "]")
+                    + " requested to"
+                    + (" [" + (mEnable ? "Enable" : "Disable") + (mIsBle ? "Ble" : "") + "]")
+                    + (".\tReason is " + getEnableDisableReasonString(mReason));
         }
 
         long getTimestamp() {
@@ -461,6 +462,36 @@ class BluetoothManagerService {
                 0);
     }
 
+    private void forceToOffFromModeChange(int currentState, int reason) {
+        // Clear registered LE apps to force shut-off
+        clearBleApps();
+
+        if (reason == ENABLE_DISABLE_REASON_SATELLITE_MODE
+                || !AirplaneModeListener.hasUserToggledApm(mCurrentUserContext)) {
+            // AirplaneMode can have a state where it does not impact the AutoOnFeature
+            AutoOnFeature.pause();
+        }
+
+        if (currentState == STATE_ON) {
+            sendDisableMsg(reason);
+        } else if (currentState == STATE_BLE_ON) {
+            // If currentState is BLE_ON make sure we trigger stopBle
+            mAdapterLock.readLock().lock();
+            try {
+                if (mAdapter != null) {
+                    addActiveLog(reason, false);
+                    mAdapter.stopBle(mContext.getAttributionSource());
+                    mEnable = false;
+                    mEnableExternal = false;
+                }
+            } catch (RemoteException e) {
+                Log.e(TAG, "Unable to call stopBle", e);
+            } finally {
+                mAdapterLock.readLock().unlock();
+            }
+        }
+    }
+
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)
     private void handleAirplaneModeChanged(boolean isAirplaneModeOn) {
         synchronized (this) {
@@ -472,58 +503,33 @@ class BluetoothManagerService {
                 }
             }
 
-            int st = mState.get();
+            int currentState = mState.get();
 
             Log.d(
                     TAG,
-                    "handleAirplaneModeChanged(isAirplaneModeOn="
-                            + isAirplaneModeOn
-                            + ") | current state="
-                            + BluetoothAdapter.nameForState(st));
+                    ("handleAirplaneModeChanged(" + isAirplaneModeOn + "):")
+                            + (" currentState=" + BluetoothAdapter.nameForState(currentState)));
 
             if (isAirplaneModeOn) {
-                // Clear registered LE apps to force shut-off
-                clearBleApps();
-
-                if (!AirplaneModeListener.hasUserToggledApm(mCurrentUserContext)) {
-                    AutoOnFeature.pause();
-                }
-
-                // If state is BLE_ON make sure we trigger stopBle
-                if (st == STATE_BLE_ON) {
-                    mAdapterLock.readLock().lock();
-                    try {
-                        if (mAdapter != null) {
-                            addActiveLog(ENABLE_DISABLE_REASON_AIRPLANE_MODE, false);
-                            mAdapter.stopBle(mContext.getAttributionSource());
-                            mEnable = false;
-                            mEnableExternal = false;
-                        }
-                    } catch (RemoteException e) {
-                        Log.e(TAG, "Unable to call stopBle", e);
-                    } finally {
-                        mAdapterLock.readLock().unlock();
-                    }
-                } else if (st == STATE_ON) {
-                    sendDisableMsg(ENABLE_DISABLE_REASON_AIRPLANE_MODE);
-                }
+                forceToOffFromModeChange(currentState, ENABLE_DISABLE_REASON_AIRPLANE_MODE);
             } else if (mEnableExternal) {
                 sendEnableMsg(mQuietEnableExternal, ENABLE_DISABLE_REASON_AIRPLANE_MODE);
-            } else if (st != STATE_ON) {
+            } else if (currentState != STATE_ON) {
                 autoOnSetupTimer();
             }
         }
     }
 
     private void handleSatelliteModeChanged(boolean isSatelliteModeOn) {
-        if (shouldBluetoothBeOn(isSatelliteModeOn) && getState() != STATE_ON) {
+        final int currentState = mState.get();
+
+        if (shouldBluetoothBeOn(isSatelliteModeOn) && currentState != STATE_ON) {
             sendEnableMsg(mQuietEnableExternal, ENABLE_DISABLE_REASON_SATELLITE_MODE);
-        } else if (!shouldBluetoothBeOn(isSatelliteModeOn) && getState() != STATE_OFF) {
-            AutoOnFeature.pause();
-            sendDisableMsg(ENABLE_DISABLE_REASON_SATELLITE_MODE);
+        } else if (!shouldBluetoothBeOn(isSatelliteModeOn) && currentState != STATE_OFF) {
+            forceToOffFromModeChange(currentState, ENABLE_DISABLE_REASON_SATELLITE_MODE);
         } else if (!isSatelliteModeOn
                 && !shouldBluetoothBeOn(isSatelliteModeOn)
-                && getState() != STATE_ON) {
+                && currentState != STATE_ON) {
             autoOnSetupTimer();
         }
     }
@@ -1039,7 +1045,7 @@ class BluetoothManagerService {
                 disableBleScanMode();
             }
             if (!mEnableExternal) {
-                addActiveLog(ENABLE_DISABLE_REASON_APPLICATION_REQUEST, packageName, false);
+                addActiveLog(ENABLE_DISABLE_REASON_APPLICATION_REQUEST, packageName, false, true);
                 sendBrEdrDownCallback();
             }
         }
@@ -1962,7 +1968,7 @@ class BluetoothManagerService {
                         UserHandle.CURRENT)) {
                     mHandler.removeMessages(MESSAGE_TIMEOUT_BIND);
                 }
-            } else if (mAdapter != null) {
+            } else if (!Flags.fastBindToApp() && mAdapter != null) {
                 // Enable bluetooth
                 try {
                     mAdapter.enable(mQuietEnable, mContext.getAttributionSource());
@@ -2085,7 +2091,7 @@ class BluetoothManagerService {
 
     private void sendDisableMsg(int reason, String packageName) {
         mHandler.sendEmptyMessage(MESSAGE_DISABLE);
-        addActiveLog(reason, packageName, false);
+        addActiveLog(reason, packageName, false, false);
     }
 
     private void sendEnableMsg(boolean quietMode, int reason) {
@@ -2098,21 +2104,22 @@ class BluetoothManagerService {
 
     private void sendEnableMsg(boolean quietMode, int reason, String packageName, boolean isBle) {
         mHandler.obtainMessage(MESSAGE_ENABLE, quietMode ? 1 : 0, isBle ? 1 : 0).sendToTarget();
-        addActiveLog(reason, packageName, true);
+        addActiveLog(reason, packageName, true, isBle);
         mLastEnabledTime = SystemClock.elapsedRealtime();
     }
 
     private void addActiveLog(int reason, boolean enable) {
-        addActiveLog(reason, mContext.getPackageName(), enable);
+        addActiveLog(reason, mContext.getPackageName(), enable, false);
     }
 
-    private void addActiveLog(int reason, String packageName, boolean enable) {
+    private void addActiveLog(int reason, String packageName, boolean enable, boolean isBle) {
         ActiveLog lastActiveLog = mActiveLogs.peekLast();
         synchronized (mActiveLogs) {
             if (mActiveLogs.size() > ACTIVE_LOG_MAX_SIZE) {
                 mActiveLogs.remove();
             }
-            mActiveLogs.add(new ActiveLog(reason, packageName, enable, System.currentTimeMillis()));
+            mActiveLogs.add(
+                    new ActiveLog(reason, packageName, enable, isBle, System.currentTimeMillis()));
 
             int state =
                     enable

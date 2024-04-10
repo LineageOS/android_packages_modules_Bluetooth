@@ -1545,7 +1545,8 @@ public class BassClientStateMachine extends StateMachine {
             log("no existing SI for update source op");
             return null;
         }
-        byte numSubGroups = (byte) metaData.getSubgroups().size();
+        List<BluetoothLeBroadcastSubgroup> subGroups = metaData.getSubgroups();
+        byte numSubGroups = (byte) subGroups.size();
         byte[] res = new byte[UPDATE_SOURCE_FIXED_LENGTH + numSubGroups * 5];
         int offset = 0;
         // Opcode
@@ -1553,7 +1554,7 @@ public class BassClientStateMachine extends StateMachine {
         // Source_ID
         res[offset++] = (byte) sourceId;
         // PA_Sync
-        if (paSync != BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_INVALID) {
+        if (paSync != BassConstants.INVALID_PA_SYNC_VALUE) {
             res[offset++] = (byte) paSync;
         } else if (existingState.getPaSyncState()
                 == BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCHRONIZED) {
@@ -1566,12 +1567,22 @@ public class BassClientStateMachine extends StateMachine {
         res[offset++] = (byte) 0xFF;
         // Num_Subgroups
         res[offset++] = numSubGroups;
-        for (int i = 0; i < numSubGroups; i++) {
+
+        for (BluetoothLeBroadcastSubgroup subGroup : subGroups) {
             int bisIndexValue;
-            if (paSync != BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_INVALID) {
+            if (paSync == BassConstants.PA_SYNC_DO_NOT_SYNC) {
                 bisIndexValue = 0;
+            } else if (paSync == BassConstants.PA_SYNC_PAST_AVAILABLE
+                    || paSync == BassConstants.PA_SYNC_PAST_NOT_AVAILABLE) {
+                bisIndexValue = getBisSyncFromChannelPreference(subGroup.getChannels());
+
+                // Let sink decide to which BIS sync if there is no channel preference
+                if (bisIndexValue == 0) {
+                    bisIndexValue = 0xFFFFFFFF;
+                }
             } else {
-                bisIndexValue = existingState.getBisSyncState().get(i).intValue();
+                bisIndexValue =
+                        existingState.getBisSyncState().get(subGroups.indexOf(subGroup)).intValue();
             }
             log("UPDATE_BCAST_SOURCE: bisIndexValue : " + bisIndexValue);
             // BIS_Sync
@@ -1780,7 +1791,7 @@ public class BassClientStateMachine extends StateMachine {
                         log("SWITCH_BCAST_SOURCE force source to lost PA sync");
                         Message msg = obtainMessage(UPDATE_BCAST_SOURCE);
                         msg.arg1 = sourceIdToRemove;
-                        msg.arg2 = BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE;
+                        msg.arg2 = BassConstants.PA_SYNC_DO_NOT_SYNC;
                         msg.obj = metaDataToUpdate;
                         /* Pending remove set. Remove source once not synchronized to PA */
                         sendMessage(msg);
@@ -1853,7 +1864,7 @@ public class BassClientStateMachine extends StateMachine {
                         writeBassControlPoint(updateSourceInfo);
                         mPendingOperation = message.what;
                         mPendingSourceId = (byte) sourceId;
-                        if (paSync == BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE) {
+                        if (paSync == BassConstants.PA_SYNC_DO_NOT_SYNC) {
                             setPendingRemove(sourceId, true);
                         }
                         if (metaData.isEncrypted() && (metaData.getBroadcastCode() != null)) {

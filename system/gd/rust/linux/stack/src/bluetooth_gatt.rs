@@ -705,11 +705,7 @@ pub struct BluetoothGattDescriptor {
 }
 
 impl BluetoothGattDescriptor {
-    pub(crate) fn new(
-        uuid: Uuid128Bit,
-        instance_id: i32,
-        permissions: i32,
-    ) -> BluetoothGattDescriptor {
+    pub fn new(uuid: Uuid128Bit, instance_id: i32, permissions: i32) -> BluetoothGattDescriptor {
         BluetoothGattDescriptor { uuid, instance_id, permissions }
     }
 }
@@ -747,7 +743,7 @@ impl BluetoothGattCharacteristic {
     pub const PERMISSION_WRITE_SIGNED: i32 = 1 << 7;
     pub const PERMISSION_WRITE_SIGNED_MITM: i32 = 1 << 8;
 
-    pub(crate) fn new(
+    pub fn new(
         uuid: Uuid128Bit,
         instance_id: i32,
         properties: i32,
@@ -811,7 +807,7 @@ impl BluetoothGattService {
                             elem.uuid.uu,
                             elem.attribute_handle as i32,
                             elem.properties as i32,
-                            0,
+                            elem.permissions as i32,
                         )),
                         None => {
                             // TODO(b/193685325): Log error.
@@ -826,7 +822,7 @@ impl BluetoothGattService {
                             Some(c) => c.descriptors.push(BluetoothGattDescriptor::new(
                                 elem.uuid.uu,
                                 elem.attribute_handle as i32,
-                                0,
+                                elem.permissions as i32,
                             )),
                             None => {
                                 // TODO(b/193685325): Log error.
@@ -859,7 +855,10 @@ impl BluetoothGattService {
         db_out
     }
 
-    fn into_db(service: BluetoothGattService) -> Vec<BtGattDbElement> {
+    fn into_db(
+        service: BluetoothGattService,
+        services: &Vec<BluetoothGattService>,
+    ) -> Vec<BtGattDbElement> {
         let mut db_out: Vec<BtGattDbElement> = vec![];
         db_out.push(BtGattDbElement {
             id: service.instance_id as u16,
@@ -883,7 +882,7 @@ impl BluetoothGattService {
                 end_handle: 0,
                 properties: char.properties as u8,
                 extended_properties: 0,
-                permissions: char.permissions as u16,
+                permissions: (((char.key_size - 7) << 12) + char.permissions) as u16,
             });
 
             for desc in char.descriptors {
@@ -896,12 +895,22 @@ impl BluetoothGattService {
                     end_handle: 0,
                     properties: 0,
                     extended_properties: 0,
-                    permissions: desc.permissions as u16,
+                    permissions: (((char.key_size - 7) << 12) + desc.permissions) as u16,
                 });
             }
         }
 
         for included_service in service.included_services {
+            if !services.iter().any(|s| {
+                s.instance_id == included_service.instance_id && s.uuid == included_service.uuid
+            }) {
+                log::error!(
+                    "Included service with uuid {} not found",
+                    Uuid::from(included_service.uuid)
+                );
+                continue;
+            }
+
             db_out.push(BtGattDbElement {
                 id: included_service.instance_id as u16,
                 uuid: Uuid::from(included_service.uuid),
@@ -2161,21 +2170,25 @@ impl IBluetoothGatt for BluetoothGatt {
         }
 
         // If the client is not specifying scan settings, the default one will be used.
-        let settings = settings.unwrap_or_else(|| ScanSettings {
-            interval: sysprop::get_i32(sysprop::PropertyI32::LeAdvMonScanInterval),
-            window: sysprop::get_i32(sysprop::PropertyI32::LeAdvMonScanWindow),
-            // TODO(b/290300475): Use the default value (Active) here after the issue is addressed.
-            // TODO(b/262746968): Forward the scanning settings from ARC++ APPs.
-            // Either of the TODOs above could fix this workaround for the below issues:
-            // - b/290300475: Offloaded filtering would be broken on some hardwares if scan mode is
-            //                Active. Thus, if |filter| is not none then the scan type should be set
-            //                to Passive.
-            // - b/328711786: Android only supports Active scan, i.e., ARC++ APPs always expect
-            //                Active scan. However, ARC++ bridge is not able to specify the scan
-            //                type through the BluetoothLowEnergyScanSession API. Fortunately ARC++
-            //                bridge is not able to specify the filter either, so when |filter| is
-            //                none we always set the scan type to Active.
-            scan_type: if filter.is_none() { ScanType::Active } else { ScanType::Passive },
+        let settings = settings.unwrap_or_else(|| {
+            // Offloaded filtering + Active scan doesn't work correctly on some QCA chips - It
+            // behaves like "Filter policy: Accept all advertisement" and impacts the power
+            // consumption. Thus, we by default select Passive scan if the quirk is on and the
+            // filter is set.
+            // OTOH the clients are still allowed to explicitly set the scan type Active, so in case
+            // the scan response data is necessary this quirk will not cause any functionality
+            // breakage.
+            let scan_type =
+                if sysprop::get_bool(sysprop::PropertyBool::LeAdvMonQcaQuirk) && filter.is_some() {
+                    ScanType::Passive
+                } else {
+                    ScanType::default()
+                };
+            ScanSettings {
+                interval: sysprop::get_i32(sysprop::PropertyI32::LeAdvMonScanInterval),
+                window: sysprop::get_i32(sysprop::PropertyI32::LeAdvMonScanWindow),
+                scan_type,
+            }
         });
 
         // Multiplexing scanners happens at this layer. The implementations of start_scan
@@ -2801,13 +2814,17 @@ impl IBluetoothGatt for BluetoothGatt {
     }
 
     fn add_service(&self, server_id: i32, service: BluetoothGattService) {
-        self.gatt
-            .as_ref()
-            .unwrap()
-            .lock()
-            .unwrap()
-            .server
-            .add_service(server_id, &BluetoothGattService::into_db(service));
+        if let Some(server) = self.server_context_map.get_by_server_id(server_id) {
+            self.gatt
+                .as_ref()
+                .unwrap()
+                .lock()
+                .unwrap()
+                .server
+                .add_service(server_id, &BluetoothGattService::into_db(service, &server.services));
+        } else {
+            log::error!("Server id {} is not valid", server_id);
+        }
     }
 
     fn remove_service(&self, server_id: i32, handle: i32) {

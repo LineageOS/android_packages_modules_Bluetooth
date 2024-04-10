@@ -46,6 +46,7 @@ public class BassConstants {
     public static final int INVALID_BROADCAST_ID = -1;
     public static final int BROADCAST_ASSIST_ADDRESS_TYPE_PUBLIC = 0;
     public static final int INVALID_SOURCE_ID = -1;
+    public static final int INVALID_PA_SYNC_VALUE = -1;
     public static final int ADV_ADDRESS_DONT_MATCHES_EXT_ADV_ADDRESS = 0x00000001;
     public static final int ADV_ADDRESS_DONT_MATCHES_SOURCE_ADV_ADDRESS = 0x00000002;
     // types of command for select and add Broadcast source operations
@@ -76,4 +77,8 @@ public class BassConstants {
     public static final int BCAST_NAME_AD_TYPE = 0x30;
     public static final int BCAST_NAME_LEN_MIN = 4;
     public static final int BCAST_NAME_LEN_MAX = 32;
+    // PA_Sync parameter value
+    public static final int PA_SYNC_DO_NOT_SYNC = 0x00;
+    public static final int PA_SYNC_PAST_AVAILABLE = 0x01;
+    public static final int PA_SYNC_PAST_NOT_AVAILABLE = 0x02;
 }

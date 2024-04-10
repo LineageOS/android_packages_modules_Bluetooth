@@ -130,12 +130,10 @@ cc_defaults {
         },
     },
     srcs: [
-        ":BluetoothAttSources",
         ":BluetoothCommonSources",
         ":BluetoothDumpsysSources",
         ":BluetoothHalSources",
         ":BluetoothHciSources",
-        ":BluetoothIsoSources",
         ":BluetoothL2capSources",
         ":BluetoothLogRedactionSources",
         ":BluetoothMetricsSources",
@@ -147,7 +145,6 @@ cc_defaults {
         ":BluetoothSyspropsSources",
         "module.cc",
         "module_dumper.cc",
-        "module_state_dumper.cc",
         "stack_manager.cc",
     ],
     generated_headers: [
@@ -284,7 +281,6 @@ cc_binary {
     srcs: [
         ":BluetoothFacade_hci_hal",
         ":BluetoothFacade_hci_layer",
-        ":BluetoothFacade_iso_layer",
         ":BluetoothFacade_l2cap_layer",
         ":BluetoothFacade_neighbor",
         ":BluetoothFacade_security_layer",

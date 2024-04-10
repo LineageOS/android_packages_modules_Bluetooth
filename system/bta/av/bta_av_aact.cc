@@ -535,20 +535,22 @@ static void bta_av_a2dp_sdp_cback(bool found, tA2DP_Service* p_service,
     log::error("BTA_AV_SDP_DISC_FAIL_EVT: peer_addr={}",
                ADDRESS_TO_LOGGABLE_CSTR(p_scb->PeerAddress()));
   }
-  if (found && (p_service != NULL)) {
-    p_scb->SetAvdtpVersion(p_service->avdt_version);
-    DEVICE_IOT_CONFIG_ADDR_SET_HEX_IF_GREATER(
-        p_scb->PeerAddress(), IOT_CONF_KEY_A2DP_VERSION,
-        p_service->avdt_version, IOT_CONF_BYTE_NUM_2);
+  if (found) {
+    if (p_service != NULL) {
+      p_scb->SetAvdtpVersion(p_service->avdt_version);
+      DEVICE_IOT_CONFIG_ADDR_SET_HEX_IF_GREATER(
+          p_scb->PeerAddress(), IOT_CONF_KEY_A2DP_VERSION,
+          p_service->avdt_version, IOT_CONF_BYTE_NUM_2);
 
-    if (p_service->avdt_version != 0) {
-      if (btif_config_set_bin(p_scb->PeerAddress().ToString(),
-                              BTIF_STORAGE_KEY_AVDTP_VERSION,
-                              (const uint8_t*)&p_service->avdt_version,
-                              sizeof(p_service->avdt_version))) {
-      } else {
-        log::warn("Failed to store peer AVDTP version for {}",
-                  ADDRESS_TO_LOGGABLE_CSTR(p_scb->PeerAddress()));
+      if (p_service->avdt_version != 0) {
+        if (btif_config_set_bin(p_scb->PeerAddress().ToString(),
+                                BTIF_STORAGE_KEY_AVDTP_VERSION,
+                                (const uint8_t*)&p_service->avdt_version,
+                                sizeof(p_service->avdt_version))) {
+        } else {
+          log::warn("Failed to store peer AVDTP version for {}",
+                    ADDRESS_TO_LOGGABLE_CSTR(p_scb->PeerAddress()));
+        }
       }
     }
   } else {
@@ -815,11 +817,22 @@ void bta_av_do_disc_a2dp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   bta_sys_app_open(BTA_ID_AV, p_scb->app_id, p_scb->PeerAddress());
 
+  p_scb->uuid_int = p_data->api_open.uuid;
+  if (p_scb->AvdtpVersion() != 0
+      && interop_match_addr_or_name(
+              INTEROP_A2DP_SKIP_SDP_DURING_RECONNECTION,
+              &p_scb->PeerAddress(),
+              &btif_storage_get_remote_device_property)) {
+    log::info("Skip SDP with valid AVDTP version 0x%04x",
+              p_scb->AvdtpVersion());
+    bta_av_a2dp_sdp_cback(true, nullptr, p_scb->PeerAddress());
+    return;
+  }
+
   /* set up parameters */
   db_params.db_len = BTA_AV_DISC_BUF_SIZE;
   db_params.num_attr = 3;
   db_params.p_attrs = attr_list;
-  p_scb->uuid_int = p_data->api_open.uuid;
   p_scb->sdp_discovery_started = true;
   if (p_scb->uuid_int == UUID_SERVCLASS_AUDIO_SINK)
     sdp_uuid = UUID_SERVCLASS_AUDIO_SOURCE;

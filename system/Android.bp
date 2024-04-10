@@ -22,7 +22,6 @@ filegroup {
         "blueberry/facade/hci/le_advertising_manager_facade.proto",
         "blueberry/facade/hci/le_initiator_address_facade.proto",
         "blueberry/facade/hci/le_scanning_manager_facade.proto",
-        "blueberry/facade/iso/facade.proto",
         "blueberry/facade/l2cap/classic/facade.proto",
         "blueberry/facade/l2cap/le/facade.proto",
         "blueberry/facade/neighbor/facade.proto",
@@ -63,8 +62,6 @@ genrule {
         "blueberry/facade/hci/le_initiator_address_facade.pb.h",
         "blueberry/facade/hci/le_scanning_manager_facade.grpc.pb.h",
         "blueberry/facade/hci/le_scanning_manager_facade.pb.h",
-        "blueberry/facade/iso/facade.grpc.pb.h",
-        "blueberry/facade/iso/facade.pb.h",
         "blueberry/facade/l2cap/classic/facade.grpc.pb.h",
         "blueberry/facade/l2cap/classic/facade.pb.h",
         "blueberry/facade/l2cap/le/facade.grpc.pb.h",
@@ -110,8 +107,6 @@ genrule {
         "blueberry/facade/hci/le_initiator_address_facade.pb.cc",
         "blueberry/facade/hci/le_scanning_manager_facade.grpc.pb.cc",
         "blueberry/facade/hci/le_scanning_manager_facade.pb.cc",
-        "blueberry/facade/iso/facade.grpc.pb.cc",
-        "blueberry/facade/iso/facade.pb.cc",
         "blueberry/facade/l2cap/classic/facade.grpc.pb.cc",
         "blueberry/facade/l2cap/classic/facade.pb.cc",
         "blueberry/facade/l2cap/le/facade.grpc.pb.cc",
@@ -146,47 +141,11 @@ genrule {
 }
 
 rust_protobuf {
-    name: "libbt_facade_proto",
-    crate_name: "bt_facade_proto",
-    protos: ["blueberry/facade/common.proto"],
-    grpc_protos: [
-        "blueberry/facade/hal/hal_facade.proto",
-        "blueberry/facade/hci/controller_facade.proto",
-        "blueberry/facade/hci/hci_facade.proto",
-        "blueberry/facade/rootservice.proto",
-    ],
-    source_stem: "facade",
-    host_supported: true,
-    apex_available: [
-        "com.android.btservices",
-    ],
-    min_sdk_version: "30",
-}
-
-rust_protobuf {
     name: "libbt_topshim_facade_protobuf",
     crate_name: "bt_topshim_facade_protobuf",
     source_stem: "topshim_facade",
     host_supported: true,
     grpc_protos: ["blueberry/facade/topshim/facade.proto"],
-}
-
-genrule {
-    name: "libbt_topshim_facade_py_proto",
-    tools: [
-        "aprotoc",
-        "protoc-gen-grpc-python-plugin",
-        "soong_zip",
-    ],
-    cmd: "$(location aprotoc) --plugin=protoc-gen-grpc=$(location protoc-gen-grpc-python-plugin) -Iexternal/protobuf/src -Ipackages/modules/Bluetooth/system $(location blueberry/facade/topshim/facade.proto) --grpc_out=$(genDir) --python_out=$(genDir)",
-    srcs: [
-        ":libprotobuf-internal-protos",
-        "blueberry/facade/topshim/facade.proto",
-    ],
-    out: [
-        "blueberry/facade/topshim/facade_pb2.py",
-        "blueberry/facade/topshim/facade_pb2_grpc.py",
-    ],
 }
 
 // Export system headers for rules that can't simply use `include_dirs`

@@ -1811,7 +1811,8 @@ void L2CA_Dumpsys(int fd) {
     while (ccb != nullptr) {
       LOG_DUMPSYS(
           fd, "  active channel lcid:0x%04x rcid:0x%04x is_ecoc:%s in_use:%s",
-          ccb->local_cid, ccb->remote_cid, ccb->ecoc,
+          ccb->local_cid, ccb->remote_cid,
+          ccb->ecoc ? "true" : "false",
           ccb->in_use ? "true" : "false");
       ccb = ccb->p_next_ccb;
     }
