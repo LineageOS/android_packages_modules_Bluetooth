@@ -1888,6 +1888,60 @@ TEST_F(StateMachineTest, testConfigureQosFailed) {
   testing::Mock::VerifyAndClearExpectations(mock_iso_manager_);
 }
 
+TEST_F(StateMachineTest, testDeviceDisconnectedWhileCigCreated) {
+  const auto context_type = kContextTypeMedia;
+  const auto leaudio_group_id = 3;
+  const auto num_devices = 1;
+
+  // verify proper cleaning when group is disconnected while CIG is creating.
+
+  // Prepare fake connected device in a group
+  auto* group =
+      PrepareSingleTestDeviceGroup(leaudio_group_id, context_type, num_devices);
+  ASSERT_EQ(group->Size(), num_devices);
+
+  PrepareConfigureCodecHandler(group);
+
+  ON_CALL(*mock_iso_manager_, CreateCig).WillByDefault(Return());
+
+  auto* leAudioDevice = group->GetFirstDevice();
+  EXPECT_CALL(gatt_queue, WriteCharacteristic(leAudioDevice->conn_id_,
+                                              leAudioDevice->ctp_hdls_.val_hdl,
+                                              _, GATT_WRITE_NO_RSP, _, _))
+      .Times(1);
+
+  EXPECT_CALL(*mock_iso_manager_, CreateCig(_, _)).Times(1);
+  EXPECT_CALL(*mock_iso_manager_, EstablishCis(_)).Times(0);
+  EXPECT_CALL(*mock_iso_manager_, SetupIsoDataPath(_, _)).Times(0);
+  EXPECT_CALL(*mock_iso_manager_, RemoveIsoDataPath(_, _)).Times(0);
+  EXPECT_CALL(*mock_iso_manager_, DisconnectCis(_, _)).Times(0);
+
+  InjectInitialIdleNotification(group);
+
+  // Start the configuration and stream Media content
+  ASSERT_TRUE(LeAudioGroupStateMachine::Get()->StartStream(
+      group, context_type,
+      {.sink = types::AudioContexts(context_type),
+       .source = types::AudioContexts(context_type)}));
+
+  // Check if group has transitioned to a proper state
+  ASSERT_EQ(group->GetState(),
+            types::AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED);
+
+  testing::Mock::VerifyAndClearExpectations(mock_iso_manager_);
+
+  InjectAclDisconnected(group, leAudioDevice);
+  std::vector<uint16_t> conn_handles = {0x0001, 0x0002};
+  int cig_id = 1;
+
+  EXPECT_CALL(*mock_iso_manager_, RemoveCig(_, _)).Times(1);
+  LeAudioGroupStateMachine::Get()->ProcessHciNotifOnCigCreate(
+      group, HCI_SUCCESS, cig_id, conn_handles);
+
+  ASSERT_EQ(1, get_func_call_count("alarm_cancel"));
+  testing::Mock::VerifyAndClearExpectations(mock_iso_manager_);
+}
+
 TEST_F(StateMachineTest, testStreamCreationError) {
   /* Device is banded headphones with 1x snk + 0x src ase
    * (1xunidirectional CIS) with channel count 2 (for stereo
