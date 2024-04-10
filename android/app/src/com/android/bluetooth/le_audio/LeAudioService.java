@@ -22,7 +22,6 @@ import static android.bluetooth.IBluetoothLeAudio.LE_AUDIO_GROUP_ID_INVALID;
 
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastFeatureSupport;
 import static com.android.bluetooth.flags.Flags.leaudioApiSynchronizedBlockFix;
-import static com.android.bluetooth.flags.Flags.leaudioGettingActiveStateSupport;
 import static com.android.bluetooth.Utils.enforceBluetoothPrivilegedPermission;
 import static com.android.modules.utils.build.SdkLevel.isAtLeastU;
 
@@ -1949,20 +1948,30 @@ public class LeAudioService extends ProfileService {
     /**
      * Set the active device group.
      *
-     * @param hasFallbackDevice hasFallbackDevice whether any fallback device exists when
-     *                          {@code device} is null.
+     * @param hasFallbackDevice hasFallbackDevice whether any fallback device exists when {@code
+     *     device} is null.
      */
-    private void setActiveGroupWithDevice(BluetoothDevice device, boolean hasFallbackDevice) {
+    private boolean setActiveGroupWithDevice(BluetoothDevice device, boolean hasFallbackDevice) {
         int groupId = LE_AUDIO_GROUP_ID_INVALID;
 
         if (device != null) {
             LeAudioDeviceDescriptor descriptor = getDeviceDescriptor(device);
             if (descriptor == null) {
                 Log.e(TAG, "setActiveGroupWithDevice: No valid descriptor for device: " + device);
-                return;
+                return false;
             }
 
             groupId = descriptor.mGroupId;
+
+            if (!isGroupAvailableForStream(groupId)) {
+                Log.e(
+                        TAG,
+                        "setActiveGroupWithDevice: groupId "
+                                + groupId
+                                + " is not available for streaming");
+                return false;
+            }
+
             clearInactiveDueToContextTypeFlags();
         }
 
@@ -1987,7 +1996,7 @@ public class LeAudioService extends ProfileService {
             // If broadcast is ongoing and need to update unicast fallback active group
             // we need to update the cached group id and skip changing the active device
             updateFallbackUnicastGroupIdForBroadcast(groupId);
-            return;
+            return true;
         }
 
         LeAudioGroupDescriptor groupDescriptor = getGroupDescriptor(currentlyActiveGroupId);
@@ -2006,7 +2015,7 @@ public class LeAudioService extends ProfileService {
                                 + mExposedActiveDevice);
                 sentActiveDeviceChangeIntent(mExposedActiveDevice);
             }
-            return;
+            return true;
         }
 
         if (currentlyActiveGroupId != LE_AUDIO_GROUP_ID_INVALID
@@ -2017,7 +2026,7 @@ public class LeAudioService extends ProfileService {
 
         if (!mLeAudioNativeIsInitialized) {
             Log.e(TAG, "Le Audio not initialized properly.");
-            return;
+            return false;
         }
 
         if (Flags.leaudioGettingActiveStateSupport()) {
@@ -2040,6 +2049,7 @@ public class LeAudioService extends ProfileService {
              */
             handleGroupTransitToInactive(currentlyActiveGroupId);
         }
+        return true;
     }
 
     /**
@@ -2090,8 +2100,7 @@ public class LeAudioService extends ProfileService {
                 }
             }
         }
-        setActiveGroupWithDevice(device, false);
-        return true;
+        return setActiveGroupWithDevice(device, false);
     }
 
     /**
@@ -3713,6 +3722,27 @@ public class LeAudioService extends ProfileService {
             }
 
             return descriptor.mGroupId;
+        } finally {
+            mGroupReadLock.unlock();
+        }
+    }
+
+    /**
+     * Check if group is available for streaming. If there is no available context types then group
+     * is not available for streaming.
+     *
+     * @param groupId groupid
+     * @return true if available, false otherwise
+     */
+    public boolean isGroupAvailableForStream(int groupId) {
+        mGroupReadLock.lock();
+        try {
+            LeAudioGroupDescriptor descriptor = getGroupDescriptor(groupId);
+            if (descriptor == null) {
+                Log.e(TAG, "getGroupId: No valid descriptor for groupId: " + groupId);
+                return false;
+            }
+            return descriptor.mAvailableContexts != 0;
         } finally {
             mGroupReadLock.unlock();
         }
