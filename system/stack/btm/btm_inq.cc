@@ -25,6 +25,7 @@
  *
  ******************************************************************************/
 
+#include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -862,9 +863,14 @@ tBTM_STATUS BTM_CancelRemoteDeviceName(void) {
       /* Cancel remote name request for LE device, and process remote name
        * callback. */
       btm_inq_rmt_name_failed_cancelled();
-    } else
+    } else {
       bluetooth::shim::ACL_CancelRemoteNameRequest(
           btm_cb.btm_inq_vars.remname_bda);
+      if (IS_FLAG_ENABLED(rnr_reset_state_at_cancel)) {
+        btm_process_remote_name(&btm_cb.btm_inq_vars.remname_bda, nullptr, 0,
+                                HCI_ERR_UNSPECIFIED);
+      }
+    }
     return (BTM_CMD_STARTED);
   } else
     return (BTM_WRONG_MODE);
