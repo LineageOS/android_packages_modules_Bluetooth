@@ -130,7 +130,6 @@ cc_defaults {
         },
     },
     srcs: [
-        ":BluetoothAttSources",
         ":BluetoothCommonSources",
         ":BluetoothDumpsysSources",
         ":BluetoothHalSources",
