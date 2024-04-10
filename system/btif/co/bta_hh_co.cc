@@ -780,7 +780,7 @@ void bta_hh_le_co_rpt_info(const tAclLinkSpec& link_spec,
                            UNUSED_ATTR uint8_t app_id) {
   unsigned idx = 0;
 
-  std::string addrstr = link_spec.addrt.ToString();
+  std::string addrstr = link_spec.addrt.bda.ToString();
   const char* bdstr = addrstr.c_str();
 
   size_t len = btif_config_get_bin_length(bdstr, BTIF_STORAGE_KEY_HID_REPORT);
@@ -821,7 +821,7 @@ void bta_hh_le_co_rpt_info(const tAclLinkSpec& link_spec,
 tBTA_HH_RPT_CACHE_ENTRY* bta_hh_le_co_cache_load(const tAclLinkSpec& link_spec,
                                                  uint8_t* p_num_rpt,
                                                  UNUSED_ATTR uint8_t app_id) {
-  std::string addrstr = link_spec.addrt.ToString();
+  std::string addrstr = link_spec.addrt.bda.ToString();
   const char* bdstr = addrstr.c_str();
 
   size_t len = btif_config_get_bin_length(bdstr, BTIF_STORAGE_KEY_HID_REPORT);
@@ -861,7 +861,7 @@ tBTA_HH_RPT_CACHE_ENTRY* bta_hh_le_co_cache_load(const tAclLinkSpec& link_spec,
  ******************************************************************************/
 void bta_hh_le_co_reset_rpt_cache(const tAclLinkSpec& link_spec,
                                   UNUSED_ATTR uint8_t app_id) {
-  std::string addrstr = link_spec.addrt.ToString();
+  std::string addrstr = link_spec.addrt.bda.ToString();
   const char* bdstr = addrstr.c_str();
 
   btif_config_remove(bdstr, BTIF_STORAGE_KEY_HID_REPORT);
