@@ -10,7 +10,6 @@ package {
 // AIDL interface used in service-bluetooth
 java_library {
     name: "service-bluetooth-binder-aidl",
-    defaults: ["bluetooth-module-sdk-version-defaults"],
     visibility: ["//packages/modules/Bluetooth:__subpackages__"],
     srcs: [
         "android/bluetooth/IBluetoothManager.aidl",
@@ -23,4 +22,5 @@ java_library {
     apex_available: [
         "com.android.btservices",
     ],
+    min_sdk_version: "Tiramisu",
 }
