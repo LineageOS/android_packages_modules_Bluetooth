@@ -111,8 +111,6 @@ void SecurityModule::Start() {
       GetDependency<hci::Controller>(),
       GetDependency<storage::StorageModule>(),
       GetDependency<neighbor::NameDbModule>());
-
-  GetDependency<hci::AclManager>()->SetSecurityModule(this);
 }
 
 void SecurityModule::Stop() {

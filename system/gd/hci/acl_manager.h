@@ -33,9 +33,6 @@
 #include "os/handler.h"
 
 namespace bluetooth {
-namespace security {
-class SecurityModule;
-}  // namespace security
 namespace shim {
 namespace legacy {
 class Acl;
@@ -142,10 +139,6 @@ class AclManager : public Module {
       uint8_t adv_set_id,
       hci::AddressWithType adv_address,
       bool is_discoverable);
-
-  // In order to avoid circular dependency use setter rather than module
-  // dependency.
-  virtual void SetSecurityModule(security::SecurityModule* security_module);
 
   virtual LeAddressManager* GetLeAddressManager();
 

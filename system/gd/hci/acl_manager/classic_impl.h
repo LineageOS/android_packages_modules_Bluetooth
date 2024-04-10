@@ -24,14 +24,15 @@
 #include "common/init_flags.h"
 #include "hci/acl_manager/acl_scheduler.h"
 #include "hci/acl_manager/assembler.h"
+#include "hci/acl_manager/connection_callbacks.h"
+#include "hci/acl_manager/connection_management_callbacks.h"
 #include "hci/acl_manager/round_robin_scheduler.h"
 #include "hci/class_of_device.h"
 #include "hci/controller.h"
 #include "hci/event_checkers.h"
+#include "hci/hci_layer.h"
 #include "hci/remote_name_request.h"
 #include "os/metrics.h"
-#include "security/security_manager_listener.h"
-#include "security/security_module.h"
 
 namespace bluetooth {
 namespace hci {
@@ -49,7 +50,7 @@ struct acl_connection {
   ConnectionManagementCallbacks* connection_management_callbacks_ = nullptr;
 };
 
-struct classic_impl : public security::ISecurityManagerListener {
+struct classic_impl {
   classic_impl(
       HciLayer* hci_layer,
       Controller* controller,
@@ -78,7 +79,6 @@ struct classic_impl : public security::ISecurityManagerListener {
   ~classic_impl() {
     hci_layer_->PutAclConnectionInterface();
     connections.reset();
-    security_manager_.reset();
   }
 
   void on_classic_event(EventView event_packet) {
@@ -657,23 +657,6 @@ struct classic_impl : public security::ISecurityManagerListener {
     });
   }
 
-  void OnEncryptionStateChanged(EncryptionChangeView encryption_change_view) override {
-    if (!encryption_change_view.IsValid()) {
-      log::error("Invalid packet");
-      return;
-    } else if (encryption_change_view.GetStatus() != ErrorCode::SUCCESS) {
-      auto status = encryption_change_view.GetStatus();
-      std::string error_code = ErrorCodeText(status);
-      log::error("error_code {}", error_code);
-      return;
-    }
-    uint16_t handle = encryption_change_view.GetConnectionHandle();
-    connections.execute(handle, [=](ConnectionManagementCallbacks* callbacks) {
-      EncryptionEnabled enabled = encryption_change_view.GetEncryptionEnabled();
-      callbacks->OnEncryptionChange(enabled);
-    });
-  }
-
   void on_role_change(EventView packet) {
     RoleChangeView role_change_view = RoleChangeView::Create(packet);
     if (!role_change_view.IsValid()) {
@@ -750,17 +733,6 @@ struct classic_impl : public security::ISecurityManagerListener {
         std::move(builder), handler_->BindOnce(check_status<RejectConnectionRequestStatusView>));
   }
 
-  void OnDeviceBonded(bluetooth::hci::AddressWithType /* device */) override {}
-  void OnDeviceUnbonded(bluetooth::hci::AddressWithType /* device */) override {}
-  void OnDeviceBondFailed(
-      bluetooth::hci::AddressWithType /* device */,
-      security::PairingFailure /* status */) override {}
-
-  void set_security_module(security::SecurityModule* security_module) {
-    security_manager_ = security_module->GetSecurityManager();
-    security_manager_->RegisterCallbackListener(this, handler_);
-  }
-
   uint16_t HACK_get_handle(Address address) {
     return connections.HACK_get_handle(address);
   }
@@ -793,8 +765,6 @@ struct classic_impl : public security::ISecurityManagerListener {
 
   common::Callback<bool(Address, ClassOfDevice)> should_accept_connection_;
   std::unique_ptr<RoleChangeView> delayed_role_change_ = nullptr;
-
-  std::unique_ptr<security::SecurityManager> security_manager_;
 };
 
 }  // namespace acl_manager
