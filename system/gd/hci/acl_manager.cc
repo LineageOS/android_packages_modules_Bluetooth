@@ -390,10 +390,6 @@ void AclManager::OnAdvertisingSetTerminated(
   }
 }
 
-void AclManager::SetSecurityModule(security::SecurityModule* security_module) {
-  CallOn(pimpl_->classic_impl_, &classic_impl::set_security_module, security_module);
-}
-
 void AclManager::OnClassicSuspendInitiatedDisconnect(uint16_t handle, ErrorCode reason) {
   CallOn(pimpl_->classic_impl_, &classic_impl::on_classic_disconnect, handle, reason);
 }
