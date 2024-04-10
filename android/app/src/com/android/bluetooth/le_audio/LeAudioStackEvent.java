@@ -294,6 +294,8 @@ public class LeAudioStackEvent {
                         return "ACTION_DISABLE";
                     case HEALTH_RECOMMENDATION_ACTION_CONSIDER_DISABLING:
                         return "ACTION_CONSIDER_DISABLING";
+                    case HEALTH_RECOMMENDATION_ACTION_INACTIVATE_GROUP:
+                        return "ACTION_INACTIVATE_GROUP";
                     default:
                         return "UNKNOWN";
                 }
