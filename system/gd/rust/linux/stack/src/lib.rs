@@ -97,7 +97,6 @@ pub enum Message {
     ConnectionCallbackDisconnected(u32),
 
     // Some delayed actions for the adapter.
-    TriggerUpdateConnectableMode,
     DelayedAdapterActions(DelayedActions),
 
     // Follows IBluetooth's on_device_(dis)connected callback but doesn't require depending on
@@ -316,13 +315,6 @@ impl Stack {
 
                 Message::ConnectionCallbackDisconnected(id) => {
                     bluetooth.lock().unwrap().connection_callback_disconnected(id);
-                }
-
-                Message::TriggerUpdateConnectableMode => {
-                    let is_listening = bluetooth_socketmgr.lock().unwrap().is_listening();
-                    bluetooth.lock().unwrap().handle_delayed_actions(
-                        DelayedActions::UpdateConnectableMode(is_listening),
-                    );
                 }
 
                 Message::DelayedAdapterActions(action) => {
