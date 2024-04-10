@@ -16,7 +16,8 @@ use bt_topshim::profiles::{gatt::LePhy, ProfileConnectionState};
 use btstack::battery_manager::IBatteryManager;
 use btstack::bluetooth::{BluetoothDevice, IBluetooth};
 use btstack::bluetooth_gatt::{
-    BluetoothGattService, GattDbElementType, GattWriteType, IBluetoothGatt,
+    BluetoothGattCharacteristic, BluetoothGattDescriptor, BluetoothGattService, GattDbElementType,
+    GattWriteType, IBluetoothGatt,
 };
 use btstack::bluetooth_media::{IBluetoothMedia, IBluetoothTelephony};
 use btstack::bluetooth_qa::IBluetoothQA;
@@ -28,9 +29,19 @@ const INDENT_CHAR: &str = " ";
 const BAR1_CHAR: &str = "=";
 const BAR2_CHAR: &str = "-";
 const MAX_MENU_CHAR_WIDTH: usize = 72;
+
 const GATT_CLIENT_APP_UUID: &str = "12345678123456781234567812345678";
 const GATT_SERVER_APP_UUID: &str = "12345678123456781234567812345679";
 const HEART_RATE_SERVICE_UUID: &str = "0000180D-0000-1000-8000-00805F9B34FB";
+const HEART_RATE_MEASUREMENT_UUID: &str = "00002A37-0000-1000-8000-00805F9B34FB";
+const GENERIC_UUID: &str = "00000000-0000-1000-8000-00805F9B34FB";
+const CCC_DESCRIPTOR_UUID: &str = "00002902-0000-1000-8000-00805F9B34FB";
+const BATTERY_SERVICE_UUID: &str = "0000180F-0000-1000-8000-00805F9B34FB";
+
+const PROPERTY_WRITE: i32 = 1 << 3;
+const PROPERTY_NOTIFY: i32 = 1 << 4;
+const PERMISSION_READ: i32 = 1 << 0;
+const PERMISSION_WRITE: i32 = 1 << 1;
 
 enum CommandError {
     // Command not handled due to invalid arguments.
@@ -227,13 +238,19 @@ fn build_commands() -> HashMap<String, CommandOption> {
                 String::from("gatt unregister-server <server_id>"),
                 String::from("gatt server-connect <server_id> <client_address>"),
                 String::from("gatt server-disconnect <server_id> <client_address>"),
-                String::from("gatt server-add-heartrate-service <server_id>"),
+                String::from("gatt server-add-basic-service <server_id>"),
+                String::from("gatt server-add-service <server_id> <incl_service_instance_id>"),
                 String::from("gatt server-remove-service <server_id> <service_handle>"),
                 String::from("gatt server-clear-all-services <server_id>"),
                 String::from("gatt server-set-direct-connect <true|false>"),
                 String::from("gatt server-set-connect-transport <Bredr|LE|Auto>"),
             ],
-            description: String::from("GATT tools"),
+            description: String::from(
+                "GATT tools\n\n
+                Creating a GATT Server:\n
+                Register a server, then add a basic (battery) service. After, a more complex\n
+                (heartrate) service can be created with previously created services included.",
+            ),
             function_pointer: CommandHandler::cmd_gatt,
         },
     );
@@ -1367,17 +1384,72 @@ impl CommandHandler {
                     return Err("Disconnection was unsuccessful".into());
                 }
             }
-            "server-add-heartrate-service" => {
-                let uuid = Uuid::from(UuidHelper::from_string(HEART_RATE_SERVICE_UUID).unwrap());
+            "server-add-basic-service" => {
+                let service_uuid =
+                    Uuid::from(UuidHelper::from_string(BATTERY_SERVICE_UUID).unwrap());
 
                 let server_id = String::from(get_arg(args, 1)?)
                     .parse::<i32>()
                     .or(Err("Failed to parse server_id"))?;
+
                 let service = BluetoothGattService::new(
-                    uuid.into(),
+                    service_uuid.into(),
                     0, // libbluetooth assigns this handle once the service is added
                     GattDbElementType::PrimaryService.into(),
                 );
+
+                self.lock_context().gatt_dbus.as_mut().unwrap().add_service(server_id, service);
+            }
+            "server-add-service" => {
+                let service_uuid =
+                    Uuid::from(UuidHelper::from_string(HEART_RATE_SERVICE_UUID).unwrap());
+                let characteristic_uuid =
+                    Uuid::from(UuidHelper::from_string(HEART_RATE_MEASUREMENT_UUID).unwrap());
+                let descriptor_uuid = Uuid::from(UuidHelper::from_string(GENERIC_UUID).unwrap());
+                let ccc_descriptor_uuid =
+                    Uuid::from(UuidHelper::from_string(CCC_DESCRIPTOR_UUID).unwrap());
+                let included_service_uuid =
+                    Uuid::from(UuidHelper::from_string(BATTERY_SERVICE_UUID).unwrap());
+
+                let server_id = String::from(get_arg(args, 1)?)
+                    .parse::<i32>()
+                    .or(Err("Failed to parse server_id"))?;
+                let included_service_instance_id =
+                    String::from(get_arg(args, 2)?)
+                        .parse::<i32>()
+                        .or(Err("Failed to parse included service instance id"))?;
+
+                let mut service = BluetoothGattService::new(
+                    service_uuid.into(),
+                    0,
+                    GattDbElementType::PrimaryService.into(),
+                );
+                let included_service = BluetoothGattService::new(
+                    included_service_uuid.into(),
+                    included_service_instance_id,
+                    GattDbElementType::IncludedService.into(),
+                );
+                let mut characteristic = BluetoothGattCharacteristic::new(
+                    characteristic_uuid.into(),
+                    0,
+                    PROPERTY_WRITE + PROPERTY_NOTIFY,
+                    PERMISSION_READ + PERMISSION_WRITE,
+                );
+                let descriptor = BluetoothGattDescriptor::new(
+                    descriptor_uuid.into(),
+                    0,
+                    PERMISSION_READ + PERMISSION_WRITE,
+                );
+                let ccc_descriptor = BluetoothGattDescriptor::new(
+                    ccc_descriptor_uuid.into(),
+                    0,
+                    PERMISSION_READ + PERMISSION_WRITE,
+                );
+
+                service.included_services.push(included_service);
+                characteristic.descriptors.push(ccc_descriptor);
+                characteristic.descriptors.push(descriptor);
+                service.characteristics.push(characteristic);
 
                 self.lock_context().gatt_dbus.as_mut().unwrap().add_service(server_id, service);
             }
