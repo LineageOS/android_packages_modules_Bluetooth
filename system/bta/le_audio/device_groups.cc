@@ -29,6 +29,7 @@
 #include "hci/controller_interface.h"
 #include "internal_include/bt_trace.h"
 #include "le_audio/codec_manager.h"
+#include "le_audio/devices.h"
 #include "le_audio/le_audio_types.h"
 #include "le_audio_set_configuration_provider.h"
 #include "le_audio_utils.h"
@@ -783,11 +784,90 @@ bool LeAudioDeviceGroup::UpdateAudioContextAvailability(void) {
   return old_contexts != GetAvailableContexts();
 }
 
+CodecManager::UnicastConfigurationRequirements
+LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(
+    types::LeAudioContextType ctx_type) const {
+  auto new_req = CodecManager::UnicastConfigurationRequirements{
+      .audio_context_type = ctx_type,
+  };
+
+  // Define a requirement for each location. Knowing codec specific
+  // capabilities (i.e. multiplexing capability) the config provider can
+  // determine the number of ASEs to activate.
+  for (auto const& weak_dev_ptr : leAudioDevices_) {
+    auto device = weak_dev_ptr.lock();
+    BidirectionalPair<bool> has_location = {false, false};
+
+    for (auto direction :
+         {types::kLeAudioDirectionSink, types::kLeAudioDirectionSource}) {
+      if (device->GetAseCount(direction) == 0) {
+        log::warn("Device {} has no ASEs for direction: {}", device->address_,
+                  (int)direction);
+        continue;
+      }
+
+      auto& dev_locations = (direction == types::kLeAudioDirectionSink)
+                                ? device->snk_audio_locations_
+                                : device->src_audio_locations_;
+      if (dev_locations.none()) {
+        log::warn("Device {} has no locations for direction: {}",
+                  device->address_, (int)direction);
+        continue;
+      }
+
+      has_location.get(direction) = true;
+      auto& direction_req = (direction == types::kLeAudioDirectionSink)
+                                ? new_req.sink_requirements
+                                : new_req.source_requirements;
+      if (!direction_req) {
+        direction_req =
+            std::vector<CodecManager::UnicastConfigurationRequirements::
+                            DeviceDirectionRequirements>();
+      }
+
+      // Pass the audio channel allocation requirement
+      auto locations = dev_locations.to_ulong();
+      CodecManager::UnicastConfigurationRequirements::
+          DeviceDirectionRequirements config_req;
+      config_req.params.Add(
+          codec_spec_conf::kLeAudioLtvTypeAudioChannelAllocation,
+          (uint32_t)locations);
+      log::warn("Device {} pushes requirement, location: {}, direction: {}",
+                device->address_, (int)locations, (int)direction);
+      direction_req->push_back(std::move(config_req));
+    }
+
+    // Push sink PACs if there are some sink requirements
+    if (has_location.sink && !device->snk_pacs_.empty()) {
+      if (!new_req.sink_pacs) {
+        new_req.sink_pacs = std::vector<types::acs_ac_record>{};
+      }
+      for (auto const& [_, pac_char] : device->snk_pacs_) {
+        for (auto const& pac_record : pac_char) {
+          new_req.sink_pacs->push_back(pac_record);
+        }
+      }
+    }
+
+    // Push source PACs if there are some source requirements
+    if (has_location.source && !device->src_pacs_.empty()) {
+      if (!new_req.source_pacs) {
+        new_req.source_pacs = std::vector<types::acs_ac_record>{};
+      }
+      for (auto& [_, pac_char] : device->src_pacs_) {
+        for (auto const& pac_record : pac_char) {
+          new_req.source_pacs->push_back(pac_record);
+        }
+      }
+    }
+  }
+
+  return new_req;
+}
+
 bool LeAudioDeviceGroup::UpdateAudioSetConfigurationCache(
     LeAudioContextType ctx_type) const {
-  CodecManager::UnicastConfigurationRequirements requirements = {
-      .audio_context_type = ctx_type};
-
+  auto requirements = GetAudioSetConfigurationRequirements(ctx_type);
   auto new_conf = CodecManager::GetInstance()->GetCodecConfig(
       requirements,
       std::bind(&LeAudioDeviceGroup::FindFirstSupportedConfiguration, this,
@@ -1375,10 +1455,12 @@ bool LeAudioDeviceGroup::IsAudioSetConfigurationSupported(
                    static_cast<int>(ase_cnt - active_ase_cnt));
 
       for (auto const& ent : ase_confs) {
+        // Verify PACS only if this is transparent LTV format
         auto const& pacs = (direction == types::kLeAudioDirectionSink)
                                ? device->snk_pacs_
                                : device->src_pacs_;
-        if (!utils::GetConfigurationSupportedPac(pacs, ent.codec)) {
+        if (utils::IsCodecUsingLtvFormat(ent.codec.id) &&
+            !utils::GetConfigurationSupportedPac(pacs, ent.codec)) {
           log::debug(
               "Insufficient PAC for {}",
               direction == types::kLeAudioDirectionSink ? "sink" : "source");

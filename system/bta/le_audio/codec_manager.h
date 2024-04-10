@@ -62,6 +62,17 @@ class CodecManager {
  public:
   struct UnicastConfigurationRequirements {
     ::bluetooth::le_audio::types::LeAudioContextType audio_context_type;
+    std::optional<std::vector<types::acs_ac_record>> sink_pacs;
+    std::optional<std::vector<types::acs_ac_record>> source_pacs;
+
+    struct DeviceDirectionRequirements {
+      uint8_t target_latency = types::kTargetLatencyUndefined;
+      uint8_t target_Phy = types::kTargetPhyUndefined;
+      types::LeAudioLtvMap params;
+    };
+
+    std::optional<std::vector<DeviceDirectionRequirements>> sink_requirements;
+    std::optional<std::vector<DeviceDirectionRequirements>> source_requirements;
   };
 
   /* The verifier function checks each possible configuration (from the set of

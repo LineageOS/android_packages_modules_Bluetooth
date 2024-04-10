@@ -800,6 +800,7 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
     group->ReloadAudioDirections();
     group->UpdateAudioContextAvailability();
     group->InvalidateCachedConfigurations();
+    group->InvalidateGroupStrategy();
 
     /* If group is in Idle and not transitioning, update the current group
      * audio context availability which could change due to disconnected group
@@ -1906,7 +1907,13 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
       conf.target_latency = ase->target_latency;
       conf.target_phy = group->GetTargetPhy(ase->direction);
       conf.codec_id = ase->codec_id;
-      conf.codec_config = ase->codec_config.RawPacket();
+
+      if (!ase->vendor_codec_config.empty()) {
+        log::debug("Using vendor codec configuration.");
+        conf.codec_config = ase->vendor_codec_config;
+      } else {
+        conf.codec_config = ase->codec_config.RawPacket();
+      }
       confs.push_back(conf);
 
       msg_stream << "ASE_ID " << +conf.ase_id << ",";

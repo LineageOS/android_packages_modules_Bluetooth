@@ -264,7 +264,7 @@ constexpr uint8_t kLeAudioCodecChannelCountFourChannel = 0x08;
 constexpr uint8_t kLeAudioCodecChannelCountFiveChannel = 0x10;
 constexpr uint8_t kLeAudioCodecChannelCountSixChannel = 0x20;
 constexpr uint8_t kLeAudioCodecChannelCountSevenChannel = 0x40;
-constexpr uint8_t kLeAudioCodecChannelCountEightChannel = 0x40;
+constexpr uint8_t kLeAudioCodecChannelCountEightChannel = 0x80;
 
 /* Octets Per Frame */
 constexpr uint16_t kLeAudioCodecFrameLen30 =
@@ -316,10 +316,12 @@ constexpr uint8_t kLeAudioDirectionBoth =
 constexpr uint8_t kFramingUnframedPduSupported = 0x00;
 constexpr uint8_t kFramingUnframedPduUnsupported = 0x01;
 
+constexpr uint8_t kTargetLatencyUndefined = 0x00;
 constexpr uint8_t kTargetLatencyLower = 0x01;
 constexpr uint8_t kTargetLatencyBalancedLatencyReliability = 0x02;
 constexpr uint8_t kTargetLatencyHigherReliability = 0x03;
 
+constexpr uint8_t kTargetPhyUndefined = 0x00;
 constexpr uint8_t kTargetPhy1M = 0x01;
 constexpr uint8_t kTargetPhy2M = 0x02;
 constexpr uint8_t kTargetPhyCoded = 0x03;
@@ -1063,6 +1065,7 @@ struct ase {
   /* Codec configuration */
   LeAudioCodecId codec_id;
   LeAudioLtvMap codec_config;
+  std::vector<uint8_t> vendor_codec_config;
   uint8_t channel_count;
 
   /* Set to true, if the codec is implemented in BT controller, false if it's
@@ -1118,6 +1121,8 @@ struct CodecConfigSetting {
 
   /* Codec Specific Configuration */
   types::LeAudioLtvMap params;
+  /* Vendor Specific Configuration */
+  std::vector<uint8_t> vendor_params;
 
   /* Channel count per device */
   uint8_t channel_count_per_iso_stream;
@@ -1139,7 +1144,7 @@ struct CodecConfigSetting {
     return (id == other.id) &&
            (channel_count_per_iso_stream ==
             other.channel_count_per_iso_stream) &&
-           (params == other.params);
+           (vendor_params == other.vendor_params) && (params == other.params);
   }
 
   bool operator!=(const CodecConfigSetting& other) const {
@@ -1202,9 +1207,7 @@ struct AudioSetConfiguration {
   }
 
   bool operator==(const AudioSetConfiguration& other) const {
-    return ((packing == other.packing) &&
-            // (codec_flags == other.codec_flags) &&
-            (confs == other.confs));
+    return ((packing == other.packing) && (confs == other.confs));
   }
 };
 
