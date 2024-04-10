@@ -2,6 +2,13 @@ package: "com.android.bluetooth.flags"
 container: "com.android.btservices"
 
 flag {
+    name: "key_missing_classic_device"
+    namespace: "bluetooth"
+    description: "Key missing broadcast for Classic devices"
+    bug: "333634398"
+}
+
+flag {
     name: "correct_bond_type_of_loaded_devices"
     namespace: "bluetooth"
     description: "Mark the bond type of loaded device as persistent"
