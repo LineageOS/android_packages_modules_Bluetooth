@@ -229,12 +229,14 @@ class BluetoothManagerService {
         private int mReason;
         private String mPackageName;
         private boolean mEnable;
+        private boolean mIsBle;
         private long mTimestamp;
 
-        ActiveLog(int reason, String packageName, boolean enable, long timestamp) {
+        ActiveLog(int reason, String packageName, boolean enable, boolean isBle, long timestamp) {
             mReason = reason;
             mPackageName = packageName;
             mEnable = enable;
+            mIsBle = isBle;
             mTimestamp = timestamp;
             Log.d(TAG, this.toString());
         }
@@ -242,11 +244,10 @@ class BluetoothManagerService {
         @Override
         public String toString() {
             return timeToLog(mTimestamp)
-                    + (mEnable ? "  Enabled " : " Disabled ")
-                    + " due to "
-                    + getEnableDisableReasonString(mReason)
-                    + " by "
-                    + mPackageName;
+                    + ("\tPackage [" + mPackageName + "]")
+                    + " requested to"
+                    + (" [" + (mEnable ? "Enable" : "Disable") + (mIsBle ? "Ble" : "") + "]")
+                    + (".\tReason is " + getEnableDisableReasonString(mReason));
         }
 
         long getTimestamp() {
@@ -1039,7 +1040,7 @@ class BluetoothManagerService {
                 disableBleScanMode();
             }
             if (!mEnableExternal) {
-                addActiveLog(ENABLE_DISABLE_REASON_APPLICATION_REQUEST, packageName, false);
+                addActiveLog(ENABLE_DISABLE_REASON_APPLICATION_REQUEST, packageName, false, true);
                 sendBrEdrDownCallback();
             }
         }
@@ -2085,7 +2086,7 @@ class BluetoothManagerService {
 
     private void sendDisableMsg(int reason, String packageName) {
         mHandler.sendEmptyMessage(MESSAGE_DISABLE);
-        addActiveLog(reason, packageName, false);
+        addActiveLog(reason, packageName, false, false);
     }
 
     private void sendEnableMsg(boolean quietMode, int reason) {
@@ -2098,21 +2099,22 @@ class BluetoothManagerService {
 
     private void sendEnableMsg(boolean quietMode, int reason, String packageName, boolean isBle) {
         mHandler.obtainMessage(MESSAGE_ENABLE, quietMode ? 1 : 0, isBle ? 1 : 0).sendToTarget();
-        addActiveLog(reason, packageName, true);
+        addActiveLog(reason, packageName, true, isBle);
         mLastEnabledTime = SystemClock.elapsedRealtime();
     }
 
     private void addActiveLog(int reason, boolean enable) {
-        addActiveLog(reason, mContext.getPackageName(), enable);
+        addActiveLog(reason, mContext.getPackageName(), enable, false);
     }
 
-    private void addActiveLog(int reason, String packageName, boolean enable) {
+    private void addActiveLog(int reason, String packageName, boolean enable, boolean isBle) {
         ActiveLog lastActiveLog = mActiveLogs.peekLast();
         synchronized (mActiveLogs) {
             if (mActiveLogs.size() > ACTIVE_LOG_MAX_SIZE) {
                 mActiveLogs.remove();
             }
-            mActiveLogs.add(new ActiveLog(reason, packageName, enable, System.currentTimeMillis()));
+            mActiveLogs.add(
+                    new ActiveLog(reason, packageName, enable, isBle, System.currentTimeMillis()));
 
             int state =
                     enable
