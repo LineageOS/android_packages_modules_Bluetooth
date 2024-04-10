@@ -3740,13 +3740,13 @@ public final class BluetoothAdapter {
 
     private static final IBluetoothManagerCallback sManagerCallback =
             new IBluetoothManagerCallback.Stub() {
-                public void onBluetoothServiceUp(IBluetooth bluetoothService) {
+                public void onBluetoothServiceUp(IBinder bluetoothService) {
                     if (DBG) {
                         Log.d(TAG, "onBluetoothServiceUp: " + bluetoothService);
                     }
 
                     synchronized (sServiceLock) {
-                        sService = bluetoothService;
+                        sService = IBluetooth.Stub.asInterface(bluetoothService);
                         for (IBluetoothManagerCallback cb : sProxyServiceStateCallbacks.keySet()) {
                             try {
                                 if (cb != null) {
@@ -3825,11 +3825,11 @@ public final class BluetoothAdapter {
 
     private final IBluetoothManagerCallback mManagerCallback =
             new IBluetoothManagerCallback.Stub() {
-                public void onBluetoothServiceUp(@NonNull IBluetooth bluetoothService) {
+                public void onBluetoothServiceUp(@NonNull IBinder bluetoothService) {
                     requireNonNull(bluetoothService, "bluetoothService cannot be null");
                     mServiceLock.writeLock().lock();
                     try {
-                        mService = bluetoothService;
+                        mService = IBluetooth.Stub.asInterface(bluetoothService);
                     } finally {
                         // lock downgrade is possible in ReentrantReadWriteLock
                         mServiceLock.readLock().lock();
@@ -4282,7 +4282,9 @@ public final class BluetoothAdapter {
         if (isRegistered != wantRegistered) {
             if (wantRegistered) {
                 try {
-                    sService = mManagerService.registerAdapter(sManagerCallback);
+                    sService =
+                            IBluetooth.Stub.asInterface(
+                                    mManagerService.registerAdapter(sManagerCallback));
                 } catch (RemoteException e) {
                     throw e.rethrowAsRuntimeException();
                 }
