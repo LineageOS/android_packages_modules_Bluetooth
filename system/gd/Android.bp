@@ -134,7 +134,6 @@ cc_defaults {
         ":BluetoothDumpsysSources",
         ":BluetoothHalSources",
         ":BluetoothHciSources",
-        ":BluetoothIsoSources",
         ":BluetoothL2capSources",
         ":BluetoothLogRedactionSources",
         ":BluetoothMetricsSources",
@@ -282,7 +281,6 @@ cc_binary {
     srcs: [
         ":BluetoothFacade_hci_hal",
         ":BluetoothFacade_hci_layer",
-        ":BluetoothFacade_iso_layer",
         ":BluetoothFacade_l2cap_layer",
         ":BluetoothFacade_neighbor",
         ":BluetoothFacade_security_layer",
