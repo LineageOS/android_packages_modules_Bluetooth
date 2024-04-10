@@ -507,6 +507,17 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
               ToString(group->cig.GetState()),
               static_cast<int>(conn_handles.size()));
 
+    if (group->GetTargetState() != AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
+      /* Group is not going to stream. It happen while CIG was creating.
+       * Remove CIG in such a case
+       */
+      log::warn("group_id {} is not going to stream anymore. Remove CIG.",
+                group->group_id_);
+      group->PrintDebugState();
+      RemoveCigForGroup(group);
+      return;
+    }
+
     /* Assign all connection handles to CIS ids of the CIG */
     group->cig.AssignCisConnHandles(conn_handles);
 
@@ -516,15 +527,7 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
     /* Last node configured, process group to codec configured state */
     group->SetState(AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED);
 
-    if (group->GetTargetState() == AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
-      PrepareAndSendQoSToTheGroup(group);
-    } else {
-      log::error(", invalid state transition, from: {} , to: {}",
-                 ToString(group->GetState()),
-                 ToString(group->GetTargetState()));
-      StopStream(group);
-      return;
-    }
+    PrepareAndSendQoSToTheGroup(group);
   }
 
   void FreeLinkQualityReports(LeAudioDevice* leAudioDevice) {
