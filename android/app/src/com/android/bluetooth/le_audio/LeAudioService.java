@@ -1204,6 +1204,19 @@ public class LeAudioService extends ProfileService {
             return;
         }
 
+        if (Flags.leaudioBroadcastAssistantPeripheralEntrustment()) {
+            if (!isPlaying(broadcastId)) {
+                Log.d(TAG, "pauseBroadcast: Broadcast is not playing, skip pause request");
+                return;
+            }
+
+            // Due to broadcast pause sinks may lose synchronization
+            BassClientService bassClientService = getBassClientService();
+            if (bassClientService != null) {
+                bassClientService.cacheSuspendingSources(broadcastId);
+            }
+        }
+
         Log.d(TAG, "pauseBroadcast");
         mLeAudioBroadcasterNativeInterface.pauseBroadcast(broadcastId);
     }
@@ -3054,8 +3067,10 @@ public class LeAudioService extends ProfileService {
                     notifyPlaybackStopped(broadcastId,
                             BluetoothStatusCodes.REASON_LOCAL_STACK_REQUEST);
 
-                    if (bassClientService != null) {
-                        bassClientService.suspendReceiversSourceSynchronization(broadcastId);
+                    if (!Flags.leaudioBroadcastAssistantPeripheralEntrustment()) {
+                        if (bassClientService != null) {
+                            bassClientService.suspendReceiversSourceSynchronization(broadcastId);
+                        }
                     }
 
                     transitionFromBroadcastToUnicast();
