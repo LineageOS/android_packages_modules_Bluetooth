@@ -189,7 +189,7 @@ public class AdapterService extends Service {
     private static final int MESSAGE_PROFILE_SERVICE_UNREGISTERED = 3;
     private static final int MESSAGE_PREFERRED_AUDIO_PROFILES_AUDIO_FRAMEWORK_TIMEOUT = 4;
 
-    private static final int CONTROLLER_ENERGY_UPDATE_TIMEOUT_MILLIS = 30;
+    private static final int CONTROLLER_ENERGY_UPDATE_TIMEOUT_MILLIS = 100;
     private static final int MIN_ADVT_INSTANCES_FOR_MA = 5;
     private static final int MIN_OFFLOADED_FILTERS = 10;
     private static final int MIN_OFFLOADED_SCAN_STORAGE_BYTES = 1024;
