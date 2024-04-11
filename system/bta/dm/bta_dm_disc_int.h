@@ -143,7 +143,6 @@ typedef struct {
   tBTA_DM_SEARCH_CBACK* p_device_search_cback;
   service_discovery_callbacks service_search_cbacks;
   tBTM_INQ_INFO* p_btm_inq_info;
-  tBTA_SERVICE_MASK services;
   tBTA_SERVICE_MASK services_to_search;
   tBTA_SERVICE_MASK services_found;
   tSDP_DISCOVERY_DB* p_sdp_db;
