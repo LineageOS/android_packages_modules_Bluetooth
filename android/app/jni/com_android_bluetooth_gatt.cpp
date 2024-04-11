@@ -457,7 +457,7 @@ void btgattc_track_adv_event_cb(btgatt_track_adv_info_t* p_adv_track_info) {
   ScopedLocalRef<jobject> trackadv_obj(
       sCallbackEnv.get(),
       sCallbackEnv->CallObjectMethod(
-          mCallbacksObj, method_createOnTrackAdvFoundLostObject,
+          mScanCallbacksObj, method_createOnTrackAdvFoundLostObject,
           p_adv_track_info->client_if, p_adv_track_info->adv_pkt_len,
           jb_adv_pkt.get(), p_adv_track_info->scan_rsp_len, jb_scan_rsp.get(),
           p_adv_track_info->filt_index, p_adv_track_info->advertiser_state,
@@ -1061,7 +1061,7 @@ class JniScanningCallbacks : ScanningCallbacks {
     ScopedLocalRef<jobject> trackadv_obj(
         sCallbackEnv.get(),
         sCallbackEnv->CallObjectMethod(
-            mCallbacksObj, method_createOnTrackAdvFoundLostObject,
+            mScanCallbacksObj, method_createOnTrackAdvFoundLostObject,
             track_info.scanner_id, track_info.adv_packet_len, jb_adv_pkt.get(),
             track_info.scan_response_len, jb_scan_rsp.get(),
             track_info.filter_index, track_info.advertiser_state,
