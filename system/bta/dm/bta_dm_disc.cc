@@ -842,16 +842,10 @@ static void bta_dm_read_dis_cmpl(const RawAddress& addr,
 }
 #endif
 
-/*******************************************************************************
- *
- * Function         bta_dm_search_cmpl
- *
- * Description      Sends event to application
- *
- * Returns          void
- *
- ******************************************************************************/
-static void bta_dm_search_cmpl() {
+static void bta_dm_service_discovery_cmpl() {
+  // TODO: we shouldn't change search state, just service discovery state, but
+  // both state machines are now joined. This bug will be fixed in upcoming
+  // patches.
   bta_dm_search_set_state(BTA_DM_SEARCH_IDLE);
 
   uint16_t conn_id = bta_dm_search_cb.conn_id;
@@ -910,9 +904,6 @@ static void bta_dm_search_cmpl() {
     }
   }
 
-  if (bta_dm_search_cb.p_device_search_cback) {
-    bta_dm_search_cb.p_device_search_cback(BTA_DM_DISC_CMPL_EVT, nullptr);
-  }
   bta_dm_search_cb.gatt_disc_active = false;
 
 #if TARGET_FLOSS
@@ -922,6 +913,16 @@ static void bta_dm_search_cmpl() {
     return;
   }
 #endif
+
+  bta_dm_execute_queued_request();
+}
+
+static void bta_dm_search_cmpl() {
+  bta_dm_search_set_state(BTA_DM_SEARCH_IDLE);
+
+  if (bta_dm_search_cb.p_device_search_cback) {
+    bta_dm_search_cb.p_device_search_cback(BTA_DM_DISC_CMPL_EVT, nullptr);
+  }
 
   bta_dm_execute_queued_request();
 }
@@ -957,7 +958,7 @@ static void bta_dm_disc_result(tBTA_DM_SVC_RES& disc_result) {
     get_gatt_interface().BTA_GATTC_CancelOpen(0, bta_dm_search_cb.peer_bdaddr,
                                               true);
 
-    bta_dm_search_cmpl();
+    bta_dm_service_discovery_cmpl();
   }
 }
 
