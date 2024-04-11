@@ -72,6 +72,10 @@ class SystemServiceMessenger {
         return send(data, SystemServiceMessage.FactoryReset.Reply.class);
     }
 
+    SystemServiceMessage.GetAddress.Reply send(SystemServiceMessage.GetAddress data) {
+        return send(data, SystemServiceMessage.GetAddress.Reply.class);
+    }
+
     private <T extends Parcelable, U> U send(T data, Class<U> replyClass) {
         CompletableFuture<U> future = new CompletableFuture();
 

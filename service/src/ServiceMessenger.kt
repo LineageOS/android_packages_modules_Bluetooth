@@ -16,6 +16,7 @@
 package com.android.server.bluetooth
 
 import android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_APPLICATION_REQUEST
+import android.bluetooth.IBluetoothManager
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -118,6 +119,20 @@ internal class ServiceMessenger(
                         } catch (e: PermissionChecker.BluetoothPermissionException) {
                             Log.e(TAG, "${obj}: FAILED", e)
                             false
+                        }
+                }
+            }
+            is SystemServiceMessage.GetAddress -> {
+                val source = obj.attributionSource
+
+                SystemServiceMessage.GetAddress.Reply().apply {
+                    value =
+                        try {
+                            checker.getAddressAllowed(sendingUid, source)
+                            managerService.getAddress()
+                        } catch (e: PermissionChecker.BluetoothPermissionException) {
+                            Log.e(TAG, "${obj}: FAILED", e)
+                            IBluetoothManager.DEFAULT_MAC_ADDRESS
                         }
                 }
             }

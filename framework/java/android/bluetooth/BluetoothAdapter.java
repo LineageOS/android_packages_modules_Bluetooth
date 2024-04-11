@@ -1657,6 +1657,12 @@ public final class BluetoothAdapter {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, LOCAL_MAC_ADDRESS})
     public String getAddress() {
+        if (Flags.systemServerMessenger()) {
+            var data = new SystemServiceMessage.GetAddress();
+            data.attributionSource = mAttributionSource;
+
+            return mSystemServiceMessenger.send(data).value;
+        }
         try {
             return mManagerService.getAddress(mAttributionSource);
         } catch (RemoteException e) {

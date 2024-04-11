@@ -270,6 +270,7 @@ public class BluetoothServiceBinderTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER)
     public void getAddress() {
         assertThrows(NullPointerException.class, () -> mBinder.getAddress(null));
 

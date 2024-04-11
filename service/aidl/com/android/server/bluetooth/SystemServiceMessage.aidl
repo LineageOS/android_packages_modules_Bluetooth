@@ -56,4 +56,11 @@ interface SystemServiceMessage {
             boolean value;
         }
     }
+
+    parcelable GetAddress {
+        AttributionSource attributionSource;
+        parcelable Reply {
+            String value;
+        }
+    }
 }
