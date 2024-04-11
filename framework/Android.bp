@@ -27,6 +27,7 @@ java_defaults {
         "PlatformProperties",
         "bluetooth_flags_java_lib",
         "modules-utils-expresslog",
+        "service-bluetooth-binder-aidl",
     ],
     libs: [
         "app-compat-annotations",
@@ -41,7 +42,6 @@ java_defaults {
     srcs: [
         ":Bluetooth-binder-aidl",
         ":framework-bluetooth-sources",
-        ":service-bluetooth-binder-aidl",
     ],
 }
 
