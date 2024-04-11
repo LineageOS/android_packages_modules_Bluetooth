@@ -22,7 +22,6 @@ namespace shim {
 
 namespace testing {
 legacy::Acl* acl_{nullptr};
-Btm* btm_{nullptr};
 Stack* instance_{nullptr};
 }  // namespace testing
 
@@ -44,8 +43,6 @@ StackManager* Stack::GetStackManager() { return nullptr; }
 const StackManager* Stack::GetStackManager() const { return nullptr; }
 
 legacy::Acl* Stack::GetAcl() { return testing::acl_; }
-
-Btm* Stack::GetBtm() { return testing::btm_; }
 
 os::Handler* Stack::GetHandler() { return stack_handler_; }
 

@@ -22,19 +22,14 @@
 
 #include "hci/controller.h"
 #include "hci/controller_interface.h"
+#include "hci/le_advertising_manager.h"
 #include "main/shim/acl.h"
-#include "main/shim/btm.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
 #include "main/shim/stack.h"
 #include "stack/btm/btm_ble_sec.h"
 #include "stack/btm/btm_dev.h"
 #include "types/raw_address.h"
-
-uint16_t bluetooth::shim::BTM_GetHCIConnHandle(const RawAddress& remote_bda,
-                                               tBT_TRANSPORT transport) {
-  return Stack::GetInstance()->GetBtm()->GetAclHandle(remote_bda, transport);
-}
 
 tBTM_STATUS bluetooth::shim::BTM_ClearEventFilter() {
   GetController()->SetEventFilterClearAll();
@@ -139,5 +134,5 @@ tBTM_STATUS bluetooth::shim::BTM_BleResetId() {
 }
 
 size_t bluetooth::shim::BTM_BleGetNumberOfAdvertisingInstancesInUse(void) {
-  return Stack::GetInstance()->GetBtm()->GetNumberOfAdvertisingInstancesInUse();
+  return GetAdvertising()->GetNumberOfAdvertisingInstancesInUse();
 }
