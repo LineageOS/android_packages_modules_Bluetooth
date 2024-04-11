@@ -39,6 +39,14 @@ mod dbus_arg;
 mod dbus_iface;
 mod editor;
 
+#[derive(Clone)]
+pub(crate) struct GattRequest {
+    address: String,
+    id: i32,
+    offset: i32,
+    value: Vec<u8>,
+}
+
 /// Context structure for the client. Used to keep track details about the active adapter and its
 /// state.
 pub(crate) struct ClientContext {
@@ -155,6 +163,9 @@ pub(crate) struct ClientContext {
 
     /// A set of addresses whose battery changes are being tracked.
     pub(crate) battery_address_filter: HashSet<String>,
+
+    /// A request from a GATT client that is still being processed.
+    pending_gatt_request: Option<GattRequest>,
 }
 
 impl ClientContext {
@@ -207,6 +218,7 @@ impl ClientContext {
             mps_sdp_handle: None,
             client_commands_with_callbacks,
             battery_address_filter: HashSet::new(),
+            pending_gatt_request: None,
         }
     }
 
