@@ -109,11 +109,6 @@ tBTM_STATUS bluetooth::shim::BTM_SetInquiryMode(uint8_t /* inquiry_mode */) {
   inc_func_call_count(__func__);
   return BTM_SUCCESS;
 }
-uint16_t bluetooth::shim::BTM_GetHCIConnHandle(
-    const RawAddress& /* remote_bda */, tBT_TRANSPORT /* transport */) {
-  inc_func_call_count(__func__);
-  return 0;
-}
 void bluetooth::shim::BTM_AddEirService(uint32_t* /* p_eir_uuid */,
                                         uint16_t /* uuid16 */) {
   inc_func_call_count(__func__);

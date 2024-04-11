@@ -57,7 +57,6 @@ class Stack {
 
   legacy::Acl* GetAcl();
 
-  Btm* GetBtm();
   os::Handler* GetHandler();
 
   bool LockForDumpsys(std::function<void()> dumpsys_callback);

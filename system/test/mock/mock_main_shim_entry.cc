@@ -22,10 +22,6 @@
 #include "hci/le_advertising_manager_mock.h"
 #include "hci/le_scanning_manager_mock.h"
 #include "main/shim/entry.h"
-#include "neighbor/connectability.h"
-#include "neighbor/discoverability.h"
-#include "neighbor/inquiry.h"
-#include "neighbor/page.h"
 #include "os/handler.h"
 #include "storage/storage_module.h"
 
@@ -67,10 +63,6 @@ hci::DistanceMeasurementManager* GetDistanceMeasurementManager() {
 hci::VendorSpecificEventManager* GetVendorSpecificEventManager() {
   return nullptr;
 }
-neighbor::ConnectabilityModule* GetConnectability() { return nullptr; }
-neighbor::DiscoverabilityModule* GetDiscoverability() { return nullptr; }
-neighbor::InquiryModule* GetInquiry() { return nullptr; }
-neighbor::PageModule* GetPage() { return nullptr; }
 os::Handler* GetGdShimHandler() { return hci::testing::mock_gd_shim_handler_; }
 hal::SnoopLogger* GetSnoopLogger() { return nullptr; }
 storage::StorageModule* GetStorage() { return nullptr; }

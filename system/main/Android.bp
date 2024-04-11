@@ -185,7 +185,6 @@ cc_test {
         "shim/acl.cc",
         "shim/acl_api.cc",
         "shim/acl_legacy_interface.cc",
-        "shim/btm.cc",
         "shim/btm_api.cc",
         "shim/config.cc",
         "shim/distance_measurement_manager.cc",
