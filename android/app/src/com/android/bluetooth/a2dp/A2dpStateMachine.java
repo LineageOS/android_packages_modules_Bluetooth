@@ -283,7 +283,8 @@ final class A2dpStateMachine extends StateMachine {
                         result,
                         mLastConnectionState,
                         BluetoothProfile.STATE_DISCONNECTED,
-                        BluetoothProtoEnums.REASON_UNEXPECTED_STATE);
+                        BluetoothProtoEnums.REASON_UNEXPECTED_STATE,
+                        MetricsLogger.getInstance().getRemoteDeviceInfoProto(mDevice));
             }
         }
     }
@@ -630,7 +631,8 @@ final class A2dpStateMachine extends StateMachine {
                         BluetoothProtoEnums.RESULT_SUCCESS,
                         mLastConnectionState,
                         BluetoothProfile.STATE_CONNECTED,
-                        BluetoothProtoEnums.REASON_SUCCESS);
+                        BluetoothProtoEnums.REASON_SUCCESS,
+                        MetricsLogger.getInstance().getRemoteDeviceInfoProto(mDevice));
             }
         }
     }
