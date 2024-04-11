@@ -1681,6 +1681,12 @@ public final class BluetoothAdapter {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public String getName() {
+        if (Flags.systemServerMessenger()) {
+            var data = new SystemServiceMessage.GetName();
+            data.attributionSource = mAttributionSource;
+
+            return mSystemServiceMessenger.send(data).value;
+        }
         try {
             return mManagerService.getName(mAttributionSource);
         } catch (RemoteException e) {

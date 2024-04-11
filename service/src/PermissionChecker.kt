@@ -65,6 +65,11 @@ class PermissionChecker(
         enforceLocalMacAddressPermission(uid, "getAddress")
     }
 
+    fun getNameAllowed(uid: Int, source: AttributionSource) {
+        enforceConnectPermission(source, "getName")
+        if (uid != SYSTEM_UID) enforceCallerIsForegroundUser(uid)
+    }
+
     fun enforcePrivileged(uid: Int) = context.enforcePermission(BLUETOOTH_PRIVILEGED, -1, uid, null)
 
     ////////////////////////////////////////////////////////////////////////////////////////////////

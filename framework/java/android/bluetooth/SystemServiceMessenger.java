@@ -76,6 +76,10 @@ class SystemServiceMessenger {
         return send(data, SystemServiceMessage.GetAddress.Reply.class);
     }
 
+    SystemServiceMessage.GetName.Reply send(SystemServiceMessage.GetName data) {
+        return send(data, SystemServiceMessage.GetName.Reply.class);
+    }
+
     private <T extends Parcelable, U> U send(T data, Class<U> replyClass) {
         CompletableFuture<U> future = new CompletableFuture();
 

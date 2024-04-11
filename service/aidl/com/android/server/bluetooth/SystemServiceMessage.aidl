@@ -63,4 +63,11 @@ interface SystemServiceMessage {
             String value;
         }
     }
+
+    parcelable GetName {
+        AttributionSource attributionSource;
+        parcelable Reply {
+            String value;
+        }
+    }
 }

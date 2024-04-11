@@ -300,6 +300,7 @@ public class BluetoothServiceBinderTest {
 
     @Test
     public void getName() {
+        mSetFlagsRule.disableFlags(Flags.FLAG_SYSTEM_SERVER_MESSENGER);
         assertThrows(NullPointerException.class, () -> mBinder.getName(null));
 
         assertThrows(SecurityException.class, () -> mBinder.getName(mSource));

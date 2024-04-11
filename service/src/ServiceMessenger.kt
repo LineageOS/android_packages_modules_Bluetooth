@@ -136,6 +136,20 @@ internal class ServiceMessenger(
                         }
                 }
             }
+            is SystemServiceMessage.GetName -> {
+                val source = obj.attributionSource
+
+                SystemServiceMessage.GetName.Reply().apply {
+                    value =
+                        try {
+                            checker.getNameAllowed(sendingUid, source)
+                            managerService.getName()
+                        } catch (e: PermissionChecker.BluetoothPermissionException) {
+                            Log.e(TAG, "${obj}: FAILED", e)
+                            null
+                        }
+                }
+            }
             else -> throw IllegalArgumentException("Invalid command: [${obj}] from ${sendingUid}")
         }
     }
