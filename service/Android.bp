@@ -16,27 +16,8 @@ package {
     default_applicable_licenses: ["Android-Apache-2.0"],
 }
 
-filegroup {
-    name: "services.bluetooth-sources",
-    srcs: [
-        ":statslog-bluetooth-java-gen",
-        "src/**/*.java",
-        "src/AdapterState.kt",
-        "src/AutoOnFeature.kt",
-        "src/Log.kt",
-        "src/RadioModeListener.kt",
-        "src/airplane/ModeListener.kt",
-        "src/com/**/*.kt",
-        "src/satellite/ModeListener.kt",
-    ],
-    visibility: [":__subpackages__"],
-}
-
-// pre-jarjar version of service-bluetooth that builds against pre-jarjar version of framework-bluetooth
 java_defaults {
-    name: "service-bluetooth-pre-jarjar",
-    srcs: [":services.bluetooth-sources"],
-
+    name: "service-bluetooth-buildflags",
     errorprone: {
         javacflags: [
             "-Xep:AlreadyChecked:ERROR",
@@ -48,8 +29,6 @@ java_defaults {
             "-Xep:UnusedVariable:ERROR",
         ],
     },
-
-    sdk_version: "system_server_current",
 
     lint: {
         error_checks: [
@@ -66,6 +45,26 @@ java_defaults {
 
     kotlincflags: [
         "-Werror",
+    ],
+
+    defaults_visibility: [":__subpackages__"],
+}
+
+// pre-jarjar version of service-bluetooth that builds against pre-jarjar version of framework-bluetooth
+java_library {
+    name: "service-bluetooth-pre-jarjar",
+    defaults: ["service-bluetooth-buildflags"],
+    installable: false,
+    srcs: [
+        ":statslog-bluetooth-java-gen",
+        "src/**/*.java",
+        "src/AdapterState.kt",
+        "src/AutoOnFeature.kt",
+        "src/Log.kt",
+        "src/RadioModeListener.kt",
+        "src/airplane/ModeListener.kt",
+        "src/com/**/*.kt",
+        "src/satellite/ModeListener.kt",
     ],
 
     libs: [
@@ -88,14 +87,26 @@ java_defaults {
         "modules-utils-shell-command-handler",
     ],
 
+    lint: {
+        baseline_filename: "lint-baseline.xml",
+    },
+
+    optimize: {
+        enabled: true,
+        shrink: true,
+        proguard_flags_files: ["proguard.flags"],
+    },
+
+    sdk_version: "system_server_current",
+    min_sdk_version: "Tiramisu",
+    apex_available: ["com.android.btservices"],
     visibility: [":__subpackages__"],
 }
 
-// service-bluetooth static library
-// ==============================================================
+// Apply jarjaring before using library in the apex
 java_library {
     name: "service-bluetooth",
-    defaults: ["service-bluetooth-pre-jarjar"],
+    static_libs: ["service-bluetooth-pre-jarjar"],
     installable: true,
 
     jarjar_rules: ":bluetooth-jarjar-rules",
@@ -105,56 +116,48 @@ java_library {
         shrink: true,
         proguard_flags_files: ["proguard.flags"],
     },
-    visibility: [
-        "//packages/modules/Bluetooth/apex",
+
+    libs: [
+        "framework-bluetooth",
     ],
-    apex_available: [
-        "com.android.btservices",
-    ],
+
     min_sdk_version: "Tiramisu",
-    lint: {
-        baseline_filename: "lint-baseline.xml",
-    },
+    apex_available: ["com.android.btservices"],
+    visibility: ["//packages/modules/Bluetooth/apex"],
 }
 
 java_library {
     name: "bluetooth-manager-service-proto-java-gen",
+    srcs: [":srcs_bluetooth_manager_service_proto"],
     installable: false,
+
     proto: {
         type: "stream",
-        include_dirs: [
-            "external/protobuf/src",
-        ],
+        include_dirs: ["external/protobuf/src"],
     },
-    srcs: [
-        ":srcs_bluetooth_manager_service_proto",
-    ],
+
     sdk_version: "system_server_current",
-    apex_available: [
-        "com.android.btservices",
-    ],
     min_sdk_version: "Tiramisu",
+    apex_available: ["com.android.btservices"],
 }
 
 java_library {
     name: "bluetooth-nano-protos",
+    srcs: [":system-messages-proto-src"],
     installable: false,
+
     proto: {
         type: "nano",
     },
-    srcs: [
-        ":system-messages-proto-src",
-    ],
+
     libs: ["libprotobuf-java-nano"],
     lint: {
         strict_updatability_linting: true,
-
     },
+
     sdk_version: "system_current",
-    apex_available: [
-        "com.android.btservices",
-    ],
     min_sdk_version: "Tiramisu",
+    apex_available: ["com.android.btservices"],
 }
 
 android_robolectric_test {
