@@ -674,8 +674,13 @@ class AdapterProperties {
                 Flags.identityAddressNullIfUnknown()
                         ? Utils.getBrEdrAddress(device, mService)
                         : mService.getIdentityAddress(address);
-        debugLog("cleanupPrevBondRecordsFor: " + device);
+        int deviceType = mRemoteDevices.getDeviceProperties(device).getDeviceType();
+        debugLog("cleanupPrevBondRecordsFor: " + device + ", device type: " + deviceType);
         if (identityAddress == null) {
+            return;
+        }
+
+        if (Flags.cleanupLeOnlyDeviceType() && deviceType != BluetoothDevice.DEVICE_TYPE_LE) {
             return;
         }
 
@@ -685,29 +690,40 @@ class AdapterProperties {
                     Flags.identityAddressNullIfUnknown()
                             ? Utils.getBrEdrAddress(existingDevice, mService)
                             : mService.getIdentityAddress(existingAddress);
+            int existingDeviceType =
+                    mRemoteDevices.getDeviceProperties(existingDevice).getDeviceType();
 
-            if (!identityAddress.equals(existingIdentityAddress) || address.equals(
-                existingAddress)) {
-                continue;
+            boolean removeExisting = false;
+            if (identityAddress.equals(existingIdentityAddress)
+                    && !address.equals(existingAddress)) {
+                if (Flags.cleanupLeOnlyDeviceType()) {
+                    // Existing device record should be removed only if the device type is LE-only
+                    removeExisting = (existingDeviceType == BluetoothDevice.DEVICE_TYPE_LE);
+                } else {
+                    removeExisting = true;
+                }
             }
 
-            // Found an existing device with same identity address but different pseudo address
-            if (mService.getNative().removeBond(Utils.getBytesFromAddress(existingAddress))) {
-                mBondedDevices.remove(existingDevice);
-                infoLog(
-                    "Removing old bond record: "
-                        + existingDevice
-                        + " for the device: "
-                        + device);
-            } else {
-                Log.e(
-                    TAG,
-                    "Unexpected error while removing old bond record:"
-                        + existingDevice
-                        + " for the device: "
-                        + device);
+            if (removeExisting) {
+                // Found an existing LE-only device with the same identity address but different
+                // pseudo address
+                if (mService.getNative().removeBond(Utils.getBytesFromAddress(existingAddress))) {
+                    mBondedDevices.remove(existingDevice);
+                    infoLog(
+                            "Removing old bond record: "
+                                    + existingDevice
+                                    + " for the device: "
+                                    + device);
+                } else {
+                    Log.e(
+                            TAG,
+                            "Unexpected error while removing old bond record:"
+                                    + existingDevice
+                                    + " for the device: "
+                                    + device);
+                }
+                break;
             }
-            break;
         }
     }
 
