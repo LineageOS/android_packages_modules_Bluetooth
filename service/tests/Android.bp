@@ -19,13 +19,7 @@ package {
 
 android_test {
     name: "ServiceBluetoothTests",
-
-    // Linking source to test the working copy, not the on-device copy.
-    // Use 'pre-jarjar' so that we can reference symbols before renaming.
-    // Then apply the same common jarjar_rules
-    defaults: ["service-bluetooth-pre-jarjar"],
-    jarjar_rules: ":bluetooth-jarjar-rules",
-
+    defaults: ["service-bluetooth-buildflags"],
     srcs: [
         "src/**/*.java",
         "src/**/*.kt",
@@ -39,6 +33,10 @@ android_test {
         "mockito-target-extended-minus-junit4",
         "platform-compat-test-rules",
         "platform-test-annotations",
+
+        // Linking source to test the working copy, not the on-device copy.
+        // Use 'pre-jarjar' so that we can reference symbols before renaming.
+        "service-bluetooth-pre-jarjar",
         "truth",
     ],
 
@@ -46,6 +44,8 @@ android_test {
         "android.test.base",
         "android.test.mock",
         "android.test.runner",
+        "framework-bluetooth-pre-jarjar",
+        "service-bluetooth.change-ids",
     ],
     jni_libs: [
         // these are needed for Extended Mockito
@@ -53,10 +53,10 @@ android_test {
         "libstaticjvmtiagent",
     ],
 
-    min_sdk_version: "Tiramisu",
-
     test_suites: [
         "general-tests",
         "mts-bluetooth",
     ],
+
+    min_sdk_version: "Tiramisu",
 }
