@@ -758,9 +758,14 @@ class AdapterProperties {
         BluetoothDevice device = connIntent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
         int state = connIntent.getIntExtra(BluetoothProfile.EXTRA_STATE, -1);
         int metricId = mService.getMetricId(device);
+        byte[] remoteDeviceInfoBytes = MetricsLogger.getInstance().getRemoteDeviceInfoProto(device);
         if (state == BluetoothProfile.STATE_CONNECTING) {
             BluetoothStatsLog.write(BluetoothStatsLog.BLUETOOTH_DEVICE_NAME_REPORTED,
                     metricId, device.getName());
+            BluetoothStatsLog.write(
+                    BluetoothStatsLog.REMOTE_DEVICE_INFORMATION_WITH_METRIC_ID,
+                    metricId,
+                    remoteDeviceInfoBytes);
             MetricsLogger.getInstance()
                     .logAllowlistedDeviceNameHash(metricId, device.getName(), true);
         }
