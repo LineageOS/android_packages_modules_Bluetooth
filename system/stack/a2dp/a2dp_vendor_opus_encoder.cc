@@ -21,7 +21,6 @@
 #include <bluetooth/log.h>
 #include <dlfcn.h>
 #include <opus.h>
-#include <stdio.h>
 #include <string.h>
 
 #include "a2dp_vendor.h"

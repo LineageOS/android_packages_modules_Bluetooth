@@ -21,7 +21,6 @@
 #include <bluetooth/log.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_gatt.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 

@@ -19,7 +19,6 @@
 #include <statslog_bt.h>
 #endif
 #include <bluetooth/log.h>
-#include <stdio.h>
 #include <sys/stat.h>
 
 #include <cerrno>

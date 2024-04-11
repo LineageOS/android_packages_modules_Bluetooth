@@ -28,7 +28,6 @@
 #include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
 #include <stddef.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 

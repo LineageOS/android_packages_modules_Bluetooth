@@ -19,7 +19,6 @@
  *   Functions generated:16
  */
 
-#include <stdio.h>
 #include <stdlib.h>
 
 #include "stack/include/hidd_api.h"

@@ -43,7 +43,6 @@ Function prototypes and macro definitions used internally by the codec.
 #endif
 
 #ifdef CODEC_DEBUG
-#include <stdio.h>
 #define ERROR(x)  \
   do {            \
     printf x;     \

@@ -27,7 +27,6 @@
 #include <fcntl.h>
 #include <hardware/bluetooth.h>
 #include <pthread.h>
-#include <stdio.h>
 #include <string.h>  // For memcmp
 #include <sys/stat.h>
 #include <unistd.h>
