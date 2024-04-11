@@ -3257,8 +3257,6 @@ class LeAudioClientImpl : public LeAudioClient {
       L2CA_LockBleConnParamsForProfileConnection(leAudioDevice->address_,
                                                  false);
     }
-    callbacks_->OnConnectionState(ConnectionState::CONNECTED,
-                                  leAudioDevice->address_);
 
     if (leAudioDevice->GetConnectionState() ==
             DeviceConnectState::CONNECTED_BY_USER_GETTING_READY &&
@@ -3273,19 +3271,30 @@ class LeAudioClientImpl : public LeAudioClient {
         ConnectionState::CONNECTED,
         bluetooth::le_audio::ConnectionStatus::SUCCESS);
 
-    if (leAudioDevice->group_id_ != bluetooth::groups::kGroupUnknown) {
-      LeAudioDeviceGroup* group = aseGroups_.FindById(leAudioDevice->group_id_);
-      if (group) {
-        UpdateLocationsAndContextsAvailability(group);
-      }
-      AttachToStreamingGroupIfNeeded(leAudioDevice);
+    if (leAudioDevice->group_id_ == bluetooth::groups::kGroupUnknown) {
+      log::warn(" LeAudio device {} connected with no group",
+                ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+      callbacks_->OnConnectionState(ConnectionState::CONNECTED,
+                                    leAudioDevice->address_);
+      return;
+    }
 
-      if (reconnection_mode_ == BTM_BLE_BKG_CONNECT_TARGETED_ANNOUNCEMENTS) {
-        /* Add other devices to allow list if there are any not yet connected
-         * from the group
-         */
-        group->AddToAllowListNotConnectedGroupMembers(gatt_if_);
-      }
+    LeAudioDeviceGroup* group = aseGroups_.FindById(leAudioDevice->group_id_);
+    if (group) {
+      UpdateLocationsAndContextsAvailability(group);
+    }
+
+    /* Notify connected after contexts are notified */
+    callbacks_->OnConnectionState(ConnectionState::CONNECTED,
+                                  leAudioDevice->address_);
+
+    AttachToStreamingGroupIfNeeded(leAudioDevice);
+
+    if (reconnection_mode_ == BTM_BLE_BKG_CONNECT_TARGETED_ANNOUNCEMENTS) {
+      /* Add other devices to allow list if there are any not yet connected
+       * from the group
+       */
+      group->AddToAllowListNotConnectedGroupMembers(gatt_if_);
     }
   }
 
