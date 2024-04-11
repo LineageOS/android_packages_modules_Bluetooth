@@ -16,15 +16,13 @@
 
 package android.bluetooth;
 
-import android.bluetooth.IBluetooth;
-
 /**
  * API for Communication between BluetoothAdapter and BluetoothManager
  *
  * {@hide}
  */
 oneway interface IBluetoothManagerCallback {
-    void onBluetoothServiceUp(in IBluetooth bluetoothService);
+    void onBluetoothServiceUp(in IBinder bluetoothService);
     void onBluetoothServiceDown();
     void onBluetoothOn();
     void onBluetoothOff();

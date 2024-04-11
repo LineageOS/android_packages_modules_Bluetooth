@@ -422,6 +422,11 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                 return;
             }
 
+            if (!leAudioService.isGroupAvailableForStream(leAudioService.getGroupId(device))) {
+                Log.i(TAG, "LE Audio device is not available for streaming now." + device);
+                return;
+            }
+
             if (mHearingAidActiveDevices.isEmpty()
                     && mLeHearingAidActiveDevice == null
                     && mPendingLeHearingAidActiveDevice.isEmpty()) {
@@ -634,7 +639,14 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                         && mAdapterService.isAllSupportedClassicAudioProfilesActive(device)) {
                     setLeAudioActiveDevice(device);
                 } else {
-                    setLeAudioActiveDevice(null, true);
+                    if (Flags.leaudioResumeActiveAfterHfpHandover()) {
+                        if (device != null) {
+                            // remove LE audio active device when it is not null, and not dual mode
+                            setLeAudioActiveDevice(null, true);
+                        }
+                    } else {
+                        setLeAudioActiveDevice(null, true);
+                    }
                 }
             }
             // Just assign locally the new value

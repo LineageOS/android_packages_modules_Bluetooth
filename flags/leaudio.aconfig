@@ -299,3 +299,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_broadcast_volume_control_with_set_volume"
+    namespace: "bluetooth"
+    description: "Set broadcast sink volume with setVolume API"
+    bug: "333761969"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

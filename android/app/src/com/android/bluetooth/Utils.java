@@ -241,6 +241,19 @@ public final class Utils {
      * Returns the correct device address to be used for connections over BR/EDR transport.
      *
      * @param device the device for which to obtain the connection address
+     * @param service the adapter service to make the identity address retrieval call
+     * @return either identity address or device address in String format
+     */
+    public static String getBrEdrAddress(BluetoothDevice device, AdapterService service) {
+        final String address = device.getAddress();
+        String identity = service.getIdentityAddress(address);
+        return identity != null ? identity : address;
+    }
+
+    /**
+     * Returns the correct device address to be used for connections over BR/EDR transport.
+     *
+     * @param device the device for which to obtain the connection address
      * @return either identity address or device address as a byte array
      */
     public static byte[] getByteBrEdrAddress(BluetoothDevice device) {
