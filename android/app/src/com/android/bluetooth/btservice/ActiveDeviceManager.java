@@ -422,6 +422,11 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                 return;
             }
 
+            if (!leAudioService.isGroupAvailableForStream(leAudioService.getGroupId(device))) {
+                Log.i(TAG, "LE Audio device is not available for streaming now." + device);
+                return;
+            }
+
             if (mHearingAidActiveDevices.isEmpty()
                     && mLeHearingAidActiveDevice == null
                     && mPendingLeHearingAidActiveDevice.isEmpty()) {
