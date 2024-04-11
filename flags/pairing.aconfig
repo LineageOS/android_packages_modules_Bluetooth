@@ -7,3 +7,10 @@ flag {
     description: "Clear authentication collision state on pairing conclusion"
     bug: "327208896"
 }
+
+flag {
+    name: "cleanup_le_only_device_type"
+    namespace: "bluetooth"
+    description: "Cleanup the duplicate bond records only if the device type is LE-only"
+    bug: "333949759"
+}
