@@ -10,9 +10,10 @@ use crate::callbacks::{BtGattCallback, BtGattServerCallback};
 use crate::ClientContext;
 use crate::{console_red, console_yellow, print_error, print_info};
 use bt_topshim::btif::{BtConnectionState, BtDiscMode, BtStatus, BtTransport, Uuid, INVALID_RSSI};
+use bt_topshim::profiles::gatt::{GattStatus, LePhy};
 use bt_topshim::profiles::hid_host::BthhReportType;
 use bt_topshim::profiles::sdp::{BtSdpMpsRecord, BtSdpRecord};
-use bt_topshim::profiles::{gatt::LePhy, ProfileConnectionState};
+use bt_topshim::profiles::ProfileConnectionState;
 use btstack::battery_manager::IBatteryManager;
 use btstack::bluetooth::{BluetoothDevice, IBluetooth};
 use btstack::bluetooth_gatt::{
@@ -37,11 +38,6 @@ const HEART_RATE_MEASUREMENT_UUID: &str = "00002A37-0000-1000-8000-00805F9B34FB"
 const GENERIC_UUID: &str = "00000000-0000-1000-8000-00805F9B34FB";
 const CCC_DESCRIPTOR_UUID: &str = "00002902-0000-1000-8000-00805F9B34FB";
 const BATTERY_SERVICE_UUID: &str = "0000180F-0000-1000-8000-00805F9B34FB";
-
-const PROPERTY_WRITE: i32 = 1 << 3;
-const PROPERTY_NOTIFY: i32 = 1 << 4;
-const PERMISSION_READ: i32 = 1 << 0;
-const PERMISSION_WRITE: i32 = 1 << 1;
 
 enum CommandError {
     // Command not handled due to invalid arguments.
@@ -242,6 +238,7 @@ fn build_commands() -> HashMap<String, CommandOption> {
                 String::from("gatt server-add-service <server_id> <incl_service_instance_id>"),
                 String::from("gatt server-remove-service <server_id> <service_handle>"),
                 String::from("gatt server-clear-all-services <server_id>"),
+                String::from("gatt server-send-response <server_id> <success|fail>"),
                 String::from("gatt server-set-direct-connect <true|false>"),
                 String::from("gatt server-set-connect-transport <Bredr|LE|Auto>"),
             ],
@@ -1432,18 +1429,23 @@ impl CommandHandler {
                 let mut characteristic = BluetoothGattCharacteristic::new(
                     characteristic_uuid.into(),
                     0,
-                    PROPERTY_WRITE + PROPERTY_NOTIFY,
-                    PERMISSION_READ + PERMISSION_WRITE,
+                    BluetoothGattCharacteristic::PROPERTY_READ
+                        | BluetoothGattCharacteristic::PROPERTY_WRITE
+                        | BluetoothGattCharacteristic::PROPERTY_NOTIFY,
+                    BluetoothGattCharacteristic::PERMISSION_READ
+                        | BluetoothGattCharacteristic::PERMISSION_WRITE,
                 );
                 let descriptor = BluetoothGattDescriptor::new(
                     descriptor_uuid.into(),
                     0,
-                    PERMISSION_READ + PERMISSION_WRITE,
+                    BluetoothGattCharacteristic::PERMISSION_READ
+                        | BluetoothGattCharacteristic::PERMISSION_WRITE,
                 );
                 let ccc_descriptor = BluetoothGattDescriptor::new(
                     ccc_descriptor_uuid.into(),
                     0,
-                    PERMISSION_READ + PERMISSION_WRITE,
+                    BluetoothGattCharacteristic::PERMISSION_READ
+                        | BluetoothGattCharacteristic::PERMISSION_WRITE,
                 );
 
                 service.included_services.push(included_service);
@@ -1472,6 +1474,31 @@ impl CommandHandler {
                     .parse::<i32>()
                     .or(Err("Failed to parse server_id"))?;
                 self.lock_context().gatt_dbus.as_mut().unwrap().clear_services(server_id);
+            }
+            "server-send-response" => {
+                let server_id = String::from(get_arg(args, 1)?)
+                    .parse::<i32>()
+                    .or(Err("Failed to parse server_id"))?;
+                let status = match String::from(get_arg(args, 2)?).as_str() {
+                    "success" => GattStatus::Success,
+                    "fail" => GattStatus::Error,
+                    _ => return Err("{} is not one of the following: `success`, `fail`".into()),
+                };
+
+                let request = match self.lock_context().pending_gatt_request.clone() {
+                    None => return Err("No pending request to send response to".into()),
+                    Some(r) => r,
+                };
+                self.lock_context().gatt_dbus.as_mut().unwrap().send_response(
+                    server_id,
+                    request.address.clone(),
+                    request.id,
+                    status,
+                    request.offset,
+                    request.value.clone(),
+                );
+
+                self.lock_context().pending_gatt_request = None;
             }
             "server-set-direct-connect" => {
                 let is_direct = String::from(get_arg(args, 1)?)
