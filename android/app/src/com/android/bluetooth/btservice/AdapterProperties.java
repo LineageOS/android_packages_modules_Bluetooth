@@ -672,7 +672,7 @@ class AdapterProperties {
         String currentAddress = currentDevice.getAddress();
         String currentBrEdrAddress =
                 Flags.identityAddressNullIfUnknown()
-                        ? Utils.getBrEdrAddress(currentDevice)
+                        ? Utils.getBrEdrAddress(currentDevice, mService)
                         : mService.getIdentityAddress(currentAddress);
         debugLog("cleanupPrevBondRecordsFor: " + currentDevice);
         if (currentBrEdrAddress == null) {
@@ -683,7 +683,7 @@ class AdapterProperties {
             String address = device.getAddress();
             String brEdrAddress =
                     Flags.identityAddressNullIfUnknown()
-                            ? Utils.getBrEdrAddress(device)
+                            ? Utils.getBrEdrAddress(device, mService)
                             : mService.getIdentityAddress(address);
             if (currentBrEdrAddress.equals(brEdrAddress) && !currentAddress.equals(address)) {
                 if (mService.getNative()
