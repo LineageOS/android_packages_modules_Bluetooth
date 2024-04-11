@@ -24,9 +24,10 @@ import android.content.Context
 import android.os.ParcelUuid
 import androidx.test.core.app.ApplicationProvider
 import com.android.compatibility.common.util.AdoptShellPermissionsRule
-import com.google.common.collect.Sets
 import com.google.common.truth.Truth.assertThat
 import com.google.protobuf.Empty
+import com.google.testing.junit.testparameterinjector.TestParameter
+import com.google.testing.junit.testparameterinjector.TestParameterInjector
 import io.grpc.Context as GrpcContext
 import io.grpc.Deadline
 import java.util.UUID
@@ -37,8 +38,6 @@ import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.junit.runners.Parameterized
-import org.junit.runners.Parameterized.Parameters
 import org.mockito.kotlin.any
 import org.mockito.kotlin.argumentCaptor
 import org.mockito.kotlin.clearInvocations
@@ -52,8 +51,8 @@ import pandora.HostProto.AdvertiseRequest
 import pandora.HostProto.OwnAddressType
 
 /** DCK GATT Tests */
-@RunWith(Parameterized::class)
-public class DckGattTest(private val connected: Boolean) {
+@RunWith(TestParameterInjector::class)
+public class DckGattTest() {
 
     private val context: Context = ApplicationProvider.getApplicationContext()
     private val bluetoothManager = context.getSystemService(BluetoothManager::class.java)!!
@@ -340,12 +339,6 @@ public class DckGattTest(private val connected: Boolean) {
         // CCC DK Specification R3 1.2.0 r14 section 19.2.1.2 Bluetooth Le Pairing
         private val CCC_DK_UUID = UUID.fromString("0000FFF5-0000-1000-8000-00805f9b34fb")
 
-        @Parameters(name = "connected = {0}")
-        @JvmStatic
-        fun parameters(): Iterable<Array<Any?>> =
-            Sets.cartesianProduct(
-                    setOf(false, true), // connected
-                )
-                .map { it.toTypedArray() }
+        @TestParameter private val connected: Boolean = false
     }
 }
