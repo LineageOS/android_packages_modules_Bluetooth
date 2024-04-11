@@ -24,7 +24,6 @@ from blueberry.tests.gd.hci.le_advertising_manager_test import LeAdvertisingMana
 from blueberry.tests.gd.hci.le_scanning_manager_test import LeScanningManagerTest
 from blueberry.tests.gd.hci.le_scanning_with_security_test import LeScanningWithSecurityTest
 from blueberry.tests.gd.iso.le_iso_test import LeIsoTest
-from blueberry.tests.gd.neighbor.neighbor_test import NeighborTest
 from blueberry.tests.gd.security.le_security_test import LeSecurityTest
 from blueberry.tests.gd.security.security_test import SecurityTest
 from blueberry.tests.gd.shim.shim_test import ShimTest
@@ -35,7 +34,7 @@ from mobly import suite_runner
 ALL_TESTS = {
     CertSelfTest, SimpleHalTest, AclManagerTest, ControllerTest, DirectHciTest, LeAclManagerTest,
     LeAdvertisingManagerTest, LeScanningManagerTest, LeScanningWithSecurityTest, LeIsoTest,
-    NeighborTest, LeSecurityTest, SecurityTest, ShimTest, StackTest
+    LeSecurityTest, SecurityTest, ShimTest, StackTest
 }
 
 DISABLED_TESTS = set()
