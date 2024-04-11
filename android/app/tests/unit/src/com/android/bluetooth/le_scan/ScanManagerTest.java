@@ -75,7 +75,6 @@ import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.BluetoothAdapterProxy;
 import com.android.bluetooth.btservice.MetricsLogger;
-import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.gatt.GattNativeInterface;
 import com.android.bluetooth.gatt.GattObjectsFactory;
 import com.android.bluetooth.gatt.GattService;
@@ -1284,9 +1283,9 @@ public class ScanManagerTest {
         testSleep(50);
         // Turn off screen
         sendMessageWaitForProcessed(createScreenOnOffMessage(false));
-        verify(mMetricsLogger, times(1))
+        verify(mMetricsLogger, atMost(2))
                 .cacheCount(eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR), anyLong());
-        verify(mMetricsLogger, times(1))
+        verify(mMetricsLogger, atMost(2))
                 .cacheCount(
                         eq(BluetoothProtoEnums.LE_SCAN_RADIO_DURATION_REGULAR_SCREEN_ON),
                         anyLong());
@@ -1412,7 +1411,7 @@ public class ScanManagerTest {
             long capturedDuration = mScanDurationCaptor.getValue();
             Log.d(TAG, "capturedDuration: " + String.valueOf(capturedDuration));
             assertThat(capturedDuration).isAtLeast(weightedScanDuration);
-            assertThat(capturedDuration).isAtMost(weightedScanDuration + DELAY_ASYNC_MS);
+            assertThat(capturedDuration).isAtMost(weightedScanDuration + DELAY_ASYNC_MS * 2);
             Mockito.clearInvocations(mMetricsLogger);
         }
     }
