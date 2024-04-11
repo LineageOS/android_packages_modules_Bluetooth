@@ -397,7 +397,9 @@ static bluetooth::core::CoreInterface* CreateInterfaceToProfiles() {
  ******************************************************************************/
 
 static bool interface_ready(void) { return bt_hal_cbacks != NULL; }
-void set_hal_cbacks(bt_callbacks_t* callbacks) { bt_hal_cbacks = callbacks; }
+static void set_hal_cbacks(bt_callbacks_t* callbacks) {
+  bt_hal_cbacks = callbacks;
+}
 
 static bool is_profile(const char* p1, const char* p2) {
   log::assert_that(p1 != nullptr, "assert failed: p1 != nullptr");
@@ -1530,3 +1532,8 @@ void invoke_key_missing_cb(RawAddress bd_addr) {
                                   },
                                   bd_addr));
 }
+
+namespace bluetooth::testing {
+void set_hal_cbacks(bt_callbacks_t* callbacks) { ::set_hal_cbacks(callbacks); }
+
+}  // namespace bluetooth::testing
