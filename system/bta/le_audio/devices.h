@@ -17,27 +17,16 @@
 
 #pragma once
 
-#include <map>
 #include <memory>
-#include <optional>
-#include <tuple>
 #include <utility>  // for std::pair
 #include <vector>
 
-#ifdef __ANDROID__
-#include <android/sysprop/BluetoothProperties.sysprop.h>
-#endif
-
 #include "audio_hal_client/audio_hal_client.h"
 #include "bta_groups.h"
-#include "btm_iso_api_types.h"
-#include "common/strings.h"
 #include "gatt_api.h"
-#include "le_audio_log_history.h"
 #include "le_audio_types.h"
 #include "os/log.h"
 #include "osi/include/alarm.h"
-#include "osi/include/properties.h"
 #include "raw_address.h"
 
 namespace bluetooth::le_audio {
