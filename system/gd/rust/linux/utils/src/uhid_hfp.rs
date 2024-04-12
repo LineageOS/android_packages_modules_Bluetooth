@@ -46,7 +46,9 @@ const RDESC: [u8; 57] = [
     0x95,
     0x03, //   Report Count (3)
     0x81,
-    0x23, //   Input
+    //   Input (Data,Var,Abs,No Wrap,Linear,No Preferred State,No Null Position,
+    //          Non-volatile)
+    0x22,
     0x75,
     0x01, //   Report Size (1)
     0x95,
@@ -70,7 +72,9 @@ const RDESC: [u8; 57] = [
     0x95,
     0x03, //   Report Count (3)
     0x91,
-    0x22, //   Output
+    //   Output (Data,Var,Abs,No Wrap,Linear,No Preferred State,
+    //           No Null Position, Non-volatile)
+    0x22,
     0x75,
     0x01, //   Report Size (1)
     0x95,
