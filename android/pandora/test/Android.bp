@@ -22,6 +22,11 @@ python_test_host {
     srcs: [
         "**/*.py",
     ],
+    version: {
+        py3: {
+            embedded_launcher: false,
+        },
+    },
     libs: [
         "bumble_services_experimental-python",
         "libavatar",
