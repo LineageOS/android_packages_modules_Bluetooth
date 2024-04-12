@@ -38,7 +38,9 @@
 #include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
 
+#include "common/strings.h"
 #include "devices.h"
+#include "le_audio_log_history.h"
 #include "le_audio_types.h"
 
 namespace bluetooth::le_audio {
