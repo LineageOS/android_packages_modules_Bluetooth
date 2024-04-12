@@ -502,19 +502,14 @@ class LeAudioAseConfigurationTest : public Test {
     // Regardless of the codec location, return all the possible configurations
     ON_CALL(*mock_codec_manager_, GetCodecConfig)
         .WillByDefault(Invoke(
-            [](bluetooth::le_audio::types::LeAudioContextType ctx_type,
-               std::function<
-                   const bluetooth::le_audio::set_configurations::
-                       AudioSetConfiguration*(
-                           bluetooth::le_audio::types::LeAudioContextType
-                               context_type,
-                           const bluetooth::le_audio::set_configurations::
-                               AudioSetConfigurations* confs)>
-                   non_vendor_config_matcher) {
-              auto cfg = non_vendor_config_matcher(
-                  ctx_type,
+            [](const bluetooth::le_audio::CodecManager::
+                   UnicastConfigurationRequirements& requirements,
+               bluetooth::le_audio::CodecManager::UnicastConfigurationVerifier
+                   verifier) {
+              auto configs =
                   bluetooth::le_audio::AudioSetConfigurationProvider::Get()
-                      ->GetConfigurations(ctx_type));
+                      ->GetConfigurations(requirements.audio_context_type);
+              auto cfg = verifier(requirements, configs);
               if (cfg == nullptr) {
                 return std::unique_ptr<AudioSetConfiguration>(nullptr);
               }
