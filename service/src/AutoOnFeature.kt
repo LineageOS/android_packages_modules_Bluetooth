@@ -109,6 +109,10 @@ public fun notifyBluetoothOn(context: Context) {
         } else {
             Log.i(TAG, "Feature was set to its default value ${defaultFeatureValue}")
         }
+    } else {
+        // When Bluetooth turned on state, any saved time will be obsolete.
+        // This happen only when the phone reboot while Bluetooth is ON
+        Timer.resetStorage(context.contentResolver)
     }
 }
 
@@ -204,7 +208,7 @@ private constructor(
             return date?.let { LocalDateTime.parse(it) }
         }
 
-        private fun resetStorage(resolver: ContentResolver) {
+        fun resetStorage(resolver: ContentResolver) {
             Settings.Secure.putString(resolver, STORAGE_KEY, null)
         }
 

@@ -210,6 +210,16 @@ class AutoOnFeatureTest {
     }
 
     @Test
+    fun notifyBluetoothOn_whenStorage_resetStorage() {
+        Settings.Secure.putString(resolver, Timer.STORAGE_KEY, timerTarget.toString())
+        shadowOf(looper).idle()
+
+        notifyBluetoothOn(context)
+
+        expectNoStorageTime()
+    }
+
+    @Test
     fun apiIsUserEnable_whenItWasNeverUsed_throwException() {
         restoreSettings()
 
