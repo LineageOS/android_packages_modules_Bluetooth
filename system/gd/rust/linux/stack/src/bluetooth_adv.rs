@@ -722,6 +722,9 @@ pub(crate) trait AdvertiseManagerOps:
 
 impl AdvertiseManagerOps for AdvertiseManagerImpl {
     fn enter_suspend(&mut self) {
+        if self.suspend_mode() != SuspendMode::Normal {
+            return;
+        }
         self.set_suspend_mode(SuspendMode::Suspending);
 
         let mut pausing_cnt = 0;
@@ -742,6 +745,9 @@ impl AdvertiseManagerOps for AdvertiseManagerImpl {
     }
 
     fn exit_suspend(&mut self) {
+        if self.suspend_mode() != SuspendMode::Suspended {
+            return;
+        }
         for id in self.stopped_sets().map(|s| s.adv_id()).collect::<Vec<_>>() {
             self.gatt.lock().unwrap().advertiser.unregister(id);
             self.remove_by_advertiser_id(id as AdvertiserId);
@@ -948,7 +954,7 @@ impl IBluetoothAdvertiseManager for AdvertiseManagerImpl {
 
         if self.suspend_mode() != SuspendMode::Normal {
             if !s.is_stopped() {
-                warn!("Deferred advertisement unregistering due to suspending");
+                info!("Deferred advertisement unregistering due to suspending");
                 self.get_mut_by_advertiser_id(advertiser_id).unwrap().set_stopped();
                 if let Some(cb) = self.get_callback(&s) {
                     cb.on_advertising_set_stopped(advertiser_id);
