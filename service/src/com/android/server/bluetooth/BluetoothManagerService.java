@@ -107,7 +107,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
@@ -208,8 +207,6 @@ class BluetoothManagerService {
 
     @GuardedBy("mAdapterLock")
     private AdapterBinder mAdapter = null;
-
-    private List<Integer> mSupportedProfileList = new ArrayList<>();
 
     // used inside handler thread
     private boolean mQuietEnable = false;
@@ -1620,14 +1617,6 @@ class BluetoothManagerService {
                             sendBluetoothServiceUpCallback();
                         }
 
-                        // Get the supported profiles list
-                        try {
-                            mSupportedProfileList =
-                                    mAdapter.getSupportedProfiles(mContext.getAttributionSource());
-                        } catch (RemoteException e) {
-                            Log.e(TAG, "Unable to get the supported profiles list", e);
-                        }
-
                         // Do enable request
                         try {
                             mAdapter.enable(mQuietEnable, mContext.getAttributionSource());
@@ -1707,7 +1696,6 @@ class BluetoothManagerService {
                             break;
                         }
                         mAdapter = null;
-                        mSupportedProfileList.clear();
                     } finally {
                         mAdapterLock.writeLock().unlock();
                     }
