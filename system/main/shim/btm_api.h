@@ -844,19 +844,6 @@ tBTM_SCO_DEBUG_DUMP BTM_GetScoDebugDump(void);
  ******************************************************************************/
 tBT_DEVICE_TYPE BTM_GetPeerDeviceTypeFromFeatures(const RawAddress& bd_addr);
 
-/*******************************************************************************
- *
- * Function         BTM_GetHCIConnHandle
- *
- * Description      This function is called to get the handle for an ACL
- *                  connection to a specific remote BD Address.
- *
- * Returns          the handle of the connection, or 0xFFFF if none.
- *
- ******************************************************************************/
-uint16_t BTM_GetHCIConnHandle(const RawAddress& remote_bda,
-                              tBT_TRANSPORT transport);
-
 /**
  *
  * BLE API
