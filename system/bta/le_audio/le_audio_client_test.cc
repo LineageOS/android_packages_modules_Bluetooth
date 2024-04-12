@@ -39,6 +39,7 @@
 #include "hardware/bt_gatt_types.h"
 #include "hci/controller_interface_mock.h"
 #include "internal_include/stack_config.h"
+#include "le_audio/codec_manager.h"
 #include "le_audio_health_status.h"
 #include "le_audio_set_configuration_provider.h"
 #include "le_audio_types.h"
@@ -1576,17 +1577,16 @@ class UnicastTestNoInit : public Test {
         .WillByDefault(Return(location));
     // Regardless of the codec location, return all the possible configurations
     ON_CALL(*mock_codec_manager_, GetCodecConfig)
-        .WillByDefault(Invoke(
-            [](types::LeAudioContextType ctx_type,
-               std::function<const set_configurations::AudioSetConfiguration*(
-                   types::LeAudioContextType context_type,
-                   const set_configurations::AudioSetConfigurations* confs)>
-                   non_vendor_config_matcher) {
+        .WillByDefault(
+            Invoke([](const CodecManager::UnicastConfigurationRequirements&
+                          requirements,
+                      CodecManager::UnicastConfigurationVerifier verifier) {
+              auto configs =
+                  le_audio::AudioSetConfigurationProvider::Get()
+                      ->GetConfigurations(requirements.audio_context_type);
               return std::make_unique<
                   set_configurations::AudioSetConfiguration>(
-                  *non_vendor_config_matcher(
-                      ctx_type, le_audio::AudioSetConfigurationProvider::Get()
-                                    ->GetConfigurations(ctx_type)));
+                  *verifier(requirements, configs));
             }));
   }
 

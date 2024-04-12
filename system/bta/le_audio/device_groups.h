@@ -390,7 +390,7 @@ class LeAudioDeviceGroup {
    */
   const set_configurations::AudioSetConfiguration*
   FindFirstSupportedConfiguration(
-      types::LeAudioContextType context_type,
+      const CodecManager::UnicastConfigurationRequirements& requirements,
       const set_configurations::AudioSetConfigurations* confs) const;
 
  private:
@@ -407,7 +407,7 @@ class LeAudioDeviceGroup {
       const types::BidirectionalPair<std::vector<uint8_t>>& ccid_lists);
   bool IsAudioSetConfigurationSupported(
       const set_configurations::AudioSetConfiguration* audio_set_configuration,
-      types::LeAudioContextType context_type,
+      const CodecManager::UnicastConfigurationRequirements& requirements,
       types::LeAudioConfigurationStrategy required_snk_strategy) const;
   uint32_t GetTransportLatencyUs(uint8_t direction) const;
   bool IsCisPartOfCurrentStream(uint16_t cis_conn_hdl) const;

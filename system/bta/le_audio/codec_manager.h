@@ -58,6 +58,21 @@ struct broadcast_offload_config {
 
 class CodecManager {
  public:
+  struct UnicastConfigurationRequirements {
+    ::bluetooth::le_audio::types::LeAudioContextType audio_context_type;
+  };
+
+  typedef std::function<const set_configurations::AudioSetConfiguration*(
+      const UnicastConfigurationRequirements& requirements,
+      const set_configurations::AudioSetConfigurations* confs)>
+      UnicastConfigurationVerifier;
+
+  struct BroadcastConfigurationRequirements {
+    std::vector<
+        std::pair<bluetooth::le_audio::types::LeAudioContextType, uint8_t>>
+        subgroup_quality;
+  };
+
   virtual ~CodecManager() = default;
   static CodecManager* GetInstance(void) {
     static CodecManager* instance = new CodecManager();
@@ -79,21 +94,15 @@ class CodecManager {
           update_receiver);
   virtual std::unique_ptr<
       ::bluetooth::le_audio::set_configurations::AudioSetConfiguration>
-  GetCodecConfig(::bluetooth::le_audio::types::LeAudioContextType ctx_type,
-                 std::function<const set_configurations::AudioSetConfiguration*(
-                     types::LeAudioContextType context_type,
-                     const set_configurations::AudioSetConfigurations* confs)>
-                     non_vendor_config_matcher);
+  GetCodecConfig(const UnicastConfigurationRequirements& requirements,
+                 UnicastConfigurationVerifier verifier);
 
   virtual bool CheckCodecConfigIsBiDirSwb(
       const ::bluetooth::le_audio::set_configurations::AudioSetConfiguration&
           config) const;
   virtual std::unique_ptr<broadcaster::BroadcastConfiguration>
   GetBroadcastConfig(
-      const std::vector<
-          std::pair<bluetooth::le_audio::types::LeAudioContextType, uint8_t>>&
-          subgroup_quality,
-      std::optional<const types::PublishedAudioCapabilities*> pacs) const;
+      const BroadcastConfigurationRequirements& requirements) const;
 
   virtual void UpdateBroadcastConnHandle(
       const std::vector<uint16_t>& conn_handle,
