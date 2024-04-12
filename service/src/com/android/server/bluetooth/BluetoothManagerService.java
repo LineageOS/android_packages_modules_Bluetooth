@@ -659,7 +659,7 @@ class BluetoothManagerService {
         filter.addAction(Intent.ACTION_SETTING_RESTORED);
         filter.addAction(Intent.ACTION_SHUTDOWN);
         filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
-        mContext.registerReceiver(mReceiver, filter);
+        mContext.registerReceiver(mReceiver, filter, null, mHandler);
 
         IntentFilter filterUser = new IntentFilter();
         filterUser.addAction(UserManager.ACTION_USER_RESTRICTIONS_CHANGED);
@@ -688,7 +688,7 @@ class BluetoothManagerService {
                 },
                 filterUser,
                 null,
-                null);
+                mHandler);
 
         loadStoredNameAndAddress();
         if (isBluetoothPersistedStateOn()) {
