@@ -2236,7 +2236,8 @@ public class BassClientService extends ProfileService {
                 for (int i = 0; i < receiveState.getNumSubgroups(); i++) {
                     Long syncState = receiveState.getBisSyncState().get(i);
                     /* Not synced to BIS of failed to sync to BIG */
-                    if (syncState == 0x00000000 || syncState == 0xFFFFFFFF) {
+                    if (syncState == BassConstants.BIS_SYNC_NOT_SYNC_TO_BIS
+                            || syncState == BassConstants.BIS_SYNC_FAILED_SYNC_TO_BIG) {
                         continue;
                     }
 
@@ -2246,6 +2247,30 @@ public class BassClientService extends ProfileService {
         }
 
         return false;
+    }
+
+    /** Get the active broadcast sink devices receiving broadcast stream */
+    public List<BluetoothDevice> getActiveBroadcastSinks() {
+        List<BluetoothDevice> activeSinks = new ArrayList<>();
+
+        for (BluetoothDevice device : getConnectedDevices()) {
+            // Check if any device's source in active sync state
+            if (getAllSources(device).stream()
+                    .anyMatch(
+                            receiveState ->
+                                    (receiveState.getBisSyncState().stream()
+                                            .anyMatch(
+                                                    syncState ->
+                                                            syncState
+                                                                            != BassConstants
+                                                                                    .BIS_SYNC_NOT_SYNC_TO_BIS
+                                                                    && syncState
+                                                                            != BassConstants
+                                                                                    .BIS_SYNC_FAILED_SYNC_TO_BIG)))) {
+                activeSinks.add(device);
+            }
+        }
+        return activeSinks;
     }
 
     /** Handle broadcast state changed */
