@@ -3220,8 +3220,10 @@ class LeAudioClientImpl : public LeAudioClient {
 
   void SendAudioGroupCurrentCodecConfigChanged(LeAudioDeviceGroup* group) {
     // This shall be called when configuration changes
-    auto* stream_conf = &group->stream_conf;
-    if (stream_conf == nullptr) {
+    log::debug(" {} ", group->group_id_);
+
+    auto audio_set_conf = group->GetConfiguration(configuration_context_type_);
+    if (!audio_set_conf) {
       log::warn("Stream configuration is not valid for group id {}",
                 group->group_id_);
       return;
@@ -3229,12 +3231,11 @@ class LeAudioClientImpl : public LeAudioClient {
 
     bluetooth::le_audio::btle_audio_codec_config_t input_config{};
     bluetooth::le_audio::utils::fillStreamParamsToBtLeAudioCodecConfig(
-        stream_conf->codec_id, &stream_conf->stream_params.source,
-        input_config);
+        audio_set_conf->confs.source, input_config);
 
     bluetooth::le_audio::btle_audio_codec_config_t output_config{};
     bluetooth::le_audio::utils::fillStreamParamsToBtLeAudioCodecConfig(
-        stream_conf->codec_id, &stream_conf->stream_params.sink, output_config);
+        audio_set_conf->confs.sink, output_config);
 
     callbacks_->OnAudioGroupCurrentCodecConf(group->group_id_, input_config,
                                              output_config);
