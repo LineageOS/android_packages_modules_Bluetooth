@@ -24,11 +24,14 @@
 #include "acl_api.h"
 #include "bta_gatt_queue.h"
 #include "btif/include/btif_storage.h"
+#include "common/strings.h"
 #include "hci/controller_interface.h"
 #include "internal_include/bt_trace.h"
+#include "le_audio_log_history.h"
 #include "le_audio_utils.h"
 #include "main/shim/entry.h"
 #include "os/log.h"
+#include "osi/include/properties.h"
 
 using bluetooth::hci::kIsoCigPhy1M;
 using bluetooth::hci::kIsoCigPhy2M;
