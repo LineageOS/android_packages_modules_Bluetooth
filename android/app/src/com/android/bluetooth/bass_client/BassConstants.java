@@ -81,4 +81,7 @@ public class BassConstants {
     public static final int PA_SYNC_DO_NOT_SYNC = 0x00;
     public static final int PA_SYNC_PAST_AVAILABLE = 0x01;
     public static final int PA_SYNC_PAST_NOT_AVAILABLE = 0x02;
+    // BIS_Sync parameter value
+    public static final long BIS_SYNC_NOT_SYNC_TO_BIS = 0x00000000L;
+    public static final long BIS_SYNC_FAILED_SYNC_TO_BIG = 0xFFFFFFFFL;
 }
