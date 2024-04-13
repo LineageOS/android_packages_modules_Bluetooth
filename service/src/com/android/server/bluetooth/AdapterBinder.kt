@@ -15,7 +15,6 @@
  */
 package com.android.server.bluetooth
 
-import android.bluetooth.BluetoothProfile
 import android.bluetooth.IBluetooth
 import android.bluetooth.IBluetoothCallback
 import android.content.AttributionSource
@@ -69,18 +68,6 @@ class AdapterBinder(rawBinder: IBinder) {
     @Throws(RemoteException::class)
     fun unregisterCallback(callback: IBluetoothCallback, source: AttributionSource) {
         adapterBinder.unregisterCallback(callback, source)
-    }
-
-    @Throws(RemoteException::class)
-    fun getSupportedProfiles(source: AttributionSource): MutableList<Int> {
-        val supportedProfiles = ArrayList<Int>()
-        val supportedProfilesBitMask = adapterBinder.getSupportedProfiles(source)
-        for (i in 0..BluetoothProfile.MAX_PROFILE_ID) {
-            if (supportedProfilesBitMask and (1 shl i).toLong() != 0L) {
-                supportedProfiles.add(i)
-            }
-        }
-        return supportedProfiles
     }
 
     @Throws(RemoteException::class)
