@@ -2634,9 +2634,6 @@ public class BluetoothMapContent {
                         if (smsMmsCursor != null) {
                             populateSmsMmsConvoElement(ele, smsMmsCursor, ap, contacts);
                         }
-                        // TODO: b/331483747 - This was originally guarded by a debug flag.
-                        // Determine what to do with this line
-                        // fi.mMsgType = FilterInfo.TYPE_IM;
                         break;
                     }
                     case EMAIL:

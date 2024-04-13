@@ -31,10 +31,6 @@
 #include "hci/vendor_specific_event_manager.h"
 #include "main/shim/stack.h"
 #include "metrics/counter_metrics.h"
-#include "neighbor/connectability.h"
-#include "neighbor/discoverability.h"
-#include "neighbor/inquiry.h"
-#include "neighbor/page.h"
 #include "os/handler.h"
 #include "shim/dumpsys.h"
 #include "storage/storage_module.h"
@@ -56,36 +52,12 @@ hci::ControllerInterface* GetController() {
       ->GetInstance<hci::Controller>();
 }
 
-neighbor::ConnectabilityModule* GetConnectability() {
-  return Stack::GetInstance()
-      ->GetStackManager()
-      ->GetInstance<neighbor::ConnectabilityModule>();
-}
-
-neighbor::DiscoverabilityModule* GetDiscoverability() {
-  return Stack::GetInstance()
-      ->GetStackManager()
-      ->GetInstance<neighbor::DiscoverabilityModule>();
-}
-
 Dumpsys* GetDumpsys() {
   return Stack::GetInstance()->GetStackManager()->GetInstance<Dumpsys>();
 }
 
-neighbor::InquiryModule* GetInquiry() {
-  return Stack::GetInstance()
-      ->GetStackManager()
-      ->GetInstance<neighbor::InquiryModule>();
-}
-
 hci::HciInterface* GetHciLayer() {
   return Stack::GetInstance()->GetStackManager()->GetInstance<hci::HciLayer>();
-}
-
-neighbor::PageModule* GetPage() {
-  return Stack::GetInstance()
-      ->GetStackManager()
-      ->GetInstance<neighbor::PageModule>();
 }
 
 hci::RemoteNameRequestModule* GetRemoteNameRequest() {

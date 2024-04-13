@@ -570,16 +570,12 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
     // Prepare the configuration requirements for each subgroup.
     // Note: For now, each subgroup contains exactly the same content, but
     // differs in codec configuration.
-    std::vector<
-        std::pair<bluetooth::le_audio::types::LeAudioContextType, uint8_t>>
-        subgroup_requirements;
+    CodecManager::BroadcastConfigurationRequirements requirements;
     for (auto& idx : subgroup_quality) {
-      subgroup_requirements.push_back(
+      requirements.subgroup_quality.push_back(
           {ChooseConfigurationContextType(context_type), idx});
     }
-
-    auto config = CodecManager::GetInstance()->GetBroadcastConfig(
-        subgroup_requirements, std::nullopt);
+    auto config = CodecManager::GetInstance()->GetBroadcastConfig(requirements);
 
     if (!config) {
       log::error("No valid broadcast offload config");

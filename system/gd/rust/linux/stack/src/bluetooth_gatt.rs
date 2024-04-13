@@ -26,7 +26,7 @@ use crate::bluetooth_adv::{
 use crate::callbacks::Callbacks;
 use crate::uuid::UuidHelper;
 use crate::{APIMessage, BluetoothAPI, Message, RPCProxy, SuspendMode};
-use log::warn;
+use log::{info, warn};
 use num_derive::{FromPrimitive, ToPrimitive};
 use num_traits::cast::{FromPrimitive, ToPrimitive};
 use rand::rngs::SmallRng;
@@ -787,7 +787,10 @@ impl BluetoothGattService {
         }
     }
 
-    fn from_db(elements: Vec<BtGattDbElement>) -> Vec<BluetoothGattService> {
+    fn from_db(
+        elements: Vec<BtGattDbElement>,
+        with_included_service: bool,
+    ) -> Vec<BluetoothGattService> {
         let mut db_out: Vec<BluetoothGattService> = vec![];
 
         for elem in elements {
@@ -836,6 +839,9 @@ impl BluetoothGattService {
                 }
 
                 GattDbElementType::IncludedService => {
+                    if !with_included_service {
+                        continue;
+                    }
                     match db_out.last_mut() {
                         Some(s) => {
                             s.included_services.push(BluetoothGattService::new(
@@ -1441,7 +1447,6 @@ pub struct BluetoothGatt {
     scanner_callbacks: Callbacks<dyn IScannerCallback + Send>,
     scanners: Arc<Mutex<ScannersMap>>,
     scan_suspend_mode: SuspendMode,
-    paused_scanner_ids: Vec<u8>,
     adv_manager: AdvertiseManager,
 
     adv_mon_add_cb_sender: CallbackSender<(u8, u8)>,
@@ -1473,7 +1478,6 @@ impl BluetoothGatt {
             scanner_callbacks: Callbacks::new(tx.clone(), Message::ScannerCallbackDisconnected),
             scanners: scanners.clone(),
             scan_suspend_mode: SuspendMode::Normal,
-            paused_scanner_ids: Vec::new(),
             small_rng: SmallRng::from_entropy(),
             adv_manager: AdvertiseManager::new(tx.clone()),
             adv_mon_add_cb_sender: async_helper_msft_adv_monitor_add.get_callback_sender(),
@@ -1647,27 +1651,21 @@ impl BluetoothGatt {
         }
         self.set_scan_suspend_mode(SuspendMode::Suspending);
 
-        // Collect the scanners that will be paused so that they can be re-enabled at resume.
-        let paused_scanner_ids = self
+        let scanners_to_suspend = self
             .scanners
             .lock()
             .unwrap()
             .iter()
-            .filter_map(|(_uuid, scanner)| {
-                if let (true, Some(scanner_id)) = (scanner.is_enabled, scanner.scanner_id) {
-                    Some(scanner_id)
-                } else {
-                    None
-                }
-            })
-            .collect();
-
+            .filter_map(
+                |(_uuid, scanner)| if scanner.is_enabled { scanner.scanner_id } else { None },
+            )
+            .collect::<Vec<_>>();
         // Note: We can't simply disable the LE scanning. When a filter is offloaded
         // with the MSFT extension and it is monitoring a device, it sends a
         // `Monitor Device Event` to indicate that monitoring is stopped and this
         // can cause an early wake-up. Until we fix the disable + mask solution, we
         // must remove all monitors before suspend and re-monitor them on resume.
-        for &scanner_id in &paused_scanner_ids {
+        for scanner_id in scanners_to_suspend {
             self.stop_scan(scanner_id);
             if let Some(scanner) =
                 Self::find_scanner_by_id(&mut self.scanners.lock().unwrap(), scanner_id)
@@ -1675,7 +1673,6 @@ impl BluetoothGatt {
                 scanner.is_suspended = true;
             }
         }
-        self.paused_scanner_ids = paused_scanner_ids;
         self.set_scan_suspend_mode(SuspendMode::Suspended);
         return BtStatus::Success;
     }
@@ -1691,10 +1688,34 @@ impl BluetoothGatt {
         }
         self.set_scan_suspend_mode(SuspendMode::Resuming);
 
-        // The resume_scan() will add and reenable the monitors individually.
-        for scanner_id in self.paused_scanner_ids.drain(..).collect::<Vec<_>>() {
-            self.resume_scan(scanner_id);
+        self.scanners.lock().unwrap().retain(|_uuid, scanner| {
+            if let (true, Some(scanner_id)) = (scanner.is_unregistered, scanner.scanner_id) {
+                self.gatt.as_ref().unwrap().lock().unwrap().scanner.unregister(scanner_id);
+            }
+            !scanner.is_unregistered
+        });
+
+        let scanners_to_resume = self
+            .scanners
+            .lock()
+            .unwrap()
+            .iter()
+            .filter_map(
+                |(_uuid, scanner)| if scanner.is_suspended { scanner.scanner_id } else { None },
+            )
+            .collect::<Vec<_>>();
+        for scanner_id in scanners_to_resume {
+            let status = self.resume_scan(scanner_id);
+            if status != BtStatus::Success {
+                log::error!("Failed to resume scanner {}, status={:?}", scanner_id, status);
+            }
+            if let Some(scanner) =
+                Self::find_scanner_by_id(&mut self.scanners.lock().unwrap(), scanner_id)
+            {
+                scanner.is_suspended = false;
+            }
         }
+
         self.set_scan_suspend_mode(SuspendMode::Normal);
 
         return BtStatus::Success;
@@ -1714,8 +1735,7 @@ impl BluetoothGatt {
             return BtStatus::Fail;
         }
 
-        let scan_suspend_mode = self.get_scan_suspend_mode();
-        if scan_suspend_mode != SuspendMode::Normal && scan_suspend_mode != SuspendMode::Resuming {
+        if self.get_scan_suspend_mode() != SuspendMode::Resuming {
             return BtStatus::Busy;
         }
 
@@ -2016,8 +2036,14 @@ struct ScannerInfo {
     filter: Option<ScanFilter>,
     // Adv monitor handle, if exists.
     monitor_handle: Option<u8>,
-    // Used by start_scan() to determine if it is called because of system resuming.
+    // If suspended then we need to resume it on exit_suspend.
     is_suspended: bool,
+    /// Whether the unregistration of the scanner is held.
+    /// This flag is set when a scanner is unregistered while we're not able to do it, such as:
+    /// - The system is suspending / suspended
+    ///
+    /// The scanner would be unregistered after the system exits the suspended state.
+    is_unregistered: bool,
     // The scan parameters to use
     scan_settings: Option<ScanSettings>,
     // Whether the MSFT extension monitor tracking by address filter quirk will be used.
@@ -2035,6 +2061,7 @@ impl ScannerInfo {
             filter: None,
             monitor_handle: None,
             is_suspended: false,
+            is_unregistered: false,
             scan_settings: None,
             addr_tracking_quirk: sysprop::get_bool(sysprop::PropertyBool::LeAdvMonRtlQuirk),
             addr_handle_map: HashMap::new(),
@@ -2141,6 +2168,19 @@ impl IBluetoothGatt for BluetoothGatt {
     }
 
     fn unregister_scanner(&mut self, scanner_id: u8) -> bool {
+        if self.get_scan_suspend_mode() != SuspendMode::Normal {
+            if let Some(scanner) =
+                Self::find_scanner_by_id(&mut self.scanners.lock().unwrap(), scanner_id)
+            {
+                info!("Deferred scanner unregistration due to suspending");
+                scanner.is_unregistered = true;
+                return true;
+            } else {
+                warn!("Scanner {} not found", scanner_id);
+                return false;
+            }
+        }
+
         self.gatt.as_ref().unwrap().lock().unwrap().scanner.unregister(scanner_id);
 
         // The unregistered scanner must also be stopped.
@@ -2164,8 +2204,7 @@ impl IBluetoothGatt for BluetoothGatt {
             return BtStatus::Fail;
         }
 
-        let scan_suspend_mode = self.get_scan_suspend_mode();
-        if scan_suspend_mode != SuspendMode::Normal && scan_suspend_mode != SuspendMode::Resuming {
+        if self.get_scan_suspend_mode() != SuspendMode::Normal {
             return BtStatus::Busy;
         }
 
@@ -3340,7 +3379,7 @@ impl BtifGattClientCallbacks for BluetoothGatt {
                     |cb: &mut GattClientCallback| {
                         cb.on_search_complete(
                             addr.to_string(),
-                            BluetoothGattService::from_db(elements),
+                            BluetoothGattService::from_db(elements, true),
                             GattStatus::Success,
                         );
                         Some(())
@@ -3645,7 +3684,7 @@ impl BtifGattServerCallbacks for BluetoothGatt {
         elements: Vec<BtGattDbElement>,
         _count: usize,
     ) {
-        for service in BluetoothGattService::from_db(elements) {
+        for service in BluetoothGattService::from_db(elements, false) {
             if status == GattStatus::Success {
                 self.server_context_map.add_service(server_id, service.clone());
             }

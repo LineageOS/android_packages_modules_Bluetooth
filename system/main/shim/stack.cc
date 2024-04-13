@@ -43,7 +43,6 @@
 #include "hci/vendor_specific_event_manager.h"
 #include "main/shim/acl.h"
 #include "main/shim/acl_legacy_interface.h"
-#include "main/shim/btm.h"
 #include "main/shim/distance_measurement_manager.h"
 #include "main/shim/entry.h"
 #include "main/shim/hci_layer.h"
@@ -63,7 +62,6 @@ using ::bluetooth::common::StringFormat;
 
 struct Stack::impl {
   legacy::Acl* acl_ = nullptr;
-  Btm* btm_ = nullptr;
 };
 
 Stack::Stack() { pimpl_ = std::make_shared<Stack::impl>(); }
@@ -162,9 +160,6 @@ void Stack::Stop() {
   log::assert_that(is_running_, "Gd stack not running");
   is_running_ = false;
 
-  delete pimpl_->btm_;
-  pimpl_->btm_ = nullptr;
-
   stack_handler_->Clear();
 
   stack_manager_.ShutDown();
@@ -202,12 +197,6 @@ legacy::Acl* Stack::GetAcl() {
   log::assert_that(pimpl_->acl_ != nullptr,
                    "Acl shim layer has not been created");
   return pimpl_->acl_;
-}
-
-Btm* Stack::GetBtm() {
-  std::lock_guard<std::recursive_mutex> lock(mutex_);
-  log::assert_that(is_running_, "assert failed: is_running_");
-  return pimpl_->btm_;
 }
 
 os::Handler* Stack::GetHandler() {

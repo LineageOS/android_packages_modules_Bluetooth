@@ -45,7 +45,6 @@ bool L2CA_SetAclPriority(uint16_t, bool);
 namespace hci {
 
 class AclManager : public Module {
-  friend class bluetooth::shim::Btm;
   friend class bluetooth::shim::legacy::Acl;
   friend bool bluetooth::shim::L2CA_SetAclPriority(uint16_t, bool);
   friend class bluetooth::hci::LeScanningManager;

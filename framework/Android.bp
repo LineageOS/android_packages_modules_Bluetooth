@@ -2,11 +2,6 @@ package {
     default_applicable_licenses: ["Android-Apache-2.0"],
 }
 
-java_defaults {
-    name: "bluetooth-module-sdk-version-defaults",
-    min_sdk_version: "Tiramisu",
-}
-
 filegroup {
     name: "framework-bluetooth-sources",
     defaults: ["framework-sources-module-defaults"],
@@ -22,7 +17,6 @@ filegroup {
 // `framework-bluetooth-pre-jarjar`
 java_defaults {
     name: "framework-bluetooth-defaults",
-    defaults: ["bluetooth-module-sdk-version-defaults"],
     static_libs: [
         "PlatformProperties",
         "bluetooth_flags_java_lib",
@@ -43,6 +37,7 @@ java_defaults {
         ":Bluetooth-binder-aidl",
         ":framework-bluetooth-sources",
     ],
+    min_sdk_version: "Tiramisu",
 }
 
 // bluetooth-service needs pre-jarjared version of framework-bluetooth so it can reference copied utility
@@ -72,7 +67,6 @@ java_sdk_library {
 
     impl_library_visibility: [
         "//external/sl4a/Common",
-        "//frameworks/opt/wear",
         "//packages/modules/Bluetooth/android/app/tests/unit",
         "//packages/modules/Bluetooth/android/pandora/server",
         "//packages/modules/Bluetooth/framework/tests/bumble",

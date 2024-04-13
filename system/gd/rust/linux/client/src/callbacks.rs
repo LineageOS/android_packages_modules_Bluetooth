@@ -8,8 +8,8 @@ use crate::dbus_iface::{
     export_qa_callback_dbus_intf, export_scanner_callback_dbus_intf,
     export_socket_callback_dbus_intf, export_suspend_callback_dbus_intf,
 };
-use crate::ClientContext;
 use crate::{console_red, console_yellow, print_error, print_info};
+use crate::{ClientContext, GattRequest};
 use bt_topshim::btif::{BtBondState, BtPropertyType, BtSspVariant, BtStatus, Uuid128Bit};
 use bt_topshim::profiles::gatt::{AdvertisingStatus, GattStatus, LePhy};
 use bt_topshim::profiles::hfp::HfpCodecId;
@@ -841,7 +841,7 @@ impl RPCProxy for BtGattCallback {
 
 pub(crate) struct BtGattServerCallback {
     objpath: String,
-    _context: Arc<Mutex<ClientContext>>,
+    context: Arc<Mutex<ClientContext>>,
 
     dbus_connection: Arc<SyncConnection>,
     dbus_crossroads: Arc<Mutex<Crossroads>>,
@@ -850,11 +850,11 @@ pub(crate) struct BtGattServerCallback {
 impl BtGattServerCallback {
     pub(crate) fn new(
         objpath: String,
-        _context: Arc<Mutex<ClientContext>>,
+        context: Arc<Mutex<ClientContext>>,
         dbus_connection: Arc<SyncConnection>,
         dbus_crossroads: Arc<Mutex<Crossroads>>,
     ) -> Self {
-        Self { objpath, _context, dbus_connection, dbus_crossroads }
+        Self { objpath, context, dbus_connection, dbus_crossroads }
     }
 }
 
@@ -890,12 +890,21 @@ impl IBluetoothGattServerCallback for BtGattServerCallback {
     ) {
         print_info!(
             "GATT characteristic read request for addr = {}, trans_id = {}, offset = {}, is_long = {}, handle = {}",
-            addr,
+            addr.clone(),
             trans_id,
             offset,
             is_long,
             handle
         );
+
+        if self.context.lock().unwrap().pending_gatt_request.is_some() {
+            print_info!(
+                "This request will be dropped because the previous one has not been responded to"
+            );
+            return;
+        }
+        self.context.lock().unwrap().pending_gatt_request =
+            Some(GattRequest { address: addr, id: trans_id, offset: offset, value: vec![] });
     }
 
     fn on_descriptor_read_request(
@@ -914,6 +923,15 @@ impl IBluetoothGattServerCallback for BtGattServerCallback {
             is_long,
             handle
         );
+
+        if self.context.lock().unwrap().pending_gatt_request.is_some() {
+            print_info!(
+                "This request will be dropped because the previous one has not been responded to"
+            );
+            return;
+        }
+        self.context.lock().unwrap().pending_gatt_request =
+            Some(GattRequest { address: addr, id: trans_id, offset: offset, value: vec![] });
     }
 
     fn on_characteristic_write_request(
@@ -939,6 +957,15 @@ impl IBluetoothGattServerCallback for BtGattServerCallback {
             handle,
             value
         );
+
+        if self.context.lock().unwrap().pending_gatt_request.is_some() {
+            print_info!(
+                "This request will be dropped because the previous one has not been responded to"
+            );
+            return;
+        }
+        self.context.lock().unwrap().pending_gatt_request =
+            Some(GattRequest { address: addr, id: trans_id, offset: offset, value: value });
     }
 
     fn on_descriptor_write_request(
@@ -964,6 +991,15 @@ impl IBluetoothGattServerCallback for BtGattServerCallback {
             handle,
             value
         );
+
+        if self.context.lock().unwrap().pending_gatt_request.is_some() {
+            print_info!(
+                "This request will be dropped because the previous one has not been responded to"
+            );
+            return;
+        }
+        self.context.lock().unwrap().pending_gatt_request =
+            Some(GattRequest { address: addr, id: trans_id, offset: offset, value: value });
     }
 
     fn on_execute_write(&mut self, addr: String, trans_id: i32, exec_write: bool) {
@@ -973,6 +1009,15 @@ impl IBluetoothGattServerCallback for BtGattServerCallback {
             trans_id,
             exec_write
         );
+
+        if self.context.lock().unwrap().pending_gatt_request.is_some() {
+            print_info!(
+                "This request will be dropped because the previous one has not been responded to"
+            );
+            return;
+        }
+        self.context.lock().unwrap().pending_gatt_request =
+            Some(GattRequest { address: addr, id: trans_id, offset: 0, value: vec![] });
     }
 
     fn on_notification_sent(&mut self, addr: String, status: GattStatus) {

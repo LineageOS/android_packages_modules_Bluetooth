@@ -95,13 +95,12 @@ public class BluetoothManagerServiceTest {
 
     TestLooper mLooper;
 
-    boolean mHasException = false;
-
     static {
         // Required for reading DeviceConfig.
         InstrumentationRegistry.getInstrumentation()
                 .getUiAutomation()
-                .adoptShellPermissionIdentity(android.Manifest.permission.READ_DEVICE_CONFIG);
+                .adoptShellPermissionIdentity(
+                        android.Manifest.permission.INTERACT_ACROSS_USERS_FULL);
     }
 
     @Before
@@ -168,10 +167,8 @@ public class BluetoothManagerServiceTest {
             mManagerService = null;
         }
         mLooper.moveTimeForward(120_000); // 120 seconds
-        // Do not try to assert if `syncHandler()` already raised an exception for it
-        if (!mHasException) {
-            assertThat(mLooper.nextMessage()).isNull();
-        }
+
+        assertThat(mLooper.nextMessage()).isNull();
         validateMockitoUsage();
     }
 
