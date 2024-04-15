@@ -35,7 +35,6 @@
 #include "os/log.h"
 #include "os/thread.h"
 #include "security/facade.h"
-#include "shim/facade/facade.h"
 #include "stack_manager.h"
 
 namespace bluetooth {
@@ -100,9 +99,6 @@ class RootFacadeService : public ::blueberry::facade::RootFacade::Service {
         modules.add<::bluetooth::hci::facade::ControllerFacadeModule>();
         modules.add<::bluetooth::hci::facade::LeAdvertisingManagerFacadeModule>();
         modules.add<::bluetooth::hci::facade::LeScanningManagerFacadeModule>();
-        break;
-      case BluetoothModule::SHIM:
-        modules.add<::bluetooth::shim::facade::ShimFacadeModule>();
         break;
       default:
         return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "invalid module under test");
