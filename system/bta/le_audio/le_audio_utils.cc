@@ -18,7 +18,6 @@
 
 #include <bluetooth/log.h>
 
-#include "bta/le_audio/content_control_id_keeper.h"
 #include "common/strings.h"
 #include "le_audio_types.h"
 #include "os/log.h"
@@ -416,6 +415,58 @@ bool IsCodecUsingLtvFormat(const types::LeAudioCodecId& codec_id) {
     return true;
   }
   return false;
+}
+
+::bluetooth::le_audio::LeAudioCodecConfiguration
+GetAudioSessionCodecConfigFromAudioSetConfiguration(
+    const bluetooth::le_audio::set_configurations::AudioSetConfiguration&
+        audio_set_conf,
+    uint8_t remote_direction) {
+  /* Note: For now we expect that each ASE in a particular direction needs
+   *       exactly the same audio codec parameters.
+   */
+
+  LeAudioCodecConfiguration group_config = {0, 0, 0, 0};
+  for (const auto& conf : audio_set_conf.confs.get(remote_direction)) {
+    if (group_config.sample_rate != 0 &&
+        conf.codec.GetSamplingFrequencyHz() != group_config.sample_rate) {
+      log::warn(
+          "Stream configuration could not be determined (multiple, different "
+          "sampling frequencies) for remote_direction: {:#x}",
+          remote_direction);
+      break;
+    }
+    group_config.sample_rate = conf.codec.GetSamplingFrequencyHz();
+
+    if (group_config.data_interval_us != 0 &&
+        conf.codec.GetDataIntervalUs() != group_config.data_interval_us) {
+      log::warn(
+          "Stream configuration could not be determined (multiple, different "
+          "data intervals) for remote_direction: {:#x}",
+          remote_direction);
+      break;
+    }
+    group_config.data_interval_us = conf.codec.GetDataIntervalUs();
+
+    if (group_config.bits_per_sample != 0 &&
+        conf.codec.GetBitsPerSample() != group_config.bits_per_sample) {
+      log::warn(
+          "Stream configuration could not be determined (multiple, different "
+          "bits per sample) for remote_direction: {:#x}",
+          remote_direction);
+      break;
+    }
+    group_config.bits_per_sample = conf.codec.GetBitsPerSample();
+
+    log::assert_that(
+        audio_set_conf.topology_info.has_value(),
+        "No topology info, which is required to properly configure the ASEs");
+    group_config.num_channels +=
+        conf.codec.GetChannelCountPerIsoStream() *
+        audio_set_conf.topology_info->device_count.get(remote_direction);
+  }
+
+  return group_config;
 }
 }  // namespace utils
 }  // namespace bluetooth::le_audio

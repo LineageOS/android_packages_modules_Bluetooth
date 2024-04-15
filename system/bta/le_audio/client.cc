@@ -249,8 +249,6 @@ class LeAudioClientImpl : public LeAudioClient {
         sink_monitor_mode_(false),
         sink_monitor_notified_status_(std::nullopt),
         source_monitor_mode_(false),
-        current_source_codec_config({0, 0, 0, 0}),
-        current_sink_codec_config({0, 0, 0, 0}),
         le_audio_source_hal_client_(nullptr),
         le_audio_sink_hal_client_(nullptr),
         close_vbc_timeout_(alarm_new("LeAudioCloseVbcTimeout")),
@@ -1111,9 +1109,7 @@ class LeAudioClientImpl : public LeAudioClient {
     group->is_duplex_preference_le_audio = is_duplex_preference_le_audio;
   }
 
-  void StartAudioSession(LeAudioDeviceGroup* group,
-                         const LeAudioCodecConfiguration* source_config,
-                         const LeAudioCodecConfiguration* sink_config) {
+  void StartAudioSession(LeAudioDeviceGroup* group) {
     /* This function is called when group is not yet set to active.
      * This is why we don't have to check if session is started already.
      * Just check if it is acquired.
@@ -1132,10 +1128,10 @@ class LeAudioClientImpl : public LeAudioClient {
 
     /* We assume that peer device always use same frame duration */
     uint32_t frame_duration_us = 0;
-    if (!source_config->IsInvalid()) {
-      frame_duration_us = source_config->data_interval_us;
-    } else if (!sink_config->IsInvalid()) {
-      frame_duration_us = sink_config->data_interval_us;
+    if (!current_encoder_config_.IsInvalid()) {
+      frame_duration_us = current_encoder_config_.data_interval_us;
+    } else if (!current_decoder_config_.IsInvalid()) {
+      frame_duration_us = current_decoder_config_.data_interval_us;
     } else {
       log::assert_that(true, "Both configs are invalid");
     }
@@ -1150,14 +1146,13 @@ class LeAudioClientImpl : public LeAudioClient {
     /* If group supports more than 16kHz for the microphone in converstional
      * case let's use that also for Audio Framework.
      */
-    std::optional<LeAudioCodecConfiguration> sink_configuration =
-        group->GetCodecConfigurationByDirection(
-            LeAudioContextType::CONVERSATIONAL,
-            bluetooth::le_audio::types::kLeAudioDirectionSource);
-    if (sink_configuration &&
-        sink_configuration->sample_rate >
+    auto sink_configuration = group->GetAudioSessionCodecConfigForDirection(
+        LeAudioContextType::CONVERSATIONAL,
+        bluetooth::le_audio::types::kLeAudioDirectionSource);
+    if (!sink_configuration.IsInvalid() &&
+        sink_configuration.sample_rate >
             bluetooth::audio::le_audio::kSampleRate16000) {
-      audio_framework_sink_config.sample_rate = sink_configuration->sample_rate;
+      audio_framework_sink_config.sample_rate = sink_configuration.sample_rate;
     }
 
     le_audio_sink_hal_client_->Start(audio_framework_sink_config,
@@ -1289,14 +1284,12 @@ class LeAudioClientImpl : public LeAudioClient {
         }
       }
     }
-    UpdateConfigAndCheckIfReconfigurationIsNeeded(group_id,
-                                                  default_context_type);
-    if (current_source_codec_config.IsInvalid() &&
-        current_sink_codec_config.IsInvalid()) {
-      log::error("Unsupported device configurations");
-      callbacks_->OnGroupStatus(group_id, GroupStatus::INACTIVE);
-      return;
-    }
+
+    /* Only update the configuration audio context and audio coding session
+     * parameters if needed.
+     */
+    UpdateConfigAndCheckIfReconfigurationIsNeeded(group, default_context_type);
+    callbacks_->OnGroupStatus(group_id, GroupStatus::INACTIVE);
 
     auto previous_active_group = active_group_id_;
     log::info("Active group_id changed {} -> {}", previous_active_group,
@@ -1304,8 +1297,7 @@ class LeAudioClientImpl : public LeAudioClient {
 
     if (previous_active_group == bluetooth::groups::kGroupUnknown) {
       /* Expose audio sessions if there was no previous active group */
-      StartAudioSession(group, &current_source_codec_config,
-                        &current_sink_codec_config);
+      StartAudioSession(group);
       active_group_id_ = group_id;
     } else {
       /* In case there was an active group. Stop the stream, but before that, set
@@ -3678,7 +3670,7 @@ class LeAudioClientImpl : public LeAudioClient {
       sw_enc_left = bluetooth::le_audio::CodecInterface::CreateInstance(
           stream_conf->codec_id);
       auto codec_status = sw_enc_left->InitEncoder(
-          audio_framework_source_config, current_source_codec_config);
+          audio_framework_source_config, current_encoder_config_);
       if (codec_status !=
           bluetooth::le_audio::CodecInterface::Status::STATUS_OK) {
         log::error("Left channel codec setup failed with err: {}",
@@ -3690,7 +3682,7 @@ class LeAudioClientImpl : public LeAudioClient {
       sw_enc_right = bluetooth::le_audio::CodecInterface::CreateInstance(
           stream_conf->codec_id);
       codec_status = sw_enc_right->InitEncoder(audio_framework_source_config,
-                                               current_source_codec_config);
+                                               current_encoder_config_);
       if (codec_status !=
           bluetooth::le_audio::CodecInterface::Status::STATUS_OK) {
         log::error("Right channel codec setup failed with err: {}",
@@ -3757,7 +3749,7 @@ class LeAudioClientImpl : public LeAudioClient {
       }
       sw_dec_left = bluetooth::le_audio::CodecInterface::CreateInstance(
           stream_conf->codec_id);
-      auto codec_status = sw_dec_left->InitDecoder(current_sink_codec_config,
+      auto codec_status = sw_dec_left->InitDecoder(current_decoder_config_,
                                                    audio_framework_sink_config);
       if (codec_status !=
           bluetooth::le_audio::CodecInterface::Status::STATUS_OK) {
@@ -3769,7 +3761,7 @@ class LeAudioClientImpl : public LeAudioClient {
 
       sw_dec_right = bluetooth::le_audio::CodecInterface::CreateInstance(
           stream_conf->codec_id);
-      codec_status = sw_dec_right->InitDecoder(current_sink_codec_config,
+      codec_status = sw_dec_right->InitDecoder(current_decoder_config_,
                                                audio_framework_sink_config);
       if (codec_status !=
           bluetooth::le_audio::CodecInterface::Status::STATUS_OK) {
@@ -3810,49 +3802,30 @@ class LeAudioClientImpl : public LeAudioClient {
 
   void StopAudio(void) { SuspendAudio(); }
 
-  void printSingleConfiguration(int fd, LeAudioCodecConfiguration* conf,
-                                bool print_audio_state, bool sender = false) {
+  void printCurrentStreamConfiguration(int fd) {
     std::stringstream stream;
-    if (print_audio_state) {
-      if (sender) {
-        stream << "\taudio sender state: " << audio_sender_state_ << "\n";
-      } else {
-        stream << "\taudio receiver state: " << audio_receiver_state_ << "\n";
-      }
-    }
+    auto config_printer = [&stream](LeAudioCodecConfiguration& conf) {
+      stream << "\tsample rate: " << +conf.sample_rate
+             << ",\tchan: " << +conf.num_channels
+             << ",\tbits: " << +conf.bits_per_sample
+             << ",\tdata_interval_us: " << +conf.data_interval_us << "\n";
+    };
 
-    stream << "\tsample rate: " << +conf->sample_rate
-           << ",\tchan: " << +conf->num_channels
-           << ",\tbits: " << +conf->bits_per_sample
-           << ",\tdata_interval_us: " << +conf->data_interval_us << "\n";
+    stream << " Speaker codec config (audio framework) \n";
+    stream << "\taudio sender state: " << audio_sender_state_ << "\n";
+    config_printer(audio_framework_source_config);
+
+    stream << " Microphone codec config (audio framework) \n";
+    stream << "\taudio receiver state: " << audio_receiver_state_ << "\n";
+    config_printer(audio_framework_sink_config);
+
+    stream << " Speaker codec config (SW encoder)\n";
+    config_printer(current_encoder_config_);
+
+    stream << " Microphone codec config (SW decoder)\n";
+    config_printer(current_decoder_config_);
 
     dprintf(fd, "%s", stream.str().c_str());
-  }
-
-  void printCurrentStreamConfiguration(int fd) {
-    auto conf = &audio_framework_source_config;
-    dprintf(fd, " Speaker codec config (audio framework) \n");
-    if (conf) {
-      printSingleConfiguration(fd, conf, false);
-    }
-
-    dprintf(fd, " Microphone codec config (audio framework) \n");
-    conf = &audio_framework_sink_config;
-    if (conf) {
-      printSingleConfiguration(fd, conf, false);
-    }
-
-    conf = &current_source_codec_config;
-    dprintf(fd, " Speaker codec config (Bluetooth)\n");
-    if (conf) {
-      printSingleConfiguration(fd, conf, true, true);
-    }
-
-    conf = &current_sink_codec_config;
-    dprintf(fd, " Microphone codec config (Bluetooth)\n");
-    if (conf) {
-      printSingleConfiguration(fd, conf, true, false);
-    }
   }
 
   void Dump(int fd) {
@@ -3924,65 +3897,17 @@ class LeAudioClientImpl : public LeAudioClient {
   }
 
   AudioReconfigurationResult UpdateConfigAndCheckIfReconfigurationIsNeeded(
-      int group_id, LeAudioContextType context_type) {
-    bool reconfiguration_needed = false;
-    bool sink_cfg_available = true;
-    bool source_cfg_available = true;
-
+      LeAudioDeviceGroup* group, LeAudioContextType context_type) {
     log::debug("Checking whether to reconfigure from {} to {}",
                ToString(configuration_context_type_), ToString(context_type));
 
-    auto group = aseGroups_.FindById(group_id);
-    if (!group) {
-      log::error("Invalid group: {}", static_cast<int>(group_id));
-      return AudioReconfigurationResult::RECONFIGURATION_NOT_NEEDED;
+    auto audio_set_conf = group->GetConfiguration(context_type);
+    if (!audio_set_conf) {
+      return AudioReconfigurationResult::RECONFIGURATION_NOT_POSSIBLE;
     }
 
-    std::optional<LeAudioCodecConfiguration> source_configuration =
-        group->GetCodecConfigurationByDirection(
-            context_type, bluetooth::le_audio::types::kLeAudioDirectionSink);
-    std::optional<LeAudioCodecConfiguration> sink_configuration =
-        group->GetCodecConfigurationByDirection(
-            context_type, bluetooth::le_audio::types::kLeAudioDirectionSource);
-
-    if (source_configuration) {
-      if (*source_configuration != current_source_codec_config) {
-        current_source_codec_config = *source_configuration;
-        reconfiguration_needed = true;
-      }
-    } else {
-      if (!current_source_codec_config.IsInvalid()) {
-        current_source_codec_config = {0, 0, 0, 0};
-        reconfiguration_needed = true;
-      }
-      source_cfg_available = false;
-    }
-
-    if (sink_configuration) {
-      if (*sink_configuration != current_sink_codec_config) {
-        current_sink_codec_config = *sink_configuration;
-        reconfiguration_needed = true;
-      }
-    } else {
-      if (!current_sink_codec_config.IsInvalid()) {
-        current_sink_codec_config = {0, 0, 0, 0};
-        reconfiguration_needed = true;
-      }
-
-      sink_cfg_available = false;
-    }
-
-    if (DsaReconfigureNeeded(group, context_type)) {
-      reconfiguration_needed = true;
-    }
-
-    log::debug(
-        "Context: {} Reconfiguration_needed = {}, sink_cfg_available = {}, "
-        "source_cfg_available = {}",
-        ToString(context_type), reconfiguration_needed, sink_cfg_available,
-        source_cfg_available);
-
-    if (!reconfiguration_needed) {
+    if (group->IsGroupConfiguredTo(*audio_set_conf) &&
+        !DsaReconfigureNeeded(group, context_type)) {
       // Assign the new configuration context as it reprents the current
       // use case even when it eventually ends up being the exact same
       // codec and qos configuration.
@@ -3993,14 +3918,17 @@ class LeAudioClientImpl : public LeAudioClient {
       return AudioReconfigurationResult::RECONFIGURATION_NOT_NEEDED;
     }
 
-    if (!sink_cfg_available && !source_cfg_available) {
-      return AudioReconfigurationResult::RECONFIGURATION_NOT_POSSIBLE;
-    }
-
     log::info("Session reconfiguration needed group: {} for context type: {}",
               group->group_id_, ToHexString(context_type));
 
     configuration_context_type_ = context_type;
+
+    // Note: The local sink config is based on remote device's source config
+    //       and vice versa.
+    current_decoder_config_ = group->GetAudioSessionCodecConfigForDirection(
+        context_type, bluetooth::le_audio::types::kLeAudioDirectionSource);
+    current_encoder_config_ = group->GetAudioSessionCodecConfigForDirection(
+        context_type, bluetooth::le_audio::types::kLeAudioDirectionSink);
     return AudioReconfigurationResult::RECONFIGURATION_NEEDED;
   }
 
@@ -4143,7 +4071,7 @@ class LeAudioClientImpl : public LeAudioClient {
     }
 
     /* Check if the device resume is allowed */
-    if (!group->GetCodecConfigurationByDirection(
+    if (!group->HasCodecConfigurationForDirection(
             configuration_context_type_,
             bluetooth::le_audio::types::kLeAudioDirectionSink)) {
       log::error("invalid resume request for context type: {}",
@@ -4358,10 +4286,11 @@ class LeAudioClientImpl : public LeAudioClient {
 
   inline bool IsDirectionAvailableForCurrentConfiguration(
       const LeAudioDeviceGroup* group, uint8_t direction) const {
-    return group
-        ->GetCachedCodecConfigurationByDirection(configuration_context_type_,
-                                                 direction)
-        .has_value();
+    auto current_config =
+        group->GetCachedConfiguration(configuration_context_type_);
+    if (current_config)
+      return (current_config->confs.get(direction).size() != 0);
+    return false;
   }
 
   void notifyAudioLocalSink(UnicastMonitorModeStatus status) {
@@ -4418,7 +4347,7 @@ class LeAudioClientImpl : public LeAudioClient {
     }
 
     /* Check if the device resume is allowed */
-    if (!group->GetCodecConfigurationByDirection(
+    if (!group->HasCodecConfigurationForDirection(
             configuration_context_type_,
             bluetooth::le_audio::types::kLeAudioDirectionSource)) {
       log::error("invalid resume request for context type: {}",
@@ -4639,8 +4568,8 @@ class LeAudioClientImpl : public LeAudioClient {
 
   bool SetConfigurationAndStopStreamWhenNeeded(
       LeAudioDeviceGroup* group, LeAudioContextType new_context_type) {
-    auto reconfig_result = UpdateConfigAndCheckIfReconfigurationIsNeeded(
-        group->group_id_, new_context_type);
+    auto reconfig_result =
+        UpdateConfigAndCheckIfReconfigurationIsNeeded(group, new_context_type);
     /* Even though the reconfiguration may not be needed, this has
      * to be set here as it might be the initial configuration.
      */
@@ -5823,9 +5752,9 @@ class LeAudioClientImpl : public LeAudioClient {
 
   static constexpr uint16_t kBapMinimumAttMtu = 64;
 
-  /* Current stream configuration */
-  LeAudioCodecConfiguration current_source_codec_config;
-  LeAudioCodecConfiguration current_sink_codec_config;
+  /* Current stream configuration - used to set up the software codecs */
+  LeAudioCodecConfiguration current_encoder_config_;
+  LeAudioCodecConfiguration current_decoder_config_;
 
   /* Static Audio Framework session configuration.
    *  Resampling will be done inside the bt stack
