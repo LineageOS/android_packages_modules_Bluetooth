@@ -15,7 +15,6 @@
 
 source_set("BluetoothNeighborSources") {
   sources = [
-    "connectability.cc",
     "discoverability.cc",
     "inquiry.cc",
     "name_db.cc",
