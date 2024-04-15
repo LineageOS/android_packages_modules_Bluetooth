@@ -39,15 +39,13 @@ using namespace blueberry::facade::neighbor;
 class NeighborFacadeService : public NeighborFacade::Service {
  public:
   NeighborFacadeService(
-      ConnectabilityModule* connectability_module,
       DiscoverabilityModule* discoverability_module,
       InquiryModule* inquiry_module,
       hci::RemoteNameRequestModule* name_module,
       PageModule*,
       ScanModule* scan_module,
       ::bluetooth::os::Handler* facade_handler)
-      : connectability_module_(connectability_module),
-        discoverability_module_(discoverability_module),
+      : discoverability_module_(discoverability_module),
         inquiry_module_(inquiry_module),
         name_module_(name_module),
         scan_module_(scan_module),
@@ -58,9 +56,9 @@ class NeighborFacadeService : public NeighborFacade::Service {
       const EnableMsg* request,
       ::google::protobuf::Empty* /* response */) override {
     if (request->enabled()) {
-      connectability_module_->StartConnectability();
+      scan_module_->SetPageScan();
     } else {
-      connectability_module_->StopConnectability();
+      scan_module_->ClearPageScan();
     }
     return ::grpc::Status::OK;
   }
@@ -216,7 +214,6 @@ class NeighborFacadeService : public NeighborFacade::Service {
     pending_remote_names_.OnIncomingEvent(response);
   }
 
-  ConnectabilityModule* connectability_module_;
   DiscoverabilityModule* discoverability_module_;
   InquiryModule* inquiry_module_;
   hci::RemoteNameRequestModule* name_module_;
@@ -228,7 +225,6 @@ class NeighborFacadeService : public NeighborFacade::Service {
 
 void NeighborFacadeModule::ListDependencies(ModuleList* list) const {
   ::bluetooth::grpc::GrpcFacadeModule::ListDependencies(list);
-  list->add<ConnectabilityModule>();
   list->add<DiscoverabilityModule>();
   list->add<InquiryModule>();
   list->add<hci::RemoteNameRequestModule>();
@@ -239,7 +235,6 @@ void NeighborFacadeModule::ListDependencies(ModuleList* list) const {
 void NeighborFacadeModule::Start() {
   ::bluetooth::grpc::GrpcFacadeModule::Start();
   service_ = new NeighborFacadeService(
-      GetDependency<ConnectabilityModule>(),
       GetDependency<DiscoverabilityModule>(),
       GetDependency<InquiryModule>(),
       GetDependency<hci::RemoteNameRequestModule>(),
