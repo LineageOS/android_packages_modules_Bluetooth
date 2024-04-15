@@ -1164,6 +1164,14 @@ struct QosConfigSetting {
   uint8_t target_latency;
   uint8_t retransmission_number;
   uint16_t max_transport_latency;
+
+  bool operator!=(const QosConfigSetting& other) { return !(*this == other); }
+
+  bool operator==(const QosConfigSetting& other) const {
+    return ((target_latency == other.target_latency) &&
+            (retransmission_number == other.retransmission_number) &&
+            (max_transport_latency == other.max_transport_latency));
+  }
 };
 
 struct AseConfiguration {
@@ -1179,6 +1187,14 @@ struct AseConfiguration {
 
   CodecConfigSetting codec;
   QosConfigSetting qos;
+
+  bool operator!=(const AseConfiguration& other) { return !(*this == other); }
+
+  bool operator==(const AseConfiguration& other) const {
+    return ((is_codec_in_controller == other.is_codec_in_controller) &&
+            (data_path_id == other.data_path_id) && (codec == other.codec) &&
+            (qos == other.qos));
+  }
 };
 
 /* Defined audio scenarios */
@@ -1188,6 +1204,15 @@ struct AudioSetConfiguration {
   uint8_t packing = bluetooth::hci::kIsoCigPackingSequential;
   types::BidirectionalPair<std::vector<struct AseConfiguration>> confs;
 
+  bool operator!=(const AudioSetConfiguration& other) {
+    return !(*this == other);
+  }
+
+  bool operator==(const AudioSetConfiguration& other) const {
+    return ((packing == other.packing) &&
+            // (codec_flags == other.codec_flags) &&
+            (confs == other.confs));
+  }
   struct TopologyInfo {
     /* How many sink and source devices must be in the set */
     types::BidirectionalPair<uint8_t> device_count;

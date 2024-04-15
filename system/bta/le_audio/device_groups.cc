@@ -20,6 +20,8 @@
 
 #include <bluetooth/log.h>
 
+#include <optional>
+
 #include "bta/include/bta_gatt_api.h"
 #include "bta_csis_api.h"
 #include "btif/include/btif_profile_storage.h"
@@ -28,6 +30,7 @@
 #include "internal_include/bt_trace.h"
 #include "le_audio/le_audio_types.h"
 #include "le_audio_set_configuration_provider.h"
+#include "le_audio_utils.h"
 #include "main/shim/entry.h"
 #include "metrics_collector.h"
 #include "os/log.h"
@@ -760,7 +763,7 @@ bool LeAudioDeviceGroup::UpdateAudioContextAvailability(void) {
 }
 
 bool LeAudioDeviceGroup::UpdateAudioSetConfigurationCache(
-    LeAudioContextType ctx_type) {
+    LeAudioContextType ctx_type) const {
   CodecManager::UnicastConfigurationRequirements requirements = {
       .audio_context_type = ctx_type};
   auto new_conf = CodecManager::GetInstance()->GetCodecConfig(
@@ -1550,7 +1553,7 @@ LeAudioDeviceGroup::GetActiveConfiguration(void) const {
 }
 
 std::shared_ptr<const set_configurations::AudioSetConfiguration>
-LeAudioDeviceGroup::GetConfiguration(LeAudioContextType context_type) {
+LeAudioDeviceGroup::GetConfiguration(LeAudioContextType context_type) const {
   if (context_type == LeAudioContextType::UNINITIALIZED) {
     return nullptr;
   }
@@ -1572,60 +1575,9 @@ LeAudioDeviceGroup::GetConfiguration(LeAudioContextType context_type) {
   return GetCachedConfiguration(context_type);
 }
 
-std::optional<LeAudioCodecConfiguration>
-LeAudioDeviceGroup::GetCachedCodecConfigurationByDirection(
+LeAudioCodecConfiguration
+LeAudioDeviceGroup::GetAudioSessionCodecConfigForDirection(
     LeAudioContextType context_type, uint8_t direction) const {
-  auto audio_set_conf = GetCachedConfiguration(context_type);
-  if (!audio_set_conf) return std::nullopt;
-
-  LeAudioCodecConfiguration group_config = {0, 0, 0, 0};
-  for (const auto& conf : audio_set_conf->confs.get(direction)) {
-    if (group_config.sample_rate != 0 &&
-        conf.codec.GetSamplingFrequencyHz() != group_config.sample_rate) {
-      log::warn(
-          "stream configuration could not be determined (sampling frequency "
-          "differs) for direction: {}",
-          loghex(direction));
-      return std::nullopt;
-    }
-    group_config.sample_rate = conf.codec.GetSamplingFrequencyHz();
-
-    if (group_config.data_interval_us != 0 &&
-        conf.codec.GetDataIntervalUs() != group_config.data_interval_us) {
-      log::warn(
-          "stream configuration could not be determined (data interval "
-          "differs) for direction: {}",
-          loghex(direction));
-      return std::nullopt;
-    }
-    group_config.data_interval_us = conf.codec.GetDataIntervalUs();
-
-    if (group_config.bits_per_sample != 0 &&
-        conf.codec.GetBitsPerSample() != group_config.bits_per_sample) {
-      log::warn(
-          "stream configuration could not be determined (bits per sample "
-          "differs) for direction: {}",
-          loghex(direction));
-      return std::nullopt;
-    }
-    group_config.bits_per_sample = conf.codec.GetBitsPerSample();
-
-    log::assert_that(
-        audio_set_conf->topology_info.has_value(),
-        "No topology info, which is required to properly configure the ASEs");
-    group_config.num_channels +=
-        conf.codec.GetChannelCountPerIsoStream() *
-        audio_set_conf->topology_info->device_count.get(direction);
-  }
-
-  if (group_config.IsInvalid()) return std::nullopt;
-
-  return group_config;
-}
-
-std::optional<LeAudioCodecConfiguration>
-LeAudioDeviceGroup::GetCodecConfigurationByDirection(
-    LeAudioContextType context_type, uint8_t direction) {
   const set_configurations::AudioSetConfiguration* conf = nullptr;
   bool is_valid = false;
 
@@ -1640,8 +1592,19 @@ LeAudioDeviceGroup::GetCodecConfigurationByDirection(
     UpdateAudioSetConfigurationCache(context_type);
   }
 
-  /* Return the cached value */
-  return GetCachedCodecConfigurationByDirection(context_type, direction);
+  auto audio_set_conf = GetCachedConfiguration(context_type);
+  if (!audio_set_conf) return {0, 0, 0, 0};
+
+  auto group_config =
+      utils::GetAudioSessionCodecConfigFromAudioSetConfiguration(
+          *audio_set_conf.get(), direction);
+  return group_config;
+}
+
+bool LeAudioDeviceGroup::HasCodecConfigurationForDirection(
+    types::LeAudioContextType context_type, uint8_t direction) const {
+  auto audio_set_conf = GetConfiguration(context_type);
+  return audio_set_conf ? !audio_set_conf->confs.get(direction).empty() : false;
 }
 
 bool LeAudioDeviceGroup::IsAudioSetConfigurationAvailable(
@@ -1863,6 +1826,8 @@ bool LeAudioDeviceGroup::IsConfiguredForContext(
   if (GetConfigurationContextType() != context_type) {
     return false;
   }
+
+  if (!stream_conf.conf) return false;
 
   /* Check if used configuration is same as the active one.*/
   return (stream_conf.conf.get() == GetActiveConfiguration().get());
