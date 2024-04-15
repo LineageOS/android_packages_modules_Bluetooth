@@ -98,7 +98,7 @@ static void parse_central_link_key_complete(const EventView event) {
                    "assert failed: event_opt.has_value()");
   auto complete = event_opt.value();
 
-  log::info("Unhandled event: {}", EventCodeText(event.GetEventCode()).c_str());
+  log::info("Unhandled event: {}", EventCodeText(event.GetEventCode()));
 }
 static void parse_return_link_keys(const EventView event) {
   auto event_opt = ReturnLinkKeysView::CreateOptional(event);
@@ -106,7 +106,7 @@ static void parse_return_link_keys(const EventView event) {
                    "assert failed: event_opt.has_value()");
   auto view = event_opt.value();
 
-  log::info("Unhandled event: {}", EventCodeText(event.GetEventCode()).c_str());
+  log::info("Unhandled event: {}", EventCodeText(event.GetEventCode()));
 }
 static void parse_pin_code_request(const EventView event) {
   auto event_opt = PinCodeRequestView::CreateOptional(event);
@@ -210,7 +210,7 @@ static void parse_keypress_notification(const EventView event) {
                    "assert failed: event_opt.has_value()");
   auto notification = event_opt.value();
 
-  log::info("Unhandled event: {}", EventCodeText(event.GetEventCode()).c_str());
+  log::info("Unhandled event: {}", EventCodeText(event.GetEventCode()));
   log_address(notification.GetBdAddr(), event.GetEventCode());
 }
 static void parse_user_confirmation_request(const EventView event) {
@@ -289,8 +289,7 @@ void SecurityEventParser::OnSecurityEvent(bluetooth::hci::EventView event) {
       parse_user_passkey_request(event);
       break;
     default:
-      log::error("Unhandled event {}",
-                 EventCodeText(event.GetEventCode()).c_str());
+      log::error("Unhandled event {}", EventCodeText(event.GetEventCode()));
   }
 }
 }  // namespace bluetooth::stack::btm

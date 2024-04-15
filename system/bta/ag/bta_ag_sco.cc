@@ -416,11 +416,8 @@ static void bta_ag_esco_connreq_cback(tBTM_ESCO_EVT event,
       log::warn(
           "reject incoming SCO connection, remote_bda={}, active_bda={}, "
           "current_bda={}",
-          ADDRESS_TO_LOGGABLE_STR(remote_bda ? *remote_bda
-                                             : RawAddress::kEmpty),
-          ADDRESS_TO_LOGGABLE_STR(active_device_addr),
-          ADDRESS_TO_LOGGABLE_STR(p_scb ? p_scb->peer_addr
-                                        : RawAddress::kEmpty));
+          remote_bda ? *remote_bda : RawAddress::kEmpty, active_device_addr,
+          p_scb ? p_scb->peer_addr : RawAddress::kEmpty);
       BTM_EScoConnRsp(p_data->conn_evt.sco_inx, HCI_ERR_HOST_REJECT_RESOURCES,
                       (enh_esco_params_t*)nullptr);
     }
@@ -461,9 +458,8 @@ void bta_ag_create_sco(tBTA_AG_SCB* p_scb, bool is_orig) {
   tBTA_AG_PEER_CODEC esco_codec = UUID_CODEC_CVSD;
 
   if (!bta_ag_sco_is_active_device(p_scb->peer_addr)) {
-    log::warn("device {} is not active, active_device={}",
-              ADDRESS_TO_LOGGABLE_STR(p_scb->peer_addr),
-              ADDRESS_TO_LOGGABLE_STR(active_device_addr));
+    log::warn("device {} is not active, active_device={}", p_scb->peer_addr,
+              active_device_addr);
     if (bta_ag_cb.sco.p_curr_scb != nullptr &&
         bta_ag_cb.sco.p_curr_scb->in_use && p_scb == bta_ag_cb.sco.p_curr_scb) {
       do_in_main_thread(FROM_HERE, base::BindOnce(&bta_ag_sm_execute, p_scb,
@@ -474,8 +470,8 @@ void bta_ag_create_sco(tBTA_AG_SCB* p_scb, bool is_orig) {
   }
   /* Make sure this SCO handle is not already in use */
   if (p_scb->sco_idx != BTM_INVALID_SCO_INDEX) {
-    log::error("device {}, index 0x{:04x} already in use!",
-               ADDRESS_TO_LOGGABLE_CSTR(p_scb->peer_addr), p_scb->sco_idx);
+    log::error("device {}, index 0x{:04x} already in use!", p_scb->peer_addr,
+               p_scb->sco_idx);
     return;
   }
 
@@ -856,7 +852,7 @@ static void bta_ag_sco_event(tBTA_AG_SCB* p_scb, uint8_t event) {
   tBTA_AG_SCO_CB* p_sco = &bta_ag_cb.sco;
   uint8_t previous_state = p_sco->state;
   log::info("device:{} index:0x{:04x} state:{}[{}] event:{}[{}]",
-            ADDRESS_TO_LOGGABLE_CSTR(p_scb->peer_addr), p_scb->sco_idx,
+            p_scb->peer_addr, p_scb->sco_idx,
             bta_ag_sco_state_str(p_sco->state), p_sco->state,
             bta_ag_sco_evt_str(event), event);
 
@@ -1396,7 +1392,7 @@ bool bta_ag_sco_is_opening(tBTA_AG_SCB* p_scb) {
  *
  ******************************************************************************/
 void bta_ag_sco_listen(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /* data */) {
-  log::info("{}", ADDRESS_TO_LOGGABLE_STR(p_scb->peer_addr));
+  log::info("{}", p_scb->peer_addr);
   bta_ag_sco_event(p_scb, BTA_AG_SCO_LISTEN_E);
 }
 
@@ -1440,13 +1436,12 @@ void bta_ag_sco_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
 
   /* if another scb using sco, this is a transfer */
   if (bta_ag_cb.sco.p_curr_scb && bta_ag_cb.sco.p_curr_scb != p_scb) {
-    log::info("transfer {} -> {}",
-              ADDRESS_TO_LOGGABLE_STR(bta_ag_cb.sco.p_curr_scb->peer_addr),
-              ADDRESS_TO_LOGGABLE_STR(p_scb->peer_addr));
+    log::info("transfer {} -> {}", bta_ag_cb.sco.p_curr_scb->peer_addr,
+              p_scb->peer_addr);
     bta_ag_sco_event(p_scb, BTA_AG_SCO_XFER_E);
   } else {
     /* else it is an open */
-    log::info("open {}", ADDRESS_TO_LOGGABLE_STR(p_scb->peer_addr));
+    log::info("open {}", p_scb->peer_addr);
     bta_ag_sco_event(p_scb, BTA_AG_SCO_OPEN_E);
   }
 }
@@ -1486,13 +1481,13 @@ void bta_ag_sco_codec_nego(tBTA_AG_SCB* p_scb, bool result) {
   if (result) {
     /* Subsequent SCO connection will skip codec negotiation */
     log::info("Succeeded for index 0x{:04x}, device {}", p_scb->sco_idx,
-              ADDRESS_TO_LOGGABLE_CSTR(p_scb->peer_addr));
+              p_scb->peer_addr);
     p_scb->codec_updated = false;
     bta_ag_sco_event(p_scb, BTA_AG_SCO_CN_DONE_E);
   } else {
     /* codec negotiation failed */
     log::info("Failed for index 0x{:04x}, device {}", p_scb->sco_idx,
-              ADDRESS_TO_LOGGABLE_CSTR(p_scb->peer_addr));
+              p_scb->peer_addr);
     bta_ag_sco_event(p_scb, BTA_AG_SCO_CLOSE_E);
   }
 }

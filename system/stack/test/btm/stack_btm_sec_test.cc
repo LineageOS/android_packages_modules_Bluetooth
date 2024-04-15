@@ -303,7 +303,7 @@ TEST_F(StackBtmSecWithInitFreeTest, btm_sec_rmt_name_request_complete) {
     struct tm tm;
     localtime_r(&then, &tm);
     auto s2 = common::StringFormatTime(kTimeFormat, tm);
-    log::debug(" {}.{} {}", s2,
+    log::debug("{}.{} {}", s2,
                static_cast<unsigned int>(record.timestamp % 1000),
                record.entry);
   }

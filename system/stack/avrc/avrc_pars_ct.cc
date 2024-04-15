@@ -553,7 +553,7 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
       if (len < min_len) goto length_error;
       BE_STREAM_TO_UINT8(p_result->get_caps.capability_id, p);
       BE_STREAM_TO_UINT8(p_result->get_caps.count, p);
-      log::verbose("cap id = {}, cap_count = {} ",
+      log::verbose("cap id = {}, cap_count = {}",
                    p_result->get_caps.capability_id, p_result->get_caps.count);
       if (p_result->get_caps.capability_id == AVRC_CAP_COMPANY_ID) {
         if (p_result->get_caps.count > AVRC_CAP_MAX_NUM_COMP_ID) {
@@ -588,7 +588,7 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
       }
       min_len += 1;
       BE_STREAM_TO_UINT8(p_result->list_app_attr.num_attr, p);
-      log::verbose("attr count = {} ", p_result->list_app_attr.num_attr);
+      log::verbose("attr count = {}", p_result->list_app_attr.num_attr);
 
       if (p_result->list_app_attr.num_attr > AVRC_MAX_APP_ATTR_SIZE) {
         p_result->list_app_attr.num_attr = AVRC_MAX_APP_ATTR_SIZE;
@@ -612,7 +612,7 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
         p_result->list_app_values.num_val = AVRC_MAX_APP_ATTR_SIZE;
       }
 
-      log::verbose("value count = {} ", p_result->list_app_values.num_val);
+      log::verbose("value count = {}", p_result->list_app_values.num_val);
       min_len += p_result->list_app_values.num_val;
       if (len < min_len) goto length_error;
       for (int xx = 0; xx < p_result->list_app_values.num_val; xx++) {
@@ -627,7 +627,7 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
       }
       min_len += 1;
       BE_STREAM_TO_UINT8(p_result->get_cur_app_val.num_val, p);
-      log::verbose("attr count = {} ", p_result->get_cur_app_val.num_val);
+      log::verbose("attr count = {}", p_result->get_cur_app_val.num_val);
 
       if (p_result->get_cur_app_val.num_val > AVRC_MAX_APP_ATTR_SIZE) {
         p_result->get_cur_app_val.num_val = AVRC_MAX_APP_ATTR_SIZE;
@@ -659,7 +659,7 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
       if (num_attrs > AVRC_MAX_APP_ATTR_SIZE) {
         num_attrs = AVRC_MAX_APP_ATTR_SIZE;
       }
-      log::verbose("attr count = {} ", p_result->get_app_attr_txt.num_attr);
+      log::verbose("attr count = {}", p_result->get_app_attr_txt.num_attr);
       p_result->get_app_attr_txt.num_attr = num_attrs;
 
       p_result->get_app_attr_txt.p_attrs = (tAVRC_APP_SETTING_TEXT*)osi_calloc(
@@ -712,7 +712,7 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
         num_vals = AVRC_MAX_APP_ATTR_SIZE;
       }
       p_result->get_app_val_txt.num_attr = num_vals;
-      log::verbose("value count = {} ", p_result->get_app_val_txt.num_attr);
+      log::verbose("value count = {}", p_result->get_app_val_txt.num_attr);
 
       p_result->get_app_val_txt.p_attrs = (tAVRC_APP_SETTING_TEXT*)osi_calloc(
           num_vals * sizeof(tAVRC_APP_SETTING_TEXT));

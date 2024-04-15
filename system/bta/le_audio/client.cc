@@ -391,8 +391,8 @@ class LeAudioClientImpl : public LeAudioClient {
 
   void OnGroupAddedCb(const RawAddress& address, const bluetooth::Uuid& uuid,
                       int group_id) {
-    log::info("address: {} group uuid {} group_id: {}",
-              ADDRESS_TO_LOGGABLE_STR(address), uuid, group_id);
+    log::info("address: {} group uuid {} group_id: {}", address, uuid,
+              group_id);
 
     /* We are interested in the groups which are in the context of CAP */
     if (uuid != bluetooth::le_audio::uuid::kCapServiceUuid) return;
@@ -412,15 +412,14 @@ class LeAudioClientImpl : public LeAudioClient {
    * considering this removing device.
    */
   void SetDeviceAsRemovePendingAndStopGroup(LeAudioDevice* leAudioDevice) {
-    log::info("device {}", ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+    log::info("device {}", leAudioDevice->address_);
     leAudioDevice->SetConnectionState(DeviceConnectState::REMOVING);
     leAudioDevice->closing_stream_for_disconnection_ = true;
     GroupStop(leAudioDevice->group_id_);
   }
 
   void OnGroupMemberAddedCb(const RawAddress& address, int group_id) {
-    log::info("address: {} group_id: {}", ADDRESS_TO_LOGGABLE_STR(address),
-              group_id);
+    log::info("address: {} group_id: {}", address, group_id);
 
     auto group = aseGroups_.FindById(group_id);
     if (!group) {
@@ -444,21 +443,20 @@ class LeAudioClientImpl : public LeAudioClient {
   }
 
   void OnGroupMemberRemovedCb(const RawAddress& address, int group_id) {
-    log::info("address: {} group_id: {}", ADDRESS_TO_LOGGABLE_STR(address),
-              group_id);
+    log::info("address: {} group_id: {}", address, group_id);
 
     LeAudioDevice* leAudioDevice = leAudioDevices_.FindByAddress(address);
     if (!leAudioDevice) return;
     if (leAudioDevice->group_id_ != group_id) {
       log::warn("Device: {} not assigned to the group.",
-                ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+                leAudioDevice->address_);
       return;
     }
 
     LeAudioDeviceGroup* group = aseGroups_.FindById(group_id);
     if (group == NULL) {
-      log::info("device not in the group: {}, {}",
-                ADDRESS_TO_LOGGABLE_STR(leAudioDevice->address_), group_id);
+      log::info("device not in the group: {}, {}", leAudioDevice->address_,
+                group_id);
       return;
     }
 
@@ -545,7 +543,7 @@ class LeAudioClientImpl : public LeAudioClient {
 
   void OnDeviceAutonomousStateTransitionTimeout(LeAudioDevice* leAudioDevice) {
     log::error("Device {}, failed to complete autonomous transition",
-               ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+               leAudioDevice->address_);
     DisconnectDevice(leAudioDevice, true);
   }
 
@@ -646,8 +644,8 @@ class LeAudioClientImpl : public LeAudioClient {
       /* TODO This part possible to remove as this is to handle adding device to
        * the group which is unknown and not connected.
        */
-      log::info("leAudioDevice unknown , address: {} group: {}",
-                ADDRESS_TO_LOGGABLE_STR(address), loghex(group_id));
+      log::info("leAudioDevice unknown , address: {} group: {}", address,
+                loghex(group_id));
 
       if (group_id == bluetooth::groups::kGroupUnknown) return;
 
@@ -766,12 +764,10 @@ class LeAudioClientImpl : public LeAudioClient {
     LeAudioDevice* leAudioDevice = leAudioDevices_.FindByAddress(address);
     LeAudioDeviceGroup* group = aseGroups_.FindById(group_id);
 
-    log::info("group_id: {} address: {}", group_id,
-              ADDRESS_TO_LOGGABLE_STR(address));
+    log::info("group_id: {} address: {}", group_id, address);
 
     if (!leAudioDevice) {
-      log::error("Skipping unknown leAudioDevice, address: {}",
-                 ADDRESS_TO_LOGGABLE_STR(address));
+      log::error("Skipping unknown leAudioDevice, address: {}", address);
       return;
     }
 
@@ -1330,11 +1326,10 @@ class LeAudioClientImpl : public LeAudioClient {
   }
 
   void SetEnableState(const RawAddress& address, bool enabled) override {
-    log::info("{}: {}", ADDRESS_TO_LOGGABLE_CSTR(address),
-              (enabled ? "enabled" : "disabled"));
+    log::info("{}: {}", address, (enabled ? "enabled" : "disabled"));
     auto leAudioDevice = leAudioDevices_.FindByAddress(address);
     if (leAudioDevice == nullptr) {
-      log::warn("{} is null", ADDRESS_TO_LOGGABLE_CSTR(address));
+      log::warn("{} is null", address);
       return;
     }
 
@@ -1353,7 +1348,7 @@ class LeAudioClientImpl : public LeAudioClient {
   }
 
   void RemoveDevice(const RawAddress& address) override {
-    log::info(": {}", ADDRESS_TO_LOGGABLE_CSTR(address));
+    log::info(": {}", address);
     LeAudioDevice* leAudioDevice = leAudioDevices_.FindByAddress(address);
     if (!leAudioDevice) {
       return;
@@ -1363,7 +1358,7 @@ class LeAudioClientImpl : public LeAudioClient {
     BTA_GATTC_CancelOpen(gatt_if_, address, false);
     btif_storage_set_leaudio_autoconnect(address, false);
 
-    log::info("{}, state: {}", ADDRESS_TO_LOGGABLE_CSTR(address),
+    log::info("{}, state: {}", address,
               bluetooth::common::ToString(leAudioDevice->GetConnectionState()));
     auto connection_state = leAudioDevice->GetConnectionState();
     switch (connection_state) {
@@ -1403,13 +1398,12 @@ class LeAudioClientImpl : public LeAudioClient {
   }
 
   void Connect(const RawAddress& address) override {
-    log::info(": {}", ADDRESS_TO_LOGGABLE_CSTR(address));
+    log::info(": {}", address);
 
     LeAudioDevice* leAudioDevice = leAudioDevices_.FindByAddress(address);
     if (!leAudioDevice) {
       if (!BTM_IsLinkKeyKnown(address, BT_TRANSPORT_LE)) {
-        log::error("Connecting  {} when not bonded",
-                   ADDRESS_TO_LOGGABLE_CSTR(address));
+        log::error("Connecting  {} when not bonded", address);
         callbacks_->OnConnectionState(ConnectionState::DISCONNECTED, address);
         return;
       }
@@ -1418,8 +1412,7 @@ class LeAudioClientImpl : public LeAudioClient {
       auto current_connect_state = leAudioDevice->GetConnectionState();
       if ((current_connect_state == DeviceConnectState::CONNECTED) ||
           (current_connect_state == DeviceConnectState::CONNECTING_BY_USER)) {
-        log::error("Device {} is in invalid state: {}",
-                   ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_),
+        log::error("Device {} is in invalid state: {}", leAudioDevice->address_,
                    bluetooth::common::ToString(current_connect_state));
 
         return;
@@ -1428,8 +1421,7 @@ class LeAudioClientImpl : public LeAudioClient {
       if (leAudioDevice->group_id_ != bluetooth::groups::kGroupUnknown) {
         auto group = GetGroupIfEnabled(leAudioDevice->group_id_);
         if (!group) {
-          log::warn("{}, trying to connect to disabled group id {}",
-                    ADDRESS_TO_LOGGABLE_CSTR(address),
+          log::warn("{}, trying to connect to disabled group id {}", address,
                     leAudioDevice->group_id_);
           callbacks_->OnConnectionState(ConnectionState::DISCONNECTED, address);
           return;
@@ -1481,9 +1473,8 @@ class LeAudioClientImpl : public LeAudioClient {
         "restoring: {}, autoconnect {}, sink_audio_location: {}, "
         "source_audio_location: {}, sink_supported_context_types : 0x{:04x}, "
         "source_supported_context_types 0x{:04x}",
-        ADDRESS_TO_LOGGABLE_CSTR(address), autoconnect, sink_audio_location,
-        source_audio_location, sink_supported_context_types,
-        source_supported_context_types);
+        address, autoconnect, sink_audio_location, source_audio_location,
+        sink_supported_context_types, source_supported_context_types);
 
     leAudioDevices_.Add(address, DeviceConnectState::DISCONNECTED);
     leAudioDevice = leAudioDevices_.FindByAddress(address);
@@ -1576,25 +1567,24 @@ class LeAudioClientImpl : public LeAudioClient {
   void BackgroundConnectIfNeeded(LeAudioDevice* leAudioDevice) {
     if (!leAudioDevice->autoconnect_flag_) {
       log::debug("Device {} not in the background connect",
-                 ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+                 leAudioDevice->address_);
       return;
     }
     AddToBackgroundConnectCheckGroupConnected(leAudioDevice);
   }
 
   void Disconnect(const RawAddress& address) override {
-    log::info(": {}", ADDRESS_TO_LOGGABLE_CSTR(address));
+    log::info(": {}", address);
     LeAudioDevice* leAudioDevice = leAudioDevices_.FindByAddress(address);
 
     if (!leAudioDevice) {
-      log::warn("leAudioDevice not connected ( {} )",
-                ADDRESS_TO_LOGGABLE_CSTR(address));
+      log::warn("leAudioDevice not connected ( {} )", address);
       callbacks_->OnConnectionState(ConnectionState::DISCONNECTED, address);
       return;
     }
 
     auto connection_state = leAudioDevice->GetConnectionState();
-    log::info("{}, state: {}", ADDRESS_TO_LOGGABLE_CSTR(address),
+    log::info("{}, state: {}", address,
               bluetooth::common::ToString(connection_state));
 
     switch (connection_state) {
@@ -1674,7 +1664,7 @@ class LeAudioClientImpl : public LeAudioClient {
       case DeviceConnectState::DISCONNECTING_AND_RECOVER:
       case DeviceConnectState::CONNECTING_AUTOCONNECT:
       case DeviceConnectState::REMOVING:
-        log::warn("{}, invalid state {}", ADDRESS_TO_LOGGABLE_CSTR(address),
+        log::warn("{}, invalid state {}", address,
                   bluetooth::common::ToString(connection_state));
         return;
     }
@@ -1974,13 +1964,13 @@ class LeAudioClientImpl : public LeAudioClient {
     BTA_GATTC_CancelOpen(gatt_if_, address, false);
     if (group->IsAnyDeviceConnected()) {
       log::info("Group {} in connected state. Adding {} to allow list",
-                leAudioDevice->group_id_, ADDRESS_TO_LOGGABLE_CSTR(address));
+                leAudioDevice->group_id_, address);
       BTA_GATTC_Open(gatt_if_, address, BTM_BLE_BKG_CONNECT_ALLOW_LIST, false);
     } else {
       log::info(
           "Adding {} to backgroud connect (default reconnection_mode "
           "(0x{:02x}))",
-          ADDRESS_TO_LOGGABLE_CSTR(address), reconnection_mode_);
+          address, reconnection_mode_);
       BTA_GATTC_Open(gatt_if_, address, reconnection_mode_, false);
     }
   }
@@ -1991,8 +1981,8 @@ class LeAudioClientImpl : public LeAudioClient {
     LeAudioDevice* leAudioDevice = leAudioDevices_.FindByAddress(address);
 
     log::info("{}, conn_id=0x{:04x}, transport={}, status={} (0x{:02x})",
-              ADDRESS_TO_LOGGABLE_CSTR(address), conn_id,
-              bt_transport_text(transport), gatt_status_text(status), status);
+              address, conn_id, bt_transport_text(transport),
+              gatt_status_text(status), status);
 
     if (transport != BT_TRANSPORT_LE) {
       log::warn("Only LE connection is allowed (transport {})",
@@ -2004,8 +1994,8 @@ class LeAudioClientImpl : public LeAudioClient {
     if (!leAudioDevice) return;
 
     if (leAudioDevice->conn_id_ != GATT_INVALID_CONN_ID) {
-      log::debug("Already connected {}, conn_id=0x{:04x}",
-                 ADDRESS_TO_LOGGABLE_CSTR(address), leAudioDevice->conn_id_);
+      log::debug("Already connected {}, conn_id=0x{:04x}", address,
+                 leAudioDevice->conn_id_);
       return;
     }
 
@@ -2042,7 +2032,7 @@ class LeAudioClientImpl : public LeAudioClient {
 
         log::warn(
             "LeAudio profile is disabled for group_id: {}. {} is not connected",
-            leAudioDevice->group_id_, ADDRESS_TO_LOGGABLE_CSTR(address));
+            leAudioDevice->group_id_, address);
         return;
       }
     }
@@ -2059,7 +2049,7 @@ class LeAudioClientImpl : public LeAudioClient {
     BTA_GATTC_Open(gatt_if_, address, reconnection_mode_, false);
 
     if (bluetooth::shim::GetController()->SupportsBle2mPhy()) {
-      log::info("{} set preferred PHY to 2M", ADDRESS_TO_LOGGABLE_STR(address));
+      log::info("{} set preferred PHY to 2M", address);
       BTM_BleSetPhy(address, PHY_LE_2M, PHY_LE_2M, 0);
     }
 
@@ -2092,12 +2082,11 @@ class LeAudioClientImpl : public LeAudioClient {
     int result = BTM_SetEncryption(address, BT_TRANSPORT_LE, nullptr, nullptr,
                                    BTM_BLE_SEC_ENCRYPT);
 
-    log::info("Encryption required for {}. Request result: 0x{:02x}",
-              ADDRESS_TO_LOGGABLE_CSTR(address), result);
+    log::info("Encryption required for {}. Request result: 0x{:02x}", address,
+              result);
 
     if (result == BTM_ERR_KEY_MISSING) {
-      log::error("Link key unknown for {}, disconnect profile",
-                 ADDRESS_TO_LOGGABLE_CSTR(address));
+      log::error("Link key unknown for {}, disconnect profile", address);
       bluetooth::le_audio::MetricsCollector::Get()->OnConnectionStateChanged(
           leAudioDevice->group_id_, address, ConnectionState::CONNECTED,
           bluetooth::le_audio::ConnectionStatus::FAILED);
@@ -2109,12 +2098,12 @@ class LeAudioClientImpl : public LeAudioClient {
 
   void RegisterKnownNotifications(LeAudioDevice* leAudioDevice,
                                   bool gatt_register, bool write_ccc) {
-    log::info("device: {}", ADDRESS_TO_LOGGABLE_STR(leAudioDevice->address_));
+    log::info("device: {}", leAudioDevice->address_);
 
     if (leAudioDevice->ctp_hdls_.val_hdl == 0) {
       log::error(
           "Control point characteristic is mandatory - disconnecting device {}",
-          ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+          leAudioDevice->address_);
       DisconnectDevice(leAudioDevice);
       return;
     }
@@ -2172,7 +2161,7 @@ class LeAudioClientImpl : public LeAudioClient {
   }
 
   void OnEncryptionComplete(const RawAddress& address, uint8_t status) {
-    log::info("{} status 0x{:02x}", ADDRESS_TO_LOGGABLE_CSTR(address), status);
+    log::info("{} status 0x{:02x}", address, status);
     LeAudioDevice* leAudioDevice = leAudioDevices_.FindByAddress(address);
     if (leAudioDevice == NULL ||
         (leAudioDevice->conn_id_ == GATT_INVALID_CONN_ID)) {
@@ -2208,8 +2197,7 @@ class LeAudioClientImpl : public LeAudioClient {
      */
     if (!leAudioDevice->acl_phy_update_done_ &&
         bluetooth::shim::GetController()->SupportsBle2mPhy()) {
-      log::info("{} set preferred PHY to 2M",
-                ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+      log::info("{} set preferred PHY to 2M", leAudioDevice->address_);
       BTM_BleSetPhy(address, PHY_LE_2M, PHY_LE_2M, 0);
     }
 
@@ -2290,8 +2278,7 @@ class LeAudioClientImpl : public LeAudioClient {
   void autoConnect(RawAddress address) {
     auto leAudioDevice = leAudioDevices_.FindByAddress(address);
     if (leAudioDevice == nullptr) {
-      log::warn("Device {} not valid anymore",
-                ADDRESS_TO_LOGGABLE_CSTR(address));
+      log::warn("Device {} not valid anymore", address);
       return;
     }
 
@@ -2299,7 +2286,7 @@ class LeAudioClientImpl : public LeAudioClient {
   }
 
   void scheduleAutoConnect(RawAddress& address) {
-    log::info("Schedule auto connect {}", ADDRESS_TO_LOGGABLE_CSTR(address));
+    log::info("Schedule auto connect {}", address);
     do_in_main_thread_delayed(
         FROM_HERE,
         base::BindOnce(&LeAudioClientImpl::autoConnect,
@@ -2308,15 +2295,14 @@ class LeAudioClientImpl : public LeAudioClient {
   }
 
   void recoveryReconnect(RawAddress address) {
-    log::info("Reconnecting to {} after timeout on state machine.",
-              ADDRESS_TO_LOGGABLE_CSTR(address));
+    log::info("Reconnecting to {} after timeout on state machine.", address);
     LeAudioDevice* leAudioDevice = leAudioDevices_.FindByAddress(address);
 
     if (leAudioDevice == nullptr ||
         leAudioDevice->GetConnectionState() !=
             DeviceConnectState::DISCONNECTING_AND_RECOVER) {
       log::warn("Device {}, not interested in recovery connect anymore",
-                ADDRESS_TO_LOGGABLE_CSTR(address));
+                address);
       return;
     }
 
@@ -2333,7 +2319,7 @@ class LeAudioClientImpl : public LeAudioClient {
 
   void scheduleRecoveryReconnect(RawAddress& address) {
     log::info("Schedule reconnecting to {} after timeout on state machine.",
-              ADDRESS_TO_LOGGABLE_CSTR(address));
+              address);
     do_in_main_thread_delayed(
         FROM_HERE,
         base::BindOnce(&LeAudioClientImpl::recoveryReconnect,
@@ -2342,13 +2328,11 @@ class LeAudioClientImpl : public LeAudioClient {
   }
 
   void checkIfGroupMember(RawAddress address) {
-    log::info("checking being a group member: {}",
-              ADDRESS_TO_LOGGABLE_CSTR(address));
+    log::info("checking being a group member: {}", address);
     LeAudioDevice* leAudioDevice = leAudioDevices_.FindByAddress(address);
 
     if (leAudioDevice == nullptr) {
-      log::warn("Device {}, probably removed",
-                ADDRESS_TO_LOGGABLE_CSTR(address));
+      log::warn("Device {}, probably removed", address);
       return;
     }
 
@@ -2369,7 +2353,7 @@ class LeAudioClientImpl : public LeAudioClient {
    */
   void scheduleGuardForCsisAdd(RawAddress& address) {
     log::info("Schedule reconnecting to {} after timeout on state machine.",
-              ADDRESS_TO_LOGGABLE_CSTR(address));
+              address);
     do_in_main_thread_delayed(
         FROM_HERE,
         base::BindOnce(&LeAudioClientImpl::checkIfGroupMember,
@@ -2382,8 +2366,7 @@ class LeAudioClientImpl : public LeAudioClient {
     LeAudioDevice* leAudioDevice = leAudioDevices_.FindByConnId(conn_id);
 
     if (!leAudioDevice) {
-      log::error(", skipping unknown leAudioDevice, address: {}",
-                 ADDRESS_TO_LOGGABLE_STR(address));
+      log::error(", skipping unknown leAudioDevice, address: {}", address);
       return;
     }
 
@@ -2417,8 +2400,7 @@ class LeAudioClientImpl : public LeAudioClient {
 
     auto connection_state = leAudioDevice->GetConnectionState();
     log::info("{}, autoconnect {}, reason 0x{:02x}, connection state {}",
-              ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_),
-              leAudioDevice->autoconnect_flag_, reason,
+              leAudioDevice->address_, leAudioDevice->autoconnect_flag_, reason,
               bluetooth::common::ToString(connection_state));
 
     if (connection_state == DeviceConnectState::DISCONNECTING_AND_RECOVER) {
@@ -2497,7 +2479,7 @@ class LeAudioClientImpl : public LeAudioClient {
 
     if (write_ccc == false) {
       log::verbose("CCC is not written to {} (0x{:04x}), handle 0x{:04x}",
-                   ADDRESS_TO_LOGGABLE_CSTR(address), conn_id, ccc_handle);
+                   address, conn_id, ccc_handle);
       return true;
     }
 
@@ -2532,7 +2514,7 @@ class LeAudioClientImpl : public LeAudioClient {
       return;
     }
 
-    log::info("{}", ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+    log::info("{}", leAudioDevice->address_);
 
     if (leAudioDevice->known_service_handles_ == false) {
       log::debug("Database already invalidated");
@@ -2559,8 +2541,8 @@ class LeAudioClientImpl : public LeAudioClient {
   void OnServiceChangeEvent(const RawAddress& address) {
     LeAudioDevice* leAudioDevice = leAudioDevices_.FindByAddress(address);
     if (!leAudioDevice) {
-      log::warn("Skipping unknown leAudioDevice {} ({})",
-                ADDRESS_TO_LOGGABLE_CSTR(address), fmt::ptr(leAudioDevice));
+      log::warn("Skipping unknown leAudioDevice {} ({})", address,
+                fmt::ptr(leAudioDevice));
       return;
     }
 
@@ -2592,7 +2574,7 @@ class LeAudioClientImpl : public LeAudioClient {
      */
     if (mtu < 64) {
       log::error("Device {} MTU is too low ({}). Disconnecting from LE Audio",
-                 ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_), mtu);
+                 leAudioDevice->address_, mtu);
       Disconnect(leAudioDevice->address_);
       return;
     }
@@ -2609,8 +2591,7 @@ class LeAudioClientImpl : public LeAudioClient {
     }
 
     log::info("{}, tx_phy: {:#x}, rx_phy: {:#x} , status: {:#x}",
-              ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_), tx_phy, rx_phy,
-              status);
+              leAudioDevice->address_, tx_phy, rx_phy, status);
 
     if (status == 0) {
       leAudioDevice->acl_phy_update_done_ = true;
@@ -2620,8 +2601,8 @@ class LeAudioClientImpl : public LeAudioClient {
   void OnGattServiceDiscoveryDone(const RawAddress& address) {
     LeAudioDevice* leAudioDevice = leAudioDevices_.FindByAddress(address);
     if (!leAudioDevice || (leAudioDevice->conn_id_ == GATT_INVALID_CONN_ID)) {
-      log::verbose("skipping unknown leAudioDevice, address {} ({})",
-                   ADDRESS_TO_LOGGABLE_CSTR(address), fmt::ptr(leAudioDevice));
+      log::verbose("skipping unknown leAudioDevice, address {} ({})", address,
+                   fmt::ptr(leAudioDevice));
       return;
     }
 
@@ -2639,8 +2620,7 @@ class LeAudioClientImpl : public LeAudioClient {
   void disconnectInvalidDevice(LeAudioDevice* leAudioDevice,
                                std::string error_string,
                                LeAudioHealthDeviceStatType stat) {
-    log::error("{}, {}", ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_),
-               error_string);
+    log::error("{}, {}", leAudioDevice->address_, error_string);
     if (leAudioHealthStatus_) {
       leAudioHealthStatus_->AddStatisticForDevice(leAudioDevice, stat);
     }
@@ -2688,23 +2668,22 @@ class LeAudioClientImpl : public LeAudioClient {
           bluetooth::le_audio::uuid::kPublishedAudioCapabilityServiceUuid) {
         log::info(
             "Found Audio Capability service, handle: 0x{:04x}, device: {}",
-            tmp.handle, ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+            tmp.handle, leAudioDevice->address_);
         pac_svc = &tmp;
       } else if (tmp.uuid ==
                  bluetooth::le_audio::uuid::kAudioStreamControlServiceUuid) {
         log::info(
             "Found Audio Stream Endpoint service, handle: 0x{:04x}, device: {}",
-            tmp.handle, ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+            tmp.handle, leAudioDevice->address_);
         ase_svc = &tmp;
       } else if (tmp.uuid == bluetooth::csis::kCsisServiceUuid) {
         log::info(
             "Found CSIS service, handle: 0x{:04x}, is primary: {}, device: {}",
-            tmp.handle, tmp.is_primary,
-            ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+            tmp.handle, tmp.is_primary, leAudioDevice->address_);
         if (tmp.is_primary) csis_primary_handles.push_back(tmp.handle);
       } else if (tmp.uuid == bluetooth::le_audio::uuid::kCapServiceUuid) {
         log::info("Found CAP service, handle: 0x{:04x}, device: {}", tmp.handle,
-                  ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+                  leAudioDevice->address_);
 
         /* Try to find context for CSIS instances */
         for (auto& included_srvc : tmp.included_services) {
@@ -2721,7 +2700,7 @@ class LeAudioClientImpl : public LeAudioClient {
         log::info(
             "Found Telephony and Media Audio service, handle: 0x{:04x}, "
             "device: {}",
-            tmp.handle, ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+            tmp.handle, leAudioDevice->address_);
         tmas_svc = &tmp;
       }
     }
@@ -2776,8 +2755,7 @@ class LeAudioClientImpl : public LeAudioClient {
         log::info(
             "Found Sink PAC characteristic, handle: 0x{:04x}, ccc handle: "
             "0x{:04x}, addr: {}",
-            charac.value_handle, hdl_pair.ccc_hdl,
-            ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+            charac.value_handle, hdl_pair.ccc_hdl, leAudioDevice->address_);
       } else if (charac.uuid ==
                  bluetooth::le_audio::uuid::
                      kSourcePublishedAudioCapabilityCharacteristicUuid) {
@@ -2809,8 +2787,7 @@ class LeAudioClientImpl : public LeAudioClient {
         log::info(
             "Found Source PAC characteristic, handle: 0x{:04x}, ccc handle: "
             "0x{:04x}, addr: {}",
-            charac.value_handle, hdl_pair.ccc_hdl,
-            ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+            charac.value_handle, hdl_pair.ccc_hdl, leAudioDevice->address_);
       } else if (charac.uuid == bluetooth::le_audio::uuid::
                                     kSinkAudioLocationCharacteristicUuid) {
         leAudioDevice->snk_audio_locations_hdls_.val_hdl = charac.value_handle;
@@ -2841,7 +2818,7 @@ class LeAudioClientImpl : public LeAudioClient {
             "handle: 0x{:04x}, addr: {}",
             charac.value_handle,
             leAudioDevice->snk_audio_locations_hdls_.ccc_hdl,
-            ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+            leAudioDevice->address_);
       } else if (charac.uuid == bluetooth::le_audio::uuid::
                                     kSourceAudioLocationCharacteristicUuid) {
         leAudioDevice->src_audio_locations_hdls_.val_hdl = charac.value_handle;
@@ -2872,7 +2849,7 @@ class LeAudioClientImpl : public LeAudioClient {
             "ccc handle: 0x{:04x}, addr: {}",
             charac.value_handle,
             leAudioDevice->src_audio_locations_hdls_.ccc_hdl,
-            ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+            leAudioDevice->address_);
       } else if (charac.uuid ==
                  bluetooth::le_audio::uuid::
                      kAudioContextAvailabilityCharacteristicUuid) {
@@ -2903,7 +2880,7 @@ class LeAudioClientImpl : public LeAudioClient {
             "Found Audio Availability Context characteristic, handle: "
             "0x{:04x}, ccc handle: 0x{:04x}, addr: {}",
             charac.value_handle, leAudioDevice->audio_avail_hdls_.ccc_hdl,
-            ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+            leAudioDevice->address_);
       } else if (charac.uuid == bluetooth::le_audio::uuid::
                                     kAudioSupportedContextCharacteristicUuid) {
         leAudioDevice->audio_supp_cont_hdls_.val_hdl = charac.value_handle;
@@ -2932,7 +2909,7 @@ class LeAudioClientImpl : public LeAudioClient {
             "Found Audio Supported Context characteristic, handle: 0x{:04x}, "
             "ccc handle: 0x{:04x}, addr: {}",
             charac.value_handle, leAudioDevice->audio_supp_cont_hdls_.ccc_hdl,
-            ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+            leAudioDevice->address_);
       }
     }
 
@@ -2974,7 +2951,7 @@ class LeAudioClientImpl : public LeAudioClient {
             "Found ASE characteristic, handle: 0x{:04x}, ccc handle: 0x{:04x}, "
             "direction: {}, addr: {}",
             charac.value_handle, ccc_handle, direction,
-            ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+            leAudioDevice->address_);
       } else if (charac.uuid ==
                  bluetooth::le_audio::uuid::
                      kAudioStreamEndpointControlPointCharacteristicUuid) {
@@ -2999,7 +2976,7 @@ class LeAudioClientImpl : public LeAudioClient {
             "Found ASE Control Point characteristic, handle: 0x{:04x}, ccc "
             "handle: 0x{:04x}, addr: {}",
             charac.value_handle, leAudioDevice->ctp_hdls_.ccc_hdl,
-            ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+            leAudioDevice->address_);
       }
     }
 
@@ -3018,8 +2995,7 @@ class LeAudioClientImpl : public LeAudioClient {
           log::info(
               "Found Telephony and Media Profile characteristic, handle: "
               "0x{:04x}, device: {}",
-              leAudioDevice->tmap_role_hdl_,
-              ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+              leAudioDevice->tmap_role_hdl_, leAudioDevice->address_);
         }
       }
     }
@@ -3051,13 +3027,13 @@ class LeAudioClientImpl : public LeAudioClient {
     /* CSIS will trigger adding to group */
     if (leAudioDevice->csis_member_) {
       log::info("{},  waiting for CSIS to create group for device",
-                ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+                leAudioDevice->address_);
       scheduleGuardForCsisAdd(leAudioDevice->address_);
       return;
     }
 
     log::info("{} Not a CSIS member. Create group by our own",
-              ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+              leAudioDevice->address_);
 
     /* If there is no Csis just add device by our own */
     DeviceGroups::Get()->AddDevice(leAudioDevice->address_,
@@ -3076,14 +3052,14 @@ class LeAudioClientImpl : public LeAudioClient {
 
     if (status == GATT_DATABASE_OUT_OF_SYNC) {
       log::info("Database out of sync for {}, conn_id: 0x{:04x}",
-                ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_), conn_id);
+                leAudioDevice->address_, conn_id);
       ClearDeviceInformationAndStartSearch(leAudioDevice);
       return;
     }
 
     if (status == GATT_SUCCESS) {
       log::info("Successfully registered on ccc: 0x{:04x}, device: {}", hdl,
-                ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+                leAudioDevice->address_);
 
       if (leAudioDevice->ctp_hdls_.ccc_hdl == hdl &&
           leAudioDevice->known_service_handles_ &&
@@ -3099,7 +3075,7 @@ class LeAudioClientImpl : public LeAudioClient {
     log::error(
         "Failed to register for indications: 0x{:04x}, device: {}, status: "
         "0x{:02x}",
-        hdl, ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_), status);
+        hdl, leAudioDevice->address_, status);
 
     ase_it =
         std::find_if(leAudioDevice->ases_.begin(), leAudioDevice->ases_.end(),
@@ -3109,7 +3085,7 @@ class LeAudioClientImpl : public LeAudioClient {
 
     if (ase_it == leAudioDevice->ases_.end()) {
       log::error("Unknown ccc handle: 0x{:04x}, device: {}", hdl,
-                 ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+                 leAudioDevice->address_);
       return;
     }
 
@@ -3131,7 +3107,7 @@ class LeAudioClientImpl : public LeAudioClient {
     auto device_available_contexts = leAudioDevice->GetAvailableContexts();
     if (!group_metadata_contexts.test_any(device_available_contexts)) {
       log::info("{} does is not have required context type",
-                ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+                leAudioDevice->address_);
       return;
     }
 
@@ -3197,8 +3173,7 @@ class LeAudioClientImpl : public LeAudioClient {
     if (!groupStateMachine_->AttachToStream(group, leAudioDevice,
                                             std::move(ccids))) {
       log::warn("Could not add device {} to the group {} streaming.",
-                ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_),
-                group->group_id_);
+                leAudioDevice->address_, group->group_id_);
       scheduleAttachDeviceToTheStream(leAudioDevice->address_);
     } else {
       stream_setup_start_timestamp_ =
@@ -3210,15 +3185,14 @@ class LeAudioClientImpl : public LeAudioClient {
     LeAudioDevice* leAudioDevice = leAudioDevices_.FindByAddress(addr);
     if (leAudioDevice == nullptr ||
         leAudioDevice->conn_id_ == GATT_INVALID_CONN_ID) {
-      log::info("Device {} not available anymore",
-                ADDRESS_TO_LOGGABLE_CSTR(addr));
+      log::info("Device {} not available anymore", addr);
       return;
     }
     AttachToStreamingGroupIfNeeded(leAudioDevice);
   }
 
   void scheduleAttachDeviceToTheStream(const RawAddress& addr) {
-    log::info("Device {} scheduler for stream", ADDRESS_TO_LOGGABLE_CSTR(addr));
+    log::info("Device {} scheduler for stream", addr);
     do_in_main_thread_delayed(
         FROM_HERE,
         base::BindOnce(&LeAudioClientImpl::restartAttachToTheStream,
@@ -3269,7 +3243,7 @@ class LeAudioClientImpl : public LeAudioClient {
 
   void connectionReady(LeAudioDevice* leAudioDevice) {
     log::debug(
-        "{},  {}", ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_),
+        "{},  {}", leAudioDevice->address_,
         bluetooth::common::ToString(leAudioDevice->GetConnectionState()));
 
     if (IS_FLAG_ENABLED(le_audio_fast_bond_params)) {
@@ -5210,14 +5184,14 @@ class LeAudioClientImpl : public LeAudioClient {
 
     if (status == GATT_DATABASE_OUT_OF_SYNC) {
       log::info("Database out of sync for {}, re-discovering",
-                ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+                leAudioDevice->address_);
       instance->ClearDeviceInformationAndStartSearch(leAudioDevice);
       return;
     }
 
     if (status != GATT_SUCCESS || len != 2) {
       log::error("Could not read CCC for {}, disconnecting",
-                 ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+                 leAudioDevice->address_);
       instance->Disconnect(leAudioDevice->address_);
       return;
     }
@@ -5225,7 +5199,7 @@ class LeAudioClientImpl : public LeAudioClient {
     uint16_t val = *(uint16_t*)value;
     if (val == 0) {
       log::info("{} forgot CCC values. Re-subscribing",
-                ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+                leAudioDevice->address_);
       instance->RegisterKnownNotifications(leAudioDevice, false, true);
     } else {
       instance->connectionReady(leAudioDevice);
@@ -5271,8 +5245,7 @@ class LeAudioClientImpl : public LeAudioClient {
 
   void LeAudioHealthSendRecommendation(const RawAddress& address, int group_id,
                                        LeAudioHealthBasedAction action) {
-    log::debug("{}, {}, {}", ADDRESS_TO_LOGGABLE_CSTR(address), group_id,
-               ToString(action));
+    log::debug("{}, {}, {}", address, group_id, ToString(action));
 
     if (address != RawAddress::kEmpty &&
         leAudioDevices_.FindByAddress(address)) {
@@ -5450,7 +5423,7 @@ class LeAudioClientImpl : public LeAudioClient {
         if (device->closing_stream_for_disconnection_) {
           device->closing_stream_for_disconnection_ = false;
           log::info("Disconnecting group id: {}, address: {}", group->group_id_,
-                    ADDRESS_TO_LOGGABLE_CSTR(device->address_));
+                    device->address_);
           bool force_acl_disconnect =
               device->autoconnect_flag_ && group->IsEnabled();
           DisconnectDevice(device, force_acl_disconnect);
@@ -5468,7 +5441,7 @@ class LeAudioClientImpl : public LeAudioClient {
       if (leAudioDevice->closing_stream_for_disconnection_) {
         leAudioDevice->closing_stream_for_disconnection_ = false;
         log::debug("Disconnecting group id: {}, address: {}", group->group_id_,
-                   ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+                   leAudioDevice->address_);
         bool force_acl_disconnect =
             leAudioDevice->autoconnect_flag_ && group->IsEnabled();
         DisconnectDevice(leAudioDevice, force_acl_disconnect);
@@ -5964,16 +5937,16 @@ class LeAudioClientImpl : public LeAudioClient {
          tmpDevice = group->GetNextDevice(tmpDevice)) {
       log::info(
           "tmpDevice->acl_asymmetric_: {}, asymmetric: {}, address: {}, "
-          "acl_connected: {} ",
+          "acl_connected: {}",
           tmpDevice->acl_asymmetric_ == asymmetric, asymmetric,
-          ADDRESS_TO_LOGGABLE_CSTR(tmpDevice->address_),
+          tmpDevice->address_,
           BTM_IsAclConnectionUp(tmpDevice->address_, BT_TRANSPORT_LE));
       if (tmpDevice->acl_asymmetric_ == asymmetric ||
           !BTM_IsAclConnectionUp(tmpDevice->address_, BT_TRANSPORT_LE))
         continue;
 
       log::info("SetAsymmetricBlePhy: {} for {}", asymmetric,
-                ADDRESS_TO_LOGGABLE_CSTR(tmpDevice->address_));
+                tmpDevice->address_);
       BTM_BleSetPhy(tmpDevice->address_, PHY_LE_2M,
                     asymmetric ? PHY_LE_1M : PHY_LE_2M, 0);
       tmpDevice->acl_asymmetric_ = asymmetric;

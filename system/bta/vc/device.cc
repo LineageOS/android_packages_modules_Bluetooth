@@ -50,7 +50,7 @@ void VolumeControlDevice::DeregisterNotifications(tGATT_IF gatt_if) {
 }
 
 void VolumeControlDevice::Disconnect(tGATT_IF gatt_if) {
-  log::info("{}", ADDRESS_TO_LOGGABLE_STR(address));
+  log::info("{}", address);
 
   if (IsConnected()) {
     DeregisterNotifications(gatt_if);
@@ -423,7 +423,7 @@ bool VolumeControlDevice::IsEncryptionEnabled() {
 bool VolumeControlDevice::EnableEncryption() {
   int result = BTM_SetEncryption(address, BT_TRANSPORT_LE, nullptr, nullptr,
                                  BTM_BLE_SEC_ENCRYPT);
-  log::info("{}: result=0x{:02x}", ADDRESS_TO_LOGGABLE_CSTR(address), result);
+  log::info("{}: result=0x{:02x}", address, result);
 
   return result != BTM_ERR_KEY_MISSING;
 }

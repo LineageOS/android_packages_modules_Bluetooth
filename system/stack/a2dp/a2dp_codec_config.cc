@@ -644,7 +644,7 @@ bool A2dpCodecs::init() {
     if (codec_config == nullptr) continue;
 
     if (codec_priority != BTAV_A2DP_CODEC_PRIORITY_DEFAULT) {
-      log::info("updated {} codec priority to {}", codec_config->name().c_str(),
+      log::info("updated {} codec priority to {}", codec_config->name(),
                 codec_priority);
     }
 
@@ -669,7 +669,7 @@ bool A2dpCodecs::init() {
     log::error("no Source codecs were initialized");
   } else {
     for (auto iter : ordered_source_codecs_) {
-      log::info("initialized Source codec {}, idx {}", iter->name().c_str(),
+      log::info("initialized Source codec {}, idx {}", iter->name(),
                 iter->codecIndex());
     }
   }
@@ -677,7 +677,7 @@ bool A2dpCodecs::init() {
     log::error("no Sink codecs were initialized");
   } else {
     for (auto iter : ordered_sink_codecs_) {
-      log::info("initialized Sink codec {}, idx {}", iter->name().c_str(),
+      log::info("initialized Sink codec {}, idx {}", iter->name(),
                 iter->codecIndex());
     }
   }
@@ -767,7 +767,7 @@ bool A2dpCodecs::setCodecUserConfig(
   *p_restart_output = false;
   *p_config_updated = false;
 
-  log::info("Configuring: {}", codec_user_config.ToString().c_str());
+  log::info("Configuring: {}", codec_user_config.ToString());
 
   if (codec_user_config.codec_type < BTAV_A2DP_CODEC_INDEX_MAX) {
     auto iter = indexed_codecs_.find(codec_user_config.codec_type);
@@ -906,8 +906,7 @@ bool A2dpCodecs::setCodecOtaConfig(
       log::warn(
           "ignoring peer OTA configuration for codec {}: existing user "
           "configuration for current codec {}",
-          A2DP_CodecName(p_ota_codec_config),
-          current_codec_config_->name().c_str());
+          A2DP_CodecName(p_ota_codec_config), current_codec_config_->name());
       goto fail;
     }
   }

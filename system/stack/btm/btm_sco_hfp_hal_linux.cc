@@ -481,12 +481,12 @@ void notify_sco_connection_change(RawAddress device, bool is_connected,
     log::error(
         "Failed to notify HAL of connection change: hci {}, device {}, "
         "connected {}, codec {}",
-        hci, ADDRESS_TO_LOGGABLE_CSTR(device), is_connected, codec);
+        hci, device, is_connected, codec);
   } else {
     log::info(
         "Notified HAL of connection change: hci {}, device {}, connected {}, "
         "codec {}",
-        hci, ADDRESS_TO_LOGGABLE_CSTR(device), is_connected, codec);
+        hci, device, is_connected, codec);
   }
 
   close(fd);

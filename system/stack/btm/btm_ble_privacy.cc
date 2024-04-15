@@ -384,7 +384,7 @@ void btm_ble_read_resolving_list_entry_complete(const uint8_t* p,
       p += (2 + 16 + 1 + 6);
       STREAM_TO_BDADDR(rra, p);
 
-      log::info("peer_addr:{}", ADDRESS_TO_LOGGABLE_CSTR(rra));
+      log::info("peer_addr:{}", rra);
     } else {
       STREAM_TO_BDADDR(rra, p);
     }
@@ -571,13 +571,13 @@ void btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC& dev_rec) {
   // No need to check for local identity key validity. It remains unchanged.
   if (!is_peer_identity_key_valid(dev_rec)) {
     log::info("Peer is not an RPA enabled device:{}",
-              ADDRESS_TO_LOGGABLE_CSTR(dev_rec.ble.identity_address_with_type));
+              dev_rec.ble.identity_address_with_type);
     return;
   }
 
   if (dev_rec.ble.in_controller_list & BTM_RESOLVING_LIST_BIT) {
     log::warn("Already in Address Resolving list device:{}",
-              ADDRESS_TO_LOGGABLE_CSTR(dev_rec.ble.identity_address_with_type));
+              dev_rec.ble.identity_address_with_type);
     return;
   }
 
@@ -601,7 +601,7 @@ void btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC& dev_rec) {
       dev_rec.ble.identity_address_with_type, peer_irk, local_irk);
 
   log::debug("Added to Address Resolving list device:{}",
-             ADDRESS_TO_LOGGABLE_CSTR(dev_rec.ble.identity_address_with_type));
+             dev_rec.ble.identity_address_with_type);
 
   dev_rec.ble.in_controller_list |= BTM_RESOLVING_LIST_BIT;
 }

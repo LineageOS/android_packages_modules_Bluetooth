@@ -183,8 +183,7 @@ bool sdp_dynamic_change_hfp_version(const tSDP_ATTRIBUTE* p_attr,
     p_attr->value_ptr[PROFILE_VERSION_POSITION] = HFP_PROFILE_MINOR_VERSION_7;
   }
   log::verbose("SDP Change HFP Version = {} for {}",
-               p_attr->value_ptr[PROFILE_VERSION_POSITION],
-               ADDRESS_TO_LOGGABLE_CSTR(remote_address));
+               p_attr->value_ptr[PROFILE_VERSION_POSITION], remote_address);
   return true;
 }
 /******************************************************************************
@@ -1129,8 +1128,8 @@ static uint16_t sdp_pbap_pse_dynamic_attributes_len_update(
   log::verbose(
       "remote BD Addr : {} is_pbap_102_supported = {} is_pbap_101_allowlisted "
       "= {} is_pbap_102_allowlisted = {} running_pts = {}",
-      ADDRESS_TO_LOGGABLE_CSTR(p_ccb->device_address), is_pbap_102_supported,
-      is_pbap_101_allowlisted, is_pbap_102_allowlisted, running_pts);
+      p_ccb->device_address, is_pbap_102_supported, is_pbap_101_allowlisted,
+      is_pbap_102_allowlisted, running_pts);
 
   if (is_pbap_101_allowlisted ||
       (!is_pbap_102_supported && !is_pbap_102_allowlisted && !running_pts)) {
@@ -1225,8 +1224,8 @@ static const tSDP_RECORD* sdp_upgrade_pse_record(const tSDP_RECORD* p_rec,
   log::verbose(
       "remote BD Addr : {} is_pbap_102_supported : {} is_pbap_101_allowlisted "
       "= {} is_pbap_102_allowlisted = {} running_pts = {}",
-      ADDRESS_TO_LOGGABLE_CSTR(remote_address), is_pbap_102_supported,
-      is_pbap_101_allowlisted, is_pbap_102_allowlisted, running_pts);
+      remote_address, is_pbap_102_supported, is_pbap_101_allowlisted,
+      is_pbap_102_allowlisted, running_pts);
 
   if (is_pbap_101_allowlisted ||
       (!is_pbap_102_supported && !is_pbap_102_allowlisted && !running_pts)) {
@@ -1286,11 +1285,9 @@ void update_pce_entry_to_interop_database(RawAddress remote_addr) {
   if (!interop_match_addr_or_name(INTEROP_ADV_PBAP_VER_1_2, &remote_addr,
                                   &btif_storage_get_remote_device_property)) {
     interop_database_add_addr(INTEROP_ADV_PBAP_VER_1_2, &remote_addr, 3);
-    log::verbose("device: {} is added into interop list",
-                 ADDRESS_TO_LOGGABLE_CSTR(remote_addr));
+    log::verbose("device: {} is added into interop list", remote_addr);
   } else {
-    log::warn("device: {} is already found on interop list",
-              ADDRESS_TO_LOGGABLE_CSTR(remote_addr));
+    log::warn("device: {} is already found on interop list", remote_addr);
   }
 }
 

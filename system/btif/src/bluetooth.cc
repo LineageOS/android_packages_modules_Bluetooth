@@ -654,8 +654,7 @@ static int cancel_bond(const RawAddress* bd_addr) {
 
 static int remove_bond(const RawAddress* bd_addr) {
   if (is_restricted_mode() && !btif_storage_is_restricted_device(bd_addr)) {
-    log::info("{} cannot be removed in restricted mode",
-              ADDRESS_TO_LOGGABLE_CSTR(*bd_addr));
+    log::info("{} cannot be removed in restricted mode", *bd_addr);
     return BT_STATUS_SUCCESS;
   }
 
@@ -856,8 +855,7 @@ static int get_remote_pbap_pce_version(const RawAddress* bd_addr) {
   if (!btif_config_get_bin(bd_addr->ToString(),
                            BTIF_STORAGE_KEY_PBAP_PCE_VERSION,
                            (uint8_t*)&pce_version, &version_value_size)) {
-    log::warn("Failed to read cached peer PCE version for {}",
-              ADDRESS_TO_LOGGABLE_CSTR(*bd_addr));
+    log::warn("Failed to read cached peer PCE version for {}", *bd_addr);
   }
   return pce_version;
 }

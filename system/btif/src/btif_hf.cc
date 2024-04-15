@@ -290,8 +290,7 @@ static bool IsSlcConnected(RawAddress* bd_addr) {
   }
   int idx = btif_hf_idx_by_bdaddr(bd_addr);
   if (idx < 0 || idx > BTA_AG_MAX_NUM_CLIENTS) {
-    log::warn("invalid index {} for {}", idx,
-              ADDRESS_TO_LOGGABLE_STR(*bd_addr));
+    log::warn("invalid index {} for {}", idx, *bd_addr);
     return false;
   }
   return btif_hf_cb[idx].state == BTHF_CONNECTION_STATE_SLC_CONNECTED;
@@ -353,17 +352,15 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
                 "btif_hf_cb state[{}] is not expected, possible connection "
                 "collision, ignoring AG open failure event for the same device "
                 "{}",
-                p_data->open.status,
-                ADDRESS_TO_LOGGABLE_STR(p_data->open.bd_addr));
+                p_data->open.status, p_data->open.bd_addr);
           } else {
             log::warn(
                 "btif_hf_cb state[{}] is not expected, possible connection "
                 "collision, ignoring AG open failure event for the different "
                 "devices btif_hf_cb bda: {}, p_data bda: {}, report disconnect "
                 "state for p_data bda.",
-                p_data->open.status,
-                ADDRESS_TO_LOGGABLE_STR(btif_hf_cb[idx].connected_bda),
-                ADDRESS_TO_LOGGABLE_STR(p_data->open.bd_addr));
+                p_data->open.status, btif_hf_cb[idx].connected_bda,
+                p_data->open.bd_addr);
             bt_hf_callbacks->ConnectionStateCallback(
                 BTHF_CONNECTION_STATE_DISCONNECTED, &(p_data->open.bd_addr));
             log_counter_metrics_btif(
@@ -389,8 +386,7 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
               "possible connection collision, ignore the outgoing connection "
               "for the different devices btif_hf_cb bda: {}, p_data bda: {}, "
               "report disconnect state for btif_hf_cb bda.",
-              ADDRESS_TO_LOGGABLE_STR(btif_hf_cb[idx].connected_bda),
-              ADDRESS_TO_LOGGABLE_STR(p_data->open.bd_addr));
+              btif_hf_cb[idx].connected_bda, p_data->open.bd_addr);
           bt_hf_callbacks->ConnectionStateCallback(
               BTHF_CONNECTION_STATE_DISCONNECTED,
               &(btif_hf_cb[idx].connected_bda));
@@ -425,13 +421,11 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
         if (!btif_hf_cb[idx].is_initiator) {
           // Ignore remote initiated open failures
           log::warn("Unexpected AG open failure {} for {} is ignored",
-                    p_data->open.status,
-                    ADDRESS_TO_LOGGABLE_STR(p_data->open.bd_addr));
+                    p_data->open.status, p_data->open.bd_addr);
           break;
         }
         log::error("self initiated AG open failed for {}, status {}",
-                   ADDRESS_TO_LOGGABLE_STR(btif_hf_cb[idx].connected_bda),
-                   p_data->open.status);
+                   btif_hf_cb[idx].connected_bda, p_data->open.status);
         RawAddress connected_bda = btif_hf_cb[idx].connected_bda;
         reset_control_block(&btif_hf_cb[idx]);
         bt_hf_callbacks->ConnectionStateCallback(btif_hf_cb[idx].state,
@@ -462,8 +456,7 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
       bt_hf_callbacks->ConnectionStateCallback(btif_hf_cb[idx].state,
                                                &connected_bda);
       if (failed_to_setup_slc) {
-        log::error("failed to setup SLC for {}",
-                   ADDRESS_TO_LOGGABLE_STR(connected_bda));
+        log::error("failed to setup SLC for {}", connected_bda);
         log_counter_metrics_btif(
             android::bluetooth::CodePathCounterKeyEnum::HFP_SLC_SETUP_FAILED,
             1);
@@ -770,8 +763,7 @@ static void bte_hf_evt(tBTA_AG_EVT event, tBTA_AG* p_data) {
 static bt_status_t connect_int(RawAddress* bd_addr, uint16_t uuid) {
   CHECK_BTHF_INIT();
   if (is_connected(bd_addr)) {
-    log::warn("device {} is already connected",
-              ADDRESS_TO_LOGGABLE_CSTR(*bd_addr));
+    log::warn("device {} is already connected", *bd_addr);
     return BT_STATUS_DONE;
   }
   btif_hf_cb_t* hf_cb = nullptr;
@@ -785,13 +777,13 @@ static bt_status_t connect_int(RawAddress* bd_addr, uint16_t uuid) {
     // Crash here to prevent future code changes from breaking this mechanism
     if (btif_hf_cb[i].state == BTHF_CONNECTION_STATE_CONNECTING) {
       log::fatal("{}, handle {}, is still in connecting state {}",
-                 ADDRESS_TO_LOGGABLE_STR(btif_hf_cb[i].connected_bda),
-                 btif_hf_cb[i].handle, btif_hf_cb[i].state);
+                 btif_hf_cb[i].connected_bda, btif_hf_cb[i].handle,
+                 btif_hf_cb[i].state);
     }
   }
   if (hf_cb == nullptr) {
     log::warn("Cannot connect {}: maximum {} clients already connected",
-              ADDRESS_TO_LOGGABLE_CSTR(*bd_addr), btif_max_hf_clients);
+              *bd_addr, btif_max_hf_clients);
     return BT_STATUS_BUSY;
   }
   hf_cb->state = BTHF_CONNECTION_STATE_CONNECTING;
@@ -931,7 +923,7 @@ bt_status_t HeadsetInterface::Disconnect(RawAddress* bd_addr) {
     return BT_STATUS_FAIL;
   }
   if (!is_connected(bd_addr)) {
-    log::error("{} is not connected", ADDRESS_TO_LOGGABLE_CSTR(*bd_addr));
+    log::error("{} is not connected", *bd_addr);
     return BT_STATUS_FAIL;
   }
   BTA_AgClose(btif_hf_cb[idx].handle);
@@ -948,7 +940,7 @@ bt_status_t HeadsetInterface::ConnectAudio(RawAddress* bd_addr,
   }
   /* Check if SLC is connected */
   if (!IsSlcConnected(bd_addr)) {
-    log::error("SLC not connected for {}", ADDRESS_TO_LOGGABLE_STR(*bd_addr));
+    log::error("SLC not connected for {}", *bd_addr);
     return BT_STATUS_NOT_READY;
   }
   do_in_jni_thread(base::BindOnce(&Callbacks::AudioStateCallback,
@@ -971,7 +963,7 @@ bt_status_t HeadsetInterface::DisconnectAudio(RawAddress* bd_addr) {
     return BT_STATUS_FAIL;
   }
   if (!is_connected(bd_addr)) {
-    log::error("{} is not connected", ADDRESS_TO_LOGGABLE_CSTR(*bd_addr));
+    log::error("{} is not connected", *bd_addr);
     return BT_STATUS_FAIL;
   }
   BTA_AgAudioClose(btif_hf_cb[idx].handle);
@@ -1012,7 +1004,7 @@ bt_status_t HeadsetInterface::StartVoiceRecognition(RawAddress* bd_addr) {
     return BT_STATUS_FAIL;
   }
   if (!is_connected(bd_addr)) {
-    log::error("{} is not connected", ADDRESS_TO_LOGGABLE_CSTR(*bd_addr));
+    log::error("{} is not connected", *bd_addr);
     return BT_STATUS_NOT_READY;
   }
   if (!(btif_hf_cb[idx].peer_feat & BTA_AG_PEER_FEAT_VREC)) {
@@ -1035,7 +1027,7 @@ bt_status_t HeadsetInterface::StopVoiceRecognition(RawAddress* bd_addr) {
     return BT_STATUS_FAIL;
   }
   if (!is_connected(bd_addr)) {
-    log::error("{} is not connected", ADDRESS_TO_LOGGABLE_CSTR(*bd_addr));
+    log::error("{} is not connected", *bd_addr);
     return BT_STATUS_NOT_READY;
   }
   if (!(btif_hf_cb[idx].peer_feat & BTA_AG_PEER_FEAT_VREC)) {
@@ -1058,7 +1050,7 @@ bt_status_t HeadsetInterface::VolumeControl(bthf_volume_type_t type, int volume,
     return BT_STATUS_FAIL;
   }
   if (!is_connected(bd_addr)) {
-    log::error("{} is not connected", ADDRESS_TO_LOGGABLE_CSTR(*bd_addr));
+    log::error("{} is not connected", *bd_addr);
     return BT_STATUS_FAIL;
   }
   tBTA_AG_RES_DATA ag_res = {};
@@ -1079,8 +1071,7 @@ bt_status_t HeadsetInterface::DeviceStatusNotification(
   }
   int idx = btif_hf_idx_by_bdaddr(bd_addr);
   if (idx < 0 || idx > BTA_AG_MAX_NUM_CLIENTS) {
-    log::warn("invalid index {} for {}", idx,
-              ADDRESS_TO_LOGGABLE_CSTR(*bd_addr));
+    log::warn("invalid index {} for {}", idx, *bd_addr);
     return BT_STATUS_FAIL;
   }
   const btif_hf_cb_t& control_block = btif_hf_cb[idx];
@@ -1107,7 +1098,7 @@ bt_status_t HeadsetInterface::CopsResponse(const char* cops,
     return BT_STATUS_FAIL;
   }
   if (!is_connected(bd_addr)) {
-    log::error("{} is not connected", ADDRESS_TO_LOGGABLE_CSTR(*bd_addr));
+    log::error("{} is not connected", *bd_addr);
     return BT_STATUS_FAIL;
   }
   tBTA_AG_RES_DATA ag_res = {};
@@ -1130,7 +1121,7 @@ bt_status_t HeadsetInterface::CindResponse(int svc, int num_active,
     return BT_STATUS_FAIL;
   }
   if (!is_connected(bd_addr)) {
-    log::error("{} is not connected", ADDRESS_TO_LOGGABLE_CSTR(*bd_addr));
+    log::error("{} is not connected", *bd_addr);
     return BT_STATUS_FAIL;
   }
   tBTA_AG_RES_DATA ag_res = {};
@@ -1159,7 +1150,7 @@ bt_status_t HeadsetInterface::FormattedAtResponse(const char* rsp,
     return BT_STATUS_FAIL;
   }
   if (!is_connected(bd_addr)) {
-    log::error("{} is not connected", ADDRESS_TO_LOGGABLE_CSTR(*bd_addr));
+    log::error("{} is not connected", *bd_addr);
     return BT_STATUS_FAIL;
   }
   /* Format the response and send */
@@ -1177,7 +1168,7 @@ bt_status_t HeadsetInterface::AtResponse(bthf_at_response_t response_code,
     return BT_STATUS_FAIL;
   }
   if (!is_connected(bd_addr)) {
-    log::error("{} is not connected", ADDRESS_TO_LOGGABLE_CSTR(*bd_addr));
+    log::error("{} is not connected", *bd_addr);
     return BT_STATUS_FAIL;
   }
   send_at_result(
@@ -1197,7 +1188,7 @@ bt_status_t HeadsetInterface::ClccResponse(
     return BT_STATUS_FAIL;
   }
   if (!is_connected(bd_addr)) {
-    log::error("{} is not connected", ADDRESS_TO_LOGGABLE_CSTR(*bd_addr));
+    log::error("{} is not connected", *bd_addr);
     return BT_STATUS_FAIL;
   }
   tBTA_AG_RES_DATA ag_res = {};
@@ -1251,14 +1242,13 @@ bt_status_t HeadsetInterface::PhoneStateChange(
   const RawAddress raw_address(*bd_addr);
   int idx = btif_hf_idx_by_bdaddr(bd_addr);
   if (idx < 0 || idx >= BTA_AG_MAX_NUM_CLIENTS) {
-    log::warn("Invalid index {} for {}", idx,
-              ADDRESS_TO_LOGGABLE_CSTR(raw_address));
+    log::warn("Invalid index {} for {}", idx, raw_address);
     return BT_STATUS_FAIL;
   }
 
   const btif_hf_cb_t& control_block = btif_hf_cb[idx];
   if (!IsSlcConnected(bd_addr)) {
-    log::warn("SLC not connected for {}", ADDRESS_TO_LOGGABLE_STR(*bd_addr));
+    log::warn("SLC not connected for {}", *bd_addr);
     return BT_STATUS_NOT_READY;
   }
   if (call_setup_state == BTHF_CALL_STATE_DISCONNECTED) {
@@ -1267,16 +1257,14 @@ bt_status_t HeadsetInterface::PhoneStateChange(
     log::info(
         "Ignore call state change to DISCONNECTED, idx={}, addr={}, "
         "num_active={}, num_held={}",
-        idx, ADDRESS_TO_LOGGABLE_STR(*bd_addr), num_active, num_held);
+        idx, *bd_addr, num_active, num_held);
     return BT_STATUS_SUCCESS;
   }
   log::debug(
       "bd_addr:{} active_bda:{} num_active:{} prev_num_active:{} num_held:{} "
       "prev_num_held:{} call_state:{} prev_call_state:{}",
-      ADDRESS_TO_LOGGABLE_CSTR((*bd_addr)),
-      ADDRESS_TO_LOGGABLE_CSTR(active_bda), num_active,
-      control_block.num_active, num_held, control_block.num_held,
-      dump_hf_call_state(call_setup_state),
+      (*bd_addr), active_bda, num_active, control_block.num_active, num_held,
+      control_block.num_held, dump_hf_call_state(call_setup_state),
       dump_hf_call_state(control_block.call_setup_state));
   tBTA_AG_RES res = BTA_AG_UNKNOWN;
   bt_status_t status = BT_STATUS_SUCCESS;
@@ -1570,12 +1558,11 @@ bt_status_t HeadsetInterface::SendBsir(bool value, RawAddress* bd_addr) {
   CHECK_BTHF_INIT();
   int idx = btif_hf_idx_by_bdaddr(bd_addr);
   if ((idx < 0) || (idx >= BTA_AG_MAX_NUM_CLIENTS)) {
-    log::error("Invalid index {} for {}", idx,
-               ADDRESS_TO_LOGGABLE_CSTR(*bd_addr));
+    log::error("Invalid index {} for {}", idx, *bd_addr);
     return BT_STATUS_FAIL;
   }
   if (!is_connected(bd_addr)) {
-    log::error("{} not connected", ADDRESS_TO_LOGGABLE_CSTR(*bd_addr));
+    log::error("{} not connected", *bd_addr);
     return BT_STATUS_FAIL;
   }
   tBTA_AG_RES_DATA ag_result = {};

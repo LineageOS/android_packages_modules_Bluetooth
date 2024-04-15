@@ -355,13 +355,12 @@ static void gatt_connect_cback(UNUSED_ATTR tGATT_IF gatt_if,
                                const RawAddress& bda, uint16_t conn_id,
                                bool connected, tGATT_DISCONN_REASON reason,
                                tBT_TRANSPORT transport) {
-  log::verbose("from {} connected: {}, conn_id: {}",
-               ADDRESS_TO_LOGGABLE_STR(bda), connected, loghex(conn_id));
+  log::verbose("from {} connected: {}, conn_id: {}", bda, connected,
+               loghex(conn_id));
 
   // if the device is not trusted, remove data when the link is disconnected
   if (!connected && !btm_sec_is_a_bonded_dev(bda)) {
-    log::info("remove untrusted client status, bda={}",
-              ADDRESS_TO_LOGGABLE_STR(bda));
+    log::info("remove untrusted client status, bda={}", bda);
     btif_storage_remove_gatt_cl_supp_feat(bda);
     btif_storage_remove_gatt_cl_db_hash(bda);
   }
@@ -857,8 +856,7 @@ bool gatt_cl_read_sr_supp_feat_req(
 
   if (!cb) return false;
 
-  log::verbose("BDA: {} read gatt supported features",
-               ADDRESS_TO_LOGGABLE_STR(peer_bda));
+  log::verbose("BDA: {} read gatt supported features", peer_bda);
 
   GATT_GetConnIdIfConnected(gatt_cb.gatt_if, peer_bda, &conn_id,
                             BT_TRANSPORT_LE);
@@ -901,7 +899,7 @@ bool gatt_cl_read_sirk_req(
 
   if (!cb) return false;
 
-  log::debug("BDA: {}, read SIRK", ADDRESS_TO_LOGGABLE_CSTR(peer_bda));
+  log::debug("BDA: {}, read SIRK", peer_bda);
 
   GATT_GetConnIdIfConnected(gatt_cb.gatt_if, peer_bda, &conn_id,
                             BT_TRANSPORT_LE);
@@ -938,8 +936,7 @@ bool gatt_cl_read_sirk_req(
 bool gatt_profile_get_eatt_support(const RawAddress& remote_bda) {
   uint16_t conn_id;
 
-  log::verbose("BDA: {} read GATT support",
-               ADDRESS_TO_LOGGABLE_STR(remote_bda));
+  log::verbose("BDA: {} read GATT support", remote_bda);
 
   GATT_GetConnIdIfConnected(gatt_cb.gatt_if, remote_bda, &conn_id,
                             BT_TRANSPORT_LE);
@@ -1047,9 +1044,8 @@ void gatt_sr_init_cl_status(tGATT_TCB& tcb) {
     tcb.is_robust_cache_change_aware = true;
   }
 
-  log::info("bda={}, cl_supp_feat={}, aware={}",
-            ADDRESS_TO_LOGGABLE_STR(tcb.peer_bda), loghex(tcb.cl_supp_feat),
-            tcb.is_robust_cache_change_aware);
+  log::info("bda={}, cl_supp_feat={}, aware={}", tcb.peer_bda,
+            loghex(tcb.cl_supp_feat), tcb.is_robust_cache_change_aware);
 }
 
 /*******************************************************************************
@@ -1073,8 +1069,7 @@ void gatt_sr_update_cl_status(tGATT_TCB& tcb, bool chg_aware) {
 
   // only when the status is changed, print the log
   if (tcb.is_robust_cache_change_aware != chg_aware) {
-    log::info("bda={}, chg_aware={}", ADDRESS_TO_LOGGABLE_STR(tcb.peer_bda),
-              chg_aware);
+    log::info("bda={}, chg_aware={}", tcb.peer_bda, chg_aware);
   }
 
   tcb.is_robust_cache_change_aware = chg_aware;
@@ -1137,14 +1132,13 @@ static tGATT_STATUS gatt_sr_write_cl_supp_feat(uint16_t conn_id,
 
   // If input length is zero, return value_not_allowed
   if (tmp.empty()) {
-    log::info("zero length, conn_id={}, bda={}", loghex(conn_id),
-              ADDRESS_TO_LOGGABLE_STR(tcb.peer_bda));
+    log::info("zero length, conn_id={}, bda={}", loghex(conn_id), tcb.peer_bda);
     return GATT_VALUE_NOT_ALLOWED;
   }
   // if original length is longer than new one, it must be the bit reset case.
   if (feature_list.size() > tmp.size()) {
     log::info("shorter length, conn_id={}, bda={}", loghex(conn_id),
-              ADDRESS_TO_LOGGABLE_STR(tcb.peer_bda));
+              tcb.peer_bda);
     return GATT_VALUE_NOT_ALLOWED;
   }
   // new length is longer or equals to the original, need to check bits
@@ -1159,7 +1153,7 @@ static tGATT_STATUS gatt_sr_write_cl_supp_feat(uint16_t conn_id,
     uint8_t val_and = val_xor & *it_new;
     if (val_and != val_xor) {
       log::info("bit cannot be reset, conn_id={}, bda={}", loghex(conn_id),
-                ADDRESS_TO_LOGGABLE_STR(tcb.peer_bda));
+                tcb.peer_bda);
       return GATT_VALUE_NOT_ALLOWED;
     }
   }
@@ -1172,7 +1166,7 @@ static tGATT_STATUS gatt_sr_write_cl_supp_feat(uint16_t conn_id,
     // remove robust caching bit
     tcb.cl_supp_feat &= ~BLE_GATT_CL_SUP_FEAT_CACHING_BITMASK;
     log::info("reset robust caching bit, conn_id={}, bda={}", loghex(conn_id),
-              ADDRESS_TO_LOGGABLE_STR(tcb.peer_bda));
+              tcb.peer_bda);
   }
   // TODO(hylo): save data as byte array
   btif_storage_set_gatt_cl_supp_feat(tcb.peer_bda, tcb.cl_supp_feat);

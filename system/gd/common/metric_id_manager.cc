@@ -75,7 +75,7 @@ bool MetricIdManager::Init(
       log::fatal(
           "Invalid Bluetooth Metric Id in config. Id {} of {} is out of range [{}, {}]",
           p.second,
-          ADDRESS_TO_LOGGABLE_CSTR(p.first),
+          p.first,
           kMinId,
           kMaxId);
     }

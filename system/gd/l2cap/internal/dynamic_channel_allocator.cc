@@ -91,10 +91,7 @@ void DynamicChannelAllocator::FreeChannel(Cid cid) {
   used_cid_.erase(cid);
   auto channel = FindChannelByCid(cid);
   if (channel == nullptr) {
-    log::info(
-        "Channel is not in use: cid {}, device {}",
-        cid,
-        ADDRESS_TO_LOGGABLE_CSTR(link_->GetDevice()));
+    log::info("Channel is not in use: cid {}, device {}", cid, link_->GetDevice());
     return;
   }
   used_remote_cid_.erase(channel->GetRemoteCid());

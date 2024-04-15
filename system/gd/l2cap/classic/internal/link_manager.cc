@@ -107,7 +107,7 @@ void LinkManager::ConnectDynamicChannelServices(
 void LinkManager::InitiateConnectionForSecurity(hci::Address remote) {
   auto* link = GetLink(remote);
   if (link != nullptr) {
-    log::error("Link already exists for {}", ADDRESS_TO_LOGGABLE_CSTR(remote));
+    log::error("Link already exists for {}", remote);
   }
   acl_manager_->CreateConnection(remote);
 }
@@ -299,7 +299,7 @@ void LinkManager::OnConnectFail(hci::Address device, hci::ErrorCode reason, bool
     // There is no pending link, exit
     log::info(
         "Connection to {} failed without a pending link; reason: {}",
-        ADDRESS_TO_LOGGABLE_CSTR(device),
+        device,
         hci::ErrorCodeText(reason));
     if (pending_dynamic_channels_callbacks_.find(device) != pending_dynamic_channels_callbacks_.end()) {
       for (Link::PendingDynamicChannelConnection& callbacks : pending_dynamic_channels_callbacks_[device]) {

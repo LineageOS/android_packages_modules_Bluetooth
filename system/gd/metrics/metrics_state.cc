@@ -151,9 +151,7 @@ void LEConnectionMetricsRemoteDevice::UploadLEConnectionSession(const hci::Addre
     session_options.acl_latency = session_options.latency;
     session_options.is_cancelled = it->second->is_cancelled;
     metrics_logger_module->LogMetricBluetoothLESession(session_options);
-    log::info(
-        "LEConnectionMetricsRemoteDevice: The session is uploaded for {}",
-        ADDRESS_TO_LOGGABLE_CSTR(address));
+    log::info("LEConnectionMetricsRemoteDevice: The session is uploaded for {}", address);
     opened_devices.erase(it);
   }
 }

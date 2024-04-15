@@ -807,7 +807,7 @@ struct codec_manager_impl {
     log::debug("Print adsp_capabilities:");
 
     for (auto& adsp : adsp_capabilities) {
-      log::debug("'{}':", adsp.name.c_str());
+      log::debug("'{}':", adsp.name);
       for (auto direction : {le_audio::types::kLeAudioDirectionSink,
                              le_audio::types::kLeAudioDirectionSource}) {
         log::debug(

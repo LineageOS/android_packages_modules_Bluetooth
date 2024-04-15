@@ -103,9 +103,7 @@ struct AclScheduler::impl {
         [&]() { cancel_connection.Invoke(); },
         [&](auto /* entry */) { cancel_connection_completed.Invoke(); });
     if (!ok) {
-      log::error(
-          "Attempted to cancel connection to {} that does not exist",
-          ADDRESS_TO_LOGGABLE_CSTR(address));
+      log::error("Attempted to cancel connection to {} that does not exist", address);
     }
   }
 
@@ -152,9 +150,7 @@ struct AclScheduler::impl {
         [&]() { cancel_request.Invoke(); },
         [](auto entry) { std::get<RemoteNameRequestQueueEntry>(entry).callback_when_cancelled.Invoke(); });
     if (!ok) {
-      log::error(
-          "Attempted to cancel remote name request to {} that does not exist",
-          ADDRESS_TO_LOGGABLE_CSTR(address));
+      log::error("Attempted to cancel remote name request to {} that does not exist", address);
     }
   };
 

@@ -47,7 +47,7 @@ class LeAudioHealthStatusImpl : public LeAudioHealthStatus {
   }
 
   void RemoveStatistics(const RawAddress& address, int group_id) override {
-    log::debug("{}, group_id: {}", ADDRESS_TO_LOGGABLE_CSTR(address), group_id);
+    log::debug("{}, group_id: {}", address, group_id);
     remove_device(address);
     remove_group(group_id);
   }
@@ -60,15 +60,14 @@ class LeAudioHealthStatusImpl : public LeAudioHealthStatus {
     }
 
     const RawAddress& address = device->address_;
-    log::debug("{}, {}", ADDRESS_TO_LOGGABLE_CSTR(address), ToString(type));
+    log::debug("{}, {}", address, ToString(type));
 
     auto dev = find_device(address);
     if (dev == nullptr) {
       add_device(address);
       dev = find_device(address);
       if (dev == nullptr) {
-        log::error("Could not add device {}",
-                   ADDRESS_TO_LOGGABLE_CSTR(address));
+        log::error("Could not add device {}", address);
         return;
       }
     }
@@ -233,8 +232,7 @@ class LeAudioHealthStatusImpl : public LeAudioHealthStatus {
 
   void send_recommendation_for_device(const RawAddress& address,
                                       LeAudioHealthBasedAction recommendation) {
-    log::debug("{}, {}", ADDRESS_TO_LOGGABLE_CSTR(address),
-               ToString(recommendation));
+    log::debug("{}, {}", address, ToString(recommendation));
     /* Notify new user about known groups */
     for (auto& cb : callbacks_) {
       cb.Run(address, kGroupUnknown, recommendation);

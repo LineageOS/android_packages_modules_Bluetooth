@@ -135,11 +135,11 @@ bool tBTM_SEC_CB::IsDeviceEncrypted(const RawAddress bd_addr,
     } else if (transport == BT_TRANSPORT_LE) {
       return sec_rec->is_le_device_encrypted();
     }
-    log::error("unknown transport:{}", bt_transport_text(transport).c_str());
+    log::error("unknown transport:{}", bt_transport_text(transport));
     return false;
   }
 
-  log::error("unknown device:{}", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+  log::error("unknown device:{}", bd_addr);
   return false;
 }
 
@@ -152,11 +152,11 @@ bool tBTM_SEC_CB::IsLinkKeyAuthenticated(const RawAddress bd_addr,
     } else if (transport == BT_TRANSPORT_LE) {
       return sec_rec->is_le_link_key_authenticated();
     }
-    log::error("unknown transport:{}", bt_transport_text(transport).c_str());
+    log::error("unknown transport:{}", bt_transport_text(transport));
     return false;
   }
 
-  log::error("unknown device:{}", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+  log::error("unknown device:{}", bd_addr);
   return false;
 }
 
@@ -169,11 +169,11 @@ bool tBTM_SEC_CB::IsDeviceAuthenticated(const RawAddress bd_addr,
     } else if (transport == BT_TRANSPORT_LE) {
       return sec_rec->is_le_device_authenticated();
     }
-    log::error("unknown transport:{}", bt_transport_text(transport).c_str());
+    log::error("unknown transport:{}", bt_transport_text(transport));
     return false;
   }
 
-  log::error("unknown device:{}", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+  log::error("unknown device:{}", bd_addr);
   return false;
 }
 
@@ -186,11 +186,11 @@ bool tBTM_SEC_CB::IsLinkKeyKnown(const RawAddress bd_addr,
     } else if (transport == BT_TRANSPORT_LE) {
       return sec_rec->is_le_link_key_known();
     }
-    log::error("unknown transport:{}", bt_transport_text(transport).c_str());
+    log::error("unknown transport:{}", bt_transport_text(transport));
     return false;
   }
 
-  log::error("unknown device:{}", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+  log::error("unknown device:{}", bd_addr);
   return false;
 }
 
@@ -203,8 +203,8 @@ bool tBTM_SEC_CB::IsDeviceBonded(const RawAddress bd_addr) {
                     p_dev_rec->sec_rec.is_link_key_known())) {
     is_bonded = true;
   }
-  log::debug("Device record bonded check peer:{} is_bonded:{}",
-             ADDRESS_TO_LOGGABLE_CSTR(bd_addr), is_bonded);
+  log::debug("Device record bonded check peer:{} is_bonded:{}", bd_addr,
+             is_bonded);
   return is_bonded;
 }
 
@@ -351,7 +351,7 @@ uint8_t tBTM_SEC_CB::RemoveServiceByPsm(uint16_t psm) {
   for (i = 0; i < BTM_SEC_MAX_SERVICE_RECORDS; i++, p_srec++) {
     /* Delete services with specified name (if in use and not SDP) */
     if ((p_srec->security_flags & BTM_SEC_IN_USE) && (p_srec->psm == psm)) {
-      log::verbose("BTM_SEC_CLR[{}]: id {} ", i, p_srec->service_id);
+      log::verbose("BTM_SEC_CLR[{}]: id {}", i, p_srec->service_id);
       p_srec->security_flags = 0;
       num_freed++;
     }
