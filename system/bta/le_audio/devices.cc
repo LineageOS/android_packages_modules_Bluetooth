@@ -885,32 +885,37 @@ void LeAudioDevice::DumpPacsDebugState(std::stringstream& stream) {
   DumpPacsDebugState(stream, src_pacs_);
 }
 
+static std::string locationToString(uint32_t location) {
+  std::string result_str = "unknown location";
+
+  if (location & codec_spec_conf::kLeAudioLocationAnyLeft &&
+      location & codec_spec_conf::kLeAudioLocationAnyRight) {
+    std::string location_left_right = "left/right";
+    result_str.swap(location_left_right);
+  } else if (location & codec_spec_conf::kLeAudioLocationAnyLeft) {
+    std::string location_left = "left";
+    result_str.swap(location_left);
+  } else if (location & codec_spec_conf::kLeAudioLocationAnyRight) {
+    std::string location_right = "right";
+    result_str.swap(location_right);
+  }
+
+  return result_str;
+}
+
 void LeAudioDevice::Dump(int fd) {
   uint16_t acl_handle = BTM_GetHCIConnHandle(address_, BT_TRANSPORT_LE);
-  std::string location = "unknown location";
-
-  if (snk_audio_locations_.to_ulong() &
-          codec_spec_conf::kLeAudioLocationAnyLeft &&
-      snk_audio_locations_.to_ulong() &
-          codec_spec_conf::kLeAudioLocationAnyRight) {
-    std::string location_left_right = "left/right";
-    location.swap(location_left_right);
-  } else if (snk_audio_locations_.to_ulong() &
-             codec_spec_conf::kLeAudioLocationAnyLeft) {
-    std::string location_left = "left";
-    location.swap(location_left);
-  } else if (snk_audio_locations_.to_ulong() &
-             codec_spec_conf::kLeAudioLocationAnyRight) {
-    std::string location_right = "right";
-    location.swap(location_right);
-  }
+  std::string snk_location = locationToString(snk_audio_locations_.to_ulong());
+  std::string src_location = locationToString(src_audio_locations_.to_ulong());
 
   std::stringstream stream;
   stream << "\n\taddress: " << ADDRESS_TO_LOGGABLE_STR(address_) << ": "
          << connection_state_ << ": "
          << (conn_id_ == GATT_INVALID_CONN_ID ? "" : std::to_string(conn_id_))
-         << ", acl_handle: " << std::to_string(acl_handle) << ", " << location
-         << ",\t" << (encrypted_ ? "Encrypted" : "Unecrypted")
+         << ", acl_handle: " << std::to_string(acl_handle)
+         << ", snk_location: " << snk_location
+         << ", src_location: " << src_location << ",\t"
+         << (encrypted_ ? "Encrypted" : "Unecrypted")
          << ",mtu: " << std::to_string(mtu_)
          << "\n\tnumber of ases_: " << static_cast<int>(ases_.size());
 
