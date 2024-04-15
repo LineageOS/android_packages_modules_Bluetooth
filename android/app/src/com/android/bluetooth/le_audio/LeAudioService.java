@@ -1406,7 +1406,7 @@ public class LeAudioService extends ProfileService {
             for (Map.Entry<Integer, LeAudioGroupDescriptor> entry :
                     mGroupDescriptorsView.entrySet()) {
                 LeAudioGroupDescriptor descriptor = entry.getValue();
-                if (descriptor.isActive()) {
+                if (!descriptor.isInactive()) {
                     return false;
                 }
             }
