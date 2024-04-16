@@ -143,6 +143,13 @@ void CodecManager::ClearCisConfiguration(uint8_t direction) {
   if (pimpl_) return pimpl_->ClearCisConfiguration(direction);
 }
 
+std::ostream& operator<<(
+    std::ostream& os,
+    const CodecManager::UnicastConfigurationRequirements& req) {
+  os << "{audio context type: " << req.audio_context_type << "}";
+  return os;
+}
+
 // CodecManager::~CodecManager() = default;
 
 }  // namespace bluetooth::le_audio
