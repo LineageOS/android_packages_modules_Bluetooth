@@ -389,10 +389,15 @@ TEST_F(CodecManagerTestAdsp, test_capabilities_none) {
       offloading_preference(0);
   codec_manager->Start(offloading_preference);
 
+  bool has_null_config = false;
   auto match_first_config =
-      [](const CodecManager::UnicastConfigurationRequirements& requirements,
-         const set_configurations::AudioSetConfigurations* confs)
+      [&](const CodecManager::UnicastConfigurationRequirements& requirements,
+          const set_configurations::AudioSetConfigurations* confs)
       -> const set_configurations::AudioSetConfiguration* {
+    // Don't expect the matcher being called on nullptr
+    if (confs == nullptr) {
+      has_null_config = true;
+    }
     if (confs && confs->size()) {
       // For simplicity return the first element, the real matcher should
       // check the group capabilities.
@@ -404,11 +409,13 @@ TEST_F(CodecManagerTestAdsp, test_capabilities_none) {
   // Verify every context
   for (::bluetooth::le_audio::types::LeAudioContextType ctx_type :
        ::bluetooth::le_audio::types::kLeAudioContextAllTypesArray) {
+    has_null_config = false;
     CodecManager::UnicastConfigurationRequirements requirements = {
         .audio_context_type = ctx_type,
     };
     ASSERT_EQ(nullptr,
               codec_manager->GetCodecConfig(requirements, match_first_config));
+    ASSERT_FALSE(has_null_config);
   }
 }
 
