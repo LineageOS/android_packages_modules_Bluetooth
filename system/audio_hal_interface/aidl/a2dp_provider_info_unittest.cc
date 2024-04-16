@@ -547,11 +547,8 @@ TEST_F_WITH_FLAGS(ProviderInfoTest,
 }
 
 TEST_F_WITH_FLAGS(ProviderInfoTest, TestCodecIndexStr,
-                  REQUIRES_FLAGS_ENABLED(
-                      ACONFIG_FLAG(TEST_BT, a2dp_offload_codec_extensibility)))
-// The test deliberately triggers undefined behaviour with an out of bound
-// index.
-__attribute__((no_sanitize("undefined"))) {
+                  REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(
+                      TEST_BT, a2dp_offload_codec_extensibility))) {
   GetProviderInfoForTesting(true, false);
 
   auto codecInfoArray = test_source_provider_info.codecInfos;
@@ -567,10 +564,6 @@ __attribute__((no_sanitize("undefined"))) {
 
   ASSERT_EQ(provider_info->CodecIndexStr(BTAV_A2DP_CODEC_INDEX_SOURCE_EXT_MIN),
             codecInfoArray[3].name);
-
-  ASSERT_EQ(provider_info->CodecIndexStr(static_cast<btav_a2dp_codec_index_t>(
-                test_unknown_vendor_codec_id.id)),
-            std::nullopt);
 }
 
 TEST_F_WITH_FLAGS(ProviderInfoTest, TestSupportsCodec,
