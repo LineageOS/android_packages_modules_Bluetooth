@@ -301,7 +301,6 @@ typedef void(tBTA_DM_DISC_CBACK)(RawAddress bd_addr, tBTA_SERVICE_MASK services,
                                  const std::vector<bluetooth::Uuid>& uuids,
                                  tBTA_STATUS result, tHCI_STATUS hci_status);
 struct service_discovery_callbacks {
-  /* legacy callback I'll tear apart and get rid of */
   tBTA_DM_GATT_DISC_CBACK* on_gatt_results;
   tBTA_DM_DID_RES_CBACK* on_did_received;
   // TODO: delete after separate_service_and_device_discovery rolls out

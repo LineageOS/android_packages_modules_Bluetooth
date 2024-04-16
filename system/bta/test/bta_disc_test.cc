@@ -206,15 +206,13 @@ TEST_F(BtaInitializedTest,
 }
 
 TEST_F(BtaInitializedTest, init_bta_dm_search_cb__conn_id) {
-  constexpr uint16_t kConnId = 123;
-
   // Set the global search block target field to some non-reset value
   tBTA_DM_SEARCH_CB& search_cb =
       bluetooth::legacy::testing::bta_dm_disc_search_cb();
-  search_cb.conn_id = kConnId;
+  search_cb.name_discover_done = true;
 
   bluetooth::legacy::testing::bta_dm_disc_init_search_cb(search_cb);
 
   // Verify global search block field reset value is correct
-  ASSERT_EQ(search_cb.conn_id, GATT_INVALID_CONN_ID);
+  ASSERT_EQ(search_cb.name_discover_done, false);
 }

@@ -155,40 +155,43 @@ inline std::string bta_dm_state_text(
 /* DM search control block */
 typedef struct {
   tBTA_DM_SEARCH_CBACK* p_device_search_cback;
-  service_discovery_callbacks service_search_cbacks;
   tBTM_INQ_INFO* p_btm_inq_info;
-  tBTA_SERVICE_MASK services_to_search;
-  tBTA_SERVICE_MASK services_found;
-  tSDP_DISCOVERY_DB* p_sdp_db;
   /* This covers device search state. That is scanning through android Settings
    * to discover LE and Classic devices. Runs Name discovery on Inquiry Results
    */
   tBTA_DM_DEVICE_SEARCH_STATE search_state;
+  bool name_discover_done;
+  /* peer address used for name discovery */
+  RawAddress peer_bdaddr;
+  BD_NAME peer_name;
+  std::unique_ptr<tBTA_DM_MSG> p_pending_search;
+  tBTA_DM_SEARCH_CBACK* p_csis_scan_cback;
+} tBTA_DM_SEARCH_CB;
+
+typedef struct {
+  RawAddress peer_bdaddr;
+  service_discovery_callbacks service_search_cbacks;
+  tBTA_SERVICE_MASK services_to_search;
+  tBTA_SERVICE_MASK services_found;
+  tSDP_DISCOVERY_DB* p_sdp_db;
   /* This covers service discovery state - callers of BTA_DmDiscover. That is
    * initial service discovery after bonding and
    * BluetoothDevice.fetchUuidsWithSdp(). Responsible for LE GATT Service
    * Discovery and SDP */
   tBTA_DM_SERVICE_DISCOVERY_STATE service_discovery_state;
-  RawAddress peer_bdaddr;
-  bool name_discover_done;
-  BD_NAME peer_name;
   alarm_t* search_timer;
   uint8_t service_index;
-  std::unique_ptr<tBTA_DM_MSG> p_pending_search;
   std::queue<tBTA_DM_API_DISCOVER> pending_discovery_queue;
-  bool wait_disc;
   bool sdp_results;
-  bluetooth::Uuid uuid;
+  bool wait_disc;
   uint8_t peer_scn;
-  tBTA_DM_SEARCH_CBACK* p_csis_scan_cback;
   tGATT_IF client_if;
   uint8_t uuid_to_search;
   bool gatt_disc_active;
   uint16_t conn_id;
   alarm_t* gatt_close_timer;    /* GATT channel close delay timer */
   RawAddress pending_close_bda; /* pending GATT channel remote device address */
-
-} tBTA_DM_SEARCH_CB;
+} tBTA_DM_SERVICE_DISCOVERY_CB;
 
 extern const uint32_t bta_service_id_to_btm_srv_id_lkup_tbl[];
 extern const uint16_t bta_service_id_to_uuid_lkup_tbl[];
