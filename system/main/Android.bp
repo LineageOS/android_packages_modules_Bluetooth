@@ -190,7 +190,6 @@ cc_test {
         "shim/distance_measurement_manager.cc",
         "shim/dumpsys.cc",
         "shim/hci_layer.cc",
-        "shim/l2c_api.cc",
         "shim/le_advertising_manager.cc",
         "shim/le_scanning_manager.cc",
         "shim/metric_id_api.cc",
