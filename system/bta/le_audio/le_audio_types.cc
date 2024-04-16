@@ -245,6 +245,16 @@ bool IsCodecConfigSettingSupported(
   return false;
 }
 
+uint16_t CodecConfigSetting::GetOctectsPerFrame() const {
+  switch (id.coding_format) {
+    case kLeAudioCodingFormatLC3:
+      return params.GetAsCoreCodecConfig().GetOctectsPerFrame();
+    default:
+      log::warn(", invalid codec id: 0x{:02x}", id.coding_format);
+      return 0;
+  }
+};
+
 uint32_t CodecConfigSetting::GetSamplingFrequencyHz() const {
   switch (id.coding_format) {
     case kLeAudioCodingFormatLC3:
