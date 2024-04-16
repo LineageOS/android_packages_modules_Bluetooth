@@ -663,6 +663,30 @@ TEST_F(AclManagerWithCallbacksTest, two_remote_connection_requests_ABBA) {
   }
 }
 
+TEST_F(AclManagerWithCallbacksTest, test_disconnection_after_request) {
+  Address remote = *Address::FromString("12:34:56:78:9a:bc");
+  EXPECT_CALL(mock_connection_callbacks_, OnConnectRequest).Times(1);
+  test_hci_layer_->IncomingEvent(ConnectionRequestBuilder::Create(
+      remote, ClassOfDevice({1, 2, 3}), ConnectionRequestLinkType::ACL));
+  test_hci_layer_->IncomingEvent(ConnectionCompleteBuilder::Create(
+      ErrorCode::REMOTE_USER_TERMINATED_CONNECTION, 0, remote, LinkType::ACL, Enable::DISABLED));
+}
+
+TEST_F(AclManagerWithCallbacksTest, test_disconnection_after_request_sync) {
+  std::promise<void> request_promise;
+  auto request_future = request_promise.get_future();
+
+  Address remote = *Address::FromString("12:34:56:78:9a:bc");
+  EXPECT_CALL(mock_connection_callbacks_, OnConnectRequest).WillOnce([&request_promise]() {
+    request_promise.set_value();
+  });
+  test_hci_layer_->IncomingEvent(ConnectionRequestBuilder::Create(
+      remote, ClassOfDevice({1, 2, 3}), ConnectionRequestLinkType::ACL));
+  ASSERT_EQ(std::future_status::ready, request_future.wait_for(std::chrono::seconds(1)));
+  test_hci_layer_->IncomingEvent(ConnectionCompleteBuilder::Create(
+      ErrorCode::REMOTE_USER_TERMINATED_CONNECTION, 0, remote, LinkType::ACL, Enable::DISABLED));
+}
+
 }  // namespace
 }  // namespace acl_manager
 }  // namespace hci
