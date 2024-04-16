@@ -51,8 +51,6 @@ void bta_dm_opportunistic_observe_results_cb(tBTM_INQ_RESULTS* p_inq,
                                              const uint8_t* p_eir,
                                              uint16_t eir_len);
 void bta_dm_queue_search(tBTA_DM_API_SEARCH& search);
-void bta_dm_service_search_remname_cback(const RawAddress& bd_addr,
-                                         DEV_CLASS dc, BD_NAME bd_name);
 void bta_dm_start_scan(uint8_t duration_sec, bool low_latency_scan = false);
 void store_avrcp_profile_feature(tSDP_DISC_REC* sdp_rec);
 
@@ -156,27 +154,6 @@ TEST_F(BtaInitializedTest, bta_dm_queue_search) {
 TEST_F(BtaInitializedTest, bta_dm_read_remote_device_name) {
   bluetooth::legacy::testing::bta_dm_read_remote_device_name(
       kRawAddress, BT_TRANSPORT_BR_EDR);
-}
-
-TEST_F(BtaInitializedTest, bta_dm_service_search_remname_cback__expected_name) {
-  DEV_CLASS dc;
-  BD_NAME bd_name;
-  tBTA_DM_SEARCH_CB& search_cb =
-      bluetooth::legacy::testing::bta_dm_disc_search_cb();
-  search_cb.peer_bdaddr = kRawAddress,
-  bluetooth::legacy::testing::bta_dm_service_search_remname_cback(kRawAddress,
-                                                                  dc, bd_name);
-}
-
-TEST_F(BtaInitializedTest,
-       bta_dm_service_search_remname_cback__unexpected_name) {
-  DEV_CLASS dc;
-  BD_NAME bd_name;
-  tBTA_DM_SEARCH_CB& search_cb =
-      bluetooth::legacy::testing::bta_dm_disc_search_cb();
-  search_cb.peer_bdaddr = RawAddress::kAny;
-  bluetooth::legacy::testing::bta_dm_service_search_remname_cback(kRawAddress,
-                                                                  dc, bd_name);
 }
 
 TEST_F(BtaInitializedTest, bta_dm_start_scan) {

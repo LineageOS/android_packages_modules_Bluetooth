@@ -102,8 +102,6 @@ static void bta_dm_inq_results_cb(tBTM_INQ_RESULTS* p_inq, const uint8_t* p_eir,
                                   uint16_t eir_len);
 static void bta_dm_inq_cmpl();
 static void bta_dm_inq_cmpl_cb(void* p_result);
-static void bta_dm_service_search_remname_cback(const RawAddress& bd_addr,
-                                                DEV_CLASS dc, BD_NAME bd_name);
 static void bta_dm_remname_cback(const tBTM_REMOTE_DEV_NAME* p);
 static void bta_dm_find_services(const RawAddress& bd_addr);
 static void bta_dm_discover_next_device(void);
@@ -477,14 +475,6 @@ static bool bta_dm_read_remote_device_name(const RawAddress& bd_addr,
     return (true);
   } else if (btm_status == BTM_BUSY) {
     log::verbose("BTM_ReadRemoteDeviceName is busy");
-
-    /* Remote name discovery is on going now so BTM cannot notify through
-     * "bta_dm_remname_cback" */
-    /* adding callback to get notified that current reading remote name done */
-
-    get_btm_client_interface().security.BTM_SecAddRmtNameNotifyCallback(
-        &bta_dm_service_search_remname_cback);
-
     return (true);
   } else {
     log::warn("BTM_ReadRemoteDeviceName returns 0x{:02X}", btm_status);
@@ -545,24 +535,14 @@ static void bta_dm_remote_name_cmpl(
   }
 
   // Callback with this property
-  if (bta_dm_search_cb.p_device_search_cback != nullptr ||
-      bta_dm_search_cb.service_search_cbacks.on_name_read != nullptr) {
-    // Both device and service search callbacks end up sending event to java.
-    // It's enough to send callback to just one of them.
-    if (bta_dm_search_cb.p_device_search_cback != nullptr) {
-      tBTA_DM_SEARCH search_data = {
-          .name_res = {.bd_addr = remote_name_msg.bd_addr, .bd_name = {}},
-      };
-      if (remote_name_msg.hci_status == HCI_SUCCESS) {
-        bd_name_copy(search_data.name_res.bd_name, remote_name_msg.bd_name);
-      }
-      bta_dm_search_cb.p_device_search_cback(BTA_DM_NAME_READ_EVT,
-                                             &search_data);
-    } else if (bta_dm_search_cb.service_search_cbacks.on_name_read != nullptr) {
-      bta_dm_search_cb.service_search_cbacks.on_name_read(
-          remote_name_msg.bd_addr, remote_name_msg.hci_status,
-          remote_name_msg.bd_name);
+  if (bta_dm_search_cb.p_device_search_cback != nullptr) {
+    tBTA_DM_SEARCH search_data = {
+        .name_res = {.bd_addr = remote_name_msg.bd_addr, .bd_name = {}},
+    };
+    if (remote_name_msg.hci_status == HCI_SUCCESS) {
+      bd_name_copy(search_data.name_res.bd_name, remote_name_msg.bd_name);
     }
+    bta_dm_search_cb.p_device_search_cback(BTA_DM_NAME_READ_EVT, &search_data);
   } else {
     log::warn("Received remote name complete without callback");
   }
@@ -709,11 +689,8 @@ static void bta_dm_sdp_result(tBTA_DM_SDP_RESULT& sdp_event) {
           log::info("GATT services discovered using SDP");
 
           // send all result back to app
-          BD_NAME bd_name;
-          bd_name_from_char_pointer(bd_name, bta_dm_get_remname());
-
           bta_dm_search_cb.service_search_cbacks.on_gatt_results(
-              bta_dm_search_cb.peer_bdaddr, bd_name, gatt_uuids,
+              bta_dm_search_cb.peer_bdaddr, BD_NAME{}, gatt_uuids,
               /* transport_le */ false);
         }
       } else {
@@ -780,10 +757,6 @@ static void bta_dm_sdp_result(tBTA_DM_SDP_RESULT& sdp_event) {
     } else {
       /* callbacks */
       /* start next bd_addr if necessary */
-
-      get_btm_client_interface().security.BTM_SecDeleteRmtNameNotifyCallback(
-          &bta_dm_service_search_remname_cback);
-
       BTM_LogHistory(
           kBtmLogTag, bta_dm_search_cb.peer_bdaddr, "Discovery completed",
           base::StringPrintf("Result:%s services_found:0x%x service_index:0x%d",
@@ -839,9 +812,6 @@ static void bta_dm_sdp_result(tBTA_DM_SDP_RESULT& sdp_event) {
     /* not able to connect go to next device */
     if (bta_dm_search_cb.p_sdp_db)
       osi_free_and_reset((void**)&bta_dm_search_cb.p_sdp_db);
-
-    get_btm_client_interface().security.BTM_SecDeleteRmtNameNotifyCallback(
-        &bta_dm_service_search_remname_cback);
 
     auto msg = std::make_unique<tBTA_DM_MSG>(tBTA_DM_SVC_RES{});
     auto& disc_result = std::get<tBTA_DM_SVC_RES>(*msg);
@@ -919,10 +889,8 @@ static void bta_dm_service_discovery_cmpl() {
     if (bta_dm_search_cb.service_search_cbacks.on_gatt_results != nullptr) {
       log::info("Sending GATT results to upper layer");
 
-      BD_NAME bd_name;
-      bd_name_from_char_pointer(bd_name, bta_dm_get_remname());
       bta_dm_search_cb.service_search_cbacks.on_gatt_results(
-          bta_dm_search_cb.peer_bdaddr, bd_name, gatt_services,
+          bta_dm_search_cb.peer_bdaddr, BD_NAME{}, gatt_services,
           /* transport_le */ true);
     } else {
       log::warn("on_gatt_results is nullptr!");
@@ -1485,53 +1453,6 @@ static void bta_dm_inq_cmpl_cb(void* /* p_result */) {
 
 /*******************************************************************************
  *
- * Function         bta_dm_service_search_remname_cback
- *
- * Description      Remote name call back from BTM during service discovery
- *
- * Returns          void
- *
- ******************************************************************************/
-static void bta_dm_service_search_remname_cback(const RawAddress& bd_addr,
-                                                DEV_CLASS /* dc */,
-                                                BD_NAME bd_name) {
-  tBTM_REMOTE_DEV_NAME rem_name = {};
-  tBTM_STATUS btm_status;
-
-  log::verbose("name=<{}>", reinterpret_cast<char const*>(bd_name));
-
-  /* if this is what we are looking for */
-  if (bta_dm_search_cb.peer_bdaddr == bd_addr) {
-    rem_name.bd_addr = bd_addr;
-    bd_name_copy(rem_name.remote_bd_name, bd_name);
-    rem_name.status = BTM_SUCCESS;
-    rem_name.hci_status = HCI_SUCCESS;
-    bta_dm_remname_cback(&rem_name);
-  } else {
-    /* get name of device */
-    btm_status = get_btm_client_interface().peer.BTM_ReadRemoteDeviceName(
-        bta_dm_search_cb.peer_bdaddr, bta_dm_remname_cback,
-        BT_TRANSPORT_BR_EDR);
-    if (btm_status == BTM_BUSY) {
-      /* wait for next chance(notification of remote name discovery done) */
-      log::verbose("BTM_ReadRemoteDeviceName is busy");
-    } else if (btm_status != BTM_CMD_STARTED) {
-      /* if failed to start getting remote name then continue */
-      log::warn("BTM_ReadRemoteDeviceName returns 0x{:02X}", btm_status);
-
-      // needed so our response is not ignored, since this corresponds to the
-      // actual peer_bdaddr
-      rem_name.bd_addr = bta_dm_search_cb.peer_bdaddr;
-      rem_name.remote_bd_name[0] = 0;
-      rem_name.status = btm_status;
-      rem_name.hci_status = HCI_SUCCESS;
-      bta_dm_remname_cback(&rem_name);
-    }
-  }
-}
-
-/*******************************************************************************
- *
  * Function         bta_dm_remname_cback
  *
  * Description      Remote name complete call back from BTM
@@ -1551,16 +1472,11 @@ static void bta_dm_remname_cback(const tBTM_REMOTE_DEV_NAME* p_remote_name) {
       p_remote_name->remote_bd_name[0],
       strnlen((const char*)p_remote_name->remote_bd_name, BD_NAME_LEN));
 
-  if (bta_dm_search_cb.peer_bdaddr == p_remote_name->bd_addr) {
-    get_btm_client_interface().security.BTM_SecDeleteRmtNameNotifyCallback(
-        &bta_dm_service_search_remname_cback);
-  } else {
+  if (bta_dm_search_cb.peer_bdaddr != p_remote_name->bd_addr) {
     // if we got a different response, maybe ignore it
     // we will have made a request directly from BTM_ReadRemoteDeviceName so we
     // expect a dedicated response for us
     if (p_remote_name->hci_status == HCI_ERR_CONNECTION_EXISTS) {
-      get_btm_client_interface().security.BTM_SecDeleteRmtNameNotifyCallback(
-          &bta_dm_service_search_remname_cback);
       log::info(
           "Assume command failed due to disconnection hci_status:{} peer:{}",
           hci_error_code_text(p_remote_name->hci_status),
@@ -2412,11 +2328,6 @@ void bta_dm_opportunistic_observe_results_cb(tBTM_INQ_RESULTS* p_inq,
 }
 void bta_dm_queue_search(tBTA_DM_API_SEARCH& search) {
   ::bta_dm_queue_search(search);
-}
-
-void bta_dm_service_search_remname_cback(const RawAddress& bd_addr,
-                                         DEV_CLASS dc, BD_NAME bd_name) {
-  ::bta_dm_service_search_remname_cback(bd_addr, dc, bd_name);
 }
 
 void bta_dm_start_scan(uint8_t duration_sec, bool low_latency_scan = false) {
