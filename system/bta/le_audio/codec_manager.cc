@@ -229,6 +229,7 @@ struct codec_manager_impl {
       const CodecManager::UnicastConfigurationRequirements& requirements,
       CodecManager::UnicastConfigurationVerifier verifier) {
     auto configs = GetSupportedCodecConfigurations(requirements);
+    if (configs == nullptr) return nullptr;
     // Note: For the only supported right now legacy software configuration
     //       provider, we use the device group logic to match the proper
     //       configuration with group capabilities. Note that this path only
