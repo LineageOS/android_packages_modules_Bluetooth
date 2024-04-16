@@ -22,10 +22,3 @@ filegroup {
         "dumpsys_test.cc",
     ],
 }
-
-filegroup {
-    name: "BluetoothFacade_shim_layer",
-    srcs: [
-        "facade/facade.cc",
-    ],
-}
