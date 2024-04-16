@@ -86,3 +86,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "fix_hfp_qual_1_9"
+    namespace: "bluetooth"
+    description: "Fix multiple issues in CVSD fallback logics, which are blocking PTS HFP Qualification 1.9"
+    bug: "332650199"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
