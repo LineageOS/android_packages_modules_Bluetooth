@@ -19,9 +19,6 @@
 #include <grpc++/grpc++.h>
 
 #include "grpc/grpc_module.h"
-#include "neighbor/discoverability.h"
-#include "neighbor/inquiry.h"
-#include "neighbor/page.h"
 #include "neighbor/scan.h"
 
 namespace bluetooth {
