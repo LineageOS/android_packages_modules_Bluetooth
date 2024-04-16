@@ -27,7 +27,6 @@ filegroup {
         "blueberry/facade/neighbor/facade.proto",
         "blueberry/facade/rootservice.proto",
         "blueberry/facade/security/facade.proto",
-        "blueberry/facade/shim/facade.proto",
         "blueberry/facade/topshim/facade.proto",
     ],
 }
@@ -72,8 +71,6 @@ genrule {
         "blueberry/facade/rootservice.pb.h",
         "blueberry/facade/security/facade.grpc.pb.h",
         "blueberry/facade/security/facade.pb.h",
-        "blueberry/facade/shim/facade.grpc.pb.h",
-        "blueberry/facade/shim/facade.pb.h",
     ],
 }
 
@@ -117,8 +114,6 @@ genrule {
         "blueberry/facade/rootservice.pb.cc",
         "blueberry/facade/security/facade.grpc.pb.cc",
         "blueberry/facade/security/facade.pb.cc",
-        "blueberry/facade/shim/facade.grpc.pb.cc",
-        "blueberry/facade/shim/facade.pb.cc",
     ],
 }
 

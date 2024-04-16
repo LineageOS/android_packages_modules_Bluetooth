@@ -10,10 +10,7 @@ package {
 filegroup {
     name: "BluetoothNeighborSources",
     srcs: [
-        "discoverability.cc",
-        "inquiry.cc",
         "name_db.cc",
-        "page.cc",
         "scan.cc",
     ],
 }
