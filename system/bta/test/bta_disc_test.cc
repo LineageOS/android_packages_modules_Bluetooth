@@ -19,6 +19,7 @@
 #include <gtest/gtest.h>
 #include <sys/socket.h>
 
+#include "bta/dm/bta_dm_device_search.h"
 #include "bta/dm/bta_dm_disc.h"
 #include "bta/dm/bta_dm_disc_int.h"
 #include "bta/test/bta_test_fixtures.h"
