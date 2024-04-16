@@ -1559,6 +1559,9 @@ class UnicastTestNoInit : public Test {
     supported_snk_context_types_ = 0xffff;
     supported_src_context_types_ = 0xffff;
 
+    empty_source_pack_ = false;
+    empty_sink_pack_ = false;
+
     bluetooth::le_audio::AudioSetConfigurationProvider::Initialize(
         codec_location);
     ASSERT_FALSE(LeAudioClient::IsLeAudioClientRunning());
@@ -2423,62 +2426,66 @@ class UnicastTestNoInit : public Test {
             std::vector<uint8_t> value;
             if (gatt_status == GATT_SUCCESS) {
               if (handle == pacs->sink_pac_char + 1) {
-                value = {
-                    // Num records
-                    0x02,
-                    // Codec_ID
-                    0x06,
-                    0x00,
-                    0x00,
-                    0x00,
-                    0x00,
-                    // Codec Spec. Caps. Len
-                    0x10,
-                    0x03, /* sample freq */
-                    0x01,
-                    sample_freq[0],
-                    sample_freq[1],
-                    0x02,
-                    0x02, /* frame duration */
-                    0x03,
-                    0x02, /* channel count */
-                    0x03,
-                    sink_channel_cnt,
-                    0x05,
-                    0x04,
-                    0x1E,
-                    0x00,
-                    0x78,
-                    0x00,
-                    // Metadata Length
-                    0x00,
-                    // Codec_ID
-                    0x06,
-                    0x00,
-                    0x00,
-                    0x00,
-                    0x00,
-                    // Codec Spec. Caps. Len
-                    0x10,
-                    0x03, /* sample freq */
-                    0x01,
-                    0x80, /* 48kHz */
-                    0x00,
-                    0x02, /* frame duration */
-                    0x02,
-                    0x03,
-                    0x02, /* channel count */
-                    0x03,
-                    sink_channel_cnt,
-                    0x05, /* octects per frame */
-                    0x04,
-                    0x78,
-                    0x00,
-                    0x78,
-                    0x00,
-                    // Metadata Length
-                    0x00,
-                };
+                if (empty_sink_pack_) {
+                  value = {0x00};
+                } else {
+                  value = {
+                      // Num records
+                      0x02,
+                      // Codec_ID
+                      0x06,
+                      0x00,
+                      0x00,
+                      0x00,
+                      0x00,
+                      // Codec Spec. Caps. Len
+                      0x10,
+                      0x03, /* sample freq */
+                      0x01,
+                      sample_freq[0],
+                      sample_freq[1],
+                      0x02,
+                      0x02, /* frame duration */
+                      0x03,
+                      0x02, /* channel count */
+                      0x03,
+                      sink_channel_cnt,
+                      0x05,
+                      0x04,
+                      0x1E,
+                      0x00,
+                      0x78,
+                      0x00,
+                      // Metadata Length
+                      0x00,
+                      // Codec_ID
+                      0x06,
+                      0x00,
+                      0x00,
+                      0x00,
+                      0x00,
+                      // Codec Spec. Caps. Len
+                      0x10,
+                      0x03, /* sample freq */
+                      0x01,
+                      0x80, /* 48kHz */
+                      0x00,
+                      0x02, /* frame duration */
+                      0x02,
+                      0x03,
+                      0x02, /* channel count */
+                      0x03,
+                      sink_channel_cnt,
+                      0x05, /* octects per frame */
+                      0x04,
+                      0x78,
+                      0x00,
+                      0x78,
+                      0x00,
+                      // Metadata Length
+                      0x00,
+                  };
+                }
               } else if (handle == pacs->sink_audio_loc_char + 1) {
                 value = {
                     // Audio Locations
@@ -2488,62 +2495,66 @@ class UnicastTestNoInit : public Test {
                     snk_allocation[3],
                 };
               } else if (handle == pacs->source_pac_char + 1) {
-                value = {
-                    // Num records
-                    0x02,
-                    // Codec_ID
-                    0x06,
-                    0x00,
-                    0x00,
-                    0x00,
-                    0x00,
-                    // Codec Spec. Caps. Len
-                    0x10,
-                    0x03,
-                    0x01,
-                    sample_freq[0],
-                    sample_freq[1],
-                    0x02,
-                    0x02,
-                    0x03,
-                    0x02,
-                    0x03,
-                    source_channel_cnt,
-                    0x05,
-                    0x04,
-                    0x1E,
-                    0x00,
-                    0x78,
-                    0x00,
-                    // Metadata Length
-                    0x00,
-                    // Codec_ID
-                    0x06,
-                    0x00,
-                    0x00,
-                    0x00,
-                    0x00,
-                    // Codec Spec. Caps. Len
-                    0x10,
-                    0x03,
-                    0x01,
-                    0x24,
-                    0x00,
-                    0x02,
-                    0x02,
-                    0x03,
-                    0x02,
-                    0x03,
-                    source_channel_cnt,
-                    0x05,
-                    0x04,
-                    0x1E,
-                    0x00,
-                    0x50,
-                    0x00,
-                    // Metadata Length
-                    0x00,
-                };
+                if (empty_source_pack_) {
+                  value = {0x00};
+                } else {
+                  value = {
+                      // Num records
+                      0x02,
+                      // Codec_ID
+                      0x06,
+                      0x00,
+                      0x00,
+                      0x00,
+                      0x00,
+                      // Codec Spec. Caps. Len
+                      0x10,
+                      0x03,
+                      0x01,
+                      sample_freq[0],
+                      sample_freq[1],
+                      0x02,
+                      0x02,
+                      0x03,
+                      0x02,
+                      0x03,
+                      source_channel_cnt,
+                      0x05,
+                      0x04,
+                      0x1E,
+                      0x00,
+                      0x78,
+                      0x00,
+                      // Metadata Length
+                      0x00,
+                      // Codec_ID
+                      0x06,
+                      0x00,
+                      0x00,
+                      0x00,
+                      0x00,
+                      // Codec Spec. Caps. Len
+                      0x10,
+                      0x03,
+                      0x01,
+                      0x24,
+                      0x00,
+                      0x02,
+                      0x02,
+                      0x03,
+                      0x02,
+                      0x03,
+                      source_channel_cnt,
+                      0x05,
+                      0x04,
+                      0x1E,
+                      0x00,
+                      0x50,
+                      0x00,
+                      // Metadata Length
+                      0x00,
+                  };
+                }
               } else if (handle == pacs->source_audio_loc_char + 1) {
                 value = {
                     // Audio Locations
@@ -2783,6 +2794,9 @@ class UnicastTestNoInit : public Test {
   uint16_t available_src_context_types_ = 0xffff;
   uint16_t supported_snk_context_types_ = 0xffff;
   uint16_t supported_src_context_types_ = 0xffff;
+
+  bool empty_source_pack_;
+  bool empty_sink_pack_;
 
   NiceMock<bluetooth::storage::MockBtifStorageInterface> mock_btif_storage_;
 
@@ -4647,6 +4661,132 @@ TEST_F(UnicastTest, HandleResumeWithoutMetadataUpdateOnLocalSink) {
   LocalAudioSinkResume();
   SyncOnMainLoop();
   Mock::VerifyAndClearExpectations(&mock_state_machine_);
+}
+
+TEST_F(UnicastTest, GroupSetActive) {
+  const RawAddress test_address0 = GetTestAddress(0);
+  int group_id = bluetooth::groups::kGroupUnknown;
+
+  /**
+   * In this test we want to make sure that Available context change reach Java
+   * when group is in Configured state
+   */
+
+  default_channel_cnt = 1;
+
+  SetSampleDatabaseEarbudsValid(
+      1, test_address0, codec_spec_conf::kLeAudioLocationStereo,
+      codec_spec_conf::kLeAudioLocationStereo, default_channel_cnt,
+      default_channel_cnt, 0x0004,
+      /* source sample freq 16khz */ false /*add_csis*/, true /*add_cas*/,
+      true /*add_pacs*/, default_ase_cnt /*add_ascs_cnt*/, 1 /*set_size*/,
+      0 /*rank*/);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnConnectionState(ConnectionState::CONNECTED, test_address0))
+      .Times(1);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnGroupNodeStatus(test_address0, _, GroupNodeStatus::ADDED))
+      .WillOnce(DoAll(SaveArg<1>(&group_id)));
+
+  ConnectLeAudio(test_address0);
+  ASSERT_NE(group_id, bluetooth::groups::kGroupUnknown);
+
+  // Audio sessions are started only when device gets active
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnAudioGroupSelectableCodecConf(group_id, _, _))
+      .Times(1);
+  EXPECT_CALL(*mock_le_audio_source_hal_client_, Start(_, _, _)).Times(1);
+  EXPECT_CALL(*mock_le_audio_sink_hal_client_, Start(_, _, _)).Times(1);
+  LeAudioClient::Get()->GroupSetActive(group_id);
+  SyncOnMainLoop();
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
+  Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
+}
+
+TEST_F(UnicastTest, GroupSetActive_SinkPacksEmpty) {
+  const RawAddress test_address0 = GetTestAddress(0);
+  int group_id = bluetooth::groups::kGroupUnknown;
+  empty_sink_pack_ = true;
+
+  /**
+   * In this test we want to make sure that Available context change reach Java
+   * when group is in Configured state
+   */
+
+  default_channel_cnt = 1;
+
+  SetSampleDatabaseEarbudsValid(
+      1, test_address0, codec_spec_conf::kLeAudioLocationStereo,
+      codec_spec_conf::kLeAudioLocationStereo, default_channel_cnt,
+      default_channel_cnt, 0x0004,
+      /* source sample freq 16khz */ false /*add_csis*/, true /*add_cas*/,
+      true /*add_pacs*/, default_ase_cnt /*add_ascs_cnt*/, 1 /*set_size*/,
+      0 /*rank*/);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnConnectionState(ConnectionState::CONNECTED, test_address0))
+      .Times(1);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnGroupNodeStatus(test_address0, _, GroupNodeStatus::ADDED))
+      .WillOnce(DoAll(SaveArg<1>(&group_id)));
+
+  ConnectLeAudio(test_address0);
+  ASSERT_NE(group_id, bluetooth::groups::kGroupUnknown);
+
+  // Audio sessions are started only when device gets active
+  std::vector<btle_audio_codec_config_t> empty_confs;
+
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnAudioGroupSelectableCodecConf(group_id, _, empty_confs))
+      .Times(1);
+  EXPECT_CALL(*mock_le_audio_source_hal_client_, Start(_, _, _)).Times(1);
+  EXPECT_CALL(*mock_le_audio_sink_hal_client_, Start(_, _, _)).Times(1);
+  LeAudioClient::Get()->GroupSetActive(group_id);
+  SyncOnMainLoop();
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
+  Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
+}
+
+TEST_F(UnicastTest, GroupSetActive_SourcePacksEmpty) {
+  const RawAddress test_address0 = GetTestAddress(0);
+  int group_id = bluetooth::groups::kGroupUnknown;
+  empty_source_pack_ = true;
+
+  /**
+   * In this test we want to make sure that Available context change reach Java
+   * when group is in Configured state
+   */
+
+  default_channel_cnt = 1;
+
+  SetSampleDatabaseEarbudsValid(
+      1, test_address0, codec_spec_conf::kLeAudioLocationStereo,
+      codec_spec_conf::kLeAudioLocationStereo, default_channel_cnt,
+      default_channel_cnt, 0x0004,
+      /* source sample freq 16khz */ false /*add_csis*/, true /*add_cas*/,
+      true /*add_pacs*/, default_ase_cnt /*add_ascs_cnt*/, 1 /*set_size*/,
+      0 /*rank*/);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnConnectionState(ConnectionState::CONNECTED, test_address0))
+      .Times(1);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnGroupNodeStatus(test_address0, _, GroupNodeStatus::ADDED))
+      .WillOnce(DoAll(SaveArg<1>(&group_id)));
+
+  ConnectLeAudio(test_address0);
+  ASSERT_NE(group_id, bluetooth::groups::kGroupUnknown);
+
+  // Audio sessions are started only when device gets active
+  std::vector<btle_audio_codec_config_t> empty_confs;
+
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnAudioGroupSelectableCodecConf(group_id, empty_confs, _))
+      .Times(1);
+  EXPECT_CALL(*mock_le_audio_source_hal_client_, Start(_, _, _)).Times(1);
+  EXPECT_CALL(*mock_le_audio_sink_hal_client_, Start(_, _, _)).Times(1);
+  LeAudioClient::Get()->GroupSetActive(group_id);
+  SyncOnMainLoop();
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
+  Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
 }
 
 TEST_F(UnicastTest, ChangeAvailableContextTypeWhenInCodecConfigured) {
