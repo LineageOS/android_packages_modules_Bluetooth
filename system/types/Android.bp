@@ -57,6 +57,7 @@ cc_test {
     name: "net_test_types",
     static_libs: [
         "libbluetooth-types",
+        "libbluetooth_log",
         "libchrome",
         "libosi", // strlcpy
     ],
