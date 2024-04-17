@@ -88,7 +88,6 @@ static_library("bta") {
     "hd/bta_hd_main.cc",
     "jv/bta_jv_act.cc",
     "jv/bta_jv_api.cc",
-    "jv/bta_jv_cfg.cc",
     "le_audio/audio_hal_client/audio_sink_hal_client.cc",
     "le_audio/audio_hal_client/audio_source_hal_client.cc",
     "le_audio/broadcaster/broadcast_configuration_provider.cc",
