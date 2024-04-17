@@ -489,6 +489,9 @@ final class BondStateMachine extends StateMachine {
             infoLog("Invalid bond state " + newState);
             return;
         }
+
+        mRemoteDevices.onBondStateChange(device, newState);
+
         if (devProp != null) {
             oldState = devProp.getBondState();
         }
