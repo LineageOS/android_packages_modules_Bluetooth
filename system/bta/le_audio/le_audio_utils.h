@@ -59,6 +59,9 @@ std::vector<bluetooth::le_audio::btle_audio_codec_config_t>
 GetRemoteBtLeAudioCodecConfigFromPac(
     const types::PublishedAudioCapabilities& group_pacs);
 bool IsCodecUsingLtvFormat(const types::LeAudioCodecId& codec_id);
+types::LeAudioConfigurationStrategy GetStrategyForAseConfig(
+    const std::vector<le_audio::set_configurations::AseConfiguration>& cfgs,
+    uint8_t device_cnt);
 ::bluetooth::le_audio::LeAudioCodecConfiguration
 GetAudioSessionCodecConfigFromAudioSetConfiguration(
     const ::bluetooth::le_audio::set_configurations::AudioSetConfiguration&

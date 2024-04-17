@@ -27,6 +27,8 @@
 #include "common/strings.h"
 #include "hci/controller_interface.h"
 #include "internal_include/bt_trace.h"
+#include "le_audio/codec_manager.h"
+#include "le_audio/le_audio_types.h"
 #include "le_audio_log_history.h"
 #include "le_audio_utils.h"
 #include "main/shim/entry.h"
@@ -242,7 +244,7 @@ bool LeAudioDevice::IsAudioSetConfigurationSupported(
 
 bool LeAudioDevice::ConfigureAses(
     const set_configurations::AudioSetConfiguration* audio_set_conf,
-    uint8_t direction, LeAudioContextType context_type,
+    uint8_t num_of_devices, uint8_t direction, LeAudioContextType context_type,
     uint8_t* number_of_already_active_group_ase,
     AudioLocations& group_audio_locations_memo,
     const AudioContexts& metadata_context_types,
@@ -260,50 +262,63 @@ bool LeAudioDevice::ConfigureAses(
     return false;
   }
 
-  log::assert_that(
-      audio_set_conf->topology_info.has_value(),
-      "No topology info, which is required to properly configure the ASEs");
-  auto device_cnt = audio_set_conf->topology_info->device_count.get(direction);
-  auto strategy = audio_set_conf->topology_info->strategy.get(direction);
-  auto const& ents = audio_set_conf->confs.get(direction);
-
-  /* The number_of_already_active_group_ase keeps all the active ases
-   * in other devices in the group.
-   * This function counts active ases only for this device, and we count here
-   * new active ases and already active ases which we want to reuse in the
-   * scenario
-   */
-  uint8_t active_ases = *number_of_already_active_group_ase;
-  uint8_t max_required_ase_per_dev =
-      ents.size() / device_cnt + (ents.size() % device_cnt);
-
+  auto const& ase_configs = audio_set_conf->confs.get(direction);
   auto const& pacs =
       (direction == types::kLeAudioDirectionSink) ? snk_pacs_ : src_pacs_;
-
-  // Before we activate the ASEs, make sure we have the right configuration
-  int needed_ase = std::min((int)(max_required_ase_per_dev),
-                            (int)(ents.size() - active_ases));
-  for (int i = 0; i < needed_ase; ++i) {
-    auto const& ase_cfg = ents.at(i);
+  for (size_t i = 0; i < ase_configs.size() && ase; ++i) {
+    auto const& ase_cfg = ase_configs.at(i);
     if (!utils::GetConfigurationSupportedPac(pacs, ase_cfg.codec)) {
       return false;
     }
   }
 
-  AudioLocations audio_locations = 0;
+  /* The number_of_already_active_group_ase keeps all the active ases
+   * in other devices in the group for the given direction.
+   * This function counts active ases only for this device, and we count here
+   * new active ases and already active ases which we want to reuse in the
+   * scenario
+   */
+  uint8_t active_ases = *number_of_already_active_group_ase;
 
-  /* Check direction and if audio location allows to create more cise */
-  if (direction == types::kLeAudioDirectionSink) {
-    audio_locations = snk_audio_locations_;
-  } else {
-    audio_locations = src_audio_locations_;
+  auto audio_locations = (direction == types::kLeAudioDirectionSink)
+                             ? snk_audio_locations_
+                             : src_audio_locations_;
+
+  // Before we activate the ASEs, make sure we have the right configuration
+  uint8_t max_required_ase_per_dev = ase_configs.size() / num_of_devices +
+                                     (ase_configs.size() % num_of_devices);
+  int needed_ase = std::min((int)(max_required_ase_per_dev),
+                            (int)(ase_configs.size() - active_ases));
+  for (int i = 0; i < needed_ase; ++i) {
+    auto const& ase_cfg = ase_configs.at(i);
+    if (!utils::GetConfigurationSupportedPac(pacs, ase_cfg.codec)) {
+      log::error("No matching PAC found. Stop the activation.");
+      return false;
+    }
   }
 
-  for (int i = 0; needed_ase && ase; needed_ase--) {
+  auto strategy = utils::GetStrategyForAseConfig(ase_configs, num_of_devices);
+
+  // Make sure we configure a single microphone if Dual Bidir SWB is not
+  // supported.
+  if (direction == types::kLeAudioDirectionSource &&
+      !CodecManager::GetInstance()->IsDualBiDirSwbSupported() &&
+      (active_ases != 0)) {
+    if (CodecManager::GetInstance()->CheckCodecConfigIsDualBiDirSwb(
+            *audio_set_conf)) {
+      log::error(
+          "Trying to configure the dual bidir SWB, but the feature is "
+          "disabled. This should not happen! Skipping ASE activation.");
+      return true;
+    }
+  }
+
+  for (int i = 0; i < needed_ase && ase; ++i) {
+    auto const& ase_cfg = ase_configs.at(i);
     ase->active = true;
     ase->configured_for_context_type = context_type;
-    ase->is_codec_in_controller = ents[i].is_codec_in_controller;
-    ase->data_path_id = ents[i].data_path_id;
+    ase->is_codec_in_controller = ase_cfg.is_codec_in_controller;
+    ase->data_path_id = ase_cfg.data_path_id;
     active_ases++;
 
     /* In case of late connect, we could be here for STREAMING ase.
@@ -315,9 +330,10 @@ bool LeAudioDevice::ConfigureAses(
       if (ase->state == AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED)
         ase->reconfigure = true;
 
-      ase->target_latency = ents[i].qos.target_latency;
-      ase->codec_id = ents[i].codec.id;
-      ase->codec_config = ents[i].codec.params;
+      ase->target_latency = ase_cfg.qos.target_latency;
+      ase->codec_id = ase_cfg.codec.id;
+      ase->codec_config = ase_cfg.codec.params;
+      ase->channel_count = ase_cfg.codec.channel_count_per_iso_stream;
 
       /* Let's choose audio channel allocation if not set */
       ase->codec_config.Add(
@@ -332,18 +348,13 @@ bool LeAudioDevice::ConfigureAses(
         ase->codec_config.Add(
             codec_spec_conf::kLeAudioLtvTypeCodecFrameBlocksPerSdu,
             GetMaxCodecFramesPerSduFromPac(
-                utils::GetConfigurationSupportedPac(pacs, ents.at(i).codec)));
+                utils::GetConfigurationSupportedPac(pacs, ase_cfg.codec)));
       }
 
-      /* Recalculate Max SDU size from the Core codec config */
-      ase->qos_config.max_sdu_size =
-          ase->codec_config.GetAsCoreCodecConfig().CalculateMaxSduSize();
-      /* Get the SDU interval from the Core codec config */
-      ase->qos_config.sdu_interval =
-          ase->codec_config.GetAsCoreCodecConfig().GetFrameDurationUs();
-
-      ase->qos_config.retrans_nb = ents[i].qos.retransmission_number;
-      ase->qos_config.max_transport_latency = ents[i].qos.max_transport_latency;
+      ase->qos_config.sdu_interval = ase_cfg.qos.sduIntervalUs;
+      ase->qos_config.max_sdu_size = ase_cfg.qos.maxSdu;
+      ase->qos_config.retrans_nb = ase_cfg.qos.retransmission_number;
+      ase->qos_config.max_transport_latency = ase_cfg.qos.max_transport_latency;
 
       SetMetadataToAse(ase, metadata_context_types, ccid_lists);
     }
@@ -352,14 +363,13 @@ bool LeAudioDevice::ConfigureAses(
         "device={}, activated ASE id={}, direction={}, max_sdu_size={}, "
         "cis_id={}, target_latency={}",
         address_, ase->id, (direction == 1 ? "snk" : "src"),
-        ase->qos_config.max_sdu_size, ase->cis_id, ents[i].qos.target_latency);
+        ase->qos_config.max_sdu_size, ase->cis_id, ase_cfg.qos.target_latency);
 
     /* Try to use the already active ASE */
     ase = GetNextActiveAseWithSameDirection(ase);
     if (ase == nullptr) {
       ase = GetFirstInactiveAse(direction, reuse_cis_id);
     }
-    ++i;
   }
 
   *number_of_already_active_group_ase = active_ases;
