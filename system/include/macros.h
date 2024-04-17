@@ -16,6 +16,20 @@
 
 #pragma once
 
+#include <bluetooth/log.h>
+
+#include <cstdint>
+#include <string>
+
 #define CASE_RETURN_TEXT(code) \
   case code:                   \
     return #code
+
+#define CASE_RETURN_STRING(enumerator)         \
+  case enumerator:                             \
+    return fmt::format(#enumerator "(0x{:x})", \
+                       static_cast<uint64_t>(enumerator))
+
+#define RETURN_UNKNOWN_TYPE_STRING(type, variable) \
+  return fmt::format("Unknown {}(0x{:x})", #type,  \
+                     static_cast<uint64_t>(variable))
