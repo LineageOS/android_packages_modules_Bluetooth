@@ -189,7 +189,6 @@ cc_library_static {
         "gatt/database_builder.cc",
         "jv/bta_jv_act.cc",
         "jv/bta_jv_api.cc",
-        "jv/bta_jv_cfg.cc",
         "rfcomm/bta_rfcomm_scn.cc",
         "sdp/bta_sdp.cc",
         "sdp/bta_sdp_act.cc",
