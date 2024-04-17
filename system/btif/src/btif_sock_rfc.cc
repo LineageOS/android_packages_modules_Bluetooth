@@ -257,6 +257,12 @@ static rfc_slot_t* create_srv_accept_rfc_slot(rfc_slot_t* srv_rs,
   srv_rs->rfc_handle = new_listen_handle;
   srv_rs->rfc_port_handle = BTA_JvRfcommGetPortHdl(new_listen_handle);
 
+  if (accept_rs->rfc_port_handle == srv_rs->rfc_port_handle) {
+    log::error(
+        "accept_rs->rfc_port_handle == srv_rs->rfc_port_handle, "
+        "rfc_port_handle={}",
+        accept_rs->rfc_port_handle);
+  }
   log::assert_that(
       accept_rs->rfc_port_handle != srv_rs->rfc_port_handle,
       "assert failed: accept_rs->rfc_port_handle != srv_rs->rfc_port_handle");
