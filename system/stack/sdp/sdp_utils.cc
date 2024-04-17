@@ -1156,7 +1156,7 @@ bool sdpu_compare_uuid_with_attr(const Uuid& uuid, tSDP_DISC_ATTR* p_attr) {
     if (SDP_DISC_ATTR_LEN(p_attr->attr_len_type) == Uuid::kNumBytes16) {
       return uuid.As16Bit() == p_attr->attr_value.v.u16;
     } else {
-      log::error("invalid length for discovery attribute");
+      log::error("invalid length for 16bit discovery attribute len:{}", len);
       return (false);
     }
   }
@@ -1164,13 +1164,13 @@ bool sdpu_compare_uuid_with_attr(const Uuid& uuid, tSDP_DISC_ATTR* p_attr) {
     if (SDP_DISC_ATTR_LEN(p_attr->attr_len_type) == Uuid::kNumBytes32) {
       return uuid.As32Bit() == p_attr->attr_value.v.u32;
     } else {
-      log::error("invalid length for discovery attribute");
+      log::error("invalid length for 32bit discovery attribute len:{}", len);
       return (false);
     }
   }
 
   if (SDP_DISC_ATTR_LEN(p_attr->attr_len_type) != Uuid::kNumBytes128) {
-    log::error("invalid length for discovery attribute");
+    log::error("invalid length for 128bit discovery attribute len:{}", len);
     return (false);
   }
 

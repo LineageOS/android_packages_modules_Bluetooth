@@ -15,6 +15,7 @@
  */
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <stdlib.h>
 
 #include <cstddef>
 
@@ -23,14 +24,22 @@
 #include "common/init_flags.h"
 #include "device/include/interop.h"
 #include "mock_btif_config.h"
+#include "osi/include/allocator.h"
 #include "profile/avrcp/avrcp_config.h"
 #include "stack/include/avrc_api.h"
 #include "stack/include/avrc_defs.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/sdp/sdpint.h"
+#include "test/fake/fake_osi.h"
 #include "test/mock/mock_btif_config.h"
+#include "test/mock/mock_osi_allocator.h"
 #include "test/mock/mock_osi_properties.h"
+#include "test/mock/mock_stack_l2cap_api.h"
+
+#ifndef BT_DEFAULT_BUFFER_SIZE
+#define BT_DEFAULT_BUFFER_SIZE (4096 + 16)
+#endif
 
 #define INVALID_LENGTH 5
 #define INVALID_UUID 0X1F
@@ -41,6 +50,10 @@
 #define HFP_PROFILE_MINOR_VERSION_6 0x06
 #define HFP_PROFILE_MINOR_VERSION_7 0x07
 
+static int L2CA_ConnectReq2_cid = 0x42;
+static RawAddress addr = RawAddress({0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA6});
+static tSDP_DISCOVERY_DB* sdp_db = nullptr;
+
 using testing::_;
 using testing::DoAll;
 using testing::Return;
@@ -49,6 +62,9 @@ using testing::SetArrayArgument;
 bool sdp_dynamic_change_hfp_version(const tSDP_ATTRIBUTE* p_attr,
                                     const RawAddress& remote_address);
 void hfp_fallback(bool& is_hfp_fallback, const tSDP_ATTRIBUTE* p_attr);
+
+void sdp_callback(const RawAddress& bd_addr, tSDP_RESULT result);
+tCONN_CB* find_ccb(uint16_t cid, uint8_t state);
 
 const char* test_flags_feature_disabled[] = {
     "INIT_dynamic_avrcp_version_enhancement=false",
@@ -233,9 +249,56 @@ uint16_t get_avrc_target_feature(tSDP_ATTRIBUTE* p_attr) {
   return feature;
 }
 
-class StackSdpUtilsTest : public ::testing::Test {
+class StackSdpMockAndFakeTest : public ::testing::Test {
  protected:
   void SetUp() override {
+    fake_osi_ = std::make_unique<test::fake::FakeOsi>();
+    test::mock::stack_l2cap_api::L2CA_ConnectReq2.body =
+        [](uint16_t /* psm */, const RawAddress& /* p_bd_addr */,
+           uint16_t /* sec_level */) { return ++L2CA_ConnectReq2_cid; };
+    test::mock::stack_l2cap_api::L2CA_DataWrite.body = [](uint16_t /* cid */,
+                                                          BT_HDR* p_data) {
+      osi_free_and_reset((void**)&p_data);
+      return 0;
+    };
+    test::mock::stack_l2cap_api::L2CA_DisconnectReq.body =
+        [](uint16_t /* cid */) { return true; };
+    test::mock::stack_l2cap_api::L2CA_Register2.body =
+        [](uint16_t /* psm */, const tL2CAP_APPL_INFO& /* p_cb_info */,
+           bool /* enable_snoop */, tL2CAP_ERTM_INFO* /* p_ertm_info */,
+           uint16_t /* my_mtu */, uint16_t /* required_remote_mtu */,
+           uint16_t /* sec_level */) {
+          return 42;  // return non zero
+        };
+  }
+
+  void TearDown() override {
+    test::mock::stack_l2cap_api::L2CA_ConnectReq2 = {};
+    test::mock::stack_l2cap_api::L2CA_Register2 = {};
+    test::mock::stack_l2cap_api::L2CA_DataWrite = {};
+    test::mock::stack_l2cap_api::L2CA_DisconnectReq = {};
+  }
+  std::unique_ptr<test::fake::FakeOsi> fake_osi_;
+};
+
+class StackSdpInitTest : public StackSdpMockAndFakeTest {
+ protected:
+  void SetUp() override {
+    StackSdpMockAndFakeTest::SetUp();
+    sdp_init();
+    sdp_db = (tSDP_DISCOVERY_DB*)osi_malloc(BT_DEFAULT_BUFFER_SIZE);
+  }
+
+  void TearDown() override {
+    osi_free(sdp_db);
+    StackSdpMockAndFakeTest::TearDown();
+  }
+};
+
+class StackSdpUtilsTest : public StackSdpInitTest {
+ protected:
+  void SetUp() override {
+    StackSdpInitTest::SetUp();
     bluetooth::common::InitFlags::Load(hfp_test_flags_feature_disabled);
     bluetooth::common::InitFlags::Load(test_flags_feature_disabled);
     GetInterfaceToProfiles()->profileSpecific_HACK->AVRC_GetProfileVersion =
@@ -270,6 +333,7 @@ class StackSdpUtilsTest : public ::testing::Test {
 
     localIopMock.reset();
     localAvrcpVersionMock.reset();
+    StackSdpInitTest::TearDown();
   }
   bluetooth::manager::MockBtifConfigInterface btif_config_interface_;
 };
@@ -628,4 +692,79 @@ TEST_F(StackSdpUtilsTest, check_HFP_version_fallback_success) {
   hfp_fallback(is_hfp_fallback, &hfp_attr);
   ASSERT_EQ(hfp_attr.value_ptr[PROFILE_VERSION_POSITION],
             HFP_PROFILE_MINOR_VERSION_6);
+}
+
+TEST_F(StackSdpUtilsTest, sdpu_compare_uuid_with_attr_u16) {
+  tSDP_DISC_ATTR attr = {
+      .p_next_attr = nullptr,
+      .attr_id = 0,
+      .attr_len_type = bluetooth::Uuid::kNumBytes16,
+      .attr_value =
+          {
+              .v =
+                  {
+                      .u16 = 0x1234,
+                  },
+          },
+  };
+
+  bool is_valid{false};
+  bluetooth::Uuid uuid = bluetooth::Uuid::FromString("1234", &is_valid);
+
+  ASSERT_EQ(uuid.As16Bit(), attr.attr_value.v.u16);
+  ASSERT_TRUE(is_valid);
+  ASSERT_TRUE(sdpu_compare_uuid_with_attr(uuid, &attr));
+}
+
+TEST_F(StackSdpUtilsTest, sdpu_compare_uuid_with_attr_u32) {
+  tSDP_DISC_ATTR attr = {
+      .p_next_attr = nullptr,
+      .attr_id = 0,
+      .attr_len_type = bluetooth::Uuid::kNumBytes32,
+      .attr_value =
+          {
+              .v =
+                  {
+                      .u32 = 0x12345678,
+                  },
+          },
+  };
+
+  bool is_valid{false};
+  bluetooth::Uuid uuid = bluetooth::Uuid::FromString("12345678", &is_valid);
+
+  ASSERT_EQ(uuid.As32Bit(), attr.attr_value.v.u32);
+  ASSERT_TRUE(is_valid);
+  ASSERT_TRUE(sdpu_compare_uuid_with_attr(uuid, &attr));
+}
+
+TEST_F(StackSdpUtilsTest, sdpu_compare_uuid_with_attr_u128) {
+  tSDP_DISC_ATTR* p_attr =
+      (tSDP_DISC_ATTR*)calloc(1, sizeof(tSDP_DISC_ATTR) + 16);
+  tSDP_DISC_ATTR attr = {
+      .p_next_attr = nullptr,
+      .attr_id = 0,
+      .attr_len_type = bluetooth::Uuid::kNumBytes128,
+      .attr_value = {},
+  };
+
+  uint8_t data[] = {
+      0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0,
+      0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc, 0xde, 0xf0,
+  };
+
+  memcpy(p_attr, &attr, sizeof(tSDP_DISC_ATTR));
+  memcpy(p_attr->attr_value.v.array, data, 16);
+
+  bool is_valid{false};
+  bluetooth::Uuid uuid = bluetooth::Uuid::FromString(
+      "12345678-9abc-def0-1234-56789abcdef0", &is_valid);
+
+  ASSERT_EQ(0,
+            memcmp(uuid.To128BitBE().data(), (void*)p_attr->attr_value.v.array,
+                   bluetooth::Uuid::kNumBytes128));
+  ASSERT_TRUE(is_valid);
+  ASSERT_TRUE(sdpu_compare_uuid_with_attr(uuid, p_attr));
+
+  free(p_attr);
 }
