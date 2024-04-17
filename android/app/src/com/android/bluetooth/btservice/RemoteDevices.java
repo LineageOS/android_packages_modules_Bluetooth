@@ -1236,7 +1236,7 @@ public class RemoteDevices {
     }
 
     void onBondStateChange(byte[] address, int newState) {
-        if (newState == BondStateMachine.BOND_STATE_NONE) {
+        if (newState == BluetoothDevice.BOND_NONE) {
             removeAddressMapping(address);
         }
     }
