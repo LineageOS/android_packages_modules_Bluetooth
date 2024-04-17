@@ -1237,6 +1237,13 @@ class LeAudioClientImpl : public LeAudioClient {
       return;
     }
 
+    if (group->NumOfConnected() == 0) {
+      log::error("Group: {} is not connected anymore",
+                 static_cast<int>(group_id));
+      callbacks_->OnGroupStatus(group_id, GroupStatus::INACTIVE);
+      return;
+    }
+
     if (active_group_id_ != bluetooth::groups::kGroupUnknown) {
       if (active_group_id_ == group_id) {
         log::info("Group is already active: {}",
