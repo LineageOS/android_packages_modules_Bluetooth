@@ -149,6 +149,7 @@ static tBTA_AG_SCB* bta_ag_scb_alloc(void) {
       p_scb->received_at_bac = false;
       p_scb->codec_updated = false;
       p_scb->codec_fallback = false;
+      p_scb->trying_cvsd_safe_settings = false;
       p_scb->retransmission_effort_retries = 0;
       p_scb->peer_codecs = BTM_SCO_CODEC_CVSD;
       p_scb->sco_codec = BTM_SCO_CODEC_CVSD;
@@ -160,6 +161,8 @@ static tBTA_AG_SCB* bta_ag_scb_alloc(void) {
       p_scb->collision_timer = alarm_new("bta_ag.scb_collision_timer");
       p_scb->codec_negotiation_timer =
           alarm_new("bta_ag.scb_codec_negotiation_timer");
+      /* reset to CVSD S4 settings as the preferred */
+      p_scb->codec_cvsd_settings = BTA_AG_SCO_CVSD_SETTINGS_S4;
       /* set eSCO mSBC setting to T2 as the preferred */
       p_scb->codec_msbc_settings = BTA_AG_SCO_MSBC_SETTINGS_T2;
       p_scb->codec_lc3_settings = BTA_AG_SCO_LC3_SETTINGS_T2;

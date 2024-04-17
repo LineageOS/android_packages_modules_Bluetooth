@@ -215,6 +215,12 @@ typedef struct {
 } tBTA_AG_PROFILE;
 
 typedef enum {
+  BTA_AG_SCO_CVSD_SETTINGS_S4 = 0, /* preferred/default when codec is CVSD */
+  BTA_AG_SCO_CVSD_SETTINGS_S3,
+  BTA_AG_SCO_CVSD_SETTINGS_S1,
+} tBTA_AG_SCO_CVSD_SETTINGS;
+
+typedef enum {
   BTA_AG_SCO_MSBC_SETTINGS_T2 = 0, /* preferred/default when codec is mSBC */
   BTA_AG_SCO_MSBC_SETTINGS_T1,
 } tBTA_AG_SCO_MSBC_SETTINGS;
@@ -285,12 +291,16 @@ struct tBTA_AG_SCB {
       inuse_codec;     /* codec being used for the current SCO connection */
   bool codec_updated;  /* set to true whenever the app updates codec type */
   bool codec_fallback; /* If sco nego fails for mSBC, fallback to CVSD */
+  bool trying_cvsd_safe_settings; /* set to true whenever we are trying CVSD
+                                     safe settings */
   uint8_t retransmission_effort_retries;         /* Retry eSCO
                                                   with retransmission_effort value*/
   tBTA_AG_SCO_MSBC_SETTINGS codec_msbc_settings; /* settings to be used for the
                                                     impending eSCO on WB */
   tBTA_AG_SCO_LC3_SETTINGS codec_lc3_settings;   /* settings to be used for the
                                                     impending eSCO on SWB */
+  tBTA_AG_SCO_CVSD_SETTINGS codec_cvsd_settings; /* settings to be used for the
+                                                    impending eSCO on CVSD */
   tBTA_AG_SCO_APTX_SWB_SETTINGS
       codec_aptx_settings; /* settings to be used for the
                               aptX Voice SWB eSCO */
