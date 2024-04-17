@@ -1320,6 +1320,7 @@ class LeAudioClientImpl : public LeAudioClient {
     sink_monitor_notified_status_ = std::nullopt;
     if (IS_FLAG_ENABLED(leaudio_codec_config_callback_order_fix)) {
       SendAudioGroupSelectableCodecConfigChanged(group);
+      SendAudioGroupCurrentCodecConfigChanged(group);
       callbacks_->OnGroupStatus(active_group_id_, GroupStatus::ACTIVE);
     } else {
       callbacks_->OnGroupStatus(active_group_id_, GroupStatus::ACTIVE);
