@@ -37,7 +37,9 @@
 #include "test/mock/mock_stack_btm_sec.h"
 #include "types/raw_address.h"
 
+namespace bluetooth::testing {
 void set_hal_cbacks(bt_callbacks_t* callbacks);
+}  // namespace bluetooth::testing
 
 const tBTA_AG_RES_DATA tBTA_AG_RES_DATA::kEmpty = {};
 
@@ -108,6 +110,8 @@ void generate_local_oob_data_callback(tBT_TRANSPORT /* transport */,
                                       bt_oob_data_t /* oob_data */) {}
 void switch_buffer_size_callback(bool /* is_low_latency_buffer_size */) {}
 void switch_codec_callback(bool /* is_low_latency_buffer_size */) {}
+void le_rand_callback(uint64_t /* random */) {}
+void key_missing_callback(const RawAddress /* bd_addr */) {}
 #undef TESTCB
 
 bt_callbacks_t callbacks = {
@@ -131,6 +135,8 @@ bt_callbacks_t callbacks = {
     .generate_local_oob_data_cb = generate_local_oob_data_callback,
     .switch_buffer_size_cb = switch_buffer_size_callback,
     .switch_codec_cb = switch_codec_callback,
+    .le_rand_cb = le_rand_callback,
+    .key_missing_cb = key_missing_callback,
 };
 
 }  // namespace
@@ -140,7 +146,7 @@ class BtifCoreTest : public ::testing::Test {
   void SetUp() override {
     callback_map_.clear();
     bluetooth::hci::testing::mock_controller_ = &controller_;
-    set_hal_cbacks(&callbacks);
+    bluetooth::testing::set_hal_cbacks(&callbacks);
     auto promise = std::promise<void>();
     auto future = promise.get_future();
     callback_map_["callback_thread_event"] = [&promise]() {
