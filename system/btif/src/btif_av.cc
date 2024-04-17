@@ -35,6 +35,7 @@
 #include <vector>
 
 #include "audio_hal_interface/a2dp_encoding.h"
+#include "btif/avrcp/avrcp_service.h"
 #include "btif/include/btif_a2dp.h"
 #include "btif/include/btif_a2dp_control.h"
 #include "btif/include/btif_a2dp_sink.h"
@@ -2897,11 +2898,23 @@ bool BtifAvStateMachine::StateClosing::ProcessEvent(uint32_t event,
  */
 static void btif_av_source_initiate_av_open_timer_timeout(void* data) {
   BtifAvPeer* peer = (BtifAvPeer*)data;
+  bool device_connected = false;
+
+  if (IS_FLAG_ENABLED(avrcp_connect_a2dp_delayed) && is_new_avrcp_enabled()) {
+    // check if device is connected
+    if (bluetooth::avrcp::AvrcpService::Get() != nullptr) {
+      device_connected =
+          bluetooth::avrcp::AvrcpService::Get()->IsDeviceConnected(
+              peer->PeerAddress());
+    }
+  } else {
+    device_connected = btif_rc_is_connected_peer(peer->PeerAddress());
+  }
 
   log::verbose("Peer {}", peer->PeerAddress());
 
   // Check if AVRCP is connected to the peer
-  if (!btif_rc_is_connected_peer(peer->PeerAddress())) {
+  if (!device_connected) {
     log::error("AVRCP peer {} is not connected", peer->PeerAddress());
     return;
   }
@@ -4363,4 +4376,14 @@ bool btif_av_peer_is_source(const RawAddress& peer_address) {
   }
 
   return true;
+}
+
+void btif_av_connect_sink_delayed(uint8_t handle,
+                                  const RawAddress& peer_address) {
+  log::debug("Peer {} : handle: {}", ADDRESS_TO_LOGGABLE_CSTR(peer_address),
+             handle);
+
+  if (btif_av_source.Enabled()) {
+    btif_av_source_dispatch_sm_event(peer_address, BTIF_AV_AVRCP_OPEN_EVT);
+  }
 }

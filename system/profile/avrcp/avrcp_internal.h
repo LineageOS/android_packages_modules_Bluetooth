@@ -17,6 +17,7 @@
 #pragma once
 
 #include "avrcp_config.h"
+#include "stack/include/a2dp_api.h"
 #include "stack/include/avrc_api.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/sdp_api.h"
@@ -95,6 +96,9 @@ class A2dpInterface {
  public:
   virtual RawAddress active_peer() = 0;
   virtual bool is_peer_in_silence_mode(const RawAddress& peer_address) = 0;
-
+  virtual void connect_audio_sink_delayed(uint8_t handle,
+                                          const RawAddress& peer_address) = 0;
+  virtual uint16_t find_audio_sink_service(const RawAddress& peer_address,
+                                           tA2DP_FIND_CBACK p_cback) = 0;
   virtual ~A2dpInterface() = default;
 };

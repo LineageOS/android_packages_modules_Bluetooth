@@ -18,6 +18,7 @@
 
 #include "connection_handler.h"
 
+#include <android_bluetooth_flags.h>
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
 
@@ -405,6 +406,11 @@ void ConnectionHandler::AcceptorControlCb(uint8_t handle, uint8_t event,
       // Open for the next incoming connection. The handle will not be the same
       // as this one which will be closed when the device is disconnected.
       AvrcpConnect(false, RawAddress::kAny);
+
+      if (IS_FLAG_ENABLED(avrcp_connect_a2dp_delayed)) {
+        // Check peer audio role: src or sink and connect A2DP after 3 seconds
+        SdpLookupAudioRole(handle);
+      }
     } break;
 
     case AVRC_CLOSE_IND_EVT: {
@@ -639,6 +645,41 @@ void ConnectionHandler::RegisterVolChanged(const RawAddress& bdaddr) {
       }
       break;
     }
+  }
+}
+
+bool ConnectionHandler::SdpLookupAudioRole(uint16_t handle) {
+  if (device_map_.find(handle) == device_map_.end()) {
+    log::warn("No device found for handle: {}", loghex(handle));
+    return false;
+  }
+  auto device = device_map_[handle];
+
+  log::info(
+      "Performing SDP for AUDIO_SINK on connected device: address={}, "
+      "handle={}",
+      ADDRESS_TO_LOGGABLE_STR(device->GetAddress()), handle);
+
+  return device->find_sink_service(
+      base::Bind(&ConnectionHandler::SdpLookupAudioRoleCb,
+                 weak_ptr_factory_.GetWeakPtr(), handle));
+}
+
+void ConnectionHandler::SdpLookupAudioRoleCb(uint16_t handle, bool found,
+                                             tA2DP_Service* p_service,
+                                             const RawAddress& peer_address) {
+  if (device_map_.find(handle) == device_map_.end()) {
+    log::warn("No device found for handle: {}", loghex(handle));
+    return;
+  }
+  auto device = device_map_[handle];
+
+  log::debug("SDP callback for address={}, handle={}, AUDIO_SINK {}",
+             ADDRESS_TO_LOGGABLE_STR(device->GetAddress()), handle,
+             found ? "found" : "not found");
+
+  if (found) {
+    device->connect_a2dp_sink_delayed(handle);
   }
 }
 
