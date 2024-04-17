@@ -214,6 +214,32 @@ uint32_t PickAudioLocation(types::LeAudioConfigurationStrategy strategy,
   return left_device_loc ? left_device_loc : right_device_loc;
 }
 
+bool LeAudioDevice::IsAudioSetConfigurationSupported(
+    const set_configurations::AudioSetConfiguration* audio_set_conf) const {
+  for (auto direction : {le_audio::types::kLeAudioDirectionSink,
+                         le_audio::types::kLeAudioDirectionSource}) {
+    const auto& confs = audio_set_conf->confs.get(direction);
+    if (confs.size() == 0) continue;
+
+    log::info("Looking for requirements: {} - {}", audio_set_conf->name,
+              (direction == 1 ? "snk" : "src"));
+
+    auto const& pacs =
+        (direction == types::kLeAudioDirectionSink) ? snk_pacs_ : src_pacs_;
+    for (const auto& ent : confs) {
+      if (!utils::GetConfigurationSupportedPac(pacs, ent.codec)) {
+        log::info("Configuration is NOT supported by device {}",
+                  ADDRESS_TO_LOGGABLE_CSTR(address_));
+        return false;
+      }
+    }
+  }
+
+  log::info("Configuration is supported by device {}",
+            ADDRESS_TO_LOGGABLE_CSTR(address_));
+  return true;
+}
+
 bool LeAudioDevice::ConfigureAses(
     const set_configurations::AudioSetConfiguration* audio_set_conf,
     uint8_t direction, LeAudioContextType context_type,
@@ -252,11 +278,18 @@ bool LeAudioDevice::ConfigureAses(
   uint8_t max_required_ase_per_dev =
       ents.size() / device_cnt + (ents.size() % device_cnt);
 
-  auto pac = GetCodecConfigurationSupportedPac(direction, ents[0].codec);
-  if (!pac) return false;
+  auto const& pacs =
+      (direction == types::kLeAudioDirectionSink) ? snk_pacs_ : src_pacs_;
 
+  // Before we activate the ASEs, make sure we have the right configuration
   int needed_ase = std::min((int)(max_required_ase_per_dev),
                             (int)(ents.size() - active_ases));
+  for (int i = 0; i < needed_ase; ++i) {
+    auto const& ase_cfg = ents.at(i);
+    if (!utils::GetConfigurationSupportedPac(pacs, ase_cfg.codec)) {
+      return false;
+    }
+  }
 
   AudioLocations audio_locations = 0;
 
@@ -299,7 +332,8 @@ bool LeAudioDevice::ConfigureAses(
               codec_spec_conf::kLeAudioLtvTypeCodecFrameBlocksPerSdu)) {
         ase->codec_config.Add(
             codec_spec_conf::kLeAudioLtvTypeCodecFrameBlocksPerSdu,
-            GetMaxCodecFramesPerSduFromPac(pac));
+            GetMaxCodecFramesPerSduFromPac(
+                utils::GetConfigurationSupportedPac(pacs, ents.at(i).codec)));
       }
 
       /* Recalculate Max SDU size from the Core codec config */
@@ -745,35 +779,6 @@ uint8_t LeAudioDevice::GetSupportedAudioChannelCounts(uint8_t direction) const {
   }
 
   return 0;
-}
-
-const struct types::acs_ac_record*
-LeAudioDevice::GetCodecConfigurationSupportedPac(
-    uint8_t direction, const CodecConfigSetting& codec_capability_setting) {
-  auto& pacs =
-      direction == types::kLeAudioDirectionSink ? snk_pacs_ : src_pacs_;
-
-  if (pacs.size() == 0) {
-    log::error("missing PAC for direction {}", direction);
-    return nullptr;
-  }
-
-  /* TODO: Validate channel locations */
-
-  for (const auto& pac_tuple : pacs) {
-    /* Get PAC records from tuple as second element from tuple */
-    auto& pac_recs = std::get<1>(pac_tuple);
-
-    for (const auto& pac : pac_recs) {
-      if (!IsCodecConfigSettingSupported(pac, codec_capability_setting))
-        continue;
-
-      return &pac;
-    };
-  }
-
-  /* Doesn't match required configuration with any PAC */
-  return nullptr;
 }
 
 /**

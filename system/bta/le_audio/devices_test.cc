@@ -1819,8 +1819,8 @@ TEST_F(LeAudioAseConfigurationTest, test_config_support) {
   left->snk_pacs_ = snk_pac_builder.Get();
   right->snk_pacs_ = snk_pac_builder.Get();
 
-  ASSERT_FALSE(group_->IsAudioSetConfigurationSupported(left, test_config));
-  ASSERT_FALSE(group_->IsAudioSetConfigurationSupported(right, test_config));
+  ASSERT_FALSE(left->IsAudioSetConfigurationSupported(test_config));
+  ASSERT_FALSE(right->IsAudioSetConfigurationSupported(test_config));
 
   /* Create PACs for source */
   PublishedAudioCapabilitiesBuilder src_pac_builder;
@@ -1831,8 +1831,8 @@ TEST_F(LeAudioAseConfigurationTest, test_config_support) {
   left->src_pacs_ = src_pac_builder.Get();
   right->src_pacs_ = src_pac_builder.Get();
 
-  ASSERT_TRUE(group_->IsAudioSetConfigurationSupported(left, test_config));
-  ASSERT_TRUE(group_->IsAudioSetConfigurationSupported(right, test_config));
+  ASSERT_TRUE(left->IsAudioSetConfigurationSupported(test_config));
+  ASSERT_TRUE(right->IsAudioSetConfigurationSupported(test_config));
 }
 
 }  // namespace

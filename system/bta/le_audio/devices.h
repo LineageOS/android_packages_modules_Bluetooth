@@ -173,12 +173,11 @@ class LeAudioDevice {
   bool IsReadyToSuspendStream(void);
   bool HaveAllActiveAsesCisEst(void) const;
   bool HaveAnyCisConnected(void);
-  const struct types::acs_ac_record* GetCodecConfigurationSupportedPac(
-      uint8_t direction,
-      const set_configurations::CodecConfigSetting& codec_capability_setting);
   uint8_t GetSupportedAudioChannelCounts(uint8_t direction) const;
   uint8_t GetPhyBitmask(void) const;
   uint8_t GetPreferredPhyBitmask(uint8_t preferred_phy) const;
+  bool IsAudioSetConfigurationSupported(
+      const set_configurations::AudioSetConfiguration* audio_set_conf) const;
   bool ConfigureAses(
       const set_configurations::AudioSetConfiguration* audio_set_conf,
       uint8_t direction, types::LeAudioContextType context_type,

@@ -910,44 +910,42 @@ uint8_t LeAudioDeviceGroup::CigConfiguration::GetFirstFreeCisId(
   return kInvalidCisId;
 }
 
-types::LeAudioConfigurationStrategy
-LeAudioDeviceGroup::GetGroupSinkStrategyFromPacs(
-    int expected_group_size) const {
-  /* Simple strategy picker */
-  log::debug("Group {} size {}", group_id_, expected_group_size);
-  if (expected_group_size > 1) {
-    return types::LeAudioConfigurationStrategy::MONO_ONE_CIS_PER_DEVICE;
-  }
-
-  log::debug("audio location 0x{:04x}", snk_audio_locations_.to_ulong());
-  if (!(snk_audio_locations_.to_ulong() &
-        codec_spec_conf::kLeAudioLocationAnyLeft) ||
-      !(snk_audio_locations_.to_ulong() &
-        codec_spec_conf::kLeAudioLocationAnyRight)) {
-    return types::LeAudioConfigurationStrategy::MONO_ONE_CIS_PER_DEVICE;
-  }
-
-  auto device = GetFirstDevice();
-  /* Note: Currently, the audio channel counts LTV is only mandatory for LC3. */
-  auto channel_count_bitmap =
-      device->GetSupportedAudioChannelCounts(types::kLeAudioDirectionSink);
-  log::debug("Supported channel counts for group {} (device {}) is {}",
-             group_id_, ADDRESS_TO_LOGGABLE_CSTR(device->address_),
-             channel_count_bitmap);
-  if (channel_count_bitmap == 1) {
-    return types::LeAudioConfigurationStrategy::STEREO_TWO_CISES_PER_DEVICE;
-  }
-
-  return types::LeAudioConfigurationStrategy::STEREO_ONE_CIS_PER_DEVICE;
-}
-
 types::LeAudioConfigurationStrategy LeAudioDeviceGroup::GetGroupSinkStrategy()
     const {
   /* Update the strategy if not set yet or was invalidated */
   if (!strategy_) {
-    int expected_group_size = Size();
     /* Choose the group configuration strategy based on PAC records */
-    strategy_ = GetGroupSinkStrategyFromPacs(expected_group_size);
+    strategy_ = [this]() {
+      int expected_group_size = Size();
+
+      /* Simple strategy picker */
+      log::debug("Group {} size {}", group_id_, expected_group_size);
+      if (expected_group_size > 1) {
+        return types::LeAudioConfigurationStrategy::MONO_ONE_CIS_PER_DEVICE;
+      }
+
+      log::debug("audio location 0x{:04x}", snk_audio_locations_.to_ulong());
+      if (!(snk_audio_locations_.to_ulong() &
+            codec_spec_conf::kLeAudioLocationAnyLeft) ||
+          !(snk_audio_locations_.to_ulong() &
+            codec_spec_conf::kLeAudioLocationAnyRight)) {
+        return types::LeAudioConfigurationStrategy::MONO_ONE_CIS_PER_DEVICE;
+      }
+
+      auto device = GetFirstDevice();
+      /* Note: Currently, the audio channel counts LTV is only mandatory for
+       * LC3. */
+      auto channel_count_bitmap =
+          device->GetSupportedAudioChannelCounts(types::kLeAudioDirectionSink);
+      log::debug("Supported channel counts for group {} (device {}) is {}",
+                 group_id_, ADDRESS_TO_LOGGABLE_CSTR(device->address_),
+                 channel_count_bitmap);
+      if (channel_count_bitmap == 1) {
+        return types::LeAudioConfigurationStrategy::STEREO_TWO_CISES_PER_DEVICE;
+      }
+
+      return types::LeAudioConfigurationStrategy::STEREO_ONE_CIS_PER_DEVICE;
+    }();
 
     log::info(
         "Group strategy set to: {}",
@@ -1291,9 +1289,8 @@ bool CheckIfStrategySupported(types::LeAudioConfigurationStrategy strategy,
  * (no matter on the ASE state) and for given context type
  */
 bool LeAudioDeviceGroup::IsAudioSetConfigurationSupported(
-    const set_configurations::AudioSetConfiguration* audio_set_conf,
     const CodecManager::UnicastConfigurationRequirements& requirements,
-    types::LeAudioConfigurationStrategy required_snk_strategy) const {
+    const set_configurations::AudioSetConfiguration* audio_set_conf) const {
   /* When at least one device supports the configuration context, configure
    * for these devices only. Otherwise configure for all devices - we will
    * not put this context into the metadata if not supported.
@@ -1317,6 +1314,7 @@ bool LeAudioDeviceGroup::IsAudioSetConfigurationSupported(
    *    scenarion will be covered.
    * 3) ASEs should be filled according to performance profile.
    */
+  auto required_snk_strategy = GetGroupSinkStrategy();
   for (auto direction :
        {types::kLeAudioDirectionSink, types::kLeAudioDirectionSource}) {
     log::debug("Looking for configuration: {} - {}", audio_set_conf->name,
@@ -1374,8 +1372,13 @@ bool LeAudioDeviceGroup::IsAudioSetConfigurationSupported(
                    static_cast<int>(ase_cnt - active_ase_cnt));
 
       for (auto const& ent : ase_confs) {
-        if (!device->GetCodecConfigurationSupportedPac(direction, ent.codec)) {
-          log::debug("Insufficient PAC");
+        auto const& pacs = (direction == types::kLeAudioDirectionSink)
+                               ? device->snk_pacs_
+                               : device->src_pacs_;
+        if (!utils::GetConfigurationSupportedPac(pacs, ent.codec)) {
+          log::debug(
+              "Insufficient PAC for {}",
+              (direction == types::kLeAudioDirectionSink ? "sink" : "source"));
           continue;
         }
 
@@ -1833,31 +1836,6 @@ bool LeAudioDeviceGroup::IsConfiguredForContext(
   return (stream_conf.conf.get() == GetActiveConfiguration().get());
 }
 
-bool LeAudioDeviceGroup::IsAudioSetConfigurationSupported(
-    LeAudioDevice* leAudioDevice,
-    const set_configurations::AudioSetConfiguration* audio_set_conf) const {
-  for (auto direction : {le_audio::types::kLeAudioDirectionSink,
-                         le_audio::types::kLeAudioDirectionSource}) {
-    const auto& confs = audio_set_conf->confs.get(direction);
-    if (confs.size() == 0) continue;
-
-    log::info("Looking for requirements: {} - {}", audio_set_conf->name,
-              (direction == 1 ? "snk" : "src"));
-    for (const auto& ent : confs) {
-      if (!leAudioDevice->GetCodecConfigurationSupportedPac(direction,
-                                                            ent.codec)) {
-        log::info("Configuration is NOT supported by device {}",
-                  ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
-        return false;
-      }
-    }
-  }
-
-  log::info("Configuration is supported by device {}",
-            ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
-  return true;
-}
-
 const set_configurations::AudioSetConfiguration*
 LeAudioDeviceGroup::FindFirstSupportedConfiguration(
     const CodecManager::UnicastConfigurationRequirements& requirements,
@@ -1880,11 +1858,9 @@ LeAudioDeviceGroup::FindFirstSupportedConfiguration(
   }
 
   /* Filter out device set for each end every scenario */
-  auto required_snk_strategy = GetGroupSinkStrategy();
   for (const auto& conf : *confs) {
     log::assert_that(conf != nullptr, "confs should not be null");
-    if (IsAudioSetConfigurationSupported(conf, requirements,
-                                         required_snk_strategy)) {
+    if (IsAudioSetConfigurationSupported(requirements, conf)) {
       log::debug("found: {}", conf->name);
       return conf;
     }

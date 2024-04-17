@@ -1255,9 +1255,6 @@ bool check_if_may_cover_scenario(
     const AudioSetConfigurations* audio_set_configurations, uint8_t group_size);
 bool check_if_may_cover_scenario(
     const AudioSetConfiguration* audio_set_configuration, uint8_t group_size);
-bool IsCodecConfigSettingSupported(
-    const types::acs_ac_record& pac_record,
-    const CodecConfigSetting& codec_capability_setting);
 uint8_t get_num_of_devices_in_configuration(
     const AudioSetConfiguration* audio_set_configuration);
 }  // namespace set_configurations
