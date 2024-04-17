@@ -327,6 +327,36 @@ TEST_F(RemoteNameRequestModuleTest, SendCommandThenCancelItCallbackInteropWorkar
           Eq(std::make_tuple(ErrorCode::UNKNOWN_CONNECTION, std::array<uint8_t, 248>{}))));
 }
 
+TEST_F(RemoteNameRequestModuleTest, SendCommandThenCancelItCancelFails) {
+  auto promise = std::promise<std::tuple<ErrorCode, std::array<uint8_t, 248>>>{};
+  auto future = promise.get_future();
+
+  // start a remote name request
+  remote_name_request_module_->StartRemoteNameRequest(
+      address1,
+      RemoteNameRequestBuilder::Create(
+          address1, PageScanRepetitionMode::R0, 3, ClockOffsetValid::INVALID),
+      emptyCallback<ErrorCode>(),
+      impossibleCallback<uint64_t>(),
+      capturingPromiseCallback<ErrorCode, std::array<uint8_t, 248>>(std::move(promise)));
+
+  // we successfully start
+  test_hci_layer_->GetCommand();
+  test_hci_layer_->IncomingEvent(RemoteNameRequestStatusBuilder::Create(ErrorCode::SUCCESS, 1));
+
+  // but then the request is cancelled successfully (the status doesn't matter)
+  remote_name_request_module_->CancelRemoteNameRequest(address1);
+  test_hci_layer_->GetCommand();
+  test_hci_layer_->IncomingEvent(RemoteNameRequestCancelCompleteBuilder::Create(
+      1, ErrorCode::INVALID_HCI_COMMAND_PARAMETERS, address1));
+
+  // we expect the name callback to be invoked nonetheless
+  EXPECT_THAT(
+      future,
+      IsSetWithValue(Eq(
+          std::make_tuple(ErrorCode::INVALID_HCI_COMMAND_PARAMETERS, std::array<uint8_t, 248>{}))));
+}
+
 TEST_F(RemoteNameRequestModuleTest, HostSupportedEvents) {
   auto promise = std::promise<uint64_t>{};
   auto future = promise.get_future();

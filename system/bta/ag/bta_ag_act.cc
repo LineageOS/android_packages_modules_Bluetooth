@@ -395,8 +395,10 @@ void bta_ag_rfc_close(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /* data */) {
   /* Clear these flags upon SLC teardown */
   p_scb->codec_updated = false;
   p_scb->codec_fallback = false;
+  p_scb->trying_cvsd_safe_settings = false;
   p_scb->retransmission_effort_retries = 0;
   p_scb->codec_msbc_settings = BTA_AG_SCO_MSBC_SETTINGS_T2;
+  p_scb->codec_cvsd_settings = BTA_AG_SCO_CVSD_SETTINGS_S4;
   p_scb->codec_aptx_settings = BTA_AG_SCO_APTX_SWB_SETTINGS_Q0;
   p_scb->is_aptx_swb_codec = false;
   p_scb->codec_lc3_settings = BTA_AG_SCO_LC3_SETTINGS_T2;

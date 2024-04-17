@@ -332,8 +332,9 @@ class LeAudioClientImpl : public LeAudioClient {
     }
 
     /* Choose the right configuration context */
-    auto new_configuration_context =
-        ChooseConfigurationContextType(local_metadata_context_types_.source);
+    auto new_configuration_context = AdjustForVoiceAssistant(
+        group,
+        ChooseConfigurationContextType(local_metadata_context_types_.source));
 
     log::debug("new_configuration_context= {}",
                ToString(new_configuration_context));
@@ -1236,6 +1237,13 @@ class LeAudioClientImpl : public LeAudioClient {
       return;
     }
 
+    if (group->NumOfConnected() == 0) {
+      log::error("Group: {} is not connected anymore",
+                 static_cast<int>(group_id));
+      callbacks_->OnGroupStatus(group_id, GroupStatus::INACTIVE);
+      return;
+    }
+
     if (active_group_id_ != bluetooth::groups::kGroupUnknown) {
       if (active_group_id_ == group_id) {
         log::info("Group is already active: {}",
@@ -1312,6 +1320,7 @@ class LeAudioClientImpl : public LeAudioClient {
     sink_monitor_notified_status_ = std::nullopt;
     if (IS_FLAG_ENABLED(leaudio_codec_config_callback_order_fix)) {
       SendAudioGroupSelectableCodecConfigChanged(group);
+      SendAudioGroupCurrentCodecConfigChanged(group);
       callbacks_->OnGroupStatus(active_group_id_, GroupStatus::ACTIVE);
     } else {
       callbacks_->OnGroupStatus(active_group_id_, GroupStatus::ACTIVE);
@@ -3838,7 +3847,7 @@ class LeAudioClientImpl : public LeAudioClient {
                  : "Targeted Announcements"));
     dprintf(fd, "  configuration: %s  (0x%08hx)\n",
             bluetooth::common::ToString(configuration_context_type_).c_str(),
-            configuration_context_type_);
+            static_cast<uint16_t>(configuration_context_type_));
     dprintf(fd, "  local source metadata context type mask: %s\n",
             local_metadata_context_types_.source.to_string().c_str());
     dprintf(fd, "  local sink metadata context type mask: %s\n",
@@ -3848,7 +3857,7 @@ class LeAudioClientImpl : public LeAudioClient {
             sink_monitor_mode_ ? "true" : "false");
     if (sink_monitor_notified_status_) {
       dprintf(fd, "  Local sink notified state: %d\n",
-              sink_monitor_notified_status_.value());
+              static_cast<int>(sink_monitor_notified_status_.value()));
     }
     dprintf(fd, "  Source monitor mode: %s\n",
             source_monitor_mode_ ? "true" : "false");
@@ -4955,6 +4964,50 @@ class LeAudioClientImpl : public LeAudioClient {
     return remote_metadata;
   }
 
+  LeAudioContextType AdjustForVoiceAssistant(
+      LeAudioDeviceGroup* group, LeAudioContextType new_configuration_context) {
+    if (!IS_FLAG_ENABLED(le_audio_support_unidirectional_voice_assistant)) {
+      log::debug(
+          "Flag le_audio_support_unidirectional_voice_assistant NOT enabled");
+      return new_configuration_context;
+    }
+
+    /* Some remote devices expect VOICE ASSISTANT to be unidirectional Phone is
+     * Source and Earbuds are Sink */
+    if (new_configuration_context != LeAudioContextType::VOICEASSISTANTS) {
+      return new_configuration_context;
+    }
+
+    auto sink_supported_contexts = group->GetSupportedContexts(
+        bluetooth::le_audio::types::kLeAudioDirectionSink);
+    auto source_supported_contexts = group->GetSupportedContexts(
+        bluetooth::le_audio::types::kLeAudioDirectionSource);
+
+    log::debug(" group_id: {}, sink_supported: {}, source_supported {}",
+               group->group_id_, ToString(sink_supported_contexts),
+               ToString(source_supported_contexts));
+    if (sink_supported_contexts.test(LeAudioContextType::VOICEASSISTANTS) &&
+        source_supported_contexts.test(LeAudioContextType::VOICEASSISTANTS)) {
+      return new_configuration_context;
+    }
+
+    if (sink_supported_contexts.test(LeAudioContextType::VOICEASSISTANTS)) {
+      log::info(
+          "group_id {} supports only Sink direction for Voice Assistant. "
+          "Selecting configurarion context type {}",
+          group->group_id_, ToString(LeAudioContextType::INSTRUCTIONAL));
+
+      return LeAudioContextType::INSTRUCTIONAL;
+    }
+
+    log::warn(
+        " group_id: {},  unexpected configuration, sink_supported: {}, "
+        "source_supported {}",
+        group->group_id_, ToString(sink_supported_contexts),
+        ToString(source_supported_contexts));
+    return new_configuration_context;
+  }
+
   /* Return true if stream is started */
   bool ReconfigureOrUpdateRemote(LeAudioDeviceGroup* group,
                                  int remote_direction) {
@@ -4974,8 +5027,8 @@ class LeAudioClientImpl : public LeAudioClient {
                 override_contexts.to_string());
 
       /* Choose the right configuration context */
-      auto new_configuration_context =
-          ChooseConfigurationContextType(override_contexts);
+      auto new_configuration_context = AdjustForVoiceAssistant(
+          group, ChooseConfigurationContextType(override_contexts));
 
       log::debug("new_configuration_context= {}.",
                  ToString(new_configuration_context));
@@ -4995,8 +5048,8 @@ class LeAudioClientImpl : public LeAudioClient {
 
     /* Choose the right configuration context */
     auto config_context_candids = get_bidirectional(remote_metadata);
-    auto new_config_context =
-        ChooseConfigurationContextType(config_context_candids);
+    auto new_config_context = AdjustForVoiceAssistant(
+        group, ChooseConfigurationContextType(config_context_candids));
     log::debug("config_context_candids= {}, new_config_context= {}",
                ToString(config_context_candids), ToString(new_config_context));
 

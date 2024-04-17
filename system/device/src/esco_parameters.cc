@@ -62,6 +62,45 @@ static const enh_esco_params_t default_esco_parameters[ESCO_NUM_CODECS] = {
                          ESCO_PKT_TYPES_MASK_HV3),
         .retransmission_effort = ESCO_RETRANSMISSION_OFF,
         .coding_format = ESCO_CODING_FORMAT_CVSD,
+    },  // CVSD S1
+    {
+        .transmit_bandwidth = TXRX_64KBITS_RATE,
+        .receive_bandwidth = TXRX_64KBITS_RATE,
+        .transmit_coding_format = {.coding_format = ESCO_CODING_FORMAT_CVSD,
+                                   .company_id = 0x0000,
+                                   .vendor_specific_codec_id = 0x0000},
+        .receive_coding_format = {.coding_format = ESCO_CODING_FORMAT_CVSD,
+                                  .company_id = 0x0000,
+                                  .vendor_specific_codec_id = 0x0000},
+        .transmit_codec_frame_size = 60,
+        .receive_codec_frame_size = 60,
+        .input_bandwidth = INPUT_OUTPUT_64K_RATE,
+        .output_bandwidth = INPUT_OUTPUT_64K_RATE,
+        .input_coding_format = {.coding_format = ESCO_CODING_FORMAT_LINEAR,
+                                .company_id = 0x0000,
+                                .vendor_specific_codec_id = 0x0000},
+        .output_coding_format = {.coding_format = ESCO_CODING_FORMAT_LINEAR,
+                                 .company_id = 0x0000,
+                                 .vendor_specific_codec_id = 0x0000},
+        .input_coded_data_size = 16,
+        .output_coded_data_size = 16,
+        .input_pcm_data_format = ESCO_PCM_DATA_FORMAT_2_COMP,
+        .output_pcm_data_format = ESCO_PCM_DATA_FORMAT_2_COMP,
+        .input_pcm_payload_msb_position = 0,
+        .output_pcm_payload_msb_position = 0,
+        .input_data_path = ESCO_DATA_PATH_PCM,
+        .output_data_path = ESCO_DATA_PATH_PCM,
+        .input_transport_unit_size = 0x00,
+        .output_transport_unit_size = 0x00,
+        .max_latency_ms = 7,
+        .packet_types =
+            (ESCO_PKT_TYPES_MASK_HV1 | ESCO_PKT_TYPES_MASK_HV2 |
+             ESCO_PKT_TYPES_MASK_HV3 | ESCO_PKT_TYPES_MASK_EV3 |
+             ESCO_PKT_TYPES_MASK_EV4 | ESCO_PKT_TYPES_MASK_EV5 |
+             ESCO_PKT_TYPES_MASK_NO_3_EV3 | ESCO_PKT_TYPES_MASK_NO_2_EV5 |
+             ESCO_PKT_TYPES_MASK_NO_3_EV5),
+        .retransmission_effort = ESCO_RETRANSMISSION_POWER,
+        .coding_format = ESCO_CODING_FORMAT_CVSD,
     },
     // CVSD S3
     {
@@ -374,6 +413,27 @@ enh_esco_params_t esco_parameters_for_codec(esco_codec_t codec, bool offload) {
     param.input_bandwidth = TXRX_64KBITS_RATE;
     param.output_bandwidth = TXRX_64KBITS_RATE;
   }
+
+#if TARGET_FLOSS
+  esco_packet_types_t new_packet_types = param.packet_types;
+  if (codec == ESCO_CODEC_CVSD_S3 || codec == ESCO_CODEC_CVSD_S4 ||
+      codec == ESCO_CODEC_MSBC_T2 || codec == ESCO_CODEC_LC3_T2) {
+    new_packet_types =
+        (ESCO_PKT_TYPES_MASK_NO_3_EV3 | ESCO_PKT_TYPES_MASK_NO_2_EV5 |
+         ESCO_PKT_TYPES_MASK_NO_3_EV5);
+  } else if (codec == ESCO_CODEC_CVSD_S1) {
+    new_packet_types =
+        (ESCO_PKT_TYPES_MASK_EV3 | ESCO_PKT_TYPES_MASK_EV4 |
+         ESCO_PKT_TYPES_MASK_EV5 | ESCO_PKT_TYPES_MASK_NO_3_EV3 |
+         ESCO_PKT_TYPES_MASK_NO_2_EV5 | ESCO_PKT_TYPES_MASK_NO_3_EV5);
+  }
+
+  if (param.packet_types != new_packet_types) {
+    log::info("Applying restricted packet types for codec %d: 0x%04x -> 0x%04x",
+              (int)codec, param.packet_types, new_packet_types);
+    param.packet_types = new_packet_types;
+  }
+#endif
 
   return param;
 }

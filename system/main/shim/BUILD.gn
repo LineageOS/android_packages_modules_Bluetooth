@@ -59,6 +59,7 @@ source_set("LibBluetoothShimSources") {
     "distance_measurement_manager.cc",
     "dumpsys.cc",
     "hci_layer.cc",
+    "l2c_api.cc",
     "le_advertising_manager.cc",
     "le_scanning_manager.cc",
     "metric_id_api.cc",
