@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "osi/include/osi.h"
+
 // Helper macros for stubbing out functions and modules for testing.
 
 // Stub out a function, with call counting and mode awareness
