@@ -52,6 +52,5 @@ sh_binary_host {
         "pandora-python-gen-src",
         "pandora_experimental-python-gen-src",
         "tradefed",
-        "tradefed-test-framework",
     ],
 }
