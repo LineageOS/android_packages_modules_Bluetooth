@@ -146,16 +146,6 @@ struct set_remote_device_property {
   };
 };
 extern struct set_remote_device_property set_remote_device_property;
-// Name: set_hal_cbacks
-// Params: bt_callbacks_t* callbacks
-// Returns: void
-struct set_hal_cbacks {
-  std::function<void(bt_callbacks_t* callbacks)> body{
-      [](bt_callbacks_t* /* callbacks */) { ; }};
-  void operator()(bt_callbacks_t* callbacks) { body(callbacks); };
-};
-extern struct set_hal_cbacks set_hal_cbacks;
-
 // Name: invoke_switch_buffer_size_cb
 // Params: bool invoke_switch_buffer_size_cb
 // Returns: void
