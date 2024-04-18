@@ -42,21 +42,21 @@
  *  Functions
  ******************************************************************************/
 
-const char* dump_bt_status(bt_status_t status);
-const char* dump_dm_search_event(uint16_t event);
-const char* dump_dm_event(uint16_t event);
-const char* dump_hf_event(uint16_t event);
-const char* dump_hf_client_event(uint16_t event);
-const char* dump_hd_event(uint16_t event);
-const char* dump_property_type(bt_property_type_t type);
-const char* dump_adapter_scan_mode(bt_scan_mode_t mode);
-const char* dump_thread_evt(bt_cb_thread_evt evt);
-const char* dump_av_conn_state(uint16_t event);
-const char* dump_av_audio_state(uint16_t event);
-const char* dump_rc_opcode(uint8_t opcode);
-const char* dump_rc_event(uint8_t event);
-const char* dump_rc_notification_event_id(uint8_t event_id);
-const char* dump_rc_pdu(uint8_t pdu);
+std::string dump_bt_status(bt_status_t status);
+std::string dump_dm_search_event(uint16_t event);
+std::string dump_dm_event(uint16_t event);
+std::string dump_hf_event(uint16_t event);
+std::string dump_hf_client_event(uint16_t event);
+std::string dump_hd_event(uint16_t event);
+std::string dump_property_type(bt_property_type_t type);
+std::string dump_adapter_scan_mode(bt_scan_mode_t mode);
+std::string dump_thread_evt(bt_cb_thread_evt evt);
+std::string dump_av_conn_state(uint16_t event);
+std::string dump_av_audio_state(uint16_t event);
+std::string dump_rc_opcode(uint8_t opcode);
+std::string dump_rc_event(uint8_t event);
+std::string dump_rc_notification_event_id(uint8_t event_id);
+std::string dump_rc_pdu(uint8_t pdu);
 
 uint32_t devclass2uint(const DEV_CLASS dev_class);
 DEV_CLASS uint2devclass(uint32_t dev);
