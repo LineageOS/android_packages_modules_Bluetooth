@@ -160,7 +160,9 @@ public class SdpManager {
             for (SdpSearchInstance inst : mList) {
                 String instAddressString =
                         mAdapterService.getIdentityAddress(inst.getDevice().getAddress());
-                if (instAddressString.equals(addressString) && inst.getUuid().equals(uuid)) {
+                if (instAddressString != null
+                        && instAddressString.equals(addressString)
+                        && inst.getUuid().equals(uuid)) {
                     return inst.isSearching();
                 }
             }
