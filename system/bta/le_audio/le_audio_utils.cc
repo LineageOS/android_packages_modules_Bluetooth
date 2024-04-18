@@ -492,5 +492,105 @@ GetAudioSessionCodecConfigFromAudioSetConfiguration(
 
   return group_config;
 }
+
+static bool IsCodecConfigCoreSupported(const types::LeAudioLtvMap& pacs,
+                                       const types::LeAudioLtvMap& reqs,
+                                       uint8_t channel_cnt_per_ase) {
+  auto caps = pacs.GetAsCoreCodecCapabilities();
+  auto config = reqs.GetAsCoreCodecConfig();
+
+  /* Sampling frequency */
+  if (!caps.HasSupportedSamplingFrequencies() || !config.sampling_frequency) {
+    log::debug("Missing supported sampling frequencies capability");
+    return false;
+  }
+  if (!caps.IsSamplingFrequencyConfigSupported(
+          config.sampling_frequency.value())) {
+    log::debug("Cfg: SamplingFrequency= {:#x}",
+               config.sampling_frequency.value());
+    log::debug("Cap: SupportedSamplingFrequencies= {:#x}",
+               caps.supported_sampling_frequencies.value());
+    log::debug("Sampling frequency not supported");
+    return false;
+  }
+
+  /* Channel counts */
+  if (!caps.IsAudioChannelCountsSupported(channel_cnt_per_ase)) {
+    log::debug("Cfg: Allocated channel count= {:#x}", channel_cnt_per_ase);
+    log::debug("Cap: Supported channel counts= {:#x}",
+               caps.supported_audio_channel_counts.value_or(1));
+    log::debug("Channel count not supported");
+    return false;
+  }
+
+  /* Frame duration */
+  if (!caps.HasSupportedFrameDurations() || !config.frame_duration) {
+    log::debug("Missing supported frame durations capability");
+    return false;
+  }
+  if (!caps.IsFrameDurationConfigSupported(config.frame_duration.value())) {
+    log::debug("Cfg: FrameDuration= {:#x}", config.frame_duration.value());
+    log::debug("Cap: SupportedFrameDurations= {:#x}",
+               caps.supported_frame_durations.value());
+    log::debug("Frame duration not supported");
+    return false;
+  }
+
+  /* Octets per frame */
+  if (!caps.HasSupportedOctetsPerCodecFrame() ||
+      !config.octets_per_codec_frame) {
+    log::debug("Missing supported octets per codec frame");
+    return false;
+  }
+  if (!caps.IsOctetsPerCodecFrameConfigSupported(
+          config.octets_per_codec_frame.value())) {
+    log::debug("Cfg: Octets per frame={}",
+               config.octets_per_codec_frame.value());
+    log::debug("Cap: Min octets per frame={}",
+               caps.supported_min_octets_per_codec_frame.value());
+    log::debug("Cap: Max octets per frame={}",
+               caps.supported_max_octets_per_codec_frame.value());
+    log::debug("Octets per codec frame outside the capabilities");
+    return false;
+  }
+
+  return true;
+}
+
+static bool IsCodecConfigSettingSupported(
+    const types::acs_ac_record& pac,
+    const set_configurations::CodecConfigSetting& codec_config_setting) {
+  const auto& codec_id = codec_config_setting.id;
+  if (codec_id != pac.codec_id) return false;
+
+  log::debug(": Settings for format: 0x%02x ", codec_id.coding_format);
+
+  if (utils::IsCodecUsingLtvFormat(codec_id)) {
+    log::assert_that(
+        !pac.codec_spec_caps.IsEmpty(),
+        "Codec specific capabilities are not parsed approprietly.");
+    return IsCodecConfigCoreSupported(
+        pac.codec_spec_caps, codec_config_setting.params,
+        codec_config_setting.GetChannelCountPerIsoStream());
+  }
+
+  log::error("Codec {}, seems to be not supported here.",
+             bluetooth::common::ToString(codec_id));
+  return false;
+}
+
+const struct types::acs_ac_record* GetConfigurationSupportedPac(
+    const types::PublishedAudioCapabilities& pacs,
+    const set_configurations::CodecConfigSetting& codec_config_setting) {
+  for (const auto& pac_tuple : pacs) {
+    for (const auto& pac : std::get<1>(pac_tuple)) {
+      if (utils::IsCodecConfigSettingSupported(pac, codec_config_setting))
+        return &pac;
+    };
+  }
+  /* Doesn't match required configuration with any PAC */
+  if (pacs.size() == 0) log::error("No PAC records");
+  return nullptr;
+}
 }  // namespace utils
 }  // namespace bluetooth::le_audio

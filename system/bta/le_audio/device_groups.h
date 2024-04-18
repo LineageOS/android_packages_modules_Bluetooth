@@ -164,8 +164,6 @@ class LeAudioDeviceGroup {
   LeAudioDevice* GetFirstDevice(void) const;
   LeAudioDevice* GetFirstDeviceWithAvailableContext(
       types::LeAudioContextType context_type) const;
-  types::LeAudioConfigurationStrategy GetGroupSinkStrategyFromPacs(
-      int expected_group_size) const;
   types::LeAudioConfigurationStrategy GetGroupSinkStrategy(void) const;
   inline void InvalidateGroupStrategy(void) { strategy_ = std::nullopt; }
   int GetAseCount(uint8_t direction) const;
@@ -229,9 +227,6 @@ class LeAudioDeviceGroup {
   void Disable(int gatt_if);
   void Enable(int gatt_if, tBTM_BLE_CONN_TYPE reconnection_mode);
   bool IsEnabled(void) const;
-  bool IsAudioSetConfigurationSupported(
-      LeAudioDevice* leAudioDevice,
-      const set_configurations::AudioSetConfiguration* audio_set_conf) const;
   LeAudioCodecConfiguration GetAudioSessionCodecConfigForDirection(
       types::LeAudioContextType group_context_type, uint8_t direction) const;
   bool HasCodecConfigurationForDirection(
@@ -412,9 +407,9 @@ class LeAudioDeviceGroup {
           metadata_context_types,
       const types::BidirectionalPair<std::vector<uint8_t>>& ccid_lists);
   bool IsAudioSetConfigurationSupported(
-      const set_configurations::AudioSetConfiguration* audio_set_configuration,
       const CodecManager::UnicastConfigurationRequirements& requirements,
-      types::LeAudioConfigurationStrategy required_snk_strategy) const;
+      const set_configurations::AudioSetConfiguration* audio_set_configuration)
+      const;
   uint32_t GetTransportLatencyUs(uint8_t direction) const;
   bool IsCisPartOfCurrentStream(uint16_t cis_conn_hdl) const;
 

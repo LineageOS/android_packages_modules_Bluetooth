@@ -107,6 +107,7 @@ using bluetooth::le_audio::types::kLeAudioContextAllRemoteSinkOnly;
 using bluetooth::le_audio::types::kLeAudioContextAllRemoteSource;
 using bluetooth::le_audio::types::kLeAudioContextAllTypesArray;
 using bluetooth::le_audio::types::LeAudioContextType;
+using bluetooth::le_audio::types::PublishedAudioCapabilities;
 using bluetooth::le_audio::utils::GetAudioContextsFromSinkMetadata;
 using bluetooth::le_audio::utils::GetAudioContextsFromSourceMetadata;
 
@@ -3153,16 +3154,32 @@ class LeAudioClientImpl : public LeAudioClient {
     auto num_of_devices =
         get_num_of_devices_in_configuration(stream_conf->conf.get());
 
-    if (num_of_devices < group->NumOfConnected() &&
-        !group->IsAudioSetConfigurationSupported(leAudioDevice,
-                                                 stream_conf->conf.get())) {
-      /* Reconfigure if newly connected member device cannot support current
-       * codec configuration */
-      group->SetPendingConfiguration();
-      groupStateMachine_->StopStream(group);
-      stream_setup_start_timestamp_ =
-          bluetooth::common::time_get_os_boottime_us();
-      return;
+    if (num_of_devices < group->NumOfConnected()) {
+      for (auto direction :
+           {bluetooth::le_audio::types::kLeAudioDirectionSink,
+            bluetooth::le_audio::types::kLeAudioDirectionSource}) {
+        log::info("Looking for requirements: {} - {}", stream_conf->conf->name,
+                  ((direction == 1 ? "snk" : "src")));
+        const auto& pacs =
+            (direction == bluetooth::le_audio::types::kLeAudioDirectionSink)
+                ? leAudioDevice->snk_pacs_
+                : leAudioDevice->src_pacs_;
+        for (const auto& ent : stream_conf->conf->confs.get(direction)) {
+          if (!bluetooth::le_audio::utils::GetConfigurationSupportedPac(
+                  pacs, ent.codec)) {
+            log::info("Configuration is not supported by device %s",
+                      ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+
+            /* Reconfigure if newly connected member device cannot support
+             * current codec configuration */
+            group->SetPendingConfiguration();
+            groupStateMachine_->StopStream(group);
+            stream_setup_start_timestamp_ =
+                bluetooth::common::time_get_os_boottime_us();
+            return;
+          }
+        }
+      }
     }
 
     /* Do not put the TBS CCID when not using Telecom for the VoIP calls. */

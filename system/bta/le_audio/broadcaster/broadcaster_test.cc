@@ -893,6 +893,8 @@ static const broadcaster::BroadcastSubgroupCodecConfig vendor_stereo_16_2 =
         {broadcaster::BroadcastSubgroupBisCodecConfig{
             // num_bis
             2,
+            // bis_channel_cnt
+            1,
             // codec_specific
             types::LeAudioLtvMap({
                 LTV_ENTRY_SAMPLING_FREQUENCY(

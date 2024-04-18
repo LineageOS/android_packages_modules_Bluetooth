@@ -33,6 +33,8 @@ static const BroadcastSubgroupCodecConfig lc3_mono_16_2 =
         {BroadcastSubgroupBisCodecConfig{
             // num_bis
             1,
+            // bis_channel_cnt_
+            1,
             // codec_specific
             types::LeAudioLtvMap({
                 LTV_ENTRY_SAMPLING_FREQUENCY(
@@ -41,7 +43,6 @@ static const BroadcastSubgroupCodecConfig lc3_mono_16_2 =
                     codec_spec_conf::kLeAudioCodecFrameDur10000us),
                 LTV_ENTRY_OCTETS_PER_CODEC_FRAME(40),
             }),
-            // .channel_count_per_iso_stream = 1,
         }},
         // bits_per_sample
         16);
@@ -52,6 +53,8 @@ static const BroadcastSubgroupCodecConfig lc3_stereo_16_2 =
         {BroadcastSubgroupBisCodecConfig{
             // num_bis
             2,
+            // bis_channel_cnt_
+            1,
             // codec_specific
             types::LeAudioLtvMap({
                 LTV_ENTRY_SAMPLING_FREQUENCY(
@@ -60,7 +63,6 @@ static const BroadcastSubgroupCodecConfig lc3_stereo_16_2 =
                     codec_spec_conf::kLeAudioCodecFrameDur10000us),
                 LTV_ENTRY_OCTETS_PER_CODEC_FRAME(40),
             }),
-            // .channel_count_per_iso_stream = 1,
         }},
         // bits_per_sample
         16);
@@ -71,6 +73,8 @@ static const BroadcastSubgroupCodecConfig lc3_stereo_24_2 =
         {BroadcastSubgroupBisCodecConfig{
             // num_bis
             2,
+            // bis_channel_cnt_
+            1,
             // codec_specific
             types::LeAudioLtvMap({
                 LTV_ENTRY_SAMPLING_FREQUENCY(
@@ -79,7 +83,6 @@ static const BroadcastSubgroupCodecConfig lc3_stereo_24_2 =
                     codec_spec_conf::kLeAudioCodecFrameDur10000us),
                 LTV_ENTRY_OCTETS_PER_CODEC_FRAME(60),
             }),
-            // .channel_count_per_iso_stream = 1,
         }},
         // bits_per_sample
         16);
@@ -90,6 +93,8 @@ static const BroadcastSubgroupCodecConfig lc3_stereo_48_1 =
         {BroadcastSubgroupBisCodecConfig{
             // num_bis
             2,
+            // bis_channel_cnt_
+            1,
             // codec_specific
             types::LeAudioLtvMap({
                 LTV_ENTRY_SAMPLING_FREQUENCY(
@@ -98,7 +103,6 @@ static const BroadcastSubgroupCodecConfig lc3_stereo_48_1 =
                     codec_spec_conf::kLeAudioCodecFrameDur7500us),
                 LTV_ENTRY_OCTETS_PER_CODEC_FRAME(75),
             }),
-            // .channel_count_per_iso_stream = 1,
         }},
         // bits_per_sample
         16);
@@ -109,6 +113,8 @@ static const BroadcastSubgroupCodecConfig lc3_stereo_48_2 =
         {BroadcastSubgroupBisCodecConfig{
             // num_bis
             2,
+            // bis_channel_cnt_
+            1,
             // codec_specific
             types::LeAudioLtvMap({
                 LTV_ENTRY_SAMPLING_FREQUENCY(
@@ -117,7 +123,6 @@ static const BroadcastSubgroupCodecConfig lc3_stereo_48_2 =
                     codec_spec_conf::kLeAudioCodecFrameDur10000us),
                 LTV_ENTRY_OCTETS_PER_CODEC_FRAME(100),
             }),
-            // .channel_count_per_iso_stream = 1,
         }},
         // bits_per_sample
         16);
@@ -128,6 +133,8 @@ static const BroadcastSubgroupCodecConfig lc3_stereo_48_3 =
         {BroadcastSubgroupBisCodecConfig{
             // num_bis
             2,
+            // bis_channel_cnt_
+            1,
             // codec_specific
             types::LeAudioLtvMap({
                 LTV_ENTRY_SAMPLING_FREQUENCY(
@@ -136,7 +143,6 @@ static const BroadcastSubgroupCodecConfig lc3_stereo_48_3 =
                     codec_spec_conf::kLeAudioCodecFrameDur7500us),
                 LTV_ENTRY_OCTETS_PER_CODEC_FRAME(90),
             }),
-            // .channel_count_per_iso_stream = 1,
         }},
         // bits_per_sample
         16);
@@ -147,6 +153,8 @@ static const BroadcastSubgroupCodecConfig lc3_stereo_48_4 =
         {BroadcastSubgroupBisCodecConfig{
             // num_bis
             2,
+            // bis_channel_cnt_
+            1,
             // codec_specific
             types::LeAudioLtvMap({
                 LTV_ENTRY_SAMPLING_FREQUENCY(
@@ -155,7 +163,6 @@ static const BroadcastSubgroupCodecConfig lc3_stereo_48_4 =
                     codec_spec_conf::kLeAudioCodecFrameDur10000us),
                 LTV_ENTRY_OCTETS_PER_CODEC_FRAME(120),
             }),
-            // .channel_count_per_iso_stream = 1,
         }},
         // bits_per_sample
         16);
