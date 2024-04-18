@@ -51,10 +51,11 @@ using ::bluetooth::le_audio::set_configurations::AudioSetConfiguration;
 using ::bluetooth::le_audio::types::CodecLocation;
 }  // namespace
 
-std::vector<AudioSetConfiguration> get_offload_capabilities() {
+OffloadCapabilities get_offload_capabilities() {
   if (HalVersionManager::GetHalTransport() ==
       BluetoothAudioHalTransport::HIDL) {
-    return std::vector<AudioSetConfiguration>(0);
+    return {std::vector<AudioSetConfiguration>(0),
+            std::vector<AudioSetConfiguration>(0)};
   }
   return aidl::le_audio::get_offload_capabilities();
 }

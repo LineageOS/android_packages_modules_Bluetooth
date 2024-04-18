@@ -1570,14 +1570,18 @@ TEST_F(LeAudioAseConfigurationTest, test_reconnection_media) {
   if (!configuration->confs.sink.empty()) {
     left->ConfigureAses(configuration, kLeAudioDirectionSink,
                         group_->GetConfigurationContextType(),
-                        &number_of_active_ases, group_audio_locations,
-                        audio_contexts, ccid_lists, false);
+                        &number_of_active_ases,
+                        group_audio_locations.get(kLeAudioDirectionSink),
+                        audio_contexts.get(kLeAudioDirectionSink),
+                        ccid_lists.get(kLeAudioDirectionSink), false);
   }
   if (!configuration->confs.source.empty()) {
     left->ConfigureAses(configuration, kLeAudioDirectionSource,
                         group_->GetConfigurationContextType(),
-                        &number_of_active_ases, group_audio_locations,
-                        audio_contexts, ccid_lists, false);
+                        &number_of_active_ases,
+                        group_audio_locations.get(kLeAudioDirectionSource),
+                        audio_contexts.get(kLeAudioDirectionSource),
+                        ccid_lists.get(kLeAudioDirectionSource), false);
   }
 
   ASSERT_TRUE(number_of_active_ases == 2);
@@ -1650,7 +1654,7 @@ TEST_F(LeAudioAseConfigurationTest, test_reactivation_conversational) {
 
   ::bluetooth::le_audio::types::AudioLocations group_snk_audio_locations = 0;
   ::bluetooth::le_audio::types::AudioLocations group_src_audio_locations = 0;
-  uint8_t number_of_already_active_ases = 0;
+  BidirectionalPair<uint8_t> number_of_already_active_ases = {0, 0};
 
   BidirectionalPair<AudioLocations> group_audio_locations = {
       .sink = group_snk_audio_locations, .source = group_src_audio_locations};
@@ -1664,14 +1668,20 @@ TEST_F(LeAudioAseConfigurationTest, test_reactivation_conversational) {
   if (!conversational_configuration->confs.sink.empty()) {
     tws_headset->ConfigureAses(
         conversational_configuration, kLeAudioDirectionSink,
-        group_->GetConfigurationContextType(), &number_of_already_active_ases,
-        group_audio_locations, audio_contexts, ccid_lists, false);
+        group_->GetConfigurationContextType(),
+        &number_of_already_active_ases.get(kLeAudioDirectionSink),
+        group_audio_locations.get(kLeAudioDirectionSink),
+        audio_contexts.get(kLeAudioDirectionSink),
+        ccid_lists.get(kLeAudioDirectionSink), false);
   }
   if (!conversational_configuration->confs.source.empty()) {
     tws_headset->ConfigureAses(
         conversational_configuration, kLeAudioDirectionSource,
-        group_->GetConfigurationContextType(), &number_of_already_active_ases,
-        group_audio_locations, audio_contexts, ccid_lists, false);
+        group_->GetConfigurationContextType(),
+        &number_of_already_active_ases.get(kLeAudioDirectionSource),
+        group_audio_locations.get(kLeAudioDirectionSource),
+        audio_contexts.get(kLeAudioDirectionSource),
+        ccid_lists.get(kLeAudioDirectionSource), false);
   }
 
   /* Generate CISes, simulate CIG creation and assign cis handles to ASEs.*/
@@ -1776,8 +1786,10 @@ TEST_F(LeAudioAseConfigurationTest, test_getting_cis_count) {
   if (!media_configuration->confs.sink.empty()) {
     left->ConfigureAses(media_configuration, kLeAudioDirectionSink,
                         group_->GetConfigurationContextType(),
-                        &number_of_already_active_ases, group_audio_locations,
-                        audio_contexts, ccid_lists, false);
+                        &number_of_already_active_ases,
+                        group_audio_locations.get(kLeAudioDirectionSink),
+                        audio_contexts.get(kLeAudioDirectionSink),
+                        ccid_lists.get(kLeAudioDirectionSink), false);
   }
 
   /* Generate CIS, simulate CIG creation and assign cis handles to ASEs.*/
@@ -1819,8 +1831,8 @@ TEST_F(LeAudioAseConfigurationTest, test_config_support) {
   left->snk_pacs_ = snk_pac_builder.Get();
   right->snk_pacs_ = snk_pac_builder.Get();
 
-  ASSERT_FALSE(group_->IsAudioSetConfigurationSupported(left, test_config));
-  ASSERT_FALSE(group_->IsAudioSetConfigurationSupported(right, test_config));
+  ASSERT_FALSE(left->IsAudioSetConfigurationSupported(test_config));
+  ASSERT_FALSE(right->IsAudioSetConfigurationSupported(test_config));
 
   /* Create PACs for source */
   PublishedAudioCapabilitiesBuilder src_pac_builder;
@@ -1831,8 +1843,8 @@ TEST_F(LeAudioAseConfigurationTest, test_config_support) {
   left->src_pacs_ = src_pac_builder.Get();
   right->src_pacs_ = src_pac_builder.Get();
 
-  ASSERT_TRUE(group_->IsAudioSetConfigurationSupported(left, test_config));
-  ASSERT_TRUE(group_->IsAudioSetConfigurationSupported(right, test_config));
+  ASSERT_TRUE(left->IsAudioSetConfigurationSupported(test_config));
+  ASSERT_TRUE(right->IsAudioSetConfigurationSupported(test_config));
 }
 
 }  // namespace
