@@ -843,8 +843,9 @@ void bta_av_do_disc_a2dp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       "Initiate SDP discovery for peer {} : uuid_int=0x{:x} sdp_uuid=0x{:x}",
       ADDRESS_TO_LOGGABLE_CSTR(p_scb->PeerAddress()), p_scb->uuid_int,
       sdp_uuid);
-  tA2DP_STATUS find_service_status = A2DP_FindService(
-      sdp_uuid, p_scb->PeerAddress(), &db_params, bta_av_a2dp_sdp_cback);
+  tA2DP_STATUS find_service_status =
+      A2DP_FindService(sdp_uuid, p_scb->PeerAddress(), &db_params,
+                       base::Bind(bta_av_a2dp_sdp_cback));
   if (find_service_status != A2DP_SUCCESS) {
     log::error(
         "A2DP_FindService() failed for peer {} uuid_int=0x{:x} sdp_uuid=0x{:x} "
