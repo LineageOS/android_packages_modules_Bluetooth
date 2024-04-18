@@ -73,6 +73,11 @@ class HciLayer : public Module, public HciInterface {
 
   virtual void UnregisterLeEventHandler(SubeventCode subevent_code);
 
+  virtual void RegisterVendorSpecificEventHandler(
+      VseSubeventCode event, common::ContextualCallback<void(VendorSpecificEventView)> handler);
+
+  virtual void UnregisterVendorSpecificEventHandler(VseSubeventCode event);
+
   virtual void RegisterForDisconnects(
       common::ContextualCallback<void(uint16_t, hci::ErrorCode)> on_disconnect);
 

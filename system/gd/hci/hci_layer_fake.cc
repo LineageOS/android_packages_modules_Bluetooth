@@ -137,6 +137,16 @@ void HciLayerFake::UnregisterLeEventHandler(SubeventCode subevent_code) {
   registered_le_events_.erase(subevent_code);
 }
 
+void HciLayerFake::RegisterVendorSpecificEventHandler(
+    VseSubeventCode subevent_code,
+    common::ContextualCallback<void(VendorSpecificEventView)> event_handler) {
+  registered_vs_events_[subevent_code] = event_handler;
+}
+
+void HciLayerFake::UnregisterVendorSpecificEventHandler(VseSubeventCode subevent_code) {
+  registered_vs_events_.erase(subevent_code);
+}
+
 void HciLayerFake::IncomingEvent(std::unique_ptr<EventBuilder> event_builder) {
   auto packet = GetPacketView(std::move(event_builder));
   EventView event = EventView::Create(packet);
