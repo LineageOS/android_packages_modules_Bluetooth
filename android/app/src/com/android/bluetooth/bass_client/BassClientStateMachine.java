@@ -820,7 +820,7 @@ public class BassClientStateMachine extends StateMachine {
                 offset += BassConstants.BCAST_RCVR_STATE_BIS_SYNC_SIZE;
                 bisSyncState.add((long) Utils.byteArrayToInt(bisSyncIndex));
 
-                byte metaDataLength = receiverState[offset++];
+                int metaDataLength = receiverState[offset++] & 0xFF;
                 if (metaDataLength > 0) {
                     log("metadata of length: " + metaDataLength + "is available");
                     byte[] metaData = new byte[metaDataLength];
