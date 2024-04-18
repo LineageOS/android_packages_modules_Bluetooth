@@ -3845,7 +3845,7 @@ class LeAudioClientImpl : public LeAudioClient {
             (reconnection_mode_ == BTM_BLE_BKG_CONNECT_ALLOW_LIST
                  ? "Allow List"
                  : "Targeted Announcements"));
-    dprintf(fd, "  configuration: %s  (0x%08hx)\n",
+    dprintf(fd, "  configuration: %s  (0x%08x)\n",
             bluetooth::common::ToString(configuration_context_type_).c_str(),
             static_cast<uint16_t>(configuration_context_type_));
     dprintf(fd, "  local source metadata context type mask: %s\n",
