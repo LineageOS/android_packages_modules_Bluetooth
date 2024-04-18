@@ -47,6 +47,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.AudioManager;
+import android.media.AudioDeviceInfo;
 import android.media.BluetoothProfileConnectionInfo;
 import android.os.Handler;
 import android.os.Looper;
@@ -105,6 +106,7 @@ public class LeAudioServiceTest {
 
     private BluetoothAdapter mAdapter;
     private Context mTargetContext;
+
     private LeAudioService mService;
     private BluetoothDevice mLeftDevice;
     private BluetoothDevice mRightDevice;
@@ -541,6 +543,36 @@ public class LeAudioServiceTest {
                 BluetoothProfile.STATE_CONNECTING);
         assertThat(mService.getConnectionState(mLeftDevice))
                 .isEqualTo(BluetoothProfile.STATE_DISCONNECTED);
+    }
+
+    private void injectAudioDeviceAdded(
+            BluetoothDevice device,
+            int type,
+            boolean isSink,
+            boolean isSource,
+            boolean expectedIntent) {
+        mService.handleAudioDeviceAdded(device, type, isSink, isSource);
+        if (expectedIntent) {
+            verifyActiveDeviceStateIntent(AUDIO_MANAGER_DEVICE_ADD_TIMEOUT_MS, device);
+        } else {
+            Intent intent = TestUtils.waitForNoIntent(TIMEOUT_MS, mDeviceQueueMap.get(device));
+            assertThat(intent).isNull();
+        }
+    }
+
+    private void injectAudioDeviceRemoved(
+            BluetoothDevice device,
+            int type,
+            boolean isSink,
+            boolean isSource,
+            boolean expectedIntent) {
+        mService.handleAudioDeviceRemoved(device, type, isSink, isSource);
+        if (expectedIntent) {
+            verifyActiveDeviceStateIntent(AUDIO_MANAGER_DEVICE_ADD_TIMEOUT_MS, null);
+        } else {
+            Intent intent = TestUtils.waitForNoIntent(TIMEOUT_MS, mDeviceQueueMap.get(device));
+            assertThat(intent).isNull();
+        }
     }
 
     private void injectNoVerifyDeviceConnected(BluetoothDevice device) {
@@ -1339,7 +1371,7 @@ public class LeAudioServiceTest {
         /* Since LeAudioService called AudioManager - assume Audio manager calles properly callback
          * mAudioManager.onAudioDeviceAdded
          */
-        mService.notifyActiveDeviceChanged(mSingleDevice);
+        injectAudioDeviceAdded(mSingleDevice, AudioDeviceInfo.TYPE_BLE_HEADSET, true, false, true);
 
         reset(mNativeInterface);
 
@@ -1453,8 +1485,7 @@ public class LeAudioServiceTest {
                 .handleBluetoothActiveDeviceChanged(
                         eq(mSingleDevice), eq(null), connectionInfoArgumentCaptor.capture());
 
-        mService.notifyActiveDeviceChanged(mSingleDevice);
-        verifyActiveDeviceStateIntent(AUDIO_MANAGER_DEVICE_ADD_TIMEOUT_MS, mSingleDevice);
+        injectAudioDeviceAdded(mSingleDevice, AudioDeviceInfo.TYPE_BLE_HEADSET, true, false, true);
 
         BluetoothProfileConnectionInfo connInfo = connectionInfoArgumentCaptor.getValue();
         assertThat(connInfo.isSuppressNoisyIntent()).isTrue();
@@ -1478,7 +1509,8 @@ public class LeAudioServiceTest {
                         eq(null), eq(mSingleDevice), connectionInfoArgumentCaptor.capture());
         connInfo = connectionInfoArgumentCaptor.getValue();
         assertThat(connInfo.isSuppressNoisyIntent()).isTrue();
-        mService.notifyActiveDeviceChanged(null);
+        injectAudioDeviceRemoved(
+                mSingleDevice, AudioDeviceInfo.TYPE_BLE_HEADSET, true, false, false);
 
         reset(mAudioManager);
 
@@ -1495,7 +1527,8 @@ public class LeAudioServiceTest {
         connInfo = connectionInfoArgumentCaptor.getValue();
         assertThat(connInfo.isSuppressNoisyIntent()).isTrue();
 
-        mService.notifyActiveDeviceChanged(mSingleDevice_2);
+        injectAudioDeviceAdded(
+                mSingleDevice_2, AudioDeviceInfo.TYPE_BLE_HEADSET, true, false, true);
     }
 
     /**
@@ -1686,6 +1719,86 @@ public class LeAudioServiceTest {
         audioConfChangedEvent.valueInt5 = availableContexts;
         mService.messageFromNative(audioConfChangedEvent);
     }
+
+    /** Test group direction changed */
+    @Test
+    public void testGroupDirectionChanged_AudioConfChangedActiveGroup() {
+
+        int testVolume = 100;
+
+        ArgumentCaptor<BluetoothProfileConnectionInfo> testConnectioInfoCapture =
+                ArgumentCaptor.forClass(BluetoothProfileConnectionInfo.class);
+
+        doReturn(testVolume).when(mVolumeControlService).getAudioDeviceGroupVolume(testGroupId);
+
+        doReturn(true).when(mNativeInterface).connectLeAudio(any(BluetoothDevice.class));
+        connectTestDevice(mSingleDevice, testGroupId);
+        injectAudioConfChanged(
+                testGroupId,
+                BluetoothLeAudio.CONTEXT_TYPE_MEDIA | BluetoothLeAudio.CONTEXT_TYPE_CONVERSATIONAL,
+                3);
+        injectGroupStatusChange(testGroupId, BluetoothLeAudio.GROUP_STATUS_ACTIVE);
+
+        verify(mAudioManager, times(2))
+                .handleBluetoothActiveDeviceChanged(
+                        eq(mSingleDevice), eq(null), testConnectioInfoCapture.capture());
+
+        injectAudioDeviceAdded(mSingleDevice, AudioDeviceInfo.TYPE_BLE_HEADSET, true, false, true);
+        injectAudioDeviceAdded(mSingleDevice, AudioDeviceInfo.TYPE_BLE_HEADSET, false, true, false);
+
+        reset(mAudioManager);
+        /* Verify input and output has been connected to AF*/
+        List<BluetoothProfileConnectionInfo> connInfos = testConnectioInfoCapture.getAllValues();
+        assertThat(connInfos.size()).isEqualTo(2);
+        assertThat(connInfos.get(0).isLeOutput()).isEqualTo(true);
+        assertThat(connInfos.get(1).isLeOutput()).isEqualTo(false);
+
+        // Remove source direction
+        injectAudioConfChanged(
+                testGroupId,
+                BluetoothLeAudio.CONTEXT_TYPE_MEDIA | BluetoothLeAudio.CONTEXT_TYPE_CONVERSATIONAL,
+                1);
+
+        verify(mAudioManager, times(1))
+                .handleBluetoothActiveDeviceChanged(
+                        eq(null), eq(mSingleDevice), testConnectioInfoCapture.capture());
+
+        injectAudioDeviceAdded(mSingleDevice, AudioDeviceInfo.TYPE_BLE_HEADSET, true, false, false);
+        injectAudioDeviceRemoved(
+                mSingleDevice, AudioDeviceInfo.TYPE_BLE_HEADSET, false, true, false);
+
+        reset(mAudioManager);
+
+        connInfos = testConnectioInfoCapture.getAllValues();
+        assertThat(connInfos.size()).isEqualTo(3);
+        assertThat(connInfos.get(2).isLeOutput()).isEqualTo(false);
+
+        // remove Sink and add Source back
+
+        injectAudioConfChanged(
+                testGroupId,
+                BluetoothLeAudio.CONTEXT_TYPE_MEDIA | BluetoothLeAudio.CONTEXT_TYPE_CONVERSATIONAL,
+                2);
+
+        verify(mAudioManager, times(1))
+                .handleBluetoothActiveDeviceChanged(
+                        eq(null), eq(mSingleDevice), testConnectioInfoCapture.capture());
+        verify(mAudioManager, times(1))
+                .handleBluetoothActiveDeviceChanged(
+                        eq(mSingleDevice), eq(null), testConnectioInfoCapture.capture());
+
+        injectAudioDeviceRemoved(
+                mSingleDevice, AudioDeviceInfo.TYPE_BLE_HEADSET, true, false, false);
+        injectAudioDeviceAdded(mSingleDevice, AudioDeviceInfo.TYPE_BLE_HEADSET, false, true, false);
+
+        reset(mAudioManager);
+
+        connInfos = testConnectioInfoCapture.getAllValues();
+        assertThat(connInfos.size()).isEqualTo(5);
+        assertThat(connInfos.get(3).isLeOutput()).isEqualTo(true);
+        assertThat(connInfos.get(4).isLeOutput()).isEqualTo(false);
+    }
+
     /**
      * Test native interface audio configuration changed message handling
      */
@@ -1702,16 +1815,9 @@ public class LeAudioServiceTest {
         verify(mAudioManager, times(2)).handleBluetoothActiveDeviceChanged(any(), any(),
                         any(BluetoothProfileConnectionInfo.class));
         /* Since LeAudioService called AudioManager - assume Audio manager calles properly callback
-        * mAudioManager.onAudioDeviceAdded
-        */
-        mService.notifyActiveDeviceChanged(mSingleDevice);
-
-        String action = BluetoothLeAudio.ACTION_LE_AUDIO_ACTIVE_DEVICE_CHANGED;
-        Intent intent = TestUtils.waitForIntent(TIMEOUT_MS, mDeviceQueueMap.get(mSingleDevice));
-        assertThat(intent).isNotNull();
-        assertThat(action).isEqualTo(intent.getAction());
-        assertThat(mSingleDevice)
-                .isEqualTo(intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE));
+         * mAudioManager.onAudioDeviceAdded
+         */
+        injectAudioDeviceAdded(mSingleDevice, AudioDeviceInfo.TYPE_BLE_HEADSET, true, false, true);
     }
     /**
      * Test native interface audio configuration changed message handling
@@ -2168,9 +2274,8 @@ public class LeAudioServiceTest {
         /* Since LeAudioService called AudioManager - assume Audio manager calles properly callback
          * mAudioManager.onAudioDeviceAdded
          */
-        mService.notifyActiveDeviceChanged(leadDevice);
+        injectAudioDeviceAdded(leadDevice, AudioDeviceInfo.TYPE_BLE_HEADSET, true, false, true);
         doReturn(BluetoothDevice.BOND_BONDED).when(mAdapterService).getBondState(leadDevice);
-        verifyActiveDeviceStateIntent(AUDIO_MANAGER_DEVICE_ADD_TIMEOUT_MS, leadDevice);
         injectNoVerifyDeviceDisconnected(leadDevice);
 
         // We should not change the audio device
@@ -2241,9 +2346,8 @@ public class LeAudioServiceTest {
         /* Since LeAudioService called AudioManager - assume Audio manager calles properly callback
          * mAudioManager.onAudioDeviceAdded
          */
-        mService.notifyActiveDeviceChanged(leadDevice);
+        injectAudioDeviceAdded(leadDevice, AudioDeviceInfo.TYPE_BLE_HEADSET, true, false, true);
 
-        verifyActiveDeviceStateIntent(AUDIO_MANAGER_DEVICE_ADD_TIMEOUT_MS, leadDevice);
         /* We don't want to distribute DISCONNECTION event, instead will try to reconnect
          * (in native)
          */
