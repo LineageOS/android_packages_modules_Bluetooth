@@ -23,6 +23,8 @@
 #ifndef A2DP_API_H
 #define A2DP_API_H
 
+#include <base/functional/callback.h>
+
 #include <cstdint>
 
 #include "stack/include/a2dp_constants.h"
@@ -83,8 +85,8 @@ typedef struct {
 } tA2DP_Service;
 
 /* This is the callback to notify the result of the SDP discovery process. */
-typedef void(tA2DP_FIND_CBACK)(bool found, tA2DP_Service* p_service,
-                               const RawAddress& peer_address);
+using tA2DP_FIND_CBACK = base::Callback<void(
+    bool found, tA2DP_Service* p_service, const RawAddress& peer_address)>;
 
 /*****************************************************************************
  *  external function declarations
@@ -160,7 +162,7 @@ tA2DP_STATUS A2DP_AddRecord(uint16_t service_uuid, char* p_service_name,
  *****************************************************************************/
 tA2DP_STATUS A2DP_FindService(uint16_t service_uuid, const RawAddress& bd_addr,
                               tA2DP_SDP_DB_PARAMS* p_db,
-                              tA2DP_FIND_CBACK* p_cback);
+                              tA2DP_FIND_CBACK p_cback);
 
 /******************************************************************************
  *

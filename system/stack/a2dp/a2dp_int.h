@@ -43,7 +43,7 @@
 
 /* Control block used by A2DP_FindService(). */
 typedef struct {
-  tA2DP_FIND_CBACK* p_cback; /* pointer to application callback */
+  tA2DP_FIND_CBACK p_cback;  /* application callback */
   tSDP_DISCOVERY_DB* p_db;   /* pointer to discovery database */
   uint16_t service_uuid;     /* service UUID of search */
 } tA2DP_FIND_CB;
