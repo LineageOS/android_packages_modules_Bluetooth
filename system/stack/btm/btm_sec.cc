@@ -877,10 +877,10 @@ tBTM_STATUS BTM_SecBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
   if ((transport == BT_TRANSPORT_LE && (dev_type & BT_DEVICE_TYPE_BLE) == 0) ||
       (transport == BT_TRANSPORT_BR_EDR &&
        (dev_type & BT_DEVICE_TYPE_BREDR) == 0)) {
-    log::warn(
-        "Can't start bonding - requested transport and transport we've seen "
-        "device on don't match");
-    return BTM_ILLEGAL_ACTION;
+    log::warn("Requested transport and supported transport don't match");
+    if (!IS_FLAG_ENABLED(pairing_on_unknown_transport)) {
+      return BTM_ILLEGAL_ACTION;
+    }
   }
   return btm_sec_bond_by_transport(bd_addr, addr_type, transport);
 }
