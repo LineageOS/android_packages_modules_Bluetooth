@@ -3209,14 +3209,6 @@ class LeAudioClientImpl : public LeAudioClient {
   }
 
   void SendAudioGroupSelectableCodecConfigChanged(LeAudioDeviceGroup* group) {
-    // This shall be called when device gets active
-    auto* stream_conf = &group->stream_conf;
-    if (stream_conf == nullptr) {
-      log::warn("Stream configuration is not valid for group id {}",
-                group->group_id_);
-      return;
-    }
-
     auto leAudioDevice = group->GetFirstDevice();
     callbacks_->OnAudioGroupSelectableCodecConf(
         group->group_id_,
