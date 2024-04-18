@@ -554,6 +554,19 @@ impl BluetoothSocketManager {
         self.sock = Some(socket::BtSocket::new(&intf.lock().unwrap()));
     }
 
+    /// Check if there is any listening socket.
+    pub fn is_listening(&self) -> bool {
+        self.listening.values().any(|vs| !vs.is_empty())
+    }
+
+    /// Trigger adapter to update connectable mode.
+    fn trigger_update_connectable_mode(&self) {
+        let txl = self.tx.clone();
+        tokio::spawn(async move {
+            let _ = txl.send(Message::TriggerUpdateConnectableMode).await;
+        });
+    }
+
     // TODO(abps) - We need to save information about who the caller is so that
     //              we can pipe it down to the lower levels. This needs to be
     //              provided by the projection layer and is currently missing.
@@ -651,6 +664,9 @@ impl BluetoothSocketManager {
                     .entry(cbid)
                     .or_default()
                     .push(InternalListeningSocket::new(cbid, id, runner_tx, uuid, joinhandle));
+
+                // Update the connectable mode since the list of listening socket has changed.
+                self.trigger_update_connectable_mode();
 
                 SocketResult::new(status, id)
             }
@@ -1172,6 +1188,9 @@ impl BluetoothSocketManager {
                         .entry(cbid)
                         .and_modify(|v| v.retain(|s| s.socket_id != socket_id));
                 }
+
+                // Update the connectable mode since the list of listening socket has changed.
+                self.trigger_update_connectable_mode();
             }
 
             SocketActions::OnHandleIncomingConnection(cbid, socket_id, socket) => {
@@ -1245,6 +1264,10 @@ impl BluetoothSocketManager {
                 });
             }
         });
+
+        // Update the connectable mode since the list of listening socket has changed.
+        self.trigger_update_connectable_mode();
+
         self.callbacks.remove_callback(callback);
     }
 
