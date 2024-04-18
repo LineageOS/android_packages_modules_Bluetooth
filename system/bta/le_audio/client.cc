@@ -1297,7 +1297,6 @@ class LeAudioClientImpl : public LeAudioClient {
      * parameters if needed.
      */
     UpdateConfigAndCheckIfReconfigurationIsNeeded(group, default_context_type);
-    callbacks_->OnGroupStatus(group_id, GroupStatus::INACTIVE);
 
     auto previous_active_group = active_group_id_;
     log::info("Active group_id changed {} -> {}", previous_active_group,
