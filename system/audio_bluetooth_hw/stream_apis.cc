@@ -193,7 +193,7 @@ std::ostream& operator<<(std::ostream& os, const BluetoothStreamState& state) {
     case BluetoothStreamState::UNKNOWN:
       return os << "UNKNOWN";
     default:
-      return os << StringPrintf("%#hhx", state);
+      return os << StringPrintf("%#x", static_cast<unsigned>(state));
   }
 }
 
