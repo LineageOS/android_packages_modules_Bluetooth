@@ -18,8 +18,6 @@ package com.android.bluetooth.bass_client;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.junit.Assert.assertThrows;
-
 import android.bluetooth.BluetoothLeBroadcastMetadata;
 
 import org.junit.Test;
@@ -47,22 +45,19 @@ public class PublicBroadcastDataTest {
 
     @Test
     public void parsePublicBroadcastData() {
-        assertThrows(IllegalArgumentException.class, () ->
-                PublicBroadcastData.parsePublicBroadcastData(null));
+        assertThat(PublicBroadcastData.parsePublicBroadcastData(null)).isNull();
 
         byte[] serviceDataInvalid = new byte[] {
                 (byte) 0x02, // features, non-encrypted, standard quality prsent
         };
-        assertThrows(IllegalArgumentException.class, () ->
-                PublicBroadcastData.parsePublicBroadcastData(serviceDataInvalid));
+        assertThat(PublicBroadcastData.parsePublicBroadcastData(serviceDataInvalid)).isNull();
 
         byte[] serviceDataInvalid2 = new byte[] {
                 (byte) 0x02, // features, non-encrypted, standard quality prsent
                 (byte) 0x03,  // metaDataLength
                 (byte) 0x06, (byte) 0x07,  // invalid metaData
         };
-        assertThrows(IllegalArgumentException.class, () ->
-                PublicBroadcastData.parsePublicBroadcastData(serviceDataInvalid2));
+        assertThat(PublicBroadcastData.parsePublicBroadcastData(serviceDataInvalid2)).isNull();
 
         byte[] serviceData = new byte[] {
                 (byte) 0x07, // features

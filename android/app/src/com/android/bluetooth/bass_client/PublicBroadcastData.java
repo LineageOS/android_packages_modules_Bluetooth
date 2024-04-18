@@ -66,8 +66,8 @@ class PublicBroadcastData {
 
     static PublicBroadcastData parsePublicBroadcastData(byte[] serviceData) {
         if (serviceData == null || serviceData.length < PUBLIC_BROADCAST_SERVICE_DATA_LEN_MIN) {
-            Log.e(TAG, "Invalid service data for PublicBroadcastData construction");
-            throw new IllegalArgumentException("PublicBroadcastData: serviceData is invalid");
+            Log.w(TAG, "Invalid service data for PublicBroadcastData construction");
+            return null;
         }
         PublicBroadcastInfo publicBroadcastInfo = new PublicBroadcastInfo();
 
@@ -93,8 +93,8 @@ class PublicBroadcastData {
         publicBroadcastInfo.metaDataLength = serviceData[offset++];
         if (serviceData.length
                 != (publicBroadcastInfo.metaDataLength + PUBLIC_BROADCAST_SERVICE_DATA_LEN_MIN)) {
-            Log.e(TAG, "Invalid meta data length for PublicBroadcastData construction");
-            throw new IllegalArgumentException("PublicBroadcastData: metaData is invalid");
+            Log.w(TAG, "Invalid meta data length for PublicBroadcastData construction");
+            return null;
         }
         if (publicBroadcastInfo.metaDataLength != 0) {
             publicBroadcastInfo.metaData = new byte[(int) publicBroadcastInfo.metaDataLength];
