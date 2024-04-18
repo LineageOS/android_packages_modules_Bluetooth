@@ -46,6 +46,17 @@ std::string LeAddressManager::ClientStateText(const ClientState cs) {
   RETURN_UNKNOWN_TYPE_STRING(ClientState, cs);
 }
 
+std::string AddressPolicyText(const LeAddressManager::AddressPolicy policy) {
+  switch (policy) {
+    CASE_RETURN_STRING(LeAddressManager::AddressPolicy::POLICY_NOT_SET);
+    CASE_RETURN_STRING(LeAddressManager::AddressPolicy::USE_PUBLIC_ADDRESS);
+    CASE_RETURN_STRING(LeAddressManager::AddressPolicy::USE_STATIC_ADDRESS);
+    CASE_RETURN_STRING(LeAddressManager::AddressPolicy::USE_NON_RESOLVABLE_ADDRESS);
+    CASE_RETURN_STRING(LeAddressManager::AddressPolicy::USE_RESOLVABLE_ADDRESS);
+  }
+  RETURN_UNKNOWN_TYPE_STRING(LeAddressManager::AddressPolicy, policy);
+}
+
 LeAddressManager::LeAddressManager(
     common::Callback<void(std::unique_ptr<CommandBuilder>)> enqueue_command,
     os::Handler* handler,
@@ -95,7 +106,7 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddress(
       registered_clients_.empty(), "Policy must be set before clients are registered.");
   address_policy_ = address_policy;
   supports_ble_privacy_ = supports_ble_privacy;
-  log::info("SetPrivacyPolicyForInitiatorAddress with policy {}", address_policy);
+  log::info("New policy: {}", AddressPolicyText(address_policy));
 
   if (IS_FLAG_ENABLED(nrpa_non_connectable_adv)) {
     minimum_rotation_time_ = minimum_rotation_time;

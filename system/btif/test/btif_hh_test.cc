@@ -35,7 +35,9 @@
 
 using namespace std::chrono_literals;
 
+namespace bluetooth::testing {
 void set_hal_cbacks(bt_callbacks_t* callbacks);
+}  // namespace bluetooth::testing
 
 // Used the legacy stack manager
 module_t bt_utils_module;
@@ -154,7 +156,7 @@ class BtifHhWithHalCallbacksTest : public BtifHhWithMockTest {
     bt_callbacks.thread_evt_cb = [](bt_cb_thread_evt evt) {
       g_thread_evt_promise.set_value(evt);
     };
-    set_hal_cbacks(&bt_callbacks);
+    bluetooth::testing::set_hal_cbacks(&bt_callbacks);
     // Start the jni callback thread
     InitializeCoreInterface();
     ASSERT_EQ(std::future_status::ready, future.wait_for(2s));

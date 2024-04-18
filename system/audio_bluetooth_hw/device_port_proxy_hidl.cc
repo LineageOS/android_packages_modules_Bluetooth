@@ -474,8 +474,8 @@ bool BluetoothAudioPortHidl::GetPresentationPosition(
   }
   bool retval = BluetoothAudioSessionControl_2_1::GetPresentationPosition(
       session_type_hidl_, delay_ns, bytes, timestamp);
-  LOG(VERBOSE) << __func__
-               << ": session_type=" << StringPrintf("%#hhx", session_type_hidl_)
+  LOG(VERBOSE) << __func__ << ": session_type="
+               << StringPrintf("%#x", static_cast<unsigned>(session_type_hidl_))
                << ", cookie=" << StringPrintf("%#hx", cookie_)
                << ", state=" << state_ << ", delay=" << *delay_ns
                << "ns, data=" << *bytes

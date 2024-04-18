@@ -67,6 +67,7 @@ cc_defaults {
         "-Werror",
         "-Wextra",
         // Override global.go that demote the error to a warning
+        "-Werror=format",
         "-Werror=reorder-init-list",
     ],
     c_std: "c99",

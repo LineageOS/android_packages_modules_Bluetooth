@@ -19,6 +19,7 @@
 #include <bluetooth/log.h>
 
 #include <bitset>
+#include <sstream>
 
 #include "audio_hal_client/audio_hal_client.h"
 #include "broadcaster/broadcast_configuration_provider.h"
@@ -225,11 +226,34 @@ struct codec_manager_impl {
         requirements.audio_context_type);
   }
 
+  void PrintDebugState() const {
+    for (types::LeAudioContextType ctx_type :
+         types::kLeAudioContextAllTypesArray) {
+      std::stringstream os;
+      os << ctx_type << ": ";
+      if (context_type_offload_config_map_.count(ctx_type) == 0) {
+        os << "{empty}";
+      } else {
+        os << "{";
+        for (const auto& conf : context_type_offload_config_map_.at(ctx_type)) {
+          os << conf->name << ", ";
+        }
+        os << "}";
+      }
+      log::info("Offload configs for {}", os.str());
+    }
+  }
+
   std::unique_ptr<AudioSetConfiguration> GetCodecConfig(
       const CodecManager::UnicastConfigurationRequirements& requirements,
       CodecManager::UnicastConfigurationVerifier verifier) {
     auto configs = GetSupportedCodecConfigurations(requirements);
-    if (configs == nullptr) return nullptr;
+    if (configs == nullptr) {
+      log::error("No valid configuration matching the requirements: {}",
+                 requirements);
+      PrintDebugState();
+      return nullptr;
+    }
     // Note: For the only supported right now legacy software configuration
     //       provider, we use the device group logic to match the proper
     //       configuration with group capabilities. Note that this path only
@@ -902,7 +926,14 @@ struct codec_manager_impl {
   std::vector<btle_audio_codec_config_t> codec_input_capa = {};
   std::vector<btle_audio_codec_config_t> codec_output_capa = {};
   int broadcast_target_config = -1;
-};  // namespace bluetooth::le_audio
+};
+
+std::ostream& operator<<(
+    std::ostream& os,
+    const CodecManager::UnicastConfigurationRequirements& req) {
+  os << "{audio context type: " << req.audio_context_type << "}";
+  return os;
+}
 
 struct CodecManager::impl {
   impl(const CodecManager& codec_manager) : codec_manager_(codec_manager) {}

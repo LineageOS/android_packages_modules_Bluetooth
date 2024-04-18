@@ -66,7 +66,6 @@ filegroup {
         "internal/enhanced_retransmission_mode_channel_data_controller_test.cc",
         "internal/fixed_channel_allocator_test.cc",
         "internal/le_credit_based_channel_data_controller_test.cc",
-        "internal/receiver_test.cc",
         "internal/scheduler_fifo_test.cc",
         "internal/sender_test.cc",
         "le/internal/dynamic_channel_service_manager_test.cc",

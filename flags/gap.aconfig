@@ -186,3 +186,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "gatt_rediscover_on_canceled"
+    namespace: "bluetooth"
+    description: "Re-initiate discovery if the previous discovery is canceled for multiple GATT clients"
+    bug: "335082571"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

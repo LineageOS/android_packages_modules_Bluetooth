@@ -19,9 +19,11 @@ import logging
 from floss.pandora.server import a2dp
 from floss.pandora.server import bluetooth as bluetooth_module
 from floss.pandora.server import gatt
+from floss.pandora.server import hfp
 from floss.pandora.server import hid
 from floss.pandora.server import host
 from floss.pandora.server import l2cap
+from floss.pandora.server import modem
 from floss.pandora.server import rfcomm
 from floss.pandora.server import security
 import grpc
@@ -29,8 +31,10 @@ from pandora import a2dp_grpc_aio
 from pandora import host_grpc_aio
 from pandora import security_grpc_aio
 from pandora_experimental import gatt_grpc_aio
+from pandora_experimental import hfp_grpc_aio
 from pandora_experimental import hid_grpc_aio
 from pandora_experimental import l2cap_grpc_aio
+from pandora_experimental import modem_grpc_aio
 from pandora_experimental import rfcomm_grpc_aio
 
 
@@ -57,6 +61,12 @@ async def serve(port):
 
             gatt_service = gatt.GATTService(bluetooth)
             gatt_grpc_aio.add_GATTServicer_to_server(gatt_service, server)
+
+            modem_service = modem.Modem(bluetooth)
+            modem_grpc_aio.add_ModemServicer_to_server(modem_service, server)
+
+            hfp_service = hfp.HFPService(bluetooth)
+            hfp_grpc_aio.add_HFPServicer_to_server(hfp_service, server)
 
             hid_service = hid.HIDService(bluetooth)
             hid_grpc_aio.add_HIDServicer_to_server(hid_service, server)

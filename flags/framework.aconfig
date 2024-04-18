@@ -56,8 +56,11 @@ flag {
 }
 
 flag {
-    name: "remove_bond_with_address_map"
+    name: "remove_address_map_on_unbond"
     namespace: "bluetooth"
     description: "Removes the address map when the bond is removed"
-    bug: "326603271"
+    bug: "335465028"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
 }
