@@ -73,6 +73,7 @@ EventCallbacks mock_event_callbacks = {
            int /* snr */, int /* retransmission_count */,
            int /* packets_not_receive_count */,
            int /* negative_acknowledgement_count */) {},
+    .invoke_key_missing_cb = [](RawAddress /* bd_addr */) {},
 };
 
 // This interface lets us query for configuration properties of the stack that
