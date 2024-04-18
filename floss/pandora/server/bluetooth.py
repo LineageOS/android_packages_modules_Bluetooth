@@ -27,6 +27,7 @@ from floss.pandora.floss import media_client
 from floss.pandora.floss import qa_client
 from floss.pandora.floss import scanner_client
 from floss.pandora.floss import socket_manager
+from floss.pandora.floss import telephony_client
 from floss.pandora.floss import utils
 from gi.repository import GLib
 import pydbus
@@ -71,6 +72,7 @@ class Bluetooth(object):
         self.gatt_client = gatt_client.FlossGattClient(self.bus, self.DEFAULT_ADAPTER)
         self.gatt_server = gatt_server.FlossGattServer(self.bus, self.DEFAULT_ADAPTER)
         self.socket_manager = socket_manager.FlossSocketManagerClient(self.bus, self.DEFAULT_ADAPTER)
+        self.telephony_client = telephony_client.FlossTelephonyClient(self.bus, self.DEFAULT_ADAPTER)
 
     def __del__(self):
         if not self.is_clean:
@@ -147,6 +149,9 @@ class Bluetooth(object):
         if not self.socket_manager.register_callbacks():
             logging.error('scanner_client: Failed to register callbacks')
             return False
+        if not self.telephony_client.register_telephony_callback():
+            logging.error('telephony_client: Failed to register callbacks')
+            return False
         return True
 
     def is_bluetoothd_proxy_valid(self):
@@ -161,7 +166,8 @@ class Bluetooth(object):
             self.media_client.has_proxy(),
             self.gatt_client.has_proxy(),
             self.gatt_server.has_proxy(),
-            self.socket_manager.has_proxy()
+            self.socket_manager.has_proxy(),
+            self.telephony_client.has_proxy()
         ])
 
         if not proxy_ready:
@@ -199,6 +205,7 @@ class Bluetooth(object):
             self.gatt_client = gatt_client.FlossGattClient(self.bus, default_adapter)
             self.gatt_server = gatt_server.FlossGattServer(self.bus, default_adapter)
             self.socket_manager = socket_manager.FlossSocketManagerClient(self.bus, default_adapter)
+            self.telephony_client = telephony_client.FlossTelephonyClient(self.bus, default_adapter)
 
             try:
                 utils.poll_for_condition(
@@ -352,6 +359,45 @@ class Bluetooth(object):
     def write_characteristic(self, address, handle, write_type, auth_req, value):
         return self.gatt_client.write_characteristic(address, handle, write_type, auth_req, value)
 
+    def set_mps_qualification_enabled(self, enable):
+        return self.telephony_client.set_mps_qualification_enabled(enable)
+
+    def incoming_call(self, number):
+        return self.telephony_client.incoming_call(number)
+
+    def set_phone_ops_enabled(self, enable):
+        return self.telephony_client.set_phone_ops_enabled(enable)
+
+    def dial_call(self, number):
+        return self.telephony_client.dialing_call(number)
+
+    def answer_call(self):
+        return self.telephony_client.answer_call()
+
+    def swap_active_call(self):
+        return self.telephony_client.hold_active_accept_held()
+
+    def set_last_call(self, number=None):
+        return self.telephony_client.set_last_call(number)
+
+    def set_memory_call(self, number=None):
+        return self.telephony_client.set_memory_call(number)
+
+    def get_connected_audio_devices(self):
+        return self.media_client.devices
+
+    def audio_connect(self, address):
+        return self.telephony_client.audio_connect(address)
+
+    def audio_disconnect(self, address):
+        return self.telephony_client.audio_disconnect(address)
+
+    def hangup_call(self):
+        return self.telephony_client.hangup_call()
+
+    def set_battery_level(self, battery_level):
+        return self.telephony_client.set_battery_level(battery_level)
+
     def gatt_connect(self, address, is_direct, transport):
         return self.gatt_client.connect_client(address, is_direct, transport)
 
@@ -410,3 +456,6 @@ class Bluetooth(object):
 
     def disconnect_media(self, address):
         return self.media_client.disconnect(address)
+
+    def incoming_call(self, number):
+        return self.telephony_client.incoming_call(number)
