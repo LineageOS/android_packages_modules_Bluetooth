@@ -165,8 +165,8 @@ tBTA_JV_STATUS BTA_JvFreeChannel(uint16_t channel, int conn_type) {
 tBTA_JV_STATUS BTA_JvStartDiscovery(const RawAddress& bd_addr,
                                     uint16_t num_uuid, const Uuid* p_uuid_list,
                                     uint32_t rfcomm_slot_id) {
-  log::verbose("bd_addr:{}, rfcomm_slot_id:{}, num_uuid:{}",
-               ADDRESS_TO_LOGGABLE_CSTR(bd_addr), rfcomm_slot_id, num_uuid);
+  log::verbose("bd_addr:{}, rfcomm_slot_id:{}, num_uuid:{}", bd_addr,
+               rfcomm_slot_id, num_uuid);
 
   Uuid* uuid_list_copy = new Uuid[num_uuid];
   memcpy(uuid_list_copy, p_uuid_list, num_uuid * sizeof(Uuid));
@@ -235,8 +235,7 @@ void BTA_JvL2capConnect(int conn_type, tBTA_SEC sec_mask, tBTA_JV_ROLE role,
   log::verbose(
       "conn_type:{}, role:{}, remote_psm:{}, peer_bd_addr:{}, "
       "l2cap_socket_id:{}",
-      conn_type, role, remote_psm, ADDRESS_TO_LOGGABLE_CSTR(peer_bd_addr),
-      l2cap_socket_id);
+      conn_type, role, remote_psm, peer_bd_addr, l2cap_socket_id);
   log::assert_that(p_cback != nullptr, "assert failed: p_cback != nullptr");
 
   do_in_main_thread(FROM_HERE,
@@ -430,7 +429,7 @@ tBTA_JV_STATUS BTA_JvRfcommConnect(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
                                    tBTA_JV_RFCOMM_CBACK* p_cback,
                                    uint32_t rfcomm_slot_id) {
   log::verbose("remote_scn:{}, peer_bd_addr:{}, rfcomm_slot_id:{}", remote_scn,
-               ADDRESS_TO_LOGGABLE_CSTR(peer_bd_addr), rfcomm_slot_id);
+               peer_bd_addr, rfcomm_slot_id);
 
   if (!p_cback) return tBTA_JV_STATUS::FAILURE; /* Nothing to do */
 

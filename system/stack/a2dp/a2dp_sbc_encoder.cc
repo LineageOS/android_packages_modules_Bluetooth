@@ -172,7 +172,7 @@ static void a2dp_sbc_encoder_update(A2dpCodecConfig* a2dp_codec_config,
   *p_config_updated = false;
   if (!a2dp_codec_config->copyOutOtaCodecConfig(codec_info)) {
     log::error("Cannot update the codec encoder for {}: invalid codec config",
-               a2dp_codec_config->name().c_str());
+               a2dp_codec_config->name());
     return;
   }
   const uint8_t* p_codec_info = codec_info;
@@ -857,7 +857,7 @@ static uint32_t a2dp_sbc_frame_length(void) {
 
 uint32_t a2dp_sbc_get_bitrate() {
   SBC_ENC_PARAMS* p_encoder_params = &a2dp_sbc_encoder_cb.sbc_encoder_params;
-  log::info("bit rate {} ", p_encoder_params->u16BitRate);
+  log::info("bit rate {}", p_encoder_params->u16BitRate);
   return p_encoder_params->u16BitRate * 1000;
 }
 

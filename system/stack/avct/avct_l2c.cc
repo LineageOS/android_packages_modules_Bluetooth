@@ -166,7 +166,7 @@ void avct_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
     p_lcb->ch_state = AVCT_CH_CFG;
   }
 
-  if (p_lcb) log::verbose("ch_state cni: {} ", p_lcb->ch_state);
+  if (p_lcb) log::verbose("ch_state cni: {}", p_lcb->ch_state);
 }
 
 static void avct_on_l2cap_error(uint16_t lcid, uint16_t result) {
@@ -183,7 +183,7 @@ static void avct_on_l2cap_error(uint16_t lcid, uint16_t result) {
       avct_lcb_event(p_lcb, AVCT_LCB_LL_CLOSE_EVT, &avct_lcb_evt);
     }
   } else if (p_lcb->ch_state == AVCT_CH_CFG) {
-    log::verbose("ERROR avct_l2c_config_cfm_cback L2CA_DisconnectReq {} ",
+    log::verbose("ERROR avct_l2c_config_cfm_cback L2CA_DisconnectReq {}",
                  p_lcb->ch_state);
     /* store result value */
     p_lcb->ch_result = result;
@@ -236,7 +236,7 @@ void avct_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result) {
       }
       p_lcb->conflict_lcid = 0;
     }
-    log::verbose("ch_state cnc: {} ", p_lcb->ch_state);
+    log::verbose("ch_state cnc: {}", p_lcb->ch_state);
   }
 }
 
@@ -266,7 +266,7 @@ void avct_l2c_config_cfm_cback(uint16_t lcid, uint16_t initiator,
       p_lcb->ch_state = AVCT_CH_OPEN;
       avct_lcb_event(p_lcb, AVCT_LCB_LL_OPEN_EVT, NULL);
     }
-    log::verbose("ch_state cfc: {} ", p_lcb->ch_state);
+    log::verbose("ch_state cfc: {}", p_lcb->ch_state);
   }
 }
 
@@ -319,7 +319,7 @@ void avct_l2c_disconnect_ind_cback(uint16_t lcid, bool ack_needed) {
     tAVCT_LCB_EVT avct_lcb_evt;
     avct_lcb_evt.result = result;
     avct_lcb_event(p_lcb, AVCT_LCB_LL_CLOSE_EVT, &avct_lcb_evt);
-    log::verbose("ch_state di: {} ", p_lcb->ch_state);
+    log::verbose("ch_state di: {}", p_lcb->ch_state);
   }
 }
 
@@ -341,7 +341,7 @@ void avct_l2c_disconnect(uint16_t lcid, uint16_t result) {
     tAVCT_LCB_EVT avct_lcb_evt;
     avct_lcb_evt.result = res;
     avct_lcb_event(p_lcb, AVCT_LCB_LL_CLOSE_EVT, &avct_lcb_evt);
-    log::verbose("ch_state dc: {} ", p_lcb->ch_state);
+    log::verbose("ch_state dc: {}", p_lcb->ch_state);
   }
 }
 

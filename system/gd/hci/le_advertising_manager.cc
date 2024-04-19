@@ -1738,7 +1738,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
       log::info(
           "update random address for advertising set {} : {}",
           advertiser_id,
-          ADDRESS_TO_LOGGABLE_CSTR(address_with_type.GetAddress()));
+          address_with_type.GetAddress());
       advertising_sets_[advertiser_id].current_address = address_with_type;
     }
   }

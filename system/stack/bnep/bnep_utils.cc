@@ -173,7 +173,7 @@ void bnep_send_conn_req(tBNEP_CONN* p_bcb) {
   uint8_t *p, *p_start;
 
   log::verbose("sending setup req with dst uuid {}",
-               p_bcb->dst_uuid.ToString().c_str());
+               p_bcb->dst_uuid.ToString());
 
   p_buf->offset = L2CAP_MIN_OFFSET;
   p = p_start = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
@@ -201,8 +201,7 @@ void bnep_send_conn_req(tBNEP_CONN* p_bcb) {
     memcpy(p, p_bcb->src_uuid.To128BitBE().data(), Uuid::kNumBytes128);
     p += Uuid::kNumBytes128;
   } else {
-    log::error("uuid: {}, invalid length: {}",
-               p_bcb->dst_uuid.ToString().c_str(),
+    log::error("uuid: {}, invalid length: {}", p_bcb->dst_uuid.ToString(),
                p_bcb->dst_uuid.GetShortestRepresentationSize());
   }
 
@@ -613,7 +612,7 @@ void bnep_process_setup_conn_req(tBNEP_CONN* p_bcb, uint8_t* p_setup,
   p_bcb->con_flags |= BNEP_FLAGS_SETUP_RCVD;
 
   log::debug("BNEP initiating security check for incoming call for uuid {}",
-             p_bcb->src_uuid.ToString().c_str());
+             p_bcb->src_uuid.ToString());
   bnep_sec_check_complete(&p_bcb->rem_bda, BT_TRANSPORT_BR_EDR, p_bcb);
 }
 
@@ -1256,7 +1255,7 @@ tBNEP_RESULT bnep_is_packet_allowed(tBNEP_CONN* p_bcb,
     if ((p_bcb->rcvd_mcast_filters == 0xFFFF) ||
         (i == p_bcb->rcvd_mcast_filters)) {
       log::verbose("Ignoring multicast address {} in BNEP data write",
-                   ADDRESS_TO_LOGGABLE_STR(dest_addr));
+                   dest_addr);
       return BNEP_IGNORE_CMD;
     }
   }

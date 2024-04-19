@@ -96,8 +96,7 @@ void btif_gatt_check_encrypted_link(RawAddress bd_addr,
            bd_addr, BTM_LE_KEY_PENC, (uint8_t*)&key,
            sizeof(tBTM_LE_PENC_KEYS)) == BT_STATUS_SUCCESS) &&
       !btif_gatt_is_link_encrypted(bd_addr)) {
-    log::debug("Checking gatt link peer:{} transport:{}",
-               ADDRESS_TO_LOGGABLE_CSTR(bd_addr),
+    log::debug("Checking gatt link peer:{} transport:{}", bd_addr,
                bt_transport_text(transport_link));
     BTA_DmSetEncryption(bd_addr, transport_link, &btif_gatt_set_encryption_cb,
                         BTM_BLE_SEC_ENCRYPT);

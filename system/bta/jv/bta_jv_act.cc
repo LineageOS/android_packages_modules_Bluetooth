@@ -799,15 +799,13 @@ static void bta_jv_start_discovery_cback(const RawAddress& bd_addr,
   if (!bta_jv_cb.sdp_cb.sdp_active) {
     log::warn(
         "Received unexpected service discovery callback bd_addr:{} result:{}",
-        ADDRESS_TO_LOGGABLE_CSTR(bd_addr), sdp_result_text(result),
-        bta_jv_cb.sdp_cb.sdp_active);
+        bd_addr, sdp_result_text(result), bta_jv_cb.sdp_cb.sdp_active);
   }
   if (bta_jv_cb.sdp_cb.bd_addr != bta_jv_cb.sdp_cb.bd_addr) {
     log::warn(
         "Received incorrect service discovery callback expected_bd_addr:{} "
         "actual_bd_addr:{} result:{}",
-        ADDRESS_TO_LOGGABLE_CSTR(bta_jv_cb.sdp_cb.bd_addr),
-        ADDRESS_TO_LOGGABLE_CSTR(bd_addr), sdp_result_text(result),
+        bta_jv_cb.sdp_cb.bd_addr, bd_addr, sdp_result_text(result),
         bta_jv_cb.sdp_cb.sdp_active);
   }
 
@@ -823,7 +821,7 @@ static void bta_jv_start_discovery_cback(const RawAddress& bd_addr,
     if (result == SDP_SUCCESS || result == SDP_DB_FULL) {
       log::info(
           "Received service discovery callback success bd_addr:{} result:{}",
-          ADDRESS_TO_LOGGABLE_CSTR(bd_addr), sdp_result_text(result));
+          bd_addr, sdp_result_text(result));
       tSDP_PROTOCOL_ELEM pe;
       tSDP_DISC_REC* p_sdp_rec = NULL;
       p_sdp_rec = get_legacy_stack_sdp_api()->db.SDP_FindServiceUUIDInDb(
@@ -844,19 +842,19 @@ static void bta_jv_start_discovery_cback(const RawAddress& bd_addr,
     } else {
       log::warn(
           "Received service discovery callback failed bd_addr:{} result:{}",
-          ADDRESS_TO_LOGGABLE_CSTR(bd_addr), sdp_result_text(result));
+          bd_addr, sdp_result_text(result));
     }
     log::info(
         "Issuing service discovery complete callback bd_addr:{} result:{} "
         "status:{} scn:{}",
-        ADDRESS_TO_LOGGABLE_CSTR(bd_addr), sdp_result_text(result),
+        bd_addr, sdp_result_text(result),
         bta_jv_status_text(bta_jv.disc_comp.status), bta_jv.disc_comp.scn);
     bta_jv_cb.p_dm_cback(BTA_JV_DISCOVERY_COMP_EVT, &bta_jv, rfcomm_slot_id);
   } else {
     log::warn(
         "Received service discovery callback when disabled bd_addr:{} "
         "result:{}",
-        ADDRESS_TO_LOGGABLE_CSTR(bd_addr), sdp_result_text(result));
+        bd_addr, sdp_result_text(result));
   }
   // User data memory is allocated in `bta_jv_start_discovery`
   osi_free(const_cast<void*>(user_data));
@@ -871,10 +869,8 @@ void bta_jv_start_discovery(const RawAddress& bd_addr, uint16_t num_uuid,
   if (bta_jv_cb.sdp_cb.sdp_active) {
     log::warn(
         "Unable to start discovery as already in progress active_bd_addr{} "
-        "request_bd_addr:{} "
-        "num:uuid:{} rfcomm_slot_id:{}",
-        ADDRESS_TO_LOGGABLE_CSTR(bta_jv_cb.sdp_cb.bd_addr),
-        ADDRESS_TO_LOGGABLE_CSTR(bd_addr), num_uuid, rfcomm_slot_id);
+        "request_bd_addr:{} num:uuid:{} rfcomm_slot_id:{}",
+        bta_jv_cb.sdp_cb.bd_addr, bd_addr, num_uuid, rfcomm_slot_id);
     if (bta_jv_cb.p_dm_cback) {
       tBTA_JV bta_jv = {
           .status = tBTA_JV_STATUS::BUSY,
@@ -896,7 +892,7 @@ void bta_jv_start_discovery(const RawAddress& bd_addr, uint16_t num_uuid,
     log::warn(
         "Unable to initialize service discovery db bd_addr:{} num:uuid:{} "
         "rfcomm_slot_id:{}",
-        ADDRESS_TO_LOGGABLE_CSTR(bd_addr), num_uuid, rfcomm_slot_id);
+        bd_addr, num_uuid, rfcomm_slot_id);
   }
 
   /* tell SDP to keep the raw data */
@@ -923,7 +919,7 @@ void bta_jv_start_discovery(const RawAddress& bd_addr, uint16_t num_uuid,
     log::warn(
         "Unable to original service discovery bd_addr:{} num:uuid:{} "
         "rfcomm_slot_id:{}",
-        ADDRESS_TO_LOGGABLE_CSTR(bd_addr), num_uuid, rfcomm_slot_id);
+        bd_addr, num_uuid, rfcomm_slot_id);
     /* failed to start SDP. report the failure right away */
     if (bta_jv_cb.p_dm_cback) {
       tBTA_JV bta_jv = {
@@ -935,9 +931,8 @@ void bta_jv_start_discovery(const RawAddress& bd_addr, uint16_t num_uuid,
     }
   } else {
     log::info(
-        "Started service discovery bd_addr:{} num_uuid:{} "
-        "rfcomm_slot_id:{}",
-        ADDRESS_TO_LOGGABLE_CSTR(bd_addr), num_uuid, rfcomm_slot_id);
+        "Started service discovery bd_addr:{} num_uuid:{} rfcomm_slot_id:{}",
+        bd_addr, num_uuid, rfcomm_slot_id);
   }
 }
 

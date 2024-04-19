@@ -492,20 +492,19 @@ ServiceInterface* AvrcpService::GetServiceInterface() {
 }
 
 void AvrcpService::ConnectDevice(const RawAddress& bdaddr) {
-  log::info("address={}", ADDRESS_TO_LOGGABLE_STR(bdaddr));
+  log::info("address={}", bdaddr);
 
   connection_handler_->ConnectDevice(bdaddr);
 }
 
 void AvrcpService::DisconnectDevice(const RawAddress& bdaddr) {
-  log::info("address={}", ADDRESS_TO_LOGGABLE_STR(bdaddr));
+  log::info("address={}", bdaddr);
   connection_handler_->DisconnectDevice(bdaddr);
 }
 
 void AvrcpService::SetBipClientStatus(const RawAddress& bdaddr,
                                       bool connected) {
-  log::info("address={}, connected={}", ADDRESS_TO_LOGGABLE_STR(bdaddr),
-            connected);
+  log::info("address={}, connected={}", bdaddr, connected);
   connection_handler_->SetBipClientStatus(bdaddr, connected);
 }
 
@@ -690,7 +689,7 @@ void AvrcpService::DebugDump(int fd) {
 /** when a2dp connected, btif will start register vol changed, so we need a
  * interface for it. */
 void AvrcpService::RegisterVolChanged(const RawAddress& bdaddr) {
-  log::info(": address={}", ADDRESS_TO_LOGGABLE_STR(bdaddr));
+  log::info(": address={}", bdaddr);
 
   connection_handler_->RegisterVolChanged(bdaddr);
 }

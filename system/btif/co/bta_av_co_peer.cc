@@ -128,8 +128,7 @@ BtaAvCoSep* BtaAvCoPeerCache::FindPeerSource(
     BtaAvCoPeer* p_peer, btav_a2dp_codec_index_t codec_index,
     const uint8_t content_protect_flag) {
   if (codec_index == BTAV_A2DP_CODEC_INDEX_MAX) {
-    log::warn("invalid codec index for peer {}",
-              ADDRESS_TO_LOGGABLE_CSTR(p_peer->addr));
+    log::warn("invalid codec index for peer {}", p_peer->addr);
     return nullptr;
   }
 
@@ -156,8 +155,7 @@ BtaAvCoSep* BtaAvCoPeerCache::FindPeerSink(BtaAvCoPeer* p_peer,
                                            btav_a2dp_codec_index_t codec_index,
                                            const uint8_t content_protect_flag) {
   if (codec_index == BTAV_A2DP_CODEC_INDEX_MAX) {
-    log::warn("invalid codec index for peer {}",
-              ADDRESS_TO_LOGGABLE_CSTR(p_peer->addr));
+    log::warn("invalid codec index for peer {}", p_peer->addr);
     return nullptr;
   }
 
@@ -170,8 +168,7 @@ BtaAvCoSep* BtaAvCoPeerCache::FindPeerSink(BtaAvCoPeer* p_peer,
       continue;
     }
     if (!AudioSepHasContentProtection(p_sink, content_protect_flag)) {
-      log::warn("invalid codec index for peer {}",
-                ADDRESS_TO_LOGGABLE_CSTR(p_peer->addr));
+      log::warn("invalid codec index for peer {}", p_peer->addr);
       continue;
     }
     return p_sink;
@@ -198,19 +195,17 @@ BtaAvCoPeer* BtaAvCoPeerCache::FindPeer(tBTA_AV_HNDL bta_av_handle) {
 
 BtaAvCoPeer* BtaAvCoPeerCache::FindPeerAndUpdate(
     tBTA_AV_HNDL bta_av_handle, const RawAddress& peer_address) {
-  log::verbose("peer {} bta_av_handle = 0x{:x}",
-               ADDRESS_TO_LOGGABLE_CSTR(peer_address), bta_av_handle);
+  log::verbose("peer {} bta_av_handle = 0x{:x}", peer_address, bta_av_handle);
 
   BtaAvCoPeer* p_peer = FindPeer(bta_av_handle);
   if (p_peer == nullptr) {
     log::error("peer entry for BTA AV handle 0x{:x} peer {} not found",
-               bta_av_handle, ADDRESS_TO_LOGGABLE_CSTR(peer_address));
+               bta_av_handle, peer_address);
     return nullptr;
   }
 
   log::verbose("peer {} bta_av_handle = 0x{:x} previous address {}",
-               ADDRESS_TO_LOGGABLE_CSTR(peer_address), bta_av_handle,
-               ADDRESS_TO_LOGGABLE_CSTR(p_peer->addr));
+               peer_address, bta_av_handle, p_peer->addr);
   p_peer->addr = peer_address;
   return p_peer;
 }

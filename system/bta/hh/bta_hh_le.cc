@@ -1002,8 +1002,7 @@ static void bta_hh_le_encrypt_cback(const RawAddress* bd_addr,
  ******************************************************************************/
 void bta_hh_security_cmpl(tBTA_HH_DEV_CB* p_cb,
                           const tBTA_HH_DATA* /* p_buf */) {
-  log::verbose("addr:{}, status:{}", ADDRESS_TO_LOGGABLE_CSTR(p_cb->link_spec),
-               p_cb->status);
+  log::verbose("addr:{}, status:{}", p_cb->link_spec, p_cb->status);
   if (p_cb->status == BTA_HH_OK) {
     if (p_cb->hid_srvc.state < BTA_HH_SERVICE_DISCOVERED) {
       log::debug("No reports loaded, try to load");
@@ -1100,7 +1099,7 @@ static void bta_hh_clear_service_cache(tBTA_HH_DEV_CB* p_cb) {
  ******************************************************************************/
 void bta_hh_start_security(tBTA_HH_DEV_CB* p_cb,
                            const tBTA_HH_DATA* /* p_buf */) {
-  log::verbose("addr:{}", ADDRESS_TO_LOGGABLE_CSTR(p_cb->link_spec.addrt.bda));
+  log::verbose("addr:{}", p_cb->link_spec.addrt.bda);
   if (BTM_SecIsSecurityPending(p_cb->link_spec.addrt.bda)) {
     /* if security collision happened, wait for encryption done */
     p_cb->security_pending = true;
@@ -1109,23 +1108,20 @@ void bta_hh_start_security(tBTA_HH_DEV_CB* p_cb,
 
   /* if link has been encrypted */
   if (BTM_IsEncrypted(p_cb->link_spec.addrt.bda, BT_TRANSPORT_LE)) {
-    log::debug("addr:{} already encrypted",
-               ADDRESS_TO_LOGGABLE_CSTR(p_cb->link_spec.addrt.bda));
+    log::debug("addr:{} already encrypted", p_cb->link_spec.addrt.bda);
     p_cb->status = BTA_HH_OK;
     bta_hh_sm_execute(p_cb, BTA_HH_ENC_CMPL_EVT, NULL);
   }
   /* if bonded and link not encrypted */
   else if (BTM_IsLinkKeyKnown(p_cb->link_spec.addrt.bda, BT_TRANSPORT_LE)) {
-    log::debug("addr:{} bonded, not encrypted",
-               ADDRESS_TO_LOGGABLE_CSTR(p_cb->link_spec.addrt.bda));
+    log::debug("addr:{} bonded, not encrypted", p_cb->link_spec.addrt.bda);
     p_cb->status = BTA_HH_ERR_AUTH_FAILED;
     BTM_SetEncryption(p_cb->link_spec.addrt.bda, BT_TRANSPORT_LE,
                       bta_hh_le_encrypt_cback, NULL, BTM_BLE_SEC_ENCRYPT);
   }
   /* unbonded device, report security error here */
   else {
-    log::debug("addr:{} not bonded",
-               ADDRESS_TO_LOGGABLE_CSTR(p_cb->link_spec.addrt.bda));
+    log::debug("addr:{} not bonded", p_cb->link_spec.addrt.bda);
     p_cb->status = BTA_HH_ERR_AUTH_FAILED;
     bta_hh_clear_service_cache(p_cb);
     BTM_SetEncryption(p_cb->link_spec.addrt.bda, BT_TRANSPORT_LE,
@@ -1149,8 +1145,8 @@ void bta_hh_gatt_open(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_buf) {
   /* if received invalid callback data , ignore it */
   if (p_cb == NULL || p_data == NULL) return;
 
-  log::verbose("BTA_GATTC_OPEN_EVT bda={} status={}",
-               ADDRESS_TO_LOGGABLE_CSTR(p_data->remote_bda), p_data->status);
+  log::verbose("BTA_GATTC_OPEN_EVT bda={} status={}", p_data->remote_bda,
+               p_data->status);
 
   if (p_data->status == GATT_SUCCESS) {
     p_cb->hid_handle = bta_hh_le_get_le_dev_hdl(p_cb->index);
@@ -1195,15 +1191,14 @@ static void bta_hh_le_close(const tBTA_GATTC_CLOSE& gattc_data) {
 
   tBTA_HH_DEV_CB* p_cb = bta_hh_le_find_dev_cb_by_bda(link_spec);
   if (p_cb == nullptr) {
-    log::warn("unknown device:{}",
-              ADDRESS_TO_LOGGABLE_CSTR(gattc_data.remote_bda));
+    log::warn("unknown device:{}", gattc_data.remote_bda);
     return;
   }
 
   if (p_cb->hid_srvc.state == BTA_HH_SERVICE_CHANGED) {
     /* Service change would have already prompted a local disconnection */
     log::warn("Disconnected after service changed indication:{}",
-              ADDRESS_TO_LOGGABLE_CSTR(gattc_data.remote_bda));
+              gattc_data.remote_bda);
     return;
   }
 
@@ -1671,8 +1666,7 @@ void bta_hh_le_open_fail(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
       base::StringPrintf(
           "%s reason %s", bt_transport_text(p_cb->link_spec.transport).c_str(),
           gatt_disconnection_reason_text(le_close->reason).c_str()));
-  log::warn("Open failed for device:{}",
-            ADDRESS_TO_LOGGABLE_CSTR(p_cb->link_spec.addrt.bda));
+  log::warn("Open failed for device:{}", p_cb->link_spec.addrt.bda);
 
   /* open failure in the middle of service discovery, clear all services */
   if (p_cb->disc_active & BTA_HH_LE_DISC_HIDS) {
@@ -1744,8 +1738,7 @@ void bta_hh_gatt_close(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
       case GATT_CONN_TIMEOUT:
         log::debug(
             "gd_acl: add into acceptlist for reconnection device:{} reason:{}",
-            ADDRESS_TO_LOGGABLE_CSTR(p_cb->link_spec),
-            gatt_disconnection_reason_text(le_close->reason));
+            p_cb->link_spec, gatt_disconnection_reason_text(le_close->reason));
         // gd removes from bg list after successful connection
         // Correct the cached state to allow re-add to acceptlist.
         bta_hh_le_add_dev_bg_conn(p_cb);
@@ -1760,8 +1753,7 @@ void bta_hh_gatt_close(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
         log::debug(
             "gd_acl: SKIP add into acceptlist for reconnection device:{} "
             "reason:{}",
-            ADDRESS_TO_LOGGABLE_CSTR(p_cb->link_spec),
-            gatt_disconnection_reason_text(le_close->reason));
+            p_cb->link_spec, gatt_disconnection_reason_text(le_close->reason));
         break;
     }
   }
@@ -2118,7 +2110,7 @@ uint8_t bta_hh_le_add_device(tBTA_HH_DEV_CB* p_cb,
 void bta_hh_le_remove_dev_bg_conn(tBTA_HH_DEV_CB* p_dev_cb) {
   if (p_dev_cb->in_bg_conn) {
     log::debug("Removing from background connection device:{}",
-               ADDRESS_TO_LOGGABLE_CSTR(p_dev_cb->link_spec));
+               p_dev_cb->link_spec);
     p_dev_cb->in_bg_conn = false;
 
     BTA_GATTC_CancelOpen(bta_hh_cb.gatt_if, p_dev_cb->link_spec.addrt.bda,
@@ -2132,8 +2124,7 @@ void bta_hh_le_remove_dev_bg_conn(tBTA_HH_DEV_CB* p_dev_cb) {
 static void bta_hh_le_service_changed(tAclLinkSpec link_spec) {
   tBTA_HH_DEV_CB* p_cb = bta_hh_le_find_dev_cb_by_bda(link_spec);
   if (p_cb == nullptr) {
-    log::warn("Received close event with unknown device:{}",
-              ADDRESS_TO_LOGGABLE_CSTR(link_spec));
+    log::warn("Received close event with unknown device:{}", link_spec);
     return;
   }
 
@@ -2165,7 +2156,7 @@ static void bta_hh_le_service_changed(tAclLinkSpec link_spec) {
 static void bta_hh_le_service_discovery_done(tAclLinkSpec link_spec) {
   tBTA_HH_DEV_CB* p_cb = bta_hh_le_find_dev_cb_by_bda(link_spec);
   if (p_cb == nullptr) {
-    log::warn("unknown device:{}", ADDRESS_TO_LOGGABLE_CSTR(link_spec));
+    log::warn("unknown device:{}", link_spec);
     return;
   }
 
@@ -2315,7 +2306,7 @@ static bool bta_hh_le_iso_data_callback(const RawAddress& addr,
 
   tBTA_HH_DEV_CB* p_dev_cb = bta_hh_le_find_dev_cb_by_bda(link_spec);
   if (p_dev_cb == nullptr) {
-    log::warn("Device not connected: {}", ADDRESS_TO_LOGGABLE_CSTR(link_spec));
+    log::warn("Device not connected: {}", link_spec);
     return false;
   }
 

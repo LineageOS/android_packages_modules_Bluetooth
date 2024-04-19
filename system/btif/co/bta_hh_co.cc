@@ -271,8 +271,7 @@ static void uhid_fd_close(btif_hh_device_t* p_dev) {
     struct uhid_event ev = {};
     ev.type = UHID_DESTROY;
     uhid_write(p_dev->fd, &ev);
-    log::debug("Closing fd={}, addr:{}", p_dev->fd,
-               ADDRESS_TO_LOGGABLE_CSTR(p_dev->link_spec));
+    log::debug("Closing fd={}, addr:{}", p_dev->fd, p_dev->link_spec);
     close(p_dev->fd);
     p_dev->fd = -1;
   }
@@ -396,8 +395,7 @@ static void* btif_hh_poll_event_thread(void* arg) {
   }
 
   /* Todo: Disconnect if loop exited due to a failure */
-  log::info("Polling thread stopped for device {}",
-            ADDRESS_TO_LOGGABLE_CSTR(p_dev->link_spec));
+  log::info("Polling thread stopped for device {}", p_dev->link_spec);
   p_dev->hh_poll_thread_id = -1;
   p_dev->hh_keep_polling = 0;
   uhid_fd_close(p_dev);
@@ -445,8 +443,8 @@ bool bta_hh_co_open(uint8_t dev_handle, uint8_t sub_class,
         "Found an existing device with the same handle dev_status={}, "
         "device={}, attr_mask=0x{:04x}, sub_class=0x{:02x}, app_id={}, "
         "dev_handle={}",
-        p_dev->dev_status, ADDRESS_TO_LOGGABLE_CSTR(p_dev->link_spec),
-        p_dev->attr_mask, p_dev->sub_class, p_dev->app_id, dev_handle);
+        p_dev->dev_status, p_dev->link_spec, p_dev->attr_mask, p_dev->sub_class,
+        p_dev->app_id, dev_handle);
   } else {  // Use an empty slot
     p_dev = btif_hh_find_empty_dev();
     if (p_dev == nullptr) {
@@ -501,8 +499,7 @@ bool bta_hh_co_open(uint8_t dev_handle, uint8_t sub_class,
  ******************************************************************************/
 void bta_hh_co_close(btif_hh_device_t* p_dev) {
   log::info("Closing device handle={}, status={}, address={}",
-            p_dev->dev_handle, p_dev->dev_status,
-            ADDRESS_TO_LOGGABLE_CSTR(p_dev->link_spec));
+            p_dev->dev_handle, p_dev->dev_status, p_dev->link_spec);
 
   /* Clear the queues */
   fixed_queue_flush(p_dev->get_rpt_id_queue, osi_free);
@@ -797,8 +794,7 @@ void bta_hh_le_co_rpt_info(const tAclLinkSpec& link_spec,
                         idx * sizeof(tBTA_HH_RPT_CACHE_ENTRY));
     btif_config_set_int(bdstr, BTIF_STORAGE_KEY_HID_REPORT_VERSION,
                         BTA_HH_CACHE_REPORT_VERSION);
-    log::verbose("Saving report; dev={}, idx={}",
-                 ADDRESS_TO_LOGGABLE_CSTR(link_spec), idx);
+    log::verbose("Saving report; dev={}, idx={}", link_spec, idx);
   }
 }
 
@@ -842,8 +838,7 @@ tBTA_HH_RPT_CACHE_ENTRY* bta_hh_le_co_cache_load(const tAclLinkSpec& link_spec,
 
   *p_num_rpt = len / sizeof(tBTA_HH_RPT_CACHE_ENTRY);
 
-  log::verbose("Loaded {} reports; dev={}", *p_num_rpt,
-               ADDRESS_TO_LOGGABLE_CSTR(link_spec));
+  log::verbose("Loaded {} reports; dev={}", *p_num_rpt, link_spec);
 
   return sReportCache;
 }
@@ -866,5 +861,5 @@ void bta_hh_le_co_reset_rpt_cache(const tAclLinkSpec& link_spec,
 
   btif_config_remove(bdstr, BTIF_STORAGE_KEY_HID_REPORT);
   btif_config_remove(bdstr, BTIF_STORAGE_KEY_HID_REPORT_VERSION);
-  log::verbose("Reset cache for bda {}", ADDRESS_TO_LOGGABLE_CSTR(link_spec));
+  log::verbose("Reset cache for bda {}", link_spec);
 }

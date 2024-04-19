@@ -999,7 +999,7 @@ bool smp_sm_event(tSMP_CB* p_cb, tSMP_EVENT event, tSMP_INT_DATA* p_data) {
   tSMP_SM_TBL state_table;
   uint8_t action, entry, i;
 
-  log::debug("addr:{}", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
+  log::debug("addr:{}", p_cb->pairing_bda);
   if (p_cb->role >= 2) {
     log::error("Invalid role:{}", p_cb->role);
     return false;

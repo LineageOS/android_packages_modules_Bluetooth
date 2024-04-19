@@ -138,7 +138,7 @@ void LogMetricA2dpAudioUnderrunEvent(
   if (ret < 0) {
     log::warn(
         "Failed for {}, encoding_interval_nanos {}, num_missing_pcm_bytes {}, error {}",
-        ADDRESS_TO_LOGGABLE_CSTR(address),
+        address,
         std::to_string(encoding_interval_nanos),
         num_missing_pcm_bytes,
         ret);
@@ -169,7 +169,7 @@ void LogMetricA2dpAudioOverrunEvent(
     log::warn(
         "Failed to log for {}, encoding_interval_nanos {}, num_dropped_buffers {}, "
         "num_dropped_encoded_frames {}, num_dropped_encoded_bytes {}, error {}",
-        ADDRESS_TO_LOGGABLE_CSTR(address),
+        address,
         std::to_string(encoding_interval_nanos),
         num_dropped_buffers,
         num_dropped_encoded_frames,
@@ -188,7 +188,7 @@ void LogMetricA2dpPlaybackEvent(const Address& address, int playback_state, int 
   if (ret < 0) {
     log::warn(
         "Failed to log for {}, playback_state {}, audio_coding_mode {},error {}",
-        ADDRESS_TO_LOGGABLE_CSTR(address),
+        address,
         playback_state,
         audio_coding_mode,
         ret);
@@ -230,7 +230,7 @@ void LogMetricReadRssiResult(const Address& address, uint16_t handle, uint32_t c
   if (ret < 0) {
     log::warn(
         "Failed for {}, handle {}, status {}, rssi {} dBm, error {}",
-        ADDRESS_TO_LOGGABLE_CSTR(address),
+        address,
         handle,
         common::ToHexString(cmd_status),
         rssi,
@@ -254,7 +254,7 @@ void LogMetricReadFailedContactCounterResult(
   if (ret < 0) {
     log::warn(
         "Failed for {}, handle {}, status {}, failed_contact_counter {} packets, error {}",
-        ADDRESS_TO_LOGGABLE_CSTR(address),
+        address,
         handle,
         common::ToHexString(cmd_status),
         failed_contact_counter,
@@ -273,7 +273,7 @@ void LogMetricReadTxPowerLevelResult(
   if (ret < 0) {
     log::warn(
         "Failed for {}, handle {}, status {}, transmit_power_level {} packets, error {}",
-        ADDRESS_TO_LOGGABLE_CSTR(address),
+        address,
         handle,
         common::ToHexString(cmd_status),
         transmit_power_level,
@@ -292,7 +292,7 @@ void LogMetricSmpPairingEvent(
   if (ret < 0) {
     log::warn(
         "Failed for {}, smp_cmd {}, direction {}, smp_fail_reason {}, error {}",
-        ADDRESS_TO_LOGGABLE_CSTR(address),
+        address,
         common::ToHexString(smp_cmd),
         direction,
         common::ToHexString(smp_fail_reason),
@@ -326,7 +326,7 @@ void LogMetricClassicPairingEvent(
     log::warn(
         "Failed for {}, handle {}, hci_cmd {}, hci_event {}, cmd_status {}, reason {}, event_value "
         "{}, error {}",
-        ADDRESS_TO_LOGGABLE_CSTR(address),
+        address,
         handle,
         common::ToHexString(hci_cmd),
         common::ToHexString(hci_event),
@@ -357,7 +357,7 @@ void LogMetricSdpAttribute(
   if (ret < 0) {
     log::warn(
         "Failed for {}, protocol_uuid {}, attribute_id {}, error {}",
-        ADDRESS_TO_LOGGABLE_CSTR(address),
+        address,
         common::ToHexString(protocol_uuid),
         common::ToHexString(attribute_id),
         ret);
@@ -394,7 +394,7 @@ void LogMetricSocketConnectionState(
     log::warn(
         "Failed for {}, port {}, type {}, state {}, tx_bytes {}, rx_bytes {}, uid {}, server_port "
         "{}, socket_role {}, error {}",
-        ADDRESS_TO_LOGGABLE_CSTR(address),
+        address,
         port,
         type,
         connection_state,
@@ -439,7 +439,7 @@ void LogMetricManufacturerInfo(
         "Failed for {}, source_type {}, source_name {}, manufacturer {}, model {}, "
         "hardware_version {}, software_version {}, MAC address type {} MAC address prefix {} {} "
         "{}, error {}",
-        ADDRESS_TO_LOGGABLE_CSTR(address),
+        address,
         source_type,
         source_name,
         manufacturer,
@@ -463,7 +463,7 @@ void LogMetricBluetoothHalCrashReason(
   if (ret < 0) {
     log::warn(
         "Failed for {}, error_code {}, vendor_error_code {}, error {}",
-        ADDRESS_TO_LOGGABLE_CSTR(address),
+        address,
         common::ToHexString(error_code),
         common::ToHexString(vendor_error_code),
         ret);
@@ -589,7 +589,7 @@ void LogMetricBluetoothLEConnection(os::LEConnectionSessionOptions session_optio
     log::warn(
         "Failed BluetoothLeSessionConnected - Address: {}, ACL Connection State: {}, Origin Type:  "
         "{}",
-        ADDRESS_TO_LOGGABLE_CSTR(session_options.remote_address),
+        session_options.remote_address,
         common::ToHexString(session_options.acl_connection_state),
         common::ToHexString(session_options.origin_type));
   }

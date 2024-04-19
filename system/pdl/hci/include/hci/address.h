@@ -26,6 +26,7 @@
 #include <string>
 
 #include "common/interfaces/ILoggable.h"
+#include "os/logging/log_adapter.h"
 #include "packet/custom_field_fixed_size_interface.h"
 #include "storage/serializable.h"
 
@@ -110,3 +111,22 @@ struct hash<bluetooth::hci::Address> {
   }
 };
 }  // namespace std
+
+#if __has_include(<bluetooth/log.h>)
+#include <bluetooth/log.h>
+
+namespace fmt {
+template <>
+struct formatter<bluetooth::hci::Address> : formatter<std::string> {
+  template <class Context>
+  typename Context::iterator format(const bluetooth::hci::Address& address,
+                                    Context& ctx) const {
+    std::string repr = bluetooth::os::should_log_be_redacted()
+                           ? address.ToRedactedStringForLogging()
+                           : address.ToStringForLogging();
+    return fmt::formatter<std::string>::format(repr, ctx);
+  }
+};
+}  // namespace fmt
+
+#endif  // __has_include(<bluetooth/log.h>)

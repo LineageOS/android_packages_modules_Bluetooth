@@ -338,7 +338,7 @@ static void hidh_l2cif_connect_cfm(uint16_t l2cap_cid, uint16_t result) {
       ((l2cap_cid == p_hcon->intr_cid) &&
        (p_hcon->conn_state != HID_CONN_STATE_CONNECTING_INTR) &&
        (p_hcon->conn_state != HID_CONN_STATE_DISCONNECTING))) {
-    log::warn("HID-Host Rcvd unexpected conn cnf, CID 0x{:x} ", l2cap_cid);
+    log::warn("HID-Host Rcvd unexpected conn cnf, CID 0x{:x}", l2cap_cid);
     return;
   }
 

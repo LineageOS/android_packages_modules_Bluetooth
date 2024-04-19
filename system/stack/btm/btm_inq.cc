@@ -781,7 +781,7 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
                   tBTM_INQUIRY_STATE::BTM_INQUIRY_STARTED);
             } else {
               log::info("Inquiry failed to start status: {}",
-                        bluetooth::hci::ErrorCodeText(status).c_str());
+                        bluetooth::hci::ErrorCodeText(status));
             }
           }));
 
@@ -826,7 +826,7 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
 tBTM_STATUS BTM_ReadRemoteDeviceName(const RawAddress& remote_bda,
                                      tBTM_NAME_CMPL_CB* p_cb,
                                      tBT_TRANSPORT transport) {
-  log::verbose("bd addr {}", ADDRESS_TO_LOGGABLE_STR(remote_bda));
+  log::verbose("bd addr {}", remote_bda);
   /* Use LE transport when LE is the only available option */
   if (transport == BT_TRANSPORT_LE) {
     return btm_ble_read_remote_name(remote_bda, p_cb);
@@ -1761,8 +1761,7 @@ void btm_process_inq_complete(tHCI_STATUS status, uint8_t mode) {
       tBTM_INQUIRY_STATE::BTM_INQUIRY_COMPLETE);
 
   if (status != HCI_SUCCESS) {
-    log::warn("Received unexpected hci status:{}",
-              hci_error_code_text(status).c_str());
+    log::warn("Received unexpected hci status:{}", hci_error_code_text(status));
   }
 
   /* Ignore any stray or late complete messages if the inquiry is not active */
@@ -2230,12 +2229,12 @@ uint8_t BTM_GetEirUuidList(const uint8_t* p_eir, size_t eir_len,
   if (uuid_size == Uuid::kNumBytes16) {
     for (yy = 0; yy < *p_num_uuid; yy++) {
       STREAM_TO_UINT16(*(p_uuid16 + yy), p_uuid_data);
-      log::verbose("                     0x{:04X}", *(p_uuid16 + yy));
+      log::verbose("0x{:04X}", *(p_uuid16 + yy));
     }
   } else if (uuid_size == Uuid::kNumBytes32) {
     for (yy = 0; yy < *p_num_uuid; yy++) {
       STREAM_TO_UINT32(*(p_uuid32 + yy), p_uuid_data);
-      log::verbose("                     0x{:08X}", *(p_uuid32 + yy));
+      log::verbose("0x{:08X}", *(p_uuid32 + yy));
     }
   } else if (uuid_size == Uuid::kNumBytes128) {
     for (yy = 0; yy < *p_num_uuid; yy++) {
@@ -2243,7 +2242,7 @@ uint8_t BTM_GetEirUuidList(const uint8_t* p_eir, size_t eir_len,
       for (xx = 0; xx < Uuid::kNumBytes128; xx++)
         snprintf(buff + xx * 2, sizeof(buff) - xx * 2, "%02X",
                  *(p_uuid_list + yy * Uuid::kNumBytes128 + xx));
-      log::verbose("                     0x{}", buff);
+      log::verbose("0x{}", buff);
     }
   }
 

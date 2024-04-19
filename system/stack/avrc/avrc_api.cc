@@ -1447,10 +1447,9 @@ void AVRC_SaveControllerVersion(const RawAddress& bdaddr,
                  bdaddr.ToString(), BTIF_STORAGE_KEY_AVRCP_CONTROLLER_VERSION,
                  (const uint8_t*)&new_version, sizeof(new_version))) {
     log::info("store AVRC controller version {:x} for {} into config.",
-              new_version, ADDRESS_TO_LOGGABLE_CSTR(bdaddr));
+              new_version, bdaddr);
   } else {
-    log::warn("Failed to store AVRC controller version for {}",
-              ADDRESS_TO_LOGGABLE_CSTR(bdaddr));
+    log::warn("Failed to store AVRC controller version for {}", bdaddr);
   }
 }
 
