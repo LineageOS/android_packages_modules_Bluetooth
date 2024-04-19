@@ -222,12 +222,11 @@ static void ServerCleanup() {
   gatt_free();
 }
 
-static void FuzzAsServer(const uint8_t* data, size_t size) {
+static void FuzzAsServer(FuzzedDataProvider& fdp) {
   ServerInit();
   fixed_chnl_reg.pL2CA_FixedConn_Cb(L2CAP_ATT_CID, kDummyAddr, true, 0,
                                     BT_TRANSPORT_LE);
 
-  FuzzedDataProvider fdp(data, size);
   while (fdp.remaining_bytes() > 0) {
     auto size = fdp.ConsumeIntegralInRange<uint16_t>(0, kMaxPacketSize);
     auto bytes = fdp.ConsumeBytes<uint8_t>(size);
@@ -252,12 +251,11 @@ static void ClientCleanup() {
   gatt_free();
 }
 
-static void FuzzAsClient(const uint8_t* data, size_t size) {
+static void FuzzAsClient(FuzzedDataProvider& fdp) {
   ClientInit();
   fixed_chnl_reg.pL2CA_FixedConn_Cb(L2CAP_ATT_CID, kDummyAddr, true, 0,
                                     BT_TRANSPORT_LE);
 
-  FuzzedDataProvider fdp(data, size);
   while (fdp.remaining_bytes() > 0) {
     auto op = fdp.ConsumeIntegral<uint8_t>();
     switch (op) {
@@ -313,10 +311,16 @@ static void FuzzAsClient(const uint8_t* data, size_t size) {
   ClientCleanup();
 }
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* Data, size_t Size) {
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   auto fakes = std::make_unique<Fakes>();
 
-  FuzzAsServer(Data, Size);
-  FuzzAsClient(Data, Size);
+  FuzzedDataProvider fdp(data, size);
+
+  if (fdp.ConsumeBool()) {
+    FuzzAsServer(fdp);
+  } else {
+    FuzzAsClient(fdp);
+  }
+
   return 0;
 }
