@@ -42,3 +42,10 @@ flag {
     description: "Continue service discovery when API cancel device discovery called"
     bug: "329642681"
 }
+
+flag {
+    name: "separate_service_and_device_discovery"
+    namespace: "bluetooth"
+    description: "Separate service and device discovery state machines such that one does not block on another"
+    bug: "335732980"
+}
