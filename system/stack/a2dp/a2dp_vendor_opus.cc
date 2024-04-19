@@ -117,7 +117,7 @@ static const tA2DP_DECODER_INTERFACE a2dp_decoder_interface_opus = {
     a2dp_vendor_opus_decoder_suspend,       a2dp_vendor_opus_decoder_configure,
 };
 
-UNUSED_ATTR static tA2DP_STATUS A2DP_CodecInfoMatchesCapabilityOpus(
+static tA2DP_STATUS A2DP_CodecInfoMatchesCapabilityOpus(
     const tA2DP_OPUS_CIE* p_cap, const uint8_t* p_codec_info,
     bool is_peer_codec_info);
 
@@ -354,12 +354,12 @@ static tA2DP_STATUS A2DP_CodecInfoMatchesCapabilityOpus(
   return A2DP_SUCCESS;
 }
 
-bool A2DP_VendorUsesRtpHeaderOpus(UNUSED_ATTR bool content_protection_enabled,
-                                  UNUSED_ATTR const uint8_t* p_codec_info) {
+bool A2DP_VendorUsesRtpHeaderOpus(bool /* content_protection_enabled */,
+                                  const uint8_t* /* p_codec_info */) {
   return true;
 }
 
-const char* A2DP_VendorCodecNameOpus(UNUSED_ATTR const uint8_t* p_codec_info) {
+const char* A2DP_VendorCodecNameOpus(const uint8_t* /* p_codec_info */) {
   return "Opus";
 }
 
@@ -553,14 +553,14 @@ int A2DP_VendorGetFrameSizeOpus(const uint8_t* p_codec_info) {
   return -1;
 }
 
-bool A2DP_VendorGetPacketTimestampOpus(UNUSED_ATTR const uint8_t* p_codec_info,
+bool A2DP_VendorGetPacketTimestampOpus(const uint8_t* /* p_codec_info */,
                                        const uint8_t* p_data,
                                        uint32_t* p_timestamp) {
   *p_timestamp = *(const uint32_t*)p_data;
   return true;
 }
 
-bool A2DP_VendorBuildCodecHeaderOpus(UNUSED_ATTR const uint8_t* p_codec_info,
+bool A2DP_VendorBuildCodecHeaderOpus(const uint8_t* /* p_codec_info */,
                                      BT_HDR* p_buf,
                                      uint16_t frames_per_packet) {
   uint8_t* p;
@@ -646,12 +646,12 @@ bool A2DP_VendorAdjustCodecOpus(uint8_t* p_codec_info) {
 }
 
 btav_a2dp_codec_index_t A2DP_VendorSourceCodecIndexOpus(
-    UNUSED_ATTR const uint8_t* p_codec_info) {
+    const uint8_t* /* p_codec_info */) {
   return BTAV_A2DP_CODEC_INDEX_SOURCE_OPUS;
 }
 
 btav_a2dp_codec_index_t A2DP_VendorSinkCodecIndexOpus(
-    UNUSED_ATTR const uint8_t* p_codec_info) {
+    const uint8_t* /* p_codec_info */) {
   return BTAV_A2DP_CODEC_INDEX_SINK_OPUS;
 }
 
@@ -1319,8 +1319,8 @@ bool A2dpCodecConfigOpusSink::init() {
 bool A2dpCodecConfigOpusSink::useRtpHeaderMarkerBit() const { return false; }
 
 bool A2dpCodecConfigOpusSink::updateEncoderUserConfig(
-    UNUSED_ATTR const tA2DP_ENCODER_INIT_PEER_PARAMS* p_peer_params,
-    UNUSED_ATTR bool* p_restart_input, UNUSED_ATTR bool* p_restart_output,
-    UNUSED_ATTR bool* p_config_updated) {
+    const tA2DP_ENCODER_INIT_PEER_PARAMS* /* p_peer_params */,
+    bool* /* p_restart_input */, bool* /* p_restart_output */,
+    bool* /* p_config_updated */) {
   return false;
 }

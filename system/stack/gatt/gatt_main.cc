@@ -762,8 +762,8 @@ static void gatt_le_data_ind(uint16_t chan, const RawAddress& bd_addr,
  *
  ******************************************************************************/
 static void gatt_l2cif_connect_ind_cback(const RawAddress& bd_addr,
-                                         uint16_t lcid,
-                                         UNUSED_ATTR uint16_t psm, uint8_t id) {
+                                         uint16_t lcid, uint16_t /* psm */,
+                                         uint8_t id) {
   uint8_t result = L2CAP_CONN_OK;
   log::info("Connection indication cid = {}", lcid);
 

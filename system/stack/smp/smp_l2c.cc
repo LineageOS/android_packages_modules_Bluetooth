@@ -30,7 +30,6 @@
 #include "internal_include/bt_target.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
-#include "osi/include/osi.h"  // UNUSED_ATTR
 #include "smp_int.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/include/bt_hdr.h"
@@ -92,9 +91,9 @@ void smp_l2cap_if_init(void) {
  *                      connected (conn = true)/disconnected (conn = false).
  *
  ******************************************************************************/
-static void smp_connect_callback(UNUSED_ATTR uint16_t channel,
+static void smp_connect_callback(uint16_t /* channel */,
                                  const RawAddress& bd_addr, bool connected,
-                                 UNUSED_ATTR uint16_t reason,
+                                 uint16_t /* reason */,
                                  tBT_TRANSPORT transport) {
   tSMP_CB* p_cb = &smp_cb;
   tSMP_INT_DATA int_data;

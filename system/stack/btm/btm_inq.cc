@@ -588,7 +588,7 @@ void BTM_CancelInquiry(void) {
   }
 }
 
-static void btm_classic_inquiry_timeout(UNUSED_ATTR void* data) {
+static void btm_classic_inquiry_timeout(void* /* data */) {
   // When the Inquiry Complete event is received, the classic inquiry
   // will be marked as completed. Therefore, we only need to mark
   // the BLE inquiry as completed here to stop processing BLE results
@@ -2001,7 +2001,7 @@ void btm_process_remote_name(const RawAddress* bda, const BD_NAME bdn,
   }
 }
 
-void btm_inq_remote_name_timer_timeout(UNUSED_ATTR void* data) {
+void btm_inq_remote_name_timer_timeout(void* /* data */) {
   btm_inq_rmt_name_failed_cancelled();
 }
 

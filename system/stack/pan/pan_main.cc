@@ -33,7 +33,6 @@
 
 #include "os/log.h"
 #include "osi/include/allocator.h"
-#include "osi/include/osi.h"  // UNUSED_ATTR
 #include "stack/include/bnep_api.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_uuid16.h"
@@ -283,8 +282,7 @@ void pan_conn_ind_cb(uint16_t handle, const RawAddress& p_bda,
  * Returns          none
  *
  ******************************************************************************/
-void pan_connect_state_cb(uint16_t handle,
-                          UNUSED_ATTR const RawAddress& rem_bda,
+void pan_connect_state_cb(uint16_t handle, const RawAddress& /* rem_bda */,
                           tBNEP_RESULT result, bool is_role_change) {
   tPAN_CONN* pcb;
   uint8_t peer_role;

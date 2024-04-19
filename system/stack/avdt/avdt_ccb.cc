@@ -491,7 +491,7 @@ void AvdtpCcb::Allocate(const RawAddress& peer_address) {
  * Returns          void.
  *
  ******************************************************************************/
-void avdt_ccb_dealloc(AvdtpCcb* p_ccb, UNUSED_ATTR tAVDT_CCB_EVT* p_data) {
+void avdt_ccb_dealloc(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* /* p_data */) {
   log::verbose("deallocated (index {}) peer={} p_ccb={}",
                avdt_ccb_to_idx(p_ccb), p_ccb->peer_addr, fmt::ptr(p_ccb));
   p_ccb->ResetCcb();

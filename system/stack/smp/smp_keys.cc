@@ -143,7 +143,7 @@ void smp_proc_passkey(tSMP_CB* p_cb, uint64_t rand) {
  * Returns          void
  *
  ******************************************************************************/
-void smp_generate_passkey(tSMP_CB* p_cb, UNUSED_ATTR tSMP_INT_DATA* p_data) {
+void smp_generate_passkey(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   log::verbose("addr:{}", p_cb->pairing_bda);
   /* generate MRand or SRand */
   send_ble_rand(BindOnce(&smp_proc_passkey, p_cb));
@@ -160,7 +160,7 @@ void smp_generate_passkey(tSMP_CB* p_cb, UNUSED_ATTR tSMP_INT_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-void smp_generate_stk(tSMP_CB* p_cb, UNUSED_ATTR tSMP_INT_DATA* p_data) {
+void smp_generate_stk(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   Octet16 output;
 
   log::verbose("addr:{}", p_cb->pairing_bda);
@@ -198,7 +198,7 @@ void smp_compute_csrk(uint16_t div, tSMP_CB* p_cb) {
 /**
  * This function is called to calculate CSRK, starting with DIV generation.
  */
-void smp_generate_csrk(tSMP_CB* p_cb, UNUSED_ATTR tSMP_INT_DATA* p_data) {
+void smp_generate_csrk(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   bool div_status;
 
   log::verbose("addr:{}", p_cb->pairing_bda);
@@ -404,7 +404,7 @@ static void smp_generate_confirm(tSMP_CB* p_cb) {
  *
  ******************************************************************************/
 void smp_generate_srand_mrand_confirm(tSMP_CB* p_cb,
-                                      UNUSED_ATTR tSMP_INT_DATA* p_data) {
+                                      tSMP_INT_DATA* /* p_data */) {
   log::verbose("addr:{}", p_cb->pairing_bda);
   /* generate MRand or SRand */
   send_ble_rand(BindOnce(
@@ -434,7 +434,7 @@ void smp_generate_srand_mrand_confirm(tSMP_CB* p_cb,
  * Returns          void
  *
  ******************************************************************************/
-void smp_generate_compare(tSMP_CB* p_cb, UNUSED_ATTR tSMP_INT_DATA* p_data) {
+void smp_generate_compare(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   log::verbose("addr:{}", p_cb->pairing_bda);
   smp_debug_print_nbyte_little_endian(p_cb->rrand, "peer rand", 16);
   Octet16 output;
@@ -543,7 +543,7 @@ static void smp_generate_ltk_cont(uint16_t div, tSMP_CB* p_cb) {
  * Returns          void
  *
  ******************************************************************************/
-void smp_generate_ltk(tSMP_CB* p_cb, UNUSED_ATTR tSMP_INT_DATA* p_data) {
+void smp_generate_ltk(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   log::verbose("addr:{}", p_cb->pairing_bda);
 
   if (smp_get_br_state() == SMP_BR_STATE_BOND_PENDING) {
