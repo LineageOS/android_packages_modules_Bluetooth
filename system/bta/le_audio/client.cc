@@ -1892,16 +1892,24 @@ class LeAudioClientImpl : public LeAudioClient {
         return;
       }
 
+      if (group->IsInTransition()) {
+        /* Group is in transition.
+         * if group is going to stream, schedule attaching the device to the
+         * group.
+         */
+
+        if (group->GetTargetState() ==
+            AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
+          AttachToStreamingGroupIfNeeded(leAudioDevice);
+        }
+        return;
+      }
+
       if (!group->IsStreaming()) {
         /* Group is not streaming. Device does not have to be attach to the
          * stream, and we can update context availability for the group
          */
         UpdateLocationsAndContextsAvailability(group);
-        return;
-      }
-
-      if (group->IsInTransition()) {
-        /* Group is in transition, do not take any actions now.*/
         return;
       }
 
