@@ -40,6 +40,7 @@ filegroup {
         "dm/bta_dm_cfg.cc",
         "dm/bta_dm_ci.cc",
         "dm/bta_dm_disc.cc",
+        "dm/bta_dm_disc_legacy.cc",
         "dm/bta_dm_gatt_client.cc",
         "dm/bta_dm_main.cc",
         "dm/bta_dm_pm.cc",
