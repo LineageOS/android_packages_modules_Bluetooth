@@ -4811,6 +4811,12 @@ TEST_F(UnicastTest, GroupSetActive) {
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnAudioGroupSelectableCodecConf(group_id, _, _))
       .Times(1);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnGroupStatus(group_id, GroupStatus::ACTIVE))
+      .Times(1);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnGroupStatus(_, GroupStatus::INACTIVE))
+      .Times(0);
   EXPECT_CALL(*mock_le_audio_source_hal_client_, Start(_, _, _)).Times(1);
   EXPECT_CALL(*mock_le_audio_sink_hal_client_, Start(_, _, _)).Times(1);
   LeAudioClient::Get()->GroupSetActive(group_id);
