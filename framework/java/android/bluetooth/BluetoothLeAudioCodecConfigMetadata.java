@@ -29,7 +29,6 @@ import static android.bluetooth.BluetoothLeAudioCodecConfig.SAMPLE_RATE_8000;
 import static android.bluetooth.BluetoothLeAudioCodecConfig.SAMPLE_RATE_NONE;
 import static android.bluetooth.BluetoothLeAudioCodecConfig.SampleRate;
 
-import android.annotation.FlaggedApi;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.SystemApi;
@@ -123,6 +122,17 @@ public final class BluetoothLeAudioCodecConfigMetadata implements Parcelable {
                 mFrameDuration,
                 mOctetsPerFrame,
                 Arrays.hashCode(mRawMetadata));
+    }
+
+    @Override
+    public String toString() {
+        return "BluetoothLeAudioCodecConfigMetadata{"
+                + ("audioLocation=" + mAudioLocation)
+                + (", sampleRate=" + mSampleRate)
+                + (", frameDuration=" + mFrameDuration)
+                + (", octetsPerFrame=" + mOctetsPerFrame)
+                + (", rawMetadata=" + Arrays.toString(mRawMetadata))
+                + '}';
     }
 
     /**
