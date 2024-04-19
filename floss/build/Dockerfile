@@ -61,7 +61,7 @@ RUN apt-get update && \
 # Next install the Rust toolchain. Download the toolchain to the local folder
 # using curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs
 ADD rustup/rustup.sh /tmp
-RUN /tmp/rustup.sh -y --default-toolchain 1.68.2
+RUN /tmp/rustup.sh -y --default-toolchain 1.77.1
 
 # Add .cargo/bin to $PATH
 ENV PATH="/root/.cargo/bin:${PATH}"
