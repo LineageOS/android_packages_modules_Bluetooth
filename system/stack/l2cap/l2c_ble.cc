@@ -73,9 +73,7 @@ void L2CA_Consolidate(const RawAddress& identity_addr, const RawAddress& rpa) {
     return;
   }
 
-  log::info("consolidating l2c_lcb record {} -> {}",
-            ADDRESS_TO_LOGGABLE_CSTR(rpa),
-            ADDRESS_TO_LOGGABLE_CSTR(identity_addr));
+  log::info("consolidating l2c_lcb record {} -> {}", rpa, identity_addr);
   p_lcb->remote_bd_addr = identity_addr;
 }
 
@@ -1127,8 +1125,7 @@ void l2cble_process_data_length_change_event(uint16_t handle,
       log::debug(
           "Received data length change event for device:{} tx_data_len:{} => "
           "{}",
-          ADDRESS_TO_LOGGABLE_CSTR(p_lcb->remote_bd_addr), p_lcb->tx_data_len,
-          tx_data_len);
+          p_lcb->remote_bd_addr, p_lcb->tx_data_len, tx_data_len);
       BTM_LogHistory(kBtmLogTag, p_lcb->remote_bd_addr, "LE Data length change",
                      base::StringPrintf("tx_octets:%hu => %hu",
                                         p_lcb->tx_data_len, tx_data_len));
@@ -1137,13 +1134,13 @@ void l2cble_process_data_length_change_event(uint16_t handle,
       log::debug(
           "Received duplicated data length change event for device:{} "
           "tx_data_len:{}",
-          ADDRESS_TO_LOGGABLE_CSTR(p_lcb->remote_bd_addr), tx_data_len);
+          p_lcb->remote_bd_addr, tx_data_len);
     }
   } else {
     log::warn(
         "Received illegal data length change event for device:{} "
         "tx_data_len:{}",
-        ADDRESS_TO_LOGGABLE_CSTR(p_lcb->remote_bd_addr), tx_data_len);
+        p_lcb->remote_bd_addr, tx_data_len);
   }
   /* ignore rx_data len for now */
 }
@@ -1259,8 +1256,7 @@ void l2cble_sec_comp(const RawAddress* bda, tBT_TRANSPORT transport,
   uint8_t sec_act;
 
   if (!p_lcb) {
-    log::warn("security complete for unknown device. bda={}",
-              ADDRESS_TO_LOGGABLE_CSTR(*bda));
+    log::warn("security complete for unknown device. bda={}", *bda);
     return;
   }
 

@@ -109,10 +109,7 @@ class PeriodicSyncManager {
         "Invalid address type {}",
         AddressTypeText(address_type));
     periodic_syncs_.emplace_back(request);
-    log::debug(
-        "address = {}, sid = {}",
-        ADDRESS_TO_LOGGABLE_CSTR(request.address_with_type),
-        request.advertiser_sid);
+    log::debug("address = {}, sid = {}", request.address_with_type, request.advertiser_sid);
     pending_sync_requests_.emplace_back(
         request.advertiser_sid, request.address_with_type, skip, sync_timeout, handler_);
     HandleNextRequest();
@@ -228,7 +225,7 @@ class PeriodicSyncManager {
           OpCodeText(view.GetCommandOpCode()),
           ErrorCodeText(status),
           request.advertiser_sid,
-          ADDRESS_TO_LOGGABLE_CSTR(request.address_with_type));
+          request.address_with_type);
 
       uint8_t adv_sid = request.advertiser_sid;
       AddressWithType address_with_type = request.address_with_type;
@@ -263,7 +260,7 @@ class PeriodicSyncManager {
           OpCodeText(view.GetCommandOpCode()),
           ErrorCodeText(status),
           request.advertiser_sid,
-          ADDRESS_TO_LOGGABLE_CSTR(request.address_with_type));
+          request.address_with_type);
       AdvanceRequest();
     }
   }
@@ -302,12 +299,10 @@ class PeriodicSyncManager {
     log::assert_that(event_view.IsValid(), "assert failed: event_view.IsValid()");
     log::debug(
         "[PSync]: status={}, sync_handle={}, address={}, s_id={}, address_type={}, adv_phy={}, "
-        "adv_interval={}, "
-        "clock_acc={}",
+        "adv_interval={}, clock_acc={}",
         (uint16_t)event_view.GetStatus(),
         event_view.GetSyncHandle(),
-        ADDRESS_TO_LOGGABLE_CSTR(AddressWithType(
-            event_view.GetAdvertiserAddress(), event_view.GetAdvertiserAddressType())),
+        AddressWithType(event_view.GetAdvertiserAddress(), event_view.GetAdvertiserAddressType()),
         event_view.GetAdvertisingSid(),
         (uint16_t)event_view.GetAdvertiserAddressType(),
         (uint16_t)event_view.GetAdvertiserPhy(),
@@ -431,7 +426,7 @@ class PeriodicSyncManager {
         event_view.GetSyncHandle(),
         event_view.GetAdvertisingSid(),
         (uint8_t)event_view.GetAdvertiserAddressType(),
-        ADDRESS_TO_LOGGABLE_CSTR(event_view.GetAdvertiserAddress()),
+        event_view.GetAdvertiserAddress(),
         advertiser_phy,
         event_view.GetPeriodicAdvertisingInterval(),
         (uint8_t)event_view.GetAdvertiserClockAccuracy());
@@ -450,9 +445,7 @@ class PeriodicSyncManager {
   void OnStartSyncTimeout() {
     auto& request = pending_sync_requests_.front();
     log::warn(
-        "sync timeout SID={:04X}, bd_addr={}",
-        request.advertiser_sid,
-        ADDRESS_TO_LOGGABLE_CSTR(request.address_with_type));
+        "sync timeout SID={:04X}, bd_addr={}", request.advertiser_sid, request.address_with_type);
     uint8_t adv_sid = request.advertiser_sid;
     AddressWithType address_with_type = request.address_with_type;
     auto sync = GetSyncFromAddressWithTypeAndSid(address_with_type, adv_sid);
@@ -583,7 +576,7 @@ class PeriodicSyncManager {
     log::info(
         "executing sync request SID={:04X}, bd_addr={}",
         request.advertiser_sid,
-        ADDRESS_TO_LOGGABLE_CSTR(request.address_with_type));
+        request.address_with_type);
     if (request.busy) {
       log::info("Request is already busy");
       return;
@@ -613,7 +606,7 @@ class PeriodicSyncManager {
         log::info(
             "removing connection request SID={:04X}, bd_addr={}, busy={}",
             it->advertiser_sid,
-            ADDRESS_TO_LOGGABLE_CSTR(it->address_with_type),
+            it->address_with_type,
             it->busy);
         it = pending_sync_requests_.erase(it);
       } else {

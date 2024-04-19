@@ -401,7 +401,7 @@ BT_HDR* attp_build_sr_msg(tGATT_TCB& tcb, uint8_t op_code, tGATT_SR_MSG* p_msg,
   if (payload_size == 0) {
     log::error(
         "Cannot send response (op: 0x{:02x}) due to payload size = 0, {}",
-        op_code, ADDRESS_TO_LOGGABLE_CSTR(tcb.peer_bda));
+        op_code, tcb.peer_bda);
     return nullptr;
   }
 
@@ -435,7 +435,7 @@ BT_HDR* attp_build_sr_msg(tGATT_TCB& tcb, uint8_t op_code, tGATT_SR_MSG* p_msg,
       return attp_build_mtu_cmd(op_code, p_msg->mtu);
 
     default:
-      log::fatal("attp_build_sr_msg: unknown op code = {}", +op_code);
+      log::fatal("attp_build_sr_msg: unknown op code = {}", op_code);
       return nullptr;
   }
 }
@@ -489,8 +489,8 @@ static tGATT_STATUS attp_cl_send_cmd(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
       return GATT_CMD_STARTED;
     }
 
-    log::error("{}, cid 0x{:02x} already disconnected",
-               ADDRESS_TO_LOGGABLE_CSTR(tcb.peer_bda), p_clcb->cid);
+    log::error("{}, cid 0x{:02x} already disconnected", tcb.peer_bda,
+               p_clcb->cid);
     return GATT_INTERNAL_ERROR;
   }
 
@@ -515,7 +515,7 @@ static tGATT_STATUS attp_cl_send_cmd(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
   if (!gatt_cmd_enq(tcb, p_clcb, false, cmd_code, NULL)) {
     log::error(
         "Could not queue sent request. {}, cid 0x{:02x} already disconnected",
-        ADDRESS_TO_LOGGABLE_CSTR(tcb.peer_bda), p_clcb->cid);
+        tcb.peer_bda, p_clcb->cid);
     return GATT_INTERNAL_ERROR;
   }
 
@@ -580,7 +580,7 @@ tGATT_STATUS attp_send_cl_msg(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
   uint16_t payload_size = gatt_tcb_get_payload_size(tcb, p_clcb->cid);
   if (payload_size == 0) {
     log::error("Cannot send request (op: 0x{:02x}) due to payload size = 0, {}",
-               op_code, ADDRESS_TO_LOGGABLE_CSTR(tcb.peer_bda));
+               op_code, tcb.peer_bda);
     return GATT_NO_RESOURCES;
   }
 

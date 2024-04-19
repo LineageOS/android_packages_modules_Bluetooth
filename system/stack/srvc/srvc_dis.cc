@@ -454,8 +454,7 @@ bool DIS_ReadDISInfo(const RawAddress& peer_bda, tDIS_READ_CBACK* p_cback,
 
   dis_cb.request_mask = mask;
 
-  log::verbose("BDA: {} cl_read_uuid: 0x{:04x}",
-               ADDRESS_TO_LOGGABLE_STR(peer_bda),
+  log::verbose("BDA: {} cl_read_uuid: 0x{:04x}", peer_bda,
                dis_attr_uuid[dis_cb.dis_read_uuid_idx]);
 
   if (!GATT_GetConnIdIfConnected(srvc_eng_cb.gatt_if, peer_bda, &conn_id,

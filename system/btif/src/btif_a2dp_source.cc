@@ -389,7 +389,7 @@ static void btif_a2dp_source_startup_delayed() {
 
 bool btif_a2dp_source_start_session(const RawAddress& peer_address,
                                     std::promise<void> peer_ready_promise) {
-  log::info("peer_address={} state={}", ADDRESS_TO_LOGGABLE_STR(peer_address),
+  log::info("peer_address={} state={}", peer_address,
             btif_a2dp_source_cb.StateStr());
   btif_a2dp_source_setup_codec(peer_address);
   if (btif_a2dp_source_thread.DoInThread(
@@ -399,8 +399,7 @@ bool btif_a2dp_source_start_session(const RawAddress& peer_address,
     return true;
   } else {
     // cannot set promise but triggers crash
-    log::fatal("peer_address={} state={} fails to context switch",
-               ADDRESS_TO_LOGGABLE_STR(peer_address),
+    log::fatal("peer_address={} state={} fails to context switch", peer_address,
                btif_a2dp_source_cb.StateStr());
     return false;
   }
@@ -408,7 +407,7 @@ bool btif_a2dp_source_start_session(const RawAddress& peer_address,
 
 static void btif_a2dp_source_start_session_delayed(
     const RawAddress& peer_address, std::promise<void> peer_ready_promise) {
-  log::info("peer_address={} state={}", ADDRESS_TO_LOGGABLE_STR(peer_address),
+  log::info("peer_address={} state={}", peer_address,
             btif_a2dp_source_cb.StateStr());
   if (btif_a2dp_source_cb.State() != BtifA2dpSource::kStateRunning) {
     log::error("A2DP Source media task is not running");
@@ -432,9 +431,7 @@ bool btif_a2dp_source_restart_session(const RawAddress& old_peer_address,
                                       const RawAddress& new_peer_address,
                                       std::promise<void> peer_ready_promise) {
   log::info("old_peer_address={} new_peer_address={} state={}",
-            ADDRESS_TO_LOGGABLE_STR(old_peer_address),
-            ADDRESS_TO_LOGGABLE_STR(new_peer_address),
-            btif_a2dp_source_cb.StateStr());
+            old_peer_address, new_peer_address, btif_a2dp_source_cb.StateStr());
 
   log::assert_that(!new_peer_address.IsEmpty(),
                    "assert failed: !new_peer_address.IsEmpty()");
@@ -459,7 +456,7 @@ bool btif_a2dp_source_restart_session(const RawAddress& old_peer_address,
 }
 
 bool btif_a2dp_source_end_session(const RawAddress& peer_address) {
-  log::info("peer_address={} state={}", ADDRESS_TO_LOGGABLE_CSTR(peer_address),
+  log::info("peer_address={} state={}", peer_address,
             btif_a2dp_source_cb.StateStr());
   btif_a2dp_source_thread.DoInThread(
       FROM_HERE,
@@ -470,7 +467,7 @@ bool btif_a2dp_source_end_session(const RawAddress& peer_address) {
 
 static void btif_a2dp_source_end_session_delayed(
     const RawAddress& peer_address) {
-  log::info("peer_address={} state={}", ADDRESS_TO_LOGGABLE_CSTR(peer_address),
+  log::info("peer_address={} state={}", peer_address,
             btif_a2dp_source_cb.StateStr());
   if ((btif_a2dp_source_cb.State() == BtifA2dpSource::kStateRunning) ||
       (btif_a2dp_source_cb.State() == BtifA2dpSource::kStateShuttingDown)) {
@@ -558,7 +555,7 @@ bool btif_a2dp_source_is_streaming(void) {
 }
 
 static void btif_a2dp_source_setup_codec(const RawAddress& peer_address) {
-  log::info("peer_address={} state={}", ADDRESS_TO_LOGGABLE_CSTR(peer_address),
+  log::info("peer_address={} state={}", peer_address,
             btif_a2dp_source_cb.StateStr());
 
   // Check to make sure the platform has 8 bits/byte since
@@ -573,7 +570,7 @@ static void btif_a2dp_source_setup_codec(const RawAddress& peer_address) {
 
 static void btif_a2dp_source_setup_codec_delayed(
     const RawAddress& peer_address) {
-  log::info("peer_address={} state={}", ADDRESS_TO_LOGGABLE_CSTR(peer_address),
+  log::info("peer_address={} state={}", peer_address,
             btif_a2dp_source_cb.StateStr());
 
   tA2DP_ENCODER_INIT_PEER_PARAMS peer_params;
@@ -581,13 +578,13 @@ static void btif_a2dp_source_setup_codec_delayed(
   if (IS_FLAG_ENABLED(a2dp_concurrent_source_sink)) {
     if (!bta_av_co_set_active_source_peer(peer_address)) {
       log::error("Cannot stream audio: cannot set active peer to {}",
-                 ADDRESS_TO_LOGGABLE_CSTR(peer_address));
+                 peer_address);
       return;
     }
   } else {
     if (!bta_av_co_set_active_peer(peer_address)) {
       log::error("Cannot stream audio: cannot set active peer to {}",
-                 ADDRESS_TO_LOGGABLE_CSTR(peer_address));
+                 peer_address);
       return;
     }
   }
@@ -650,8 +647,7 @@ void btif_a2dp_source_encoder_user_config_update_req(
     const RawAddress& peer_address,
     const std::vector<btav_a2dp_codec_config_t>& codec_user_preferences,
     std::promise<void> peer_ready_promise) {
-  log::info("peer_address={} state={} {} codec_preference(s)",
-            ADDRESS_TO_LOGGABLE_STR(peer_address),
+  log::info("peer_address={} state={} {} codec_preference(s)", peer_address,
             btif_a2dp_source_cb.StateStr(), codec_user_preferences.size());
   if (!btif_a2dp_source_thread.DoInThread(
           FROM_HERE,
@@ -659,8 +655,7 @@ void btif_a2dp_source_encoder_user_config_update_req(
                          peer_address, codec_user_preferences,
                          std::move(peer_ready_promise)))) {
     // cannot set promise but triggers crash
-    log::fatal("peer_address={} state={} fails to context switch",
-               ADDRESS_TO_LOGGABLE_STR(peer_address),
+    log::fatal("peer_address={} state={} fails to context switch", peer_address,
                btif_a2dp_source_cb.StateStr());
   }
 }
@@ -677,7 +672,7 @@ static void btif_a2dp_source_encoder_user_config_update_event(
     if (success) {
       log::info(
           "peer_address={} state={} codec_preference=[{}] restart_output={}",
-          ADDRESS_TO_LOGGABLE_STR(peer_address), btif_a2dp_source_cb.StateStr(),
+          peer_address, btif_a2dp_source_cb.StateStr(),
           codec_user_config.ToString(), (restart_output ? "true" : "false"));
       break;
     }
@@ -1397,8 +1392,7 @@ static void btm_read_rssi_cb(void* data) {
                        bluetooth::common::kUnknownConnectionHandle,
                        result->hci_status, result->rssi);
 
-  log::warn("device: {}, rssi: {}", ADDRESS_TO_LOGGABLE_CSTR(result->rem_bda),
-            result->rssi);
+  log::warn("device: {}, rssi: {}", result->rem_bda, result->rssi);
 }
 
 static void btm_read_failed_contact_counter_cb(void* data) {
@@ -1418,8 +1412,7 @@ static void btm_read_failed_contact_counter_cb(void* data) {
       result->rem_bda, bluetooth::common::kUnknownConnectionHandle,
       result->hci_status, result->failed_contact_counter);
 
-  log::warn("device: {}, Failed Contact Counter: {}",
-            ADDRESS_TO_LOGGABLE_CSTR(result->rem_bda),
+  log::warn("device: {}, Failed Contact Counter: {}", result->rem_bda,
             result->failed_contact_counter);
 }
 
@@ -1438,6 +1431,5 @@ static void btm_read_tx_power_cb(void* data) {
                                  bluetooth::common::kUnknownConnectionHandle,
                                  result->hci_status, result->tx_power);
 
-  log::warn("device: {}, Tx Power: {}",
-            ADDRESS_TO_LOGGABLE_CSTR(result->rem_bda), result->tx_power);
+  log::warn("device: {}, Tx Power: {}", result->rem_bda, result->tx_power);
 }

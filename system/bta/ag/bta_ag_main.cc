@@ -364,13 +364,13 @@ void bta_ag_collision_cback(tBTA_SYS_CONN_STATUS /* status */, tBTA_SYS_ID id,
   if (p_scb && (p_scb->state == BTA_AG_OPENING_ST)) {
     if (id == BTA_ID_SYS) {
       log::warn("AG found collision (ACL) for handle {} device {}",
-                unsigned(handle), ADDRESS_TO_LOGGABLE_STR(peer_addr));
+                unsigned(handle), peer_addr);
     } else if (id == BTA_ID_AG) {
       log::warn("AG found collision (RFCOMM) for handle {} device {}",
-                unsigned(handle), ADDRESS_TO_LOGGABLE_STR(peer_addr));
+                unsigned(handle), peer_addr);
     } else {
       log::warn("AG found collision (UNKNOWN) for handle {} device {}",
-                unsigned(handle), ADDRESS_TO_LOGGABLE_STR(peer_addr));
+                unsigned(handle), peer_addr);
     }
     bta_ag_sm_execute(p_scb, BTA_AG_COLLISION_EVT, tBTA_AG_DATA::kEmpty);
   }
@@ -388,14 +388,13 @@ void bta_ag_collision_cback(tBTA_SYS_CONN_STATUS /* status */, tBTA_SYS_ID id,
  ******************************************************************************/
 void bta_ag_resume_open(tBTA_AG_SCB* p_scb) {
   if (p_scb->state == BTA_AG_INIT_ST) {
-    log::info("Resume connection to {}, handle{}",
-              ADDRESS_TO_LOGGABLE_STR(p_scb->peer_addr),
+    log::info("Resume connection to {}, handle{}", p_scb->peer_addr,
               bta_ag_scb_to_idx(p_scb));
     tBTA_AG_DATA open_data = {.api_open = {.bd_addr = p_scb->peer_addr}};
     bta_ag_sm_execute(p_scb, BTA_AG_API_OPEN_EVT, open_data);
   } else {
-    log::verbose("device {} is already in state {}",
-                 ADDRESS_TO_LOGGABLE_STR(p_scb->peer_addr), p_scb->state);
+    log::verbose("device {} is already in state {}", p_scb->peer_addr,
+                 p_scb->state);
   }
 }
 
@@ -748,7 +747,7 @@ void bta_ag_sm_execute(tBTA_AG_SCB* p_scb, uint16_t event,
   log::debug(
       "Execute AG event handle:0x{:04x} bd_addr:{} state:{}[0x{:02x}] "
       "event:{}[0x{:04x}] result:{}[0x{:02x}]",
-      bta_ag_scb_to_idx(p_scb), ADDRESS_TO_LOGGABLE_CSTR(p_scb->peer_addr),
+      bta_ag_scb_to_idx(p_scb), p_scb->peer_addr,
       bta_ag_state_str(p_scb->state), p_scb->state, bta_ag_evt_str(event),
       event, bta_ag_res_str(data.api_result.result), data.api_result.result);
 
@@ -759,7 +758,7 @@ void bta_ag_sm_execute(tBTA_AG_SCB* p_scb, uint16_t event,
         "State changed handle:0x{:04x} bd_addr:{} "
         "state_change:{}[0x{:02x}]->{}[0x{:02x}] event:{}[0x{:04x}] "
         "result:{}[0x{:02x}]",
-        bta_ag_scb_to_idx(p_scb), ADDRESS_TO_LOGGABLE_CSTR(p_scb->peer_addr),
+        bta_ag_scb_to_idx(p_scb), p_scb->peer_addr,
         bta_ag_state_str(previous_state), previous_state,
         bta_ag_state_str(p_scb->state), p_scb->state,
         bta_ag_evt_str(previous_event), previous_event,

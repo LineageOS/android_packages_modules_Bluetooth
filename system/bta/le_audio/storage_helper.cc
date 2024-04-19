@@ -146,7 +146,7 @@ bool SerializeSinkPacs(const bluetooth::le_audio::LeAudioDevice* leAudioDevice,
     return false;
   }
   log::verbose("Device {}, num of PAC characteristics: {}",
-               ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_),
+               leAudioDevice->address_,
                static_cast<int>(leAudioDevice->snk_pacs_.size()));
   return serializePacs(leAudioDevice->snk_pacs_, out);
 }
@@ -159,7 +159,7 @@ bool SerializeSourcePacs(
     return false;
   }
   log::verbose("Device {}, num of PAC characteristics: {}",
-               ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_),
+               leAudioDevice->address_,
                static_cast<int>(leAudioDevice->src_pacs_.size()));
   return serializePacs(leAudioDevice->src_pacs_, out);
 }
@@ -181,7 +181,7 @@ bool deserializePacs(LeAudioDevice* leAudioDevice,
   if (magic != LEAUDIO_PACS_STORAGE_CURRENT_LAYOUT_MAGIC) {
     log::error("Invalid magic ({}!={}) for device {}", magic,
                LEAUDIO_PACS_STORAGE_CURRENT_LAYOUT_MAGIC,
-               ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+               leAudioDevice->address_);
     return false;
   }
 
@@ -191,7 +191,7 @@ bool deserializePacs(LeAudioDevice* leAudioDevice,
   if (in.size() < LEAUDIO_STORAGE_HEADER_WITH_ENTRIES_SZ +
                       (num_of_pacs_chars * LEAUDIO_PACS_ENTRY_SZ)) {
     log::error("Invalid persistent storage data for device {}",
-               ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+               leAudioDevice->address_);
     return false;
   }
 
@@ -262,13 +262,11 @@ bool SerializeAses(const bluetooth::le_audio::LeAudioDevice* leAudioDevice,
   }
 
   auto num_of_ases = leAudioDevice->ases_.size();
-  log::debug("device: {}, number of ases {}",
-             ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_),
+  log::debug("device: {}, number of ases {}", leAudioDevice->address_,
              static_cast<int>(num_of_ases));
 
   if (num_of_ases == 0 || (num_of_ases > std::numeric_limits<uint8_t>::max())) {
-    log::warn("No ases available for device {}",
-              ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+    log::warn("No ases available for device {}", leAudioDevice->address_);
     return false;
   }
 
@@ -312,7 +310,7 @@ bool DeserializeAses(bluetooth::le_audio::LeAudioDevice* leAudioDevice,
   if (in.size() <
       LEAUDIO_STORAGE_HEADER_WITH_ENTRIES_SZ + LEAUDIO_ASES_ENTRY_SZ) {
     log::warn("There is not single ASE stored for device {}",
-              ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+              leAudioDevice->address_);
     return false;
   }
 
@@ -333,12 +331,12 @@ bool DeserializeAses(bluetooth::le_audio::LeAudioDevice* leAudioDevice,
   if (in.size() < LEAUDIO_STORAGE_HEADER_WITH_ENTRIES_SZ +
                       (num_of_ases * LEAUDIO_ASES_ENTRY_SZ)) {
     log::error("Invalid persistent storage data for device {}",
-               ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+               leAudioDevice->address_);
     return false;
   }
 
   log::debug("Loading {} Ases for device {}", num_of_ases,
-             ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+             leAudioDevice->address_);
   /* sets entries */
   while (num_of_ases--) {
     uint16_t handle;
@@ -382,7 +380,7 @@ bool SerializeHandles(const LeAudioDevice* leAudioDevice,
   if (leAudioDevice->ctp_hdls_.val_hdl == 0 ||
       leAudioDevice->ctp_hdls_.ccc_hdl == 0) {
     log::warn("Invalid control point handles for device {}",
-              ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+              leAudioDevice->address_);
     return false;
   }
 
@@ -415,7 +413,7 @@ bool DeserializeHandles(LeAudioDevice* leAudioDevice,
 
   if (in.size() != LEAUDIO_STORAGE_HANDLES_ENTRIES_SZ) {
     log::warn("There is not single ASE stored for device {}",
-              ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+              leAudioDevice->address_);
     return false;
   }
 
@@ -427,7 +425,7 @@ bool DeserializeHandles(LeAudioDevice* leAudioDevice,
   if (magic != LEAUDIO_HANDLES_STORAGE_CURRENT_LAYOUT_MAGIC) {
     log::error("Invalid magic ({}!={}) for device {}", magic,
                LEAUDIO_PACS_STORAGE_CURRENT_LAYOUT_MAGIC,
-               ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+               leAudioDevice->address_);
     return false;
   }
 

@@ -655,7 +655,7 @@ tGATT_STATUS GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id,
   tGATT_SR_CMD* sr_res_p = gatt_sr_get_cmd_by_trans_id(p_tcb, trans_id);
 
   if (!sr_res_p) {
-    log::error("conn_id={} waiting for other op_code ", loghex(conn_id));
+    log::error("conn_id={} waiting for other op_code", loghex(conn_id));
     return (GATT_WRONG_STATE);
   }
 
@@ -766,19 +766,17 @@ tGATTC_TryMtuRequestResult GATTC_TryMtuRequest(const RawAddress& remote_bda,
                                                tBT_TRANSPORT transport,
                                                uint16_t conn_id,
                                                uint16_t* current_mtu) {
-  log::info("{} conn_id=0x{:04x}", ADDRESS_TO_LOGGABLE_STR(remote_bda), conn_id);
+  log::info("{} conn_id=0x{:04x}", remote_bda, conn_id);
   *current_mtu = GATT_DEF_BLE_MTU_SIZE;
 
   if (transport == BT_TRANSPORT_BR_EDR) {
-    log::error("Device {} connected over BR/EDR",
-               ADDRESS_TO_LOGGABLE_CSTR(remote_bda));
+    log::error("Device {} connected over BR/EDR", remote_bda);
     return MTU_EXCHANGE_NOT_ALLOWED;
   }
 
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(remote_bda, transport);
   if (!p_tcb) {
-    log::error("Device {} is not connected ",
-               ADDRESS_TO_LOGGABLE_CSTR(remote_bda));
+    log::error("Device {} is not connected", remote_bda);
     return MTU_EXCHANGE_DEVICE_DISCONNECTED;
   }
 
@@ -793,8 +791,7 @@ tGATTC_TryMtuRequestResult GATTC_TryMtuRequest(const RawAddress& remote_bda,
 
   uint16_t mtu = gatt_get_mtu(remote_bda, transport);
   if (mtu == GATT_DEF_BLE_MTU_SIZE || mtu == 0) {
-    log::debug("MTU not yet updated for {}",
-               ADDRESS_TO_LOGGABLE_CSTR(remote_bda));
+    log::debug("MTU not yet updated for {}", remote_bda);
     return MTU_EXCHANGE_NOT_DONE_YET;
   }
 
@@ -818,16 +815,15 @@ tGATTC_TryMtuRequestResult GATTC_TryMtuRequest(const RawAddress& remote_bda,
 void GATTC_UpdateUserAttMtuIfNeeded(const RawAddress& remote_bda,
                                     tBT_TRANSPORT transport,
                                     uint16_t user_mtu) {
-  log::info("{}, mtu={}", ADDRESS_TO_LOGGABLE_CSTR(remote_bda), user_mtu);
+  log::info("{}, mtu={}", remote_bda, user_mtu);
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(remote_bda, transport);
   if (!p_tcb) {
     log::warn("Transport control block not found");
     return;
   }
 
-  log::info("{}, current mtu: {}, max_user_mtu:{}, user_mtu: {}",
-            ADDRESS_TO_LOGGABLE_CSTR(remote_bda), p_tcb->payload_size,
-            p_tcb->max_user_mtu, user_mtu);
+  log::info("{}, current mtu: {}, max_user_mtu:{}, user_mtu: {}", remote_bda,
+            p_tcb->payload_size, p_tcb->max_user_mtu, user_mtu);
 
   if (p_tcb->payload_size < user_mtu) {
     log::info("User requested more than what GATT can handle. Trim it.");
@@ -1104,7 +1100,7 @@ tGATT_STATUS GATTC_ExecuteWrite(uint16_t conn_id, bool is_execute) {
   log::verbose("conn_id={}, is_execute={}", loghex(conn_id), is_execute);
 
   if ((p_tcb == NULL) || (p_reg == NULL)) {
-    log::error(" Illegal param: conn_id={}", loghex(conn_id));
+    log::error("Illegal param: conn_id={}", loghex(conn_id));
     return GATT_ILLEGAL_PARAMETER;
   }
 
@@ -1272,7 +1268,7 @@ tGATT_IF GATT_Register(const Uuid& app_uuid128, const std::string& name,
  *
  ******************************************************************************/
 void GATT_Deregister(tGATT_IF gatt_if) {
-  log::info("gatt_if={}", +gatt_if);
+  log::info("gatt_if={}", gatt_if);
 
   tGATT_REG* p_reg = gatt_get_regcb(gatt_if);
   /* Index 0 is GAP and is never deregistered */
@@ -1362,7 +1358,7 @@ void GATT_StartIf(tGATT_IF gatt_if) {
         gatt_find_the_connected_bda(start_idx, bda, &found_idx, &transport)) {
       p_tcb = gatt_find_tcb_by_addr(bda, transport);
       log::info("GATT interface {} already has connected device {}", gatt_if,
-                ADDRESS_TO_LOGGABLE_CSTR(bda));
+                bda);
       if (p_reg->app_cb.p_conn_cb && p_tcb) {
         conn_id = GATT_CREATE_CONN_ID(p_tcb->tcb_idx, gatt_if);
         log::info("Invoking callback with connection id {}", conn_id);
@@ -1428,7 +1424,7 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr,
   bool ret = false;
   if (is_direct) {
     log::debug("Starting direct connect gatt_if={} address={}", gatt_if,
-               ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+               bd_addr);
     bool tcb_exist = !!gatt_find_tcb_by_addr(bd_addr, transport);
 
     if (!IS_FLAG_ENABLED(gatt_reconnect_on_bt_on_fix) || tcb_exist) {
@@ -1436,14 +1432,13 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr,
       ret = gatt_act_connect(p_reg, bd_addr, addr_type, transport,
                              initiating_phys);
     } else {
-      log::verbose("Connecting without tcb address: {}",
-                   ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+      log::verbose("Connecting without tcb address: {}", bd_addr);
 
       if (p_reg->direct_connect_request.count(bd_addr) == 0) {
         p_reg->direct_connect_request.insert(bd_addr);
       } else {
-        log::warn(" {} already added to gatt_if {} direct conn list",
-                  ADDRESS_TO_LOGGABLE_CSTR(bd_addr), gatt_if);
+        log::warn("{} already added to gatt_if {} direct conn list", bd_addr,
+                  gatt_if);
       }
 
       ret = acl_create_le_connection_with_id(gatt_if, bd_addr, addr_type);
@@ -1451,17 +1446,16 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr,
 
   } else {
     log::debug("Starting background connect gatt_if={} address={}", gatt_if,
-               ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+               bd_addr);
     if (!BTM_Sec_AddressKnown(bd_addr)) {
       //  RPA can rotate, causing address to "expire" in the background
       //  connection list. RPA is allowed for direct connect, as such request
       //  times out after 30 seconds
       log::warn("Unable to add RPA {} to background connection gatt_if={}",
-                ADDRESS_TO_LOGGABLE_CSTR(bd_addr), gatt_if);
+                bd_addr, gatt_if);
       ret = false;
     } else {
-      log::debug("Adding to background connect to device:{}",
-                 ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+      log::debug("Adding to background connect to device:{}", bd_addr);
       if (bluetooth::common::init_flags::
               use_unified_connection_manager_is_enabled()) {
         if (connection_type == BTM_BLE_BKG_CONNECT_ALLOW_LIST) {
@@ -1533,8 +1527,7 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr,
  ******************************************************************************/
 bool GATT_CancelConnect(tGATT_IF gatt_if, const RawAddress& bd_addr,
                         bool is_direct) {
-  log::info("gatt_if:{}, address: {}, direct:{}", gatt_if,
-            ADDRESS_TO_LOGGABLE_CSTR(bd_addr), is_direct);
+  log::info("gatt_if:{}, address: {}, direct:{}", gatt_if, bd_addr, is_direct);
 
   tGATT_REG* p_reg;
   if (gatt_if) {
@@ -1551,7 +1544,7 @@ bool GATT_CancelConnect(tGATT_IF gatt_if, const RawAddress& bd_addr,
     }
   }
 
-  log::verbose(" unconditional");
+  log::verbose("unconditional");
 
   /* only LE connection can be cancelled */
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE);
@@ -1702,13 +1695,11 @@ void gatt_load_bonded(void) {
   }
   for (tBTM_SEC_DEV_REC* p_dev_rec : btm_get_sec_dev_rec()) {
     if (p_dev_rec->sec_rec.is_link_key_known()) {
-      log::verbose("Add bonded BR/EDR transport {}",
-                   ADDRESS_TO_LOGGABLE_CSTR(p_dev_rec->bd_addr));
+      log::verbose("Add bonded BR/EDR transport {}", p_dev_rec->bd_addr);
       gatt_bonded_check_add_address(p_dev_rec->bd_addr);
     }
     if (p_dev_rec->sec_rec.is_le_link_key_known()) {
-      log::verbose("Add bonded BLE {}",
-                   ADDRESS_TO_LOGGABLE_CSTR(p_dev_rec->ble.pseudo_addr));
+      log::verbose("Add bonded BLE {}", p_dev_rec->ble.pseudo_addr);
       gatt_bonded_check_add_address(p_dev_rec->ble.pseudo_addr);
     }
   }

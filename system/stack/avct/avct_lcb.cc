@@ -256,7 +256,7 @@ tAVCT_LCB* avct_lcb_by_bd(const RawAddress& bd_addr) {
     /* if no lcb found */
     p_lcb = NULL;
 
-    log::verbose("No lcb for addr {}", ADDRESS_TO_LOGGABLE_STR(bd_addr));
+    log::verbose("No lcb for addr {}", bd_addr);
   }
   return p_lcb;
 }

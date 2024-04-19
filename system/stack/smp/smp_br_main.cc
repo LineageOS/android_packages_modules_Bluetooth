@@ -309,7 +309,7 @@ void smp_br_state_machine_event(tSMP_CB* p_cb, tSMP_BR_EVENT event,
   tSMP_BR_SM_TBL state_table;
   uint8_t action, entry;
 
-  log::debug("addr:{}", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
+  log::debug("addr:{}", p_cb->pairing_bda);
   if (curr_state >= SMP_BR_STATE_MAX) {
     log::error("Invalid br_state: {}", curr_state);
     return;

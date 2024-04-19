@@ -155,8 +155,7 @@ void BTA_AvDeregister(tBTA_AV_HNDL hndl) {
  ******************************************************************************/
 void BTA_AvOpen(const RawAddress& bd_addr, tBTA_AV_HNDL handle, bool use_rc,
                 uint16_t uuid) {
-  log::info("peer {} bta_handle:0x{:x} use_rc={} uuid=0x{:x}",
-            ADDRESS_TO_LOGGABLE_CSTR(bd_addr), handle,
+  log::info("peer {} bta_handle:0x{:x} use_rc={} uuid=0x{:x}", bd_addr, handle,
             (use_rc) ? "true" : "false", uuid);
 
   tBTA_AV_API_OPEN* p_buf =

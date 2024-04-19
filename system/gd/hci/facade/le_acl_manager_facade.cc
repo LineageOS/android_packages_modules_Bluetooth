@@ -285,10 +285,7 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public LeC
   }
 
   void on_incoming_acl(std::shared_ptr<LeAclConnection> connection, uint16_t handle) {
-    log::info(
-        "handle={}, addr={}",
-        connection->GetHandle(),
-        ADDRESS_TO_LOGGABLE_CSTR(connection->GetRemoteAddress()));
+    log::info("handle={}, addr={}", connection->GetHandle(), connection->GetRemoteAddress());
     auto packet = connection->GetAclQueueEnd()->TryDequeue();
     auto connection_tracker = acl_connections_.find(handle);
     log::assert_that(connection_tracker != acl_connections_.end(), "handle {}", handle);
@@ -299,7 +296,7 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public LeC
   }
 
   void OnLeConnectSuccess(AddressWithType peer, std::unique_ptr<LeAclConnection> connection) override {
-    log::info("handle={}, addr={}", connection->GetHandle(), ADDRESS_TO_LOGGABLE_CSTR(peer));
+    log::info("handle={}, addr={}", connection->GetHandle(), peer);
     std::unique_lock<std::mutex> lock(acl_connections_mutex_);
     std::shared_ptr<LeAclConnection> shared_connection = std::move(connection);
     uint16_t handle = shared_connection->GetHandle();
@@ -344,7 +341,7 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public LeC
   }
 
   void OnLeConnectFail(AddressWithType address, ErrorCode reason) override {
-    log::info("addr={}, reason={}", ADDRESS_TO_LOGGABLE_CSTR(address), ErrorCodeText(reason));
+    log::info("addr={}, reason={}", address, ErrorCodeText(reason));
     std::unique_ptr<BasePacketBuilder> builder = LeConnectionCompleteBuilder::Create(
         reason, 0, Role::CENTRAL, address.GetAddressType(), address.GetAddress(), 0, 0, 0, ClockAccuracy::PPM_20);
     LeConnectionEvent fail;

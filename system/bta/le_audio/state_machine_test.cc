@@ -1205,8 +1205,7 @@ class StateMachineTestBase : public Test {
             ase_p += 3;
 
             if (caching) {
-              log::info("Device: {}",
-                        ADDRESS_TO_LOGGABLE_STR(device->address_));
+              log::info("Device: {}", device->address_);
               if (cached_ase_to_cis_id_map_.count(device->address_) > 0) {
                 auto ase_list = cached_ase_to_cis_id_map_.at(device->address_);
                 if (ase_list.count(ase_id) > 0) {
@@ -1494,8 +1493,7 @@ class StateMachineTestBase : public Test {
                     this](LeAudioDevice* device, std::vector<uint8_t> value,
                           GATT_WRITE_OP_CB cb, void* cb_data) {
               if (dev != nullptr && device != dev) {
-                log::info("Do nothing for {}",
-                          ADDRESS_TO_LOGGABLE_CSTR(dev->address_));
+                log::info("Do nothing for {}", dev->address_);
                 return;
               }
 
@@ -4292,8 +4290,8 @@ TEST_F(StateMachineTest, testHandlingCachedCodecConfig2Devices) {
   LeAudioGroupStateMachine::Get()->StopStream(group);
 
   for (auto& ase : firstDevice->ases_) {
-    log::debug("{} , {}, {}", ADDRESS_TO_LOGGABLE_CSTR(firstDevice->address_),
-               ase.id, bluetooth::common::ToString(ase.state));
+    log::debug("{} , {}, {}", firstDevice->address_, ase.id,
+               bluetooth::common::ToString(ase.state));
     ASSERT_EQ(ase.state, types::AseState::BTA_LE_AUDIO_ASE_STATE_RELEASING);
     // Simulate autonomus configured state.
     InjectAseStateNotification(&ase, firstDevice, group,
@@ -4311,8 +4309,8 @@ TEST_F(StateMachineTest, testHandlingCachedCodecConfig2Devices) {
           bluetooth::le_audio::GroupStreamStatus::CONFIGURED_AUTONOMOUS))
       .Times(1);
   for (auto& ase : secondDevice->ases_) {
-    log::debug("{} , {}, {}", ADDRESS_TO_LOGGABLE_CSTR(firstDevice->address_),
-               ase.id, bluetooth::common::ToString(ase.state));
+    log::debug("{} , {}, {}", firstDevice->address_, ase.id,
+               bluetooth::common::ToString(ase.state));
     ASSERT_EQ(ase.state, types::AseState::BTA_LE_AUDIO_ASE_STATE_RELEASING);
     // Simulate autonomus configured state.
     InjectAseStateNotification(&ase, secondDevice, group,

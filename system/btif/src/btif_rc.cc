@@ -494,7 +494,7 @@ static btif_rc_device_cb_t* get_connected_device(int index) {
 }
 
 btif_rc_device_cb_t* btif_rc_get_device_by_bda(const RawAddress& bd_addr) {
-  log::verbose("bd_addr: {}", ADDRESS_TO_LOGGABLE_STR(bd_addr));
+  log::verbose("bd_addr: {}", bd_addr);
 
   for (int idx = 0; idx < BTIF_RC_NUM_CONN; idx++) {
     if ((btif_rc_cb.rc_multi_cb[idx].rc_state !=
@@ -601,8 +601,7 @@ void handle_rc_ctrl_features_all(btif_rc_device_cb_t* p_dev) {
       }
     }
   } else {
-    log::verbose("{} is not connected, pending",
-                 ADDRESS_TO_LOGGABLE_CSTR(p_dev->rc_addr));
+    log::verbose("{} is not connected, pending", p_dev->rc_addr);
     p_dev->launch_cmd_pending |=
         (RC_PENDING_ACT_GET_CAP | RC_PENDING_ACT_REG_VOL);
   }
@@ -733,9 +732,8 @@ void handle_rc_features(btif_rc_device_cb_t* p_dev) {
   log::verbose(
       "AVDTP Source Active Peer Address: {} AVDTP Sink Active Peer Address: {} "
       "AVCTP address: {}",
-      ADDRESS_TO_LOGGABLE_CSTR(avdtp_source_active_peer_addr),
-      ADDRESS_TO_LOGGABLE_CSTR(avdtp_sink_active_peer_addr),
-      ADDRESS_TO_LOGGABLE_CSTR(p_dev->rc_addr));
+      avdtp_source_active_peer_addr, avdtp_sink_active_peer_addr,
+      p_dev->rc_addr);
 
   if (interop_match_addr(INTEROP_DISABLE_ABSOLUTE_VOLUME, &p_dev->rc_addr) ||
       absolute_volume_disabled() ||
@@ -5494,8 +5492,7 @@ static bt_status_t get_transaction(btif_rc_device_cb_t* p_dev,
       return BT_STATUS_SUCCESS;
     }
   }
-  log::error("p_dev={}, failed to find free transaction",
-             ADDRESS_TO_LOGGABLE_CSTR(p_dev->rc_addr));
+  log::error("p_dev={}, failed to find free transaction", p_dev->rc_addr);
   return BT_STATUS_NOMEM;
 }
 
@@ -5622,8 +5619,7 @@ static void vendor_cmd_timeout_handler(btif_rc_device_cb_t* p_dev,
   tBTA_AV_META_MSG meta_msg = {.rc_handle = p_dev->rc_handle};
 
   log::warn("timeout, addr={}, label={}, pdu_id={}, event_id={}",
-            ADDRESS_TO_LOGGABLE_CSTR(p_dev->rc_addr), label,
-            dump_rc_pdu(p_context->pdu_id),
+            p_dev->rc_addr, label, dump_rc_pdu(p_context->pdu_id),
             dump_rc_notification_event_id(p_context->event_id));
 
   switch (p_context->pdu_id) {
@@ -5713,8 +5709,7 @@ static void browse_cmd_timeout_handler(btif_rc_device_cb_t* p_dev,
       .p_msg = nullptr,
   };
 
-  log::warn("timeout, addr={}, label={}, pdu_id={}",
-            ADDRESS_TO_LOGGABLE_CSTR(p_dev->rc_addr), label,
+  log::warn("timeout, addr={}, label={}, pdu_id={}", p_dev->rc_addr, label,
             dump_rc_pdu(p_context->pdu_id));
 
   switch (p_context->pdu_id) {
@@ -5757,8 +5752,7 @@ static void passthru_cmd_timeout_handler(btif_rc_device_cb_t* p_dev,
   }
 
   log::warn("timeout, addr={}, label={}, rc_id={}, key_state={}",
-            ADDRESS_TO_LOGGABLE_CSTR(p_dev->rc_addr), label, p_context->rc_id,
-            p_context->key_state);
+            p_dev->rc_addr, label, p_context->rc_id, p_context->key_state);
 
   // Other requests are wrapped in a tAVRC_RESPONSE response object, but these
   // passthru events are not in there. As well, the upper layers don't handle

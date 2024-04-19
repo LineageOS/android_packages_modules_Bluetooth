@@ -90,7 +90,7 @@ void BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
     log::info(
         "Caching new record from config file device: {}, dev_class: 0x{:02x}, "
         "link_key_type: 0x{:x}",
-        ADDRESS_TO_LOGGABLE_STR(bd_addr), fmt::join(dev_class, ""), key_type);
+        bd_addr, fmt::join(dev_class, ""), key_type);
 
     p_dev_rec->bd_addr = bd_addr;
     p_dev_rec->hci_handle = BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_BR_EDR);
@@ -102,7 +102,7 @@ void BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
     log::info(
         "Caching existing record from config file device: {}, dev_class: "
         "0x{:02x}, link_key_type: 0x{:x}",
-        ADDRESS_TO_LOGGABLE_STR(bd_addr), fmt::join(dev_class, ""), key_type);
+        bd_addr, fmt::join(dev_class, ""), key_type);
 
     /* "Bump" timestamp for existing record */
     p_dev_rec->timestamp = btm_sec_cb.dev_rec_count++;
@@ -157,8 +157,7 @@ void BTM_AcceptlistRemove(const RawAddress& address);
 bool BTM_SecDeleteDevice(const RawAddress& bd_addr) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
   if (p_dev_rec == NULL) {
-    log::warn("Unable to delete link key for unknown device {}",
-              ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+    log::warn("Unable to delete link key for unknown device {}", bd_addr);
     return true;
   }
 
@@ -168,15 +167,14 @@ bool BTM_SecDeleteDevice(const RawAddress& bd_addr) {
 
   if (BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE) ||
       BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_BR_EDR)) {
-    log::warn("FAILED: Cannot Delete when connection to {} is active",
-              ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+    log::warn("FAILED: Cannot Delete when connection to {} is active", bd_addr);
     return false;
   }
 
   RawAddress bda = p_dev_rec->bd_addr;
 
   log::info("Remove device {} from filter accept list before delete record",
-            ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+            bd_addr);
   if (bluetooth::common::init_flags::
           use_unified_connection_manager_is_enabled()) {
     bluetooth::connection::GetConnectionManager()
@@ -194,7 +192,7 @@ bool BTM_SecDeleteDevice(const RawAddress& bd_addr) {
   wipe_secrets_and_remove(p_dev_rec);
   /* Tell controller to get rid of the link key, if it has one stored */
   BTM_DeleteStoredLinkKey(&bda, NULL);
-  log::info("{} complete", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+  log::info("{} complete", bd_addr);
   BTM_LogHistory(kBtmLogTag, bd_addr, "Device removed",
                  base::StringPrintf("device_type:%s bond_type:%s",
                                     DeviceTypeText(device_type).c_str(),
@@ -256,8 +254,7 @@ tBTM_SEC_DEV_REC* btm_sec_alloc_dev(const RawAddress& bd_addr) {
 
   tBTM_SEC_DEV_REC* p_dev_rec = btm_sec_allocate_dev_rec();
 
-  log::debug("Allocated device record bd_addr:{}",
-             ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+  log::debug("Allocated device record bd_addr:{}", bd_addr);
 
   /* Check with the BT manager if details about remote device are known */
   /* outgoing connection */
@@ -452,7 +449,7 @@ void btm_dev_consolidate_existing_connections(const RawAddress& bd_addr) {
     return;
   }
 
-  log::info("{}", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+  log::info("{}", bd_addr);
 
   list_node_t* end = list_end(btm_sec_cb.sec_dev_rec);
   list_node_t* node = list_begin(btm_sec_cb.sec_dev_rec);
@@ -469,7 +466,7 @@ void btm_dev_consolidate_existing_connections(const RawAddress& bd_addr) {
     if (btm_ble_addr_resolvable(p_dev_rec->bd_addr, p_target_rec)) {
       if (p_dev_rec->ble_hci_handle == HCI_INVALID_HANDLE) {
         log::info("already disconnected - erasing entry {}",
-                  ADDRESS_TO_LOGGABLE_CSTR(p_dev_rec->bd_addr));
+                  p_dev_rec->bd_addr);
         wipe_secrets_and_remove(p_dev_rec);
         continue;
       }
@@ -477,8 +474,7 @@ void btm_dev_consolidate_existing_connections(const RawAddress& bd_addr) {
       log::info(
           "Found existing LE connection to just bonded device on {} handle "
           "0x{:04x}",
-          ADDRESS_TO_LOGGABLE_CSTR(p_dev_rec->bd_addr),
-          p_dev_rec->ble_hci_handle);
+          p_dev_rec->bd_addr, p_dev_rec->ble_hci_handle);
 
       RawAddress ble_conn_addr = p_dev_rec->bd_addr;
       p_target_rec->ble_hci_handle = p_dev_rec->ble_hci_handle;
@@ -694,8 +690,8 @@ bool BTM_Sec_AddressKnown(const RawAddress& address) {
   if (p_dev_rec == NULL || (p_dev_rec->device_type & BT_DEVICE_TYPE_BLE) == 0)
     return true;
 
-  log::warn("{}, device type not BLE: 0x{:02x}",
-            ADDRESS_TO_LOGGABLE_CSTR(address), p_dev_rec->device_type);
+  log::warn("{}, device type not BLE: 0x{:02x}", address,
+            p_dev_rec->device_type);
 
   // bonded device with identity address known
   if (!p_dev_rec->ble.identity_address_with_type.bda.IsEmpty()) {
@@ -708,8 +704,8 @@ bool BTM_Sec_AddressKnown(const RawAddress& address) {
     return true;
   }
 
-  log::warn("{}, the address type is 0x{:02x}",
-            ADDRESS_TO_LOGGABLE_CSTR(address), p_dev_rec->ble.AddressType());
+  log::warn("{}, the address type is 0x{:02x}", address,
+            p_dev_rec->ble.AddressType());
 
   // Only Resolvable Private Address (RPA) is known, we don't allow it into
   // the background connection procedure.

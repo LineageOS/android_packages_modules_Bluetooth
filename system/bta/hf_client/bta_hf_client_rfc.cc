@@ -137,7 +137,7 @@ static void bta_hf_client_mgmt_cback(uint32_t code, uint16_t port_handle) {
   } else if (client_cb != NULL &&
              port_handle == client_cb->conn_handle) { /* code != PORT_SUC */
     log::error("closing port handle {} dev {}", port_handle,
-               ADDRESS_TO_LOGGABLE_STR(client_cb->peer_addr));
+               client_cb->peer_addr);
 
     RFCOMM_RemoveServer(port_handle);
     p_buf->hdr.event = BTA_HF_CLIENT_RFC_CLOSE_EVT;

@@ -191,8 +191,7 @@ bt_status_t btif_gattc_test_command_impl(int command,
     case 0x02: /* Connect */
     {
       log::info("CONNECT - device={} (dev_type={}, addr_type={})",
-                ADDRESS_TO_LOGGABLE_CSTR(*params->bda1), params->u1,
-                params->u2);
+                *params->bda1, params->u1, params->u2);
 
       if (params->u1 == BT_DEVICE_TYPE_BLE)
         BTM_SecAddBleDevice(*params->bda1, BT_DEVICE_TYPE_BLE,

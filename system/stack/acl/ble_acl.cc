@@ -151,9 +151,8 @@ void acl_ble_connection_fail(const tBLE_BD_ADDR& address_with_type,
           resolved_address_with_type.bda);
     }
     log::warn("LE connection fail peer:{} bd_addr:{} hci_status:{}",
-              ADDRESS_TO_LOGGABLE_CSTR(address_with_type),
-              ADDRESS_TO_LOGGABLE_CSTR(resolved_address_with_type.bda),
-              hci_status_code_text(status).c_str());
+              address_with_type, resolved_address_with_type.bda,
+              hci_status_code_text(status));
   } else {
     btm_cb.ble_ctr_cb.inq_var.adv_mode = BTM_BLE_ADV_DISABLE;
   }

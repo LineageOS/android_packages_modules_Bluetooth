@@ -484,10 +484,7 @@ class LeAdvertisingManagerFacadeService : public LeAdvertisingManagerFacade::Ser
   };
 
   void OnOwnAddressRead(uint8_t advertiser_id, uint8_t address_type, Address address) {
-    log::info(
-        "OnOwnAddressRead Address:{}, address_type:{}",
-        ADDRESS_TO_LOGGABLE_CSTR(address),
-        address_type);
+    log::info("OnOwnAddressRead Address:{}, address_type:{}", address, address_type);
     AddressMsg msg;
     msg.set_message_type(AdvertisingCallbackMsgType::OWN_ADDRESS_READ);
     msg.set_advertiser_id(advertiser_id);

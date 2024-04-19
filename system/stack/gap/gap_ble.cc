@@ -225,7 +225,7 @@ void server_attr_request_cback(uint16_t conn_id, uint32_t trans_id,
       break;
 
     case GATTS_REQ_TYPE_MTU:
-      log::verbose("Get MTU exchange new mtu size: {}", +p_data->mtu);
+      log::verbose("Get MTU exchange new mtu size: {}", p_data->mtu);
       ignore = true;
       break;
 
@@ -293,8 +293,7 @@ void client_connect_cback(tGATT_IF, const RawAddress& bda, uint16_t conn_id,
                           tBT_TRANSPORT) {
   tGAP_CLCB* p_clcb = find_clcb_by_bd_addr(bda);
   if (p_clcb == NULL) {
-    log::info("No active GAP service found for peer:{} callback:{}",
-              ADDRESS_TO_LOGGABLE_CSTR(bda),
+    log::info("No active GAP service found for peer:{} callback:{}", bda,
               (connected) ? "Connected" : "Disconnected");
     return;
   }

@@ -285,8 +285,7 @@ void pan_dump_status(void) {
 
   for (i = 0, p_pcb = pan_cb.pcb; i < MAX_PAN_CONNS; i++, p_pcb++) {
     log::verbose("{} state:{}, handle:{}, src{}, BD:{}", i, p_pcb->con_state,
-                 p_pcb->handle, p_pcb->src_uuid,
-                 ADDRESS_TO_LOGGABLE_STR(p_pcb->rem_bda));
+                 p_pcb->handle, p_pcb->src_uuid, p_pcb->rem_bda);
   }
 #endif
 }

@@ -353,7 +353,7 @@ struct iso_impl {
     if (iso == nullptr) {
       /* That can happen when ACL has been disconnected while ISO patch was
        * creating */
-      log::warn("Invalid connection handle: {}", +conn_handle);
+      log::warn("Invalid connection handle: {}", conn_handle);
       return;
     }
 
@@ -414,7 +414,7 @@ struct iso_impl {
     if (iso == nullptr) {
       /* That could happen when ACL has been disconnected while removing data
        * path */
-      log::warn("Invalid connection handle: {}", +conn_handle);
+      log::warn("Invalid connection handle: {}", conn_handle);
       return;
     }
 
@@ -483,7 +483,7 @@ struct iso_impl {
     if (iso == nullptr) {
       /* That could happen when ACL has been disconnected while waiting on the
        * read respose */
-      log::warn("Invalid connection handle: {}", +conn_handle);
+      log::warn("Invalid connection handle: {}", conn_handle);
       return;
     }
 
@@ -636,7 +636,7 @@ struct iso_impl {
 
     log::assert_that(cig_callbacks_ != nullptr, "Invalid CIG callbacks");
 
-    log::info("flags: {}", +cis->state_flags);
+    log::info("flags: {}", cis->state_flags);
 
     BTM_LogHistory(
         kBtmLogTag, cis_hdl_to_addr[handle], "CIS disconnected",
@@ -709,7 +709,7 @@ struct iso_impl {
       uint16_t conn_handle;
       STREAM_TO_UINT16(conn_handle, data);
       evt.conn_handles.push_back(conn_handle);
-      log::info(" received BIS conn_hdl {}", +conn_handle);
+      log::info("received BIS conn_hdl {}", conn_handle);
 
       if (evt.status == HCI_SUCCESS) {
         auto bis = std::unique_ptr<iso_bis>(new iso_bis());
@@ -810,7 +810,7 @@ struct iso_impl {
         /* Not supported */
         break;
       default:
-        log::error("Unhandled event code {}", +code);
+        log::error("Unhandled event code {}", code);
     }
   }
 

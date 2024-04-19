@@ -351,9 +351,8 @@ bool LeAudioDevice::ConfigureAses(
     log::debug(
         "device={}, activated ASE id={}, direction={}, max_sdu_size={}, "
         "cis_id={}, target_latency={}",
-        ADDRESS_TO_LOGGABLE_CSTR(address_), ase->id,
-        (direction == 1 ? "snk" : "src"), ase->qos_config.max_sdu_size,
-        ase->cis_id, ents[i].qos.target_latency);
+        address_, ase->id, (direction == 1 ? "snk" : "src"),
+        ase->qos_config.max_sdu_size, ase->cis_id, ents[i].qos.target_latency);
 
     /* Try to use the already active ASE */
     ase = GetNextActiveAseWithSameDirection(ase);
@@ -369,7 +368,7 @@ bool LeAudioDevice::ConfigureAses(
 
 /* LeAudioDevice Class methods implementation */
 void LeAudioDevice::SetConnectionState(DeviceConnectState state) {
-  log::debug("{}, {} --> {}", ADDRESS_TO_LOGGABLE_CSTR(address_),
+  log::debug("{}, {} --> {}", address_,
              bluetooth::common::ToString(connection_state_),
              bluetooth::common::ToString(state));
   LeAudioLogHistory::Get()->AddLogHistory(
@@ -709,7 +708,7 @@ bool LeAudioDevice::IsReadyToSuspendStream(void) {
 
 bool LeAudioDevice::HaveAllActiveAsesCisEst(void) const {
   if (ases_.empty()) {
-    log::warn("No ases for device {}", ADDRESS_TO_LOGGABLE_CSTR(address_));
+    log::warn("No ases for device {}", address_);
     /* If there is no ASEs at all, it means we are good here - meaning, it is
      * not waiting for any CIS to be established.
      */
@@ -992,13 +991,13 @@ bool LeAudioDevice::ActivateConfiguredAses(
     const BidirectionalPair<AudioContexts>& metadata_context_types,
     BidirectionalPair<std::vector<uint8_t>> ccid_lists) {
   if (conn_id_ == GATT_INVALID_CONN_ID) {
-    log::warn("Device {} is not connected", ADDRESS_TO_LOGGABLE_CSTR(address_));
+    log::warn("Device {} is not connected", address_);
     return false;
   }
 
   bool ret = false;
 
-  log::info("Configuring device {}", ADDRESS_TO_LOGGABLE_CSTR(address_));
+  log::info("Configuring device {}", address_);
   for (auto& ase : ases_) {
     if (ase.state == AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED &&
         ase.configured_for_context_type == context_type) {
@@ -1024,8 +1023,8 @@ void LeAudioDevice::DeactivateAllAses(void) {
       log::warn(
           "{}, ase_id: {}, ase.cis_id: {}, cis_handle: 0x{:02x}, "
           "ase.cis_state={}, ase.data_path_state={}",
-          ADDRESS_TO_LOGGABLE_CSTR(address_), ase.id, ase.cis_id,
-          ase.cis_conn_hdl, bluetooth::common::ToString(ase.cis_state),
+          address_, ase.id, ase.cis_id, ase.cis_conn_hdl,
+          bluetooth::common::ToString(ase.cis_state),
           bluetooth::common::ToString(ase.data_path_state));
     }
     if (alarm_is_scheduled(ase.autonomous_operation_timer_)) {
@@ -1119,8 +1118,8 @@ void LeAudioDevices::Add(const RawAddress& address, DeviceConnectState state,
                          int group_id) {
   auto device = FindByAddress(address);
   if (device != nullptr) {
-    log::error("address: {} is already assigned to group: {}",
-               ADDRESS_TO_LOGGABLE_STR(address), device->group_id_);
+    log::error("address: {} is already assigned to group: {}", address,
+               device->group_id_);
     return;
   }
 
@@ -1135,7 +1134,7 @@ void LeAudioDevices::Remove(const RawAddress& address) {
                            });
 
   if (iter == leAudioDevices_.end()) {
-    log::error("no such address: {}", ADDRESS_TO_LOGGABLE_STR(address));
+    log::error("no such address: {}", address);
     return;
   }
 
