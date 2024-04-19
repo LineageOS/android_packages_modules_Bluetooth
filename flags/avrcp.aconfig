@@ -1,0 +1,9 @@
+package: "com.android.bluetooth.flags"
+container: "com.android.btservices"
+
+flag {
+    name: "avrcp_connect_a2dp_delayed"
+    namespace: "bluetooth"
+    description: "When peer device connects AVRCP but not A2DP we initiate A2DP connection after some time delay"
+    bug: "328406945"
+}
