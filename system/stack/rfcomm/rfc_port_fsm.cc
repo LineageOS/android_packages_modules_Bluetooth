@@ -85,9 +85,8 @@ void rfc_port_sm_execute(tPORT* p_port, tRFC_PORT_EVENT event, void* p_data) {
 
   // logs for state RFC_STATE_OPENED handled in rfc_port_sm_opened()
   if (p_port->rfc.state != RFC_STATE_OPENED) {
-    log::info("bd_addr:{}, index:{}, state:{}, event:{}",
-              ADDRESS_TO_LOGGABLE_CSTR(p_port->bd_addr), p_port->handle,
-              p_port->rfc.state, event);
+    log::info("bd_addr:{}, index:{}, state:{}, event:{}", p_port->bd_addr,
+              p_port->handle, p_port->rfc.state, event);
   }
   switch (p_port->rfc.state) {
     case RFC_STATE_CLOSED:
@@ -462,14 +461,13 @@ void rfc_port_sm_orig_wait_sec_check(tPORT* p_port, tRFC_PORT_EVENT event,
 void rfc_port_sm_opened(tPORT* p_port, tRFC_PORT_EVENT event, void* p_data) {
   switch (event) {
     case RFC_PORT_EVENT_OPEN:
-      log::error("Port error, bd_addr={}, state={}, event={}",
-                 ADDRESS_TO_LOGGABLE_CSTR(p_port->bd_addr), p_port->rfc.state,
-                 event);
+      log::error("Port error, bd_addr={}, state={}, event={}", p_port->bd_addr,
+                 p_port->rfc.state, event);
       return;
 
     case RFC_PORT_EVENT_CLOSE:
-      log::info("RFC_PORT_EVENT_CLOSE bd_addr={}, index={}",
-                ADDRESS_TO_LOGGABLE_CSTR(p_port->bd_addr), p_port->handle);
+      log::info("RFC_PORT_EVENT_CLOSE bd_addr={}, index={}", p_port->bd_addr,
+                p_port->handle);
       rfc_port_timer_start(p_port, RFC_DISC_TIMEOUT);
       rfc_send_disc(p_port->rfc.p_mcb, p_port->dlci);
       p_port->rfc.expected_rsp = 0;
@@ -477,8 +475,8 @@ void rfc_port_sm_opened(tPORT* p_port, tRFC_PORT_EVENT event, void* p_data) {
       return;
 
     case RFC_PORT_EVENT_CLEAR:
-      log::warn("RFC_PORT_EVENT_CLEAR, bd_addr={}, index={}",
-                ADDRESS_TO_LOGGABLE_CSTR(p_port->bd_addr), p_port->handle);
+      log::warn("RFC_PORT_EVENT_CLEAR, bd_addr={}, index={}", p_port->bd_addr,
+                p_port->handle);
       rfc_port_closed(p_port);
       return;
 
@@ -488,8 +486,8 @@ void rfc_port_sm_opened(tPORT* p_port, tRFC_PORT_EVENT event, void* p_data) {
       /* There might be an initial case when we reduced rx_max and credit_rx is
        * still */
       /* bigger.  Make sure that we do not send 255 */
-      log::verbose("RFC_PORT_EVENT_DATA bd_addr={}, index={}",
-                   ADDRESS_TO_LOGGABLE_CSTR(p_port->bd_addr), p_port->handle);
+      log::verbose("RFC_PORT_EVENT_DATA bd_addr={}, index={}", p_port->bd_addr,
+                   p_port->handle);
       if ((p_port->rfc.p_mcb->flow == PORT_FC_CREDIT) &&
           (((BT_HDR*)p_data)->len < p_port->peer_mtu) &&
           (!p_port->rx.user_fc) &&
@@ -505,27 +503,26 @@ void rfc_port_sm_opened(tPORT* p_port, tRFC_PORT_EVENT event, void* p_data) {
       return;
 
     case RFC_PORT_EVENT_UA:
-      log::verbose("RFC_PORT_EVENT_UA bd_addr={}, index={}",
-                   ADDRESS_TO_LOGGABLE_CSTR(p_port->bd_addr), p_port->handle);
+      log::verbose("RFC_PORT_EVENT_UA bd_addr={}, index={}", p_port->bd_addr,
+                   p_port->handle);
       return;
 
     case RFC_PORT_EVENT_SABME:
-      log::verbose("RFC_PORT_EVENT_SABME bd_addr={}, index={}",
-                   ADDRESS_TO_LOGGABLE_CSTR(p_port->bd_addr), p_port->handle);
+      log::verbose("RFC_PORT_EVENT_SABME bd_addr={}, index={}", p_port->bd_addr,
+                   p_port->handle);
       rfc_send_ua(p_port->rfc.p_mcb, p_port->dlci);
       return;
 
     case RFC_PORT_EVENT_DM:
-      log::info("RFC_EVENT_DM, bd_addr={}, index={}",
-                ADDRESS_TO_LOGGABLE_CSTR(p_port->bd_addr), p_port->handle);
+      log::info("RFC_EVENT_DM, bd_addr={}, index={}", p_port->bd_addr,
+                p_port->handle);
       PORT_DlcReleaseInd(p_port->rfc.p_mcb, p_port->dlci);
       rfc_port_closed(p_port);
       return;
 
     case RFC_PORT_EVENT_DISC:
-      log::info("RFC_PORT_EVENT_DISC, bd_addr={}, index={}",
-                ADDRESS_TO_LOGGABLE_CSTR(p_port->bd_addr), p_port->handle,
-                p_port->rfc.state, event);
+      log::info("RFC_PORT_EVENT_DISC, bd_addr={}, index={}", p_port->bd_addr,
+                p_port->handle, p_port->rfc.state, event);
       p_port->rfc.state = RFC_STATE_CLOSED;
       rfc_send_ua(p_port->rfc.p_mcb, p_port->dlci);
       if (!fixed_queue_is_empty(p_port->rx.queue)) {
@@ -537,20 +534,19 @@ void rfc_port_sm_opened(tPORT* p_port, tRFC_PORT_EVENT event, void* p_data) {
       return;
 
     case RFC_PORT_EVENT_UIH:
-      log::verbose("RFC_PORT_EVENT_UIH bd_addr={}, index={}",
-                   ADDRESS_TO_LOGGABLE_CSTR(p_port->bd_addr), p_port->handle);
+      log::verbose("RFC_PORT_EVENT_UIH bd_addr={}, index={}", p_port->bd_addr,
+                   p_port->handle);
       rfc_port_uplink_data(p_port, (BT_HDR*)p_data);
       return;
 
     case RFC_PORT_EVENT_TIMEOUT:
       PORT_TimeOutCloseMux(p_port->rfc.p_mcb);
-      log::error("Port error, bd_addr={}, state={}, event={}",
-                 ADDRESS_TO_LOGGABLE_CSTR(p_port->bd_addr), p_port->rfc.state,
-                 event);
+      log::error("Port error, bd_addr={}, state={}, event={}", p_port->bd_addr,
+                 p_port->rfc.state, event);
       return;
     default:
       log::error("Received unexpected event {}, bd_addr={}, state={}", event,
-                 ADDRESS_TO_LOGGABLE_CSTR(p_port->bd_addr), p_port->rfc.state);
+                 p_port->bd_addr, p_port->rfc.state);
   }
   log::warn("Port state opened Event ignored {}", event);
 }
@@ -638,8 +634,7 @@ void rfc_port_uplink_data(tPORT* p_port, BT_HDR* p_buf) {
  ******************************************************************************/
 void rfc_process_pn(tRFC_MCB* p_mcb, bool is_command, MX_FRAME* p_frame) {
   log::verbose("is_initiator={}, is_cmd={}, state={}, bd_addr={}",
-               p_mcb->is_initiator, is_command, p_mcb->state,
-               ADDRESS_TO_LOGGABLE_CSTR(p_mcb->bd_addr));
+               p_mcb->is_initiator, is_command, p_mcb->state, p_mcb->bd_addr);
   uint8_t dlci = p_frame->dlci;
 
   if (is_command) {
@@ -649,7 +644,7 @@ void rfc_process_pn(tRFC_MCB* p_mcb, bool is_command, MX_FRAME* p_frame) {
                      p_frame->u.pn.k);
     } else {
       log::warn("MX PN while disconnecting, bd_addr={}, p_mcb={}",
-                ADDRESS_TO_LOGGABLE_STR(p_mcb->bd_addr), fmt::ptr(p_mcb));
+                p_mcb->bd_addr, fmt::ptr(p_mcb));
       rfc_send_dm(p_mcb, dlci, false);
     }
 
@@ -659,7 +654,7 @@ void rfc_process_pn(tRFC_MCB* p_mcb, bool is_command, MX_FRAME* p_frame) {
   tPORT* p_port = port_find_mcb_dlci_port(p_mcb, dlci);
   if ((p_port == nullptr) || !(p_port->rfc.expected_rsp & RFC_RSP_PN)) {
     log::warn(": Ignore unwanted response, p_mcb={}, bd_addr={}, dlci={}",
-              fmt::ptr(p_mcb), ADDRESS_TO_LOGGABLE_STR(p_mcb->bd_addr), dlci);
+              fmt::ptr(p_mcb), p_mcb->bd_addr, dlci);
     return;
   }
 

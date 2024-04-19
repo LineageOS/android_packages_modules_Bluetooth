@@ -134,13 +134,11 @@ tRFC_MCB* rfc_alloc_multiplexer_channel(const RawAddress& bd_addr,
                                         bool is_initiator) {
   int i, j;
   tRFC_MCB* p_mcb = NULL;
-  log::verbose("bd_addr:{}, is_initiator:{}", ADDRESS_TO_LOGGABLE_CSTR(bd_addr),
-               is_initiator);
+  log::verbose("bd_addr:{}, is_initiator:{}", bd_addr, is_initiator);
 
   for (i = 0; i < MAX_BD_CONNECTIONS; i++) {
     log::verbose("rfc_cb.port.rfc_mcb[{}] - state:{}, bd_addr:{}", i,
-                 rfc_cb.port.rfc_mcb[i].state,
-                 ADDRESS_TO_LOGGABLE_CSTR(rfc_cb.port.rfc_mcb[i].bd_addr));
+                 rfc_cb.port.rfc_mcb[i].state, rfc_cb.port.rfc_mcb[i].bd_addr);
 
     if ((rfc_cb.port.rfc_mcb[i].state != RFC_MX_STATE_IDLE) &&
         rfc_cb.port.rfc_mcb[i].bd_addr == bd_addr) {

@@ -318,7 +318,7 @@ static tSCO_CONN* btm_get_active_sco() {
 static void btm_route_sco_data(bluetooth::hci::ScoView valid_packet) {
   uint16_t handle = valid_packet.GetHandle();
   if (handle > HCI_HANDLE_MAX) {
-    log::error("Dropping SCO data with invalid handle: 0x{:X} > 0x{:X}, ",
+    log::error("Dropping SCO data with invalid handle: 0x{:X} > 0x{:X},",
                handle, HCI_HANDLE_MAX);
     return;
   }
@@ -345,15 +345,15 @@ static void btm_route_sco_data(bluetooth::hci::ScoView valid_packet) {
     auto status = valid_packet.GetPacketStatusFlag();
 
     if (status != bluetooth::hci::PacketStatusFlag::CORRECTLY_RECEIVED) {
-      log::debug("{} packet corrupted with status({})", codec.c_str(),
-                 PacketStatusFlagText(status).c_str());
+      log::debug("{} packet corrupted with status({})", codec,
+                 PacketStatusFlagText(status));
     }
     auto enqueue_packet = codec_type == BTM_SCO_CODEC_LC3
                               ? &bluetooth::audio::sco::swb::enqueue_packet
                               : &bluetooth::audio::sco::wbs::enqueue_packet;
     rc = enqueue_packet(
         data, status != bluetooth::hci::PacketStatusFlag::CORRECTLY_RECEIVED);
-    if (!rc) log::debug("Failed to enqueue {} packet", codec.c_str());
+    if (!rc) log::debug("Failed to enqueue {} packet", codec);
 
     while (rc) {
       auto decode = codec_type == BTM_SCO_CODEC_LC3
@@ -391,7 +391,7 @@ static void btm_route_sco_data(bluetooth::hci::ScoView valid_packet) {
           log::info(
               "Requested to read {} bytes of {} data but got {} bytes of PCM "
               "data from audio server: WriteOffset:{} ReadOffset:{}",
-              (unsigned long)to_read, codec.c_str(), (unsigned long)read,
+              (unsigned long)to_read, codec, (unsigned long)read,
               (unsigned long)btm_pcm_buf_write_offset,
               (unsigned long)btm_pcm_buf_read_offset);
           if (read == 0) break;
@@ -403,7 +403,7 @@ static void btm_route_sco_data(bluetooth::hci::ScoView valid_packet) {
          * buffer to spare the buffer space when the buffer is full */
         log::warn(
             "Buffer is full when we try to read {} packet from audio server",
-            codec.c_str());
+            codec);
         log::assert_that(
             btm_pcm_buf_write_offset - btm_pcm_buf_read_offset >=
                 (codec_type == BTM_SCO_CODEC_MSBC ? BTM_MSBC_CODE_SIZE
@@ -428,7 +428,7 @@ static void btm_route_sco_data(bluetooth::hci::ScoView valid_packet) {
         log::debug(
             "Failed to encode {} data starting at ReadOffset:{} to "
             "WriteOffset:{}",
-            codec.c_str(), (unsigned long)btm_pcm_buf_read_offset,
+            codec, (unsigned long)btm_pcm_buf_read_offset,
             (unsigned long)btm_pcm_buf_write_offset);
 
       /* The offsets should reset some time as the buffer length should always
@@ -592,8 +592,7 @@ static tBTM_STATUS btm_send_connect_request(uint16_t acl_handle,
             acl_handle);
       }
     } else {
-      log::error("Received SCO connect from unknown peer:{}",
-                 ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+      log::error("Received SCO connect from unknown peer:{}", bd_addr);
     }
 
     p_setup->packet_types = temp_packet_types;
@@ -681,8 +680,7 @@ tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig,
     }
     acl_handle = BTM_GetHCIConnHandle(*remote_bda, BT_TRANSPORT_BR_EDR);
     if (acl_handle == HCI_INVALID_HANDLE) {
-      log::error("cannot find ACL handle for remote device {}",
-                 ADDRESS_TO_LOGGABLE_STR(*remote_bda));
+      log::error("cannot find ACL handle for remote device {}", *remote_bda);
       return BTM_UNKNOWN_ADDR;
     }
   }
@@ -694,7 +692,7 @@ tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig,
            (p->state == SCO_ST_PEND_UNPARK)) &&
           (p->esco.data.bd_addr == *remote_bda)) {
         log::error("a sco connection is already going on for {}, at state {}",
-                   ADDRESS_TO_LOGGABLE_STR(*remote_bda), unsigned(p->state));
+                   *remote_bda, unsigned(p->state));
         return BTM_BUSY;
       }
     }
@@ -720,16 +718,15 @@ tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig,
           if (BTM_ReadPowerMode(*remote_bda, &state)) {
             if (state == BTM_PM_ST_SNIFF || state == BTM_PM_ST_PARK ||
                 state == BTM_PM_ST_PENDING) {
-              log::info("{} in sniff, park or pending mode {}",
-                        ADDRESS_TO_LOGGABLE_STR(*remote_bda), unsigned(state));
+              log::info("{} in sniff, park or pending mode {}", *remote_bda,
+                        unsigned(state));
               if (!BTM_SetLinkPolicyActiveMode(*remote_bda)) {
                 log::warn("Unable to set link policy active");
               }
               p->state = SCO_ST_PEND_UNPARK;
             }
           } else {
-            log::error("failed to read power mode for {}",
-                       ADDRESS_TO_LOGGABLE_STR(*remote_bda));
+            log::error("failed to read power mode for {}", *remote_bda);
           }
         }
         p->esco.data.bd_addr = *remote_bda;
@@ -777,8 +774,7 @@ tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig,
 
           if ((btm_send_connect_request(acl_handle, p_setup)) !=
               BTM_CMD_STARTED) {
-            log::error("failed to send connect request for {}",
-                       ADDRESS_TO_LOGGABLE_STR(*remote_bda));
+            log::error("failed to send connect request for {}", *remote_bda);
             return (BTM_NO_RESOURCES);
           }
 
@@ -825,14 +821,13 @@ void btm_sco_chk_pend_unpark(tHCI_STATUS hci_status, uint16_t hci_handle) {
       log::info(
           "{} unparked, sending connection request, acl_handle={}, "
           "hci_status={}",
-          ADDRESS_TO_LOGGABLE_STR(p->esco.data.bd_addr), unsigned(acl_handle),
-          unsigned(hci_status));
+          p->esco.data.bd_addr, unsigned(acl_handle), unsigned(hci_status));
       if (btm_send_connect_request(acl_handle, &p->esco.setup) ==
           BTM_CMD_STARTED) {
         p->state = SCO_ST_CONNECTING;
       } else {
         log::error("failed to send connection request for {}",
-                   ADDRESS_TO_LOGGABLE_STR(p->esco.data.bd_addr));
+                   p->esco.data.bd_addr);
       }
     }
   }
@@ -888,7 +883,7 @@ void btm_sco_disc_chk_pend_for_modechange(uint16_t hci_handle) {
   log::debug(
       "Checking for SCO pending mode change events hci_handle:0x{:04x} "
       "p->state:{}",
-      hci_handle, sco_state_text(p->state).c_str());
+      hci_handle, sco_state_text(p->state));
 
   for (uint16_t xx = 0; xx < BTM_MAX_SCO_LINKS; xx++, p++) {
     if ((p->state == SCO_ST_PEND_MODECHANGE) &&
@@ -970,7 +965,7 @@ void btm_sco_conn_req(const RawAddress& bda, const DEV_CLASS& dev_class,
   }
 
   /* If here, no one wants the SCO connection. Reject it */
-  log::warn("rejecting SCO for {}", ADDRESS_TO_LOGGABLE_CSTR(bda));
+  log::warn("rejecting SCO for {}", bda);
   btm_esco_conn_rsp(BTM_MAX_SCO_LINKS, HCI_ERR_HOST_REJECT_RESOURCES, bda,
                     nullptr);
 }
@@ -1011,8 +1006,7 @@ void btm_sco_connected(const RawAddress& bda, uint16_t hci_handle,
       BTM_LogHistory(kBtmLogTag, bda, "Connection success",
                      base::StringPrintf("handle:0x%04x %s", hci_handle,
                                         (spt) ? "listener" : "initiator"));
-      log::debug("Connected SCO link handle:0x{:04x} peer:{}", hci_handle,
-                 ADDRESS_TO_LOGGABLE_CSTR(bda));
+      log::debug("Connected SCO link handle:0x{:04x} peer:{}", hci_handle, bda);
 
       if (!btm_cb.sco_cb.esco_supported) {
         p->esco.data.link_type = BTM_LINK_TYPE_SCO;
@@ -1080,7 +1074,7 @@ void btm_sco_connection_failed(tHCI_STATUS hci_status, const RawAddress& bda,
       /* Report the error if originator, otherwise remain in Listen mode */
       if (p->is_orig) {
         log::debug("SCO initiating connection failed handle:0x{:04x} reason:{}",
-                   hci_handle, hci_error_code_text(hci_status).c_str());
+                   hci_handle, hci_error_code_text(hci_status));
         switch (hci_status) {
           case HCI_ERR_ROLE_SWITCH_PENDING:
             /* If role switch is pending, we need try again after role switch
@@ -1104,7 +1098,7 @@ void btm_sco_connection_failed(tHCI_STATUS hci_status, const RawAddress& bda,
       } else {
         log::debug(
             "SCO terminating connection failed handle:0x{:04x} reason:{}",
-            hci_handle, hci_error_code_text(hci_status).c_str());
+            hci_handle, hci_error_code_text(hci_status));
         if (p->state == SCO_ST_CONNECTING) {
           p->state = SCO_ST_UNUSED;
           (*p->p_disc_cb)(xx);
@@ -1171,7 +1165,7 @@ tBTM_STATUS BTM_RemoveSco(uint16_t sco_inx) {
   GetInterface().Disconnect(p->Handle(), HCI_ERR_PEER_USER);
 
   log::debug("Disconnecting link sco_handle:0x{:04x} peer:{}", p->Handle(),
-             ADDRESS_TO_LOGGABLE_CSTR(p->esco.data.bd_addr));
+             p->esco.data.bd_addr);
   BTM_LogHistory(
       kBtmLogTag, p->esco.data.bd_addr, "Disconnecting",
       base::StringPrintf("local initiated handle:0x%04x previous_state:%s",
@@ -1223,7 +1217,7 @@ bool btm_sco_removed(uint16_t hci_handle, tHCI_REASON reason) {
               p->esco.setup.transmit_coding_format.coding_format));
 
       log::debug("Disconnected SCO link handle:{} reason:{}", hci_handle,
-                 hci_reason_code_text(reason).c_str());
+                 hci_reason_code_text(reason));
       return true;
     }
   }
@@ -1239,13 +1233,13 @@ void btm_sco_on_disconnected(uint16_t hci_handle, tHCI_REASON reason) {
 
   if (!p_sco->is_active()) {
     log::info("Connection is not active handle:0x{:04x} reason:{}", hci_handle,
-              hci_reason_code_text(reason).c_str());
+              hci_reason_code_text(reason));
     return;
   }
 
   if (p_sco->state == SCO_ST_LISTENING) {
     log::info("Connection is in listening state handle:0x{:04x} reason:{}",
-              hci_handle, hci_reason_code_text(reason).c_str());
+              hci_handle, hci_reason_code_text(reason));
     return;
   }
 
@@ -1257,7 +1251,7 @@ void btm_sco_on_disconnected(uint16_t hci_handle, tHCI_REASON reason) {
   p_sco->esco.p_esco_cback = NULL; /* Deregister eSCO callback */
   (*p_sco->p_disc_cb)(btm_cb.sco_cb.get_index(p_sco));
   log::debug("Disconnected SCO link handle:{} reason:{}", hci_handle,
-             hci_reason_code_text(reason).c_str());
+             hci_reason_code_text(reason));
   BTM_LogHistory(kBtmLogTag, bd_addr, "Disconnected",
                  base::StringPrintf("handle:0x%04x reason:%s", hci_handle,
                                     hci_reason_code_text(reason).c_str()));
@@ -1284,7 +1278,7 @@ void btm_sco_on_disconnected(uint16_t hci_handle, tHCI_REASON reason) {
         log::debug(
             "Stopped SCO codec:{}, num_decoded_frames:{}, "
             "packet_loss_ratio:{:f}",
-            codec.c_str(), num_decoded_frames, packet_loss_ratio);
+            codec, num_decoded_frames, packet_loss_ratio);
       } else {
         log::warn("Failed to get the packet loss stats");
       }
@@ -1488,8 +1482,7 @@ static tBTM_STATUS BTM_ChangeEScoLinkParms(uint16_t sco_inx,
 
     log::verbose("-> eSCO Link for handle 0x{:04x}", p_sco->hci_handle);
     log::verbose(
-        "   txbw 0x{:x}, rxbw 0x{:x}, lat 0x{:x}, retrans 0x{:02x}, pkt "
-        "0x{:04x}",
+        "txbw 0x{:x}, rxbw 0x{:x}, lat 0x{:x}, retrans 0x{:02x}, pkt 0x{:04x}",
         p_setup->transmit_bandwidth, p_setup->receive_bandwidth,
         p_parms->max_latency_ms, p_parms->retransmission_effort,
         temp_packet_types);

@@ -420,7 +420,7 @@ AvdtpCcb* avdt_ccb_by_bd(const RawAddress& bd_addr) {
     /* if no ccb found */
     p_ccb = NULL;
 
-    log::verbose("No ccb for addr {}", ADDRESS_TO_LOGGABLE_STR(bd_addr));
+    log::verbose("No ccb for addr {}", bd_addr);
   }
   return p_ccb;
 }
@@ -441,8 +441,7 @@ AvdtpCcb* avdt_ccb_alloc(const RawAddress& bd_addr) {
   for (int i = 0; i < AVDT_NUM_LINKS; i++, p_ccb++) {
     if (!p_ccb->allocated) {
       p_ccb->Allocate(bd_addr);
-      log::verbose("allocated (index {}) for peer {}", i,
-                   ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+      log::verbose("allocated (index {}) for peer {}", i, bd_addr);
       return p_ccb;
     }
   }
@@ -455,20 +454,19 @@ AvdtpCcb* avdt_ccb_alloc_by_channel_index(const RawAddress& bd_addr,
                                           uint8_t channel_index) {
   // Allocate the entry for the specified channel index
   if (channel_index >= AVDT_NUM_LINKS) {
-    log::error("peer {} invalid channel index {} (max {})",
-               ADDRESS_TO_LOGGABLE_CSTR(bd_addr), channel_index,
-               AVDT_NUM_LINKS);
+    log::error("peer {} invalid channel index {} (max {})", bd_addr,
+               channel_index, AVDT_NUM_LINKS);
     return nullptr;
   }
   AvdtpCcb* p_ccb = &avdtp_cb.ccb[channel_index];
   if (p_ccb->allocated) {
-    log::error("peer {} channel index {} already allocated",
-               ADDRESS_TO_LOGGABLE_CSTR(bd_addr), channel_index);
+    log::error("peer {} channel index {} already allocated", bd_addr,
+               channel_index);
     return nullptr;
   }
   p_ccb->Allocate(bd_addr);
   log::verbose("allocated (index {}) peer={} p_ccb={}", channel_index,
-               ADDRESS_TO_LOGGABLE_CSTR(p_ccb->peer_addr), fmt::ptr(p_ccb));
+               p_ccb->peer_addr, fmt::ptr(p_ccb));
   return p_ccb;
 }
 
@@ -495,8 +493,7 @@ void AvdtpCcb::Allocate(const RawAddress& peer_address) {
  ******************************************************************************/
 void avdt_ccb_dealloc(AvdtpCcb* p_ccb, UNUSED_ATTR tAVDT_CCB_EVT* p_data) {
   log::verbose("deallocated (index {}) peer={} p_ccb={}",
-               avdt_ccb_to_idx(p_ccb),
-               ADDRESS_TO_LOGGABLE_CSTR(p_ccb->peer_addr), fmt::ptr(p_ccb));
+               avdt_ccb_to_idx(p_ccb), p_ccb->peer_addr, fmt::ptr(p_ccb));
   p_ccb->ResetCcb();
 }
 

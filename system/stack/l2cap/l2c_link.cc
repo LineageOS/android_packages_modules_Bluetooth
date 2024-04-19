@@ -196,7 +196,7 @@ void l2c_link_sec_comp(const RawAddress* p_bda,
   tL2C_CCB* p_next_ccb;
 
   log::debug("btm_status={}, BD_ADDR={}, transport={}", btm_status_text(status),
-             ADDRESS_TO_LOGGABLE_CSTR(*p_bda), bt_transport_text(transport));
+             *p_bda, bt_transport_text(transport));
 
   if (status == BTM_SUCCESS_NO_SECURITY) {
     status = BTM_SUCCESS;
@@ -1155,7 +1155,7 @@ tBTM_STATUS l2cu_ConnectAclForSecurity(const RawAddress& bd_addr) {
   /* Make sure an L2cap link control block is available */
   if (!p_lcb &&
       (p_lcb = l2cu_allocate_lcb(bd_addr, true, BT_TRANSPORT_BR_EDR)) == NULL) {
-    log::warn("failed allocate LCB for {}", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+    log::warn("failed allocate LCB for {}", bd_addr);
     return BTM_NO_RESOURCES;
   }
 

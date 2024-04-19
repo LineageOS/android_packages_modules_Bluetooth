@@ -273,8 +273,7 @@ class CsisDevice : public GattServiceDevice {
     }
 
     csis_instances_.insert({handle, csis_instance});
-    log::debug("instance added: 0x{:04x}, device {}", handle,
-               ADDRESS_TO_LOGGABLE_CSTR(addr));
+    log::debug("instance added: 0x{:04x}, device {}", handle, addr);
   }
 
   void RemoveCsisInstance(int group_id) {
@@ -296,14 +295,13 @@ class CsisDevice : public GattServiceDevice {
   }
 
   void SetExpectedGroupIdMember(int group_id) {
-    log::info("Expected Group ID: {}, for member: {} is set", group_id,
-              ADDRESS_TO_LOGGABLE_CSTR(addr));
+    log::info("Expected Group ID: {}, for member: {} is set", group_id, addr);
     expected_group_id_member_ = group_id;
   }
 
   void SetPairingSirkReadFlag(bool flag) {
     log::info("Pairing flag for Group ID: {}, member: {} is set to {}",
-              expected_group_id_member_, ADDRESS_TO_LOGGABLE_CSTR(addr), flag);
+              expected_group_id_member_, addr, flag);
     pairing_sirk_read_flag_ = flag;
   }
 
@@ -426,8 +424,7 @@ class CsisGroup {
     auto iter = std::find_if(
         devices_.begin(), devices_.end(), [id, &number_of_connected](auto& d) {
           if (!d->IsConnected()) {
-            log::debug("Device {} is not connected in group {}",
-                       ADDRESS_TO_LOGGABLE_CSTR(d->addr), id);
+            log::debug("Device {} is not connected in group {}", d->addr, id);
             return false;
           }
           auto inst = d->GetCsisInstanceByGroupId(id);
@@ -436,8 +433,7 @@ class CsisGroup {
             return false;
           }
           number_of_connected++;
-          log::debug("Device {},  lock state: {}",
-                     ADDRESS_TO_LOGGABLE_CSTR(d->addr),
+          log::debug("Device {},  lock state: {}", d->addr,
                      (int)inst->GetLockState());
           return inst->GetLockState() == CsisLockState::CSIS_STATE_LOCKED;
         });
@@ -446,7 +442,7 @@ class CsisGroup {
                number_of_connected);
     /* If there is no locked device, we are good to go */
     if (iter != devices_.end()) {
-      log::warn("Device {} is locked", ADDRESS_TO_LOGGABLE_CSTR((*iter)->addr));
+      log::warn("Device {} is locked", (*iter)->addr);
       return false;
     }
 

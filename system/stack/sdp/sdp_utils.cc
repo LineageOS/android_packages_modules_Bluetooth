@@ -198,8 +198,7 @@ void sdpu_log_attribute_metrics(const RawAddress& bda,
        p_rec = p_rec->p_next_rec) {
     uint16_t service_uuid = sdpu_find_most_specific_service_uuid(p_rec);
     if (service_uuid == 0) {
-      log::info("skipping record without service uuid {}",
-                ADDRESS_TO_LOGGABLE_STR(bda));
+      log::info("skipping record without service uuid {}", bda);
       continue;
     }
     // Log the existence of a profile role
@@ -1482,7 +1481,7 @@ void sdpu_set_avrc_target_version(const tSDP_ATTRIBUTE* p_attr,
   log::info("SDP AVRCP DB Version {:x}", avrcp_version);
   if (avrcp_version == 0) {
     log::info("Not AVRCP version attribute or version not valid for device {}",
-              ADDRESS_TO_LOGGABLE_CSTR(*bdaddr));
+              *bdaddr);
     return;
   }
 
@@ -1510,7 +1509,7 @@ void sdpu_set_avrc_target_version(const tSDP_ATTRIBUTE* p_attr,
     log::info(
         "device={} is in IOP database. Reply AVRC Target version {:x} instead "
         "of {:x}.",
-        ADDRESS_TO_LOGGABLE_CSTR(*bdaddr), iop_version, avrcp_version);
+        *bdaddr, iop_version, avrcp_version);
     uint8_t* p_version = p_attr->value_ptr + 6;
     UINT16_TO_BE_FIELD(p_version, iop_version);
     return;
@@ -1530,8 +1529,7 @@ void sdpu_set_avrc_target_version(const tSDP_ATTRIBUTE* p_attr,
       bdaddr->ToString(), BTIF_STORAGE_KEY_AVRCP_CONTROLLER_VERSION);
   if (version_value_size != sizeof(cached_version)) {
     log::error("cached value len wrong, bdaddr={}. Len is {} but should be {}.",
-               ADDRESS_TO_LOGGABLE_CSTR(*bdaddr), version_value_size,
-               sizeof(cached_version));
+               *bdaddr, version_value_size, sizeof(cached_version));
     return;
   }
 
@@ -1541,7 +1539,7 @@ void sdpu_set_avrc_target_version(const tSDP_ATTRIBUTE* p_attr,
     log::info(
         "no cached AVRC Controller version for {}. Reply default AVRC Target "
         "version {:x}.DUT AVRC Target version {:x}.",
-        ADDRESS_TO_LOGGABLE_CSTR(*bdaddr), avrcp_version, dut_avrcp_version);
+        *bdaddr, avrcp_version, dut_avrcp_version);
     return;
   }
 
@@ -1549,7 +1547,7 @@ void sdpu_set_avrc_target_version(const tSDP_ATTRIBUTE* p_attr,
     log::error(
         "cached AVRC Controller version {:x} of {} is not valid. Reply default "
         "AVRC Target version {:x}.",
-        cached_version, ADDRESS_TO_LOGGABLE_CSTR(*bdaddr), avrcp_version);
+        cached_version, *bdaddr, avrcp_version);
     return;
   }
 
@@ -1564,8 +1562,7 @@ void sdpu_set_avrc_target_version(const tSDP_ATTRIBUTE* p_attr,
   log::info(
       "read cached AVRC Controller version {:x} of {}. DUT AVRC Target version "
       "{:x}.Negotiated AVRCP version to update peer {:x}.",
-      cached_version, ADDRESS_TO_LOGGABLE_CSTR(*bdaddr), dut_avrcp_version,
-      negotiated_avrcp_version);
+      cached_version, *bdaddr, dut_avrcp_version, negotiated_avrcp_version);
   uint8_t* p_version = p_attr->value_ptr + 6;
   UINT16_TO_BE_FIELD(p_version, negotiated_avrcp_version);
 }
@@ -1594,8 +1591,7 @@ void sdpu_set_avrc_target_features(const tSDP_ATTRIBUTE* p_attr,
   }
 
   if (avrcp_version == 0) {
-    log::info("AVRCP version not valid for device {}",
-              ADDRESS_TO_LOGGABLE_CSTR(*bdaddr));
+    log::info("AVRCP version not valid for device {}", *bdaddr);
     return;
   }
 
@@ -1612,8 +1608,7 @@ void sdpu_set_avrc_target_features(const tSDP_ATTRIBUTE* p_attr,
       bdaddr->ToString(), BTIF_STORAGE_KEY_AV_REM_CTRL_FEATURES);
   if (version_value_size != sizeof(avrcp_peer_features)) {
     log::error("cached value len wrong, bdaddr={}. Len is {} but should be {}.",
-               ADDRESS_TO_LOGGABLE_CSTR(*bdaddr), version_value_size,
-               sizeof(avrcp_peer_features));
+               *bdaddr, version_value_size, sizeof(avrcp_peer_features));
     return;
   }
 

@@ -276,7 +276,7 @@ void SecurityManagerImpl::HandleEvent(T packet) {
         event_code != hci::EventCode::IO_CAPABILITY_RESPONSE) {
       log::error(
           "No classic pairing handler for device '{}' ready for command {}",
-          ADDRESS_TO_LOGGABLE_CSTR(bd_addr),
+          bd_addr,
           hci::EventCodeText(event_code));
       return;
     }
@@ -360,7 +360,7 @@ void SecurityManagerImpl::OnHciEventReceived(hci::EventView packet) {
 void SecurityManagerImpl::OnConnectionClosed(hci::Address address) {
   auto entry = pairing_handler_map_.find(address);
   if (entry != pairing_handler_map_.end()) {
-    log::info("Cancelling pairing handler for '{}'", ADDRESS_TO_LOGGABLE_CSTR(address));
+    log::info("Cancelling pairing handler for '{}'", address);
     entry->second->Cancel();
   }
   auto record = security_database_.FindOrCreate(hci::AddressWithType(address, hci::AddressType::PUBLIC_DEVICE_ADDRESS));
@@ -433,10 +433,10 @@ void SecurityManagerImpl::OnPasskeyEntry(const bluetooth::hci::AddressWithType& 
 void SecurityManagerImpl::OnPinEntry(const bluetooth::hci::AddressWithType& address, std::vector<uint8_t> pin) {
   auto entry = pairing_handler_map_.find(address.GetAddress());
   if (entry != pairing_handler_map_.end()) {
-    log::info("PIN for {}", ADDRESS_TO_LOGGABLE_CSTR(address));
+    log::info("PIN for {}", address);
     entry->second->OnPinEntry(address, pin);
   } else {
-    log::warn("No handler found for PIN for {}", ADDRESS_TO_LOGGABLE_CSTR(address));
+    log::warn("No handler found for PIN for {}", address);
     // TODO(jpawlowski): Implement LE version
   }
 }
@@ -729,7 +729,7 @@ void SecurityManagerImpl::OnPairingFinished(security::PairingResultOrFailure pai
   }
 
   auto result = std::get<PairingResult>(pairing_result);
-  log::info("Pairing with {} was successful", ADDRESS_TO_LOGGABLE_CSTR(result.connection_address));
+  log::info("Pairing with {} was successful", result.connection_address);
 
   // TODO: ensure that the security level is not weaker than what we already have.
   auto record = this->security_database_.FindOrCreate(result.connection_address);
@@ -852,8 +852,7 @@ void SecurityManagerImpl::InternalEnforceSecurityPolicy(
 void SecurityManagerImpl::UpdateLinkSecurityCondition(hci::AddressWithType remote) {
   auto entry = enforce_security_policy_callback_map_.find(remote);
   if (entry == enforce_security_policy_callback_map_.end()) {
-    log::error(
-        "No L2CAP security policy callback pending for {}", ADDRESS_TO_LOGGABLE_CSTR(remote));
+    log::error("No L2CAP security policy callback pending for {}", remote);
     return;
   }
   std::move(entry->second.callback_).Invoke(IsSecurityRequirementSatisfied(remote, entry->second.policy_));

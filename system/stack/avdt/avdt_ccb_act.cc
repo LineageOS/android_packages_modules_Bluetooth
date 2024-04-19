@@ -1001,7 +1001,7 @@ void avdt_ccb_ll_closed(AvdtpCcb* p_ccb, UNUSED_ATTR tAVDT_CCB_EVT* p_data) {
   tAVDT_CTRL_CBACK* p_cback;
   tAVDT_CTRL avdt_ctrl;
 
-  log::verbose("peer {}", ADDRESS_TO_LOGGABLE_CSTR(p_ccb->peer_addr));
+  log::verbose("peer {}", p_ccb->peer_addr);
 
   /* clear any pending commands */
   avdt_ccb_clear_cmds(p_ccb, NULL);
@@ -1036,8 +1036,7 @@ void avdt_ccb_ll_closed(AvdtpCcb* p_ccb, UNUSED_ATTR tAVDT_CCB_EVT* p_data) {
 void avdt_ccb_ll_opened(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data) {
   tAVDT_CTRL avdt_ctrl;
 
-  log::verbose("peer {} BtaAvScbIndex={} p_ccb={}",
-               ADDRESS_TO_LOGGABLE_CSTR(p_ccb->peer_addr),
+  log::verbose("peer {} BtaAvScbIndex={} p_ccb={}", p_ccb->peer_addr,
                p_ccb->BtaAvScbIndex(), fmt::ptr(p_ccb));
   p_ccb->ll_opened = true;
 

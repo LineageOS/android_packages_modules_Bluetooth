@@ -198,8 +198,7 @@ bool LeAudioDeviceGroup::Activate(
 
     bool activated = leAudioDevice.lock()->ActivateConfiguredAses(
         context_type, metadata_context_types, ccid_lists);
-    log::info("Device {} is {}",
-              ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice.lock().get()->address_),
+    log::info("Device {} is {}", leAudioDevice.lock().get()->address_,
               activated ? "activated" : " not activated");
     if (activated) {
       if (!cig.AssignCisIds(leAudioDevice.lock().get())) {
@@ -1045,12 +1044,12 @@ void LeAudioDeviceGroup::CigConfiguration::GenerateCisIds(
 bool LeAudioDeviceGroup::CigConfiguration::AssignCisIds(
     LeAudioDevice* leAudioDevice) {
   log::assert_that(leAudioDevice, "invalid device");
-  log::info("device: {}", ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+  log::info("device: {}", leAudioDevice->address_);
 
   struct ase* ase = leAudioDevice->GetFirstActiveAse();
   if (!ase) {
     log::error("Device {} shouldn't be called without an active ASE",
-               ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+               leAudioDevice->address_);
     return false;
   }
 
@@ -1177,7 +1176,7 @@ void LeAudioDeviceGroup::AssignCisConnHandlesToAses(
     LeAudioDevice* leAudioDevice) {
   log::assert_that(leAudioDevice, "Invalid device");
   log::info("group: {}, group_id: {}, device: {}", fmt::ptr(this), group_id_,
-            ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+            leAudioDevice->address_);
 
   /* Assign all CIS connection handles to ases */
   struct bluetooth::le_audio::types::ase* ase =
@@ -1223,8 +1222,7 @@ void LeAudioDeviceGroup::CigConfiguration::UnassignCis(
   log::assert_that(leAudioDevice, "Invalid device");
 
   log::info("Group {}, group_id {}, device: {}", fmt::ptr(group_),
-            group_->group_id_,
-            ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+            group_->group_id_, leAudioDevice->address_);
 
   for (struct bluetooth::le_audio::types::cis& cis_entry : cises) {
     if (cis_entry.addr == leAudioDevice->address_) {
@@ -1492,8 +1490,7 @@ bool LeAudioDeviceGroup::ConfigureAses(
        * connected
        */
       if (dev->GetConnectionState() != DeviceConnectState::CONNECTED) {
-        log::warn("Device {}, in the state {}",
-                  ADDRESS_TO_LOGGABLE_CSTR(dev->address_),
+        log::warn("Device {}, in the state {}", dev->address_,
                   bluetooth::common::ToString(dev->GetConnectionState()));
         return;
       }
@@ -1741,8 +1738,7 @@ void LeAudioDeviceGroup::Disable(int gatt_if) {
     device_iter.lock()->autoconnect_flag_ = false;
 
     log::info("Group {} in state {}. Removing {} from background connect",
-              group_id_, bluetooth::common::ToString(GetState()),
-              ADDRESS_TO_LOGGABLE_CSTR(address));
+              group_id_, bluetooth::common::ToString(GetState()), address);
 
     BTA_GATTC_CancelOpen(gatt_if, address, false);
 
@@ -1767,8 +1763,7 @@ void LeAudioDeviceGroup::Enable(int gatt_if,
     device_iter.lock()->autoconnect_flag_ = true;
 
     log::info("Group {} in state {}. Adding {} from background connect",
-              group_id_, bluetooth::common::ToString(GetState()),
-              ADDRESS_TO_LOGGABLE_CSTR(address));
+              group_id_, bluetooth::common::ToString(GetState()), address);
 
     if (connection_state == DeviceConnectState::DISCONNECTED) {
       BTA_GATTC_Open(gatt_if, address, reconnection_mode, false);
@@ -1794,8 +1789,7 @@ void LeAudioDeviceGroup::AddToAllowListNotConnectedGroupMembers(int gatt_if) {
 
     auto address = device_iter.lock()->address_;
     log::info("Group {} in state {}. Adding {} to allow list", group_id_,
-              bluetooth::common::ToString(GetState()),
-              ADDRESS_TO_LOGGABLE_CSTR(address));
+              bluetooth::common::ToString(GetState()), address);
 
     /* When adding set members to allow list, let use direct connect first.
      * When it fails (i.e. device is not advertising), it will go to background
@@ -1818,7 +1812,7 @@ void LeAudioDeviceGroup::ApplyReconnectionMode(
                    false);
     log::info("Group {} in state {}. Adding {} to default reconnection mode",
               group_id_, bluetooth::common::ToString(GetState()),
-              ADDRESS_TO_LOGGABLE_CSTR(device_iter.lock()->address_));
+              device_iter.lock()->address_);
     device_iter.lock()->SetConnectionState(
         DeviceConnectState::CONNECTING_AUTOCONNECT);
   }

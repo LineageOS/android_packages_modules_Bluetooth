@@ -201,9 +201,8 @@ void NotifyAclFeaturesReadComplete(tACL_CONN& p_acl,
 
 static void disconnect_acl(tACL_CONN& p_acl, tHCI_STATUS reason,
                            std::string comment) {
-  log::info("Disconnecting peer:{} reason:{} comment:{}",
-            ADDRESS_TO_LOGGABLE_CSTR(p_acl.remote_addr),
-            hci_error_code_text(reason).c_str(), comment.c_str());
+  log::info("Disconnecting peer:{} reason:{} comment:{}", p_acl.remote_addr,
+            hci_error_code_text(reason), comment);
   p_acl.disconnect_reason = reason;
 
   return bluetooth::shim::ACL_Disconnect(
@@ -221,7 +220,7 @@ void hci_btm_set_link_supervision_timeout(tACL_CONN& link, uint16_t timeout) {
   if (link.link_role != HCI_ROLE_CENTRAL) {
     /* Only send if current role is Central; 2.0 spec requires this */
     log::warn("Can only set link supervision timeout if central role:{}",
-              RoleText(link.link_role).c_str());
+              RoleText(link.link_role));
     return;
   }
 
@@ -230,13 +229,11 @@ void hci_btm_set_link_supervision_timeout(tACL_CONN& link, uint16_t timeout) {
     log::warn(
         "UNSUPPORTED by controller write link supervision timeout:{:.2f}ms "
         "bd_addr:{}",
-        supervision_timeout_to_seconds(timeout),
-        ADDRESS_TO_LOGGABLE_CSTR(link.RemoteAddress()));
+        supervision_timeout_to_seconds(timeout), link.RemoteAddress());
     return;
   }
   log::debug("Setting link supervision timeout:{:.2f}s peer:{}",
-             double(timeout) * 0.01,
-             ADDRESS_TO_LOGGABLE_CSTR(link.RemoteAddress()));
+             double(timeout) * 0.01, link.RemoteAddress());
   link.link_super_tout = timeout;
   btsnd_hcic_write_link_super_tout(link.Handle(), timeout);
 }
@@ -327,8 +324,7 @@ void StackAclBtmAcl::btm_acl_consolidate(const RawAddress& identity_addr,
     if (!p_acl->in_use) continue;
 
     if (p_acl->remote_addr == rpa) {
-      log::info("consolidate {} -> {}", ADDRESS_TO_LOGGABLE_CSTR(rpa),
-                ADDRESS_TO_LOGGABLE_CSTR(identity_addr));
+      log::info("consolidate {} -> {}", rpa, identity_addr);
       p_acl->remote_addr = identity_addr;
       return;
     }
@@ -387,7 +383,7 @@ void btm_acl_process_sca_cmpl_pkt(uint8_t len, uint8_t* data) {
 
   if (status != HCI_SUCCESS) {
     log::warn("Peer SCA Command complete failed:{}",
-              hci_error_code_text(static_cast<tHCI_STATUS>(status)).c_str());
+              hci_error_code_text(static_cast<tHCI_STATUS>(status)));
     return;
   }
 
@@ -425,8 +421,7 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
     log::warn(
         "Unable to create duplicate acl when one already exists handle:{} "
         "role:{} transport:{}",
-        hci_handle, RoleText(link_role).c_str(),
-        bt_transport_text(transport).c_str());
+        hci_handle, RoleText(link_role), bt_transport_text(transport));
     return;
   }
 
@@ -448,8 +443,8 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
 
   log::debug(
       "Created new ACL connection peer:{} role:{} handle:0x{:04x} transport:{}",
-      ADDRESS_TO_LOGGABLE_CSTR(bda), RoleText(p_acl->link_role).c_str(),
-      hci_handle, bt_transport_text(transport).c_str());
+      bda, RoleText(p_acl->link_role), hci_handle,
+      bt_transport_text(transport));
 
   if (p_acl->is_transport_br_edr()) {
     BTM_PM_OnConnected(hci_handle, bda);
@@ -835,8 +830,7 @@ static void maybe_chain_more_commands_after_read_remote_version_complete(
       break;
     default:
       log::error("Unable to determine transport:{} device:{}",
-                 bt_transport_text(p_acl_cb->transport).c_str(),
-                 ADDRESS_TO_LOGGABLE_CSTR(p_acl_cb->remote_addr));
+                 bt_transport_text(p_acl_cb->transport), p_acl_cb->remote_addr);
   }
 
   // save remote versions to iot conf file
@@ -1057,8 +1051,7 @@ void StackAclBtmAcl::btm_establish_continue(tACL_CONN* p_acl) {
                                                   default_packet_type_mask)) {
       log::error(
           "Unable to change connection packet type types:{:04x} address:{}",
-          default_packet_type_mask,
-          ADDRESS_TO_LOGGABLE_CSTR(p_acl->RemoteAddress()));
+          default_packet_type_mask, p_acl->RemoteAddress());
     }
     btm_set_link_policy(p_acl, btm_cb.acl_cb_.DefaultLinkPolicy());
   }
@@ -1121,22 +1114,19 @@ tBTM_STATUS BTM_SetLinkSuperTout(const RawAddress& remote_bda,
       log::warn(
           "UNSUPPORTED by controller write link supervision timeout:{:.2f}ms "
           "bd_addr:{}",
-          supervision_timeout_to_seconds(timeout),
-          ADDRESS_TO_LOGGABLE_CSTR(remote_bda));
+          supervision_timeout_to_seconds(timeout), remote_bda);
       return BTM_MODE_UNSUPPORTED;
     }
     p_acl->link_super_tout = timeout;
     btsnd_hcic_write_link_super_tout(p_acl->hci_handle, timeout);
     log::debug("Set supervision timeout:{:.2f}ms bd_addr:{}",
-               supervision_timeout_to_seconds(timeout),
-               ADDRESS_TO_LOGGABLE_CSTR(remote_bda));
+               supervision_timeout_to_seconds(timeout), remote_bda);
     return BTM_CMD_STARTED;
   } else {
     log::warn(
         "Role is peripheral so unable to set supervision timeout:{:.2f}ms "
         "bd_addr:{}",
-        supervision_timeout_to_seconds(timeout),
-        ADDRESS_TO_LOGGABLE_CSTR(remote_bda));
+        supervision_timeout_to_seconds(timeout), remote_bda);
     return BTM_SUCCESS;
   }
 }
@@ -1328,7 +1318,7 @@ void btm_rejectlist_role_change_device(const RawAddress& bd_addr,
       log::warn(
           "Device {} rejectlisted for role switching - multiple role switch "
           "failed attempts: {}",
-          ADDRESS_TO_LOGGABLE_CSTR(bd_addr), p->switch_role_failed_attempts);
+          bd_addr, p->switch_role_failed_attempts);
       interop_database_add(INTEROP_DYNAMIC_ROLE_SWITCH, &bd_addr, 3);
     }
   }
@@ -1384,9 +1374,7 @@ void StackAclBtmAcl::btm_acl_role_changed(tHCI_STATUS hci_status,
 
   tBTM_ROLE_SWITCH_CMPL* p_switch_role = &btm_cb.acl_cb_.switch_role_ref_data;
   log::debug("Role change event received peer:{} hci_status:{} new_role:{}",
-             ADDRESS_TO_LOGGABLE_CSTR(bd_addr),
-             hci_error_code_text(hci_status).c_str(),
-             RoleText(new_role).c_str());
+             bd_addr, hci_error_code_text(hci_status), RoleText(new_role));
 
   p_switch_role->hci_status = hci_status;
   if (hci_status == HCI_SUCCESS) {
@@ -1495,8 +1483,7 @@ bool StackAclBtmAcl::change_connection_packet_types(
   link.pkt_types_mask = packet_type_mask;
   GetInterface().ChangeConnectionPacketType(link.Handle(), link.pkt_types_mask);
   log::debug("Started change connection packet type:0x{:04x} address:{}",
-             link.pkt_types_mask,
-             ADDRESS_TO_LOGGABLE_CSTR(link.RemoteAddress()));
+             link.pkt_types_mask, link.RemoteAddress());
   return true;
 }
 
@@ -1511,7 +1498,7 @@ void btm_set_packet_types_from_address(const RawAddress& bd_addr,
   if (!internal_.change_connection_packet_types(*p_acl, pkt_types)) {
     log::error(
         "Unable to change connection packet type types:{:04x} address:{}",
-        pkt_types, ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+        pkt_types, bd_addr);
   }
 }
 
@@ -1736,7 +1723,7 @@ tBTM_STATUS BTM_ReadTxPower(const RawAddress& remote_bda,
 #define BTM_READ_RSSI_TYPE_CUR 0x00
 #define BTM_READ_RSSI_TYPE_MAX 0X01
 
-  log::verbose("RemBdAddr: {}", ADDRESS_TO_LOGGABLE_STR(remote_bda));
+  log::verbose("RemBdAddr: {}", remote_bda);
 
   /* If someone already waiting on the version, do not allow another */
   if (btm_cb.devcb.p_tx_power_cmpl_cb) return (BTM_BUSY);
@@ -1831,8 +1818,7 @@ void btm_read_tx_power_complete(uint8_t* p, uint16_t evt_len, bool is_ble) {
       }
       log::debug(
           "Transmit power complete: tx_power:{} hci status:{}", result.tx_power,
-          hci_error_code_text(static_cast<tHCI_STATUS>(result.hci_status))
-              .c_str());
+          hci_error_code_text(static_cast<tHCI_STATUS>(result.hci_status)));
     } else {
       result.status = BTM_ERR_PROCESSING;
     }
@@ -1961,10 +1947,9 @@ void btm_read_failed_contact_counter_complete(uint8_t* p) {
       STREAM_TO_UINT16(handle, p);
 
       STREAM_TO_UINT16(result.failed_contact_counter, p);
-      log::debug(
-          "Failed contact counter complete: counter {}, hci status:{}",
-          result.failed_contact_counter,
-          hci_status_code_text(to_hci_status_code(result.hci_status)).c_str());
+      log::debug("Failed contact counter complete: counter {}, hci status:{}",
+                 result.failed_contact_counter,
+                 hci_status_code_text(to_hci_status_code(result.hci_status)));
 
       tACL_CONN* p_acl_cb = internal_.acl_get_connection_from_handle(handle);
       if (p_acl_cb != nullptr) {
@@ -2010,8 +1995,7 @@ void btm_read_automatic_flush_timeout_complete(uint8_t* p) {
       log::debug(
           "Read automatic flush timeout complete timeout:{} hci_status:{}",
           result.automatic_flush_timeout,
-          hci_error_code_text(static_cast<tHCI_STATUS>(result.hci_status))
-              .c_str());
+          hci_error_code_text(static_cast<tHCI_STATUS>(result.hci_status)));
 
       tACL_CONN* p_acl_cb = internal_.acl_get_connection_from_handle(handle);
       if (p_acl_cb != nullptr) {
@@ -2061,8 +2045,7 @@ void btm_read_link_quality_complete(uint8_t* p, uint16_t evt_len) {
       log::debug(
           "BTM Link Quality Complete: Link Quality {}, hci status:{}",
           result.link_quality,
-          hci_error_code_text(static_cast<tHCI_STATUS>(result.hci_status))
-              .c_str());
+          hci_error_code_text(static_cast<tHCI_STATUS>(result.hci_status)));
 
       tACL_CONN* p_acl_cb = internal_.acl_get_connection_from_handle(handle);
       if (p_acl_cb != nullptr) {
@@ -2099,9 +2082,8 @@ tBTM_STATUS btm_remove_acl(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
   }
 
   if (p_acl->Handle() == HCI_INVALID_HANDLE) {
-    log::warn("Cannot remove unknown acl bd_addr:{} transport:{}",
-              ADDRESS_TO_LOGGABLE_CSTR(bd_addr),
-              bt_transport_text(transport).c_str());
+    log::warn("Cannot remove unknown acl bd_addr:{} transport:{}", bd_addr,
+              bt_transport_text(transport));
     return BTM_UNKNOWN_ADDR;
   }
 
@@ -2109,8 +2091,7 @@ tBTM_STATUS btm_remove_acl(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
     log::debug(
         "Delay disconnect until role switch is complete bd_addr:{} "
         "transport:{}",
-        ADDRESS_TO_LOGGABLE_CSTR(bd_addr),
-        bt_transport_text(transport).c_str());
+        bd_addr, bt_transport_text(transport));
     p_acl->rs_disc_pending = BTM_SEC_DISC_PENDING;
     return BTM_SUCCESS;
   }
@@ -2189,7 +2170,7 @@ bool acl_refresh_remote_address(const RawAddress& identity_address,
     p_acl->active_remote_addr = rpa;
   }
 
-  log::debug("active_remote_addr_type: {} ", p_acl->active_remote_addr_type);
+  log::debug("active_remote_addr_type: {}", p_acl->active_remote_addr_type);
   return true;
 }
 
@@ -2267,8 +2248,7 @@ void BTM_ReadConnectionAddr(const RawAddress& remote_bda,
                             tBLE_ADDR_TYPE* p_addr_type, bool ota_address) {
   tBTM_SEC_DEV_REC* p_sec_rec = btm_find_dev(remote_bda);
   if (p_sec_rec == nullptr) {
-    log::warn("No matching known device {} in record",
-              ADDRESS_TO_LOGGABLE_CSTR(remote_bda));
+    log::warn("No matching known device {} in record", remote_bda);
     return;
   }
 
@@ -2333,8 +2313,7 @@ bool BTM_ReadRemoteConnectionAddr(const RawAddress& pseudo_addr,
                                   bool ota_address) {
   tBTM_SEC_DEV_REC* p_sec_rec = btm_find_dev(pseudo_addr);
   if (p_sec_rec == nullptr) {
-    log::warn("No matching known device {} in record",
-              ADDRESS_TO_LOGGABLE_CSTR(pseudo_addr));
+    log::warn("No matching known device {} in record", pseudo_addr);
     return false;
   }
 
@@ -2484,8 +2463,7 @@ void btm_acl_connected(const RawAddress& bda, uint16_t handle,
 void btm_acl_disconnected(tHCI_STATUS status, uint16_t handle,
                           tHCI_REASON reason) {
   if (status != HCI_SUCCESS) {
-    log::warn("Received disconnect with error:{}",
-              hci_error_code_text(status).c_str());
+    log::warn("Received disconnect with error:{}", hci_error_code_text(status));
   }
   power_telemetry::GetInstance().LogLinkDetails(handle, RawAddress::kEmpty,
                                                 false, true);
@@ -2558,8 +2536,7 @@ void acl_disconnect_after_role_switch(uint16_t conn_handle, tHCI_STATUS reason,
     log::warn(
         "Controller will not accept invalid reason parameter:{} instead "
         "sending:{}",
-        hci_error_code_text(reason).c_str(),
-        hci_error_code_text(HCI_ERR_PEER_USER).c_str());
+        hci_error_code_text(reason), hci_error_code_text(HCI_ERR_PEER_USER));
     reason = HCI_ERR_PEER_USER;
   }
 
@@ -2579,7 +2556,7 @@ void acl_disconnect_after_role_switch(uint16_t conn_handle, tHCI_STATUS reason,
     p_acl->rs_disc_pending = BTM_SEC_DISC_PENDING;
   } else {
     log::debug("Sending acl disconnect reason:{} [{}]",
-               hci_error_code_text(reason).c_str(), reason);
+               hci_error_code_text(reason), reason);
     disconnect_acl(*p_acl, reason, comment);
   }
 }
@@ -2587,8 +2564,7 @@ void acl_disconnect_after_role_switch(uint16_t conn_handle, tHCI_STATUS reason,
 void acl_send_data_packet_br_edr(const RawAddress& bd_addr, BT_HDR* p_buf) {
     tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR);
     if (p_acl == nullptr) {
-      log::warn("Acl br_edr data write for unknown device:{}",
-                ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+      log::warn("Acl br_edr data write for unknown device:{}", bd_addr);
       osi_free(p_buf);
       return;
     }
@@ -2599,8 +2575,7 @@ void acl_send_data_packet_br_edr(const RawAddress& bd_addr, BT_HDR* p_buf) {
 void acl_send_data_packet_ble(const RawAddress& bd_addr, BT_HDR* p_buf) {
     tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, BT_TRANSPORT_LE);
     if (p_acl == nullptr) {
-      log::warn("Acl le data write for unknown device:{}",
-                ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+      log::warn("Acl le data write for unknown device:{}", bd_addr);
       osi_free(p_buf);
       return;
     }
@@ -2636,15 +2611,14 @@ bool acl_create_le_connection_with_id(uint8_t id, const RawAddress& bd_addr,
   find_in_device_record(bd_addr, &address_with_type);
 
   log::debug("Creating le direct connection to:{} type:{} (initial type: {})",
-             ADDRESS_TO_LOGGABLE_CSTR(address_with_type),
-             AddressTypeText(address_with_type.type).c_str(),
-             AddressTypeText(addr_type).c_str());
+             address_with_type, AddressTypeText(address_with_type.type),
+             AddressTypeText(addr_type));
 
   if (address_with_type.type == BLE_ADDR_ANONYMOUS) {
     log::warn(
         "Creating le direct connection to:{}, address type 'anonymous' is "
         "invalid",
-        ADDRESS_TO_LOGGABLE_CSTR(address_with_type));
+        address_with_type);
     return false;
   }
 
@@ -2711,8 +2685,7 @@ void acl_process_supported_features(uint16_t handle, uint64_t features) {
       "Copied supported feature pages handle:{} current_page_number:{} "
       "features:{}",
       handle, current_page_number,
-      bd_features_text(p_acl->peer_lmp_feature_pages[current_page_number])
-          .c_str());
+      bd_features_text(p_acl->peer_lmp_feature_pages[current_page_number]));
 
   if ((HCI_LMP_EXTENDED_SUPPORTED(p_acl->peer_lmp_feature_pages[0])) &&
       (bluetooth::shim::GetController()->IsSupported(
@@ -2743,8 +2716,7 @@ void acl_process_extended_features(uint16_t handle, uint8_t current_page_number,
       "Copied extended feature pages handle:{} current_page_number:{} "
       "max_page_number:{} features:{}",
       handle, current_page_number, max_page_number,
-      bd_features_text(p_acl->peer_lmp_feature_pages[current_page_number])
-          .c_str());
+      bd_features_text(p_acl->peer_lmp_feature_pages[current_page_number]));
 
   if (max_page_number == 0 || max_page_number == current_page_number) {
     NotifyAclFeaturesReadComplete(*p_acl, max_page_number);

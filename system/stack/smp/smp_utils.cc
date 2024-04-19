@@ -369,8 +369,7 @@ bool smp_send_msg_to_L2CAP(const RawAddress& rem_bda, BT_HDR* p_toL2CAP) {
     fixed_cid = L2CAP_SMP_BR_CID;
   }
 
-  log::verbose("rem_bda:{}, over_bredr:{}", ADDRESS_TO_LOGGABLE_CSTR(rem_bda),
-               smp_cb.smp_over_br);
+  log::verbose("rem_bda:{}, over_bredr:{}", rem_bda, smp_cb.smp_over_br);
 
   smp_log_metrics(rem_bda, true /* outgoing */,
                   p_toL2CAP->data + p_toL2CAP->offset, p_toL2CAP->len,
@@ -428,7 +427,7 @@ bool smp_send_cmd(uint8_t cmd_code, tSMP_CB* p_cb) {
 
   log::debug("Sending SMP command:{}[0x{:x}] pairing_bda={}",
              smp_opcode_text(static_cast<tSMP_OPCODE>(cmd_code)), cmd_code,
-             ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
+             p_cb->pairing_bda);
 
   if (cmd_code <= (SMP_OPCODE_MAX + 1 /* for SMP_OPCODE_PAIR_COMMITM */) &&
       smp_cmd_build_act[cmd_code] != NULL) {
@@ -543,7 +542,7 @@ static BT_HDR* smp_build_confirm_cmd(UNUSED_ATTR uint8_t cmd_code,
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR) + SMP_CONFIRM_CMD_SIZE +
                                       L2CAP_MIN_OFFSET);
 
-  log::verbose("addr:{}", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
+  log::verbose("addr:{}", p_cb->pairing_bda);
 
   p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
 
@@ -568,7 +567,7 @@ static BT_HDR* smp_build_rand_cmd(UNUSED_ATTR uint8_t cmd_code, tSMP_CB* p_cb) {
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR) + SMP_RAND_CMD_SIZE +
                                       L2CAP_MIN_OFFSET);
 
-  log::verbose("addr:{}", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
+  log::verbose("addr:{}", p_cb->pairing_bda);
 
   p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
   UINT8_TO_STREAM(p, SMP_OPCODE_RAND);
@@ -593,7 +592,7 @@ static BT_HDR* smp_build_encrypt_info_cmd(UNUSED_ATTR uint8_t cmd_code,
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR) + SMP_ENC_INFO_SIZE +
                                       L2CAP_MIN_OFFSET);
 
-  log::verbose("addr:{}", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
+  log::verbose("addr:{}", p_cb->pairing_bda);
 
   p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
   UINT8_TO_STREAM(p, SMP_OPCODE_ENCRYPT_INFO);
@@ -618,7 +617,7 @@ static BT_HDR* smp_build_central_id_cmd(UNUSED_ATTR uint8_t cmd_code,
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR) + SMP_CENTRAL_ID_SIZE +
                                       L2CAP_MIN_OFFSET);
 
-  log::verbose("addr:{}", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
+  log::verbose("addr:{}", p_cb->pairing_bda);
 
   p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
   UINT8_TO_STREAM(p, SMP_OPCODE_CENTRAL_ID);
@@ -644,7 +643,7 @@ static BT_HDR* smp_build_identity_info_cmd(UNUSED_ATTR uint8_t cmd_code,
   BT_HDR* p_buf =
       (BT_HDR*)osi_malloc(sizeof(BT_HDR) + SMP_ID_INFO_SIZE + L2CAP_MIN_OFFSET);
 
-  log::verbose("addr:{}", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
+  log::verbose("addr:{}", p_cb->pairing_bda);
 
   p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
 
@@ -672,7 +671,7 @@ static BT_HDR* smp_build_id_addr_cmd(UNUSED_ATTR uint8_t cmd_code,
   BT_HDR* p_buf =
       (BT_HDR*)osi_malloc(sizeof(BT_HDR) + SMP_ID_ADDR_SIZE + L2CAP_MIN_OFFSET);
 
-  log::verbose("addr:{}", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
+  log::verbose("addr:{}", p_cb->pairing_bda);
 
   p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
   UINT8_TO_STREAM(p, SMP_OPCODE_ID_ADDR);
@@ -699,7 +698,7 @@ static BT_HDR* smp_build_signing_info_cmd(UNUSED_ATTR uint8_t cmd_code,
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR) + SMP_SIGN_INFO_SIZE +
                                       L2CAP_MIN_OFFSET);
 
-  log::verbose("addr:{}", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
+  log::verbose("addr:{}", p_cb->pairing_bda);
 
   p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
   UINT8_TO_STREAM(p, SMP_OPCODE_SIGN_INFO);
@@ -724,7 +723,7 @@ static BT_HDR* smp_build_pairing_fail(UNUSED_ATTR uint8_t cmd_code,
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR) + SMP_PAIR_FAIL_SIZE +
                                       L2CAP_MIN_OFFSET);
 
-  log::verbose("addr:{}", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
+  log::verbose("addr:{}", p_cb->pairing_bda);
 
   p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
   UINT8_TO_STREAM(p, SMP_OPCODE_PAIRING_FAILED);
@@ -748,7 +747,7 @@ static BT_HDR* smp_build_security_request(UNUSED_ATTR uint8_t cmd_code,
   uint8_t* p;
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR) + 2 + L2CAP_MIN_OFFSET);
 
-  log::verbose("addr:{}", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
+  log::verbose("addr:{}", p_cb->pairing_bda);
 
   p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
   UINT8_TO_STREAM(p, SMP_OPCODE_SEC_REQ);
@@ -778,7 +777,7 @@ static BT_HDR* smp_build_pair_public_key_cmd(UNUSED_ATTR uint8_t cmd_code,
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR) + SMP_PAIR_PUBL_KEY_SIZE +
                                       L2CAP_MIN_OFFSET);
 
-  log::verbose("addr:{}", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
+  log::verbose("addr:{}", p_cb->pairing_bda);
 
   memcpy(p_publ_key, p_cb->loc_publ_key.x, BT_OCTET32_LEN);
   memcpy(p_publ_key + BT_OCTET32_LEN, p_cb->loc_publ_key.y, BT_OCTET32_LEN);
@@ -806,7 +805,7 @@ static BT_HDR* smp_build_pairing_commitment_cmd(UNUSED_ATTR uint8_t cmd_code,
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR) + SMP_PAIR_COMMITM_SIZE +
                                       L2CAP_MIN_OFFSET);
 
-  log::verbose("addr:{}", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
+  log::verbose("addr:{}", p_cb->pairing_bda);
 
   p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
   UINT8_TO_STREAM(p, SMP_OPCODE_CONFIRM);
@@ -831,7 +830,7 @@ static BT_HDR* smp_build_pair_dhkey_check_cmd(UNUSED_ATTR uint8_t cmd_code,
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(
       sizeof(BT_HDR) + SMP_PAIR_DHKEY_CHECK_SIZE + L2CAP_MIN_OFFSET);
 
-  log::verbose("addr:{}", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
+  log::verbose("addr:{}", p_cb->pairing_bda);
 
   p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
   UINT8_TO_STREAM(p, SMP_OPCODE_PAIR_DHKEY_CHECK);
@@ -856,7 +855,7 @@ static BT_HDR* smp_build_pairing_keypress_notification_cmd(
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(
       sizeof(BT_HDR) + SMP_PAIR_KEYPR_NOTIF_SIZE + L2CAP_MIN_OFFSET);
 
-  log::verbose("addr:{}", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
+  log::verbose("addr:{}", p_cb->pairing_bda);
 
   p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
   UINT8_TO_STREAM(p, SMP_OPCODE_PAIR_KEYPR_NOTIF);
@@ -967,7 +966,7 @@ void tSMP_CB::reset() {
  *
  ******************************************************************************/
 void smp_remove_fixed_channel(tSMP_CB* p_cb) {
-  log::verbose("addr:{}", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
+  log::verbose("addr:{}", p_cb->pairing_bda);
 
   if (p_cb->smp_over_br)
     L2CA_RemoveFixedChnl(L2CAP_SMP_BR_CID, p_cb->pairing_bda);
@@ -1032,14 +1031,14 @@ void smp_proc_pairing_cmpl(tSMP_CB* p_cb) {
     log::debug(
         "Pairing process has completed successfully remote:{} "
         "sec_level:0x{:0x}",
-        ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda), evt_data.cmplt.sec_level);
+        p_cb->pairing_bda, evt_data.cmplt.sec_level);
     BTM_LogHistory(kBtmLogTag, pairing_bda, "Pairing success");
   } else {
     log::warn(
         "Pairing process has failed to remote:{} smp_reason:{} "
         "sec_level:0x{:0x}",
-        ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda),
-        smp_status_text(evt_data.cmplt.reason), evt_data.cmplt.sec_level);
+        p_cb->pairing_bda, smp_status_text(evt_data.cmplt.reason),
+        evt_data.cmplt.sec_level);
     BTM_LogHistory(
         kBtmLogTag, pairing_bda, "Pairing failed",
         base::StringPrintf("reason:%s",
@@ -1281,7 +1280,7 @@ void smp_reject_unexpected_pairing_command(const RawAddress& bd_addr) {
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR) + SMP_PAIR_FAIL_SIZE +
                                       L2CAP_MIN_OFFSET);
 
-  log::verbose("bd_addr:{}", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+  log::verbose("bd_addr:{}", bd_addr);
 
   p = (uint8_t*)(p_buf + 1) + L2CAP_MIN_OFFSET;
   UINT8_TO_STREAM(p, SMP_OPCODE_PAIRING_FAILED);
@@ -1354,7 +1353,7 @@ tSMP_ASSO_MODEL smp_select_association_model(tSMP_CB* p_cb) {
 tSMP_ASSO_MODEL smp_select_legacy_association_model(tSMP_CB* p_cb) {
   tSMP_ASSO_MODEL model = SMP_MODEL_OUT_OF_RANGE;
 
-  log::verbose("addr:{}", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
+  log::verbose("addr:{}", p_cb->pairing_bda);
   /* if OOB data is present on both devices, then use OOB association model */
   if (p_cb->peer_oob_flag == SMP_OOB_PRESENT &&
       p_cb->loc_oob_flag == SMP_OOB_PRESENT)
@@ -1391,7 +1390,7 @@ tSMP_ASSO_MODEL smp_select_legacy_association_model(tSMP_CB* p_cb) {
 tSMP_ASSO_MODEL smp_select_association_model_secure_connections(tSMP_CB* p_cb) {
   tSMP_ASSO_MODEL model = SMP_MODEL_OUT_OF_RANGE;
 
-  log::verbose("addr:{}", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
+  log::verbose("addr:{}", p_cb->pairing_bda);
   /* if OOB data is present on at least one device, then use OOB association
    * model */
   if (p_cb->peer_oob_flag == SMP_OOB_PRESENT ||
@@ -1451,7 +1450,7 @@ uint8_t smp_calculate_random_input(uint8_t* random, uint8_t round) {
  *
  ******************************************************************************/
 void smp_collect_local_io_capabilities(uint8_t* iocap, tSMP_CB* p_cb) {
-  log::verbose("addr:{}", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
+  log::verbose("addr:{}", p_cb->pairing_bda);
 
   iocap[0] = p_cb->local_io_capability;
   iocap[1] = p_cb->loc_oob_flag;
@@ -1468,7 +1467,7 @@ void smp_collect_local_io_capabilities(uint8_t* iocap, tSMP_CB* p_cb) {
  *
  ******************************************************************************/
 void smp_collect_peer_io_capabilities(uint8_t* iocap, tSMP_CB* p_cb) {
-  log::verbose("addr:{}", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
+  log::verbose("addr:{}", p_cb->pairing_bda);
 
   iocap[0] = p_cb->peer_io_caps;
   iocap[1] = p_cb->peer_oob_flag;
@@ -1490,7 +1489,7 @@ void smp_collect_local_ble_address(uint8_t* le_addr, tSMP_CB* p_cb) {
   RawAddress bda;
   uint8_t* p = le_addr;
 
-  log::verbose("addr:{}", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
+  log::verbose("addr:{}", p_cb->pairing_bda);
 
   BTM_ReadConnectionAddr(p_cb->pairing_bda, bda, &addr_type, true);
   BDADDR_TO_STREAM(p, bda);
@@ -1512,7 +1511,7 @@ void smp_collect_peer_ble_address(uint8_t* le_addr, tSMP_CB* p_cb) {
   RawAddress bda;
   uint8_t* p = le_addr;
 
-  log::verbose("addr:{}", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
+  log::verbose("addr:{}", p_cb->pairing_bda);
 
   if (!BTM_ReadRemoteConnectionAddr(p_cb->pairing_bda, bda, &addr_type, true)) {
     log::error("can not collect peer le addr information for unknown device");
@@ -1535,7 +1534,7 @@ void smp_collect_peer_ble_address(uint8_t* le_addr, tSMP_CB* p_cb) {
  *
  ******************************************************************************/
 bool smp_check_commitment(tSMP_CB* p_cb) {
-  log::verbose("addr:{}", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
+  log::verbose("addr:{}", p_cb->pairing_bda);
 
   Octet16 expected = smp_calculate_peer_commitment(p_cb);
   print128(expected, "calculated peer commitment");
@@ -1594,7 +1593,7 @@ void smp_calculate_f5_mackey_and_long_term_key(tSMP_CB* p_cb) {
   Octet16 na;
   Octet16 nb;
 
-  log::verbose("addr:{}", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
+  log::verbose("addr:{}", p_cb->pairing_bda);
 
   if (p_cb->role == HCI_ROLE_CENTRAL) {
     smp_collect_local_ble_address(a, p_cb);
@@ -1624,7 +1623,7 @@ void smp_calculate_f5_mackey_and_long_term_key(tSMP_CB* p_cb) {
 bool smp_request_oob_data(tSMP_CB* p_cb) {
   tSMP_OOB_DATA_TYPE req_oob_type = SMP_OOB_INVALID_TYPE;
 
-  log::verbose("addr:{}", ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
+  log::verbose("addr:{}", p_cb->pairing_bda);
 
   if (p_cb->peer_oob_flag == SMP_OOB_PRESENT &&
       p_cb->loc_oob_flag == SMP_OOB_PRESENT) {

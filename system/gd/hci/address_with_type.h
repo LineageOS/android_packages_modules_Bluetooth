@@ -27,6 +27,7 @@
 #include "hci/address.h"
 #include "hci/hci_packets.h"
 #include "hci/octets.h"
+#include "os/logging/log_adapter.h"
 
 namespace bluetooth {
 namespace hci {
@@ -156,3 +157,22 @@ struct hash<bluetooth::hci::AddressWithType> {
   }
 };
 }  // namespace std
+
+#if __has_include(<bluetooth/log.h>)
+#include <bluetooth/log.h>
+
+namespace fmt {
+template <>
+struct formatter<bluetooth::hci::AddressWithType> : formatter<std::string> {
+  template <class Context>
+  typename Context::iterator format(
+      const bluetooth::hci::AddressWithType& address, Context& ctx) const {
+    std::string repr = bluetooth::os::should_log_be_redacted()
+                           ? address.ToRedactedStringForLogging()
+                           : address.ToStringForLogging();
+    return fmt::formatter<std::string>::format(repr, ctx);
+  }
+};
+}  // namespace fmt
+
+#endif  // __has_include(<bluetooth/log.h>

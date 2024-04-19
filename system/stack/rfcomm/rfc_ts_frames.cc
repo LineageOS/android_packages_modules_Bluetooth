@@ -652,7 +652,7 @@ void rfc_process_mx_message(tRFC_MCB* p_mcb, BT_HDR* p_buf) {
 
   if (!p_rx_frame->ea || !length) {
     log::error("Invalid MX frame ea={}, len={}, bd_addr={}", p_rx_frame->ea,
-               length, ADDRESS_TO_LOGGABLE_STR(p_mcb->bd_addr));
+               length, p_mcb->bd_addr);
     osi_free(p_buf);
     return;
   }
@@ -678,18 +678,17 @@ void rfc_process_mx_message(tRFC_MCB* p_mcb, BT_HDR* p_buf) {
 
   if (mx_len != length) {
     log::error("Bad MX frame, p_mcb={}, bd_addr={}", fmt::ptr(p_mcb),
-               ADDRESS_TO_LOGGABLE_STR(p_mcb->bd_addr));
+               p_mcb->bd_addr);
     osi_free(p_buf);
     return;
   }
 
-  log::verbose("type=0x{:02x}, bd_addr={}", p_rx_frame->type,
-               ADDRESS_TO_LOGGABLE_CSTR(p_mcb->bd_addr));
+  log::verbose("type=0x{:02x}, bd_addr={}", p_rx_frame->type, p_mcb->bd_addr);
   switch (p_rx_frame->type) {
     case RFCOMM_MX_PN:
       if (length != RFCOMM_MX_PN_LEN) {
         log::error("Invalid PN length, p_mcb={}, bd_addr={}", fmt::ptr(p_mcb),
-                   ADDRESS_TO_LOGGABLE_STR(p_mcb->bd_addr));
+                   p_mcb->bd_addr);
         break;
       }
 
@@ -707,7 +706,7 @@ void rfc_process_mx_message(tRFC_MCB* p_mcb, BT_HDR* p_buf) {
           (p_rx_frame->u.pn.mtu < RFCOMM_MIN_MTU) ||
           (p_rx_frame->u.pn.mtu > RFCOMM_MAX_MTU)) {
         log::error("Bad PN frame, p_mcb={}, bd_addr={}", fmt::ptr(p_mcb),
-                   ADDRESS_TO_LOGGABLE_STR(p_mcb->bd_addr));
+                   p_mcb->bd_addr);
         break;
       }
 

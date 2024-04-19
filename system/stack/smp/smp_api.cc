@@ -86,7 +86,7 @@ tSMP_STATUS SMP_Pair(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type) {
   tSMP_CB* p_cb = &smp_cb;
 
   log::verbose("state={} br_state={} flag=0x{:x}, bd_addr={}", p_cb->state,
-               p_cb->br_state, p_cb->flags, ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+               p_cb->br_state, p_cb->flags, bd_addr);
 
   if (p_cb->state != SMP_STATE_IDLE ||
       p_cb->flags & SMP_PAIR_FLAGS_WE_STARTED_DD || p_cb->smp_over_br) {
@@ -134,7 +134,7 @@ tSMP_STATUS SMP_BR_PairWith(const RawAddress& bd_addr) {
   tSMP_CB* p_cb = &smp_cb;
 
   log::verbose("state={} br_state={} flag=0x{:x}, bd_addr={}", p_cb->state,
-               p_cb->br_state, p_cb->flags, ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+               p_cb->br_state, p_cb->flags, bd_addr);
 
   if (p_cb->state != SMP_STATE_IDLE || p_cb->smp_over_br ||
       p_cb->flags & SMP_PAIR_FLAGS_WE_STARTED_DD) {
@@ -200,7 +200,7 @@ bool SMP_PairCancel(const RawAddress& bd_addr) {
  *
  ******************************************************************************/
 void SMP_SecurityGrant(const RawAddress& bd_addr, tSMP_STATUS res) {
-  log::verbose("addr:{}", ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+  log::verbose("addr:{}", bd_addr);
 
   // If just showing consent dialog, send response
   if (smp_cb.cb_evt == SMP_CONSENT_REQ_EVT) {
@@ -328,7 +328,7 @@ void SMP_PasskeyReply(const RawAddress& bd_addr, uint8_t res,
 void SMP_ConfirmReply(const RawAddress& bd_addr, uint8_t res) {
   tSMP_CB* p_cb = &smp_cb;
 
-  log::verbose("addr:{}, Result:{}", ADDRESS_TO_LOGGABLE_CSTR(bd_addr), res);
+  log::verbose("addr:{}, Result:{}", bd_addr, res);
 
   /* If timeout already expired or has been canceled, ignore the reply */
   if (p_cb->cb_evt != SMP_NC_REQ_EVT) {
@@ -510,9 +510,8 @@ void SMP_SirkConfirmDeviceReply(const RawAddress& bd_addr, uint8_t res) {
   }
 
   if (bd_addr != p_cb->pairing_bda) {
-    log::warn("Wrong confirmation BD Addr: {} vs expected {}",
-              ADDRESS_TO_LOGGABLE_CSTR(bd_addr),
-              ADDRESS_TO_LOGGABLE_CSTR(p_cb->pairing_bda));
+    log::warn("Wrong confirmation BD Addr: {} vs expected {}", bd_addr,
+              p_cb->pairing_bda);
     return;
   }
 

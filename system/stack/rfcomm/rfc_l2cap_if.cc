@@ -268,8 +268,7 @@ void RFCOMM_BufDataInd(uint16_t lcid, BT_HDR* p_buf) {
   /* If the frame did not pass validation just ignore it */
   if (event == RFC_EVENT_BAD_FRAME) {
     log::warn("Bad RFCOMM frame from lcid={}, bd_addr={}, p_mcb={}",
-              loghex(lcid), ADDRESS_TO_LOGGABLE_STR(p_mcb->bd_addr),
-              fmt::ptr(p_mcb));
+              loghex(lcid), p_mcb->bd_addr, fmt::ptr(p_mcb));
     osi_free(p_buf);
     return;
   }
@@ -295,13 +294,11 @@ void RFCOMM_BufDataInd(uint16_t lcid, BT_HDR* p_buf) {
     /* If this is a SABME on new port, check if any app is waiting for it */
     if (event != RFC_EVENT_SABME) {
       log::warn("no for none-SABME event, lcid={}, bd_addr={}, p_mcb={}",
-                loghex(lcid), ADDRESS_TO_LOGGABLE_STR(p_mcb->bd_addr),
-                fmt::ptr(p_mcb));
+                loghex(lcid), p_mcb->bd_addr, fmt::ptr(p_mcb));
       if ((p_mcb->is_initiator && !rfc_cb.rfc.rx_frame.cr) ||
           (!p_mcb->is_initiator && rfc_cb.rfc.rx_frame.cr)) {
         log::error("Disconnecting RFCOMM, lcid={}, bd_addr={}, p_mcb={}",
-                   loghex(lcid), ADDRESS_TO_LOGGABLE_STR(p_mcb->bd_addr),
-                   fmt::ptr(p_mcb));
+                   loghex(lcid), p_mcb->bd_addr, fmt::ptr(p_mcb));
         rfc_send_dm(p_mcb, rfc_cb.rfc.rx_frame.dlci, rfc_cb.rfc.rx_frame.pf);
       }
       osi_free(p_buf);
@@ -313,8 +310,8 @@ void RFCOMM_BufDataInd(uint16_t lcid, BT_HDR* p_buf) {
       log::error(
           "Disconnecting RFCOMM, no port for dlci {}, lcid={}, bd_addr={}, "
           "p_mcb={}",
-          rfc_cb.rfc.rx_frame.dlci, loghex(lcid),
-          ADDRESS_TO_LOGGABLE_STR(p_mcb->bd_addr), fmt::ptr(p_mcb));
+          rfc_cb.rfc.rx_frame.dlci, loghex(lcid), p_mcb->bd_addr,
+          fmt::ptr(p_mcb));
       rfc_send_dm(p_mcb, rfc_cb.rfc.rx_frame.dlci, true);
       osi_free(p_buf);
       return;

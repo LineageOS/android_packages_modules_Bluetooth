@@ -187,4 +187,38 @@ struct tAclLinkSpec {
   }
 };
 
+#if __has_include(<bluetooth/log.h>)
+#include <bluetooth/log.h>
+
+namespace bluetooth::os {
+bool should_log_be_redacted();
+}  // namespace bluetooth::os
+
+namespace fmt {
+template <>
+struct formatter<tBLE_BD_ADDR> : formatter<std::string> {
+  template <class Context>
+  typename Context::iterator format(const tBLE_BD_ADDR& address,
+                                    Context& ctx) const {
+    std::string repr = bluetooth::os::should_log_be_redacted()
+                           ? address.ToRedactedStringForLogging()
+                           : address.ToStringForLogging();
+    return fmt::formatter<std::string>::format(repr, ctx);
+  }
+};
+template <>
+struct formatter<tAclLinkSpec> : formatter<std::string> {
+  template <class Context>
+  typename Context::iterator format(const tAclLinkSpec& address,
+                                    Context& ctx) const {
+    std::string repr = bluetooth::os::should_log_be_redacted()
+                           ? address.ToRedactedStringForLogging()
+                           : address.ToStringForLogging();
+    return fmt::formatter<std::string>::format(repr, ctx);
+  }
+};
+}  // namespace fmt
+
+#endif  // __has_include(<bluetooth/log.h>
+
 #endif

@@ -107,3 +107,26 @@ inline void STREAM_TO_BDADDR(RawAddress& a, const uint8_t*& p) {
   uint8_t* pbda = (uint8_t*)(a.address) + BD_ADDR_LEN - 1;
   for (int ijk = 0; ijk < BD_ADDR_LEN; ijk++) *pbda-- = *(p)++;
 }
+
+#if __has_include(<bluetooth/log.h>)
+#include <bluetooth/log.h>
+
+namespace bluetooth::os {
+bool should_log_be_redacted();
+}  // namespace bluetooth::os
+
+namespace fmt {
+template <>
+struct formatter<RawAddress> : formatter<std::string> {
+  template <class Context>
+  typename Context::iterator format(const RawAddress& address,
+                                    Context& ctx) const {
+    std::string repr = bluetooth::os::should_log_be_redacted()
+                           ? address.ToRedactedStringForLogging()
+                           : address.ToStringForLogging();
+    return fmt::formatter<std::string>::format(repr, ctx);
+  }
+};
+}  // namespace fmt
+
+#endif  // __has_include(<bluetooth/log.h>)

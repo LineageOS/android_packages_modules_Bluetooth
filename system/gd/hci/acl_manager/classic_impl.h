@@ -293,7 +293,7 @@ struct classic_impl {
 
   void actually_create_connection(Address address, std::unique_ptr<CreateConnectionBuilder> packet) {
     if (is_classic_link_already_connected(address)) {
-      log::warn("already connected: {}", ADDRESS_TO_LOGGABLE_CSTR(address));
+      log::warn("already connected: {}", address);
       acl_scheduler_->ReportOutgoingAclConnectionFailure();
       return;
     }
@@ -362,9 +362,7 @@ struct classic_impl {
       if (delayed_role_change_ == nullptr) {
         callbacks->OnRoleChange(hci::ErrorCode::SUCCESS, current_role);
       } else if (delayed_role_change_->GetBdAddr() == address) {
-        log::info(
-            "Sending delayed role change for {}",
-            ADDRESS_TO_LOGGABLE_CSTR(delayed_role_change_->GetBdAddr()));
+        log::info("Sending delayed role change for {}", delayed_role_change_->GetBdAddr());
         callbacks->OnRoleChange(delayed_role_change_->GetStatus(), delayed_role_change_->GetNewRole());
         delayed_role_change_.reset();
       }
@@ -398,14 +396,11 @@ struct classic_impl {
                 Address address,
                 ErrorCode status,
                 std::string valid_incoming_addresses) {
-              log::warn(
-                  "No matching connection to {} ({})",
-                  ADDRESS_TO_LOGGABLE_CSTR(address),
-                  ErrorCodeText(status));
+              log::warn("No matching connection to {} ({})", address, ErrorCodeText(status));
               log::assert_that(
                   status != ErrorCode::SUCCESS,
                   "No prior connection request for {} expecting:{}",
-                  ADDRESS_TO_LOGGABLE_CSTR(address),
+                  address,
                   valid_incoming_addresses.c_str());
               remote_name_request_module->ReportRemoteNameRequestCancellation(address);
             },
@@ -674,13 +669,11 @@ struct classic_impl {
     });
     if (!sent) {
       if (delayed_role_change_ != nullptr) {
-        log::warn(
-            "Second delayed role change (@{} dropped)",
-            ADDRESS_TO_LOGGABLE_CSTR(delayed_role_change_->GetBdAddr()));
+        log::warn("Second delayed role change (@{} dropped)", delayed_role_change_->GetBdAddr());
       }
       log::info(
           "Role change for {} with no matching connection (new role: {})",
-          ADDRESS_TO_LOGGABLE_CSTR(role_change_view.GetBdAddr()),
+          role_change_view.GetBdAddr(),
           RoleText(role_change_view.GetNewRole()));
       delayed_role_change_ = std::make_unique<RoleChangeView>(role_change_view);
     }
