@@ -28,7 +28,6 @@ mod ffi {
         fn irk_rotation_is_enabled() -> bool;
         fn leaudio_targeted_announcement_reconnection_mode_is_enabled() -> bool;
         fn pbap_pse_dynamic_version_upgrade_is_enabled() -> bool;
-        fn private_gatt_is_enabled() -> bool;
         fn redact_log_is_enabled() -> bool;
         fn sco_codec_select_lc3_is_enabled() -> bool;
         fn sco_codec_timeout_clear_is_enabled() -> bool;
