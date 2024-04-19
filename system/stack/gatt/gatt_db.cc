@@ -23,7 +23,6 @@
  ******************************************************************************/
 
 #include <bluetooth/log.h>
-#include <stdio.h>
 #include <string.h>
 
 #include "gatt_int.h"

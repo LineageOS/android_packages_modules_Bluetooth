@@ -22,7 +22,6 @@
 #include <base/threading/thread.h>
 #include <bluetooth/log.h>
 #include <hardware/bluetooth.h>
-#include <stdio.h>
 
 #include "btif/include/btif_common.h"
 #include "hci/address.h"

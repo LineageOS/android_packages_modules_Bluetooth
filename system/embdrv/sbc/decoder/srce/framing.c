@@ -98,7 +98,6 @@ const OI_BYTE crc8_narrow[256] = {
 #endif
 
 #if defined(OI_DEBUG) || defined(PRINT_SAMPLES) || defined(PRINT_SCALEFACTORS)
-#include <stdio.h>
 #endif
 
 #ifdef USE_WIDE_CRC

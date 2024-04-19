@@ -18,7 +18,6 @@
 
 #include "variable.h"
 
-#include <stdio.h>
 #include <sstream>
 
 namespace bluetooth {
