@@ -20,7 +20,6 @@
 
 #include <bluetooth/log.h>
 #include <fcntl.h>
-#include <stdio.h>
 #include <unistd.h>
 
 #include <string>

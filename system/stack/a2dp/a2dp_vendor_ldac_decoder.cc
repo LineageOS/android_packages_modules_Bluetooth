@@ -23,7 +23,6 @@
 #include <ldacBT.h>
 #include <ldacBT_bco_for_fluoride.h>
 #include <pthread.h>
-#include <stdio.h>
 #include <string.h>
 
 #include "a2dp_vendor_ldac.h"

@@ -33,7 +33,6 @@
 #include <ctype.h>
 #include <hardware/bt_av.h>
 #include <netinet/in.h>
-#include <stdio.h>
 #include <stdlib.h>
 
 #include <string>
