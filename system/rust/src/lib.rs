@@ -15,7 +15,6 @@
 //! The core event loop for Rust modules. Here Rust modules are started in
 //! dependency order.
 
-use bt_common::init_flags::rust_event_loop_is_enabled;
 use connection::le_manager::InactiveLeAclManager;
 use gatt::{channel::AttTransport, GattCallbacks};
 use log::{info, warn};
@@ -160,10 +159,6 @@ pub fn do_in_rust_thread<F>(f: F)
 where
     F: for<'a> FnOnce(&'a mut ModuleViews) + Send + 'static,
 {
-    if !rust_event_loop_is_enabled() {
-        warn!("ignoring do_in_rust_thread() invocation since Rust loop is inactive");
-        return;
-    }
     let ret = MAIN_THREAD_TX.with(|tx| tx.send(MainThreadTxMessage::Callback(Box::new(f))));
     if ret.is_err() {
         panic!("Rust call failed");

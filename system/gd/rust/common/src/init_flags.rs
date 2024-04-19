@@ -241,7 +241,6 @@ init_flags!(
         pbap_pse_dynamic_version_upgrade = false,
         private_gatt = true,
         redact_log = true,
-        rust_event_loop = true,
         sco_codec_select_lc3 = true,
         sco_codec_timeout_clear,
         sdp_serialization = true,
@@ -259,8 +258,7 @@ init_flags!(
         "--hci" => parse_hci_adapter(_, _),
     }
     dependencies: {
-        always_use_private_gatt_for_debugging => private_gatt,
-        private_gatt => rust_event_loop
+        always_use_private_gatt_for_debugging => private_gatt
     }
 );
 
