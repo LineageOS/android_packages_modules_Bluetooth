@@ -21,6 +21,10 @@
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
 
+// TODO: Remove this file after flag separate_service_and_device_discovery rolls
+// out
+namespace bta_dm_disc_legacy {
+
 // Bta module start and stop entry points
 void bta_dm_disc_start(bool delay_close_gatt);
 void bta_dm_disc_stop();
@@ -41,7 +45,7 @@ void bta_dm_disc_disable_search_and_disc();
 void bta_dm_disc_acl_down(const RawAddress& bd_addr, tBT_TRANSPORT transport);
 
 // Return most recent remote name
-const char* bta_dm_get_remname();
+const char* bta_dm_get_remname(void);
 
 // LE observe and scan interface
 void bta_dm_ble_scan(bool start, uint8_t duration_sec, bool low_latency_scan);
@@ -63,3 +67,5 @@ void bta_dm_disc_remove_device(const RawAddress& bd_addr);
 
 // Provide data for the dumpsys procedure
 void DumpsysBtaDmDisc(int fd);
+
+}  // namespace bta_dm_disc_legacy
