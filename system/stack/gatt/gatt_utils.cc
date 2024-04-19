@@ -1751,16 +1751,13 @@ static void gatt_le_disconnect_complete_notify_user(const RawAddress& bda,
                                                     tGATT_DISCONN_REASON reason,
                                                     tBT_TRANSPORT transport) {
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bda, transport);
-  uint8_t tcb_idx = 0;
-
-  if (p_tcb) {
-    tcb_idx = p_tcb->tcb_idx;
-  }
 
   for (uint8_t i = 0; i < GATT_MAX_APPS; i++) {
     tGATT_REG* p_reg = &gatt_cb.cl_rcb[i];
     if (p_reg->in_use && p_reg->app_cb.p_conn_cb) {
-      uint16_t conn_id = GATT_CREATE_CONN_ID(tcb_idx, p_reg->gatt_if);
+      uint16_t conn_id =
+          p_tcb ? GATT_CREATE_CONN_ID(p_tcb->tcb_idx, p_reg->gatt_if)
+                : GATT_INVALID_CONN_ID;
       (*p_reg->app_cb.p_conn_cb)(p_reg->gatt_if, bda, conn_id,
                                  kGattDisconnected, reason, transport);
     }
