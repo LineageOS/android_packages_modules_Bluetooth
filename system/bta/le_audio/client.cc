@@ -1107,6 +1107,29 @@ class LeAudioClientImpl : public LeAudioClient {
     group->is_duplex_preference_le_audio = is_duplex_preference_le_audio;
   }
 
+  void SetGroupAllowedContextMask(int group_id, int sink_context_types,
+                                  int source_context_types) override {
+    log::info("group_id: {}, sink context types: {}, source context types: {}",
+              group_id, sink_context_types, source_context_types);
+
+    if (group_id == bluetooth::groups::kGroupUnknown) {
+      log::warn("Unknown group_id");
+      return;
+    }
+    LeAudioDeviceGroup* group = aseGroups_.FindById(group_id);
+    if (!group) {
+      log::warn("group_id {} does not exist", group_id);
+      return;
+    }
+
+    BidirectionalPair<AudioContexts> allowed_contexts = {
+        .sink = AudioContexts(sink_context_types),
+        .source = AudioContexts(source_context_types),
+    };
+
+    group->SetAllowedContextMask(allowed_contexts);
+  }
+
   void StartAudioSession(LeAudioDeviceGroup* group) {
     /* This function is called when group is not yet set to active.
      * This is why we don't have to check if session is started already.
@@ -4075,6 +4098,16 @@ class LeAudioClientImpl : public LeAudioClient {
       return;
     }
 
+    if (!group
+             ->GetAllowedContextMask(
+                 bluetooth::le_audio::types::kLeAudioDirectionSink)
+             .test(configuration_context_type_)) {
+      log::warn("Block source resume request context type: {}",
+                ToHexString(configuration_context_type_));
+      CancelLocalAudioSourceStreamingRequest();
+      return;
+    }
+
     log::debug(
         "active_group_id: {}\n audio_receiver_state: {}\n audio_sender_state: "
         "{}\n configuration_context_type_: {}\n group {}\n",
@@ -4348,6 +4381,16 @@ class LeAudioClientImpl : public LeAudioClient {
       log::error("invalid resume request for context type: {}",
                  ToHexString(configuration_context_type_));
       CancelLocalAudioSinkStreamingRequest();
+      return;
+    }
+
+    if (!group
+             ->GetAllowedContextMask(
+                 bluetooth::le_audio::types::kLeAudioDirectionSource)
+             .test(configuration_context_type_)) {
+      log::warn("Block sink resume request context type: {}",
+                ToHexString(configuration_context_type_));
+      CancelLocalAudioSourceStreamingRequest();
       return;
     }
 

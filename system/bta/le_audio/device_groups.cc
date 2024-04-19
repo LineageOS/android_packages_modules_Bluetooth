@@ -1904,6 +1904,8 @@ void LeAudioDeviceGroup::PrintDebugState(void) const {
             << bluetooth::common::ToString(GetSupportedContexts())
             << ", \n group available contexts: "
             << bluetooth::common::ToString(GetAvailableContexts())
+            << ", \n group allowed contexts: "
+            << bluetooth::common::ToString(GetAllowedContextMask())
             << ", \n configuration context type: "
             << bluetooth::common::ToString(GetConfigurationContextType())
             << ", \n active configuration name: "
@@ -1965,6 +1967,7 @@ void LeAudioDeviceGroup::Dump(int fd, int active_group_id) const {
          << ",\tcig state: " << cig.GetState() << "\n"
          << "      group supported contexts: " << GetSupportedContexts() << "\n"
          << "      group available contexts: " << GetAvailableContexts() << "\n"
+         << "      group allowed contexts: " << GetAllowedContextMask() << "\n"
          << "      configuration context type: "
          << bluetooth::common::ToString(GetConfigurationContextType()).c_str()
          << "\n"

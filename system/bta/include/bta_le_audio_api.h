@@ -74,6 +74,8 @@ class LeAudioClient {
   virtual void SendAudioProfilePreferences(
       const int group_id, bool is_output_preference_le_audio,
       bool is_duplex_preference_le_audio) = 0;
+  virtual void SetGroupAllowedContextMask(int group_id, int sink_context_types,
+                                          int source_context_types) = 0;
 
   virtual bool isOutputPreferenceLeAudio(const RawAddress& address) = 0;
   virtual bool isDuplexPreferenceLeAudio(const RawAddress& address) = 0;

@@ -126,6 +126,9 @@ class LeAudioDeviceGroup {
                  types::LeAudioContextType::UNINITIALIZED)}),
         pending_group_available_contexts_change_(
             types::LeAudioContextType::UNINITIALIZED),
+        group_user_allowed_context_mask_(
+            {.sink = types::AudioContexts(types::kLeAudioContextAllTypes),
+             .source = types::AudioContexts(types::kLeAudioContextAllTypes)}),
         target_state_(types::AseState::BTA_LE_AUDIO_ASE_STATE_IDLE),
         current_state_(types::AseState::BTA_LE_AUDIO_ASE_STATE_IDLE),
         in_transition_(false) {
@@ -335,6 +338,32 @@ class LeAudioDeviceGroup {
     }
   }
 
+  inline void SetAllowedContextMask(
+      types::BidirectionalPair<types::AudioContexts>& context_types) {
+    group_user_allowed_context_mask_ = context_types;
+    log::debug(
+        "group id: {}, allowed contexts sink: {}, allowed contexts source: "
+        "{}",
+        group_id_, group_user_allowed_context_mask_.sink.to_string(),
+        group_user_allowed_context_mask_.source.to_string());
+  }
+
+  types::AudioContexts GetAllowedContextMask(
+      int direction = types::kLeAudioDirectionBoth) const {
+    log::assert_that(direction <= (types::kLeAudioDirectionBoth),
+                     "Invalid direction used.");
+    if (direction < types::kLeAudioDirectionBoth) {
+      log::debug(
+          "group id: {}, allowed contexts sink: {}, allowed contexts "
+          "source: {}",
+          group_id_, group_user_allowed_context_mask_.sink.to_string(),
+          group_user_allowed_context_mask_.source.to_string());
+      return group_user_allowed_context_mask_.get(direction);
+    } else {
+      return types::get_bidirectional(group_user_allowed_context_mask_);
+    }
+  }
+
   types::AudioContexts GetSupportedContexts(
       int direction = types::kLeAudioDirectionBoth) const;
 
@@ -428,6 +457,12 @@ class LeAudioDeviceGroup {
    * our group configuration capabilities to clear this.
    */
   types::AudioContexts pending_group_available_contexts_change_;
+
+  /* Mask of currently allowed context types. Not set a value not set will
+   * result in streaming rejection.
+   */
+  types::BidirectionalPair<types::AudioContexts>
+      group_user_allowed_context_mask_;
 
   /* Possible configuration cache - refreshed on each group context availability
    * change. Stored as a pair of (is_valid_cache, configuration*). `pair.first`
