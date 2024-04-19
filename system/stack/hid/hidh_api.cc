@@ -28,7 +28,6 @@
 
 #include <bluetooth/log.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 

@@ -19,8 +19,6 @@
  *   Functions generated:14
  */
 
-#include <stdio.h>
-
 #include "stack/sdp/sdpint.h"
 #include "test/common/mock_functions.h"
 

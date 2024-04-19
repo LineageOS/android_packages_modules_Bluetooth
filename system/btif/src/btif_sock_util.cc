@@ -26,7 +26,6 @@
 #include <hardware/bt_sock.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/ioctl.h>

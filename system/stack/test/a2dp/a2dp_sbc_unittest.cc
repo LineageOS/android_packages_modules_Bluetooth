@@ -17,7 +17,6 @@
 #include "stack/include/a2dp_sbc.h"
 
 #include <gtest/gtest.h>
-#include <stdio.h>
 
 #include <chrono>
 #include <cstdint>

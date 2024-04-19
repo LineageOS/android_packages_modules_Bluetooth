@@ -17,7 +17,6 @@
 #include "stack_manager.h"
 
 #include <bluetooth/log.h>
-#include <stdio.h>
 
 #include <chrono>
 #include <future>

@@ -41,7 +41,6 @@
 #include <hardware/bt_le_audio.h>
 #include <hardware/bt_vc.h>
 #include <signal.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
