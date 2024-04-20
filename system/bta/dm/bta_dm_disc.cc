@@ -123,7 +123,8 @@ static void btm_dm_start_gatt_discovery(const RawAddress& bd_addr);
 static void bta_dm_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data);
 static void bta_dm_search_cmpl();
 static void bta_dm_free_sdp_db();
-static void bta_dm_execute_queued_request();
+static void bta_dm_execute_queued_discovery_request();
+static void bta_dm_execute_queued_search_request();
 static void bta_dm_search_cancel_notify();
 static void bta_dm_close_gatt_conn();
 
@@ -504,7 +505,7 @@ static bool bta_dm_read_remote_device_name(const RawAddress& bd_addr,
 static void bta_dm_inq_cmpl() {
   if (bta_dm_search_get_state() == BTA_DM_SEARCH_CANCELLING) {
     bta_dm_search_set_state(BTA_DM_SEARCH_IDLE);
-    bta_dm_execute_queued_request();
+    bta_dm_execute_queued_search_request();
     return;
   }
 
@@ -865,7 +866,7 @@ static void bta_dm_read_dis_cmpl(const RawAddress& addr,
         p_dis_value->pnp_id.product_id, p_dis_value->pnp_id.product_version);
   }
 
-  bta_dm_execute_queued_request();
+  bta_dm_execute_queued_discovery_request();
 }
 #endif
 
@@ -938,7 +939,7 @@ static void bta_dm_service_discovery_cmpl() {
   }
 #endif
 
-  bta_dm_execute_queued_request();
+  bta_dm_execute_queued_discovery_request();
 }
 
 static void bta_dm_search_cmpl() {
@@ -948,7 +949,7 @@ static void bta_dm_search_cmpl() {
     bta_dm_search_cb.p_device_search_cback(BTA_DM_DISC_CMPL_EVT, nullptr);
   }
 
-  bta_dm_execute_queued_request();
+  bta_dm_execute_queued_search_request();
 }
 
 /*******************************************************************************
@@ -1033,30 +1034,28 @@ static void bta_dm_queue_disc(tBTA_DM_API_DISCOVER& discovery) {
   bta_dm_search_cb.pending_discovery_queue.push(discovery);
 }
 
-/*******************************************************************************
- *
- * Function         bta_dm_execute_queued_request
- *
- * Description      Executes queued request if one exists
- *
- * Returns          void
- *
- ******************************************************************************/
-static void bta_dm_execute_queued_request() {
-  if (!bta_dm_search_cb.pending_discovery_queue.empty()) {
-    tBTA_DM_API_DISCOVER pending_discovery =
-        bta_dm_search_cb.pending_discovery_queue.front();
-    bta_dm_search_cb.pending_discovery_queue.pop();
-    log::info("Start pending discovery");
-    post_disc_evt(
-        BTA_DM_API_DISCOVER_EVT,
-        std::make_unique<tBTA_DM_MSG>(tBTA_DM_API_DISCOVER{pending_discovery}));
-  } else if (bta_dm_search_cb.p_pending_search) {
-    log::info("Start pending search");
-    post_search_evt(BTA_DM_API_SEARCH_EVT,
-                    std::move(bta_dm_search_cb.p_pending_search));
-    bta_dm_search_cb.p_pending_search.reset();
+static void bta_dm_execute_queued_search_request() {
+  if (!bta_dm_search_cb.p_pending_search) return;
+
+  log::info("Start pending search");
+  post_search_evt(BTA_DM_API_SEARCH_EVT,
+                  std::move(bta_dm_search_cb.p_pending_search));
+  bta_dm_search_cb.p_pending_search.reset();
+}
+
+static void bta_dm_execute_queued_discovery_request() {
+  if (bta_dm_search_cb.pending_discovery_queue.empty()) {
+    log::info("No more service discovery queued");
+    return;
   }
+
+  tBTA_DM_API_DISCOVER pending_discovery =
+      bta_dm_search_cb.pending_discovery_queue.front();
+  bta_dm_search_cb.pending_discovery_queue.pop();
+  log::info("Start pending discovery");
+  post_disc_evt(
+      BTA_DM_API_DISCOVER_EVT,
+      std::make_unique<tBTA_DM_MSG>(tBTA_DM_API_DISCOVER{pending_discovery}));
 }
 
 /*******************************************************************************
@@ -1867,7 +1866,7 @@ static void bta_dm_gatt_disc_complete(uint16_t conn_id, tGATT_STATUS status) {
           "Discovery complete for invalid conn ID. Will pick up next job");
       bta_dm_discovery_set_state(BTA_DM_DISCOVER_IDLE);
       bta_dm_free_sdp_db();
-      bta_dm_execute_queued_request();
+      bta_dm_execute_queued_discovery_request();
     }
   }
 }
@@ -2166,7 +2165,7 @@ static void bta_dm_search_sm_execute(tBTA_DM_DEV_SEARCH_EVT event,
           bta_dm_search_set_state(BTA_DM_SEARCH_IDLE);
           bta_dm_free_sdp_db();
           bta_dm_search_cancel_notify();
-          bta_dm_execute_queued_request();
+          bta_dm_execute_queued_search_request();
           break;
         default:
           log::info("Received unexpected event {}[0x{:x}] in state {}",
@@ -2394,7 +2393,6 @@ bool bta_dm_read_remote_device_name(const RawAddress& bd_addr,
 }
 void bta_dm_discover_next_device() { ::bta_dm_discover_next_device(); }
 
-void bta_dm_execute_queued_request() { ::bta_dm_execute_queued_request(); }
 void bta_dm_find_services(const RawAddress& bd_addr) {
   ::bta_dm_find_services(bd_addr);
 }
