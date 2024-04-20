@@ -34,7 +34,7 @@ fn get_bt_dispatcher(
                 BaseCallbacks::AdapterState(state) => {
                     println!("State changed to {:?}", state);
                 }
-                BaseCallbacks::SspRequest(addr, _, _, variant, passkey) => {
+                BaseCallbacks::SspRequest(addr, variant, passkey) => {
                     println!(
                         "SSP Request made for address {:?} with variant {:?} and passkey {:?}",
                         addr.to_string(),
@@ -125,7 +125,7 @@ impl AdapterService for AdapterServiceImpl {
                         );
                         sink.send((rsp, WriteFlags::default())).await.unwrap();
                     }
-                    BaseCallbacks::SspRequest(_, _, _, _, _) => {}
+                    BaseCallbacks::SspRequest(_, _, _) => {}
                     BaseCallbacks::LeRandCallback(random) => {
                         let mut rsp = FetchEventsResponse::new();
                         rsp.event_type = EventType::LE_RAND.into();

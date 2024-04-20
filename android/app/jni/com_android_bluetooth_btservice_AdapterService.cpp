@@ -508,8 +508,8 @@ static void pin_request_callback(RawAddress* bd_addr, bt_bdname_t* bdname,
                                addr.get(), devname.get(), cod, min_16_digits);
 }
 
-static void ssp_request_callback(RawAddress* bd_addr, bt_bdname_t* bdname,
-                                 uint32_t cod, bt_ssp_variant_t pairing_variant,
+static void ssp_request_callback(RawAddress* bd_addr,
+                                 bt_ssp_variant_t pairing_variant,
                                  uint32_t pass_key) {
   if (!bd_addr) {
     log::error("Address is null");
@@ -535,19 +535,8 @@ static void ssp_request_callback(RawAddress* bd_addr, bt_bdname_t* bdname,
   sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
                                    (jbyte*)bd_addr);
 
-  ScopedLocalRef<jbyteArray> devname(
-      sCallbackEnv.get(), sCallbackEnv->NewByteArray(sizeof(bt_bdname_t)));
-  if (!devname.get()) {
-    log::error("Error while allocating");
-    return;
-  }
-
-  sCallbackEnv->SetByteArrayRegion(devname.get(), 0, sizeof(bt_bdname_t),
-                                   (jbyte*)bdname);
-
   sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_sspRequestCallback,
-                               addr.get(), devname.get(), cod,
-                               (jint)pairing_variant, pass_key);
+                               addr.get(), (jint)pairing_variant, pass_key);
 }
 
 static jobject createClassicOobDataObject(JNIEnv* env, bt_oob_data_t oob_data) {
@@ -2273,7 +2262,7 @@ int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env) {
        &method_devicePropertyChangedCallback},
       {"deviceFoundCallback", "([B)V", &method_deviceFoundCallback},
       {"pinRequestCallback", "([B[BIZ)V", &method_pinRequestCallback},
-      {"sspRequestCallback", "([B[BIII)V", &method_sspRequestCallback},
+      {"sspRequestCallback", "([BII)V", &method_sspRequestCallback},
       {"bondStateChangeCallback", "(I[BII)V", &method_bondStateChangeCallback},
       {"addressConsolidateCallback", "([B[B)V",
        &method_addressConsolidateCallback},
