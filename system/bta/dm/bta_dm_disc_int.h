@@ -180,7 +180,6 @@ typedef struct {
   bool sdp_results;
   bluetooth::Uuid uuid;
   uint8_t peer_scn;
-  tBT_TRANSPORT transport;
   tBTA_DM_SEARCH_CBACK* p_csis_scan_cback;
   tGATT_IF client_if;
   uint8_t uuid_to_search;
