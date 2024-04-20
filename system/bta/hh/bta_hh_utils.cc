@@ -254,7 +254,7 @@ tBTA_HH_STATUS bta_hh_read_ssr_param(const tAclLinkSpec& link_spec,
                                      uint16_t* p_min_ssr_tout) {
   tBTA_HH_DEV_CB* p_cb = bta_hh_get_cb(link_spec);
   if (p_cb == nullptr) {
-    log::warn("Unable to find device:{}", ADDRESS_TO_LOGGABLE_CSTR(link_spec));
+    log::warn("Unable to find device:{}", link_spec);
     return BTA_HH_ERR;
   }
 
@@ -267,7 +267,7 @@ tBTA_HH_STATUS bta_hh_read_ssr_param(const tAclLinkSpec& link_spec,
     if (get_btm_client_interface().link_controller.BTM_GetLinkSuperTout(
             p_cb->link_spec.addrt.bda, &ssr_max_latency) != BTM_SUCCESS) {
       log::warn("Unable to get supervision timeout for peer:{}",
-                ADDRESS_TO_LOGGABLE_CSTR(p_cb->link_spec));
+                p_cb->link_spec);
       return BTA_HH_ERR;
     }
     ssr_max_latency = BTA_HH_GET_DEF_SSR_MAX_LAT(ssr_max_latency);

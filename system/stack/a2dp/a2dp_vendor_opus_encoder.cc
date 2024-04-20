@@ -172,7 +172,7 @@ bool A2dpCodecConfigOpusSource::updateEncoderUserConfig(
     bool* p_restart_output, bool* p_config_updated) {
   if (a2dp_opus_encoder_cb.peer_mtu == 0) {
     log::error("Cannot update the codec encoder for {}: invalid peer MTU",
-               name().c_str());
+               name());
     return false;
   }
 
@@ -206,7 +206,7 @@ static bool a2dp_vendor_opus_encoder_update(uint16_t peer_mtu,
 
   if (!a2dp_codec_config->copyOutOtaCodecConfig(codec_info)) {
     log::error("Cannot update the codec encoder for {}: invalid codec config",
-               a2dp_codec_config->name().c_str());
+               a2dp_codec_config->name());
     return false;
   }
   const uint8_t* p_codec_info = codec_info;

@@ -85,10 +85,10 @@ class RasClientImpl : public bluetooth::ras::RasClient {
   }
 
   void Connect(const RawAddress& address) override {
-    log::info("{}", ADDRESS_TO_LOGGABLE_CSTR(address));
+    log::info("{}", address);
     tBLE_BD_ADDR ble_bd_addr;
     ResolveAddress(ble_bd_addr, address);
-    log::info("resolve {}", ADDRESS_TO_LOGGABLE_CSTR(ble_bd_addr.bda));
+    log::info("resolve {}", ble_bd_addr.bda);
 
     auto tracker = FindTrackerByAddress(ble_bd_addr.bda);
     if (tracker == nullptr) {
@@ -111,34 +111,31 @@ class RasClientImpl : public bluetooth::ras::RasClient {
         OnGattNotification(p_data->notify);
       } break;
       default:
-        log::warn("Unhandled event: {}", gatt_client_event_text(event).c_str());
+        log::warn("Unhandled event: {}", gatt_client_event_text(event));
     }
   }
 
   void OnGattConnected(const tBTA_GATTC_OPEN& evt) {
-    log::info("{}, conn_id=0x{:04x}, transport:{}, status:{}",
-              ADDRESS_TO_LOGGABLE_CSTR(evt.remote_bda), evt.conn_id,
-              bt_transport_text(evt.transport).c_str(),
-              gatt_status_text(evt.status).c_str());
+    log::info("{}, conn_id=0x{:04x}, transport:{}, status:{}", evt.remote_bda,
+              evt.conn_id, bt_transport_text(evt.transport),
+              gatt_status_text(evt.status));
 
     if (evt.transport != BT_TRANSPORT_LE) {
       log::warn("Only LE connection is allowed (transport {})",
-                bt_transport_text(evt.transport).c_str());
+                bt_transport_text(evt.transport));
       BTA_GATTC_Close(evt.conn_id);
       return;
     }
 
     auto tracker = FindTrackerByAddress(evt.remote_bda);
     if (tracker == nullptr) {
-      log::warn("Skipping unknown device, address: {}",
-                ADDRESS_TO_LOGGABLE_CSTR(evt.remote_bda));
+      log::warn("Skipping unknown device, address: {}", evt.remote_bda);
       BTA_GATTC_Close(evt.conn_id);
       return;
     }
 
     if (evt.status != GATT_SUCCESS) {
-      log::error("Failed to connect to server device {}",
-                 ADDRESS_TO_LOGGABLE_CSTR(evt.remote_bda));
+      log::error("Failed to connect to server device {}", evt.remote_bda);
       return;
     }
     tracker->conn_id_ = evt.conn_id;
@@ -211,7 +208,7 @@ class RasClientImpl : public bluetooth::ras::RasClient {
 
     uint16_t uuid_16bit = characteristic->uuid.As16Bit();
     log::debug("Handle uuid 0x{:04x}, {}, size {}", uuid_16bit,
-               getUuidName(characteristic->uuid).c_str(), evt.len);
+               getUuidName(characteristic->uuid), evt.len);
 
     switch (uuid_16bit) {
       case kRasOnDemandDataCharacteristic16bit: {
@@ -323,7 +320,7 @@ class RasClientImpl : public bluetooth::ras::RasClient {
                          const uint8_t* value) {
     if (status != GATT_SUCCESS) {
       log::error("Fail to write conn_id {}, status {}, handle {}", conn_id,
-                 gatt_status_text(status).c_str(), handle);
+                 gatt_status_text(status), handle);
       auto tracker = FindTrackerByHandle(conn_id);
       if (tracker == nullptr) {
         log::warn("Can't find tracker for conn_id:{}", conn_id);
@@ -367,8 +364,7 @@ class RasClientImpl : public bluetooth::ras::RasClient {
     tGATT_STATUS register_status = BTA_GATTC_RegisterForNotifications(
         gatt_if_, tracker->address_, characteristic->value_handle);
     if (register_status != GATT_SUCCESS) {
-      log::error("Fail to register, {}",
-                 gatt_status_text(register_status).c_str());
+      log::error("Fail to register, {}", gatt_status_text(register_status));
       return;
     }
 
@@ -394,7 +390,7 @@ class RasClientImpl : public bluetooth::ras::RasClient {
   void OnDescriptorWrite(uint16_t conn_id, tGATT_STATUS status, uint16_t handle,
                          uint16_t len, const uint8_t* value, void* data) {
     log::info("conn_id:{}, handle:{}, status:{}", conn_id, handle,
-              gatt_status_text(status).c_str());
+              gatt_status_text(status));
   }
 
   void ListCharacteristic(const gatt::Service* service) {
@@ -403,11 +399,11 @@ class RasClientImpl : public bluetooth::ras::RasClient {
           "Characteristic uuid:0x{:04x}, handle:0x{:04x}, properties:0x{:02x}, "
           "{}",
           characteristic.uuid.As16Bit(), characteristic.value_handle,
-          characteristic.properties, getUuidName(characteristic.uuid).c_str());
+          characteristic.properties, getUuidName(characteristic.uuid));
       for (auto& descriptor : characteristic.descriptors) {
         log::info("\tDescriptor uuid: 0x{:04x}, handle:{}, {}",
                   descriptor.uuid.As16Bit(), descriptor.handle,
-                  getUuidName(descriptor.uuid).c_str());
+                  getUuidName(descriptor.uuid));
       }
     }
   }
@@ -423,7 +419,7 @@ class RasClientImpl : public bluetooth::ras::RasClient {
                                     uint8_t* value, void* data) {
     log::info("conn_id: {}, handle: {}, len: {}", conn_id, handle, len);
     if (status != GATT_SUCCESS) {
-      log::error("Fail with status {}", gatt_status_text(status).c_str());
+      log::error("Fail with status {}", gatt_status_text(status));
       return;
     }
     auto tracker = FindTrackerByHandle(conn_id);
@@ -439,7 +435,7 @@ class RasClientImpl : public bluetooth::ras::RasClient {
 
     uint16_t uuid_16bit = characteristic->uuid.As16Bit();
     log::info("Handle uuid 0x{:04x}, {}", uuid_16bit,
-              getUuidName(characteristic->uuid).c_str());
+              getUuidName(characteristic->uuid));
 
     switch (uuid_16bit) {
       case kRasFeaturesCharacteristic16bit: {
@@ -448,9 +444,8 @@ class RasClientImpl : public bluetooth::ras::RasClient {
           return;
         }
         STREAM_TO_UINT32(tracker->remote_supported_features_, value);
-        log::info(
-            "Remote supported features : {}",
-            getFeaturesString(tracker->remote_supported_features_).c_str());
+        log::info("Remote supported features : {}",
+                  getFeaturesString(tracker->remote_supported_features_));
       } break;
       default:
         log::warn("Unexpected UUID");

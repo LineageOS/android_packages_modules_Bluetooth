@@ -566,12 +566,10 @@ void avdt_scb_hdl_setconfig_cmd(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data) {
                fmt::ptr(p_scb), p_scb->stream_config.scb_index);
 
   if (!p_scb->in_use) {
-    log::verbose(
-        "codec: {}",
-        A2DP_CodecInfoString(p_scb->stream_config.cfg.codec_info).c_str());
-    log::verbose(
-        "codec: {}",
-        A2DP_CodecInfoString(p_data->msg.config_cmd.p_cfg->codec_info).c_str());
+    log::verbose("codec: {}",
+                 A2DP_CodecInfoString(p_scb->stream_config.cfg.codec_info));
+    log::verbose("codec: {}", A2DP_CodecInfoString(
+                                  p_data->msg.config_cmd.p_cfg->codec_info));
     AvdtpSepConfig* p_cfg = p_data->msg.config_cmd.p_cfg;
     if (A2DP_GetCodecType(p_scb->stream_config.cfg.codec_info) ==
         A2DP_GetCodecType(p_cfg->codec_info)) {
@@ -1209,9 +1207,8 @@ void avdt_scb_snd_open_rsp(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data) {
 void avdt_scb_snd_reconfig_req(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data) {
   log::verbose("p_scb->peer_seid={} p_data->msg.hdr.seid={}", p_scb->peer_seid,
                p_data->msg.hdr.seid);
-  log::verbose(
-      "codec: {}",
-      A2DP_CodecInfoString(p_data->msg.config_cmd.p_cfg->codec_info).c_str());
+  log::verbose("codec: {}",
+               A2DP_CodecInfoString(p_data->msg.config_cmd.p_cfg->codec_info));
 
   p_scb->req_cfg = *p_data->msg.config_cmd.p_cfg;
   p_data->msg.hdr.seid = p_scb->peer_seid;
@@ -1313,9 +1310,8 @@ void avdt_scb_snd_setconfig_rej(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data) {
  *
  ******************************************************************************/
 void avdt_scb_snd_setconfig_req(AvdtpScb* p_scb, tAVDT_SCB_EVT* p_data) {
-  log::verbose(
-      "codec: {}",
-      A2DP_CodecInfoString(p_data->msg.config_cmd.p_cfg->codec_info).c_str());
+  log::verbose("codec: {}",
+               A2DP_CodecInfoString(p_data->msg.config_cmd.p_cfg->codec_info));
 
   /* copy API parameters to scb, set scb as in use */
 

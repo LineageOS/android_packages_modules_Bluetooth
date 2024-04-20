@@ -140,8 +140,7 @@ void bta_pan_co_tx_path(uint16_t handle, uint8_t app_id) {
                    p_buf->len, p_buf->offset);
       if (is_empty_eth_addr(conn->eth_addr) && is_valid_bt_eth_addr(src)) {
         log::verbose("pan bt peer addr: {} update its ethernet addr: {}",
-                     ADDRESS_TO_LOGGABLE_STR(conn->peer),
-                     ADDRESS_TO_LOGGABLE_STR(src));
+                     conn->peer, src);
         conn->eth_addr = src;
       }
       btpan_tap_send(btpan_cb.tap_fd, src, dst, protocol,

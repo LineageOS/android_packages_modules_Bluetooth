@@ -652,10 +652,13 @@ class UnicastTestNoInit : public Test {
 
   void InjectAvailableContextTypes(const RawAddress& test_address,
                                    uint16_t conn_id, AudioContexts sink_ctxs,
-                                   AudioContexts source_ctxs) {
+                                   AudioContexts source_ctxs,
+                                   bool sync_on_mainloop = true) {
     /* 0x0074 is pacs->avail_contexts_char + 1 */
     InjectContextTypes(test_address, conn_id, 0x0074, sink_ctxs, source_ctxs);
-    SyncOnMainLoop();
+    if (sync_on_mainloop) {
+      SyncOnMainLoop();
+    }
   }
 
   void SetUpMockGatt() {
@@ -929,12 +932,17 @@ class UnicastTestNoInit : public Test {
             });
 
     ON_CALL(mock_state_machine_, AttachToStream(_, _, _))
-        .WillByDefault([](LeAudioDeviceGroup* group,
-                          LeAudioDevice* leAudioDevice,
-                          types::BidirectionalPair<std::vector<uint8_t>>
-                              ccids) {
+        .WillByDefault([this](LeAudioDeviceGroup* group,
+                              LeAudioDevice* leAudioDevice,
+                              types::BidirectionalPair<std::vector<uint8_t>>
+                                  ccids) {
           if (group->GetState() !=
               types::AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
+            if (group->GetTargetState() ==
+                types::AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
+              attach_to_stream_scheduled = true;
+            }
+
             return false;
           }
 
@@ -1240,7 +1248,8 @@ class UnicastTestNoInit : public Test {
           // Inject the state
           group->SetTargetState(
               types::AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING);
-          group->SetState(group->GetTargetState());
+          group->SetState(
+              types::AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED);
           streaming_groups[group->group_id_] = group;
 
           /* Assume CIG is created */
@@ -1248,6 +1257,7 @@ class UnicastTestNoInit : public Test {
 
           if (block_streaming_state_callback) return true;
 
+          group->SetState(types::AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING);
           do_in_main_thread(
               FROM_HERE,
               base::BindOnce(
@@ -2781,6 +2791,8 @@ class UnicastTestNoInit : public Test {
       state_machine_callbacks_;
   std::map<int, LeAudioDeviceGroup*> streaming_groups;
   bool block_streaming_state_callback = false;
+
+  bool attach_to_stream_scheduled = false;
 
   bluetooth::hci::IsoManager* iso_manager_;
   MockIsoManager* mock_iso_manager_;
@@ -4805,6 +4817,12 @@ TEST_F(UnicastTest, GroupSetActive) {
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnAudioGroupSelectableCodecConf(group_id, _, _))
       .Times(1);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnGroupStatus(group_id, GroupStatus::ACTIVE))
+      .Times(1);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnGroupStatus(_, GroupStatus::INACTIVE))
+      .Times(0);
   EXPECT_CALL(*mock_le_audio_source_hal_client_, Start(_, _, _)).Times(1);
   EXPECT_CALL(*mock_le_audio_sink_hal_client_, Start(_, _, _)).Times(1);
   LeAudioClient::Get()->GroupSetActive(group_id);
@@ -7085,6 +7103,93 @@ TEST_F(UnicastTest, TwoEarbuds2ndLateConnect) {
   LocalAudioSourceResume();
 
   TestAudioDataTransfer(group_id, cis_count_out, cis_count_in, 1920);
+}
+
+TEST_F(UnicastTest, LateStreamConnectBasedOnContextType) {
+  uint8_t group_size = 2;
+  int group_id = 2;
+
+  /* Scenario
+   * 1. Two devices A and B are connect. Device A has all available context
+   * types, Device B has no available context types.
+   * 2. Stream creation to Device A has been started
+   * 3. Device B notified us with new available Context Types - while A is not
+   * yet streaming
+   * 4. Make sure AttachToStream was called for Device B
+   */
+
+  // Report working CSIS
+  ON_CALL(mock_csis_client_module_, IsCsisClientRunning())
+      .WillByDefault(Return(true));
+
+  ON_CALL(mock_csis_client_module_, GetDesiredSize(group_id))
+      .WillByDefault(Invoke([&](int group_id) { return group_size; }));
+
+  const RawAddress test_address0 = GetTestAddress(0);
+  const RawAddress test_address1 = GetTestAddress(1);
+
+  // First earbud connects
+  ConnectCsisDevice(test_address0, 1 /*conn_id*/,
+                    codec_spec_conf::kLeAudioLocationFrontLeft,
+                    codec_spec_conf::kLeAudioLocationFrontLeft, group_size,
+                    group_id, 1 /* rank*/);
+
+  // Second earbud connects
+  ConnectCsisDevice(test_address1, 2 /*conn_id*/,
+                    codec_spec_conf::kLeAudioLocationFrontRight,
+                    codec_spec_conf::kLeAudioLocationFrontRight, group_size,
+                    group_id, 2 /* rank*/, true /*connect_through_csis*/);
+
+  // Start streaming
+  EXPECT_CALL(*mock_le_audio_source_hal_client_, Start(_, _, _)).Times(1);
+  EXPECT_CALL(*mock_le_audio_sink_hal_client_, Start(_, _, _)).Times(1);
+  LeAudioClient::Get()->GroupSetActive(group_id);
+  SyncOnMainLoop();
+
+  /* Simulate available context type being cleared */
+  InjectAvailableContextTypes(test_address1, 2, types::AudioContexts(0),
+                              types::AudioContexts(0));
+
+  // Block streaming state
+  block_streaming_state_callback = true;
+
+  UpdateLocalSourceMetadata(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC);
+  LocalAudioSourceResume(false);
+
+  SyncOnMainLoop();
+  Mock::VerifyAndClearExpectations(&mock_le_audio_source_hal_client_);
+
+  InjectAvailableContextTypes(test_address1, 2,
+                              types::kLeAudioContextAllRemoteSinkOnly,
+                              types::AudioContexts(0), false);
+
+  // Now simulate group is finally streaming
+  auto group = streaming_groups.at(group_id);
+  do_in_main_thread(
+      FROM_HERE,
+      base::BindOnce(
+          [](int group_id,
+             bluetooth::le_audio::LeAudioGroupStateMachine::Callbacks*
+                 state_machine_callbacks,
+             LeAudioDeviceGroup* group) {
+            group->SetState(types::AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING);
+
+            state_machine_callbacks->StatusReportCb(
+                group_id, GroupStreamStatus::STREAMING);
+          },
+          group_id, base::Unretained(this->state_machine_callbacks_),
+          std::move(group)));
+
+  SyncOnMainLoop();
+
+  /* verify AttachToStream was called while stream was not yet created. */
+  ASSERT_TRUE(attach_to_stream_scheduled);
+
+  // Expect two iso channel to be fed with data
+  uint8_t cis_count_out = 2;
+  uint8_t cis_count_in = 0;
+  TestAudioDataTransfer(group_id, cis_count_out, cis_count_in, 1920);
+  SyncOnMainLoop();
 }
 
 TEST_F(UnicastTest,

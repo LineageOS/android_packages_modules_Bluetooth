@@ -324,8 +324,7 @@ class BroadcastStateMachineImpl : public BroadcastStateMachine {
                           [](const void*) { /* Already streaming */ }};
 
   void OnAddressResponse(uint8_t addr_type, RawAddress addr) {
-    log::info("own address={}, type={}", ADDRESS_TO_LOGGABLE_CSTR(addr),
-              addr_type);
+    log::info("own address={}, type={}", addr, addr_type);
     addr_ = addr;
     addr_type_ = addr_type;
   }

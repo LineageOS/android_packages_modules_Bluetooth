@@ -171,8 +171,7 @@ class TestStackDumpsysBase : public bluetooth::Module,
   static const ModuleFactory Factory;
 
   virtual void TestMethod(TestData test_data) const {
-    log::info("Test base class iter:{} tag:{}", test_data.iter,
-              test_data.tag.c_str());
+    log::info("Test base class iter:{} tag:{}", test_data.iter, test_data.tag);
   }
 
  protected:
@@ -321,8 +320,7 @@ class TestStackDumpsys4 : public TestStackDumpsysBase {
   static const ModuleFactory Factory;
 
   void TestMethod(TestData test_data) const override {
-    log::info("mod:{} iter:{} tag:{}", __func__, test_data.iter,
-              test_data.tag.c_str());
+    log::info("mod:{} iter:{} tag:{}", __func__, test_data.iter, test_data.tag);
   }
 
  private:

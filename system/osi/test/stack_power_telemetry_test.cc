@@ -1,8 +1,8 @@
-#include "osi/include/stack_power_telemetry.h"
+#include "osi/src/stack_power_telemetry.cc"
 
 #include <gtest/gtest.h>
 
-#include "osi/src/stack_power_telemetry.cc"
+#include "osi/include/stack_power_telemetry.h"
 #include "types/raw_address.h"
 
 class PowerTelemetryTest : public ::testing::Test {

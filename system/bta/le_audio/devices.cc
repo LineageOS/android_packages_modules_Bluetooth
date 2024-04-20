@@ -214,14 +214,39 @@ uint32_t PickAudioLocation(types::LeAudioConfigurationStrategy strategy,
   return left_device_loc ? left_device_loc : right_device_loc;
 }
 
+bool LeAudioDevice::IsAudioSetConfigurationSupported(
+    const set_configurations::AudioSetConfiguration* audio_set_conf) const {
+  for (auto direction : {le_audio::types::kLeAudioDirectionSink,
+                         le_audio::types::kLeAudioDirectionSource}) {
+    const auto& confs = audio_set_conf->confs.get(direction);
+    if (confs.size() == 0) continue;
+
+    log::info("Looking for requirements: {} - {}", audio_set_conf->name,
+              (direction == 1 ? "snk" : "src"));
+
+    auto const& pacs =
+        (direction == types::kLeAudioDirectionSink) ? snk_pacs_ : src_pacs_;
+    for (const auto& ent : confs) {
+      if (!utils::GetConfigurationSupportedPac(pacs, ent.codec)) {
+        log::info("Configuration is NOT supported by device {}",
+                  ADDRESS_TO_LOGGABLE_CSTR(address_));
+        return false;
+      }
+    }
+  }
+
+  log::info("Configuration is supported by device {}",
+            ADDRESS_TO_LOGGABLE_CSTR(address_));
+  return true;
+}
+
 bool LeAudioDevice::ConfigureAses(
     const set_configurations::AudioSetConfiguration* audio_set_conf,
     uint8_t direction, LeAudioContextType context_type,
     uint8_t* number_of_already_active_group_ase,
-    BidirectionalPair<AudioLocations>& group_audio_locations_memo,
-    const BidirectionalPair<AudioContexts>& metadata_context_types,
-    const BidirectionalPair<std::vector<uint8_t>>& ccid_lists,
-    bool reuse_cis_id) {
+    AudioLocations& group_audio_locations_memo,
+    const AudioContexts& metadata_context_types,
+    const std::vector<uint8_t>& ccid_lists, bool reuse_cis_id) {
   /* First try to use the already configured ASE */
   auto ase = GetFirstActiveAseByDirection(direction);
   if (ase) {
@@ -252,11 +277,18 @@ bool LeAudioDevice::ConfigureAses(
   uint8_t max_required_ase_per_dev =
       ents.size() / device_cnt + (ents.size() % device_cnt);
 
-  auto pac = GetCodecConfigurationSupportedPac(direction, ents[0].codec);
-  if (!pac) return false;
+  auto const& pacs =
+      (direction == types::kLeAudioDirectionSink) ? snk_pacs_ : src_pacs_;
 
+  // Before we activate the ASEs, make sure we have the right configuration
   int needed_ase = std::min((int)(max_required_ase_per_dev),
                             (int)(ents.size() - active_ases));
+  for (int i = 0; i < needed_ase; ++i) {
+    auto const& ase_cfg = ents.at(i);
+    if (!utils::GetConfigurationSupportedPac(pacs, ase_cfg.codec)) {
+      return false;
+    }
+  }
 
   AudioLocations audio_locations = 0;
 
@@ -291,7 +323,7 @@ bool LeAudioDevice::ConfigureAses(
       ase->codec_config.Add(
           codec_spec_conf::kLeAudioLtvTypeAudioChannelAllocation,
           PickAudioLocation(strategy, audio_locations,
-                            group_audio_locations_memo.get(direction)));
+                            group_audio_locations_memo));
 
       /* Get default value if no requirement for specific frame blocks per sdu
        */
@@ -299,7 +331,8 @@ bool LeAudioDevice::ConfigureAses(
               codec_spec_conf::kLeAudioLtvTypeCodecFrameBlocksPerSdu)) {
         ase->codec_config.Add(
             codec_spec_conf::kLeAudioLtvTypeCodecFrameBlocksPerSdu,
-            GetMaxCodecFramesPerSduFromPac(pac));
+            GetMaxCodecFramesPerSduFromPac(
+                utils::GetConfigurationSupportedPac(pacs, ents.at(i).codec)));
       }
 
       /* Recalculate Max SDU size from the Core codec config */
@@ -318,9 +351,8 @@ bool LeAudioDevice::ConfigureAses(
     log::debug(
         "device={}, activated ASE id={}, direction={}, max_sdu_size={}, "
         "cis_id={}, target_latency={}",
-        ADDRESS_TO_LOGGABLE_CSTR(address_), ase->id,
-        (direction == 1 ? "snk" : "src"), ase->qos_config.max_sdu_size,
-        ase->cis_id, ents[i].qos.target_latency);
+        address_, ase->id, (direction == 1 ? "snk" : "src"),
+        ase->qos_config.max_sdu_size, ase->cis_id, ents[i].qos.target_latency);
 
     /* Try to use the already active ASE */
     ase = GetNextActiveAseWithSameDirection(ase);
@@ -336,7 +368,7 @@ bool LeAudioDevice::ConfigureAses(
 
 /* LeAudioDevice Class methods implementation */
 void LeAudioDevice::SetConnectionState(DeviceConnectState state) {
-  log::debug("{}, {} --> {}", ADDRESS_TO_LOGGABLE_CSTR(address_),
+  log::debug("{}, {} --> {}", address_,
              bluetooth::common::ToString(connection_state_),
              bluetooth::common::ToString(state));
   LeAudioLogHistory::Get()->AddLogHistory(
@@ -676,7 +708,7 @@ bool LeAudioDevice::IsReadyToSuspendStream(void) {
 
 bool LeAudioDevice::HaveAllActiveAsesCisEst(void) const {
   if (ases_.empty()) {
-    log::warn("No ases for device {}", ADDRESS_TO_LOGGABLE_CSTR(address_));
+    log::warn("No ases for device {}", address_);
     /* If there is no ASEs at all, it means we are good here - meaning, it is
      * not waiting for any CIS to be established.
      */
@@ -745,35 +777,6 @@ uint8_t LeAudioDevice::GetSupportedAudioChannelCounts(uint8_t direction) const {
   }
 
   return 0;
-}
-
-const struct types::acs_ac_record*
-LeAudioDevice::GetCodecConfigurationSupportedPac(
-    uint8_t direction, const CodecConfigSetting& codec_capability_setting) {
-  auto& pacs =
-      direction == types::kLeAudioDirectionSink ? snk_pacs_ : src_pacs_;
-
-  if (pacs.size() == 0) {
-    log::error("missing PAC for direction {}", direction);
-    return nullptr;
-  }
-
-  /* TODO: Validate channel locations */
-
-  for (const auto& pac_tuple : pacs) {
-    /* Get PAC records from tuple as second element from tuple */
-    auto& pac_recs = std::get<1>(pac_tuple);
-
-    for (const auto& pac : pac_recs) {
-      if (!IsCodecConfigSettingSupported(pac, codec_capability_setting))
-        continue;
-
-      return &pac;
-    };
-  }
-
-  /* Doesn't match required configuration with any PAC */
-  return nullptr;
 }
 
 /**
@@ -970,15 +973,13 @@ void LeAudioDevice::SetAvailableContexts(
 }
 
 void LeAudioDevice::SetMetadataToAse(
-    struct types::ase* ase,
-    const BidirectionalPair<AudioContexts>& metadata_context_types,
-    BidirectionalPair<std::vector<uint8_t>> ccid_lists) {
+    struct types::ase* ase, const AudioContexts& metadata_context_types,
+    const std::vector<uint8_t>& ccid_lists) {
   /* Filter multidirectional audio context for each ase direction */
-  auto directional_audio_context = metadata_context_types.get(ase->direction) &
-                                   GetAvailableContexts(ase->direction);
+  auto directional_audio_context =
+      metadata_context_types & GetAvailableContexts(ase->direction);
   if (directional_audio_context.any()) {
-    ase->metadata =
-        GetMetadata(directional_audio_context, ccid_lists.get(ase->direction));
+    ase->metadata = GetMetadata(directional_audio_context, ccid_lists);
   } else {
     ase->metadata = GetMetadata(AudioContexts(LeAudioContextType::UNSPECIFIED),
                                 std::vector<uint8_t>());
@@ -990,13 +991,13 @@ bool LeAudioDevice::ActivateConfiguredAses(
     const BidirectionalPair<AudioContexts>& metadata_context_types,
     BidirectionalPair<std::vector<uint8_t>> ccid_lists) {
   if (conn_id_ == GATT_INVALID_CONN_ID) {
-    log::warn("Device {} is not connected", ADDRESS_TO_LOGGABLE_CSTR(address_));
+    log::warn("Device {} is not connected", address_);
     return false;
   }
 
   bool ret = false;
 
-  log::info("Configuring device {}", ADDRESS_TO_LOGGABLE_CSTR(address_));
+  log::info("Configuring device {}", address_);
   for (auto& ase : ases_) {
     if (ase.state == AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED &&
         ase.configured_for_context_type == context_type) {
@@ -1007,7 +1008,8 @@ bool LeAudioDevice::ActivateConfiguredAses(
       ase.active = true;
       ret = true;
       /* update metadata */
-      SetMetadataToAse(&ase, metadata_context_types, ccid_lists);
+      SetMetadataToAse(&ase, metadata_context_types.get(ase.direction),
+                       ccid_lists.get(ase.direction));
     }
   }
 
@@ -1021,8 +1023,8 @@ void LeAudioDevice::DeactivateAllAses(void) {
       log::warn(
           "{}, ase_id: {}, ase.cis_id: {}, cis_handle: 0x{:02x}, "
           "ase.cis_state={}, ase.data_path_state={}",
-          ADDRESS_TO_LOGGABLE_CSTR(address_), ase.id, ase.cis_id,
-          ase.cis_conn_hdl, bluetooth::common::ToString(ase.cis_state),
+          address_, ase.id, ase.cis_id, ase.cis_conn_hdl,
+          bluetooth::common::ToString(ase.cis_state),
           bluetooth::common::ToString(ase.data_path_state));
     }
     if (alarm_is_scheduled(ase.autonomous_operation_timer_)) {
@@ -1116,8 +1118,8 @@ void LeAudioDevices::Add(const RawAddress& address, DeviceConnectState state,
                          int group_id) {
   auto device = FindByAddress(address);
   if (device != nullptr) {
-    log::error("address: {} is already assigned to group: {}",
-               ADDRESS_TO_LOGGABLE_STR(address), device->group_id_);
+    log::error("address: {} is already assigned to group: {}", address,
+               device->group_id_);
     return;
   }
 
@@ -1132,7 +1134,7 @@ void LeAudioDevices::Remove(const RawAddress& address) {
                            });
 
   if (iter == leAudioDevices_.end()) {
-    log::error("no such address: {}", ADDRESS_TO_LOGGABLE_STR(address));
+    log::error("no such address: {}", address);
     return;
   }
 

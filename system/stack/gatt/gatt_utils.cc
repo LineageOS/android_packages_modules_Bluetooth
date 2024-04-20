@@ -295,7 +295,7 @@ bool gatt_find_the_connected_bda(uint8_t start_idx, RawAddress& bda,
       *p_found_idx = i;
       *p_transport = gatt_cb.tcb[i].transport;
       found = true;
-      log::debug("bda: {}", ADDRESS_TO_LOGGABLE_CSTR(bda));
+      log::debug("bda: {}", bda);
       break;
     }
   }
@@ -347,7 +347,7 @@ bool gatt_is_srv_chg_ind_pending(tGATT_TCB* p_tcb) {
  *
  ******************************************************************************/
 tGATTS_SRV_CHG* gatt_is_bda_in_the_srv_chg_clt_list(const RawAddress& bda) {
-  log::verbose("{}", ADDRESS_TO_LOGGABLE_STR(bda));
+  log::verbose("{}", bda);
 
   if (fixed_queue_is_empty(gatt_cb.srv_chg_clt_q)) return NULL;
 
@@ -1051,8 +1051,7 @@ bool gatt_tcb_is_cid_busy(tGATT_TCB& tcb, uint16_t cid) {
   EattChannel* channel =
       EattExtension::GetInstance()->FindEattChannelByCid(tcb.peer_bda, cid);
   if (channel == nullptr) {
-    log::warn("{}, cid 0x{:02x} already disconnected",
-              ADDRESS_TO_LOGGABLE_CSTR(tcb.peer_bda), cid);
+    log::warn("{}, cid 0x{:02x} already disconnected", tcb.peer_bda, cid);
     return false;
   }
 
@@ -1188,8 +1187,7 @@ uint16_t gatt_tcb_get_payload_size(tGATT_TCB& tcb, uint16_t cid) {
   EattChannel* channel =
       EattExtension::GetInstance()->FindEattChannelByCid(tcb.peer_bda, cid);
   if (channel == nullptr) {
-    log::warn("{}, cid 0x{:02x} already disconnected",
-              ADDRESS_TO_LOGGABLE_CSTR(tcb.peer_bda), cid);
+    log::warn("{}, cid 0x{:02x} already disconnected", tcb.peer_bda, cid);
     return 0;
   }
 
@@ -1252,8 +1250,7 @@ void gatt_clcb_invalidate(tGATT_TCB* p_tcb, const tGATT_CLCB* p_clcb) {
     EattChannel* channel = EattExtension::GetInstance()->FindEattChannelByCid(
         p_tcb->peer_bda, cid);
     if (channel == nullptr) {
-      log::warn("{}, cid 0x{:02x} already disconnected",
-                ADDRESS_TO_LOGGABLE_CSTR(p_tcb->peer_bda), cid);
+      log::warn("{}, cid 0x{:02x} already disconnected", p_tcb->peer_bda, cid);
       return;
     }
     cl_cmd_q_p = &channel->cl_cmd_q_;
@@ -1383,8 +1380,7 @@ void gatt_sr_reset_cback_cnt(tGATT_TCB& tcb, uint16_t cid) {
       EattChannel* channel =
           EattExtension::GetInstance()->FindEattChannelByCid(tcb.peer_bda, cid);
       if (channel == nullptr) {
-        log::warn("{}, cid 0x{:02x} already disconnected",
-                  ADDRESS_TO_LOGGABLE_CSTR(tcb.peer_bda), cid);
+        log::warn("{}, cid 0x{:02x} already disconnected", tcb.peer_bda, cid);
         return;
       }
       channel->server_outstanding_cmd_.cback_cnt[i] = 0;
@@ -1418,8 +1414,7 @@ tGATT_SR_CMD* gatt_sr_get_cmd_by_cid(tGATT_TCB& tcb, uint16_t cid) {
     EattChannel* channel =
         EattExtension::GetInstance()->FindEattChannelByCid(tcb.peer_bda, cid);
     if (channel == nullptr) {
-      log::warn("{}, cid 0x{:02x} already disconnected",
-                ADDRESS_TO_LOGGABLE_CSTR(tcb.peer_bda), cid);
+      log::warn("{}, cid 0x{:02x} already disconnected", tcb.peer_bda, cid);
       return nullptr;
     }
 
@@ -1440,8 +1435,7 @@ tGATT_READ_MULTI* gatt_sr_get_read_multi(tGATT_TCB& tcb, uint16_t cid) {
     EattChannel* channel =
         EattExtension::GetInstance()->FindEattChannelByCid(tcb.peer_bda, cid);
     if (channel == nullptr) {
-      log::warn("{}, cid 0x{:02x} already disconnected",
-                ADDRESS_TO_LOGGABLE_CSTR(tcb.peer_bda), cid);
+      log::warn("{}, cid 0x{:02x} already disconnected", tcb.peer_bda, cid);
       return nullptr;
     }
     read_multi_p = &channel->server_outstanding_cmd_.multi_req;
@@ -1470,8 +1464,7 @@ void gatt_sr_update_cback_cnt(tGATT_TCB& tcb, uint16_t cid, tGATT_IF gatt_if,
     EattChannel* channel =
         EattExtension::GetInstance()->FindEattChannelByCid(tcb.peer_bda, cid);
     if (channel == nullptr) {
-      log::warn("{}, cid 0x{:02x} already disconnected",
-                ADDRESS_TO_LOGGABLE_CSTR(tcb.peer_bda), cid);
+      log::warn("{}, cid 0x{:02x} already disconnected", tcb.peer_bda, cid);
       return;
     }
     sr_cmd_p = &channel->server_outstanding_cmd_;
@@ -1531,15 +1524,14 @@ bool gatt_cancel_open(tGATT_IF gatt_if, const RawAddress& bda) {
       if (!p_reg) {
         log::error("Unable to find registered app gatt_if={}", gatt_if);
       } else {
-        log::info("Removing {} from direct list",
-                  ADDRESS_TO_LOGGABLE_CSTR(bda));
+        log::info("Removing {} from direct list", bda);
         p_reg->direct_connect_request.erase(bda);
       }
       return true;
     }
 
     log::warn("Unable to cancel open for unknown connection gatt_if:{} peer:{}",
-              gatt_if, ADDRESS_TO_LOGGABLE_CSTR(bda));
+              gatt_if, bda);
     return true;
   }
 
@@ -1554,7 +1546,7 @@ bool gatt_cancel_open(tGATT_IF gatt_if, const RawAddress& bda) {
     log::debug(
         "Client reference count is zero disconnecting device gatt_if:{} "
         "peer:{}",
-        gatt_if, ADDRESS_TO_LOGGABLE_CSTR(bda));
+        gatt_if, bda);
     gatt_disconnect(p_tcb);
   }
 
@@ -1569,12 +1561,12 @@ bool gatt_cancel_open(tGATT_IF gatt_if, const RawAddress& bda) {
         log::info(
             "Gatt connection manager has no background record but  removed "
             "filter acceptlist gatt_if:{} peer:{}",
-            gatt_if, ADDRESS_TO_LOGGABLE_CSTR(bda));
+            gatt_if, bda);
       } else {
         log::info(
             "Gatt connection manager maintains a background record preserving "
             "filter acceptlist gatt_if:{} peer:{}",
-            gatt_if, ADDRESS_TO_LOGGABLE_CSTR(bda));
+            gatt_if, bda);
       }
     }
   }
@@ -1598,8 +1590,7 @@ bool gatt_cmd_enq(tGATT_TCB& tcb, tGATT_CLCB* p_clcb, bool to_send,
     EattChannel* channel = EattExtension::GetInstance()->FindEattChannelByCid(
         tcb.peer_bda, cmd.cid);
     if (channel == nullptr) {
-      log::warn("{}, cid 0x{:02x} already disconnected",
-                ADDRESS_TO_LOGGABLE_CSTR(tcb.peer_bda), cmd.cid);
+      log::warn("{}, cid 0x{:02x} already disconnected", tcb.peer_bda, cmd.cid);
       return false;
     }
     channel->cl_cmd_q_.push_back(cmd);
@@ -1618,8 +1609,7 @@ tGATT_CLCB* gatt_cmd_dequeue(tGATT_TCB& tcb, uint16_t cid, uint8_t* p_op_code) {
     EattChannel* channel =
         EattExtension::GetInstance()->FindEattChannelByCid(tcb.peer_bda, cid);
     if (channel == nullptr) {
-      log::warn("{}, cid 0x{:02x} already disconnected",
-                ADDRESS_TO_LOGGABLE_CSTR(tcb.peer_bda), cid);
+      log::warn("{}, cid 0x{:02x} already disconnected", tcb.peer_bda, cid);
       return nullptr;
     }
 
@@ -1751,16 +1741,13 @@ static void gatt_le_disconnect_complete_notify_user(const RawAddress& bda,
                                                     tGATT_DISCONN_REASON reason,
                                                     tBT_TRANSPORT transport) {
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bda, transport);
-  uint8_t tcb_idx = 0;
-
-  if (p_tcb) {
-    tcb_idx = p_tcb->tcb_idx;
-  }
 
   for (uint8_t i = 0; i < GATT_MAX_APPS; i++) {
     tGATT_REG* p_reg = &gatt_cb.cl_rcb[i];
     if (p_reg->in_use && p_reg->app_cb.p_conn_cb) {
-      uint16_t conn_id = GATT_CREATE_CONN_ID(tcb_idx, p_reg->gatt_if);
+      uint16_t conn_id =
+          p_tcb ? GATT_CREATE_CONN_ID(p_tcb->tcb_idx, p_reg->gatt_if)
+                : GATT_INVALID_CONN_ID;
       (*p_reg->app_cb.p_conn_cb)(p_reg->gatt_if, bda, conn_id,
                                  kGattDisconnected, reason, transport);
     }
@@ -1768,8 +1755,8 @@ static void gatt_le_disconnect_complete_notify_user(const RawAddress& bda,
     if (IS_FLAG_ENABLED(gatt_reconnect_on_bt_on_fix)) {
       if (p_reg->direct_connect_request.count(bda) > 0) {
         log::info(
-            "Removing device {} from the direct connect list of gatt_if {} ",
-            ADDRESS_TO_LOGGABLE_CSTR(bda), p_reg->gatt_if);
+            "Removing device {} from the direct connect list of gatt_if {}",
+            bda, p_reg->gatt_if);
         p_reg->direct_connect_request.erase(bda);
       }
     }
@@ -1786,13 +1773,12 @@ void gatt_cleanup_upon_disc(const RawAddress& bda, tGATT_DISCONN_REASON reason,
     if (!IS_FLAG_ENABLED(gatt_reconnect_on_bt_on_fix)) {
       log::error(
           "Disconnect for unknown connection bd_addr:{} reason:{} transport:{}",
-          ADDRESS_TO_LOGGABLE_CSTR(bda), gatt_disconnection_reason_text(reason),
+          bda, gatt_disconnection_reason_text(reason),
           bt_transport_text(transport));
       return;
     }
 
-    log::info("Connection timeout bd_addr:{} reason:{} transport:{}",
-              ADDRESS_TO_LOGGABLE_CSTR(bda),
+    log::info("Connection timeout bd_addr:{} reason:{} transport:{}", bda,
               gatt_disconnection_reason_text(reason),
               bt_transport_text(transport));
 

@@ -150,12 +150,12 @@ class DBusHeadsetCallbacks : public headset::Callbacks {
 
   // headset::Callbacks
   void ConnectionStateCallback(headset::bthf_connection_state_t state, RawAddress* bd_addr) override {
-    log::info("ConnectionStateCallback from {}", ADDRESS_TO_LOGGABLE_CSTR(*bd_addr));
+    log::info("ConnectionStateCallback from {}", *bd_addr);
     topshim::rust::internal::connection_state_cb(state, bd_addr);
   }
 
   void AudioStateCallback(headset::bthf_audio_state_t state, RawAddress* bd_addr) override {
-    log::info("AudioStateCallback {} from {}", state, ADDRESS_TO_LOGGABLE_CSTR(*bd_addr));
+    log::info("AudioStateCallback {} from {}", state, *bd_addr);
     topshim::rust::internal::audio_state_cb(state, bd_addr);
   }
 
@@ -174,12 +174,10 @@ class DBusHeadsetCallbacks : public headset::Callbacks {
     if (volume < 0) return;
     if (volume > 15) volume = 15;
     if (type == headset::bthf_volume_type_t::BTHF_VOLUME_TYPE_SPK) {
-      log::info(
-          "VolumeControlCallback (Spk) {} from {}", volume, ADDRESS_TO_LOGGABLE_CSTR(*bd_addr));
+      log::info("VolumeControlCallback (Spk) {} from {}", volume, *bd_addr);
       topshim::rust::internal::volume_update_cb(volume, bd_addr);
     } else if (type == headset::bthf_volume_type_t::BTHF_VOLUME_TYPE_MIC) {
-      log::info(
-          "VolumeControlCallback (Mic) {} from {}", volume, ADDRESS_TO_LOGGABLE_CSTR(*bd_addr));
+      log::info("VolumeControlCallback (Mic) {} from {}", volume, *bd_addr);
       topshim::rust::internal::mic_volume_update_cb(volume, bd_addr);
     }
   }
@@ -194,13 +192,13 @@ class DBusHeadsetCallbacks : public headset::Callbacks {
       [[maybe_unused]] headset::bthf_nrec_t nrec, [[maybe_unused]] RawAddress* bd_addr) override {}
 
   void WbsCallback(headset::bthf_wbs_config_t wbs, RawAddress* addr) override {
-    log::info("WbsCallback {} from {}", wbs, ADDRESS_TO_LOGGABLE_CSTR(*addr));
+    log::info("WbsCallback {} from {}", wbs, *addr);
     rusty::hfp_wbs_caps_update_callback(wbs == headset::BTHF_WBS_YES, *addr);
   }
 
   void SwbCallback(
       headset::bthf_swb_codec_t codec, headset::bthf_swb_config_t swb, RawAddress* addr) override {
-    log::info("SwbCallback codec:{}, swb:{} from {}", codec, swb, ADDRESS_TO_LOGGABLE_CSTR(*addr));
+    log::info("SwbCallback codec:{}, swb:{} from {}", codec, swb, *addr);
     rusty::hfp_swb_caps_update_callback(
         (codec == headset::BTHF_SWB_CODEC_LC3 && swb == headset::BTHF_SWB_YES), *addr);
   }
@@ -220,7 +218,7 @@ class DBusHeadsetCallbacks : public headset::Callbacks {
   }
 
   void AtCopsCallback(RawAddress* bd_addr) override {
-    log::warn("Respond +COPS: 0 to AT+COPS? from {}", ADDRESS_TO_LOGGABLE_CSTR(*bd_addr));
+    log::warn("Respond +COPS: 0 to AT+COPS? from {}", *bd_addr);
     headset_->CopsResponse("", bd_addr);
   }
 
@@ -256,9 +254,7 @@ class DBusHeadsetCallbacks : public headset::Callbacks {
 
   void AtBindCallback(char* at_string, RawAddress* bd_addr) override {
     log::warn(
-        "AT+BIND {} from addr {}: Bluetooth HF Indicators is not supported.",
-        at_string,
-        ADDRESS_TO_LOGGABLE_CSTR(*bd_addr));
+        "AT+BIND {} from addr {}: Bluetooth HF Indicators is not supported.", at_string, *bd_addr);
   }
 
   void AtBievCallback(headset::bthf_hf_ind_type_t ind_id, int ind_value, RawAddress* bd_addr) override {
@@ -272,23 +268,13 @@ class DBusHeadsetCallbacks : public headset::Callbacks {
         headset_->AtResponse(headset::BTHF_AT_RESPONSE_OK, 0, bd_addr);
         break;
       default:
-        log::warn(
-            "AT+BIEV indicator {} with value {} from addr {}",
-            ind_id,
-            ind_value,
-            ADDRESS_TO_LOGGABLE_CSTR(*bd_addr));
+        log::warn("AT+BIEV indicator {} with value {} from addr {}", ind_id, ind_value, *bd_addr);
         return;
     }
   }
 
   void AtBiaCallback(bool service, bool roam, bool signal, bool battery, RawAddress* bd_addr) override {
-    log::warn(
-        "AT+BIA=,,{},{},{},{},from addr {}",
-        service,
-        signal,
-        roam,
-        battery,
-        ADDRESS_TO_LOGGABLE_CSTR(*bd_addr));
+    log::warn("AT+BIA=,,{},{},{},{},from addr {}", service, signal, roam, battery, *bd_addr);
   }
 
   void DebugDumpCallback(

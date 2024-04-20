@@ -181,8 +181,7 @@ RobustCachingSupport GetRobustCachingSupport(const tBTA_GATTC_CLCB* p_clcb,
   // support GATT Caching.
   uint8_t lmp_version = 0;
   if (!BTM_ReadRemoteVersion(p_clcb->bda, &lmp_version, nullptr, nullptr)) {
-    log::warn("Could not read remote version for {}",
-              ADDRESS_TO_LOGGABLE_CSTR(p_clcb->bda));
+    log::warn("Could not read remote version for {}", p_clcb->bda);
   }
 
   if (lmp_version < 0x0a) {

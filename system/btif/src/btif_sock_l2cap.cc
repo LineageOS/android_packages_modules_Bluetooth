@@ -229,8 +229,7 @@ static void btsock_l2cap_free_l(l2cap_socket* sock) {
   log::info(
       "Disconnected L2CAP connection for device: {}, channel: {}, app_uid: {}, "
       "id: {}, is_le: {}",
-      ADDRESS_TO_LOGGABLE_CSTR(sock->addr), sock->channel, sock->app_uid,
-      sock->id, sock->is_le_coc);
+      sock->addr, sock->channel, sock->app_uid, sock->id, sock->is_le_coc);
   btif_sock_connection_logger(
       sock->addr, sock->id, sock->is_le_coc ? BTSOCK_L2CAP_LE : BTSOCK_L2CAP,
       SOCKET_CONNECTION_STATE_DISCONNECTED,
@@ -458,8 +457,7 @@ static void on_srv_l2cap_listen_started(tBTA_JV_L2CAP_START* p_start,
   log::info(
       "Listening for L2CAP connection for device: {}, channel: {}, app_uid: "
       "{}, id: {}, is_le: {}",
-      ADDRESS_TO_LOGGABLE_CSTR(sock->addr), sock->channel, sock->app_uid,
-      sock->id, sock->is_le_coc);
+      sock->addr, sock->channel, sock->app_uid, sock->id, sock->is_le_coc);
   btif_sock_connection_logger(
       sock->addr, sock->id, sock->is_le_coc ? BTSOCK_L2CAP_LE : BTSOCK_L2CAP,
       SOCKET_CONNECTION_STATE_LISTENING,
@@ -527,8 +525,7 @@ static void on_srv_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open,
   log::info(
       "Connected to L2CAP connection for device: {}, channel: {}, app_uid: {}, "
       "id: {}, is_le: {}",
-      ADDRESS_TO_LOGGABLE_CSTR(sock->addr), sock->channel, sock->app_uid,
-      sock->id, sock->is_le_coc);
+      sock->addr, sock->channel, sock->app_uid, sock->id, sock->is_le_coc);
   btif_sock_connection_logger(
       accept_rs->addr, accept_rs->id,
       accept_rs->is_le_coc ? BTSOCK_L2CAP_LE : BTSOCK_L2CAP,
@@ -575,8 +572,7 @@ static void on_cl_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open,
   log::info(
       "Connected to L2CAP connection for device: {}, channel: {}, app_uid: {}, "
       "id: {}, is_le: {}",
-      ADDRESS_TO_LOGGABLE_CSTR(sock->addr), sock->channel, sock->app_uid,
-      sock->id, sock->is_le_coc);
+      sock->addr, sock->channel, sock->app_uid, sock->id, sock->is_le_coc);
   btif_sock_connection_logger(
       sock->addr, sock->id, sock->is_le_coc ? BTSOCK_L2CAP_LE : BTSOCK_L2CAP,
       SOCKET_CONNECTION_STATE_CONNECTED,
@@ -631,8 +627,7 @@ static void on_l2cap_close(tBTA_JV_L2CAP_CLOSE* p_close, uint32_t id) {
   log::info(
       "Disconnecting from L2CAP connection for device: {}, channel: {}, "
       "app_uid: {}, id: {}, is_le: {}",
-      ADDRESS_TO_LOGGABLE_CSTR(sock->addr), sock->channel, sock->app_uid,
-      sock->id, sock->is_le_coc);
+      sock->addr, sock->channel, sock->app_uid, sock->id, sock->is_le_coc);
   btif_sock_connection_logger(
       sock->addr, sock->id, sock->is_le_coc ? BTSOCK_L2CAP_LE : BTSOCK_L2CAP,
       SOCKET_CONNECTION_STATE_DISCONNECTING,

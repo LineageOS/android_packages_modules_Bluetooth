@@ -80,6 +80,7 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -1604,15 +1605,19 @@ public class HeadsetServiceAndStateMachineTest {
 
     @Test
     public void testHfpHandoverToLeAudioAfterScoDisconnect() {
+        BluetoothDevice device = TestUtils.getTestDevice(mAdapter, 0);
         mSetFlagsRule.enableFlags(Flags.FLAG_LEAUDIO_RESUME_ACTIVE_AFTER_HFP_HANDOVER);
 
         Assert.assertNotNull(mHeadsetService.mFactory);
         doReturn(mLeAudioService).when(mServiceFactory).getLeAudioService();
+        doReturn(List.of(device)).when(mLeAudioService).getConnectedDevices();
+        List<BluetoothDevice> activeDeviceList = new ArrayList<>();
+        activeDeviceList.add(null);
+        doReturn(activeDeviceList).when(mLeAudioService).getActiveDevices();
         mHeadsetService.mFactory = mServiceFactory;
         doReturn(true).when(mSystemInterface).isCallIdle();
 
         // Connect HF
-        BluetoothDevice device = TestUtils.getTestDevice(mAdapter, 0);
         connectTestDevice(device);
         // Make device active
         Assert.assertTrue(mHeadsetService.setActiveDevice(device));

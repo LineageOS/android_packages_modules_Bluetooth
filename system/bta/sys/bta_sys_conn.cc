@@ -76,9 +76,8 @@ void bta_sys_role_chg_register(tBTA_SYS_ROLE_SWITCH_CBACK* p_cback) {
  ******************************************************************************/
 void bta_sys_notify_role_chg(const RawAddress& peer_addr, tHCI_ROLE new_role,
                              tHCI_STATUS hci_status) {
-  log::debug("Role changed peer:{} new_role:{} hci_status:{}",
-             ADDRESS_TO_LOGGABLE_CSTR(peer_addr), RoleText(new_role),
-             hci_error_code_text(hci_status));
+  log::debug("Role changed peer:{} new_role:{} hci_status:{}", peer_addr,
+             RoleText(new_role), hci_error_code_text(hci_status));
   if (bta_sys_cb.p_role_cb) {
     bta_sys_cb.p_role_cb(BTA_SYS_ROLE_CHANGE, new_role, hci_status, peer_addr);
   }

@@ -850,7 +850,7 @@ static tAVRC_STS avrc_bld_set_browsed_player_rsp(tAVRC_SET_BR_PLAYER_RSP* p_rsp,
     len_left = mtu;
   }
   len_left = len_left - p_pkt->offset - p_pkt->len;
-  log::verbose("len_left:{}, mtu:{} ", len_left, mtu);
+  log::verbose("len_left:{}, mtu:{}", len_left, mtu);
 
   /* get the existing length, if any, and also the num attributes */
   p_start = (uint8_t*)(p_pkt + 1) + p_pkt->offset;

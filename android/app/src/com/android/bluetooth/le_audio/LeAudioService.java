@@ -3741,7 +3741,7 @@ public class LeAudioService extends ProfileService {
             setActiveDevice(mLeAudioDeviceInactivatedForHfpHandover);
             mLeAudioDeviceInactivatedForHfpHandover = null;
         } else {
-            Log.d(TAG, "nothing to hand over back");
+            Log.d(TAG, "nothing to handover back");
         }
     }
 

@@ -194,7 +194,7 @@ static void a2dp_vendor_ldac_encoder_update(A2dpCodecConfig* a2dp_codec_config,
 
   if (!a2dp_codec_config->copyOutOtaCodecConfig(codec_info)) {
     log::error("Cannot update the codec encoder for {}: invalid codec config",
-               a2dp_codec_config->name().c_str());
+               a2dp_codec_config->name());
     return;
   }
   const uint8_t* p_codec_info = codec_info;
@@ -224,27 +224,25 @@ static void a2dp_vendor_ldac_encoder_update(A2dpCodecConfig* a2dp_codec_config,
   if (codec_config.codec_specific_1 != 0) {
     p_encoder_params->quality_mode_index = codec_config.codec_specific_1 % 10;
     log::info("setting quality mode to {}",
-              quality_mode_index_to_name(p_encoder_params->quality_mode_index)
-                  .c_str());
+              quality_mode_index_to_name(p_encoder_params->quality_mode_index));
   } else {
     p_encoder_params->quality_mode_index = A2DP_LDAC_QUALITY_ABR;
     log::info("setting quality mode to default {}",
-              quality_mode_index_to_name(p_encoder_params->quality_mode_index)
-                  .c_str());
+              quality_mode_index_to_name(p_encoder_params->quality_mode_index));
   }
 
   int ldac_eqmid = LDAC_ABR_MODE_EQMID;
   if (p_encoder_params->quality_mode_index == A2DP_LDAC_QUALITY_ABR) {
     if (!ldac_abr_loaded) {
       p_encoder_params->quality_mode_index = A2DP_LDAC_QUALITY_MID;
-      log::warn("LDAC ABR library is not loaded, resetting quality mode to {}",
-                quality_mode_index_to_name(p_encoder_params->quality_mode_index)
-                    .c_str());
+      log::warn(
+          "LDAC ABR library is not loaded, resetting quality mode to {}",
+          quality_mode_index_to_name(p_encoder_params->quality_mode_index));
     } else {
-      log::info("changing mode from {} to {}",
-                quality_mode_index_to_name(old_quality_mode_index).c_str(),
-                quality_mode_index_to_name(p_encoder_params->quality_mode_index)
-                    .c_str());
+      log::info(
+          "changing mode from {} to {}",
+          quality_mode_index_to_name(old_quality_mode_index),
+          quality_mode_index_to_name(p_encoder_params->quality_mode_index));
       if (a2dp_ldac_encoder_cb.ldac_abr_handle != NULL) {
         log::info("already in LDAC ABR mode, do nothing.");
       } else {
@@ -260,15 +258,14 @@ static void a2dp_vendor_ldac_encoder_update(A2dpCodecConfig* a2dp_codec_config,
           p_encoder_params->quality_mode_index = A2DP_LDAC_QUALITY_MID;
           log::info(
               "get LDAC ABR handle failed, resetting quality mode to {}.",
-              quality_mode_index_to_name(p_encoder_params->quality_mode_index)
-                  .c_str());
+              quality_mode_index_to_name(p_encoder_params->quality_mode_index));
         }
       }
     }
   } else {
     ldac_eqmid = p_encoder_params->quality_mode_index;
     log::info("in {} mode, free LDAC ABR handle.",
-              quality_mode_index_to_name(ldac_eqmid).c_str());
+              quality_mode_index_to_name(ldac_eqmid));
     if (a2dp_ldac_encoder_cb.has_ldac_abr_handle) {
       ldac_ABR_free_handle(a2dp_ldac_encoder_cb.ldac_abr_handle);
       a2dp_ldac_encoder_cb.ldac_abr_handle = NULL;

@@ -66,19 +66,18 @@ bool L2CA_UpdateBleConnParams(const RawAddress& rem_bda, uint16_t min_int,
 
   /* If we do not have one, create one and accept the connection. */
   if (!p_lcb || !BTM_IsAclConnectionUp(rem_bda, BT_TRANSPORT_LE)) {
-    log::warn("- unknown BD_ADDR {}", ADDRESS_TO_LOGGABLE_STR(rem_bda));
+    log::warn("- unknown BD_ADDR {}", rem_bda);
     return (false);
   }
 
   if (p_lcb->transport != BT_TRANSPORT_LE) {
-    log::warn("- BD_ADDR {} not LE", ADDRESS_TO_LOGGABLE_STR(rem_bda));
+    log::warn("- BD_ADDR {} not LE", rem_bda);
     return (false);
   }
 
   log::verbose(
       "BD_ADDR={}, min_int={}, max_int={}, min_ce_len={}, max_ce_len={}",
-      ADDRESS_TO_LOGGABLE_STR(rem_bda), min_int, max_int, min_ce_len,
-      max_ce_len);
+      rem_bda, min_int, max_int, min_ce_len, max_ce_len);
 
   p_lcb->min_interval = min_int;
   p_lcb->max_interval = max_int;
@@ -105,32 +104,30 @@ void L2CA_LockBleConnParamsForServiceDiscovery(const RawAddress& rem_bda,
 
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(rem_bda, BT_TRANSPORT_LE);
   if (!p_lcb) {
-    log::warn("unknown address {}", ADDRESS_TO_LOGGABLE_CSTR(rem_bda));
+    log::warn("unknown address {}", rem_bda);
     return;
   }
 
   if (p_lcb->transport != BT_TRANSPORT_LE) {
-    log::warn("{} not LE, link role {}", ADDRESS_TO_LOGGABLE_CSTR(rem_bda),
-              p_lcb->LinkRole());
+    log::warn("{} not LE, link role {}", rem_bda, p_lcb->LinkRole());
     return;
   }
 
   if (lock == p_lcb->conn_update_blocked_by_service_discovery) {
     log::warn("{} service discovery already locked/unlocked conn params: {}",
-              ADDRESS_TO_LOGGABLE_CSTR(rem_bda), lock);
+              rem_bda, lock);
     return;
   }
 
   p_lcb->conn_update_blocked_by_service_discovery = lock;
 
   if (p_lcb->conn_update_blocked_by_profile_connection) {
-    log::info("{} conn params stay locked because of audio setup",
-              ADDRESS_TO_LOGGABLE_CSTR(rem_bda));
+    log::info("{} conn params stay locked because of audio setup", rem_bda);
     return;
   }
 
   log::info("{} Locking/unlocking conn params for service discovery: {}",
-            ADDRESS_TO_LOGGABLE_CSTR(rem_bda), lock);
+            rem_bda, lock);
   l2c_enable_update_ble_conn_params(p_lcb, !lock);
 }
 
@@ -144,19 +141,18 @@ void L2CA_LockBleConnParamsForProfileConnection(const RawAddress& rem_bda,
 
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(rem_bda, BT_TRANSPORT_LE);
   if (!p_lcb) {
-    log::warn("unknown address {}", ADDRESS_TO_LOGGABLE_CSTR(rem_bda));
+    log::warn("unknown address {}", rem_bda);
     return;
   }
 
   if (p_lcb->transport != BT_TRANSPORT_LE) {
-    log::warn("{} not LE, link role {}", ADDRESS_TO_LOGGABLE_CSTR(rem_bda),
-              p_lcb->LinkRole());
+    log::warn("{} not LE, link role {}", rem_bda, p_lcb->LinkRole());
     return;
   }
 
   if (lock == p_lcb->conn_update_blocked_by_profile_connection) {
-    log::info("{} audio setup already locked/unlocked conn params: {}",
-              ADDRESS_TO_LOGGABLE_CSTR(rem_bda), lock);
+    log::info("{} audio setup already locked/unlocked conn params: {}", rem_bda,
+              lock);
     return;
   }
 
@@ -164,19 +160,18 @@ void L2CA_LockBleConnParamsForProfileConnection(const RawAddress& rem_bda,
 
   if (p_lcb->conn_update_blocked_by_service_discovery) {
     log::info("{} conn params stay locked because of service discovery",
-              ADDRESS_TO_LOGGABLE_CSTR(rem_bda));
+              rem_bda);
     return;
   }
 
-  log::info("{} Locking/unlocking conn params for audio setup: {}",
-            ADDRESS_TO_LOGGABLE_CSTR(rem_bda), lock);
+  log::info("{} Locking/unlocking conn params for audio setup: {}", rem_bda,
+            lock);
   l2c_enable_update_ble_conn_params(p_lcb, !lock);
 }
 
 static bool l2c_enable_update_ble_conn_params(tL2C_LCB* p_lcb, bool enable) {
-  log::debug("{} enable {} current upd state 0x{:02x}",
-             ADDRESS_TO_LOGGABLE_CSTR(p_lcb->remote_bd_addr), enable,
-             p_lcb->conn_update_mask);
+  log::debug("{} enable {} current upd state 0x{:02x}", p_lcb->remote_bd_addr,
+             enable, p_lcb->conn_update_mask);
 
   if (enable) {
     p_lcb->conn_update_mask &= ~L2C_BLE_CONN_UPDATE_DISABLE;
@@ -206,8 +201,7 @@ static bool l2c_enable_update_ble_conn_params(tL2C_LCB* p_lcb, bool enable) {
 void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
   uint16_t min_conn_int, max_conn_int, peripheral_latency, supervision_tout;
   if (!BTM_IsAclConnectionUp(p_lcb->remote_bd_addr, BT_TRANSPORT_LE)) {
-    log::error("No known connection ACL for {}",
-               ADDRESS_TO_LOGGABLE_STR(p_lcb->remote_bd_addr));
+    log::error("No known connection ACL for {}", p_lcb->remote_bd_addr);
     return;
   }
 
@@ -369,8 +363,7 @@ void l2cble_use_preferred_conn_params(const RawAddress& bda) {
  ******************************************************************************/
 static void l2cble_start_subrate_change(tL2C_LCB* p_lcb) {
   if (!BTM_IsAclConnectionUp(p_lcb->remote_bd_addr, BT_TRANSPORT_LE)) {
-    log::error("No known connection ACL for {}",
-               ADDRESS_TO_LOGGABLE_STR(p_lcb->remote_bd_addr));
+    log::error("No known connection ACL for {}", p_lcb->remote_bd_addr);
     return;
   }
 
@@ -380,12 +373,12 @@ static void l2cble_start_subrate_change(tL2C_LCB* p_lcb) {
                p_lcb->subrate_req_mask, p_lcb->conn_update_mask);
 
   if (p_lcb->subrate_req_mask & L2C_BLE_SUBRATE_REQ_PENDING) {
-    log::verbose("returning L2C_BLE_SUBRATE_REQ_PENDING ");
+    log::verbose("returning L2C_BLE_SUBRATE_REQ_PENDING");
     return;
   }
 
   if (p_lcb->subrate_req_mask & L2C_BLE_SUBRATE_REQ_DISABLE) {
-    log::verbose("returning L2C_BLE_SUBRATE_REQ_DISABLE ");
+    log::verbose("returning L2C_BLE_SUBRATE_REQ_DISABLE");
     return;
   }
 
@@ -463,20 +456,19 @@ bool L2CA_SubrateRequest(const RawAddress& rem_bda, uint16_t subrate_min,
 
   /* If we don't have one, create one and accept the connection. */
   if (!p_lcb || !BTM_IsAclConnectionUp(rem_bda, BT_TRANSPORT_LE)) {
-    log::warn("unknown BD_ADDR {}", ADDRESS_TO_LOGGABLE_STR(rem_bda));
+    log::warn("unknown BD_ADDR {}", rem_bda);
     return (false);
   }
 
   if (p_lcb->transport != BT_TRANSPORT_LE) {
-    log::warn("BD_ADDR {} not LE", ADDRESS_TO_LOGGABLE_STR(rem_bda));
+    log::warn("BD_ADDR {} not LE", rem_bda);
     return (false);
   }
 
   log::verbose(
       "BD_ADDR={}, subrate_min={}, subrate_max={}, max_latency={}, "
       "cont_num={}, timeout={}",
-      ADDRESS_TO_LOGGABLE_STR(rem_bda), subrate_min, subrate_max, max_latency,
-      cont_num, timeout);
+      rem_bda, subrate_min, subrate_max, max_latency, cont_num, timeout);
 
   p_lcb->subrate_min = subrate_min;
   p_lcb->subrate_max = subrate_max;

@@ -198,8 +198,7 @@ bool LeAudioDeviceGroup::Activate(
 
     bool activated = leAudioDevice.lock()->ActivateConfiguredAses(
         context_type, metadata_context_types, ccid_lists);
-    log::info("Device {} is {}",
-              ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice.lock().get()->address_),
+    log::info("Device {} is {}", leAudioDevice.lock().get()->address_,
               activated ? "activated" : " not activated");
     if (activated) {
       if (!cig.AssignCisIds(leAudioDevice.lock().get())) {
@@ -910,44 +909,42 @@ uint8_t LeAudioDeviceGroup::CigConfiguration::GetFirstFreeCisId(
   return kInvalidCisId;
 }
 
-types::LeAudioConfigurationStrategy
-LeAudioDeviceGroup::GetGroupSinkStrategyFromPacs(
-    int expected_group_size) const {
-  /* Simple strategy picker */
-  log::debug("Group {} size {}", group_id_, expected_group_size);
-  if (expected_group_size > 1) {
-    return types::LeAudioConfigurationStrategy::MONO_ONE_CIS_PER_DEVICE;
-  }
-
-  log::debug("audio location 0x{:04x}", snk_audio_locations_.to_ulong());
-  if (!(snk_audio_locations_.to_ulong() &
-        codec_spec_conf::kLeAudioLocationAnyLeft) ||
-      !(snk_audio_locations_.to_ulong() &
-        codec_spec_conf::kLeAudioLocationAnyRight)) {
-    return types::LeAudioConfigurationStrategy::MONO_ONE_CIS_PER_DEVICE;
-  }
-
-  auto device = GetFirstDevice();
-  /* Note: Currently, the audio channel counts LTV is only mandatory for LC3. */
-  auto channel_count_bitmap =
-      device->GetSupportedAudioChannelCounts(types::kLeAudioDirectionSink);
-  log::debug("Supported channel counts for group {} (device {}) is {}",
-             group_id_, ADDRESS_TO_LOGGABLE_CSTR(device->address_),
-             channel_count_bitmap);
-  if (channel_count_bitmap == 1) {
-    return types::LeAudioConfigurationStrategy::STEREO_TWO_CISES_PER_DEVICE;
-  }
-
-  return types::LeAudioConfigurationStrategy::STEREO_ONE_CIS_PER_DEVICE;
-}
-
 types::LeAudioConfigurationStrategy LeAudioDeviceGroup::GetGroupSinkStrategy()
     const {
   /* Update the strategy if not set yet or was invalidated */
   if (!strategy_) {
-    int expected_group_size = Size();
     /* Choose the group configuration strategy based on PAC records */
-    strategy_ = GetGroupSinkStrategyFromPacs(expected_group_size);
+    strategy_ = [this]() {
+      int expected_group_size = Size();
+
+      /* Simple strategy picker */
+      log::debug("Group {} size {}", group_id_, expected_group_size);
+      if (expected_group_size > 1) {
+        return types::LeAudioConfigurationStrategy::MONO_ONE_CIS_PER_DEVICE;
+      }
+
+      log::debug("audio location 0x{:04x}", snk_audio_locations_.to_ulong());
+      if (!(snk_audio_locations_.to_ulong() &
+            codec_spec_conf::kLeAudioLocationAnyLeft) ||
+          !(snk_audio_locations_.to_ulong() &
+            codec_spec_conf::kLeAudioLocationAnyRight)) {
+        return types::LeAudioConfigurationStrategy::MONO_ONE_CIS_PER_DEVICE;
+      }
+
+      auto device = GetFirstDevice();
+      /* Note: Currently, the audio channel counts LTV is only mandatory for
+       * LC3. */
+      auto channel_count_bitmap =
+          device->GetSupportedAudioChannelCounts(types::kLeAudioDirectionSink);
+      log::debug("Supported channel counts for group {} (device {}) is {}",
+                 group_id_, ADDRESS_TO_LOGGABLE_CSTR(device->address_),
+                 channel_count_bitmap);
+      if (channel_count_bitmap == 1) {
+        return types::LeAudioConfigurationStrategy::STEREO_TWO_CISES_PER_DEVICE;
+      }
+
+      return types::LeAudioConfigurationStrategy::STEREO_ONE_CIS_PER_DEVICE;
+    }();
 
     log::info(
         "Group strategy set to: {}",
@@ -1047,12 +1044,12 @@ void LeAudioDeviceGroup::CigConfiguration::GenerateCisIds(
 bool LeAudioDeviceGroup::CigConfiguration::AssignCisIds(
     LeAudioDevice* leAudioDevice) {
   log::assert_that(leAudioDevice, "invalid device");
-  log::info("device: {}", ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+  log::info("device: {}", leAudioDevice->address_);
 
   struct ase* ase = leAudioDevice->GetFirstActiveAse();
   if (!ase) {
     log::error("Device {} shouldn't be called without an active ASE",
-               ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+               leAudioDevice->address_);
     return false;
   }
 
@@ -1179,7 +1176,7 @@ void LeAudioDeviceGroup::AssignCisConnHandlesToAses(
     LeAudioDevice* leAudioDevice) {
   log::assert_that(leAudioDevice, "Invalid device");
   log::info("group: {}, group_id: {}, device: {}", fmt::ptr(this), group_id_,
-            ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+            leAudioDevice->address_);
 
   /* Assign all CIS connection handles to ases */
   struct bluetooth::le_audio::types::ase* ase =
@@ -1225,8 +1222,7 @@ void LeAudioDeviceGroup::CigConfiguration::UnassignCis(
   log::assert_that(leAudioDevice, "Invalid device");
 
   log::info("Group {}, group_id {}, device: {}", fmt::ptr(group_),
-            group_->group_id_,
-            ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+            group_->group_id_, leAudioDevice->address_);
 
   for (struct bluetooth::le_audio::types::cis& cis_entry : cises) {
     if (cis_entry.addr == leAudioDevice->address_) {
@@ -1291,9 +1287,8 @@ bool CheckIfStrategySupported(types::LeAudioConfigurationStrategy strategy,
  * (no matter on the ASE state) and for given context type
  */
 bool LeAudioDeviceGroup::IsAudioSetConfigurationSupported(
-    const set_configurations::AudioSetConfiguration* audio_set_conf,
     const CodecManager::UnicastConfigurationRequirements& requirements,
-    types::LeAudioConfigurationStrategy required_snk_strategy) const {
+    const set_configurations::AudioSetConfiguration* audio_set_conf) const {
   /* When at least one device supports the configuration context, configure
    * for these devices only. Otherwise configure for all devices - we will
    * not put this context into the metadata if not supported.
@@ -1317,6 +1312,7 @@ bool LeAudioDeviceGroup::IsAudioSetConfigurationSupported(
    *    scenarion will be covered.
    * 3) ASEs should be filled according to performance profile.
    */
+  auto required_snk_strategy = GetGroupSinkStrategy();
   for (auto direction :
        {types::kLeAudioDirectionSink, types::kLeAudioDirectionSource}) {
     log::debug("Looking for configuration: {} - {}", audio_set_conf->name,
@@ -1374,8 +1370,13 @@ bool LeAudioDeviceGroup::IsAudioSetConfigurationSupported(
                    static_cast<int>(ase_cnt - active_ase_cnt));
 
       for (auto const& ent : ase_confs) {
-        if (!device->GetCodecConfigurationSupportedPac(direction, ent.codec)) {
-          log::debug("Insufficient PAC");
+        auto const& pacs = (direction == types::kLeAudioDirectionSink)
+                               ? device->snk_pacs_
+                               : device->src_pacs_;
+        if (!utils::GetConfigurationSupportedPac(pacs, ent.codec)) {
+          log::debug(
+              "Insufficient PAC for {}",
+              (direction == types::kLeAudioDirectionSink ? "sink" : "source"));
           continue;
         }
 
@@ -1489,16 +1490,16 @@ bool LeAudioDeviceGroup::ConfigureAses(
        * connected
        */
       if (dev->GetConnectionState() != DeviceConnectState::CONNECTED) {
-        log::warn("Device {}, in the state {}",
-                  ADDRESS_TO_LOGGABLE_CSTR(dev->address_),
+        log::warn("Device {}, in the state {}", dev->address_,
                   bluetooth::common::ToString(dev->GetConnectionState()));
         return;
       }
 
       if (!dev->ConfigureAses(audio_set_conf, direction, context_type,
-                              &active_ase_cnt, group_audio_locations_memo,
-                              metadata_context_types, ccid_lists,
-                              reuse_cis_id)) {
+                              &active_ase_cnt,
+                              group_audio_locations_memo.get(direction),
+                              metadata_context_types.get(direction),
+                              ccid_lists.get(direction), reuse_cis_id)) {
         return;
       }
 
@@ -1737,8 +1738,7 @@ void LeAudioDeviceGroup::Disable(int gatt_if) {
     device_iter.lock()->autoconnect_flag_ = false;
 
     log::info("Group {} in state {}. Removing {} from background connect",
-              group_id_, bluetooth::common::ToString(GetState()),
-              ADDRESS_TO_LOGGABLE_CSTR(address));
+              group_id_, bluetooth::common::ToString(GetState()), address);
 
     BTA_GATTC_CancelOpen(gatt_if, address, false);
 
@@ -1763,8 +1763,7 @@ void LeAudioDeviceGroup::Enable(int gatt_if,
     device_iter.lock()->autoconnect_flag_ = true;
 
     log::info("Group {} in state {}. Adding {} from background connect",
-              group_id_, bluetooth::common::ToString(GetState()),
-              ADDRESS_TO_LOGGABLE_CSTR(address));
+              group_id_, bluetooth::common::ToString(GetState()), address);
 
     if (connection_state == DeviceConnectState::DISCONNECTED) {
       BTA_GATTC_Open(gatt_if, address, reconnection_mode, false);
@@ -1790,8 +1789,7 @@ void LeAudioDeviceGroup::AddToAllowListNotConnectedGroupMembers(int gatt_if) {
 
     auto address = device_iter.lock()->address_;
     log::info("Group {} in state {}. Adding {} to allow list", group_id_,
-              bluetooth::common::ToString(GetState()),
-              ADDRESS_TO_LOGGABLE_CSTR(address));
+              bluetooth::common::ToString(GetState()), address);
 
     /* When adding set members to allow list, let use direct connect first.
      * When it fails (i.e. device is not advertising), it will go to background
@@ -1814,7 +1812,7 @@ void LeAudioDeviceGroup::ApplyReconnectionMode(
                    false);
     log::info("Group {} in state {}. Adding {} to default reconnection mode",
               group_id_, bluetooth::common::ToString(GetState()),
-              ADDRESS_TO_LOGGABLE_CSTR(device_iter.lock()->address_));
+              device_iter.lock()->address_);
     device_iter.lock()->SetConnectionState(
         DeviceConnectState::CONNECTING_AUTOCONNECT);
   }
@@ -1831,31 +1829,6 @@ bool LeAudioDeviceGroup::IsConfiguredForContext(
 
   /* Check if used configuration is same as the active one.*/
   return (stream_conf.conf.get() == GetActiveConfiguration().get());
-}
-
-bool LeAudioDeviceGroup::IsAudioSetConfigurationSupported(
-    LeAudioDevice* leAudioDevice,
-    const set_configurations::AudioSetConfiguration* audio_set_conf) const {
-  for (auto direction : {le_audio::types::kLeAudioDirectionSink,
-                         le_audio::types::kLeAudioDirectionSource}) {
-    const auto& confs = audio_set_conf->confs.get(direction);
-    if (confs.size() == 0) continue;
-
-    log::info("Looking for requirements: {} - {}", audio_set_conf->name,
-              (direction == 1 ? "snk" : "src"));
-    for (const auto& ent : confs) {
-      if (!leAudioDevice->GetCodecConfigurationSupportedPac(direction,
-                                                            ent.codec)) {
-        log::info("Configuration is NOT supported by device {}",
-                  ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
-        return false;
-      }
-    }
-  }
-
-  log::info("Configuration is supported by device {}",
-            ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
-  return true;
 }
 
 const set_configurations::AudioSetConfiguration*
@@ -1880,11 +1853,9 @@ LeAudioDeviceGroup::FindFirstSupportedConfiguration(
   }
 
   /* Filter out device set for each end every scenario */
-  auto required_snk_strategy = GetGroupSinkStrategy();
   for (const auto& conf : *confs) {
     log::assert_that(conf != nullptr, "confs should not be null");
-    if (IsAudioSetConfigurationSupported(conf, requirements,
-                                         required_snk_strategy)) {
+    if (IsAudioSetConfigurationSupported(requirements, conf)) {
       log::debug("found: {}", conf->name);
       return conf;
     }

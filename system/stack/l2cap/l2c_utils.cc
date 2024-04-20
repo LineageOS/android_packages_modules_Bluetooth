@@ -129,8 +129,7 @@ void l2cu_update_lcb_4_bonding(const RawAddress& p_bd_addr, bool is_bonding) {
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(p_bd_addr, BT_TRANSPORT_BR_EDR);
 
   if (p_lcb) {
-    log::verbose("BDA: {} is_bonding: {}", ADDRESS_TO_LOGGABLE_STR(p_bd_addr),
-                 is_bonding);
+    log::verbose("BDA: {} is_bonding: {}", p_bd_addr, is_bonding);
     if (is_bonding) {
       p_lcb->SetBonding();
     } else {
@@ -2687,7 +2686,7 @@ bool l2cu_initialize_fixed_ccb(tL2C_LCB* p_lcb, uint16_t fixed_cid) {
   } else {
     log::warn(
         "Unable to cancel link control block for link connection to device {}",
-        ADDRESS_TO_LOGGABLE_CSTR(p_lcb->remote_bd_addr));
+        p_lcb->remote_bd_addr);
   }
 
   /* Set CID for the connection */
@@ -3061,7 +3060,7 @@ void l2cu_send_peer_credit_based_conn_req(tL2C_CCB* p_ccb) {
 
   for (int i = 0; i < p_lcb->pending_ecoc_conn_cnt; i++) {
     uint16_t cid = p_lcb->pending_ecoc_connection_cids[i];
-    log::verbose("    cid: {}", cid);
+    log::verbose("cid: {}", cid);
     UINT16_TO_STREAM(p, cid);
   }
 

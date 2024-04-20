@@ -54,14 +54,17 @@ void PreparePeriodicData(
 
 struct BroadcastSubgroupBisCodecConfig {
   BroadcastSubgroupBisCodecConfig(
-      uint8_t num_bis, types::LeAudioLtvMap codec_specific,
+      uint8_t num_bis, uint8_t bis_channel_cnt,
+      types::LeAudioLtvMap codec_specific,
       std::optional<std::vector<uint8_t>> vendor_codec_specific = std::nullopt)
       : num_bis_(num_bis),
+        bis_channel_cnt_(bis_channel_cnt),
         codec_specific_(codec_specific),
         vendor_codec_specific_(vendor_codec_specific) {}
 
   bool operator==(const BroadcastSubgroupBisCodecConfig& other) const {
     return (num_bis_ == other.num_bis_) &&
+           (bis_channel_cnt_ == other.bis_channel_cnt_) &&
            (codec_specific_ == other.codec_specific_) &&
            (vendor_codec_specific_ == other.vendor_codec_specific_);
   }
@@ -90,12 +93,11 @@ struct BroadcastSubgroupBisCodecConfig {
     return codec_specific_.GetAsCoreCodecConfig().GetSamplingFrequencyHz();
   }
 
-  uint8_t GetNumChannelsPerBis() const {
-    return codec_specific_.GetAsCoreCodecConfig().GetChannelCountPerIsoStream();
-  }
+  uint8_t GetNumChannelsPerBis() const { return bis_channel_cnt_; }
 
  private:
   uint8_t num_bis_;
+  uint8_t bis_channel_cnt_;
   /* Codec Specific Configuration */
   types::LeAudioLtvMap codec_specific_;
   std::optional<std::vector<uint8_t>> vendor_codec_specific_;

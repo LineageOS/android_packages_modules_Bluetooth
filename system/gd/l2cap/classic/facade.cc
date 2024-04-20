@@ -194,7 +194,7 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
         "assert failed: hci::Address::FromString(request->address(), peer)");
     auto entry = security_link_map_.find(peer);
     if (entry == security_link_map_.end()) {
-      log::warn("Unknown address '{}'", ADDRESS_TO_LOGGABLE_CSTR(peer));
+      log::warn("Unknown address '{}'", peer);
     } else {
       entry->second->Hold();
     }
@@ -211,7 +211,7 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
         "assert failed: hci::Address::FromString(request->address(), peer)");
     auto entry = security_link_map_.find(peer);
     if (entry == security_link_map_.end()) {
-      log::warn("Unknown address '{}'", ADDRESS_TO_LOGGABLE_CSTR(peer));
+      log::warn("Unknown address '{}'", peer);
     } else {
       entry->second->EnsureAuthenticated();
     }
@@ -229,7 +229,7 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
     outgoing_pairing_remote_devices_.erase(peer);
     auto entry = security_link_map_.find(peer);
     if (entry == security_link_map_.end()) {
-      log::warn("Unknown address '{}'", ADDRESS_TO_LOGGABLE_CSTR(peer));
+      log::warn("Unknown address '{}'", peer);
     } else {
       entry->second->Release();
     }
@@ -247,7 +247,7 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
     outgoing_pairing_remote_devices_.erase(peer);
     auto entry = security_link_map_.find(peer);
     if (entry == security_link_map_.end()) {
-      log::warn("Unknown address '{}'", ADDRESS_TO_LOGGABLE_CSTR(peer));
+      log::warn("Unknown address '{}'", peer);
     } else {
       entry->second->Disconnect();
     }
@@ -269,7 +269,7 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
   void OnLinkDisconnected(hci::Address remote) override {
     auto entry = security_link_map_.find(remote);
     if (entry == security_link_map_.end()) {
-      log::warn("Unknown address '{}'", ADDRESS_TO_LOGGABLE_CSTR(remote));
+      log::warn("Unknown address '{}'", remote);
       return;
     }
     entry->second.reset();
