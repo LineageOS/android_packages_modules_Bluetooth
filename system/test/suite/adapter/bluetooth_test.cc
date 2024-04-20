@@ -19,7 +19,6 @@
 #include "adapter/bluetooth_test.h"
 
 #include <binder/ProcessState.h>
-#include <stdio.h>
 
 #include <mutex>
 

@@ -34,7 +34,6 @@ This file drives SBC decoding.
 @{
 */
 
-#include <stdio.h>
 #include "oi_bitstream.h"
 #include "oi_codec_sbc_private.h"
 

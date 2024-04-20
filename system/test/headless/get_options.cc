@@ -17,7 +17,6 @@
 #include "test/headless/get_options.h"
 
 #include <getopt.h>
-#include <stdio.h>
 #include <unistd.h>
 
 #include <list>

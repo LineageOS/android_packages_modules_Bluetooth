@@ -23,9 +23,10 @@
  *
  ******************************************************************************/
 #include "security/ecc/p_256_ecc_pp.h"
-#include <stdio.h>
+
 #include <stdlib.h>
 #include <string.h>
+
 #include "security/ecc/multprecision.h"
 
 namespace bluetooth {

@@ -18,7 +18,6 @@
 
 #include <bluetooth/log.h>
 #include <gtest/gtest.h>
-#include <stdio.h>
 
 #include <cstdint>
 #include <string>

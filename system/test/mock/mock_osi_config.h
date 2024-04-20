@@ -29,7 +29,6 @@
 #include <base/files/file_util.h>
 #include <fcntl.h>
 #include <libgen.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <unistd.h>

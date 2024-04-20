@@ -26,7 +26,6 @@
 #include <dlfcn.h>
 #include <inttypes.h>
 #include <ldacBT_abr.h>
-#include <stdio.h>
 #include <string.h>
 
 #include "a2dp_vendor_ldac.h"

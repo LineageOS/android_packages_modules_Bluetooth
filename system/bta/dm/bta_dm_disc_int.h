@@ -38,28 +38,35 @@ typedef enum : uint16_t {
   /* DM search API events */
   BTA_DM_API_SEARCH_EVT,
   BTA_DM_API_SEARCH_CANCEL_EVT,
-  BTA_DM_API_DISCOVER_EVT,
   BTA_DM_INQUIRY_CMPL_EVT,
   BTA_DM_REMT_NAME_EVT,
-  BTA_DM_SDP_RESULT_EVT,
   BTA_DM_SEARCH_CMPL_EVT,
+} tBTA_DM_DEV_SEARCH_EVT;
+
+typedef enum : uint16_t {
+  /* service discovery events */
+  BTA_DM_API_DISCOVER_EVT,
+  BTA_DM_SDP_RESULT_EVT,
   BTA_DM_DISCOVERY_RESULT_EVT,
   BTA_DM_DISC_CLOSE_TOUT_EVT,
-} tBTA_DM_EVT;
+} tBTA_DM_DISC_EVT;
 
-inline std::string bta_dm_event_text(const tBTA_DM_EVT& event) {
+inline std::string bta_dm_event_text(const tBTA_DM_DEV_SEARCH_EVT& event) {
   switch (event) {
     CASE_RETURN_TEXT(BTA_DM_API_SEARCH_EVT);
     CASE_RETURN_TEXT(BTA_DM_API_SEARCH_CANCEL_EVT);
-    CASE_RETURN_TEXT(BTA_DM_API_DISCOVER_EVT);
     CASE_RETURN_TEXT(BTA_DM_INQUIRY_CMPL_EVT);
     CASE_RETURN_TEXT(BTA_DM_REMT_NAME_EVT);
-    CASE_RETURN_TEXT(BTA_DM_SDP_RESULT_EVT);
     CASE_RETURN_TEXT(BTA_DM_SEARCH_CMPL_EVT);
+  }
+}
+
+inline std::string bta_dm_event_text(const tBTA_DM_DISC_EVT& event) {
+  switch (event) {
+    CASE_RETURN_TEXT(BTA_DM_API_DISCOVER_EVT);
+    CASE_RETURN_TEXT(BTA_DM_SDP_RESULT_EVT);
     CASE_RETURN_TEXT(BTA_DM_DISCOVERY_RESULT_EVT);
     CASE_RETURN_TEXT(BTA_DM_DISC_CLOSE_TOUT_EVT);
-    default:
-      return base::StringPrintf("UNKNOWN[0x%04x]", event);
   }
 }
 
@@ -119,22 +126,29 @@ using tBTA_DM_MSG =
 
 /* DM search state */
 typedef enum {
-
   BTA_DM_SEARCH_IDLE,
   BTA_DM_SEARCH_ACTIVE,
   BTA_DM_SEARCH_CANCELLING,
+} tBTA_DM_DEVICE_SEARCH_STATE;
+
+typedef enum {
+  BTA_DM_DISCOVER_IDLE,
   BTA_DM_DISCOVER_ACTIVE
+} tBTA_DM_SERVICE_DISCOVERY_STATE;
 
-} tBTA_DM_STATE;
-
-inline std::string bta_dm_state_text(const tBTA_DM_STATE& state) {
+inline std::string bta_dm_state_text(const tBTA_DM_DEVICE_SEARCH_STATE& state) {
   switch (state) {
     CASE_RETURN_TEXT(BTA_DM_SEARCH_IDLE);
     CASE_RETURN_TEXT(BTA_DM_SEARCH_ACTIVE);
     CASE_RETURN_TEXT(BTA_DM_SEARCH_CANCELLING);
+  }
+}
+
+inline std::string bta_dm_state_text(
+    const tBTA_DM_SERVICE_DISCOVERY_STATE& state) {
+  switch (state) {
+    CASE_RETURN_TEXT(BTA_DM_DISCOVER_IDLE);
     CASE_RETURN_TEXT(BTA_DM_DISCOVER_ACTIVE);
-    default:
-      return base::StringPrintf("UNKNOWN[%d]", state);
   }
 }
 
@@ -146,7 +160,15 @@ typedef struct {
   tBTA_SERVICE_MASK services_to_search;
   tBTA_SERVICE_MASK services_found;
   tSDP_DISCOVERY_DB* p_sdp_db;
-  tBTA_DM_STATE state;
+  /* This covers device search state. That is scanning through android Settings
+   * to discover LE and Classic devices. Runs Name discovery on Inquiry Results
+   */
+  tBTA_DM_DEVICE_SEARCH_STATE search_state;
+  /* This covers service discovery state - callers of BTA_DmDiscover. That is
+   * initial service discovery after bonding and
+   * BluetoothDevice.fetchUuidsWithSdp(). Responsible for LE GATT Service
+   * Discovery and SDP */
+  tBTA_DM_SERVICE_DISCOVERY_STATE service_discovery_state;
   RawAddress peer_bdaddr;
   bool name_discover_done;
   BD_NAME peer_name;
@@ -158,7 +180,6 @@ typedef struct {
   bool sdp_results;
   bluetooth::Uuid uuid;
   uint8_t peer_scn;
-  tBT_TRANSPORT transport;
   tBTA_DM_SEARCH_CBACK* p_csis_scan_cback;
   tGATT_IF client_if;
   uint8_t uuid_to_search;
@@ -174,7 +195,14 @@ extern const uint16_t bta_service_id_to_uuid_lkup_tbl[];
 
 namespace fmt {
 template <>
-struct formatter<tBTA_DM_EVT> : enum_formatter<tBTA_DM_EVT> {};
+struct formatter<tBTA_DM_DEV_SEARCH_EVT>
+    : enum_formatter<tBTA_DM_DEV_SEARCH_EVT> {};
 template <>
-struct formatter<tBTA_DM_STATE> : enum_formatter<tBTA_DM_STATE> {};
+struct formatter<tBTA_DM_DISC_EVT> : enum_formatter<tBTA_DM_DISC_EVT> {};
+template <>
+struct formatter<tBTA_DM_DEVICE_SEARCH_STATE>
+    : enum_formatter<tBTA_DM_DEVICE_SEARCH_STATE> {};
+template <>
+struct formatter<tBTA_DM_SERVICE_DISCOVERY_STATE>
+    : enum_formatter<tBTA_DM_SERVICE_DISCOVERY_STATE> {};
 }  // namespace fmt

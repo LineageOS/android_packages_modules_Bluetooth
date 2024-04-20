@@ -21,7 +21,6 @@
 #include <aacenc_lib.h>
 #include <bluetooth/log.h>
 #include <inttypes.h>
-#include <stdio.h>
 #include <string.h>
 
 #include "a2dp_aac.h"

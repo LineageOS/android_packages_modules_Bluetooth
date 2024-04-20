@@ -18,16 +18,15 @@
 
 #define LOG_TAG "bt_btif_gatt"
 
-#include <algorithm>
-
 #include "btif_gatt_util.h"
 
 #include <bluetooth/log.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_gatt.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include <algorithm>
 
 #include "bta/include/bta_api_data_types.h"
 #include "bta/include/bta_sec_api.h"

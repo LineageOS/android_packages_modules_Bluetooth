@@ -399,31 +399,9 @@ TEST_F(BtaDmTest, bta_dm_remname_cback__HCI_ERR_CONNECTION_EXISTS) {
       bluetooth::legacy::testing::bta_dm_disc_search_cb().name_discover_done);
 }
 
-TEST_F(BtaDmTest, bta_dm_determine_discovery_transport__BT_TRANSPORT_BR_EDR) {
+TEST_F(BtaDmTest, bta_dm_determine_discovery_transport__BR_EDR) {
   tBTA_DM_SEARCH_CB& search_cb =
       bluetooth::legacy::testing::bta_dm_disc_search_cb();
-  search_cb.transport = BT_TRANSPORT_BR_EDR;
-
-  ASSERT_EQ(BT_TRANSPORT_BR_EDR,
-            bluetooth::legacy::testing::bta_dm_determine_discovery_transport(
-                kRawAddress));
-}
-
-TEST_F(BtaDmTest, bta_dm_determine_discovery_transport__BT_TRANSPORT_LE) {
-  tBTA_DM_SEARCH_CB& search_cb =
-      bluetooth::legacy::testing::bta_dm_disc_search_cb();
-  search_cb.transport = BT_TRANSPORT_LE;
-
-  ASSERT_EQ(BT_TRANSPORT_LE,
-            bluetooth::legacy::testing::bta_dm_determine_discovery_transport(
-                kRawAddress));
-}
-
-TEST_F(BtaDmTest,
-       bta_dm_determine_discovery_transport__BT_TRANSPORT_AUTO__BR_EDR) {
-  tBTA_DM_SEARCH_CB& search_cb =
-      bluetooth::legacy::testing::bta_dm_disc_search_cb();
-  search_cb.transport = BT_TRANSPORT_AUTO;
 
   mock_btm_client_interface.peer.BTM_ReadDevInfo =
       [](const RawAddress& remote_bda, tBT_DEVICE_TYPE* p_dev_type,
@@ -437,11 +415,9 @@ TEST_F(BtaDmTest,
                 kRawAddress));
 }
 
-TEST_F(BtaDmTest,
-       bta_dm_determine_discovery_transport__BT_TRANSPORT_AUTO__BLE__PUBLIC) {
+TEST_F(BtaDmTest, bta_dm_determine_discovery_transport__BLE__PUBLIC) {
   tBTA_DM_SEARCH_CB& search_cb =
       bluetooth::legacy::testing::bta_dm_disc_search_cb();
-  search_cb.transport = BT_TRANSPORT_AUTO;
 
   mock_btm_client_interface.peer.BTM_ReadDevInfo =
       [](const RawAddress& remote_bda, tBT_DEVICE_TYPE* p_dev_type,
@@ -455,11 +431,9 @@ TEST_F(BtaDmTest,
                 kRawAddress));
 }
 
-TEST_F(BtaDmTest,
-       bta_dm_determine_discovery_transport__BT_TRANSPORT_AUTO__DUMO) {
+TEST_F(BtaDmTest, bta_dm_determine_discovery_transport__DUMO) {
   tBTA_DM_SEARCH_CB& search_cb =
       bluetooth::legacy::testing::bta_dm_disc_search_cb();
-  search_cb.transport = BT_TRANSPORT_AUTO;
 
   mock_btm_client_interface.peer.BTM_ReadDevInfo =
       [](const RawAddress& remote_bda, tBT_DEVICE_TYPE* p_dev_type,
