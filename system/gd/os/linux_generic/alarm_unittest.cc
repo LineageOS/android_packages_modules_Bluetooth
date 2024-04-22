@@ -16,7 +16,6 @@
 
 #include "os/alarm.h"
 
-#include <cstddef>
 #include <future>
 #include <memory>
 
@@ -85,8 +84,21 @@ TEST_F(AlarmTest, cancel_alarm) {
 }
 
 TEST_F(AlarmTest, cancel_alarm_from_callback) {
-  alarm_->Schedule(BindOnce(&Alarm::Cancel, alarm_), std::chrono::milliseconds(1));
-  std::this_thread::sleep_for(std::chrono::milliseconds(5));
+  std::promise<void> promise;
+  auto future = promise.get_future();
+  alarm_->Schedule(
+      BindOnce(
+          [](std::shared_ptr<Alarm> alarm, std::promise<void> promise) {
+            alarm->Cancel();
+            alarm.reset();  // Allow alarm to be freed by Teardown
+            promise.set_value();
+          },
+          alarm_,
+          std::move(promise)),
+      std::chrono::milliseconds(1));
+  fake_timer_advance(10);
+  ASSERT_EQ(std::future_status::ready, future.wait_for(std::chrono::seconds(1)));
+  ASSERT_EQ(alarm_.use_count(), 1);
 }
 
 TEST_F(AlarmTest, schedule_while_alarm_armed) {

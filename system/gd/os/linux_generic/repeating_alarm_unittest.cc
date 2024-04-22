@@ -26,6 +26,7 @@ namespace bluetooth {
 namespace os {
 namespace {
 
+using common::BindOnce;
 using fake_timer::fake_timerfd_advance;
 using fake_timer::fake_timerfd_reset;
 
@@ -85,7 +86,7 @@ class RepeatingAlarmTest : public ::testing::Test {
 
   RepeatingAlarm* alarm_;
 
-  common::Closure should_not_happen_ = common::Bind([] { ASSERT_TRUE(false); });
+  common::Closure should_not_happen_ = common::Bind([]() { FAIL(); });
 
  private:
   Thread* thread_;
@@ -111,13 +112,23 @@ TEST_F(RepeatingAlarmTest, schedule) {
 TEST_F(RepeatingAlarmTest, cancel_alarm) {
   alarm_->Schedule(should_not_happen_, std::chrono::milliseconds(10));
   alarm_->Cancel();
-  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  fake_timer_advance(10);
 }
 
 TEST_F(RepeatingAlarmTest, cancel_alarm_from_callback) {
+  std::promise<void> promise;
+  auto future = promise.get_future();
   alarm_->Schedule(
-      common::Bind(&RepeatingAlarm::Cancel, common::Unretained(this->alarm_)), std::chrono::milliseconds(1));
-  std::this_thread::sleep_for(std::chrono::milliseconds(5));
+      common::Bind(
+          [](RepeatingAlarm* alarm, std::promise<void>* promise) {
+            alarm->Cancel();
+            promise->set_value();
+          },
+          common::Unretained(this->alarm_),
+          common::Unretained(&promise)),
+      std::chrono::milliseconds(1));
+  fake_timer_advance(1);
+  ASSERT_EQ(std::future_status::ready, future.wait_for(std::chrono::seconds(1)));
 }
 
 TEST_F(RepeatingAlarmTest, schedule_while_alarm_armed) {
@@ -127,7 +138,7 @@ TEST_F(RepeatingAlarmTest, schedule_while_alarm_armed) {
   alarm_->Schedule(
       common::Bind(&std::promise<void>::set_value, common::Unretained(&promise)), std::chrono::milliseconds(10));
   fake_timer_advance(10);
-  future.get();
+  ASSERT_EQ(std::future_status::ready, future.wait_for(std::chrono::seconds(1)));
   alarm_->Cancel();
 }
 
@@ -135,7 +146,7 @@ TEST_F(RepeatingAlarmTest, delete_while_alarm_armed) {
   alarm_->Schedule(should_not_happen_, std::chrono::milliseconds(1));
   delete alarm_;
   alarm_ = nullptr;
-  std::this_thread::sleep_for(std::chrono::milliseconds(1));
+  fake_timer_advance(10);
 }
 
 TEST_F(RepeatingAlarmTest, verify_small) {
