@@ -194,6 +194,12 @@ struct BroadcastSubgroupCodecConfig {
     return 0;
   }
 
+  /* Note: this should be used for tests only */
+  const std::vector<BroadcastSubgroupBisCodecConfig>& GetBisCodecConfigs()
+      const {
+    return bis_codec_configs_;
+  }
+
   std::optional<types::LeAudioLtvMap> GetBisCodecSpecData(
       uint8_t bis_idx) const {
     if (bis_codec_configs_.empty()) return std::nullopt;
