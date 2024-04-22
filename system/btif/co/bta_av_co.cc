@@ -42,7 +42,6 @@
 #include "include/hardware/bt_av.h"
 #include "internal_include/bt_trace.h"
 #include "osi/include/allocator.h"
-#include "osi/include/osi.h"  // UNUSED_ATTR
 #include "stack/include/a2dp_codec_api.h"
 #include "stack/include/a2dp_error_codes.h"
 #include "stack/include/a2dp_ext.h"
@@ -450,9 +449,9 @@ tA2DP_STATUS BtaAvCo::ProcessSinkGetConfig(tBTA_AV_HNDL bta_av_handle,
 }
 
 void BtaAvCo::ProcessSetConfig(tBTA_AV_HNDL bta_av_handle,
-                               UNUSED_ATTR const RawAddress& peer_address,
-                               const uint8_t* p_codec_info,
-                               UNUSED_ATTR uint8_t seid, uint8_t num_protect,
+                               const RawAddress& peer_address,
+                               const uint8_t* p_codec_info, uint8_t seid,
+                               uint8_t num_protect,
                                const uint8_t* p_protect_info,
                                uint8_t t_local_sep, uint8_t avdt_handle) {
   tA2DP_STATUS status = A2DP_SUCCESS;
