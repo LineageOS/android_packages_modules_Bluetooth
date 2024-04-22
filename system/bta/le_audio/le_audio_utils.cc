@@ -342,14 +342,8 @@ void fillStreamParamsToBtLeAudioCodecConfig(
   out_config.frame_duration =
       translateToBtLeAudioCodecConfigFrameDuration(config.GetDataIntervalUs());
   out_config.octets_per_frame = config.GetOctectsPerFrame();
-
-  int num_of_channels = 0;
-  for (auto const& c : confs) {
-    num_of_channels += c.codec.GetChannelCountPerIsoStream();
-  }
-
-  out_config.channel_count =
-      translateToBtLeAudioCodecConfigChannelCount(num_of_channels);
+  out_config.channel_count = translateToBtLeAudioCodecConfigChannelCount(
+      config.GetChannelCountPerIsoStream());
 }
 
 static bool is_known_codec(const types::LeAudioCodecId& codec_id) {
