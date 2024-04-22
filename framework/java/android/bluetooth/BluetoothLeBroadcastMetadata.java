@@ -189,6 +189,26 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
                 mSubgroups);
     }
 
+    @Override
+    public String toString() {
+        return "BluetoothLeBroadcastMetadata{"
+                + ("sourceAddressType=" + mSourceAddressType)
+                + (", sourceDevice=" + mSourceDevice)
+                + (", sourceAdvertisingSid=" + mSourceAdvertisingSid)
+                + (", broadcastId=" + mBroadcastId)
+                + (", paSyncInterval=" + mPaSyncInterval)
+                + (", isEncrypted=" + mIsEncrypted)
+                + (", isPublicBroadcast=" + mIsPublicBroadcast)
+                + (", broadcastName=" + mBroadcastName)
+                + (", broadcastCode=" + Arrays.toString(mBroadcastCode))
+                + (", presentationDelayMicros=" + mPresentationDelayMicros)
+                + (", audioConfigQuality=" + mAudioConfigQuality)
+                + (", rssi=" + mRssi)
+                + (", publicBroadcastMetadata=" + mPublicBroadcastMetadata)
+                + (", subgroups=" + mSubgroups)
+                + '}';
+    }
+
     /**
      * Get the address type of the Broadcast Source.
      *
