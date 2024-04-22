@@ -307,6 +307,54 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
         out.writeInt(mMaxOctetsPerFrame);
     }
 
+    private String sampleRateToString(@SampleRate int sampleRateBit) {
+        switch (sampleRateBit) {
+            case SAMPLE_RATE_NONE:
+                return "None";
+            case SAMPLE_RATE_8000:
+                return "8 kHz";
+            case SAMPLE_RATE_11025:
+                return "11.025 kHz";
+            case SAMPLE_RATE_16000:
+                return "16 kHz";
+            case SAMPLE_RATE_22050:
+                return "22.05 kHz";
+            case SAMPLE_RATE_24000:
+                return "24 kHz";
+            case SAMPLE_RATE_32000:
+                return "32 kHz";
+            case SAMPLE_RATE_44100:
+                return "44.1 kHz";
+            case SAMPLE_RATE_48000:
+                return "48 kHz";
+            case SAMPLE_RATE_88200:
+                return "88.2 kHz";
+            case SAMPLE_RATE_96000:
+                return "96 kHz";
+            case SAMPLE_RATE_176400:
+                return "176.4 kHz";
+            case SAMPLE_RATE_192000:
+                return "192 kHz";
+            case SAMPLE_RATE_384000:
+                return "384 kHz";
+            default:
+                return "Unknown bit " + sampleRateBit;
+        }
+    }
+
+    private String frameDurationToString(@FrameDuration int frameDurationBit) {
+        switch (frameDurationBit) {
+            case FRAME_DURATION_NONE:
+                return "None";
+            case FRAME_DURATION_7500:
+                return "7.5 ms";
+            case FRAME_DURATION_10000:
+                return "10 ms";
+            default:
+                return "Unknown bit " + frameDurationBit;
+        }
+    }
+
     @Override
     public String toString() {
         return "{codecName:"
@@ -316,13 +364,13 @@ public final class BluetoothLeAudioCodecConfig implements Parcelable {
                 + ",mCodecPriority:"
                 + mCodecPriority
                 + ",mSampleRate:"
-                + mSampleRate
+                + sampleRateToString(mSampleRate)
                 + ",mBitsPerSample:"
                 + mBitsPerSample
-                + ",mChannelCount:"
+                + ",mChannelCountBitMask:"
                 + mChannelCount
                 + ",mFrameDuration:"
-                + mFrameDuration
+                + frameDurationToString(mFrameDuration)
                 + ",mOctetsPerFrame:"
                 + mOctetsPerFrame
                 + ",mMinOctetsPerFrame:"
