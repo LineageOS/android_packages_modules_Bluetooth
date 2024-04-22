@@ -303,10 +303,12 @@ struct codec_manager_impl {
           core_config.GetChannelCountPerIsoStream());
 
       // Enable the individual channels per BIS in the stream map
+      auto all_channels = adsp_config.codec.channel_count_per_iso_stream;
+      uint8_t channel_alloc_idx = 0;
       for (auto& [_, channels] : broadcast_config.stream_map) {
-        for (uint8_t i = 0; i < adsp_config.codec.channel_count_per_iso_stream;
-             ++i) {
-          channels |= (0b1 << i);
+        if (all_channels) {
+          channels |= (0b1 << channel_alloc_idx++);
+          --all_channels;
         }
       }
 
