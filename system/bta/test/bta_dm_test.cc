@@ -24,6 +24,7 @@
 
 #include <string>
 
+#include "bta/dm/bta_dm_device_search.h"
 #include "bta/dm/bta_dm_disc.h"
 #include "bta/dm/bta_dm_disc_int.h"
 #include "bta/dm/bta_dm_int.h"
@@ -329,16 +330,10 @@ TEST_F(BtaDmTest, bta_dm_remname_cback__typical) {
   };
   bd_name_from_char_pointer(name.remote_bd_name, kRemoteName);
 
-  mock_btm_client_interface.security.BTM_SecDeleteRmtNameNotifyCallback =
-      [](tBTM_RMT_NAME_CALLBACK*) -> bool {
-    inc_func_call_count("BTM_SecDeleteRmtNameNotifyCallback");
-    return true;
-  };
   bluetooth::legacy::testing::bta_dm_remname_cback(&name);
 
   sync_main_handler();
 
-  ASSERT_EQ(1, get_func_call_count("BTM_SecDeleteRmtNameNotifyCallback"));
   ASSERT_TRUE(
       bluetooth::legacy::testing::bta_dm_disc_search_cb().name_discover_done);
 }
@@ -347,7 +342,6 @@ TEST_F(BtaDmTest, bta_dm_remname_cback__wrong_address) {
   tBTA_DM_SEARCH_CB& search_cb =
       bluetooth::legacy::testing::bta_dm_disc_search_cb();
   search_cb.p_device_search_cback = nullptr;
-  search_cb.service_search_cbacks = {};
   search_cb.peer_bdaddr = kRawAddress;
   search_cb.name_discover_done = false;
 
@@ -359,16 +353,9 @@ TEST_F(BtaDmTest, bta_dm_remname_cback__wrong_address) {
   };
   bd_name_from_char_pointer(name.remote_bd_name, kRemoteName);
 
-  mock_btm_client_interface.security.BTM_SecDeleteRmtNameNotifyCallback =
-      [](tBTM_RMT_NAME_CALLBACK*) -> bool {
-    inc_func_call_count("BTM_SecDeleteRmtNameNotifyCallback");
-    return true;
-  };
   bluetooth::legacy::testing::bta_dm_remname_cback(&name);
 
   sync_main_handler();
-
-  ASSERT_EQ(0, get_func_call_count("BTM_SecDeleteRmtNameNotifyCallback"));
 }
 
 TEST_F(BtaDmTest, bta_dm_remname_cback__HCI_ERR_CONNECTION_EXISTS) {
@@ -385,16 +372,10 @@ TEST_F(BtaDmTest, bta_dm_remname_cback__HCI_ERR_CONNECTION_EXISTS) {
   };
   bd_name_from_char_pointer(name.remote_bd_name, kRemoteName);
 
-  mock_btm_client_interface.security.BTM_SecDeleteRmtNameNotifyCallback =
-      [](tBTM_RMT_NAME_CALLBACK*) -> bool {
-    inc_func_call_count("BTM_SecDeleteRmtNameNotifyCallback");
-    return true;
-  };
   bluetooth::legacy::testing::bta_dm_remname_cback(&name);
 
   sync_main_handler();
 
-  ASSERT_EQ(1, get_func_call_count("BTM_SecDeleteRmtNameNotifyCallback"));
   ASSERT_TRUE(
       bluetooth::legacy::testing::bta_dm_disc_search_cb().name_discover_done);
 }

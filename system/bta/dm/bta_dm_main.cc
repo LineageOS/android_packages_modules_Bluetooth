@@ -40,6 +40,7 @@ tBTA_DM_SEC_CB bta_dm_sec_cb;
 void DumpsysBtaDm(int fd) {
   LOG_DUMPSYS_TITLE(fd, DUMPSYS_TAG);
   DumpsysBtaDmDisc(fd);
+  DumpsysBtaDmSearch(fd);
   DumpsysBtaDmGattClient(fd);
 }
 #undef DUMPSYS_TAG
