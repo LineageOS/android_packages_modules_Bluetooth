@@ -116,6 +116,11 @@ bool btm_sec_is_a_bonded_dev(const RawAddress& bda) {
   inc_func_call_count(__func__);
   return false;
 }
+bool btm_sec_is_session_key_size_downgrade(uint16_t hci_handle,
+                                           uint8_t key_size) {
+  inc_func_call_count(__func__);
+  return false;
+}
 bool is_sec_state_equal(void* data, void* context) {
   inc_func_call_count(__func__);
   return false;
@@ -312,6 +317,10 @@ void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported,
 void btm_sec_update_clock_offset(uint16_t handle, uint16_t clock_offset) {
   inc_func_call_count(__func__);
 }
+void btm_sec_update_session_key_size(uint16_t hci_handle, uint8_t key_size) {
+  inc_func_call_count(__func__);
+}
+
 void btm_simple_pair_complete(const uint8_t* p) {
   inc_func_call_count(__func__);
 }
