@@ -107,6 +107,12 @@ void process_property(const RawAddress& bd_addr, const bt_property_t* prop) {
     case BT_PROPERTY_REMOTE_DEVICE_TIMESTAMP:
       LOG_CONSOLE("BT_PROPERTY_REMOTE_IS_COORDINATED_SET_MEMBER");
       break;
+    case BT_PROPERTY_REMOTE_SECURE_CONNECTIONS_SUPPORTED:
+      LOG_CONSOLE("BT_PROPERTY_REMOTE_SECURE_CONNECTIONS_SUPPORTED");
+      break;
+    case BT_PROPERTY_REMOTE_MAX_SESSION_KEY_SIZE:
+      LOG_CONSOLE("BT_PROPERTY_REMOTE_MAX_SESSION_KEY_SIZE");
+      break;
     default: {
       LOG_CONSOLE("Unable to find BT property bd_addr:%s type:%d ptr:%p",
                   ADDRESS_TO_LOGGABLE_CSTR(bd_addr), prop->type, prop);
