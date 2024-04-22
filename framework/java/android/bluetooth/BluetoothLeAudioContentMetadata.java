@@ -69,6 +69,15 @@ public final class BluetoothLeAudioContentMetadata implements Parcelable {
         return Objects.hash(mProgramInfo, mLanguage, Arrays.hashCode(mRawMetadata));
     }
 
+    @Override
+    public String toString() {
+        return "BluetoothLeAudioContentMetadata{"
+                + ("programInfo=" + mProgramInfo)
+                + (", language=" + mLanguage)
+                + (", rawMetadata=" + Arrays.toString(mRawMetadata))
+                + '}';
+    }
+
     /**
      * Get the title and/or summary of Audio Stream content in UTF-8 format.
      *
