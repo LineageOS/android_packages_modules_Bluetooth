@@ -89,6 +89,7 @@ using bluetooth::Uuid;
 #define BTIF_STORAGE_KEY_SCANMODE "ScanMode"
 #define BTIF_STORAGE_KEY_LOCAL_IO_CAPS "LocalIOCaps"
 #define BTIF_STORAGE_KEY_DISC_TIMEOUT "DiscoveryTimeout"
+#define BTIF_STORAGE_KEY_MAX_SESSION_KEY_SIZE "MaxSessionKeySize"
 #define BTIF_STORAGE_KEY_GATT_CLIENT_SUPPORTED "GattClientSupportedFeatures"
 #define BTIF_STORAGE_KEY_GATT_CLIENT_DB_HASH "GattClientDatabaseHash"
 #define BTIF_STORAGE_KEY_GATT_SERVER_SUPPORTED "GattServerSupportedFeatures"
@@ -107,6 +108,8 @@ using bluetooth::Uuid;
 #define BTIF_STORAGE_KEY_VERSION "ProductVersion"
 #define BTIF_STORAGE_KEY_RESTRICTED "Restricted"
 #define BTIF_STORAGE_KEY_ADDR_TYPE "AddrType"
+#define BTIF_STORAGE_KEY_SECURE_CONNECTIONS_SUPPORTED \
+  "SecureConnectionsSupported"
 
 /* This is a local property to add a device found */
 #define BT_PROPERTY_REMOTE_DEVICE_TIMESTAMP 0xFF
@@ -251,6 +254,14 @@ static bool prop2cfg(const RawAddress* remote_bd_addr, bt_property_t* prop) {
       btif_config_set_int(bdstr, BTIF_STORAGE_KEY_PRODUCT_ID, info->product_id);
       btif_config_set_int(bdstr, BTIF_STORAGE_KEY_VERSION, info->version);
     } break;
+    case BT_PROPERTY_REMOTE_SECURE_CONNECTIONS_SUPPORTED:
+      btif_config_set_int(bdstr, BTIF_STORAGE_KEY_SECURE_CONNECTIONS_SUPPORTED,
+                          *(uint8_t*)prop->val);
+      break;
+    case BT_PROPERTY_REMOTE_MAX_SESSION_KEY_SIZE:
+      btif_config_set_int(bdstr, BTIF_STORAGE_KEY_MAX_SESSION_KEY_SIZE,
+                          *(uint8_t*)prop->val);
+      break;
     case BT_PROPERTY_REMOTE_MODEL_NUM: {
       strncpy(value, (char*)prop->val, prop->len);
       value[prop->len] = '\0';
@@ -413,6 +424,25 @@ static bool cfg2prop(const RawAddress* remote_bd_addr, bt_property_t* prop) {
       else {
         prop->len = 0;
         ret = false;
+      }
+    } break;
+    case BT_PROPERTY_REMOTE_SECURE_CONNECTIONS_SUPPORTED: {
+      int val;
+
+      if (prop->len >= (int)sizeof(uint8_t)) {
+        ret = btif_config_get_int(
+            bdstr, BTIF_STORAGE_KEY_SECURE_CONNECTIONS_SUPPORTED, &val);
+        *(uint8_t*)prop->val = (uint8_t)val;
+      }
+    } break;
+
+    case BT_PROPERTY_REMOTE_MAX_SESSION_KEY_SIZE: {
+      int val;
+
+      if (prop->len >= (int)sizeof(uint8_t)) {
+        ret = btif_config_get_int(bdstr, BTIF_STORAGE_KEY_MAX_SESSION_KEY_SIZE,
+                                  &val);
+        *(uint8_t*)prop->val = (uint8_t)val;
       }
     } break;
 

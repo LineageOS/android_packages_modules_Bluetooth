@@ -719,6 +719,22 @@ struct btm_sec_is_a_bonded_dev {
 };
 extern struct btm_sec_is_a_bonded_dev btm_sec_is_a_bonded_dev;
 
+// Name: btm_sec_is_session_key_size_downgrade
+// Params: uint16_t hci_handle, uint8_t key_size
+// Return: bool
+struct btm_sec_is_session_key_size_downgrade {
+  static bool return_value;
+  std::function<bool(uint16_t hci_handle, uint8_t key_size)> body{
+      [](uint16_t /* hci_handle */, uint8_t /* key_size */) {
+        return return_value;
+      }};
+  bool operator()(uint16_t hci_handle, uint8_t key_size) {
+    return body(hci_handle, key_size);
+  };
+};
+extern struct btm_sec_is_session_key_size_downgrade
+    btm_sec_is_session_key_size_downgrade;
+
 // Name: btm_sec_l2cap_access_req
 // Params: const RawAddress& bd_addr, uint16_t psm, bool is_originator,
 // tBTM_SEC_CALLBACK* p_callback, void* p_ref_data Return: tBTM_STATUS
@@ -919,6 +935,18 @@ struct is_state_getting_name {
   bool operator()(void* data, void* context) { return body(data, context); };
 };
 extern struct is_state_getting_name is_state_getting_name;
+
+// Name: btm_sec_update_session_key_size
+// Params: uint16_t hci_handle, uint8_t key_size
+// Return: void
+struct btm_sec_update_session_key_size {
+  std::function<void(uint16_t hci_handle, uint8_t key_size)> body{
+      [](uint16_t /* hci_handle */, uint8_t /* key_size */) {}};
+  void operator()(uint16_t hci_handle, uint8_t key_size) {
+    body(hci_handle, key_size);
+  };
+};
+extern struct btm_sec_update_session_key_size btm_sec_update_session_key_size;
 
 }  // namespace stack_btm_sec
 }  // namespace mock

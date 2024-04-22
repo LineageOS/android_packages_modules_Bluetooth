@@ -91,6 +91,8 @@ struct btm_sec_encrypt_change btm_sec_encrypt_change;
 struct btm_sec_execute_procedure btm_sec_execute_procedure;
 struct btm_sec_find_first_serv btm_sec_find_first_serv;
 struct btm_sec_is_a_bonded_dev btm_sec_is_a_bonded_dev;
+struct btm_sec_is_session_key_size_downgrade
+    btm_sec_is_session_key_size_downgrade;
 struct btm_sec_l2cap_access_req btm_sec_l2cap_access_req;
 struct btm_sec_l2cap_access_req_by_requirement
     btm_sec_l2cap_access_req_by_requirement;
@@ -106,6 +108,7 @@ struct btm_sec_update_clock_offset btm_sec_update_clock_offset;
 struct btm_simple_pair_complete btm_simple_pair_complete;
 struct is_sec_state_equal is_sec_state_equal;
 struct is_state_getting_name is_state_getting_name;
+struct btm_sec_update_session_key_size btm_sec_update_session_key_size;
 
 }  // namespace stack_btm_sec
 }  // namespace mock
@@ -143,6 +146,7 @@ tBTM_STATUS btm_sec_disconnect::return_value = 0;
 tBTM_STATUS btm_sec_execute_procedure::return_value = 0;
 tBTM_SEC_SERV_REC* btm_sec_find_first_serv::return_value = nullptr;
 bool btm_sec_is_a_bonded_dev::return_value = false;
+bool btm_sec_is_session_key_size_downgrade::return_value = false;
 tBTM_STATUS btm_sec_l2cap_access_req::return_value = 0;
 tBTM_STATUS btm_sec_l2cap_access_req_by_requirement::return_value = 0;
 tBTM_STATUS btm_sec_mx_access_request::return_value = 0;
@@ -225,6 +229,12 @@ void BTM_RemoteOobDataReply(tBTM_STATUS res, const RawAddress& bd_addr,
 bool BTM_SecAddRmtNameNotifyCallback(tBTM_RMT_NAME_CALLBACK* p_callback) {
   inc_func_call_count(__func__);
   return test::mock::stack_btm_sec::BTM_SecAddRmtNameNotifyCallback(p_callback);
+}
+bool btm_sec_is_session_key_size_downgrade(uint16_t hci_handle,
+                                           uint8_t key_size) {
+  inc_func_call_count(__func__);
+  return test::mock::stack_btm_sec::btm_sec_is_session_key_size_downgrade(
+      hci_handle, key_size);
 }
 tBTM_STATUS BTM_SecBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
                         tBT_TRANSPORT transport, tBT_DEVICE_TYPE device_type,
@@ -467,6 +477,12 @@ void btm_sec_update_clock_offset(uint16_t handle, uint16_t clock_offset) {
   inc_func_call_count(__func__);
   test::mock::stack_btm_sec::btm_sec_update_clock_offset(handle, clock_offset);
 }
+void btm_sec_update_session_key_size(uint16_t hci_handle, uint8_t key_size) {
+  inc_func_call_count(__func__);
+  test::mock::stack_btm_sec::btm_sec_update_session_key_size(hci_handle,
+                                                             key_size);
+}
+
 void btm_simple_pair_complete(const uint8_t* p) {
   inc_func_call_count(__func__);
   test::mock::stack_btm_sec::btm_simple_pair_complete(p);
