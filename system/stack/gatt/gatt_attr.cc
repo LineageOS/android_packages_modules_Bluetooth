@@ -594,7 +594,7 @@ static void gatt_cl_op_cmpl_cback(uint16_t conn_id, tGATTC_OPTYPE op,
                loghex(static_cast<uint8_t>(conn_id)));
 
   if (op != GATTC_OPTYPE_READ && op != GATTC_OPTYPE_WRITE) {
-    log::debug("Not interested in opcode {}", op);
+    log::verbose("Not interested in opcode {}", op);
     return;
   }
 
