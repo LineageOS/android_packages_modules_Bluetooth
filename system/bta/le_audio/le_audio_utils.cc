@@ -401,6 +401,8 @@ static void fillRemotePacsCapabitiliesToBtLeAudioCodecConfig(
           if (!capa.IsAudioChannelCountsSupported(chan_bit)) continue;
 
           bluetooth::le_audio::btle_audio_codec_config_t config = {
+              .codec_type = utils::translateBluetoothCodecFormatToCodecType(
+                  record.codec_id.coding_format),
               .sample_rate = utils::translateToBtLeAudioCodecConfigSampleRate(
                   types::LeAudioCoreCodecConfig::GetSamplingFrequencyHz(
                       freq_bit)),
