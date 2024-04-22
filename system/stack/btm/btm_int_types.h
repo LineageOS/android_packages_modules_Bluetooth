@@ -89,10 +89,6 @@ typedef struct tBTM_DEVCB {
   tBTM_CMPL_CB* p_automatic_flush_timeout_cmpl_cb; /* Callback function to be */
   /* called when read Automatic Flush Timeout function completes */
 
-  alarm_t* read_link_quality_timer;
-  tBTM_CMPL_CB* p_link_qual_cmpl_cb; /* Callback function to be called when  */
-                                     /* read link quality function completes */
-
   alarm_t* read_tx_power_timer;     /* Read tx power timer */
   tBTM_CMPL_CB* p_tx_power_cmpl_cb; /* Callback function to be called       */
 
@@ -111,7 +107,6 @@ typedef struct tBTM_DEVCB {
         alarm_new("btm.read_failed_contact_counter_timer");
     read_automatic_flush_timeout_timer =
         alarm_new("btm.read_automatic_flush_timeout_timer");
-    read_link_quality_timer = alarm_new("btm.read_link_quality_timer");
     read_tx_power_timer = alarm_new("btm.read_tx_power_timer");
   }
 
@@ -120,7 +115,6 @@ typedef struct tBTM_DEVCB {
     alarm_free(read_rssi_timer);
     alarm_free(read_failed_contact_counter_timer);
     alarm_free(read_automatic_flush_timeout_timer);
-    alarm_free(read_link_quality_timer);
     alarm_free(read_tx_power_timer);
   }
 } tBTM_DEVCB;
