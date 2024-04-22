@@ -33,6 +33,7 @@
 #include <cstdint>
 #include <vector>
 
+#include "bta/dm/bta_dm_device_search.h"
 #include "bta/dm/bta_dm_disc.h"
 #include "bta/dm/bta_dm_gatt_client.h"
 #include "bta/dm/bta_dm_int.h"
@@ -222,6 +223,7 @@ void BTA_dm_on_hw_off() {
   bta_dm_deinit_cb();
 
   bta_dm_disc_stop();
+  bta_dm_search_stop();
 }
 
 void BTA_dm_on_hw_on() {
@@ -314,7 +316,12 @@ void bta_dm_disable() {
   BTM_SetConnectability(BTM_NON_CONNECTABLE);
 
   bta_dm_disable_pm();
-  bta_dm_disc_disable_search_and_disc();
+  if (IS_FLAG_ENABLED(separate_service_and_device_discovery)) {
+    bta_dm_disc_disable_search();
+    bta_dm_disc_disable_disc();
+  } else {
+    bta_dm_disc_disable_search_and_disc();
+  }
   bta_dm_cb.disabling = true;
 
   connection_manager::reset(false);

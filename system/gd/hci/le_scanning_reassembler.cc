@@ -64,7 +64,7 @@ LeScanningReassembler::ProcessAdvertisingReport(
   // the previous data as safety measure if the report is not a scan
   // response.
   if (is_legacy && !is_scan_response) {
-    log::debug("Dropping repeated legacy advertising data");
+    log::verbose("Dropping repeated legacy advertising data");
     RemoveFragment(key);
   }
 
