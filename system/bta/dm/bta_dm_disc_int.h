@@ -95,24 +95,26 @@ inline std::string bta_dm_state_text(
 }
 
 typedef struct {
-  RawAddress peer_bdaddr;
   service_discovery_callbacks service_search_cbacks;
-  tBTA_SERVICE_MASK services_to_search;
-  tBTA_SERVICE_MASK services_found;
-  tSDP_DISCOVERY_DB* p_sdp_db;
+  tGATT_IF client_if;
+  std::queue<tBTA_DM_API_DISCOVER> pending_discovery_queue;
+
+  RawAddress peer_bdaddr;
   /* This covers service discovery state - callers of BTA_DmDiscover. That is
    * initial service discovery after bonding and
    * BluetoothDevice.fetchUuidsWithSdp(). Responsible for LE GATT Service
    * Discovery and SDP */
   tBTA_DM_SERVICE_DISCOVERY_STATE service_discovery_state;
+  tBTA_SERVICE_MASK services_to_search;
+  tBTA_SERVICE_MASK services_found;
+
+  tSDP_DISCOVERY_DB* p_sdp_db;
   alarm_t* search_timer;
   uint8_t service_index;
-  std::queue<tBTA_DM_API_DISCOVER> pending_discovery_queue;
   bool sdp_results;
   bool wait_disc;
   uint8_t peer_scn;
-  tGATT_IF client_if;
-  uint8_t uuid_to_search;
+
   bool gatt_disc_active;
   uint16_t conn_id;
   alarm_t* gatt_close_timer;    /* GATT channel close delay timer */
