@@ -63,6 +63,15 @@ public final class BluetoothLeBroadcastChannel implements Parcelable {
         return Objects.hash(mIsSelected, mChannelIndex, mCodecMetadata);
     }
 
+    @Override
+    public String toString() {
+        return "BluetoothLeBroadcastChannel{"
+                + ("isSelected=" + mIsSelected)
+                + (", channelIndex=" + mChannelIndex)
+                + (", codecMetadata=" + mCodecMetadata)
+                + '}';
+    }
+
     /**
      * Return true if the channel is selected by Broadcast Assistant for the Broadcast Sink.
      *

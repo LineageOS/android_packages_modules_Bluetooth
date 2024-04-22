@@ -1505,12 +1505,10 @@ public class BassClientService extends ProfileService {
             BluetoothLeBroadcastMetadata sourceMetadata,
             boolean isGroupOp) {
         log(
-                "addSource: device: "
-                        + sink
-                        + " sourceMetadata"
-                        + sourceMetadata
-                        + " isGroupOp: "
-                        + isGroupOp);
+                "addSource: "
+                        + ("device: " + sink)
+                        + (", sourceMetadata: " + sourceMetadata)
+                        + (", isGroupOp: " + isGroupOp));
 
         List<BluetoothDevice> devices = getTargetDeviceList(sink, isGroupOp);
         // Don't coordinate it as a group if there's no group or there is one device only
@@ -1570,12 +1568,12 @@ public class BassClientService extends ProfileService {
                 if (sourceId != BassConstants.INVALID_SOURCE_ID) {
                     sEventLogger.logd(
                             TAG,
-                            "Switch Broadcast Source: device: "
-                                    + device
-                                    + ", old SourceId: "
-                                    + sourceId
-                                    + ", new SourceMetadata: "
-                                    + sourceMetadata);
+                            "Switch Broadcast Source: "
+                                    + ("device: " + device)
+                                    + (", old SourceId: " + sourceId)
+                                    + (", new broadcastId: " + sourceMetadata.getBroadcastId())
+                                    + (", new broadcastName: "
+                                            + sourceMetadata.getBroadcastName()));
 
                     // new source will be added once the existing source got removed
                     if (isGroupOp) {
@@ -1629,12 +1627,11 @@ public class BassClientService extends ProfileService {
 
             sEventLogger.logd(
                     TAG,
-                    "Add Broadcast Source: device: "
-                            + device
-                            + ", sourceMetadata: "
-                            + sourceMetadata
-                            + ", isGroupOp: "
-                            + isGroupOp);
+                    "Add Broadcast Source: "
+                            + ("device: " + device)
+                            + (", broadcastId: " + sourceMetadata.getBroadcastId())
+                            + (", broadcastName: " + sourceMetadata.getBroadcastName())
+                            + (", isGroupOp: " + isGroupOp));
 
             Message message = stateMachine.obtainMessage(BassClientStateMachine.ADD_BCAST_SOURCE);
             message.obj = sourceMetadata;
@@ -1642,10 +1639,10 @@ public class BassClientService extends ProfileService {
             if (code != null && code.length != 0) {
                 sEventLogger.logd(
                         TAG,
-                        "Set Broadcast Code (Add Source context): device: "
-                                + device
-                                + ", broadcastId: "
-                                + sourceMetadata.getBroadcastId());
+                        "Set Broadcast Code (Add Source context): "
+                                + ("device: " + device)
+                                + (", broadcastId: " + sourceMetadata.getBroadcastId())
+                                + (", broadcastName: " + sourceMetadata.getBroadcastName()));
 
                 message = stateMachine.obtainMessage(BassClientStateMachine.SET_BCAST_CODE);
                 message.obj = sourceMetadata;
@@ -1664,7 +1661,11 @@ public class BassClientService extends ProfileService {
      */
     public void modifySource(
             BluetoothDevice sink, int sourceId, BluetoothLeBroadcastMetadata updatedMetadata) {
-        log("modifySource: device: " + sink + " sourceId " + sourceId);
+        log(
+                "modifySource: "
+                        + ("device: " + sink)
+                        + ("sourceId: " + sourceId)
+                        + (", updatedMetadata: " + updatedMetadata));
 
         Map<BluetoothDevice, Integer> devices = getGroupManagedDeviceSources(sink, sourceId).second;
         if (updatedMetadata == null) {
@@ -1695,12 +1696,11 @@ public class BassClientService extends ProfileService {
 
             sEventLogger.logd(
                     TAG,
-                    "Modify Broadcast Source: device: "
-                            + device
-                            + ", sourceId: "
-                            + sourceId
-                            + ", updatedMetadata: "
-                            + updatedMetadata);
+                    "Modify Broadcast Source: "
+                            + ("device: " + device)
+                            + ("sourceId: " + sourceId)
+                            + (", updatedBroadcastId: " + updatedMetadata.getBroadcastId())
+                            + (", updatedBroadcastName: " + updatedMetadata.getBroadcastName()));
 
             Message message =
                     stateMachine.obtainMessage(BassClientStateMachine.UPDATE_BCAST_SOURCE);
@@ -1711,10 +1711,12 @@ public class BassClientService extends ProfileService {
             if (code != null && code.length != 0) {
                 sEventLogger.logd(
                         TAG,
-                        "Set Broadcast Code (Modify Source context), device: "
-                                + device
-                                + ", sourceId: "
-                                + sourceId);
+                        "Set Broadcast Code (Modify Source context): "
+                                + ("device: " + device)
+                                + ("sourceId: " + sourceId)
+                                + (", updatedBroadcastId: " + updatedMetadata.getBroadcastId())
+                                + (", updatedBroadcastName: "
+                                        + updatedMetadata.getBroadcastName()));
                 message = stateMachine.obtainMessage(BassClientStateMachine.SET_BCAST_CODE);
                 message.obj = updatedMetadata;
                 message.arg1 = BassClientStateMachine.ARGTYPE_METADATA;
@@ -1731,7 +1733,7 @@ public class BassClientService extends ProfileService {
      * @param sourceId source ID as delivered in onSourceAdded
      */
     public void removeSource(BluetoothDevice sink, int sourceId) {
-        log("removeSource: device = " + sink + ", sourceId " + sourceId);
+        log("removeSource: device: " + sink + ", sourceId: " + sourceId);
 
         Map<BluetoothDevice, Integer> devices = getGroupManagedDeviceSources(sink, sourceId).second;
         for (Map.Entry<BluetoothDevice, Integer> deviceSourceIdPair : devices.entrySet()) {
@@ -1768,10 +1770,11 @@ public class BassClientService extends ProfileService {
             if (metaData != null && stateMachine.isSyncedToTheSource(sourceId)) {
                 sEventLogger.logd(
                         TAG,
-                        "Remove Broadcast Source(Force lost PA sync): device: "
-                                + device
-                                + ", sourceId: "
-                                + sourceId);
+                        "Remove Broadcast Source(Force lost PA sync): "
+                                + ("device: " + device)
+                                + (", sourceId: " + sourceId)
+                                + (", broadcastId: " + metaData.getBroadcastId())
+                                + (", broadcastName: " + metaData.getBroadcastName()));
 
                 log("Force source to lost PA sync");
                 Message message = stateMachine.obtainMessage(
@@ -2159,13 +2162,11 @@ public class BassClientService extends ProfileService {
 
                     sEventLogger.logd(
                             TAG,
-                            "Modify Broadcast Source (resume): device: "
-                                    + sink
-                                    + ", sourceId: "
-                                    + sourceId
-                                    + ", updatedMetadata: "
-                                    + metadata);
-
+                            "Modify Broadcast Source (resume): "
+                                    + ("device: " + sink)
+                                    + ("sourceId: " + sourceId)
+                                    + (", updatedBroadcastId: " + metadata.getBroadcastId())
+                                    + (", updatedBroadcastName: " + metadata.getBroadcastName()));
                     Message message =
                             stateMachine.obtainMessage(BassClientStateMachine.UPDATE_BCAST_SOURCE);
                     message.arg1 = sourceId;

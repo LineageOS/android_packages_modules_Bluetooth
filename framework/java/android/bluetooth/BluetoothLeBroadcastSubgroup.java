@@ -67,6 +67,16 @@ public final class BluetoothLeBroadcastSubgroup implements Parcelable {
         return Objects.hash(mCodecId, mCodecSpecificConfig, mContentMetadata, mChannels);
     }
 
+    @Override
+    public String toString() {
+        return "BluetoothLeBroadcastSubgroup{"
+                + ("codecId=" + mCodecId)
+                + (", codecSpecificConfig=" + mCodecSpecificConfig)
+                + (", contentMetadata=" + mContentMetadata)
+                + (", channels=" + mChannels)
+                + '}';
+    }
+
     /**
      * Get the codec ID field as defined by the Basic Audio Profile.
      *
