@@ -118,9 +118,9 @@ int RFCOMM_CreateConnectionWithSecurity(uint16_t uuid, uint8_t scn,
 
   if ((scn == 0) || (scn > RFCOMM_MAX_SCN)) {
     // Server Channel Number (SCN) should be in range [1, 30]
-    log::error("Invalid SCN, bd_addr={}, scn={}, is_server={}, mtu={}, uuid={}",
-               bd_addr, static_cast<int>(scn), is_server, static_cast<int>(mtu),
-               loghex(uuid));
+    log::error(
+        "Invalid SCN, bd_addr={}, scn={}, is_server={}, mtu={}, uuid=0x{:x}",
+        bd_addr, static_cast<int>(scn), is_server, static_cast<int>(mtu), uuid);
     return (PORT_INVALID_SCN);
   }
 
@@ -144,13 +144,12 @@ int RFCOMM_CreateConnectionWithSecurity(uint16_t uuid, uint8_t scn,
       if (!p_port->is_server) {
         log::error(
             "already at opened state {}, RFC_state={}, MCB_state={}, "
-            "bd_addr={}, scn={}, is_server={}, mtu={}, uuid={}, dlci={}, "
+            "bd_addr={}, scn={}, is_server={}, mtu={}, uuid=0x{:x}, dlci={}, "
             "p_mcb={}, port={}",
             static_cast<int>(p_port->state),
             static_cast<int>(p_port->rfc.state),
             (p_port->rfc.p_mcb ? p_port->rfc.p_mcb->state : 0), bd_addr, scn,
-            is_server, mtu, loghex(uuid), dlci, fmt::ptr(p_mcb),
-            p_port->handle);
+            is_server, mtu, uuid, dlci, fmt::ptr(p_mcb), p_port->handle);
         *p_handle = p_port->handle;
         return (PORT_ALREADY_OPENED);
       }
@@ -161,9 +160,9 @@ int RFCOMM_CreateConnectionWithSecurity(uint16_t uuid, uint8_t scn,
   p_port = port_allocate_port(dlci, bd_addr);
   if (p_port == nullptr) {
     log::error(
-        "no resources, bd_addr={}, scn={}, is_server={}, mtu={}, uuid={}, "
+        "no resources, bd_addr={}, scn={}, is_server={}, mtu={}, uuid=0x{:x}, "
         "dlci={}",
-        bd_addr, scn, is_server, mtu, loghex(uuid), dlci);
+        bd_addr, scn, is_server, mtu, uuid, dlci);
     return PORT_NO_RESOURCES;
   }
   p_port->sec_mask = sec_mask;
@@ -222,10 +221,10 @@ int RFCOMM_CreateConnectionWithSecurity(uint16_t uuid, uint8_t scn,
   p_port->bd_addr = bd_addr;
 
   log::info(
-      "bd_addr={}, scn={}, is_server={}, mtu={}, uuid={}, dlci={}, "
-      "signal_state={}, p_port={}",
-      bd_addr, scn, is_server, mtu, loghex(uuid), dlci,
-      loghex(p_port->default_signal_state), fmt::ptr(p_port));
+      "bd_addr={}, scn={}, is_server={}, mtu={}, uuid=0x{:x}, dlci={}, "
+      "signal_state=0x{:x}, p_port={}",
+      bd_addr, scn, is_server, mtu, uuid, dlci, p_port->default_signal_state,
+      fmt::ptr(p_port));
 
   // If this is not initiator of the connection need to just wait
   if (p_port->is_server) {

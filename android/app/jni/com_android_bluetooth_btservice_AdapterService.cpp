@@ -307,9 +307,8 @@ static void device_found_callback(int num_properties,
     return;
   }
 
-  log::verbose(
-      "Properties: {}, Address: {}", num_properties,
-      ADDRESS_TO_LOGGABLE_STR(*(RawAddress*)properties[addr_index].val));
+  log::verbose("Properties: {}, Address: {}", num_properties,
+               *(RawAddress*)properties[addr_index].val);
 
   remote_device_properties_callback(BT_STATUS_SUCCESS,
                                     (RawAddress*)properties[addr_index].val,
@@ -463,7 +462,7 @@ static void discovery_state_changed_callback(bt_discovery_state_t state) {
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid()) return;
 
-  log::verbose("DiscoveryState:{} ", state);
+  log::verbose("DiscoveryState:{}", state);
 
   sCallbackEnv->CallVoidMethod(
       sJniCallbacksObj, method_discoveryStateChangeCallback, (jint)state);
@@ -824,7 +823,7 @@ static void dut_mode_recv_callback(uint16_t /* opcode */, uint8_t* /* buf */,
 
 static void le_test_mode_recv_callback(bt_status_t status,
                                        uint16_t packet_count) {
-  log::verbose("status:{} packet_count:{} ", bt_status_text(status),
+  log::verbose("status:{} packet_count:{}", bt_status_text(status),
                packet_count);
 }
 

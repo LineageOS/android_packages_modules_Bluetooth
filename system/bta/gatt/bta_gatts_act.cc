@@ -393,8 +393,8 @@ void bta_gatts_indicate_handle(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
         bta_sys_idle(BTA_ID_GATTS, BTA_ALL_APP_ID, remote_bda);
       }
     } else {
-      log::error("Unknown connection_id={} fail sending notification",
-                 loghex(p_msg->api_indicate.hdr.layer_specific));
+      log::error("Unknown connection_id=0x{:x} fail sending notification",
+                 p_msg->api_indicate.hdr.layer_specific);
     }
 
     if ((status != GATT_SUCCESS || !p_msg->api_indicate.need_confirm) &&
@@ -405,8 +405,8 @@ void bta_gatts_indicate_handle(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
       (*p_rcb->p_cback)(BTA_GATTS_CONF_EVT, &cb_data);
     }
   } else {
-    log::error("Not an registered servce attribute ID: {}",
-               loghex(p_msg->api_indicate.attr_id));
+    log::error("Not an registered servce attribute ID: 0x{:x}",
+               p_msg->api_indicate.attr_id);
   }
 }
 
@@ -525,7 +525,7 @@ void bta_gatts_close(tBTA_GATTS_CB* /* p_cb */, tBTA_GATTS_DATA* p_msg) {
       (*p_rcb->p_cback)(BTA_GATTS_CLOSE_EVT, &bta_gatts);
     }
   } else {
-    log::error("Unknown connection_id={}", loghex(p_msg->hdr.layer_specific));
+    log::error("Unknown connection_id=0x{:x}", p_msg->hdr.layer_specific);
   }
 }
 
@@ -552,8 +552,8 @@ static void bta_gatts_send_request_cback(uint16_t conn_id, uint32_t trans_id,
                               &transport)) {
     p_rcb = bta_gatts_find_app_rcb_by_app_if(gatt_if);
 
-    log::verbose("conn_id={}, trans_id={}, req_type={}", loghex(conn_id),
-                 trans_id, req_type);
+    log::verbose("conn_id=0x{:x}, trans_id={}, req_type={}", conn_id, trans_id,
+                 req_type);
 
     if (p_rcb && p_rcb->p_cback) {
       /* if over BR_EDR, inform PM for mode change */
@@ -571,7 +571,7 @@ static void bta_gatts_send_request_cback(uint16_t conn_id, uint32_t trans_id,
       log::error("connection request on gatt_if={} is not interested", gatt_if);
     }
   } else {
-    log::error("request received on unknown conn_id={}", loghex(conn_id));
+    log::error("request received on unknown conn_id=0x{:x}", conn_id);
   }
 }
 
@@ -592,8 +592,8 @@ static void bta_gatts_conn_cback(tGATT_IF gatt_if, const RawAddress& bdaddr,
   uint8_t evt = connected ? BTA_GATTS_CONNECT_EVT : BTA_GATTS_DISCONNECT_EVT;
   tBTA_GATTS_RCB* p_reg;
 
-  log::verbose("bda={} gatt_if= {}, conn_id={} connected={}", bdaddr, gatt_if,
-               loghex(conn_id), connected);
+  log::verbose("bda={} gatt_if= {}, conn_id=0x{:x} connected={}", bdaddr,
+               gatt_if, conn_id, connected);
 
   if (connected)
     btif_debug_conn_state(bdaddr, BTIF_DEBUG_CONNECTED, GATT_CONN_OK);

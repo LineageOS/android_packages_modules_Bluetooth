@@ -473,7 +473,7 @@ struct iso_impl {
 
     STREAM_TO_UINT8(status, stream);
     if (status != HCI_SUCCESS) {
-      log::error("Failed to Read ISO Link Quality, status: {}", loghex(status));
+      log::error("Failed to Read ISO Link Quality, status: 0x{:x}", status);
       return;
     }
 
@@ -505,7 +505,7 @@ struct iso_impl {
   void read_iso_link_quality(uint16_t iso_handle) {
     iso_base* iso = GetIsoIfKnown(iso_handle);
     if (iso == nullptr) {
-      log::error("No such iso connection: {}", loghex(iso_handle));
+      log::error("No such iso connection: 0x{:x}", iso_handle);
       return;
     }
 
@@ -545,7 +545,7 @@ struct iso_impl {
 
     if (!(iso->state_flags & kStateFlagIsBroadcast)) {
       if (!(iso->state_flags & kStateFlagIsConnected)) {
-        log::warn("Cis handle: {} not established", loghex(iso_handle));
+        log::warn("Cis handle: 0x{:x} not established", iso_handle);
         return;
       }
     }
@@ -568,9 +568,9 @@ struct iso_impl {
           bluetooth::common::time_get_os_boottime_us();
 
       log::warn(
-          ", dropping ISO packet, len: {}, iso credits: {}, iso handle: {}",
+          ", dropping ISO packet, len: {}, iso credits: {}, iso handle: 0x{:x}",
           static_cast<int>(data_len), static_cast<int>(iso_credits_),
-          loghex(iso_handle));
+          iso_handle);
       return;
     }
 

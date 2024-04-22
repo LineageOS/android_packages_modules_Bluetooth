@@ -611,11 +611,10 @@ void LogLinkLayerConnectionEvent(const RawAddress* address,
                   hci_ble_event, cmd_status, reason_code, metric_id);
   if (ret < 0) {
     log::warn(
-        "failed to log status {}, reason {} from cmd {}, event {}, ble_event "
-        "{} for {}, handle {}, type {}, error {}",
-        loghex(cmd_status), loghex(reason_code), loghex(hci_cmd),
-        loghex(hci_event), loghex(hci_ble_event), *address, connection_handle,
-        loghex(link_type), ret);
+        "failed to log status 0x{:x}, reason 0x{:x} from cmd 0x{:x}, event "
+        "0x{:x}, ble_event 0x{:x} for {}, handle {}, type 0x{:x}, error {}",
+        cmd_status, reason_code, hci_cmd, hci_event, hci_ble_event, *address,
+        connection_handle, link_type, ret);
   }
 }
 
@@ -623,7 +622,7 @@ void LogHciTimeoutEvent(uint32_t hci_cmd) {
   int ret = stats_write(BLUETOOTH_HCI_TIMEOUT_REPORTED,
                         static_cast<int64_t>(hci_cmd));
   if (ret < 0) {
-    log::warn("failed for opcode {}, error {}", loghex(hci_cmd), ret);
+    log::warn("failed for opcode 0x{:x}, error {}", hci_cmd, ret);
   }
 }
 
@@ -633,10 +632,9 @@ void LogRemoteVersionInfo(uint16_t handle, uint8_t status, uint8_t version,
                         version, manufacturer_name, subversion);
   if (ret < 0) {
     log::warn(
-        "failed for handle {}, status {}, version {}, manufacturer_name {}, "
-        "subversion {}, error {}",
-        handle, loghex(status), loghex(version), loghex(manufacturer_name),
-        loghex(subversion), ret);
+        "failed for handle {}, status 0x{:x}, version 0x{:x}, "
+        "manufacturer_name 0x{:x}, subversion 0x{:x}, error {}",
+        handle, status, version, manufacturer_name, subversion, ret);
   }
 }
 
@@ -728,8 +726,8 @@ void LogReadRssiResult(const RawAddress& address, uint16_t handle,
   int ret = stats_write(BLUETOOTH_DEVICE_RSSI_REPORTED, bytes_field, handle,
                         cmd_status, rssi, metric_id);
   if (ret < 0) {
-    log::warn("failed for {}, handle {}, status {}, rssi {} dBm, error {}",
-              address, handle, loghex(cmd_status), rssi, ret);
+    log::warn("failed for {}, handle {}, status 0x{:x}, rssi {} dBm, error {}",
+              address, handle, cmd_status, rssi, ret);
   }
 }
 
@@ -750,9 +748,9 @@ void LogReadFailedContactCounterResult(const RawAddress& address,
                   handle, cmd_status, failed_contact_counter, metric_id);
   if (ret < 0) {
     log::warn(
-        "failed for {}, handle {}, status {}, failed_contact_counter {} "
+        "failed for {}, handle {}, status 0x{:x}, failed_contact_counter {} "
         "packets, error {}",
-        address, handle, loghex(cmd_status), failed_contact_counter, ret);
+        address, handle, cmd_status, failed_contact_counter, ret);
   }
 }
 
@@ -772,9 +770,9 @@ void LogReadTxPowerLevelResult(const RawAddress& address, uint16_t handle,
                         handle, cmd_status, transmit_power_level, metric_id);
   if (ret < 0) {
     log::warn(
-        "failed for {}, handle {}, status {}, transmit_power_level {} packets, "
-        "error {}",
-        address, handle, loghex(cmd_status), transmit_power_level, ret);
+        "failed for {}, handle {}, status 0x{:x}, transmit_power_level {} "
+        "packets, error {}",
+        address, handle, cmd_status, transmit_power_level, ret);
   }
 }
 
@@ -796,8 +794,9 @@ void LogSmpPairingEvent(const RawAddress& address, uint8_t smp_cmd,
                   smp_cmd, direction, smp_fail_reason, metric_id);
   if (ret < 0) {
     log::warn(
-        "failed for {}, smp_cmd {}, direction {}, smp_fail_reason {}, error {}",
-        address, loghex(smp_cmd), direction, loghex(smp_fail_reason), ret);
+        "failed for {}, smp_cmd 0x{:x}, direction {}, smp_fail_reason 0x{:x}, "
+        "error {}",
+        address, smp_cmd, direction, smp_fail_reason, ret);
   }
 }
 
@@ -818,10 +817,10 @@ void LogClassicPairingEvent(const RawAddress& address, uint16_t handle, uint32_t
                         cmd_status, reason_code, event_value, metric_id);
   if (ret < 0) {
     log::warn(
-        "failed for {}, handle {}, hci_cmd {}, hci_event {}, cmd_status {}, "
-        "reason {}, event_value {}, error {}",
-        address, handle, loghex(hci_cmd), loghex(hci_event), loghex(cmd_status),
-        loghex(reason_code), event_value, ret);
+        "failed for {}, handle {}, hci_cmd 0x{:x}, hci_event 0x{:x}, "
+        "cmd_status 0x{:x}, reason 0x{:x}, event_value {}, error {}",
+        address, handle, hci_cmd, hci_event, cmd_status, reason_code,
+        event_value, ret);
   }
 }
 
@@ -843,8 +842,9 @@ void LogSdpAttribute(const RawAddress& address, uint16_t protocol_uuid,
       stats_write(BLUETOOTH_SDP_ATTRIBUTE_REPORTED, obfuscated_id_field,
                   protocol_uuid, attribute_id, attribute_field, metric_id);
   if (ret < 0) {
-    log::warn("failed for {}, protocol_uuid {}, attribute_id {}, error {}",
-              address, loghex(protocol_uuid), loghex(attribute_id), ret);
+    log::warn(
+        "failed for {}, protocol_uuid 0x{:x}, attribute_id 0x{:x}, error {}",
+        address, protocol_uuid, attribute_id, ret);
   }
 }
 
@@ -923,8 +923,9 @@ void LogBluetoothHalCrashReason(const RawAddress& address, uint32_t error_code,
   int ret = stats_write(BLUETOOTH_HAL_CRASH_REASON_REPORTED, 0,
                         obfuscated_id_field, error_code, vendor_error_code);
   if (ret < 0) {
-    log::warn("failed for {}, error_code {}, vendor_error_code {}, error {}",
-              address, loghex(error_code), loghex(vendor_error_code), ret);
+    log::warn(
+        "failed for {}, error_code 0x{:x}, vendor_error_code 0x{:x}, error {}",
+        address, error_code, vendor_error_code, ret);
   }
 }
 

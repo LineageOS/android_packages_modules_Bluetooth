@@ -324,7 +324,7 @@ uint16_t L2CA_ConnectReq(uint16_t psm, const RawAddress& p_bd_addr) {
   /* Fail if the PSM is not registered */
   tL2C_RCB* p_rcb = l2cu_find_rcb_by_psm(psm);
   if (p_rcb == nullptr) {
-    log::warn("no RCB, PSM={}", loghex(psm));
+    log::warn("no RCB, PSM=0x{:x}", psm);
     return 0;
   }
 
@@ -336,7 +336,7 @@ uint16_t L2CA_ConnectReq(uint16_t psm, const RawAddress& p_bd_addr) {
     p_lcb = l2cu_allocate_lcb(p_bd_addr, false, BT_TRANSPORT_BR_EDR);
     /* currently use BR/EDR for ERTM mode l2cap connection */
     if (p_lcb == nullptr) {
-      log::warn("connection not started for PSM={}, p_lcb={}", loghex(psm),
+      log::warn("connection not started for PSM=0x{:x}, p_lcb={}", psm,
                 fmt::ptr(p_lcb));
       return 0;
     }
@@ -346,7 +346,7 @@ uint16_t L2CA_ConnectReq(uint16_t psm, const RawAddress& p_bd_addr) {
   /* Allocate a channel control block */
   tL2C_CCB* p_ccb = l2cu_allocate_ccb(p_lcb, 0);
   if (p_ccb == nullptr) {
-    log::warn("no CCB, PSM={}", loghex(psm));
+    log::warn("no CCB, PSM=0x{:x}", psm);
     return 0;
   }
 

@@ -2200,9 +2200,9 @@ class CsisClientImpl : public CsisClient {
       tGATT_STATUS register_status =
           BTA_GATTC_RegisterForNotifications(gatt_if_, address, value_handle);
       log::debug(
-          "BTA_GATTC_RegisterForNotifications, status=0x{:02x}, value={}, "
+          "BTA_GATTC_RegisterForNotifications, status=0x{:02x}, value=0x{:x}, "
           "ccc=0x{:04x}",
-          register_status, loghex(value_handle), ccc_handle);
+          register_status, value_handle, ccc_handle);
 
       if (register_status != GATT_SUCCESS) return;
     }

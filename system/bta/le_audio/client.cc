@@ -644,8 +644,8 @@ class LeAudioClientImpl : public LeAudioClient {
       /* TODO This part possible to remove as this is to handle adding device to
        * the group which is unknown and not connected.
        */
-      log::info("leAudioDevice unknown , address: {} group: {}", address,
-                loghex(group_id));
+      log::info("leAudioDevice unknown , address: {} group: 0x{:x}", address,
+                group_id);
 
       if (group_id == bluetooth::groups::kGroupUnknown) return;
 
@@ -1933,7 +1933,7 @@ class LeAudioClientImpl : public LeAudioClient {
       bluetooth::le_audio::client_parser::tmap::ParseTmapRole(
           leAudioDevice->tmap_role_, len, value);
     } else {
-      log::error("Unknown attribute read: {}", loghex(hdl));
+      log::error("Unknown attribute read: 0x{:x}", hdl);
     }
   }
 
@@ -3053,7 +3053,7 @@ class LeAudioClientImpl : public LeAudioClient {
     std::vector<struct ase>::iterator ase_it;
 
     if (!leAudioDevice) {
-      log::error("unknown conn_id={}", loghex(conn_id));
+      log::error("unknown conn_id=0x{:x}", conn_id);
       return;
     }
 
@@ -3214,7 +3214,7 @@ class LeAudioClientImpl : public LeAudioClient {
 
   void SendAudioGroupCurrentCodecConfigChanged(LeAudioDeviceGroup* group) {
     // This shall be called when configuration changes
-    log::debug(" {} ", group->group_id_);
+    log::debug("{}", group->group_id_);
 
     auto audio_set_conf = group->GetConfiguration(configuration_context_type_);
     if (!audio_set_conf) {
@@ -3259,8 +3259,8 @@ class LeAudioClientImpl : public LeAudioClient {
         bluetooth::le_audio::ConnectionStatus::SUCCESS);
 
     if (leAudioDevice->group_id_ == bluetooth::groups::kGroupUnknown) {
-      log::warn(" LeAudio device {} connected with no group",
-                ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+      log::warn("LeAudio device {} connected with no group",
+                leAudioDevice->address_);
       callbacks_->OnConnectionState(ConnectionState::CONNECTED,
                                     leAudioDevice->address_);
       return;
@@ -4966,7 +4966,7 @@ class LeAudioClientImpl : public LeAudioClient {
     auto source_supported_contexts = group->GetSupportedContexts(
         bluetooth::le_audio::types::kLeAudioDirectionSource);
 
-    log::debug(" group_id: {}, sink_supported: {}, source_supported {}",
+    log::debug("group_id: {}, sink_supported: {}, source_supported {}",
                group->group_id_, ToString(sink_supported_contexts),
                ToString(source_supported_contexts));
     if (sink_supported_contexts.test(LeAudioContextType::VOICEASSISTANTS) &&
@@ -4984,7 +4984,7 @@ class LeAudioClientImpl : public LeAudioClient {
     }
 
     log::warn(
-        " group_id: {},  unexpected configuration, sink_supported: {}, "
+        "group_id: {},  unexpected configuration, sink_supported: {}, "
         "source_supported {}",
         group->group_id_, ToString(sink_supported_contexts),
         ToString(source_supported_contexts));
@@ -5397,9 +5397,9 @@ class LeAudioClientImpl : public LeAudioClient {
         leAudioDevices_.FindByCisConnHdl(cig_id, conn_handle);
     if (!leAudioDevice) {
       log::warn(
-          "device under connection handle: {}, has been disconnecected in "
+          "device under connection handle: 0x{:x}, has been disconnecected in "
           "meantime",
-          loghex(conn_handle));
+          conn_handle);
       return;
     }
     LeAudioDeviceGroup* group = aseGroups_.FindById(leAudioDevice->group_id_);

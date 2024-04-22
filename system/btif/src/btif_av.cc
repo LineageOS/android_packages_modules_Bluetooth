@@ -2529,8 +2529,8 @@ bool BtifAvStateMachine::StateOpened::ProcessEvent(uint32_t event,
                                        std::move(peer_ready_promise));
       }
       if (peer_.CheckFlags(BtifAvPeer::kFlagPendingStart)) {
-        log::info("Peer {} : Reconfig done - calling BTA_AvStart({})",
-                  peer_.PeerAddress(), loghex(peer_.BtaHandle()));
+        log::info("Peer {} : Reconfig done - calling BTA_AvStart(0x{:x})",
+                  peer_.PeerAddress(), peer_.BtaHandle());
         BTA_AvStart(peer_.BtaHandle(), peer_.UseLatencyMode());
       }
       break;

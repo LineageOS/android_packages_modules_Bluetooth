@@ -187,7 +187,7 @@ class HasClientImpl : public HasClient {
 
   void AddFromStorage(const RawAddress& address, uint8_t features,
                       uint16_t is_acceptlisted) {
-    log::debug("{}, features={}, isAcceptlisted={}", address, loghex(features),
+    log::debug("{}, features=0x{:x}, isAcceptlisted={}", address, features,
                is_acceptlisted);
 
     /* Notify upper layer about the device */
@@ -1008,11 +1008,11 @@ class HasClientImpl : public HasClient {
 
   void OnGattWriteCcc(uint16_t conn_id, tGATT_STATUS status, uint16_t handle,
                       void* user_data) {
-    log::debug("handle={}", loghex(handle));
+    log::debug("handle=0x{:x}", handle);
 
     auto device = GetDevice(conn_id);
     if (!device) {
-      log::error("unknown conn_id={}", loghex(conn_id));
+      log::error("unknown conn_id=0x{:x}", conn_id);
       BtaGattQueue::Clean(conn_id);
       return;
     }
@@ -1035,8 +1035,8 @@ class HasClientImpl : public HasClient {
                (handle == device->cp_ccc_handle)) {
       /* Both of these CCC are mandatory */
       if (enabling_ntf && (status != GATT_SUCCESS)) {
-        log::error("Failed to register for notifications on handle={}",
-                   loghex(handle));
+        log::error("Failed to register for notifications on handle=0x{:x}",
+                   handle);
         BTA_GATTC_Close(conn_id);
         return;
       }
@@ -1047,7 +1047,7 @@ class HasClientImpl : public HasClient {
                          const uint8_t* value) {
     auto device = GetDevice(conn_id);
     if (!device) {
-      log::warn("Skipping unknown device, conn_id={}", loghex(conn_id));
+      log::warn("Skipping unknown device, conn_id=0x{:x}", conn_id);
       return;
     }
 
@@ -1103,8 +1103,8 @@ class HasClientImpl : public HasClient {
     }
 
     if (len != 1) {
-      log::error("Invalid features value length={} at handle={}", len,
-                 loghex(handle));
+      log::error("Invalid features value length={} at handle=0x{:x}", len,
+                 handle);
       BTA_GATTC_Close(device->conn_id);
       return;
     }
@@ -1486,8 +1486,8 @@ class HasClientImpl : public HasClient {
     }
 
     if (len != 1) {
-      log::error("Invalid preset value length={} at handle={}", len,
-                 loghex(handle));
+      log::error("Invalid preset value length={} at handle=0x{:x}", len,
+                 handle);
       BTA_GATTC_Close(device->conn_id);
       return;
     }
@@ -1889,12 +1889,12 @@ class HasClientImpl : public HasClient {
     auto device = std::find_if(devices_.begin(), devices_.end(),
                                HasDevice::MatchAddress(evt.remote_bda));
     if (device == devices_.end()) {
-      log::warn("Skipping unknown device disconnect, conn_id={}",
-                loghex(evt.conn_id));
+      log::warn("Skipping unknown device disconnect, conn_id=0x{:x}",
+                evt.conn_id);
       return;
     }
-    log::debug("device={}: reason={}", device->addr,
-               loghex(static_cast<int>(evt.reason)));
+    log::debug("device={}: reason=0x{:x}", device->addr,
+               static_cast<int>(evt.reason));
 
     /* Don't notify disconnect state for background connection that failed */
     if (device->is_connecting_actively || device->isGattServiceValid())
@@ -1914,7 +1914,7 @@ class HasClientImpl : public HasClient {
   void OnGattServiceSearchComplete(const tBTA_GATTC_SEARCH_CMPL& evt) {
     auto device = GetDevice(evt.conn_id);
     if (!device) {
-      log::warn("Skipping unknown device, conn_id={}", loghex(evt.conn_id));
+      log::warn("Skipping unknown device, conn_id=0x{:x}", evt.conn_id);
       return;
     }
 
@@ -2066,8 +2066,9 @@ class HasClientImpl : public HasClient {
       tGATT_STATUS register_status =
           BTA_GATTC_RegisterForNotifications(gatt_if_, address, value_handle);
       log::debug(
-          "BTA_GATTC_RegisterForNotifications, status={} value={} ccc={}",
-          loghex(+register_status), loghex(value_handle), loghex(ccc_handle));
+          "BTA_GATTC_RegisterForNotifications, status=0x{:x} value=0x{:x} "
+          "ccc=0x{:x}",
+          register_status, value_handle, ccc_handle);
 
       if (register_status != GATT_SUCCESS) return;
     }

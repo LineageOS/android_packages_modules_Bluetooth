@@ -71,7 +71,7 @@ uint16_t VolumeControlDevice::find_ccc_handle(uint16_t chrc_handle) {
   const gatt::Characteristic* p_char =
       BTA_GATTC_GetCharacteristic(connection_id, chrc_handle);
   if (!p_char) {
-    log::warn("no such handle={}", loghex(chrc_handle));
+    log::warn("no such handle=0x{:x}", chrc_handle);
     return 0;
   }
 
@@ -157,9 +157,9 @@ void VolumeControlDevice::set_volume_offset_control_service_handles(
       GATT_HANDLE_IS_VALID(offset.audio_descr_handle)
       /* audio_descr_ccc_handle is optional */) {
     audio_offsets.Add(offset);
-    log::info("Offset added id={}", loghex(offset.id));
+    log::info("Offset added id=0x{:x}", offset.id);
   } else {
-    log::warn("Ignoring offset handle={}", loghex(service.handle));
+    log::warn("Ignoring offset handle=0x{:x}", service.handle);
   }
 }
 
@@ -176,7 +176,7 @@ bool VolumeControlDevice::UpdateHandles(void) {
 
   for (auto const& service : *services) {
     if (service.uuid == kVolumeControlUuid) {
-      log::info("Found VCS, handle={}", loghex(service.handle));
+      log::info("Found VCS, handle=0x{:x}", service.handle);
       vcs_found = set_volume_control_service_handles(service);
       if (!vcs_found) break;
 
@@ -187,7 +187,7 @@ bool VolumeControlDevice::UpdateHandles(void) {
         if (service == nullptr) continue;
 
         if (included.uuid == kVolumeOffsetUuid) {
-          log::info("Found VOCS, handle={}", loghex(service->handle));
+          log::info("Found VOCS, handle=0x{:x}", service->handle);
           set_volume_offset_control_service_handles(*service);
 
         } else {
@@ -235,7 +235,7 @@ bool VolumeControlDevice::subscribe_for_notifications(tGATT_IF gatt_if,
   tGATT_STATUS status =
       BTA_GATTC_RegisterForNotifications(gatt_if, address, handle);
   if (status != GATT_SUCCESS) {
-    log::error("failed, status={}", loghex(+status));
+    log::error("failed, status=0x{:x}", status);
     return false;
   }
 

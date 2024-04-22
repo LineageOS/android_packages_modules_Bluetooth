@@ -125,7 +125,7 @@ static void btavrcp_playerapplicationsetting_callback(
     /*2 bytes for id and num */
     arraylen += 2 + app_attrs[i].num_val;
   }
-  log::verbose(" arraylen {}", arraylen);
+  log::verbose("arraylen {}", arraylen);
 
   ScopedLocalRef<jbyteArray> playerattribs(
       sCallbackEnv.get(), sCallbackEnv->NewByteArray(arraylen));
@@ -174,7 +174,7 @@ static void btavrcp_playerapplicationsetting_changed_callback(
   ScopedLocalRef<jbyteArray> playerattribs(
       sCallbackEnv.get(), sCallbackEnv->NewByteArray(arraylen));
   if (!playerattribs.get()) {
-    log::error("Fail to new jbyteArray playerattribs ");
+    log::error("Fail to new jbyteArray playerattribs");
     return;
   }
   /*
@@ -268,7 +268,7 @@ static void btavrcp_track_changed_callback(const RawAddress& bd_addr,
   ScopedLocalRef<jintArray> attribIds(sCallbackEnv.get(),
                                       sCallbackEnv->NewIntArray(num_attr));
   if (!attribIds.get()) {
-    log::error(" failed to set new array for attribIds");
+    log::error("failed to set new array for attribIds");
     return;
   }
   sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
@@ -279,7 +279,7 @@ static void btavrcp_track_changed_callback(const RawAddress& bd_addr,
       sCallbackEnv.get(),
       sCallbackEnv->NewObjectArray((jint)num_attr, strclazz, 0));
   if (!stringArray.get()) {
-    log::error(" failed to get String array");
+    log::error("failed to get String array");
     return;
   }
 

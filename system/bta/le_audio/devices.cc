@@ -230,15 +230,13 @@ bool LeAudioDevice::IsAudioSetConfigurationSupported(
         (direction == types::kLeAudioDirectionSink) ? snk_pacs_ : src_pacs_;
     for (const auto& ent : confs) {
       if (!utils::GetConfigurationSupportedPac(pacs, ent.codec)) {
-        log::info("Configuration is NOT supported by device {}",
-                  ADDRESS_TO_LOGGABLE_CSTR(address_));
+        log::info("Configuration is NOT supported by device {}", address_);
         return false;
       }
     }
   }
 
-  log::info("Configuration is supported by device {}",
-            ADDRESS_TO_LOGGABLE_CSTR(address_));
+  log::info("Configuration is supported by device {}", address_);
   return true;
 }
 

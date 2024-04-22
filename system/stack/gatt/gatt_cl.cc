@@ -1211,7 +1211,7 @@ bool gatt_cl_send_next_cmd_inq(tGATT_TCB& tcb) {
 void gatt_client_handle_server_rsp(tGATT_TCB& tcb, uint16_t cid,
                                    uint8_t op_code, uint16_t len,
                                    uint8_t* p_data) {
-  log::verbose("opcode: {} cid{}", loghex(op_code), cid);
+  log::verbose("opcode: 0x{:x} cid{}", op_code, cid);
 
   uint16_t payload_size = gatt_tcb_get_payload_size(tcb, cid);
 

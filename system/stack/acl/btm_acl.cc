@@ -649,9 +649,9 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t /* status */,
   if (bluetooth::os::ParameterProvider::IsCommonCriteriaMode()) {
     if (p->is_encrypted && !encr_enable) {
       log::error(
-          "attempting to decrypt encrypted connection, disconnecting. "
-          "handle: {}",
-          loghex(handle));
+          "attempting to decrypt encrypted connection, disconnecting. handle: "
+          "0x{:x}",
+          handle);
 
       acl_disconnect_from_handle(handle, HCI_ERR_HOST_REJECT_SECURITY,
                                  "stack::btu::btu_hcif::read_drop_encryption "
