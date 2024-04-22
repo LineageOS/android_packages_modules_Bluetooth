@@ -805,5 +805,28 @@ void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported,
 void btm_sec_cr_loc_oob_data_cback_event(const RawAddress& address,
                                          tSMP_LOC_OOB_DATA loc_oob_data);
 
+/*******************************************************************************
+ *
+ * Function         btm_sec_is_session_key_size_downgrade
+ *
+ * Description      Check if there is a stored device record matching this
+ *                  handle, and return true if the stored record has a lower
+ *                  session key size than the candidate device.
+ *
+ * Returns          bool
+ *
+ ******************************************************************************/
+bool btm_sec_is_session_key_size_downgrade(uint16_t hci_handle,
+                                           uint8_t key_size);
+
+/*******************************************************************************
+ *
+ * Function         btm_sec_update_session_key_size
+ *
+ * Description      Store the max session key size to disk, if possible.
+ *
+ ******************************************************************************/
+void btm_sec_update_session_key_size(uint16_t hci_handle, uint8_t key_size);
+
 // Return DEV_CLASS (uint8_t[3]) of bda. If record doesn't exist, create one.
 const uint8_t* btm_get_dev_class(const RawAddress& bda);
