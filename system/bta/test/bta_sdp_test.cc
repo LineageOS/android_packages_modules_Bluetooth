@@ -37,6 +37,7 @@ namespace bluetooth {
 namespace legacy {
 namespace testing {
 
+tBTA_DM_SERVICE_DISCOVERY_CB& bta_dm_discovery_cb();
 tBTA_DM_SEARCH_CB& bta_dm_disc_search_cb();
 void bta_dm_sdp_result(tBTA_DM_SDP_RESULT& sdp_event);
 
@@ -69,14 +70,12 @@ class BtaSdpRegisteredTest : public BtaSdpTest {
 TEST_F(BtaSdpTest, nop) {}
 
 TEST_F(BtaSdpRegisteredTest, bta_dm_sdp_result_SDP_SUCCESS) {
-  tBTA_DM_SEARCH_CB& search_cb =
-      bluetooth::legacy::testing::bta_dm_disc_search_cb();
-  search_cb.service_index = BTA_MAX_SERVICE_ID;
+  tBTA_DM_SERVICE_DISCOVERY_CB& discovery_cb =
+      bluetooth::legacy::testing::bta_dm_discovery_cb();
+  discovery_cb.service_index = BTA_MAX_SERVICE_ID;
 
   mock_btm_client_interface.security.BTM_SecReadDevName =
       [](const RawAddress& bd_addr) -> const char* { return kName; };
-  mock_btm_client_interface.security.BTM_SecDeleteRmtNameNotifyCallback =
-      [](tBTM_RMT_NAME_CALLBACK*) -> bool { return true; };
   tBTA_DM_SDP_RESULT result{.sdp_result = SDP_SUCCESS};
   bluetooth::legacy::testing::bta_dm_sdp_result(result);
 }

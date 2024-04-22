@@ -55,7 +55,7 @@ void bta_energy_info_cb(tBTM_BLE_TX_TIME_MS tx_time,
                         tBTM_CONTRL_STATE ctrl_state, tBTA_STATUS status);
 
 void btif_on_name_read(RawAddress bd_addr, tHCI_ERROR_CODE hci_status,
-                       const BD_NAME bd_name);
+                       const BD_NAME bd_name, bool during_device_search);
 
 }  // namespace testing
 }  // namespace legacy
@@ -178,7 +178,7 @@ TEST_F_WITH_FLAGS(BtifDmWithStackTest,
   bd_name_from_char_pointer(bd_name, kBdName);
 
   bluetooth::legacy::testing::btif_on_name_read(kRawAddress, HCI_SUCCESS,
-                                                bd_name);
+                                                bd_name, true);
 
   ASSERT_EQ(BT_STATUS_SUCCESS, invoke_remote_device_properties_cb.status);
   ASSERT_EQ(kRawAddress, invoke_remote_device_properties_cb.bd_addr);

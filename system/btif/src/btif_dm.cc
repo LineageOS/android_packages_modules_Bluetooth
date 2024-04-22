@@ -297,6 +297,9 @@ static void btif_stats_add_bond_event(const RawAddress& bd_addr,
                                       bt_bond_function_t function,
                                       bt_bond_state_t state);
 
+static void btif_on_name_read(RawAddress bd_addr, tHCI_ERROR_CODE hci_status,
+                              const BD_NAME bd_name, bool during_device_search);
+
 /******************************************************************************
  *  Externs
  *****************************************************************************/
@@ -1425,40 +1428,9 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event,
 
   switch (event) {
     case BTA_DM_NAME_READ_EVT: {
-      /* Remote name update */
-      if (strlen((const char*)p_search_data->name_res.bd_name)) {
-        /** Fix inquiry time too long @{ */
-        bt_property_t properties[3];
-        /** @} */
-        bt_status_t status;
-
-        properties[0].type = BT_PROPERTY_BDNAME;
-        properties[0].val = p_search_data->name_res.bd_name;
-        properties[0].len = strlen((char*)p_search_data->name_res.bd_name);
-        RawAddress& bdaddr = p_search_data->name_res.bd_addr;
-
-        status =
-            btif_storage_set_remote_device_property(&bdaddr, &properties[0]);
-        ASSERTC(status == BT_STATUS_SUCCESS,
-                "failed to save remote device property", status);
-        GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(
-            status, bdaddr, 1, properties);
-        /** Fix inquiry time too long @{ */
-        uint32_t cod = get_cod(&bdaddr);
-        if (cod != 0) {
-          BTIF_STORAGE_FILL_PROPERTY(&properties[1], BT_PROPERTY_BDADDR, sizeof(bdaddr), &bdaddr);
-          BTIF_STORAGE_FILL_PROPERTY(&properties[2], BT_PROPERTY_CLASS_OF_DEVICE, sizeof(uint32_t), &cod);
-          log::debug("report new device to JNI");
-          GetInterfaceToProfiles()->events->invoke_device_found_cb(3, properties);
-        } else {
-          log::info("Skipping RNR callback because cod is zero addr:{} name:{}",
-                    bdaddr,
-                    PRIVATE_NAME(reinterpret_cast<char const*>(
-                        p_search_data->name_res.bd_name)));
-        }
-        /** @} */
-      }
-      /* TODO: Services? */
+      btif_on_name_read(p_search_data->name_res.bd_addr, HCI_SUCCESS,
+                        p_search_data->name_res.bd_name,
+                        true /* duirng_device_search */);
     } break;
 
     case BTA_DM_INQ_RES_EVT: {
@@ -2019,7 +1991,8 @@ void btif_on_gatt_results(RawAddress bd_addr, BD_NAME bd_name,
   num_properties++;
 
   /* Remote name update */
-  if (strnlen((const char*)bd_name, BD_NAME_LEN)) {
+  if (!IS_FLAG_ENABLED(separate_service_and_device_discovery) &&
+      strnlen((const char*)bd_name, BD_NAME_LEN)) {
     prop[1].type = BT_PROPERTY_BDNAME;
     prop[1].val = bd_name;
     prop[1].len = strnlen((char*)bd_name, BD_NAME_LEN);
@@ -2041,9 +2014,16 @@ void btif_on_gatt_results(RawAddress bd_addr, BD_NAME bd_name,
       BT_STATUS_SUCCESS, bd_addr, num_properties, prop);
 }
 
-void btif_on_name_read(RawAddress bd_addr, tHCI_ERROR_CODE hci_status,
-                       const BD_NAME bd_name) {
-  if (!IS_FLAG_ENABLED(rnr_present_during_service_discovery)) {
+static void btif_on_name_read(RawAddress bd_addr, tHCI_ERROR_CODE hci_status,
+                              const BD_NAME bd_name,
+                              bool during_device_search) {
+  // Differentiate between merged callbacks
+  if (!during_device_search
+      // New fix after refactor, this callback is needed for the fix to work
+      && !IS_FLAG_ENABLED(separate_service_and_device_discovery)
+      // Original fix, this callback should not be called if RNR should not be
+      // called
+      && !IS_FLAG_ENABLED(rnr_present_during_service_discovery)) {
     log::info("Skipping name read event - called on bad callback.");
     return;
   }
@@ -2057,21 +2037,48 @@ void btif_on_name_read(RawAddress bd_addr, tHCI_ERROR_CODE hci_status,
     log::warn("Received RNR event without valid name addr:{}", bd_addr);
     return;
   }
-  bt_property_t properties[] = {{
+
+  // Needs 3 properties if during_device_search is true
+  bt_property_t properties[3] = {{
       .type = BT_PROPERTY_BDNAME,
       .len = (int)strnlen((char*)bd_name, BD_NAME_LEN),
       .val = (void*)bd_name,
   }};
+
   const bt_status_t status =
       btif_storage_set_remote_device_property(&bd_addr, properties);
   log::assert_that(status == BT_STATUS_SUCCESS,
                    "Failed to save remote device property status:{}",
                    bt_status_text(status));
-  const size_t num_props = sizeof(properties) / sizeof(bt_property_t);
   GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(
-      status, bd_addr, (int)num_props, properties);
+      status, bd_addr, 1, properties);
   log::info("Callback for read name event addr:{} name:{}", bd_addr,
             PRIVATE_NAME(reinterpret_cast<char const*>(bd_name)));
+
+  if (!during_device_search) {
+    return;
+  }
+
+  uint32_t cod = get_cod(&bd_addr);
+  if (cod != 0) {
+    BTIF_STORAGE_FILL_PROPERTY(&properties[1], BT_PROPERTY_BDADDR,
+                               sizeof(bd_addr), &bd_addr);
+    BTIF_STORAGE_FILL_PROPERTY(&properties[2], BT_PROPERTY_CLASS_OF_DEVICE,
+                               sizeof(uint32_t), &cod);
+    log::debug("report new device to JNI");
+    GetInterfaceToProfiles()->events->invoke_device_found_cb(3, properties);
+  } else {
+    log::info(
+        "Skipping device found callback because cod is zero addr:{} name:{}",
+        bd_addr, PRIVATE_NAME(reinterpret_cast<char const*>(bd_name)));
+  }
+}
+
+void btif_on_name_read_from_btm(const RawAddress& bd_addr, DEV_CLASS /* dc */,
+                                BD_NAME bd_name) {
+  log::info("{} {}", bd_addr, reinterpret_cast<char const*>(bd_name));
+  btif_on_name_read(bd_addr, HCI_SUCCESS, bd_name,
+                    false /* duirng_device_search */);
 }
 
 void btif_on_did_received(RawAddress bd_addr, uint8_t vendor_id_src,
@@ -2177,6 +2184,10 @@ void BTIF_dm_enable() {
   log::info("Local BLE Privacy enabled:{}", ble_privacy_enabled);
   BTA_DmBleConfigLocalPrivacy(ble_privacy_enabled);
 
+  if (IS_FLAG_ENABLED(separate_service_and_device_discovery)) {
+    BTM_SecAddRmtNameNotifyCallback(btif_on_name_read_from_btm);
+  }
+
   /* for each of the enabled services in the mask, trigger the profile
    * enable */
   tBTA_SERVICE_MASK service_mask = btif_get_enabled_services_mask();
@@ -2202,6 +2213,10 @@ void BTIF_dm_enable() {
 }
 
 void BTIF_dm_disable() {
+  if (IS_FLAG_ENABLED(separate_service_and_device_discovery)) {
+    BTM_SecDeleteRmtNameNotifyCallback(&btif_on_name_read_from_btm);
+  }
+
   /* for each of the enabled services in the mask, trigger the profile
    * disable */
   tBTA_SERVICE_MASK service_mask = btif_get_enabled_services_mask();
@@ -3075,6 +3090,13 @@ bt_status_t btif_dm_get_adapter_property(bt_property_t* prop) {
   return BT_STATUS_SUCCESS;
 }
 
+static void btif_on_name_read_legacy(RawAddress bd_addr,
+                                     tHCI_ERROR_CODE hci_status,
+                                     const BD_NAME bd_name) {
+  btif_on_name_read(bd_addr, hci_status, bd_name,
+                    false /* during_device_search */);
+};
+
 /*******************************************************************************
  *
  * Function         btif_dm_get_remote_services
@@ -3097,7 +3119,7 @@ void btif_dm_get_remote_services(RawAddress remote_addr, const int transport) {
       service_discovery_callbacks{
           .on_gatt_results = btif_on_gatt_results,
           .on_did_received = btif_on_did_received,
-          .on_name_read = btif_on_name_read,
+          .on_name_read = btif_on_name_read_legacy,
           .on_service_discovery_results = btif_on_service_discovery_results},
       transport);
 }
@@ -4229,8 +4251,8 @@ void bta_energy_info_cb(tBTM_BLE_TX_TIME_MS tx_time,
 }
 
 void btif_on_name_read(RawAddress bd_addr, tHCI_ERROR_CODE hci_status,
-                       const BD_NAME bd_name) {
-  ::btif_on_name_read(bd_addr, hci_status, bd_name);
+                       const BD_NAME bd_name, bool during_device_search) {
+  ::btif_on_name_read(bd_addr, hci_status, bd_name, during_device_search);
 }
 
 }  // namespace testing
