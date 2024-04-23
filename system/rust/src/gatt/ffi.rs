@@ -4,9 +4,7 @@
 use std::iter::Peekable;
 
 use anyhow::{bail, Result};
-use bt_common::init_flags::{
-    always_use_private_gatt_for_debugging_is_enabled, rust_event_loop_is_enabled,
-};
+use bt_common::init_flags::always_use_private_gatt_for_debugging_is_enabled;
 use cxx::UniquePtr;
 pub use inner::*;
 use log::{error, info, trace, warn};
@@ -283,10 +281,6 @@ impl AttTransport for AttTransportImpl {
 }
 
 fn open_server(server_id: u8) {
-    if !rust_event_loop_is_enabled() {
-        return;
-    }
-
     let server_id = ServerId(server_id);
 
     do_in_rust_thread(move |modules| {
@@ -303,10 +297,6 @@ fn open_server(server_id: u8) {
 }
 
 fn close_server(server_id: u8) {
-    if !rust_event_loop_is_enabled() {
-        return;
-    }
-
     let server_id = ServerId(server_id);
 
     do_in_rust_thread(move |modules| {
@@ -368,17 +358,15 @@ fn records_to_service(service_records: &[GattRecord]) -> Result<GattServiceWithH
     }
 
     let Some((handle, uuid)) = service_handle_uuid else {
-        bail!("got service registration but with no primary service! {characteristics:?}".to_string())
+        bail!(
+            "got service registration but with no primary service! {characteristics:?}".to_string()
+        )
     };
 
     Ok(GattServiceWithHandle { handle: AttHandle(handle), type_: uuid, characteristics })
 }
 
 fn add_service(server_id: u8, service_records: Vec<GattRecord>) {
-    if !rust_event_loop_is_enabled() {
-        return;
-    }
-
     // marshal into the form expected by GattModule
     let server_id = ServerId(server_id);
 
@@ -408,10 +396,6 @@ fn add_service(server_id: u8, service_records: Vec<GattRecord>) {
 }
 
 fn remove_service(server_id: u8, service_handle: u16) {
-    if !rust_event_loop_is_enabled() {
-        return;
-    }
-
     let server_id = ServerId(server_id);
     let service_handle = AttHandle(service_handle);
     do_in_rust_thread(move |modules| {
@@ -428,18 +412,10 @@ fn remove_service(server_id: u8, service_handle: u16) {
 }
 
 fn is_connection_isolated(conn_id: u16) -> bool {
-    if !rust_event_loop_is_enabled() {
-        return false;
-    }
-
     with_arbiter(|arbiter| arbiter.is_connection_isolated(ConnectionId(conn_id).get_tcb_idx()))
 }
 
 fn send_response(_server_id: u8, conn_id: u16, trans_id: u32, status: u8, value: &[u8]) {
-    if !rust_event_loop_is_enabled() {
-        return;
-    }
-
     // TODO(aryarahul): fixup error codes to allow app-specific values (i.e. don't
     // make it an enum in PDL)
     let value = if status == 0 {
@@ -463,10 +439,6 @@ fn send_response(_server_id: u8, conn_id: u16, trans_id: u32, status: u8, value:
 }
 
 fn send_indication(_server_id: u8, handle: u16, conn_id: u16, value: &[u8]) {
-    if !rust_event_loop_is_enabled() {
-        return;
-    }
-
     let handle = AttHandle(handle);
     let conn_id = ConnectionId(conn_id);
     let value = AttAttributeDataChild::RawData(value.into());
@@ -488,10 +460,6 @@ fn send_indication(_server_id: u8, handle: u16, conn_id: u16, value: &[u8]) {
 }
 
 fn associate_server_with_advertiser(server_id: u8, advertiser_id: u8) {
-    if !rust_event_loop_is_enabled() {
-        return;
-    }
-
     let server_id = ServerId(server_id);
     let advertiser_id = AdvertiserId(advertiser_id);
     do_in_rust_thread(move |modules| {
@@ -503,10 +471,6 @@ fn associate_server_with_advertiser(server_id: u8, advertiser_id: u8) {
 }
 
 fn clear_advertiser(advertiser_id: u8) {
-    if !rust_event_loop_is_enabled() {
-        return;
-    }
-
     let advertiser_id = AdvertiserId(advertiser_id);
 
     do_in_rust_thread(move |modules| {
