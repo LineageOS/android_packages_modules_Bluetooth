@@ -20,6 +20,10 @@ import static com.google.common.truth.Truth.assertThat;
 
 import android.bluetooth.BluetoothLeBroadcastMetadata;
 
+import com.google.common.primitives.Bytes;
+
+import java.util.Random;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -74,6 +78,62 @@ public class PublicBroadcastDataTest {
                 (byte) 0x02, // features, non-encrypted, standard quality prsent
                 (byte) 0x00,  // metaDataLength
         };
+        PublicBroadcastData dataNoMetaData =
+                PublicBroadcastData.parsePublicBroadcastData(serviceDataNoMetaData);
+        assertThat(dataNoMetaData.isEncrypted()).isFalse();
+        assertThat(dataNoMetaData.getAudioConfigQuality()).isEqualTo(1);
+        assertThat(dataNoMetaData.getMetadataLength()).isEqualTo(0);
+        assertThat(dataNoMetaData.getMetadata()).isEqualTo(new byte[] {});
+    }
+
+    @Test
+    public void parsePublicBroadcastData_longMetaData() {
+        assertThat(PublicBroadcastData.parsePublicBroadcastData(null)).isNull();
+
+        int metaDataLength = 142;
+        byte[] serviceDataInvalid =
+                new byte[] {
+                    (byte) 0x02, // features, non-encrypted, standard quality prsent
+                };
+        assertThat(PublicBroadcastData.parsePublicBroadcastData(serviceDataInvalid)).isNull();
+
+        byte[] serviceDataInvalid2 =
+                new byte[] {
+                    (byte) 0x02, // features, non-encrypted, standard quality prsent
+                    (byte) 0x03, // metaDataLength
+                    (byte) 0x06,
+                    (byte) 0x07, // invalid metaData
+                };
+        assertThat(PublicBroadcastData.parsePublicBroadcastData(serviceDataInvalid2)).isNull();
+
+        byte[] serviceData =
+                new byte[] {
+                    (byte) 0x07, // features
+                    (byte) metaDataLength, // metaDataLength
+                };
+
+        byte[] metadataHeader =
+                new byte[] {
+                    (byte) (metaDataLength - 1), // length 141
+                    (byte) 0xFF
+                };
+
+        byte[] metadataPayload = new byte[140];
+        new Random().nextBytes(metadataPayload);
+
+        PublicBroadcastData data =
+                PublicBroadcastData.parsePublicBroadcastData(
+                        Bytes.concat(serviceData, metadataHeader, metadataPayload));
+        assertThat(data.isEncrypted()).isTrue();
+        assertThat(data.getAudioConfigQuality()).isEqualTo(3);
+        assertThat(data.getMetadataLength()).isEqualTo(metaDataLength);
+        assertThat(data.getMetadata()).isEqualTo(Bytes.concat(metadataHeader, metadataPayload));
+
+        byte[] serviceDataNoMetaData =
+                new byte[] {
+                    (byte) 0x02, // features, non-encrypted, standard quality prsent
+                    (byte) 0x00, // metaDataLength
+                };
         PublicBroadcastData dataNoMetaData =
                 PublicBroadcastData.parsePublicBroadcastData(serviceDataNoMetaData);
         assertThat(dataNoMetaData.isEncrypted()).isFalse();
