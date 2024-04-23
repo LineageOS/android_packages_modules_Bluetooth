@@ -200,7 +200,7 @@ public class HidHostService extends ProfileService {
     }
 
     private byte[] getByteAddress(BluetoothDevice device, int transport) {
-        ParcelUuid[] uuids = device.getUuids();
+        ParcelUuid[] uuids = mAdapterService.getRemoteUuids(device);
 
         if (!Flags.allowSwitchingHidAndHogp()) {
             boolean hogpSupported = Utils.arrayContains(uuids, BluetoothUuid.HOGP);
@@ -1106,12 +1106,12 @@ public class HidHostService extends ProfileService {
     boolean setPreferredTransport(BluetoothDevice device, int transport) {
         Log.i(TAG, "setPreferredTransport: device=" + device + " transport=" + transport);
 
-        if (device.getBondState() != BluetoothDevice.BOND_BONDED) {
+        if (mAdapterService.getBondState(device) != BluetoothDevice.BOND_BONDED) {
             Log.w(TAG, "Device " + device + " not bonded");
             return false;
         }
 
-        ParcelUuid[] uuids = device.getUuids();
+        ParcelUuid[] uuids = mAdapterService.getRemoteUuids(device);
         boolean hidSupported = Utils.arrayContains(uuids, BluetoothUuid.HID);
         boolean hogpSupported = Utils.arrayContains(uuids, BluetoothUuid.HOGP);
         boolean headtrackerSupported =
