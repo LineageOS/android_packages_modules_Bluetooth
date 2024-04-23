@@ -56,7 +56,7 @@ bool CounterMetrics::CacheCount(int32_t key, int64_t count) {
     return false;
   }
   if (count <= 0) {
-    log::warn("count is not larger than 0. count: {}, key: {}", std::to_string(count), key);
+    log::warn("count is not larger than 0. count: {}, key: {}", count, key);
     return false;
   }
   int64_t total = 0;
@@ -65,11 +65,7 @@ bool CounterMetrics::CacheCount(int32_t key, int64_t count) {
     total = counters_[key];
   }
   if (LLONG_MAX - total < count) {
-    log::warn(
-        "Counter metric overflows. count {} current total: {} key: {}",
-        std::to_string(count),
-        std::to_string(total),
-        key);
+    log::warn("Counter metric overflows. count {} current total: {} key: {}", count, total, key);
     counters_[key] = LLONG_MAX;
     return false;
   }
@@ -83,7 +79,7 @@ bool CounterMetrics::Count(int32_t key, int64_t count) {
     return false;
   }
   if (count <= 0) {
-    log::warn("count is not larger than 0. count: {}, key: {}", std::to_string(count), key);
+    log::warn("count is not larger than 0. count: {}, key: {}", count, key);
     return false;
   }
   os::LogMetricBluetoothCodePathCounterMetrics(key, count);

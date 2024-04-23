@@ -1034,7 +1034,7 @@ bool L2CA_SetAclPriority(const RawAddress& bd_addr, tL2CAP_PRIORITY priority) {
  *
  ******************************************************************************/
 bool L2CA_SetAclLatency(const RawAddress& bd_addr, tL2CAP_LATENCY latency) {
-  log::info("BDA: {}, latency: {}", bd_addr, std::to_string(latency));
+  log::info("BDA: {}, latency: {}", bd_addr, latency);
   return l2cu_set_acl_latency(bd_addr, latency);
 }
 

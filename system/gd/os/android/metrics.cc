@@ -139,7 +139,7 @@ void LogMetricA2dpAudioUnderrunEvent(
     log::warn(
         "Failed for {}, encoding_interval_nanos {}, num_missing_pcm_bytes {}, error {}",
         address,
-        std::to_string(encoding_interval_nanos),
+        encoding_interval_nanos,
         num_missing_pcm_bytes,
         ret);
   }
@@ -170,7 +170,7 @@ void LogMetricA2dpAudioOverrunEvent(
         "Failed to log for {}, encoding_interval_nanos {}, num_dropped_buffers {}, "
         "num_dropped_encoded_frames {}, num_dropped_encoded_bytes {}, error {}",
         address,
-        std::to_string(encoding_interval_nanos),
+        encoding_interval_nanos,
         num_dropped_buffers,
         num_dropped_encoded_frames,
         num_dropped_encoded_bytes,
@@ -332,7 +332,7 @@ void LogMetricClassicPairingEvent(
         common::ToHexString(hci_event),
         common::ToHexString(cmd_status),
         common::ToHexString(reason_code),
-        std::to_string(event_value),
+        event_value,
         ret);
   }
 
@@ -398,8 +398,8 @@ void LogMetricSocketConnectionState(
         port,
         type,
         connection_state,
-        std::to_string(tx_bytes),
-        std::to_string(rx_bytes),
+        tx_bytes,
+        rx_bytes,
         uid,
         server_port,
         socket_role,
@@ -477,7 +477,7 @@ void LogMetricBluetoothLocalSupportedFeatures(uint32_t page_num, uint64_t featur
     log::warn(
         "Failed for LogMetricBluetoothLocalSupportedFeatures, page_num {}, features {}, error {}",
         page_num,
-        std::to_string(features),
+        features,
         ret);
   }
 }
@@ -544,7 +544,7 @@ void LogMetricBluetoothRemoteSupportedFeatures(
         "connection_handle {}, error {}",
         metric_id,
         page,
-        std::to_string(features),
+        features,
         connection_handle,
         ret);
   }
@@ -553,7 +553,7 @@ void LogMetricBluetoothRemoteSupportedFeatures(
 void LogMetricBluetoothCodePathCounterMetrics(int32_t key, int64_t count) {
   int ret = stats_write(BLUETOOTH_CODE_PATH_COUNTER, key, count);
   if (ret < 0) {
-    log::warn("Failed counter metrics for {}, count {}, error {}", key, std::to_string(count), ret);
+    log::warn("Failed counter metrics for {}, count {}, error {}", key, count, ret);
   }
 }
 
