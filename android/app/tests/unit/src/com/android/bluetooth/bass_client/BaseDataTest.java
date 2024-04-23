@@ -20,6 +20,10 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
 
+import com.google.common.primitives.Bytes;
+
+import java.util.Random;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
@@ -108,6 +112,80 @@ public class BaseDataTest {
         assertThat(level.codecId).isEqualTo(new byte[] {0x00, 0x00, 0x00, 0x00, 0x00});
         assertThat(level.codecConfigLength).isEqualTo(2);
         assertThat(level.metaDataLength).isEqualTo(3);
+
+        assertThat(data.getLevelThree().size()).isEqualTo(1);
+        level = data.getLevelThree().get(0);
+        assertThat(level.index).isEqualTo(4);
+        assertThat(level.codecConfigLength).isEqualTo(3);
+    }
+
+    @Test
+    public void parseBaseData_longMetaData() {
+        assertThrows(IllegalArgumentException.class, () -> BaseData.parseBaseData(null));
+
+        int metaDataLength = 142;
+
+        byte[] serviceDataLevel1 =
+                new byte[] {
+                    // LEVEL 1
+                    (byte) 0x01,
+                    (byte) 0x02,
+                    (byte) 0x03, // presentationDelay
+                    (byte) 0x01 // numSubGroups
+                };
+
+        byte[] serviceDataLevel2 =
+                new byte[] {
+                    // LEVEL 2
+                    (byte) 0x01, // numSubGroups
+                    (byte) 0x00,
+                    (byte) 0x00,
+                    (byte) 0x00,
+                    (byte) 0x00,
+                    (byte) 0x00, // UNKNOWN_CODEC
+                    (byte) 0x02, // codecConfigLength
+                    (byte) 0x01,
+                    (byte) 'A', // codecConfigInfo
+                    (byte) metaDataLength, // metaDataLength 142
+                };
+
+        byte[] metadataHeader =
+                new byte[] {
+                    (byte) (metaDataLength - 1), // length 141
+                    (byte) 0xFF
+                };
+
+        byte[] metadataPayload = new byte[140];
+        new Random().nextBytes(metadataPayload);
+
+        byte[] serviceDataLevel3 =
+                new byte[] {
+                    // LEVEL 3
+                    (byte) 0x04, // index
+                    (byte) 0x03, // codecConfigLength
+                    (byte) 0x02,
+                    (byte) 'B',
+                    (byte) 'C' // codecConfigInfo
+                };
+
+        BaseData data =
+                BaseData.parseBaseData(
+                        Bytes.concat(
+                                serviceDataLevel1,
+                                Bytes.concat(serviceDataLevel2, metadataHeader, metadataPayload),
+                                serviceDataLevel3));
+        BaseData.BaseInformation level = data.getLevelOne();
+        assertThat(level.presentationDelay).isEqualTo(new byte[] {0x01, 0x02, 0x03});
+        assertThat(level.numSubGroups).isEqualTo(1);
+
+        assertThat(data.getLevelTwo().size()).isEqualTo(1);
+        level = data.getLevelTwo().get(0);
+
+        assertThat(level.numSubGroups).isEqualTo(1);
+        assertThat(level.codecId).isEqualTo(new byte[] {0x00, 0x00, 0x00, 0x00, 0x00});
+        assertThat(level.codecConfigLength).isEqualTo(2);
+        assertThat(level.metaDataLength).isEqualTo(metaDataLength);
+        assertThat(level.metaData).isEqualTo(Bytes.concat(metadataHeader, metadataPayload));
 
         assertThat(data.getLevelThree().size()).isEqualTo(1);
         level = data.getLevelThree().get(0);

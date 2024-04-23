@@ -67,9 +67,9 @@ class BaseData {
     public static class BaseInformation {
         public byte[] presentationDelay = new byte[3];
         public byte[] codecId = new byte[5];
-        public byte codecConfigLength;
+        public int codecConfigLength;
         public byte[] codecConfigInfo;
-        public byte metaDataLength;
+        public int metaDataLength;
         public byte[] metaData;
         public byte numSubGroups;
         public byte[] bisIndices;
@@ -126,12 +126,12 @@ class BaseData {
                 log("codecConfigLength: " + codecConfigLength);
                 log("subGroupId: " + subGroupId);
             }
-            if (codecConfigLength != (byte) 0) {
+            if (codecConfigLength != 0) {
                 log("codecConfigInfo: " + Arrays.toString(codecConfigInfo));
             }
             if (level == 2) {
                 log("metaDataLength: " + metaDataLength);
-                if (metaDataLength != (byte) 0) {
+                if (metaDataLength != 0) {
                     log("metaData: " + Arrays.toString(metaData));
                 }
                 if (level == 1 || level == 2) {
@@ -250,18 +250,16 @@ class BaseData {
                     0, METADATA_CODEC_LENGTH);
             offset += METADATA_CODEC_LENGTH;
         }
-        node.codecConfigLength = serviceData[offset++];
+        node.codecConfigLength = serviceData[offset++] & 0xff;
         if (node.codecConfigLength != 0) {
-            node.codecConfigInfo = new byte[(int) node.codecConfigLength];
-            System.arraycopy(serviceData, offset, node.codecConfigInfo,
-                    0, (int) node.codecConfigLength);
+            node.codecConfigInfo = new byte[node.codecConfigLength];
+            System.arraycopy(serviceData, offset, node.codecConfigInfo, 0, node.codecConfigLength);
             offset += node.codecConfigLength;
         }
-        node.metaDataLength = serviceData[offset++];
+        node.metaDataLength = serviceData[offset++] & 0xff;
         if (node.metaDataLength != 0) {
-            node.metaData = new byte[(int) node.metaDataLength];
-            System.arraycopy(serviceData, offset,
-                    node.metaData, 0, (int) node.metaDataLength);
+            node.metaData = new byte[node.metaDataLength];
+            System.arraycopy(serviceData, offset, node.metaData, 0, node.metaDataLength);
             offset += node.metaDataLength;
         }
         return new Pair<BaseInformation, Integer>(node, offset);
@@ -273,11 +271,10 @@ class BaseData {
         BaseInformation node = new BaseInformation();
         node.level = METADATA_LEVEL3;
         node.index = serviceData[offset++];
-        node.codecConfigLength = serviceData[offset++];
+        node.codecConfigLength = serviceData[offset++] & 0xff;
         if (node.codecConfigLength != 0) {
-            node.codecConfigInfo = new byte[(int) node.codecConfigLength];
-            System.arraycopy(serviceData, offset,
-                    node.codecConfigInfo, 0, (int) node.codecConfigLength);
+            node.codecConfigInfo = new byte[node.codecConfigLength];
+            System.arraycopy(serviceData, offset, node.codecConfigInfo, 0, node.codecConfigLength);
             offset += node.codecConfigLength;
         }
         return new Pair<BaseInformation, Integer>(node, offset);
