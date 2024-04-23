@@ -856,13 +856,12 @@ static void btu_hcif_esco_connection_comp_evt(const uint8_t* p) {
   STREAM_SKIP_UINT8(p);   // air_mode
 
   handle = HCID_GET_HANDLE(handle);
-  log::assert_that(handle <= HCI_HANDLE_MAX,
-                   "Received eSCO connection complete event with invalid "
-                   "handle: 0x{:X} that should be <= 0x{:X}",
-                   handle, HCI_HANDLE_MAX);
-
   data.bd_addr = bda;
   if (status == HCI_SUCCESS) {
+    log::assert_that(handle <= HCI_HANDLE_MAX,
+                     "Received eSCO connection complete event with invalid "
+                     "handle: 0x{:X} that should be <= 0x{:X}",
+                     handle, HCI_HANDLE_MAX);
     btm_sco_connected(bda, handle, &data);
   } else {
     btm_sco_connection_failed(static_cast<tHCI_STATUS>(status), bda, handle,
