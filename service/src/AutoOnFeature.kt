@@ -142,6 +142,7 @@ public fun setUserEnabled(
     Counter.logIncrement(
         if (status) "bluetooth.value_auto_on_enabled" else "bluetooth.value_auto_on_disabled"
     )
+    Timer.resetStorage(context.contentResolver)
     resetAutoOnTimerForUser(looper, context, state, callback_on)
 }
 
