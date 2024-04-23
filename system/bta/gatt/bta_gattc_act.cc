@@ -709,10 +709,16 @@ void bta_gattc_disc_close(tBTA_GATTC_CLCB* p_clcb,
                           const tBTA_GATTC_DATA* p_data) {
   log::verbose("Discovery cancel conn_id={}", loghex(p_clcb->bta_conn_id));
 
-  if (p_clcb->disc_active)
+  if (p_clcb->disc_active ||
+      (IS_FLAG_ENABLED(gatt_rediscover_on_canceled) &&
+       (p_clcb->request_during_discovery ==
+            BTA_GATTC_DISCOVER_REQ_READ_DB_HASH ||
+        p_clcb->request_during_discovery ==
+            BTA_GATTC_DISCOVER_REQ_READ_DB_HASH_FOR_SVC_CHG))) {
     bta_gattc_reset_discover_st(p_clcb->p_srcb, GATT_ERROR);
-  else
+  } else {
     p_clcb->state = BTA_GATTC_CONN_ST;
+  }
 
   // This function only gets called as the result of a BTA_GATTC_API_CLOSE_EVT
   // while in the BTA_GATTC_DISCOVER_ST state. Once the state changes, the
