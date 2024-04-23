@@ -741,67 +741,73 @@ static void bta_dm_execute_queued_discovery_request() {
  ******************************************************************************/
 static void bta_dm_find_services(const RawAddress& bd_addr) {
   while (bta_dm_discovery_cb.service_index < BTA_MAX_SERVICE_ID) {
-    Uuid uuid = Uuid::kEmpty;
     if (bta_dm_discovery_cb.services_to_search &
         (tBTA_SERVICE_MASK)(BTA_SERVICE_ID_TO_SERVICE_MASK(
             bta_dm_discovery_cb.service_index))) {
-      bta_dm_discovery_cb.p_sdp_db =
-          (tSDP_DISCOVERY_DB*)osi_malloc(BTA_DM_SDP_DB_SIZE);
-
-      /* try to search all services by search based on L2CAP UUID */
-      log::info("services_to_search={:08x}",
-                bta_dm_discovery_cb.services_to_search);
-      if (bta_dm_discovery_cb.services_to_search & BTA_RES_SERVICE_MASK) {
-        uuid = Uuid::From16Bit(bta_service_id_to_uuid_lkup_tbl[0]);
-        bta_dm_discovery_cb.services_to_search &= ~BTA_RES_SERVICE_MASK;
-      } else {
-        uuid = Uuid::From16Bit(UUID_PROTOCOL_L2CAP);
-        bta_dm_discovery_cb.services_to_search = 0;
-      }
-
-      log::info("search UUID = {}", uuid.ToString());
-      get_legacy_stack_sdp_api()->service.SDP_InitDiscoveryDb(
-          bta_dm_discovery_cb.p_sdp_db, BTA_DM_SDP_DB_SIZE, 1, &uuid, 0, NULL);
-
-      memset(g_disc_raw_data_buf, 0, sizeof(g_disc_raw_data_buf));
-      bta_dm_discovery_cb.p_sdp_db->raw_data = g_disc_raw_data_buf;
-
-      bta_dm_discovery_cb.p_sdp_db->raw_size = MAX_DISC_RAW_DATA_BUF;
-
-      if (!get_legacy_stack_sdp_api()
-               ->service.SDP_ServiceSearchAttributeRequest(
-                   bd_addr, bta_dm_discovery_cb.p_sdp_db,
-                   &bta_dm_sdp_callback)) {
-        /*
-         * If discovery is not successful with this device, then
-         * proceed with the next one.
-         */
-        osi_free_and_reset((void**)&bta_dm_discovery_cb.p_sdp_db);
-        bta_dm_discovery_cb.service_index = BTA_MAX_SERVICE_ID;
-
-      } else {
-        if (uuid == Uuid::From16Bit(UUID_PROTOCOL_L2CAP)) {
-          if (!is_sdp_pbap_pce_disabled(bd_addr)) {
-            log::debug("SDP search for PBAP Client");
-            BTA_SdpSearch(bd_addr, Uuid::From16Bit(UUID_SERVCLASS_PBAP_PCE));
-          }
-        }
-        bta_dm_discovery_cb.service_index++;
-        return;
-      }
+      break;
     }
-
     bta_dm_discovery_cb.service_index++;
   }
 
   /* no more services to be discovered */
   if (bta_dm_discovery_cb.service_index >= BTA_MAX_SERVICE_ID) {
+    log::info("SDP - no more services to discover");
     bta_dm_disc_sm_execute(BTA_DM_DISCOVERY_RESULT_EVT,
                            std::make_unique<tBTA_DM_MSG>(tBTA_DM_SVC_RES{
                                .bd_addr = bta_dm_discovery_cb.peer_bdaddr,
                                .services = bta_dm_discovery_cb.services_found,
                                .result = BTA_SUCCESS}));
+    return;
   }
+
+  /* try to search all services by search based on L2CAP UUID */
+  log::info("services_to_search={:08x}",
+            bta_dm_discovery_cb.services_to_search);
+  Uuid uuid = Uuid::kEmpty;
+  if (bta_dm_discovery_cb.services_to_search & BTA_RES_SERVICE_MASK) {
+    uuid = Uuid::From16Bit(bta_service_id_to_uuid_lkup_tbl[0]);
+    bta_dm_discovery_cb.services_to_search &= ~BTA_RES_SERVICE_MASK;
+  } else {
+    uuid = Uuid::From16Bit(UUID_PROTOCOL_L2CAP);
+    bta_dm_discovery_cb.services_to_search = 0;
+  }
+
+  bta_dm_discovery_cb.p_sdp_db =
+      (tSDP_DISCOVERY_DB*)osi_malloc(BTA_DM_SDP_DB_SIZE);
+
+  log::info("search UUID = {}", uuid.ToString());
+  get_legacy_stack_sdp_api()->service.SDP_InitDiscoveryDb(
+      bta_dm_discovery_cb.p_sdp_db, BTA_DM_SDP_DB_SIZE, 1, &uuid, 0, NULL);
+
+  memset(g_disc_raw_data_buf, 0, sizeof(g_disc_raw_data_buf));
+  bta_dm_discovery_cb.p_sdp_db->raw_data = g_disc_raw_data_buf;
+
+  bta_dm_discovery_cb.p_sdp_db->raw_size = MAX_DISC_RAW_DATA_BUF;
+
+  if (!get_legacy_stack_sdp_api()->service.SDP_ServiceSearchAttributeRequest(
+          bd_addr, bta_dm_discovery_cb.p_sdp_db, &bta_dm_sdp_callback)) {
+    /*
+     * If discovery is not successful with this device, then
+     * proceed with the next one.
+     */
+    osi_free_and_reset((void**)&bta_dm_discovery_cb.p_sdp_db);
+    bta_dm_discovery_cb.service_index = BTA_MAX_SERVICE_ID;
+    log::info("SDP not successful");
+    bta_dm_disc_sm_execute(BTA_DM_DISCOVERY_RESULT_EVT,
+                           std::make_unique<tBTA_DM_MSG>(tBTA_DM_SVC_RES{
+                               .bd_addr = bta_dm_discovery_cb.peer_bdaddr,
+                               .services = bta_dm_discovery_cb.services_found,
+                               .result = BTA_SUCCESS}));
+    return;
+  }
+
+  if (uuid == Uuid::From16Bit(UUID_PROTOCOL_L2CAP)) {
+    if (!is_sdp_pbap_pce_disabled(bd_addr)) {
+      log::debug("SDP search for PBAP Client");
+      BTA_SdpSearch(bd_addr, Uuid::From16Bit(UUID_SERVCLASS_PBAP_PCE));
+    }
+  }
+  bta_dm_discovery_cb.service_index++;
 }
 
 /*******************************************************************************
