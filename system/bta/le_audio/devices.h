@@ -180,7 +180,8 @@ class LeAudioDevice {
       const set_configurations::AudioSetConfiguration* audio_set_conf) const;
   bool ConfigureAses(
       const set_configurations::AudioSetConfiguration* audio_set_conf,
-      uint8_t direction, types::LeAudioContextType context_type,
+      uint8_t group_size, uint8_t direction,
+      types::LeAudioContextType context_type,
       uint8_t* number_of_already_active_group_ase,
       types::AudioLocations& group_audio_locations_out,
       const types::AudioContexts& metadata_context_types,

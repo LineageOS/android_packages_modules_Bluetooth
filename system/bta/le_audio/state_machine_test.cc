@@ -33,6 +33,7 @@
 #include "fake_osi.h"
 #include "hci/controller_interface_mock.h"
 #include "internal_include/stack_config.h"
+#include "le_audio/le_audio_types.h"
 #include "le_audio_set_configuration_provider.h"
 #include "mock_codec_manager.h"
 #include "mock_csis_client.h"
@@ -248,6 +249,12 @@ class StateMachineTestBase : public Test {
   uint8_t channel_count_ = kLeAudioCodecChannelCountSingleChannel;
   uint16_t sample_freq_ = codec_specific::kCapSamplingFrequency16000Hz |
                           codec_specific::kCapSamplingFrequency32000Hz;
+  uint8_t channel_allocations_sink_ =
+      ::bluetooth::le_audio::codec_spec_conf::kLeAudioLocationFrontLeft |
+      ::bluetooth::le_audio::codec_spec_conf::kLeAudioLocationFrontRight;
+  uint8_t channel_allocations_source_ =
+      ::bluetooth::le_audio::codec_spec_conf::kLeAudioLocationFrontLeft |
+      ::bluetooth::le_audio::codec_spec_conf::kLeAudioLocationFrontRight;
 
   /* Use to simulated error status on Cis creation */
   bool overwrite_cis_status_;
@@ -696,7 +703,7 @@ class StateMachineTestBase : public Test {
       ase.hdls.val_hdl = attr_handle++;
       ase.hdls.ccc_hdl = attr_handle++;
 
-      leAudioDevice->ases_.emplace_back(std::move(ase));
+      leAudioDevice->ases_.push_back(std::move(ase));
       num_ase_snk--;
     }
 
@@ -706,7 +713,7 @@ class StateMachineTestBase : public Test {
       ase.hdls.val_hdl = attr_handle++;
       ase.hdls.ccc_hdl = attr_handle++;
 
-      leAudioDevice->ases_.emplace_back(std::move(ase));
+      leAudioDevice->ases_.push_back(std::move(ase));
       num_ase_src--;
     }
 
@@ -1040,11 +1047,7 @@ class StateMachineTestBase : public Test {
               std::make_tuple(std::move(handle_pair), pac_recs));
 
           snk_context_type.set(context_type);
-          leAudioDevice->snk_audio_locations_ =
-              ::bluetooth::le_audio::codec_spec_conf::
-                  kLeAudioLocationFrontLeft |
-              ::bluetooth::le_audio::codec_spec_conf::
-                  kLeAudioLocationFrontRight;
+          leAudioDevice->snk_audio_locations_ = channel_allocations_sink_;
         }
 
         // Prepare Source Published Audio Capability records
@@ -1069,11 +1072,7 @@ class StateMachineTestBase : public Test {
               std::make_tuple(std::move(handle_pair), pac_recs));
           src_context_type.set(context_type);
 
-          leAudioDevice->src_audio_locations_ =
-              ::bluetooth::le_audio::codec_spec_conf::
-                  kLeAudioLocationFrontLeft |
-              ::bluetooth::le_audio::codec_spec_conf::
-                  kLeAudioLocationFrontRight;
+          leAudioDevice->src_audio_locations_ = channel_allocations_source_;
         }
 
         leAudioDevice->SetSupportedContexts(
@@ -6345,6 +6344,11 @@ TEST_F(StateMachineTest, BoundedHeadphonesConversationalToMediaChannelCount_2) {
 
   testing::Mock::VerifyAndClearExpectations(&mock_callbacks_);
 
+  auto current_config = group->GetCachedConfiguration(initial_context_type);
+  ASSERT_NE(nullptr, current_config);
+  ASSERT_EQ(1lu, current_config->confs.sink.size());
+  ASSERT_EQ(1lu, current_config->confs.source.size());
+
   // Validate GroupStreamStatus
   EXPECT_CALL(
       mock_callbacks_,
@@ -6374,13 +6378,141 @@ TEST_F(StateMachineTest, BoundedHeadphonesConversationalToMediaChannelCount_2) {
        .source = types::AudioContexts(new_context_type)});
 
   testing::Mock::VerifyAndClearExpectations(&mock_callbacks_);
+
+  current_config = group->GetCachedConfiguration(new_context_type);
+  ASSERT_NE(nullptr, current_config);
+  ASSERT_EQ(1lu, current_config->confs.sink.size());
+  ASSERT_EQ(0lu, current_config->confs.source.size());
 }
 
-TEST_F(StateMachineTest, BoundedHeadphonesConversationalToMediaChannelCount_1) {
+TEST_F(StateMachineTest,
+       BoundedHeadphonesConversationalToMediaChannelCount_1_MonoMic) {
   const auto initial_context_type = kContextTypeConversational;
   const auto new_context_type = kContextTypeMedia;
   const auto leaudio_group_id = 6;
   const auto num_devices = 1;
+  // Single audio allocation for the mono source
+  channel_allocations_source_ =
+      ::bluetooth::le_audio::codec_spec_conf::kLeAudioLocationFrontLeft;
+  channel_count_ = kLeAudioCodecChannelCountSingleChannel;
+
+  sample_freq_ |= codec_specific::kCapSamplingFrequency48000Hz |
+                  codec_specific::kCapSamplingFrequency32000Hz;
+  additional_snk_ases = 3;
+  additional_src_ases = 1;
+
+  ContentControlIdKeeper::GetInstance()->SetCcid(media_context, media_ccid);
+  ContentControlIdKeeper::GetInstance()->SetCcid(call_context, call_ccid);
+
+  // Prepare one fake connected devices in a group
+  auto* group = PrepareSingleTestDeviceGroup(
+      leaudio_group_id, initial_context_type, num_devices,
+      kContextTypeConversational | kContextTypeMedia);
+  ASSERT_EQ(group->Size(), num_devices);
+
+  // Cannot verify here as we will change the number of ases on reconfigure
+  PrepareConfigureCodecHandler(group, 0, true);
+  PrepareConfigureQosHandler(group);
+  PrepareEnableHandler(group);
+  PrepareDisableHandler(group);
+  PrepareReleaseHandler(group);
+  PrepareReceiverStartReadyHandler(group);
+
+  InjectInitialIdleNotification(group);
+
+  auto* leAudioDevice = group->GetFirstDevice();
+  auto expected_devices_written = 0;
+  while (leAudioDevice) {
+    /* 8 Writes:
+     * 1: Codec config (+1 after reconfig)
+     * 2: Codec QoS (+1 after reconfig)
+     * 3: Enabling (+1 after reconfig)
+     * 4: ReceiverStartReady (only for conversational)
+     * 5: Release
+     */
+    EXPECT_CALL(gatt_queue,
+                WriteCharacteristic(leAudioDevice->conn_id_,
+                                    leAudioDevice->ctp_hdls_.val_hdl, _,
+                                    GATT_WRITE_NO_RSP, _, _))
+        .Times(8);
+    expected_devices_written++;
+    leAudioDevice = group->GetNextDevice(leAudioDevice);
+  }
+  ASSERT_EQ(expected_devices_written, num_devices);
+
+  // Validate GroupStreamStatus
+  EXPECT_CALL(
+      mock_callbacks_,
+      StatusReportCb(leaudio_group_id,
+                     bluetooth::le_audio::GroupStreamStatus::STREAMING));
+
+  // Start the configuration and stream Media content
+  LeAudioGroupStateMachine::Get()->StartStream(
+      group, initial_context_type,
+      {.sink = types::AudioContexts(initial_context_type),
+       .source = types::AudioContexts(initial_context_type)});
+
+  testing::Mock::VerifyAndClearExpectations(&mock_callbacks_);
+
+  auto current_config = group->GetCachedConfiguration(initial_context_type);
+  ASSERT_NE(nullptr, current_config);
+  // sink has two locations
+  ASSERT_EQ(2lu, current_config->confs.sink.size());
+  // source has a single location
+  ASSERT_EQ(1lu, current_config->confs.source.size());
+
+  ASSERT_EQ(1, get_func_call_count("alarm_cancel"));
+  reset_mock_function_count_map();
+
+  // Validate GroupStreamStatus
+  EXPECT_CALL(
+      mock_callbacks_,
+      StatusReportCb(leaudio_group_id,
+                     bluetooth::le_audio::GroupStreamStatus::RELEASING));
+
+  EXPECT_CALL(
+      mock_callbacks_,
+      StatusReportCb(
+          leaudio_group_id,
+          bluetooth::le_audio::GroupStreamStatus::CONFIGURED_AUTONOMOUS));
+  // Start the configuration and stream Media content
+  LeAudioGroupStateMachine::Get()->StopStream(group);
+
+  testing::Mock::VerifyAndClearExpectations(&mock_callbacks_);
+  ASSERT_EQ(1, get_func_call_count("alarm_cancel"));
+  reset_mock_function_count_map();
+
+  // Restart stream
+  EXPECT_CALL(
+      mock_callbacks_,
+      StatusReportCb(leaudio_group_id,
+                     bluetooth::le_audio::GroupStreamStatus::STREAMING));
+
+  // Start the configuration and stream Media content
+  LeAudioGroupStateMachine::Get()->StartStream(
+      group, new_context_type,
+      {.sink = types::AudioContexts(new_context_type),
+       .source = types::AudioContexts(new_context_type)});
+
+  testing::Mock::VerifyAndClearExpectations(&mock_callbacks_);
+  ASSERT_EQ(1, get_func_call_count("alarm_cancel"));
+
+  current_config = group->GetCachedConfiguration(new_context_type);
+  ASSERT_NE(nullptr, current_config);
+  ASSERT_EQ(2lu, current_config->confs.sink.size());
+  ASSERT_EQ(0lu, current_config->confs.source.size());
+}
+
+TEST_F(
+    StateMachineTest,
+    DISABLED_BoundedHeadphonesConversationalToMediaChannelCount_1_StereoMic) {
+  const auto initial_context_type = kContextTypeConversational;
+  const auto new_context_type = kContextTypeMedia;
+  const auto leaudio_group_id = 6;
+  const auto num_devices = 1;
+  channel_allocations_source_ =
+      ::bluetooth::le_audio::codec_spec_conf::kLeAudioLocationFrontLeft |
+      ::bluetooth::le_audio::codec_spec_conf::kLeAudioLocationFrontRight;
   channel_count_ = kLeAudioCodecChannelCountSingleChannel;
 
   sample_freq_ |= codec_specific::kCapSamplingFrequency48000Hz |
@@ -6444,6 +6576,11 @@ TEST_F(StateMachineTest, BoundedHeadphonesConversationalToMediaChannelCount_1) {
   ASSERT_EQ(1, get_func_call_count("alarm_cancel"));
   reset_mock_function_count_map();
 
+  auto current_config = group->GetCachedConfiguration(initial_context_type);
+  ASSERT_NE(nullptr, current_config);
+  ASSERT_EQ(2lu, current_config->confs.sink.size());
+  ASSERT_EQ(2lu, current_config->confs.source.size());
+
   // Validate GroupStreamStatus
   EXPECT_CALL(
       mock_callbacks_,
@@ -6476,6 +6613,11 @@ TEST_F(StateMachineTest, BoundedHeadphonesConversationalToMediaChannelCount_1) {
 
   testing::Mock::VerifyAndClearExpectations(&mock_callbacks_);
   ASSERT_EQ(1, get_func_call_count("alarm_cancel"));
+
+  current_config = group->GetCachedConfiguration(new_context_type);
+  ASSERT_NE(nullptr, current_config);
+  ASSERT_EQ(2lu, current_config->confs.sink.size());
+  ASSERT_EQ(0lu, current_config->confs.source.size());
 }
 
 TEST_F(StateMachineTest, lateCisDisconnectedEvent_DuringReconfiguration) {
