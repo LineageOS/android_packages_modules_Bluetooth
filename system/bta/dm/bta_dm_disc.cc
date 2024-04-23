@@ -778,17 +778,17 @@ static void bta_dm_find_services(const RawAddress& bd_addr) {
          */
         osi_free_and_reset((void**)&bta_dm_discovery_cb.p_sdp_db);
         bta_dm_discovery_cb.service_index = BTA_MAX_SERVICE_ID;
-
-      } else {
-        if (uuid == Uuid::From16Bit(UUID_PROTOCOL_L2CAP)) {
-          if (!is_sdp_pbap_pce_disabled(bd_addr)) {
-            log::debug("SDP search for PBAP Client");
-            BTA_SdpSearch(bd_addr, Uuid::From16Bit(UUID_SERVCLASS_PBAP_PCE));
-          }
-        }
-        bta_dm_discovery_cb.service_index++;
-        return;
+        break;
       }
+
+      if (uuid == Uuid::From16Bit(UUID_PROTOCOL_L2CAP)) {
+        if (!is_sdp_pbap_pce_disabled(bd_addr)) {
+          log::debug("SDP search for PBAP Client");
+          BTA_SdpSearch(bd_addr, Uuid::From16Bit(UUID_SERVCLASS_PBAP_PCE));
+        }
+      }
+      bta_dm_discovery_cb.service_index++;
+      return;
     }
 
     bta_dm_discovery_cb.service_index++;
