@@ -135,10 +135,10 @@ StkOrFailure PairingHandlerLe::DoLegacyStage2(const InitialInformations& i, cons
   if (IAmCentral(i)) {
     mrand = GenerateRandom<16>();
 
-    // log::info("{} tk = {}", (IAmCentral(i)), base::HexEncode(tk.data(), tk.size()));
-    // log::info("{} mrand = {}", (IAmCentral(i)), base::HexEncode(mrand.data(), mrand.size()));
-    // log::info("{} pres = {}", (IAmCentral(i)), base::HexEncode(pres.data(), pres.size()));
-    // log::info("{} preq = {}", (IAmCentral(i)), base::HexEncode(preq.data(), preq.size()));
+    // log::info("{} tk = {}", IAmCentral(i), base::HexEncode(tk.data(), tk.size()));
+    // log::info("{} mrand = {}", IAmCentral(i), base::HexEncode(mrand.data(), mrand.size()));
+    // log::info("{} pres = {}", IAmCentral(i), base::HexEncode(pres.data(), pres.size()));
+    // log::info("{} preq = {}", IAmCentral(i), base::HexEncode(preq.data(), preq.size()));
 
     Octet16 mconfirm = crypto_toolbox::c1(
         tk,
@@ -150,7 +150,7 @@ StkOrFailure PairingHandlerLe::DoLegacyStage2(const InitialInformations& i, cons
         (uint8_t)i.remote_connection_address.GetAddressType(),
         i.remote_connection_address.GetAddress().data());
 
-    // log::info("{} mconfirm = {}", (IAmCentral(i)), base::HexEncode(mconfirm.data(),
+    // log::info("{} mconfirm = {}", IAmCentral(i), base::HexEncode(mconfirm.data(),
     // mconfirm.size()));
 
     log::info("Central sends Mconfirm");
@@ -173,7 +173,7 @@ StkOrFailure PairingHandlerLe::DoLegacyStage2(const InitialInformations& i, cons
     }
     srand = std::get<PairingRandomView>(random_pkt).GetRandomValue();
 
-    // log::info("{} srand = {}", (IAmCentral(i)), base::HexEncode(srand.data(), srand.size()));
+    // log::info("{} srand = {}", IAmCentral(i), base::HexEncode(srand.data(), srand.size()));
 
     Octet16 sconfirm_generated = crypto_toolbox::c1(
         tk,

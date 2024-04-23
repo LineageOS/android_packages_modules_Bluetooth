@@ -973,7 +973,7 @@ struct eatt_impl {
     }
 
     log::info("Device {}, role {}", bd_addr,
-              (role == HCI_ROLE_CENTRAL ? "central" : "peripheral"));
+              role == HCI_ROLE_CENTRAL ? "central" : "peripheral");
 
     if (eatt_dev) {
       /* We are reconnecting device we know that support EATT.

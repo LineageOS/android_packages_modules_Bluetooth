@@ -1657,7 +1657,7 @@ void L2CA_SetMediaStreamChannel(uint16_t local_media_cid, bool status) {
   }
 
   log::debug("local_media_cid={}, status={}", local_media_cid,
-             (status ? "add" : "remove"));
+             status ? "add" : "remove");
 
   if (status) {
     for (i = 0; i < MAX_ACTIVE_AVDT_CONN; i++) {

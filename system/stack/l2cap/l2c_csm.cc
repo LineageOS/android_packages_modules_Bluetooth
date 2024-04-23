@@ -1017,8 +1017,7 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, tL2CEVT event, void* p_data) {
       cfg_result = l2cu_process_peer_cfg_req(p_ccb, p_cfg);
       if (cfg_result == L2CAP_PEER_CFG_OK) {
         log::debug("Calling Config_Req_Cb(), CID: 0x{:04x}, C-bit {}",
-                   p_ccb->local_cid,
-                   (p_cfg->flags & L2CAP_CFG_FLAGS_MASK_CONT));
+                   p_ccb->local_cid, p_cfg->flags & L2CAP_CFG_FLAGS_MASK_CONT);
         l2c_csm_send_config_rsp_ok(p_ccb,
                                    p_cfg->flags & L2CAP_CFG_FLAGS_MASK_CONT);
         if (p_ccb->config_done & OB_CFG_DONE) {

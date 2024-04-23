@@ -1009,7 +1009,7 @@ class CsisClientImpl : public CsisClient {
   void CsisLockCompleted(std::shared_ptr<CsisGroup>& csis_group, bool lock,
                          CsisGroupLockStatus status) {
     log::debug("group id: {}, target state {}", csis_group->GetGroupId(),
-               (lock ? "lock" : "unlock"));
+               lock ? "lock" : "unlock");
 
     NotifyGroupStatus(csis_group->GetGroupId(), lock, status,
                       std::move(csis_group->GetLockCb()));
@@ -1246,7 +1246,7 @@ class CsisClientImpl : public CsisClient {
 
 #ifdef CSIS_DEBUG
     auto irk = BTM_BleGetPeerIRK(address);
-    log::info("LTK {}", (base::HexEncode(*pltk.data(), 16)));
+    log::info("LTK {}", base::HexEncode(*pltk.data(), 16));
     log::info("IRK {}", base::HexEncode(*irk.data(), 16));
 #endif
 

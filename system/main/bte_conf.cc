@@ -85,7 +85,7 @@ void bte_load_did_conf(const char* p_path) {
     }
 
     log::info("Device ID record {} : {}", i,
-              (record.primary_record ? "primary" : "not primary"));
+              record.primary_record ? "primary" : "not primary");
     log::info("vendorId            = {:04x}", record.vendor);
     log::info("vendorIdSource      = {:04x}", record.vendor_id_source);
     log::info("product             = {:04x}", record.product);

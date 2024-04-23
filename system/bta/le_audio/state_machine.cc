@@ -1067,7 +1067,7 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
     if (value.size() > (leAudioDevice->mtu_ - 3)) {
       log::warn("{}, using long write procedure ({} > {})",
                 leAudioDevice->address_, static_cast<int>(value.size()),
-                (leAudioDevice->mtu_ - 3));
+                leAudioDevice->mtu_ - 3);
 
       /* Note, that this type is actually LONG WRITE.
        * Meaning all the Prepare Writes plus Execute is handled in the stack

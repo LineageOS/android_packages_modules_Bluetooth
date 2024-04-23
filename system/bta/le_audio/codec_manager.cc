@@ -819,7 +819,7 @@ struct codec_manager_impl {
                              le_audio::types::kLeAudioDirectionSource}) {
         log::debug(
             "dir: {}: number of confs {}:",
-            (direction == types::kLeAudioDirectionSink ? "sink" : "source"),
+            direction == types::kLeAudioDirectionSink ? "sink" : "source",
             (int)(adsp.confs.get(direction).size()));
         for (auto conf : adsp.confs.sink) {
           log::debug(

@@ -487,7 +487,7 @@ static void gatt_le_connect_cback(uint16_t chan, const RawAddress& bd_addr,
   }
 
   log::verbose("GATT   ATT protocol channel with BDA: {} is {}", bd_addr,
-               ((connected) ? "connected" : "disconnected"));
+               (connected) ? "connected" : "disconnected");
 
   p_srv_chg_clt = gatt_is_bda_in_the_srv_chg_clt_list(bd_addr);
   if (p_srv_chg_clt != NULL) {
@@ -603,7 +603,7 @@ static void read_dis_cback(const RawAddress& bd_addr, tDIS_VALUE* p_dis_value) {
         prop.val = p_dis_value->data_string[i];
         prop.len = strlen((char*)prop.val);
 
-        log::info("Device {}, model name: {}", bd_addr, ((char*)prop.val));
+        log::info("Device {}, model name: {}", bd_addr, (char*)prop.val);
 
         btif_storage_set_remote_device_property(&bd_addr, &prop);
         GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(

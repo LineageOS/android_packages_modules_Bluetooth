@@ -943,9 +943,9 @@ class HearingAidImpl : public HearingAid {
     bool side = capabilities & CAPABILITY_SIDE;
     bool standalone = capabilities & CAPABILITY_BINAURAL;
     bool csis_capable = capabilities & CAPABILITY_CSIS;
-    log::debug("capabilities: {}, {}, CSIS {}", (side ? "right" : "left"),
-               (standalone ? "binaural" : "monaural"),
-               (csis_capable ? "capable" : "not capable"));
+    log::debug("capabilities: {}, {}, CSIS {}", side ? "right" : "left",
+               standalone ? "binaural" : "monaural",
+               csis_capable ? "capable" : "not capable");
 
     if (capabilities & CAPABILITY_RESERVED) {
       log::warn("reserved capabilities are set");

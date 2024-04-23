@@ -784,8 +784,8 @@ size_t BluetoothAudioSinkClientInterface::ReadAudioData(uint8_t* p_buf,
       timeout_ms -= kDefaultDataReadPollIntervalMs;
       continue;
     } else {
-      log::warn("{}/{} no data {} ms", (len - total_read), len,
-                (kDefaultDataReadTimeoutMs - timeout_ms));
+      log::warn("{}/{} no data {} ms", len - total_read, len,
+                kDefaultDataReadTimeoutMs - timeout_ms);
       break;
     }
   } while (total_read < len);
@@ -794,7 +794,7 @@ size_t BluetoothAudioSinkClientInterface::ReadAudioData(uint8_t* p_buf,
           (kDefaultDataReadTimeoutMs - kDefaultDataReadPollIntervalMs) &&
       timeout_ms >= kDefaultDataReadPollIntervalMs) {
     log::verbose("underflow {} -> {} read {} ms", len, total_read,
-                 (kDefaultDataReadTimeoutMs - timeout_ms));
+                 kDefaultDataReadTimeoutMs - timeout_ms);
   } else {
     log::verbose("{} -> {} read", len, total_read);
   }
@@ -859,8 +859,8 @@ size_t BluetoothAudioSourceClientInterface::WriteAudioData(const uint8_t* p_buf,
       timeout_ms -= kDefaultDataWritePollIntervalMs;
       continue;
     } else {
-      log::warn("{}/{} no data {} ms", (len - total_written), len,
-                (kDefaultDataWriteTimeoutMs - timeout_ms));
+      log::warn("{}/{} no data {} ms", len - total_written, len,
+                kDefaultDataWriteTimeoutMs - timeout_ms);
       break;
     }
   } while (total_written < len);
@@ -869,7 +869,7 @@ size_t BluetoothAudioSourceClientInterface::WriteAudioData(const uint8_t* p_buf,
           (kDefaultDataWriteTimeoutMs - kDefaultDataWritePollIntervalMs) &&
       timeout_ms >= kDefaultDataWritePollIntervalMs) {
     log::verbose("underflow {} -> {} read {} ms", len, total_written,
-                 (kDefaultDataWriteTimeoutMs - timeout_ms));
+                 kDefaultDataWriteTimeoutMs - timeout_ms);
   } else {
     log::verbose("{} -> {} written", len, total_written);
   }

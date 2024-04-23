@@ -673,7 +673,7 @@ static void btif_a2dp_source_encoder_user_config_update_event(
       log::info(
           "peer_address={} state={} codec_preference=[{}] restart_output={}",
           peer_address, btif_a2dp_source_cb.StateStr(),
-          codec_user_config.ToString(), (restart_output ? "true" : "false"));
+          codec_user_config.ToString(), restart_output ? "true" : "false");
       break;
     }
   }
@@ -731,7 +731,7 @@ void btif_a2dp_source_on_stopped(tBTA_AV_SUSPEND* p_av_suspend) {
   if (p_av_suspend != nullptr && p_av_suspend->status != BTA_AV_SUCCESS) {
     log::error("A2DP stop failed: status={}, initiator={}",
                p_av_suspend->status,
-               (p_av_suspend->initiator ? "true" : "false"));
+               p_av_suspend->initiator ? "true" : "false");
     if (p_av_suspend->initiator) {
       if (bluetooth::audio::a2dp::is_hal_enabled()) {
         bluetooth::audio::a2dp::ack_stream_suspended(A2DP_CTRL_ACK_FAILURE);
@@ -768,8 +768,7 @@ void btif_a2dp_source_on_suspended(tBTA_AV_SUSPEND* p_av_suspend) {
   // check for status failures
   if (p_av_suspend->status != BTA_AV_SUCCESS) {
     log::warn("A2DP suspend failed: status={}, initiator={}",
-              p_av_suspend->status,
-              (p_av_suspend->initiator ? "true" : "false"));
+              p_av_suspend->status, p_av_suspend->initiator ? "true" : "false");
     if (p_av_suspend->initiator) {
       if (bluetooth::audio::a2dp::is_hal_enabled()) {
         bluetooth::audio::a2dp::ack_stream_suspended(A2DP_CTRL_ACK_FAILURE);

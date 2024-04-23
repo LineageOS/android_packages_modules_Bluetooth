@@ -142,7 +142,7 @@ bool ConnectionHandler::ConnectDevice(const RawAddress& bdaddr) {
       log::error(
           "Failed to do SDP: status=0x{:x} features=0x{:x} supports "
           "controller: {}",
-          status, features, (features & BTA_AV_FEAT_RCCT));
+          status, features, features & BTA_AV_FEAT_RCCT);
       instance_->connection_cb_.Run(std::shared_ptr<Device>());
     }
 
@@ -243,7 +243,7 @@ void ConnectionHandler::InitiatorControlCb(uint8_t handle, uint8_t event,
   DCHECK(!connection_cb_.is_null());
 
   log::info("handle=0x{:x} result=0x{:x} addr={}", handle, result,
-            (peer_addr ? ADDRESS_TO_LOGGABLE_STR(*peer_addr) : "none"));
+            peer_addr ? ADDRESS_TO_LOGGABLE_STR(*peer_addr) : "none");
 
   switch (event) {
     case AVRC_OPEN_IND_EVT: {
@@ -335,7 +335,7 @@ void ConnectionHandler::AcceptorControlCb(uint8_t handle, uint8_t event,
   DCHECK(!connection_cb_.is_null());
 
   log::info("handle=0x{:x} result=0x{:x} addr={}", handle, result,
-            (peer_addr ? ADDRESS_TO_LOGGABLE_STR(*peer_addr) : "none"));
+            peer_addr ? ADDRESS_TO_LOGGABLE_STR(*peer_addr) : "none");
 
   switch (event) {
     case AVRC_OPEN_IND_EVT: {
