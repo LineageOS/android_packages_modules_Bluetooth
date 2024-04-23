@@ -255,7 +255,7 @@ class HciLayerFakeForController : public HciLayerFake {
     ASSERT_TRUE(event.IsValid());
     CommandCompleteView command_complete = CommandCompleteView::Create(event);
     ASSERT_TRUE(command_complete.IsValid());
-    on_complete.Invoke(std::move(command_complete));
+    on_complete(std::move(command_complete));
   }
 
   void IncomingCredit() {

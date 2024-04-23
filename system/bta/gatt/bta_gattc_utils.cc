@@ -798,19 +798,6 @@ tBTA_GATTC_CLCB* bta_gattc_find_int_disconn_clcb(tBTA_GATTC_DATA* p_msg) {
   return p_clcb;
 }
 
-/*******************************************************************************
- *
- * Function         bta_gattc_is_robust_caching_enabled
- *
- * Description      check if robust caching is enabled
- *
- * Returns          true if enabled; otherwise false
- *
- ******************************************************************************/
-bool bta_gattc_is_robust_caching_enabled() {
-  return bluetooth::common::init_flags::gatt_robust_caching_client_is_enabled();
-}
-
 void bta_gatt_client_dump(int fd) {
   std::stringstream stream;
   int entry_count = 0;

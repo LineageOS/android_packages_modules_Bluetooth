@@ -78,6 +78,7 @@ void AvrcpService::RegisterVolChanged(const RawAddress& bdaddr) {
 
 namespace {
 const RawAddress kDeviceAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
+const uint8_t kRcHandle = 123;
 }  // namespace
 
 void btif_av_clear_remote_suspend_flag(const A2dpType local_a2dp_type) {}
@@ -451,8 +452,30 @@ class BtifTrackChangeCBTest : public BtifRcTest {
 };
 
 TEST_F(BtifTrackChangeCBTest, handle_get_metadata_attr_response) {
+  // Setup an already connected device
+  btif_rc_cb.rc_multi_cb[0].rc_connected = true;
+  btif_rc_cb.rc_multi_cb[0].br_connected = false;
+  btif_rc_cb.rc_multi_cb[0].rc_handle = kRcHandle;
+  btif_rc_cb.rc_multi_cb[0].rc_features = {};
+  btif_rc_cb.rc_multi_cb[0].rc_cover_art_psm = 0;
+  btif_rc_cb.rc_multi_cb[0].rc_state = BTRC_CONNECTION_STATE_CONNECTED;
+  btif_rc_cb.rc_multi_cb[0].rc_addr = kDeviceAddress;
+  btif_rc_cb.rc_multi_cb[0].rc_pending_play = 0;
+  btif_rc_cb.rc_multi_cb[0].rc_volume = 0;
+  btif_rc_cb.rc_multi_cb[0].rc_vol_label = 0;
+  btif_rc_cb.rc_multi_cb[0].rc_supported_event_list = nullptr;
+  btif_rc_cb.rc_multi_cb[0].rc_app_settings = {};
+  btif_rc_cb.rc_multi_cb[0].rc_play_status_timer = nullptr;
+  btif_rc_cb.rc_multi_cb[0].rc_features_processed = false;
+  btif_rc_cb.rc_multi_cb[0].rc_playing_uid = 0;
+  btif_rc_cb.rc_multi_cb[0].rc_procedure_complete = false;
+  btif_rc_cb.rc_multi_cb[0].peer_ct_features = {};
+  btif_rc_cb.rc_multi_cb[0].peer_tg_features = {};
+  btif_rc_cb.rc_multi_cb[0].launch_cmd_pending = 0;
+  ASSERT_TRUE(btif_rc_get_device_by_handle(kRcHandle));
+
   tBTA_AV_META_MSG meta_msg = {
-      .rc_handle = 0,
+      .rc_handle = kRcHandle,
       .len = 0,
       .label = 0,
       .code{},
@@ -468,11 +491,6 @@ TEST_F(BtifTrackChangeCBTest, handle_get_metadata_attr_response) {
       .num_attrs = 0,
       .p_attrs = nullptr,
   };
-
-  btif_rc_cb.rc_multi_cb[0].rc_handle = 0;
-  btif_rc_cb.rc_multi_cb[0].rc_addr = RawAddress::kEmpty;
-  btif_rc_cb.rc_multi_cb[0].rc_state = BTRC_CONNECTION_STATE_CONNECTED;
-  btif_rc_cb.rc_multi_cb[0].rc_connected = true;
 
   handle_get_metadata_attr_response(&meta_msg, &rsp);
 

@@ -171,10 +171,27 @@ struct formatter<tBTA_JV_CONN_STATE> : enum_formatter<tBTA_JV_CONN_STATE> {};
 }  // namespace fmt
 
 /* JV Connection types */
-#define BTA_JV_CONN_TYPE_RFCOMM 0
-#define BTA_JV_CONN_TYPE_L2CAP 1
-#define BTA_JV_CONN_TYPE_L2CAP_LE 2
-typedef int tBTA_JV_CONN_TYPE;
+enum class tBTA_JV_CONN_TYPE {
+  UNKNOWN = -1,
+  RFCOMM = 0,
+  L2CAP = 1,
+  L2CAP_LE = 2,
+};
+
+inline std::string bta_jv_conn_type_text(const tBTA_JV_CONN_TYPE& type) {
+  switch (type) {
+    CASE_RETURN_STRING(tBTA_JV_CONN_TYPE::UNKNOWN);
+    CASE_RETURN_STRING(tBTA_JV_CONN_TYPE::RFCOMM);
+    CASE_RETURN_STRING(tBTA_JV_CONN_TYPE::L2CAP);
+    CASE_RETURN_STRING(tBTA_JV_CONN_TYPE::L2CAP_LE);
+  }
+  RETURN_UNKNOWN_TYPE_STRING(tBTA_JV_CONN_TYPE, type);
+}
+
+namespace fmt {
+template <>
+struct formatter<tBTA_JV_CONN_TYPE> : enum_formatter<tBTA_JV_CONN_TYPE> {};
+}  // namespace fmt
 
 enum tBTA_JV_EVT : uint16_t {
   /* Java I/F callback events */

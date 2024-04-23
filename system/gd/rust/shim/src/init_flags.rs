@@ -19,7 +19,6 @@ mod ffi {
         fn classic_discovery_only_is_enabled() -> bool;
         fn device_iot_config_logging_is_enabled() -> bool;
         fn dynamic_avrcp_version_enhancement_is_enabled() -> bool;
-        fn gatt_robust_caching_client_is_enabled() -> bool;
         fn gatt_robust_caching_server_is_enabled() -> bool;
         fn get_hci_adapter() -> i32;
         fn get_asha_packet_drop_frequency_threshold() -> i32;
@@ -28,9 +27,7 @@ mod ffi {
         fn irk_rotation_is_enabled() -> bool;
         fn leaudio_targeted_announcement_reconnection_mode_is_enabled() -> bool;
         fn pbap_pse_dynamic_version_upgrade_is_enabled() -> bool;
-        fn private_gatt_is_enabled() -> bool;
         fn redact_log_is_enabled() -> bool;
-        fn rust_event_loop_is_enabled() -> bool;
         fn sco_codec_select_lc3_is_enabled() -> bool;
         fn sco_codec_timeout_clear_is_enabled() -> bool;
         fn sdp_serialization_is_enabled() -> bool;

@@ -471,7 +471,6 @@ void bta_gattc_clear_notif_registration(tBTA_GATTC_SERV* p_srcb,
                                         uint16_t conn_id, uint16_t start_handle,
                                         uint16_t end_handle);
 tBTA_GATTC_SERV* bta_gattc_find_srvr_cache(const RawAddress& bda);
-bool bta_gattc_is_robust_caching_enabled();
 
 /* discovery functions */
 void bta_gattc_disc_res_cback(uint16_t conn_id, tGATT_DISC_TYPE disc_type,

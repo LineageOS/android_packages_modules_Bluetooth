@@ -181,8 +181,8 @@ void FuzzHciLayer::injectAclEvent(std::vector<uint8_t> data) {
 }
 
 void FuzzHciLayer::injectAclDisconnect(FuzzedDataProvider& fdp) {
-  if (!acl_on_disconnect_.IsEmpty()) {
-    acl_on_disconnect_.Invoke(
+  if (acl_on_disconnect_) {
+    acl_on_disconnect_(
         fdp.ConsumeIntegral<uint16_t>(),
         static_cast<hci::ErrorCode>(fdp.ConsumeIntegral<uint8_t>()));
   }
@@ -193,8 +193,8 @@ void FuzzHciLayer::injectLeAclEvent(std::vector<uint8_t> data) {
 }
 
 void FuzzHciLayer::injectLeAclDisconnect(FuzzedDataProvider& fdp) {
-  if (!le_acl_on_disconnect_.IsEmpty()) {
-    le_acl_on_disconnect_.Invoke(
+  if (le_acl_on_disconnect_) {
+    le_acl_on_disconnect_(
         fdp.ConsumeIntegral<uint16_t>(),
         static_cast<hci::ErrorCode>(fdp.ConsumeIntegral<uint8_t>()));
   }

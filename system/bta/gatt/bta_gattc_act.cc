@@ -569,9 +569,7 @@ void bta_gattc_conn(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
         p_clcb->p_srcb->state = BTA_GATTC_SERV_DISC;
 
         /* set true to read database hash before service discovery */
-        if (bta_gattc_is_robust_caching_enabled()) {
-          p_clcb->p_srcb->srvc_hdl_db_hash = true;
-        }
+        p_clcb->p_srcb->srvc_hdl_db_hash = true;
 
         /* cache load failure, start discovery */
         bta_gattc_start_discover(p_clcb, NULL);
@@ -589,9 +587,7 @@ void bta_gattc_conn(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
       p_clcb->p_srcb->srvc_hdl_chg = false;
 
       /* set true to read database hash before service discovery */
-      if (bta_gattc_is_robust_caching_enabled()) {
-        p_clcb->p_srcb->srvc_hdl_db_hash = true;
-      }
+      p_clcb->p_srcb->srvc_hdl_db_hash = true;
 
       /* start discovery */
       bta_gattc_sm_execute(p_clcb, BTA_GATTC_INT_DISCOVER_EVT, NULL);
@@ -709,10 +705,16 @@ void bta_gattc_disc_close(tBTA_GATTC_CLCB* p_clcb,
                           const tBTA_GATTC_DATA* p_data) {
   log::verbose("Discovery cancel conn_id={}", loghex(p_clcb->bta_conn_id));
 
-  if (p_clcb->disc_active)
+  if (p_clcb->disc_active ||
+      (IS_FLAG_ENABLED(gatt_rediscover_on_canceled) &&
+       (p_clcb->request_during_discovery ==
+            BTA_GATTC_DISCOVER_REQ_READ_DB_HASH ||
+        p_clcb->request_during_discovery ==
+            BTA_GATTC_DISCOVER_REQ_READ_DB_HASH_FOR_SVC_CHG))) {
     bta_gattc_reset_discover_st(p_clcb->p_srcb, GATT_ERROR);
-  else
+  } else {
     p_clcb->state = BTA_GATTC_CONN_ST;
+  }
 
   // This function only gets called as the result of a BTA_GATTC_API_CLOSE_EVT
   // while in the BTA_GATTC_DISCOVER_ST state. Once the state changes, the
@@ -919,8 +921,7 @@ void bta_gattc_continue_with_version_and_cache_known(
   }
 
   /* read db hash if db hash characteristic exists */
-  if (bta_gattc_is_robust_caching_enabled() &&
-      p_clcb->p_srcb->srvc_hdl_db_hash &&
+  if (p_clcb->p_srcb->srvc_hdl_db_hash &&
       bta_gattc_read_db_hash(p_clcb, is_svc_chg)) {
     log::info("pending service discovery, read db hash first conn_id:{}",
               loghex(p_clcb->bta_conn_id));
@@ -1309,8 +1310,7 @@ void bta_gattc_op_cmpl(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
 
   // If receive DATABASE_OUT_OF_SYNC error code, bta_gattc should start service
   // discovery immediately
-  if (bta_gattc_is_robust_caching_enabled() &&
-      p_data->op_cmpl.status == GATT_DATABASE_OUT_OF_SYNC) {
+  if (p_data->op_cmpl.status == GATT_DATABASE_OUT_OF_SYNC) {
     log::info("DATABASE_OUT_OF_SYNC, re-discover service");
     p_clcb->auto_update = BTA_GATTC_REQ_WAITING;
     /* request read db hash first */
@@ -1323,9 +1323,7 @@ void bta_gattc_op_cmpl(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_DATA* p_data) {
     p_clcb->auto_update = BTA_GATTC_REQ_WAITING;
 
     /* request read db hash first */
-    if (bta_gattc_is_robust_caching_enabled()) {
-      p_clcb->p_srcb->srvc_hdl_db_hash = true;
-    }
+    p_clcb->p_srcb->srvc_hdl_db_hash = true;
 
     bta_gattc_sm_execute(p_clcb, BTA_GATTC_INT_DISCOVER_EVT, NULL);
     return;
@@ -1523,9 +1521,7 @@ static bool bta_gattc_process_srvc_chg_ind(uint16_t conn_id,
     /* if connection available, refresh cache by doing discovery now */
     if (p_clcb) {
       /* request read db hash first */
-      if (bta_gattc_is_robust_caching_enabled()) {
-        p_srcb->srvc_hdl_db_hash = true;
-      }
+      p_srcb->srvc_hdl_db_hash = true;
       bta_gattc_sm_execute(p_clcb, BTA_GATTC_INT_DISCOVER_EVT, NULL);
     }
   }

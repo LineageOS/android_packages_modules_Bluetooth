@@ -116,13 +116,8 @@ void BTA_JvDisable(void) {
  ******************************************************************************/
 void BTA_JvGetChannelId(tBTA_JV_CONN_TYPE conn_type, uint32_t id,
                         int32_t channel) {
-  log::verbose("conn_type:{}, id:{}, channel:{}", conn_type, id, channel);
-
-  if (conn_type != BTA_JV_CONN_TYPE_RFCOMM &&
-      conn_type != BTA_JV_CONN_TYPE_L2CAP &&
-      conn_type != BTA_JV_CONN_TYPE_L2CAP_LE) {
-    log::fatal("Invalid conn_type={}", conn_type);
-  }
+  log::verbose("conn_type:{}, id:{}, channel:{}",
+               bta_jv_conn_type_text(conn_type), id, channel);
 
   do_in_main_thread(FROM_HERE,
                     Bind(&bta_jv_get_channel_id, conn_type, channel, id, id));
@@ -142,8 +137,10 @@ void BTA_JvGetChannelId(tBTA_JV_CONN_TYPE conn_type, uint32_t id,
  *                  tBTA_JV_STATUS::FAILURE, otherwise.
  *
  ******************************************************************************/
-tBTA_JV_STATUS BTA_JvFreeChannel(uint16_t channel, int conn_type) {
-  log::verbose("channel:{}, conn_type:{}", channel, conn_type);
+tBTA_JV_STATUS BTA_JvFreeChannel(uint16_t channel,
+                                 tBTA_JV_CONN_TYPE conn_type) {
+  log::verbose("channel:{}, conn_type:{}", channel,
+               bta_jv_conn_type_text(conn_type));
 
   do_in_main_thread(FROM_HERE, Bind(&bta_jv_free_scn, conn_type, channel));
   return tBTA_JV_STATUS::SUCCESS;
@@ -225,7 +222,8 @@ tBTA_JV_STATUS BTA_JvDeleteRecord(uint32_t handle) {
  *                  tBTA_JV_L2CAP_CBACK is called with BTA_JV_L2CAP_OPEN_EVT
  *
  ******************************************************************************/
-void BTA_JvL2capConnect(int conn_type, tBTA_SEC sec_mask, tBTA_JV_ROLE role,
+void BTA_JvL2capConnect(tBTA_JV_CONN_TYPE conn_type, tBTA_SEC sec_mask,
+                        tBTA_JV_ROLE role,
                         std::unique_ptr<tL2CAP_ERTM_INFO> ertm_info,
                         uint16_t remote_psm, uint16_t rx_mtu,
                         std::unique_ptr<tL2CAP_CFG_INFO> cfg,
@@ -235,7 +233,8 @@ void BTA_JvL2capConnect(int conn_type, tBTA_SEC sec_mask, tBTA_JV_ROLE role,
   log::verbose(
       "conn_type:{}, role:{}, remote_psm:{}, peer_bd_addr:{}, "
       "l2cap_socket_id:{}",
-      conn_type, role, remote_psm, peer_bd_addr, l2cap_socket_id);
+      bta_jv_conn_type_text(conn_type), role, remote_psm, peer_bd_addr,
+      l2cap_socket_id);
   log::assert_that(p_cback != nullptr, "assert failed: p_cback != nullptr");
 
   do_in_main_thread(FROM_HERE,
@@ -287,8 +286,9 @@ void BTA_JvL2capStartServer(tBTA_JV_CONN_TYPE conn_type, tBTA_SEC sec_mask,
                             tBTA_JV_L2CAP_CBACK* p_cback,
                             uint32_t l2cap_socket_id) {
   log::verbose("conn_type:{}, role:{}, local_psm:{}, l2cap_socket_id:{}",
-               conn_type, role, local_psm, l2cap_socket_id);
-  log::assert_that(p_cback != nullptr, "assert failed: p_cback != nullptr");
+               bta_jv_conn_type_text(conn_type), role, local_psm,
+               l2cap_socket_id);
+  CHECK(p_cback);
 
   do_in_main_thread(FROM_HERE,
                     Bind(&bta_jv_l2cap_start_server, conn_type, sec_mask, role,

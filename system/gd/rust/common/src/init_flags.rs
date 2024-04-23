@@ -89,15 +89,13 @@ trait FlagHolder: Default {
     fn get_defaults_for_test() -> Self;
     fn parse(flags: Vec<String>) -> Self;
     fn dump(&self) -> BTreeMap<&'static str, String>;
-    fn reconcile(self) -> Self;
 }
 
 macro_rules! init_flags_struct {
     (
      name: $name:ident
      flags: { $($flag:ident $(: $type:ty)? $(= $default:tt)?,)* }
-     extra_parsed_flags: { $($extra_flag:tt => $extra_flag_fn:ident(_, _ $(,$extra_args:tt)*),)*}
-     dependencies: { $($parent:ident => $child:ident),* }) => {
+     extra_parsed_flags: { $($extra_flag:tt => $extra_flag_fn:ident(_, _ $(,$extra_args:tt)*),)*}) => {
 
         struct $name {
             $($flag : type_expand!($($type)?),)*
@@ -144,20 +142,7 @@ macro_rules! init_flags_struct {
                     }
                 }
 
-                init_flags.reconcile()
-            }
-
-            #[allow(unused_mut)]
-            fn reconcile(mut self) -> Self {
-                loop {
-                    // dependencies can be specified in any order
-                    $(if self.$parent && !self.$child {
-                        self.$child = true;
-                        continue;
-                    })*
-                    break;
-                }
-                self
+                init_flags
             }
         }
 
@@ -175,8 +160,7 @@ macro_rules! init_flags_struct {
 macro_rules! init_flags_getters {
     (
      flags: { $($flag:ident $(: $type:ty)? $(= $default:tt)?,)* }
-     extra_parsed_flags: { $($extra_flag:tt => $extra_flag_fn:ident(_, _ $(,$extra_args:tt)*),)*}
-     dependencies: { $($parent:ident => $child:ident),* }) => {
+     extra_parsed_flags: { $($extra_flag:tt => $extra_flag_fn:ident(_, _ $(,$extra_args:tt)*),)*}) => {
 
         $(create_getter_fn!($flag $($type)?);)*
 
@@ -232,16 +216,13 @@ init_flags!(
         classic_discovery_only,
         device_iot_config_logging,
         dynamic_avrcp_version_enhancement = true,
-        gatt_robust_caching_client = true,
         gatt_robust_caching_server,
         hci_adapter: i32,
         hfp_dynamic_version = true,
         irk_rotation,
         leaudio_targeted_announcement_reconnection_mode = true,
         pbap_pse_dynamic_version_upgrade = false,
-        private_gatt = true,
         redact_log = true,
-        rust_event_loop = true,
         sco_codec_select_lc3 = true,
         sco_codec_timeout_clear,
         sdp_serialization = true,
@@ -257,10 +238,6 @@ init_flags!(
     }
     extra_parsed_flags: {
         "--hci" => parse_hci_adapter(_, _),
-    }
-    dependencies: {
-        always_use_private_gatt_for_debugging => private_gatt,
-        private_gatt => rust_event_loop
     }
 );
 
@@ -304,11 +281,7 @@ mod tests {
     #[test]
     fn simple_flag() {
         let _guard = ASYNC_LOCK.lock().unwrap();
-        test_load(vec![
-            "INIT_private_gatt=false", //override a default flag
-            "INIT_gatt_robust_caching_server=true",
-        ]);
-        assert!(!private_gatt_is_enabled());
+        test_load(vec!["INIT_gatt_robust_caching_server=true"]);
         assert!(gatt_robust_caching_server_is_enabled());
     }
     #[test]
@@ -317,10 +290,8 @@ mod tests {
         test_load(vec![
             "foo=bar=?",                                // vec length
             "foo=bar",                                  // flag not save
-            "INIT_private_gatt=not_false",              // parse error but has default value
             "INIT_gatt_robust_caching_server=not_true", // parse error
         ]);
-        assert!(private_gatt_is_enabled());
         assert!(!gatt_robust_caching_server_is_enabled());
     }
     #[test]
@@ -347,7 +318,6 @@ mod tests {
             cat,
         }
         extra_parsed_flags: {}
-        dependencies: {}
     );
 
     #[test]
