@@ -783,14 +783,14 @@ impl CommandHandler {
                     .into());
                 }
 
-                let success = self
+                let status = self
                     .lock_context()
                     .adapter_dbus
                     .as_mut()
                     .unwrap()
                     .create_bond(device.clone(), BtTransport::Auto);
 
-                if success {
+                if status == BtStatus::Success {
                     self.lock_context().bonding_attempt = Some(device);
                 }
             }
@@ -832,14 +832,14 @@ impl CommandHandler {
                     name: String::from("Classic Device"),
                 };
 
-                let success = self
+                let status = self
                     .lock_context()
                     .adapter_dbus
                     .as_mut()
                     .unwrap()
                     .connect_all_enabled_profiles(device.clone());
 
-                if success {
+                if status == BtStatus::Success {
                     println!("Connecting to {}", &device.address);
                 } else {
                     println!("Can't connect to {}", &device.address);

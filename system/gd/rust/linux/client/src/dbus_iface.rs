@@ -846,7 +846,7 @@ impl IBluetooth for BluetoothDBus {
     }
 
     #[dbus_method("CreateBond")]
-    fn create_bond(&mut self, device: BluetoothDevice, transport: BtTransport) -> bool {
+    fn create_bond(&mut self, device: BluetoothDevice, transport: BtTransport) -> BtStatus {
         dbus_generated!()
     }
 
@@ -981,7 +981,7 @@ impl IBluetooth for BluetoothDBus {
     }
 
     #[dbus_method("ConnectAllEnabledProfiles")]
-    fn connect_all_enabled_profiles(&mut self, device: BluetoothDevice) -> bool {
+    fn connect_all_enabled_profiles(&mut self, device: BluetoothDevice) -> BtStatus {
         dbus_generated!()
     }
 
