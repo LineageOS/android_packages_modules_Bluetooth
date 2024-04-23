@@ -20,32 +20,25 @@ namespace bluetooth {
 namespace shim {
 namespace arbiter {
 
-class MockAclArbiter : public AclArbiter {
- public:
-  virtual void OnLeConnect(uint8_t /* tcb_idx */,
-                           uint16_t /* advertiser_id */) override {}
+void AclArbiter::OnLeConnect(uint8_t /* tcb_idx */,
+                             uint16_t /* advertiser_id */) {}
 
-  virtual void OnLeDisconnect(uint8_t /* tcb_idx */) override {}
+void AclArbiter::OnLeDisconnect(uint8_t /* tcb_idx */) {}
 
-  virtual InterceptAction InterceptAttPacket(
-      uint8_t /* tcb_idx */, const BT_HDR* /* packet */) override {
-    return InterceptAction::FORWARD;
-  }
+InterceptAction AclArbiter::InterceptAttPacket(uint8_t /* tcb_idx */,
+                                               const BT_HDR* /* packet */) {
+  return InterceptAction::FORWARD;
+}
 
-  virtual void OnOutgoingMtuReq(uint8_t /* tcb_idx */) override {}
+void AclArbiter::OnOutgoingMtuReq(uint8_t /* tcb_idx */) {}
 
-  virtual void OnIncomingMtuResp(uint8_t /* tcb_idx */, size_t /* mtu */) {}
+void AclArbiter::OnIncomingMtuResp(uint8_t /* tcb_idx */, size_t /* mtu */) {}
 
-  virtual void OnIncomingMtuReq(uint8_t /* tcb_idx */, size_t /* mtu */) {}
-
-  static MockAclArbiter& Get() {
-    static auto singleton = MockAclArbiter();
-    return singleton;
-  }
-};
+void AclArbiter::OnIncomingMtuReq(uint8_t /* tcb_idx */, size_t /* mtu */) {}
 
 AclArbiter& GetArbiter() {
-  return static_cast<AclArbiter&>(MockAclArbiter::Get());
+  static auto singleton = AclArbiter();
+  return singleton;
 }
 
 }  // namespace arbiter
