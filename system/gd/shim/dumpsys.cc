@@ -54,8 +54,7 @@ struct Dumpsys::impl {
   ~impl() = default;
 
  protected:
-  void FilterAsUser(std::string* dumpsys_data) const;
-  void FilterAsDeveloper(std::string* dumpsys_data) const;
+  void FilterSchema(std::string* dumpsys_data) const;
   std::string PrintAsJson(std::string* dumpsys_data) const;
 
   bool IsDebuggable() const;
@@ -81,14 +80,9 @@ bool Dumpsys::impl::IsDebuggable() const {
   return (os::GetSystemProperty(kReadOnlyDebuggableProperty) == "1");
 }
 
-void Dumpsys::impl::FilterAsDeveloper(std::string* dumpsys_data) const {
+void Dumpsys::impl::FilterSchema(std::string* dumpsys_data) const {
   log::assert_that(dumpsys_data != nullptr, "assert failed: dumpsys_data != nullptr");
-  dumpsys::FilterInPlace(dumpsys::FilterType::AS_DEVELOPER, reflection_schema_, dumpsys_data);
-}
-
-void Dumpsys::impl::FilterAsUser(std::string* dumpsys_data) const {
-  log::assert_that(dumpsys_data != nullptr, "assert failed: dumpsys_data != nullptr");
-  dumpsys::FilterInPlace(dumpsys::FilterType::AS_USER, reflection_schema_, dumpsys_data);
+  dumpsys::FilterSchema(reflection_schema_, dumpsys_data);
 }
 
 std::string Dumpsys::impl::PrintAsJson(std::string* dumpsys_data) const {
@@ -151,7 +145,7 @@ void Dumpsys::impl::DumpWithArgsAsync(int fd, const char** args) const {
   dumper.DumpState(&dumpsys_data, oss);
 
   dprintf(fd, " ----- Filtering as Developer -----\n");
-  FilterAsDeveloper(&dumpsys_data);
+  FilterSchema(&dumpsys_data);
 
   dprintf(fd, "%s", PrintAsJson(&dumpsys_data).c_str());
 }
