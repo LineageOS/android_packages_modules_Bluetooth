@@ -64,17 +64,17 @@ public class MetricsLoggerTest {
         SANITIZED_DEVICE_NAME_MAP.put("Someone's AirpoDs", "airpods");
         SANITIZED_DEVICE_NAME_MAP.put("Galaxy Buds pro", "galaxybudspro");
         SANITIZED_DEVICE_NAME_MAP.put("Someone's AirpoDs", "airpods");
-        SANITIZED_DEVICE_NAME_MAP.put("My BMW X5", "bmw");
+        SANITIZED_DEVICE_NAME_MAP.put("My BMW X5", "bmwx5");
         SANITIZED_DEVICE_NAME_MAP.put("Jane Doe's Tesla Model--X", "teslamodelx");
         SANITIZED_DEVICE_NAME_MAP.put("TESLA of Jane DOE", "tesla");
-        SANITIZED_DEVICE_NAME_MAP.put("SONY WH-1000XM4", "wh1000xm4");
-        SANITIZED_DEVICE_NAME_MAP.put("Amazon Echo Dot", "echo");
+        SANITIZED_DEVICE_NAME_MAP.put("SONY WH-1000XM4", "sonywh1000xm4");
+        SANITIZED_DEVICE_NAME_MAP.put("Amazon Echo Dot", "amazonechodot");
         SANITIZED_DEVICE_NAME_MAP.put("Chevy my link", "chevymylink");
         SANITIZED_DEVICE_NAME_MAP.put("Dad's Hyundai i10", "hyundai");
         SANITIZED_DEVICE_NAME_MAP.put("Mike's new Galaxy Buds 2", "galaxybuds2");
         SANITIZED_DEVICE_NAME_MAP.put("My third Ford F-150", "fordf150");
         SANITIZED_DEVICE_NAME_MAP.put("Bose QuietComfort 35 Series 2", "bosequietcomfort35");
-        SANITIZED_DEVICE_NAME_MAP.put("Fitbit versa 3 band", "versa3");
+        SANITIZED_DEVICE_NAME_MAP.put("Fitbit versa 3 band", "fitbitversa3");
         SANITIZED_DEVICE_NAME_MAP.put("my vw bt", "myvw");
         SANITIZED_DEVICE_NAME_MAP.put("SomeDevice1", "");
         SANITIZED_DEVICE_NAME_MAP.put("My traverse", "traverse");
@@ -252,6 +252,7 @@ public class MetricsLoggerTest {
             String deviceName = entry.getKey();
             String sha256 = MetricsLogger.getSha256String(entry.getValue());
             Assert.assertEquals(
+                    deviceName,
                     sha256,
                     mTestableMetricsLogger.logAllowlistedDeviceNameHash(1, deviceName, true));
         }
