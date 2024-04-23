@@ -164,7 +164,7 @@ void Link::SendConnectionRequest(Psm psm, Cid local_cid,
     ConnectionResult result{
         .connection_result_code = ConnectionResultCode::FAIL_REMOTE_NOT_SUPPORT,
     };
-    pending_dynamic_channel_connection.on_fail_callback_.Invoke(result);
+    pending_dynamic_channel_connection.on_fail_callback_(result);
     dynamic_channel_allocator_.FreeChannel(local_cid);
     return;
   } else {
@@ -286,7 +286,7 @@ void Link::NotifyChannelCreation(Cid cid, std::unique_ptr<DynamicChannel> user_c
       "assert failed: local_cid_to_pending_dynamic_channel_connection_map_.find(cid) != "
       "local_cid_to_pending_dynamic_channel_connection_map_.end()");
   auto& pending_dynamic_channel_connection = local_cid_to_pending_dynamic_channel_connection_map_[cid];
-  pending_dynamic_channel_connection.on_open_callback_.Invoke(std::move(user_channel));
+  pending_dynamic_channel_connection.on_open_callback_(std::move(user_channel));
   local_cid_to_pending_dynamic_channel_connection_map_.erase(cid);
 }
 
@@ -297,7 +297,7 @@ void Link::NotifyChannelFail(Cid cid, ConnectionResult result) {
       "assert failed: local_cid_to_pending_dynamic_channel_connection_map_.find(cid) != "
       "local_cid_to_pending_dynamic_channel_connection_map_.end()");
   auto& pending_dynamic_channel_connection = local_cid_to_pending_dynamic_channel_connection_map_[cid];
-  pending_dynamic_channel_connection.on_fail_callback_.Invoke(result);
+  pending_dynamic_channel_connection.on_fail_callback_(result);
   local_cid_to_pending_dynamic_channel_connection_map_.erase(cid);
 }
 

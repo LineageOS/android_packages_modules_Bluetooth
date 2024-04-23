@@ -113,7 +113,7 @@ class TestLeScanningInterface : public LeScanningInterface {
     CommandCompleteView complete_view = CommandCompleteView::Create(event);
     ASSERT_TRUE(complete_view.IsValid());
     ASSERT_NE((uint16_t)command_complete_callbacks.size(), 0);
-    std::move(command_complete_callbacks.front()).Invoke(complete_view);
+    std::move(command_complete_callbacks.front())(complete_view);
     command_complete_callbacks.pop_front();
   }
 
@@ -122,7 +122,7 @@ class TestLeScanningInterface : public LeScanningInterface {
     CommandStatusView status_view = CommandStatusView::Create(event);
     ASSERT_TRUE(status_view.IsValid());
     ASSERT_NE((uint16_t)command_status_callbacks.size(), 0);
-    std::move(command_status_callbacks.front()).Invoke(status_view);
+    std::move(command_status_callbacks.front())(status_view);
     command_status_callbacks.pop_front();
   }
 
