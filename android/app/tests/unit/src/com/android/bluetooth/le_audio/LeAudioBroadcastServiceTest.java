@@ -355,6 +355,8 @@ public class LeAudioBroadcastServiceTest {
         state_event.valueInt1 = broadcastId;
         mService.messageFromNative(state_event);
 
+        TestUtils.waitForLooperToFinishScheduledTask(mService.getMainLooper());
+
         Assert.assertTrue(mOnBroadcastStoppedCalled);
         Assert.assertFalse(mOnBroadcastStopFailedCalled);
     }
@@ -426,6 +428,8 @@ public class LeAudioBroadcastServiceTest {
         create_event.valueInt1 = broadcastId;
         create_event.valueBool1 = false;
         mService.messageFromNative(create_event);
+
+        TestUtils.waitForLooperToFinishScheduledTask(mService.getMainLooper());
 
         Assert.assertFalse(mOnBroadcastStartedCalled);
         Assert.assertTrue(mOnBroadcastStartFailedCalled);
@@ -549,6 +553,9 @@ public class LeAudioBroadcastServiceTest {
 
         // Stop non-existing broadcast
         mService.stopBroadcast(broadcastId);
+
+        TestUtils.waitForLooperToFinishScheduledTask(mService.getMainLooper());
+
         Assert.assertFalse(mOnBroadcastStoppedCalled);
         Assert.assertTrue(mOnBroadcastStopFailedCalled);
 
@@ -559,6 +566,9 @@ public class LeAudioBroadcastServiceTest {
         meta_builder.setProgramInfo("Public broadcast info");
         mService.updateBroadcast(broadcastId,
                 buildBroadcastSettingsFromMetadata(meta_builder.build(), null, 1));
+
+        TestUtils.waitForLooperToFinishScheduledTask(mService.getMainLooper());
+
         Assert.assertFalse(mOnBroadcastUpdatedCalled);
         Assert.assertTrue(mOnBroadcastUpdateFailedCalled);
     }
@@ -625,12 +635,16 @@ public class LeAudioBroadcastServiceTest {
         create_event.valueBool1 = true;
         mService.messageFromNative(create_event);
 
+        TestUtils.waitForLooperToFinishScheduledTask(mService.getMainLooper());
+
         // Inject metadata stack event and verify if getter API works as expected
         LeAudioStackEvent state_event =
                 new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_BROADCAST_METADATA_CHANGED);
         state_event.valueInt1 = broadcastId;
         state_event.broadcastMetadata = createBroadcastMetadata();
         mService.messageFromNative(state_event);
+
+        TestUtils.waitForLooperToFinishScheduledTask(mService.getMainLooper());
 
         List<BluetoothLeBroadcastMetadata> meta_list = mService.getAllBroadcastMetadata();
         Assert.assertNotNull(meta_list);
@@ -844,12 +858,16 @@ public class LeAudioBroadcastServiceTest {
         BluetoothLeAudioContentMetadata meta = meta_builder.build();
         BluetoothLeBroadcastSettings settings = buildBroadcastSettingsFromMetadata(meta, code, 1);
 
+        TestUtils.waitForLooperToFinishScheduledTask(mService.getMainLooper());
+
         verifyBroadcastStarted(broadcastId, settings);
         mOnBroadcastStartedCalled = false;
         mOnBroadcastStartFailedCalled = false;
 
         // verify creating another broadcast will fail
         mService.createBroadcast(settings);
+
+        TestUtils.waitForLooperToFinishScheduledTask(mService.getMainLooper());
 
         Assert.assertFalse(mOnBroadcastStartedCalled);
         Assert.assertTrue(mOnBroadcastStartFailedCalled);
