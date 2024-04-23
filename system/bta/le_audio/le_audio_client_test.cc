@@ -4769,7 +4769,7 @@ TEST_F_WITH_FLAGS(UnicastTest, GroupSetActive_CurrentCodecSentOfActive,
       .codec_type = LE_AUDIO_CODEC_INDEX_SOURCE_LC3,
       .sample_rate = LE_AUDIO_SAMPLE_RATE_INDEX_48000HZ,
       .bits_per_sample = LE_AUDIO_BITS_PER_SAMPLE_INDEX_16,
-      .channel_count = LE_AUDIO_CHANNEL_COUNT_INDEX_2,
+      .channel_count = LE_AUDIO_CHANNEL_COUNT_INDEX_1,
       .frame_duration = LE_AUDIO_FRAME_DURATION_INDEX_10000US,
       .octets_per_frame = 120};
 
@@ -6282,7 +6282,7 @@ TEST_F(UnicastTest, TwoEarbudsStreaming) {
       .codec_type = LE_AUDIO_CODEC_INDEX_SOURCE_LC3,
       .sample_rate = LE_AUDIO_SAMPLE_RATE_INDEX_16000HZ,
       .bits_per_sample = LE_AUDIO_BITS_PER_SAMPLE_INDEX_16,
-      .channel_count = LE_AUDIO_CHANNEL_COUNT_INDEX_2,
+      .channel_count = LE_AUDIO_CHANNEL_COUNT_INDEX_1,
       .frame_duration = LE_AUDIO_FRAME_DURATION_INDEX_10000US,
       .octets_per_frame = 40};
 
