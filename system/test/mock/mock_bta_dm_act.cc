@@ -73,7 +73,6 @@ struct bta_dm_process_remove_device bta_dm_process_remove_device;
 struct bta_dm_remove_device bta_dm_remove_device;
 struct bta_dm_remote_key_missing bta_dm_remote_key_missing;
 struct bta_dm_rm_cback bta_dm_rm_cback;
-struct bta_dm_sdp_result bta_dm_sdp_result;
 struct bta_dm_set_dev_name bta_dm_set_dev_name;
 struct bta_dm_set_encryption bta_dm_set_encryption;
 struct handle_remote_features_complete handle_remote_features_complete;
@@ -249,10 +248,6 @@ void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id, uint8_t app_id,
                      const RawAddress& peer_addr) {
   inc_func_call_count(__func__);
   test::mock::bta_dm_act::bta_dm_rm_cback(status, id, app_id, peer_addr);
-}
-void bta_dm_sdp_result(tBTA_DM_SDP_RESULT& sdp_event) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_act::bta_dm_sdp_result(sdp_event);
 }
 void bta_dm_set_dev_name(const std::vector<uint8_t>& name) {
   inc_func_call_count(__func__);
