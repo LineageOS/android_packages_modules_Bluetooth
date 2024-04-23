@@ -25,3 +25,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "save_initial_hid_connection_policy"
+    namespace: "bluetooth"
+    description: "Save HID connection policy on initial successful connection"
+    bug: "335904609"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
