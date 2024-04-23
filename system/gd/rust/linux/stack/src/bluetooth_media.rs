@@ -530,6 +530,7 @@ impl BluetoothMedia {
                 }
             }
             A2dpCallbacks::AudioState(addr, state) => {
+                info!("[{}]: a2dp audio state: {:?}", DisplayAddress(&addr), state);
                 self.a2dp_audio_state.insert(addr, state);
             }
             A2dpCallbacks::AudioConfig(addr, _config, _local_caps, a2dp_caps) => {
