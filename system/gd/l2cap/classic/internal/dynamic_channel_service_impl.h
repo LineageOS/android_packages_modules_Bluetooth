@@ -16,8 +16,6 @@
 
 #pragma once
 
-#include "common/bind.h"
-
 #include "l2cap/classic/dynamic_channel.h"
 #include "l2cap/classic/dynamic_channel_configuration_option.h"
 #include "l2cap/classic/dynamic_channel_manager.h"
@@ -41,7 +39,7 @@ class DynamicChannelServiceImpl {
   };
 
   virtual void NotifyChannelCreation(std::unique_ptr<DynamicChannel> channel) {
-    on_connection_open_callback_.Invoke(std::move(channel));
+    on_connection_open_callback_(std::move(channel));
   }
 
   virtual DynamicChannelConfigurationOption GetConfigOption() const {

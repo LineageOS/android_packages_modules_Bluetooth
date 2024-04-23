@@ -43,8 +43,8 @@ void InvokeIfValid(common::ContextualOnceCallback<void(TView)> callback, std::ve
   if (!packet.IsValid()) {
     return;
   }
-  if (!callback.IsEmpty()) {
-    callback.Invoke(packet);
+  if (callback) {
+    callback(packet);
   }
 }
 
@@ -54,8 +54,8 @@ void InvokeIfValid(common::ContextualCallback<void(TView)> callback, std::vector
   if (!packet.IsValid()) {
     return;
   }
-  if (!callback.IsEmpty()) {
-    callback.Invoke(packet);
+  if (callback) {
+    callback(packet);
   }
 }
 
