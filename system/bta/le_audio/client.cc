@@ -4109,7 +4109,7 @@ class LeAudioClientImpl : public LeAudioClient {
                   "Reconfiguring to {}",
                   ToString(audio_receiver_state_),
                   ToString(audio_sender_state_),
-                  group->IsPendingConfiguration() ? "true" : "false",
+                  group->IsPendingConfiguration(),
                   ToString(configuration_context_type_));
               group->PrintDebugState();
               SetConfigurationAndStopStreamWhenNeeded(
@@ -4134,7 +4134,7 @@ class LeAudioClientImpl : public LeAudioClient {
                     "Reconfiguring to {}",
                     ToString(audio_receiver_state_),
                     ToString(audio_sender_state_),
-                    group->IsPendingConfiguration() ? "true" : "false",
+                    group->IsPendingConfiguration(),
                     ToString(configuration_context_type_));
                 group->PrintDebugState();
                 SetConfigurationAndStopStreamWhenNeeded(
@@ -4147,7 +4147,7 @@ class LeAudioClientImpl : public LeAudioClient {
                   "Reconfiguring to {}",
                   ToString(audio_receiver_state_),
                   ToString(audio_sender_state_),
-                  group->IsPendingConfiguration() ? "true" : "false",
+                  group->IsPendingConfiguration(),
                   ToString(configuration_context_type_));
               group->PrintDebugState();
               CancelStreamingRequest();
@@ -4174,7 +4174,7 @@ class LeAudioClientImpl : public LeAudioClient {
                     "Reconfiguring to {}",
                     ToString(audio_receiver_state_),
                     ToString(audio_sender_state_),
-                    group->IsPendingConfiguration() ? "true" : "false",
+                    group->IsPendingConfiguration(),
                     ToString(configuration_context_type_));
                 group->PrintDebugState();
                 SetConfigurationAndStopStreamWhenNeeded(
@@ -4187,7 +4187,7 @@ class LeAudioClientImpl : public LeAudioClient {
                   "Reconfiguring to {}",
                   ToString(audio_receiver_state_),
                   ToString(audio_sender_state_),
-                  group->IsPendingConfiguration() ? "true" : "false",
+                  group->IsPendingConfiguration(),
                   ToString(configuration_context_type_));
               group->PrintDebugState();
               CancelStreamingRequest();
@@ -4201,7 +4201,7 @@ class LeAudioClientImpl : public LeAudioClient {
             "audio_receiver_state: {} \naudio_sender_state: {} \n "
             "isPendingConfiguration: {} \n Reconfiguring to {}",
             ToString(audio_receiver_state_), ToString(audio_sender_state_),
-            group->IsPendingConfiguration() ? "true" : "false",
+            group->IsPendingConfiguration(),
             ToString(configuration_context_type_));
         group->PrintDebugState();
         break;
@@ -4383,7 +4383,7 @@ class LeAudioClientImpl : public LeAudioClient {
                   "Reconfiguring to {}",
                   ToString(audio_receiver_state_),
                   ToString(audio_sender_state_),
-                  group->IsPendingConfiguration() ? "true" : "false",
+                  group->IsPendingConfiguration(),
                   ToString(configuration_context_type_));
               group->PrintDebugState();
               SetConfigurationAndStopStreamWhenNeeded(
@@ -4408,7 +4408,7 @@ class LeAudioClientImpl : public LeAudioClient {
                     "Reconfiguring to {}",
                     ToString(audio_receiver_state_),
                     ToString(audio_sender_state_),
-                    group->IsPendingConfiguration() ? "true" : "false",
+                    group->IsPendingConfiguration(),
                     ToString(configuration_context_type_));
                 group->PrintDebugState();
                 SetConfigurationAndStopStreamWhenNeeded(
@@ -4421,7 +4421,7 @@ class LeAudioClientImpl : public LeAudioClient {
                   "Reconfiguring to {}",
                   ToString(audio_receiver_state_),
                   ToString(audio_sender_state_),
-                  group->IsPendingConfiguration() ? "true" : "false",
+                  group->IsPendingConfiguration(),
                   ToString(configuration_context_type_));
               group->PrintDebugState();
               CancelStreamingRequest();
@@ -4449,7 +4449,7 @@ class LeAudioClientImpl : public LeAudioClient {
                     "Reconfiguring to {}",
                     ToString(audio_receiver_state_),
                     ToString(audio_sender_state_),
-                    group->IsPendingConfiguration() ? "true" : "false",
+                    group->IsPendingConfiguration(),
                     ToString(configuration_context_type_));
                 group->PrintDebugState();
                 SetConfigurationAndStopStreamWhenNeeded(
@@ -4462,7 +4462,7 @@ class LeAudioClientImpl : public LeAudioClient {
                   "Reconfiguring to {}",
                   ToString(audio_receiver_state_),
                   ToString(audio_sender_state_),
-                  group->IsPendingConfiguration() ? "true" : "false",
+                  group->IsPendingConfiguration(),
                   ToString(configuration_context_type_));
               group->PrintDebugState();
               CancelStreamingRequest();
@@ -4476,7 +4476,7 @@ class LeAudioClientImpl : public LeAudioClient {
             "{} \naudio_sender_state: {} \n isPendingConfiguration: {} \n "
             "Reconfiguring to {}",
             ToString(audio_receiver_state_), ToString(audio_sender_state_),
-            group->IsPendingConfiguration() ? "true" : "false",
+            group->IsPendingConfiguration(),
             ToString(configuration_context_type_));
         group->PrintDebugState();
         break;
@@ -4832,9 +4832,8 @@ class LeAudioClientImpl : public LeAudioClient {
      * with any other bidirectional context
      */
     if (IsInCall() || IsInVoipCall()) {
-      log::debug("In Call preference used: {}, voip call: {}",
-                 IsInCall() ? "true" : "false",
-                 IsInVoipCall() ? "true" : "false");
+      log::debug("In Call preference used: {}, voip call: {}", IsInCall(),
+                 IsInVoipCall());
       local_metadata_context_types_.sink.unset_all(kLeAudioContextAllBidir);
       local_metadata_context_types_.source.unset_all(kLeAudioContextAllBidir);
       local_metadata_context_types_.sink.set(

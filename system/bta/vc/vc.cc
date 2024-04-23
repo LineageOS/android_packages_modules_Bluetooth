@@ -851,8 +851,7 @@ class VolumeControlImpl : public VolumeControl {
     log::debug(
         "num of devices: {}, group_id: {}, is_autonomous: {}  opcode: {}, arg "
         "size: {}",
-        devices.size(), group_id, is_autonomous ? "true" : "false", opcode,
-        arguments.size());
+        devices.size(), group_id, is_autonomous, opcode, arguments.size());
 
     if (std::find_if(ongoing_operations_.begin(), ongoing_operations_.end(),
                      [opcode, &devices, &arguments](const VolumeOperation& op) {
@@ -887,8 +886,7 @@ class VolumeControlImpl : public VolumeControl {
       VolumeControlDevice* dev = volume_control_devices_.FindByAddress(
           std::get<RawAddress>(addr_or_group_id));
       if (dev != nullptr) {
-        log::debug("Address: {}: isReady: {}", dev->address,
-                   dev->IsReady() ? "true" : "false");
+        log::debug("Address: {}: isReady: {}", dev->address, dev->IsReady());
         if (dev->IsReady() && (dev->mute != mute)) {
           std::vector<RawAddress> devices = {dev->address};
           PrepareVolumeControlOperation(
@@ -965,8 +963,7 @@ class VolumeControlImpl : public VolumeControl {
       VolumeControlDevice* dev = volume_control_devices_.FindByAddress(
           std::get<RawAddress>(addr_or_group_id));
       if (dev != nullptr) {
-        log::debug("Address: {}: isReady: {}", dev->address,
-                   dev->IsReady() ? "true" : "false");
+        log::debug("Address: {}: isReady: {}", dev->address, dev->IsReady());
         if (dev->IsReady() && (dev->volume != volume)) {
           std::vector<RawAddress> devices = {dev->address};
           RemovePendingVolumeControlOperations(

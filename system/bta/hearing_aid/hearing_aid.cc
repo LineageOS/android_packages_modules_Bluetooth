@@ -449,7 +449,7 @@ class HearingAidImpl : public HearingAid {
     bool droppable =
         std::chrono::duration_cast<std::chrono::seconds>(duration).count() >=
         DROP_FREQUENCY_THRESHOLD;
-    log::info("IsBelowDropFrequency {}", droppable ? "true" : "false");
+    log::info("IsBelowDropFrequency {}", droppable);
     return droppable;
   }
 

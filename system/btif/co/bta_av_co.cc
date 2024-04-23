@@ -321,8 +321,7 @@ tA2DP_STATUS BtaAvCo::ProcessSourceGetConfig(
   // If acceptor -> reconfig otherwise reply for configuration
   *p_sep_info_idx = p_sink->sep_info_idx;
   log::verbose("peer {} acceptor:{} reconfig_needed:{}", p_peer->addr,
-               (p_peer->acceptor) ? "true" : "false",
-               (p_peer->reconfig_needed) ? "true" : "false");
+               p_peer->acceptor, p_peer->reconfig_needed);
   if (p_peer->acceptor) {
     if (p_peer->reconfig_needed) {
       log::verbose("call BTA_AvReconfig(0x{:x}) for peer {}", bta_av_handle,
@@ -433,8 +432,7 @@ tA2DP_STATUS BtaAvCo::ProcessSinkGetConfig(tBTA_AV_HNDL bta_av_handle,
   // If acceptor -> reconfig otherwise reply for configuration
   *p_sep_info_idx = p_source->sep_info_idx;
   log::verbose("peer {} acceptor:{} reconfig_needed:{}", p_peer->addr,
-               (p_peer->acceptor) ? "true" : "false",
-               (p_peer->reconfig_needed) ? "true" : "false");
+               p_peer->acceptor, p_peer->reconfig_needed);
   if (p_peer->acceptor) {
     if (p_peer->reconfig_needed) {
       log::verbose("call BTA_AvReconfig(0x{:x}) for peer {}", bta_av_handle,
@@ -638,7 +636,7 @@ void BtaAvCo::ProcessStart(tBTA_AV_HNDL bta_av_handle,
       A2DP_UsesRtpHeader(p_peer->ContentProtectActive(), p_codec_info);
 
   log::verbose("bta_av_handle: 0x{:x} add_rtp_header: {}", bta_av_handle,
-               add_rtp_header ? "true" : "false");
+               add_rtp_header);
   *p_no_rtp_header = !add_rtp_header;
 }
 

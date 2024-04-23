@@ -670,7 +670,7 @@ tBTM_STATUS BTM_DeleteStoredLinkKey(const RawAddress* bd_addr,
   bool delete_all_flag = !bd_addr;
 
   log::verbose("BTM: BTM_DeleteStoredLinkKey: delete_all_flag: {}",
-               delete_all_flag ? "true" : "false");
+               delete_all_flag);
 
   btm_sec_cb.devcb.p_stored_link_key_cmpl_cb = p_cb;
   if (!bd_addr) {

@@ -744,8 +744,7 @@ static void switch_buffer_size_callback(bool is_low_latency_buffer_size) {
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid()) return;
 
-  log::verbose("SwitchBufferSizeCallback: {}",
-               is_low_latency_buffer_size ? "true" : "false");
+  log::verbose("SwitchBufferSizeCallback: {}", is_low_latency_buffer_size);
 
   sCallbackEnv->CallVoidMethod(
       sJniCallbacksObj, method_switchBufferSizeCallback,
@@ -762,8 +761,7 @@ static void switch_codec_callback(bool is_low_latency_buffer_size) {
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid()) return;
 
-  log::verbose("SwitchCodecCallback: {}",
-               is_low_latency_buffer_size ? "true" : "false");
+  log::verbose("SwitchCodecCallback: {}", is_low_latency_buffer_size);
 
   sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_switchCodecCallback,
                                (jboolean)is_low_latency_buffer_size);

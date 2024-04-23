@@ -1003,8 +1003,7 @@ bool L2CA_UseLatencyMode(const RawAddress& bd_addr, bool use_latency_mode) {
     log::warn("L2CAP - no LCB for L2CA_SetUseLatencyMode, BDA: {}", bd_addr);
     return false;
   }
-  log::info("BDA: {}, use_latency_mode: {}", bd_addr,
-            use_latency_mode ? "true" : "false");
+  log::info("BDA: {}, use_latency_mode: {}", bd_addr, use_latency_mode);
   p_lcb->use_latency_mode = use_latency_mode;
   return true;
 }

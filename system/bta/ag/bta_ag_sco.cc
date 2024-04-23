@@ -1670,8 +1670,7 @@ bool bta_ag_is_sco_managed_by_audio() {
   bool value = false;
   if (IS_FLAG_ENABLED(is_sco_managed_by_audio)) {
     value = osi_property_get_bool("bluetooth.sco.managed_by_audio", false);
-    log::verbose("is_sco_managed_by_audio enabled={}",
-                 value ? "true" : "false");
+    log::verbose("is_sco_managed_by_audio enabled={}", value);
   }
   return value;
 }
