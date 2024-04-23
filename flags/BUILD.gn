@@ -1,0 +1,41 @@
+import("//bt/flags/aconfig.gni")
+
+aconfig("bluetooth_flags_c_lib") {
+  sources = [
+    "a2dp.aconfig",
+    "asha.aconfig",
+    "audio_routing.aconfig",
+    "avrcp_controller.aconfig",
+    "bta_dm.aconfig",
+    "btif_dm.aconfig",
+    "connectivity.aconfig",
+    "did.aconfig",
+    "discovery_service.aconfig",
+    "dumpsys.aconfig",
+    "framework.aconfig",
+    "gap.aconfig",
+    "hap.aconfig",
+    "hfp.aconfig",
+    "hid.aconfig",
+    "l2cap.aconfig",
+    "le_advertising.aconfig",
+    "leaudio.aconfig",
+    "map.aconfig",
+    "mapclient.aconfig",
+    "metric.aconfig",
+    "opp.aconfig",
+    "pairing.aconfig",
+    "ranging.aconfig",
+    "rfcomm.aconfig",
+    "rnr.aconfig",
+    "sdp.aconfig",
+    "security.aconfig",
+    "sniff.aconfig",
+    "sockets.aconfig",
+    "system_service.aconfig",
+    "vcp.aconfig",
+    "vsc.aconfig",
+  ]
+  package = "com.android.bluetooth.flags"
+  deps = [ "//bt/floss/libflags:libflags" ]
+}
