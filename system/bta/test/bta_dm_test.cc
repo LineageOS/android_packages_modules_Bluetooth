@@ -25,8 +25,8 @@
 #include <string>
 
 #include "bta/dm/bta_dm_device_search.h"
+#include "bta/dm/bta_dm_device_search_int.h"
 #include "bta/dm/bta_dm_disc.h"
-#include "bta/dm/bta_dm_disc_int.h"
 #include "bta/dm/bta_dm_int.h"
 #include "bta/dm/bta_dm_pm.cc"
 #include "bta/dm/bta_dm_sec_int.h"

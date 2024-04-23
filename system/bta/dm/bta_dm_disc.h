@@ -24,7 +24,6 @@
 // Bta module start and stop entry points
 void bta_dm_disc_start(bool delay_close_gatt);
 void bta_dm_disc_stop();
-void bta_dm_search_stop();
 
 // Bta device discovery start and stop entry points
 void bta_dm_disc_start_device_discovery(tBTA_DM_SEARCH_CBACK*);
@@ -67,4 +66,3 @@ void bta_dm_disc_remove_device(const RawAddress& bd_addr);
 
 // Provide data for the dumpsys procedure
 void DumpsysBtaDmDisc(int fd);
-void DumpsysBtaDmSearch(int fd);
