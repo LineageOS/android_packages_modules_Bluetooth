@@ -796,12 +796,11 @@ static void bta_dm_find_services(const RawAddress& bd_addr) {
 
   /* no more services to be discovered */
   if (bta_dm_discovery_cb.service_index >= BTA_MAX_SERVICE_ID) {
-    auto msg = std::make_unique<tBTA_DM_MSG>(tBTA_DM_SVC_RES{});
-    auto& disc_result = std::get<tBTA_DM_SVC_RES>(*msg);
-    disc_result.services = bta_dm_discovery_cb.services_found;
-    disc_result.bd_addr = bta_dm_discovery_cb.peer_bdaddr;
-
-    post_disc_evt(BTA_DM_DISCOVERY_RESULT_EVT, std::move(msg));
+    bta_dm_disc_sm_execute(BTA_DM_DISCOVERY_RESULT_EVT,
+                           std::make_unique<tBTA_DM_MSG>(tBTA_DM_SVC_RES{
+                               .bd_addr = bta_dm_discovery_cb.peer_bdaddr,
+                               .services = bta_dm_discovery_cb.services_found,
+                               .result = BTA_SUCCESS}));
   }
 }
 
@@ -967,19 +966,17 @@ static void gatt_close_timer_cb(void*) {
  *
  ******************************************************************************/
 static void bta_dm_gatt_disc_complete(uint16_t conn_id, tGATT_STATUS status) {
-  log::verbose("conn_id = {}", conn_id);
-
-  auto msg = std::make_unique<tBTA_DM_MSG>(tBTA_DM_SVC_RES{});
-  auto& svc_result = std::get<tBTA_DM_SVC_RES>(*msg);
+  log::verbose("conn_id = {},  service found: 0x{:08x}", conn_id,
+               bta_dm_discovery_cb.services_found);
 
   /* no more services to be discovered */
-  svc_result.result = (status == GATT_SUCCESS) ? BTA_SUCCESS : BTA_FAILURE;
-  log::verbose("service found: 0x{:08x}", bta_dm_discovery_cb.services_found);
-  svc_result.services = bta_dm_discovery_cb.services_found;
-  svc_result.bd_addr = bta_dm_discovery_cb.peer_bdaddr;
-  svc_result.device_type |= BT_DEVICE_TYPE_BLE;
-
-  bta_dm_disc_sm_execute(BTA_DM_DISCOVERY_RESULT_EVT, std::move(msg));
+  bta_dm_disc_sm_execute(
+      BTA_DM_DISCOVERY_RESULT_EVT,
+      std::make_unique<tBTA_DM_MSG>(tBTA_DM_SVC_RES{
+          .bd_addr = bta_dm_discovery_cb.peer_bdaddr,
+          .services = bta_dm_discovery_cb.services_found,
+          .device_type = BT_DEVICE_TYPE_BLE,
+          .result = (status == GATT_SUCCESS) ? BTA_SUCCESS : BTA_FAILURE}));
 
   if (conn_id != GATT_INVALID_CONN_ID) {
     bta_dm_discovery_cb.pending_close_bda = bta_dm_discovery_cb.peer_bdaddr;
