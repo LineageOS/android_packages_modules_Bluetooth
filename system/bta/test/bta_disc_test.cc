@@ -20,8 +20,8 @@
 #include <sys/socket.h>
 
 #include "bta/dm/bta_dm_device_search.h"
+#include "bta/dm/bta_dm_device_search_int.h"
 #include "bta/dm/bta_dm_disc.h"
-#include "bta/dm/bta_dm_disc_int.h"
 #include "bta/test/bta_test_fixtures.h"
 #include "stack/btm/neighbor_inquiry.h"
 #include "stack/include/gatt_api.h"
@@ -53,7 +53,6 @@ void bta_dm_opportunistic_observe_results_cb(tBTM_INQ_RESULTS* p_inq,
                                              uint16_t eir_len);
 void bta_dm_queue_search(tBTA_DM_API_SEARCH& search);
 void bta_dm_start_scan(uint8_t duration_sec, bool low_latency_scan = false);
-void store_avrcp_profile_feature(tSDP_DISC_REC* sdp_rec);
 
 }  // namespace testing
 }  // namespace legacy
@@ -163,11 +162,6 @@ TEST_F(BtaInitializedTest, bta_dm_start_scan) {
   const uint8_t duration_sec = 5;
   bluetooth::legacy::testing::bta_dm_start_scan(duration_sec, kLowLatencyScan);
   bluetooth::legacy::testing::bta_dm_start_scan(duration_sec, kHighLatencyScan);
-}
-
-TEST_F(BtaInitializedTest, store_avrcp_profile_feature) {
-  tSDP_DISC_REC sdp_rec = {};
-  bluetooth::legacy::testing::store_avrcp_profile_feature(&sdp_rec);
 }
 
 TEST_F(BtaInitializedTest, bta_dm_disc_start_device_discovery) {
