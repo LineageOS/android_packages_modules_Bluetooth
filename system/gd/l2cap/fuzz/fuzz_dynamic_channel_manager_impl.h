@@ -79,12 +79,12 @@ class FuzzDynamicChannelManagerImpl {
   }
 
   void SetConnectionOnFail(l2cap::classic::DynamicChannelManager::ConnectionResult result, std::promise<void> promise) {
-    std::move(on_fail_callback_).Invoke(result);
+    std::move(on_fail_callback_)(result);
     promise.set_value();
   }
 
   void SetConnectionOnOpen(std::unique_ptr<l2cap::DynamicChannel> channel, std::promise<void> promise) {
-    std::move(on_open_callback_).Invoke(std::move(channel));
+    std::move(on_open_callback_)(std::move(channel));
     promise.set_value();
   }
 

@@ -60,7 +60,7 @@ class TestController : public Controller {
   }
 
   void SendCompletedAclPacketsCallback(uint16_t handle, uint16_t credits) {
-    acl_credits_callback_.Invoke(handle, credits);
+    acl_credits_callback_(handle, credits);
   }
 
   void UnregisterCompletedAclPacketsCallback() {

@@ -229,7 +229,7 @@ struct Controller::impl {
   }
 
   void NumberOfCompletedPackets(EventView event) {
-    if (acl_credits_callback_.IsEmpty()) {
+    if (!acl_credits_callback_) {
       log::warn("Received event when AclManager is not listening");
       return;
     }
@@ -238,40 +238,40 @@ struct Controller::impl {
     for (auto completed_packets : complete_view.GetCompletedPackets()) {
       uint16_t handle = completed_packets.connection_handle_;
       uint16_t credits = completed_packets.host_num_of_completed_packets_;
-      acl_credits_callback_.Invoke(handle, credits);
-      if (!acl_monitor_credits_callback_.IsEmpty()) {
-        acl_monitor_credits_callback_.Invoke(handle, credits);
+      acl_credits_callback_(handle, credits);
+      if (acl_monitor_credits_callback_) {
+        acl_monitor_credits_callback_(handle, credits);
       }
     }
   }
 
   void register_completed_acl_packets_callback(CompletedAclPacketsCallback callback) {
-    ASSERT(acl_credits_callback_.IsEmpty());
+    ASSERT(!acl_credits_callback_);
     acl_credits_callback_ = callback;
   }
 
   void unregister_completed_acl_packets_callback() {
-    ASSERT(!acl_credits_callback_.IsEmpty());
+    ASSERT(acl_credits_callback_);
     acl_credits_callback_ = {};
   }
 
   void register_completed_monitor_acl_packets_callback(CompletedAclPacketsCallback callback) {
-    ASSERT(acl_monitor_credits_callback_.IsEmpty());
+    ASSERT(!acl_monitor_credits_callback_);
     acl_monitor_credits_callback_ = callback;
   }
 
   void unregister_completed_monitor_acl_packets_callback() {
-    ASSERT(!acl_monitor_credits_callback_.IsEmpty());
+    ASSERT(acl_monitor_credits_callback_);
     acl_monitor_credits_callback_ = {};
   }
 
   void register_monitor_completed_acl_packets_callback(CompletedAclPacketsCallback callback) {
-    ASSERT(acl_monitor_credits_callback_.IsEmpty());
+    ASSERT(!acl_monitor_credits_callback_);
     acl_monitor_credits_callback_ = callback;
   }
 
   void unregister_monitor_completed_acl_packets_callback() {
-    ASSERT(!acl_monitor_credits_callback_.IsEmpty());
+    ASSERT(acl_monitor_credits_callback_);
     acl_monitor_credits_callback_ = {};
   }
 
@@ -770,7 +770,7 @@ struct Controller::impl {
     auto status_view = LeRandCompleteView::Create(view);
     ASSERT(status_view.IsValid());
     ASSERT(status_view.GetStatus() == ErrorCode::SUCCESS);
-    std::move(cb).Invoke(status_view.GetRandomNumber());
+    std::move(cb)(status_view.GetRandomNumber());
   }
 
   void set_event_filter(std::unique_ptr<SetEventFilterBuilder> packet) {

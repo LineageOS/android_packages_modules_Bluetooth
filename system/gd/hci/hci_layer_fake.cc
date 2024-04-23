@@ -148,7 +148,7 @@ void HciLayerFake::IncomingEvent(std::unique_ptr<EventBuilder> event_builder) {
     CommandStatusCallback(event);
   } else {
     ASSERT_NE(registered_events_.find(event_code), registered_events_.end()) << EventCodeText(event_code);
-    registered_events_[event_code].Invoke(event);
+    registered_events_[event_code](event);
   }
 }
 
@@ -159,20 +159,20 @@ void HciLayerFake::IncomingLeMetaEvent(std::unique_ptr<LeMetaEventBuilder> event
   ASSERT_TRUE(meta_event_view.IsValid());
   SubeventCode subevent_code = meta_event_view.GetSubeventCode();
   ASSERT_TRUE(registered_le_events_.find(subevent_code) != registered_le_events_.end());
-  registered_le_events_[subevent_code].Invoke(meta_event_view);
+  registered_le_events_[subevent_code](meta_event_view);
 }
 
 void HciLayerFake::CommandCompleteCallback(EventView event) {
   CommandCompleteView complete_view = CommandCompleteView::Create(event);
   ASSERT_TRUE(complete_view.IsValid());
-  std::move(command_complete_callbacks.front()).Invoke(complete_view);
+  std::move(command_complete_callbacks.front())(complete_view);
   command_complete_callbacks.pop_front();
 }
 
 void HciLayerFake::CommandStatusCallback(EventView event) {
   CommandStatusView status_view = CommandStatusView::Create(event);
   ASSERT_TRUE(status_view.IsValid());
-  std::move(command_status_callbacks.front()).Invoke(status_view);
+  std::move(command_status_callbacks.front())(status_view);
   command_status_callbacks.pop_front();
 }
 

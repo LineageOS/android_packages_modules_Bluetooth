@@ -61,7 +61,7 @@ struct AclScheduler::impl {
       if (entry != nullptr && entry->address == address) {
         // If so, clear the current entry and advance the queue
         outgoing_entry_.reset();
-        handle_outgoing_connection.Invoke();
+        handle_outgoing_connection();
         try_dequeue_next_operation();
         return;
       }
@@ -70,9 +70,9 @@ struct AclScheduler::impl {
     // Otherwise check if it's an incoming request and advance the queue if so
     if (incoming_connecting_address_set_.find(address) != incoming_connecting_address_set_.end()) {
       incoming_connecting_address_set_.erase(address);
-      handle_incoming_connection.Invoke();
+      handle_incoming_connection();
     } else {
-      handle_unknown_connection.Invoke(set_of_incoming_connecting_addresses());
+      handle_unknown_connection(set_of_incoming_connecting_addresses());
     }
     try_dequeue_next_operation();
   }
@@ -100,8 +100,8 @@ struct AclScheduler::impl {
           auto entry_ptr = std::get_if<AclCreateConnectionQueueEntry>(&entry);
           return entry_ptr != nullptr && entry_ptr->address == address;
         },
-        [&]() { cancel_connection.Invoke(); },
-        [&](auto /* entry */) { cancel_connection_completed.Invoke(); });
+        [&]() { cancel_connection(); },
+        [&](auto /* entry */) { cancel_connection_completed(); });
     if (!ok) {
       log::error("Attempted to cancel connection to {} that does not exist", address);
     }
@@ -147,8 +147,8 @@ struct AclScheduler::impl {
           auto entry_ptr = std::get_if<RemoteNameRequestQueueEntry>(&entry);
           return entry_ptr != nullptr && entry_ptr->address == address;
         },
-        [&]() { cancel_request.Invoke(); },
-        [](auto entry) { std::get<RemoteNameRequestQueueEntry>(entry).callback_when_cancelled.Invoke(); });
+        [&]() { cancel_request(); },
+        [](auto entry) { std::get<RemoteNameRequestQueueEntry>(entry).callback_when_cancelled(); });
     if (!ok) {
       log::error("Attempted to cancel remote name request to {} that does not exist", address);
     }
@@ -168,7 +168,7 @@ struct AclScheduler::impl {
       log::info("Pending connections is not empty; so sending next connection");
       auto entry = std::move(pending_outgoing_operations_.front());
       pending_outgoing_operations_.pop_front();
-      std::visit([](auto&& variant) { variant.callback.Invoke(); }, entry);
+      std::visit([](auto&& variant) { variant.callback(); }, entry);
       outgoing_entry_ = std::move(entry);
     }
   }

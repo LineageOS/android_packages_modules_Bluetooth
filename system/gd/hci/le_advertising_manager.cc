@@ -776,9 +776,9 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
       common::ContextualOnceCallback<void(uint8_t /* inst_id */, uint8_t /* status */)> callback) {
     AdvertiserId id = allocate_advertiser();
     if (id == kInvalidId) {
-      callback.Invoke(kInvalidId, AdvertisingCallback::AdvertisingStatus::TOO_MANY_ADVERTISERS);
+      callback(kInvalidId, AdvertisingCallback::AdvertisingStatus::TOO_MANY_ADVERTISERS);
     } else {
-      callback.Invoke(id, AdvertisingCallback::AdvertisingStatus::SUCCESS);
+      callback(id, AdvertisingCallback::AdvertisingStatus::SUCCESS);
     }
   }
 
