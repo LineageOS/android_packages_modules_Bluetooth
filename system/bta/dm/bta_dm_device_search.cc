@@ -30,7 +30,7 @@
 #include <vector>
 
 #include "android_bluetooth_flags.h"
-#include "bta/dm/bta_dm_disc_int.h"
+#include "bta/dm/bta_dm_device_search_int.h"
 #include "bta/dm/bta_dm_disc_legacy.h"
 #include "bta/include/bta_gatt_api.h"
 #include "bta/include/bta_sdp_api.h"
@@ -83,7 +83,7 @@ static void bta_dm_search_cancel_notify();
 static void bta_dm_disable_search();
 
 static void bta_dm_search_sm_execute(tBTA_DM_DEV_SEARCH_EVT event,
-                                     std::unique_ptr<tBTA_DM_MSG> msg);
+                                     std::unique_ptr<tBTA_DM_SEARCH_MSG> msg);
 static void bta_dm_observe_results_cb(tBTM_INQ_RESULTS* p_inq,
                                       const uint8_t* p_eir, uint16_t eir_len);
 static void bta_dm_observe_cmpl_cb(void* p_result);
@@ -96,7 +96,7 @@ static tBTA_DM_DEVICE_SEARCH_STATE bta_dm_search_get_state() {
 }
 
 static void post_search_evt(tBTA_DM_DEV_SEARCH_EVT event,
-                            std::unique_ptr<tBTA_DM_MSG> msg) {
+                            std::unique_ptr<tBTA_DM_SEARCH_MSG> msg) {
   if (do_in_main_thread(FROM_HERE, base::BindOnce(&bta_dm_search_sm_execute,
                                                   event, std::move(msg))) !=
       BT_STATUS_SUCCESS) {
@@ -290,7 +290,7 @@ static void bta_dm_remname_cback(const tBTM_REMOTE_DEV_NAME* p_remote_name) {
   bta_dm_search_cb.name_discover_done = true;
   bd_name_copy(bta_dm_search_cb.peer_name, p_remote_name->remote_bd_name);
 
-  auto msg = std::make_unique<tBTA_DM_MSG>(tBTA_DM_REMOTE_NAME{});
+  auto msg = std::make_unique<tBTA_DM_SEARCH_MSG>(tBTA_DM_REMOTE_NAME{});
   auto& rmt_name_msg = std::get<tBTA_DM_REMOTE_NAME>(*msg);
   rmt_name_msg.bd_addr = bta_dm_search_cb.peer_bdaddr;
   rmt_name_msg.hci_status = p_remote_name->hci_status;
@@ -639,7 +639,7 @@ static void bta_dm_queue_search(tBTA_DM_API_SEARCH& search) {
   if (bta_dm_search_cb.p_pending_search) {
     log::warn("Overwrote previous device discovery inquiry scan request");
   }
-  bta_dm_search_cb.p_pending_search.reset(new tBTA_DM_MSG(search));
+  bta_dm_search_cb.p_pending_search.reset(new tBTA_DM_SEARCH_MSG(search));
   log::info("Queued device discovery inquiry scan request");
 }
 
@@ -859,7 +859,7 @@ bluetooth::common::TimestampedCircularBuffer<tSEARCH_STATE_HISTORY>
  *
  ******************************************************************************/
 static void bta_dm_search_sm_execute(tBTA_DM_DEV_SEARCH_EVT event,
-                                     std::unique_ptr<tBTA_DM_MSG> msg) {
+                                     std::unique_ptr<tBTA_DM_SEARCH_MSG> msg) {
   log::info("state:{}, event:{}[0x{:x}]",
             bta_dm_state_text(bta_dm_search_get_state()),
             bta_dm_event_text(event), event);
@@ -957,9 +957,9 @@ void bta_dm_disc_start_device_discovery(tBTA_DM_SEARCH_CBACK* p_cback) {
     bta_dm_disc_legacy::bta_dm_disc_start_device_discovery(p_cback);
     return;
   }
-  bta_dm_search_sm_execute(
-      BTA_DM_API_SEARCH_EVT,
-      std::make_unique<tBTA_DM_MSG>(tBTA_DM_API_SEARCH{.p_cback = p_cback}));
+  bta_dm_search_sm_execute(BTA_DM_API_SEARCH_EVT,
+                           std::make_unique<tBTA_DM_SEARCH_MSG>(
+                               tBTA_DM_API_SEARCH{.p_cback = p_cback}));
 }
 
 void bta_dm_disc_stop_device_discovery() {

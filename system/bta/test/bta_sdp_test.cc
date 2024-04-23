@@ -38,7 +38,6 @@ namespace legacy {
 namespace testing {
 
 tBTA_DM_SERVICE_DISCOVERY_CB& bta_dm_discovery_cb();
-tBTA_DM_SEARCH_CB& bta_dm_disc_search_cb();
 void bta_dm_sdp_result(tBTA_DM_SDP_RESULT& sdp_event);
 
 }  // namespace testing

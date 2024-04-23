@@ -24,6 +24,7 @@
 #include <base/strings/stringprintf.h>
 #include <stddef.h>
 
+#include "bta/dm/bta_dm_device_search.h"
 #include "bta/dm/bta_dm_disc.h"
 #include "bta/dm/bta_dm_gatt_client.h"
 #include "bta/dm/bta_dm_int.h"
