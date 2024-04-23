@@ -309,3 +309,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "run_clock_recovery_in_worker_thread"
+    namespace: "bluetooth"
+    description: "Fix thread ownership issue in clock_recovery"
+    bug: "333657963"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
