@@ -1208,6 +1208,12 @@ static void btif_hh_upstreams_evt(uint16_t event, char* p_param) {
             p_data->dscp_info.ssr_max_latency, p_data->dscp_info.ssr_min_tout,
             len, p_data->dscp_info.descriptor.dsc_list);
 
+        // Allow incoming connections
+        if (IS_FLAG_ENABLED(allow_switching_hid_and_hogp) &&
+            IS_FLAG_ENABLED(save_initial_hid_connection_policy)) {
+          btif_storage_set_hid_connection_policy(p_dev->link_spec, true);
+        }
+
         ASSERTC(ret == BT_STATUS_SUCCESS, "storing hid info failed", ret);
         log::warn("BTA_HH_GET_DSCP_EVT: Called add device");
 
