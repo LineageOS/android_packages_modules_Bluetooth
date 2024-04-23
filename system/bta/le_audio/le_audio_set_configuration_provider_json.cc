@@ -174,19 +174,6 @@ struct AudioSetConfigurationProviderJson {
            AudioSetConfigurations>
       context_configurations_;
 
-  static const fbs::le_audio::CodecSpecificConfiguration*
-  LookupCodecSpecificParam(
-      const flatbuffers::Vector<
-          flatbuffers::Offset<fbs::le_audio::CodecSpecificConfiguration>>*
-          flat_codec_specific_params,
-      fbs::le_audio::CodecSpecificLtvGenericTypes type) {
-    auto it = std::find_if(
-        flat_codec_specific_params->cbegin(),
-        flat_codec_specific_params->cend(),
-        [&type](const auto& csc) { return (csc->type() == type); });
-    return (it != flat_codec_specific_params->cend()) ? *it : nullptr;
-  }
-
   static CodecConfigSetting CodecConfigSettingFromFlat(
       const fbs::le_audio::CodecId* flat_codec_id,
       const flatbuffers::Vector<
@@ -208,25 +195,6 @@ struct AudioSetConfigurationProviderJson {
           param->type(),
           std::vector<uint8_t>(value->data(), value->data() + value->size()));
     }
-
-    auto param = codec.params.Find(
-        fbs::le_audio::
-            CodecSpecificLtvGenericTypes_SUPPORTED_AUDIO_CHANNEL_ALLOCATION);
-    if (param) {
-      auto ptr = param->data();
-      uint32_t audio_channel_allocation;
-
-      log::assert_that((param->size() == sizeof(audio_channel_allocation)),
-                       "invalid channel allocation value {}",
-                       (int)param->size());
-      STREAM_TO_UINT32(audio_channel_allocation, ptr);
-      codec.channel_count_per_iso_stream =
-          std::bitset<32>(audio_channel_allocation).count();
-    } else {
-      // TODO: Add support for channel count in the json configurations file,
-      //       keeping support for the allocations for compatibility.
-    }
-
     return codec;
   }
 
@@ -234,10 +202,14 @@ struct AudioSetConfigurationProviderJson {
       const fbs::le_audio::AudioSetSubConfiguration* flat_subconfig,
       QosConfigSetting qos, std::vector<AseConfiguration>& subconfigs,
       types::CodecLocation location) {
-    auto config = AseConfiguration(
-        CodecConfigSettingFromFlat(flat_subconfig->codec_id(),
-                                   flat_subconfig->codec_configuration()),
-        qos);
+    auto codec_config = CodecConfigSettingFromFlat(
+        flat_subconfig->codec_id(), flat_subconfig->codec_configuration());
+
+    // Fill in the remaining params
+    codec_config.channel_count_per_iso_stream =
+        flat_subconfig->ase_channel_cnt();
+
+    auto config = AseConfiguration(codec_config, qos);
 
     // Note that these parameters are set here since for now, we are using the
     // common configuration source for all the codec locations.
@@ -353,29 +325,10 @@ struct AudioSetConfigurationProviderJson {
     }
 
     types::BidirectionalPair<std::vector<AseConfiguration>> subconfigs;
-    types::BidirectionalPair<uint8_t> device_cnt;
-    types::BidirectionalPair<types::LeAudioConfigurationStrategy> strategy = {
-        le_audio::types::LeAudioConfigurationStrategy::MONO_ONE_CIS_PER_DEVICE,
-        le_audio::types::LeAudioConfigurationStrategy::MONO_ONE_CIS_PER_DEVICE};
-
     if (codec_cfg != nullptr && codec_cfg->subconfigurations()) {
       /* Load subconfigurations */
       for (auto subconfig : *codec_cfg->subconfigurations()) {
         auto direction = subconfig->direction();
-
-        auto strategy_int =
-            static_cast<int>(subconfig->configuration_strategy());
-        bool valid_strategy =
-            (strategy_int >= (int)types::LeAudioConfigurationStrategy::
-                                 MONO_ONE_CIS_PER_DEVICE) &&
-            strategy_int < (int)types::LeAudioConfigurationStrategy::RFU;
-
-        strategy.get(direction) =
-            valid_strategy
-                ? static_cast<types::LeAudioConfigurationStrategy>(strategy_int)
-                : types::LeAudioConfigurationStrategy::RFU;
-        device_cnt.get(direction) = subconfig->device_cnt();
-
         processSubconfig(*subconfig, qos.get(direction),
                          subconfigs.get(direction), location);
       }
@@ -392,7 +345,6 @@ struct AudioSetConfigurationProviderJson {
         .name = flat_cfg->name()->c_str(),
         .packing = bluetooth::hci::kIsoCigPackingSequential,
         .confs = std::move(subconfigs),
-        .topology_info = {{device_cnt, strategy}},
     };
   }
 
@@ -403,6 +355,16 @@ struct AudioSetConfigurationProviderJson {
       types::CodecLocation location) {
     SetConfigurationFromFlatSubconfig(&subconfig, qos_setting, subconfigs,
                                       location);
+
+    // Recalculate some qos params based on the Core Codec Configuration
+    for (auto& subconfig : subconfigs) {
+      const auto& core_config = subconfig.codec.params.GetAsCoreCodecConfig();
+      subconfig.qos.maxSdu =
+          subconfig.codec.GetChannelCountPerIsoStream() *
+          core_config.octets_per_codec_frame.value_or(0) *
+          core_config.codec_frames_blocks_per_sdu.value_or(1);
+      subconfig.qos.sduIntervalUs = core_config.GetFrameDurationUs();
+    }
   }
 
   bool LoadConfigurationsFromFiles(const char* schema_file,
@@ -589,14 +551,6 @@ struct AudioSetConfigurationProvider::impl {
                    << (direction == types::kLeAudioDirectionSink
                            ? "Sink (speaker)\n"
                            : "Source (microphone)\n");
-            if (conf->topology_info.has_value()) {
-              stream << "    number of devices: "
-                     << +conf->topology_info->device_count.get(direction)
-                     << " \n"
-                     << "    strategy: "
-                     << (int)(conf->topology_info->strategy.get(direction))
-                     << " \n";
-            }
             for (const auto& ent : conf->confs.get(direction)) {
               stream << "    ASE config: "
                      << "     qos->target latency: " << +ent.qos.target_latency
@@ -689,38 +643,20 @@ bool AudioSetConfigurationProvider::CheckConfigurationIsBiDirSwb(
 
 bool AudioSetConfigurationProvider::CheckConfigurationIsDualBiDirSwb(
     const set_configurations::AudioSetConfiguration& set_configuration) const {
-  /* Check both directions for dual channel SWB */
-  uint8_t single_dev_dual_bidir_swb = 0;
-  uint8_t dual_dev_dual_bidir_swb = 0;
+  types::BidirectionalPair<uint8_t> swb_direction_counter = {0, 0};
 
   for (auto direction : {le_audio::types::kLeAudioDirectionSink,
                          le_audio::types::kLeAudioDirectionSource}) {
-    uint8_t ase_cnt = 0;
-    for (auto const& conf : set_configuration.confs.get(direction)) {
-      if (conf.codec.GetSamplingFrequencyHz() <
-          bluetooth::le_audio::LeAudioCodecConfiguration::kSampleRate32000) {
-        return false;
-      }
-      ++ase_cnt;
-    }
-
-    log::assert_that(
-        set_configuration.topology_info.has_value(),
-        "No topology info, which is required to properly configure the ASEs");
-    if (set_configuration.topology_info->device_count.get(direction) == 1 &&
-        ase_cnt == 2) {
-      single_dev_dual_bidir_swb |= direction;
-    }
-    if (set_configuration.topology_info->device_count.get(direction) == 2 &&
-        ase_cnt == 2) {
-      dual_dev_dual_bidir_swb |= direction;
-    }
+    auto const& confs = set_configuration.confs.get(direction);
+    swb_direction_counter.get(direction) +=
+        std::count_if(confs.begin(), confs.end(), [](auto const& cfg) {
+          return cfg.codec.GetSamplingFrequencyHz() >=
+                 bluetooth::le_audio::LeAudioCodecConfiguration::
+                     kSampleRate32000;
+        });
   }
 
-  return single_dev_dual_bidir_swb ==
-             bluetooth::le_audio::types::kLeAudioDirectionBoth ||
-         dual_dev_dual_bidir_swb ==
-             bluetooth::le_audio::types::kLeAudioDirectionBoth;
+  return (swb_direction_counter.sink > 1) && (swb_direction_counter.source > 1);
 }
 
 }  // namespace bluetooth::le_audio
