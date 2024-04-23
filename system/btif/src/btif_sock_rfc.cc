@@ -333,7 +333,7 @@ bt_status_t btsock_rfc_listen(const char* service_name,
   }
   log::info("Adding listening socket service_name: {} - channel: {}",
             service_name, channel);
-  BTA_JvGetChannelId(BTA_JV_CONN_TYPE_RFCOMM, slot->id, channel);
+  BTA_JvGetChannelId(tBTA_JV_CONN_TYPE::RFCOMM, slot->id, channel);
   *sock_fd = slot->app_fd;  // Transfer ownership of fd to caller.
   /*TODO:
    * We are leaking one of the app_fd's - either the listen socket, or the
