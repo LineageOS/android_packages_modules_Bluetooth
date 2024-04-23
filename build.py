@@ -614,19 +614,25 @@ class HostBuild():
             self._target_all()
 
 
+# Default to 10 min timeouts on all git operations.
+GIT_TIMEOUT_SEC = 600
+
+
 class Bootstrap():
 
-    def __init__(self, base_dir, bt_dir, partial_staging):
+    def __init__(self, base_dir, bt_dir, partial_staging, clone_timeout):
         """ Construct bootstrapper.
 
         Args:
             base_dir: Where to stage everything.
             bt_dir: Where bluetooth source is kept (will be symlinked)
             partial_staging: Whether to do a partial clone for staging.
+            clone_timeout: Timeout for clone operations.
         """
         self.base_dir = os.path.abspath(base_dir)
         self.bt_dir = os.path.abspath(bt_dir)
         self.partial_staging = partial_staging
+        self.clone_timeout = clone_timeout
 
         # Create base directory if it doesn't already exist
         os.makedirs(self.base_dir, exist_ok=True)
@@ -641,6 +647,21 @@ class Bootstrap():
 
         self.dir_setup_complete = os.path.join(self.base_dir, '.setup-complete')
 
+    def _run_with_timeout(self, cmd, cwd, timeout=None):
+        """Runs a command using subprocess.check_output. """
+        print('Running command: {} [at cwd={}]'.format(' '.join(cmd), cwd))
+        with subprocess.Popen(cmd, cwd=cwd) as proc:
+            try:
+                outs, errs = proc.communicate(timeout=timeout)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+                outs, errs = proc.communicate()
+                print('Timeout on {}'.format(' '.join(cmd)), file=sys.stderr)
+                raise
+
+            if proc.returncode != 0:
+                raise Exception('Cmd {} had return code {}'.format(' '.join(cmd), proc.returncode))
+
     def _update_platform2(self):
         """Updates repositories used for build."""
         for project in BOOTSTRAP_GIT_REPOS.keys():
@@ -648,7 +669,7 @@ class Bootstrap():
             (repo, commit) = BOOTSTRAP_GIT_REPOS[project]
 
             # Update to required commit when necessary or pull the latest code.
-            if commit:
+            if commit is not None:
                 head = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=cwd).strip()
                 if head != commit:
                     subprocess.check_call(['git', 'fetch'], cwd=cwd)
@@ -681,9 +702,29 @@ class Bootstrap():
             # Check out all repos in git directory
             for project in BOOTSTRAP_GIT_REPOS.keys():
                 (repo, commit) = BOOTSTRAP_GIT_REPOS[project]
-                subprocess.check_call(['git', 'clone', repo, project] + clone_options, cwd=self.git_dir)
+
+                # Try repo clone several times.
+                # Currently, we set timeout on this operation after
+                # |self.clone_timeout|. If it fails, try to recover.
+                tries = 2
+                for x in range(tries):
+                    try:
+                        self._run_with_timeout(['git', 'clone', repo, project] + clone_options,
+                                               cwd=self.git_dir,
+                                               timeout=self.clone_timeout)
+                    except subprocess.TimeoutExpired:
+                        shutil.rmtree(os.path.join(self.git_dir, project))
+                        if x == tries - 1:
+                            raise
+                    # All other exceptions should raise
+                    except:
+                        raise
+                    # No exceptions/problems should not retry.
+                    else:
+                        break
+
                 # Pin to commit.
-                if commit:
+                if commit is not None:
                     subprocess.check_call(['git', 'checkout', commit], cwd=os.path.join(self.git_dir, project))
 
         # Symlink things
@@ -890,6 +931,10 @@ if __name__ == '__main__':
         help='Bootstrap git repositories with partial clones. Use to speed up initial git clone for automated builds.',
         default=False,
         action='store_true')
+    parser.add_argument('--clone-timeout',
+                        help='Timeout for repository cloning during bootstrap.',
+                        default=GIT_TIMEOUT_SEC,
+                        type=int)
     args = parser.parse_args()
 
     # Make sure we get absolute path + expanded path for bootstrap directory
@@ -901,7 +946,7 @@ if __name__ == '__main__':
         raise Exception("Only x86_64 machines are currently supported by this build script.")
 
     if args.run_bootstrap:
-        bootstrap = Bootstrap(args.bootstrap_dir, os.path.dirname(__file__), args.partial_staging)
+        bootstrap = Bootstrap(args.bootstrap_dir, os.path.dirname(__file__), args.partial_staging, args.clone_timeout)
         bootstrap.bootstrap()
     elif args.print_env:
         build = HostBuild(args)
