@@ -35,3 +35,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "android_headtracker_service"
+    namespace: "bluetooth"
+    description: "Support headtracking through Android Headtracker Service"
+    bug: "335708774"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
