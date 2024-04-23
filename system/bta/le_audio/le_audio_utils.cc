@@ -477,21 +477,48 @@ GetAudioSessionCodecConfigFromAudioSetConfiguration(
       break;
     }
     group_config.bits_per_sample = conf.codec.GetBitsPerSample();
-
-    log::assert_that(
-        audio_set_conf.topology_info.has_value(),
-        "No topology info, which is required to properly configure the ASEs");
-    group_config.num_channels +=
-        conf.codec.GetChannelCountPerIsoStream() *
-        audio_set_conf.topology_info->device_count.get(remote_direction);
+    group_config.num_channels += conf.codec.GetChannelCountPerIsoStream();
   }
+  if (group_config.num_channels > 2) group_config.num_channels = 2;
 
   return group_config;
 }
 
-static bool IsCodecConfigCoreSupported(const types::LeAudioLtvMap& pacs,
-                                       const types::LeAudioLtvMap& reqs,
-                                       uint8_t channel_cnt_per_ase) {
+types::LeAudioConfigurationStrategy GetStrategyForAseConfig(
+    const std::vector<le_audio::set_configurations::AseConfiguration>& cfgs,
+    uint8_t device_cnt) {
+  if (cfgs.size() == 0) {
+    return types::LeAudioConfigurationStrategy::RFU;
+  }
+
+  /* Banded headphones or the Classic TWS style topology (a single device) */
+  if (device_cnt == 1) {
+    if (cfgs.at(0).codec.GetChannelCountPerIsoStream() == 1) {
+      /* One mono ASE - could be a single channel microphone */
+      if (cfgs.size() == 1) {
+        return types::LeAudioConfigurationStrategy::MONO_ONE_CIS_PER_DEVICE;
+      }
+
+      /* Each channel on a dedicated ASE - TWS style split channel re-routing */
+      return types::LeAudioConfigurationStrategy::STEREO_TWO_CISES_PER_DEVICE;
+    }
+
+    /* Banded headphones with 1 ASE - requires two channels per CIS */
+    return types::LeAudioConfigurationStrategy::STEREO_ONE_CIS_PER_DEVICE;
+  }
+
+  // We need at least 2 ASEs in the group config to set up more than one device
+  if (cfgs.size() == 1) {
+    return types::LeAudioConfigurationStrategy::RFU;
+  }
+
+  /* The common one channel per device topology */
+  return types::LeAudioConfigurationStrategy::MONO_ONE_CIS_PER_DEVICE;
+}
+
+static bool IsCodecConfigSupported(const types::LeAudioLtvMap& pacs,
+                                   const types::LeAudioLtvMap& reqs,
+                                   uint8_t channel_cnt_per_ase) {
   auto caps = pacs.GetAsCoreCodecCapabilities();
   auto config = reqs.GetAsCoreCodecConfig();
 
@@ -565,7 +592,7 @@ static bool IsCodecConfigSettingSupported(
     log::assert_that(
         !pac.codec_spec_caps.IsEmpty(),
         "Codec specific capabilities are not parsed approprietly.");
-    return IsCodecConfigCoreSupported(
+    return IsCodecConfigSupported(
         pac.codec_spec_caps, codec_config_setting.params,
         codec_config_setting.GetChannelCountPerIsoStream());
   }

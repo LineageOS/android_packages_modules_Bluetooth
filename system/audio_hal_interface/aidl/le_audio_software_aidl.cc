@@ -23,6 +23,7 @@
 #include <bluetooth/log.h>
 
 #include <atomic>
+#include <bitset>
 #include <unordered_map>
 #include <vector>
 
@@ -767,14 +768,17 @@ bluetooth::audio::le_audio::OffloadCapabilities get_offload_capabilities() {
       str_capability_log += " Decode Capability: " + hal_decode_cap.toString();
     }
 
-    audio_set_config.topology_info = {
-        {{static_cast<uint8_t>(hal_decode_cap.deviceCount),
-          static_cast<uint8_t>(hal_encode_cap.deviceCount)}}};
-
     if (hal_bcast_capability_to_stack_format(hal_bcast_cap, bcast_cap)) {
-      // Set device_cnt, ase_cnt to zero to ignore these fields for broadcast
-      audio_set_config.topology_info = {{{0, 0}}};
-      audio_set_config.confs.sink.push_back(AseConfiguration(bcast_cap));
+      AudioSetConfiguration audio_set_config = {
+          .name = "broadcast offload capability"};
+      // Note: The offloader config supports multiple channels per stream
+      //       (subgroup), corresponding to the number of BISes, where each BIS
+      //       has a single channel.
+      bcast_cap.channel_count_per_iso_stream = 1;
+      auto bis_cnt = hal_bcast_cap.channelCountPerStream;
+      while (bis_cnt--) {
+        audio_set_config.confs.sink.push_back(AseConfiguration(bcast_cap));
+      }
       broadcast_offload_capabilities.push_back(audio_set_config);
       str_capability_log +=
           " Broadcast Capability: " + hal_bcast_cap.toString();

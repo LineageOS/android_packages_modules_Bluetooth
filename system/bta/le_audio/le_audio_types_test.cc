@@ -250,8 +250,6 @@ TEST(LeAudioLtvMapTest, test_configuration_valid) {
   //                            kLeAudioLocationFrontRight
   ASSERT_TRUE(config.audio_channel_allocation.has_value());
   ASSERT_EQ(0x00000003u, config.audio_channel_allocation.value());
-  // Check if allocated channel count matches the number of allocation bits
-  ASSERT_EQ(2u, config.GetChannelCountPerIsoStream());
 
   // OctetsPerCodecFrame = 40
   ASSERT_TRUE(config.octets_per_codec_frame.has_value());

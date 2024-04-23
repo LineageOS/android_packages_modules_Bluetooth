@@ -43,28 +43,6 @@ using types::kLeAudioDirectionSink;
 using types::kLeAudioDirectionSource;
 using types::LeAudioCoreCodecConfig;
 
-static uint8_t min_req_devices_cnt(
-    const AudioSetConfiguration* audio_set_conf) {
-  log::assert_that(
-      audio_set_conf->topology_info.has_value(),
-      "No topology info, which is required to properly configure the ASEs");
-  return std::max(audio_set_conf->topology_info->device_count.sink,
-                  audio_set_conf->topology_info->device_count.source);
-}
-
-static uint8_t min_req_devices_cnt(
-    const AudioSetConfigurations* audio_set_confs) {
-  uint8_t curr_min_req_devices_cnt = 0xff;
-
-  for (auto ent : *audio_set_confs) {
-    uint8_t req_devices_cnt = min_req_devices_cnt(ent);
-    if (req_devices_cnt < curr_min_req_devices_cnt)
-      curr_min_req_devices_cnt = req_devices_cnt;
-  }
-
-  return curr_min_req_devices_cnt;
-}
-
 void get_cis_count(LeAudioContextType context_type, int expected_device_cnt,
                    types::LeAudioConfigurationStrategy strategy,
                    int avail_group_ase_snk_cnt, int avail_group_ase_src_count,
@@ -109,6 +87,9 @@ void get_cis_count(LeAudioContextType context_type, int expected_device_cnt,
       if (is_bidirectional) {
         if ((avail_group_ase_snk_cnt > 0) && (avail_group_ase_src_count) > 0) {
           /* Prepare CIG to enable all microphones per device */
+          /* TODO: Support TWS style device with two source ASEs - two
+           * bidirectional CISes
+           */
           out_cis_count_bidir = expected_device_cnt;
           out_cis_count_unidir_sink = expected_device_cnt;
         } else {
@@ -132,31 +113,6 @@ void get_cis_count(LeAudioContextType context_type, int expected_device_cnt,
       "Uni-Directional Source: {}",
       out_cis_count_bidir, out_cis_count_unidir_sink,
       out_cis_count_unidir_source);
-}
-
-bool check_if_may_cover_scenario(const AudioSetConfigurations* audio_set_confs,
-                                 uint8_t group_size) {
-  if (!audio_set_confs) {
-    log::error("no audio requirements for group");
-    return false;
-  }
-
-  return group_size >= min_req_devices_cnt(audio_set_confs);
-}
-
-bool check_if_may_cover_scenario(const AudioSetConfiguration* audio_set_conf,
-                                 uint8_t group_size) {
-  if (!audio_set_conf) {
-    log::error("no audio requirement for group");
-    return false;
-  }
-
-  return group_size >= min_req_devices_cnt(audio_set_conf);
-}
-
-uint8_t get_num_of_devices_in_configuration(
-    const AudioSetConfiguration* audio_set_conf) {
-  return min_req_devices_cnt(audio_set_conf);
 }
 
 uint16_t CodecConfigSetting::GetOctectsPerFrame() const {
