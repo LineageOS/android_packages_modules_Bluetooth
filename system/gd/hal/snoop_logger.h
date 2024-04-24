@@ -223,7 +223,7 @@ class SnoopLogger : public ::bluetooth::Module {
     OUTGOING,
   };
 
-  void Capture(HciPacket& packet, Direction direction, PacketType type);
+  void Capture(const HciPacket& packet, Direction direction, PacketType type);
 
   // Set a L2CAP channel as acceptlisted, allowing packets with that L2CAP CID
   // to show up in the snoop logs.

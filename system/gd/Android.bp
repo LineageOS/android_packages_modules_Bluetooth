@@ -433,7 +433,6 @@ cc_test {
         },
         android: {
             srcs: [
-                ":BluetoothHalTestSources_hci_android_hidl",
                 ":BluetoothOsTestSources_android",
             ],
             static_libs: [
