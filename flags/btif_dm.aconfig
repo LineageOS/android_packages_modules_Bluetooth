@@ -21,3 +21,13 @@ flag {
     description: "Force BR/EDR transport for retrying SDP service discovery"
     bug: "326656580"
 }
+
+flag {
+    name: "do_not_replace_existing_cod_with_uncategorized_cod"
+    namespace: "bluetooth"
+    description: "Don't replace an existing stored class of device with one determined to be uncategorized"
+    bug: "335909751"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
