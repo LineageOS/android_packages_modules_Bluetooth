@@ -11,6 +11,7 @@ pub use uhid_virt::OutputEvent;
 use uhid_virt::{Bus, CreateParams, InputEvent, StreamError, UHID_EVENT_SIZE};
 
 pub const BLUETOOTH_TELEPHONY_UHID_REPORT_ID: u8 = 1;
+pub const UHID_INPUT_NONE: u8 = 0;
 pub const UHID_INPUT_HOOK_SWITCH: u8 = 1 << 0;
 pub const UHID_INPUT_PHONE_MUTE: u8 = 1 << 1;
 pub const UHID_OUTPUT_NONE: u8 = 0;
