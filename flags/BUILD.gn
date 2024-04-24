@@ -5,6 +5,7 @@ aconfig("bluetooth_flags_c_lib") {
     "a2dp.aconfig",
     "asha.aconfig",
     "audio_routing.aconfig",
+    "avrcp.aconfig",
     "avrcp_controller.aconfig",
     "bta_dm.aconfig",
     "btif_dm.aconfig",
