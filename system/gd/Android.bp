@@ -473,6 +473,7 @@ cc_test {
         "BluetoothGeneratedDumpsysTestData_h",
     ],
     static_libs: [
+        "libbase",
         "libbluetooth-protos",
         "libbluetooth-types",
         "libbluetooth_crypto_toolbox",
@@ -496,7 +497,6 @@ cc_test {
     ],
     shared_libs: [
         "libPlatformProperties",
-        "libbase",
         "libcrypto",
         "server_configurable_flags",
     ],
