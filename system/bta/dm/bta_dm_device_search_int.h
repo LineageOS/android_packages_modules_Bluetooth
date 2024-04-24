@@ -52,21 +52,13 @@ typedef struct {
 } tBTA_DM_API_SEARCH;
 
 typedef struct {
-} tBTA_DM_API_DISCOVERY_CANCEL;
-
-typedef struct {
   RawAddress bd_addr;
   BD_NAME bd_name; /* Name of peer device. */
   tHCI_STATUS hci_status;
 } tBTA_DM_REMOTE_NAME;
 
-/* data type for tBTA_DM_DISC_RESULT */
-typedef struct {
-  tBTA_DM_SEARCH result;
-} tBTA_DM_DISC_RESULT;
-
 using tBTA_DM_SEARCH_MSG =
-    std::variant<tBTA_DM_API_SEARCH, tBTA_DM_REMOTE_NAME, tBTA_DM_DISC_RESULT>;
+    std::variant<tBTA_DM_API_SEARCH, tBTA_DM_REMOTE_NAME>;
 
 /* DM search state */
 typedef enum {
