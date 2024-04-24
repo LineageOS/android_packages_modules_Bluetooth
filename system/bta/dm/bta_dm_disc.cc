@@ -883,8 +883,6 @@ static void bta_dm_discover_services(tBTA_DM_API_DISCOVER& discover) {
 
   if (transport == BT_TRANSPORT_LE) {
     log::info("starting GATT discovery on {}", bd_addr);
-    // set the raw data buffer here
-    memset(g_disc_raw_data_buf, 0, sizeof(g_disc_raw_data_buf));
     /* start GATT for service discovery */
     btm_dm_start_gatt_discovery(bd_addr);
     return;
