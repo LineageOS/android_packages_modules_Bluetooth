@@ -90,6 +90,12 @@ void vlog(Level level, char const* tag, source_location location,
 
   // Print to vsyslog.
   syslog(LOG_USER | severity, "%s", buffer.c_str());
+
+  // abort if the message was fatal.
+  // syslog does not independently abort on CRIT logs.
+  if (level == Level::kFatal) {
+    std::abort();
+  }
 }
 
 }  // namespace bluetooth::log_internal
