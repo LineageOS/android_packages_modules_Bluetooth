@@ -135,21 +135,6 @@ struct BTA_dm_report_role_change {
 };
 extern struct BTA_dm_report_role_change BTA_dm_report_role_change;
 
-// Name: bta_dm_acl_up
-// Params: const RawAddress& bd_addr, tBT_TRANSPORT transport
-// Return: void
-struct bta_dm_acl_up {
-  std::function<void(const RawAddress& bd_addr, tBT_TRANSPORT transport,
-                     uint16_t acl_handle)>
-      body{[](const RawAddress& /* bd_addr */, tBT_TRANSPORT /* transport */,
-              uint16_t /* acl_handle */) {}};
-  void operator()(const RawAddress& bd_addr, tBT_TRANSPORT transport,
-                  uint16_t acl_handle) {
-    body(bd_addr, transport, acl_handle);
-  };
-};
-extern struct bta_dm_acl_up bta_dm_acl_up;
-
 // Name: bta_dm_add_ble_device
 // Params: const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type, tBT_DEVICE_TYPE
 // dev_type Return: void

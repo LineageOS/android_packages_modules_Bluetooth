@@ -664,8 +664,8 @@ static tBTA_DM_PEER_DEVICE* allocate_device_for(const RawAddress& bd_addr,
   return nullptr;
 }
 
-void bta_dm_acl_up(const RawAddress& bd_addr, tBT_TRANSPORT transport,
-                   uint16_t acl_handle) {
+static void bta_dm_acl_up(const RawAddress& bd_addr, tBT_TRANSPORT transport,
+                          uint16_t acl_handle) {
   auto device = allocate_device_for(bd_addr, transport);
   if (device == nullptr) {
     log::warn("Unable to allocate device resources for new connection");
@@ -1703,6 +1703,13 @@ tBTA_DM_PEER_DEVICE* allocate_device_for(const RawAddress& bd_addr,
   return ::allocate_device_for(bd_addr, transport);
 }
 
+void bta_dm_acl_up(const RawAddress& bd_addr, tBT_TRANSPORT transport,
+                   uint16_t acl_handle) {
+  ::bta_dm_acl_up(bd_addr, transport, acl_handle);
+}
+void bta_dm_acl_down(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
+  ::bta_dm_acl_down(bd_addr, transport);
+}
 void bta_dm_init_cb() { ::bta_dm_init_cb(); }
 void bta_dm_deinit_cb() { ::bta_dm_deinit_cb(); }
 void BTA_dm_on_hw_on() { ::BTA_dm_on_hw_on(); }
