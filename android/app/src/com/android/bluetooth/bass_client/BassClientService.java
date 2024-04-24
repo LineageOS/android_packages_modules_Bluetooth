@@ -88,6 +88,7 @@ public class BassClientService extends ProfileService {
     private static final int STATUS_LOCAL_STREAM_REQUESTED = 0;
     private static final int STATUS_LOCAL_STREAM_STREAMING = 1;
     private static final int STATUS_LOCAL_STREAM_SUSPENDED = 2;
+    private static final int STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE = 3;
 
     // Do not modify without updating the HAL bt_le_audio.h files.
     // Match up with BroadcastState enum of bt_le_audio.h
@@ -2308,6 +2309,8 @@ public class BassClientService extends ProfileService {
             }
         } else if (status == STATUS_LOCAL_STREAM_STREAMING) {
             Log.d(TAG, "Ignore STREAMING source status");
+        } else if (status == STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE) {
+            suspendAllReceiversSourceSynchronization();
         }
     }
 
