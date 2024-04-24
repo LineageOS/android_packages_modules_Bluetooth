@@ -589,7 +589,35 @@ static void bta_dm_read_dis_cmpl(const RawAddress& addr,
 }
 #endif
 
-static void bta_dm_service_discovery_cmpl() {
+/*******************************************************************************
+ *
+ * Function         bta_dm_disc_result
+ *
+ * Description      Service discovery result when discovering services on a
+ *                  device
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+static void bta_dm_disc_result(tBTA_DM_SVC_RES& disc_result) {
+  log::verbose("");
+
+  /* disc_res.device_type is set only when GATT discovery is finished in
+   * bta_dm_gatt_disc_complete */
+  bool is_gatt_over_ble = ((disc_result.device_type & BT_DEVICE_TYPE_BLE) != 0);
+
+  /* if any BR/EDR service discovery has been done, report the event */
+  if (!is_gatt_over_ble) {
+    auto& r = disc_result;
+    bta_dm_discovery_cb.service_search_cbacks.on_service_discovery_results(
+        r.bd_addr, r.services, r.device_type, r.uuids, r.result, r.hci_status);
+  } else {
+    GAP_BleReadPeerPrefConnParams(bta_dm_discovery_cb.peer_bdaddr);
+  }
+
+  get_gatt_interface().BTA_GATTC_CancelOpen(0, bta_dm_discovery_cb.peer_bdaddr,
+                                            true);
+
   bta_dm_discovery_set_state(BTA_DM_DISCOVER_IDLE);
 
   uint16_t conn_id = bta_dm_discovery_cb.conn_id;
@@ -657,38 +685,6 @@ static void bta_dm_service_discovery_cmpl() {
 #endif
 
   bta_dm_execute_queued_discovery_request();
-}
-
-/*******************************************************************************
- *
- * Function         bta_dm_disc_result
- *
- * Description      Service discovery result when discovering services on a
- *                  device
- *
- * Returns          void
- *
- ******************************************************************************/
-static void bta_dm_disc_result(tBTA_DM_SVC_RES& disc_result) {
-  log::verbose("");
-
-  /* disc_res.device_type is set only when GATT discovery is finished in
-   * bta_dm_gatt_disc_complete */
-  bool is_gatt_over_ble = ((disc_result.device_type & BT_DEVICE_TYPE_BLE) != 0);
-
-  /* if any BR/EDR service discovery has been done, report the event */
-  if (!is_gatt_over_ble) {
-    auto& r = disc_result;
-    bta_dm_discovery_cb.service_search_cbacks.on_service_discovery_results(
-        r.bd_addr, r.services, r.device_type, r.uuids, r.result, r.hci_status);
-  } else {
-    GAP_BleReadPeerPrefConnParams(bta_dm_discovery_cb.peer_bdaddr);
-  }
-
-  get_gatt_interface().BTA_GATTC_CancelOpen(0, bta_dm_discovery_cb.peer_bdaddr,
-                                            true);
-
-  bta_dm_service_discovery_cmpl();
 }
 
 /*******************************************************************************
