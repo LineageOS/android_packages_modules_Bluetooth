@@ -370,10 +370,9 @@ void EnableBtQualityReport(bool is_enable) {
   vendor_cap_supported_version = cmn_vsc_cb.version_supported;
 
   log::info(
-      "Event Mask: {}, Interval: {}, Multiple: {}, "
+      "Event Mask: 0x{:x}, Interval: {}, Multiple: {}, "
       "vendor_cap_supported_version: {}",
-      loghex(bqr_config.quality_event_mask),
-      bqr_config.minimum_report_interval_ms,
+      bqr_config.quality_event_mask, bqr_config.minimum_report_interval_ms,
       bqr_config.report_interval_multiple, vendor_cap_supported_version);
   ConfigureBqr(bqr_config);
 }
@@ -384,8 +383,9 @@ void ConfigureBqr(const BqrConfiguration& bqr_config) {
         bqr_config.quality_event_mask > kQualityEventMaskAll ||
         bqr_config.minimum_report_interval_ms > kMinReportIntervalMaxMs) {
       log::fatal(
-          "Invalid Parameter, Action: {}, Mask: {}, Interval: {} Multiple: {}",
-          bqr_config.report_action, loghex(bqr_config.quality_event_mask),
+          "Invalid Parameter, Action: {}, Mask: 0x{:x}, Interval: {} Multiple: "
+          "{}",
+          bqr_config.report_action, bqr_config.quality_event_mask,
           bqr_config.minimum_report_interval_ms,
           bqr_config.report_interval_multiple);
       return;
@@ -393,18 +393,17 @@ void ConfigureBqr(const BqrConfiguration& bqr_config) {
       if (bqr_config.report_action > REPORT_ACTION_CLEAR ||
           bqr_config.quality_event_mask > kQualityEventMaskAll ||
           bqr_config.minimum_report_interval_ms > kMinReportIntervalMaxMs) {
-        log::fatal("Invalid Parameter, Action: {}, Mask: {}, Interval: {}",
-                   bqr_config.report_action,
-                   loghex(bqr_config.quality_event_mask),
+        log::fatal("Invalid Parameter, Action: {}, Mask: 0x{:x}, Interval: {}",
+                   bqr_config.report_action, bqr_config.quality_event_mask,
                    bqr_config.minimum_report_interval_ms);
         return;
       }
     }
   }
 
-  log::info("Action: {}, Mask: {}, Interval: {} Multiple: {}",
-            loghex(static_cast<uint8_t>(bqr_config.report_action)),
-            loghex(bqr_config.quality_event_mask),
+  log::info("Action: 0x{:x}, Mask: 0x{:x}, Interval: {} Multiple: {}",
+            static_cast<uint8_t>(bqr_config.report_action),
+            bqr_config.quality_event_mask,
             bqr_config.minimum_report_interval_ms,
             bqr_config.report_interval_multiple);
 
@@ -446,7 +445,7 @@ void BqrVscCompleteCallback(tBTM_VSC_CMPL* p_vsc_cmpl_params) {
 
   STREAM_TO_UINT8(status, p_event_param_buf);
   if (status != HCI_SUCCESS) {
-    log::error("Fail to configure BQR. status: {}", loghex(status));
+    log::error("Fail to configure BQR. status: 0x{:x}", status);
     return;
   }
 
@@ -477,10 +476,10 @@ void BqrVscCompleteCallback(tBTM_VSC_CMPL* p_vsc_cmpl_params) {
   }
 
   log::info(
-      "current event mask: {}, vendor quality: {}, vendor trace: {}, report "
-      "interval: {}",
-      loghex(current_quality_event_mask), loghex(current_vnd_quality_mask),
-      loghex(current_vnd_trace_mask), loghex(bqr_report_interval));
+      "current event mask: 0x{:x}, vendor quality: 0x{:x}, vendor trace: "
+      "0x{:x}, report interval: 0x{:x}",
+      current_quality_event_mask, current_vnd_quality_mask,
+      current_vnd_trace_mask, bqr_report_interval);
 
   ConfigureBqrCmpl(current_quality_event_mask);
 }
@@ -524,7 +523,7 @@ void ConfigBqrA2dpScoThreshold() {
 }
 
 void ConfigureBqrCmpl(uint32_t current_evt_mask) {
-  log::info("current_evt_mask: {}", loghex(current_evt_mask));
+  log::info("current_evt_mask: 0x{:x}", current_evt_mask);
   // (Un)Register for VSE of Bluetooth Quality Report sub event
   tBTM_STATUS btm_status = BTM_BT_Quality_Report_VSE_Register(
       current_evt_mask > kQualityEventMaskAllOff, CategorizeBqrEvent);
@@ -588,11 +587,11 @@ void CategorizeBqrEvent(uint8_t length, const uint8_t* p_bqr_event) {
     case QUALITY_REPORT_ID_BT_SCHEDULING_TRACE:
     case QUALITY_REPORT_ID_CONTROLLER_DBG_INFO:
     case QUALITY_REPORT_ID_VENDOR_SPECIFIC_TRACE:
-      log::warn("Unexpected ID: {}", loghex(quality_report_id));
+      log::warn("Unexpected ID: 0x{:x}", quality_report_id);
       break;
 
     default:
-      log::warn("Unknown ID: {}", loghex(quality_report_id));
+      log::warn("Unknown ID: 0x{:x}", quality_report_id);
       break;
   }
 }

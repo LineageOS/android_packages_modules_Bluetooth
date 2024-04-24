@@ -225,7 +225,7 @@ static void bta_gattc_explore_next_service(uint16_t conn_id,
                                            tBTA_GATTC_SERV* p_srvc_cb) {
   tBTA_GATTC_CLCB* p_clcb = bta_gattc_find_clcb_by_conn_id(conn_id);
   if (!p_clcb) {
-    log::error("unknown conn_id={}", loghex(conn_id));
+    log::error("unknown conn_id=0x{:x}", conn_id);
     return;
   }
 
@@ -284,7 +284,7 @@ static void bta_gattc_explore_srvc_finished(uint16_t conn_id,
                                             tBTA_GATTC_SERV* p_srvc_cb) {
   tBTA_GATTC_CLCB* p_clcb = bta_gattc_find_clcb_by_conn_id(conn_id);
   if (!p_clcb) {
-    log::error("unknown conn_id={}", loghex(conn_id));
+    log::error("unknown conn_id=0x{:x}", conn_id);
     return;
   }
 
@@ -382,14 +382,14 @@ void bta_gattc_sdp_callback(const RawAddress& /* bd_addr */,
     uint16_t end_handle = (uint16_t)pe.params[1];
 
 #if (BTA_GATT_DEBUG == TRUE)
-    log::verbose("Found ATT service uuid={}, s_handle={}, e_handle={}",
-                 service_uuid, loghex(start_handle), loghex(end_handle));
+    log::verbose("Found ATT service uuid={}, s_handle=0x{:x}, e_handle=0x{:x}",
+                 service_uuid, start_handle, end_handle);
 #endif
 
     if (!GATT_HANDLE_IS_VALID(start_handle) ||
         !GATT_HANDLE_IS_VALID(end_handle)) {
-      log::error("invalid start_handle={}, end_handle={}", loghex(start_handle),
-                 loghex(end_handle));
+      log::error("invalid start_handle=0x{:x}, end_handle=0x{:x}", start_handle,
+                 end_handle);
       p_sdp_rec = get_legacy_stack_sdp_api()->db.SDP_FindServiceInDb(
           cb_data->p_sdp_db, 0, p_sdp_rec);
       continue;
@@ -832,7 +832,7 @@ static void bta_gattc_read_ext_prop_desc_cmpl(
   }
 
   if (status != GATT_SUCCESS) {
-    log::warn("Discovery on server failed: {}", loghex(status));
+    log::warn("Discovery on server failed: 0x{:x}", status);
     bta_gattc_reset_discover_st(p_clcb->p_srcb, GATT_ERROR);
     return;
   }
@@ -1025,7 +1025,7 @@ void bta_gattc_get_gatt_db(uint16_t conn_id, uint16_t start_handle,
 
   log::info("");
   if (p_clcb == NULL) {
-    log::error("Unknown conn_id={}", loghex(conn_id));
+    log::error("Unknown conn_id=0x{:x}", conn_id);
     return;
   }
 

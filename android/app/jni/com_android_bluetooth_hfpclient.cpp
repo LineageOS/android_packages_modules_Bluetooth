@@ -201,7 +201,7 @@ static void callsetup_cb(const RawAddress* bd_addr,
   ScopedLocalRef<jbyteArray> addr(sCallbackEnv.get(), marshall_bda(bd_addr));
   if (!addr.get()) return;
 
-  log::debug("callsetup_cb bdaddr {}", ADDRESS_TO_LOGGABLE_STR(*bd_addr));
+  log::debug("callsetup_cb bdaddr {}", *bd_addr);
 
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onCallSetup,
                                (jint)callsetup, addr.get());

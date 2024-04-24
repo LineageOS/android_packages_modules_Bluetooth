@@ -62,7 +62,7 @@ class HearingAidCallbacksImpl : public HearingAidCallbacks {
 
   void OnDeviceAvailable(uint8_t capabilities, uint64_t hi_sync_id,
                          const RawAddress& bd_addr) override {
-    log::info("capabilities={} hi_sync_id={}", +capabilities, hi_sync_id);
+    log::info("capabilities={} hi_sync_id={}", capabilities, hi_sync_id);
 
     std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);

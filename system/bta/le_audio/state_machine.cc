@@ -728,13 +728,13 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
       uint32_t crcErrorPackets, uint32_t rxUnreceivedPackets,
       uint32_t duplicatePackets) {
     log::info(
-        "conn_handle: {}, txUnackedPackets: {}, txFlushedPackets: {}, "
-        "txLastSubeventPackets: {}, retransmittedPackets: {}, crcErrorPackets: "
-        "{}, rxUnreceivedPackets: {}, duplicatePackets: {}",
-        loghex(conn_handle), loghex(txUnackedPackets), loghex(txFlushedPackets),
-        loghex(txLastSubeventPackets), loghex(retransmittedPackets),
-        loghex(crcErrorPackets), loghex(rxUnreceivedPackets),
-        loghex(duplicatePackets));
+        "conn_handle: 0x{:x}, txUnackedPackets: 0x{:x}, txFlushedPackets: "
+        "0x{:x}, txLastSubeventPackets: 0x{:x}, retransmittedPackets: 0x{:x}, "
+        "crcErrorPackets: 0x{:x}, rxUnreceivedPackets: 0x{:x}, "
+        "duplicatePackets: 0x{:x}",
+        conn_handle, txUnackedPackets, txFlushedPackets, txLastSubeventPackets,
+        retransmittedPackets, crcErrorPackets, rxUnreceivedPackets,
+        duplicatePackets);
   }
 
   void ReleaseCisIds(LeAudioDeviceGroup* group) {
@@ -1067,7 +1067,7 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
     if (value.size() > (leAudioDevice->mtu_ - 3)) {
       log::warn("{}, using long write procedure ({} > {})",
                 leAudioDevice->address_, static_cast<int>(value.size()),
-                (leAudioDevice->mtu_ - 3));
+                leAudioDevice->mtu_ - 3);
 
       /* Note, that this type is actually LONG WRITE.
        * Meaning all the Prepare Writes plus Execute is handled in the stack
@@ -1700,8 +1700,8 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
             BTM_GetHCIConnHandle(leAudioDevice->address_, BT_TRANSPORT_LE);
         conn_pairs.push_back({.cis_conn_handle = ase->cis_conn_hdl,
                               .acl_conn_handle = acl_handle});
-        log::debug("cis handle: {} acl handle : {}", ase->cis_conn_hdl,
-                   loghex(+acl_handle));
+        log::debug("cis handle: {} acl handle : 0x{:x}", ase->cis_conn_hdl,
+                   acl_handle);
 
       } while ((ase = leAudioDevice->GetNextActiveAse(ase)));
     } while ((leAudioDevice = group->GetNextActiveDevice(leAudioDevice)));

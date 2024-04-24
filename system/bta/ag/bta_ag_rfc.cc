@@ -267,9 +267,8 @@ void bta_ag_start_servers(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK services) {
         /* TODO: CR#137125 to handle to error properly */
         log::error(
             "RFCOMM_CreateConnectionWithSecurity ERROR {}, p_scb={}, "
-            "services={}, mgmt_cback_index={}",
-            status, fmt::ptr(p_scb), loghex(services),
-            management_callback_index);
+            "services=0x{:x}, mgmt_cback_index={}",
+            status, fmt::ptr(p_scb), services, management_callback_index);
       }
       log::verbose("p_scb=0x{}, services=0x{:04x}, mgmt_cback_index={}",
                    fmt::ptr(p_scb), services, management_callback_index);

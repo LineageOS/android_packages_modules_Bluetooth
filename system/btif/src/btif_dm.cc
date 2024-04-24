@@ -661,7 +661,7 @@ static void btif_update_remote_version_property(RawAddress* p_bd) {
       BTM_ReadRemoteVersion(*p_bd, &lmp_ver, &mfct_set, &lmp_subver);
 
   log::info("Remote version info valid:{} [{}]:0x{:x},0x{:x},0x{:x}",
-            version_info_valid, (*p_bd), lmp_ver, mfct_set, lmp_subver);
+            version_info_valid, *p_bd, lmp_ver, mfct_set, lmp_subver);
 
   if (version_info_valid) {
     // Always update cache to ensure we have availability whenever BTM API is

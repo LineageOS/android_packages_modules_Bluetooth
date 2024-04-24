@@ -118,9 +118,9 @@ int RFCOMM_CreateConnectionWithSecurity(uint16_t uuid, uint8_t scn,
 
   if ((scn == 0) || (scn > RFCOMM_MAX_SCN)) {
     // Server Channel Number (SCN) should be in range [1, 30]
-    log::error("Invalid SCN, bd_addr={}, scn={}, is_server={}, mtu={}, uuid={}",
-               bd_addr, static_cast<int>(scn), is_server, static_cast<int>(mtu),
-               loghex(uuid));
+    log::error(
+        "Invalid SCN, bd_addr={}, scn={}, is_server={}, mtu={}, uuid=0x{:x}",
+        bd_addr, static_cast<int>(scn), is_server, static_cast<int>(mtu), uuid);
     return (PORT_INVALID_SCN);
   }
 
@@ -144,13 +144,12 @@ int RFCOMM_CreateConnectionWithSecurity(uint16_t uuid, uint8_t scn,
       if (!p_port->is_server) {
         log::error(
             "already at opened state {}, RFC_state={}, MCB_state={}, "
-            "bd_addr={}, scn={}, is_server={}, mtu={}, uuid={}, dlci={}, "
+            "bd_addr={}, scn={}, is_server={}, mtu={}, uuid=0x{:x}, dlci={}, "
             "p_mcb={}, port={}",
             static_cast<int>(p_port->state),
             static_cast<int>(p_port->rfc.state),
-            (p_port->rfc.p_mcb ? p_port->rfc.p_mcb->state : 0), bd_addr, scn,
-            is_server, mtu, loghex(uuid), dlci, fmt::ptr(p_mcb),
-            p_port->handle);
+            p_port->rfc.p_mcb ? p_port->rfc.p_mcb->state : 0, bd_addr, scn,
+            is_server, mtu, uuid, dlci, fmt::ptr(p_mcb), p_port->handle);
         *p_handle = p_port->handle;
         return (PORT_ALREADY_OPENED);
       }
@@ -161,9 +160,9 @@ int RFCOMM_CreateConnectionWithSecurity(uint16_t uuid, uint8_t scn,
   p_port = port_allocate_port(dlci, bd_addr);
   if (p_port == nullptr) {
     log::error(
-        "no resources, bd_addr={}, scn={}, is_server={}, mtu={}, uuid={}, "
+        "no resources, bd_addr={}, scn={}, is_server={}, mtu={}, uuid=0x{:x}, "
         "dlci={}",
-        bd_addr, scn, is_server, mtu, loghex(uuid), dlci);
+        bd_addr, scn, is_server, mtu, uuid, dlci);
     return PORT_NO_RESOURCES;
   }
   p_port->sec_mask = sec_mask;
@@ -222,10 +221,10 @@ int RFCOMM_CreateConnectionWithSecurity(uint16_t uuid, uint8_t scn,
   p_port->bd_addr = bd_addr;
 
   log::info(
-      "bd_addr={}, scn={}, is_server={}, mtu={}, uuid={}, dlci={}, "
-      "signal_state={}, p_port={}",
-      bd_addr, scn, is_server, mtu, loghex(uuid), dlci,
-      loghex(p_port->default_signal_state), fmt::ptr(p_port));
+      "bd_addr={}, scn={}, is_server={}, mtu={}, uuid=0x{:x}, dlci={}, "
+      "signal_state=0x{:x}, p_port={}",
+      bd_addr, scn, is_server, mtu, uuid, dlci, p_port->default_signal_state,
+      fmt::ptr(p_port));
 
   // If this is not initiator of the connection need to just wait
   if (p_port->is_server) {
@@ -516,7 +515,7 @@ int PORT_CheckConnection(uint16_t handle, RawAddress* bd_addr,
       "handle={}, in_use={}, port_state={}, p_mcb={}, peer_ready={}, "
       "rfc_state={}",
       handle, p_port->in_use, p_port->state, fmt::ptr(p_port->rfc.p_mcb),
-      (p_port->rfc.p_mcb ? p_port->rfc.p_mcb->peer_ready : -1),
+      p_port->rfc.p_mcb ? p_port->rfc.p_mcb->peer_ready : -1,
       p_port->rfc.state);
 
   if (!p_port->in_use || (p_port->state == PORT_CONNECTION_STATE_CLOSED)) {
@@ -828,7 +827,7 @@ int PORT_ReadData(uint16_t handle, char* p_data, uint16_t max_len,
 
   if (*p_len == 1) {
     log::verbose("PORT_ReadData queue:{} returned:{} {:x}",
-                 p_port->rx.queue_size, *p_len, (p_data[0]));
+                 p_port->rx.queue_size, *p_len, p_data[0]);
   } else {
     log::verbose("PORT_ReadData queue:{} returned:{}", p_port->rx.queue_size,
                  *p_len);
@@ -883,9 +882,8 @@ static int port_write(tPORT* p_port, BT_HDR* p_buf) {
     log::verbose(
         "PORT_Write : Data is enqued. flow disabled {} peer_ready {} state {} "
         "ctrl_state {:x}",
-        p_port->tx.peer_fc,
-        (p_port->rfc.p_mcb && p_port->rfc.p_mcb->peer_ready), p_port->rfc.state,
-        p_port->port_ctrl);
+        p_port->tx.peer_fc, p_port->rfc.p_mcb && p_port->rfc.p_mcb->peer_ready,
+        p_port->rfc.state, p_port->port_ctrl);
 
     fixed_queue_enqueue(p_port->tx.queue, p_buf);
     p_port->tx.queue_size += p_buf->len;

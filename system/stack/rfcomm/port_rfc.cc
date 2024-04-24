@@ -621,10 +621,10 @@ void PORT_ControlInd(tRFC_MCB* p_mcb, uint8_t dlci, tPORT_CTRL* p_pars) {
   if (event && p_port->p_callback) (p_port->p_callback)(event, p_port->handle);
 
   log::verbose("PORT_ControlInd DTR_DSR : {}, RTS_CTS : {}, RI : {}, DCD : {}",
-               ((p_port->peer_ctrl.modem_signal & MODEM_SIGNAL_DTRDSR) ? 1 : 0),
-               ((p_port->peer_ctrl.modem_signal & MODEM_SIGNAL_RTSCTS) ? 1 : 0),
-               ((p_port->peer_ctrl.modem_signal & MODEM_SIGNAL_RI) ? 1 : 0),
-               ((p_port->peer_ctrl.modem_signal & MODEM_SIGNAL_DCD) ? 1 : 0));
+               (p_port->peer_ctrl.modem_signal & MODEM_SIGNAL_DTRDSR) ? 1 : 0,
+               (p_port->peer_ctrl.modem_signal & MODEM_SIGNAL_RTSCTS) ? 1 : 0,
+               (p_port->peer_ctrl.modem_signal & MODEM_SIGNAL_RI) ? 1 : 0,
+               (p_port->peer_ctrl.modem_signal & MODEM_SIGNAL_DCD) ? 1 : 0);
 }
 
 /*******************************************************************************
@@ -1019,10 +1019,10 @@ void port_rfc_closed(tPORT* p_port, uint8_t res) {
   p_port->rfc.state = RFC_STATE_CLOSED;
 
   log::info(
-      "RFCOMM connection closed, index={}, state={}, reason={}[{}], UUID={}, "
-      "bd_addr={}, is_server={}",
+      "RFCOMM connection closed, index={}, state={}, reason={}[{}], "
+      "UUID=0x{:x}, bd_addr={}, is_server={}",
       p_port->handle, p_port->state, PORT_GetResultString(res), res,
-      loghex(p_port->uuid), p_port->bd_addr, p_port->is_server);
+      p_port->uuid, p_port->bd_addr, p_port->is_server);
 
   port_release_port(p_port);
 }

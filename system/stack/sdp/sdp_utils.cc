@@ -107,8 +107,8 @@ static std::vector<std::pair<uint16_t, uint16_t>> sdpu_find_profile_version(
       // Safety check - each entry should itself be a sequence
       if (SDP_DISC_ATTR_TYPE(p_sattr->attr_len_type) !=
           DATA_ELE_SEQ_DESC_TYPE) {
-        log::warn("Descriptor type is not sequence: {}",
-                  loghex(SDP_DISC_ATTR_TYPE(p_sattr->attr_len_type)));
+        log::warn("Descriptor type is not sequence: 0x{:x}",
+                  SDP_DISC_ATTR_TYPE(p_sattr->attr_len_type));
         return std::vector<std::pair<uint16_t, uint16_t>>();
       }
       // Now, see if the entry contains the profile UUID we are interested in
@@ -127,8 +127,8 @@ static std::vector<std::pair<uint16_t, uint16_t>> sdpu_find_profile_version(
           if (version_attr == nullptr) {
             log::warn("version attr not found");
           } else {
-            log::warn("Bad version type {}, or length {}",
-                      loghex(SDP_DISC_ATTR_TYPE(version_attr->attr_len_type)),
+            log::warn("Bad version type 0x{:x}, or length {}",
+                      SDP_DISC_ATTR_TYPE(version_attr->attr_len_type),
                       SDP_DISC_ATTR_LEN(version_attr->attr_len_type));
           }
           return std::vector<std::pair<uint16_t, uint16_t>>();

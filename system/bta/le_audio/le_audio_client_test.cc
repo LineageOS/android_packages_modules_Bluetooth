@@ -989,7 +989,7 @@ class UnicastTestNoInit : public Test {
                     "Added Source Stream Configuration. CIS Connection Handle: "
                     "{}, Audio Channel Allocation: {}, Source Number Of "
                     "Devices: {}, Source Number Of Channels: {}",
-                    ase.cis_conn_hdl, (*core_config.audio_channel_allocation),
+                    ase.cis_conn_hdl, *core_config.audio_channel_allocation,
                     stream_conf->stream_params.source.num_of_devices,
                     stream_conf->stream_params.source.num_of_channels);
               }
@@ -1015,7 +1015,7 @@ class UnicastTestNoInit : public Test {
                     "Added Sink Stream Configuration. CIS Connection Handle: "
                     "{}, Audio Channel Allocation: {}, Sink Number Of Devices: "
                     "{}, Sink Number Of Channels: {}",
-                    ase.cis_conn_hdl, (*core_config.audio_channel_allocation),
+                    ase.cis_conn_hdl, *core_config.audio_channel_allocation,
                     stream_conf->stream_params.sink.num_of_devices,
                     stream_conf->stream_params.sink.num_of_channels);
               }
@@ -1165,7 +1165,7 @@ class UnicastTestNoInit : public Test {
                       "Added Source Stream Configuration. CIS Connection "
                       "Handle: {}, Audio Channel Allocation: {}, Source Number "
                       "Of Devices: {}, Source Number Of Channels: {}",
-                      ase.cis_conn_hdl, (*core_config.audio_channel_allocation),
+                      ase.cis_conn_hdl, *core_config.audio_channel_allocation,
                       stream_conf->stream_params.source.num_of_devices,
                       stream_conf->stream_params.source.num_of_channels);
                 }
@@ -1237,7 +1237,7 @@ class UnicastTestNoInit : public Test {
                       "Added Sink Stream Configuration. CIS Connection Handle: "
                       "{}, Audio Channel Allocation: {}, Sink Number Of "
                       "Devices: {}, Sink Number Of Channels: {}",
-                      ase.cis_conn_hdl, (*core_config.audio_channel_allocation),
+                      ase.cis_conn_hdl, *core_config.audio_channel_allocation,
                       stream_conf->stream_params.sink.num_of_devices,
                       stream_conf->stream_params.sink.num_of_channels);
                 }

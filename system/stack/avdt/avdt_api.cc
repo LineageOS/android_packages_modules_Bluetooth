@@ -588,7 +588,7 @@ uint16_t AVDT_StartReq(uint8_t* p_handles, uint8_t num_handles) {
       log::error("result={} num_handles={} invalid", result, num_handles);
     } else {
       log::error("result={} avdt_handle={}", result,
-                 (i < num_handles ? p_handles[i] : p_handles[num_handles - 1]));
+                 i < num_handles ? p_handles[i] : p_handles[num_handles - 1]);
     }
   }
   return result;
@@ -646,7 +646,7 @@ uint16_t AVDT_SuspendReq(uint8_t* p_handles, uint8_t num_handles) {
       log::error("result={} num_handles={} invalid", result, num_handles);
     } else {
       log::error("result={} avdt_handle={}", result,
-                 (i < num_handles ? p_handles[i] : p_handles[num_handles - 1]));
+                 i < num_handles ? p_handles[i] : p_handles[num_handles - 1]);
     }
   }
   return result;
