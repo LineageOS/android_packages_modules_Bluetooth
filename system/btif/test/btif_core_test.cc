@@ -16,9 +16,12 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <sys/socket.h>
 
 #include <future>
 #include <map>
+#include <memory>
+#include <string>
 
 #include "bta/include/bta_ag_api.h"
 #include "bta/include/bta_av_api.h"
@@ -29,11 +32,28 @@
 #include "btif/include/btif_api.h"
 #include "btif/include/btif_common.h"
 #include "btif/include/btif_util.h"
+#include "btif_bqr.h"
+#include "btif_jni_task.h"
+#include "btm_api_types.h"
+#include "common/bind.h"
+#include "common/contextual_callback.h"
+#include "common/postable_context.h"
+#include "gmock/gmock.h"
+#include "gtest/gtest.h"
 #include "hci/controller_interface_mock.h"
+#include "hci/hci_layer_mock.h"
+#include "hci/vendor_specific_event_manager_mock.h"
 #include "include/hardware/bluetooth.h"
 #include "include/hardware/bt_av.h"
+#include "main/shim/entry.h"
+#include "main_thread.h"
+#include "packet/base_packet_builder.h"
+#include "packet/bit_inserter.h"
+#include "packet/packet_view.h"
+#include "packet/raw_builder.h"
 #include "test/common/core_interface.h"
 #include "test/mock/mock_main_shim_entry.h"
+#include "test/mock/mock_osi_properties.h"
 #include "test/mock/mock_stack_btm_sec.h"
 #include "types/raw_address.h"
 
@@ -49,7 +69,45 @@ void bta_dm_acl_up(const RawAddress& bd_addr, tBT_TRANSPORT transport,
 
 const tBTA_AG_RES_DATA tBTA_AG_RES_DATA::kEmpty = {};
 
+using bluetooth::common::BindOnce;
+using bluetooth::common::ContextualCallback;
+using bluetooth::common::ContextualOnceCallback;
+using bluetooth::common::PostableContext;
+using bluetooth::hci::BqrA2dpAudioChoppyEventBuilder;
+using bluetooth::hci::BqrEventBuilder;
+using bluetooth::hci::BqrLinkQualityEventBuilder;
+using bluetooth::hci::BqrLmpLlMessageTraceEventBuilder;
+using bluetooth::hci::BqrLogDumpEventBuilder;
+using bluetooth::hci::BqrPacketType;
+using bluetooth::hci::CommandBuilder;
+using bluetooth::hci::CommandCompleteBuilder;
+using bluetooth::hci::CommandCompleteView;
+using bluetooth::hci::CommandStatusBuilder;
+using bluetooth::hci::CommandStatusView;
+using bluetooth::hci::CommandView;
+using bluetooth::hci::ControllerBqrBuilder;
+using bluetooth::hci::ControllerBqrCompleteBuilder;
+using bluetooth::hci::ControllerBqrCompleteView;
+using bluetooth::hci::ControllerBqrView;
+using bluetooth::hci::ErrorCode;
+using bluetooth::hci::EventView;
+using bluetooth::hci::QualityReportId;
+using bluetooth::hci::Role;
+using bluetooth::hci::VendorCommandView;
+using bluetooth::hci::VendorSpecificEventView;
+using bluetooth::hci::VseSubeventCode;
+using bluetooth::packet::BasePacketBuilder;
+using bluetooth::packet::BitInserter;
+using bluetooth::packet::kLittleEndian;
+using bluetooth::packet::PacketView;
+using bluetooth::packet::RawBuilder;
+using testing::_;
+using testing::DoAll;
+using testing::Invoke;
+using testing::Matcher;
 using testing::Return;
+using testing::SaveArg;
+
 module_t bt_utils_module;
 module_t gd_controller_module;
 module_t gd_shim_module;
@@ -57,6 +115,15 @@ module_t osi_module;
 module_t rust_module;
 
 namespace {
+
+PacketView<kLittleEndian> BuilderToView(
+    std::unique_ptr<BasePacketBuilder> builder) {
+  std::shared_ptr<std::vector<uint8_t>> packet_bytes =
+      std::make_shared<std::vector<uint8_t>>();
+  BitInserter it(*packet_bytes);
+  builder->Serialize(it);
+  return PacketView<kLittleEndian>(packet_bytes);
+}
 
 const RawAddress kRawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
 const uint16_t kHciHandle = 123;
@@ -104,7 +171,9 @@ void link_quality_report_callback(uint64_t /* timestamp */, int /* report_id */,
                                   int /* rssi */, int /* snr */,
                                   int /* retransmission_count */,
                                   int /* packets_not_receive_count */,
-                                  int /* negative_acknowledgement_count */) {}
+                                  int /* negative_acknowledgement_count */) {
+  TESTCB;
+}
 void callback_thread_event(bt_cb_thread_evt /* evt */) { TESTCB; }
 void dut_mode_recv_callback(uint16_t /* opcode */, uint8_t* /* buf */,
                             uint8_t /* len */) {}
@@ -750,4 +819,329 @@ TEST_F(BtifCoreWithConnectionTest, btif_dm_get_connection_state_sync) {
   ASSERT_EQ(7, btif_dm_get_connection_state_sync(kRawAddress));
 
   test::mock::stack_btm_sec::BTM_IsEncrypted = {};
+}
+
+auto get_properties = [](const char* key, char* value,
+                         const char* /* default_value */) -> size_t {
+  static bluetooth::bqr::BqrConfiguration config{
+      .report_action = bluetooth::bqr::REPORT_ACTION_ADD,
+      .quality_event_mask = 0x1ffff,  // Everything
+      .minimum_report_interval_ms = 1000,
+      .vnd_quality_mask = 29,
+      .vnd_trace_mask = 5,
+      .report_interval_multiple = 2,
+  };
+  if (std::string(key) == bluetooth::bqr::kpPropertyEventMask) {
+    std::string event_mask = std::to_string(config.quality_event_mask);
+    std::copy(event_mask.cbegin(), event_mask.cend(), value);
+    return event_mask.size();
+  }
+  if (std::string(key) == bluetooth::bqr::kpPropertyMinReportIntervalMs) {
+    std::string interval = std::to_string(config.minimum_report_interval_ms);
+    std::copy(interval.cbegin(), interval.cend(), value);
+    return interval.size();
+  }
+  return 0;
+};
+
+TEST_F(BtifCoreWithControllerTest, debug_dump_unconfigured) {
+  int fds[2];
+  ASSERT_EQ(0, socketpair(AF_LOCAL, SOCK_STREAM | SOCK_NONBLOCK, 0, fds));
+  static int write_fd = fds[0];
+  static int read_fd = fds[1];
+  auto reading_promise = std::make_unique<std::promise<void>>();
+  auto reading_done = reading_promise->get_future();
+
+  do_in_main_thread(FROM_HERE,
+                    BindOnce([]() { bluetooth::bqr::DebugDump(write_fd); }));
+  do_in_main_thread(
+      FROM_HERE, BindOnce(
+                     [](std::unique_ptr<std::promise<void>> done_promise) {
+                       char line_buf[1024] = "";
+                       int bytes_read = read(read_fd, line_buf, 1024);
+                       EXPECT_GT(bytes_read, 0);
+                       EXPECT_NE(
+                           std::string(line_buf).find("Event queue is empty"),
+                           std::string::npos);
+                       done_promise->set_value();
+                     },
+                     std::move(reading_promise)));
+  EXPECT_EQ(std::future_status::ready,
+            reading_done.wait_for(std::chrono::seconds(1)));
+  close(write_fd);
+  close(read_fd);
+}
+
+class BtifCoreWithVendorSupportTest : public BtifCoreWithControllerTest {
+ protected:
+  void SetUp() override {
+    BtifCoreWithControllerTest::SetUp();
+    bluetooth::hci::testing::mock_hci_layer_ = &hci_;
+    bluetooth::hci::testing::mock_vendor_specific_event_manager_ =
+        &vendor_manager_;
+    test::mock::osi_properties::osi_property_get.body = get_properties;
+
+    std::promise<void> configuration_promise;
+    auto configuration_done = configuration_promise.get_future();
+    EXPECT_CALL(
+        hci_,
+        EnqueueCommand(
+            _, Matcher<ContextualOnceCallback<void(CommandCompleteView)>>(_)))
+        .WillOnce(
+            // Replace with real PDL for 0xfc17
+            [&configuration_promise](
+                std::unique_ptr<CommandBuilder> cmd,
+                ContextualOnceCallback<void(CommandCompleteView)> callback) {
+              auto cmd_view = VendorCommandView::Create(
+                  CommandView::Create(BuilderToView(std::move(cmd))));
+              EXPECT_TRUE(cmd_view.IsValid());
+              auto response = CommandCompleteView::Create(EventView::Create(
+                  BuilderToView(CommandCompleteBuilder::Create(
+                      1, cmd_view.GetOpCode(),
+                      std::make_unique<RawBuilder>()))));
+              EXPECT_TRUE(response.IsValid());
+              callback(response);
+              configuration_promise.set_value();
+            })
+        .RetiresOnSaturation();
+    EXPECT_CALL(
+        hci_,
+        EnqueueCommand(
+            _, Matcher<ContextualOnceCallback<void(CommandCompleteView)>>(_)))
+        .WillOnce(
+            [](std::unique_ptr<CommandBuilder> cmd,
+               ContextualOnceCallback<void(CommandCompleteView)> callback) {
+              auto cmd_view =
+                  ControllerBqrView::Create(VendorCommandView::Create(
+                      CommandView::Create(BuilderToView(std::move(cmd)))));
+              EXPECT_TRUE(cmd_view.IsValid());
+              auto response = ControllerBqrCompleteView::Create(
+                  CommandCompleteView::Create(EventView::Create(
+                      BuilderToView(ControllerBqrCompleteBuilder::Create(
+                          1, ErrorCode::SUCCESS,
+                          cmd_view.GetBqrQualityEventMask())))));
+              EXPECT_TRUE(response.IsValid());
+              callback(response);
+            })
+        .RetiresOnSaturation();
+    EXPECT_CALL(vendor_manager_,
+                RegisterEventHandler(VseSubeventCode::BQR_EVENT, _))
+        .WillOnce(SaveArg<1>(&this->vse_callback_));
+    do_in_main_thread(FROM_HERE, BindOnce([]() {
+                        bluetooth::bqr::EnableBtQualityReport(get_main());
+                      }));
+    ASSERT_EQ(std::future_status::ready,
+              configuration_done.wait_for(std::chrono::seconds(1)));
+  }
+
+  void TearDown() override {
+    std::promise<void> disable_promise;
+    auto disable_future = disable_promise.get_future();
+    auto set_promise = [&disable_promise]() { disable_promise.set_value(); };
+    EXPECT_CALL(vendor_manager_,
+                UnregisterEventHandler(VseSubeventCode::BQR_EVENT));
+    EXPECT_CALL(
+        hci_,
+        EnqueueCommand(
+            _, Matcher<ContextualOnceCallback<void(CommandCompleteView)>>(_)))
+        .WillOnce(Invoke(set_promise))
+        .RetiresOnSaturation();
+    do_in_main_thread(FROM_HERE, BindOnce([]() {
+                        bluetooth::bqr::EnableBtQualityReport(nullptr);
+                      }));
+    ASSERT_EQ(std::future_status::ready,
+              disable_future.wait_for(std::chrono::seconds(1)));
+
+    bluetooth::hci::testing::mock_hci_layer_ = nullptr;
+    bluetooth::hci::testing::mock_vendor_specific_event_manager_ = nullptr;
+    BtifCoreWithControllerTest::TearDown();
+  }
+  bluetooth::hci::testing::MockHciLayer hci_;
+  bluetooth::hci::testing::MockVendorSpecificEventManager vendor_manager_;
+  ContextualCallback<void(VendorSpecificEventView)> vse_callback_;
+  PostableContext* context;
+};
+
+TEST_F(BtifCoreWithVendorSupportTest, configure_bqr_test) {}
+
+TEST_F(BtifCoreWithVendorSupportTest, send_a2dp_audio_choppy) {
+  std::promise<void> a2dp_event_promise;
+  auto event_reported = a2dp_event_promise.get_future();
+  callback_map_["link_quality_report_callback"] = [&a2dp_event_promise]() {
+    a2dp_event_promise.set_value();
+  };
+  auto view = VendorSpecificEventView::Create(
+      EventView::Create(BuilderToView(BqrLinkQualityEventBuilder::Create(
+          QualityReportId::A2DP_AUDIO_CHOPPY, BqrPacketType::TYPE_3DH3, 0x123,
+          Role::CENTRAL, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+          std::make_unique<RawBuilder>()))));
+  EXPECT_TRUE(view.IsValid());
+  vse_callback_(view);
+  ASSERT_EQ(std::future_status::ready,
+            event_reported.wait_for(std::chrono::seconds(1)));
+}
+
+TEST_F(BtifCoreWithVendorSupportTest, send_lmp_ll_trace) {
+  auto payload = std::make_unique<RawBuilder>();
+  payload->AddOctets({'d', 'a', 't', 'a'});
+  auto view = VendorSpecificEventView::Create(EventView::Create(BuilderToView(
+      BqrLmpLlMessageTraceEventBuilder::Create(0x123, std::move(payload)))));
+  EXPECT_TRUE(view.IsValid());
+  vse_callback_(view);
+}
+
+class BtifCoreVseWithSocketTest : public BtifCoreWithVendorSupportTest {
+ protected:
+  void SetUp() override {
+    BtifCoreWithVendorSupportTest::SetUp();
+    int fds[2];
+    ASSERT_EQ(0, socketpair(AF_LOCAL, SOCK_STREAM | SOCK_NONBLOCK, 0, fds));
+    write_fd_ = fds[0];
+    read_fd_ = fds[1];
+  }
+  void TearDown() override {
+    BtifCoreWithVendorSupportTest::TearDown();
+    close(write_fd_);
+    close(read_fd_);
+  }
+  int write_fd_;
+  int read_fd_;
+};
+
+TEST_F(BtifCoreVseWithSocketTest, debug_dump_empty) {
+  static int write_fd = write_fd_;
+  static int read_fd = read_fd_;
+  auto reading_promise = std::make_unique<std::promise<void>>();
+  auto reading_done = reading_promise->get_future();
+
+  do_in_main_thread(FROM_HERE,
+                    BindOnce([]() { bluetooth::bqr::DebugDump(write_fd); }));
+  do_in_main_thread(
+      FROM_HERE, BindOnce(
+                     [](std::unique_ptr<std::promise<void>> done_promise) {
+                       char line_buf[1024] = "";
+                       int bytes_read = read(read_fd, line_buf, 1024);
+                       EXPECT_GT(bytes_read, 0);
+                       EXPECT_NE(
+                           std::string(line_buf).find("Event queue is empty"),
+                           std::string::npos);
+                       done_promise->set_value();
+                     },
+                     std::move(reading_promise)));
+  EXPECT_EQ(std::future_status::ready,
+            reading_done.wait_for(std::chrono::seconds(1)));
+}
+
+namespace bluetooth::bqr::testing {
+void set_lmp_trace_log_fd(int fd);
+}
+
+TEST_F(BtifCoreVseWithSocketTest, send_lmp_ll_msg) {
+  auto payload = std::make_unique<RawBuilder>();
+  payload->AddOctets({'d', 'a', 't', 'a'});
+  auto view = VendorSpecificEventView::Create(EventView::Create(BuilderToView(
+      BqrLmpLlMessageTraceEventBuilder::Create(0x123, std::move(payload)))));
+  EXPECT_TRUE(view.IsValid());
+
+  static int read_fd = read_fd_;
+  auto reading_promise = std::make_unique<std::promise<void>>();
+  auto reading_done = reading_promise->get_future();
+
+  static int write_fd = write_fd_;
+  do_in_main_thread(FROM_HERE, BindOnce([]() {
+                      bluetooth::bqr::testing::set_lmp_trace_log_fd(write_fd);
+                    }));
+  vse_callback_(view);
+
+  do_in_main_thread(FROM_HERE,
+                    BindOnce(
+                        [](std::unique_ptr<std::promise<void>> done_promise) {
+                          char line_buf[1024] = "";
+                          std::string line;
+                          int bytes_read = read(read_fd, line_buf, 1024);
+                          EXPECT_GT(bytes_read, 0);
+                          line = std::string(line_buf);
+                          EXPECT_NE(line.find("Handle: 0x0123"),
+                                    std::string::npos);
+                          EXPECT_NE(line.find("data"), std::string::npos);
+                          done_promise->set_value();
+                        },
+                        std::move(reading_promise)));
+  EXPECT_EQ(std::future_status::ready,
+            reading_done.wait_for(std::chrono::seconds(1)));
+}
+
+TEST_F(BtifCoreVseWithSocketTest, debug_dump_a2dp_choppy_no_payload) {
+  auto payload = std::make_unique<RawBuilder>();
+  auto view = VendorSpecificEventView::Create(
+      EventView::Create(BuilderToView(BqrA2dpAudioChoppyEventBuilder::Create(
+          BqrPacketType::TYPE_3DH3, 0x123, Role::CENTRAL, 1, 2 /* rssi */, 3, 4,
+          5 /* afh_select_uni */, 6 /* lsto */, 7, 8, 9, 10,
+          11 /* last_tx_ack_timestamp */, 12, 13, 14,
+          15 /* buffer_underflow_bytes */, std::move(payload)))));
+  EXPECT_TRUE(view.IsValid());
+  vse_callback_(view);
+
+  static int write_fd = write_fd_;
+  static int read_fd = read_fd_;
+  auto reading_promise = std::make_unique<std::promise<void>>();
+  auto reading_done = reading_promise->get_future();
+
+  do_in_main_thread(FROM_HERE,
+                    BindOnce([]() { bluetooth::bqr::DebugDump(write_fd); }));
+  do_in_main_thread(
+      FROM_HERE,
+      BindOnce(
+          [](std::unique_ptr<std::promise<void>> done_promise) {
+            char line_buf[1024] = "";
+            std::string line;
+            int bytes_read = read(read_fd, line_buf, 1024);
+            EXPECT_GT(bytes_read, 0);
+            line = std::string(line_buf);
+            EXPECT_EQ(line.find("Event queue is empty"), std::string::npos);
+            EXPECT_NE(line.find("Handle: 0x0123"), std::string::npos);
+            EXPECT_NE(line.find("UndFlow: 15"), std::string::npos);
+            EXPECT_NE(line.find("A2DP Choppy"), std::string::npos);
+            done_promise->set_value();
+          },
+          std::move(reading_promise)));
+  EXPECT_EQ(std::future_status::ready,
+            reading_done.wait_for(std::chrono::seconds(1)));
+}
+
+TEST_F(BtifCoreVseWithSocketTest, debug_dump_a2dp_choppy) {
+  auto payload = std::make_unique<RawBuilder>();
+  payload->AddOctets({'d', 'a', 't', 'a'});
+  auto view = VendorSpecificEventView::Create(
+      EventView::Create(BuilderToView(BqrA2dpAudioChoppyEventBuilder::Create(
+          BqrPacketType::TYPE_3DH3, 0x123, Role::CENTRAL, 1, 2, 3, 4, 5, 6, 7,
+          8, 9, 10, 11, 12, 13, 14, 15, std::move(payload)))));
+  EXPECT_TRUE(view.IsValid());
+  vse_callback_(view);
+
+  static int write_fd = write_fd_;
+  static int read_fd = read_fd_;
+  auto reading_promise = std::make_unique<std::promise<void>>();
+  auto reading_done = reading_promise->get_future();
+
+  do_in_main_thread(FROM_HERE,
+                    BindOnce([]() { bluetooth::bqr::DebugDump(write_fd); }));
+  do_in_main_thread(
+      FROM_HERE,
+      BindOnce(
+          [](std::unique_ptr<std::promise<void>> done_promise) {
+            char line_buf[1024] = "";
+            std::string line;
+            int bytes_read = read(read_fd, line_buf, 1024);
+            EXPECT_GT(bytes_read, 0);
+            line = std::string(line_buf);
+            EXPECT_EQ(line.find("Event queue is empty"), std::string::npos);
+            EXPECT_NE(line.find("Handle: 0x0123"), std::string::npos);
+            EXPECT_NE(line.find("UndFlow: 15"), std::string::npos);
+            EXPECT_NE(line.find("A2DP Choppy"), std::string::npos);
+            done_promise->set_value();
+          },
+          std::move(reading_promise)));
+  EXPECT_EQ(std::future_status::ready,
+            reading_done.wait_for(std::chrono::seconds(1)));
 }

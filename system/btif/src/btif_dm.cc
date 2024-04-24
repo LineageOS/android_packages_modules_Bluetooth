@@ -2167,7 +2167,7 @@ void BTIF_dm_enable() {
   ** and bonded_devices_info_cb
   */
   btif_storage_load_bonded_devices();
-  bluetooth::bqr::EnableBtQualityReport(true);
+  bluetooth::bqr::EnableBtQualityReport(get_main());
   btif_enable_bluetooth_evt();
 }
 
@@ -2184,7 +2184,7 @@ void BTIF_dm_disable() {
       btif_in_execute_service_request(i, false);
     }
   }
-  bluetooth::bqr::EnableBtQualityReport(false);
+  bluetooth::bqr::EnableBtQualityReport(nullptr);
   log::info("Stack device manager shutdown finished");
   future_ready(stack_manager_get_hack_future(), FUTURE_SUCCESS);
 }
