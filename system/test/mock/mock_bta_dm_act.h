@@ -504,16 +504,6 @@ struct bta_dm_rm_cback {
 };
 extern struct bta_dm_rm_cback bta_dm_rm_cback;
 
-// Name: bta_dm_sdp_result
-// Params: tBTA_DM_SDP_RESULT& sdp_event
-// Return: void
-struct bta_dm_sdp_result {
-  std::function<void(tBTA_DM_SDP_RESULT& sdp_event)> body{
-      [](tBTA_DM_SDP_RESULT& /* sdp_event */) {}};
-  void operator()(tBTA_DM_SDP_RESULT& sdp_event) { body(sdp_event); };
-};
-extern struct bta_dm_sdp_result bta_dm_sdp_result;
-
 // Name: bta_dm_search_cancel_cmpl
 // Params:
 // Return: void

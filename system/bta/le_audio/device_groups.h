@@ -152,7 +152,7 @@ class LeAudioDeviceGroup {
   bool IsAnyDeviceConnected(void) const;
   int Size(void) const;
   int NumOfConnected() const;
-  int NumOfConnected(types::LeAudioContextType context_type) const;
+  int NumOfAvailableForDirection(int direction) const;
   bool Activate(types::LeAudioContextType context_type,
                 const types::BidirectionalPair<types::AudioContexts>&
                     metadata_context_types,

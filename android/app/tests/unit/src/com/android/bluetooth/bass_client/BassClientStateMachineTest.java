@@ -94,6 +94,8 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
 
+import com.google.common.primitives.Bytes;
+
 import org.hamcrest.core.IsInstanceOf;
 import org.junit.After;
 import org.junit.Assert;
@@ -111,6 +113,7 @@ import org.mockito.junit.MockitoRule;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 import java.util.UUID;
 
 @MediumTest
@@ -1515,6 +1518,86 @@ public class BassClientStateMachineTest {
         assertThat(mBassClientStateMachine.mPendingSourceId).isEqualTo(sourceId);
         verify(btGatt).writeCharacteristic(any());
         verify(scanControlPoint).setValue(any(byte[].class));
+    }
+
+    @Test
+    public void receiveSinkReceiveState_inConnectedState() {
+        initToConnectedState();
+        mBassClientStateMachine.connectGatt(true);
+        mBassClientStateMachine.mNumOfBroadcastReceiverStates = 2;
+        BassClientService.Callbacks callbacks = Mockito.mock(BassClientService.Callbacks.class);
+        when(mBassClientService.getCallbacks()).thenReturn(callbacks);
+
+        // Prepare mBluetoothLeBroadcastReceiveStates with metadata for test
+        int sourceId = 1;
+        int metaDataLength = 142;
+        byte[] value =
+                new byte[] {
+                    (byte) sourceId, // sourceId
+                    (byte) (mSourceTestDevice.getAddressType() & 0xFF), // sourceAddressType
+                    Utils.getByteAddress(mSourceTestDevice)[5],
+                    Utils.getByteAddress(mSourceTestDevice)[4],
+                    Utils.getByteAddress(mSourceTestDevice)[3],
+                    Utils.getByteAddress(mSourceTestDevice)[2],
+                    Utils.getByteAddress(mSourceTestDevice)[1],
+                    Utils.getByteAddress(mSourceTestDevice)[0], // sourceAddress
+                    0x00, // sourceAdvSid
+                    0x00,
+                    0x00,
+                    0x00, // broadcastIdBytes
+                    (byte) BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE,
+                    (byte) BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_CODE_REQUIRED,
+                    // no badBroadcastCode
+                    0x01, // numSubGroups 1
+                    0x00,
+                    0x00,
+                    0x00,
+                    0x00, // audioSyncIndex
+                    (byte) metaDataLength, // metaDataLength
+                };
+
+        byte[] metadataHeader =
+                new byte[] {
+                    (byte) (metaDataLength - 1), // length 141
+                    (byte) 0xFF
+                };
+
+        byte[] metadataPayload = new byte[140];
+        new Random().nextBytes(metadataPayload);
+
+        BluetoothGattCharacteristic characteristic =
+                Mockito.mock(BluetoothGattCharacteristic.class);
+        when(characteristic.getValue())
+                .thenReturn(Bytes.concat(value, metadataHeader, metadataPayload));
+        when(characteristic.getInstanceId()).thenReturn(sourceId);
+        when(characteristic.getUuid()).thenReturn(BassConstants.BASS_BCAST_RECEIVER_STATE);
+
+        mBassClientStateMachine.mGattCallback.onCharacteristicRead(
+                null, characteristic, GATT_SUCCESS);
+        TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
+
+        assertThat(mBassClientStateMachine.getAllSources().size()).isEqualTo(1);
+        BluetoothLeBroadcastReceiveState recvState = mBassClientStateMachine.getAllSources().get(0);
+
+        assertThat(recvState.getSourceId()).isEqualTo(sourceId);
+        assertThat(recvState.getSourceAddressType()).isEqualTo(mSourceTestDevice.getAddressType());
+        assertThat(recvState.getSourceDevice()).isEqualTo(mSourceTestDevice);
+        assertThat(recvState.getSourceAdvertisingSid()).isEqualTo(0x00);
+        assertThat(recvState.getBroadcastId()).isEqualTo(0x00);
+        assertThat(recvState.getPaSyncState())
+                .isEqualTo(BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_IDLE);
+        assertThat(recvState.getBigEncryptionState())
+                .isEqualTo(BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_CODE_REQUIRED);
+        assertThat(recvState.getNumSubgroups()).isEqualTo(1);
+
+        assertThat(recvState.getBisSyncState().size()).isEqualTo(1);
+        assertThat(recvState.getBisSyncState().get(0)).isEqualTo(0x00);
+
+        assertThat(recvState.getSubgroupMetadata().size()).isEqualTo(1);
+        BluetoothLeAudioContentMetadata metaData = recvState.getSubgroupMetadata().get(0);
+        assertThat(metaData.getRawMetadata().length).isEqualTo(metaDataLength);
+        assertThat(metaData.getRawMetadata())
+                .isEqualTo(Bytes.concat(metadataHeader, metadataPayload));
     }
 
     @Test

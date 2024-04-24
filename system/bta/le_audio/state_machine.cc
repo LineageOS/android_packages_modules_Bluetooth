@@ -1348,7 +1348,7 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
     auto core_config = ase->codec_config.GetAsCoreCodecConfig();
 
     params.num_of_devices++;
-    params.num_of_channels += core_config.GetChannelCountPerIsoStream();
+    params.num_of_channels += ase->channel_count;
 
     if (!core_config.audio_channel_allocation.has_value()) {
       log::warn("ASE has invalid audio location");

@@ -210,6 +210,16 @@ class AutoOnFeatureTest {
     }
 
     @Test
+    fun notifyBluetoothOn_whenStorage_resetStorage() {
+        Settings.Secure.putString(resolver, Timer.STORAGE_KEY, timerTarget.toString())
+        shadowOf(looper).idle()
+
+        notifyBluetoothOn(context)
+
+        expectNoStorageTime()
+    }
+
+    @Test
     fun apiIsUserEnable_whenItWasNeverUsed_throwException() {
         restoreSettings()
 
@@ -259,7 +269,21 @@ class AutoOnFeatureTest {
         disableUserSettings()
 
         setUserEnabled(true)
-        setupTimer()
+
+        assertThat(timer).isNotNull()
+    }
+
+    @Test
+    fun apiSetUserEnableToggle_whenScheduled_isRescheduled() {
+        val pastTime = timerTarget.minusDays(3)
+        Settings.Secure.putString(resolver, Timer.STORAGE_KEY, pastTime.toString())
+        shadowOf(looper).idle()
+
+        setUserEnabled(false)
+        expectNoStorageTime()
+
+        setUserEnabled(true)
+        expectStorageTime()
 
         assertThat(timer).isNotNull()
     }

@@ -20,6 +20,7 @@
 #include <flag_macros.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <log/log.h>
 
 #include <chrono>
 
@@ -47,7 +48,6 @@
 #include "mock_csis_client.h"
 #include "mock_device_groups.h"
 #include "mock_state_machine.h"
-#include "os/log.h"
 #include "test/common/mock_functions.h"
 #include "test/mock/mock_main_shim_entry.h"
 #include "test/mock/mock_stack_btm_iso.h"
@@ -983,7 +983,7 @@ class UnicastTestNoInit : public Test {
 
                 stream_conf->stream_params.source.num_of_devices++;
                 stream_conf->stream_params.source.num_of_channels +=
-                    core_config.GetChannelCountPerIsoStream();
+                    ase.channel_count;
 
                 log::info(
                     "Added Source Stream Configuration. CIS Connection Handle: "
@@ -1009,7 +1009,7 @@ class UnicastTestNoInit : public Test {
 
                 stream_conf->stream_params.sink.num_of_devices++;
                 stream_conf->stream_params.sink.num_of_channels +=
-                    core_config.GetChannelCountPerIsoStream();
+                    ase.channel_count;
 
                 log::info(
                     "Added Sink Stream Configuration. CIS Connection Handle: "
@@ -1114,7 +1114,7 @@ class UnicastTestNoInit : public Test {
 
                   stream_conf->stream_params.source.num_of_devices++;
                   stream_conf->stream_params.source.num_of_channels +=
-                      core_config.GetChannelCountPerIsoStream();
+                      ase.channel_count;
                   stream_conf->stream_params.source.audio_channel_allocation |=
                       *core_config.audio_channel_allocation;
 
@@ -1185,7 +1185,7 @@ class UnicastTestNoInit : public Test {
 
                   stream_conf->stream_params.sink.num_of_devices++;
                   stream_conf->stream_params.sink.num_of_channels +=
-                      core_config.GetChannelCountPerIsoStream();
+                      ase.channel_count;
 
                   stream_conf->stream_params.sink.audio_channel_allocation |=
                       *core_config.audio_channel_allocation;
@@ -1310,12 +1310,11 @@ class UnicastTestNoInit : public Test {
                       if (ases.sink) {
                         stream_conf->stream_params.sink.num_of_devices--;
                         stream_conf->stream_params.sink.num_of_channels -=
-                            ases.sink->codec_config.GetAsCoreCodecConfig()
-                                .GetChannelCountPerIsoStream();
+                            ases.sink->channel_count;
 
                         log::info(
-                            ", Source Number Of Devices: {}, Source Number Of "
-                            "Channels: {}",
+                            ", Source Number Of Devices: {}"
+                            ", Source Number Of Channels: {}",
                             stream_conf->stream_params.source.num_of_devices,
                             stream_conf->stream_params.source.num_of_channels);
                       }
@@ -1333,8 +1332,7 @@ class UnicastTestNoInit : public Test {
                       if (ases.source) {
                         stream_conf->stream_params.source.num_of_devices--;
                         stream_conf->stream_params.source.num_of_channels -=
-                            ases.source->codec_config.GetAsCoreCodecConfig()
-                                .GetChannelCountPerIsoStream();
+                            ases.source->channel_count;
 
                         log::info(
                             ", Source Number Of Devices: {}, Source Number Of "
@@ -1390,8 +1388,7 @@ class UnicastTestNoInit : public Test {
                       if (ases.sink) {
                         stream_conf->stream_params.sink.num_of_devices--;
                         stream_conf->stream_params.sink.num_of_channels -=
-                            ases.sink->codec_config.GetAsCoreCodecConfig()
-                                .GetChannelCountPerIsoStream();
+                            ases.sink->channel_count;
 
                         log::info(
                             "Sink Number Of Devices: {}, Sink Number Of "
@@ -1417,8 +1414,7 @@ class UnicastTestNoInit : public Test {
                       if (ases.source) {
                         stream_conf->stream_params.source.num_of_devices--;
                         stream_conf->stream_params.source.num_of_channels -=
-                            ases.source->codec_config.GetAsCoreCodecConfig()
-                                .GetChannelCountPerIsoStream();
+                            ases.source->channel_count;
 
                         log::info(
                             ", Source Number Of Devices: {}, Source Number Of "
@@ -1456,8 +1452,7 @@ class UnicastTestNoInit : public Test {
                         if (ases.sink) {
                           stream_conf->stream_params.sink.num_of_devices--;
                           stream_conf->stream_params.sink.num_of_channels -=
-                              ases.sink->codec_config.GetAsCoreCodecConfig()
-                                  .GetChannelCountPerIsoStream();
+                              ases.sink->channel_count;
 
                           log::info(
                               "Sink Number Of Devices: {}, Sink Number Of "
@@ -1484,8 +1479,7 @@ class UnicastTestNoInit : public Test {
                         if (ases.source) {
                           stream_conf->stream_params.source.num_of_devices--;
                           stream_conf->stream_params.source.num_of_channels -=
-                              ases.source->codec_config.GetAsCoreCodecConfig()
-                                  .GetChannelCountPerIsoStream();
+                              ases.source->channel_count;
 
                           log::info(
                               ", Source Number Of Devices: {}, Source Number "
@@ -1530,6 +1524,7 @@ class UnicastTestNoInit : public Test {
   }
 
   void SetUp() override {
+    __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
     init_message_loop_thread();
     ON_CALL(controller_, SupportsBleConnectedIsochronousStreamCentral)
         .WillByDefault(Return(true));
@@ -1588,18 +1583,36 @@ class UnicastTestNoInit : public Test {
     ASSERT_NE(mock_codec_manager_, nullptr);
     ON_CALL(*mock_codec_manager_, GetCodecLocation())
         .WillByDefault(Return(location));
+    // Turn on the dual bidir SWB support
+    ON_CALL(*mock_codec_manager_, IsDualBiDirSwbSupported)
+        .WillByDefault(Return(true));
     // Regardless of the codec location, return all the possible configurations
     ON_CALL(*mock_codec_manager_, GetCodecConfig)
         .WillByDefault(
             Invoke([](const CodecManager::UnicastConfigurationRequirements&
                           requirements,
                       CodecManager::UnicastConfigurationVerifier verifier) {
-              auto configs =
-                  le_audio::AudioSetConfigurationProvider::Get()
-                      ->GetConfigurations(requirements.audio_context_type);
-              return std::make_unique<
-                  set_configurations::AudioSetConfiguration>(
-                  *verifier(requirements, configs));
+              auto filtered =
+                  *le_audio::AudioSetConfigurationProvider::Get()
+                       ->GetConfigurations(requirements.audio_context_type);
+              // Filter out the dual bidir SWB configurations
+              if (!bluetooth::le_audio::CodecManager::GetInstance()
+                       ->IsDualBiDirSwbSupported()) {
+                filtered.erase(
+                    std::remove_if(filtered.begin(), filtered.end(),
+                                   [](auto const& el) {
+                                     if (el->confs.source.empty()) return false;
+                                     return AudioSetConfigurationProvider::Get()
+                                         ->CheckConfigurationIsDualBiDirSwb(
+                                             *el);
+                                   }),
+                    filtered.end());
+              }
+              auto cptr = verifier(requirements, &filtered);
+              return cptr
+                         ? std::make_unique<
+                               set_configurations::AudioSetConfiguration>(*cptr)
+                         : nullptr;
             }));
   }
 
@@ -2679,15 +2692,17 @@ class UnicastTestNoInit : public Test {
 
     // Expect two channels ISO Data to be sent
     std::vector<uint16_t> handles;
-    EXPECT_CALL(*mock_iso_manager_, SendIsoData(_, _, _))
-        .Times(cis_count_out)
-        .WillRepeatedly(
-            [&handles](uint16_t iso_handle, const uint8_t* data,
-                       uint16_t data_len) { handles.push_back(iso_handle); });
+    if (cis_count_out) {
+      EXPECT_CALL(*mock_iso_manager_, SendIsoData(_, _, _))
+          .Times(cis_count_out)
+          .WillRepeatedly(
+              [&handles](uint16_t iso_handle, const uint8_t* data,
+                         uint16_t data_len) { handles.push_back(iso_handle); });
+    }
     std::vector<uint8_t> data(data_len);
     unicast_source_hal_cb_->OnAudioDataReady(data);
 
-    // Inject microphone data from group
+    // Inject microphone data from group (2 CISes - pass stereo data in 1 call)
     if (decoded_in_data_len) {
       EXPECT_CALL(*mock_le_audio_sink_hal_client_,
                   SendData(_, decoded_in_data_len))
@@ -2701,6 +2716,7 @@ class UnicastTestNoInit : public Test {
     if (cis_count_in) {
       ASSERT_NE(unicast_sink_hal_cb_, nullptr);
 
+      ASSERT_NE(0lu, streaming_groups.count(group_id));
       auto group = streaming_groups.at(group_id);
       for (LeAudioDevice* device = group->GetFirstDevice(); device != nullptr;
            device = group->GetNextDevice(device)) {
@@ -2722,6 +2738,7 @@ class UnicastTestNoInit : public Test {
     handles.clear();
 
     Mock::VerifyAndClearExpectations(mock_iso_manager_);
+    Mock::VerifyAndClearExpectations(mock_le_audio_sink_hal_client_);
   }
 
   void InjectIncomingIsoData(uint16_t cig_id, uint16_t cis_con_hdl,
@@ -4967,6 +4984,7 @@ TEST_F(UnicastTest, ChangeAvailableContextTypeWhenInCodecConfigured) {
   TestAudioDataTransfer(group_id, cis_count_out, cis_count_in, 0, 40);
 
   // Remember group to set the state after stopping the stream
+  ASSERT_NE(0lu, streaming_groups.count(group_id));
   auto group = streaming_groups.at(group_id);
 
   SyncOnMainLoop();
@@ -5758,6 +5776,7 @@ TEST_F(UnicastTest, DisconnecteWhileAlmostStreaming) {
   /* This is test code, which will change the group state to the one which
    * is required by test
    */
+  ASSERT_NE(0lu, streaming_groups.count(group_id));
   auto group_inject = streaming_groups.at(group_id);
   group_inject->SetState(types::AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING);
 
@@ -5797,9 +5816,10 @@ TEST_F(UnicastTest, EarbudsTwsStyleStreaming) {
 
   SetSampleDatabaseEarbudsValid(
       1, test_address0, codec_spec_conf::kLeAudioLocationStereo,
-      codec_spec_conf::kLeAudioLocationStereo, 0x01, 0x01, 0x0004,
-      /* source sample freq 16khz */ false /*add_csis*/, true /*add_cas*/,
-      true /*add_pacs*/, 2 /*add_ascs_cnt*/, 1 /*set_size*/, 0 /*rank*/);
+      codec_spec_conf::kLeAudioLocationStereo, 0x01, 0x01,
+      codec_spec_caps::kLeAudioSamplingFreq16000Hz, false /*add_csis*/,
+      true /*add_cas*/, true /*add_pacs*/, 2 /*add_asc_cnt*/, 1 /*set_size*/,
+      0 /*rank*/);
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnConnectionState(ConnectionState::CONNECTED, test_address0))
       .Times(1);
@@ -6224,6 +6244,7 @@ TEST_F(UnicastTest, SpeakerStreamingAutonomousRelease) {
                         1920);
 
   // Inject the IDLE state as if an autonomous release happened
+  ASSERT_NE(0lu, streaming_groups.count(group_id));
   auto group = streaming_groups.at(group_id);
   ASSERT_NE(group, nullptr);
   for (LeAudioDevice* device = group->GetFirstDevice(); device != nullptr;
@@ -6315,6 +6336,7 @@ TEST_F(UnicastTest, TwoEarbudsStreaming) {
   // Verify Data transfer still works
   TestAudioDataTransfer(group_id, cis_count_out, cis_count_in, 1920, 40);
 
+  ASSERT_NE(0lu, streaming_groups.count(group_id));
   auto group = streaming_groups.at(group_id);
 
   // Stop
@@ -7245,6 +7267,7 @@ TEST_F(UnicastTest,
   TestAudioDataTransfer(group_id, cis_count_out, cis_count_in, 1920);
 
   /* Get group and Device A */
+  ASSERT_NE(0lu, streaming_groups.count(group_id));
   auto group = streaming_groups.at(group_id);
   ASSERT_NE(group, nullptr);
   auto device = group->GetFirstDevice();
@@ -7346,6 +7369,7 @@ TEST_F(UnicastTest, TwoEarbuds2ndReleaseAseRemoveAvailableContextAndBack) {
   TestAudioDataTransfer(group_id, cis_count_out, cis_count_in, 1920);
 
   /* Get group and Device A */
+  ASSERT_NE(0lu, streaming_groups.count(group_id));
   auto group = streaming_groups.at(group_id);
   ASSERT_NE(group, nullptr);
   auto device = group->GetFirstDevice();
@@ -7637,7 +7661,7 @@ TEST_F(UnicastTest, StartStreamToUnsupportedContextTypeUsingUnspecified) {
 }
 
 TEST_F(UnicastTest,
-       StartStreamToUnsupportedContextTypeUnspecifiedNotSupported) {
+       StartStreamToUnsupportedContextTypeUnspecifiedNotAvailable) {
   uint8_t group_size = 2;
   int group_id = 2;
 
@@ -7784,6 +7808,7 @@ TEST_F(UnicastTest, StartStreamToSupportedContextTypeThenMixUnavailable) {
   Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
   Mock::VerifyAndClearExpectations(&mock_le_audio_source_hal_client_);
 
+  ASSERT_NE(0lu, streaming_groups.count(group_id));
   auto group = streaming_groups.at(group_id);
 
   // Expect two iso channel to be fed with data
@@ -7908,6 +7933,7 @@ TEST_F(UnicastTest, TwoEarbuds2ndDisconnected) {
   SyncOnMainLoop();
 
   StartStreaming(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC, group_id);
+  ASSERT_NE(0lu, streaming_groups.count(group_id));
   auto group = streaming_groups.at(group_id);
 
   Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
@@ -8112,6 +8138,7 @@ TEST_F(UnicastTest, TwoEarbudsStreamingProfileDisconnectStreamStopTimeout) {
   EXPECT_CALL(mock_gatt_interface_, Close(_)).Times(0);
   EXPECT_CALL(mock_btm_interface_, AclDisconnectFromHandle(_, _)).Times(2);
 
+  ASSERT_NE(0lu, streaming_groups.count(group_id));
   auto group = streaming_groups.at(group_id);
   ASSERT_TRUE(group != nullptr);
   ASSERT_TRUE(group->NumOfConnected() > 0);
@@ -9271,6 +9298,7 @@ TEST_F(UnicastTest, SpeakerStreamingTimeout) {
   SyncOnMainLoop();
 
   /* No assigned cises should remain when transition remains in IDLE state */
+  ASSERT_NE(0lu, streaming_groups.count(group_id));
   auto group = streaming_groups.at(group_id);
   ASSERT_EQ(0, static_cast<int>(group->cig.cises.size()));
 }
@@ -9906,6 +9934,7 @@ TEST_F_WITH_FLAGS(UnicastTestHandoverMode,
                      bluetooth::le_audio::types::kLeAudioDirectionSink,
                      true /* enable */));
 
+  ASSERT_NE(0lu, streaming_groups.count(group_id));
   auto group = streaming_groups.at(group_id);
 
   // Stop streaming and expect Service to be informed about straming suspension
@@ -10077,6 +10106,7 @@ TEST_F_WITH_FLAGS(UnicastTestHandoverMode,
   uint8_t cis_count_in = 2;
   TestAudioDataTransfer(group_id, cis_count_out, cis_count_in, 1920, 40);
 
+  ASSERT_NE(0lu, streaming_groups.count(group_id));
   auto group = streaming_groups.at(group_id);
 
   // Stop streaming and expect Service to be informed about straming suspension
@@ -10189,6 +10219,7 @@ TEST_F_WITH_FLAGS(UnicastTestHandoverMode,
   uint8_t cis_count_in = 2;
   TestAudioDataTransfer(group_id, cis_count_out, cis_count_in, 1920, 40);
 
+  ASSERT_NE(0lu, streaming_groups.count(group_id));
   auto group = streaming_groups.at(group_id);
 
   // De-activate monitoring mode
@@ -10387,6 +10418,7 @@ TEST_F_WITH_FLAGS(UnicastTestHandoverMode,
   SyncOnMainLoop();
   Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
 
+  ASSERT_NE(0lu, streaming_groups.count(group_id));
   auto group = streaming_groups.at(group_id);
 
   // Stop streaming and expect Service to be informed about straming suspension

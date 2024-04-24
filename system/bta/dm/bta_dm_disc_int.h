@@ -57,19 +57,6 @@ typedef struct {
 } tBTA_DM_API_DISCOVER;
 
 typedef struct {
-} tBTA_DM_API_DISCOVERY_CANCEL;
-
-/* data type for tBTA_DM_DISC_RESULT */
-typedef struct {
-  tBTA_DM_SEARCH result;
-} tBTA_DM_DISC_RESULT;
-
-/* data type for BTA_DM_SDP_RESULT_EVT */
-typedef struct {
-  tSDP_RESULT sdp_result;
-} tBTA_DM_SDP_RESULT;
-
-typedef struct {
   RawAddress bd_addr;          /* BD address peer device. */
   tBTA_SERVICE_MASK services;  /* Services found on peer device. */
   tBT_DEVICE_TYPE device_type; /* device type in case it is BLE device */
@@ -78,8 +65,7 @@ typedef struct {
   tHCI_STATUS hci_status;
 } tBTA_DM_SVC_RES;
 
-using tBTA_DM_MSG = std::variant<tBTA_DM_API_DISCOVER, tBTA_DM_DISC_RESULT,
-                                 tBTA_DM_SDP_RESULT, tBTA_DM_SVC_RES>;
+using tBTA_DM_MSG = std::variant<tBTA_DM_API_DISCOVER, tBTA_DM_SVC_RES>;
 
 typedef enum {
   BTA_DM_DISCOVER_IDLE,
