@@ -485,6 +485,7 @@ public class RemoteDevices {
         /**
          * @param deviceType the mDeviceType to set
          */
+        @VisibleForTesting
         void setDeviceType(int deviceType) {
             synchronized (mObject) {
                 this.mDeviceType = deviceType;
