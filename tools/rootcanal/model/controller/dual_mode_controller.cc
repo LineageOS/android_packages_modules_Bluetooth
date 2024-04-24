@@ -49,7 +49,7 @@ constexpr uint16_t kLeMaximumDataLength = 64;
 constexpr uint16_t kLeMaximumDataTime = 0x148;
 constexpr uint8_t kTransmitPowerLevel = -20;
 
-constexpr bool kLeApcfTransportDiscoveryDataFilterSupported = true;
+constexpr bool kLeApcfTransportDiscoveryDataFilterSupported = false;
 constexpr bool kLeApcfAdTypeFilterSupported = true;
 
 #define CHECK_PACKET_VIEW(view)                                              \
