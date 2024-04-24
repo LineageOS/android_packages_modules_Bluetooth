@@ -23,6 +23,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothCsipSetCoordinator;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothUuid;
 import android.content.IntentFilter;
 import android.os.Handler;
@@ -343,6 +344,13 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
                 mAdapterService.getDatabase().setProfileConnectionPolicy(device,
                         BluetoothProfile.HID_HOST, BluetoothProfile.CONNECTION_POLICY_ALLOWED);
             }
+            MetricsLogger.getInstance()
+                    .count(
+                            (Utils.arrayContains(uuids, BluetoothUuid.HID)
+                                            && Utils.arrayContains(uuids, BluetoothUuid.HOGP))
+                                    ? BluetoothProtoEnums.HIDH_COUNT_SUPPORT_BOTH_HID_AND_HOGP
+                                    : BluetoothProtoEnums.HIDH_COUNT_SUPPORT_ONLY_HID_OR_HOGP,
+                            1);
         }
 
         if ((headsetService != null)
