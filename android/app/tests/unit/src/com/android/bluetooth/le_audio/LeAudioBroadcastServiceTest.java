@@ -334,6 +334,8 @@ public class LeAudioBroadcastServiceTest {
 
         // Check if metadata is requested when the broadcast starts to stream
         verify(mLeAudioBroadcasterNativeInterface, times(1)).getBroadcastMetadata(eq(broadcastId));
+        TestUtils.waitForLooperToFinishScheduledTask(mService.getMainLooper());
+
         Assert.assertFalse(mOnBroadcastStartFailedCalled);
         Assert.assertTrue(mOnBroadcastStartedCalled);
     }
@@ -476,6 +478,8 @@ public class LeAudioBroadcastServiceTest {
 
         // Verify if broadcast is auto-started on start
         verify(mLeAudioBroadcasterNativeInterface, times(1)).startBroadcast(eq(broadcastId));
+        TestUtils.waitForLooperToFinishScheduledTask(mService.getMainLooper());
+
         Assert.assertTrue(mOnBroadcastStartedCalled);
 
         // Notify initial paused state
