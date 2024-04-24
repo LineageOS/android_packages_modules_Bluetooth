@@ -557,7 +557,7 @@ class CsisClientImpl : public CsisClient {
     }
   }
 
-  int GetDesiredSize(int group_id) override {
+  int GetDesiredSize(int group_id) const override {
     auto csis_group = FindCsisGroup(group_id);
     if (!csis_group) {
       log::info("Unknown group {}", group_id);
