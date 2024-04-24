@@ -90,6 +90,7 @@ public class AdapterServiceRestartTest {
     private @Mock IBluetoothCallback mIBluetoothCallback;
     private @Mock Binder mBinder;
     private @Mock android.app.Application mApplication;
+    private @Mock MetricsLogger mMockMetricsLogger;
     private @Mock AdapterNativeInterface mNativeInterface;
     private @Mock BluetoothKeystoreNativeInterface mKeystoreNativeInterface;
     private @Mock BluetoothQualityReportNativeInterface mQualityNativeInterface;
@@ -223,8 +224,13 @@ public class AdapterServiceRestartTest {
         doReturn(Process.BLUETOOTH_UID).when(mMockPackageManager)
                 .getPackageUidAsUser(any(), anyInt(), anyInt());
 
+        when(mMockMetricsLogger.init(any())).thenReturn(true);
+        when(mMockMetricsLogger.close()).thenReturn(true);
+
         AdapterServiceTest.configureEnabledProfiles();
         Config.init(mMockContext);
+
+        mAdapterService.setMetricsLogger(mMockMetricsLogger);
 
         // Attach a context to the service for permission checks.
         mAdapterService.attach(mMockContext, null, null, null, mApplication, null);
