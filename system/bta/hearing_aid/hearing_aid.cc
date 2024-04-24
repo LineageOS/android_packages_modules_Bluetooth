@@ -1571,7 +1571,7 @@ class HearingAidImpl : public HearingAid {
     p++;
     memcpy(p, encoded_data, packet_size);
 
-    log::debug("{} : {}", hearingAid->address, base::HexEncode(p, packet_size));
+    log::debug("{} : packet_size={}", hearingAid->address, packet_size);
 
     uint16_t result = GAP_ConnWriteData(hearingAid->gap_handle, audio_packet);
 
