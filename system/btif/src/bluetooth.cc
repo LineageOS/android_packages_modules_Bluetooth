@@ -674,11 +674,7 @@ static int get_connection_state(const RawAddress* bd_addr) {
 
   if (bd_addr == nullptr) return 0;
 
-  if (IS_FLAG_ENABLED(api_get_connection_state_sync_on_main)) {
-    return btif_dm_get_connection_state_sync(*bd_addr);
-  } else {
-    return btif_dm_get_connection_state(*bd_addr);
-  }
+  return btif_dm_get_connection_state(*bd_addr);
 }
 
 static int pin_reply(const RawAddress* bd_addr, uint8_t accept, uint8_t pin_len,
