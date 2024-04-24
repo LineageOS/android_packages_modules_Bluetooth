@@ -57,7 +57,7 @@ import java.util.List;
 public class MetricsLogger {
     private static final String TAG = "BluetoothMetricsLogger";
     private static final String BLOOMFILTER_PATH = "/data/misc/bluetooth";
-    private static final String BLOOMFILTER_FILE = "/devices_for_metrics_v2";
+    private static final String BLOOMFILTER_FILE = "/devices_for_metrics_v3";
     public static final String BLOOMFILTER_FULL_PATH = BLOOMFILTER_PATH + BLOOMFILTER_FILE;
 
     // 6 hours timeout for counter metrics
