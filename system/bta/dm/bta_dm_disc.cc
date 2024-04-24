@@ -372,16 +372,23 @@ static void bta_dm_store_audio_profiles_version() {
   }
 }
 
-/*******************************************************************************
- *
- * Function         bta_dm_sdp_result
- *
- * Description      Process the discovery result from sdp
- *
- * Returns          void
- *
- ******************************************************************************/
-static void bta_dm_sdp_result(tBTA_DM_SDP_RESULT& sdp_event) {
+static void bta_dm_sdp_result(tSDP_STATUS sdp_result);
+
+/* Callback from sdp with discovery status */
+static void bta_dm_sdp_callback(const RawAddress& /* bd_addr */,
+                                tSDP_STATUS sdp_status) {
+  log::info("{}", bta_dm_state_text(bta_dm_discovery_get_state()));
+
+  if (bta_dm_discovery_get_state() == BTA_DM_DISCOVER_IDLE) {
+    bta_dm_free_sdp_db();
+    return;
+  }
+
+  do_in_main_thread(FROM_HERE, base::BindOnce(&bta_dm_sdp_result, sdp_status));
+}
+
+/* Process the discovery result from sdp */
+static void bta_dm_sdp_result(tSDP_STATUS sdp_result) {
   tSDP_DISC_REC* p_sdp_rec = NULL;
   bool scn_found = false;
   uint16_t service = 0xFFFF;
@@ -389,12 +396,9 @@ static void bta_dm_sdp_result(tBTA_DM_SDP_RESULT& sdp_event) {
 
   std::vector<Uuid> uuid_list;
 
-  const tSDP_RESULT sdp_result = sdp_event.sdp_result;
-
-  if ((sdp_event.sdp_result == SDP_SUCCESS) ||
-      (sdp_event.sdp_result == SDP_NO_RECS_MATCH) ||
-      (sdp_event.sdp_result == SDP_DB_FULL)) {
-    log::verbose("sdp_result::0x{:x}", sdp_event.sdp_result);
+  if ((sdp_result == SDP_SUCCESS) || (sdp_result == SDP_NO_RECS_MATCH) ||
+      (sdp_result == SDP_DB_FULL)) {
+    log::verbose("sdp_result::0x{:x}", sdp_result);
     do {
       p_sdp_rec = NULL;
       if (bta_dm_discovery_cb.service_index == (BTA_USER_SERVICE_ID + 1)) {
@@ -551,7 +555,7 @@ static void bta_dm_sdp_result(tBTA_DM_SDP_RESULT& sdp_event) {
         kBtmLogTag, bta_dm_discovery_cb.peer_bdaddr, "Discovery failed",
         base::StringPrintf("Result:%s", sdp_result_text(sdp_result).c_str()));
     log::error("SDP connection failed {}", sdp_status_text(sdp_result));
-    if (sdp_event.sdp_result == SDP_CONN_FAILED)
+    if (sdp_result == SDP_CONN_FAILED)
       bta_dm_discovery_cb.wait_disc = false;
 
     /* not able to connect go to next device */
@@ -901,22 +905,6 @@ static void bta_dm_discover_services(tBTA_DM_API_DISCOVER& discover) {
   bta_dm_find_services(bd_addr);
 }
 
-/*******************************************************************************
- *
- * Function         bta_dm_sdp_callback
- *
- * Description      Callback from sdp with discovery status
- *
- * Returns          void
- *
- ******************************************************************************/
-static void bta_dm_sdp_callback(const RawAddress& /* bd_addr */,
-                                tSDP_STATUS sdp_status) {
-  post_disc_evt(BTA_DM_SDP_RESULT_EVT,
-                std::make_unique<tBTA_DM_MSG>(
-                    tBTA_DM_SDP_RESULT{.sdp_result = sdp_status}));
-}
-
 #ifndef BTA_DM_GATT_CLOSE_DELAY_TOUT
 #define BTA_DM_GATT_CLOSE_DELAY_TOUT 1000
 #endif
@@ -1178,8 +1166,8 @@ tBT_TRANSPORT bta_dm_determine_discovery_transport(const RawAddress& bd_addr) {
   return ::bta_dm_determine_discovery_transport(bd_addr);
 }
 
-void bta_dm_sdp_result(tBTA_DM_SDP_RESULT& sdp_event) {
-  ::bta_dm_sdp_result(sdp_event);
+void bta_dm_sdp_result(tSDP_STATUS sdp_status) {
+  ::bta_dm_sdp_result(sdp_status);
 }
 
 }  // namespace testing
@@ -1235,9 +1223,6 @@ static void bta_dm_disc_sm_execute(tBTA_DM_DISC_EVT event,
 
           bta_dm_discover_services(std::get<tBTA_DM_API_DISCOVER>(*msg));
           break;
-        case BTA_DM_SDP_RESULT_EVT:
-          bta_dm_free_sdp_db();
-          break;
         case BTA_DM_DISC_CLOSE_TOUT_EVT:
           bta_dm_close_gatt_conn();
           break;
@@ -1250,12 +1235,6 @@ static void bta_dm_disc_sm_execute(tBTA_DM_DISC_EVT event,
 
     case BTA_DM_DISCOVER_ACTIVE:
       switch (event) {
-        case BTA_DM_SDP_RESULT_EVT:
-          log::assert_that(std::holds_alternative<tBTA_DM_SDP_RESULT>(*msg),
-                           "bad message type: {}", msg->index());
-
-          bta_dm_sdp_result(std::get<tBTA_DM_SDP_RESULT>(*msg));
-          break;
         case BTA_DM_DISCOVERY_RESULT_EVT:
           log::assert_that(std::holds_alternative<tBTA_DM_SVC_RES>(*msg),
                            "bad message type: {}", msg->index());

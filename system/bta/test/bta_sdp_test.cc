@@ -38,7 +38,7 @@ namespace legacy {
 namespace testing {
 
 tBTA_DM_SERVICE_DISCOVERY_CB& bta_dm_discovery_cb();
-void bta_dm_sdp_result(tBTA_DM_SDP_RESULT& sdp_event);
+void bta_dm_sdp_result(tSDP_STATUS sdp_status);
 
 }  // namespace testing
 }  // namespace legacy
@@ -75,6 +75,5 @@ TEST_F(BtaSdpRegisteredTest, bta_dm_sdp_result_SDP_SUCCESS) {
 
   mock_btm_client_interface.security.BTM_SecReadDevName =
       [](const RawAddress& bd_addr) -> const char* { return kName; };
-  tBTA_DM_SDP_RESULT result{.sdp_result = SDP_SUCCESS};
-  bluetooth::legacy::testing::bta_dm_sdp_result(result);
+  bluetooth::legacy::testing::bta_dm_sdp_result(SDP_SUCCESS);
 }
