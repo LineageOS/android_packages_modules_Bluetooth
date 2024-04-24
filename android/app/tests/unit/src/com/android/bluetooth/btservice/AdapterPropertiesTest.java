@@ -101,8 +101,13 @@ public class AdapterPropertiesTest {
     @Test
     public void testCleanupPrevBondRecordsFor() {
         mRemoteDevices.reset();
-        mRemoteDevices.addDeviceProperties(TEST_BT_ADDR_BYTES);
-        mRemoteDevices.addDeviceProperties(TEST_BT_ADDR_BYTES_2);
+        mRemoteDevices
+                .addDeviceProperties(TEST_BT_ADDR_BYTES)
+                .setDeviceType(BluetoothDevice.DEVICE_TYPE_LE);
+        mRemoteDevices
+                .addDeviceProperties(TEST_BT_ADDR_BYTES_2)
+                .setDeviceType(BluetoothDevice.DEVICE_TYPE_LE);
+
         BluetoothDevice device1, device2;
         device1 = mRemoteDevices.getDevice(TEST_BT_ADDR_BYTES);
         device2 = mRemoteDevices.getDevice(TEST_BT_ADDR_BYTES_2);
