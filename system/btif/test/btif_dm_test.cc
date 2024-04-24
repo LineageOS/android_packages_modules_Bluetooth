@@ -16,7 +16,7 @@
 
 #include "btif/include/btif_dm.h"
 
-#include <android_bluetooth_flags.h>
+#include <com_android_bluetooth_flags.h>
 #include <flag_macros.h>
 #include <gtest/gtest.h>
 

@@ -19,8 +19,8 @@
 #include "a2dp_provider_info.h"
 
 #include <android/binder_manager.h>
-#include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <optional>
 #include <vector>
@@ -52,7 +52,7 @@ using ::aidl::android::hardware::bluetooth::audio::SessionType;
  ***/
 std::unique_ptr<ProviderInfo> ProviderInfo::GetProviderInfo(
     bool supports_a2dp_hw_offload_v2) {
-  if (!IS_FLAG_ENABLED(a2dp_offload_codec_extensibility)) {
+  if (!com::android::bluetooth::flags::a2dp_offload_codec_extensibility()) {
     log::info(
         "a2dp offload codec extensibility is disabled,"
         " not going to load the ProviderInfo");

@@ -16,9 +16,9 @@
 
 #include "bta_ag_swb_aptx.h"
 
-#include <android_bluetooth_flags.h>
 #include <android_bluetooth_sysprop.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -30,7 +30,7 @@
 using namespace bluetooth;
 
 bool is_hfp_aptx_voice_enabled() {
-  return IS_FLAG_ENABLED(hfp_codec_aptx_voice) &&
+  return com::android::bluetooth::flags::hfp_codec_aptx_voice() &&
          GET_SYSPROP(Hfp, codec_aptx_voice, false);
 }
 

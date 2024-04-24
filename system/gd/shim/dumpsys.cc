@@ -17,8 +17,8 @@
 
 #include "dumpsys/dumpsys.h"
 
-#include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 #include <unistd.h>
 
 #include <future>
@@ -136,7 +136,7 @@ void Dumpsys::impl::DumpWithArgsAsync(int fd, const char** args) const {
   const auto registry = dumpsys_module_.GetModuleRegistry();
 
   int dumper_fd = STDOUT_FILENO;
-  if (IS_FLAG_ENABLED(dumpsys_use_passed_in_fd)) {
+  if (com::android::bluetooth::flags::dumpsys_use_passed_in_fd()) {
     dumper_fd = fd;
   }
   ModuleDumper dumper(dumper_fd, *registry, kDumpsysTitle);
@@ -151,7 +151,7 @@ void Dumpsys::impl::DumpWithArgsAsync(int fd, const char** args) const {
 }
 
 void Dumpsys::impl::DumpWithArgsSync(int fd, const char** args, std::promise<void> promise) {
-  if (IS_FLAG_ENABLED(dumpsys_acquire_stack_when_executing)) {
+  if (com::android::bluetooth::flags::dumpsys_acquire_stack_when_executing()) {
     if (bluetooth::shim::Stack::GetInstance()->LockForDumpsys(
             [=, *this]() { this->DumpWithArgsAsync(fd, args); })) {
       log::info("Successful dumpsys procedure");

@@ -26,9 +26,9 @@
 
 #define LOG_TAG "bt_btif_gatt"
 
-#include <android_bluetooth_flags.h>
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_gatt.h>
 #include <hardware/bt_gatt_types.h>
@@ -354,7 +354,8 @@ static bt_status_t btif_gatts_open(int server_if, const RawAddress& bd_addr,
                                    int transport) {
   CHECK_BTGATT_INIT();
 
-  if (IS_FLAG_ENABLED(ble_gatt_server_use_address_type_in_connection)) {
+  if (com::android::bluetooth::flags::
+          ble_gatt_server_use_address_type_in_connection()) {
     return do_in_jni_thread(Bind(&btif_gatts_open_impl_use_address_type,
                                  server_if, bd_addr, addr_type, is_direct,
                                  transport));

@@ -28,12 +28,12 @@
 
 #define LOG_TAG "bt_btif_core"
 
-#include <android_bluetooth_flags.h>
 #include <android_bluetooth_sysprop.h>
 #include <base/at_exit.h>
 #include <base/functional/bind.h>
 #include <base/threading/platform_thread.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 #include <signal.h>
 #include <sys/types.h>
 
@@ -217,7 +217,7 @@ void btif_enable_bluetooth_evt() {
 
   GetInterfaceToProfiles()->onBluetoothEnabled();
 
-  if (!IS_FLAG_ENABLED(load_did_config_from_sysprops)) {
+  if (!com::android::bluetooth::flags::load_did_config_from_sysprops()) {
     bte_load_did_conf(BTE_DID_CONF_FILE);
   } else {
     tSDP_DI_RECORD record = {

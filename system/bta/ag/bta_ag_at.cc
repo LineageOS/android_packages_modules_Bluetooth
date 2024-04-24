@@ -25,8 +25,8 @@
 
 #include "bta/ag/bta_ag_at.h"
 
-#include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
 #include <cstdlib>
@@ -143,7 +143,7 @@ void bta_ag_process_at(tBTA_AG_AT_CB* p_cb, char* p_end) {
 #if TARGET_FLOSS
         if (true)
 #else
-        if (IS_FLAG_ENABLED(bta_ag_cmd_brsf_allow_uint32))
+        if (com::android::bluetooth::flags::bta_ag_cmd_brsf_allow_uint32())
 #endif
         {
           if (p_cb->p_at_tbl[idx].command_id == BTA_AG_LOCAL_EVT_BRSF) {

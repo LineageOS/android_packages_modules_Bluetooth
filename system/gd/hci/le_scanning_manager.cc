@@ -15,8 +15,8 @@
  */
 #include "hci/le_scanning_manager.h"
 
-#include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <memory>
 #include <unordered_map>
@@ -377,7 +377,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
           extended_event_type = transform_to_extended_event_type({.legacy = true});
           break;
         case AdvertisingEventType::SCAN_RESPONSE:
-          if (IS_FLAG_ENABLED(fix_nonconnectable_scannable_advertisement)) {
+          if (com::android::bluetooth::flags::fix_nonconnectable_scannable_advertisement()) {
             // We don't know if the initial advertising report was connectable or not.
             // LeScanningReassembler fixes the connectable field.
             extended_event_type = transform_to_extended_event_type(
@@ -478,9 +478,10 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
           break;
       }
 
-      const uint16_t result_event_type = IS_FLAG_ENABLED(fix_nonconnectable_scannable_advertisement)
-                                             ? processed_report->extended_event_type
-                                             : event_type;
+      const uint16_t result_event_type =
+          com::android::bluetooth::flags::fix_nonconnectable_scannable_advertisement()
+              ? processed_report->extended_event_type
+              : event_type;
 
       scanning_callbacks_->OnScanResult(
           result_event_type,
@@ -696,7 +697,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
     le_scan_type_ = scan_type;
     interval_ms_ = scan_interval;
     window_ms_ = scan_window;
-    if (IS_FLAG_ENABLED(phy_to_native)) phy_ = scan_phy;
+    if (com::android::bluetooth::flags::phy_to_native()) phy_ = scan_phy;
     scanning_callbacks_->OnSetScannerParameterComplete(scanner_id, ScanningCallback::SUCCESS);
   }
 

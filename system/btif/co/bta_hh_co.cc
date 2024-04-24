@@ -18,7 +18,7 @@
 
 #include "bta_hh_co.h"
 
-#include <android_bluetooth_flags.h>
+#include <com_android_bluetooth_flags.h>
 #include <fcntl.h>
 #include <linux/uhid.h>
 #include <poll.h>
@@ -299,7 +299,8 @@ static int uhid_fd_poll(btif_hh_device_t* p_dev,
   int counter = 0;
 
   do {
-    if (IS_FLAG_ENABLED(break_uhid_polling_early) && !p_dev->hh_keep_polling) {
+    if (com::android::bluetooth::flags::break_uhid_polling_early() &&
+        !p_dev->hh_keep_polling) {
       log::debug("Polling stopped");
       return -1;
     }
@@ -313,7 +314,7 @@ static int uhid_fd_poll(btif_hh_device_t* p_dev,
     ret = poll(pfds.data(), pfds.size(), BTA_HH_UHID_POLL_PERIOD_MS);
   } while (ret == -1 && errno == EINTR);
 
-  if (!IS_FLAG_ENABLED(break_uhid_polling_early)) {
+  if (!com::android::bluetooth::flags::break_uhid_polling_early()) {
     if (ret == 0) {
       log::debug("Polling timed out, attempt to read (old behavior)");
       return 1;
