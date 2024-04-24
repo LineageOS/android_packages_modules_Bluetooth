@@ -319,3 +319,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_broadcast_extract_periodic_scanner_from_state_machine"
+    namespace: "bluetooth"
+    description: "Extract periodic scanner from state machine to make it independent from remote devices"
+    bug: "333691526"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
