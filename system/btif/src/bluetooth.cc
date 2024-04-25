@@ -674,11 +674,7 @@ static int get_connection_state(const RawAddress* bd_addr) {
 
   if (bd_addr == nullptr) return 0;
 
-  if (IS_FLAG_ENABLED(api_get_connection_state_sync_on_main)) {
-    return btif_dm_get_connection_state_sync(*bd_addr);
-  } else {
-    return btif_dm_get_connection_state(*bd_addr);
-  }
+  return btif_dm_get_connection_state(*bd_addr);
 }
 
 static int pin_reply(const RawAddress* bd_addr, uint8_t accept, uint8_t pin_len,
@@ -1339,17 +1335,16 @@ void invoke_pin_request_cb(RawAddress bd_addr, bt_bdname_t bd_name,
                                   bd_addr, bd_name, cod, min_16_digit));
 }
 
-void invoke_ssp_request_cb(RawAddress bd_addr, bt_bdname_t bd_name,
-                           uint32_t cod, bt_ssp_variant_t pairing_variant,
+void invoke_ssp_request_cb(RawAddress bd_addr, bt_ssp_variant_t pairing_variant,
                            uint32_t pass_key) {
   do_in_jni_thread(FROM_HERE,
                    base::BindOnce(
-                       [](RawAddress bd_addr, bt_bdname_t bd_name, uint32_t cod,
-                          bt_ssp_variant_t pairing_variant, uint32_t pass_key) {
+                       [](RawAddress bd_addr, bt_ssp_variant_t pairing_variant,
+                          uint32_t pass_key) {
                          HAL_CBACK(bt_hal_cbacks, ssp_request_cb, &bd_addr,
-                                   &bd_name, cod, pairing_variant, pass_key);
+                                   pairing_variant, pass_key);
                        },
-                       bd_addr, bd_name, cod, pairing_variant, pass_key));
+                       bd_addr, pairing_variant, pass_key));
 }
 
 void invoke_oob_data_request_cb(tBT_TRANSPORT t, bool valid, Octet16 c,

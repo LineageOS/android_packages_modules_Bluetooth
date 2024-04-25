@@ -5,6 +5,7 @@
 #include "device.h"
 #include "internal_include/stack_config.h"
 #include "packet_test_helper.h"
+#include "stack/include/a2dp_api.h"
 #include "types/raw_address.h"
 
 bool btif_av_src_sink_coexist_enabled(void) { return true; }
@@ -64,6 +65,14 @@ class FakeA2dpInterface : public A2dpInterface {
   virtual RawAddress active_peer() { return RawAddress(); }
   virtual bool is_peer_in_silence_mode(const RawAddress& peer_address) {
     return false;
+  }
+  virtual void connect_audio_sink_delayed(uint8_t handle,
+                                          const RawAddress& peer_address) {
+    return;
+  }
+  virtual uint16_t find_audio_sink_service(const RawAddress& peer_address,
+                                           tA2DP_FIND_CBACK p_cback) override {
+    return 0;
   }
 };
 

@@ -146,8 +146,6 @@ void pin_request([[maybe_unused]] RawAddress* remote_bd_addr,
 }
 
 void ssp_request([[maybe_unused]] RawAddress* remote_bd_addr,
-                 [[maybe_unused]] bt_bdname_t* bd_name,
-                 [[maybe_unused]] uint32_t cod,
                  [[maybe_unused]] bt_ssp_variant_t pairing_variant,
                  [[maybe_unused]] uint32_t pass_key) {
   log::info("");

@@ -30,9 +30,6 @@ void bta_dm_disc_stop_device_discovery();
 
 void bta_dm_disc_disable_search();
 
-// Return most recent remote name
-const char* bta_dm_get_remname(void);
-
 // LE observe and scan interface
 void bta_dm_ble_scan(bool start, uint8_t duration_sec, bool low_latency_scan);
 void bta_dm_ble_csis_observe(bool observe, tBTA_DM_SEARCH_CBACK* p_cback);

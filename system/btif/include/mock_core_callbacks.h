@@ -44,7 +44,6 @@ EventCallbacks mock_event_callbacks = {
                                 bt_bdname_t /* bd_name */, uint32_t /* cod */,
                                 bool /* min_16_digit */) {},
     .invoke_ssp_request_cb = [](RawAddress /* bd_addr */,
-                                bt_bdname_t /* bd_name */, uint32_t /* cod */,
                                 bt_ssp_variant_t /* pairing_variant */,
                                 uint32_t /* pass_key */) {},
     .invoke_oob_data_request_cb = [](tBT_TRANSPORT /* t */, bool /* valid */,
@@ -73,6 +72,7 @@ EventCallbacks mock_event_callbacks = {
            int /* snr */, int /* retransmission_count */,
            int /* packets_not_receive_count */,
            int /* negative_acknowledgement_count */) {},
+    .invoke_key_missing_cb = [](RawAddress /* bd_addr */) {},
 };
 
 // This interface lets us query for configuration properties of the stack that

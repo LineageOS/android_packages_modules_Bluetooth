@@ -951,8 +951,7 @@ types::LeAudioConfigurationStrategy LeAudioDeviceGroup::GetGroupSinkStrategy()
       auto channel_count_bitmap =
           device->GetSupportedAudioChannelCounts(types::kLeAudioDirectionSink);
       log::debug("Supported channel counts for group {} (device {}) is {}",
-                 group_id_, ADDRESS_TO_LOGGABLE_CSTR(device->address_),
-                 channel_count_bitmap);
+                 group_id_, device->address_, channel_count_bitmap);
       if (channel_count_bitmap == 1) {
         return types::LeAudioConfigurationStrategy::STEREO_TWO_CISES_PER_DEVICE;
       }
@@ -1279,8 +1278,8 @@ bool CheckIfStrategySupported(types::LeAudioConfigurationStrategy strategy,
       auto channel_count_mask =
           device.GetSupportedAudioChannelCounts(direction);
       auto requested_channel_count = conf.codec.GetChannelCountPerIsoStream();
-      log::debug("Requested channel count: {}, supp. channel counts: {}",
-                 requested_channel_count, loghex(channel_count_mask));
+      log::debug("Requested channel count: {}, supp. channel counts: 0x{:x}",
+                 requested_channel_count, channel_count_mask);
 
       /* Return true if requested channel count is set in the supported channel
        * counts. In the channel_count_mask, bit 0 is set when 1 channel is
@@ -1314,7 +1313,7 @@ bool LeAudioDeviceGroup::IsAudioSetConfigurationSupported(
   for (auto direction :
        {types::kLeAudioDirectionSink, types::kLeAudioDirectionSource}) {
     log::debug("Looking for configuration: {} - {}", audio_set_conf->name,
-               (direction == types::kLeAudioDirectionSink ? "Sink" : "Source"));
+               direction == types::kLeAudioDirectionSink ? "Sink" : "Source");
     auto const& ase_confs = audio_set_conf->confs.get(direction);
     if (ase_confs.empty()) {
       log::debug("No configurations for direction {}, skip it.",
@@ -1384,7 +1383,7 @@ bool LeAudioDeviceGroup::IsAudioSetConfigurationSupported(
         if (!utils::GetConfigurationSupportedPac(pacs, ent.codec)) {
           log::debug(
               "Insufficient PAC for {}",
-              (direction == types::kLeAudioDirectionSink ? "sink" : "source"));
+              direction == types::kLeAudioDirectionSink ? "sink" : "source");
           continue;
         }
 
@@ -1413,9 +1412,8 @@ bool LeAudioDeviceGroup::IsAudioSetConfigurationSupported(
 
     if (required_device_cnt > 0) {
       /* Don't left any active devices if requirements are not met */
-      log::debug(
-          "Could not configure all the devices for direction: {}",
-          (direction == types::kLeAudioDirectionSink ? "Sink" : "Source"));
+      log::debug("Could not configure all the devices for direction: {}",
+                 direction == types::kLeAudioDirectionSink ? "Sink" : "Source");
       return false;
     }
 
@@ -2033,7 +2031,7 @@ void LeAudioDeviceGroup::Dump(int fd, int active_group_id) const {
 LeAudioDeviceGroup* LeAudioDeviceGroups::Add(int group_id) {
   /* Get first free group id */
   if (FindById(group_id)) {
-    log::error("group already exists, id: {}", loghex(group_id));
+    log::error("group already exists, id: 0x{:x}", group_id);
     return nullptr;
   }
 

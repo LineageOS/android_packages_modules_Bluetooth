@@ -18,6 +18,7 @@
 
 #include "connection_handler.h"
 
+#include <android_bluetooth_flags.h>
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
 
@@ -137,11 +138,12 @@ bool ConnectionHandler::ConnectDevice(const RawAddress& bdaddr) {
   auto connection_lambda = [](ConnectionHandler* instance_,
                               const RawAddress& bdaddr, uint16_t status,
                               uint16_t version, uint16_t features) {
-    log::info("SDP Completed features={}", loghex(features));
+    log::info("SDP Completed features=0x{:x}", features);
     if (status != AVRC_SUCCESS || !(features & BTA_AV_FEAT_RCCT)) {
       log::error(
-          "Failed to do SDP: status={} features={} supports controller: {}",
-          loghex(status), loghex(features), (features & BTA_AV_FEAT_RCCT));
+          "Failed to do SDP: status=0x{:x} features=0x{:x} supports "
+          "controller: {}",
+          status, features, features & BTA_AV_FEAT_RCCT);
       instance_->connection_cb_.Run(std::shared_ptr<Device>());
     }
 
@@ -232,7 +234,7 @@ bool ConnectionHandler::AvrcpConnect(bool initiator, const RawAddress& bdaddr) {
 
   uint8_t handle = 0;
   uint16_t status = avrc_->Open(&handle, &open_cb, bdaddr);
-  log::info("handle={} status= {}", loghex(handle), loghex(status));
+  log::info("handle=0x{:x} status= 0x{:x}", handle, status);
   return status == AVRC_SUCCESS;
 }
 
@@ -241,8 +243,8 @@ void ConnectionHandler::InitiatorControlCb(uint8_t handle, uint8_t event,
                                            const RawAddress* peer_addr) {
   DCHECK(!connection_cb_.is_null());
 
-  log::info("handle={} result={} addr={}", loghex(handle), loghex(result),
-            (peer_addr ? ADDRESS_TO_LOGGABLE_STR(*peer_addr) : "none"));
+  log::info("handle=0x{:x} result=0x{:x} addr={}", handle, result,
+            peer_addr ? ADDRESS_TO_LOGGABLE_STR(*peer_addr) : "none");
 
   switch (event) {
     case AVRC_OPEN_IND_EVT: {
@@ -333,8 +335,8 @@ void ConnectionHandler::AcceptorControlCb(uint8_t handle, uint8_t event,
                                           const RawAddress* peer_addr) {
   DCHECK(!connection_cb_.is_null());
 
-  log::info("handle={} result={} addr={}", loghex(handle), loghex(result),
-            (peer_addr ? ADDRESS_TO_LOGGABLE_STR(*peer_addr) : "none"));
+  log::info("handle=0x{:x} result=0x{:x} addr={}", handle, result,
+            peer_addr ? ADDRESS_TO_LOGGABLE_STR(*peer_addr) : "none");
 
   switch (event) {
     case AVRC_OPEN_IND_EVT: {
@@ -372,7 +374,7 @@ void ConnectionHandler::AcceptorControlCb(uint8_t handle, uint8_t event,
                            uint16_t features) {
         if (instance_->device_map_.find(handle) ==
             instance_->device_map_.end()) {
-          log::warn("No device found for handle: {}", loghex(handle));
+          log::warn("No device found for handle: 0x{:x}", handle);
           return;
         }
 
@@ -398,13 +400,18 @@ void ConnectionHandler::AcceptorControlCb(uint8_t handle, uint8_t event,
         // SDP search failed, this could be due to a collision between outgoing
         // and incoming connection. In any case, we need to reject the current
         // connection.
-        log::error("SDP search failed for handle: {}, closing connection",
-                   loghex(handle));
+        log::error("SDP search failed for handle: 0x{:x}, closing connection",
+                   handle);
         DisconnectDevice(*peer_addr);
       }
       // Open for the next incoming connection. The handle will not be the same
       // as this one which will be closed when the device is disconnected.
       AvrcpConnect(false, RawAddress::kAny);
+
+      if (IS_FLAG_ENABLED(avrcp_connect_a2dp_delayed)) {
+        // Check peer audio role: src or sink and connect A2DP after 3 seconds
+        SdpLookupAudioRole(handle);
+      }
     } break;
 
     case AVRC_CLOSE_IND_EVT: {
@@ -449,8 +456,8 @@ void ConnectionHandler::AcceptorControlCb(uint8_t handle, uint8_t event,
 void ConnectionHandler::MessageCb(uint8_t handle, uint8_t label, uint8_t opcode,
                                   tAVRC_MSG* p_msg) {
   if (device_map_.find(handle) == device_map_.end()) {
-    log::error("Message received for unconnected device: handle={}",
-               loghex(handle));
+    log::error("Message received for unconnected device: handle=0x{:x}",
+               handle);
     return;
   }
 
@@ -505,8 +512,8 @@ void ConnectionHandler::SdpCb(RawAddress bdaddr, SdpCallback cb,
       /* get profile version (if failure, version parameter is not updated) */
       sdp_->FindProfileVersionInRec(
           sdp_record, UUID_SERVCLASS_AV_REMOTE_CONTROL, &peer_avrcp_version);
-      log::verbose("Device {} peer avrcp version={}", bdaddr,
-                   loghex(peer_avrcp_version));
+      log::verbose("Device {} peer avrcp version=0x{:x}", bdaddr,
+                   peer_avrcp_version);
 
       if (peer_avrcp_version >= AVRC_REV_1_3) {
         // These are the standard features, another way to check this is to
@@ -551,8 +558,8 @@ void ConnectionHandler::SdpCb(RawAddress bdaddr, SdpCallback cb,
     uint16_t peer_avrcp_target_version = 0;
     sdp_->FindProfileVersionInRec(sdp_record, UUID_SERVCLASS_AV_REMOTE_CONTROL,
                                   &peer_avrcp_target_version);
-    log::verbose("Device {} peer avrcp target version={}", bdaddr,
-                 loghex(peer_avrcp_target_version));
+    log::verbose("Device {} peer avrcp target version=0x{:x}", bdaddr,
+                 peer_avrcp_target_version);
 
     if ((sdp_->FindAttributeInRec(sdp_record, ATTR_ID_BT_PROFILE_DESC_LIST)) !=
         NULL) {
@@ -594,7 +601,7 @@ void ConnectionHandler::SendMessage(
         (uint8_t)(::bluetooth::Packet::Specialize<Packet>(packet)->GetCType());
   }
 
-  log::info("SendMessage to handle={}", loghex(handle));
+  log::info("SendMessage to handle=0x{:x}", handle);
 
   BT_HDR* pkt = (BT_HDR*)osi_malloc(BT_DEFAULT_BUFFER_SIZE);
 
@@ -639,6 +646,41 @@ void ConnectionHandler::RegisterVolChanged(const RawAddress& bdaddr) {
       }
       break;
     }
+  }
+}
+
+bool ConnectionHandler::SdpLookupAudioRole(uint16_t handle) {
+  if (device_map_.find(handle) == device_map_.end()) {
+    log::warn("No device found for handle: {}", loghex(handle));
+    return false;
+  }
+  auto device = device_map_[handle];
+
+  log::info(
+      "Performing SDP for AUDIO_SINK on connected device: address={}, "
+      "handle={}",
+      ADDRESS_TO_LOGGABLE_STR(device->GetAddress()), handle);
+
+  return device->find_sink_service(
+      base::Bind(&ConnectionHandler::SdpLookupAudioRoleCb,
+                 weak_ptr_factory_.GetWeakPtr(), handle));
+}
+
+void ConnectionHandler::SdpLookupAudioRoleCb(uint16_t handle, bool found,
+                                             tA2DP_Service* p_service,
+                                             const RawAddress& peer_address) {
+  if (device_map_.find(handle) == device_map_.end()) {
+    log::warn("No device found for handle: {}", loghex(handle));
+    return;
+  }
+  auto device = device_map_[handle];
+
+  log::debug("SDP callback for address={}, handle={}, AUDIO_SINK {}",
+             ADDRESS_TO_LOGGABLE_STR(device->GetAddress()), handle,
+             found ? "found" : "not found");
+
+  if (found) {
+    device->connect_a2dp_sink_delayed(handle);
   }
 }
 

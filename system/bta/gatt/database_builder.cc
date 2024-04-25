@@ -102,9 +102,9 @@ void DatabaseBuilder::AddCharacteristic(uint16_t handle, uint16_t value_handle,
 
   if (service->end_handle < value_handle)
     log::warn(
-        "Remote device violates spec: value_handle={} is after service "
-        "end_handle={}",
-        loghex(value_handle), loghex(service->end_handle));
+        "Remote device violates spec: value_handle=0x{:x} is after service "
+        "end_handle=0x{:x}",
+        value_handle, service->end_handle);
 
   service->characteristics.emplace_back(Characteristic{
       .declaration_handle = handle,

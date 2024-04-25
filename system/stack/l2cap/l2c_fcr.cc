@@ -740,7 +740,7 @@ void l2c_lcc_proc_pdu(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
     }
     if (p_buf->len > (p_ccb->ble_sdu_length - p_data->len)) {
       log::error("buffer length={} too big. max={}. Dropped", p_data->len,
-                 (p_ccb->ble_sdu_length - p_data->len));
+                 p_ccb->ble_sdu_length - p_data->len);
       osi_free(p_buf);
 
       /* Throw away all pending fragments and disconnects */

@@ -2313,7 +2313,7 @@ static bt_status_t get_folder_items_list_rsp(const RawAddress& bd_addr,
       log::verbose("item_cnt: {} len: {}", item_cnt, len_before);
       status = AVRC_BldResponse(p_dev->rc_handle, &avrc_rsp, &p_msg);
       log::verbose("Build rsp status: {} len: {}", status,
-                   (p_msg ? p_msg->len : 0));
+                   p_msg ? p_msg->len : 0);
       int len_after = p_msg ? p_msg->len : 0;
       if (status != AVRC_STS_NO_ERROR || len_before == len_after) {
         /* Error occured in build response or we ran out of buffer so break the

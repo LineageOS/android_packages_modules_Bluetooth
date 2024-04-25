@@ -36,7 +36,6 @@
 #include "osi/include/allocator.h"
 #include "osi/include/fixed_queue.h"
 #include "osi/include/list.h"
-#include "osi/include/osi.h"
 #include "osi/include/thread.h"
 #include "osi/include/wakelock.h"
 #include "osi/semaphore.h"
@@ -593,7 +592,7 @@ static void alarm_ready_mloop(alarm_t* alarm) {
   alarm_ready_generic(alarm, lock);
 }
 
-static void alarm_queue_ready(fixed_queue_t* queue, UNUSED_ATTR void* context) {
+static void alarm_queue_ready(fixed_queue_t* queue, void* /* context */) {
   log::assert_that(queue != NULL, "assert failed: queue != NULL");
 
   std::unique_lock<std::mutex> lock(alarms_mutex);
@@ -602,15 +601,13 @@ static void alarm_queue_ready(fixed_queue_t* queue, UNUSED_ATTR void* context) {
 }
 
 // Callback function for wake alarms and our posix timer
-static void timer_callback(UNUSED_ATTR void* ptr) {
-  semaphore_post(alarm_expired);
-}
+static void timer_callback(void* /* ptr */) { semaphore_post(alarm_expired); }
 
 // Function running on |dispatcher_thread| that performs the following:
 //   (1) Receives a signal using |alarm_exired| that the alarm has expired
 //   (2) Dispatches the alarm callback for processing by the corresponding
 // thread for that alarm.
-static void callback_dispatch(UNUSED_ATTR void* context) {
+static void callback_dispatch(void* /* context */) {
   while (true) {
     semaphore_wait(alarm_expired);
     if (!dispatcher_thread_active) break;

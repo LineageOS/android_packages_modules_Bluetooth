@@ -381,9 +381,8 @@ bt_status_t btsock_rfc_connect(const RawAddress* bd_addr,
   }
 
   if (!service_uuid || service_uuid->IsEmpty()) {
-    tBTA_JV_STATUS ret =
-        BTA_JvRfcommConnect(slot->security, slot->role, slot->scn, slot->addr,
-                            rfcomm_cback, slot->id);
+    tBTA_JV_STATUS ret = BTA_JvRfcommConnect(
+        slot->security, slot->scn, slot->addr, rfcomm_cback, slot->id);
     if (ret != tBTA_JV_STATUS::SUCCESS) {
       log::error(
           "unable to initiate RFCOMM connection. status:{}, scn:{}, bd_addr:{}",
@@ -786,8 +785,8 @@ static void jv_dm_cback(tBTA_JV_EVT event, tBTA_JV* p_data, uint32_t id) {
             "Since UUID is not valid; not setting SDP-record and just starting "
             "the RFCOMM server");
         // now start the rfcomm server after sdp & channel # assigned
-        BTA_JvRfcommStartServer(rs->security, rs->role, rs->scn,
-                                MAX_RFC_SESSION, rfcomm_cback, id);
+        BTA_JvRfcommStartServer(rs->security, rs->scn, MAX_RFC_SESSION,
+                                rfcomm_cback, id);
       }
       break;
     }
@@ -815,8 +814,8 @@ static void jv_dm_cback(tBTA_JV_EVT event, tBTA_JV* p_data, uint32_t id) {
       }
 
       // Start the rfcomm server after sdp & channel # assigned.
-      BTA_JvRfcommStartServer(slot->security, slot->role, slot->scn,
-                              MAX_RFC_SESSION, rfcomm_cback, id);
+      BTA_JvRfcommStartServer(slot->security, slot->scn, MAX_RFC_SESSION,
+                              rfcomm_cback, id);
       break;
     }
 
@@ -866,8 +865,8 @@ static void handle_discovery_comp(tBTA_JV_STATUS status, int scn, uint32_t id) {
     return;
   }
 
-  if (BTA_JvRfcommConnect(slot->security, slot->role, scn, slot->addr,
-                          rfcomm_cback, slot->id) != tBTA_JV_STATUS::SUCCESS) {
+  if (BTA_JvRfcommConnect(slot->security, scn, slot->addr, rfcomm_cback,
+                          slot->id) != tBTA_JV_STATUS::SUCCESS) {
     log::warn(
         "BTA_JvRfcommConnect() returned BTA_JV_FAILURE for RFCOMM slot with "
         "id: {}",

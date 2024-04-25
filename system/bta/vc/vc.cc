@@ -272,8 +272,8 @@ class VolumeControlImpl : public VolumeControl {
     VolumeControlDevice* device =
         volume_control_devices_.FindByConnId(connection_id);
     if (!device) {
-      log::error("Skipping unknown device, connection_id={}",
-                 loghex(connection_id));
+      log::error("Skipping unknown device, connection_id=0x{:x}",
+                 connection_id);
       return;
     }
 
@@ -309,7 +309,7 @@ class VolumeControlImpl : public VolumeControl {
                                     bool is_notification) {
     VolumeControlDevice* device = volume_control_devices_.FindByConnId(conn_id);
     if (!device) {
-      log::info("unknown conn_id={}", loghex(conn_id));
+      log::info("unknown conn_id=0x{:x}", conn_id);
       return;
     }
 
@@ -346,7 +346,7 @@ class VolumeControlImpl : public VolumeControl {
       } else if (handle == offset->audio_descr_handle) {
         OnOffsetOutputDescChanged(device, offset, len, value);
       } else {
-        log::error("unknown offset handle={}", loghex(handle));
+        log::error("unknown offset handle=0x{:x}", handle);
         return;
       }
 
@@ -354,12 +354,12 @@ class VolumeControlImpl : public VolumeControl {
       return;
     }
 
-    log::error("unknown handle={}", loghex(handle));
+    log::error("unknown handle=0x{:x}", handle);
   }
 
   void OnNotificationEvent(uint16_t conn_id, uint16_t handle, uint16_t len,
                            uint8_t* value) {
-    log::info("handle={}", loghex(handle));
+    log::info("handle=0x{:x}", handle);
     OnCharacteristicValueChanged(conn_id, GATT_SUCCESS, handle, len, value,
                                  nullptr, true);
   }
@@ -433,7 +433,7 @@ class VolumeControlImpl : public VolumeControl {
                                           uint16_t len, uint8_t* value,
                                           bool is_notification) {
     if (len != 3) {
-      log::info("malformed len={}", loghex(len));
+      log::info("malformed len=0x{:x}", len);
       return;
     }
 
@@ -450,8 +450,8 @@ class VolumeControlImpl : public VolumeControl {
     bool is_mute_change = (device->mute != mute);
     device->mute = mute;
 
-    log::info("volume {} mute {} change_counter {}", loghex(device->volume),
-              loghex(device->mute), loghex(device->change_counter));
+    log::info("volume 0x{:x} mute 0x{:x} change_counter 0x{:x}", device->volume,
+              device->mute, device->change_counter);
 
     if (!device->IsReady()) {
       log::info("Device: {} is not ready yet.", device->address);
@@ -506,14 +506,14 @@ class VolumeControlImpl : public VolumeControl {
                                    uint8_t* value) {
     device->flags = *value;
 
-    log::info("flags {}", loghex(device->flags));
+    log::info("flags 0x{:x}", device->flags);
   }
 
   void OnExtAudioOutStateChanged(VolumeControlDevice* device,
                                  VolumeOffset* offset, uint16_t len,
                                  uint8_t* value) {
     if (len != 3) {
-      log::info("malformed len={}", loghex(len));
+      log::info("malformed len=0x{:x}", len);
       return;
     }
 
@@ -522,8 +522,8 @@ class VolumeControlImpl : public VolumeControl {
     STREAM_TO_UINT8(offset->change_counter, pp);
 
     log::info("{}", base::HexEncode(value, len));
-    log::info("id: {} offset: {} counter: {}", loghex(offset->id),
-              loghex(offset->offset), loghex(offset->change_counter));
+    log::info("id: 0x{:x} offset: 0x{:x} counter: 0x{:x}", offset->id,
+              offset->offset, offset->change_counter);
 
     if (!device->IsReady()) {
       log::info("Device: {} is not ready yet.", device->address);
@@ -538,7 +538,7 @@ class VolumeControlImpl : public VolumeControl {
                                     VolumeOffset* offset, uint16_t len,
                                     uint8_t* value) {
     if (len != 4) {
-      log::info("malformed len={}", loghex(len));
+      log::info("malformed len=0x{:x}", len);
       return;
     }
 
@@ -546,7 +546,7 @@ class VolumeControlImpl : public VolumeControl {
     STREAM_TO_UINT32(offset->location, pp);
 
     log::info("{}", base::HexEncode(value, len));
-    log::info("id {}location {}", loghex(offset->id), loghex(offset->location));
+    log::info("id 0x{:x}location 0x{:x}", offset->id, offset->location);
 
     if (!device->IsReady()) {
       log::info("Device: {} is not ready yet.", device->address);
@@ -562,13 +562,13 @@ class VolumeControlImpl : public VolumeControl {
     VolumeControlDevice* device =
         volume_control_devices_.FindByConnId(connection_id);
     if (!device) {
-      log::error("Skipping unknown device disconnect, connection_id={}",
-                 loghex(connection_id));
+      log::error("Skipping unknown device disconnect, connection_id=0x{:x}",
+                 connection_id);
       return;
     }
 
-    log::info("Offset Control Point write response handle{} status: {}",
-              loghex(handle), loghex((int)(status)));
+    log::info("Offset Control Point write response handle0x{:x} status: 0x{:x}",
+              handle, (int)(status));
 
     /* TODO Design callback API to notify about changes */
   }
@@ -596,7 +596,7 @@ class VolumeControlImpl : public VolumeControl {
     VolumeControlDevice* device =
         volume_control_devices_.FindByConnId(connection_id);
     if (!device) {
-      log::info("unknown connection_id={}", loghex(connection_id));
+      log::info("unknown connection_id=0x{:x}", connection_id);
       BtaGattQueue::Clean(connection_id);
       return;
     }
@@ -668,18 +668,20 @@ class VolumeControlImpl : public VolumeControl {
     VolumeControlDevice* device =
         volume_control_devices_.FindByConnId(connection_id);
     if (!device) {
-      log::error("Skipping unknown device disconnect, connection_id={}",
-                 loghex(connection_id));
+      log::error("Skipping unknown device disconnect, connection_id=0x{:x}",
+                 connection_id);
       return;
     }
 
     if (!device->IsConnected()) {
       log::error(
           "Skipping disconnect of the already disconnected device, "
-          "connection_id={}",
-          loghex(connection_id));
+          "connection_id=0x{:x}",
+          connection_id);
       return;
     }
+
+    log::info("{}", remote_bda);
 
     bool notify = device->IsReady() || device->connecting_actively;
     device_cleanup_helper(device, notify);
@@ -772,13 +774,13 @@ class VolumeControlImpl : public VolumeControl {
     VolumeControlDevice* device =
         volume_control_devices_.FindByConnId(connection_id);
     if (!device) {
-      log::error("Skipping unknown device disconnect, connection_id={}",
-                 loghex(connection_id));
+      log::error("Skipping unknown device disconnect, connection_id=0x{:x}",
+                 connection_id);
       return;
     }
 
-    log::info("Write response handle: {} status: {}", loghex(handle),
-              loghex((int)(status)));
+    log::info("Write response handle: 0x{:x} status: 0x{:x}", handle,
+              (int)(status));
 
     if (status == GATT_SUCCESS) return;
 
@@ -851,8 +853,7 @@ class VolumeControlImpl : public VolumeControl {
     log::debug(
         "num of devices: {}, group_id: {}, is_autonomous: {}  opcode: {}, arg "
         "size: {}",
-        devices.size(), group_id, is_autonomous ? "true" : "false", opcode,
-        arguments.size());
+        devices.size(), group_id, is_autonomous, opcode, arguments.size());
 
     if (std::find_if(ongoing_operations_.begin(), ongoing_operations_.end(),
                      [opcode, &devices, &arguments](const VolumeOperation& op) {
@@ -887,8 +888,7 @@ class VolumeControlImpl : public VolumeControl {
       VolumeControlDevice* dev = volume_control_devices_.FindByAddress(
           std::get<RawAddress>(addr_or_group_id));
       if (dev != nullptr) {
-        log::debug("Address: {}: isReady: {}", dev->address,
-                   dev->IsReady() ? "true" : "false");
+        log::debug("Address: {}: isReady: {}", dev->address, dev->IsReady());
         if (dev->IsReady() && (dev->mute != mute)) {
           std::vector<RawAddress> devices = {dev->address};
           PrepareVolumeControlOperation(
@@ -965,8 +965,7 @@ class VolumeControlImpl : public VolumeControl {
       VolumeControlDevice* dev = volume_control_devices_.FindByAddress(
           std::get<RawAddress>(addr_or_group_id));
       if (dev != nullptr) {
-        log::debug("Address: {}: isReady: {}", dev->address,
-                   dev->IsReady() ? "true" : "false");
+        log::debug("Address: {}: isReady: {}", dev->address, dev->IsReady());
         if (dev->IsReady() && (dev->volume != volume)) {
           std::vector<RawAddress> devices = {dev->address};
           RemovePendingVolumeControlOperations(
@@ -1176,7 +1175,7 @@ class VolumeControlImpl : public VolumeControl {
   void ext_audio_out_control_point_helper(const RawAddress& address,
                                           uint8_t ext_output_id, uint8_t opcode,
                                           const std::vector<uint8_t>* arg) {
-    log::info("{} id={} op={}", address, loghex(ext_output_id), loghex(opcode));
+    log::info("{} id=0x{:x} op=0x{:x}", address, ext_output_id, opcode);
     VolumeControlDevice* device =
         volume_control_devices_.FindByAddress(address);
     if (!device) {

@@ -307,9 +307,8 @@ static void device_found_callback(int num_properties,
     return;
   }
 
-  log::verbose(
-      "Properties: {}, Address: {}", num_properties,
-      ADDRESS_TO_LOGGABLE_STR(*(RawAddress*)properties[addr_index].val));
+  log::verbose("Properties: {}, Address: {}", num_properties,
+               *(RawAddress*)properties[addr_index].val);
 
   remote_device_properties_callback(BT_STATUS_SUCCESS,
                                     (RawAddress*)properties[addr_index].val,
@@ -463,7 +462,7 @@ static void discovery_state_changed_callback(bt_discovery_state_t state) {
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid()) return;
 
-  log::verbose("DiscoveryState:{} ", state);
+  log::verbose("DiscoveryState:{}", state);
 
   sCallbackEnv->CallVoidMethod(
       sJniCallbacksObj, method_discoveryStateChangeCallback, (jint)state);
@@ -509,8 +508,8 @@ static void pin_request_callback(RawAddress* bd_addr, bt_bdname_t* bdname,
                                addr.get(), devname.get(), cod, min_16_digits);
 }
 
-static void ssp_request_callback(RawAddress* bd_addr, bt_bdname_t* bdname,
-                                 uint32_t cod, bt_ssp_variant_t pairing_variant,
+static void ssp_request_callback(RawAddress* bd_addr,
+                                 bt_ssp_variant_t pairing_variant,
                                  uint32_t pass_key) {
   if (!bd_addr) {
     log::error("Address is null");
@@ -536,19 +535,8 @@ static void ssp_request_callback(RawAddress* bd_addr, bt_bdname_t* bdname,
   sCallbackEnv->SetByteArrayRegion(addr.get(), 0, sizeof(RawAddress),
                                    (jbyte*)bd_addr);
 
-  ScopedLocalRef<jbyteArray> devname(
-      sCallbackEnv.get(), sCallbackEnv->NewByteArray(sizeof(bt_bdname_t)));
-  if (!devname.get()) {
-    log::error("Error while allocating");
-    return;
-  }
-
-  sCallbackEnv->SetByteArrayRegion(devname.get(), 0, sizeof(bt_bdname_t),
-                                   (jbyte*)bdname);
-
   sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_sspRequestCallback,
-                               addr.get(), devname.get(), cod,
-                               (jint)pairing_variant, pass_key);
+                               addr.get(), (jint)pairing_variant, pass_key);
 }
 
 static jobject createClassicOobDataObject(JNIEnv* env, bt_oob_data_t oob_data) {
@@ -745,8 +733,7 @@ static void switch_buffer_size_callback(bool is_low_latency_buffer_size) {
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid()) return;
 
-  log::verbose("SwitchBufferSizeCallback: {}",
-               is_low_latency_buffer_size ? "true" : "false");
+  log::verbose("SwitchBufferSizeCallback: {}", is_low_latency_buffer_size);
 
   sCallbackEnv->CallVoidMethod(
       sJniCallbacksObj, method_switchBufferSizeCallback,
@@ -763,8 +750,7 @@ static void switch_codec_callback(bool is_low_latency_buffer_size) {
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid()) return;
 
-  log::verbose("SwitchCodecCallback: {}",
-               is_low_latency_buffer_size ? "true" : "false");
+  log::verbose("SwitchCodecCallback: {}", is_low_latency_buffer_size);
 
   sCallbackEnv->CallVoidMethod(sJniCallbacksObj, method_switchCodecCallback,
                                (jboolean)is_low_latency_buffer_size);
@@ -824,7 +810,7 @@ static void dut_mode_recv_callback(uint16_t /* opcode */, uint8_t* /* buf */,
 
 static void le_test_mode_recv_callback(bt_status_t status,
                                        uint16_t packet_count) {
-  log::verbose("status:{} packet_count:{} ", bt_status_text(status),
+  log::verbose("status:{} packet_count:{}", bt_status_text(status),
                packet_count);
 }
 
@@ -2276,7 +2262,7 @@ int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env) {
        &method_devicePropertyChangedCallback},
       {"deviceFoundCallback", "([B)V", &method_deviceFoundCallback},
       {"pinRequestCallback", "([B[BIZ)V", &method_pinRequestCallback},
-      {"sspRequestCallback", "([B[BIII)V", &method_sspRequestCallback},
+      {"sspRequestCallback", "([BII)V", &method_sspRequestCallback},
       {"bondStateChangeCallback", "(I[BII)V", &method_bondStateChangeCallback},
       {"addressConsolidateCallback", "([B[B)V",
        &method_addressConsolidateCallback},

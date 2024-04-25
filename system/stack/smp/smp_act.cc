@@ -689,7 +689,7 @@ void smp_proc_rand(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
     return;
   }
 
-  if (IS_FLAG_ENABLED(fix_le_pairing_passkey_entry_bypass)) {
+  if (com::android::bluetooth::flags::fix_le_pairing_passkey_entry_bypass()) {
     if (!((p_cb->loc_auth_req & SMP_SC_SUPPORT_BIT) &&
           (p_cb->peer_auth_req & SMP_SC_SUPPORT_BIT)) &&
         !(p_cb->flags & SMP_PAIR_FLAGS_CMD_CONFIRM_SENT)) {

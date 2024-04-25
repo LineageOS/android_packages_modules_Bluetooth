@@ -156,7 +156,7 @@ void BTA_AvDeregister(tBTA_AV_HNDL hndl) {
 void BTA_AvOpen(const RawAddress& bd_addr, tBTA_AV_HNDL handle, bool use_rc,
                 uint16_t uuid) {
   log::info("peer {} bta_handle:0x{:x} use_rc={} uuid=0x{:x}", bd_addr, handle,
-            (use_rc) ? "true" : "false", uuid);
+            use_rc, uuid);
 
   tBTA_AV_API_OPEN* p_buf =
       (tBTA_AV_API_OPEN*)osi_malloc(sizeof(tBTA_AV_API_OPEN));
@@ -236,7 +236,7 @@ void BTA_AvStart(tBTA_AV_HNDL handle, bool use_latency_mode) {
   log::info(
       "Starting audio/video stream data transfer bta_handle:{}, "
       "use_latency_mode:{}",
-      handle, use_latency_mode ? "true" : "false");
+      handle, use_latency_mode);
 
   tBTA_AV_DO_START* p_buf =
       (tBTA_AV_DO_START*)osi_malloc(sizeof(tBTA_AV_DO_START));
@@ -626,7 +626,7 @@ void BTA_AvMetaCmd(uint8_t rc_handle, uint8_t label, tBTA_AV_CMD cmd_code,
 void BTA_AvSetLatency(tBTA_AV_HNDL handle, bool is_low_latency) {
   log::info(
       "Set audio/video stream low latency bta_handle:{}, is_low_latency:{}",
-      handle, is_low_latency ? "true" : "false");
+      handle, is_low_latency);
 
   tBTA_AV_API_SET_LATENCY* p_buf =
       (tBTA_AV_API_SET_LATENCY*)osi_malloc(sizeof(tBTA_AV_API_SET_LATENCY));

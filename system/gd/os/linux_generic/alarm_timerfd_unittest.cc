@@ -95,12 +95,19 @@ TEST_F(AlarmOnTimerFdTest, cancel_alarm) {
 }
 
 TEST_F(AlarmOnTimerFdTest, cancel_alarm_from_callback) {
-  auto promise = std::make_unique<std::promise<void>>();
-  auto future = promise->get_future();
-  alarm_->Schedule(BindOnce(&Alarm::Cancel, alarm_), kShortWait);
-  // Could wait for kForever, but no need.  Just let others run twice for a short time.
-  ASSERT_NE(std::future_status::ready, future.wait_for(kShortWait));
-  ASSERT_NE(std::future_status::ready, future.wait_for(kShortWait));
+  auto promise = std::promise<void>();
+  auto future = promise.get_future();
+  alarm_->Schedule(
+      BindOnce(
+          [](std::shared_ptr<Alarm> alarm, std::promise<void> promise) {
+            alarm->Cancel();
+            alarm.reset();  // Allow alarm to be freed by Teardown
+            promise.set_value();
+          },
+          alarm_,
+          std::move(promise)),
+      kShortWait);
+  ASSERT_EQ(std::future_status::ready, future.wait_for(kForever));
 }
 
 TEST_F(AlarmOnTimerFdTest, schedule_while_alarm_armed) {

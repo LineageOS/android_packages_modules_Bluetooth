@@ -277,6 +277,14 @@ void btif_av_set_dynamic_audio_buffer_size(uint8_t dynamic_audio_buffer_size);
 void btif_av_set_low_latency(bool is_low_latency);
 
 /**
+ * Initiate an AV connection after 3s timeout to peer audio sink
+ * @param handle bta handle
+ * @param peer_addr peer address
+ */
+void btif_av_connect_sink_delayed(uint8_t handle,
+                                  const RawAddress& peer_address);
+
+/**
  * Check whether A2DP Source is enabled.
  */
 extern bool btif_av_is_source_enabled(void);

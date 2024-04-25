@@ -78,7 +78,6 @@ tBTA_JV_STATUS BTA_JvRfcommClose(uint32_t /* handle */,
   return tBTA_JV_STATUS::SUCCESS;
 }
 tBTA_JV_STATUS BTA_JvRfcommConnect(tBTA_SEC /* sec_mask */,
-                                   tBTA_JV_ROLE /* role */,
                                    uint8_t /* remote_scn */,
                                    const RawAddress& /* peer_bd_addr */,
                                    tBTA_JV_RFCOMM_CBACK* /* p_cback */,
@@ -87,7 +86,6 @@ tBTA_JV_STATUS BTA_JvRfcommConnect(tBTA_SEC /* sec_mask */,
   return tBTA_JV_STATUS::SUCCESS;
 }
 tBTA_JV_STATUS BTA_JvRfcommStartServer(tBTA_SEC /* sec_mask */,
-                                       tBTA_JV_ROLE /* role */,
                                        uint8_t /* local_scn */,
                                        uint8_t /* max_session */,
                                        tBTA_JV_RFCOMM_CBACK* /* p_cback */,
@@ -127,7 +125,7 @@ void BTA_JvGetChannelId(tBTA_JV_CONN_TYPE /* conn_type */, uint32_t /* id */,
   inc_func_call_count(__func__);
 }
 void BTA_JvL2capConnect(tBTA_JV_CONN_TYPE /* conn_type */,
-                        tBTA_SEC /* sec_mask */, tBTA_JV_ROLE /* role */,
+                        tBTA_SEC /* sec_mask */,
                         std::unique_ptr<tL2CAP_ERTM_INFO> /* ertm_info */,
                         uint16_t /* remote_psm */, uint16_t /* rx_mtu */,
                         std::unique_ptr<tL2CAP_CFG_INFO> /* cfg */,
@@ -137,7 +135,7 @@ void BTA_JvL2capConnect(tBTA_JV_CONN_TYPE /* conn_type */,
   inc_func_call_count(__func__);
 }
 void BTA_JvL2capStartServer(tBTA_JV_CONN_TYPE /* conn_type */,
-                            tBTA_SEC /* sec_mask */, tBTA_JV_ROLE /* role */,
+                            tBTA_SEC /* sec_mask */,
                             std::unique_ptr<tL2CAP_ERTM_INFO> /* ertm_info */,
                             uint16_t /* local_psm */, uint16_t /* rx_mtu */,
                             std::unique_ptr<tL2CAP_CFG_INFO> /* cfg */,

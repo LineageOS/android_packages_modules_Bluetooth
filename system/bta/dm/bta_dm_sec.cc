@@ -721,9 +721,7 @@ static uint8_t bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda,
 
     case BTM_LE_NC_REQ_EVT:
       sec_event.key_notif.bd_addr = bda;
-      // TODO: get rid of this
-      bd_name_from_char_pointer(sec_event.key_notif.bd_name,
-                                bta_dm_get_remname());
+      bd_name_clear(sec_event.key_notif.bd_name);
       sec_event.key_notif.passkey = p_data->key_notif;
       bta_dm_sec_cb.p_sec_cback(BTA_DM_BLE_NC_REQ_EVT, &sec_event);
       break;
@@ -820,7 +818,7 @@ void bta_dm_encrypt_cback(const RawAddress* bd_addr, tBT_TRANSPORT transport,
   }
 
   log::debug("Encrypted:{:c}, peer:{} transport:{} status:{} callback:{:c}",
-             result == BTM_SUCCESS ? 'T' : 'F', (*bd_addr),
+             result == BTM_SUCCESS ? 'T' : 'F', *bd_addr,
              bt_transport_text(transport), btm_status_text(result),
              (p_callback) ? 'T' : 'F');
 

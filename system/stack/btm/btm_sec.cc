@@ -1689,8 +1689,8 @@ tBTM_STATUS btm_sec_l2cap_access_req_by_requirement(
     log::verbose(
         "(SM4 to SM4) btm_sec_l2cap_access_req rspd. authenticated: x{:x}, "
         "enc: x{:x}",
-        (p_dev_rec->sec_rec.sec_flags & BTM_SEC_AUTHENTICATED),
-        (p_dev_rec->sec_rec.sec_flags & BTM_SEC_ENCRYPTED));
+        p_dev_rec->sec_rec.sec_flags & BTM_SEC_AUTHENTICATED,
+        p_dev_rec->sec_rec.sec_flags & BTM_SEC_ENCRYPTED);
     /* SM4, but we do not know for sure which level of security we need.
      * as long as we have a link key, it's OK */
     if ((0 == (p_dev_rec->sec_rec.sec_flags & BTM_SEC_AUTHENTICATED)) ||
@@ -3465,7 +3465,7 @@ static void read_encryption_key_size_complete_after_encryption_change(
     return;
   }
 
-  if (IS_FLAG_ENABLED(bluffs_mitigation)) {
+  if (com::android::bluetooth::flags::bluffs_mitigation()) {
     if (btm_sec_is_session_key_size_downgrade(handle, key_size)) {
       log::error(
           "encryption key size lower than cached value, disconnecting. "
@@ -3502,7 +3502,7 @@ void smp_cancel_start_encryption_attempt();
  ******************************************************************************/
 void btm_sec_encryption_change_evt(uint16_t handle, tHCI_STATUS status,
                                    uint8_t encr_enable) {
-  if (IS_FLAG_ENABLED(bluffs_mitigation)) {
+  if (com::android::bluetooth::flags::bluffs_mitigation()) {
     if (status != HCI_SUCCESS || encr_enable == 0 ||
         BTM_IsBleConnection(handle) ||
         !bluetooth::shim::GetController()->IsSupported(
@@ -4139,7 +4139,7 @@ void btm_sec_link_key_notification(const RawAddress& p_bda,
     }
   }
 
-  if (IS_FLAG_ENABLED(bluffs_mitigation) &&
+  if (com::android::bluetooth::flags::bluffs_mitigation() &&
       p_dev_rec->sec_rec.is_bond_type_persistent() &&
       (p_dev_rec->is_device_type_br_edr() ||
        p_dev_rec->is_device_type_dual_mode())) {
@@ -5161,7 +5161,7 @@ void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported,
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(hci_handle);
   if (p_dev_rec == nullptr) return;
 
-  if (IS_FLAG_ENABLED(bluffs_mitigation)) {
+  if (com::android::bluetooth::flags::bluffs_mitigation()) {
     // Drop the connection here if the remote attempts to downgrade from Secure
     // Connections mode.
     if (btm_sec_is_device_sc_downgrade(hci_handle, sc_supported)) {

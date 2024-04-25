@@ -463,8 +463,8 @@ bool direct_connect_add(uint8_t app_id, const RawAddress& address) {
   if (it != bgconn_dev.end()) {
     // app already trying to connect to this particular device
     if (it->second.doing_direct_conn.count(app_id)) {
-      log::info("direct connect attempt from app_id={} already in progress",
-                loghex(app_id));
+      log::info("direct connect attempt from app_id=0x{:x} already in progress",
+                app_id);
       return false;
     }
 

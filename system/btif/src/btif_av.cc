@@ -35,6 +35,7 @@
 #include <vector>
 
 #include "audio_hal_interface/a2dp_encoding.h"
+#include "btif/avrcp/avrcp_service.h"
 #include "btif/include/btif_a2dp.h"
 #include "btif/include/btif_a2dp_control.h"
 #include "btif/include/btif_a2dp_sink.h"
@@ -2392,7 +2393,7 @@ bool BtifAvStateMachine::StateOpened::ProcessEvent(uint32_t event,
         const btif_av_start_stream_req_t* p_start_steam_req =
             static_cast<const btif_av_start_stream_req_t*>(p_data);
         log::info("Stream use_latency_mode={}",
-                  p_start_steam_req->use_latency_mode ? "true" : "false");
+                  p_start_steam_req->use_latency_mode);
         peer_.SetUseLatencyMode(p_start_steam_req->use_latency_mode);
       }
 
@@ -2529,8 +2530,8 @@ bool BtifAvStateMachine::StateOpened::ProcessEvent(uint32_t event,
                                        std::move(peer_ready_promise));
       }
       if (peer_.CheckFlags(BtifAvPeer::kFlagPendingStart)) {
-        log::info("Peer {} : Reconfig done - calling BTA_AvStart({})",
-                  peer_.PeerAddress(), loghex(peer_.BtaHandle()));
+        log::info("Peer {} : Reconfig done - calling BTA_AvStart(0x{:x})",
+                  peer_.PeerAddress(), peer_.BtaHandle());
         BTA_AvStart(peer_.BtaHandle(), peer_.UseLatencyMode());
       }
       break;
@@ -2562,8 +2563,7 @@ bool BtifAvStateMachine::StateOpened::ProcessEvent(uint32_t event,
           static_cast<const btif_av_set_latency_req_t*>(p_data);
       log::info("Peer {} : event={} flags={} is_low_latency={}",
                 peer_.PeerAddress(), BtifAvEvent::EventName(event),
-                peer_.FlagsToString(),
-                p_set_latency_req->is_low_latency ? "true" : "false");
+                peer_.FlagsToString(), p_set_latency_req->is_low_latency);
 
       BTA_AvSetLatency(peer_.BtaHandle(), p_set_latency_req->is_low_latency);
     } break;
@@ -2795,8 +2795,7 @@ bool BtifAvStateMachine::StateStarted::ProcessEvent(uint32_t event,
           static_cast<const btif_av_set_latency_req_t*>(p_data);
       log::info("Peer {} : event={} flags={} is_low_latency={}",
                 peer_.PeerAddress(), BtifAvEvent::EventName(event),
-                peer_.FlagsToString(),
-                p_set_latency_req->is_low_latency ? "true" : "false");
+                peer_.FlagsToString(), p_set_latency_req->is_low_latency);
 
       BTA_AvSetLatency(peer_.BtaHandle(), p_set_latency_req->is_low_latency);
     } break;
@@ -2897,11 +2896,23 @@ bool BtifAvStateMachine::StateClosing::ProcessEvent(uint32_t event,
  */
 static void btif_av_source_initiate_av_open_timer_timeout(void* data) {
   BtifAvPeer* peer = (BtifAvPeer*)data;
+  bool device_connected = false;
+
+  if (IS_FLAG_ENABLED(avrcp_connect_a2dp_delayed) && is_new_avrcp_enabled()) {
+    // check if device is connected
+    if (bluetooth::avrcp::AvrcpService::Get() != nullptr) {
+      device_connected =
+          bluetooth::avrcp::AvrcpService::Get()->IsDeviceConnected(
+              peer->PeerAddress());
+    }
+  } else {
+    device_connected = btif_rc_is_connected_peer(peer->PeerAddress());
+  }
 
   log::verbose("Peer {}", peer->PeerAddress());
 
   // Check if AVRCP is connected to the peer
-  if (!btif_rc_is_connected_peer(peer->PeerAddress())) {
+  if (!device_connected) {
     log::error("AVRCP peer {} is not connected", peer->PeerAddress());
     return;
   }
@@ -3592,8 +3603,7 @@ static bt_status_t connect_int(RawAddress* peer_address, uint16_t uuid) {
 
 static void set_source_silence_peer_int(const RawAddress& peer_address,
                                         bool silence) {
-  log::verbose("peer_address={}, silence={}", peer_address,
-               silence ? "true" : "false");
+  log::verbose("peer_address={}, silence={}", peer_address, silence);
   if (!btif_av_source.SetSilencePeer(peer_address, silence)) {
     log::error("Error setting silence state to {}", peer_address);
   }
@@ -3838,7 +3848,7 @@ void btif_av_stream_start_with_latency(bool use_latency_mode) {
                             sizeof(start_stream_req));
   log::info("peer_address={} event={} use_latency_mode={}",
             btif_av_source_active_peer(), btif_av_event.ToString(),
-            use_latency_mode ? "true" : "false");
+            use_latency_mode);
 
   do_in_main_thread(
       FROM_HERE, base::BindOnce(&btif_av_handle_event,
@@ -4282,7 +4292,7 @@ void btif_av_set_dynamic_audio_buffer_size(uint8_t dynamic_audio_buffer_size) {
 }
 
 void btif_av_set_low_latency(bool is_low_latency) {
-  log::info("is_low_latency: {}", is_low_latency ? "true" : "false");
+  log::info("is_low_latency: {}", is_low_latency);
 
   btif_av_set_latency_req_t set_latency_req;
   set_latency_req.is_low_latency = is_low_latency;
@@ -4363,4 +4373,14 @@ bool btif_av_peer_is_source(const RawAddress& peer_address) {
   }
 
   return true;
+}
+
+void btif_av_connect_sink_delayed(uint8_t handle,
+                                  const RawAddress& peer_address) {
+  log::debug("Peer {} : handle: {}", ADDRESS_TO_LOGGABLE_CSTR(peer_address),
+             handle);
+
+  if (btif_av_source.Enabled()) {
+    btif_av_source_dispatch_sm_event(peer_address, BTIF_AV_AVRCP_OPEN_EVT);
+  }
 }

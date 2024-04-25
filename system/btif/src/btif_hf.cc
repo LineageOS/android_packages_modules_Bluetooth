@@ -1263,7 +1263,7 @@ bt_status_t HeadsetInterface::PhoneStateChange(
   log::debug(
       "bd_addr:{} active_bda:{} num_active:{} prev_num_active:{} num_held:{} "
       "prev_num_held:{} call_state:{} prev_call_state:{}",
-      (*bd_addr), active_bda, num_active, control_block.num_active, num_held,
+      *bd_addr, active_bda, num_active, control_block.num_active, num_held,
       control_block.num_held, dump_hf_call_state(call_setup_state),
       dump_hf_call_state(control_block.call_setup_state));
   tBTA_AG_RES res = BTA_AG_UNKNOWN;

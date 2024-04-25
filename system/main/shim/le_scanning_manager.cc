@@ -176,7 +176,7 @@ void BleScannerInterfaceImpl::Unregister(int scanner_id) {
 
   /** Start or stop LE device scanning */
 void BleScannerInterfaceImpl::Scan(bool start) {
-  log::info("in shim layer {}", ((start) ? "started" : "stopped"));
+  log::info("in shim layer {}", (start) ? "started" : "stopped");
   bluetooth::shim::GetScanning()->Scan(start);
   if (start && !btm_cb.ble_ctr_cb.is_ble_observe_active()) {
     btm_cb.neighbor.le_scan = {
