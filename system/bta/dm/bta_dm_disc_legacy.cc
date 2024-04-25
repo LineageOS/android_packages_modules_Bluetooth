@@ -920,7 +920,7 @@ static void bta_dm_disc_result(tBTA_DM_SVC_RES& disc_result) {
   if (!is_gatt_over_ble) {
     auto& r = disc_result;
     bta_dm_search_cb.service_search_cbacks.on_service_discovery_results(
-        r.bd_addr, r.services, r.device_type, r.uuids, r.result, r.hci_status);
+        r.bd_addr, r.services, r.uuids, r.result, r.hci_status);
   }
 
   /* Services were discovered while device search is in progress.

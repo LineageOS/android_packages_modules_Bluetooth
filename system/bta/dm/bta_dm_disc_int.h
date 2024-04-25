@@ -59,7 +59,7 @@ typedef struct {
 typedef struct {
   RawAddress bd_addr;          /* BD address peer device. */
   tBTA_SERVICE_MASK services;  /* Services found on peer device. */
-  tBT_DEVICE_TYPE device_type; /* device type in case it is BLE device */
+  bool is_gatt_over_ble;
   std::vector<bluetooth::Uuid> uuids;
   std::vector<bluetooth::Uuid> gatt_uuids;
   tBTA_STATUS result;
