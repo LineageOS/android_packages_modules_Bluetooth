@@ -168,7 +168,7 @@ typedef struct {
   uint8_t* rpt_map;
   uint16_t ext_rpt_ref;
   tBTA_HH_DEV_DESCR descriptor;
-
+  bool is_headtracker;
 } tBTA_HH_LE_HID_SRVC;
 
 /* convert a HID handle to the LE CB index */
@@ -324,6 +324,11 @@ void bta_hh_le_srvc_init(tBTA_HH_DEV_CB* p_dev_cb, uint16_t handle);
 void bta_hh_le_save_report_map(tBTA_HH_DEV_CB* p_dev_cb, uint16_t len,
                                uint8_t* desc);
 void bta_hh_le_service_parsed(tBTA_HH_DEV_CB* p_dev_cb, tGATT_STATUS status);
+
+void bta_hh_headtracker_parse_service(tBTA_HH_DEV_CB* p_dev_cb,
+                                      const gatt::Service* service);
+bool bta_hh_headtracker_supported(tBTA_HH_DEV_CB* p_dev_cb);
+uint16_t bta_hh_get_uuid16(tBTA_HH_DEV_CB* p_dev_cb, bluetooth::Uuid uuid);
 
 #if (BTA_HH_DEBUG == TRUE)
 void bta_hh_trace_dev_db(void);

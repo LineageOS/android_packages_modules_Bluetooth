@@ -666,7 +666,7 @@ static void write_rpt_ctl_cfg_cb(uint16_t conn_id, tGATT_STATUS status,
   tBTA_HH_DEV_CB* p_dev_cb = (tBTA_HH_DEV_CB*)data;
   const gatt::Characteristic* characteristic =
       BTA_GATTC_GetOwningCharacteristic(conn_id, handle);
-  uint16_t char_uuid = characteristic->uuid.As16Bit();
+  uint16_t char_uuid = bta_hh_get_uuid16(p_dev_cb, characteristic->uuid);
 
   srvc_inst_id = BTA_GATTC_GetOwningService(conn_id, handle)->handle;
   switch (char_uuid) {
@@ -778,7 +778,8 @@ static bool bta_hh_le_set_protocol_mode(tBTA_HH_DEV_CB* p_cb,
 
   cback_data.handle = p_cb->hid_handle;
   /* boot mode is not supported in the remote device */
-  if (p_cb->hid_srvc.proto_mode_handle == 0) {
+  if (p_cb->hid_srvc.proto_mode_handle == 0 ||
+      bta_hh_headtracker_supported(p_cb)) {
     p_cb->mode = BTA_HH_PROTO_RPT_MODE;
 
     if (mode == BTA_HH_PROTO_BOOT_MODE) {
@@ -860,7 +861,8 @@ static void bta_hh_le_get_protocol_mode(tBTA_HH_DEV_CB* p_cb) {
   p_cb->w4_evt = BTA_HH_GET_PROTO_EVT;
 
   if (p_cb->hid_srvc.state >= BTA_HH_SERVICE_DISCOVERED &&
-      p_cb->hid_srvc.proto_mode_handle != 0) {
+      p_cb->hid_srvc.proto_mode_handle != 0 &&
+      !bta_hh_headtracker_supported(p_cb)) {
     BtaGattQueue::ReadCharacteristic(p_cb->conn_id,
                                      p_cb->hid_srvc.proto_mode_handle,
                                      get_protocol_mode_cb, p_cb);
@@ -1533,6 +1535,7 @@ static void bta_hh_le_srvc_search_cmpl(tBTA_GATTC_SEARCH_CMPL* p_data) {
   const gatt::Service* hogp_service = nullptr;
   const gatt::Service* gap_service = nullptr;
   const gatt::Service* scp_service = nullptr;
+  const gatt::Service* headtracker_service = nullptr;
 
   int num_hid_service = 0;
   for (const gatt::Service& service : *services) {
@@ -1558,6 +1561,9 @@ static void bta_hh_le_srvc_search_cmpl(tBTA_GATTC_SEARCH_CMPL* p_data) {
       scp_service = &service;
     } else if (service.uuid == Uuid::From16Bit(UUID_SERVCLASS_GAP_SERVER)) {
       gap_service = &service;
+    } else if (com::android::bluetooth::flags::android_headtracker_service() &&
+               service.uuid == ANDROID_HEADTRACKER_SERVICE_UUID) {
+      headtracker_service = &service;
     }
   }
 
@@ -1565,6 +1571,10 @@ static void bta_hh_le_srvc_search_cmpl(tBTA_GATTC_SEARCH_CMPL* p_data) {
     log::verbose("have HOGP service inst_id={}",
                  p_dev_cb->hid_srvc.srvc_inst_id);
     bta_hh_le_parse_hogp_service(p_dev_cb, hogp_service);
+  } else if (headtracker_service != nullptr) {
+    log::verbose("have Android Headtracker service inst_id={}",
+                 p_dev_cb->hid_srvc.srvc_inst_id);
+    bta_hh_headtracker_parse_service(p_dev_cb, headtracker_service);
   } else {
     log::error("HID service not found");
     p_dev_cb->status = BTA_HH_ERR_SDP;
@@ -1633,8 +1643,9 @@ static void bta_hh_le_input_rpt_notify(tBTA_GATTC_NOTIFY* p_data) {
   const gatt::Service* p_svc =
       BTA_GATTC_GetOwningService(p_dev_cb->conn_id, p_char->value_handle);
 
-  p_rpt = bta_hh_le_find_report_entry(
-      p_dev_cb, p_svc->handle, p_char->uuid.As16Bit(), p_char->value_handle);
+  p_rpt = bta_hh_le_find_report_entry(p_dev_cb, p_svc->handle,
+                                      bta_hh_get_uuid16(p_dev_cb, p_char->uuid),
+                                      p_char->value_handle);
   if (p_rpt == NULL) {
     log::error("Unknown Report, uuid:{}, handle:0x{:04x}",
                p_char->uuid.ToString(), p_char->value_handle);
@@ -1825,7 +1836,8 @@ static void read_report_cb(uint16_t conn_id, tGATT_STATUS status,
     return;
   }
 
-  uint16_t char_uuid = p_char->uuid.As16Bit();
+  uint16_t char_uuid = bta_hh_get_uuid16(p_dev_cb, p_char->uuid);
+
   switch (char_uuid) {
     case GATT_UUID_HID_REPORT:
     case GATT_UUID_HID_BT_KB_INPUT:
@@ -1910,7 +1922,7 @@ static void write_report_cb(uint16_t conn_id, tGATT_STATUS status,
 
   if (p_char == nullptr) return;
 
-  uint16_t uuid16 = p_char->uuid.As16Bit();
+  uint16_t uuid16 = bta_hh_get_uuid16(p_dev_cb, p_char->uuid);
   if (uuid16 != GATT_UUID_HID_REPORT && uuid16 != GATT_UUID_HID_BT_KB_INPUT &&
       uuid16 != GATT_UUID_HID_BT_MOUSE_INPUT &&
       uuid16 != GATT_UUID_HID_BT_KB_OUTPUT) {
@@ -1980,6 +1992,11 @@ static void bta_hh_le_write_rpt(tBTA_HH_DEV_CB* p_cb, tBTA_HH_RPT_TYPE r_type,
  ******************************************************************************/
 static void bta_hh_le_suspend(tBTA_HH_DEV_CB* p_cb,
                               tBTA_HH_TRANS_CTRL_TYPE ctrl_type) {
+  if (bta_hh_headtracker_supported(p_cb)) {
+    log::warn("Suspend not applicable for headtracker service");
+    return;
+  }
+
   ctrl_type -= BTA_HH_CTRL_SUSPEND;
 
   // We don't care about response
