@@ -31,3 +31,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "read_model_num_fix"
+    namespace: "bluetooth"
+    description: "Read model number for all devices, including ones bonded through Fast Pair"
+    bug: "337087330"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
