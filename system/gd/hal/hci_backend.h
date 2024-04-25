@@ -40,7 +40,7 @@ class HciBackendCallbacks {
 
 class HciBackend {
  public:
-  static std::shared_ptr<HciBackend> CreateAidl();
+  static std::shared_ptr<HciBackend> CreateAidl(const char*);
   static std::shared_ptr<HciBackend> CreateHidl(::bluetooth::os::Handler*);
 
   virtual ~HciBackend() = default;

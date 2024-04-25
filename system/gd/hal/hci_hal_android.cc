@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <android/binder_manager.h>
 #include <bluetooth/log.h>
 
 #include <future>
@@ -112,6 +113,9 @@ class HciCallbacksImpl : public HciBackendCallbacks {
 };
 
 class HciHalImpl : public HciHal {
+  static constexpr char kBluetoothAidlHalServiceName[] =
+      "android.hardware.bluetooth.IBluetoothHci/default";
+
  public:
   void registerIncomingPacketCallback(HciHalCallbacks* callback) override {
     callbacks_->SetCallback(callback);
@@ -158,10 +162,11 @@ class HciHalImpl : public HciHal {
     link_clocker_ = GetDependency<LinkClocker>();
     btsnoop_logger_ = GetDependency<SnoopLogger>();
 
-    backend_ = HciBackend::CreateAidl();
-    if (!backend_) backend_ = HciBackend::CreateHidl(GetHandler());
-
-    log::assert_that(backend_ != nullptr, "No backend available");
+    if (AServiceManager_isDeclared(kBluetoothAidlHalServiceName)) {
+      backend_ = HciBackend::CreateAidl(kBluetoothAidlHalServiceName);
+    } else {
+      backend_ = HciBackend::CreateHidl(GetHandler());
+    }
 
     callbacks_ = std::make_shared<HciCallbacksImpl>(btsnoop_logger_, link_clocker_);
 
