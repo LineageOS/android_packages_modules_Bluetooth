@@ -228,7 +228,7 @@ struct HciLayer::impl {
           CommandCompleteView::Create(EventView::Create(PacketView<kLittleEndian>(complete)));
       log::assert_that(
           command_complete_view.IsValid(), "assert failed: command_complete_view.IsValid()");
-      command_queue_.front().GetCallback<CommandCompleteView>()->Invoke(command_complete_view);
+      (*command_queue_.front().GetCallback<CommandCompleteView>())(command_complete_view);
     } else {
       log::assert_that(
           command_queue_.front().waiting_for_status_ == is_status,

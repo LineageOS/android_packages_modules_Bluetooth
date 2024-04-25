@@ -47,7 +47,7 @@ hci::AddressWithType DynamicChannelImpl::GetDevice() const {
 }
 
 void DynamicChannelImpl::RegisterOnCloseCallback(DynamicChannel::OnCloseCallback on_close_callback) {
-  log::assert_that(on_close_callback_.IsEmpty(), "OnCloseCallback can only be registered once");
+  log::assert_that(!on_close_callback_, "OnCloseCallback can only be registered once");
   // If channel is already closed, call the callback immediately without saving it
   if (closed_) {
     on_close_callback(close_reason_);
