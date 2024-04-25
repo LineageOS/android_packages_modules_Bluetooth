@@ -83,7 +83,6 @@ void pin_request_callback(RawAddress* /* remote_bd_addr */,
                           bt_bdname_t* /* bd_name */, uint32_t /* cod */,
                           bool /* min_16_digit */) {}
 void ssp_request_callback(RawAddress* /* remote_bd_addr */,
-                          bt_bdname_t* /* bd_name */, uint32_t /* cod */,
                           bt_ssp_variant_t /* pairing_variant */,
                           uint32_t /* pass_key */) {}
 void bond_state_changed_callback(bt_status_t /* status */,

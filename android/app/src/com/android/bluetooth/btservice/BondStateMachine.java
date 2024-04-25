@@ -52,7 +52,6 @@ import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Optional;
@@ -593,15 +592,12 @@ final class BondStateMachine extends StateMachine {
     }
 
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
-    void sspRequestCallback(byte[] address, byte[] name, int cod, int pairingVariant, int passkey) {
-        //TODO(BT): Get wakelock and update name and cod
+    void sspRequestCallback(byte[] address, int pairingVariant, int passkey) {
         BluetoothDevice bdDevice = mRemoteDevices.getDevice(address);
         if (bdDevice == null) {
             mRemoteDevices.addDeviceProperties(address);
         }
         infoLog("sspRequestCallback: " + Utils.getRedactedAddressStringFromByte(address)
-                + " name: " + Arrays.toString(name)
-                + " cod: " + cod
                 + " pairingVariant " + pairingVariant
                 + " passkey: " + (Build.isDebuggable() ? passkey : "******"));
         int variant;
