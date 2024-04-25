@@ -172,6 +172,13 @@ class ConnectionHandler {
   void SendMessage(uint8_t handle, uint8_t label, bool browse,
                    std::unique_ptr<::bluetooth::PacketBuilder> message);
 
+  // Check peer role: audio src or sink. If any role supported send
+  // delayed a2dp connect request
+  bool SdpLookupAudioRole(uint16_t handle);
+  void SdpLookupAudioRoleCb(uint16_t handle, bool found,
+                            tA2DP_Service* p_service,
+                            const RawAddress& peer_address);
+
   base::WeakPtrFactory<ConnectionHandler> weak_ptr_factory_;
 };
 
