@@ -81,7 +81,7 @@ class AlarmTest : public ::testing::Test {
   }
 };
 
-static void cb(UNUSED_ATTR void* data) {
+static void cb(void* /* data */) {
   ++cb_counter;
   semaphore_post(semaphore);
 }
