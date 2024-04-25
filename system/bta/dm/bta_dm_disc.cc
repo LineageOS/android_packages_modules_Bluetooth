@@ -497,54 +497,55 @@ static void bta_dm_sdp_result(tSDP_STATUS sdp_result) {
       /* Free up the p_sdp_db before checking the next one */
       bta_dm_free_sdp_db();
       bta_dm_find_services(bta_dm_discovery_cb.peer_bdaddr);
-    } else {
-      /* callbacks */
-      /* start next bd_addr if necessary */
-      BTM_LogHistory(
-          kBtmLogTag, bta_dm_discovery_cb.peer_bdaddr, "Discovery completed",
-          base::StringPrintf("Result:%s services_found:0x%x service_index:0x%d",
-                             sdp_result_text(sdp_result).c_str(),
-                             bta_dm_discovery_cb.services_found,
-                             bta_dm_discovery_cb.service_index));
-
-      auto msg = std::make_unique<tBTA_DM_MSG>(tBTA_DM_SVC_RES{});
-      auto& disc_result = std::get<tBTA_DM_SVC_RES>(*msg);
-
-      disc_result.result = BTA_SUCCESS;
-      disc_result.uuids = std::move(uuid_list);
-      disc_result.gatt_uuids = std::move(gatt_uuids);
-      // Copy the raw_data to the discovery result structure
-      if (bta_dm_discovery_cb.p_sdp_db != NULL &&
-          bta_dm_discovery_cb.p_sdp_db->raw_used != 0 &&
-          bta_dm_discovery_cb.p_sdp_db->raw_data != NULL) {
-        log::verbose("raw_data used = 0x{:x} raw_data_ptr = 0x{}",
-                     bta_dm_discovery_cb.p_sdp_db->raw_used,
-                     fmt::ptr(bta_dm_discovery_cb.p_sdp_db->raw_data));
-
-        bta_dm_discovery_cb.p_sdp_db->raw_data =
-            NULL;  // no need to free this - it is a global assigned.
-        bta_dm_discovery_cb.p_sdp_db->raw_used = 0;
-        bta_dm_discovery_cb.p_sdp_db->raw_size = 0;
-      } else {
-        log::verbose("raw data size is 0 or raw_data is null!!");
-      }
-      /* Done with p_sdp_db. Free it */
-      bta_dm_free_sdp_db();
-      disc_result.services = bta_dm_discovery_cb.services_found;
-
-      // Piggy back the SCN over result field
-      if (scn_found) {
-        disc_result.result =
-            static_cast<tBTA_STATUS>((3 + bta_dm_discovery_cb.peer_scn));
-        disc_result.services |= BTA_USER_SERVICE_MASK;
-
-        log::verbose("Piggy back the SCN over result field  SCN={}",
-                     bta_dm_discovery_cb.peer_scn);
-      }
-      disc_result.bd_addr = bta_dm_discovery_cb.peer_bdaddr;
-
-      bta_dm_disc_sm_execute(BTA_DM_DISCOVERY_RESULT_EVT, std::move(msg));
+      return;
     }
+
+    /* callbacks */
+    /* start next bd_addr if necessary */
+    BTM_LogHistory(
+        kBtmLogTag, bta_dm_discovery_cb.peer_bdaddr, "Discovery completed",
+        base::StringPrintf("Result:%s services_found:0x%x service_index:0x%d",
+                            sdp_result_text(sdp_result).c_str(),
+                            bta_dm_discovery_cb.services_found,
+                            bta_dm_discovery_cb.service_index));
+
+    auto msg = std::make_unique<tBTA_DM_MSG>(tBTA_DM_SVC_RES{});
+    auto& disc_result = std::get<tBTA_DM_SVC_RES>(*msg);
+
+    disc_result.result = BTA_SUCCESS;
+    disc_result.uuids = std::move(uuid_list);
+    disc_result.gatt_uuids = std::move(gatt_uuids);
+    // Copy the raw_data to the discovery result structure
+    if (bta_dm_discovery_cb.p_sdp_db != NULL &&
+        bta_dm_discovery_cb.p_sdp_db->raw_used != 0 &&
+        bta_dm_discovery_cb.p_sdp_db->raw_data != NULL) {
+      log::verbose("raw_data used = 0x{:x} raw_data_ptr = 0x{}",
+                    bta_dm_discovery_cb.p_sdp_db->raw_used,
+                    fmt::ptr(bta_dm_discovery_cb.p_sdp_db->raw_data));
+
+      bta_dm_discovery_cb.p_sdp_db->raw_data =
+          NULL;  // no need to free this - it is a global assigned.
+      bta_dm_discovery_cb.p_sdp_db->raw_used = 0;
+      bta_dm_discovery_cb.p_sdp_db->raw_size = 0;
+    } else {
+      log::verbose("raw data size is 0 or raw_data is null!!");
+    }
+    /* Done with p_sdp_db. Free it */
+    bta_dm_free_sdp_db();
+    disc_result.services = bta_dm_discovery_cb.services_found;
+
+    // Piggy back the SCN over result field
+    if (scn_found) {
+      disc_result.result =
+          static_cast<tBTA_STATUS>((3 + bta_dm_discovery_cb.peer_scn));
+      disc_result.services |= BTA_USER_SERVICE_MASK;
+
+      log::verbose("Piggy back the SCN over result field  SCN={}",
+                    bta_dm_discovery_cb.peer_scn);
+    }
+    disc_result.bd_addr = bta_dm_discovery_cb.peer_bdaddr;
+
+    bta_dm_disc_sm_execute(BTA_DM_DISCOVERY_RESULT_EVT, std::move(msg));
   } else {
     BTM_LogHistory(
         kBtmLogTag, bta_dm_discovery_cb.peer_bdaddr, "Discovery failed",
