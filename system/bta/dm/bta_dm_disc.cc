@@ -613,68 +613,16 @@ static void bta_dm_disc_result(tBTA_DM_SVC_RES& disc_result) {
         r.bd_addr, r.services, r.device_type, r.uuids, r.result, r.hci_status);
   } else {
     GAP_BleReadPeerPrefConnParams(bta_dm_discovery_cb.peer_bdaddr);
+
+    bta_dm_discovery_cb.service_search_cbacks.on_gatt_results(
+        bta_dm_discovery_cb.peer_bdaddr, BD_NAME{}, disc_result.gatt_uuids,
+        /* transport_le */ true);
   }
 
   bta_dm_discovery_set_state(BTA_DM_DISCOVER_IDLE);
 
-  uint16_t conn_id = bta_dm_discovery_cb.conn_id;
-
-  std::vector<Uuid> gatt_services;
-
-  bool send_gatt_results =
-      bluetooth::common::init_flags::
-              always_send_services_if_gatt_disc_done_is_enabled()
-          ? bta_dm_discovery_cb.gatt_disc_active
-          : false;
-
-  /* no BLE connection, i.e. Classic service discovery end */
-  if (conn_id == GATT_INVALID_CONN_ID) {
-    if (bta_dm_discovery_cb.gatt_disc_active) {
-      log::warn(
-          "GATT active but no BLE connection, likely disconnected midway "
-          "through");
-    } else {
-      log::info("No BLE connection, processing classic results");
-    }
-  } else {
-    btgatt_db_element_t* db = NULL;
-    int count = 0;
-    get_gatt_interface().BTA_GATTC_GetGattDb(conn_id, 0x0000, 0xFFFF, &db,
-                                             &count);
-    if (count != 0) {
-      for (int i = 0; i < count; i++) {
-        // we process service entries only
-        if (db[i].type == BTGATT_DB_PRIMARY_SERVICE) {
-          gatt_services.push_back(db[i].uuid);
-        }
-      }
-      osi_free(db);
-      log::info(
-          "GATT services discovered using LE Transport, will always send to "
-          "upper layer");
-      send_gatt_results = true;
-    } else {
-      log::warn("Empty GATT database - no BLE services discovered");
-    }
-  }
-
-  // send all result back to app
-  if (send_gatt_results) {
-    if (bta_dm_discovery_cb.service_search_cbacks.on_gatt_results != nullptr) {
-      log::info("Sending GATT results to upper layer");
-
-      bta_dm_discovery_cb.service_search_cbacks.on_gatt_results(
-          bta_dm_discovery_cb.peer_bdaddr, BD_NAME{}, gatt_services,
-          /* transport_le */ true);
-    } else {
-      log::warn("on_gatt_results is nullptr!");
-    }
-  }
-
-  bta_dm_discovery_cb.gatt_disc_active = false;
-
 #if TARGET_FLOSS
-  if (conn_id != GATT_INVALID_CONN_ID &&
+  if (bta_dm_discovery_cb.conn_id != GATT_INVALID_CONN_ID &&
       DIS_ReadDISInfo(bta_dm_discovery_cb.peer_bdaddr, bta_dm_read_dis_cmpl,
                       DIS_ATTR_PNP_ID_BIT)) {
     return;
@@ -954,6 +902,26 @@ static void bta_dm_gatt_disc_complete(uint16_t conn_id, tGATT_STATUS status) {
   log::verbose("conn_id = {},  service found: 0x{:08x}", conn_id,
                bta_dm_discovery_cb.services_found);
 
+  std::vector<Uuid> gatt_services;
+
+  if (conn_id != GATT_INVALID_CONN_ID && status == GATT_SUCCESS) {
+    btgatt_db_element_t* db = NULL;
+    int count = 0;
+    get_gatt_interface().BTA_GATTC_GetGattDb(conn_id, 0x0000, 0xFFFF, &db,
+                                             &count);
+    if (count != 0) {
+      for (int i = 0; i < count; i++) {
+        // we process service entries only
+        if (db[i].type == BTGATT_DB_PRIMARY_SERVICE) {
+          gatt_services.push_back(db[i].uuid);
+        }
+      }
+      osi_free(db);
+    }
+    log::info("GATT services discovered using LE Transport, count: {}",
+              gatt_services.size());
+  }
+
   /* no more services to be discovered */
   bta_dm_disc_sm_execute(
       BTA_DM_DISCOVERY_RESULT_EVT,
@@ -961,6 +929,7 @@ static void bta_dm_gatt_disc_complete(uint16_t conn_id, tGATT_STATUS status) {
           .bd_addr = bta_dm_discovery_cb.peer_bdaddr,
           .services = bta_dm_discovery_cb.services_found,
           .device_type = BT_DEVICE_TYPE_BLE,
+          .gatt_uuids = std::move(gatt_services),
           .result = (status == GATT_SUCCESS) ? BTA_SUCCESS : BTA_FAILURE}));
 
   if (conn_id != GATT_INVALID_CONN_ID) {
@@ -1015,8 +984,6 @@ static void bta_dm_close_gatt_conn() {
  ******************************************************************************/
 static void btm_dm_start_gatt_discovery(const RawAddress& bd_addr) {
   constexpr bool kUseOpportunistic = true;
-
-  bta_dm_discovery_cb.gatt_disc_active = true;
 
   /* connection is already open */
   if (bta_dm_discovery_cb.pending_close_bda == bd_addr &&
