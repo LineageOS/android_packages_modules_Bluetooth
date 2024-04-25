@@ -38,6 +38,7 @@ import static com.android.bluetooth.bass_client.BassClientStateMachine.START_SCA
 import static com.android.bluetooth.bass_client.BassClientStateMachine.STOP_SCAN_OFFLOAD;
 import static com.android.bluetooth.bass_client.BassClientStateMachine.SWITCH_BCAST_SOURCE;
 import static com.android.bluetooth.bass_client.BassClientStateMachine.UPDATE_BCAST_SOURCE;
+import static com.android.bluetooth.bass_client.BassClientStateMachine.CANCEL_PENDING_SOURCE_OPERATION;
 import static com.android.bluetooth.bass_client.BassConstants.CLIENT_CHARACTERISTIC_CONFIG;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -494,6 +495,7 @@ public class BassClientStateMachineTest {
         assertThat(mBassClientStateMachine.getCurrentBroadcastMetadata(invalidSourceId)).isNull();
         assertThat(mBassClientStateMachine.getDevice()).isEqualTo(mTestDevice);
         assertThat(mBassClientStateMachine.hasPendingSourceOperation()).isFalse();
+        assertThat(mBassClientStateMachine.hasPendingSourceOperation(1)).isFalse();
         assertThat(mBassClientStateMachine.isEmpty(new byte[] { 0 })).isTrue();
         assertThat(mBassClientStateMachine.isEmpty(new byte[] { 1 })).isFalse();
         assertThat(mBassClientStateMachine.isPendingRemove(invalidSourceId)).isFalse();
@@ -2134,6 +2136,47 @@ public class BassClientStateMachineTest {
         verify(callbacks).notifySourceFound(metaData.capture());
 
         Assert.assertEquals(testRssi, metaData.getValue().getRssi());
+    }
+
+    @Test
+    public void cancelPendingAddBcastSourceMessage_inConnectedState() {
+        initToConnectedState();
+
+        BassClientService.Callbacks callbacks = Mockito.mock(BassClientService.Callbacks.class);
+        when(mBassClientService.getCallbacks()).thenReturn(callbacks);
+
+        BluetoothLeBroadcastMetadata metadata = createBroadcastMetadata();
+        // verify local broadcast doesn't require active synced source
+        when(mBassClientService.isLocalBroadcast(any(BluetoothLeBroadcastMetadata.class)))
+                .thenReturn(true);
+
+        BassClientStateMachine.BluetoothGattTestableWrapper btGatt =
+                Mockito.mock(BassClientStateMachine.BluetoothGattTestableWrapper.class);
+        mBassClientStateMachine.mBluetoothGatt = btGatt;
+        BluetoothGattCharacteristic scanControlPoint =
+                Mockito.mock(BluetoothGattCharacteristic.class);
+        mBassClientStateMachine.mBroadcastScanControlPoint = scanControlPoint;
+
+        sendMessageAndVerifyTransition(
+                mBassClientStateMachine.obtainMessage(ADD_BCAST_SOURCE, metadata),
+                BassClientStateMachine.ConnectedProcessing.class);
+        verify(scanControlPoint).setValue(any(byte[].class));
+        verify(btGatt).writeCharacteristic(any());
+
+        /* Verify if there is pending add source operation */
+        assertThat(mBassClientStateMachine.hasPendingSourceOperation(metadata.getBroadcastId()))
+                .isTrue();
+
+        /* Inject a cancel pending source operation event */
+        Message msg = mBassClientStateMachine.obtainMessage(CANCEL_PENDING_SOURCE_OPERATION);
+        msg.arg1 = metadata.getBroadcastId();
+        mBassClientStateMachine.sendMessage(msg);
+
+        TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
+
+        /* Verify if pending add source operation is canceled */
+        assertThat(mBassClientStateMachine.hasPendingSourceOperation(metadata.getBroadcastId()))
+                .isFalse();
     }
 
     private void initToConnectingState() {
