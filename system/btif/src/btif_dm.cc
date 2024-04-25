@@ -470,7 +470,7 @@ static bool check_eir_appearance(tBTA_DM_SEARCH* p_search_data,
 
 /*******************************************************************************
  *
- * Function         check_cached_remote_name
+ * Function         get_cached_remote_name
  *
  * Description      Check if remote name is in the NVRAM cache
  *
@@ -478,9 +478,9 @@ static bool check_eir_appearance(tBTA_DM_SEARCH* p_search_data,
  *                  Populate p_remote_name, if provided and remote name found
  *
  ******************************************************************************/
-static bool check_cached_remote_name(tBTA_DM_SEARCH* p_search_data,
-                                     uint8_t* p_remote_name,
-                                     uint8_t* p_remote_name_len) {
+static bool get_cached_remote_name(const RawAddress& bd_addr,
+                                   uint8_t* p_remote_name,
+                                   uint8_t* p_remote_name_len) {
   bt_bdname_t bdname;
   bt_property_t prop_name;
 
@@ -488,8 +488,8 @@ static bool check_cached_remote_name(tBTA_DM_SEARCH* p_search_data,
 
   BTIF_STORAGE_FILL_PROPERTY(&prop_name, BT_PROPERTY_BDNAME,
                              sizeof(bt_bdname_t), &bdname);
-  if (btif_storage_get_remote_device_property(
-          &p_search_data->inq_res.bd_addr, &prop_name) == BT_STATUS_SUCCESS) {
+  if (btif_storage_get_remote_device_property(&bd_addr, &prop_name) ==
+      BT_STATUS_SUCCESS) {
     if (p_remote_name && p_remote_name_len) {
       strcpy((char*)p_remote_name, (char*)bdname.name);
       *p_remote_name_len = strlen((char*)p_remote_name);
@@ -1068,9 +1068,7 @@ static void btif_dm_pin_req_evt(tBTA_DM_PIN_REQ* p_pin_req) {
  *
  ******************************************************************************/
 static void btif_dm_ssp_cfm_req_evt(tBTA_DM_SP_CFM_REQ* p_ssp_cfm_req) {
-  bt_bdname_t bd_name;
   bool is_incoming = !(pairing_cb.state == BT_BOND_STATE_BONDING);
-  uint32_t cod;
   int dev_type;
 
   log::verbose("addr:{}, just_works:{}, loc_auth_req={}, rmt_auth_req={}",
@@ -1089,7 +1087,6 @@ static void btif_dm_ssp_cfm_req_evt(tBTA_DM_SP_CFM_REQ* p_ssp_cfm_req) {
                                 (tBT_DEVICE_TYPE)dev_type);
 
   RawAddress bd_addr = p_ssp_cfm_req->bd_addr;
-  bd_name_copy(bd_name.name, p_ssp_cfm_req->bd_name);
 
   if (pairing_cb.state == BT_BOND_STATE_BONDING &&
       bd_addr != pairing_cb.bd_addr) {
@@ -1128,29 +1125,19 @@ static void btif_dm_ssp_cfm_req_evt(tBTA_DM_SP_CFM_REQ* p_ssp_cfm_req) {
     }
   }
 
-  cod = devclass2uint(p_ssp_cfm_req->dev_class);
-
-  if (cod == 0) {
-    log::warn("cod is 0, set as unclassified");
-    cod = COD_UNCLASSIFIED;
-  }
-
   pairing_cb.sdp_attempts = 0;
   BTM_LogHistory(kBtmLogTagCallback, bd_addr, "Ssp request",
-                 base::StringPrintf("name:\"%s\" just_works:%c pin:%u",
-                                    PRIVATE_NAME(bd_name.name),
+                 base::StringPrintf("just_works:%c pin:%u",
                                     (p_ssp_cfm_req->just_works) ? 'T' : 'F',
                                     p_ssp_cfm_req->num_val));
   GetInterfaceToProfiles()->events->invoke_ssp_request_cb(
-      bd_addr, bd_name, cod,
+      bd_addr,
       (p_ssp_cfm_req->just_works ? BT_SSP_VARIANT_CONSENT
                                  : BT_SSP_VARIANT_PASSKEY_CONFIRMATION),
       p_ssp_cfm_req->num_val);
 }
 
 static void btif_dm_ssp_key_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif) {
-  bt_bdname_t bd_name;
-  uint32_t cod;
   int dev_type;
 
   log::verbose("addr:{}", p_ssp_key_notif->bd_addr);
@@ -1168,24 +1155,14 @@ static void btif_dm_ssp_key_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif) {
       p_ssp_key_notif->dev_class, (tBT_DEVICE_TYPE)dev_type);
 
   RawAddress bd_addr = p_ssp_key_notif->bd_addr;
-  bd_name_copy(bd_name.name, p_ssp_key_notif->bd_name);
 
   bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
   pairing_cb.is_ssp = true;
-  cod = devclass2uint(p_ssp_key_notif->dev_class);
 
-  if (cod == 0) {
-    log::warn("cod is 0, set as unclassified");
-    cod = COD_UNCLASSIFIED;
-  }
-
-  BTM_LogHistory(
-      kBtmLogTagCallback, bd_addr, "Ssp request",
-      base::StringPrintf("name:'%s' passkey:%u", PRIVATE_NAME(bd_name.name),
-                         p_ssp_key_notif->passkey));
+  BTM_LogHistory(kBtmLogTagCallback, bd_addr, "Ssp request",
+                 base::StringPrintf("passkey:%u", p_ssp_key_notif->passkey));
   GetInterfaceToProfiles()->events->invoke_ssp_request_cb(
-      bd_addr, bd_name, cod, BT_SSP_VARIANT_PASSKEY_NOTIFICATION,
-      p_ssp_key_notif->passkey);
+      bd_addr, BT_SSP_VARIANT_PASSKEY_NOTIFICATION, p_ssp_key_notif->passkey);
 }
 /*******************************************************************************
  *
@@ -1451,7 +1428,8 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event,
       bdname.name[0] = 0;
 
       if (!check_eir_remote_name(p_search_data, bdname.name, &remote_name_len))
-        check_cached_remote_name(p_search_data, bdname.name, &remote_name_len);
+        get_cached_remote_name(p_search_data->inq_res.bd_addr, bdname.name,
+                                 &remote_name_len);
 
       /* Check EIR for services */
       if (p_search_data->inq_res.p_eir) {
@@ -3524,8 +3502,6 @@ bool btif_dm_proc_rmt_oob(const RawAddress& bd_addr, Octet16* p_c,
 
 static void btif_dm_ble_key_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif) {
   RawAddress bd_addr;
-  bt_bdname_t bd_name;
-  uint32_t cod;
   int dev_type;
 
   log::verbose("addr:{}", p_ssp_key_notif->bd_addr);
@@ -3538,20 +3514,15 @@ static void btif_dm_ble_key_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif) {
                                        p_ssp_key_notif->bd_name, kDevClassEmpty,
                                        (tBT_DEVICE_TYPE)dev_type);
   bd_addr = p_ssp_key_notif->bd_addr;
-  bd_name_copy(bd_name.name, p_ssp_key_notif->bd_name);
 
   bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
   pairing_cb.is_ssp = false;
-  cod = COD_UNCLASSIFIED;
 
-  BTM_LogHistory(
-      kBtmLogTagCallback, bd_addr, "Ssp request",
-      base::StringPrintf("name:'%s' passkey:%u", PRIVATE_NAME(bd_name.name),
-                         p_ssp_key_notif->passkey));
+  BTM_LogHistory(kBtmLogTagCallback, bd_addr, "Ssp request",
+                 base::StringPrintf("passkey:%u", p_ssp_key_notif->passkey));
 
   GetInterfaceToProfiles()->events->invoke_ssp_request_cb(
-      bd_addr, bd_name, cod, BT_SSP_VARIANT_PASSKEY_NOTIFICATION,
-      p_ssp_key_notif->passkey);
+      bd_addr, BT_SSP_VARIANT_PASSKEY_NOTIFICATION, p_ssp_key_notif->passkey);
 }
 
 static bool btif_dm_ble_is_temp_pairing(RawAddress& bd_addr, bool ctkd) {
@@ -3773,8 +3744,6 @@ static void btif_dm_remove_ble_bonding_keys(void) {
  ******************************************************************************/
 static void btif_dm_ble_sec_req_evt(tBTA_DM_BLE_SEC_REQ* p_ble_req,
                                     bool is_consent) {
-  bt_bdname_t bd_name;
-  uint32_t cod;
   int dev_type;
 
   log::verbose("addr:{}", p_ble_req->bd_addr);
@@ -3793,7 +3762,6 @@ static void btif_dm_ble_sec_req_evt(tBTA_DM_BLE_SEC_REQ* p_ble_req,
                                        (tBT_DEVICE_TYPE)dev_type);
 
   RawAddress bd_addr = p_ble_req->bd_addr;
-  bd_name_copy(bd_name.name, p_ble_req->bd_name);
 
   bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
 
@@ -3803,14 +3771,11 @@ static void btif_dm_ble_sec_req_evt(tBTA_DM_BLE_SEC_REQ* p_ble_req,
   pairing_cb.is_ssp = true;
   btm_set_bond_type_dev(p_ble_req->bd_addr, pairing_cb.bond_type);
 
-  cod = COD_UNCLASSIFIED;
-
   BTM_LogHistory(kBtmLogTagCallback, bd_addr, "SSP ble request",
-                 base::StringPrintf("name:'%s' BT_SSP_VARIANT_CONSENT",
-                                    PRIVATE_NAME(bd_name.name)));
+                 "BT_SSP_VARIANT_CONSENT");
 
   GetInterfaceToProfiles()->events->invoke_ssp_request_cb(
-      bd_addr, bd_name, cod, BT_SSP_VARIANT_CONSENT, 0);
+      bd_addr, BT_SSP_VARIANT_CONSENT, 0);
 }
 
 /*******************************************************************************
@@ -3851,30 +3816,20 @@ static void btif_dm_ble_passkey_req_evt(tBTA_DM_PIN_REQ* p_pin_req) {
 }
 static void btif_dm_ble_key_nc_req_evt(tBTA_DM_SP_KEY_NOTIF* p_notif_req) {
   /* TODO implement key notification for numeric comparison */
-  log::verbose("addr:{}", p_notif_req->bd_addr);
-
-  /* Remote name update */
-  btif_update_remote_properties(p_notif_req->bd_addr, p_notif_req->bd_name,
-                                kDevClassEmpty, BT_DEVICE_TYPE_BLE);
 
   RawAddress bd_addr = p_notif_req->bd_addr;
-
-  bt_bdname_t bd_name;
-  bd_name_copy(bd_name.name, p_notif_req->bd_name);
+  log::verbose("addr:{}", bd_addr);
 
   bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
   pairing_cb.is_ssp = false;
   pairing_cb.is_le_only = true;
   pairing_cb.is_le_nc = true;
 
-  BTM_LogHistory(
-      kBtmLogTagCallback, bd_addr, "Ssp request",
-      base::StringPrintf("name:'%s' passkey:%u", PRIVATE_NAME(bd_name.name),
-                         p_notif_req->passkey));
+  BTM_LogHistory(kBtmLogTagCallback, bd_addr, "Ssp request",
+                 base::StringPrintf("passkey:%u", p_notif_req->passkey));
 
   GetInterfaceToProfiles()->events->invoke_ssp_request_cb(
-      bd_addr, bd_name, COD_UNCLASSIFIED, BT_SSP_VARIANT_PASSKEY_CONFIRMATION,
-      p_notif_req->passkey);
+      bd_addr, BT_SSP_VARIANT_PASSKEY_CONFIRMATION, p_notif_req->passkey);
 }
 
 static void btif_dm_ble_oob_req_evt(tBTA_DM_SP_RMT_OOB* req_oob_type) {

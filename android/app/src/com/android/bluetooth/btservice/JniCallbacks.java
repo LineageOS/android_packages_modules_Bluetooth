@@ -48,8 +48,8 @@ class JniCallbacks {
         throw new CloneNotSupportedException();
     }
 
-    void sspRequestCallback(byte[] address, byte[] name, int cod, int pairingVariant, int passkey) {
-        mBondStateMachine.sspRequestCallback(address, name, cod, pairingVariant, passkey);
+    void sspRequestCallback(byte[] address, int pairingVariant, int passkey) {
+        mBondStateMachine.sspRequestCallback(address, pairingVariant, passkey);
     }
 
     void devicePropertyChangedCallback(byte[] address, int[] types, byte[][] val) {
