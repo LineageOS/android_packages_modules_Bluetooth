@@ -23,6 +23,7 @@
 #include "avrcp.h"
 #include "avrcp_internal.h"
 #include "avrcp_packet.h"
+#include "stack/include/a2dp_api.h"
 #include "stack/include/bt_hdr.h"
 #include "tests/packet_test_helper.h"
 #include "types/bluetooth/uuid.h"
@@ -97,6 +98,9 @@ class MockA2dpInterface : public A2dpInterface {
   MOCK_METHOD1(event_close, void(const RawAddress&));
   MOCK_METHOD0(active_peer, RawAddress());
   MOCK_METHOD1(is_peer_in_silence_mode, bool(const RawAddress&));
+  MOCK_METHOD2(connect_audio_sink_delayed, void(uint8_t, const RawAddress&));
+  MOCK_METHOD2(find_audio_sink_service,
+               uint16_t(const RawAddress&, tA2DP_FIND_CBACK));
 };
 
 class MockSdpInterface : public SdpInterface {

@@ -64,6 +64,9 @@ cc_test {
         "tests/avrcp_connection_handler_test.cc",
         "tests/avrcp_device_test.cc",
     ],
+    shared_libs: [
+        "server_configurable_flags",
+    ],
     static_libs: [
         "avrcp-target-service",
         "lib-bt-packets",

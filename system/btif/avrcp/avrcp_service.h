@@ -76,6 +76,8 @@ class AvrcpService : public MediaCallbacks {
   void SendPlayerSettingsChanged(std::vector<PlayerAttribute> attributes,
                                  std::vector<uint8_t> values) override;
 
+  bool IsDeviceConnected(const RawAddress& bdaddr);
+
   /** when a2dp connected, btif will start register vol changed, so we need a
    * interface for it. */
   void RegisterVolChanged(const RawAddress& bdaddr);
