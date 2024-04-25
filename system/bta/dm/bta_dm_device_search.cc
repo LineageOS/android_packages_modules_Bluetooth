@@ -301,28 +301,6 @@ static void bta_dm_remname_cback(const tBTM_REMOTE_DEV_NAME* p_remote_name) {
 
 /*******************************************************************************
  *
- * Function         bta_dm_get_remname
- *
- * Description      Returns a pointer to the remote name stored in the DM
- *                  control block if it exists, or from the BTM memory.
- *
- * Returns          char * - Pointer to the remote device name
- ******************************************************************************/
-const char* bta_dm_get_remname(void) {
-  const char* p_name = (const char*)bta_dm_search_cb.peer_name;
-
-  /* If the name isn't already stored, try retrieving from BTM */
-  if (*p_name == '\0') {
-    const char* p_temp = get_btm_client_interface().security.BTM_SecReadDevName(
-        bta_dm_search_cb.peer_bdaddr);
-    if (p_temp != NULL) p_name = (const char*)p_temp;
-  }
-
-  return p_name;
-}
-
-/*******************************************************************************
- *
  * Function         bta_dm_read_remote_device_name
  *
  * Description      Initiate to get remote device name
