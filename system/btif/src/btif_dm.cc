@@ -1701,7 +1701,7 @@ static bool btif_is_gatt_service_discovery_post_pairing(const RawAddress bd_addr
 }
 
 static void btif_on_service_discovery_results(
-    RawAddress bd_addr, tBTA_SERVICE_MASK services, tBT_DEVICE_TYPE device_type,
+    RawAddress bd_addr, tBTA_SERVICE_MASK services,
     const std::vector<bluetooth::Uuid>& uuids_param, tBTA_STATUS result,
     tHCI_STATUS hci_status) {
   bt_property_t prop;
