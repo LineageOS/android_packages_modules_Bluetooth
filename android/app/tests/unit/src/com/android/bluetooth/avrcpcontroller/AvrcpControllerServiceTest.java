@@ -30,7 +30,9 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.content.Intent;
+import android.content.res.Resources;
 import android.media.AudioManager;
+import android.platform.test.flag.junit.SetFlagsRule;
 import android.support.v4.media.session.PlaybackStateCompat;
 
 import androidx.test.InstrumentationRegistry;
@@ -38,9 +40,12 @@ import androidx.test.filters.MediumTest;
 import androidx.test.rule.ServiceTestRule;
 import androidx.test.runner.AndroidJUnit4;
 
+import com.android.bluetooth.R;
 import com.android.bluetooth.TestUtils;
+import com.android.bluetooth.a2dpsink.A2dpSinkService;
 import com.android.bluetooth.avrcpcontroller.BluetoothMediaBrowserService.BrowseResult;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.flags.Flags;
 
 import org.junit.After;
 import org.junit.Before;
@@ -61,6 +66,11 @@ import java.util.List;
 public class AvrcpControllerServiceTest {
     private static final String REMOTE_DEVICE_ADDRESS = "00:00:00:00:00:00";
     private static final byte[] REMOTE_DEVICE_ADDRESS_AS_ARRAY = new byte[]{0, 0, 0, 0, 0, 0};
+    private static final String REMOTE_DEVICE_ADDRESS_2 = "11:11:11:11:11:11";
+    private static final byte[] REMOTE_DEVICE_ADDRESS_AS_ARRAY_2 =
+            new byte[] {11, 11, 11, 11, 11, 11};
+
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
     private AvrcpControllerService mService = null;
     private BluetoothAdapter mAdapter = null;
@@ -70,11 +80,18 @@ public class AvrcpControllerServiceTest {
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
+    @Mock private A2dpSinkService mA2dpSinkService;
     @Mock private AdapterService mAdapterService;
     @Mock private AvrcpControllerStateMachine mStateMachine;
+    @Mock private AvrcpControllerStateMachine mStateMachine2;
     @Mock private AvrcpControllerNativeInterface mNativeInterface;
 
+    @Mock private Resources mMockResources;
+
     private BluetoothDevice mRemoteDevice;
+    private BluetoothDevice mRemoteDevice2;
+
+    @Mock private AvrcpControllerStateMachine mAvrcpStateMachine;
 
     @Before
     public void setUp() throws Exception {
@@ -86,17 +103,29 @@ public class AvrcpControllerServiceTest {
         // Try getting the Bluetooth adapter
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         assertThat(mAdapter).isNotNull();
+        // Set a mock A2dpSinkService for audio focus calls
+        A2dpSinkService.setA2dpSinkService(mA2dpSinkService);
+        when(mMockResources.getBoolean(R.bool.a2dp_sink_automatically_request_audio_focus))
+                .thenReturn(true);
+
         mRemoteDevice = mAdapter.getRemoteDevice(REMOTE_DEVICE_ADDRESS);
         mService.mDeviceStateMap.put(mRemoteDevice, mStateMachine);
         final Intent bluetoothBrowserMediaServiceStartIntent =
                 TestUtils.prepareIntentToStartBluetoothBrowserMediaService();
         mBluetoothBrowserMediaServiceTestRule.startService(bluetoothBrowserMediaServiceStartIntent);
+
+        // Set up device and state machine under test
+        mRemoteDevice2 = mAdapter.getRemoteDevice(REMOTE_DEVICE_ADDRESS_2);
+        mService.mDeviceStateMap.put(mRemoteDevice2, mStateMachine2);
+
+        when(mA2dpSinkService.setActiveDevice(any(BluetoothDevice.class))).thenReturn(true);
     }
 
     @After
     public void tearDown() throws Exception {
         mService.stop();
         AvrcpControllerNativeInterface.setInstance(null);
+        A2dpSinkService.setA2dpSinkService(null);
         mService = AvrcpControllerService.getAvrcpControllerService();
         assertThat(mService).isNull();
         TestUtils.clearAdapterService(mAdapterService);
@@ -142,6 +171,7 @@ public class AvrcpControllerServiceTest {
 
     @Test
     public void setActiveDevice_whenA2dpSinkServiceIsNotInitailized_returnsFalse() {
+        A2dpSinkService.setA2dpSinkService(null);
         assertThat(mService.setActiveDevice(mRemoteDevice)).isFalse();
 
         assertThat(mService.getActiveDevice()).isNull();
@@ -465,9 +495,10 @@ public class AvrcpControllerServiceTest {
 
         mService.handleGetPlayerItemsRsp(mRemoteDevice, items);
 
-        verify(mStateMachine).sendMessage(
-                eq(AvrcpControllerStateMachine.MESSAGE_PROCESS_GET_PLAYER_ITEMS),
-                eq(items));
+        verify(mStateMachine)
+                .sendMessage(
+                        eq(AvrcpControllerStateMachine.MESSAGE_PROCESS_GET_PLAYER_ITEMS),
+                        eq(items));
     }
 
     @Test
@@ -486,5 +517,29 @@ public class AvrcpControllerServiceTest {
     public void testOnFocusChange_audioLoss_sessionDeactivated() {
         mService.onAudioFocusStateChanged(AudioManager.AUDIOFOCUS_LOSS);
         assertThat(BluetoothMediaBrowserService.isActive()).isFalse();
+    }
+
+    /**
+     * Connect first device and check that it is the active device. Pair a second device, then
+     * disconnect and repair this known second device. Confirm that audio focus is maintained by
+     * first device by checking that it has remained as the active device.
+     */
+    @Test
+    public void testActiveDeviceMaintainsAudioFocusWhenOtherDeviceConnects_audioFocusMaintained() {
+        mSetFlagsRule.enableFlags(Flags.FLAG_RANDOMIZE_DEVICE_LEVEL_MEDIA_IDS);
+
+        mService.onConnectionStateChanged(true, true, mRemoteDevice);
+        // check set active device is called
+        verify(mA2dpSinkService).setActiveDevice(mRemoteDevice);
+        when(mA2dpSinkService.getActiveDevice()).thenReturn(mRemoteDevice);
+
+        // connect another phone
+        mService.onConnectionStateChanged(true, true, mRemoteDevice2);
+        verify(mA2dpSinkService, times(0)).setActiveDevice(mRemoteDevice2);
+
+        // disconnect and reconnect other phone
+        mService.onConnectionStateChanged(false, false, mRemoteDevice2);
+        mService.onConnectionStateChanged(true, true, mRemoteDevice2);
+        verify(mA2dpSinkService, times(0)).setActiveDevice(mRemoteDevice2);
     }
 }
