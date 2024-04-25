@@ -217,6 +217,7 @@ source_set("stack") {
   ]
 
   deps = [
+    "//bt/sysprop:libcom.android.sysprop.bluetooth",
     "//bt/system/gd/crypto_toolbox:crypto_toolbox",
     ":nonstandard_codecs",
     "//bt/system:libbt-platform-protos-lite",
