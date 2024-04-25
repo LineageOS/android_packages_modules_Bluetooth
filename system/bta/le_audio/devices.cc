@@ -224,21 +224,19 @@ bool LeAudioDevice::IsAudioSetConfigurationSupported(
     if (confs.size() == 0) continue;
 
     log::info("Looking for requirements: {} - {}", audio_set_conf->name,
-              (direction == 1 ? "snk" : "src"));
+              direction == 1 ? "snk" : "src");
 
     auto const& pacs =
         (direction == types::kLeAudioDirectionSink) ? snk_pacs_ : src_pacs_;
     for (const auto& ent : confs) {
       if (!utils::GetConfigurationSupportedPac(pacs, ent.codec)) {
-        log::info("Configuration is NOT supported by device {}",
-                  ADDRESS_TO_LOGGABLE_CSTR(address_));
+        log::info("Configuration is NOT supported by device {}", address_);
         return false;
       }
     }
   }
 
-  log::info("Configuration is supported by device {}",
-            ADDRESS_TO_LOGGABLE_CSTR(address_));
+  log::info("Configuration is supported by device {}", address_);
   return true;
 }
 
@@ -362,7 +360,7 @@ bool LeAudioDevice::ConfigureAses(
     log::debug(
         "device={}, activated ASE id={}, direction={}, max_sdu_size={}, "
         "cis_id={}, target_latency={}",
-        address_, ase->id, (direction == 1 ? "snk" : "src"),
+        address_, ase->id, direction == 1 ? "snk" : "src",
         ase->qos_config.max_sdu_size, ase->cis_id, ase_cfg.qos.target_latency);
 
     /* Try to use the already active ASE */

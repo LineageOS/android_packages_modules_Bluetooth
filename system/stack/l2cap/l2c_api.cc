@@ -324,7 +324,7 @@ uint16_t L2CA_ConnectReq(uint16_t psm, const RawAddress& p_bd_addr) {
   /* Fail if the PSM is not registered */
   tL2C_RCB* p_rcb = l2cu_find_rcb_by_psm(psm);
   if (p_rcb == nullptr) {
-    log::warn("no RCB, PSM={}", loghex(psm));
+    log::warn("no RCB, PSM=0x{:x}", psm);
     return 0;
   }
 
@@ -336,7 +336,7 @@ uint16_t L2CA_ConnectReq(uint16_t psm, const RawAddress& p_bd_addr) {
     p_lcb = l2cu_allocate_lcb(p_bd_addr, false, BT_TRANSPORT_BR_EDR);
     /* currently use BR/EDR for ERTM mode l2cap connection */
     if (p_lcb == nullptr) {
-      log::warn("connection not started for PSM={}, p_lcb={}", loghex(psm),
+      log::warn("connection not started for PSM=0x{:x}, p_lcb={}", psm,
                 fmt::ptr(p_lcb));
       return 0;
     }
@@ -346,7 +346,7 @@ uint16_t L2CA_ConnectReq(uint16_t psm, const RawAddress& p_bd_addr) {
   /* Allocate a channel control block */
   tL2C_CCB* p_ccb = l2cu_allocate_ccb(p_lcb, 0);
   if (p_ccb == nullptr) {
-    log::warn("no CCB, PSM={}", loghex(psm));
+    log::warn("no CCB, PSM=0x{:x}", psm);
     return 0;
   }
 
@@ -1003,8 +1003,7 @@ bool L2CA_UseLatencyMode(const RawAddress& bd_addr, bool use_latency_mode) {
     log::warn("L2CAP - no LCB for L2CA_SetUseLatencyMode, BDA: {}", bd_addr);
     return false;
   }
-  log::info("BDA: {}, use_latency_mode: {}", bd_addr,
-            use_latency_mode ? "true" : "false");
+  log::info("BDA: {}, use_latency_mode: {}", bd_addr, use_latency_mode);
   p_lcb->use_latency_mode = use_latency_mode;
   return true;
 }
@@ -1035,7 +1034,7 @@ bool L2CA_SetAclPriority(const RawAddress& bd_addr, tL2CAP_PRIORITY priority) {
  *
  ******************************************************************************/
 bool L2CA_SetAclLatency(const RawAddress& bd_addr, tL2CAP_LATENCY latency) {
-  log::info("BDA: {}, latency: {}", bd_addr, std::to_string(latency));
+  log::info("BDA: {}, latency: {}", bd_addr, latency);
   return l2cu_set_acl_latency(bd_addr, latency);
 }
 
@@ -1657,7 +1656,7 @@ void L2CA_SetMediaStreamChannel(uint16_t local_media_cid, bool status) {
   }
 
   log::debug("local_media_cid={}, status={}", local_media_cid,
-             (status ? "add" : "remove"));
+             status ? "add" : "remove");
 
   if (status) {
     for (i = 0; i < MAX_ACTIVE_AVDT_CONN; i++) {

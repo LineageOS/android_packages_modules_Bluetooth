@@ -235,10 +235,10 @@ void RFCOMM_ConfigCnf(uint16_t lcid, uint16_t /* initiator */,
  *
  ******************************************************************************/
 void RFCOMM_DisconnectInd(uint16_t lcid, bool is_conf_needed) {
-  log::verbose("lcid:{}, is_conf_needed:{}", loghex(lcid), is_conf_needed);
+  log::verbose("lcid:0x{:x}, is_conf_needed:{}", lcid, is_conf_needed);
   tRFC_MCB* p_mcb = rfc_find_lcid_mcb(lcid);
   if (!p_mcb) {
-    log::warn("no mcb for lcid {}", loghex(lcid));
+    log::warn("no mcb for lcid 0x{:x}", lcid);
     return;
   }
   rfc_mx_sm_execute(p_mcb, RFC_MX_EVENT_DISC_IND, nullptr);
@@ -258,7 +258,7 @@ void RFCOMM_BufDataInd(uint16_t lcid, BT_HDR* p_buf) {
   tRFC_MCB* p_mcb = rfc_find_lcid_mcb(lcid);
 
   if (!p_mcb) {
-    log::warn("Cannot find RFCOMM multiplexer for lcid {}", loghex(lcid));
+    log::warn("Cannot find RFCOMM multiplexer for lcid 0x{:x}", lcid);
     osi_free(p_buf);
     return;
   }
@@ -267,8 +267,8 @@ void RFCOMM_BufDataInd(uint16_t lcid, BT_HDR* p_buf) {
 
   /* If the frame did not pass validation just ignore it */
   if (event == RFC_EVENT_BAD_FRAME) {
-    log::warn("Bad RFCOMM frame from lcid={}, bd_addr={}, p_mcb={}",
-              loghex(lcid), p_mcb->bd_addr, fmt::ptr(p_mcb));
+    log::warn("Bad RFCOMM frame from lcid=0x{:x}, bd_addr={}, p_mcb={}", lcid,
+              p_mcb->bd_addr, fmt::ptr(p_mcb));
     osi_free(p_buf);
     return;
   }
@@ -293,12 +293,12 @@ void RFCOMM_BufDataInd(uint16_t lcid, BT_HDR* p_buf) {
   if (p_port == nullptr || !p_port->rfc.p_mcb) {
     /* If this is a SABME on new port, check if any app is waiting for it */
     if (event != RFC_EVENT_SABME) {
-      log::warn("no for none-SABME event, lcid={}, bd_addr={}, p_mcb={}",
-                loghex(lcid), p_mcb->bd_addr, fmt::ptr(p_mcb));
+      log::warn("no for none-SABME event, lcid=0x{:x}, bd_addr={}, p_mcb={}",
+                lcid, p_mcb->bd_addr, fmt::ptr(p_mcb));
       if ((p_mcb->is_initiator && !rfc_cb.rfc.rx_frame.cr) ||
           (!p_mcb->is_initiator && rfc_cb.rfc.rx_frame.cr)) {
-        log::error("Disconnecting RFCOMM, lcid={}, bd_addr={}, p_mcb={}",
-                   loghex(lcid), p_mcb->bd_addr, fmt::ptr(p_mcb));
+        log::error("Disconnecting RFCOMM, lcid=0x{:x}, bd_addr={}, p_mcb={}",
+                   lcid, p_mcb->bd_addr, fmt::ptr(p_mcb));
         rfc_send_dm(p_mcb, rfc_cb.rfc.rx_frame.dlci, rfc_cb.rfc.rx_frame.pf);
       }
       osi_free(p_buf);
@@ -308,10 +308,9 @@ void RFCOMM_BufDataInd(uint16_t lcid, BT_HDR* p_buf) {
     p_port = port_find_dlci_port(rfc_cb.rfc.rx_frame.dlci);
     if (p_port == nullptr) {
       log::error(
-          "Disconnecting RFCOMM, no port for dlci {}, lcid={}, bd_addr={}, "
+          "Disconnecting RFCOMM, no port for dlci {}, lcid=0x{:x}, bd_addr={}, "
           "p_mcb={}",
-          rfc_cb.rfc.rx_frame.dlci, loghex(lcid), p_mcb->bd_addr,
-          fmt::ptr(p_mcb));
+          rfc_cb.rfc.rx_frame.dlci, lcid, p_mcb->bd_addr, fmt::ptr(p_mcb));
       rfc_send_dm(p_mcb, rfc_cb.rfc.rx_frame.dlci, true);
       osi_free(p_buf);
       return;
@@ -374,8 +373,8 @@ tRFC_MCB* rfc_find_lcid_mcb(uint16_t lcid) {
   tRFC_MCB* p_mcb = rfc_lcid_mcb[lcid];
   if (p_mcb != nullptr) {
     if (p_mcb->lcid != lcid) {
-      log::warn("LCID reused lcid=:{}, current_lcid={}", loghex(lcid),
-                loghex(p_mcb->lcid));
+      log::warn("LCID reused lcid=:0x{:x}, current_lcid=0x{:x}", lcid,
+                p_mcb->lcid);
       return nullptr;
     }
   }

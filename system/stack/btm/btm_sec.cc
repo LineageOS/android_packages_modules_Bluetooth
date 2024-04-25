@@ -1689,8 +1689,8 @@ tBTM_STATUS btm_sec_l2cap_access_req_by_requirement(
     log::verbose(
         "(SM4 to SM4) btm_sec_l2cap_access_req rspd. authenticated: x{:x}, "
         "enc: x{:x}",
-        (p_dev_rec->sec_rec.sec_flags & BTM_SEC_AUTHENTICATED),
-        (p_dev_rec->sec_rec.sec_flags & BTM_SEC_ENCRYPTED));
+        p_dev_rec->sec_rec.sec_flags & BTM_SEC_AUTHENTICATED,
+        p_dev_rec->sec_rec.sec_flags & BTM_SEC_ENCRYPTED);
     /* SM4, but we do not know for sure which level of security we need.
      * as long as we have a link key, it's OK */
     if ((0 == (p_dev_rec->sec_rec.sec_flags & BTM_SEC_AUTHENTICATED)) ||

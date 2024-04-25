@@ -149,19 +149,19 @@ static tA2DP_STATUS A2DP_BuildInfoOpus(uint8_t media_type,
   *p_result = 0;
   *p_result |= (uint8_t)(p_ie->channelMode) & A2DP_OPUS_CHANNEL_MODE_MASK;
   if ((*p_result & A2DP_OPUS_CHANNEL_MODE_MASK) == 0) {
-    log::error("channelmode 0x{:X} setting failed", (p_ie->channelMode));
+    log::error("channelmode 0x{:X} setting failed", p_ie->channelMode);
     return A2DP_INVALID_PARAMS;
   }
 
   *p_result |= ((uint8_t)(p_ie->future1) & A2DP_OPUS_FRAMESIZE_MASK);
   if ((*p_result & A2DP_OPUS_FRAMESIZE_MASK) == 0) {
-    log::error("frameSize 0x{:X} setting failed", (p_ie->future1));
+    log::error("frameSize 0x{:X} setting failed", p_ie->future1);
     return A2DP_INVALID_PARAMS;
   }
 
   *p_result |= ((uint8_t)(p_ie->sampleRate) & A2DP_OPUS_SAMPLING_FREQ_MASK);
   if ((*p_result & A2DP_OPUS_SAMPLING_FREQ_MASK) == 0) {
-    log::error("samplerate 0x{:X} setting failed", (p_ie->sampleRate));
+    log::error("samplerate 0x{:X} setting failed", p_ie->sampleRate);
     return A2DP_INVALID_PARAMS;
   }
 

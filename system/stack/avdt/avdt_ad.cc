@@ -547,7 +547,7 @@ void avdt_ad_open_req(uint8_t type, AvdtpCcb* p_ccb, AvdtpScb* p_scb,
     if (lcid != 0) {
       /* if connect req ok, store tcid in lcid table  */
       avdtp_cb.ad.lcid_tbl[lcid] = avdt_ad_tc_tbl_to_idx(p_tbl);
-      log::verbose("avdtp_cb.ad.lcid_tbl[{}] = {}", (lcid),
+      log::verbose("avdtp_cb.ad.lcid_tbl[{}] = {}", lcid,
                    avdt_ad_tc_tbl_to_idx(p_tbl));
 
       avdtp_cb.ad.rt_tbl[avdt_ccb_to_idx(p_ccb)][p_tbl->tcid].lcid = lcid;

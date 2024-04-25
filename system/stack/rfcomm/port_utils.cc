@@ -284,8 +284,8 @@ tRFC_MCB* port_find_mcb(const RawAddress& bd_addr) {
   for (tRFC_MCB& mcb : rfc_cb.port.rfc_mcb) {
     if ((mcb.state != RFC_MX_STATE_IDLE) && (mcb.bd_addr == bd_addr)) {
       /* Multiplexer channel found do not change anything */
-      log::verbose("found, bd_addr:{}, rfc_mcb:{}, lcid:{}", bd_addr,
-                   fmt::ptr(&mcb), loghex(mcb.lcid));
+      log::verbose("found, bd_addr:{}, rfc_mcb:{}, lcid:0x{:x}", bd_addr,
+                   fmt::ptr(&mcb), mcb.lcid);
       return &mcb;
     }
   }

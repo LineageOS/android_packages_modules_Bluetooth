@@ -1009,7 +1009,7 @@ class CsisClientImpl : public CsisClient {
   void CsisLockCompleted(std::shared_ptr<CsisGroup>& csis_group, bool lock,
                          CsisGroupLockStatus status) {
     log::debug("group id: {}, target state {}", csis_group->GetGroupId(),
-               (lock ? "lock" : "unlock"));
+               lock ? "lock" : "unlock");
 
     NotifyGroupStatus(csis_group->GetGroupId(), lock, status,
                       std::move(csis_group->GetLockCb()));
@@ -1246,7 +1246,7 @@ class CsisClientImpl : public CsisClient {
 
 #ifdef CSIS_DEBUG
     auto irk = BTM_BleGetPeerIRK(address);
-    log::info("LTK {}", (base::HexEncode(*pltk.data(), 16)));
+    log::info("LTK {}", base::HexEncode(*pltk.data(), 16));
     log::info("IRK {}", base::HexEncode(*irk.data(), 16));
 #endif
 
@@ -2200,9 +2200,9 @@ class CsisClientImpl : public CsisClient {
       tGATT_STATUS register_status =
           BTA_GATTC_RegisterForNotifications(gatt_if_, address, value_handle);
       log::debug(
-          "BTA_GATTC_RegisterForNotifications, status=0x{:02x}, value={}, "
+          "BTA_GATTC_RegisterForNotifications, status=0x{:02x}, value=0x{:x}, "
           "ccc=0x{:04x}",
-          register_status, loghex(value_handle), ccc_handle);
+          register_status, value_handle, ccc_handle);
 
       if (register_status != GATT_SUCCESS) return;
     }

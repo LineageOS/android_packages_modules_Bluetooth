@@ -1018,7 +1018,7 @@ void Device::ListPlayerApplicationSettingValuesResponse(
         log::verbose("value={}", static_cast<PlayerShuffleValue>(value));
       }
     } else {
-      log::verbose("value={}", loghex(values.at(0)));
+      log::verbose("value=0x{:x}", values.at(0));
     }
   }
 
@@ -1038,7 +1038,7 @@ void Device::GetPlayerApplicationSettingValueResponse(
     } else if (attributes[i] == PlayerAttribute::SHUFFLE) {
       log::verbose("value={}", static_cast<PlayerShuffleValue>(values[i]));
     } else {
-      log::verbose("value={}", loghex(values.at(0)));
+      log::verbose("value=0x{:x}", values.at(0));
     }
   }
 
@@ -1216,8 +1216,7 @@ void Device::HandleChangePath(uint8_t label,
     return;
   }
 
-  log::verbose("direction={} uid={}", pkt->GetDirection(),
-               loghex(pkt->GetUid()));
+  log::verbose("direction={} uid=0x{:x}", pkt->GetDirection(), pkt->GetUid());
 
   if (pkt->GetDirection() == Direction::DOWN &&
       vfs_ids_.get_media_id(pkt->GetUid()) == "") {
@@ -1272,8 +1271,8 @@ void Device::HandleGetItemAttributes(
     return;
   }
 
-  log::verbose("scope={} uid={} uid counter={}", pkt->GetScope(),
-               loghex(pkt->GetUid()), loghex(pkt->GetUidCounter()));
+  log::verbose("scope={} uid=0x{:x} uid counter=0x{:x}", pkt->GetScope(),
+               pkt->GetUid(), pkt->GetUidCounter());
   if (pkt->GetUidCounter() != 0x0000) {  // For database unaware player, use 0
     log::warn("{}: UidCounter is invalid", address_);
     auto builder = GetItemAttributesResponseBuilder::MakeBuilder(
@@ -1307,7 +1306,7 @@ void Device::HandleGetItemAttributes(
 void Device::GetItemAttributesNowPlayingResponse(
     uint8_t label, std::shared_ptr<GetItemAttributesRequest> pkt,
     std::string curr_media_id, std::vector<SongInfo> song_list) {
-  log::verbose("uid={}", loghex(pkt->GetUid()));
+  log::verbose("uid=0x{:x}", pkt->GetUid());
   auto builder = GetItemAttributesResponseBuilder::MakeBuilder(Status::NO_ERROR,
                                                                browse_mtu_);
 
@@ -1356,7 +1355,7 @@ void Device::GetItemAttributesNowPlayingResponse(
 void Device::GetItemAttributesVFSResponse(
     uint8_t label, std::shared_ptr<GetItemAttributesRequest> pkt,
     std::vector<ListItem> item_list) {
-  log::verbose("uid={}", loghex(pkt->GetUid()));
+  log::verbose("uid=0x{:x}", pkt->GetUid());
 
   auto media_id = vfs_ids_.get_media_id(pkt->GetUid());
   if (media_id == "") {

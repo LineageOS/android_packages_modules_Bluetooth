@@ -644,8 +644,8 @@ class LeAudioClientImpl : public LeAudioClient {
       /* TODO This part possible to remove as this is to handle adding device to
        * the group which is unknown and not connected.
        */
-      log::info("leAudioDevice unknown , address: {} group: {}", address,
-                loghex(group_id));
+      log::info("leAudioDevice unknown , address: {} group: 0x{:x}", address,
+                group_id);
 
       if (group_id == bluetooth::groups::kGroupUnknown) return;
 
@@ -1325,7 +1325,7 @@ class LeAudioClientImpl : public LeAudioClient {
   }
 
   void SetEnableState(const RawAddress& address, bool enabled) override {
-    log::info("{}: {}", address, (enabled ? "enabled" : "disabled"));
+    log::info("{}: {}", address, enabled ? "enabled" : "disabled");
     auto leAudioDevice = leAudioDevices_.FindByAddress(address);
     if (leAudioDevice == nullptr) {
       log::warn("{} is null", address);
@@ -1933,7 +1933,7 @@ class LeAudioClientImpl : public LeAudioClient {
       bluetooth::le_audio::client_parser::tmap::ParseTmapRole(
           leAudioDevice->tmap_role_, len, value);
     } else {
-      log::error("Unknown attribute read: {}", loghex(hdl));
+      log::error("Unknown attribute read: 0x{:x}", hdl);
     }
   }
 
@@ -2173,7 +2173,7 @@ class LeAudioClientImpl : public LeAudioClient {
     if (leAudioDevice == NULL ||
         (leAudioDevice->conn_id_ == GATT_INVALID_CONN_ID)) {
       log::warn("Skipping device which is {}",
-                (leAudioDevice ? " not connected by service." : " null"));
+                leAudioDevice ? " not connected by service." : " null");
       return;
     }
 
@@ -3053,7 +3053,7 @@ class LeAudioClientImpl : public LeAudioClient {
     std::vector<struct ase>::iterator ase_it;
 
     if (!leAudioDevice) {
-      log::error("unknown conn_id={}", loghex(conn_id));
+      log::error("unknown conn_id=0x{:x}", conn_id);
       return;
     }
 
@@ -3214,7 +3214,7 @@ class LeAudioClientImpl : public LeAudioClient {
 
   void SendAudioGroupCurrentCodecConfigChanged(LeAudioDeviceGroup* group) {
     // This shall be called when configuration changes
-    log::debug(" {} ", group->group_id_);
+    log::debug("{}", group->group_id_);
 
     auto audio_set_conf = group->GetConfiguration(configuration_context_type_);
     if (!audio_set_conf) {
@@ -3259,8 +3259,8 @@ class LeAudioClientImpl : public LeAudioClient {
         bluetooth::le_audio::ConnectionStatus::SUCCESS);
 
     if (leAudioDevice->group_id_ == bluetooth::groups::kGroupUnknown) {
-      log::warn(" LeAudio device {} connected with no group",
-                ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+      log::warn("LeAudio device {} connected with no group",
+                leAudioDevice->address_);
       callbacks_->OnConnectionState(ConnectionState::CONNECTED,
                                     leAudioDevice->address_);
       return;
@@ -4080,7 +4080,7 @@ class LeAudioClientImpl : public LeAudioClient {
         "{}\n configuration_context_type_: {}\n group {}\n",
         active_group_id_, audio_receiver_state_, audio_sender_state_,
         ToHexString(configuration_context_type_),
-        (group ? " exist " : " does not exist "));
+        group ? " exist " : " does not exist ");
 
     switch (audio_sender_state_) {
       case AudioState::STARTED:
@@ -4109,7 +4109,7 @@ class LeAudioClientImpl : public LeAudioClient {
                   "Reconfiguring to {}",
                   ToString(audio_receiver_state_),
                   ToString(audio_sender_state_),
-                  (group->IsPendingConfiguration() ? "true" : "false"),
+                  group->IsPendingConfiguration(),
                   ToString(configuration_context_type_));
               group->PrintDebugState();
               SetConfigurationAndStopStreamWhenNeeded(
@@ -4134,7 +4134,7 @@ class LeAudioClientImpl : public LeAudioClient {
                     "Reconfiguring to {}",
                     ToString(audio_receiver_state_),
                     ToString(audio_sender_state_),
-                    (group->IsPendingConfiguration() ? "true" : "false"),
+                    group->IsPendingConfiguration(),
                     ToString(configuration_context_type_));
                 group->PrintDebugState();
                 SetConfigurationAndStopStreamWhenNeeded(
@@ -4147,7 +4147,7 @@ class LeAudioClientImpl : public LeAudioClient {
                   "Reconfiguring to {}",
                   ToString(audio_receiver_state_),
                   ToString(audio_sender_state_),
-                  (group->IsPendingConfiguration() ? "true" : "false"),
+                  group->IsPendingConfiguration(),
                   ToString(configuration_context_type_));
               group->PrintDebugState();
               CancelStreamingRequest();
@@ -4174,7 +4174,7 @@ class LeAudioClientImpl : public LeAudioClient {
                     "Reconfiguring to {}",
                     ToString(audio_receiver_state_),
                     ToString(audio_sender_state_),
-                    (group->IsPendingConfiguration() ? "true" : "false"),
+                    group->IsPendingConfiguration(),
                     ToString(configuration_context_type_));
                 group->PrintDebugState();
                 SetConfigurationAndStopStreamWhenNeeded(
@@ -4187,7 +4187,7 @@ class LeAudioClientImpl : public LeAudioClient {
                   "Reconfiguring to {}",
                   ToString(audio_receiver_state_),
                   ToString(audio_sender_state_),
-                  (group->IsPendingConfiguration() ? "true" : "false"),
+                  group->IsPendingConfiguration(),
                   ToString(configuration_context_type_));
               group->PrintDebugState();
               CancelStreamingRequest();
@@ -4201,7 +4201,7 @@ class LeAudioClientImpl : public LeAudioClient {
             "audio_receiver_state: {} \naudio_sender_state: {} \n "
             "isPendingConfiguration: {} \n Reconfiguring to {}",
             ToString(audio_receiver_state_), ToString(audio_sender_state_),
-            (group->IsPendingConfiguration() ? "true" : "false"),
+            group->IsPendingConfiguration(),
             ToString(configuration_context_type_));
         group->PrintDebugState();
         break;
@@ -4356,7 +4356,7 @@ class LeAudioClientImpl : public LeAudioClient {
         "{}\n configuration_context_type_: {}\n group {}\n",
         active_group_id_, audio_receiver_state_, audio_sender_state_,
         ToHexString(configuration_context_type_),
-        (group ? " exist " : " does not exist "));
+        group ? " exist " : " does not exist ");
 
     switch (audio_receiver_state_) {
       case AudioState::STARTED:
@@ -4383,7 +4383,7 @@ class LeAudioClientImpl : public LeAudioClient {
                   "Reconfiguring to {}",
                   ToString(audio_receiver_state_),
                   ToString(audio_sender_state_),
-                  (group->IsPendingConfiguration() ? "true" : "false"),
+                  group->IsPendingConfiguration(),
                   ToString(configuration_context_type_));
               group->PrintDebugState();
               SetConfigurationAndStopStreamWhenNeeded(
@@ -4408,7 +4408,7 @@ class LeAudioClientImpl : public LeAudioClient {
                     "Reconfiguring to {}",
                     ToString(audio_receiver_state_),
                     ToString(audio_sender_state_),
-                    (group->IsPendingConfiguration() ? "true" : "false"),
+                    group->IsPendingConfiguration(),
                     ToString(configuration_context_type_));
                 group->PrintDebugState();
                 SetConfigurationAndStopStreamWhenNeeded(
@@ -4421,7 +4421,7 @@ class LeAudioClientImpl : public LeAudioClient {
                   "Reconfiguring to {}",
                   ToString(audio_receiver_state_),
                   ToString(audio_sender_state_),
-                  (group->IsPendingConfiguration() ? "true" : "false"),
+                  group->IsPendingConfiguration(),
                   ToString(configuration_context_type_));
               group->PrintDebugState();
               CancelStreamingRequest();
@@ -4449,7 +4449,7 @@ class LeAudioClientImpl : public LeAudioClient {
                     "Reconfiguring to {}",
                     ToString(audio_receiver_state_),
                     ToString(audio_sender_state_),
-                    (group->IsPendingConfiguration() ? "true" : "false"),
+                    group->IsPendingConfiguration(),
                     ToString(configuration_context_type_));
                 group->PrintDebugState();
                 SetConfigurationAndStopStreamWhenNeeded(
@@ -4462,7 +4462,7 @@ class LeAudioClientImpl : public LeAudioClient {
                   "Reconfiguring to {}",
                   ToString(audio_receiver_state_),
                   ToString(audio_sender_state_),
-                  (group->IsPendingConfiguration() ? "true" : "false"),
+                  group->IsPendingConfiguration(),
                   ToString(configuration_context_type_));
               group->PrintDebugState();
               CancelStreamingRequest();
@@ -4476,7 +4476,7 @@ class LeAudioClientImpl : public LeAudioClient {
             "{} \naudio_sender_state: {} \n isPendingConfiguration: {} \n "
             "Reconfiguring to {}",
             ToString(audio_receiver_state_), ToString(audio_sender_state_),
-            (group->IsPendingConfiguration() ? "true" : "false"),
+            group->IsPendingConfiguration(),
             ToString(configuration_context_type_));
         group->PrintDebugState();
         break;
@@ -4834,9 +4834,8 @@ class LeAudioClientImpl : public LeAudioClient {
      * with any other bidirectional context
      */
     if (IsInCall() || IsInVoipCall()) {
-      log::debug("In Call preference used: {}, voip call: {}",
-                 (IsInCall() ? "true" : "false"),
-                 (IsInVoipCall() ? "true" : "false"));
+      log::debug("In Call preference used: {}, voip call: {}", IsInCall(),
+                 IsInVoipCall());
       local_metadata_context_types_.sink.unset_all(kLeAudioContextAllBidir);
       local_metadata_context_types_.source.unset_all(kLeAudioContextAllBidir);
       local_metadata_context_types_.sink.set(
@@ -4869,11 +4868,11 @@ class LeAudioClientImpl : public LeAudioClient {
              ? "Source"
              : "Sink"));
     log::debug("is_streaming_other_direction= {}",
-               (is_streaming_other_direction ? "True" : "False"));
+               is_streaming_other_direction ? "True" : "False");
     log::debug("is_releasing_for_reconfiguration= {}",
-               (is_releasing_for_reconfiguration ? "True" : "False"));
+               is_releasing_for_reconfiguration ? "True" : "False");
     log::debug("is_ongoing_call_on_other_direction={}",
-               (is_ongoing_call_on_other_direction ? "True" : "False"));
+               is_ongoing_call_on_other_direction ? "True" : "False");
 
     if (remote_metadata.get(remote_other_direction)
             .test_any(kLeAudioContextAllBidir) &&
@@ -4968,7 +4967,7 @@ class LeAudioClientImpl : public LeAudioClient {
     auto source_supported_contexts = group->GetSupportedContexts(
         bluetooth::le_audio::types::kLeAudioDirectionSource);
 
-    log::debug(" group_id: {}, sink_supported: {}, source_supported {}",
+    log::debug("group_id: {}, sink_supported: {}, source_supported {}",
                group->group_id_, ToString(sink_supported_contexts),
                ToString(source_supported_contexts));
     if (sink_supported_contexts.test(LeAudioContextType::VOICEASSISTANTS) &&
@@ -4986,7 +4985,7 @@ class LeAudioClientImpl : public LeAudioClient {
     }
 
     log::warn(
-        " group_id: {},  unexpected configuration, sink_supported: {}, "
+        "group_id: {},  unexpected configuration, sink_supported: {}, "
         "source_supported {}",
         group->group_id_, ToString(sink_supported_contexts),
         ToString(source_supported_contexts));
@@ -5399,9 +5398,9 @@ class LeAudioClientImpl : public LeAudioClient {
         leAudioDevices_.FindByCisConnHdl(cig_id, conn_handle);
     if (!leAudioDevice) {
       log::warn(
-          "device under connection handle: {}, has been disconnecected in "
+          "device under connection handle: 0x{:x}, has been disconnecected in "
           "meantime",
-          loghex(conn_handle));
+          conn_handle);
       return;
     }
     LeAudioDeviceGroup* group = aseGroups_.FindById(leAudioDevice->group_id_);

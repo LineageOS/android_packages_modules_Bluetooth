@@ -171,16 +171,16 @@ Stage2ResultOrFailure PairingHandlerLe::DoSecureConnectionsStage2(
   std::array<uint8_t, 3> iocapB{static_cast<uint8_t>(pairing_response.GetIoCapability()),
                                 static_cast<uint8_t>(pairing_response.GetOobDataFlag()), pairing_response.GetAuthReq()};
 
-  // log::info("{} LTK = {}", (IAmCentral(i)), base::HexEncode(ltk.data(), ltk.size()));
-  // log::info("{} MAC_KEY = {}", (IAmCentral(i)), base::HexEncode(mac_key.data(), mac_key.size()));
-  // log::info("{} Na = {}", (IAmCentral(i)), base::HexEncode(Na.data(), Na.size()));
-  // log::info("{} Nb = {}", (IAmCentral(i)), base::HexEncode(Nb.data(), Nb.size()));
-  // log::info("{} ra = {}", (IAmCentral(i)), base::HexEncode(ra.data(), ra.size()));
-  // log::info("{} rb = {}", (IAmCentral(i)), base::HexEncode(rb.data(), rb.size()));
-  // log::info("{} iocapA = {}", (IAmCentral(i)), base::HexEncode(iocapA.data(), iocapA.size()));
-  // log::info("{} iocapB = {}", (IAmCentral(i)), base::HexEncode(iocapB.data(), iocapB.size()));
-  // log::info("{} a = {}", (IAmCentral(i)), base::HexEncode(a, 7));
-  // log::info("{} b = {}", (IAmCentral(i)), base::HexEncode(b, 7));
+  // log::info("{} LTK = {}", IAmCentral(i), base::HexEncode(ltk.data(), ltk.size()));
+  // log::info("{} MAC_KEY = {}", IAmCentral(i), base::HexEncode(mac_key.data(), mac_key.size()));
+  // log::info("{} Na = {}", IAmCentral(i), base::HexEncode(Na.data(), Na.size()));
+  // log::info("{} Nb = {}", IAmCentral(i), base::HexEncode(Nb.data(), Nb.size()));
+  // log::info("{} ra = {}", IAmCentral(i), base::HexEncode(ra.data(), ra.size()));
+  // log::info("{} rb = {}", IAmCentral(i), base::HexEncode(rb.data(), rb.size()));
+  // log::info("{} iocapA = {}", IAmCentral(i), base::HexEncode(iocapA.data(), iocapA.size()));
+  // log::info("{} iocapB = {}", IAmCentral(i), base::HexEncode(iocapB.data(), iocapB.size()));
+  // log::info("{} a = {}", IAmCentral(i), base::HexEncode(a, 7));
+  // log::info("{} b = {}", IAmCentral(i), base::HexEncode(b, 7));
 
   Octet16 Ea = crypto_toolbox::f6(mac_key, Na, Nb, rb, iocapA.data(), a, b);
 
