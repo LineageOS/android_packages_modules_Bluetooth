@@ -329,3 +329,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_allowed_context_mask"
+    namespace: "bluetooth"
+    description: "Set allowed context mask to filter stream requests in native"
+    bug: "336468573"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
