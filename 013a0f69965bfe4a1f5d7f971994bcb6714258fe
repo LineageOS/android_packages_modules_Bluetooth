@@ -1,4 +1,22 @@
 {
-  "comments": [],
+  "comments": [
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "beff2c21_11f8573b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 33698
+      },
+      "writtenOn": "2024-04-25T20:33:15Z",
+      "side": 1,
+      "message": "Do we know why this has been Abandoned?\n\nThere are now multiple issues with not working Bluetooth devices - one example https://gitlab.com/LineageOS/issues/android/-/issues/7059\n\nGrapheneOS has revered those (https://github.com/GrapheneOS/platform_packages_modules_Bluetooth/pull/27) and its users confirmed that the Bluetooth devices are working as they should.",
+      "revId": "013a0f69965bfe4a1f5d7f971994bcb6714258fe",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    }
+  ],
   "submitRequirementResults": []
 }
