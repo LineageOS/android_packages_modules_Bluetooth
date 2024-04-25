@@ -578,9 +578,8 @@ void UIPC_Close(tUIPC_STATE& uipc, tUIPC_CH_ID ch_id) {
  ** Returns          true in case of success, false in case of failure.
  **
  ******************************************************************************/
-bool UIPC_Send(tUIPC_STATE& uipc, tUIPC_CH_ID ch_id,
-               UNUSED_ATTR uint16_t msg_evt, const uint8_t* p_buf,
-               uint16_t msglen) {
+bool UIPC_Send(tUIPC_STATE& uipc, tUIPC_CH_ID ch_id, uint16_t /* msg_evt */,
+               const uint8_t* p_buf, uint16_t msglen) {
   log::verbose("UIPC_Send : ch_id:{} {} bytes", ch_id, msglen);
 
   std::lock_guard<std::recursive_mutex> lock(uipc.mutex);
