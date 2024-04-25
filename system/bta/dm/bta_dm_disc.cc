@@ -615,9 +615,6 @@ static void bta_dm_disc_result(tBTA_DM_SVC_RES& disc_result) {
     GAP_BleReadPeerPrefConnParams(bta_dm_discovery_cb.peer_bdaddr);
   }
 
-  get_gatt_interface().BTA_GATTC_CancelOpen(0, bta_dm_discovery_cb.peer_bdaddr,
-                                            true);
-
   bta_dm_discovery_set_state(BTA_DM_DISCOVER_IDLE);
 
   uint16_t conn_id = bta_dm_discovery_cb.conn_id;
