@@ -3,7 +3,6 @@
 #include <bluetooth/log.h>
 
 #include "osi/include/allocator.h"
-#include "osi/include/osi.h"
 
 using namespace bluetooth;
 
@@ -189,7 +188,7 @@ list_node_t* list_begin(const list_t* list) {
   return list->head;
 }
 
-list_node_t* list_end(UNUSED_ATTR const list_t* list) {
+list_node_t* list_end(const list_t* list) {
   log::assert_that(list != NULL, "assert failed: list != NULL");
   return NULL;
 }
