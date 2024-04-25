@@ -1009,7 +1009,13 @@ public class BassClientService extends ProfileService {
             }
         }
         if (stateMachine.hasPendingSourceOperation()) {
-            throw new IllegalStateException("modifySource: source operation already pending");
+            Log.w(
+                    TAG,
+                    "modifySource: source operation already pending, device: "
+                            + device
+                            + ", broadcastId: "
+                            + updatedMetadata.getBroadcastId());
+            return BluetoothStatusCodes.ERROR_ALREADY_IN_TARGET_STATE;
         }
 
         return BluetoothStatusCodes.SUCCESS;
@@ -1560,7 +1566,15 @@ public class BassClientService extends ProfileService {
                 continue;
             }
             if (stateMachine.hasPendingSourceOperation()) {
-                throw new IllegalStateException("addSource: source operation already pending");
+                Log.w(
+                        TAG,
+                        "addSource: source operation already pending, device: "
+                                + device
+                                + ", broadcastId: "
+                                + sourceMetadata.getBroadcastId());
+                mCallbacks.notifySourceAddFailed(
+                        device, sourceMetadata, BluetoothStatusCodes.ERROR_ALREADY_IN_TARGET_STATE);
+                continue;
             }
             if (!hasRoomForBroadcastSourceAddition(device)) {
                 log("addSource: device has no room");
@@ -1907,6 +1921,21 @@ public class BassClientService extends ProfileService {
         return list;
     }
 
+    private void cancelPendingSourceOperations(int broadcastId) {
+        for (BluetoothDevice device : getConnectedDevices()) {
+            synchronized (mStateMachines) {
+                BassClientStateMachine sm = getOrCreateStateMachine(device);
+                if (sm != null && sm.hasPendingSourceOperation(broadcastId)) {
+                    Message message =
+                            sm.obtainMessage(
+                                    BassClientStateMachine.CANCEL_PENDING_SOURCE_OPERATION);
+                    message.arg1 = broadcastId;
+                    sm.sendMessage(message);
+                }
+            }
+        }
+    }
+
     private void stopSourceReceivers(int broadcastId) {
         List<Pair<BluetoothLeBroadcastReceiveState, BluetoothDevice>> sourcesToRemove =
                 getReceiveStateDevicePairs(broadcastId);
@@ -1914,6 +1943,9 @@ public class BassClientService extends ProfileService {
         for (Pair<BluetoothLeBroadcastReceiveState, BluetoothDevice> pair : sourcesToRemove) {
             removeSource(pair.second, pair.first.getSourceId());
         }
+
+        /* There may be some pending add/modify source operations */
+        cancelPendingSourceOperations(broadcastId);
     }
 
     private void stopSourceReceivers(int broadcastId, boolean store) {
