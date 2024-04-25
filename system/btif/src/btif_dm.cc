@@ -1463,7 +1463,19 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event,
         uint32_t cod = devclass2uint(p_search_data->inq_res.dev_class);
 
         if (cod != 0) {
+          /* Use the existing class of device when the one reported from inquiry
+             is unclassified. Inquiry results coming from BLE can have an
+             inferred device class based on the service uuids or appearence. We
+             don't want this to replace the existing value below when we call
+             btif_storage_add_remote_device */
           uint32_t old_cod = get_cod(&bdaddr);
+          if (IS_FLAG_ENABLED(
+                  do_not_replace_existing_cod_with_uncategorized_cod)) {
+            if (cod == COD_UNCLASSIFIED && old_cod != 0) {
+              cod = old_cod;
+            }
+          }
+
           if (old_cod != cod)
             log::info("{} CoD: 0x{:06x} -> 0x{:06x}", bdaddr, old_cod, cod);
 
