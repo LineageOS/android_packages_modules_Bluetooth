@@ -109,7 +109,7 @@ error:
  * Used by AndroidSocketImpl
  */
 int osi_socket_local_client_connect(int fd, const char* name, int namespaceId,
-                                    int type UNUSED_ATTR) {
+                                    int /* type */) {
   struct sockaddr_un addr;
   socklen_t alen;
   int err;
