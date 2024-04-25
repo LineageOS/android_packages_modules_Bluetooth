@@ -185,7 +185,7 @@ Size ParentDef::GetOffsetForField(std::string field_name, bool from_end) const {
 
   // We have to use a generic lambda to conditionally change iteration direction
   // due to iterator and reverse_iterator being different types.
-  auto size_lambda = [&](auto from, auto to) -> Size {
+  auto size_lambda = [&field_name, padded_field, from_end](auto from, auto to) -> Size {
     auto size = Size(0);
     for (auto it = from; it != to; it++) {
       // We've reached the field, end the loop.
