@@ -36,7 +36,6 @@
 #include "osi/include/alarm.h"
 #include "osi/include/config.h"
 #include "osi/include/future.h"
-#include "osi/include/osi.h"
 #include "osi/include/properties.h"
 #include "types/raw_address.h"
 
@@ -189,7 +188,7 @@ EXPORT_SYMBOL module_t device_iot_config_module = {
     .shut_down = device_iot_config_module_shut_down,
     .clean_up = device_iot_config_module_clean_up};
 
-void device_iot_config_write(uint16_t event, UNUSED_ATTR char* p_param) {
+void device_iot_config_write(uint16_t event, char* /* p_param */) {
   if (!InitFlags::IsDeviceIotConfigLoggingEnabled()) return;
 
   log::assert_that(config != NULL, "assert failed: config != NULL");
@@ -294,7 +293,7 @@ bool device_iot_config_compare_key(const entry_t& first,
   }
 }
 
-void device_iot_config_timer_save_cb(UNUSED_ATTR void* data) {
+void device_iot_config_timer_save_cb(void* /* data */) {
   // Moving file I/O to btif context instead of timer callback because
   // it usually takes a lot of time to be completed, introducing
   // delays during A2DP playback causing blips or choppiness.
