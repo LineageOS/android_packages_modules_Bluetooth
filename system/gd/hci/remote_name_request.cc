@@ -177,7 +177,7 @@ struct RemoteNameRequestModule::impl {
   void on_remote_host_supported_features_notification(EventView view) {
     auto packet = RemoteHostSupportedFeaturesNotificationView::Create(view);
     log::assert_that(packet.IsValid(), "assert failed: packet.IsValid()");
-    if (pending_ && !on_remote_host_supported_features_notification_.IsEmpty()) {
+    if (pending_ && on_remote_host_supported_features_notification_) {
       log::info(
           "Received REMOTE_HOST_SUPPORTED_FEATURES_NOTIFICATION from {}",
           packet.GetBdAddr().ToRedactedStringForLogging());
