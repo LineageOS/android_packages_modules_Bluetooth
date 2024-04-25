@@ -89,6 +89,12 @@ struct VolumeOperation {
   };
 
   ~VolumeOperation() {
+    if (operation_timeout_ == nullptr) {
+      log::warn("operation_timeout_ should not be null, id {}, device cnt {}",
+                operation_id_, devices_.size());
+      return;
+    }
+
     if (alarm_is_scheduled(operation_timeout_))
       alarm_cancel(operation_timeout_);
 

@@ -681,6 +681,8 @@ class VolumeControlImpl : public VolumeControl {
       return;
     }
 
+    log::info("{}", remote_bda);
+
     bool notify = device->IsReady() || device->connecting_actively;
     device_cleanup_helper(device, notify);
 
