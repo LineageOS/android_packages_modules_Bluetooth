@@ -196,3 +196,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "le_scan_use_uid_for_importance"
+    namespace: "bluetooth"
+    description: "Use uid instead of the first package name for fetching the importance of clients"
+    bug: "336965663"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
