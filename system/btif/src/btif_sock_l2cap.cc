@@ -814,9 +814,9 @@ static void btsock_l2cap_server_listen(l2cap_socket* sock) {
     ertm_info.reset(new tL2CAP_ERTM_INFO(obex_l2c_etm_opt));
   }
 
-  BTA_JvL2capStartServer(connection_type, sock->security, 0,
-                         std::move(ertm_info), sock->channel, sock->rx_mtu,
-                         std::move(cfg), btsock_l2cap_cbk, sock->id);
+  BTA_JvL2capStartServer(connection_type, sock->security, std::move(ertm_info),
+                         sock->channel, sock->rx_mtu, std::move(cfg),
+                         btsock_l2cap_cbk, sock->id);
 }
 
 static bt_status_t btsock_l2cap_listen_or_connect(const char* name,
@@ -878,9 +878,9 @@ static bt_status_t btsock_l2cap_listen_or_connect(const char* name,
       ertm_info.reset(new tL2CAP_ERTM_INFO(obex_l2c_etm_opt));
     }
 
-      BTA_JvL2capConnect(
-          connection_type, sock->security, 0, std::move(ertm_info), channel,
-          sock->rx_mtu, std::move(cfg), sock->addr, btsock_l2cap_cbk, sock->id);
+    BTA_JvL2capConnect(connection_type, sock->security, std::move(ertm_info),
+                       channel, sock->rx_mtu, std::move(cfg), sock->addr,
+                       btsock_l2cap_cbk, sock->id);
   }
 
   *sock_fd = sock->app_fd;
