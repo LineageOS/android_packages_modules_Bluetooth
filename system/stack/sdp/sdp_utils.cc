@@ -399,7 +399,7 @@ tCONN_CB* sdpu_allocate_ccb(void) {
   for (xx = 0, p_ccb = sdp_cb.ccb; xx < SDP_MAX_CONNECTIONS; xx++, p_ccb++) {
     if (p_ccb->con_state == SDP_STATE_IDLE) {
       alarm_t* alarm = p_ccb->sdp_conn_timer;
-      memset(p_ccb, 0, sizeof(tCONN_CB));
+      *p_ccb = {};
       p_ccb->sdp_conn_timer = alarm;
       return (p_ccb);
     }
