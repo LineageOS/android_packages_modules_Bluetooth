@@ -1015,6 +1015,31 @@ TEST_F(StateMachineTest, AnnouncementTest) {
             BroadcastStateMachine::kBroadcastAdvertisingType);
 }
 
+TEST_F(StateMachineTest, GetMetadataBeforeGettingAddress) {
+  unsigned int broadcast_id = 0;
+
+  BleAdvertiserInterface::GetAddressCallback cb;
+
+  /* Address should be already known after notifying callback recipients */
+  EXPECT_CALL(
+      *(sm_callbacks_.get()),
+      OnStateMachineEvent(_, BroadcastStateMachine::State::CONFIGURED, _))
+      .WillOnce([this](uint32_t broadcast_id,
+                       BroadcastStateMachine::State state, const void* data) {
+        RawAddress test_address;
+
+        RawAddress::FromString("00:00:00:00:00:00", test_address);
+        ASSERT_NE(test_address,
+                  this->broadcasts_[broadcast_id]->GetOwnAddress());
+      });
+
+  broadcast_id = InstantiateStateMachine();
+  ASSERT_NE(broadcast_id, 0u);
+  ASSERT_TRUE(pending_broadcasts_.empty());
+  ASSERT_FALSE(broadcasts_.empty());
+  ASSERT_TRUE(broadcasts_[broadcast_id]->GetBroadcastId() == broadcast_id);
+}
+
 }  // namespace
 }  // namespace broadcaster
 }  // namespace bluetooth::le_audio

@@ -161,12 +161,6 @@ class BroadcastStateMachineImpl : public BroadcastStateMachine {
       return;
     }
 
-    /* Ext. advertisings are already on */
-    SetState(State::CONFIGURED);
-
-    callbacks_->OnStateMachineCreateStatus(GetBroadcastId(), true);
-    callbacks_->OnStateMachineEvent(GetBroadcastId(), State::CONFIGURED);
-
     advertiser_if_->GetOwnAddress(
         advertising_sid,
         base::Bind(&BroadcastStateMachineImpl::OnAddressResponse,
@@ -327,6 +321,12 @@ class BroadcastStateMachineImpl : public BroadcastStateMachine {
     log::info("own address={}, type={}", addr, addr_type);
     addr_ = addr;
     addr_type_ = addr_type;
+
+    /* Ext. advertisings are already on */
+    SetState(State::CONFIGURED);
+
+    callbacks_->OnStateMachineCreateStatus(GetBroadcastId(), true);
+    callbacks_->OnStateMachineEvent(GetBroadcastId(), State::CONFIGURED);
   }
 
   void CreateBroadcastAnnouncement(
