@@ -677,8 +677,7 @@ void gatt_process_notification(tGATT_TCB& tcb, uint16_t cid, uint8_t op_code,
     STREAM_TO_UINT16(value.len, p);
 
     if (value.len > len - 4) {
-      log::error("value.len ({}) greater than length ({})", value.len,
-                 (len - 4));
+      log::error("value.len ({}) greater than length ({})", value.len, len - 4);
       return;
     }
 
@@ -820,7 +819,7 @@ void gatt_process_read_by_type_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
        or value_len > message total length -1 */
     log::error(
         "Discard response op_code={} vale_len={} > (MTU-2={} or msg_len-1={})",
-        op_code, value_len, (payload_size - 2), (len - 1));
+        op_code, value_len, payload_size - 2, len - 1);
     gatt_end_operation(p_clcb, GATT_ERROR, NULL);
     return;
   }
@@ -1211,7 +1210,7 @@ bool gatt_cl_send_next_cmd_inq(tGATT_TCB& tcb) {
 void gatt_client_handle_server_rsp(tGATT_TCB& tcb, uint16_t cid,
                                    uint8_t op_code, uint16_t len,
                                    uint8_t* p_data) {
-  log::verbose("opcode: {} cid{}", loghex(op_code), cid);
+  log::verbose("opcode: 0x{:x} cid{}", op_code, cid);
 
   uint16_t payload_size = gatt_tcb_get_payload_size(tcb, cid);
 

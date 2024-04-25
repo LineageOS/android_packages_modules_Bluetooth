@@ -487,7 +487,7 @@ static void gatt_le_connect_cback(uint16_t chan, const RawAddress& bd_addr,
   }
 
   log::verbose("GATT   ATT protocol channel with BDA: {} is {}", bd_addr,
-               ((connected) ? "connected" : "disconnected"));
+               (connected) ? "connected" : "disconnected");
 
   p_srv_chg_clt = gatt_is_bda_in_the_srv_chg_clt_list(bd_addr);
   if (p_srv_chg_clt != NULL) {
@@ -603,7 +603,7 @@ static void read_dis_cback(const RawAddress& bd_addr, tDIS_VALUE* p_dis_value) {
         prop.val = p_dis_value->data_string[i];
         prop.len = strlen((char*)prop.val);
 
-        log::info("Device {}, model name: {}", bd_addr, ((char*)prop.val));
+        log::info("Device {}, model name: {}", bd_addr, (char*)prop.val);
 
         btif_storage_set_remote_device_property(&bd_addr, &prop);
         GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(
@@ -1021,7 +1021,7 @@ void gatt_data_process(tGATT_TCB& tcb, uint16_t cid, BT_HDR* p_buf) {
   if (pseudo_op_code >= GATT_OP_CODE_MAX) {
     /* Note: PTS: GATT/SR/UNS/BI-01-C mandates error on unsupported ATT request.
      */
-    log::error("ATT - Rcvd L2CAP data, unknown cmd: {}", loghex(op_code));
+    log::error("ATT - Rcvd L2CAP data, unknown cmd: 0x{:x}", op_code);
     gatt_send_error_rsp(tcb, cid, GATT_REQ_NOT_SUPPORTED, op_code, 0, false);
     return;
   }
@@ -1169,8 +1169,8 @@ void gatt_proc_srv_chg(void) {
 void gatt_set_ch_state(tGATT_TCB* p_tcb, tGATT_CH_STATE ch_state) {
   if (!p_tcb) return;
 
-  log::verbose("old={} new={}", p_tcb->ch_state,
-               loghex(static_cast<uint8_t>(ch_state)));
+  log::verbose("old={} new=0x{:x}", p_tcb->ch_state,
+               static_cast<uint8_t>(ch_state));
   p_tcb->ch_state = ch_state;
 }
 

@@ -583,7 +583,7 @@ static void btif_a2dp_sink_avk_handle_timer() {
 
 /* when true media task discards any rx frames */
 void btif_a2dp_sink_set_rx_flush(bool enable) {
-  log::info("enable={}", (enable) ? "true" : "false");
+  log::info("enable={}", enable);
   LockGuard lock(g_mutex);
 
   btif_a2dp_sink_cb.rx_flush = enable;

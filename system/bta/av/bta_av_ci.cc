@@ -73,8 +73,7 @@ void bta_av_ci_setconfig(tBTA_AV_HNDL bta_av_handle, uint8_t err_code,
   log::info(
       "bta_av_handle=0x{:x} err_code={} category={} num_seid={} "
       "recfg_needed={} avdt_handle={}",
-      bta_av_handle, err_code, category, num_seid,
-      recfg_needed ? "true" : "false", avdt_handle);
+      bta_av_handle, err_code, category, num_seid, recfg_needed, avdt_handle);
 
   tBTA_AV_CI_SETCONFIG* p_buf =
       (tBTA_AV_CI_SETCONFIG*)osi_malloc(sizeof(tBTA_AV_CI_SETCONFIG));

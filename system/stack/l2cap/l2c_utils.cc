@@ -850,7 +850,7 @@ void l2cu_send_peer_config_rej(tL2C_CCB* p_ccb, uint8_t* p_data,
   p_buf->len = len + 4;
 
   log::verbose("L2CAP - cfg_rej pkt hci_len={}, l2cap_len={}", len,
-               (L2CAP_CMD_OVERHEAD + L2CAP_CONFIG_RSP_LEN + rej_len));
+               L2CAP_CMD_OVERHEAD + L2CAP_CONFIG_RSP_LEN + rej_len);
 
   l2c_link_check_send_pkts(p_ccb->p_lcb, 0, p_buf);
 }

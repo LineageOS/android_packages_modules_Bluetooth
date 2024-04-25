@@ -321,8 +321,7 @@ tA2DP_STATUS BtaAvCo::ProcessSourceGetConfig(
   // If acceptor -> reconfig otherwise reply for configuration
   *p_sep_info_idx = p_sink->sep_info_idx;
   log::verbose("peer {} acceptor:{} reconfig_needed:{}", p_peer->addr,
-               (p_peer->acceptor) ? "true" : "false",
-               (p_peer->reconfig_needed) ? "true" : "false");
+               p_peer->acceptor, p_peer->reconfig_needed);
   if (p_peer->acceptor) {
     if (p_peer->reconfig_needed) {
       log::verbose("call BTA_AvReconfig(0x{:x}) for peer {}", bta_av_handle,
@@ -433,8 +432,7 @@ tA2DP_STATUS BtaAvCo::ProcessSinkGetConfig(tBTA_AV_HNDL bta_av_handle,
   // If acceptor -> reconfig otherwise reply for configuration
   *p_sep_info_idx = p_source->sep_info_idx;
   log::verbose("peer {} acceptor:{} reconfig_needed:{}", p_peer->addr,
-               (p_peer->acceptor) ? "true" : "false",
-               (p_peer->reconfig_needed) ? "true" : "false");
+               p_peer->acceptor, p_peer->reconfig_needed);
   if (p_peer->acceptor) {
     if (p_peer->reconfig_needed) {
       log::verbose("call BTA_AvReconfig(0x{:x}) for peer {}", bta_av_handle,
@@ -638,7 +636,7 @@ void BtaAvCo::ProcessStart(tBTA_AV_HNDL bta_av_handle,
       A2DP_UsesRtpHeader(p_peer->ContentProtectActive(), p_codec_info);
 
   log::verbose("bta_av_handle: 0x{:x} add_rtp_header: {}", bta_av_handle,
-               add_rtp_header ? "true" : "false");
+               add_rtp_header);
   *p_no_rtp_header = !add_rtp_header;
 }
 
@@ -715,15 +713,15 @@ void BtaAvCo::ProcessAudioDelay(tBTA_AV_HNDL bta_av_handle,
 
 void BtaAvCo::UpdateMtu(tBTA_AV_HNDL bta_av_handle,
                         const RawAddress& peer_address, uint16_t mtu) {
-  log::info("peer {} bta_av_handle: {} mtu: {}", peer_address,
-            loghex(bta_av_handle), mtu);
+  log::info("peer {} bta_av_handle: 0x{:x} mtu: {}", peer_address,
+            bta_av_handle, mtu);
 
   // Find the peer
   BtaAvCoPeer* p_peer =
       peer_cache_->FindPeerAndUpdate(bta_av_handle, peer_address);
   if (p_peer == nullptr) {
-    log::error("could not find peer entry for bta_av_handle {} peer {}",
-               loghex(bta_av_handle), peer_address);
+    log::error("could not find peer entry for bta_av_handle 0x{:x} peer {}",
+               bta_av_handle, peer_address);
     return;
   }
   p_peer->mtu = mtu;
@@ -893,7 +891,7 @@ bool BtaAvCo::SetCodecUserConfig(
     }
 
     p_peer->acceptor = false;
-    log::verbose("call BTA_AvReconfig({})", loghex(p_peer->BtaAvHandle()));
+    log::verbose("call BTA_AvReconfig(0x{:x})", p_peer->BtaAvHandle());
     BTA_AvReconfig(p_peer->BtaAvHandle(), true, p_sink->sep_info_idx,
                    p_peer->codec_config, num_protect, bta_av_co_cp_scmst);
     *p_restart_output = true;
@@ -977,7 +975,7 @@ bool BtaAvCo::SetCodecAudioConfig(
                        p_sink->protect_info, AVDT_TSEP_SRC);
 
     p_peer->acceptor = false;
-    log::verbose("call BTA_AvReconfig({})", loghex(p_peer->BtaAvHandle()));
+    log::verbose("call BTA_AvReconfig(0x{:x})", p_peer->BtaAvHandle());
     BTA_AvReconfig(p_peer->BtaAvHandle(), true, p_sink->sep_info_idx,
                    p_peer->codec_config, num_protect, bta_av_co_cp_scmst);
   }

@@ -662,7 +662,7 @@ static void btm_get_dynamic_audio_buffer_vsc_cmpl_cback(
   // Audio_Codec_Buffer_Time    | 192 octet| Default/Max/Min buffer time
   STREAM_TO_UINT8(status, p_event_param_buf);
   if (status != HCI_SUCCESS) {
-    log::error("Fail to configure DFTB. status: {}", loghex(status));
+    log::error("Fail to configure DFTB. status: 0x{:x}", status);
     return;
   }
 
@@ -673,11 +673,11 @@ static void btm_get_dynamic_audio_buffer_vsc_cmpl_cback(
   }
 
   STREAM_TO_UINT8(opcode, p_event_param_buf);
-  log::info("opcode = {}", loghex(opcode));
+  log::info("opcode = 0x{:x}", opcode);
 
   if (opcode == 0x01) {
     STREAM_TO_UINT32(codec_mask, p_event_param_buf);
-    log::info("codec_mask = {}", loghex(codec_mask));
+    log::info("codec_mask = 0x{:x}", codec_mask);
 
     for (int i = 0; i < BTM_CODEC_TYPE_MAX_RECORDS; i++) {
       STREAM_TO_UINT16(btm_cb.dynamic_audio_buffer_cb[i].default_buffer_time,

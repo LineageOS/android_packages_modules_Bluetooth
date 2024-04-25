@@ -495,7 +495,7 @@ void bta_av_sink_data_cback(uint8_t handle, BT_HDR* p_pkt, uint32_t time_stamp,
  ******************************************************************************/
 static void bta_av_a2dp_sdp_cback(bool found, tA2DP_Service* p_service,
                                   const RawAddress& peer_address) {
-  log::verbose("peer {} : found={}", peer_address, (found) ? "true" : "false");
+  log::verbose("peer {} : found={}", peer_address, found);
 
   tBTA_AV_SCB* p_scb = NULL;
   if (peer_address != RawAddress::kEmpty) {
@@ -516,8 +516,7 @@ static void bta_av_a2dp_sdp_cback(bool found, tA2DP_Service* p_service,
   if (!found) {
     log::error("peer {} A2DP service discovery failed", p_scb->PeerAddress());
   }
-  log::verbose("peer {} found={}", p_scb->PeerAddress(),
-               (found) ? "true" : "false");
+  log::verbose("peer {} found={}", p_scb->PeerAddress(), found);
 
   tBTA_AV_SDP_RES* p_msg =
       (tBTA_AV_SDP_RES*)osi_malloc(sizeof(tBTA_AV_SDP_RES));
@@ -2290,7 +2289,7 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   }
   log::verbose("peer {} wait:0x{:x} use_rtp_header_marker_bit:{}",
                p_scb->PeerAddress(), p_scb->wait,
-               (p_scb->use_rtp_header_marker_bit) ? "true" : "false");
+               p_scb->use_rtp_header_marker_bit);
 
   if (p_data && (p_data->hdr.offset != BTA_AV_RS_NONE)) {
     p_scb->wait &= ~BTA_AV_WAIT_ROLE_SW_BITS;

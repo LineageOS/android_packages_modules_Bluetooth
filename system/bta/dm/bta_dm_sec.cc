@@ -820,7 +820,7 @@ void bta_dm_encrypt_cback(const RawAddress* bd_addr, tBT_TRANSPORT transport,
   }
 
   log::debug("Encrypted:{:c}, peer:{} transport:{} status:{} callback:{:c}",
-             result == BTM_SUCCESS ? 'T' : 'F', (*bd_addr),
+             result == BTM_SUCCESS ? 'T' : 'F', *bd_addr,
              bt_transport_text(transport), btm_status_text(result),
              (p_callback) ? 'T' : 'F');
 

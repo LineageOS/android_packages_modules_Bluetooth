@@ -266,8 +266,7 @@ bool LeAudioTransport::IsRequestCompletedAfterUpdate(
 
   auto ret = std::get<1>(result);
   log::verbose("new state: {}, return: {}",
-               static_cast<int>(start_request_state_.load()),
-               ret ? "true" : "false");
+               static_cast<int>(start_request_state_.load()), ret);
   return ret;
 }
 
