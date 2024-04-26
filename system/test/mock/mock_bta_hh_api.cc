@@ -25,6 +25,17 @@
 #include "stack/include/bt_hdr.h"
 #include "test/common/mock_functions.h"
 
+using namespace bluetooth;
+
+const Uuid ANDROID_HEADTRACKER_SERVICE_UUID =
+    Uuid::FromString(ANDROID_HEADTRACKER_SERVICE_UUID_STRING);
+const Uuid ANDROID_HEADTRACKER_VERSION_CHARAC_UUID =
+    Uuid::FromString(ANDROID_HEADTRACKER_VERSION_CHARAC_UUID_STRING);
+const Uuid ANDROID_HEADTRACKER_CONTROL_CHARAC_UUID =
+    Uuid::FromString(ANDROID_HEADTRACKER_CONTROL_CHARAC_UUID_STRING);
+const Uuid ANDROID_HEADTRACKER_REPORT_CHARAC_UUID =
+    Uuid::FromString(ANDROID_HEADTRACKER_REPORT_CHARAC_UUID_STRING);
+
 void BTA_HhEnable(tBTA_HH_CBACK* /* p_cback */, bool /* enable_hidp */,
                   bool /* enable_hogp */) {
   inc_func_call_count(__func__);
