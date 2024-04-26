@@ -10,3 +10,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "uncache_player_when_browsed_player_changes"
+    namespace: "bluetooth"
+    description: "Uncache media player items when changing to a new player so updated player contents can be fetched if we change back to the previous player"
+    bug: "337259487"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
