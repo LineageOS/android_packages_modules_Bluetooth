@@ -34,6 +34,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.ParcelUuid;
 import android.os.UserHandle;
 import android.sysprop.BluetoothProperties;
 import android.util.Log;
@@ -62,6 +63,12 @@ import java.util.stream.Collectors;
  */
 public class HidHostService extends ProfileService {
     private static final String TAG = "BluetoothHidHostService";
+
+    public static final String ANDROID_HEADTRACKER_UUID_STR =
+            "109b862f-50e3-45cc-8ea1-ac62de4846d1";
+
+    public static final ParcelUuid ANDROID_HEADTRACKER_UUID =
+            ParcelUuid.fromString(ANDROID_HEADTRACKER_UUID_STR);
 
     private static class InputDevice {
         int mSelectedTransport = BluetoothDevice.TRANSPORT_AUTO;
@@ -201,8 +208,15 @@ public class HidHostService extends ProfileService {
     }
 
     private byte[] getByteAddress(BluetoothDevice device, int transport) {
+        ParcelUuid[] uuids = device.getUuids();
+
         if (!Flags.allowSwitchingHidAndHogp()) {
-            if (Utils.arrayContains(device.getUuids(), BluetoothUuid.HOGP)) {
+            boolean hogpSupported = Utils.arrayContains(uuids, BluetoothUuid.HOGP);
+            boolean headtrackerSupported =
+                    Flags.androidHeadtrackerService()
+                            && Utils.arrayContains(uuids, HidHostService.ANDROID_HEADTRACKER_UUID);
+
+            if (hogpSupported || headtrackerSupported) {
                 // Use pseudo address when HOGP is available
                 return Utils.getByteAddress(device);
             } else {
@@ -218,8 +232,9 @@ public class HidHostService extends ProfileService {
             // Use identity address if HID is to be used
             return getIdentityAddress(device);
         } else { // BluetoothDevice.TRANSPORT_AUTO
+            boolean hidSupported = Utils.arrayContains(uuids, BluetoothUuid.HID);
             // Prefer HID over HOGP
-            if (Utils.arrayContains(device.getUuids(), BluetoothUuid.HID)) {
+            if (hidSupported) {
                 // Use identity address if HID is available
                 return getIdentityAddress(device);
             } else {
@@ -1128,12 +1143,17 @@ public class HidHostService extends ProfileService {
             return false;
         }
 
-        boolean hidSupported = Utils.arrayContains(device.getUuids(), BluetoothUuid.HID);
-        boolean hogpSupported = Utils.arrayContains(device.getUuids(), BluetoothUuid.HOGP);
+        ParcelUuid[] uuids = device.getUuids();
+        boolean hidSupported = Utils.arrayContains(uuids, BluetoothUuid.HID);
+        boolean hogpSupported = Utils.arrayContains(uuids, BluetoothUuid.HOGP);
+        boolean headtrackerSupported =
+                Flags.androidHeadtrackerService()
+                        && Utils.arrayContains(uuids, HidHostService.ANDROID_HEADTRACKER_UUID);
         if (transport == BluetoothDevice.TRANSPORT_BREDR && !hidSupported) {
             Log.w(TAG, "HID not supported: " + device);
             return false;
-        } else if (transport == BluetoothDevice.TRANSPORT_LE && !hogpSupported) {
+        } else if (transport == BluetoothDevice.TRANSPORT_LE
+                && !(hogpSupported || headtrackerSupported)) {
             Log.w(TAG, "HOGP not supported: " + device);
             return false;
         }
