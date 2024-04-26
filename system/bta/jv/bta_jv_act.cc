@@ -24,8 +24,8 @@
 
 #define LOG_TAG "bluetooth"
 
-#include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
 #include <unordered_set>
@@ -1470,7 +1470,7 @@ void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, uint8_t remote_scn,
 #ifdef TARGET_FLOSS
   if (true)
 #else
-  if (IS_FLAG_ENABLED(rfcomm_always_use_mitm))
+  if (com::android::bluetooth::flags::rfcomm_always_use_mitm())
 #endif
   {
     // Update security service record for RFCOMM client so that

@@ -24,8 +24,8 @@
 
 #define LOG_TAG "bt_bta_hh"
 
-#include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
 #include <string>
@@ -944,7 +944,7 @@ void bta_hh_maint_dev_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
       /* initialize callback data */
       if (p_cb->hid_handle == BTA_HH_INVALID_HANDLE) {
         tBT_TRANSPORT transport = p_data->api_maintdev.link_spec.transport;
-        if (!IS_FLAG_ENABLED(allow_switching_hid_and_hogp)) {
+        if (!com::android::bluetooth::flags::allow_switching_hid_and_hogp()) {
           transport = BTM_UseLeLink(p_data->api_maintdev.link_spec.addrt.bda)
                           ? BT_TRANSPORT_LE
                           : BT_TRANSPORT_BR_EDR;

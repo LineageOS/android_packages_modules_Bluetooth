@@ -15,7 +15,6 @@
  */
 
 #include <android-base/properties.h>
-#include <android_bluetooth_flags.h>
 #include <base/functional/bind.h>
 #include <base/location.h>
 #include <bluetooth/log.h>
@@ -216,7 +215,7 @@ class BtaAgCmdTest : public BtaAgTest {
 TEST_F_WITH_FLAGS(BtaAgCmdTest, check_flag_disabling_guarding_with_prop,
                   REQUIRES_FLAGS_DISABLED(ACONFIG_FLAG(TEST_BT,
                                                        hfp_codec_aptx_voice))) {
-  ASSERT_FALSE(IS_FLAG_ENABLED(hfp_codec_aptx_voice));
+  ASSERT_FALSE(com::android::bluetooth::flags::hfp_codec_aptx_voice());
   ASSERT_TRUE(enable_aptx_voice_property(false));
   ASSERT_FALSE(is_hfp_aptx_voice_enabled());
 
@@ -227,7 +226,7 @@ TEST_F_WITH_FLAGS(BtaAgCmdTest, check_flag_disabling_guarding_with_prop,
 TEST_F_WITH_FLAGS(BtaAgCmdTest, check_flag_guarding_with_prop,
                   REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT,
                                                       hfp_codec_aptx_voice))) {
-  ASSERT_TRUE(IS_FLAG_ENABLED(hfp_codec_aptx_voice));
+  ASSERT_TRUE(com::android::bluetooth::flags::hfp_codec_aptx_voice());
   ASSERT_TRUE(enable_aptx_voice_property(false));
   ASSERT_FALSE(is_hfp_aptx_voice_enabled());
 

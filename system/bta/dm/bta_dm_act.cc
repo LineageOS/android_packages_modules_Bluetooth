@@ -25,10 +25,10 @@
 
 #define LOG_TAG "bt_bta_dm"
 
-#include <android_bluetooth_flags.h>
 #include <android_bluetooth_sysprop.h>
 #include <base/location.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
 #include <vector>
@@ -292,7 +292,7 @@ void BTA_dm_on_hw_on() {
   bta_sys_rm_register(bta_dm_rm_cback);
 
   /* if sniff is offload, no need to handle it in the stack */
-  if (IS_FLAG_ENABLED(enable_sniff_offload) &&
+  if (com::android::bluetooth::flags::enable_sniff_offload() &&
       osi_property_get_bool(kPropertySniffOffloadEnabled, false)) {
   } else {
     /* initialize bluetooth low power manager */
@@ -316,7 +316,7 @@ void bta_dm_disable() {
   BTM_SetConnectability(BTM_NON_CONNECTABLE);
 
   bta_dm_disable_pm();
-  if (IS_FLAG_ENABLED(separate_service_and_device_discovery)) {
+  if (com::android::bluetooth::flags::separate_service_and_device_discovery()) {
     bta_dm_disc_disable_search();
     bta_dm_disc_disable_disc();
   } else {
@@ -1479,7 +1479,7 @@ static void bta_ble_energy_info_cmpl(tBTM_BLE_TX_TIME_MS tx_time,
   tBTM_CONTRL_STATE ctrl_state = BTM_CONTRL_UNKNOWN;
 
   if (BTA_SUCCESS == st) {
-    ctrl_state = IS_FLAG_ENABLED(bt_system_context_report)
+    ctrl_state = com::android::bluetooth::flags::bt_system_context_report()
                      ? bta_dm_obtain_system_context()
                      : bta_dm_pm_obtain_controller_state();
   }

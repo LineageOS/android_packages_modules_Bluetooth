@@ -16,8 +16,8 @@
 
 #include "hci/controller.h"
 
-#include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <future>
 #include <memory>
@@ -639,7 +639,7 @@ struct Controller::impl {
     }
     vendor_capabilities_.dynamic_audio_buffer_support_ = v103.GetDynamicAudioBufferSupport();
 
-    if (IS_FLAG_ENABLED(a2dp_offload_codec_extensibility)) {
+    if (com::android::bluetooth::flags::a2dp_offload_codec_extensibility()) {
       // v1.04
       auto v104 = LeGetVendorCapabilitiesComplete104View::Create(v103);
       if (!v104.IsValid()) {

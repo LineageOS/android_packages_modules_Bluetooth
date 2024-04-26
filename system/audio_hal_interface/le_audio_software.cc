@@ -19,8 +19,8 @@
 
 #include "le_audio_software.h"
 
-#include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <unordered_map>
 #include <vector>
@@ -1013,7 +1013,7 @@ bool LeAudioClientInterface::ReleaseSource(
 }
 
 void LeAudioClientInterface::SetAllowedDsaModes(DsaModes dsa_modes) {
-  if (!IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
+  if (!com::android::bluetooth::flags::leaudio_dynamic_spatial_audio()) {
     return;
   }
 

@@ -25,8 +25,8 @@
  ******************************************************************************/
 #define LOG_TAG "l2c_link"
 
-#include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
 
@@ -214,7 +214,7 @@ void l2c_link_sec_comp(const RawAddress* p_bda,
     return;
   }
 
-  if (IS_FLAG_ENABLED(l2cap_p_ccb_check_rewrite)) {
+  if (com::android::bluetooth::flags::l2cap_p_ccb_check_rewrite()) {
     if (!p_ref_data) {
       log::warn("Argument p_ref_data is NULL");
       return;

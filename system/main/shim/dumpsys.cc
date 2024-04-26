@@ -18,7 +18,7 @@
 
 #include "main/shim/dumpsys.h"
 
-#include <android_bluetooth_flags.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <unordered_map>
 
@@ -60,7 +60,7 @@ void bluetooth::shim::Dump(int fd, const char** args) {
       dumpsys.second(fd);
     }
   }
-  if (IS_FLAG_ENABLED(dumpsys_acquire_stack_when_executing)) {
+  if (com::android::bluetooth::flags::dumpsys_acquire_stack_when_executing()) {
     std::promise<void> promise;
     std::future future = promise.get_future();
     if (bluetooth::shim::Stack::GetInstance()->CallOnModule<shim::Dumpsys>(

@@ -16,8 +16,8 @@
  *
  ******************************************************************************/
 
-#include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 #include <string.h>
 
 #include "gap_api.h"
@@ -644,7 +644,7 @@ static void gap_checks_con_flags(tGAP_CCB* p_ccb) {
     tGAP_CB_DATA* cb_data_ptr = nullptr;
     tGAP_CB_DATA cb_data;
     uint16_t l2cap_remote_cid;
-    if (IS_FLAG_ENABLED(bt_socket_api_l2cap_cid) &&
+    if (com::android::bluetooth::flags::bt_socket_api_l2cap_cid() &&
         L2CA_GetPeerChannelId(p_ccb->connection_id, &l2cap_remote_cid)) {
       cb_data.l2cap_cids.local_cid = p_ccb->connection_id;
       cb_data.l2cap_cids.remote_cid = l2cap_remote_cid;

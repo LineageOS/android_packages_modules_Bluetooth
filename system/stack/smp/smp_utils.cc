@@ -23,8 +23,8 @@
  ******************************************************************************/
 #define LOG_TAG "smp"
 
-#include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
 #include <cstring>
@@ -378,7 +378,7 @@ bool smp_send_msg_to_L2CAP(const RawAddress& rem_bda, BT_HDR* p_toL2CAP) {
 #ifdef TARGET_FLOSS
   if (true)
 #else
-  if (IS_FLAG_ENABLED(l2cap_tx_complete_cb_info))
+  if (com::android::bluetooth::flags::l2cap_tx_complete_cb_info())
 #endif
   {
     /* Unacked needs to be incremented before calling SendFixedChnlData */

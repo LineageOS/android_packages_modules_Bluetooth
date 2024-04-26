@@ -16,8 +16,8 @@
 
 #include "remote_name_request.h"
 
-#include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include "hci/acl_manager/acl_scheduler.h"
 #include "hci/hci_layer.h"
@@ -154,7 +154,7 @@ struct RemoteNameRequestModule::impl {
   }
 
   void actually_cancel_remote_name_request(Address address) {
-    if (IS_FLAG_ENABLED(rnr_cancel_before_event_race)) {
+    if (com::android::bluetooth::flags::rnr_cancel_before_event_race()) {
       if (pending_) {
         log::info("Cancelling remote name request to {}", address.ToRedactedStringForLogging());
         hci_layer_->EnqueueCommand(
