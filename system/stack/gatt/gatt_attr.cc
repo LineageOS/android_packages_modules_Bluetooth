@@ -37,7 +37,6 @@
 #include "internal_include/bt_trace.h"
 #include "os/log.h"
 #include "os/logging/log_adapter.h"
-#include "osi/include/osi.h"  // UNUSED_ATTR
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_sec_api.h"
@@ -72,9 +71,9 @@ static std::map<uint16_t, std::deque<gatt_op_cb_data>> OngoingOps;
 
 static void gatt_request_cback(uint16_t conn_id, uint32_t trans_id,
                                uint8_t op_code, tGATTS_DATA* p_data);
-static void gatt_connect_cback(UNUSED_ATTR tGATT_IF gatt_if,
-                               const RawAddress& bda, uint16_t conn_id,
-                               bool connected, tGATT_DISCONN_REASON reason,
+static void gatt_connect_cback(tGATT_IF /* gatt_if */, const RawAddress& bda,
+                               uint16_t conn_id, bool connected,
+                               tGATT_DISCONN_REASON reason,
                                tBT_TRANSPORT transport);
 static void gatt_disc_res_cback(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
                                 tGATT_DISC_RES* p_data);
@@ -349,9 +348,9 @@ static void gatt_request_cback(uint16_t conn_id, uint32_t trans_id,
  * Returns          void
  *
  ******************************************************************************/
-static void gatt_connect_cback(UNUSED_ATTR tGATT_IF gatt_if,
-                               const RawAddress& bda, uint16_t conn_id,
-                               bool connected, tGATT_DISCONN_REASON reason,
+static void gatt_connect_cback(tGATT_IF /* gatt_if */, const RawAddress& bda,
+                               uint16_t conn_id, bool connected,
+                               tGATT_DISCONN_REASON reason,
                                tBT_TRANSPORT transport) {
   log::verbose("from {} connected: {}, conn_id: 0x{:x}", bda, connected,
                conn_id);

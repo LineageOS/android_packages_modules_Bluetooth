@@ -113,7 +113,7 @@ tBNEP_RESULT bnep_register_with_l2cap(void) {
  *
  ******************************************************************************/
 static void bnep_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
-                             UNUSED_ATTR uint16_t psm, uint8_t l2cap_id) {
+                             uint16_t /* psm */, uint8_t l2cap_id) {
   tBNEP_CONN* p_bcb = bnepu_find_bcb_by_bd_addr(bd_addr);
 
   /* If we are not acting as server, or already have a connection, or have */

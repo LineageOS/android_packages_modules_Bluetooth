@@ -100,7 +100,7 @@ static const tA2DP_DECODER_INTERFACE a2dp_decoder_interface_ldac = {
     a2dp_vendor_ldac_decoder_suspend,       a2dp_vendor_ldac_decoder_configure,
 };
 
-UNUSED_ATTR static tA2DP_STATUS A2DP_CodecInfoMatchesCapabilityLdac(
+static tA2DP_STATUS A2DP_CodecInfoMatchesCapabilityLdac(
     const tA2DP_LDAC_CIE* p_cap, const uint8_t* p_codec_info,
     bool is_peer_codec_info);
 
@@ -301,13 +301,13 @@ static tA2DP_STATUS A2DP_CodecInfoMatchesCapabilityLdac(
   return A2DP_SUCCESS;
 }
 
-bool A2DP_VendorUsesRtpHeaderLdac(UNUSED_ATTR bool content_protection_enabled,
-                                  UNUSED_ATTR const uint8_t* p_codec_info) {
+bool A2DP_VendorUsesRtpHeaderLdac(bool /* content_protection_enabled */,
+                                  const uint8_t* /* p_codec_info */) {
   // TODO: Is this correct? The RTP header is always included?
   return true;
 }
 
-const char* A2DP_VendorCodecNameLdac(UNUSED_ATTR const uint8_t* p_codec_info) {
+const char* A2DP_VendorCodecNameLdac(const uint8_t* /* p_codec_info */) {
   return "LDAC";
 }
 
@@ -506,7 +506,7 @@ int A2DP_VendorGetChannelModeCodeLdac(const uint8_t* p_codec_info) {
   return -1;
 }
 
-bool A2DP_VendorGetPacketTimestampLdac(UNUSED_ATTR const uint8_t* p_codec_info,
+bool A2DP_VendorGetPacketTimestampLdac(const uint8_t* /* p_codec_info */,
                                        const uint8_t* p_data,
                                        uint32_t* p_timestamp) {
   // TODO: Is this function really codec-specific?
@@ -514,7 +514,7 @@ bool A2DP_VendorGetPacketTimestampLdac(UNUSED_ATTR const uint8_t* p_codec_info,
   return true;
 }
 
-bool A2DP_VendorBuildCodecHeaderLdac(UNUSED_ATTR const uint8_t* p_codec_info,
+bool A2DP_VendorBuildCodecHeaderLdac(const uint8_t* /* p_codec_info */,
                                      BT_HDR* p_buf,
                                      uint16_t frames_per_packet) {
   uint8_t* p;
@@ -605,12 +605,12 @@ bool A2DP_VendorAdjustCodecLdac(uint8_t* p_codec_info) {
 }
 
 btav_a2dp_codec_index_t A2DP_VendorSourceCodecIndexLdac(
-    UNUSED_ATTR const uint8_t* p_codec_info) {
+    const uint8_t* /* p_codec_info */) {
   return BTAV_A2DP_CODEC_INDEX_SOURCE_LDAC;
 }
 
 btav_a2dp_codec_index_t A2DP_VendorSinkCodecIndexLdac(
-    UNUSED_ATTR const uint8_t* p_codec_info) {
+    const uint8_t* /* p_codec_info */) {
   return BTAV_A2DP_CODEC_INDEX_SINK_LDAC;
 }
 

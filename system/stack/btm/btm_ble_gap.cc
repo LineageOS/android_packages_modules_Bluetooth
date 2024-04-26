@@ -43,7 +43,6 @@
 #include "main/shim/acl_api.h"
 #include "main/shim/entry.h"
 #include "osi/include/allocator.h"
-#include "osi/include/osi.h"  // UNUSED_ATTR
 #include "osi/include/properties.h"
 #include "osi/include/stack_power_telemetry.h"
 #include "stack/acl/acl.h"
@@ -2757,7 +2756,7 @@ static tBTM_STATUS btm_ble_stop_adv(void) {
   return BTM_SUCCESS;
 }
 
-static void btm_ble_fast_adv_timer_timeout(UNUSED_ATTR void* data) {
+static void btm_ble_fast_adv_timer_timeout(void* /* data */) {
   /* fast adv is completed, fall back to slow adv interval */
   btm_ble_start_slow_adv();
 }
@@ -2795,18 +2794,18 @@ static void btm_ble_start_slow_adv(void) {
 }
 
 static void btm_ble_inquiry_timer_gap_limited_discovery_timeout(
-    UNUSED_ATTR void* data) {
+    void* /* data */) {
   /* lim_timeout expired, limited discovery should exit now */
   btm_cb.btm_inq_vars.discoverable_mode &= ~BTM_BLE_LIMITED_DISCOVERABLE;
   btm_ble_set_adv_flag(btm_cb.btm_inq_vars.connectable_mode,
                        btm_cb.btm_inq_vars.discoverable_mode);
 }
 
-static void btm_ble_inquiry_timer_timeout(UNUSED_ATTR void* data) {
+static void btm_ble_inquiry_timer_timeout(void* /* data */) {
   btm_ble_stop_inquiry();
 }
 
-static void btm_ble_observer_timer_timeout(UNUSED_ATTR void* data) {
+static void btm_ble_observer_timer_timeout(void* /* data */) {
   btm_ble_stop_observe();
 }
 

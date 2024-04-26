@@ -43,7 +43,6 @@
 #include "main/shim/dumpsys.h"
 #include "main/shim/entry.h"
 #include "os/log.h"
-#include "osi/include/osi.h"  // UNUSED_ATTR
 #include "osi/include/stack_power_telemetry.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/include/bt_types.h"
@@ -767,7 +766,7 @@ void btm_pm_proc_mode_change(tHCI_STATUS hci_status, uint16_t hci_handle,
  *
  ******************************************************************************/
 void process_ssr_event(tHCI_STATUS status, uint16_t handle,
-                       UNUSED_ATTR uint16_t max_tx_lat, uint16_t max_rx_lat) {
+                       uint16_t /* max_tx_lat */, uint16_t max_rx_lat) {
   if (pm_mode_db.count(handle) == 0) {
     log::warn("Received sniff subrating event with no active ACL");
     return;
@@ -803,7 +802,7 @@ void btm_pm_on_sniff_subrating(tHCI_STATUS status, uint16_t handle,
                     maximum_receive_latency);
 }
 
-void btm_pm_proc_ssr_evt(uint8_t* p, UNUSED_ATTR uint16_t evt_len) {
+void btm_pm_proc_ssr_evt(uint8_t* p, uint16_t /* evt_len */) {
   uint8_t status;
   uint16_t handle;
   uint16_t max_tx_lat;

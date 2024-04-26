@@ -33,7 +33,6 @@
 #include "avdt_api.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
-#include "osi/include/osi.h"  // UNUSED_ATTR
 #include "sdpdefs.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
@@ -71,7 +70,7 @@ static uint16_t a2dp_attr_list[] = {
  * Returns          Nothing.
  *
  *****************************************************************************/
-static void a2dp_sdp_cback(UNUSED_ATTR const RawAddress& bd_addr,
+static void a2dp_sdp_cback(const RawAddress& /* bd_addr */,
                            tSDP_STATUS status) {
   tSDP_DISC_REC* p_rec = NULL;
   tSDP_DISC_ATTR* p_attr;
