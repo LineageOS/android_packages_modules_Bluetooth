@@ -879,8 +879,7 @@ tAVRC_STS AVRC_Ctrl_ParsResponse(tAVRC_MSG* p_msg, tAVRC_RESPONSE* p_result,
  *
  ******************************************************************************/
 tAVRC_STS AVRC_ParsResponse(tAVRC_MSG* p_msg, tAVRC_RESPONSE* p_result,
-                            UNUSED_ATTR uint8_t* p_buf,
-                            UNUSED_ATTR uint16_t buf_len) {
+                            uint8_t* /* p_buf */, uint16_t /* buf_len */) {
   tAVRC_STS status = AVRC_STS_INTERNAL_ERR;
   uint16_t id;
 

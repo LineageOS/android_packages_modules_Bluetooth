@@ -33,7 +33,6 @@
 #include "main/shim/entry.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
-#include "osi/include/osi.h"  // UNUSED_ATTR
 #include "stack/btm/btm_sec.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_uuid16.h"
@@ -875,8 +874,7 @@ void rfc_process_rls(tRFC_MCB* p_mcb, bool is_command, MX_FRAME* p_frame) {
  * Description      This function handles None Supported Command frame.
  *
  ******************************************************************************/
-void rfc_process_nsc(UNUSED_ATTR tRFC_MCB* p_mcb,
-                     UNUSED_ATTR MX_FRAME* p_frame) {}
+void rfc_process_nsc(tRFC_MCB* /* p_mcb */, MX_FRAME* /* p_frame */) {}
 
 /*******************************************************************************
  *
@@ -886,7 +884,7 @@ void rfc_process_nsc(UNUSED_ATTR tRFC_MCB* p_mcb,
  *                  reply to it.  Otherwise pass response to the user.
  *
  ******************************************************************************/
-void rfc_process_test_rsp(UNUSED_ATTR tRFC_MCB* p_mcb, BT_HDR* p_buf) {
+void rfc_process_test_rsp(tRFC_MCB* /* p_mcb */, BT_HDR* p_buf) {
   osi_free(p_buf);
 }
 

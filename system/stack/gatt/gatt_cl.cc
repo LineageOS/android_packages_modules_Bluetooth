@@ -388,9 +388,8 @@ void gatt_send_prepare_write(tGATT_TCB& tcb, tGATT_CLCB* p_clcb) {
  * Returns          void
  *
  ******************************************************************************/
-void gatt_process_find_type_value_rsp(UNUSED_ATTR tGATT_TCB& tcb,
-                                      tGATT_CLCB* p_clcb, uint16_t len,
-                                      uint8_t* p_data) {
+void gatt_process_find_type_value_rsp(tGATT_TCB& /* tcb */, tGATT_CLCB* p_clcb,
+                                      uint16_t len, uint8_t* p_data) {
   tGATT_DISC_RES result;
   uint8_t* p = p_data;
 
@@ -435,8 +434,8 @@ void gatt_process_find_type_value_rsp(UNUSED_ATTR tGATT_TCB& tcb,
  * Returns          void
  *
  ******************************************************************************/
-void gatt_process_read_info_rsp(UNUSED_ATTR tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
-                                UNUSED_ATTR uint8_t op_code, uint16_t len,
+void gatt_process_read_info_rsp(tGATT_TCB& /* tcb */, tGATT_CLCB* p_clcb,
+                                uint8_t /* op_code */, uint16_t len,
                                 uint8_t* p_data) {
   tGATT_DISC_RES result;
   uint8_t *p = p_data, uuid_len = 0, type;
@@ -489,8 +488,8 @@ void gatt_process_read_info_rsp(UNUSED_ATTR tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
  * Returns          void.
  *
  ******************************************************************************/
-void gatt_proc_disc_error_rsp(UNUSED_ATTR tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
-                              uint8_t opcode, UNUSED_ATTR uint16_t handle,
+void gatt_proc_disc_error_rsp(tGATT_TCB& /* tcb */, tGATT_CLCB* p_clcb,
+                              uint8_t opcode, uint16_t /* handle */,
                               uint8_t reason) {
   tGATT_STATUS status = (tGATT_STATUS)reason;
 
@@ -525,8 +524,8 @@ void gatt_proc_disc_error_rsp(UNUSED_ATTR tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
  *
  ******************************************************************************/
 void gatt_process_error_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
-                            UNUSED_ATTR uint8_t op_code,
-                            UNUSED_ATTR uint16_t len, uint8_t* p_data) {
+                            uint8_t /* op_code */, uint16_t len,
+                            uint8_t* p_data) {
   uint8_t opcode, *p = p_data;
   uint8_t reason;
   uint16_t handle;
@@ -994,7 +993,7 @@ void gatt_process_read_by_type_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
  *
  ******************************************************************************/
 void gatt_process_read_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
-                           UNUSED_ATTR uint8_t op_code, uint16_t len,
+                           uint8_t /* op_code */, uint16_t len,
                            uint8_t* p_data) {
   uint16_t offset = p_clcb->counter;
   uint8_t* p = p_data;

@@ -106,8 +106,7 @@ static void avdt_sec_check_complete_term(const RawAddress* bd_addr,
  ******************************************************************************/
 static void avdt_sec_check_complete_orig(const RawAddress* bd_addr,
                                          tBT_TRANSPORT trasnport,
-                                         UNUSED_ATTR void* p_ref_data,
-                                         uint8_t res) {
+                                         void* /* p_ref_data */, uint8_t res) {
   AvdtpCcb* p_ccb = NULL;
   AvdtpTransportChannel* p_tbl;
 
@@ -135,7 +134,7 @@ static void avdt_sec_check_complete_orig(const RawAddress* bd_addr,
  *
  ******************************************************************************/
 void avdt_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
-                                UNUSED_ATTR uint16_t psm, uint8_t id) {
+                                uint16_t /* psm */, uint8_t id) {
   AvdtpCcb* p_ccb;
   AvdtpTransportChannel* p_tbl = NULL;
   uint16_t result;
