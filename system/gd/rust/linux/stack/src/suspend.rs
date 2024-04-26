@@ -1,12 +1,10 @@
 //! Suspend/Resume API.
 
-use crate::bluetooth::{
-    Bluetooth, BluetoothDevice, BtifBluetoothCallbacks, DelayedActions, IBluetooth,
-};
+use crate::bluetooth::{Bluetooth, BluetoothDevice, BtifBluetoothCallbacks, DelayedActions};
 use crate::bluetooth_media::BluetoothMedia;
 use crate::callbacks::Callbacks;
 use crate::{BluetoothGatt, Message, RPCProxy};
-use bt_topshim::btif::{BluetoothInterface, BtDiscMode};
+use bt_topshim::btif::BluetoothInterface;
 use bt_topshim::metrics;
 use log::warn;
 use num_derive::{FromPrimitive, ToPrimitive};
@@ -145,11 +143,6 @@ pub struct Suspend {
 
     suspend_timeout_joinhandle: Option<tokio::task::JoinHandle<()>>,
     suspend_state: Arc<Mutex<SuspendState>>,
-
-    /// Bluetooth adapter connectable state before suspending.
-    connectable_to_restore: bool,
-    /// Bluetooth adapter discoverable mode before suspending.
-    discoverable_mode_to_restore: BtDiscMode,
 }
 
 impl Suspend {
@@ -171,8 +164,6 @@ impl Suspend {
             audio_reconnect_joinhandle: None,
             suspend_timeout_joinhandle: None,
             suspend_state: Arc::new(Mutex::new(SuspendState::new())),
-            connectable_to_restore: false,
-            discoverable_mode_to_restore: BtDiscMode::NonDiscoverable,
         }
     }
 
@@ -236,10 +227,7 @@ impl ISuspend for Suspend {
         // Set suspend event mask
         self.intf.lock().unwrap().set_default_event_mask_except(MASKED_EVENTS_FOR_SUSPEND, 0u64);
 
-        self.connectable_to_restore = self.bt.lock().unwrap().get_connectable_internal();
-        self.discoverable_mode_to_restore =
-            self.bt.lock().unwrap().get_discoverable_mode_internal();
-        self.bt.lock().unwrap().set_connectable_internal(false);
+        self.bt.lock().unwrap().scan_mode_enter_suspend();
         self.intf.lock().unwrap().clear_event_filter();
         self.intf.lock().unwrap().clear_filter_accept_list();
 
@@ -327,10 +315,7 @@ impl ISuspend for Suspend {
         self.intf.lock().unwrap().clear_event_filter();
         self.intf.lock().unwrap().clear_filter_accept_list();
         self.intf.lock().unwrap().restore_filter_accept_list();
-        self.bt.lock().unwrap().set_connectable_internal(self.connectable_to_restore);
-        if self.discoverable_mode_to_restore != BtDiscMode::NonDiscoverable {
-            self.bt.lock().unwrap().set_discoverable(self.discoverable_mode_to_restore.clone(), 0);
-        }
+        self.bt.lock().unwrap().scan_mode_exit_suspend();
 
         if !self.audio_reconnect_list.is_empty() {
             let reconnect_list = self.audio_reconnect_list.clone();
