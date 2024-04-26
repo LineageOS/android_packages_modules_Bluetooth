@@ -34,9 +34,11 @@ import android.os.Looper;
 import android.os.SystemProperties;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.KeyEvent;
 
 import com.android.bluetooth.BluetoothEventLogger;
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.avrcp.AvrcpPassthrough;
 import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -308,6 +310,17 @@ public class MediaPlayerList {
     /** Returns the {@link #MediaPlayerWrapper} with ID matching {@link #mActivePlayerId}. */
     public MediaPlayerWrapper getActivePlayer() {
         return mMediaPlayers.get(mActivePlayerId);
+    }
+
+    /** This is used to send passthrough command to media session */
+    public void sendMediaKeyEvent(int key, boolean pushed) {
+        if (mMediaSessionManager == null) {
+            Log.d(TAG, "Bluetooth is turning off, ignore it");
+            return;
+        }
+        int action = pushed ? KeyEvent.ACTION_DOWN : KeyEvent.ACTION_UP;
+        KeyEvent event = new KeyEvent(action, AvrcpPassthrough.toKeyCode(key));
+        mMediaSessionManager.dispatchMediaKeyEvent(event, false);
     }
 
     /**
