@@ -349,3 +349,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_broadcast_stop_on_streaming_request"
+    namespace: "bluetooth"
+    description: "Stop instead of pause on unicast stream request"
+    bug: "336740254"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
