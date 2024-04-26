@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <base/callback_forward.h>
 #include <base/strings/stringprintf.h>
 
 #include <cstdint>
@@ -129,15 +130,15 @@ struct tSdpApi {
       parameters:      bd_addr     - (input) device address for service search
                        p_db        - (input) address of an area of memory where
                                              the discovery database is managed.
-                       p_cb2       - (input) callback executed when complete
-                       p_data      - (input) user data
+                       complete_callback - (input) callback executed when
+     complete
 
       Returns          true if discovery started, false if failed.
 
      ******************************************************************************/
     [[nodiscard]] bool (*SDP_ServiceSearchAttributeRequest2)(
-        const RawAddress&, tSDP_DISCOVERY_DB*, tSDP_DISC_CMPL_CB2*,
-        const void*);
+        const RawAddress&, tSDP_DISCOVERY_DB*,
+        base::RepeatingCallback<tSDP_DISC_CMPL_CB> complete_callback);
   } service;
 
   struct {

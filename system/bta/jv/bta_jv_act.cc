@@ -792,9 +792,9 @@ void bta_jv_free_scn(tBTA_JV_CONN_TYPE type /* One of BTA_JV_CONN_TYPE_ */,
  * Returns      void
  *
  ******************************************************************************/
-static void bta_jv_start_discovery_cback(const RawAddress& bd_addr,
-                                         tSDP_RESULT result,
-                                         const void* user_data) {
+static void bta_jv_start_discovery_cback(uint32_t rfcomm_slot_id,
+                                         const RawAddress& bd_addr,
+                                         tSDP_RESULT result) {
   if (!bta_jv_cb.sdp_cb.sdp_active) {
     log::warn(
         "Received unexpected service discovery callback bd_addr:{} result:{}",
@@ -809,7 +809,6 @@ static void bta_jv_start_discovery_cback(const RawAddress& bd_addr,
   }
 
   if (bta_jv_cb.p_dm_cback) {
-    const uint32_t rfcomm_slot_id = *static_cast<const uint32_t*>(user_data);
     tBTA_JV bta_jv = {
         .disc_comp =
             {
@@ -855,8 +854,6 @@ static void bta_jv_start_discovery_cback(const RawAddress& bd_addr,
         "result:{}",
         bd_addr, sdp_result_text(result));
   }
-  // User data memory is allocated in `bta_jv_start_discovery`
-  osi_free(const_cast<void*>(user_data));
   bta_jv_cb.sdp_cb = {};
 }
 
@@ -905,16 +902,10 @@ void bta_jv_start_discovery(const RawAddress& bd_addr, uint16_t num_uuid,
       .uuid = uuid_list[0],
   };
 
-  // NOTE: This gets freed on the callback or when discovery failed to start
-  uint32_t* rfcomm_slot_id_copy = (uint32_t*)osi_malloc(sizeof(uint32_t));
-  *rfcomm_slot_id_copy = rfcomm_slot_id;
-
-  // user_data memory is freed in `bta_jv_start_discovery_cback` callback
   if (!get_legacy_stack_sdp_api()->service.SDP_ServiceSearchAttributeRequest2(
-          bd_addr, p_bta_jv_cfg->p_sdp_db, bta_jv_start_discovery_cback,
-          (const void*)rfcomm_slot_id_copy)) {
+          bd_addr, p_bta_jv_cfg->p_sdp_db,
+          base::BindRepeating(&bta_jv_start_discovery_cback, rfcomm_slot_id))) {
     bta_jv_cb.sdp_cb = {};
-    osi_free(rfcomm_slot_id_copy);
     log::warn(
         "Unable to original service discovery bd_addr:{} num:uuid:{} "
         "rfcomm_slot_id:{}",
@@ -2079,9 +2070,10 @@ static void bta_jv_reset_sniff_timer(tBTA_JV_PM_CB* p_cb) {
 
 namespace bluetooth::legacy::testing {
 
-void bta_jv_start_discovery_cback(const RawAddress& bd_addr, tSDP_RESULT result,
-                                  const void* user_data) {
-  ::bta_jv_start_discovery_cback(bd_addr, result, user_data);
+void bta_jv_start_discovery_cback(uint32_t rfcomm_slot_id,
+                                  const RawAddress& bd_addr,
+                                  tSDP_RESULT result) {
+  ::bta_jv_start_discovery_cback(rfcomm_slot_id, bd_addr, result);
 }
 
 }  // namespace bluetooth::legacy::testing
