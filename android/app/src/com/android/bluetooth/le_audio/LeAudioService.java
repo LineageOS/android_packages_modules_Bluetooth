@@ -247,6 +247,8 @@ public class LeAudioService extends ProfileService {
         LeAudioGroupDescriptor(boolean isInbandRingtonEnabled) {
             mIsConnected = false;
             mActiveState = ACTIVE_STATE_INACTIVE;
+            mAllowedSinkContexts = BluetoothLeAudio.CONTEXTS_ALL;
+            mAllowedSourceContexts = BluetoothLeAudio.CONTEXTS_ALL;
             mHasFallbackDeviceWhenGettingInactive = false;
             mDirection = AUDIO_DIRECTION_NONE;
             mCodecStatus = null;
@@ -338,11 +340,8 @@ public class LeAudioService extends ProfileService {
         }
 
         boolean areAllowedContextsModified() {
-            if ((mAllowedSinkContexts != BluetoothLeAudio.CONTEXTS_ALL)
-                    || (mAllowedSourceContexts != BluetoothLeAudio.CONTEXTS_ALL)) {
-                return true;
-            }
-            return false;
+            return (mAllowedSinkContexts != BluetoothLeAudio.CONTEXTS_ALL)
+                    || (mAllowedSourceContexts != BluetoothLeAudio.CONTEXTS_ALL);
         }
     }
 
