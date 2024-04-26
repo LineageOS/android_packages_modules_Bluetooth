@@ -1512,6 +1512,7 @@ static bt_status_t init(bthh_callbacks_t* callbacks) {
 static void btif_hh_transport_select(tAclLinkSpec& link_spec) {
   bool hid_available = false;
   bool hogp_available = false;
+  bool headtracker_available = false;
   bool le_preferred = false;
   bluetooth::Uuid remote_uuids[BT_MAX_NUM_UUIDS] = {};
   bt_property_t remote_properties = {BT_PROPERTY_UUIDS, sizeof(remote_uuids),
@@ -1537,10 +1538,14 @@ static void btif_hh_transport_select(tAclLinkSpec& link_spec) {
           hid_available = true;
         } else if (remote_uuids[i].As16Bit() == UUID_SERVCLASS_LE_HID) {
           hogp_available = true;
+        } else if (remote_uuids[i] == ANDROID_HEADTRACKER_SERVICE_UUID) {
+          if (com::android::bluetooth::flags::android_headtracker_service()) {
+            headtracker_available = true;
+          }
         }
       }
 
-      if (hid_available && hogp_available) {
+      if (hid_available && (hogp_available || headtracker_available)) {
         break;
       }
     }
@@ -1549,11 +1554,11 @@ static void btif_hh_transport_select(tAclLinkSpec& link_spec) {
   /* Decide whether to connect HID or HOGP */
   if (bredr_acl && hid_available) {
     le_preferred = false;
-  } else if (le_acl && hogp_available) {
+  } else if (le_acl && (hogp_available || headtracker_available)) {
     le_preferred = true;
   } else if (hid_available) {
     le_preferred = false;
-  } else if (hogp_available) {
+  } else if (hogp_available || headtracker_available) {
     le_preferred = true;
   } else if (bredr_acl) {
     le_preferred = false;
@@ -1566,10 +1571,10 @@ static void btif_hh_transport_select(tAclLinkSpec& link_spec) {
   link_spec.transport = le_preferred ? BT_TRANSPORT_LE : BT_TRANSPORT_BR_EDR;
   log::info(
       "link_spec:{}, bredr_acl:{}, hid_available:{}, le_acl:{}, "
-      "hogp_available:{}, "
+      "hogp_available:{}, headtracker_available:{}, "
       "dev_type:{}, le_preferred:{}",
       link_spec.ToRedactedStringForLogging(), bredr_acl, hid_available, le_acl,
-      hogp_available, dev_type, le_preferred);
+      hogp_available, headtracker_available, dev_type, le_preferred);
 }
 /*******************************************************************************
  *
