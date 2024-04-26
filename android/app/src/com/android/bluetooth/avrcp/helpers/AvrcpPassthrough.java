@@ -19,7 +19,7 @@ package com.android.bluetooth.avrcp;
 import android.bluetooth.BluetoothAvrcp;
 import android.view.KeyEvent;
 
-class AvrcpPassthrough {
+public class AvrcpPassthrough {
     public static int toKeyCode(int operation) {
         switch (operation) {
             case BluetoothAvrcp.PASSTHROUGH_ID_UP:
