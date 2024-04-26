@@ -238,6 +238,10 @@ static void srvc_eng_s_request_cback(uint16_t conn_id, uint32_t trans_id,
   tGATTS_RSP rsp_msg;
   uint8_t act = SRVC_ACT_IGNORE;
   uint8_t clcb_idx = srvc_eng_find_clcb_idx_by_conn_id(conn_id);
+  if (clcb_idx == SRVC_MAX_APPS) {
+    log::error("Can't find clcb, id:{}", conn_id);
+    return;
+  }
 
   log::verbose("srvc_eng_s_request_cback : recv type (0x{:02x})", type);
 
