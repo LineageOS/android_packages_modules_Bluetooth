@@ -377,11 +377,10 @@ where
                     let h = &u2 - &u1;
                     let r = &s2 - &s1;
 
-                    let h2 = (&h * &h) % p;
-                    let h3 = (&h * &h2) % p;
-                    let u1h2 = (&u1 * &h2) % p;
+                    let h3 = h.pow(3) % p;
+                    let u1h2 = (u1 * h.pow(2)) % p;
                     let x3 = r.pow(2) - &h3 - 2 * &u1h2;
-                    let y3 = r * (&u1h2 - &x3) - s1 * &h3;
+                    let y3 = r * (u1h2 - &x3) - s1 * h3;
                     let z3 = h * z1 * z2;
 
                     Point::new(x3 % p, y3 % p, z3 % p)
