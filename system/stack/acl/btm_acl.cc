@@ -53,7 +53,6 @@
 #include "os/log.h"
 #include "os/parameter_provider.h"
 #include "osi/include/allocator.h"
-#include "osi/include/osi.h"  // UNUSED_ATTR
 #include "osi/include/properties.h"
 #include "osi/include/stack_power_telemetry.h"
 #include "rust/src/connection/ffi/connection_shim.h"
@@ -190,8 +189,7 @@ void NotifyAclRoleSwitchComplete(const RawAddress& bda, tHCI_ROLE new_role,
   BTA_dm_report_role_change(bda, new_role, hci_status);
 }
 
-void NotifyAclFeaturesReadComplete(tACL_CONN& p_acl,
-                                   UNUSED_ATTR uint8_t max_page_number) {
+void NotifyAclFeaturesReadComplete(tACL_CONN& p_acl, uint8_t max_page_number) {
   btm_process_remote_ext_features(&p_acl, max_page_number);
   btm_set_link_policy(&p_acl, btm_cb.acl_cb_.DefaultLinkPolicy());
   BTA_dm_notify_remote_features_complete(p_acl.remote_addr);
@@ -1760,7 +1758,7 @@ tBTM_STATUS BTM_ReadTxPower(const RawAddress& remote_bda,
  * Returns          void
  *
  ******************************************************************************/
-void btm_read_tx_power_timeout(UNUSED_ATTR void* data) {
+void btm_read_tx_power_timeout(void* /* data */) {
   tBTM_CMPL_CB* p_cb = btm_cb.devcb.p_tx_power_cmpl_cb;
   btm_cb.devcb.p_tx_power_cmpl_cb = NULL;
   if (p_cb) (*p_cb)((void*)NULL);
@@ -1841,7 +1839,7 @@ void btm_read_tx_power_complete(uint8_t* p, uint16_t evt_len, bool is_ble) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_read_rssi_timeout(UNUSED_ATTR void* data) {
+void btm_read_rssi_timeout(void* /* data */) {
   tBTM_RSSI_RESULT result;
   tBTM_CMPL_CB* p_cb = btm_cb.devcb.p_rssi_cmpl_cb;
   btm_cb.devcb.p_rssi_cmpl_cb = NULL;
@@ -1910,7 +1908,7 @@ void btm_read_rssi_complete(uint8_t* p, uint16_t evt_len) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_read_failed_contact_counter_timeout(UNUSED_ATTR void* data) {
+void btm_read_failed_contact_counter_timeout(void* /* data */) {
   tBTM_FAILED_CONTACT_COUNTER_RESULT result;
   tBTM_CMPL_CB* p_cb = btm_cb.devcb.p_failed_contact_counter_cmpl_cb;
   btm_cb.devcb.p_failed_contact_counter_cmpl_cb = NULL;

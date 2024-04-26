@@ -29,7 +29,6 @@
 #include "avrc_api.h"
 #include "avrc_int.h"
 #include "os/log.h"
-#include "osi/include/osi.h"  // UNUSED_ATTR
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/sdp_api.h"
@@ -67,7 +66,7 @@ static uint16_t a2dp_attr_list_sdp[] = {
  * Returns          Nothing.
  *
  *****************************************************************************/
-static void avrc_sdp_cback(UNUSED_ATTR const RawAddress& bd_addr,
+static void avrc_sdp_cback(const RawAddress& /* bd_addr */,
                            tSDP_STATUS status) {
   log::verbose("status: {}", status);
 

@@ -33,7 +33,7 @@ using namespace bluetooth;
 
 static void srvc_eng_s_request_cback(uint16_t conn_id, uint32_t trans_id,
                                      tGATTS_REQ_TYPE type, tGATTS_DATA* p_data);
-static void srvc_eng_connect_cback(UNUSED_ATTR tGATT_IF gatt_if,
+static void srvc_eng_connect_cback(tGATT_IF /* gatt_if */,
                                    const RawAddress& bda, uint16_t conn_id,
                                    bool connected, tGATT_DISCONN_REASON reason,
                                    tBT_TRANSPORT transport);
@@ -210,7 +210,7 @@ static uint8_t srvc_eng_process_read_req(uint8_t clcb_idx,
  ******************************************************************************/
 static uint8_t srvc_eng_process_write_req(uint8_t clcb_idx,
                                           tGATT_WRITE_REQ* p_data,
-                                          UNUSED_ATTR tGATTS_RSP* p_rsp,
+                                          tGATTS_RSP* /* p_rsp */,
                                           tGATT_STATUS* p_status) {
   uint8_t act = SRVC_ACT_RSP;
 
@@ -312,10 +312,10 @@ static void srvc_eng_c_cmpl_cback(uint16_t conn_id, tGATTC_OPTYPE op,
  * Returns          void
  *
  ******************************************************************************/
-static void srvc_eng_connect_cback(UNUSED_ATTR tGATT_IF gatt_if,
+static void srvc_eng_connect_cback(tGATT_IF /* gatt_if */,
                                    const RawAddress& bda, uint16_t conn_id,
                                    bool connected, tGATT_DISCONN_REASON reason,
-                                   UNUSED_ATTR tBT_TRANSPORT transport) {
+                                   tBT_TRANSPORT /* transport */) {
   log::verbose("from {} connected:{} conn_id={}", bda, connected, conn_id);
 
   if (connected) {

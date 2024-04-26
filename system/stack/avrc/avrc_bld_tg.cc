@@ -266,8 +266,8 @@ static tAVRC_STS avrc_bld_get_cur_app_setting_value_rsp(
  *                  Otherwise, the error code.
  *
  ******************************************************************************/
-static tAVRC_STS avrc_bld_set_app_setting_value_rsp(
-    UNUSED_ATTR tAVRC_RSP* p_rsp, UNUSED_ATTR BT_HDR* p_pkt) {
+static tAVRC_STS avrc_bld_set_app_setting_value_rsp(tAVRC_RSP* /* p_rsp */,
+                                                    BT_HDR* /* p_pkt */) {
   /* nothing to be added. */
   log::verbose("");
   return AVRC_STS_NO_ERROR;
@@ -388,8 +388,8 @@ static tAVRC_STS avrc_bld_get_app_setting_value_text_rsp(
  *                  Otherwise, the error code.
  *
  ******************************************************************************/
-static tAVRC_STS avrc_bld_inform_charset_rsp(UNUSED_ATTR tAVRC_RSP* p_rsp,
-                                             UNUSED_ATTR BT_HDR* p_pkt) {
+static tAVRC_STS avrc_bld_inform_charset_rsp(tAVRC_RSP* /* p_rsp */,
+                                             BT_HDR* /* p_pkt */) {
   /* nothing to be added. */
   log::verbose("");
   return AVRC_STS_NO_ERROR;
@@ -406,8 +406,8 @@ static tAVRC_STS avrc_bld_inform_charset_rsp(UNUSED_ATTR tAVRC_RSP* p_rsp,
  *                  Otherwise, the error code.
  *
  ******************************************************************************/
-static tAVRC_STS avrc_bld_inform_battery_status_rsp(
-    UNUSED_ATTR tAVRC_RSP* p_rsp, UNUSED_ATTR BT_HDR* p_pkt) {
+static tAVRC_STS avrc_bld_inform_battery_status_rsp(tAVRC_RSP* /* p_rsp */,
+                                                    BT_HDR* /* p_pkt */) {
   /* nothing to be added. */
   log::verbose("");
   return AVRC_STS_NO_ERROR;

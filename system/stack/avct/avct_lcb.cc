@@ -304,7 +304,7 @@ tAVCT_LCB* avct_lcb_alloc(const RawAddress& bd_addr) {
  * Returns          void.
  *
  ******************************************************************************/
-void avct_lcb_dealloc(tAVCT_LCB* p_lcb, UNUSED_ATTR tAVCT_LCB_EVT* p_data) {
+void avct_lcb_dealloc(tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* /* p_data */) {
   log::verbose("allocated: {}", p_lcb->allocated);
 
   // Check if the LCB is still referenced
