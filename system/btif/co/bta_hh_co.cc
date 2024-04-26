@@ -538,8 +538,8 @@ void bta_hh_co_close(btif_hh_device_t* p_dev) {
  ******************************************************************************/
 void bta_hh_co_data(uint8_t dev_handle, uint8_t* p_rpt, uint16_t len,
                     tBTA_HH_PROTO_MODE mode, uint8_t sub_class,
-                    uint8_t ctry_code,
-                    UNUSED_ATTR const tAclLinkSpec& link_spec, uint8_t app_id) {
+                    uint8_t ctry_code, const tAclLinkSpec& /* link_spec */,
+                    uint8_t app_id) {
   btif_hh_device_t* p_dev;
 
   log::verbose(
@@ -774,7 +774,7 @@ void bta_hh_co_get_rpt_rsp(uint8_t dev_handle, uint8_t status,
  ******************************************************************************/
 void bta_hh_le_co_rpt_info(const tAclLinkSpec& link_spec,
                            tBTA_HH_RPT_CACHE_ENTRY* p_entry,
-                           UNUSED_ATTR uint8_t app_id) {
+                           uint8_t /* app_id */) {
   unsigned idx = 0;
 
   std::string addrstr = link_spec.addrt.bda.ToString();
@@ -816,7 +816,7 @@ void bta_hh_le_co_rpt_info(const tAclLinkSpec& link_spec,
  ******************************************************************************/
 tBTA_HH_RPT_CACHE_ENTRY* bta_hh_le_co_cache_load(const tAclLinkSpec& link_spec,
                                                  uint8_t* p_num_rpt,
-                                                 UNUSED_ATTR uint8_t app_id) {
+                                                 uint8_t app_id) {
   std::string addrstr = link_spec.addrt.bda.ToString();
   const char* bdstr = addrstr.c_str();
 
@@ -855,7 +855,7 @@ tBTA_HH_RPT_CACHE_ENTRY* bta_hh_le_co_cache_load(const tAclLinkSpec& link_spec,
  *
  ******************************************************************************/
 void bta_hh_le_co_reset_rpt_cache(const tAclLinkSpec& link_spec,
-                                  UNUSED_ATTR uint8_t app_id) {
+                                  uint8_t /* app_id */) {
   std::string addrstr = link_spec.addrt.bda.ToString();
   const char* bdstr = addrstr.c_str();
 
