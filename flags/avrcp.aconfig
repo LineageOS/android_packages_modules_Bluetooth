@@ -7,3 +7,13 @@ flag {
     description: "When peer device connects AVRCP but not A2DP we initiate A2DP connection after some time delay"
     bug: "328406945"
 }
+
+flag {
+    name: "abs_volume_sdp_conflict"
+    namespace: "bluetooth"
+    description: "Check connection state after SDP discovery to prevent connection collision resulting in no absolute volume support"
+    bug: "336915955"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
