@@ -474,6 +474,8 @@ class LeAudioAseConfigurationTest : public Test {
  protected:
   void SetUp() override {
     group_ = new LeAudioDeviceGroup(group_id_);
+    desired_group_size_ = -1;
+
     bluetooth::manager::SetMockBtmInterface(&btm_interface_);
     bluetooth::hci::testing::mock_controller_ = &controller_interface_;
 
@@ -488,8 +490,10 @@ class LeAudioAseConfigurationTest : public Test {
     ON_CALL(mock_csis_client_module_, GetDeviceList(_))
         .WillByDefault(Invoke([this](int group_id) { return addresses_; }));
     ON_CALL(mock_csis_client_module_, GetDesiredSize(_))
-        .WillByDefault(
-            Invoke([this](int group_id) { return (int)(addresses_.size()); }));
+        .WillByDefault(Invoke([this](int group_id) {
+          return desired_group_size_ > 0 ? desired_group_size_
+                                         : (int)(addresses_.size());
+        }));
     SetUpMockCodecManager(codec_location);
   }
 
@@ -565,18 +569,18 @@ class LeAudioAseConfigurationTest : public Test {
     }
   }
 
-  LeAudioDevice* AddTestDevice(int snk_ase_num, int src_ase_num,
-                               int snk_ase_num_cached = 0,
-                               int src_ase_num_cached = 0,
-                               bool invert_ases_emplacement = false,
-                               bool out_of_range_device = false) {
+  LeAudioDevice* AddTestDevice(
+      int snk_ase_num, int src_ase_num, int snk_ase_num_cached = 0,
+      int src_ase_num_cached = 0, bool invert_ases_emplacement = false,
+      bool out_of_range_device = false,
+      uint8_t allocation = codec_spec_conf::kLeAudioLocationFrontLeft |
+                           codec_spec_conf::kLeAudioLocationFrontRight) {
     int index = group_->Size() + 1;
     auto device = (std::make_shared<LeAudioDevice>(
         GetTestAddress(index), DeviceConnectState::DISCONNECTED));
     devices_.push_back(device);
-    log::info("addresses {}", (int)(addresses_.size()));
     addresses_.push_back(device->address_);
-    log::info("Addresses {}", (int)(addresses_.size()));
+    log::info("Number of devices {}", (int)(addresses_.size()));
 
     if (out_of_range_device == false) {
       group_->AddNode(device);
@@ -629,12 +633,8 @@ class LeAudioAseConfigurationTest : public Test {
     device->SetAvailableContexts(
         {.sink = AudioContexts(kLeAudioContextAllTypes),
          .source = AudioContexts(kLeAudioContextAllTypes)});
-    device->snk_audio_locations_ =
-        ::bluetooth::le_audio::codec_spec_conf::kLeAudioLocationFrontLeft |
-        ::bluetooth::le_audio::codec_spec_conf::kLeAudioLocationFrontRight;
-    device->src_audio_locations_ =
-        ::bluetooth::le_audio::codec_spec_conf::kLeAudioLocationFrontLeft |
-        ::bluetooth::le_audio::codec_spec_conf::kLeAudioLocationFrontRight;
+    device->snk_audio_locations_ = allocation;
+    device->src_audio_locations_ = allocation;
 
     device->conn_id_ = index;
     device->SetConnectionState(out_of_range_device
@@ -987,10 +987,23 @@ class LeAudioAseConfigurationTest : public Test {
              UINT8_TO_VEC_UINT8(supported_codec_frames_per_sdu)},
         }),
         .channel_count_per_iso_stream = 1};
+
     auto swb_config = AudioSetConfiguration({
         .name = "Two-OneChan-SnkAse-Lc3_32_2-Two-OneChan-SrcAse-Lc3_32_2_SWB",
         .confs = {.sink = {AseConfiguration(swb), AseConfiguration(swb)},
                   .source = {AseConfiguration(swb), AseConfiguration(swb)}},
+    });
+
+    auto swb_config_single = AudioSetConfiguration({
+        .name = "One-OneChan-SnkAse-Lc3_32_2-One-OneChan-SrcAse-Lc3_32_2_SWB",
+        .confs = {.sink =
+                      {
+                          AseConfiguration(swb),
+                      },
+                  .source =
+                      {
+                          AseConfiguration(swb),
+                      }},
     });
 
     ASSERT_FALSE(swb.params.IsEmpty());
@@ -1018,7 +1031,15 @@ class LeAudioAseConfigurationTest : public Test {
                   .source = {AseConfiguration(non_swb),
                              AseConfiguration(non_swb)}},
     });
-    AudioSetConfigurations configs = {{&swb_config, &non_swb_config}};
+    auto non_swb_config_single = AudioSetConfiguration({
+        .name =
+            "One-OneChan-SnkAse-Lc3_16_2-One-OneChan-SrcAse-Lc3_16_2_NON_SWB",
+        .confs = {.sink = {AseConfiguration(non_swb)},
+                  .source = {AseConfiguration(non_swb)}},
+    });
+    AudioSetConfigurations configs = {{&swb_config, &swb_config_single,
+                                       &non_swb_config,
+                                       &non_swb_config_single}};
 
     // Support single channel per ASE to activate two ASES on both direction
     for (auto config : configs) {
@@ -1169,6 +1190,8 @@ class LeAudioAseConfigurationTest : public Test {
   }
 
   const int group_id_ = 6;
+  int desired_group_size_ = -1;
+
   std::vector<std::shared_ptr<LeAudioDevice>> devices_;
   std::vector<RawAddress> addresses_;
   LeAudioDeviceGroup* group_ = nullptr;
@@ -1491,6 +1514,31 @@ TEST_F(LeAudioAseConfigurationTest,
   ASSERT_NE(nullptr, config);
   ASSERT_FALSE(
       CodecManager::GetInstance()->CheckCodecConfigIsDualBiDirSwb(*config));
+}
+
+TEST_F(LeAudioAseConfigurationTest,
+       test_earbuds_conversational_stereo_microphone_no_swb_one_bonded) {
+  /* There will be 2 eabuds eventually but for the moment only 1 is bonded
+   * Turn off the dual bidir SWB support
+   */
+  desired_group_size_ = 2;
+  ON_CALL(*mock_codec_manager_, IsDualBiDirSwbSupported)
+      .WillByDefault(Return(false));
+  ASSERT_FALSE(CodecManager::GetInstance()->IsDualBiDirSwbSupported());
+
+  const auto context_type = LeAudioContextType::CONVERSATIONAL;
+  TestSingleDevDualBidir(
+      AddTestDevice(1, 1, 0, 0, false, false,
+                    codec_spec_conf::kLeAudioLocationFrontLeft),
+      context_type);
+
+  // Verify non-SWB config was selected
+  auto config = group_->GetCachedConfiguration(context_type).get();
+  ASSERT_NE(nullptr, config);
+  ASSERT_FALSE(
+      CodecManager::GetInstance()->CheckCodecConfigIsDualBiDirSwb(*config));
+  ASSERT_FALSE(
+      CodecManager::GetInstance()->CheckCodecConfigIsBiDirSwb(*config));
 }
 
 TEST_F(LeAudioAseConfigurationTest,
@@ -1971,7 +2019,7 @@ TEST_F(LeAudioAseConfigurationTest, test_reactivation_conversational) {
 
   /* Verify ASEs assigned CISes by counting assigned to bi-directional CISes */
   int bi_dir_ases_count = std::count_if(
-      tws_headset->ases_.begin(), tws_headset->ases_.end(), [=](auto& ase) {
+      tws_headset->ases_.begin(), tws_headset->ases_.end(), [this](auto& ase) {
         return this->group_->cig.cises[ase.cis_id].type ==
                CisType::CIS_TYPE_BIDIRECTIONAL;
       });
@@ -2006,6 +2054,9 @@ TEST_F(LeAudioAseConfigurationTest, test_num_of_connected) {
  * 4. There is no dual device scenario with strategy stereo channels per device
  */
 TEST_F(LeAudioAseConfigurationTest, test_getting_cis_count) {
+  /* Set desired size to 2 */
+  desired_group_size_ = 2;
+
   LeAudioDevice* left = AddTestDevice(2, 1);
   LeAudioDevice* right = AddTestDevice(0, 0, 0, 0, false, true);
 
