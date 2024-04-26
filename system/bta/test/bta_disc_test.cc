@@ -194,7 +194,8 @@ TEST_F(BtaInitializedTest,
 TEST_F(BtaInitializedTest,
        bta_dm_disc_start_service_discovery__BT_TRANSPORT_LE) {
   bta_dm_disc_start_service_discovery(
-      {nullptr, nullptr, nullptr,
+      {[](RawAddress, BD_NAME, std::vector<bluetooth::Uuid>&, bool) {}, nullptr,
+       nullptr,
        [](RawAddress, tBTA_SERVICE_MASK, const std::vector<bluetooth::Uuid>&,
           tBTA_STATUS, tHCI_STATUS) {}},
       kRawAddress, BT_TRANSPORT_LE);
