@@ -25,9 +25,9 @@
 
 #include "stack/include/gatt_api.h"
 
-#include <android_bluetooth_flags.h>
 #include <base/strings/string_number_conversions.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <string>
 
@@ -1425,7 +1425,8 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr,
                bd_addr);
     bool tcb_exist = !!gatt_find_tcb_by_addr(bd_addr, transport);
 
-    if (!IS_FLAG_ENABLED(gatt_reconnect_on_bt_on_fix) || tcb_exist) {
+    if (!com::android::bluetooth::flags::gatt_reconnect_on_bt_on_fix() ||
+        tcb_exist) {
       /* Consider to remove gatt_act_connect at all */
       ret = gatt_act_connect(p_reg, bd_addr, addr_type, transport,
                              initiating_phys);

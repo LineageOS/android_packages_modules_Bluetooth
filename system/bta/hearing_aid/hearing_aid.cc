@@ -21,11 +21,11 @@
 
 #define LOG_TAG "bluetooth"
 
-#include <android_bluetooth_flags.h>
 #include <base/functional/bind.h>
 #include <base/functional/callback.h>
 #include <base/strings/string_number_conversions.h>  // HexEncode
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <chrono>
 #include <cstdint>
@@ -364,7 +364,7 @@ class HearingAidImpl : public HearingAid {
   // Reset and configure the ASHA resampling context using the input device
   // devices as reference for the BT clock estimation.
   void ConfigureAsrc() {
-    if (!IS_FLAG_ENABLED(asha_asrc)) {
+    if (!com::android::bluetooth::flags::asha_asrc()) {
       log::info("Asha resampling disabled: feature flag off");
       return;
     }
@@ -1436,7 +1436,7 @@ class HearingAidImpl : public HearingAid {
     }
 
     uint16_t l2cap_flush_threshold = 0;
-    if (IS_FLAG_ENABLED(higher_l2cap_flush_threshold)) {
+    if (com::android::bluetooth::flags::higher_l2cap_flush_threshold()) {
       l2cap_flush_threshold = 1;
     }
 
@@ -1448,7 +1448,7 @@ class HearingAidImpl : public HearingAid {
     // to the number of credits specified for the ASHA l2cap streaming
     // channel. This will ensure it is only triggered in case of
     // critical failure.
-    if (IS_FLAG_ENABLED(asha_asrc)) {
+    if (com::android::bluetooth::flags::asha_asrc()) {
       l2cap_flush_threshold = 8;
     }
 

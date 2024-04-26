@@ -23,8 +23,8 @@
  *
  ******************************************************************************/
 
-#include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
 
@@ -428,7 +428,8 @@ void bta_gatts_open(tBTA_GATTS_CB* /* p_cb */, tBTA_GATTS_DATA* p_msg) {
   if (p_rcb != NULL) {
     /* should always get the connection ID */
     bool success = false;
-    if (IS_FLAG_ENABLED(ble_gatt_server_use_address_type_in_connection)) {
+    if (com::android::bluetooth::flags::
+            ble_gatt_server_use_address_type_in_connection()) {
       success = GATT_Connect(p_rcb->gatt_if, p_msg->api_open.remote_bda,
                              p_msg->api_open.remote_addr_type,
                              p_msg->api_open.connection_type,

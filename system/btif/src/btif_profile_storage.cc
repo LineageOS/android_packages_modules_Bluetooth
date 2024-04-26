@@ -20,8 +20,8 @@
 #include "btif_profile_storage.h"
 
 #include <alloca.h>
-#include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
@@ -139,7 +139,7 @@ bt_status_t btif_storage_add_hid_device_info(
   log::verbose("link spec: {}", link_spec.ToRedactedStringForLogging());
   std::string bdstr = link_spec.addrt.bda.ToString();
 
-  if (!IS_FLAG_ENABLED(allow_switching_hid_and_hogp)) {
+  if (!com::android::bluetooth::flags::allow_switching_hid_and_hogp()) {
     btif_storage_hid_device_info(
         bdstr, attr_mask, sub_class, app_id, vendor_id, product_id, version,
         ctry_code, ssr_max_latency, ssr_min_tout, dl_len, dsc_list);
@@ -289,7 +289,7 @@ bt_status_t btif_storage_load_bonded_hid_info(void) {
     link_spec.transport = BT_TRANSPORT_AUTO;
 
     int db_version = 0;
-    if (IS_FLAG_ENABLED(allow_switching_hid_and_hogp)) {
+    if (com::android::bluetooth::flags::allow_switching_hid_and_hogp()) {
       btif_config_get_int(name, BTIF_STORAGE_KEY_HID_DB_VERSION, &db_version);
     }
 
@@ -336,7 +336,7 @@ bt_status_t btif_storage_remove_hid_info(const tAclLinkSpec& link_spec) {
   btif_config_remove(bdstr, BTIF_STORAGE_KEY_HID_REPORT_VERSION);
   btif_config_remove(bdstr, BTIF_STORAGE_KEY_HID_RECONNECT_ALLOWED);
 
-  if (IS_FLAG_ENABLED(allow_switching_hid_and_hogp)) {
+  if (com::android::bluetooth::flags::allow_switching_hid_and_hogp()) {
     int db_version = 0;
     btif_config_get_int(bdstr, BTIF_STORAGE_KEY_HID_DB_VERSION, &db_version);
     if (db_version == STORAGE_HID_DB_VERSION) {

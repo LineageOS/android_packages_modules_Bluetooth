@@ -20,9 +20,9 @@
 #define LOG_TAG "bt_btif_a2dp_source"
 #define ATRACE_TAG ATRACE_TAG_AUDIO
 
-#include <android_bluetooth_flags.h>
 #include <base/run_loop.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 #ifdef __ANDROID__
 #include <cutils/trace.h>
 #endif
@@ -344,7 +344,7 @@ static void btif_a2dp_source_init_delayed(void) {
   // the provider needs to be initialized earlier in order to ensure
   // get_a2dp_configuration and parse_a2dp_configuration can be
   // invoked before the stream is started.
-  if (IS_FLAG_ENABLED(a2dp_offload_codec_extensibility)) {
+  if (com::android::bluetooth::flags::a2dp_offload_codec_extensibility()) {
     bluetooth::audio::a2dp::init(&btif_a2dp_source_thread);
   }
 }
@@ -575,7 +575,7 @@ static void btif_a2dp_source_setup_codec_delayed(
 
   tA2DP_ENCODER_INIT_PEER_PARAMS peer_params;
   bta_av_co_get_peer_params(peer_address, &peer_params);
-  if (IS_FLAG_ENABLED(a2dp_concurrent_source_sink)) {
+  if (com::android::bluetooth::flags::a2dp_concurrent_source_sink()) {
     if (!bta_av_co_set_active_source_peer(peer_address)) {
       log::error("Cannot stream audio: cannot set active peer to {}",
                  peer_address);

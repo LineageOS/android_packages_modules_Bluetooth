@@ -21,8 +21,8 @@
  *  This module contains action functions of the link control state machine.
  *
  ******************************************************************************/
-#include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 #include <string.h>
 
 #include "avct_api.h"
@@ -722,7 +722,7 @@ bool avct_msg_ind_for_src_sink_coexist(tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* p_data,
   uint16_t pid, type;
 
   p = (uint8_t*)(p_data->p_buf + 1) + p_data->p_buf->offset;
-  if (IS_FLAG_ENABLED(a2dp_concurrent_source_sink)) {
+  if (com::android::bluetooth::flags::a2dp_concurrent_source_sink()) {
     AVCT_PARSE_HDR(p, label, type, cr_ipid);
   }
 

@@ -25,10 +25,10 @@
 
 #define LOG_TAG "bt_bta_gattc"
 
-#include <android_bluetooth_flags.h>
 #include <base/functional/bind.h>
 #include <base/strings/stringprintf.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include "bta/gatt/bta_gattc_int.h"
 #include "bta/include/bta_api.h"
@@ -358,7 +358,7 @@ void bta_gattc_open_error(tBTA_GATTC_CLCB* p_clcb,
 
 void bta_gattc_open_fail(tBTA_GATTC_CLCB* p_clcb,
                          const tBTA_GATTC_DATA* p_data) {
-  if (IS_FLAG_ENABLED(enumerate_gatt_errors) &&
+  if (com::android::bluetooth::flags::enumerate_gatt_errors() &&
       p_data->int_conn.reason == GATT_CONN_TIMEOUT) {
     log::warn(
         "Connection timed out after 30 seconds. conn_id=0x{:x}. Return "
@@ -707,7 +707,7 @@ void bta_gattc_disc_close(tBTA_GATTC_CLCB* p_clcb,
   log::verbose("Discovery cancel conn_id=0x{:x}", p_clcb->bta_conn_id);
 
   if (p_clcb->disc_active ||
-      (IS_FLAG_ENABLED(gatt_rediscover_on_canceled) &&
+      (com::android::bluetooth::flags::gatt_rediscover_on_canceled() &&
        (p_clcb->request_during_discovery ==
             BTA_GATTC_DISCOVER_REQ_READ_DB_HASH ||
         p_clcb->request_during_discovery ==
@@ -913,7 +913,7 @@ void bta_gattc_continue_with_version_and_cache_known(
     tBTA_GATTC_CLCB* p_clcb, RobustCachingSupport cache_support,
     bool is_svc_chg) {
   if (cache_support == RobustCachingSupport::UNSUPPORTED ||
-      (IS_FLAG_ENABLED(skip_unknown_robust_caching) &&
+      (com::android::bluetooth::flags::skip_unknown_robust_caching() &&
        cache_support == RobustCachingSupport::UNKNOWN)) {
     // Skip initial DB hash read if no DB hash is known, or if
     // we have strong reason (due to interop,

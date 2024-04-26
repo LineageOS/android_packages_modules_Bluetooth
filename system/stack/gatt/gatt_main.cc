@@ -22,8 +22,8 @@
  *
  ******************************************************************************/
 
-#include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include "btif/include/btif_dm.h"
 #include "btif/include/btif_storage.h"
@@ -463,7 +463,7 @@ bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr,
 
 namespace connection_manager {
 void on_connection_timed_out(uint8_t app_id, const RawAddress& address) {
-  if (IS_FLAG_ENABLED(enumerate_gatt_errors)) {
+  if (com::android::bluetooth::flags::enumerate_gatt_errors()) {
     gatt_le_connect_cback(L2CAP_ATT_CID, address, false, 0x08, BT_TRANSPORT_LE);
   } else {
     gatt_le_connect_cback(L2CAP_ATT_CID, address, false, 0xff, BT_TRANSPORT_LE);
@@ -524,7 +524,8 @@ static void gatt_le_connect_cback(uint16_t chan, const RawAddress& bd_addr,
     p_tcb = gatt_allocate_tcb_by_bdaddr(bd_addr, BT_TRANSPORT_LE);
     if (!p_tcb) {
       log::error("CCB max out, no rsources");
-      if (IS_FLAG_ENABLED(gatt_drop_acl_on_out_of_resources_fix)) {
+      if (com::android::bluetooth::flags::
+              gatt_drop_acl_on_out_of_resources_fix()) {
         log::error("Disconnecting address:{} due to out of resources.",
                    bd_addr);
         // When single FIXED channel cannot be created, there is no reason to
@@ -939,7 +940,7 @@ static void gatt_send_conn_cback(tGATT_TCB* p_tcb) {
     if (apps.find(p_reg->gatt_if) != apps.end())
       gatt_update_app_use_link_flag(p_reg->gatt_if, p_tcb, true, true);
 
-    if (IS_FLAG_ENABLED(gatt_reconnect_on_bt_on_fix)) {
+    if (com::android::bluetooth::flags::gatt_reconnect_on_bt_on_fix()) {
       if (p_reg->direct_connect_request.count(p_tcb->peer_bda) > 0) {
         gatt_update_app_use_link_flag(p_reg->gatt_if, p_tcb, true, true);
         log::info(

@@ -19,7 +19,7 @@
 #include "provider_info.h"
 
 #include <android/binder_manager.h>
-#include <android_bluetooth_flags.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <optional>
 

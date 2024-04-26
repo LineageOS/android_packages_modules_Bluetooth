@@ -23,9 +23,9 @@
  ******************************************************************************/
 #define LOG_TAG "gatt_utils"
 
-#include <android_bluetooth_flags.h>
 #include <base/strings/stringprintf.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
 #include <deque>
@@ -1514,7 +1514,7 @@ void gatt_sr_update_prep_cnt(tGATT_TCB& tcb, tGATT_IF gatt_if, bool is_inc,
 bool gatt_cancel_open(tGATT_IF gatt_if, const RawAddress& bda) {
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bda, BT_TRANSPORT_LE);
   if (!p_tcb) {
-    if (IS_FLAG_ENABLED(gatt_reconnect_on_bt_on_fix)) {
+    if (com::android::bluetooth::flags::gatt_reconnect_on_bt_on_fix()) {
       /* TCB is not allocated when trying to connect under this flag.
        * but device address is storred in the tGATT_REG. Make sure to remove
        * the address from the list when cancel is called.
@@ -1752,7 +1752,7 @@ static void gatt_le_disconnect_complete_notify_user(const RawAddress& bda,
                                  kGattDisconnected, reason, transport);
     }
 
-    if (IS_FLAG_ENABLED(gatt_reconnect_on_bt_on_fix)) {
+    if (com::android::bluetooth::flags::gatt_reconnect_on_bt_on_fix()) {
       if (p_reg->direct_connect_request.count(bda) > 0) {
         log::info(
             "Removing device {} from the direct connect list of gatt_if {}",
@@ -1770,7 +1770,7 @@ void gatt_cleanup_upon_disc(const RawAddress& bda, tGATT_DISCONN_REASON reason,
 
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bda, transport);
   if (!p_tcb) {
-    if (!IS_FLAG_ENABLED(gatt_reconnect_on_bt_on_fix)) {
+    if (!com::android::bluetooth::flags::gatt_reconnect_on_bt_on_fix()) {
       log::error(
           "Disconnect for unknown connection bd_addr:{} reason:{} transport:{}",
           bda, gatt_disconnection_reason_text(reason),
