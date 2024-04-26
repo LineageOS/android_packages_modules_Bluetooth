@@ -20,11 +20,11 @@
 
 #include "btif/include/btif_av.h"
 
-#include <android_bluetooth_flags.h>
 #include <android_bluetooth_sysprop.h>
 #include <base/functional/bind.h>
 #include <base/strings/stringprintf.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/a2dp/enums.pb.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 
@@ -513,7 +513,7 @@ class BtifAvSource {
     }
     if (peer_address.IsEmpty()) {
       log::verbose("peer address is empty, shutdown the Audio source");
-      if (IS_FLAG_ENABLED(a2dp_concurrent_source_sink)) {
+      if (com::android::bluetooth::flags::a2dp_concurrent_source_sink()) {
         if (!bta_av_co_set_active_source_peer(peer_address)) {
           log::warn("unable to set active peer to empty in BtaAvCo");
         }
@@ -542,7 +542,7 @@ class BtifAvSource {
       return true;
     }
 
-    if (!IS_FLAG_ENABLED(a2dp_concurrent_source_sink) &&
+    if (!com::android::bluetooth::flags::a2dp_concurrent_source_sink() &&
         btif_av_src_sink_coexist_enabled()) {
       btif_av_sink_delete_active_peer();
     }
@@ -565,7 +565,7 @@ class BtifAvSource {
   void DeleteActivePeer(void) {
     std::promise<void> shutdown_complete_promise;
     log::verbose("");
-    if (IS_FLAG_ENABLED(a2dp_concurrent_source_sink)) {
+    if (com::android::bluetooth::flags::a2dp_concurrent_source_sink()) {
       if (!bta_av_co_set_active_source_peer(RawAddress::kEmpty)) {
         log::warn("unable to set active peer to empty in BtaAvCo");
       }
@@ -704,7 +704,7 @@ class BtifAvSink {
     }
     if (peer_address.IsEmpty()) {
       log::verbose("peer address is empty, shutdown the Audio sink");
-      if (IS_FLAG_ENABLED(a2dp_concurrent_source_sink)) {
+      if (com::android::bluetooth::flags::a2dp_concurrent_source_sink()) {
         if (!bta_av_co_set_active_sink_peer(peer_address)) {
           log::warn("unable to set active peer to empty in BtaAvCo");
         }
@@ -725,7 +725,7 @@ class BtifAvSink {
       return true;
     }
 
-    if (!IS_FLAG_ENABLED(a2dp_concurrent_source_sink) &&
+    if (!com::android::bluetooth::flags::a2dp_concurrent_source_sink() &&
         btif_av_src_sink_coexist_enabled()) {
       btif_av_source_delete_active_peer();
     }
@@ -748,7 +748,7 @@ class BtifAvSink {
 
   void DeleteActivePeer(void) {
     log::verbose("");
-    if (IS_FLAG_ENABLED(a2dp_concurrent_source_sink)) {
+    if (com::android::bluetooth::flags::a2dp_concurrent_source_sink()) {
       if (!bta_av_co_set_active_sink_peer(RawAddress::kEmpty)) {
         log::warn("unable to set active peer to empty in BtaAvCo");
       }
@@ -849,7 +849,7 @@ static BtifAvPeer* btif_av_sink_find_peer(const RawAddress& peer_address) {
 }
 static BtifAvPeer* btif_av_find_peer(const RawAddress& peer_address,
                                      const A2dpType local_a2dp_type) {
-  if (IS_FLAG_ENABLED(a2dp_concurrent_source_sink)) {
+  if (com::android::bluetooth::flags::a2dp_concurrent_source_sink()) {
     if (btif_av_source.Enabled() && local_a2dp_type == A2dpType::kSource) {
       BtifAvPeer* sourcePeer = btif_av_source_find_peer(peer_address);
       if (sourcePeer != nullptr) {
@@ -890,7 +890,7 @@ static BtifAvPeer* btif_av_find_peer(const RawAddress& peer_address,
   return nullptr;
 }
 static BtifAvPeer* btif_av_find_active_peer(const A2dpType local_a2dp_type) {
-  if (IS_FLAG_ENABLED(a2dp_concurrent_source_sink)) {
+  if (com::android::bluetooth::flags::a2dp_concurrent_source_sink()) {
     if (btif_av_source.Enabled() && local_a2dp_type == A2dpType::kSource)
       return btif_av_source_find_peer(btif_av_source.ActivePeer());
     if (btif_av_sink.Enabled() && local_a2dp_type == A2dpType::kSink)
@@ -1152,7 +1152,7 @@ bool BtifAvPeer::CanBeDeleted() const {
 }
 
 const RawAddress& BtifAvPeer::ActivePeerAddress() const {
-  if (!IS_FLAG_ENABLED(a2dp_concurrent_source_sink)) {
+  if (!com::android::bluetooth::flags::a2dp_concurrent_source_sink()) {
     if (btif_av_src_sink_coexist_enabled() && btif_av_both_enable()) {
       RawAddress addr = btif_av_sink.ActivePeer();
       if (RawAddress::kEmpty == addr) {
@@ -1320,7 +1320,7 @@ BtifAvPeer* BtifAvSource::FindOrCreatePeer(const RawAddress& peer_address,
 bool BtifAvSource::AllowedToConnect(const RawAddress& peer_address) const {
   int connected = 0;
 
-  if (!IS_FLAG_ENABLED(a2dp_concurrent_source_sink) &&
+  if (!com::android::bluetooth::flags::a2dp_concurrent_source_sink() &&
       btif_av_src_sink_coexist_enabled() && invalid_peer_check_) {
     log::info(
         "invalid_peer_check_ so allow to connect here, when BTA_AV_OPEN_EVT "
@@ -1337,7 +1337,7 @@ bool BtifAvSource::AllowedToConnect(const RawAddress& peer_address) const {
       case BtifAvStateMachine::kStateStarted:
         if (peer->PeerAddress() == peer_address) {
           /* we should check if another role is used */
-          if (!IS_FLAG_ENABLED(a2dp_concurrent_source_sink) &&
+          if (!com::android::bluetooth::flags::a2dp_concurrent_source_sink() &&
               btif_av_src_sink_coexist_enabled() && btif_av_both_enable()) {
             break;
           }
@@ -1350,7 +1350,7 @@ bool BtifAvSource::AllowedToConnect(const RawAddress& peer_address) const {
         break;
     }
   }
-  if (!IS_FLAG_ENABLED(a2dp_concurrent_source_sink) &&
+  if (!com::android::bluetooth::flags::a2dp_concurrent_source_sink() &&
       btif_av_src_sink_coexist_enabled() && btif_av_both_enable()) {
     log::info("connected={}, max_connected_peers_={}, sink_peers={}", connected,
               max_connected_peers_, (int)btif_av_sink.Peers().size());
@@ -1362,7 +1362,7 @@ bool BtifAvSource::AllowedToConnect(const RawAddress& peer_address) const {
       return true;
     }
   }
-  if (IS_FLAG_ENABLED(a2dp_concurrent_source_sink)) {
+  if (com::android::bluetooth::flags::a2dp_concurrent_source_sink()) {
     const int sink_connected_peers_size = (int)btif_av_sink.Peers().size();
     log::info(
         "connected={}, max_connected_peers_={}, sink_connected_peers_size={}",
@@ -1581,7 +1581,7 @@ BtifAvPeer* BtifAvSink::FindOrCreatePeer(const RawAddress& peer_address,
 bool BtifAvSink::AllowedToConnect(const RawAddress& peer_address) const {
   int connected = 0;
 
-  if (!IS_FLAG_ENABLED(a2dp_concurrent_source_sink) &&
+  if (!com::android::bluetooth::flags::a2dp_concurrent_source_sink() &&
       btif_av_src_sink_coexist_enabled() && invalid_peer_check_) {
     log::info(
         "invalid_peer_check_ so allow to connect here, when BTA_AV_OPEN_EVT "
@@ -1596,7 +1596,7 @@ bool BtifAvSink::AllowedToConnect(const RawAddress& peer_address) const {
       case BtifAvStateMachine::kStateOpened:
       case BtifAvStateMachine::kStateStarted:
         if (peer->PeerAddress() == peer_address) {
-          if (!IS_FLAG_ENABLED(a2dp_concurrent_source_sink)) {
+          if (!com::android::bluetooth::flags::a2dp_concurrent_source_sink()) {
             /* we should check if another role is used */
             if (btif_av_both_enable()) break;
           }
@@ -1619,7 +1619,8 @@ bool BtifAvSink::AllowedToConnect(const RawAddress& peer_address) const {
         break;
     }
   }
-  if (!IS_FLAG_ENABLED(a2dp_concurrent_source_sink) && btif_av_both_enable()) {
+  if (!com::android::bluetooth::flags::a2dp_concurrent_source_sink() &&
+      btif_av_both_enable()) {
     log::info("connected={}, max_connected_peers_={}, source_peers={}",
               connected, max_connected_peers_,
               (int)btif_av_source.Peers().size());
@@ -1627,7 +1628,7 @@ bool BtifAvSink::AllowedToConnect(const RawAddress& peer_address) const {
     return (connected < max_connected_peers_) && btif_av_source.Peers().empty();
   }
 
-  if (IS_FLAG_ENABLED(a2dp_concurrent_source_sink)) {
+  if (com::android::bluetooth::flags::a2dp_concurrent_source_sink()) {
     const int source_connected_peers_size = (int)btif_av_source.Peers().size();
     log::info(
         "connected={}, max_connected_peers_={}, source_connected_peers_size={}",
@@ -1930,7 +1931,7 @@ bool BtifAvStateMachine::StateIdle::ProcessEvent(uint32_t event, void* p_data) {
           log::verbose("Peer {} sep={}, open_sep={}", peer_.PeerAddress(),
                        peer_.PeerSep(), p_bta_data->open.sep);
           /* if peer is wrong sep type, move it to BtifAvSxxx */
-          if (!IS_FLAG_ENABLED(a2dp_concurrent_source_sink)) {
+          if (!com::android::bluetooth::flags::a2dp_concurrent_source_sink()) {
             if (peer_.PeerSep() == AVDT_TSEP_SNK) {
               log::verbose("set source invalid_peer_check as false");
               btif_av_source.SetInvalidPeerCheck(false);
@@ -2133,7 +2134,7 @@ bool BtifAvStateMachine::StateOpening::ProcessEvent(uint32_t event,
           log::verbose("Peer {} sep={}, open_sep={}", peer_.PeerAddress(),
                        peer_.PeerSep(), p_bta_data->open.sep);
           /* if peer is wrong sep type, move it to BtifAvSxxx */
-          if (!IS_FLAG_ENABLED(a2dp_concurrent_source_sink)) {
+          if (!com::android::bluetooth::flags::a2dp_concurrent_source_sink()) {
             if (peer_.PeerSep() == AVDT_TSEP_SNK) {
               log::verbose("set source invalid_peer_check as false");
               btif_av_source.SetInvalidPeerCheck(false);
@@ -2898,7 +2899,8 @@ static void btif_av_source_initiate_av_open_timer_timeout(void* data) {
   BtifAvPeer* peer = (BtifAvPeer*)data;
   bool device_connected = false;
 
-  if (IS_FLAG_ENABLED(avrcp_connect_a2dp_delayed) && is_new_avrcp_enabled()) {
+  if (com::android::bluetooth::flags::avrcp_connect_a2dp_delayed() &&
+      is_new_avrcp_enabled()) {
     // check if device is connected
     if (bluetooth::avrcp::AvrcpService::Get() != nullptr) {
       device_connected =
@@ -3140,7 +3142,7 @@ static BtifAvPeer* btif_av_handle_both_peer(uint8_t peer_sep,
           log::verbose("peer_sep({}), create a new sink peer", peer_sep);
           peer = btif_av_source.FindOrCreatePeer(peer_address, bta_handle);
         } else {
-          if (!IS_FLAG_ENABLED(a2dp_concurrent_source_sink)) {
+          if (!com::android::bluetooth::flags::a2dp_concurrent_source_sink()) {
             btif_av_source.SetInvalidPeerCheck(true);
           }
           if (!btif_av_source.Peers().empty()) {
@@ -3443,7 +3445,7 @@ bool is_a2dp_sink_property_enabled(void) {
 #endif
 }
 bool btif_av_src_sink_coexist_enabled(void) {
-  if (IS_FLAG_ENABLED(a2dp_concurrent_source_sink)) {
+  if (com::android::bluetooth::flags::a2dp_concurrent_source_sink()) {
     return is_a2dp_sink_property_enabled() && is_a2dp_source_property_enabled();
   }
   return GET_SYSPROP(A2dp, src_sink_coexist, false);
@@ -4147,7 +4149,8 @@ void btif_av_acl_disconnected(const RawAddress& peer_address,
                               const A2dpType local_a2dp_type) {
   // Inform the application that ACL is disconnected and move to idle state
   log::info("Peer {} : ACL Disconnected", peer_address);
-  if (IS_FLAG_ENABLED(a2dp_concurrent_source_sink) || btif_av_both_enable()) {
+  if (com::android::bluetooth::flags::a2dp_concurrent_source_sink() ||
+      btif_av_both_enable()) {
     BtifAvPeer* peer = btif_av_find_peer(peer_address, local_a2dp_type);
     if (peer != nullptr) {
       if (peer->IsSource()) {

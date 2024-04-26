@@ -262,7 +262,7 @@ void SinkImpl::ConfirmStreamingRequest() {
   }
 
   log::info("");
-  if (IS_FLAG_ENABLED(leaudio_start_stream_race_fix)) {
+  if (com::android::bluetooth::flags::leaudio_start_stream_race_fix()) {
     halSourceInterface_->ConfirmStreamingRequestV2();
   } else {
     halSourceInterface_->ConfirmStreamingRequest();
@@ -299,7 +299,7 @@ void SinkImpl::CancelStreamingRequest() {
   }
 
   log::info("");
-  if (IS_FLAG_ENABLED(leaudio_start_stream_race_fix)) {
+  if (com::android::bluetooth::flags::leaudio_start_stream_race_fix()) {
     halSourceInterface_->CancelStreamingRequestV2();
   } else {
     halSourceInterface_->CancelStreamingRequest();

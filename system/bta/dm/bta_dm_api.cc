@@ -22,9 +22,9 @@
  *
  ******************************************************************************/
 
-#include <android_bluetooth_flags.h>
 #include <base/functional/bind.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <vector>
 
@@ -229,7 +229,7 @@ void BTA_DmBleUpdateConnectionParams(const RawAddress& bd_addr,
  *
  ******************************************************************************/
 void BTA_DmBleConfigLocalPrivacy(bool privacy_enable) {
-  if (IS_FLAG_ENABLED(synchronous_bta_sec)) {
+  if (com::android::bluetooth::flags::synchronous_bta_sec()) {
     bta_dm_ble_config_local_privacy(privacy_enable);
   } else {
     do_in_main_thread(FROM_HERE, base::BindOnce(bta_dm_ble_config_local_privacy,

@@ -35,8 +35,8 @@
 #include <android/sysprop/BluetoothProperties.sysprop.h>
 #endif
 
-#include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include "common/strings.h"
 #include "devices.h"
@@ -142,7 +142,7 @@ class LeAudioDeviceGroup {
     is_duplex_preference_le_audio = true;
 #endif
     asymmetric_phy_for_unidirectional_cis_supported =
-        IS_FLAG_ENABLED(asymmetric_phy_for_unidirectional_cis);
+        com::android::bluetooth::flags::asymmetric_phy_for_unidirectional_cis();
   }
   ~LeAudioDeviceGroup(void);
 
@@ -340,7 +340,7 @@ class LeAudioDeviceGroup {
       int direction = types::kLeAudioDirectionBoth) const;
 
   DsaModes GetAllowedDsaModes() {
-    if (!IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
+    if (!com::android::bluetooth::flags::leaudio_dynamic_spatial_audio()) {
       return {DsaMode::DISABLED};
     }
 

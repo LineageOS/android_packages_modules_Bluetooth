@@ -19,8 +19,8 @@
 #include "client_interface_aidl.h"
 
 #include <android/binder_manager.h>
-#include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <thread>
 #include <vector>
@@ -101,7 +101,7 @@ BluetoothAudioClientInterface::GetProviderInfo(
     SessionType session_type,
     std::shared_ptr<IBluetoothAudioProviderFactory> provider_factory) {
   if (!is_aidl_available() ||
-      !IS_FLAG_ENABLED(a2dp_offload_codec_extensibility)) {
+      !com::android::bluetooth::flags::a2dp_offload_codec_extensibility()) {
     return std::nullopt;
   }
 
@@ -135,7 +135,7 @@ BluetoothAudioClientInterface::GetA2dpConfiguration(
     std::vector<A2dpRemoteCapabilities> const& remote_capabilities,
     A2dpConfigurationHint const& hint) const {
   if (!is_aidl_available() ||
-      !IS_FLAG_ENABLED(a2dp_offload_codec_extensibility)) {
+      !com::android::bluetooth::flags::a2dp_offload_codec_extensibility()) {
     return std::nullopt;
   }
 

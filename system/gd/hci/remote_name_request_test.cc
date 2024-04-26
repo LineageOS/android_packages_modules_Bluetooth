@@ -16,7 +16,7 @@
 
 #include "hci/remote_name_request.h"
 
-#include <android_bluetooth_flags.h>
+#include <com_android_bluetooth_flags.h>
 #include <flag_macros.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>

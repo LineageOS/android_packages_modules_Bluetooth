@@ -15,8 +15,8 @@
  */
 #pragma once
 
-#include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <chrono>
 #include <memory>
@@ -210,7 +210,7 @@ class PeriodicSyncManager {
 
   template <class View>
   void HandlePeriodicAdvertisingCreateSyncStatus(CommandStatusView view) {
-    if (!IS_FLAG_ENABLED(leaudio_broadcast_assistant_handle_command_statuses)) {
+    if (!com::android::bluetooth::flags::leaudio_broadcast_assistant_handle_command_statuses()) {
       return;
     }
     log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
@@ -245,7 +245,7 @@ class PeriodicSyncManager {
 
   template <class View>
   void HandlePeriodicAdvertisingCreateSyncCancelStatus(CommandCompleteView view) {
-    if (!IS_FLAG_ENABLED(leaudio_broadcast_assistant_handle_command_statuses)) {
+    if (!com::android::bluetooth::flags::leaudio_broadcast_assistant_handle_command_statuses()) {
       return;
     }
     log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
@@ -353,7 +353,7 @@ class PeriodicSyncManager {
         (uint16_t)event_view.GetAdvertiserPhy(),
         event_view.GetPeriodicAdvertisingInterval());
 
-    if (IS_FLAG_ENABLED(leaudio_broadcast_feature_support)) {
+    if (com::android::bluetooth::flags::leaudio_broadcast_feature_support()) {
       if (event_view.GetStatus() != ErrorCode::SUCCESS) {
         periodic_syncs_.erase(periodic_sync);
       }
@@ -382,7 +382,7 @@ class PeriodicSyncManager {
     }
 
     auto complete_advertising_data =
-        IS_FLAG_ENABLED(le_periodic_scanning_reassembler)
+        com::android::bluetooth::flags::le_periodic_scanning_reassembler()
             ? scanning_reassembler_.ProcessPeriodicAdvertisingReport(
                   sync_handle, DataStatus(event_view.GetDataStatus()), event_view.GetData())
             : event_view.GetData();

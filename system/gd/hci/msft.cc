@@ -16,8 +16,8 @@
 #if TARGET_FLOSS
 #include "hci/msft.h"
 
-#include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 #include <hardware/bt_common_types.h>
 
 #include "hal/hci_hal.h"
@@ -146,7 +146,7 @@ struct MsftExtensionManager::impl {
       return;
     }
 
-    if (IS_FLAG_ENABLED(msft_addr_tracking_quirk)) {
+    if (com::android::bluetooth::flags::msft_addr_tracking_quirk()) {
       if (monitor.condition_type != MSFT_CONDITION_TYPE_ADDRESS &&
           monitor.condition_type != MSFT_CONDITION_TYPE_PATTERNS) {
         log::warn("Disallowed as MSFT condition type {} is not supported.", monitor.condition_type);

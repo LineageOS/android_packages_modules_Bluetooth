@@ -18,10 +18,10 @@
 
 #define LOG_TAG "ble_bta_hh"
 
-#include <android_bluetooth_flags.h>
 #include <base/functional/bind.h>
 #include <base/functional/callback.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
 #include <vector>
@@ -205,7 +205,7 @@ void bta_hh_le_enable(void) {
                           }
                         }), false);
 
-  if (IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
+  if (com::android::bluetooth::flags::leaudio_dynamic_spatial_audio()) {
     LeAudioClient::RegisterIsoDataConsumer(bta_hh_le_iso_data_callback);
   }
 }
@@ -642,7 +642,8 @@ static void bta_hh_le_open_cmpl(tBTA_HH_DEV_CB* p_cb) {
     bta_hh_le_register_input_notif(p_cb, p_cb->mode, true);
     bta_hh_sm_execute(p_cb, BTA_HH_OPEN_CMPL_EVT, NULL);
 
-    if (!IS_FLAG_ENABLED(prevent_hogp_reconnect_when_connected)) {
+    if (!com::android::bluetooth::flags::
+            prevent_hogp_reconnect_when_connected()) {
       if (kBTA_HH_LE_RECONN && p_cb->status == BTA_HH_OK) {
         bta_hh_le_add_dev_bg_conn(p_cb);
       }
@@ -2295,7 +2296,7 @@ static void bta_hh_process_cache_rpt(tBTA_HH_DEV_CB* p_cb,
 static bool bta_hh_le_iso_data_callback(const RawAddress& addr,
                                         uint16_t cis_conn_hdl, uint8_t* data,
                                         uint16_t size, uint32_t timestamp) {
-  if (!IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
+  if (!com::android::bluetooth::flags::leaudio_dynamic_spatial_audio()) {
     log::warn("DSA not supported");
     return false;
   }

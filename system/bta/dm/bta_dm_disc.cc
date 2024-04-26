@@ -18,10 +18,10 @@
 
 #include "bta/dm/bta_dm_disc.h"
 
-#include <android_bluetooth_flags.h>
 #include <base/functional/bind.h>
 #include <base/strings/stringprintf.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <cstddef>
 #include <cstdint>
@@ -29,12 +29,12 @@
 #include <variant>
 #include <vector>
 
-#include "android_bluetooth_flags.h"
 #include "bta/dm/bta_dm_disc_int.h"
 #include "bta/dm/bta_dm_disc_legacy.h"
 #include "bta/include/bta_gatt_api.h"
 #include "bta/include/bta_sdp_api.h"
 #include "btif/include/btif_config.h"
+#include "com_android_bluetooth_flags.h"
 #include "common/circular_buffer.h"
 #include "common/init_flags.h"
 #include "common/strings.h"
@@ -179,7 +179,7 @@ gatt_interface_t& get_gatt_interface() { return *gatt_interface; }
 }  // namespace
 
 void bta_dm_disc_disable_search_and_disc() {
-  if (IS_FLAG_ENABLED(separate_service_and_device_discovery)) {
+  if (com::android::bluetooth::flags::separate_service_and_device_discovery()) {
     log::info("No one should be calling this when flag is enabled");
     return;
   }
@@ -187,7 +187,8 @@ void bta_dm_disc_disable_search_and_disc() {
 }
 
 void bta_dm_disc_disable_disc() {
-  if (!IS_FLAG_ENABLED(separate_service_and_device_discovery)) {
+  if (!com::android::bluetooth::flags::
+          separate_service_and_device_discovery()) {
     log::info("no-op when flag is disabled");
     return;
   }
@@ -195,7 +196,8 @@ void bta_dm_disc_disable_disc() {
 }
 
 void bta_dm_disc_gatt_cancel_open(const RawAddress& bd_addr) {
-  if (!IS_FLAG_ENABLED(separate_service_and_device_discovery)) {
+  if (!com::android::bluetooth::flags::
+          separate_service_and_device_discovery()) {
     bta_dm_disc_legacy::bta_dm_disc_gatt_cancel_open(bd_addr);
     return;
   }
@@ -203,7 +205,8 @@ void bta_dm_disc_gatt_cancel_open(const RawAddress& bd_addr) {
 }
 
 void bta_dm_disc_gatt_refresh(const RawAddress& bd_addr) {
-  if (!IS_FLAG_ENABLED(separate_service_and_device_discovery)) {
+  if (!com::android::bluetooth::flags::
+          separate_service_and_device_discovery()) {
     bta_dm_disc_legacy::bta_dm_disc_gatt_refresh(bd_addr);
     return;
   }
@@ -211,7 +214,8 @@ void bta_dm_disc_gatt_refresh(const RawAddress& bd_addr) {
 }
 
 void bta_dm_disc_remove_device(const RawAddress& bd_addr) {
-  if (!IS_FLAG_ENABLED(separate_service_and_device_discovery)) {
+  if (!com::android::bluetooth::flags::
+          separate_service_and_device_discovery()) {
     bta_dm_disc_legacy::bta_dm_disc_remove_device(bd_addr);
     return;
   }
@@ -226,7 +230,8 @@ void bta_dm_disc_remove_device(const RawAddress& bd_addr) {
 }
 
 void bta_dm_disc_gattc_register() {
-  if (!IS_FLAG_ENABLED(separate_service_and_device_discovery)) {
+  if (!com::android::bluetooth::flags::
+          separate_service_and_device_discovery()) {
     bta_dm_disc_legacy::bta_dm_disc_gattc_register();
     return;
   }
@@ -944,7 +949,7 @@ static void bta_dm_gatt_disc_complete(uint16_t conn_id, tGATT_STATUS status) {
   } else {
     bta_dm_discovery_cb.conn_id = GATT_INVALID_CONN_ID;
 
-    if (IS_FLAG_ENABLED(bta_dm_disc_stuck_in_cancelling_fix)) {
+    if (com::android::bluetooth::flags::bta_dm_disc_stuck_in_cancelling_fix()) {
       log::info(
           "Discovery complete for invalid conn ID. Will pick up next job");
       bta_dm_discovery_set_state(BTA_DM_DISCOVER_IDLE);
@@ -1228,7 +1233,8 @@ static void bta_dm_disc_reset() {
 }
 
 void bta_dm_disc_start(bool delay_close_gatt) {
-  if (!IS_FLAG_ENABLED(separate_service_and_device_discovery)) {
+  if (!com::android::bluetooth::flags::
+          separate_service_and_device_discovery()) {
     bta_dm_disc_legacy::bta_dm_disc_start(delay_close_gatt);
     return;
   }
@@ -1240,7 +1246,8 @@ void bta_dm_disc_start(bool delay_close_gatt) {
 }
 
 void bta_dm_disc_acl_down(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
-  if (!IS_FLAG_ENABLED(separate_service_and_device_discovery)) {
+  if (!com::android::bluetooth::flags::
+          separate_service_and_device_discovery()) {
     bta_dm_disc_legacy::bta_dm_disc_acl_down(bd_addr, transport);
     return;
   }
@@ -1265,7 +1272,8 @@ void bta_dm_disc_acl_down(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
 }
 
 void bta_dm_disc_stop() {
-  if (!IS_FLAG_ENABLED(separate_service_and_device_discovery)) {
+  if (!com::android::bluetooth::flags::
+          separate_service_and_device_discovery()) {
     bta_dm_disc_legacy::bta_dm_disc_stop();
     return;
   }
@@ -1275,7 +1283,8 @@ void bta_dm_disc_stop() {
 void bta_dm_disc_start_service_discovery(service_discovery_callbacks cbacks,
                                          const RawAddress& bd_addr,
                                          tBT_TRANSPORT transport) {
-  if (!IS_FLAG_ENABLED(separate_service_and_device_discovery)) {
+  if (!com::android::bluetooth::flags::
+          separate_service_and_device_discovery()) {
     bta_dm_disc_legacy::bta_dm_disc_start_service_discovery(cbacks, bd_addr,
                                                             transport);
     return;
@@ -1288,7 +1297,8 @@ void bta_dm_disc_start_service_discovery(service_discovery_callbacks cbacks,
 
 #define DUMPSYS_TAG "shim::legacy::bta::dm"
 void DumpsysBtaDmDisc(int fd) {
-  if (!IS_FLAG_ENABLED(separate_service_and_device_discovery)) {
+  if (!com::android::bluetooth::flags::
+          separate_service_and_device_discovery()) {
     bta_dm_disc_legacy::DumpsysBtaDmDisc(fd);
     return;
   }

@@ -19,8 +19,8 @@
 
 #include "le_audio_software_aidl.h"
 
-#include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <atomic>
 #include <bitset>
@@ -199,7 +199,7 @@ void LeAudioTransport::SetLatencyMode(LatencyMode latency_mode) {
       return;
   }
 
-  if (IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
+  if (com::android::bluetooth::flags::leaudio_dynamic_spatial_audio()) {
     if (dsa_mode_ != prev_dsa_mode &&
         cached_source_metadata_.tracks != nullptr &&
         cached_source_metadata_.tracks != 0) {
@@ -234,7 +234,7 @@ void LeAudioTransport::SourceMetadataChanged(
     return;
   }
 
-  if (IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
+  if (com::android::bluetooth::flags::leaudio_dynamic_spatial_audio()) {
     if (cached_source_metadata_.tracks != nullptr) {
       free(cached_source_metadata_.tracks);
       cached_source_metadata_.tracks = nullptr;
@@ -342,7 +342,8 @@ bool LeAudioTransport::IsRequestCompletedAfterUpdate(
 }
 
 StartRequestState LeAudioTransport::GetStartRequestState(void) {
-  if (IS_FLAG_ENABLED(leaudio_start_request_state_mutex_check)) {
+  if (com::android::bluetooth::flags::
+          leaudio_start_request_state_mutex_check()) {
     std::lock_guard<std::mutex> guard(start_request_state_mutex_);
   }
   return start_request_state_;
@@ -389,7 +390,7 @@ LeAudioSinkTransport::LeAudioSinkTransport(SessionType session_type,
 LeAudioSinkTransport::~LeAudioSinkTransport() { delete transport_; }
 
 BluetoothAudioCtrlAck LeAudioSinkTransport::StartRequest(bool is_low_latency) {
-  if (IS_FLAG_ENABLED(leaudio_start_stream_race_fix)) {
+  if (com::android::bluetooth::flags::leaudio_start_stream_race_fix()) {
     return transport_->StartRequestV2(is_low_latency);
   }
   return transport_->StartRequest(is_low_latency);
@@ -488,7 +489,7 @@ LeAudioSourceTransport::~LeAudioSourceTransport() { delete transport_; }
 
 BluetoothAudioCtrlAck LeAudioSourceTransport::StartRequest(
     bool is_low_latency) {
-  if (IS_FLAG_ENABLED(leaudio_start_stream_race_fix)) {
+  if (com::android::bluetooth::flags::leaudio_start_stream_race_fix()) {
     return transport_->StartRequestV2(is_low_latency);
   }
   return transport_->StartRequest(is_low_latency);

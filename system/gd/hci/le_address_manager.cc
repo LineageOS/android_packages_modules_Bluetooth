@@ -16,8 +16,8 @@
 
 #include "hci/le_address_manager.h"
 
-#include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include "common/init_flags.h"
 #include "hci/octets.h"
@@ -108,7 +108,7 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddress(
   supports_ble_privacy_ = supports_ble_privacy;
   log::info("New policy: {}", AddressPolicyText(address_policy));
 
-  if (IS_FLAG_ENABLED(nrpa_non_connectable_adv)) {
+  if (com::android::bluetooth::flags::nrpa_non_connectable_adv()) {
     minimum_rotation_time_ = minimum_rotation_time;
     maximum_rotation_time_ = maximum_rotation_time;
   }
@@ -140,7 +140,7 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddress(
     case AddressPolicy::USE_RESOLVABLE_ADDRESS:
       le_address_ = fixed_address;
       rotation_irk_ = rotation_irk;
-      if (!IS_FLAG_ENABLED(nrpa_non_connectable_adv)) {
+      if (!com::android::bluetooth::flags::nrpa_non_connectable_adv()) {
         minimum_rotation_time_ = minimum_rotation_time;
         maximum_rotation_time_ = maximum_rotation_time;
       }
@@ -280,7 +280,7 @@ AddressWithType LeAddressManager::NewResolvableAddress() {
 }
 
 AddressWithType LeAddressManager::NewNonResolvableAddress() {
-  if (!IS_FLAG_ENABLED(nrpa_non_connectable_adv)) {
+  if (!com::android::bluetooth::flags::nrpa_non_connectable_adv()) {
     log::assert_that(RotatingAddress(), "assert failed: RotatingAddress()");
   }
   hci::Address address = generate_nrpa();

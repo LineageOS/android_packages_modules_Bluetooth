@@ -298,7 +298,7 @@ LeAudioSinkTransport::LeAudioSinkTransport(SessionType_2_1 session_type,
 LeAudioSinkTransport::~LeAudioSinkTransport() { delete transport_; }
 
 BluetoothAudioCtrlAck LeAudioSinkTransport::StartRequest() {
-  if (IS_FLAG_ENABLED(leaudio_start_stream_race_fix)) {
+  if (com::android::bluetooth::flags::leaudio_start_stream_race_fix()) {
     return transport_->StartRequestV2();
   }
   return transport_->StartRequest();
@@ -379,7 +379,7 @@ LeAudioSourceTransport::LeAudioSourceTransport(SessionType_2_1 session_type,
 LeAudioSourceTransport::~LeAudioSourceTransport() { delete transport_; }
 
 BluetoothAudioCtrlAck LeAudioSourceTransport::StartRequest() {
-  if (IS_FLAG_ENABLED(leaudio_start_stream_race_fix)) {
+  if (com::android::bluetooth::flags::leaudio_start_stream_race_fix()) {
     return transport_->StartRequestV2();
   }
   return transport_->StartRequest();
