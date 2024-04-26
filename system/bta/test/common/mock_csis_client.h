@@ -33,7 +33,7 @@ class MockCsisClient : public bluetooth::csis::CsisClient {
               (override));
   MOCK_METHOD((std::vector<RawAddress>), GetDeviceList, (int group_id),
               (override));
-  MOCK_METHOD((int), GetDesiredSize, (int group_id), (override));
+  MOCK_METHOD((int), GetDesiredSize, (int group_id), (const override));
 
   /* Called from static methods */
   MOCK_METHOD((void), Initialize,
