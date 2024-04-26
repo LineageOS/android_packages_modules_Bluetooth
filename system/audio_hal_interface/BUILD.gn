@@ -35,6 +35,7 @@ static_library("audio_hal_interface") {
   ]
 
   deps = [
+    "//bt/flags:bluetooth_flags_c_lib",
     "//bt/system/common",
     "//bt/system/osi:osi",
   ]

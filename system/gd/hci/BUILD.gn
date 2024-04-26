@@ -42,6 +42,7 @@ source_set("BluetoothHciSources") {
   include_dirs = [ "//bt/system/gd" ]
 
   deps = [
+    "//bt/flags:bluetooth_flags_c_lib",
     "//bt/system/gd:gd_default_deps",
   ]
 
