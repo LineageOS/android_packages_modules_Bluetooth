@@ -257,6 +257,7 @@ bool LeAudioDevice::ConfigureAses(
 
   if (!ase) {
     log::error("Unable to find an ASE to configure");
+    PrintDebugState();
     return false;
   }
 
@@ -265,7 +266,8 @@ bool LeAudioDevice::ConfigureAses(
       (direction == types::kLeAudioDirectionSink) ? snk_pacs_ : src_pacs_;
   for (size_t i = 0; i < ase_configs.size() && ase; ++i) {
     auto const& ase_cfg = ase_configs.at(i);
-    if (!utils::GetConfigurationSupportedPac(pacs, ase_cfg.codec)) {
+    if (utils::IsCodecUsingLtvFormat(ase_cfg.codec.id) &&
+        !utils::GetConfigurationSupportedPac(pacs, ase_cfg.codec)) {
       return false;
     }
   }
@@ -283,13 +285,15 @@ bool LeAudioDevice::ConfigureAses(
                              : src_audio_locations_;
 
   // Before we activate the ASEs, make sure we have the right configuration
+  // Check for matching PACs only if we know that the LTV format is being used.
   uint8_t max_required_ase_per_dev = ase_configs.size() / num_of_devices +
                                      (ase_configs.size() % num_of_devices);
   int needed_ase = std::min((int)(max_required_ase_per_dev),
                             (int)(ase_configs.size() - active_ases));
   for (int i = 0; i < needed_ase; ++i) {
     auto const& ase_cfg = ase_configs.at(i);
-    if (!utils::GetConfigurationSupportedPac(pacs, ase_cfg.codec)) {
+    if (utils::IsCodecUsingLtvFormat(ase_cfg.codec.id) &&
+        !utils::GetConfigurationSupportedPac(pacs, ase_cfg.codec)) {
       log::error("No matching PAC found. Stop the activation.");
       return false;
     }
@@ -331,6 +335,7 @@ bool LeAudioDevice::ConfigureAses(
       ase->target_latency = ase_cfg.qos.target_latency;
       ase->codec_id = ase_cfg.codec.id;
       ase->codec_config = ase_cfg.codec.params;
+      ase->vendor_codec_config = ase_cfg.codec.vendor_params;
       ase->channel_count = ase_cfg.codec.channel_count_per_iso_stream;
 
       /* Let's choose audio channel allocation if not set */
@@ -341,7 +346,8 @@ bool LeAudioDevice::ConfigureAses(
 
       /* Get default value if no requirement for specific frame blocks per sdu
        */
-      if (!ase->codec_config.Find(
+      if (utils::IsCodecUsingLtvFormat(ase->codec_id) &&
+          !ase->codec_config.Find(
               codec_spec_conf::kLeAudioLtvTypeCodecFrameBlocksPerSdu)) {
         ase->codec_config.Add(
             codec_spec_conf::kLeAudioLtvTypeCodecFrameBlocksPerSdu,
