@@ -84,6 +84,15 @@ bool LeAudioDeviceGroup::IsAnyDeviceConnected(void) const {
 
 int LeAudioDeviceGroup::Size(void) const { return leAudioDevices_.size(); }
 
+int LeAudioDeviceGroup::DesiredSize(void) const {
+  int group_size = 0;
+  if (bluetooth::csis::CsisClient::IsCsisClientRunning()) {
+    group_size = bluetooth::csis::CsisClient::Get()->GetDesiredSize(group_id_);
+  }
+
+  return group_size > 0 ? group_size : leAudioDevices_.size();
+}
+
 int LeAudioDeviceGroup::NumOfConnected() const {
   /* return number of connected devices from the set*/
   return std::count_if(
@@ -1000,15 +1009,7 @@ void LeAudioDeviceGroup::CigConfiguration::GenerateCisIds(
   uint8_t cis_count_bidir = 0;
   uint8_t cis_count_unidir_sink = 0;
   uint8_t cis_count_unidir_source = 0;
-  int csis_group_size = 0;
-
-  if (bluetooth::csis::CsisClient::IsCsisClientRunning()) {
-    csis_group_size =
-        bluetooth::csis::CsisClient::Get()->GetDesiredSize(group_->group_id_);
-  }
-  /* If this is CSIS group, the csis_group_size will be > 0, otherwise -1.
-   * If the last happen it means, group size is 1 */
-  int group_size = csis_group_size > 0 ? csis_group_size : 1;
+  int group_size = group_->DesiredSize();
 
   set_configurations::get_cis_count(
       context_type, group_size, group_->GetGroupSinkStrategy(),
@@ -1326,10 +1327,7 @@ bool LeAudioDeviceGroup::IsAudioSetConfigurationSupported(
     // but use UNSPECIFIED which is always supported (but can be unavailable)
     auto device_cnt = NumOfAvailableForDirection(direction);
     if (device_cnt == 0) {
-      if (bluetooth::csis::CsisClient::IsCsisClientRunning()) {
-        device_cnt =
-            bluetooth::csis::CsisClient::Get()->GetDesiredSize(group_id_);
-      }
+      device_cnt = DesiredSize();
       if (device_cnt == 0) {
         log::error("Device count is 0");
         continue;
@@ -1428,8 +1426,9 @@ bool LeAudioDeviceGroup::IsAudioSetConfigurationSupported(
    */
   bool dual_bidirection_swb_supported_ =
       CodecManager::GetInstance()->IsDualBiDirSwbSupported();
-  if (Size() > 1 && CodecManager::GetInstance()->CheckCodecConfigIsBiDirSwb(
-                        *audio_set_conf)) {
+  if (DesiredSize() > 1 &&
+      CodecManager::GetInstance()->CheckCodecConfigIsBiDirSwb(
+          *audio_set_conf)) {
     if (!dual_bidirection_swb_supported_) {
       return false;
     }
