@@ -2394,6 +2394,7 @@ public class LeAudioServiceTest {
         injectAudioConfChanged(groupId, availableContexts, direction);
 
         assertThat(mService.setActiveDevice(mLeftDevice)).isTrue();
+        TestUtils.waitForLooperToFinishScheduledTask(mService.getMainLooper());
 
         doReturn(-1).when(mVolumeControlService).getAudioDeviceGroupVolume(groupId);
         //Set group and device as active.
@@ -2411,6 +2412,7 @@ public class LeAudioServiceTest {
 
         verify(mAudioManager, times(1)).handleBluetoothActiveDeviceChanged(eq(null), any(),
                         any(BluetoothProfileConnectionInfo.class));
+        TestUtils.waitForLooperToFinishScheduledTask(mService.getMainLooper());
 
         doReturn(100).when(mVolumeControlService).getAudioDeviceGroupVolume(groupId);
 
@@ -2445,6 +2447,7 @@ public class LeAudioServiceTest {
         // Add location support.
         injectAudioConfChanged(groupId, availableContexts, direction);
         assertThat(mService.setActiveDevice(mLeftDevice)).isTrue();
+        TestUtils.waitForLooperToFinishScheduledTask(mService.getMainLooper());
 
         doReturn(volume).when(mVolumeControlService).getAudioDeviceGroupVolume(groupId);
         // Set group and device as active.
@@ -2460,6 +2463,7 @@ public class LeAudioServiceTest {
         verify(mAudioManager, times(1))
                 .handleBluetoothActiveDeviceChanged(
                         eq(null), any(), any(BluetoothProfileConnectionInfo.class));
+        TestUtils.waitForLooperToFinishScheduledTask(mService.getMainLooper());
 
         // Verify setGroupVolume will not be called if no active sinks
         doReturn(new ArrayList<>()).when(mBassClientService).getActiveBroadcastSinks();
