@@ -357,6 +357,25 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
      */
     public static final int CONTEXT_TYPE_EMERGENCY_ALARM = 0x0800;
 
+    /**
+     * Indicates all contexts.
+     *
+     * @hide
+     */
+    public static final int CONTEXTS_ALL =
+            CONTEXT_TYPE_UNSPECIFIED
+                    | CONTEXT_TYPE_CONVERSATIONAL
+                    | CONTEXT_TYPE_MEDIA
+                    | CONTEXT_TYPE_GAME
+                    | CONTEXT_TYPE_INSTRUCTIONAL
+                    | CONTEXT_TYPE_VOICE_ASSISTANTS
+                    | CONTEXT_TYPE_LIVE
+                    | CONTEXT_TYPE_SOUND_EFFECTS
+                    | CONTEXT_TYPE_NOTIFICATIONS
+                    | CONTEXT_TYPE_RINGTONE
+                    | CONTEXT_TYPE_ALERTS
+                    | CONTEXT_TYPE_EMERGENCY_ALARM;
+
     /** This represents an invalid group ID. */
     public static final int GROUP_ID_INVALID = IBluetoothLeAudio.LE_AUDIO_GROUP_ID_INVALID;
 

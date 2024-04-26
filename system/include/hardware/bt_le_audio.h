@@ -409,6 +409,10 @@ class LeAudioClientInterface {
   virtual void SendAudioProfilePreferences(
       int group_id, bool is_output_preference_le_audio,
       bool is_duplex_preference_le_audio) = 0;
+
+  /* Set allowed to stream context */
+  virtual void SetGroupAllowedContextMask(int group_id, int sink_context_types,
+                                          int source_context_types) = 0;
 };
 
 /* Represents the broadcast source state. */
