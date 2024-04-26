@@ -191,7 +191,9 @@ public class ActiveDeviceManagerTest {
     public void tearDown() throws Exception {
         mTestLooper.stopAutoDispatchAndIgnoreExceptions();
         BluetoothMethodProxy.setInstanceForTesting(null);
-        mActiveDeviceManager.cleanup();
+        if (mActiveDeviceManager != null) {
+            mActiveDeviceManager.cleanup();
+        }
         TestUtils.clearAdapterService(mAdapterService);
         Utils.setDualModeAudioStateForTesting(mOriginalDualModeAudioState);
     }
