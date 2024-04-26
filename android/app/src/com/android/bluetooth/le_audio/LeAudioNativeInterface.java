@@ -390,6 +390,26 @@ public class LeAudioNativeInterface {
                 isDuplexPreferenceLeAudio);
     }
 
+    /**
+     * Set allowed context which should be considered while Audio Framework would request streaming.
+     *
+     * @param groupId is the groupId corresponding to the allowed context
+     * @param sinkContextTypes sink context types that would be allowed to stream
+     * @param sourceContextTypes source context types that would be allowed to stream
+     */
+    public void setGroupAllowedContextMask(
+            int groupId, int sinkContextTypes, int sourceContextTypes) {
+        Log.d(
+                TAG,
+                "setGroupAllowedContextMask groupId="
+                        + groupId
+                        + ", sinkContextTypes="
+                        + sinkContextTypes
+                        + ", sourceContextTypes="
+                        + sourceContextTypes);
+        setGroupAllowedContextMaskNative(groupId, sinkContextTypes, sourceContextTypes);
+    }
+
     // Native methods that call into the JNI interface
     private native void initNative(BluetoothLeAudioCodecConfig[] codecConfigOffloading);
     private native void cleanupNative();
@@ -410,4 +430,7 @@ public class LeAudioNativeInterface {
     /*package*/
     private native void sendAudioProfilePreferencesNative(int groupId,
             boolean isOutputPreferenceLeAudio, boolean isDuplexPreferenceLeAudio);
+
+    private native void setGroupAllowedContextMaskNative(
+            int groupId, int sinkContextTypes, int sourceContextTypes);
 }
