@@ -1,0 +1,13 @@
+package: "com.android.bluetooth.flags"
+container: "com.android.btservices"
+
+flag {
+    name: "mcp_allow_play_without_active_player"
+    namespace: "bluetooth"
+    description: "Handle LeAudio play same as in AVRCP in case player is not active"
+    bug: "337169240"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+
+}
