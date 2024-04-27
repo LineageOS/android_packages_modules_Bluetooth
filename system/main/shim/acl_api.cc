@@ -50,6 +50,16 @@ void bluetooth::shim::ACL_CancelClassicConnection(
   Stack::GetInstance()->GetAcl()->CancelClassicConnection(address);
 }
 
+bool bluetooth::shim::ACL_DeviceAlreadyConnected(
+    const tBLE_BD_ADDR& legacy_address_with_type) {
+  std::promise<bool> promise;
+  auto future = promise.get_future();
+  Stack::GetInstance()->GetAcl()->DeviceAlreadyConnected(
+      ToAddressWithTypeFromLegacy(legacy_address_with_type),
+      std::move(promise));
+  return future.get();
+}
+
 bool bluetooth::shim::ACL_AcceptLeConnectionFrom(
     const tBLE_BD_ADDR& legacy_address_with_type, bool is_direct) {
   std::promise<bool> promise;

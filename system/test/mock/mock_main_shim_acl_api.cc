@@ -42,6 +42,11 @@ bool bluetooth::shim::ACL_AcceptLeConnectionFrom(
   inc_func_call_count(__func__);
   return true;
 }
+bool bluetooth::shim::ACL_DeviceAlreadyConnected(
+    const tBLE_BD_ADDR& /* legacy_address_with_type */) {
+  inc_func_call_count(__func__);
+  return false;
+}
 void bluetooth::shim::ACL_IgnoreLeConnectionFrom(
     const tBLE_BD_ADDR& /* legacy_address_with_type */) {
   inc_func_call_count(__func__);

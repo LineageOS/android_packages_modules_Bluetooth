@@ -27,6 +27,7 @@
 #include "stack/btm/btm_ble_bgconn.h"
 
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
 #include <unordered_map>
@@ -38,6 +39,7 @@
 #include "stack/btm/btm_ble_int.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_int_types.h"
+#include "stack/include/acl_api.h"
 #include "types/raw_address.h"
 
 using namespace bluetooth;
@@ -114,6 +116,18 @@ bool BTM_AcceptlistAdd(const RawAddress& address, bool is_direct) {
     return false;
   }
 
+  if (com::android::bluetooth::flags::verify_handle_before_add_accept_list()) {
+    // Only RPA is checked here. RPA is converted to the identity address in
+    // BTM_Sec_GetAddressWithType if host has resolved it. Adding the identity
+    // address to accept list is not necessary if a valid handle already exists
+    // for the RPA.
+    if (BTM_BLE_IS_RESOLVE_BDA(address) &&
+        bluetooth::shim::ACL_DeviceAlreadyConnected(
+            {.type = 0x01, .bda = address})) {
+      log::info("Already connected, not adding to accept list.");
+      return true;
+    }
+  }
   return bluetooth::shim::ACL_AcceptLeConnectionFrom(
       BTM_Sec_GetAddressWithType(address), is_direct);
 }
