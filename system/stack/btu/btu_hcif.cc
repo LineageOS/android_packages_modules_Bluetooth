@@ -213,8 +213,7 @@ static void btu_hcif_log_event_metrics(uint8_t evt_code,
  * Returns          void
  *
  ******************************************************************************/
-void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id,
-                            const BT_HDR* p_msg) {
+void btu_hcif_process_event(uint8_t /* controller_id */, const BT_HDR* p_msg) {
   uint8_t* p = (uint8_t*)(p_msg + 1) + p_msg->offset;
   uint8_t hci_evt_code, hci_evt_len;
   uint8_t ble_sub_code;
@@ -579,7 +578,7 @@ static void btu_hcif_log_command_metrics(uint16_t opcode, const uint8_t* p_cmd,
  * Returns          void
  *
  ******************************************************************************/
-void btu_hcif_send_cmd(UNUSED_ATTR uint8_t controller_id, const BT_HDR* p_buf) {
+void btu_hcif_send_cmd(uint8_t /* controller_id */, const BT_HDR* p_buf) {
   if (!p_buf) return;
 
   uint16_t opcode;

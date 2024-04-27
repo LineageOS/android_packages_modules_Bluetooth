@@ -18,10 +18,10 @@
 
 #include "bta/dm/bta_dm_device_search.h"
 
-#include <android_bluetooth_flags.h>
 #include <base/functional/bind.h>
 #include <base/strings/stringprintf.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 #include <stddef.h>
 
 #include <cstdint>
@@ -29,12 +29,12 @@
 #include <variant>
 #include <vector>
 
-#include "android_bluetooth_flags.h"
 #include "bta/dm/bta_dm_device_search_int.h"
 #include "bta/dm/bta_dm_disc_legacy.h"
 #include "bta/include/bta_gatt_api.h"
 #include "bta/include/bta_sdp_api.h"
 #include "btif/include/btif_config.h"
+#include "com_android_bluetooth_flags.h"
 #include "common/circular_buffer.h"
 #include "common/init_flags.h"
 #include "common/strings.h"
@@ -105,7 +105,8 @@ static void post_search_evt(tBTA_DM_DEV_SEARCH_EVT event,
 }
 
 void bta_dm_disc_disable_search() {
-  if (!IS_FLAG_ENABLED(separate_service_and_device_discovery)) {
+  if (!com::android::bluetooth::flags::
+          separate_service_and_device_discovery()) {
     log::info("no-op when flag is disabled");
     return;
   }
@@ -165,8 +166,8 @@ static void bta_dm_search_cancel() {
     get_btm_client_interface().peer.BTM_CancelRemoteDeviceName();
 #ifndef TARGET_FLOSS
     /* bta_dm_search_cmpl is called when receiving the remote name cancel evt */
-    if (!IS_FLAG_ENABLED(
-            bta_dm_defer_device_discovery_state_change_until_rnr_complete)) {
+    if (!com::android::bluetooth::flags::
+            bta_dm_defer_device_discovery_state_change_until_rnr_complete()) {
       bta_dm_search_cmpl();
     }
 #endif
@@ -598,7 +599,8 @@ static void bta_dm_discover_name(const RawAddress& remote_bd_addr) {
  *
  ******************************************************************************/
 bool bta_dm_is_search_request_queued() {
-  if (!IS_FLAG_ENABLED(separate_service_and_device_discovery)) {
+  if (!com::android::bluetooth::flags::
+          separate_service_and_device_discovery()) {
     return bta_dm_disc_legacy::bta_dm_is_search_request_queued();
   }
   return bta_dm_search_cb.p_pending_search != NULL;
@@ -931,7 +933,8 @@ static void bta_dm_disable_search(void) {
 }
 
 void bta_dm_disc_start_device_discovery(tBTA_DM_SEARCH_CBACK* p_cback) {
-  if (!IS_FLAG_ENABLED(separate_service_and_device_discovery)) {
+  if (!com::android::bluetooth::flags::
+          separate_service_and_device_discovery()) {
     bta_dm_disc_legacy::bta_dm_disc_start_device_discovery(p_cback);
     return;
   }
@@ -941,7 +944,8 @@ void bta_dm_disc_start_device_discovery(tBTA_DM_SEARCH_CBACK* p_cback) {
 }
 
 void bta_dm_disc_stop_device_discovery() {
-  if (!IS_FLAG_ENABLED(separate_service_and_device_discovery)) {
+  if (!com::android::bluetooth::flags::
+          separate_service_and_device_discovery()) {
     bta_dm_disc_legacy::bta_dm_disc_stop_device_discovery();
     return;
   }
@@ -959,7 +963,8 @@ static void bta_dm_search_reset() {
 }
 
 void bta_dm_search_stop() {
-  if (!IS_FLAG_ENABLED(separate_service_and_device_discovery)) {
+  if (!com::android::bluetooth::flags::
+          separate_service_and_device_discovery()) {
     log::info("no-op when flag is disabled");
     return;
   }
@@ -967,7 +972,8 @@ void bta_dm_search_stop() {
 }
 
 void bta_dm_disc_discover_next_device() {
-  if (!IS_FLAG_ENABLED(separate_service_and_device_discovery)) {
+  if (!com::android::bluetooth::flags::
+          separate_service_and_device_discovery()) {
     bta_dm_disc_legacy::bta_dm_disc_discover_next_device();
     return;
   }
@@ -976,7 +982,8 @@ void bta_dm_disc_discover_next_device() {
 
 #define DUMPSYS_TAG "shim::legacy::bta::dm"
 void DumpsysBtaDmSearch(int fd) {
-  if (!IS_FLAG_ENABLED(separate_service_and_device_discovery)) {
+  if (!com::android::bluetooth::flags::
+          separate_service_and_device_discovery()) {
     log::info("no-op when flag is disabled");
     return;
   }

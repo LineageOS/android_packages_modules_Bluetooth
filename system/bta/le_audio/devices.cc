@@ -17,9 +17,9 @@
 
 #include "devices.h"
 
-#include <android_bluetooth_flags.h>
 #include <base/strings/string_number_conversions.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include "acl_api.h"
 #include "bta_gatt_queue.h"
@@ -435,7 +435,7 @@ void LeAudioDevice::RegisterPACs(
               << base::HexEncode(pac.metadata.data(), pac.metadata.size());
     log::debug("{}", debug_str.str());
 
-    if (IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
+    if (com::android::bluetooth::flags::leaudio_dynamic_spatial_audio()) {
       if (pac.codec_id == types::kLeAudioCodecHeadtracking) {
         log::info("Headtracking supported");
         /* Todo: Set DSA modes according to the codec configuration */

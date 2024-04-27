@@ -22,8 +22,8 @@
  *
  ******************************************************************************/
 
-#include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
 #include <cstring>
@@ -578,7 +578,7 @@ void bta_ag_rfc_acp_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
       log::info(
           "close outgoing connection before accepting {} with conn_handle={}",
           ag_scb.peer_addr, ag_scb.conn_handle);
-      if (!IS_FLAG_ENABLED(close_rfcomm_instead_of_reset)) {
+      if (!com::android::bluetooth::flags::close_rfcomm_instead_of_reset()) {
         // Fail the outgoing connection to clean up any upper layer states
         bta_ag_rfc_fail(&ag_scb, tBTA_AG_DATA::kEmpty);
       }
@@ -591,7 +591,7 @@ void bta_ag_rfc_acp_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
               "RFCOMM_RemoveConnection failed for {}, handle {}, error {}",
               dev_addr, ag_scb.conn_handle, status);
         }
-      } else if (IS_FLAG_ENABLED(reset_after_collision)) {
+      } else if (com::android::bluetooth::flags::reset_after_collision()) {
         // As no existing outgoing rfcomm connection, then manual reset current
         // state, and use the incoming one
         bta_ag_rfc_fail(&ag_scb, tBTA_AG_DATA::kEmpty);

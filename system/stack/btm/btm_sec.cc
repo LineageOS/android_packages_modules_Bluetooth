@@ -26,10 +26,10 @@
 
 #include "stack/btm/btm_sec.h"
 
-#include <android_bluetooth_flags.h>
 #include <base/functional/bind.h>
 #include <base/strings/stringprintf.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <cstddef>
 #include <cstdint>
@@ -877,7 +877,7 @@ tBTM_STATUS BTM_SecBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
       (transport == BT_TRANSPORT_BR_EDR &&
        (dev_type & BT_DEVICE_TYPE_BREDR) == 0)) {
     log::warn("Requested transport and supported transport don't match");
-    if (!IS_FLAG_ENABLED(pairing_on_unknown_transport)) {
+    if (!com::android::bluetooth::flags::pairing_on_unknown_transport()) {
       return BTM_ILLEGAL_ACTION;
     }
   }

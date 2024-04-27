@@ -18,10 +18,10 @@
 
 #define LOG_TAG "ble_bta_hh"
 
-#include <android_bluetooth_flags.h>
 #include <base/functional/bind.h>
 #include <base/functional/callback.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
 #include <vector>
@@ -205,7 +205,7 @@ void bta_hh_le_enable(void) {
                           }
                         }), false);
 
-  if (IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
+  if (com::android::bluetooth::flags::leaudio_dynamic_spatial_audio()) {
     LeAudioClient::RegisterIsoDataConsumer(bta_hh_le_iso_data_callback);
   }
 }
@@ -403,10 +403,10 @@ static tBTA_HH_LE_RPT* bta_hh_le_find_rpt_by_idtype(tBTA_HH_LE_RPT* p_head,
  *                  list.
  *
  ******************************************************************************/
-static tBTA_HH_LE_RPT* bta_hh_le_find_alloc_report_entry(tBTA_HH_DEV_CB* p_cb,
-                                                         uint8_t srvc_inst_id,
-                                                         uint16_t rpt_uuid,
-                                                         uint16_t inst_id) {
+tBTA_HH_LE_RPT* bta_hh_le_find_alloc_report_entry(tBTA_HH_DEV_CB* p_cb,
+                                                  uint8_t srvc_inst_id,
+                                                  uint16_t rpt_uuid,
+                                                  uint16_t inst_id) {
   uint8_t i, hid_inst_id = srvc_inst_id;
   tBTA_HH_LE_RPT* p_rpt;
 
@@ -497,43 +497,23 @@ static tBTA_HH_STATUS bta_hh_le_read_char_descriptor(tBTA_HH_DEV_CB* p_cb,
  * Parameters:
  *
  ******************************************************************************/
-static void bta_hh_le_save_report_ref(tBTA_HH_DEV_CB* p_dev_cb,
-                                      tBTA_HH_LE_RPT* p_rpt,
-                                      tGATT_STATUS status, uint8_t* value,
-                                      uint16_t len) {
-  if (status == GATT_INSUF_AUTHENTICATION) {
-    /* close connection right away */
-    p_dev_cb->status = BTA_HH_ERR_AUTH_FAILED;
-    /* close the connection and report service discovery complete with error */
-    bta_hh_le_api_disc_act(p_dev_cb);
-    return;
-  }
+void bta_hh_le_save_report_ref(tBTA_HH_DEV_CB* p_dev_cb, tBTA_HH_LE_RPT* p_rpt,
+                               uint8_t rpt_type, uint8_t rpt_id) {
+  log::verbose("report ID:{}, report type: {}", rpt_id, rpt_type);
+  p_rpt->rpt_id = rpt_id;
+  p_rpt->rpt_type = rpt_type;
 
-  /* if the length of the descriptor value is right, parse it */
-  if (status == GATT_SUCCESS && len == 2) {
-    uint8_t* pp = value;
+  if (p_rpt->rpt_type > BTA_HH_RPTT_FEATURE) /* invalid report type */
+    p_rpt->rpt_type = BTA_HH_RPTT_RESRV;
 
-    STREAM_TO_UINT8(p_rpt->rpt_id, pp);
-    STREAM_TO_UINT8(p_rpt->rpt_type, pp);
+  tBTA_HH_RPT_CACHE_ENTRY rpt_entry;
+  rpt_entry.rpt_id = p_rpt->rpt_id;
+  rpt_entry.rpt_type = p_rpt->rpt_type;
+  rpt_entry.rpt_uuid = p_rpt->uuid;
+  rpt_entry.srvc_inst_id = p_rpt->srvc_inst_id;
+  rpt_entry.char_inst_id = p_rpt->char_inst_id;
 
-    if (p_rpt->rpt_type > BTA_HH_RPTT_FEATURE) /* invalid report type */
-      p_rpt->rpt_type = BTA_HH_RPTT_RESRV;
-
-    log::verbose("report ID:{}", p_rpt->rpt_id);
-    tBTA_HH_RPT_CACHE_ENTRY rpt_entry;
-    rpt_entry.rpt_id = p_rpt->rpt_id;
-    rpt_entry.rpt_type = p_rpt->rpt_type;
-    rpt_entry.rpt_uuid = p_rpt->uuid;
-    rpt_entry.srvc_inst_id = p_rpt->srvc_inst_id;
-    rpt_entry.char_inst_id = p_rpt->char_inst_id;
-
-    bta_hh_le_co_rpt_info(p_dev_cb->link_spec, &rpt_entry, p_dev_cb->app_id);
-  }
-
-  if (p_rpt->index < BTA_HH_LE_RPT_MAX - 1)
-    p_rpt++;
-  else
-    p_rpt = NULL;
+  bta_hh_le_co_rpt_info(p_dev_cb->link_spec, &rpt_entry, p_dev_cb->app_id);
 }
 
 /*******************************************************************************
@@ -642,7 +622,8 @@ static void bta_hh_le_open_cmpl(tBTA_HH_DEV_CB* p_cb) {
     bta_hh_le_register_input_notif(p_cb, p_cb->mode, true);
     bta_hh_sm_execute(p_cb, BTA_HH_OPEN_CMPL_EVT, NULL);
 
-    if (!IS_FLAG_ENABLED(prevent_hogp_reconnect_when_connected)) {
+    if (!com::android::bluetooth::flags::
+            prevent_hogp_reconnect_when_connected()) {
       if (kBTA_HH_LE_RECONN && p_cb->status == BTA_HH_OK) {
         bta_hh_le_add_dev_bg_conn(p_cb);
       }
@@ -685,7 +666,7 @@ static void write_rpt_ctl_cfg_cb(uint16_t conn_id, tGATT_STATUS status,
   tBTA_HH_DEV_CB* p_dev_cb = (tBTA_HH_DEV_CB*)data;
   const gatt::Characteristic* characteristic =
       BTA_GATTC_GetOwningCharacteristic(conn_id, handle);
-  uint16_t char_uuid = characteristic->uuid.As16Bit();
+  uint16_t char_uuid = bta_hh_get_uuid16(p_dev_cb, characteristic->uuid);
 
   srvc_inst_id = BTA_GATTC_GetOwningService(conn_id, handle)->handle;
   switch (char_uuid) {
@@ -706,6 +687,7 @@ static void write_rpt_ctl_cfg_cb(uint16_t conn_id, tGATT_STATUS status,
       log::error("Unknown char ID clt cfg:0x{:04x}", char_uuid);
   }
 }
+
 /*******************************************************************************
  *
  * Function         bta_hh_le_write_rpt_clt_cfg
@@ -741,11 +723,14 @@ static bool bta_hh_le_write_rpt_clt_cfg(tBTA_HH_DEV_CB* p_cb) {
   return false;
 }
 
-static void write_proto_mode_cb(uint16_t conn_id, tGATT_STATUS status,
-                                uint16_t handle, uint16_t len,
-                                const uint8_t* value, void* data) {
-  tBTA_HH_DEV_CB* p_dev_cb = (tBTA_HH_DEV_CB*)data;
-
+/*******************************************************************************
+ *
+ * Function         bta_hh_le_service_parsed
+ *
+ * Description      Continue after discovered services are parsed.
+ *
+ ******************************************************************************/
+void bta_hh_le_service_parsed(tBTA_HH_DEV_CB* p_dev_cb, tGATT_STATUS status) {
   if (p_dev_cb->state == BTA_HH_CONN_ST) {
     /* Set protocol finished in CONN state*/
 
@@ -770,6 +755,13 @@ static void write_proto_mode_cb(uint16_t conn_id, tGATT_STATUS status,
   }
 }
 
+static void write_proto_mode_cb(uint16_t conn_id, tGATT_STATUS status,
+                                uint16_t handle, uint16_t len,
+                                const uint8_t* value, void* data) {
+  tBTA_HH_DEV_CB* p_dev_cb = (tBTA_HH_DEV_CB*)data;
+  bta_hh_le_service_parsed(p_dev_cb, status);
+}
+
 /*******************************************************************************
  *
  * Function         bta_hh_le_set_protocol_mode
@@ -786,7 +778,8 @@ static bool bta_hh_le_set_protocol_mode(tBTA_HH_DEV_CB* p_cb,
 
   cback_data.handle = p_cb->hid_handle;
   /* boot mode is not supported in the remote device */
-  if (p_cb->hid_srvc.proto_mode_handle == 0) {
+  if (p_cb->hid_srvc.proto_mode_handle == 0 ||
+      bta_hh_headtracker_supported(p_cb)) {
     p_cb->mode = BTA_HH_PROTO_RPT_MODE;
 
     if (mode == BTA_HH_PROTO_BOOT_MODE) {
@@ -868,7 +861,8 @@ static void bta_hh_le_get_protocol_mode(tBTA_HH_DEV_CB* p_cb) {
   p_cb->w4_evt = BTA_HH_GET_PROTO_EVT;
 
   if (p_cb->hid_srvc.state >= BTA_HH_SERVICE_DISCOVERED &&
-      p_cb->hid_srvc.proto_mode_handle != 0) {
+      p_cb->hid_srvc.proto_mode_handle != 0 &&
+      !bta_hh_headtracker_supported(p_cb)) {
     BtaGattQueue::ReadCharacteristic(p_cb->conn_id,
                                      p_cb->hid_srvc.proto_mode_handle,
                                      get_protocol_mode_cb, p_cb);
@@ -1273,6 +1267,22 @@ static void read_hid_info_cb(uint16_t conn_id, tGATT_STATUS status,
   STREAM_TO_UINT8(p_dev_cb->dscp_info.flag, pp);
 }
 
+void bta_hh_le_save_report_map(tBTA_HH_DEV_CB* p_dev_cb, uint16_t len,
+                               uint8_t* desc) {
+  tBTA_HH_LE_HID_SRVC* p_srvc = &p_dev_cb->hid_srvc;
+
+  osi_free_and_reset((void**)&p_srvc->rpt_map);
+
+  if (len > 0) {
+    p_srvc->rpt_map = (uint8_t*)osi_malloc(len);
+
+    uint8_t* pp = desc;
+    STREAM_TO_ARRAY(p_srvc->rpt_map, pp, len);
+    p_srvc->descriptor.dl_len = len;
+    p_srvc->descriptor.dsc_list = p_dev_cb->hid_srvc.rpt_map;
+  }
+}
+
 static void read_hid_report_map_cb(uint16_t conn_id, tGATT_STATUS status,
                                    uint16_t handle, uint16_t len,
                                    uint8_t* value, void* data) {
@@ -1282,18 +1292,7 @@ static void read_hid_report_map_cb(uint16_t conn_id, tGATT_STATUS status,
   }
 
   tBTA_HH_DEV_CB* p_dev_cb = (tBTA_HH_DEV_CB*)data;
-  tBTA_HH_LE_HID_SRVC* p_srvc = &p_dev_cb->hid_srvc;
-
-  osi_free_and_reset((void**)&p_srvc->rpt_map);
-
-  if (len > 0) {
-    p_srvc->rpt_map = (uint8_t*)osi_malloc(len);
-
-    uint8_t* pp = value;
-    STREAM_TO_ARRAY(p_srvc->rpt_map, pp, len);
-    p_srvc->descriptor.dl_len = len;
-    p_srvc->descriptor.dsc_list = p_dev_cb->hid_srvc.rpt_map;
-  }
+  bta_hh_le_save_report_map(p_dev_cb, len, value);
 }
 
 static void read_ext_rpt_ref_desc_cb(uint16_t conn_id, tGATT_STATUS status,
@@ -1328,6 +1327,11 @@ static void read_report_ref_desc_cb(uint16_t conn_id, tGATT_STATUS status,
     return;
   }
 
+  if (value == nullptr || len != 2) {
+    log::error("Invalid report reference");
+    return;
+  }
+
   tBTA_HH_DEV_CB* p_dev_cb = (tBTA_HH_DEV_CB*)data;
   const gatt::Descriptor* p_desc = BTA_GATTC_GetDescriptor(conn_id, handle);
 
@@ -1345,7 +1349,18 @@ static void read_report_ref_desc_cb(uint16_t conn_id, tGATT_STATUS status,
   p_rpt = bta_hh_le_find_report_entry(p_dev_cb, service->handle,
                                       GATT_UUID_HID_REPORT,
                                       characteristic->value_handle);
-  if (p_rpt) bta_hh_le_save_report_ref(p_dev_cb, p_rpt, status, value, len);
+  if (p_rpt == nullptr) {
+    log::error("No such report");
+    return;
+  }
+
+  uint8_t* pp = value;
+  uint8_t rpt_id;
+  uint8_t rpt_type;
+  STREAM_TO_UINT8(rpt_id, pp);
+  STREAM_TO_UINT8(rpt_type, pp);
+
+  bta_hh_le_save_report_ref(p_dev_cb, p_rpt, rpt_type, rpt_id);
 }
 
 static void read_pref_conn_params_cb(uint16_t conn_id, tGATT_STATUS status,
@@ -1406,7 +1421,7 @@ static void read_pref_conn_params_cb(uint16_t conn_id, tGATT_STATUS status,
 
 /*******************************************************************************
  *
- * Function         bta_hh_le_search_hid_chars
+ * Function         bta_hh_le_parse_hogp_service
  *
  * Description      This function discover all characteristics a service and
  *                  all descriptors available.
@@ -1414,9 +1429,11 @@ static void read_pref_conn_params_cb(uint16_t conn_id, tGATT_STATUS status,
  * Parameters:
  *
  ******************************************************************************/
-static void bta_hh_le_search_hid_chars(tBTA_HH_DEV_CB* p_dev_cb,
-                                       const gatt::Service* service) {
+static void bta_hh_le_parse_hogp_service(tBTA_HH_DEV_CB* p_dev_cb,
+                                         const gatt::Service* service) {
   tBTA_HH_LE_RPT* p_rpt;
+
+  bta_hh_le_srvc_init(p_dev_cb, service->handle);
 
   for (const gatt::Characteristic& charac : service->characteristics) {
     if (!charac.uuid.Is16Bit()) continue;
@@ -1485,6 +1502,13 @@ static void bta_hh_le_search_hid_chars(tBTA_HH_DEV_CB* p_dev_cb,
   }
 }
 
+void bta_hh_le_srvc_init(tBTA_HH_DEV_CB* p_dev_cb, uint16_t handle) {
+  p_dev_cb->hid_srvc.state = BTA_HH_SERVICE_DISCOVERED;
+  p_dev_cb->hid_srvc.srvc_inst_id = handle;
+  p_dev_cb->hid_srvc.proto_mode_handle = 0;
+  p_dev_cb->hid_srvc.control_point_handle = 0;
+}
+
 /*******************************************************************************
  *
  * Function         bta_hh_le_srvc_search_cmpl
@@ -1508,14 +1532,15 @@ static void bta_hh_le_srvc_search_cmpl(tBTA_GATTC_SEARCH_CMPL* p_data) {
   }
 
   const std::list<gatt::Service>* services = BTA_GATTC_GetServices(p_data->conn_id);
+  const gatt::Service* hogp_service = nullptr;
   const gatt::Service* gap_service = nullptr;
   const gatt::Service* scp_service = nullptr;
+  const gatt::Service* headtracker_service = nullptr;
 
   int num_hid_service = 0;
-  bool have_hid = false;
   for (const gatt::Service& service : *services) {
     if (service.uuid == Uuid::From16Bit(UUID_SERVCLASS_LE_HID) &&
-        service.is_primary && !have_hid) {
+        service.is_primary && hogp_service == nullptr) {
       // TODO(b/286413526): The current implementation connects to the first HID
       // service, in the case of multiple HID services being present. As a
       // temporary mitigation, connect to the third HID service for some
@@ -1531,24 +1556,26 @@ static void bta_hh_le_srvc_search_cmpl(tBTA_GATTC_SEARCH_CMPL* p_data) {
       }
 
       /* found HID primamry service */
-      have_hid = true;
-      p_dev_cb->hid_srvc.state = BTA_HH_SERVICE_DISCOVERED;
-      p_dev_cb->hid_srvc.srvc_inst_id = service.handle;
-      p_dev_cb->hid_srvc.proto_mode_handle = 0;
-      p_dev_cb->hid_srvc.control_point_handle = 0;
-
-      bta_hh_le_search_hid_chars(p_dev_cb, &service);
-
-      log::verbose("have HID service inst_id={}",
-                   p_dev_cb->hid_srvc.srvc_inst_id);
+      hogp_service = &service;
     } else if (service.uuid == Uuid::From16Bit(UUID_SERVCLASS_SCAN_PARAM)) {
       scp_service = &service;
     } else if (service.uuid == Uuid::From16Bit(UUID_SERVCLASS_GAP_SERVER)) {
       gap_service = &service;
+    } else if (com::android::bluetooth::flags::android_headtracker_service() &&
+               service.uuid == ANDROID_HEADTRACKER_SERVICE_UUID) {
+      headtracker_service = &service;
     }
   }
 
-  if (!have_hid) {
+  if (hogp_service != nullptr) {
+    log::verbose("have HOGP service inst_id={}",
+                 p_dev_cb->hid_srvc.srvc_inst_id);
+    bta_hh_le_parse_hogp_service(p_dev_cb, hogp_service);
+  } else if (headtracker_service != nullptr) {
+    log::verbose("have Android Headtracker service inst_id={}",
+                 p_dev_cb->hid_srvc.srvc_inst_id);
+    bta_hh_headtracker_parse_service(p_dev_cb, headtracker_service);
+  } else {
     log::error("HID service not found");
     p_dev_cb->status = BTA_HH_ERR_SDP;
     bta_hh_le_api_disc_act(p_dev_cb);
@@ -1616,8 +1643,9 @@ static void bta_hh_le_input_rpt_notify(tBTA_GATTC_NOTIFY* p_data) {
   const gatt::Service* p_svc =
       BTA_GATTC_GetOwningService(p_dev_cb->conn_id, p_char->value_handle);
 
-  p_rpt = bta_hh_le_find_report_entry(
-      p_dev_cb, p_svc->handle, p_char->uuid.As16Bit(), p_char->value_handle);
+  p_rpt = bta_hh_le_find_report_entry(p_dev_cb, p_svc->handle,
+                                      bta_hh_get_uuid16(p_dev_cb, p_char->uuid),
+                                      p_char->value_handle);
   if (p_rpt == NULL) {
     log::error("Unknown Report, uuid:{}, handle:0x{:04x}",
                p_char->uuid.ToString(), p_char->value_handle);
@@ -1808,7 +1836,8 @@ static void read_report_cb(uint16_t conn_id, tGATT_STATUS status,
     return;
   }
 
-  uint16_t char_uuid = p_char->uuid.As16Bit();
+  uint16_t char_uuid = bta_hh_get_uuid16(p_dev_cb, p_char->uuid);
+
   switch (char_uuid) {
     case GATT_UUID_HID_REPORT:
     case GATT_UUID_HID_BT_KB_INPUT:
@@ -1893,10 +1922,10 @@ static void write_report_cb(uint16_t conn_id, tGATT_STATUS status,
 
   if (p_char == nullptr) return;
 
-  uint16_t uuid = p_char->uuid.As16Bit();
-  if (uuid != GATT_UUID_HID_REPORT && uuid != GATT_UUID_HID_BT_KB_INPUT &&
-      uuid != GATT_UUID_HID_BT_MOUSE_INPUT &&
-      uuid != GATT_UUID_HID_BT_KB_OUTPUT) {
+  uint16_t uuid16 = bta_hh_get_uuid16(p_dev_cb, p_char->uuid);
+  if (uuid16 != GATT_UUID_HID_REPORT && uuid16 != GATT_UUID_HID_BT_KB_INPUT &&
+      uuid16 != GATT_UUID_HID_BT_MOUSE_INPUT &&
+      uuid16 != GATT_UUID_HID_BT_KB_OUTPUT) {
     return;
   }
 
@@ -1963,6 +1992,11 @@ static void bta_hh_le_write_rpt(tBTA_HH_DEV_CB* p_cb, tBTA_HH_RPT_TYPE r_type,
  ******************************************************************************/
 static void bta_hh_le_suspend(tBTA_HH_DEV_CB* p_cb,
                               tBTA_HH_TRANS_CTRL_TYPE ctrl_type) {
+  if (bta_hh_headtracker_supported(p_cb)) {
+    log::warn("Suspend not applicable for headtracker service");
+    return;
+  }
+
   ctrl_type -= BTA_HH_CTRL_SUSPEND;
 
   // We don't care about response
@@ -2295,7 +2329,7 @@ static void bta_hh_process_cache_rpt(tBTA_HH_DEV_CB* p_cb,
 static bool bta_hh_le_iso_data_callback(const RawAddress& addr,
                                         uint16_t cis_conn_hdl, uint8_t* data,
                                         uint16_t size, uint32_t timestamp) {
-  if (!IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
+  if (!com::android::bluetooth::flags::leaudio_dynamic_spatial_audio()) {
     log::warn("DSA not supported");
     return false;
   }

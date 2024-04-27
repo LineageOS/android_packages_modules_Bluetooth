@@ -81,6 +81,7 @@ static_library("bta") {
     "hh/bta_hh_act.cc",
     "hh/bta_hh_api.cc",
     "hh/bta_hh_cfg.cc",
+    "hh/bta_hh_headtracker.cc",
     "hh/bta_hh_le.cc",
     "hh/bta_hh_main.cc",
     "hh/bta_hh_utils.cc",
@@ -161,6 +162,7 @@ static_library("bta") {
   ]
 
   deps = [
+    "//bt/flags:bluetooth_flags_c_lib",
     "//bt/system/audio:libbt-audio-asrc",
     "//bt/system/bta:LeAudioSetScenariosSchema_bfbs",
     "//bt/system/bta:LeAudioSetConfigsSchema_bfbs",

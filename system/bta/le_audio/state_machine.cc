@@ -17,11 +17,11 @@
 
 #include "state_machine.h"
 
-#include <android_bluetooth_flags.h>
 #include <base/functional/bind.h>
 #include <base/functional/callback.h>
 #include <base/strings/string_number_conversions.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include "bta_gatt_queue.h"
 #include "btm_iso_api.h"
@@ -330,7 +330,8 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
   void notifyLeAudioHealth(
       LeAudioDeviceGroup* group,
       bluetooth::le_audio::LeAudioHealthGroupStatType stat) {
-    if (!IS_FLAG_ENABLED(leaudio_enable_health_based_actions)) {
+    if (!com::android::bluetooth::flags::
+            leaudio_enable_health_based_actions()) {
       return;
     }
 
@@ -614,7 +615,7 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
       return;
     }
 
-    if (IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
+    if (com::android::bluetooth::flags::leaudio_dynamic_spatial_audio()) {
       if (group->dsa_.active &&
           (group->dsa_.mode == DsaMode::ISO_SW ||
            group->dsa_.mode == DsaMode::ISO_HW) &&
@@ -702,7 +703,8 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
         ases_pair.source->cis_state = CisState::DISCONNECTING;
         do_disconnect = true;
       }
-    } else if (IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
+    } else if (com::android::bluetooth::flags::
+                   leaudio_dynamic_spatial_audio()) {
       if (group->dsa_.active &&
           leAudioDevice->GetDsaDataPathState() == DataPathState::REMOVING) {
         log::info("DSA data path removed");
@@ -871,7 +873,7 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
 
   void applyDsaDataPath(LeAudioDeviceGroup* group, LeAudioDevice* leAudioDevice,
                         uint16_t conn_hdl) {
-    if (!IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
+    if (!com::android::bluetooth::flags::leaudio_dynamic_spatial_audio()) {
       return;
     }
 
@@ -1096,7 +1098,7 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
       value |= bluetooth::hci::iso_manager::kRemoveIsoDataPathDirectionOutput;
       ases_pair.source->data_path_state = DataPathState::REMOVING;
     } else {
-      if (IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
+      if (com::android::bluetooth::flags::leaudio_dynamic_spatial_audio()) {
         if (leAudioDevice->GetDsaDataPathState() == DataPathState::CONFIGURED) {
           value |=
               bluetooth::hci::iso_manager::kRemoveIsoDataPathDirectionOutput;
@@ -1425,7 +1427,7 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
 
   void ApplyDsaParams(LeAudioDeviceGroup* group,
                       bluetooth::hci::iso_manager::cig_create_params& param) {
-    if (!IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
+    if (!com::android::bluetooth::flags::leaudio_dynamic_spatial_audio()) {
       return;
     }
 

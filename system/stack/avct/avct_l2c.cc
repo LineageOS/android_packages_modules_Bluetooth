@@ -106,7 +106,7 @@ static bool avct_l2c_is_passive(tAVCT_LCB* p_lcb) {
  *
  ******************************************************************************/
 void avct_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
-                                UNUSED_ATTR uint16_t psm, uint8_t id) {
+                                uint16_t /* psm */, uint8_t id) {
   tAVCT_LCB* p_lcb;
   uint16_t result = L2CAP_CONN_OK;
 

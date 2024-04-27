@@ -18,8 +18,8 @@
 
 #include "osi/include/stack_power_telemetry.h"
 
-#include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 #include <sys/stat.h>
 #include <time.h>
 
@@ -159,8 +159,9 @@ struct power_telemetry::PowerTelemetryImpl {
         std::string(kPowerTelemetryEnabledProperty).c_str(), true);
 
     // Enable this feature when both feature flag and sysprops turn on.
-    power_telemerty_enabled_ = IS_FLAG_ENABLED(bluetooth_power_telemetry) &&
-                               power_telemetry_enabled_property_;
+    power_telemerty_enabled_ =
+        com::android::bluetooth::flags::bluetooth_power_telemetry() &&
+        power_telemetry_enabled_property_;
   }
 
   LogDataContainer& GetCurrentLogDataContainer() {

@@ -1633,7 +1633,10 @@ public class AdapterService extends Service {
         }
         if (profile == BluetoothProfile.HID_HOST) {
             return Utils.arrayContains(remoteDeviceUuids, BluetoothUuid.HID)
-                    || Utils.arrayContains(remoteDeviceUuids, BluetoothUuid.HOGP);
+                    || Utils.arrayContains(remoteDeviceUuids, BluetoothUuid.HOGP)
+                    || (Flags.androidHeadtrackerService()
+                            && Utils.arrayContains(
+                                    remoteDeviceUuids, HidHostService.ANDROID_HEADTRACKER_UUID));
         }
         if (profile == BluetoothProfile.HID_DEVICE) {
             return mHidDeviceService.getConnectionState(device)

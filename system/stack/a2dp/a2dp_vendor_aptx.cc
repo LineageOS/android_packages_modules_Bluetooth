@@ -81,7 +81,7 @@ static const tA2DP_ENCODER_INTERFACE a2dp_encoder_interface_aptx = {
     nullptr  // set_transmit_queue_length
 };
 
-UNUSED_ATTR static tA2DP_STATUS A2DP_CodecInfoMatchesCapabilityAptx(
+static tA2DP_STATUS A2DP_CodecInfoMatchesCapabilityAptx(
     const tA2DP_APTX_CIE* p_cap, const uint8_t* p_codec_info,
     bool is_peer_codec_info);
 
@@ -200,7 +200,7 @@ bool A2DP_IsVendorPeerSinkCodecValidAptx(const uint8_t* p_codec_info) {
 // is acting as an A2DP source.
 // Returns A2DP_SUCCESS if the codec configuration matches with capabilities,
 // otherwise the corresponding A2DP error status code.
-static tA2DP_STATUS A2DP_CodecInfoMatchesCapabilityAptx(
+UNUSED_ATTR static tA2DP_STATUS A2DP_CodecInfoMatchesCapabilityAptx(
     const tA2DP_APTX_CIE* p_cap, const uint8_t* p_codec_info,
     bool is_capability) {
   tA2DP_STATUS status;
@@ -229,13 +229,13 @@ static tA2DP_STATUS A2DP_CodecInfoMatchesCapabilityAptx(
   return A2DP_SUCCESS;
 }
 
-bool A2DP_VendorUsesRtpHeaderAptx(UNUSED_ATTR bool content_protection_enabled,
-                                  UNUSED_ATTR const uint8_t* p_codec_info) {
+bool A2DP_VendorUsesRtpHeaderAptx(bool /* content_protection_enabled */,
+                                  const uint8_t* /* p_codec_info */) {
   // no RTP header for aptX classic and no Copy Protection byte
   return false;
 }
 
-const char* A2DP_VendorCodecNameAptx(UNUSED_ATTR const uint8_t* p_codec_info) {
+const char* A2DP_VendorCodecNameAptx(const uint8_t* /* p_codec_info */) {
   return "aptX";
 }
 
@@ -339,7 +339,7 @@ int A2DP_VendorGetTrackChannelCountAptx(const uint8_t* p_codec_info) {
   return -1;
 }
 
-bool A2DP_VendorGetPacketTimestampAptx(UNUSED_ATTR const uint8_t* p_codec_info,
+bool A2DP_VendorGetPacketTimestampAptx(const uint8_t* /* p_codec_info */,
                                        const uint8_t* p_data,
                                        uint32_t* p_timestamp) {
   // TODO: Is this function really codec-specific?
@@ -347,9 +347,9 @@ bool A2DP_VendorGetPacketTimestampAptx(UNUSED_ATTR const uint8_t* p_codec_info,
   return true;
 }
 
-bool A2DP_VendorBuildCodecHeaderAptx(UNUSED_ATTR const uint8_t* p_codec_info,
-                                     UNUSED_ATTR BT_HDR* p_buf,
-                                     UNUSED_ATTR uint16_t frames_per_packet) {
+bool A2DP_VendorBuildCodecHeaderAptx(const uint8_t* /* p_codec_info */,
+                                     BT_HDR* /* p_buf */,
+                                     uint16_t /* frames_per_packet */) {
   // Nothing to do
   return true;
 }
@@ -408,7 +408,7 @@ bool A2DP_VendorAdjustCodecAptx(uint8_t* p_codec_info) {
 }
 
 btav_a2dp_codec_index_t A2DP_VendorSourceCodecIndexAptx(
-    UNUSED_ATTR const uint8_t* p_codec_info) {
+    const uint8_t* /* p_codec_info */) {
   return BTAV_A2DP_CODEC_INDEX_SOURCE_APTX;
 }
 

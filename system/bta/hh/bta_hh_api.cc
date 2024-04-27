@@ -42,6 +42,18 @@ using namespace bluetooth;
  *  Constants
  ****************************************************************************/
 
+/**
+ * Android Headtracker Service UUIDs
+ */
+const Uuid ANDROID_HEADTRACKER_SERVICE_UUID =
+    Uuid::FromString(ANDROID_HEADTRACKER_SERVICE_UUID_STRING);
+const Uuid ANDROID_HEADTRACKER_VERSION_CHARAC_UUID =
+    Uuid::FromString(ANDROID_HEADTRACKER_VERSION_CHARAC_UUID_STRING);
+const Uuid ANDROID_HEADTRACKER_CONTROL_CHARAC_UUID =
+    Uuid::FromString(ANDROID_HEADTRACKER_CONTROL_CHARAC_UUID_STRING);
+const Uuid ANDROID_HEADTRACKER_REPORT_CHARAC_UUID =
+    Uuid::FromString(ANDROID_HEADTRACKER_REPORT_CHARAC_UUID_STRING);
+
 static const tBTA_SYS_REG bta_hh_reg = {bta_hh_hdl_event, BTA_HhDisable};
 
 /*******************************************************************************

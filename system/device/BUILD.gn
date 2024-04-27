@@ -33,6 +33,7 @@ static_library("device") {
   ]
 
   deps = [
+    "//bt/flags:bluetooth_flags_c_lib",
     "//bt/system/gd/rust/shim:init_flags_bridge_header",
     "//bt/system/gd/rust/shim:libbluetooth_rust_interop",
     "//bt/system/pdl:BluetoothGeneratedPackets_h",

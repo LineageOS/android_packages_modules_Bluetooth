@@ -332,8 +332,7 @@ static void avdt_msg_bld_cfg(uint8_t** p, AvdtpSepConfig* p_cfg) {
  * Returns          void.
  *
  ******************************************************************************/
-static void avdt_msg_bld_none(UNUSED_ATTR uint8_t** p,
-                              UNUSED_ATTR tAVDT_MSG* p_msg) {
+static void avdt_msg_bld_none(uint8_t** /* p */, tAVDT_MSG* /* p_msg */) {
   return;
 }
 
@@ -675,9 +674,8 @@ static uint8_t avdt_msg_prs_cfg(AvdtpSepConfig* p_cfg, uint8_t* p, uint16_t len,
  * Returns          Error code or zero if no error.
  *
  ******************************************************************************/
-static uint8_t avdt_msg_prs_none(UNUSED_ATTR tAVDT_MSG* p_msg,
-                                 UNUSED_ATTR uint8_t* p,
-                                 UNUSED_ATTR uint16_t len) {
+static uint8_t avdt_msg_prs_none(tAVDT_MSG* /* p_msg */, uint8_t* /* p */,
+                                 uint16_t /* len */) {
   return 0;
 }
 

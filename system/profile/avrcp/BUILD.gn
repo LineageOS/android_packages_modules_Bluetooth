@@ -37,6 +37,7 @@ static_library("profile_avrcp") {
   ]
 
   deps = [
+    "//bt/flags:bluetooth_flags_c_lib",
     "//bt/system/gd/rust/shim:libbluetooth_rust_interop",
   ]
 

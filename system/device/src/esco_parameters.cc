@@ -18,8 +18,8 @@
 
 #include "device/include/esco_parameters.h"
 
-#include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include "hci/controller_interface.h"
 #include "main/shim/entry.h"
@@ -371,7 +371,8 @@ enh_esco_params_t esco_parameters_for_codec(esco_codec_t codec, bool offload) {
                    ESCO_NUM_CODECS);
 
   std::vector<uint8_t> codecIds;
-  if (IS_FLAG_ENABLED(use_dsp_codec_when_controller_does_not_support)) {
+  if (com::android::bluetooth::flags::
+          use_dsp_codec_when_controller_does_not_support()) {
     auto controller = bluetooth::shim::GetController();
     if (controller == nullptr) {
       log::warn("controller is null");

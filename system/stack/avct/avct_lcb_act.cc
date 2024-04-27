@@ -21,8 +21,8 @@
  *  This module contains action functions of the link control state machine.
  *
  ******************************************************************************/
-#include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 #include <string.h>
 
 #include "avct_api.h"
@@ -32,7 +32,6 @@
 #include "device/include/device_iot_config.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
-#include "osi/include/osi.h"
 #include "stack/avct/avct_defs.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_types.h"
@@ -181,7 +180,7 @@ static BT_HDR* avct_lcb_msg_asmbl(tAVCT_LCB* p_lcb, BT_HDR* p_buf) {
  * Returns          Nothing.
  *
  ******************************************************************************/
-void avct_lcb_chnl_open(tAVCT_LCB* p_lcb, UNUSED_ATTR tAVCT_LCB_EVT* p_data) {
+void avct_lcb_chnl_open(tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* /* p_data */) {
   uint16_t result = AVCT_RESULT_FAIL;
 
   p_lcb->ch_state = AVCT_CH_CONN;
@@ -205,7 +204,7 @@ void avct_lcb_chnl_open(tAVCT_LCB* p_lcb, UNUSED_ATTR tAVCT_LCB_EVT* p_data) {
  * Returns          Nothing.
  *
  ******************************************************************************/
-void avct_lcb_unbind_disc(UNUSED_ATTR tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* p_data) {
+void avct_lcb_unbind_disc(tAVCT_LCB* /* p_lcb */, tAVCT_LCB_EVT* p_data) {
   avct_ccb_dealloc(p_data->p_ccb, AVCT_DISCONNECT_CFM_EVT, 0, NULL);
 }
 
@@ -345,7 +344,7 @@ void avct_lcb_open_fail(tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* p_data) {
  * Returns          Nothing.
  *
  ******************************************************************************/
-void avct_lcb_close_ind(tAVCT_LCB* p_lcb, UNUSED_ATTR tAVCT_LCB_EVT* p_data) {
+void avct_lcb_close_ind(tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* /* p_data */) {
   tAVCT_CCB* p_ccb = &avct_cb.ccb[0];
   int i;
 
@@ -449,7 +448,7 @@ void avct_lcb_chk_disc(tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* p_data) {
  * Returns          Nothing.
  *
  ******************************************************************************/
-void avct_lcb_chnl_disc(tAVCT_LCB* p_lcb, UNUSED_ATTR tAVCT_LCB_EVT* p_data) {
+void avct_lcb_chnl_disc(tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* /* p_data */) {
   avct_l2c_disconnect(p_lcb->ch_lcid, 0);
 }
 
@@ -464,7 +463,7 @@ void avct_lcb_chnl_disc(tAVCT_LCB* p_lcb, UNUSED_ATTR tAVCT_LCB_EVT* p_data) {
  * Returns          Nothing.
  *
  ******************************************************************************/
-void avct_lcb_bind_fail(UNUSED_ATTR tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* p_data) {
+void avct_lcb_bind_fail(tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* p_data) {
   avct_ccb_dealloc(p_data->p_ccb, AVCT_CONNECT_CFM_EVT, AVCT_RESULT_FAIL, NULL);
   DEVICE_IOT_CONFIG_ADDR_INT_ADD_ONE(p_lcb->peer_addr,
                                      IOT_CONF_KEY_AVRCP_CONN_FAIL_COUNT);
@@ -517,7 +516,7 @@ void avct_lcb_cong_ind(tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* p_data) {
  * Returns          Nothing.
  *
  ******************************************************************************/
-void avct_lcb_discard_msg(UNUSED_ATTR tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* p_data) {
+void avct_lcb_discard_msg(tAVCT_LCB* /* p_lcb */, tAVCT_LCB_EVT* p_data) {
   log::warn("Dropping message");
   osi_free_and_reset((void**)&p_data->ul_msg.p_buf);
 }
@@ -630,8 +629,7 @@ void avct_lcb_send_msg(tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* p_data) {
  * Returns          Nothing.
  *
  ******************************************************************************/
-void avct_lcb_free_msg_ind(UNUSED_ATTR tAVCT_LCB* p_lcb,
-                           tAVCT_LCB_EVT* p_data) {
+void avct_lcb_free_msg_ind(tAVCT_LCB* /* p_lcb */, tAVCT_LCB_EVT* p_data) {
   if (p_data == NULL) return;
 
   osi_free_and_reset((void**)&p_data->p_buf);
@@ -722,7 +720,7 @@ bool avct_msg_ind_for_src_sink_coexist(tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* p_data,
   uint16_t pid, type;
 
   p = (uint8_t*)(p_data->p_buf + 1) + p_data->p_buf->offset;
-  if (IS_FLAG_ENABLED(a2dp_concurrent_source_sink)) {
+  if (com::android::bluetooth::flags::a2dp_concurrent_source_sink()) {
     AVCT_PARSE_HDR(p, label, type, cr_ipid);
   }
 

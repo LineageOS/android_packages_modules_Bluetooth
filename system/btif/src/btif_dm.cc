@@ -30,11 +30,11 @@
 
 #include "btif_dm.h"
 
-#include <android_bluetooth_flags.h>
 #include <base/functional/bind.h>
 #include <base/strings/stringprintf.h>
 #include <bluetooth/log.h>
 #include <bluetooth/uuid.h>
+#include <com_android_bluetooth_flags.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_csis.h>
 #include <hardware/bt_hearing_aid.h>
@@ -762,7 +762,7 @@ bool is_device_le_audio_capable(const RawAddress bd_addr) {
   /* First try reading device type from BTIF - it persists over multiple
    * inquiry sessions */
   int dev_type = 0;
-  if (IS_FLAG_ENABLED(le_audio_dev_type_detection_fix) &&
+  if (com::android::bluetooth::flags::le_audio_dev_type_detection_fix() &&
       (btif_get_device_type(bd_addr, &dev_type) &&
        (dev_type & BT_DEVICE_TYPE_BLE) == BT_DEVICE_TYPE_BLE)) {
     /* LE Audio capable device is discoverable over both LE and Classic using
@@ -855,7 +855,7 @@ static void btif_dm_cb_create_bond(const RawAddress bd_addr,
                        static_cast<tBT_DEVICE_TYPE>(device_type));
   }
 
-  if (!IS_FLAG_ENABLED(connect_hid_after_service_discovery) &&
+  if (!com::android::bluetooth::flags::connect_hid_after_service_discovery() &&
       is_hid && (device_type & BT_DEVICE_TYPE_BLE) == 0) {
     tAclLinkSpec link_spec;
     link_spec.addrt.bda = bd_addr;
@@ -1469,8 +1469,8 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event,
              don't want this to replace the existing value below when we call
              btif_storage_add_remote_device */
           uint32_t old_cod = get_cod(&bdaddr);
-          if (IS_FLAG_ENABLED(
-                  do_not_replace_existing_cod_with_uncategorized_cod)) {
+          if (com::android::bluetooth::flags::
+                  do_not_replace_existing_cod_with_uncategorized_cod()) {
             if (cod == COD_UNCLASSIFIED && old_cod != 0) {
               cod = old_cod;
             }
@@ -1668,7 +1668,8 @@ static bool btif_should_ignore_uuid(const Uuid& uuid) {
 }
 
 static bool btif_is_gatt_service_discovery_post_pairing(const RawAddress bd_addr) {
-  if (!IS_FLAG_ENABLED(reset_pairing_only_for_related_service_discovery)) {
+  if (!com::android::bluetooth::flags::
+          reset_pairing_only_for_related_service_discovery()) {
     if (bd_addr == pairing_cb.bd_addr || bd_addr == pairing_cb.static_bdaddr) {
       if (pairing_cb.gatt_over_le !=
           btif_dm_pairing_cb_t::ServiceDiscoveryState::SCHEDULED) {
@@ -1705,7 +1706,7 @@ static void btif_on_service_discovery_results(
     if (pairing_cb.sdp_attempts) {
       log::warn("SDP failed after bonding re-attempting for {}", bd_addr);
       pairing_cb.sdp_attempts++;
-      if (IS_FLAG_ENABLED(force_bredr_for_sdp_retry)) {
+      if (com::android::bluetooth::flags::force_bredr_for_sdp_retry()) {
         btif_dm_get_remote_services(bd_addr, BT_TRANSPORT_BR_EDR);
       } else {
         btif_dm_get_remote_services(bd_addr, BT_TRANSPORT_AUTO);
@@ -1870,7 +1871,8 @@ void btif_on_gatt_results(RawAddress bd_addr, BD_NAME bd_name,
         pairing_cb = {};
       }
 
-      if (IS_FLAG_ENABLED(le_audio_fast_bond_params) && lea_supported) {
+      if (com::android::bluetooth::flags::le_audio_fast_bond_params() &&
+          lea_supported) {
         /* LE Audio profile should relax parameters when it connects. If
          * profile is not enabled, relax parameters after timeout. */
         log::debug("Scheduling conn params unlock for {}", bd_addr);
@@ -1981,7 +1983,8 @@ void btif_on_gatt_results(RawAddress bd_addr, BD_NAME bd_name,
   num_properties++;
 
   /* Remote name update */
-  if (!IS_FLAG_ENABLED(separate_service_and_device_discovery) &&
+  if (!com::android::bluetooth::flags::
+          separate_service_and_device_discovery() &&
       strnlen((const char*)bd_name, BD_NAME_LEN)) {
     prop[1].type = BT_PROPERTY_BDNAME;
     prop[1].val = bd_name;
@@ -2010,10 +2013,12 @@ static void btif_on_name_read(RawAddress bd_addr, tHCI_ERROR_CODE hci_status,
   // Differentiate between merged callbacks
   if (!during_device_search
       // New fix after refactor, this callback is needed for the fix to work
-      && !IS_FLAG_ENABLED(separate_service_and_device_discovery)
+      &&
+      !com::android::bluetooth::flags::separate_service_and_device_discovery()
       // Original fix, this callback should not be called if RNR should not be
       // called
-      && !IS_FLAG_ENABLED(rnr_present_during_service_discovery)) {
+      &&
+      !com::android::bluetooth::flags::rnr_present_during_service_discovery()) {
     log::info("Skipping name read event - called on bad callback.");
     return;
   }
@@ -2174,7 +2179,7 @@ void BTIF_dm_enable() {
   log::info("Local BLE Privacy enabled:{}", ble_privacy_enabled);
   BTA_DmBleConfigLocalPrivacy(ble_privacy_enabled);
 
-  if (IS_FLAG_ENABLED(separate_service_and_device_discovery)) {
+  if (com::android::bluetooth::flags::separate_service_and_device_discovery()) {
     BTM_SecAddRmtNameNotifyCallback(btif_on_name_read_from_btm);
   }
 
@@ -2203,7 +2208,7 @@ void BTIF_dm_enable() {
 }
 
 void BTIF_dm_disable() {
-  if (IS_FLAG_ENABLED(separate_service_and_device_discovery)) {
+  if (com::android::bluetooth::flags::separate_service_and_device_discovery()) {
     BTM_SecDeleteRmtNameNotifyCallback(&btif_on_name_read_from_btm);
   }
 
@@ -2439,7 +2444,7 @@ void btif_dm_acl_evt(tBTA_DM_ACL_EVT event, tBTA_DM_ACL* p_data) {
               : bt_conn_direction_t::BT_CONN_DIRECTION_INCOMING,
           p_data->link_up.acl_handle);
 
-      if (IS_FLAG_ENABLED(le_audio_fast_bond_params) &&
+      if (com::android::bluetooth::flags::le_audio_fast_bond_params() &&
           p_data->link_up.transport_link_type == BT_TRANSPORT_LE &&
           pairing_cb.bd_addr == bd_addr &&
           is_device_le_audio_capable(bd_addr)) {
@@ -3539,7 +3544,7 @@ static void btif_dm_ble_key_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif) {
 
 static bool btif_dm_ble_is_temp_pairing(RawAddress& bd_addr, bool ctkd) {
   if (btm_get_bond_type_dev(bd_addr) == BOND_TYPE_TEMPORARY) {
-    if (!IS_FLAG_ENABLED(ignore_bond_type_for_le)) {
+    if (!com::android::bluetooth::flags::ignore_bond_type_for_le()) {
       return true;
     }
 

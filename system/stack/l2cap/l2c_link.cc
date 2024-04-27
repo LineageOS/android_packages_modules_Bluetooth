@@ -25,8 +25,8 @@
  ******************************************************************************/
 #define LOG_TAG "l2c_link"
 
-#include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
 
@@ -34,7 +34,6 @@
 #include "internal_include/bt_target.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
-#include "osi/include/osi.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/bt_hdr.h"
@@ -187,9 +186,8 @@ void l2c_link_hci_conn_comp(tHCI_STATUS status, uint16_t handle,
  * Returns          void
  *
  ******************************************************************************/
-void l2c_link_sec_comp(const RawAddress* p_bda,
-                       UNUSED_ATTR tBT_TRANSPORT transport, void* p_ref_data,
-                       tBTM_STATUS status) {
+void l2c_link_sec_comp(const RawAddress* p_bda, tBT_TRANSPORT transport,
+                       void* p_ref_data, tBTM_STATUS status) {
   tL2C_CONN_INFO ci;
   tL2C_LCB* p_lcb;
   tL2C_CCB* p_ccb;
@@ -214,7 +212,7 @@ void l2c_link_sec_comp(const RawAddress* p_bda,
     return;
   }
 
-  if (IS_FLAG_ENABLED(l2cap_p_ccb_check_rewrite)) {
+  if (com::android::bluetooth::flags::l2cap_p_ccb_check_rewrite()) {
     if (!p_ref_data) {
       log::warn("Argument p_ref_data is NULL");
       return;

@@ -339,3 +339,23 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_no_context_validate_streaming_request"
+    namespace: "bluetooth"
+    description: "Request streaming would be send without available cotext validation"
+    bug: "336466406"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "leaudio_broadcast_stop_on_streaming_request"
+    namespace: "bluetooth"
+    description: "Stop instead of pause on unicast stream request"
+    bug: "336740254"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

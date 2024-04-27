@@ -1062,6 +1062,10 @@ impl BluetoothMedia {
                 self.phone_state_change("".into());
             }
             HfpCallbacks::CallHold(command, addr) => {
+                if !self.mps_qualification_enabled {
+                    self.simple_at_response(false, addr);
+                    return;
+                }
                 let success = match command {
                     CallHoldCommand::ReleaseHeld => self.release_held_impl(),
                     CallHoldCommand::ReleaseActiveAcceptHeld => {
@@ -1076,7 +1080,6 @@ impl BluetoothMedia {
                 if success {
                     // Success means the call state has changed. Inform libbluetooth.
                     self.phone_state_change("".into());
-                    self.uhid_send_input_report(&addr);
                 } else {
                     warn!(
                         "[{}]: Unexpected or unsupported CHLD command {:?} from HF",
@@ -2019,87 +2022,61 @@ impl BluetoothMedia {
     }
 
     fn release_held_impl(&mut self) -> bool {
-        if !(self.phone_ops_enabled || self.mps_qualification_enabled) {
+        if !self.mps_qualification_enabled {
             return false;
         }
-
-        if self.mps_qualification_enabled {
-            if self.phone_state.state != CallState::Idle {
-                return false;
-            }
-            self.call_list.retain(|x| x.state != CallState::Held);
-            self.phone_state.num_held = 0;
-        } else if self.phone_ops_enabled {
-            if self.phone_state.state == CallState::Incoming {
-                self.call_list.retain(|x| x.state != CallState::Incoming);
-                self.phone_state.state = CallState::Idle;
-            } else {
-                return false;
-            }
+        if self.phone_state.state != CallState::Idle {
+            return false;
         }
+        self.call_list.retain(|x| x.state != CallState::Held);
+        self.phone_state.num_held = 0;
         true
     }
 
     fn release_active_accept_held_impl(&mut self) -> bool {
-        if !(self.phone_ops_enabled || self.mps_qualification_enabled) {
+        if !self.mps_qualification_enabled {
             return false;
         }
         self.call_list.retain(|x| x.state != CallState::Active);
         self.phone_state.num_active = 0;
         // Activate the first held call
-        if self.mps_qualification_enabled {
-            if self.phone_state.state != CallState::Idle {
-                return false;
-            }
-            for c in self.call_list.iter_mut() {
-                if c.state == CallState::Held {
-                    c.state = CallState::Active;
-                    self.phone_state.num_held -= 1;
-                    self.phone_state.num_active += 1;
-                    break;
-                }
-            }
-        } else if self.phone_ops_enabled {
-            for c in self.call_list.iter_mut() {
-                if c.state == CallState::Incoming && self.phone_state.state == CallState::Incoming {
-                    c.state = CallState::Active;
-                    self.phone_state.num_active += 1;
-                    self.phone_state.state = CallState::Idle;
-                    break;
-                }
+        if self.phone_state.state != CallState::Idle {
+            return false;
+        }
+        for c in self.call_list.iter_mut() {
+            if c.state == CallState::Held {
+                c.state = CallState::Active;
+                self.phone_state.num_held -= 1;
+                self.phone_state.num_active += 1;
+                break;
             }
         }
         true
     }
 
     fn hold_active_accept_held_impl(&mut self) -> bool {
-        if !(self.phone_ops_enabled || self.mps_qualification_enabled) {
+        if !self.mps_qualification_enabled {
             return false;
         }
-
-        if self.mps_qualification_enabled {
-            if self.phone_state.state != CallState::Idle {
-                return false;
-            }
-            self.phone_state.num_held += self.phone_state.num_active;
-            self.phone_state.num_active = 0;
-
-            for c in self.call_list.iter_mut() {
-                match c.state {
-                    // Activate at most one held call
-                    CallState::Held if self.phone_state.num_active == 0 => {
-                        c.state = CallState::Active;
-                        self.phone_state.num_held -= 1;
-                        self.phone_state.num_active = 1;
-                    }
-                    CallState::Active => {
-                        c.state = CallState::Held;
-                    }
-                    _ => {}
-                }
-            }
-        } else if self.phone_ops_enabled {
+        if self.phone_state.state != CallState::Idle {
             return false;
+        }
+        self.phone_state.num_held += self.phone_state.num_active;
+        self.phone_state.num_active = 0;
+
+        for c in self.call_list.iter_mut() {
+            match c.state {
+                // Activate at most one held call
+                CallState::Held if self.phone_state.num_active == 0 => {
+                    c.state = CallState::Active;
+                    self.phone_state.num_held -= 1;
+                    self.phone_state.num_active = 1;
+                }
+                CallState::Active => {
+                    c.state = CallState::Held;
+                }
+                _ => {}
+            }
         }
         true
     }

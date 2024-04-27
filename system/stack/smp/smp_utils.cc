@@ -23,8 +23,8 @@
  ******************************************************************************/
 #define LOG_TAG "smp"
 
-#include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
 #include <cstring>
@@ -37,7 +37,6 @@
 #include "main/shim/helpers.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
-#include "osi/include/osi.h"
 #include "p_256_ecc_pp.h"
 #include "smp_int.h"
 #include "stack/btm/btm_ble_sec.h"
@@ -158,31 +157,21 @@ static const tSMP_CMD_PARAM_RANGES_VALID smp_cmd_param_ranges_are_valid[] = {
 typedef BT_HDR* (*tSMP_CMD_ACT)(uint8_t cmd_code, tSMP_CB* p_cb);
 
 static BT_HDR* smp_build_pairing_cmd(uint8_t cmd_code, tSMP_CB* p_cb);
-static BT_HDR* smp_build_confirm_cmd(UNUSED_ATTR uint8_t cmd_code,
-                                     tSMP_CB* p_cb);
-static BT_HDR* smp_build_rand_cmd(UNUSED_ATTR uint8_t cmd_code, tSMP_CB* p_cb);
-static BT_HDR* smp_build_pairing_fail(UNUSED_ATTR uint8_t cmd_code,
-                                      tSMP_CB* p_cb);
-static BT_HDR* smp_build_identity_info_cmd(UNUSED_ATTR uint8_t cmd_code,
-                                           tSMP_CB* p_cb);
-static BT_HDR* smp_build_encrypt_info_cmd(UNUSED_ATTR uint8_t cmd_code,
-                                          tSMP_CB* p_cb);
-static BT_HDR* smp_build_security_request(UNUSED_ATTR uint8_t cmd_code,
-                                          tSMP_CB* p_cb);
-static BT_HDR* smp_build_signing_info_cmd(UNUSED_ATTR uint8_t cmd_code,
-                                          tSMP_CB* p_cb);
-static BT_HDR* smp_build_central_id_cmd(UNUSED_ATTR uint8_t cmd_code,
-                                        tSMP_CB* p_cb);
-static BT_HDR* smp_build_id_addr_cmd(UNUSED_ATTR uint8_t cmd_code,
-                                     tSMP_CB* p_cb);
-static BT_HDR* smp_build_pair_public_key_cmd(UNUSED_ATTR uint8_t cmd_code,
-                                             tSMP_CB* p_cb);
-static BT_HDR* smp_build_pairing_commitment_cmd(UNUSED_ATTR uint8_t cmd_code,
+static BT_HDR* smp_build_confirm_cmd(uint8_t cmd_code, tSMP_CB* p_cb);
+static BT_HDR* smp_build_rand_cmd(uint8_t cmd_code, tSMP_CB* p_cb);
+static BT_HDR* smp_build_pairing_fail(uint8_t cmd_code, tSMP_CB* p_cb);
+static BT_HDR* smp_build_identity_info_cmd(uint8_t cmd_code, tSMP_CB* p_cb);
+static BT_HDR* smp_build_encrypt_info_cmd(uint8_t cmd_code, tSMP_CB* p_cb);
+static BT_HDR* smp_build_security_request(uint8_t cmd_code, tSMP_CB* p_cb);
+static BT_HDR* smp_build_signing_info_cmd(uint8_t cmd_code, tSMP_CB* p_cb);
+static BT_HDR* smp_build_central_id_cmd(uint8_t cmd_code, tSMP_CB* p_cb);
+static BT_HDR* smp_build_id_addr_cmd(uint8_t cmd_code, tSMP_CB* p_cb);
+static BT_HDR* smp_build_pair_public_key_cmd(uint8_t cmd_code, tSMP_CB* p_cb);
+static BT_HDR* smp_build_pairing_commitment_cmd(uint8_t cmd_code,
                                                 tSMP_CB* p_cb);
-static BT_HDR* smp_build_pair_dhkey_check_cmd(UNUSED_ATTR uint8_t cmd_code,
-                                              tSMP_CB* p_cb);
-static BT_HDR* smp_build_pairing_keypress_notification_cmd(
-    UNUSED_ATTR uint8_t cmd_code, tSMP_CB* p_cb);
+static BT_HDR* smp_build_pair_dhkey_check_cmd(uint8_t cmd_code, tSMP_CB* p_cb);
+static BT_HDR* smp_build_pairing_keypress_notification_cmd(uint8_t cmd_code,
+                                                           tSMP_CB* p_cb);
 
 static const tSMP_CMD_ACT smp_cmd_build_act[] = {
     NULL,
@@ -378,7 +367,7 @@ bool smp_send_msg_to_L2CAP(const RawAddress& rem_bda, BT_HDR* p_toL2CAP) {
 #ifdef TARGET_FLOSS
   if (true)
 #else
-  if (IS_FLAG_ENABLED(l2cap_tx_complete_cb_info))
+  if (com::android::bluetooth::flags::l2cap_tx_complete_cb_info())
 #endif
   {
     /* Unacked needs to be incremented before calling SendFixedChnlData */
@@ -461,7 +450,7 @@ bool smp_send_cmd(uint8_t cmd_code, tSMP_CB* p_cb) {
  * Returns          void
  *
  ******************************************************************************/
-void smp_rsp_timeout(UNUSED_ATTR void* data) {
+void smp_rsp_timeout(void* /* data */) {
   tSMP_CB* p_cb = &smp_cb;
 
   log::verbose("state:{} br_state:{}", p_cb->state, p_cb->br_state);
@@ -485,7 +474,7 @@ void smp_rsp_timeout(UNUSED_ATTR void* data) {
  * Returns          void
  *
  ******************************************************************************/
-void smp_delayed_auth_complete_timeout(UNUSED_ATTR void* data) {
+void smp_delayed_auth_complete_timeout(void* /* data */) {
   /*
    * Waited for potential pair failure. Send SMP_AUTH_CMPL_EVT if
    * the state is still in bond pending.
@@ -536,8 +525,7 @@ BT_HDR* smp_build_pairing_cmd(uint8_t cmd_code, tSMP_CB* p_cb) {
  * Description      Build confirm request command.
  *
  ******************************************************************************/
-static BT_HDR* smp_build_confirm_cmd(UNUSED_ATTR uint8_t cmd_code,
-                                     tSMP_CB* p_cb) {
+static BT_HDR* smp_build_confirm_cmd(uint8_t /* cmd_code */, tSMP_CB* p_cb) {
   uint8_t* p;
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR) + SMP_CONFIRM_CMD_SIZE +
                                       L2CAP_MIN_OFFSET);
@@ -562,7 +550,7 @@ static BT_HDR* smp_build_confirm_cmd(UNUSED_ATTR uint8_t cmd_code,
  * Description      Build Random command.
  *
  ******************************************************************************/
-static BT_HDR* smp_build_rand_cmd(UNUSED_ATTR uint8_t cmd_code, tSMP_CB* p_cb) {
+static BT_HDR* smp_build_rand_cmd(uint8_t /* cmd_code */, tSMP_CB* p_cb) {
   uint8_t* p;
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR) + SMP_RAND_CMD_SIZE +
                                       L2CAP_MIN_OFFSET);
@@ -586,7 +574,7 @@ static BT_HDR* smp_build_rand_cmd(UNUSED_ATTR uint8_t cmd_code, tSMP_CB* p_cb) {
  * Description      Build security information command.
  *
  ******************************************************************************/
-static BT_HDR* smp_build_encrypt_info_cmd(UNUSED_ATTR uint8_t cmd_code,
+static BT_HDR* smp_build_encrypt_info_cmd(uint8_t /* cmd_code */,
                                           tSMP_CB* p_cb) {
   uint8_t* p;
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR) + SMP_ENC_INFO_SIZE +
@@ -611,8 +599,7 @@ static BT_HDR* smp_build_encrypt_info_cmd(UNUSED_ATTR uint8_t cmd_code,
  * Description      Build security information command.
  *
  ******************************************************************************/
-static BT_HDR* smp_build_central_id_cmd(UNUSED_ATTR uint8_t cmd_code,
-                                        tSMP_CB* p_cb) {
+static BT_HDR* smp_build_central_id_cmd(uint8_t /* cmd_code */, tSMP_CB* p_cb) {
   uint8_t* p;
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR) + SMP_CENTRAL_ID_SIZE +
                                       L2CAP_MIN_OFFSET);
@@ -637,8 +624,8 @@ static BT_HDR* smp_build_central_id_cmd(UNUSED_ATTR uint8_t cmd_code,
  * Description      Build identity information command.
  *
  ******************************************************************************/
-static BT_HDR* smp_build_identity_info_cmd(UNUSED_ATTR uint8_t cmd_code,
-                                           UNUSED_ATTR tSMP_CB* p_cb) {
+static BT_HDR* smp_build_identity_info_cmd(uint8_t /* cmd_code */,
+                                           tSMP_CB* p_cb) {
   uint8_t* p;
   BT_HDR* p_buf =
       (BT_HDR*)osi_malloc(sizeof(BT_HDR) + SMP_ID_INFO_SIZE + L2CAP_MIN_OFFSET);
@@ -665,8 +652,7 @@ static BT_HDR* smp_build_identity_info_cmd(UNUSED_ATTR uint8_t cmd_code,
  * Description      Build identity address information command.
  *
  ******************************************************************************/
-static BT_HDR* smp_build_id_addr_cmd(UNUSED_ATTR uint8_t cmd_code,
-                                     UNUSED_ATTR tSMP_CB* p_cb) {
+static BT_HDR* smp_build_id_addr_cmd(uint8_t /* cmd_code */, tSMP_CB* p_cb) {
   uint8_t* p;
   BT_HDR* p_buf =
       (BT_HDR*)osi_malloc(sizeof(BT_HDR) + SMP_ID_ADDR_SIZE + L2CAP_MIN_OFFSET);
@@ -692,7 +678,7 @@ static BT_HDR* smp_build_id_addr_cmd(UNUSED_ATTR uint8_t cmd_code,
  * Description      Build signing information command.
  *
  ******************************************************************************/
-static BT_HDR* smp_build_signing_info_cmd(UNUSED_ATTR uint8_t cmd_code,
+static BT_HDR* smp_build_signing_info_cmd(uint8_t /* cmd_code */,
                                           tSMP_CB* p_cb) {
   uint8_t* p;
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR) + SMP_SIGN_INFO_SIZE +
@@ -717,8 +703,7 @@ static BT_HDR* smp_build_signing_info_cmd(UNUSED_ATTR uint8_t cmd_code,
  * Description      Build Pairing Fail command.
  *
  ******************************************************************************/
-static BT_HDR* smp_build_pairing_fail(UNUSED_ATTR uint8_t cmd_code,
-                                      tSMP_CB* p_cb) {
+static BT_HDR* smp_build_pairing_fail(uint8_t /* cmd_code */, tSMP_CB* p_cb) {
   uint8_t* p;
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR) + SMP_PAIR_FAIL_SIZE +
                                       L2CAP_MIN_OFFSET);
@@ -742,7 +727,7 @@ static BT_HDR* smp_build_pairing_fail(UNUSED_ATTR uint8_t cmd_code,
  * Description      Build security request command.
  *
  ******************************************************************************/
-static BT_HDR* smp_build_security_request(UNUSED_ATTR uint8_t cmd_code,
+static BT_HDR* smp_build_security_request(uint8_t /* cmd_code */,
                                           tSMP_CB* p_cb) {
   uint8_t* p;
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR) + 2 + L2CAP_MIN_OFFSET);
@@ -769,7 +754,7 @@ static BT_HDR* smp_build_security_request(UNUSED_ATTR uint8_t cmd_code,
  * Description      Build pairing public key command.
  *
  ******************************************************************************/
-static BT_HDR* smp_build_pair_public_key_cmd(UNUSED_ATTR uint8_t cmd_code,
+static BT_HDR* smp_build_pair_public_key_cmd(uint8_t /* cmd_code */,
                                              tSMP_CB* p_cb) {
   uint8_t* p;
   uint8_t publ_key[2 * BT_OCTET32_LEN];
@@ -799,7 +784,7 @@ static BT_HDR* smp_build_pair_public_key_cmd(UNUSED_ATTR uint8_t cmd_code,
  * Description      Build pairing commitment command.
  *
  ******************************************************************************/
-static BT_HDR* smp_build_pairing_commitment_cmd(UNUSED_ATTR uint8_t cmd_code,
+static BT_HDR* smp_build_pairing_commitment_cmd(uint8_t /* cmd_code */,
                                                 tSMP_CB* p_cb) {
   uint8_t* p;
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR) + SMP_PAIR_COMMITM_SIZE +
@@ -824,7 +809,7 @@ static BT_HDR* smp_build_pairing_commitment_cmd(UNUSED_ATTR uint8_t cmd_code,
  * Description      Build pairing DHKey check command.
  *
  ******************************************************************************/
-static BT_HDR* smp_build_pair_dhkey_check_cmd(UNUSED_ATTR uint8_t cmd_code,
+static BT_HDR* smp_build_pair_dhkey_check_cmd(uint8_t /* cmd_code */,
                                               tSMP_CB* p_cb) {
   uint8_t* p;
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(
@@ -850,7 +835,7 @@ static BT_HDR* smp_build_pair_dhkey_check_cmd(UNUSED_ATTR uint8_t cmd_code,
  *
  ******************************************************************************/
 static BT_HDR* smp_build_pairing_keypress_notification_cmd(
-    UNUSED_ATTR uint8_t cmd_code, tSMP_CB* p_cb) {
+    uint8_t /* cmd_code */, tSMP_CB* p_cb) {
   uint8_t* p;
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(
       sizeof(BT_HDR) + SMP_PAIR_KEYPR_NOTIF_SIZE + L2CAP_MIN_OFFSET);
@@ -1250,9 +1235,7 @@ bool smp_pairing_keypress_notification_is_valid(tSMP_CB* p_cb) {
  * Description      Always returns true.
  *
  ******************************************************************************/
-bool smp_parameter_unconditionally_valid(UNUSED_ATTR tSMP_CB* p_cb) {
-  return true;
-}
+bool smp_parameter_unconditionally_valid(tSMP_CB* /* p_cb */) { return true; }
 
 /*******************************************************************************
  *
@@ -1261,7 +1244,7 @@ bool smp_parameter_unconditionally_valid(UNUSED_ATTR tSMP_CB* p_cb) {
  * Description      Always returns false.
  *
  ******************************************************************************/
-bool smp_parameter_unconditionally_invalid(UNUSED_ATTR tSMP_CB* p_cb) {
+bool smp_parameter_unconditionally_invalid(tSMP_CB* /* p_cb */) {
   return false;
 }
 

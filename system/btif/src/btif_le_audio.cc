@@ -353,6 +353,24 @@ class LeAudioClientInterfaceImpl : public LeAudioClientInterface,
              is_output_preference_le_audio, is_duplex_preference_le_audio));
   }
 
+  void SetGroupAllowedContextMask(int group_id, int sink_context_types,
+                                  int source_context_types) {
+    if (!initialized || !LeAudioClient::IsLeAudioClientRunning()) {
+      log::verbose(
+          "call ignored, due to already started cleanup procedure or service "
+          "being not read");
+      return;
+    }
+
+    log::info("group_id: {}, sink context types: {}, source context types: {}",
+              group_id, sink_context_types, source_context_types);
+
+    do_in_main_thread(FROM_HERE,
+                      Bind(&LeAudioClient::SetGroupAllowedContextMask,
+                           Unretained(LeAudioClient::Get()), group_id,
+                           sink_context_types, source_context_types));
+  }
+
  private:
   LeAudioClientCallbacks* callbacks;
 };

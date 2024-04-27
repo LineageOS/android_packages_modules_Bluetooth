@@ -21,8 +21,8 @@
 
 #include "btif_a2dp.h"
 
-#include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 #include <stdbool.h>
 
 #include "audio_a2dp_hw/include/audio_a2dp_hw.h"
@@ -48,7 +48,7 @@ void btif_a2dp_on_idle(const RawAddress& peer_addr,
   log::verbose(
       "Peer stream endpoint type:{}",
       peer_stream_endpoint_text(btif_av_get_peer_sep(local_a2dp_type)));
-  if (!IS_FLAG_ENABLED(a2dp_concurrent_source_sink) &&
+  if (!com::android::bluetooth::flags::a2dp_concurrent_source_sink() &&
       btif_av_src_sink_coexist_enabled()) {
     bool is_sink = btif_av_peer_is_sink(peer_addr);
     bool is_source = btif_av_peer_is_source(peer_addr);
@@ -139,7 +139,7 @@ void btif_a2dp_on_stopped(tBTA_AV_SUSPEND* p_av_suspend,
     btif_a2dp_sink_on_stopped(p_av_suspend);
     return;
   }
-  if (!IS_FLAG_ENABLED(a2dp_concurrent_source_sink)) {
+  if (!com::android::bluetooth::flags::a2dp_concurrent_source_sink()) {
     if (bluetooth::audio::a2dp::is_hal_enabled() ||
         !btif_av_is_a2dp_offload_running()) {
       btif_a2dp_source_on_stopped(p_av_suspend);
@@ -162,7 +162,7 @@ void btif_a2dp_on_suspended(tBTA_AV_SUSPEND* p_av_suspend,
     btif_a2dp_sink_on_suspended(p_av_suspend);
     return;
   }
-  if (!IS_FLAG_ENABLED(a2dp_concurrent_source_sink)) {
+  if (!com::android::bluetooth::flags::a2dp_concurrent_source_sink()) {
     if (bluetooth::audio::a2dp::is_hal_enabled() ||
         !btif_av_is_a2dp_offload_running()) {
       btif_a2dp_source_on_suspended(p_av_suspend);

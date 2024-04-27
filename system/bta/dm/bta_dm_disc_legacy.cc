@@ -18,10 +18,10 @@
 
 #include "bta/dm/bta_dm_disc_legacy.h"
 
-#include <android_bluetooth_flags.h>
 #include <base/functional/bind.h>
 #include <base/strings/stringprintf.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 #include <stddef.h>
 
 #include <cstdint>
@@ -29,11 +29,11 @@
 #include <variant>
 #include <vector>
 
-#include "android_bluetooth_flags.h"
 #include "bta/dm/bta_dm_disc_int_legacy.h"
 #include "bta/include/bta_gatt_api.h"
 #include "bta/include/bta_sdp_api.h"
 #include "btif/include/btif_config.h"
+#include "com_android_bluetooth_flags.h"
 #include "common/circular_buffer.h"
 #include "common/init_flags.h"
 #include "common/strings.h"
@@ -324,8 +324,8 @@ static void bta_dm_search_cancel() {
     get_btm_client_interface().peer.BTM_CancelRemoteDeviceName();
 #ifndef TARGET_FLOSS
     /* bta_dm_search_cmpl is called when receiving the remote name cancel evt */
-    if (!IS_FLAG_ENABLED(
-            bta_dm_defer_device_discovery_state_change_until_rnr_complete)) {
+    if (!com::android::bluetooth::flags::
+            bta_dm_defer_device_discovery_state_change_until_rnr_complete()) {
       bta_dm_search_cmpl();
     }
 #endif
@@ -1811,7 +1811,7 @@ static void bta_dm_gatt_disc_complete(uint16_t conn_id, tGATT_STATUS status) {
   } else {
     bta_dm_search_cb.conn_id = GATT_INVALID_CONN_ID;
 
-    if (IS_FLAG_ENABLED(bta_dm_disc_stuck_in_cancelling_fix)) {
+    if (com::android::bluetooth::flags::bta_dm_disc_stuck_in_cancelling_fix()) {
       log::info(
           "Discovery complete for invalid conn ID. Will pick up next job");
       bta_dm_search_set_state(BTA_DM_SEARCH_IDLE);
@@ -2211,8 +2211,8 @@ static void bta_dm_search_sm_execute(tBTA_DM_EVT event,
           break;
         case BTA_DM_API_SEARCH_CANCEL_EVT:
           bta_dm_search_clear_queue();
-          if (IS_FLAG_ENABLED(
-                  continue_service_discovery_when_cancel_device_discovery)) {
+          if (com::android::bluetooth::flags::
+                  continue_service_discovery_when_cancel_device_discovery()) {
             bta_dm_search_set_state(BTA_DM_SEARCH_CANCELLING);
           }
           bta_dm_search_cancel_notify();

@@ -89,7 +89,7 @@ static const tA2DP_ENCODER_INTERFACE a2dp_encoder_interface_aptx_hd = {
     nullptr  // set_transmit_queue_length
 };
 
-UNUSED_ATTR static tA2DP_STATUS A2DP_CodecInfoMatchesCapabilityAptxHd(
+static tA2DP_STATUS A2DP_CodecInfoMatchesCapabilityAptxHd(
     const tA2DP_APTX_HD_CIE* p_cap, const uint8_t* p_codec_info,
     bool is_peer_codec_info);
 
@@ -219,7 +219,7 @@ bool A2DP_IsVendorPeerSinkCodecValidAptxHd(const uint8_t* p_codec_info) {
 // is acting as an A2DP source.
 // Returns A2DP_SUCCESS if the codec configuration matches with capabilities,
 // otherwise the corresponding A2DP error status code.
-static tA2DP_STATUS A2DP_CodecInfoMatchesCapabilityAptxHd(
+UNUSED_ATTR static tA2DP_STATUS A2DP_CodecInfoMatchesCapabilityAptxHd(
     const tA2DP_APTX_HD_CIE* p_cap, const uint8_t* p_codec_info,
     bool is_capability) {
   tA2DP_STATUS status;
@@ -248,13 +248,12 @@ static tA2DP_STATUS A2DP_CodecInfoMatchesCapabilityAptxHd(
   return A2DP_SUCCESS;
 }
 
-bool A2DP_VendorUsesRtpHeaderAptxHd(UNUSED_ATTR bool content_protection_enabled,
-                                    UNUSED_ATTR const uint8_t* p_codec_info) {
+bool A2DP_VendorUsesRtpHeaderAptxHd(bool /* content_protection_enabled */,
+                                    const uint8_t* /* p_codec_info */) {
   return true;
 }
 
-const char* A2DP_VendorCodecNameAptxHd(
-    UNUSED_ATTR const uint8_t* p_codec_info) {
+const char* A2DP_VendorCodecNameAptxHd(const uint8_t* /* p_codec_info */) {
   return "aptX-HD";
 }
 
@@ -361,17 +360,17 @@ int A2DP_VendorGetTrackChannelCountAptxHd(const uint8_t* p_codec_info) {
   return -1;
 }
 
-bool A2DP_VendorGetPacketTimestampAptxHd(
-    UNUSED_ATTR const uint8_t* p_codec_info, const uint8_t* p_data,
-    uint32_t* p_timestamp) {
+bool A2DP_VendorGetPacketTimestampAptxHd(const uint8_t* /* p_codec_info */,
+                                         const uint8_t* p_data,
+                                         uint32_t* p_timestamp) {
   // TODO: Is this function really codec-specific?
   *p_timestamp = *(const uint32_t*)p_data;
   return true;
 }
 
-bool A2DP_VendorBuildCodecHeaderAptxHd(UNUSED_ATTR const uint8_t* p_codec_info,
-                                       UNUSED_ATTR BT_HDR* p_buf,
-                                       UNUSED_ATTR uint16_t frames_per_packet) {
+bool A2DP_VendorBuildCodecHeaderAptxHd(const uint8_t* /* p_codec_info */,
+                                       BT_HDR* /* p_buf */,
+                                       uint16_t /* frames_per_packet */) {
   // Nothing to do
   return true;
 }

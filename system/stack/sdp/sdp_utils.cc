@@ -23,8 +23,8 @@
  *  This file contains SDP utility functions
  *
  ******************************************************************************/
-#include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <array>
 #include <cstdint>
@@ -995,7 +995,8 @@ uint8_t* sdpu_get_len_from_type(uint8_t* p, uint8_t* p_end, uint8_t type,
 
   switch (type & 7) {
     case SIZE_ONE_BYTE:
-      if (IS_FLAG_ENABLED(stack_sdp_detect_nil_property_type)) {
+      if (com::android::bluetooth::flags::
+              stack_sdp_detect_nil_property_type()) {
         // Return NIL type if appropriate
         *p_len = (type == 0) ? 0 : sizeof(uint8_t);
       } else {

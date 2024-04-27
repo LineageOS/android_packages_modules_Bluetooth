@@ -113,6 +113,7 @@ static_library("btif") {
   ]
 
   deps = [
+    "//bt/flags:bluetooth_flags_c_lib",
     "//bt/system:libbt-platform-protos-lite",
     "//bt/system/common",
     "//bt/system/gd/rust/shim:init_flags_bridge_header",

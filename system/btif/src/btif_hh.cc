@@ -29,8 +29,8 @@
 
 #include "btif/include/btif_hh.h"
 
-#include <android_bluetooth_flags.h>
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
 
@@ -462,7 +462,7 @@ static void btif_hh_start_vup_timer(const tAclLinkSpec& link_spec) {
 
 static bthh_connection_state_t hh_get_state_on_disconnect(
     tAclLinkSpec& link_spec) {
-  if (!IS_FLAG_ENABLED(allow_switching_hid_and_hogp)) {
+  if (!com::android::bluetooth::flags::allow_switching_hid_and_hogp()) {
     return BTHH_CONN_STATE_ACCEPTING;
   }
 
@@ -492,7 +492,7 @@ static void hh_open_handler(tBTA_HH_CONN& conn) {
              conn.link_spec.ToRedactedStringForLogging(), conn.status,
              conn.handle);
 
-  if (IS_FLAG_ENABLED(allow_switching_hid_and_hogp)) {
+  if (com::android::bluetooth::flags::allow_switching_hid_and_hogp()) {
     // Initialize with disconnected/accepting state based on reconnection policy
     bthh_connection_state_t dev_status =
         hh_get_state_on_disconnect(conn.link_spec);
@@ -529,7 +529,7 @@ static void hh_open_handler(tBTA_HH_CONN& conn) {
     }
   }
 
-  if (!IS_FLAG_ENABLED(allow_switching_hid_and_hogp)) {
+  if (!com::android::bluetooth::flags::allow_switching_hid_and_hogp()) {
     BTHH_STATE_UPDATE(conn.link_spec, BTHH_CONN_STATE_CONNECTING);
   }
 
@@ -621,7 +621,7 @@ void btif_hh_load_bonded_dev(const tAclLinkSpec& link_spec_ref,
   uint8_t i;
   tAclLinkSpec link_spec = link_spec_ref;
 
-  if (IS_FLAG_ENABLED(allow_switching_hid_and_hogp) &&
+  if (com::android::bluetooth::flags::allow_switching_hid_and_hogp() &&
       link_spec.transport == BT_TRANSPORT_AUTO) {
     log::warn("Resolving link spec {} transport to BREDR/LE",
               link_spec.ToRedactedStringForLogging());
@@ -639,7 +639,8 @@ void btif_hh_load_bonded_dev(const tAclLinkSpec& link_spec_ref,
   }
 
   if (hh_add_device(link_spec, attr_mask, reconnect_allowed)) {
-    if (IS_FLAG_ENABLED(allow_switching_hid_and_hogp) && reconnect_allowed) {
+    if (com::android::bluetooth::flags::allow_switching_hid_and_hogp() &&
+        reconnect_allowed) {
       BTHH_STATE_UPDATE(link_spec, BTHH_CONN_STATE_ACCEPTING);
     }
     BTA_HhAddDev(link_spec, attr_mask, sub_class, app_id, dscp_info);
@@ -809,7 +810,7 @@ bt_status_t btif_hh_connect(const tAclLinkSpec& link_spec) {
     }
 
     // Reset the connection policy to allow incoming reconnections
-    if (IS_FLAG_ENABLED(allow_switching_hid_and_hogp)) {
+    if (com::android::bluetooth::flags::allow_switching_hid_and_hogp()) {
       added_dev->reconnect_allowed = true;
       btif_storage_set_hid_connection_policy(link_spec, true);
     }
@@ -1209,8 +1210,9 @@ static void btif_hh_upstreams_evt(uint16_t event, char* p_param) {
             len, p_data->dscp_info.descriptor.dsc_list);
 
         // Allow incoming connections
-        if (IS_FLAG_ENABLED(allow_switching_hid_and_hogp) &&
-            IS_FLAG_ENABLED(save_initial_hid_connection_policy)) {
+        if (com::android::bluetooth::flags::allow_switching_hid_and_hogp() &&
+            com::android::bluetooth::flags::
+                save_initial_hid_connection_policy()) {
           btif_storage_set_hid_connection_policy(p_dev->link_spec, true);
         }
 
@@ -1510,6 +1512,7 @@ static bt_status_t init(bthh_callbacks_t* callbacks) {
 static void btif_hh_transport_select(tAclLinkSpec& link_spec) {
   bool hid_available = false;
   bool hogp_available = false;
+  bool headtracker_available = false;
   bool le_preferred = false;
   bluetooth::Uuid remote_uuids[BT_MAX_NUM_UUIDS] = {};
   bt_property_t remote_properties = {BT_PROPERTY_UUIDS, sizeof(remote_uuids),
@@ -1535,10 +1538,14 @@ static void btif_hh_transport_select(tAclLinkSpec& link_spec) {
           hid_available = true;
         } else if (remote_uuids[i].As16Bit() == UUID_SERVCLASS_LE_HID) {
           hogp_available = true;
+        } else if (remote_uuids[i] == ANDROID_HEADTRACKER_SERVICE_UUID) {
+          if (com::android::bluetooth::flags::android_headtracker_service()) {
+            headtracker_available = true;
+          }
         }
       }
 
-      if (hid_available && hogp_available) {
+      if (hid_available && (hogp_available || headtracker_available)) {
         break;
       }
     }
@@ -1547,11 +1554,11 @@ static void btif_hh_transport_select(tAclLinkSpec& link_spec) {
   /* Decide whether to connect HID or HOGP */
   if (bredr_acl && hid_available) {
     le_preferred = false;
-  } else if (le_acl && hogp_available) {
+  } else if (le_acl && (hogp_available || headtracker_available)) {
     le_preferred = true;
   } else if (hid_available) {
     le_preferred = false;
-  } else if (hogp_available) {
+  } else if (hogp_available || headtracker_available) {
     le_preferred = true;
   } else if (bredr_acl) {
     le_preferred = false;
@@ -1564,10 +1571,10 @@ static void btif_hh_transport_select(tAclLinkSpec& link_spec) {
   link_spec.transport = le_preferred ? BT_TRANSPORT_LE : BT_TRANSPORT_BR_EDR;
   log::info(
       "link_spec:{}, bredr_acl:{}, hid_available:{}, le_acl:{}, "
-      "hogp_available:{}, "
+      "hogp_available:{}, headtracker_available:{}, "
       "dev_type:{}, le_preferred:{}",
       link_spec.ToRedactedStringForLogging(), bredr_acl, hid_available, le_acl,
-      hogp_available, dev_type, le_preferred);
+      hogp_available, headtracker_available, dev_type, le_preferred);
 }
 /*******************************************************************************
  *
@@ -1636,7 +1643,8 @@ static bt_status_t disconnect(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
     return BT_STATUS_UNHANDLED;
   }
 
-  if (IS_FLAG_ENABLED(allow_switching_hid_and_hogp) && !reconnect_allowed) {
+  if (com::android::bluetooth::flags::allow_switching_hid_and_hogp() &&
+      !reconnect_allowed) {
     log::info("Incoming reconnections disabled for device {}",
               link_spec.ToRedactedStringForLogging());
     btif_hh_added_device_t* added_dev = btif_hh_find_added_dev(link_spec);
@@ -1649,7 +1657,7 @@ static bt_status_t disconnect(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
 
   btif_hh_device_t* p_dev = btif_hh_find_connected_dev_by_link_spec(link_spec);
   if (p_dev == nullptr) {
-    if (IS_FLAG_ENABLED(allow_switching_hid_and_hogp)) {
+    if (com::android::bluetooth::flags::allow_switching_hid_and_hogp()) {
       // Conclude the request if the device is already disconnected
       p_dev = btif_hh_find_dev_by_link_spec(link_spec);
       if (p_dev != nullptr &&

@@ -30,6 +30,7 @@
 #include "stack/include/hiddefs.h"
 #include "stack/include/l2c_api.h"
 #include "types/ble_address_with_type.h"
+#include "types/bluetooth/uuid.h"
 
 /*****************************************************************************
  *  Constants and Type Definitions
@@ -339,6 +340,23 @@ typedef union {
                                       BTA_HH_GET_PROTO_EVT
                                       BTA_HH_GET_IDLE_EVT */
 } tBTA_HH;
+
+/**
+ * Android Headtracker Service UUIDs
+ */
+#define ANDROID_HEADTRACKER_SERVICE_UUID_STRING \
+  "109b862f-50e3-45cc-8ea1-ac62de4846d1"
+#define ANDROID_HEADTRACKER_VERSION_CHARAC_UUID_STRING \
+  "b4eb9919-a910-46a2-a9dd-fec2525196fd"
+#define ANDROID_HEADTRACKER_CONTROL_CHARAC_UUID_STRING \
+  "8584cbb5-2d58-45a3-ab9d-583e0958b067"
+#define ANDROID_HEADTRACKER_REPORT_CHARAC_UUID_STRING \
+  "e66dd173-b2ae-4f5a-ae16-0162af8038ae"
+
+extern const bluetooth::Uuid ANDROID_HEADTRACKER_SERVICE_UUID;
+extern const bluetooth::Uuid ANDROID_HEADTRACKER_VERSION_CHARAC_UUID;
+extern const bluetooth::Uuid ANDROID_HEADTRACKER_CONTROL_CHARAC_UUID;
+extern const bluetooth::Uuid ANDROID_HEADTRACKER_REPORT_CHARAC_UUID;
 
 /* BTA HH callback function */
 typedef void(tBTA_HH_CBACK)(tBTA_HH_EVT event, tBTA_HH* p_data);
