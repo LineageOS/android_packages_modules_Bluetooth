@@ -538,7 +538,12 @@ static void a2dp_sbc_encode_frames(uint8_t nb_frame) {
        */
       *((uint32_t*)(p_buf + 1)) = a2dp_sbc_encoder_cb.timestamp;
 
-      a2dp_sbc_encoder_cb.timestamp += p_buf->layer_specific * blocm_x_subband;
+      // Timestamp will wrap over to 0 if stream continues on long enough
+      // (>25H @ 48KHz). The parameters are promoted to 64bit to ensure that
+      // no unsigned overflow is triggered as ubsan is always enabled.
+      a2dp_sbc_encoder_cb.timestamp =
+          ((uint64_t)a2dp_sbc_encoder_cb.timestamp +
+           (p_buf->layer_specific * blocm_x_subband)) & UINT32_MAX;
 
       uint8_t done_nb_frame = remain_nb_frame - nb_frame;
       remain_nb_frame = nb_frame;

@@ -126,13 +126,8 @@ uint16_t CodecConfigSetting::GetOctectsPerFrame() const {
 };
 
 uint32_t CodecConfigSetting::GetSamplingFrequencyHz() const {
-  switch (id.coding_format) {
-    case kLeAudioCodingFormatLC3:
-      return params.GetAsCoreCodecConfig().GetSamplingFrequencyHz();
-    default:
-      log::warn(", invalid codec id: 0x{:02x}", id.coding_format);
-      return 0;
-  }
+  // We also mandate the sampling frequency parameter for vendor spec. codecs
+  return params.GetAsCoreCodecConfig().GetSamplingFrequencyHz();
 };
 
 uint32_t CodecConfigSetting::GetDataIntervalUs() const {

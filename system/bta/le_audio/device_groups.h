@@ -214,6 +214,9 @@ class LeAudioDeviceGroup {
   bool UpdateAudioContextAvailability(void);
   bool UpdateAudioSetConfigurationCache(
       types::LeAudioContextType ctx_type) const;
+  CodecManager::UnicastConfigurationRequirements
+  GetAudioSetConfigurationRequirements(
+      types::LeAudioContextType ctx_type) const;
   bool ReloadAudioLocations(void);
   bool ReloadAudioDirections(void);
   std::shared_ptr<const set_configurations::AudioSetConfiguration>
