@@ -16,6 +16,23 @@
       "message": "Please review. FYI: First change proposal for LOS/Gerrit, please let me know if I\u0027m missing something obvious :)",
       "revId": "68da7911036d86303df53b0603648f2dd351ae09",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d8a8710a_448ebba0",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 11883
+      },
+      "writtenOn": "2024-04-27T21:35:41Z",
+      "side": 1,
+      "message": "looking at the diff this seems like a lot of the code got simply refactored and changed a bit, I\u0027ll spend some time finding the actual diffs",
+      "revId": "68da7911036d86303df53b0603648f2dd351ae09",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
