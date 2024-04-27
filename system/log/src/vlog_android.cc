@@ -21,6 +21,9 @@
 
 namespace bluetooth::log_internal {
 
+static constexpr std::string_view kAndroidRepoLocation =
+    "packages/modules/Bluetooth/";
+
 static constexpr size_t kBufferSize = 1024;
 
 void vlog(Level level, char const* tag, source_location location,
@@ -31,15 +34,21 @@ void vlog(Level level, char const* tag, source_location location,
     return;
   }
 
+  // Strip prefix of file_name to remove kAndroidRepoLocation if present
+  const char* file_name = location.file_name;
+  if (strncmp(kAndroidRepoLocation.data(), location.file_name,
+              kAndroidRepoLocation.size()) == 0) {
+    file_name = location.file_name + kAndroidRepoLocation.size();
+  }
+
   // Format to stack buffer.
   // liblog uses a different default depending on the execution context
   // (host or device); the file and line are not systematically included.
   // In order to have consistent logs we include it manually in the log
   // message.
   truncating_buffer<kBufferSize> buffer;
-  fmt::format_to(std::back_insert_iterator(buffer),
-                 "{}:{} {}: ", location.file_name, location.line,
-                 location.function_name);
+  fmt::format_to(std::back_insert_iterator(buffer), "{}:{} {}: ", file_name,
+                 location.line, location.function_name);
   fmt::vformat_to(std::back_insert_iterator(buffer), fmt, vargs);
 
   // Send message to liblog.
