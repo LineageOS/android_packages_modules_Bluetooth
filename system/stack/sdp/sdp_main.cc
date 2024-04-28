@@ -25,11 +25,9 @@
 #define LOG_TAG "sdp"
 
 #include <bluetooth/log.h>
-#include <string.h>  // memset
 
 #include "common/init_flags.h"
 #include "internal_include/bt_target.h"
-#include "os/logging/log_adapter.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_psm_types.h"
@@ -72,7 +70,7 @@ static void sdp_on_l2cap_error(uint16_t l2cap_cid, uint16_t result);
  ******************************************************************************/
 void sdp_init(void) {
   /* Clears all structures and local SDP database (if Server is enabled) */
-  memset(&sdp_cb, 0, sizeof(tSDP_CB));
+  sdp_cb = {};
 
   for (int i = 0; i < SDP_MAX_CONNECTIONS; i++) {
     sdp_cb.ccb[i].sdp_conn_timer = alarm_new("sdp.sdp_conn_timer");
