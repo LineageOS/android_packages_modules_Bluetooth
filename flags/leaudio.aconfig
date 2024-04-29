@@ -69,6 +69,17 @@ flag {
 }
 
 flag {
+    name: "leaudio_dynamic_direction_opening"
+    namespace: "bluetooth"
+    description: "Enable direction only when needed"
+    bug: "412540131"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+
+flag {
     name: "le_ase_read_multiple_variable"
     namespace: "bluetooth"
     description: "Use GATT read multiple variable length characteristic values"
