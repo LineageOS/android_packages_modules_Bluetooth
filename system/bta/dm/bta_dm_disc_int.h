@@ -96,10 +96,7 @@ typedef struct {
   tBTA_SERVICE_MASK services_found;
 
   tSDP_DISCOVERY_DB* p_sdp_db;
-  alarm_t* search_timer;
   uint8_t service_index;
-  bool sdp_results;
-  bool wait_disc;
   uint8_t peer_scn;
 
   uint16_t conn_id;
