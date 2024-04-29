@@ -3841,6 +3841,10 @@ static void btif_dm_ble_key_nc_req_evt(tBTA_DM_SP_KEY_NOTIF* p_notif_req) {
   RawAddress bd_addr = p_notif_req->bd_addr;
   log::verbose("addr:{}", bd_addr);
 
+  /* Remote name update */
+  btif_update_remote_properties(p_notif_req->bd_addr, p_notif_req->bd_name,
+                                kDevClassEmpty, BT_DEVICE_TYPE_BLE);
+
   bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
   pairing_cb.is_ssp = false;
   pairing_cb.is_le_only = true;
