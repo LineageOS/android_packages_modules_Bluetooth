@@ -556,8 +556,6 @@ static void bta_dm_sdp_result(tSDP_STATUS sdp_result) {
         kBtmLogTag, bta_dm_discovery_cb.peer_bdaddr, "Discovery failed",
         base::StringPrintf("Result:%s", sdp_result_text(sdp_result).c_str()));
     log::error("SDP connection failed {}", sdp_status_text(sdp_result));
-    if (sdp_result == SDP_CONN_FAILED)
-      bta_dm_discovery_cb.wait_disc = false;
 
     /* not able to connect go to next device */
     if (bta_dm_discovery_cb.p_sdp_db)
@@ -833,17 +831,7 @@ static void bta_dm_discover_services(tBTA_DM_API_DISCOVER& discover) {
   }
   // transport == BT_TRANSPORT_BR_EDR
 
-  /* check whether connection already exists to the device
-      if connection exists, we don't have to wait for ACL
-      link to go down to start search on next device */
-  if (get_btm_client_interface().peer.BTM_IsAclConnectionUp(
-          bd_addr, BT_TRANSPORT_BR_EDR))
-    bta_dm_discovery_cb.wait_disc = false;
-  else
-    bta_dm_discovery_cb.wait_disc = true;
-
   log::info("starting SDP discovery on {}", bd_addr);
-  bta_dm_discovery_cb.sdp_results = false;
   bta_dm_find_services(bd_addr);
 }
 
@@ -1227,7 +1215,6 @@ static void bta_dm_disc_init_discovery_cb(
 }
 
 static void bta_dm_disc_reset() {
-  alarm_free(bta_dm_discovery_cb.search_timer);
   alarm_free(bta_dm_discovery_cb.gatt_close_timer);
   bta_dm_disc_init_discovery_cb(::bta_dm_discovery_cb);
 }
@@ -1239,7 +1226,6 @@ void bta_dm_disc_start(bool delay_close_gatt) {
     return;
   }
   bta_dm_disc_reset();
-  bta_dm_discovery_cb.search_timer = alarm_new("bta_dm_search.search_timer");
   bta_dm_discovery_cb.gatt_close_timer =
       delay_close_gatt ? alarm_new("bta_dm_search.gatt_close_timer") : nullptr;
   bta_dm_discovery_cb.pending_discovery_queue = {};
@@ -1250,24 +1236,6 @@ void bta_dm_disc_acl_down(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
           separate_service_and_device_discovery()) {
     bta_dm_disc_legacy::bta_dm_disc_acl_down(bd_addr, transport);
     return;
-  }
-  switch (transport) {
-    case BT_TRANSPORT_BR_EDR:
-      if (bta_dm_discovery_cb.wait_disc &&
-          bta_dm_discovery_cb.peer_bdaddr == bd_addr) {
-        bta_dm_discovery_cb.wait_disc = false;
-
-        if (bta_dm_discovery_cb.sdp_results) {
-          log::verbose("timer stopped");
-          alarm_cancel(bta_dm_discovery_cb.search_timer);
-          bta_dm_disc_discover_next_device();
-        }
-      }
-      break;
-
-    case BT_TRANSPORT_LE:
-    default:
-      break;
   }
 }
 

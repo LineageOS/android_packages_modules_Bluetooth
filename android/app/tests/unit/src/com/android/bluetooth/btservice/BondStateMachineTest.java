@@ -54,6 +54,11 @@ public class BondStateMachineTest {
     private static final int TEST_BOND_REASON = 0;
     private static final byte[] TEST_BT_ADDR_BYTES = {00, 11, 22, 33, 44, 55};
     private static final byte[] TEST_BT_ADDR_BYTES_2 = {00, 11, 22, 33, 44, 66};
+    private static final int[] DEVICE_TYPES = {
+        BluetoothDevice.DEVICE_TYPE_CLASSIC,
+        BluetoothDevice.DEVICE_TYPE_DUAL,
+        BluetoothDevice.DEVICE_TYPE_LE
+    };
     private static final ParcelUuid[] TEST_UUIDS =
             {ParcelUuid.fromString("0000111E-0000-1000-8000-00805F9B34FB")};
 
@@ -233,20 +238,25 @@ public class BondStateMachineTest {
         Assert.assertTrue(mBondStateMachine.mPendingBondedDevices.isEmpty());
     }
 
-    @Test
-    public void testSendIntent() {
-        int badBondState = 42;
-        mVerifyCount = 0;
-
+    private void resetRemoteDevice(int deviceType) {
         // Reset mRemoteDevices for the test.
         mRemoteDevices.reset();
         mDeviceProperties = mRemoteDevices.addDeviceProperties(TEST_BT_ADDR_BYTES);
         mDevice = mDeviceProperties.getDevice();
         Assert.assertNotNull(mDevice);
+        mDeviceProperties.mDeviceType = deviceType;
+        mBondStateMachine.mPendingBondedDevices.clear();
+    }
+
+    @Test
+    public void testSendIntent() {
+        int badBondState = 42;
+        mVerifyCount = 0;
 
         // Uuid not available, mPendingBondedDevice is empty.
-        testSendIntentNoPendingDevice(BOND_NONE, BOND_NONE, false, BOND_NONE,
-                false, BOND_NONE, BOND_NONE, false);
+        testSendIntentNoPendingDevice(
+                BOND_NONE, BOND_NONE, false, BOND_NONE, false, BOND_NONE, BOND_NONE, false);
+
         testSendIntentNoPendingDevice(BOND_NONE, BOND_BONDING, false, BOND_BONDING,
                 true, BOND_NONE, BOND_BONDING, false);
         testSendIntentNoPendingDevice(BOND_NONE, BOND_BONDED, false, BOND_BONDED,
@@ -463,7 +473,11 @@ public class BondStateMachineTest {
         } catch (IllegalArgumentException e) {
             // Do nothing.
         }
-        Assert.assertEquals(expectedNewState, mDeviceProperties.getBondState());
+
+        // Properties are removed when bond is removed
+        if (newState != BluetoothDevice.BOND_NONE) {
+            Assert.assertEquals(expectedNewState, mDeviceProperties.getBondState());
+        }
 
         // Check for bond state Intent status.
         if (shouldBroadcast) {
@@ -485,70 +499,124 @@ public class BondStateMachineTest {
         }
     }
 
-    private void testSendIntentNoPendingDeviceWithUuid(int oldState, int newState,
-            boolean isTriggerFromDelayMessage, int expectedNewState, boolean shouldBroadcast,
-            int broadcastOldState, int broadcastNewState, boolean shouldDelayMessageExist) {
-        // Add dummy UUID for the device.
-        mDeviceProperties.mUuids = TEST_UUIDS;
-        testSendIntentNoPendingDevice(oldState, newState, isTriggerFromDelayMessage,
-                expectedNewState, shouldBroadcast, broadcastOldState, broadcastNewState,
-                shouldDelayMessageExist);
+    private void testSendIntentForAllDeviceTypes(
+            int oldState,
+            int newState,
+            boolean isTriggerFromDelayMessage,
+            int expectedNewState,
+            boolean shouldBroadcast,
+            int broadcastOldState,
+            int broadcastNewState,
+            boolean shouldDelayMessageExist,
+            BluetoothDevice pendingBondedDevice,
+            ParcelUuid[] uuids) {
+        for (int deviceType : DEVICE_TYPES) {
+            resetRemoteDevice(deviceType);
+            if (pendingBondedDevice != null) {
+                mBondStateMachine.mPendingBondedDevices.add(mDevice);
+            }
+            if (uuids != null) {
+                // Add dummy UUID for the device.
+                mDeviceProperties.mUuids = TEST_UUIDS;
+            }
+            testSendIntentCase(
+                    oldState,
+                    newState,
+                    isTriggerFromDelayMessage,
+                    expectedNewState,
+                    shouldBroadcast,
+                    broadcastOldState,
+                    broadcastNewState,
+                    shouldDelayMessageExist);
+        }
     }
 
-    private void testSendIntentPendingDeviceWithUuid(int oldState, int newState,
-            boolean isTriggerFromDelayMessage, int expectedNewState, boolean shouldBroadcast,
-            int broadcastOldState, int broadcastNewState, boolean shouldDelayMessageExist) {
-        // Add dummy UUID for the device.
-        mDeviceProperties.mUuids = TEST_UUIDS;
-        testSendIntentPendingDevice(oldState, newState, isTriggerFromDelayMessage, expectedNewState,
-                shouldBroadcast, broadcastOldState, broadcastNewState, shouldDelayMessageExist);
+    private void testSendIntentNoPendingDeviceWithUuid(
+            int oldState,
+            int newState,
+            boolean isTriggerFromDelayMessage,
+            int expectedNewState,
+            boolean shouldBroadcast,
+            int broadcastOldState,
+            int broadcastNewState,
+            boolean shouldDelayMessageExist) {
+        testSendIntentForAllDeviceTypes(
+                oldState,
+                newState,
+                isTriggerFromDelayMessage,
+                expectedNewState,
+                shouldBroadcast,
+                broadcastOldState,
+                broadcastNewState,
+                shouldDelayMessageExist,
+                null,
+                TEST_UUIDS);
     }
 
-    private void testSendIntentPendingDevice(int oldState, int newState,
-            boolean isTriggerFromDelayMessage, int expectedNewState, boolean shouldBroadcast,
-            int broadcastOldState, int broadcastNewState, boolean shouldDelayMessageExist) {
-        // Test for classic remote device.
-        mDeviceProperties.mDeviceType = BluetoothDevice.DEVICE_TYPE_CLASSIC;
-        mBondStateMachine.mPendingBondedDevices.clear();
-        mBondStateMachine.mPendingBondedDevices.add(mDevice);
-        testSendIntentCase(oldState, newState, isTriggerFromDelayMessage, expectedNewState,
-                shouldBroadcast, broadcastOldState, broadcastNewState, shouldDelayMessageExist);
-
-        // Test for dual-mode remote device.
-        mDeviceProperties.mDeviceType = BluetoothDevice.DEVICE_TYPE_DUAL;
-        mBondStateMachine.mPendingBondedDevices.clear();
-        mBondStateMachine.mPendingBondedDevices.add(mDevice);
-        testSendIntentCase(oldState, newState, isTriggerFromDelayMessage, expectedNewState,
-                shouldBroadcast, broadcastOldState, broadcastNewState, shouldDelayMessageExist);
-
-        // Test for low energy remote device.
-        mDeviceProperties.mDeviceType = BluetoothDevice.DEVICE_TYPE_LE;
-        mBondStateMachine.mPendingBondedDevices.clear();
-        mBondStateMachine.mPendingBondedDevices.add(mDevice);
-        testSendIntentCase(oldState, newState, isTriggerFromDelayMessage, expectedNewState,
-                shouldBroadcast, broadcastOldState, broadcastNewState, shouldDelayMessageExist);
+    private void testSendIntentPendingDeviceWithUuid(
+            int oldState,
+            int newState,
+            boolean isTriggerFromDelayMessage,
+            int expectedNewState,
+            boolean shouldBroadcast,
+            int broadcastOldState,
+            int broadcastNewState,
+            boolean shouldDelayMessageExist) {
+        testSendIntentForAllDeviceTypes(
+                oldState,
+                newState,
+                isTriggerFromDelayMessage,
+                expectedNewState,
+                shouldBroadcast,
+                broadcastOldState,
+                broadcastNewState,
+                shouldDelayMessageExist,
+                mDevice,
+                TEST_UUIDS);
     }
 
-    private void testSendIntentNoPendingDevice(int oldState, int newState,
-            boolean isTriggerFromDelayMessage, int expectedNewState, boolean shouldBroadcast,
-            int broadcastOldState, int broadcastNewState, boolean shouldDelayMessageExist) {
-        // Test for classic remote device.
-        mDeviceProperties.mDeviceType = BluetoothDevice.DEVICE_TYPE_CLASSIC;
-        mBondStateMachine.mPendingBondedDevices.clear();
-        testSendIntentCase(oldState, newState, isTriggerFromDelayMessage, expectedNewState,
-                shouldBroadcast, broadcastOldState, broadcastNewState, shouldDelayMessageExist);
+    private void testSendIntentPendingDevice(
+            int oldState,
+            int newState,
+            boolean isTriggerFromDelayMessage,
+            int expectedNewState,
+            boolean shouldBroadcast,
+            int broadcastOldState,
+            int broadcastNewState,
+            boolean shouldDelayMessageExist) {
+        testSendIntentForAllDeviceTypes(
+                oldState,
+                newState,
+                isTriggerFromDelayMessage,
+                expectedNewState,
+                shouldBroadcast,
+                broadcastOldState,
+                broadcastNewState,
+                shouldDelayMessageExist,
+                mDevice,
+                null);
+    }
 
-        // Test for dual-mode remote device.
-        mDeviceProperties.mDeviceType = BluetoothDevice.DEVICE_TYPE_DUAL;
-        mBondStateMachine.mPendingBondedDevices.clear();
-        testSendIntentCase(oldState, newState, isTriggerFromDelayMessage, expectedNewState,
-                shouldBroadcast, broadcastOldState, broadcastNewState, shouldDelayMessageExist);
-
-        // Test for low energy remote device.
-        mDeviceProperties.mDeviceType = BluetoothDevice.DEVICE_TYPE_LE;
-        mBondStateMachine.mPendingBondedDevices.clear();
-        testSendIntentCase(oldState, newState, isTriggerFromDelayMessage, expectedNewState,
-                shouldBroadcast, broadcastOldState, broadcastNewState, shouldDelayMessageExist);
+    private void testSendIntentNoPendingDevice(
+            int oldState,
+            int newState,
+            boolean isTriggerFromDelayMessage,
+            int expectedNewState,
+            boolean shouldBroadcast,
+            int broadcastOldState,
+            int broadcastNewState,
+            boolean shouldDelayMessageExist) {
+        testSendIntentForAllDeviceTypes(
+                oldState,
+                newState,
+                isTriggerFromDelayMessage,
+                expectedNewState,
+                shouldBroadcast,
+                broadcastOldState,
+                broadcastNewState,
+                shouldDelayMessageExist,
+                null,
+                null);
     }
 
     private void verifyBondStateChangeIntent(int oldState, int newState, Intent intent) {
