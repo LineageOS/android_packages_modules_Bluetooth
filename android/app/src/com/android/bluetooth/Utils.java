@@ -227,6 +227,18 @@ public final class Utils {
     /**
      * Returns the correct device address to be used for connections over BR/EDR transport.
      *
+     * @param address the device address for which to obtain the connection address
+     * @param service the adapter service to make the identity address retrieval call
+     * @return either identity address or device address in String format
+     */
+    public static String getBrEdrAddress(String address, AdapterService service) {
+        String identity = service.getIdentityAddress(address);
+        return identity != null ? identity : address;
+    }
+
+    /**
+     * Returns the correct device address to be used for connections over BR/EDR transport.
+     *
      * @param device the device for which to obtain the connection address
      * @return either identity address or device address in String format
      */
