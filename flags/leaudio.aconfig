@@ -359,3 +359,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "headtracker_codec_capability"
+    namespace: "bluetooth"
+    description: "Use Android Headtracker codec capabilities"
+    bug: "338098113"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
