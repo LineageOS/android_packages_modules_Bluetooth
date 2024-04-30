@@ -92,6 +92,7 @@ enum class UnicastMonitorModeStatus {
   STREAMING_REQUESTED = 0,
   STREAMING,
   STREAMING_SUSPENDED,
+  STREAMING_REQUESTED_NO_CONTEXT_VALIDATE,
 };
 
 typedef enum {
