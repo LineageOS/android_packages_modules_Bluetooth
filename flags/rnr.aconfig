@@ -21,3 +21,13 @@ flag {
     description: "Clear rnr in-progress-state when rnr_cancel called"
     bug: "333094503"
 }
+
+flag {
+    name: "rnr_store_device_type"
+    namespace: "bluetooth"
+    description: "Store BREDR/LE when issuing RNR so we can cancel the correct type"
+    bug: "337179433"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
