@@ -390,7 +390,7 @@ class BluetoothManagerService {
                 TAG,
                 ("delayModeChangedIfNeeded(" + modechanged + "):")
                         + (" state=" + BluetoothAdapter.nameForState(state))
-                        + (" isAirplaneModeOn()=" + isAirplaneModeOn())
+                        + (" Airplane.isOnOverrode=" + AirplaneModeListener.isOnOverrode())
                         + (" isSatelliteModeOn()=" + isSatelliteModeOn())
                         + (" delayed=" + delayMs + "ms"));
 
@@ -537,7 +537,7 @@ class BluetoothManagerService {
             return false;
         }
 
-        if (isAirplaneModeOn() && isBluetoothPersistedStateOnAirplane()) {
+        if (AirplaneModeListener.isOnOverrode() && isBluetoothPersistedStateOnAirplane()) {
             Log.d(TAG, "shouldBluetoothBeOn: BT should be off as airplaneMode is on.");
             return false;
         }
@@ -703,11 +703,6 @@ class BluetoothManagerService {
 
     IBluetoothManager.Stub getBinder() {
         return mBinder;
-    }
-
-    /** Returns true if airplane mode is currently on */
-    private boolean isAirplaneModeOn() {
-        return AirplaneModeListener.isOn();
     }
 
     /** Returns true if satellite mode is turned on. */
@@ -879,7 +874,7 @@ class BluetoothManagerService {
     }
 
     boolean isBleScanAlwaysAvailable() {
-        if (isAirplaneModeOn() && !mEnable) {
+        if (AirplaneModeListener.isOnOverrode() && !mEnable) {
             return false;
         }
         try {
@@ -983,7 +978,7 @@ class BluetoothManagerService {
                         + (" isBinding=" + isBinding())
                         + (" mState=" + mState));
 
-        if (isAirplaneModeOn()) {
+        if (AirplaneModeListener.isOnOverrode()) {
             Log.d(TAG, "enableBle: not enabling - Airplane mode is on");
             return false;
         }
@@ -2195,7 +2190,7 @@ class BluetoothManagerService {
         mHandler.sendEmptyMessageDelayed(MESSAGE_RESTART_BLUETOOTH_SERVICE, ERROR_RESTART_TIME_MS);
 
         if (repeatAirplaneRunnable) {
-            onAirplaneModeChanged(isAirplaneModeOn());
+            onAirplaneModeChanged(AirplaneModeListener.isOnOverrode());
         }
     }
 
