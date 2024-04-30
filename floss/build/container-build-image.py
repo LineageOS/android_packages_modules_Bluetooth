@@ -90,8 +90,14 @@ class ContainerImageBuilder:
             # Install libchrome.
             ['find', '/tmp/libchrome', '-name', 'libchrome_*.deb', '-exec', 'dpkg', '-i', '{}', '+'],
 
+            # Run the dpkg builder for sysprop
+            [f'{SRC_MOUNT}/system/build/dpkg/sysprop/gen-src-pkg.sh', '/tmp/sysprop'],
+
+            # Install sysprop.
+            ['find', '/tmp/sysprop', '-name', 'sysprop_*.deb', '-exec', 'dpkg', '-i', '{}', '+'],
+
             # Delete intermediate files
-            ['rm', '-rf', '/tmp/libchrome', '/tmp/modpb64'],
+            ['rm', '-rf', '/tmp/libchrome', '/tmp/modpb64', '/tmp/sysprop'],
         ]
 
         try:
