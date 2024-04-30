@@ -166,6 +166,11 @@ class Host(
         grpcUnary<Empty>(scope, responseObserver, 30) {
             Log.i(TAG, "factoryReset")
 
+            // remove bond for each device to avoid auto connection if remote resets faster
+            for (device in bluetoothAdapter.bondedDevices) {
+                device.removeBond()
+            }
+
             val stateFlow =
                 flow
                     .filter { it.getAction() == BluetoothAdapter.ACTION_STATE_CHANGED }
