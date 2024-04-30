@@ -57,8 +57,7 @@ bool is_coding_format_supported(esco_coding_format_t /* coding_format */) {
 bool get_wbs_supported() { return true; }
 
 bool get_swb_supported() {
-  return osi_property_get_bool("bluetooth.hfp.swb.supported", false) &&
-         bluetooth::common::init_flags::sco_codec_select_lc3_is_enabled();
+  return osi_property_get_bool("bluetooth.hfp.swb.supported", false);
 }
 
 // Checks the supported codecs
