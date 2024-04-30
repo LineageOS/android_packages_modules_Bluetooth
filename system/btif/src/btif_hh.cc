@@ -1538,11 +1538,11 @@ static void btif_hh_transport_select(tAclLinkSpec& link_spec) {
           hid_available = true;
         } else if (remote_uuids[i].As16Bit() == UUID_SERVCLASS_LE_HID) {
           hogp_available = true;
-        } else if (remote_uuids[i] == ANDROID_HEADTRACKER_SERVICE_UUID) {
-          if (com::android::bluetooth::flags::android_headtracker_service()) {
-            headtracker_available = true;
-          }
         }
+      } else if (com::android::bluetooth::flags::
+                     android_headtracker_service() &&
+                 remote_uuids[i] == ANDROID_HEADTRACKER_SERVICE_UUID) {
+        headtracker_available = true;
       }
 
       if (hid_available && (hogp_available || headtracker_available)) {
