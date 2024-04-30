@@ -5432,7 +5432,6 @@ public class AdapterService extends Service {
      * @param device the remote device that we want to get UUIDs from
      * @return the uuids of the remote device
      */
-    @VisibleForTesting
     public ParcelUuid[] getRemoteUuids(BluetoothDevice device) {
         DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
         if (deviceProp == null) {
