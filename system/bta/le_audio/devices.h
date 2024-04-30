@@ -258,6 +258,7 @@ class LeAudioDevice {
 
   void DumpPacsDebugState(std::stringstream& stream,
                           types::PublishedAudioCapabilities pacs);
+  void ParseHeadtrackingCodec(const struct types::acs_ac_record& pac);
 };
 
 /* LeAudioDevices class represents a wraper helper over all devices in le audio
