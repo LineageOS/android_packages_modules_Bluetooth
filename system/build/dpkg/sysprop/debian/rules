@@ -1,0 +1,25 @@
+#!/usr/bin/make -f
+
+CC = clang
+CXX = clang++
+CPPFLAGS = -Iinclude -I.
+CXXFLAGS = -std=c++17
+LDFLAGS = -lprotobuf -lfmt -lstdc++
+
+%:
+	dh $@
+
+override_dh_auto_clean:
+	rm -rf sysprop_cpp
+
+override_dh_auto_build: sysprop_cpp
+
+posix_strerror_r.o: CPPFLAGS += -D_POSIX_C_SOURCE=200112L
+
+Common.o CppGen.o: sysprop.pb.h
+
+sysprop_cpp: CppMain.o CppGen.o Common.o CodeWriter.o sysprop.pb.o file.o strings.o stringprintf.o posix_strerror_r.o
+	$(LINK.o) $^ -o $@
+
+sysprop.pb.h sysprop.pb.cc: sysprop.proto
+	protoc --proto_path=. --cpp_out=. sysprop.proto
