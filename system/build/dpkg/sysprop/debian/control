@@ -1,0 +1,17 @@
+Source: sysprop
+Section: misc
+Priority: optional
+Maintainer: David Duarte <licorne@google.com>
+Standards-Version: 4.1.4
+Homepage: https://android.googlesource.com/platform/system/tools/sysprop
+Build-Depends:
+ debhelper (>=11~),
+ clang,
+ libfmt-dev,
+ protobuf-compiler
+
+Package: sysprop
+Architecture: any
+Multi-Arch: foreign
+Depends: ${misc:Depends}, ${shlibs:Depends}
+Description: sysprop codegen tools
