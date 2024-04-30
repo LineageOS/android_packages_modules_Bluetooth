@@ -85,6 +85,7 @@ public class LeAudioStackEvent {
     static final int STATUS_LOCAL_STREAM_REQUESTED = 0;
     static final int STATUS_LOCAL_STREAM_STREAMING = 1;
     static final int STATUS_LOCAL_STREAM_SUSPENDED = 2;
+    static final int STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE = 3;
 
     // Do not modify without updating le_audio_types.h
     // Match up with defines of le_audio_types.h
@@ -307,6 +308,8 @@ public class LeAudioStackEvent {
                         return "STATUS_LOCAL_STREAM_STREAMING";
                     case STATUS_LOCAL_STREAM_SUSPENDED:
                         return "STATUS_LOCAL_STREAM_SUSPENDED";
+                    case STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE:
+                        return "STATUS_LOCAL_STREAM_REQUESTED_NO_CONTEXT_VALIDATE";
                     default:
                         return "UNKNOWN";
                 }
