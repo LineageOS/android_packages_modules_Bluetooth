@@ -22,3 +22,13 @@ flag {
     description: "Remove complexity and non necessary initialization when simply binding"
     bug: "328698375"
 }
+
+flag {
+    name: "airplane_mode_x_ble_on"
+    namespace: "bluetooth"
+    description: "Airplane mode is not properly listen to when reaching BLE mode"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+    bug: "338079154"
+}
