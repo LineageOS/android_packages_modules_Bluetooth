@@ -1,0 +1,9 @@
+<resources>
+  <string name="app_name">ChannelSoundingTestApp</string>
+  <string name="action_settings">Settings</string>
+  <!-- Strings used for fragments for navigation -->
+  <string name="role_selection_fragment_label">Role Selection Fragment</string>
+  <string name="initiator_fragment_label">Initiator Fragment</string>
+    <string name="reflector_fragment_label">Reflector Fragment</string>
+
+</resources>

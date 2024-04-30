@@ -1,0 +1,15 @@
+1. prepare the device
+adb root
+adb remount -R
+2. build the app
+make ChannelSoundingTestApp
+3. load the app
+adb root
+adb remount
+adb push ChannelSoundingTestApp.apk /system/priv-app/ChannelSoundingTestApp/ChannelSoundingTestApp.apk
+adb push com.android.bluetooth.channelsoundingtestapp.xml /system/etc/permissions/com.android.bluetooth.cs.xml
+adb reboot
+4. run test
+pair devices from settings;
+launch APk
+one device works as 'Initiator', another device works as 'Responder';
