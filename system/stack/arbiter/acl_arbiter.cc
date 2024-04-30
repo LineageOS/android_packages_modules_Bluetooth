@@ -45,17 +45,26 @@ RustArbiterCallbacks callbacks_{};
 }  // namespace
 
 void AclArbiter::OnLeConnect(uint8_t tcb_idx, uint16_t advertiser_id) {
+#ifdef TARGET_FLOSS
+  return;
+#endif
   log::info("Notifying Rust of LE connection");
   callbacks_.on_le_connect(tcb_idx, advertiser_id);
 }
 
 void AclArbiter::OnLeDisconnect(uint8_t tcb_idx) {
+#ifdef TARGET_FLOSS
+  return;
+#endif
   log::info("Notifying Rust of LE disconnection");
   callbacks_.on_le_disconnect(tcb_idx);
 }
 
 InterceptAction AclArbiter::InterceptAttPacket(uint8_t tcb_idx,
                                                const BT_HDR* packet) {
+#ifdef TARGET_FLOSS
+  return InterceptAction::FORWARD;
+#endif
   log::debug("Intercepting ATT packet and forwarding to Rust");
 
   uint8_t* packet_start = (uint8_t*)(packet + 1) + packet->offset;
@@ -67,22 +76,34 @@ InterceptAction AclArbiter::InterceptAttPacket(uint8_t tcb_idx,
 }
 
 void AclArbiter::OnOutgoingMtuReq(uint8_t tcb_idx) {
+#ifdef TARGET_FLOSS
+  return;
+#endif
   log::debug("Notifying Rust of outgoing MTU request");
   callbacks_.on_outgoing_mtu_req(tcb_idx);
 }
 
 void AclArbiter::OnIncomingMtuResp(uint8_t tcb_idx, size_t mtu) {
+#ifdef TARGET_FLOSS
+  return;
+#endif
   log::debug("Notifying Rust of incoming MTU response {}", mtu);
   callbacks_.on_incoming_mtu_resp(tcb_idx, mtu);
 }
 
 void AclArbiter::OnIncomingMtuReq(uint8_t tcb_idx, size_t mtu) {
+#ifdef TARGET_FLOSS
+  return;
+#endif
   log::debug("Notifying Rust of incoming MTU request {}", mtu);
   callbacks_.on_incoming_mtu_req(tcb_idx, mtu);
 }
 
 void AclArbiter::SendPacketToPeer(uint8_t tcb_idx,
                                   ::rust::Vec<uint8_t> buffer) {
+#ifdef TARGET_FLOSS
+  return;
+#endif
   tGATT_TCB* p_tcb = gatt_get_tcb_by_idx(tcb_idx);
   if (p_tcb != nullptr) {
     BT_HDR* p_buf =
