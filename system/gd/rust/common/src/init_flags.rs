@@ -223,7 +223,6 @@ init_flags!(
         leaudio_targeted_announcement_reconnection_mode = true,
         pbap_pse_dynamic_version_upgrade = false,
         redact_log = true,
-        sco_codec_select_lc3 = true,
         sco_codec_timeout_clear,
         sdp_serialization = true,
         sdp_skip_rnr_if_known = true,
