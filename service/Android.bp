@@ -185,6 +185,8 @@ android_robolectric_test {
     static_libs: [
         "androidx.test.core",
         "androidx.test.ext.truth",
+        "bluetooth_flags_java_lib",
+        "flag-junit",
         "kotlin-test",
         "kotlinx_coroutines",
         "kotlinx_coroutines_test",
