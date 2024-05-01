@@ -2407,8 +2407,7 @@ class BluetoothManagerService {
         for (Method m : Flags.class.getDeclaredMethods()) {
             String flagStatus = ((Boolean) m.invoke(null)) ? "[■]" : "[ ]";
             String name = m.getName();
-            String snakeCaseName =
-                    name.replaceAll("([a-z])([A-Z]+)", "$1_$2").toLowerCase(Locale.US);
+            String snakeCaseName = name.replaceAll("([A-Z])", "_$1").toLowerCase(Locale.US);
             writer.println(String.format(fmt, flagStatus, name, snakeCaseName));
         }
         writer.println("");
