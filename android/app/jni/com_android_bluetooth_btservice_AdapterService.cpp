@@ -219,7 +219,8 @@ static void remote_device_properties_callback(bt_status_t status,
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid()) return;
 
-  log::verbose("Status is: {}, Properties: {}", bt_status_text(status),
+  log::verbose("Device: {}, Status: {}, Properties: {}",
+               ADDRESS_TO_LOGGABLE_STR(*bd_addr), bt_status_text(status),
                num_properties);
 
   if (status != BT_STATUS_SUCCESS) {
