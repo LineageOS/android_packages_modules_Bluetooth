@@ -24,3 +24,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "cancel_pairing_only_on_disconnected_transport"
+    namespace: "bluetooth"
+    description: "Cancel pairing due to unexpected disconnection only if the transport matches"
+    bug: "338152239"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
