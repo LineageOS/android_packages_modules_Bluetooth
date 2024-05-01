@@ -1847,7 +1847,7 @@ public class LeAudioService extends ProfileService {
                         + (", mActiveAudioInDevice: " + mActiveAudioInDevice)
                         + (", mActiveAudioOutDevice: " + mActiveAudioOutDevice));
 
-        if (device != mExposedActiveDevice) {
+        if (!device.equals(mExposedActiveDevice)) {
             return;
         }
 
