@@ -391,6 +391,7 @@ class BluetoothManagerService {
                 ("delayModeChangedIfNeeded(" + modechanged + "):")
                         + (" state=" + BluetoothAdapter.nameForState(state))
                         + (" Airplane.isOnOverrode=" + AirplaneModeListener.isOnOverrode())
+                        + (" Airplane.isOn=" + AirplaneModeListener.isOn())
                         + (" isSatelliteModeOn()=" + isSatelliteModeOn())
                         + (" delayed=" + delayMs + "ms"));
 
@@ -874,8 +875,14 @@ class BluetoothManagerService {
     }
 
     boolean isBleScanAlwaysAvailable() {
-        if (AirplaneModeListener.isOnOverrode() && !mEnable) {
-            return false;
+        if (Flags.airplaneModeXBleOn()) {
+            if (AirplaneModeListener.isOn() && !mEnable) {
+                return false;
+            }
+        } else {
+            if (AirplaneModeListener.isOnOverrode() && !mEnable) {
+                return false;
+            }
         }
         try {
             return Settings.Global.getInt(
@@ -978,9 +985,16 @@ class BluetoothManagerService {
                         + (" isBinding=" + isBinding())
                         + (" mState=" + mState));
 
-        if (AirplaneModeListener.isOnOverrode()) {
-            Log.d(TAG, "enableBle: not enabling - Airplane mode is on");
-            return false;
+        if (Flags.airplaneModeXBleOn()) {
+            if (AirplaneModeListener.isOn() && !mEnable) {
+                Log.d(TAG, "enableBle: not enabling - Airplane mode is ON on system");
+                return false;
+            }
+        } else {
+            if (AirplaneModeListener.isOnOverrode()) {
+                Log.d(TAG, "enableBle: not enabling - Airplane mode is ON");
+                return false;
+            }
         }
 
         if (isSatelliteModeOn()) {
@@ -1094,7 +1108,9 @@ class BluetoothManagerService {
                 Log.w(TAG, "sendBrEdrDownCallback: mAdapter is null");
                 return;
             }
-            if (isBleAppPresent()) {
+            boolean airplaneDoesNotAllowBleOn =
+                    Flags.airplaneModeXBleOn() && AirplaneModeListener.isOn();
+            if (!airplaneDoesNotAllowBleOn && isBleAppPresent()) {
                 // Need to stay at BLE ON. Disconnect all Gatt connections
                 Log.i(TAG, "sendBrEdrDownCallback: Staying in BLE_ON");
                 mAdapter.unregAllGattClient(mContext.getAttributionSource());

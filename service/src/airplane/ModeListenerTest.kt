@@ -22,8 +22,10 @@ import android.content.Context
 import android.content.res.Resources
 import android.os.Looper
 import android.os.UserHandle
+import android.platform.test.flag.junit.SetFlagsRule
 import android.provider.Settings
 import androidx.test.core.app.ApplicationProvider
+import com.android.bluetooth.flags.Flags
 import com.android.server.bluetooth.BluetoothAdapterState
 import com.android.server.bluetooth.Log
 import com.android.server.bluetooth.airplane.APM_BT_ENABLED_NOTIFICATION
@@ -34,6 +36,7 @@ import com.android.server.bluetooth.airplane.APM_WIFI_BT_NOTIFICATION
 import com.android.server.bluetooth.airplane.BLUETOOTH_APM_STATE
 import com.android.server.bluetooth.airplane.WIFI_APM_STATE
 import com.android.server.bluetooth.airplane.initialize
+import com.android.server.bluetooth.airplane.isOn
 import com.android.server.bluetooth.airplane.isOnOverrode
 import com.android.server.bluetooth.airplane.notifyUserToggledBluetooth
 import com.android.server.bluetooth.test.disableMode
@@ -93,7 +96,9 @@ class ModeListenerTest {
     private val state = BluetoothAdapterState()
     private val mContext = ApplicationProvider.getApplicationContext<Context>()
     private val resolver: ContentResolver = mContext.contentResolver
+
     @JvmField @Rule val testName = TestName()
+    @JvmField @Rule val setFlagsRule = SetFlagsRule()
 
     private val userContext =
         mContext.createContextAsUser(UserHandle.of(ActivityManager.getCurrentUser()), 0)
@@ -159,6 +164,7 @@ class ModeListenerTest {
 
         initializeAirplane()
 
+        assertThat(isOn).isFalse()
         assertThat(isOnOverrode).isFalse()
         assertThat(mode).isEmpty()
     }
@@ -170,6 +176,7 @@ class ModeListenerTest {
 
         initializeAirplane()
 
+        assertThat(isOn).isFalse()
         assertThat(isOnOverrode).isFalse()
         assertThat(mode).isEmpty()
     }
@@ -183,6 +190,7 @@ class ModeListenerTest {
 
         enableMode()
 
+        assertThat(isOn).isFalse()
         assertThat(isOnOverrode).isFalse()
         assertThat(mode).isEmpty()
     }
@@ -191,6 +199,7 @@ class ModeListenerTest {
     fun initialize_whenSensitive_isOff() {
         initializeAirplane()
 
+        assertThat(isOn).isFalse()
         assertThat(isOnOverrode).isFalse()
         assertThat(mode).isEmpty()
     }
@@ -202,6 +211,7 @@ class ModeListenerTest {
 
         initializeAirplane()
 
+        assertThat(isOn).isTrue()
         assertThat(isOnOverrode).isTrue()
         assertThat(mode).isEmpty()
     }
@@ -215,6 +225,7 @@ class ModeListenerTest {
 
         initializeAirplane()
 
+        assertThat(isOn).isTrue()
         assertThat(isOnOverrode).isFalse()
         assertThat(mode).isEmpty()
     }
@@ -252,6 +263,33 @@ class ModeListenerTest {
 
         assertThat(isOnOverrode).isFalse()
         assertThat(mode).isEmpty()
+    }
+
+    @Test
+    fun disable_whenBluetoothOn_discardUpdate() {
+        setFlagsRule.enableFlags(Flags.FLAG_AIRPLANE_MODE_X_BLE_ON)
+        initializeAirplane()
+        enableMode()
+
+        state.set(BluetoothAdapter.STATE_ON)
+        disableMode()
+
+        assertThat(isOnOverrode).isFalse()
+        assertThat(mode).containsExactly(true)
+    }
+
+    // Test to remove once AIRPLANE_MODE_X_BLE_ON has shipped
+    @Test
+    fun disable_whenBluetoothOn_notDiscardUpdate() {
+        setFlagsRule.disableFlags(Flags.FLAG_AIRPLANE_MODE_X_BLE_ON)
+        initializeAirplane()
+        enableMode()
+
+        state.set(BluetoothAdapter.STATE_ON)
+        disableMode()
+
+        assertThat(isOnOverrode).isFalse()
+        assertThat(mode).containsExactly(true, false)
     }
 
     @Test
@@ -324,6 +362,7 @@ class ModeListenerTest {
         enableMode()
 
         assertThat(isOnOverrode).isTrue()
+        assertThat(isOn).isTrue()
         assertThat(mode).containsExactly(true)
     }
 
@@ -338,6 +377,7 @@ class ModeListenerTest {
         enableMode()
 
         assertThat(isOnOverrode).isFalse()
+        assertThat(isOn).isTrue()
         assertThat(mode).isEmpty()
     }
 
@@ -351,6 +391,7 @@ class ModeListenerTest {
         enableMode()
 
         assertThat(isOnOverrode).isTrue()
+        assertThat(isOn).isTrue()
         assertThat(mode).containsExactly(true)
     }
 
@@ -365,6 +406,7 @@ class ModeListenerTest {
         enableMode()
 
         assertThat(isOnOverrode).isFalse()
+        assertThat(isOn).isTrue()
         assertThat(mode).isEmpty()
         assertThat(notification).containsExactly(APM_BT_NOTIFICATION)
     }
