@@ -309,8 +309,12 @@ pub enum DelayedActions {
     /// Scanner for BLE discovery is reporting a result.
     BleDiscoveryScannerResult(ScanResult),
 
-    /// Update the connectable mode to allow or disallow classic reconnect
+    /// Update the connectable mode to allow or disallow classic reconnect.
+    /// Parameter: Whether or not there are Classic listening sockets
     UpdateConnectableMode(bool),
+
+    /// Reset the discoverable mode to BtDiscMode::NonDiscoverable.
+    ResetDiscoverable,
 }
 
 /// Serializable device used in various apis.
@@ -523,6 +527,10 @@ pub struct Bluetooth {
     discovering_started: Instant,
     hh: Option<HidHost>,
     is_connectable: bool,
+    discoverable_mode: BtDiscMode,
+    // This refers to the suspend mode of the functionality related to Classic scan mode,
+    // i.e., page scan and inquiry scan; Also known as connectable and discoverable.
+    scan_suspend_mode: SuspendMode,
     is_discovering: bool,
     is_discovering_before_suspend: bool,
     is_discovery_paused: bool,
@@ -581,6 +589,8 @@ impl Bluetooth {
             discovering_started: Instant::now(),
             intf,
             is_connectable: false,
+            discoverable_mode: BtDiscMode::NonDiscoverable,
+            scan_suspend_mode: SuspendMode::Normal,
             is_discovering: false,
             is_discovering_before_suspend: false,
             is_discovery_paused: false,
@@ -628,6 +638,9 @@ impl Bluetooth {
     }
 
     fn trigger_update_connectable_mode(&self) {
+        if self.get_scan_suspend_mode() != SuspendMode::Normal {
+            return;
+        }
         let txl = self.tx.clone();
         tokio::spawn(async move {
             let _ = txl.send(Message::TriggerUpdateConnectableMode).await;
@@ -837,22 +850,30 @@ impl Bluetooth {
 
     /// Returns whether the adapter is connectable.
     pub(crate) fn get_connectable_internal(&self) -> bool {
-        match self.properties.get(&BtPropertyType::AdapterScanMode) {
-            Some(prop) => match prop {
-                BluetoothProperty::AdapterScanMode(mode) => match *mode {
-                    BtScanMode::Connectable | BtScanMode::ConnectableDiscoverable => true,
-                    _ => false,
-                },
-                _ => false,
+        self.properties.get(&BtPropertyType::AdapterScanMode).map_or(false, |prop| match prop {
+            BluetoothProperty::AdapterScanMode(mode) => match *mode {
+                BtScanMode::Connectable
+                | BtScanMode::ConnectableDiscoverable
+                | BtScanMode::ConnectableLimitedDiscoverable => true,
+                BtScanMode::None_ => false,
             },
             _ => false,
-        }
+        })
     }
 
     /// Sets the adapter's connectable mode for classic connections.
     pub(crate) fn set_connectable_internal(&mut self, mode: bool) -> bool {
+        if self.get_scan_suspend_mode() != SuspendMode::Normal {
+            // We will always trigger an update on resume so no need so store the mode change.
+            return false;
+        }
+        if self.is_connectable == mode {
+            return true;
+        }
         self.is_connectable = mode;
-        if mode && self.get_discoverable() {
+        if self.discoverable_mode != BtDiscMode::NonDiscoverable {
+            // Discoverable always implies connectable. Don't affect the discoverable mode for now
+            // and the connectable mode would be restored when discoverable becomes off.
             return true;
         }
         self.intf.lock().unwrap().set_adapter_property(BluetoothProperty::AdapterScanMode(
@@ -861,20 +882,86 @@ impl Bluetooth {
     }
 
     /// Returns adapter's discoverable mode.
-    pub fn get_discoverable_mode_internal(&self) -> BtDiscMode {
+    pub(crate) fn get_discoverable_mode_internal(&self) -> BtDiscMode {
         let off_mode = BtDiscMode::NonDiscoverable;
 
-        match self.properties.get(&BtPropertyType::AdapterScanMode) {
-            Some(prop) => match prop {
+        self.properties.get(&BtPropertyType::AdapterScanMode).map_or(off_mode.clone(), |prop| {
+            match prop {
                 BluetoothProperty::AdapterScanMode(mode) => match *mode {
                     BtScanMode::ConnectableDiscoverable => BtDiscMode::GeneralDiscoverable,
                     BtScanMode::ConnectableLimitedDiscoverable => BtDiscMode::LimitedDiscoverable,
-                    _ => off_mode,
+                    BtScanMode::Connectable | BtScanMode::None_ => off_mode,
                 },
                 _ => off_mode,
-            },
-            _ => off_mode,
+            }
+        })
+    }
+
+    /// Set the suspend mode for scan mode (connectable/discoverable mode).
+    pub(crate) fn set_scan_suspend_mode(&mut self, suspend_mode: SuspendMode) {
+        if suspend_mode != self.scan_suspend_mode {
+            self.scan_suspend_mode = suspend_mode;
         }
+    }
+
+    /// Gets current suspend mode for scan mode (connectable/discoverable mode).
+    pub(crate) fn get_scan_suspend_mode(&self) -> SuspendMode {
+        self.scan_suspend_mode.clone()
+    }
+
+    /// Enters the suspend mode for scan mode (connectable/discoverable mode).
+    pub(crate) fn scan_mode_enter_suspend(&mut self) -> BtStatus {
+        if self.get_scan_suspend_mode() != SuspendMode::Normal {
+            return BtStatus::Busy;
+        }
+        self.set_scan_suspend_mode(SuspendMode::Suspending);
+
+        if self
+            .intf
+            .lock()
+            .unwrap()
+            .set_adapter_property(BluetoothProperty::AdapterScanMode(BtScanMode::None_))
+            != 0
+        {
+            warn!("scan_mode_enter_suspend: Failed to set BtScanMode::None_");
+        }
+
+        self.set_scan_suspend_mode(SuspendMode::Suspended);
+
+        return BtStatus::Success;
+    }
+
+    /// Exits the suspend mode for scan mode (connectable/discoverable mode).
+    pub(crate) fn scan_mode_exit_suspend(&mut self) -> BtStatus {
+        if self.get_scan_suspend_mode() != SuspendMode::Suspended {
+            return BtStatus::Busy;
+        }
+        self.set_scan_suspend_mode(SuspendMode::Resuming);
+
+        let mode = match self.discoverable_mode {
+            BtDiscMode::LimitedDiscoverable => BtScanMode::ConnectableLimitedDiscoverable,
+            BtDiscMode::GeneralDiscoverable => BtScanMode::ConnectableDiscoverable,
+            BtDiscMode::NonDiscoverable => match self.is_connectable {
+                true => BtScanMode::Connectable,
+                false => BtScanMode::None_,
+            },
+        };
+        if self
+            .intf
+            .lock()
+            .unwrap()
+            .set_adapter_property(BluetoothProperty::AdapterScanMode(mode.clone()))
+            != 0
+        {
+            warn!("scan_mode_exit_suspend: Failed to restore scan mode {:?}", mode);
+        }
+
+        self.set_scan_suspend_mode(SuspendMode::Normal);
+
+        // Update is only available after SuspendMode::Normal
+        self.trigger_update_connectable_mode();
+
+        return BtStatus::Success;
     }
 
     /// Returns adapter's alias.
@@ -1106,8 +1193,13 @@ impl Bluetooth {
                     self.found_devices.insert(address.clone(), device_with_props);
                 }
             }
+
             DelayedActions::UpdateConnectableMode(is_sock_listening) => {
                 self.update_connectable_mode(is_sock_listening);
+            }
+
+            DelayedActions::ResetDiscoverable => {
+                self.set_discoverable(BtDiscMode::NonDiscoverable, 0);
             }
         }
     }
@@ -2128,16 +2220,7 @@ impl IBluetooth for Bluetooth {
     }
 
     fn get_discoverable(&self) -> bool {
-        match self.properties.get(&BtPropertyType::AdapterScanMode) {
-            Some(prop) => match prop {
-                BluetoothProperty::AdapterScanMode(mode) => match mode {
-                    BtScanMode::ConnectableDiscoverable => true,
-                    _ => false,
-                },
-                _ => false,
-            },
-            _ => false,
-        }
+        self.get_discoverable_mode_internal() != BtDiscMode::NonDiscoverable
     }
 
     fn get_discoverable_timeout(&self) -> u32 {
@@ -2159,32 +2242,40 @@ impl IBluetooth for Bluetooth {
             return false;
         }
 
-        let new_mode = match mode {
-            BtDiscMode::LimitedDiscoverable => BtScanMode::ConnectableLimitedDiscoverable,
-            BtDiscMode::GeneralDiscoverable => BtScanMode::ConnectableDiscoverable,
-            BtDiscMode::NonDiscoverable => match self.is_connectable {
-                true => BtScanMode::Connectable,
-                false => BtScanMode::None_,
-            },
-        };
+        // Don't really set the mode when suspend. The mode would be instead restored on resume.
+        // However, we still need to set the discoverable timeout so it would properly reset
+        // |self.discoverable_mode| after resume.
+        if self.get_scan_suspend_mode() == SuspendMode::Normal {
+            let scan_mode = match mode {
+                BtDiscMode::LimitedDiscoverable => BtScanMode::ConnectableLimitedDiscoverable,
+                BtDiscMode::GeneralDiscoverable => BtScanMode::ConnectableDiscoverable,
+                BtDiscMode::NonDiscoverable => match self.is_connectable {
+                    true => BtScanMode::Connectable,
+                    false => BtScanMode::None_,
+                },
+            };
+            if intf.set_adapter_property(BluetoothProperty::AdapterDiscoverableTimeout(duration))
+                != 0
+                || intf.set_adapter_property(BluetoothProperty::AdapterScanMode(scan_mode)) != 0
+            {
+                return false;
+            }
+        }
+
+        self.discoverable_mode = mode.clone();
 
         // The old timer should be overwritten regardless of what the new mode is.
-        if let Some(ref handle) = self.discoverable_timeout {
+        if let Some(handle) = self.discoverable_timeout.take() {
             handle.abort();
-            self.discoverable_timeout = None;
         }
 
-        if intf.set_adapter_property(BluetoothProperty::AdapterDiscoverableTimeout(duration)) != 0
-            || intf.set_adapter_property(BluetoothProperty::AdapterScanMode(new_mode)) != 0
-        {
-            return false;
-        }
-
-        if (mode != BtDiscMode::NonDiscoverable) && (duration != 0) {
+        if mode != BtDiscMode::NonDiscoverable && duration != 0 {
             let txl = self.tx.clone();
             self.discoverable_timeout = Some(tokio::spawn(async move {
                 time::sleep(Duration::from_secs(duration.into())).await;
-                let _ = txl.send(Message::TriggerUpdateConnectableMode).await;
+                let _ = txl
+                    .send(Message::DelayedAdapterActions(DelayedActions::ResetDiscoverable))
+                    .await;
             }));
         }
 
