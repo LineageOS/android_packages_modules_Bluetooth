@@ -36,9 +36,7 @@ class BluetoothShellCommand extends BasicShellCommandHandler {
 
     @VisibleForTesting
     final BluetoothCommand[] mBluetoothCommands = {
-        new Enable(),
-        new Disable(),
-        new WaitForAdapterState(),
+        new Enable(), new EnableBle(), new Disable(), new DisableBle(), new WaitForAdapterState(),
     };
 
     @VisibleForTesting
@@ -63,6 +61,54 @@ class BluetoothShellCommand extends BasicShellCommandHandler {
 
         abstract int exec(String cmd) throws RemoteException;
         abstract void onHelp(PrintWriter pw);
+    }
+
+    @VisibleForTesting
+    class EnableBle extends BluetoothCommand {
+        EnableBle() {
+            super(true, "enableBle");
+        }
+
+        @Override
+        public int exec(String cmd) throws RemoteException {
+            return mManagerService
+                            .getBinder()
+                            .enableBle(
+                                    AttributionSource.myAttributionSource(),
+                                    mManagerService.getBinder())
+                    ? 0
+                    : -1;
+        }
+
+        @Override
+        public void onHelp(PrintWriter pw) {
+            pw.println("  " + getName());
+            pw.println("    Call enableBle to activate ble only mode on this device.");
+        }
+    }
+
+    @VisibleForTesting
+    class DisableBle extends BluetoothCommand {
+        DisableBle() {
+            super(true, "disableBle");
+        }
+
+        @Override
+        public int exec(String cmd) throws RemoteException {
+            return mManagerService
+                            .getBinder()
+                            .disableBle(
+                                    AttributionSource.myAttributionSource(),
+                                    mManagerService.getBinder())
+                    ? 0
+                    : -1;
+        }
+
+        @Override
+        public void onHelp(PrintWriter pw) {
+            pw.println("  " + getName());
+            pw.println("    revoke the call to enableBle. No-op if enableBle wasn't call before");
+        }
     }
 
     @VisibleForTesting

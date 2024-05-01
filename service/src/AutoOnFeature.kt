@@ -39,7 +39,7 @@ import androidx.annotation.RequiresApi
 import androidx.annotation.VisibleForTesting
 import com.android.modules.expresslog.Counter
 import com.android.server.bluetooth.airplane.hasUserToggledApm as hasUserToggledApm
-import com.android.server.bluetooth.airplane.isOn as isAirplaneModeOn
+import com.android.server.bluetooth.airplane.isOnOverrode as isAirplaneModeOn
 import com.android.server.bluetooth.satellite.isOn as isSatelliteModeOn
 import java.time.LocalDateTime
 import java.time.LocalTime

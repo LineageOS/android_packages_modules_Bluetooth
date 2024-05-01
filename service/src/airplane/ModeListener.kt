@@ -27,6 +27,7 @@ import android.os.Looper
 import android.provider.Settings
 import android.widget.Toast
 import com.android.bluetooth.BluetoothStatsLog
+import com.android.bluetooth.flags.Flags
 import com.android.server.bluetooth.BluetoothAdapterState
 import com.android.server.bluetooth.Log
 import com.android.server.bluetooth.initializeRadioModeListener
@@ -36,7 +37,16 @@ import kotlin.time.TimeSource
 
 private const val TAG = "AirplaneModeListener"
 
-/** @return true if Bluetooth state is impacted by airplane mode */
+/** @return true if Bluetooth state is currently impacted by airplane mode */
+public var isOnOverrode = false
+    private set
+
+/**
+ * @return true if airplane is ON on the device.
+ *
+ * This need to be used instead of reading the settings properties to avoid race condition from
+ * within the BluetoothManagerService thread
+ */
 public var isOn = false
     private set
 
@@ -80,11 +90,12 @@ public fun initialize(
             Settings.Global.AIRPLANE_MODE_RADIOS,
             Settings.Global.AIRPLANE_MODE_ON,
             fun(newMode: Boolean) {
-                val previousMode = isOn
+                isOn = newMode
+                val previousMode = isOnOverrode
                 val isBluetoothOn = state.oneOf(STATE_ON, STATE_TURNING_ON, STATE_TURNING_OFF)
                 val isMediaConnected = isBluetoothOn && mediaCallback()
 
-                isOn =
+                isOnOverrode =
                     airplaneModeValueOverride(
                         systemResolver,
                         newMode,
@@ -103,17 +114,25 @@ public fun initialize(
                     timeSource.markNow(),
                 )
 
-                if (previousMode == isOn) {
-                    Log.d(TAG, "Ignore airplane mode change because is already: $isOn")
+                val description = "isOn=$isOn, isOnOverrode=$isOnOverrode"
+
+                if (previousMode == isOnOverrode) {
+                    Log.d(TAG, "Ignore mode change to same state. $description")
+                    return
+                } else if (
+                    Flags.airplaneModeXBleOn() && isOnOverrode == false && state.oneOf(STATE_ON)
+                ) {
+                    Log.d(TAG, "Ignore mode change as Bluetooth is ON. $description")
                     return
                 }
 
-                Log.i(TAG, "Trigger callback with state: $isOn")
-                modeCallback(isOn)
+                Log.i(TAG, "Trigger callback. $description")
+                modeCallback(isOnOverrode)
             }
         )
 
-    isOn =
+    isOn = airplaneModeAtBoot
+    isOnOverrode =
         airplaneModeValueOverride(
             systemResolver,
             airplaneModeAtBoot,
@@ -132,7 +151,7 @@ public fun initialize(
         false,
         timeSource.markNow(),
     )
-    Log.i(TAG, "Initialized successfully with state: $isOn")
+    Log.i(TAG, "Init completed. isOn=$isOn, isOnOverrode=$isOnOverrode")
 }
 
 @kotlin.time.ExperimentalTime
@@ -263,7 +282,7 @@ private class AirplaneMetricSession(
         }
     }
 
-    private val isBluetoothOnAfterApmToggle = !isOn
+    private val isBluetoothOnAfterApmToggle = !isOnOverrode
     private var userToggledBluetoothDuringApm = false
     private var userToggledBluetoothDuringApmWithinMinute = false
 
