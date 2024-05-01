@@ -1282,14 +1282,22 @@ class AdapterProperties {
         StringBuilder sb = new StringBuilder();
         for (BluetoothDevice device : mBondedDevices) {
             String address = device.getAddress();
+            BluetoothClass cod = device.getBluetoothClass();
+            int codInt = cod != null ? cod.getClassOfDevice() : 0;
             String brEdrAddress =
                     Flags.identityAddressNullIfUnknown()
                             ? Utils.getBrEdrAddress(device)
                             : mService.getIdentityAddress(address);
             if (brEdrAddress.equals(address)) {
-                writer.println("    " + address
-                            + " [" + dumpDeviceType(device.getType()) + "] "
-                            + Utils.getName(device));
+                writer.println(
+                        "    "
+                                + address
+                                + " ["
+                                + dumpDeviceType(device.getType())
+                                + "][ 0x"
+                                + String.format("%06X", codInt)
+                                + " ] "
+                                + Utils.getName(device));
             } else {
                 sb.append(
                         "    "
@@ -1298,7 +1306,9 @@ class AdapterProperties {
                                 + brEdrAddress
                                 + " ["
                                 + dumpDeviceType(device.getType())
-                                + "] "
+                                + "][ 0x"
+                                + String.format("%06X", codInt)
+                                + " ] "
                                 + Utils.getName(device)
                                 + "\n");
             }
