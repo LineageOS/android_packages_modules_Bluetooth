@@ -17,3 +17,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "browsing_refactor"
+    namespace: "bluetooth"
+    description: "Broadcast all players instead of BT player, remove MediaBrowser preload, support package modification"
+    bug: "338156685"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

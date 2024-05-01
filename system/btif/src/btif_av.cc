@@ -3622,9 +3622,10 @@ static void set_active_peer_int(uint8_t peer_sep,
   if (peer_sep == AVDT_TSEP_SNK) {
     if (!btif_av_src_sink_coexist_enabled() || (btif_av_src_sink_coexist_enabled() &&
       btif_av_both_enable() && (btif_av_sink.FindPeer(peer_address) == nullptr))) {
-      btif_av_source.SetActivePeer(peer_address,
-                                      std::move(peer_ready_promise));
-      log::error("Error setting {} as active Sink peer", peer_address);
+      if (!btif_av_source.SetActivePeer(peer_address,
+                                        std::move(peer_ready_promise))) {
+        log::error("Error setting {} as active Sink peer", peer_address);
+      }
     }
     return;
   }
