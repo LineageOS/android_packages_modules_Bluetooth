@@ -288,7 +288,6 @@ constexpr uint16_t kLeAudioVendorCompanyIdUndefined = 0x00;
 constexpr uint16_t kLeAudioVendorCodecIdUndefined = 0x00;
 
 constexpr uint16_t kLeAudioVendorCompanyIdGoogle = 0x00E0;
-/* Todo: Temporary value */
 constexpr uint16_t kLeAudioVendorCodecIdHeadtracking = 0x0001;
 
 /* Metadata types from Assigned Numbers */
@@ -297,11 +296,18 @@ constexpr uint8_t kLeAudioMetadataTypeStreamingAudioContext = 0x02;
 constexpr uint8_t kLeAudioMetadataTypeProgramInfo = 0x03;
 constexpr uint8_t kLeAudioMetadataTypeLanguage = 0x04;
 constexpr uint8_t kLeAudioMetadataTypeCcidList = 0x05;
+constexpr uint8_t kLeAudioMetadataTypeVendorSpecific = 0xFF;
 
 constexpr uint8_t kLeAudioMetadataTypeLen = 1;
 constexpr uint8_t kLeAudioMetadataLenLen = 1;
 
 constexpr uint8_t kLeAudioMetadataStreamingAudioContextLen = 2;
+
+/* Android Headtracker Codec metadata */
+constexpr uint8_t kLeAudioMetadataHeadtrackerTransportLen = 1;
+constexpr uint8_t kLeAudioMetadataHeadtrackerTransportVal = 1;
+constexpr uint8_t kLeAudioMetadataHeadtrackerTransportLeAcl = 1;
+constexpr uint8_t kLeAudioMetadataHeadtrackerTransportLeIso = 2;
 
 /* CSIS Types */
 constexpr uint8_t kDefaultScanDurationS = 5;
