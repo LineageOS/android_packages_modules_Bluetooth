@@ -67,7 +67,6 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -106,14 +105,7 @@ public class HeadsetServiceTest {
     @Before
     public void setUp() throws Exception {
         TestUtils.setAdapterService(mAdapterService);
-        // We cannot mock HeadsetObjectsFactory.getInstance() with Mockito.
-        // Hence we need to use reflection to call a private method to
-        // initialize properly the HeadsetObjectsFactory.sInstance field.
-        Method method =
-                HeadsetObjectsFactory.class.getDeclaredMethod(
-                        "setInstanceForTesting", HeadsetObjectsFactory.class);
-        method.setAccessible(true);
-        method.invoke(null, mObjectsFactory);
+        HeadsetObjectsFactory.setInstanceForTesting(mObjectsFactory);
         doReturn(MAX_HEADSET_CONNECTIONS).when(mAdapterService).getMaxConnectedAudioDevices();
         doReturn(new ParcelUuid[] {BluetoothUuid.HFP})
                 .when(mAdapterService)
@@ -190,11 +182,7 @@ public class HeadsetServiceTest {
         Assert.assertNull(mHeadsetService);
         mStateMachines.clear();
         mCurrentDevice = null;
-        Method method =
-                HeadsetObjectsFactory.class.getDeclaredMethod(
-                        "setInstanceForTesting", HeadsetObjectsFactory.class);
-        method.setAccessible(true);
-        method.invoke(null, (HeadsetObjectsFactory) null);
+        HeadsetObjectsFactory.setInstanceForTesting(null);
         TestUtils.clearAdapterService(mAdapterService);
     }
 
@@ -1350,7 +1338,7 @@ public class HeadsetServiceTest {
      *
      *  @param device test device
      *  @param bondState bond state value, could be invalid
-     *  @param priority value, could be invalid, coudl be invalid
+     *  @param priority value, could be invalid, could be invalid
      *  @param expected expected result from okToAcceptConnection()
      */
     private void testOkToAcceptConnectionCase(
