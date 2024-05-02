@@ -43,8 +43,6 @@ import android.os.ParcelUuid;
 import android.os.PowerManager;
 import android.os.RemoteException;
 import android.os.SystemProperties;
-import android.platform.test.flag.junit.CheckFlagsRule;
-import android.platform.test.flag.junit.DeviceFlagsValueProvider;
 import android.platform.test.flag.junit.SetFlagsRule;
 import android.telecom.PhoneAccount;
 import android.util.Log;
@@ -84,20 +82,30 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
-/**
- * A set of integration test that involves both {@link HeadsetService} and {@link
- * HeadsetStateMachine}
- */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class HeadsetServiceAndStateMachineTest {
-    @Rule
-    public final CheckFlagsRule mCheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule();
-
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
+
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+
+    @Spy private HeadsetObjectsFactory mObjectsFactory = HeadsetObjectsFactory.getInstance();
+
+    @Mock private HeadsetNativeInterface mNativeInterface;
+    @Mock private LeAudioService mLeAudioService;
+    @Mock private ServiceFactory mServiceFactory;
+    @Mock private AdapterService mAdapterService;
+    @Mock private ActiveDeviceManager mActiveDeviceManager;
+    @Mock private SilenceDeviceManager mSilenceDeviceManager;
+    @Mock private DatabaseManager mDatabaseManager;
+    @Mock private HeadsetSystemInterface mSystemInterface;
+    @Mock private AudioManager mAudioManager;
+    @Mock private HeadsetPhoneState mPhoneState;
+    @Mock private RemoteDevices mRemoteDevices;
 
     private static final String TAG = "HeadsetServiceAndStateMachineTest";
     private static final int ASYNC_CALL_TIMEOUT_MILLIS = 500;
@@ -109,26 +117,19 @@ public class HeadsetServiceAndStateMachineTest {
     private static final String TEST_PHONE_NUMBER = "1234567890";
     private static final String TEST_CALLER_ID = "Test Name";
 
-    private Context mTargetContext;
-    private HeadsetService mHeadsetService;
-    private BluetoothAdapter mAdapter;
-    private HashSet<BluetoothDevice> mBondedDevices = new HashSet<>();
+    private final BluetoothAdapter mAdapter = BluetoothAdapter.getDefaultAdapter();
+    private final Context mTargetContext = InstrumentationRegistry.getTargetContext();
+    private final Set<BluetoothDevice> mBondedDevices = new HashSet<>();
     private final BlockingQueue<Intent> mConnectionStateChangedQueue = new LinkedBlockingQueue<>();
     private final BlockingQueue<Intent> mActiveDeviceChangedQueue = new LinkedBlockingQueue<>();
     private final BlockingQueue<Intent> mAudioStateChangedQueue = new LinkedBlockingQueue<>();
-    private HeadsetIntentReceiver mHeadsetIntentReceiver;
+    private final HeadsetIntentReceiver mHeadsetIntentReceiver = new HeadsetIntentReceiver();
+
     private int mOriginalVrTimeoutMs = 5000;
     private PowerManager.WakeLock mVoiceRecognitionWakeLock;
     boolean mIsAdapterServiceSet;
     boolean mIsHeadsetServiceStarted;
-
-    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
-
-    @Mock private HeadsetNativeInterface mNativeInterface;
-
-    @Mock private LeAudioService mLeAudioService;
-
-    @Mock private ServiceFactory mServiceFactory;
+    private HeadsetService mHeadsetService;
 
     private class HeadsetIntentReceiver extends BroadcastReceiver {
         @Override
@@ -172,19 +173,8 @@ public class HeadsetServiceAndStateMachineTest {
         }
     }
 
-    @Spy private HeadsetObjectsFactory mObjectsFactory = HeadsetObjectsFactory.getInstance();
-    @Mock private AdapterService mAdapterService;
-    @Mock private ActiveDeviceManager mActiveDeviceManager;
-    @Mock private SilenceDeviceManager mSilenceDeviceManager;
-    @Mock private DatabaseManager mDatabaseManager;
-    @Mock private HeadsetSystemInterface mSystemInterface;
-    @Mock private AudioManager mAudioManager;
-    @Mock private HeadsetPhoneState mPhoneState;
-    @Mock private RemoteDevices mRemoteDevices;
-
     @Before
     public void setUp() throws Exception {
-        mTargetContext = InstrumentationRegistry.getTargetContext();
         PowerManager powerManager = mTargetContext.getSystemService(PowerManager.class);
         mVoiceRecognitionWakeLock =
                 powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "VoiceRecognitionTest");
@@ -196,8 +186,6 @@ public class HeadsetServiceAndStateMachineTest {
                 .getRemoteUuids(any(BluetoothDevice.class));
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
         HeadsetObjectsFactory.setInstanceForTesting(mObjectsFactory);
-        // This line must be called to make sure relevant objects are initialized properly
-        mAdapter = BluetoothAdapter.getDefaultAdapter();
         // Mock methods in AdapterService
         doReturn(FAKE_HEADSET_UUID)
                 .when(mAdapterService)
@@ -257,7 +245,6 @@ public class HeadsetServiceAndStateMachineTest {
         filter.addAction(BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED);
         filter.addAction(BluetoothHeadset.ACTION_ACTIVE_DEVICE_CHANGED);
         filter.addAction(BluetoothHeadset.ACTION_AUDIO_STATE_CHANGED);
-        mHeadsetIntentReceiver = new HeadsetIntentReceiver();
         mTargetContext.registerReceiver(mHeadsetIntentReceiver, filter);
         if (Flags.hfpCodecAptxVoice()) {
             verify(mNativeInterface, timeout(ASYNC_CALL_TIMEOUT_MILLIS).atLeast(1))

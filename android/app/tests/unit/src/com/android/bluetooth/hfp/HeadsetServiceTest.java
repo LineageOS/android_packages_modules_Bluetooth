@@ -77,19 +77,9 @@ import java.util.Set;
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class HeadsetServiceTest {
-    private static final int MAX_HEADSET_CONNECTIONS = 5;
-    private static final ParcelUuid[] FAKE_HEADSET_UUID = {BluetoothUuid.HFP};
-    private static final int ASYNC_CALL_TIMEOUT_MILLIS = 250;
-    private static final String TEST_PHONE_NUMBER = "1234567890";
-
-    private Context mTargetContext;
-    private HeadsetService mHeadsetService;
-    private BluetoothAdapter mAdapter;
-    private BluetoothDevice mCurrentDevice;
-    private final HashMap<BluetoothDevice, HeadsetStateMachine> mStateMachines = new HashMap<>();
+    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Spy private HeadsetObjectsFactory mObjectsFactory = HeadsetObjectsFactory.getInstance();
-    @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock private AdapterService mAdapterService;
     @Mock private ActiveDeviceManager mActiveDeviceManager;
@@ -101,9 +91,20 @@ public class HeadsetServiceTest {
     @Mock private HeadsetPhoneState mPhoneState;
     @Mock private RemoteDevices mRemoteDevices;
 
+    private static final int MAX_HEADSET_CONNECTIONS = 5;
+    private static final ParcelUuid[] FAKE_HEADSET_UUID = {BluetoothUuid.HFP};
+    private static final int ASYNC_CALL_TIMEOUT_MILLIS = 250;
+    private static final String TEST_PHONE_NUMBER = "1234567890";
+
+    private final BluetoothAdapter mAdapter = BluetoothAdapter.getDefaultAdapter();
+    private final Context mTargetContext = InstrumentationRegistry.getTargetContext();
+    private final HashMap<BluetoothDevice, HeadsetStateMachine> mStateMachines = new HashMap<>();
+
+    private HeadsetService mHeadsetService;
+    private BluetoothDevice mCurrentDevice;
+
     @Before
     public void setUp() throws Exception {
-        mTargetContext = InstrumentationRegistry.getTargetContext();
         TestUtils.setAdapterService(mAdapterService);
         // We cannot mock HeadsetObjectsFactory.getInstance() with Mockito.
         // Hence we need to use reflection to call a private method to
@@ -118,7 +119,6 @@ public class HeadsetServiceTest {
                 .when(mAdapterService)
                 .getRemoteUuids(any(BluetoothDevice.class));
         // This line must be called to make sure relevant objects are initialized properly
-        mAdapter = BluetoothAdapter.getDefaultAdapter();
         // Mock methods in AdapterService
         doReturn(FAKE_HEADSET_UUID)
                 .when(mAdapterService)
