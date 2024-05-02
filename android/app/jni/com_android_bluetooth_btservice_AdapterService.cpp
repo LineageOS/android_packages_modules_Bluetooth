@@ -35,9 +35,7 @@
 #include "utils/misc.h"
 
 using bluetooth::Uuid;
-#ifndef DYNAMIC_LOAD_BLUETOOTH
 extern bt_interface_t bluetoothInterface;
-#endif
 
 namespace fmt {
 template <>
@@ -989,40 +987,8 @@ static bt_os_callouts_t sBluetoothOsCallouts = {
 };
 
 int hal_util_load_bt_library(const bt_interface_t** interface) {
-#ifndef DYNAMIC_LOAD_BLUETOOTH
   *interface = &bluetoothInterface;
   return 0;
-#else
-  const char* sym = BLUETOOTH_INTERFACE_STRING;
-  bt_interface_t* itf = nullptr;
-
-  // The library name is not set by default, so the preset library name is used.
-  void* handle = dlopen("libbluetooth.so", RTLD_NOW);
-  if (!handle) {
-    const char* err_str = dlerror();
-    log::error("failed to load Bluetooth library, error={}",
-               err_str ? err_str : "error unknown");
-    goto error;
-  }
-
-  // Get the address of the bt_interface_t.
-  itf = (bt_interface_t*)dlsym(handle, sym);
-  if (!itf) {
-    log::error("failed to load symbol from Bluetooth library {}", sym);
-    goto error;
-  }
-
-  // Success.
-  log::info("loaded Bluetooth library successfully");
-  *interface = itf;
-  return 0;
-
-error:
-  *interface = NULL;
-  if (handle) dlclose(handle);
-
-  return -EINVAL;
-#endif
 }
 
 static bool initNative(JNIEnv* env, jobject obj, jboolean isGuest,
