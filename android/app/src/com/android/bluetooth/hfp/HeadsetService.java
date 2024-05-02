@@ -22,6 +22,8 @@ import static android.Manifest.permission.MODIFY_PHONE_STATE;
 import static com.android.bluetooth.Utils.enforceBluetoothPrivilegedPermission;
 import static com.android.modules.utils.build.SdkLevel.isAtLeastU;
 
+import static java.util.Objects.requireNonNull;
+
 import android.annotation.Nullable;
 import android.annotation.RequiresPermission;
 import android.bluetooth.BluetoothClass;
@@ -128,16 +130,17 @@ public class HeadsetService extends ProfileService {
     // Timeout for state machine thread join, to prevent potential ANR.
     private static final int SM_THREAD_JOIN_TIMEOUT_MS = 1000;
 
+    private final AdapterService mAdapterService;
+    private final DatabaseManager mDatabaseManager;
+    private final HeadsetNativeInterface mNativeInterface;
+    private final HashMap<BluetoothDevice, HeadsetStateMachine> mStateMachines = new HashMap<>();
+
     private int mMaxHeadsetConnections = 1;
     private BluetoothDevice mActiveDevice;
-    private AdapterService mAdapterService;
-    private DatabaseManager mDatabaseManager;
     private HandlerThread mStateMachinesThread;
     private Handler mStateMachinesThreadHandler;
     private Handler mHandler;
     // This is also used as a lock for shared data in HeadsetService
-    private final HashMap<BluetoothDevice, HeadsetStateMachine> mStateMachines = new HashMap<>();
-    private HeadsetNativeInterface mNativeInterface;
     private HeadsetSystemInterface mSystemInterface;
     private boolean mAudioRouteAllowed = true;
     // Indicates whether SCO audio needs to be forced to open regardless ANY OTHER restrictions
@@ -160,9 +163,18 @@ public class HeadsetService extends ProfileService {
 
     @VisibleForTesting ServiceFactory mFactory = new ServiceFactory();
 
-    public HeadsetService(Context ctx) {
-        super(ctx);
+    public HeadsetService(AdapterService adapterService) {
+        this(adapterService, HeadsetNativeInterface.getInstance());
     }
+
+    @VisibleForTesting
+    HeadsetService(AdapterService adapterService, HeadsetNativeInterface nativeInterface) {
+        super(requireNonNull(adapterService));
+        mAdapterService = adapterService;
+        mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
+        mNativeInterface = requireNonNull(nativeInterface);
+    }
+
     public static boolean isEnabled() {
         return BluetoothProperties.isProfileHfpAgEnabled().orElse(false);
     }
@@ -181,11 +193,6 @@ public class HeadsetService extends ProfileService {
 
         setComponentAvailable(HFP_AG_IN_CALL_SERVICE, true);
 
-        // Step 1: Get AdapterService and DatabaseManager, should never be null
-        mAdapterService = Objects.requireNonNull(AdapterService.getAdapterService(),
-                "AdapterService cannot be null when HeadsetService starts");
-        mDatabaseManager = Objects.requireNonNull(mAdapterService.getDatabase(),
-                "DatabaseManager cannot be null when HeadsetService starts");
         // Step 2: Start handler thread for state machines
         mHandler = new Handler(Looper.getMainLooper());
         mStateMachinesThread = new HandlerThread("HeadsetService.StateMachines");
@@ -204,7 +211,6 @@ public class HeadsetService extends ProfileService {
         }
         setHeadsetService(this);
         mMaxHeadsetConnections = mAdapterService.getMaxConnectedAudioDevices();
-        mNativeInterface = HeadsetObjectsFactory.getInstance().getNativeInterface();
         // Add 1 to allow a pending device to be connecting or disconnecting
         mNativeInterface.init(mMaxHeadsetConnections + 1, isInbandRingingEnabled());
         if (Flags.hfpCodecAptxVoice()) {
@@ -294,9 +300,6 @@ public class HeadsetService extends ProfileService {
         }
 
         // Step 1: Clear
-        synchronized (mStateMachines) {
-            mAdapterService = null;
-        }
         setComponentAvailable(HFP_AG_IN_CALL_SERVICE, false);
     }
 
@@ -930,7 +933,7 @@ public class HeadsetService extends ProfileService {
     public List<BluetoothDevice> getDevicesMatchingConnectionStates(int[] states) {
         ArrayList<BluetoothDevice> devices = new ArrayList<>();
         synchronized (mStateMachines) {
-            if (states == null || mAdapterService == null) {
+            if (states == null) {
                 return devices;
             }
             final BluetoothDevice[] bondedDevices = mAdapterService.getBondedDevices();

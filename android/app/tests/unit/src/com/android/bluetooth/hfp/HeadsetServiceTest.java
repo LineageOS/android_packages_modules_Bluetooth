@@ -104,7 +104,10 @@ public class HeadsetServiceTest {
 
     @Before
     public void setUp() throws Exception {
-        TestUtils.setAdapterService(mAdapterService);
+        doReturn(mTargetContext.getPackageName()).when(mAdapterService).getPackageName();
+        doReturn(mTargetContext.getPackageManager()).when(mAdapterService).getPackageManager();
+        doReturn(mTargetContext.getResources()).when(mAdapterService).getResources();
+
         HeadsetObjectsFactory.setInstanceForTesting(mObjectsFactory);
         doReturn(MAX_HEADSET_CONNECTIONS).when(mAdapterService).getMaxConnectedAudioDevices();
         doReturn(new ParcelUuid[] {BluetoothUuid.HFP})
@@ -164,13 +167,11 @@ public class HeadsetServiceTest {
                 .when(mObjectsFactory)
                 .makeStateMachine(any(), any(), any(), any(), any(), any());
         doReturn(mSystemInterface).when(mObjectsFactory).makeSystemInterface(any());
-        doReturn(mNativeInterface).when(mObjectsFactory).getNativeInterface();
         HeadsetNativeInterface.setInstance(mNativeInterface);
-        mHeadsetService = new HeadsetService(mTargetContext);
+        mHeadsetService = new HeadsetService(mAdapterService, mNativeInterface);
         mHeadsetService.start();
         mHeadsetService.setAvailable(true);
         verify(mObjectsFactory).makeSystemInterface(mHeadsetService);
-        verify(mObjectsFactory).getNativeInterface();
         mHeadsetService.setForceScoAudio(true);
     }
 
@@ -183,7 +184,6 @@ public class HeadsetServiceTest {
         mStateMachines.clear();
         mCurrentDevice = null;
         HeadsetObjectsFactory.setInstanceForTesting(null);
-        TestUtils.clearAdapterService(mAdapterService);
     }
 
     /** Test to verify that HeadsetService can be successfully started */

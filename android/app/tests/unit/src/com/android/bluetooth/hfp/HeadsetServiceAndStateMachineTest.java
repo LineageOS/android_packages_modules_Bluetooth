@@ -16,6 +16,10 @@
 
 package com.android.bluetooth.hfp;
 
+import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
+import static androidx.test.espresso.intent.matcher.IntentMatchers.hasData;
+import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
+
 import static org.hamcrest.Matchers.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
@@ -23,8 +27,6 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
-import android.app.Activity;
-import android.app.Instrumentation;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHeadset;
@@ -32,10 +34,8 @@ import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.bluetooth.BluetoothStatusCodes;
 import android.bluetooth.BluetoothUuid;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.media.AudioManager;
 import android.net.Uri;
 import android.os.Looper;
@@ -49,7 +49,6 @@ import android.util.Log;
 
 import androidx.test.InstrumentationRegistry;
 import androidx.test.espresso.intent.Intents;
-import androidx.test.espresso.intent.matcher.IntentMatchers;
 import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
@@ -64,7 +63,9 @@ import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.LeAudioService;
 
+import org.hamcrest.Matcher;
 import org.hamcrest.Matchers;
+import org.hamcrest.core.AllOf;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -75,16 +76,16 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.Spy;
+import org.mockito.hamcrest.MockitoHamcrest;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
 
 @MediumTest
 @RunWith(AndroidJUnit4.class)
@@ -108,6 +109,7 @@ public class HeadsetServiceAndStateMachineTest {
     @Mock private RemoteDevices mRemoteDevices;
 
     private static final String TAG = "HeadsetServiceAndStateMachineTest";
+    private static final Duration TIMEOUT = Duration.ofSeconds(1);
     private static final int ASYNC_CALL_TIMEOUT_MILLIS = 500;
     private static final int START_VR_TIMEOUT_MILLIS = 1000;
     private static final int START_VR_TIMEOUT_WAIT_MILLIS = START_VR_TIMEOUT_MILLIS * 3 / 2;
@@ -120,65 +122,24 @@ public class HeadsetServiceAndStateMachineTest {
     private final BluetoothAdapter mAdapter = BluetoothAdapter.getDefaultAdapter();
     private final Context mTargetContext = InstrumentationRegistry.getTargetContext();
     private final Set<BluetoothDevice> mBondedDevices = new HashSet<>();
-    private final BlockingQueue<Intent> mConnectionStateChangedQueue = new LinkedBlockingQueue<>();
-    private final BlockingQueue<Intent> mActiveDeviceChangedQueue = new LinkedBlockingQueue<>();
-    private final BlockingQueue<Intent> mAudioStateChangedQueue = new LinkedBlockingQueue<>();
-    private final HeadsetIntentReceiver mHeadsetIntentReceiver = new HeadsetIntentReceiver();
 
     private int mOriginalVrTimeoutMs = 5000;
     private PowerManager.WakeLock mVoiceRecognitionWakeLock;
     boolean mIsAdapterServiceSet;
     boolean mIsHeadsetServiceStarted;
     private HeadsetService mHeadsetService;
-
-    private class HeadsetIntentReceiver extends BroadcastReceiver {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (action == null) {
-                Assert.fail("Action is null for intent " + intent);
-                return;
-            }
-            switch (action) {
-                case BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED:
-                    try {
-                        mConnectionStateChangedQueue.put(intent);
-                    } catch (InterruptedException e) {
-                        Assert.fail(
-                                "Cannot add Intent to the Connection State Changed queue: "
-                                        + e.getMessage());
-                    }
-                    break;
-                case BluetoothHeadset.ACTION_ACTIVE_DEVICE_CHANGED:
-                    try {
-                        mActiveDeviceChangedQueue.put(intent);
-                    } catch (InterruptedException e) {
-                        Assert.fail(
-                                "Cannot add Intent to the Active Device Changed queue: "
-                                        + e.getMessage());
-                    }
-                    break;
-                case BluetoothHeadset.ACTION_AUDIO_STATE_CHANGED:
-                    try {
-                        mAudioStateChangedQueue.put(intent);
-                    } catch (InterruptedException e) {
-                        Assert.fail(
-                                "Cannot add Intent to the Audio State Changed queue: "
-                                        + e.getMessage());
-                    }
-                    break;
-                default:
-                    Assert.fail("Unknown action " + action);
-            }
-        }
-    }
+    private InOrder mInOrder;
 
     @Before
     public void setUp() throws Exception {
+        mInOrder = inOrder(mAdapterService);
+        doReturn(mTargetContext.getPackageName()).when(mAdapterService).getPackageName();
+        doReturn(mTargetContext.getPackageManager()).when(mAdapterService).getPackageManager();
+        doReturn(mTargetContext.getResources()).when(mAdapterService).getResources();
+
         PowerManager powerManager = mTargetContext.getSystemService(PowerManager.class);
         mVoiceRecognitionWakeLock =
                 powerManager.newWakeLock(PowerManager.PARTIAL_WAKE_LOCK, "VoiceRecognitionTest");
-        TestUtils.setAdapterService(mAdapterService);
         mIsAdapterServiceSet = true;
         doReturn(MAX_HEADSET_CONNECTIONS).when(mAdapterService).getMaxConnectedAudioDevices();
         doReturn(new ParcelUuid[] {BluetoothUuid.HFP})
@@ -225,27 +186,19 @@ public class HeadsetServiceAndStateMachineTest {
                 .makeStateMachine(any(), any(), any(), any(), any(), any());
         // Mock methods in HeadsetObjectsFactory
         doReturn(mSystemInterface).when(mObjectsFactory).makeSystemInterface(any());
-        doReturn(mNativeInterface).when(mObjectsFactory).getNativeInterface();
         Intents.init();
         // Modify start VR timeout to a smaller value for testing
         mOriginalVrTimeoutMs = HeadsetService.sStartVrTimeoutMs;
         HeadsetService.sStartVrTimeoutMs = START_VR_TIMEOUT_MILLIS;
-        mHeadsetService = new HeadsetService(mTargetContext);
+        mHeadsetService = new HeadsetService(mAdapterService, mNativeInterface);
         mHeadsetService.start();
         mHeadsetService.setAvailable(true);
         mIsHeadsetServiceStarted = true;
         Assert.assertNotNull(mHeadsetService);
         verify(mObjectsFactory).makeSystemInterface(mHeadsetService);
-        verify(mObjectsFactory).getNativeInterface();
         verify(mNativeInterface).init(MAX_HEADSET_CONNECTIONS + 1, true /* inband ringtone */);
 
         // Set up the Connection State Changed receiver
-        IntentFilter filter = new IntentFilter();
-        filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
-        filter.addAction(BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED);
-        filter.addAction(BluetoothHeadset.ACTION_ACTIVE_DEVICE_CHANGED);
-        filter.addAction(BluetoothHeadset.ACTION_AUDIO_STATE_CHANGED);
-        mTargetContext.registerReceiver(mHeadsetIntentReceiver, filter);
         if (Flags.hfpCodecAptxVoice()) {
             verify(mNativeInterface, timeout(ASYNC_CALL_TIMEOUT_MILLIS).atLeast(1))
                     .enableSwb(
@@ -262,11 +215,8 @@ public class HeadsetServiceAndStateMachineTest {
         if (!mIsAdapterServiceSet) {
             return;
         }
-        mConnectionStateChangedQueue.clear();
-        mActiveDeviceChangedQueue.clear();
 
         if (mIsHeadsetServiceStarted) {
-            mTargetContext.unregisterReceiver(mHeadsetIntentReceiver);
             mHeadsetService.stop();
             mHeadsetService = HeadsetService.getHeadsetService();
             Assert.assertNull(mHeadsetService);
@@ -277,7 +227,6 @@ public class HeadsetServiceAndStateMachineTest {
         Intents.release();
         HeadsetObjectsFactory.setInstanceForTesting(null);
         mBondedDevices.clear();
-        TestUtils.clearAdapterService(mAdapterService);
     }
 
     /** Test to verify that HeadsetService can be successfully started */
@@ -314,11 +263,8 @@ public class HeadsetServiceAndStateMachineTest {
         // Wait ASYNC_CALL_TIMEOUT_MILLIS for state to settle, timing is also tested here and
         // 250ms for processing two messages should be way more than enough. Anything that breaks
         // this indicate some breakage in other part of Android OS
-        waitAndVerifyConnectionStateIntent(
-                ASYNC_CALL_TIMEOUT_MILLIS,
-                device,
-                BluetoothProfile.STATE_CONNECTING,
-                BluetoothProfile.STATE_DISCONNECTED);
+        verifyConnectionStateIntent(
+                device, BluetoothProfile.STATE_CONNECTING, BluetoothProfile.STATE_DISCONNECTED);
         verify(mNativeInterface).connectHfp(device);
         Assert.assertEquals(
                 BluetoothProfile.STATE_CONNECTING, mHeadsetService.getConnectionState(device));
@@ -336,11 +282,8 @@ public class HeadsetServiceAndStateMachineTest {
         // Wait ASYNC_CALL_TIMEOUT_MILLIS for state to settle, timing is also tested here and
         // 250ms for processing two messages should be way more than enough. Anything that breaks
         // this indicate some breakage in other part of Android OS
-        waitAndVerifyConnectionStateIntent(
-                ASYNC_CALL_TIMEOUT_MILLIS,
-                device,
-                BluetoothProfile.STATE_CONNECTED,
-                BluetoothProfile.STATE_CONNECTING);
+        verifyConnectionStateIntent(
+                device, BluetoothProfile.STATE_CONNECTED, BluetoothProfile.STATE_CONNECTING);
         Assert.assertEquals(
                 BluetoothProfile.STATE_CONNECTED, mHeadsetService.getConnectionState(device));
         Assert.assertEquals(
@@ -372,11 +315,8 @@ public class HeadsetServiceAndStateMachineTest {
         // Wait ASYNC_CALL_TIMEOUT_MILLIS for state to settle, timing is also tested here and
         // 250ms for processing two messages should be way more than enough. Anything that breaks
         // this indicate some breakage in other part of Android OS
-        waitAndVerifyConnectionStateIntent(
-                ASYNC_CALL_TIMEOUT_MILLIS,
-                device,
-                BluetoothProfile.STATE_CONNECTING,
-                BluetoothProfile.STATE_DISCONNECTED);
+        verifyConnectionStateIntent(
+                device, BluetoothProfile.STATE_CONNECTING, BluetoothProfile.STATE_DISCONNECTED);
         verify(mNativeInterface).connectHfp(device);
         // Get feedback from native layer to go back to disconnected state
         HeadsetStackEvent connectedEvent =
@@ -388,11 +328,8 @@ public class HeadsetServiceAndStateMachineTest {
         // Wait ASYNC_CALL_TIMEOUT_MILLIS for state to settle, timing is also tested here and
         // 250ms for processing two messages should be way more than enough. Anything that breaks
         // this indicate some breakage in other part of Android OS
-        waitAndVerifyConnectionStateIntent(
-                ASYNC_CALL_TIMEOUT_MILLIS,
-                device,
-                BluetoothProfile.STATE_DISCONNECTED,
-                BluetoothProfile.STATE_CONNECTING);
+        verifyConnectionStateIntent(
+                device, BluetoothProfile.STATE_DISCONNECTED, BluetoothProfile.STATE_CONNECTING);
         // Send unbond intent
         doReturn(BluetoothDevice.BOND_NONE).when(mAdapterService).getBondState(eq(device));
         mHeadsetService.handleBondStateChanged(
@@ -430,11 +367,8 @@ public class HeadsetServiceAndStateMachineTest {
         // 250ms for processing two messages should be way more than enough. Anything that breaks
         // this indicate some breakage in other part of Android OS
         verify(mNativeInterface, after(ASYNC_CALL_TIMEOUT_MILLIS)).connectHfp(device);
-        waitAndVerifyConnectionStateIntent(
-                ASYNC_CALL_TIMEOUT_MILLIS,
-                device,
-                BluetoothProfile.STATE_CONNECTING,
-                BluetoothProfile.STATE_DISCONNECTED);
+        verifyConnectionStateIntent(
+                device, BluetoothProfile.STATE_CONNECTING, BluetoothProfile.STATE_DISCONNECTED);
         // Get feedback from native layer to go to connected state
         HeadsetStackEvent connectedEvent =
                 new HeadsetStackEvent(
@@ -445,11 +379,8 @@ public class HeadsetServiceAndStateMachineTest {
         // Wait ASYNC_CALL_TIMEOUT_MILLIS for state to settle, timing is also tested here and
         // 250ms for processing two messages should be way more than enough. Anything that breaks
         // this indicate some breakage in other part of Android OS
-        waitAndVerifyConnectionStateIntent(
-                ASYNC_CALL_TIMEOUT_MILLIS,
-                device,
-                BluetoothProfile.STATE_CONNECTED,
-                BluetoothProfile.STATE_CONNECTING);
+        verifyConnectionStateIntent(
+                device, BluetoothProfile.STATE_CONNECTED, BluetoothProfile.STATE_CONNECTING);
         Assert.assertEquals(
                 BluetoothProfile.STATE_CONNECTED, mHeadsetService.getConnectionState(device));
         Assert.assertEquals(
@@ -470,11 +401,8 @@ public class HeadsetServiceAndStateMachineTest {
                         HeadsetHalConstants.CONNECTION_STATE_DISCONNECTED,
                         device);
         mHeadsetService.messageFromNative(connectingEvent);
-        waitAndVerifyConnectionStateIntent(
-                ASYNC_CALL_TIMEOUT_MILLIS,
-                device,
-                BluetoothProfile.STATE_DISCONNECTED,
-                BluetoothProfile.STATE_CONNECTED);
+        verifyConnectionStateIntent(
+                device, BluetoothProfile.STATE_DISCONNECTED, BluetoothProfile.STATE_CONNECTED);
         // Check that the state machine is destroyed after another async call
         ArgumentCaptor<HeadsetStateMachine> stateMachineArgument =
                 ArgumentCaptor.forClass(HeadsetStateMachine.class);
@@ -508,7 +436,7 @@ public class HeadsetServiceAndStateMachineTest {
         BluetoothDevice activeDevice = connectedDevices.get(MAX_HEADSET_CONNECTIONS / 2);
         Assert.assertTrue(mHeadsetService.setActiveDevice(activeDevice));
         verify(mNativeInterface).setActiveDevice(activeDevice);
-        waitAndVerifyActiveDeviceChangedIntent(ASYNC_CALL_TIMEOUT_MILLIS, activeDevice);
+        verifyActiveDeviceChangedIntent(activeDevice);
         Assert.assertEquals(activeDevice, mHeadsetService.getActiveDevice());
         // Start virtual call
         Assert.assertTrue(mHeadsetService.startScoUsingVirtualVoiceCall());
@@ -587,7 +515,7 @@ public class HeadsetServiceAndStateMachineTest {
         BluetoothDevice activeDevice = connectedDevices.get(MAX_HEADSET_CONNECTIONS / 2);
         Assert.assertTrue(mHeadsetService.setActiveDevice(activeDevice));
         verify(mNativeInterface).setActiveDevice(activeDevice);
-        waitAndVerifyActiveDeviceChangedIntent(ASYNC_CALL_TIMEOUT_MILLIS, activeDevice);
+        verifyActiveDeviceChangedIntent(activeDevice);
         Assert.assertEquals(activeDevice, mHeadsetService.getActiveDevice());
         // Reject virtual call setup if call state is not idle
         when(mSystemInterface.isCallIdle()).thenReturn(false);
@@ -615,7 +543,7 @@ public class HeadsetServiceAndStateMachineTest {
         BluetoothDevice activeDevice = connectedDevices.get(0);
         Assert.assertTrue(mHeadsetService.setActiveDevice(activeDevice));
         verify(mNativeInterface).setActiveDevice(activeDevice);
-        waitAndVerifyActiveDeviceChangedIntent(ASYNC_CALL_TIMEOUT_MILLIS, activeDevice);
+        verifyActiveDeviceChangedIntent(activeDevice);
         Assert.assertEquals(activeDevice, mHeadsetService.getActiveDevice());
         // Try dialing out from the a non active Headset
         BluetoothDevice dialingOutDevice = connectedDevices.get(1);
@@ -625,27 +553,26 @@ public class HeadsetServiceAndStateMachineTest {
                         TEST_PHONE_NUMBER,
                         dialingOutDevice);
         Uri dialOutUri = Uri.fromParts(PhoneAccount.SCHEME_TEL, TEST_PHONE_NUMBER, null);
-        Instrumentation.ActivityResult result =
-                new Instrumentation.ActivityResult(Activity.RESULT_OK, null);
-        Intents.intending(IntentMatchers.hasAction(Intent.ACTION_CALL_PRIVILEGED))
-                .respondWith(result);
         mHeadsetService.messageFromNative(dialingOutEvent);
-        waitAndVerifyActiveDeviceChangedIntent(ASYNC_CALL_TIMEOUT_MILLIS, dialingOutDevice);
+        verifyActiveDeviceChangedIntent(dialingOutDevice);
         TestUtils.waitForLooperToFinishScheduledTask(
                 mHeadsetService.getStateMachinesThreadLooper());
         Assert.assertTrue(mHeadsetService.hasDeviceInitiatedDialingOut());
         // Make sure the correct intent is fired
-        Intents.intended(
-                allOf(
-                        IntentMatchers.hasAction(Intent.ACTION_CALL_PRIVILEGED),
-                        IntentMatchers.hasData(dialOutUri)),
-                Intents.times(1));
+        mInOrder.verify(mAdapterService, timeout(TIMEOUT.toMillis()))
+                .startActivity(
+                        MockitoHamcrest.argThat(
+                                AllOf.allOf(
+                                        hasAction(Intent.ACTION_CALL_PRIVILEGED),
+                                        hasData(dialOutUri))));
+
         // Further dial out attempt from same device will fail
         mHeadsetService.messageFromNative(dialingOutEvent);
         TestUtils.waitForLooperToFinishScheduledTask(
                 mHeadsetService.getStateMachinesThreadLooper());
         verify(mNativeInterface)
                 .atResponseCode(dialingOutDevice, HeadsetHalConstants.AT_RESPONSE_ERROR, 0);
+
         // Further dial out attempt from other device will fail
         HeadsetStackEvent dialingOutEventOtherDevice =
                 new HeadsetStackEvent(
@@ -655,14 +582,23 @@ public class HeadsetServiceAndStateMachineTest {
                 mHeadsetService.getStateMachinesThreadLooper());
         verify(mNativeInterface)
                 .atResponseCode(activeDevice, HeadsetHalConstants.AT_RESPONSE_ERROR, 0);
-        TestUtils.waitForNoIntent(ASYNC_CALL_TIMEOUT_MILLIS, mActiveDeviceChangedQueue);
+        mInOrder.verify(mAdapterService, timeout(TIMEOUT.toMillis()).times(0))
+                .sendBroadcastAsUser(
+                        MockitoHamcrest.argThat(
+                                hasAction(BluetoothHeadset.ACTION_ACTIVE_DEVICE_CHANGED)),
+                        any(),
+                        any(),
+                        any());
         Assert.assertEquals(dialingOutDevice, mHeadsetService.getActiveDevice());
+
         // Make sure only one intent is fired
-        Intents.intended(
-                allOf(
-                        IntentMatchers.hasAction(Intent.ACTION_CALL_PRIVILEGED),
-                        IntentMatchers.hasData(dialOutUri)),
-                Intents.times(1));
+        mInOrder.verify(mAdapterService, timeout(TIMEOUT.toMillis()).times(0))
+                .startActivity(
+                        MockitoHamcrest.argThat(
+                                AllOf.allOf(
+                                        hasAction(Intent.ACTION_CALL_PRIVILEGED),
+                                        hasData(dialOutUri))));
+
         // Verify that phone state update confirms the dial out event
         mHeadsetService.phoneStateChanged(
                 0, 0, HeadsetHalConstants.CALL_STATE_DIALING, TEST_PHONE_NUMBER, 128, "", false);
@@ -702,7 +638,7 @@ public class HeadsetServiceAndStateMachineTest {
         BluetoothDevice activeDevice = connectedDevices.get(0);
         Assert.assertTrue(mHeadsetService.setActiveDevice(activeDevice));
         verify(mNativeInterface).setActiveDevice(activeDevice);
-        waitAndVerifyActiveDeviceChangedIntent(ASYNC_CALL_TIMEOUT_MILLIS, activeDevice);
+        verifyActiveDeviceChangedIntent(activeDevice);
         Assert.assertEquals(activeDevice, mHeadsetService.getActiveDevice());
         // Start virtual call
         Assert.assertTrue(mHeadsetService.startScoUsingVirtualVoiceCall());
@@ -716,21 +652,18 @@ public class HeadsetServiceAndStateMachineTest {
                         TEST_PHONE_NUMBER,
                         dialingOutDevice);
         Uri dialOutUri = Uri.fromParts(PhoneAccount.SCHEME_TEL, TEST_PHONE_NUMBER, null);
-        Instrumentation.ActivityResult result =
-                new Instrumentation.ActivityResult(Activity.RESULT_OK, null);
-        Intents.intending(IntentMatchers.hasAction(Intent.ACTION_CALL_PRIVILEGED))
-                .respondWith(result);
         mHeadsetService.messageFromNative(dialingOutEvent);
-        waitAndVerifyActiveDeviceChangedIntent(ASYNC_CALL_TIMEOUT_MILLIS, dialingOutDevice);
+        verifyActiveDeviceChangedIntent(dialingOutDevice);
         TestUtils.waitForLooperToFinishScheduledTask(
                 mHeadsetService.getStateMachinesThreadLooper());
         Assert.assertTrue(mHeadsetService.hasDeviceInitiatedDialingOut());
-        // Make sure the correct intent is fired
-        Intents.intended(
-                allOf(
-                        IntentMatchers.hasAction(Intent.ACTION_CALL_PRIVILEGED),
-                        IntentMatchers.hasData(dialOutUri)),
-                Intents.times(1));
+
+        mInOrder.verify(mAdapterService, timeout(TIMEOUT.toMillis()))
+                .startActivity(
+                        MockitoHamcrest.argThat(
+                                AllOf.allOf(
+                                        hasAction(Intent.ACTION_CALL_PRIVILEGED),
+                                        hasData(dialOutUri))));
         // Virtual call should be preempted by dialing out call
         Assert.assertFalse(mHeadsetService.isVirtualCallStarted());
         verifyVirtualCallStopSequenceInvocations(connectedDevices);
@@ -1253,8 +1186,7 @@ public class HeadsetServiceAndStateMachineTest {
         verify(mAudioManager, timeout(ASYNC_CALL_TIMEOUT_MILLIS)).setA2dpSuspended(true);
         verify(mAudioManager, timeout(ASYNC_CALL_TIMEOUT_MILLIS)).setLeAudioSuspended(true);
         verify(mNativeInterface, timeout(ASYNC_CALL_TIMEOUT_MILLIS)).connectAudio(deviceA);
-        waitAndVerifyAudioStateIntent(
-                ASYNC_CALL_TIMEOUT_MILLIS,
+        verifyAudioStateIntent(
                 deviceA,
                 BluetoothHeadset.STATE_AUDIO_CONNECTING,
                 BluetoothHeadset.STATE_AUDIO_DISCONNECTED);
@@ -1263,8 +1195,7 @@ public class HeadsetServiceAndStateMachineTest {
                         HeadsetStackEvent.EVENT_TYPE_AUDIO_STATE_CHANGED,
                         HeadsetHalConstants.AUDIO_STATE_CONNECTED,
                         deviceA));
-        waitAndVerifyAudioStateIntent(
-                ASYNC_CALL_TIMEOUT_MILLIS,
+        verifyAudioStateIntent(
                 deviceA,
                 BluetoothHeadset.STATE_AUDIO_CONNECTED,
                 BluetoothHeadset.STATE_AUDIO_CONNECTING);
@@ -1373,8 +1304,7 @@ public class HeadsetServiceAndStateMachineTest {
         when(mSystemInterface.isRinging()).thenReturn(true);
         // Connect Audio
         Assert.assertEquals(BluetoothStatusCodes.SUCCESS, mHeadsetService.connectAudio());
-        waitAndVerifyAudioStateIntent(
-                ASYNC_CALL_TIMEOUT_MILLIS,
+        verifyAudioStateIntent(
                 device,
                 BluetoothHeadset.STATE_AUDIO_CONNECTING,
                 BluetoothHeadset.STATE_AUDIO_DISCONNECTED);
@@ -1383,8 +1313,7 @@ public class HeadsetServiceAndStateMachineTest {
                         HeadsetStackEvent.EVENT_TYPE_AUDIO_STATE_CHANGED,
                         HeadsetHalConstants.AUDIO_STATE_CONNECTED,
                         device));
-        waitAndVerifyAudioStateIntent(
-                ASYNC_CALL_TIMEOUT_MILLIS,
+        verifyAudioStateIntent(
                 device,
                 BluetoothHeadset.STATE_AUDIO_CONNECTED,
                 BluetoothHeadset.STATE_AUDIO_CONNECTING);
@@ -1454,8 +1383,7 @@ public class HeadsetServiceAndStateMachineTest {
         when(mSystemInterface.isRinging()).thenReturn(true);
         // Connect Audio
         Assert.assertEquals(BluetoothStatusCodes.SUCCESS, mHeadsetService.connectAudio());
-        waitAndVerifyAudioStateIntent(
-                ASYNC_CALL_TIMEOUT_MILLIS,
+        verifyAudioStateIntent(
                 device,
                 BluetoothHeadset.STATE_AUDIO_CONNECTING,
                 BluetoothHeadset.STATE_AUDIO_DISCONNECTED);
@@ -1464,8 +1392,7 @@ public class HeadsetServiceAndStateMachineTest {
                         HeadsetStackEvent.EVENT_TYPE_AUDIO_STATE_CHANGED,
                         HeadsetHalConstants.AUDIO_STATE_CONNECTED,
                         device));
-        waitAndVerifyAudioStateIntent(
-                ASYNC_CALL_TIMEOUT_MILLIS,
+        verifyAudioStateIntent(
                 device,
                 BluetoothHeadset.STATE_AUDIO_CONNECTED,
                 BluetoothHeadset.STATE_AUDIO_CONNECTING);
@@ -1707,8 +1634,7 @@ public class HeadsetServiceAndStateMachineTest {
                             anyBoolean(),
                             eq(device));
         }
-        waitAndVerifyAudioStateIntent(
-                ASYNC_CALL_TIMEOUT_MILLIS,
+        verifyAudioStateIntent(
                 device,
                 BluetoothHeadset.STATE_AUDIO_CONNECTING,
                 BluetoothHeadset.STATE_AUDIO_DISCONNECTED);
@@ -1717,8 +1643,7 @@ public class HeadsetServiceAndStateMachineTest {
                         HeadsetStackEvent.EVENT_TYPE_AUDIO_STATE_CHANGED,
                         HeadsetHalConstants.AUDIO_STATE_CONNECTED,
                         device));
-        waitAndVerifyAudioStateIntent(
-                ASYNC_CALL_TIMEOUT_MILLIS,
+        verifyAudioStateIntent(
                 device,
                 BluetoothHeadset.STATE_AUDIO_CONNECTED,
                 BluetoothHeadset.STATE_AUDIO_CONNECTING);
@@ -1760,8 +1685,7 @@ public class HeadsetServiceAndStateMachineTest {
                             anyBoolean(),
                             eq(device));
         }
-        waitAndVerifyAudioStateIntent(
-                ASYNC_CALL_TIMEOUT_MILLIS,
+        verifyAudioStateIntent(
                 device,
                 BluetoothHeadset.STATE_AUDIO_CONNECTING,
                 BluetoothHeadset.STATE_AUDIO_DISCONNECTED);
@@ -1770,8 +1694,7 @@ public class HeadsetServiceAndStateMachineTest {
                         HeadsetStackEvent.EVENT_TYPE_AUDIO_STATE_CHANGED,
                         HeadsetHalConstants.AUDIO_STATE_CONNECTED,
                         device));
-        waitAndVerifyAudioStateIntent(
-                ASYNC_CALL_TIMEOUT_MILLIS,
+        verifyAudioStateIntent(
                 device,
                 BluetoothHeadset.STATE_AUDIO_CONNECTED,
                 BluetoothHeadset.STATE_AUDIO_CONNECTING);
@@ -1892,24 +1815,33 @@ public class HeadsetServiceAndStateMachineTest {
                 BluetoothProfile.STATE_CONNECTED, mHeadsetService.getConnectionState(device));
     }
 
-    private void waitAndVerifyConnectionStateIntent(
-            int timeoutMs, BluetoothDevice device, int newState, int prevState) {
-        Intent intent = TestUtils.waitForIntent(timeoutMs, mConnectionStateChangedQueue);
-        Assert.assertNotNull(intent);
-        HeadsetTestUtils.verifyConnectionStateBroadcast(device, newState, prevState, intent, false);
+    @SafeVarargs
+    private void verifyIntentSent(Matcher<Intent>... matchers) {
+        mInOrder.verify(mAdapterService, timeout(TIMEOUT.toMillis() * 2))
+                .sendBroadcastAsUser(
+                        MockitoHamcrest.argThat(AllOf.allOf(matchers)), any(), any(), any());
     }
 
-    private void waitAndVerifyActiveDeviceChangedIntent(int timeoutMs, BluetoothDevice device) {
-        Intent intent = TestUtils.waitForIntent(timeoutMs, mActiveDeviceChangedQueue);
-        Assert.assertNotNull(intent);
-        HeadsetTestUtils.verifyActiveDeviceChangedBroadcast(device, intent, false);
+    private void verifyConnectionStateIntent(BluetoothDevice device, int newState, int prevState) {
+        verifyIntentSent(
+                hasAction(BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
+                hasExtra(BluetoothProfile.EXTRA_STATE, newState),
+                hasExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState));
     }
 
-    private void waitAndVerifyAudioStateIntent(
-            int timeoutMs, BluetoothDevice device, int newState, int prevState) {
-        Intent intent = TestUtils.waitForIntent(timeoutMs, mAudioStateChangedQueue);
-        Assert.assertNotNull(intent);
-        HeadsetTestUtils.verifyAudioStateBroadcast(device, newState, prevState, intent);
+    private void verifyActiveDeviceChangedIntent(BluetoothDevice device) {
+        verifyIntentSent(
+                hasAction(BluetoothHeadset.ACTION_ACTIVE_DEVICE_CHANGED),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, device));
+    }
+
+    private void verifyAudioStateIntent(BluetoothDevice device, int newState, int prevState) {
+        verifyIntentSent(
+                hasAction(BluetoothHeadset.ACTION_AUDIO_STATE_CHANGED),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
+                hasExtra(BluetoothProfile.EXTRA_STATE, newState),
+                hasExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState));
     }
 
     /**
