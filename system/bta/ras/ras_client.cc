@@ -187,11 +187,7 @@ class RasClientImpl : public bluetooth::ras::RasClient {
         },
         nullptr);
 
-    // Subscribe Characteristics
-    SubscribeCharacteristic(tracker, kRasOnDemandDataCharacteristic);
     SubscribeCharacteristic(tracker, kRasControlPointCharacteristic);
-    SubscribeCharacteristic(tracker, kRasRangingDataReadyCharacteristic);
-    SubscribeCharacteristic(tracker, kRasRangingDataOverWrittenCharacteristic);
   }
 
   void OnGattNotification(const tBTA_GATTC_NOTIFY& evt) {
@@ -211,8 +207,9 @@ class RasClientImpl : public bluetooth::ras::RasClient {
                getUuidName(characteristic->uuid), evt.len);
 
     switch (uuid_16bit) {
+      case kRasRealTimeRangingDataCharacteristic16bit:
       case kRasOnDemandDataCharacteristic16bit: {
-        OnDemandData(evt, tracker);
+        OnRemoteData(evt, tracker);
         break;
       }
       case kRasControlPointCharacteristic16bit: {
@@ -226,7 +223,7 @@ class RasClientImpl : public bluetooth::ras::RasClient {
     }
   }
 
-  void OnDemandData(const tBTA_GATTC_NOTIFY& evt,
+  void OnRemoteData(const tBTA_GATTC_NOTIFY& evt,
                     std::shared_ptr<RasTracker> tracker) {
     std::vector<uint8_t> data;
     data.resize(evt.len);
@@ -446,6 +443,18 @@ class RasClientImpl : public bluetooth::ras::RasClient {
         STREAM_TO_UINT32(tracker->remote_supported_features_, value);
         log::info("Remote supported features : {}",
                   getFeaturesString(tracker->remote_supported_features_));
+        if (tracker->remote_supported_features_ &
+            feature::kRealTimeRangingData) {
+          log::info("Subscribe Real-time Ranging Data");
+          SubscribeCharacteristic(tracker,
+                                  kRasRealTimeRangingDataCharacteristic);
+        } else {
+          log::info("Subscribe On-demand Ranging Data");
+          SubscribeCharacteristic(tracker, kRasOnDemandDataCharacteristic);
+          SubscribeCharacteristic(tracker, kRasRangingDataReadyCharacteristic);
+          SubscribeCharacteristic(tracker,
+                                  kRasRangingDataOverWrittenCharacteristic);
+        }
       } break;
       default:
         log::warn("Unexpected UUID");
