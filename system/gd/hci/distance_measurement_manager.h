@@ -79,7 +79,7 @@ class DistanceMeasurementManager : public bluetooth::Module {
   void StartDistanceMeasurement(
       const Address&, uint16_t interval, DistanceMeasurementMethod method);
   void StopDistanceMeasurement(const Address& address, DistanceMeasurementMethod method);
-  void HandleRemoteData(const Address& address, const std::vector<uint8_t> raw_data);
+  void HandleRemoteData(const Address& address, const std::vector<uint8_t>& raw_data);
 
   static const ModuleFactory Factory;
 
