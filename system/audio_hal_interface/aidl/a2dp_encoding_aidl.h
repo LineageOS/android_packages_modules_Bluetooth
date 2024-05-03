@@ -146,7 +146,7 @@ get_a2dp_configuration(
  * received from the peer and decide whether accept
  * the it or not.
  ***/
-uint8_t parse_a2dp_configuration(
+tA2DP_STATUS parse_a2dp_configuration(
     btav_a2dp_codec_index_t codec_index, const uint8_t* codec_info,
     btav_a2dp_codec_config_t* codec_parameters,
     std::vector<uint8_t>* vendor_specific_parameters);

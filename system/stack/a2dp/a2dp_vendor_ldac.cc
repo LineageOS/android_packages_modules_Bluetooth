@@ -541,7 +541,8 @@ std::string A2DP_VendorCodecInfoStringLdac(const uint8_t* p_codec_info) {
 
   a2dp_status = A2DP_ParseInfoLdac(&ldac_cie, p_codec_info, true);
   if (a2dp_status != A2DP_SUCCESS) {
-    res << "A2DP_ParseInfoLdac fail: " << loghex(a2dp_status);
+    res << "A2DP_ParseInfoLdac fail: "
+        << loghex(static_cast<uint8_t>(a2dp_status));
     return res.str();
   }
 
