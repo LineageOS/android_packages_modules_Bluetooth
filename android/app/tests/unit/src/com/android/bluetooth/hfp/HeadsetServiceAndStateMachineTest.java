@@ -188,17 +188,19 @@ public class HeadsetServiceAndStateMachineTest {
         // Modify start VR timeout to a smaller value for testing
         mOriginalVrTimeoutMs = HeadsetService.sStartVrTimeoutMs;
         HeadsetService.sStartVrTimeoutMs = START_VR_TIMEOUT_MILLIS;
+
         mHeadsetService = new HeadsetService(mAdapterService, mNativeInterface);
         mHeadsetService.start();
         mHeadsetService.setAvailable(true);
+
         mIsHeadsetServiceStarted = true;
-        Assert.assertNotNull(mHeadsetService);
+
         verify(mObjectsFactory).makeSystemInterface(mHeadsetService);
         verify(mNativeInterface).init(MAX_HEADSET_CONNECTIONS + 1, true /* inband ringtone */);
 
         // Set up the Connection State Changed receiver
         if (Flags.hfpCodecAptxVoice()) {
-            verify(mNativeInterface, timeout(ASYNC_CALL_TIMEOUT_MILLIS).atLeast(1))
+            verify(mNativeInterface)
                     .enableSwb(
                             eq(HeadsetHalConstants.BTHF_SWB_CODEC_VENDOR_APTX),
                             eq(
@@ -257,9 +259,6 @@ public class HeadsetServiceAndStateMachineTest {
                         mAdapterService,
                         mNativeInterface,
                         mSystemInterface);
-        // Wait ASYNC_CALL_TIMEOUT_MILLIS for state to settle, timing is also tested here and
-        // 250ms for processing two messages should be way more than enough. Anything that breaks
-        // this indicate some breakage in other part of Android OS
         verifyConnectionStateIntent(
                 device, BluetoothProfile.STATE_CONNECTING, BluetoothProfile.STATE_DISCONNECTED);
         verify(mNativeInterface).connectHfp(device);
@@ -276,9 +275,6 @@ public class HeadsetServiceAndStateMachineTest {
                         HeadsetHalConstants.CONNECTION_STATE_SLC_CONNECTED,
                         device);
         mHeadsetService.messageFromNative(connectedEvent);
-        // Wait ASYNC_CALL_TIMEOUT_MILLIS for state to settle, timing is also tested here and
-        // 250ms for processing two messages should be way more than enough. Anything that breaks
-        // this indicate some breakage in other part of Android OS
         verifyConnectionStateIntent(
                 device, BluetoothProfile.STATE_CONNECTED, BluetoothProfile.STATE_CONNECTING);
         Assert.assertEquals(
@@ -309,9 +305,6 @@ public class HeadsetServiceAndStateMachineTest {
                         mAdapterService,
                         mNativeInterface,
                         mSystemInterface);
-        // Wait ASYNC_CALL_TIMEOUT_MILLIS for state to settle, timing is also tested here and
-        // 250ms for processing two messages should be way more than enough. Anything that breaks
-        // this indicate some breakage in other part of Android OS
         verifyConnectionStateIntent(
                 device, BluetoothProfile.STATE_CONNECTING, BluetoothProfile.STATE_DISCONNECTED);
         verify(mNativeInterface).connectHfp(device);
@@ -322,9 +315,6 @@ public class HeadsetServiceAndStateMachineTest {
                         HeadsetHalConstants.CONNECTION_STATE_DISCONNECTED,
                         device);
         mHeadsetService.messageFromNative(connectedEvent);
-        // Wait ASYNC_CALL_TIMEOUT_MILLIS for state to settle, timing is also tested here and
-        // 250ms for processing two messages should be way more than enough. Anything that breaks
-        // this indicate some breakage in other part of Android OS
         verifyConnectionStateIntent(
                 device, BluetoothProfile.STATE_DISCONNECTED, BluetoothProfile.STATE_CONNECTING);
         // Send unbond intent
@@ -373,9 +363,6 @@ public class HeadsetServiceAndStateMachineTest {
                         HeadsetHalConstants.CONNECTION_STATE_SLC_CONNECTED,
                         device);
         mHeadsetService.messageFromNative(connectedEvent);
-        // Wait ASYNC_CALL_TIMEOUT_MILLIS for state to settle, timing is also tested here and
-        // 250ms for processing two messages should be way more than enough. Anything that breaks
-        // this indicate some breakage in other part of Android OS
         verifyConnectionStateIntent(
                 device, BluetoothProfile.STATE_CONNECTED, BluetoothProfile.STATE_CONNECTING);
         Assert.assertEquals(
