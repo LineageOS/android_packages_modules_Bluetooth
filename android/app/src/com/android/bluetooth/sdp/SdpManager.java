@@ -143,11 +143,16 @@ public class SdpManager {
 
         SdpSearchInstance getSearchInstance(byte[] address, byte[] uuidBytes) {
             String addressString = Utils.getAddressStringFromByte(address);
-            addressString = mAdapterService.getIdentityAddress(addressString);
+            addressString =
+                    Flags.identityAddressNullIfUnknown()
+                            ? Utils.getBrEdrAddress(addressString, mAdapterService)
+                            : mAdapterService.getIdentityAddress(addressString);
             ParcelUuid uuid = Utils.byteArrayToUuid(uuidBytes)[0];
             for (SdpSearchInstance inst : mList) {
                 String instAddressString =
-                        mAdapterService.getIdentityAddress(inst.getDevice().getAddress());
+                        Flags.identityAddressNullIfUnknown()
+                                ? Utils.getBrEdrAddress(inst.getDevice(), mAdapterService)
+                                : mAdapterService.getIdentityAddress(inst.getDevice().getAddress());
                 if (instAddressString.equals(addressString) && inst.getUuid().equals(uuid)) {
                     return inst;
                 }
@@ -156,10 +161,15 @@ public class SdpManager {
         }
 
         boolean isSearching(BluetoothDevice device, ParcelUuid uuid) {
-            String addressString = mAdapterService.getIdentityAddress(device.getAddress());
+            String addressString =
+                    Flags.identityAddressNullIfUnknown()
+                            ? Utils.getBrEdrAddress(device, mAdapterService)
+                            : mAdapterService.getIdentityAddress(device.getAddress());
             for (SdpSearchInstance inst : mList) {
                 String instAddressString =
-                        mAdapterService.getIdentityAddress(inst.getDevice().getAddress());
+                        Flags.identityAddressNullIfUnknown()
+                                ? Utils.getBrEdrAddress(inst.getDevice(), mAdapterService)
+                                : mAdapterService.getIdentityAddress(inst.getDevice().getAddress());
                 if (instAddressString != null
                         && instAddressString.equals(addressString)
                         && inst.getUuid().equals(uuid)) {
