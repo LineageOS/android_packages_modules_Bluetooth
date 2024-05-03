@@ -587,7 +587,8 @@ std::string A2DP_VendorCodecInfoStringOpus(const uint8_t* p_codec_info) {
 
   a2dp_status = A2DP_ParseInfoOpus(&Opus_cie, p_codec_info, true);
   if (a2dp_status != A2DP_SUCCESS) {
-    res << "A2DP_ParseInfoOpus fail: " << loghex(a2dp_status);
+    res << "A2DP_ParseInfoOpus fail: "
+        << loghex(static_cast<uint8_t>(a2dp_status));
     return res.str();
   }
 
