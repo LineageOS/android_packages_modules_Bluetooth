@@ -3558,6 +3558,49 @@ static bool btif_dm_ble_is_temp_pairing(RawAddress& bd_addr, bool ctkd) {
   return false;
 }
 
+static bool btif_model_name_known(const RawAddress& bd_addr) {
+  bt_property_t prop;
+  bt_bdname_t model_name;
+  BTIF_STORAGE_FILL_PROPERTY(&prop, BT_PROPERTY_REMOTE_MODEL_NUM,
+                             sizeof(model_name), &model_name);
+
+  if (btif_storage_get_remote_device_property(&bd_addr, &prop) !=
+          BT_STATUS_SUCCESS ||
+      prop.len == 0) {
+    log::info("Device {} no cached model name", bd_addr);
+    return false;
+  }
+
+  return true;
+}
+
+static void read_dis_cback(const RawAddress& bd_addr, tDIS_VALUE* p_dis_value) {
+  if (p_dis_value == nullptr) {
+    log::warn("received unexpected/error DIS callback");
+    return;
+  }
+
+  if (!(p_dis_value->attr_mask & DIS_ATTR_MODEL_NUM_BIT)) {
+    log::warn("unknown bit, mask: {}", (int)p_dis_value->attr_mask);
+    return;
+  }
+
+  for (int i = 0; i < DIS_MAX_STRING_DATA; i++) {
+    if (p_dis_value->data_string[i] == nullptr) continue;
+
+    bt_property_t prop;
+    prop.type = BT_PROPERTY_REMOTE_MODEL_NUM;
+    prop.val = p_dis_value->data_string[i];
+    prop.len = strlen((char*)prop.val);
+
+    log::info("Device {}, model name: {}", bd_addr, (char*)prop.val);
+
+    btif_storage_set_remote_device_property(&bd_addr, &prop);
+    GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(
+        BT_STATUS_SUCCESS, bd_addr, 1, &prop);
+  }
+}
+
 /*******************************************************************************
  *
  * Function         btif_dm_ble_auth_cmpl_evt
@@ -3596,6 +3639,16 @@ static void btif_dm_ble_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
       state = BT_BOND_STATE_NONE;
     } else {
       btif_dm_save_ble_bonding_keys(bd_addr);
+
+      if (com::android::bluetooth::flags::read_model_num_fix() &&
+          is_le_audio_capable_during_service_discovery(bd_addr) &&
+          !btif_model_name_known(bd_addr) &&
+          BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE)) {
+        log::info("Read model name for le audio capable device");
+        if (!DIS_ReadDISInfo(bd_addr, read_dis_cback, DIS_ATTR_MODEL_NUM_BIT)) {
+          log::warn("Read DIS failed");
+        }
+      }
 
       if (pairing_cb.gatt_over_le ==
           btif_dm_pairing_cb_t::ServiceDiscoveryState::NOT_STARTED) {
@@ -4207,49 +4260,6 @@ void btif_dm_set_event_filter_inquiry_result_all_devices() {
   BTA_DmSetEventFilterInquiryResultAllDevices();
 }
 
-static bool btif_model_name_known(const RawAddress& bd_addr) {
-  bt_property_t prop;
-  bt_bdname_t model_name;
-  BTIF_STORAGE_FILL_PROPERTY(&prop, BT_PROPERTY_REMOTE_MODEL_NUM,
-                             sizeof(model_name), &model_name);
-
-  if (btif_storage_get_remote_device_property(&bd_addr, &prop) !=
-          BT_STATUS_SUCCESS ||
-      prop.len == 0) {
-    log::info("Device {} no cached model name", bd_addr);
-    return false;
-  }
-
-  return true;
-}
-
-static void read_dis_cback(const RawAddress& bd_addr, tDIS_VALUE* p_dis_value) {
-  if (p_dis_value == nullptr) {
-    log::warn("received unexpected/error DIS callback");
-    return;
-  }
-
-  if (!(p_dis_value->attr_mask & DIS_ATTR_MODEL_NUM_BIT)) {
-    log::warn("unknown bit, mask: {}", (int)p_dis_value->attr_mask);
-    return;
-  }
-
-  for (int i = 0; i < DIS_MAX_STRING_DATA; i++) {
-    if (p_dis_value->data_string[i] == nullptr) continue;
-
-    bt_property_t prop;
-    prop.type = BT_PROPERTY_REMOTE_MODEL_NUM;
-    prop.val = p_dis_value->data_string[i];
-    prop.len = strlen((char*)prop.val);
-
-    log::info("Device {}, model name: {}", bd_addr, (char*)prop.val);
-
-    btif_storage_set_remote_device_property(&bd_addr, &prop);
-    GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(
-        BT_STATUS_SUCCESS, bd_addr, 1, &prop);
-  }
-}
-
 void btif_dm_metadata_changed(const RawAddress& remote_bd_addr, int key,
                               std::vector<uint8_t> value) {
   static const int METADATA_LE_AUDIO = 26;
@@ -4258,8 +4268,10 @@ void btif_dm_metadata_changed(const RawAddress& remote_bd_addr, int key,
     log::info("Device is LE Audio Capable {}", remote_bd_addr);
     metadata_cb.le_audio_cache.insert_or_assign(remote_bd_addr, value);
 
+    // TODO(b/334067583): Remove this DIS read when b/334067583 is fixed
     if (com::android::bluetooth::flags::read_model_num_fix() &&
-        !btif_model_name_known(remote_bd_addr)) {
+        !btif_model_name_known(remote_bd_addr) &&
+        BTM_IsAclConnectionUp(remote_bd_addr, BT_TRANSPORT_LE)) {
       log::info("Read model name for le audio capable device");
       if (!DIS_ReadDISInfo(remote_bd_addr, read_dis_cback,
                            DIS_ATTR_MODEL_NUM_BIT)) {
