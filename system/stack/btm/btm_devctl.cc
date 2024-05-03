@@ -99,8 +99,6 @@ void btm_dev_init() {
       alarm_new("btm.read_failed_contact_counter_timer");
   btm_cb.devcb.read_automatic_flush_timeout_timer =
       alarm_new("btm.read_automatic_flush_timeout_timer");
-  btm_cb.devcb.read_link_quality_timer =
-      alarm_new("btm.read_link_quality_timer");
   btm_cb.devcb.read_tx_power_timer = alarm_new("btm.read_tx_power_timer");
 }
 
@@ -109,7 +107,6 @@ void btm_dev_free() {
   alarm_free(btm_cb.devcb.read_rssi_timer);
   alarm_free(btm_cb.devcb.read_failed_contact_counter_timer);
   alarm_free(btm_cb.devcb.read_automatic_flush_timeout_timer);
-  alarm_free(btm_cb.devcb.read_link_quality_timer);
   alarm_free(btm_cb.devcb.read_tx_power_timer);
 }
 

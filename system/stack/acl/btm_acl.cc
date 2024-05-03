@@ -2006,64 +2006,6 @@ void btm_read_automatic_flush_timeout_complete(uint8_t* p) {
 
 /*******************************************************************************
  *
- * Function         btm_read_link_quality_complete
- *
- * Description      This function is called when the command complete message
- *                  is received from the HCI for the read link quality.
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_read_link_quality_complete(uint8_t* p, uint16_t evt_len) {
-  tBTM_CMPL_CB* p_cb = btm_cb.devcb.p_link_qual_cmpl_cb;
-  tBTM_LINK_QUALITY_RESULT result;
-
-  alarm_cancel(btm_cb.devcb.read_link_quality_timer);
-  btm_cb.devcb.p_link_qual_cmpl_cb = NULL;
-
-  /* If there was a registered callback, call it */
-  if (p_cb) {
-    if (evt_len < 1) {
-      goto err_out;
-    }
-
-    STREAM_TO_UINT8(result.hci_status, p);
-
-    if (result.hci_status == HCI_SUCCESS) {
-      uint16_t handle;
-      result.status = BTM_SUCCESS;
-
-      if (evt_len < 4) {
-        goto err_out;
-      }
-
-      STREAM_TO_UINT16(handle, p);
-
-      STREAM_TO_UINT8(result.link_quality, p);
-      log::debug(
-          "BTM Link Quality Complete: Link Quality {}, hci status:{}",
-          result.link_quality,
-          hci_error_code_text(static_cast<tHCI_STATUS>(result.hci_status)));
-
-      tACL_CONN* p_acl_cb = internal_.acl_get_connection_from_handle(handle);
-      if (p_acl_cb != nullptr) {
-        result.rem_bda = p_acl_cb->remote_addr;
-      }
-    } else {
-      result.status = BTM_ERR_PROCESSING;
-    }
-
-    (*p_cb)(&result);
-  }
-
-  return;
-
-err_out:
-  log::error("Bogus Link Quality event packet, size: {}", evt_len);
-}
-
-/*******************************************************************************
- *
  * Function         btm_remove_acl
  *
  * Description      This function is called to disconnect an ACL connection

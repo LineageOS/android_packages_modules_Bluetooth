@@ -226,7 +226,6 @@ init_flags!(
         sco_codec_timeout_clear,
         sdp_serialization = true,
         sdp_skip_rnr_if_known = true,
-        bluetooth_quality_report_callback = true,
         set_min_encryption = true,
         subrating = true,
         use_unified_connection_manager,

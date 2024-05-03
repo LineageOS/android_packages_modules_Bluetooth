@@ -987,15 +987,6 @@ struct btm_read_failed_contact_counter_timeout {
 };
 extern struct btm_read_failed_contact_counter_timeout
     btm_read_failed_contact_counter_timeout;
-// Name: btm_read_link_quality_complete
-// Params: uint8_t* p
-// Returns: void
-struct btm_read_link_quality_complete {
-  std::function<void(uint8_t* p, uint16_t evt_len)> body{
-      [](uint8_t* /* p */, uint16_t /* evt_len */) { ; }};
-  void operator()(uint8_t* p, uint16_t evt_len) { body(p, evt_len); };
-};
-extern struct btm_read_link_quality_complete btm_read_link_quality_complete;
 // Name: btm_read_remote_ext_features
 // Params: uint16_t handle, uint8_t page_number
 // Returns: void
