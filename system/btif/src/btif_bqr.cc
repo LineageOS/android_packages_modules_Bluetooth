@@ -211,6 +211,9 @@ void BqrVseSubEvt::WriteBtSchedulingTraceLogFile(int fd, uint8_t length,
   BtSchedulingTraceCounter++;
 }
 
+static std::string QualityReportIdToString(uint8_t quality_report_id);
+static std::string PacketTypeToString(uint8_t packet_type);
+
 std::string BqrVseSubEvt::ToString() const {
   std::stringstream ss;
   ss << QualityReportIdToString(bqr_link_quality_event_.quality_report_id)
@@ -258,7 +261,11 @@ std::string BqrVseSubEvt::ToString() const {
   return ss.str();
 }
 
-std::string QualityReportIdToString(uint8_t quality_report_id) {
+// Get a string representation of the Quality Report ID.
+//
+// @param quality_report_id The quality report ID to convert.
+// @return a string representation of the Quality Report ID.
+static std::string QualityReportIdToString(uint8_t quality_report_id) {
   switch (quality_report_id) {
     case QUALITY_REPORT_ID_MONITOR_MODE:
       return "Monitoring";
@@ -277,7 +284,11 @@ std::string QualityReportIdToString(uint8_t quality_report_id) {
   }
 }
 
-std::string PacketTypeToString(uint8_t packet_type) {
+// Get a string representation of the Packet Type.
+//
+// @param packet_type The packet type to convert.
+// @return a string representation of the Packet Type.
+static std::string PacketTypeToString(uint8_t packet_type) {
   switch (packet_type) {
     case PACKET_TYPE_ID:
       return "ID";
@@ -345,6 +356,8 @@ std::string PacketTypeToString(uint8_t packet_type) {
 void register_vse();
 void unregister_vse();
 
+static void ConfigureBqr(const BqrConfiguration& bqr_config);
+
 void EnableBtQualityReport(common::PostableContext* to_bind) {
   log::info("is_enable: {}", to_bind != nullptr);
   if (to_bind != nullptr) {
@@ -409,6 +422,12 @@ void EnableBtQualityReport(common::PostableContext* to_bind) {
   ConfigureBqr(bqr_config);
 }
 
+static void BqrVscCompleteCallback(
+    bluetooth::hci::CommandCompleteView complete);
+
+// Configure Bluetooth Quality Report setting to the Bluetooth controller.
+//
+// @param bqr_config The struct of configuration parameters.
 void ConfigureBqr(const BqrConfiguration& bqr_config) {
   if (vendor_cap_supported_version >= kBqrVersion6_0) {
     if (bqr_config.report_action > REPORT_ACTION_QUERY ||
@@ -457,7 +476,15 @@ void ConfigureBqr(const BqrConfiguration& bqr_config) {
       to_bind_->BindOnce(BqrVscCompleteCallback));
 }
 
-void BqrVscCompleteCallback(bluetooth::hci::CommandCompleteView complete) {
+static void ConfigureBqrCmpl(uint32_t current_evt_mask);
+
+// Callback invoked on completion of vendor specific Bluetooth Quality Report
+// command.
+//
+// @param p_vsc_cmpl_params A pointer to the parameters contained in the vendor
+//   specific command complete event.
+static void BqrVscCompleteCallback(
+    bluetooth::hci::CommandCompleteView complete) {
   std::vector<uint8_t> payload_vector{complete.GetPayload().begin(),
                                       complete.GetPayload().end()};
   tBTM_VSC_CMPL vsc_cmpl_params = {
@@ -565,8 +592,14 @@ void ConfigBqrA2dpScoThreshold() {
 
 static tBTM_STATUS BTM_BT_Quality_Report_VSE_Register(
     bool is_register, tBTM_BT_QUALITY_REPORT_RECEIVER* p_bqr_report_receiver);
+static void CategorizeBqrEvent(uint8_t length, const uint8_t* p_bqr_event);
 
-void ConfigureBqrCmpl(uint32_t current_evt_mask) {
+// Invoked on completion of Bluetooth Quality Report configuration. Then it will
+// Register/Unregister for receiving VSE - Bluetooth Quality Report sub-event.
+//
+// @param current_evt_mask Indicates current quality event bit mask setting in
+//   the Bluetooth controller.
+static void ConfigureBqrCmpl(uint32_t current_evt_mask) {
   log::info("current_evt_mask: 0x{:x}", current_evt_mask);
   // (Un)Register for VSE of Bluetooth Quality Report sub event
   tBTM_STATUS btm_status = BTM_BT_Quality_Report_VSE_Register(
@@ -596,7 +629,15 @@ void ConfigureBqrCmpl(uint32_t current_evt_mask) {
   }
 }
 
-void CategorizeBqrEvent(uint8_t length, const uint8_t* p_bqr_event) {
+static void AddLinkQualityEventToQueue(uint8_t length,
+                                       const uint8_t* p_link_quality_event);
+// Categorize the incoming Bluetooth Quality Report.
+//
+// @param length Lengths of the quality report sent from the Bluetooth
+//   controller.
+// @param p_bqr_event A pointer to the BQR VSE sub-event which is sent from the
+//   Bluetooth controller.
+static void CategorizeBqrEvent(uint8_t length, const uint8_t* p_bqr_event) {
   if (length == 0) {
     log::warn("Lengths of all of the parameters are zero.");
     return;
@@ -638,8 +679,12 @@ void CategorizeBqrEvent(uint8_t length, const uint8_t* p_bqr_event) {
   }
 }
 
-void AddLinkQualityEventToQueue(uint8_t length,
-                                const uint8_t* p_link_quality_event) {
+// Record a new incoming Link Quality related BQR event in quality event queue.
+//
+// @param length Lengths of the Link Quality related BQR event.
+// @param p_link_quality_event A pointer to the Link Quality related BQR event.
+static void AddLinkQualityEventToQueue(uint8_t length,
+                                       const uint8_t* p_link_quality_event) {
   std::unique_ptr<BqrVseSubEvt> p_bqr_event = std::make_unique<BqrVseSubEvt>();
   RawAddress bd_addr;
 
@@ -709,7 +754,14 @@ void AddLinkQualityEventToQueue(uint8_t length,
   kpBqrEventQueue->Enqueue(p_bqr_event.release());
 }
 
-void DumpLmpLlMessage(uint8_t length, const uint8_t* p_lmp_ll_message_event) {
+static int OpenLmpLlTraceLogFile();
+
+// Dump the LMP/LL message handshaking with the remote device to a log file.
+//
+// @param length Lengths of the LMP/LL message trace event.
+// @param p_lmp_ll_message_event A pointer to the LMP/LL message trace event.
+static void DumpLmpLlMessage(uint8_t length,
+                             const uint8_t* p_lmp_ll_message_event) {
   std::unique_ptr<BqrVseSubEvt> p_bqr_event = std::make_unique<BqrVseSubEvt>();
 
   if (LmpLlMessageTraceLogFd == INVALID_FD ||
@@ -722,7 +774,10 @@ void DumpLmpLlMessage(uint8_t length, const uint8_t* p_lmp_ll_message_event) {
   }
 }
 
-int OpenLmpLlTraceLogFile() {
+// Open the LMP/LL message trace log file.
+//
+// @return a file descriptor of the LMP/LL message trace log file.
+static int OpenLmpLlTraceLogFile() {
   if (rename(kpLmpLlMessageTraceLogPath, kpLmpLlMessageTraceLastLogPath) != 0 &&
       errno != ENOENT) {
     log::error("Unable to rename '{}' to '{}' : {}", kpLmpLlMessageTraceLogPath,
@@ -743,7 +798,16 @@ int OpenLmpLlTraceLogFile() {
   return logfile_fd;
 }
 
-void DumpBtScheduling(uint8_t length, const uint8_t* p_bt_scheduling_event) {
+static int OpenBtSchedulingTraceLogFile();
+
+// Dump the Bluetooth Multi-profile/Coex scheduling information to a log file.
+//
+// @param length Lengths of the Bluetooth Multi-profile/Coex scheduling trace
+//   event.
+// @param p_bt_scheduling_event A pointer to the Bluetooth Multi-profile/Coex
+//   scheduling trace event.
+static void DumpBtScheduling(uint8_t length,
+                             const uint8_t* p_bt_scheduling_event) {
   std::unique_ptr<BqrVseSubEvt> p_bqr_event = std::make_unique<BqrVseSubEvt>();
 
   if (BtSchedulingTraceLogFd == INVALID_FD ||
@@ -756,7 +820,11 @@ void DumpBtScheduling(uint8_t length, const uint8_t* p_bt_scheduling_event) {
   }
 }
 
-int OpenBtSchedulingTraceLogFile() {
+// Open the Bluetooth Multi-profile/Coex scheduling trace log file.
+//
+// @return a file descriptor of the Bluetooth Multi-profile/Coex scheduling
+//   trace log file.
+static int OpenBtSchedulingTraceLogFile() {
   if (rename(kpBtSchedulingTraceLogPath, kpBtSchedulingTraceLastLogPath) != 0 &&
       errno != ENOENT) {
     log::error("Unable to rename '{}' to '{}' : {}", kpBtSchedulingTraceLogPath,
