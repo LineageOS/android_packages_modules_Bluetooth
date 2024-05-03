@@ -248,8 +248,8 @@ public class HeadsetServiceAndStateMachineTest {
     @Test
     public void testConnectFromApi() {
         BluetoothDevice device = TestUtils.getTestDevice(mAdapter, 0);
-        when(mDatabaseManager.getProfileConnectionPolicy(device, BluetoothProfile.HEADSET))
-                .thenReturn(BluetoothProfile.CONNECTION_POLICY_UNKNOWN);
+        doReturn(BluetoothProfile.CONNECTION_POLICY_UNKNOWN).when(mDatabaseManager)
+            .getProfileConnectionPolicy(device, BluetoothProfile.HEADSET);
         mBondedDevices.add(device);
         Assert.assertTrue(mHeadsetService.connect(device));
         verify(mObjectsFactory)
@@ -300,8 +300,8 @@ public class HeadsetServiceAndStateMachineTest {
     @Test
     public void testUnbondDevice_disconnectBeforeUnbond() {
         BluetoothDevice device = TestUtils.getTestDevice(mAdapter, 0);
-        when(mDatabaseManager.getProfileConnectionPolicy(device, BluetoothProfile.HEADSET))
-                .thenReturn(BluetoothProfile.CONNECTION_POLICY_UNKNOWN);
+        doReturn(BluetoothProfile.CONNECTION_POLICY_UNKNOWN).when(mDatabaseManager)
+            .getProfileConnectionPolicy(device, BluetoothProfile.HEADSET);
         mBondedDevices.add(device);
         Assert.assertTrue(mHeadsetService.connect(device));
         verify(mObjectsFactory)
@@ -351,8 +351,8 @@ public class HeadsetServiceAndStateMachineTest {
     @Test
     public void testUnbondDevice_disconnectAfterUnbond() {
         BluetoothDevice device = TestUtils.getTestDevice(mAdapter, 0);
-        when(mDatabaseManager.getProfileConnectionPolicy(device, BluetoothProfile.HEADSET))
-                .thenReturn(BluetoothProfile.CONNECTION_POLICY_UNKNOWN);
+        doReturn(BluetoothProfile.CONNECTION_POLICY_UNKNOWN).when(mDatabaseManager)
+            .getProfileConnectionPolicy(device, BluetoothProfile.HEADSET);
         mBondedDevices.add(device);
         Assert.assertTrue(mHeadsetService.connect(device));
         verify(mObjectsFactory)
@@ -518,7 +518,7 @@ public class HeadsetServiceAndStateMachineTest {
         verifyActiveDeviceChangedIntent(activeDevice);
         Assert.assertEquals(activeDevice, mHeadsetService.getActiveDevice());
         // Reject virtual call setup if call state is not idle
-        when(mSystemInterface.isCallIdle()).thenReturn(false);
+        doReturn(false).when(mSystemInterface).isCallIdle();
         Assert.assertFalse(mHeadsetService.startScoUsingVirtualVoiceCall());
         Assert.assertFalse(mHeadsetService.isVirtualCallStarted());
     }
@@ -1260,12 +1260,12 @@ public class HeadsetServiceAndStateMachineTest {
 
         BluetoothDevice device = TestUtils.getTestDevice(mAdapter, 0);
 
-        when(mNativeInterface.enableSwb(
+        doReturn(true).when(mNativeInterface)
+            .enableSwb(
                         eq(HeadsetHalConstants.BTHF_SWB_CODEC_VENDOR_APTX),
                         anyBoolean(),
-                        eq(device)))
-                .thenReturn(true);
-        when(mSystemInterface.isHighDefCallInProgress()).thenReturn(false);
+                        eq(device));
+        doReturn(false).when(mSystemInterface).isHighDefCallInProgress();
 
         // Connect HF
         connectTestDevice(device);
@@ -1301,7 +1301,7 @@ public class HeadsetServiceAndStateMachineTest {
         verifyCallStateToNativeInvocation(incomingCallState, connectedDevices);
         TestUtils.waitForLooperToFinishScheduledTask(
                 mHeadsetService.getStateMachinesThreadLooper());
-        when(mSystemInterface.isRinging()).thenReturn(true);
+        doReturn(true).when(mSystemInterface).isRinging();
         // Connect Audio
         Assert.assertEquals(BluetoothStatusCodes.SUCCESS, mHeadsetService.connectAudio());
         verifyAudioStateIntent(
@@ -1339,12 +1339,12 @@ public class HeadsetServiceAndStateMachineTest {
         configureHeadsetServiceForAptxVoice(true);
         BluetoothDevice device = TestUtils.getTestDevice(mAdapter, 0);
 
-        when(mNativeInterface.enableSwb(
+        doReturn(true).when(mNativeInterface)
+            .enableSwb(
                         eq(HeadsetHalConstants.BTHF_SWB_CODEC_VENDOR_APTX),
                         anyBoolean(),
-                        eq(device)))
-                .thenReturn(true);
-        when(mSystemInterface.isHighDefCallInProgress()).thenReturn(true);
+                        eq(device));
+        doReturn(true).when(mSystemInterface).isHighDefCallInProgress();
 
         // Connect HF
         connectTestDevice(device);
@@ -1380,7 +1380,7 @@ public class HeadsetServiceAndStateMachineTest {
         verifyCallStateToNativeInvocation(incomingCallState, connectedDevices);
         TestUtils.waitForLooperToFinishScheduledTask(
                 mHeadsetService.getStateMachinesThreadLooper());
-        when(mSystemInterface.isRinging()).thenReturn(true);
+        doReturn(true).when(mSystemInterface).isRinging();
         // Connect Audio
         Assert.assertEquals(BluetoothStatusCodes.SUCCESS, mHeadsetService.connectAudio());
         verifyAudioStateIntent(
@@ -1756,8 +1756,8 @@ public class HeadsetServiceAndStateMachineTest {
     }
 
     private void connectTestDevice(BluetoothDevice device) {
-        when(mDatabaseManager.getProfileConnectionPolicy(device, BluetoothProfile.HEADSET))
-                .thenReturn(BluetoothProfile.CONNECTION_POLICY_UNKNOWN);
+        doReturn(BluetoothProfile.CONNECTION_POLICY_UNKNOWN).when(mDatabaseManager)
+            .getProfileConnectionPolicy(device, BluetoothProfile.HEADSET);
         doReturn(BluetoothDevice.BOND_BONDED).when(mAdapterService).getBondState(eq(device));
         // Make device bonded
         mBondedDevices.add(device);
