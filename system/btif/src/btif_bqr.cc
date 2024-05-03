@@ -59,19 +59,6 @@ static uint16_t vendor_cap_supported_version;
 class BluetoothQualityReportInterfaceImpl;
 std::unique_ptr<BluetoothQualityReportInterface> bluetoothQualityReportInstance;
 
-/* Maximum number of callbacks that can be registered using
- * BTM_RegisterForVSEvents */
-#ifndef BTM_MAX_VSE_CALLBACKS
-#define BTM_MAX_VSE_CALLBACKS 3
-#endif
-
-// Bluetooth Quality Report - Report receiver
-typedef void(tBTM_BT_QUALITY_REPORT_RECEIVER)(uint8_t len,
-                                              const uint8_t* p_stream);
-static tBTM_BT_QUALITY_REPORT_RECEIVER* p_bqr_report_receiver_ = nullptr;
-typedef void(tBTM_VS_EVT_CB)(uint8_t len, const uint8_t* p);
-tBTM_VS_EVT_CB* p_vend_spec_cb[BTM_MAX_VSE_CALLBACKS];
-
 namespace {
 common::PostableContext* to_bind_ = nullptr;
 }
@@ -422,8 +409,7 @@ void EnableBtQualityReport(common::PostableContext* to_bind) {
   ConfigureBqr(bqr_config);
 }
 
-static void BqrVscCompleteCallback(
-    bluetooth::hci::CommandCompleteView complete);
+static void BqrVscCompleteCallback(hci::CommandCompleteView complete);
 
 // Configure Bluetooth Quality Report setting to the Bluetooth controller.
 //
@@ -483,8 +469,7 @@ static void ConfigureBqrCmpl(uint32_t current_evt_mask);
 //
 // @param p_vsc_cmpl_params A pointer to the parameters contained in the vendor
 //   specific command complete event.
-static void BqrVscCompleteCallback(
-    bluetooth::hci::CommandCompleteView complete) {
+static void BqrVscCompleteCallback(hci::CommandCompleteView complete) {
   std::vector<uint8_t> payload_vector{complete.GetPayload().begin(),
                                       complete.GetPayload().end()};
   tBTM_VSC_CMPL vsc_cmpl_params = {
@@ -563,7 +548,7 @@ void ConfigBqrA2dpScoThreshold() {
   sscanf(bqr_prop_threshold, "%hu,%hu", &a2dp_choppy_threshold,
          &sco_choppy_threshold);
 
-  log::warn("a2dp_choppy_threshold: {}, sco_choppy_threshold: {}",
+  log::info("a2dp_choppy_threshold: {}, sco_choppy_threshold: {}",
             a2dp_choppy_threshold, sco_choppy_threshold);
 
   auto payload = std::make_unique<packet::RawBuilder>();
@@ -585,14 +570,9 @@ void ConfigBqrA2dpScoThreshold() {
 
   shim::GetHciLayer()->EnqueueCommand(
       hci::CommandBuilder::Create(
-          static_cast<bluetooth::hci::OpCode>(HCI_VS_HOST_LOG_OPCODE),
-          std::move(payload)),
+          static_cast<hci::OpCode>(HCI_VS_HOST_LOG_OPCODE), std::move(payload)),
       to_bind_->BindOnce([](hci::CommandCompleteView) {}));
 }
-
-static tBTM_STATUS BTM_BT_Quality_Report_VSE_Register(
-    bool is_register, tBTM_BT_QUALITY_REPORT_RECEIVER* p_bqr_report_receiver);
-static void CategorizeBqrEvent(uint8_t length, const uint8_t* p_bqr_event);
 
 // Invoked on completion of Bluetooth Quality Report configuration. Then it will
 // Register/Unregister for receiving VSE - Bluetooth Quality Report sub-event.
@@ -601,18 +581,9 @@ static void CategorizeBqrEvent(uint8_t length, const uint8_t* p_bqr_event);
 //   the Bluetooth controller.
 static void ConfigureBqrCmpl(uint32_t current_evt_mask) {
   log::info("current_evt_mask: 0x{:x}", current_evt_mask);
-  // (Un)Register for VSE of Bluetooth Quality Report sub event
-  tBTM_STATUS btm_status = BTM_BT_Quality_Report_VSE_Register(
-      current_evt_mask > kQualityEventMaskAllOff, CategorizeBqrEvent);
 
   if (current_evt_mask > kQualityEventMaskAllOff) {
     ConfigBqrA2dpScoThreshold();
-  }
-
-  if (btm_status != BTM_SUCCESS) {
-    log::error("Fail to (un)register VSE of BQR sub event. status: {}",
-               btm_status);
-    return;
   }
 
   if (LmpLlMessageTraceLogFd != INVALID_FD &&
@@ -690,7 +661,6 @@ static void AddLinkQualityEventToQueue(uint8_t length,
 
   p_bqr_event->ParseBqrLinkQualityEvt(length, p_link_quality_event);
 
-  log::warn("{}", *p_bqr_event);
   GetInterfaceToProfiles()->events->invoke_link_quality_report_cb(
       bluetooth::common::time_get_os_boottime_ms(),
       p_bqr_event->bqr_link_quality_event_.quality_report_id,
@@ -971,143 +941,24 @@ BluetoothQualityReportInterface* getBluetoothQualityReportInterface() {
   return bluetoothQualityReportInstance.get();
 }
 
-/*******************************************************************************
- *
- * Function         BTM_RegisterForVSEvents
- *
- * Description      This function is called to register/deregister for vendor
- *                  specific HCI events.
- *
- *                  If is_register=true, then the function will be registered;
- *                  otherwise, the function will be deregistered.
- *
- * Returns          BTM_SUCCESS if successful,
- *                  BTM_BUSY if maximum number of callbacks have already been
- *                           registered.
- *
- ******************************************************************************/
-tBTM_STATUS BTM_RegisterForVSEvents(tBTM_VS_EVT_CB* p_cb, bool is_register) {
-  tBTM_STATUS retval = BTM_SUCCESS;
-  uint8_t i, free_idx = BTM_MAX_VSE_CALLBACKS;
-
-  /* See if callback is already registered */
-  for (i = 0; i < BTM_MAX_VSE_CALLBACKS; i++) {
-    if (p_vend_spec_cb[i] == NULL) {
-      /* Found a free slot. Store index */
-      free_idx = i;
-    } else if (p_vend_spec_cb[i] == p_cb) {
-      /* Found callback in lookup table. If deregistering, clear the entry. */
-      if (!is_register) {
-        p_vend_spec_cb[i] = NULL;
-        log::verbose("BTM Deregister For VSEvents is successfully");
-      }
-      return BTM_SUCCESS;
-    }
-  }
-
-  /* Didn't find callback. Add callback to free slot if registering */
-  if (is_register) {
-    if (free_idx < BTM_MAX_VSE_CALLBACKS) {
-      p_vend_spec_cb[free_idx] = p_cb;
-      log::verbose("BTM Register For VSEvents is successfully");
-    } else {
-      /* No free entries available */
-      log::error("BTM_RegisterForVSEvents: too many callbacks registered");
-
-      retval = BTM_NO_RESOURCES;
-    }
-  }
-
-  return retval;
-}
-
-/*******************************************************************************
- *
- * Function         BTM_BT_Quality_Report_VSE_CBack
- *
- * Description      Callback invoked on receiving of Vendor Specific Events.
- *                  This function will call registered BQR report receiver if
- *                  Bluetooth Quality Report sub-event is identified.
- *
- * Parameters:      length - Lengths of all of the parameters contained in the
- *                    Vendor Specific Event.
- *                  p_stream - A pointer to the quality report which is sent
- *                    from the Bluetooth controller via Vendor Specific Event.
- *
- ******************************************************************************/
-static void BTM_BT_Quality_Report_VSE_CBack(uint8_t length,
-                                            const uint8_t* p_stream) {
-  if (length == 0) {
-    log::warn("Lengths of all of the parameters are zero.");
+static void vendor_specific_event_callback(
+    hci::VendorSpecificEventView vendor_specific_event_view) {
+  auto bqr = hci::BqrEventView::CreateOptional(vendor_specific_event_view);
+  if (!bqr) {
     return;
   }
+  auto payload = vendor_specific_event_view.GetPayload();
+  std::vector<uint8_t> bytes{payload.begin(), payload.end()};
 
-  uint8_t sub_event = 0;
-  STREAM_TO_UINT8(sub_event, p_stream);
-  length--;
-
-  if (sub_event == HCI_VSE_SUBCODE_BQR_SUB_EVT) {
-    if (p_bqr_report_receiver_ == nullptr) {
-      log::warn("No registered report receiver.");
-      return;
-    }
-
-    p_bqr_report_receiver_(length, p_stream);
-  }
-}
-
-/*******************************************************************************
- *
- * Function         BTM_BT_Quality_Report_VSE_Register
- *
- * Description      Register/Deregister for Bluetooth Quality Report VSE sub
- *                  event Callback.
- *
- * Parameters:      is_register - True/False to register/unregister for VSE.
- *                  p_bqr_report_receiver - The receiver for receiving Bluetooth
- *                    Quality Report VSE sub event.
- *
- ******************************************************************************/
-tBTM_STATUS BTM_BT_Quality_Report_VSE_Register(
-    bool is_register, tBTM_BT_QUALITY_REPORT_RECEIVER* p_bqr_report_receiver) {
-  tBTM_STATUS retval =
-      BTM_RegisterForVSEvents(BTM_BT_Quality_Report_VSE_CBack, is_register);
-
-  if (retval != BTM_SUCCESS) {
-    log::warn("Fail to (un)register VSEvents: {}, is_register: {}", retval,
-              is_register);
-    return retval;
-  }
-
-  if (is_register) {
-    p_bqr_report_receiver_ = p_bqr_report_receiver;
-  } else {
-    p_bqr_report_receiver_ = nullptr;
-  }
-
-  log::info("Success to (un)register VSEvents. is_register: {}", is_register);
-  return retval;
-}
-
-/*******************************************************************************
- *
- * Function         btm_vendor_specific_evt
- *
- * Description      Process event HCI_VENDOR_SPECIFIC_EVT (BQR)
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_vendor_specific_evt(const uint8_t* p, uint8_t evt_len) {
-  uint8_t quality_report_id = *p;
-  uint8_t bqr_parameter_length = evt_len;
-  const uint8_t* p_bqr_event = p;
-
-  log::verbose("BTM Event: Vendor Specific event from controller");
+  uint8_t quality_report_id = static_cast<uint8_t>(bqr->GetQualityReportId());
+  uint8_t bqr_parameter_length = bytes.size();
+  const uint8_t* p_bqr_event = bytes.data();
 
   // The stream currently points to the BQR sub-event parameters
   switch (quality_report_id) {
-    case bluetooth::bqr::QUALITY_REPORT_ID_LMP_LL_MESSAGE_TRACE:
+    case bluetooth::bqr::QUALITY_REPORT_ID_LMP_LL_MESSAGE_TRACE: {
+      auto lmp_view = hci::BqrLogDumpEventView::Create(*bqr);
+    }
       if (bqr_parameter_length >= bluetooth::bqr::kLogDumpParamTotalLen) {
         bluetooth::bqr::DumpLmpLlMessage(bqr_parameter_length, p_bqr_event);
       } else {
@@ -1128,36 +979,12 @@ void btm_vendor_specific_evt(const uint8_t* p, uint8_t evt_len) {
       log::info("Unhandled BQR subevent 0x{:02x}", quality_report_id);
   }
 
-  uint8_t i;
-  std::vector<uint8_t> reconstructed_event;
-  reconstructed_event.reserve(4 + bqr_parameter_length);
-  reconstructed_event.push_back(HCI_VSE_SUBCODE_BQR_SUB_EVT);
-  for (i = 0; i < bqr_parameter_length; i++) {
-    reconstructed_event.push_back(p_bqr_event[i]);
-  }
-
-  for (i = 0; i < BTM_MAX_VSE_CALLBACKS; i++) {
-    if (p_vend_spec_cb[i])
-      (*p_vend_spec_cb[i])(reconstructed_event.size(),
-                           reconstructed_event.data());
-  }
-}
-
-static void vendor_specific_event_callback(
-    bluetooth::hci::VendorSpecificEventView vendor_specific_event_view) {
-  auto bqr =
-      bluetooth::hci::BqrEventView::CreateOptional(vendor_specific_event_view);
-  if (!bqr) {
-    return;
-  }
-  auto payload = vendor_specific_event_view.GetPayload();
-  std::vector<uint8_t> bytes{payload.begin(), payload.end()};
-  btm_vendor_specific_evt(bytes.data(), bytes.size());
+  CategorizeBqrEvent(bytes.size(), bytes.data());
 }
 
 void register_vse() {
   bluetooth::shim::GetVendorSpecificEventManager()->RegisterEventHandler(
-      bluetooth::hci::VseSubeventCode::BQR_EVENT,
+      hci::VseSubeventCode::BQR_EVENT,
       to_bind_->Bind(vendor_specific_event_callback));
 }
 
