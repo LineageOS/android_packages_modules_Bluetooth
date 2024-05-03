@@ -17,7 +17,6 @@
 
 #include <bluetooth/log.h>
 
-#include "hci/controller.h"
 #include "hci/hci_layer.h"
 #include "hci/hci_packets.h"
 
@@ -32,13 +31,11 @@ struct VendorSpecificEventManager::impl {
 
   ~impl() {}
 
-  void start(os::Handler* handler, hci::HciLayer* hci_layer, hci::Controller* controller) {
+  void start(os::Handler* handler, hci::HciLayer* hci_layer) {
     module_handler_ = handler;
     hci_layer_ = hci_layer;
-    controller_ = controller;
     hci_layer_->RegisterEventHandler(
         EventCode::VENDOR_SPECIFIC, handler->BindOn(this, &VendorSpecificEventManager::impl::on_vendor_specific_event));
-    vendor_capabilities_ = controller->GetVendorCapabilities();
   }
 
   void stop() {}
@@ -53,30 +50,6 @@ struct VendorSpecificEventManager::impl {
 
   void unregister_event(VseSubeventCode event) {
     subevent_handlers_.erase(subevent_handlers_.find(event));
-  }
-
-  bool check_event_supported(VseSubeventCode event) {
-    switch (event) {
-      case (VseSubeventCode::BLE_THRESHOLD): {
-        if (vendor_capabilities_.total_scan_results_storage_ > 0) {
-          return true;
-        }
-      } break;
-      case (VseSubeventCode::BLE_TRACKING): {
-        if (vendor_capabilities_.total_num_of_advt_tracked_ > 0) {
-          return true;
-        }
-      } break;
-      case (VseSubeventCode::DEBUG_INFO): {
-        return vendor_capabilities_.debug_logging_supported_;
-      } break;
-      case (VseSubeventCode::BQR_EVENT): {
-        return vendor_capabilities_.bluetooth_quality_report_support_;
-      } break;
-      default:
-        log::warn("Unhandled event {}", VseSubeventCodeText(event));
-    }
-    return false;
   }
 
   void on_vendor_specific_event(EventView event_view) {
@@ -95,8 +68,6 @@ struct VendorSpecificEventManager::impl {
   Module* module_;
   os::Handler* module_handler_;
   hci::HciLayer* hci_layer_;
-  hci::Controller* controller_;
-  Controller::VendorCapabilities vendor_capabilities_;
   std::map<VseSubeventCode, common::ContextualCallback<void(VendorSpecificEventView)>> subevent_handlers_;
 };
 
@@ -106,11 +77,10 @@ VendorSpecificEventManager::VendorSpecificEventManager() {
 
 void VendorSpecificEventManager::ListDependencies(ModuleList* list) const {
   list->add<hci::HciLayer>();
-  list->add<hci::Controller>();
 }
 
 void VendorSpecificEventManager::Start() {
-  pimpl_->start(GetHandler(), GetDependency<hci::HciLayer>(), GetDependency<hci::Controller>());
+  pimpl_->start(GetHandler(), GetDependency<hci::HciLayer>());
 }
 
 void VendorSpecificEventManager::Stop() {
