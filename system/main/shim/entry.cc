@@ -96,7 +96,7 @@ hci::AclManager* GetAclManager() {
       ->GetInstance<hci::AclManager>();
 }
 
-hci::VendorSpecificEventManager* GetVendorSpecificEventManager() {
+hci::VendorSpecificEventManagerInterface* GetVendorSpecificEventManager() {
   return Stack::GetInstance()
       ->GetStackManager()
       ->GetInstance<hci::VendorSpecificEventManager>();

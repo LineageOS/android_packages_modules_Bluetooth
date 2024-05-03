@@ -16,20 +16,24 @@
 #pragma once
 
 #include "hci/hci_packets.h"
+#include "hci/vendor_specific_event_manager_interface.h"
 #include "module.h"
 
 namespace bluetooth {
 namespace hci {
 
-class VendorSpecificEventManager : public bluetooth::Module {
+class VendorSpecificEventManager : public VendorSpecificEventManagerInterface,
+                                   public bluetooth::Module {
  public:
   VendorSpecificEventManager();
   VendorSpecificEventManager(const VendorSpecificEventManager&) = delete;
   VendorSpecificEventManager& operator=(const VendorSpecificEventManager&) = delete;
 
-  void RegisterEventHandler(VseSubeventCode event, common::ContextualCallback<void(VendorSpecificEventView)> handler);
+  void RegisterEventHandler(
+      VseSubeventCode event,
+      common::ContextualCallback<void(VendorSpecificEventView)> handler) override;
 
-  void UnregisterEventHandler(VseSubeventCode event);
+  void UnregisterEventHandler(VseSubeventCode event) override;
 
   static const ModuleFactory Factory;
 
