@@ -10,3 +10,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "floss_separate_host_privacy_and_llprivacy"
+    namespace: "bluetooth"
+    description: "Allow enabling host privacy and LL privacy separately in floss"
+    bug: "338134627"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
