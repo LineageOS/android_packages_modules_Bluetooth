@@ -31,7 +31,6 @@ mod ffi {
         fn sco_codec_timeout_clear_is_enabled() -> bool;
         fn sdp_serialization_is_enabled() -> bool;
         fn sdp_skip_rnr_if_known_is_enabled() -> bool;
-        fn bluetooth_quality_report_callback_is_enabled() -> bool;
         fn set_min_encryption_is_enabled() -> bool;
         fn subrating_is_enabled() -> bool;
         fn use_unified_connection_manager_is_enabled() -> bool;
