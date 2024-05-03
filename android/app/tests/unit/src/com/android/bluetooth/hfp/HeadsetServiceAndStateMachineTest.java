@@ -48,7 +48,6 @@ import android.telecom.PhoneAccount;
 import android.util.Log;
 
 import androidx.test.InstrumentationRegistry;
-import androidx.test.espresso.intent.Intents;
 import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
@@ -186,7 +185,6 @@ public class HeadsetServiceAndStateMachineTest {
                 .makeStateMachine(any(), any(), any(), any(), any(), any());
         // Mock methods in HeadsetObjectsFactory
         doReturn(mSystemInterface).when(mObjectsFactory).makeSystemInterface(any());
-        Intents.init();
         // Modify start VR timeout to a smaller value for testing
         mOriginalVrTimeoutMs = HeadsetService.sStartVrTimeoutMs;
         HeadsetService.sStartVrTimeoutMs = START_VR_TIMEOUT_MILLIS;
@@ -224,7 +222,6 @@ public class HeadsetServiceAndStateMachineTest {
             clearInvocations(mNativeInterface);
         }
         HeadsetService.sStartVrTimeoutMs = mOriginalVrTimeoutMs;
-        Intents.release();
         HeadsetObjectsFactory.setInstanceForTesting(null);
         mBondedDevices.clear();
     }
