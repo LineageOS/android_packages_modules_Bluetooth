@@ -191,11 +191,13 @@ android_robolectric_test {
         "kotlinx_coroutines",
         "kotlinx_coroutines_test",
         "mockito-robolectric-prebuilt",
+        "modules-utils-expresslog",
         "platform-test-annotations",
         "testng",
         "truth",
     ],
 
+    sdk_version: "test_current",
     upstream: true,
     test_suites: ["general-tests"],
 }
