@@ -71,7 +71,7 @@ namespace test {
 namespace mock {
 namespace btif_co_bta_av_co {
 
-tA2DP_STATUS bta_av_co_audio_getconfig::return_value = 0;
+tA2DP_STATUS bta_av_co_audio_getconfig::return_value = A2DP_SUCCESS;
 bool bta_av_co_audio_init::return_value = false;
 BT_HDR* bta_av_co_audio_source_data_path::return_value = nullptr;
 int bta_av_co_get_encoder_effective_frame_size::return_value = 0;

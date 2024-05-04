@@ -608,7 +608,8 @@ std::string A2DP_CodecInfoStringAac(const uint8_t* p_codec_info) {
 
   a2dp_status = A2DP_ParseInfoAac(&aac_cie, p_codec_info, true);
   if (a2dp_status != A2DP_SUCCESS) {
-    res << "A2DP_ParseInfoAac fail: " << loghex(a2dp_status);
+    res << "A2DP_ParseInfoAac fail: "
+        << loghex(static_cast<uint8_t>(a2dp_status));
     return res.str();
   }
 
