@@ -22,6 +22,7 @@
 #include <functional>
 
 #include "common/message_loop_thread.h"
+#include "common/postable_context.h"
 #include "include/hardware/bluetooth.h"
 
 using bluetooth::common::MessageLoopThread;
@@ -38,3 +39,4 @@ void main_thread_shut_down();
 extern const int sync_timeout_in_ms;
 void sync_main_handler();
 bluetooth::common::MessageLoopThread* get_main_thread();
+bluetooth::common::PostableContext* get_main();

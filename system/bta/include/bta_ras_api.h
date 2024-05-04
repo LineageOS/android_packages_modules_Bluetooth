@@ -37,7 +37,8 @@ RasServer* GetRasServer();
 class RasClientCallbacks {
  public:
   virtual ~RasClientCallbacks() = default;
-  virtual void OnRemoteData(RawAddress address, std::vector<uint8_t> data) = 0;
+  virtual void OnRemoteData(const RawAddress& address,
+                            const std::vector<uint8_t>& data) = 0;
 };
 
 class RasClient {
