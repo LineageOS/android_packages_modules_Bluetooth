@@ -1860,6 +1860,7 @@ tBTM_STATUS btm_ble_read_remote_name(const RawAddress& remote_bda,
   btm_cb.btm_inq_vars.p_remname_cmpl_cb = p_cb;
   btm_cb.btm_inq_vars.remname_active = true;
   btm_cb.btm_inq_vars.remname_bda = remote_bda;
+  btm_cb.btm_inq_vars.remname_dev_type = BT_DEVICE_TYPE_BLE;
 
   alarm_set_on_mloop(btm_cb.btm_inq_vars.remote_name_timer,
                      BTM_EXT_BLE_RMT_NAME_TIMEOUT_MS,
@@ -1886,6 +1887,7 @@ bool btm_ble_cancel_remote_name(const RawAddress& remote_bda) {
 
   btm_cb.btm_inq_vars.remname_active = false;
   btm_cb.btm_inq_vars.remname_bda = RawAddress::kEmpty;
+  btm_cb.btm_inq_vars.remname_dev_type = BT_DEVICE_TYPE_UNKNOWN;
   alarm_cancel(btm_cb.btm_inq_vars.remote_name_timer);
 
   return status;
