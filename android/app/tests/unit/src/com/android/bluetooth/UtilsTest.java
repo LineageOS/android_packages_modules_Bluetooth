@@ -119,10 +119,12 @@ public class UtilsTest {
         boolean enabledStatus = locationManager.isLocationEnabledForUser(userHandle);
 
         locationManager.setLocationEnabledForUser(false, userHandle);
-        assertThat(Utils.checkCallerHasCoarseLocation(context, null, userHandle)).isFalse();
+        assertThat(Utils.checkCallerHasCoarseLocation(
+                       context, context.getAttributionSource(), userHandle))
+                .isFalse();
 
         locationManager.setLocationEnabledForUser(true, userHandle);
-        Utils.checkCallerHasCoarseLocation(context, null, userHandle);
+        Utils.checkCallerHasCoarseLocation(context, context.getAttributionSource(), userHandle);
         if (!enabledStatus) {
             locationManager.setLocationEnabledForUser(false, userHandle);
         }
@@ -136,10 +138,13 @@ public class UtilsTest {
         boolean enabledStatus = locationManager.isLocationEnabledForUser(userHandle);
 
         locationManager.setLocationEnabledForUser(false, userHandle);
-        assertThat(Utils.checkCallerHasCoarseOrFineLocation(context, null, userHandle)).isFalse();
+        assertThat(Utils.checkCallerHasCoarseOrFineLocation(
+                       context, context.getAttributionSource(), userHandle))
+                .isFalse();
 
         locationManager.setLocationEnabledForUser(true, userHandle);
-        Utils.checkCallerHasCoarseOrFineLocation(context, null, userHandle);
+        Utils.checkCallerHasCoarseOrFineLocation(
+                context, context.getAttributionSource(), userHandle);
         if (!enabledStatus) {
             locationManager.setLocationEnabledForUser(false, userHandle);
         }
