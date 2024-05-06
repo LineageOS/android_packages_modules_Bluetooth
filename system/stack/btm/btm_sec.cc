@@ -2530,6 +2530,20 @@ void btm_sec_rmt_host_support_feat_evt(const RawAddress bd_addr,
  ******************************************************************************/
 void btm_io_capabilities_req(RawAddress p) {
   if (btm_sec_is_a_bonded_dev(p)) {
+    if (com::android::bluetooth::flags::key_missing_classic_device()) {
+      log::warn(
+          "Incoming bond request, but {} is already bonded (notifying user)",
+          p);
+      bta_dm_remote_key_missing(p);
+
+      auto p_dev_rec = btm_find_dev(p);
+      if (p_dev_rec != NULL) {
+        btm_sec_disconnect(p_dev_rec->hci_handle, HCI_ERR_AUTH_FAILURE,
+                           "btm_io_capabilities_req Security failure");
+      }
+      return;
+    }
+
     log::warn("Incoming bond request, but {} is already bonded (removing)", p);
     bta_dm_process_remove_device(p);
   }
