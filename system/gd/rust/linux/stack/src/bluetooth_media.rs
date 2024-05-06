@@ -21,6 +21,7 @@ use bt_topshim::profiles::hfp::{
 use bt_topshim::profiles::ProfileConnectionState;
 use bt_topshim::{metrics, topstack};
 use bt_utils::at_command_parser::{calculate_battery_percent, parse_at_command_data};
+use bt_utils::features;
 use bt_utils::uhid_hfp::{
     OutputEvent, UHidHfp, BLUETOOTH_TELEPHONY_UHID_REPORT_ID, UHID_INPUT_DROP,
     UHID_INPUT_HOOK_SWITCH, UHID_INPUT_NONE, UHID_INPUT_PHONE_MUTE, UHID_OUTPUT_MUTE,
@@ -321,6 +322,7 @@ pub struct BluetoothMedia {
     memory_dialing_number: Option<String>,
     last_dialing_number: Option<String>,
     uhid: HashMap<RawAddress, UHid>,
+    is_le_audio_only_enabled: bool, // TODO: remove this once there is dual mode.
 }
 
 impl BluetoothMedia {
@@ -374,6 +376,7 @@ impl BluetoothMedia {
             memory_dialing_number: None,
             last_dialing_number: None,
             uhid: HashMap::new(),
+            is_le_audio_only_enabled: false,
         }
     }
 
@@ -2338,6 +2341,9 @@ impl IBluetoothMedia for BluetoothMedia {
             return false;
         }
         self.initialized = true;
+
+        self.is_le_audio_only_enabled =
+            features::is_feature_enabled("CrOSLateBootBluetoothAudioLEAudioOnly").unwrap_or(false);
 
         // A2DP
         let a2dp_dispatcher = get_a2dp_dispatcher(self.tx.clone());
