@@ -1,0 +1,9 @@
+package: "com.android.bluetooth.flags"
+container: "com.android.btservices"
+
+flag {
+    name: "device_iot_config_logging"
+    namespace: "bluetooth"
+    description: "Enable device IOT information storage."
+    bug: "290844229"
+}
