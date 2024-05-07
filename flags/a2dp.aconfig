@@ -35,3 +35,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "bta_av_use_peer_codec"
+    namespace: "bluetooth"
+    description: "Deprecate bta av codec state"
+    bug: "339264791"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
