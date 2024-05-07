@@ -21,6 +21,8 @@
 #include <memory>
 #include <vector>
 
+#include "common/message_loop_thread.h"
+
 namespace bluetooth::audio::asrc {
 
 class SourceAudioHalAsrc {
@@ -36,9 +38,9 @@ class SourceAudioHalAsrc {
   // `burst_delay_ms` helps to ensure that the synchronization with the
   // transmission intervals is done.
 
-  SourceAudioHalAsrc(int channels, int sample_rate, int bit_depth,
-                     int interval_us, int num_burst_buffers = 2,
-                     int burst_delay_ms = 500);
+  SourceAudioHalAsrc(bluetooth::common::MessageLoopThread* thread, int channels,
+                     int sample_rate, int bit_depth, int interval_us,
+                     int num_burst_buffers = 2, int burst_delay_ms = 500);
 
   ~SourceAudioHalAsrc();
 
