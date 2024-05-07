@@ -22,9 +22,9 @@ use bt_topshim::profiles::ProfileConnectionState;
 use bt_topshim::{metrics, topstack};
 use bt_utils::at_command_parser::{calculate_battery_percent, parse_at_command_data};
 use bt_utils::uhid_hfp::{
-    OutputEvent, UHidHfp, BLUETOOTH_TELEPHONY_UHID_REPORT_ID, UHID_INPUT_HOOK_SWITCH,
-    UHID_INPUT_NONE, UHID_INPUT_PHONE_MUTE, UHID_OUTPUT_MUTE, UHID_OUTPUT_NONE,
-    UHID_OUTPUT_OFF_HOOK, UHID_OUTPUT_RING,
+    OutputEvent, UHidHfp, BLUETOOTH_TELEPHONY_UHID_REPORT_ID, UHID_INPUT_DROP,
+    UHID_INPUT_HOOK_SWITCH, UHID_INPUT_NONE, UHID_INPUT_PHONE_MUTE, UHID_OUTPUT_MUTE,
+    UHID_OUTPUT_NONE, UHID_OUTPUT_OFF_HOOK, UHID_OUTPUT_RING,
 };
 use bt_utils::uinput::UInput;
 
@@ -1216,6 +1216,8 @@ impl BluetoothMedia {
             let mut data = UHID_INPUT_NONE;
             if hook {
                 data |= UHID_INPUT_HOOK_SWITCH;
+            } else if self.phone_state.state == CallState::Incoming {
+                data |= UHID_INPUT_DROP;
             }
             // Preserve the muted state when sending the hook switch event.
             if uhid.muted {
