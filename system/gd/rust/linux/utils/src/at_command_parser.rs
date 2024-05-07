@@ -130,7 +130,14 @@ pub fn calculate_battery_percent(at_command: AtCommand) -> Result<u32, String> {
         Some(data) => {
             match data.get(&AtCommandDataType::IPhoneAccevBatteryLevel) {
                 Some(battery_level) => match battery_level.parse::<u32>() {
-                    Ok(level) => return Ok(level * 10),
+                    // The Apple Accessory Design Guidelines indicate
+                    // this will be a value in the range [0, 9]. The
+                    // guidelines do not specify that this maps to
+                    // [10, 100] but that is how other Bluetooth
+                    // stacks interpret it so we do so as well.
+                    // See https://developer.apple.com/accessories/Accessory-Design-Guidelines.pdf
+                    // Section 27.1 HFP Command AT+IPHONEACCEV
+                    Ok(level) => return Ok((level + 1) * 10),
                     Err(e) => return Err(e.to_string()),
                 },
                 None => (),
@@ -428,7 +435,7 @@ mod tests {
         let at_command = parse_at_command_data("AT+IPHONEACCEV=1,1,2".to_string());
         assert!(!at_command.is_err());
         let battery_level = calculate_battery_percent(at_command.unwrap()).unwrap();
-        assert_eq!(battery_level, 20);
+        assert_eq!(battery_level, 30);
 
         // Plantronics - missing args
         let at_command = parse_at_command_data("AT+XEVENT=BATTERY".to_string());
