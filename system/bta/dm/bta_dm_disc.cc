@@ -716,8 +716,11 @@ static void bta_dm_find_services(const RawAddress& bd_addr) {
       (tSDP_DISCOVERY_DB*)osi_malloc(BTA_DM_SDP_DB_SIZE);
 
   log::info("search UUID = {}", uuid.ToString());
-  get_legacy_stack_sdp_api()->service.SDP_InitDiscoveryDb(
-      bta_dm_discovery_cb.p_sdp_db, BTA_DM_SDP_DB_SIZE, 1, &uuid, 0, NULL);
+  if (!get_legacy_stack_sdp_api()->service.SDP_InitDiscoveryDb(
+          bta_dm_discovery_cb.p_sdp_db, BTA_DM_SDP_DB_SIZE, 1, &uuid, 0,
+          NULL)) {
+    log::warn("Unable to initialize SDP service discovery db peer:{}", bd_addr);
+  }
 
   memset(g_disc_raw_data_buf, 0, sizeof(g_disc_raw_data_buf));
   bta_dm_discovery_cb.p_sdp_db->raw_data = g_disc_raw_data_buf;
