@@ -53,6 +53,7 @@
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/l2c_api.h"  // L2CAP_MIN_OFFSET
+#include "stack/include/main_thread.h"
 #include "types/bluetooth/uuid.h"
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
@@ -373,6 +374,7 @@ class HearingAidImpl : public HearingAid {
     if (asrc == nullptr) {
       log::info("Configuring Asha resampler");
       asrc = std::make_unique<bluetooth::audio::asrc::SourceAudioHalAsrc>(
+          /*thread*/ get_main_thread(),
           /*channels*/ 2,
           /*sample_rate*/ codec_in_use == CODEC_G722_24KHZ ? 24000 : 16000,
           /*bit_depth*/ 16,

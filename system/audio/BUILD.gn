@@ -30,6 +30,7 @@ source_set("libbt-audio-asrc") {
   ]
 
   deps = [
+    "//bt/flags:bluetooth_flags_c_lib",
     "//bt/system/gd:gd_default_deps"
   ]
 }
