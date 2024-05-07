@@ -976,13 +976,17 @@ uint32_t gatt_add_sdp_record(const Uuid& uuid, uint16_t start_hdl,
   proto_elem_list[1].params[0] = start_hdl;
   proto_elem_list[1].params[1] = end_hdl;
 
-  get_legacy_stack_sdp_api()->handle.SDP_AddProtocolList(sdp_handle, 2,
-                                                         proto_elem_list);
+  if (!get_legacy_stack_sdp_api()->handle.SDP_AddProtocolList(
+          sdp_handle, 2, proto_elem_list)) {
+    log::warn("Unable to add SDP protocol list for l2cap and att");
+  }
 
   /* Make the service browseable */
   uint16_t list = UUID_SERVCLASS_PUBLIC_BROWSE_GROUP;
-  get_legacy_stack_sdp_api()->handle.SDP_AddUuidSequence(
-      sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &list);
+  if (!get_legacy_stack_sdp_api()->handle.SDP_AddUuidSequence(
+          sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &list)) {
+    log::warn("Unable to add SDP uuid sequence public browse group");
+  }
 
   return (sdp_handle);
 }
