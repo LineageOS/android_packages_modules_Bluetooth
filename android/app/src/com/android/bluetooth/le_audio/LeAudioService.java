@@ -2750,10 +2750,12 @@ public class LeAudioService extends ProfileService {
                 .build();
         filterList.add(filter);
 
-        ScanSettings settings = new ScanSettings.Builder()
-                .setLegacy(false)
-                .setScanMode(ScanSettings.SCAN_MODE_BALANCED)
-                .build();
+        ScanSettings settings =
+                new ScanSettings.Builder()
+                        .setLegacy(false)
+                        .setScanMode(ScanSettings.SCAN_MODE_BALANCED)
+                        .setPhy(BluetoothDevice.PHY_LE_1M)
+                        .build();
 
         try {
             mAudioServersScanner.startScan(filterList, settings, mScanCallback);

@@ -14,12 +14,13 @@ pub const BLUETOOTH_TELEPHONY_UHID_REPORT_ID: u8 = 1;
 pub const UHID_INPUT_NONE: u8 = 0;
 pub const UHID_INPUT_HOOK_SWITCH: u8 = 1 << 0;
 pub const UHID_INPUT_PHONE_MUTE: u8 = 1 << 1;
+pub const UHID_INPUT_DROP: u8 = 1 << 2;
 pub const UHID_OUTPUT_NONE: u8 = 0;
 pub const UHID_OUTPUT_RING: u8 = 1 << 0;
 pub const UHID_OUTPUT_OFF_HOOK: u8 = 1 << 1;
 pub const UHID_OUTPUT_MUTE: u8 = 1 << 2;
 
-const RDESC: [u8; 55] = [
+const RDESC: [u8; 57] = [
     0x05,
     0x0B, // Usage Page (Telephony)
     0x09,
@@ -38,16 +39,20 @@ const RDESC: [u8; 55] = [
     0x20, //   Usage (Hook Switch)
     0x09,
     0x2f, //   Usage (Phone Mute)
+    0x09,
+    0x26, //   Usage (Drop)
     0x75,
     0x01, //   Report Size (1)
     0x95,
-    0x02, //   Report Count (2)
+    0x03, //   Report Count (3)
     0x81,
-    0x23, //   Input
+    //   Input (Data,Var,Abs,No Wrap,Linear,No Preferred State,No Null Position,
+    //          Non-volatile)
+    0x22,
     0x75,
     0x01, //   Report Size (1)
     0x95,
-    0x06, //   Report Count (6)
+    0x05, //   Report Count (5)
     0x81,
     0x01, //   Input
     0x05,
@@ -67,7 +72,9 @@ const RDESC: [u8; 55] = [
     0x95,
     0x03, //   Report Count (3)
     0x91,
-    0x22, //   Output
+    //   Output (Data,Var,Abs,No Wrap,Linear,No Preferred State,
+    //           No Null Position, Non-volatile)
+    0x22,
     0x75,
     0x01, //   Report Size (1)
     0x95,

@@ -22,9 +22,9 @@ use bt_topshim::profiles::ProfileConnectionState;
 use bt_topshim::{metrics, topstack};
 use bt_utils::at_command_parser::{calculate_battery_percent, parse_at_command_data};
 use bt_utils::uhid_hfp::{
-    OutputEvent, UHidHfp, BLUETOOTH_TELEPHONY_UHID_REPORT_ID, UHID_INPUT_HOOK_SWITCH,
-    UHID_INPUT_NONE, UHID_INPUT_PHONE_MUTE, UHID_OUTPUT_MUTE, UHID_OUTPUT_NONE,
-    UHID_OUTPUT_OFF_HOOK, UHID_OUTPUT_RING,
+    OutputEvent, UHidHfp, BLUETOOTH_TELEPHONY_UHID_REPORT_ID, UHID_INPUT_DROP,
+    UHID_INPUT_HOOK_SWITCH, UHID_INPUT_NONE, UHID_INPUT_PHONE_MUTE, UHID_OUTPUT_MUTE,
+    UHID_OUTPUT_NONE, UHID_OUTPUT_OFF_HOOK, UHID_OUTPUT_RING,
 };
 use bt_utils::uinput::UInput;
 
@@ -849,12 +849,14 @@ impl BluetoothMedia {
 
                 if let Some(uhid) = self.uhid.get_mut(&addr) {
                     if volume == 0 && !uhid.muted {
-                        uhid.muted = true;
+                        // We expect the application to send back UHID output report and
+                        // update uhid.mute in dispatch_uhid_hfp_output_callback later.
                         self.uhid_send_phone_mute_input_report(&addr, true);
                     } else if volume > 0 {
                         uhid.volume = volume;
                         if uhid.muted {
-                            uhid.muted = false;
+                            // We expect the application to send back UHID output report and
+                            // update uhid.mute in dispatch_uhid_hfp_output_callback later.
                             self.uhid_send_phone_mute_input_report(&addr, false);
                         }
                     }
@@ -1005,25 +1007,36 @@ impl BluetoothMedia {
                     warn!("Unexpected answer call. phone_ops_enabled and mps_qualification_enabled does not enabled.");
                     return;
                 }
-                self.answer_call_impl();
-                self.uhid_send_hook_switch_input_report(&addr, true);
+                if self.mps_qualification_enabled {
+                    // In qualification mode we expect no application to interact with.
+                    // So we just jump right in to the telephony ops implementation.
+                    let id = BLUETOOTH_TELEPHONY_UHID_REPORT_ID;
+                    let mut data = UHID_OUTPUT_NONE;
+                    data |= UHID_OUTPUT_OFF_HOOK;
+                    self.dispatch_uhid_hfp_output_callback(addr.to_string(), id, data);
+                } else {
+                    // We expect the application to send back UHID output report and
+                    // trigger dispatch_uhid_hfp_output_callback later.
+                    self.uhid_send_hook_switch_input_report(&addr, true);
+                }
             }
             HfpCallbacks::HangupCall(addr) => {
                 if !self.phone_ops_enabled && !self.mps_qualification_enabled {
                     warn!("Unexpected hangup call. phone_ops_enabled and mps_qualification_enabled does not enabled.");
                     return;
                 }
-                if self.should_insert_call_when_sco_start(addr) {
-                    // The devices requiring a +CIEV event are not managed through the telephony commands.
-                    // This allows to prevent to stop the SCO link as there is no command to set it up again.
-                    debug!(
-                        "[{}]: AT+CHUP skipped due to interop workaround",
-                        DisplayAddress(&addr)
-                    );
-                    return;
+                if self.mps_qualification_enabled {
+                    // In qualification mode we expect no application to interact with.
+                    // So we just jump right in to the telephony ops implementation.
+                    let id = BLUETOOTH_TELEPHONY_UHID_REPORT_ID;
+                    let mut data = UHID_OUTPUT_NONE;
+                    data &= !UHID_OUTPUT_OFF_HOOK;
+                    self.dispatch_uhid_hfp_output_callback(addr.to_string(), id, data);
+                } else {
+                    // We expect the application to send back UHID output report and
+                    // trigger dispatch_uhid_hfp_output_callback later.
+                    self.uhid_send_hook_switch_input_report(&addr, false);
                 }
-                self.hangup_call_impl();
-                self.uhid_send_hook_switch_input_report(&addr, false);
             }
             HfpCallbacks::DialCall(number, addr) => {
                 if !self.mps_qualification_enabled {
@@ -1203,6 +1216,8 @@ impl BluetoothMedia {
             let mut data = UHID_INPUT_NONE;
             if hook {
                 data |= UHID_INPUT_HOOK_SWITCH;
+            } else if self.phone_state.state == CallState::Incoming {
+                data |= UHID_INPUT_DROP;
             }
             // Preserve the muted state when sending the hook switch event.
             if uhid.muted {
