@@ -132,7 +132,10 @@ void bta_hd_api_disable(void) {
 
   /* Remove service record */
   if (bta_hd_cb.sdp_handle != 0) {
-    get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(bta_hd_cb.sdp_handle);
+    if (!get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(
+            bta_hd_cb.sdp_handle)) {
+      log::warn("Unable to delete SDP record handle:{}", bta_hd_cb.sdp_handle);
+    };
     bta_sys_remove_uuid(UUID_SERVCLASS_HUMAN_INTERFACE);
   }
 
@@ -189,7 +192,10 @@ void bta_hd_register_act(tBTA_HD_DATA* p_data) {
 
   /* Remove old record if for some reason it's already registered */
   if (bta_hd_cb.sdp_handle != 0) {
-    get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(bta_hd_cb.sdp_handle);
+    if (!get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(
+            bta_hd_cb.sdp_handle)) {
+      log::warn("Unable to delete SDP record handle:{}", bta_hd_cb.sdp_handle);
+    }
   }
 
   bta_hd_cb.use_report_id = use_report_id;
@@ -237,7 +243,10 @@ void bta_hd_unregister_act() {
   HID_DevSetIncomingPolicy(FALSE);
 
   if (bta_hd_cb.sdp_handle != 0) {
-    get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(bta_hd_cb.sdp_handle);
+    if (!get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(
+            bta_hd_cb.sdp_handle)) {
+      log::warn("Unable to delete SDP record handle:{}", bta_hd_cb.sdp_handle);
+    }
   }
 
   bta_hd_cb.sdp_handle = 0;

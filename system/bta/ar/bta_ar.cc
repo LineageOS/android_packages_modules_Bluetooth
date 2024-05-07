@@ -255,8 +255,11 @@ void bta_ar_dereg_avrc(uint16_t service_uuid) {
   if (service_uuid == UUID_SERVCLASS_AV_REM_CTRL_TARGET) {
     if (bta_ar_cb.sdp_tg_handle && mask == bta_ar_cb.tg_registered) {
       bta_ar_cb.tg_registered = 0;
-      get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(
-          bta_ar_cb.sdp_tg_handle);
+      if (!get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(
+              bta_ar_cb.sdp_tg_handle)) {
+        log::warn("Unable to delete SDP record handle:{}",
+                  bta_ar_cb.sdp_tg_handle);
+      }
       bta_ar_cb.sdp_tg_handle = 0;
       bta_sys_remove_uuid(service_uuid);
     }
@@ -266,8 +269,11 @@ void bta_ar_dereg_avrc(uint16_t service_uuid) {
       categories = bta_ar_cb.ct_categories[0] | bta_ar_cb.ct_categories[1];
       if (!categories) {
         /* no CT is still registered - cleaup */
-        get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(
-            bta_ar_cb.sdp_ct_handle);
+        if (get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(
+                bta_ar_cb.sdp_ct_handle)) {
+          log::warn("Unable to delete SDP record handle:{}",
+                    bta_ar_cb.sdp_ct_handle);
+        }
         bta_ar_cb.sdp_ct_handle = 0;
         bta_sys_remove_uuid(service_uuid);
       } else {

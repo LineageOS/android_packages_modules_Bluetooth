@@ -300,8 +300,11 @@ void bta_ag_del_records(tBTA_AG_SCB* p_scb) {
     if (((services & 1) == 1) && ((others & 1) == 0)) {
       log::verbose("bta_ag_del_records {}", i);
       if (bta_ag_cb.profile[i].sdp_handle != 0) {
-        get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(
-            bta_ag_cb.profile[i].sdp_handle);
+        if (!get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(
+                bta_ag_cb.profile[i].sdp_handle)) {
+          log::warn("Unable to delete record sdp_handle:{}",
+                    bta_ag_cb.profile[i].sdp_handle);
+        }
         bta_ag_cb.profile[i].sdp_handle = 0;
       }
       BTA_FreeSCN(bta_ag_cb.profile[i].scn);

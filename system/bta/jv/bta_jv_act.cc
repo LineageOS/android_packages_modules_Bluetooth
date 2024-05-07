@@ -951,7 +951,9 @@ void bta_jv_create_record(uint32_t rfcomm_slot_id) {
 void bta_jv_delete_record(uint32_t handle) {
   if (handle) {
     /* this is a record created by btif layer*/
-    get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(handle);
+    if (!get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(handle)) {
+      log::warn("Unable to delete  SDP record handle:{}", handle);
+    }
   }
 }
 
