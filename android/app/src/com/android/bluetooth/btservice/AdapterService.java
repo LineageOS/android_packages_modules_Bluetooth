@@ -5706,10 +5706,6 @@ public class AdapterService extends Service {
         return mAdapterProperties.getScanMode();
     }
 
-    public String[] getAllowlistedMediaPlayers() {
-        return mAdapterProperties.getAllowlistedMediaPlayers();
-    }
-
     @VisibleForTesting
     BluetoothActivityEnergyInfo reportActivityInfo() {
         if (mAdapterProperties.getState() != BluetoothAdapter.STATE_ON

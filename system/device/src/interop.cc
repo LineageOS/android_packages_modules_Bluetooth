@@ -89,7 +89,6 @@ static const char* INTEROP_STATIC_FILE_PATH =
     return #const;
 
 static list_t* interop_list = NULL;
-static list_t* media_player_list = NULL;
 
 bool interop_is_initialized = false;
 // protects operations on |interop_list|
@@ -201,8 +200,6 @@ static void interop_config_cleanup(void);
 // This function is used to initialize the interop list and load the entries
 // from file
 static void load_config();
-static void interop_database_save_allowlisted_media_players_list(
-    const config_t* config);
 static void interop_database_add_(interop_db_entry_t* db_entry, bool persist);
 static bool interop_database_remove_(interop_db_entry_t* entry);
 static bool interop_database_match(interop_db_entry_t* entry,
@@ -314,8 +311,6 @@ static future_t* interop_clean_up(void) {
   pthread_mutex_lock(&interop_list_lock);
   list_free(interop_list);
   interop_list = NULL;
-  list_free(media_player_list);
-  media_player_list = NULL;
   interop_is_initialized = false;
   pthread_mutex_unlock(&interop_list_lock);
   pthread_mutex_destroy(&interop_list_lock);
@@ -374,7 +369,6 @@ static const char* interop_feature_string_(const interop_feature_t feature) {
     CASE_RETURN_STR(INTEROP_DISABLE_SNIFF_DURING_CALL)
     CASE_RETURN_STR(INTEROP_HID_HOST_LIMIT_SNIFF_INTERVAL)
     CASE_RETURN_STR(INTEROP_DISABLE_REFRESH_ACCEPT_SIG_TIMER)
-    CASE_RETURN_STR(INTEROP_BROWSE_PLAYER_ALLOW_LIST)
     CASE_RETURN_STR(INTEROP_SKIP_INCOMING_STATE)
     CASE_RETURN_STR(INTEROP_NOT_UPDATE_AVRCP_PAUSED_TO_REMOTE)
     CASE_RETURN_STR(INTEROP_PHONE_POLICY_INCREASED_DELAY_CONNECT_OTHER_PROFILES)
@@ -1179,7 +1173,6 @@ static void load_config() {
       }
     }
   }
-  interop_database_save_allowlisted_media_players_list(config_static.get());
   // We no longer need the static config file
   config_static.reset();
 
@@ -1692,39 +1685,4 @@ bool interop_database_remove_addr_lmp_version(const interop_feature_t feature,
     return true;
   }
   return false;
-}
-
-static void delete_media_player_node(void* data) {
-  std::string* key = static_cast<std::string*>(data);
-  delete key;
-}
-
-static void interop_database_save_allowlisted_media_players_list(
-    const config_t* config) {
-  media_player_list = list_new(delete_media_player_node);
-  for (const section_t& sec : config->sections) {
-    if (INTEROP_BROWSE_PLAYER_ALLOW_LIST ==
-        interop_feature_name_to_feature_id(sec.name.c_str())) {
-      log::warn("found feature - {}", sec.name);
-      for (const entry_t& entry : sec.entries) {
-        list_append(media_player_list, (void*)(new std::string(entry.key)));
-      }
-      break;
-    }
-  }
-}
-
-bool interop_get_allowlisted_media_players_list(list_t* p_bl_devices) {
-  if (media_player_list == nullptr) return false;
-
-  const list_node_t* node = list_begin(media_player_list);
-  bool found = false;
-
-  while (node != list_end(media_player_list)) {
-    found = true;
-    std::string* key = (std::string*)list_node(node);
-    list_append(p_bl_devices, (void*)key->c_str());
-    node = list_next(node);
-  }
-  return found;
 }

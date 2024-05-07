@@ -166,7 +166,6 @@ pub enum BtPropertyType {
     Appearance,
     VendorProductInfo,
     // Unimplemented:
-    //  BT_PROPERTY_WL_MEDIA_PLAYERS_LIST,
     //  BT_PROPERTY_REMOTE_ASHA_CAPABILITY,
     //  BT_PROPERTY_REMOTE_ASHA_TRUNCATED_HISYNCID,
     //  BT_PROPERTY_REMOTE_MODEL_NUM,

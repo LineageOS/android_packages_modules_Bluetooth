@@ -191,7 +191,6 @@ class BtPropertyType(enum.IntEnum):
     Appearance = 0x12
     VendorProductInfo = 0x13
     # Unimplemented:
-    #  BT_PROPERTY_WL_MEDIA_PLAYERS_LIST,
     #  BT_PROPERTY_REMOTE_ASHA_CAPABILITY,
     #  BT_PROPERTY_REMOTE_ASHA_TRUNCATED_HISYNCID,
     #  BT_PROPERTY_REMOTE_MODEL_NUM,
