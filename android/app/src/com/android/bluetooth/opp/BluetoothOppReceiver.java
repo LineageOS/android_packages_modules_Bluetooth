@@ -37,6 +37,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothDevicePicker;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
+import android.bluetooth.BluetoothUtils;
 import android.content.BroadcastReceiver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -79,7 +80,10 @@ public class BluetoothOppReceiver extends BroadcastReceiver {
             Log.d(
                     TAG,
                     "Received BT device selected intent, bt device: "
-                            + remoteDevice.getIdentityAddress());
+                            + BluetoothUtils.toAnonymizedAddress(
+                                    Flags.identityAddressNullIfUnknown()
+                                            ? Utils.getBrEdrAddress(remoteDevice)
+                                            : remoteDevice.getIdentityAddress()));
 
             // Insert transfer session record to database
             mOppManager.startTransfer(remoteDevice);
