@@ -1025,15 +1025,6 @@ impl BluetoothMedia {
                     warn!("Unexpected hangup call. phone_ops_enabled and mps_qualification_enabled does not enabled.");
                     return;
                 }
-                if self.should_insert_call_when_sco_start(addr) {
-                    // The devices requiring a +CIEV event are not managed through the telephony commands.
-                    // This allows to prevent to stop the SCO link as there is no command to set it up again.
-                    debug!(
-                        "[{}]: AT+CHUP skipped due to interop workaround",
-                        DisplayAddress(&addr)
-                    );
-                    return;
-                }
                 if self.mps_qualification_enabled {
                     // In qualification mode we expect no application to interact with.
                     // So we just jump right in to the telephony ops implementation.
