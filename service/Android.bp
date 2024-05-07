@@ -196,4 +196,5 @@ android_robolectric_test {
 
     upstream: true,
     test_suites: ["general-tests"],
+    strict_mode: false,
 }
