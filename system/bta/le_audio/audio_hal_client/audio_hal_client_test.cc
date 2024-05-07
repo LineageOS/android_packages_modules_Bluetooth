@@ -216,9 +216,11 @@ class MockLeAudioClientAudioSinkEventReceiver
               (override));
   MOCK_METHOD((void), OnAudioSuspend, (), (override));
   MOCK_METHOD((void), OnAudioResume, (), (override));
-  MOCK_METHOD((void), OnAudioMetadataUpdate,
-              (source_metadata_v7 source_metadata, DsaMode dsa_mode),
-              (override));
+  MOCK_METHOD(
+      (void), OnAudioMetadataUpdate,
+      (const std::vector<struct playback_track_metadata_v7> source_metadata,
+       DsaMode dsa_mode),
+      (override));
 };
 
 class MockAudioHalClientEventReceiver
@@ -226,8 +228,10 @@ class MockAudioHalClientEventReceiver
  public:
   MOCK_METHOD((void), OnAudioSuspend, (), (override));
   MOCK_METHOD((void), OnAudioResume, (), (override));
-  MOCK_METHOD((void), OnAudioMetadataUpdate, (sink_metadata_v7 sink_metadata),
-              (override));
+  MOCK_METHOD(
+      (void), OnAudioMetadataUpdate,
+      (const std::vector<struct record_track_metadata_v7> sink_metadata),
+      (override));
 };
 
 class LeAudioClientAudioTest : public ::testing::Test {
