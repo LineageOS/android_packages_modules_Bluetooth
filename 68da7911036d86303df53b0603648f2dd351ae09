@@ -33,6 +33,23 @@
       "message": "looking at the diff this seems like a lot of the code got simply refactored and changed a bit, I\u0027ll spend some time finding the actual diffs",
       "revId": "68da7911036d86303df53b0603648f2dd351ae09",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "ea19316b_941050fb",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 33722
+      },
+      "writtenOn": "2024-05-07T12:53:39Z",
+      "side": 1,
+      "message": "Hi, I understand that you are all busy and i appreciate the work that you are doing.\nHowever, it\u0027s been a over a week since there\u0027s been any action on this ticket.\nThe issue is affecting many people on multiple roms.\n\nIs there any chance someone will fix BT, or do we need to wait until QPR3?\nIf so, when will that be integrated?\nAny info you can provide would be greatly appreciated.\nThanks,\n\nRon",
+      "revId": "68da7911036d86303df53b0603648f2dd351ae09",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
