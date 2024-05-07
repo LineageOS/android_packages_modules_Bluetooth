@@ -953,18 +953,24 @@ uint32_t gatt_add_sdp_record(const Uuid& uuid, uint16_t start_hdl,
       UINT8_TO_BE_STREAM(p, (UUID_DESC_TYPE << 3) | SIZE_FOUR_BYTES);
       uint32_t tmp = uuid.As32Bit();
       UINT32_TO_BE_STREAM(p, tmp);
-      get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
-          sdp_handle, ATTR_ID_SERVICE_CLASS_ID_LIST, DATA_ELE_SEQ_DESC_TYPE,
-          (uint32_t)(p - buff), buff);
+      if (!get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+              sdp_handle, ATTR_ID_SERVICE_CLASS_ID_LIST, DATA_ELE_SEQ_DESC_TYPE,
+              (uint32_t)(p - buff), buff)) {
+        log::warn("Unable to add SDP attribute for 32 bit uuid handle:{}",
+                  sdp_handle);
+      }
       break;
     }
 
     case Uuid::kNumBytes128:
       UINT8_TO_BE_STREAM(p, (UUID_DESC_TYPE << 3) | SIZE_SIXTEEN_BYTES);
       ARRAY_TO_BE_STREAM(p, uuid.To128BitBE().data(), (int)Uuid::kNumBytes128);
-      get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
-          sdp_handle, ATTR_ID_SERVICE_CLASS_ID_LIST, DATA_ELE_SEQ_DESC_TYPE,
-          (uint32_t)(p - buff), buff);
+      if (!get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
+              sdp_handle, ATTR_ID_SERVICE_CLASS_ID_LIST, DATA_ELE_SEQ_DESC_TYPE,
+              (uint32_t)(p - buff), buff)) {
+        log::warn("Unable to add SDP attribute for 128 bit uuid handle:{}",
+                  sdp_handle);
+      }
       break;
   }
 
