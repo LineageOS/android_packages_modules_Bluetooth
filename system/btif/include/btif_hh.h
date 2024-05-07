@@ -111,6 +111,7 @@ typedef struct {
   uint8_t dev_handle;
   RawAddress bd_addr;
   tBTA_HH_ATTR_MASK attr_mask;
+  bool reconnect_allowed;
 } btif_hh_added_device_t;
 
 /**
@@ -134,7 +135,8 @@ extern btif_hh_cb_t btif_hh_cb;
 
 btif_hh_device_t* btif_hh_find_connected_dev_by_handle(uint8_t handle);
 void btif_hh_remove_device(RawAddress bd_addr);
-bool btif_hh_add_added_dev(const RawAddress& bda, tBTA_HH_ATTR_MASK attr_mask);
+bool btif_hh_add_added_dev(const RawAddress& bda, tBTA_HH_ATTR_MASK attr_mask,
+                           bool reconnect_allowed);
 bt_status_t btif_hh_virtual_unplug(const RawAddress* bd_addr);
 void btif_hh_disconnect(RawAddress* bd_addr);
 void btif_hh_setreport(btif_hh_device_t* p_dev, bthh_report_type_t r_type,
