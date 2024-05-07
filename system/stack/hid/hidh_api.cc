@@ -81,6 +81,7 @@ tHID_STATUS HID_HostGetSDPRecord(const RawAddress& addr,
     hh_cb.sdp_busy = true;
     return HID_SUCCESS;
   } else {
+    log::warn("Unable to start SDP service search request peer:{}", addr);
     log_counter_metrics(
         android::bluetooth::CodePathCounterKeyEnum::HIDH_ERR_NO_RESOURCES_SDP,
         1);

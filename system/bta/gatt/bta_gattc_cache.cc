@@ -438,6 +438,8 @@ static tGATT_STATUS bta_gattc_sdp_service_disc(uint16_t conn_id,
   if (!get_legacy_stack_sdp_api()->service.SDP_ServiceSearchAttributeRequest2(
           p_server_cb->server_bda, cb_data->p_sdp_db, &bta_gattc_sdp_callback,
           const_cast<const void*>(static_cast<void*>(cb_data)))) {
+    log::warn("Unable to start SDP service search attribute request peer:{}",
+              p_server_cb->server_bda);
     osi_free(cb_data);
     return GATT_ERROR;
   }
