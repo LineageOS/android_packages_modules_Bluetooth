@@ -1,0 +1,12 @@
+package: "com.android.bluetooth.flags"
+container: "com.android.btservices"
+
+flag {
+    name: "verify_handle_before_add_accept_list"
+    namespace: "bluetooth"
+    description: "Verify there is no valid handle before adding address to the accept list"
+    bug: "338112215"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
