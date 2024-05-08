@@ -348,8 +348,6 @@ TEST_F(InteropTest, test_lookup_miss) {
       interop_match_addr(INTEROP_HID_HOST_LIMIT_SNIFF_INTERVAL, &test_address));
   EXPECT_FALSE(interop_match_addr(INTEROP_DISABLE_REFRESH_ACCEPT_SIG_TIMER,
                                   &test_address));
-  EXPECT_FALSE(
-      interop_match_addr(INTEROP_BROWSE_PLAYER_ALLOW_LIST, &test_address));
   EXPECT_FALSE(interop_match_addr(INTEROP_SKIP_INCOMING_STATE, &test_address));
   EXPECT_FALSE(interop_match_addr(INTEROP_NOT_UPDATE_AVRCP_PAUSED_TO_REMOTE,
                                   &test_address));
@@ -521,7 +519,6 @@ TEST_F(InteropTest, test_name_miss) {
       interop_match_name(INTEROP_HID_HOST_LIMIT_SNIFF_INTERVAL, "TEST"));
   EXPECT_FALSE(
       interop_match_name(INTEROP_DISABLE_REFRESH_ACCEPT_SIG_TIMER, "TEST"));
-  EXPECT_FALSE(interop_match_name(INTEROP_BROWSE_PLAYER_ALLOW_LIST, "TEST"));
   EXPECT_FALSE(interop_match_name(INTEROP_SKIP_INCOMING_STATE, "TEST"));
   EXPECT_FALSE(
       interop_match_name(INTEROP_NOT_UPDATE_AVRCP_PAUSED_TO_REMOTE, "TEST"));

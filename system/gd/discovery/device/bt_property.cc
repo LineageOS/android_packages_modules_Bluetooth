@@ -46,7 +46,6 @@ std::string bt_property_type_text(const bt_property_type_t& type) {
     CASE_RETURN_TEXT(BT_PROPERTY_REMOTE_IS_COORDINATED_SET_MEMBER);
     CASE_RETURN_TEXT(BT_PROPERTY_APPEARANCE);
     CASE_RETURN_TEXT(BT_PROPERTY_VENDOR_PRODUCT_INFO);
-    CASE_RETURN_TEXT(BT_PROPERTY_WL_MEDIA_PLAYERS_LIST);
     CASE_RETURN_TEXT(BT_PROPERTY_REMOTE_ASHA_CAPABILITY);
     CASE_RETURN_TEXT(BT_PROPERTY_REMOTE_ASHA_TRUNCATED_HISYNCID);
     CASE_RETURN_TEXT(BT_PROPERTY_REMOTE_MODEL_NUM);
@@ -212,9 +211,6 @@ std::string bt_property_text(const bt_property_t& property) {
           ((bt_vendor_product_info_t*)property.val)->vendor_id,
           ((bt_vendor_product_info_t*)property.val)->product_id,
           ((bt_vendor_product_info_t*)property.val)->version);
-
-    case BT_PROPERTY_WL_MEDIA_PLAYERS_LIST:
-      return base::StringPrintf("type:%s", bt_property_type_text(property.type).c_str());
 
     case BT_PROPERTY_REMOTE_ASHA_CAPABILITY:
       return base::StringPrintf(
