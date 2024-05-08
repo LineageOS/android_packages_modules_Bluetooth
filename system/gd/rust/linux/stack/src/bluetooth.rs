@@ -870,15 +870,23 @@ impl Bluetooth {
         if self.is_connectable == mode {
             return true;
         }
-        self.is_connectable = mode;
         if self.discoverable_mode != BtDiscMode::NonDiscoverable {
             // Discoverable always implies connectable. Don't affect the discoverable mode for now
             // and the connectable mode would be restored when discoverable becomes off.
+            self.is_connectable = mode;
             return true;
         }
-        self.intf.lock().unwrap().set_adapter_property(BluetoothProperty::AdapterScanMode(
-            if mode { BtScanMode::Connectable } else { BtScanMode::None_ },
-        )) == 0
+        let status =
+            self.intf.lock().unwrap().set_adapter_property(BluetoothProperty::AdapterScanMode(
+                if mode { BtScanMode::Connectable } else { BtScanMode::None_ },
+            ));
+        let status = BtStatus::from(status as u32);
+        if status != BtStatus::Success {
+            warn!("Failed to set connectable mode: {:?}", status);
+            return false;
+        }
+        self.is_connectable = mode;
+        return true;
     }
 
     /// Returns adapter's discoverable mode.
@@ -1335,13 +1343,7 @@ pub(crate) trait BtifBluetoothCallbacks {
     fn discovery_state(&mut self, state: BtDiscoveryState) {}
 
     #[btif_callback(SspRequest)]
-    fn ssp_request(
-        &mut self,
-        remote_addr: RawAddress,
-        variant: BtSspVariant,
-        passkey: u32,
-    ) {
-    }
+    fn ssp_request(&mut self, remote_addr: RawAddress, variant: BtSspVariant, passkey: u32) {}
 
     #[btif_callback(BondState)]
     fn bond_state(
@@ -1701,12 +1703,7 @@ impl BtifBluetoothCallbacks for Bluetooth {
         }
     }
 
-    fn ssp_request(
-        &mut self,
-        remote_addr: RawAddress,
-        variant: BtSspVariant,
-        passkey: u32,
-    ) {
+    fn ssp_request(&mut self, remote_addr: RawAddress, variant: BtSspVariant, passkey: u32) {
         // Accept the Just-Works pairing that we initiated, reject otherwise.
         if variant == BtSspVariant::Consent {
             let initiated_by_us = Some(remote_addr.clone()) == self.active_pairing_address;
