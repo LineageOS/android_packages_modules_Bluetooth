@@ -53,6 +53,7 @@ cc_library_static {
         "gatt/gatt_shim.cc",
         "hfp/hfp_shim.cc",
         "le_audio/le_audio_shim.cc",
+        "vc/vc_shim.cc",
     ],
     generated_headers: [
         "BluetoothGeneratedDumpsysDataSchema_h",
@@ -89,6 +90,7 @@ gensrcs {
         "src/profiles/gatt.rs",
         "src/profiles/hfp.rs",
         "src/profiles/le_audio.rs",
+        "src/profiles/vc.rs",
     ],
     output_extension: "rs.h",
     export_include_dirs: ["."],
@@ -106,6 +108,7 @@ gensrcs {
         "src/profiles/gatt.rs",
         "src/profiles/hfp.rs",
         "src/profiles/le_audio.rs",
+        "src/profiles/vc.rs",
     ],
     output_extension: "cc",
     export_include_dirs: ["."],
