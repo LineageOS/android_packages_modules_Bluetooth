@@ -114,6 +114,7 @@ public class BrowseTreeTest {
 
     @Test
     public void findBrowseNodeByIDForDevice() {
+        mSetFlagsRule.disableFlags(Flags.FLAG_RANDOMIZE_DEVICE_LEVEL_MEDIA_IDS);
         BrowseTree browseTree = new BrowseTree(mTestDevice);
         final String deviceId = BrowseTree.ROOT + mTestDevice.getAddress().toString();
         assertThat(browseTree.findBrowseNodeByID(deviceId)).isEqualTo(browseTree.mRootNode);
