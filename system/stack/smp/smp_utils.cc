@@ -364,12 +364,7 @@ bool smp_send_msg_to_L2CAP(const RawAddress& rem_bda, BT_HDR* p_toL2CAP) {
                   p_toL2CAP->data + p_toL2CAP->offset, p_toL2CAP->len,
                   smp_cb.smp_over_br /* is_over_br */);
 
-#ifdef TARGET_FLOSS
-  if (true)
-#else
-  if (com::android::bluetooth::flags::l2cap_tx_complete_cb_info())
-#endif
-  {
+  if (com::android::bluetooth::flags::l2cap_tx_complete_cb_info()) {
     /* Unacked needs to be incremented before calling SendFixedChnlData */
     smp_cb.total_tx_unacked++;
     l2cap_ret = L2CA_SendFixedChnlData(fixed_cid, rem_bda, p_toL2CAP);
