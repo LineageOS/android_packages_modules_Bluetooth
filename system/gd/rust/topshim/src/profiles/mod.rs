@@ -35,3 +35,4 @@ pub mod hid_host;
 pub mod le_audio;
 pub mod sdp;
 pub mod socket;
+pub mod vc;
