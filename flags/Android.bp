@@ -16,6 +16,7 @@ aconfig_declarations {
         "avrcp_controller.aconfig",
         "bta_dm.aconfig",
         "btif_dm.aconfig",
+        "btm_ble.aconfig",
         "connectivity.aconfig",
         "device_iot_config.aconfig",
         "did.aconfig",
