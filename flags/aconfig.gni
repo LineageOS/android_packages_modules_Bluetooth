@@ -20,21 +20,16 @@
 #   sources: aconfig source files
 #   package: aconfig package
 template("aconfig") {
-  forward_variables_from(invoker,
-                         [
-                           "sources",
-                           "package",
-                         ])
-  assert(defined(sources), "sources must be set")
-  assert(defined(package), "package must be set")
+  assert(defined(invoker.sources), "sources must be set")
+  assert(defined(invoker.package), "package must be set")
 
   outdir = rebase_path(target_gen_dir)
 
-  aconfig_cpp_file_name = string_replace(package, ".", "_")
+  aconfig_cpp_file_name = string_replace(invoker.package, ".", "_")
 
   aconfig_declarations = []
 
-  foreach(source, sources) {
+  foreach(source, invoker.sources) {
     source = rebase_path(source)
     aconfig_declarations += [ "--declarations=${source}" ]
   }
@@ -46,10 +41,11 @@ template("aconfig") {
     args = [
              "aconfig",
              "create-cache",
-             "--package=${package}",
+             "--package=${invoker.package}",
              "--cache=${outdir}/${aconfig_cache}",
            ] + aconfig_declarations
 
+    sources = invoker.sources
     outputs = [ "${outdir}/${aconfig_cache}" ]
   }
 
@@ -76,7 +72,6 @@ template("aconfig") {
   }
 
   static_library(target_name) {
-    sources = []
     sources = [ "${outdir}/${aconfig_cpp_file_name}.cc" ]
     deps = [ ":${target_name}_cpp" ] + invoker.deps
     all_dependent_configs = [ ":${all_dependent_config_name}" ]
