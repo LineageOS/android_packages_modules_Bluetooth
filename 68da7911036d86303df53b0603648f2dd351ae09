@@ -50,6 +50,23 @@
       "message": "Hi, I understand that you are all busy and i appreciate the work that you are doing.\nHowever, it\u0027s been a over a week since there\u0027s been any action on this ticket.\nThe issue is affecting many people on multiple roms.\n\nIs there any chance someone will fix BT, or do we need to wait until QPR3?\nIf so, when will that be integrated?\nAny info you can provide would be greatly appreciated.\nThanks,\n\nRon",
       "revId": "68da7911036d86303df53b0603648f2dd351ae09",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "9030fb19_19e9e0bf",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 16185
+      },
+      "writtenOn": "2024-05-08T14:39:22Z",
+      "side": 1,
+      "message": "please try this patch: https://android-review.googlesource.com/c/platform/packages/modules/Bluetooth/+/2899207",
+      "revId": "68da7911036d86303df53b0603648f2dd351ae09",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
