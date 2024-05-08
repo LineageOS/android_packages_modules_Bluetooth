@@ -411,18 +411,6 @@ struct interop_feature_name_to_feature_id {
 extern struct interop_feature_name_to_feature_id
     interop_feature_name_to_feature_id;
 
-// Name: interop_get_allowlisted_media_players_list
-// Params: list_t* p_bl_devices
-// Return: bool
-struct interop_get_allowlisted_media_players_list {
-  static bool return_value;
-  std::function<bool(list_t* p_bl_devices)> body{
-      [](list_t* /* p_bl_devices */) { return return_value; }};
-  bool operator()(list_t* p_bl_devices) { return body(p_bl_devices); };
-};
-extern struct interop_get_allowlisted_media_players_list
-    interop_get_allowlisted_media_players_list;
-
 // Name: interop_match_addr
 // Params: const interop_feature_t feature, const RawAddress* addr
 // Return: bool

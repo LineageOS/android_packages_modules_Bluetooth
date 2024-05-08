@@ -230,9 +230,6 @@ typedef enum {
   // Disable refresh_accept_signalling_timer
   INTEROP_DISABLE_REFRESH_ACCEPT_SIG_TIMER,
 
-  // list of allowlisted media players
-  INTEROP_BROWSE_PLAYER_ALLOW_LIST,
-
   // skip sending incoming state to denylisted devices
   INTEROP_SKIP_INCOMING_STATE,
 
@@ -246,7 +243,8 @@ typedef enum {
   // connect other profiles timeout to 10s to make sure there is no
   // connection rejection from remote because of connection collision.
   INTEROP_PHONE_POLICY_INCREASED_DELAY_CONNECT_OTHER_PROFILES,
-  // Disable remote name requst for some devices.
+
+  // Disable remote name request for some devices.
   // The public address of these devices are same as the Random address in ADV.
   // Then will get name by LE_Create_connection, actually fails,
   // but will block pairing.
@@ -414,11 +412,6 @@ bool interop_database_match_version(const interop_feature_t feature,
 // latency for SSR stored for particular remote device is returned.
 bool interop_match_addr_get_max_lat(const interop_feature_t feature,
                                     const RawAddress* addr, uint16_t* max_lat);
-
-// This API is used for name based lookups for allowlisted media players.
-// If allowlisted media players list found it will assign the media players list
-// pointer to the argument passed and  return true else return false.
-bool interop_get_allowlisted_media_players_list(list_t* p_bl_devices);
 
 // Return feature's enum value according to feature'name.
 int interop_feature_name_to_feature_id(const char* feature_name);

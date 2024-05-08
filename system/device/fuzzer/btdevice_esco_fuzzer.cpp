@@ -65,7 +65,6 @@ constexpr interop_feature_t kInteropFeature[] = {
     interop_feature_t::INTEROP_DISABLE_SNIFF_DURING_CALL,
     interop_feature_t::INTEROP_HID_HOST_LIMIT_SNIFF_INTERVAL,
     interop_feature_t::INTEROP_DISABLE_REFRESH_ACCEPT_SIG_TIMER,
-    interop_feature_t::INTEROP_BROWSE_PLAYER_ALLOW_LIST,
     interop_feature_t::INTEROP_SKIP_INCOMING_STATE,
     interop_feature_t::INTEROP_NOT_UPDATE_AVRCP_PAUSED_TO_REMOTE,
     interop_feature_t::
