@@ -96,8 +96,10 @@ uint32_t pan_register_with_sdp(uint16_t uuid, const char* p_name,
       LANGUAGE_BASE_ID);
 
   /* Profile descriptor list */
-  get_legacy_stack_sdp_api()->handle.SDP_AddProfileDescriptorList(
-      sdp_handle, uuid, PAN_PROFILE_VERSION);
+  if (!get_legacy_stack_sdp_api()->handle.SDP_AddProfileDescriptorList(
+          sdp_handle, uuid, PAN_PROFILE_VERSION)) {
+    log::warn("Unable to add SDP PAN profile version");
+  }
 
   /* Service Name */
   get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
