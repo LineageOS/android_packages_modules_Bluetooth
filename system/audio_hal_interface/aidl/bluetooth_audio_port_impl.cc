@@ -17,9 +17,11 @@
 #include "bluetooth_audio_port_impl.h"
 
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <vector>
 
+#include "android/binder_ibinder_platform.h"
 #include "btif/include/btif_common.h"
 #include "common/stop_watch_legacy.h"
 
@@ -224,6 +226,17 @@ PresentationPosition::TimeSpec BluetoothAudioPortImpl::timespec_convert_to_hal(
     const timespec& ts) {
   return {.tvSec = static_cast<int64_t>(ts.tv_sec),
           .tvNSec = static_cast<int64_t>(ts.tv_nsec)};
+}
+
+// Overriding create binder and inherit RT from caller.
+// In our case, the caller is the AIDL session control, so we match the priority
+// of the AIDL session / AudioFlinger writer thread.
+ndk::SpAIBinder BluetoothAudioPortImpl::createBinder() {
+  auto binder = BnBluetoothAudioPort::createBinder();
+  if (com::android::bluetooth::flags::audio_port_binder_inherit_rt()) {
+    AIBinder_setInheritRt(binder.get(), true);
+  }
+  return binder;
 }
 
 }  // namespace aidl

@@ -63,6 +63,8 @@ class BluetoothAudioPortImpl : public BnBluetoothAudioPort {
 
  private:
   ndk::ScopedAStatus switchCodec(bool isLowLatency);
+
+  ndk::SpAIBinder createBinder() override;
 };
 
 }  // namespace aidl
