@@ -2105,45 +2105,6 @@ void btif_on_did_received(RawAddress bd_addr, uint8_t vendor_id_src,
       BT_STATUS_SUCCESS, bd_addr, 1, &prop_did);
 }
 
-static void btif_dm_update_allowlisted_media_players() {
-  uint8_t i = 0, buf_len = 0;
-  bt_property_t wlplayers_prop;
-  list_t* wl_players = list_new(nullptr);
-  if (!wl_players) {
-    log::error("Unable to allocate space for allowlist players");
-    return;
-  }
-  log::debug("btif_dm_update_allowlisted_media_players");
-
-  wlplayers_prop.len = 0;
-  if (!interop_get_allowlisted_media_players_list(wl_players)) {
-    log::debug("Allowlisted media players not found");
-    list_free(wl_players);
-    return;
-  }
-
-  /*find the total number of bytes and allocate memory */
-  for (list_node_t* node = list_begin(wl_players); node != list_end(wl_players);
-       node = list_next(node)) {
-    buf_len += (strlen((char*)list_node(node)) + 1);
-  }
-  char* players_list = (char*)osi_malloc(buf_len);
-  for (list_node_t* node = list_begin(wl_players); node != list_end(wl_players);
-       node = list_next(node)) {
-    char* name;
-    name = (char*)list_node(node);
-    memcpy(&players_list[i], list_node(node), strlen(name) + 1);
-    i += (strlen(name) + 1);
-  }
-  wlplayers_prop.type = BT_PROPERTY_WL_MEDIA_PLAYERS_LIST;
-  wlplayers_prop.len = buf_len;
-  wlplayers_prop.val = players_list;
-
-  GetInterfaceToProfiles()->events->invoke_adapter_properties_cb(
-      BT_STATUS_SUCCESS, 1, &wlplayers_prop);
-  list_free(wl_players);
-}
-
 void BTIF_dm_report_inquiry_status_change(tBTM_INQUIRY_STATE status) {
   btif_dm_inquiry_in_progress =
       (status == tBTM_INQUIRY_STATE::BTM_INQUIRY_STARTED);
@@ -2207,7 +2168,6 @@ void BTIF_dm_enable() {
   */
   btif_storage_load_bonded_devices();
   bluetooth::bqr::EnableBtQualityReport(true);
-  btif_dm_update_allowlisted_media_players();
   btif_enable_bluetooth_evt();
 }
 
