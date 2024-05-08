@@ -26,6 +26,7 @@ import android.annotation.RequiresPermission;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHidHost;
 import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothUuid;
 import android.bluetooth.IBluetoothHidHost;
 import android.content.AttributionSource;
@@ -1096,6 +1097,8 @@ public class HidHostService extends ProfileService {
             connect(device);
         } else if (connectionPolicy == BluetoothProfile.CONNECTION_POLICY_FORBIDDEN) {
             disconnect(device, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
+            MetricsLogger.getInstance()
+                    .count(BluetoothProtoEnums.HIDH_COUNT_CONNECTION_POLICY_DISABLED, 1);
         }
         return true;
     }
