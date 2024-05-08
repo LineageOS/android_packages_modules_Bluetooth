@@ -3346,32 +3346,31 @@ public class AdapterService extends Service {
         }
 
         @Override
-        public boolean registerBluetoothConnectionCallback(
+        public void registerBluetoothConnectionCallback(
                 IBluetoothConnectionCallback callback, AttributionSource source) {
             AdapterService service = getService();
             if (service == null
                     || !callerIsSystemOrActiveOrManagedUser(
                             service, TAG, "registerBluetoothConnectionCallback")
                     || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
-                return false;
+                return;
             }
             enforceBluetoothPrivilegedPermission(service);
             service.mBluetoothConnectionCallbacks.add(callback);
-            return true;
         }
 
         @Override
-        public boolean unregisterBluetoothConnectionCallback(
+        public void unregisterBluetoothConnectionCallback(
                 IBluetoothConnectionCallback callback, AttributionSource source) {
             AdapterService service = getService();
             if (service == null
                     || !callerIsSystemOrActiveOrManagedUser(
                             service, TAG, "unregisterBluetoothConnectionCallback")
                     || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
-                return false;
+                return;
             }
             enforceBluetoothPrivilegedPermission(service);
-            return service.mBluetoothConnectionCallbacks.remove(callback);
+            service.mBluetoothConnectionCallbacks.remove(callback);
         }
 
         @Override
