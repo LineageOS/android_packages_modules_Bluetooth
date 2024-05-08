@@ -168,52 +168,40 @@ struct btav_a2dp_codec_config_t {
   int64_t codec_specific_3;  // Codec-specific value 3
   int64_t codec_specific_4;  // Codec-specific value 4
 
-  std::string ToString() const {
-    std::string codec_name_str;
-
+  std::string CodecNameStr() const {
     switch (codec_type) {
       case BTAV_A2DP_CODEC_INDEX_SOURCE_SBC:
-        codec_name_str = "SBC";
-        break;
+        return "SBC";
       case BTAV_A2DP_CODEC_INDEX_SOURCE_AAC:
-        codec_name_str = "AAC";
-        break;
+        return "AAC";
       case BTAV_A2DP_CODEC_INDEX_SOURCE_APTX:
-        codec_name_str = "aptX";
-        break;
+        return "aptX";
       case BTAV_A2DP_CODEC_INDEX_SOURCE_APTX_HD:
-        codec_name_str = "aptX HD";
-        break;
+        return "aptX HD";
       case BTAV_A2DP_CODEC_INDEX_SOURCE_LDAC:
-        codec_name_str = "LDAC";
-        break;
+        return "LDAC";
       case BTAV_A2DP_CODEC_INDEX_SINK_SBC:
-        codec_name_str = "SBC (Sink)";
-        break;
+        return "SBC (Sink)";
       case BTAV_A2DP_CODEC_INDEX_SINK_AAC:
-        codec_name_str = "AAC (Sink)";
-        break;
+        return "AAC (Sink)";
       case BTAV_A2DP_CODEC_INDEX_SINK_LDAC:
-        codec_name_str = "LDAC (Sink)";
-        break;
+        return "LDAC (Sink)";
       case BTAV_A2DP_CODEC_INDEX_SOURCE_LC3:
-        codec_name_str = "LC3";
-        break;
+        return "LC3";
       case BTAV_A2DP_CODEC_INDEX_SINK_OPUS:
-        codec_name_str = "Opus (Sink)";
-        break;
+        return "Opus (Sink)";
       case BTAV_A2DP_CODEC_INDEX_SOURCE_OPUS:
-        codec_name_str = "Opus";
-        break;
+        return "Opus";
       case BTAV_A2DP_CODEC_INDEX_MAX:
-        codec_name_str = "Unknown(CODEC_INDEX_MAX)";
-        break;
+        return "Unknown(CODEC_INDEX_MAX)";
       case BTAV_A2DP_CODEC_INDEX_SOURCE_EXT_MIN:
       case BTAV_A2DP_CODEC_INDEX_SINK_EXT_MIN:
-        codec_name_str = "Unknown(CODEC_EXT)";
-        break;
+        return "Unknown(CODEC_EXT)";
     }
+    return "Unknown";
+  }
 
+  std::string ToString() const {
     std::string sample_rate_str;
     AppendCapability(sample_rate_str,
                      (sample_rate == BTAV_A2DP_CODEC_SAMPLE_RATE_NONE), "NONE");
@@ -267,7 +255,7 @@ struct btav_a2dp_codec_config_t {
                      (channel_mode & BTAV_A2DP_CODEC_CHANNEL_MODE_STEREO),
                      "STEREO");
 
-    return "codec: " + codec_name_str +
+    return "codec: " + CodecNameStr() +
            " priority: " + std::to_string(codec_priority) +
            " sample_rate: " + sample_rate_str +
            " bits_per_sample: " + bits_per_sample_str +
@@ -276,6 +264,18 @@ struct btav_a2dp_codec_config_t {
            " codec_specific_2: " + std::to_string(codec_specific_2) +
            " codec_specific_3: " + std::to_string(codec_specific_3) +
            " codec_specific_4: " + std::to_string(codec_specific_4);
+  }
+
+  static std::string PrintCodecs(std::vector<btav_a2dp_codec_config_t> codecs) {
+    std::ostringstream oss;
+    for (size_t i = 0; i < codecs.size(); i++) {
+      oss << codecs[i].CodecNameStr();
+      if (i != (codecs.size() - 1)) {
+        oss << ", ";
+      }
+    }
+
+    return oss.str();
   }
 
  private:
