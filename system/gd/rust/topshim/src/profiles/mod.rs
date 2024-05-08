@@ -28,6 +28,7 @@ pub enum ProfileConnectionState {
 
 pub mod a2dp;
 pub mod avrcp;
+pub mod csis;
 pub mod gatt;
 pub mod hf_client;
 pub mod hfp;
