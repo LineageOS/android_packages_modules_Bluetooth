@@ -78,8 +78,16 @@ typedef enum {
   AUDIO_USAGE_ANNOUNCEMENT = 1003,
 } audio_usage_t;
 
+// Flags that never appear on their own.
+enum {
+  AUDIO_DEVICE_BIT_IN = 0x80000000u,
+  AUDIO_DEVICE_BIT_DEFAULT = 0x40000000u,
+};
+
+// The exact device types are not of interest at the moment.
 typedef enum {
-  AUDIO_DEVICE_DEFAULT = 0,
+  AUDIO_DEVICE_OUT_DEFAULT = AUDIO_DEVICE_BIT_DEFAULT,
+  AUDIO_DEVICE_IN_DEFAULT = AUDIO_DEVICE_BIT_IN | AUDIO_DEVICE_BIT_DEFAULT,
 } audio_devices_t;
 
 // The "channel mask" enum is comprised of discrete channels,
