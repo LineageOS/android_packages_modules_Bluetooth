@@ -1,6 +1,7 @@
 import("//bt/flags/aconfig.gni")
 
 aconfig("bluetooth_flags_c_lib") {
+  # LINT.IfChange
   sources = [
     "a2dp.aconfig",
     "asha.aconfig",
@@ -10,6 +11,7 @@ aconfig("bluetooth_flags_c_lib") {
     "bta_dm.aconfig",
     "btif_dm.aconfig",
     "connectivity.aconfig",
+    "device_iot_config.aconfig",
     "did.aconfig",
     "discovery_service.aconfig",
     "dumpsys.aconfig",
@@ -23,6 +25,7 @@ aconfig("bluetooth_flags_c_lib") {
     "leaudio.aconfig",
     "map.aconfig",
     "mapclient.aconfig",
+    "mcp.aconfig",
     "metric.aconfig",
     "opp.aconfig",
     "pairing.aconfig",
@@ -37,6 +40,7 @@ aconfig("bluetooth_flags_c_lib") {
     "vcp.aconfig",
     "vsc.aconfig",
   ]
+  # LINT.ThenChange(/flags/Android.bp)
   package = "com.android.bluetooth.flags"
   deps = [ "//bt/floss/libflags:libflags" ]
 }
