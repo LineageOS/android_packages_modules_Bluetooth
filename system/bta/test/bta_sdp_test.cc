@@ -17,14 +17,9 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include <string>
-
 #include "bta/dm/bta_dm_disc_int.h"
 #include "bta/test/bta_test_fixtures.h"
 #include "osi/include/allocator.h"
-#include "test/common/main_handler.h"
-#include "test/mock/mock_stack_btm_interface.h"
-#include "test/mock/mock_stack_gatt_api.h"
 
 void BTA_dm_on_hw_on();
 void BTA_dm_on_hw_off();
@@ -73,7 +68,5 @@ TEST_F(BtaSdpRegisteredTest, bta_dm_sdp_result_SDP_SUCCESS) {
       bluetooth::legacy::testing::bta_dm_discovery_cb();
   discovery_cb.service_index = BTA_MAX_SERVICE_ID;
 
-  mock_btm_client_interface.security.BTM_SecReadDevName =
-      [](const RawAddress& bd_addr) -> const char* { return kName; };
   bluetooth::legacy::testing::bta_dm_sdp_result(SDP_SUCCESS);
 }
