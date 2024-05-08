@@ -38,19 +38,15 @@
 #include "common/circular_buffer.h"
 #include "common/init_flags.h"
 #include "common/strings.h"
-#include "device/include/interop.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/dumpsys.h"
 #include "os/logging/log_adapter.h"
 #include "osi/include/allocator.h"
 #include "stack/btm/btm_int_types.h"  // TimestampedStringCircularBuffer
-#include "stack/btm/neighbor_inquiry.h"
-#include "stack/include/bt_dev_class.h"
 #include "stack/include/bt_name.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_log_history.h"
-#include "stack/include/btm_sec_api.h"  // BTM_IsRemoteNameKnown
 #include "stack/include/gap_api.h"      // GAP_BleReadPeerPrefConnParams
 #include "stack/include/hidh_api.h"
 #include "stack/include/main_thread.h"
@@ -66,8 +62,6 @@
 using bluetooth::Uuid;
 using namespace bluetooth::legacy::stack::sdp;
 using namespace bluetooth;
-
-tBTM_CONTRL_STATE bta_dm_pm_obtain_controller_state(void);
 
 namespace {
 constexpr char kBtmLogTag[] = "SDP";
