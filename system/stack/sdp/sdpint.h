@@ -245,7 +245,7 @@ void sdp_disconnect(tCONN_CB* p_ccb, tSDP_REASON reason);
 
 void sdp_conn_timer_timeout(void* data);
 
-tCONN_CB* sdp_conn_originate(const RawAddress& p_bd_addr);
+tCONN_CB* sdp_conn_originate(const RawAddress& bd_addr);
 
 /* Functions provided by sdp_utils.cc
  */
@@ -297,7 +297,7 @@ void sdpu_set_avrc_target_version(const tSDP_ATTRIBUTE* p_attr,
 void sdpu_set_avrc_target_features(const tSDP_ATTRIBUTE* p_attr,
                                    const RawAddress* bdaddr,
                                    uint16_t profile_version);
-uint16_t sdpu_get_active_ccb_cid(const RawAddress& remote_bd_addr);
+uint16_t sdpu_get_active_ccb_cid(const RawAddress& bd_addr);
 bool sdpu_process_pend_ccb_same_cid(tCONN_CB& ccb);
 bool sdpu_process_pend_ccb_new_cid(tCONN_CB& ccb);
 void sdpu_clear_pend_ccb(tCONN_CB& ccb);
