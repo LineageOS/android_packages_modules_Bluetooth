@@ -1258,7 +1258,12 @@ static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status,
       }
       break;
     case HCI_SET_CONN_ENCRYPTION:
-      if (status != HCI_SUCCESS) {
+      STREAM_TO_UINT16(handle, p_cmd);
+      if (status == HCI_ERR_KEY_MISSING && handle != HCI_INVALID_HANDLE){
+        // Received HCI_ERR_KEY_MISSING and failed to send file via bt to another device
+        btm_sec_encrypt_change(handle, HCI_SUCCESS, false);
+      }
+      else if (status != HCI_SUCCESS) {
         // Device refused to start encryption
         // This is treated as an encryption failure
         btm_sec_encrypt_change(HCI_INVALID_HANDLE, hci_status, false);
