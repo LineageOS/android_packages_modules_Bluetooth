@@ -4963,6 +4963,7 @@ void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported,
 
   if (!(p_dev_rec->sec_rec.sec_flags & BTM_SEC_NAME_KNOWN) ||
       p_dev_rec->is_originator) {
+    p_dev_rec->sec_rec.security_required |= BTM_SEC_OUT_AUTHENTICATE;
     tBTM_STATUS btm_status = btm_sec_execute_procedure(p_dev_rec);
     if (btm_status != BTM_CMD_STARTED) {
       LOG_WARN("Security procedure not started! status:%s",
