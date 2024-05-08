@@ -19,7 +19,6 @@
 
 #include "bta/dm/bta_dm_disc_int.h"
 #include "bta/test/bta_test_fixtures.h"
-#include "osi/include/allocator.h"
 
 void BTA_dm_on_hw_on();
 void BTA_dm_on_hw_off();
@@ -51,14 +50,6 @@ class BtaSdpRegisteredTest : public BtaSdpTest {
   void SetUp() override { BtaSdpTest::SetUp(); }
 
   void TearDown() override { BtaSdpTest::TearDown(); }
-
-  tBTA_SYS_REG bta_sys_reg = {
-      .evt_hdlr = [](const BT_HDR_RIGID* p_msg) -> bool {
-        osi_free((void*)p_msg);
-        return false;
-      },
-      .disable = []() {},
-  };
 };
 
 TEST_F(BtaSdpTest, nop) {}
