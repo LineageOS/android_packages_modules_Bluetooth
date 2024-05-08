@@ -21,6 +21,7 @@
 #include "device/include/device_iot_config.h"
 
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 #include <ctype.h>
 #include <string.h>
 #include <time.h>
@@ -29,7 +30,6 @@
 #include <mutex>
 #include <string>
 
-#include "common/init_flags.h"
 #include "device_iot_config_int.h"
 #include "internal_include/bt_target.h"
 #include "os/log.h"
@@ -47,11 +47,11 @@ std::mutex config_lock;  // protects operations on |config|.
 std::unique_ptr<config_t> config;
 alarm_t* config_timer;
 
-using bluetooth::common::InitFlags;
 using namespace bluetooth;
 
 bool device_iot_config_has_section(const std::string& section) {
-  if (!InitFlags::IsDeviceIotConfigLoggingEnabled()) return false;
+  if (!com::android::bluetooth::flags::device_iot_config_logging())
+    return false;
 
   log::assert_that(config != NULL, "assert failed: config != NULL");
 
@@ -61,7 +61,8 @@ bool device_iot_config_has_section(const std::string& section) {
 
 bool device_iot_config_exist(const std::string& section,
                              const std::string& key) {
-  if (!InitFlags::IsDeviceIotConfigLoggingEnabled()) return false;
+  if (!com::android::bluetooth::flags::device_iot_config_logging())
+    return false;
 
   log::assert_that(config != NULL, "assert failed: config != NULL");
 
@@ -71,7 +72,8 @@ bool device_iot_config_exist(const std::string& section,
 
 bool device_iot_config_get_int(const std::string& section,
                                const std::string& key, int& value) {
-  if (!InitFlags::IsDeviceIotConfigLoggingEnabled()) return false;
+  if (!com::android::bluetooth::flags::device_iot_config_logging())
+    return false;
 
   log::assert_that(config != NULL, "assert failed: config != NULL");
 
@@ -84,7 +86,8 @@ bool device_iot_config_get_int(const std::string& section,
 
 bool device_iot_config_set_int(const std::string& section,
                                const std::string& key, int value) {
-  if (!InitFlags::IsDeviceIotConfigLoggingEnabled()) return false;
+  if (!com::android::bluetooth::flags::device_iot_config_logging())
+    return false;
 
   log::assert_that(config != NULL, "assert failed: config != NULL");
 
@@ -101,7 +104,8 @@ bool device_iot_config_set_int(const std::string& section,
 
 bool device_iot_config_int_add_one(const std::string& section,
                                    const std::string& key) {
-  if (!InitFlags::IsDeviceIotConfigLoggingEnabled()) return false;
+  if (!com::android::bluetooth::flags::device_iot_config_logging())
+    return false;
 
   log::assert_that(config != NULL, "assert failed: config != NULL");
 
@@ -121,7 +125,8 @@ bool device_iot_config_int_add_one(const std::string& section,
 
 bool device_iot_config_get_hex(const std::string& section,
                                const std::string& key, int& value) {
-  if (!InitFlags::IsDeviceIotConfigLoggingEnabled()) return false;
+  if (!com::android::bluetooth::flags::device_iot_config_logging())
+    return false;
 
   log::assert_that(config != NULL, "assert failed: config != NULL");
 
@@ -144,7 +149,8 @@ bool device_iot_config_get_hex(const std::string& section,
 bool device_iot_config_set_hex(const std::string& section,
                                const std::string& key, int value,
                                int byte_num) {
-  if (!InitFlags::IsDeviceIotConfigLoggingEnabled()) return false;
+  if (!com::android::bluetooth::flags::device_iot_config_logging())
+    return false;
 
   log::assert_that(config != NULL, "assert failed: config != NULL");
 
@@ -170,7 +176,8 @@ bool device_iot_config_set_hex(const std::string& section,
 bool device_iot_config_set_hex_if_greater(const std::string& section,
                                           const std::string& key, int value,
                                           int byte_num) {
-  if (!InitFlags::IsDeviceIotConfigLoggingEnabled()) return false;
+  if (!com::android::bluetooth::flags::device_iot_config_logging())
+    return false;
 
   int stored_value = 0;
   bool ret = device_iot_config_get_hex(section, key, stored_value);
@@ -182,7 +189,8 @@ bool device_iot_config_set_hex_if_greater(const std::string& section,
 bool device_iot_config_get_str(const std::string& section,
                                const std::string& key, char* value,
                                int* size_bytes) {
-  if (!InitFlags::IsDeviceIotConfigLoggingEnabled()) return false;
+  if (!com::android::bluetooth::flags::device_iot_config_logging())
+    return false;
 
   log::assert_that(config != NULL, "assert failed: config != NULL");
   log::assert_that(value != NULL, "assert failed: value != NULL");
@@ -203,7 +211,8 @@ bool device_iot_config_get_str(const std::string& section,
 bool device_iot_config_set_str(const std::string& section,
                                const std::string& key,
                                const std::string& value) {
-  if (!InitFlags::IsDeviceIotConfigLoggingEnabled()) return false;
+  if (!com::android::bluetooth::flags::device_iot_config_logging())
+    return false;
 
   log::assert_that(config != NULL, "assert failed: config != NULL");
 
@@ -219,7 +228,8 @@ bool device_iot_config_set_str(const std::string& section,
 bool device_iot_config_get_bin(const std::string& section,
                                const std::string& key, uint8_t* value,
                                size_t* length) {
-  if (!InitFlags::IsDeviceIotConfigLoggingEnabled()) return false;
+  if (!com::android::bluetooth::flags::device_iot_config_logging())
+    return false;
 
   log::assert_that(config != NULL, "assert failed: config != NULL");
   log::assert_that(value != NULL, "assert failed: value != NULL");
@@ -253,7 +263,7 @@ bool device_iot_config_get_bin(const std::string& section,
 
 size_t device_iot_config_get_bin_length(const std::string& section,
                                         const std::string& key) {
-  if (!InitFlags::IsDeviceIotConfigLoggingEnabled()) return 0;
+  if (!com::android::bluetooth::flags::device_iot_config_logging()) return 0;
 
   log::assert_that(config != NULL, "assert failed: config != NULL");
 
@@ -269,7 +279,8 @@ size_t device_iot_config_get_bin_length(const std::string& section,
 bool device_iot_config_set_bin(const std::string& section,
                                const std::string& key, const uint8_t* value,
                                size_t length) {
-  if (!InitFlags::IsDeviceIotConfigLoggingEnabled()) return false;
+  if (!com::android::bluetooth::flags::device_iot_config_logging())
+    return false;
 
   const char* lookup = "0123456789abcdef";
 
@@ -305,7 +316,8 @@ bool device_iot_config_set_bin(const std::string& section,
 
 bool device_iot_config_remove(const std::string& section,
                               const std::string& key) {
-  if (!InitFlags::IsDeviceIotConfigLoggingEnabled()) return false;
+  if (!com::android::bluetooth::flags::device_iot_config_logging())
+    return false;
 
   log::assert_that(config != NULL, "assert failed: config != NULL");
 
@@ -314,7 +326,7 @@ bool device_iot_config_remove(const std::string& section,
 }
 
 void device_iot_config_flush(void) {
-  if (!InitFlags::IsDeviceIotConfigLoggingEnabled()) return;
+  if (!com::android::bluetooth::flags::device_iot_config_logging()) return;
 
   log::assert_that(config != NULL, "assert failed: config != NULL");
   log::assert_that(config_timer != NULL, "assert failed: config_timer != NULL");
@@ -327,7 +339,7 @@ void device_iot_config_flush(void) {
 }
 
 bool device_iot_config_clear(void) {
-  if (!InitFlags::IsDeviceIotConfigLoggingEnabled()) return true;
+  if (!com::android::bluetooth::flags::device_iot_config_logging()) return true;
 
   log::assert_that(config != NULL, "assert failed: config != NULL");
   log::assert_that(config_timer != NULL, "assert failed: config_timer != NULL");
@@ -349,7 +361,7 @@ bool device_iot_config_clear(void) {
 }
 
 void device_debug_iot_config_dump(int fd) {
-  if (!InitFlags::IsDeviceIotConfigLoggingEnabled()) return;
+  if (!com::android::bluetooth::flags::device_iot_config_logging()) return;
 
   dprintf(fd, "\nBluetooth Iot Config:\n");
 

@@ -34,7 +34,8 @@ namespace bluetooth::audio::asrc {
 class SourceAudioHalAsrcTest : public SourceAudioHalAsrc {
  public:
   SourceAudioHalAsrcTest(int channels, int bitdepth)
-      : SourceAudioHalAsrc(channels, 48000, bitdepth, 10000) {}
+      : SourceAudioHalAsrc(&message_loop_thread, channels, 48000, bitdepth,
+                           10000) {}
 
   template <typename T>
   void Resample(double ratio, const T* in, size_t in_length, size_t* in_count,
