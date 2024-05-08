@@ -93,9 +93,11 @@ uint32_t pan_register_with_sdp(uint16_t uuid, const char* p_name,
       (uint8_t*)(pan_proto_elem_data + 2));
 
   /* Language base */
-  get_legacy_stack_sdp_api()->handle.SDP_AddLanguageBaseAttrIDList(
-      sdp_handle, LANG_ID_CODE_ENGLISH, LANG_ID_CHAR_ENCODE_UTF8,
-      LANGUAGE_BASE_ID);
+  if (!get_legacy_stack_sdp_api()->handle.SDP_AddLanguageBaseAttrIDList(
+          sdp_handle, LANG_ID_CODE_ENGLISH, LANG_ID_CHAR_ENCODE_UTF8,
+          LANGUAGE_BASE_ID)) {
+    log::warn("Unable to add SDP language base attribute");
+  }
 
   /* Profile descriptor list */
   if (!get_legacy_stack_sdp_api()->handle.SDP_AddProfileDescriptorList(
