@@ -100,6 +100,7 @@ cc_test {
         "liblog",
     ],
     static_libs: [
+        "bluetooth_flags_c_lib",
         "libbluetooth-types",
         "libbluetooth_log",
         "libbt-platform-protos-lite",
@@ -108,7 +109,9 @@ cc_test {
         "libbtcore",
         "libbtdevice",
         "libchrome",
+        "libflagtest",
         "libgmock",
+        "server_configurable_flags",
     ],
     header_libs: ["libbluetooth_headers"],
     cflags: ["-Wno-unused-parameter"],
