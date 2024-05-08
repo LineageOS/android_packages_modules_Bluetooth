@@ -67,6 +67,24 @@
       "message": "please try this patch: https://android-review.googlesource.com/c/platform/packages/modules/Bluetooth/+/2899207",
       "revId": "68da7911036d86303df53b0603648f2dd351ae09",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "f567d96f_9ca78f41",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 6360
+      },
+      "writtenOn": "2024-05-08T16:18:56Z",
+      "side": 1,
+      "message": "This patch works.",
+      "parentUuid": "9030fb19_19e9e0bf",
+      "revId": "68da7911036d86303df53b0603648f2dd351ae09",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
