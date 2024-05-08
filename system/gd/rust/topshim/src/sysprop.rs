@@ -66,6 +66,9 @@ pub enum PropertyBool {
     // bluetooth.core.le
     LeAdvMonRtlQuirk,
     LeAdvMonQcaQuirk,
+
+    // bluetooth.le_audio
+    LeAudioEnableLeAudioOnly,
 }
 
 impl Into<(CString, bool)> for PropertyBool {
@@ -74,6 +77,9 @@ impl Into<(CString, bool)> for PropertyBool {
         let (key, default_value) = match self {
             PropertyBool::LeAdvMonRtlQuirk => ("bluetooth.core.le.adv_mon_rtl_quirk", false),
             PropertyBool::LeAdvMonQcaQuirk => ("bluetooth.core.le.adv_mon_qca_quirk", false),
+            PropertyBool::LeAudioEnableLeAudioOnly => {
+                ("bluetooth.le_audio.enable_le_audio_only", false)
+            }
         };
 
         (CString::new(key).expect("CString::new failed on sysprop key"), default_value)
