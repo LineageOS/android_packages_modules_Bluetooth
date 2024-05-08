@@ -3198,6 +3198,11 @@ void btm_sec_encrypt_change(uint16_t handle, tHCI_STATUS status,
   const tBT_TRANSPORT transport =
       BTM_IsBleConnection(handle) ? BT_TRANSPORT_LE : BT_TRANSPORT_BR_EDR;
 
+  /* Without authenticating with the other device, we hit HCI_ERR_KEY_MISSING */
+  LOG_INFO("starting authentication");
+  p_dev_rec->sec_rec.sec_state = BTM_SEC_STATE_AUTHENTICATING;
+  btsnd_hcic_auth_request(p_dev_rec->hci_handle);
+
   LOG_DEBUG(
       "Security Manager encryption change request hci_status:%s"
       " request:%s state:%s sec_flags:0x%x",
