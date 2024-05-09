@@ -37,11 +37,10 @@ import com.android.internal.annotations.VisibleForTesting;
 import java.util.List;
 
 /**
- * Defines system calls that is used by state machine/service to either send or receive
- * messages from the Android System.
+ * Defines system calls that is used by state machine/service to either send or receive messages
+ * from the Android System.
  */
-@VisibleForTesting
-public class HeadsetSystemInterface {
+class HeadsetSystemInterface {
     private static final String TAG = HeadsetSystemInterface.class.getSimpleName();
 
     private final HeadsetService mHeadsetService;
@@ -78,7 +77,7 @@ public class HeadsetSystemInterface {
     }
 
     /**
-     * Get audio manager. Most audio manager oprations are pass through and therefore are not
+     * Get audio manager. Most audio manager operations are pass through and therefore are not
      * individually managed by this class
      *
      * @return audio manager for setting audio parameters
@@ -232,7 +231,7 @@ public class HeadsetSystemInterface {
     /**
      * Get the phone number of this device without incall service
      *
-     * @return emptry if unavailable
+     * @return empty if unavailable
      */
     @RequiresPermission(android.Manifest.permission.MODIFY_PHONE_STATE)
     private String getNumberWithoutInCallService() {

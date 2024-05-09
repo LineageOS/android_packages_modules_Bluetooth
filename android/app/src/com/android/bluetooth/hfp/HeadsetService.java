@@ -138,11 +138,11 @@ public class HeadsetService extends ProfileService {
     private final Looper mStateMachinesLooper;
     private final Handler mStateMachinesThreadHandler;
     private final HandlerThread mStateMachinesThread;
+    // This is also used as a lock for shared data in HeadsetService
+    private final HeadsetSystemInterface mSystemInterface;
 
     private int mMaxHeadsetConnections = 1;
     private BluetoothDevice mActiveDevice;
-    // This is also used as a lock for shared data in HeadsetService
-    private HeadsetSystemInterface mSystemInterface;
     private boolean mAudioRouteAllowed = true;
     // Indicates whether SCO audio needs to be forced to open regardless ANY OTHER restrictions
     private boolean mForceScoAudio;
@@ -156,7 +156,6 @@ public class HeadsetService extends ProfileService {
     // Timeout when voice recognition is started by remote device
     @VisibleForTesting static int sStartVrTimeoutMs = 5000;
     private ArrayList<StateMachineTask> mPendingClccResponses = new ArrayList<>();
-    private boolean mStarted;
     private static HeadsetService sHeadsetService;
 
     @VisibleForTesting boolean mIsAptXSwbEnabled = false;
@@ -191,23 +190,6 @@ public class HeadsetService extends ProfileService {
             mStateMachinesLooper = mStateMachinesThread.getLooper();
         }
         mStateMachinesThreadHandler = new Handler(mStateMachinesLooper);
-    }
-
-    public static boolean isEnabled() {
-        return BluetoothProperties.isProfileHfpAgEnabled().orElse(false);
-    }
-
-    @Override
-    public IProfileServiceBinder initBinder() {
-        return new BluetoothHeadsetBinder(this);
-    }
-
-    @Override
-    public void start() {
-        Log.i(TAG, "start()");
-        if (mStarted) {
-            throw new IllegalStateException("start() called twice");
-        }
 
         setComponentAvailable(HFP_AG_IN_CALL_SERVICE, true);
 
@@ -233,12 +215,6 @@ public class HeadsetService extends ProfileService {
                     mIsAptXSwbEnabled,
                     mActiveDevice);
         }
-        // Step 5: Check if state machine table is empty, crash if not
-        if (mStateMachines.size() > 0) {
-            throw new IllegalStateException(
-                    "start(): mStateMachines is not empty, " + mStateMachines.size()
-                            + " is already created. Was stop() called properly?");
-        }
         // Step 6: Setup broadcast receivers
         IntentFilter filter = new IntentFilter();
         filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
@@ -246,21 +222,20 @@ public class HeadsetService extends ProfileService {
         filter.addAction(AudioManager.ACTION_VOLUME_CHANGED);
         filter.addAction(BluetoothDevice.ACTION_CONNECTION_ACCESS_REPLY);
         registerReceiver(mHeadsetReceiver, filter);
-        // Step 7: Mark service as started
-        mStarted = true;
+    }
+
+    public static boolean isEnabled() {
+        return BluetoothProperties.isProfileHfpAgEnabled().orElse(false);
+    }
+
+    @Override
+    public IProfileServiceBinder initBinder() {
+        return new BluetoothHeadsetBinder(this);
     }
 
     @Override
     public void stop() {
         Log.i(TAG, "stop()");
-        if (!mStarted) {
-            Log.w(TAG, "stop() called before start()");
-            // Still return true because it is considered "stopped" and doesn't have any functional
-            // impact on the user
-            return;
-        }
-        // Step 7: Mark service as stopped
-        mStarted = false;
         // Step 6: Tear down broadcast receivers
         unregisterReceiver(mHeadsetReceiver);
         synchronized (mStateMachines) {
@@ -322,7 +297,7 @@ public class HeadsetService extends ProfileService {
      * @return True if the object can accept binder calls, False otherwise
      */
     public boolean isAlive() {
-        return isAvailable() && mStarted;
+        return isAvailable();
     }
 
     /**
@@ -2391,7 +2366,6 @@ public class HeadsetService extends ProfileService {
             ProfileService.println(sb, "mVirtualCallStarted: " + mVirtualCallStarted);
             ProfileService.println(sb, "mDialingOutTimeoutEvent: " + mDialingOutTimeoutEvent);
             ProfileService.println(sb, "mForceScoAudio: " + mForceScoAudio);
-            ProfileService.println(sb, "mStarted: " + mStarted);
             ProfileService.println(sb, "AudioManager.isBluetoothScoOn(): " + isScoOn);
             ProfileService.println(sb, "Telecom.isInCall(): " + mSystemInterface.isInCall());
             ProfileService.println(sb, "Telecom.isRinging(): " + mSystemInterface.isRinging());
