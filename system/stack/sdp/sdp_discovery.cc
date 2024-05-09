@@ -53,7 +53,7 @@ static void process_service_search_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
                                             uint8_t* p_reply_end);
 static uint8_t* save_attr_seq(tCONN_CB* p_ccb, uint8_t* p, uint8_t* p_msg_end);
 static tSDP_DISC_REC* add_record(tSDP_DISCOVERY_DB* p_db,
-                                 const RawAddress& p_bda);
+                                 const RawAddress& bd_addr);
 static uint8_t* add_attr(uint8_t* p, uint8_t* p_end, tSDP_DISCOVERY_DB* p_db,
                          tSDP_DISC_REC* p_rec, uint16_t attr_id,
                          tSDP_DISC_ATTR* p_parent_attr, uint8_t nest_level);
@@ -783,7 +783,7 @@ static uint8_t* save_attr_seq(tCONN_CB* p_ccb, uint8_t* p, uint8_t* p_msg_end) {
  * Returns          pointer to next byte in data stream
  *
  ******************************************************************************/
-tSDP_DISC_REC* add_record(tSDP_DISCOVERY_DB* p_db, const RawAddress& p_bda) {
+tSDP_DISC_REC* add_record(tSDP_DISCOVERY_DB* p_db, const RawAddress& bd_addr) {
   tSDP_DISC_REC* p_rec;
 
   /* See if there is enough space in the database */
@@ -796,7 +796,7 @@ tSDP_DISC_REC* add_record(tSDP_DISCOVERY_DB* p_db, const RawAddress& p_bda) {
   p_rec->p_first_attr = NULL;
   p_rec->p_next_rec = NULL;
 
-  p_rec->remote_bd_addr = p_bda;
+  p_rec->remote_bd_addr = bd_addr;
 
   /* Add the record to the end of chain */
   if (!p_db->p_first_rec)
