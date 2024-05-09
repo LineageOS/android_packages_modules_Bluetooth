@@ -95,6 +95,7 @@ import android.os.Message;
 import android.os.ParcelUuid;
 import android.os.Parcelable;
 import android.os.PowerManager;
+import android.os.Process;
 import android.os.RemoteCallbackList;
 import android.os.RemoteException;
 import android.os.SystemClock;
@@ -2249,8 +2250,13 @@ public class AdapterService extends Service {
             // Post on the main handler to be sure the cleanup has completed before calling exit
             mService.mHandler.post(
                     () -> {
-                        Log.i(TAG, "killBluetoothProcess: Calling System.exit");
-                        System.exit(0);
+                        if (Flags.killInsteadOfExit()) {
+                            Log.i(TAG, "killBluetoothProcess: Calling killProcess(myPid())");
+                            Process.killProcess(Process.myPid());
+                        } else {
+                            Log.i(TAG, "killBluetoothProcess: Calling System.exit");
+                            System.exit(0);
+                        }
                     });
         }
 
