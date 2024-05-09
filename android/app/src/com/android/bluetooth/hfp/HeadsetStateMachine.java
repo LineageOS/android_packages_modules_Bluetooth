@@ -20,6 +20,8 @@ import static android.Manifest.permission.BLUETOOTH_CONNECT;
 
 import static com.android.modules.utils.build.SdkLevel.isAtLeastU;
 
+import static java.util.Objects.requireNonNull;
+
 import android.annotation.RequiresPermission;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothAssignedNumbers;
@@ -84,9 +86,8 @@ import java.util.Scanner;
  *                           V      |
  *                           (AudioOn)
  */
-@VisibleForTesting
-public class HeadsetStateMachine extends StateMachine {
-    private static final String TAG = "HeadsetStateMachine";
+class HeadsetStateMachine extends StateMachine {
+    private static final String TAG = HeadsetStateMachine.class.getSimpleName();
 
     static final int CONNECT = 1;
     static final int DISCONNECT = 2;
@@ -123,8 +124,6 @@ public class HeadsetStateMachine extends StateMachine {
     private static final HeadsetAgIndicatorEnableState DEFAULT_AG_INDICATOR_ENABLE_STATE =
             new HeadsetAgIndicatorEnableState(true, true, true, true);
 
-    private final BluetoothDevice mDevice;
-
     // State machine states
     private final Disconnected mDisconnected = new Disconnected();
     private final Connecting mConnecting = new Connecting();
@@ -137,11 +136,12 @@ public class HeadsetStateMachine extends StateMachine {
     private HeadsetStateBase mCurrentState;
 
     // Run time dependencies
+    private final BluetoothDevice mDevice;
     private final HeadsetService mHeadsetService;
     private final AdapterService mAdapterService;
     private final HeadsetNativeInterface mNativeInterface;
     private final HeadsetSystemInterface mSystemInterface;
-    private DatabaseManager mDatabaseManager;
+    private final DatabaseManager mDatabaseManager;
 
     // Runtime states
     @VisibleForTesting
@@ -201,22 +201,19 @@ public class HeadsetStateMachine extends StateMachine {
     private HeadsetStateMachine(BluetoothDevice device, Looper looper,
             HeadsetService headsetService, AdapterService adapterService,
             HeadsetNativeInterface nativeInterface, HeadsetSystemInterface systemInterface) {
-        super(TAG, Objects.requireNonNull(looper, "looper cannot be null"));
+        super(TAG, requireNonNull(looper));
 
         // Let the logging framework enforce the log level. TAG is set above in the parent
         // constructor.
         setDbg(true);
 
-        mDevice = Objects.requireNonNull(device, "device cannot be null");
-        mHeadsetService = Objects.requireNonNull(headsetService, "headsetService cannot be null");
-        mNativeInterface =
-                Objects.requireNonNull(nativeInterface, "nativeInterface cannot be null");
-        mSystemInterface =
-                Objects.requireNonNull(systemInterface, "systemInterface cannot be null");
-        mAdapterService = Objects.requireNonNull(adapterService, "AdapterService cannot be null");
-        mDatabaseManager = Objects.requireNonNull(
-            AdapterService.getAdapterService().getDatabase(),
-            "DatabaseManager cannot be null when HeadsetClientStateMachine is created");
+        mDevice = requireNonNull(device);
+        mHeadsetService = requireNonNull(headsetService);
+        mNativeInterface = requireNonNull(nativeInterface);
+        mSystemInterface = requireNonNull(systemInterface);
+        mAdapterService = requireNonNull(adapterService);
+        mDatabaseManager = requireNonNull(adapterService.getDatabase());
+
         mDeviceSilenced = false;
 
         BluetoothSinkAudioPolicy storedAudioPolicy =
@@ -1662,7 +1659,7 @@ public class HeadsetStateMachine extends StateMachine {
      * @return device in focus
      */
     @VisibleForTesting
-    public synchronized BluetoothDevice getDevice() {
+    public BluetoothDevice getDevice() {
         return mDevice;
     }
 

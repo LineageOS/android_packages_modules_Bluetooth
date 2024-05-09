@@ -95,13 +95,4 @@ public class HeadsetObjectsFactory {
     public HeadsetSystemInterface makeSystemInterface(HeadsetService service) {
         return new HeadsetSystemInterface(service);
     }
-
-    /**
-     * Get a singleton native interface
-     *
-     * @return the singleton native interface
-     */
-    public HeadsetNativeInterface getNativeInterface() {
-        return HeadsetNativeInterface.getInstance();
-    }
 }
