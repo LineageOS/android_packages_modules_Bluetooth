@@ -240,10 +240,10 @@ class BluetoothManagerService {
         @Override
         public String toString() {
             return timeToLog(mTimestamp)
-                    + ("\tPackage [" + mPackageName + "]")
+                    + (" \tPackage [" + mPackageName + "]")
                     + " requested to"
                     + (" [" + (mEnable ? "Enable" : "Disable") + (mIsBle ? "Ble" : "") + "]")
-                    + (".\tReason is " + getEnableDisableReasonString(mReason));
+                    + (". \tReason is " + getEnableDisableReasonString(mReason));
         }
 
         long getTimestamp() {
