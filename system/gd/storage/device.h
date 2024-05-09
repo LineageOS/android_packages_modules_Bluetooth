@@ -27,6 +27,7 @@
 #include "hci/address_with_type.h"
 #include "hci/class_of_device.h"
 #include "hci/enum_helper.h"
+#include "hci/uuid.h"
 #include "storage/config_cache.h"
 #include "storage/config_cache_helper.h"
 #include "storage/config_keys.h"
@@ -192,6 +193,8 @@ class Device {
         return static_cast<hci::DeviceType>(
             value | GetDeviceType().value_or(hci::DeviceType::UNKNOWN));
       });
+  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(
+      ServiceUuids, std::vector<hci::Uuid>, BTIF_STORAGE_KEY_REMOTE_SERVICE);
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(ManufacturerCode, uint16_t, "Manufacturer");
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(LmpVersion, uint8_t, "LmpVer");
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(LmpSubVersion, uint16_t, "LmpSubVer");
