@@ -154,6 +154,12 @@ enum tBTA_HH_SERVICE_STATE {
   BTA_HH_SERVICE_DISCOVERED,
 };
 
+enum tBTA_HH_AVAILABLE {
+  BTA_HH_UNKNOWN = 0,
+  BTA_HH_AVAILABLE,
+  BTA_HH_UNAVAILABLE
+};
+
 typedef struct {
   tBTA_HH_SERVICE_STATE state;
   uint8_t srvc_inst_id;
@@ -168,7 +174,7 @@ typedef struct {
   uint8_t* rpt_map;
   uint16_t ext_rpt_ref;
   tBTA_HH_DEV_DESCR descriptor;
-  bool is_headtracker;
+  tBTA_HH_AVAILABLE headtracker_support;
 } tBTA_HH_LE_HID_SRVC;
 
 /* convert a HID handle to the LE CB index */
