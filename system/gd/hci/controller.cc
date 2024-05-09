@@ -33,7 +33,9 @@
 #include "os/log.h"
 #include "os/metrics.h"
 #include "os/system_properties.h"
+#if TARGET_FLOSS
 #include "sysprops/sysprops_module.h"
+#endif
 
 namespace bluetooth {
 namespace hci {
@@ -1537,7 +1539,9 @@ const ModuleFactory Controller::Factory = ModuleFactory([]() { return new Contro
 
 void Controller::ListDependencies(ModuleList* list) const {
   list->add<hci::HciLayer>();
+#if TARGET_FLOSS
   list->add<sysprops::SyspropsModule>();
+#endif
 }
 
 void Controller::Start() {

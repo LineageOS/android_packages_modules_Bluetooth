@@ -15,6 +15,10 @@
  */
 #pragma once
 
+#if !defined(TARGET_FLOSS)
+#error "sysprops_module is supposed to be FLOSS specific"
+#endif
+
 #include "module.h"
 
 namespace bluetooth {
