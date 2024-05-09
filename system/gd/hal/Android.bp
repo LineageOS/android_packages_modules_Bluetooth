@@ -21,6 +21,8 @@ filegroup {
 filegroup {
     name: "BluetoothHalTestSources",
     srcs: [
+        "hci_hal_android.cc",
+        "hci_hal_android_test.cc",
         "snoop_logger_socket_test.cc",
         "snoop_logger_socket_thread_test.cc",
         "snoop_logger_test.cc",
@@ -37,7 +39,9 @@ filegroup {
 filegroup {
     name: "BluetoothHalSources_hci_android_hidl",
     srcs: [
-        "hci_hal_android_hidl.cc",
+        "hci_backend_aidl.cc",
+        "hci_backend_hidl.cc",
+        "hci_hal_android.cc",
     ],
 }
 
@@ -45,13 +49,6 @@ filegroup {
     name: "BluetoothHalTestSources_hci_host",
     srcs: [
         "hci_hal_host_test.cc",
-    ],
-}
-
-filegroup {
-    name: "BluetoothHalTestSources_hci_android_hidl",
-    srcs: [
-        "hci_hal_android_hidl_test.cc",
     ],
 }
 
