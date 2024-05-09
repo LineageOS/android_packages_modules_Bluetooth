@@ -161,10 +161,6 @@ bool interop_match_addr_get_max_lat(const interop_feature_t feature,
   return localIopMock->InteropMatchAddrGetMaxLat(feature, addr, max_lat);
 }
 
-bool interop_get_allowlisted_media_players_list(list_t* p_bl_devices) {
-  return localIopMock->InteropGetAllowlistedMediaPlayersList(p_bl_devices);
-}
-
 int interop_feature_name_to_feature_id(const char* feature_name) {
   return localIopMock->InteropFeatureNameToFeatureId(feature_name);
 }

@@ -38,19 +38,15 @@
 #include "common/circular_buffer.h"
 #include "common/init_flags.h"
 #include "common/strings.h"
-#include "device/include/interop.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/dumpsys.h"
 #include "os/logging/log_adapter.h"
 #include "osi/include/allocator.h"
 #include "stack/btm/btm_int_types.h"  // TimestampedStringCircularBuffer
-#include "stack/btm/neighbor_inquiry.h"
-#include "stack/include/bt_dev_class.h"
 #include "stack/include/bt_name.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_log_history.h"
-#include "stack/include/btm_sec_api.h"  // BTM_IsRemoteNameKnown
 #include "stack/include/gap_api.h"      // GAP_BleReadPeerPrefConnParams
 #include "stack/include/hidh_api.h"
 #include "stack/include/main_thread.h"
@@ -66,8 +62,6 @@
 using bluetooth::Uuid;
 using namespace bluetooth::legacy::stack::sdp;
 using namespace bluetooth;
-
-tBTM_CONTRL_STATE bta_dm_pm_obtain_controller_state(void);
 
 namespace {
 constexpr char kBtmLogTag[] = "SDP";
@@ -736,9 +730,11 @@ static void bta_dm_find_services(const RawAddress& bd_addr) {
      * If discovery is not successful with this device, then
      * proceed with the next one.
      */
+    log::warn("Unable to start SDP service search attribute request peer:{}",
+              bd_addr);
+
     osi_free_and_reset((void**)&bta_dm_discovery_cb.p_sdp_db);
     bta_dm_discovery_cb.service_index = BTA_MAX_SERVICE_ID;
-    log::info("SDP not successful");
     bta_dm_disc_sm_execute(BTA_DM_DISCOVERY_RESULT_EVT,
                            std::make_unique<tBTA_DM_MSG>(tBTA_DM_SVC_RES{
                                .bd_addr = bta_dm_discovery_cb.peer_bdaddr,

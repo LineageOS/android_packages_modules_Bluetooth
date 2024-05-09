@@ -473,6 +473,7 @@ public class AvrcpControllerStateMachineTest {
     /** Get the root of the device */
     @Test
     public void testGetDeviceRootNode_flagRandomDeviceIdDisabled_rootNodeMatchesUuidFormat() {
+        mSetFlagsRule.disableFlags(Flags.FLAG_RANDOMIZE_DEVICE_LEVEL_MEDIA_IDS);
         setUpConnectedState(true, true);
         final String rootName = "__ROOT__" + mTestDevice.getAddress().toString();
         // Get the root of the device

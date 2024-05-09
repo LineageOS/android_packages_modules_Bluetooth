@@ -67,8 +67,6 @@ struct interop_database_remove_name interop_database_remove_name;
 struct interop_database_remove_version interop_database_remove_version;
 struct interop_database_remove_vndr_prdt interop_database_remove_vndr_prdt;
 struct interop_feature_name_to_feature_id interop_feature_name_to_feature_id;
-struct interop_get_allowlisted_media_players_list
-    interop_get_allowlisted_media_players_list;
 struct interop_match_addr interop_match_addr;
 struct interop_match_addr_get_max_lat interop_match_addr_get_max_lat;
 struct interop_match_addr_or_name interop_match_addr_or_name;
@@ -102,7 +100,6 @@ bool interop_database_remove_name::return_value = false;
 bool interop_database_remove_version::return_value = false;
 bool interop_database_remove_vndr_prdt::return_value = false;
 int interop_feature_name_to_feature_id::return_value = 0;
-bool interop_get_allowlisted_media_players_list::return_value = false;
 bool interop_match_addr::return_value = false;
 bool interop_match_addr_get_max_lat::return_value = false;
 bool interop_match_addr_or_name::return_value = false;
@@ -263,11 +260,6 @@ int interop_feature_name_to_feature_id(const char* feature_name) {
   inc_func_call_count(__func__);
   return test::mock::device_interop::interop_feature_name_to_feature_id(
       feature_name);
-}
-bool interop_get_allowlisted_media_players_list(list_t* p_bl_devices) {
-  inc_func_call_count(__func__);
-  return test::mock::device_interop::interop_get_allowlisted_media_players_list(
-      p_bl_devices);
 }
 bool interop_match_addr(const interop_feature_t feature,
                         const RawAddress* addr) {

@@ -1103,6 +1103,9 @@ static void bta_dm_find_services(const RawAddress& bd_addr) {
       if (!get_legacy_stack_sdp_api()
                ->service.SDP_ServiceSearchAttributeRequest(
                    bd_addr, bta_dm_search_cb.p_sdp_db, &bta_dm_sdp_callback)) {
+        log::warn(
+            "Unable to start SDP service search attribute request peer:{}",
+            bd_addr);
         /*
          * If discovery is not successful with this device, then
          * proceed with the next one.

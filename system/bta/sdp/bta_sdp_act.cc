@@ -699,6 +699,8 @@ void bta_sdp_search(const RawAddress bd_addr, const bluetooth::Uuid uuid) {
   if (!get_legacy_stack_sdp_api()->service.SDP_ServiceSearchAttributeRequest2(
           bd_addr, p_bta_sdp_cfg->p_sdp_db, bta_sdp_search_cback,
           (void*)bta_sdp_search_uuid)) {
+    log::warn("Unable to start SDP service search attribute request peer:{}",
+              bd_addr);
     bta_sdp_cb.sdp_active = false;
 
     /* failed to start SDP. report the failure right away */

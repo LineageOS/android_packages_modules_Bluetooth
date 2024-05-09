@@ -45,3 +45,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "a2dp_async_allow_low_latency"
+    namespace: "bluetooth"
+    description: "Make allow_low_latency run on main thread"
+    bug : "339368380"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
