@@ -371,8 +371,8 @@ static void event_shut_down_stack(ProfileStopCallback stopProfiles) {
   future_await(local_hack_future);
 
   gatt_free();
-  l2c_free();
   sdp_free();
+  l2c_free();
   get_btm_client_interface().lifecycle.btm_ble_free();
 
   get_btm_client_interface().lifecycle.btm_free();
