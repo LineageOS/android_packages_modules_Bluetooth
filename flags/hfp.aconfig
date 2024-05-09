@@ -88,6 +88,16 @@ flag {
 }
 
 flag {
+    name: "keep_hfp_active_during_leaudio_handover"
+    namespace: "bluetooth"
+    description: "During LE audio to HFP handover, keep HFP active throughout SCO retry"
+    bug: "339528451"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "fix_hfp_qual_1_9"
     namespace: "bluetooth"
     description: "Fix multiple issues in CVSD fallback logics, which are blocking PTS HFP Qualification 1.9"
