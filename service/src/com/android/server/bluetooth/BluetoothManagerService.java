@@ -1694,6 +1694,7 @@ class BluetoothManagerService {
                         if (mAdapter == null) {
                             break;
                         }
+                        mContext.unbindService(mConnection);
                         mAdapter = null;
                     } finally {
                         mAdapterLock.writeLock().unlock();
