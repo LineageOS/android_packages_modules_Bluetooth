@@ -100,10 +100,12 @@ void sdp_init(void) {
 }
 
 void sdp_free(void) {
+  L2CA_Deregister(BT_PSM_SDP);
   for (int i = 0; i < SDP_MAX_CONNECTIONS; i++) {
     alarm_free(sdp_cb.ccb[i].sdp_conn_timer);
     sdp_cb.ccb[i].sdp_conn_timer = NULL;
   }
+  sdp_cb = {};
 }
 
 /*******************************************************************************
