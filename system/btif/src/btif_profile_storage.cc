@@ -332,9 +332,9 @@ bt_status_t btif_storage_remove_hid_info(const tAclLinkSpec& link_spec) {
   btif_config_remove(bdstr, BTIF_STORAGE_KEY_HID_SSR_MAX_LATENCY);
   btif_config_remove(bdstr, BTIF_STORAGE_KEY_HID_SSR_MIN_TIMEOUT);
   btif_config_remove(bdstr, BTIF_STORAGE_KEY_HID_DESCRIPTOR);
-  btif_config_remove(bdstr, BTIF_STORAGE_KEY_HID_REPORT);
-  btif_config_remove(bdstr, BTIF_STORAGE_KEY_HID_REPORT_VERSION);
   btif_config_remove(bdstr, BTIF_STORAGE_KEY_HID_RECONNECT_ALLOWED);
+  btif_config_remove(bdstr, BTIF_STORAGE_KEY_HOGP_REPORT);
+  btif_config_remove(bdstr, BTIF_STORAGE_KEY_HOGP_REPORT_VERSION);
 
   if (com::android::bluetooth::flags::allow_switching_hid_and_hogp()) {
     int db_version = 0;
