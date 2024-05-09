@@ -124,23 +124,6 @@ DEV_CLASS BTM_ReadDeviceClass(void);
 
 /*******************************************************************************
  *
- * Function         BTM_RegisterForVSEvents
- *
- * Description      This function is called to register/deregister for vendor
- *                  specific HCI events.
- *
- *                  If is_register=true, then the function will be registered;
- *                  otherwise the function will be deregistered.
- *
- * Returns          BTM_SUCCESS if successful,
- *                  BTM_BUSY if maximum number of callbacks have already been
- *                           registered.
- *
- ******************************************************************************/
-tBTM_STATUS BTM_RegisterForVSEvents(tBTM_VS_EVT_CB* p_cb, bool is_register);
-
-/*******************************************************************************
- *
  * Function         BTM_VendorSpecificCommand
  *
  * Description      Send a vendor specific HCI command to the controller.
@@ -744,9 +727,6 @@ bool BTM_IsScoActiveByBdaddr(const RawAddress& remote_bda);
 
 /* Read maximum data packet that can be sent over current connection */
 uint16_t BTM_GetMaxPacketSize(const RawAddress& addr);
-
-tBTM_STATUS BTM_BT_Quality_Report_VSE_Register(
-    bool is_register, tBTM_BT_QUALITY_REPORT_RECEIVER* p_bqr_report_receiver);
 
 typedef void(BTM_CONSOLIDATION_CB)(const RawAddress& identity_addr,
                                    const RawAddress& rpa);

@@ -19,8 +19,5 @@
 
 #include <cstdint>
 
-#include <cstdint>
-
 void btm_delete_stored_link_key_complete(uint8_t* p, uint16_t evt_len);
-void btm_vendor_specific_evt(const uint8_t* p, uint8_t evt_len);
 void btm_read_local_name_complete(uint8_t* p, uint16_t evt_len);

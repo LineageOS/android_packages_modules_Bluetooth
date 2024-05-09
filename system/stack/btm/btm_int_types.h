@@ -67,9 +67,6 @@ class TimestampedStringCircularBuffer
 /* Define the Device Management control structure
  */
 typedef struct tBTM_DEVCB {
-  tBTM_VS_EVT_CB* p_vend_spec_cb[BTM_MAX_VSE_CALLBACKS]; /* Register for vendor
-                                                            specific events  */
-
   alarm_t* read_local_name_timer; /* Read local name timer */
   tBTM_CMPL_CB* p_rln_cmpl_cb;    /* Callback function to be called when  */
                                   /* read local name function complete    */
@@ -154,9 +151,6 @@ typedef struct tBTM_CB {
 
   fixed_queue_t* sec_pending_q{nullptr}; /* pending sequrity requests in
                                             tBTM_SEC_QUEUE_ENTRY format */
-
-  // BQR Receiver
-  tBTM_BT_QUALITY_REPORT_RECEIVER* p_bqr_report_receiver{nullptr};
 
 #define BTM_CODEC_TYPE_MAX_RECORDS 32
   tBTM_BT_DYNAMIC_AUDIO_BUFFER_CB
