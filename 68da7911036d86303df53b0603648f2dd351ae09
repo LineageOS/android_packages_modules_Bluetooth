@@ -120,6 +120,23 @@
       "message": "supersceded: https://review.lineageos.org/c/LineageOS/android_packages_modules_Bluetooth/+/391989",
       "revId": "68da7911036d86303df53b0603648f2dd351ae09",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "c2191705_5fac9b1a",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 11883
+      },
+      "writtenOn": "2024-05-09T06:42:35Z",
+      "side": 1,
+      "message": "wrong link, https://review.lineageos.org/c/LineageOS/android_packages_modules_Bluetooth/+/391977",
+      "revId": "68da7911036d86303df53b0603648f2dd351ae09",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ],
   "submitRequirementResults": []
