@@ -369,3 +369,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_use_audio_mode_listener"
+    namespace: "bluetooth"
+    description: "Use Audio Mode listener instead of Telecom in call callback"
+    bug: "339612732"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
