@@ -358,6 +358,8 @@ void bta_hf_client_do_disc(tBTA_HF_CLIENT_CB* client_cb) {
   }
 
   if (!db_inited) {
+    log::warn("Unable to start SDP service search request peer:{}",
+              client_cb->peer_addr);
     /*free discover db */
     osi_free_and_reset((void**)&client_cb->p_disc_db);
     /* sent failed event */
