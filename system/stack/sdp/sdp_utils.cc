@@ -460,7 +460,7 @@ void sdpu_release_ccb(tCONN_CB& ccb) {
  * Returns          returns cid if any active sdp connection, else 0.
  *
  ******************************************************************************/
-uint16_t sdpu_get_active_ccb_cid(const RawAddress& remote_bd_addr) {
+uint16_t sdpu_get_active_ccb_cid(const RawAddress& bd_addr) {
   uint16_t xx;
   tCONN_CB* p_ccb;
 
@@ -470,7 +470,7 @@ uint16_t sdpu_get_active_ccb_cid(const RawAddress& remote_bd_addr) {
         (p_ccb->con_state == SDP_STATE_CFG_SETUP) ||
         (p_ccb->con_state == SDP_STATE_CONNECTED)) {
       if (p_ccb->con_flags & SDP_FLAGS_IS_ORIG &&
-          p_ccb->device_address == remote_bd_addr) {
+          p_ccb->device_address == bd_addr) {
         return p_ccb->connection_id;
       }
     }
