@@ -1599,6 +1599,13 @@ TEST_F(SnoopLoggerModuleTest, custom_socket_profiles_filtered_hfp_hf_test) {
       0x35, 0x36, 0x37, 0x38, 0x39, 0x22, 0x2c, 0x31, 0x34, 0x35, 0x0d, 0x0a, 0x49,
   };
 
+  std::vector<uint8_t> kExpectedPhoneNumber = {
+      0x0b, 0x00, 0x30, 0x00, 0x0c, 0x00, 0x40, 0x30, 0x19, 0xff, 0x4f, 0x01, 0x0d,
+      0x0a, 0x2b, 0x43, 0x4c, 0x43, 0x43, 0x3a, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+      0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  };
+
   // Set pbap and map filtering modes
   ASSERT_TRUE(bluetooth::os::SetSystemProperty(
       SnoopLogger::kBtSnoopLogFilterProfilePbapModeProperty,
@@ -1681,7 +1688,7 @@ TEST_F(SnoopLoggerModuleTest, custom_socket_profiles_filtered_hfp_hf_test) {
   ASSERT_TRUE(
       std::memcmp(recv_buf1, &SnoopLoggerCommon::kBtSnoopFileHeader, sizeof(recv_buf1)) == 0);
   ASSERT_EQ(bytes_read, static_cast<int>(expected_data_size));
-  ASSERT_TRUE(std::memcmp(recv_buf3, kPhoneNumber.data(), expected_data_size) == 0);
+  ASSERT_TRUE(std::memcmp(recv_buf3, kExpectedPhoneNumber.data(), expected_data_size) == 0);
 
   ASSERT_TRUE(bluetooth::os::SetSystemProperty(
       SnoopLogger::kBtSnoopLogFilterProfileMapModeProperty,
