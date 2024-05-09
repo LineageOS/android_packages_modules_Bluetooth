@@ -55,6 +55,7 @@ pub trait Context {
         SendAcceptedLmpPacketFuture(self, opcode)
     }
 
+    #[allow(dead_code)]
     fn get_private_key(&self) -> Option<PrivateKey> {
         None
     }
