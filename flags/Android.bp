@@ -24,6 +24,7 @@ aconfig_declarations {
         "dumpsys.aconfig",
         "framework.aconfig",
         "gap.aconfig",
+        "hal.aconfig",
         "hap.aconfig",
         "hfp.aconfig",
         "hid.aconfig",

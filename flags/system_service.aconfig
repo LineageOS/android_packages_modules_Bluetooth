@@ -2,28 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.btservices"
 
 flag {
-    name: "auto_on_feature"
-    is_exported: true
-    namespace: "bluetooth"
-    description: "Turn bluetooth on next morning at 5 am"
-    bug: "323060869"
-}
-
-flag {
-    name: "system_server_messenger"
-    namespace: "bluetooth"
-    description: "Replace binder call to the system server with a Messenger to enforce thread safety"
-    bug: "321804999"
-}
-
-flag {
-    name: "fast_bind_to_app"
-    namespace: "bluetooth"
-    description: "Remove complexity and non necessary initialization when simply binding"
-    bug: "328698375"
-}
-
-flag {
     name: "airplane_mode_x_ble_on"
     namespace: "bluetooth"
     description: "Airplane mode is not properly listen to when reaching BLE mode"
@@ -34,11 +12,33 @@ flag {
 }
 
 flag {
-    name: "audio_port_binder_inherit_rt"
+    name: "auto_on_feature"
+    is_exported: true
     namespace: "bluetooth"
-    description: "Allow audio port AIDL thread to inherit thread priority from its caller"
-    bug: "335049159"
+    description: "Turn bluetooth on next morning at 5 am"
+    bug: "323060869"
+}
+
+flag {
+    name: "explicit_kill_from_system_server"
+    namespace: "bluetooth"
+    description: "Explicit kill and wait of Bluetooth AdapterService when turning Bluetooth OFF"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
+    bug: "339548431"
+}
+
+flag {
+    name: "fast_bind_to_app"
+    namespace: "bluetooth"
+    description: "Remove complexity and non necessary initialization when simply binding"
+    bug: "328698375"
+}
+
+flag {
+    name: "system_server_messenger"
+    namespace: "bluetooth"
+    description: "Replace binder call to the system server with a Messenger to enforce thread safety"
+    bug: "321804999"
 }
