@@ -2,18 +2,21 @@ package: "com.android.bluetooth.flags"
 container: "com.android.btservices"
 
 flag {
+    name: "airplane_mode_x_ble_on"
+    namespace: "bluetooth"
+    description: "Airplane mode is not properly listen to when reaching BLE mode"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+    bug: "338079154"
+}
+
+flag {
     name: "auto_on_feature"
     is_exported: true
     namespace: "bluetooth"
     description: "Turn bluetooth on next morning at 5 am"
     bug: "323060869"
-}
-
-flag {
-    name: "system_server_messenger"
-    namespace: "bluetooth"
-    description: "Replace binder call to the system server with a Messenger to enforce thread safety"
-    bug: "321804999"
 }
 
 flag {
@@ -24,11 +27,8 @@ flag {
 }
 
 flag {
-    name: "airplane_mode_x_ble_on"
+    name: "system_server_messenger"
     namespace: "bluetooth"
-    description: "Airplane mode is not properly listen to when reaching BLE mode"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-    bug: "338079154"
+    description: "Replace binder call to the system server with a Messenger to enforce thread safety"
+    bug: "321804999"
 }
