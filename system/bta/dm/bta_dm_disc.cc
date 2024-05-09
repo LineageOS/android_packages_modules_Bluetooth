@@ -730,9 +730,11 @@ static void bta_dm_find_services(const RawAddress& bd_addr) {
      * If discovery is not successful with this device, then
      * proceed with the next one.
      */
+    log::warn("Unable to start SDP service search attribute request peer:{}",
+              bd_addr);
+
     osi_free_and_reset((void**)&bta_dm_discovery_cb.p_sdp_db);
     bta_dm_discovery_cb.service_index = BTA_MAX_SERVICE_ID;
-    log::info("SDP not successful");
     bta_dm_disc_sm_execute(BTA_DM_DISCOVERY_RESULT_EVT,
                            std::make_unique<tBTA_DM_MSG>(tBTA_DM_SVC_RES{
                                .bd_addr = bta_dm_discovery_cb.peer_bdaddr,

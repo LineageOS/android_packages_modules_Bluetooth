@@ -1731,6 +1731,7 @@ cc_test {
         "packages/modules/Bluetooth/system/stack/btm",
     ],
     srcs: [
+        ":BluetoothLogRedactionSources",
         ":TestCommonMockFunctions",
         ":TestMockStackBtm",
         ":TestMockStackL2cap",
