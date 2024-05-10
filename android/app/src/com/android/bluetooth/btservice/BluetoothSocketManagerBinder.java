@@ -23,12 +23,13 @@ import android.content.AttributionSource;
 import android.os.Binder;
 import android.os.ParcelFileDescriptor;
 import android.os.ParcelUuid;
+import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.flags.Flags;
 
 class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
-    private static final String TAG = "BluetoothSocketManagerBinder";
+    private static final String TAG = "BtSocketManagerBinder";
 
     private static final int INVALID_FD = -1;
 
@@ -59,6 +60,19 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
                         ? Utils.getBrEdrAddress(device)
                         : mService.getIdentityAddress(device.getAddress());
 
+        Log.i(
+                TAG,
+                "connectSocket: device="
+                        + device
+                        + ", type="
+                        + type
+                        + ", uuid="
+                        + uuid
+                        + ", port="
+                        + port
+                        + ", from "
+                        + Utils.getUidPidString());
+
         return marshalFd(
                 mService.getNative()
                         .connectSocket(
@@ -82,6 +96,19 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
         if (!Utils.checkConnectPermissionForPreflight(mService)) {
             return null;
         }
+
+        Log.i(
+                TAG,
+                "createSocketChannel: type="
+                        + type
+                        + ", serviceName="
+                        + serviceName
+                        + ", uuid="
+                        + uuid
+                        + ", port="
+                        + port
+                        + ", from "
+                        + Utils.getUidPidString());
 
         return marshalFd(
                 mService.getNative()

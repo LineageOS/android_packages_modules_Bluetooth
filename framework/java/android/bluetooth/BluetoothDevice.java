@@ -1910,10 +1910,10 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
     private boolean createBondInternal(
             int transport, @Nullable OobData remoteP192Data, @Nullable OobData remoteP256Data) {
-        if (DBG) log("createBondOutOfBand()");
+        if (DBG) log("createBondInternal()");
         final IBluetooth service = getService();
         if (service == null || !isBluetoothEnabled()) {
-            Log.w(TAG, "BT not enabled, createBondOutOfBand failed");
+            Log.w(TAG, "BT not enabled, createBondInternal failed");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (NULL_MAC_ADDRESS.equals(mAddress)) {
             Log.e(TAG, "Unable to create bond, invalid address " + mAddress);
