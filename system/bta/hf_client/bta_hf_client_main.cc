@@ -389,8 +389,10 @@ void bta_hf_client_collision_cback(tBTA_SYS_CONN_STATUS /* status */,
 
     /* Cancel SDP if it had been started. */
     if (client_cb->p_disc_db) {
-      get_legacy_stack_sdp_api()->service.SDP_CancelServiceSearch(
-          client_cb->p_disc_db);
+      if (!get_legacy_stack_sdp_api()->service.SDP_CancelServiceSearch(
+              client_cb->p_disc_db)) {
+        log::warn("Unable to cancel SDP service discovery peer:{}", peer_addr);
+      }
       osi_free_and_reset((void**)&client_cb->p_disc_db);
     }
 
