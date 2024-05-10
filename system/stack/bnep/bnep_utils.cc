@@ -415,7 +415,10 @@ void bnepu_check_send_packet(tBNEP_CONN* p_bcb, BT_HDR* p_buf) {
       fixed_queue_enqueue(p_bcb->xmit_q, p_buf);
     }
   } else {
-    L2CA_DataWrite(p_bcb->l2cap_cid, p_buf);
+    if (L2CA_DataWrite(p_bcb->l2cap_cid, p_buf) != L2CAP_DW_SUCCESS) {
+      log::warn("Unable to write L2CAP data peer:{} cid:{} len:{}",
+                p_bcb->rem_bda, p_bcb->l2cap_cid, p_buf->len);
+    }
   }
 }
 
