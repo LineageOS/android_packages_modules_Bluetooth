@@ -21,7 +21,7 @@ import android.bluetooth.le.PeriodicAdvertisingManager;
 import android.util.Log;
 
 /** Bass Client Periodic Advertising object handler */
-class BassClientPeriodicAdvertisingManager {
+public class BassClientPeriodicAdvertisingManager {
     private static final String TAG = "BassClientPeriodicAdvertisingManager";
 
     private static PeriodicAdvertisingManager sPeriodicAdvertisingManager;
