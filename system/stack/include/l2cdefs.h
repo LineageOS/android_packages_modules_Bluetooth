@@ -19,7 +19,10 @@
 #ifndef L2CDEFS_H
 #define L2CDEFS_H
 
+#include <bluetooth/log.h>
+
 #include <cstdint>
+#include <string>
 
 #include "internal_include/bt_target.h"  // L2CAP_EXTFEA_SUPPORTED_MASK
 #include "macros.h"
@@ -264,7 +267,7 @@ inline std::string l2cap_le_result_code_text(
 
 /* L2CAP Predefined CIDs
 */
-enum : uint16_t {
+enum tL2CAP_CID_FIXED : uint16_t {
   L2CAP_SIGNALLING_CID = 1,
   L2CAP_CONNECTIONLESS_CID = 2,
   L2CAP_AMP_CID = 3,
@@ -274,6 +277,20 @@ enum : uint16_t {
   L2CAP_SMP_BR_CID = 7,
   L2CAP_BASE_APPL_CID = 0x0040,
 };
+
+inline std::string l2cap_cid_fixed_text(const tL2CAP_CID_FIXED& cid) {
+  switch (cid) {
+    CASE_RETURN_STRING_HEX04(L2CAP_SIGNALLING_CID);
+    CASE_RETURN_STRING_HEX04(L2CAP_CONNECTIONLESS_CID);
+    CASE_RETURN_STRING_HEX04(L2CAP_AMP_CID);
+    CASE_RETURN_STRING_HEX04(L2CAP_ATT_CID);
+    CASE_RETURN_STRING_HEX04(L2CAP_BLE_SIGNALLING_CID);
+    CASE_RETURN_STRING_HEX04(L2CAP_SMP_CID);
+    CASE_RETURN_STRING_HEX04(L2CAP_SMP_BR_CID);
+    CASE_RETURN_STRING_HEX04(L2CAP_BASE_APPL_CID);
+  };
+  RETURN_UNKNOWN_TYPE_STRING(type, cid);
+}
 
 /* Fixed Channels mask bits */
 
