@@ -462,7 +462,10 @@ void bta_ag_rfc_close(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /* data */) {
   }
   /* else close port and deallocate scb */
   else {
-    RFCOMM_RemoveServer(p_scb->conn_handle);
+    if (RFCOMM_RemoveServer(p_scb->conn_handle) != PORT_SUCCESS) {
+      log::warn("Unable to remove RFCOMM server peer:{} handle:{}",
+                p_scb->peer_addr, p_scb->conn_handle);
+    };
     bta_ag_scb_dealloc(p_scb);
   }
 }

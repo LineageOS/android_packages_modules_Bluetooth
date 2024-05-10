@@ -227,8 +227,15 @@ void bta_ag_setup_port(tBTA_AG_SCB* p_scb, uint16_t handle) {
                                              sizeof(bta_ag_port_cback_tbl[0])),
       "callback index out of bound, handle={}, bd_addr={}", handle,
       ADDRESS_TO_LOGGABLE_STR(p_scb->peer_addr));
-  PORT_SetEventMask(handle, BTA_AG_PORT_EV_MASK);
-  PORT_SetEventCallback(handle, bta_ag_port_cback_tbl[port_callback_index]);
+  if (PORT_SetEventMask(handle, BTA_AG_PORT_EV_MASK) != PORT_SUCCESS) {
+    log::warn("Unable to set RFCOMM event mask peer:{} handle:{}",
+              p_scb->peer_addr, handle);
+  }
+  if (PORT_SetEventCallback(
+          handle, bta_ag_port_cback_tbl[port_callback_index]) != PORT_SUCCESS) {
+    log::warn("Unable to set RFCOMM event callback peer:{} handle:{}",
+              p_scb->peer_addr, handle);
+  }
 }
 
 /*******************************************************************************
@@ -291,7 +298,9 @@ void bta_ag_close_servers(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK services) {
   for (int i = 0; i < BTA_AG_NUM_IDX && services != 0; i++, services >>= 1) {
     /* if service is set in mask */
     if (services & 1) {
-      RFCOMM_RemoveServer(p_scb->serv_handle[i]);
+      if (RFCOMM_RemoveServer(p_scb->serv_handle[i]) != PORT_SUCCESS) {
+        log::warn("Unable to remove RFCOMM server service:0x{:x}", services);
+      }
       p_scb->serv_handle[i] = 0;
     }
   }
@@ -361,7 +370,10 @@ void bta_ag_rfc_do_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
 void bta_ag_rfc_do_close(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /* data */) {
   log::info("p_scb->conn_handle: 0x{:04x}", p_scb->conn_handle);
   if (p_scb->conn_handle) {
-    RFCOMM_RemoveConnection(p_scb->conn_handle);
+    if (RFCOMM_RemoveConnection(p_scb->conn_handle) != PORT_SUCCESS) {
+      log::warn("Unable to remove RFCOMM connection handle:0x{:04x}",
+                p_scb->conn_handle);
+    }
   } else {
     /* Close API was called while AG is in Opening state.               */
     /* Need to trigger the state machine to send callback to the app    */

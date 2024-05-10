@@ -941,7 +941,9 @@ static bool flush_incoming_que_on_wr_signal(rfc_slot_t* slot) {
   log::verbose(
       "enable data flow, rfc_handle:0x{:x}, rfc_port_handle:0x{:x}, user_id:{}",
       slot->rfc_handle, slot->rfc_port_handle, slot->id);
-  PORT_FlowControl_MaxCredit(slot->rfc_port_handle, true);
+  if (PORT_FlowControl_MaxCredit(slot->rfc_port_handle, true) != PORT_SUCCESS) {
+    log::warn("Unable to open RFCOMM port peer:{}", slot->addr);
+  }
   return true;
 }
 
