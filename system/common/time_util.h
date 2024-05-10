@@ -24,6 +24,10 @@ namespace bluetooth {
 
 namespace common {
 
+// Get the time aligned to the clock domain of the audio server, in
+// microseconds.
+uint64_t time_get_audio_server_tick_us();
+
 // Get the OS boot time in milliseconds.
 uint64_t time_get_os_boottime_ms();
 
