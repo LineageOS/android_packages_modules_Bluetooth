@@ -1473,12 +1473,7 @@ void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, uint8_t remote_scn,
   memset(&evt_data, 0, sizeof(evt_data));
   evt_data.status = tBTA_JV_STATUS::SUCCESS;
 
-#ifdef TARGET_FLOSS
-  if (true)
-#else
-  if (com::android::bluetooth::flags::rfcomm_always_use_mitm())
-#endif
-  {
+  if (com::android::bluetooth::flags::rfcomm_always_use_mitm()) {
     // Update security service record for RFCOMM client so that
     // secure RFCOMM connection will be authenticated with MTIM protection
     // while creating the L2CAP connection.
