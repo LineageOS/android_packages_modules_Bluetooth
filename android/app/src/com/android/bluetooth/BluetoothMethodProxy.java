@@ -43,6 +43,7 @@ import android.os.ParcelFileDescriptor;
 import android.provider.Telephony;
 import android.util.Log;
 
+import com.android.bluetooth.bass_client.BassClientPeriodicAdvertisingManager;
 import com.android.bluetooth.gatt.AppAdvertiseStats;
 import com.android.bluetooth.gatt.ContextMap;
 import com.android.bluetooth.gatt.GattService;
@@ -234,6 +235,15 @@ public class BluetoothMethodProxy {
      */
     public long telephonyGetOrCreateThreadId(Context context, Set<String> recipients) {
         return Telephony.Threads.getOrCreateThreadId(context, recipients);
+    }
+
+    /**
+     * Proxies {@link
+     * BassClientPeriodicAdvertisingManager#initializePeriodicAdvertisingManagerOnDefaultAdapter}.
+     */
+    public boolean initializePeriodicAdvertisingManagerOnDefaultAdapter() {
+        return BassClientPeriodicAdvertisingManager
+                .initializePeriodicAdvertisingManagerOnDefaultAdapter();
     }
 
     /**
