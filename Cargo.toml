@@ -35,3 +35,9 @@ members = [
   "system/gd/rust/linux/utils",
   "floss/hcidoc",
 ]
+
+[patch.crates-io]
+# When building out of ChromiumOS, we do not actually use featured.
+# Stub it to avoid downloading the platform2 repository.
+# See also: https://github.com/rust-lang/cargo/issues/4544
+featured = { path = "system/gd/rust/linux/repositories/featured_stub" } # ignored by ebuild
