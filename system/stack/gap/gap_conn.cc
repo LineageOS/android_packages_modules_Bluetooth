@@ -319,7 +319,10 @@ uint16_t GAP_ConnClose(uint16_t gap_handle) {
     /* Check if we have a connection ID */
     if (p_ccb->con_state != GAP_CCB_STATE_LISTENING) {
       if (p_ccb->transport == BT_TRANSPORT_LE) {
-        L2CA_DisconnectLECocReq(p_ccb->connection_id);
+        if (!L2CA_DisconnectLECocReq(p_ccb->connection_id)) {
+          log::warn("Unable to request L2CAP disconnect le_coc peer:{} cid:{}",
+                    p_ccb->rem_dev_address, p_ccb->connection_id);
+        }
       } else {
         L2CA_DisconnectReq(p_ccb->connection_id);
       }
@@ -601,7 +604,10 @@ static void gap_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
 
     /* Disconnect because it is an unexpected connection */
     if (BTM_UseLeLink(bd_addr)) {
-      L2CA_DisconnectLECocReq(l2cap_cid);
+      if (!L2CA_DisconnectLECocReq(l2cap_cid)) {
+        log::warn("Unable to request L2CAP disconnect le_coc peer:{} cid:{}",
+                  bd_addr, l2cap_cid);
+      }
     } else {
       L2CA_DisconnectReq(l2cap_cid);
     }
