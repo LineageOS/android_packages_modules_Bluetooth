@@ -494,6 +494,8 @@ public class BassClientStateMachineTest {
 
     @Test
     public void parseScanRecord_withoutBaseData_callCancelActiveSync() {
+        mSetFlagsRule.disableFlags(
+                Flags.FLAG_LEAUDIO_BROADCAST_EXTRACT_PERIODIC_SCANNER_FROM_STATE_MACHINE);
         byte[] scanRecord = new byte[]{
                 0x02, 0x01, 0x1a, // advertising flags
                 0x05, 0x02, 0x0b, 0x11, 0x0a, 0x11, // 16 bit service uuids
@@ -514,6 +516,8 @@ public class BassClientStateMachineTest {
 
     @Test
     public void parseScanRecord_withBaseData_callsUpdateBase() {
+        mSetFlagsRule.disableFlags(
+                Flags.FLAG_LEAUDIO_BROADCAST_EXTRACT_PERIODIC_SCANNER_FROM_STATE_MACHINE);
         byte[] scanRecordWithBaseData =
                 new byte[] {
                     (byte) 0x02,
@@ -976,7 +980,7 @@ public class BassClientStateMachineTest {
         // need this to ensure expected mock behavior for getActiveSyncedSource
         when(mBassClientService.getActiveSyncedSources(any())).thenReturn(null);
 
-        mBassClientStateMachine.sendMessage(PSYNC_ACTIVE_TIMEOUT);
+        mBassClientStateMachine.sendMessage(STOP_SCAN_OFFLOAD);
         TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
         verify(mBassClientService, never()).sendBroadcast(any(Intent.class), anyString(), any());
 
@@ -1191,6 +1195,8 @@ public class BassClientStateMachineTest {
 
     @Test
     public void sendPsyncActiveMessage_inConnectedState() {
+        mSetFlagsRule.disableFlags(
+                Flags.FLAG_LEAUDIO_BROADCAST_EXTRACT_PERIODIC_SCANNER_FROM_STATE_MACHINE);
         initToConnectedState();
         // need this to ensure expected mock behavior for getActiveSyncedSource
         when(mBassClientService.getActiveSyncedSources(any())).thenReturn(null);
@@ -1212,6 +1218,8 @@ public class BassClientStateMachineTest {
 
     @Test
     public void sendSelectBcastSourceMessage_inConnectedState() {
+        mSetFlagsRule.disableFlags(
+                Flags.FLAG_LEAUDIO_BROADCAST_EXTRACT_PERIODIC_SCANNER_FROM_STATE_MACHINE);
         initToConnectedState();
 
         byte[] scanRecord = new byte[]{
@@ -1273,6 +1281,8 @@ public class BassClientStateMachineTest {
 
     @Test
     public void sendReachedMaxSourceLimitMessage_inConnectedState() {
+        mSetFlagsRule.disableFlags(
+                Flags.FLAG_LEAUDIO_BROADCAST_EXTRACT_PERIODIC_SCANNER_FROM_STATE_MACHINE);
         initToConnectedState();
         // need this to ensure expected mock behavior for getActiveSyncedSource
         when(mBassClientService.getActiveSyncedSources(any())).thenReturn(null);
@@ -1713,17 +1723,20 @@ public class BassClientStateMachineTest {
         sendMessageAndVerifyTransition(
                 mBassClientStateMachine.obtainMessage(GATT_TXN_PROCESSED, GATT_FAILURE),
                 BassClientStateMachine.Connected.class);
-        // verify getActiveSyncedSource got called in CancelActiveSync
-        verify(mBassClientService).getActiveSyncedSources(any());
 
-        // Test sendPendingCallbacks(START_SCAN_OFFLOAD, ERROR_UNKNOWN)
-        moveConnectedStateToConnectedProcessingState();
-        mBassClientStateMachine.mPendingOperation = START_SCAN_OFFLOAD;
-        mBassClientStateMachine.mAutoTriggered = true;
-        sendMessageAndVerifyTransition(
-                mBassClientStateMachine.obtainMessage(GATT_TXN_PROCESSED, GATT_FAILURE),
-                BassClientStateMachine.Connected.class);
-        assertThat(mBassClientStateMachine.mAutoTriggered).isFalse();
+        if (!Flags.leaudioBroadcastExtractPeriodicScannerFromStateMachine()) {
+            // verify getActiveSyncedSource got called in CancelActiveSync
+            verify(mBassClientService).getActiveSyncedSources(any());
+
+            // Test sendPendingCallbacks(START_SCAN_OFFLOAD, ERROR_UNKNOWN)
+            moveConnectedStateToConnectedProcessingState();
+            mBassClientStateMachine.mPendingOperation = START_SCAN_OFFLOAD;
+            mBassClientStateMachine.mAutoTriggered = true;
+            sendMessageAndVerifyTransition(
+                    mBassClientStateMachine.obtainMessage(GATT_TXN_PROCESSED, GATT_FAILURE),
+                    BassClientStateMachine.Connected.class);
+            assertThat(mBassClientStateMachine.mAutoTriggered).isFalse();
+        }
 
         // Test sendPendingCallbacks(ADD_BCAST_SOURCE, ERROR_UNKNOWN)
         moveConnectedStateToConnectedProcessingState();
@@ -1734,14 +1747,16 @@ public class BassClientStateMachineTest {
                 BassClientStateMachine.Connected.class);
         verify(callbacks).notifySourceAddFailed(any(), any(), anyInt());
 
-        // Test sendPendingCallbacks(UPDATE_BCAST_SOURCE, REASON_LOCAL_APP_REQUEST)
-        moveConnectedStateToConnectedProcessingState();
-        mBassClientStateMachine.mPendingOperation = UPDATE_BCAST_SOURCE;
-        mBassClientStateMachine.mAutoTriggered = true;
-        sendMessageAndVerifyTransition(
-                mBassClientStateMachine.obtainMessage(GATT_TXN_PROCESSED, GATT_SUCCESS),
-                BassClientStateMachine.Connected.class);
-        assertThat(mBassClientStateMachine.mAutoTriggered).isFalse();
+        if (!Flags.leaudioBroadcastExtractPeriodicScannerFromStateMachine()) {
+            // Test sendPendingCallbacks(UPDATE_BCAST_SOURCE, REASON_LOCAL_APP_REQUEST)
+            moveConnectedStateToConnectedProcessingState();
+            mBassClientStateMachine.mPendingOperation = UPDATE_BCAST_SOURCE;
+            mBassClientStateMachine.mAutoTriggered = true;
+            sendMessageAndVerifyTransition(
+                    mBassClientStateMachine.obtainMessage(GATT_TXN_PROCESSED, GATT_SUCCESS),
+                    BassClientStateMachine.Connected.class);
+            assertThat(mBassClientStateMachine.mAutoTriggered).isFalse();
+        }
 
         // Test sendPendingCallbacks(UPDATE_BCAST_SOURCE, ERROR_UNKNOWN)
         moveConnectedStateToConnectedProcessingState();
@@ -1929,6 +1944,8 @@ public class BassClientStateMachineTest {
 
     @Test
     public void selectBcastSource_withSameBroadcastId() {
+        mSetFlagsRule.disableFlags(
+                Flags.FLAG_LEAUDIO_BROADCAST_EXTRACT_PERIODIC_SCANNER_FROM_STATE_MACHINE);
         final int testSyncHandle = 1;
         initToConnectedState();
 
@@ -1977,6 +1994,8 @@ public class BassClientStateMachineTest {
 
     @Test
     public void addBcastSource_withCachedScanResults() {
+        mSetFlagsRule.disableFlags(
+                Flags.FLAG_LEAUDIO_BROADCAST_EXTRACT_PERIODIC_SCANNER_FROM_STATE_MACHINE);
         initToConnectedState();
 
         BassClientService.Callbacks callbacks = Mockito.mock(BassClientService.Callbacks.class);
@@ -2029,6 +2048,8 @@ public class BassClientStateMachineTest {
 
     @Test
     public void periodicAdvertisingCallbackOnSyncLost_notifySourceLost() {
+        mSetFlagsRule.disableFlags(
+                Flags.FLAG_LEAUDIO_BROADCAST_EXTRACT_PERIODIC_SCANNER_FROM_STATE_MACHINE);
         mSetFlagsRule.enableFlags(Flags.FLAG_LEAUDIO_BROADCAST_MONITOR_SOURCE_SYNC_STATUS);
         PeriodicAdvertisingCallback cb = mBassClientStateMachine.mLocalPeriodicAdvCallback;
         BassClientService.Callbacks callbacks = Mockito.mock(BassClientService.Callbacks.class);
@@ -2043,6 +2064,8 @@ public class BassClientStateMachineTest {
 
     @Test
     public void periodicAdvertisingCallbackOnBigInfoAdvertisingReport_updateRssi() {
+        mSetFlagsRule.disableFlags(
+                Flags.FLAG_LEAUDIO_BROADCAST_EXTRACT_PERIODIC_SCANNER_FROM_STATE_MACHINE);
         mSetFlagsRule.enableFlags(Flags.FLAG_LEAUDIO_BROADCAST_MONITOR_SOURCE_SYNC_STATUS);
         PeriodicAdvertisingCallback cb = mBassClientStateMachine.mLocalPeriodicAdvCallback;
         BassClientService.Callbacks callbacks = Mockito.mock(BassClientService.Callbacks.class);
