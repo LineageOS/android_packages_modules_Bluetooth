@@ -15,8 +15,8 @@
  */
 #pragma once
 
-#if !defined(TARGET_FLOSS)
-#error "sysprops_module is supposed to be FLOSS specific"
+#ifdef __ANDROID__
+#error "sysprops_module is not supposed to be used on Android"
 #endif
 
 #include "module.h"

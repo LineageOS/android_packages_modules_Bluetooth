@@ -106,6 +106,7 @@ cc_defaults {
             srcs: [
                 ":BluetoothHalSources_hci_host",
                 ":BluetoothOsSources_host",
+                ":BluetoothSyspropsSources",
             ],
         },
         android: {
