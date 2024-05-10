@@ -14,11 +14,13 @@
  * limitations under the License.
  */
 
+#include <bluetooth/log.h>
 #include <fcntl.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <sys/socket.h>
 
+#include "bt_psm_types.h"
 #include "common/init_flags.h"
 #include "hci/controller_interface_mock.h"
 #include "osi/include/allocator.h"
@@ -264,5 +266,32 @@ TEST_F(StackL2capTest, L2CA_Dumpsys) {
 
   L2CA_Dumpsys(sv[0]);
   while (read(sv[1], buf, sizeof(buf)) != -1) {
+  }
+}
+
+TEST_F(StackL2capTest, bt_psm_text) {
+  std::map<tBT_PSM, std::string> map = {
+      {BT_PSM_SDP, "BT_PSM_SDP"},
+      {BT_PSM_RFCOMM, "BT_PSM_RFCOMM"},
+      {BT_PSM_TCS, "BT_PSM_TCS"},
+      {BT_PSM_CTP, "BT_PSM_CTP"},
+      {BT_PSM_BNEP, "BT_PSM_BNEP"},
+      {BT_PSM_HIDC, "BT_PSM_HIDC"},
+      {HID_PSM_CONTROL, "HID_PSM_CONTROL"},
+      {BT_PSM_HIDI, "BT_PSM_HIDI"},
+      {HID_PSM_INTERRUPT, "HID_PSM_INTERRUPT"},
+      {BT_PSM_UPNP, "BT_PSM_UPNP"},
+      {BT_PSM_AVCTP, "BT_PSM_AVCTP"},
+      {BT_PSM_AVDTP, "BT_PSM_AVDTP"},
+      {BT_PSM_AVCTP_13, "BT_PSM_AVCTP_13"},
+      {BT_PSM_UDI_CP, "BT_PSM_UDI_CP"},
+      {BT_PSM_ATT, "BT_PSM_ATT"},
+      {BT_PSM_EATT, "BT_PSM_EATT"},
+      {BRCM_RESERVED_PSM_START, "BRCM_RESERVED_PSM_START"},
+      {BRCM_RESERVED_PSM_END, "BRCM_RESERVED_PSM_END"},
+  };
+
+  for (const auto& it : map) {
+    bluetooth::log::info("{} {} ", bt_psm_text(it.first), it.second);
   }
 }
