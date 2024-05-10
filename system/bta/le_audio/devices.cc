@@ -319,8 +319,7 @@ bool LeAudioDevice::ConfigureAses(
     auto const& ase_cfg = ase_configs.at(i);
     ase->active = true;
     ase->configured_for_context_type = context_type;
-    ase->is_codec_in_controller = ase_cfg.is_codec_in_controller;
-    ase->data_path_id = ase_cfg.data_path_id;
+    ase->data_path_configuration = ase_cfg.data_path_configuration;
     active_ases++;
 
     /* In case of late connect, we could be here for STREAMING ase.

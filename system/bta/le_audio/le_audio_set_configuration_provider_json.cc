@@ -24,6 +24,7 @@
 #include "audio_hal_client/audio_hal_client.h"
 #include "audio_set_configurations_generated.h"
 #include "audio_set_scenarios_generated.h"
+#include "btm_iso_api_types.h"
 #include "flatbuffers/idl.h"
 #include "flatbuffers/util.h"
 #include "le_audio/le_audio_types.h"
@@ -215,18 +216,40 @@ struct AudioSetConfigurationProviderJson {
     // common configuration source for all the codec locations.
     switch (location) {
       case types::CodecLocation::ADSP:
-        config.is_codec_in_controller = false;
-        config.data_path_id =
+        config.data_path_configuration.dataPathId =
             bluetooth::hci::iso_manager::kIsoDataPathPlatformDefault;
+        config.data_path_configuration.dataPathConfig = {};
+        config.data_path_configuration.isoDataPathConfig.isTransparent = true;
+        config.data_path_configuration.isoDataPathConfig.controllerDelayUs = 0;
+        config.data_path_configuration.isoDataPathConfig.codecId = {
+            .coding_format = bluetooth::hci::kIsoCodingFormatTransparent,
+            .vendor_company_id = 0,
+            .vendor_codec_id = 0};
+        config.data_path_configuration.isoDataPathConfig.configuration = {};
         break;
       case types::CodecLocation::HOST:
-        config.is_codec_in_controller = false;
-        config.data_path_id = bluetooth::hci::iso_manager::kIsoDataPathHci;
+        config.data_path_configuration.dataPathId =
+            bluetooth::hci::iso_manager::kIsoDataPathHci;
+        config.data_path_configuration.dataPathConfig = {};
+        config.data_path_configuration.isoDataPathConfig.isTransparent = true;
+        config.data_path_configuration.isoDataPathConfig.codecId = {
+            .coding_format = bluetooth::hci::kIsoCodingFormatTransparent,
+            .vendor_company_id = 0,
+            .vendor_codec_id = 0};
+        config.data_path_configuration.isoDataPathConfig.controllerDelayUs = 0;
+        config.data_path_configuration.isoDataPathConfig.configuration = {};
         break;
       case types::CodecLocation::CONTROLLER:
-        config.is_codec_in_controller = true;
-        config.data_path_id =
+        config.data_path_configuration.dataPathId =
             bluetooth::hci::iso_manager::kIsoDataPathPlatformDefault;
+        config.data_path_configuration.dataPathConfig = {};
+        config.data_path_configuration.isoDataPathConfig.isTransparent = false;
+        // Note: The data path codecId matches the used codec, but for now there
+        //       is no support for the custom path configuration data buffer.
+        config.data_path_configuration.isoDataPathConfig.codecId =
+            codec_config.id;
+        config.data_path_configuration.isoDataPathConfig.controllerDelayUs = 0;
+        config.data_path_configuration.isoDataPathConfig.configuration = {};
         break;
     }
 
