@@ -1257,7 +1257,7 @@ public class RemoteDevices {
                             + Utils.getRedactedAddressStringFromByte(address));
             return;
         }
-        Log.d(TAG, "keyMissingCallback device: " + bluetoothDevice);
+        Log.i(TAG, "keyMissingCallback device: " + bluetoothDevice);
 
         if (bluetoothDevice.getBondState() == BluetoothDevice.BOND_BONDED) {
             if (!Flags.keyMissingBroadcast()) {
