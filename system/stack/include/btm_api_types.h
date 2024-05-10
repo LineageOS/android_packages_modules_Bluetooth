@@ -40,12 +40,6 @@ typedef struct {
 /**************************************************
  *  Device Control and General Callback Functions
  **************************************************/
-/* Callback function for when a vendor specific event occurs. The length and
- * array of returned parameter bytes are included. This asynchronous event
- * is enabled/disabled by calling BTM_RegisterForVSEvents().
-*/
-typedef void(tBTM_VS_EVT_CB)(uint8_t len, const uint8_t* p);
-
 /* General callback function for notifying an application that a synchronous
  * BTM function is complete. The pointer contains the address of any returned
  * data.
@@ -180,8 +174,4 @@ inline uint16_t sco_codec_type_to_id(tBTM_SCO_CODEC_TYPE codec_type) {
       return 0;
   }
 }
-
-// Bluetooth Quality Report - Report receiver
-typedef void(tBTM_BT_QUALITY_REPORT_RECEIVER)(uint8_t len,
-                                              const uint8_t* p_stream);
 #endif  // BTM_API_TYPES_H
