@@ -77,11 +77,11 @@ public class EnableBluetoothRule extends BeforeAfterRule {
     }
 
     private void enableBluetoothAdapter() {
-        assertThat(BluetoothAdapterUtils.enableAdapter(mBluetoothAdapter, mContext)).isTrue();
+        assertThat(BlockingBluetoothAdapter.enableAdapter(mBluetoothAdapter, mContext)).isTrue();
     }
 
     private void disableBluetoothAdapter() {
-        assertThat(BluetoothAdapterUtils.disableAdapter(mBluetoothAdapter, mContext)).isTrue();
+        assertThat(BlockingBluetoothAdapter.disableAdapter(mBluetoothAdapter, mContext)).isTrue();
     }
 
     private void enableBluetoothTestMode() {

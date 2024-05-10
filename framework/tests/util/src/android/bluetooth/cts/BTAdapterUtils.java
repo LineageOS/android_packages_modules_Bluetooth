@@ -16,6 +16,55 @@
 
 package android.bluetooth.cts;
 
-import android.bluetooth.test_utils.BluetoothAdapterUtils;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.test_utils.BlockingBluetoothAdapter;
+import android.content.Context;
 
-public class BTAdapterUtils extends BluetoothAdapterUtils {}
+/**
+ * @deprecated see {@link android.bluetooth.test_utils.BlockingBluetoothAdapter}
+ */
+@Deprecated
+public class BTAdapterUtils {
+    private BTAdapterUtils() {}
+
+    /**
+     * @deprecated see {@link android.bluetooth.test_utils.BlockingBluetoothAdapter#enable}
+     */
+    @Deprecated
+    public static final boolean enableAdapter(BluetoothAdapter adapter, Context ctx) {
+        return BlockingBluetoothAdapter.enableAdapter(adapter, ctx);
+    }
+
+    /**
+     * @deprecated see {@link android.bluetooth.test_utils.BlockingBluetoothAdapter#disable}
+     */
+    @Deprecated
+    public static final boolean disableAdapter(BluetoothAdapter adapter, Context ctx) {
+        return BlockingBluetoothAdapter.disableAdapter(adapter, ctx);
+    }
+
+    /**
+     * @deprecated see {@link android.bluetooth.test_utils.BlockingBluetoothAdapter#disable}
+     */
+    @Deprecated
+    public static final boolean disableAdapter(
+            BluetoothAdapter adapter, boolean persist, Context ctx) {
+        return BlockingBluetoothAdapter.disableAdapter(adapter, persist, ctx);
+    }
+
+    /**
+     * @deprecated see {@link android.bluetooth.test_utils.BlockingBluetoothAdapter#enableBLE}
+     */
+    @Deprecated
+    public static final boolean enableBLE(BluetoothAdapter adapter, Context ctx) {
+        return BlockingBluetoothAdapter.enableBLE(adapter, ctx);
+    }
+
+    /**
+     * @deprecated see {@link android.bluetooth.test_utils.BlockingBluetoothAdapter#disableBLE}
+     */
+    @Deprecated
+    public static final boolean disableBLE(BluetoothAdapter adapter, Context ctx) {
+        return BlockingBluetoothAdapter.disableBLE(adapter, ctx);
+    }
+}

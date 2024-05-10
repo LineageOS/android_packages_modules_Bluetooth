@@ -26,7 +26,10 @@ java_library {
         "compatibility-device-util-axt",
         "junit",
     ],
-    srcs: ["src/**/*.java"],
+    srcs: [
+        "src/**/*.java",
+        "src/BlockingBluetoothAdapter.kt",
+    ],
     sdk_version: "test_current",
     // Keep it public for now to avoid merge conflicts
     visibility: ["//visibility:public"],
