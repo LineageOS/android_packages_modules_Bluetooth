@@ -1214,10 +1214,16 @@ void bta_av_stream_chg(tBTA_AV_SCB* p_scb, bool started) {
 
   if (started) {
     /* Let L2CAP know this channel is processed with high priority */
-    L2CA_SetAclPriority(p_scb->PeerAddress(), L2CAP_PRIORITY_HIGH);
+    if (!L2CA_SetAclPriority(p_scb->PeerAddress(), L2CAP_PRIORITY_HIGH)) {
+      log::warn("Unable to set L2CAP acl high priority peer:{}",
+                p_scb->PeerAddress());
+    }
   } else {
     /* Let L2CAP know this channel is processed with low priority */
-    L2CA_SetAclPriority(p_scb->PeerAddress(), L2CAP_PRIORITY_NORMAL);
+    if (!L2CA_SetAclPriority(p_scb->PeerAddress(), L2CAP_PRIORITY_NORMAL)) {
+      log::warn("Unable to set L2CAP acl normal priority peer:{}",
+                p_scb->PeerAddress());
+    }
   }
 }
 
