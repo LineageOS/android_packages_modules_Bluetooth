@@ -1365,7 +1365,13 @@ void bta_av_do_close(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* /* p_data */) {
   p_scb->use_rtp_header_marker_bit = false;
 
   /* drop the buffers queued in L2CAP */
-  L2CA_FlushChannel(p_scb->l2c_cid, L2CAP_FLUSH_CHANS_ALL);
+  const uint16_t buffers_left =
+      L2CA_FlushChannel(p_scb->l2c_cid, L2CAP_FLUSH_CHANS_ALL);
+  if (buffers_left) {
+    log::warn(
+        "Unable to flush L2CAP ALL channel peer:{} cid:{} buffers_left:{}",
+        p_scb->PeerAddress(), p_scb->l2c_cid, buffers_left);
+  }
 
   AVDT_CloseReq(p_scb->avdt_handle);
   /* just in case that the link is congested, link is flow controled by peer or
@@ -1974,8 +1980,17 @@ void bta_av_str_stopped(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     }
 
     /* drop the audio buffers queued in L2CAP */
-    if (p_data && p_data->api_stop.flush)
-      L2CA_FlushChannel(p_scb->l2c_cid, L2CAP_FLUSH_CHANS_ALL);
+    if (p_data && p_data->api_stop.flush) {
+      const uint16_t buffers_left =
+          L2CA_FlushChannel(p_scb->l2c_cid, L2CAP_FLUSH_CHANS_ALL);
+
+      if (buffers_left) {
+        log::warn(
+            "Unable to flush all L2CAP ALL channel peer:{} cid:{} "
+            "buffers_left:{}",
+            p_scb->PeerAddress(), p_scb->l2c_cid, buffers_left);
+      }
+    }
   }
 
   tBTA_AV_SUSPEND suspend_rsp = {};
@@ -2102,7 +2117,14 @@ void bta_av_reconfig(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       bta_av_str_stopped(p_scb, NULL);
     }
     // Drop the buffers queued in L2CAP
-    L2CA_FlushChannel(p_scb->l2c_cid, L2CAP_FLUSH_CHANS_ALL);
+    const uint16_t buffers_left =
+        L2CA_FlushChannel(p_scb->l2c_cid, L2CAP_FLUSH_CHANS_ALL);
+    if (buffers_left) {
+      log::warn(
+          "Unable to flush all L2CAP ALL channel peer:{} cid:{} "
+          "buffers_left:{}",
+          p_scb->PeerAddress(), p_scb->l2c_cid, buffers_left);
+    }
     AVDT_CloseReq(p_scb->avdt_handle);
   }
 }
@@ -2780,10 +2802,13 @@ void bta_av_suspend_cont(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
                  p_scb->PeerAddress());
       bta_av_ssm_execute(p_scb, BTA_AV_STR_DISC_FAIL_EVT, NULL);
     } else {
-      log::error("suspend rejected, try close");
       /* drop the buffers queued in L2CAP */
-      L2CA_FlushChannel(p_scb->l2c_cid, L2CAP_FLUSH_CHANS_ALL);
-
+      const uint16_t buffers_left =
+          L2CA_FlushChannel(p_scb->l2c_cid, L2CAP_FLUSH_CHANS_ALL);
+      if (buffers_left) {
+        log::error("suspend rejected, closing peer:{} cid:{} buffers_left:{}",
+                   p_scb->PeerAddress(), p_scb->l2c_cid, buffers_left);
+      }
       AVDT_CloseReq(p_scb->avdt_handle);
     }
   } else {
@@ -2829,7 +2854,6 @@ void bta_av_rcfg_cfm(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   }
 
   if ((err_code != 0) || disable_avdtp_reconfigure) {
-    log::error("reconfig rejected, try close");
     /* Disable reconfiguration feature only with explicit rejection(not with
      * timeout) */
     if ((err_code != AVDT_ERR_TIMEOUT) || disable_avdtp_reconfigure) {
@@ -2837,7 +2861,13 @@ void bta_av_rcfg_cfm(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     }
     /* started flag is false when reconfigure command is sent */
     /* drop the buffers queued in L2CAP */
-    L2CA_FlushChannel(p_scb->l2c_cid, L2CAP_FLUSH_CHANS_ALL);
+    const uint16_t buffers_left =
+        L2CA_FlushChannel(p_scb->l2c_cid, L2CAP_FLUSH_CHANS_ALL);
+    if (buffers_left) {
+      log::error(
+          "reconfig rejected, closing queued  peer:{} cid:{} buffers_left:{}",
+          p_scb->PeerAddress(), p_scb->l2c_cid, buffers_left);
+    }
     AVDT_CloseReq(p_scb->avdt_handle);
   } else {
     /* update the codec info after rcfg cfm */
