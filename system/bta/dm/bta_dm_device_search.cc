@@ -164,13 +164,11 @@ static void bta_dm_search_cancel() {
      active */
   else if (!bta_dm_search_cb.name_discover_done) {
     get_btm_client_interface().peer.BTM_CancelRemoteDeviceName();
-#ifndef TARGET_FLOSS
     /* bta_dm_search_cmpl is called when receiving the remote name cancel evt */
     if (!com::android::bluetooth::flags::
             bta_dm_defer_device_discovery_state_change_until_rnr_complete()) {
       bta_dm_search_cmpl();
     }
-#endif
   } else {
     bta_dm_inq_cmpl();
   }

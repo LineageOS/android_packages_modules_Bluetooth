@@ -221,11 +221,7 @@ static void bta_ag_sco_disc_cback(uint16_t sco_idx) {
     /* Restore settings */
     if (bta_ag_cb.sco.p_curr_scb->inuse_codec == UUID_CODEC_MSBC ||
         bta_ag_cb.sco.p_curr_scb->inuse_codec == UUID_CODEC_LC3 || aptx_voice ||
-#if TARGET_FLOSS
-        (true &&
-#else
         (com::android::bluetooth::flags::fix_hfp_qual_1_9() &&
-#endif
          bta_ag_cb.sco.p_curr_scb->inuse_codec == UUID_CODEC_CVSD &&
          bta_ag_cb.sco.p_curr_scb->codec_cvsd_settings !=
              BTA_AG_SCO_CVSD_SETTINGS_S1)) {
@@ -239,20 +235,12 @@ static void bta_ag_sco_disc_cback(uint16_t sco_idx) {
        * 'Safe setting' first. If T1 also fails, try CVSD
        * same operations for LC3 settings */
       if (bta_ag_sco_is_opening(bta_ag_cb.sco.p_curr_scb) &&
-#if TARGET_FLOSS
-          (false ||
-#else
           (!com::android::bluetooth::flags::fix_hfp_qual_1_9() ||
-#endif
            bta_ag_cb.sco.is_local)) {
         /* Don't bother to edit |p_curr_scb->state| because it is in
          * |BTA_AG_OPEN_ST|, which has the same value as |BTA_AG_SCO_CODEC_ST|
          */
-#if TARGET_FLOSS
-        if (false) {
-#else
         if (!com::android::bluetooth::flags::fix_hfp_qual_1_9()) {
-#endif
           bta_ag_cb.sco.p_curr_scb->state = BTA_AG_SCO_CODEC_ST;
         }
         if (bta_ag_cb.sco.p_curr_scb->inuse_codec == UUID_CODEC_LC3) {
@@ -283,7 +271,7 @@ static void bta_ag_sco_disc_cback(uint16_t sco_idx) {
           }
         } else {
           // Entering this block implies
-          // - |fix_hfp_qual_1_9| is enabled or is in Floss, AND
+          // - |fix_hfp_qual_1_9| is enabled, AND
           // - we just failed CVSD S2+.
           log::warn(
               "eSCO/SCO failed to open, falling back to CVSD S1 settings");
@@ -293,21 +281,13 @@ static void bta_ag_sco_disc_cback(uint16_t sco_idx) {
         }
       }
     } else if (bta_ag_sco_is_opening(bta_ag_cb.sco.p_curr_scb) &&
-#if TARGET_FLOSS
-               (false ||
-#else
                (!com::android::bluetooth::flags::fix_hfp_qual_1_9() ||
-#endif
                 bta_ag_cb.sco.is_local)) {
       if (com::android::bluetooth::flags::
               retry_esco_with_zero_retransmission_effort() &&
           bta_ag_cb.sco.p_curr_scb->retransmission_effort_retries == 0) {
         bta_ag_cb.sco.p_curr_scb->retransmission_effort_retries++;
-#if TARGET_FLOSS
-        if (false) {
-#else
         if (!com::android::bluetooth::flags::fix_hfp_qual_1_9()) {
-#endif
           bta_ag_cb.sco.p_curr_scb->state = BTA_AG_SCO_CODEC_ST;
         }
         log::warn("eSCO/SCO failed to open, retry with retransmission_effort");
@@ -541,11 +521,7 @@ void bta_ag_create_sco(tBTA_AG_SCB* p_scb, bool is_orig) {
       params = esco_parameters_for_codec(ESCO_CODEC_SWB_Q0, true);
     }
   } else {
-#if TARGET_FLOSS
-    if (true &&
-#else
     if (com::android::bluetooth::flags::fix_hfp_qual_1_9() &&
-#endif
         p_scb->codec_cvsd_settings == BTA_AG_SCO_CVSD_SETTINGS_S1) {
       params = esco_parameters_for_codec(ESCO_CODEC_CVSD_S1, offload);
     } else {
@@ -676,11 +652,7 @@ void bta_ag_create_pending_sco(tBTA_AG_SCB* p_scb, bool is_local) {
         params = esco_parameters_for_codec(ESCO_CODEC_MSBC_T1, offload);
       }
     } else {
-#if TARGET_FLOSS
-      if (true &&
-#else
       if (com::android::bluetooth::flags::fix_hfp_qual_1_9() &&
-#endif
           p_scb->codec_cvsd_settings == BTA_AG_SCO_CVSD_SETTINGS_S1) {
         params = esco_parameters_for_codec(ESCO_CODEC_CVSD_S1, offload);
       } else {
@@ -1590,11 +1562,7 @@ void bta_ag_sco_conn_close(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /* data */) {
             retry_esco_with_zero_retransmission_effort() &&
         p_scb->retransmission_effort_retries == 1) ||
        aptx_voice ||
-#if TARGET_FLOSS
-       (true &&
-#else
        (com::android::bluetooth::flags::fix_hfp_qual_1_9() &&
-#endif
         p_scb->sco_codec == BTM_SCO_CODEC_CVSD &&
         p_scb->codec_cvsd_settings == BTA_AG_SCO_CVSD_SETTINGS_S1 &&
         p_scb->trying_cvsd_safe_settings))) {
