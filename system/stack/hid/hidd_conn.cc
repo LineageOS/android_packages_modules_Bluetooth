@@ -31,11 +31,11 @@
 
 #include "bta/include/bta_sec_api.h"
 #include "internal_include/bt_target.h"
-#include "os/log.h"
 #include "osi/include/allocator.h"
 #include "stack/hid/hidd_int.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_psm_types.h"
+#include "stack/include/l2cdefs.h"
 #include "stack/include/stack_metrics_logging.h"
 #include "types/raw_address.h"
 
