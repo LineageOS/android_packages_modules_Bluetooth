@@ -1483,7 +1483,10 @@ void bta_av_api_set_latency(tBTA_AV_DATA* p_data) {
   tL2CAP_LATENCY latency = p_data->api_set_latency.is_low_latency
                                ? L2CAP_LATENCY_LOW
                                : L2CAP_LATENCY_NORMAL;
-  L2CA_SetAclLatency(p_scb->PeerAddress(), latency);
+  if (!L2CA_SetAclLatency(p_scb->PeerAddress(), latency)) {
+    log::warn("Unable to set L2CAP latenty mode peer:{} use_latency_mode:{}",
+              p_scb->PeerAddress(), latency);
+  }
 }
 
 /**
