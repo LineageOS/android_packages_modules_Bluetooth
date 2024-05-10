@@ -74,8 +74,11 @@ void rfcomm_l2cap_if_init(void) {
   p_l2c->pL2CA_TxComplete_Cb = NULL;
   p_l2c->pL2CA_Error_Cb = rfc_on_l2cap_error;
 
-  L2CA_Register(BT_PSM_RFCOMM, rfc_cb.rfc.reg_info, true /* enable_snoop */,
-                nullptr, L2CAP_MTU_SIZE, 0, 0);
+  if (!L2CA_Register(BT_PSM_RFCOMM, rfc_cb.rfc.reg_info,
+                     true /* enable_snoop */, nullptr, L2CAP_MTU_SIZE, 0, 0)) {
+    log::error("Unable to register with L2CAP profile RFCOMM psm:{}",
+               BT_PSM_RFCOMM);
+  }
 }
 
 /*******************************************************************************
