@@ -16,11 +16,15 @@
 
 #include "server_configurable_flags/get_flags.h"
 
+#include "gd/os/system_properties.h"
+
 namespace server_configurable_flags {
 
 std::string GetServerConfigurableFlag(
     const std::string& experiment_category_name,
     const std::string& experiment_flag_name, const std::string& default_value) {
-  return default_value;
+  std::string prop_name = "persist.device_config." + experiment_category_name +
+                          "." + experiment_flag_name;
+  return bluetooth::os::GetSystemProperty(prop_name).value_or(default_value);
 }
 }  // namespace server_configurable_flags
