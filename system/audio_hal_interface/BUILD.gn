@@ -20,6 +20,7 @@ static_library("audio_hal_interface") {
     "hearing_aid_software_encoding_host.cc",
     "hfp_client_interface_host.cc",
     "le_audio_software_host.cc",
+    "le_audio_software_host_transport.cc",
   ]
 
   include_dirs = [
