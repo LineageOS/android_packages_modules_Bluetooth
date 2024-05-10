@@ -121,7 +121,9 @@ void RFCOMM_ConnectInd(const RawAddress& bd_addr, uint16_t lcid,
   }
 
   if (p_mcb == nullptr) {
-    L2CA_DisconnectReq(lcid);
+    if (!L2CA_DisconnectReq(lcid)) {
+      log::warn("Unable to disconnect L2CAP cid:{}", lcid);
+    }
     return;
   }
   p_mcb->lcid = lcid;
@@ -157,7 +159,10 @@ void RFCOMM_ConnectCnf(uint16_t lcid, uint16_t result) {
 
       /* Peer gave up its connection request, make sure cleaning up L2CAP
        * channel */
-      L2CA_DisconnectReq(p_mcb->pending_lcid);
+      if (!L2CA_DisconnectReq(p_mcb->pending_lcid)) {
+        log::warn("Unable to send L2CAP disconnect request peer:{} cid:{}",
+                  p_mcb->bd_addr, p_mcb->lcid);
+      }
 
       p_mcb->pending_lcid = 0;
     }
