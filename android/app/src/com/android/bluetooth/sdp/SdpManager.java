@@ -171,6 +171,7 @@ public class SdpManager {
                                 ? Utils.getBrEdrAddress(inst.getDevice(), mAdapterService)
                                 : mAdapterService.getIdentityAddress(inst.getDevice().getAddress());
                 if (instAddressString != null
+                        && addressString != null
                         && instAddressString.equals(addressString)
                         && inst.getUuid().equals(uuid)) {
                     return inst.isSearching();
