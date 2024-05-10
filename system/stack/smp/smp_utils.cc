@@ -981,8 +981,12 @@ void smp_reset_control_value(tSMP_CB* p_cb) {
      usually service discovery will follow authentication complete, to avoid
      racing condition for a link down/up, set link idle timer to be
      SMP_LINK_TOUT_MIN to guarantee SMP key exchange */
-  L2CA_SetIdleTimeoutByBdAddr(p_cb->pairing_bda, SMP_LINK_TOUT_MIN,
-                              BT_TRANSPORT_LE);
+  if (!L2CA_SetIdleTimeoutByBdAddr(p_cb->pairing_bda, SMP_LINK_TOUT_MIN,
+                                   BT_TRANSPORT_LE)) {
+    log::warn(
+        "Unable to set L2CAP idle timeout peer:{} transport:{} timeout:{}",
+        p_cb->pairing_bda, BT_TRANSPORT_LE, SMP_LINK_TOUT_MIN);
+  }
 
   /* We can tell L2CAP to remove the fixed channel (if it has one) */
   smp_remove_fixed_channel(p_cb);

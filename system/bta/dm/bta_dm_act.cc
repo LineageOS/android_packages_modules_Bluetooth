@@ -306,8 +306,16 @@ void BTA_dm_on_hw_on() {
 void bta_dm_disable() {
   /* Set l2cap idle timeout to 0 (so BTE immediately disconnects ACL link after
    * last channel is closed) */
-  L2CA_SetIdleTimeoutByBdAddr(RawAddress::kAny, 0, BT_TRANSPORT_BR_EDR);
-  L2CA_SetIdleTimeoutByBdAddr(RawAddress::kAny, 0, BT_TRANSPORT_LE);
+  if (!L2CA_SetIdleTimeoutByBdAddr(RawAddress::kAny, 0, BT_TRANSPORT_BR_EDR)) {
+    log::warn(
+        "Unable to set L2CAP idle timeout peer:{} transport:{} timeout:{}",
+        RawAddress::kAny, BT_TRANSPORT_BR_EDR, 0);
+  }
+  if (!L2CA_SetIdleTimeoutByBdAddr(RawAddress::kAny, 0, BT_TRANSPORT_LE)) {
+    log::warn(
+        "Unable to set L2CAP idle timeout peer:{} transport:{} timeout:{}",
+        RawAddress::kAny, BT_TRANSPORT_LE, 0);
+  }
 
   /* disable all active subsystems */
   bta_sys_disable();
