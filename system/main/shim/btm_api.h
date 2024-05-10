@@ -458,23 +458,6 @@ DEV_CLASS BTM_ReadDeviceClass(void);
 
 /*******************************************************************************
  *
- * Function         BTM_RegisterForVSEvents
- *
- * Description      This function is called to register/deregister for vendor
- *                  specific HCI events.
- *
- *                  If is_register=true, then the function will be registered;
- *                  otherwise the function will be deregistered.
- *
- * Returns          BTM_SUCCESS if successful,
- *                  BTM_BUSY if maximum number of callbacks have already been
- *                           registered.
- *
- ******************************************************************************/
-tBTM_STATUS BTM_RegisterForVSEvents(tBTM_VS_EVT_CB* p_cb, bool is_register);
-
-/*******************************************************************************
- *
  * Function         BTM_VendorSpecificCommand
  *
  * Description      Send a vendor specific HCI command to the controller.
