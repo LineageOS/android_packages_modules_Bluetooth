@@ -22,6 +22,7 @@
 
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
+#include "stack/include/l2cdefs.h"
 #include "stack/include/sdpdefs.h"
 #include "stack/sdp/internal/sdp_api.h"
 #include "stack/sdp/sdpint.h"

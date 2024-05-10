@@ -33,6 +33,7 @@
 #include "stack/include/l2cap_acl_interface.h"
 #include "stack/include/l2cap_controller_interface.h"
 #include "stack/include/l2cap_hci_link_interface.h"
+#include "stack/include/l2cdefs.h"
 #include "test/fake/fake_osi.h"
 #include "test/mock/mock_main_shim_entry.h"
 #include "test/mock/mock_stack_acl.h"
@@ -263,13 +264,13 @@ static void Fuzz(const uint8_t* data, size_t size) {
     l2c_rcv_acl_data(hdr);
   }
 
-  L2CA_DisconnectReq(att_cid);
-  L2CA_DisconnectLECocReq(eatt_cid);
+  (void)L2CA_DisconnectReq(att_cid);
+  (void)L2CA_DisconnectLECocReq(eatt_cid);
 
-  L2CA_RemoveFixedChnl(L2CAP_SMP_BR_CID, kSmpBrAddr);
+  (void)L2CA_RemoveFixedChnl(L2CAP_SMP_BR_CID, kSmpBrAddr);
   l2c_link_hci_disc_comp(kSmpBrHndl, HCI_SUCCESS);
 
-  L2CA_RemoveFixedChnl(L2CAP_ATT_CID, kAttAddr);
+  (void)L2CA_RemoveFixedChnl(L2CAP_ATT_CID, kAttAddr);
   l2c_link_hci_disc_comp(kAttHndl, HCI_SUCCESS);
 
   l2cu_device_reset();
