@@ -130,7 +130,9 @@ void gatt_init(void) {
   // clients exist
   fixed_reg.default_idle_tout = L2CAP_NO_IDLE_TIMEOUT;
 
-  L2CA_RegisterFixedChannel(L2CAP_ATT_CID, &fixed_reg);
+  if (!L2CA_RegisterFixedChannel(L2CAP_ATT_CID, &fixed_reg)) {
+    log::error("Unable to register L2CAP ATT fixed channel");
+  }
 
   gatt_cb.over_br_enabled =
       osi_property_get_bool("bluetooth.gatt.over_bredr.enabled", true);
