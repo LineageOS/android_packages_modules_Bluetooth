@@ -123,7 +123,7 @@ class Host(
 
         // Add all intent actions to be listened.
         val intentFilter = IntentFilter()
-        intentFilter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED)
+        intentFilter.addAction(BluetoothAdapter.ACTION_BLE_STATE_CHANGED)
         intentFilter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
         intentFilter.addAction(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED)
         intentFilter.addAction(BluetoothDevice.ACTION_PAIRING_REQUEST)
@@ -147,7 +147,7 @@ class Host(
 
         val stateFlow =
             flow
-                .filter { it.getAction() == BluetoothAdapter.ACTION_STATE_CHANGED }
+                .filter { it.getAction() == BluetoothAdapter.ACTION_BLE_STATE_CHANGED }
                 .map { it.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR) }
 
         if (bluetoothAdapter.isEnabled) {
@@ -173,7 +173,7 @@ class Host(
 
             val stateFlow =
                 flow
-                    .filter { it.getAction() == BluetoothAdapter.ACTION_STATE_CHANGED }
+                    .filter { it.getAction() == BluetoothAdapter.ACTION_BLE_STATE_CHANGED }
                     .map { it.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR) }
 
             initiatedConnection.clear()
