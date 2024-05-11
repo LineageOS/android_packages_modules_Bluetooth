@@ -30,15 +30,13 @@
 #include "gatt_int.h"
 #include "hardware/bt_gatt_types.h"
 #include "internal_include/bt_target.h"
-#include "internal_include/bt_trace.h"
 #include "l2c_api.h"
-#include "os/log.h"
 #include "osi/include/allocator.h"
-#include "osi/include/osi.h"
 #include "stack/arbiter/acl_arbiter.h"
 #include "stack/eatt/eatt.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_types.h"
+#include "stack/include/l2cdefs.h"
 #include "types/bluetooth/uuid.h"
 
 #define GATT_MTU_REQ_MIN_LEN 2

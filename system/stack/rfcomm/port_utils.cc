@@ -30,12 +30,11 @@
 #include <cstring>
 
 #include "internal_include/bt_target.h"
-#include "internal_include/bt_trace.h"
-#include "os/logging/log_adapter.h"
 #include "osi/include/allocator.h"
 #include "osi/include/mutex.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/btm_client_interface.h"
+#include "stack/include/l2cdefs.h"
 #include "stack/rfcomm/port_int.h"
 #include "stack/rfcomm/rfc_int.h"
 #include "types/raw_address.h"

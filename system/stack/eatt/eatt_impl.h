@@ -23,11 +23,9 @@
 #include "bind_helpers.h"
 #include "eatt.h"
 #include "hci/controller_interface.h"
-#include "internal_include/bt_trace.h"
 #include "internal_include/stack_config.h"
 #include "l2c_api.h"
 #include "main/shim/entry.h"
-#include "os/log.h"
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"
 #include "stack/btm/btm_sec.h"
@@ -35,6 +33,7 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_psm_types.h"
 #include "stack/include/btm_sec_api.h"
+#include "stack/include/l2cdefs.h"
 #include "stack/include/main_thread.h"
 
 namespace bluetooth {
