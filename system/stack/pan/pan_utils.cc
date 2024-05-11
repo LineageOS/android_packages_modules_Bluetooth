@@ -82,8 +82,10 @@ uint32_t pan_register_with_sdp(uint16_t uuid, const char* p_name,
   }
 
   /* Service Class ID List */
-  get_legacy_stack_sdp_api()->handle.SDP_AddServiceClassIdList(sdp_handle, 1,
-                                                               &uuid);
+  if (!get_legacy_stack_sdp_api()->handle.SDP_AddServiceClassIdList(sdp_handle,
+                                                                    1, &uuid)) {
+    log::warn("Unable to add SDP class id list handle:{}", sdp_handle);
+  }
 
   /* Add protocol element sequence from the constant string */
   get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
