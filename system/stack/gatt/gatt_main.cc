@@ -31,12 +31,10 @@
 #include "connection_manager.h"
 #include "device/include/interop.h"
 #include "internal_include/bt_target.h"
-#include "internal_include/bt_trace.h"
 #include "internal_include/stack_config.h"
 #include "l2c_api.h"
 #include "main/shim/acl_api.h"
 #include "osi/include/allocator.h"
-#include "osi/include/osi.h"
 #include "osi/include/properties.h"
 #include "rust/src/connection/ffi/connection_shim.h"
 #include "stack/arbiter/acl_arbiter.h"
@@ -49,6 +47,7 @@
 #include "stack/include/bt_psm_types.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/l2cap_acl_interface.h"
+#include "stack/include/l2cdefs.h"
 #include "stack/include/srvc_api.h"  // tDIS_VALUE
 #include "types/raw_address.h"
 

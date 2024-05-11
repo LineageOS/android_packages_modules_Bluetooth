@@ -261,12 +261,6 @@
 #define BTM_SEC_TIMEOUT_VALUE 35
 #endif
 
-/* Maximum number of callbacks that can be registered using
- * BTM_RegisterForVSEvents */
-#ifndef BTM_MAX_VSE_CALLBACKS
-#define BTM_MAX_VSE_CALLBACKS 3
-#endif
-
 /******************************************
  *    Lisbon Features
  ******************************************/

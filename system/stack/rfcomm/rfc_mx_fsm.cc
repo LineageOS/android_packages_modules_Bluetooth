@@ -27,11 +27,11 @@
 
 #include <cstdint>
 
-#include "os/logging/log_adapter.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_psm_types.h"
 #include "stack/include/l2c_api.h"
+#include "stack/include/l2cdefs.h"
 #include "stack/rfcomm/port_int.h"
 #include "stack/rfcomm/rfc_int.h"
 

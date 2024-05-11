@@ -82,8 +82,10 @@ uint32_t pan_register_with_sdp(uint16_t uuid, const char* p_name,
   }
 
   /* Service Class ID List */
-  get_legacy_stack_sdp_api()->handle.SDP_AddServiceClassIdList(sdp_handle, 1,
-                                                               &uuid);
+  if (!get_legacy_stack_sdp_api()->handle.SDP_AddServiceClassIdList(sdp_handle,
+                                                                    1, &uuid)) {
+    log::warn("Unable to add SDP class id list handle:{}", sdp_handle);
+  }
 
   /* Add protocol element sequence from the constant string */
   get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
@@ -96,8 +98,10 @@ uint32_t pan_register_with_sdp(uint16_t uuid, const char* p_name,
       LANGUAGE_BASE_ID);
 
   /* Profile descriptor list */
-  get_legacy_stack_sdp_api()->handle.SDP_AddProfileDescriptorList(
-      sdp_handle, uuid, PAN_PROFILE_VERSION);
+  if (!get_legacy_stack_sdp_api()->handle.SDP_AddProfileDescriptorList(
+          sdp_handle, uuid, PAN_PROFILE_VERSION)) {
+    log::warn("Unable to add SDP PAN profile version");
+  }
 
   /* Service Name */
   get_legacy_stack_sdp_api()->handle.SDP_AddAttribute(
@@ -137,8 +141,11 @@ uint32_t pan_register_with_sdp(uint16_t uuid, const char* p_name,
   }
 
   /* Make the service browsable */
-  get_legacy_stack_sdp_api()->handle.SDP_AddUuidSequence(
-      sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &browse_list);
+  if (!get_legacy_stack_sdp_api()->handle.SDP_AddUuidSequence(
+          sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &browse_list)) {
+    log::warn("Unable to add SDP uuid sequence browse group list handle:{}",
+              sdp_handle);
+  }
 
   return sdp_handle;
 }

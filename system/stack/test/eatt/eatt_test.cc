@@ -31,6 +31,7 @@
 #include "mock_l2cap_layer.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_psm_types.h"
+#include "stack/include/l2cdefs.h"
 #include "test/mock/mock_main_shim_entry.h"
 #include "types/raw_address.h"
 

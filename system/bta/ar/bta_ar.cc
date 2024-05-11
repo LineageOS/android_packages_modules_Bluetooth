@@ -343,13 +343,19 @@ void bta_ar_reg_avrc_for_src_sink_coexist(
             class_list[1] = UUID_SERVCLASS_AV_REM_CTRL_CONTROL;
             count = 2;
           }
-          get_legacy_stack_sdp_api()->handle.SDP_AddServiceClassIdList(
-              bta_ar_cb.sdp_ct_handle, count, class_list);
+          if (!get_legacy_stack_sdp_api()->handle.SDP_AddServiceClassIdList(
+                  bta_ar_cb.sdp_ct_handle, count, class_list)) {
+            log::warn("Unable to add SDP service class id list handle:{}",
+                      bta_ar_cb.sdp_ct_handle);
+          }
         } else {
           bta_ar_cb.ct_ver = profile_version;
         }
-        get_legacy_stack_sdp_api()->handle.SDP_AddProfileDescriptorList(
-            bta_ar_cb.sdp_ct_handle, service_uuid, profile_version);
+        if (!get_legacy_stack_sdp_api()->handle.SDP_AddProfileDescriptorList(
+                bta_ar_cb.sdp_ct_handle, service_uuid, profile_version)) {
+          log::warn("Unable to add SDP profile descriptor version handle:{}",
+                    bta_ar_cb.sdp_ct_handle);
+        }
       }
       /* multiple CT are allowed.
        * Change supported categories on the second one */
