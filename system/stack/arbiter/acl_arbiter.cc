@@ -24,6 +24,7 @@
 #include "osi/include/allocator.h"
 #include "stack/gatt/gatt_int.h"
 #include "stack/include/l2c_api.h"
+#include "stack/include/l2cdefs.h"
 #include "stack/include/main_thread.h"
 
 namespace bluetooth {
