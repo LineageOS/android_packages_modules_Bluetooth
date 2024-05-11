@@ -299,12 +299,16 @@ bool SourceImpl::OnMetadataUpdateReq(
     return false;
   }
 
+  std::vector<struct playback_track_metadata_v7> metadata(
+      source_metadata.tracks,
+      source_metadata.tracks + source_metadata.track_count);
+
   bt_status_t status = do_in_main_thread(
       FROM_HERE,
       base::BindOnce(
           &LeAudioSourceAudioHalClient::Callbacks::OnAudioMetadataUpdate,
-          audioSourceCallbacks_->weak_factory_.GetWeakPtr(), source_metadata,
-          dsa_mode));
+          audioSourceCallbacks_->weak_factory_.GetWeakPtr(),
+          std::move(metadata), dsa_mode));
   if (status == BT_STATUS_SUCCESS) {
     return true;
   }

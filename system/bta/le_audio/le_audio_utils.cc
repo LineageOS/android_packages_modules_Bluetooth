@@ -163,19 +163,18 @@ static bool isMetadataTagPresent(const char* tags, const char* tag) {
 }
 
 AudioContexts GetAudioContextsFromSourceMetadata(
-    const source_metadata_v7& source_metadata) {
+    const std::vector<struct playback_track_metadata_v7>& source_metadata) {
   AudioContexts track_contexts;
-  for (size_t i = 0; i < source_metadata.track_count; i++) {
-    auto track = source_metadata.tracks[i].base;
+  for (const auto& entry : source_metadata) {
+    auto track = entry.base;
     if (track.content_type == 0 && track.usage == 0) continue;
 
     LOG_INFO("%s: usage=%s(%d), content_type=%s(%d), gain=%f, tag:%s", __func__,
              usageToString(track.usage).c_str(), track.usage,
              contentTypeToString(track.content_type).c_str(),
-             track.content_type, track.gain, source_metadata.tracks[i].tags);
+             track.content_type, track.gain, entry.tags);
 
-    if (isMetadataTagPresent(source_metadata.tracks[i].tags,
-                             "VX_AOSP_SAMPLESOUND")) {
+    if (isMetadataTagPresent(entry.tags, "VX_AOSP_SAMPLESOUND")) {
       track_contexts.set(LeAudioContextType::SOUNDEFFECTS);
     } else {
       track_contexts.set(
@@ -186,11 +185,11 @@ AudioContexts GetAudioContextsFromSourceMetadata(
 }
 
 AudioContexts GetAudioContextsFromSinkMetadata(
-    const sink_metadata_v7& sink_metadata) {
+    const std::vector<struct record_track_metadata_v7>& sink_metadata) {
   AudioContexts all_track_contexts;
 
-  for (size_t i = 0; i < sink_metadata.track_count; i++) {
-    auto track = sink_metadata.tracks[i].base;
+  for (const auto& entry : sink_metadata) {
+    auto track = entry.base;
     if (track.source == AUDIO_SOURCE_INVALID) continue;
     LeAudioContextType track_context;
 

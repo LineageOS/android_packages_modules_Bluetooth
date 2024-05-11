@@ -1850,9 +1850,6 @@ class UnicastTestNoInit : public Test {
       tracks_vec.push_back(desc_track);
     }
 
-    const source_metadata_v7_t source_metadata = {
-        .track_count = tracks_vec.size(), .tracks = tracks_vec.data()};
-
     ASSERT_NE(nullptr, mock_le_audio_source_hal_client_);
     /* Local Source may reconfigure once the metadata is updated */
     if (reconfigure_existing_stream) {
@@ -1873,7 +1870,7 @@ class UnicastTestNoInit : public Test {
     }
 
     ASSERT_NE(unicast_source_hal_cb_, nullptr);
-    unicast_source_hal_cb_->OnAudioMetadataUpdate(source_metadata,
+    unicast_source_hal_cb_->OnAudioMetadataUpdate(std::move(tracks_vec),
                                                   DsaMode::DISABLED);
   }
 
@@ -1914,11 +1911,8 @@ class UnicastTestNoInit : public Test {
       tracks_vec.push_back(desc_track);
     }
 
-    const sink_metadata_v7_t sink_metadata = {.track_count = tracks_vec.size(),
-                                              .tracks = tracks_vec.data()};
-
     ASSERT_NE(nullptr, unicast_sink_hal_cb_);
-    unicast_sink_hal_cb_->OnAudioMetadataUpdate(sink_metadata);
+    unicast_sink_hal_cb_->OnAudioMetadataUpdate(std::move(tracks_vec));
   }
 
   void LocalAudioSourceSuspend(void) {
