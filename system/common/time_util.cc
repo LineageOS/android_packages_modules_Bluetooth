@@ -16,14 +16,22 @@
  *
  ******************************************************************************/
 
+#include "common/time_util.h"
+
 #include <sys/time.h>
 #include <time.h>
-
-#include "common/time_util.h"
 
 namespace bluetooth {
 
 namespace common {
+
+uint64_t time_get_audio_server_tick_us() {
+#ifndef TARGET_FLOSS
+  return time_get_os_boottime_us();
+#else
+  return time_get_os_monotonic_raw_us();
+#endif
+}
 
 uint64_t time_get_os_boottime_ms() { return time_get_os_boottime_us() / 1000; }
 

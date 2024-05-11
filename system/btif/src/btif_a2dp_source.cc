@@ -898,13 +898,8 @@ static void btif_a2dp_source_audio_tx_stop_event(void) {
 static void btif_a2dp_source_audio_handle_timer(void) {
   if (btif_av_is_a2dp_offload_running()) return;
 
-#ifndef TARGET_FLOSS
-  uint64_t timestamp_us = bluetooth::common::time_get_os_boottime_us();
-  uint64_t stats_timestamp_us = timestamp_us;
-#else
-  uint64_t timestamp_us = bluetooth::common::time_get_os_monotonic_raw_us();
+  uint64_t timestamp_us = bluetooth::common::time_get_audio_server_tick_us();
   uint64_t stats_timestamp_us = bluetooth::common::time_get_os_boottime_us();
-#endif
 
   log_tstamps_us("A2DP Source tx scheduling timer", timestamp_us);
 

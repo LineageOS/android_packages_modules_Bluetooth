@@ -60,6 +60,21 @@ struct ACL_AcceptLeConnectionFrom {
 };
 extern struct ACL_AcceptLeConnectionFrom ACL_AcceptLeConnectionFrom;
 
+// Name: ACL_DeviceAlreadyConnected
+// Params: const tBLE_BD_ADDR& legacy_address_with_type
+// Return: bool
+struct ACL_DeviceAlreadyConnected {
+  static bool return_value;
+  std::function<bool(const tBLE_BD_ADDR& legacy_address_with_type)> body{
+      [](const tBLE_BD_ADDR& legacy_address_with_type) {
+        return return_value;
+      }};
+  bool operator()(const tBLE_BD_ADDR& legacy_address_with_type) {
+    return body(legacy_address_with_type);
+  };
+};
+extern struct ACL_DeviceAlreadyConnected ACL_DeviceAlreadyConnected;
+
 // Name: ACL_AddToAddressResolution
 // Params: const tBLE_BD_ADDR& legacy_address_with_type, const Octet16&
 // peer_irk, const Octet16& local_irk Return: void

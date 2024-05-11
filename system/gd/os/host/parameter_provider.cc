@@ -33,6 +33,7 @@ std::mutex parameter_mutex;
 std::string config_file_path;
 std::string snoop_log_file_path;
 std::string snooz_log_file_path;
+std::string sysprops_file_path;
 }  // namespace
 
 // Write to $PWD/bt_stack.conf if $PWD can be found, otherwise, write to $HOME/bt_stack.conf
@@ -104,7 +105,13 @@ void ParameterProvider::OverrideSnoozLogFilePath(const std::string& path) {
 }
 
 std::string ParameterProvider::SyspropsFilePath() {
-  return "";
+  std::lock_guard<std::mutex> lock(parameter_mutex);
+  return sysprops_file_path;
+}
+
+void ParameterProvider::OverrideSyspropsFilePath(const std::string& path) {
+  std::lock_guard<std::mutex> lock(parameter_mutex);
+  sysprops_file_path = path;
 }
 
 bluetooth_keystore::BluetoothKeystoreInterface* ParameterProvider::GetBtKeystoreInterface() {

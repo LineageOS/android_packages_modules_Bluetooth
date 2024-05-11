@@ -21,7 +21,6 @@
 #include <unordered_set>
 
 #include "hci/link_key.h"
-#include "hci/uuid.h"
 #include "storage/config_cache.h"
 #include "storage/config_cache_helper.h"
 #include "storage/device.h"
@@ -91,7 +90,6 @@ class ClassicDevice {
  public:
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(LinkKey, hci::LinkKey, "LinkKey");
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(LinkKeyType, hci::KeyType, "LinkKeyType");
-  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(ServiceUuids, std::vector<hci::Uuid>, "Service");
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(SdpDiManufacturer, uint16_t, "SdpDiManufacturer");
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(SdpDiModel, uint16_t, "SdpDiModel");
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(SdpDiHardwareVersion, uint16_t, "SdpDiHardwareVersion");

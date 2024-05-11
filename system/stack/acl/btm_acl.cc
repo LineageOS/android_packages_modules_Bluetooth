@@ -1882,7 +1882,8 @@ void btm_read_rssi_complete(uint8_t* p, uint16_t evt_len) {
       STREAM_TO_UINT16(handle, p);
 
       STREAM_TO_UINT8(result.rssi, p);
-      log::debug("Read rrsi complete rssi:%hhd hci status:{}", result.rssi);
+      log::debug("Read rrsi complete rssi:{} hci status:{}", result.rssi,
+                 hci_status_code_text(to_hci_status_code(result.hci_status)));
 
       tACL_CONN* p_acl_cb = internal_.acl_get_connection_from_handle(handle);
       if (p_acl_cb != nullptr) {

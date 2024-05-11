@@ -15,6 +15,10 @@
  */
 #pragma once
 
+#ifdef __ANDROID__
+#error "sysprops_module is not supposed to be used on Android"
+#endif
+
 #include "module.h"
 
 namespace bluetooth {
@@ -22,11 +26,11 @@ namespace sysprops {
 
 class SyspropsModule : public bluetooth::Module {
  public:
-  SyspropsModule() = default;
+  SyspropsModule();
   SyspropsModule(const SyspropsModule&) = delete;
   SyspropsModule& operator=(const SyspropsModule&) = delete;
 
-  ~SyspropsModule() = default;
+  ~SyspropsModule();
 
   static const ModuleFactory Factory;
 

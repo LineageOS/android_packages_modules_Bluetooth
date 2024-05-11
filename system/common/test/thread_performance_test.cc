@@ -24,7 +24,6 @@
 
 #include <chrono>
 #include <future>
-#include <iostream>
 #include <thread>
 
 #include "abstract_message_loop.h"
@@ -37,7 +36,7 @@ using namespace bluetooth;
 
 #define NUM_MESSAGES_TO_SEND 100000
 
-volatile static int g_counter = 0;
+static int g_counter = 0;
 static std::unique_ptr<std::promise<void>> g_counter_promise = nullptr;
 
 void callback_batch(fixed_queue_t* queue, void* data) {

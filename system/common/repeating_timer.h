@@ -23,6 +23,8 @@
 #include <chrono>
 #include <future>
 
+#include "time_util.h"
+
 namespace bluetooth {
 
 namespace common {
@@ -38,7 +40,9 @@ class MessageLoopThread;
  */
 class RepeatingTimer final {
  public:
-  RepeatingTimer() : expected_time_next_task_us_(0) {}
+  RepeatingTimer(uint64_t (*clock_tick_us)(void) =
+                     bluetooth::common::time_get_os_boottime_us)
+      : expected_time_next_task_us_(0), clock_tick_us_(clock_tick_us) {}
   RepeatingTimer(const RepeatingTimer&) = delete;
   RepeatingTimer& operator=(const RepeatingTimer&) = delete;
 
@@ -83,7 +87,8 @@ class RepeatingTimer final {
   base::CancelableClosure task_wrapper_;
   base::RepeatingClosure task_;
   std::chrono::microseconds period_;
-  uint64_t expected_time_next_task_us_;  // Using clock boot time in time_util.h
+  uint64_t expected_time_next_task_us_;
+  uint64_t (*clock_tick_us_)(void);
   mutable std::recursive_mutex api_mutex_;
   void CancelHelper(std::promise<void> promise);
   void CancelClosure(std::promise<void> promise);
