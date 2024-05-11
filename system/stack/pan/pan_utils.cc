@@ -137,8 +137,11 @@ uint32_t pan_register_with_sdp(uint16_t uuid, const char* p_name,
   }
 
   /* Make the service browsable */
-  get_legacy_stack_sdp_api()->handle.SDP_AddUuidSequence(
-      sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &browse_list);
+  if (!get_legacy_stack_sdp_api()->handle.SDP_AddUuidSequence(
+          sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &browse_list)) {
+    log::warn("Unable to add SDP uuid sequence browse group list handle:{}",
+              sdp_handle);
+  }
 
   return sdp_handle;
 }
