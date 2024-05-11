@@ -942,8 +942,10 @@ uint32_t gatt_add_sdp_record(const Uuid& uuid, uint16_t start_hdl,
   switch (uuid.GetShortestRepresentationSize()) {
     case Uuid::kNumBytes16: {
       uint16_t tmp = uuid.As16Bit();
-      get_legacy_stack_sdp_api()->handle.SDP_AddServiceClassIdList(sdp_handle,
-                                                                   1, &tmp);
+      if (!get_legacy_stack_sdp_api()->handle.SDP_AddServiceClassIdList(
+              sdp_handle, 1, &tmp)) {
+        log::warn("Unable to add SDP attribute for 16 bit uuid");
+      }
       break;
     }
 
