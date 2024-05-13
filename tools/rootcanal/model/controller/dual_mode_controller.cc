@@ -3107,6 +3107,14 @@ void DualModeController::LeApcf(CommandView command) {
           apcf_available_spaces));
       break;
     }
+    case bluetooth::hci::ApcfOpcode::TRANSPORT_DISCOVERY_SERVICE: {
+      DEBUG(id_, "<< LE APCF Transport Discovery Service");
+
+      send_event_(bluetooth::hci::LeApcfCompleteBuilder::Create(
+          kNumCommandPackets, ErrorCode::INVALID_HCI_COMMAND_PARAMETERS,
+          command_view.GetApcfOpcode(), std::vector<uint8_t>{}));
+      break;
+    }
     case bluetooth::hci::ApcfOpcode::AD_TYPE_FILTER: {
       auto subcommand_view =
           bluetooth::hci::LeApcfAdTypeFilterView::Create(command_view);
