@@ -1,8 +1,8 @@
 //! Anything related to audio and media API.
 
 use bt_topshim::btif::{
-    BluetoothInterface, BtBondState, BtConnectionDirection, BtStatus, DisplayAddress, RawAddress,
-    ToggleableProfile,
+    BluetoothInterface, BtBondState, BtConnectionDirection, BtStatus, BtTransport, DisplayAddress,
+    RawAddress, ToggleableProfile,
 };
 use bt_topshim::profiles::a2dp::{
     A2dp, A2dpCallbacks, A2dpCallbacksDispatcher, A2dpCodecBitsPerSample, A2dpCodecChannelMode,
@@ -17,6 +17,12 @@ use bt_topshim::profiles::hfp::{
     BthfAudioState, BthfConnectionState, CallHoldCommand, CallInfo, CallState, EscoCodingFormat,
     Hfp, HfpCallbacks, HfpCallbacksDispatcher, HfpCodecBitId, HfpCodecFormat, HfpCodecId,
     PhoneState, TelephonyDeviceStatus,
+};
+use bt_topshim::profiles::le_audio::{
+    BtLeAudioConnectionState, BtLeAudioContentType, BtLeAudioDirection, BtLeAudioGroupNodeStatus,
+    BtLeAudioGroupStatus, BtLeAudioGroupStreamStatus, BtLeAudioSource,
+    BtLeAudioUnicastMonitorModeStatus, BtLeAudioUsage, BtLePcmConfig, LeAudioClient,
+    LeAudioClientCallbacks, LeAudioClientCallbacksDispatcher, SinkMetadata, SourceMetadata,
 };
 use bt_topshim::profiles::ProfileConnectionState;
 use bt_topshim::{metrics, topstack};
@@ -67,9 +73,15 @@ const CONNECT_MISSING_PROFILES_TIMEOUT_SEC: u64 = 6;
 // Set to 5s to align with default page timeout (BT spec vol 4 part E sec 6.6)
 const CONNECT_AS_INITIATOR_TIMEOUT_SEC: u64 = 5;
 
-/// The list of profiles we consider as audio profiles for media.
-const MEDIA_AUDIO_PROFILES: &[uuid::Profile] =
+/// The list of profiles we consider as classic audio profiles for media.
+const MEDIA_CLASSIC_AUDIO_PROFILES: &[uuid::Profile] =
     &[uuid::Profile::A2dpSink, uuid::Profile::Hfp, uuid::Profile::AvrcpController];
+
+/// The list of profiles we consider as LE audio profiles for media.
+const MEDIA_LE_AUDIO_PROFILES: &[uuid::Profile] = &[uuid::Profile::LeAudio];
+
+/// Group ID used to identify unknown/non-existent groups.
+const LEA_UNKNOWN_GROUP_ID: i32 = -1;
 
 pub trait IBluetoothMedia {
     ///
@@ -81,12 +93,18 @@ pub trait IBluetoothMedia {
     /// clean up media stack
     fn cleanup(&mut self) -> bool;
 
-    /// connect to available but missing media profiles
+    /// connect to available but missing classic media profiles
     fn connect(&mut self, address: String);
 
     /// disconnect all profiles from the device
     /// NOTE: do not call this function from outside unless `is_complete_profiles_required`
     fn disconnect(&mut self, address: String);
+
+    fn connect_lea_group_by_member_address(&mut self, address: String);
+    fn disconnect_lea_group_by_member_address(&mut self, address: String);
+
+    fn connect_lea(&mut self, address: String);
+    fn disconnect_lea(&mut self, address: String);
 
     // Set the device as the active A2DP device
     fn set_active_device(&mut self, address: String);
@@ -147,6 +165,29 @@ pub trait IBluetoothMedia {
 
     // Trigger a debug log dump.
     fn trigger_debug_dump(&mut self);
+
+    /// LE Audio Commands
+    fn group_set_active(&mut self, group_id: i32);
+    fn host_start_audio_request(&mut self) -> bool;
+    fn host_stop_audio_request(&mut self);
+    fn peer_start_audio_request(&mut self) -> bool;
+    fn peer_stop_audio_request(&mut self);
+    fn get_host_pcm_config(&mut self) -> BtLePcmConfig;
+    fn get_peer_pcm_config(&mut self) -> BtLePcmConfig;
+    fn get_host_stream_started(&mut self) -> bool;
+    fn get_peer_stream_started(&mut self) -> bool;
+    fn source_metadata_changed(
+        &mut self,
+        usage: BtLeAudioUsage,
+        content_type: BtLeAudioContentType,
+        gain: f64,
+    ) -> bool;
+    fn sink_metadata_changed(&mut self, source: BtLeAudioSource, gain: f64) -> bool;
+    fn get_unicast_monitor_mode_status(
+        &mut self,
+        direction: BtLeAudioDirection,
+    ) -> BtLeAudioUnicastMonitorModeStatus;
+    fn get_group_stream_status(&mut self, group_id: i32) -> BtLeAudioGroupStreamStatus;
 }
 
 pub trait IBluetoothMediaCallback: RPCProxy {
@@ -191,6 +232,42 @@ pub trait IBluetoothMediaCallback: RPCProxy {
         pkt_status_in_hex: String,
         pkt_status_in_binary: String,
     );
+
+    /// Triggered when the first member of the specified LEA group has connected
+    /// the LE audio profile. This is the earliest meaningful timing to notify
+    /// the audio server that the group as an audio device is available.
+    fn on_lea_group_connected(&mut self, group_id: i32, name: String);
+
+    /// Triggered when the last connected member of the specified LEA group has
+    /// disconnected the LE audio profile. This is when we should notify the
+    /// audio server that the group is no longer available as an audio device.
+    fn on_lea_group_disconnected(&mut self, group_id: i32);
+
+    fn on_lea_group_status(&mut self, group_id: i32, status: BtLeAudioGroupStatus);
+
+    fn on_lea_group_node_status(
+        &mut self,
+        addr: String,
+        group_id: i32,
+        status: BtLeAudioGroupNodeStatus,
+    );
+
+    fn on_lea_audio_conf(
+        &mut self,
+        direction: u8,
+        group_id: i32,
+        snk_audio_location: u32,
+        src_audio_location: u32,
+        avail_cont: u16,
+    );
+
+    fn on_lea_unicast_monitor_mode_status(
+        &mut self,
+        direction: BtLeAudioDirection,
+        status: BtLeAudioUnicastMonitorModeStatus,
+    );
+
+    fn on_lea_group_stream_status(&mut self, group_id: i32, status: BtLeAudioGroupStreamStatus);
 }
 
 pub trait IBluetoothTelephony {
@@ -268,6 +345,11 @@ pub enum MediaActions {
     Connect(String),
     Disconnect(String),
     ForceEnterConnected(String), // Only used for qualification.
+
+    ConnectLeaGroupByMemberAddress(String),
+    DisconnectLeaGroupByMemberAddress(String),
+    ConnectLea(String),
+    DisconnectLea(String),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -285,6 +367,14 @@ struct UHid {
     pub volume: u8,
     pub muted: bool,
     pub is_open: bool,
+}
+
+struct LEAAudioConf {
+    pub direction: u8,
+    pub group_id: i32,
+    pub snk_audio_location: u32,
+    pub src_audio_location: u32,
+    pub avail_cont: u16,
 }
 
 pub struct BluetoothMedia {
@@ -322,6 +412,14 @@ pub struct BluetoothMedia {
     memory_dialing_number: Option<String>,
     last_dialing_number: Option<String>,
     uhid: HashMap<RawAddress, UHid>,
+    le_audio: Option<LeAudioClient>,
+    le_audio_group_status: HashMap<i32, BtLeAudioGroupStatus>,
+    le_audio_groups: HashMap<i32, HashSet<RawAddress>>,
+    le_audio_node_to_group: HashMap<RawAddress, i32>,
+    le_audio_states: HashMap<RawAddress, BtLeAudioConnectionState>,
+    le_audio_unicast_monitor_mode_status: HashMap<i32, BtLeAudioUnicastMonitorModeStatus>,
+    le_audio_group_stream_status: HashMap<i32, BtLeAudioGroupStreamStatus>,
+    le_audio_delayed_audio_conf_updates: HashMap<i32, LEAAudioConf>,
     is_le_audio_only_enabled: bool, // TODO: remove this once there is dual mode.
 }
 
@@ -376,6 +474,14 @@ impl BluetoothMedia {
             memory_dialing_number: None,
             last_dialing_number: None,
             uhid: HashMap::new(),
+            le_audio: None,
+            le_audio_group_status: HashMap::new(),
+            le_audio_groups: HashMap::new(),
+            le_audio_node_to_group: HashMap::new(),
+            le_audio_states: HashMap::new(),
+            le_audio_unicast_monitor_mode_status: HashMap::new(),
+            le_audio_group_stream_status: HashMap::new(),
+            le_audio_delayed_audio_conf_updates: HashMap::new(),
             is_le_audio_only_enabled: false,
         }
     }
@@ -431,6 +537,22 @@ impl BluetoothMedia {
 
     pub fn enable_profile(&mut self, profile: &Profile) {
         match profile {
+            Profile::A2dpSource | Profile::AvrcpTarget | Profile::Hfp => {
+                if self.is_le_audio_only_enabled {
+                    info!("LeAudioEnableLeAudioOnly is set, skip enabling {:?}", profile);
+                    return;
+                }
+            }
+            Profile::LeAudio => {
+                if !self.is_le_audio_only_enabled {
+                    info!("LeAudioEnableLeAudioOnly is not set, skip enabling {:?}", profile);
+                    return;
+                }
+            }
+            _ => {}
+        }
+
+        match profile {
             &Profile::A2dpSource => {
                 if let Some(a2dp) = &mut self.a2dp {
                     a2dp.enable();
@@ -444,6 +566,11 @@ impl BluetoothMedia {
             &Profile::Hfp => {
                 if let Some(hfp) = &mut self.hfp {
                     hfp.enable();
+                }
+            }
+            &Profile::LeAudio => {
+                if let Some(le_audio) = &mut self.le_audio {
+                    le_audio.enable();
                 }
             }
             _ => {
@@ -476,6 +603,11 @@ impl BluetoothMedia {
                     hfp.disable();
                 }
             }
+            &Profile::LeAudio => {
+                if let Some(le_audio) = &mut self.le_audio {
+                    le_audio.disable();
+                }
+            }
             _ => {
                 warn!("Tried to disable {} in bluetooth_media", profile);
                 return;
@@ -494,9 +626,292 @@ impl BluetoothMedia {
                 Some(self.avrcp.as_ref().map_or(false, |avrcp| avrcp.is_enabled()))
             }
             &Profile::Hfp => Some(self.hfp.as_ref().map_or(false, |hfp| hfp.is_enabled())),
+            &Profile::LeAudio => {
+                Some(self.le_audio.as_ref().map_or(false, |le_audio| le_audio.is_enabled()))
+            }
             _ => {
                 warn!("Tried to query enablement status of {} in bluetooth_media", profile);
                 None
+            }
+        }
+    }
+
+    pub fn dispatch_le_audio_callbacks(&mut self, cb: LeAudioClientCallbacks) {
+        match cb {
+            LeAudioClientCallbacks::Initialized() => {
+                info!("LeAudioClientCallbacks::Initialized: ");
+            }
+            LeAudioClientCallbacks::ConnectionState(state, addr) => {
+                if !self.le_audio_states.get(&addr).is_none()
+                    && state == *self.le_audio_states.get(&addr).unwrap()
+                {
+                    return;
+                }
+
+                let group_id =
+                    *self.le_audio_node_to_group.get(&addr).unwrap_or(&LEA_UNKNOWN_GROUP_ID);
+                if group_id == LEA_UNKNOWN_GROUP_ID {
+                    warn!(
+                        "LeAudioClientCallbacks::ConnectionState: [{}] Ignored dispatching of LeAudio callback on a device with no group",
+                        DisplayAddress(&addr)
+                    );
+                    return;
+                }
+
+                let group = self.le_audio_groups.get(&group_id).unwrap_or(&HashSet::new()).clone();
+
+                let is_only_connected_member = group.iter().all(|&member_addr| {
+                    member_addr == addr
+                        || *self
+                            .le_audio_states
+                            .get(&member_addr)
+                            .unwrap_or(&BtLeAudioConnectionState::Disconnected)
+                            != BtLeAudioConnectionState::Connected
+                });
+
+                info!(
+                    "LeAudioClientCallbacks::ConnectionState: [{}]: state={:?}, group_id={}, is_only_connected_member={}",
+                    DisplayAddress(&addr),
+                    state,
+                    group_id,
+                    is_only_connected_member
+                );
+
+                match state {
+                    BtLeAudioConnectionState::Connected => {
+                        if is_only_connected_member {
+                            self.callbacks.lock().unwrap().for_all_callbacks(|callback| {
+                                callback.on_lea_group_connected(
+                                    group_id,
+                                    self.adapter_get_remote_name(addr),
+                                );
+                            });
+
+                            match self.le_audio_delayed_audio_conf_updates.remove(&group_id) {
+                                Some(conf) => {
+                                    self.callbacks.lock().unwrap().for_all_callbacks(|callback| {
+                                        callback.on_lea_audio_conf(
+                                            conf.direction,
+                                            conf.group_id,
+                                            conf.snk_audio_location,
+                                            conf.src_audio_location,
+                                            conf.avail_cont,
+                                        );
+                                    });
+                                }
+                                _ => {}
+                            }
+                        }
+
+                        self.le_audio_states.insert(addr, state);
+                    }
+                    BtLeAudioConnectionState::Disconnected => {
+                        if self.le_audio_states.remove(&addr).is_some() {
+                            if is_only_connected_member {
+                                self.callbacks.lock().unwrap().for_all_callbacks(|callback| {
+                                    callback.on_lea_group_disconnected(group_id);
+                                });
+                            }
+                        }
+                    }
+                    _ => {
+                        self.le_audio_states.insert(addr, state);
+                    }
+                }
+            }
+            LeAudioClientCallbacks::GroupStatus(group_id, status) => {
+                if !self.le_audio_group_status.get(&group_id).is_none()
+                    && status == *self.le_audio_group_status.get(&group_id).unwrap()
+                {
+                    return;
+                }
+
+                info!(
+                    "LeAudioClientCallbacks::GroupStatus: group_id={}, status={:?}",
+                    group_id, status
+                );
+
+                if self.le_audio_groups.get(&group_id).is_none() {
+                    warn!("LeAudioClientCallbacks::GroupStatus: Updating status of a non-existent group.")
+                }
+
+                self.callbacks.lock().unwrap().for_all_callbacks(|callback| {
+                    callback.on_lea_group_status(group_id, status);
+                });
+
+                self.le_audio_group_status.insert(group_id, status);
+            }
+            LeAudioClientCallbacks::GroupNodeStatus(addr, group_id, status) => {
+                info!(
+                    "LeAudioClientCallbacks::GroupNodeStatus: [{}]: group_id={}, status={:?}",
+                    DisplayAddress(&addr),
+                    group_id,
+                    status
+                );
+
+                match status {
+                    BtLeAudioGroupNodeStatus::Added => {
+                        if let Some(old_group_id) =
+                            self.le_audio_node_to_group.insert(addr, group_id)
+                        {
+                            if old_group_id != group_id {
+                                warn!(
+                                    "LeAudioClientCallbacks::GroupNodeStatus: [{}]: node already belongs to another group {}",
+                                    DisplayAddress(&addr),
+                                    old_group_id,
+                                );
+
+                                if let Some(old_group) = self.le_audio_groups.get_mut(&old_group_id)
+                                {
+                                    old_group.remove(&addr);
+                                    if old_group.is_empty() {
+                                        self.le_audio_groups.remove(&old_group_id);
+                                    }
+                                }
+                            }
+                        }
+
+                        self.le_audio_groups.entry(group_id).or_insert(HashSet::new()).insert(addr);
+                    }
+                    BtLeAudioGroupNodeStatus::Removed => {
+                        if let Some(old_group_id) = self.le_audio_node_to_group.remove(&addr) {
+                            if old_group_id != group_id {
+                                warn!(
+                                    "LeAudioClientCallbacks::GroupNodeStatus: [{}]: removed node from its group {} which is not the specified group {}",
+                                    DisplayAddress(&addr),
+                                    old_group_id,
+                                    group_id,
+                                );
+                            }
+
+                            if let Some(old_group) = self.le_audio_groups.get_mut(&old_group_id) {
+                                old_group.remove(&addr);
+                                if old_group.is_empty() {
+                                    self.le_audio_groups.remove(&old_group_id);
+                                }
+                            }
+                        } else {
+                            warn!(
+                                "LeAudioClientCallbacks::GroupNodeStatus: [{}]: node does not belong to any group",
+                                DisplayAddress(&addr)
+                            );
+                        }
+                    }
+                    _ => {
+                        warn!("LeAudioClientCallbacks::GroupNodeStatus: Unknown status for GroupNodeStatus {:?}", status);
+                    }
+                }
+
+                self.callbacks.lock().unwrap().for_all_callbacks(|callback| {
+                    callback.on_lea_group_node_status(addr.to_string(), group_id, status);
+                });
+            }
+            LeAudioClientCallbacks::AudioConf(
+                direction,
+                group_id,
+                snk_audio_location,
+                src_audio_location,
+                avail_cont,
+            ) => {
+                info!(
+                    "LeAudioClientCallbacks::AudioConf: direction={}, group_id={}, snk_audio_location={}, src_audio_location={}, avail_cont={}",
+                    direction, group_id, snk_audio_location, src_audio_location, avail_cont,
+                );
+
+                let group = self.le_audio_groups.get(&group_id).unwrap_or(&HashSet::new()).clone();
+
+                let is_group_connected = group.iter().any(|&addr| {
+                    *self
+                        .le_audio_states
+                        .get(&addr)
+                        .unwrap_or(&BtLeAudioConnectionState::Disconnected)
+                        == BtLeAudioConnectionState::Connected
+                });
+
+                if is_group_connected {
+                    self.callbacks.lock().unwrap().for_all_callbacks(|callback| {
+                        callback.on_lea_audio_conf(
+                            direction,
+                            group_id,
+                            snk_audio_location,
+                            src_audio_location,
+                            avail_cont,
+                        );
+                    });
+                } else {
+                    self.le_audio_delayed_audio_conf_updates.insert(
+                        group_id,
+                        LEAAudioConf {
+                            direction,
+                            group_id,
+                            snk_audio_location,
+                            src_audio_location,
+                            avail_cont,
+                        },
+                    );
+                }
+            }
+            LeAudioClientCallbacks::SinkAudioLocationAvailable(addr, snk_audio_locations) => {
+                info!("LeAudioClientCallbacks::SinkAudioLocationAvailable: [{}]: snk_audio_locations={:?}", DisplayAddress(&addr), snk_audio_locations);
+            }
+            LeAudioClientCallbacks::AudioLocalCodecCapabilities(
+                local_input_codec_conf,
+                local_output_codec_conf,
+            ) => {
+                info!(
+                    "LeAudioClientCallbacks::AudioLocalCodecCapabilities: local_input_codec_conf={:?}, local_output_codec_conf={:?}",
+                    local_input_codec_conf, local_output_codec_conf
+                );
+            }
+            LeAudioClientCallbacks::AudioGroupCodecConf(
+                group_id,
+                input_codec_conf,
+                output_codec_conf,
+                input_caps,
+                output_caps,
+            ) => {
+                info!("LeAudioClientCallbacks::AudioGroupCodecConf: group_id={}, input_codec_conf={:?}, output_codec_conf={:?}, input_caps={:?}, output_caps={:?}",
+                      group_id, input_codec_conf, output_codec_conf, input_caps, output_caps);
+            }
+            LeAudioClientCallbacks::UnicastMonitorModeStatus(direction, status) => {
+                if !self.le_audio_unicast_monitor_mode_status.get(&direction.into()).is_none()
+                    && status
+                        == *self
+                            .le_audio_unicast_monitor_mode_status
+                            .get(&direction.into())
+                            .unwrap()
+                {
+                    return;
+                }
+
+                info!(
+                    "LeAudioClientCallbacks::UnicastMonitorModeStatus: direction={:?}, status={:?}",
+                    direction, status
+                );
+
+                self.callbacks.lock().unwrap().for_all_callbacks(|callback| {
+                    callback.on_lea_unicast_monitor_mode_status(direction, status);
+                });
+
+                self.le_audio_unicast_monitor_mode_status.insert(direction.into(), status);
+            }
+            LeAudioClientCallbacks::GroupStreamStatus(group_id, status) => {
+                if !self.le_audio_group_stream_status.get(&group_id).is_none()
+                    && status == *self.le_audio_group_stream_status.get(&group_id).unwrap()
+                {
+                    return;
+                }
+
+                info!(
+                    "LeAudioClientCallbacks::GroupStreamStatus: group_id={} status {:?}",
+                    group_id, status
+                );
+
+                self.callbacks.lock().unwrap().for_all_callbacks(|callback| {
+                    callback.on_lea_group_stream_status(group_id, status);
+                });
+
+                self.le_audio_group_stream_status.insert(group_id, status);
             }
         }
     }
@@ -690,6 +1105,18 @@ impl BluetoothMedia {
             MediaActions::Connect(address) => self.connect(address),
             MediaActions::Disconnect(address) => self.disconnect(address),
             MediaActions::ForceEnterConnected(address) => self.force_enter_connected(address),
+
+            MediaActions::ConnectLea(address) => self.connect_lea(address),
+            MediaActions::DisconnectLea(address) => self.disconnect_lea(address),
+            MediaActions::ConnectVc(address) => self.connect_vc(address),
+            MediaActions::DisconnectVc(address) => self.disconnect_vc(address),
+
+            MediaActions::ConnectLeaGroupByMemberAddress(address) => {
+                self.connect_lea_group_by_member_address(address)
+            }
+            MediaActions::DisconnectLeaGroupByMemberAddress(address) => {
+                self.disconnect_lea_group_by_member_address(address)
+            }
         }
     }
 
@@ -1557,7 +1984,7 @@ impl BluetoothMedia {
             return;
         }
 
-        let available_profiles = self.adapter_get_audio_profiles(addr);
+        let available_profiles = self.adapter_get_classic_audio_profiles(addr);
         let connected_profiles = self.connected_profiles.get(&addr).unwrap();
         let missing_profiles =
             available_profiles.difference(&connected_profiles).cloned().collect::<HashSet<_>>();
@@ -1729,7 +2156,7 @@ impl BluetoothMedia {
         }
     }
 
-    fn adapter_get_audio_profiles(&self, addr: RawAddress) -> HashSet<uuid::Profile> {
+    fn adapter_get_le_audio_profiles(&self, addr: RawAddress) -> HashSet<uuid::Profile> {
         let device = BluetoothDevice::new(addr.to_string(), "".to_string());
         if let Some(adapter) = &self.adapter {
             adapter
@@ -1737,10 +2164,24 @@ impl BluetoothMedia {
                 .unwrap()
                 .get_remote_uuids(device)
                 .into_iter()
-                .map(|u| uuid::UuidHelper::is_known_profile(&u))
-                .filter(|u| u.is_some())
-                .map(|u| u.unwrap())
-                .filter(|u| MEDIA_AUDIO_PROFILES.contains(&u))
+                .filter_map(|u| uuid::UuidHelper::is_known_profile(&u))
+                .filter(|u| MEDIA_LE_AUDIO_PROFILES.contains(&u))
+                .collect()
+        } else {
+            HashSet::new()
+        }
+    }
+
+    fn adapter_get_classic_audio_profiles(&self, addr: RawAddress) -> HashSet<uuid::Profile> {
+        let device = BluetoothDevice::new(addr.to_string(), "".to_string());
+        if let Some(adapter) = &self.adapter {
+            adapter
+                .lock()
+                .unwrap()
+                .get_remote_uuids(device)
+                .into_iter()
+                .filter_map(|u| uuid::UuidHelper::is_known_profile(&u))
+                .filter(|u| MEDIA_CLASSIC_AUDIO_PROFILES.contains(&u))
                 .collect()
         } else {
             HashSet::new()
@@ -1826,7 +2267,8 @@ impl BluetoothMedia {
                     Some(a) => a,
                 };
 
-                self.is_any_profile_connected(&addr, &MEDIA_AUDIO_PROFILES)
+                self.is_any_profile_connected(&addr, &MEDIA_CLASSIC_AUDIO_PROFILES)
+                    || self.is_any_profile_connected(&addr, &MEDIA_LE_AUDIO_PROFILES)
             })
             .cloned()
             .collect()
@@ -2330,6 +2772,17 @@ fn get_hfp_dispatcher(tx: Sender<Message>) -> HfpCallbacksDispatcher {
     }
 }
 
+fn get_le_audio_dispatcher(tx: Sender<Message>) -> LeAudioClientCallbacksDispatcher {
+    LeAudioClientCallbacksDispatcher {
+        dispatch: Box::new(move |cb| {
+            let txl = tx.clone();
+            topstack::get_runtime().spawn(async move {
+                let _ = txl.send(Message::LeAudioClient(cb)).await;
+            });
+        }),
+    }
+}
+
 impl IBluetoothMedia for BluetoothMedia {
     fn register_callback(&mut self, callback: Box<dyn IBluetoothMediaCallback + Send>) -> bool {
         let _id = self.callbacks.lock().unwrap().add_callback(callback);
@@ -2360,9 +2813,15 @@ impl IBluetoothMedia for BluetoothMedia {
         self.hfp = Some(Hfp::new(&self.intf.lock().unwrap()));
         self.hfp.as_mut().unwrap().initialize(hfp_dispatcher);
 
+        // LEA
+        let le_audio_dispatcher = get_le_audio_dispatcher(self.tx.clone());
+        self.le_audio = Some(LeAudioClient::new(&self.intf.lock().unwrap()));
+        self.le_audio.as_mut().unwrap().initialize(le_audio_dispatcher);
+
         // TODO(b/284811956) A2DP needs to be enabled before AVRCP otherwise AVRCP gets memset'd.
         // Iterate the delay_enable_profiles hashmap directly when this is fixed.
-        let profile_order = vec![Profile::A2dpSource, Profile::AvrcpTarget, Profile::Hfp];
+        let profile_order =
+            vec![Profile::A2dpSource, Profile::AvrcpTarget, Profile::Hfp, Profile::LeAudio];
         for profile in profile_order {
             if self.delay_enable_profiles.contains(&profile) {
                 self.enable_profile(&profile);
@@ -2371,7 +2830,147 @@ impl IBluetoothMedia for BluetoothMedia {
         true
     }
 
+    fn connect_lea_group_by_member_address(&mut self, address: String) {
+        let addr = match RawAddress::from_string(address.clone()) {
+            None => {
+                warn!("connect_lea_group_by_member_address: invalid device address");
+                return;
+            }
+            Some(addr) => addr,
+        };
+
+        // Note that at this point the scanning of profiles may be incomplete,
+        // TODO(b/335780769): connect to available profiles and ensure
+        // this function is invoked whenever there is an incremental
+        // discovery of LE audio profiles.
+        for profile in MEDIA_LE_AUDIO_PROFILES {
+            match profile {
+                uuid::Profile::LeAudio => {
+                    self.connect_lea(addr.to_string());
+                }
+                _ => {}
+            }
+        }
+    }
+
+    fn disconnect_lea_group_by_member_address(&mut self, address: String) {
+        let addr = match RawAddress::from_string(address.clone()) {
+            None => {
+                warn!("disconnect_lea_group_by_member_address: invalid device address");
+                return;
+            }
+            Some(addr) => addr,
+        };
+
+        let group_id = *self.le_audio_node_to_group.get(&addr).unwrap_or(&LEA_UNKNOWN_GROUP_ID);
+        if group_id == LEA_UNKNOWN_GROUP_ID {
+            warn!(
+                "disconnect_lea_group_by_member_address: [{}]: address belongs to no group",
+                DisplayAddress(&addr)
+            );
+            return;
+        }
+
+        let group = self.le_audio_groups.get(&group_id).unwrap_or(&HashSet::new()).clone();
+
+        let available_profiles = self.adapter_get_le_audio_profiles(addr);
+
+        info!(
+            "disconnect_lea_group_by_member_address: [{}]: available profiles: {:?}.",
+            DisplayAddress(&addr),
+            available_profiles
+        );
+
+        for &member_addr in group.iter() {
+            for profile in self.adapter_get_le_audio_profiles(addr) {
+                match profile {
+                    uuid::Profile::LeAudio => {
+                        self.disconnect_lea(member_addr.to_string());
+                    }
+                    _ => {}
+                }
+            }
+        }
+    }
+
+    fn connect_lea(&mut self, address: String) {
+        if !self.is_le_audio_only_enabled {
+            warn!("connect_lea: LeAudioEnableLeAudioOnly is not set");
+            return;
+        }
+
+        let addr = match RawAddress::from_string(address.clone()) {
+            None => {
+                warn!("connect_lea: invalid device address");
+                return;
+            }
+            Some(addr) => addr,
+        };
+
+        if *self.le_audio_states.get(&addr).unwrap_or(&BtLeAudioConnectionState::Disconnected)
+            == BtLeAudioConnectionState::Connected
+        {
+            info!("connect_lea: already connected.");
+            return;
+        }
+
+        let available_profiles = self.adapter_get_le_audio_profiles(addr);
+
+        info!(
+            "connect_lea: [{}]: connecting, available profiles: {:?}.",
+            DisplayAddress(&addr),
+            available_profiles
+        );
+
+        match self.le_audio.as_mut() {
+            Some(le_audio) => {
+                le_audio.set_enable_state(addr, true);
+                le_audio.connect(addr);
+            }
+            None => {
+                warn!("connect_lea: [{}]: uninitialized LeAudio to connect", DisplayAddress(&addr));
+            }
+        };
+    }
+
+    fn disconnect_lea(&mut self, address: String) {
+        let addr = match RawAddress::from_string(address.clone()) {
+            None => {
+                warn!("disconnect_lea: invalid device address");
+                return;
+            }
+            Some(addr) => addr,
+        };
+
+        if *self.le_audio_states.get(&addr).unwrap_or(&BtLeAudioConnectionState::Disconnected)
+            == BtLeAudioConnectionState::Disconnected
+        {
+            info!("disconnect_lea: [{}]: already disconnected", DisplayAddress(&addr));
+            return;
+        }
+
+        info!("disconnect_lea: [{}]: disconnecting", DisplayAddress(&addr));
+
+        match self.le_audio.as_mut() {
+            Some(le_audio) => {
+                le_audio.set_enable_state(addr, false);
+                le_audio.disconnect(addr);
+            }
+            None => {
+                warn!(
+                    "disconnect_lea: [{}]: uninitialized LeAudio to disconnect",
+                    DisplayAddress(&addr)
+                );
+            }
+        };
+    }
+
     fn connect(&mut self, address: String) {
+        if self.is_le_audio_only_enabled {
+            warn!("connect: LeAudioEnableLeAudioOnly is set");
+            return;
+        }
+
         let addr = match RawAddress::from_string(address.clone()) {
             None => {
                 warn!("Invalid device address for connecting");
@@ -2380,7 +2979,7 @@ impl IBluetoothMedia for BluetoothMedia {
             Some(addr) => addr,
         };
 
-        let available_profiles = self.adapter_get_audio_profiles(addr);
+        let available_profiles = self.adapter_get_classic_audio_profiles(addr);
 
         info!(
             "[{}]: Connecting to device, available profiles: {:?}.",
@@ -2549,6 +3148,11 @@ impl IBluetoothMedia for BluetoothMedia {
     // is notified of the disconnection callback, `disconnect_device` will be
     // invoked as necessary to ensure the device is removed.
     fn disconnect(&mut self, address: String) {
+        if self.is_le_audio_only_enabled {
+            warn!("LeAudioEnableLeAudioOnly is set");
+            return;
+        }
+
         let addr = match RawAddress::from_string(address.clone()) {
             None => {
                 warn!("Invalid device address for disconnecting");
@@ -2983,6 +3587,143 @@ impl IBluetoothMedia for BluetoothMedia {
             Some(hfp) => hfp.debug_dump(),
             None => warn!("Uninitialized HFP to dump debug log"),
         };
+    }
+
+    fn group_set_active(&mut self, group_id: i32) {
+        match self.le_audio.as_mut() {
+            Some(le_audio) => le_audio.group_set_active(group_id),
+            None => {
+                warn!("Uninitialized LEA to group set active");
+            }
+        }
+    }
+
+    fn source_metadata_changed(
+        &mut self,
+        usage: BtLeAudioUsage,
+        content_type: BtLeAudioContentType,
+        gain: f64,
+    ) -> bool {
+        match self.le_audio.as_mut() {
+            Some(le_audio) => {
+                let data = vec![SourceMetadata { usage, content_type, gain }];
+                le_audio.source_metadata_changed(data);
+                true
+            }
+            None => {
+                warn!("Uninitialized LEA to update source metadata");
+                false
+            }
+        }
+    }
+
+    fn sink_metadata_changed(&mut self, source: BtLeAudioSource, gain: f64) -> bool {
+        match self.le_audio.as_mut() {
+            Some(le_audio) => {
+                let data = vec![SinkMetadata { source, gain }];
+                le_audio.sink_metadata_changed(data);
+                true
+            }
+            None => {
+                warn!("Uninitialized LEA to update sink metadata");
+                false
+            }
+        }
+    }
+
+    fn host_start_audio_request(&mut self) -> bool {
+        match self.le_audio.as_mut() {
+            Some(le_audio) => le_audio.host_start_audio_request(),
+            None => {
+                warn!("Uninitialized LEA to start audio request");
+                false
+            }
+        }
+    }
+
+    fn host_stop_audio_request(&mut self) {
+        match self.le_audio.as_mut() {
+            Some(le_audio) => le_audio.host_stop_audio_request(),
+            None => {
+                warn!("Uninitialized LEA to stop audio request");
+            }
+        }
+    }
+
+    fn peer_start_audio_request(&mut self) -> bool {
+        match self.le_audio.as_mut() {
+            Some(le_audio) => le_audio.peer_start_audio_request(),
+            None => {
+                warn!("Uninitialized LEA for peer to start audio request");
+                false
+            }
+        }
+    }
+
+    fn peer_stop_audio_request(&mut self) {
+        match self.le_audio.as_mut() {
+            Some(le_audio) => le_audio.peer_stop_audio_request(),
+            None => {
+                warn!("Uninitialized LEA for peer to stop audio request");
+            }
+        }
+    }
+
+    fn get_host_pcm_config(&mut self) -> BtLePcmConfig {
+        match self.le_audio.as_mut() {
+            Some(le_audio) => le_audio.get_host_pcm_config(),
+            None => {
+                warn!("Uninitialized LEA to get active pcm config from host");
+                Default::default()
+            }
+        }
+    }
+
+    fn get_peer_pcm_config(&mut self) -> BtLePcmConfig {
+        match self.le_audio.as_mut() {
+            Some(le_audio) => le_audio.get_peer_pcm_config(),
+            None => {
+                warn!("Uninitialized LEA to get active pcm config from peer");
+                Default::default()
+            }
+        }
+    }
+
+    fn get_host_stream_started(&mut self) -> bool {
+        match self.le_audio.as_mut() {
+            Some(le_audio) => le_audio.get_host_stream_started(),
+            None => {
+                warn!("Uninitialized LEA to get_host_stream_started");
+                Default::default()
+            }
+        }
+    }
+
+    fn get_peer_stream_started(&mut self) -> bool {
+        match self.le_audio.as_mut() {
+            Some(le_audio) => le_audio.get_peer_stream_started(),
+            None => {
+                warn!("Uninitialized LEA to get_peer_stream_started");
+                Default::default()
+            }
+        }
+    }
+
+    fn get_unicast_monitor_mode_status(
+        &mut self,
+        direction: BtLeAudioDirection,
+    ) -> BtLeAudioUnicastMonitorModeStatus {
+        *self
+            .le_audio_unicast_monitor_mode_status
+            .get(&direction.into())
+            .unwrap_or(&BtLeAudioUnicastMonitorModeStatus::StreamingSuspended)
+    }
+
+    fn get_group_stream_status(&mut self, group_id: i32) -> BtLeAudioGroupStreamStatus {
+        *self
+            .le_audio_group_stream_status
+            .get(&group_id)
+            .unwrap_or(&BtLeAudioGroupStreamStatus::Idle)
     }
 }
 
