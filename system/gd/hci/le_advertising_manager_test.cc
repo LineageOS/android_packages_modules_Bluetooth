@@ -724,6 +724,66 @@ TEST_F(LeExtendedAdvertisingManagerTest, create_advertiser_test) {
   ASSERT_NE(LeAdvertisingManager::kInvalidId, id);
   le_advertising_manager_->RemoveAdvertiser(id);
   ASSERT_EQ(OpCode::LE_SET_EXTENDED_ADVERTISING_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
+  ASSERT_EQ(OpCode::LE_REMOVE_ADVERTISING_SET, test_hci_layer_->GetCommand().GetOpCode());
+}
+
+TEST_F(LeExtendedAdvertisingManagerTest, create_periodic_advertiser_test) {
+  AdvertisingConfig advertising_config{};
+  advertising_config.advertising_type = AdvertisingType::ADV_IND;
+  advertising_config.requested_advertiser_address_type = AdvertiserAddressType::PUBLIC;
+  std::vector<GapData> gap_data{};
+  GapData data_item{};
+  data_item.data_type_ = GapDataType::FLAGS;
+  data_item.data_ = {0x34};
+  gap_data.push_back(data_item);
+  data_item.data_type_ = GapDataType::COMPLETE_LOCAL_NAME;
+  data_item.data_ = {'r', 'a', 'n', 'd', 'o', 'm', ' ', 'd', 'e', 'v', 'i', 'c', 'e'};
+  gap_data.push_back(data_item);
+  advertising_config.advertisement = gap_data;
+  advertising_config.scan_response = gap_data;
+  advertising_config.channel_map = 1;
+  advertising_config.sid = 0x01;
+  advertising_config.periodic_advertising_parameters.enable = true;
+
+  AdvertiserId id;
+  EXPECT_CALL(
+      mock_advertising_callback_,
+      OnAdvertisingSetStarted(0, _, -23, AdvertisingCallback::AdvertisingStatus::SUCCESS))
+      .WillOnce(SaveArg<1>(&id));
+
+  le_advertising_manager_->ExtendedCreateAdvertiser(
+      kAdvertiserClientIdJni,
+      0x00,
+      advertising_config,
+      scan_callback,
+      set_terminated_callback,
+      0,
+      0,
+      client_handler_);
+
+  std::vector<OpCode> adv_opcodes = {
+      OpCode::LE_SET_EXTENDED_ADVERTISING_PARAMETERS,
+      OpCode::LE_SET_EXTENDED_SCAN_RESPONSE_DATA,
+      OpCode::LE_SET_EXTENDED_ADVERTISING_DATA,
+      OpCode::LE_SET_EXTENDED_ADVERTISING_ENABLE,
+  };
+  std::vector<uint8_t> success_vector{static_cast<uint8_t>(ErrorCode::SUCCESS)};
+  for (size_t i = 0; i < adv_opcodes.size(); i++) {
+    ASSERT_EQ(adv_opcodes[i], test_hci_layer_->GetCommand().GetOpCode());
+    if (adv_opcodes[i] == OpCode::LE_SET_EXTENDED_ADVERTISING_PARAMETERS) {
+      test_hci_layer_->IncomingEvent(LeSetExtendedAdvertisingParametersCompleteBuilder::Create(
+          uint8_t{1}, ErrorCode::SUCCESS, static_cast<uint8_t>(-23)));
+    } else {
+      test_hci_layer_->IncomingEvent(CommandCompleteBuilder::Create(
+          uint8_t{1}, adv_opcodes[i], std::make_unique<RawBuilder>(success_vector)));
+    }
+  }
+  sync_client_handler();
+
+  // Remove the advertiser
+  ASSERT_NE(LeAdvertisingManager::kInvalidId, id);
+  le_advertising_manager_->RemoveAdvertiser(id);
+  ASSERT_EQ(OpCode::LE_SET_EXTENDED_ADVERTISING_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
   ASSERT_EQ(OpCode::LE_SET_PERIODIC_ADVERTISING_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
   ASSERT_EQ(OpCode::LE_REMOVE_ADVERTISING_SET, test_hci_layer_->GetCommand().GetOpCode());
 }
@@ -786,7 +846,6 @@ TEST_F_WITH_FLAGS(
   ASSERT_NE(LeAdvertisingManager::kInvalidId, id);
   le_advertising_manager_->RemoveAdvertiser(id);
   ASSERT_EQ(OpCode::LE_SET_EXTENDED_ADVERTISING_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
-  ASSERT_EQ(OpCode::LE_SET_PERIODIC_ADVERTISING_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
   ASSERT_EQ(OpCode::LE_REMOVE_ADVERTISING_SET, test_hci_layer_->GetCommand().GetOpCode());
 }
 
@@ -856,7 +915,6 @@ TEST_F_WITH_FLAGS(
   ASSERT_NE(LeAdvertisingManager::kInvalidId, id);
   le_advertising_manager_->RemoveAdvertiser(id);
   ASSERT_EQ(OpCode::LE_SET_EXTENDED_ADVERTISING_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
-  ASSERT_EQ(OpCode::LE_SET_PERIODIC_ADVERTISING_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
   ASSERT_EQ(OpCode::LE_REMOVE_ADVERTISING_SET, test_hci_layer_->GetCommand().GetOpCode());
 }
 
@@ -960,7 +1018,6 @@ TEST_F(LeExtendedAdvertisingManagerTest, ignore_on_pause_on_resume_after_unregis
   ASSERT_NE(LeAdvertisingManager::kInvalidId, id);
   le_advertising_manager_->RemoveAdvertiser(id);
   ASSERT_EQ(OpCode::LE_SET_EXTENDED_ADVERTISING_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
-  ASSERT_EQ(OpCode::LE_SET_PERIODIC_ADVERTISING_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
   ASSERT_EQ(OpCode::LE_REMOVE_ADVERTISING_SET, test_hci_layer_->GetCommand().GetOpCode());
   sync_client_handler();
 
