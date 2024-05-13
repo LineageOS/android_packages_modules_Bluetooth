@@ -60,6 +60,7 @@ use bt_topshim::{
         hid_host::{BthhReportType, HHCallbacks},
         le_audio::LeAudioClientCallbacks,
         sdp::SdpCallbacks,
+        vc::VolumeControlCallbacks,
     },
 };
 
@@ -89,6 +90,7 @@ pub enum Message {
     HidHost(HHCallbacks),
     Hfp(HfpCallbacks),
     Sdp(SdpCallbacks),
+    VolumeControl(VolumeControlCallbacks),
     CreateBondWithRetry(BluetoothDevice, BtTransport, u32, Duration),
 
     // Actions within the stack
@@ -301,6 +303,10 @@ impl Stack {
 
                 Message::LeAudioClient(a) => {
                     bluetooth_media.lock().unwrap().dispatch_le_audio_callbacks(a);
+                }
+
+                Message::VolumeControl(a) => {
+                    bluetooth_media.lock().unwrap().dispatch_vc_callbacks(a);
                 }
 
                 Message::LeScanner(m) => {

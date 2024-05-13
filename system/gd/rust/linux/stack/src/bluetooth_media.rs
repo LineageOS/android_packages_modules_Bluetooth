@@ -24,6 +24,9 @@ use bt_topshim::profiles::le_audio::{
     BtLeAudioUnicastMonitorModeStatus, BtLeAudioUsage, BtLePcmConfig, LeAudioClient,
     LeAudioClientCallbacks, LeAudioClientCallbacksDispatcher, SinkMetadata, SourceMetadata,
 };
+use bt_topshim::profiles::vc::{
+    BtVcConnectionState, VolumeControl, VolumeControlCallbacks, VolumeControlCallbacksDispatcher,
+};
 use bt_topshim::profiles::ProfileConnectionState;
 use bt_topshim::{metrics, topstack};
 use bt_utils::at_command_parser::{calculate_battery_percent, parse_at_command_data};
@@ -78,7 +81,8 @@ const MEDIA_CLASSIC_AUDIO_PROFILES: &[uuid::Profile] =
     &[uuid::Profile::A2dpSink, uuid::Profile::Hfp, uuid::Profile::AvrcpController];
 
 /// The list of profiles we consider as LE audio profiles for media.
-const MEDIA_LE_AUDIO_PROFILES: &[uuid::Profile] = &[uuid::Profile::LeAudio];
+const MEDIA_LE_AUDIO_PROFILES: &[uuid::Profile] =
+    &[uuid::Profile::LeAudio, uuid::Profile::VolumeControl];
 
 /// Group ID used to identify unknown/non-existent groups.
 const LEA_UNKNOWN_GROUP_ID: i32 = -1;
@@ -105,6 +109,8 @@ pub trait IBluetoothMedia {
 
     fn connect_lea(&mut self, address: String);
     fn disconnect_lea(&mut self, address: String);
+    fn connect_vc(&mut self, address: String);
+    fn disconnect_vc(&mut self, address: String);
 
     // Set the device as the active A2DP device
     fn set_active_device(&mut self, address: String);
@@ -188,6 +194,9 @@ pub trait IBluetoothMedia {
         direction: BtLeAudioDirection,
     ) -> BtLeAudioUnicastMonitorModeStatus;
     fn get_group_stream_status(&mut self, group_id: i32) -> BtLeAudioGroupStreamStatus;
+
+    /// Valid volume range is [0, 255], see 2.3.1.1, VCS v1.
+    fn set_group_volume(&mut self, group_id: i32, volume: u8);
 }
 
 pub trait IBluetoothMediaCallback: RPCProxy {
@@ -350,6 +359,8 @@ pub enum MediaActions {
     DisconnectLeaGroupByMemberAddress(String),
     ConnectLea(String),
     DisconnectLea(String),
+    ConnectVc(String),
+    DisconnectVc(String),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -420,6 +431,8 @@ pub struct BluetoothMedia {
     le_audio_unicast_monitor_mode_status: HashMap<i32, BtLeAudioUnicastMonitorModeStatus>,
     le_audio_group_stream_status: HashMap<i32, BtLeAudioGroupStreamStatus>,
     le_audio_delayed_audio_conf_updates: HashMap<i32, LEAAudioConf>,
+    vc: Option<VolumeControl>,
+    vc_states: HashMap<RawAddress, BtVcConnectionState>,
     is_le_audio_only_enabled: bool, // TODO: remove this once there is dual mode.
 }
 
@@ -482,6 +495,8 @@ impl BluetoothMedia {
             le_audio_unicast_monitor_mode_status: HashMap::new(),
             le_audio_group_stream_status: HashMap::new(),
             le_audio_delayed_audio_conf_updates: HashMap::new(),
+            vc: None,
+            vc_states: HashMap::new(),
             is_le_audio_only_enabled: false,
         }
     }
@@ -543,7 +558,7 @@ impl BluetoothMedia {
                     return;
                 }
             }
-            Profile::LeAudio => {
+            Profile::LeAudio | Profile::VolumeControl => {
                 if !self.is_le_audio_only_enabled {
                     info!("LeAudioEnableLeAudioOnly is not set, skip enabling {:?}", profile);
                     return;
@@ -571,6 +586,11 @@ impl BluetoothMedia {
             &Profile::LeAudio => {
                 if let Some(le_audio) = &mut self.le_audio {
                     le_audio.enable();
+                }
+            }
+            &Profile::VolumeControl => {
+                if let Some(vc) = &mut self.vc {
+                    vc.enable();
                 }
             }
             _ => {
@@ -608,6 +628,11 @@ impl BluetoothMedia {
                     le_audio.disable();
                 }
             }
+            &Profile::VolumeControl => {
+                if let Some(vc) = &mut self.vc {
+                    vc.disable();
+                }
+            }
             _ => {
                 warn!("Tried to disable {} in bluetooth_media", profile);
                 return;
@@ -629,9 +654,86 @@ impl BluetoothMedia {
             &Profile::LeAudio => {
                 Some(self.le_audio.as_ref().map_or(false, |le_audio| le_audio.is_enabled()))
             }
+            &Profile::VolumeControl => Some(self.vc.as_ref().map_or(false, |vc| vc.is_enabled())),
             _ => {
                 warn!("Tried to query enablement status of {} in bluetooth_media", profile);
                 None
+            }
+        }
+    }
+
+    pub fn dispatch_vc_callbacks(&mut self, cb: VolumeControlCallbacks) {
+        match cb {
+            VolumeControlCallbacks::ConnectionState(state, addr) => {
+                if !self.vc_states.get(&addr).is_none()
+                    && state == *self.vc_states.get(&addr).unwrap()
+                {
+                    return;
+                }
+
+                info!(
+                    "VolumeControlCallbacks::ConnectionState: [{}]: state={:?}",
+                    DisplayAddress(&addr),
+                    state
+                );
+
+                match state {
+                    BtVcConnectionState::Connected => {
+                        self.vc_states.insert(addr, state);
+                    }
+                    BtVcConnectionState::Disconnected => {
+                        self.vc_states.remove(&addr);
+                    }
+                    _ => {
+                        self.vc_states.insert(addr, state);
+                    }
+                }
+            }
+            VolumeControlCallbacks::VolumeState(addr, volume, mute, is_autonomous) => {
+                info!(
+                    "VolumeControlCallbacks::VolumeState: [{}]: volume={}, mute={}, is_autonomous={}",
+                    DisplayAddress(&addr),
+                    volume,
+                    mute,
+                    is_autonomous
+                );
+            }
+            VolumeControlCallbacks::GroupVolumeState(group_id, volume, mute, is_autonomous) => {
+                info!(
+                    "VolumeControlCallbacks::GroupVolumeState: group_id={}, volume={}, mute={}, is_autonomous={}",
+                    group_id, volume, mute, is_autonomous
+                );
+            }
+            VolumeControlCallbacks::DeviceAvailable(addr, num_offset) => {
+                info!(
+                    "VolumeControlCallbacks::DeviceAvailable: [{}]: num_offset={}",
+                    DisplayAddress(&addr),
+                    num_offset
+                );
+            }
+            VolumeControlCallbacks::ExtAudioOutVolume(addr, ext_output_id, offset) => {
+                info!(
+                    "VolumeControlCallbacks::ExtAudioOutVolume: [{}]: ext_output_id={}, offset={}",
+                    DisplayAddress(&addr),
+                    ext_output_id,
+                    offset
+                );
+            }
+            VolumeControlCallbacks::ExtAudioOutLocation(addr, ext_output_id, location) => {
+                info!(
+                    "VolumeControlCallbacks::ExtAudioOutLocation: [{}]: ext_output_id={}, location={}",
+                    DisplayAddress(&addr),
+                    ext_output_id,
+                    location
+                );
+            }
+            VolumeControlCallbacks::ExtAudioOutDescription(addr, ext_output_id, descr) => {
+                info!(
+                    "VolumeControlCallbacks::ExtAudioOutDescription: [{}]: ext_output_id={}, descr={}",
+                    DisplayAddress(&addr),
+                    ext_output_id,
+                    descr
+                );
             }
         }
     }
@@ -2783,6 +2885,17 @@ fn get_le_audio_dispatcher(tx: Sender<Message>) -> LeAudioClientCallbacksDispatc
     }
 }
 
+fn get_vc_dispatcher(tx: Sender<Message>) -> VolumeControlCallbacksDispatcher {
+    VolumeControlCallbacksDispatcher {
+        dispatch: Box::new(move |cb| {
+            let txl = tx.clone();
+            topstack::get_runtime().spawn(async move {
+                let _ = txl.send(Message::VolumeControl(cb)).await;
+            });
+        }),
+    }
+}
+
 impl IBluetoothMedia for BluetoothMedia {
     fn register_callback(&mut self, callback: Box<dyn IBluetoothMediaCallback + Send>) -> bool {
         let _id = self.callbacks.lock().unwrap().add_callback(callback);
@@ -2818,10 +2931,20 @@ impl IBluetoothMedia for BluetoothMedia {
         self.le_audio = Some(LeAudioClient::new(&self.intf.lock().unwrap()));
         self.le_audio.as_mut().unwrap().initialize(le_audio_dispatcher);
 
+        // VC
+        let vc_dispatcher = get_vc_dispatcher(self.tx.clone());
+        self.vc = Some(VolumeControl::new(&self.intf.lock().unwrap()));
+        self.vc.as_mut().unwrap().initialize(vc_dispatcher);
+
         // TODO(b/284811956) A2DP needs to be enabled before AVRCP otherwise AVRCP gets memset'd.
         // Iterate the delay_enable_profiles hashmap directly when this is fixed.
-        let profile_order =
-            vec![Profile::A2dpSource, Profile::AvrcpTarget, Profile::Hfp, Profile::LeAudio];
+        let profile_order = vec![
+            Profile::A2dpSource,
+            Profile::AvrcpTarget,
+            Profile::Hfp,
+            Profile::LeAudio,
+            Profile::VolumeControl,
+        ];
         for profile in profile_order {
             if self.delay_enable_profiles.contains(&profile) {
                 self.enable_profile(&profile);
@@ -2847,6 +2970,9 @@ impl IBluetoothMedia for BluetoothMedia {
             match profile {
                 uuid::Profile::LeAudio => {
                     self.connect_lea(addr.to_string());
+                }
+                uuid::Profile::VolumeControl => {
+                    self.connect_vc(addr.to_string());
                 }
                 _ => {}
             }
@@ -2886,6 +3012,9 @@ impl IBluetoothMedia for BluetoothMedia {
                 match profile {
                     uuid::Profile::LeAudio => {
                         self.disconnect_lea(member_addr.to_string());
+                    }
+                    uuid::Profile::VolumeControl => {
+                        self.disconnect_vc(member_addr.to_string());
                     }
                     _ => {}
                 }
@@ -2961,6 +3090,73 @@ impl IBluetoothMedia for BluetoothMedia {
                     "disconnect_lea: [{}]: uninitialized LeAudio to disconnect",
                     DisplayAddress(&addr)
                 );
+            }
+        };
+    }
+
+    fn connect_vc(&mut self, address: String) {
+        if !self.is_le_audio_only_enabled {
+            warn!("connect_vc: LeAudioEnableLeAudioOnly is not set");
+            return;
+        }
+
+        let addr = match RawAddress::from_string(address.clone()) {
+            None => {
+                warn!("connect_vc: invalid device address");
+                return;
+            }
+            Some(addr) => addr,
+        };
+
+        if *self.vc_states.get(&addr).unwrap_or(&BtVcConnectionState::Disconnected)
+            == BtVcConnectionState::Connected
+        {
+            info!("connect_vc: already connected");
+            return;
+        }
+
+        let available_profiles = self.adapter_get_le_audio_profiles(addr);
+
+        info!(
+            "connect_vc: [{}]: connecting, available profiles: {:?}.",
+            DisplayAddress(&addr),
+            available_profiles
+        );
+
+        match self.vc.as_mut() {
+            Some(vc) => {
+                vc.connect(addr);
+            }
+            None => {
+                warn!("connect_vc: [{}]: uninitialized VC to connect", DisplayAddress(&addr));
+            }
+        };
+    }
+
+    fn disconnect_vc(&mut self, address: String) {
+        let addr = match RawAddress::from_string(address.clone()) {
+            None => {
+                warn!("disconnect_vc: invalid device address");
+                return;
+            }
+            Some(addr) => addr,
+        };
+
+        if *self.vc_states.get(&addr).unwrap_or(&BtVcConnectionState::Disconnected)
+            == BtVcConnectionState::Disconnected
+        {
+            info!("disconnect_vc: already disconnected");
+            return;
+        }
+
+        info!("disconnect_vc: [{}]: disconnecting", DisplayAddress(&addr));
+
+        match self.vc.as_mut() {
+            Some(vc) => {
+                vc.disconnect(addr);
+            }
+            None => {
+                warn!("disconnect_vc: [{}]: uninitialized VC to disconnect", DisplayAddress(&addr));
             }
         };
     }
@@ -3724,6 +3920,15 @@ impl IBluetoothMedia for BluetoothMedia {
             .le_audio_group_stream_status
             .get(&group_id)
             .unwrap_or(&BtLeAudioGroupStreamStatus::Idle)
+    }
+
+    fn set_group_volume(&mut self, group_id: i32, volume: u8) {
+        match self.vc.as_mut() {
+            Some(vc) => {
+                vc.set_volume(group_id, volume);
+            }
+            None => warn!("Uninitialized VC to set volume"),
+        };
     }
 }
 
