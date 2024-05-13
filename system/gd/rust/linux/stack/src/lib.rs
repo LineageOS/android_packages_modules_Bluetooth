@@ -26,6 +26,7 @@ use num_derive::{FromPrimitive, ToPrimitive};
 use std::sync::{Arc, Mutex};
 use tokio::sync::mpsc::channel;
 use tokio::sync::mpsc::{Receiver, Sender};
+use tokio::time::{sleep, Duration};
 
 use crate::battery_manager::{BatteryManager, BatterySet};
 use crate::battery_provider_manager::BatteryProviderManager;
@@ -86,6 +87,7 @@ pub enum Message {
     HidHost(HHCallbacks),
     Hfp(HfpCallbacks),
     Sdp(SdpCallbacks),
+    CreateBondWithRetry(BluetoothDevice, BtTransport, u32, Duration),
 
     // Actions within the stack
     Media(MediaActions),
@@ -201,6 +203,7 @@ impl Stack {
     /// Runs the main dispatch loop.
     pub async fn dispatch(
         mut rx: Receiver<Message>,
+        tx: Sender<Message>,
         api_tx: Sender<APIMessage>,
         bluetooth: Arc<Mutex<Box<Bluetooth>>>,
         bluetooth_gatt: Arc<Mutex<Box<BluetoothGatt>>>,
@@ -224,9 +227,9 @@ impl Stack {
 
             match m.unwrap() {
                 Message::InterfaceShutdown => {
-                    let tx = api_tx.clone();
+                    let txl = api_tx.clone();
                     tokio::spawn(async move {
-                        let _ = tx.send(APIMessage::ShutDown).await;
+                        let _ = txl.send(APIMessage::ShutDown).await;
                     });
                 }
 
@@ -257,6 +260,33 @@ impl Stack {
                 Message::Base(b) => {
                     dispatch_base_callbacks(bluetooth.lock().unwrap().as_mut(), b.clone());
                     dispatch_base_callbacks(suspend.lock().unwrap().as_mut(), b);
+                }
+
+                // When pairing is busy for any reason, the bond cannot be created.
+                // Allow retries until it is ready for bonding.
+                Message::CreateBondWithRetry(device, bt_transport, num_attempts, retry_delay) => {
+                    if num_attempts <= 0 {
+                        continue;
+                    }
+
+                    let mut bt = bluetooth.lock().unwrap();
+                    if !bt.is_pairing_busy() {
+                        bt.create_bond(device, bt_transport);
+                        continue;
+                    }
+
+                    let txl = tx.clone();
+                    tokio::spawn(async move {
+                        sleep(retry_delay).await;
+                        let _ = txl
+                            .send(Message::CreateBondWithRetry(
+                                device,
+                                bt_transport,
+                                num_attempts - 1,
+                                retry_delay,
+                            ))
+                            .await;
+                    });
                 }
 
                 Message::GattClient(m) => {

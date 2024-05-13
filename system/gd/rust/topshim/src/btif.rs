@@ -1281,6 +1281,10 @@ impl BluetoothInterface {
         ccall!(self, cancel_discovery)
     }
 
+    pub fn pairing_is_busy(&self) -> bool {
+        ccall!(self, pairing_is_busy)
+    }
+
     pub fn create_bond(&self, addr: &RawAddress, transport: BtTransport) -> i32 {
         let ctransport: i32 = transport.into();
         let addr_ptr = LTCheckedPtr::from_ref(addr);

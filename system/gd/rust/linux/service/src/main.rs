@@ -199,6 +199,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         // Run the stack main dispatch loop.
         topstack::get_runtime().spawn(Stack::dispatch(
             rx,
+            tx.clone(),
             api_tx.clone(),
             bluetooth.clone(),
             bluetooth_gatt.clone(),

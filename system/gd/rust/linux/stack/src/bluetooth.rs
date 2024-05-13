@@ -1302,6 +1302,11 @@ impl Bluetooth {
     fn clear_uhid(&mut self) {
         self.uhid_wakeup_source.clear();
     }
+
+    /// Checks whether pairing is busy.
+    pub fn is_pairing_busy(&self) -> bool {
+        self.intf.lock().unwrap().pairing_is_busy()
+    }
 }
 
 #[btif_callbacks_dispatcher(dispatch_base_callbacks, BaseCallbacks)]
@@ -2821,7 +2826,7 @@ impl IBluetooth for Bluetooth {
 
         let addr = RawAddress::from_string(device.address.clone());
         if addr.is_none() {
-            warn!("Can't connect profiles on invalid address [{}]", &device.address);
+            warn!("Can't disconnect profiles on invalid address [{}]", &device.address);
             return false;
         }
 
