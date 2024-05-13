@@ -165,13 +165,19 @@ static void bta_av_api_enable(tBTA_AV_DATA* p_data) {
       return;
     }
     if (bta_av_cb.sdp_a2dp_handle) {
-      get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(
-          bta_av_cb.sdp_a2dp_handle);
+      if (!get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(
+              bta_av_cb.sdp_a2dp_handle)) {
+        log::warn("Unable to delete SDP record handle:{}",
+                  bta_av_cb.sdp_a2dp_handle);
+      }
       bta_sys_remove_uuid(UUID_SERVCLASS_AUDIO_SOURCE);
     }
     if (bta_av_cb.sdp_a2dp_snk_handle) {
-      get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(
-          bta_av_cb.sdp_a2dp_snk_handle);
+      if (!get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(
+              bta_av_cb.sdp_a2dp_snk_handle)) {
+        log::warn("Unable to delete SDP record handle:{}",
+                  bta_av_cb.sdp_a2dp_snk_handle);
+      }
       bta_sys_remove_uuid(UUID_SERVCLASS_AUDIO_SINK);
     }
     // deregister from AVDT
