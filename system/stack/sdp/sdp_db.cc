@@ -41,15 +41,45 @@
 
 using namespace bluetooth;
 
-/******************************************************************************/
-/*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
-/******************************************************************************/
+/*******************************************************************************
+ *
+ * Function         find_uuid_in_seq
+ *
+ * Description      This function searches a data element sequenct for a UUID.
+ *
+ * Returns          true if found, else false
+ *
+ ******************************************************************************/
 static bool find_uuid_in_seq(uint8_t* p, uint32_t seq_len,
-                             const uint8_t* p_his_uuid, uint16_t his_len,
-                             int nest_level);
+                             const uint8_t* p_uuid, uint16_t uuid_len,
+                             int nest_level) {
+  uint8_t* p_end = p + seq_len;
+  uint8_t type;
+  uint32_t len;
 
-bool SDP_AddAttribute(uint32_t handle, uint16_t attr_id, uint8_t attr_type,
-                      uint32_t attr_len, uint8_t* p_val);
+  /* A little safety check to avoid excessive recursion */
+  if (nest_level > 3) return (false);
+
+  while (p < p_end) {
+    type = *p++;
+    p = sdpu_get_len_from_type(p, p_end, type, &len);
+    if (p == NULL || (p + len) > p_end) {
+      log::warn("bad length");
+      break;
+    }
+    type = type >> 3;
+    if (type == UUID_DESC_TYPE) {
+      if (sdpu_compare_uuid_arrays(p, len, p_uuid, uuid_len)) return (true);
+    } else if (type == DATA_ELE_SEQ_DESC_TYPE) {
+      if (find_uuid_in_seq(p, len, p_uuid, uuid_len, nest_level + 1))
+        return (true);
+    }
+    p = p + len;
+  }
+
+  /* If here, failed to match */
+  return (false);
+}
 
 /*******************************************************************************
  *
@@ -103,46 +133,6 @@ const tSDP_RECORD* sdp_db_service_search(const tSDP_RECORD* p_rec,
 
   /* If here, no more records found */
   return (NULL);
-}
-
-/*******************************************************************************
- *
- * Function         find_uuid_in_seq
- *
- * Description      This function searches a data element sequenct for a UUID.
- *
- * Returns          true if found, else false
- *
- ******************************************************************************/
-static bool find_uuid_in_seq(uint8_t* p, uint32_t seq_len,
-                             const uint8_t* p_uuid, uint16_t uuid_len,
-                             int nest_level) {
-  uint8_t* p_end = p + seq_len;
-  uint8_t type;
-  uint32_t len;
-
-  /* A little safety check to avoid excessive recursion */
-  if (nest_level > 3) return (false);
-
-  while (p < p_end) {
-    type = *p++;
-    p = sdpu_get_len_from_type(p, p_end, type, &len);
-    if (p == NULL || (p + len) > p_end) {
-      log::warn("bad length");
-      break;
-    }
-    type = type >> 3;
-    if (type == UUID_DESC_TYPE) {
-      if (sdpu_compare_uuid_arrays(p, len, p_uuid, uuid_len)) return (true);
-    } else if (type == DATA_ELE_SEQ_DESC_TYPE) {
-      if (find_uuid_in_seq(p, len, p_uuid, uuid_len, nest_level + 1))
-        return (true);
-    }
-    p = p + len;
-  }
-
-  /* If here, failed to match */
-  return (false);
 }
 
 /*******************************************************************************
@@ -249,6 +239,97 @@ static int sdp_compose_proto_list(uint8_t* p, uint16_t num_elem,
 
 /*******************************************************************************
  *
+ * Function         SDP_AddAttribute
+ *
+ * Description      This function is called to add an attribute to a record.
+ *                  This would be through the SDP database maintenance API.
+ *                  If the attribute already exists in the record, it is
+ *                  replaced with the new value.
+ *
+ * NOTE             Attribute values must be passed as a Big Endian stream.
+ *
+ * Returns          true if added OK, else false
+ *
+ ******************************************************************************/
+bool SDP_AddAttribute(uint32_t handle, uint16_t attr_id, uint8_t attr_type,
+                      uint32_t attr_len, uint8_t* p_val) {
+  uint16_t zz;
+  tSDP_RECORD* p_rec = &sdp_cb.server_db.record[0];
+
+  if (p_val == nullptr) {
+    log::warn("Trying to add attribute with p_val == nullptr, skipped");
+    return (false);
+  }
+
+  // TODO(305066880): invoke would_log when implemented to check
+  // if LOG_VERBOSE is displayed.
+  if (true) {
+    if ((attr_type == UINT_DESC_TYPE) ||
+        (attr_type == TWO_COMP_INT_DESC_TYPE) ||
+        (attr_type == UUID_DESC_TYPE) ||
+        (attr_type == DATA_ELE_SEQ_DESC_TYPE) ||
+        (attr_type == DATA_ELE_ALT_DESC_TYPE)) {
+#define MAX_ARR_LEN 200
+      // one extra byte for storing terminating zero byte
+      char num_array[2 * MAX_ARR_LEN + 1] = {0};
+      uint32_t len = (attr_len > MAX_ARR_LEN) ? MAX_ARR_LEN : attr_len;
+#undef MAX_ARR_LEN
+
+      for (uint32_t i = 0; i < len; i++) {
+        snprintf(&num_array[i * 2], sizeof(num_array) - i * 2, "%02X",
+                 (uint8_t)(p_val[i]));
+      }
+      log::verbose(
+          "SDP_AddAttribute: handle:{:X}, id:{:04X}, type:{}, len:{}, "
+          "p_val:{}, *p_val:{}",
+          handle, attr_id, attr_type, attr_len, fmt::ptr(p_val), num_array);
+    } else if (attr_type == BOOLEAN_DESC_TYPE) {
+      log::verbose(
+          "SDP_AddAttribute: handle:{:X}, id:{:04X}, type:{}, len:{}, "
+          "p_val:{}, *p_val:{}",
+          handle, attr_id, attr_type, attr_len, fmt::ptr(p_val), *p_val);
+    } else if ((attr_type == TEXT_STR_DESC_TYPE) ||
+               (attr_type == URL_DESC_TYPE)) {
+      if (p_val[attr_len - 1] == '\0') {
+        log::verbose(
+            "SDP_AddAttribute: handle:{:X}, id:{:04X}, type:{}, len:{}, "
+            "p_val:{}, *p_val:{}",
+            handle, attr_id, attr_type, attr_len, fmt::ptr(p_val),
+            (char*)p_val);
+      } else {
+        log::verbose(
+            "SDP_AddAttribute: handle:{:X}, id:{:04X}, type:{}, len:{}, "
+            "p_val:{}",
+            handle, attr_id, attr_type, attr_len, fmt::ptr(p_val));
+      }
+    } else {
+      log::verbose(
+          "SDP_AddAttribute: handle:{:X}, id:{:04X}, type:{}, len:{}, p_val:{}",
+          handle, attr_id, attr_type, attr_len, fmt::ptr(p_val));
+    }
+  }
+
+  /* Find the record in the database */
+  for (zz = 0; zz < sdp_cb.server_db.num_records; zz++, p_rec++) {
+    if (p_rec->record_handle == handle) {
+      // error out early, no need to look up
+      if (p_rec->free_pad_ptr >= SDP_MAX_PAD_LEN) {
+        log::error(
+            "the free pad for SDP record with handle {} is full, skip adding "
+            "the attribute",
+            handle);
+        return (false);
+      }
+
+      return SDP_AddAttributeToRecord(p_rec, attr_id, attr_type, attr_len,
+                                      p_val);
+    }
+  }
+  return (false);
+}
+
+/*******************************************************************************
+ *
  * Function         SDP_CreateRecord
  *
  * Description      This function is called to create a record in the database.
@@ -341,99 +422,6 @@ bool SDP_DeleteRecord(uint32_t handle) {
 
         return (true);
       }
-    }
-  }
-  return (false);
-}
-
-/*******************************************************************************
- *
- * Function         SDP_AddAttribute
- *
- * Description      This function is called to add an attribute to a record.
- *                  This would be through the SDP database maintenance API.
- *                  If the attribute already exists in the record, it is
- *                  replaced with the new value.
- *
- * NOTE             Attribute values must be passed as a Big Endian stream.
- *
- * Returns          true if added OK, else false
- *
- ******************************************************************************/
-bool SDP_AddAttribute(uint32_t handle, uint16_t attr_id, uint8_t attr_type,
-                      uint32_t attr_len, uint8_t* p_val) {
-  uint16_t zz;
-  tSDP_RECORD* p_rec = &sdp_cb.server_db.record[0];
-
-  if (p_val == nullptr) {
-    log::warn("Trying to add attribute with p_val == nullptr, skipped");
-    return (false);
-  }
-
-  // TODO(305066880): invoke would_log when implemented to check
-  // if LOG_VERBOSE is displayed.
-  if (true) {
-    if ((attr_type == UINT_DESC_TYPE) ||
-        (attr_type == TWO_COMP_INT_DESC_TYPE) ||
-        (attr_type == UUID_DESC_TYPE) ||
-        (attr_type == DATA_ELE_SEQ_DESC_TYPE) ||
-        (attr_type == DATA_ELE_ALT_DESC_TYPE)) {
-
-      #define MAX_ARR_LEN 200
-      // one extra byte for storing terminating zero byte
-      char num_array[2 * MAX_ARR_LEN + 1] = {0};
-      uint32_t len = (attr_len > MAX_ARR_LEN) ? MAX_ARR_LEN : attr_len;
-      #undef MAX_ARR_LEN
-
-      for (uint32_t i = 0; i < len; i++) {
-        snprintf(&num_array[i * 2], sizeof(num_array) - i * 2, "%02X",
-                 (uint8_t)(p_val[i]));
-      }
-      log::verbose(
-          "SDP_AddAttribute: handle:{:X}, id:{:04X}, type:{}, len:{}, "
-          "p_val:{}, *p_val:{}",
-          handle, attr_id, attr_type, attr_len, fmt::ptr(p_val), num_array);
-    } else if (attr_type == BOOLEAN_DESC_TYPE) {
-      log::verbose(
-          "SDP_AddAttribute: handle:{:X}, id:{:04X}, type:{}, len:{}, "
-          "p_val:{}, *p_val:{}",
-          handle, attr_id, attr_type, attr_len, fmt::ptr(p_val), *p_val);
-    } else if ((attr_type == TEXT_STR_DESC_TYPE) ||
-               (attr_type == URL_DESC_TYPE)) {
-      if (p_val[attr_len - 1] == '\0') {
-        log::verbose(
-            "SDP_AddAttribute: handle:{:X}, id:{:04X}, type:{}, len:{}, "
-            "p_val:{}, *p_val:{}",
-            handle, attr_id, attr_type, attr_len, fmt::ptr(p_val),
-            (char*)p_val);
-      } else {
-        log::verbose(
-            "SDP_AddAttribute: handle:{:X}, id:{:04X}, type:{}, len:{}, "
-            "p_val:{}",
-            handle, attr_id, attr_type, attr_len, fmt::ptr(p_val));
-      }
-    } else {
-      log::verbose(
-          "SDP_AddAttribute: handle:{:X}, id:{:04X}, type:{}, len:{}, p_val:{}",
-          handle, attr_id, attr_type, attr_len, fmt::ptr(p_val));
-    }
-  }
-
-  /* Find the record in the database */
-  for (zz = 0; zz < sdp_cb.server_db.num_records; zz++, p_rec++) {
-    if (p_rec->record_handle == handle) {
-
-      // error out early, no need to look up
-      if (p_rec->free_pad_ptr >= SDP_MAX_PAD_LEN) {
-        log::error(
-            "the free pad for SDP record with handle {} is full, skip adding "
-            "the attribute",
-            handle);
-        return (false);
-      }
-
-      return SDP_AddAttributeToRecord(p_rec, attr_id, attr_type, attr_len,
-                                      p_val);
     }
   }
   return (false);

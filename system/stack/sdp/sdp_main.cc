@@ -45,70 +45,6 @@ using namespace bluetooth;
 /******************************************************************************/
 tSDP_CB sdp_cb;
 
-/******************************************************************************/
-/*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
-/******************************************************************************/
-static void sdp_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
-                            uint16_t psm, uint8_t l2cap_id);
-static void sdp_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg);
-static void sdp_config_cfm(uint16_t l2cap_cid, uint16_t result,
-                           tL2CAP_CFG_INFO* p_cfg);
-static void sdp_disconnect_ind(uint16_t l2cap_cid, bool ack_needed);
-static void sdp_data_ind(uint16_t l2cap_cid, BT_HDR* p_msg);
-
-static void sdp_connect_cfm(uint16_t l2cap_cid, uint16_t result);
-static void sdp_disconnect_cfm(uint16_t l2cap_cid, uint16_t result);
-static void sdp_on_l2cap_error(uint16_t l2cap_cid, uint16_t result);
-
-/*******************************************************************************
- *
- * Function         sdp_init
- *
- * Description      This function initializes the SDP unit.
- *
- * Returns          void
- *
- ******************************************************************************/
-void sdp_init(void) {
-  /* Clears all structures and local SDP database (if Server is enabled) */
-  sdp_cb = {};
-
-  for (int i = 0; i < SDP_MAX_CONNECTIONS; i++) {
-    sdp_cb.ccb[i].sdp_conn_timer = alarm_new("sdp.sdp_conn_timer");
-  }
-
-  /* Initialize the L2CAP configuration. We only care about MTU */
-  sdp_cb.l2cap_my_cfg.mtu_present = true;
-  sdp_cb.l2cap_my_cfg.mtu = SDP_MTU_SIZE;
-
-  sdp_cb.max_attr_list_size = SDP_MTU_SIZE - 16;
-  sdp_cb.max_recs_per_search = SDP_MAX_DISC_SERVER_RECS;
-
-  sdp_cb.reg_info.pL2CA_ConnectInd_Cb = sdp_connect_ind;
-  sdp_cb.reg_info.pL2CA_ConnectCfm_Cb = sdp_connect_cfm;
-  sdp_cb.reg_info.pL2CA_ConfigInd_Cb = sdp_config_ind;
-  sdp_cb.reg_info.pL2CA_ConfigCfm_Cb = sdp_config_cfm;
-  sdp_cb.reg_info.pL2CA_DisconnectInd_Cb = sdp_disconnect_ind;
-  sdp_cb.reg_info.pL2CA_DisconnectCfm_Cb = sdp_disconnect_cfm;
-  sdp_cb.reg_info.pL2CA_DataInd_Cb = sdp_data_ind;
-  sdp_cb.reg_info.pL2CA_Error_Cb = sdp_on_l2cap_error;
-
-  /* Now, register with L2CAP */
-  if (!L2CA_Register2(BT_PSM_SDP, sdp_cb.reg_info, true /* enable_snoop */,
-                      nullptr, SDP_MTU_SIZE, 0, BTM_SEC_NONE)) {
-    log::error("SDP Registration failed");
-  }
-}
-
-void sdp_free(void) {
-  L2CA_Deregister(BT_PSM_SDP);
-  for (int i = 0; i < SDP_MAX_CONNECTIONS; i++) {
-    alarm_free(sdp_cb.ccb[i].sdp_conn_timer);
-    sdp_cb.ccb[i].sdp_conn_timer = NULL;
-  }
-  sdp_cb = {};
-}
-
 /*******************************************************************************
  *
  * Function         sdp_connect_ind
@@ -448,4 +384,53 @@ void sdp_conn_timer_timeout(void* data) {
   sdpu_callback(ccb, SDP_CONN_FAILED);
   sdpu_clear_pend_ccb(ccb);
   sdpu_release_ccb(ccb);
+}
+
+/*******************************************************************************
+ *
+ * Function         sdp_init
+ *
+ * Description      This function initializes the SDP unit.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void sdp_init(void) {
+  /* Clears all structures and local SDP database (if Server is enabled) */
+  sdp_cb = {};
+
+  for (int i = 0; i < SDP_MAX_CONNECTIONS; i++) {
+    sdp_cb.ccb[i].sdp_conn_timer = alarm_new("sdp.sdp_conn_timer");
+  }
+
+  /* Initialize the L2CAP configuration. We only care about MTU */
+  sdp_cb.l2cap_my_cfg.mtu_present = true;
+  sdp_cb.l2cap_my_cfg.mtu = SDP_MTU_SIZE;
+
+  sdp_cb.max_attr_list_size = SDP_MTU_SIZE - 16;
+  sdp_cb.max_recs_per_search = SDP_MAX_DISC_SERVER_RECS;
+
+  sdp_cb.reg_info.pL2CA_ConnectInd_Cb = sdp_connect_ind;
+  sdp_cb.reg_info.pL2CA_ConnectCfm_Cb = sdp_connect_cfm;
+  sdp_cb.reg_info.pL2CA_ConfigInd_Cb = sdp_config_ind;
+  sdp_cb.reg_info.pL2CA_ConfigCfm_Cb = sdp_config_cfm;
+  sdp_cb.reg_info.pL2CA_DisconnectInd_Cb = sdp_disconnect_ind;
+  sdp_cb.reg_info.pL2CA_DisconnectCfm_Cb = sdp_disconnect_cfm;
+  sdp_cb.reg_info.pL2CA_DataInd_Cb = sdp_data_ind;
+  sdp_cb.reg_info.pL2CA_Error_Cb = sdp_on_l2cap_error;
+
+  /* Now, register with L2CAP */
+  if (!L2CA_Register2(BT_PSM_SDP, sdp_cb.reg_info, true /* enable_snoop */,
+                      nullptr, SDP_MTU_SIZE, 0, BTM_SEC_NONE)) {
+    log::error("SDP Registration failed");
+  }
+}
+
+void sdp_free(void) {
+  L2CA_Deregister(BT_PSM_SDP);
+  for (int i = 0; i < SDP_MAX_CONNECTIONS; i++) {
+    alarm_free(sdp_cb.ccb[i].sdp_conn_timer);
+    sdp_cb.ccb[i].sdp_conn_timer = NULL;
+  }
+  sdp_cb = {};
 }
