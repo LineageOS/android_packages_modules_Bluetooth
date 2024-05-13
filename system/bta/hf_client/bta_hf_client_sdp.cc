@@ -261,8 +261,11 @@ bool bta_hf_client_sdp_find_attr(tBTA_HF_CLIENT_CB* client_cb) {
     }
 
     /* get profile version (if failure, version parameter is not updated) */
-    get_legacy_stack_sdp_api()->record.SDP_FindProfileVersionInRec(
-        p_rec, UUID_SERVCLASS_HF_HANDSFREE, &client_cb->peer_version);
+    if (!get_legacy_stack_sdp_api()->record.SDP_FindProfileVersionInRec(
+            p_rec, UUID_SERVCLASS_HF_HANDSFREE, &client_cb->peer_version)) {
+      log::warn("Uable to find HFP profile version in SDP record peer:{}",
+                p_rec->remote_bd_addr);
+    }
 
     /* get features */
     p_attr = get_legacy_stack_sdp_api()->record.SDP_FindAttributeInRec(
