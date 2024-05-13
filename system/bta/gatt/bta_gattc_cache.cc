@@ -432,8 +432,12 @@ static tGATT_STATUS bta_gattc_sdp_service_disc(uint16_t conn_id,
   attr_list[1] = ATTR_ID_PROTOCOL_DESC_LIST;
 
   Uuid uuid = Uuid::From16Bit(UUID_PROTOCOL_ATT);
-  get_legacy_stack_sdp_api()->service.SDP_InitDiscoveryDb(
-      cb_data->p_sdp_db, BTA_GATT_SDP_DB_SIZE, 1, &uuid, num_attrs, attr_list);
+  if (!get_legacy_stack_sdp_api()->service.SDP_InitDiscoveryDb(
+          cb_data->p_sdp_db, BTA_GATT_SDP_DB_SIZE, 1, &uuid, num_attrs,
+          attr_list)) {
+    log::warn("Unable to initialize SDP service discovery db peer:{}",
+              p_server_cb->server_bda);
+  };
 
   if (!get_legacy_stack_sdp_api()->service.SDP_ServiceSearchAttributeRequest2(
           p_server_cb->server_bda, cb_data->p_sdp_db, &bta_gattc_sdp_callback,
