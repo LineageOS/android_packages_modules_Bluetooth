@@ -599,8 +599,10 @@ static void bta_sdp_search_cback(const RawAddress& /* bd_addr */,
         if (p_rec != NULL) {
           uint16_t peer_pce_version = 0;
 
-          get_legacy_stack_sdp_api()->record.SDP_FindProfileVersionInRec(
-              p_rec, UUID_SERVCLASS_PHONE_ACCESS, &peer_pce_version);
+          if (!get_legacy_stack_sdp_api()->record.SDP_FindProfileVersionInRec(
+                  p_rec, UUID_SERVCLASS_PHONE_ACCESS, &peer_pce_version)) {
+            log::warn("Unable to find PBAP profile version in SDP record");
+          }
           if (peer_pce_version != 0) {
             btif_storage_set_pce_profile_version(p_rec->remote_bd_addr,
                                                  peer_pce_version);

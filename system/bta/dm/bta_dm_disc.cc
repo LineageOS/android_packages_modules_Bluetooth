@@ -355,8 +355,11 @@ static void bta_dm_store_audio_profiles_version() {
 
     uint16_t profile_version = 0;
     /* get profile version (if failure, version parameter is not updated) */
-    get_legacy_stack_sdp_api()->record.SDP_FindProfileVersionInRec(
-        sdp_rec, audio_profile.btprofile_uuid, &profile_version);
+    if (!get_legacy_stack_sdp_api()->record.SDP_FindProfileVersionInRec(
+            sdp_rec, audio_profile.btprofile_uuid, &profile_version)) {
+      log::warn("Unable to find SDP profile version in record peer:{}",
+                sdp_rec->remote_bd_addr);
+    }
     if (profile_version != 0) {
       if (btif_config_set_bin(sdp_rec->remote_bd_addr.ToString().c_str(),
                               audio_profile.profile_key,
