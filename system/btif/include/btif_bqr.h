@@ -19,8 +19,8 @@
 
 #include <bluetooth/log.h>
 
-#include "btm_api_types.h"
-#include "common/leaky_bonded_queue.h"
+#include "common/postable_context.h"
+#include "hci/hci_packets.h"
 #include "include/hardware/bt_bqr.h"
 #include "osi/include/osi.h"
 #include "raw_address.h"
@@ -393,18 +393,6 @@ class BqrVseSubEvt {
 
 BluetoothQualityReportInterface* getBluetoothQualityReportInterface();
 
-// Get a string representation of the Quality Report ID.
-//
-// @param quality_report_id The quality report ID to convert.
-// @return a string representation of the Quality Report ID.
-std::string QualityReportIdToString(uint8_t quality_report_id);
-
-// Get a string representation of the Packet Type.
-//
-// @param packet_type The packet type to convert.
-// @return a string representation of the Packet Type.
-std::string PacketTypeToString(uint8_t packet_type);
-
 // Enable/Disable Bluetooth Quality Report mechanism.
 //
 // Which Quality event will be enabled is according to the setting of the
@@ -412,68 +400,8 @@ std::string PacketTypeToString(uint8_t packet_type);
 // And the minimum time interval of quality event reporting depends on the
 // setting of property "persist.bluetooth.bqr.min_interval_ms".
 //
-// @param is_enable True/False to enable/disable Bluetooth Quality Report
-//   mechanism in the Bluetooth controller.
-void EnableBtQualityReport(bool is_enable);
-
-// Configure Bluetooth Quality Report setting to the Bluetooth controller.
-//
-// @param bqr_config The struct of configuration parameters.
-void ConfigureBqr(const BqrConfiguration& bqr_config);
-
-// Callback invoked on completion of vendor specific Bluetooth Quality Report
-// command.
-//
-// @param p_vsc_cmpl_params A pointer to the parameters contained in the vendor
-//   specific command complete event.
-void BqrVscCompleteCallback(tBTM_VSC_CMPL* p_vsc_cmpl_params);
-
-// Invoked on completion of Bluetooth Quality Report configuration. Then it will
-// Register/Unregister for receiving VSE - Bluetooth Quality Report sub-event.
-//
-// @param current_evt_mask Indicates current quality event bit mask setting in
-//   the Bluetooth controller.
-void ConfigureBqrCmpl(uint32_t current_evt_mask);
-
-// Categorize the incoming Bluetooth Quality Report.
-//
-// @param length Lengths of the quality report sent from the Bluetooth
-//   controller.
-// @param p_bqr_event A pointer to the BQR VSE sub-event which is sent from the
-//   Bluetooth controller.
-void CategorizeBqrEvent(uint8_t length, const uint8_t* p_bqr_event);
-
-// Record a new incoming Link Quality related BQR event in quality event queue.
-//
-// @param length Lengths of the Link Quality related BQR event.
-// @param p_link_quality_event A pointer to the Link Quality related BQR event.
-void AddLinkQualityEventToQueue(uint8_t length,
-                                const uint8_t* p_link_quality_event);
-
-// Dump the LMP/LL message handshaking with the remote device to a log file.
-//
-// @param length Lengths of the LMP/LL message trace event.
-// @param p_lmp_ll_message_event A pointer to the LMP/LL message trace event.
-void DumpLmpLlMessage(uint8_t length, const uint8_t* p_lmp_ll_message_event);
-
-// Open the LMP/LL message trace log file.
-//
-// @return a file descriptor of the LMP/LL message trace log file.
-int OpenLmpLlTraceLogFile();
-
-// Dump the Bluetooth Multi-profile/Coex scheduling information to a log file.
-//
-// @param length Lengths of the Bluetooth Multi-profile/Coex scheduling trace
-//   event.
-// @param p_bt_scheduling_event A pointer to the Bluetooth Multi-profile/Coex
-//   scheduling trace event.
-void DumpBtScheduling(uint8_t length, const uint8_t* p_bt_scheduling_event);
-
-// Open the Bluetooth Multi-profile/Coex scheduling trace log file.
-//
-// @return a file descriptor of the Bluetooth Multi-profile/Coex scheduling
-//   trace log file.
-int OpenBtSchedulingTraceLogFile();
+// @param to_bind gives the postable for the callback, or null if disabling.
+void EnableBtQualityReport(common::PostableContext* to_bind);
 
 // Dump Bluetooth Quality Report information.
 //

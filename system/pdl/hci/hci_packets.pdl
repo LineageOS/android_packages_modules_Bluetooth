@@ -6996,6 +6996,8 @@ enum QualityReportId : 8 {
   A2DP_AUDIO_CHOPPY = 0x03,
   SCO_VOICE_CHOPPY = 0x04,
   ROOT_INFLAMMATION = 0x05,
+  LE_AUDIO_CHOPPY = 0x07,
+  CONNECT_FAIL = 0x08,
   LMP_LL_MESSAGE_TRACE = 0x11,
   BT_SCHEDULING_TRACE = 0x12,
   CONTROLLER_DBG_INFO = 0x13,
@@ -7073,6 +7075,14 @@ packet BqrA2dpAudioChoppyEvent : BqrLinkQualityEvent (quality_report_id = A2DP_A
 }
 
 packet BqrScoVoiceChoppyEvent : BqrLinkQualityEvent (quality_report_id = SCO_VOICE_CHOPPY) {
+ _payload_, // vendor specific parameter
+}
+
+packet BqrLeAudioChoppyEvent : BqrLinkQualityEvent (quality_report_id = LE_AUDIO_CHOPPY) {
+ _payload_, // vendor specific parameter
+}
+
+packet BqrConnectFailEvent : BqrLinkQualityEvent (quality_report_id = CONNECT_FAIL) {
  _payload_, // vendor specific parameter
 }
 
