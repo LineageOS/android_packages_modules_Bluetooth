@@ -29,7 +29,6 @@
 #include <cstdint>
 
 #include "internal_include/bt_target.h"
-#include "os/log.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_types.h"
@@ -41,22 +40,6 @@
 
 using bluetooth::Uuid;
 using namespace bluetooth;
-
-/******************************************************************************/
-/*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
-/******************************************************************************/
-static void process_service_search_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
-                                       uint8_t* p_reply_end);
-static void process_service_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
-                                     uint8_t* p_reply_end);
-static void process_service_search_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
-                                            uint8_t* p_reply_end);
-static uint8_t* save_attr_seq(tCONN_CB* p_ccb, uint8_t* p, uint8_t* p_msg_end);
-static tSDP_DISC_REC* add_record(tSDP_DISCOVERY_DB* p_db,
-                                 const RawAddress& bd_addr);
-static uint8_t* add_attr(uint8_t* p, uint8_t* p_end, tSDP_DISCOVERY_DB* p_db,
-                         tSDP_DISC_REC* p_rec, uint16_t attr_id,
-                         tSDP_DISC_ATTR* p_parent_attr, uint8_t nest_level);
 
 /* Safety check in case we go crazy */
 #define MAX_NEST_LEVELS 5
@@ -203,157 +186,6 @@ static void sdp_snd_service_search_req(tCONN_CB* p_ccb, uint8_t cont_len,
 
 /*******************************************************************************
  *
- * Function         sdp_disc_connected
- *
- * Description      This function is called when an SDP discovery attempt is
- *                  connected.
- *
- * Returns          void
- *
- ******************************************************************************/
-void sdp_disc_connected(tCONN_CB* p_ccb) {
-  if (p_ccb->is_attr_search) {
-    p_ccb->disc_state = SDP_DISC_WAIT_SEARCH_ATTR;
-
-    process_service_search_attr_rsp(p_ccb, NULL, NULL);
-  } else {
-    /* First step is to get a list of the handles from the server. */
-    /* We are not searching for a specific attribute, so we will   */
-    /* first search for the service, then get all attributes of it */
-
-    p_ccb->num_handles = 0;
-    sdp_snd_service_search_req(p_ccb, 0, NULL);
-  }
-}
-
-/*******************************************************************************
- *
- * Function         sdp_disc_server_rsp
- *
- * Description      This function is called when there is a response from
- *                  the server.
- *
- * Returns          void
- *
- ******************************************************************************/
-void sdp_disc_server_rsp(tCONN_CB* p_ccb, BT_HDR* p_msg) {
-  uint8_t *p, rsp_pdu;
-  bool invalid_pdu = true;
-
-  /* stop inactivity timer when we receive a response */
-  alarm_cancel(p_ccb->sdp_conn_timer);
-
-  /* Got a reply!! Check what we got back */
-  p = (uint8_t*)(p_msg + 1) + p_msg->offset;
-  uint8_t* p_end = p + p_msg->len;
-
-  if (p_msg->len < 1) {
-    sdp_disconnect(p_ccb, SDP_GENERIC_ERROR);
-    return;
-  }
-
-  BE_STREAM_TO_UINT8(rsp_pdu, p);
-
-  p_msg->len--;
-
-  switch (rsp_pdu) {
-    case SDP_PDU_SERVICE_SEARCH_RSP:
-      if (p_ccb->disc_state == SDP_DISC_WAIT_HANDLES) {
-        process_service_search_rsp(p_ccb, p, p_end);
-        invalid_pdu = false;
-      }
-      break;
-
-    case SDP_PDU_SERVICE_ATTR_RSP:
-      if (p_ccb->disc_state == SDP_DISC_WAIT_ATTR) {
-        process_service_attr_rsp(p_ccb, p, p_end);
-        invalid_pdu = false;
-      }
-      break;
-
-    case SDP_PDU_SERVICE_SEARCH_ATTR_RSP:
-      if (p_ccb->disc_state == SDP_DISC_WAIT_SEARCH_ATTR) {
-        process_service_search_attr_rsp(p_ccb, p, p_end);
-        invalid_pdu = false;
-      }
-      break;
-  }
-
-  if (invalid_pdu) {
-    log::warn("SDP - Unexp. PDU: {} in state: {}", rsp_pdu, p_ccb->disc_state);
-    sdp_disconnect(p_ccb, SDP_GENERIC_ERROR);
-  }
-}
-
-/******************************************************************************
- *
- * Function         process_service_search_rsp
- *
- * Description      This function is called when there is a search response from
- *                  the server.
- *
- * Returns          void
- *
- ******************************************************************************/
-static void process_service_search_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
-                                       uint8_t* p_reply_end) {
-  uint16_t xx;
-  uint16_t total, cur_handles, orig;
-  uint8_t cont_len;
-
-  if (p_reply + 8 > p_reply_end) {
-    sdp_disconnect(p_ccb, SDP_GENERIC_ERROR);
-    return;
-  }
-  /* Skip transaction, and param len */
-  p_reply += 4;
-  BE_STREAM_TO_UINT16(total, p_reply);
-  BE_STREAM_TO_UINT16(cur_handles, p_reply);
-
-  orig = p_ccb->num_handles;
-  p_ccb->num_handles += cur_handles;
-  if (p_ccb->num_handles == 0 || p_ccb->num_handles < orig) {
-    log::warn("SDP - Rcvd ServiceSearchRsp, no matches");
-    sdp_disconnect(p_ccb, SDP_NO_RECS_MATCH);
-    return;
-  }
-
-  /* Save the handles that match. We will can only process a certain number. */
-  if (total > sdp_cb.max_recs_per_search) total = sdp_cb.max_recs_per_search;
-  if (p_ccb->num_handles > sdp_cb.max_recs_per_search)
-    p_ccb->num_handles = sdp_cb.max_recs_per_search;
-
-  if (p_reply + ((p_ccb->num_handles - orig) * 4) + 1 > p_reply_end) {
-    sdp_disconnect(p_ccb, SDP_GENERIC_ERROR);
-    return;
-  }
-
-  for (xx = orig; xx < p_ccb->num_handles; xx++)
-    BE_STREAM_TO_UINT32(p_ccb->handles[xx], p_reply);
-
-  BE_STREAM_TO_UINT8(cont_len, p_reply);
-  if (cont_len != 0) {
-    if (cont_len > SDP_MAX_CONTINUATION_LEN) {
-      sdp_disconnect(p_ccb, SDP_INVALID_CONT_STATE);
-      return;
-    }
-    if (p_reply + cont_len > p_reply_end) {
-      sdp_disconnect(p_ccb, SDP_INVALID_CONT_STATE);
-      return;
-    }
-    /* stay in the same state */
-    sdp_snd_service_search_req(p_ccb, cont_len, p_reply);
-  } else {
-    /* change state */
-    p_ccb->disc_state = SDP_DISC_WAIT_ATTR;
-
-    /* Kick off the first attribute request */
-    process_service_attr_rsp(p_ccb, NULL, NULL);
-  }
-}
-
-/*******************************************************************************
- *
  * Function         sdp_copy_raw_data
  *
  * Description      copy the raw data
@@ -404,374 +236,6 @@ static bool sdp_copy_raw_data(tCONN_CB* p_ccb, bool offset) {
     p_ccb->p_db->raw_used += cpy_len;
   }
   return true;
-}
-
-/*******************************************************************************
- *
- * Function         process_service_attr_rsp
- *
- * Description      This function is called when there is a attribute response
- *                  from the server.
- *
- * Returns          void
- *
- ******************************************************************************/
-static void process_service_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
-                                     uint8_t* p_reply_end) {
-  uint8_t *p_start, *p_param_len;
-  uint16_t param_len, list_byte_count;
-  bool cont_request_needed = false;
-
-  /* If p_reply is NULL, we were called after the records handles were read */
-  if (p_reply) {
-    if (p_reply + 4 /* transaction ID and length */ + sizeof(list_byte_count) >
-        p_reply_end) {
-      sdp_disconnect(p_ccb, SDP_INVALID_PDU_SIZE);
-      return;
-    }
-
-    /* Skip transaction ID and length */
-    p_reply += 4;
-
-    BE_STREAM_TO_UINT16(list_byte_count, p_reply);
-
-    /* Copy the response to the scratchpad. First, a safety check on the length
-     */
-    if ((p_ccb->list_len + list_byte_count) > SDP_MAX_LIST_BYTE_COUNT) {
-      sdp_disconnect(p_ccb, SDP_INVALID_PDU_SIZE);
-      return;
-    }
-
-    if (p_reply + list_byte_count + 1 /* continuation */ > p_reply_end) {
-      sdp_disconnect(p_ccb, SDP_INVALID_PDU_SIZE);
-      return;
-    }
-
-    if (p_ccb->rsp_list == NULL)
-      p_ccb->rsp_list = (uint8_t*)osi_malloc(SDP_MAX_LIST_BYTE_COUNT);
-    memcpy(&p_ccb->rsp_list[p_ccb->list_len], p_reply, list_byte_count);
-    p_ccb->list_len += list_byte_count;
-    p_reply += list_byte_count;
-    if (*p_reply) {
-      if (*p_reply > SDP_MAX_CONTINUATION_LEN) {
-        sdp_disconnect(p_ccb, SDP_INVALID_CONT_STATE);
-        return;
-      }
-      cont_request_needed = true;
-    } else {
-      log::warn("process_service_attr_rsp");
-      if (!sdp_copy_raw_data(p_ccb, false)) {
-        log::error("sdp_copy_raw_data failed");
-        sdp_disconnect(p_ccb, SDP_ILLEGAL_PARAMETER);
-        return;
-      }
-
-      /* Save the response in the database. Stop on any error */
-      if (!save_attr_seq(p_ccb, &p_ccb->rsp_list[0],
-                         &p_ccb->rsp_list[p_ccb->list_len])) {
-        sdp_disconnect(p_ccb, SDP_DB_FULL);
-        return;
-      }
-      p_ccb->list_len = 0;
-      p_ccb->cur_handle++;
-    }
-  }
-
-  /* Now, ask for the next handle. Re-use the buffer we just got. */
-  if (p_ccb->cur_handle < p_ccb->num_handles) {
-    BT_HDR* p_msg = (BT_HDR*)osi_malloc(SDP_DATA_BUF_SIZE);
-    uint8_t* p;
-
-    p_msg->offset = L2CAP_MIN_OFFSET;
-    p = p_start = (uint8_t*)(p_msg + 1) + L2CAP_MIN_OFFSET;
-
-    /* Get all the attributes from the server */
-    UINT8_TO_BE_STREAM(p, SDP_PDU_SERVICE_ATTR_REQ);
-    UINT16_TO_BE_STREAM(p, p_ccb->transaction_id);
-    p_ccb->transaction_id++;
-
-    /* Skip the length, we need to add it at the end */
-    p_param_len = p;
-    p += 2;
-
-    UINT32_TO_BE_STREAM(p, p_ccb->handles[p_ccb->cur_handle]);
-
-    /* Max attribute byte count */
-    UINT16_TO_BE_STREAM(p, sdp_cb.max_attr_list_size);
-
-    /* If no attribute filters, build a wildcard attribute sequence */
-    if (p_ccb->p_db->num_attr_filters)
-      p = sdpu_build_attrib_seq(p, p_ccb->p_db->attr_filters,
-                                p_ccb->p_db->num_attr_filters);
-    else
-      p = sdpu_build_attrib_seq(p, NULL, 0);
-
-    /* Was this a continuation request ? */
-    if (cont_request_needed) {
-      if ((p_reply + *p_reply + 1) <= p_reply_end) {
-        memcpy(p, p_reply, *p_reply + 1);
-        p += *p_reply + 1;
-      }
-    } else
-      UINT8_TO_BE_STREAM(p, 0);
-
-    /* Go back and put the parameter length into the buffer */
-    param_len = (uint16_t)(p - p_param_len - 2);
-    UINT16_TO_BE_STREAM(p_param_len, param_len);
-
-    /* Set the length of the SDP data in the buffer */
-    p_msg->len = (uint16_t)(p - p_start);
-
-    L2CA_DataWrite(p_ccb->connection_id, p_msg);
-
-    /* Start inactivity timer */
-    alarm_set_on_mloop(p_ccb->sdp_conn_timer, SDP_INACT_TIMEOUT_MS,
-                       sdp_conn_timer_timeout, p_ccb);
-  } else {
-    sdpu_log_attribute_metrics(p_ccb->device_address, p_ccb->p_db);
-    sdp_disconnect(p_ccb, SDP_SUCCESS);
-    return;
-  }
-}
-
-/*******************************************************************************
- *
- * Function         process_service_search_attr_rsp
- *
- * Description      This function is called when there is a search attribute
- *                  response from the server.
- *
- * Returns          void
- *
- ******************************************************************************/
-static void process_service_search_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
-                                            uint8_t* p_reply_end) {
-  uint8_t *p, *p_start, *p_end, *p_param_len;
-  uint8_t type;
-  uint32_t seq_len;
-  uint16_t param_len, lists_byte_count = 0;
-  bool cont_request_needed = false;
-
-  /* If p_reply is NULL, we were called for the initial read */
-  if (p_reply) {
-    if (p_reply + 4 /* transaction ID and length */ + sizeof(lists_byte_count) >
-        p_reply_end) {
-      sdp_disconnect(p_ccb, SDP_INVALID_PDU_SIZE);
-      return;
-    }
-
-    /* Skip transaction ID and length */
-    p_reply += 4;
-
-    BE_STREAM_TO_UINT16(lists_byte_count, p_reply);
-
-    /* Copy the response to the scratchpad. First, a safety check on the length
-     */
-    if ((p_ccb->list_len + lists_byte_count) > SDP_MAX_LIST_BYTE_COUNT) {
-      sdp_disconnect(p_ccb, SDP_INVALID_PDU_SIZE);
-      return;
-    }
-
-    if (p_reply + lists_byte_count + 1 /* continuation */ > p_reply_end) {
-      sdp_disconnect(p_ccb, SDP_INVALID_PDU_SIZE);
-      return;
-    }
-
-    if (p_ccb->rsp_list == NULL)
-      p_ccb->rsp_list = (uint8_t*)osi_malloc(SDP_MAX_LIST_BYTE_COUNT);
-    memcpy(&p_ccb->rsp_list[p_ccb->list_len], p_reply, lists_byte_count);
-    p_ccb->list_len += lists_byte_count;
-    p_reply += lists_byte_count;
-    if (*p_reply) {
-      if (*p_reply > SDP_MAX_CONTINUATION_LEN) {
-        sdp_disconnect(p_ccb, SDP_INVALID_CONT_STATE);
-        return;
-      }
-
-      cont_request_needed = true;
-    }
-  }
-
-  /* If continuation request (or first time request) */
-  if ((cont_request_needed) || (!p_reply)) {
-    BT_HDR* p_msg = (BT_HDR*)osi_malloc(SDP_DATA_BUF_SIZE);
-    uint8_t* p;
-    uint16_t bytes_left = SDP_DATA_BUF_SIZE;
-
-    p_msg->offset = L2CAP_MIN_OFFSET;
-    p = p_start = (uint8_t*)(p_msg + 1) + L2CAP_MIN_OFFSET;
-
-    /* Build a service search request packet */
-    UINT8_TO_BE_STREAM(p, SDP_PDU_SERVICE_SEARCH_ATTR_REQ);
-    UINT16_TO_BE_STREAM(p, p_ccb->transaction_id);
-    p_ccb->transaction_id++;
-
-    /* Skip the length, we need to add it at the end */
-    p_param_len = p;
-    p += 2;
-
-    /* Account for header size, max service record count and
-     * continuation state */
-    const uint16_t base_bytes = (sizeof(BT_HDR) + L2CAP_MIN_OFFSET +
-                                 3u + /* service search request header */
-                                 2u + /* param len */
-                                 3u + /* max service record count */
-                                 ((p_reply) ? (*p_reply) : 0));
-
-    if (base_bytes > bytes_left) {
-      sdp_disconnect(p_ccb, SDP_INVALID_CONT_STATE);
-      return;
-    }
-
-    bytes_left -= base_bytes;
-
-    /* Build the UID sequence. */
-    p = sdpu_build_uuid_seq(p, p_ccb->p_db->num_uuid_filters,
-                            p_ccb->p_db->uuid_filters, bytes_left);
-
-    /* Max attribute byte count */
-    UINT16_TO_BE_STREAM(p, sdp_cb.max_attr_list_size);
-
-    /* If no attribute filters, build a wildcard attribute sequence */
-    if (p_ccb->p_db->num_attr_filters)
-      p = sdpu_build_attrib_seq(p, p_ccb->p_db->attr_filters,
-                                p_ccb->p_db->num_attr_filters);
-    else
-      p = sdpu_build_attrib_seq(p, NULL, 0);
-
-    /* No continuation for first request */
-    if (p_reply) {
-      if ((p_reply + *p_reply + 1) <= p_reply_end) {
-        memcpy(p, p_reply, *p_reply + 1);
-        p += *p_reply + 1;
-      }
-    } else
-      UINT8_TO_BE_STREAM(p, 0);
-
-    /* Go back and put the parameter length into the buffer */
-    param_len = p - p_param_len - 2;
-    UINT16_TO_BE_STREAM(p_param_len, param_len);
-
-    /* Set the length of the SDP data in the buffer */
-    p_msg->len = p - p_start;
-
-    L2CA_DataWrite(p_ccb->connection_id, p_msg);
-
-    /* Start inactivity timer */
-    alarm_set_on_mloop(p_ccb->sdp_conn_timer, SDP_INACT_TIMEOUT_MS,
-                       sdp_conn_timer_timeout, p_ccb);
-
-    return;
-  }
-
-/*******************************************************************/
-/* We now have the full response, which is a sequence of sequences */
-/*******************************************************************/
-
-  if (!sdp_copy_raw_data(p_ccb, true)) {
-    log::error("sdp_copy_raw_data failed");
-    sdp_disconnect(p_ccb, SDP_ILLEGAL_PARAMETER);
-    return;
-  }
-
-  p = &p_ccb->rsp_list[0];
-
-  /* The contents is a sequence of attribute sequences */
-  type = *p++;
-
-  if ((type >> 3) != DATA_ELE_SEQ_DESC_TYPE) {
-    log::warn("Wrong element in attr_rsp type:0x{:02x}", type);
-    sdp_disconnect(p_ccb, SDP_ILLEGAL_PARAMETER);
-    return;
-  }
-  p = sdpu_get_len_from_type(p, p + p_ccb->list_len, type, &seq_len);
-  if (p == NULL || (p + seq_len) > (p + p_ccb->list_len)) {
-    log::warn("Illegal search attribute length");
-    sdp_disconnect(p_ccb, SDP_ILLEGAL_PARAMETER);
-    return;
-  }
-  p_end = &p_ccb->rsp_list[p_ccb->list_len];
-
-  if ((p + seq_len) != p_end) {
-    sdp_disconnect(p_ccb, SDP_INVALID_CONT_STATE);
-    return;
-  }
-
-  while (p < p_end) {
-    p = save_attr_seq(p_ccb, p, &p_ccb->rsp_list[p_ccb->list_len]);
-    if (!p) {
-      sdp_disconnect(p_ccb, SDP_DB_FULL);
-      return;
-    }
-  }
-
-  /* Since we got everything we need, disconnect the call */
-  sdpu_log_attribute_metrics(p_ccb->device_address, p_ccb->p_db);
-  sdp_disconnect(p_ccb, SDP_SUCCESS);
-}
-
-/*******************************************************************************
- *
- * Function         save_attr_seq
- *
- * Description      This function is called when there is a response from
- *                  the server.
- *
- * Returns          pointer to next byte or NULL if error
- *
- ******************************************************************************/
-static uint8_t* save_attr_seq(tCONN_CB* p_ccb, uint8_t* p, uint8_t* p_msg_end) {
-  uint32_t seq_len, attr_len;
-  uint16_t attr_id;
-  uint8_t type, *p_seq_end;
-  tSDP_DISC_REC* p_rec;
-
-  type = *p++;
-
-  if ((type >> 3) != DATA_ELE_SEQ_DESC_TYPE) {
-    log::warn("SDP - Wrong type: 0x{:02x} in attr_rsp", type);
-    return (NULL);
-  }
-  p = sdpu_get_len_from_type(p, p_msg_end, type, &seq_len);
-  if (p == NULL || (p + seq_len) > p_msg_end) {
-    log::warn("SDP - Bad len in attr_rsp {}", seq_len);
-    return (NULL);
-  }
-
-  /* Create a record */
-  p_rec = add_record(p_ccb->p_db, p_ccb->device_address);
-  if (!p_rec) {
-    log::warn("SDP - DB full add_record");
-    return (NULL);
-  }
-
-  p_seq_end = p + seq_len;
-
-  while (p < p_seq_end) {
-    /* First get the attribute ID */
-    type = *p++;
-    p = sdpu_get_len_from_type(p, p_msg_end, type, &attr_len);
-    if (p == NULL || (p + attr_len) > p_seq_end) {
-      log::warn("Bad len in attr_rsp {}", attr_len);
-      return (NULL);
-    }
-    if (((type >> 3) != UINT_DESC_TYPE) || (attr_len != 2)) {
-      log::warn("SDP - Bad type: 0x{:02x} or len: {} in attr_rsp", type,
-                attr_len);
-      return (NULL);
-    }
-    BE_STREAM_TO_UINT16(attr_id, p);
-
-    /* Now, add the attribute value */
-    p = add_attr(p, p_seq_end, p_ccb->p_db, p_rec, attr_id, NULL, 0);
-
-    if (!p) {
-      log::warn("SDP - DB full add_attr");
-      return (NULL);
-    }
-  }
-
-  return (p);
 }
 
 /*******************************************************************************
@@ -1033,4 +497,523 @@ static uint8_t* add_attr(uint8_t* p, uint8_t* p_end, tSDP_DISCOVERY_DB* p_db,
   }
 
   return (p);
+}
+
+/*******************************************************************************
+ *
+ * Function         save_attr_seq
+ *
+ * Description      This function is called when there is a response from
+ *                  the server.
+ *
+ * Returns          pointer to next byte or NULL if error
+ *
+ ******************************************************************************/
+static uint8_t* save_attr_seq(tCONN_CB* p_ccb, uint8_t* p, uint8_t* p_msg_end) {
+  uint32_t seq_len, attr_len;
+  uint16_t attr_id;
+  uint8_t type, *p_seq_end;
+  tSDP_DISC_REC* p_rec;
+
+  type = *p++;
+
+  if ((type >> 3) != DATA_ELE_SEQ_DESC_TYPE) {
+    log::warn("SDP - Wrong type: 0x{:02x} in attr_rsp", type);
+    return (NULL);
+  }
+  p = sdpu_get_len_from_type(p, p_msg_end, type, &seq_len);
+  if (p == NULL || (p + seq_len) > p_msg_end) {
+    log::warn("SDP - Bad len in attr_rsp {}", seq_len);
+    return (NULL);
+  }
+
+  /* Create a record */
+  p_rec = add_record(p_ccb->p_db, p_ccb->device_address);
+  if (!p_rec) {
+    log::warn("SDP - DB full add_record");
+    return (NULL);
+  }
+
+  p_seq_end = p + seq_len;
+
+  while (p < p_seq_end) {
+    /* First get the attribute ID */
+    type = *p++;
+    p = sdpu_get_len_from_type(p, p_msg_end, type, &attr_len);
+    if (p == NULL || (p + attr_len) > p_seq_end) {
+      log::warn("Bad len in attr_rsp {}", attr_len);
+      return (NULL);
+    }
+    if (((type >> 3) != UINT_DESC_TYPE) || (attr_len != 2)) {
+      log::warn("SDP - Bad type: 0x{:02x} or len: {} in attr_rsp", type,
+                attr_len);
+      return (NULL);
+    }
+    BE_STREAM_TO_UINT16(attr_id, p);
+
+    /* Now, add the attribute value */
+    p = add_attr(p, p_seq_end, p_ccb->p_db, p_rec, attr_id, NULL, 0);
+
+    if (!p) {
+      log::warn("SDP - DB full add_attr");
+      return (NULL);
+    }
+  }
+
+  return (p);
+}
+
+/*******************************************************************************
+ *
+ * Function         process_service_search_attr_rsp
+ *
+ * Description      This function is called when there is a search attribute
+ *                  response from the server.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+static void process_service_search_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
+                                            uint8_t* p_reply_end) {
+  uint8_t *p, *p_start, *p_end, *p_param_len;
+  uint8_t type;
+  uint32_t seq_len;
+  uint16_t param_len, lists_byte_count = 0;
+  bool cont_request_needed = false;
+
+  /* If p_reply is NULL, we were called for the initial read */
+  if (p_reply) {
+    if (p_reply + 4 /* transaction ID and length */ + sizeof(lists_byte_count) >
+        p_reply_end) {
+      sdp_disconnect(p_ccb, SDP_INVALID_PDU_SIZE);
+      return;
+    }
+
+    /* Skip transaction ID and length */
+    p_reply += 4;
+
+    BE_STREAM_TO_UINT16(lists_byte_count, p_reply);
+
+    /* Copy the response to the scratchpad. First, a safety check on the length
+     */
+    if ((p_ccb->list_len + lists_byte_count) > SDP_MAX_LIST_BYTE_COUNT) {
+      sdp_disconnect(p_ccb, SDP_INVALID_PDU_SIZE);
+      return;
+    }
+
+    if (p_reply + lists_byte_count + 1 /* continuation */ > p_reply_end) {
+      sdp_disconnect(p_ccb, SDP_INVALID_PDU_SIZE);
+      return;
+    }
+
+    if (p_ccb->rsp_list == NULL)
+      p_ccb->rsp_list = (uint8_t*)osi_malloc(SDP_MAX_LIST_BYTE_COUNT);
+    memcpy(&p_ccb->rsp_list[p_ccb->list_len], p_reply, lists_byte_count);
+    p_ccb->list_len += lists_byte_count;
+    p_reply += lists_byte_count;
+    if (*p_reply) {
+      if (*p_reply > SDP_MAX_CONTINUATION_LEN) {
+        sdp_disconnect(p_ccb, SDP_INVALID_CONT_STATE);
+        return;
+      }
+
+      cont_request_needed = true;
+    }
+  }
+
+  /* If continuation request (or first time request) */
+  if ((cont_request_needed) || (!p_reply)) {
+    BT_HDR* p_msg = (BT_HDR*)osi_malloc(SDP_DATA_BUF_SIZE);
+    uint8_t* p;
+    uint16_t bytes_left = SDP_DATA_BUF_SIZE;
+
+    p_msg->offset = L2CAP_MIN_OFFSET;
+    p = p_start = (uint8_t*)(p_msg + 1) + L2CAP_MIN_OFFSET;
+
+    /* Build a service search request packet */
+    UINT8_TO_BE_STREAM(p, SDP_PDU_SERVICE_SEARCH_ATTR_REQ);
+    UINT16_TO_BE_STREAM(p, p_ccb->transaction_id);
+    p_ccb->transaction_id++;
+
+    /* Skip the length, we need to add it at the end */
+    p_param_len = p;
+    p += 2;
+
+    /* Account for header size, max service record count and
+     * continuation state */
+    const uint16_t base_bytes = (sizeof(BT_HDR) + L2CAP_MIN_OFFSET +
+                                 3u + /* service search request header */
+                                 2u + /* param len */
+                                 3u + /* max service record count */
+                                 ((p_reply) ? (*p_reply) : 0));
+
+    if (base_bytes > bytes_left) {
+      sdp_disconnect(p_ccb, SDP_INVALID_CONT_STATE);
+      return;
+    }
+
+    bytes_left -= base_bytes;
+
+    /* Build the UID sequence. */
+    p = sdpu_build_uuid_seq(p, p_ccb->p_db->num_uuid_filters,
+                            p_ccb->p_db->uuid_filters, bytes_left);
+
+    /* Max attribute byte count */
+    UINT16_TO_BE_STREAM(p, sdp_cb.max_attr_list_size);
+
+    /* If no attribute filters, build a wildcard attribute sequence */
+    if (p_ccb->p_db->num_attr_filters)
+      p = sdpu_build_attrib_seq(p, p_ccb->p_db->attr_filters,
+                                p_ccb->p_db->num_attr_filters);
+    else
+      p = sdpu_build_attrib_seq(p, NULL, 0);
+
+    /* No continuation for first request */
+    if (p_reply) {
+      if ((p_reply + *p_reply + 1) <= p_reply_end) {
+        memcpy(p, p_reply, *p_reply + 1);
+        p += *p_reply + 1;
+      }
+    } else
+      UINT8_TO_BE_STREAM(p, 0);
+
+    /* Go back and put the parameter length into the buffer */
+    param_len = p - p_param_len - 2;
+    UINT16_TO_BE_STREAM(p_param_len, param_len);
+
+    /* Set the length of the SDP data in the buffer */
+    p_msg->len = p - p_start;
+
+    L2CA_DataWrite(p_ccb->connection_id, p_msg);
+
+    /* Start inactivity timer */
+    alarm_set_on_mloop(p_ccb->sdp_conn_timer, SDP_INACT_TIMEOUT_MS,
+                       sdp_conn_timer_timeout, p_ccb);
+
+    return;
+  }
+
+/*******************************************************************/
+/* We now have the full response, which is a sequence of sequences */
+/*******************************************************************/
+
+  if (!sdp_copy_raw_data(p_ccb, true)) {
+    log::error("sdp_copy_raw_data failed");
+    sdp_disconnect(p_ccb, SDP_ILLEGAL_PARAMETER);
+    return;
+  }
+
+  p = &p_ccb->rsp_list[0];
+
+  /* The contents is a sequence of attribute sequences */
+  type = *p++;
+
+  if ((type >> 3) != DATA_ELE_SEQ_DESC_TYPE) {
+    log::warn("Wrong element in attr_rsp type:0x{:02x}", type);
+    sdp_disconnect(p_ccb, SDP_ILLEGAL_PARAMETER);
+    return;
+  }
+  p = sdpu_get_len_from_type(p, p + p_ccb->list_len, type, &seq_len);
+  if (p == NULL || (p + seq_len) > (p + p_ccb->list_len)) {
+    log::warn("Illegal search attribute length");
+    sdp_disconnect(p_ccb, SDP_ILLEGAL_PARAMETER);
+    return;
+  }
+  p_end = &p_ccb->rsp_list[p_ccb->list_len];
+
+  if ((p + seq_len) != p_end) {
+    sdp_disconnect(p_ccb, SDP_INVALID_CONT_STATE);
+    return;
+  }
+
+  while (p < p_end) {
+    p = save_attr_seq(p_ccb, p, &p_ccb->rsp_list[p_ccb->list_len]);
+    if (!p) {
+      sdp_disconnect(p_ccb, SDP_DB_FULL);
+      return;
+    }
+  }
+
+  /* Since we got everything we need, disconnect the call */
+  sdpu_log_attribute_metrics(p_ccb->device_address, p_ccb->p_db);
+  sdp_disconnect(p_ccb, SDP_SUCCESS);
+}
+
+/*******************************************************************************
+ *
+ * Function         process_service_attr_rsp
+ *
+ * Description      This function is called when there is a attribute response
+ *                  from the server.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+static void process_service_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
+                                     uint8_t* p_reply_end) {
+  uint8_t *p_start, *p_param_len;
+  uint16_t param_len, list_byte_count;
+  bool cont_request_needed = false;
+
+  /* If p_reply is NULL, we were called after the records handles were read */
+  if (p_reply) {
+    if (p_reply + 4 /* transaction ID and length */ + sizeof(list_byte_count) >
+        p_reply_end) {
+      sdp_disconnect(p_ccb, SDP_INVALID_PDU_SIZE);
+      return;
+    }
+
+    /* Skip transaction ID and length */
+    p_reply += 4;
+
+    BE_STREAM_TO_UINT16(list_byte_count, p_reply);
+
+    /* Copy the response to the scratchpad. First, a safety check on the length
+     */
+    if ((p_ccb->list_len + list_byte_count) > SDP_MAX_LIST_BYTE_COUNT) {
+      sdp_disconnect(p_ccb, SDP_INVALID_PDU_SIZE);
+      return;
+    }
+
+    if (p_reply + list_byte_count + 1 /* continuation */ > p_reply_end) {
+      sdp_disconnect(p_ccb, SDP_INVALID_PDU_SIZE);
+      return;
+    }
+
+    if (p_ccb->rsp_list == NULL)
+      p_ccb->rsp_list = (uint8_t*)osi_malloc(SDP_MAX_LIST_BYTE_COUNT);
+    memcpy(&p_ccb->rsp_list[p_ccb->list_len], p_reply, list_byte_count);
+    p_ccb->list_len += list_byte_count;
+    p_reply += list_byte_count;
+    if (*p_reply) {
+      if (*p_reply > SDP_MAX_CONTINUATION_LEN) {
+        sdp_disconnect(p_ccb, SDP_INVALID_CONT_STATE);
+        return;
+      }
+      cont_request_needed = true;
+    } else {
+      log::warn("process_service_attr_rsp");
+      if (!sdp_copy_raw_data(p_ccb, false)) {
+        log::error("sdp_copy_raw_data failed");
+        sdp_disconnect(p_ccb, SDP_ILLEGAL_PARAMETER);
+        return;
+      }
+
+      /* Save the response in the database. Stop on any error */
+      if (!save_attr_seq(p_ccb, &p_ccb->rsp_list[0],
+                         &p_ccb->rsp_list[p_ccb->list_len])) {
+        sdp_disconnect(p_ccb, SDP_DB_FULL);
+        return;
+      }
+      p_ccb->list_len = 0;
+      p_ccb->cur_handle++;
+    }
+  }
+
+  /* Now, ask for the next handle. Re-use the buffer we just got. */
+  if (p_ccb->cur_handle < p_ccb->num_handles) {
+    BT_HDR* p_msg = (BT_HDR*)osi_malloc(SDP_DATA_BUF_SIZE);
+    uint8_t* p;
+
+    p_msg->offset = L2CAP_MIN_OFFSET;
+    p = p_start = (uint8_t*)(p_msg + 1) + L2CAP_MIN_OFFSET;
+
+    /* Get all the attributes from the server */
+    UINT8_TO_BE_STREAM(p, SDP_PDU_SERVICE_ATTR_REQ);
+    UINT16_TO_BE_STREAM(p, p_ccb->transaction_id);
+    p_ccb->transaction_id++;
+
+    /* Skip the length, we need to add it at the end */
+    p_param_len = p;
+    p += 2;
+
+    UINT32_TO_BE_STREAM(p, p_ccb->handles[p_ccb->cur_handle]);
+
+    /* Max attribute byte count */
+    UINT16_TO_BE_STREAM(p, sdp_cb.max_attr_list_size);
+
+    /* If no attribute filters, build a wildcard attribute sequence */
+    if (p_ccb->p_db->num_attr_filters)
+      p = sdpu_build_attrib_seq(p, p_ccb->p_db->attr_filters,
+                                p_ccb->p_db->num_attr_filters);
+    else
+      p = sdpu_build_attrib_seq(p, NULL, 0);
+
+    /* Was this a continuation request ? */
+    if (cont_request_needed) {
+      if ((p_reply + *p_reply + 1) <= p_reply_end) {
+        memcpy(p, p_reply, *p_reply + 1);
+        p += *p_reply + 1;
+      }
+    } else
+      UINT8_TO_BE_STREAM(p, 0);
+
+    /* Go back and put the parameter length into the buffer */
+    param_len = (uint16_t)(p - p_param_len - 2);
+    UINT16_TO_BE_STREAM(p_param_len, param_len);
+
+    /* Set the length of the SDP data in the buffer */
+    p_msg->len = (uint16_t)(p - p_start);
+
+    L2CA_DataWrite(p_ccb->connection_id, p_msg);
+
+    /* Start inactivity timer */
+    alarm_set_on_mloop(p_ccb->sdp_conn_timer, SDP_INACT_TIMEOUT_MS,
+                       sdp_conn_timer_timeout, p_ccb);
+  } else {
+    sdpu_log_attribute_metrics(p_ccb->device_address, p_ccb->p_db);
+    sdp_disconnect(p_ccb, SDP_SUCCESS);
+    return;
+  }
+}
+
+/******************************************************************************
+ *
+ * Function         process_service_search_rsp
+ *
+ * Description      This function is called when there is a search response from
+ *                  the server.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+static void process_service_search_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
+                                       uint8_t* p_reply_end) {
+  uint16_t xx;
+  uint16_t total, cur_handles, orig;
+  uint8_t cont_len;
+
+  if (p_reply + 8 > p_reply_end) {
+    sdp_disconnect(p_ccb, SDP_GENERIC_ERROR);
+    return;
+  }
+  /* Skip transaction, and param len */
+  p_reply += 4;
+  BE_STREAM_TO_UINT16(total, p_reply);
+  BE_STREAM_TO_UINT16(cur_handles, p_reply);
+
+  orig = p_ccb->num_handles;
+  p_ccb->num_handles += cur_handles;
+  if (p_ccb->num_handles == 0 || p_ccb->num_handles < orig) {
+    log::warn("SDP - Rcvd ServiceSearchRsp, no matches");
+    sdp_disconnect(p_ccb, SDP_NO_RECS_MATCH);
+    return;
+  }
+
+  /* Save the handles that match. We will can only process a certain number. */
+  if (total > sdp_cb.max_recs_per_search) total = sdp_cb.max_recs_per_search;
+  if (p_ccb->num_handles > sdp_cb.max_recs_per_search)
+    p_ccb->num_handles = sdp_cb.max_recs_per_search;
+
+  if (p_reply + ((p_ccb->num_handles - orig) * 4) + 1 > p_reply_end) {
+    sdp_disconnect(p_ccb, SDP_GENERIC_ERROR);
+    return;
+  }
+
+  for (xx = orig; xx < p_ccb->num_handles; xx++)
+    BE_STREAM_TO_UINT32(p_ccb->handles[xx], p_reply);
+
+  BE_STREAM_TO_UINT8(cont_len, p_reply);
+  if (cont_len != 0) {
+    if (cont_len > SDP_MAX_CONTINUATION_LEN) {
+      sdp_disconnect(p_ccb, SDP_INVALID_CONT_STATE);
+      return;
+    }
+    if (p_reply + cont_len > p_reply_end) {
+      sdp_disconnect(p_ccb, SDP_INVALID_CONT_STATE);
+      return;
+    }
+    /* stay in the same state */
+    sdp_snd_service_search_req(p_ccb, cont_len, p_reply);
+  } else {
+    /* change state */
+    p_ccb->disc_state = SDP_DISC_WAIT_ATTR;
+
+    /* Kick off the first attribute request */
+    process_service_attr_rsp(p_ccb, NULL, NULL);
+  }
+}
+
+/*******************************************************************************
+ *
+ * Function         sdp_disc_connected
+ *
+ * Description      This function is called when an SDP discovery attempt is
+ *                  connected.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void sdp_disc_connected(tCONN_CB* p_ccb) {
+  if (p_ccb->is_attr_search) {
+    p_ccb->disc_state = SDP_DISC_WAIT_SEARCH_ATTR;
+
+    process_service_search_attr_rsp(p_ccb, NULL, NULL);
+  } else {
+    /* First step is to get a list of the handles from the server. */
+    /* We are not searching for a specific attribute, so we will   */
+    /* first search for the service, then get all attributes of it */
+
+    p_ccb->num_handles = 0;
+    sdp_snd_service_search_req(p_ccb, 0, NULL);
+  }
+}
+
+/*******************************************************************************
+ *
+ * Function         sdp_disc_server_rsp
+ *
+ * Description      This function is called when there is a response from
+ *                  the server.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void sdp_disc_server_rsp(tCONN_CB* p_ccb, BT_HDR* p_msg) {
+  uint8_t *p, rsp_pdu;
+  bool invalid_pdu = true;
+
+  /* stop inactivity timer when we receive a response */
+  alarm_cancel(p_ccb->sdp_conn_timer);
+
+  /* Got a reply!! Check what we got back */
+  p = (uint8_t*)(p_msg + 1) + p_msg->offset;
+  uint8_t* p_end = p + p_msg->len;
+
+  if (p_msg->len < 1) {
+    sdp_disconnect(p_ccb, SDP_GENERIC_ERROR);
+    return;
+  }
+
+  BE_STREAM_TO_UINT8(rsp_pdu, p);
+
+  p_msg->len--;
+
+  switch (rsp_pdu) {
+    case SDP_PDU_SERVICE_SEARCH_RSP:
+      if (p_ccb->disc_state == SDP_DISC_WAIT_HANDLES) {
+        process_service_search_rsp(p_ccb, p, p_end);
+        invalid_pdu = false;
+      }
+      break;
+
+    case SDP_PDU_SERVICE_ATTR_RSP:
+      if (p_ccb->disc_state == SDP_DISC_WAIT_ATTR) {
+        process_service_attr_rsp(p_ccb, p, p_end);
+        invalid_pdu = false;
+      }
+      break;
+
+    case SDP_PDU_SERVICE_SEARCH_ATTR_RSP:
+      if (p_ccb->disc_state == SDP_DISC_WAIT_SEARCH_ATTR) {
+        process_service_search_attr_rsp(p_ccb, p, p_end);
+        invalid_pdu = false;
+      }
+      break;
+  }
+
+  if (invalid_pdu) {
+    log::warn("SDP - Unexp. PDU: {} in state: {}", rsp_pdu, p_ccb->disc_state);
+    sdp_disconnect(p_ccb, SDP_GENERIC_ERROR);
+  }
 }

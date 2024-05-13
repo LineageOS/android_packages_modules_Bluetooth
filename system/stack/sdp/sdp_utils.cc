@@ -40,7 +40,6 @@
 #include "device/include/interop.h"
 #include "internal_include/bt_target.h"
 #include "internal_include/bt_trace.h"
-#include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/properties.h"
 #include "stack/include/avrc_api.h"
@@ -52,6 +51,7 @@
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/sdpdefs.h"
 #include "stack/include/stack_metrics_logging.h"
+#include "stack/sdp/internal/sdp_api.h"
 #include "stack/sdp/sdpint.h"
 #include "storage/config_keys.h"
 #include "types/bluetooth/uuid.h"
@@ -59,15 +59,6 @@
 
 using bluetooth::Uuid;
 using namespace bluetooth;
-
-bool SDP_FindProtocolListElemInRec(const tSDP_DISC_REC* p_rec,
-                                   uint16_t layer_uuid,
-                                   tSDP_PROTOCOL_ELEM* p_elem);
-tSDP_DISC_ATTR* SDP_FindAttributeInRec(const tSDP_DISC_REC* p_rec,
-                                       uint16_t attr_id);
-uint16_t SDP_GetDiRecord(uint8_t getRecordIndex,
-                         tSDP_DI_GET_RECORD* device_info,
-                         const tSDP_DISCOVERY_DB* p_db);
 
 static const uint8_t sdp_base_uuid[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
                                         0x10, 0x00, 0x80, 0x00, 0x00, 0x80,
