@@ -126,11 +126,22 @@ static tGATT_CBACK gatt_profile_cback = {
  ******************************************************************************/
 uint16_t gatt_profile_find_conn_id_by_bd_addr(const RawAddress& remote_bda) {
   uint16_t conn_id = GATT_INVALID_CONN_ID;
-  GATT_GetConnIdIfConnected(gatt_cb.gatt_if, remote_bda, &conn_id,
-                            BT_TRANSPORT_LE);
-  if (conn_id == GATT_INVALID_CONN_ID)
-    GATT_GetConnIdIfConnected(gatt_cb.gatt_if, remote_bda, &conn_id,
-                              BT_TRANSPORT_BR_EDR);
+  if (!GATT_GetConnIdIfConnected(gatt_cb.gatt_if, remote_bda, &conn_id,
+                                 BT_TRANSPORT_LE)) {
+    log::warn(
+        "Unable to get GATT connection id if connected peer:{} gatt_if:{} "
+        "transport:{}",
+        remote_bda, gatt_cb.gatt_if, bt_transport_text(BT_TRANSPORT_LE));
+  }
+  if (conn_id == GATT_INVALID_CONN_ID) {
+    if (!GATT_GetConnIdIfConnected(gatt_cb.gatt_if, remote_bda, &conn_id,
+                                   BT_TRANSPORT_BR_EDR)) {
+      log::warn(
+          "Unable to get GATT connection id if connected peer:{} gatt_if:{} "
+          "transport:{}",
+          remote_bda, gatt_cb.gatt_if, bt_transport_text(BT_TRANSPORT_BR_EDR));
+    }
+  }
   return conn_id;
 }
 
@@ -336,7 +347,11 @@ static void gatt_request_cback(uint16_t conn_id, uint32_t trans_id,
       break;
   }
 
-  if (rsp_needed) GATTS_SendRsp(conn_id, trans_id, status, &rsp_msg);
+  if (rsp_needed) {
+    if (GATTS_SendRsp(conn_id, trans_id, status, &rsp_msg) != GATT_SUCCESS) {
+      log::warn("Unable to send GATT server response conn_id:{}", conn_id);
+    }
+  }
 }
 
 /*******************************************************************************
@@ -435,8 +450,11 @@ void gatt_profile_db_init(void) {
           .permissions = GATT_PERM_READ,
       }};
 
-  GATTS_AddService(gatt_cb.gatt_if, service,
-                   sizeof(service) / sizeof(btgatt_db_element_t));
+  if (GATTS_AddService(gatt_cb.gatt_if, service,
+                       sizeof(service) / sizeof(btgatt_db_element_t)) !=
+      GATT_SERVICE_STARTED) {
+    log::warn("Unable to add GATT server service gatt_if:{}", gatt_cb.gatt_if);
+  }
 
   gatt_cb.handle_of_h_r = service[1].attribute_handle;
   gatt_cb.handle_sr_supported_feat = service[2].attribute_handle;
@@ -693,18 +711,29 @@ static void gatt_cl_start_config_ccc(tGATT_PROFILE_CLCB* p_clcb) {
 
   switch (p_clcb->ccc_stage) {
     case GATT_SVC_CHANGED_SERVICE: /* discover GATT service */
-      GATTC_Discover(p_clcb->conn_id, GATT_DISC_SRVC_BY_UUID, 0x0001, 0xffff,
-                     Uuid::From16Bit(UUID_SERVCLASS_GATT_SERVER));
+      if (GATTC_Discover(p_clcb->conn_id, GATT_DISC_SRVC_BY_UUID, 0x0001,
+                         0xffff, Uuid::From16Bit(UUID_SERVCLASS_GATT_SERVER)) !=
+          GATT_SUCCESS) {
+        log::warn("Unable to discovery GATT client conn_id:{}",
+                  p_clcb->conn_id);
+      }
       break;
 
     case GATT_SVC_CHANGED_CHARACTERISTIC: /* discover service change char */
-      GATTC_Discover(p_clcb->conn_id, GATT_DISC_CHAR, 0x0001, p_clcb->e_handle,
-                     Uuid::From16Bit(GATT_UUID_GATT_SRV_CHGD));
+      if (GATTC_Discover(
+              p_clcb->conn_id, GATT_DISC_CHAR, 0x0001, p_clcb->e_handle,
+              Uuid::From16Bit(GATT_UUID_GATT_SRV_CHGD)) != GATT_SUCCESS) {
+        log::warn("Unable to discovery GATT client conn_id:{}",
+                  p_clcb->conn_id);
+      }
       break;
 
     case GATT_SVC_CHANGED_DESCRIPTOR: /* discover service change ccc */
-      GATTC_Discover(p_clcb->conn_id, GATT_DISC_CHAR_DSCPT, p_clcb->s_handle,
-                     p_clcb->e_handle);
+      if (GATTC_Discover(p_clcb->conn_id, GATT_DISC_CHAR_DSCPT,
+                         p_clcb->s_handle, p_clcb->e_handle) != GATT_SUCCESS) {
+        log::warn("Unable to discovery GATT client conn_id:{}",
+                  p_clcb->conn_id);
+      }
       break;
 
     case GATT_SVC_CHANGED_CONFIGURE_CCCD: /* write ccc */
@@ -714,7 +743,11 @@ static void gatt_cl_start_config_ccc(tGATT_PROFILE_CLCB* p_clcb) {
       ccc_value.handle = p_clcb->s_handle;
       ccc_value.len = 2;
       ccc_value.value[0] = GATT_CLT_CONFIG_INDICATION;
-      GATTC_Write(p_clcb->conn_id, GATT_WRITE, &ccc_value);
+      if (GATTC_Write(p_clcb->conn_id, GATT_WRITE, &ccc_value) !=
+          GATT_SUCCESS) {
+        log::warn("Unable to write GATT client data conn_id:{}",
+                  p_clcb->conn_id);
+      }
 
       gatt_op_cb_data cb_data;
       cb_data.cb = base::BindOnce(
@@ -749,10 +782,22 @@ void GATT_ConfigServiceChangeCCC(const RawAddress& remote_bda, bool enable,
   if (GATT_GetConnIdIfConnected(gatt_cb.gatt_if, remote_bda, &p_clcb->conn_id,
                                 transport)) {
     p_clcb->connected = true;
+  } else {
+    log::warn(
+        "Unable to get GATT connection id if connected peer:{} gatt_if:{} "
+        "transport:{}",
+        remote_bda, gatt_cb.gatt_if, bt_transport_text(BT_TRANSPORT_LE));
   }
+
   /* hold the link here */
-  GATT_Connect(gatt_cb.gatt_if, remote_bda, BTM_BLE_DIRECT_CONNECTION,
-               transport, true);
+  if (!GATT_Connect(gatt_cb.gatt_if, remote_bda, BTM_BLE_DIRECT_CONNECTION,
+                    transport, true)) {
+    log::warn(
+        "Unable to connect GATT client gatt_if:{} peer:{} transport:{} "
+        "connection_tyoe:{} opporunistic:{}",
+        gatt_cb.gatt_if, remote_bda, bt_transport_text(transport),
+        "BTM_BLE_DIRECT_CONNECTION", true);
+  }
   p_clcb->ccc_stage = GATT_SVC_CHANGED_CONNECTING;
 
   if (!p_clcb->connected) {
@@ -851,8 +896,14 @@ bool gatt_cl_read_sr_supp_feat_req(
 
   log::verbose("BDA: {} read gatt supported features", peer_bda);
 
-  GATT_GetConnIdIfConnected(gatt_cb.gatt_if, peer_bda, &conn_id,
-                            BT_TRANSPORT_LE);
+  if (!GATT_GetConnIdIfConnected(gatt_cb.gatt_if, peer_bda, &conn_id,
+                                 BT_TRANSPORT_LE)) {
+    log::warn(
+        "Unable to get GATT connection id if connected peer:{} gatt_if:{} "
+        "transport:{}",
+        peer_bda, gatt_cb.gatt_if, bt_transport_text(BT_TRANSPORT_LE));
+  }
+
   if (conn_id == GATT_INVALID_CONN_ID) return false;
 
   p_clcb = gatt_profile_find_clcb_by_conn_id(conn_id);
@@ -894,8 +945,13 @@ bool gatt_cl_read_sirk_req(
 
   log::debug("BDA: {}, read SIRK", peer_bda);
 
-  GATT_GetConnIdIfConnected(gatt_cb.gatt_if, peer_bda, &conn_id,
-                            BT_TRANSPORT_LE);
+  if (!GATT_GetConnIdIfConnected(gatt_cb.gatt_if, peer_bda, &conn_id,
+                                 BT_TRANSPORT_LE)) {
+    log::warn(
+        "Unable to get GATT connection id if connected peer:{} gatt_if:{} "
+        "transport:{}",
+        peer_bda, gatt_cb.gatt_if, bt_transport_text(BT_TRANSPORT_LE));
+  }
   if (conn_id == GATT_INVALID_CONN_ID) return false;
 
   p_clcb = gatt_profile_find_clcb_by_conn_id(conn_id);
@@ -931,8 +987,13 @@ bool gatt_profile_get_eatt_support(const RawAddress& remote_bda) {
 
   log::verbose("BDA: {} read GATT support", remote_bda);
 
-  GATT_GetConnIdIfConnected(gatt_cb.gatt_if, remote_bda, &conn_id,
-                            BT_TRANSPORT_LE);
+  if (!GATT_GetConnIdIfConnected(gatt_cb.gatt_if, remote_bda, &conn_id,
+                                 BT_TRANSPORT_LE)) {
+    log::warn(
+        "Unable to get GATT connection id if connected peer:{} gatt_if:{} "
+        "transport:{}",
+        remote_bda, gatt_cb.gatt_if, bt_transport_text(BT_TRANSPORT_LE));
+  }
 
   /* This read is important only when connected */
   if (conn_id == GATT_INVALID_CONN_ID) return false;
