@@ -12,6 +12,9 @@ use bt_topshim::profiles::a2dp::{
 use bt_topshim::profiles::avrcp::{
     Avrcp, AvrcpCallbacks, AvrcpCallbacksDispatcher, PlayerMetadata,
 };
+use bt_topshim::profiles::csis::{
+    BtCsisConnectionState, CsisClient, CsisClientCallbacks, CsisClientCallbacksDispatcher,
+};
 use bt_topshim::profiles::hfp::interop_insert_call_when_sco_start;
 use bt_topshim::profiles::hfp::{
     BthfAudioState, BthfConnectionState, CallHoldCommand, CallInfo, CallState, EscoCodingFormat,
@@ -82,10 +85,16 @@ const MEDIA_CLASSIC_AUDIO_PROFILES: &[uuid::Profile] =
 
 /// The list of profiles we consider as LE audio profiles for media.
 const MEDIA_LE_AUDIO_PROFILES: &[uuid::Profile] =
-    &[uuid::Profile::LeAudio, uuid::Profile::VolumeControl];
+    &[uuid::Profile::LeAudio, uuid::Profile::VolumeControl, uuid::Profile::CoordinatedSet];
 
 /// Group ID used to identify unknown/non-existent groups.
 const LEA_UNKNOWN_GROUP_ID: i32 = -1;
+
+/// Refer to |pairDeviceByCsip| in |CachedBluetoothDeviceManager.java|.
+/// Number of attempts for CSIS to bond set members of a connected group.
+const CSIS_BONDING_NUM_ATTEMPTS: u32 = 30;
+/// The delay for bonding retries when pairing is busy, in milliseconds.
+const CSIS_BONDING_RETRY_DELAY_MS: u64 = 500;
 
 pub trait IBluetoothMedia {
     ///
@@ -111,6 +120,8 @@ pub trait IBluetoothMedia {
     fn disconnect_lea(&mut self, address: String);
     fn connect_vc(&mut self, address: String);
     fn disconnect_vc(&mut self, address: String);
+    fn connect_csis(&mut self, address: String);
+    fn disconnect_csis(&mut self, address: String);
 
     // Set the device as the active A2DP device
     fn set_active_device(&mut self, address: String);
@@ -361,6 +372,8 @@ pub enum MediaActions {
     DisconnectLea(String),
     ConnectVc(String),
     DisconnectVc(String),
+    ConnectCsis(String),
+    DisconnectCsis(String),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -433,6 +446,8 @@ pub struct BluetoothMedia {
     le_audio_delayed_audio_conf_updates: HashMap<i32, LEAAudioConf>,
     vc: Option<VolumeControl>,
     vc_states: HashMap<RawAddress, BtVcConnectionState>,
+    csis: Option<CsisClient>,
+    csis_states: HashMap<RawAddress, BtCsisConnectionState>,
     is_le_audio_only_enabled: bool, // TODO: remove this once there is dual mode.
 }
 
@@ -497,6 +512,8 @@ impl BluetoothMedia {
             le_audio_delayed_audio_conf_updates: HashMap::new(),
             vc: None,
             vc_states: HashMap::new(),
+            csis: None,
+            csis_states: HashMap::new(),
             is_le_audio_only_enabled: false,
         }
     }
@@ -558,7 +575,7 @@ impl BluetoothMedia {
                     return;
                 }
             }
-            Profile::LeAudio | Profile::VolumeControl => {
+            Profile::LeAudio | Profile::VolumeControl | Profile::CoordinatedSet => {
                 if !self.is_le_audio_only_enabled {
                     info!("LeAudioEnableLeAudioOnly is not set, skip enabling {:?}", profile);
                     return;
@@ -591,6 +608,11 @@ impl BluetoothMedia {
             &Profile::VolumeControl => {
                 if let Some(vc) = &mut self.vc {
                     vc.enable();
+                }
+            }
+            &Profile::CoordinatedSet => {
+                if let Some(csis) = &mut self.csis {
+                    csis.enable();
                 }
             }
             _ => {
@@ -633,6 +655,11 @@ impl BluetoothMedia {
                     vc.disable();
                 }
             }
+            &Profile::CoordinatedSet => {
+                if let Some(csis) = &mut self.csis {
+                    csis.disable();
+                }
+            }
             _ => {
                 warn!("Tried to disable {} in bluetooth_media", profile);
                 return;
@@ -655,9 +682,77 @@ impl BluetoothMedia {
                 Some(self.le_audio.as_ref().map_or(false, |le_audio| le_audio.is_enabled()))
             }
             &Profile::VolumeControl => Some(self.vc.as_ref().map_or(false, |vc| vc.is_enabled())),
+            &Profile::CoordinatedSet => {
+                Some(self.csis.as_ref().map_or(false, |csis| csis.is_enabled()))
+            }
             _ => {
                 warn!("Tried to query enablement status of {} in bluetooth_media", profile);
                 None
+            }
+        }
+    }
+
+    pub fn dispatch_csis_callbacks(&mut self, cb: CsisClientCallbacks) {
+        match cb {
+            CsisClientCallbacks::ConnectionState(addr, state) => {
+                if !self.csis_states.get(&addr).is_none()
+                    && state == *self.csis_states.get(&addr).unwrap()
+                {
+                    return;
+                }
+
+                info!(
+                    "CsisClientCallbacks::ConnectionState: [{}]: state={:?}",
+                    DisplayAddress(&addr),
+                    state
+                );
+
+                match state {
+                    BtCsisConnectionState::Connected => {
+                        self.csis_states.insert(addr, state);
+                    }
+                    BtCsisConnectionState::Disconnected => {
+                        self.csis_states.remove(&addr);
+                    }
+                    _ => {
+                        self.csis_states.insert(addr, state);
+                    }
+                }
+            }
+            CsisClientCallbacks::DeviceAvailable(addr, group_id, group_size, rank, uuid) => {
+                info!(
+                    "CsisClientCallbacks::DeviceAvailable: [{}]: group_id={}, group_size={}, rank={}, uuid={:?}",
+                    DisplayAddress(&addr),
+                    group_id,
+                    group_size,
+                    rank,
+                    uuid,
+                );
+            }
+            CsisClientCallbacks::SetMemberAvailable(addr, group_id) => {
+                info!(
+                    "CsisClientCallbacks::SetMemberAvailable: [{}]: group_id={}",
+                    DisplayAddress(&addr),
+                    group_id
+                );
+                let device = BluetoothDevice::new(addr.to_string(), "".to_string());
+                let txl = self.tx.clone();
+                topstack::get_runtime().spawn(async move {
+                    let _ = txl
+                        .send(Message::CreateBondWithRetry(
+                            device,
+                            BtTransport::Le,
+                            CSIS_BONDING_NUM_ATTEMPTS,
+                            Duration::from_millis(CSIS_BONDING_RETRY_DELAY_MS),
+                        ))
+                        .await;
+                });
+            }
+            CsisClientCallbacks::GroupLockChanged(group_id, locked, status) => {
+                info!(
+                    "CsisClientCallbacks::GroupLockChanged: group_id={}, locked={}, status={:?}",
+                    group_id, locked, status
+                );
             }
         }
     }
@@ -1212,6 +1307,8 @@ impl BluetoothMedia {
             MediaActions::DisconnectLea(address) => self.disconnect_lea(address),
             MediaActions::ConnectVc(address) => self.connect_vc(address),
             MediaActions::DisconnectVc(address) => self.disconnect_vc(address),
+            MediaActions::ConnectCsis(address) => self.connect_csis(address),
+            MediaActions::DisconnectCsis(address) => self.disconnect_csis(address),
 
             MediaActions::ConnectLeaGroupByMemberAddress(address) => {
                 self.connect_lea_group_by_member_address(address)
@@ -2896,6 +2993,17 @@ fn get_vc_dispatcher(tx: Sender<Message>) -> VolumeControlCallbacksDispatcher {
     }
 }
 
+fn get_csis_dispatcher(tx: Sender<Message>) -> CsisClientCallbacksDispatcher {
+    CsisClientCallbacksDispatcher {
+        dispatch: Box::new(move |cb| {
+            let txl = tx.clone();
+            topstack::get_runtime().spawn(async move {
+                let _ = txl.send(Message::CsisClient(cb)).await;
+            });
+        }),
+    }
+}
+
 impl IBluetoothMedia for BluetoothMedia {
     fn register_callback(&mut self, callback: Box<dyn IBluetoothMediaCallback + Send>) -> bool {
         let _id = self.callbacks.lock().unwrap().add_callback(callback);
@@ -2936,6 +3044,11 @@ impl IBluetoothMedia for BluetoothMedia {
         self.vc = Some(VolumeControl::new(&self.intf.lock().unwrap()));
         self.vc.as_mut().unwrap().initialize(vc_dispatcher);
 
+        // CSIS
+        let csis_dispatcher = get_csis_dispatcher(self.tx.clone());
+        self.csis = Some(CsisClient::new(&self.intf.lock().unwrap()));
+        self.csis.as_mut().unwrap().initialize(csis_dispatcher);
+
         // TODO(b/284811956) A2DP needs to be enabled before AVRCP otherwise AVRCP gets memset'd.
         // Iterate the delay_enable_profiles hashmap directly when this is fixed.
         let profile_order = vec![
@@ -2944,6 +3057,7 @@ impl IBluetoothMedia for BluetoothMedia {
             Profile::Hfp,
             Profile::LeAudio,
             Profile::VolumeControl,
+            Profile::CoordinatedSet,
         ];
         for profile in profile_order {
             if self.delay_enable_profiles.contains(&profile) {
@@ -2973,6 +3087,9 @@ impl IBluetoothMedia for BluetoothMedia {
                 }
                 uuid::Profile::VolumeControl => {
                     self.connect_vc(addr.to_string());
+                }
+                uuid::Profile::CoordinatedSet => {
+                    self.connect_csis(addr.to_string());
                 }
                 _ => {}
             }
@@ -3015,6 +3132,9 @@ impl IBluetoothMedia for BluetoothMedia {
                     }
                     uuid::Profile::VolumeControl => {
                         self.disconnect_vc(member_addr.to_string());
+                    }
+                    uuid::Profile::CoordinatedSet => {
+                        self.disconnect_csis(member_addr.to_string());
                     }
                     _ => {}
                 }
@@ -3157,6 +3277,76 @@ impl IBluetoothMedia for BluetoothMedia {
             }
             None => {
                 warn!("disconnect_vc: [{}]: uninitialized VC to disconnect", DisplayAddress(&addr));
+            }
+        };
+    }
+
+    fn connect_csis(&mut self, address: String) {
+        if !self.is_le_audio_only_enabled {
+            warn!("connect_csis: LeAudioEnableLeAudioOnly is not set");
+            return;
+        }
+
+        let addr = match RawAddress::from_string(address.clone()) {
+            None => {
+                warn!("connecting_csis: invalid device address");
+                return;
+            }
+            Some(addr) => addr,
+        };
+
+        if *self.csis_states.get(&addr).unwrap_or(&BtCsisConnectionState::Disconnected)
+            == BtCsisConnectionState::Connected
+        {
+            info!("connect_csis: already connected");
+            return;
+        }
+
+        let available_profiles = self.adapter_get_le_audio_profiles(addr);
+
+        info!(
+            "connect_csis: [{}]: connecting, available profiles: {:?}.",
+            DisplayAddress(&addr),
+            available_profiles
+        );
+
+        match self.csis.as_mut() {
+            Some(csis) => {
+                csis.connect(addr);
+            }
+            None => {
+                warn!("connect_csis: [{}]: uninitialized Csis to connect", DisplayAddress(&addr));
+            }
+        };
+    }
+
+    fn disconnect_csis(&mut self, address: String) {
+        let addr = match RawAddress::from_string(address.clone()) {
+            None => {
+                warn!("disconnect_csis: invalid device address");
+                return;
+            }
+            Some(addr) => addr,
+        };
+
+        if *self.csis_states.get(&addr).unwrap_or(&BtCsisConnectionState::Disconnected)
+            == BtCsisConnectionState::Disconnected
+        {
+            info!("disconnect_csis: already disconnected");
+            return;
+        }
+
+        info!("disconnect_csis: [{}]: disconnecting", DisplayAddress(&addr),);
+
+        match self.csis.as_mut() {
+            Some(csis) => {
+                csis.disconnect(addr);
+            }
+            None => {
+                warn!(
+                    "disconnect_csis: [{}]: uninitialized CSIS to disconnect",
+                    DisplayAddress(&addr)
+                );
             }
         };
     }

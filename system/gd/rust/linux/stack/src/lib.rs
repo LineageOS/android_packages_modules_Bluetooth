@@ -50,6 +50,7 @@ use bt_topshim::{
     profiles::{
         a2dp::A2dpCallbacks,
         avrcp::AvrcpCallbacks,
+        csis::CsisClientCallbacks,
         gatt::GattAdvCallbacks,
         gatt::GattAdvInbandCallbacks,
         gatt::GattClientCallbacks,
@@ -91,6 +92,7 @@ pub enum Message {
     Hfp(HfpCallbacks),
     Sdp(SdpCallbacks),
     VolumeControl(VolumeControlCallbacks),
+    CsisClient(CsisClientCallbacks),
     CreateBondWithRetry(BluetoothDevice, BtTransport, u32, Duration),
 
     // Actions within the stack
@@ -307,6 +309,10 @@ impl Stack {
 
                 Message::VolumeControl(a) => {
                     bluetooth_media.lock().unwrap().dispatch_vc_callbacks(a);
+                }
+
+                Message::CsisClient(a) => {
+                    bluetooth_media.lock().unwrap().dispatch_csis_callbacks(a);
                 }
 
                 Message::LeScanner(m) => {

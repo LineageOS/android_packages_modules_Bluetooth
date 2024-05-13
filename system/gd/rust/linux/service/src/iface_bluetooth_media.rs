@@ -300,6 +300,16 @@ impl IBluetoothMedia for IBluetoothMediaDBus {
         dbus_generated!()
     }
 
+    #[dbus_method("ConnectCsis")]
+    fn connect_csis(&mut self, address: String) {
+        dbus_generated!()
+    }
+
+    #[dbus_method("DisconnectCsis")]
+    fn disconnect_csis(&mut self, address: String) {
+        dbus_generated!()
+    }
+
     #[dbus_method("SetActiveDevice")]
     fn set_active_device(&mut self, address: String) {
         dbus_generated!()
