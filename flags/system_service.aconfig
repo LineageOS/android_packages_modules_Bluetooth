@@ -20,6 +20,16 @@ flag {
 }
 
 flag {
+    name: "avoid_static_loading_of_native"
+    namespace: "bluetooth"
+    description: "Prevent loading native during static initialization and prefer doing it during init"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+    bug: "339554081"
+}
+
+flag {
     name: "explicit_kill_from_system_server"
     namespace: "bluetooth"
     description: "Explicit kill and wait of Bluetooth AdapterService when turning Bluetooth OFF"
@@ -34,6 +44,16 @@ flag {
     namespace: "bluetooth"
     description: "Remove complexity and non necessary initialization when simply binding"
     bug: "328698375"
+}
+
+flag {
+    name: "kill_instead_of_exit"
+    namespace: "bluetooth"
+    description: "There is no value in pretending we are exiting properly. This is a kill and we should express it this way when finishing the process"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+    bug: "339553092"
 }
 
 flag {
