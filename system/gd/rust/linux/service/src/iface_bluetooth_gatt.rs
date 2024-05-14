@@ -1,5 +1,5 @@
 use bt_topshim::btif::{BtStatus, BtTransport, Uuid, Uuid128Bit};
-use bt_topshim::profiles::gatt::{AdvertisingStatus, GattStatus, LePhy};
+use bt_topshim::profiles::gatt::{AdvertisingStatus, GattStatus, LeDiscMode, LePhy};
 
 use btstack::bluetooth_adv::{
     AdvertiseData, AdvertisingSetParameters, IAdvertisingSetCallback, ManfId,
@@ -381,6 +381,7 @@ impl_dbus_arg_enum!(AdvertisingStatus);
 impl_dbus_arg_enum!(GattStatus);
 impl_dbus_arg_enum!(GattWriteRequestStatus);
 impl_dbus_arg_enum!(GattWriteType);
+impl_dbus_arg_enum!(LeDiscMode);
 impl_dbus_arg_enum!(LePhy);
 impl_dbus_arg_enum!(ScanType);
 impl_dbus_arg_enum!(SuspendMode);
@@ -570,6 +571,7 @@ impl IAdvertisingSetCallback for AdvertisingSetCallbackDBus {
 
 #[dbus_propmap(AdvertisingSetParameters)]
 struct AdvertisingSetParametersDBus {
+    discoverable: LeDiscMode,
     connectable: bool,
     scannable: bool,
     is_legacy: bool,
