@@ -26,8 +26,20 @@ java_library {
         "compatibility-device-util-axt",
         "junit",
     ],
-    srcs: ["src/**/*.java"],
+    srcs: [
+        "src/**/*.java",
+        "src/BlockingBluetoothAdapter.kt",
+    ],
     sdk_version: "test_current",
-    // Keep it public for now to avoid merge conflicts
-    visibility: ["//visibility:public"],
+    visibility: [
+        "//cts/tests/tests/bluetooth",
+        "//packages/modules/Bluetooth/framework/tests/bumble",
+
+        // TODO: b/339938196 -- remove export for other modules and test
+        "//cts/tests/tests/appop",
+        "//packages/modules/Connectivity/nearby/tests/cts/fastpair",
+        "//packages/modules/Permission/tests/cts/permission",
+        "//packages/modules/Permission/tests/cts/permissionui",
+        "//test/cts-root/tests/bluetooth",
+    ],
 }
