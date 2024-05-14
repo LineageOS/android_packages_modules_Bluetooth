@@ -5,7 +5,7 @@ use crate::ClientContext;
 use crate::{console_yellow, print_info};
 
 use bt_topshim::btif::Uuid;
-use bt_topshim::profiles::gatt::LePhy;
+use bt_topshim::profiles::gatt::{LeDiscMode, LePhy};
 use btstack::bluetooth_adv::{AdvertiseData, AdvertiserId, AdvertisingSetParameters};
 use btstack::bluetooth_gatt::IBluetoothGatt;
 
@@ -28,6 +28,7 @@ pub(crate) struct AdvSet {
 impl AdvSet {
     pub(crate) fn new(is_legacy: bool) -> Self {
         let params = AdvertisingSetParameters {
+            discoverable: LeDiscMode::GeneralDiscoverable,
             connectable: false,
             scannable: false,
             is_legacy,
