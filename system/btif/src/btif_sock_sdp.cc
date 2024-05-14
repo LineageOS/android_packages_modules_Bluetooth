@@ -204,7 +204,9 @@ static int add_sdp_by_uuid(const char* name, const Uuid& uuid,
   return handle;
 
 error:
-  get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(handle);
+  if (get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(handle)) {
+    log::warn("Unable to delete SDP record handle:{}", handle);
+  }
   log::error("failed to register service stage: {}, service_name: {}", stage,
              name);
   return 0;
@@ -258,7 +260,9 @@ static int add_pbap_sdp(const char* name, const int channel) {
   return handle;
 
 error:
-  get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(handle);
+  if (get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(handle)) {
+    log::warn("Unable to delete SDP record handle:{}", handle);
+  }
   log::error(
       "add_pbap_sdp: failed to register PBAP service, stage: {}, service_name: "
       "{}",
@@ -332,7 +336,9 @@ static int add_ops_sdp(const char* name, const int channel) {
   return handle;
 
 error:
-  get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(handle);
+  if (get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(handle)) {
+    log::warn("Unable to delete SDP record handle:{}", handle);
+  }
   log::error(
       "add_ops_sdp: failed to register OPS service, stage: {}, service_name: "
       "{}",
@@ -377,7 +383,9 @@ static int add_spp_sdp(const char* name, const int channel) {
   return handle;
 
 error:
-  get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(handle);
+  if (get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(handle)) {
+    log::warn("Unable to delete SDP record handle:{}", handle);
+  }
   log::error(
       "add_spp_sdp: failed to register SPP service, stage: {}, service_name: "
       "{}",

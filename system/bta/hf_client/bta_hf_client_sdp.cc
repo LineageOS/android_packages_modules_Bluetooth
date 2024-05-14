@@ -216,7 +216,10 @@ void bta_hf_client_del_record(tBTA_HF_CLIENT_CB_ARR* client_cb) {
   log::verbose("");
 
   if (client_cb->sdp_handle != 0) {
-    get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(client_cb->sdp_handle);
+    if (get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(
+            client_cb->sdp_handle)) {
+      log::warn("Unable to delete SDP record handle:{}", client_cb->sdp_handle);
+    }
     client_cb->sdp_handle = 0;
     BTA_FreeSCN(client_cb->scn);
     bta_sys_remove_uuid(UUID_SERVCLASS_HF_HANDSFREE);

@@ -512,7 +512,9 @@ static int add_maps_sdp(const bluetooth_sdp_mas_record* rec) {
       sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &browse);
 
   if (!status) {
-    get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(sdp_handle);
+    if (!get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(sdp_handle)) {
+      log::warn("Unable to delete SDP record handle:{}", sdp_handle);
+    }
     sdp_handle = 0;
     log::error("FAILED");
   } else {
@@ -584,7 +586,9 @@ static int add_mapc_sdp(const bluetooth_sdp_mns_record* rec) {
       sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &browse);
 
   if (!status) {
-    get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(sdp_handle);
+    if (!get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(sdp_handle)) {
+      log::warn("Unable to delete SDP record handle:{}", sdp_handle);
+    }
     sdp_handle = 0;
     log::error("FAILED");
   } else {
@@ -626,7 +630,9 @@ static int add_pbapc_sdp(const bluetooth_sdp_pce_record* rec) {
       sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &browse);
 
   if (!status) {
-    get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(sdp_handle);
+    if (!get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(sdp_handle)) {
+      log::error("Unable to remove handle 0x{:08x}", sdp_handle);
+    }
     sdp_handle = 0;
     log::error("FAILED");
     return sdp_handle;
@@ -756,7 +762,9 @@ static int add_pbaps_sdp(const bluetooth_sdp_pse_record* rec) {
       sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &browse);
 
   if (!status) {
-    get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(sdp_handle);
+    if (!get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(sdp_handle)) {
+      log::error("Unable to remove handle 0x{:08x}", sdp_handle);
+    }
     sdp_handle = 0;
     log::error("FAILED");
   } else {
@@ -839,7 +847,9 @@ static int add_opps_sdp(const bluetooth_sdp_ops_record* rec) {
       sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &browse);
 
   if (!status) {
-    get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(sdp_handle);
+    if (!get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(sdp_handle)) {
+      log::error("Unable to remove handle 0x{:08x}", sdp_handle);
+    }
     sdp_handle = 0;
     log::error("FAILED");
   } else {
@@ -900,7 +910,9 @@ static int add_saps_sdp(const bluetooth_sdp_sap_record* rec) {
       sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &browse);
 
   if (!status) {
-    get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(sdp_handle);
+    if (!get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(sdp_handle)) {
+      log::error("Unable to remove handle 0x{:08x}", sdp_handle);
+    }
     sdp_handle = 0;
     log::error("FAILED deleting record");
   } else {
@@ -949,7 +961,9 @@ static int add_mps_sdp(const bluetooth_sdp_mps_record* rec) {
       sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1, &browse);
 
   if (!status) {
-    get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(sdp_handle);
+    if (!get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(sdp_handle)) {
+      log::warn("Unable to delete SDP record handle:{}", sdp_handle);
+    }
     sdp_handle = 0;
     log::error("FAILED");
     return sdp_handle;
