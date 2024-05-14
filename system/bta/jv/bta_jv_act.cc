@@ -1399,7 +1399,10 @@ static void bta_jv_port_mgmt_cl_cback(uint32_t code, uint16_t port_handle) {
   log::verbose("code={}, port_handle={}, handle={}", code, port_handle,
                p_cb->handle);
 
-  PORT_CheckConnection(port_handle, &rem_bda, &lcid);
+  if (PORT_CheckConnection(port_handle, &rem_bda, &lcid) != PORT_SUCCESS) {
+    log::warn("Unable to check RFCOMM connection peer:{} handle:{}", rem_bda,
+              port_handle);
+  }
 
   if (code == PORT_SUCCESS) {
     evt_data.rfc_open.handle = p_cb->handle;
@@ -1500,15 +1503,28 @@ void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, uint8_t remote_scn,
       p_pcb->rfcomm_slot_id = rfcomm_slot_id;
       evt_data.use_co = true;
 
-      PORT_SetEventCallback(handle, bta_jv_port_event_cl_cback);
-      PORT_SetEventMask(handle, event_mask);
-      PORT_SetDataCOCallback(handle, bta_jv_port_data_co_cback);
-
-      PORT_GetState(handle, &port_state);
+      if (PORT_SetEventCallback(handle, bta_jv_port_event_cl_cback) !=
+          PORT_SUCCESS) {
+        log::warn("Unable to set RFCOMM client event callback handle:{}",
+                  handle);
+      }
+      if (PORT_SetEventMask(handle, event_mask) != PORT_SUCCESS) {
+        log::warn("Unable to set RFCOMM client event mask handle:{}", handle);
+      }
+      if (PORT_SetDataCOCallback(handle, bta_jv_port_data_co_cback) !=
+          PORT_SUCCESS) {
+        log::warn("Unable to set RFCOMM client data callback handle:{}",
+                  handle);
+      }
+      if (PORT_GetState(handle, &port_state) != PORT_SUCCESS) {
+        log::warn("Unable to get RFCOMM client state handle:{}", handle);
+      }
 
       port_state.fc_type = (PORT_FC_CTS_ON_INPUT | PORT_FC_CTS_ON_OUTPUT);
 
-      PORT_SetState(handle, &port_state);
+      if (PORT_SetState(handle, &port_state) != PORT_SUCCESS) {
+        log::warn("Unable to set RFCOMM client state handle:{}", handle);
+      }
 
       evt_data.handle = p_cb->handle;
     } else {
@@ -1520,7 +1536,10 @@ void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, uint8_t remote_scn,
   bta_jv.rfc_cl_init = evt_data;
   p_cback(BTA_JV_RFCOMM_CL_INIT_EVT, &bta_jv, rfcomm_slot_id);
   if (bta_jv.rfc_cl_init.status == tBTA_JV_STATUS::FAILURE) {
-    if (handle) RFCOMM_RemoveConnection(handle);
+    if (handle) {
+      if (RFCOMM_RemoveConnection(handle) != PORT_SUCCESS) {
+      }
+    }
   }
 }
 
@@ -1744,15 +1763,33 @@ static tBTA_JV_PCB* bta_jv_add_rfc_port(tBTA_JV_RFC_CB* p_cb,
         p_pcb->port_handle = p_cb->rfc_hdl[si];
         p_pcb->rfcomm_slot_id = p_pcb_open->rfcomm_slot_id;
 
-        PORT_ClearKeepHandleFlag(p_pcb->port_handle);
-        PORT_SetEventCallback(p_pcb->port_handle, bta_jv_port_event_sr_cback);
-        PORT_SetDataCOCallback(p_pcb->port_handle, bta_jv_port_data_co_cback);
-        PORT_SetEventMask(p_pcb->port_handle, event_mask);
-        PORT_GetState(p_pcb->port_handle, &port_state);
+        if (PORT_ClearKeepHandleFlag(p_pcb->port_handle) != PORT_SUCCESS) {
+          log::warn("Unable to clear RFCOMM server keep handle flag handle:{}",
+                    p_pcb->port_handle);
+        }
+        if (PORT_SetEventCallback(p_pcb->port_handle,
+                                  bta_jv_port_event_sr_cback) != PORT_SUCCESS) {
+          log::warn("Unable to set RFCOMM server event callback handle:{}",
+                    p_pcb->port_handle);
+        }
+        if (PORT_SetDataCOCallback(p_pcb->port_handle,
+                                   bta_jv_port_data_co_cback) != PORT_SUCCESS) {
+          log::warn("Unable to set RFCOMM server data callback handle:{}",
+                    p_pcb->port_handle);
+        }
+        if (PORT_SetEventMask(p_pcb->port_handle, event_mask) != PORT_SUCCESS) {
+          log::warn("Unable to set RFCOMM server event mask handle:{}",
+                    p_pcb->port_handle);
+        }
+        if (PORT_GetState(p_pcb->port_handle, &port_state) != PORT_SUCCESS) {
+          log::warn("Unable to get RFCOMM server state handle:{}",
+                    p_pcb->port_handle);
+        }
 
         port_state.fc_type = (PORT_FC_CTS_ON_INPUT | PORT_FC_CTS_ON_OUTPUT);
 
-        PORT_SetState(p_pcb->port_handle, &port_state);
+        if (PORT_SetState(p_pcb->port_handle, &port_state) != PORT_SUCCESS) {
+        }
         p_pcb->handle = BTA_JV_RFC_H_S_TO_HDL(p_cb->handle, si);
         log::verbose("p_pcb->handle=0x{:x}, curr_sess={}", p_pcb->handle,
                      p_cb->curr_sess);
@@ -1808,23 +1845,44 @@ void bta_jv_rfcomm_start_server(tBTA_SEC sec_mask, uint8_t local_scn,
     evt_data.handle = p_cb->handle;
     evt_data.use_co = true;
 
-    PORT_ClearKeepHandleFlag(handle);
-    PORT_SetEventCallback(handle, bta_jv_port_event_sr_cback);
-    PORT_SetEventMask(handle, event_mask);
-    PORT_GetState(handle, &port_state);
+    if (PORT_ClearKeepHandleFlag(handle) != PORT_SUCCESS) {
+      log::warn("Unable to clear RFCOMM server keep handle flag handle:{}",
+                handle);
+    }
+    if (PORT_SetEventCallback(handle, bta_jv_port_event_sr_cback) !=
+        PORT_SUCCESS) {
+      log::warn("Unable to clear RFCOMM server event callback handle:{}",
+                handle);
+    }
+    if (PORT_SetEventMask(handle, event_mask) != PORT_SUCCESS) {
+      log::warn("Unable to set RFCOMM server event mask handle:{}", handle);
+    }
+    if (PORT_GetState(handle, &port_state) != PORT_SUCCESS) {
+      log::warn("Unable to get RFCOMM server state handle:{}", handle);
+    }
 
     port_state.fc_type = (PORT_FC_CTS_ON_INPUT | PORT_FC_CTS_ON_OUTPUT);
 
-    PORT_SetState(handle, &port_state);
+    if (PORT_SetState(handle, &port_state) != PORT_SUCCESS) {
+      log::warn("Unable to set RFCOMM port state handle:{}", handle);
+    };
   } while (0);
 
   tBTA_JV bta_jv;
   bta_jv.rfc_start = evt_data;
   p_cback(BTA_JV_RFCOMM_START_EVT, &bta_jv, rfcomm_slot_id);
   if (bta_jv.rfc_start.status == tBTA_JV_STATUS::SUCCESS) {
-    PORT_SetDataCOCallback(handle, bta_jv_port_data_co_cback);
+    if (PORT_SetDataCOCallback(handle, bta_jv_port_data_co_cback) !=
+        PORT_SUCCESS) {
+      log::error("Unable to set RFCOMM server data callback handle:{}", handle);
+    }
   } else {
-    if (handle) RFCOMM_RemoveConnection(handle);
+    if (handle) {
+      if (RFCOMM_RemoveConnection(handle) != PORT_SUCCESS) {
+        log::warn("Unable to remote RFCOMM server connection handle:{}",
+                  handle);
+      }
+    }
   }
 }
 

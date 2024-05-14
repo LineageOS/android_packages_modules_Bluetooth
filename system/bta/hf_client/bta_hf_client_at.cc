@@ -196,7 +196,11 @@ static void bta_hf_client_send_at(tBTA_HF_CLIENT_CB* client_cb,
     }
 
     log::verbose("writing port data to {}", client_cb->conn_handle);
-    PORT_WriteData(client_cb->conn_handle, buf, buf_len, &len);
+    if (PORT_WriteData(client_cb->conn_handle, buf, buf_len, &len) !=
+        PORT_SUCCESS) {
+      log::warn("Unable to write RFCOMM data peer:{} handle:{} len:{}",
+                client_cb->peer_addr, client_cb->conn_handle, buf_len);
+    };
 
     bta_hf_client_start_at_resp_timer(client_cb);
 
