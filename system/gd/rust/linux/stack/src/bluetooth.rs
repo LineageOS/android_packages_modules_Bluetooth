@@ -1527,6 +1527,9 @@ impl BtifBluetoothCallbacks for Bluetooth {
                 self.ble_scanner_uuid =
                     Some(self.bluetooth_gatt.lock().unwrap().register_scanner(callback_id));
 
+                // LibBluetooth saves and restores the discoverable mode on the previous run.
+                // But on Floss we always want non-discoverable mode on start.
+                self.set_discoverable(BtDiscMode::NonDiscoverable, 0);
                 // Update connectable mode so that disconnected bonded classic device can reconnect
                 self.trigger_update_connectable_mode();
 
