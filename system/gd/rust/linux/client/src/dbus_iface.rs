@@ -9,7 +9,7 @@ use bt_topshim::profiles::a2dp::{
     A2dpCodecSampleRate, PresentationPosition,
 };
 use bt_topshim::profiles::avrcp::PlayerMetadata;
-use bt_topshim::profiles::gatt::{AdvertisingStatus, GattStatus, LePhy};
+use bt_topshim::profiles::gatt::{AdvertisingStatus, GattStatus, LeDiscMode, LePhy};
 use bt_topshim::profiles::hfp::{EscoCodingFormat, HfpCodecBitId, HfpCodecFormat};
 use bt_topshim::profiles::hid_host::BthhReportType;
 use bt_topshim::profiles::sdp::{
@@ -88,6 +88,7 @@ impl_dbus_arg_enum!(BtTransport);
 impl_dbus_arg_enum!(GattStatus);
 impl_dbus_arg_enum!(GattWriteRequestStatus);
 impl_dbus_arg_enum!(GattWriteType);
+impl_dbus_arg_enum!(LeDiscMode);
 impl_dbus_arg_enum!(LePhy);
 impl_dbus_arg_enum!(ProfileConnectionState);
 impl_dbus_arg_enum!(ScanType);
@@ -1267,6 +1268,7 @@ impl IAdvertisingSetCallback for IAdvertisingSetCallbackDBus {
 
 #[dbus_propmap(AdvertisingSetParameters)]
 struct AdvertisingSetParametersDBus {
+    discoverable: LeDiscMode,
     connectable: bool,
     scannable: bool,
     is_legacy: bool,

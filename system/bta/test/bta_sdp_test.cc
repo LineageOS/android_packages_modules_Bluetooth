@@ -19,7 +19,6 @@
 
 #include "bta/dm/bta_dm_disc_int.h"
 #include "bta/test/bta_test_fixtures.h"
-#include "osi/include/allocator.h"
 
 void BTA_dm_on_hw_on();
 void BTA_dm_on_hw_off();
@@ -33,7 +32,7 @@ namespace legacy {
 namespace testing {
 
 tBTA_DM_SERVICE_DISCOVERY_CB& bta_dm_discovery_cb();
-void bta_dm_sdp_result(tSDP_STATUS sdp_status);
+void bta_dm_sdp_result(tSDP_STATUS sdp_status, tBTA_DM_SDP_STATE* state);
 
 }  // namespace testing
 }  // namespace legacy
@@ -51,22 +50,13 @@ class BtaSdpRegisteredTest : public BtaSdpTest {
   void SetUp() override { BtaSdpTest::SetUp(); }
 
   void TearDown() override { BtaSdpTest::TearDown(); }
-
-  tBTA_SYS_REG bta_sys_reg = {
-      .evt_hdlr = [](const BT_HDR_RIGID* p_msg) -> bool {
-        osi_free((void*)p_msg);
-        return false;
-      },
-      .disable = []() {},
-  };
 };
 
 TEST_F(BtaSdpTest, nop) {}
 
 TEST_F(BtaSdpRegisteredTest, bta_dm_sdp_result_SDP_SUCCESS) {
-  tBTA_DM_SERVICE_DISCOVERY_CB& discovery_cb =
-      bluetooth::legacy::testing::bta_dm_discovery_cb();
-  discovery_cb.service_index = BTA_MAX_SERVICE_ID;
-
-  bluetooth::legacy::testing::bta_dm_sdp_result(SDP_SUCCESS);
+  std::unique_ptr<tBTA_DM_SDP_STATE> state =
+      std::make_unique<tBTA_DM_SDP_STATE>(
+          tBTA_DM_SDP_STATE{.service_index = BTA_MAX_SERVICE_ID});
+  bluetooth::legacy::testing::bta_dm_sdp_result(SDP_SUCCESS, state.get());
 }

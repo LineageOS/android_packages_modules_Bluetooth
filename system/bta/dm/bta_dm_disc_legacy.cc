@@ -574,8 +574,11 @@ static void bta_dm_store_audio_profiles_version() {
 
     uint16_t profile_version = 0;
     /* get profile version (if failure, version parameter is not updated) */
-    get_legacy_stack_sdp_api()->record.SDP_FindProfileVersionInRec(
-        sdp_rec, audio_profile.btprofile_uuid, &profile_version);
+    if (!get_legacy_stack_sdp_api()->record.SDP_FindProfileVersionInRec(
+            sdp_rec, audio_profile.btprofile_uuid, &profile_version)) {
+      log::warn("Unable to find SDP profile version in record peer:{}",
+                sdp_rec->remote_bd_addr);
+    }
     if (profile_version != 0) {
       if (btif_config_set_bin(sdp_rec->remote_bd_addr.ToString().c_str(),
                               audio_profile.profile_key,
@@ -1090,8 +1093,12 @@ static void bta_dm_find_services(const RawAddress& bd_addr) {
       }
 
       log::info("search UUID = {}", uuid.ToString());
-      get_legacy_stack_sdp_api()->service.SDP_InitDiscoveryDb(
-          bta_dm_search_cb.p_sdp_db, BTA_DM_SDP_DB_SIZE, 1, &uuid, 0, NULL);
+      if (!get_legacy_stack_sdp_api()->service.SDP_InitDiscoveryDb(
+              bta_dm_search_cb.p_sdp_db, BTA_DM_SDP_DB_SIZE, 1, &uuid, 0,
+              NULL)) {
+        log::warn("Unable to initialize SDP service discovery db peer:{}",
+                  bd_addr);
+      }
 
       memset(g_disc_raw_data_buf, 0, sizeof(g_disc_raw_data_buf));
       bta_dm_search_cb.p_sdp_db->raw_data = g_disc_raw_data_buf;

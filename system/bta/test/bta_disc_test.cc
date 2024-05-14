@@ -22,6 +22,7 @@
 #include "bta/dm/bta_dm_device_search.h"
 #include "bta/dm/bta_dm_device_search_int.h"
 #include "bta/dm/bta_dm_disc.h"
+#include "bta/dm/bta_dm_disc_int.h"
 #include "bta/test/bta_test_fixtures.h"
 #include "stack/btm/neighbor_inquiry.h"
 #include "stack/include/gatt_api.h"
@@ -42,7 +43,7 @@ bool bta_dm_read_remote_device_name(const RawAddress& bd_addr,
                                     tBT_TRANSPORT transport);
 tBTA_DM_SEARCH_CB& bta_dm_disc_search_cb();
 void bta_dm_discover_next_device();
-void bta_dm_find_services(const RawAddress& bd_addr);
+void bta_dm_find_services(const RawAddress& bd_addr, tBTA_DM_SDP_STATE* state);
 void bta_dm_inq_cmpl();
 void bta_dm_inq_cmpl_cb(void* p_result);
 void bta_dm_observe_cmpl_cb(void* p_result);
@@ -111,7 +112,13 @@ TEST_F(BtaInitializedTest, bta_dm_discover_next_device) {
 }
 
 TEST_F(BtaInitializedTest, bta_dm_find_services) {
-  bluetooth::legacy::testing::bta_dm_find_services(kRawAddress);
+  std::unique_ptr<tBTA_DM_SDP_STATE> state =
+      std::make_unique<tBTA_DM_SDP_STATE>(tBTA_DM_SDP_STATE{
+          .services_to_search = BTA_ALL_SERVICE_MASK,
+          .services_found = 0,
+          .service_index = 0,
+      });
+  bluetooth::legacy::testing::bta_dm_find_services(kRawAddress, state.get());
 }
 
 TEST_F(BtaInitializedTest, bta_dm_inq_cmpl) {

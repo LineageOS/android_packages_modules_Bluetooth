@@ -81,6 +81,21 @@ inline std::string bta_dm_state_text(
   }
 }
 
+#define MAX_DISC_RAW_DATA_BUF (4096)
+
+typedef struct {
+  tBTA_SERVICE_MASK services_to_search;
+  tBTA_SERVICE_MASK services_found;
+
+  uint8_t service_index;
+  uint8_t peer_scn;
+
+  std::array<uint8_t, MAX_DISC_RAW_DATA_BUF> g_disc_raw_data_buf;
+
+  /* sdp_db must be together with sdp_db_buffer*/
+  uint8_t sdp_db_buffer[BTA_DM_SDP_DB_SIZE];
+} tBTA_DM_SDP_STATE;
+
 typedef struct {
   service_discovery_callbacks service_search_cbacks;
   tGATT_IF client_if;
@@ -92,12 +107,7 @@ typedef struct {
    * BluetoothDevice.fetchUuidsWithSdp(). Responsible for LE GATT Service
    * Discovery and SDP */
   tBTA_DM_SERVICE_DISCOVERY_STATE service_discovery_state;
-  tBTA_SERVICE_MASK services_to_search;
-  tBTA_SERVICE_MASK services_found;
-
-  tSDP_DISCOVERY_DB* p_sdp_db;
-  uint8_t service_index;
-  uint8_t peer_scn;
+  std::unique_ptr<tBTA_DM_SDP_STATE> sdp_state;
 
   uint16_t conn_id;
   alarm_t* gatt_close_timer;    /* GATT channel close delay timer */

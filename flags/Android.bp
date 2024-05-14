@@ -49,6 +49,7 @@ aconfig_declarations {
         "vsc.aconfig",
     ],
     // LINT.ThenChange(/flags/BUILD.gn)
+    exportable: true,
 }
 
 java_aconfig_library {
@@ -68,6 +69,17 @@ java_aconfig_library {
     libs: ["framework-configinfrastructure"],
     sdk_version: "module_current",
     min_sdk_version: "Tiramisu",
+}
+
+java_aconfig_library {
+    name: "bluetooth_exported_flags_java_lib",
+    aconfig_declarations: "bluetooth_aconfig_flags",
+    defaults: ["framework-minus-apex-aconfig-java-defaults"],
+    min_sdk_version: "VanillaIceCream",
+    mode: "exported",
+    visibility: [
+        "//frameworks/base",
+    ],
 }
 
 cc_aconfig_library {

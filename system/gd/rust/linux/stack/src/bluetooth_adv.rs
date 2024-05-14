@@ -3,7 +3,7 @@
 use btif_macros::{btif_callback, btif_callbacks_dispatcher};
 
 use bt_topshim::btif::{RawAddress, Uuid};
-use bt_topshim::profiles::gatt::{AdvertisingStatus, Gatt, GattAdvCallbacks, LePhy};
+use bt_topshim::profiles::gatt::{AdvertisingStatus, Gatt, GattAdvCallbacks, LeDiscMode, LePhy};
 
 use itertools::Itertools;
 use log::{debug, error, info, warn};
@@ -28,6 +28,8 @@ pub type ManfId = u16;
 /// Advertising parameters for each BLE advertising set.
 #[derive(Debug, Default, Clone)]
 pub struct AdvertisingSetParameters {
+    /// Discoverable modes.
+    pub discoverable: LeDiscMode,
     /// Whether the advertisement will be connectable.
     pub connectable: bool,
     /// Whether the advertisement will be scannable.
@@ -226,6 +228,13 @@ impl Into<bt_topshim::profiles::gatt::AdvertiseParameters> for AdvertisingSetPar
         }
         if self.include_tx_power {
             props |= 0x40;
+        }
+
+        match self.discoverable {
+            LeDiscMode::GeneralDiscoverable => {
+                props |= 0x04;
+            }
+            _ => {}
         }
 
         let interval = clamp(self.interval, INTERVAL_MIN, INTERVAL_MAX - INTERVAL_DELTA);

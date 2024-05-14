@@ -599,8 +599,10 @@ static void bta_sdp_search_cback(const RawAddress& /* bd_addr */,
         if (p_rec != NULL) {
           uint16_t peer_pce_version = 0;
 
-          get_legacy_stack_sdp_api()->record.SDP_FindProfileVersionInRec(
-              p_rec, UUID_SERVCLASS_PHONE_ACCESS, &peer_pce_version);
+          if (!get_legacy_stack_sdp_api()->record.SDP_FindProfileVersionInRec(
+                  p_rec, UUID_SERVCLASS_PHONE_ACCESS, &peer_pce_version)) {
+            log::warn("Unable to find PBAP profile version in SDP record");
+          }
           if (peer_pce_version != 0) {
             btif_storage_set_pce_profile_version(p_rec->remote_bd_addr,
                                                  peer_pce_version);
@@ -691,8 +693,11 @@ void bta_sdp_search(const RawAddress bd_addr, const bluetooth::Uuid uuid) {
 
   /* initialize the search for the uuid */
   log::verbose("init discovery with UUID: {}", uuid.ToString());
-  get_legacy_stack_sdp_api()->service.SDP_InitDiscoveryDb(
-      p_bta_sdp_cfg->p_sdp_db, p_bta_sdp_cfg->sdp_db_size, 1, &uuid, 0, NULL);
+  if (!get_legacy_stack_sdp_api()->service.SDP_InitDiscoveryDb(
+          p_bta_sdp_cfg->p_sdp_db, p_bta_sdp_cfg->sdp_db_size, 1, &uuid, 0,
+          NULL)) {
+    log::warn("Unable to initialize SDP service search db peer:{}", bd_addr);
+  }
 
   Uuid* bta_sdp_search_uuid = (Uuid*)osi_malloc(sizeof(Uuid));
   *bta_sdp_search_uuid = uuid;
