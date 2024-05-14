@@ -1208,6 +1208,29 @@ impl BluetoothMedia {
         }
     }
 
+    fn uhid_send_input_event_report(&mut self, addr: &RawAddress, data: u8) {
+        if !self.phone_ops_enabled {
+            return;
+        }
+        if let Some(uhid) = self.uhid.get_mut(addr) {
+            info!(
+                "[{}]: UHID: Send telephony hid input report. hook_switch({}), mute({}), drop({})",
+                DisplayAddress(&addr),
+                (data & UHID_INPUT_HOOK_SWITCH) != 0,
+                (data & UHID_INPUT_PHONE_MUTE) != 0,
+                (data & UHID_INPUT_DROP) != 0,
+            );
+            match uhid.handle.send_input(data) {
+                Err(e) => log::error!(
+                    "[{}]: UHID: Fail to send hid input report. err:{}",
+                    DisplayAddress(&addr),
+                    e
+                ),
+                Ok(_) => (),
+            };
+        }
+    }
+
     fn uhid_send_hook_switch_input_report(&mut self, addr: &RawAddress, hook: bool) {
         if !self.phone_ops_enabled {
             return;
@@ -1223,22 +1246,7 @@ impl BluetoothMedia {
             if uhid.muted {
                 data |= UHID_INPUT_PHONE_MUTE;
             }
-            info!(
-                "[{}]: UHID: Send hook-switch({}) hid input report. phone_mute({})",
-                DisplayAddress(&addr),
-                hook,
-                uhid.muted
-            );
-            match uhid.handle.send_input(data) {
-                Err(e) => log::error!(
-                    "[{}]: UHID: Fail to send hook-switch({}) hid input report. phone_mute({}) err:{}",
-                    DisplayAddress(&addr),
-                    hook,
-                    uhid.muted,
-                    e
-                ),
-                Ok(_) => (),
-            };
+            self.uhid_send_input_event_report(&addr, data);
         };
     }
     fn uhid_send_phone_mute_input_report(&mut self, addr: &RawAddress, muted: bool) {
@@ -1252,25 +1260,26 @@ impl BluetoothMedia {
             if call_active {
                 data |= UHID_INPUT_HOOK_SWITCH;
             }
-            if muted {
-                data |= UHID_INPUT_PHONE_MUTE;
-            }
             info!(
                 "[{}]: UHID: Send phone_mute({}) hid input report. hook-switch({})",
                 DisplayAddress(&addr),
                 muted,
                 call_active
             );
-            match uhid.handle.send_input(data) {
-                Err(e) => log::error!(
-                    "[{}]: UHID: Fail to send phone_mute({}) hid input report. hook-switch({}) err:{}",
-                    DisplayAddress(&addr),
-                    muted,
-                    call_active,
-                    e
-                ),
-                Ok(_) => (),
-            };
+            if muted {
+                data |= UHID_INPUT_PHONE_MUTE;
+                self.uhid_send_input_event_report(&addr, data);
+            } else {
+                // We follow the same pattern as the USB headset, which sends an
+                // additional phone mute=1 event when unmuting the microphone.
+                // Based on our testing, Some applications do not respond to phone
+                // mute=0 and treat the phone mute=1 event as a toggle rather than
+                // an on off control.
+                data |= UHID_INPUT_PHONE_MUTE;
+                self.uhid_send_input_event_report(&addr, data);
+                data &= !UHID_INPUT_PHONE_MUTE;
+                self.uhid_send_input_event_report(&addr, data);
+            }
         };
     }
 
