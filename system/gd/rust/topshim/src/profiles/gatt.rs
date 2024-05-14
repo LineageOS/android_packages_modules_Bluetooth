@@ -548,6 +548,34 @@ impl Display for GattStatus {
 }
 
 #[derive(Debug, FromPrimitive, ToPrimitive, Clone, Copy)]
+#[repr(u32)]
+/// LE Discoverable modes.
+pub enum LeDiscMode {
+    Invalid = 0,
+    NonDiscoverable,
+    LimitedDiscoverable,
+    GeneralDiscoverable,
+}
+
+impl From<u32> for LeDiscMode {
+    fn from(num: u32) -> Self {
+        LeDiscMode::from_u32(num).unwrap_or(LeDiscMode::Invalid)
+    }
+}
+
+impl Into<u32> for LeDiscMode {
+    fn into(self) -> u32 {
+        self.to_u32().unwrap_or(0)
+    }
+}
+
+impl Default for LeDiscMode {
+    fn default() -> Self {
+        LeDiscMode::Invalid
+    }
+}
+
+#[derive(Debug, FromPrimitive, ToPrimitive, Clone, Copy)]
 #[repr(u8)]
 /// Represents LE PHY.
 pub enum LePhy {
