@@ -20,6 +20,7 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.never;
@@ -465,6 +466,50 @@ public class MapClientContentTest {
         MapClientContent.clearAllContent(mMockContext);
     }
 
+    /** Test that we gracefully exit when there's a problem with the SMS/MMS DB being available */
+    @Test
+    public void testInsertSmsFails_messageHandleNotInteractable() {
+        // Try to store an MMS, but make the content resolver fail to insert and provide a null URI
+        MissingContentProvider missingContentProvider =
+                Mockito.spy(new MissingContentProvider(mMockContext));
+        mMockContentResolver.addProvider("sms", missingContentProvider);
+        mMapClientContent = new MapClientContent(mMockContext, mCallbacks, mTestDevice);
+        mMapClientContent.storeMessage(
+                mTestMessage1, mTestMessage1Handle, mTestMessage1Timestamp, MESSAGE_SEEN);
+
+        // Because the insert failed, function calls to update or delete this message should not
+        // work either
+        mMapClientContent.markRead(mTestMessage1Handle);
+        verify(missingContentProvider, never())
+                .update(any(Uri.class), any(ContentValues.class), any(Bundle.class));
+
+        mMapClientContent.deleteMessage(mTestMessage1Handle);
+        verify(missingContentProvider, never())
+                .delete(any(Uri.class), anyString(), any(String[].class));
+    }
+
+    /** Test that we gracefully exit when there's a problem with the SMS/MMS DB being available */
+    @Test
+    public void testInsertMmsPartsSkippedWhenMmsInsertFails_messageHandleNotInteractable() {
+        // Try to store an MMS, but make the content resolver fail to insert and provide a null URI
+        MissingContentProvider missingContentProvider =
+                Mockito.spy(new MissingContentProvider(mMockContext));
+        mMockContentResolver.addProvider("mms", missingContentProvider);
+        mMapClientContent = new MapClientContent(mMockContext, mCallbacks, mTestDevice);
+        mMapClientContent.storeMessage(
+                mTestMessage2, mTestMessage2Handle, mTestMessage1Timestamp, MESSAGE_SEEN);
+
+        // Because the insert failed, function calls to update or delete this message should not
+        // work either
+        mMapClientContent.markRead(mTestMessage2Handle);
+        verify(missingContentProvider, never())
+                .update(any(Uri.class), any(ContentValues.class), any(Bundle.class));
+
+        mMapClientContent.deleteMessage(mTestMessage2Handle);
+        verify(missingContentProvider, never())
+                .delete(any(Uri.class), anyString(), any(String[].class));
+    }
+
     /**
      * Test verifying dumpsys does not cause Bluetooth to crash (esp since we're querying the
      * database to generate dump).
@@ -547,6 +592,44 @@ public class MapClientContentTest {
 
         @Override
         public int update(Uri uri, ContentValues values, Bundle extras) {
+            return 0;
+        }
+    }
+
+    public class MissingContentProvider extends FakeContentProvider {
+        MissingContentProvider(Context context) {
+            super(context);
+        }
+
+        @Override
+        public int delete(Uri uri, String selection, String[] selectionArgs) {
+            // nothing deleted
+            return 0;
+        }
+
+        @Override
+        public Uri insert(Uri uri, ContentValues values) {
+            // Insert fails, so there's no URI that points to the inserted values
+            return null;
+        }
+
+        @Override
+        public Cursor query(
+                Uri uri,
+                String[] projection,
+                String selection,
+                String[] selectionArgs,
+                String sortOrder) {
+            // Return empty cursor
+            Cursor cursor = Mockito.mock(Cursor.class);
+            when(cursor.moveToFirst()).thenReturn(false);
+            when(cursor.moveToNext()).thenReturn(false);
+            return cursor;
+        }
+
+        @Override
+        public int update(Uri uri, ContentValues values, Bundle extras) {
+            // zero rows updated
             return 0;
         }
     }
