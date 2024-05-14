@@ -693,8 +693,11 @@ void bta_sdp_search(const RawAddress bd_addr, const bluetooth::Uuid uuid) {
 
   /* initialize the search for the uuid */
   log::verbose("init discovery with UUID: {}", uuid.ToString());
-  get_legacy_stack_sdp_api()->service.SDP_InitDiscoveryDb(
-      p_bta_sdp_cfg->p_sdp_db, p_bta_sdp_cfg->sdp_db_size, 1, &uuid, 0, NULL);
+  if (!get_legacy_stack_sdp_api()->service.SDP_InitDiscoveryDb(
+          p_bta_sdp_cfg->p_sdp_db, p_bta_sdp_cfg->sdp_db_size, 1, &uuid, 0,
+          NULL)) {
+    log::warn("Unable to initialize SDP service search db peer:{}", bd_addr);
+  }
 
   Uuid* bta_sdp_search_uuid = (Uuid*)osi_malloc(sizeof(Uuid));
   *bta_sdp_search_uuid = uuid;

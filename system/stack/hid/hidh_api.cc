@@ -72,8 +72,10 @@ tHID_STATUS HID_HostGetSDPRecord(const RawAddress& addr,
 
   hh_cb.p_sdp_db = p_db;
   Uuid uuid_list = Uuid::From16Bit(UUID_SERVCLASS_HUMAN_INTERFACE);
-  get_legacy_stack_sdp_api()->service.SDP_InitDiscoveryDb(p_db, db_len, 1,
-                                                          &uuid_list, 0, NULL);
+  if (!get_legacy_stack_sdp_api()->service.SDP_InitDiscoveryDb(
+          p_db, db_len, 1, &uuid_list, 0, NULL)) {
+    log::warn("Unable to initialize SDP service discovery db peer:{}", addr);
+  };
 
   if (get_legacy_stack_sdp_api()->service.SDP_ServiceSearchRequest(
           addr, p_db, hidh_search_callback)) {
