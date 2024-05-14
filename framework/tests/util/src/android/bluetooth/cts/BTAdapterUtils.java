@@ -32,7 +32,7 @@ public class BTAdapterUtils {
      */
     @Deprecated
     public static final boolean enableAdapter(BluetoothAdapter adapter, Context ctx) {
-        return BlockingBluetoothAdapter.enableAdapter(adapter, ctx);
+        return BlockingBluetoothAdapter.enable();
     }
 
     /**
@@ -40,7 +40,7 @@ public class BTAdapterUtils {
      */
     @Deprecated
     public static final boolean disableAdapter(BluetoothAdapter adapter, Context ctx) {
-        return BlockingBluetoothAdapter.disableAdapter(adapter, ctx);
+        return BlockingBluetoothAdapter.disable(true);
     }
 
     /**
@@ -49,7 +49,7 @@ public class BTAdapterUtils {
     @Deprecated
     public static final boolean disableAdapter(
             BluetoothAdapter adapter, boolean persist, Context ctx) {
-        return BlockingBluetoothAdapter.disableAdapter(adapter, persist, ctx);
+        return BlockingBluetoothAdapter.disable(persist);
     }
 
     /**
@@ -57,7 +57,7 @@ public class BTAdapterUtils {
      */
     @Deprecated
     public static final boolean enableBLE(BluetoothAdapter adapter, Context ctx) {
-        return BlockingBluetoothAdapter.enableBLE(adapter, ctx);
+        return BlockingBluetoothAdapter.enableBLE();
     }
 
     /**
@@ -65,6 +65,6 @@ public class BTAdapterUtils {
      */
     @Deprecated
     public static final boolean disableBLE(BluetoothAdapter adapter, Context ctx) {
-        return BlockingBluetoothAdapter.disableBLE(adapter, ctx);
+        return BlockingBluetoothAdapter.disableBLE();
     }
 }
