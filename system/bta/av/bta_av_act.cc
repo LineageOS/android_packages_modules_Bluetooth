@@ -183,7 +183,9 @@ static void bta_av_close_all_rc(tBTA_AV_CB* p_cb) {
  ******************************************************************************/
 static void bta_av_del_sdp_rec(uint32_t* p_sdp_handle) {
   if (*p_sdp_handle != 0) {
-    get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(*p_sdp_handle);
+    if (!get_legacy_stack_sdp_api()->handle.SDP_DeleteRecord(*p_sdp_handle)) {
+      log::warn("Unable to delete SDP record:{}", *p_sdp_handle);
+    }
     *p_sdp_handle = 0;
   }
 }
