@@ -30,6 +30,11 @@
     return fmt::format(#enumerator "(0x{:x})", \
                        static_cast<uint64_t>(enumerator))
 
+#define CASE_RETURN_STRING_HEX04(enumerator)     \
+  case enumerator:                               \
+    return fmt::format(#enumerator "(0x{:04x})", \
+                       static_cast<uint64_t>(enumerator))
+
 #define RETURN_UNKNOWN_TYPE_STRING(type, variable) \
   return fmt::format("Unknown {}(0x{:x})", #type,  \
                      static_cast<uint64_t>(variable))
