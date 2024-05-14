@@ -47,6 +47,25 @@ bool CodecManager::IsDualBiDirSwbSupported(void) const {
   return pimpl_->IsDualBiDirSwbSupported();
 }
 
+bool CodecManager::UpdateActiveUnicastAudioHalClient(
+    LeAudioSourceAudioHalClient* source_unicast_client,
+    LeAudioSinkAudioHalClient* sink_unicast_client, bool is_active) {
+  if (pimpl_) {
+    return pimpl_->UpdateActiveUnicastAudioHalClient(
+        source_unicast_client, sink_unicast_client, is_active);
+  }
+  return true;
+}
+
+bool CodecManager::UpdateActiveBroadcastAudioHalClient(
+    LeAudioSourceAudioHalClient* source_broadcast_client, bool is_active) {
+  if (pimpl_) {
+    return pimpl_->UpdateActiveBroadcastAudioHalClient(source_broadcast_client,
+                                                       is_active);
+  }
+  return true;
+}
+
 void CodecManager::UpdateActiveAudioConfig(
     const types::BidirectionalPair<stream_parameters>& stream_params,
     types::BidirectionalPair<uint16_t> delays_ms,
