@@ -295,8 +295,11 @@ cc_test {
         "le_audio_software_unittest.cc",
     ],
     static_libs: [
+        "libbt-bta",
+        "libbt-platform-protos-lite",
         "libgmock",
     ],
+    header_libs: ["libbluetooth_headers"],
     cflags: [
         "-DBUILDCFG",
     ],
