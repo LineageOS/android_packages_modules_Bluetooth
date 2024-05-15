@@ -26,7 +26,6 @@
 #include "hci/hci_packets.h"
 #include "hci/le_periodic_sync_manager.h"
 #include "hci/le_scanning_interface.h"
-#include "hci/vendor_specific_event_manager.h"
 #include "module.h"
 #include "os/handler.h"
 #include "os/log.h"

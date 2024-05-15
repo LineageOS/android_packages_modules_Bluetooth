@@ -29,7 +29,6 @@
 #include "hci/le_periodic_sync_manager.h"
 #include "hci/le_scanning_interface.h"
 #include "hci/le_scanning_reassembler.h"
-#include "hci/vendor_specific_event_manager.h"
 #include "module.h"
 #include "os/handler.h"
 #include "os/log.h"
@@ -195,13 +194,11 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
       HciLayer* hci_layer,
       Controller* controller,
       AclManager* acl_manager,
-      VendorSpecificEventManager* vendor_specific_event_manager,
       storage::StorageModule* storage_module) {
     module_handler_ = handler;
     hci_layer_ = hci_layer;
     controller_ = controller;
     acl_manager_ = acl_manager;
-    vendor_specific_event_manager_ = vendor_specific_event_manager;
     storage_module_ = storage_module;
     le_address_manager_ = acl_manager->GetLeAddressManager();
     le_scanning_interface_ = hci_layer_->GetLeScanningInterface(
@@ -230,10 +227,12 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
         controller_->SupportsBlePeriodicAdvertisingSyncTransferSender();
     total_num_of_advt_tracked_ = controller->GetVendorCapabilities().total_num_of_advt_tracked_;
     if (is_batch_scan_supported_) {
-      vendor_specific_event_manager_->RegisterEventHandler(
-          VseSubeventCode::BLE_THRESHOLD, handler->BindOn(this, &LeScanningManager::impl::on_storage_threshold_breach));
-      vendor_specific_event_manager_->RegisterEventHandler(
-          VseSubeventCode::BLE_TRACKING, handler->BindOn(this, &LeScanningManager::impl::on_advertisement_tracking));
+      hci_layer_->RegisterVendorSpecificEventHandler(
+          VseSubeventCode::BLE_THRESHOLD,
+          handler->BindOn(this, &LeScanningManager::impl::on_storage_threshold_breach));
+      hci_layer_->RegisterVendorSpecificEventHandler(
+          VseSubeventCode::BLE_TRACKING,
+          handler->BindOn(this, &LeScanningManager::impl::on_advertisement_tracking));
     }
     scanners_ = std::vector<Scanner>(kMaxAppNum + 1);
     for (size_t i = 0; i < scanners_.size(); i++) {
@@ -1701,7 +1700,6 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
   HciLayer* hci_layer_;
   Controller* controller_;
   AclManager* acl_manager_;
-  VendorSpecificEventManager* vendor_specific_event_manager_;
   storage::StorageModule* storage_module_;
   LeScanningInterface* le_scanning_interface_;
   LeAddressManager* le_address_manager_;
@@ -1739,7 +1737,6 @@ LeScanningManager::LeScanningManager() {
 
 void LeScanningManager::ListDependencies(ModuleList* list) const {
   list->add<HciLayer>();
-  list->add<VendorSpecificEventManager>();
   list->add<Controller>();
   list->add<AclManager>();
   list->add<storage::StorageModule>();
@@ -1751,7 +1748,6 @@ void LeScanningManager::Start() {
       GetDependency<HciLayer>(),
       GetDependency<Controller>(),
       GetDependency<AclManager>(),
-      GetDependency<VendorSpecificEventManager>(),
       GetDependency<storage::StorageModule>());
 }
 

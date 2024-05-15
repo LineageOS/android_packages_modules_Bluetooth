@@ -22,7 +22,6 @@
 #include "hci/hci_layer_mock.h"
 #include "hci/le_advertising_manager_mock.h"
 #include "hci/le_scanning_manager_mock.h"
-#include "hci/vendor_specific_event_manager_mock.h"
 #include "shim/dumpsys.h"
 
 namespace bluetooth {
@@ -37,7 +36,6 @@ extern os::Handler* mock_gd_shim_handler_;
 extern MockLeAdvertisingManager* mock_le_advertising_manager_;
 extern MockLeScanningManager* mock_le_scanning_manager_;
 extern MockDistanceMeasurementManager* mock_distance_measurement_manager_;
-extern MockVendorSpecificEventManager* mock_vendor_specific_event_manager_;
 
 }  // namespace testing
 }  // namespace hci
