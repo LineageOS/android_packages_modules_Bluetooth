@@ -203,6 +203,10 @@ BluetoothAudioClientInterface::BluetoothAudioClientInterface(
   death_recipient_ = death_recipient;
 }
 
+bool BluetoothAudioClientInterface::IsValid() const {
+  return provider_ != nullptr || provider_2_1_ != nullptr;
+}
+
 std::vector<AudioCapabilities>
 BluetoothAudioClientInterface::GetAudioCapabilities() const {
   return capabilities_;

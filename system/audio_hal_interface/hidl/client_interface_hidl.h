@@ -192,9 +192,7 @@ class BluetoothAudioClientInterface {
       IBluetoothTransportInstance* instance);
   virtual ~BluetoothAudioClientInterface() = default;
 
-  bool IsValid() const {
-    return provider_ != nullptr || provider_2_1_ != nullptr;
-  }
+  bool IsValid() const;
 
   std::vector<AudioCapabilities> GetAudioCapabilities() const;
   std::vector<AudioCapabilities_2_1> GetAudioCapabilities_2_1() const;
