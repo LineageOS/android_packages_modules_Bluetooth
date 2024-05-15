@@ -81,7 +81,7 @@ LeAudioTransport::~LeAudioTransport() {
   }
 }
 
-BluetoothAudioCtrlAck LeAudioTransport::StartRequest(bool is_low_latency) {
+BluetoothAudioCtrlAck LeAudioTransport::StartRequest(bool /*is_low_latency*/) {
   // Check if operation is pending already
   if (GetStartRequestState() == StartRequestState::PENDING_AFTER_RESUME) {
     log::info("Start request is already pending. Ignore the request");
@@ -120,7 +120,8 @@ BluetoothAudioCtrlAck LeAudioTransport::StartRequest(bool is_low_latency) {
   return BluetoothAudioCtrlAck::FAILURE;
 }
 
-BluetoothAudioCtrlAck LeAudioTransport::StartRequestV2(bool is_low_latency) {
+BluetoothAudioCtrlAck LeAudioTransport::StartRequestV2(
+    bool /*is_low_latency*/) {
   // Check if operation is pending already
   if (GetStartRequestState() == StartRequestState::PENDING_AFTER_RESUME) {
     log::info("Start request is already pending. Ignore the request");

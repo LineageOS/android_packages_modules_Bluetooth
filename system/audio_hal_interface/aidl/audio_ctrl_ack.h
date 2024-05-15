@@ -18,6 +18,8 @@
 
 #include <bluetooth/log.h>
 
+#include "audio_aidl_interfaces.h"
+
 namespace bluetooth {
 namespace audio {
 namespace aidl {
