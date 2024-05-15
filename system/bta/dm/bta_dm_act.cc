@@ -321,10 +321,10 @@ void bta_dm_disable() {
   bta_sys_disable();
 
   if (BTM_SetDiscoverability(BTM_NON_DISCOVERABLE) != BTM_SUCCESS) {
-    log::warn("Unable to clear discoverability");
+    log::warn("Unable to disable classic BR/EDR discoverability");
   }
   if (BTM_SetConnectability(BTM_NON_CONNECTABLE) != BTM_SUCCESS) {
-    log::warn("Unable to clear connectability");
+    log::warn("Unable to disable classic BR/EDR connectability");
   }
 
   bta_dm_disable_pm();
@@ -449,10 +449,12 @@ bool BTA_DmSetVisibility(bt_scan_mode_t mode) {
   }
 
   if (BTM_SetDiscoverability(disc_mode_param) != BTM_SUCCESS) {
-    log::warn("Unable to set discoveability");
+    log::warn("Unable to set classic BR/EDR discoverability 0x{:04x}",
+              disc_mode_param);
   }
   if (BTM_SetConnectability(conn_mode_param) != BTM_SUCCESS) {
-    log::warn("Unable to set connectability");
+    log::warn("Unable to set classic BR/EDR connectability 0x{:04x}",
+              conn_mode_param);
   }
   return true;
 }
@@ -1609,7 +1611,7 @@ void bta_dm_allow_wake_by_hid(
   // the adapter connectable for classic.
   if (classic_hid_devices.size() > 0) {
     if (BTM_SetConnectability(BTM_CONNECTABLE) != BTM_SUCCESS) {
-      log::warn("Unable to set connectability");
+      log::warn("Unable to enable classic BR/EDR connectability");
     }
   }
 
