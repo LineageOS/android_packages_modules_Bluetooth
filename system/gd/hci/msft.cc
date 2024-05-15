@@ -23,7 +23,6 @@
 #include "hal/hci_hal.h"
 #include "hci/hci_layer.h"
 #include "hci/hci_packets.h"
-#include "hci/vendor_specific_event_manager.h"
 
 namespace bluetooth {
 namespace hci {
@@ -46,16 +45,11 @@ struct MsftExtensionManager::impl {
 
   ~impl() {}
 
-  void start(
-      os::Handler* handler,
-      hal::HciHal* hal,
-      hci::HciLayer* hci_layer,
-      hci::VendorSpecificEventManager* vendor_specific_event_manager) {
+  void start(os::Handler* handler, hal::HciHal* hal, hci::HciLayer* hci_layer) {
     log::info("MsftExtensionManager start()");
     module_handler_ = handler;
     hal_ = hal;
     hci_layer_ = hci_layer;
-    vendor_specific_event_manager_ = vendor_specific_event_manager;
 
     /*
      * The MSFT opcode is assigned by Bluetooth controller vendors.
@@ -266,7 +260,7 @@ struct MsftExtensionManager::impl {
     // Note: registration of the first octet of the vendor prefix is sufficient
     //       because each vendor controller should ensure that the first octet
     //       is unique within the vendor's events.
-    vendor_specific_event_manager_->RegisterEventHandler(
+    hci_layer_->RegisterVendorSpecificEventHandler(
         static_cast<VseSubeventCode>(msft_.prefix[0]),
         module_handler_->BindOn(this, &impl::handle_msft_events));
   }
@@ -320,7 +314,6 @@ struct MsftExtensionManager::impl {
   os::Handler* module_handler_;
   hal::HciHal* hal_;
   hci::HciLayer* hci_layer_;
-  hci::VendorSpecificEventManager* vendor_specific_event_manager_;
   Msft msft_;
   MsftAdvMonitorAddCallback msft_adv_monitor_add_cb_;
   MsftAdvMonitorRemoveCallback msft_adv_monitor_remove_cb_;
@@ -336,15 +329,10 @@ MsftExtensionManager::MsftExtensionManager() {
 void MsftExtensionManager::ListDependencies(ModuleList* list) const {
   list->add<hal::HciHal>();
   list->add<hci::HciLayer>();
-  list->add<hci::VendorSpecificEventManager>();
 }
 
 void MsftExtensionManager::Start() {
-  pimpl_->start(
-      GetHandler(),
-      GetDependency<hal::HciHal>(),
-      GetDependency<hci::HciLayer>(),
-      GetDependency<hci::VendorSpecificEventManager>());
+  pimpl_->start(GetHandler(), GetDependency<hal::HciHal>(), GetDependency<hci::HciLayer>());
 }
 
 void MsftExtensionManager::Stop() {

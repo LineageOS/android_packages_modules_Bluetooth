@@ -34,7 +34,6 @@
 #include "core_callbacks.h"
 #include "hci/hci_interface.h"
 #include "hci/hci_packets.h"
-#include "hci/vendor_specific_event_manager_interface.h"
 #include "internal_include/bt_trace.h"
 #include "main/shim/entry.h"
 #include "osi/include/properties.h"
@@ -982,13 +981,13 @@ static void vendor_specific_event_callback(
 }
 
 void register_vse() {
-  bluetooth::shim::GetVendorSpecificEventManager()->RegisterEventHandler(
+  bluetooth::shim::GetHciLayer()->RegisterVendorSpecificEventHandler(
       hci::VseSubeventCode::BQR_EVENT,
       to_bind_->Bind(vendor_specific_event_callback));
 }
 
 void unregister_vse() {
-  bluetooth::shim::GetVendorSpecificEventManager()->UnregisterEventHandler(
+  bluetooth::shim::GetHciLayer()->UnregisterVendorSpecificEventHandler(
       hci::VseSubeventCode::BQR_EVENT);
 }
 

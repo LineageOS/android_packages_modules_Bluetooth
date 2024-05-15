@@ -28,7 +28,6 @@
 #include "hci/msft.h"
 #endif
 #include "hci/remote_name_request.h"
-#include "hci/vendor_specific_event_manager.h"
 #include "main/shim/stack.h"
 #include "metrics/counter_metrics.h"
 #include "os/handler.h"
@@ -94,12 +93,6 @@ hci::AclManager* GetAclManager() {
   return Stack::GetInstance()
       ->GetStackManager()
       ->GetInstance<hci::AclManager>();
-}
-
-hci::VendorSpecificEventManagerInterface* GetVendorSpecificEventManager() {
-  return Stack::GetInstance()
-      ->GetStackManager()
-      ->GetInstance<hci::VendorSpecificEventManager>();
 }
 
 metrics::CounterMetrics* GetCounterMetrics() {

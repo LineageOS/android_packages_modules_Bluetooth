@@ -31,7 +31,6 @@
 #include "hci/hci_layer.h"
 #include "hci/hci_packets.h"
 #include "hci/le_advertising_interface.h"
-#include "hci/vendor_specific_event_manager.h"
 #include "module.h"
 #include "os/handler.h"
 #include "os/log.h"
@@ -148,8 +147,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
       os::Handler* handler,
       hci::HciLayer* hci_layer,
       hci::Controller* controller,
-      hci::AclManager* acl_manager,
-      hci::VendorSpecificEventManager* vendor_specific_event_manager) {
+      hci::AclManager* acl_manager) {
     module_handler_ = handler;
     hci_layer_ = hci_layer;
     controller_ = controller;
@@ -160,7 +158,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
 
     le_advertising_interface_ =
         hci_layer_->GetLeAdvertisingInterface(module_handler_->BindOn(this, &LeAdvertisingManager::impl::handle_event));
-    vendor_specific_event_manager->RegisterEventHandler(
+    hci_layer_->RegisterVendorSpecificEventHandler(
         hci::VseSubeventCode::BLE_STCHANGE,
         handler->BindOn(this, &LeAdvertisingManager::impl::multi_advertising_state_change));
 
@@ -1841,7 +1839,6 @@ void LeAdvertisingManager::ListDependencies(ModuleList* list) const {
   list->add<hci::HciLayer>();
   list->add<hci::Controller>();
   list->add<hci::AclManager>();
-  list->add<hci::VendorSpecificEventManager>();
 }
 
 void LeAdvertisingManager::Start() {
@@ -1849,8 +1846,7 @@ void LeAdvertisingManager::Start() {
       GetHandler(),
       GetDependency<hci::HciLayer>(),
       GetDependency<hci::Controller>(),
-      GetDependency<AclManager>(),
-      GetDependency<VendorSpecificEventManager>());
+      GetDependency<AclManager>());
 }
 
 void LeAdvertisingManager::Stop() {

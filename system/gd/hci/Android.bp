@@ -28,7 +28,6 @@ filegroup {
         "link_key.cc",
         "remote_name_request.cc",
         "uuid.cc",
-        "vendor_specific_event_manager.cc",
     ],
 }
 

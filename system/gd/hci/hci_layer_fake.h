@@ -56,6 +56,12 @@ class HciLayerFake : public HciLayer {
 
   void UnregisterLeEventHandler(SubeventCode subevent_code) override;
 
+  void RegisterVendorSpecificEventHandler(
+      VseSubeventCode subevent_code,
+      common::ContextualCallback<void(VendorSpecificEventView)> event_handler) override;
+
+  void UnregisterVendorSpecificEventHandler(VseSubeventCode subevent_code) override;
+
   void IncomingEvent(std::unique_ptr<EventBuilder> event_builder);
 
   void IncomingLeMetaEvent(std::unique_ptr<LeMetaEventBuilder> event_builder);
@@ -90,6 +96,8 @@ class HciLayerFake : public HciLayer {
   std::list<common::ContextualOnceCallback<void(CommandStatusView)>> command_status_callbacks;
   std::map<EventCode, common::ContextualCallback<void(EventView)>> registered_events_;
   std::map<SubeventCode, common::ContextualCallback<void(LeMetaEventView)>> registered_le_events_;
+  std::map<VseSubeventCode, common::ContextualCallback<void(VendorSpecificEventView)>>
+      registered_vs_events_;
 
   // thread-safe
   common::BidiQueue<AclView, AclBuilder> acl_queue_{3 /* TODO: Set queue depth */};

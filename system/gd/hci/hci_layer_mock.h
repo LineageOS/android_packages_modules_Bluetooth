@@ -57,6 +57,12 @@ class MockHciLayer : public HciInterface {
       (override));
   MOCK_METHOD((void), UnregisterLeEventHandler, (SubeventCode), (override));
   MOCK_METHOD(
+      (void),
+      RegisterVendorSpecificEventHandler,
+      (VseSubeventCode, common::ContextualCallback<void(VendorSpecificEventView)>),
+      (override));
+  MOCK_METHOD((void), UnregisterVendorSpecificEventHandler, (VseSubeventCode), (override));
+  MOCK_METHOD(
       (SecurityInterface*),
       GetSecurityInterface,
       (common::ContextualCallback<void(EventView)> event_handler),
