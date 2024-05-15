@@ -47,20 +47,19 @@
 
 #define BTA_DM_NUM_PEER_DEVICE 7
 
-typedef enum : uint8_t {
+enum class tBTA_DM_CONN_STATE : uint8_t {
   BTA_DM_NOT_CONNECTED = 0,
   BTA_DM_CONNECTED = 1,
   BTA_DM_UNPAIRING = 2,
-} tBTA_DM_CONN_STATE;
+};
 
 inline std::string bta_conn_state_text(tBTA_DM_CONN_STATE state) {
   switch (state) {
-    CASE_RETURN_TEXT(BTA_DM_NOT_CONNECTED);
-    CASE_RETURN_TEXT(BTA_DM_CONNECTED);
-    CASE_RETURN_TEXT(BTA_DM_UNPAIRING);
-    default:
-      return std::string("UNKNOWN");
+    CASE_RETURN_STRING(tBTA_DM_CONN_STATE::BTA_DM_NOT_CONNECTED);
+    CASE_RETURN_STRING(tBTA_DM_CONN_STATE::BTA_DM_CONNECTED);
+    CASE_RETURN_STRING(tBTA_DM_CONN_STATE::BTA_DM_UNPAIRING);
   }
+  RETURN_UNKNOWN_TYPE_STRING(tBTA_DM_CONN_STATE, state);
 }
 
 typedef enum : uint8_t {
@@ -98,7 +97,7 @@ typedef uint8_t tBTA_DM_PM_REQ;
 
 struct tBTA_DM_PEER_DEVICE {
   RawAddress peer_bdaddr;
-  tBTA_DM_CONN_STATE conn_state;
+  tBTA_DM_CONN_STATE conn_state{tBTA_DM_CONN_STATE::BTA_DM_NOT_CONNECTED};
   tBTA_PREF_ROLES pref_role;
   bool in_use;
 
