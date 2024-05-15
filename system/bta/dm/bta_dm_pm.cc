@@ -107,8 +107,11 @@ void bta_dm_init_pm(void) {
     bta_sys_pm_register(bta_dm_pm_cback);
     bta_sys_sniff_register(bta_dm_sniff_cback);
 
-    get_btm_client_interface().lifecycle.BTM_PmRegister(
-        (BTM_PM_REG_SET), &bta_dm_cb.pm_id, bta_dm_pm_btm_cback);
+    if (get_btm_client_interface().lifecycle.BTM_PmRegister(
+            (BTM_PM_REG_SET), &bta_dm_cb.pm_id, bta_dm_pm_btm_cback) !=
+        BTM_SUCCESS) {
+      log::warn("Unable to initialize BTM power manager");
+    };
   }
 
   /* Need to initialize all PM timer service IDs */
@@ -129,8 +132,10 @@ void bta_dm_init_pm(void) {
  *
  ******************************************************************************/
 void bta_dm_disable_pm(void) {
-  get_btm_client_interface().lifecycle.BTM_PmRegister(
-      BTM_PM_DEREG, &bta_dm_cb.pm_id, bta_dm_pm_btm_cback);
+  if (get_btm_client_interface().lifecycle.BTM_PmRegister(
+          BTM_PM_DEREG, &bta_dm_cb.pm_id, bta_dm_pm_btm_cback) != BTM_SUCCESS) {
+    log::warn("Unable to terminate BTM power manager");
+  }
 
   /*
    * Deregister the PM callback from the system handling to prevent
@@ -558,8 +563,10 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, const tBTA_SYS_ID id,
         (index == BTA_DM_PM_SSR0)) {
       if (status == BTA_SYS_SCO_OPEN) {
         log::verbose("SCO inactive, reset SSR to zero");
-        get_btm_client_interface().link_policy.BTM_SetSsrParams(peer_addr, 0, 0,
-                                                                0);
+        if (get_btm_client_interface().link_policy.BTM_SetSsrParams(
+                peer_addr, 0, 0, 0) != BTM_SUCCESS) {
+          log::warn("Unable to set link into sniff mode peer:{}", peer_addr);
+        }
       } else if (status == BTA_SYS_SCO_CLOSE) {
         log::verbose("SCO active, back to old SSR");
         bta_dm_pm_ssr(peer_addr, BTA_DM_PM_SSR0);
@@ -974,8 +981,11 @@ static void bta_dm_pm_ssr(const RawAddress& peer_addr, const int ssr) {
         ticks_to_seconds(p_spec->min_loc_to),
         ticks_to_seconds(p_spec->min_rmt_to));
     /* set the SSR parameters. */
-    get_btm_client_interface().link_policy.BTM_SetSsrParams(
-        peer_addr, p_spec->max_lat, p_spec->min_rmt_to, p_spec->min_loc_to);
+    if (get_btm_client_interface().link_policy.BTM_SetSsrParams(
+            peer_addr, p_spec->max_lat, p_spec->min_rmt_to,
+            p_spec->min_loc_to) != BTM_SUCCESS) {
+      log::warn("Unable to set link into sniff mode peer:{}", peer_addr);
+    }
   }
 }
 
