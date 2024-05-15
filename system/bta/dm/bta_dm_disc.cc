@@ -57,6 +57,8 @@
 
 #ifdef TARGET_FLOSS
 #include "stack/include/srvc_api.h"
+void bta_dm_sdp_received_di(const RawAddress& bd_addr,
+                            tSDP_DI_GET_RECORD& di_record);
 #endif
 
 using bluetooth::Uuid;
@@ -497,9 +499,7 @@ static void bta_dm_sdp_result(tSDP_STATUS sdp_result,
     tSDP_DI_GET_RECORD di_record;
     if (get_legacy_stack_sdp_api()->device_id.SDP_GetDiRecord(
             1, &di_record, p_sdp_db) == SDP_SUCCESS) {
-      bta_dm_discovery_cb.service_search_cbacks.on_did_received(
-          sdp_state->bd_addr, di_record.rec.vendor_id_source,
-          di_record.rec.vendor, di_record.rec.product, di_record.rec.version);
+      bta_dm_sdp_received_di(sdp_state->bd_addr, di_record);
     }
 #endif
 
@@ -556,6 +556,13 @@ static void bta_dm_sdp_result(tSDP_STATUS sdp_result,
 
 /** Callback of peer's DIS reply. This is only called for floss */
 #if TARGET_FLOSS
+void bta_dm_sdp_received_di(const RawAddress& bd_addr,
+                            tSDP_DI_GET_RECORD& di_record) {
+  bta_dm_discovery_cb.service_search_cbacks.on_did_received(
+      bd_addr, di_record.rec.vendor_id_source, di_record.rec.vendor,
+      di_record.rec.product, di_record.rec.version);
+}
+
 static void bta_dm_read_dis_cmpl(const RawAddress& addr,
                                  tDIS_VALUE* p_dis_value) {
   if (!p_dis_value) {
