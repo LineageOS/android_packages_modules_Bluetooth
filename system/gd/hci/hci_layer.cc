@@ -346,14 +346,27 @@ struct HciLayer::impl {
 
   void register_le_event(SubeventCode event, ContextualCallback<void(LeMetaEventView)> handler) {
     log::assert_that(
-        subevent_handlers_.count(event) == 0,
+        le_event_handlers_.count(event) == 0,
         "Can not register a second handler for {}",
         SubeventCodeText(event));
-    subevent_handlers_[event] = handler;
+    le_event_handlers_[event] = handler;
   }
 
   void unregister_le_event(SubeventCode event) {
-    subevent_handlers_.erase(subevent_handlers_.find(event));
+    le_event_handlers_.erase(le_event_handlers_.find(event));
+  }
+
+  void register_vs_event(
+      VseSubeventCode event, ContextualCallback<void(VendorSpecificEventView)> handler) {
+    log::assert_that(
+        vs_event_handlers_.count(event) == 0,
+        "Can not register a second handler for {}",
+        VseSubeventCodeText(event));
+    vs_event_handlers_[event] = handler;
+  }
+
+  void unregister_vs_event(VseSubeventCode event) {
+    vs_event_handlers_.erase(vs_event_handlers_.find(event));
   }
 
   static void abort_after_root_inflammation(uint8_t vse_error) {
@@ -440,6 +453,9 @@ struct HciLayer::impl {
       case EventCode::HARDWARE_ERROR:
         on_hardware_error(event);
         break;
+      case EventCode::VENDOR_SPECIFIC:
+        on_vs_event(event);
+        break;
       default:
         if (event_handlers_.find(event_code) == event_handlers_.end()) {
           log::warn("Unhandled event of type {}", EventCodeText(event_code));
@@ -467,11 +483,22 @@ struct HciLayer::impl {
     LeMetaEventView meta_event_view = LeMetaEventView::Create(event);
     log::assert_that(meta_event_view.IsValid(), "assert failed: meta_event_view.IsValid()");
     SubeventCode subevent_code = meta_event_view.GetSubeventCode();
-    if (subevent_handlers_.find(subevent_code) == subevent_handlers_.end()) {
+    if (le_event_handlers_.find(subevent_code) == le_event_handlers_.end()) {
       log::warn("Unhandled le subevent of type {}", SubeventCodeText(subevent_code));
       return;
     }
-    subevent_handlers_[subevent_code](meta_event_view);
+    le_event_handlers_[subevent_code](meta_event_view);
+  }
+
+  void on_vs_event(EventView event) {
+    VendorSpecificEventView vs_event_view = VendorSpecificEventView::Create(event);
+    log::assert_that(vs_event_view.IsValid(), "assert failed: vs_event_view.IsValid()");
+    VseSubeventCode subevent_code = vs_event_view.GetSubeventCode();
+    if (vs_event_handlers_.find(subevent_code) == vs_event_handlers_.end()) {
+      log::warn("Unhandled vendor specific event of type {}", VseSubeventCodeText(subevent_code));
+      return;
+    }
+    vs_event_handlers_[subevent_code](vs_event_view);
   }
 
   hal::HciHal* hal_;
@@ -481,7 +508,9 @@ struct HciLayer::impl {
   std::list<CommandQueueEntry> command_queue_;
 
   std::map<EventCode, ContextualCallback<void(EventView)>> event_handlers_;
-  std::map<SubeventCode, ContextualCallback<void(LeMetaEventView)>> subevent_handlers_;
+  std::map<SubeventCode, ContextualCallback<void(LeMetaEventView)>> le_event_handlers_;
+  std::map<VseSubeventCode, ContextualCallback<void(VendorSpecificEventView)>> vs_event_handlers_;
+
   OpCode waiting_command_{OpCode::NONE};
   uint8_t command_credits_{1};  // Send reset first
   Alarm* hci_timeout_alarm_{nullptr};
@@ -579,6 +608,15 @@ void HciLayer::RegisterLeEventHandler(SubeventCode event, ContextualCallback<voi
 
 void HciLayer::UnregisterLeEventHandler(SubeventCode event) {
   CallOn(impl_, &impl::unregister_le_event, event);
+}
+
+void HciLayer::RegisterVendorSpecificEventHandler(
+    VseSubeventCode event, ContextualCallback<void(VendorSpecificEventView)> handler) {
+  CallOn(impl_, &impl::register_vs_event, event, handler);
+}
+
+void HciLayer::UnregisterVendorSpecificEventHandler(VseSubeventCode event) {
+  CallOn(impl_, &impl::unregister_vs_event, event);
 }
 
 void HciLayer::on_disconnection_complete(EventView event_view) {

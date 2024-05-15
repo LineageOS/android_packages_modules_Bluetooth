@@ -39,7 +39,6 @@
 #include "hci/msft.h"
 #endif
 #include "hci/remote_name_request.h"
-#include "hci/vendor_specific_event_manager.h"
 #include "main/shim/acl.h"
 #include "main/shim/acl_legacy_interface.h"
 #include "main/shim/distance_measurement_manager.h"
@@ -83,7 +82,6 @@ void Stack::StartEverything() {
   modules.add<hci::HciLayer>();
   modules.add<storage::StorageModule>();
   modules.add<shim::Dumpsys>();
-  modules.add<hci::VendorSpecificEventManager>();
 #if TARGET_FLOSS
   modules.add<sysprops::SyspropsModule>();
 #endif

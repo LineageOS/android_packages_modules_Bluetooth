@@ -66,6 +66,12 @@ class HciInterface : public CommandInterface<CommandBuilder> {
 
   virtual void UnregisterLeEventHandler(SubeventCode subevent_code) = 0;
 
+  virtual void RegisterVendorSpecificEventHandler(
+      VseSubeventCode subevent_code,
+      common::ContextualCallback<void(VendorSpecificEventView)> event_handler) = 0;
+
+  virtual void UnregisterVendorSpecificEventHandler(VseSubeventCode subevent_code) = 0;
+
   virtual void RegisterForDisconnects(
       common::ContextualCallback<void(uint16_t, hci::ErrorCode)> on_disconnect) = 0;
 
