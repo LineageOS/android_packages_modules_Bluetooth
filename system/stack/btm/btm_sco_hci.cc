@@ -485,8 +485,7 @@ struct tBTM_MSBC_INFO {
     if (pkt_size == packet_size) return packet_size;
     packet_size = pkt_size;
 
-    if (packet_buf) osi_free(packet_buf);
-    packet_buf = (uint8_t*)osi_calloc(packet_size);
+    if (!packet_buf) packet_buf = (uint8_t*)osi_calloc(BTM_MSBC_PKT_LEN);
 
     if (msbc_decode_buf) osi_free(msbc_decode_buf);
     msbc_decode_buf = (uint8_t*)osi_calloc(buf_size);
