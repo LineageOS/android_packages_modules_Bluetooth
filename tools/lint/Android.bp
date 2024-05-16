@@ -32,7 +32,6 @@ java_library_host {
 
 java_test_host {
     name: "BluetoothLintCheckerTest",
-    team: "trendy_team_bluetooth",
     srcs: [
         "checks/tests/**/*.java",
         "checks/tests/**/*.kt",
