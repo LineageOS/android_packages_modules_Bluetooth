@@ -57,7 +57,7 @@ public class AdapterServiceBinderTest {
     }
 
     @After
-    public void cleaUp() {
+    public void cleanUp() {
         mBinder.cleanup();
     }
 
