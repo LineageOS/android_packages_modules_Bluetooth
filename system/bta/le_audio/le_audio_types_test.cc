@@ -725,5 +725,31 @@ TEST(LeAudioLtvMapTest, test_intersection) {
   ASSERT_EQ(ltv_map_two.GetIntersection(ltv_map_one), ltv_map_common);
 }
 
+constexpr types::LeAudioCodecId kLeAudioCodecIdVendor1 = {
+    .coding_format = types::kLeAudioCodingFormatVendorSpecific,
+    // Not a particualr vendor - just some random numbers
+    .vendor_company_id = 0xC0,
+    .vendor_codec_id = 0xDE,
+};
+
+static const set_configurations::CodecConfigSetting vendor_16_2 = {
+    .id = kLeAudioCodecIdVendor1,
+    .params = types::LeAudioLtvMap({
+        LTV_ENTRY_SAMPLING_FREQUENCY(
+            codec_spec_conf::kLeAudioSamplingFreq16000Hz),
+        LTV_ENTRY_FRAME_DURATION(codec_spec_conf::kLeAudioCodecFrameDur10000us),
+        LTV_ENTRY_AUDIO_CHANNEL_ALLOCATION(
+            codec_spec_conf::kLeAudioLocationStereo),
+        LTV_ENTRY_OCTETS_PER_CODEC_FRAME(40),
+    }),
+    .vendor_params = {0x01, 0x02, 0x03, 0x04},
+    .channel_count_per_iso_stream = 1,
+};
+
+TEST(CodecConfigSettingTest, test_vendor_codec_type) {
+  auto vendor_codec = vendor_16_2;
+  ASSERT_EQ(vendor_16_2, vendor_codec);
+}
+
 }  // namespace types
 }  // namespace bluetooth::le_audio

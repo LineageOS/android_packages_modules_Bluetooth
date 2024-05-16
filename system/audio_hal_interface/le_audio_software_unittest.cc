@@ -23,6 +23,7 @@
 
 #include <cerrno>
 
+#include "aidl/android/hardware/bluetooth/audio/IBluetoothAudioProvider.h"
 #include "aidl/audio_ctrl_ack.h"
 #include "aidl/le_audio_software_aidl.h"
 #include "audio_hal_interface/hal_version_manager.h"
@@ -129,6 +130,30 @@ class MockBluetoothAudioClientInterfaceAidl {
   MOCK_METHOD((std::vector<bluetooth::audio::aidl::AudioCapabilities>),
               GetAudioCapabilities,
               (bluetooth::audio::aidl::SessionType /*session_type*/));
+  MOCK_METHOD(
+      (std::vector<
+          ::aidl::android::hardware::bluetooth::audio::IBluetoothAudioProvider::
+              LeAudioAseConfigurationSetting>),
+      GetLeAudioAseConfiguration,
+      ((std::optional<std::vector<std::optional<
+            ::aidl::android::hardware::bluetooth::audio::
+                IBluetoothAudioProvider::LeAudioDeviceCapabilities>>>&),
+       (std::optional<std::vector<std::optional<
+            ::aidl::android::hardware::bluetooth::audio::
+                IBluetoothAudioProvider::LeAudioDeviceCapabilities>>>&),
+       (std::vector<
+           ::aidl::android::hardware::bluetooth::audio::
+               IBluetoothAudioProvider::LeAudioConfigurationRequirement>&)));
+  MOCK_METHOD(
+      (::aidl::android::hardware::bluetooth::audio::IBluetoothAudioProvider::
+           LeAudioBroadcastConfigurationSetting),
+      getLeAudioBroadcastConfiguration,
+      ((const std::optional<std::vector<std::optional<
+            ::aidl::android::hardware::bluetooth::audio::
+                IBluetoothAudioProvider::LeAudioDeviceCapabilities>>>&),
+       (const ::aidl::android::hardware::bluetooth::audio::
+            IBluetoothAudioProvider::
+                LeAudioBroadcastConfigurationRequirement&)));
 
   static void SetInstance(MockBluetoothAudioClientInterfaceAidl* ptr) {
     instance_ptr = ptr;
@@ -437,6 +462,42 @@ BluetoothAudioClientInterface::GetAudioCapabilities(SessionType session_type) {
     return instance->GetAudioCapabilities(session_type);
   }
   return std::vector<AudioCapabilities>(0);
+}
+
+std::vector<IBluetoothAudioProvider::LeAudioAseConfigurationSetting>
+BluetoothAudioClientInterface::GetLeAudioAseConfiguration(
+    std::optional<std::vector<
+        std::optional<IBluetoothAudioProvider::LeAudioDeviceCapabilities>>>&
+        remoteSinkAudioCapabilities,
+    std::optional<std::vector<
+        std::optional<IBluetoothAudioProvider::LeAudioDeviceCapabilities>>>&
+        remoteSourceAudioCapabilities,
+    std::vector<IBluetoothAudioProvider::LeAudioConfigurationRequirement>&
+        requirements) {
+  auto instance = MockBluetoothAudioClientInterfaceAidl::GetInstance();
+  if (instance) {
+    return instance->GetLeAudioAseConfiguration(remoteSinkAudioCapabilities,
+                                                remoteSourceAudioCapabilities,
+                                                requirements);
+  }
+
+  return std::vector<IBluetoothAudioProvider::LeAudioAseConfigurationSetting>();
+}
+
+IBluetoothAudioProvider::LeAudioBroadcastConfigurationSetting
+BluetoothAudioClientInterface::getLeAudioBroadcastConfiguration(
+    const std::optional<std::vector<
+        std::optional<IBluetoothAudioProvider::LeAudioDeviceCapabilities>>>&
+        remoteSinkAudioCapabilities,
+    const IBluetoothAudioProvider::LeAudioBroadcastConfigurationRequirement&
+        requirement) {
+  auto instance = MockBluetoothAudioClientInterfaceAidl::GetInstance();
+  if (instance) {
+    return instance->getLeAudioBroadcastConfiguration(
+        remoteSinkAudioCapabilities, requirement);
+  }
+
+  return IBluetoothAudioProvider::LeAudioBroadcastConfigurationSetting();
 }
 
 std::ostream& operator<<(std::ostream& os, const BluetoothAudioCtrlAck& ack) {

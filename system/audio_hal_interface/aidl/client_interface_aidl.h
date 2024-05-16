@@ -26,6 +26,8 @@
 #include "audio_aidl_interfaces.h"
 #include "audio_ctrl_ack.h"
 #include "bluetooth_audio_port_impl.h"
+#include "bta/le_audio/broadcaster/broadcaster_types.h"
+#include "bta/le_audio/le_audio_types.h"
 #include "transport_instance.h"
 
 #define BLUETOOTH_AUDIO_HAL_PROP_DISABLED \

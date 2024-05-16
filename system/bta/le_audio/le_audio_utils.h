@@ -38,6 +38,25 @@ types::AudioContexts GetAudioContextsFromSourceMetadata(
     const std::vector<struct playback_track_metadata_v7>& source_metadata);
 types::AudioContexts GetAudioContextsFromSinkMetadata(
     const std::vector<struct record_track_metadata_v7>& sink_metadata);
+inline uint8_t GetTargetLatencyForAudioContext(types::LeAudioContextType ctx) {
+  switch (ctx) {
+    case types::LeAudioContextType::GAME:
+      FALLTHROUGH_INTENDED;
+    case types::LeAudioContextType::VOICEASSISTANTS:
+      FALLTHROUGH_INTENDED;
+    case types::LeAudioContextType::LIVE:
+      FALLTHROUGH_INTENDED;
+    case types::LeAudioContextType::CONVERSATIONAL:
+      FALLTHROUGH_INTENDED;
+    case types::LeAudioContextType::RINGTONE:
+      return types::kTargetLatencyLower;
+
+    default:
+      return types::kTargetLatencyUndefined;
+  }
+
+  return types::kTargetLatencyUndefined;
+}
 
 /* Helpers to get btle_audio_codec_config_t for Java */
 bluetooth::le_audio::btle_audio_codec_index_t
