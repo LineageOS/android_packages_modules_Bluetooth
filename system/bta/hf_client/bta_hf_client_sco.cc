@@ -22,10 +22,10 @@
 #include <cstdint>
 
 #include "bta/hf_client/bta_hf_client_int.h"
-#include "bta/include/bta_ag_api.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/btm_api.h"
+#include "stack/include/btm_client_interface.h"
 
 #define BTA_HF_CLIENT_NO_EDR_ESCO                                \
   (ESCO_PKT_TYPES_MASK_NO_2_EV3 | ESCO_PKT_TYPES_MASK_NO_3_EV3 | \
@@ -256,7 +256,10 @@ static void bta_hf_client_sco_create(tBTA_HF_CLIENT_CB* client_cb,
 
   /* if initiating set current scb and peer bd addr */
   if (is_orig) {
-    BTM_SetEScoMode(&params);
+    if (get_btm_client_interface().sco.BTM_SetEScoMode(&params) !=
+        BTM_SUCCESS) {
+      log::warn("Unable to set ESCO mode");
+    }
     /* tell sys to stop av if any */
     bta_sys_sco_use(BTA_ID_HS, 1, client_cb->peer_addr);
   }
