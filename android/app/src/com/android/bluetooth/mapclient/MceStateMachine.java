@@ -690,7 +690,7 @@ class MceStateMachine extends StateMachine {
                     break;
 
                 case MSG_GET_MESSAGE_LISTING:
-                    // Get latest 50 Unread messages in the last week
+                    // Get the 50 most recent messages from the last week
                     Calendar calendar = Calendar.getInstance();
                     calendar.add(Calendar.DATE, -7);
                     byte messageType;
