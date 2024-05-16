@@ -118,6 +118,19 @@ typedef struct {
 extern const uint32_t bta_service_id_to_btm_srv_id_lkup_tbl[];
 extern const uint16_t bta_service_id_to_uuid_lkup_tbl[];
 
+void bta_dm_sdp_find_services(tBTA_DM_SDP_STATE* sdp_state);
+void bta_dm_sdp_result(tSDP_STATUS sdp_result, tBTA_DM_SDP_STATE* sdp_state);
+void bta_dm_sdp_finished(RawAddress bda, tBTA_STATUS result,
+                         tBTA_SERVICE_MASK services,
+                         std::vector<bluetooth::Uuid> uuids = {},
+                         std::vector<bluetooth::Uuid> gatt_uuids = {});
+void bta_dm_sdp_callback(const RawAddress& bd_addr, tSDP_STATUS sdp_status);
+
+#ifdef TARGET_FLOSS
+void bta_dm_sdp_received_di(const RawAddress& bd_addr,
+                            tSDP_DI_GET_RECORD& di_record);
+#endif
+
 namespace fmt {
 template <>
 struct formatter<tBTA_DM_DISC_EVT> : enum_formatter<tBTA_DM_DISC_EVT> {};
