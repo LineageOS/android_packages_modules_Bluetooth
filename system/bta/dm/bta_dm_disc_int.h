@@ -94,7 +94,7 @@ typedef struct {
   std::array<uint8_t, MAX_DISC_RAW_DATA_BUF> g_disc_raw_data_buf;
 
   /* sdp_db must be together with sdp_db_buffer*/
-  uint8_t sdp_db_buffer[BTA_DM_SDP_DB_SIZE];
+  alignas(tSDP_DISCOVERY_DB) uint8_t sdp_db_buffer[BTA_DM_SDP_DB_SIZE];
 } tBTA_DM_SDP_STATE;
 
 typedef struct {
