@@ -92,6 +92,7 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -536,6 +537,307 @@ public class BassClientServiceTest {
         for (BassClientStateMachine sm : mStateMachines.values()) {
             verify(sm).sendMessage(BassClientStateMachine.START_SCAN_OFFLOAD);
         }
+    }
+
+    @Test
+    public void testStopSearchingForSources() {
+        mSetFlagsRule.enableFlags(
+                Flags.FLAG_LEAUDIO_BROADCAST_EXTRACT_PERIODIC_SCANNER_FROM_STATE_MACHINE);
+
+        prepareConnectedDeviceGroup();
+        startSearchingForSources();
+
+        // Scan and sync 1
+        clearInvocations(mMethodProxy);
+        onScanResult(mSourceDevice, TEST_BROADCAST_ID);
+        verify(mMethodProxy, timeout(TIMEOUT_MS).times(1))
+                .periodicAdvertisingManagerRegisterSync(
+                        any(), any(), anyInt(), anyInt(), any(), any());
+        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+        assertThat(mBassClientService.getActiveSyncedSources().size()).isEqualTo(1);
+        assertThat(mBassClientService.getDeviceForSyncHandle(TEST_SYNC_HANDLE))
+                .isEqualTo(mSourceDevice);
+        assertThat(mBassClientService.getBroadcastIdForSyncHandle(TEST_SYNC_HANDLE))
+                .isEqualTo(TEST_BROADCAST_ID);
+
+        // Stop searching
+        clearInvocations(mMethodProxy);
+        clearInvocations(mBluetoothLeScannerWrapper);
+        mBassClientService.stopSearchingForSources();
+
+        verify(mBluetoothLeScannerWrapper).stopScan(mCallbackCaptor.getValue());
+        for (BassClientStateMachine sm : mStateMachines.values()) {
+            verify(sm).sendMessage(BassClientStateMachine.STOP_SCAN_OFFLOAD);
+        }
+
+        // Check if unsyced
+        verify(mMethodProxy, timeout(TIMEOUT_MS).times(1))
+                .periodicAdvertisingManagerUnregisterSync(any(), any());
+        assertThat(mBassClientService.getActiveSyncedSources()).isEmpty();
+        assertThat(mBassClientService.getDeviceForSyncHandle(TEST_SYNC_HANDLE)).isEqualTo(null);
+        assertThat(mBassClientService.getBroadcastIdForSyncHandle(TEST_SYNC_HANDLE))
+                .isEqualTo(BassConstants.INVALID_BROADCAST_ID);
+    }
+
+    @Test
+    public void testStop() {
+        mSetFlagsRule.enableFlags(
+                Flags.FLAG_LEAUDIO_BROADCAST_EXTRACT_PERIODIC_SCANNER_FROM_STATE_MACHINE);
+
+        prepareConnectedDeviceGroup();
+        startSearchingForSources();
+
+        // Scan and sync 1
+        clearInvocations(mMethodProxy);
+        onScanResult(mSourceDevice, TEST_BROADCAST_ID);
+        verify(mMethodProxy, timeout(TIMEOUT_MS).times(1))
+                .periodicAdvertisingManagerRegisterSync(
+                        any(), any(), anyInt(), anyInt(), any(), any());
+        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+        assertThat(mBassClientService.getActiveSyncedSources().size()).isEqualTo(1);
+        assertThat(mBassClientService.getDeviceForSyncHandle(TEST_SYNC_HANDLE))
+                .isEqualTo(mSourceDevice);
+        assertThat(mBassClientService.getBroadcastIdForSyncHandle(TEST_SYNC_HANDLE))
+                .isEqualTo(TEST_BROADCAST_ID);
+
+        // Stop
+        clearInvocations(mMethodProxy);
+        clearInvocations(mBluetoothLeScannerWrapper);
+        mBassClientService.stop();
+
+        // Check if unsyced
+        verify(mMethodProxy, timeout(TIMEOUT_MS).times(1))
+                .periodicAdvertisingManagerUnregisterSync(any(), any());
+        assertThat(mBassClientService.getActiveSyncedSources()).isEmpty();
+        assertThat(mBassClientService.getDeviceForSyncHandle(TEST_SYNC_HANDLE)).isEqualTo(null);
+        assertThat(mBassClientService.getBroadcastIdForSyncHandle(TEST_SYNC_HANDLE))
+                .isEqualTo(BassConstants.INVALID_BROADCAST_ID);
+    }
+
+    @Test
+    public void testStopSearchingForSources_startAndSyncAgain() {
+        mSetFlagsRule.enableFlags(
+                Flags.FLAG_LEAUDIO_BROADCAST_EXTRACT_PERIODIC_SCANNER_FROM_STATE_MACHINE);
+
+        prepareConnectedDeviceGroup();
+        startSearchingForSources();
+
+        // Scan and sync 1
+        clearInvocations(mMethodProxy);
+        onScanResult(mSourceDevice, TEST_BROADCAST_ID);
+        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+
+        // Stop searching
+        mBassClientService.stopSearchingForSources();
+
+        // Start searching again
+        clearInvocations(mBluetoothLeScannerWrapper);
+        startSearchingForSources();
+
+        // Sync the same device again
+        clearInvocations(mMethodProxy);
+        onScanResult(mSourceDevice, TEST_BROADCAST_ID);
+        verify(mMethodProxy, timeout(TIMEOUT_MS).times(1))
+                .periodicAdvertisingManagerRegisterSync(
+                        any(), any(), anyInt(), anyInt(), any(), any());
+        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+        assertThat(mBassClientService.getActiveSyncedSources().size()).isEqualTo(1);
+        assertThat(mBassClientService.getDeviceForSyncHandle(TEST_SYNC_HANDLE))
+                .isEqualTo(mSourceDevice);
+        assertThat(mBassClientService.getBroadcastIdForSyncHandle(TEST_SYNC_HANDLE))
+                .isEqualTo(TEST_BROADCAST_ID);
+    }
+
+    @Test
+    public void testStop_startAndSyncAgain() {
+        mSetFlagsRule.enableFlags(
+                Flags.FLAG_LEAUDIO_BROADCAST_EXTRACT_PERIODIC_SCANNER_FROM_STATE_MACHINE);
+
+        prepareConnectedDeviceGroup();
+        startSearchingForSources();
+
+        // Scan and sync 1
+        clearInvocations(mMethodProxy);
+        onScanResult(mSourceDevice, TEST_BROADCAST_ID);
+        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+
+        // Stop
+        mBassClientService.stop();
+
+        // Start again
+        mBassClientService.start();
+
+        // Start searching again
+        clearInvocations(mBluetoothLeScannerWrapper);
+        prepareConnectedDeviceGroup();
+        startSearchingForSources();
+
+        // Sync the same device again
+        clearInvocations(mMethodProxy);
+        onScanResult(mSourceDevice, TEST_BROADCAST_ID);
+        verify(mMethodProxy, timeout(TIMEOUT_MS).times(1))
+                .periodicAdvertisingManagerRegisterSync(
+                        any(), any(), anyInt(), anyInt(), any(), any());
+        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+        assertThat(mBassClientService.getActiveSyncedSources().size()).isEqualTo(1);
+        assertThat(mBassClientService.getDeviceForSyncHandle(TEST_SYNC_HANDLE))
+                .isEqualTo(mSourceDevice);
+        assertThat(mBassClientService.getBroadcastIdForSyncHandle(TEST_SYNC_HANDLE))
+                .isEqualTo(TEST_BROADCAST_ID);
+    }
+
+    @Test
+    public void testStopSearchingForSources_addSourceCauseSyncEvenWithoutScanning() {
+        mSetFlagsRule.enableFlags(
+                Flags.FLAG_LEAUDIO_BROADCAST_EXTRACT_PERIODIC_SCANNER_FROM_STATE_MACHINE);
+
+        prepareConnectedDeviceGroup();
+        startSearchingForSources();
+
+        // Scan and sync 1
+        onScanResult(mSourceDevice, TEST_BROADCAST_ID);
+        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+
+        // Stop searching
+        mBassClientService.stopSearchingForSources();
+
+        // Add source to unsynced broadcast, causes synchronization first
+        BluetoothLeBroadcastMetadata meta = createBroadcastMetadata(TEST_BROADCAST_ID);
+        clearInvocations(mMethodProxy);
+        mBassClientService.addSource(mCurrentDevice, meta, true);
+        handleHandoverSupport();
+        verify(mMethodProxy, timeout(TIMEOUT_MS).times(1))
+                .periodicAdvertisingManagerRegisterSync(
+                        any(), any(), anyInt(), anyInt(), any(), any());
+
+        // Verify not getting ADD_BCAST_SOURCE message before source sync
+        assertThat(mStateMachines.size()).isEqualTo(2);
+        for (BassClientStateMachine sm : mStateMachines.values()) {
+            ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
+            verify(sm, never()).sendMessage(messageCaptor.capture());
+
+            Message msg =
+                    messageCaptor.getAllValues().stream()
+                            .filter(
+                                    m ->
+                                            (m.what == BassClientStateMachine.ADD_BCAST_SOURCE)
+                                                    && (m.obj == meta))
+                            .findFirst()
+                            .orElse(null);
+            assertThat(msg).isNull();
+
+            clearInvocations(sm);
+        }
+
+        // Source synced which cause execute pending add source
+        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+        assertThat(mBassClientService.getActiveSyncedSources().size()).isEqualTo(1);
+        assertThat(mBassClientService.getDeviceForSyncHandle(TEST_SYNC_HANDLE))
+                .isEqualTo(mSourceDevice);
+        assertThat(mBassClientService.getBroadcastIdForSyncHandle(TEST_SYNC_HANDLE))
+                .isEqualTo(TEST_BROADCAST_ID);
+
+        // Verify all group members getting ADD_BCAST_SOURCE message
+        assertThat(mStateMachines.size()).isEqualTo(2);
+        for (BassClientStateMachine sm : mStateMachines.values()) {
+            ArgumentCaptor<Message> messageCaptor = ArgumentCaptor.forClass(Message.class);
+            verify(sm, atLeast(1)).sendMessage(messageCaptor.capture());
+
+            Message msg =
+                    messageCaptor.getAllValues().stream()
+                            .filter(
+                                    m ->
+                                            (m.what == BassClientStateMachine.ADD_BCAST_SOURCE)
+                                                    && (m.obj == meta))
+                            .findFirst()
+                            .orElse(null);
+            assertThat(msg).isNotNull();
+        }
+    }
+
+    @Test
+    public void testStopSearchingForSources_timeoutForActiveSync() {
+        mSetFlagsRule.enableFlags(
+                Flags.FLAG_LEAUDIO_BROADCAST_EXTRACT_PERIODIC_SCANNER_FROM_STATE_MACHINE);
+
+        prepareConnectedDeviceGroup();
+        startSearchingForSources();
+
+        // Scan and sync 1
+        onScanResult(mSourceDevice, TEST_BROADCAST_ID);
+        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+
+        // Stop searching
+        mBassClientService.stopSearchingForSources();
+
+        // Add source to unsynced broadcast, causes synchronization first
+        BluetoothLeBroadcastMetadata meta = createBroadcastMetadata(TEST_BROADCAST_ID);
+        mBassClientService.addSource(mCurrentDevice, meta, true);
+        handleHandoverSupport();
+
+        // Source synced which cause start timeout event
+        mBassClientService.sSyncActiveTimeout = Duration.ofSeconds(1);
+        clearInvocations(mMethodProxy);
+        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+
+        assertThat(mBassClientService.getActiveSyncedSources().size()).isEqualTo(1);
+        assertThat(mBassClientService.getDeviceForSyncHandle(TEST_SYNC_HANDLE))
+                .isEqualTo(mSourceDevice);
+        assertThat(mBassClientService.getBroadcastIdForSyncHandle(TEST_SYNC_HANDLE))
+                .isEqualTo(TEST_BROADCAST_ID);
+
+        // Check if unsyced
+        verify(mMethodProxy, timeout(2000).times(1))
+                .periodicAdvertisingManagerUnregisterSync(any(), any());
+        assertThat(mBassClientService.getActiveSyncedSources()).isEmpty();
+        assertThat(mBassClientService.getDeviceForSyncHandle(TEST_SYNC_HANDLE)).isEqualTo(null);
+        assertThat(mBassClientService.getBroadcastIdForSyncHandle(TEST_SYNC_HANDLE))
+                .isEqualTo(BassConstants.INVALID_BROADCAST_ID);
+    }
+
+    @Test
+    public void testStopSearchingForSources_clearTimeoutForActiveSync() {
+        mSetFlagsRule.enableFlags(
+                Flags.FLAG_LEAUDIO_BROADCAST_EXTRACT_PERIODIC_SCANNER_FROM_STATE_MACHINE);
+
+        prepareConnectedDeviceGroup();
+        startSearchingForSources();
+
+        // Scan and sync 1
+        onScanResult(mSourceDevice, TEST_BROADCAST_ID);
+        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+
+        // Stop searching
+        mBassClientService.stopSearchingForSources();
+
+        // Add source to unsynced broadcast, causes synchronization first
+        BluetoothLeBroadcastMetadata meta = createBroadcastMetadata(TEST_BROADCAST_ID);
+        mBassClientService.addSource(mCurrentDevice, meta, true);
+        handleHandoverSupport();
+
+        // Source synced which cause start timeout event
+        mBassClientService.sSyncActiveTimeout = Duration.ofSeconds(1);
+        clearInvocations(mMethodProxy);
+        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
+
+        assertThat(mBassClientService.getActiveSyncedSources().size()).isEqualTo(1);
+        assertThat(mBassClientService.getDeviceForSyncHandle(TEST_SYNC_HANDLE))
+                .isEqualTo(mSourceDevice);
+        assertThat(mBassClientService.getBroadcastIdForSyncHandle(TEST_SYNC_HANDLE))
+                .isEqualTo(TEST_BROADCAST_ID);
+
+        // Start searching again should clear timeout
+        clearInvocations(mBluetoothLeScannerWrapper);
+        clearInvocations(mMethodProxy);
+        startSearchingForSources();
+
+        verify(mMethodProxy, timeout(2000).times(0))
+                .periodicAdvertisingManagerUnregisterSync(any(), any());
+        assertThat(mBassClientService.getActiveSyncedSources().size()).isEqualTo(1);
+        assertThat(mBassClientService.getDeviceForSyncHandle(TEST_SYNC_HANDLE))
+                .isEqualTo(mSourceDevice);
+        assertThat(mBassClientService.getBroadcastIdForSyncHandle(TEST_SYNC_HANDLE))
+                .isEqualTo(TEST_BROADCAST_ID);
     }
 
     private byte[] getScanRecord(int broadcastId) {
