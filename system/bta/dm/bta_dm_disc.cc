@@ -57,6 +57,8 @@
 
 #ifdef TARGET_FLOSS
 #include "stack/include/srvc_api.h"
+void bta_dm_sdp_received_di(const RawAddress& bd_addr,
+                            tSDP_DI_GET_RECORD& di_record);
 #endif
 
 using bluetooth::Uuid;
@@ -81,8 +83,7 @@ static void post_disc_evt(tBTA_DM_DISC_EVT event,
 }
 
 static void bta_dm_gatt_disc_complete(uint16_t conn_id, tGATT_STATUS status);
-static void bta_dm_find_services(const RawAddress& bd_addr,
-                                 tBTA_DM_SDP_STATE* sdp_state);
+static void bta_dm_find_services(tBTA_DM_SDP_STATE* sdp_state);
 static void bta_dm_sdp_callback(const RawAddress& bd_addr,
                                 tSDP_STATUS sdp_status);
 static void bta_dm_disable_disc(void);
@@ -498,26 +499,23 @@ static void bta_dm_sdp_result(tSDP_STATUS sdp_result,
     tSDP_DI_GET_RECORD di_record;
     if (get_legacy_stack_sdp_api()->device_id.SDP_GetDiRecord(
             1, &di_record, p_sdp_db) == SDP_SUCCESS) {
-      bta_dm_discovery_cb.service_search_cbacks.on_did_received(
-          bta_dm_discovery_cb.peer_bdaddr, di_record.rec.vendor_id_source,
-          di_record.rec.vendor, di_record.rec.product, di_record.rec.version);
+      bta_dm_sdp_received_di(sdp_state->bd_addr, di_record);
     }
 #endif
 
     /* if there are more services to search for */
     if (sdp_state->services_to_search) {
-      bta_dm_find_services(bta_dm_discovery_cb.peer_bdaddr, sdp_state);
+      bta_dm_find_services(sdp_state);
       return;
     }
 
     /* callbacks */
     /* start next bd_addr if necessary */
-    BTM_LogHistory(
-        kBtmLogTag, bta_dm_discovery_cb.peer_bdaddr, "Discovery completed",
-        base::StringPrintf("Result:%s services_found:0x%x service_index:0x%d",
-                           sdp_result_text(sdp_result).c_str(),
-                           sdp_state->services_found,
-                           sdp_state->service_index));
+    BTM_LogHistory(kBtmLogTag, sdp_state->bd_addr, "Discovery completed",
+                   base::StringPrintf(
+                       "Result:%s services_found:0x%x service_index:0x%d",
+                       sdp_result_text(sdp_result).c_str(),
+                       sdp_state->services_found, sdp_state->service_index));
 
     // Copy the raw_data to the discovery result structure
     if (p_sdp_db != NULL && p_sdp_db->raw_used != 0 &&
@@ -544,22 +542,27 @@ static void bta_dm_sdp_result(tSDP_STATUS sdp_result,
                    sdp_state->peer_scn);
     }
 
-    sdp_finished(bta_dm_discovery_cb.peer_bdaddr, result, services, uuid_list,
-                 gatt_uuids);
+    sdp_finished(sdp_state->bd_addr, result, services, uuid_list, gatt_uuids);
   } else {
     BTM_LogHistory(
-        kBtmLogTag, bta_dm_discovery_cb.peer_bdaddr, "Discovery failed",
+        kBtmLogTag, sdp_state->bd_addr, "Discovery failed",
         base::StringPrintf("Result:%s", sdp_result_text(sdp_result).c_str()));
     log::error("SDP connection failed {}", sdp_status_text(sdp_result));
 
     /* not able to connect go to next device */
-    sdp_finished(bta_dm_discovery_cb.peer_bdaddr, BTA_FAILURE,
-                 sdp_state->services_found);
+    sdp_finished(sdp_state->bd_addr, BTA_FAILURE, sdp_state->services_found);
   }
 }
 
 /** Callback of peer's DIS reply. This is only called for floss */
 #if TARGET_FLOSS
+void bta_dm_sdp_received_di(const RawAddress& bd_addr,
+                            tSDP_DI_GET_RECORD& di_record) {
+  bta_dm_discovery_cb.service_search_cbacks.on_did_received(
+      bd_addr, di_record.rec.vendor_id_source, di_record.rec.vendor,
+      di_record.rec.product, di_record.rec.version);
+}
+
 static void bta_dm_read_dis_cmpl(const RawAddress& addr,
                                  tDIS_VALUE* p_dis_value) {
   if (!p_dis_value) {
@@ -659,8 +662,7 @@ static void bta_dm_execute_queued_discovery_request() {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_dm_find_services(const RawAddress& bd_addr,
-                                 tBTA_DM_SDP_STATE* sdp_state) {
+static void bta_dm_find_services(tBTA_DM_SDP_STATE* sdp_state) {
   while (sdp_state->service_index < BTA_MAX_SERVICE_ID) {
     if (sdp_state->services_to_search &
         (tBTA_SERVICE_MASK)(BTA_SERVICE_ID_TO_SERVICE_MASK(
@@ -673,7 +675,7 @@ static void bta_dm_find_services(const RawAddress& bd_addr,
   /* no more services to be discovered */
   if (sdp_state->service_index >= BTA_MAX_SERVICE_ID) {
     log::info("SDP - no more services to discover");
-    sdp_finished(bd_addr, BTA_SUCCESS, sdp_state->services_found);
+    sdp_finished(sdp_state->bd_addr, BTA_SUCCESS, sdp_state->services_found);
     return;
   }
 
@@ -693,7 +695,8 @@ static void bta_dm_find_services(const RawAddress& bd_addr,
   log::info("search UUID = {}", uuid.ToString());
   if (!get_legacy_stack_sdp_api()->service.SDP_InitDiscoveryDb(
           p_sdp_db, BTA_DM_SDP_DB_SIZE, 1, &uuid, 0, NULL)) {
-    log::warn("Unable to initialize SDP service discovery db peer:{}", bd_addr);
+    log::warn("Unable to initialize SDP service discovery db peer:{}",
+              sdp_state->bd_addr);
   }
 
   sdp_state->g_disc_raw_data_buf = {};
@@ -702,26 +705,26 @@ static void bta_dm_find_services(const RawAddress& bd_addr,
   p_sdp_db->raw_size = MAX_DISC_RAW_DATA_BUF;
 
   if (!get_legacy_stack_sdp_api()->service.SDP_ServiceSearchAttributeRequest(
-          bd_addr, p_sdp_db, &bta_dm_sdp_callback)) {
+          sdp_state->bd_addr, p_sdp_db, &bta_dm_sdp_callback)) {
     /*
      * If discovery is not successful with this device, then
      * proceed with the next one.
      */
     log::warn("Unable to start SDP service search attribute request peer:{}",
-              bd_addr);
+              sdp_state->bd_addr);
 
     sdp_state->service_index = BTA_MAX_SERVICE_ID;
-    sdp_finished(bd_addr, BTA_SUCCESS, sdp_state->services_found);
+    sdp_finished(sdp_state->bd_addr, BTA_SUCCESS, sdp_state->services_found);
     return;
   }
 
   if (uuid == Uuid::From16Bit(UUID_PROTOCOL_L2CAP)) {
-    if (!is_sdp_pbap_pce_disabled(bd_addr)) {
+    if (!is_sdp_pbap_pce_disabled(sdp_state->bd_addr)) {
       log::debug("SDP search for PBAP Client");
-      BTA_SdpSearch(bd_addr, Uuid::From16Bit(UUID_SERVCLASS_PBAP_PCE));
+      BTA_SdpSearch(sdp_state->bd_addr,
+                    Uuid::From16Bit(UUID_SERVCLASS_PBAP_PCE));
     }
   }
-  // TODO: this change must happen on same sdp_state that's Bound
   sdp_state->service_index++;
 }
 
@@ -800,11 +803,12 @@ static void bta_dm_discover_services(tBTA_DM_API_DISCOVER& discover) {
   log::info("starting SDP discovery on {}", bd_addr);
   bta_dm_discovery_cb.sdp_state =
       std::make_unique<tBTA_DM_SDP_STATE>(tBTA_DM_SDP_STATE{
+          .bd_addr = bd_addr,
           .services_to_search = BTA_ALL_SERVICE_MASK,
           .services_found = 0,
           .service_index = 0,
       });
-  bta_dm_find_services(bd_addr, bta_dm_discovery_cb.sdp_state.get());
+  bta_dm_find_services(bta_dm_discovery_cb.sdp_state.get());
 }
 
 #ifndef BTA_DM_GATT_CLOSE_DELAY_TOUT
@@ -1259,9 +1263,8 @@ tBTA_DM_SERVICE_DISCOVERY_CB& bta_dm_discovery_cb() {
   return ::bta_dm_discovery_cb;
 }
 
-void bta_dm_find_services(const RawAddress& bd_addr,
-                          tBTA_DM_SDP_STATE* sdp_state) {
-  ::bta_dm_find_services(bd_addr, sdp_state);
+void bta_dm_find_services(tBTA_DM_SDP_STATE* sdp_state) {
+  ::bta_dm_find_services(sdp_state);
 }
 
 void store_avrcp_profile_feature(tSDP_DISC_REC* sdp_rec) {
