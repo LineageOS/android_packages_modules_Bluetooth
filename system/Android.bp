@@ -31,6 +31,13 @@ filegroup {
     ],
 }
 
+filegroup {
+    name: "TestMockCodecManager",
+    srcs: [
+        "bta/le_audio/mock_codec_manager.cc",
+    ],
+}
+
 genrule {
     name: "BlueberryFacadeGeneratedStub_h",
     tools: [

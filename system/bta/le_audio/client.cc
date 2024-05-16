@@ -1222,16 +1222,16 @@ class LeAudioClientImpl : public LeAudioClient {
     if (active_group_id_ == bluetooth::groups::kGroupUnknown) {
       return;
     }
-    auto group_id_to_close = active_group_id_;
-    active_group_id_ = bluetooth::groups::kGroupUnknown;
     sink_monitor_notified_status_ = std::nullopt;
+    log::info("Group id: {}", active_group_id_);
 
-    log::info("Group id: {}", group_id_to_close);
     if (alarm_is_scheduled(suspend_timeout_)) alarm_cancel(suspend_timeout_);
 
     StopAudio();
     ClientAudioInterfaceRelease();
-    callbacks_->OnGroupStatus(group_id_to_close, GroupStatus::INACTIVE);
+
+    callbacks_->OnGroupStatus(active_group_id_, GroupStatus::INACTIVE);
+    active_group_id_ = bluetooth::groups::kGroupUnknown;
   }
 
   void GroupSetActive(const int group_id) override {

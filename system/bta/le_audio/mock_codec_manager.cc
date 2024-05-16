@@ -16,7 +16,6 @@
 
 #include "mock_codec_manager.h"
 
-#include "broadcaster/broadcast_configuration_provider.h"
 #include "le_audio/codec_manager.h"
 
 MockCodecManager* mock_codec_manager_pimpl_;
@@ -72,10 +71,8 @@ CodecManager::GetBroadcastConfig(
     const bluetooth::le_audio::CodecManager::BroadcastConfigurationRequirements&
         requirements) const {
   if (!pimpl_)
-    return std::make_unique<
-        bluetooth::le_audio::broadcaster::BroadcastConfiguration>(
-        bluetooth::le_audio::broadcaster::GetBroadcastConfig(
-            requirements.subgroup_quality));
+    return std::unique_ptr<
+        bluetooth::le_audio::broadcaster::BroadcastConfiguration>(nullptr);
   return pimpl_->GetBroadcastConfig(requirements);
 }
 
@@ -118,7 +115,7 @@ void CodecManager::UpdateBroadcastConnHandle(
 
 void CodecManager::Start(
     const std::vector<bluetooth::le_audio::btle_audio_codec_config_t>&
-        offloading_preference) {
+    /*offloading_preference*/) {
   // It is needed here as CodecManager which is a singleton creates it, but in
   // this mock we want to destroy and recreate the mock on each test case.
   if (!pimpl_) {
@@ -152,9 +149,7 @@ void CodecManager::ClearCisConfiguration(uint8_t direction) {
 }
 
 std::ostream& operator<<(
-    std::ostream& os,
-    const CodecManager::UnicastConfigurationRequirements& req) {
-  os << "{audio context type: " << req.audio_context_type << "}";
+    std::ostream& os, const CodecManager::UnicastConfigurationRequirements&) {
   return os;
 }
 

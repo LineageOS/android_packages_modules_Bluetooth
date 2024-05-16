@@ -213,8 +213,6 @@ struct btm_client_interface_t default_btm_client_interface = {
 
         .BTM_BleReadControllerFeatures =
             [](tBTM_BLE_CTRL_FEATURES_CBACK* /* p_vsc_cback */) {},
-        .BTM_BleSetConnScanParams = [](uint32_t /* scan_interval */,
-                                       uint32_t /* scan_window */) {},
         .BTM_BleSetPhy = [](const RawAddress& /* bd_addr */,
                             uint8_t /* tx_phys */, uint8_t /* rx_phys */,
                             uint16_t /* phy_options */) {},

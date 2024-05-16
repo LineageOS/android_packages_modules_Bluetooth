@@ -62,6 +62,10 @@ BluetoothAudioClientInterface::BluetoothAudioClientInterface(
       AIBinder_DeathRecipient_new(binderDiedCallbackAidl));
 }
 
+bool BluetoothAudioClientInterface::IsValid() const {
+  return provider_ != nullptr;
+}
+
 bool BluetoothAudioClientInterface::is_aidl_available() {
   return AServiceManager_isDeclared(
       kDefaultAudioProviderFactoryInterface.c_str());

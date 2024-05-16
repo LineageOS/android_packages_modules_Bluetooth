@@ -5139,12 +5139,16 @@ TEST_F(UnicastTest, InactiveDeviceOnInternalStateMachineError) {
 
   SyncOnMainLoop();
   Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
-  Mock::VerifyAndClearExpectations(&mock_le_audio_source_hal_client_);
+  Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
+  Mock::VerifyAndClearExpectations(mock_le_audio_sink_hal_client_);
   Mock::VerifyAndClearExpectations(&mock_state_machine_);
   SyncOnMainLoop();
 
   // Verify Data transfer on one audio source cis
   TestAudioDataTransfer(group_id, cis_count_out, cis_count_in, 1920);
+
+  EXPECT_CALL(*mock_le_audio_source_hal_client_, Stop()).Times(1);
+  EXPECT_CALL(*mock_le_audio_sink_hal_client_, Stop()).Times(1);
 
   EXPECT_CALL(mock_audio_hal_client_callbacks_,
               OnGroupStatus(group_id, GroupStatus::INACTIVE))
@@ -5156,6 +5160,8 @@ TEST_F(UnicastTest, InactiveDeviceOnInternalStateMachineError) {
 
   SyncOnMainLoop();
   Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
+  Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
+  Mock::VerifyAndClearExpectations(mock_le_audio_sink_hal_client_);
 }
 
 TEST_F(UnicastTest, GroupingAddTwiceNoRemove) {
