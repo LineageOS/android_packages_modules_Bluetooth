@@ -17,13 +17,13 @@ package android.bluetooth.test_utils
 
 import android.Manifest.permission.BLUETOOTH_CONNECT
 import android.Manifest.permission.BLUETOOTH_PRIVILEGED
-import android.app.UiAutomation
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothAdapter.ACTION_BLE_STATE_CHANGED
 import android.bluetooth.BluetoothAdapter.STATE_BLE_ON
 import android.bluetooth.BluetoothAdapter.STATE_OFF
 import android.bluetooth.BluetoothAdapter.STATE_ON
 import android.bluetooth.BluetoothManager
+import android.bluetooth.test_utils.Permissions.withPermissions
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -53,7 +53,6 @@ object BlockingBluetoothAdapter {
     @JvmStatic val adapter = context.getSystemService(BluetoothManager::class.java).getAdapter()
 
     private val state = AdapterStateListener(context, adapter)
-    private val uiAutomation = InstrumentationRegistry.getInstrumentation().getUiAutomation()
 
     // BLE_START_TIMEOUT_DELAY + BREDR_START_TIMEOUT_DELAY + (10 seconds of additional delay)
     private val stateChangeTimeout = 18.seconds
@@ -69,7 +68,7 @@ object BlockingBluetoothAdapter {
             throw IllegalStateException("Invalid call to enableBLE while current state is: $state")
         }
         Log.d(TAG, "Call to enableBLE")
-        if (!withPermission(BLUETOOTH_CONNECT).use { adapter.enableBLE() }) {
+        if (!withPermissions(BLUETOOTH_CONNECT).use { adapter.enableBLE() }) {
             Log.e(TAG, "enableBLE: Failed")
             return false
         }
@@ -83,7 +82,7 @@ object BlockingBluetoothAdapter {
             throw IllegalStateException("Invalid call to disableBLE while current state is: $state")
         }
         Log.d(TAG, "Call to disableBLE")
-        if (!withPermission(BLUETOOTH_CONNECT).use { adapter.disableBLE() }) {
+        if (!withPermissions(BLUETOOTH_CONNECT).use { adapter.disableBLE() }) {
             Log.e(TAG, "disableBLE: Failed")
             return false
         }
@@ -99,7 +98,7 @@ object BlockingBluetoothAdapter {
         }
         Log.d(TAG, "Call to enable")
         if (
-            !withPermission(BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED).use {
+            !withPermissions(BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED).use {
                 @Suppress("DEPRECATION") adapter.enable()
             }
         ) {
@@ -118,7 +117,7 @@ object BlockingBluetoothAdapter {
         }
         Log.d(TAG, "Call to disable($persist)")
         if (
-            !withPermission(BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED).use {
+            !withPermissions(BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED).use {
                 adapter.disable(persist)
             }
         ) {
@@ -128,33 +127,6 @@ object BlockingBluetoothAdapter {
         // Notify that disable was call.
         state.wasDisabled = true
         return state.waitForStateWithTimeout(stateChangeTimeout, STATE_OFF)
-    }
-
-    private fun restorePermissions(permissions: Set<String>) {
-        if (UiAutomation.ALL_PERMISSIONS.equals(permissions)) {
-            uiAutomation.adoptShellPermissionIdentity()
-        } else {
-            uiAutomation.adoptShellPermissionIdentity(*permissions.map { it }.toTypedArray())
-        }
-    }
-
-    private fun replacePermissionsWith(vararg newPermissions: String): Set<String> {
-        val currentPermissions = uiAutomation.getAdoptedShellPermissions()
-        if (newPermissions.size == 0) {
-            // Throw even if the code support it as we are not expecting this by design
-            throw IllegalArgumentException("Invalid permissions replacement with no permissions.")
-        }
-        uiAutomation.adoptShellPermissionIdentity(*newPermissions)
-        return currentPermissions
-    }
-
-    // Set permissions to be used as long as the resource is open.
-    // Restore initial permissions after closing resource.
-    private fun withPermission(
-        vararg newPermissions: String,
-    ): AutoCloseable {
-        val savedPermissions = replacePermissionsWith(*newPermissions)
-        return AutoCloseable { restorePermissions(savedPermissions) }
     }
 }
 
