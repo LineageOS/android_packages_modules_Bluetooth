@@ -952,7 +952,7 @@ void btsock_rfc_signaled(int /* fd */, int flags, uint32_t id) {
   std::unique_lock<std::recursive_mutex> lock(slot_lock);
   rfc_slot_t* slot = find_rfc_slot_by_id(id);
   if (!slot) {
-    log::error("RFCOMM slot with id {} not found.", id);
+    log::warn("RFCOMM slot with id {} not found.", id);
     return;
   }
 
