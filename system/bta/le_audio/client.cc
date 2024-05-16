@@ -547,11 +547,12 @@ class LeAudioClientImpl : public LeAudioClient {
     DisconnectDevice(leAudioDevice, true);
   }
 
-  void UpdateLocationsAndContextsAvailability(LeAudioDeviceGroup* group) {
+  void UpdateLocationsAndContextsAvailability(LeAudioDeviceGroup* group,
+                                              bool force = false) {
     bool group_conf_changed = group->ReloadAudioLocations();
     group_conf_changed |= group->ReloadAudioDirections();
     group_conf_changed |= group->UpdateAudioContextAvailability();
-    if (group_conf_changed) {
+    if (group_conf_changed || force) {
       /* All the configurations should be recalculated for the new conditions */
       group->InvalidateCachedConfigurations();
       group->InvalidateGroupStrategy();
@@ -3307,7 +3308,7 @@ class LeAudioClientImpl : public LeAudioClient {
 
     LeAudioDeviceGroup* group = aseGroups_.FindById(leAudioDevice->group_id_);
     if (group) {
-      UpdateLocationsAndContextsAvailability(group);
+      UpdateLocationsAndContextsAvailability(group, true);
     }
 
     /* Notify connected after contexts are notified */

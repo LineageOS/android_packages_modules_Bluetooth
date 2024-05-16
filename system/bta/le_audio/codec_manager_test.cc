@@ -107,6 +107,14 @@ const stack_config_t* stack_config_get_interface(void) {
   return &mock_stack_config;
 }
 
+namespace server_configurable_flags {
+std::string GetServerConfigurableFlag(
+    const std::string& experiment_category_name,
+    const std::string& experiment_flag_name, const std::string& default_value) {
+  return "";
+}
+}  // namespace server_configurable_flags
+
 namespace bluetooth {
 namespace audio {
 namespace le_audio {
@@ -176,6 +184,24 @@ class MockLeAudioSinkHalClient : public LeAudioSinkAudioHalClient {
   MOCK_METHOD((void), SuspendedForReconfiguration, (), (override));
   MOCK_METHOD((void), ReconfigurationComplete, (), (override));
 
+  MOCK_METHOD(
+      (std::optional<broadcaster::BroadcastConfiguration>), GetBroadcastConfig,
+      ((const std::vector<std::pair<types::LeAudioContextType, uint8_t>>&),
+       (const std::optional<
+           std::vector<::bluetooth::le_audio::types::acs_ac_record>>&)),
+      (const override));
+
+  MOCK_METHOD(
+      (std::optional<
+          ::bluetooth::le_audio::set_configurations::AudioSetConfiguration>),
+      GetUnicastConfig,
+      (types::LeAudioContextType,
+       std::optional<
+           const ::bluetooth::le_audio::types::PublishedAudioCapabilities*>,
+       std::optional<
+           const ::bluetooth::le_audio::types::PublishedAudioCapabilities*>),
+      (const override));
+
   MOCK_METHOD((void), OnDestroyed, ());
   virtual ~MockLeAudioSinkHalClient() override { OnDestroyed(); }
 };
@@ -199,6 +225,19 @@ class MockLeAudioSourceHalClient : public LeAudioSourceAudioHalClient {
               (override));
   MOCK_METHOD((void), SuspendedForReconfiguration, (), (override));
   MOCK_METHOD((void), ReconfigurationComplete, (), (override));
+
+  MOCK_METHOD(
+      (std::optional<broadcaster::BroadcastConfiguration>), GetBroadcastConfig,
+      ((const std::vector<std::pair<types::LeAudioContextType, uint8_t>>&),
+       (const std::optional<
+           std::vector<::bluetooth::le_audio::types::acs_ac_record>>&)),
+      (const override));
+
+  MOCK_METHOD(
+      (std::optional<
+          ::bluetooth::le_audio::set_configurations::AudioSetConfiguration>),
+      GetUnicastConfig, (const CodecManager::UnicastConfigurationRequirements&),
+      (const override));
 
   MOCK_METHOD((void), OnDestroyed, ());
   virtual ~MockLeAudioSourceHalClient() override { OnDestroyed(); }

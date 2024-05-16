@@ -93,6 +93,7 @@ class CodecManager {
     std::vector<
         std::pair<bluetooth::le_audio::types::LeAudioContextType, uint8_t>>
         subgroup_quality;
+    std::optional<std::vector<types::acs_ac_record>> sink_pacs;
   };
 
   virtual ~CodecManager() = default;

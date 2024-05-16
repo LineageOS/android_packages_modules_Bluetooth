@@ -100,6 +100,19 @@ class MockLeAudioClientInterfaceSink : public LeAudioClientInterface::Sink {
   MOCK_METHOD((void), CancelStreamingRequest, (), (override));
   MOCK_METHOD((void), UpdateAudioConfigToHal,
               (const ::bluetooth::le_audio::offload_config&));
+  MOCK_METHOD((std::optional<::le_audio::broadcaster::BroadcastConfiguration>),
+              GetBroadcastConfig,
+              ((const std::vector<
+                   std::pair<::le_audio::types::LeAudioContextType, uint8_t>>&),
+               (const std::optional<
+                   std::vector<::bluetooth::le_audio::types::acs_ac_record>>&)),
+              (const));
+  MOCK_METHOD(
+      (std::optional<::le_audio::set_configurations::AudioSetConfiguration>),
+      GetUnicastConfig,
+      (const ::bluetooth::le_audio::CodecManager::
+           UnicastConfigurationRequirements&),
+      (const));
   MOCK_METHOD((void), UpdateBroadcastAudioConfigToHal,
               (const ::bluetooth::le_audio::broadcast_offload_config&));
   MOCK_METHOD((size_t), Read, (uint8_t * p_buf, uint32_t len));
@@ -186,6 +199,20 @@ void LeAudioClientInterface::Sink::UpdateAudioConfigToHal(
     const ::bluetooth::le_audio::offload_config& config){};
 void LeAudioClientInterface::Sink::UpdateBroadcastAudioConfigToHal(
     const ::bluetooth::le_audio::broadcast_offload_config& config){};
+std::optional<::le_audio::broadcaster::BroadcastConfiguration>
+LeAudioClientInterface::Sink::GetBroadcastConfig(
+    const std::vector<
+        std::pair<::le_audio::types::LeAudioContextType, uint8_t>>& quality,
+    const std::optional<
+        std::vector<::bluetooth::le_audio::types::acs_ac_record>>& pacs) const {
+  return sink_mock->GetBroadcastConfig(quality, pacs);
+};
+std::optional<::le_audio::set_configurations::AudioSetConfiguration>
+LeAudioClientInterface::Sink::GetUnicastConfig(
+    const ::bluetooth::le_audio::CodecManager::UnicastConfigurationRequirements&
+        requirements) const {
+  return sink_mock->GetUnicastConfig(requirements);
+};
 void LeAudioClientInterface::Sink::SuspendedForReconfiguration() {}
 void LeAudioClientInterface::Sink::ReconfigurationComplete() {}
 
