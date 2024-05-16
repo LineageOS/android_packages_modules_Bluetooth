@@ -84,6 +84,7 @@ inline std::string bta_dm_state_text(
 #define MAX_DISC_RAW_DATA_BUF (4096)
 
 typedef struct {
+  RawAddress bd_addr;
   tBTA_SERVICE_MASK services_to_search;
   tBTA_SERVICE_MASK services_found;
 
