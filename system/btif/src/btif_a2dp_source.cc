@@ -17,7 +17,7 @@
  *
  ******************************************************************************/
 
-#define LOG_TAG "bt_btif_a2dp_source"
+#define LOG_TAG "bluetooth-a2dp"
 #define ATRACE_TAG ATRACE_TAG_AUDIO
 
 #include <base/run_loop.h>

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "a2dp_aac_encoder"
+#define LOG_TAG "bluetooth-a2dp"
 
 #include <bluetooth/log.h>
 #include <inttypes.h>

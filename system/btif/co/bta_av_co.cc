@@ -23,6 +23,8 @@
  *
  ******************************************************************************/
 
+#define LOG_TAG "bluetooth-a2dp"
+
 #include "btif/include/bta_av_co.h"
 
 #include <bluetooth/log.h>
