@@ -42,6 +42,7 @@ filegroup {
         "dm/bta_dm_device_search.cc",
         "dm/bta_dm_disc.cc",
         "dm/bta_dm_disc_legacy.cc",
+        "dm/bta_dm_disc_sdp.cc",
         "dm/bta_dm_gatt_client.cc",
         "dm/bta_dm_main.cc",
         "dm/bta_dm_pm.cc",

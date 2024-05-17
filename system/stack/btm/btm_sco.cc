@@ -54,6 +54,7 @@
 #include "stack/include/bt_dev_class.h"
 #include "stack/include/btm_api.h"
 #include "stack/include/btm_api_types.h"
+#include "stack/include/btm_client_interface.h"
 #include "stack/include/btm_log_history.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/include/hcimsgs.h"
@@ -960,7 +961,9 @@ void btm_sco_disc_chk_pend_for_modechange(uint16_t hci_handle) {
 
     {
       log::debug("Removing SCO Link handle 0x{:04x}", p->hci_handle);
-      BTM_RemoveSco(xx);
+      if (get_btm_client_interface().sco.BTM_RemoveSco(xx) != BTM_SUCCESS) {
+        log::warn("Unable to remove SCO link:{}", xx);
+      }
     }
   }
 }
@@ -1247,7 +1250,9 @@ void BTM_RemoveSco(const RawAddress& bda) {
 
   for (xx = 0; xx < BTM_MAX_SCO_LINKS; xx++, p++) {
     if (p->rem_bd_known && p->esco.data.bd_addr == bda) {
-      BTM_RemoveSco(xx);
+      if (get_btm_client_interface().sco.BTM_RemoveSco(xx) != BTM_SUCCESS) {
+        log::warn("Unable to remove SCO link:{}", xx);
+      }
     }
   }
 }

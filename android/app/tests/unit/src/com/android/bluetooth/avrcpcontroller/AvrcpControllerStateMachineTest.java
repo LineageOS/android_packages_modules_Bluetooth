@@ -474,6 +474,8 @@ public class AvrcpControllerStateMachineTest {
     @Test
     public void testGetDeviceRootNode_flagRandomDeviceIdDisabled_rootNodeMatchesUuidFormat() {
         mSetFlagsRule.disableFlags(Flags.FLAG_RANDOMIZE_DEVICE_LEVEL_MEDIA_IDS);
+        // create new state machine to follow current flags rule
+        mAvrcpStateMachine = makeStateMachine(mTestDevice);
         setUpConnectedState(true, true);
         final String rootName = "__ROOT__" + mTestDevice.getAddress().toString();
         // Get the root of the device
@@ -485,6 +487,8 @@ public class AvrcpControllerStateMachineTest {
     @Test
     public void testGetDeviceRootNode_flagRandomDeviceIdEnabled_rootNodeMatchesUuidFormat() {
         mSetFlagsRule.enableFlags(Flags.FLAG_RANDOMIZE_DEVICE_LEVEL_MEDIA_IDS);
+        // create new state machine to follow current flags rule
+        mAvrcpStateMachine = makeStateMachine(mTestDevice);
         setUpConnectedState(true, true);
         final String rootName = "__ROOT__" + mTestDevice.getAddress().toString();
         // Get the root of the device

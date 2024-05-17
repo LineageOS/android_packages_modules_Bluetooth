@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/nav_graph"
+    app:startDestination="@id/RoleSelectionFragment">
+
+  <fragment
+      android:id="@+id/RoleSelectionFragment"
+      android:name="com.android.bluetooth.channelsoundingtestapp.RoleSelectionFragment"
+      android:label="Role Selection"
+      tools:layout="@layout/fragment_role_selection">
+
+    <action
+        android:id="@+id/action_RoleSelectionFragment_to_InitiatorFragment"
+        app:destination="@id/InitiatorFragment" />
+      <action
+          android:id="@+id/action_RoleSelectionFragment_to_ReflectorFragment"
+          app:destination="@id/ReflectorFragment" />
+  </fragment>
+  <fragment
+      android:id="@+id/InitiatorFragment"
+      android:name="com.android.bluetooth.channelsoundingtestapp.InitiatorFragment"
+      android:label="Initiator"
+      tools:layout="@layout/fragment_initiator">
+
+    <action
+        android:id="@+id/action_InitiatorFragment_to_RoleSelectionFragment"
+        app:destination="@id/RoleSelectionFragment" />
+  </fragment>
+    <fragment
+        android:id="@+id/ReflectorFragment"
+        android:name="com.android.bluetooth.channelsoundingtestapp.ReflectorFragment"
+        android:label="Reflector"
+        tools:layout="@layout/fragment_reflector">
+
+        <action
+            android:id="@+id/action_ReflectorFragment_to_RoleSelectionFragment"
+            app:destination="@id/RoleSelectionFragment" />
+    </fragment>
+
+</navigation>
