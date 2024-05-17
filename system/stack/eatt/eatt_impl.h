@@ -875,7 +875,11 @@ struct eatt_impl {
     connect_eatt_wrap(eatt_dev);
   }
 
-  void disconnect_channel(uint16_t cid) { L2CA_DisconnectReq(cid); }
+  void disconnect_channel(uint16_t cid) {
+    if (!L2CA_DisconnectReq(cid)) {
+      log::warn("Unable to request L2CAP disconnect cid:{}", cid);
+    }
+  }
 
   void disconnect(const RawAddress& bd_addr, uint16_t cid) {
     log::info("Device: {}, cid: 0x{:04x}", bd_addr, cid);

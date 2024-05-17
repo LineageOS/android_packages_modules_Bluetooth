@@ -789,7 +789,9 @@ static void gatt_l2cif_connect_ind_cback(const RawAddress& bd_addr,
 
   /* If we reject the connection, send DisconnectReq */
   if (result != L2CAP_CONN_OK) {
-    L2CA_DisconnectReq(lcid);
+    if (!L2CA_DisconnectReq(lcid)) {
+      log::warn("Unable to disconnect L2CAP peer:{} cid:{}", bd_addr, lcid);
+    }
     return;
   }
 
@@ -883,7 +885,9 @@ void gatt_l2cif_disconnect_ind_cback(uint16_t lcid, bool ack_needed) {
 }
 
 static void gatt_l2cif_disconnect(uint16_t lcid) {
-  L2CA_DisconnectReq(lcid);
+  if (!L2CA_DisconnectReq(lcid)) {
+    log::warn("Unable to disconnect L2CAP cid:{}", lcid);
+  }
 
   /* look up clcb for this channel */
   tGATT_TCB* p_tcb = gatt_find_tcb_by_cid(lcid);

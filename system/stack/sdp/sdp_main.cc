@@ -323,7 +323,10 @@ void sdp_disconnect(tCONN_CB* p_ccb, tSDP_REASON reason) {
       sdpu_release_ccb(ccb);
       return;
     } else {
-      L2CA_DisconnectReq(ccb.connection_id);
+      if (!L2CA_DisconnectReq(ccb.connection_id)) {
+        log::warn("Unable to disconnect L2CAP peer:{} cid:{}",
+                  ccb.device_address, ccb.connection_id);
+      }
     }
   }
 
@@ -379,7 +382,10 @@ void sdp_conn_timer_timeout(void* data) {
   log::verbose("SDP - CCB timeout in state: {}  CID: 0x{:x}", ccb.con_state,
                ccb.connection_id);
 
-  L2CA_DisconnectReq(ccb.connection_id);
+  if (!L2CA_DisconnectReq(ccb.connection_id)) {
+    log::warn("Unable to disconnect L2CAP peer:{} cid:{}", ccb.device_address,
+              ccb.connection_id);
+  }
 
   sdpu_callback(ccb, SDP_CONN_FAILED);
   sdpu_clear_pend_ccb(ccb);

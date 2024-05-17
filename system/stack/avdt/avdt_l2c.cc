@@ -206,7 +206,9 @@ void avdt_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
 
   /* If we reject the connection, send DisconnectReq */
   if (result != L2CAP_CONN_OK) {
-    L2CA_DisconnectReq(lcid);
+    if (!L2CA_DisconnectReq(lcid)) {
+      log::warn("Unable to disconnect L2CAP cid:{}", lcid);
+    }
     return;
   }
 
@@ -364,7 +366,10 @@ void avdt_l2c_disconnect_ind_cback(uint16_t lcid, bool ack_needed) {
 }
 
 void avdt_l2c_disconnect(uint16_t lcid) {
-  L2CA_DisconnectReq(lcid);
+  if (!L2CA_DisconnectReq(lcid)) {
+    log::warn("Unable to disconnect L2CAP cid:{}", lcid);
+  }
+
   AvdtpTransportChannel* p_tbl;
 
   log::verbose("avdt_l2c_disconnect_cfm_cback lcid: {}", lcid);

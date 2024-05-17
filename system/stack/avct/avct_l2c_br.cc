@@ -148,7 +148,9 @@ void avct_l2c_br_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
   /* If we reject the connection, send DisconnectReq */
   if (result != L2CAP_CONN_OK) {
     log::verbose("Connection rejected to lcid:0x{:x}", lcid);
-    L2CA_DisconnectReq(lcid);
+    if (!L2CA_DisconnectReq(lcid)) {
+      log::warn("Unable to send L2CAP disconnect request cid:{}", lcid);
+    }
   }
 
   /* if result ok, proceed with connection */
@@ -213,7 +215,10 @@ void avct_l2c_br_connect_cfm_cback(uint16_t lcid, uint16_t result) {
       /* just in case the peer also accepts our connection - Send L2CAP
        * disconnect req */
       log::verbose("Disconnect conflict_lcid:0x{:x}", p_bcb->conflict_lcid);
-      L2CA_DisconnectReq(lcid);
+      if (!L2CA_DisconnectReq(lcid)) {
+        log::warn("Unable to send L2CAP disconnect request peer:{} cid:{}",
+                  p_bcb->peer_addr, lcid);
+      }
     }
     p_bcb->conflict_lcid = 0;
   }
@@ -298,7 +303,9 @@ void avct_l2c_br_disconnect_ind_cback(uint16_t lcid, bool ack_needed) {
 }
 
 void avct_l2c_br_disconnect(uint16_t lcid, uint16_t result) {
-  L2CA_DisconnectReq(lcid);
+  if (!L2CA_DisconnectReq(lcid)) {
+    log::warn("Unable to send L2CAP disconnect request cid:{}", lcid);
+  }
 
   tAVCT_BCB* p_lcb;
   uint16_t res;
