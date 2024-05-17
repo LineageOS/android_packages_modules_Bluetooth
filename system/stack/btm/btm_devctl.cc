@@ -297,10 +297,15 @@ static void decode_controller_support() {
   btm_sec_dev_reset();
 
   if (bluetooth::shim::GetController()->SupportsRssiWithInquiryResults()) {
-    if (bluetooth::shim::GetController()->SupportsExtendedInquiryResponse())
-      BTM_SetInquiryMode(BTM_INQ_RESULT_EXTENDED);
-    else
-      BTM_SetInquiryMode(BTM_INQ_RESULT_WITH_RSSI);
+    if (bluetooth::shim::GetController()->SupportsExtendedInquiryResponse()) {
+      if (BTM_SetInquiryMode(BTM_INQ_RESULT_EXTENDED) != BTM_SUCCESS) {
+        log::warn("Unable to set inquiry mode BTM_INQ_RESULT_EXTENDED");
+      }
+    } else {
+      if (BTM_SetInquiryMode(BTM_INQ_RESULT_WITH_RSSI) != BTM_SUCCESS) {
+        log::warn("Unable to set inquiry mode BTM_INQ_RESULT_WITH_RSSI");
+      }
+    }
   }
 
   l2cu_set_non_flushable_pbf(
