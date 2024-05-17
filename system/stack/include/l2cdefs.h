@@ -314,15 +314,13 @@ inline std::string l2cap_cid_fixed_text(const tL2CAP_CID_FIXED& cid) {
 
 /* Define the L2CAP configuration result codes
 */
-#define L2CAP_CFG_OK 0
-#define L2CAP_CFG_UNACCEPTABLE_PARAMS 1
-#define L2CAP_CFG_FAILED_NO_REASON 2
-#define L2CAP_CFG_UNKNOWN_OPTIONS 3
-#define L2CAP_CFG_PENDING 4
-
-static_assert(L2CAP_CONN_OTHER_ERROR != L2CAP_CFG_FAILED_NO_REASON,
-              "Different error code should be provided for Connect error and "
-              "Config error");
+typedef enum : uint16_t {
+  L2CAP_CFG_OK = 0,
+  L2CAP_CFG_UNACCEPTABLE_PARAMS = 1,
+  L2CAP_CFG_FAILED_NO_REASON = 2,
+  L2CAP_CFG_UNKNOWN_OPTIONS = 3,
+  L2CAP_CFG_PENDING = 4,
+} tL2CAP_CFG_RESULT;
 
 /* Define the L2CAP configuration option types
 */
