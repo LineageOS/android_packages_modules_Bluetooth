@@ -163,7 +163,7 @@ class Host(
     }
 
     override fun factoryReset(request: Empty, responseObserver: StreamObserver<Empty>) {
-        grpcUnary<Empty>(scope, responseObserver, 30) {
+        grpcUnary<Empty>(scope, responseObserver, timeout = 30) {
             Log.i(TAG, "factoryReset")
 
             // remove bond for each device to avoid auto connection if remote resets faster
