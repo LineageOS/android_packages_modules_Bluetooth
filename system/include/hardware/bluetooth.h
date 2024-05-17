@@ -374,6 +374,8 @@ typedef enum {
    */
   BT_PROPERTY_VENDOR_PRODUCT_INFO,
 
+  BT_PROPERTY_RESERVED_0x14,
+
   /**
    * Description - ASHA capability.
    * Access mode - GET.
