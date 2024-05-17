@@ -297,7 +297,10 @@ tBNEP_RESULT BNEP_Disconnect(uint16_t handle) {
 
   log::verbose("BNEP_Disconnect()  for handle {}", handle);
 
-  L2CA_DisconnectReq(p_bcb->l2cap_cid);
+  if (!L2CA_DisconnectReq(p_bcb->l2cap_cid)) {
+    log::warn("Unable to send L2CAP disconnect request peer:{} cid:{}",
+              p_bcb->rem_bda, p_bcb->l2cap_cid);
+  }
 
   bnepu_release_bcb(p_bcb);
 
