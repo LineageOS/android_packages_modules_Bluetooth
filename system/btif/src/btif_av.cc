@@ -16,7 +16,7 @@
  *
  ******************************************************************************/
 
-#define LOG_TAG "btif_av"
+#define LOG_TAG "bluetooth-a2dp"
 
 #include "btif/include/btif_av.h"
 
