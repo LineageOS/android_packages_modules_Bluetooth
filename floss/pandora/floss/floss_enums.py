@@ -135,6 +135,7 @@ class BtStatus(enum.IntEnum):
     WAKE_LOCK_ERROR = 14
     BT_STATUS_TIMEOUT = 15
     DEVICE_NOT_FOUND = 16
+    UNEXPECTED_STATE = 17
 
 
 class SocketType(enum.IntEnum):
