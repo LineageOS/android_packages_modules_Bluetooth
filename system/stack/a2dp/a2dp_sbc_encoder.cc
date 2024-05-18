@@ -17,7 +17,7 @@
  *
  ******************************************************************************/
 
-#define LOG_TAG "a2dp_sbc_encoder"
+#define LOG_TAG "bluetooth-a2dp"
 
 #include "a2dp_sbc_encoder.h"
 
