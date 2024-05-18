@@ -409,9 +409,11 @@ public class AdapterServiceTest {
         TestUtils.syncHandler(looper, AdapterState.BLE_TURN_ON);
         verifyStateChange(callback, STATE_OFF, STATE_BLE_TURNING_ON);
 
-        TestUtils.syncHandler(looper, MESSAGE_PROFILE_SERVICE_REGISTERED);
+        if (!Flags.scanManagerRefactor()) {
+            TestUtils.syncHandler(looper, MESSAGE_PROFILE_SERVICE_REGISTERED);
 
-        TestUtils.syncHandler(looper, MESSAGE_PROFILE_SERVICE_STATE_CHANGED);
+            TestUtils.syncHandler(looper, MESSAGE_PROFILE_SERVICE_STATE_CHANGED);
+        }
 
         verify(nativeInterface).enable();
         adapter.stateChangeCallback(AbstractionLayer.BT_STATE_ON);
@@ -673,6 +675,136 @@ public class AdapterServiceTest {
         verifyStateChange(STATE_BLE_TURNING_OFF, STATE_OFF);
 
         assertThat(mAdapterService.getState()).isEqualTo(STATE_OFF);
+    }
+
+    @Test
+    public void startBleOnly_whenScanManagerRefactorFlagIsOff_onlyStartGattProfile() {
+        mSetFlagsRule.disableFlags(Flags.FLAG_SCAN_MANAGER_REFACTOR);
+
+        mAdapterService.bringUpBle();
+
+        assertThat(mAdapterService.getBluetoothGatt()).isNotNull();
+        assertThat(mAdapterService.getBluetoothScan()).isNull();
+
+        dropNextMessage(MESSAGE_PROFILE_SERVICE_REGISTERED);
+        dropNextMessage(MESSAGE_PROFILE_SERVICE_STATE_CHANGED);
+    }
+
+    @Test
+    public void startBleOnly_whenScanManagerRefactorFlagIsOn_onlyStartScanController() {
+        mSetFlagsRule.enableFlags(Flags.FLAG_SCAN_MANAGER_REFACTOR);
+
+        mAdapterService.bringUpBle();
+
+        assertThat(mAdapterService.getBluetoothGatt()).isNull();
+        assertThat(mAdapterService.getBluetoothScan()).isNotNull();
+    }
+
+    @Test
+    public void startBleOnly_whenScanManagerRefactorFlagIsOn_startAndStopScanController() {
+        mSetFlagsRule.enableFlags(Flags.FLAG_SCAN_MANAGER_REFACTOR);
+
+        assertThat(mAdapterService.getBluetoothScan()).isNull();
+        assertThat(mAdapterService.getBluetoothGatt()).isNull();
+
+        IBluetoothCallback callback = mock(IBluetoothCallback.class);
+        Binder binder = mock(Binder.class);
+        doReturn(binder).when(callback).asBinder();
+        mAdapterService.registerRemoteCallback(callback);
+
+        offToBleOn(
+                mLooper,
+                mMockGattService,
+                mAdapterService,
+                mMockContext,
+                mIBluetoothCallback,
+                mNativeInterface);
+
+        assertThat(mAdapterService.getBluetoothScan()).isNotNull();
+        assertThat(mAdapterService.getBluetoothGatt()).isNull();
+
+        mAdapterService.stopBle();
+        TestUtils.syncHandler(mLooper, AdapterState.BLE_TURN_OFF);
+        verifyStateChange(callback, STATE_BLE_ON, STATE_BLE_TURNING_OFF);
+
+        verify(mNativeInterface).disable();
+        mAdapterService.stateChangeCallback(AbstractionLayer.BT_STATE_OFF);
+        TestUtils.syncHandler(mLooper, AdapterState.BLE_STOPPED);
+        verifyStateChange(callback, STATE_BLE_TURNING_OFF, STATE_OFF);
+
+        assertThat(mAdapterService.getState()).isEqualTo(STATE_OFF);
+        mAdapterService.unregisterRemoteCallback(callback);
+
+        assertThat(mAdapterService.getBluetoothScan()).isNull();
+        assertThat(mAdapterService.getBluetoothGatt()).isNull();
+    }
+
+    @Test
+    public void startBrDr_whenScanManagerRefactorFlagIsOn_startAndStopScanController() {
+        mSetFlagsRule.enableFlags(Flags.FLAG_SCAN_MANAGER_REFACTOR);
+
+        assertThat(mAdapterService.getBluetoothScan()).isNull();
+        assertThat(mAdapterService.getBluetoothGatt()).isNull();
+
+        IBluetoothCallback callback = mock(IBluetoothCallback.class);
+        Binder binder = mock(Binder.class);
+        doReturn(binder).when(callback).asBinder();
+        mAdapterService.registerRemoteCallback(callback);
+
+        assertThat(mAdapterService.getState()).isEqualTo(STATE_OFF);
+
+        offToBleOn(
+                mLooper,
+                mMockGattService,
+                mAdapterService,
+                mMockContext,
+                mIBluetoothCallback,
+                mNativeInterface);
+
+        assertThat(mAdapterService.getBluetoothScan()).isNotNull();
+        assertThat(mAdapterService.getBluetoothGatt()).isNull();
+
+        mAdapterService.startBrEdr();
+        TestUtils.syncHandler(mLooper, AdapterState.USER_TURN_ON);
+        verifyStateChange(callback, STATE_BLE_ON, STATE_TURNING_ON);
+
+        // Start Mock PBAP, PAN, and GATT services
+        assertThat(mAdapterService.mSetProfileServiceStateCounter).isEqualTo(3);
+        List<ProfileService> services = List.of(mMockService, mMockService2, mMockGattService);
+
+        for (ProfileService service : services) {
+            mAdapterService.addProfile(service);
+            TestUtils.syncHandler(mLooper, MESSAGE_PROFILE_SERVICE_REGISTERED);
+        }
+
+        for (ProfileService service : services) {
+            mAdapterService.onProfileServiceStateChanged(service, STATE_ON);
+            TestUtils.syncHandler(mLooper, MESSAGE_PROFILE_SERVICE_STATE_CHANGED);
+        }
+
+        TestUtils.syncHandler(mLooper, AdapterState.BREDR_STARTED);
+        verifyStateChange(callback, STATE_TURNING_ON, STATE_ON);
+
+        assertThat(mAdapterService.getState()).isEqualTo(STATE_ON);
+
+        mAdapterService.disable();
+        TestUtils.syncHandler(mLooper, AdapterState.USER_TURN_OFF);
+        verifyStateChange(callback, STATE_ON, STATE_TURNING_OFF);
+
+        // Stop PBAP, PAN, and GATT services
+        assertThat(mAdapterService.mSetProfileServiceStateCounter).isEqualTo(6);
+
+        for (ProfileService service : services) {
+            mAdapterService.onProfileServiceStateChanged(service, STATE_OFF);
+            TestUtils.syncHandler(mLooper, MESSAGE_PROFILE_SERVICE_STATE_CHANGED);
+        }
+
+        TestUtils.syncHandler(mLooper, AdapterState.BREDR_STOPPED);
+        verifyStateChange(callback, STATE_TURNING_OFF, STATE_BLE_ON);
+
+        assertThat(mAdapterService.getState()).isEqualTo(STATE_BLE_ON);
+
+        mAdapterService.unregisterRemoteCallback(callback);
     }
 
     /**
