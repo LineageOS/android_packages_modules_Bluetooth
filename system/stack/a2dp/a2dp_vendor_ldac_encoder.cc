@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "a2dp_vendor_ldac_encoder"
+#define LOG_TAG "bluetooth-a2dp"
 #define ATRACE_TAG ATRACE_TAG_AUDIO
 
 #include "a2dp_vendor_ldac_encoder.h"

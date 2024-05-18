@@ -18,7 +18,7 @@
  * A2DP Codecs Configuration
  */
 
-#define LOG_TAG "a2dp_codec"
+#define LOG_TAG "bluetooth-a2dp"
 
 #include <bluetooth/log.h>
 
