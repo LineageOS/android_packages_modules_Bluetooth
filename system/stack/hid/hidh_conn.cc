@@ -189,7 +189,10 @@ static void hidh_l2cif_connect_ind(const RawAddress& bd_addr,
 
   /* always add incoming connection device into HID database by default */
   if (HID_HostAddDev(bd_addr, HID_SEC_REQUIRED, &i) != HID_SUCCESS) {
-    L2CA_DisconnectReq(l2cap_cid);
+    if (!L2CA_DisconnectReq(l2cap_cid)) {
+      log::warn("Unable to send L2CAP disconnect request peer:{} cid:{}",
+                bd_addr, l2cap_cid);
+    }
     return;
   }
 
@@ -227,7 +230,10 @@ static void hidh_l2cif_connect_ind(const RawAddress& bd_addr,
   }
 
   if (!bAccept) {
-    L2CA_DisconnectReq(l2cap_cid);
+    if (!L2CA_DisconnectReq(l2cap_cid)) {
+      log::warn("Unable to send L2CAP disconnect request peer:{} cid:{}",
+                bd_addr, l2cap_cid);
+    }
     return;
   }
 
@@ -562,7 +568,9 @@ static void hidh_l2cif_disconnect_ind(uint16_t l2cap_cid, bool ack_needed) {
 }
 
 static void hidh_l2cif_disconnect(uint16_t l2cap_cid) {
-  L2CA_DisconnectReq(l2cap_cid);
+  if (!L2CA_DisconnectReq(l2cap_cid)) {
+    log::warn("Unable to send L2CAP disconnect request cid:{}", l2cap_cid);
+  }
 
   /* Find CCB based on CID */
   const uint8_t dhandle = find_conn_by_cid(l2cap_cid);
@@ -578,7 +586,10 @@ static void hidh_l2cif_disconnect(uint16_t l2cap_cid) {
     p_hcon->intr_cid = 0;
     if (p_hcon->ctrl_cid) {
       log::verbose("HID-Host Initiating L2CAP Ctrl disconnection");
-      L2CA_DisconnectReq(p_hcon->ctrl_cid);
+      if (!L2CA_DisconnectReq(p_hcon->ctrl_cid)) {
+        log::warn("Unable to send L2CAP disconnect request cid:{}",
+                  p_hcon->ctrl_cid);
+      }
       p_hcon->ctrl_cid = 0;
     }
   }

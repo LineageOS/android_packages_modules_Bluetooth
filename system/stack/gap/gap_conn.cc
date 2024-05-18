@@ -324,7 +324,10 @@ uint16_t GAP_ConnClose(uint16_t gap_handle) {
                     p_ccb->rem_dev_address, p_ccb->connection_id);
         }
       } else {
-        L2CA_DisconnectReq(p_ccb->connection_id);
+        if (!L2CA_DisconnectReq(p_ccb->connection_id)) {
+          log::warn("Unable to request L2CAP disconnect le_coc peer:{} cid:{}",
+                    p_ccb->rem_dev_address, p_ccb->connection_id);
+        }
       }
     }
 
@@ -609,7 +612,10 @@ static void gap_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
                   bd_addr, l2cap_cid);
       }
     } else {
-      L2CA_DisconnectReq(l2cap_cid);
+      if (!L2CA_DisconnectReq(l2cap_cid)) {
+        log::warn("Unable to request L2CAP disconnect le_coc peer:{} cid:{}",
+                  bd_addr, l2cap_cid);
+      }
     }
     return;
   }

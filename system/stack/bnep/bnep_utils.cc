@@ -688,7 +688,10 @@ void bnep_process_setup_conn_responce(tBNEP_CONN* p_bcb, uint8_t* p_setup) {
     } else {
       log::error("BNEP - setup response {} is not OK", resp_code);
 
-      L2CA_DisconnectReq(p_bcb->l2cap_cid);
+      if (!L2CA_DisconnectReq(p_bcb->l2cap_cid)) {
+        log::warn("Unable to request L2CAP disconnect peer:{} cid:{}",
+                  p_bcb->rem_bda, p_bcb->l2cap_cid);
+      }
 
       /* Tell the user if there is a callback */
       if ((p_bcb->con_flags & BNEP_FLAGS_IS_ORIG) && (bnep_cb.p_conn_state_cb))
