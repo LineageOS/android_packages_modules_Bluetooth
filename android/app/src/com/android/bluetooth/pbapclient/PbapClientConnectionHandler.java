@@ -226,7 +226,9 @@ class PbapClientConnectionHandler extends Handler {
                     closeSocket();
                 }
                 Log.d(TAG, "Completing Disconnect");
-                removeAccount();
+                if (mAccountCreated) {
+                    removeAccount();
+                }
                 removeCallLog();
 
                 mPbapClientStateMachine.sendMessage(PbapClientStateMachine.MSG_CONNECTION_CLOSED);
