@@ -21,6 +21,8 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothAdapter;
@@ -73,7 +75,7 @@ public class PbapClientConnectionHandlerTest {
 
     private PbapClientService mService;
 
-    private PbapClientStateMachine mStateMachine;
+    @Mock private PbapClientStateMachine mStateMachine;
 
     private PbapClientConnectionHandler mHandler;
 
@@ -81,6 +83,11 @@ public class PbapClientConnectionHandlerTest {
     public void setUp() throws Exception {
         mTargetContext = spy(new ContextWrapper(
                 InstrumentationRegistry.getInstrumentation().getTargetContext()));
+
+        if (Looper.myLooper() == null) {
+            Looper.prepare();
+        }
+
         TestUtils.setAdapterService(mAdapterService);
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
         mService = new PbapClientService(mTargetContext);
@@ -93,7 +100,8 @@ public class PbapClientConnectionHandlerTest {
         mLooper = mThread.getLooper();
         mRemoteDevice = mAdapter.getRemoteDevice(REMOTE_DEVICE_ADDRESS);
 
-        mStateMachine = new PbapClientStateMachine(mService, mRemoteDevice);
+        when(mStateMachine.getContext()).thenReturn(mTargetContext);
+
         mHandler = new PbapClientConnectionHandler.Builder()
                 .setLooper(mLooper)
                 .setClientSM(mStateMachine)
@@ -182,5 +190,12 @@ public class PbapClientConnectionHandlerTest {
         final int mask = 0x11;
 
         assertThat(mHandler.isRepositorySupported(mask)).isTrue();
+    }
+
+    @Test
+    public void createAndDisconnectWithoutAddingAccount_doesNotCrash() {
+        mHandler.obtainMessage(PbapClientConnectionHandler.MSG_DISCONNECT).sendToTarget();
+        TestUtils.waitForLooperToFinishScheduledTask(mHandler.getLooper());
+        verify(mStateMachine, times(1)).sendMessage(PbapClientStateMachine.MSG_CONNECTION_CLOSED);
     }
 }
