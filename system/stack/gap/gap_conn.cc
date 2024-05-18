@@ -630,7 +630,10 @@ static void gap_connect_ind(const RawAddress& bd_addr, uint16_t l2cap_cid,
 
   if (p_ccb->transport == BT_TRANSPORT_LE) {
     /* get the remote coc configuration */
-    L2CA_GetPeerLECocConfig(l2cap_cid, &p_ccb->peer_coc_cfg);
+    if (!L2CA_GetPeerLECocConfig(l2cap_cid, &p_ccb->peer_coc_cfg)) {
+      log::warn("Unable to get L2CAP peer le_coc config peer:{} cid:{}",
+                p_ccb->rem_dev_address, l2cap_cid);
+    }
     p_ccb->rem_mtu_size = p_ccb->peer_coc_cfg.mtu;
 
     /* configuration is not required for LE COC */
@@ -734,7 +737,10 @@ static void gap_connect_cfm(uint16_t l2cap_cid, uint16_t result) {
 
     if (p_ccb->transport == BT_TRANSPORT_LE) {
       /* get the remote coc configuration */
-      L2CA_GetPeerLECocConfig(l2cap_cid, &p_ccb->peer_coc_cfg);
+      if (!L2CA_GetPeerLECocConfig(l2cap_cid, &p_ccb->peer_coc_cfg)) {
+        log::warn("Unable to get L2CAP peer le_coc config peer:{} cid:{}",
+                  p_ccb->rem_dev_address, l2cap_cid);
+      }
       p_ccb->rem_mtu_size = p_ccb->peer_coc_cfg.mtu;
 
       /* configuration is not required for LE COC */
