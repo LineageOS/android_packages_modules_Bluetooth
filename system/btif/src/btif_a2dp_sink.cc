@@ -17,7 +17,7 @@
  *
  ******************************************************************************/
 
-#define LOG_TAG "bt_btif_a2dp_sink"
+#define LOG_TAG "bluetooth-a2dp"
 
 #include "btif/include/btif_a2dp_sink.h"
 

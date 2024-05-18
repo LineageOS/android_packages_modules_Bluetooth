@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "a2dp_sbc_decoder"
+#define LOG_TAG "bluetooth-a2dp"
 
 #include "a2dp_sbc_decoder.h"
 
