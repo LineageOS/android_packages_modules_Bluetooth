@@ -86,7 +86,7 @@ static void bta_ag_port_cback(uint32_t /* code */, uint16_t port_handle,
     if (!bta_ag_scb_open(p_scb)) {
       log::error(
           "rfcomm data on an unopened control block {} peer_addr {} state {}",
-          handle, p_scb->peer_addr, p_scb->state);
+          handle, p_scb->peer_addr, bta_ag_state_str(p_scb->state));
     }
     do_in_main_thread(
         FROM_HERE, base::BindOnce(&bta_ag_sm_execute_by_handle, handle,
