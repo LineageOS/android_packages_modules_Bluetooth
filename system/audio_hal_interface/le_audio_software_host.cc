@@ -278,7 +278,8 @@ size_t LeAudioClientInterface::Sink::Read(uint8_t* p_buf, uint32_t len) {
   uint32_t bytes_read = 0;
   bytes_read = UIPC_Read(*lea_uipc, UIPC_CH_ID_AV_AUDIO, p_buf, len);
 
-  log::info("");
+  // TODO(b/317682986): grab meaningful statistics for logs and metrics
+  log::verbose("Read {} bytes", bytes_read);
 
   return bytes_read;
 }
