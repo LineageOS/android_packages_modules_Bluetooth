@@ -1474,9 +1474,12 @@ void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, uint8_t remote_scn,
   uint32_t event_mask = BTA_JV_RFC_EV_MASK;
   tPORT_STATE port_state;
 
-  tBTA_JV_RFCOMM_CL_INIT evt_data;
-  memset(&evt_data, 0, sizeof(evt_data));
-  evt_data.status = tBTA_JV_STATUS::SUCCESS;
+  tBTA_JV_RFCOMM_CL_INIT evt_data = {
+      .status = tBTA_JV_STATUS::SUCCESS,
+      .handle = 0,
+      .sec_id = 0,
+      .use_co = false,
+  };
 
   if (com::android::bluetooth::flags::rfcomm_always_use_mitm()) {
     // Update security service record for RFCOMM client so that
