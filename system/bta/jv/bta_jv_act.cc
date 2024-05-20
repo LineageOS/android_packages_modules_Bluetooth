@@ -1496,8 +1496,7 @@ void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, uint8_t remote_scn,
           sec_mask) != PORT_SUCCESS) {
     log::error("RFCOMM_CreateConnection failed");
     evt_data.status = tBTA_JV_STATUS::FAILURE;
-  }
-  if (evt_data.status == tBTA_JV_STATUS::SUCCESS) {
+  } else {
     tBTA_JV_PCB* p_pcb;
     tBTA_JV_RFC_CB* p_cb = bta_jv_alloc_rfc_cb(handle, &p_pcb);
     if (p_cb) {
