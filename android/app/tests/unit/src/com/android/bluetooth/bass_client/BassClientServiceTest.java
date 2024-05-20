@@ -333,6 +333,11 @@ public class BassClientServiceTest {
     private class BassIntentReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
+            /* Ignore intent when service is inactive */
+            if (mBassClientService == null) {
+                return;
+            }
+
             try {
                 BluetoothDevice device = intent.getParcelableExtra(
                         BluetoothDevice.EXTRA_DEVICE);
