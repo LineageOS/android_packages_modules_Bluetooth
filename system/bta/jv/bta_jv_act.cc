@@ -1490,8 +1490,7 @@ void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, uint8_t remote_scn,
         BTM_SEC_PROTO_RFCOMM, 0);
   }
 
-  if (evt_data.status == tBTA_JV_STATUS::SUCCESS &&
-      RFCOMM_CreateConnectionWithSecurity(
+  if (RFCOMM_CreateConnectionWithSecurity(
           UUID_SERVCLASS_SERIAL_PORT, remote_scn, false, BTA_JV_DEF_RFC_MTU,
           peer_bd_addr, &handle, bta_jv_port_mgmt_cl_cback,
           sec_mask) != PORT_SUCCESS) {
