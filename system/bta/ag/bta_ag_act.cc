@@ -334,7 +334,7 @@ void bta_ag_disc_fail(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /* data */) {
  ******************************************************************************/
 void bta_ag_open_fail(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
   /* call open cback w. failure */
-  log::debug("state [0x{:02x}]", p_scb->state);
+  log::debug("state {}", bta_ag_state_str(p_scb->state));
   bta_ag_cback_open(p_scb, data.api_open.bd_addr, BTA_AG_FAIL_RESOURCES);
 }
 
@@ -352,6 +352,9 @@ void bta_ag_rfc_fail(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& /* data */) {
   log::info("reset p_scb with index={}", bta_ag_scb_to_idx(p_scb));
   RawAddress peer_addr = p_scb->peer_addr;
   /* reinitialize stuff */
+  if (com::android::bluetooth::flags::reset_ag_state_on_collision()) {
+    p_scb->state = BTA_AG_INIT_ST;
+  }
   p_scb->conn_handle = 0;
   p_scb->conn_service = 0;
   p_scb->peer_features = 0;

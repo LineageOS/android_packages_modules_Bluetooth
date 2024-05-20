@@ -197,12 +197,12 @@ static void bta_ag_sco_disc_cback(uint16_t sco_idx) {
 
   log::debug("sco_idx: 0x{:x} sco.state:{}", sco_idx,
              sco_state_text(static_cast<tSCO_STATE>(bta_ag_cb.sco.state)));
-  log::debug("scb[0] in_use:{} sco_idx: 0x{:x} sco state:{}",
+  log::debug("scb[0] in_use:{} sco_idx: 0x{:x} ag state:{}",
              bta_ag_cb.scb[0].in_use, bta_ag_cb.scb[0].sco_idx,
-             sco_state_text(static_cast<tSCO_STATE>(bta_ag_cb.scb[0].state)));
-  log::debug("scb[1] in_use:{} sco_idx:0x{:x} sco state:{}",
+             bta_ag_state_str(bta_ag_cb.scb[0].state));
+  log::debug("scb[1] in_use:{} sco_idx:0x{:x} ag state:{}",
              bta_ag_cb.scb[1].in_use, bta_ag_cb.scb[1].sco_idx,
-             sco_state_text(static_cast<tSCO_STATE>(bta_ag_cb.scb[1].state)));
+             bta_ag_state_str(bta_ag_cb.scb[1].state));
 
   /* match callback to scb */
   if (bta_ag_cb.sco.p_curr_scb != nullptr && bta_ag_cb.sco.p_curr_scb->in_use) {
@@ -245,7 +245,7 @@ static void bta_ag_sco_disc_cback(uint16_t sco_idx) {
          * |BTA_AG_OPEN_ST|, which has the same value as |BTA_AG_SCO_CODEC_ST|
          */
         if (!com::android::bluetooth::flags::fix_hfp_qual_1_9()) {
-          bta_ag_cb.sco.p_curr_scb->state = BTA_AG_SCO_CODEC_ST;
+          bta_ag_cb.sco.p_curr_scb->state = (tBTA_AG_STATE)BTA_AG_SCO_CODEC_ST;
         }
         if (bta_ag_cb.sco.p_curr_scb->inuse_codec == UUID_CODEC_LC3) {
           if (bta_ag_cb.sco.p_curr_scb->codec_lc3_settings ==
@@ -292,7 +292,7 @@ static void bta_ag_sco_disc_cback(uint16_t sco_idx) {
           bta_ag_cb.sco.p_curr_scb->retransmission_effort_retries == 0) {
         bta_ag_cb.sco.p_curr_scb->retransmission_effort_retries++;
         if (!com::android::bluetooth::flags::fix_hfp_qual_1_9()) {
-          bta_ag_cb.sco.p_curr_scb->state = BTA_AG_SCO_CODEC_ST;
+          bta_ag_cb.sco.p_curr_scb->state = (tBTA_AG_STATE)BTA_AG_SCO_CODEC_ST;
         }
         log::warn("eSCO/SCO failed to open, retry with retransmission_effort");
       } else {
