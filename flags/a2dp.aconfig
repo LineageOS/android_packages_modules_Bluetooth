@@ -65,3 +65,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "avrcp_sdp_records"
+    namespace: "bluetooth"
+    description: "Update SDP records for AVRC"
+    bug: "341353017"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
