@@ -58,7 +58,8 @@ const tBTA_AG_PORT_CBACK bta_ag_port_cback_tbl[] = {
     bta_ag_port_cback_1, bta_ag_port_cback_2, bta_ag_port_cback_3,
     bta_ag_port_cback_4, bta_ag_port_cback_5, bta_ag_port_cback_6};
 
-const tBTA_AG_PORT_CBACK bta_ag_mgmt_cback_tbl[] = {
+typedef tPORT_MGMT_CALLBACK* tBTA_AG_PORT_MGMT_CBACK;
+const tBTA_AG_PORT_MGMT_CBACK bta_ag_mgmt_cback_tbl[] = {
     bta_ag_mgmt_cback_1, bta_ag_mgmt_cback_2, bta_ag_mgmt_cback_3,
     bta_ag_mgmt_cback_4, bta_ag_mgmt_cback_5, bta_ag_mgmt_cback_6};
 

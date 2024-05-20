@@ -133,7 +133,7 @@ RawAddress GetTestAddress(int index) {
 class StackRfcommTest : public Test {
  public:
   void StartServerPort(uint16_t uuid, uint8_t scn, uint16_t mtu,
-                       tPORT_CALLBACK* management_callback,
+                       tPORT_MGMT_CALLBACK* management_callback,
                        tPORT_CALLBACK* event_callback,
                        uint16_t* server_handle) {
     log::verbose("Step 1");
@@ -266,7 +266,7 @@ class StackRfcommTest : public Test {
 
   void StartClientPort(const RawAddress& peer_bd_addr, uint16_t uuid,
                        uint8_t scn, uint16_t mtu,
-                       tPORT_CALLBACK* management_callback,
+                       tPORT_MGMT_CALLBACK* management_callback,
                        tPORT_CALLBACK* event_callback, uint16_t lcid,
                        uint16_t acl_handle, uint16_t* client_handle,
                        bool is_first_connection) {

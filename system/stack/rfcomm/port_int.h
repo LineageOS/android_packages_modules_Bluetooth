@@ -197,7 +197,7 @@ typedef struct {
 
   uint32_t ev_mask;           /* Event mask for the callback */
   tPORT_CALLBACK* p_callback; /* Pointer to users callback function */
-  tPORT_CALLBACK*
+  tPORT_MGMT_CALLBACK*
       p_mgmt_callback; /* Callback function to receive connection up/down */
   tPORT_DATA_CALLBACK*
       p_data_callback; /* Callback function to receive data indications */
