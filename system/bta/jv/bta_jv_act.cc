@@ -1543,6 +1543,7 @@ void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, uint8_t remote_scn,
   if (bta_jv.rfc_cl_init.status == tBTA_JV_STATUS::FAILURE) {
     if (handle) {
       if (RFCOMM_RemoveConnection(handle) != PORT_SUCCESS) {
+        log::warn("Unable to remove RFCOMM connection handle:{}", handle);
       }
     }
   }
