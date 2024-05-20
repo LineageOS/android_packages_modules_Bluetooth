@@ -205,6 +205,7 @@ pub trait IBluetoothMedia {
         direction: BtLeAudioDirection,
     ) -> BtLeAudioUnicastMonitorModeStatus;
     fn get_group_stream_status(&mut self, group_id: i32) -> BtLeAudioGroupStreamStatus;
+    fn get_group_status(&mut self, group_id: i32) -> BtLeAudioGroupStatus;
 
     /// Valid volume range is [0, 255], see 2.3.1.1, VCS v1.
     fn set_group_volume(&mut self, group_id: i32, volume: u8);
@@ -4110,6 +4111,10 @@ impl IBluetoothMedia for BluetoothMedia {
             .le_audio_group_stream_status
             .get(&group_id)
             .unwrap_or(&BtLeAudioGroupStreamStatus::Idle)
+    }
+
+    fn get_group_status(&mut self, group_id: i32) -> BtLeAudioGroupStatus {
+        *self.le_audio_group_status.get(&group_id).unwrap_or(&BtLeAudioGroupStatus::Inactive)
     }
 
     fn set_group_volume(&mut self, group_id: i32, volume: u8) {

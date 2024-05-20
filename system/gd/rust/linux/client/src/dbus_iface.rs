@@ -2843,6 +2843,11 @@ impl IBluetoothMedia for BluetoothMediaDBus {
         dbus_generated!()
     }
 
+    #[dbus_method("GetGroupStatus")]
+    fn get_group_status(&mut self, group_id: i32) -> BtLeAudioGroupStatus {
+        dbus_generated!()
+    }
+
     #[dbus_method("SetGroupVolume")]
     fn set_group_volume(&mut self, group_id: i32, volume: u8) {
         dbus_generated!()
