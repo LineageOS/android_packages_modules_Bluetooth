@@ -106,3 +106,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "reset_ag_state_on_collision"
+    namespace: "bluetooth"
+    description: "Reset AG instance state as well when outgoing connection attempt is discarded on collision detection"
+    bug: "341376713"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

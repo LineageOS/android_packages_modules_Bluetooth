@@ -27,6 +27,7 @@
 #include <bluetooth/log.h>
 
 #include <cstdint>
+#include <string>
 
 #include "bta/ag/bta_ag_at.h"
 #include "bta/include/bta_ag_api.h"
@@ -238,6 +239,14 @@ typedef enum {
   BTA_AG_SCO_APTX_SWB_SETTINGS_UNKNOWN = 0xFFFF,
 } tBTA_AG_SCO_APTX_SWB_SETTINGS;
 
+/* state machine states */
+typedef enum {
+  BTA_AG_INIT_ST,
+  BTA_AG_OPENING_ST,
+  BTA_AG_OPEN_ST,
+  BTA_AG_CLOSING_ST
+} tBTA_AG_STATE;
+
 /* type for each service control block */
 struct tBTA_AG_SCB {
   char clip[BTA_AG_AT_MAX_LEN + 1];     /* number string used for CLIP */
@@ -264,7 +273,7 @@ struct tBTA_AG_SCB {
   bool inband_enabled;      /* set to true if inband ring enabled */
   bool nrec_enabled;        /* noise reduction & echo canceling */
   bool svc_conn;            /* set to true when service level connection up */
-  uint8_t state;            /* state machine state */
+  tBTA_AG_STATE state;      /* state machine state */
   uint8_t conn_service;     /* connected service */
   uint8_t peer_scn;         /* peer scn */
   uint8_t app_id;           /* application id */
@@ -388,6 +397,7 @@ void bta_ag_sm_execute_by_handle(uint16_t handle, uint16_t event,
 void bta_ag_collision_cback(tBTA_SYS_CONN_STATUS status, tBTA_SYS_ID id,
                             uint8_t app_id, const RawAddress& peer_addr);
 void bta_ag_resume_open(tBTA_AG_SCB* p_scb);
+const std::string bta_ag_state_str(tBTA_AG_STATE state);
 
 /* SDP functions */
 bool bta_ag_add_record(uint16_t service_uuid, const char* p_service_name,
