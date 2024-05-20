@@ -1537,8 +1537,10 @@ void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, uint8_t remote_scn,
       log::error("run out of rfc control block");
     }
   }
-  tBTA_JV bta_jv;
-  bta_jv.rfc_cl_init = evt_data;
+  tBTA_JV bta_jv = {
+      .rfc_cl_init = evt_data,
+  };
+
   p_cback(BTA_JV_RFCOMM_CL_INIT_EVT, &bta_jv, rfcomm_slot_id);
   if (bta_jv.rfc_cl_init.status == tBTA_JV_STATUS::FAILURE) {
     if (handle) {
