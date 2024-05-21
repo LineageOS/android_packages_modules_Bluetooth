@@ -1474,9 +1474,12 @@ void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, uint8_t remote_scn,
   uint32_t event_mask = BTA_JV_RFC_EV_MASK;
   tPORT_STATE port_state;
 
-  tBTA_JV_RFCOMM_CL_INIT evt_data;
-  memset(&evt_data, 0, sizeof(evt_data));
-  evt_data.status = tBTA_JV_STATUS::SUCCESS;
+  tBTA_JV_RFCOMM_CL_INIT evt_data = {
+      .status = tBTA_JV_STATUS::SUCCESS,
+      .handle = 0,
+      .sec_id = 0,
+      .use_co = false,
+  };
 
   if (com::android::bluetooth::flags::rfcomm_always_use_mitm()) {
     // Update security service record for RFCOMM client so that
@@ -1487,15 +1490,13 @@ void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, uint8_t remote_scn,
         BTM_SEC_PROTO_RFCOMM, 0);
   }
 
-  if (evt_data.status == tBTA_JV_STATUS::SUCCESS &&
-      RFCOMM_CreateConnectionWithSecurity(
+  if (RFCOMM_CreateConnectionWithSecurity(
           UUID_SERVCLASS_SERIAL_PORT, remote_scn, false, BTA_JV_DEF_RFC_MTU,
           peer_bd_addr, &handle, bta_jv_port_mgmt_cl_cback,
           sec_mask) != PORT_SUCCESS) {
     log::error("RFCOMM_CreateConnection failed");
     evt_data.status = tBTA_JV_STATUS::FAILURE;
-  }
-  if (evt_data.status == tBTA_JV_STATUS::SUCCESS) {
+  } else {
     tBTA_JV_PCB* p_pcb;
     tBTA_JV_RFC_CB* p_cb = bta_jv_alloc_rfc_cb(handle, &p_pcb);
     if (p_cb) {
@@ -1534,8 +1535,10 @@ void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, uint8_t remote_scn,
       log::error("run out of rfc control block");
     }
   }
-  tBTA_JV bta_jv;
-  bta_jv.rfc_cl_init = evt_data;
+  tBTA_JV bta_jv = {
+      .rfc_cl_init = evt_data,
+  };
+
   p_cback(BTA_JV_RFCOMM_CL_INIT_EVT, &bta_jv, rfcomm_slot_id);
   if (bta_jv.rfc_cl_init.status == tBTA_JV_STATUS::FAILURE) {
     if (handle) {
