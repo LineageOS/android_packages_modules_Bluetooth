@@ -724,12 +724,7 @@ impl BluetoothMedia {
                             self.start_sco_call_impl(addr.to_string(), false, HfpCodecBitId::NONE);
                         }
 
-                        if self.should_insert_call_when_sco_start(addr) {
-                            info!(
-                                "[{}]: UHID creation skipped due to interop workaround",
-                                DisplayAddress(&addr)
-                            );
-                        } else {
+                        if self.phone_ops_enabled {
                             self.uhid_create(addr);
                         }
                     }
