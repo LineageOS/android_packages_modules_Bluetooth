@@ -101,7 +101,6 @@
     <string name="status_connection_error" msgid="8253709700568062220">"সংযোগ কৰিব পৰা নগ\'ল।"</string>
     <string name="status_protocol_error" msgid="3231573735130475654">"অনুৰোধ সঠিকভাৱে পৰিচালনা কৰিব নোৱাৰি।"</string>
     <string name="status_unknown_error" msgid="314676481744304866">"অজ্ঞাত আসোঁৱাহ।"</string>
-    <string name="btopp_live_folder" msgid="4859989703965326287">"ব্লুটুথ লাভ কৰা হ’ল"</string>
     <string name="opp_notification_group" msgid="150067508422520653">"ব্লুটুথ শ্বেয়াৰ"</string>
     <string name="download_success" msgid="3438268368708549686">"<xliff:g id="FILE_SIZE">%1$s</xliff:g> লাভ কৰা কাৰ্য সম্পূৰ্ণ হ’ল।"</string>
     <string name="upload_success" msgid="143787470859042049">"<xliff:g id="FILE_SIZE">%1$s</xliff:g> প্ৰেৰণ কৰা কাম সম্পূৰ্ণ হ’ল"</string>
@@ -136,4 +135,8 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"আপোনাৰ ডিভাইচটোৱে এয়াৰপ্লেন ম’ডত ব্লুটুথ অন ৰাখিবলৈ মনত ৰাখে। আপুনি যদি ব্লুটুথ অন হৈ থকাটো নিবিচাৰে, তেন্তে ইয়াক অফ কৰক।"</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"ৱাই-ফাই আৰু ব্লুটুথ অন হৈ থাকে"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"আপোনাৰ ডিভাইচটোৱে এয়াৰপ্লেন ম’ডত ৱাই-ফাই আৰু ব্লুটুথ অন ৰাখিবলৈ মনত ৰাখে। আপুনি ৱাই-ফাই আৰু ব্লুটুথ অন হৈ থকাটো নিবিচাৰিলে সেইবোৰ অফ কৰক।"</string>
+    <string name="bluetooth_enabled_auto_on_title" msgid="1799541656310353393">"ব্লুটুথ স্বয়ংক্ৰিয়ভাৱে সক্ষম কৰা হৈছে"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="1070556457440100730">"ব্লুটুথৰ ছেটিঙত স্বয়ংক্ৰিয় ৰিষ্টাৰ্ট ট’গল কৰা হ’ব পাৰে।"</string>
+    <string name="bluetooth_disable_auto_on" msgid="1085026923461565937">"অফ কৰক"</string>
+    <string name="bluetooth_notification_group" msgid="7251886707585872194">"ব্লুটুথৰ স্বয়ংক্ৰিয় স্থিতি সলনি হোৱা"</string>
 </resources>

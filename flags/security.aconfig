@@ -15,10 +15,30 @@ flag {
     bug: "319530790"
 }
 
+flag {
+    name: "bluffs_mitigation"
+    namespace: "bluetooth"
+    description: "Cache security values to mitigate BLUFFS"
+    bug: "314331379"
+}
 
 flag {
     name: "fix_pairing_failure_reason_from_remote"
     namespace: "bluetooth"
     description: "Correct the pairing failure reason reported from remote"
     bug: "320745565"
+}
+
+flag {
+    name: "fix_le_oob_pairing_bypass"
+    namespace: "bluetooth"
+    description: "Fix oob bypassing bug in SMP"
+    bug: "321271585"
+}
+
+flag {
+    name: "fix_le_pairing_passkey_entry_bypass"
+    namespace: "bluetooth"
+    description: "Fix the passkey entry bypassing bug in SMP"
+    bug: "321300737"
 }

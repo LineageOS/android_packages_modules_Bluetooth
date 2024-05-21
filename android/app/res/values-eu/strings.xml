@@ -18,9 +18,9 @@
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="app_name" msgid="2326164424236203271">"Bluetootha"</string>
     <string name="permlab_bluetoothShareManager" msgid="5297865456717871041">"Atzitu deskargen kudeatzailea."</string>
-    <string name="permdesc_bluetoothShareManager" msgid="1588034776955941477">"Bluetooth bidezko partekatzeen kudeatzailea atzitzea eta fitxategiak transferitzeko erabiltzeko baimena ematen die aplikazioei."</string>
+    <string name="permdesc_bluetoothShareManager" msgid="1588034776955941477">"Bluetooth bidezko partekatzeen kudeatzailea atzitzea eta fitxategiak transferitzeko erabiltzeko baimena ematen dio aplikazioari."</string>
     <string name="permlab_bluetoothAcceptlist" msgid="5785922051395856524">"Ezarri Bluetooth bidezko gailuak onartutakoen zerrendan."</string>
-    <string name="permdesc_bluetoothAcceptlist" msgid="259308920158011885">"Bluetooth bidezko gailu bat aldi baterako onartutakoen zerrendan ezartzeko baimena ematen die aplikazioei, gailu honetara fitxategiak bidaltzeko baimena izan dezan, baina gailu honen erabiltzaileari berrespena eskatu beharrik gabe."</string>
+    <string name="permdesc_bluetoothAcceptlist" msgid="259308920158011885">"Bluetooth bidezko gailu bat aldi baterako onartutakoen zerrendan ezartzeko baimena ematen dio aplikazioari, gailu honetara fitxategiak bidaltzeko baimena izan dezan, baina gailu honen erabiltzaileari berrespena eskatu beharrik gabe."</string>
     <string name="bt_share_picker_label" msgid="7464438494743777696">"Bluetootha"</string>
     <string name="unknown_device" msgid="2317679521750821654">"Identifikatu ezin den gailua"</string>
     <string name="unknownNumber" msgid="1245183329830158661">"Ezezaguna"</string>
@@ -101,7 +101,6 @@
     <string name="status_connection_error" msgid="8253709700568062220">"Ezin izan da konektatu."</string>
     <string name="status_protocol_error" msgid="3231573735130475654">"Ezin da eskaera behar bezala kudeatu."</string>
     <string name="status_unknown_error" msgid="314676481744304866">"Errore ezezaguna."</string>
-    <string name="btopp_live_folder" msgid="4859989703965326287">"Bluetooth bidez jasotakoak"</string>
     <string name="opp_notification_group" msgid="150067508422520653">"Bluetooth bidez partekatzea"</string>
     <string name="download_success" msgid="3438268368708549686">"<xliff:g id="FILE_SIZE">%1$s</xliff:g> jaso dira osorik."</string>
     <string name="upload_success" msgid="143787470859042049">"<xliff:g id="FILE_SIZE">%1$s</xliff:g> osorik bidali da."</string>
@@ -136,4 +135,8 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Hegaldi moduan, Bluetootha aktibatuta mantentzeaz gogoratzen da gailua. Halakorik nahi ez baduzu, desaktiba ezazu zuk zeuk."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wifia eta Bluetootha aktibatuta mantentzen dira"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Hegaldi moduan, wifia eta Bluetootha aktibatuta mantentzeaz gogoratzen da gailua. Halakorik nahi ez baduzu, desaktiba itzazu zuk zeuk."</string>
+    <string name="bluetooth_enabled_auto_on_title" msgid="1799541656310353393">"Bluetootha automatikoki gaitu da"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="1070556457440100730">"Bluetootharen ezarpenetan alda daiteke automatikoki berrabiarazteko aukera."</string>
+    <string name="bluetooth_disable_auto_on" msgid="1085026923461565937">"Desaktibatu"</string>
+    <string name="bluetooth_notification_group" msgid="7251886707585872194">"Bluetootharen egoera automatikoki aldatu da"</string>
 </resources>

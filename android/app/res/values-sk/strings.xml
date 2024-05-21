@@ -101,7 +101,6 @@
     <string name="status_connection_error" msgid="8253709700568062220">"Neúspešný pokus o pripojenie."</string>
     <string name="status_protocol_error" msgid="3231573735130475654">"Žiadosť nie je možné správne spracovať."</string>
     <string name="status_unknown_error" msgid="314676481744304866">"Neznáma chyba."</string>
-    <string name="btopp_live_folder" msgid="4859989703965326287">"Prijaté cez Bluetooth"</string>
     <string name="opp_notification_group" msgid="150067508422520653">"Zdieľanie Bluetooth"</string>
     <string name="download_success" msgid="3438268368708549686">"<xliff:g id="FILE_SIZE">%1$s</xliff:g>, príjem dokončený"</string>
     <string name="upload_success" msgid="143787470859042049">"<xliff:g id="FILE_SIZE">%1$s</xliff:g> Odosielanie dokončené."</string>
@@ -136,4 +135,8 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Zariadenie si pamätá, aby v režime v lietadle nevypínalo rozhranie Bluetooth. Ak ho nechcete ponechať zapnuté, vypnite ho."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi‑Fi a Bluetooth zostanú zapnuté"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Zariadenie si pamätá, aby v režime v lietadle nevypínalo Wi‑Fi ani Bluetooth. Ak ich nechcete ponechať zapnuté, vypnite ich."</string>
+    <string name="bluetooth_enabled_auto_on_title" msgid="1799541656310353393">"Rozhranie Bluetooth bolo automaticky zapnuté"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="1070556457440100730">"Automatický reštart sa dá prepnúť v nastaveniach rozhrania Bluetooth."</string>
+    <string name="bluetooth_disable_auto_on" msgid="1085026923461565937">"Vypnúť"</string>
+    <string name="bluetooth_notification_group" msgid="7251886707585872194">"Automatická zmena stavu rozhrania Bluetooth"</string>
 </resources>
