@@ -220,7 +220,7 @@ static void aptx_init_framing_params(tAPTX_FRAMING_PARAMS* framing_params) {
     }
   }
 
-  log::info("{}: sleep_time_ns = %", PRIu64);
+  log::info("sleep_time_ns={}", framing_params->sleep_time_ns);
 }
 
 //
@@ -275,9 +275,11 @@ static void aptx_update_framing_params(tAPTX_FRAMING_PARAMS* framing_params) {
   }
 
   log::verbose(
-      "{}: sleep_time_ns = %", PRIu64
-      " aptx_bytes = %u "
-      "pcm_bytes_per_read = %u pcm_reads = %u frame_size_counter = %u");
+      "sleep_time_ns={} aptx_bytes={} pcm_bytes_per_read={} pcm_reads={} "
+      "frame_size_counter={}",
+      framing_params->sleep_time_ns, framing_params->aptx_bytes,
+      framing_params->pcm_bytes_per_read, framing_params->pcm_reads,
+      framing_params->frame_size_counter);
 }
 
 void a2dp_vendor_aptx_feeding_reset(void) {
