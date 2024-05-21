@@ -417,22 +417,22 @@ bool BTA_DmSetVisibility(bt_scan_mode_t mode) {
 
   switch (mode) {
     case BT_SCAN_MODE_NONE:
-      disc_mode_param = BTA_DM_NON_DISC;
+      disc_mode_param = BTM_NON_DISCOVERABLE;
       conn_mode_param = BTM_NON_CONNECTABLE;
       break;
 
     case BT_SCAN_MODE_CONNECTABLE:
-      disc_mode_param = BTA_DM_NON_DISC;
+      disc_mode_param = BTM_NON_DISCOVERABLE;
       conn_mode_param = BTM_CONNECTABLE;
       break;
 
     case BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE:
-      disc_mode_param = BTA_DM_GENERAL_DISC;
+      disc_mode_param = BTM_GENERAL_DISCOVERABLE;
       conn_mode_param = BTM_CONNECTABLE;
       break;
 
     case BT_SCAN_MODE_CONNECTABLE_LIMITED_DISCOVERABLE:
-      disc_mode_param = BTA_DM_LIMITED_DISC;
+      disc_mode_param = BTM_LIMITED_DISCOVERABLE;
       conn_mode_param = BTM_CONNECTABLE;
       break;
 
