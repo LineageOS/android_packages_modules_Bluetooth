@@ -177,7 +177,10 @@ static void sdp_snd_service_search_req(tCONN_CB* p_ccb, uint8_t cont_len,
   /* Set the length of the SDP data in the buffer */
   p_cmd->len = (uint16_t)(p - p_start);
 
-  L2CA_DataWrite(p_ccb->connection_id, p_cmd);
+  if (L2CA_DataWrite(p_ccb->connection_id, p_cmd) != L2CAP_DW_SUCCESS) {
+    log::warn("Unable to write L2CAP data peer:{} cid:{} len:{}",
+              p_ccb->device_address, p_ccb->connection_id, p_cmd->len);
+  }
 
   /* Start inactivity timer */
   alarm_set_on_mloop(p_ccb->sdp_conn_timer, SDP_INACT_TIMEOUT_MS,
@@ -684,7 +687,10 @@ static void process_service_search_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
     /* Set the length of the SDP data in the buffer */
     p_msg->len = p - p_start;
 
-    L2CA_DataWrite(p_ccb->connection_id, p_msg);
+    if (L2CA_DataWrite(p_ccb->connection_id, p_msg) != L2CAP_DW_SUCCESS) {
+      log::warn("Unable to write L2CAP data peer:{} cid:{} len:{}",
+                p_ccb->device_address, p_ccb->connection_id, p_msg->len);
+    }
 
     /* Start inactivity timer */
     alarm_set_on_mloop(p_ccb->sdp_conn_timer, SDP_INACT_TIMEOUT_MS,
@@ -855,7 +861,10 @@ static void process_service_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
     /* Set the length of the SDP data in the buffer */
     p_msg->len = (uint16_t)(p - p_start);
 
-    L2CA_DataWrite(p_ccb->connection_id, p_msg);
+    if (L2CA_DataWrite(p_ccb->connection_id, p_msg) != L2CAP_DW_SUCCESS) {
+      log::warn("Unable to write L2CAP data peer:{} cid:{} len:{}",
+                p_ccb->device_address, p_ccb->connection_id, p_msg->len);
+    }
 
     /* Start inactivity timer */
     alarm_set_on_mloop(p_ccb->sdp_conn_timer, SDP_INACT_TIMEOUT_MS,
