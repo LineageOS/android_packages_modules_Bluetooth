@@ -27,6 +27,7 @@
 
 #include <cstdint>
 
+#include "include/macros.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/alarm.h"
 #include "osi/include/fixed_queue.h"
@@ -121,6 +122,32 @@ typedef struct {
   alarm_t* port_timer;
 } tRFC_PORT;
 
+typedef enum : uint8_t {
+  PORT_CONNECTION_STATE_CLOSED = 0,
+  PORT_CONNECTION_STATE_OPENING = 1,
+  PORT_CONNECTION_STATE_OPENED = 2,
+  PORT_CONNECTION_STATE_CLOSING = 3,
+} tPORT_CONNECTION_STATE;
+
+inline std::string port_connection_state_text(
+    const tPORT_CONNECTION_STATE& state) {
+  switch (state) {
+    CASE_RETURN_STRING(PORT_CONNECTION_STATE_CLOSED);
+    CASE_RETURN_STRING(PORT_CONNECTION_STATE_OPENING);
+    CASE_RETURN_STRING(PORT_CONNECTION_STATE_OPENED);
+    CASE_RETURN_STRING(PORT_CONNECTION_STATE_CLOSING);
+    default:
+      break;
+  }
+  RETURN_UNKNOWN_TYPE_STRING(tPORT_CONNECTION_STATE, state);
+}
+
+namespace fmt {
+template <>
+struct formatter<tPORT_CONNECTION_STATE>
+    : enum_formatter<tPORT_CONNECTION_STATE> {};
+}  // namespace fmt
+
 /*
  * Define control block containing information about PORT connection
 */
@@ -128,12 +155,7 @@ typedef struct {
   uint8_t handle;  // Starting from 1, unique for this object
   bool in_use; /* True when structure is allocated */
 
-#define PORT_CONNECTION_STATE_CLOSED 0
-#define PORT_CONNECTION_STATE_OPENING 1
-#define PORT_CONNECTION_STATE_OPENED 2
-#define PORT_CONNECTION_STATE_CLOSING 3
-
-  uint8_t state; /* State of the application */
+  tPORT_CONNECTION_STATE state; /* State of the application */
 
   uint8_t scn;   /* Service channel number */
   uint16_t uuid; /* Service UUID */
