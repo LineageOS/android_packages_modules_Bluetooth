@@ -2219,10 +2219,7 @@ static void bta_dm_search_sm_execute(tBTA_DM_EVT event,
           break;
         case BTA_DM_API_SEARCH_CANCEL_EVT:
           bta_dm_search_clear_queue();
-          if (com::android::bluetooth::flags::
-                  continue_service_discovery_when_cancel_device_discovery()) {
-            bta_dm_search_set_state(BTA_DM_SEARCH_CANCELLING);
-          }
+          bta_dm_search_set_state(BTA_DM_SEARCH_CANCELLING);
           bta_dm_search_cancel_notify();
           break;
         case BTA_DM_DISC_CLOSE_TOUT_EVT:
