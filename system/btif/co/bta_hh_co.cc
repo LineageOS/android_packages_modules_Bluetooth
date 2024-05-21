@@ -316,7 +316,7 @@ static int uhid_fd_poll(btif_hh_device_t* p_dev,
 
   if (!com::android::bluetooth::flags::break_uhid_polling_early()) {
     if (ret == 0) {
-      log::debug("Polling timed out, attempt to read (old behavior)");
+      log::verbose("Polling timed out, attempt to read (old behavior)");
       return 1;
     }
   }

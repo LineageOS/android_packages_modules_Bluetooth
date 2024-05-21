@@ -31,6 +31,7 @@
 #include "bta/ag/bta_ag_int.h"
 #include "bta/include/bta_hfp_api.h"
 #include "internal_include/bt_target.h"
+#include "macros.h"
 #include "osi/include/alarm.h"
 #include "osi/include/compat.h"
 #include "stack/include/bt_hdr.h"
@@ -42,9 +43,6 @@ using namespace bluetooth;
 /*****************************************************************************
  * Constants and types
  ****************************************************************************/
-/* state machine states */
-enum { BTA_AG_INIT_ST, BTA_AG_OPENING_ST, BTA_AG_OPEN_ST, BTA_AG_CLOSING_ST };
-
 #define CASE_RETURN_STR(const) \
   case const:                  \
     return #const;
@@ -108,14 +106,14 @@ static const char* bta_ag_evt_str(uint16_t event) {
   }
 }
 
-static const char* bta_ag_state_str(uint8_t state) {
+const std::string bta_ag_state_str(tBTA_AG_STATE state) {
   switch (state) {
-    CASE_RETURN_STR(BTA_AG_INIT_ST)
-    CASE_RETURN_STR(BTA_AG_OPENING_ST)
-    CASE_RETURN_STR(BTA_AG_OPEN_ST)
-    CASE_RETURN_STR(BTA_AG_CLOSING_ST)
+    CASE_RETURN_STRING(BTA_AG_INIT_ST);
+    CASE_RETURN_STRING(BTA_AG_OPENING_ST);
+    CASE_RETURN_STRING(BTA_AG_OPEN_ST);
+    CASE_RETURN_STRING(BTA_AG_CLOSING_ST);
     default:
-      return "Unknown AG State";
+      RETURN_UNKNOWN_TYPE_STRING(tBTA_AG_STATE, state);
   }
 }
 
@@ -394,7 +392,7 @@ void bta_ag_resume_open(tBTA_AG_SCB* p_scb) {
     bta_ag_sm_execute(p_scb, BTA_AG_API_OPEN_EVT, open_data);
   } else {
     log::verbose("device {} is already in state {}", p_scb->peer_addr,
-                 p_scb->state);
+                 bta_ag_state_str(p_scb->state));
   }
 }
 
@@ -584,7 +582,8 @@ static void bta_ag_better_state_machine(tBTA_AG_SCB* p_scb, uint16_t event,
           bta_ag_free_db(p_scb, data);
           break;
         default:
-          log::error("unknown event {} at state {}", event, p_scb->state);
+          log::error("unknown event {} at state {}", event,
+                     bta_ag_state_str(p_scb->state));
           break;
       }
       break;
@@ -633,7 +632,8 @@ static void bta_ag_better_state_machine(tBTA_AG_SCB* p_scb, uint16_t event,
           bta_ag_handle_collision(p_scb, data);
           break;
         default:
-          log::error("unknown event {} at state {}", event, p_scb->state);
+          log::error("unknown event {} at state {}", event,
+                     bta_ag_state_str(p_scb->state));
           break;
       }
       break;
@@ -690,7 +690,8 @@ static void bta_ag_better_state_machine(tBTA_AG_SCB* p_scb, uint16_t event,
           bta_ag_start_close(p_scb, data);
           break;
         default:
-          log::error("unknown event {} at state {}", event, p_scb->state);
+          log::error("unknown event {} at state {}", event,
+                     bta_ag_state_str(p_scb->state));
           break;
       }
       break;
@@ -722,7 +723,8 @@ static void bta_ag_better_state_machine(tBTA_AG_SCB* p_scb, uint16_t event,
           bta_ag_free_db(p_scb, data);
           break;
         default:
-          log::error("unknown event {} at state {}", event, p_scb->state);
+          log::error("unknown event {} at state {}", event,
+                     bta_ag_state_str(p_scb->state));
           break;
       }
       break;
@@ -742,14 +744,15 @@ static void bta_ag_better_state_machine(tBTA_AG_SCB* p_scb, uint16_t event,
 void bta_ag_sm_execute(tBTA_AG_SCB* p_scb, uint16_t event,
                        const tBTA_AG_DATA& data) {
   uint16_t previous_event = event;
-  uint8_t previous_state = p_scb->state;
+  tBTA_AG_STATE previous_state = p_scb->state;
 
   log::debug(
       "Execute AG event handle:0x{:04x} bd_addr:{} state:{}[0x{:02x}] "
       "event:{}[0x{:04x}] result:{}[0x{:02x}]",
       bta_ag_scb_to_idx(p_scb), p_scb->peer_addr,
-      bta_ag_state_str(p_scb->state), p_scb->state, bta_ag_evt_str(event),
-      event, bta_ag_res_str(data.api_result.result), data.api_result.result);
+      bta_ag_state_str(p_scb->state), static_cast<uint64_t>(p_scb->state),
+      bta_ag_evt_str(event), event, bta_ag_res_str(data.api_result.result),
+      data.api_result.result);
 
   bta_ag_better_state_machine(p_scb, event, data);
 
@@ -759,8 +762,8 @@ void bta_ag_sm_execute(tBTA_AG_SCB* p_scb, uint16_t event,
         "state_change:{}[0x{:02x}]->{}[0x{:02x}] event:{}[0x{:04x}] "
         "result:{}[0x{:02x}]",
         bta_ag_scb_to_idx(p_scb), p_scb->peer_addr,
-        bta_ag_state_str(previous_state), previous_state,
-        bta_ag_state_str(p_scb->state), p_scb->state,
+        bta_ag_state_str(previous_state), static_cast<uint64_t>(previous_state),
+        bta_ag_state_str(p_scb->state), static_cast<uint64_t>(p_scb->state),
         bta_ag_evt_str(previous_event), previous_event,
         bta_ag_res_str(data.api_result.result), data.api_result.result);
   }
