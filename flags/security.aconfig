@@ -42,3 +42,14 @@ flag {
     description: "Fix the passkey entry bypassing bug in SMP"
     bug: "321300737"
 }
+
+flag {
+  name: "bta_av_setconfig_rej_type_confusion"
+  namespace: "bluetooth"
+  description: "Use stream control block for bta_av_setconfig_rej instead of a possibly incorrect union type"
+  bug: "341754333"
+  metadata {
+    purpose: PURPOSE_BUGFIX
+  }
+}
+
