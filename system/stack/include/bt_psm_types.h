@@ -67,3 +67,8 @@ inline std::string bt_psm_text(const tBT_PSM& psm) {
   };
   RETURN_UNKNOWN_TYPE_STRING(type, psm);
 }
+
+namespace fmt {
+template <>
+struct formatter<tBT_PSM> : enum_formatter<tBT_PSM> {};
+}  // namespace fmt

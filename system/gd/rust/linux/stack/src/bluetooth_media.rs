@@ -283,6 +283,7 @@ struct UHid {
     pub handle: UHidHfp,
     pub volume: u8,
     pub muted: bool,
+    pub is_open: bool,
 }
 
 pub struct BluetoothMedia {
@@ -723,12 +724,7 @@ impl BluetoothMedia {
                             self.start_sco_call_impl(addr.to_string(), false, HfpCodecBitId::NONE);
                         }
 
-                        if self.should_insert_call_when_sco_start(addr) {
-                            info!(
-                                "[{}]: UHID creation skipped due to interop workaround",
-                                DisplayAddress(&addr)
-                            );
-                        } else {
+                        if self.phone_ops_enabled {
                             self.uhid_create(addr);
                         }
                     }
@@ -1180,6 +1176,7 @@ impl BluetoothMedia {
                 ),
                 volume: 15, // By default use maximum volume in case microphone gain has not been received
                 muted: false,
+                is_open: false,
             },
         );
     }
@@ -1340,15 +1337,28 @@ impl BluetoothMedia {
             }
             Some(addr) => addr,
         };
+        let uhid = match self.uhid.get_mut(&addr) {
+            Some(uhid) => uhid,
+            None => {
+                warn!("[{}]: UHID: No valid UHID", DisplayAddress(&addr));
+                return;
+            }
+        };
 
-        debug!("[{}]: UHID: Telephony use: {}", DisplayAddress(&addr), state);
-        if state == false {
-            // As there's a HID call for each WebHID call, even if it has been answered in the app
-            // or pre-exists, and that an app which disconnects from WebHID may not have trigger
-            // the UHID_OUTPUT_NONE, we need to remove all pending HID calls on telephony use
-            // release to keep lower HF layer in sync and not prevent A2DP streaming
-            self.hangup_call_impl();
-        }
+        uhid.is_open = state;
+
+        info!("[{}]: UHID: floss telephony device is open: {}", DisplayAddress(&addr), state);
+        // A hangup call is necessary both when opening and closing the UHID device,
+        // although for different reasons:
+        //  - On open: To prevent conflicts with existing SCO calls in CRAS and establish
+        //             a clean environment for Bluetooth Telephony operations.
+        //  - On close: As there's a HID call for each WebHID call, even if it has been
+        //              answered in the app or pre-exists, and that an app which disconnects
+        //              from WebHID may not have trigger the UHID_OUTPUT_NONE, we need to
+        //              remove all pending HID calls on telephony use release to keep lower
+        //              HF layer in sync and not prevent A2DP streaming.
+        self.hangup_call_impl();
+
         self.telephony_callbacks.lock().unwrap().for_all_callbacks(|callback| {
             callback.on_telephony_use(address.to_string(), state);
         });
@@ -2227,6 +2237,16 @@ impl BluetoothMedia {
         self.avrcp.as_mut().unwrap().add_player(&name, browsing_supported);
     }
 
+    // This function determines if it's safe to send a +CIEV command to an HFP device when SCO starts.
+
+    // The +CIEV command should NOT be sent if:
+    //  - MPS qualification mode is enabled, as it may cause qualification failures.
+    //  - Uhid device is open, as it may conflict with ongoing telephony operations.
+
+    // The +CIEV command is safe to send if:
+    //  - Both MPS qualification and Bluetooth telephony are disabled.
+    //  - Uhid device is closed, preventing any telephony conflicts.
+    //  - The headset is listed in interop_database.conf, indicating it requires +CIEV for audio.
     fn should_insert_call_when_sco_start(&self, address: RawAddress) -> bool {
         if self.mps_qualification_enabled {
             return false;
@@ -2234,6 +2254,18 @@ impl BluetoothMedia {
         if !self.phone_ops_enabled {
             return true;
         }
+
+        match self.uhid.get(&address) {
+            Some(uhid) => {
+                if !uhid.is_open {
+                    return true;
+                }
+            }
+            None => {
+                return true;
+            }
+        };
+
         return interop_insert_call_when_sco_start(address);
     }
     // Places an active call into the call list and triggers a headset update (+CIEV).
