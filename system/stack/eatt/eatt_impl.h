@@ -152,14 +152,18 @@ struct eatt_impl {
         shim::GetController()->GetLeBufferSize().le_data_packet_length_;
 
     tL2CAP_LE_CFG_INFO local_coc_cfg = {
+        .result = L2CAP_LE_RESULT_CONN_OK,
         .mtu = eatt_dev->rx_mtu_,
         .mps = eatt_dev->rx_mps_ < max_mps ? eatt_dev->rx_mps_ : max_mps,
         .credits = L2CA_LeCreditDefault(),
     };
 
     if (!L2CA_ConnectCreditBasedRsp(bda, identifier, lcids, L2CAP_CONN_OK,
-                                    &local_coc_cfg))
+                                    &local_coc_cfg)) {
+      log::warn("Unable to respond L2CAP le_coc credit indication peer:{}",
+                bda);
       return false;
+    }
 
     if (!eatt_dev->eatt_tcb_) {
       eatt_dev->eatt_tcb_ =
@@ -264,9 +268,12 @@ struct eatt_impl {
         std::vector<uint16_t> empty;
         log::error("Insufficient key size ({}<{}) for device {}", key_size,
                    min_key_size, bda);
-        L2CA_ConnectCreditBasedRsp(bda, identifier, empty,
-                                   L2CAP_LE_RESULT_INSUFFICIENT_ENCRYP_KEY_SIZE,
-                                   nullptr);
+        if (!L2CA_ConnectCreditBasedRsp(
+                bda, identifier, empty,
+                L2CAP_LE_RESULT_INSUFFICIENT_ENCRYP_KEY_SIZE, nullptr)) {
+          log::warn("Unable to respond L2CAP le_coc credit indication peer:{}",
+                    bda);
+        }
         return;
       }
     }
@@ -313,7 +320,11 @@ struct eatt_impl {
         result = L2CAP_LE_RESULT_INSUFFICIENT_ENCRYP;
       }
       log::error("ACL to device {} is unencrypted.", bda);
-      L2CA_ConnectCreditBasedRsp(bda, identifier, empty, result, nullptr);
+      if (!L2CA_ConnectCreditBasedRsp(bda, identifier, empty, result,
+                                      nullptr)) {
+        log::warn("Unable to respond L2CAP le_coc credit indication peer:{}",
+                  bda);
+      }
       return;
     }
 
@@ -563,6 +574,7 @@ struct eatt_impl {
           shim::GetController()->GetLeBufferSize().le_data_packet_length_;
 
     tL2CAP_LE_CFG_INFO local_coc_cfg = {
+        .result = L2CAP_LE_RESULT_CONN_OK,
         .mtu = eatt_dev->rx_mtu_,
         .mps = eatt_dev->rx_mps_,
         .credits = L2CA_LeCreditDefault(),
@@ -800,7 +812,10 @@ struct eatt_impl {
 
     std::vector<uint16_t> cids = {cid};
 
-    tL2CAP_LE_CFG_INFO cfg = {.mtu = new_mtu, .mps = eatt_dev->rx_mps_};
+    tL2CAP_LE_CFG_INFO cfg = {
+        .result = L2CAP_LE_RESULT_CONN_OK,
+        .mtu = new_mtu,
+        .mps = eatt_dev->rx_mps_};
 
     if (!L2CA_ReconfigCreditBasedConnsReq(eatt_dev->bda_, cids, &cfg)) {
       log::error("Could not start reconfig cid: 0x{:x} or device {}", cid,
@@ -839,7 +854,10 @@ struct eatt_impl {
       return;
     }
 
-    tL2CAP_LE_CFG_INFO cfg = {.mtu = new_mtu, .mps = eatt_dev->rx_mps_};
+    tL2CAP_LE_CFG_INFO cfg = {
+        .result = L2CAP_LE_RESULT_CONN_OK,
+        .mtu = new_mtu,
+        .mps = eatt_dev->rx_mps_};
 
     if (!L2CA_ReconfigCreditBasedConnsReq(eatt_dev->bda_, cids, &cfg)) {
       log::error("Could not start reconfig for device {}", bd_addr);
