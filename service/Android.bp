@@ -198,7 +198,12 @@ android_robolectric_test {
         "truth",
     ],
 
-    sdk_version: "test_current",
+    libs: [
+        "framework-bluetooth.stubs.module_lib",
+        "framework-statsd.stubs.module_lib",
+    ],
+
+    sdk_version: "module_current",
     upstream: true,
     test_suites: ["general-tests"],
 }
