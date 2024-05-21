@@ -808,7 +808,7 @@ void bta_av_do_disc_a2dp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
               INTEROP_A2DP_SKIP_SDP_DURING_RECONNECTION,
               &p_scb->PeerAddress(),
               &btif_storage_get_remote_device_property)) {
-    log::info("Skip SDP with valid AVDTP version 0x%04x",
+    log::info("Skip SDP with valid AVDTP version 0x{:04x}",
               p_scb->AvdtpVersion());
     bta_av_a2dp_sdp_cback(true, nullptr, p_scb->PeerAddress());
     return;
