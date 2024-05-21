@@ -107,9 +107,6 @@ typedef uint16_t
                      LE mode */
 
 /* Connectable Modes */
-#define BTA_DM_NON_CONN BTM_NON_CONNECTABLE /* Device is not connectable. */
-#define BTA_DM_CONN BTM_CONNECTABLE         /* Device is connectable. */
-
 typedef uint16_t tBTA_DM_CONN;
 
 /* Central/peripheral preferred roles */
