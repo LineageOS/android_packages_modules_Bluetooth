@@ -20,6 +20,7 @@
 #include <benchmark/benchmark.h>
 #include <bluetooth/log.h>
 
+#include <atomic>
 #include <future>
 #include <memory>
 #include <thread>
@@ -34,7 +35,7 @@ using bluetooth::common::MessageLoopThread;
 
 #define NUM_MESSAGES_TO_SEND 100000
 
-volatile static int g_counter = 0;
+static std::atomic<int> g_counter = 0;
 static std::unique_ptr<std::promise<void>> g_counter_promise = nullptr;
 
 void pthread_callback_batch(void* context) {
