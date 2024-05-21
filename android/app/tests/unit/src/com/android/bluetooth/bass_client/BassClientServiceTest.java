@@ -2356,14 +2356,14 @@ public class BassClientServiceTest {
 
         // Scan and sync 5 sources cause removing 1 synced element
         onScanResult(device1, broadcastId1);
-        onScanResult(device2, broadcastId2);
-        onScanResult(device3, broadcastId3);
-        onScanResult(device4, broadcastId4);
-        onScanResult(device5, broadcastId5);
         onSyncEstablished(device1, handle1);
+        onScanResult(device2, broadcastId2);
         onSyncEstablished(device2, handle2);
+        onScanResult(device3, broadcastId3);
         onSyncEstablished(device3, handle3);
+        onScanResult(device4, broadcastId4);
         onSyncEstablished(device4, handle4);
+        onScanResult(device5, broadcastId5);
         InOrder inOrder = inOrder(mMethodProxy);
         inOrder.verify(mMethodProxy, timeout(TIMEOUT_MS).times(4))
                 .periodicAdvertisingManagerRegisterSync(
@@ -2496,15 +2496,30 @@ public class BassClientServiceTest {
         final BluetoothDevice device4 =
                 mBluetoothAdapter.getRemoteLeDevice(
                         "00:11:22:33:44:44", BluetoothDevice.ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device5 =
+                mBluetoothAdapter.getRemoteLeDevice(
+                        "00:11:22:33:44:55", BluetoothDevice.ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device6 =
+                mBluetoothAdapter.getRemoteLeDevice(
+                        "00:11:22:33:44:66", BluetoothDevice.ADDRESS_TYPE_RANDOM);
+        final BluetoothDevice device7 =
+                mBluetoothAdapter.getRemoteLeDevice(
+                        "00:11:22:33:44:77", BluetoothDevice.ADDRESS_TYPE_RANDOM);
         final int broadcastId1 = 1111;
         final int broadcastId2 = 2222;
         final int broadcastId3 = 3333;
         final int broadcastId4 = 4444;
+        final int broadcastId5 = 5555;
+        final int broadcastId6 = 6666;
+        final int broadcastId7 = 7777;
 
         byte[] scanRecord1 = getScanRecord(broadcastId1);
         byte[] scanRecord2 = getScanRecord(broadcastId2);
         byte[] scanRecord3 = getScanRecord(broadcastId3);
         byte[] scanRecord4 = getScanRecord(broadcastId4);
+        byte[] scanRecord5 = getScanRecord(broadcastId5);
+        byte[] scanRecord6 = getScanRecord(broadcastId6);
+        byte[] scanRecord7 = getScanRecord(broadcastId7);
 
         ScanResult scanResult1 =
                 new ScanResult(
@@ -2526,7 +2541,7 @@ public class BassClientServiceTest {
                         0,
                         0,
                         0,
-                        TEST_RSSI,
+                        TEST_RSSI + 3,
                         0,
                         ScanRecord.parseFromBytes(scanRecord2),
                         0);
@@ -2538,7 +2553,7 @@ public class BassClientServiceTest {
                         0,
                         0,
                         0,
-                        TEST_RSSI,
+                        TEST_RSSI + 7,
                         0,
                         ScanRecord.parseFromBytes(scanRecord3),
                         0);
@@ -2550,19 +2565,61 @@ public class BassClientServiceTest {
                         0,
                         0,
                         0,
-                        TEST_RSSI,
+                        TEST_RSSI + 5,
                         0,
                         ScanRecord.parseFromBytes(scanRecord4),
+                        0);
+        ScanResult scanResult5 =
+                new ScanResult(
+                        device5,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        TEST_RSSI + 2,
+                        0,
+                        ScanRecord.parseFromBytes(scanRecord5),
+                        0);
+        ScanResult scanResult6 =
+                new ScanResult(
+                        device6,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        TEST_RSSI + 6,
+                        0,
+                        ScanRecord.parseFromBytes(scanRecord6),
+                        0);
+        ScanResult scanResult7 =
+                new ScanResult(
+                        device7,
+                        0,
+                        0,
+                        0,
+                        0,
+                        0,
+                        TEST_RSSI + 4,
+                        0,
+                        ScanRecord.parseFromBytes(scanRecord7),
                         0);
 
         // Added and executed immidiatelly as no other in queue
         mBassClientService.addSelectSourceRequest(scanResult1, false);
-        // Added to queue
+        // Added to queue with worst rssi
         mBassClientService.addSelectSourceRequest(scanResult2, false);
-        // Added to queue
+        // Added to queue with best rssi
         mBassClientService.addSelectSourceRequest(scanResult3, false);
-        // Added to queue with priority which put it on the beginning
-        mBassClientService.addSelectSourceRequest(scanResult4, true);
+        // Added to queue with medium rssi
+        mBassClientService.addSelectSourceRequest(scanResult4, false);
+        // Added to queue with priority and worst rssi
+        mBassClientService.addSelectSourceRequest(scanResult5, true);
+        // Added to queue with priority and best rssi
+        mBassClientService.addSelectSourceRequest(scanResult6, true);
+        // Added to queue with priority and medium rssi
+        mBassClientService.addSelectSourceRequest(scanResult7, true);
 
         ArgumentCaptor<ScanResult> resultCaptor = ArgumentCaptor.forClass(ScanResult.class);
 
@@ -2590,9 +2647,9 @@ public class BassClientServiceTest {
                                         .getScanRecord()
                                         .getServiceData()
                                         .get(BassConstants.BAAS_UUID)))
-                .isEqualTo(broadcastId4);
+                .isEqualTo(broadcastId6);
 
-        onSyncEstablished(device4, TEST_SYNC_HANDLE + 1);
+        onSyncEstablished(device6, TEST_SYNC_HANDLE + 1);
         inOrder.verify(mMethodProxy, timeout(TIMEOUT_MS))
                 .periodicAdvertisingManagerRegisterSync(
                         any(), resultCaptor.capture(), anyInt(), anyInt(), any(), any());
@@ -2603,9 +2660,22 @@ public class BassClientServiceTest {
                                         .getScanRecord()
                                         .getServiceData()
                                         .get(BassConstants.BAAS_UUID)))
-                .isEqualTo(broadcastId2);
+                .isEqualTo(broadcastId7);
 
-        onSyncEstablished(device2, TEST_SYNC_HANDLE + 2);
+        onSyncEstablished(device7, TEST_SYNC_HANDLE + 2);
+        inOrder.verify(mMethodProxy, timeout(TIMEOUT_MS))
+                .periodicAdvertisingManagerRegisterSync(
+                        any(), resultCaptor.capture(), anyInt(), anyInt(), any(), any());
+        assertThat(
+                        BassUtils.parseBroadcastId(
+                                resultCaptor
+                                        .getValue()
+                                        .getScanRecord()
+                                        .getServiceData()
+                                        .get(BassConstants.BAAS_UUID)))
+                .isEqualTo(broadcastId5);
+
+        onSyncEstablished(device5, TEST_SYNC_HANDLE + 3);
         inOrder.verify(mMethodProxy, timeout(TIMEOUT_MS))
                 .periodicAdvertisingManagerRegisterSync(
                         any(), resultCaptor.capture(), anyInt(), anyInt(), any(), any());
@@ -2617,6 +2687,32 @@ public class BassClientServiceTest {
                                         .getServiceData()
                                         .get(BassConstants.BAAS_UUID)))
                 .isEqualTo(broadcastId3);
+
+        onSyncEstablished(device3, TEST_SYNC_HANDLE + 4);
+        inOrder.verify(mMethodProxy, timeout(TIMEOUT_MS))
+                .periodicAdvertisingManagerRegisterSync(
+                        any(), resultCaptor.capture(), anyInt(), anyInt(), any(), any());
+        assertThat(
+                        BassUtils.parseBroadcastId(
+                                resultCaptor
+                                        .getValue()
+                                        .getScanRecord()
+                                        .getServiceData()
+                                        .get(BassConstants.BAAS_UUID)))
+                .isEqualTo(broadcastId4);
+
+        onSyncEstablished(device4, TEST_SYNC_HANDLE + 5);
+        inOrder.verify(mMethodProxy, timeout(TIMEOUT_MS))
+                .periodicAdvertisingManagerRegisterSync(
+                        any(), resultCaptor.capture(), anyInt(), anyInt(), any(), any());
+        assertThat(
+                        BassUtils.parseBroadcastId(
+                                resultCaptor
+                                        .getValue()
+                                        .getScanRecord()
+                                        .getServiceData()
+                                        .get(BassConstants.BAAS_UUID)))
+                .isEqualTo(broadcastId2);
     }
 
     @Test
