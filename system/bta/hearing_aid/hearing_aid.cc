@@ -1486,7 +1486,14 @@ class HearingAidImpl : public HearingAid {
           log::info("{} skipping {} packets", left->address, packets_in_chans);
           left->audio_stats.packet_flush_count += packets_in_chans;
           left->audio_stats.frame_flush_count++;
-          L2CA_FlushChannel(cid, 0xffff);
+          const uint16_t buffers_left =
+              L2CA_FlushChannel(cid, L2CAP_FLUSH_CHANS_ALL);
+          if (buffers_left) {
+            log::warn(
+                "Unable to flush L2CAP ALL (left HA) channel peer:{} cid:{} "
+                "buffers_left:{}",
+                left->address, cid, buffers_left);
+          }
         }
         hearingDevices.StartRssiLog();
       }
@@ -1517,7 +1524,14 @@ class HearingAidImpl : public HearingAid {
           log::info("{} skipping {} packets", right->address, packets_in_chans);
           right->audio_stats.packet_flush_count += packets_in_chans;
           right->audio_stats.frame_flush_count++;
-          L2CA_FlushChannel(cid, 0xffff);
+          const uint16_t buffers_left =
+              L2CA_FlushChannel(cid, L2CAP_FLUSH_CHANS_ALL);
+          if (buffers_left) {
+            log::warn(
+                "Unable to flush L2CAP ALL (right HA) channel peer:{} cid:{} "
+                "buffers_left:{}",
+                right->address, cid, buffers_left);
+          }
         }
         hearingDevices.StartRssiLog();
       }
