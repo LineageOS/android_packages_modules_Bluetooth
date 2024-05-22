@@ -155,9 +155,6 @@ class Host(
             stateFlow.filter { it == BluetoothAdapter.STATE_OFF }.first()
         }
 
-        // TODO: b/234892968
-        delay(3000L)
-
         bluetoothAdapter.enable()
         stateFlow.filter { it == BluetoothAdapter.STATE_ON }.first()
     }
