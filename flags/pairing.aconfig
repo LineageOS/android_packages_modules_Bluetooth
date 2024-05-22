@@ -34,3 +34,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "temporary_pairing_device_properties"
+    namespace: "bluetooth"
+    description: "Do not remove the device properties immediately after insecure pairing"
+    bug: "342202557"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
