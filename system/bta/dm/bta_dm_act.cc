@@ -306,8 +306,16 @@ void BTA_dm_on_hw_on() {
 void bta_dm_disable() {
   /* Set l2cap idle timeout to 0 (so BTE immediately disconnects ACL link after
    * last channel is closed) */
-  L2CA_SetIdleTimeoutByBdAddr(RawAddress::kAny, 0, BT_TRANSPORT_BR_EDR);
-  L2CA_SetIdleTimeoutByBdAddr(RawAddress::kAny, 0, BT_TRANSPORT_LE);
+  if (!L2CA_SetIdleTimeoutByBdAddr(RawAddress::kAny, 0, BT_TRANSPORT_BR_EDR)) {
+    log::warn(
+        "Unable to set L2CAP idle timeout peer:{} transport:{} timeout:{}",
+        RawAddress::kAny, BT_TRANSPORT_BR_EDR, 0);
+  }
+  if (!L2CA_SetIdleTimeoutByBdAddr(RawAddress::kAny, 0, BT_TRANSPORT_LE)) {
+    log::warn(
+        "Unable to set L2CAP idle timeout peer:{} transport:{} timeout:{}",
+        RawAddress::kAny, BT_TRANSPORT_LE, 0);
+  }
 
   /* disable all active subsystems */
   bta_sys_disable();
@@ -1701,8 +1709,10 @@ void bta_dm_ble_subrate_request(const RawAddress& bd_addr, uint16_t subrate_min,
                                 uint16_t subrate_max, uint16_t max_latency,
                                 uint16_t cont_num, uint16_t timeout) {
     // Logging done in l2c_ble.cc
-    L2CA_SubrateRequest(bd_addr, subrate_min, subrate_max, max_latency,
-                        cont_num, timeout);
+    if (!L2CA_SubrateRequest(bd_addr, subrate_min, subrate_max, max_latency,
+                             cont_num, timeout)) {
+      log::warn("Unable to set L2CAP ble subrating peer:{}", bd_addr);
+    }
 }
 
 namespace bluetooth {

@@ -1218,8 +1218,14 @@ void bta_av_str_opened(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
                p_scb->stream_mtu);
 
   /* Set the media channel as high priority */
-  L2CA_SetTxPriority(p_scb->l2c_cid, L2CAP_CHNL_PRIORITY_HIGH);
-  L2CA_SetChnlFlushability(p_scb->l2c_cid, true);
+  if (!L2CA_SetTxPriority(p_scb->l2c_cid, L2CAP_CHNL_PRIORITY_HIGH)) {
+    log::warn("Unable to set L2CAP flush peer:{} cid:{}", p_scb->PeerAddress(),
+              p_scb->l2c_cid);
+  }
+  if (!L2CA_SetChnlFlushability(p_scb->l2c_cid, true)) {
+    log::warn("Unable to set L2CAP flush peer:{} cid:{}", p_scb->PeerAddress(),
+              p_scb->l2c_cid);
+  }
 
   bta_sys_conn_open(BTA_ID_AV, p_scb->app_id, p_scb->PeerAddress());
   memset(&p_scb->q_info, 0, sizeof(tBTA_AV_Q_INFO));
