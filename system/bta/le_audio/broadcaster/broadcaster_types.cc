@@ -17,6 +17,8 @@
 
 #include "broadcaster_types.h"
 
+#include <base/strings/string_number_conversions.h>
+
 #include <vector>
 
 #include "bta/le_audio/audio_hal_client/audio_hal_client.h"
@@ -258,10 +260,13 @@ std::ostream& operator<<(
      << +config.GetLeAudioCodecId().vendor_company_id << ":"
      << +config.GetLeAudioCodecId().vendor_codec_id << "}, ";
   os << "BISes=[";
-  for (auto const& bis_config : config.bis_codec_configs_) {
-    os << bis_config << ", ";
+  if (!config.bis_codec_configs_.empty()) {
+    for (auto const& bis_config : config.bis_codec_configs_) {
+      os << bis_config << ", ";
+    }
+    os << "\b\b";
   }
-  os << "\r\r]";
+  os << "]";
   os << ", BitsPerSample=" << +config.GetBitsPerSample() << "}";
   os << "}";
   return os;
@@ -272,7 +277,16 @@ std::ostream& operator<<(
     const le_audio::broadcaster::BroadcastSubgroupBisCodecConfig& config) {
   os << "BisCfg={numBis=" << +config.GetNumBis()
      << ", NumChannelsPerBis=" << +config.GetNumChannelsPerBis()
-     << ", SamplingFreqHz=" << +config.GetSamplingFrequencyHz() << "}";
+     << ", CodecSpecific=" << config.GetCodecSpecData().GetAsCoreCodecConfig();
+  if (config.GetVendorCodecSpecific().has_value()) {
+    os << ", VendorSpecific=[";
+    if (!config.GetVendorCodecSpecific()->empty()) {
+      os << base::HexEncode(config.GetVendorCodecSpecific()->data(),
+                            config.GetVendorCodecSpecific()->size());
+    }
+    os << "]";
+  }
+  os << "}";
   return os;
 }
 

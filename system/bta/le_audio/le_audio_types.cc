@@ -150,6 +150,62 @@ uint8_t CodecConfigSetting::GetBitsPerSample() const {
       return 0;
   }
 };
+
+std::ostream& operator<<(std::ostream& os, const QosConfigSetting& config) {
+  os << "QosConfigSetting{";
+  os << "targetLatency: " << (int)config.target_latency;
+  os << ", retransmissionNum: " << (int)config.retransmission_number;
+  os << ", maxTransportLatency: " << (int)config.max_transport_latency;
+  os << ", sduIntervalUs: " << (int)config.sduIntervalUs;
+  os << ", maxSdu: " << (int)config.maxSdu;
+  os << "}";
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const AseConfiguration& config) {
+  os << "AseConfiguration{";
+  os << "dataPath: " << config.data_path_configuration;
+  os << ", codec: " << config.codec;
+  os << ", qos: " << config.qos;
+  os << "}";
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os,
+                         const AudioSetConfiguration& config) {
+  os << "AudioSetConfiguration{";
+  os << "name: " << config.name;
+  os << ", packing: " << (int)config.packing;
+  os << ", sinkConfs: [";
+  for (auto const& conf : config.confs.sink) {
+    os << conf;
+    os << ", ";
+  }
+  os << "], sourceConfs: [";
+  for (auto const& conf : config.confs.source) {
+    os << conf;
+    os << ", ";
+  }
+  os << "]}";
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const CodecConfigSetting& config) {
+  os << "CodecConfigSetting{";
+  os << ", id: " << config.id;
+  os << ", codecSpecParams: " << config.params.GetAsCoreCodecConfig();
+  os << ", bitsPerSample: " << (int)config.GetBitsPerSample();
+  os << ", channelCountPerIsoStream: "
+     << (int)config.GetChannelCountPerIsoStream();
+  if (!config.vendor_params.empty()) {
+    os << ", vendorParams: "
+       << base::HexEncode(config.vendor_params.data(),
+                          config.vendor_params.size());
+  }
+  os << "}";
+  return os;
+}
+
 }  // namespace set_configurations
 
 namespace types {
@@ -609,20 +665,21 @@ std::ostream& operator<<(std::ostream& os, const types::AseState& state) {
 }
 
 std::ostream& operator<<(std::ostream& os, const LeAudioCodecId& codec_id) {
-  os << "LeAudioCodecId(CodingFormat=" << loghex(codec_id.coding_format)
-     << ", CompanyId=" << loghex(codec_id.vendor_company_id)
-     << ", CodecId=" << loghex(codec_id.vendor_codec_id) << ")";
+  os << "LeAudioCodecId{CodingFormat: " << loghex(codec_id.coding_format)
+     << ", CompanyId: " << loghex(codec_id.vendor_company_id)
+     << ", CodecId: " << loghex(codec_id.vendor_codec_id) << "}";
   return os;
 }
 
 std::ostream& operator<<(std::ostream& os,
                          const types::LeAudioCoreCodecConfig& config) {
-  os << " LeAudioCoreCodecConfig(SamplFreq="
+  os << "LeAudioCoreCodecConfig{SamplFreq: "
      << loghex(*config.sampling_frequency)
-     << ", FrameDur=" << loghex(*config.frame_duration)
-     << ", OctetsPerFrame=" << int(*config.octets_per_codec_frame)
-     << ", CodecFramesBlocksPerSDU=" << int(*config.codec_frames_blocks_per_sdu)
-     << ", AudioChanLoc=" << loghex(*config.audio_channel_allocation) << ")";
+     << ", FrameDur: " << loghex(*config.frame_duration)
+     << ", OctetsPerFrame: " << int(*config.octets_per_codec_frame)
+     << ", CodecFramesBlocksPerSDU: "
+     << int(*config.codec_frames_blocks_per_sdu)
+     << ", AudioChanLoc: " << loghex(*config.audio_channel_allocation) << "}";
   return os;
 }
 
@@ -739,18 +796,18 @@ AudioLocations get_bidirectional(BidirectionalPair<AudioLocations> bidir) {
 
 std::ostream& operator<<(
     std::ostream& os, const le_audio::types::IsoDataPathConfiguration& config) {
-  os << "IsoDataPathCfg={codecId=" << config.codecId
-     << ", isTransparent=" << config.isTransparent
-     << ", controllerDelayUs=" << config.controllerDelayUs
-     << ", configuration.size()=" << config.configuration.size() << "}";
+  os << "IsoDataPathCfg{codecId: " << config.codecId
+     << ", isTransparent: " << config.isTransparent
+     << ", controllerDelayUs: " << config.controllerDelayUs
+     << ", configuration.size: " << config.configuration.size() << "}";
   return os;
 }
 
 std::ostream& operator<<(std::ostream& os,
                          const le_audio::types::DataPathConfiguration& config) {
-  os << "DataPathCfg={datapathId=" << +config.dataPathId
-     << ", dataPathCfg.size()=" << +config.dataPathConfig.size()
-     << ", isoDataPathCfg=" << config.isoDataPathConfig << "}";
+  os << "DataPathCfg{datapathId: " << +config.dataPathId
+     << ", dataPathCfg.size: " << +config.dataPathConfig.size()
+     << ", isoDataPathCfg: " << config.isoDataPathConfig << "}";
   return os;
 }
 
