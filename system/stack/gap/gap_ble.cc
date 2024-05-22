@@ -29,6 +29,7 @@
 #include "os/log.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
+#include "stack/include/btm_client_interface.h"
 #include "types/bluetooth/uuid.h"
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
@@ -139,7 +140,10 @@ tGATT_STATUS read_attr_value(uint16_t handle, tGATT_VALUE* p_value,
 
       switch (db_attr.uuid) {
         case GATT_UUID_GAP_DEVICE_NAME:
-          BTM_ReadLocalDeviceName((const char**)&p_dev_name);
+          if (get_btm_client_interface().local.BTM_ReadLocalDeviceName(
+                  (const char**)&p_dev_name) != BTM_SUCCESS) {
+            log::warn("Unable to read local device name");
+          };
           if (strlen((char*)p_dev_name) > GATT_MAX_ATTR_LEN)
             p_value->len = GATT_MAX_ATTR_LEN;
           else
@@ -487,7 +491,10 @@ void GAP_BleAttrDBUpdate(uint16_t attr_uuid, tGAP_BLE_ATTR_VALUE* p_value) {
           break;
 
         case GATT_UUID_GAP_DEVICE_NAME:
-          BTM_SetLocalDeviceName((const char*)p_value->p_dev_name);
+          if (get_btm_client_interface().local.BTM_SetLocalDeviceName(
+                  (const char*)p_value->p_dev_name) != BTM_SUCCESS) {
+            log::warn("Unable to set local name");
+          }
           break;
 
         case GATT_UUID_GAP_CENTRAL_ADDR_RESOL:

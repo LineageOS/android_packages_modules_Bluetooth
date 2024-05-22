@@ -93,7 +93,6 @@
 #include "device/include/interop_config.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/dumpsys.h"
-#include "os/log.h"
 #include "os/parameter_provider.h"
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"
@@ -104,6 +103,7 @@
 #include "stack/include/a2dp_api.h"
 #include "stack/include/avdt_api.h"
 #include "stack/include/btm_api.h"
+#include "stack/include/btm_client_interface.h"
 #include "stack/include/hfp_lc3_decoder.h"
 #include "stack/include/hfp_lc3_encoder.h"
 #include "stack/include/hfp_msbc_decoder.h"
@@ -1357,7 +1357,10 @@ void invoke_oob_data_request_cb(tBT_TRANSPORT t, bool valid, Octet16 c,
   log::info("");
   bt_oob_data_t oob_data = {};
   const char* local_name;
-  BTM_ReadLocalDeviceName(&local_name);
+  if (get_btm_client_interface().local.BTM_ReadLocalDeviceName(&local_name) !=
+      BTM_SUCCESS) {
+    log::warn("Unable to read local device name");
+  }
   for (int i = 0; i < BD_NAME_LEN; i++) {
     oob_data.device_name[i] = local_name[i];
   }
