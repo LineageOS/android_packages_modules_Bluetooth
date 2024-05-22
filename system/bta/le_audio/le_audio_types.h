@@ -1158,6 +1158,8 @@ struct CodecConfigSetting {
    */
 };
 
+std::ostream& operator<<(std::ostream& os, const CodecConfigSetting& config);
+
 struct QosConfigSetting {
   uint8_t target_latency;
   uint8_t retransmission_number;
@@ -1173,6 +1175,8 @@ struct QosConfigSetting {
             (max_transport_latency == other.max_transport_latency));
   }
 };
+
+std::ostream& operator<<(std::ostream& os, const QosConfigSetting& config);
 
 struct AseConfiguration {
   AseConfiguration(CodecConfigSetting codec,
@@ -1192,6 +1196,8 @@ struct AseConfiguration {
   }
 };
 
+std::ostream& operator<<(std::ostream& os, const AseConfiguration& config);
+
 /* Defined audio scenarios */
 struct AudioSetConfiguration {
   std::string name = "";
@@ -1207,6 +1213,8 @@ struct AudioSetConfiguration {
     return ((packing == other.packing) && (confs == other.confs));
   }
 };
+
+std::ostream& operator<<(std::ostream& os, const AudioSetConfiguration& config);
 
 using AudioSetConfigurations = std::vector<const AudioSetConfiguration*>;
 
