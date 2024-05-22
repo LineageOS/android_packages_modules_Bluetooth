@@ -429,14 +429,6 @@ class BtifAvSource {
   bool AllowedToConnect(const RawAddress& peer_address) const;
 
   /**
-   * Delete a peer.
-   *
-   * @param peer_address the peer to delete
-   * @return true on success, otherwise false
-   */
-  bool DeletePeer(const RawAddress& peer_address);
-
-  /**
    * Delete all peers that have transitioned to Idle state and can be deleted.
    * If a peer was just created/initialized, then it cannot be deleted yet.
    */
@@ -665,14 +657,6 @@ class BtifAvSink {
    * @return true if connection is allowed, otherwise false
    */
   bool AllowedToConnect(const RawAddress& peer_address) const;
-
-  /**
-   * Delete a peer.
-   *
-   * @param peer_address the peer to delete
-   * @return true on success, otherwise false
-   */
-  bool DeletePeer(const RawAddress& peer_address);
 
   /**
    * Delete all peers that have transitioned to Idle state and can be deleted.
@@ -1372,16 +1356,6 @@ bool BtifAvSource::AllowedToConnect(const RawAddress& peer_address) const {
   return (connected < max_connected_peers_);
 }
 
-bool BtifAvSource::DeletePeer(const RawAddress& peer_address) {
-  auto it = peers_.find(peer_address);
-  if (it == peers_.end()) return false;
-  BtifAvPeer* peer = it->second;
-  peer->Cleanup();
-  peers_.erase(it);
-  delete peer;
-  return true;
-}
-
 void BtifAvSource::DeleteIdlePeers() {
   for (auto it = peers_.begin(); it != peers_.end();) {
     BtifAvPeer* peer = it->second;
@@ -1636,16 +1610,6 @@ bool BtifAvSink::AllowedToConnect(const RawAddress& peer_address) const {
     return ((connected + source_connected_peers_size) < max_connected_peers_);
   }
   return (connected < max_connected_peers_);
-}
-
-bool BtifAvSink::DeletePeer(const RawAddress& peer_address) {
-  auto it = peers_.find(peer_address);
-  if (it == peers_.end()) return false;
-  BtifAvPeer* peer = it->second;
-  peer->Cleanup();
-  peers_.erase(it);
-  delete peer;
-  return true;
 }
 
 void BtifAvSink::DeleteIdlePeers() {
