@@ -101,7 +101,6 @@
     <string name="status_connection_error" msgid="8253709700568062220">"Ukuxhumeka akuphumelelanga."</string>
     <string name="status_protocol_error" msgid="3231573735130475654">"Isicelo asikwazi ukuphathwa ngokulungile"</string>
     <string name="status_unknown_error" msgid="314676481744304866">"Iphutha elingaziwa"</string>
-    <string name="btopp_live_folder" msgid="4859989703965326287">"I-Bluetooth etholiwe"</string>
     <string name="opp_notification_group" msgid="150067508422520653">"Ukwabelana kwe-bluetooth"</string>
     <string name="download_success" msgid="3438268368708549686">"<xliff:g id="FILE_SIZE">%1$s</xliff:g> Ukuthola kuqedile."</string>
     <string name="upload_success" msgid="143787470859042049">"<xliff:g id="FILE_SIZE">%1$s</xliff:g> Ukuthumela kuqedile."</string>
@@ -136,4 +135,8 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Idivayisi yakho ikhumbula ukugcina i-Bluetooth ivuliwe kumodi yendiza. Vala i-Bluetooth uma ungafuni ukuthi ihlale ivuliwe."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"I-Wi-Fi ne-Bluetooth kuhlala kuvuliwe"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Ifoni yakho ikhumbula ukugcina i-Wi-Fi ne-Bluetooth kuvuliwe kumodi yendiza. Vala i-Wi-Fi ne-Bluetooth uma ungafuni ukuthi ihlale ivuliwe."</string>
+    <string name="bluetooth_enabled_auto_on_title" msgid="1799541656310353393">"I-Bluetooth inikwe amandla ngokuzenzekelayo"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="1070556457440100730">"Ukuqalisa kabusha okuzenzekelayo kungashintshwa Kumasethingi e-Bluetooth."</string>
+    <string name="bluetooth_disable_auto_on" msgid="1085026923461565937">"Vala"</string>
+    <string name="bluetooth_notification_group" msgid="7251886707585872194">"Ukushintsha kwesimo se-Bluetooth okuzenzekelayo"</string>
 </resources>

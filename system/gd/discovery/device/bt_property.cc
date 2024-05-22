@@ -52,6 +52,8 @@ std::string bt_property_type_text(const bt_property_type_t& type) {
     CASE_RETURN_TEXT(BT_PROPERTY_REMOTE_MODEL_NUM);
     CASE_RETURN_TEXT(BT_PROPERTY_REMOTE_ADDR_TYPE);
     CASE_RETURN_TEXT(BT_PROPERTY_REMOTE_DEVICE_TIMESTAMP);
+    CASE_RETURN_TEXT(BT_PROPERTY_REMOTE_SECURE_CONNECTIONS_SUPPORTED);
+    CASE_RETURN_TEXT(BT_PROPERTY_REMOTE_MAX_SESSION_KEY_SIZE);
   }
   return base::StringPrintf("Unknown [%d]", (int)type);
 }
@@ -242,6 +244,18 @@ std::string bt_property_text(const bt_property_t& property) {
 
     case BT_PROPERTY_REMOTE_DEVICE_TIMESTAMP:
       return base::StringPrintf("type:%s", bt_property_type_text(property.type).c_str());
+
+    case BT_PROPERTY_REMOTE_SECURE_CONNECTIONS_SUPPORTED:
+      return base::StringPrintf(
+          "type:%s remote secure connections supported:%hhd",
+          bt_property_type_text(property.type).c_str(),
+          (*(uint8_t*)property.val));
+
+    case BT_PROPERTY_REMOTE_MAX_SESSION_KEY_SIZE:
+      return base::StringPrintf(
+          "type:%s remote max session key size:%hhd",
+          bt_property_type_text(property.type).c_str(),
+          (*(uint8_t*)property.val));
   }
   return std::string("Unknown");
 }

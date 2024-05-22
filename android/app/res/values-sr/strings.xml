@@ -101,7 +101,6 @@
     <string name="status_connection_error" msgid="8253709700568062220">"Повезивање није успело."</string>
     <string name="status_protocol_error" msgid="3231573735130475654">"Није могуће исправно обрадити захтев."</string>
     <string name="status_unknown_error" msgid="314676481744304866">"Непозната грешка."</string>
-    <string name="btopp_live_folder" msgid="4859989703965326287">"Примљено преко Bluetooth-а"</string>
     <string name="opp_notification_group" msgid="150067508422520653">"Дељење преко Bluetooth-а"</string>
     <string name="download_success" msgid="3438268368708549686">"<xliff:g id="FILE_SIZE">%1$s</xliff:g> Примљено у целости."</string>
     <string name="upload_success" msgid="143787470859042049">"<xliff:g id="FILE_SIZE">%1$s</xliff:g> Слање је довршено."</string>
@@ -136,4 +135,8 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Уређај памти да не треба да искључује Bluetooth у режиму рада у авиону. Искључите Bluetooth ако не желите да остане укључен."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"WiFi и Bluetooth остају укључени"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Уређај памти да не треба да искључује WiFi и Bluetooth у режиму рада у авиону. Искључите WiFi и Bluetooth ако не желите да остану укључени."</string>
+    <string name="bluetooth_enabled_auto_on_title" msgid="1799541656310353393">"Bluetooth је аутоматски омогућен"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="1070556457440100730">"Аутоматски рестарт може да се укључи или искључи у подешавањима Bluetooth-а."</string>
+    <string name="bluetooth_disable_auto_on" msgid="1085026923461565937">"Искључи"</string>
+    <string name="bluetooth_notification_group" msgid="7251886707585872194">"Аутоматски статус Bluetooth-а је промењен"</string>
 </resources>

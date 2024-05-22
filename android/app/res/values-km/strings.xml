@@ -101,7 +101,6 @@
     <string name="status_connection_error" msgid="8253709700568062220">"ការ​តភ្ជាប់​​មិន​ជោគជ័យ​។"</string>
     <string name="status_protocol_error" msgid="3231573735130475654">"មិន​អាច​ដោះស្រាយ​សំណើ​​​​ដោយ​ត្រឹមត្រូវ​ទេ។"</string>
     <string name="status_unknown_error" msgid="314676481744304866">"មិន​ស្គាល់​កំហុស។"</string>
-    <string name="btopp_live_folder" msgid="4859989703965326287">"​បាន​ទទួលតាម​​ប៊្លូ​ធូ​ស"</string>
     <string name="opp_notification_group" msgid="150067508422520653">"ការ​ចែករំលែក​ប៊្លូ​ធូ​ស"</string>
     <string name="download_success" msgid="3438268368708549686">"បាន​ទទួល​ពេញ​លេញ <xliff:g id="FILE_SIZE">%1$s</xliff:g> ។"</string>
     <string name="upload_success" msgid="143787470859042049">"បាន​ផ្ញើ​ពេញ​លេញ <xliff:g id="FILE_SIZE">%1$s</xliff:g> ។"</string>
@@ -136,4 +135,8 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"ឧបករណ៍របស់អ្នក​ចាំថាត្រូវបន្តបើកប៊្លូធូស​នៅក្នុង​មុខងារពេលជិះយន្តហោះ។ បិទប៊្លូធូស ប្រសិនបើអ្នក​មិនចង់ឱ្យបន្តបើកទេ។"</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi និងប៊្លូធូស​បន្តបើក"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"ឧបករណ៍របស់អ្នក​ចាំថាត្រូវបន្តបើក Wi-Fi និងប៊្លូធូស​នៅក្នុង​មុខងារពេលជិះយន្តហោះ។ បិទ Wi-Fi និង​ប៊្លូធូស ប្រសិនបើអ្នក​មិនចង់ឱ្យបន្តបើកទេ។"</string>
+    <string name="bluetooth_enabled_auto_on_title" msgid="1799541656310353393">"ប៊្លូធូសត្រូវបានបើកដោយស្វ័យប្រវត្តិ"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="1070556457440100730">"អាចបិទ/បើកការចាប់ផ្ដើម​ឡើងវិញស្វ័យប្រវត្តិនៅក្នុងការកំណត់ប៊្លូធូស។"</string>
+    <string name="bluetooth_disable_auto_on" msgid="1085026923461565937">"បិទ"</string>
+    <string name="bluetooth_notification_group" msgid="7251886707585872194">"ការផ្លាស់ប្ដូរស្ថានភាពស្វ័យប្រវត្តិរបស់ប៊្លូធូស"</string>
 </resources>

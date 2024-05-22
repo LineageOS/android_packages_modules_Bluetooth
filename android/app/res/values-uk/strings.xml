@@ -101,7 +101,6 @@
     <string name="status_connection_error" msgid="8253709700568062220">"Помилка з’єднання."</string>
     <string name="status_protocol_error" msgid="3231573735130475654">"Запит неможливо обробити належним чином."</string>
     <string name="status_unknown_error" msgid="314676481744304866">"Невідома помилка."</string>
-    <string name="btopp_live_folder" msgid="4859989703965326287">"Отримані через Bluetooth"</string>
     <string name="opp_notification_group" msgid="150067508422520653">"Обмін даними через Bluetooth"</string>
     <string name="download_success" msgid="3438268368708549686">"Завершено отримання <xliff:g id="FILE_SIZE">%1$s</xliff:g>."</string>
     <string name="upload_success" msgid="143787470859042049">"Заверш. надсил. <xliff:g id="FILE_SIZE">%1$s</xliff:g>."</string>
@@ -136,4 +135,8 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"У режимі польоту функція Bluetooth на пристрої залишатиметься ввімкненою. За бажання її можна вимкнути."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi і Bluetooth залишаються ввімкненими"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"У режимі польоту функції Wi-Fi і Bluetooth на пристрої залишатимуться ввімкненими. За бажання їх можна вимкнути."</string>
+    <string name="bluetooth_enabled_auto_on_title" msgid="1799541656310353393">"Bluetooth увімкнено автоматично"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="1070556457440100730">"Автоматичний перезапуск можна вмикати й вимикати в налаштуваннях Bluetooth."</string>
+    <string name="bluetooth_disable_auto_on" msgid="1085026923461565937">"Вимкнути"</string>
+    <string name="bluetooth_notification_group" msgid="7251886707585872194">"Автоматичне змінення стану Bluetooth"</string>
 </resources>
