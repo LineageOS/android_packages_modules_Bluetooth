@@ -1474,11 +1474,14 @@ void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, uint8_t remote_scn,
   uint32_t event_mask = BTA_JV_RFC_EV_MASK;
   tPORT_STATE port_state;
 
-  tBTA_JV_RFCOMM_CL_INIT evt_data = {
-      .status = tBTA_JV_STATUS::SUCCESS,
-      .handle = 0,
-      .sec_id = 0,
-      .use_co = false,
+  tBTA_JV bta_jv = {
+      .rfc_cl_init =
+          {
+              .status = tBTA_JV_STATUS::SUCCESS,
+              .handle = 0,
+              .sec_id = 0,
+              .use_co = false,
+          },
   };
 
   if (com::android::bluetooth::flags::rfcomm_always_use_mitm()) {
@@ -1495,7 +1498,7 @@ void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, uint8_t remote_scn,
           peer_bd_addr, &handle, bta_jv_port_mgmt_cl_cback,
           sec_mask) != PORT_SUCCESS) {
     log::error("RFCOMM_CreateConnection failed");
-    evt_data.status = tBTA_JV_STATUS::FAILURE;
+    bta_jv.rfc_cl_init.status = tBTA_JV_STATUS::FAILURE;
   } else {
     tBTA_JV_PCB* p_pcb;
     tBTA_JV_RFC_CB* p_cb = bta_jv_alloc_rfc_cb(handle, &p_pcb);
@@ -1504,7 +1507,7 @@ void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, uint8_t remote_scn,
       p_cb->scn = 0;
       p_pcb->state = BTA_JV_ST_CL_OPENING;
       p_pcb->rfcomm_slot_id = rfcomm_slot_id;
-      evt_data.use_co = true;
+      bta_jv.rfc_cl_init.use_co = true;
 
       if (PORT_SetEventCallback(handle, bta_jv_port_event_cl_cback) !=
           PORT_SUCCESS) {
@@ -1529,15 +1532,12 @@ void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, uint8_t remote_scn,
         log::warn("Unable to set RFCOMM client state handle:{}", handle);
       }
 
-      evt_data.handle = p_cb->handle;
+      bta_jv.rfc_cl_init.handle = p_cb->handle;
     } else {
-      evt_data.status = tBTA_JV_STATUS::FAILURE;
+      bta_jv.rfc_cl_init.status = tBTA_JV_STATUS::FAILURE;
       log::error("run out of rfc control block");
     }
   }
-  tBTA_JV bta_jv = {
-      .rfc_cl_init = evt_data,
-  };
 
   p_cback(BTA_JV_RFCOMM_CL_INIT_EVT, &bta_jv, rfcomm_slot_id);
   if (bta_jv.rfc_cl_init.status == tBTA_JV_STATUS::FAILURE) {
