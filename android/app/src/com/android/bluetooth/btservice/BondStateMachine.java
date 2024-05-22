@@ -489,7 +489,7 @@ final class BondStateMachine extends StateMachine {
             return;
         }
 
-        mRemoteDevices.onBondStateChange(device, newState);
+        mRemoteDevices.onBondStateChange(device, oldState, newState);
 
         if (devProp != null) {
             oldState = devProp.getBondState();
