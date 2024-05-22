@@ -1189,8 +1189,12 @@ void GATT_SetIdleTimeout(const RawAddress& bd_addr, uint16_t idle_tout,
     }
 
     if (idle_tout == GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP) {
-      L2CA_SetIdleTimeoutByBdAddr(
-          p_tcb->peer_bda, GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP, BT_TRANSPORT_LE);
+      if (!L2CA_SetIdleTimeoutByBdAddr(p_tcb->peer_bda,
+                                       GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP,
+                                       BT_TRANSPORT_LE)) {
+        log::warn("Unable to set L2CAP link idle timeout peer:{} transport:{}",
+                  p_tcb->peer_bda, bt_transport_text(transport));
+      }
     }
   }
 
