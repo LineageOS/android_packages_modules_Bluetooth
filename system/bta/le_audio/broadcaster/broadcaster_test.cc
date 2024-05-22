@@ -937,6 +937,11 @@ static const broadcaster::BroadcastConfiguration vendor_stereo_16_2_1 = {
     .framing = 1,  // Framed
 };
 
+TEST_F(BroadcasterTest, SanityTest) {
+  ASSERT_EQ(broadcaster::lc3_mono_16_2_1, broadcaster::lc3_mono_16_2_1);
+  ASSERT_EQ(vendor_stereo_16_2_1, vendor_stereo_16_2_1);
+}
+
 TEST_F(BroadcasterTest, VendorCodecConfig) {
   ConfigCodecManagerMock(types::CodecLocation::HOST);
 
