@@ -541,6 +541,7 @@ const struct LeAudioCoreCodecConfig& LeAudioLtvMap::GetAsCoreCodecConfig()
     const {
   log::assert_that(!core_capabilities,
                    "LTVs were already parsed for capabilities!");
+  log::assert_that(!metadata, "LTVs were already parsed for metadata!");
 
   if (!core_config) {
     core_config = LtvMapToCoreCodecConfig(*this);
@@ -552,11 +553,24 @@ const struct LeAudioCoreCodecCapabilities&
 LeAudioLtvMap::GetAsCoreCodecCapabilities() const {
   log::assert_that(!core_config,
                    "LTVs were already parsed for configurations!");
+  log::assert_that(!metadata, "LTVs were already parsed for metadata!");
 
   if (!core_capabilities) {
     core_capabilities = LtvMapToCoreCodecCapabilities(*this);
   }
   return *core_capabilities;
+}
+
+const struct LeAudioMetadata& LeAudioLtvMap::GetAsLeAudioMetadata() const {
+  log::assert_that(!core_config,
+                   "LTVs were already parsed for configurations!");
+  log::assert_that(!core_capabilities,
+                   "LTVs were already parsed for capabilities!");
+
+  if (!metadata) {
+    metadata = LtvMapToMetadata(*this);
+  }
+  return *metadata;
 }
 
 void LeAudioLtvMap::RemoveAllTypes(const LeAudioLtvMap& other) {
@@ -808,6 +822,59 @@ std::ostream& operator<<(std::ostream& os,
   os << "DataPathCfg{datapathId: " << +config.dataPathId
      << ", dataPathCfg.size: " << +config.dataPathConfig.size()
      << ", isoDataPathCfg: " << config.isoDataPathConfig << "}";
+  return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const LeAudioMetadata& config) {
+  os << "LeAudioMetadata{";
+  if (config.preferred_audio_context) {
+    os << "preferred_audio_context: ";
+    os << AudioContexts(config.preferred_audio_context.value());
+  }
+  if (config.streaming_audio_context) {
+    os << ", streaming_audio_context: ";
+    os << AudioContexts(config.streaming_audio_context.value());
+  }
+  if (config.program_info) {
+    os << ", program_info: ";
+    os << config.program_info.value();
+  }
+  if (config.language) {
+    os << ", language: ";
+    os << config.language.value();
+  }
+  if (config.ccid_list) {
+    os << ", ccid_list: ";
+    os << base::HexEncode(config.ccid_list.value().data(),
+                          config.ccid_list.value().size());
+  }
+  if (config.parental_rating) {
+    os << ", parental_rating: ";
+    os << (int)config.parental_rating.value();
+  }
+  if (config.program_info_uri) {
+    os << ", program_info_uri: ";
+    os << config.program_info_uri.value();
+  }
+  if (config.extended_metadata) {
+    os << ", extended_metadata: ";
+    os << base::HexEncode(config.extended_metadata.value().data(),
+                          config.extended_metadata.value().size());
+  }
+  if (config.vendor_specific) {
+    os << ", vendor_specific: ";
+    os << base::HexEncode(config.vendor_specific.value().data(),
+                          config.vendor_specific.value().size());
+  }
+  if (config.audio_active_state) {
+    os << ", audio_active_state: ";
+    os << config.audio_active_state.value();
+  }
+  if (config.broadcast_audio_immediate_rendering) {
+    os << ", broadcast_audio_immediate_rendering: ";
+    os << config.broadcast_audio_immediate_rendering.value();
+  }
+  os << "}";
   return os;
 }
 
