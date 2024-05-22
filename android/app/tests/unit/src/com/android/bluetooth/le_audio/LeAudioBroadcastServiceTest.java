@@ -973,6 +973,7 @@ public class LeAudioBroadcastServiceTest {
 
     @Test
     public void testInCallDrivenBroadcastSwitch() {
+        mSetFlagsRule.disableFlags(Flags.FLAG_LEAUDIO_USE_AUDIO_MODE_LISTENER);
         int groupId = 1;
         int broadcastId = 243;
         byte[] code = {0x00, 0x01, 0x00, 0x02};
