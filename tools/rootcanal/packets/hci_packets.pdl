@@ -5995,6 +5995,17 @@ packet LeApcfAdTypeFilterComplete : LeApcfComplete (apcf_opcode = AD_TYPE_FILTER
   apcf_available_spaces : 8,
 }
 
+packet LeApcfTransportDiscoveryService : LeApcf (apcf_opcode = TRANSPORT_DISCOVERY_SERVICE) {
+  apcf_action : ApcfAction,
+  apcf_filter_index : 8,
+  apcf_transport_discovery_data : 8[],
+}
+
+packet LeApcfTransportDiscoveryServiceComplete : LeApcfComplete (apcf_opcode = TRANSPORT_DISCOVERY_SERVICE) {
+  apcf_action : ApcfAction,
+  apcf_available_spaces : 8,
+}
+
 packet LeApcfReadExtendedFeatures : LeApcf (apcf_opcode = READ_EXTENDED_FEATURES) {
 }
 
