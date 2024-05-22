@@ -62,16 +62,23 @@ void AVCT_Register() {
   memset(&avct_cb, 0, sizeof(tAVCT_CB));
 
   /* register PSM with L2CAP */
-  L2CA_Register2(AVCT_PSM, avct_l2c_appl, true /* enable_snoop */, nullptr,
-                 kAvrcMtu, 0, BTA_SEC_AUTHENTICATE);
+  if (!L2CA_Register2(AVCT_PSM, avct_l2c_appl, true /* enable_snoop */, nullptr,
+                      kAvrcMtu, 0, BTA_SEC_AUTHENTICATE)) {
+    log::error(
+        "Unable to register with L2CAP AVCT profile psm:AVCT_PSM[0x0017]");
+  }
 
   /* Include the browsing channel which uses eFCR */
   tL2CAP_ERTM_INFO ertm_info;
   ertm_info.preferred_mode = L2CAP_FCR_ERTM_MODE;
 
-  L2CA_Register2(AVCT_BR_PSM, avct_l2c_br_appl, true /*enable_snoop*/,
-                 &ertm_info, kAvrcBrMtu, AVCT_MIN_BROWSE_MTU,
-                 BTA_SEC_AUTHENTICATE);
+  if (!L2CA_Register2(AVCT_BR_PSM, avct_l2c_br_appl, true /*enable_snoop*/,
+                      &ertm_info, kAvrcBrMtu, AVCT_MIN_BROWSE_MTU,
+                      BTA_SEC_AUTHENTICATE)) {
+    log::error(
+        "Unable to register with L2CAP AVCT_BR profile "
+        "psm:AVCT_BR_PSM[0x001b]");
+  }
 }
 
 /*******************************************************************************
