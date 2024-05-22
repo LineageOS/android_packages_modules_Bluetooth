@@ -47,13 +47,7 @@ ROOTCANAL_PORT_CUTTLEFISH = 7300
     help='Bumble json configuration file',
 )
 def main(grpc_port: int, rootcanal_port: int, transport: str, config: str) -> None:
-    bumble_server.register_servicer_hook(
-        lambda bumble, _, server: add_AshaServicer_to_server(AshaService(bumble.device), server))
-    bumble_server.register_servicer_hook(
-        lambda bumble, _, server: add_DckServicer_to_server(DckService(bumble.device), server))
-    bumble_server.register_servicer_hook(
-        lambda bumble, _, server: add_GATTServicer_to_server(GATTService(bumble.device), server))
-
+    register_bumble_services()
     if '<rootcanal-port>' in transport:
         transport = transport.replace('<rootcanal-port>', str(rootcanal_port))
 
@@ -68,6 +62,15 @@ def main(grpc_port: int, rootcanal_port: int, transport: str, config: str) -> No
                         format='%(asctime)s.%(msecs).03d %(levelname)-8s %(message)s',
                         datefmt='%m-%d %H:%M:%S')
     asyncio.run(serve(device, config=server_config, port=grpc_port))
+
+
+def register_bumble_services():
+    bumble_server.register_servicer_hook(
+        lambda bumble, _, server: add_AshaServicer_to_server(AshaService(bumble.device), server))
+    bumble_server.register_servicer_hook(
+        lambda bumble, _, server: add_DckServicer_to_server(DckService(bumble.device), server))
+    bumble_server.register_servicer_hook(
+        lambda bumble, _, server: add_GATTServicer_to_server(GATTService(bumble.device), server))
 
 
 def retrieve_config(config: str) -> Dict[str, Any]:
