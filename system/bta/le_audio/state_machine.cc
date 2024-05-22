@@ -1721,20 +1721,24 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
             ase->direction == bluetooth::le_audio::types::kLeAudioDirectionSink
                 ? bluetooth::hci::iso_manager::kIsoDataPathDirectionIn
                 : bluetooth::hci::iso_manager::kIsoDataPathDirectionOut,
-        .data_path_id = ase->data_path_id,
-        .codec_id_format = ase->is_codec_in_controller
-                               ? ase->codec_id.coding_format
-                               : bluetooth::hci::kIsoCodingFormatTransparent,
-        .codec_id_company = ase->codec_id.vendor_company_id,
-        .codec_id_vendor = ase->codec_id.vendor_codec_id,
-        .controller_delay = 0x00000000,
-        .codec_conf = std::vector<uint8_t>(),
+        .data_path_id = ase->data_path_configuration.dataPathId,
+        .codec_id_format = ase->data_path_configuration.isoDataPathConfig
+                               .codecId.coding_format,
+        .codec_id_company = ase->data_path_configuration.isoDataPathConfig
+                                .codecId.vendor_company_id,
+        .codec_id_vendor = ase->data_path_configuration.isoDataPathConfig
+                               .codecId.vendor_codec_id,
+        .controller_delay =
+            ase->data_path_configuration.isoDataPathConfig.controllerDelayUs,
+        .codec_conf =
+            ase->data_path_configuration.isoDataPathConfig.configuration,
     };
 
     LeAudioLogHistory::Get()->AddLogHistory(
         kLogStateMachineTag, group_id, RawAddress::kEmpty,
         kLogSetDataPathOp + "cis_h:" + loghex(ase->cis_conn_hdl),
-        "direction: " + loghex(param.data_path_dir));
+        "direction: " + loghex(param.data_path_dir) + ", codecId: " +
+            ToString(ase->data_path_configuration.isoDataPathConfig.codecId));
 
     ase->data_path_state = DataPathState::CONFIGURING;
     IsoManager::GetInstance()->SetupIsoDataPath(ase->cis_conn_hdl,
