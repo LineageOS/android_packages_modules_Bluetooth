@@ -22,7 +22,6 @@
 #include "stack/include/acl_api.h"
 #include "stack/include/btm_api.h"
 #include "stack/include/btm_ble_api.h"
-#include "stack/include/btm_ble_sec_api.h"
 
 struct btm_client_interface_t btm_client_interface = {
     .lifecycle =
@@ -99,6 +98,7 @@ struct btm_client_interface_t btm_client_interface = {
 
     .local =
         {
+            .BTM_ReadLocalDeviceName = BTM_ReadLocalDeviceName,
             .BTM_ReadLocalDeviceNameFromController =
                 BTM_ReadLocalDeviceNameFromController,
             .BTM_SetLocalDeviceName = BTM_SetLocalDeviceName,
