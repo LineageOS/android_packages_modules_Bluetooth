@@ -47,6 +47,28 @@ class RangingHalAndroid : public RangingHal {
     return bluetooth_channel_sounding_ != nullptr;
   }
 
+  std::vector<VendorSpecificCharacteristic> getVendorSpecificCharacteristics() override {
+    std::vector<VendorSpecificCharacteristic> vendor_specific_characteristics = {};
+    if (bluetooth_channel_sounding_ != nullptr) {
+      std::optional<std::vector<std::optional<VendorSpecificData>>> vendorSpecificDataOptional;
+      bluetooth_channel_sounding_->getVendorSpecificData(&vendorSpecificDataOptional);
+      if (vendorSpecificDataOptional.has_value()) {
+        for (auto vendor_specific_data : vendorSpecificDataOptional.value()) {
+          VendorSpecificCharacteristic vendor_specific_characteristic;
+          vendor_specific_characteristic.characteristicUuid_ =
+              vendor_specific_data->characteristicUuid;
+          vendor_specific_characteristic.value_ = vendor_specific_data->opaqueValue;
+          vendor_specific_characteristics.emplace_back(vendor_specific_characteristic);
+        }
+      }
+      log::info("size {}", vendor_specific_characteristics.size());
+    } else {
+      log::warn("bluetooth_channel_sounding_ is nullptr");
+    }
+
+    return vendor_specific_characteristics;
+  };
+
  protected:
   void ListDependencies(ModuleList* /*list*/) const {}
 

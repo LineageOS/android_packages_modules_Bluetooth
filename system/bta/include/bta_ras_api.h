@@ -19,15 +19,24 @@
 #include <cstdint>
 #include <vector>
 
+#include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
 namespace bluetooth {
 namespace ras {
 
+struct VendorSpecificCharacteristic {
+  bluetooth::Uuid characteristicUuid_;
+  std::vector<uint8_t> value_;
+};
+
 class RasServer {
  public:
   virtual ~RasServer() = default;
   virtual void Initialize() = 0;
+  virtual void SetVendorSpecificCharacteristic(
+      const std::vector<VendorSpecificCharacteristic>&
+          vendor_specific_characteristics) = 0;
   virtual void PushProcedureData(RawAddress address, uint16_t procedure_count,
                                  bool is_last, std::vector<uint8_t> data) = 0;
 };

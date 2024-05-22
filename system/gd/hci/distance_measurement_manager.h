@@ -18,6 +18,7 @@
 #include <bluetooth/log.h>
 
 #include "address.h"
+#include "hal/ranging_hal.h"
 #include "module.h"
 
 namespace bluetooth {
@@ -66,6 +67,8 @@ class DistanceMeasurementCallbacks {
       DistanceMeasurementMethod method) = 0;
   virtual void OnRasFragmentReady(
       Address address, uint16_t procedure_counter, bool is_last, std::vector<uint8_t> raw_data) = 0;
+  virtual void OnVendorSpecificCharacteristics(
+      std::vector<hal::VendorSpecificCharacteristic> vendor_specific_characteristics) = 0;
 };
 
 class DistanceMeasurementManager : public bluetooth::Module {
