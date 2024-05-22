@@ -250,7 +250,11 @@ void avct_lcb_open_ind(tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* p_data) {
         if (p_ccb->cc.role == AVCT_INT) {
           /** @} */
           bind = true;
-          L2CA_SetTxPriority(p_lcb->ch_lcid, L2CAP_CHNL_PRIORITY_HIGH);
+          if (!L2CA_SetTxPriority(p_lcb->ch_lcid, L2CAP_CHNL_PRIORITY_HIGH)) {
+            log::warn(
+                "Unable to set L2CAP transmit high priority peer:{} cid:{}",
+                p_ccb->p_lcb->peer_addr, p_lcb->ch_lcid);
+          }
           p_ccb->cc.p_ctrl_cback(avct_ccb_to_idx(p_ccb), AVCT_CONNECT_CFM_EVT,
                                  0, &p_lcb->peer_addr);
         }
@@ -267,7 +271,11 @@ void avct_lcb_open_ind(tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* p_data) {
           } else {
             bind = true;
             p_ccb->p_lcb = p_lcb;
-            L2CA_SetTxPriority(p_lcb->ch_lcid, L2CAP_CHNL_PRIORITY_HIGH);
+            if (!L2CA_SetTxPriority(p_lcb->ch_lcid, L2CAP_CHNL_PRIORITY_HIGH)) {
+              log::warn(
+                  "Unable to set L2CAP transmit high priority peer:{} cid:{}",
+                  p_ccb->p_lcb->peer_addr, p_lcb->ch_lcid);
+            }
             p_ccb->cc.p_ctrl_cback(avct_ccb_to_idx(p_ccb), AVCT_CONNECT_IND_EVT,
                                    0, &p_lcb->peer_addr);
           }
@@ -281,7 +289,11 @@ void avct_lcb_open_ind(tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* p_data) {
         /* if bound to this lcb send connect confirm event */
         if (p_ccb->p_lcb == p_lcb) {
           bind = true;
-          L2CA_SetTxPriority(p_lcb->ch_lcid, L2CAP_CHNL_PRIORITY_HIGH);
+          if (!L2CA_SetTxPriority(p_lcb->ch_lcid, L2CAP_CHNL_PRIORITY_HIGH)) {
+            log::warn(
+                "Unable to set L2CAP transmit high priority peer:{} cid:{}",
+                p_ccb->p_lcb->peer_addr, p_lcb->ch_lcid);
+          }
           p_ccb->cc.p_ctrl_cback(avct_ccb_to_idx(p_ccb), AVCT_CONNECT_CFM_EVT,
                                  0, &p_lcb->peer_addr);
         }
@@ -292,7 +304,11 @@ void avct_lcb_open_ind(tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* p_data) {
           /* bind ccb to lcb and send connect ind event */
           bind = true;
           p_ccb->p_lcb = p_lcb;
-          L2CA_SetTxPriority(p_lcb->ch_lcid, L2CAP_CHNL_PRIORITY_HIGH);
+          if (!L2CA_SetTxPriority(p_lcb->ch_lcid, L2CAP_CHNL_PRIORITY_HIGH)) {
+            log::warn(
+                "Unable to set L2CAP transmit high priority peer:{} cid:{}",
+                p_ccb->p_lcb->peer_addr, p_lcb->ch_lcid);
+          }
           p_ccb->cc.p_ctrl_cback(avct_ccb_to_idx(p_ccb), AVCT_CONNECT_IND_EVT,
                                  0, &p_lcb->peer_addr);
         }

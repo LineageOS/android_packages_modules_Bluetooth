@@ -355,8 +355,12 @@ void avdt_ad_tc_open_ind(AvdtpTransportChannel* p_tbl) {
   /* if signaling channel, notify ccb that channel open */
   if (p_tbl->tcid == 0) {
     /* set the signal channel to use high priority within the ACL link */
-    L2CA_SetTxPriority(avdtp_cb.ad.rt_tbl[p_tbl->ccb_idx][AVDT_CHAN_SIG].lcid,
-                       L2CAP_CHNL_PRIORITY_HIGH);
+    if (!L2CA_SetTxPriority(
+            avdtp_cb.ad.rt_tbl[p_tbl->ccb_idx][AVDT_CHAN_SIG].lcid,
+            L2CAP_CHNL_PRIORITY_HIGH)) {
+      log::warn("Unable to set L2CAP transmit high priority cid:{}",
+                avdtp_cb.ad.rt_tbl[p_tbl->ccb_idx][AVDT_CHAN_SIG].lcid);
+    }
 
     p_ccb = avdt_ccb_by_idx(p_tbl->ccb_idx);
     /* use err_param to indicate the role of connection.
