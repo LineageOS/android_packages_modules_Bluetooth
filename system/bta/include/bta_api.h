@@ -96,20 +96,11 @@ typedef uint32_t tBTA_SERVICE_MASK;
 #define BTA_ALL_APP_ID 0xFF
 
 /* Discoverable Modes */
-#define BTA_DM_NON_DISC BTM_NON_DISCOVERABLE /* Device is not discoverable. */
-#define BTA_DM_GENERAL_DISC                         \
-  BTM_GENERAL_DISCOVERABLE /* General discoverable. \
-                              */
-#define BTA_DM_LIMITED_DISC BTM_LIMITED_DISCOVERABLE
-
 typedef uint16_t
     tBTA_DM_DISC; /* this discoverability mode is a bit mask among BR mode and
                      LE mode */
 
 /* Connectable Modes */
-#define BTA_DM_NON_CONN BTM_NON_CONNECTABLE /* Device is not connectable. */
-#define BTA_DM_CONN BTM_CONNECTABLE         /* Device is connectable. */
-
 typedef uint16_t tBTA_DM_CONN;
 
 /* Central/peripheral preferred roles */

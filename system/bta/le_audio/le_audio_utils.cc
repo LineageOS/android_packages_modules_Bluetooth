@@ -586,7 +586,7 @@ static bool IsCodecConfigSettingSupported(
   const auto& codec_id = codec_config_setting.id;
   if (codec_id != pac.codec_id) return false;
 
-  log::debug(": Settings for format: 0x%02x ", codec_id.coding_format);
+  log::debug(": Settings for format: 0x{:#02x} ", codec_id.coding_format);
 
   if (utils::IsCodecUsingLtvFormat(codec_id)) {
     log::assert_that(

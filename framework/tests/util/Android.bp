@@ -29,6 +29,7 @@ java_library {
     srcs: [
         "src/**/*.java",
         "src/BlockingBluetoothAdapter.kt",
+        "src/Permissions.kt",
     ],
     sdk_version: "test_current",
     visibility: [
@@ -36,6 +37,7 @@ java_library {
         "//packages/modules/Bluetooth/framework/tests/bumble",
 
         // TODO: b/339938196 -- remove export for other modules and test
+        "//cts/hostsidetests/statsdatom/apps/statsdapp",
         "//cts/tests/tests/appop",
         "//packages/modules/Connectivity/nearby/tests/cts/fastpair",
         "//packages/modules/Permission/tests/cts/permission",

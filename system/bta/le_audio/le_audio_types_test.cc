@@ -378,6 +378,118 @@ TEST(LeAudioLtvMapTest, test_capabilities_valid) {
   ASSERT_FALSE(caps.IsCodecFramesPerSduSupported(3));
 }
 
+TEST(LeAudioLtvMapTest, test_metadata_use_guard1) {
+  auto default_context =
+      (uint16_t)bluetooth::le_audio::types::LeAudioContextType::VOICEASSISTANTS;
+  static const std::vector<uint8_t> default_metadata = {
+      bluetooth::le_audio::types::kLeAudioMetadataStreamingAudioContextLen + 1,
+      bluetooth::le_audio::types::kLeAudioMetadataTypeStreamingAudioContext,
+      (uint8_t)(default_context & 0x00FF),
+      (uint8_t)((default_context & 0xFF00) >> 8)};
+
+  // Parse
+  bool success = true;
+  LeAudioLtvMap ltv_map = LeAudioLtvMap::Parse(
+      default_metadata.data(), default_metadata.size(), success);
+  ASSERT_TRUE(success);
+
+  // Verify the codec capabilities values
+  auto metadata = ltv_map.GetAsLeAudioMetadata();
+
+  // Should fail when trying to reinterpret the LTV as configuration
+  EXPECT_DEATH(ltv_map.GetAsCoreCodecConfig(), "");
+}
+
+TEST(LeAudioLtvMapTest, test_metadata_use_guard2) {
+  auto default_context =
+      (uint16_t)bluetooth::le_audio::types::LeAudioContextType::VOICEASSISTANTS;
+  static const std::vector<uint8_t> default_metadata = {
+      bluetooth::le_audio::types::kLeAudioMetadataStreamingAudioContextLen + 1,
+      bluetooth::le_audio::types::kLeAudioMetadataTypeStreamingAudioContext,
+      (uint8_t)(default_context & 0x00FF),
+      (uint8_t)((default_context & 0xFF00) >> 8)};
+
+  // Parse
+  bool success = true;
+  LeAudioLtvMap ltv_map = LeAudioLtvMap::Parse(
+      default_metadata.data(), default_metadata.size(), success);
+  ASSERT_TRUE(success);
+
+  // Verify the codec capabilities values
+  auto metadata = ltv_map.GetAsLeAudioMetadata();
+
+  // Should fail when trying to reinterpret the LTV as configuration
+  EXPECT_DEATH(ltv_map.GetAsCoreCodecCapabilities(), "");
+}
+
+static auto PrepareMetadataLtv() {
+  ::bluetooth::le_audio::types::LeAudioLtvMap metadata_ltvs;
+  // Prepare the metadata LTVs
+  metadata_ltvs
+      .Add(::bluetooth::le_audio::types::
+               kLeAudioMetadataTypePreferredAudioContext,
+           (uint16_t)10)
+      .Add(::bluetooth::le_audio::types::
+               kLeAudioMetadataTypeStreamingAudioContext,
+           (uint16_t)8)
+      .Add(::bluetooth::le_audio::types::kLeAudioMetadataTypeProgramInfo,
+           std::string{"ProgramInfo"})
+      .Add(::bluetooth::le_audio::types::kLeAudioMetadataTypeLanguage,
+           std::string{"ice"})
+      .Add(::bluetooth::le_audio::types::kLeAudioMetadataTypeCcidList,
+           std::vector<uint8_t>{1, 2, 3})
+      .Add(::bluetooth::le_audio::types::kLeAudioMetadataTypeparentalRating,
+           (uint8_t)0x01)
+      .Add(::bluetooth::le_audio::types::kLeAudioMetadataTypeProgramInfoUri,
+           std::string{"ProgramInfoUri"})
+      .Add(::bluetooth::le_audio::types::kLeAudioMetadataTypeAudioActiveState,
+           false)
+      .Add(::bluetooth::le_audio::types::
+               kLeAudioMetadataTypeBroadcastAudioImmediateRenderingFlag,
+           true)
+      .Add(::bluetooth::le_audio::types::kLeAudioMetadataTypeExtendedMetadata,
+           std::vector<uint8_t>{1, 2, 3})
+      .Add(::bluetooth::le_audio::types::kLeAudioMetadataTypeVendorSpecific,
+           std::vector<uint8_t>{1, 2, 3});
+  return metadata_ltvs;
+}
+
+TEST(LeAudioLtvMapTest, test_metadata_valid) {
+  // Prepare the reference LTV
+  auto metadata_ltv = PrepareMetadataLtv();
+  auto raw_metadata = metadata_ltv.RawPacket();
+
+  // Check the Parsing
+  bool success = true;
+  LeAudioLtvMap parsed_ltv_map =
+      LeAudioLtvMap::Parse(raw_metadata.data(), raw_metadata.size(), success);
+  ASSERT_TRUE(success);
+
+  // Verify the values
+  auto metadata = metadata_ltv.GetAsLeAudioMetadata();
+  auto parsed_metadata = parsed_ltv_map.GetAsLeAudioMetadata();
+  ASSERT_EQ(parsed_metadata.preferred_audio_context.value(),
+            metadata.preferred_audio_context.value());
+  ASSERT_EQ(parsed_metadata.program_info.value(),
+            metadata.program_info.value());
+  ASSERT_TRUE(parsed_metadata.language.has_value());
+  ASSERT_TRUE(metadata.language.has_value());
+  ASSERT_EQ(parsed_metadata.language.value(), metadata.language.value());
+  ASSERT_EQ(parsed_metadata.ccid_list.value(), metadata.ccid_list.value());
+  ASSERT_EQ(parsed_metadata.parental_rating.value(),
+            metadata.parental_rating.value());
+  ASSERT_EQ(parsed_metadata.program_info_uri.value(),
+            metadata.program_info_uri.value());
+  ASSERT_EQ(parsed_metadata.audio_active_state.value(),
+            metadata.audio_active_state.value());
+  ASSERT_EQ(parsed_metadata.broadcast_audio_immediate_rendering.value(),
+            metadata.broadcast_audio_immediate_rendering.value());
+  ASSERT_EQ(parsed_metadata.extended_metadata.value(),
+            metadata.extended_metadata.value());
+  ASSERT_EQ(parsed_metadata.vendor_specific.value(),
+            metadata.vendor_specific.value());
+}
+
 TEST(LeAudioLtvMapTest, test_adding_types) {
   LeAudioLtvMap ltv_map;
   ltv_map.Add(1, (uint8_t)127);

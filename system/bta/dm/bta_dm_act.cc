@@ -417,23 +417,23 @@ bool BTA_DmSetVisibility(bt_scan_mode_t mode) {
 
   switch (mode) {
     case BT_SCAN_MODE_NONE:
-      disc_mode_param = BTA_DM_NON_DISC;
-      conn_mode_param = BTA_DM_NON_CONN;
+      disc_mode_param = BTM_NON_DISCOVERABLE;
+      conn_mode_param = BTM_NON_CONNECTABLE;
       break;
 
     case BT_SCAN_MODE_CONNECTABLE:
-      disc_mode_param = BTA_DM_NON_DISC;
-      conn_mode_param = BTA_DM_CONN;
+      disc_mode_param = BTM_NON_DISCOVERABLE;
+      conn_mode_param = BTM_CONNECTABLE;
       break;
 
     case BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE:
-      disc_mode_param = BTA_DM_GENERAL_DISC;
-      conn_mode_param = BTA_DM_CONN;
+      disc_mode_param = BTM_GENERAL_DISCOVERABLE;
+      conn_mode_param = BTM_CONNECTABLE;
       break;
 
     case BT_SCAN_MODE_CONNECTABLE_LIMITED_DISCOVERABLE:
-      disc_mode_param = BTA_DM_LIMITED_DISC;
-      conn_mode_param = BTA_DM_CONN;
+      disc_mode_param = BTM_LIMITED_DISCOVERABLE;
+      conn_mode_param = BTM_CONNECTABLE;
       break;
 
     default:
@@ -1600,7 +1600,7 @@ void bta_dm_allow_wake_by_hid(
   // If there are any entries in the classic hid list, we should also make
   // the adapter connectable for classic.
   if (classic_hid_devices.size() > 0) {
-    if (BTM_SetConnectability(BTA_DM_CONN) != BTM_SUCCESS) {
+    if (BTM_SetConnectability(BTM_CONNECTABLE) != BTM_SUCCESS) {
       log::warn("Unable to set connectability");
     }
   }

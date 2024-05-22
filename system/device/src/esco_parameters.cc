@@ -430,8 +430,9 @@ enh_esco_params_t esco_parameters_for_codec(esco_codec_t codec, bool offload) {
   }
 
   if (param.packet_types != new_packet_types) {
-    log::info("Applying restricted packet types for codec %d: 0x%04x -> 0x%04x",
-              (int)codec, param.packet_types, new_packet_types);
+    log::info(
+        "Applying restricted packet types for codec {}: 0x{:04x} -> 0x{:04x}",
+        (int)codec, param.packet_types, new_packet_types);
     param.packet_types = new_packet_types;
   }
 #endif

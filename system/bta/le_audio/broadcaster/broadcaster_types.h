@@ -126,14 +126,15 @@ struct BroadcastSubgroupCodecConfig {
 
     if (subgroup_vendor_codec_config_.has_value()) {
       if (subgroup_vendor_codec_config_->size() !=
-          other.subgroup_vendor_codec_config_->size())
+          other.subgroup_vendor_codec_config_->size()) {
         return false;
-    }
+      }
 
-    if (0 != memcmp(subgroup_vendor_codec_config_->data(),
-                    other.subgroup_vendor_codec_config_->data(),
-                    subgroup_vendor_codec_config_->size())) {
-      return false;
+      if (0 != memcmp(subgroup_vendor_codec_config_->data(),
+                      other.subgroup_vendor_codec_config_->data(),
+                      subgroup_vendor_codec_config_->size())) {
+        return false;
+      }
     }
 
     return (codec_id_ == other.codec_id_) &&

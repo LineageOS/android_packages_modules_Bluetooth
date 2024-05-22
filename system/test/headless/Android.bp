@@ -30,6 +30,7 @@ cc_binary {
     defaults: [
         "fluoride_defaults",
         "latest_android_hardware_audio_common_ndk_static",
+        "latest_android_hardware_bluetooth_audio_ndk_android_static",
         "latest_android_hardware_bluetooth_audio_ndk_static",
         "latest_android_media_audio_common_types_ndk_static",
     ],
@@ -140,7 +141,6 @@ cc_binary {
     target: {
         android: {
             static_libs: [
-                "android.hardware.bluetooth.audio-V4-ndk",
                 "android.hardware.bluetooth.audio@2.0",
                 "android.hardware.bluetooth.audio@2.1",
                 "android.hardware.bluetooth@1.0",

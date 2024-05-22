@@ -296,6 +296,12 @@ constexpr uint8_t kLeAudioMetadataTypeStreamingAudioContext = 0x02;
 constexpr uint8_t kLeAudioMetadataTypeProgramInfo = 0x03;
 constexpr uint8_t kLeAudioMetadataTypeLanguage = 0x04;
 constexpr uint8_t kLeAudioMetadataTypeCcidList = 0x05;
+constexpr uint8_t kLeAudioMetadataTypeparentalRating = 0x06;
+constexpr uint8_t kLeAudioMetadataTypeProgramInfoUri = 0x07;
+constexpr uint8_t kLeAudioMetadataTypeAudioActiveState = 0x08;
+constexpr uint8_t kLeAudioMetadataTypeBroadcastAudioImmediateRenderingFlag =
+    0x09;
+constexpr uint8_t kLeAudioMetadataTypeExtendedMetadata = 0xFE;
 constexpr uint8_t kLeAudioMetadataTypeVendorSpecific = 0xFF;
 
 constexpr uint8_t kLeAudioMetadataTypeLen = 1;
@@ -648,6 +654,22 @@ struct LeAudioCoreCodecCapabilities {
   std::optional<uint8_t> supported_max_codec_frames_per_sdu;
 };
 
+struct LeAudioMetadata {
+  std::optional<uint16_t> preferred_audio_context;
+  std::optional<uint16_t> streaming_audio_context;
+  std::optional<std::string> program_info;
+  std::optional<std::string> language;  // ISO 639-3 (3 lowercase letter codes)
+  std::optional<std::vector<uint8_t>> ccid_list;
+  std::optional<uint8_t> parental_rating;
+  std::optional<std::string> program_info_uri;
+  std::optional<std::vector<uint8_t>> extended_metadata;
+  std::optional<std::vector<uint8_t>> vendor_specific;
+  std::optional<bool> audio_active_state;
+  std::optional<bool> broadcast_audio_immediate_rendering;
+};
+
+std::ostream& operator<<(std::ostream& os, const LeAudioMetadata& config);
+
 #define LTV_ENTRY_SAMPLING_FREQUENCY(value)                 \
   {                                                         \
     le_audio::codec_spec_conf::kLeAudioLtvTypeSamplingFreq, \
@@ -688,7 +710,8 @@ class LeAudioLtvMap {
       : values(values),
         value_hash(0),
         core_config(std::nullopt),
-        core_capabilities(std::nullopt) {}
+        core_capabilities(std::nullopt),
+        metadata(std::nullopt) {}
   LeAudioLtvMap() = default;
   ~LeAudioLtvMap() = default;
 
@@ -707,6 +730,16 @@ class LeAudioLtvMap {
     values.insert_or_assign(type, std::move(value));
     invalidate();
     return *this;
+  }
+
+  // Add vendor specific data preceded with 2 octets of company ID
+  LeAudioLtvMap& Add(uint8_t type, uint16_t vendorCompanyId,
+                     std::vector<uint8_t> value) {
+    std::vector<uint8_t> data(value.size() + 2);
+    auto ptr = data.data();
+    UINT16_TO_STREAM(ptr, vendorCompanyId);
+    ARRAY_TO_STREAM(ptr, value.data(), (int)value.size());
+    return Add(type, data);
   }
 
   LeAudioLtvMap& Add(uint8_t type, const std::string& value) {
@@ -771,6 +804,7 @@ class LeAudioLtvMap {
 
   const struct LeAudioCoreCodecConfig& GetAsCoreCodecConfig() const;
   const struct LeAudioCoreCodecCapabilities& GetAsCoreCodecCapabilities() const;
+  const struct LeAudioMetadata& GetAsLeAudioMetadata() const;
   LeAudioLtvMap GetIntersection(const LeAudioLtvMap& other) const;
 
   std::string ToString(
@@ -791,7 +825,78 @@ class LeAudioLtvMap {
   void invalidate() {
     core_config = std::nullopt;
     core_capabilities = std::nullopt;
+    metadata = std::nullopt;
     value_hash = 0;
+  }
+
+  static LeAudioMetadata LtvMapToMetadata(const LeAudioLtvMap& ltvs) {
+    LeAudioMetadata metadata;
+
+    auto vec_opt = ltvs.Find(types::kLeAudioMetadataTypePreferredAudioContext);
+    if (vec_opt &&
+        (vec_opt->size() ==
+         sizeof(decltype(metadata.preferred_audio_context)::value_type))) {
+      auto ptr = vec_opt->data();
+      STREAM_TO_UINT16(metadata.preferred_audio_context, ptr);
+    }
+
+    vec_opt = ltvs.Find(types::kLeAudioMetadataTypeStreamingAudioContext);
+    if (vec_opt &&
+        (vec_opt->size() ==
+         sizeof(decltype(metadata.streaming_audio_context)::value_type))) {
+      auto ptr = vec_opt->data();
+      STREAM_TO_UINT16(metadata.streaming_audio_context, ptr);
+    }
+
+    vec_opt = ltvs.Find(types::kLeAudioMetadataTypeProgramInfo);
+    if (vec_opt) {
+      metadata.program_info = std::string(
+          reinterpret_cast<const char*>(vec_opt->data()), vec_opt->size());
+    }
+
+    vec_opt = ltvs.Find(types::kLeAudioMetadataTypeLanguage);
+    if (vec_opt && (vec_opt->size() == 3)) {  // it is always 3 in ISO 639-3
+      metadata.language = std::string(
+          reinterpret_cast<const char*>(vec_opt->data()), vec_opt->size());
+    }
+
+    metadata.ccid_list = ltvs.Find(types::kLeAudioMetadataTypeCcidList);
+
+    vec_opt = ltvs.Find(types::kLeAudioMetadataTypeparentalRating);
+    if (vec_opt && (vec_opt->size() ==
+                    sizeof(decltype(metadata.parental_rating)::value_type))) {
+      auto ptr = vec_opt->data();
+      STREAM_TO_UINT8(metadata.parental_rating, ptr);
+    }
+
+    vec_opt = ltvs.Find(types::kLeAudioMetadataTypeProgramInfoUri);
+    if (vec_opt) {
+      metadata.program_info_uri = std::string(
+          reinterpret_cast<const char*>(vec_opt->data()), vec_opt->size());
+    }
+
+    vec_opt = ltvs.Find(types::kLeAudioMetadataTypeAudioActiveState);
+    if (vec_opt &&
+        (vec_opt->size() ==
+         sizeof(decltype(metadata.audio_active_state)::value_type))) {
+      auto ptr = vec_opt->data();
+      uint8_t val;
+      STREAM_TO_UINT8(val, ptr);
+      metadata.audio_active_state = val ? true : false;
+    }
+
+    vec_opt = ltvs.Find(
+        types::kLeAudioMetadataTypeBroadcastAudioImmediateRenderingFlag);
+    if (vec_opt) {
+      metadata.broadcast_audio_immediate_rendering = true;
+    }
+
+    metadata.extended_metadata =
+        ltvs.Find(types::kLeAudioMetadataTypeExtendedMetadata);
+    metadata.vendor_specific =
+        ltvs.Find(types::kLeAudioMetadataTypeVendorSpecific);
+
+    return metadata;
   }
 
   static LeAudioCoreCodecConfig LtvMapToCoreCodecConfig(
@@ -927,6 +1032,7 @@ class LeAudioLtvMap {
       std::nullopt;
   mutable std::optional<struct LeAudioCoreCodecCapabilities> core_capabilities =
       std::nullopt;
+  mutable std::optional<struct LeAudioMetadata> metadata = std::nullopt;
 };
 
 struct LeAudioCodecId {
@@ -956,17 +1062,18 @@ constexpr LeAudioCodecId kLeAudioCodecHeadtracking = {
     kLeAudioVendorCodecIdHeadtracking};
 
 struct IsoDataPathConfiguration {
-  types::LeAudioCodecId codecId;
-  bool isTransparent;
-  uint32_t controllerDelayUs;
-  std::vector<uint8_t> configuration;
+  types::LeAudioCodecId codecId = {0, 0, 0};
+  bool isTransparent = true;
+  uint32_t controllerDelayUs = 0;
+  std::vector<uint8_t> configuration = {};
 
   bool operator==(const IsoDataPathConfiguration& other) const {
     if (codecId != other.codecId) return false;
     if (isTransparent != other.isTransparent) return false;
     if (controllerDelayUs != other.controllerDelayUs) return false;
     if (configuration.size() != other.configuration.size()) return false;
-    if (memcmp(configuration.data(), other.configuration.data(),
+    if ((!other.configuration.empty()) &&
+        memcmp(configuration.data(), other.configuration.data(),
                other.configuration.size())) {
       return false;
     }
@@ -982,15 +1089,16 @@ std::ostream& operator<<(
     std::ostream& os, const le_audio::types::IsoDataPathConfiguration& config);
 
 struct DataPathConfiguration {
-  uint8_t dataPathId;
-  std::vector<uint8_t> dataPathConfig;
+  uint8_t dataPathId = 0;
+  std::vector<uint8_t> dataPathConfig = {};
   IsoDataPathConfiguration isoDataPathConfig;
 
   bool operator==(const DataPathConfiguration& other) const {
     if (dataPathId != other.dataPathId) return false;
     if (isoDataPathConfig != other.isoDataPathConfig) return false;
     if (dataPathConfig.size() != other.dataPathConfig.size()) return false;
-    if (memcmp(dataPathConfig.data(), other.dataPathConfig.data(),
+    if ((!other.dataPathConfig.empty()) &&
+        memcmp(dataPathConfig.data(), other.dataPathConfig.data(),
                other.dataPathConfig.size())) {
       return false;
     }
@@ -1049,8 +1157,6 @@ struct ase {
         cis_state(CisState::IDLE),
         data_path_state(DataPathState::IDLE),
         configured_for_context_type(LeAudioContextType::UNINITIALIZED),
-        is_codec_in_controller(false),
-        data_path_id(bluetooth::hci::iso_manager::kIsoDataPathDisabled),
         autonomous_operation_timer_(nullptr),
         autonomous_target_state_(AseState::BTA_LE_AUDIO_ASE_STATE_IDLE),
         state(AseState::BTA_LE_AUDIO_ASE_STATE_IDLE) {}
@@ -1074,12 +1180,8 @@ struct ase {
   std::vector<uint8_t> vendor_codec_config;
   uint8_t channel_count;
 
-  /* Set to true, if the codec is implemented in BT controller, false if it's
-   * implemented in host, or in separate DSP
-   */
-  bool is_codec_in_controller;
-  /* Datapath ID used to configure an ISO channel for these ASEs */
-  uint8_t data_path_id;
+  /* Data path configuration */
+  DataPathConfiguration data_path_configuration;
 
   /* Qos configuration */
   AseQosConfiguration qos_config;
@@ -1162,6 +1264,8 @@ struct CodecConfigSetting {
    */
 };
 
+std::ostream& operator<<(std::ostream& os, const CodecConfigSetting& config);
+
 struct QosConfigSetting {
   uint8_t target_latency;
   uint8_t retransmission_number;
@@ -1178,28 +1282,27 @@ struct QosConfigSetting {
   }
 };
 
+std::ostream& operator<<(std::ostream& os, const QosConfigSetting& config);
+
 struct AseConfiguration {
   AseConfiguration(CodecConfigSetting codec,
                    QosConfigSetting qos = {.target_latency = 0,
                                            .retransmission_number = 0,
                                            .max_transport_latency = 0})
       : codec(codec), qos(qos) {}
-  /* Whether the codec location is transparent to the controller */
-  bool is_codec_in_controller = false;
-  /* Datapath ID used to configure an ISO channel for these ASEs */
-  uint8_t data_path_id = bluetooth::hci::iso_manager::kIsoDataPathHci;
-
+  types::DataPathConfiguration data_path_configuration;
   CodecConfigSetting codec;
   QosConfigSetting qos;
 
   bool operator!=(const AseConfiguration& other) { return !(*this == other); }
 
   bool operator==(const AseConfiguration& other) const {
-    return ((is_codec_in_controller == other.is_codec_in_controller) &&
-            (data_path_id == other.data_path_id) && (codec == other.codec) &&
-            (qos == other.qos));
+    return ((data_path_configuration == other.data_path_configuration) &&
+            (codec == other.codec) && (qos == other.qos));
   }
 };
+
+std::ostream& operator<<(std::ostream& os, const AseConfiguration& config);
 
 /* Defined audio scenarios */
 struct AudioSetConfiguration {
@@ -1216,6 +1319,8 @@ struct AudioSetConfiguration {
     return ((packing == other.packing) && (confs == other.confs));
   }
 };
+
+std::ostream& operator<<(std::ostream& os, const AudioSetConfiguration& config);
 
 using AudioSetConfigurations = std::vector<const AudioSetConfiguration*>;
 

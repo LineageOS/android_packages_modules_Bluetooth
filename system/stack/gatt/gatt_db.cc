@@ -543,7 +543,7 @@ tGATT_STATUS gatts_write_attr_perm_check(tGATT_SVC_DB* p_db, uint8_t op_code,
                                          uint8_t* p_data, uint16_t len,
                                          tGATT_SEC_FLAG sec_flag,
                                          uint8_t key_size) {
-  log::verbose("op_code=0x%{:x} handle=0x{:04x} offset={} len={} key_size={}",
+  log::verbose("op_code=0x{:x} handle=0x{:04x} offset={} len={} key_size={}",
                op_code, handle, offset, len, key_size);
 
   tGATT_ATTR* p_attr = find_attr_by_handle(p_db, handle);
