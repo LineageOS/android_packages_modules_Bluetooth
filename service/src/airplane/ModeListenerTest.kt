@@ -22,6 +22,8 @@ import android.content.Context
 import android.content.res.Resources
 import android.os.Looper
 import android.os.UserHandle
+import android.platform.test.annotations.DisableFlags
+import android.platform.test.annotations.EnableFlags
 import android.platform.test.flag.junit.SetFlagsRule
 import android.provider.Settings
 import androidx.test.core.app.ApplicationProvider
@@ -98,7 +100,7 @@ class ModeListenerTest {
     private val resolver: ContentResolver = mContext.contentResolver
 
     @JvmField @Rule val testName = TestName()
-    @JvmField @Rule val setFlagsRule = SetFlagsRule()
+    @JvmField @Rule val setFlagsRule = SetFlagsRule(SetFlagsRule.DefaultInitValueType.NULL_DEFAULT)
 
     private val userContext =
         mContext.createContextAsUser(UserHandle.of(ActivityManager.getCurrentUser()), 0)
@@ -266,8 +268,8 @@ class ModeListenerTest {
     }
 
     @Test
+    @EnableFlags(Flags.FLAG_AIRPLANE_MODE_X_BLE_ON)
     fun disable_whenBluetoothOn_discardUpdate() {
-        setFlagsRule.enableFlags(Flags.FLAG_AIRPLANE_MODE_X_BLE_ON)
         initializeAirplane()
         enableMode()
 
@@ -280,8 +282,8 @@ class ModeListenerTest {
 
     // Test to remove once AIRPLANE_MODE_X_BLE_ON has shipped
     @Test
+    @DisableFlags(Flags.FLAG_AIRPLANE_MODE_X_BLE_ON)
     fun disable_whenBluetoothOn_notDiscardUpdate() {
-        setFlagsRule.disableFlags(Flags.FLAG_AIRPLANE_MODE_X_BLE_ON)
         initializeAirplane()
         enableMode()
 
