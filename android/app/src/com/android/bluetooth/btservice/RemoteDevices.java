@@ -1243,9 +1243,23 @@ public class RemoteDevices {
         }
     }
 
-    void onBondStateChange(BluetoothDevice device, int newState) {
+    void onBondStateChange(BluetoothDevice device, int oldState, int newState) {
+        String address = device.getAddress();
+        if (Flags.temporaryPairingDeviceProperties() && oldState != BluetoothDevice.BOND_BONDED) {
+            DeviceProperties deviceProperties = mDevices.get(address);
+            int leConnectionHandle =
+                    deviceProperties.getConnectionHandle(BluetoothDevice.TRANSPORT_LE);
+            int bredrConnectionHandle =
+                    deviceProperties.getConnectionHandle(BluetoothDevice.TRANSPORT_BREDR);
+            if (leConnectionHandle != BluetoothDevice.ERROR
+                    || bredrConnectionHandle != BluetoothDevice.ERROR) {
+                // Device still connected, wait for disconnection to remove the properties
+                return;
+            }
+        }
+
         if (Flags.removeAddressMapOnUnbond() && newState == BluetoothDevice.BOND_NONE) {
-            removeAddressMapping(device.getAddress());
+            removeAddressMapping(address);
         }
     }
 
