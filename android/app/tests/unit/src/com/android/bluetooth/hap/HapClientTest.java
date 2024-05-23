@@ -126,7 +126,6 @@ public class HapClientTest {
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         mAttributionSource = mAdapter.getAttributionSource();
 
-        HapClientNativeInterface.setInstance(mNativeInterface);
         startService();
         mService.mFactory = mServiceFactory;
         doReturn(mCsipService).when(mServiceFactory).getCsipSetCoordinatorService();
@@ -200,13 +199,12 @@ public class HapClientTest {
         mService.mCallbacks.unregister(mCallback);
 
         stopService();
-        HapClientNativeInterface.setInstance(null);
 
         mAdapter = null;
     }
 
     private void startService() throws TimeoutException {
-        mService = new HapClientService(mAdapterService);
+        mService = new HapClientService(mAdapterService, mNativeInterface);
         mService.start();
         mService.setAvailable(true);
     }
