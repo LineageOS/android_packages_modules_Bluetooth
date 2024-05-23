@@ -55,11 +55,19 @@ class RasServerImpl : public bluetooth::ras::RasServer {
     std::vector<std::vector<uint8_t>> segments_;
   };
 
+  struct PendingWriteResponse {
+    uint16_t conn_id_;
+    uint32_t trans_id_;
+    uint16_t write_req_handle_;
+  };
+
   struct ClientTracker {
     uint16_t conn_id_;
     std::unordered_map<Uuid, uint16_t> ccc_values_;
     std::vector<DataBuffer> buffers_;
     bool handling_control_point_command_ = false;
+    uint8_t vendor_specific_reply_counter_ = 0;
+    PendingWriteResponse pending_write_response_;
   };
 
   void Initialize() {
@@ -74,10 +82,29 @@ class RasServerImpl : public bluetooth::ras::RasServer {
         false);
   }
 
+  void RegisterCallbacks(bluetooth::ras::RasServerCallbacks* callbacks) {
+    callbacks_ = callbacks;
+  }
+
   void SetVendorSpecificCharacteristic(
       const std::vector<VendorSpecificCharacteristic>&
           vendor_specific_characteristics) {
     vendor_specific_characteristics_ = vendor_specific_characteristics;
+  }
+
+  void HandleVendorSpecificReplyComplete(RawAddress address, bool success) {
+    log::info("address:{}, success:{}", address, success);
+    tBLE_BD_ADDR ble_bd_addr;
+    ResolveAddress(ble_bd_addr, address);
+    if (trackers_.find(ble_bd_addr.bda) == trackers_.end()) {
+      log::warn("Can't find tracker for address {}", address);
+      return;
+    };
+    auto response = trackers_[ble_bd_addr.bda].pending_write_response_;
+    tGATTS_RSP p_msg;
+    p_msg.attr_value.handle = response.write_req_handle_;
+    GattStatus status = success ? GATT_SUCCESS : GATT_ERROR;
+    BTA_GATTS_SendRsp(response.conn_id_, response.trans_id_, status, &p_msg);
   }
 
   void PushProcedureData(RawAddress address, uint16_t procedure_counter,
@@ -386,8 +413,10 @@ class RasServerImpl : public bluetooth::ras::RasServer {
     uint16_t conn_id = p_data->req_data.conn_id;
     uint16_t write_req_handle = p_data->req_data.p_data->write_req.handle;
     uint16_t len = p_data->req_data.p_data->write_req.len;
-    log::info("conn_id:{}, write_req_handle:{}, len:{}", conn_id,
-              write_req_handle, len);
+    bool need_rsp = p_data->req_data.p_data->write_req.need_rsp;
+    RawAddress remote_bda = p_data->req_data.remote_bda;
+    log::info("conn_id:{}, write_req_handle:0x{:04x}, need_rsp{}, len:{}",
+              conn_id, write_req_handle, need_rsp, len);
 
     tGATTS_RSP p_msg;
     p_msg.handle = write_req_handle;
@@ -399,6 +428,12 @@ class RasServerImpl : public bluetooth::ras::RasServer {
     }
 
     auto uuid = characteristics_[write_req_handle].uuid_;
+    auto vendor_specific_characteristic = GetVendorSpecificCharacteristic(uuid);
+    if (vendor_specific_characteristic != nullptr) {
+      WriteVendorSpecificCharacteristic(vendor_specific_characteristic, p_data,
+                                        p_msg);
+      return;
+    }
     log::info("Write uuid, {}", getUuidName(uuid));
 
     // Check Characteristic UUID
@@ -417,8 +452,10 @@ class RasServerImpl : public bluetooth::ras::RasServer {
                             GATT_PRC_IN_PROGRESS, &p_msg);
           return;
         }
-        BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_SUCCESS,
-                          &p_msg);
+        if (need_rsp) {
+          BTA_GATTS_SendRsp(conn_id, p_data->req_data.trans_id, GATT_SUCCESS,
+                            &p_msg);
+        }
         HandleControlPoint(tracker, &p_data->req_data.p_data->write_req);
       } break;
       default:
@@ -426,6 +463,47 @@ class RasServerImpl : public bluetooth::ras::RasServer {
         BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id,
                           GATT_ILLEGAL_PARAMETER, &p_msg);
         return;
+    }
+  }
+
+  void WriteVendorSpecificCharacteristic(
+      VendorSpecificCharacteristic* vendor_specific_characteristic,
+      tBTA_GATTS* p_data, tGATTS_RSP& p_msg) {
+    log::debug("uuid {}", vendor_specific_characteristic->characteristicUuid_);
+    uint16_t len = p_data->req_data.p_data->write_req.len;
+    RawAddress remote_bda = p_data->req_data.remote_bda;
+
+    if (trackers_.find(remote_bda) == trackers_.end()) {
+      BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id,
+                        GATT_INVALID_HANDLE, &p_msg);
+      log::warn("Can't find tracker for remote_bda {}", remote_bda);
+      return;
+    }
+
+    // Update reply value
+    auto& tracker = trackers_[remote_bda];
+    auto value = p_data->req_data.p_data->write_req.value;
+    vendor_specific_characteristic->reply_value_.clear();
+    vendor_specific_characteristic->reply_value_.reserve(len);
+    vendor_specific_characteristic->reply_value_.assign(value, value + len);
+    tracker.vendor_specific_reply_counter_++;
+
+    if (tracker.vendor_specific_reply_counter_ ==
+        vendor_specific_characteristics_.size()) {
+      log::info("All vendor specific characteristics written");
+      tBLE_BD_ADDR ble_bd_addr;
+      ble_bd_addr.bda = remote_bda;
+      ble_bd_addr.type = BLE_ADDR_RANDOM;
+      btm_random_pseudo_to_identity_addr(&ble_bd_addr.bda, &ble_bd_addr.type);
+      tracker.vendor_specific_reply_counter_ = 0;
+      tracker.pending_write_response_.conn_id_ = p_data->req_data.conn_id;
+      tracker.pending_write_response_.trans_id_ = p_data->req_data.trans_id;
+      tracker.pending_write_response_.write_req_handle_ = p_msg.handle;
+      callbacks_->OnVendorSpecificReply(ble_bd_addr.bda,
+                                        vendor_specific_characteristics_);
+    } else {
+      BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id,
+                        GATT_SUCCESS, &p_msg);
     }
   }
 
@@ -648,6 +726,7 @@ class RasServerImpl : public bluetooth::ras::RasServer {
   std::unordered_map<uint16_t, RasCharacteristic> characteristics_;
   // A map to client trackers with address
   std::unordered_map<RawAddress, ClientTracker> trackers_;
+  bluetooth::ras::RasServerCallbacks* callbacks_;
   std::mutex on_demand_ranging_mutex_;
   std::vector<VendorSpecificCharacteristic> vendor_specific_characteristics_;
 };

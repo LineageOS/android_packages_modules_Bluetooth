@@ -166,6 +166,18 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
         cs_trackers_[connection_handle].address, REASON_INTERNAL_ERROR, METHOD_CS);
   }
 
+  void OnHandleVendorSpecificReplyComplete(uint16_t connection_handle, bool success) {
+    log::info("connection_handle:0x{:04x}, success:{}", connection_handle, success);
+    if (cs_trackers_.find(connection_handle) == cs_trackers_.end()) {
+      log::error("Can't find CS tracker for connection_handle {}", connection_handle);
+      distance_measurement_callbacks_->OnDistanceMeasurementStartFail(
+          cs_trackers_[connection_handle].address, REASON_INTERNAL_ERROR, METHOD_CS);
+      return;
+    }
+    distance_measurement_callbacks_->OnHandleVendorSpecificReplyComplete(
+        cs_trackers_[connection_handle].address, success);
+  }
+
   ~impl() {}
   void start(
       os::Handler* handler,
@@ -355,6 +367,38 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
       ranging_hal_->OpenSession(connection_handle, att_handle, vendor_specific_data);
       return;
     }
+    start_distance_measurement_with_cs(tracker.address, connection_handle, tracker.interval_ms);
+  }
+
+  void handle_vendor_specific_reply(
+      const Address address,
+      const std::vector<hal::VendorSpecificCharacteristic> vendor_specific_reply) {
+    uint16_t connection_handle = acl_manager_->HACK_GetLeHandle(address);
+    cs_trackers_[connection_handle].address = address;
+    if (ranging_hal_->IsBound()) {
+      ranging_hal_->HandleVendorSpecificReply(connection_handle, vendor_specific_reply);
+      return;
+    }
+  }
+
+  void handle_vendor_specific_reply_complete(const Address address, bool success) {
+    uint16_t connection_handle = acl_manager_->HACK_GetLeHandle(address);
+    log::info(
+        "address:{}, connection_handle:0x{:04x}, success:{}", address, connection_handle, success);
+    if (cs_trackers_.find(connection_handle) == cs_trackers_.end()) {
+      log::warn("can't find tracker for 0x{:04x}", connection_handle);
+      distance_measurement_callbacks_->OnDistanceMeasurementStartFail(
+          address, REASON_INTERNAL_ERROR, METHOD_CS);
+      return;
+    }
+
+    if (!success) {
+      distance_measurement_callbacks_->OnDistanceMeasurementStartFail(
+          address, REASON_INTERNAL_ERROR, METHOD_CS);
+      return;
+    }
+
+    auto& tracker = cs_trackers_[connection_handle];
     start_distance_measurement_with_cs(tracker.address, connection_handle, tracker.interval_ms);
   }
 
@@ -1519,6 +1563,17 @@ void DistanceMeasurementManager::HandleRasConnectedEvent(
     const std::vector<hal::VendorSpecificCharacteristic>& vendor_specific_data) {
   CallOn(
       pimpl_.get(), &impl::handle_ras_connected_event, address, att_handle, vendor_specific_data);
+}
+
+void DistanceMeasurementManager::HandleVendorSpecificReply(
+    const Address& address,
+    const std::vector<hal::VendorSpecificCharacteristic>& vendor_specific_reply) {
+  CallOn(pimpl_.get(), &impl::handle_vendor_specific_reply, address, vendor_specific_reply);
+}
+
+void DistanceMeasurementManager::HandleVendorSpecificReplyComplete(
+    const Address& address, bool success) {
+  CallOn(pimpl_.get(), &impl::handle_vendor_specific_reply_complete, address, success);
 }
 
 void DistanceMeasurementManager::HandleRemoteData(

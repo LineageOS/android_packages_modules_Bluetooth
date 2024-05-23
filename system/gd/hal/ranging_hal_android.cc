@@ -46,11 +46,18 @@ namespace hal {
 class BluetoothChannelSoundingSessionTracker : public BnBluetoothChannelSoundingSessionCallback {
  public:
   BluetoothChannelSoundingSessionTracker(
-      uint16_t connection_handle, RangingHalCallback* ranging_hal_callback)
-      : connection_handle_(connection_handle), ranging_hal_callback_(ranging_hal_callback){};
+      uint16_t connection_handle,
+      RangingHalCallback* ranging_hal_callback,
+      bool for_vendor_specific_reply)
+      : connection_handle_(connection_handle),
+        ranging_hal_callback_(ranging_hal_callback),
+        for_vendor_specific_reply_(for_vendor_specific_reply) {}
 
   ::ndk::ScopedAStatus onOpened(::aidl::android::hardware::bluetooth::ranging::Reason in_reason) {
     log::info("connection_handle 0x{:04x}, reason {}", connection_handle_, (uint16_t)in_reason);
+    if (for_vendor_specific_reply_) {
+      ranging_hal_callback_->OnHandleVendorSpecificReplyComplete(connection_handle_, true);
+    }
     return ::ndk::ScopedAStatus::ok();
   };
 
@@ -58,7 +65,11 @@ class BluetoothChannelSoundingSessionTracker : public BnBluetoothChannelSounding
       ::aidl::android::hardware::bluetooth::ranging::Reason in_reason) {
     log::info("connection_handle 0x{:04x}, reason {}", connection_handle_, (uint16_t)in_reason);
     bluetooth_channel_sounding_session_ = nullptr;
-    ranging_hal_callback_->OnOpenFailed(connection_handle_);
+    if (for_vendor_specific_reply_) {
+      ranging_hal_callback_->OnHandleVendorSpecificReplyComplete(connection_handle_, false);
+    } else {
+      ranging_hal_callback_->OnOpenFailed(connection_handle_);
+    }
     return ::ndk::ScopedAStatus::ok();
   };
 
@@ -86,6 +97,7 @@ class BluetoothChannelSoundingSessionTracker : public BnBluetoothChannelSounding
   std::shared_ptr<IBluetoothChannelSoundingSession> bluetooth_channel_sounding_session_ = nullptr;
   uint16_t connection_handle_;
   RangingHalCallback* ranging_hal_callback_;
+  bool for_vendor_specific_reply_;
 };
 
 class RangingHalAndroid : public RangingHal {
@@ -131,7 +143,7 @@ class RangingHalAndroid : public RangingHal {
         vendor_specific_data.size());
     session_trackers_[connection_handle] =
         ndk::SharedRefBase::make<BluetoothChannelSoundingSessionTracker>(
-            connection_handle, ranging_hal_callback_);
+            connection_handle, ranging_hal_callback_, false);
     BluetoothChannelSoundingParameters parameters;
     parameters.aclHandle = connection_handle;
     parameters.role = aidl::android::hardware::bluetooth::ranging::Role::INITIATOR;
@@ -156,6 +168,21 @@ class RangingHalAndroid : public RangingHal {
       }
       ranging_hal_callback_->OnOpened(connection_handle, vendor_specific_reply);
     }
+  }
+
+  void HandleVendorSpecificReply(
+      uint16_t connection_handle,
+      const std::vector<hal::VendorSpecificCharacteristic>& vendor_specific_reply) {
+    log::info("connection_handle 0x{:04x}", connection_handle);
+    session_trackers_[connection_handle] =
+        ndk::SharedRefBase::make<BluetoothChannelSoundingSessionTracker>(
+            connection_handle, ranging_hal_callback_, true);
+    BluetoothChannelSoundingParameters parameters;
+    parameters.aclHandle = connection_handle;
+    parameters.role = aidl::android::hardware::bluetooth::ranging::Role::REFLECTOR;
+    CopyVendorSpecificData(vendor_specific_reply, parameters.vendorSpecificData);
+    auto& tracker = session_trackers_[connection_handle];
+    bluetooth_channel_sounding_->openSession(parameters, tracker, &tracker->GetSession());
   }
 
   void CopyVendorSpecificData(
