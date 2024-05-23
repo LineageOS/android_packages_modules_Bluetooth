@@ -29,6 +29,7 @@
 using namespace bluetooth;
 using namespace ::ras;
 using namespace ::ras::uuid;
+using bluetooth::ras::VendorSpecificCharacteristic;
 
 namespace {
 
@@ -71,6 +72,12 @@ class RasServerImpl : public bluetooth::ras::RasServer {
           if (instance && p_data) instance->GattsCallback(event, p_data);
         },
         false);
+  }
+
+  void SetVendorSpecificCharacteristic(
+      const std::vector<VendorSpecificCharacteristic>&
+          vendor_specific_characteristics) {
+    vendor_specific_characteristics_ = vendor_specific_characteristics;
   }
 
   void PushProcedureData(RawAddress address, uint16_t procedure_counter,
@@ -277,6 +284,21 @@ class RasServerImpl : public bluetooth::ras::RasServer {
     service.push_back(ranging_data_overwritten_characteristic);
     service.push_back(ccc_descriptor);
 
+    for (auto& vendor_specific_characteristics :
+         vendor_specific_characteristics_) {
+      btgatt_db_element_t characteristics;
+      characteristics.uuid =
+          vendor_specific_characteristics.characteristicUuid_;
+      characteristics.type = BTGATT_DB_CHARACTERISTIC;
+      characteristics.properties =
+          GATT_CHAR_PROP_BIT_READ | GATT_CHAR_PROP_BIT_WRITE;
+      characteristics.permissions =
+          GATT_PERM_READ_ENCRYPTED | GATT_PERM_WRITE_ENCRYPTED | key_mask;
+      service.push_back(characteristics);
+      log::info("Push vendor_specific_characteristics uuid {}",
+                characteristics.uuid);
+    }
+
     BTA_GATTS_AddService(
         server_if_, service,
         base::BindRepeating([](tGATT_STATUS status, int server_if,
@@ -299,6 +321,17 @@ class RasServerImpl : public bluetooth::ras::RasServer {
     }
 
     auto uuid = characteristics_[read_req_handle].uuid_;
+    auto vendor_specific_characteristic = GetVendorSpecificCharacteristic(uuid);
+    if (vendor_specific_characteristic != nullptr) {
+      log::debug("Read vendor_specific_characteristic uuid {}", uuid);
+      p_msg.attr_value.len = vendor_specific_characteristic->value_.size();
+      std::copy(vendor_specific_characteristic->value_.begin(),
+                vendor_specific_characteristic->value_.end(),
+                p_msg.attr_value.value);
+      BTA_GATTS_SendRsp(p_data->req_data.conn_id, p_data->req_data.trans_id,
+                        GATT_SUCCESS, &p_msg);
+      return;
+    }
     log::info("Read uuid, {}", getUuidName(uuid));
 
     // Check Characteristic UUID
@@ -598,6 +631,16 @@ class RasServerImpl : public bluetooth::ras::RasServer {
     return buffers.back();
   }
 
+  VendorSpecificCharacteristic* GetVendorSpecificCharacteristic(
+      const bluetooth::Uuid& uuid) {
+    for (auto& characteristic : vendor_specific_characteristics_) {
+      if (characteristic.characteristicUuid_ == uuid) {
+        return &characteristic;
+      }
+    }
+    return nullptr;
+  }
+
  private:
   bluetooth::Uuid app_uuid_;
   uint16_t server_if_;
@@ -606,6 +649,7 @@ class RasServerImpl : public bluetooth::ras::RasServer {
   // A map to client trackers with address
   std::unordered_map<RawAddress, ClientTracker> trackers_;
   std::mutex on_demand_ranging_mutex_;
+  std::vector<VendorSpecificCharacteristic> vendor_specific_characteristics_;
 };
 
 }  // namespace
