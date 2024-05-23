@@ -1583,6 +1583,10 @@ class UnicastTestNoInit : public Test {
     ASSERT_NE(mock_codec_manager_, nullptr);
     ON_CALL(*mock_codec_manager_, GetCodecLocation())
         .WillByDefault(Return(location));
+    ON_CALL(*mock_codec_manager_, UpdateActiveUnicastAudioHalClient(_, _, _))
+        .WillByDefault(Return(true));
+    ON_CALL(*mock_codec_manager_, UpdateActiveBroadcastAudioHalClient(_, _))
+        .WillByDefault(Return(true));
     // Turn on the dual bidir SWB support
     ON_CALL(*mock_codec_manager_, IsDualBiDirSwbSupported)
         .WillByDefault(Return(true));
@@ -4842,10 +4846,17 @@ TEST_F(UnicastTest, GroupSetActive) {
       .Times(0);
   EXPECT_CALL(*mock_le_audio_source_hal_client_, Start(_, _, _)).Times(1);
   EXPECT_CALL(*mock_le_audio_sink_hal_client_, Start(_, _, _)).Times(1);
+
+  EXPECT_CALL(*mock_codec_manager_, UpdateActiveUnicastAudioHalClient(
+                                        mock_le_audio_source_hal_client_,
+                                        mock_le_audio_sink_hal_client_, true))
+      .Times(1);
+
   LeAudioClient::Get()->GroupSetActive(group_id);
   SyncOnMainLoop();
   Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
   Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
+  Mock::VerifyAndClearExpectations(mock_codec_manager_);
 }
 
 TEST_F(UnicastTest, GroupSetActive_SinkPacksEmpty) {
@@ -4885,10 +4896,17 @@ TEST_F(UnicastTest, GroupSetActive_SinkPacksEmpty) {
       .Times(1);
   EXPECT_CALL(*mock_le_audio_source_hal_client_, Start(_, _, _)).Times(1);
   EXPECT_CALL(*mock_le_audio_sink_hal_client_, Start(_, _, _)).Times(1);
+
+  EXPECT_CALL(*mock_codec_manager_, UpdateActiveUnicastAudioHalClient(
+                                        mock_le_audio_source_hal_client_,
+                                        mock_le_audio_sink_hal_client_, true))
+      .Times(1);
+
   LeAudioClient::Get()->GroupSetActive(group_id);
   SyncOnMainLoop();
   Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
   Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
+  Mock::VerifyAndClearExpectations(mock_codec_manager_);
 }
 
 TEST_F(UnicastTest, GroupSetActive_SourcePacksEmpty) {
@@ -5872,11 +5890,17 @@ TEST_F(UnicastTest, EarbudsTwsStyleStreaming) {
 
   // Release
   EXPECT_CALL(*mock_le_audio_source_hal_client_, Stop()).Times(1);
+  EXPECT_CALL(*mock_codec_manager_, UpdateActiveUnicastAudioHalClient(
+                                        mock_le_audio_source_hal_client_,
+                                        mock_le_audio_sink_hal_client_, false))
+      .Times(1);
+
   EXPECT_CALL(*mock_le_audio_source_hal_client_, OnDestroyed()).Times(1);
   EXPECT_CALL(*mock_le_audio_sink_hal_client_, OnDestroyed()).Times(1);
   LeAudioClient::Get()->GroupSetActive(bluetooth::groups::kGroupUnknown);
   SyncOnMainLoop();
   Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
+  Mock::VerifyAndClearExpectations(mock_codec_manager_);
 }
 
 TEST_F(UnicastTest, SpeakerFailedConversationalStreaming) {
@@ -5972,11 +5996,18 @@ TEST_F(UnicastTest, SpeakerStreaming) {
 
   // Release
   EXPECT_CALL(*mock_le_audio_source_hal_client_, Stop()).Times(1);
+
+  EXPECT_CALL(*mock_codec_manager_, UpdateActiveUnicastAudioHalClient(
+                                        mock_le_audio_source_hal_client_,
+                                        mock_le_audio_sink_hal_client_, false))
+      .Times(1);
+
   EXPECT_CALL(*mock_le_audio_source_hal_client_, OnDestroyed()).Times(1);
   EXPECT_CALL(*mock_le_audio_sink_hal_client_, OnDestroyed()).Times(1);
   LeAudioClient::Get()->GroupSetActive(bluetooth::groups::kGroupUnknown);
   SyncOnMainLoop();
   Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
+  Mock::VerifyAndClearExpectations(mock_codec_manager_);
 }
 
 TEST_F(UnicastTest, SpeakerStreamingNonDefault) {
@@ -6128,6 +6159,12 @@ TEST_F_WITH_FLAGS(UnicastTest, TestUnidirectionalVoiceAssistant_Sink,
   // Audio sessions are started only when device gets active
   EXPECT_CALL(*mock_le_audio_source_hal_client_, Start(_, _, _)).Times(1);
   EXPECT_CALL(*mock_le_audio_sink_hal_client_, Start(_, _, _)).Times(1);
+
+  EXPECT_CALL(*mock_codec_manager_, UpdateActiveUnicastAudioHalClient(
+                                        mock_le_audio_source_hal_client_,
+                                        mock_le_audio_sink_hal_client_, true))
+      .Times(1);
+
   LeAudioClient::Get()->GroupSetActive(group_id);
   SyncOnMainLoop();
 
@@ -6136,6 +6173,7 @@ TEST_F_WITH_FLAGS(UnicastTest, TestUnidirectionalVoiceAssistant_Sink,
   Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
   Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
   Mock::VerifyAndClearExpectations(mock_le_audio_sink_hal_client_);
+  Mock::VerifyAndClearExpectations(mock_codec_manager_);
   SyncOnMainLoop();
 
   // Verify Data transfer on one local audio source cis

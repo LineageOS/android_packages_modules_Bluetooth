@@ -30,6 +30,11 @@ class RangingHalHost : public RangingHal {
     return false;
   }
 
+  std::vector<VendorSpecificCharacteristic> getVendorSpecificCharacteristics() override {
+    std::vector<VendorSpecificCharacteristic> vendor_specific_characteristics = {};
+    return vendor_specific_characteristics;
+  };
+
  protected:
   void ListDependencies(ModuleList* /*list*/) const {}
 

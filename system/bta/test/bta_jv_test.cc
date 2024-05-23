@@ -42,8 +42,9 @@ constexpr uint8_t kScn = 123;
 
 namespace bluetooth::legacy::testing {
 
-void bta_jv_start_discovery_cback(const RawAddress& bd_addr, tSDP_RESULT result,
-                                  const void* user_data);
+void bta_jv_start_discovery_cback(uint32_t rfcomm_slot_id,
+                                  const RawAddress& bd_addr,
+                                  tSDP_RESULT result);
 
 }  // namespace bluetooth::legacy::testing
 
@@ -61,8 +62,8 @@ class FakeSdp {
             .SDP_ServiceSearchAttributeRequest2 =
                 [](const RawAddress& /* p_bd_addr */,
                    tSDP_DISCOVERY_DB* /* p_db */,
-                   tSDP_DISC_CMPL_CB2* /* p_cb2 */, const void* user_data) {
-                  if (user_data) osi_free((void*)user_data);
+                   base::RepeatingCallback<
+                       tSDP_DISC_CMPL_CB> /* complete_callback */) {
                   return true;
                 },
         },
@@ -144,19 +145,13 @@ class BtaJvTest : public BtaJvMockAndFakeTest {
 };
 
 TEST_F(BtaJvTest, bta_jv_start_discovery_cback__no_callback) {
-  uint32_t* user_data = (uint32_t*)osi_malloc(sizeof(uint32_t));
-  *user_data = 0x12345678;
-
   bta_jv_enable(nullptr);
   bluetooth::legacy::testing::bta_jv_start_discovery_cback(
-      kRawAddress, SDP_SUCCESS, (const void*)user_data);
+      0x12345678, kRawAddress, SDP_SUCCESS);
 }
 
 TEST_F(BtaJvTest,
        bta_jv_start_discovery_cback__with_callback_success_no_record) {
-  uint32_t* user_data = (uint32_t*)osi_malloc(sizeof(uint32_t));
-  *user_data = kSlotId;
-
   // Ensure that there was an sdp active
   bta_jv_cb.sdp_cb = {
       .sdp_active = true,
@@ -179,15 +174,12 @@ TEST_F(BtaJvTest,
         FAIL();
     }
   });
-  bluetooth::legacy::testing::bta_jv_start_discovery_cback(
-      kRawAddress, SDP_SUCCESS, (const void*)user_data);
+  bluetooth::legacy::testing::bta_jv_start_discovery_cback(kSlotId, kRawAddress,
+                                                           SDP_SUCCESS);
 }
 
 TEST_F(BtaJvTest,
        bta_jv_start_discovery_cback__with_callback_success_with_record) {
-  uint32_t* user_data = (uint32_t*)osi_malloc(sizeof(uint32_t));
-  *user_data = kSlotId;
-
   static tSDP_DISC_REC sdp_disc_rec = {
       .p_first_attr = nullptr,
       .p_next_rec = nullptr,
@@ -231,14 +223,12 @@ TEST_F(BtaJvTest,
         FAIL();
     }
   });
-  bluetooth::legacy::testing::bta_jv_start_discovery_cback(
-      kRawAddress, SDP_SUCCESS, (const void*)user_data);
+  bluetooth::legacy::testing::bta_jv_start_discovery_cback(kSlotId, kRawAddress,
+                                                           SDP_SUCCESS);
 }
 
 TEST_F(BtaJvTest, bta_jv_start_discovery_cback__with_callback_failure) {
   tSDP_RESULT result = SDP_CONN_FAILED;
-  uint32_t* user_data = (uint32_t*)osi_malloc(sizeof(uint32_t));
-  *user_data = kSlotId;
 
   // Ensure that there was an sdp active
   bta_jv_cb.sdp_cb = {
@@ -262,8 +252,8 @@ TEST_F(BtaJvTest, bta_jv_start_discovery_cback__with_callback_failure) {
         FAIL();
     }
   });
-  bluetooth::legacy::testing::bta_jv_start_discovery_cback(
-      kRawAddress, result, (const void*)user_data);
+  bluetooth::legacy::testing::bta_jv_start_discovery_cback(kSlotId, kRawAddress,
+                                                           result);
 }
 
 TEST_F(BtaJvTest, bta_jv_start_discovery__idle) {
@@ -288,8 +278,9 @@ TEST_F(BtaJvTest, bta_jv_start_discovery__idle_failed_to_start) {
   test::mock::stack_sdp_legacy::api_.service
       .SDP_ServiceSearchAttributeRequest2 =
       [](const RawAddress& /* p_bd_addr */, tSDP_DISCOVERY_DB* /* p_db */,
-         tSDP_DISC_CMPL_CB2* /* p_cb2 */,
-         const void* /* user_data */) { return false; };
+         base::RepeatingCallback<tSDP_DISC_CMPL_CB> /* complete_callback */) {
+        return false;
+      };
 
   bta_jv_enable([](tBTA_JV_EVT event, tBTA_JV* p_data, uint32_t id) {
     switch (event) {

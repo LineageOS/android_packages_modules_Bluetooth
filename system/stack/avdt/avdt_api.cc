@@ -98,8 +98,11 @@ void avdt_scb_transport_channel_timer_timeout(void* data) {
  ******************************************************************************/
 void AVDT_Register(AvdtpRcb* p_reg, tAVDT_CTRL_CBACK* p_cback) {
   /* register PSM with L2CAP */
-  L2CA_Register2(AVDT_PSM, avdt_l2c_appl, true /* enable_snoop */, nullptr,
-                 kAvdtpMtu, 0, BTA_SEC_AUTHENTICATE);
+  if (!L2CA_Register2(AVDT_PSM, avdt_l2c_appl, true /* enable_snoop */, nullptr,
+                      kAvdtpMtu, 0, BTA_SEC_AUTHENTICATE)) {
+    log::error(
+        "Unable to register with L2CAP profile AVDT psm:AVDT_PSM[0x0019]");
+  }
 
   /* initialize AVDTP data structures */
   avdt_scb_init();

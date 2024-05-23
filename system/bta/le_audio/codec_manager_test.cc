@@ -18,7 +18,9 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include <log/log.h>
 
+#include "audio_hal_client/audio_hal_client.h"
 #include "audio_hal_interface/le_audio_software.h"
 #include "common/init_flags.h"
 #include "hci/controller_interface_mock.h"
@@ -116,7 +118,91 @@ OffloadCapabilities get_offload_capabilities() {
 }  // namespace bluetooth
 
 namespace bluetooth::le_audio {
-namespace {
+
+class MockLeAudioSourceHalClient;
+MockLeAudioSourceHalClient* mock_le_audio_source_hal_client_;
+std::unique_ptr<LeAudioSourceAudioHalClient>
+    owned_mock_le_audio_source_hal_client_;
+bool is_audio_unicast_source_acquired;
+bool is_audio_broadcast_source_acquired;
+
+std::unique_ptr<LeAudioSourceAudioHalClient>
+LeAudioSourceAudioHalClient::AcquireUnicast() {
+  if (is_audio_unicast_source_acquired) return nullptr;
+  is_audio_unicast_source_acquired = true;
+  return std::move(owned_mock_le_audio_source_hal_client_);
+}
+
+MockLeAudioSourceHalClient* mock_broadcast_le_audio_source_hal_client_;
+std::unique_ptr<LeAudioSourceAudioHalClient>
+    owned_mock_broadcast_le_audio_source_hal_client_;
+
+std::unique_ptr<LeAudioSourceAudioHalClient>
+LeAudioSourceAudioHalClient::AcquireBroadcast() {
+  if (is_audio_broadcast_source_acquired) return nullptr;
+  is_audio_broadcast_source_acquired = true;
+  return std::move(owned_mock_broadcast_le_audio_source_hal_client_);
+}
+
+void LeAudioSourceAudioHalClient::DebugDump(int fd) {}
+
+class MockLeAudioSinkHalClient;
+MockLeAudioSinkHalClient* mock_le_audio_sink_hal_client_;
+std::unique_ptr<LeAudioSinkAudioHalClient> owned_mock_le_audio_sink_hal_client_;
+bool is_audio_unicast_sink_acquired;
+
+std::unique_ptr<LeAudioSinkAudioHalClient>
+LeAudioSinkAudioHalClient::AcquireUnicast() {
+  if (is_audio_unicast_sink_acquired) return nullptr;
+  is_audio_unicast_sink_acquired = true;
+  return std::move(owned_mock_le_audio_sink_hal_client_);
+}
+
+class MockLeAudioSinkHalClient : public LeAudioSinkAudioHalClient {
+ public:
+  MockLeAudioSinkHalClient() = default;
+  MOCK_METHOD((bool), Start,
+              (const LeAudioCodecConfiguration& codecConfiguration,
+               LeAudioSinkAudioHalClient::Callbacks* audioReceiver,
+               DsaModes dsa_modes),
+              (override));
+  MOCK_METHOD((void), Stop, (), (override));
+  MOCK_METHOD((size_t), SendData, (uint8_t * data, uint16_t size), (override));
+  MOCK_METHOD((void), ConfirmStreamingRequest, (), (override));
+  MOCK_METHOD((void), CancelStreamingRequest, (), (override));
+  MOCK_METHOD((void), UpdateRemoteDelay, (uint16_t delay), (override));
+  MOCK_METHOD((void), UpdateAudioConfigToHal,
+              (const ::bluetooth::le_audio::offload_config&), (override));
+  MOCK_METHOD((void), SuspendedForReconfiguration, (), (override));
+  MOCK_METHOD((void), ReconfigurationComplete, (), (override));
+
+  MOCK_METHOD((void), OnDestroyed, ());
+  virtual ~MockLeAudioSinkHalClient() override { OnDestroyed(); }
+};
+
+class MockLeAudioSourceHalClient : public LeAudioSourceAudioHalClient {
+ public:
+  MockLeAudioSourceHalClient() = default;
+  MOCK_METHOD((bool), Start,
+              (const LeAudioCodecConfiguration& codecConfiguration,
+               LeAudioSourceAudioHalClient::Callbacks* audioReceiver,
+               DsaModes dsa_modes),
+              (override));
+  MOCK_METHOD((void), Stop, (), (override));
+  MOCK_METHOD((void), ConfirmStreamingRequest, (), (override));
+  MOCK_METHOD((void), CancelStreamingRequest, (), (override));
+  MOCK_METHOD((void), UpdateRemoteDelay, (uint16_t delay), (override));
+  MOCK_METHOD((void), UpdateAudioConfigToHal,
+              (const ::bluetooth::le_audio::offload_config&), (override));
+  MOCK_METHOD((void), UpdateBroadcastAudioConfigToHal,
+              (const ::bluetooth::le_audio::broadcast_offload_config&),
+              (override));
+  MOCK_METHOD((void), SuspendedForReconfiguration, (), (override));
+  MOCK_METHOD((void), ReconfigurationComplete, (), (override));
+
+  MOCK_METHOD((void), OnDestroyed, ());
+  virtual ~MockLeAudioSourceHalClient() override { OnDestroyed(); }
+};
 
 static const types::LeAudioCodecId kLeAudioCodecIdLc3 = {
     .coding_format = types::kLeAudioCodingFormatLC3,
@@ -190,6 +276,7 @@ static constexpr char kPropLeAudioBidirSwbSupported[] =
 class CodecManagerTestBase : public Test {
  public:
   virtual void SetUp() override {
+    __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
     bluetooth::common::InitFlags::Load(test_flags);
     set_mock_offload_capabilities(offload_capabilities_none);
 
@@ -202,6 +289,9 @@ class CodecManagerTestBase : public Test {
     bluetooth::hci::testing::mock_controller_ = &controller_interface;
 
     codec_manager = CodecManager::GetInstance();
+
+    RegisterSourceHalClientMock();
+    RegisterSinkHalClientMock();
   }
 
   virtual void TearDown() override { codec_manager->Stop(); }
@@ -210,6 +300,43 @@ class CodecManagerTestBase : public Test {
       controller_interface;
   CodecManager* codec_manager;
   bluetooth::legacy::hci::testing::MockInterface legacy_hci_mock_;
+
+ protected:
+  void RegisterSourceHalClientMock() {
+    owned_mock_le_audio_source_hal_client_.reset(
+        new NiceMock<MockLeAudioSourceHalClient>());
+    mock_le_audio_source_hal_client_ =
+        (MockLeAudioSourceHalClient*)
+            owned_mock_le_audio_source_hal_client_.get();
+
+    is_audio_unicast_source_acquired = false;
+
+    owned_mock_broadcast_le_audio_source_hal_client_.reset(
+        new NiceMock<MockLeAudioSourceHalClient>());
+    mock_broadcast_le_audio_source_hal_client_ =
+        (MockLeAudioSourceHalClient*)
+            owned_mock_broadcast_le_audio_source_hal_client_.get();
+    is_audio_broadcast_source_acquired = false;
+
+    ON_CALL(*mock_le_audio_source_hal_client_, OnDestroyed).WillByDefault([]() {
+      mock_le_audio_source_hal_client_ = nullptr;
+      is_audio_unicast_source_acquired = false;
+    });
+  }
+
+  void RegisterSinkHalClientMock() {
+    owned_mock_le_audio_sink_hal_client_.reset(
+        new NiceMock<MockLeAudioSinkHalClient>());
+    mock_le_audio_sink_hal_client_ =
+        (MockLeAudioSinkHalClient*)owned_mock_le_audio_sink_hal_client_.get();
+
+    is_audio_unicast_sink_acquired = false;
+
+    ON_CALL(*mock_le_audio_sink_hal_client_, OnDestroyed).WillByDefault([]() {
+      mock_le_audio_sink_hal_client_ = nullptr;
+      is_audio_unicast_sink_acquired = false;
+    });
+  }
 };
 
 /*----------------- ADSP codec manager tests ------------------*/
@@ -623,6 +750,66 @@ class CodecManagerTestHostNoSwb : public CodecManagerTestBase {
 
 TEST_F(CodecManagerTestHost, test_init) {
   ASSERT_EQ(codec_manager, CodecManager::GetInstance());
+}
+
+TEST_F(CodecManagerTestHost, test_audio_session_update) {
+  ASSERT_EQ(codec_manager, CodecManager::GetInstance());
+
+  auto unicast_source = LeAudioSourceAudioHalClient::AcquireUnicast();
+  auto unicast_sink = LeAudioSinkAudioHalClient::AcquireUnicast();
+  auto broadcast_source = LeAudioSourceAudioHalClient::AcquireBroadcast();
+
+  // codec manager not started
+  ASSERT_FALSE(codec_manager->UpdateActiveUnicastAudioHalClient(
+      unicast_source.get(), unicast_sink.get(), true));
+  ASSERT_FALSE(codec_manager->UpdateActiveUnicastAudioHalClient(
+      unicast_source.get(), unicast_sink.get(), false));
+  ASSERT_FALSE(codec_manager->UpdateActiveBroadcastAudioHalClient(
+      broadcast_source.get(), true));
+  ASSERT_FALSE(codec_manager->UpdateActiveBroadcastAudioHalClient(
+      broadcast_source.get(), false));
+
+  std::vector<bluetooth::le_audio::btle_audio_codec_config_t>
+      offloading_preference(0);
+
+  // Start codec manager
+  codec_manager->Start(offloading_preference);
+
+  ASSERT_TRUE(codec_manager->UpdateActiveUnicastAudioHalClient(
+      unicast_source.get(), unicast_sink.get(), true));
+  ASSERT_FALSE(codec_manager->UpdateActiveUnicastAudioHalClient(
+      unicast_source.get(), unicast_sink.get(), true));
+  ASSERT_TRUE(codec_manager->UpdateActiveUnicastAudioHalClient(
+      unicast_source.get(), unicast_sink.get(), false));
+  ASSERT_TRUE(codec_manager->UpdateActiveUnicastAudioHalClient(
+      unicast_source.get(), nullptr, true));
+  ASSERT_TRUE(codec_manager->UpdateActiveUnicastAudioHalClient(
+      nullptr, unicast_sink.get(), true));
+  ASSERT_FALSE(codec_manager->UpdateActiveUnicastAudioHalClient(
+      nullptr, nullptr, false));
+  ASSERT_FALSE(
+      codec_manager->UpdateActiveUnicastAudioHalClient(nullptr, nullptr, true));
+  ASSERT_TRUE(codec_manager->UpdateActiveUnicastAudioHalClient(
+      nullptr, unicast_sink.get(), false));
+  ASSERT_TRUE(codec_manager->UpdateActiveUnicastAudioHalClient(
+      unicast_source.get(), nullptr, false));
+
+  ASSERT_TRUE(codec_manager->UpdateActiveBroadcastAudioHalClient(
+      broadcast_source.get(), true));
+  ASSERT_TRUE(codec_manager->UpdateActiveBroadcastAudioHalClient(
+      broadcast_source.get(), false));
+  ASSERT_TRUE(codec_manager->UpdateActiveBroadcastAudioHalClient(
+      broadcast_source.get(), true));
+  ASSERT_FALSE(codec_manager->UpdateActiveBroadcastAudioHalClient(
+      broadcast_source.get(), true));
+  ASSERT_FALSE(codec_manager->UpdateActiveBroadcastAudioHalClient(
+      unicast_source.get(), true));
+  ASSERT_FALSE(codec_manager->UpdateActiveBroadcastAudioHalClient(
+      unicast_source.get(), false));
+  ASSERT_FALSE(
+      codec_manager->UpdateActiveBroadcastAudioHalClient(nullptr, false));
+  ASSERT_FALSE(
+      codec_manager->UpdateActiveBroadcastAudioHalClient(nullptr, true));
 }
 
 TEST_F(CodecManagerTestHost, test_start) {
@@ -1047,5 +1234,4 @@ TEST_F(CodecManagerTestHost, test_dont_update_broadcast_offloader) {
   ASSERT_FALSE(was_called);
 }
 
-}  // namespace
 }  // namespace bluetooth::le_audio

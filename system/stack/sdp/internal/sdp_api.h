@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include <base/callback_forward.h>
+
 #include <cstdint>
 
 #include "stack/include/sdp_callback.h"
@@ -94,10 +96,9 @@ bool SDP_ServiceSearchAttributeRequest(const RawAddress& p_bd_addr,
  * Returns          true if discovery started, false if failed.
  *
  ******************************************************************************/
-bool SDP_ServiceSearchAttributeRequest2(const RawAddress& p_bd_addr,
-                                        tSDP_DISCOVERY_DB* p_db,
-                                        tSDP_DISC_CMPL_CB2* p_cb,
-                                        const void* user_data);
+bool SDP_ServiceSearchAttributeRequest2(
+    const RawAddress& p_bd_addr, tSDP_DISCOVERY_DB* p_db,
+    base::RepeatingCallback<tSDP_DISC_CMPL_CB> complete_callback);
 
 /* API of utilities to find data in the local discovery database */
 

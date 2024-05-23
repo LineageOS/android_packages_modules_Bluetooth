@@ -61,14 +61,14 @@ using namespace bluetooth;
  * Returns          void
  *
  ******************************************************************************/
-static void bta_hf_client_sdp_cback(const RawAddress& /* bd_addr */,
-                                    tSDP_STATUS status, const void* data) {
+static void bta_hf_client_sdp_cback(tBTA_HF_CLIENT_CB* client_cb,
+                                    const RawAddress& /* bd_addr */,
+                                    tSDP_STATUS status) {
   uint16_t event;
   tBTA_HF_CLIENT_DISC_RESULT* p_buf = (tBTA_HF_CLIENT_DISC_RESULT*)osi_malloc(
       sizeof(tBTA_HF_CLIENT_DISC_RESULT));
 
   log::verbose("bta_hf_client_sdp_cback status:0x{:x}", status);
-  tBTA_HF_CLIENT_CB* client_cb = (tBTA_HF_CLIENT_CB*)data;
 
   /* set event according to int/acp */
   if (client_cb->role == BTA_HF_CLIENT_ACP)
@@ -359,8 +359,8 @@ void bta_hf_client_do_disc(tBTA_HF_CLIENT_CB* client_cb) {
     /*Service discovery not initiated */
     db_inited =
         get_legacy_stack_sdp_api()->service.SDP_ServiceSearchAttributeRequest2(
-            client_cb->peer_addr, client_cb->p_disc_db, bta_hf_client_sdp_cback,
-            (void*)client_cb);
+            client_cb->peer_addr, client_cb->p_disc_db,
+            base::BindRepeating(&bta_hf_client_sdp_cback, client_cb));
   }
 
   if (!db_inited) {

@@ -1214,10 +1214,16 @@ void bta_av_stream_chg(tBTA_AV_SCB* p_scb, bool started) {
 
   if (started) {
     /* Let L2CAP know this channel is processed with high priority */
-    L2CA_SetAclPriority(p_scb->PeerAddress(), L2CAP_PRIORITY_HIGH);
+    if (!L2CA_SetAclPriority(p_scb->PeerAddress(), L2CAP_PRIORITY_HIGH)) {
+      log::warn("Unable to set L2CAP acl high priority peer:{}",
+                p_scb->PeerAddress());
+    }
   } else {
     /* Let L2CAP know this channel is processed with low priority */
-    L2CA_SetAclPriority(p_scb->PeerAddress(), L2CAP_PRIORITY_NORMAL);
+    if (!L2CA_SetAclPriority(p_scb->PeerAddress(), L2CAP_PRIORITY_NORMAL)) {
+      log::warn("Unable to set L2CAP acl normal priority peer:{}",
+                p_scb->PeerAddress());
+    }
   }
 }
 
@@ -1464,7 +1470,10 @@ void bta_av_api_disconnect(tBTA_AV_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_av_set_use_latency_mode(tBTA_AV_SCB* p_scb, bool use_latency_mode) {
-  L2CA_UseLatencyMode(p_scb->PeerAddress(), use_latency_mode);
+  if (!L2CA_UseLatencyMode(p_scb->PeerAddress(), use_latency_mode)) {
+    log::warn("Unable to set L2CAP latenty mode peer:{} use_latency_mode:{}",
+              p_scb->PeerAddress(), use_latency_mode);
+  }
 }
 
 /*******************************************************************************
@@ -1483,7 +1492,10 @@ void bta_av_api_set_latency(tBTA_AV_DATA* p_data) {
   tL2CAP_LATENCY latency = p_data->api_set_latency.is_low_latency
                                ? L2CAP_LATENCY_LOW
                                : L2CAP_LATENCY_NORMAL;
-  L2CA_SetAclLatency(p_scb->PeerAddress(), latency);
+  if (!L2CA_SetAclLatency(p_scb->PeerAddress(), latency)) {
+    log::warn("Unable to set L2CAP latenty mode peer:{} use_latency_mode:{}",
+              p_scb->PeerAddress(), latency);
+  }
 }
 
 /**

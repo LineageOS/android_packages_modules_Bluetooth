@@ -306,17 +306,25 @@ void BTA_dm_on_hw_on() {
 void bta_dm_disable() {
   /* Set l2cap idle timeout to 0 (so BTE immediately disconnects ACL link after
    * last channel is closed) */
-  L2CA_SetIdleTimeoutByBdAddr(RawAddress::kAny, 0, BT_TRANSPORT_BR_EDR);
-  L2CA_SetIdleTimeoutByBdAddr(RawAddress::kAny, 0, BT_TRANSPORT_LE);
+  if (!L2CA_SetIdleTimeoutByBdAddr(RawAddress::kAny, 0, BT_TRANSPORT_BR_EDR)) {
+    log::warn(
+        "Unable to set L2CAP idle timeout peer:{} transport:{} timeout:{}",
+        RawAddress::kAny, BT_TRANSPORT_BR_EDR, 0);
+  }
+  if (!L2CA_SetIdleTimeoutByBdAddr(RawAddress::kAny, 0, BT_TRANSPORT_LE)) {
+    log::warn(
+        "Unable to set L2CAP idle timeout peer:{} transport:{} timeout:{}",
+        RawAddress::kAny, BT_TRANSPORT_LE, 0);
+  }
 
   /* disable all active subsystems */
   bta_sys_disable();
 
   if (BTM_SetDiscoverability(BTM_NON_DISCOVERABLE) != BTM_SUCCESS) {
-    log::warn("Unable to clear discoverability");
+    log::warn("Unable to disable classic BR/EDR discoverability");
   }
   if (BTM_SetConnectability(BTM_NON_CONNECTABLE) != BTM_SUCCESS) {
-    log::warn("Unable to clear connectability");
+    log::warn("Unable to disable classic BR/EDR connectability");
   }
 
   bta_dm_disable_pm();
@@ -441,10 +449,12 @@ bool BTA_DmSetVisibility(bt_scan_mode_t mode) {
   }
 
   if (BTM_SetDiscoverability(disc_mode_param) != BTM_SUCCESS) {
-    log::warn("Unable to set discoveability");
+    log::warn("Unable to set classic BR/EDR discoverability 0x{:04x}",
+              disc_mode_param);
   }
   if (BTM_SetConnectability(conn_mode_param) != BTM_SUCCESS) {
-    log::warn("Unable to set connectability");
+    log::warn("Unable to set classic BR/EDR connectability 0x{:04x}",
+              conn_mode_param);
   }
   return true;
 }
@@ -1601,7 +1611,7 @@ void bta_dm_allow_wake_by_hid(
   // the adapter connectable for classic.
   if (classic_hid_devices.size() > 0) {
     if (BTM_SetConnectability(BTM_CONNECTABLE) != BTM_SUCCESS) {
-      log::warn("Unable to set connectability");
+      log::warn("Unable to enable classic BR/EDR connectability");
     }
   }
 
@@ -1701,8 +1711,10 @@ void bta_dm_ble_subrate_request(const RawAddress& bd_addr, uint16_t subrate_min,
                                 uint16_t subrate_max, uint16_t max_latency,
                                 uint16_t cont_num, uint16_t timeout) {
     // Logging done in l2c_ble.cc
-    L2CA_SubrateRequest(bd_addr, subrate_min, subrate_max, max_latency,
-                        cont_num, timeout);
+    if (!L2CA_SubrateRequest(bd_addr, subrate_min, subrate_max, max_latency,
+                             cont_num, timeout)) {
+      log::warn("Unable to set L2CAP ble subrating peer:{}", bd_addr);
+    }
 }
 
 namespace bluetooth {

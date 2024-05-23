@@ -1295,6 +1295,12 @@ class LeAudioClientImpl : public LeAudioClient {
       }
     }
 
+    auto result =
+        CodecManager::GetInstance()->UpdateActiveUnicastAudioHalClient(
+            le_audio_source_hal_client_.get(), le_audio_sink_hal_client_.get(),
+            true);
+    log::assert_that(result, "Could not update session to codec manager");
+
     /* Mini policy: Try configure audio HAL sessions with most recent context.
      * If reconfiguration is not needed it means, context type is not supported.
      * If most recent scenario is not supported, try to find first supported.
@@ -5901,6 +5907,12 @@ class LeAudioClientImpl : public LeAudioClient {
       handleAsymmetricPhyForUnicast(group);
       log::info("ClientAudioInterfaceRelease - cleanup");
     }
+
+    auto result =
+        CodecManager::GetInstance()->UpdateActiveUnicastAudioHalClient(
+            le_audio_source_hal_client_.get(), le_audio_sink_hal_client_.get(),
+            false);
+    log::assert_that(result, "Could not update session to codec manager");
 
     if (le_audio_source_hal_client_) {
       le_audio_source_hal_client_->Stop();

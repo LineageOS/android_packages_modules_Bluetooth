@@ -1415,8 +1415,11 @@ static void read_pref_conn_params_cb(uint16_t conn_id, tGATT_STATUS status,
 
   BTM_BleSetPrefConnParams(p_dev_cb->link_spec.addrt.bda, min_interval,
                            max_interval, latency, timeout);
-  L2CA_UpdateBleConnParams(p_dev_cb->link_spec.addrt.bda, min_interval,
-                           max_interval, latency, timeout, 0, 0);
+  if (!L2CA_UpdateBleConnParams(p_dev_cb->link_spec.addrt.bda, min_interval,
+                                max_interval, latency, timeout, 0, 0)) {
+    log::warn("Unable to update L2CAP ble connection params peer:{}",
+              p_dev_cb->link_spec.addrt.bda);
+  }
 }
 
 /*******************************************************************************

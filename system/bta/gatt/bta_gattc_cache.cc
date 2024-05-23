@@ -25,6 +25,7 @@
 
 #define LOG_TAG "bt_bta_gattc"
 
+#include <base/bind.h>
 #include <base/strings/string_number_conversions.h>
 #include <base/strings/stringprintf.h>
 #include <bluetooth/log.h>
@@ -342,9 +343,9 @@ descriptor_discovery_done:
 }
 
 /* Process the discovery result from sdp */
-void bta_gattc_sdp_callback(const RawAddress& /* bd_addr */,
-                            tSDP_STATUS sdp_status, const void* user_data) {
-  tBTA_GATTC_CB_DATA* cb_data = (tBTA_GATTC_CB_DATA*)user_data;
+void bta_gattc_sdp_callback(tBTA_GATTC_CB_DATA* cb_data,
+                            const RawAddress& /* bd_addr */,
+                            tSDP_STATUS sdp_status) {
   tBTA_GATTC_SERV* p_srvc_cb = bta_gattc_find_scb_by_cid(cb_data->sdp_conn_id);
 
   if (p_srvc_cb == nullptr) {
@@ -440,8 +441,8 @@ static tGATT_STATUS bta_gattc_sdp_service_disc(uint16_t conn_id,
   };
 
   if (!get_legacy_stack_sdp_api()->service.SDP_ServiceSearchAttributeRequest2(
-          p_server_cb->server_bda, cb_data->p_sdp_db, &bta_gattc_sdp_callback,
-          const_cast<const void*>(static_cast<void*>(cb_data)))) {
+          p_server_cb->server_bda, cb_data->p_sdp_db,
+          base::BindRepeating(bta_gattc_sdp_callback, cb_data))) {
     log::warn("Unable to start SDP service search attribute request peer:{}",
               p_server_cb->server_bda);
     osi_free(cb_data);

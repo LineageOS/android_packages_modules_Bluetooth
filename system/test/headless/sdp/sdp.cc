@@ -32,11 +32,9 @@
 using namespace bluetooth::legacy::stack::sdp;
 using namespace bluetooth::test::headless;
 
-static void bta_jv_start_discovery_callback(const RawAddress& /* bd_addr */,
-                                            tSDP_STATUS result,
-                                            const void* user_data) {
-  auto promise =
-      static_cast<std::promise<uint16_t>*>(const_cast<void*>(user_data));
+static void bta_jv_start_discovery_callback(std::promise<tSDP_STATUS>* promise,
+                                            const RawAddress& /* bd_addr */,
+                                            tSDP_STATUS result) {
   promise->set_value(result);
 }
 
@@ -65,7 +63,7 @@ int sdp_query_uuid([[maybe_unused]] unsigned int num_loops,
 
   if (!get_legacy_stack_sdp_api()->service.SDP_ServiceSearchAttributeRequest2(
           raw_address, sdp_discovery_db.RawPointer(),
-          bta_jv_start_discovery_callback, (void*)&promise)) {
+          base::BindRepeating(bta_jv_start_discovery_callback, &promise))) {
     fprintf(stdout, "%s Failed to start search attribute request\n", __func__);
     return -2;
   }

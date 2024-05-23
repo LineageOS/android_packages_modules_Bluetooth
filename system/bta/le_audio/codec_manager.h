@@ -26,6 +26,9 @@
 
 namespace bluetooth::le_audio {
 
+class LeAudioSinkAudioHalClient;
+class LeAudioSourceAudioHalClient;
+
 struct stream_map_info {
   stream_map_info(uint16_t stream_handle, uint32_t audio_channel_allocation,
                   bool is_stream_active)
@@ -106,6 +109,11 @@ class CodecManager {
       const std::vector<struct types::cis>& cises,
       const stream_parameters& stream_params, uint8_t direction);
   virtual void ClearCisConfiguration(uint8_t direction);
+  virtual bool UpdateActiveUnicastAudioHalClient(
+      LeAudioSourceAudioHalClient* source_unicast_client,
+      LeAudioSinkAudioHalClient* sink_unicast_client, bool is_active);
+  virtual bool UpdateActiveBroadcastAudioHalClient(
+      LeAudioSourceAudioHalClient* source_broadcast_client, bool is_active);
   virtual void UpdateActiveAudioConfig(
       const types::BidirectionalPair<stream_parameters>& stream_params,
       types::BidirectionalPair<uint16_t> delays_ms,

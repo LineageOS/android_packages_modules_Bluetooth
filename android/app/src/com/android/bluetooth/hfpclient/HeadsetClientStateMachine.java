@@ -68,6 +68,7 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hfp.HeadsetService;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.IState;
@@ -134,8 +135,8 @@ public class HeadsetClientStateMachine extends StateMachine {
     static final int CONNECTING_TIMEOUT_MS = 10000;  // 10s
     private static final int ROUTING_DELAY_MS = 250;
 
-    private static final int MAX_HFP_SCO_VOICE_CALL_VOLUME = 15; // HFP 1.5 spec.
-    private static final int MIN_HFP_SCO_VOICE_CALL_VOLUME = 1; // HFP 1.5 spec.
+    @VisibleForTesting static final int MAX_HFP_SCO_VOICE_CALL_VOLUME = 15; // HFP 1.5 spec.
+    @VisibleForTesting static final int MIN_HFP_SCO_VOICE_CALL_VOLUME = 1; // HFP 1.5 spec.
 
     static final int HF_ORIGINATED_CALL_ID = -1;
     private static final long OUTGOING_TIMEOUT_MILLI = 10 * 1000; // 10 seconds
@@ -995,8 +996,14 @@ public class HeadsetClientStateMachine extends StateMachine {
     static int hfToAmVol(int hfVol) {
         int amRange = sMaxAmVcVol - sMinAmVcVol;
         int hfRange = MAX_HFP_SCO_VOICE_CALL_VOLUME - MIN_HFP_SCO_VOICE_CALL_VOLUME;
-        int amOffset = (amRange * (hfVol - MIN_HFP_SCO_VOICE_CALL_VOLUME)) / hfRange;
-        int amVol = sMinAmVcVol + amOffset;
+        int amVol = 0;
+        if (Flags.headsetClientAmHfVolumeSymmetric()) {
+            amVol = (int) Math.round((hfVol - MIN_HFP_SCO_VOICE_CALL_VOLUME)
+                                      * ((double) amRange / hfRange)) + sMinAmVcVol;
+        } else {
+            int amOffset = (amRange * (hfVol - MIN_HFP_SCO_VOICE_CALL_VOLUME)) / hfRange;
+            amVol = sMinAmVcVol + amOffset;
+        }
         Log.d(TAG, "HF -> AM " + hfVol + " " + amVol);
         return amVol;
     }
@@ -1004,8 +1011,14 @@ public class HeadsetClientStateMachine extends StateMachine {
     static int amToHfVol(int amVol) {
         int amRange = (sMaxAmVcVol > sMinAmVcVol) ? (sMaxAmVcVol - sMinAmVcVol) : 1;
         int hfRange = MAX_HFP_SCO_VOICE_CALL_VOLUME - MIN_HFP_SCO_VOICE_CALL_VOLUME;
-        int hfOffset = (hfRange * (amVol - sMinAmVcVol)) / amRange;
-        int hfVol = MIN_HFP_SCO_VOICE_CALL_VOLUME + hfOffset;
+        int hfVol = 0;
+        if (Flags.headsetClientAmHfVolumeSymmetric()) {
+            hfVol = (int) Math.round((amVol - sMinAmVcVol) * ((double) hfRange / amRange))
+                            + MIN_HFP_SCO_VOICE_CALL_VOLUME;
+        } else {
+            int hfOffset = (hfRange * (amVol - sMinAmVcVol)) / amRange;
+            hfVol = MIN_HFP_SCO_VOICE_CALL_VOLUME + hfOffset;
+        }
         Log.d(TAG, "AM -> HF " + amVol + " " + hfVol);
         return hfVol;
     }

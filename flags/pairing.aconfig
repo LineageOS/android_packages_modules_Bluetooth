@@ -34,3 +34,23 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "temporary_pairing_device_properties"
+    namespace: "bluetooth"
+    description: "Do not remove the device properties immediately after insecure pairing"
+    bug: "342202557"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "use_local_oob_extended_command"
+    namespace: "bluetooth"
+    description: "Use HCI Read Local OOB Extended Data command to generate local OOB when Secure Connections is supported by the controller"
+    bug: "342250775"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
