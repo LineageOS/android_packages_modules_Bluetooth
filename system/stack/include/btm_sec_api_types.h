@@ -338,8 +338,10 @@ typedef struct {
 /* data type for BTM_SP_LOC_OOB_EVT */
 typedef struct {
   tBTM_STATUS status; /* */
-  Octet16 c;          /* Simple Pairing Hash C */
-  Octet16 r;          /* Simple Pairing Randomnizer R */
+  Octet16 c_192;      /* Simple Pairing Hash C from P-192 public key */
+  Octet16 r_192;      /* Simple Pairing Randomnizer R from P-192 public key */
+  Octet16 c_256;      /* Simple Pairing Hash C from P-256 public key */
+  Octet16 r_256;      /* Simple Pairing Randomnizer R from P-256 public key */
 } tBTM_SP_LOC_OOB;
 
 /* data type for BTM_SP_RMT_OOB_EVT */

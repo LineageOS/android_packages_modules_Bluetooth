@@ -104,6 +104,8 @@ static void btu_hcif_create_conn_cancel_complete(const uint8_t* p,
                                                  uint16_t evt_len);
 static void btu_hcif_read_local_oob_complete(const uint8_t* p,
                                              uint16_t evt_len);
+static void btu_hcif_read_local_oob_extended_complete(const uint8_t* p,
+                                                      uint16_t evt_len);
 
 /* Simple Pairing Events */
 static void btu_hcif_io_cap_request_evt(const uint8_t* p);
@@ -494,6 +496,7 @@ static void btu_hcif_log_command_metrics(uint16_t opcode, const uint8_t* p_cmd,
       }
       break;
     case HCI_READ_LOCAL_OOB_DATA:
+    case HCI_READ_LOCAL_OOB_EXTENDED_DATA:
       log_classic_pairing_event(RawAddress::kEmpty,
                                 bluetooth::common::kUnknownConnectionHandle,
                                 opcode, hci_event, cmd_status,
@@ -628,6 +631,7 @@ static void btu_hcif_log_command_complete_metrics(
   switch (opcode) {
     case HCI_DELETE_STORED_LINK_KEY:
     case HCI_READ_LOCAL_OOB_DATA:
+    case HCI_READ_LOCAL_OOB_EXTENDED_DATA:
     case HCI_WRITE_SIMPLE_PAIRING_MODE:
     case HCI_WRITE_SECURE_CONNS_SUPPORT:
       STREAM_TO_UINT8(status, p_return_params);
@@ -941,6 +945,10 @@ static void btu_hcif_hdl_command_complete(uint16_t opcode, uint8_t* p,
 
     case HCI_READ_LOCAL_OOB_DATA:
       btu_hcif_read_local_oob_complete(p, evt_len);
+      break;
+
+    case HCI_READ_LOCAL_OOB_EXTENDED_DATA:
+      btu_hcif_read_local_oob_extended_complete(p, evt_len);
       break;
 
     case HCI_READ_INQ_TX_POWER_LEVEL:
@@ -1281,7 +1289,7 @@ void btu_hcif_create_conn_cancel_complete(const uint8_t* p, uint16_t evt_len) {
   btm_create_conn_cancel_complete(status, bd_addr);
 }
 void btu_hcif_read_local_oob_complete(const uint8_t* p, uint16_t evt_len) {
-  tBTM_SP_LOC_OOB evt_data;
+  tBTM_SP_LOC_OOB evt_data = {};
   uint8_t status;
   if (evt_len < 1) {
     goto err_out;
@@ -1295,13 +1303,36 @@ void btu_hcif_read_local_oob_complete(const uint8_t* p, uint16_t evt_len) {
   if (evt_len < 32 + 1) {
     goto err_out;
   }
-  STREAM_TO_ARRAY16(evt_data.c.data(), p);
-  STREAM_TO_ARRAY16(evt_data.r.data(), p);
+  STREAM_TO_ARRAY16(evt_data.c_192.data(), p);
+  STREAM_TO_ARRAY16(evt_data.r_192.data(), p);
   btm_read_local_oob_complete(evt_data);
   return;
 
 err_out:
   log::error("bogus event packet, too short");
+}
+
+void btu_hcif_read_local_oob_extended_complete(const uint8_t* p,
+                                               uint16_t evt_len) {
+  if (evt_len < 64 + 1) {
+    log::error("Invalid event length: {}", evt_len);
+    return;
+  }
+
+  tBTM_SP_LOC_OOB evt_data = {};
+  uint8_t status;
+  STREAM_TO_UINT8(status, p);
+  if (status == HCI_SUCCESS) {
+    evt_data.status = BTM_SUCCESS;
+  } else {
+    evt_data.status = BTM_ERR_PROCESSING;
+  }
+
+  STREAM_TO_ARRAY16(evt_data.c_192.data(), p);
+  STREAM_TO_ARRAY16(evt_data.r_192.data(), p);
+  STREAM_TO_ARRAY16(evt_data.c_256.data(), p);
+  STREAM_TO_ARRAY16(evt_data.r_256.data(), p);
+  btm_read_local_oob_complete(evt_data);
 }
 
 /*******************************************************************************
