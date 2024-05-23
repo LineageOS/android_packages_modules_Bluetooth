@@ -102,13 +102,12 @@ bool SDP_ServiceSearchAttributeRequest(const RawAddress& p_bd_addr,
   return test::mock::stack_sdp_api::SDP_ServiceSearchAttributeRequest(
       p_bd_addr, p_db, p_cb);
 }
-bool SDP_ServiceSearchAttributeRequest2(const RawAddress& p_bd_addr,
-                                        tSDP_DISCOVERY_DB* p_db,
-                                        tSDP_DISC_CMPL_CB2* p_cb2,
-                                        const void* user_data) {
+bool SDP_ServiceSearchAttributeRequest2(
+    const RawAddress& p_bd_addr, tSDP_DISCOVERY_DB* p_db,
+    base::RepeatingCallback<tSDP_DISC_CMPL_CB> complete_callback) {
   inc_func_call_count(__func__);
   return test::mock::stack_sdp_api::SDP_ServiceSearchAttributeRequest2(
-      p_bd_addr, p_db, p_cb2, user_data);
+      p_bd_addr, p_db, complete_callback);
 }
 bool SDP_ServiceSearchRequest(const RawAddress& p_bd_addr,
                               tSDP_DISCOVERY_DB* p_db,

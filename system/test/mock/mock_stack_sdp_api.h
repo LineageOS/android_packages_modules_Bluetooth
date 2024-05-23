@@ -21,6 +21,8 @@
  *  mockcify.pl ver 0.2.1
  */
 
+#include <base/callback.h>
+
 #include <cstdint>
 #include <functional>
 
@@ -135,16 +137,20 @@ extern struct SDP_ServiceSearchAttributeRequest
     SDP_ServiceSearchAttributeRequest;
 // Name: SDP_ServiceSearchAttributeRequest2
 // Params: const RawAddress& p_bd_addr, tSDP_DISCOVERY_DB* p_db,
-// tSDP_DISC_CMPL_CB2* p_cb2, void* user_data Returns: bool
+// base::RepeatingCallback<tSDP_DISC_CMPL_CB> complete_callback
+// Returns: bool
 struct SDP_ServiceSearchAttributeRequest2 {
-  std::function<bool(const RawAddress& p_bd_addr, tSDP_DISCOVERY_DB* p_db,
-                     tSDP_DISC_CMPL_CB2* p_cb2, const void* user_data)>
-      body{[](const RawAddress& /* p_bd_addr */, tSDP_DISCOVERY_DB* /* p_db */,
-              tSDP_DISC_CMPL_CB2* /* p_cb2 */,
-              const void* /* user_data */) { return false; }};
-  bool operator()(const RawAddress& p_bd_addr, tSDP_DISCOVERY_DB* p_db,
-                  tSDP_DISC_CMPL_CB2* p_cb2, const void* user_data) {
-    return body(p_bd_addr, p_db, p_cb2, user_data);
+  std::function<bool(
+      const RawAddress& p_bd_addr, tSDP_DISCOVERY_DB* p_db,
+      base::RepeatingCallback<tSDP_DISC_CMPL_CB> complete_callback)>
+      body{
+          [](const RawAddress& /* p_bd_addr */, tSDP_DISCOVERY_DB* /* p_db */,
+             base::RepeatingCallback<
+                 tSDP_DISC_CMPL_CB> /* complete_callback */) { return false; }};
+  bool operator()(
+      const RawAddress& p_bd_addr, tSDP_DISCOVERY_DB* p_db,
+      base::RepeatingCallback<tSDP_DISC_CMPL_CB> complete_callback) {
+    return body(p_bd_addr, p_db, complete_callback);
   };
 };
 extern struct SDP_ServiceSearchAttributeRequest2

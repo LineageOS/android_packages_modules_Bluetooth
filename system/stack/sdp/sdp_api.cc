@@ -194,10 +194,9 @@ bool SDP_ServiceSearchAttributeRequest(const RawAddress& bd_addr,
  * Returns          true if discovery started, false if failed.
  *
  ******************************************************************************/
-bool SDP_ServiceSearchAttributeRequest2(const RawAddress& bd_addr,
-                                        tSDP_DISCOVERY_DB* p_db,
-                                        tSDP_DISC_CMPL_CB2* p_cb2,
-                                        const void* user_data) {
+bool SDP_ServiceSearchAttributeRequest2(
+    const RawAddress& bd_addr, tSDP_DISCOVERY_DB* p_db,
+    base::RepeatingCallback<tSDP_DISC_CMPL_CB> complete_callback) {
   tCONN_CB* p_ccb;
 
   /* Specific BD address */
@@ -207,10 +206,9 @@ bool SDP_ServiceSearchAttributeRequest2(const RawAddress& bd_addr,
 
   p_ccb->disc_state = SDP_DISC_WAIT_CONN;
   p_ccb->p_db = p_db;
-  p_ccb->p_cb2 = p_cb2;
+  p_ccb->complete_callback = std::move(complete_callback);
 
   p_ccb->is_attr_search = true;
-  p_ccb->user_data = user_data;
 
   return (true);
 }
