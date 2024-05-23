@@ -540,8 +540,6 @@ public class AdapterService extends Service {
                         updateUuids();
                         initProfileServices();
                         mNativeInterface.getAdapterProperty(
-                                AbstractionLayer.BT_PROPERTY_LOCAL_IO_CAPS);
-                        mNativeInterface.getAdapterProperty(
                                 AbstractionLayer.BT_PROPERTY_DYNAMIC_AUDIO_BUFFER);
                         mAdapterStateMachine.sendMessage(AdapterState.BREDR_STARTED);
                         mBtCompanionManager.loadCompanionInfo();
@@ -2450,37 +2448,6 @@ public class AdapterService extends Service {
 
             Log.d(TAG, "AdapterServiceBinder.setName(" + name + ")");
             return service.mAdapterProperties.setName(name);
-        }
-
-        @Override
-        public int getIoCapability(AttributionSource attributionSource) {
-            AdapterService service = getService();
-            if (service == null
-                    || !callerIsSystemOrActiveOrManagedUser(service, TAG, "getIoCapability")
-                    || !Utils.checkConnectPermissionForDataDelivery(
-                            service, attributionSource, "AdapterService getIoCapability")) {
-                return BluetoothAdapter.IO_CAPABILITY_UNKNOWN;
-            }
-
-            return service.mAdapterProperties.getIoCapability();
-        }
-
-        @Override
-        public boolean setIoCapability(int capability, AttributionSource source) {
-            AdapterService service = getService();
-            if (service == null
-                    || !callerIsSystemOrActiveOrManagedUser(service, TAG, "setIoCapability")
-                    || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
-                return false;
-            }
-
-            enforceBluetoothPrivilegedPermission(service);
-
-            if (!isValidIoCapability(capability)) {
-                return false;
-            }
-
-            return service.mAdapterProperties.setIoCapability(capability);
         }
 
         @Override
@@ -4700,16 +4667,6 @@ public class AdapterService extends Service {
 
     public int getNameLengthForAdvertise() {
         return mAdapterProperties.getName().length();
-    }
-
-    @VisibleForTesting
-    static boolean isValidIoCapability(int capability) {
-        if (capability < 0 || capability >= BluetoothAdapter.IO_CAPABILITY_MAX) {
-            Log.e(TAG, "Invalid IO capability value - " + capability);
-            return false;
-        }
-
-        return true;
     }
 
     List<DiscoveringPackage> getDiscoveringPackages() {

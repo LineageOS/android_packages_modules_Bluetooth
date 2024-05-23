@@ -159,10 +159,6 @@ static bool prop2cfg(const RawAddress* remote_bd_addr, bt_property_t* prop) {
       btif_config_set_int(BTIF_STORAGE_SECTION_ADAPTER,
                           BTIF_STORAGE_KEY_SCANMODE, *(int*)prop->val);
       break;
-    case BT_PROPERTY_LOCAL_IO_CAPS:
-      btif_config_set_int(BTIF_STORAGE_SECTION_ADAPTER,
-                          BTIF_STORAGE_KEY_LOCAL_IO_CAPS, *(int*)prop->val);
-      break;
     case BT_PROPERTY_ADAPTER_DISCOVERABLE_TIMEOUT:
       btif_config_set_int(BTIF_STORAGE_SECTION_ADAPTER,
                           BTIF_STORAGE_KEY_DISC_TIMEOUT, *(int*)prop->val);
@@ -281,12 +277,6 @@ static bool cfg2prop(const RawAddress* remote_bd_addr, bt_property_t* prop) {
                                   BTIF_STORAGE_KEY_SCANMODE, (int*)prop->val);
       break;
 
-    case BT_PROPERTY_LOCAL_IO_CAPS:
-      if (prop->len >= (int)sizeof(int))
-        ret = btif_config_get_int(BTIF_STORAGE_SECTION_ADAPTER,
-                                  BTIF_STORAGE_KEY_LOCAL_IO_CAPS,
-                                  (int*)prop->val);
-      break;
     case BT_PROPERTY_ADAPTER_DISCOVERABLE_TIMEOUT:
       if (prop->len >= (int)sizeof(int))
         ret =
@@ -580,41 +570,6 @@ size_t btif_split_uuids_string(const char* str, bluetooth::Uuid* p_uuid,
   }
 
   return num_uuids;
-}
-
-/**
- * Helper function for fetching a local Input/Output capability property. If not
- * set, it returns the default value.
- */
-static uint8_t btif_storage_get_io_cap_property(bt_property_type_t type,
-                                                uint8_t default_value) {
-  char buf[sizeof(int)];
-
-  bt_property_t property;
-  property.type = type;
-  property.val = (void*)buf;
-  property.len = sizeof(int);
-
-  bt_status_t ret = btif_storage_get_adapter_property(&property);
-
-  return (ret == BT_STATUS_SUCCESS) ? (uint8_t)(*(int*)property.val)
-                                    : default_value;
-}
-
-/*******************************************************************************
- *
- * Function         btif_storage_get_io_caps
- *
- * Description      BTIF storage API - Fetches the local Input/Output
- *                  capabilities of the device.
- *
- * Returns          Returns local IO Capability of device. If not stored,
- *                  returns BTM_LOCAL_IO_CAPS.
- *
- ******************************************************************************/
-tBTM_IO_CAP btif_storage_get_local_io_caps() {
-  return static_cast<tBTM_IO_CAP>(btif_storage_get_io_cap_property(
-      BT_PROPERTY_LOCAL_IO_CAPS, BTM_LOCAL_IO_CAPS));
 }
 
 /** Helper function for fetching a bt_property of the adapter. */

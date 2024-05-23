@@ -132,19 +132,6 @@ bt_status_t btif_storage_set_remote_device_property(
 
 /*******************************************************************************
  *
- * Function         btif_storage_get_io_caps
- *
- * Description      BTIF storage API - Fetches the local Input/Output
- *                  capabilities of the device.
- *
- * Returns          Returns local IO Capability of device. If not stored,
- *                  returns BTM_LOCAL_IO_CAPS.
- *
- ******************************************************************************/
-tBTM_IO_CAP btif_storage_get_local_io_caps();
-
-/*******************************************************************************
- *
  * Function         btif_storage_add_remote_device
  *
  * Description      BTIF storage API - Adds a newly discovered device to
