@@ -115,6 +115,24 @@ class DistanceMeasurementInterfaceImpl
         bluetooth::ToRawAddress(address), procedure_counter, is_last, raw_data);
   }
 
+  void OnVendorSpecificCharacteristics(
+      std::vector<bluetooth::hal::VendorSpecificCharacteristic>
+          vendor_specific_characteristics) {
+    std::vector<bluetooth::ras::VendorSpecificCharacteristic>
+        ras_vendor_specific_characteristics;
+    for (auto& characteristic : vendor_specific_characteristics) {
+      bluetooth::ras::VendorSpecificCharacteristic
+          vendor_specific_characteristic;
+      vendor_specific_characteristic.characteristicUuid_ =
+          bluetooth::Uuid::From128BitBE(characteristic.characteristicUuid_);
+      vendor_specific_characteristic.value_ = characteristic.value_;
+      ras_vendor_specific_characteristics.emplace_back(
+          vendor_specific_characteristic);
+    }
+    bluetooth::ras::GetRasServer()->SetVendorSpecificCharacteristic(
+        ras_vendor_specific_characteristics);
+  }
+
   void OnRemoteData(const RawAddress& address,
                     const std::vector<uint8_t>& data) {
     bluetooth::shim::GetDistanceMeasurementManager()->HandleRemoteData(

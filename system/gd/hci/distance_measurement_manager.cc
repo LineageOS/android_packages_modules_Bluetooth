@@ -165,6 +165,10 @@ struct DistanceMeasurementManager::impl {
 
   void register_distance_measurement_callbacks(DistanceMeasurementCallbacks* callbacks) {
     distance_measurement_callbacks_ = callbacks;
+    if (ranging_hal_->isBound()) {
+      distance_measurement_callbacks_->OnVendorSpecificCharacteristics(
+          ranging_hal_->getVendorSpecificCharacteristics());
+    }
   }
 
   void start_distance_measurement(
