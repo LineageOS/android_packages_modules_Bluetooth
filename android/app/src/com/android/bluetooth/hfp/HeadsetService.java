@@ -2196,10 +2196,6 @@ public class HeadsetService extends ProfileService {
 
                     // usually controller limitation cause CONNECTING -> DISCONNECTED, so only
                     // resume LE audio active device if it is HFP audio only and SCO disconnected
-                    Log.v(
-                            TAG,
-                            "keep HFP active during handover: isHFPAudioOnly="
-                                    + isHFPAudioOnly(device));
                     if (Flags.keepHfpActiveDuringLeaudioHandover()
                             && fromState != BluetoothHeadset.STATE_AUDIO_CONNECTING
                             && isHFPAudioOnly(device)) {
