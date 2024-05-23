@@ -5035,6 +5035,71 @@ TEST_F(UnicastTest, ChangeAvailableContextTypeWhenInCodecConfigured) {
   Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
 }
 
+TEST_F(UnicastTest, TestUpdateConfigurationCallbackWhileStreaming) {
+  const RawAddress test_address0 = GetTestAddress(0);
+  int group_id = bluetooth::groups::kGroupUnknown;
+
+  SetSampleDatabaseEarbudsValid(
+      1, test_address0, codec_spec_conf::kLeAudioLocationStereo,
+      codec_spec_conf::kLeAudioLocationStereo, default_channel_cnt,
+      default_channel_cnt, 0x0004,
+      /* source sample freq 16khz */ false /*add_csis*/, true /*add_cas*/,
+      true /*add_pacs*/, default_ase_cnt /*add_ascs_cnt*/, 1 /*set_size*/,
+      0 /*rank*/);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnConnectionState(ConnectionState::CONNECTED, test_address0))
+      .Times(1);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnGroupNodeStatus(test_address0, _, GroupNodeStatus::ADDED))
+      .WillOnce(DoAll(SaveArg<1>(&group_id)));
+
+  ConnectLeAudio(test_address0);
+  ASSERT_NE(group_id, bluetooth::groups::kGroupUnknown);
+
+  // Start streaming
+  LeAudioClient::Get()->GroupSetActive(group_id);
+  SyncOnMainLoop();
+
+  EXPECT_CALL(mock_state_machine_, StartStream(_, _, _, _)).Times(1);
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnAudioGroupCurrentCodecConf(group_id, _, _))
+      .Times(1);
+  StartStreaming(AUDIO_USAGE_MEDIA, AUDIO_CONTENT_TYPE_MUSIC, group_id);
+
+  SyncOnMainLoop();
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
+  Mock::VerifyAndClearExpectations(&mock_state_machine_);
+  SyncOnMainLoop();
+
+  // When metadata update happen, there should be no configuration change
+  // callback sent
+  EXPECT_CALL(mock_audio_hal_client_callbacks_,
+              OnAudioGroupCurrentCodecConf(group_id, _, _))
+      .Times(0);
+
+  EXPECT_CALL(mock_state_machine_, StartStream(_, _, _, _)).Times(1);
+  UpdateLocalSourceMetadata(AUDIO_USAGE_ALARM, AUDIO_CONTENT_TYPE_UNKNOWN);
+
+  // Inject STREAMING Status from state machine.
+  auto group = streaming_groups.at(group_id);
+  do_in_main_thread(
+      FROM_HERE,
+      base::BindOnce(
+          [](int group_id,
+             bluetooth::le_audio::LeAudioGroupStateMachine::Callbacks*
+                 state_machine_callbacks,
+             LeAudioDeviceGroup* group) {
+            state_machine_callbacks->StatusReportCb(
+                group_id, GroupStreamStatus::STREAMING);
+          },
+          group_id, base::Unretained(this->state_machine_callbacks_),
+          std::move(group)));
+
+  SyncOnMainLoop();
+  Mock::VerifyAndClearExpectations(&mock_state_machine_);
+  Mock::VerifyAndClearExpectations(&mock_audio_hal_client_callbacks_);
+}
+
 TEST_F(UnicastTest, RemoveNodeWhileStreaming) {
   const RawAddress test_address0 = GetTestAddress(0);
   int group_id = bluetooth::groups::kGroupUnknown;
