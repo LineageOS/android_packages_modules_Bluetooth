@@ -1696,15 +1696,13 @@ static bool btif_is_gatt_service_discovery_post_pairing(const RawAddress bd_addr
 }
 
 static void btif_on_service_discovery_results(
-    RawAddress bd_addr, tBTA_SERVICE_MASK services,
-    const std::vector<bluetooth::Uuid>& uuids_param, tBTA_STATUS result,
-    tHCI_STATUS hci_status) {
+    RawAddress bd_addr, const std::vector<bluetooth::Uuid>& uuids_param,
+    tBTA_STATUS result) {
   bt_property_t prop;
   std::vector<uint8_t> property_value;
   std::set<Uuid> uuids;
   bool a2dp_sink_capable = false;
 
-  log::verbose("result=0x{:x}, services 0x{:x}", result, services);
   if (result != BTA_SUCCESS && pairing_cb.state == BT_BOND_STATE_BONDED &&
       pairing_cb.sdp_attempts < BTIF_DM_MAX_SDP_ATTEMPTS_AFTER_PAIRING) {
     if (pairing_cb.sdp_attempts) {
