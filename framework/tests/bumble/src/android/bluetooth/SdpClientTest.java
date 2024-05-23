@@ -84,13 +84,6 @@ public class SdpClientTest {
                                 .setAddress(ByteString.copyFrom(local_bytes_addr))
                                 .build());
 
-        // Wait until connection is stable
-        mBumble.hostBlocking()
-                .waitConnection(
-                        WaitConnectionRequest.newBuilder()
-                                .setAddress(ByteString.copyFrom(local_bytes_addr))
-                                .build());
-
         // Get the remote device
         BluetoothDevice device = mBumble.getRemoteDevice();
 
