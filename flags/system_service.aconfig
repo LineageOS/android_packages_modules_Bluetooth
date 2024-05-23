@@ -57,6 +57,16 @@ flag {
 }
 
 flag {
+    name: "respect_ble_scan_setting"
+    namespace: "bluetooth"
+    description: "No longer allow BLE_ON mode when the settings is explicitly disable"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+    bug: "341783936"
+}
+
+flag {
     name: "system_server_messenger"
     namespace: "bluetooth"
     description: "Replace binder call to the system server with a Messenger to enforce thread safety"
