@@ -21,6 +21,12 @@ class MockRasClient : public bluetooth::ras::RasClient {
   void RegisterCallbacks(
       bluetooth::ras::RasClientCallbacks* /* callbacks */) override{};
   void Connect(const RawAddress& /* address */) override{};
+  void SendVendorSpecificReply(
+      const RawAddress& /* address */,
+      const std::vector<
+          bluetooth::ras::
+              VendorSpecificCharacteristic>& /*vendor_specific_data*/)
+      override{};
 };
 
 namespace bluetooth {
