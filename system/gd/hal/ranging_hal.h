@@ -21,12 +21,18 @@
 namespace bluetooth {
 namespace hal {
 
+struct VendorSpecificCharacteristic {
+  std::array<uint8_t, 16> characteristicUuid_;
+  std::vector<uint8_t> value_;
+};
+
 class RangingHal : public ::bluetooth::Module {
  public:
   static const ModuleFactory Factory;
 
   virtual ~RangingHal() = default;
   virtual bool isBound() = 0;
+  virtual std::vector<VendorSpecificCharacteristic> getVendorSpecificCharacteristics() = 0;
 };
 
 }  // namespace hal

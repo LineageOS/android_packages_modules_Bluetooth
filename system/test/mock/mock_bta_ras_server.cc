@@ -21,6 +21,9 @@ class MockRasServer : public bluetooth::ras::RasServer {
   void PushProcedureData(RawAddress /* address */,
                          uint16_t /* procedure_count */, bool /* is_last */,
                          std::vector<uint8_t> /* data */) override{};
+  void SetVendorSpecificCharacteristic(
+      const std::vector<bluetooth::ras::VendorSpecificCharacteristic>&
+      /* vendor_specific_characteristics */) override{};
 };
 
 namespace bluetooth {
