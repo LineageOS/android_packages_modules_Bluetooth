@@ -228,14 +228,6 @@ class LocalLeFeatures : public BtPropertySimple<bt_local_le_features_t> {
   static std::shared_ptr<LocalLeFeatures> Create(const bt_local_le_features_t& features);
 };
 
-class LocalIOCaps : public BtPropertySimple<bt_io_cap_t> {
- public:
-  LocalIOCaps(const bt_io_cap_t& cap)
-      : BtPropertySimple<bt_io_cap_t>(BT_PROPERTY_LOCAL_IO_CAPS, cap) {}
-
-  static std::shared_ptr<LocalIOCaps> Create(const bt_io_cap_t& cap);
-};
-
 class RemoteIsCoordinatedSetMember : public BtPropertySimple<bool> {
  public:
   RemoteIsCoordinatedSetMember(const bool& is_set_member)

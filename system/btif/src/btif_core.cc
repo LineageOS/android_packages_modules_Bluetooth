@@ -306,7 +306,7 @@ void btif_dut_mode_send(uint16_t opcode, uint8_t* buf, uint8_t len) {
  ****************************************************************************/
 
 static bt_status_t btif_in_get_adapter_properties(void) {
-  const static uint32_t NUM_ADAPTER_PROPERTIES = 7;
+  const static uint32_t NUM_ADAPTER_PROPERTIES = 6;
   bt_property_t properties[NUM_ADAPTER_PROPERTIES];
   uint32_t num_props = 0;
 
@@ -317,7 +317,6 @@ static bt_status_t btif_in_get_adapter_properties(void) {
   RawAddress bonded_devices[BTM_SEC_MAX_DEVICE_RECORDS];
   Uuid local_uuids[BT_MAX_NUM_UUIDS];
   bt_status_t status;
-  bt_io_cap_t local_bt_io_cap;
 
   /* RawAddress */
   BTIF_STORAGE_FILL_PROPERTY(&properties[num_props], BT_PROPERTY_BDADDR,
@@ -359,12 +358,6 @@ static bt_status_t btif_in_get_adapter_properties(void) {
   /* LOCAL UUIDs */
   BTIF_STORAGE_FILL_PROPERTY(&properties[num_props], BT_PROPERTY_UUIDS,
                              sizeof(local_uuids), local_uuids);
-  btif_storage_get_adapter_property(&properties[num_props]);
-  num_props++;
-
-  /* LOCAL IO Capabilities */
-  BTIF_STORAGE_FILL_PROPERTY(&properties[num_props], BT_PROPERTY_LOCAL_IO_CAPS,
-                             sizeof(bt_io_cap_t), &local_bt_io_cap);
   btif_storage_get_adapter_property(&properties[num_props]);
   num_props++;
 
@@ -627,12 +620,6 @@ void btif_set_adapter_property(bt_property_t* property) {
       /* Nothing to do beside store the value in NV.  Java
          will change the SCAN_MODE property after setting timeout,
          if required */
-      btif_core_storage_adapter_write(property);
-    } break;
-    case BT_PROPERTY_LOCAL_IO_CAPS: {
-      // Changing IO Capability of stack at run-time is not currently supported.
-      // This call changes the stored value which will affect the stack next
-      // time it starts up.
       btif_core_storage_adapter_write(property);
     } break;
     default:
