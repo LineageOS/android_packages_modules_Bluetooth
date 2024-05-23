@@ -107,8 +107,8 @@ namespace testing {
 
 void bta_create_dip_sdp_record(bluetooth_sdp_record* record,
                                tSDP_DISC_REC* p_rec);
-void bta_sdp_search_cback(const RawAddress& bd_addr, tSDP_RESULT result,
-                          const void* user_data);
+void bta_sdp_search_cback(Uuid uuid, const RawAddress& bd_addr,
+                          tSDP_RESULT result);
 
 }  // namespace testing
 }  // namespace bluetooth
@@ -208,9 +208,6 @@ TEST_F(BtaDipTest, test_invalid_size_checks) {
 
 
 TEST_F(BtaDipTest, test_bta_sdp_search_cback) {
-  Uuid* userdata = (Uuid*)malloc(sizeof(Uuid));
-
-  memcpy(userdata, &UUID_DIP, sizeof(UUID_DIP));
-  bluetooth::testing::bta_sdp_search_cback(RawAddress::kEmpty, SDP_SUCCESS,
-                                           userdata);
+  bluetooth::testing::bta_sdp_search_cback(UUID_DIP, RawAddress::kEmpty,
+                                           SDP_SUCCESS);
 }

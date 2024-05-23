@@ -23,5 +23,3 @@
 
 /* Define a callback function for when discovery is complete. */
 typedef void(tSDP_DISC_CMPL_CB)(const RawAddress& bd_addr, tSDP_RESULT result);
-typedef void(tSDP_DISC_CMPL_CB2)(const RawAddress& bd_addr, tSDP_RESULT result,
-                                 const void* user_data);
