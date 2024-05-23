@@ -48,7 +48,7 @@ interface IBluetoothManager
     boolean onFactoryReset(in AttributionSource attributionSource);
 
     @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
-    boolean isBleScanAlwaysAvailable();
+    boolean isBleScanAvailable();
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     boolean enableBle(in AttributionSource attributionSource, IBinder b);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")

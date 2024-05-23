@@ -2434,9 +2434,9 @@ public final class BluetoothAdapter {
     @RequiresNoPermission
     public boolean isBleScanAlwaysAvailable() {
         try {
-            return mManagerService.isBleScanAlwaysAvailable();
+            return mManagerService.isBleScanAvailable();
         } catch (RemoteException e) {
-            Log.e(TAG, "remote exception when calling isBleScanAlwaysAvailable", e);
+            Log.e(TAG, "remote exception when calling isBleScanAvailable", e);
             return false;
         }
     }
