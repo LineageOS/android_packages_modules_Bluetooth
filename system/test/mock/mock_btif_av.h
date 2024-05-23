@@ -568,16 +568,6 @@ struct dump_av_sm_event_name {
 };
 extern struct dump_av_sm_event_name dump_av_sm_event_name;
 
-// Name: src_do_suspend_in_main_thread
-// Params: btif_av_sm_event_t event
-// Return: void
-struct src_do_suspend_in_main_thread {
-  std::function<void(btif_av_sm_event_t event)> body{
-      [](btif_av_sm_event_t /* event */) {}};
-  void operator()(btif_av_sm_event_t event) { body(event); };
-};
-extern struct src_do_suspend_in_main_thread src_do_suspend_in_main_thread;
-
 }  // namespace btif_av
 }  // namespace mock
 }  // namespace test
