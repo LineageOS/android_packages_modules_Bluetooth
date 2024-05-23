@@ -25,6 +25,7 @@
 #ifndef SDP_INT_H
 #define SDP_INT_H
 
+#include <base/callback.h>
 #include <base/strings/stringprintf.h>
 
 #include <cstdint>
@@ -191,9 +192,11 @@ struct tCONN_CB {
 
   tSDP_DISCOVERY_DB* p_db; /* Database to save info into   */
   tSDP_DISC_CMPL_CB* p_cb; /* Callback for discovery done  */
-  tSDP_DISC_CMPL_CB2*
-      p_cb2; /* Callback for discovery done piggy back with the user data */
-  const void* user_data; /* piggy back user data */
+  /* OnceCallback would be more appropriate, but it doesn't have copy
+   * constructor, so won't compile with current memory management for control
+   * blocks */
+  base::RepeatingCallback<tSDP_DISC_CMPL_CB>
+      complete_callback; /* Callback for discovery */
   uint32_t
       handles[SDP_MAX_DISC_SERVER_RECS]; /* Discovered server record handles */
   uint16_t num_handles;                  /* Number of server handles     */
