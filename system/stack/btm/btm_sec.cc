@@ -2052,7 +2052,7 @@ void btm_sec_dev_reset(void) {
                    "only controllers with SSP is supported");
 
   /* set the default IO capabilities */
-  btm_sec_cb.devcb.loc_io_caps = btif_storage_get_local_io_caps();
+  btm_sec_cb.devcb.loc_io_caps = BTM_IO_CAP_IO;
   /* add mx service to use no security */
   BTM_SetSecurityLevel(false, "RFC_MUX", BTM_SEC_SERVICE_RFC_MUX,
                        BTM_SEC_NONE, BT_PSM_RFCOMM, BTM_SEC_PROTO_RFCOMM, 0);

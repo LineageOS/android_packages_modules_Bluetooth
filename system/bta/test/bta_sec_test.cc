@@ -42,7 +42,6 @@ namespace legacy {
 namespace testing {
 
 tBTM_STATUS bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data);
-void btm_set_local_io_caps(uint8_t io_caps);
 
 }  // namespace testing
 }  // namespace legacy
@@ -67,8 +66,6 @@ TEST_F(BtaSecTest, bta_dm_sp_cback__BTM_SP_CFM_REQ_EVT_WithName) {
     callback_sent = true;
     cfm_req = p_data->cfm_req;
   });
-
-  bluetooth::legacy::testing::btm_set_local_io_caps(0xff);
 
   tBTM_SP_EVT_DATA data = {
       .cfm_req =
@@ -119,8 +116,6 @@ TEST_F(BtaSecTest, bta_dm_sp_cback__BTM_SP_CFM_REQ_EVT_WithoutName_RNRSuccess) {
     cfm_req = p_data->cfm_req;
   });
 
-  bluetooth::legacy::testing::btm_set_local_io_caps(0xff);
-
   tBTM_SP_EVT_DATA data = {
       .cfm_req =
           {
@@ -159,8 +154,6 @@ TEST_F(BtaSecTest, bta_dm_sp_cback__BTM_SP_CFM_REQ_EVT_WithoutName_RNRFail) {
     callback_sent = true;
     cfm_req = p_data->cfm_req;
   });
-
-  bluetooth::legacy::testing::btm_set_local_io_caps(0xff);
 
   tBTM_SP_EVT_DATA data = {
       .cfm_req =
@@ -208,7 +201,6 @@ TEST_F(BtaSecTest, bta_dm_sp_cback__BTM_SP_KEY_NOTIF_EVT) {
     callback_sent = true;
     key_notif = p_data->key_notif;
   });
-  bluetooth::legacy::testing::btm_set_local_io_caps(0xff);
 
   tBTM_SP_EVT_DATA data = {
       .key_notif =
