@@ -2289,6 +2289,8 @@ public class BassClientService extends ProfileService {
                             sink,
                             sourceMetadata,
                             BluetoothStatusCodes.ERROR_LOCAL_NOT_ENOUGH_RESOURCES);
+
+                    return;
                 }
             }
         } else {

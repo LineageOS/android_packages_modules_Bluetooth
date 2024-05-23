@@ -3412,16 +3412,13 @@ public class BassClientServiceTest {
         assertThat(activeSinks.contains(mCurrentDevice1)).isTrue();
     }
 
-    private void prepareTwoSynchronizedDevices() {
+    private void prepareTwoSynchronizedDevicesForLocalBroadcast() {
         BluetoothLeBroadcastMetadata meta = createBroadcastMetadata(TEST_BROADCAST_ID);
 
         doReturn(new ArrayList<BluetoothLeBroadcastMetadata>(Arrays.asList(meta)))
                 .when(mLeAudioService)
                 .getAllBroadcastMetadata();
         prepareConnectedDeviceGroup();
-        startSearchingForSources();
-        onScanResult(mSourceDevice, TEST_BROADCAST_ID);
-        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
         verifyAddSourceForGroup(meta);
         for (BassClientStateMachine sm : mStateMachines.values()) {
             if (sm.getDevice().equals(mCurrentDevice)) {
@@ -3472,10 +3469,11 @@ public class BassClientServiceTest {
 
     @Test
     public void testPrivateBroadcastIntentionalDisconnection() {
-        prepareTwoSynchronizedDevices();
-
         /* Imitate broadcast being active */
         doReturn(true).when(mLeAudioService).isPlaying(TEST_BROADCAST_ID);
+
+        prepareTwoSynchronizedDevicesForLocalBroadcast();
+
         /* Imitate devices being primary */
         doReturn(true).when(mLeAudioService).isPrimaryDevice(mCurrentDevice);
         doReturn(true).when(mLeAudioService).isPrimaryDevice(mCurrentDevice1);
@@ -3500,10 +3498,11 @@ public class BassClientServiceTest {
 
     @Test
     public void testPrivateBroadcastUnintentionalDisconnection() {
-        prepareTwoSynchronizedDevices();
-
         /* Imitate broadcast being active */
         doReturn(true).when(mLeAudioService).isPlaying(TEST_BROADCAST_ID);
+
+        prepareTwoSynchronizedDevicesForLocalBroadcast();
+
         /* Imitate devices being primary */
         doReturn(true).when(mLeAudioService).isPrimaryDevice(mCurrentDevice);
         doReturn(true).when(mLeAudioService).isPrimaryDevice(mCurrentDevice1);
@@ -3528,10 +3527,11 @@ public class BassClientServiceTest {
 
     @Test
     public void testAudioSharingIntentionalDisconnection() {
-        prepareTwoSynchronizedDevices();
-
         /* Imitate broadcast being active */
         doReturn(true).when(mLeAudioService).isPlaying(TEST_BROADCAST_ID);
+
+        prepareTwoSynchronizedDevicesForLocalBroadcast();
+
         /* Imitate devices being primary */
         doReturn(true).when(mLeAudioService).isPrimaryDevice(mCurrentDevice);
         doReturn(false).when(mLeAudioService).isPrimaryDevice(mCurrentDevice1);
@@ -3556,10 +3556,11 @@ public class BassClientServiceTest {
 
     @Test
     public void testAudioSharingUnintentionalDisconnection() {
-        prepareTwoSynchronizedDevices();
-
         /* Imitate broadcast being active */
         doReturn(true).when(mLeAudioService).isPlaying(TEST_BROADCAST_ID);
+
+        prepareTwoSynchronizedDevicesForLocalBroadcast();
+
         /* Imitate devices being primary */
         doReturn(true).when(mLeAudioService).isPrimaryDevice(mCurrentDevice);
         doReturn(false).when(mLeAudioService).isPrimaryDevice(mCurrentDevice1);
@@ -3584,15 +3585,15 @@ public class BassClientServiceTest {
 
     @Test
     public void testNotifyBroadcastStateChangedStopped() {
+        /* Imitate broadcast being active */
+        doReturn(true).when(mLeAudioService).isPlaying(TEST_BROADCAST_ID);
+
         BluetoothLeBroadcastMetadata meta = createBroadcastMetadata(TEST_BROADCAST_ID);
 
         doReturn(new ArrayList<BluetoothLeBroadcastMetadata>(Arrays.asList(meta)))
                 .when(mLeAudioService)
                 .getAllBroadcastMetadata();
         prepareConnectedDeviceGroup();
-        startSearchingForSources();
-        onScanResult(mSourceDevice, TEST_BROADCAST_ID);
-        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
         verifyAddSourceForGroup(meta);
         for (BassClientStateMachine sm : mStateMachines.values()) {
             if (sm.getDevice().equals(mCurrentDevice)) {
