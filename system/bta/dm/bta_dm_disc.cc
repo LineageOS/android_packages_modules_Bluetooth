@@ -304,7 +304,7 @@ static void bta_dm_disc_result(tBTA_DM_SVC_RES& disc_result) {
           r.bd_addr, BD_NAME{}, r.gatt_uuids, /* transport_le */ false);
     }
     bta_dm_discovery_cb.service_search_cbacks.on_service_discovery_results(
-        r.bd_addr, r.services, r.uuids, r.result, r.hci_status);
+        r.bd_addr, r.uuids, r.result);
   } else {
     GAP_BleReadPeerPrefConnParams(bta_dm_discovery_cb.peer_bdaddr);
 
