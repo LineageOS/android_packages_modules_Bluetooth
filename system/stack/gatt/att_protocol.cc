@@ -206,7 +206,8 @@ static BT_HDR* attp_build_read_by_type_value_cmd(
 static BT_HDR* attp_build_read_multi_cmd(uint8_t op_code, uint16_t payload_size,
                                          uint16_t num_handle,
                                          uint16_t* p_handle) {
-  uint8_t *p, i = 0;
+  uint8_t* p;
+  uint16_t i = 0;
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR) + num_handle * 2 + 1 +
                                       L2CAP_MIN_OFFSET);
 
