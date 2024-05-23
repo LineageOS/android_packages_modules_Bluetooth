@@ -82,19 +82,29 @@ int port_open_continue(tPORT* p_port) {
   /* Connection is up and we know local and remote features, select MTU */
   port_select_mtu(p_port);
 
-  if (p_mcb->state == RFC_MX_STATE_CONNECTED) {
-    RFCOMM_ParameterNegotiationRequest(p_mcb, p_port->dlci, p_port->mtu);
-  } else if ((p_mcb->state == RFC_MX_STATE_IDLE) ||
-             (p_mcb->state == RFC_MX_STATE_DISC_WAIT_UA)) {
-    // In RFC_MX_STATE_IDLE state, MX state machine will create connection
-    // In RFC_MX_STATE_DISC_WAIT_UA state, MX state machine will recreate
-    // connection after disconnecting is completed
-    RFCOMM_StartReq(p_mcb);
-  } else {
-    // MX state machine ignores RFC_MX_EVENT_START_REQ in these states
-    // When it enters RFC_MX_STATE_CONNECTED, it will check any openning ports
-    log::verbose("port_open_continue: mx state({}) mx channel is opening",
-                 p_mcb->state);
+  switch (p_mcb->state) {
+    case RFC_MX_STATE_CONNECTED:
+      RFCOMM_ParameterNegotiationRequest(p_mcb, p_port->dlci, p_port->mtu);
+      log::verbose("Multiplexer already connected peer:{} state:{} cid:{}",
+                   p_port->bd_addr, p_mcb->state, p_mcb->lcid);
+      break;
+
+    case RFC_MX_STATE_IDLE:
+    case RFC_MX_STATE_DISC_WAIT_UA:
+      // In RFC_MX_STATE_IDLE state, MX state machine will create connection
+      // In RFC_MX_STATE_DISC_WAIT_UA state, MX state machine will recreate
+      // connection after disconnecting is completed
+      RFCOMM_StartReq(p_mcb);
+      log::verbose("Starting multiplexer connect peer:{} state:{} cid:{}",
+                   p_port->bd_addr, p_mcb->state, p_mcb->lcid);
+      break;
+
+    default:
+      // MX state machine ignores RFC_MX_EVENT_START_REQ in these states
+      // When it enters RFC_MX_STATE_CONNECTED, it will check any opening ports
+      log::verbose("Ignoring RFC_MX_EVENT_START_REQ peer:{} state:{} cid:{}",
+                   p_port->bd_addr, p_mcb->state, p_mcb->lcid);
+      break;
   }
   return (PORT_SUCCESS);
 }
