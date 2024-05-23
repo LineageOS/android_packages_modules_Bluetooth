@@ -5662,12 +5662,23 @@ class LeAudioClientImpl : public LeAudioClient {
                       weak_factory_.GetWeakPtr(), std::placeholders::_1,
                       std::placeholders::_2));
 
-        if (audio_sender_state_ == AudioState::READY_TO_START)
+        /* When at least one direction is started we can assume new
+         * configuration here */
+        bool new_configuration = false;
+        if (audio_sender_state_ == AudioState::READY_TO_START) {
           StartSendingAudio(group_id);
-        if (audio_receiver_state_ == AudioState::READY_TO_START)
-          StartReceivingAudio(group_id);
+          new_configuration = true;
+        }
 
-        SendAudioGroupCurrentCodecConfigChanged(group);
+        if (audio_receiver_state_ == AudioState::READY_TO_START) {
+          StartReceivingAudio(group_id);
+          new_configuration = true;
+        }
+
+        if (new_configuration) {
+          /* Notify Java about new configuration */
+          SendAudioGroupCurrentCodecConfigChanged(group);
+        }
         break;
       }
       case GroupStreamStatus::SUSPENDED:
