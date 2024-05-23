@@ -261,13 +261,11 @@ class BroadcasterTest : public Test {
     ASSERT_NE(iso_manager_, nullptr);
     iso_manager_->Start();
 
-    is_audio_hal_acquired = false;
-    mock_audio_source_ = new MockAudioHalClientEndpoint();
-    ON_CALL(*mock_audio_source_, Start).WillByDefault(Return(true));
-    ON_CALL(*mock_audio_source_, OnDestroyed).WillByDefault([]() {
-      mock_audio_source_ = nullptr;
-      is_audio_hal_acquired = false;
-    });
+    mock_iso_manager_ = MockIsoManager::GetInstance();
+    ON_CALL(*mock_iso_manager_, RegisterBigCallbacks(_))
+        .WillByDefault(SaveArg<0>(&big_callbacks_));
+
+    ConfigAudioHalClientMock();
 
     EXPECT_CALL(*MockIsoManager::GetInstance(),
                 RegisterOnIsoTrafficActiveCallbacks)
@@ -287,6 +285,10 @@ class BroadcasterTest : public Test {
 
     ConfigCodecManagerMock(types::CodecLocation::HOST);
 
+    ON_CALL(*mock_codec_manager_, UpdateActiveUnicastAudioHalClient(_, _, _))
+        .WillByDefault(Return(true));
+    ON_CALL(*mock_codec_manager_, UpdateActiveBroadcastAudioHalClient(_, _))
+        .WillByDefault(Return(true));
     ON_CALL(*mock_codec_manager_, GetBroadcastConfig)
         .WillByDefault(
             Invoke([](const bluetooth::le_audio::CodecManager::
@@ -295,6 +297,16 @@ class BroadcasterTest : public Test {
                   bluetooth::le_audio::broadcaster::GetBroadcastConfig(
                       requirements.subgroup_quality));
             }));
+  }
+
+  void ConfigAudioHalClientMock() {
+    is_audio_hal_acquired = false;
+    mock_audio_source_ = new MockAudioHalClientEndpoint();
+    ON_CALL(*mock_audio_source_, Start).WillByDefault(Return(true));
+    ON_CALL(*mock_audio_source_, OnDestroyed).WillByDefault([]() {
+      mock_audio_source_ = nullptr;
+      is_audio_hal_acquired = false;
+    });
   }
 
   void ConfigCodecManagerMock(types::CodecLocation location) {
@@ -363,10 +375,41 @@ class BroadcasterTest : public Test {
     return broadcast_id;
   }
 
+  void InjectBigCreateComplete(uint8_t big_id, uint8_t status) {
+    std::vector<uint16_t> conn_handles = {0x10, 0x12};
+
+    hci::iso_manager::big_create_cmpl_evt evt = {
+        .status = status,
+        .big_id = big_id,
+        .big_sync_delay = 1231,
+        .transport_latency_big = 1234,
+        .phy = 2,
+        .nse = 3,
+        .bn = 2,
+        .pto = 2,
+        .irc = 2,
+        .max_pdu = 128,
+        .iso_interval = 10,
+        .conn_handles = conn_handles,
+    };
+
+    big_callbacks_->OnBigEvent(
+        bluetooth::hci::iso_manager::kIsoEventBigOnCreateCmpl, &evt);
+  }
+
+  void InjectBigTerminateComplete(uint8_t big_id, uint8_t reason) {
+    hci::iso_manager::big_terminate_cmpl_evt evt = {.big_id = big_id,
+                                                    .reason = reason};
+    big_callbacks_->OnBigEvent(
+        bluetooth::hci::iso_manager::kIsoEventBigOnTerminateCmpl, &evt);
+  }
+
  protected:
   MockLeAudioBroadcasterCallbacks mock_broadcaster_callbacks_;
   bluetooth::hci::testing::MockControllerInterface mock_controller_;
   bluetooth::hci::IsoManager* iso_manager_;
+  MockIsoManager* mock_iso_manager_;
+  bluetooth::hci::iso_manager::BigCallbacks* big_callbacks_ = nullptr;
 
   le_audio::CodecManager* codec_manager_ = nullptr;
   MockCodecManager* mock_codec_manager_ = nullptr;
@@ -419,19 +462,38 @@ TEST_F(BroadcasterTest, CreateAudioBroadcastMultiGroups) {
 }
 
 TEST_F(BroadcasterTest, SuspendAudioBroadcast) {
+  EXPECT_CALL(*mock_codec_manager_,
+              UpdateActiveBroadcastAudioHalClient(mock_audio_source_, true))
+      .Times(1);
   auto broadcast_id = InstantiateBroadcast();
   LeAudioBroadcaster::Get()->StartAudioBroadcast(broadcast_id);
+  Mock::VerifyAndClearExpectations(mock_codec_manager_);
 
   EXPECT_CALL(mock_broadcaster_callbacks_,
               OnBroadcastStateChanged(broadcast_id, BroadcastState::CONFIGURED))
       .Times(1);
 
   EXPECT_CALL(*mock_audio_source_, Stop).Times(AtLeast(1));
+  EXPECT_CALL(*mock_codec_manager_,
+              UpdateActiveBroadcastAudioHalClient(mock_audio_source_, _))
+      .Times(0);
   LeAudioBroadcaster::Get()->SuspendAudioBroadcast(broadcast_id);
+  Mock::VerifyAndClearExpectations(mock_codec_manager_);
 }
 
 TEST_F(BroadcasterTest, StartAudioBroadcast) {
+  EXPECT_CALL(*mock_codec_manager_,
+              UpdateActiveBroadcastAudioHalClient(mock_audio_source_, true))
+      .Times(1);
   auto broadcast_id = InstantiateBroadcast();
+  Mock::VerifyAndClearExpectations(mock_codec_manager_);
+
+  EXPECT_CALL(*mock_codec_manager_,
+              UpdateActiveBroadcastAudioHalClient(mock_audio_source_, true))
+      .Times(0);
+  EXPECT_CALL(*mock_codec_manager_,
+              UpdateActiveBroadcastAudioHalClient(mock_audio_source_, false))
+      .Times(0);
   LeAudioBroadcaster::Get()->StopAudioBroadcast(broadcast_id);
 
   EXPECT_CALL(mock_broadcaster_callbacks_,
@@ -460,11 +522,18 @@ TEST_F(BroadcasterTest, StartAudioBroadcast) {
   EXPECT_CALL(*MockIsoManager::GetInstance(), SendIsoData).Times(1);
   std::vector<uint8_t> sample_data(320, 0);
   audio_receiver->OnAudioDataReady(sample_data);
+
+  Mock::VerifyAndClearExpectations(mock_codec_manager_);
 }
 
 TEST_F(BroadcasterTest, StartAudioBroadcastMedia) {
+  EXPECT_CALL(*mock_codec_manager_,
+              UpdateActiveBroadcastAudioHalClient(mock_audio_source_, true))
+      .Times(1);
   auto broadcast_id = InstantiateBroadcast(media_metadata, default_code,
                                            {bluetooth::le_audio::QUALITY_HIGH});
+  Mock::VerifyAndClearExpectations(mock_codec_manager_);
+
   LeAudioBroadcaster::Get()->StopAudioBroadcast(broadcast_id);
 
   EXPECT_CALL(mock_broadcaster_callbacks_,
@@ -474,6 +543,12 @@ TEST_F(BroadcasterTest, StartAudioBroadcastMedia) {
   LeAudioSourceAudioHalClient::Callbacks* audio_receiver;
   EXPECT_CALL(*mock_audio_source_, Start)
       .WillOnce(DoAll(SaveArg<1>(&audio_receiver), Return(true)));
+  EXPECT_CALL(*mock_codec_manager_,
+              UpdateActiveBroadcastAudioHalClient(mock_audio_source_, true))
+      .Times(0);
+  EXPECT_CALL(*mock_codec_manager_,
+              UpdateActiveBroadcastAudioHalClient(mock_audio_source_, false))
+      .Times(0);
 
   LeAudioBroadcaster::Get()->StartAudioBroadcast(broadcast_id);
   ASSERT_NE(audio_receiver, nullptr);
@@ -494,26 +569,67 @@ TEST_F(BroadcasterTest, StartAudioBroadcastMedia) {
   EXPECT_CALL(*MockIsoManager::GetInstance(), SendIsoData).Times(2);
   std::vector<uint8_t> sample_data(1920, 0);
   audio_receiver->OnAudioDataReady(sample_data);
+  Mock::VerifyAndClearExpectations(mock_codec_manager_);
 }
 
 TEST_F(BroadcasterTest, StopAudioBroadcast) {
+  EXPECT_CALL(*mock_codec_manager_,
+              UpdateActiveBroadcastAudioHalClient(mock_audio_source_, true))
+      .Times(1);
+  EXPECT_CALL(*mock_codec_manager_,
+              UpdateActiveBroadcastAudioHalClient(mock_audio_source_, false))
+      .Times(1);
   auto broadcast_id = InstantiateBroadcast();
   LeAudioBroadcaster::Get()->StartAudioBroadcast(broadcast_id);
 
+  // NOTICE: This is really an implementation specific part, we fake the BIG
+  //         config as the mocked state machine does not even call the
+  //         IsoManager to prepare one (and that's good since IsoManager is also
+  //         a mocked one).
+
+  auto mock_state_machine = MockBroadcastStateMachine::GetLastInstance();
+  BigConfig big_cfg;
+  big_cfg.big_id = mock_state_machine->GetAdvertisingSid();
+  big_cfg.connection_handles = {0x10, 0x12};
+  big_cfg.max_pdu = 128;
+  mock_state_machine->SetExpectedBigConfig(big_cfg);
+
+  InjectBigCreateComplete(big_cfg.big_id, 0x00);
   EXPECT_CALL(mock_broadcaster_callbacks_,
               OnBroadcastStateChanged(broadcast_id, BroadcastState::STOPPED))
       .Times(1);
 
   EXPECT_CALL(*mock_audio_source_, Stop).Times(AtLeast(1));
   LeAudioBroadcaster::Get()->StopAudioBroadcast(broadcast_id);
+  InjectBigTerminateComplete(big_cfg.big_id, 0x16);
+  Mock::VerifyAndClearExpectations(mock_codec_manager_);
 }
 
 TEST_F(BroadcasterTest, DestroyAudioBroadcast) {
+  EXPECT_CALL(*mock_codec_manager_,
+              UpdateActiveBroadcastAudioHalClient(mock_audio_source_, true))
+      .Times(1);
+
   auto broadcast_id = InstantiateBroadcast();
 
+  Mock::VerifyAndClearExpectations(mock_codec_manager_);
+
+  EXPECT_CALL(*mock_codec_manager_,
+              UpdateActiveBroadcastAudioHalClient(mock_audio_source_, false))
+      .Times(1);
   EXPECT_CALL(mock_broadcaster_callbacks_, OnBroadcastDestroyed(broadcast_id))
       .Times(1);
   LeAudioBroadcaster::Get()->DestroyAudioBroadcast(broadcast_id);
+
+  Mock::VerifyAndClearExpectations(mock_codec_manager_);
+  ASSERT_EQ(mock_audio_source_, nullptr);
+
+  /* Create a mock again for the test purpose */
+  ConfigAudioHalClientMock();
+
+  EXPECT_CALL(*mock_codec_manager_,
+              UpdateActiveBroadcastAudioHalClient(mock_audio_source_, _))
+      .Times(0);
 
   // Expect not being able to interact with this Broadcast
   EXPECT_CALL(mock_broadcaster_callbacks_,
@@ -528,6 +644,9 @@ TEST_F(BroadcasterTest, DestroyAudioBroadcast) {
 
   EXPECT_CALL(*mock_audio_source_, Stop).Times(0);
   LeAudioBroadcaster::Get()->SuspendAudioBroadcast(broadcast_id);
+
+  Mock::VerifyAndClearExpectations(mock_codec_manager_);
+  Mock::VerifyAndClearExpectations(&mock_broadcaster_callbacks_);
 }
 
 TEST_F(BroadcasterTest, GetBroadcastAllStates) {
@@ -943,8 +1062,6 @@ TEST_F(BroadcasterTest, SanityTest) {
 }
 
 TEST_F(BroadcasterTest, VendorCodecConfig) {
-  ConfigCodecManagerMock(types::CodecLocation::HOST);
-
   ON_CALL(*mock_codec_manager_, GetBroadcastConfig)
       .WillByDefault(Invoke([](const bluetooth::le_audio::CodecManager::
                                    BroadcastConfigurationRequirements&) {
