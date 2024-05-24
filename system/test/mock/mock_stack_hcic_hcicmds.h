@@ -305,6 +305,16 @@ struct btsnd_hcic_read_local_oob_data {
 };
 extern struct btsnd_hcic_read_local_oob_data btsnd_hcic_read_local_oob_data;
 
+// Name: btsnd_hcic_read_local_oob_extended_data
+// Params: void
+// Return: void
+struct btsnd_hcic_read_local_oob_extended_data {
+  std::function<void(void)> body{[](void) {}};
+  void operator()(void) { body(); };
+};
+extern struct btsnd_hcic_read_local_oob_extended_data
+    btsnd_hcic_read_local_oob_extended_data;
+
 // Name: btsnd_hcic_read_name
 // Params: void
 // Return: void
