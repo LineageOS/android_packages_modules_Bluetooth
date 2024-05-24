@@ -112,7 +112,7 @@ int RFCOMM_CreateConnectionWithSecurity(uint16_t uuid, uint8_t scn,
                                         bool is_server, uint16_t mtu,
                                         const RawAddress& bd_addr,
                                         uint16_t* p_handle,
-                                        tPORT_CALLBACK* p_mgmt_callback,
+                                        tPORT_MGMT_CALLBACK* p_mgmt_callback,
                                         uint16_t sec_mask) {
   *p_handle = 0;
 
