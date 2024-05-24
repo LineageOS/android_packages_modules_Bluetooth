@@ -231,13 +231,11 @@ static void bta_dm_disable_disc(void) {
 }
 
 void bta_dm_sdp_finished(RawAddress bda, tBTA_STATUS result,
-                         tBTA_SERVICE_MASK services,
                          std::vector<bluetooth::Uuid> uuids,
                          std::vector<bluetooth::Uuid> gatt_uuids) {
   bta_dm_disc_sm_execute(BTA_DM_DISCOVERY_RESULT_EVT,
                          std::make_unique<tBTA_DM_MSG>(tBTA_DM_SVC_RES{
                              .bd_addr = bda,
-                             .services = services,
                              .uuids = uuids,
                              .gatt_uuids = gatt_uuids,
                              .result = result,
@@ -410,10 +408,9 @@ static void bta_dm_discover_services(tBTA_DM_API_DISCOVER& discover) {
     log::info("peer:{} with HIDSDPDisable attribute.", bd_addr);
 
     /* service discovery is done for this device */
-    bta_dm_disc_sm_execute(
-        BTA_DM_DISCOVERY_RESULT_EVT,
-        std::make_unique<tBTA_DM_MSG>(tBTA_DM_SVC_RES{
-            .bd_addr = bd_addr, .services = 0, .result = BTA_SUCCESS}));
+    bta_dm_disc_sm_execute(BTA_DM_DISCOVERY_RESULT_EVT,
+                           std::make_unique<tBTA_DM_MSG>(tBTA_DM_SVC_RES{
+                               .bd_addr = bd_addr, .result = BTA_SUCCESS}));
     return;
   }
 
