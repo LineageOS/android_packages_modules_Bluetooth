@@ -25,7 +25,7 @@ use bt_utils::cod::{is_cod_hid_combo, is_cod_hid_keyboard};
 use bt_utils::uhid::{UHid, BD_ADDR_DEFAULT};
 use btif_macros::{btif_callback, btif_callbacks_dispatcher};
 
-use log::{debug, warn};
+use log::{debug, error, warn};
 use num_derive::{FromPrimitive, ToPrimitive};
 use num_traits::cast::ToPrimitive;
 use num_traits::pow;
@@ -315,6 +315,9 @@ pub enum DelayedActions {
 
     /// Reset the discoverable mode to BtDiscMode::NonDiscoverable.
     ResetDiscoverable,
+
+    /// Create bond to the device stored in |pending_create_bond|.
+    CreateBond,
 }
 
 /// Serializable device used in various apis.
@@ -547,6 +550,7 @@ pub struct Bluetooth {
     // Internal API members
     discoverable_timeout: Option<JoinHandle<()>>,
     cancelling_devices: HashSet<RawAddress>,
+    pending_create_bond: Option<(BluetoothDevice, BtTransport)>,
     active_pairing_address: Option<RawAddress>,
     le_supported_states: u64,
 
@@ -606,6 +610,7 @@ impl Bluetooth {
             // Internal API members
             discoverable_timeout: None,
             cancelling_devices: HashSet::new(),
+            pending_create_bond: None,
             active_pairing_address: None,
             le_supported_states: 0u64,
             sig_notifier,
@@ -1192,6 +1197,15 @@ impl Bluetooth {
             DelayedActions::ResetDiscoverable => {
                 self.set_discoverable(BtDiscMode::NonDiscoverable, 0);
             }
+
+            DelayedActions::CreateBond => {
+                if let Some((device, transport)) = self.pending_create_bond.take() {
+                    let status = self.create_bond(device, transport);
+                    if status != BtStatus::Success {
+                        error!("Failed CreateBond status={:?}", status);
+                    }
+                }
+            }
         }
     }
 
@@ -1677,6 +1691,17 @@ impl BtifBluetoothCallbacks for Bluetooth {
                 self.bluetooth_gatt.lock().unwrap().start_active_scan(scanner_id);
             } else {
                 self.bluetooth_gatt.lock().unwrap().stop_active_scan(scanner_id);
+            }
+        }
+
+        if !self.is_discovering {
+            if self.pending_create_bond.is_some() {
+                debug!("Invoking delayed CreateBond");
+                let tx = self.tx.clone();
+                tokio::spawn(async move {
+                    let _ =
+                        tx.send(Message::DelayedAdapterActions(DelayedActions::CreateBond)).await;
+                });
             }
         }
     }
@@ -2335,18 +2360,29 @@ impl IBluetooth for Bluetooth {
             return BtStatus::Busy;
         }
 
+        if self.pending_create_bond.is_some() {
+            warn!("Delayed CreateBond is still pending");
+            return BtStatus::Busy;
+        }
+
         // There could be a race between bond complete and bond cancel, which makes
         // |cancelling_devices| in a wrong state. Remove the device just in case.
         if self.cancelling_devices.remove(&address) {
             warn!("Device {} is also cancelling the bond.", DisplayAddress(&address));
         }
 
+        // BREDR connection won't work when Inquiry / Remote Name Request is in progress.
+        // If is_discovering, delay the request until discovery state change.
+        if self.is_discovering {
+            debug!("Discovering. Delay the CreateBond request until discovery is done.");
+            self.pause_discovery();
+            self.pending_create_bond = Some((device, transport));
+            return BtStatus::Success;
+        }
+
         // We explicitly log the attempt to start the bonding separate from logging the bond state.
         // The start of the attempt is critical to help identify a bonding/pairing session.
         metrics::bond_create_attempt(address, device_type.clone());
-
-        // BREDR connection won't work when Inquiry is in progress.
-        self.pause_discovery();
 
         self.active_pairing_address = Some(address.clone());
         let status = self.intf.lock().unwrap().create_bond(&address, transport);
