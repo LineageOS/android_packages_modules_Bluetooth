@@ -49,3 +49,10 @@ flag {
     description: "Separate service and device discovery state machines such that one does not block on another"
     bug: "335732980"
 }
+
+flag {
+    name: "bta_dm_discover_both"
+    namespace: "bluetooth"
+    description: "perform both LE and Classic service discovery simulteanously on capable devices"
+    bug: "339217881"
+}
