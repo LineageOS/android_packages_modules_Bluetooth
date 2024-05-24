@@ -494,9 +494,10 @@ static tBTM_STATUS bta_dm_sp_cback(tBTM_SP_EVT event,
       break;
 
     case BTM_SP_LOC_OOB_EVT:
+      // BR/EDR OOB pairing is not supported with Secure Connections
       btif_dm_proc_loc_oob(BT_TRANSPORT_BR_EDR,
                            (bool)(p_data->loc_oob.status == BTM_SUCCESS),
-                           p_data->loc_oob.c, p_data->loc_oob.r);
+                           p_data->loc_oob.c_192, p_data->loc_oob.r_192);
       break;
 
     case BTM_SP_RMT_OOB_EVT: {
