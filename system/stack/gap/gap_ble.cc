@@ -238,7 +238,11 @@ void server_attr_request_cback(uint16_t conn_id, uint32_t trans_id,
       break;
   }
 
-  if (!ignore) GATTS_SendRsp(conn_id, trans_id, status, &rsp_msg);
+  if (!ignore) {
+    if (GATTS_SendRsp(conn_id, trans_id, status, &rsp_msg) != GATT_SUCCESS) {
+      log::warn("Unable to send GATT ervier response conn_id:{}", conn_id);
+    }
+  }
 }
 
 /**
@@ -285,7 +289,9 @@ void cl_op_cmpl(tGAP_CLCB& clcb, bool status, uint16_t len, uint8_t* p_name) {
   /* if no further activity is requested in callback, drop the link */
   if (clcb.connected) {
     if (!send_cl_read_request(clcb)) {
-      GATT_Disconnect(clcb.conn_id);
+      if (GATT_Disconnect(clcb.conn_id) != GATT_SUCCESS) {
+        log::warn("Unable to disconnect GATT conn_id:{}", clcb.conn_id);
+      }
       clcb_dealloc(clcb);
     }
   }
@@ -444,8 +450,11 @@ void gap_attr_db_init(void) {
   };
 
   /* Add a GAP service */
-  GATTS_AddService(gatt_if, service,
-                   sizeof(service) / sizeof(btgatt_db_element_t));
+  if (GATTS_AddService(gatt_if, service,
+                       sizeof(service) / sizeof(btgatt_db_element_t)) !=
+      GATT_SERVICE_STARTED) {
+    log::warn("Unable to add GATT services gatt_if:{}", gatt_if);
+  }
 
   gatt_attr[0].uuid = GATT_UUID_GAP_DEVICE_NAME;
   gatt_attr[0].handle = service[1].attribute_handle;
