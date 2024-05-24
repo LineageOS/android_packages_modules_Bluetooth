@@ -1225,7 +1225,7 @@ impl BluetoothMedia {
         if !self.phone_ops_enabled {
             return;
         }
-        if let Some(uhid) = self.uhid.get_mut(addr) {
+        if let Some(uhid) = self.uhid.get(addr) {
             let mut data = UHID_INPUT_NONE;
             if hook {
                 data |= UHID_INPUT_HOOK_SWITCH;
@@ -1243,7 +1243,7 @@ impl BluetoothMedia {
         if !self.phone_ops_enabled {
             return;
         }
-        if let Some(uhid) = self.uhid.get_mut(addr) {
+        if self.uhid.get(addr).is_some() {
             let mut data = UHID_INPUT_NONE;
             // Preserve the hook switch state when sending the microphone mute event.
             let call_active = self.phone_state.num_active > 0;
