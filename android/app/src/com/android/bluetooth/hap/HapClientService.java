@@ -1512,7 +1512,7 @@ public class HapClientService extends ProfileService {
 
             HapClientService service = getService(source);
             if (service == null) {
-                throw new IllegalStateException("Service is unavailable");
+                return;
             }
 
             enforceBluetoothPrivilegedPermission(service);
@@ -1527,7 +1527,7 @@ public class HapClientService extends ProfileService {
 
             HapClientService service = getService(source);
             if (service == null) {
-                throw new IllegalStateException("Service is unavailable");
+                return;
             }
 
             enforceBluetoothPrivilegedPermission(service);
