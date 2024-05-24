@@ -178,16 +178,6 @@ flag {
 }
 
 flag {
-    name: "gatt_server_add_handler_to_run_callbacks_on"
-    namespace: "bluetooth"
-    description: "Make BluetoothGattServer able to run callbacks on specified Handler"
-    bug: "333332161"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "gatt_rediscover_on_canceled"
     namespace: "bluetooth"
     description: "Re-initiate discovery if the previous discovery is canceled for multiple GATT clients"
