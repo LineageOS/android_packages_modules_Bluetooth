@@ -5126,7 +5126,7 @@ public class LeAudioService extends ProfileService {
 
             LeAudioService service = getService(source);
             if ((service == null) || (service.mLeAudioCallbacks == null)) {
-                throw new IllegalStateException("Service is unavailable: " + service);
+                return;
             }
 
             enforceBluetoothPrivilegedPermission(service);
@@ -5144,7 +5144,7 @@ public class LeAudioService extends ProfileService {
 
             LeAudioService service = getService(source);
             if ((service == null) || (service.mLeAudioCallbacks == null)) {
-                throw new IllegalStateException("Service is unavailable");
+                return;
             }
 
             enforceBluetoothPrivilegedPermission(service);
@@ -5159,7 +5159,7 @@ public class LeAudioService extends ProfileService {
 
             LeAudioService service = getService(source);
             if ((service == null) || (service.mBroadcastCallbacks == null)) {
-                throw new IllegalStateException("Service is unavailable");
+                return;
             }
 
             enforceBluetoothPrivilegedPermission(service);
@@ -5174,7 +5174,7 @@ public class LeAudioService extends ProfileService {
 
             LeAudioService service = getService(source);
             if ((service == null) || (service.mBroadcastCallbacks == null)) {
-                throw new IllegalStateException("Service is unavailable");
+                return;
             }
 
             enforceBluetoothPrivilegedPermission(service);
