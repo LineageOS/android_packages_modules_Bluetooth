@@ -1543,7 +1543,7 @@ static uint8_t bta_av_find_lcb_index_by_scb_and_address(
     if (!p_scb->IsAssigned()) {
       const RawAddress& btif_addr = btif_av_find_by_handle(p_scb->hndl);
       if (!btif_addr.IsEmpty() && btif_addr != peer_address) {
-        log::debug("btif_addr = {}, index={}!", btif_addr.ToString(), index);
+        log::debug("btif_addr = {}, index={}!", btif_addr, index);
         continue;
       }
       return index;
