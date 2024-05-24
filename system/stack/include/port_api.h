@@ -187,6 +187,8 @@ template <>
 struct formatter<tPORT_RESULT> : enum_formatter<tPORT_RESULT> {};
 }  // namespace fmt
 
+typedef void(tPORT_MGMT_CALLBACK)(uint32_t code, uint16_t port_handle);
+
 /*****************************************************************************
  *  External Function Declarations
  ****************************************************************************/
@@ -225,7 +227,7 @@ struct formatter<tPORT_RESULT> : enum_formatter<tPORT_RESULT> {};
 [[nodiscard]] int RFCOMM_CreateConnectionWithSecurity(
     uint16_t uuid, uint8_t scn, bool is_server, uint16_t mtu,
     const RawAddress& bd_addr, uint16_t* p_handle,
-    tPORT_CALLBACK* p_mgmt_callback, uint16_t sec_mask);
+    tPORT_MGMT_CALLBACK* p_mgmt_callback, uint16_t sec_mask);
 
 /*******************************************************************************
  *
