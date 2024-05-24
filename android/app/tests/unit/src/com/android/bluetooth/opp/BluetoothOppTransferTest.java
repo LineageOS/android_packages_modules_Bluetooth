@@ -29,7 +29,6 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
@@ -42,6 +41,7 @@ import android.content.IntentFilter;
 import android.net.Uri;
 import android.os.Looper;
 import android.os.Message;
+import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
@@ -49,6 +49,7 @@ import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.BluetoothObexTransport;
+import com.android.bluetooth.flags.Flags;
 import com.android.obex.ObexTransport;
 
 import org.junit.After;
@@ -80,6 +81,7 @@ public class BluetoothOppTransferTest {
     private final boolean mMediaScanned = false;
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
+    @Rule public final SetFlagsRule mSetFlagRule = new SetFlagsRule();
 
     @Mock
     BluetoothOppObexSession mSession;
@@ -328,9 +330,11 @@ public class BluetoothOppTransferTest {
     }
 
     @Test
-    public void oppConnectionReceiver_onReceiveWithActionSdpRecord_sendsNoMessage() {
+    public void oppConnectionReceiver_onReceiveWithActionSdpRecord_withoutSdpRecord() {
+        mSetFlagRule.enableFlags(Flags.FLAG_IDENTITY_ADDRESS_NULL_IF_UNKNOWN);
         BluetoothDevice device = (mContext.getSystemService(BluetoothManager.class))
                 .getAdapter().getRemoteDevice(mDestination);
+
         BluetoothOppTransfer transfer = new BluetoothOppTransfer(mContext, mBluetoothOppBatch);
         transfer.mCurrentShare = mInitShareInfo;
         transfer.mCurrentShare.mConfirm = BluetoothShare.USER_CONFIRMATION_PENDING;
@@ -344,7 +348,7 @@ public class BluetoothOppTransferTest {
 
         receiver.onReceive(mContext, intent);
 
-        // bluetooth device name is null => skip without interaction
-        verifyNoMoreInteractions(mCallProxy);
+        // No sdp record was passed to intent => sends TRANSPORT_ERROR
+        verify(mCallProxy).handlerSendEmptyMessage(any(), eq(TRANSPORT_ERROR));
     }
 }
