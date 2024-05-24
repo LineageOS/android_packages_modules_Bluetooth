@@ -46,7 +46,7 @@ use crate::dis::{DeviceInformation, ServiceCallbacks};
 use crate::socket_manager::{BluetoothSocketManager, SocketActions};
 use crate::suspend::Suspend;
 use bt_topshim::{
-    btif::{BaseCallbacks, BtTransport},
+    btif::{BaseCallbacks, BtTransport, RawAddress},
     profiles::{
         a2dp::A2dpCallbacks,
         avrcp::AvrcpCallbacks,
@@ -156,14 +156,14 @@ pub enum Message {
     // Qualification Only
     QaCallbackDisconnected(u32),
     QaAddMediaPlayer(String, bool),
-    QaRfcommSendMsc(u8, String),
+    QaRfcommSendMsc(u8, RawAddress),
     QaFetchDiscoverableMode,
     QaFetchConnectable,
     QaSetConnectable(bool),
     QaFetchAlias,
-    QaGetHidReport(String, BthhReportType, u8),
-    QaSetHidReport(String, BthhReportType, String),
-    QaSendHidData(String, String),
+    QaGetHidReport(RawAddress, BthhReportType, u8),
+    QaSetHidReport(RawAddress, BthhReportType, String),
+    QaSendHidData(RawAddress, String),
 
     // UHid callbacks
     UHidHfpOutputCallback(String, u8, u8),

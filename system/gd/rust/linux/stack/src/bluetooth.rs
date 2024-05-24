@@ -110,7 +110,7 @@ pub trait IBluetooth {
     fn cleanup(&mut self);
 
     /// Returns the Bluetooth address of the local adapter.
-    fn get_address(&self) -> String;
+    fn get_address(&self) -> RawAddress;
 
     /// Gets supported UUIDs by the local adapter.
     fn get_uuids(&self) -> Vec<Uuid128Bit>;
@@ -278,7 +278,7 @@ pub trait IBluetoothQALegacy {
     /// Gets HID report on the peer.
     fn get_hid_report(
         &mut self,
-        addr: String,
+        addr: RawAddress,
         report_type: BthhReportType,
         report_id: u8,
     ) -> BtStatus;
@@ -286,13 +286,13 @@ pub trait IBluetoothQALegacy {
     /// Sets HID report to the peer.
     fn set_hid_report(
         &mut self,
-        addr: String,
+        addr: RawAddress,
         report_type: BthhReportType,
         report: String,
     ) -> BtStatus;
 
     /// Snd HID data report to the peer.
-    fn send_hid_data(&mut self, addr: String, data: String) -> BtStatus;
+    fn send_hid_data(&mut self, addr: RawAddress, data: String) -> BtStatus;
 }
 
 /// Delayed actions from adapter events.
@@ -442,7 +442,7 @@ pub trait IBluetoothCallback: RPCProxy {
     );
 
     /// When any of the adapter local address is changed.
-    fn on_address_changed(&mut self, addr: String);
+    fn on_address_changed(&mut self, addr: RawAddress);
 
     /// When the adapter name is changed.
     fn on_name_changed(&mut self, name: String);
@@ -475,7 +475,7 @@ pub trait IBluetoothCallback: RPCProxy {
     fn on_pin_display(&mut self, remote_device: BluetoothDevice, pincode: String);
 
     /// When a bonding attempt has completed.
-    fn on_bond_state_changed(&mut self, status: u32, device_address: String, state: u32);
+    fn on_bond_state_changed(&mut self, status: u32, device_address: RawAddress, state: u32);
 
     /// When an SDP search has completed.
     fn on_sdp_search_complete(
@@ -798,11 +798,11 @@ impl Bluetooth {
         self.profiles_ready = true;
     }
 
-    fn update_local_address(&mut self, addr: &RawAddress) {
+    fn update_local_address(&mut self, addr: RawAddress) {
         self.local_address = Some(addr.clone());
 
         self.callbacks.for_all_callbacks(|callback| {
-            callback.on_address_changed(addr.to_string());
+            callback.on_address_changed(addr);
         });
     }
 
@@ -989,58 +989,50 @@ impl Bluetooth {
     // TODO(b/328675014): Add BtAddrType and BtTransport parameters
     pub(crate) fn get_hid_report_internal(
         &mut self,
-        addr: String,
+        mut addr: RawAddress,
         report_type: BthhReportType,
         report_id: u8,
     ) -> BtStatus {
-        if let Some(mut addr) = RawAddress::from_string(addr) {
-            self.hh.as_mut().unwrap().get_report(
-                &mut addr,
-                BtAddrType::Public,
-                BtTransport::Auto,
-                report_type,
-                report_id,
-                128,
-            )
-        } else {
-            BtStatus::InvalidParam
-        }
+        self.hh.as_mut().unwrap().get_report(
+            &mut addr,
+            BtAddrType::Public,
+            BtTransport::Auto,
+            report_type,
+            report_id,
+            128,
+        )
     }
 
     // TODO(b/328675014): Add BtAddrType and BtTransport parameters
     pub(crate) fn set_hid_report_internal(
         &mut self,
-        addr: String,
+        mut addr: RawAddress,
         report_type: BthhReportType,
         report: String,
     ) -> BtStatus {
-        if let Some(mut addr) = RawAddress::from_string(addr) {
-            let mut rb = report.clone().into_bytes();
-            self.hh.as_mut().unwrap().set_report(
-                &mut addr,
-                BtAddrType::Public,
-                BtTransport::Auto,
-                report_type,
-                rb.as_mut_slice(),
-            )
-        } else {
-            BtStatus::InvalidParam
-        }
+        let mut rb = report.clone().into_bytes();
+        self.hh.as_mut().unwrap().set_report(
+            &mut addr,
+            BtAddrType::Public,
+            BtTransport::Auto,
+            report_type,
+            rb.as_mut_slice(),
+        )
     }
 
     // TODO(b/328675014): Add BtAddrType and BtTransport parameters
-    pub(crate) fn send_hid_data_internal(&mut self, addr: String, data: String) -> BtStatus {
-        if let Some(mut addr) = RawAddress::from_string(addr) {
-            let mut rb = data.clone().into_bytes();
-            self.hh.as_mut().unwrap().send_data(
-                &mut addr,
-                BtAddrType::Public,
-                BtTransport::Auto,
-                rb.as_mut_slice(),
-            )
-        } else {
-            BtStatus::InvalidParam
-        }
+    pub(crate) fn send_hid_data_internal(
+        &mut self,
+        mut addr: RawAddress,
+        data: String,
+    ) -> BtStatus {
+        let mut rb = data.clone().into_bytes();
+        self.hh.as_mut().unwrap().send_data(
+            &mut addr,
+            BtAddrType::Public,
+            BtTransport::Auto,
+            rb.as_mut_slice(),
+        )
     }
 
     /// Returns all bonded and connected devices.
@@ -1325,7 +1317,7 @@ impl Bluetooth {
         if !self.uhid_wakeup_source.is_empty() {
             return;
         }
-        let adapter_addr = self.get_address().to_lowercase();
+        let adapter_addr = self.get_address().to_string().to_lowercase();
         match self.uhid_wakeup_source.create(
             "VIRTUAL_SUSPEND_UHID".to_string(),
             adapter_addr,
@@ -1618,7 +1610,7 @@ impl BtifBluetoothCallbacks for Bluetooth {
 
             match &prop {
                 BluetoothProperty::BdAddr(bdaddr) => {
-                    self.update_local_address(&bdaddr);
+                    self.update_local_address(*bdaddr);
                 }
                 BluetoothProperty::AdapterBondedDevices(bondlist) => {
                     for addr in bondlist.iter() {
@@ -1872,7 +1864,7 @@ impl BtifBluetoothCallbacks for Bluetooth {
         self.callbacks.for_all_callbacks(|callback| {
             callback.on_bond_state_changed(
                 status.to_u32().unwrap(),
-                address.clone(),
+                addr.clone(),
                 bond_state.to_u32().unwrap(),
             );
         });
@@ -2159,11 +2151,8 @@ impl IBluetooth for Bluetooth {
         self.intf.lock().unwrap().cleanup();
     }
 
-    fn get_address(&self) -> String {
-        match self.local_address {
-            None => String::from(""),
-            Some(addr) => addr.to_string(),
-        }
+    fn get_address(&self) -> RawAddress {
+        self.local_address.unwrap_or_default()
     }
 
     fn get_uuids(&self) -> Vec<Uuid128Bit> {
@@ -3241,7 +3230,7 @@ impl IBluetoothQALegacy for Bluetooth {
 
     fn get_hid_report(
         &mut self,
-        addr: String,
+        addr: RawAddress,
         report_type: BthhReportType,
         report_id: u8,
     ) -> BtStatus {
@@ -3250,14 +3239,14 @@ impl IBluetoothQALegacy for Bluetooth {
 
     fn set_hid_report(
         &mut self,
-        addr: String,
+        addr: RawAddress,
         report_type: BthhReportType,
         report: String,
     ) -> BtStatus {
         self.set_hid_report_internal(addr, report_type, report)
     }
 
-    fn send_hid_data(&mut self, addr: String, data: String) -> BtStatus {
+    fn send_hid_data(&mut self, addr: RawAddress, data: String) -> BtStatus {
         self.send_hid_data_internal(addr, data)
     }
 }

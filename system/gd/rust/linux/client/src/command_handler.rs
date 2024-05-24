@@ -9,7 +9,9 @@ use crate::bt_gatt::AuthReq;
 use crate::callbacks::{BtGattCallback, BtGattServerCallback};
 use crate::ClientContext;
 use crate::{console_red, console_yellow, print_error, print_info};
-use bt_topshim::btif::{BtConnectionState, BtDiscMode, BtStatus, BtTransport, Uuid, INVALID_RSSI};
+use bt_topshim::btif::{
+    BtConnectionState, BtDiscMode, BtStatus, BtTransport, RawAddress, Uuid, INVALID_RSSI,
+};
 use bt_topshim::profiles::gatt::{GattStatus, LePhy};
 use bt_topshim::profiles::hid_host::BthhReportType;
 use bt_topshim::profiles::sdp::{BtSdpMpsRecord, BtSdpRecord};
@@ -532,10 +534,7 @@ impl CommandHandler {
                 }
 
                 let enabled = self.lock_context().enabled;
-                let address = match self.lock_context().adapter_address.as_ref() {
-                    Some(x) => x.clone(),
-                    None => String::from(""),
-                };
+                let address = self.lock_context().adapter_address.unwrap_or_default();
                 let context = self.lock_context();
                 let adapter_dbus = context.adapter_dbus.as_ref().unwrap();
                 let qa_dbus = context.qa_dbus.as_ref().unwrap();
@@ -563,7 +562,7 @@ impl CommandHandler {
                 qa_dbus.fetch_connectable();
                 qa_dbus.fetch_alias();
                 qa_dbus.fetch_discoverable_mode();
-                print_info!("Address: {}", address);
+                print_info!("Address: {}", address.to_string());
                 print_info!("Name: {}", name);
                 print_info!("Modalias: {}", modalias);
                 print_info!("State: {}", if enabled { "enabled" } else { "disabled" });
@@ -662,7 +661,7 @@ impl CommandHandler {
         }
 
         let address = self.lock_context().update_adapter_address();
-        print_info!("Local address = {}", &address);
+        print_info!("Local address = {}", address.to_string());
         Ok(())
     }
 
@@ -1795,7 +1794,7 @@ impl CommandHandler {
             "send-msc" => {
                 let dlci =
                     String::from(get_arg(args, 1)?).parse::<u8>().or(Err("Failed parsing DLCI"))?;
-                let addr = String::from(get_arg(args, 2)?);
+                let addr = RawAddress::from_string(get_arg(args, 2)?).ok_or("Invalid Address")?;
                 self.context.lock().unwrap().qa_dbus.as_mut().unwrap().rfcomm_send_msc(dlci, addr);
             }
             "listen-rfcomm" => {
@@ -1985,7 +1984,7 @@ impl CommandHandler {
 
         match &command[..] {
             "get-report" => {
-                let addr = String::from(get_arg(args, 1)?);
+                let addr = RawAddress::from_string(get_arg(args, 1)?).ok_or("Invalid Address")?;
                 let report_type = match &get_arg(args, 2)?[..] {
                     "Input" => BthhReportType::InputReport,
                     "Output" => BthhReportType::OutputReport,
@@ -2005,7 +2004,7 @@ impl CommandHandler {
                 );
             }
             "set-report" => {
-                let addr = String::from(get_arg(args, 1)?);
+                let addr = RawAddress::from_string(get_arg(args, 1)?).ok_or("Invalid Address")?;
                 let report_type = match &get_arg(args, 2)?[..] {
                     "Input" => BthhReportType::InputReport,
                     "Output" => BthhReportType::OutputReport,
@@ -2023,7 +2022,7 @@ impl CommandHandler {
                 );
             }
             "send-data" => {
-                let addr = String::from(get_arg(args, 1)?);
+                let addr = RawAddress::from_string(get_arg(args, 1)?).ok_or("Invalid Address")?;
                 let data = String::from(get_arg(args, 2)?);
 
                 self.context.lock().unwrap().qa_dbus.as_mut().unwrap().send_hid_data(addr, data);

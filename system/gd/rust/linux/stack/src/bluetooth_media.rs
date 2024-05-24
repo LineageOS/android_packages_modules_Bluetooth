@@ -1804,7 +1804,7 @@ impl BluetoothMedia {
             return;
         }
         let adapter_addr = match &self.adapter {
-            Some(adapter) => adapter.lock().unwrap().get_address().to_lowercase(),
+            Some(adapter) => adapter.lock().unwrap().get_address().to_string().to_lowercase(),
             _ => "".to_string(),
         };
         let txl = self.tx.clone();
