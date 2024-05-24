@@ -53,7 +53,6 @@ import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
-import com.android.bluetooth.flags.Flags;
 import com.android.obex.HeaderSet;
 import com.android.obex.ObexTransport;
 import com.android.obex.Operation;
@@ -428,7 +427,7 @@ public class BluetoothOppObexServerSession extends ServerRequestHandler
                     msg.sendToTarget();
                 }
 
-                if (Flags.oppRemoveIncompleteDownload() && mFileInfo.mInsertUri != null) {
+                if (mFileInfo.mInsertUri != null) {
                     Log.d(
                         TAG,
                         "Download failed. Removing the file. Uri=" + mFileInfo.mInsertUri);
