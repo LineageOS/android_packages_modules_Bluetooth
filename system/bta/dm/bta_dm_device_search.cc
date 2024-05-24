@@ -124,7 +124,9 @@ void bta_dm_disc_disable_search() {
  *
  ******************************************************************************/
 static void bta_dm_search_start(tBTA_DM_API_SEARCH& search) {
-  get_btm_client_interface().db.BTM_ClearInqDb(nullptr);
+  if (get_btm_client_interface().db.BTM_ClearInqDb(nullptr) != BTM_SUCCESS) {
+    log::warn("Unable to clear inquiry database for device discovery");
+  }
   /* save search params */
   bta_dm_search_cb.p_device_search_cback = search.p_cback;
 
@@ -163,7 +165,10 @@ static void bta_dm_search_cancel() {
   /* If no Service Search going on then issue cancel remote name in case it is
      active */
   else if (!bta_dm_search_cb.name_discover_done) {
-    get_btm_client_interface().peer.BTM_CancelRemoteDeviceName();
+    if (get_btm_client_interface().peer.BTM_CancelRemoteDeviceName() !=
+        BTM_CMD_STARTED) {
+      log::warn("Unable to cancel RNR");
+    }
     /* bta_dm_search_cmpl is called when receiving the remote name cancel evt */
     if (!com::android::bluetooth::flags::
             bta_dm_defer_device_discovery_state_change_until_rnr_complete()) {
@@ -459,7 +464,10 @@ static void bta_dm_search_cancel_notify() {
     case BTA_DM_SEARCH_ACTIVE:
     case BTA_DM_SEARCH_CANCELLING:
       if (!bta_dm_search_cb.name_discover_done) {
-        get_btm_client_interface().peer.BTM_CancelRemoteDeviceName();
+        if (get_btm_client_interface().peer.BTM_CancelRemoteDeviceName() !=
+            BTM_CMD_STARTED) {
+          log::warn("Unable to cancel RNR");
+        }
       }
       break;
     case BTA_DM_SEARCH_IDLE:
@@ -761,7 +769,10 @@ static void bta_dm_start_scan(uint8_t duration_sec,
 void bta_dm_ble_scan(bool start, uint8_t duration_sec,
                      bool low_latency_scan = false) {
   if (!start) {
-    get_btm_client_interface().ble.BTM_BleObserve(false, 0, NULL, NULL, false);
+    if (get_btm_client_interface().ble.BTM_BleObserve(
+            false, 0, NULL, NULL, false) != BTM_CMD_STARTED) {
+      log::warn("Unable to start ble observe");
+    }
     return;
   }
 

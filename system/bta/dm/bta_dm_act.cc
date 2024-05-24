@@ -243,7 +243,10 @@ void BTA_dm_on_hw_on() {
   log::info("Read default class of device [0x{:x}, 0x{:x}, 0x{:x}]",
             dev_class[0], dev_class[1], dev_class[2]);
 
-  get_btm_client_interface().local.BTM_SetDeviceClass(dev_class);
+  if (get_btm_client_interface().local.BTM_SetDeviceClass(dev_class) !=
+      BTM_SUCCESS) {
+    log::warn("Unable to set local device class:{}", dev_class_text(dev_class));
+  }
 
   /* load BLE local information: ID keys, ER if available */
   Octet16 er;
@@ -286,8 +289,10 @@ void BTA_dm_on_hw_on() {
      which forces
      the DM_ENABLE_EVT to be sent only after all the init steps are complete
      */
-  get_btm_client_interface().local.BTM_ReadLocalDeviceNameFromController(
-      bta_dm_local_name_cback);
+  if (get_btm_client_interface().local.BTM_ReadLocalDeviceNameFromController(
+          bta_dm_local_name_cback) != BTM_CMD_STARTED) {
+    log::warn("Unable to read local device name from controller");
+  }
 
   bta_sys_rm_register(bta_dm_rm_cback);
 
@@ -413,8 +418,10 @@ static void bta_dm_wait_for_acl_to_drain_cback(void* data) {
 
 /** Sets local device name */
 void bta_dm_set_dev_name(const std::vector<uint8_t>& name) {
-  get_btm_client_interface().local.BTM_SetLocalDeviceName(
-      (const char*)name.data());
+  if (get_btm_client_interface().local.BTM_SetLocalDeviceName(
+          (const char*)name.data()) != BTM_CMD_STARTED) {
+    log::warn("Unable to set local device name");
+  }
   bta_dm_set_eir((char*)name.data());
 }
 
@@ -612,7 +619,20 @@ static void handle_role_change(const RawAddress& bd_addr, tHCI_ROLE new_role,
       /* more than one connections and the AV connection is role switched
        * to peripheral
        * switch it back to central and remove the switch policy */
-      get_btm_client_interface().link_policy.BTM_SwitchRoleToCentral(bd_addr);
+      const tBTM_STATUS status =
+          get_btm_client_interface().link_policy.BTM_SwitchRoleToCentral(
+              bd_addr);
+      switch (status) {
+        case BTM_SUCCESS:
+          log::debug("Role policy already set to central peer:{}", bd_addr);
+          break;
+        case BTM_CMD_STARTED:
+          log::debug("Role policy started to central peer:{}", bd_addr);
+          break;
+        default:
+          log::warn("Unable to set role policy to central peer:{}", bd_addr);
+          break;
+      }
       need_policy_change = true;
     } else if (p_bta_dm_cfg->avoid_scatter && (new_role == HCI_ROLE_CENTRAL)) {
       /* if the link updated to be central include AV activities, remove
@@ -847,8 +867,23 @@ static void bta_dm_check_av() {
                 p_dev->info_text());
       if ((p_dev->conn_state == BTA_DM_CONNECTED) && p_dev->is_av_active()) {
         /* make central and take away the role switch policy */
-        get_btm_client_interface().link_policy.BTM_SwitchRoleToCentral(
-            p_dev->peer_bdaddr);
+        const tBTM_STATUS status =
+            get_btm_client_interface().link_policy.BTM_SwitchRoleToCentral(
+                p_dev->peer_bdaddr);
+        switch (status) {
+          case BTM_SUCCESS:
+            log::debug("Role policy already set to central peer:{}",
+                       p_dev->peer_bdaddr);
+            break;
+          case BTM_CMD_STARTED:
+            log::debug("Role policy started to central peer:{}",
+                       p_dev->peer_bdaddr);
+            break;
+          default:
+            log::warn("Unable to set role policy to central peer:{}",
+                      p_dev->peer_bdaddr);
+            break;
+        }
         /* else either already central or can not switch for some reasons */
         get_btm_client_interface().link_policy.BTM_block_role_switch_for(
             p_dev->peer_bdaddr);
@@ -992,8 +1027,23 @@ static void bta_dm_adjust_roles(bool delay_role_switch) {
           if (bta_dm_cb.device_list.peer_device[i].pref_role !=
                   BTA_PERIPHERAL_ROLE_ONLY &&
               !delay_role_switch) {
-            get_btm_client_interface().link_policy.BTM_SwitchRoleToCentral(
-                bta_dm_cb.device_list.peer_device[i].peer_bdaddr);
+            const tBTM_STATUS status =
+                get_btm_client_interface().link_policy.BTM_SwitchRoleToCentral(
+                    bta_dm_cb.device_list.peer_device[i].peer_bdaddr);
+            switch (status) {
+              case BTM_SUCCESS:
+                log::debug("Role policy already set to central peer:{}",
+                           bta_dm_cb.device_list.peer_device[i].peer_bdaddr);
+                break;
+              case BTM_CMD_STARTED:
+                log::debug("Role policy started to central peer:{}",
+                           bta_dm_cb.device_list.peer_device[i].peer_bdaddr);
+                break;
+              default:
+                log::warn("Unable to set role policy to central peer:{}",
+                          bta_dm_cb.device_list.peer_device[i].peer_bdaddr);
+                break;
+            }
           } else {
             alarm_set_on_mloop(bta_dm_cb.switch_delay_timer,
                                BTA_DM_SWITCH_DELAY_TIMER_MS,
@@ -1246,7 +1296,9 @@ static void bta_dm_set_eir(char* local_name) {
   if (free_eir_length)
     UINT8_TO_STREAM(p, 0); /* terminator of significant part */
 
-  get_btm_client_interface().eir.BTM_WriteEIR(p_buf);
+  if (get_btm_client_interface().eir.BTM_WriteEIR(p_buf) != BTM_SUCCESS) {
+    log::warn("Unable to write EIR data");
+  }
 }
 
 /*******************************************************************************
