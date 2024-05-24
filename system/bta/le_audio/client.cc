@@ -3139,6 +3139,12 @@ class LeAudioClientImpl : public LeAudioClient {
       return;
     }
 
+    if (leAudioDevice->HaveActiveAse()) {
+      log::debug("{} is already configured, nothing to do",
+                 leAudioDevice->address_);
+      return;
+    }
+
     LeAudioDeviceGroup* group = aseGroups_.FindById(active_group_id_);
 
     auto group_metadata_contexts =
@@ -3149,8 +3155,6 @@ class LeAudioClientImpl : public LeAudioClient {
                 leAudioDevice->address_);
       return;
     }
-
-    log::info("Attaching to group: {}", leAudioDevice->group_id_);
 
     /* Restore configuration */
     auto* stream_conf = &group->stream_conf;
@@ -3165,6 +3169,9 @@ class LeAudioClientImpl : public LeAudioClient {
       log::info("Configuration not yet set. Nothing to do now");
       return;
     }
+
+    log::info("Attaching {} to group: {}", leAudioDevice->address_,
+              leAudioDevice->group_id_);
 
     for (auto direction :
          {bluetooth::le_audio::types::kLeAudioDirectionSink,
