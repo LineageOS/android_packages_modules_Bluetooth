@@ -1667,7 +1667,7 @@ public class VolumeControlService extends ProfileService {
 
             VolumeControlService service = getService(source);
             if (service == null) {
-                throw new IllegalStateException("Service is unavailable");
+                return;
             }
 
             enforceBluetoothPrivilegedPermission(service);
@@ -1682,7 +1682,7 @@ public class VolumeControlService extends ProfileService {
 
             VolumeControlService service = getService(source);
             if (service == null) {
-                throw new IllegalStateException("Service is unavailable");
+                return;
             }
 
             enforceBluetoothPrivilegedPermission(service);
@@ -1697,7 +1697,7 @@ public class VolumeControlService extends ProfileService {
 
             VolumeControlService service = getService(source);
             if (service == null) {
-                throw new IllegalStateException("Service is unavailable");
+                return;
             }
 
             enforceBluetoothPrivilegedPermission(service);
