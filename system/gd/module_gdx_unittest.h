@@ -20,6 +20,7 @@
 
 #include <string>
 
+#include "common/contextual_callback.h"
 #include "module.h"
 #include "module_jniloop.h"
 #include "module_mainloop.h"
@@ -41,6 +42,16 @@ class TestGdxModule : public Module, public ModuleMainloop, public ModuleJniloop
   void call_on_jni_repost(pid_t tid, int a, int b, int c);
   void call_on_jni_recurse(pid_t tid, int a, int b, int c);
 
+  void set_callback(common::ContextualCallback<void(std::string)> one_message_callback);
+  void set_once_callback(common::ContextualOnceCallback<void(std::string)> one_message_callback);
+
+  void call_callback_on_handler(std::string message);
+  void call_once_callback_on_handler(std::string message);
+  void call_callback_on_jni(std::string message);
+  void call_once_callback_on_jni(std::string message);
+  void call_callback_on_main(std::string message);
+  void call_once_callback_on_main(std::string message);
+
   static const bluetooth::ModuleFactory Factory;
 
  protected:
@@ -57,6 +68,9 @@ class TestGdxModule : public Module, public ModuleMainloop, public ModuleJniloop
  private:
   struct PrivateImpl;
   std::shared_ptr<TestGdxModule::PrivateImpl> pimpl_;
+
+  common::ContextualOnceCallback<void(std::string)> call_once_;
+  common::ContextualCallback<void(std::string)> call_many_;
 
   bool started_ = false;
 
