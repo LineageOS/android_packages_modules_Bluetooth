@@ -72,7 +72,7 @@ void LogMetricsBondCreateAttempt(RawAddress* addr, uint32_t device_type) {
       "PairingStateChanged: {}, {}, {}, {}, {}",
       boot_id,
       (int)boot_time,
-      addr_string,
+      *addr,
       (int)connection_type,
       (int)PairingState::PAIR_STARTING);
 
@@ -110,7 +110,7 @@ void LogMetricsBondStateChanged(
       "PairingStateChanged: {}, {}, {}, {}, {}",
       boot_id,
       (int)boot_time,
-      addr_string,
+      *addr,
       (int)connection_type,
       (int)pairing_state);
 
@@ -150,7 +150,7 @@ void LogMetricsDeviceInfoReport(
       "DeviceInfoReport {} {} {} {} {} {} {} {} {} {}",
       boot_id,
       (int)boot_time,
-      addr_string,
+      *addr,
       (int)device_type,
       (int)major_class,
       (int)category,
@@ -198,7 +198,7 @@ void LogMetricsProfileConnectionStateChanged(RawAddress* addr, uint32_t profile,
       "ProfileConnectionStateChanged: {}, {}, {}, {}, {}, {}",
       boot_id,
       (int)boot_time,
-      addr_string,
+      *addr,
       (int)event.type,
       (int)event.profile,
       (int)event.state);
@@ -247,7 +247,7 @@ void LogMetricsAclConnectionStateChanged(
       "AclConnectionStateChanged: {}, {}, {}, {}, {}, {}, {}, {}",
       boot_id,
       (int)event.start_time,
-      addr_string,
+      *addr,
       (int)transport,
       (int)event.direction,
       (int)event.initiator,
@@ -270,7 +270,7 @@ void LogMetricsAclConnectionStateChanged(
       "AclConnectionStateChanged: {}, {}, {}, {}, {}, {}, {}, {}",
       boot_id,
       (int)boot_time,
-      addr_string,
+      *addr,
       (int)transport,
       (int)event.direction,
       (int)event.initiator,
