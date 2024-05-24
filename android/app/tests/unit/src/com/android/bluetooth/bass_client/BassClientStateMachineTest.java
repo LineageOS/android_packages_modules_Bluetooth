@@ -2035,6 +2035,9 @@ public class BassClientStateMachineTest {
         mBassClientStateMachine.sendMessage(ADD_BCAST_SOURCE, metadata);
         TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
 
+        verify(mMethodProxy, timeout(TIMEOUT_MS))
+                .periodicAdvertisingManagerRegisterSync(
+                        any(), any(), anyInt(), anyInt(), any(), any());
         Assert.assertEquals(mBassClientStateMachine.mPendingSourceToAdd, metadata);
         verify(mBassClientService, never()).sendBroadcast(any(Intent.class), anyString(), any());
     }
