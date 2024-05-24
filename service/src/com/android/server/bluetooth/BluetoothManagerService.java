@@ -274,8 +274,7 @@ class BluetoothManagerService {
     private boolean mEnableExternal = false;
 
     // Map of apps registered to keep BLE scanning on.
-    private Map<IBinder, ClientDeathRecipient> mBleApps =
-            new ConcurrentHashMap<IBinder, ClientDeathRecipient>();
+    private Map<IBinder, ClientDeathRecipient> mBleApps = new ConcurrentHashMap<>();
 
     private final BluetoothAdapterState mState = new BluetoothAdapterState();
 
@@ -630,7 +629,11 @@ class BluetoothManagerService {
         mHandler = new BluetoothHandler(mLooper);
 
         // Observe BLE scan only mode settings change.
-        registerForBleScanModeChange();
+        if (Flags.respectBleScanSetting()) {
+            BleScanSettingListener.initialize(mLooper, mContentResolver, this::onBleScanDisabled);
+        } else {
+            registerForBleScanModeChange();
+        }
 
         // Disable ASHA if BLE is not supported, overriding any system property
         if (!isBleSupported(mContext)) {
@@ -701,6 +704,30 @@ class BluetoothManagerService {
                 Counter.logIncrement("bluetooth.value_auto_on_supported");
             }
         }
+    }
+
+    private Unit onBleScanDisabled() {
+        if (mState.oneOf(STATE_OFF, STATE_BLE_TURNING_OFF)) {
+            Log.i(TAG, "onBleScanDisabled: Nothing to do, Bluetooth is already turning off");
+            return Unit.INSTANCE;
+        }
+        clearBleApps();
+        try {
+            mAdapter.unregAllGattClient(mContext.getAttributionSource());
+        } catch (RemoteException e) {
+            Log.e(TAG, "onBleScanDisabled: unregAllGattClient failed", e);
+        }
+        if (mState.oneOf(STATE_BLE_ON)) {
+            Log.i(TAG, "onBleScanDisabled: Shutting down BLE_ON mode");
+            try {
+                mAdapter.stopBle(mContext.getAttributionSource());
+            } catch (RemoteException e) {
+                Log.e(TAG, "onBleScanDisabled: stopBle failed", e);
+            }
+        } else {
+            Log.i(TAG, "onBleScanDisabled: Bluetooth is not in BLE_ON, staying on");
+        }
+        return Unit.INSTANCE;
     }
 
     IBluetoothManager.Stub getBinder() {
@@ -885,6 +912,12 @@ class BluetoothManagerService {
                 return false;
             }
         }
+        if (Flags.respectBleScanSetting()) {
+            if (SatelliteModeListener.isOn()) {
+                return false;
+            }
+            return BleScanSettingListener.isScanAllowed();
+        }
         try {
             return Settings.Global.getInt(
                             mContentResolver, Settings.Global.BLE_SCAN_ALWAYS_AVAILABLE)
@@ -1003,6 +1036,11 @@ class BluetoothManagerService {
             return false;
         }
 
+        if (Flags.respectBleScanSetting() && !BleScanSettingListener.isScanAllowed()) {
+            Log.d(TAG, "enableBle: not enabling - Scan mode is not allowed.");
+            return false;
+        }
+
         // TODO(b/262605980): enableBle/disableBle should be on handler thread
         updateBleAppCount(token, true, packageName);
 
@@ -1030,7 +1068,8 @@ class BluetoothManagerService {
                         + (" isBinding=" + isBinding())
                         + (" mState=" + mState));
 
-        if (isSatelliteModeOn()) {
+        // Remove this with flag, preventing a "disable" make no sense, even in satellite mode
+        if (!Flags.respectBleScanSetting() && isSatelliteModeOn()) {
             Log.d(TAG, "disableBle: not disabling - satellite mode is on.");
             return false;
         }
@@ -1111,7 +1150,9 @@ class BluetoothManagerService {
             }
             boolean airplaneDoesNotAllowBleOn =
                     Flags.airplaneModeXBleOn() && AirplaneModeListener.isOn();
-            if (!airplaneDoesNotAllowBleOn && isBleAppPresent()) {
+            boolean scanIsAllowed =
+                    !Flags.respectBleScanSetting() || BleScanSettingListener.isScanAllowed();
+            if (!airplaneDoesNotAllowBleOn && isBleAppPresent() && scanIsAllowed) {
                 // Need to stay at BLE ON. Disconnect all Gatt connections
                 Log.i(TAG, "sendBrEdrDownCallback: Staying in BLE_ON");
                 mAdapter.unregAllGattClient(mContext.getAttributionSource());

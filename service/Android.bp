@@ -61,6 +61,7 @@ java_library {
         "src/AdapterBinder.kt",
         "src/AdapterState.kt",
         "src/AutoOnFeature.kt",
+        "src/BleScanSettingListener.kt",
         "src/BluetoothService.kt",
         "src/Log.kt",
         "src/RadioModeListener.kt",
@@ -171,6 +172,8 @@ android_robolectric_test {
         "src/AdapterStateTest.kt",
         "src/AutoOnFeature.kt",
         "src/AutoOnFeatureTest.kt",
+        "src/BleScanSettingListener.kt",
+        "src/BleScanSettingListenerTest.kt",
         "src/Log.kt",
         "src/LogTest.kt",
         "src/RadioModeListener.kt",
@@ -198,7 +201,12 @@ android_robolectric_test {
         "truth",
     ],
 
-    sdk_version: "test_current",
+    libs: [
+        "framework-bluetooth.stubs.module_lib",
+        "framework-statsd.stubs.module_lib",
+    ],
+
+    sdk_version: "module_current",
     upstream: true,
     test_suites: ["general-tests"],
 }
