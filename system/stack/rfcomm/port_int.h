@@ -166,8 +166,6 @@ typedef struct {
   bool is_server;  /* true if the server application */
   uint8_t dlci;    /* DLCI of the connection */
 
-  uint8_t error; /* Last error detected */
-
   uint8_t line_status; /* Line status as reported by peer */
 
   uint8_t default_signal_state; /* Initial signal state depending on uuid */
