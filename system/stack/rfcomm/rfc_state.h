@@ -71,3 +71,11 @@ inline std::string rfcomm_port_state_text(const tRFC_PORT_STATE& state) {
       return std::string("UNKNOWN[") + std::to_string(state) + std::string("]");
   }
 }
+
+namespace fmt {
+template <>
+struct formatter<tRFC_MX_STATE> : enum_formatter<tRFC_MX_STATE> {};
+template <>
+struct formatter<tRFC_PORT_STATE> : enum_formatter<tRFC_PORT_STATE> {};
+
+}  // namespace fmt
