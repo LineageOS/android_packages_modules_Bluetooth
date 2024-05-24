@@ -187,7 +187,7 @@ static void ServerInit() {
       .p_srv_chg_callback = [](tGATTS_SRV_CHG_CMD, tGATTS_SRV_CHG_REQ*,
                                tGATTS_SRV_CHG_RSP*) { return true; },
   };
-  GATTS_NVRegister(&appl_info);
+  (void)GATTS_NVRegister(&appl_info);
 
   Uuid svc_uuid = Uuid::From16Bit(UUID_SERVCLASS_GAP_SERVER);
   Uuid name_uuid = Uuid::From16Bit(GATT_UUID_GAP_DEVICE_NAME);
@@ -213,8 +213,8 @@ static void ServerInit() {
        .permissions = GATT_PERM_READ}};
 
   /* Add a GAP service */
-  GATTS_AddService(s_AppIf, service,
-                   sizeof(service) / sizeof(btgatt_db_element_t));
+  (void)GATTS_AddService(s_AppIf, service,
+                         sizeof(service) / sizeof(btgatt_db_element_t));
 }
 
 static void ServerCleanup() {
@@ -241,12 +241,12 @@ static void FuzzAsServer(FuzzedDataProvider& fdp) {
 
 static void ClientInit() {
   GattInit();
-  GATT_Connect(s_AppIf, kDummyAddr, BTM_BLE_DIRECT_CONNECTION, BT_TRANSPORT_LE,
-               false);
+  (void)GATT_Connect(s_AppIf, kDummyAddr, BTM_BLE_DIRECT_CONNECTION,
+                     BT_TRANSPORT_LE, false);
 }
 
 static void ClientCleanup() {
-  GATT_CancelConnect(s_AppIf, kDummyAddr, true);
+  (void)GATT_CancelConnect(s_AppIf, kDummyAddr, true);
   GATT_Deregister(s_AppIf);
   gatt_free();
 }
@@ -261,7 +261,7 @@ static void FuzzAsClient(FuzzedDataProvider& fdp) {
     switch (op) {
       case GATTC_OPTYPE_CONFIG: {
         auto mtu = fdp.ConsumeIntegral<uint16_t>();
-        GATTC_ConfigureMTU(s_ConnId, mtu);
+        (void)GATTC_ConfigureMTU(s_ConnId, mtu);
         break;
       }
       case GATTC_OPTYPE_DISCOVERY: {
@@ -269,7 +269,7 @@ static void FuzzAsClient(FuzzedDataProvider& fdp) {
             0, GATT_DISC_MAX);
         uint16_t start = fdp.ConsumeIntegral<uint16_t>();
         uint16_t end = fdp.ConsumeIntegral<uint16_t>();
-        GATTC_Discover(s_ConnId, type, start, end);
+        (void)GATTC_Discover(s_ConnId, type, start, end);
         break;
       }
       case GATTC_OPTYPE_READ: {
@@ -277,7 +277,7 @@ static void FuzzAsClient(FuzzedDataProvider& fdp) {
             0, GATT_READ_MAX);
         tGATT_READ_PARAM param = {};
         fdp.ConsumeData(&param, sizeof(param));
-        GATTC_Read(s_ConnId, type, &param);
+        (void)GATTC_Read(s_ConnId, type, &param);
         break;
       }
       case GATTC_OPTYPE_WRITE: {
@@ -287,12 +287,12 @@ static void FuzzAsClient(FuzzedDataProvider& fdp) {
         value.len =
             fdp.ConsumeIntegralInRange<uint16_t>(0, sizeof(value.value));
         value.len = fdp.ConsumeData(&value.value, value.len);
-        GATTC_Write(s_ConnId, type, &value);
+        (void)GATTC_Write(s_ConnId, type, &value);
         break;
       }
       case GATTC_OPTYPE_EXE_WRITE: {
         auto type = fdp.ConsumeBool();
-        GATTC_ExecuteWrite(s_ConnId, type);
+        (void)GATTC_ExecuteWrite(s_ConnId, type);
         break;
       }
       default:

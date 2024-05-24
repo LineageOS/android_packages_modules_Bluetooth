@@ -19,7 +19,6 @@
 #include <bluetooth/log.h>
 
 #include "gatt_api.h"
-#include "os/logging/log_adapter.h"
 #include "osi/include/allocator.h"
 #include "osi/include/osi.h"
 #include "srvc_dis_int.h"
@@ -278,7 +277,11 @@ static void srvc_eng_s_request_cback(uint16_t conn_id, uint32_t trans_id,
 
   srvc_eng_cb.clcb[clcb_idx].trans_id = 0;
 
-  if (act == SRVC_ACT_RSP) GATTS_SendRsp(conn_id, trans_id, status, &rsp_msg);
+  if (act == SRVC_ACT_RSP) {
+    if (GATTS_SendRsp(conn_id, trans_id, status, &rsp_msg) != GATT_SUCCESS) {
+      log::warn("Unable to send GATT server respond conn_id:{}", conn_id);
+    }
+  }
 }
 
 /*******************************************************************************
@@ -373,7 +376,9 @@ void srvc_eng_release_channel(uint16_t conn_id) {
   p_clcb->cur_srvc_id = SRVC_ID_NONE;
 
   /* check pending request */
-  GATT_Disconnect(p_clcb->conn_id);
+  if (GATT_Disconnect(p_clcb->conn_id) != GATT_SUCCESS) {
+    log::warn("Unable to disconnect GATT conn_id:{}", p_clcb->conn_id);
+  }
 }
 /*******************************************************************************
  *

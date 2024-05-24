@@ -509,7 +509,10 @@ void bta_dm_remove_device(const RawAddress& bd_addr) {
         peer_device.conn_state = BTA_DM_UNPAIRING;
 
         /* Make sure device is not in acceptlist before we disconnect */
-        GATT_CancelConnect(0, bd_addr, false);
+        if (!GATT_CancelConnect(0, bd_addr, false)) {
+          log::warn("Unable to cancel GATT connect peer:{} is_direct:{}",
+                    bd_addr, false);
+        }
 
         btm_remove_acl(bd_addr, peer_device.transport);
         log::verbose("transport: {}", peer_device.transport);
@@ -562,7 +565,10 @@ void bta_dm_remove_device(const RawAddress& bd_addr) {
         log::info("Remove ACL of address {}", other_address);
 
         /* Make sure device is not in acceptlist before we disconnect */
-        GATT_CancelConnect(0, bd_addr, false);
+        if (!GATT_CancelConnect(0, bd_addr, false)) {
+          log::warn("Unable to cancel GATT connect peer:{} is_direct:{}",
+                    bd_addr, false);
+        }
 
         btm_remove_acl(other_address, peer_device.transport);
         break;
