@@ -51,7 +51,7 @@ impl IBluetoothQA for IBluetoothQADBus {
     fn get_modalias(&self) -> String {
         dbus_generated!()
     }
-    #[dbus_method("FetchHIDReport")]
+    #[dbus_method("GetHIDReport")]
     fn get_hid_report(&self, addr: String, report_type: BthhReportType, report_id: u8) {
         dbus_generated!()
     }
