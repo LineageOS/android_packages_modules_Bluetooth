@@ -282,11 +282,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                     1);
         }
         setBluetoothOppService(null);
-        if (Flags.oppServiceFixIndexOutOfBoundsExceptionInUpdateThread()) {
-            stopInternal();
-        } else {
-            mHandler.sendMessage(mHandler.obtainMessage(STOP_LISTENER));
-        }
+        stopInternal();
 
         setComponentAvailable(OPP_PROVIDER, false);
         setComponentAvailable(INCOMING_FILE_CONFIRM_ACTIVITY, false);
@@ -538,9 +534,6 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
     @Override
     public void cleanup() {
         Log.v(TAG, "onDestroy");
-        if (!Flags.oppServiceFixIndexOutOfBoundsExceptionInUpdateThread()) {
-            stopListeners();
-        }
 
         mBatches.clear();
         mShares.clear();
@@ -659,9 +652,6 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                         break;
                     case BluetoothAdapter.STATE_TURNING_OFF:
                         Log.v(TAG, "Bluetooth state changed: STATE_TURNING_OFF");
-                        if (!Flags.oppServiceFixIndexOutOfBoundsExceptionInUpdateThread()) {
-                            mHandler.sendMessage(mHandler.obtainMessage(STOP_LISTENER));
-                        }
                         break;
                 }
             }
