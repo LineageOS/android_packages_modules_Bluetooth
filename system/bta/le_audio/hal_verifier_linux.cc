@@ -16,7 +16,9 @@
 
 #include "bta_le_audio_api.h"
 
-bool LeAudioHalVerifier::SupportsLeAudio() { return false; }
+// The HAL always supports LE audio.
+// Disable LE audio in the policy level if needed.
+bool LeAudioHalVerifier::SupportsLeAudio() { return true; }
 bool LeAudioHalVerifier::SupportsLeAudioHardwareOffload() { return false; }
 bool LeAudioHalVerifier::SupportsLeAudioBroadcast() { return false; }
 bool LeAudioHalVerifier::SupportsStreamActiveApi() { return false; }

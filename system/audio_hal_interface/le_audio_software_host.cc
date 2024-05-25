@@ -81,15 +81,30 @@ namespace le_audio {
 
 // Invoked by audio server when it has audio data to stream.
 bool HostStartRequest() {
+  if (!host::le_audio::LeAudioSinkTransport::instance) {
+    log::warn("instance is null");
+    return false;
+  }
+
   host::le_audio::LeAudioSinkTransport::instance->ResetPresentationPosition();
   return host::le_audio::LeAudioSinkTransport::instance->StartRequest();
 }
 
 void HostStopRequest() {
+  if (!host::le_audio::LeAudioSinkTransport::instance) {
+    log::warn("instance is null");
+    return;
+  }
+
   host::le_audio::LeAudioSinkTransport::instance->StopRequest();
 }
 
 btle_pcm_parameters GetHostPcmConfig() {
+  if (!host::le_audio::LeAudioSinkTransport::instance) {
+    log::warn("instance is null");
+    return {};
+  }
+
   auto pcm_params = host::le_audio::LeAudioSinkTransport::instance
                         ->LeAudioGetSelectedHalPcmConfig();
 
@@ -105,15 +120,30 @@ btle_pcm_parameters GetHostPcmConfig() {
 
 // Invoked by audio server to request audio data streamed from the peer.
 bool PeerStartRequest() {
-  host::le_audio::LeAudioSinkTransport::instance->ResetPresentationPosition();
+  if (!host::le_audio::LeAudioSourceTransport::instance) {
+    log::warn("instance is null");
+    return false;
+  }
+
+  host::le_audio::LeAudioSourceTransport::instance->ResetPresentationPosition();
   return host::le_audio::LeAudioSourceTransport::instance->StartRequest();
 }
 
 void PeerStopRequest() {
+  if (!host::le_audio::LeAudioSourceTransport::instance) {
+    log::warn("instance is null");
+    return;
+  }
+
   host::le_audio::LeAudioSourceTransport::instance->StopRequest();
 }
 
 btle_pcm_parameters GetPeerPcmConfig() {
+  if (!host::le_audio::LeAudioSourceTransport::instance) {
+    log::warn("instance is null");
+    return {};
+  }
+
   auto pcm_params = host::le_audio::LeAudioSourceTransport::instance
                         ->LeAudioGetSelectedHalPcmConfig();
 
@@ -136,16 +166,27 @@ bool GetPeerStreamStarted() {
 }
 
 void SourceMetadataChanged(const source_metadata_v7_t& metadata) {
-  host::le_audio::LeAudioSourceTransport::instance->SourceMetadataChanged(
-      metadata);
-  host::le_audio::LeAudioSinkTransport::instance->SourceMetadataChanged(
-      metadata);
+  if (host::le_audio::LeAudioSourceTransport::instance) {
+    host::le_audio::LeAudioSourceTransport::instance->SourceMetadataChanged(
+        metadata);
+  }
+
+  if (host::le_audio::LeAudioSinkTransport::instance) {
+    host::le_audio::LeAudioSinkTransport::instance->SourceMetadataChanged(
+        metadata);
+  }
 }
 
 void SinkMetadataChanged(const sink_metadata_v7_t& metadata) {
-  host::le_audio::LeAudioSourceTransport::instance->SinkMetadataChanged(
-      metadata);
-  host::le_audio::LeAudioSinkTransport::instance->SinkMetadataChanged(metadata);
+  if (host::le_audio::LeAudioSourceTransport::instance) {
+    host::le_audio::LeAudioSourceTransport::instance->SinkMetadataChanged(
+        metadata);
+  }
+
+  if (host::le_audio::LeAudioSinkTransport::instance) {
+    host::le_audio::LeAudioSinkTransport::instance->SinkMetadataChanged(
+        metadata);
+  }
 }
 
 OffloadCapabilities get_offload_capabilities() {
@@ -169,6 +210,11 @@ void LeAudioClientInterface::Sink::Cleanup() {
 
 void LeAudioClientInterface::Sink::SetPcmParameters(
     const PcmParameters& params) {
+  if (!host::le_audio::LeAudioSinkTransport::instance) {
+    log::warn("instance is null");
+    return;
+  }
+
   log::info(
       "sample_rate={}, bits_per_sample={}, channels_count={}, "
       "data_interval_us={}",
@@ -182,6 +228,11 @@ void LeAudioClientInterface::Sink::SetPcmParameters(
 }
 
 void LeAudioClientInterface::Sink::SetRemoteDelay(uint16_t delay_report_ms) {
+  if (!host::le_audio::LeAudioSinkTransport::instance) {
+    log::warn("instance is null");
+    return;
+  }
+
   log::info("delay_report_ms={} msec", delay_report_ms);
 
   host::le_audio::LeAudioSinkTransport::instance->SetRemoteDelay(
@@ -201,6 +252,11 @@ void LeAudioClientInterface::Sink::StopSession() {
 }
 
 void LeAudioClientInterface::Sink::ConfirmStreamingRequest() {
+  if (!host::le_audio::LeAudioSinkTransport::instance) {
+    log::warn("instance is null");
+    return;
+  }
+
   log::info("");
 
   auto instance = host::le_audio::LeAudioSinkTransport::instance;
@@ -233,6 +289,11 @@ void LeAudioClientInterface::Sink::ConfirmStreamingRequestV2() {
 }
 
 void LeAudioClientInterface::Sink::CancelStreamingRequest() {
+  if (!host::le_audio::LeAudioSinkTransport::instance) {
+    log::warn("instance is null");
+    return;
+  }
+
   log::info("");
 
   auto instance = host::le_audio::LeAudioSinkTransport::instance;
@@ -278,7 +339,8 @@ size_t LeAudioClientInterface::Sink::Read(uint8_t* p_buf, uint32_t len) {
   uint32_t bytes_read = 0;
   bytes_read = UIPC_Read(*lea_uipc, UIPC_CH_ID_AV_AUDIO, p_buf, len);
 
-  log::info("");
+  // TODO(b/317682986): grab meaningful statistics for logs and metrics
+  log::verbose("Read {} bytes", bytes_read);
 
   return bytes_read;
 }
@@ -294,6 +356,11 @@ void LeAudioClientInterface::Source::Cleanup() {
 
 void LeAudioClientInterface::Source::SetPcmParameters(
     const PcmParameters& params) {
+  if (!host::le_audio::LeAudioSourceTransport::instance) {
+    log::warn("instance is null");
+    return;
+  }
+
   log::info(
       "sample_rate={}, bits_per_sample={}, channels_count={}, "
       "data_interval_us={}",
@@ -307,6 +374,11 @@ void LeAudioClientInterface::Source::SetPcmParameters(
 }
 
 void LeAudioClientInterface::Source::SetRemoteDelay(uint16_t delay_report_ms) {
+  if (!host::le_audio::LeAudioSourceTransport::instance) {
+    log::warn("instance is null");
+    return;
+  }
+
   log::info("delay_report_ms={} msec", delay_report_ms);
 
   host::le_audio::LeAudioSourceTransport::instance->SetRemoteDelay(
@@ -326,6 +398,11 @@ void LeAudioClientInterface::Source::StopSession() {
 }
 
 void LeAudioClientInterface::Source::ConfirmStreamingRequest() {
+  if (!host::le_audio::LeAudioSourceTransport::instance) {
+    log::warn("instance is null");
+    return;
+  }
+
   log::info("");
 
   auto instance = host::le_audio::LeAudioSourceTransport::instance;
@@ -358,6 +435,11 @@ void LeAudioClientInterface::Source::ConfirmStreamingRequestV2() {
 }
 
 void LeAudioClientInterface::Source::CancelStreamingRequest() {
+  if (!host::le_audio::LeAudioSourceTransport::instance) {
+    log::warn("instance is null");
+    return;
+  }
+
   log::info("");
 
   auto instance = host::le_audio::LeAudioSourceTransport::instance;

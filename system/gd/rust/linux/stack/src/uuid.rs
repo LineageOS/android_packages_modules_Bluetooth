@@ -32,7 +32,7 @@ pub const MNS: &str = "00001133-0000-1000-8000-00805F9B34FB";
 pub const MAS: &str = "00001132-0000-1000-8000-00805F9B34FB";
 pub const SAP: &str = "0000112D-0000-1000-8000-00805F9B34FB";
 pub const HEARING_AID: &str = "0000FDF0-0000-1000-8000-00805f9b34fb";
-pub const LE_AUDIO: &str = "EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE";
+pub const LE_AUDIO: &str = "0000184E-0000-1000-8000-00805F9B34FB";
 pub const DIP: &str = "00001200-0000-1000-8000-00805F9B34FB";
 pub const VOLUME_CONTROL: &str = "00001844-0000-1000-8000-00805F9B34FB";
 pub const GENERIC_MEDIA_CONTROL: &str = "00001849-0000-1000-8000-00805F9B34FB";
@@ -123,6 +123,7 @@ lazy_static! {
         Profile::Hfp,
         Profile::Hid,
         Profile::Hogp,
+        Profile::LeAudio,
         Profile::Panu,
         Profile::PbapPce,
         Profile::Map,
