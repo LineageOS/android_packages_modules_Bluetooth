@@ -31,7 +31,7 @@ fn debug_output_to_file(gen: &proc_macro2::TokenStream, filename: String) {
         .to_string();
 
     let path = Path::new(&filepath);
-    let mut file = File::create(&path).unwrap();
+    let mut file = File::create(path).unwrap();
     file.write_all(gen.to_string().as_bytes()).unwrap();
 }
 
@@ -166,7 +166,7 @@ pub fn generate_dbus_exporter(attr: TokenStream, item: TokenStream) -> TokenStre
                     if let Pat::Ident(pat_ident) = &*typed.pat {
                         let ident = pat_ident.ident.clone();
                         let mut dbus_input_ident = ident.to_string();
-                        dbus_input_ident.push_str("_");
+                        dbus_input_ident.push('_');
                         let dbus_input_arg = format_ident!("{}", dbus_input_ident);
                         let ident_string = ident.to_string();
 
@@ -210,7 +210,7 @@ pub fn generate_dbus_exporter(attr: TokenStream, item: TokenStream) -> TokenStre
                             <#arg_type as DBusArg>::log(&#ident),
                         };
 
-                        if args_debug_format.len() != 0 {
+                        if !args_debug_format.is_empty() {
                             args_debug_format.push_str(", ");
                         }
                         args_debug_format.push_str("{:?}");
@@ -293,7 +293,7 @@ pub fn generate_dbus_exporter(attr: TokenStream, item: TokenStream) -> TokenStre
         }
     };
 
-    debug_output_to_file(&gen, format!("out-{}.rs", fn_ident.to_string()));
+    debug_output_to_file(&gen, format!("out-{}.rs", fn_ident));
 
     gen.into()
 }
@@ -390,11 +390,7 @@ pub fn generate_dbus_interface_client(attr: TokenStream, item: TokenStream) -> T
                         let ident = pat_ident.ident.clone();
 
                         let is_box = if let Type::Path(type_path) = &**arg_type {
-                            if type_path.path.segments[0].ident.to_string().eq("Box") {
-                                true
-                            } else {
-                                false
-                            }
+                            type_path.path.segments[0].ident.to_string().eq("Box")
                         } else {
                             false
                         };
@@ -711,7 +707,7 @@ pub fn dbus_propmap(attr: TokenStream, item: TokenStream) -> TokenStream {
         }
     };
 
-    debug_output_to_file(&gen, format!("out-{}.rs", struct_ident.to_string()));
+    debug_output_to_file(&gen, format!("out-{}.rs", struct_ident));
 
     gen.into()
 }
@@ -791,6 +787,7 @@ pub fn dbus_proxy_obj(attr: TokenStream, item: TokenStream) -> TokenStream {
 
             for input in method.sig.inputs {
                 if let FnArg::Typed(ref typed) = input {
+                    let arg_type = &typed.ty;
                     if let Pat::Ident(pat_ident) = &*typed.pat {
                         let ident = pat_ident.ident.clone();
 
@@ -799,10 +796,11 @@ pub fn dbus_proxy_obj(attr: TokenStream, item: TokenStream) -> TokenStream {
                         };
 
                         args_debug = quote! {
-                            #args_debug &#ident,
+                            #args_debug
+                            <#arg_type as DBusArg>::log(&#ident),
                         };
 
-                        if args_debug_format.len() != 0 {
+                        if !args_debug_format.is_empty() {
                             args_debug_format.push_str(", ");
                         }
                         args_debug_format.push_str("{:?}");
@@ -980,7 +978,7 @@ pub fn dbus_proxy_obj(attr: TokenStream, item: TokenStream) -> TokenStream {
         }
     };
 
-    debug_output_to_file(&gen, format!("out-{}.rs", struct_ident.to_string()));
+    debug_output_to_file(&gen, format!("out-{}.rs", struct_ident));
 
     gen.into()
 }
@@ -1428,7 +1426,7 @@ pub fn generate_dbus_arg(_item: TokenStream) -> TokenStream {
         }
     };
 
-    debug_output_to_file(&gen, format!("out-generate_dbus_arg.rs"));
+    debug_output_to_file(&gen, "out-generate_dbus_arg.rs".into());
 
     gen.into()
 }
