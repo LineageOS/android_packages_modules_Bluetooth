@@ -1225,8 +1225,11 @@ static void gatts_chk_pending_ind(tGATT_TCB& tcb) {
   tGATT_VALUE* p_buf =
       (tGATT_VALUE*)fixed_queue_try_peek_first(tcb.pending_ind_q);
   if (p_buf != NULL) {
-    GATTS_HandleValueIndication(p_buf->conn_id, p_buf->handle, p_buf->len,
-                                p_buf->value);
+    if (GATTS_HandleValueIndication(p_buf->conn_id, p_buf->handle, p_buf->len,
+                                    p_buf->value) != GATT_SUCCESS) {
+      log::warn("Unable to send GATT server handle value conn_id:{}",
+                p_buf->conn_id);
+    }
     osi_free(fixed_queue_try_remove_from_queue(tcb.pending_ind_q, p_buf));
   }
 }

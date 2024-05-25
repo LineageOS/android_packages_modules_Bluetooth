@@ -81,6 +81,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -90,6 +91,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.PriorityQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -130,7 +132,8 @@ public class BassClientService extends ProfileService {
     private final List<Integer> mActiveSyncedSources = new ArrayList<>();
     private final Map<Integer, PeriodicAdvertisingCallback> mPeriodicAdvCallbacksMap =
             new HashMap<>();
-    private final List<ScanResult> mSourceSyncRequestsQueue = new ArrayList<ScanResult>();
+    private final PriorityQueue<SourceSyncRequest> mSourceSyncRequestsQueue =
+            new PriorityQueue<>(sSourceSyncRequestComparator);
     private final Map<Integer, Boolean> mFirstTimeBisDiscoveryMap = new HashMap<Integer, Boolean>();
     private final List<AddSourceData> mPendingSourcesToAdd = new ArrayList<AddSourceData>();
 
@@ -204,6 +207,52 @@ public class BassClientService extends ProfileService {
         return leaudioBroadcastFeatureSupport()
                 && BluetoothProperties.isProfileBapBroadcastAssistEnabled().orElse(false);
     }
+
+    private static class SourceSyncRequest {
+        private ScanResult mScanResult;
+        private boolean mHasPriority;
+
+        SourceSyncRequest(ScanResult scanResult, boolean hasPriority) {
+            this.mScanResult = scanResult;
+            this.mHasPriority = hasPriority;
+        }
+
+        public ScanResult getScanResult() {
+            return mScanResult;
+        }
+
+        public int getRssi() {
+            return mScanResult.getRssi();
+        }
+
+        public boolean hasPriority() {
+            return mHasPriority;
+        }
+
+        @Override
+        public String toString() {
+            return "SourceSyncRequest{"
+                    + "mScanResult="
+                    + mScanResult
+                    + ", mHasPriority="
+                    + mHasPriority
+                    + '}';
+        }
+    }
+
+    private static final Comparator<SourceSyncRequest> sSourceSyncRequestComparator =
+            new Comparator<SourceSyncRequest>() {
+                @Override
+                public int compare(SourceSyncRequest ssr1, SourceSyncRequest ssr2) {
+                    if (ssr1.hasPriority() && !ssr2.hasPriority()) {
+                        return -1;
+                    } else if (!ssr1.hasPriority() && ssr2.hasPriority()) {
+                        return 1;
+                    } else {
+                        return Integer.compare(ssr2.getRssi(), ssr1.getRssi());
+                    }
+                }
+            };
 
     private static class AddSourceData {
         BluetoothDevice mSink;
@@ -2059,11 +2108,7 @@ public class BassClientService extends ProfileService {
         }
 
         synchronized (mSourceSyncRequestsQueue) {
-            if (hasPriority) {
-                mSourceSyncRequestsQueue.add(0, scanRes);
-            } else {
-                mSourceSyncRequestsQueue.add(scanRes);
-            }
+            mSourceSyncRequestsQueue.add(new SourceSyncRequest(scanRes, hasPriority));
         }
 
         handleSelectSourceRequest();
@@ -2085,7 +2130,7 @@ public class BassClientService extends ProfileService {
         }
         ScanResult scanRes;
         synchronized (mSourceSyncRequestsQueue) {
-            scanRes = mSourceSyncRequestsQueue.remove(0);
+            scanRes = mSourceSyncRequestsQueue.poll().getScanResult();
         }
         ScanRecord scanRecord = scanRes.getScanRecord();
 
@@ -2244,6 +2289,8 @@ public class BassClientService extends ProfileService {
                             sink,
                             sourceMetadata,
                             BluetoothStatusCodes.ERROR_LOCAL_NOT_ENOUGH_RESOURCES);
+
+                    return;
                 }
             }
         } else {

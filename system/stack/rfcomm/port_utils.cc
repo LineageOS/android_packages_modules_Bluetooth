@@ -108,7 +108,6 @@ void port_set_defaults(tPORT* p_port) {
   p_port->ev_mask = 0;
   p_port->p_callback = nullptr;
   p_port->port_ctrl = 0;
-  p_port->error = 0;
   p_port->line_status = 0;
   p_port->rx_flag_ev_pending = false;
   p_port->peer_mtu = RFCOMM_DEFAULT_MTU;

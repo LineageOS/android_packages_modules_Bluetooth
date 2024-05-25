@@ -1375,7 +1375,6 @@ static int bta_jv_port_data_co_cback(uint16_t port_handle, uint8_t* buf,
 static void bta_jv_port_mgmt_cl_cback(uint32_t code, uint16_t port_handle) {
   tBTA_JV_RFC_CB* p_cb = bta_jv_rfc_port_to_cb(port_handle);
   tBTA_JV_PCB* p_pcb = bta_jv_rfc_port_to_pcb(port_handle);
-  tBTA_JV evt_data;
   RawAddress rem_bda = RawAddress::kEmpty;
   uint16_t lcid;
   tBTA_JV_RFCOMM_CBACK* p_cback; /* the callback function */
@@ -1398,19 +1397,26 @@ static void bta_jv_port_mgmt_cl_cback(uint32_t code, uint16_t port_handle) {
   }
 
   if (code == PORT_SUCCESS) {
-    evt_data.rfc_open.handle = p_cb->handle;
-    evt_data.rfc_open.status = tBTA_JV_STATUS::SUCCESS;
-    evt_data.rfc_open.rem_bda = rem_bda;
+    tBTA_JV evt_data = {
+        .rfc_open =
+            {
+                .status = tBTA_JV_STATUS::SUCCESS,
+                .handle = p_cb->handle,
+                .rem_bda = rem_bda,
+            },
+    };
     p_pcb->state = BTA_JV_ST_CL_OPEN;
     p_cb->p_cback(BTA_JV_RFCOMM_OPEN_EVT, &evt_data, p_pcb->rfcomm_slot_id);
   } else {
-    evt_data.rfc_close.handle = p_cb->handle;
-    evt_data.rfc_close.status = tBTA_JV_STATUS::FAILURE;
-    evt_data.rfc_close.port_status = code;
-    evt_data.rfc_close.async = true;
-    if (p_pcb->state == BTA_JV_ST_CL_CLOSING) {
-      evt_data.rfc_close.async = false;
-    }
+    tBTA_JV evt_data = {
+        .rfc_close =
+            {
+                .status = tBTA_JV_STATUS::FAILURE,
+                .port_status = code,
+                .handle = p_cb->handle,
+                .async = (p_pcb->state == BTA_JV_ST_CL_CLOSING) ? false : true,
+            },
+    };
     // p_pcb->state = BTA_JV_ST_NONE;
     // p_pcb->cong = false;
     p_cback = p_cb->p_cback;

@@ -261,19 +261,6 @@
 #define BTM_SEC_TIMEOUT_VALUE 35
 #endif
 
-/******************************************
- *    Lisbon Features
- ******************************************/
-
-/* The IO capability of the local device (for Simple Pairing) */
-#ifndef BTM_LOCAL_IO_CAPS
-#define BTM_LOCAL_IO_CAPS BTM_IO_CAP_IO
-#endif
-
-/*************************
- * End of Lisbon Features
- *************************/
-
 /******************************************************************************
  *
  * L2CAP

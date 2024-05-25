@@ -58,10 +58,20 @@ using bluetooth::Uuid;
 using namespace bluetooth::legacy::stack::sdp;
 using namespace bluetooth;
 
+static void btm_dm_start_gatt_discovery(const RawAddress& bd_addr);
+
 namespace {
 constexpr char kBtmLogTag[] = "SDP";
 
 tBTA_DM_SERVICE_DISCOVERY_CB bta_dm_discovery_cb;
+base::RepeatingCallback<void(tBTA_DM_SDP_STATE*)> default_sdp_performer =
+    base::Bind(bta_dm_sdp_find_services);
+base::RepeatingCallback<void(const RawAddress&)> default_gatt_performer =
+    base::Bind(btm_dm_start_gatt_discovery);
+base::RepeatingCallback<void(tBTA_DM_SDP_STATE*)> sdp_performer =
+    default_sdp_performer;
+base::RepeatingCallback<void(const RawAddress&)> gatt_performer =
+    default_gatt_performer;
 }  // namespace
 
 static void bta_dm_disc_sm_execute(tBTA_DM_DISC_EVT event,
@@ -78,7 +88,6 @@ static void post_disc_evt(tBTA_DM_DISC_EVT event,
 static void bta_dm_gatt_disc_complete(uint16_t conn_id, tGATT_STATUS status);
 static void bta_dm_disable_disc(void);
 static void bta_dm_gattc_register(void);
-static void btm_dm_start_gatt_discovery(const RawAddress& bd_addr);
 static void bta_dm_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data);
 static void bta_dm_execute_queued_discovery_request();
 static void bta_dm_close_gatt_conn();
@@ -231,13 +240,11 @@ static void bta_dm_disable_disc(void) {
 }
 
 void bta_dm_sdp_finished(RawAddress bda, tBTA_STATUS result,
-                         tBTA_SERVICE_MASK services,
                          std::vector<bluetooth::Uuid> uuids,
                          std::vector<bluetooth::Uuid> gatt_uuids) {
   bta_dm_disc_sm_execute(BTA_DM_DISCOVERY_RESULT_EVT,
                          std::make_unique<tBTA_DM_MSG>(tBTA_DM_SVC_RES{
                              .bd_addr = bda,
-                             .services = services,
                              .uuids = uuids,
                              .gatt_uuids = gatt_uuids,
                              .result = result,
@@ -304,7 +311,7 @@ static void bta_dm_disc_result(tBTA_DM_SVC_RES& disc_result) {
           r.bd_addr, BD_NAME{}, r.gatt_uuids, /* transport_le */ false);
     }
     bta_dm_discovery_cb.service_search_cbacks.on_service_discovery_results(
-        r.bd_addr, r.services, r.uuids, r.result, r.hci_status);
+        r.bd_addr, r.uuids, r.result);
   } else {
     GAP_BleReadPeerPrefConnParams(bta_dm_discovery_cb.peer_bdaddr);
 
@@ -410,10 +417,9 @@ static void bta_dm_discover_services(tBTA_DM_API_DISCOVER& discover) {
     log::info("peer:{} with HIDSDPDisable attribute.", bd_addr);
 
     /* service discovery is done for this device */
-    bta_dm_disc_sm_execute(
-        BTA_DM_DISCOVERY_RESULT_EVT,
-        std::make_unique<tBTA_DM_MSG>(tBTA_DM_SVC_RES{
-            .bd_addr = bd_addr, .services = 0, .result = BTA_SUCCESS}));
+    bta_dm_disc_sm_execute(BTA_DM_DISCOVERY_RESULT_EVT,
+                           std::make_unique<tBTA_DM_MSG>(tBTA_DM_SVC_RES{
+                               .bd_addr = bd_addr, .result = BTA_SUCCESS}));
     return;
   }
 
@@ -424,7 +430,7 @@ static void bta_dm_discover_services(tBTA_DM_API_DISCOVER& discover) {
   if (transport == BT_TRANSPORT_LE) {
     log::info("starting GATT discovery on {}", bd_addr);
     /* start GATT for service discovery */
-    btm_dm_start_gatt_discovery(bd_addr);
+    gatt_performer.Run(bd_addr);
     return;
   }
   // transport == BT_TRANSPORT_BR_EDR
@@ -437,7 +443,25 @@ static void bta_dm_discover_services(tBTA_DM_API_DISCOVER& discover) {
           .services_found = 0,
           .service_index = 0,
       });
-  bta_dm_sdp_find_services(bta_dm_discovery_cb.sdp_state.get());
+
+  sdp_performer.Run(bta_dm_discovery_cb.sdp_state.get());
+}
+
+void bta_dm_disc_override_sdp_performer_for_testing(
+    base::RepeatingCallback<void(tBTA_DM_SDP_STATE*)> test_sdp_performer) {
+  if (test_sdp_performer.is_null()) {
+    sdp_performer = default_sdp_performer;
+  } else {
+    sdp_performer = test_sdp_performer;
+  }
+}
+void bta_dm_disc_override_gatt_performer_for_testing(
+    base::RepeatingCallback<void(const RawAddress&)> test_gatt_performer) {
+  if (test_gatt_performer.is_null()) {
+    gatt_performer = default_gatt_performer;
+  } else {
+    gatt_performer = test_gatt_performer;
+  }
 }
 
 #ifndef BTA_DM_GATT_CLOSE_DELAY_TOUT
@@ -482,6 +506,17 @@ static void gatt_close_timer_cb(void*) {
   bta_dm_disc_sm_execute(BTA_DM_DISC_CLOSE_TOUT_EVT, nullptr);
 }
 
+void bta_dm_gatt_finished(RawAddress bda, tBTA_STATUS result,
+                          std::vector<bluetooth::Uuid> gatt_uuids) {
+  bta_dm_disc_sm_execute(BTA_DM_DISCOVERY_RESULT_EVT,
+                         std::make_unique<tBTA_DM_MSG>(tBTA_DM_SVC_RES{
+                             .bd_addr = bda,
+                             .is_gatt_over_ble = true,
+                             .gatt_uuids = gatt_uuids,
+                             .result = result,
+                         }));
+}
+
 /*******************************************************************************
  *
  * Function         bta_dm_gatt_disc_complete
@@ -515,13 +550,9 @@ static void bta_dm_gatt_disc_complete(uint16_t conn_id, tGATT_STATUS status) {
   }
 
   /* no more services to be discovered */
-  bta_dm_disc_sm_execute(
-      BTA_DM_DISCOVERY_RESULT_EVT,
-      std::make_unique<tBTA_DM_MSG>(tBTA_DM_SVC_RES{
-          .bd_addr = bta_dm_discovery_cb.peer_bdaddr,
-          .is_gatt_over_ble = true,
-          .gatt_uuids = std::move(gatt_services),
-          .result = (status == GATT_SUCCESS) ? BTA_SUCCESS : BTA_FAILURE}));
+  bta_dm_gatt_finished(bta_dm_discovery_cb.peer_bdaddr,
+                       (status == GATT_SUCCESS) ? BTA_SUCCESS : BTA_FAILURE,
+                       std::move(gatt_services));
 
   if (conn_id != GATT_INVALID_CONN_ID) {
     bta_dm_discovery_cb.pending_close_bda = bta_dm_discovery_cb.peer_bdaddr;

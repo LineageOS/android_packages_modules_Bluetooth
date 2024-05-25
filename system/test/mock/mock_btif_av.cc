@@ -80,7 +80,6 @@ struct btif_av_stream_stop btif_av_stream_stop;
 struct btif_av_stream_suspend btif_av_stream_suspend;
 struct btif_debug_av_dump btif_debug_av_dump;
 struct dump_av_sm_event_name dump_av_sm_event_name;
-struct src_do_suspend_in_main_thread src_do_suspend_in_main_thread;
 
 }  // namespace btif_av
 }  // namespace mock
@@ -307,10 +306,6 @@ void btif_debug_av_dump(int fd) {
 const char* dump_av_sm_event_name(int event) {
   inc_func_call_count(__func__);
   return test::mock::btif_av::dump_av_sm_event_name(event);
-}
-void src_do_suspend_in_main_thread(btif_av_sm_event_t event) {
-  inc_func_call_count(__func__);
-  test::mock::btif_av::src_do_suspend_in_main_thread(event);
 }
 // Mocked functions complete
 // END mockcify generation

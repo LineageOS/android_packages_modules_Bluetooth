@@ -17,7 +17,7 @@
 #ifndef FUZZER_SDP_FUNCTIONS_H_
 #define FUZZER_SDP_FUNCTIONS_H_
 
-#include <base/bind.h>
+#include <base/functional/bind.h>
 #include <fuzzer/FuzzedDataProvider.h>
 
 #include <vector>

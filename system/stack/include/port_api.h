@@ -187,6 +187,8 @@ template <>
 struct formatter<tPORT_RESULT> : enum_formatter<tPORT_RESULT> {};
 }  // namespace fmt
 
+typedef void(tPORT_MGMT_CALLBACK)(uint32_t code, uint16_t port_handle);
+
 /*****************************************************************************
  *  External Function Declarations
  ****************************************************************************/
@@ -209,7 +211,7 @@ struct formatter<tPORT_RESULT> : enum_formatter<tPORT_RESULT> {};
  *                  mask         - specifies events to be enabled.  A value
  *                                 of zero disables all events.
  *                  p_handle     - OUT pointer to the handle.
- *                  p_mgmt_cb    - pointer to callback function to receive
+ *                  p_mgmt_callback - pointer to callback function to receive
  *                                 connection up/down events.
  * Notes:
  *
@@ -224,8 +226,8 @@ struct formatter<tPORT_RESULT> : enum_formatter<tPORT_RESULT> {};
  ******************************************************************************/
 [[nodiscard]] int RFCOMM_CreateConnectionWithSecurity(
     uint16_t uuid, uint8_t scn, bool is_server, uint16_t mtu,
-    const RawAddress& bd_addr, uint16_t* p_handle, tPORT_CALLBACK* p_mgmt_cb,
-    uint16_t sec_mask);
+    const RawAddress& bd_addr, uint16_t* p_handle,
+    tPORT_MGMT_CALLBACK* p_mgmt_callback, uint16_t sec_mask);
 
 /*******************************************************************************
  *

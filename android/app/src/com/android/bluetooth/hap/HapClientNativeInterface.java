@@ -23,7 +23,6 @@ import android.bluetooth.BluetoothHapPresetInfo;
 import android.util.Log;
 
 import com.android.bluetooth.Utils;
-import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
@@ -35,35 +34,10 @@ public class HapClientNativeInterface {
 
     private final BluetoothAdapter mAdapter;
 
-    @GuardedBy("INSTANCE_LOCK")
-    private static HapClientNativeInterface sInstance;
-
-    private static final Object INSTANCE_LOCK = new Object();
-
-    private HapClientNativeInterface() {
+    public HapClientNativeInterface() {
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         if (mAdapter == null) {
             Log.wtf(TAG, "No Bluetooth Adapter Available");
-        }
-    }
-
-    /**
-     * Get singleton instance.
-     */
-    public static HapClientNativeInterface getInstance() {
-        synchronized (INSTANCE_LOCK) {
-            if (sInstance == null) {
-                sInstance = new HapClientNativeInterface();
-            }
-            return sInstance;
-        }
-    }
-
-    /** Set singleton instance. */
-    @VisibleForTesting
-    public static void setInstance(HapClientNativeInterface instance) {
-        synchronized (INSTANCE_LOCK) {
-            sInstance = instance;
         }
     }
 

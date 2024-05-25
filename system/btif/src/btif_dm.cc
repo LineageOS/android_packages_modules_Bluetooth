@@ -1435,9 +1435,11 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event,
 
       /* Check EIR for services */
       if (p_search_data->inq_res.p_eir) {
-        get_btm_client_interface().eir.BTM_GetEirUuidList(
-            p_search_data->inq_res.p_eir, p_search_data->inq_res.eir_len,
-            Uuid::kNumBytes16, &num_uuids, uuid_list, max_num_uuid);
+        if (!get_btm_client_interface().eir.BTM_GetEirUuidList(
+                p_search_data->inq_res.p_eir, p_search_data->inq_res.eir_len,
+                Uuid::kNumBytes16, &num_uuids, uuid_list, max_num_uuid)) {
+          log::debug("Unable to find service uuids in EIR peer:{}", bdaddr);
+        }
       }
 
       {
@@ -1696,15 +1698,13 @@ static bool btif_is_gatt_service_discovery_post_pairing(const RawAddress bd_addr
 }
 
 static void btif_on_service_discovery_results(
-    RawAddress bd_addr, tBTA_SERVICE_MASK services,
-    const std::vector<bluetooth::Uuid>& uuids_param, tBTA_STATUS result,
-    tHCI_STATUS hci_status) {
+    RawAddress bd_addr, const std::vector<bluetooth::Uuid>& uuids_param,
+    tBTA_STATUS result) {
   bt_property_t prop;
   std::vector<uint8_t> property_value;
   std::set<Uuid> uuids;
   bool a2dp_sink_capable = false;
 
-  log::verbose("result=0x{:x}, services 0x{:x}", result, services);
   if (result != BTA_SUCCESS && pairing_cb.state == BT_BOND_STATE_BONDED &&
       pairing_cb.sdp_attempts < BTIF_DM_MAX_SDP_ATTEMPTS_AFTER_PAIRING) {
     if (pairing_cb.sdp_attempts) {
@@ -3030,16 +3030,6 @@ bt_status_t btif_dm_get_adapter_property(bt_property_t* prop) {
       uint32_t* tmt = (uint32_t*)prop->val;
       *tmt = 120; /* default to 120s, if not found in NV */
       prop->len = sizeof(uint32_t);
-    } break;
-
-      // While fetching IO_CAP* values for the local device, we maintain
-      // backward compatibility by using the value from #define macros
-      // BTM_LOCAL_IO_CAPS, BTM_LOCAL_IO_CAPS_BLE if the values have never been
-      // explicitly set.
-
-    case BT_PROPERTY_LOCAL_IO_CAPS: {
-      *(bt_io_cap_t*)prop->val = (bt_io_cap_t)BTM_LOCAL_IO_CAPS;
-      prop->len = sizeof(bt_io_cap_t);
     } break;
 
     default:

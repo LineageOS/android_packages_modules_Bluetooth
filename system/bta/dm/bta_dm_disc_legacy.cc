@@ -282,7 +282,10 @@ static tBTA_DM_STATE bta_dm_search_get_state() {
 static void bta_dm_search_start(tBTA_DM_API_SEARCH& search) {
   bta_dm_gattc_register();
 
-  get_btm_client_interface().db.BTM_ClearInqDb(nullptr);
+  if (get_btm_client_interface().db.BTM_ClearInqDb(nullptr) != BTM_SUCCESS) {
+    log::warn("Unable to clear inquiry db for device discovery");
+  }
+
   /* save search params */
   bta_dm_search_cb.p_device_search_cback = search.p_cback;
 
@@ -321,7 +324,10 @@ static void bta_dm_search_cancel() {
   /* If no Service Search going on then issue cancel remote name in case it is
      active */
   else if (!bta_dm_search_cb.name_discover_done) {
-    get_btm_client_interface().peer.BTM_CancelRemoteDeviceName();
+    if (get_btm_client_interface().peer.BTM_CancelRemoteDeviceName() !=
+        BTM_CMD_STARTED) {
+      log::warn("Unable to cancel RNR");
+    }
     /* bta_dm_search_cmpl is called when receiving the remote name cancel evt */
     if (!com::android::bluetooth::flags::
             bta_dm_defer_device_discovery_state_change_until_rnr_complete()) {
@@ -921,7 +927,7 @@ static void bta_dm_disc_result(tBTA_DM_SVC_RES& disc_result) {
   if (!is_gatt_over_ble) {
     auto& r = disc_result;
     bta_dm_search_cb.service_search_cbacks.on_service_discovery_results(
-        r.bd_addr, r.services, r.uuids, r.result, r.hci_status);
+        r.bd_addr, r.uuids, r.result);
   }
 
   /* Services were discovered while device search is in progress.
@@ -1053,7 +1059,10 @@ static void bta_dm_search_cancel_notify() {
     case BTA_DM_SEARCH_ACTIVE:
     case BTA_DM_SEARCH_CANCELLING:
       if (!bta_dm_search_cb.name_discover_done) {
-        get_btm_client_interface().peer.BTM_CancelRemoteDeviceName();
+        if (get_btm_client_interface().peer.BTM_CancelRemoteDeviceName() !=
+            BTM_CMD_STARTED) {
+          log::warn("Unable to cancel RNR");
+        }
       }
       break;
     case BTA_DM_SEARCH_IDLE:
@@ -1717,7 +1726,10 @@ static void bta_dm_start_scan(uint8_t duration_sec,
 void bta_dm_ble_scan(bool start, uint8_t duration_sec,
                      bool low_latency_scan = false) {
   if (!start) {
-    get_btm_client_interface().ble.BTM_BleObserve(false, 0, NULL, NULL, false);
+    if (get_btm_client_interface().ble.BTM_BleObserve(
+            false, 0, NULL, NULL, false) != BTM_CMD_STARTED) {
+      log::warn("Unable to stop ble observe");
+    }
     return;
   }
 

@@ -93,7 +93,7 @@ const char kBtmLogTag[] = "RFCOMM";
  *                  mtu          - Maximum frame size the application can accept
  *                  bd_addr      - address of the peer (client)
  *                  p_handle     - OUT pointer to the handle.
- *                  p_mgmt_cb    - pointer to callback function to receive
+ *                  p_mgmt_callback - pointer to callback function to receive
  *                                 connection up/down events.
  *                  sec_mask     - bitmask of BTM_SEC_* values indicating the
  *                                 minimum security requirements for this
@@ -112,7 +112,7 @@ int RFCOMM_CreateConnectionWithSecurity(uint16_t uuid, uint8_t scn,
                                         bool is_server, uint16_t mtu,
                                         const RawAddress& bd_addr,
                                         uint16_t* p_handle,
-                                        tPORT_CALLBACK* p_mgmt_cb,
+                                        tPORT_MGMT_CALLBACK* p_mgmt_callback,
                                         uint16_t sec_mask) {
   *p_handle = 0;
 
@@ -217,7 +217,7 @@ int RFCOMM_CreateConnectionWithSecurity(uint16_t uuid, uint8_t scn,
   }
   p_port->local_ctrl.modem_signal = p_port->default_signal_state;
   p_port->local_ctrl.fc = false;
-  p_port->p_mgmt_callback = p_mgmt_cb;
+  p_port->p_mgmt_callback = p_mgmt_callback;
   p_port->bd_addr = bd_addr;
 
   log::info(

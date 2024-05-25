@@ -130,7 +130,9 @@ void gatt_init(void) {
   // clients exist
   fixed_reg.default_idle_tout = L2CAP_NO_IDLE_TIMEOUT;
 
-  L2CA_RegisterFixedChannel(L2CAP_ATT_CID, &fixed_reg);
+  if (!L2CA_RegisterFixedChannel(L2CAP_ATT_CID, &fixed_reg)) {
+    log::error("Unable to register L2CAP ATT fixed channel");
+  }
 
   gatt_cb.over_br_enabled =
       osi_property_get_bool("bluetooth.gatt.over_bredr.enabled", true);
@@ -1088,8 +1090,12 @@ void gatt_send_srv_chg_ind(const RawAddress& peer_bda) {
   uint8_t* p = handle_range;
   UINT16_TO_STREAM(p, sGATT_DEFAULT_START_HANDLE);
   UINT16_TO_STREAM(p, sGATT_LAST_HANDLE);
-  GATTS_HandleValueIndication(conn_id, gatt_cb.handle_of_h_r,
-                              GATT_SIZE_OF_SRV_CHG_HNDL_RANGE, handle_range);
+  if (GATTS_HandleValueIndication(conn_id, gatt_cb.handle_of_h_r,
+                                  GATT_SIZE_OF_SRV_CHG_HNDL_RANGE,
+                                  handle_range) != GATT_SUCCESS) {
+    log::warn("Unable to handle GATT service value indication conn_id:{}",
+              conn_id);
+  }
 }
 
 /** Check sending service chnaged Indication is required or not if required then

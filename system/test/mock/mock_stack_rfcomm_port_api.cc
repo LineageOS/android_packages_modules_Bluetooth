@@ -80,13 +80,11 @@ int PORT_WriteDataCO(uint16_t /* handle */, int* /* p_len */) {
   inc_func_call_count(__func__);
   return 0;
 }
-int RFCOMM_CreateConnectionWithSecurity(uint16_t /* uuid */, uint8_t /* scn */,
-                                        bool /* is_server */,
-                                        uint16_t /* mtu */,
-                                        const RawAddress& /* bd_addr */,
-                                        uint16_t* /* p_handle */,
-                                        tPORT_CALLBACK* /* p_mgmt_cb */,
-                                        uint16_t /* sec_mask */) {
+int RFCOMM_CreateConnectionWithSecurity(
+    uint16_t /* uuid */, uint8_t /* scn */, bool /* is_server */,
+    uint16_t /* mtu */, const RawAddress& /* bd_addr */,
+    uint16_t* /* p_handle */, tPORT_MGMT_CALLBACK* /* p_mgmt_callback */,
+    uint16_t /* sec_mask */) {
   inc_func_call_count(__func__);
   return 0;
 }
