@@ -41,7 +41,6 @@ class BleScanSettingListenerTest {
     @Before
     public fun setup() {
         callbackTriggered = false
-        enableSetting()
     }
 
     private fun startListener() {
@@ -63,6 +62,14 @@ class BleScanSettingListenerTest {
     }
 
     @Test
+    fun initialize_whenNoSettings_isOff() {
+        startListener()
+
+        assertThat(isScanAllowed).isFalse()
+        assertThat(callbackTriggered).isFalse()
+    }
+
+    @Test
     fun initialize_whenSettingsOff_isOff() {
         disableSetting()
 
@@ -74,6 +81,7 @@ class BleScanSettingListenerTest {
 
     @Test
     fun initialize_whenSettingsOn_isScanAllowed() {
+        enableSetting()
         startListener()
 
         assertThat(isScanAllowed).isTrue()
@@ -82,6 +90,7 @@ class BleScanSettingListenerTest {
 
     @Test
     fun changeModeToOn_whenSettingsOn_isScanAllowedAndEventDiscarded() {
+        enableSetting()
         startListener()
 
         enableSetting()
@@ -92,7 +101,6 @@ class BleScanSettingListenerTest {
 
     @Test
     fun changeModeToOff_whenSettingsOff_isOffAndEventDiscarded() {
-        disableSetting()
         startListener()
 
         disableSetting()
@@ -103,7 +111,6 @@ class BleScanSettingListenerTest {
 
     @Test
     fun changeModeToOn_whenSettingsOff_isScanAllowedWithoutCallback() {
-        disableSetting()
         startListener()
 
         enableSetting()
@@ -114,6 +121,7 @@ class BleScanSettingListenerTest {
 
     @Test
     fun changeModeToOff_whenSettingsOn_isOffAndCallbackTriggered() {
+        enableSetting()
         startListener()
 
         disableSetting()
