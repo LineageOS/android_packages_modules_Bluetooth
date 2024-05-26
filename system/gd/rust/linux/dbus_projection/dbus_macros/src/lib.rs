@@ -610,14 +610,14 @@ pub fn dbus_propmap(attr: TokenStream, item: TokenStream) -> TokenStream {
     let mut field_idents = quote! {};
 
     let mut insert_map_fields = quote! {};
+
+    let mut log_format = String::new();
+    let mut log_args = quote! {};
+
     for field in ast.fields {
-        let field_ident = field.ident;
+        let Some(field_ident) = field.ident else { continue };
 
-        if field_ident.is_none() {
-            continue;
-        }
-
-        let field_str = field_ident.as_ref().unwrap().clone().to_string();
+        let field_str = field_ident.to_string();
 
         let field_type = if let Type::Path(t) = field.ty {
             t
@@ -673,7 +673,26 @@ pub fn dbus_propmap(attr: TokenStream, item: TokenStream) -> TokenStream {
             let field_data__ = DBusArg::to_dbus(data__.#field_ident)?;
             map__.insert(String::from(#field_str), dbus::arg::Variant(Box::new(field_data__)));
         };
+
+        if !log_format.is_empty() {
+            log_format.push_str(", ");
+        }
+        log_format.push_str(field_str.as_str());
+        log_format.push_str(": {:?}");
+
+        log_args = quote! {
+            #log_args
+            <#field_type as DBusArg>::log(&data__.#field_ident),
+        };
     }
+
+    // Give an example type: struct BluetoothDevice { address: RawAddress, name: String }
+    // At this point the |log_format| would be: "address: {:?}, name: {:?}"
+    // Now, wrap it with curly braces and prepend the structure name so it becomes:
+    //     "BluetoothDevice { address: {:?}, name: {:?} }"
+    log_format.insert_str(0, " {{ ");
+    log_format.push_str(" }}");
+    log_format.insert_str(0, struct_ident.to_string().as_str());
 
     let gen = quote! {
         #[allow(dead_code)]
@@ -701,8 +720,8 @@ pub fn dbus_propmap(attr: TokenStream, item: TokenStream) -> TokenStream {
                 return Ok(map__);
             }
 
-            fn log(data: &#struct_ident) -> String {
-                String::from(format!("{:?}", data))
+            fn log(data__: &#struct_ident) -> String {
+                format!(#log_format, #log_args)
             }
         }
     };
