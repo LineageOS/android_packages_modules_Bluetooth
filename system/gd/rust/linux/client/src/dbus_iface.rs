@@ -441,7 +441,7 @@ pub struct BluetoothGattServiceDBus {
 
 #[dbus_propmap(BluetoothDevice)]
 pub struct BluetoothDeviceDBus {
-    address: String,
+    address: RawAddress,
     name: String,
 }
 

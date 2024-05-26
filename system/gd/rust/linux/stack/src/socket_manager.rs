@@ -1,6 +1,6 @@
 //! Implementation of the Socket API (IBluetoothSocketManager).
 
-use bt_topshim::btif::{BluetoothInterface, BtStatus, RawAddress, Uuid};
+use bt_topshim::btif::{BluetoothInterface, BtStatus, DisplayAddress, RawAddress, Uuid};
 use bt_topshim::profiles::socket;
 use log;
 use nix::sys::socket::{recvmsg, ControlMessageOwned};
@@ -147,7 +147,7 @@ impl BluetoothServerSocket {
         sock.uuid = self.uuid.clone();
 
         // Data from connection.
-        sock.remote_device = BluetoothDevice::new(conn.addr.to_string(), "".into());
+        sock.remote_device = BluetoothDevice::new(conn.addr, "".into());
         sock.port = conn.channel;
         sock.max_rx_size = conn.max_rx_packet_size.into();
         sock.max_tx_size = conn.max_tx_packet_size.into();
@@ -205,7 +205,7 @@ impl BluetoothSocket {
     fn new() -> Self {
         BluetoothSocket {
             id: 0,
-            remote_device: BluetoothDevice::new(String::new(), String::new()),
+            remote_device: BluetoothDevice::new(RawAddress::default(), String::new()),
             sock_type: SocketType::Unknown,
             flags: 0,
             fd: None,
@@ -253,7 +253,7 @@ impl fmt::Display for BluetoothSocket {
         write!(
             f,
             "[{}]:{} (type: {:?}) (uuid: {})",
-            self.remote_device.address,
+            DisplayAddress(&self.remote_device.address),
             self.port,
             self.sock_type,
             match self.uuid {
@@ -697,21 +697,10 @@ impl BluetoothSocketManager {
             }
         }
 
-        let addr = match RawAddress::from_string(socket_info.remote_device.address.clone()) {
-            Some(v) => v,
-            None => {
-                log::warn!(
-                    "Invalid address during socket connection: {}",
-                    socket_info.remote_device.address.clone()
-                );
-                return SocketResult::new(BtStatus::InvalidParam, INVALID_SOCKET_ID);
-            }
-        };
-
         // Create connecting socket pair.
         let (mut status, result) =
             self.sock.as_ref().expect("Socket manager not initialized").connect(
-                addr,
+                socket_info.remote_device.address,
                 socket_info.sock_type.clone(),
                 match socket_info.uuid {
                     Some(u) => Some(u.uu.clone()),

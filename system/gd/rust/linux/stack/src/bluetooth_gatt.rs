@@ -1966,42 +1966,27 @@ impl BluetoothGatt {
     pub fn handle_action(&mut self, action: GattActions) {
         match action {
             GattActions::Disconnect(device) => {
-                let address = match RawAddress::from_string(&device.address) {
-                    None => {
-                        warn!(
-                            "GattActions::Disconnect failed: Invalid device address={}",
-                            device.address
-                        );
-                        return;
-                    }
-                    Some(addr) => addr,
-                };
-                for client_id in self.context_map.get_client_ids_from_address(&device.address) {
+                let address = device.address.to_string();
+                for client_id in self.context_map.get_client_ids_from_address(&address) {
                     if let Some(conn_id) =
-                        self.context_map.get_conn_id_from_address(client_id, &device.address)
+                        self.context_map.get_conn_id_from_address(client_id, &address)
                     {
-                        self.gatt
-                            .as_ref()
-                            .unwrap()
-                            .lock()
-                            .unwrap()
-                            .client
-                            .disconnect(client_id, &address, conn_id);
+                        self.gatt.as_ref().unwrap().lock().unwrap().client.disconnect(
+                            client_id,
+                            &device.address,
+                            conn_id,
+                        );
                     }
                 }
-                for server_id in
-                    self.server_context_map.get_server_ids_from_address(&device.address)
-                {
+                for server_id in self.server_context_map.get_server_ids_from_address(&address) {
                     if let Some(conn_id) =
-                        self.server_context_map.get_conn_id_from_address(server_id, &device.address)
+                        self.server_context_map.get_conn_id_from_address(server_id, &address)
                     {
-                        self.gatt
-                            .as_ref()
-                            .unwrap()
-                            .lock()
-                            .unwrap()
-                            .server
-                            .disconnect(server_id, &address, conn_id);
+                        self.gatt.as_ref().unwrap().lock().unwrap().server.disconnect(
+                            server_id,
+                            &device.address,
+                            conn_id,
+                        );
                     }
                 }
             }

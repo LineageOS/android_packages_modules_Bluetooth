@@ -293,7 +293,7 @@ impl ClientContext {
         let bonded_devices = self.adapter_dbus.as_ref().unwrap().get_bonded_devices();
 
         for device in bonded_devices {
-            self.bonded_devices.insert(device.address.clone(), device.clone());
+            self.bonded_devices.insert(device.address.to_string(), device.clone());
         }
     }
 

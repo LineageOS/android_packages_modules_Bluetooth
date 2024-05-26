@@ -235,11 +235,11 @@ impl BatteryService {
                 if transport != BtTransport::Le {
                     return;
                 }
-                self.init_device(device.address, transport);
+                self.init_device(device.address.to_string(), transport);
             }
 
             BatteryServiceActions::Disconnect(device) => {
-                self.drop_device(device.address);
+                self.drop_device(device.address.to_string());
             }
         }
     }
