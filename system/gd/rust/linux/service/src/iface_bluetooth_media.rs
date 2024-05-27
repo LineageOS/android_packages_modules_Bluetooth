@@ -1,3 +1,4 @@
+use bt_topshim::btif::RawAddress;
 use bt_topshim::profiles::a2dp::{
     A2dpCodecBitsPerSample, A2dpCodecChannelMode, A2dpCodecConfig, A2dpCodecIndex,
     A2dpCodecSampleRate, PresentationPosition,
@@ -45,7 +46,7 @@ pub struct A2dpCodecConfigDBus {
 
 #[dbus_propmap(BluetoothAudioDevice)]
 pub struct BluetoothAudioDeviceDBus {
-    address: String,
+    address: RawAddress,
     name: String,
     a2dp_caps: Vec<A2dpCodecConfig>,
     hfp_cap: HfpCodecFormat,
@@ -83,7 +84,7 @@ impl IBluetoothMediaCallback for BluetoothMediaCallbackDBus {
     }
 
     #[dbus_method("OnBluetoothAudioDeviceRemoved")]
-    fn on_bluetooth_audio_device_removed(&mut self, addr: String) {
+    fn on_bluetooth_audio_device_removed(&mut self, addr: RawAddress) {
         dbus_generated!()
     }
 
@@ -98,12 +99,12 @@ impl IBluetoothMediaCallback for BluetoothMediaCallbackDBus {
     }
 
     #[dbus_method("OnHfpVolumeChanged")]
-    fn on_hfp_volume_changed(&mut self, volume: u8, addr: String) {
+    fn on_hfp_volume_changed(&mut self, volume: u8, addr: RawAddress) {
         dbus_generated!()
     }
 
     #[dbus_method("OnHfpAudioDisconnected")]
-    fn on_hfp_audio_disconnected(&mut self, addr: String) {
+    fn on_hfp_audio_disconnected(&mut self, addr: RawAddress) {
         dbus_generated!()
     }
 
@@ -140,7 +141,7 @@ impl IBluetoothMediaCallback for BluetoothMediaCallbackDBus {
     #[dbus_method("OnLeaGroupNodeStatus")]
     fn on_lea_group_node_status(
         &mut self,
-        addr: String,
+        addr: RawAddress,
         group_id: i32,
         status: BtLeAudioGroupNodeStatus,
     ) {
@@ -261,57 +262,57 @@ impl IBluetoothMedia for IBluetoothMediaDBus {
     }
 
     #[dbus_method("Connect")]
-    fn connect(&mut self, address: String) {
+    fn connect(&mut self, address: RawAddress) {
         dbus_generated!()
     }
 
     #[dbus_method("Disconnect")]
-    fn disconnect(&mut self, address: String) {
+    fn disconnect(&mut self, address: RawAddress) {
         dbus_generated!()
     }
 
     #[dbus_method("ConnectLeaGroupByMemberAddress")]
-    fn connect_lea_group_by_member_address(&mut self, address: String) {
+    fn connect_lea_group_by_member_address(&mut self, address: RawAddress) {
         dbus_generated!()
     }
 
     #[dbus_method("DisconnectLeaGroupByMemberAddress")]
-    fn disconnect_lea_group_by_member_address(&mut self, address: String) {
+    fn disconnect_lea_group_by_member_address(&mut self, address: RawAddress) {
         dbus_generated!()
     }
 
     #[dbus_method("ConnectLea")]
-    fn connect_lea(&mut self, address: String) {
+    fn connect_lea(&mut self, address: RawAddress) {
         dbus_generated!()
     }
 
     #[dbus_method("DisconnectLea")]
-    fn disconnect_lea(&mut self, address: String) {
+    fn disconnect_lea(&mut self, address: RawAddress) {
         dbus_generated!()
     }
 
     #[dbus_method("ConnectVc")]
-    fn connect_vc(&mut self, address: String) {
+    fn connect_vc(&mut self, address: RawAddress) {
         dbus_generated!()
     }
 
     #[dbus_method("DisconnectVc")]
-    fn disconnect_vc(&mut self, address: String) {
+    fn disconnect_vc(&mut self, address: RawAddress) {
         dbus_generated!()
     }
 
     #[dbus_method("ConnectCsis")]
-    fn connect_csis(&mut self, address: String) {
+    fn connect_csis(&mut self, address: RawAddress) {
         dbus_generated!()
     }
 
     #[dbus_method("DisconnectCsis")]
-    fn disconnect_csis(&mut self, address: String) {
+    fn disconnect_csis(&mut self, address: RawAddress) {
         dbus_generated!()
     }
 
     #[dbus_method("SetActiveDevice")]
-    fn set_active_device(&mut self, address: String) {
+    fn set_active_device(&mut self, address: RawAddress) {
         dbus_generated!()
     }
 
@@ -321,14 +322,14 @@ impl IBluetoothMedia for IBluetoothMediaDBus {
     }
 
     #[dbus_method("SetHfpActiveDevice", DBusLog::Disable)]
-    fn set_hfp_active_device(&mut self, address: String) {
+    fn set_hfp_active_device(&mut self, address: RawAddress) {
         dbus_generated!()
     }
 
     #[dbus_method("SetAudioConfig")]
     fn set_audio_config(
         &mut self,
-        address: String,
+        address: RawAddress,
         codec_type: A2dpCodecIndex,
         sample_rate: A2dpCodecSampleRate,
         bits_per_sample: A2dpCodecBitsPerSample,
@@ -343,7 +344,7 @@ impl IBluetoothMedia for IBluetoothMediaDBus {
     }
 
     #[dbus_method("SetHfpVolume")]
-    fn set_hfp_volume(&mut self, volume: u8, address: String) {
+    fn set_hfp_volume(&mut self, volume: u8, address: RawAddress) {
         dbus_generated!()
     }
 
@@ -353,7 +354,7 @@ impl IBluetoothMedia for IBluetoothMediaDBus {
     }
 
     #[dbus_method("GetA2dpAudioStarted", DBusLog::Disable)]
-    fn get_a2dp_audio_started(&mut self, address: String) -> bool {
+    fn get_a2dp_audio_started(&mut self, address: RawAddress) -> bool {
         dbus_generated!()
     }
 
@@ -365,7 +366,7 @@ impl IBluetoothMedia for IBluetoothMediaDBus {
     #[dbus_method("StartScoCall")]
     fn start_sco_call(
         &mut self,
-        address: String,
+        address: RawAddress,
         sco_offload: bool,
         disabled_codecs: HfpCodecBitId,
     ) -> bool {
@@ -373,12 +374,12 @@ impl IBluetoothMedia for IBluetoothMediaDBus {
     }
 
     #[dbus_method("GetHfpAudioFinalCodecs")]
-    fn get_hfp_audio_final_codecs(&mut self, address: String) -> u8 {
+    fn get_hfp_audio_final_codecs(&mut self, address: RawAddress) -> u8 {
         dbus_generated!()
     }
 
     #[dbus_method("StopScoCall")]
-    fn stop_sco_call(&mut self, address: String) {
+    fn stop_sco_call(&mut self, address: RawAddress) {
         dbus_generated!()
     }
 

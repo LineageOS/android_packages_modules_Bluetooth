@@ -166,8 +166,8 @@ pub enum Message {
     QaSendHidData(RawAddress, String),
 
     // UHid callbacks
-    UHidHfpOutputCallback(String, u8, u8),
-    UHidTelephonyUseCallback(String, bool),
+    UHidHfpOutputCallback(RawAddress, u8, u8),
+    UHidTelephonyUseCallback(RawAddress, bool),
 }
 
 pub enum BluetoothAPI {
