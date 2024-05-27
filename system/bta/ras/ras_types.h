@@ -109,4 +109,6 @@ struct ControlPointResponse {
 bool ParseControlPointCommand(ControlPointCommand* command,
                               const uint8_t* value, uint16_t len);
 
+bool IsRangingServiceCharacteristic(const bluetooth::Uuid& uuid);
+
 }  // namespace ras
