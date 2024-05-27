@@ -46,6 +46,9 @@ RasServer* GetRasServer();
 class RasClientCallbacks {
  public:
   virtual ~RasClientCallbacks() = default;
+  virtual void OnConnected(const RawAddress& address, uint16_t att_handle,
+                           const std::vector<VendorSpecificCharacteristic>&
+                               vendor_specific_characteristics) = 0;
   virtual void OnRemoteData(const RawAddress& address,
                             const std::vector<uint8_t>& data) = 0;
 };
@@ -56,6 +59,10 @@ class RasClient {
   virtual void Initialize() = 0;
   virtual void RegisterCallbacks(RasClientCallbacks* callbacks) = 0;
   virtual void Connect(const RawAddress& address) = 0;
+  virtual void SendVendorSpecificReply(
+      const RawAddress& address,
+      const std::vector<VendorSpecificCharacteristic>&
+          vendor_specific_data) = 0;
 };
 
 RasClient* GetRasClient();

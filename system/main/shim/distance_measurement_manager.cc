@@ -133,6 +133,46 @@ class DistanceMeasurementInterfaceImpl
         ras_vendor_specific_characteristics);
   }
 
+  void OnVendorSpecificReply(
+      bluetooth::hci::Address address,
+      std::vector<bluetooth::hal::VendorSpecificCharacteristic>
+          vendor_specific_characteristics) {
+    std::vector<bluetooth::ras::VendorSpecificCharacteristic>
+        ras_vendor_specific_characteristics;
+    for (auto& characteristic : vendor_specific_characteristics) {
+      bluetooth::ras::VendorSpecificCharacteristic
+          vendor_specific_characteristic;
+      vendor_specific_characteristic.characteristicUuid_ =
+          bluetooth::Uuid::From128BitBE(characteristic.characteristicUuid_);
+      vendor_specific_characteristic.value_ = characteristic.value_;
+      ras_vendor_specific_characteristics.emplace_back(
+          vendor_specific_characteristic);
+    }
+    bluetooth::ras::GetRasClient()->SendVendorSpecificReply(
+        bluetooth::ToRawAddress(address), ras_vendor_specific_characteristics);
+  }
+
+  void OnConnected(
+      const RawAddress& address, uint16_t att_handle,
+      const std::vector<bluetooth::ras::VendorSpecificCharacteristic>&
+          vendor_specific_characteristics) {
+    std::vector<bluetooth::hal::VendorSpecificCharacteristic>
+        hal_vendor_specific_characteristics;
+    for (auto& characteristic : vendor_specific_characteristics) {
+      bluetooth::hal::VendorSpecificCharacteristic
+          vendor_specific_characteristic;
+      vendor_specific_characteristic.characteristicUuid_ =
+          characteristic.characteristicUuid_.To128BitBE();
+      vendor_specific_characteristic.value_ = characteristic.value_;
+      hal_vendor_specific_characteristics.emplace_back(
+          vendor_specific_characteristic);
+    }
+
+    bluetooth::shim::GetDistanceMeasurementManager()->HandleRasConnectedEvent(
+        bluetooth::ToGdAddress(address), att_handle,
+        hal_vendor_specific_characteristics);
+  }
+
   void OnRemoteData(const RawAddress& address,
                     const std::vector<uint8_t>& data) {
     bluetooth::shim::GetDistanceMeasurementManager()->HandleRemoteData(

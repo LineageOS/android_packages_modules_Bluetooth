@@ -26,14 +26,18 @@ namespace hal {
 
 class RangingHalHost : public RangingHal {
  public:
-  bool isBound() override {
+  bool IsBound() override {
     return false;
   }
-
-  std::vector<VendorSpecificCharacteristic> getVendorSpecificCharacteristics() override {
+  void RegisterCallback(RangingHalCallback* /* callback */) override {}
+  std::vector<VendorSpecificCharacteristic> GetVendorSpecificCharacteristics() override {
     std::vector<VendorSpecificCharacteristic> vendor_specific_characteristics = {};
     return vendor_specific_characteristics;
   };
+  void OpenSession(
+      uint16_t /* connection_handle */,
+      uint16_t /* att_handle */,
+      const std::vector<hal::VendorSpecificCharacteristic>& /* vendor_specific_data */) override{};
 
  protected:
   void ListDependencies(ModuleList* /*list*/) const {}
