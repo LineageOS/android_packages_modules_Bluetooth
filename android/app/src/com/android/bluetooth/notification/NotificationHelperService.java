@@ -154,6 +154,14 @@ public class NotificationHelperService extends Service {
                                     .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK),
                             PendingIntent.FLAG_IMMUTABLE));
         } else {
+            // Open the setting page when the notification is clicked
+            builder.setContentIntent(
+                    PendingIntent.getActivity(
+                            this,
+                            PendingIntent.FLAG_UPDATE_CURRENT,
+                            new Intent("android.settings.BLUETOOTH_DASHBOARD_SETTINGS"),
+                            PendingIntent.FLAG_IMMUTABLE));
+
             Intent baseIntent =
                     new Intent()
                             .setAction(AUTO_ON_USER_ACTION)
