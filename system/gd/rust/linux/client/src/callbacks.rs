@@ -1525,8 +1525,8 @@ impl TelephonyCallback {
 }
 
 impl IBluetoothTelephonyCallback for TelephonyCallback {
-    fn on_telephony_use(&mut self, addr: String, state: bool) {
-        print_info!("Telephony use changed: [{}] state: {}", addr, state);
+    fn on_telephony_event(&mut self, addr: String, event: u8, call_state: u8) {
+        print_info!("Telephony event changed: [{}] event {} state: {}", addr, event, call_state);
     }
 }
 
