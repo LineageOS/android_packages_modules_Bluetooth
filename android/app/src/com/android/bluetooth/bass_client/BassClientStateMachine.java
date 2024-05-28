@@ -1749,15 +1749,7 @@ public class BassClientStateMachine extends StateMachine {
             log("Enter Connected(" + mDevice + "): "
                     + messageWhatToString(getCurrentMessage().what));
             removeDeferredMessages(CONNECT);
-            if (mLastConnectionState == BluetoothProfile.STATE_CONNECTED) {
-                log("CONNECTED->CONNECTED: Ignore");
-                // Broadcast for testing purpose only
-                if (Utils.isInstrumentationTestMode()) {
-                    Intent intent = new Intent("android.bluetooth.bass_client.NOTIFY_TEST");
-                    mService.sendBroadcast(
-                            intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastOptions().toBundle());
-                }
-            } else {
+            if (mLastConnectionState != BluetoothProfile.STATE_CONNECTED) {
                 broadcastConnectionState(mDevice, mLastConnectionState,
                         BluetoothProfile.STATE_CONNECTED);
             }
@@ -2169,13 +2161,6 @@ public class BassClientStateMachine extends StateMachine {
         public void enter() {
             log("Enter ConnectedProcessing(" + mDevice + "): "
                     + messageWhatToString(getCurrentMessage().what));
-
-            // Broadcast for testing purpose only
-            if (Utils.isInstrumentationTestMode()) {
-                Intent intent = new Intent("android.bluetooth.bass_client.NOTIFY_TEST");
-                mService.sendBroadcast(
-                        intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastOptions().toBundle());
-            }
         }
         @Override
         public void exit() {
