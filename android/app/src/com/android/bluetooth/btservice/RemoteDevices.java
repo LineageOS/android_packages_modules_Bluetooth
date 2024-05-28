@@ -1247,14 +1247,16 @@ public class RemoteDevices {
         String address = device.getAddress();
         if (Flags.temporaryPairingDeviceProperties() && oldState != BluetoothDevice.BOND_BONDED) {
             DeviceProperties deviceProperties = mDevices.get(address);
-            int leConnectionHandle =
-                    deviceProperties.getConnectionHandle(BluetoothDevice.TRANSPORT_LE);
-            int bredrConnectionHandle =
-                    deviceProperties.getConnectionHandle(BluetoothDevice.TRANSPORT_BREDR);
-            if (leConnectionHandle != BluetoothDevice.ERROR
-                    || bredrConnectionHandle != BluetoothDevice.ERROR) {
-                // Device still connected, wait for disconnection to remove the properties
-                return;
+            if (deviceProperties != null) {
+                int leConnectionHandle =
+                        deviceProperties.getConnectionHandle(BluetoothDevice.TRANSPORT_LE);
+                int bredrConnectionHandle =
+                        deviceProperties.getConnectionHandle(BluetoothDevice.TRANSPORT_BREDR);
+                if (leConnectionHandle != BluetoothDevice.ERROR
+                        || bredrConnectionHandle != BluetoothDevice.ERROR) {
+                    // Device still connected, wait for disconnection to remove the properties
+                    return;
+                }
             }
         }
 
