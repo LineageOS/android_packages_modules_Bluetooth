@@ -282,6 +282,21 @@ pub type CallInfo = ffi::CallInfo;
 pub type PhoneState = ffi::PhoneState;
 pub type CallHoldCommand = ffi::CallHoldCommand;
 
+// CallState (non-primitive) cannot be directly cast to u8.
+impl From<CallState> for u8 {
+    fn from(state: CallState) -> u8 {
+        match state {
+            CallState::Idle => 0,
+            CallState::Incoming => 1,
+            CallState::Dialing => 2,
+            CallState::Alerting => 3,
+            CallState::Active => 4,
+            CallState::Held => 5,
+            CallState { repr: 6_u8..=u8::MAX } => todo!(),
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub enum HfpCallbacks {
     ConnectionState(BthfConnectionState, RawAddress),

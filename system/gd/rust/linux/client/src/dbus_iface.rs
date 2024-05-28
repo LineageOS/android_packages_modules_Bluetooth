@@ -2449,8 +2449,8 @@ impl RPCProxy for IBluetoothTelephonyCallbackDBus {}
     "org.chromium.bluetooth.BluetoothTelephonyCallback"
 )]
 impl IBluetoothTelephonyCallback for IBluetoothTelephonyCallbackDBus {
-    #[dbus_method("OnTelephonyUse")]
-    fn on_telephony_use(&mut self, addr: String, state: bool) {
+    #[dbus_method("OnTelephonyEvent")]
+    fn on_telephony_event(&mut self, addr: String, event: u8, call_state: u8) {
         dbus_generated!()
     }
 }
