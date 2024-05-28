@@ -1344,6 +1344,8 @@ impl Bluetooth {
     /// Checks whether pairing is busy.
     pub fn is_pairing_busy(&self) -> bool {
         self.intf.lock().unwrap().pairing_is_busy()
+            || self.active_pairing_address.is_some()
+            || self.pending_create_bond.is_some()
     }
 }
 
