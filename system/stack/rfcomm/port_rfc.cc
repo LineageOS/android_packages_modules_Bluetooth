@@ -1017,7 +1017,11 @@ void port_rfc_closed(tPORT* p_port, uint8_t res) {
   if ((p_port->p_callback != NULL) && events)
     p_port->p_callback(events, p_port->handle);
 
-  if (p_port->p_mgmt_callback) p_port->p_mgmt_callback(res, p_port->handle);
+  if (p_port->p_mgmt_callback) {
+    uint32_t res2 = res;
+    if (res2 >= PORT_ERR_MAX) res2 = PORT_ERR_MAX;
+    p_port->p_mgmt_callback(static_cast<tPORT_RESULT>(res2), p_port->handle);
+  }
 
   p_port->rfc.state = RFC_STATE_CLOSED;
 

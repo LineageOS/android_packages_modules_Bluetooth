@@ -187,7 +187,8 @@ template <>
 struct formatter<tPORT_RESULT> : enum_formatter<tPORT_RESULT> {};
 }  // namespace fmt
 
-typedef void(tPORT_MGMT_CALLBACK)(uint32_t code, uint16_t port_handle);
+typedef void(tPORT_MGMT_CALLBACK)(const tPORT_RESULT code,
+                                  uint16_t port_handle);
 
 /*****************************************************************************
  *  External Function Declarations

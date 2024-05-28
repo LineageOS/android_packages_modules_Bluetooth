@@ -1372,7 +1372,8 @@ static int bta_jv_port_data_co_cback(uint16_t port_handle, uint8_t* buf,
  * Returns      void
  *
  ******************************************************************************/
-static void bta_jv_port_mgmt_cl_cback(uint32_t code, uint16_t port_handle) {
+static void bta_jv_port_mgmt_cl_cback(const tPORT_RESULT code,
+                                      uint16_t port_handle) {
   tBTA_JV_RFC_CB* p_cb = bta_jv_rfc_port_to_cb(port_handle);
   tBTA_JV_PCB* p_pcb = bta_jv_rfc_port_to_pcb(port_handle);
   RawAddress rem_bda = RawAddress::kEmpty;
@@ -1594,7 +1595,8 @@ void bta_jv_rfcomm_close(uint32_t handle, uint32_t rfcomm_slot_id) {
  * Returns      void
  *
  ******************************************************************************/
-static void bta_jv_port_mgmt_sr_cback(uint32_t code, uint16_t port_handle) {
+static void bta_jv_port_mgmt_sr_cback(const tPORT_RESULT code,
+                                      uint16_t port_handle) {
   tBTA_JV_PCB* p_pcb = bta_jv_rfc_port_to_pcb(port_handle);
   tBTA_JV_RFC_CB* p_cb = bta_jv_rfc_port_to_cb(port_handle);
   tBTA_JV evt_data;
