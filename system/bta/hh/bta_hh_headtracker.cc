@@ -188,6 +188,9 @@ uint16_t bta_hh_get_uuid16(tBTA_HH_DEV_CB* p_dev_cb, Uuid uuid) {
        uuid == ANDROID_HEADTRACKER_CONTROL_CHARAC_UUID ||
        uuid == ANDROID_HEADTRACKER_REPORT_CHARAC_UUID)) {
     return GATT_UUID_HID_REPORT;
+  } else if (!uuid.Is16Bit()) {
+    log::warn("UUID is not 16 bit");
+    return 0;
   } else {
     return uuid.As16Bit();
   }
