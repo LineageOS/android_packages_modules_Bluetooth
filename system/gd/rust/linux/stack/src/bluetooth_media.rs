@@ -62,6 +62,8 @@ use crate::uuid;
 use crate::uuid::Profile;
 use crate::{Message, RPCProxy};
 
+use num_derive::FromPrimitive;
+
 // The timeout we have to wait for all supported profiles to connect after we
 // receive the first profile connected event. The host shall disconnect or
 // force connect the potentially partially connected device after this many
@@ -337,7 +339,7 @@ pub trait IBluetoothTelephony {
 }
 
 pub trait IBluetoothTelephonyCallback: RPCProxy {
-    fn on_telephony_use(&mut self, addr: String, state: bool);
+    fn on_telephony_event(&mut self, addr: String, event: u8, state: u8);
 }
 
 /// Serializable device used in.
@@ -400,6 +402,34 @@ struct LEAAudioConf {
     pub snk_audio_location: u32,
     pub src_audio_location: u32,
     pub avail_cont: u16,
+}
+
+#[derive(Debug, Copy, Clone, FromPrimitive)]
+#[repr(u8)]
+enum TelephonyEvent {
+    UHidCreate = 0,
+    UHidDestroy,
+    UHidOpen,
+    UHidClose,
+    UHidIncomingCall,
+    UHidAnswerCall,
+    UHidHangupCall,
+    UHidPlaceActiveCall,
+    UHidMicMute,
+    UHidMicUnmute,
+    CRASPlaceActiveCall,
+    CRASRemoveActiveCall,
+    HFAnswerCall,
+    HFHangupCall,
+    HFMicMute,
+    HFMicUnmute,
+    HFCurrentCallsQuery,
+}
+
+impl From<TelephonyEvent> for u8 {
+    fn from(telephony_event: TelephonyEvent) -> Self {
+        telephony_event as u8
+    }
 }
 
 pub struct BluetoothMedia {
@@ -1394,6 +1424,7 @@ impl BluetoothMedia {
                             // This triggers a +CIEV command to set the call status for HFP devices.
                             // It is required for some devices to provide sound.
                             self.place_active_call();
+                            self.notify_telephony_event(&addr, TelephonyEvent::CRASPlaceActiveCall);
                         }
                     }
                     BthfAudioState::Disconnected => {
@@ -1413,6 +1444,10 @@ impl BluetoothMedia {
                             self.call_list = vec![];
                             self.phone_state.num_active = 0;
                             self.phone_state_change("".into());
+                            self.notify_telephony_event(
+                                &addr,
+                                TelephonyEvent::CRASRemoveActiveCall,
+                            );
                         }
 
                         // Resume the A2DP stream when a phone call ended (per MPS v1.0).
@@ -1471,12 +1506,14 @@ impl BluetoothMedia {
                         // We expect the application to send back UHID output report and
                         // update uhid.mute in dispatch_uhid_hfp_output_callback later.
                         self.uhid_send_phone_mute_input_report(&addr, true);
+                        self.notify_telephony_event(&addr, TelephonyEvent::HFMicMute);
                     } else if volume > 0 {
                         uhid.volume = volume;
                         if uhid.muted {
                             // We expect the application to send back UHID output report and
                             // update uhid.mute in dispatch_uhid_hfp_output_callback later.
                             self.uhid_send_phone_mute_input_report(&addr, false);
+                            self.notify_telephony_event(&addr, TelephonyEvent::HFMicUnmute);
                         }
                     }
                 }
@@ -1617,6 +1654,7 @@ impl BluetoothMedia {
                                 status
                             );
                         }
+                        self.notify_telephony_event(&addr, TelephonyEvent::HFCurrentCallsQuery);
                     }
                     None => warn!("Uninitialized HFP to notify telephony status"),
                 };
@@ -1637,6 +1675,7 @@ impl BluetoothMedia {
                     // We expect the application to send back UHID output report and
                     // trigger dispatch_uhid_hfp_output_callback later.
                     self.uhid_send_hook_switch_input_report(&addr, true);
+                    self.notify_telephony_event(&addr, TelephonyEvent::HFAnswerCall);
                 }
             }
             HfpCallbacks::HangupCall(addr) => {
@@ -1655,6 +1694,7 @@ impl BluetoothMedia {
                     // We expect the application to send back UHID output report and
                     // trigger dispatch_uhid_hfp_output_callback later.
                     self.uhid_send_hook_switch_input_report(&addr, false);
+                    self.notify_telephony_event(&addr, TelephonyEvent::HFHangupCall);
                 }
             }
             HfpCallbacks::DialCall(number, addr) => {
@@ -1809,6 +1849,7 @@ impl BluetoothMedia {
                 is_open: false,
             },
         );
+        self.notify_telephony_event(&addr, TelephonyEvent::UHidCreate);
     }
 
     fn uhid_destroy(&mut self, addr: &RawAddress) {
@@ -1823,6 +1864,7 @@ impl BluetoothMedia {
                 Ok(_) => (),
             };
             self.uhid.remove(addr);
+            self.notify_telephony_event(&addr, TelephonyEvent::UHidDestroy);
         } else {
             debug!("[{}]: UHID destroy: not a UHID device", DisplayAddress(&addr));
         }
@@ -1937,22 +1979,28 @@ impl BluetoothMedia {
             if mute == UHID_OUTPUT_MUTE && !uhid.muted {
                 uhid.muted = true;
                 self.set_hfp_mic_volume(0, addr);
+                self.notify_telephony_event(&addr, TelephonyEvent::UHidMicMute);
             } else if mute != UHID_OUTPUT_MUTE && uhid.muted {
                 uhid.muted = false;
                 let saved_volume = uhid.volume;
                 self.set_hfp_mic_volume(saved_volume, addr);
+                self.notify_telephony_event(&addr, TelephonyEvent::UHidMicUnmute);
             }
 
             let call_state = data & (UHID_OUTPUT_RING | UHID_OUTPUT_OFF_HOOK);
             if call_state == UHID_OUTPUT_NONE {
                 self.hangup_call_impl();
+                self.notify_telephony_event(&addr, TelephonyEvent::UHidHangupCall);
             } else if call_state == UHID_OUTPUT_RING {
                 self.incoming_call_impl("".into());
+                self.notify_telephony_event(&addr, TelephonyEvent::UHidIncomingCall);
             } else if call_state == UHID_OUTPUT_OFF_HOOK {
                 if self.phone_state.state == CallState::Incoming {
                     self.answer_call_impl();
+                    self.notify_telephony_event(&addr, TelephonyEvent::UHidAnswerCall);
                 } else if self.phone_state.state == CallState::Idle {
                     self.place_active_call();
+                    self.notify_telephony_event(&addr, TelephonyEvent::UHidPlaceActiveCall);
                 }
                 self.uhid_send_hook_switch_input_report(&addr, true);
             }
@@ -1989,8 +2037,24 @@ impl BluetoothMedia {
         //              HF layer in sync and not prevent A2DP streaming.
         self.hangup_call_impl();
 
+        if state {
+            self.notify_telephony_event(&addr, TelephonyEvent::UHidOpen);
+        } else {
+            self.notify_telephony_event(&addr, TelephonyEvent::UHidClose);
+        }
+    }
+
+    fn notify_telephony_event(&mut self, addr: &RawAddress, event: TelephonyEvent) {
+        // Simplified call status: Assumes at most one call in the list.
+        // Defaults to Idle if no calls are present.
+        // Revisit this logic if the system supports multiple concurrent calls in the future (e.g., three-way-call).
+        let mut call_state = CallState::Idle;
+        for c in self.call_list.iter() {
+            call_state = c.state;
+            break;
+        }
         self.telephony_callbacks.lock().unwrap().for_all_callbacks(|callback| {
-            callback.on_telephony_use(address.to_string(), state);
+            callback.on_telephony_event(addr.to_string(), u8::from(event), u8::from(call_state));
         });
     }
 
