@@ -2280,26 +2280,18 @@ impl CommandHandler {
                 }
             }
             "audio-connect" => {
-                let success = self
-                    .context
-                    .lock()
-                    .unwrap()
-                    .telephony_dbus
-                    .as_mut()
-                    .unwrap()
-                    .audio_connect(String::from(get_arg(args, 1)?));
+                let success =
+                    self.context.lock().unwrap().telephony_dbus.as_mut().unwrap().audio_connect(
+                        RawAddress::from_string(get_arg(args, 1)?).ok_or("Invalid Address")?,
+                    );
                 if !success {
                     return Err("ConnectAudio failed".into());
                 }
             }
             "audio-disconnect" => {
-                self.context
-                    .lock()
-                    .unwrap()
-                    .telephony_dbus
-                    .as_mut()
-                    .unwrap()
-                    .audio_disconnect(String::from(get_arg(args, 1)?));
+                self.context.lock().unwrap().telephony_dbus.as_mut().unwrap().audio_disconnect(
+                    RawAddress::from_string(get_arg(args, 1)?).ok_or("Invalid Address")?,
+                );
             }
             other => {
                 return Err(format!("Invalid argument '{}'", other).into());

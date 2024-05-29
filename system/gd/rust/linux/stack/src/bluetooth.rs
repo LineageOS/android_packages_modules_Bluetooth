@@ -2721,9 +2721,7 @@ impl IBluetooth for Bluetooth {
                                 topstack::get_runtime().spawn(async move {
                                     let _ = txl
                                         .send(Message::Media(
-                                            MediaActions::ConnectLeaGroupByMemberAddress(
-                                                addr.to_string(),
-                                            ),
+                                            MediaActions::ConnectLeaGroupByMemberAddress(addr),
                                         ))
                                         .await;
                                 });
@@ -2736,11 +2734,8 @@ impl IBluetooth for Bluetooth {
                                 has_classic_media_profile = true;
                                 let txl = self.tx.clone();
                                 topstack::get_runtime().spawn(async move {
-                                    let _ = txl
-                                        .send(Message::Media(MediaActions::Connect(
-                                            addr.to_string(),
-                                        )))
-                                        .await;
+                                    let _ =
+                                        txl.send(Message::Media(MediaActions::Connect(addr))).await;
                                 });
                             }
 
@@ -2844,9 +2839,7 @@ impl IBluetooth for Bluetooth {
                                 topstack::get_runtime().spawn(async move {
                                     let _ = txl
                                         .send(Message::Media(
-                                            MediaActions::DisconnectLeaGroupByMemberAddress(
-                                                addr.to_string(),
-                                            ),
+                                            MediaActions::DisconnectLeaGroupByMemberAddress(addr),
                                         ))
                                         .await;
                                 });
@@ -2862,9 +2855,7 @@ impl IBluetooth for Bluetooth {
                                 let txl = self.tx.clone();
                                 topstack::get_runtime().spawn(async move {
                                     let _ = txl
-                                        .send(Message::Media(MediaActions::Disconnect(
-                                            addr.to_string(),
-                                        )))
+                                        .send(Message::Media(MediaActions::Disconnect(addr)))
                                         .await;
                                 });
                             }
