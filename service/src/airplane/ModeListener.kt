@@ -114,7 +114,8 @@ public fun initialize(
                     timeSource.markNow(),
                 )
 
-                val description = "isOn=$isOn, isOnOverrode=$isOnOverrode"
+                val description =
+                    "previousMode=$previousMode, isOn=$isOn, isOnOverrode=$isOnOverrode, isMediaConnected=$isMediaConnected"
 
                 if (previousMode == isOnOverrode) {
                     Log.d(TAG, "Ignore mode change to same state. $description")
@@ -183,14 +184,14 @@ private fun airplaneModeValueOverride(
     if (isApmEnhancementEnabled(resolver) && hasUserToggledApm(getUser())) {
         // … Staying on only depend on its last action in airplane mode
         if (isBluetoothOnAPM(getUser)) {
-            Log.i(TAG, "Bluetooth stay on during airplane mode because of last user action")
-
             val isWifiOn = isWifiOnApm(resolver, getUser)
             sendAirplaneModeNotification?.invoke(
                 if (isWifiOn) APM_WIFI_BT_NOTIFICATION else APM_BT_NOTIFICATION
             )
+            Log.i(TAG, "Enhancement Mode: override and stays ON")
             return false
         }
+        Log.i(TAG, "Enhancement Mode: override and turns OFF")
         return true
     }
     // … Else, staying on only depend on media profile being connected or not
@@ -202,10 +203,11 @@ private fun airplaneModeValueOverride(
     //           3. User turns airplane off, stops media and toggles airplane back on
     //       Should we turn Bt off like asked initially ? Or keep it `on` like the toggle ?
     if (isMediaConnected) {
-        Log.i(TAG, "Bluetooth stay on during airplane mode because media profile are connected")
+        Log.i(TAG, "Legacy Mode: override and stays ON since media profile are connected")
         ToastNotification.displayIfNeeded(resolver, getUser)
         return false
     }
+    Log.i(TAG, "Legacy Mode: no override, turns OFF")
     return true
 }
 
