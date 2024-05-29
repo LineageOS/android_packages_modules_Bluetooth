@@ -62,6 +62,7 @@ import android.permission.PermissionCheckerManager;
 import android.permission.PermissionManager;
 import android.platform.test.annotations.DisableFlags;
 import android.platform.test.annotations.EnableFlags;
+import android.platform.test.flag.junit.FlagsParameterization;
 import android.platform.test.flag.junit.SetFlagsRule;
 import android.provider.Settings;
 import android.sysprop.BluetoothProperties;
@@ -71,7 +72,6 @@ import android.util.Log;
 
 import androidx.test.InstrumentationRegistry;
 import androidx.test.filters.MediumTest;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.Utils;
@@ -107,8 +107,11 @@ import java.util.List;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
+import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
+import platform.test.runner.parameterized.Parameters;
+
 @MediumTest
-@RunWith(AndroidJUnit4.class)
+@RunWith(ParameterizedAndroidJunit4.class)
 public class AdapterServiceTest {
     private static final String TAG = AdapterServiceTest.class.getSimpleName();
     private static final String TEST_BT_ADDR_1 = "00:11:22:33:44:55";
@@ -157,7 +160,7 @@ public class AdapterServiceTest {
     private @Mock ScanNativeInterface mScanNativeInterface;
     private @Mock JniCallbacks mJniCallbacks;
 
-    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
+    @Rule public final SetFlagsRule mSetFlagsRule;
 
     // SystemService that are not mocked
     private BluetoothManager mBluetoothManager;
@@ -203,6 +206,15 @@ public class AdapterServiceTest {
 
     <T> T mockGetSystemService(String serviceName, Class<T> serviceClass) {
         return TestUtils.mockGetSystemService(mMockContext, serviceName, serviceClass);
+    }
+
+    @Parameters(name = "{0}")
+    public static List<FlagsParameterization> getParams() {
+        return FlagsParameterization.allCombinationsOf(Flags.FLAG_EXPLICIT_KILL_FROM_SYSTEM_SERVER);
+    }
+
+    public AdapterServiceTest(FlagsParameterization flags) {
+        mSetFlagsRule = new SetFlagsRule(flags);
     }
 
     @Before
