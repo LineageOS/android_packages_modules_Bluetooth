@@ -416,7 +416,7 @@ class FlossQAClient(BluetoothQACallbacks):
         Returns:
             True on success, False otherwise.
         """
-        self.proxy().FetchHIDReport(addr, report_type, report_id)
+        self.proxy().GetHIDReport(addr, report_type, report_id)
         return True
 
     @utils.glib_call(False)
