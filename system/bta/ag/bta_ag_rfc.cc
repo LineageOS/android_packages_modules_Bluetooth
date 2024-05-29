@@ -228,13 +228,10 @@ void bta_ag_setup_port(tBTA_AG_SCB* p_scb, uint16_t handle) {
                                              sizeof(bta_ag_port_cback_tbl[0])),
       "callback index out of bound, handle={}, bd_addr={}", handle,
       ADDRESS_TO_LOGGABLE_STR(p_scb->peer_addr));
-  if (PORT_SetEventMask(handle, BTA_AG_PORT_EV_MASK) != PORT_SUCCESS) {
-    log::warn("Unable to set RFCOMM event mask peer:{} handle:{}",
-              p_scb->peer_addr, handle);
-  }
-  if (PORT_SetEventCallback(
-          handle, bta_ag_port_cback_tbl[port_callback_index]) != PORT_SUCCESS) {
-    log::warn("Unable to set RFCOMM event callback peer:{} handle:{}",
+  if (PORT_SetEventMaskAndCallback(
+          handle, BTA_AG_PORT_EV_MASK,
+          bta_ag_port_cback_tbl[port_callback_index]) != PORT_SUCCESS) {
+    log::warn("Unable to set RFCOMM event and callback mask peer:{} handle:{}",
               p_scb->peer_addr, handle);
   }
 }
