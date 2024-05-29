@@ -164,6 +164,7 @@ static_library("bta") {
 
   deps = [
     "//bt/flags:bluetooth_flags_c_lib",
+    "//bt/sysprop:libcom.android.sysprop.bluetooth",
     "//bt/system/audio:libbt-audio-asrc",
     "//bt/system/bta:LeAudioSetScenariosSchema_bfbs",
     "//bt/system/bta:LeAudioSetConfigsSchema_bfbs",
