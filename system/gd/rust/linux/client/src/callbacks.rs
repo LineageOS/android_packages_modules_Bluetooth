@@ -1422,7 +1422,7 @@ impl IBluetoothMediaCallback for MediaCallback {
     fn on_lea_group_status(&mut self, _group_id: i32, _status: BtLeAudioGroupStatus) {}
     fn on_lea_group_node_status(
         &mut self,
-        _addr: String,
+        _addr: RawAddress,
         _group_id: i32,
         _status: BtLeAudioGroupNodeStatus,
     ) {
@@ -1444,11 +1444,11 @@ impl IBluetoothMediaCallback for MediaCallback {
     }
     fn on_lea_group_stream_status(&mut self, _group_id: i32, _status: BtLeAudioGroupStreamStatus) {}
     fn on_bluetooth_audio_device_added(&mut self, _device: BluetoothAudioDevice) {}
-    fn on_bluetooth_audio_device_removed(&mut self, _addr: String) {}
+    fn on_bluetooth_audio_device_removed(&mut self, _addr: RawAddress) {}
     fn on_absolute_volume_supported_changed(&mut self, _supported: bool) {}
     fn on_absolute_volume_changed(&mut self, _volume: u8) {}
-    fn on_hfp_volume_changed(&mut self, _volume: u8, _addr: String) {}
-    fn on_hfp_audio_disconnected(&mut self, _addr: String) {}
+    fn on_hfp_volume_changed(&mut self, _volume: u8, _addr: RawAddress) {}
+    fn on_hfp_audio_disconnected(&mut self, _addr: RawAddress) {}
     fn on_hfp_debug_dump(
         &mut self,
         active: bool,
@@ -1551,8 +1551,13 @@ impl TelephonyCallback {
 }
 
 impl IBluetoothTelephonyCallback for TelephonyCallback {
-    fn on_telephony_event(&mut self, addr: String, event: u8, call_state: u8) {
-        print_info!("Telephony event changed: [{}] event {} state: {}", addr, event, call_state);
+    fn on_telephony_event(&mut self, addr: RawAddress, event: u8, call_state: u8) {
+        print_info!(
+            "Telephony event changed: [{}] event {} state: {}",
+            addr.to_string(),
+            event,
+            call_state
+        );
     }
 }
 
