@@ -22,7 +22,6 @@ import static android.content.pm.PackageManager.DONT_KILL_APP;
 import android.content.ComponentName;
 import android.content.ContentValues;
 import android.content.Context;
-import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.annotation.UiThreadTest;
 import androidx.test.filters.SmallTest;
@@ -30,7 +29,6 @@ import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.flags.Flags;
 
 import org.junit.Rule;
 import org.junit.Test;
@@ -41,7 +39,6 @@ import org.mockito.junit.MockitoRule;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothOppServiceCleanupTest {
-    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     private final Context mTargetContext =
@@ -50,9 +47,6 @@ public class BluetoothOppServiceCleanupTest {
     @Test
     @UiThreadTest
     public void testStopAndCleanup() {
-        mSetFlagsRule.enableFlags(
-                Flags.FLAG_OPP_SERVICE_FIX_INDEX_OUT_OF_BOUNDS_EXCEPTION_IN_UPDATE_THREAD);
-
         AdapterService adapterService = new AdapterService(mTargetContext);
 
         // Don't need to disable again since it will be handled in OppService.stop
