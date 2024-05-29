@@ -1,3 +1,4 @@
+use bt_topshim::btif::RawAddress;
 use btstack::battery_manager::BatterySet;
 use btstack::battery_provider_manager::{IBatteryProviderCallback, IBatteryProviderManager};
 use btstack::RPCProxy;
@@ -43,7 +44,7 @@ impl IBatteryProviderManager for IBatteryProviderManagerDBus {
     }
 
     #[dbus_method("RemoveBatteryInfo")]
-    fn remove_battery_info(&mut self, battery_provider_id: u32, address: String, uuid: String) {
+    fn remove_battery_info(&mut self, battery_provider_id: u32, address: RawAddress, uuid: String) {
         dbus_generated!()
     }
 }

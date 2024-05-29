@@ -10,6 +10,7 @@ use crate::bluetooth_gatt::{
 };
 use crate::uuid::{Profile, UuidHelper};
 use crate::{Message, RPCProxy};
+use bt_topshim::btif::RawAddress;
 use bt_topshim::profiles::gatt::{GattStatus, LePhy};
 use bt_topshim::sysprop;
 
@@ -124,7 +125,7 @@ impl DeviceInformation {
 
                         self.bluetooth_gatt.lock().unwrap().send_response(
                             server_id,
-                            addr.clone(),
+                            *addr,
                             *trans_id,
                             GattStatus::Success,
                             *offset,
@@ -143,7 +144,7 @@ impl DeviceInformation {
 pub enum ServiceCallbacks {
     Registered(GattStatus, i32),
     ServiceAdded(GattStatus, BluetoothGattService),
-    OnCharacteristicReadRequest(String, i32, i32, bool, i32),
+    OnCharacteristicReadRequest(RawAddress, i32, i32, bool, i32),
 }
 
 // Handle callbacks for DIS to register
@@ -175,7 +176,7 @@ impl IBluetoothGattServerCallback for DeviceInformationServerCallbacks {
 
     fn on_characteristic_read_request(
         &mut self,
-        addr: String,
+        addr: RawAddress,
         trans_id: i32,
         offset: i32,
         is_long: bool,
@@ -194,10 +195,11 @@ impl IBluetoothGattServerCallback for DeviceInformationServerCallbacks {
     // Remaining callbacks are unhandled
 
     fn on_service_removed(&mut self, _status: GattStatus, _handle: i32) {}
-    fn on_server_connection_state(&mut self, _server_id: i32, _connected: bool, _addr: String) {}
+    fn on_server_connection_state(&mut self, _server_id: i32, _connected: bool, _addr: RawAddress) {
+    }
     fn on_descriptor_read_request(
         &mut self,
-        _addr: String,
+        _addr: RawAddress,
         _trans_id: i32,
         _offset: i32,
         _is_long: bool,
@@ -206,7 +208,7 @@ impl IBluetoothGattServerCallback for DeviceInformationServerCallbacks {
     }
     fn on_characteristic_write_request(
         &mut self,
-        _addr: String,
+        _addr: RawAddress,
         _trans_id: i32,
         _offset: i32,
         _len: i32,
@@ -218,7 +220,7 @@ impl IBluetoothGattServerCallback for DeviceInformationServerCallbacks {
     }
     fn on_descriptor_write_request(
         &mut self,
-        _addr: String,
+        _addr: RawAddress,
         _trans_id: i32,
         _offset: i32,
         _len: i32,
@@ -228,21 +230,28 @@ impl IBluetoothGattServerCallback for DeviceInformationServerCallbacks {
         _value: Vec<u8>,
     ) {
     }
-    fn on_execute_write(&mut self, _addr: String, _trans_id: i32, _exec_write: bool) {}
-    fn on_notification_sent(&mut self, _addr: String, _status: GattStatus) {}
-    fn on_mtu_changed(&mut self, _addr: String, _mtu: i32) {}
+    fn on_execute_write(&mut self, _addr: RawAddress, _trans_id: i32, _exec_write: bool) {}
+    fn on_notification_sent(&mut self, _addr: RawAddress, _status: GattStatus) {}
+    fn on_mtu_changed(&mut self, _addr: RawAddress, _mtu: i32) {}
     fn on_phy_update(
         &mut self,
-        _addr: String,
+        _addr: RawAddress,
         _tx_phy: LePhy,
         _rx_phy: LePhy,
         _status: GattStatus,
     ) {
     }
-    fn on_phy_read(&mut self, _addr: String, _tx_phy: LePhy, _rx_phy: LePhy, _status: GattStatus) {}
+    fn on_phy_read(
+        &mut self,
+        _addr: RawAddress,
+        _tx_phy: LePhy,
+        _rx_phy: LePhy,
+        _status: GattStatus,
+    ) {
+    }
     fn on_connection_updated(
         &mut self,
-        _addr: String,
+        _addr: RawAddress,
         _interval: i32,
         _latency: i32,
         _timeout: i32,
@@ -251,7 +260,7 @@ impl IBluetoothGattServerCallback for DeviceInformationServerCallbacks {
     }
     fn on_subrate_change(
         &mut self,
-        _addr: String,
+        _addr: RawAddress,
         _subrate_factor: i32,
         _latency: i32,
         _cont_num: i32,

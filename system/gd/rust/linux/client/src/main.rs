@@ -41,7 +41,7 @@ mod editor;
 
 #[derive(Clone)]
 pub(crate) struct GattRequest {
-    address: String,
+    address: RawAddress,
     id: i32,
     offset: i32,
     value: Vec<u8>,

@@ -691,7 +691,8 @@ impl CommandHandler {
         }
 
         let command = get_arg(args, 0)?;
-        let address = get_arg(args, 1)?.to_uppercase();
+        let addr = RawAddress::from_string(get_arg(args, 1)?).ok_or("Invalid Address")?;
+        let address = addr.to_string();
 
         match &command[..] {
             "status" => {
@@ -700,21 +701,18 @@ impl CommandHandler {
                     .battery_manager_dbus
                     .as_ref()
                     .unwrap()
-                    .get_battery_information(address.clone())
+                    .get_battery_information(addr)
                 {
-                    None => println!(
-                        "Battery status for device {} could not be fetched",
-                        address.clone()
-                    ),
+                    None => println!("Battery status for device {} could not be fetched", address),
                     Some(set) => {
                         if set.batteries.len() == 0 {
-                            println!("Battery set for device {} is empty", set.address.clone());
+                            println!("Battery set for device {} is empty", set.address.to_string());
                             return Ok(());
                         }
 
                         println!(
                             "Battery data for '{}' from source '{}' and uuid '{}':",
-                            set.address.clone(),
+                            set.address.to_string(),
                             set.source_uuid.clone(),
                             set.source_info.clone()
                         );
@@ -726,10 +724,10 @@ impl CommandHandler {
             }
             "track" => {
                 if self.lock_context().battery_address_filter.contains(&address) {
-                    println!("Already tracking {}", address.clone());
+                    println!("Already tracking {}", address);
                     return Ok(());
                 }
-                self.lock_context().battery_address_filter.insert(address.clone());
+                self.lock_context().battery_address_filter.insert(address);
 
                 println!("Currently tracking:");
                 for addr in self.lock_context().battery_address_filter.iter() {
@@ -738,10 +736,10 @@ impl CommandHandler {
             }
             "untrack" => {
                 if !self.lock_context().battery_address_filter.remove(&address) {
-                    println!("Not tracking {}", address.clone());
+                    println!("Not tracking {}", address);
                     return Ok(());
                 }
-                println!("Stopped tracking {}", address.clone());
+                println!("Stopped tracking {}", address);
 
                 if self.lock_context().battery_address_filter.len() == 0 {
                     println!("No longer tracking any addresses for battery status updates");
@@ -1097,13 +1095,13 @@ impl CommandHandler {
                     .client_id
                     .ok_or("GATT client is not yet registered.")?;
 
-                let addr = String::from(get_arg(args, 1)?);
+                let addr = RawAddress::from_string(get_arg(args, 1)?).ok_or("Invalid Address")?;
                 let is_direct = self.lock_context().gatt_client_context.is_connect_direct;
                 let transport = self.lock_context().gatt_client_context.connect_transport;
                 let oppurtunistic = self.lock_context().gatt_client_context.connect_opportunistic;
                 let phy = self.lock_context().gatt_client_context.connect_phy;
 
-                println!("Initiating GATT client connect. client_id: {}, addr: {}, is_direct: {}, transport: {:?}, oppurtunistic: {}, phy: {:?}", client_id, addr, is_direct, transport, oppurtunistic, phy);
+                println!("Initiating GATT client connect. client_id: {}, addr: {}, is_direct: {}, transport: {:?}, oppurtunistic: {}, phy: {:?}", client_id, addr.to_string(), is_direct, transport, oppurtunistic, phy);
                 self.lock_context().gatt_dbus.as_ref().unwrap().client_connect(
                     client_id,
                     addr,
@@ -1120,7 +1118,7 @@ impl CommandHandler {
                     .client_id
                     .ok_or("GATT client is not yet registered.")?;
 
-                let addr = String::from(get_arg(args, 1)?);
+                let addr = RawAddress::from_string(get_arg(args, 1)?).ok_or("Invalid Address")?;
                 self.lock_context().gatt_dbus.as_ref().unwrap().client_disconnect(client_id, addr);
             }
             "client-read-phy" => {
@@ -1129,7 +1127,7 @@ impl CommandHandler {
                     .gatt_client_context
                     .client_id
                     .ok_or("GATT client is not yet registered.")?;
-                let addr = String::from(get_arg(args, 1)?);
+                let addr = RawAddress::from_string(get_arg(args, 1)?).ok_or("Invalid Address")?;
                 self.lock_context().gatt_dbus.as_mut().unwrap().client_read_phy(client_id, addr);
             }
             "client-discover-services" => {
@@ -1139,7 +1137,7 @@ impl CommandHandler {
                     .client_id
                     .ok_or("GATT client is not yet registered.")?;
 
-                let addr = String::from(get_arg(args, 1)?);
+                let addr = RawAddress::from_string(get_arg(args, 1)?).ok_or("Invalid Address")?;
                 self.lock_context().gatt_dbus.as_ref().unwrap().discover_services(client_id, addr);
             }
             "client-discover-service-by-uuid-pts" => {
@@ -1148,7 +1146,7 @@ impl CommandHandler {
                     .gatt_client_context
                     .client_id
                     .ok_or("GATT client is not yet registered.")?;
-                let addr = String::from(get_arg(args, 1)?);
+                let addr = RawAddress::from_string(get_arg(args, 1)?).ok_or("Invalid Address")?;
                 let uuid = String::from(get_arg(args, 2)?);
                 self.lock_context()
                     .gatt_dbus
@@ -1163,7 +1161,7 @@ impl CommandHandler {
                     .client_id
                     .ok_or("GATT client is not yet registered.")?;
 
-                let addr = String::from(get_arg(args, 1)?);
+                let addr = RawAddress::from_string(get_arg(args, 1)?).ok_or("Invalid Address")?;
                 let mtu =
                     String::from(get_arg(args, 2)?).parse::<i32>().or(Err("Failed parsing mtu"))?;
 
@@ -1222,7 +1220,7 @@ impl CommandHandler {
                 println!("AuthReq: {:?}", self.lock_context().gatt_client_context.get_auth_req());
             }
             "write-characteristic" => {
-                let addr = String::from(get_arg(args, 1)?);
+                let addr = RawAddress::from_string(get_arg(args, 1)?).ok_or("Invalid Address")?;
                 let handle = String::from(get_arg(args, 2)?)
                     .parse::<i32>()
                     .or(Err("Failed to parse handle"))?;
@@ -1253,7 +1251,7 @@ impl CommandHandler {
                     .write_characteristic(client_id, addr, handle, write_type, auth_req, value);
             }
             "read-characteristic" => {
-                let addr = String::from(get_arg(args, 1)?);
+                let addr = RawAddress::from_string(get_arg(args, 1)?).ok_or("Invalid Address")?;
                 let handle = String::from(get_arg(args, 2)?)
                     .parse::<i32>()
                     .or(Err("Failed to parse handle"))?;
@@ -1272,7 +1270,7 @@ impl CommandHandler {
                     .read_characteristic(client_id, addr, handle, auth_req);
             }
             "read-characteristic-by-uuid" => {
-                let addr = String::from(get_arg(args, 1)?);
+                let addr = RawAddress::from_string(get_arg(args, 1)?).ok_or("Invalid Address")?;
                 let uuid = String::from(get_arg(args, 2)?);
                 let start_handle = String::from(get_arg(args, 3)?)
                     .parse::<i32>()
@@ -1299,7 +1297,7 @@ impl CommandHandler {
                 );
             }
             "register-notification" => {
-                let addr = String::from(get_arg(args, 1)?);
+                let addr = RawAddress::from_string(get_arg(args, 1)?).ok_or("Invalid Address")?;
                 let handle = String::from(get_arg(args, 2)?)
                     .parse::<i32>()
                     .or(Err("Failed to parse handle"))?;
@@ -1351,13 +1349,14 @@ impl CommandHandler {
                 let server_id = String::from(get_arg(args, 1)?)
                     .parse::<i32>()
                     .or(Err("Failed to parse server_id"))?;
-                let client_addr = String::from(get_arg(args, 2)?);
+                let client_addr =
+                    RawAddress::from_string(get_arg(args, 2)?).ok_or("Invalid Address")?;
                 let is_direct = self.lock_context().gatt_server_context.is_connect_direct;
                 let transport = self.lock_context().gatt_server_context.connect_transport;
 
                 if !self.lock_context().gatt_dbus.as_mut().unwrap().server_connect(
                     server_id,
-                    client_addr.clone(),
+                    client_addr,
                     is_direct,
                     transport,
                 ) {
@@ -1368,14 +1367,15 @@ impl CommandHandler {
                 let server_id = String::from(get_arg(args, 1)?)
                     .parse::<i32>()
                     .or(Err("Failed to parse server_id"))?;
-                let client_addr = String::from(get_arg(args, 2)?);
+                let client_addr =
+                    RawAddress::from_string(get_arg(args, 2)?).ok_or("Invalid Address")?;
 
                 if !self
                     .lock_context()
                     .gatt_dbus
                     .as_mut()
                     .unwrap()
-                    .server_disconnect(server_id, client_addr.clone())
+                    .server_disconnect(server_id, client_addr)
                 {
                     return Err("Disconnection was unsuccessful".into());
                 }

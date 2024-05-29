@@ -1,3 +1,4 @@
+use bt_topshim::btif::RawAddress;
 use btstack::battery_manager::{Battery, BatterySet, IBatteryManager, IBatteryManagerCallback};
 use btstack::RPCProxy;
 use dbus::arg::RefArg;
@@ -9,7 +10,7 @@ use crate::dbus_arg::{DBusArg, DBusArgError, RefArgToRust};
 
 #[dbus_propmap(BatterySet)]
 pub struct BatterySetDBus {
-    address: String,
+    address: RawAddress,
     source_uuid: String,
     source_info: String,
     batteries: Vec<Battery>,
@@ -26,7 +27,7 @@ struct IBatteryManagerCallbackDBus {}
 #[dbus_proxy_obj(BatteryManagerCallback, "org.chromium.bluetooth.BatteryManagerCallback")]
 impl IBatteryManagerCallback for IBatteryManagerCallbackDBus {
     #[dbus_method("OnBatteryInfoUpdated")]
-    fn on_battery_info_updated(&mut self, remote_address: String, battery_set: BatterySet) {
+    fn on_battery_info_updated(&mut self, remote_address: RawAddress, battery_set: BatterySet) {
         dbus_generated!()
     }
 }
@@ -49,7 +50,7 @@ impl IBatteryManager for IBatteryManagerDBus {
     }
 
     #[dbus_method("GetBatteryInformation")]
-    fn get_battery_information(&self, remote_address: String) -> Option<BatterySet> {
+    fn get_battery_information(&self, remote_address: RawAddress) -> Option<BatterySet> {
         dbus_generated!()
     }
 }

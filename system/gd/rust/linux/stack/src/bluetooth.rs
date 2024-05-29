@@ -1144,42 +1144,28 @@ impl Bluetooth {
             }
 
             DelayedActions::BleDiscoveryScannerResult(result) => {
-                let addr = RawAddress::from_string(result.address);
-
                 // Generate a vector of properties from ScanResult.
-                let properties = match addr {
-                    Some(v) => {
-                        let mut props = vec![];
-                        props.push(BluetoothProperty::BdName(result.name.clone()));
-                        props.push(BluetoothProperty::BdAddr(v.clone()));
-                        if result.service_uuids.len() > 0 {
-                            props.push(BluetoothProperty::Uuids(
-                                result
-                                    .service_uuids
-                                    .iter()
-                                    .map(|&v| Uuid::from(v.clone()))
-                                    .collect(),
-                            ));
-                        }
-                        if result.service_data.len() > 0 {
-                            props.push(BluetoothProperty::Uuids(
-                                result
-                                    .service_data
-                                    .keys()
-                                    .map(|v| UuidHelper::from_string(v).unwrap().into())
-                                    .collect(),
-                            ));
-                        }
-                        props.push(BluetoothProperty::RemoteRssi(result.rssi));
-                        props.push(BluetoothProperty::RemoteAddrType(
-                            (result.addr_type as u32).into(),
+                let properties = {
+                    let mut props = vec![];
+                    props.push(BluetoothProperty::BdName(result.name.clone()));
+                    props.push(BluetoothProperty::BdAddr(result.address));
+                    if result.service_uuids.len() > 0 {
+                        props.push(BluetoothProperty::Uuids(
+                            result.service_uuids.iter().map(|&v| Uuid::from(v.clone())).collect(),
                         ));
-
-                        props
                     }
-                    None => {
-                        return;
+                    if result.service_data.len() > 0 {
+                        props.push(BluetoothProperty::Uuids(
+                            result
+                                .service_data
+                                .keys()
+                                .map(|v| UuidHelper::from_string(v).unwrap().into())
+                                .collect(),
+                        ));
                     }
+                    props.push(BluetoothProperty::RemoteRssi(result.rssi));
+                    props.push(BluetoothProperty::RemoteAddrType((result.addr_type as u32).into()));
+                    props
                 };
 
                 let device_info = BluetoothDevice::from_properties(&properties);
