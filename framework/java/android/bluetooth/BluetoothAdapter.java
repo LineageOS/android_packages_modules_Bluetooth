@@ -85,6 +85,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.WeakHashMap;
@@ -855,6 +856,7 @@ public final class BluetoothAdapter {
 
     private final IBluetoothManager mManagerService;
     private final AttributionSource mAttributionSource;
+    private final Optional<Context> mContext;
 
     // Yeah, keeping both mService and sService isn't pretty, but it's too late
     // in the current release for a major refactoring, so we leave them both
@@ -1063,13 +1065,13 @@ public final class BluetoothAdapter {
     @RequiresNoPermission
     public static synchronized BluetoothAdapter getDefaultAdapter() {
         if (sAdapter == null) {
-            sAdapter = createAdapter(AttributionSource.myAttributionSource());
+            sAdapter = createAdapter(null);
         }
         return sAdapter;
     }
 
     /** @hide */
-    public static BluetoothAdapter createAdapter(AttributionSource attributionSource) {
+    public static BluetoothAdapter createAdapter(Context context) {
         BluetoothServiceManager manager =
                 BluetoothFrameworkInitializer.getBluetoothServiceManager();
         if (manager == null) {
@@ -1080,7 +1082,7 @@ public final class BluetoothAdapter {
                 IBluetoothManager.Stub.asInterface(
                         manager.getBluetoothManagerServiceRegisterer().get());
         if (service != null) {
-            return new BluetoothAdapter(service, attributionSource);
+            return new BluetoothAdapter(service, context);
         } else {
             Log.e(TAG, "Bluetooth service is null");
             return null;
@@ -1088,9 +1090,15 @@ public final class BluetoothAdapter {
     }
 
     /** Use {@link #getDefaultAdapter} to get the BluetoothAdapter instance. */
-    BluetoothAdapter(IBluetoothManager managerService, AttributionSource attributionSource) {
+    BluetoothAdapter(IBluetoothManager managerService, @Nullable Context context) {
+        mContext = Optional.ofNullable(context);
         mManagerService = requireNonNull(managerService);
-        mAttributionSource = requireNonNull(attributionSource);
+        if (context != null) {
+            mAttributionSource = requireNonNull(context.getAttributionSource());
+        } else {
+            mAttributionSource = requireNonNull(AttributionSource.myAttributionSource());
+        }
+
         mServiceLock.writeLock().lock();
         try {
             mService = getBluetoothService(mManagerCallback);
@@ -3762,23 +3770,10 @@ public final class BluetoothAdapter {
                                 }
                             }
                         }
-                        synchronized (mBluetoothConnectionCallbackExecutorMap) {
-                            if (!mBluetoothConnectionCallbackExecutorMap.isEmpty()) {
-                                try {
-                                    mService.registerBluetoothConnectionCallback(
-                                            mConnectionCallback, mAttributionSource);
-                                } catch (RemoteException e) {
-                                    Log.e(
-                                            TAG,
-                                            "onBluetoothServiceUp: Failed to register "
-                                                    + "bluetooth connection callback",
-                                            e);
-                                }
-                            }
-                        }
                     } finally {
                         mServiceLock.readLock().unlock();
                     }
+                    registerBluetoothConnectionCallbackIfNeeded();
                 }
 
                 public void onBluetoothServiceDown() {
@@ -4630,7 +4625,7 @@ public final class BluetoothAdapter {
     }
 
     @SuppressLint("AndroidFrameworkBluetoothPermission")
-    private final IBluetoothConnectionCallback mConnectionCallback =
+    private final IBluetoothConnectionCallback mBluetoothConnectionCallback =
             new IBluetoothConnectionCallback.Stub() {
                 @Override
                 public void onDeviceConnected(BluetoothDevice device) {
@@ -4680,33 +4675,56 @@ public final class BluetoothAdapter {
             return false;
         }
 
+        // Enforcing permission in the framework is useless from security point of view.
+        // This is being done to help normal app developer to catch the missing permission, since
+        // the call to the service is oneway and the SecurityException will just be logged
+        mContext.ifPresent(
+                ctx -> {
+                    final int pid = Process.myPid();
+                    final int uid = Process.myUid();
+                    ctx.enforcePermission(
+                            android.Manifest.permission.BLUETOOTH_CONNECT, pid, uid, null);
+                    ctx.enforcePermission(
+                            android.Manifest.permission.BLUETOOTH_PRIVILEGED, pid, uid, null);
+                });
+
         synchronized (mBluetoothConnectionCallbackExecutorMap) {
             if (mBluetoothConnectionCallbackExecutorMap.containsKey(callback)) {
                 throw new IllegalArgumentException("This callback has already been registered");
             }
 
             if (mBluetoothConnectionCallbackExecutorMap.isEmpty()) {
-                // If the callback map is empty, we register the service-to-app callback
-                mServiceLock.readLock().lock();
-                try {
-                    if (mService == null) {
-                        return false;
-                    }
-                    mService.registerBluetoothConnectionCallback(
-                            mConnectionCallback, mAttributionSource);
-                } catch (RemoteException e) {
-                    Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
-                    return false;
-                } finally {
-                    mServiceLock.readLock().unlock();
-                }
+                registerBluetoothConnectionCallback();
             }
 
-            // Adds the passed in callback to our map of callbacks to executors
             mBluetoothConnectionCallbackExecutorMap.put(callback, executor);
         }
 
         return true;
+    }
+
+    private void registerBluetoothConnectionCallback() {
+        mServiceLock.readLock().lock();
+        try {
+            if (mService == null) {
+                return;
+            }
+            mService.registerBluetoothConnectionCallback(
+                    mBluetoothConnectionCallback, mAttributionSource);
+        } catch (RemoteException e) {
+            Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
+        } finally {
+            mServiceLock.readLock().unlock();
+        }
+    }
+
+    private void registerBluetoothConnectionCallbackIfNeeded() {
+        synchronized (mBluetoothConnectionCallbackExecutorMap) {
+            if (mBluetoothConnectionCallbackExecutorMap.isEmpty()) {
+                return;
+            }
+            registerBluetoothConnectionCallback();
+        }
     }
 
     /**
@@ -4730,6 +4748,19 @@ public final class BluetoothAdapter {
             return false;
         }
 
+        // Enforcing permission in the framework is useless from security point of view.
+        // This is being done to help normal app developer to catch the missing permission, since
+        // the call to the service is oneway and the SecurityException will just be logged
+        mContext.ifPresent(
+                ctx -> {
+                    final int pid = Process.myPid();
+                    final int uid = Process.myUid();
+                    ctx.enforcePermission(
+                            android.Manifest.permission.BLUETOOTH_CONNECT, pid, uid, null);
+                    ctx.enforcePermission(
+                            android.Manifest.permission.BLUETOOTH_PRIVILEGED, pid, uid, null);
+                });
+
         synchronized (mBluetoothConnectionCallbackExecutorMap) {
             if (!mBluetoothConnectionCallbackExecutorMap.containsKey(callback)) {
                 return true;
@@ -4745,7 +4776,7 @@ public final class BluetoothAdapter {
                         return true;
                     }
                     mService.unregisterBluetoothConnectionCallback(
-                            mConnectionCallback, mAttributionSource);
+                            mBluetoothConnectionCallback, mAttributionSource);
                 } catch (RemoteException e) {
                     Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
                 } finally {
@@ -5193,7 +5224,7 @@ public final class BluetoothAdapter {
             }
         }
 
-        if (!mBluetoothConnectionCallbackExecutorMap.isEmpty()) {
+        if (!mAudioProfilesChangedCallbackExecutorMap.isEmpty()) {
             return BluetoothStatusCodes.SUCCESS;
         }
 
@@ -5385,7 +5416,7 @@ public final class BluetoothAdapter {
             }
         }
 
-        if (!mBluetoothConnectionCallbackExecutorMap.isEmpty()) {
+        if (!mBluetoothQualityReportReadyCallbackExecutorMap.isEmpty()) {
             return BluetoothStatusCodes.SUCCESS;
         }
 
