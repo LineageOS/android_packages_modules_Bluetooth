@@ -59,6 +59,7 @@ source_set("BluetoothSecuritySources") {
     ":BluetoothSecurityChannelSources",
     ":BluetoothSecurityPairingSources",
     ":BluetoothSecurityRecordSources",
+    "//bt/sysprop:libcom.android.sysprop.bluetooth",
     "//bt/system/gd:gd_default_deps",
   ]
 

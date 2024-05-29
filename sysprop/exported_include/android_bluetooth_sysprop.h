@@ -16,8 +16,6 @@
 
 #pragma once
 
-#ifndef TARGET_FLOSS
-
 #include <a2dp.sysprop.h>
 #include <avrcp.sysprop.h>
 #include <ble.sysprop.h>
@@ -27,9 +25,3 @@
 
 #define GET_SYSPROP(namespace, prop, default) \
   android::sysprop::bluetooth::namespace ::prop().value_or(default)
-
-#else
-
-#define GET_SYSPROP(namespace, prop, default) default
-
-#endif
