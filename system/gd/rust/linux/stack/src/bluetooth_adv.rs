@@ -2,7 +2,7 @@
 
 use btif_macros::{btif_callback, btif_callbacks_dispatcher};
 
-use bt_topshim::btif::{RawAddress, Uuid};
+use bt_topshim::btif::{DisplayAddress, RawAddress, Uuid};
 use bt_topshim::profiles::gatt::{AdvertisingStatus, Gatt, GattAdvCallbacks, LeDiscMode, LePhy};
 
 use itertools::Itertools;
@@ -107,7 +107,7 @@ pub trait IAdvertisingSetCallback: RPCProxy {
     );
 
     /// Callback triggered in response to `get_own_address` indicating result of the operation.
-    fn on_own_address_read(&mut self, advertiser_id: i32, address_type: i32, address: String);
+    fn on_own_address_read(&mut self, advertiser_id: i32, address_type: i32, address: RawAddress);
 
     /// Callback triggered in response to `stop_advertising_set` indicating the advertising set
     /// is stopped.
@@ -1380,8 +1380,10 @@ impl BtifGattAdvCallbacks for AdvertiseManagerImpl {
 
     fn on_own_address_read(&mut self, adv_id: u8, addr_type: u8, address: RawAddress) {
         debug!(
-            "on_own_address_read(): adv_id = {}, addr_type = {}, address = {:?}",
-            adv_id, addr_type, address
+            "on_own_address_read(): adv_id = {}, addr_type = {}, address = {}",
+            adv_id,
+            addr_type,
+            DisplayAddress(&address)
         );
 
         let advertiser_id: i32 = adv_id.into();
@@ -1391,7 +1393,7 @@ impl BtifGattAdvCallbacks for AdvertiseManagerImpl {
         let s = self.get_by_advertiser_id(advertiser_id).unwrap().clone();
 
         if let Some(cb) = self.get_callback(&s) {
-            cb.on_own_address_read(advertiser_id, addr_type.into(), address.to_string());
+            cb.on_own_address_read(advertiser_id, addr_type.into(), address);
         }
     }
 }

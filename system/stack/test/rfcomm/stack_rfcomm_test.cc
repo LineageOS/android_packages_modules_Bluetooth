@@ -107,11 +107,11 @@ MATCHER_P(BtHdrEqual, expected, DumpBtHdrToString(expected)) {
 
 bluetooth::rfcomm::MockRfcommCallback* rfcomm_callback = nullptr;
 
-void port_mgmt_cback_0(uint32_t code, uint16_t port_handle) {
+void port_mgmt_cback_0(const tPORT_RESULT code, uint16_t port_handle) {
   rfcomm_callback->PortManagementCallback(code, port_handle, 0);
 }
 
-void port_mgmt_cback_1(uint32_t code, uint16_t port_handle) {
+void port_mgmt_cback_1(const tPORT_RESULT code, uint16_t port_handle) {
   rfcomm_callback->PortManagementCallback(code, port_handle, 1);
 }
 

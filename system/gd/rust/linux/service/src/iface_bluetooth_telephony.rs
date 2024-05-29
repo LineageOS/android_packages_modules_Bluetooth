@@ -1,3 +1,4 @@
+use bt_topshim::btif::RawAddress;
 use btstack::bluetooth_media::{IBluetoothTelephony, IBluetoothTelephonyCallback};
 use btstack::RPCProxy;
 
@@ -15,7 +16,7 @@ struct BluetoothTelephonyCallbackDBus {}
 #[dbus_proxy_obj(BluetoothTelephonyCallback, "org.chromium.bluetooth.BluetoothTelephonyCallback")]
 impl IBluetoothTelephonyCallback for BluetoothTelephonyCallbackDBus {
     #[dbus_method("OnTelephonyEvent")]
-    fn on_telephony_event(&mut self, addr: String, event: u8, call_state: u8) {
+    fn on_telephony_event(&mut self, addr: RawAddress, event: u8, call_state: u8) {
         dbus_generated!()
     }
 }
@@ -97,11 +98,11 @@ impl IBluetoothTelephony for IBluetoothTelephonyDBus {
         dbus_generated!()
     }
     #[dbus_method("AudioConnect")]
-    fn audio_connect(&mut self, address: String) -> bool {
+    fn audio_connect(&mut self, address: RawAddress) -> bool {
         dbus_generated!()
     }
     #[dbus_method("AudioDisconnect")]
-    fn audio_disconnect(&mut self, address: String) {
+    fn audio_disconnect(&mut self, address: RawAddress) {
         dbus_generated!()
     }
 }

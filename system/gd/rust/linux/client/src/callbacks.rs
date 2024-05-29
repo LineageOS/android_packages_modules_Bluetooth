@@ -10,7 +10,9 @@ use crate::dbus_iface::{
 };
 use crate::{console_red, console_yellow, print_error, print_info};
 use crate::{ClientContext, GattRequest};
-use bt_topshim::btif::{BtBondState, BtPropertyType, BtSspVariant, BtStatus, Uuid128Bit};
+use bt_topshim::btif::{
+    BtBondState, BtPropertyType, BtSspVariant, BtStatus, RawAddress, Uuid128Bit,
+};
 use bt_topshim::profiles::gatt::{AdvertisingStatus, GattStatus, LePhy};
 use bt_topshim::profiles::hfp::HfpCodecId;
 use bt_topshim::profiles::le_audio::{
@@ -140,11 +142,16 @@ impl IBluetoothCallback for BtCallback {
         remote_device: BluetoothDevice,
         props: Vec<BtPropertyType>,
     ) {
-        print_info!("Bluetooth properties {:?} changed for {:?}", props, remote_device);
+        print_info!(
+            "Bluetooth properties {:?} changed for [{}: {:?}]",
+            props,
+            remote_device.address.to_string(),
+            remote_device.name
+        );
     }
 
-    fn on_address_changed(&mut self, addr: String) {
-        print_info!("Address changed to {}", &addr);
+    fn on_address_changed(&mut self, addr: RawAddress) {
+        print_info!("Address changed to {}", addr.to_string());
         self.context.lock().unwrap().adapter_address = Some(addr);
     }
 
@@ -161,19 +168,28 @@ impl IBluetoothCallback for BtCallback {
             .lock()
             .unwrap()
             .found_devices
-            .entry(remote_device.address.clone())
+            .entry(remote_device.address.to_string())
             .or_insert(remote_device.clone());
 
-        print_info!("Found device: {:?}", remote_device);
+        print_info!(
+            "Found device: [{}: {:?}]",
+            remote_device.address.to_string(),
+            remote_device.name
+        );
     }
 
     fn on_device_cleared(&mut self, remote_device: BluetoothDevice) {
-        match self.context.lock().unwrap().found_devices.remove(&remote_device.address) {
-            Some(_) => print_info!("Removed device: {:?}", remote_device),
+        match self.context.lock().unwrap().found_devices.remove(&remote_device.address.to_string())
+        {
+            Some(_) => print_info!(
+                "Removed device: [{}: {:?}]",
+                remote_device.address.to_string(),
+                remote_device.name
+            ),
             None => (),
         };
 
-        self.context.lock().unwrap().bonded_devices.remove(&remote_device.address);
+        self.context.lock().unwrap().bonded_devices.remove(&remote_device.address.to_string());
     }
 
     fn on_discovering_changed(&mut self, discovering: bool) {
@@ -192,9 +208,9 @@ impl IBluetoothCallback for BtCallback {
         match variant {
             BtSspVariant::PasskeyNotification | BtSspVariant::PasskeyConfirmation => {
                 print_info!(
-                    "Device [{}: {}] would like to pair, enter passkey on remote device: {:06}",
-                    &remote_device.address,
-                    &remote_device.name,
+                    "Device [{}: {:?}] would like to pair, enter passkey on remote device: {:06}",
+                    remote_device.address.to_string(),
+                    remote_device.name,
                     passkey
                 );
             }
@@ -228,9 +244,9 @@ impl IBluetoothCallback for BtCallback {
 
     fn on_pin_request(&mut self, remote_device: BluetoothDevice, _cod: u32, min_16_digit: bool) {
         print_info!(
-            "Device [{}: {}] would like to pair, enter pin code {}",
-            &remote_device.address,
-            &remote_device.name,
+            "Device [{}: {:?}] would like to pair, enter pin code {}",
+            remote_device.address.to_string(),
+            remote_device.name,
             match min_16_digit {
                 true => "with at least 16 digits",
                 false => "",
@@ -240,15 +256,20 @@ impl IBluetoothCallback for BtCallback {
 
     fn on_pin_display(&mut self, remote_device: BluetoothDevice, pincode: String) {
         print_info!(
-            "Device [{}: {}] would like to pair, enter pin code {} on the remote",
-            &remote_device.address,
-            &remote_device.name,
+            "Device [{}: {:?}] would like to pair, enter pin code {} on the remote",
+            remote_device.address.to_string(),
+            remote_device.name,
             pincode
         );
     }
 
-    fn on_bond_state_changed(&mut self, status: u32, address: String, state: u32) {
-        print_info!("Bonding state changed: [{}] state: {}, Status = {}", address, state, status);
+    fn on_bond_state_changed(&mut self, status: u32, address: RawAddress, state: u32) {
+        print_info!(
+            "Bonding state changed: [{}] state: {}, Status = {}",
+            address.to_string(),
+            state,
+            status
+        );
 
         // Clear bonding attempt if bonding fails or succeeds
         match BtBondState::from(state) {
@@ -257,7 +278,7 @@ impl IBluetoothCallback for BtCallback {
                     self.context.lock().unwrap().bonding_attempt.as_ref().cloned();
                 match bonding_attempt {
                     Some(bd) => {
-                        if &address == &bd.address {
+                        if address == bd.address {
                             self.context.lock().unwrap().bonding_attempt = None;
                         }
                     }
@@ -267,17 +288,16 @@ impl IBluetoothCallback for BtCallback {
             BtBondState::Bonding => (),
         }
 
-        let device =
-            BluetoothDevice { address: address.clone(), name: String::from("Classic device") };
+        let device = BluetoothDevice { address: address, name: String::from("Classic device") };
 
         // If bonded, we should also automatically connect all enabled profiles
         if BtBondState::Bonded == state.into() {
-            self.context.lock().unwrap().bonded_devices.insert(address.clone(), device.clone());
+            self.context.lock().unwrap().bonded_devices.insert(address.to_string(), device.clone());
             self.context.lock().unwrap().connect_all_enabled_profiles(device.clone());
         }
 
         if BtBondState::NotBonded == state.into() {
-            self.context.lock().unwrap().bonded_devices.remove(&address);
+            self.context.lock().unwrap().bonded_devices.remove(&address.to_string());
         }
     }
 
@@ -288,8 +308,9 @@ impl IBluetoothCallback for BtCallback {
         sdp_records: Vec<BtSdpRecord>,
     ) {
         print_info!(
-            "SDP search of {} for UUID {} returned {} results",
-            remote_device.address,
+            "SDP search of [{}: {:?}] for UUID {} returned {} results",
+            remote_device.address.to_string(),
+            remote_device.name,
             UuidWrapper(&searched_uuid),
             sdp_records.len()
         );
@@ -350,11 +371,15 @@ impl BtConnectionCallback {
 
 impl IBluetoothConnectionCallback for BtConnectionCallback {
     fn on_device_connected(&mut self, remote_device: BluetoothDevice) {
-        print_info!("Connected: [{}]: {}", remote_device.address, remote_device.name);
+        print_info!("Connected: [{}: {:?}]", remote_device.address.to_string(), remote_device.name);
     }
 
     fn on_device_disconnected(&mut self, remote_device: BluetoothDevice) {
-        print_info!("Disconnected: [{}]: {}", remote_device.address, remote_device.name);
+        print_info!(
+            "Disconnected: [{}: {:?}]",
+            remote_device.address.to_string(),
+            remote_device.name
+        );
     }
 }
 
@@ -476,8 +501,9 @@ impl IBluetoothAdminPolicyCallback for AdminCallback {
         new_policy_effect: Option<PolicyEffect>,
     ) {
         print_info!(
-            "new device policy effect. Device: {:?}. New Effect: {:?}",
-            device,
+            "new device policy effect. Device: [{}: {:?}]. New Effect: {:?}",
+            device.address.to_string(),
+            device.name,
             new_policy_effect
         );
     }
@@ -550,12 +576,12 @@ impl IAdvertisingSetCallback for AdvertisingSetCallback {
         }
     }
 
-    fn on_own_address_read(&mut self, advertiser_id: i32, address_type: i32, address: String) {
+    fn on_own_address_read(&mut self, advertiser_id: i32, address_type: i32, address: RawAddress) {
         print_info!(
             "on_own_address_read: advertiser_id = {}, address_type = {}, address = {}",
             advertiser_id,
             address_type,
-            address
+            address.to_string()
         );
     }
 
@@ -692,31 +718,37 @@ impl IBluetoothGattCallback for BtGattCallback {
         status: GattStatus,
         client_id: i32,
         connected: bool,
-        addr: String,
+        addr: RawAddress,
     ) {
         print_info!(
             "GATT Client connection state = {}, client_id = {}, connected = {}, addr = {}",
             status,
             client_id,
             connected,
-            addr
+            addr.to_string()
         );
     }
 
-    fn on_phy_update(&mut self, addr: String, tx_phy: LePhy, rx_phy: LePhy, status: GattStatus) {
+    fn on_phy_update(
+        &mut self,
+        addr: RawAddress,
+        tx_phy: LePhy,
+        rx_phy: LePhy,
+        status: GattStatus,
+    ) {
         print_info!(
             "Phy updated: addr = {}, tx_phy = {:?}, rx_phy = {:?}, status = {:?}",
-            addr,
+            addr.to_string(),
             tx_phy,
             rx_phy,
             status
         );
     }
 
-    fn on_phy_read(&mut self, addr: String, tx_phy: LePhy, rx_phy: LePhy, status: GattStatus) {
+    fn on_phy_read(&mut self, addr: RawAddress, tx_phy: LePhy, rx_phy: LePhy, status: GattStatus) {
         print_info!(
             "Phy read: addr = {}, tx_phy = {:?}, rx_phy = {:?}, status = {:?}",
-            addr,
+            addr.to_string(),
             tx_phy,
             rx_phy,
             status
@@ -725,13 +757,13 @@ impl IBluetoothGattCallback for BtGattCallback {
 
     fn on_search_complete(
         &mut self,
-        addr: String,
+        addr: RawAddress,
         services: Vec<BluetoothGattService>,
         status: GattStatus,
     ) {
         print_info!(
             "GATT DB Search complete: addr = {}, services = {:?}, status = {}",
-            addr,
+            addr.to_string(),
             services,
             status
         );
@@ -739,73 +771,88 @@ impl IBluetoothGattCallback for BtGattCallback {
 
     fn on_characteristic_read(
         &mut self,
-        addr: String,
+        addr: RawAddress,
         status: GattStatus,
         handle: i32,
         value: Vec<u8>,
     ) {
         print_info!(
             "GATT Characteristic read: addr = {}, status = {}, handle = {}, value = {:?}",
-            addr,
+            addr.to_string(),
             status,
             handle,
             value
         );
     }
 
-    fn on_characteristic_write(&mut self, addr: String, status: GattStatus, handle: i32) {
+    fn on_characteristic_write(&mut self, addr: RawAddress, status: GattStatus, handle: i32) {
         print_info!(
             "GATT Characteristic write: addr = {}, status = {}, handle = {}",
-            addr,
+            addr.to_string(),
             status,
             handle
         );
     }
 
-    fn on_execute_write(&mut self, addr: String, status: GattStatus) {
-        print_info!("GATT execute write addr = {}, status = {}", addr, status);
+    fn on_execute_write(&mut self, addr: RawAddress, status: GattStatus) {
+        print_info!("GATT execute write addr = {}, status = {}", addr.to_string(), status);
     }
 
     fn on_descriptor_read(
         &mut self,
-        addr: String,
+        addr: RawAddress,
         status: GattStatus,
         handle: i32,
         value: Vec<u8>,
     ) {
         print_info!(
             "GATT Descriptor read: addr = {}, status = {}, handle = {}, value = {:?}",
-            addr,
+            addr.to_string(),
             status,
             handle,
             value
         );
     }
 
-    fn on_descriptor_write(&mut self, addr: String, status: GattStatus, handle: i32) {
+    fn on_descriptor_write(&mut self, addr: RawAddress, status: GattStatus, handle: i32) {
         print_info!(
             "GATT Descriptor write: addr = {}, status = {}, handle = {}",
-            addr,
+            addr.to_string(),
             status,
             handle
         );
     }
 
-    fn on_notify(&mut self, addr: String, handle: i32, value: Vec<u8>) {
-        print_info!("GATT Notification: addr = {}, handle = {}, value = {:?}", addr, handle, value);
+    fn on_notify(&mut self, addr: RawAddress, handle: i32, value: Vec<u8>) {
+        print_info!(
+            "GATT Notification: addr = {}, handle = {}, value = {:?}",
+            addr.to_string(),
+            handle,
+            value
+        );
     }
 
-    fn on_read_remote_rssi(&mut self, addr: String, rssi: i32, status: GattStatus) {
-        print_info!("Remote RSSI read: addr = {}, rssi = {}, status = {}", addr, rssi, status);
+    fn on_read_remote_rssi(&mut self, addr: RawAddress, rssi: i32, status: GattStatus) {
+        print_info!(
+            "Remote RSSI read: addr = {}, rssi = {}, status = {}",
+            addr.to_string(),
+            rssi,
+            status
+        );
     }
 
-    fn on_configure_mtu(&mut self, addr: String, mtu: i32, status: GattStatus) {
-        print_info!("MTU configured: addr = {}, mtu = {}, status = {}", addr, mtu, status);
+    fn on_configure_mtu(&mut self, addr: RawAddress, mtu: i32, status: GattStatus) {
+        print_info!(
+            "MTU configured: addr = {}, mtu = {}, status = {}",
+            addr.to_string(),
+            mtu,
+            status
+        );
     }
 
     fn on_connection_updated(
         &mut self,
-        addr: String,
+        addr: RawAddress,
         interval: i32,
         latency: i32,
         timeout: i32,
@@ -813,7 +860,7 @@ impl IBluetoothGattCallback for BtGattCallback {
     ) {
         print_info!(
             "Connection updated: addr = {}, interval = {}, latency = {}, timeout = {}, status = {}",
-            addr,
+            addr.to_string(),
             interval,
             latency,
             timeout,
@@ -821,8 +868,8 @@ impl IBluetoothGattCallback for BtGattCallback {
         );
     }
 
-    fn on_service_changed(&mut self, addr: String) {
-        print_info!("Service changed for {}", addr,);
+    fn on_service_changed(&mut self, addr: RawAddress) {
+        print_info!("Service changed for {}", addr.to_string());
     }
 }
 
@@ -867,12 +914,12 @@ impl IBluetoothGattServerCallback for BtGattServerCallback {
         print_info!("GATT Server registered status = {}, server_id = {}", status, server_id);
     }
 
-    fn on_server_connection_state(&mut self, server_id: i32, connected: bool, addr: String) {
+    fn on_server_connection_state(&mut self, server_id: i32, connected: bool, addr: RawAddress) {
         print_info!(
             "GATT server connection with server_id = {}, connected = {}, addr = {}",
             server_id,
             connected,
-            addr
+            addr.to_string()
         );
     }
 
@@ -886,7 +933,7 @@ impl IBluetoothGattServerCallback for BtGattServerCallback {
 
     fn on_characteristic_read_request(
         &mut self,
-        addr: String,
+        addr: RawAddress,
         trans_id: i32,
         offset: i32,
         is_long: bool,
@@ -894,7 +941,7 @@ impl IBluetoothGattServerCallback for BtGattServerCallback {
     ) {
         print_info!(
             "GATT characteristic read request for addr = {}, trans_id = {}, offset = {}, is_long = {}, handle = {}",
-            addr.clone(),
+            addr.to_string(),
             trans_id,
             offset,
             is_long,
@@ -913,7 +960,7 @@ impl IBluetoothGattServerCallback for BtGattServerCallback {
 
     fn on_descriptor_read_request(
         &mut self,
-        addr: String,
+        addr: RawAddress,
         trans_id: i32,
         offset: i32,
         is_long: bool,
@@ -921,7 +968,7 @@ impl IBluetoothGattServerCallback for BtGattServerCallback {
     ) {
         print_info!(
             "GATT descriptor read request for addr = {}, trans_id = {}, offset = {}, is_long = {}, handle = {}",
-            addr,
+            addr.to_string(),
             trans_id,
             offset,
             is_long,
@@ -940,7 +987,7 @@ impl IBluetoothGattServerCallback for BtGattServerCallback {
 
     fn on_characteristic_write_request(
         &mut self,
-        addr: String,
+        addr: RawAddress,
         trans_id: i32,
         offset: i32,
         len: i32,
@@ -952,7 +999,7 @@ impl IBluetoothGattServerCallback for BtGattServerCallback {
         print_info!(
             "GATT characteristic write request for \
                 addr = {}, trans_id = {}, offset = {}, len = {}, is_prep = {}, need_rsp = {}, handle = {}, value = {:?}",
-            addr,
+            addr.to_string(),
             trans_id,
             offset,
             len,
@@ -974,7 +1021,7 @@ impl IBluetoothGattServerCallback for BtGattServerCallback {
 
     fn on_descriptor_write_request(
         &mut self,
-        addr: String,
+        addr: RawAddress,
         trans_id: i32,
         offset: i32,
         len: i32,
@@ -986,7 +1033,7 @@ impl IBluetoothGattServerCallback for BtGattServerCallback {
         print_info!(
             "GATT descriptor write request for \
                 addr = {}, trans_id = {}, offset = {}, len = {}, is_prep = {}, need_rsp = {}, handle = {}, value = {:?}",
-            addr,
+            addr.to_string(),
             trans_id,
             offset,
             len,
@@ -1006,10 +1053,10 @@ impl IBluetoothGattServerCallback for BtGattServerCallback {
             Some(GattRequest { address: addr, id: trans_id, offset: offset, value: value });
     }
 
-    fn on_execute_write(&mut self, addr: String, trans_id: i32, exec_write: bool) {
+    fn on_execute_write(&mut self, addr: RawAddress, trans_id: i32, exec_write: bool) {
         print_info!(
             "GATT executed write for addr = {}, trans_id = {}, exec_write = {}",
-            addr,
+            addr.to_string(),
             trans_id,
             exec_write
         );
@@ -1024,32 +1071,38 @@ impl IBluetoothGattServerCallback for BtGattServerCallback {
             Some(GattRequest { address: addr, id: trans_id, offset: 0, value: vec![] });
     }
 
-    fn on_notification_sent(&mut self, addr: String, status: GattStatus) {
+    fn on_notification_sent(&mut self, addr: RawAddress, status: GattStatus) {
         print_info!(
             "GATT notification/indication sent for addr = {} with status = {}",
-            addr,
+            addr.to_string(),
             status
         );
     }
 
-    fn on_mtu_changed(&mut self, addr: String, mtu: i32) {
-        print_info!("GATT server MTU changed for addr = {}, mtu = {}", addr, mtu);
+    fn on_mtu_changed(&mut self, addr: RawAddress, mtu: i32) {
+        print_info!("GATT server MTU changed for addr = {}, mtu = {}", addr.to_string(), mtu);
     }
 
-    fn on_phy_update(&mut self, addr: String, tx_phy: LePhy, rx_phy: LePhy, status: GattStatus) {
+    fn on_phy_update(
+        &mut self,
+        addr: RawAddress,
+        tx_phy: LePhy,
+        rx_phy: LePhy,
+        status: GattStatus,
+    ) {
         print_info!(
             "GATT server phy updated for addr = {}: tx_phy = {:?}, rx_phy = {:?}, status = {}",
-            addr,
+            addr.to_string(),
             tx_phy,
             rx_phy,
             status
         );
     }
 
-    fn on_phy_read(&mut self, addr: String, tx_phy: LePhy, rx_phy: LePhy, status: GattStatus) {
+    fn on_phy_read(&mut self, addr: RawAddress, tx_phy: LePhy, rx_phy: LePhy, status: GattStatus) {
         print_info!(
             "GATT server phy read for addr = {}: tx_phy = {:?}, rx_phy = {:?}, status = {}",
-            addr,
+            addr.to_string(),
             tx_phy,
             rx_phy,
             status
@@ -1058,7 +1111,7 @@ impl IBluetoothGattServerCallback for BtGattServerCallback {
 
     fn on_connection_updated(
         &mut self,
-        addr: String,
+        addr: RawAddress,
         interval: i32,
         latency: i32,
         timeout: i32,
@@ -1066,7 +1119,7 @@ impl IBluetoothGattServerCallback for BtGattServerCallback {
     ) {
         print_info!(
             "GATT server connection updated for addr = {}, interval = {}, latency = {}, timeout = {}, status = {}",
-            addr,
+            addr.to_string(),
             interval,
             latency,
             timeout,
@@ -1076,7 +1129,7 @@ impl IBluetoothGattServerCallback for BtGattServerCallback {
 
     fn on_subrate_change(
         &mut self,
-        addr: String,
+        addr: RawAddress,
         subrate_factor: i32,
         latency: i32,
         cont_num: i32,
@@ -1085,7 +1138,7 @@ impl IBluetoothGattServerCallback for BtGattServerCallback {
     ) {
         print_info!(
             "GATT server subrate changed for addr = {}, subrate_factor = {}, latency = {}, cont_num = {}, timeout = {}, status = {}",
-            addr,
+            addr.to_string(),
             subrate_factor,
             latency,
             cont_num,
@@ -1396,7 +1449,7 @@ impl IBluetoothMediaCallback for MediaCallback {
     fn on_lea_group_status(&mut self, _group_id: i32, _status: BtLeAudioGroupStatus) {}
     fn on_lea_group_node_status(
         &mut self,
-        _addr: String,
+        _addr: RawAddress,
         _group_id: i32,
         _status: BtLeAudioGroupNodeStatus,
     ) {
@@ -1418,11 +1471,11 @@ impl IBluetoothMediaCallback for MediaCallback {
     }
     fn on_lea_group_stream_status(&mut self, _group_id: i32, _status: BtLeAudioGroupStreamStatus) {}
     fn on_bluetooth_audio_device_added(&mut self, _device: BluetoothAudioDevice) {}
-    fn on_bluetooth_audio_device_removed(&mut self, _addr: String) {}
+    fn on_bluetooth_audio_device_removed(&mut self, _addr: RawAddress) {}
     fn on_absolute_volume_supported_changed(&mut self, _supported: bool) {}
     fn on_absolute_volume_changed(&mut self, _volume: u8) {}
-    fn on_hfp_volume_changed(&mut self, _volume: u8, _addr: String) {}
-    fn on_hfp_audio_disconnected(&mut self, _addr: String) {}
+    fn on_hfp_volume_changed(&mut self, _volume: u8, _addr: RawAddress) {}
+    fn on_hfp_audio_disconnected(&mut self, _addr: RawAddress) {}
     fn on_hfp_debug_dump(
         &mut self,
         active: bool,
@@ -1525,8 +1578,13 @@ impl TelephonyCallback {
 }
 
 impl IBluetoothTelephonyCallback for TelephonyCallback {
-    fn on_telephony_event(&mut self, addr: String, event: u8, call_state: u8) {
-        print_info!("Telephony event changed: [{}] event {} state: {}", addr, event, call_state);
+    fn on_telephony_event(&mut self, addr: RawAddress, event: u8, call_state: u8) {
+        print_info!(
+            "Telephony event changed: [{}] event {} state: {}",
+            addr.to_string(),
+            event,
+            call_state
+        );
     }
 }
 
@@ -1566,8 +1624,8 @@ impl BatteryManagerCallback {
 }
 
 impl IBatteryManagerCallback for BatteryManagerCallback {
-    fn on_battery_info_updated(&mut self, remote_address: String, battery_set: BatterySet) {
-        let address = remote_address.to_uppercase();
+    fn on_battery_info_updated(&mut self, remote_address: RawAddress, battery_set: BatterySet) {
+        let address = remote_address.to_string();
         if self.context.lock().unwrap().battery_address_filter.contains(&address) {
             if battery_set.batteries.len() == 0 {
                 print_info!(

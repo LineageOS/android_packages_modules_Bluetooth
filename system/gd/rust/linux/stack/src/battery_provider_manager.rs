@@ -1,6 +1,7 @@
 use crate::battery_manager::{Batteries, BatterySet};
 use crate::callbacks::Callbacks;
 use crate::{Message, RPCProxy};
+use bt_topshim::btif::{DisplayAddress, RawAddress};
 use log::debug;
 use std::collections::HashMap;
 use tokio::sync::mpsc::Sender;
@@ -27,7 +28,7 @@ pub trait IBatteryProviderManager {
     fn set_battery_info(&mut self, battery_provider_id: u32, battery_set: BatterySet);
 
     /// Removes the battery information for the battery associated with battery_id.
-    fn remove_battery_info(&mut self, battery_provider_id: u32, address: String, uuid: String);
+    fn remove_battery_info(&mut self, battery_provider_id: u32, address: RawAddress, uuid: String);
 }
 
 /// Represents the BatteryProviderManager, a central point for collecting battery information from
@@ -37,7 +38,7 @@ pub struct BatteryProviderManager {
     tx: Sender<Message>,
     battery_provider_callbacks: Callbacks<dyn IBatteryProviderCallback + Send>,
     /// Stored information merged from all battery providers.
-    battery_info: HashMap<String, Batteries>,
+    battery_info: HashMap<RawAddress, Batteries>,
 }
 
 impl BatteryProviderManager {
@@ -56,7 +57,7 @@ impl BatteryProviderManager {
     }
 
     /// Get the best battery info available for a given device.
-    pub fn get_battery_info(&self, remote_address: String) -> Option<BatterySet> {
+    pub fn get_battery_info(&self, remote_address: RawAddress) -> Option<BatterySet> {
         self.battery_info.get(&remote_address)?.pick_best()
     }
 
@@ -78,7 +79,12 @@ impl IBatteryProviderManager for BatteryProviderManager {
         self.remove_battery_provider_callback(battery_provider_id);
     }
 
-    fn remove_battery_info(&mut self, _battery_provider_id: u32, address: String, uuid: String) {
+    fn remove_battery_info(
+        &mut self,
+        _battery_provider_id: u32,
+        address: RawAddress,
+        uuid: String,
+    ) {
         if let Some(batteries) = self.battery_info.get_mut(&address) {
             batteries.remove_battery_set(&uuid);
 
@@ -91,7 +97,7 @@ impl IBatteryProviderManager for BatteryProviderManager {
     fn set_battery_info(&mut self, _battery_provider_id: u32, battery_set: BatterySet) {
         debug!(
             "BatteryProviderManager received BatterySet for [{}] from \"{}\": {:?}",
-            battery_set.address.clone(),
+            DisplayAddress(&battery_set.address),
             battery_set.source_info.clone(),
             battery_set.clone()
         );
@@ -100,10 +106,8 @@ impl IBatteryProviderManager for BatteryProviderManager {
             return;
         }
 
-        let batteries = self
-            .battery_info
-            .entry(battery_set.address.clone())
-            .or_insert_with(|| Batteries::new());
+        let batteries =
+            self.battery_info.entry(battery_set.address).or_insert_with(|| Batteries::new());
         batteries.add_or_update_battery_set(battery_set);
 
         if let Some(best_battery_set) = batteries.pick_best() {
@@ -111,7 +115,7 @@ impl IBatteryProviderManager for BatteryProviderManager {
             tokio::spawn(async move {
                 let _ = tx
                     .send(Message::BatteryProviderManagerBatteryUpdated(
-                        best_battery_set.address.clone(),
+                        best_battery_set.address,
                         best_battery_set,
                     ))
                     .await;

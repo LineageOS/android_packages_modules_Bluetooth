@@ -25,7 +25,7 @@ use crate::dbus_iface::{
     BluetoothTelephonyDBus, SuspendDBus,
 };
 use crate::editor::AsyncEditor;
-use bt_topshim::topstack;
+use bt_topshim::{btif::RawAddress, topstack};
 use btstack::bluetooth::{BluetoothDevice, IBluetooth};
 use btstack::suspend::ISuspend;
 use manager_service::iface_bluetooth_manager::IBluetoothManager;
@@ -41,7 +41,7 @@ mod editor;
 
 #[derive(Clone)]
 pub(crate) struct GattRequest {
-    address: String,
+    address: RawAddress,
     id: i32,
     offset: i32,
     value: Vec<u8>,
@@ -64,7 +64,7 @@ pub(crate) struct ClientContext {
     pub(crate) adapter_ready: bool,
 
     /// Current adapter address if known.
-    pub(crate) adapter_address: Option<String>,
+    pub(crate) adapter_address: Option<RawAddress>,
 
     /// Currently active bonding attempt. If it is not none, we are currently attempting to bond
     /// this device.
@@ -281,7 +281,7 @@ impl ClientContext {
     }
 
     // Foreground-only: Updates the adapter address.
-    fn update_adapter_address(&mut self) -> String {
+    fn update_adapter_address(&mut self) -> RawAddress {
         let address = self.adapter_dbus.as_ref().unwrap().get_address();
         self.adapter_address = Some(address.clone());
 
@@ -293,7 +293,7 @@ impl ClientContext {
         let bonded_devices = self.adapter_dbus.as_ref().unwrap().get_bonded_devices();
 
         for device in bonded_devices {
-            self.bonded_devices.insert(device.address.clone(), device.clone());
+            self.bonded_devices.insert(device.address.to_string(), device.clone());
         }
     }
 
@@ -759,7 +759,7 @@ async fn handle_client_command(
                 let adapter_address = context.lock().unwrap().update_adapter_address();
                 context.lock().unwrap().update_bonded_devices();
 
-                print_info!("Adapter {} is ready", adapter_address);
+                print_info!("Adapter {} is ready", adapter_address.to_string());
 
                 // Run the command with the command arguments as the client is
                 // non-interactive.

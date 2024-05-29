@@ -11,7 +11,7 @@ use crate::uuid::UuidHelper;
 use crate::Message;
 use crate::RPCProxy;
 use crate::{uuid, APIMessage, BluetoothAPI};
-use bt_topshim::btif::BtTransport;
+use bt_topshim::btif::{BtTransport, DisplayAddress, RawAddress};
 use bt_topshim::profiles::gatt::{GattStatus, LePhy};
 use log::debug;
 use std::collections::HashMap;
@@ -37,10 +37,10 @@ pub struct BatteryService {
     /// The GATT client ID needed for GATT calls.
     client_id: Option<i32>,
     /// Cached battery info keyed by remote device.
-    battery_sets: HashMap<String, BatterySet>,
+    battery_sets: HashMap<RawAddress, BatterySet>,
     /// Found handles for battery levels. Required for faster
     /// refreshes than initiating another search.
-    handles: HashMap<String, i32>,
+    handles: HashMap<RawAddress, i32>,
 }
 
 /// Enum for GATT callbacks to relay messages to the main processing thread. Newly supported
@@ -49,13 +49,13 @@ pub enum BatteryServiceActions {
     /// Params: status, client_id
     OnClientRegistered(GattStatus, i32),
     /// Params: status, client_id, connected, addr
-    OnClientConnectionState(GattStatus, i32, bool, String),
+    OnClientConnectionState(GattStatus, i32, bool, RawAddress),
     /// Params: addr, services, status
-    OnSearchComplete(String, Vec<BluetoothGattService>, GattStatus),
+    OnSearchComplete(RawAddress, Vec<BluetoothGattService>, GattStatus),
     /// Params: addr, status, handle, value
-    OnCharacteristicRead(String, GattStatus, i32, Vec<u8>),
+    OnCharacteristicRead(RawAddress, GattStatus, i32, Vec<u8>),
     /// Params: addr, handle, value
-    OnNotify(String, i32, Vec<u8>),
+    OnNotify(RawAddress, i32, Vec<u8>),
     /// Params: remote_device, transport
     Connect(BluetoothDevice, BtTransport),
     /// Params: remote_device
@@ -73,11 +73,11 @@ pub trait IBatteryService {
     fn unregister_callback(&mut self, callback_id: u32);
 
     /// Returns the battery info of the remote device if available in BatteryService's cache.
-    fn get_battery_info(&self, remote_address: String) -> Option<BatterySet>;
+    fn get_battery_info(&self, remote_address: RawAddress) -> Option<BatterySet>;
 
     /// Forces an explicit read of the device's battery level, including initiating battery level
     /// tracking if not yet performed.
-    fn refresh_battery_info(&self, remote_address: String) -> bool;
+    fn refresh_battery_info(&self, remote_address: RawAddress) -> bool;
 }
 
 /// Callback for interacting with BAS.
@@ -86,12 +86,12 @@ pub trait IBatteryServiceCallback: RPCProxy {
     /// not support BAS will result in this method being called with BatteryServiceNotSupported.
     fn on_battery_service_status_updated(
         &mut self,
-        remote_address: String,
+        remote_address: RawAddress,
         status: BatteryServiceStatus,
     );
 
     /// Invoked when battery level for a device has been changed due to notification.
-    fn on_battery_info_updated(&mut self, remote_address: String, battery_info: BatterySet);
+    fn on_battery_info_updated(&mut self, remote_address: RawAddress, battery_info: BatterySet);
 }
 
 impl BatteryService {
@@ -158,7 +158,11 @@ impl BatteryService {
 
             BatteryServiceActions::OnSearchComplete(addr, services, status) => {
                 if status != GattStatus::Success {
-                    debug!("GATT service discovery for {} failed with status {:?}", addr, status);
+                    debug!(
+                        "GATT service discovery for {} failed with status {:?}",
+                        DisplayAddress(&addr),
+                        status
+                    );
                     return;
                 }
                 let (bas_uuid, battery_level_uuid) = match (
@@ -174,7 +178,7 @@ impl BatteryService {
                     None => {
                         self.callbacks.for_all_callbacks(|callback| {
                             callback.on_battery_service_status_updated(
-                                addr.clone(),
+                                addr,
                                 BatteryServiceStatus::BatteryServiceNotSupported,
                             )
                         });
@@ -188,7 +192,10 @@ impl BatteryService {
                 {
                     Some(battery_level) => battery_level,
                     None => {
-                        debug!("Device {} has no BatteryLevel characteristic", addr);
+                        debug!(
+                            "Device {} has no BatteryLevel characteristic",
+                            DisplayAddress(&addr)
+                        );
                         return;
                     }
                 };
@@ -197,13 +204,8 @@ impl BatteryService {
                     None => return,
                 };
                 let handle = battery_level.instance_id;
-                self.handles.insert(addr.clone(), handle.clone());
-                self.gatt.lock().unwrap().register_for_notification(
-                    client_id,
-                    addr.clone(),
-                    handle,
-                    true,
-                );
+                self.handles.insert(addr, handle.clone());
+                self.gatt.lock().unwrap().register_for_notification(client_id, addr, handle, true);
                 if let None = self.battery_sets.get(&addr) {
                     self.gatt.lock().unwrap().read_characteristic(
                         client_id,
@@ -220,14 +222,14 @@ impl BatteryService {
                 }
                 let battery_info = self.set_battery_info(&addr, &value);
                 self.callbacks.for_all_callbacks(|callback| {
-                    callback.on_battery_info_updated(addr.clone(), battery_info.clone());
+                    callback.on_battery_info_updated(addr, battery_info.clone());
                 });
             }
 
             BatteryServiceActions::OnNotify(addr, _handle, value) => {
                 let battery_info = self.set_battery_info(&addr, &value);
                 self.callbacks.for_all_callbacks(|callback| {
-                    callback.on_battery_info_updated(addr.clone(), battery_info.clone());
+                    callback.on_battery_info_updated(addr, battery_info.clone());
                 });
             }
 
@@ -244,13 +246,13 @@ impl BatteryService {
         }
     }
 
-    fn set_battery_info(&mut self, remote_address: &String, value: &Vec<u8>) -> BatterySet {
+    fn set_battery_info(&mut self, remote_address: &RawAddress, value: &Vec<u8>) -> BatterySet {
         let level: Vec<_> = value.iter().cloned().chain(iter::repeat(0 as u8)).take(4).collect();
         let level = u32::from_le_bytes(level.try_into().unwrap());
-        debug!("BAS received battery level for {}: {}", remote_address.clone(), level);
-        let battery_set = self.battery_sets.entry(remote_address.clone()).or_insert_with(|| {
+        debug!("BAS received battery level for {}: {}", DisplayAddress(&remote_address), level);
+        let battery_set = self.battery_sets.entry(*remote_address).or_insert_with(|| {
             BatterySet::new(
-                remote_address.clone(),
+                *remote_address,
                 uuid::BAS.to_string(),
                 "BAS".to_string(),
                 vec![Battery { percentage: level, variant: "".to_string() }],
@@ -263,12 +265,12 @@ impl BatteryService {
         battery_set.clone()
     }
 
-    fn init_device(&self, remote_address: String, transport: BtTransport) {
+    fn init_device(&self, remote_address: RawAddress, transport: BtTransport) {
         let client_id = match self.client_id {
             Some(id) => id,
             None => return,
         };
-        debug!("Attempting GATT connection to {}", remote_address.clone());
+        debug!("Attempting GATT connection to {}", DisplayAddress(&remote_address));
         self.gatt.lock().unwrap().client_connect(
             client_id,
             remote_address,
@@ -279,18 +281,18 @@ impl BatteryService {
         );
     }
 
-    fn drop_device(&mut self, remote_address: String) {
+    fn drop_device(&mut self, remote_address: RawAddress) {
         self.handles.remove(&remote_address);
         match self.client_id {
             Some(client_id) => {
-                self.gatt.lock().unwrap().client_disconnect(client_id, remote_address.clone())
+                self.gatt.lock().unwrap().client_disconnect(client_id, remote_address);
             }
             None => return,
         }
         // Let BatteryProviderManager know that BAS no longer has a battery for this device.
         self.battery_provider_manager.lock().unwrap().remove_battery_info(
             self.battery_provider_id,
-            remote_address.clone(),
+            remote_address,
             uuid::BAS.to_string(),
         );
         self.battery_sets.remove(&remote_address);
@@ -298,12 +300,12 @@ impl BatteryService {
 
     /// Perform an explicit read on all devices BAS knows about.
     pub fn refresh_all_devices(&self) {
-        self.handles.keys().for_each(|device| {
-            self.refresh_device(device.to_string());
+        self.handles.keys().for_each(|&addr| {
+            self.refresh_device(addr);
         });
     }
 
-    fn refresh_device(&self, remote_address: String) -> bool {
+    fn refresh_device(&self, remote_address: RawAddress) -> bool {
         let client_id = match self.client_id {
             Some(id) => id,
             None => return false,
@@ -312,7 +314,7 @@ impl BatteryService {
             Some(id) => *id,
             None => return false,
         };
-        self.gatt.lock().unwrap().read_characteristic(client_id, remote_address.clone(), handle, 0);
+        self.gatt.lock().unwrap().read_characteristic(client_id, remote_address, handle, 0);
         true
     }
 
@@ -337,11 +339,11 @@ impl IBatteryService for BatteryService {
         self.remove_callback(callback_id);
     }
 
-    fn get_battery_info(&self, remote_address: String) -> Option<BatterySet> {
+    fn get_battery_info(&self, remote_address: RawAddress) -> Option<BatterySet> {
         self.battery_sets.get(&remote_address).cloned()
     }
 
-    fn refresh_battery_info(&self, remote_address: String) -> bool {
+    fn refresh_battery_info(&self, remote_address: RawAddress) -> bool {
         self.refresh_device(remote_address)
     }
 }
@@ -405,7 +407,7 @@ impl IBluetoothGattCallback for GattCallback {
         status: GattStatus,
         client_id: i32,
         connected: bool,
-        addr: String,
+        addr: RawAddress,
     ) {
         let tx = self.tx.clone();
         tokio::spawn(async move {
@@ -419,7 +421,7 @@ impl IBluetoothGattCallback for GattCallback {
 
     fn on_search_complete(
         &mut self,
-        addr: String,
+        addr: RawAddress,
         services: Vec<BluetoothGattService>,
         status: GattStatus,
     ) {
@@ -435,7 +437,7 @@ impl IBluetoothGattCallback for GattCallback {
 
     fn on_characteristic_read(
         &mut self,
-        addr: String,
+        addr: RawAddress,
         status: GattStatus,
         handle: i32,
         value: Vec<u8>,
@@ -450,7 +452,7 @@ impl IBluetoothGattCallback for GattCallback {
         });
     }
 
-    fn on_notify(&mut self, addr: String, handle: i32, value: Vec<u8>) {
+    fn on_notify(&mut self, addr: RawAddress, handle: i32, value: Vec<u8>) {
         let tx = self.tx.clone();
         tokio::spawn(async move {
             let _ = tx
@@ -461,37 +463,44 @@ impl IBluetoothGattCallback for GattCallback {
 
     fn on_phy_update(
         &mut self,
-        _addr: String,
+        _addr: RawAddress,
         _tx_phy: LePhy,
         _rx_phy: LePhy,
         _status: GattStatus,
     ) {
     }
 
-    fn on_phy_read(&mut self, _addr: String, _tx_phy: LePhy, _rx_phy: LePhy, _status: GattStatus) {}
+    fn on_phy_read(
+        &mut self,
+        _addr: RawAddress,
+        _tx_phy: LePhy,
+        _rx_phy: LePhy,
+        _status: GattStatus,
+    ) {
+    }
 
-    fn on_characteristic_write(&mut self, _addr: String, _status: GattStatus, _handle: i32) {}
+    fn on_characteristic_write(&mut self, _addr: RawAddress, _status: GattStatus, _handle: i32) {}
 
-    fn on_execute_write(&mut self, _addr: String, _status: GattStatus) {}
+    fn on_execute_write(&mut self, _addr: RawAddress, _status: GattStatus) {}
 
     fn on_descriptor_read(
         &mut self,
-        _addr: String,
+        _addr: RawAddress,
         _status: GattStatus,
         _handle: i32,
         _value: Vec<u8>,
     ) {
     }
 
-    fn on_descriptor_write(&mut self, _addr: String, _status: GattStatus, _handle: i32) {}
+    fn on_descriptor_write(&mut self, _addr: RawAddress, _status: GattStatus, _handle: i32) {}
 
-    fn on_read_remote_rssi(&mut self, _addr: String, _rssi: i32, _status: GattStatus) {}
+    fn on_read_remote_rssi(&mut self, _addr: RawAddress, _rssi: i32, _status: GattStatus) {}
 
-    fn on_configure_mtu(&mut self, _addr: String, _mtu: i32, _status: GattStatus) {}
+    fn on_configure_mtu(&mut self, _addr: RawAddress, _mtu: i32, _status: GattStatus) {}
 
     fn on_connection_updated(
         &mut self,
-        _addr: String,
+        _addr: RawAddress,
         _interval: i32,
         _latency: i32,
         _timeout: i32,
@@ -499,7 +508,7 @@ impl IBluetoothGattCallback for GattCallback {
     ) {
     }
 
-    fn on_service_changed(&mut self, _addr: String) {}
+    fn on_service_changed(&mut self, _addr: RawAddress) {}
 }
 
 impl RPCProxy for GattCallback {

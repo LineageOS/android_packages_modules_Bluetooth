@@ -3,6 +3,7 @@ use crate::callbacks::Callbacks;
 use crate::uuid;
 use crate::Message;
 use crate::RPCProxy;
+use bt_topshim::btif::RawAddress;
 use itertools::Itertools;
 use std::sync::{Arc, Mutex};
 use tokio::sync::mpsc::Sender;
@@ -11,7 +12,7 @@ use tokio::sync::mpsc::Sender;
 #[derive(Debug, Clone)]
 pub struct BatterySet {
     /// Address of the remote device.
-    pub address: String,
+    pub address: RawAddress,
     /// UUID of where the battery info is decoded from as found in BT Spec.
     pub source_uuid: String,
     /// Information about the battery source, e.g. "BAS" or "HFP 1.8".
@@ -37,7 +38,7 @@ pub struct Batteries(Vec<BatterySet>);
 /// Callback for interacting with the BatteryManager.
 pub trait IBatteryManagerCallback: RPCProxy {
     /// Invoked whenever battery information associated with the given remote changes.
-    fn on_battery_info_updated(&mut self, remote_address: String, battery_set: BatterySet);
+    fn on_battery_info_updated(&mut self, remote_address: RawAddress, battery_set: BatterySet);
 }
 
 /// Central point for getting battery information that might be sourced from numerous systems.
@@ -53,7 +54,7 @@ pub trait IBatteryManager {
     fn unregister_battery_callback(&mut self, callback_id: u32) -> bool;
 
     /// Returns battery information for the remote, sourced from the highest priority origin.
-    fn get_battery_information(&self, remote_address: String) -> Option<BatterySet>;
+    fn get_battery_information(&self, remote_address: RawAddress) -> Option<BatterySet>;
 }
 
 /// Repesentation of the BatteryManager.
@@ -78,9 +79,9 @@ impl BatteryManager {
     }
 
     /// Handles a BatterySet update.
-    pub fn handle_battery_updated(&mut self, remote_address: String, battery_set: BatterySet) {
+    pub fn handle_battery_updated(&mut self, remote_address: RawAddress, battery_set: BatterySet) {
         self.callbacks.for_all_callbacks(|callback| {
-            callback.on_battery_info_updated(remote_address.clone(), battery_set.clone())
+            callback.on_battery_info_updated(remote_address, battery_set.clone())
         });
     }
 }
@@ -97,14 +98,14 @@ impl IBatteryManager for BatteryManager {
         self.remove_callback(callback_id)
     }
 
-    fn get_battery_information(&self, remote_address: String) -> Option<BatterySet> {
+    fn get_battery_information(&self, remote_address: RawAddress) -> Option<BatterySet> {
         self.battery_provider_manager.lock().unwrap().get_battery_info(remote_address)
     }
 }
 
 impl BatterySet {
     pub fn new(
-        address: String,
+        address: RawAddress,
         source_uuid: String,
         source_info: String,
         batteries: Vec<Battery>,

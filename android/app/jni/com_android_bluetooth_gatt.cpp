@@ -1037,7 +1037,10 @@ class JniScanningCallbacks : ScanningCallbacks {
   void OnTrackAdvFoundLost(AdvertisingTrackInfo track_info) {
     std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
     CallbackEnv sCallbackEnv(__func__);
-    if (!sCallbackEnv.valid() || !mScanCallbacksObj) return;
+    if (!sCallbackEnv.valid() || !mScanCallbacksObj) {
+      log::error("sCallbackEnv not valid or no mScanCallbacksObj.");
+      return;
+    }
 
     ScopedLocalRef<jstring> address(
         sCallbackEnv.get(),
