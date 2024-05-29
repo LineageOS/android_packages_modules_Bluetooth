@@ -55,7 +55,9 @@ void ModuleDumper::DumpState(std::string* output, std::ostringstream& /*oss*/) c
     log::assert_that(
         instance != module_registry_.started_modules_.end(),
         "assert failed: instance != module_registry_.started_modules_.end()");
+    log::verbose("Starting dumpsys module:{}", instance->second->ToString());
     queue.push(instance->second->GetDumpsysData(&builder));
+    log::verbose("Finished dumpsys module:{}", instance->second->ToString());
   }
 
   DumpsysDataBuilder data_builder(builder);
