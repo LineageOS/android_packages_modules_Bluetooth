@@ -1,6 +1,7 @@
 use bt_topshim::btif::{
     BtAddrType, BtBondState, BtConnectionState, BtDeviceType, BtDiscMode, BtPropertyType,
-    BtSspVariant, BtStatus, BtTransport, BtVendorProductInfo, Uuid, Uuid128Bit,
+    BtSspVariant, BtStatus, BtTransport, BtVendorProductInfo, DisplayAddress, RawAddress, Uuid,
+    Uuid128Bit,
 };
 use bt_topshim::profiles::socket::SocketType;
 use bt_topshim::profiles::ProfileConnectionState;
@@ -68,7 +69,7 @@ pub struct BluetoothMixin {
 
 #[dbus_propmap(BluetoothDevice)]
 pub struct BluetoothDeviceDBus {
-    address: String,
+    address: RawAddress,
     name: String,
 }
 
@@ -90,7 +91,7 @@ impl IBluetoothCallback for BluetoothCallbackDBus {
         dbus_generated!()
     }
     #[dbus_method("OnAddressChanged")]
-    fn on_address_changed(&mut self, addr: String) {
+    fn on_address_changed(&mut self, addr: RawAddress) {
         dbus_generated!()
     }
     #[dbus_method("OnNameChanged")]
@@ -138,7 +139,7 @@ impl IBluetoothCallback for BluetoothCallbackDBus {
         "OnBondStateChanged",
         DBusLog::Enable(DBusLogOptions::LogAll, DBusLogVerbosity::Verbose)
     )]
-    fn on_bond_state_changed(&mut self, status: u32, address: String, state: u32) {
+    fn on_bond_state_changed(&mut self, status: u32, address: RawAddress, state: u32) {
         dbus_generated!()
     }
     #[dbus_method("OnSdpSearchComplete")]
@@ -425,6 +426,33 @@ impl DBusArg for BtSdpRecord {
     }
 }
 
+impl DBusArg for RawAddress {
+    type DBusType = String;
+    fn from_dbus(
+        data: String,
+        _conn: Option<std::sync::Arc<dbus::nonblock::SyncConnection>>,
+        _remote: Option<dbus::strings::BusName<'static>>,
+        _disconnect_watcher: Option<
+            std::sync::Arc<std::sync::Mutex<dbus_projection::DisconnectWatcher>>,
+        >,
+    ) -> Result<RawAddress, Box<dyn std::error::Error>> {
+        Ok(RawAddress::from_string(data.clone()).ok_or_else(|| {
+            format!(
+                "Invalid Address: last 6 chars=\"{}\"",
+                data.chars().rev().take(6).collect::<String>().chars().rev().collect::<String>()
+            )
+        })?)
+    }
+
+    fn to_dbus(addr: RawAddress) -> Result<String, Box<dyn std::error::Error>> {
+        Ok(addr.to_string())
+    }
+
+    fn log(addr: &RawAddress) -> String {
+        format!("{}", DisplayAddress(addr))
+    }
+}
+
 impl_dbus_arg_enum!(BtDiscMode);
 impl_dbus_arg_from_into!(EscoCodingFormat, u8);
 
@@ -482,7 +510,7 @@ impl IBluetooth for IBluetoothDBus {
     }
 
     #[dbus_method("GetAddress", DBusLog::Disable)]
-    fn get_address(&self) -> String {
+    fn get_address(&self) -> RawAddress {
         dbus_generated!()
     }
 
@@ -1020,7 +1048,7 @@ impl IBluetoothQALegacy for IBluetoothQALegacyDBus {
     #[dbus_method("GetHIDReport")]
     fn get_hid_report(
         &mut self,
-        addr: String,
+        addr: RawAddress,
         report_type: BthhReportType,
         report_id: u8,
     ) -> BtStatus {
@@ -1030,7 +1058,7 @@ impl IBluetoothQALegacy for IBluetoothQALegacyDBus {
     #[dbus_method("SetHIDReport")]
     fn set_hid_report(
         &mut self,
-        addr: String,
+        addr: RawAddress,
         report_type: BthhReportType,
         report: String,
     ) -> BtStatus {
@@ -1038,7 +1066,7 @@ impl IBluetoothQALegacy for IBluetoothQALegacyDBus {
     }
 
     #[dbus_method("SendHIDData")]
-    fn send_hid_data(&mut self, addr: String, data: String) -> BtStatus {
+    fn send_hid_data(&mut self, addr: RawAddress, data: String) -> BtStatus {
         dbus_generated!()
     }
 }

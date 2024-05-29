@@ -9,7 +9,9 @@ use crate::bt_gatt::AuthReq;
 use crate::callbacks::{BtGattCallback, BtGattServerCallback};
 use crate::ClientContext;
 use crate::{console_red, console_yellow, print_error, print_info};
-use bt_topshim::btif::{BtConnectionState, BtDiscMode, BtStatus, BtTransport, Uuid, INVALID_RSSI};
+use bt_topshim::btif::{
+    BtConnectionState, BtDiscMode, BtStatus, BtTransport, RawAddress, Uuid, INVALID_RSSI,
+};
 use bt_topshim::profiles::gatt::{GattStatus, LePhy};
 use bt_topshim::profiles::hid_host::BthhReportType;
 use bt_topshim::profiles::sdp::{BtSdpMpsRecord, BtSdpRecord};
@@ -532,10 +534,7 @@ impl CommandHandler {
                 }
 
                 let enabled = self.lock_context().enabled;
-                let address = match self.lock_context().adapter_address.as_ref() {
-                    Some(x) => x.clone(),
-                    None => String::from(""),
-                };
+                let address = self.lock_context().adapter_address.unwrap_or_default();
                 let context = self.lock_context();
                 let adapter_dbus = context.adapter_dbus.as_ref().unwrap();
                 let qa_dbus = context.qa_dbus.as_ref().unwrap();
@@ -563,7 +562,7 @@ impl CommandHandler {
                 qa_dbus.fetch_connectable();
                 qa_dbus.fetch_alias();
                 qa_dbus.fetch_discoverable_mode();
-                print_info!("Address: {}", address);
+                print_info!("Address: {}", address.to_string());
                 print_info!("Name: {}", name);
                 print_info!("Modalias: {}", modalias);
                 print_info!("State: {}", if enabled { "enabled" } else { "disabled" });
@@ -662,7 +661,7 @@ impl CommandHandler {
         }
 
         let address = self.lock_context().update_adapter_address();
-        print_info!("Local address = {}", &address);
+        print_info!("Local address = {}", address.to_string());
         Ok(())
     }
 
@@ -769,7 +768,7 @@ impl CommandHandler {
         match &command[..] {
             "add" => {
                 let device = BluetoothDevice {
-                    address: String::from(get_arg(args, 1)?),
+                    address: RawAddress::from_string(get_arg(args, 1)?).ok_or("Invalid Address")?,
                     name: String::from("Classic Device"),
                 };
 
@@ -778,7 +777,7 @@ impl CommandHandler {
                 if bonding_attempt.is_some() {
                     return Err(format!(
                         "Already bonding [{}]. Cancel bonding first.",
-                        bonding_attempt.as_ref().unwrap().address,
+                        bonding_attempt.as_ref().unwrap().address.to_string(),
                     )
                     .into());
                 }
@@ -796,7 +795,7 @@ impl CommandHandler {
             }
             "remove" => {
                 let device = BluetoothDevice {
-                    address: String::from(get_arg(args, 1)?),
+                    address: RawAddress::from_string(get_arg(args, 1)?).ok_or("Invalid Address")?,
                     name: String::from("Classic Device"),
                 };
 
@@ -804,7 +803,7 @@ impl CommandHandler {
             }
             "cancel" => {
                 let device = BluetoothDevice {
-                    address: String::from(get_arg(args, 1)?),
+                    address: RawAddress::from_string(get_arg(args, 1)?).ok_or("Invalid Address")?,
                     name: String::from("Classic Device"),
                 };
 
@@ -828,7 +827,7 @@ impl CommandHandler {
         match &command[..] {
             "connect" => {
                 let device = BluetoothDevice {
-                    address: String::from(get_arg(args, 1)?),
+                    address: RawAddress::from_string(get_arg(args, 1)?).ok_or("Invalid Address")?,
                     name: String::from("Classic Device"),
                 };
 
@@ -840,14 +839,14 @@ impl CommandHandler {
                     .connect_all_enabled_profiles(device.clone());
 
                 if status == BtStatus::Success {
-                    println!("Connecting to {}", &device.address);
+                    println!("Connecting to {}", &device.address.to_string());
                 } else {
-                    println!("Can't connect to {}", &device.address);
+                    println!("Can't connect to {}", &device.address.to_string());
                 }
             }
             "disconnect" => {
                 let device = BluetoothDevice {
-                    address: String::from(get_arg(args, 1)?),
+                    address: RawAddress::from_string(get_arg(args, 1)?).ok_or("Invalid Address")?,
                     name: String::from("Classic Device"),
                 };
 
@@ -859,14 +858,14 @@ impl CommandHandler {
                     .disconnect_all_enabled_profiles(device.clone());
 
                 if success {
-                    println!("Disconnecting from {}", &device.address);
+                    println!("Disconnecting from {}", &device.address.to_string());
                 } else {
-                    println!("Can't disconnect from {}", &device.address);
+                    println!("Can't disconnect from {}", &device.address.to_string());
                 }
             }
             "info" => {
                 let device = BluetoothDevice {
-                    address: String::from(get_arg(args, 1)?),
+                    address: RawAddress::from_string(get_arg(args, 1)?).ok_or("Invalid Address")?,
                     name: String::from("Classic Device"),
                 };
 
@@ -914,7 +913,7 @@ impl CommandHandler {
                     )
                 };
 
-                print_info!("Address: {}", &device.address);
+                print_info!("Address: {}", &device.address.to_string());
                 print_info!("Name: {}", name);
                 print_info!("Alias: {}", alias);
                 print_info!("Device Type: {:?}", device_type);
@@ -937,7 +936,7 @@ impl CommandHandler {
             "set-alias" => {
                 let new_alias = get_arg(args, 2)?;
                 let device = BluetoothDevice {
-                    address: String::from(get_arg(args, 1)?),
+                    address: RawAddress::from_string(get_arg(args, 1)?).ok_or("Invalid Address")?,
                     name: String::from(""),
                 };
                 let old_alias = self
@@ -960,7 +959,7 @@ impl CommandHandler {
             }
             "set-pairing-confirmation" => {
                 let device = BluetoothDevice {
-                    address: String::from(get_arg(args, 1)?),
+                    address: RawAddress::from_string(get_arg(args, 1)?).ok_or("Invalid Address")?,
                     name: String::from(""),
                 };
                 let accept = match &get_arg(args, 2)?[..] {
@@ -979,7 +978,7 @@ impl CommandHandler {
             }
             "set-pairing-pin" => {
                 let device = BluetoothDevice {
-                    address: String::from(get_arg(args, 1)?),
+                    address: RawAddress::from_string(get_arg(args, 1)?).ok_or("Invalid Address")?,
                     name: String::from(""),
                 };
                 let pin = get_arg(args, 2)?;
@@ -997,7 +996,7 @@ impl CommandHandler {
             }
             "set-pairing-passkey" => {
                 let device = BluetoothDevice {
-                    address: String::from(get_arg(args, 1)?),
+                    address: RawAddress::from_string(get_arg(args, 1)?).ok_or("Invalid Address")?,
                     name: String::from(""),
                 };
                 let passkey = get_arg(args, 2)?;
@@ -1017,7 +1016,7 @@ impl CommandHandler {
             }
             "get-rssi" => {
                 let device = BluetoothDevice {
-                    address: String::from(get_arg(args, 1)?),
+                    address: RawAddress::from_string(get_arg(args, 1)?).ok_or("Invalid Address")?,
                     name: String::from(""),
                 };
 
@@ -1735,7 +1734,7 @@ impl CommandHandler {
         match &command[..] {
             "search" => {
                 let device = BluetoothDevice {
-                    address: String::from(get_arg(args, 1)?),
+                    address: RawAddress::from_string(get_arg(args, 1)?).ok_or("Invalid Address")?,
                     name: String::from(""),
                 };
                 let uuid = match UuidHelper::parse_string(get_arg(args, 2)?) {
@@ -1795,7 +1794,7 @@ impl CommandHandler {
             "send-msc" => {
                 let dlci =
                     String::from(get_arg(args, 1)?).parse::<u8>().or(Err("Failed parsing DLCI"))?;
-                let addr = String::from(get_arg(args, 2)?);
+                let addr = RawAddress::from_string(get_arg(args, 2)?).ok_or("Invalid Address")?;
                 self.context.lock().unwrap().qa_dbus.as_mut().unwrap().rfcomm_send_msc(dlci, addr);
             }
             "listen-rfcomm" => {
@@ -1862,7 +1861,7 @@ impl CommandHandler {
                 let (addr, sock_type, psm_or_uuid) =
                     (&get_arg(args, 1)?, &get_arg(args, 2)?, &get_arg(args, 3)?);
                 let device = BluetoothDevice {
-                    address: String::from(*addr),
+                    address: RawAddress::from_string(*addr).ok_or("Invalid Address")?,
                     name: String::from("Socket Connect Device"),
                 };
 
@@ -1985,7 +1984,7 @@ impl CommandHandler {
 
         match &command[..] {
             "get-report" => {
-                let addr = String::from(get_arg(args, 1)?);
+                let addr = RawAddress::from_string(get_arg(args, 1)?).ok_or("Invalid Address")?;
                 let report_type = match &get_arg(args, 2)?[..] {
                     "Input" => BthhReportType::InputReport,
                     "Output" => BthhReportType::OutputReport,
@@ -2005,7 +2004,7 @@ impl CommandHandler {
                 );
             }
             "set-report" => {
-                let addr = String::from(get_arg(args, 1)?);
+                let addr = RawAddress::from_string(get_arg(args, 1)?).ok_or("Invalid Address")?;
                 let report_type = match &get_arg(args, 2)?[..] {
                     "Input" => BthhReportType::InputReport,
                     "Output" => BthhReportType::OutputReport,
@@ -2023,7 +2022,7 @@ impl CommandHandler {
                 );
             }
             "send-data" => {
-                let addr = String::from(get_arg(args, 1)?);
+                let addr = RawAddress::from_string(get_arg(args, 1)?).ok_or("Invalid Address")?;
                 let data = String::from(get_arg(args, 2)?);
 
                 self.context.lock().unwrap().qa_dbus.as_mut().unwrap().send_hid_data(addr, data);
@@ -2052,7 +2051,7 @@ impl CommandHandler {
                 let devices =
                     self.lock_context().adapter_dbus.as_ref().unwrap().get_bonded_devices();
                 for device in devices.iter() {
-                    print_info!("[{:17}] {}", device.address, device.name);
+                    print_info!("[{}] {}", device.address.to_string(), device.name);
                 }
             }
             "found" => {
@@ -2066,7 +2065,7 @@ impl CommandHandler {
                 let devices =
                     self.lock_context().adapter_dbus.as_ref().unwrap().get_connected_devices();
                 for device in devices.iter() {
-                    print_info!("[{:17}] {}", device.address, device.name);
+                    print_info!("[{}] {}", device.address.to_string(), device.name);
                 }
             }
             other => {

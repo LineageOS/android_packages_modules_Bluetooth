@@ -1,6 +1,6 @@
 use btstack::bluetooth_qa::{IBluetoothQA, IBluetoothQACallback};
 
-use bt_topshim::btif::BtDiscMode;
+use bt_topshim::btif::{BtDiscMode, RawAddress};
 use dbus_macros::{dbus_method, dbus_proxy_obj, generate_dbus_exporter};
 use dbus_projection::prelude::*;
 
@@ -28,7 +28,7 @@ impl IBluetoothQA for IBluetoothQADBus {
         dbus_generated!()
     }
     #[dbus_method("RfcommSendMsc")]
-    fn rfcomm_send_msc(&self, dlci: u8, addr: String) {
+    fn rfcomm_send_msc(&self, dlci: u8, addr: RawAddress) {
         dbus_generated!()
     }
     #[dbus_method("FetchDiscoverableMode")]
@@ -51,16 +51,16 @@ impl IBluetoothQA for IBluetoothQADBus {
     fn get_modalias(&self) -> String {
         dbus_generated!()
     }
-    #[dbus_method("FetchHIDReport")]
-    fn get_hid_report(&self, addr: String, report_type: BthhReportType, report_id: u8) {
+    #[dbus_method("GetHIDReport")]
+    fn get_hid_report(&self, addr: RawAddress, report_type: BthhReportType, report_id: u8) {
         dbus_generated!()
     }
     #[dbus_method("SetHIDReport")]
-    fn set_hid_report(&self, addr: String, report_type: BthhReportType, report: String) {
+    fn set_hid_report(&self, addr: RawAddress, report_type: BthhReportType, report: String) {
         dbus_generated!()
     }
     #[dbus_method("SendHIDData")]
-    fn send_hid_data(&self, addr: String, data: String) {
+    fn send_hid_data(&self, addr: RawAddress, data: String) {
         dbus_generated!()
     }
 }
