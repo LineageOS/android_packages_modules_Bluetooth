@@ -10,7 +10,9 @@ use crate::dbus_iface::{
 };
 use crate::{console_red, console_yellow, print_error, print_info};
 use crate::{ClientContext, GattRequest};
-use bt_topshim::btif::{BtBondState, BtPropertyType, BtSspVariant, BtStatus, Uuid128Bit};
+use bt_topshim::btif::{
+    BtBondState, BtPropertyType, BtSspVariant, BtStatus, RawAddress, Uuid128Bit,
+};
 use bt_topshim::profiles::gatt::{AdvertisingStatus, GattStatus, LePhy};
 use bt_topshim::profiles::hfp::HfpCodecId;
 use bt_topshim::profiles::le_audio::{
@@ -140,11 +142,16 @@ impl IBluetoothCallback for BtCallback {
         remote_device: BluetoothDevice,
         props: Vec<BtPropertyType>,
     ) {
-        print_info!("Bluetooth properties {:?} changed for {:?}", props, remote_device);
+        print_info!(
+            "Bluetooth properties {:?} changed for [{}: {:?}]",
+            props,
+            remote_device.address.to_string(),
+            remote_device.name
+        );
     }
 
-    fn on_address_changed(&mut self, addr: String) {
-        print_info!("Address changed to {}", &addr);
+    fn on_address_changed(&mut self, addr: RawAddress) {
+        print_info!("Address changed to {}", addr.to_string());
         self.context.lock().unwrap().adapter_address = Some(addr);
     }
 
@@ -161,19 +168,28 @@ impl IBluetoothCallback for BtCallback {
             .lock()
             .unwrap()
             .found_devices
-            .entry(remote_device.address.clone())
+            .entry(remote_device.address.to_string())
             .or_insert(remote_device.clone());
 
-        print_info!("Found device: {:?}", remote_device);
+        print_info!(
+            "Found device: [{}: {:?}]",
+            remote_device.address.to_string(),
+            remote_device.name
+        );
     }
 
     fn on_device_cleared(&mut self, remote_device: BluetoothDevice) {
-        match self.context.lock().unwrap().found_devices.remove(&remote_device.address) {
-            Some(_) => print_info!("Removed device: {:?}", remote_device),
+        match self.context.lock().unwrap().found_devices.remove(&remote_device.address.to_string())
+        {
+            Some(_) => print_info!(
+                "Removed device: [{}: {:?}]",
+                remote_device.address.to_string(),
+                remote_device.name
+            ),
             None => (),
         };
 
-        self.context.lock().unwrap().bonded_devices.remove(&remote_device.address);
+        self.context.lock().unwrap().bonded_devices.remove(&remote_device.address.to_string());
     }
 
     fn on_discovering_changed(&mut self, discovering: bool) {
@@ -192,9 +208,9 @@ impl IBluetoothCallback for BtCallback {
         match variant {
             BtSspVariant::PasskeyNotification | BtSspVariant::PasskeyConfirmation => {
                 print_info!(
-                    "Device [{}: {}] would like to pair, enter passkey on remote device: {:06}",
-                    &remote_device.address,
-                    &remote_device.name,
+                    "Device [{}: {:?}] would like to pair, enter passkey on remote device: {:06}",
+                    remote_device.address.to_string(),
+                    remote_device.name,
                     passkey
                 );
             }
@@ -228,9 +244,9 @@ impl IBluetoothCallback for BtCallback {
 
     fn on_pin_request(&mut self, remote_device: BluetoothDevice, _cod: u32, min_16_digit: bool) {
         print_info!(
-            "Device [{}: {}] would like to pair, enter pin code {}",
-            &remote_device.address,
-            &remote_device.name,
+            "Device [{}: {:?}] would like to pair, enter pin code {}",
+            remote_device.address.to_string(),
+            remote_device.name,
             match min_16_digit {
                 true => "with at least 16 digits",
                 false => "",
@@ -240,15 +256,20 @@ impl IBluetoothCallback for BtCallback {
 
     fn on_pin_display(&mut self, remote_device: BluetoothDevice, pincode: String) {
         print_info!(
-            "Device [{}: {}] would like to pair, enter pin code {} on the remote",
-            &remote_device.address,
-            &remote_device.name,
+            "Device [{}: {:?}] would like to pair, enter pin code {} on the remote",
+            remote_device.address.to_string(),
+            remote_device.name,
             pincode
         );
     }
 
-    fn on_bond_state_changed(&mut self, status: u32, address: String, state: u32) {
-        print_info!("Bonding state changed: [{}] state: {}, Status = {}", address, state, status);
+    fn on_bond_state_changed(&mut self, status: u32, address: RawAddress, state: u32) {
+        print_info!(
+            "Bonding state changed: [{}] state: {}, Status = {}",
+            address.to_string(),
+            state,
+            status
+        );
 
         // Clear bonding attempt if bonding fails or succeeds
         match BtBondState::from(state) {
@@ -257,7 +278,7 @@ impl IBluetoothCallback for BtCallback {
                     self.context.lock().unwrap().bonding_attempt.as_ref().cloned();
                 match bonding_attempt {
                     Some(bd) => {
-                        if &address == &bd.address {
+                        if address == bd.address {
                             self.context.lock().unwrap().bonding_attempt = None;
                         }
                     }
@@ -267,17 +288,16 @@ impl IBluetoothCallback for BtCallback {
             BtBondState::Bonding => (),
         }
 
-        let device =
-            BluetoothDevice { address: address.clone(), name: String::from("Classic device") };
+        let device = BluetoothDevice { address: address, name: String::from("Classic device") };
 
         // If bonded, we should also automatically connect all enabled profiles
         if BtBondState::Bonded == state.into() {
-            self.context.lock().unwrap().bonded_devices.insert(address.clone(), device.clone());
+            self.context.lock().unwrap().bonded_devices.insert(address.to_string(), device.clone());
             self.context.lock().unwrap().connect_all_enabled_profiles(device.clone());
         }
 
         if BtBondState::NotBonded == state.into() {
-            self.context.lock().unwrap().bonded_devices.remove(&address);
+            self.context.lock().unwrap().bonded_devices.remove(&address.to_string());
         }
     }
 
@@ -288,8 +308,9 @@ impl IBluetoothCallback for BtCallback {
         sdp_records: Vec<BtSdpRecord>,
     ) {
         print_info!(
-            "SDP search of {} for UUID {} returned {} results",
-            remote_device.address,
+            "SDP search of [{}: {:?}] for UUID {} returned {} results",
+            remote_device.address.to_string(),
+            remote_device.name,
             UuidWrapper(&searched_uuid),
             sdp_records.len()
         );
@@ -350,11 +371,15 @@ impl BtConnectionCallback {
 
 impl IBluetoothConnectionCallback for BtConnectionCallback {
     fn on_device_connected(&mut self, remote_device: BluetoothDevice) {
-        print_info!("Connected: [{}]: {}", remote_device.address, remote_device.name);
+        print_info!("Connected: [{}: {:?}]", remote_device.address.to_string(), remote_device.name);
     }
 
     fn on_device_disconnected(&mut self, remote_device: BluetoothDevice) {
-        print_info!("Disconnected: [{}]: {}", remote_device.address, remote_device.name);
+        print_info!(
+            "Disconnected: [{}: {:?}]",
+            remote_device.address.to_string(),
+            remote_device.name
+        );
     }
 }
 
@@ -476,8 +501,9 @@ impl IBluetoothAdminPolicyCallback for AdminCallback {
         new_policy_effect: Option<PolicyEffect>,
     ) {
         print_info!(
-            "new device policy effect. Device: {:?}. New Effect: {:?}",
-            device,
+            "new device policy effect. Device: [{}: {:?}]. New Effect: {:?}",
+            device.address.to_string(),
+            device.name,
             new_policy_effect
         );
     }

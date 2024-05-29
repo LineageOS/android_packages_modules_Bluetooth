@@ -2,7 +2,7 @@
 
 use btif_macros::{btif_callback, btif_callbacks_dispatcher};
 
-use bt_topshim::btif::{RawAddress, Uuid};
+use bt_topshim::btif::{DisplayAddress, RawAddress, Uuid};
 use bt_topshim::profiles::gatt::{AdvertisingStatus, Gatt, GattAdvCallbacks, LeDiscMode, LePhy};
 
 use itertools::Itertools;
@@ -1380,8 +1380,10 @@ impl BtifGattAdvCallbacks for AdvertiseManagerImpl {
 
     fn on_own_address_read(&mut self, adv_id: u8, addr_type: u8, address: RawAddress) {
         debug!(
-            "on_own_address_read(): adv_id = {}, addr_type = {}, address = {:?}",
-            adv_id, addr_type, address
+            "on_own_address_read(): adv_id = {}, addr_type = {}, address = {}",
+            adv_id,
+            addr_type,
+            DisplayAddress(&address)
         );
 
         let advertiser_id: i32 = adv_id.into();

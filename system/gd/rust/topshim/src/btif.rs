@@ -895,7 +895,6 @@ impl Hash for RawAddress {
     }
 }
 
-// TODO (b/264603574): Handling address hiding in rust logging statements
 impl ToString for RawAddress {
     fn to_string(&self) -> String {
         String::from(format!(
@@ -955,7 +954,13 @@ impl RawAddress {
 pub struct DisplayAddress<'a>(pub &'a RawAddress);
 impl<'a> Display for DisplayAddress<'a> {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        write!(f, "xx:xx:xx:xx:{:02X}:{:02X}", &self.0.address[4], &self.0.address[5])
+        if self.0.address.iter().all(|&x| x == 0x00) {
+            write!(f, "00:00:00:00:00:00")
+        } else if self.0.address.iter().all(|&x| x == 0xff) {
+            write!(f, "ff:ff:ff:ff:ff:ff")
+        } else {
+            write!(f, "xx:xx:xx:xx:{:02x}:{:02x}", &self.0.address[4], &self.0.address[5])
+        }
     }
 }
 
@@ -1523,15 +1528,19 @@ mod tests {
     fn test_display_address() {
         assert_eq!(
             format!("{}", DisplayAddress(&RawAddress::from_string("00:00:00:00:00:00").unwrap())),
-            String::from("xx:xx:xx:xx:00:00")
+            String::from("00:00:00:00:00:00")
+        );
+        assert_eq!(
+            format!("{}", DisplayAddress(&RawAddress::from_string("ff:ff:ff:ff:ff:ff").unwrap())),
+            String::from("ff:ff:ff:ff:ff:ff")
         );
         assert_eq!(
             format!("{}", DisplayAddress(&RawAddress::from_string("1a:2b:1a:2b:1a:2b").unwrap())),
-            String::from("xx:xx:xx:xx:1A:2B")
+            String::from("xx:xx:xx:xx:1a:2b")
         );
         assert_eq!(
             format!("{}", DisplayAddress(&RawAddress::from_string("3C:4D:3C:4D:3C:4D").unwrap())),
-            String::from("xx:xx:xx:xx:3C:4D")
+            String::from("xx:xx:xx:xx:3c:4d")
         );
         assert_eq!(
             format!("{}", DisplayAddress(&RawAddress::from_string("11:35:11:35:11:35").unwrap())),
