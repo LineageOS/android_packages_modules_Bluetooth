@@ -373,6 +373,33 @@ int RFCOMM_RemoveServer(uint16_t handle) {
 
 /*******************************************************************************
  *
+ * Function         PORT_SetEventMask
+ *
+ * Description      This function is called to close the specified connection.
+ *
+ * Parameters:      handle     - Handle returned in the RFCOMM_CreateConnection
+ *                  mask   - Bitmask of the events the host is interested in
+ *
+ ******************************************************************************/
+int PORT_SetEventMask(uint16_t handle, uint32_t mask) {
+  log::verbose("PORT_SetEventMask() handle:{} mask:0x{:x}", handle, mask);
+  tPORT* p_port = get_port_from_handle(handle);
+  if (p_port == nullptr) {
+    log::error("Unable to get RFCOMM port control block bad handle:{}", handle);
+    return (PORT_BAD_HANDLE);
+  }
+
+  if (!p_port->in_use || (p_port->state == PORT_CONNECTION_STATE_CLOSED)) {
+    return (PORT_NOT_OPENED);
+  }
+
+  p_port->ev_mask = mask;
+
+  return (PORT_SUCCESS);
+}
+
+/*******************************************************************************
+ *
  * Function         PORT_SetEventCallback
  *
  * Description      This function is called to provide an address of the
@@ -450,33 +477,6 @@ int PORT_SetDataCOCallback(uint16_t handle, tPORT_DATA_CO_CALLBACK* p_port_cb) {
   }
 
   p_port->p_data_co_callback = p_port_cb;
-
-  return (PORT_SUCCESS);
-}
-
-/*******************************************************************************
- *
- * Function         PORT_SetEventMask
- *
- * Description      This function is called to close the specified connection.
- *
- * Parameters:      handle     - Handle returned in the RFCOMM_CreateConnection
- *                  mask   - Bitmask of the events the host is interested in
- *
- ******************************************************************************/
-int PORT_SetEventMask(uint16_t handle, uint32_t mask) {
-  log::verbose("PORT_SetEventMask() handle:{} mask:0x{:x}", handle, mask);
-  tPORT* p_port = get_port_from_handle(handle);
-  if (p_port == nullptr) {
-    log::error("Unable to get RFCOMM port control block bad handle:{}", handle);
-    return (PORT_BAD_HANDLE);
-  }
-
-  if (!p_port->in_use || (p_port->state == PORT_CONNECTION_STATE_CLOSED)) {
-    return (PORT_NOT_OPENED);
-  }
-
-  p_port->ev_mask = mask;
 
   return (PORT_SUCCESS);
 }
