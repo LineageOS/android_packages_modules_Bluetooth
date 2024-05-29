@@ -213,7 +213,7 @@ pub fn generate_dbus_exporter(attr: TokenStream, item: TokenStream) -> TokenStre
                         if !args_debug_format.is_empty() {
                             args_debug_format.push_str(", ");
                         }
-                        args_debug_format.push_str("{:?}");
+                        args_debug_format.push_str("|{}|");
                     }
                 }
             }
@@ -678,7 +678,7 @@ pub fn dbus_propmap(attr: TokenStream, item: TokenStream) -> TokenStream {
             log_format.push_str(", ");
         }
         log_format.push_str(field_str.as_str());
-        log_format.push_str(": {:?}");
+        log_format.push_str(": {}");
 
         log_args = quote! {
             #log_args
@@ -687,9 +687,9 @@ pub fn dbus_propmap(attr: TokenStream, item: TokenStream) -> TokenStream {
     }
 
     // Give an example type: struct BluetoothDevice { address: RawAddress, name: String }
-    // At this point the |log_format| would be: "address: {:?}, name: {:?}"
+    // At this point the |log_format| would be: "address: {}, name: {}"
     // Now, wrap it with curly braces and prepend the structure name so it becomes:
-    //     "BluetoothDevice { address: {:?}, name: {:?} }"
+    //     "BluetoothDevice { address: {}, name: {} }"
     log_format.insert_str(0, " {{ ");
     log_format.push_str(" }}");
     log_format.insert_str(0, struct_ident.to_string().as_str());
@@ -822,7 +822,7 @@ pub fn dbus_proxy_obj(attr: TokenStream, item: TokenStream) -> TokenStream {
                         if !args_debug_format.is_empty() {
                             args_debug_format.push_str(", ");
                         }
-                        args_debug_format.push_str("{:?}");
+                        args_debug_format.push_str("|{}|");
                     }
                 }
             }
@@ -1212,6 +1212,10 @@ pub fn generate_dbus_arg(_item: TokenStream) -> TokenStream {
         /// When implementing this trait for Rust container types (i.e. Option<T>),
         /// you must first select the D-Bus container type used (i.e. array, property map, etc) and
         /// then implement the `from_dbus`, `to_dbus`, and `log` functions.
+        ///
+        /// Note that when implementing `log` function for a container type, avoid using the "{:?}"
+        /// Debug format because the `log` function could be recursively called and generate many
+        /// backslashes.
         pub(crate) trait DBusArg {
             type DBusType;
 
@@ -1230,7 +1234,7 @@ pub fn generate_dbus_arg(_item: TokenStream) -> TokenStream {
         }
 
         // Types that implement dbus::arg::Append do not need any conversion.
-        pub(crate) trait DirectDBus: Clone + std::fmt::Display {}
+        pub(crate) trait DirectDBus: Clone + std::fmt::Debug {}
         impl DirectDBus for bool {}
         impl DirectDBus for i32 {}
         impl DirectDBus for u32 {}
@@ -1258,7 +1262,7 @@ pub fn generate_dbus_arg(_item: TokenStream) -> TokenStream {
             }
 
             fn log(data: &T) -> String {
-                format!("{}", data)
+                format!("{:?}", data)
             }
         }
 
@@ -1286,7 +1290,7 @@ pub fn generate_dbus_arg(_item: TokenStream) -> TokenStream {
             }
         }
 
-        impl<T: DBusArg> DBusArg for Vec<T> where T: std::fmt::Debug {
+        impl<T: DBusArg> DBusArg for Vec<T> {
             type DBusType = Vec<T::DBusType>;
 
             fn from_dbus(
@@ -1318,7 +1322,14 @@ pub fn generate_dbus_arg(_item: TokenStream) -> TokenStream {
             }
 
             fn log(data: &Vec<T>) -> String {
-                format!("{:?}", data)
+                format!(
+                    "[{}]",
+                    data
+                        .iter()
+                        .map(|d| <T as DBusArg>::log(d))
+                        .collect::<Vec<String>>()
+                        .join(", ")
+                )
             }
         }
 
@@ -1327,7 +1338,6 @@ pub fn generate_dbus_arg(_item: TokenStream) -> TokenStream {
                 <T as DBusArg>::DBusType: dbus::arg::RefArg
                     + 'static
                     + RefArgToRust<RustType = <T as DBusArg>::DBusType>,
-                T: std::fmt::Debug
         {
             type DBusType = dbus::arg::PropMap;
 
@@ -1384,7 +1394,11 @@ pub fn generate_dbus_arg(_item: TokenStream) -> TokenStream {
             }
 
             fn log(data: &Option<T>) -> String {
-                format!("{:?}", data)
+                if let Some(d) = data.as_ref() {
+                    format!("Some({})", <T as DBusArg>::log(d))
+                } else {
+                    String::from("None")
+                }
             }
         }
 
@@ -1395,8 +1409,6 @@ pub fn generate_dbus_arg(_item: TokenStream) -> TokenStream {
                     + Hash
                     + dbus::arg::RefArg
                     + RefArgToRust<RustType = <K as DBusArg>::DBusType>,
-                K: std::fmt::Debug,
-                V: std::fmt::Debug,
         {
             type DBusType = std::collections::HashMap<K::DBusType, V::DBusType>;
 
@@ -1440,7 +1452,17 @@ pub fn generate_dbus_arg(_item: TokenStream) -> TokenStream {
             }
 
             fn log(data: &std::collections::HashMap<K, V>) -> String {
-                format!("{:?}", data)
+                format!(
+                    "{{{}}}",
+                    data.iter()
+                        .map(|(k, v)| format!(
+                            "{}: {}",
+                            <K as DBusArg>::log(k),
+                            <V as DBusArg>::log(v),
+                        ))
+                        .collect::<Vec<String>>()
+                        .join(", ")
+                )
             }
         }
     };
