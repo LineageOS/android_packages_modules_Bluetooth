@@ -272,7 +272,7 @@ impl ClientContext {
         // Trigger callback registration in the foreground
         let fg = self.fg.clone();
         tokio::spawn(async move {
-            let adapter = String::from(format!("adapter{}", idx));
+            let adapter = format!("adapter{}", idx);
             // Floss won't export the interface until it is ready to be used.
             // Wait 1 second before registering the callbacks.
             sleep(Duration::from_millis(1000)).await;

@@ -28,7 +28,7 @@ pub(crate) struct InterfaceManager {}
 
 impl InterfaceManager {
     fn make_object_name(idx: i32, name: &str) -> String {
-        String::from(format!("/org/chromium/bluetooth/hci{}/{}", idx, name))
+        format!("/org/chromium/bluetooth/hci{}/{}", idx, name)
     }
 
     /// Creates an mpsc channel for passing messages to the main dispatch loop.

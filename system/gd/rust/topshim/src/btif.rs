@@ -940,7 +940,7 @@ impl Hash for RawAddress {
 
 impl ToString for RawAddress {
     fn to_string(&self) -> String {
-        String::from(format!(
+        format!(
             "{:02X}:{:02X}:{:02X}:{:02X}:{:02X}:{:02X}",
             self.address[0],
             self.address[1],
@@ -948,7 +948,7 @@ impl ToString for RawAddress {
             self.address[3],
             self.address[4],
             self.address[5]
-        ))
+        )
     }
 }
 

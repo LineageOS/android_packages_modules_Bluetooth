@@ -266,11 +266,11 @@ macro_rules! impl_dbus_arg_enum {
             ) -> Result<$enum_type, Box<dyn std::error::Error>> {
                 match <$enum_type>::from_u32(data) {
                     Some(x) => Ok(x),
-                    None => Err(Box::new(DBusArgError::new(String::from(format!(
+                    None => Err(Box::new(DBusArgError::new(format!(
                         "error converting {} to {}",
                         data,
                         stringify!($enum_type)
-                    ))))),
+                    )))),
                 }
             }
 
@@ -279,7 +279,7 @@ macro_rules! impl_dbus_arg_enum {
             }
 
             fn log(data: &$enum_type) -> String {
-                String::from(format!("{:?}", data))
+                format!("{:?}", data)
             }
         }
     };
@@ -300,28 +300,28 @@ macro_rules! impl_dbus_arg_from_into {
                 >,
             ) -> Result<$rust_type, Box<dyn std::error::Error>> {
                 match <$rust_type>::try_from(data.clone()) {
-                    Err(e) => Err(Box::new(DBusArgError::new(String::from(format!(
+                    Err(e) => Err(Box::new(DBusArgError::new(format!(
                         "error converting {:?} to {:?}",
                         data,
                         stringify!($rust_type),
-                    ))))),
+                    )))),
                     Ok(result) => Ok(result),
                 }
             }
 
             fn to_dbus(data: $rust_type) -> Result<$dbus_type, Box<dyn std::error::Error>> {
                 match data.clone().try_into() {
-                    Err(e) => Err(Box::new(DBusArgError::new(String::from(format!(
+                    Err(e) => Err(Box::new(DBusArgError::new(format!(
                         "error converting {:?} to {:?}",
                         data,
                         stringify!($dbus_type)
-                    ))))),
+                    )))),
                     Ok(result) => Ok(result),
                 }
             }
 
             fn log(data: &$rust_type) -> String {
-                String::from(format!("{:?}", data))
+                format!("{:?}", data)
             }
         }
     };
