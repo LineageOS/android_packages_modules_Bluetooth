@@ -1277,6 +1277,7 @@ void SnoopLogger::DumpSnoozLogToFile(const std::vector<std::string>& data) const
     return;
   }
 
+  log::debug("Dumping btsnooz log data to {}", snooz_log_path_);
   auto last_file_path = get_last_log_path(snooz_log_path_);
 
   if (os::FileExists(snooz_log_path_)) {
@@ -1372,7 +1373,6 @@ void SnoopLogger::Stop() {
 
 DumpsysDataFinisher SnoopLogger::GetDumpsysData(
     flatbuffers::FlatBufferBuilder* /* builder */) const {
-  log::debug("Dumping btsnooz log data to {}", snooz_log_path_);
   DumpSnoozLogToFile(btsnooz_buffer_.Pull());
   return EmptyDumpsysDataFinisher;
 }
