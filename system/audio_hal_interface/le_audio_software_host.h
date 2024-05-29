@@ -38,6 +38,12 @@ struct btle_pcm_parameters {
   uint8_t channels_count;
 };
 
+enum class btle_stream_started_status : int32_t {
+  CANCELED = -1,
+  IDLE = 0,
+  STARTED = 1,
+};
+
 // Invoked by audio server when it has audio data to stream.
 // Returns whether the start request has been made successfully.
 bool HostStartRequest();
@@ -45,8 +51,11 @@ bool HostStartRequest();
 // Invoked by audio server when audio streaming is done.
 void HostStopRequest();
 
-// Returns whether the host stream has started.
-bool GetHostStreamStarted();
+// Whether the peer stream has started.
+// Returns 1, when the stream has started,
+//         -1, when the previous request has been cancelled,
+//         0, otherwise.
+btle_stream_started_status GetHostStreamStarted();
 
 // Returns the current host audio config.
 btle_pcm_parameters GetHostPcmConfig();
@@ -61,8 +70,11 @@ bool PeerStartRequest();
 // Invoked by audio server when audio streaming is done.
 void PeerStopRequest();
 
-// Returns whether the peer stream has started.
-bool GetPeerStreamStarted();
+// Whether the peer stream has started.
+// Returns 1, when the stream has started,
+//         -1, when the previous request has been cancelled,
+//         0, otherwise.
+btle_stream_started_status GetPeerStreamStarted();
 
 // Returns the current peer audio config.
 btle_pcm_parameters GetPeerPcmConfig();

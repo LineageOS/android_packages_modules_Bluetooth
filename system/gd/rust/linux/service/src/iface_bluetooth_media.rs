@@ -8,7 +8,7 @@ use bt_topshim::profiles::hfp::{HfpCodecBitId, HfpCodecFormat};
 use bt_topshim::profiles::le_audio::{
     BtLeAudioContentType, BtLeAudioDirection, BtLeAudioGroupNodeStatus, BtLeAudioGroupStatus,
     BtLeAudioGroupStreamStatus, BtLeAudioSource, BtLeAudioUnicastMonitorModeStatus, BtLeAudioUsage,
-    BtLePcmConfig,
+    BtLePcmConfig, BtLeStreamStartedStatus,
 };
 use btstack::bluetooth_media::{BluetoothAudioDevice, IBluetoothMedia, IBluetoothMediaCallback};
 use btstack::RPCProxy;
@@ -69,6 +69,7 @@ impl_dbus_arg_from_into!(BtLeAudioSource, i32);
 impl_dbus_arg_from_into!(BtLeAudioGroupStatus, i32);
 impl_dbus_arg_from_into!(BtLeAudioGroupNodeStatus, i32);
 impl_dbus_arg_from_into!(BtLeAudioUnicastMonitorModeStatus, i32);
+impl_dbus_arg_from_into!(BtLeStreamStartedStatus, i32);
 impl_dbus_arg_from_into!(BtLeAudioDirection, i32);
 impl_dbus_arg_from_into!(BtLeAudioGroupStreamStatus, i32);
 impl_dbus_arg_enum!(A2dpCodecIndex);
@@ -447,12 +448,12 @@ impl IBluetoothMedia for IBluetoothMediaDBus {
     }
 
     #[dbus_method("GetHostStreamStarted")]
-    fn get_host_stream_started(&mut self) -> bool {
+    fn get_host_stream_started(&mut self) -> BtLeStreamStartedStatus {
         dbus_generated!()
     }
 
     #[dbus_method("GetPeerStreamStarted")]
-    fn get_peer_stream_started(&mut self) -> bool {
+    fn get_peer_stream_started(&mut self) -> BtLeStreamStartedStatus {
         dbus_generated!()
     }
 

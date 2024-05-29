@@ -24,8 +24,9 @@ use bt_topshim::profiles::hfp::{
 use bt_topshim::profiles::le_audio::{
     BtLeAudioConnectionState, BtLeAudioContentType, BtLeAudioDirection, BtLeAudioGroupNodeStatus,
     BtLeAudioGroupStatus, BtLeAudioGroupStreamStatus, BtLeAudioSource,
-    BtLeAudioUnicastMonitorModeStatus, BtLeAudioUsage, BtLePcmConfig, LeAudioClient,
-    LeAudioClientCallbacks, LeAudioClientCallbacksDispatcher, SinkMetadata, SourceMetadata,
+    BtLeAudioUnicastMonitorModeStatus, BtLeAudioUsage, BtLePcmConfig, BtLeStreamStartedStatus,
+    LeAudioClient, LeAudioClientCallbacks, LeAudioClientCallbacksDispatcher, SinkMetadata,
+    SourceMetadata,
 };
 use bt_topshim::profiles::vc::{
     BtVcConnectionState, VolumeControl, VolumeControlCallbacks, VolumeControlCallbacksDispatcher,
@@ -193,8 +194,8 @@ pub trait IBluetoothMedia {
     fn peer_stop_audio_request(&mut self);
     fn get_host_pcm_config(&mut self) -> BtLePcmConfig;
     fn get_peer_pcm_config(&mut self) -> BtLePcmConfig;
-    fn get_host_stream_started(&mut self) -> bool;
-    fn get_peer_stream_started(&mut self) -> bool;
+    fn get_host_stream_started(&mut self) -> BtLeStreamStartedStatus;
+    fn get_peer_stream_started(&mut self) -> BtLeStreamStartedStatus;
     fn source_metadata_changed(
         &mut self,
         usage: BtLeAudioUsage,
@@ -3966,22 +3967,22 @@ impl IBluetoothMedia for BluetoothMedia {
         }
     }
 
-    fn get_host_stream_started(&mut self) -> bool {
+    fn get_host_stream_started(&mut self) -> BtLeStreamStartedStatus {
         match self.le_audio.as_mut() {
             Some(le_audio) => le_audio.get_host_stream_started(),
             None => {
                 warn!("Uninitialized LEA to get_host_stream_started");
-                Default::default()
+                BtLeStreamStartedStatus::Idle
             }
         }
     }
 
-    fn get_peer_stream_started(&mut self) -> bool {
+    fn get_peer_stream_started(&mut self) -> BtLeStreamStartedStatus {
         match self.le_audio.as_mut() {
             Some(le_audio) => le_audio.get_peer_stream_started(),
             None => {
                 warn!("Uninitialized LEA to get_peer_stream_started");
-                Default::default()
+                BtLeStreamStartedStatus::Idle
             }
         }
     }
