@@ -507,7 +507,7 @@ void bta_gatts_close(tBTA_GATTS_CB* /* p_cb */, tBTA_GATTS_DATA* p_msg) {
   if (GATT_GetConnectionInfor(p_msg->hdr.layer_specific, &gatt_if, remote_bda,
                               &transport)) {
     log::debug("Disconnecting gatt_if={}, remote_bda={}, transport={}", gatt_if,
-               remote_bda.ToString(), transport);
+               remote_bda, transport);
     status = GATT_Disconnect(p_msg->hdr.layer_specific);
     if (status != GATT_SUCCESS) {
       log::error("fail conn_id={}", p_msg->hdr.layer_specific);

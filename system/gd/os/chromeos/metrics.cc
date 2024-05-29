@@ -70,7 +70,7 @@ void LogMetricA2dpAudioOverrunEvent(
   log::debug(
       "A2dpAudioOverrun: {}, {}, {}, {}, {}, {}",
       boot_id,
-      addr_string,
+      address,
       (long long unsigned)encoding_interval_millis,
       num_dropped_buffers,
       num_dropped_encoded_bytes,
@@ -98,7 +98,7 @@ void LogMetricHfpPacketLossStats(
   log::debug(
       "HfpPacketLoss: {}, {}, {}, {:f}, {}",
       boot_id,
-      addr_string,
+      address,
       num_decoded_frames,
       packet_loss_ratio,
       codec_type);
@@ -211,7 +211,7 @@ void LogMetricA2dpSessionMetricsEvent(
   log::debug(
       "A2dpSessionMetrics: {}, {}, {}, {}, {}, {}, {}, {}, {}, {:f}, {}, {}, {}",
       boot_id,
-      addr_string,
+      address,
       (long long int)audio_duration_ms,
       media_timer_min_ms,
       media_timer_max_ms,
