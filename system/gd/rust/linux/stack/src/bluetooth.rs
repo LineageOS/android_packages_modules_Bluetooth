@@ -255,6 +255,9 @@ pub trait IBluetooth {
 
     /// Returns whether the coding format is supported.
     fn is_coding_format_supported(&self, coding_format: EscoCodingFormat) -> bool;
+
+    /// Returns whether LE Audio is supported.
+    fn is_le_audio_supported(&self) -> bool;
 }
 
 /// Adapter API for Bluetooth qualification and verification.
@@ -553,6 +556,7 @@ pub struct Bluetooth {
     pending_create_bond: Option<(BluetoothDevice, BtTransport)>,
     active_pairing_address: Option<RawAddress>,
     le_supported_states: u64,
+    le_local_supported_features: u64,
 
     /// Used to notify signal handler that we have turned off the stack.
     sig_notifier: Arc<SigData>,
@@ -613,6 +617,7 @@ impl Bluetooth {
             pending_create_bond: None,
             active_pairing_address: None,
             le_supported_states: 0u64,
+            le_local_supported_features: 0u64,
             sig_notifier,
             uhid_wakeup_source: UHid::new(),
         }
@@ -1517,7 +1522,9 @@ impl BtifBluetoothCallbacks for Bluetooth {
 
                 // Also need to manually request some properties
                 self.intf.lock().unwrap().get_adapter_property(BtPropertyType::ClassOfDevice);
-                self.le_supported_states = controller::Controller::new().get_ble_supported_states();
+                let mut controller = controller::Controller::new();
+                self.le_supported_states = controller.get_ble_supported_states();
+                self.le_local_supported_features = controller.get_ble_local_supported_features();
 
                 // Initialize the BLE scanner for discovery.
                 let callback_id = self.bluetooth_gatt.lock().unwrap().register_scanner_callback(
@@ -2910,6 +2917,12 @@ impl IBluetooth for Bluetooth {
 
     fn is_coding_format_supported(&self, coding_format: EscoCodingFormat) -> bool {
         self.intf.lock().unwrap().is_coding_format_supported(coding_format as u8)
+    }
+
+    fn is_le_audio_supported(&self) -> bool {
+        // We determine LE Audio support by checking CIS Central support
+        // See Core 5.3, Vol 6, 4.6 FEATURE SUPPORT
+        self.le_local_supported_features >> 28 & 1 == 1u64
     }
 }
 

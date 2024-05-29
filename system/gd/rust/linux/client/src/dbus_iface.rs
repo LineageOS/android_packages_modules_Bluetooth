@@ -1059,6 +1059,11 @@ impl IBluetooth for BluetoothDBus {
     fn is_coding_format_supported(&self, coding_format: EscoCodingFormat) -> bool {
         dbus_generated!()
     }
+
+    #[dbus_method("IsLEAudioSupported")]
+    fn is_le_audio_supported(&self) -> bool {
+        dbus_generated!()
+    }
 }
 
 pub(crate) struct BluetoothQALegacyDBus {
