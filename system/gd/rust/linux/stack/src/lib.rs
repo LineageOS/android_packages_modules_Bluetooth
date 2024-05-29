@@ -132,7 +132,7 @@ pub enum Message {
 
     // Battery related
     BatteryProviderManagerCallbackDisconnected(u32),
-    BatteryProviderManagerBatteryUpdated(String, BatterySet),
+    BatteryProviderManagerBatteryUpdated(RawAddress, BatterySet),
     BatteryServiceCallbackDisconnected(u32),
     BatteryService(BatteryServiceActions),
     BatteryServiceRefresh,
