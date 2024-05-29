@@ -60,6 +60,8 @@ import android.os.UserManager;
 import android.os.test.TestLooper;
 import android.permission.PermissionCheckerManager;
 import android.permission.PermissionManager;
+import android.platform.test.annotations.DisableFlags;
+import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 import android.provider.Settings;
 import android.sysprop.BluetoothProperties;
@@ -678,9 +680,8 @@ public class AdapterServiceTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_SCAN_MANAGER_REFACTOR)
     public void startBleOnly_whenScanManagerRefactorFlagIsOff_onlyStartGattProfile() {
-        mSetFlagsRule.disableFlags(Flags.FLAG_SCAN_MANAGER_REFACTOR);
-
         mAdapterService.bringUpBle();
 
         assertThat(mAdapterService.getBluetoothGatt()).isNotNull();
@@ -691,9 +692,8 @@ public class AdapterServiceTest {
     }
 
     @Test
+    @EnableFlags(Flags.FLAG_SCAN_MANAGER_REFACTOR)
     public void startBleOnly_whenScanManagerRefactorFlagIsOn_onlyStartScanController() {
-        mSetFlagsRule.enableFlags(Flags.FLAG_SCAN_MANAGER_REFACTOR);
-
         mAdapterService.bringUpBle();
 
         assertThat(mAdapterService.getBluetoothGatt()).isNull();
@@ -701,9 +701,8 @@ public class AdapterServiceTest {
     }
 
     @Test
+    @EnableFlags(Flags.FLAG_SCAN_MANAGER_REFACTOR)
     public void startBleOnly_whenScanManagerRefactorFlagIsOn_startAndStopScanController() {
-        mSetFlagsRule.enableFlags(Flags.FLAG_SCAN_MANAGER_REFACTOR);
-
         assertThat(mAdapterService.getBluetoothScan()).isNull();
         assertThat(mAdapterService.getBluetoothGatt()).isNull();
 
@@ -740,9 +739,8 @@ public class AdapterServiceTest {
     }
 
     @Test
+    @EnableFlags(Flags.FLAG_SCAN_MANAGER_REFACTOR)
     public void startBrDr_whenScanManagerRefactorFlagIsOn_startAndStopScanController() {
-        mSetFlagsRule.enableFlags(Flags.FLAG_SCAN_MANAGER_REFACTOR);
-
         assertThat(mAdapterService.getBluetoothScan()).isNull();
         assertThat(mAdapterService.getBluetoothGatt()).isNull();
 
@@ -1032,9 +1030,8 @@ public class AdapterServiceTest {
     }
 
     @Test
+    @EnableFlags(Flags.FLAG_IDENTITY_ADDRESS_NULL_IF_UNKNOWN)
     public void testIdentityAddressNullIfUnknown() {
-        mSetFlagsRule.enableFlags(Flags.FLAG_IDENTITY_ADDRESS_NULL_IF_UNKNOWN);
-
         BluetoothDevice device = TestUtils.getTestDevice(BluetoothAdapter.getDefaultAdapter(), 0);
 
         assertThat(mAdapterService.getByteIdentityAddress(device)).isNull();
