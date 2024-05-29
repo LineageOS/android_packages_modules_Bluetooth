@@ -46,12 +46,6 @@
 #define PTR_TO_INT(p) ((int)((intptr_t)(p)))
 #define INT_TO_PTR(i) ((void*)((intptr_t)(i)))
 
-// Obtain a random number between 0 and INT_MAX inclusive.
-// Taken from a system random source such as /dev/random.
-// No guarantees of distribution are made.
-// Effort is made for this to come from a real random source.
-int osi_rand(void);
-
 // Re-run |fn| system call until the system call doesn't cause EINTR.
 #define OSI_NO_INTR(fn) \
   do {                  \
