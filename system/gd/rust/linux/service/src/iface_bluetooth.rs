@@ -41,16 +41,28 @@ use std::sync::{Arc, Mutex};
 use crate::dbus_arg::{DBusArg, DBusArgError, DirectDBus, RefArgToRust};
 
 // Represents Uuid as an array in D-Bus.
-impl_dbus_arg_from_into!(Uuid, Vec<u8>);
+impl DBusArg for Uuid {
+    type DBusType = Vec<u8>;
+    fn from_dbus(
+        data: Vec<u8>,
+        _conn: Option<Arc<SyncConnection>>,
+        _remote: Option<dbus::strings::BusName<'static>>,
+        _disconnect_watcher: Option<Arc<Mutex<dbus_projection::DisconnectWatcher>>>,
+    ) -> Result<Uuid, Box<dyn std::error::Error>> {
+        Ok(Uuid::try_from(data.clone()).or_else(|_| {
+            Err(format!(
+                "Invalid Uuid: first 4 bytes={:?}",
+                data.iter().take(4).collect::<Vec<_>>()
+            ))
+        })?)
+    }
 
-impl RefArgToRust for Uuid {
-    type RustType = Vec<u8>;
+    fn to_dbus(data: Uuid) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+        Ok(data.try_into()?)
+    }
 
-    fn ref_arg_to_rust(
-        arg: &(dyn dbus::arg::RefArg + 'static),
-        name: String,
-    ) -> Result<Self::RustType, Box<dyn std::error::Error>> {
-        <Vec<u8> as RefArgToRust>::ref_arg_to_rust(arg, name)
+    fn log(data: &Uuid) -> String {
+        format!("{}", data)
     }
 }
 

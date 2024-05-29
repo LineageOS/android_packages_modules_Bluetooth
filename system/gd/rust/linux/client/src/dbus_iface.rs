@@ -112,17 +112,6 @@ impl_dbus_arg_from_into!(Uuid, Vec<u8>);
 impl_dbus_arg_enum!(BthhReportType);
 impl_dbus_arg_enum!(BtAdapterRole);
 
-impl RefArgToRust for Uuid {
-    type RustType = Vec<u8>;
-
-    fn ref_arg_to_rust(
-        arg: &(dyn dbus::arg::RefArg + 'static),
-        name: String,
-    ) -> Result<Self::RustType, Box<dyn std::error::Error>> {
-        <Vec<u8> as RefArgToRust>::ref_arg_to_rust(arg, name)
-    }
-}
-
 impl_dbus_arg_enum!(BtSdpType);
 
 #[dbus_propmap(BtSdpHeaderOverlay)]
