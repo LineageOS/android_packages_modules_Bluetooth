@@ -1540,7 +1540,7 @@ impl BluetoothMedia {
                 self.battery_provider_manager.lock().unwrap().set_battery_info(
                     self.battery_provider_id,
                     BatterySet::new(
-                        addr.to_string(),
+                        addr,
                         uuid::HFP.to_string(),
                         source_info,
                         vec![Battery { percentage: battery_level, variant: "".to_string() }],
@@ -1549,7 +1549,7 @@ impl BluetoothMedia {
             }
             HfpCallbacks::BatteryLevelUpdate(battery_level, addr) => {
                 let battery_set = BatterySet::new(
-                    addr.to_string(),
+                    addr,
                     uuid::HFP.to_string(),
                     "HFP".to_string(),
                     vec![Battery { percentage: battery_level as u32, variant: "".to_string() }],

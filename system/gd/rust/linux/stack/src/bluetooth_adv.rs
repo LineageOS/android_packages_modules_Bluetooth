@@ -107,7 +107,7 @@ pub trait IAdvertisingSetCallback: RPCProxy {
     );
 
     /// Callback triggered in response to `get_own_address` indicating result of the operation.
-    fn on_own_address_read(&mut self, advertiser_id: i32, address_type: i32, address: String);
+    fn on_own_address_read(&mut self, advertiser_id: i32, address_type: i32, address: RawAddress);
 
     /// Callback triggered in response to `stop_advertising_set` indicating the advertising set
     /// is stopped.
@@ -1393,7 +1393,7 @@ impl BtifGattAdvCallbacks for AdvertiseManagerImpl {
         let s = self.get_by_advertiser_id(advertiser_id).unwrap().clone();
 
         if let Some(cb) = self.get_callback(&s) {
-            cb.on_own_address_read(advertiser_id, addr_type.into(), address.to_string());
+            cb.on_own_address_read(advertiser_id, addr_type.into(), address);
         }
     }
 }
