@@ -25,6 +25,8 @@
  *
  ******************************************************************************/
 
+#include "stack/include/btm_inq.h"
+
 #include <bluetooth/log.h>
 #include <com_android_bluetooth_flags.h>
 #include <stddef.h>
@@ -48,7 +50,6 @@
 #include "main/shim/shim.h"
 #include "neighbor_inquiry.h"
 #include "osi/include/allocator.h"
-#include "osi/include/osi.h"
 #include "osi/include/properties.h"
 #include "osi/include/stack_power_telemetry.h"
 #include "packet/bit_inserter.h"
