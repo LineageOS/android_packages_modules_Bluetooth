@@ -53,15 +53,10 @@ object Permissions {
         }
         newPermissions.forEach {
             val permissionsSet = newPermissions.toMutableSet()
-            val removedPermission = it
-            permissionsSet.remove(removedPermission)
+            permissionsSet.remove(it)
 
             withPermissions(*arrayOf(*permissionsSet.toTypedArray())).use {
-                assertThrows(
-                    "SecurityException wasn't throw when checking for $removedPermission",
-                    SecurityException::class.java,
-                    { action() }
-                )
+                assertThrows(SecurityException::class.java, { action() })
             }
         }
     }
