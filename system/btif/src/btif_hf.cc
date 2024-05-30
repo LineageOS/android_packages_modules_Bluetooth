@@ -920,7 +920,7 @@ bt_status_t HeadsetInterface::Disconnect(RawAddress* bd_addr) {
   int idx = btif_hf_idx_by_bdaddr(bd_addr);
   if ((idx < 0) || (idx >= BTA_AG_MAX_NUM_CLIENTS)) {
     log::error("Invalid index {}", idx);
-    return BT_STATUS_FAIL;
+    return BT_STATUS_PARM_INVALID;
   }
   if (!is_connected(bd_addr)) {
     log::error("{} is not connected", *bd_addr);
@@ -936,7 +936,7 @@ bt_status_t HeadsetInterface::ConnectAudio(RawAddress* bd_addr,
   int idx = btif_hf_idx_by_bdaddr(bd_addr);
   if ((idx < 0) || (idx >= BTA_AG_MAX_NUM_CLIENTS)) {
     log::error("Invalid index {}", idx);
-    return BT_STATUS_FAIL;
+    return BT_STATUS_PARM_INVALID;
   }
   /* Check if SLC is connected */
   if (!IsSlcConnected(bd_addr)) {
@@ -960,7 +960,7 @@ bt_status_t HeadsetInterface::DisconnectAudio(RawAddress* bd_addr) {
   int idx = btif_hf_idx_by_bdaddr(bd_addr);
   if ((idx < 0) || (idx >= BTA_AG_MAX_NUM_CLIENTS)) {
     log::error("Invalid index {}", idx);
-    return BT_STATUS_FAIL;
+    return BT_STATUS_PARM_INVALID;
   }
   if (!is_connected(bd_addr)) {
     log::error("{} is not connected", *bd_addr);
@@ -975,7 +975,7 @@ bt_status_t HeadsetInterface::isNoiseReductionSupported(RawAddress* bd_addr) {
   int idx = btif_hf_idx_by_bdaddr(bd_addr);
   if ((idx < 0) || (idx >= BTA_AG_MAX_NUM_CLIENTS)) {
     log::error("Invalid index {}", idx);
-    return BT_STATUS_FAIL;
+    return BT_STATUS_PARM_INVALID;
   }
   if (!(btif_hf_cb[idx].peer_feat & BTA_AG_PEER_FEAT_ECNR)) {
     return BT_STATUS_UNSUPPORTED;
@@ -988,7 +988,7 @@ bt_status_t HeadsetInterface::isVoiceRecognitionSupported(RawAddress* bd_addr) {
   int idx = btif_hf_idx_by_bdaddr(bd_addr);
   if ((idx < 0) || (idx >= BTA_AG_MAX_NUM_CLIENTS)) {
     log::error("Invalid index {}", idx);
-    return BT_STATUS_FAIL;
+    return BT_STATUS_PARM_INVALID;
   }
   if (!(btif_hf_cb[idx].peer_feat & BTA_AG_PEER_FEAT_VREC)) {
     return BT_STATUS_UNSUPPORTED;
@@ -1001,7 +1001,7 @@ bt_status_t HeadsetInterface::StartVoiceRecognition(RawAddress* bd_addr) {
   int idx = btif_hf_idx_by_bdaddr(bd_addr);
   if ((idx < 0) || (idx >= BTA_AG_MAX_NUM_CLIENTS)) {
     log::error("Invalid index {}", idx);
-    return BT_STATUS_FAIL;
+    return BT_STATUS_PARM_INVALID;
   }
   if (!is_connected(bd_addr)) {
     log::error("{} is not connected", *bd_addr);
@@ -1024,7 +1024,7 @@ bt_status_t HeadsetInterface::StopVoiceRecognition(RawAddress* bd_addr) {
 
   if ((idx < 0) || (idx >= BTA_AG_MAX_NUM_CLIENTS)) {
     log::error("Invalid index {}", idx);
-    return BT_STATUS_FAIL;
+    return BT_STATUS_PARM_INVALID;
   }
   if (!is_connected(bd_addr)) {
     log::error("{} is not connected", *bd_addr);
@@ -1047,7 +1047,7 @@ bt_status_t HeadsetInterface::VolumeControl(bthf_volume_type_t type, int volume,
   int idx = btif_hf_idx_by_bdaddr(bd_addr);
   if ((idx < 0) || (idx >= BTA_AG_MAX_NUM_CLIENTS)) {
     log::error("Invalid index {}", idx);
-    return BT_STATUS_FAIL;
+    return BT_STATUS_PARM_INVALID;
   }
   if (!is_connected(bd_addr)) {
     log::error("{} is not connected", *bd_addr);
@@ -1067,12 +1067,12 @@ bt_status_t HeadsetInterface::DeviceStatusNotification(
   CHECK_BTHF_INIT();
   if (!bd_addr) {
     log::warn("bd_addr is null");
-    return BT_STATUS_FAIL;
+    return BT_STATUS_PARM_INVALID;
   }
   int idx = btif_hf_idx_by_bdaddr(bd_addr);
   if (idx < 0 || idx > BTA_AG_MAX_NUM_CLIENTS) {
     log::warn("invalid index {} for {}", idx, *bd_addr);
-    return BT_STATUS_FAIL;
+    return BT_STATUS_PARM_INVALID;
   }
   const btif_hf_cb_t& control_block = btif_hf_cb[idx];
   // ok if no device is connected
@@ -1095,7 +1095,7 @@ bt_status_t HeadsetInterface::CopsResponse(const char* cops,
   int idx = btif_hf_idx_by_bdaddr(bd_addr);
   if ((idx < 0) || (idx >= BTA_AG_MAX_NUM_CLIENTS)) {
     log::error("Invalid index {}", idx);
-    return BT_STATUS_FAIL;
+    return BT_STATUS_PARM_INVALID;
   }
   if (!is_connected(bd_addr)) {
     log::error("{} is not connected", *bd_addr);
@@ -1118,7 +1118,7 @@ bt_status_t HeadsetInterface::CindResponse(int svc, int num_active,
   int idx = btif_hf_idx_by_bdaddr(bd_addr);
   if ((idx < 0) || (idx >= BTA_AG_MAX_NUM_CLIENTS)) {
     log::error("Invalid index {}", idx);
-    return BT_STATUS_FAIL;
+    return BT_STATUS_PARM_INVALID;
   }
   if (!is_connected(bd_addr)) {
     log::error("{} is not connected", *bd_addr);
@@ -1147,7 +1147,7 @@ bt_status_t HeadsetInterface::FormattedAtResponse(const char* rsp,
   int idx = btif_hf_idx_by_bdaddr(bd_addr);
   if ((idx < 0) || (idx >= BTA_AG_MAX_NUM_CLIENTS)) {
     log::error("Invalid index {}", idx);
-    return BT_STATUS_FAIL;
+    return BT_STATUS_PARM_INVALID;
   }
   if (!is_connected(bd_addr)) {
     log::error("{} is not connected", *bd_addr);
@@ -1165,7 +1165,7 @@ bt_status_t HeadsetInterface::AtResponse(bthf_at_response_t response_code,
   int idx = btif_hf_idx_by_bdaddr(bd_addr);
   if ((idx < 0) || (idx >= BTA_AG_MAX_NUM_CLIENTS)) {
     log::error("Invalid index {}", idx);
-    return BT_STATUS_FAIL;
+    return BT_STATUS_PARM_INVALID;
   }
   if (!is_connected(bd_addr)) {
     log::error("{} is not connected", *bd_addr);
@@ -1185,7 +1185,7 @@ bt_status_t HeadsetInterface::ClccResponse(
   int idx = btif_hf_idx_by_bdaddr(bd_addr);
   if ((idx < 0) || (idx >= BTA_AG_MAX_NUM_CLIENTS)) {
     log::error("Invalid index {}", idx);
-    return BT_STATUS_FAIL;
+    return BT_STATUS_PARM_INVALID;
   }
   if (!is_connected(bd_addr)) {
     log::error("{} is not connected", *bd_addr);
@@ -1236,14 +1236,14 @@ bt_status_t HeadsetInterface::PhoneStateChange(
   CHECK_BTHF_INIT();
   if (bd_addr == nullptr) {
     log::warn("bd_addr is null");
-    return BT_STATUS_FAIL;
+    return BT_STATUS_PARM_INVALID;
   }
 
   const RawAddress raw_address(*bd_addr);
   int idx = btif_hf_idx_by_bdaddr(bd_addr);
   if (idx < 0 || idx >= BTA_AG_MAX_NUM_CLIENTS) {
     log::warn("Invalid index {} for {}", idx, raw_address);
-    return BT_STATUS_FAIL;
+    return BT_STATUS_PARM_INVALID;
   }
 
   const btif_hf_cb_t& control_block = btif_hf_cb[idx];
@@ -1559,7 +1559,7 @@ bt_status_t HeadsetInterface::SendBsir(bool value, RawAddress* bd_addr) {
   int idx = btif_hf_idx_by_bdaddr(bd_addr);
   if ((idx < 0) || (idx >= BTA_AG_MAX_NUM_CLIENTS)) {
     log::error("Invalid index {} for {}", idx, *bd_addr);
-    return BT_STATUS_FAIL;
+    return BT_STATUS_PARM_INVALID;
   }
   if (!is_connected(bd_addr)) {
     log::error("{} not connected", *bd_addr);
