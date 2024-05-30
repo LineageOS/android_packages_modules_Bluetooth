@@ -380,19 +380,19 @@ int RFCOMM_RemoveServer(uint16_t handle) {
  *
  *
  ******************************************************************************/
-int PORT_SetEventCallback(uint16_t port_handle, tPORT_CALLBACK* p_port_cb) {
+int PORT_SetEventCallback(uint16_t handle, tPORT_CALLBACK* p_port_cb) {
   /* Check if handle is valid to avoid crashing */
-  if ((port_handle == 0) || (port_handle > MAX_RFC_PORTS)) {
+  if ((handle == 0) || (handle > MAX_RFC_PORTS)) {
     return (PORT_BAD_HANDLE);
   }
 
-  tPORT* p_port = &rfc_cb.port.port[port_handle - 1];
+  tPORT* p_port = &rfc_cb.port.port[handle - 1];
 
   if (!p_port->in_use || (p_port->state == PORT_CONNECTION_STATE_CLOSED)) {
     return (PORT_NOT_OPENED);
   }
 
-  log::verbose("PORT_SetEventCallback() handle:{}", port_handle);
+  log::verbose("PORT_SetEventCallback() handle:{}", handle);
 
   p_port->p_callback = p_port_cb;
 
@@ -408,13 +408,13 @@ int PORT_SetEventCallback(uint16_t port_handle, tPORT_CALLBACK* p_port_cb) {
  *
  ******************************************************************************/
 
-int PORT_ClearKeepHandleFlag(uint16_t port_handle) {
+int PORT_ClearKeepHandleFlag(uint16_t handle) {
   /* Check if handle is valid to avoid crashing */
-  if ((port_handle == 0) || (port_handle > MAX_RFC_PORTS)) {
+  if ((handle == 0) || (handle > MAX_RFC_PORTS)) {
     return (PORT_BAD_HANDLE);
   }
 
-  tPORT* p_port = &rfc_cb.port.port[port_handle - 1];
+  tPORT* p_port = &rfc_cb.port.port[handle - 1];
   p_port->keep_port_handle = 0;
   return (PORT_SUCCESS);
 }
@@ -432,17 +432,16 @@ int PORT_ClearKeepHandleFlag(uint16_t port_handle) {
  *
  *
  ******************************************************************************/
-int PORT_SetDataCOCallback(uint16_t port_handle,
-                           tPORT_DATA_CO_CALLBACK* p_port_cb) {
-  log::verbose("PORT_SetDataCOCallback() handle:{} cb 0x{}", port_handle,
+int PORT_SetDataCOCallback(uint16_t handle, tPORT_DATA_CO_CALLBACK* p_port_cb) {
+  log::verbose("PORT_SetDataCOCallback() handle:{} cb 0x{}", handle,
                fmt::ptr(p_port_cb));
 
   /* Check if handle is valid to avoid crashing */
-  if ((port_handle == 0) || (port_handle > MAX_RFC_PORTS)) {
+  if ((handle == 0) || (handle > MAX_RFC_PORTS)) {
     return (PORT_BAD_HANDLE);
   }
 
-  tPORT* p_port = &rfc_cb.port.port[port_handle - 1];
+  tPORT* p_port = &rfc_cb.port.port[handle - 1];
 
   if (!p_port->in_use || (p_port->state == PORT_CONNECTION_STATE_CLOSED)) {
     return (PORT_NOT_OPENED);
@@ -463,15 +462,15 @@ int PORT_SetDataCOCallback(uint16_t port_handle,
  *                  mask   - Bitmask of the events the host is interested in
  *
  ******************************************************************************/
-int PORT_SetEventMask(uint16_t port_handle, uint32_t mask) {
-  log::verbose("PORT_SetEventMask() handle:{} mask:0x{:x}", port_handle, mask);
+int PORT_SetEventMask(uint16_t handle, uint32_t mask) {
+  log::verbose("PORT_SetEventMask() handle:{} mask:0x{:x}", handle, mask);
 
   /* Check if handle is valid to avoid crashing */
-  if ((port_handle == 0) || (port_handle > MAX_RFC_PORTS)) {
+  if ((handle == 0) || (handle > MAX_RFC_PORTS)) {
     return (PORT_BAD_HANDLE);
   }
 
-  tPORT* p_port = &rfc_cb.port.port[port_handle - 1];
+  tPORT* p_port = &rfc_cb.port.port[handle - 1];
 
   if (!p_port->in_use || (p_port->state == PORT_CONNECTION_STATE_CLOSED)) {
     return (PORT_NOT_OPENED);
