@@ -49,6 +49,7 @@
 #include "stack/include/bt_name.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_client_interface.h"
+#include "stack/include/btm_inq.h"
 #include "stack/include/btm_log_history.h"
 #include "stack/include/btm_sec_api.h"  // BTM_IsRemoteNameKnown
 #include "stack/include/gap_api.h"      // GAP_BleReadPeerPrefConnParams
