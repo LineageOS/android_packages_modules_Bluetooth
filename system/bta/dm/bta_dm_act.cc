@@ -506,7 +506,7 @@ void bta_dm_remove_device(const RawAddress& bd_addr) {
     for (int i = 0; i < bta_dm_cb.device_list.count; i++) {
       auto& peer_device = bta_dm_cb.device_list.peer_device[i];
       if (peer_device.peer_bdaddr == bd_addr) {
-        peer_device.conn_state = BTA_DM_UNPAIRING;
+        peer_device.conn_state = tBTA_DM_CONN_STATE::BTA_DM_UNPAIRING;
 
         /* Make sure device is not in acceptlist before we disconnect */
         if (!GATT_CancelConnect(0, bd_addr, false)) {
@@ -561,7 +561,7 @@ void bta_dm_remove_device(const RawAddress& bd_addr) {
       auto& peer_device = bta_dm_cb.device_list.peer_device[i];
       if (peer_device.peer_bdaddr == other_address &&
           peer_device.transport == other_transport) {
-        peer_device.conn_state = BTA_DM_UNPAIRING;
+        peer_device.conn_state = tBTA_DM_CONN_STATE::BTA_DM_UNPAIRING;
         log::info("Remove ACL of address {}", other_address);
 
         /* Make sure device is not in acceptlist before we disconnect */
@@ -717,7 +717,7 @@ static void bta_dm_acl_up(const RawAddress& bd_addr, tBT_TRANSPORT transport,
   }
   log::info("Acl connected peer:{} transport:{} handle:{}", bd_addr,
             bt_transport_text(transport), acl_handle);
-  device->conn_state = BTA_DM_CONNECTED;
+  device->conn_state = tBTA_DM_CONN_STATE::BTA_DM_CONNECTED;
   device->pref_role = BTA_ANY_ROLE;
   device->reset_device_info();
   device->transport = transport;
@@ -778,7 +778,7 @@ static void bta_dm_acl_down(const RawAddress& bd_addr,
     if (device->peer_bdaddr != bd_addr || device->transport != transport)
       continue;
 
-    if (device->conn_state == BTA_DM_UNPAIRING) {
+    if (device->conn_state == tBTA_DM_CONN_STATE::BTA_DM_UNPAIRING) {
       issue_unpair_cb = get_btm_client_interface().security.BTM_SecDeleteDevice(
           device->peer_bdaddr);
 
@@ -871,7 +871,8 @@ static void bta_dm_check_av() {
       p_dev = &bta_dm_cb.device_list.peer_device[i];
       log::warn("[{}]: state:{}, info:{}", i, p_dev->conn_state,
                 p_dev->info_text());
-      if ((p_dev->conn_state == BTA_DM_CONNECTED) && p_dev->is_av_active()) {
+      if ((p_dev->conn_state == tBTA_DM_CONN_STATE::BTA_DM_CONNECTED) &&
+          p_dev->is_av_active()) {
         /* make central and take away the role switch policy */
         const tBTM_STATUS status =
             get_btm_client_interface().link_policy.BTM_SwitchRoleToCentral(
@@ -947,8 +948,8 @@ static void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, tBTA_SYS_ID id,
        * switch command.
        * But this should not be done if we are in the middle of unpairing.
        */
-      if (p_dev->conn_state != BTA_DM_UNPAIRING)
-        p_dev->conn_state = BTA_DM_CONNECTED;
+      if (p_dev->conn_state != tBTA_DM_CONN_STATE::BTA_DM_UNPAIRING)
+        p_dev->conn_state = tBTA_DM_CONN_STATE::BTA_DM_CONNECTED;
 
       for (j = 1; j <= p_bta_dm_rm_cfg[0].app_id; j++) {
         if (((p_bta_dm_rm_cfg[j].app_id == app_id) ||
@@ -1015,7 +1016,8 @@ static void bta_dm_adjust_roles(bool delay_role_switch) {
   uint8_t link_count = bta_dm_cb.device_list.count;
   if (link_count) {
     for (i = 0; i < bta_dm_cb.device_list.count; i++) {
-      if (bta_dm_cb.device_list.peer_device[i].conn_state == BTA_DM_CONNECTED &&
+      if (bta_dm_cb.device_list.peer_device[i].conn_state ==
+              tBTA_DM_CONN_STATE::BTA_DM_CONNECTED &&
           bta_dm_cb.device_list.peer_device[i].transport ==
               BT_TRANSPORT_BR_EDR) {
         if ((bta_dm_cb.device_list.peer_device[i].pref_role ==
@@ -1417,7 +1419,8 @@ tBTA_DM_PEER_DEVICE* find_connected_device(const RawAddress& bd_addr,
                                            tBT_TRANSPORT /* transport */) {
   for (uint8_t i = 0; i < bta_dm_cb.device_list.count; i++) {
     if (bta_dm_cb.device_list.peer_device[i].peer_bdaddr == bd_addr &&
-        bta_dm_cb.device_list.peer_device[i].conn_state == BTA_DM_CONNECTED)
+        bta_dm_cb.device_list.peer_device[i].conn_state ==
+            tBTA_DM_CONN_STATE::BTA_DM_CONNECTED)
       return &bta_dm_cb.device_list.peer_device[i];
   }
   return nullptr;
@@ -1492,7 +1495,8 @@ static tBTM_CONTRL_STATE bta_dm_obtain_system_context() {
 
   for (int i = 0; i < bta_dm_cb.device_list.count; i++) {
     tBTA_DM_PEER_DEVICE* p_dev = &bta_dm_cb.device_list.peer_device[i];
-    if (p_dev->conn_state == BTA_DM_CONNECTED && p_dev->is_av_active()) {
+    if (p_dev->conn_state == tBTA_DM_CONN_STATE::BTA_DM_CONNECTED &&
+        p_dev->is_av_active()) {
       is_av_active = true;
       break;
     }

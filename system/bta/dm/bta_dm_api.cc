@@ -125,7 +125,7 @@ void BTA_DmDiscover(const RawAddress& bd_addr,
  ******************************************************************************/
 bool BTA_DmGetConnectionState(const RawAddress& bd_addr) {
   tBTA_DM_PEER_DEVICE* p_dev = bta_dm_find_peer_device(bd_addr);
-  return (p_dev && p_dev->conn_state == BTA_DM_CONNECTED);
+  return (p_dev && p_dev->conn_state == tBTA_DM_CONN_STATE::BTA_DM_CONNECTED);
 }
 
 /*******************************************************************************
