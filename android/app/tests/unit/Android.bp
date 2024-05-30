@@ -33,6 +33,7 @@ java_defaults {
         "frameworks-base-testutils",
         "gson",
         "mockito-target",
+        "platform-parametric-runner-lib",
         "platform-test-annotations",
         "truth",
     ],
