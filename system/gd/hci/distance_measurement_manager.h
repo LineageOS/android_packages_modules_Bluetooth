@@ -73,6 +73,7 @@ class DistanceMeasurementCallbacks {
       Address address,
       std::vector<bluetooth::hal::VendorSpecificCharacteristic>
           vendor_specific_characteristics) = 0;
+  virtual void OnHandleVendorSpecificReplyComplete(Address address, bool success) = 0;
 };
 
 class DistanceMeasurementManager : public bluetooth::Module {
@@ -85,11 +86,15 @@ class DistanceMeasurementManager : public bluetooth::Module {
   void RegisterDistanceMeasurementCallbacks(DistanceMeasurementCallbacks* callbacks);
   void StartDistanceMeasurement(
       const Address&, uint16_t interval, DistanceMeasurementMethod method);
+  void StopDistanceMeasurement(const Address& address, DistanceMeasurementMethod method);
   void HandleRasConnectedEvent(
       const Address& address,
       uint16_t att_handle,
       const std::vector<hal::VendorSpecificCharacteristic>& vendor_specific_data);
-  void StopDistanceMeasurement(const Address& address, DistanceMeasurementMethod method);
+  void HandleVendorSpecificReply(
+      const Address& address,
+      const std::vector<hal::VendorSpecificCharacteristic>& vendor_specific_reply);
+  void HandleVendorSpecificReplyComplete(const Address& address, bool success);
   void HandleRemoteData(const Address& address, const std::vector<uint8_t>& raw_data);
 
   static const ModuleFactory Factory;

@@ -33,6 +33,7 @@ class RangingHalCallback {
       uint16_t connection_handle,
       const std::vector<VendorSpecificCharacteristic>& vendor_specific_reply) = 0;
   virtual void OnOpenFailed(uint16_t connection_handle) = 0;
+  virtual void OnHandleVendorSpecificReplyComplete(uint16_t connection_handle, bool success) = 0;
 };
 
 class RangingHal : public ::bluetooth::Module {
@@ -47,6 +48,9 @@ class RangingHal : public ::bluetooth::Module {
       uint16_t connection_handle,
       uint16_t att_handle,
       const std::vector<hal::VendorSpecificCharacteristic>& vendor_specific_data) = 0;
+  virtual void HandleVendorSpecificReply(
+      uint16_t connection_handle,
+      const std::vector<hal::VendorSpecificCharacteristic>& vendor_specific_reply) = 0;
 };
 
 }  // namespace hal
