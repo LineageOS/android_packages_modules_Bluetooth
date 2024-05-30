@@ -137,6 +137,7 @@
             <intent-filter>
                 <action android:name="android.intent.action.APPLICATION_PREFERENCES"/>
             </intent-filter>
+            <meta-data android:name="distractionOptimized" android:value="true"/>
         </activity>
 
         <service
