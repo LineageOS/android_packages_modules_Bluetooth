@@ -549,6 +549,25 @@ impl Display for Uuid {
     }
 }
 
+/// UUID that is safe to display in logs.
+pub struct DisplayUuid<'a>(pub &'a Uuid);
+impl<'a> Display for DisplayUuid<'a> {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        write!(
+            f,
+            "{:02x}{:02x}{:02x}{:02x}-xxxx-xxxx-xxxx-xxxx{:02x}{:02x}{:02x}{:02x}",
+            self.0.uu[0],
+            self.0.uu[1],
+            self.0.uu[2],
+            self.0.uu[3],
+            self.0.uu[12],
+            self.0.uu[13],
+            self.0.uu[14],
+            self.0.uu[15]
+        )
+    }
+}
+
 /// All supported Bluetooth properties after conversion.
 #[derive(Debug, Clone)]
 pub enum BluetoothProperty {

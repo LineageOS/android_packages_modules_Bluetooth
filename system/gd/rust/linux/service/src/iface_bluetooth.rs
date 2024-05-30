@@ -1,6 +1,7 @@
 use bt_topshim::btif::{
     BtAddrType, BtBondState, BtConnectionState, BtDeviceType, BtDiscMode, BtPropertyType,
-    BtSspVariant, BtStatus, BtTransport, BtVendorProductInfo, DisplayAddress, RawAddress, Uuid,
+    BtSspVariant, BtStatus, BtTransport, BtVendorProductInfo, DisplayAddress, DisplayUuid,
+    RawAddress, Uuid,
 };
 use bt_topshim::profiles::socket::SocketType;
 use bt_topshim::profiles::ProfileConnectionState;
@@ -62,7 +63,7 @@ impl DBusArg for Uuid {
     }
 
     fn log(data: &Uuid) -> String {
-        format!("{}", data)
+        format!("{}", DisplayUuid(&data))
     }
 }
 

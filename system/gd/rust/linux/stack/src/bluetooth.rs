@@ -4,8 +4,8 @@ use bt_topshim::btif::{
     BaseCallbacks, BaseCallbacksDispatcher, BluetoothInterface, BluetoothProperty, BtAclState,
     BtAddrType, BtBondState, BtConnectionDirection, BtConnectionState, BtDeviceType, BtDiscMode,
     BtDiscoveryState, BtHciErrorCode, BtPinCode, BtPropertyType, BtScanMode, BtSspVariant, BtState,
-    BtStatus, BtThreadEvent, BtTransport, BtVendorProductInfo, DisplayAddress, RawAddress,
-    ToggleableProfile, Uuid, INVALID_RSSI,
+    BtStatus, BtThreadEvent, BtTransport, BtVendorProductInfo, DisplayAddress, DisplayUuid,
+    RawAddress, ToggleableProfile, Uuid, INVALID_RSSI,
 };
 use bt_topshim::{
     controller, metrics,
@@ -3010,7 +3010,7 @@ impl BtifSdpCallbacks for Bluetooth {
             "Sdp search result found: Status={:?} Address={} Uuid={}",
             status,
             DisplayAddress(&address),
-            uuid
+            DisplayUuid(&uuid)
         );
     }
 }
