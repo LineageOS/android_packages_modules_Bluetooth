@@ -8,7 +8,7 @@ use dbus_projection::prelude::*;
 
 use crate::dbus_arg::{DBusArg, DBusArgError, RefArgToRust};
 
-use bt_topshim::btif::Uuid128Bit;
+use bt_topshim::btif::Uuid;
 
 use btstack::bluetooth::BluetoothDevice;
 use btstack::RPCProxy;
@@ -19,14 +19,14 @@ struct IBluetoothAdminPolicyCallbackDBus {}
 
 #[dbus_propmap(PolicyEffect)]
 pub struct PolicyEffectDBus {
-    pub service_blocked: Vec<Uuid128Bit>,
+    pub service_blocked: Vec<Uuid>,
     pub affected: bool,
 }
 
 #[dbus_proxy_obj(AdminPolicyCallback, "org.chromium.bluetooth.AdminPolicyCallback")]
 impl IBluetoothAdminPolicyCallback for IBluetoothAdminPolicyCallbackDBus {
     #[dbus_method("OnServiceAllowlistChanged")]
-    fn on_service_allowlist_changed(&mut self, allowlist: Vec<Uuid128Bit>) {
+    fn on_service_allowlist_changed(&mut self, allowlist: Vec<Uuid>) {
         dbus_generated!()
     }
 
@@ -43,17 +43,17 @@ impl IBluetoothAdminPolicyCallback for IBluetoothAdminPolicyCallbackDBus {
 #[generate_dbus_exporter(export_bluetooth_admin_dbus_intf, "org.chromium.bluetooth.BluetoothAdmin")]
 impl IBluetoothAdmin for IBluetoothAdminDBus {
     #[dbus_method("IsServiceAllowed")]
-    fn is_service_allowed(&self, uuid: Uuid128Bit) -> bool {
+    fn is_service_allowed(&self, uuid: Uuid) -> bool {
         dbus_generated!()
     }
 
     #[dbus_method("SetAllowedServices")]
-    fn set_allowed_services(&mut self, services: Vec<Uuid128Bit>) -> bool {
+    fn set_allowed_services(&mut self, services: Vec<Uuid>) -> bool {
         dbus_generated!()
     }
 
     #[dbus_method("GetAllowedServices")]
-    fn get_allowed_services(&self) -> Vec<Uuid128Bit> {
+    fn get_allowed_services(&self) -> Vec<Uuid> {
         dbus_generated!()
     }
 

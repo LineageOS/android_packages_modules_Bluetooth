@@ -59,7 +59,7 @@ use crate::battery_provider_manager::{
 use crate::bluetooth::{Bluetooth, BluetoothDevice, IBluetooth};
 use crate::callbacks::Callbacks;
 use crate::uuid;
-use crate::uuid::Profile;
+use crate::uuid::{Profile, UuidHelper};
 use crate::{Message, RPCProxy};
 
 use num_derive::FromPrimitive;
@@ -82,12 +82,12 @@ const CONNECT_MISSING_PROFILES_TIMEOUT_SEC: u64 = 6;
 const CONNECT_AS_INITIATOR_TIMEOUT_SEC: u64 = 5;
 
 /// The list of profiles we consider as classic audio profiles for media.
-const MEDIA_CLASSIC_AUDIO_PROFILES: &[uuid::Profile] =
-    &[uuid::Profile::A2dpSink, uuid::Profile::Hfp, uuid::Profile::AvrcpController];
+const MEDIA_CLASSIC_AUDIO_PROFILES: &[Profile] =
+    &[Profile::A2dpSink, Profile::Hfp, Profile::AvrcpController];
 
 /// The list of profiles we consider as LE audio profiles for media.
-const MEDIA_LE_AUDIO_PROFILES: &[uuid::Profile] =
-    &[uuid::Profile::LeAudio, uuid::Profile::VolumeControl, uuid::Profile::CoordinatedSet];
+const MEDIA_LE_AUDIO_PROFILES: &[Profile] =
+    &[Profile::LeAudio, Profile::VolumeControl, Profile::CoordinatedSet];
 
 /// Group ID used to identify unknown/non-existent groups.
 const LEA_UNKNOWN_GROUP_ID: i32 = -1;
@@ -455,10 +455,10 @@ pub struct BluetoothMedia {
     fallback_tasks: Arc<Mutex<HashMap<RawAddress, Option<(JoinHandle<()>, Instant)>>>>,
     absolute_volume: bool,
     uinput: UInput,
-    delay_enable_profiles: HashSet<uuid::Profile>,
-    connected_profiles: HashMap<RawAddress, HashSet<uuid::Profile>>,
+    delay_enable_profiles: HashSet<Profile>,
+    connected_profiles: HashMap<RawAddress, HashSet<Profile>>,
     device_states: Arc<Mutex<HashMap<RawAddress, DeviceConnectionStates>>>,
-    delay_volume_update: HashMap<uuid::Profile, u8>,
+    delay_volume_update: HashMap<Profile, u8>,
     telephony_device_status: TelephonyDeviceStatus,
     phone_state: PhoneState,
     call_list: Vec<CallInfo>,
@@ -549,11 +549,11 @@ impl BluetoothMedia {
         }
     }
 
-    fn is_profile_connected(&self, addr: &RawAddress, profile: &uuid::Profile) -> bool {
+    fn is_profile_connected(&self, addr: &RawAddress, profile: &Profile) -> bool {
         self.is_any_profile_connected(addr, &[profile.clone()])
     }
 
-    fn is_any_profile_connected(&self, addr: &RawAddress, profiles: &[uuid::Profile]) -> bool {
+    fn is_any_profile_connected(&self, addr: &RawAddress, profiles: &[Profile]) -> bool {
         if let Some(connected_profiles) = self.connected_profiles.get(addr) {
             return profiles.iter().any(|p| connected_profiles.contains(&p));
         }
@@ -561,7 +561,7 @@ impl BluetoothMedia {
         return false;
     }
 
-    fn add_connected_profile(&mut self, addr: RawAddress, profile: uuid::Profile) {
+    fn add_connected_profile(&mut self, addr: RawAddress, profile: Profile) {
         if self.is_profile_connected(&addr, &profile) {
             warn!("[{}]: profile is already connected", DisplayAddress(&addr));
             return;
@@ -575,7 +575,7 @@ impl BluetoothMedia {
     fn rm_connected_profile(
         &mut self,
         addr: RawAddress,
-        profile: uuid::Profile,
+        profile: Profile,
         is_profile_critical: bool,
     ) {
         if !self.is_profile_connected(&addr, &profile) {
@@ -1162,14 +1162,14 @@ impl BluetoothMedia {
                     BtavConnectionState::Connected => {
                         info!("[{}]: a2dp connected.", DisplayAddress(&addr));
                         self.a2dp_states.insert(addr, state);
-                        self.add_connected_profile(addr, uuid::Profile::A2dpSink);
+                        self.add_connected_profile(addr, Profile::A2dpSink);
                     }
                     BtavConnectionState::Disconnected => {
                         info!("[{}]: a2dp disconnected.", DisplayAddress(&addr));
                         self.a2dp_states.remove(&addr);
                         self.a2dp_caps.remove(&addr);
                         self.a2dp_audio_state.remove(&addr);
-                        self.rm_connected_profile(addr, uuid::Profile::A2dpSink, true);
+                        self.rm_connected_profile(addr, Profile::A2dpSink, true);
                     }
                     _ => {
                         self.a2dp_states.insert(addr, state);
@@ -1242,7 +1242,7 @@ impl BluetoothMedia {
                 // Reset direction to unknown.
                 self.avrcp_direction = BtConnectionDirection::Unknown;
 
-                self.add_connected_profile(addr, uuid::Profile::AvrcpController);
+                self.add_connected_profile(addr, Profile::AvrcpController);
             }
             AvrcpCallbacks::AvrcpDeviceDisconnected(addr) => {
                 info!("[{}]: avrcp disconnected.", DisplayAddress(&addr));
@@ -1255,7 +1255,7 @@ impl BluetoothMedia {
                 // This may be considered a critical profile in the extreme case
                 // where only AVRCP was connected.
                 let is_profile_critical = match self.connected_profiles.get(&addr) {
-                    Some(profiles) => *profiles == HashSet::from([uuid::Profile::AvrcpController]),
+                    Some(profiles) => *profiles == HashSet::from([Profile::AvrcpController]),
                     None => false,
                 };
 
@@ -1278,11 +1278,7 @@ impl BluetoothMedia {
                 // Reset direction to unknown.
                 self.avrcp_direction = BtConnectionDirection::Unknown;
 
-                self.rm_connected_profile(
-                    addr,
-                    uuid::Profile::AvrcpController,
-                    is_profile_critical,
-                );
+                self.rm_connected_profile(addr, Profile::AvrcpController, is_profile_critical);
             }
             AvrcpCallbacks::AvrcpAbsoluteVolumeUpdate(volume) => {
                 for (addr, state) in self.device_states.lock().unwrap().iter() {
@@ -1375,7 +1371,7 @@ impl BluetoothMedia {
                         if !self.hfp_cap.contains_key(&addr) {
                             self.hfp_cap.insert(addr, HfpCodecFormat::CVSD);
                         }
-                        self.add_connected_profile(addr, uuid::Profile::Hfp);
+                        self.add_connected_profile(addr, Profile::Hfp);
 
                         // Connect SCO if phone operations are enabled and an active call exists.
                         // This is only used for Bluetooth HFP qualification.
@@ -1394,7 +1390,7 @@ impl BluetoothMedia {
                         self.hfp_states.remove(&addr);
                         self.hfp_cap.remove(&addr);
                         self.hfp_audio_state.remove(&addr);
-                        self.rm_connected_profile(addr, uuid::Profile::Hfp, true);
+                        self.rm_connected_profile(addr, Profile::Hfp, true);
                     }
                     BthfConnectionState::Connecting => {
                         info!("[{}]: hfp connecting.", DisplayAddress(&addr));
@@ -2395,7 +2391,7 @@ impl BluetoothMedia {
         }
     }
 
-    fn adapter_get_le_audio_profiles(&self, addr: RawAddress) -> HashSet<uuid::Profile> {
+    fn adapter_get_le_audio_profiles(&self, addr: RawAddress) -> HashSet<Profile> {
         let device = BluetoothDevice::new(addr, "".to_string());
         if let Some(adapter) = &self.adapter {
             adapter
@@ -2403,7 +2399,7 @@ impl BluetoothMedia {
                 .unwrap()
                 .get_remote_uuids(device)
                 .into_iter()
-                .filter_map(|u| uuid::UuidHelper::is_known_profile(&u))
+                .filter_map(|u| UuidHelper::is_known_profile(&u))
                 .filter(|u| MEDIA_LE_AUDIO_PROFILES.contains(&u))
                 .collect()
         } else {
@@ -2411,7 +2407,7 @@ impl BluetoothMedia {
         }
     }
 
-    fn adapter_get_classic_audio_profiles(&self, addr: RawAddress) -> HashSet<uuid::Profile> {
+    fn adapter_get_classic_audio_profiles(&self, addr: RawAddress) -> HashSet<Profile> {
         let device = BluetoothDevice::new(addr, "".to_string());
         if let Some(adapter) = &self.adapter {
             adapter
@@ -2419,7 +2415,7 @@ impl BluetoothMedia {
                 .unwrap()
                 .get_remote_uuids(device)
                 .into_iter()
-                .filter_map(|u| uuid::UuidHelper::is_known_profile(&u))
+                .filter_map(|u| UuidHelper::is_known_profile(&u))
                 .filter(|u| MEDIA_CLASSIC_AUDIO_PROFILES.contains(&u))
                 .collect()
         } else {
@@ -3092,13 +3088,13 @@ impl IBluetoothMedia for BluetoothMedia {
         // discovery of LE audio profiles.
         for profile in MEDIA_LE_AUDIO_PROFILES {
             match profile {
-                uuid::Profile::LeAudio => {
+                Profile::LeAudio => {
                     self.connect_lea(addr);
                 }
-                uuid::Profile::VolumeControl => {
+                Profile::VolumeControl => {
                     self.connect_vc(addr);
                 }
-                uuid::Profile::CoordinatedSet => {
+                Profile::CoordinatedSet => {
                     self.connect_csis(addr);
                 }
                 _ => {}
@@ -3129,13 +3125,13 @@ impl IBluetoothMedia for BluetoothMedia {
         for &member_addr in group.iter() {
             for profile in self.adapter_get_le_audio_profiles(addr) {
                 match profile {
-                    uuid::Profile::LeAudio => {
+                    Profile::LeAudio => {
                         self.disconnect_lea(member_addr);
                     }
-                    uuid::Profile::VolumeControl => {
+                    Profile::VolumeControl => {
                         self.disconnect_vc(member_addr);
                     }
-                    uuid::Profile::CoordinatedSet => {
+                    Profile::CoordinatedSet => {
                         self.disconnect_csis(member_addr);
                     }
                     _ => {}
@@ -3331,7 +3327,7 @@ impl IBluetoothMedia for BluetoothMedia {
         let mut is_connect = false;
         for profile in missing_profiles {
             match profile {
-                uuid::Profile::A2dpSink => {
+                Profile::A2dpSink => {
                     metrics::profile_connection_state_changed(
                         addr,
                         Profile::A2dpSink as u32,
@@ -3364,7 +3360,7 @@ impl IBluetoothMedia for BluetoothMedia {
                         }
                     };
                 }
-                uuid::Profile::Hfp => {
+                Profile::Hfp => {
                     metrics::profile_connection_state_changed(
                         addr,
                         Profile::Hfp as u32,
@@ -3397,7 +3393,7 @@ impl IBluetoothMedia for BluetoothMedia {
                         }
                     };
                 }
-                uuid::Profile::AvrcpController => {
+                Profile::AvrcpController => {
                     // Fluoride will resolve AVRCP as a part of A2DP connection request.
                     // Explicitly connect to it only when it is considered missing, and don't
                     // bother about it when A2DP is not connected.
@@ -3498,7 +3494,7 @@ impl IBluetoothMedia for BluetoothMedia {
 
         for profile in connected_profiles {
             match profile {
-                uuid::Profile::A2dpSink => {
+                Profile::A2dpSink => {
                     // Some headsets (b/278963515) will try reconnecting to A2DP
                     // when HFP is running but (requested to be) disconnected.
                     // TODO: Remove this workaround once proper fix lands.
@@ -3534,7 +3530,7 @@ impl IBluetoothMedia for BluetoothMedia {
                         }
                     };
                 }
-                uuid::Profile::Hfp => {
+                Profile::Hfp => {
                     metrics::profile_connection_state_changed(
                         addr,
                         Profile::Hfp as u32,
@@ -3564,7 +3560,7 @@ impl IBluetoothMedia for BluetoothMedia {
                         }
                     };
                 }
-                uuid::Profile::AvrcpController => {
+                Profile::AvrcpController => {
                     if connected_profiles.contains(&Profile::A2dpSink) {
                         continue;
                     }

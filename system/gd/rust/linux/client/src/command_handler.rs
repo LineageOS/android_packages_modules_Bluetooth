@@ -25,7 +25,7 @@ use btstack::bluetooth_gatt::{
 use btstack::bluetooth_media::{IBluetoothMedia, IBluetoothTelephony};
 use btstack::bluetooth_qa::IBluetoothQA;
 use btstack::socket_manager::{IBluetoothSocketManager, SocketResult};
-use btstack::uuid::{Profile, UuidHelper, UuidWrapper};
+use btstack::uuid::{Profile, UuidHelper};
 use manager_service::iface_bluetooth_manager::IBluetoothManager;
 
 const INDENT_CHAR: &str = " ";
@@ -551,8 +551,8 @@ impl CommandHandler {
                 let connected_profiles: Vec<(Profile, ProfileConnectionState)> = supported_profiles
                     .iter()
                     .map(|&prof| {
-                        if let Some(uuid) = UuidHelper::get_profile_uuid(&prof) {
-                            (prof, adapter_dbus.get_profile_connection_state(uuid.clone()))
+                        if let Some(&uuid) = UuidHelper::get_profile_uuid(&prof) {
+                            (prof, adapter_dbus.get_profile_connection_state(uuid))
                         } else {
                             (prof, ProfileConnectionState::Disconnected)
                         }
@@ -1381,15 +1381,14 @@ impl CommandHandler {
                 }
             }
             "server-add-basic-service" => {
-                let service_uuid =
-                    Uuid::from(UuidHelper::from_string(BATTERY_SERVICE_UUID).unwrap());
+                let service_uuid = Uuid::from_string(BATTERY_SERVICE_UUID).unwrap();
 
                 let server_id = String::from(get_arg(args, 1)?)
                     .parse::<i32>()
                     .or(Err("Failed to parse server_id"))?;
 
                 let service = BluetoothGattService::new(
-                    service_uuid.into(),
+                    service_uuid,
                     0, // libbluetooth assigns this handle once the service is added
                     GattDbElementType::PrimaryService.into(),
                 );
@@ -1397,15 +1396,11 @@ impl CommandHandler {
                 self.lock_context().gatt_dbus.as_mut().unwrap().add_service(server_id, service);
             }
             "server-add-service" => {
-                let service_uuid =
-                    Uuid::from(UuidHelper::from_string(HEART_RATE_SERVICE_UUID).unwrap());
-                let characteristic_uuid =
-                    Uuid::from(UuidHelper::from_string(HEART_RATE_MEASUREMENT_UUID).unwrap());
-                let descriptor_uuid = Uuid::from(UuidHelper::from_string(GENERIC_UUID).unwrap());
-                let ccc_descriptor_uuid =
-                    Uuid::from(UuidHelper::from_string(CCC_DESCRIPTOR_UUID).unwrap());
-                let included_service_uuid =
-                    Uuid::from(UuidHelper::from_string(BATTERY_SERVICE_UUID).unwrap());
+                let service_uuid = Uuid::from_string(HEART_RATE_SERVICE_UUID).unwrap();
+                let characteristic_uuid = Uuid::from_string(HEART_RATE_MEASUREMENT_UUID).unwrap();
+                let descriptor_uuid = Uuid::from_string(GENERIC_UUID).unwrap();
+                let ccc_descriptor_uuid = Uuid::from_string(CCC_DESCRIPTOR_UUID).unwrap();
+                let included_service_uuid = Uuid::from_string(BATTERY_SERVICE_UUID).unwrap();
 
                 let server_id = String::from(get_arg(args, 1)?)
                     .parse::<i32>()
@@ -1416,17 +1411,17 @@ impl CommandHandler {
                         .or(Err("Failed to parse included service instance id"))?;
 
                 let mut service = BluetoothGattService::new(
-                    service_uuid.into(),
+                    service_uuid,
                     0,
                     GattDbElementType::PrimaryService.into(),
                 );
                 let included_service = BluetoothGattService::new(
-                    included_service_uuid.into(),
+                    included_service_uuid,
                     included_service_instance_id,
                     GattDbElementType::IncludedService.into(),
                 );
                 let mut characteristic = BluetoothGattCharacteristic::new(
-                    characteristic_uuid.into(),
+                    characteristic_uuid,
                     0,
                     BluetoothGattCharacteristic::PROPERTY_READ
                         | BluetoothGattCharacteristic::PROPERTY_WRITE
@@ -1435,13 +1430,13 @@ impl CommandHandler {
                         | BluetoothGattCharacteristic::PERMISSION_WRITE,
                 );
                 let descriptor = BluetoothGattDescriptor::new(
-                    descriptor_uuid.into(),
+                    descriptor_uuid,
                     0,
                     BluetoothGattCharacteristic::PERMISSION_READ
                         | BluetoothGattCharacteristic::PERMISSION_WRITE,
                 );
                 let ccc_descriptor = BluetoothGattDescriptor::new(
-                    ccc_descriptor_uuid.into(),
+                    ccc_descriptor_uuid,
                     0,
                     BluetoothGattCharacteristic::PERMISSION_READ
                         | BluetoothGattCharacteristic::PERMISSION_WRITE,
@@ -1543,7 +1538,7 @@ impl CommandHandler {
                     .unwrap()
                     .register_scanner(scanner_callback_id);
 
-                print_info!("Scanner to be registered with UUID = {}", UuidWrapper(&uuid));
+                print_info!("Scanner to be registered with UUID = {}", uuid);
             }
             "unregister-scanner" => {
                 let scanner_id = String::from(get_arg(args, 1)?)
@@ -1737,10 +1732,7 @@ impl CommandHandler {
                     address: RawAddress::from_string(get_arg(args, 1)?).ok_or("Invalid Address")?,
                     name: String::from(""),
                 };
-                let uuid = match UuidHelper::parse_string(get_arg(args, 2)?) {
-                    Some(uu) => uu.uu,
-                    None => return Err(CommandError::Failed("Invalid UUID".into())),
-                };
+                let uuid = Uuid::from_string(get_arg(args, 2)?).ok_or("Invalid UUID")?;
                 let success =
                     self.lock_context().adapter_dbus.as_ref().unwrap().sdp_search(device, uuid);
                 if !success {
@@ -1908,7 +1900,7 @@ impl CommandHandler {
                             }
                         }
                         "rfcomm" => {
-                            let uuid = match UuidHelper::parse_string(*psm_or_uuid) {
+                            let uuid = match Uuid::from_string(*psm_or_uuid) {
                                 Some(uu) => uu,
                                 None => {
                                     return Err(CommandError::Failed(format!(
