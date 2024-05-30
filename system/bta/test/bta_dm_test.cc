@@ -221,7 +221,7 @@ TEST_F(BtaDmTest, bta_dm_set_encryption) {
   tBTA_DM_PEER_DEVICE* device =
       bluetooth::legacy::testing::allocate_device_for(kRawAddress, transport);
   ASSERT_TRUE(device != nullptr);
-  device->conn_state = BTA_DM_CONNECTED;
+  device->conn_state = tBTA_DM_CONN_STATE::BTA_DM_CONNECTED;
   device->p_encrypt_cback = nullptr;
 
   // Setup a device that is busy with another encryption
@@ -276,7 +276,7 @@ TEST_F(BtaDmTest, bta_dm_encrypt_cback) {
   tBTA_DM_PEER_DEVICE* device =
       bluetooth::legacy::testing::allocate_device_for(kRawAddress, transport);
   ASSERT_TRUE(device != nullptr);
-  device->conn_state = BTA_DM_CONNECTED;
+  device->conn_state = tBTA_DM_CONN_STATE::BTA_DM_CONNECTED;
 
   // Encryption with no callback set
   device->p_encrypt_cback = nullptr;
