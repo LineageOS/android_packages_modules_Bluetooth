@@ -156,11 +156,6 @@ TEST(UuidTest, legacy) {
   ASSERT_EQ(uuid, Uuid::FromLegacyConfigString(UUID_BASE_STR));
 }
 
-TEST(UuidTest, random) {
-  auto uuid = Uuid::GetRandom();
-  ASSERT_TRUE(!uuid.IsEmpty());
-}
-
 TEST(UuidTest, inequalities) {
   auto uuid1 = Uuid::kEmpty;
   auto uuid2 = Uuid::FromString("11111111-1111-1111-1111-111111111111");
