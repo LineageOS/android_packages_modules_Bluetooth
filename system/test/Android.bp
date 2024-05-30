@@ -407,6 +407,13 @@ filegroup {
 }
 
 filegroup {
+    name: "TestMockStackBtmInterface",
+    srcs: [
+        "mock/mock_stack_btm_interface.cc",
+    ],
+}
+
+filegroup {
     name: "TestMockStackBtmIso",
     srcs: [
         "mock/mock_stack_btm_iso.cc",
