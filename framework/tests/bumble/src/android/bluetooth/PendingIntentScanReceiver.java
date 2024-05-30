@@ -64,7 +64,10 @@ public class PendingIntentScanReceiver extends BroadcastReceiver {
      */
     public static PendingIntent newBroadcastPendingIntent(Context context, int requestCode) {
         return PendingIntent.getBroadcast(
-                context, requestCode, newIntent(context), PendingIntent.FLAG_CANCEL_CURRENT);
+                context,
+                requestCode,
+                newIntent(context),
+                PendingIntent.FLAG_MUTABLE | PendingIntent.FLAG_ALLOW_UNSAFE_IMPLICIT_INTENT);
     }
 
     /**

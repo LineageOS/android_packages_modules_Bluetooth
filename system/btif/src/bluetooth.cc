@@ -807,6 +807,7 @@ static int set_event_filter_connection_setup_all_devices() {
 }
 
 static void dump(int fd, const char** arguments) {
+  log::debug("Started bluetooth dumpsys");
   btif_debug_conn_dump(fd);
   btif_debug_bond_event_dump(fd);
   btif_debug_linkkey_type_dump(fd);
@@ -836,6 +837,7 @@ static void dump(int fd, const char** arguments) {
   DumpsysBtaDm(fd);
   bluetooth::shim::Dump(fd, arguments);
   power_telemetry::GetInstance().Dumpsys(fd);
+  log::debug("Finished bluetooth dumpsys");
 }
 
 static void dumpMetrics(std::string* output) {

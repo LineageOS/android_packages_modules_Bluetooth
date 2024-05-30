@@ -136,7 +136,7 @@ int RFCOMM_CreateConnectionWithSecurity(uint16_t uuid, uint8_t scn,
 
   // On the client side, do not allow the same (dlci, bd_addr) to be opened
   // twice by application
-  tPORT* p_port;
+  tPORT* p_port{nullptr};
   if (!is_server) {
     p_port = port_find_port(dlci, bd_addr);
     if (p_port != nullptr) {
@@ -293,8 +293,6 @@ int RFCOMM_ControlReqFromBTSOCK(uint8_t dlci, const RawAddress& bd_addr,
  *
  ******************************************************************************/
 int RFCOMM_RemoveConnection(uint16_t handle) {
-  tPORT* p_port;
-
   log::verbose("RFCOMM_RemoveConnection() handle:{}", handle);
 
   /* Check if handle is valid to avoid crashing */
@@ -302,7 +300,7 @@ int RFCOMM_RemoveConnection(uint16_t handle) {
     log::error("RFCOMM_RemoveConnection() BAD handle:{}", handle);
     return (PORT_BAD_HANDLE);
   }
-  p_port = &rfc_cb.port.port[handle - 1];
+  tPORT* p_port = &rfc_cb.port.port[handle - 1];
 
   if (!p_port->in_use || (p_port->state == PORT_CONNECTION_STATE_CLOSED)) {
     log::verbose("RFCOMM_RemoveConnection() Not opened:{}", handle);
@@ -382,21 +380,19 @@ int RFCOMM_RemoveServer(uint16_t handle) {
  *
  *
  ******************************************************************************/
-int PORT_SetEventCallback(uint16_t port_handle, tPORT_CALLBACK* p_port_cb) {
-  tPORT* p_port;
-
+int PORT_SetEventCallback(uint16_t handle, tPORT_CALLBACK* p_port_cb) {
   /* Check if handle is valid to avoid crashing */
-  if ((port_handle == 0) || (port_handle > MAX_RFC_PORTS)) {
+  if ((handle == 0) || (handle > MAX_RFC_PORTS)) {
     return (PORT_BAD_HANDLE);
   }
 
-  p_port = &rfc_cb.port.port[port_handle - 1];
+  tPORT* p_port = &rfc_cb.port.port[handle - 1];
 
   if (!p_port->in_use || (p_port->state == PORT_CONNECTION_STATE_CLOSED)) {
     return (PORT_NOT_OPENED);
   }
 
-  log::verbose("PORT_SetEventCallback() handle:{}", port_handle);
+  log::verbose("PORT_SetEventCallback() handle:{}", handle);
 
   p_port->p_callback = p_port_cb;
 
@@ -412,15 +408,13 @@ int PORT_SetEventCallback(uint16_t port_handle, tPORT_CALLBACK* p_port_cb) {
  *
  ******************************************************************************/
 
-int PORT_ClearKeepHandleFlag(uint16_t port_handle) {
-  tPORT* p_port;
-
+int PORT_ClearKeepHandleFlag(uint16_t handle) {
   /* Check if handle is valid to avoid crashing */
-  if ((port_handle == 0) || (port_handle > MAX_RFC_PORTS)) {
+  if ((handle == 0) || (handle > MAX_RFC_PORTS)) {
     return (PORT_BAD_HANDLE);
   }
 
-  p_port = &rfc_cb.port.port[port_handle - 1];
+  tPORT* p_port = &rfc_cb.port.port[handle - 1];
   p_port->keep_port_handle = 0;
   return (PORT_SUCCESS);
 }
@@ -438,19 +432,16 @@ int PORT_ClearKeepHandleFlag(uint16_t port_handle) {
  *
  *
  ******************************************************************************/
-int PORT_SetDataCOCallback(uint16_t port_handle,
-                           tPORT_DATA_CO_CALLBACK* p_port_cb) {
-  tPORT* p_port;
-
-  log::verbose("PORT_SetDataCOCallback() handle:{} cb 0x{}", port_handle,
+int PORT_SetDataCOCallback(uint16_t handle, tPORT_DATA_CO_CALLBACK* p_port_cb) {
+  log::verbose("PORT_SetDataCOCallback() handle:{} cb 0x{}", handle,
                fmt::ptr(p_port_cb));
 
   /* Check if handle is valid to avoid crashing */
-  if ((port_handle == 0) || (port_handle > MAX_RFC_PORTS)) {
+  if ((handle == 0) || (handle > MAX_RFC_PORTS)) {
     return (PORT_BAD_HANDLE);
   }
 
-  p_port = &rfc_cb.port.port[port_handle - 1];
+  tPORT* p_port = &rfc_cb.port.port[handle - 1];
 
   if (!p_port->in_use || (p_port->state == PORT_CONNECTION_STATE_CLOSED)) {
     return (PORT_NOT_OPENED);
@@ -471,17 +462,15 @@ int PORT_SetDataCOCallback(uint16_t port_handle,
  *                  mask   - Bitmask of the events the host is interested in
  *
  ******************************************************************************/
-int PORT_SetEventMask(uint16_t port_handle, uint32_t mask) {
-  tPORT* p_port;
-
-  log::verbose("PORT_SetEventMask() handle:{} mask:0x{:x}", port_handle, mask);
+int PORT_SetEventMask(uint16_t handle, uint32_t mask) {
+  log::verbose("PORT_SetEventMask() handle:{} mask:0x{:x}", handle, mask);
 
   /* Check if handle is valid to avoid crashing */
-  if ((port_handle == 0) || (port_handle > MAX_RFC_PORTS)) {
+  if ((handle == 0) || (handle > MAX_RFC_PORTS)) {
     return (PORT_BAD_HANDLE);
   }
 
-  p_port = &rfc_cb.port.port[port_handle - 1];
+  tPORT* p_port = &rfc_cb.port.port[handle - 1];
 
   if (!p_port->in_use || (p_port->state == PORT_CONNECTION_STATE_CLOSED)) {
     return (PORT_NOT_OPENED);
@@ -598,7 +587,6 @@ bool PORT_IsOpening(RawAddress* bd_addr) {
  *
  ******************************************************************************/
 int PORT_SetState(uint16_t handle, tPORT_STATE* p_settings) {
-  tPORT* p_port;
   uint8_t baud_rate;
 
   log::verbose("PORT_SetState() handle:{}", handle);
@@ -608,7 +596,7 @@ int PORT_SetState(uint16_t handle, tPORT_STATE* p_settings) {
     return (PORT_BAD_HANDLE);
   }
 
-  p_port = &rfc_cb.port.port[handle - 1];
+  tPORT* p_port = &rfc_cb.port.port[handle - 1];
 
   if (!p_port->in_use || (p_port->state == PORT_CONNECTION_STATE_CLOSED)) {
     return (PORT_NOT_OPENED);
@@ -644,8 +632,6 @@ int PORT_SetState(uint16_t handle, tPORT_STATE* p_settings) {
  *
  ******************************************************************************/
 int PORT_GetState(uint16_t handle, tPORT_STATE* p_settings) {
-  tPORT* p_port;
-
   log::verbose("PORT_GetState() handle:{}", handle);
 
   /* Check if handle is valid to avoid crashing */
@@ -653,7 +639,7 @@ int PORT_GetState(uint16_t handle, tPORT_STATE* p_settings) {
     return (PORT_BAD_HANDLE);
   }
 
-  p_port = &rfc_cb.port.port[handle - 1];
+  tPORT* p_port = &rfc_cb.port.port[handle - 1];
 
   if (!p_port->in_use || (p_port->state == PORT_CONNECTION_STATE_CLOSED)) {
     return (PORT_NOT_OPENED);
@@ -682,7 +668,6 @@ int PORT_GetState(uint16_t handle, tPORT_STATE* p_settings) {
  ******************************************************************************/
 
 int PORT_FlowControl_MaxCredit(uint16_t handle, bool enable) {
-  tPORT* p_port;
   bool old_fc;
   uint32_t events;
 
@@ -693,7 +678,7 @@ int PORT_FlowControl_MaxCredit(uint16_t handle, bool enable) {
     return (PORT_BAD_HANDLE);
   }
 
-  p_port = &rfc_cb.port.port[handle - 1];
+  tPORT* p_port = &rfc_cb.port.port[handle - 1];
 
   if (!p_port->in_use || (p_port->state == PORT_CONNECTION_STATE_CLOSED)) {
     return (PORT_NOT_OPENED);
@@ -750,7 +735,6 @@ int PORT_FlowControl_MaxCredit(uint16_t handle, bool enable) {
  ******************************************************************************/
 int PORT_ReadData(uint16_t handle, char* p_data, uint16_t max_len,
                   uint16_t* p_len) {
-  tPORT* p_port;
   BT_HDR* p_buf;
   uint16_t count;
 
@@ -764,7 +748,7 @@ int PORT_ReadData(uint16_t handle, char* p_data, uint16_t max_len,
     return (PORT_BAD_HANDLE);
   }
 
-  p_port = &rfc_cb.port.port[handle - 1];
+  tPORT* p_port = &rfc_cb.port.port[handle - 1];
 
   if (!p_port->in_use || (p_port->state == PORT_CONNECTION_STATE_CLOSED)) {
     return (PORT_NOT_OPENED);
@@ -910,7 +894,6 @@ static int port_write(tPORT* p_port, BT_HDR* p_buf) {
  *
  ******************************************************************************/
 int PORT_WriteDataCO(uint16_t handle, int* p_len) {
-  tPORT* p_port;
   BT_HDR* p_buf;
   uint32_t event = 0;
   int rc = 0;
@@ -923,7 +906,7 @@ int PORT_WriteDataCO(uint16_t handle, int* p_len) {
   if ((handle == 0) || (handle > MAX_RFC_PORTS)) {
     return (PORT_BAD_HANDLE);
   }
-  p_port = &rfc_cb.port.port[handle - 1];
+  tPORT* p_port = &rfc_cb.port.port[handle - 1];
 
   if (!p_port->in_use || (p_port->state == PORT_CONNECTION_STATE_CLOSED)) {
     log::warn("PORT_WriteDataByFd() no port state:{}", p_port->state);
@@ -1067,7 +1050,6 @@ int PORT_WriteDataCO(uint16_t handle, int* p_len) {
  ******************************************************************************/
 int PORT_WriteData(uint16_t handle, const char* p_data, uint16_t max_len,
                    uint16_t* p_len) {
-  tPORT* p_port;
   BT_HDR* p_buf;
   uint32_t event = 0;
   int rc = 0;
@@ -1081,7 +1063,7 @@ int PORT_WriteData(uint16_t handle, const char* p_data, uint16_t max_len,
   if ((handle == 0) || (handle > MAX_RFC_PORTS)) {
     return (PORT_BAD_HANDLE);
   }
-  p_port = &rfc_cb.port.port[handle - 1];
+  tPORT* p_port = &rfc_cb.port.port[handle - 1];
 
   if (!p_port->in_use || (p_port->state == PORT_CONNECTION_STATE_CLOSED)) {
     log::warn("PORT_WriteData() no port state:{}", p_port->state);

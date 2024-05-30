@@ -3374,8 +3374,14 @@ void btm_sec_encrypt_change(uint16_t handle, tHCI_STATUS status,
   if (transport == BT_TRANSPORT_LE) {
     if (status == HCI_ERR_KEY_MISSING || status == HCI_ERR_AUTH_FAILURE ||
         status == HCI_ERR_ENCRY_MODE_NOT_ACCEPTABLE) {
-      p_dev_rec->sec_rec.sec_flags &= ~(BTM_SEC_LE_LINK_KEY_KNOWN);
-      p_dev_rec->sec_rec.ble_keys.key_type = BTM_LE_KEY_NONE;
+      if (com::android::bluetooth::flags::
+              sec_dont_clear_keys_on_encryption_err()) {
+        log::error("{} encrypt failure status 0x{:x}", p_dev_rec->bd_addr,
+                   status);
+      } else {
+        p_dev_rec->sec_rec.sec_flags &= ~(BTM_SEC_LE_LINK_KEY_KNOWN);
+        p_dev_rec->sec_rec.ble_keys.key_type = BTM_LE_KEY_NONE;
+      }
     }
     p_dev_rec->sec_rec.sec_status = status;
     btm_ble_link_encrypted(p_dev_rec->ble.pseudo_addr, encr_enable);

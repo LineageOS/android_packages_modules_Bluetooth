@@ -22,7 +22,7 @@ use bt_topshim::{
 
 use bt_utils::array_utils;
 use bt_utils::cod::{is_cod_hid_combo, is_cod_hid_keyboard};
-use bt_utils::uhid::{UHid, BD_ADDR_DEFAULT};
+use bt_utils::uhid::UHid;
 use btif_macros::{btif_callback, btif_callbacks_dispatcher};
 
 use log::{debug, error, warn};
@@ -357,7 +357,8 @@ struct BluetoothDeviceContext {
     /// Transport type reported by ACL connection (if completed).
     pub acl_reported_transport: BtTransport,
 
-    pub acl_state: BtAclState,
+    pub bredr_acl_state: BtAclState,
+    pub ble_acl_state: BtAclState,
     pub bond_state: BtBondState,
     pub info: BluetoothDevice,
     pub last_seen: Instant,
@@ -374,14 +375,16 @@ struct BluetoothDeviceContext {
 impl BluetoothDeviceContext {
     pub(crate) fn new(
         bond_state: BtBondState,
-        acl_state: BtAclState,
+        bredr_acl_state: BtAclState,
+        ble_acl_state: BtAclState,
         info: BluetoothDevice,
         last_seen: Instant,
         properties: Vec<BluetoothProperty>,
     ) -> BluetoothDeviceContext {
         let mut device = BluetoothDeviceContext {
             acl_reported_transport: BtTransport::Auto,
-            acl_state,
+            bredr_acl_state,
+            ble_acl_state,
             bond_state,
             info,
             last_seen,
@@ -417,6 +420,59 @@ impl BluetoothDeviceContext {
     /// Mark this device as seen.
     pub(crate) fn seen(&mut self) {
         self.last_seen = Instant::now();
+    }
+
+    fn get_default_transport(&self) -> BtTransport {
+        self.properties.get(&BtPropertyType::TypeOfDevice).map_or(BtTransport::Auto, |prop| {
+            match prop {
+                BluetoothProperty::TypeOfDevice(t) => match *t {
+                    BtDeviceType::Bredr => BtTransport::Bredr,
+                    BtDeviceType::Ble => BtTransport::Le,
+                    _ => BtTransport::Auto,
+                },
+                _ => BtTransport::Auto,
+            }
+        })
+    }
+
+    /// Check if it is connected in at least one transport.
+    fn is_connected(&self) -> bool {
+        self.bredr_acl_state == BtAclState::Connected || self.ble_acl_state == BtAclState::Connected
+    }
+
+    /// Set ACL state given transport. Return true if state changed.
+    fn set_transport_state(&mut self, transport: &BtTransport, state: &BtAclState) -> bool {
+        match (transport, self.get_default_transport()) {
+            (t, d)
+                if *t == BtTransport::Bredr
+                    || (*t == BtTransport::Auto && d == BtTransport::Bredr) =>
+            {
+                if self.bredr_acl_state == *state {
+                    return false;
+                }
+                self.bredr_acl_state = state.clone();
+            }
+            (t, d)
+                if *t == BtTransport::Le || (*t == BtTransport::Auto && d == BtTransport::Le) =>
+            {
+                if self.ble_acl_state == *state {
+                    return false;
+                }
+                self.ble_acl_state = state.clone();
+            }
+            // both link transport and the default transport are Auto.
+            _ => {
+                warn!("Unable to decide the transport! Set current connection states bredr({:?}), ble({:?}) to {:?}", self.bredr_acl_state, self.ble_acl_state, *state);
+                if self.bredr_acl_state == *state && self.ble_acl_state == *state {
+                    return false;
+                }
+                // There is no way for us to know which transport the link is referring to in this case.
+                self.ble_acl_state = state.clone();
+                self.bredr_acl_state = state.clone();
+                return true;
+            }
+        };
+        true
     }
 }
 
@@ -626,7 +682,7 @@ impl Bluetooth {
             is_sock_listening
                 || self.remote_devices.values().any(|ctx| {
                     ctx.bond_state == BtBondState::Bonded
-                        && ctx.acl_state == BtAclState::Disconnected
+                        && ctx.bredr_acl_state == BtAclState::Disconnected
                         && ctx
                             .properties
                             .get(&BtPropertyType::TypeOfDevice)
@@ -1033,7 +1089,7 @@ impl Bluetooth {
     pub(crate) fn get_bonded_and_connected_devices(&mut self) -> Vec<BluetoothDevice> {
         self.remote_devices
             .values()
-            .filter(|v| v.acl_state == BtAclState::Connected && v.bond_state == BtBondState::Bonded)
+            .filter(|v| v.is_connected() && v.bond_state == BtBondState::Bonded)
             .map(|v| v.info.clone())
             .collect()
     }
@@ -1045,7 +1101,7 @@ impl Bluetooth {
 
     /// Gets whether a single device is connected with its address.
     fn get_acl_state_by_addr(&self, addr: &RawAddress) -> bool {
-        self.remote_devices.get(addr).map_or(false, |d| d.acl_state == BtAclState::Connected)
+        self.remote_devices.get(addr).map_or(false, |d| d.is_connected())
     }
 
     /// Check whether remote devices are still fresh. If they're outside the
@@ -1057,9 +1113,7 @@ impl Bluetooth {
         // * It is currently connected.
         fn is_fresh(d: &BluetoothDeviceContext, now: &Instant) -> bool {
             let fresh_at = d.last_seen + FOUND_DEVICE_FRESHNESS;
-            now < &fresh_at
-                || d.acl_state == BtAclState::Connected
-                || d.bond_state != BtBondState::NotBonded
+            now < &fresh_at || d.is_connected() || d.bond_state != BtBondState::NotBonded
         }
 
         let now = Instant::now();
@@ -1088,7 +1142,7 @@ impl Bluetooth {
     }
 
     fn send_metrics_remote_device_info(device: &BluetoothDeviceContext) {
-        if device.bond_state != BtBondState::Bonded && device.acl_state != BtAclState::Connected {
+        if device.bond_state != BtBondState::Bonded && !device.is_connected() {
             return;
         }
 
@@ -1178,6 +1232,7 @@ impl Bluetooth {
                     })
                     .or_insert(BluetoothDeviceContext::new(
                         BtBondState::NotBonded,
+                        BtAclState::Disconnected,
                         BtAclState::Disconnected,
                         device_info,
                         Instant::now(),
@@ -1296,13 +1351,12 @@ impl Bluetooth {
         if !self.uhid_wakeup_source.is_empty() {
             return;
         }
-        let adapter_addr = self.get_address().to_string().to_lowercase();
         match self.uhid_wakeup_source.create(
             "VIRTUAL_SUSPEND_UHID".to_string(),
-            adapter_addr,
-            String::from(BD_ADDR_DEFAULT),
+            self.get_address(),
+            RawAddress::empty(),
         ) {
-            Err(e) => log::error!("Fail to create uhid {}", e),
+            Err(e) => error!("Fail to create uhid {}", e),
             Ok(_) => (),
         }
     }
@@ -1601,6 +1655,7 @@ impl BtifBluetoothCallbacks for Bluetooth {
                             .or_insert(BluetoothDeviceContext::new(
                                 BtBondState::Bonded,
                                 BtAclState::Disconnected,
+                                BtAclState::Disconnected,
                                 BluetoothDevice::new(*addr, "".to_string()),
                                 Instant::now(),
                                 vec![],
@@ -1642,6 +1697,7 @@ impl BtifBluetoothCallbacks for Bluetooth {
             })
             .or_insert(BluetoothDeviceContext::new(
                 BtBondState::NotBonded,
+                BtAclState::Disconnected,
                 BtAclState::Disconnected,
                 device_info,
                 Instant::now(),
@@ -1809,6 +1865,7 @@ impl BtifBluetoothCallbacks for Bluetooth {
                     let device = entry.or_insert(BluetoothDeviceContext::new(
                         BtBondState::Bonded,
                         BtAclState::Disconnected,
+                        BtAclState::Disconnected,
                         BluetoothDevice::new(addr, "".to_string()),
                         Instant::now(),
                         vec![],
@@ -1863,6 +1920,7 @@ impl BtifBluetoothCallbacks for Bluetooth {
 
         let device = self.remote_devices.entry(addr).or_insert(BluetoothDeviceContext::new(
             BtBondState::NotBonded,
+            BtAclState::Disconnected,
             BtAclState::Disconnected,
             BluetoothDevice::new(addr, String::from("")),
             Instant::now(),
@@ -1961,18 +2019,18 @@ impl BtifBluetoothCallbacks for Bluetooth {
         let device = self.remote_devices.entry(addr).or_insert(BluetoothDeviceContext::new(
             BtBondState::NotBonded,
             BtAclState::Disconnected,
+            BtAclState::Disconnected,
             BluetoothDevice::new(addr, String::from("")),
             Instant::now(),
             vec![],
         ));
 
         // Only notify if there's been a change in state
-        if device.acl_state == state {
+        if !device.set_transport_state(&link_type, &state) {
             return;
         }
 
         let info = device.info.clone();
-        device.acl_state = state.clone();
         device.acl_reported_transport = link_type;
 
         metrics::acl_connection_state_changed(
@@ -2001,9 +2059,11 @@ impl BtifBluetoothCallbacks for Bluetooth {
                 });
             }
             BtAclState::Disconnected => {
-                self.connection_callbacks.for_all_callbacks(|callback| {
-                    callback.on_device_disconnected(info.clone());
-                });
+                if !device.is_connected() {
+                    self.connection_callbacks.for_all_callbacks(|callback| {
+                        callback.on_device_disconnected(info.clone());
+                    });
+                }
                 tokio::spawn(async move {
                     let _ = txl.send(Message::OnAclDisconnected(info)).await;
                 });
@@ -2560,13 +2620,7 @@ impl IBluetooth for Bluetooth {
     fn get_connected_devices(&self) -> Vec<BluetoothDevice> {
         self.remote_devices
             .values()
-            .filter_map(|d| {
-                if d.acl_state == BtAclState::Connected {
-                    Some(d.info.clone())
-                } else {
-                    None
-                }
-            })
+            .filter_map(|d| if d.is_connected() { Some(d.info.clone()) } else { None })
             .collect()
     }
 

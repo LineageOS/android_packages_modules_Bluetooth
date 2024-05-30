@@ -152,8 +152,10 @@ void Dumpsys::impl::DumpWithArgsAsync(int fd, const char** args) const {
 
 void Dumpsys::impl::DumpWithArgsSync(int fd, const char** args, std::promise<void> promise) {
   if (com::android::bluetooth::flags::dumpsys_acquire_stack_when_executing()) {
-    if (bluetooth::shim::Stack::GetInstance()->LockForDumpsys(
-            [=, *this]() { this->DumpWithArgsAsync(fd, args); })) {
+    if (bluetooth::shim::Stack::GetInstance()->LockForDumpsys([=, *this]() {
+          log::info("Started dumpsys procedure");
+          this->DumpWithArgsAsync(fd, args);
+        })) {
       log::info("Successful dumpsys procedure");
     } else {
       log::info("Failed dumpsys procedure as stack was not longer active");

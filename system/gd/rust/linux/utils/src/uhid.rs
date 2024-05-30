@@ -1,14 +1,12 @@
 //! This library provides access to Linux uhid.
 
+use bt_topshim::btif::{DisplayAddress, RawAddress};
 use log::{debug, error};
 use std::fs::File;
 use uhid_virt::{Bus, CreateParams, UHIDDevice};
 
 const VID_DEFAULT: u32 = 0x0000;
 const PID_DEFAULT: u32 = 0x0000;
-
-/// Default address for a virtual uhid device.
-pub const BD_ADDR_DEFAULT: &str = "00:00:00:00:00:00";
 
 // Report descriptor for a standard mouse
 const RDESC: [u8; 34] = [
@@ -50,13 +48,23 @@ impl UHid {
     }
 
     /// Initialize a uhid device with kernel.
-    pub fn create(&mut self, name: String, phys: String, uniq: String) -> Result<(), String> {
-        debug!("Create a UHID {} with phys: {}, uniq: {}", name, phys, uniq);
+    pub fn create(
+        &mut self,
+        name: String,
+        phys: RawAddress,
+        uniq: RawAddress,
+    ) -> Result<(), String> {
+        debug!(
+            "Create a UHID {} with phys: {}, uniq: {}",
+            name,
+            DisplayAddress(&phys),
+            DisplayAddress(&uniq)
+        );
         let rd_data = RDESC.to_vec();
         let create_params = CreateParams {
-            name: name,
-            phys: phys,
-            uniq: uniq,
+            name,
+            phys: phys.to_string().to_lowercase(),
+            uniq: uniq.to_string().to_lowercase(),
             bus: Bus::BLUETOOTH,
             vendor: VID_DEFAULT,
             product: PID_DEFAULT,

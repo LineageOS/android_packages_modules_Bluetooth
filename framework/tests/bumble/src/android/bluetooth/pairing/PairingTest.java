@@ -355,10 +355,10 @@ public class PairingTest {
                         .next();
 
         // Todo: Unexpected empty ACTION_UUID intent is generated
-        verifyIntentReceived(hasAction(BluetoothDevice.ACTION_UUID));
+        verifyIntentReceivedUnordered(hasAction(BluetoothDevice.ACTION_UUID));
 
         // Wait for connection on Android
-        verifyIntentReceived(
+        verifyIntentReceivedUnordered(
                 hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
                 hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_LE));
 

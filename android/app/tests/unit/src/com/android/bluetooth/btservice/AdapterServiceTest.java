@@ -60,6 +60,9 @@ import android.os.UserManager;
 import android.os.test.TestLooper;
 import android.permission.PermissionCheckerManager;
 import android.permission.PermissionManager;
+import android.platform.test.annotations.DisableFlags;
+import android.platform.test.annotations.EnableFlags;
+import android.platform.test.flag.junit.FlagsParameterization;
 import android.platform.test.flag.junit.SetFlagsRule;
 import android.provider.Settings;
 import android.sysprop.BluetoothProperties;
@@ -69,7 +72,6 @@ import android.util.Log;
 
 import androidx.test.InstrumentationRegistry;
 import androidx.test.filters.MediumTest;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.Utils;
@@ -105,8 +107,11 @@ import java.util.List;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
+import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
+import platform.test.runner.parameterized.Parameters;
+
 @MediumTest
-@RunWith(AndroidJUnit4.class)
+@RunWith(ParameterizedAndroidJunit4.class)
 public class AdapterServiceTest {
     private static final String TAG = AdapterServiceTest.class.getSimpleName();
     private static final String TEST_BT_ADDR_1 = "00:11:22:33:44:55";
@@ -155,7 +160,7 @@ public class AdapterServiceTest {
     private @Mock ScanNativeInterface mScanNativeInterface;
     private @Mock JniCallbacks mJniCallbacks;
 
-    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
+    @Rule public final SetFlagsRule mSetFlagsRule;
 
     // SystemService that are not mocked
     private BluetoothManager mBluetoothManager;
@@ -201,6 +206,15 @@ public class AdapterServiceTest {
 
     <T> T mockGetSystemService(String serviceName, Class<T> serviceClass) {
         return TestUtils.mockGetSystemService(mMockContext, serviceName, serviceClass);
+    }
+
+    @Parameters(name = "{0}")
+    public static List<FlagsParameterization> getParams() {
+        return FlagsParameterization.allCombinationsOf(Flags.FLAG_EXPLICIT_KILL_FROM_SYSTEM_SERVER);
+    }
+
+    public AdapterServiceTest(FlagsParameterization flags) {
+        mSetFlagsRule = new SetFlagsRule(flags);
     }
 
     @Before
@@ -546,6 +560,12 @@ public class AdapterServiceTest {
         verify(nativeInterface).disable();
         adapter.stateChangeCallback(AbstractionLayer.BT_STATE_OFF);
         TestUtils.syncHandler(looper, AdapterState.BLE_STOPPED);
+        if (Flags.explicitKillFromSystemServer()) {
+            // When reaching the OFF state, the cleanup is called that will destroy the state
+            // machine of the adapterService. Destroying state machine send a -1 event on the
+            // handler
+            TestUtils.syncHandler(looper, -1);
+        }
         verifyStateChange(callback, STATE_BLE_TURNING_OFF, STATE_OFF);
 
         assertThat(adapter.getState()).isEqualTo(STATE_OFF);
@@ -638,6 +658,12 @@ public class AdapterServiceTest {
         assertThat(mAdapterService.getBluetoothGatt()).isNull();
 
         syncHandler(AdapterState.BLE_STOPPED);
+        if (Flags.explicitKillFromSystemServer()) {
+            // When reaching the OFF state, the cleanup is called that will destroy the state
+            // machine of the adapterService. Destroying state machine send a -1 event on the
+            // handler
+            syncHandler(-1);
+        }
         syncHandler(MESSAGE_PROFILE_SERVICE_STATE_CHANGED);
         syncHandler(MESSAGE_PROFILE_SERVICE_UNREGISTERED);
 
@@ -672,15 +698,20 @@ public class AdapterServiceTest {
 
         mLooper.moveTimeForward(120_000); // Skip time so the timeout fires
         syncHandler(AdapterState.BLE_STOP_TIMEOUT);
+        if (Flags.explicitKillFromSystemServer()) {
+            // When reaching the OFF state, the cleanup is called that will destroy the state
+            // machine of the adapterService. Destroying state machine send a -1 event on the
+            // handler
+            syncHandler(-1);
+        }
         verifyStateChange(STATE_BLE_TURNING_OFF, STATE_OFF);
 
         assertThat(mAdapterService.getState()).isEqualTo(STATE_OFF);
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_SCAN_MANAGER_REFACTOR)
     public void startBleOnly_whenScanManagerRefactorFlagIsOff_onlyStartGattProfile() {
-        mSetFlagsRule.disableFlags(Flags.FLAG_SCAN_MANAGER_REFACTOR);
-
         mAdapterService.bringUpBle();
 
         assertThat(mAdapterService.getBluetoothGatt()).isNotNull();
@@ -691,9 +722,8 @@ public class AdapterServiceTest {
     }
 
     @Test
+    @EnableFlags(Flags.FLAG_SCAN_MANAGER_REFACTOR)
     public void startBleOnly_whenScanManagerRefactorFlagIsOn_onlyStartScanController() {
-        mSetFlagsRule.enableFlags(Flags.FLAG_SCAN_MANAGER_REFACTOR);
-
         mAdapterService.bringUpBle();
 
         assertThat(mAdapterService.getBluetoothGatt()).isNull();
@@ -701,9 +731,8 @@ public class AdapterServiceTest {
     }
 
     @Test
+    @EnableFlags(Flags.FLAG_SCAN_MANAGER_REFACTOR)
     public void startBleOnly_whenScanManagerRefactorFlagIsOn_startAndStopScanController() {
-        mSetFlagsRule.enableFlags(Flags.FLAG_SCAN_MANAGER_REFACTOR);
-
         assertThat(mAdapterService.getBluetoothScan()).isNull();
         assertThat(mAdapterService.getBluetoothGatt()).isNull();
 
@@ -724,12 +753,18 @@ public class AdapterServiceTest {
         assertThat(mAdapterService.getBluetoothGatt()).isNull();
 
         mAdapterService.stopBle();
-        TestUtils.syncHandler(mLooper, AdapterState.BLE_TURN_OFF);
+        syncHandler(AdapterState.BLE_TURN_OFF);
         verifyStateChange(callback, STATE_BLE_ON, STATE_BLE_TURNING_OFF);
 
         verify(mNativeInterface).disable();
         mAdapterService.stateChangeCallback(AbstractionLayer.BT_STATE_OFF);
-        TestUtils.syncHandler(mLooper, AdapterState.BLE_STOPPED);
+        syncHandler(AdapterState.BLE_STOPPED);
+        if (Flags.explicitKillFromSystemServer()) {
+            // When reaching the OFF state, the cleanup is called that will destroy the state
+            // machine of the adapterService. Destroying state machine send a -1 event on the
+            // handler
+            syncHandler(-1);
+        }
         verifyStateChange(callback, STATE_BLE_TURNING_OFF, STATE_OFF);
 
         assertThat(mAdapterService.getState()).isEqualTo(STATE_OFF);
@@ -740,9 +775,8 @@ public class AdapterServiceTest {
     }
 
     @Test
+    @EnableFlags(Flags.FLAG_SCAN_MANAGER_REFACTOR)
     public void startBrDr_whenScanManagerRefactorFlagIsOn_startAndStopScanController() {
-        mSetFlagsRule.enableFlags(Flags.FLAG_SCAN_MANAGER_REFACTOR);
-
         assertThat(mAdapterService.getBluetoothScan()).isNull();
         assertThat(mAdapterService.getBluetoothGatt()).isNull();
 
@@ -877,6 +911,12 @@ public class AdapterServiceTest {
         // TODO(b/280518177): The only timeout to fire here should be the BREDR
         mLooper.moveTimeForward(120_000); // Skip time so the timeout fires
         syncHandler(AdapterState.BLE_STOP_TIMEOUT);
+        if (Flags.explicitKillFromSystemServer()) {
+            // When reaching the OFF state, the cleanup is called that will destroy the state
+            // machine of the adapterService. Destroying state machine send a -1 event on the
+            // handler
+            syncHandler(-1);
+        }
         verifyStateChange(STATE_BLE_TURNING_OFF, STATE_OFF);
 
         assertThat(mAdapterService.getState()).isEqualTo(STATE_OFF);
@@ -920,6 +960,12 @@ public class AdapterServiceTest {
 
         mAdapterService.stateChangeCallback(AbstractionLayer.BT_STATE_OFF);
         syncHandler(AdapterState.BLE_STOPPED);
+        if (Flags.explicitKillFromSystemServer()) {
+            // When reaching the OFF state, the cleanup is called that will destroy the state
+            // machine of the adapterService. Destroying state machine send a -1 event on the
+            // handler
+            syncHandler(-1);
+        }
 
         verifyStateChange(STATE_BLE_TURNING_OFF, STATE_OFF);
         assertThat(mAdapterService.getState()).isEqualTo(STATE_OFF);
@@ -1032,9 +1078,8 @@ public class AdapterServiceTest {
     }
 
     @Test
+    @EnableFlags(Flags.FLAG_IDENTITY_ADDRESS_NULL_IF_UNKNOWN)
     public void testIdentityAddressNullIfUnknown() {
-        mSetFlagsRule.enableFlags(Flags.FLAG_IDENTITY_ADDRESS_NULL_IF_UNKNOWN);
-
         BluetoothDevice device = TestUtils.getTestDevice(BluetoothAdapter.getDefaultAdapter(), 0);
 
         assertThat(mAdapterService.getByteIdentityAddress(device)).isNull();

@@ -42,16 +42,17 @@ import androidx.test.runner.AndroidJUnit4;
 import com.android.bluetooth.flags.Flags;
 import com.android.compatibility.common.util.AdoptShellPermissionsRule;
 
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import pandora.HostProto.AdvertiseRequest;
+import pandora.HostProto.OwnAddressType;
+
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-
-import pandora.HostProto.AdvertiseRequest;
-import pandora.HostProto.OwnAddressType;
 
 /** Test cases for {@link BluetoothGattServer}. */
 @RunWith(AndroidJUnit4.class)
@@ -61,11 +62,13 @@ public class GattServerConnectWithScanTest {
     private static final int TIMEOUT_SCANNING_MS = 2_000;
     private static final int TIMEOUT_GATT_CONNECTION_MS = 2_000;
 
-    @Rule public final AdoptShellPermissionsRule mPermissionRule = new AdoptShellPermissionsRule();
+    @Rule(order = 2)
+    public final AdoptShellPermissionsRule mPermissionRule = new AdoptShellPermissionsRule();
 
-    @Rule public final PandoraDevice mBumble = new PandoraDevice();
+    @Rule(order = 1)
+    public final PandoraDevice mBumble = new PandoraDevice();
 
-    @Rule
+    @Rule(order = 0)
     public final CheckFlagsRule mCheckFlagsRule = DeviceFlagsValueProvider.createCheckFlagsRule();
 
     private final Context mContext = ApplicationProvider.getApplicationContext();
@@ -75,6 +78,7 @@ public class GattServerConnectWithScanTest {
     private final BluetoothLeScanner mLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
 
     @Test
+    @Ignore("b/343525982: Remove hidden api's dependencies to enable the test.")
     public void serverConnectToRandomAddress_withTransportAuto() throws Exception {
         advertiseWithBumble(OwnAddressType.RANDOM);
         assertThat(scanBumbleDevice(Utils.BUMBLE_RANDOM_ADDRESS)).isNotNull();
@@ -101,6 +105,7 @@ public class GattServerConnectWithScanTest {
     }
 
     @Test
+    @Ignore("b/343525982: Remove hidden api's dependencies to enable the test.")
     public void serverConnectToRandomAddress_withTransportLE() throws Exception {
         advertiseWithBumble(OwnAddressType.RANDOM);
         assertThat(scanBumbleDevice(Utils.BUMBLE_RANDOM_ADDRESS)).isNotNull();
@@ -151,6 +156,7 @@ public class GattServerConnectWithScanTest {
     }
 
     @Test
+    @Ignore("b/343525982: Remove hidden api's dependencies to enable the test.")
     public void serverConnectToPublicAddress_withTransportLE() throws Exception {
         String publicAddress = mBumble.getRemoteDevice().getAddress();
         advertiseWithBumble(OwnAddressType.PUBLIC);

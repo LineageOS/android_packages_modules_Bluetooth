@@ -52,16 +52,16 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 
+import pandora.HostProto;
+import pandora.HostProto.AdvertiseRequest;
+import pandora.HostProto.AdvertiseResponse;
+import pandora.HostProto.OwnAddressType;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
-
-import pandora.HostProto;
-import pandora.HostProto.AdvertiseRequest;
-import pandora.HostProto.AdvertiseResponse;
-import pandora.HostProto.OwnAddressType;
 
 @RunWith(AndroidJUnit4.class)
 public class LeScanningTest {
@@ -168,7 +168,7 @@ public class LeScanningTest {
     public void startBleScan_withPendingIntentAndDynamicReceiverAndCallbackTypeAllMatches() {
         BroadcastReceiver mockReceiver = mock(BroadcastReceiver.class);
         IntentFilter intentFilter = new IntentFilter(ACTION_DYNAMIC_RECEIVER_SCAN_RESULT);
-        mContext.registerReceiver(mockReceiver, intentFilter);
+        mContext.registerReceiver(mockReceiver, intentFilter, Context.RECEIVER_EXPORTED);
 
         advertiseWithBumble(TEST_UUID_STRING, OwnAddressType.PUBLIC);
 
@@ -187,7 +187,12 @@ public class LeScanningTest {
         Intent scanIntent = new Intent(ACTION_DYNAMIC_RECEIVER_SCAN_RESULT);
         PendingIntent pendingIntent =
                 PendingIntent.getBroadcast(
-                        mContext, 0, scanIntent, PendingIntent.FLAG_CANCEL_CURRENT);
+                        mContext,
+                        0,
+                        scanIntent,
+                        PendingIntent.FLAG_MUTABLE
+                                | PendingIntent.FLAG_CANCEL_CURRENT
+                                | PendingIntent.FLAG_ALLOW_UNSAFE_IMPLICIT_INTENT);
 
         mLeScanner.startScan(List.of(scanFilter), scanSettings, pendingIntent);
 
