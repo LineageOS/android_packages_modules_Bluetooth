@@ -386,11 +386,6 @@ void alarm_set_on_mloop(alarm_t* alarm, uint64_t interval_ms,
   fake_osi_alarm_set_on_mloop_.data = data;
 }
 
-int osi_rand(void) {
-  inc_func_call_count(__func__);
-  return 0;
-}
-
 bool socket_listen(const socket_t* socket, port_t port) {
   inc_func_call_count(__func__);
   return false;
