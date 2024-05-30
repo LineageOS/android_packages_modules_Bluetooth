@@ -137,6 +137,7 @@ public class GattServerConnectWithoutScanTest {
     }
 
     @Test
+    @Ignore("b/343525982: Remove hidden api's dependencies to enable the test.")
     public void serverConnectToPublicAddress_withTransportLE() throws Exception {
         advertiseWithBumble(OwnAddressType.PUBLIC);
 

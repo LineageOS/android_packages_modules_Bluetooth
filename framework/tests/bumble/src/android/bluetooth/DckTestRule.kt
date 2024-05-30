@@ -152,7 +152,7 @@ class DckTestRule(
                         }
                     }
 
-                context.registerReceiver(broadcastReceiver, intentFilter)
+                context.registerReceiver(broadcastReceiver, intentFilter, Context.RECEIVER_EXPORTED)
 
                 val scanIntent = Intent(ACTION_DYNAMIC_RECEIVER_SCAN_RESULT)
                 val pendingIntent =
@@ -160,7 +160,9 @@ class DckTestRule(
                         context,
                         0,
                         scanIntent,
-                        PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+                        PendingIntent.FLAG_MUTABLE or
+                            PendingIntent.FLAG_UPDATE_CURRENT or
+                            PendingIntent.FLAG_ALLOW_UNSAFE_IMPLICIT_INTENT
                     )
 
                 leScanner.startScan(listOf(scanFilter), scanSettings, pendingIntent)

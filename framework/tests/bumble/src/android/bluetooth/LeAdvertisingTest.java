@@ -33,6 +33,7 @@ import com.android.compatibility.common.util.AdoptShellPermissionsRule;
 
 import io.grpc.Deadline;
 
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -56,6 +57,7 @@ public class LeAdvertisingTest {
     @Rule public final PandoraDevice mBumble = new PandoraDevice();
 
     @Test
+    @Ignore("b/343525982: Remove hidden api's dependencies to enable the test.")
     public void advertisingSet() throws Exception {
         Pair<String, Integer> addressPair = startAdvertising().join();
         ScanningResponse response = scanWithBumble(addressPair);
