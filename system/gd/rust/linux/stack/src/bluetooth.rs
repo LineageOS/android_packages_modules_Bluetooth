@@ -22,7 +22,7 @@ use bt_topshim::{
 
 use bt_utils::array_utils;
 use bt_utils::cod::{is_cod_hid_combo, is_cod_hid_keyboard};
-use bt_utils::uhid::{UHid, BD_ADDR_DEFAULT};
+use bt_utils::uhid::UHid;
 use btif_macros::{btif_callback, btif_callbacks_dispatcher};
 
 use log::{debug, error, warn};
@@ -1296,13 +1296,12 @@ impl Bluetooth {
         if !self.uhid_wakeup_source.is_empty() {
             return;
         }
-        let adapter_addr = self.get_address().to_string().to_lowercase();
         match self.uhid_wakeup_source.create(
             "VIRTUAL_SUSPEND_UHID".to_string(),
-            adapter_addr,
-            String::from(BD_ADDR_DEFAULT),
+            self.get_address(),
+            RawAddress::empty(),
         ) {
-            Err(e) => log::error!("Fail to create uhid {}", e),
+            Err(e) => error!("Fail to create uhid {}", e),
             Ok(_) => (),
         }
     }
