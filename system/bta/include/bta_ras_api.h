@@ -28,15 +28,28 @@ namespace ras {
 struct VendorSpecificCharacteristic {
   bluetooth::Uuid characteristicUuid_;
   std::vector<uint8_t> value_;
+  std::vector<uint8_t> reply_value_;
+};
+
+class RasServerCallbacks {
+ public:
+  virtual ~RasServerCallbacks() = default;
+  virtual void OnVendorSpecificReply(
+      const RawAddress& address,
+      const std::vector<VendorSpecificCharacteristic>&
+          vendor_specific_reply) = 0;
 };
 
 class RasServer {
  public:
   virtual ~RasServer() = default;
   virtual void Initialize() = 0;
+  virtual void RegisterCallbacks(RasServerCallbacks* callbacks) = 0;
   virtual void SetVendorSpecificCharacteristic(
       const std::vector<VendorSpecificCharacteristic>&
           vendor_specific_characteristics) = 0;
+  virtual void HandleVendorSpecificReplyComplete(RawAddress address,
+                                                 bool success) = 0;
   virtual void PushProcedureData(RawAddress address, uint16_t procedure_count,
                                  bool is_last, std::vector<uint8_t> data) = 0;
 };
@@ -49,6 +62,8 @@ class RasClientCallbacks {
   virtual void OnConnected(const RawAddress& address, uint16_t att_handle,
                            const std::vector<VendorSpecificCharacteristic>&
                                vendor_specific_characteristics) = 0;
+  virtual void OnWriteVendorSpecificReplyComplete(const RawAddress& address,
+                                                  bool success) = 0;
   virtual void OnRemoteData(const RawAddress& address,
                             const std::vector<uint8_t>& data) = 0;
 };

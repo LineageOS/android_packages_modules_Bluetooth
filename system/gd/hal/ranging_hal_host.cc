@@ -39,6 +39,10 @@ class RangingHalHost : public RangingHal {
       uint16_t /* att_handle */,
       const std::vector<hal::VendorSpecificCharacteristic>& /* vendor_specific_data */) override{};
 
+  virtual void HandleVendorSpecificReply(
+      uint16_t /* connection_handle */,
+      const std::vector<hal::VendorSpecificCharacteristic>& /* vendor_specific_reply */) override{};
+
  protected:
   void ListDependencies(ModuleList* /*list*/) const {}
 

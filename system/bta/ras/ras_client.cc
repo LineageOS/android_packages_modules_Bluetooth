@@ -34,8 +34,14 @@ namespace {
 class RasClientImpl;
 RasClientImpl* instance;
 
+enum CallbackDataType { VENDOR_SPECIFIC_REPLY };
+
 class RasClientImpl : public bluetooth::ras::RasClient {
  public:
+  struct GattWriteCallbackData {
+    const CallbackDataType type_;
+  };
+
   struct RasTracker {
     RasTracker(const RawAddress& address, const RawAddress& address_for_cs)
         : address_(address), address_for_cs_(address_for_cs) {}
@@ -47,6 +53,8 @@ class RasClientImpl : public bluetooth::ras::RasClient {
     uint16_t latest_ranging_counter_ = 0;
     bool handling_on_demand_data_ = false;
     std::vector<VendorSpecificCharacteristic> vendor_specific_characteristics_;
+    uint8_t writeReplyCounter_ = 0;
+    uint8_t writeReplySuccessCounter_ = 0;
 
     const gatt::Characteristic* FindCharacteristicByUuid(Uuid uuid) {
       for (auto& characteristic : service_->characteristics) {
@@ -97,10 +105,9 @@ class RasClientImpl : public bluetooth::ras::RasClient {
   }
 
   void Connect(const RawAddress& address) override {
-    log::info("{}", address);
     tBLE_BD_ADDR ble_bd_addr;
     ResolveAddress(ble_bd_addr, address);
-    log::info("resolve {}", ble_bd_addr.bda);
+    log::info("address {}, resolve {}", address, ble_bd_addr.bda);
 
     auto tracker = FindTrackerByAddress(ble_bd_addr.bda);
     if (tracker == nullptr) {
@@ -118,7 +125,6 @@ class RasClientImpl : public bluetooth::ras::RasClient {
     log::info("address {}, resolve {}", address, ble_bd_addr.bda);
     auto tracker = FindTrackerByAddress(ble_bd_addr.bda);
 
-    uint8_t index = 1;
     for (auto& vendor_specific_characteristic : vendor_specific_data) {
       auto characteristic = tracker->FindCharacteristicByUuid(
           vendor_specific_characteristic.characteristicUuid_);
@@ -130,10 +136,10 @@ class RasClientImpl : public bluetooth::ras::RasClient {
       log::debug("write to remote, uuid {}, len {}",
                  vendor_specific_characteristic.characteristicUuid_,
                  vendor_specific_characteristic.value_.size());
-      BTA_GATTC_WriteCharValue(tracker->conn_id_, characteristic->value_handle,
-                               GATT_WRITE,
-                               vendor_specific_characteristic.value_,
-                               GATT_AUTH_REQ_MITM, GattWriteCallback, nullptr);
+      BTA_GATTC_WriteCharValue(
+          tracker->conn_id_, characteristic->value_handle, GATT_WRITE,
+          vendor_specific_characteristic.value_, GATT_AUTH_REQ_MITM,
+          GattWriteCallback, &gatt_write_callback_data_);
     }
   }
 
@@ -372,6 +378,46 @@ class RasClientImpl : public bluetooth::ras::RasClient {
     }
   }
 
+  void GattWriteCallbackForVendorSpecificData(uint16_t conn_id,
+                                              tGATT_STATUS status,
+                                              uint16_t handle,
+                                              const uint8_t* value,
+                                              GattWriteCallbackData* data) {
+    if (data != nullptr) {
+      GattWriteCallbackData* structPtr =
+          static_cast<GattWriteCallbackData*>(data);
+      if (structPtr->type_ == CallbackDataType::VENDOR_SPECIFIC_REPLY) {
+        log::info("Write vendor specific reply complete");
+        auto tracker = FindTrackerByHandle(conn_id);
+        tracker->writeReplyCounter_++;
+        if (status == GATT_SUCCESS) {
+          tracker->writeReplySuccessCounter_++;
+        } else {
+          log::error(
+              "Fail to write vendor specific reply conn_id {}, status {}, "
+              "handle {}",
+              conn_id, gatt_status_text(status), handle);
+        }
+        // All reply complete
+        if (tracker->writeReplyCounter_ ==
+            tracker->vendor_specific_characteristics_.size()) {
+          log::info(
+              "All vendor specific reply write complete, size {} "
+              "successCounter {}",
+              tracker->vendor_specific_characteristics_.size(),
+              tracker->writeReplySuccessCounter_);
+          bool success = tracker->writeReplySuccessCounter_ ==
+                         tracker->vendor_specific_characteristics_.size();
+          tracker->writeReplyCounter_ = 0;
+          tracker->writeReplySuccessCounter_ = 0;
+          callbacks_->OnWriteVendorSpecificReplyComplete(
+              tracker->address_for_cs_, success);
+        }
+        return;
+      }
+    }
+  }
+
   void GattWriteCallback(uint16_t conn_id, tGATT_STATUS status, uint16_t handle,
                          const uint8_t* value) {
     if (status != GATT_SUCCESS) {
@@ -400,6 +446,15 @@ class RasClientImpl : public bluetooth::ras::RasClient {
                                 uint16_t handle, uint16_t len,
                                 const uint8_t* value, void* data) {
     if (instance != nullptr) {
+      if (data != nullptr) {
+        GattWriteCallbackData* structPtr =
+            static_cast<GattWriteCallbackData*>(data);
+        if (structPtr->type_ == CallbackDataType::VENDOR_SPECIFIC_REPLY) {
+          instance->GattWriteCallbackForVendorSpecificData(
+              conn_id, status, handle, value, structPtr);
+          return;
+        }
+      }
       instance->GattWriteCallback(conn_id, status, handle, value);
     }
   }
@@ -605,6 +660,8 @@ class RasClientImpl : public bluetooth::ras::RasClient {
   uint16_t gatt_if_;
   std::list<std::shared_ptr<RasTracker>> trackers_;
   bluetooth::ras::RasClientCallbacks* callbacks_;
+  GattWriteCallbackData gatt_write_callback_data_{
+      CallbackDataType::VENDOR_SPECIFIC_REPLY};
 };
 
 }  // namespace
