@@ -57,8 +57,9 @@ public class BluetoothMapUtilsTest {
 
     @Test
     public void printCursor_doesNotCrash() {
-        MatrixCursor cursor = new MatrixCursor(new String[] {
-                BluetoothMapContract.PresenceColumns.LAST_ONLINE, "Name"});
+        MatrixCursor cursor =
+                new MatrixCursor(
+                        new String[] {BluetoothMapContract.PresenceColumns.LAST_ONLINE, "Name"});
         cursor.addRow(new Object[] {345345226L, "test_name"});
         cursor.moveToFirst();
 
@@ -67,8 +68,10 @@ public class BluetoothMapUtilsTest {
 
     @Test
     public void stripEncoding_quotedPrintable() {
-        assertThat(BluetoothMapUtils.stripEncoding("=?UTF-8?Q?" + QUOTED_PRINTABLE_ENCODED_TEXT
-                + "?=")).isEqualTo(TEXT);
+        assertThat(
+                        BluetoothMapUtils.stripEncoding(
+                                "=?UTF-8?Q?" + QUOTED_PRINTABLE_ENCODED_TEXT + "?="))
+                .isEqualTo(TEXT);
     }
 
     @Test

@@ -31,31 +31,31 @@ public class BmessageTest {
     private static final String TAG = BmessageTest.class.getSimpleName();
     private static final String SIMPLE_MMS_MESSAGE =
             "BEGIN:BMSG\r\nVERSION:1.0\r\nSTATUS:READ\r\nTYPE:MMS\r\nFOLDER:null\r\nBEGIN:BENV\r\n"
-            + "BEGIN:VCARD\r\nVERSION:2.1\r\nN:null;;;;\r\nTEL:555-5555\r\nEND:VCARD\r\n"
-            + "BEGIN:BBODY\r\nLENGTH:39\r\nBEGIN:MSG\r\nThis is a new msg\r\nEND:MSG\r\n"
-            + "END:BBODY\r\nEND:BENV\r\nEND:BMSG\r\n";
+                    + "BEGIN:VCARD\r\nVERSION:2.1\r\nN:null;;;;\r\nTEL:555-5555\r\nEND:VCARD\r\n"
+                    + "BEGIN:BBODY\r\nLENGTH:39\r\nBEGIN:MSG\r\nThis is a new msg\r\nEND:MSG\r\n"
+                    + "END:BBODY\r\nEND:BENV\r\nEND:BMSG\r\n";
 
     private static final String NO_END_MESSAGE =
             "BEGIN:BMSG\r\nVERSION:1.0\r\nSTATUS:READ\r\nTYPE:MMS\r\nFOLDER:null\r\nBEGIN:BENV\r\n"
-            + "BEGIN:VCARD\r\nVERSION:2.1\r\nN:null;;;;\r\nTEL:555-5555\r\nEND:VCARD\r\n"
-            + "BEGIN:BBODY\r\nLENGTH:39\r\nBEGIN:MSG\r\nThis is a new msg\r\n";
+                    + "BEGIN:VCARD\r\nVERSION:2.1\r\nN:null;;;;\r\nTEL:555-5555\r\nEND:VCARD\r\n"
+                    + "BEGIN:BBODY\r\nLENGTH:39\r\nBEGIN:MSG\r\nThis is a new msg\r\n";
 
     private static final String WRONG_LENGTH_MESSAGE =
             "BEGIN:BMSG\r\nVERSION:1.0\r\nSTATUS:READ\r\nTYPE:MMS\r\nFOLDER:null\r\nBEGIN:BENV\r\n"
-            + "BEGIN:VCARD\r\nVERSION:2.1\r\nN:null;;;;\r\nTEL:555-5555\r\nEND:VCARD\r\n"
-            + "BEGIN:BBODY\r\nLENGTH:200\r\nBEGIN:MSG\r\nThis is a new msg\r\nEND:MSG\r\n"
-            + "END:BBODY\r\nEND:BENV\r\nEND:BMSG\r\n";
+                    + "BEGIN:VCARD\r\nVERSION:2.1\r\nN:null;;;;\r\nTEL:555-5555\r\nEND:VCARD\r\n"
+                    + "BEGIN:BBODY\r\nLENGTH:200\r\nBEGIN:MSG\r\nThis is a new msg\r\nEND:MSG\r\n"
+                    + "END:BBODY\r\nEND:BENV\r\nEND:BMSG\r\n";
 
     private static final String NO_BODY_MESSAGE =
             "BEGIN:BMSG\r\nVERSION:1.0\r\nSTATUS:READ\r\nTYPE:MMS\r\nFOLDER:null\r\nBEGIN:BENV\r\n"
-            + "BEGIN:VCARD\r\nVERSION:2.1\r\nN:null;;;;\r\nTEL:555-5555\r\nEND:VCARD\r\n"
-            + "BEGIN:BBODY\r\nLENGTH:\r\n";
+                    + "BEGIN:VCARD\r\nVERSION:2.1\r\nN:null;;;;\r\nTEL:555-5555\r\nEND:VCARD\r\n"
+                    + "BEGIN:BBODY\r\nLENGTH:\r\n";
 
     private static final String NEGATIVE_LENGTH_MESSAGE =
             "BEGIN:BMSG\r\nVERSION:1.0\r\nSTATUS:READ\r\nTYPE:MMS\r\nFOLDER:null\r\nBEGIN:BENV\r\n"
-            + "BEGIN:VCARD\r\nVERSION:2.1\r\nN:null;;;;\r\nTEL:555-5555\r\nEND:VCARD\r\n"
-            + "BEGIN:BBODY\r\nLENGTH:-1\r\nBEGIN:MSG\r\nThis is a new msg\r\nEND:MSG\r\n"
-            + "END:BBODY\r\nEND:BENV\r\nEND:BMSG\r\n";
+                    + "BEGIN:VCARD\r\nVERSION:2.1\r\nN:null;;;;\r\nTEL:555-5555\r\nEND:VCARD\r\n"
+                    + "BEGIN:BBODY\r\nLENGTH:-1\r\nBEGIN:MSG\r\nThis is a new msg\r\nEND:MSG\r\n"
+                    + "END:BBODY\r\nEND:BENV\r\nEND:BMSG\r\n";
 
     @Test
     public void testNormalMessages() {

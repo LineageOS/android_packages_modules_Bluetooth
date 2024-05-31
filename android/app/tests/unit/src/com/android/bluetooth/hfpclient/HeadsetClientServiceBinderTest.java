@@ -40,8 +40,7 @@ public class HeadsetClientServiceBinderTest {
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    private HeadsetClientService mService;
+    @Mock private HeadsetClientService mService;
 
     BluetoothDevice mRemoteDevice;
 

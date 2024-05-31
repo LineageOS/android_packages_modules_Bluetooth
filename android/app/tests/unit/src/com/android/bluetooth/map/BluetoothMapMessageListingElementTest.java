@@ -101,15 +101,15 @@ public class BluetoothMapMessageListingElementTest {
         assertThat(mMessageListingElement.getHandle()).isEqualTo(TEST_CP_HANDLE);
         assertThat(mMessageListingElement.getSubject()).isEqualTo(TEST_SUBJECT);
         assertThat(mMessageListingElement.getDateTime()).isEqualTo(TEST_DATE_TIME);
-        assertThat(mMessageListingElement.getDateTimeString()).isEqualTo(
-                format.format(TEST_DATE_TIME));
+        assertThat(mMessageListingElement.getDateTimeString())
+                .isEqualTo(format.format(TEST_DATE_TIME));
         assertThat(mMessageListingElement.getSenderName()).isEqualTo(TEST_SENDER_NAME);
         assertThat(mMessageListingElement.getSenderAddressing()).isEqualTo(TEST_SENDER_ADDRESSING);
-        assertThat(mMessageListingElement.getReplyToAddressing()).isEqualTo(
-                TEST_REPLY_TO_ADDRESSING);
+        assertThat(mMessageListingElement.getReplyToAddressing())
+                .isEqualTo(TEST_REPLY_TO_ADDRESSING);
         assertThat(mMessageListingElement.getRecipientName()).isEqualTo(TEST_RECIPIENT_NAME);
-        assertThat(mMessageListingElement.getRecipientAddressing()).isEqualTo(
-                TEST_RECIPIENT_ADDRESSING);
+        assertThat(mMessageListingElement.getRecipientAddressing())
+                .isEqualTo(TEST_RECIPIENT_ADDRESSING);
         assertThat(mMessageListingElement.getType()).isEqualTo(TEST_TYPE);
         assertThat(mMessageListingElement.getSize()).isEqualTo(TEST_SIZE);
         assertThat(mMessageListingElement.getText()).isEqualTo(TEST_TEXT);
@@ -123,8 +123,8 @@ public class BluetoothMapMessageListingElementTest {
         assertThat(mMessageListingElement.getProtect()).isEqualTo(TEST_PROTECT);
         assertThat(mMessageListingElement.getFolderType()).isEqualTo(TEST_FOLDER_TYPE);
         assertThat(mMessageListingElement.getThreadName()).isEqualTo(TEST_THREAD_NAME);
-        assertThat(mMessageListingElement.getAttachmentMimeTypes()).isEqualTo(
-                TEST_ATTACHMENT_MIME_TYPES);
+        assertThat(mMessageListingElement.getAttachmentMimeTypes())
+                .isEqualTo(TEST_ATTACHMENT_MIME_TYPES);
         assertThat(mMessageListingElement.getCursorIndex()).isEqualTo(TEST_CURSOR_INDEX);
     }
 
@@ -155,14 +155,14 @@ public class BluetoothMapMessageListingElementTest {
             String attributeName = parser.getAttributeName(i).trim();
             String attributeValue = parser.getAttributeValue(i);
             if (attributeName.equalsIgnoreCase("handle")) {
-                assertThat(attributeValue).isEqualTo(
-                        BluetoothMapUtils.getMapHandle(TEST_CP_HANDLE, TEST_TYPE));
+                assertThat(attributeValue)
+                        .isEqualTo(BluetoothMapUtils.getMapHandle(TEST_CP_HANDLE, TEST_TYPE));
             } else if (attributeName.equalsIgnoreCase("datetime")) {
-                assertThat(attributeValue).isEqualTo(
-                        BluetoothMapUtils.getDateTimeString(TEST_DATE_TIME));
+                assertThat(attributeValue)
+                        .isEqualTo(BluetoothMapUtils.getDateTimeString(TEST_DATE_TIME));
             } else if (attributeName.equalsIgnoreCase("sender_name")) {
-                assertThat(attributeValue).isEqualTo(
-                        BluetoothMapUtils.stripInvalidChars(TEST_SENDER_NAME));
+                assertThat(attributeValue)
+                        .isEqualTo(BluetoothMapUtils.stripInvalidChars(TEST_SENDER_NAME));
             } else if (attributeName.equalsIgnoreCase("sender_addressing")) {
                 assertThat(attributeValue).isEqualTo(TEST_SENDER_ADDRESSING);
             } else if (attributeName.equalsIgnoreCase("replyto_addressing")) {
@@ -194,8 +194,8 @@ public class BluetoothMapMessageListingElementTest {
             } else if (attributeName.equalsIgnoreCase("protected")) {
                 assertThat(attributeValue).isEqualTo(TEST_PROTECT);
             } else if (attributeName.equalsIgnoreCase("conversation_id")) {
-                assertThat(attributeValue).isEqualTo(
-                        BluetoothMapUtils.getMapConvoHandle(TEST_THREAD_ID, TEST_TYPE));
+                assertThat(attributeValue)
+                        .isEqualTo(BluetoothMapUtils.getMapConvoHandle(TEST_THREAD_ID, TEST_TYPE));
             } else if (attributeName.equalsIgnoreCase("conversation_name")) {
                 assertThat(attributeValue).isEqualTo(TEST_THREAD_NAME);
             } else if (attributeName.equalsIgnoreCase("folder_type")) {

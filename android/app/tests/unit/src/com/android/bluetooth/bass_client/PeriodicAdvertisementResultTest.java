@@ -51,9 +51,16 @@ public class PeriodicAdvertisementResultTest {
         int broadcastId = 5;
         PublicBroadcastData pbData = generatePublicBroadcastData();
         String broadcastName = TEST_BROADCAST_NAME;
-        PeriodicAdvertisementResult result = new PeriodicAdvertisementResult(
-                mDevice, addressType, syncHandle, advSid, paInterval, broadcastId,
-                pbData, broadcastName);
+        PeriodicAdvertisementResult result =
+                new PeriodicAdvertisementResult(
+                        mDevice,
+                        addressType,
+                        syncHandle,
+                        advSid,
+                        paInterval,
+                        broadcastId,
+                        pbData,
+                        broadcastName);
 
         assertThat(result.getAddressType()).isEqualTo(addressType);
         assertThat(result.getSyncHandle()).isEqualTo(syncHandle);
@@ -73,9 +80,16 @@ public class PeriodicAdvertisementResultTest {
         int broadcastId = 5;
         PublicBroadcastData pbData = null;
         String broadcastName = null;
-        PeriodicAdvertisementResult result = new PeriodicAdvertisementResult(
-                mDevice, addressType, syncHandle, advSid, paInterval, broadcastId,
-                pbData, broadcastName);
+        PeriodicAdvertisementResult result =
+                new PeriodicAdvertisementResult(
+                        mDevice,
+                        addressType,
+                        syncHandle,
+                        advSid,
+                        paInterval,
+                        broadcastId,
+                        pbData,
+                        broadcastName);
 
         int newAddressType = 6;
         result.updateAddressType(newAddressType);
@@ -115,25 +129,30 @@ public class PeriodicAdvertisementResultTest {
         int broadcastId = 5;
         PublicBroadcastData pbData = generatePublicBroadcastData();
         String broadcastName = TEST_BROADCAST_NAME;
-        PeriodicAdvertisementResult result = new PeriodicAdvertisementResult(
-                mDevice, addressType, syncHandle, advSid, paInterval, broadcastId,
-                pbData, broadcastName);
+        PeriodicAdvertisementResult result =
+                new PeriodicAdvertisementResult(
+                        mDevice,
+                        addressType,
+                        syncHandle,
+                        advSid,
+                        paInterval,
+                        broadcastId,
+                        pbData,
+                        broadcastName);
 
         result.print();
     }
 
-    /**
-     * Helper to generate test data for public broadcast.
-     */
+    /** Helper to generate test data for public broadcast. */
     private PublicBroadcastData generatePublicBroadcastData() {
         PublicBroadcastData.PublicBroadcastInfo info =
                 new PublicBroadcastData.PublicBroadcastInfo();
         info.isEncrypted = true;
-        info.audioConfigQuality = (
-                BluetoothLeBroadcastMetadata.AUDIO_CONFIG_QUALITY_STANDARD |
-                BluetoothLeBroadcastMetadata.AUDIO_CONFIG_QUALITY_HIGH);
+        info.audioConfigQuality =
+                (BluetoothLeBroadcastMetadata.AUDIO_CONFIG_QUALITY_STANDARD
+                        | BluetoothLeBroadcastMetadata.AUDIO_CONFIG_QUALITY_HIGH);
         info.metaDataLength = 3;
-        info.metaData = new byte[] { 0x06, 0x07, 0x08 };
+        info.metaData = new byte[] {0x06, 0x07, 0x08};
         return new PublicBroadcastData(info);
     }
 }

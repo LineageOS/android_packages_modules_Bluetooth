@@ -44,8 +44,7 @@ public class BluetoothHidDeviceBinderTest {
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    private HidDeviceService mService;
+    @Mock private HidDeviceService mService;
     private AttributionSource mAttributionSource;
     private BluetoothDevice mTestDevice;
     private HidDeviceService.BluetoothHidDeviceBinder mBinder;
@@ -71,20 +70,31 @@ public class BluetoothHidDeviceBinderTest {
         String provider = "test-provider";
         byte subclass = 1;
         byte[] descriptors = new byte[] {10};
-        BluetoothHidDeviceAppSdpSettings sdp = new BluetoothHidDeviceAppSdpSettings(
-                name, description, provider, subclass, descriptors);
+        BluetoothHidDeviceAppSdpSettings sdp =
+                new BluetoothHidDeviceAppSdpSettings(
+                        name, description, provider, subclass, descriptors);
 
         int tokenRate = 800;
         int tokenBucketSize = 9;
         int peakBandwidth = 10;
         int latency = 11250;
         int delayVariation = BluetoothHidDeviceAppQosSettings.MAX;
-        BluetoothHidDeviceAppQosSettings inQos = new BluetoothHidDeviceAppQosSettings(
-                BluetoothHidDeviceAppQosSettings.SERVICE_BEST_EFFORT, tokenRate,
-                tokenBucketSize, peakBandwidth, latency, delayVariation);
-        BluetoothHidDeviceAppQosSettings outQos = new BluetoothHidDeviceAppQosSettings(
-                BluetoothHidDeviceAppQosSettings.SERVICE_BEST_EFFORT, tokenRate,
-                tokenBucketSize, peakBandwidth, latency, delayVariation);
+        BluetoothHidDeviceAppQosSettings inQos =
+                new BluetoothHidDeviceAppQosSettings(
+                        BluetoothHidDeviceAppQosSettings.SERVICE_BEST_EFFORT,
+                        tokenRate,
+                        tokenBucketSize,
+                        peakBandwidth,
+                        latency,
+                        delayVariation);
+        BluetoothHidDeviceAppQosSettings outQos =
+                new BluetoothHidDeviceAppQosSettings(
+                        BluetoothHidDeviceAppQosSettings.SERVICE_BEST_EFFORT,
+                        tokenRate,
+                        tokenBucketSize,
+                        peakBandwidth,
+                        latency,
+                        delayVariation);
         IBluetoothHidDeviceCallback cb = mock(IBluetoothHidDeviceCallback.class);
 
         mBinder.registerApp(sdp, inQos, outQos, cb, mAttributionSource);
@@ -100,7 +110,7 @@ public class BluetoothHidDeviceBinderTest {
     @Test
     public void sendReport() {
         int id = 100;
-        byte[] data = new byte[] { 0x00,  0x01 };
+        byte[] data = new byte[] {0x00, 0x01};
         mBinder.sendReport(mTestDevice, id, data, mAttributionSource);
         verify(mService).sendReport(mTestDevice, id, data);
     }
@@ -109,7 +119,7 @@ public class BluetoothHidDeviceBinderTest {
     public void replyReport() {
         byte type = 0;
         byte id = 100;
-        byte[] data = new byte[] { 0x00,  0x01 };
+        byte[] data = new byte[] {0x00, 0x01};
         mBinder.replyReport(mTestDevice, type, id, data, mAttributionSource);
         verify(mService).replyReport(mTestDevice, type, id, data);
     }
@@ -160,7 +170,7 @@ public class BluetoothHidDeviceBinderTest {
 
     @Test
     public void getDevicesMatchingConnectionStates() {
-        int[] states = new int[] { BluetoothProfile.STATE_CONNECTED };
+        int[] states = new int[] {BluetoothProfile.STATE_CONNECTED};
         mBinder.getDevicesMatchingConnectionStates(states, mAttributionSource);
         verify(mService).getDevicesMatchingConnectionStates(states);
     }

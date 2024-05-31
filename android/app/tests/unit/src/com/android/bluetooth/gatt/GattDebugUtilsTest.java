@@ -32,17 +32,14 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
-/**
- * Test cases for {@link GattDebugUtils}.
- */
+/** Test cases for {@link GattDebugUtils}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class GattDebugUtilsTest {
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    private GattService mService;
+    @Mock private GattService mService;
 
     @Test
     public void handleDebugAction() {
@@ -79,7 +76,7 @@ public class GattDebugUtilsTest {
         int initKey = 7;
         int respKey = 7;
         int maxKey = 16;
-        verify(mService).gattTestCommand(0xF0, null, null, authReq, ioCap, initKey, respKey,
-                maxKey);
+        verify(mService)
+                .gattTestCommand(0xF0, null, null, authReq, ioCap, initKey, respKey, maxKey);
     }
 }

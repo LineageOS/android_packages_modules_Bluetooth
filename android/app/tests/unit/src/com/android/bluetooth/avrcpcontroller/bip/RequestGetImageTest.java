@@ -40,9 +40,11 @@ public class RequestGetImageTest {
 
         RequestGetImage requestGetImage = new RequestGetImage(TEST_IMAGE_HANDLE, descriptor);
 
-        String expected = sXmlDocDecl + "<image-descriptor version=\"1.0\">\r\n"
-                + "  <image encoding=\"JPEG\" pixel=\"1280*960\" />\r\n"
-                + "</image-descriptor>";
+        String expected =
+                sXmlDocDecl
+                        + "<image-descriptor version=\"1.0\">\r\n"
+                        + "  <image encoding=\"JPEG\" pixel=\"1280*960\" />\r\n"
+                        + "</image-descriptor>";
         assertThat(requestGetImage.getImageHandle()).isEqualTo(TEST_IMAGE_HANDLE);
         assertThat(requestGetImage.mImageDescriptor.toString()).isEqualTo(expected);
     }

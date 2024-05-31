@@ -47,8 +47,7 @@ public class BluetoothPbapRequestTest {
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    private ObexTransport mObexTransport;
+    @Mock private ObexTransport mObexTransport;
 
     @Before
     public void setUp() throws Exception {

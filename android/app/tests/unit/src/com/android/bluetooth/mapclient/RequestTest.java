@@ -57,12 +57,11 @@ public class RequestTest {
     private static final String TYPE_SET_NOTIFICATION_REGISTRATION =
             "x-bt/MAP-NotificationRegistration";
 
-
     private static final String HANDLE = "0000001";
 
     private static final Bmessage TEST_MESSAGE = BmessageParser.createBmessage(SIMPLE_MMS_MESSAGE);
-    private static final ArrayList<String> TEST_FOLDER_LIST = new ArrayList<String>(
-            Arrays.asList("folder1"));
+    private static final ArrayList<String> TEST_FOLDER_LIST =
+            new ArrayList<String>(Arrays.asList("folder1"));
     private static final ArrayList<Message> TEST_MESSAGE_LIST = new ArrayList<Message>();
     private static final Date TEST_TIME = new Date();
     private static final byte TEST_STATUS_INDICATOR = Request.STATUS_INDICATOR_READ;
@@ -80,9 +79,14 @@ public class RequestTest {
 
     @Test
     public void testRequestGetMessagesListing() throws IOException {
-        RequestGetMessagesListing newRequest = new RequestGetMessagesListing(
-                TEST_FOLDER_LIST.get(0), /*parameters*/ 0, /*filter*/ null, /*subjectLength*/ 0,
-                /*maxListCount*/ 0, /*listStartOffset*/ 0);
+        RequestGetMessagesListing newRequest =
+                new RequestGetMessagesListing(
+                        TEST_FOLDER_LIST.get(0), /*parameters*/
+                        0, /*filter*/
+                        null, /*subjectLength*/
+                        0,
+                        /*maxListCount*/ 0, /*listStartOffset*/
+                        0);
         assertThat(newRequest).isNotNull();
         newRequest.execute(mFakeClientSession);
 
@@ -94,8 +98,8 @@ public class RequestTest {
 
     @Test
     public void testRequestGetMessage() throws IOException {
-        RequestGetMessage newRequest = new RequestGetMessage(HANDLE, MasClient.CharsetType.UTF_8,
-                /*attachment*/ false);
+        RequestGetMessage newRequest =
+                new RequestGetMessage(HANDLE, MasClient.CharsetType.UTF_8, /*attachment*/ false);
         assertThat(newRequest).isNotNull();
         assertThat(newRequest.getHandle()).isEqualTo(HANDLE);
         newRequest.execute(mFakeClientSession);
@@ -107,8 +111,8 @@ public class RequestTest {
 
     @Test
     public void testRequestGetFolderListing() throws IOException {
-        RequestGetFolderListing newRequest = new RequestGetFolderListing(/*maxListCount*/ 255,
-                /*listStartOffset*/ 0);
+        RequestGetFolderListing newRequest =
+                new RequestGetFolderListing(/*maxListCount*/ 255, /*listStartOffset*/ 0);
         assertThat(newRequest).isNotNull();
         newRequest.execute(mFakeClientSession);
 
@@ -118,8 +122,13 @@ public class RequestTest {
 
     @Test
     public void testRequestPushMessage() throws IOException {
-        RequestPushMessage newRequest = new RequestPushMessage(TEST_FOLDER_LIST.get(0),
-                TEST_MESSAGE, /*charset*/ null, /*transparent*/ false, /*retry*/ false);
+        RequestPushMessage newRequest =
+                new RequestPushMessage(
+                        TEST_FOLDER_LIST.get(0),
+                        TEST_MESSAGE, /*charset*/
+                        null, /*transparent*/
+                        false, /*retry*/
+                        false);
         assertThat(newRequest).isNotNull();
         assertThat(newRequest.getMsgHandle()).isEqualTo(null);
         newRequest.execute(mFakeClientSession);
@@ -131,8 +140,8 @@ public class RequestTest {
 
     @Test
     public void testRequestSetMessageStatus() throws IOException {
-        RequestSetMessageStatus newRequest = new RequestSetMessageStatus(HANDLE,
-                StatusIndicator.READ, TEST_STATUS_VALUE);
+        RequestSetMessageStatus newRequest =
+                new RequestSetMessageStatus(HANDLE, StatusIndicator.READ, TEST_STATUS_VALUE);
         assertThat(newRequest).isNotNull();
         assertThat(newRequest.getHandle()).isEqualTo(HANDLE);
         newRequest.execute(mFakeClientSession);
@@ -144,8 +153,8 @@ public class RequestTest {
 
     @Test
     public void testRequestSetNotificationRegistration() throws IOException {
-        RequestSetNotificationRegistration newRequest = new RequestSetNotificationRegistration(
-                /*status*/ true);
+        RequestSetNotificationRegistration newRequest =
+                new RequestSetNotificationRegistration(/*status*/ true);
         assertThat(newRequest).isNotNull();
         newRequest.execute(mFakeClientSession);
 
@@ -197,8 +206,8 @@ public class RequestTest {
                     case TYPE_GET_MESSAGE_LISTING:
                         outAppParams.setNewMessage(1);
                         outAppParams.setMseTime(TEST_TIME.getTime());
-                        replyHeaders.setHeader(HeaderSet.APPLICATION_PARAMETER,
-                                outAppParams.encodeParams());
+                        replyHeaders.setHeader(
+                                HeaderSet.APPLICATION_PARAMETER, outAppParams.encodeParams());
                         op.sendHeaders(replyHeaders);
                         return ResponseCodes.OBEX_HTTP_OK;
                 }
@@ -249,7 +258,9 @@ public class RequestTest {
         }
 
         @Override
-        public int onSetPathValidator(final HeaderSet request, HeaderSet reply,
+        public int onSetPathValidator(
+                final HeaderSet request,
+                HeaderSet reply,
                 final boolean backup,
                 final boolean create) {
             try {

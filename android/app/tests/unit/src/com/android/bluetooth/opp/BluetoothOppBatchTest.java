@@ -44,8 +44,22 @@ public class BluetoothOppBatchTest {
 
     @Before
     public void setUp() throws Exception {
-        mInitShareInfo = new BluetoothOppShareInfo(0, null, null, null, null, 0,
-                "00:11:22:33:44:55", 0, 0, BluetoothShare.STATUS_PENDING, 0, 0, 0, false);
+        mInitShareInfo =
+                new BluetoothOppShareInfo(
+                        0,
+                        null,
+                        null,
+                        null,
+                        null,
+                        0,
+                        "00:11:22:33:44:55",
+                        0,
+                        0,
+                        BluetoothShare.STATUS_PENDING,
+                        0,
+                        0,
+                        0,
+                        false);
         mContext = InstrumentationRegistry.getInstrumentation().getContext();
         mBluetoothOppBatch = new BluetoothOppBatch(mContext, mInitShareInfo);
     }
@@ -62,24 +76,36 @@ public class BluetoothOppBatchTest {
 
     @Test
     public void addShare_shareInfoStoredCorrectly() {
-        BluetoothOppShareInfo newBluetoothOppShareInfo = new BluetoothOppShareInfo(1, null, null,
-                null, null, 0, "AA:BB:22:CD:E0:55", 0, 0, BluetoothShare.STATUS_PENDING, 0, 0, 0,
-                false);
+        BluetoothOppShareInfo newBluetoothOppShareInfo =
+                new BluetoothOppShareInfo(
+                        1,
+                        null,
+                        null,
+                        null,
+                        null,
+                        0,
+                        "AA:BB:22:CD:E0:55",
+                        0,
+                        0,
+                        BluetoothShare.STATUS_PENDING,
+                        0,
+                        0,
+                        0,
+                        false);
 
-        mBluetoothOppBatch.registerListener(new BluetoothOppBatch.BluetoothOppBatchListener() {
-            @Override
-            public void onShareAdded(int id) {
-                assertThat(id).isEqualTo(newBluetoothOppShareInfo.mId);
-            }
+        mBluetoothOppBatch.registerListener(
+                new BluetoothOppBatch.BluetoothOppBatchListener() {
+                    @Override
+                    public void onShareAdded(int id) {
+                        assertThat(id).isEqualTo(newBluetoothOppShareInfo.mId);
+                    }
 
-            @Override
-            public void onShareDeleted(int id) {
-            }
+                    @Override
+                    public void onShareDeleted(int id) {}
 
-            @Override
-            public void onBatchCanceled() {
-            }
-        });
+                    @Override
+                    public void onBatchCanceled() {}
+                });
         assertThat(mBluetoothOppBatch.isEmpty()).isFalse();
         assertThat(mBluetoothOppBatch.getNumShares()).isEqualTo(1);
         assertThat(mBluetoothOppBatch.hasShare(mInitShareInfo)).isTrue();

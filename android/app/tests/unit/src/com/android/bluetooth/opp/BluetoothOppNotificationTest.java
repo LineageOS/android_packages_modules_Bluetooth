@@ -63,8 +63,7 @@ public class BluetoothOppNotificationTest {
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    BluetoothMethodProxy mMethodProxy;
+    @Mock BluetoothMethodProxy mMethodProxy;
 
     Context mTargetContext;
 
@@ -80,12 +79,12 @@ public class BluetoothOppNotificationTest {
 
     @Before
     public void setUp() throws Exception {
-        mTargetContext = spy(new ContextWrapper(
-                ApplicationProvider.getApplicationContext()));
+        mTargetContext = spy(new ContextWrapper(ApplicationProvider.getApplicationContext()));
         BluetoothMethodProxy.setInstanceForTesting(mMethodProxy);
 
-        InstrumentationRegistry.getInstrumentation().runOnMainSync(() ->
-                mOppNotification = new BluetoothOppNotification(mTargetContext));
+        InstrumentationRegistry.getInstrumentation()
+                .runOnMainSync(
+                        () -> mOppNotification = new BluetoothOppNotification(mTargetContext));
 
         Intents.init();
         TestUtils.setUpUiTest();
@@ -93,12 +92,15 @@ public class BluetoothOppNotificationTest {
         UiDevice.getInstance(InstrumentationRegistry.getInstrumentation()).openNotification();
 
         // Enable BluetoothOppReceiver and then check for dismissed notification
-        mReceiverName = new ComponentName(mTargetContext,
-                com.android.bluetooth.opp.BluetoothOppReceiver.class);
-        mPreviousState = mTargetContext.getPackageManager().getComponentEnabledSetting(
-                mReceiverName);
-        mTargetContext.getPackageManager().setComponentEnabledSetting(
-                mReceiverName, COMPONENT_ENABLED_STATE_ENABLED, DONT_KILL_APP);
+        mReceiverName =
+                new ComponentName(
+                        mTargetContext, com.android.bluetooth.opp.BluetoothOppReceiver.class);
+        mPreviousState =
+                mTargetContext.getPackageManager().getComponentEnabledSetting(mReceiverName);
+        mTargetContext
+                .getPackageManager()
+                .setComponentEnabledSetting(
+                        mReceiverName, COMPONENT_ENABLED_STATE_ENABLED, DONT_KILL_APP);
 
         // clear all OPP notifications before each test
         mOppNotification.cancelOppNotifications();
@@ -113,8 +115,9 @@ public class BluetoothOppNotificationTest {
         BluetoothMethodProxy.setInstanceForTesting(null);
         Intents.release();
 
-        mTargetContext.getPackageManager().setComponentEnabledSetting(
-                mReceiverName, mPreviousState, DONT_KILL_APP);
+        mTargetContext
+                .getPackageManager()
+                .setComponentEnabledSetting(mReceiverName, mPreviousState, DONT_KILL_APP);
 
         // clear all OPP notifications after each test
         mOppNotification.cancelOppNotifications();
@@ -132,35 +135,67 @@ public class BluetoothOppNotificationTest {
         int confirmation = BluetoothShare.USER_CONFIRMATION_CONFIRMED;
         int confirmationHandoverInitiated = BluetoothShare.USER_CONFIRMATION_HANDOVER_CONFIRMED;
         String destination = "AA:BB:CC:DD:EE:FF";
-        MatrixCursor cursor = new MatrixCursor(new String[]{
-                BluetoothShare.TIMESTAMP, BluetoothShare.DIRECTION, BluetoothShare._ID,
-                BluetoothShare.TOTAL_BYTES, BluetoothShare.CURRENT_BYTES, BluetoothShare._DATA,
-                BluetoothShare.FILENAME_HINT, BluetoothShare.USER_CONFIRMATION,
-                BluetoothShare.DESTINATION, BluetoothShare.STATUS
-        });
-        cursor.addRow(new Object[]{
-                timestamp, dir, id, total, current, null, null, confirmation, destination, status
-        });
-        cursor.addRow(new Object[]{
-                timestamp + 10L, dir, id, total, current, null, null, confirmationHandoverInitiated,
-                destination, status
-        });
-        doReturn(cursor).when(mMethodProxy).contentResolverQuery(any(),
-                eq(BluetoothShare.CONTENT_URI), any(), any(), any(), any());
+        MatrixCursor cursor =
+                new MatrixCursor(
+                        new String[] {
+                            BluetoothShare.TIMESTAMP,
+                            BluetoothShare.DIRECTION,
+                            BluetoothShare._ID,
+                            BluetoothShare.TOTAL_BYTES,
+                            BluetoothShare.CURRENT_BYTES,
+                            BluetoothShare._DATA,
+                            BluetoothShare.FILENAME_HINT,
+                            BluetoothShare.USER_CONFIRMATION,
+                            BluetoothShare.DESTINATION,
+                            BluetoothShare.STATUS
+                        });
+        cursor.addRow(
+                new Object[] {
+                    timestamp,
+                    dir,
+                    id,
+                    total,
+                    current,
+                    null,
+                    null,
+                    confirmation,
+                    destination,
+                    status
+                });
+        cursor.addRow(
+                new Object[] {
+                    timestamp + 10L,
+                    dir,
+                    id,
+                    total,
+                    current,
+                    null,
+                    null,
+                    confirmationHandoverInitiated,
+                    destination,
+                    status
+                });
+        doReturn(cursor)
+                .when(mMethodProxy)
+                .contentResolverQuery(
+                        any(), eq(BluetoothShare.CONTENT_URI), any(), any(), any(), any());
 
         mOppNotification.updateActiveNotification();
 
-        //confirm handover case does broadcast
-        verify(mTargetContext).sendBroadcast(any(), eq(Constants.HANDOVER_STATUS_PERMISSION),
-                any());
+        // confirm handover case does broadcast
+        verify(mTargetContext)
+                .sendBroadcast(any(), eq(Constants.HANDOVER_STATUS_PERMISSION), any());
 
-        final UiDevice device = UiDevice.getInstance(
-                androidx.test.platform.app.InstrumentationRegistry.getInstrumentation());
+        final UiDevice device =
+                UiDevice.getInstance(
+                        androidx.test.platform.app.InstrumentationRegistry.getInstrumentation());
 
         device.openNotification();
 
-        String titleString = mTargetContext.getString(R.string.notification_receiving,
-                mTargetContext.getString(R.string.unknown_file));
+        String titleString =
+                mTargetContext.getString(
+                        R.string.notification_receiving,
+                        mTargetContext.getString(R.string.unknown_file));
         device.wait(Until.hasObject(By.text(titleString)), TIMEOUT_MS);
         UiObject2 title = device.findObject(By.text(titleString));
         assertThat(title).isNotNull();
@@ -179,26 +214,56 @@ public class BluetoothOppNotificationTest {
         long current = 100;
         int confirmation = BluetoothShare.USER_CONFIRMATION_CONFIRMED;
         String destination = "AA:BB:CC:DD:EE:FF";
-        MatrixCursor cursor = new MatrixCursor(new String[]{
-                BluetoothShare.TIMESTAMP, BluetoothShare.DIRECTION, BluetoothShare._ID,
-                BluetoothShare.TOTAL_BYTES, BluetoothShare.CURRENT_BYTES, BluetoothShare._DATA,
-                BluetoothShare.FILENAME_HINT, BluetoothShare.USER_CONFIRMATION,
-                BluetoothShare.DESTINATION, BluetoothShare.STATUS
-        });
-        cursor.addRow(new Object[]{
-                timestamp, dir, id, total, current, null, null, confirmation, destination, status
-        });
-        cursor.addRow(new Object[]{
-                timestamp + 10L, dir, id, total, current, null, null, confirmation,
-                destination, statusError
-        });
-        doReturn(cursor).when(mMethodProxy).contentResolverQuery(any(),
-                eq(BluetoothShare.CONTENT_URI), any(), any(), any(), any());
+        MatrixCursor cursor =
+                new MatrixCursor(
+                        new String[] {
+                            BluetoothShare.TIMESTAMP,
+                            BluetoothShare.DIRECTION,
+                            BluetoothShare._ID,
+                            BluetoothShare.TOTAL_BYTES,
+                            BluetoothShare.CURRENT_BYTES,
+                            BluetoothShare._DATA,
+                            BluetoothShare.FILENAME_HINT,
+                            BluetoothShare.USER_CONFIRMATION,
+                            BluetoothShare.DESTINATION,
+                            BluetoothShare.STATUS
+                        });
+        cursor.addRow(
+                new Object[] {
+                    timestamp,
+                    dir,
+                    id,
+                    total,
+                    current,
+                    null,
+                    null,
+                    confirmation,
+                    destination,
+                    status
+                });
+        cursor.addRow(
+                new Object[] {
+                    timestamp + 10L,
+                    dir,
+                    id,
+                    total,
+                    current,
+                    null,
+                    null,
+                    confirmation,
+                    destination,
+                    statusError
+                });
+        doReturn(cursor)
+                .when(mMethodProxy)
+                .contentResolverQuery(
+                        any(), eq(BluetoothShare.CONTENT_URI), any(), any(), any(), any());
 
         mOppNotification.updateCompletedNotification();
 
-        final UiDevice device = UiDevice.getInstance(
-                androidx.test.platform.app.InstrumentationRegistry.getInstrumentation());
+        final UiDevice device =
+                UiDevice.getInstance(
+                        androidx.test.platform.app.InstrumentationRegistry.getInstrumentation());
 
         device.openNotification();
 
@@ -229,26 +294,56 @@ public class BluetoothOppNotificationTest {
         long current = 100;
         int confirmation = BluetoothShare.USER_CONFIRMATION_CONFIRMED;
         String destination = "AA:BB:CC:DD:EE:FF";
-        MatrixCursor cursor = new MatrixCursor(new String[]{
-                BluetoothShare.TIMESTAMP, BluetoothShare.DIRECTION, BluetoothShare._ID,
-                BluetoothShare.TOTAL_BYTES, BluetoothShare.CURRENT_BYTES, BluetoothShare._DATA,
-                BluetoothShare.FILENAME_HINT, BluetoothShare.USER_CONFIRMATION,
-                BluetoothShare.DESTINATION, BluetoothShare.STATUS
-        });
-        cursor.addRow(new Object[]{
-                timestamp, dir, id, total, current, null, null, confirmation, destination, status
-        });
-        cursor.addRow(new Object[]{
-                timestamp + 10L, dir, id, total, current, null, null, confirmation,
-                destination, statusError
-        });
-        doReturn(cursor).when(mMethodProxy).contentResolverQuery(any(),
-                eq(BluetoothShare.CONTENT_URI), any(), any(), any(), any());
+        MatrixCursor cursor =
+                new MatrixCursor(
+                        new String[] {
+                            BluetoothShare.TIMESTAMP,
+                            BluetoothShare.DIRECTION,
+                            BluetoothShare._ID,
+                            BluetoothShare.TOTAL_BYTES,
+                            BluetoothShare.CURRENT_BYTES,
+                            BluetoothShare._DATA,
+                            BluetoothShare.FILENAME_HINT,
+                            BluetoothShare.USER_CONFIRMATION,
+                            BluetoothShare.DESTINATION,
+                            BluetoothShare.STATUS
+                        });
+        cursor.addRow(
+                new Object[] {
+                    timestamp,
+                    dir,
+                    id,
+                    total,
+                    current,
+                    null,
+                    null,
+                    confirmation,
+                    destination,
+                    status
+                });
+        cursor.addRow(
+                new Object[] {
+                    timestamp + 10L,
+                    dir,
+                    id,
+                    total,
+                    current,
+                    null,
+                    null,
+                    confirmation,
+                    destination,
+                    statusError
+                });
+        doReturn(cursor)
+                .when(mMethodProxy)
+                .contentResolverQuery(
+                        any(), eq(BluetoothShare.CONTENT_URI), any(), any(), any(), any());
 
         mOppNotification.updateCompletedNotification();
 
-        final UiDevice device = UiDevice.getInstance(
-                androidx.test.platform.app.InstrumentationRegistry.getInstrumentation());
+        final UiDevice device =
+                UiDevice.getInstance(
+                        androidx.test.platform.app.InstrumentationRegistry.getInstrumentation());
 
         device.openNotification();
 
@@ -282,44 +377,65 @@ public class BluetoothOppNotificationTest {
 
         mOppNotification.mNotificationMgr = spy(mOppNotification.mNotificationMgr);
 
-        MatrixCursor cursor = new MatrixCursor(new String[]{
-                BluetoothShare.TIMESTAMP, BluetoothShare.DIRECTION, BluetoothShare._ID,
-                BluetoothShare.TOTAL_BYTES, BluetoothShare.CURRENT_BYTES, BluetoothShare._DATA,
-                BluetoothShare.FILENAME_HINT, BluetoothShare.USER_CONFIRMATION, BluetoothShare.URI,
-                BluetoothShare.DESTINATION, BluetoothShare.STATUS, BluetoothShare.MIMETYPE
-        });
-        cursor.addRow(new Object[]{
-                timestamp, dir, id, total, current, null, null, confirmation, url, destination,
-                status, mimeType
-        });
-        doReturn(cursor).when(mMethodProxy).contentResolverQuery(any(),
-                eq(com.android.bluetooth.opp.BluetoothShare.CONTENT_URI), any(), any(), any(),
-                any());
+        MatrixCursor cursor =
+                new MatrixCursor(
+                        new String[] {
+                            BluetoothShare.TIMESTAMP, BluetoothShare.DIRECTION, BluetoothShare._ID,
+                            BluetoothShare.TOTAL_BYTES, BluetoothShare.CURRENT_BYTES,
+                                    BluetoothShare._DATA,
+                            BluetoothShare.FILENAME_HINT, BluetoothShare.USER_CONFIRMATION,
+                                    BluetoothShare.URI,
+                            BluetoothShare.DESTINATION, BluetoothShare.STATUS,
+                                    BluetoothShare.MIMETYPE
+                        });
+        cursor.addRow(
+                new Object[] {
+                    timestamp,
+                    dir,
+                    id,
+                    total,
+                    current,
+                    null,
+                    null,
+                    confirmation,
+                    url,
+                    destination,
+                    status,
+                    mimeType
+                });
+        doReturn(cursor)
+                .when(mMethodProxy)
+                .contentResolverQuery(
+                        any(),
+                        eq(com.android.bluetooth.opp.BluetoothShare.CONTENT_URI),
+                        any(),
+                        any(),
+                        any(),
+                        any());
 
         mOppNotification.updateIncomingFileConfirmNotification();
 
-        final UiDevice device = UiDevice.getInstance(
-                androidx.test.platform.app.InstrumentationRegistry.getInstrumentation());
+        final UiDevice device =
+                UiDevice.getInstance(
+                        androidx.test.platform.app.InstrumentationRegistry.getInstrumentation());
 
-        String titleString = mTargetContext.getString(
-                R.string.incoming_file_confirm_Notification_title);
+        String titleString =
+                mTargetContext.getString(R.string.incoming_file_confirm_Notification_title);
 
-        String confirmString = mTargetContext.getString(
-                R.string.incoming_file_confirm_ok);
-        String declineString = mTargetContext.getString(
-                R.string.incoming_file_confirm_cancel);
+        String confirmString = mTargetContext.getString(R.string.incoming_file_confirm_ok);
+        String declineString = mTargetContext.getString(R.string.incoming_file_confirm_cancel);
 
         device.wait(Until.hasObject(By.text(titleString)), TIMEOUT_MS);
         UiObject2 title = device.findObject(By.text(titleString));
         UiObject2 buttonOk = device.findObject(By.text(confirmString));
         // In AOSP, all actions' titles are converted into upper case
-        if(buttonOk == null) {
+        if (buttonOk == null) {
             buttonOk = device.findObject(By.text(confirmString.toUpperCase()));
         }
 
         UiObject2 buttonDecline = device.findObject(By.text(declineString));
         // In AOSP, all actions' titles are converted into upper case
-        if(buttonDecline == null) {
+        if (buttonDecline == null) {
             buttonDecline = device.findObject(By.text(declineString.toUpperCase()));
         }
 
@@ -343,4 +459,3 @@ public class BluetoothOppNotificationTest {
         assertThat(device.findObject(By.text(declineString.toUpperCase()))).isNull();
     }
 }
-

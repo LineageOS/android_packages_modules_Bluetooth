@@ -102,8 +102,8 @@ public class EventReportTest {
 
         assertThat(report.getType()).isEqualTo(type);
         assertThat(report.getDateTime()).isEqualTo(dateTime);
-        assertThat(report.getTimestamp()).isEqualTo(
-                new ObexTime(dateTime).getInstant().toEpochMilli());
+        assertThat(report.getTimestamp())
+                .isEqualTo(new ObexTime(dateTime).getInstant().toEpochMilli());
         assertThat(report.getHandle()).isEqualTo(handle);
         assertThat(report.getFolder()).isEqualTo(folder);
         assertThat(report.getOldFolder()).isEqualTo(oldFolder);

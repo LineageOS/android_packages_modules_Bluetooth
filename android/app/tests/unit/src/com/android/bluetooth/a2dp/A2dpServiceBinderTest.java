@@ -101,7 +101,7 @@ public class A2dpServiceBinderTest {
 
     @Test
     public void getDevicesMatchingConnectionStates() {
-        int[] states = new int[] {BluetoothProfile.STATE_CONNECTED };
+        int[] states = new int[] {BluetoothProfile.STATE_CONNECTED};
 
         mBinder.getDevicesMatchingConnectionStates(states, sSource);
         verify(mA2dpService).getDevicesMatchingConnectionStates(states);

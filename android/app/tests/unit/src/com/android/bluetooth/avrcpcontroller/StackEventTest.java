@@ -33,14 +33,14 @@ public class StackEventTest {
         boolean remoteControlConnected = true;
         boolean browsingConnected = true;
 
-        StackEvent stackEvent = StackEvent.connectionStateChanged(remoteControlConnected,
-                browsingConnected);
+        StackEvent stackEvent =
+                StackEvent.connectionStateChanged(remoteControlConnected, browsingConnected);
 
         assertThat(stackEvent.mType).isEqualTo(StackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         assertThat(stackEvent.mRemoteControlConnected).isTrue();
         assertThat(stackEvent.mBrowsingConnected).isTrue();
-        assertThat(stackEvent.toString()).isEqualTo(
-                "EVENT_TYPE_CONNECTION_STATE_CHANGED " + remoteControlConnected);
+        assertThat(stackEvent.toString())
+                .isEqualTo("EVENT_TYPE_CONNECTION_STATE_CHANGED " + remoteControlConnected);
     }
 
     @Test

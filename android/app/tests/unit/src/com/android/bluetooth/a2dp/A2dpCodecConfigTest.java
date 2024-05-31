@@ -57,13 +57,14 @@ public class A2dpCodecConfigTest {
     @Mock private Resources mMockResources;
     @Mock private A2dpNativeInterface mA2dpNativeInterface;
 
-    private static final int[] sOptionalCodecTypes = new int[] {
-            BluetoothCodecConfig.SOURCE_CODEC_TYPE_AAC,
-            BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX,
-            BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX_HD,
-            BluetoothCodecConfig.SOURCE_CODEC_TYPE_LDAC,
-            BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS
-    };
+    private static final int[] sOptionalCodecTypes =
+            new int[] {
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_AAC,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX_HD,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_LDAC,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS
+            };
 
     // Not use the default value to make sure it reads from config
     private static final int SBC_PRIORITY_DEFAULT = 1001;
@@ -75,91 +76,141 @@ public class A2dpCodecConfigTest {
     private static final int OPUS_PRIORITY_DEFAULT = 13001;
     private static final int PRIORITY_HIGH = 1000000;
 
-    private static final BluetoothCodecConfig[] sCodecCapabilities = new BluetoothCodecConfig[] {
-            buildBluetoothCodecConfig(BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC,
-                                     SBC_PRIORITY_DEFAULT,
-                                     BluetoothCodecConfig.SAMPLE_RATE_44100,
-                                     BluetoothCodecConfig.BITS_PER_SAMPLE_16,
-                                     BluetoothCodecConfig.CHANNEL_MODE_MONO
-                                     | BluetoothCodecConfig.CHANNEL_MODE_STEREO,
-                                     0, 0, 0, 0),       // Codec-specific fields
-            buildBluetoothCodecConfig(BluetoothCodecConfig.SOURCE_CODEC_TYPE_AAC,
-                                     AAC_PRIORITY_DEFAULT,
-                                     BluetoothCodecConfig.SAMPLE_RATE_44100,
-                                     BluetoothCodecConfig.BITS_PER_SAMPLE_16,
-                                     BluetoothCodecConfig.CHANNEL_MODE_STEREO,
-                                     0, 0, 0, 0),       // Codec-specific fields
-            buildBluetoothCodecConfig(BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX,
-                                     APTX_PRIORITY_DEFAULT,
-                                     BluetoothCodecConfig.SAMPLE_RATE_44100
-                                     | BluetoothCodecConfig.SAMPLE_RATE_48000,
-                                     BluetoothCodecConfig.BITS_PER_SAMPLE_16,
-                                     BluetoothCodecConfig.CHANNEL_MODE_STEREO,
-                                     0, 0, 0, 0),       // Codec-specific fields
-            buildBluetoothCodecConfig(BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX_HD,
-                                     APTX_HD_PRIORITY_DEFAULT,
-                                     BluetoothCodecConfig.SAMPLE_RATE_44100
-                                     | BluetoothCodecConfig.SAMPLE_RATE_48000,
-                                     BluetoothCodecConfig.BITS_PER_SAMPLE_24,
-                                     BluetoothCodecConfig.CHANNEL_MODE_STEREO,
-                                     0, 0, 0, 0),       // Codec-specific fields
-            buildBluetoothCodecConfig(BluetoothCodecConfig.SOURCE_CODEC_TYPE_LDAC,
-                                     LDAC_PRIORITY_DEFAULT,
-                                     BluetoothCodecConfig.SAMPLE_RATE_44100
-                                     | BluetoothCodecConfig.SAMPLE_RATE_48000
-                                     | BluetoothCodecConfig.SAMPLE_RATE_88200
-                                     | BluetoothCodecConfig.SAMPLE_RATE_96000,
-                                     BluetoothCodecConfig.BITS_PER_SAMPLE_16
-                                     | BluetoothCodecConfig.BITS_PER_SAMPLE_24
-                                     | BluetoothCodecConfig.BITS_PER_SAMPLE_32,
-                                     BluetoothCodecConfig.CHANNEL_MODE_STEREO,
-                                     0, 0, 0, 0),       // Codec-specific fields
-            buildBluetoothCodecConfig(BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS,
-                                     OPUS_PRIORITY_DEFAULT,
-                                     BluetoothCodecConfig.SAMPLE_RATE_48000,
-                                     BluetoothCodecConfig.BITS_PER_SAMPLE_16,
-                                     BluetoothCodecConfig.CHANNEL_MODE_STEREO,
-                                     0, 0, 0, 0)        // Codec-specific fields
-    };
+    private static final BluetoothCodecConfig[] sCodecCapabilities =
+            new BluetoothCodecConfig[] {
+                buildBluetoothCodecConfig(
+                        BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC,
+                        SBC_PRIORITY_DEFAULT,
+                        BluetoothCodecConfig.SAMPLE_RATE_44100,
+                        BluetoothCodecConfig.BITS_PER_SAMPLE_16,
+                        BluetoothCodecConfig.CHANNEL_MODE_MONO
+                                | BluetoothCodecConfig.CHANNEL_MODE_STEREO,
+                        0,
+                        0,
+                        0,
+                        0), // Codec-specific fields
+                buildBluetoothCodecConfig(
+                        BluetoothCodecConfig.SOURCE_CODEC_TYPE_AAC,
+                        AAC_PRIORITY_DEFAULT,
+                        BluetoothCodecConfig.SAMPLE_RATE_44100,
+                        BluetoothCodecConfig.BITS_PER_SAMPLE_16,
+                        BluetoothCodecConfig.CHANNEL_MODE_STEREO,
+                        0,
+                        0,
+                        0,
+                        0), // Codec-specific fields
+                buildBluetoothCodecConfig(
+                        BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX,
+                        APTX_PRIORITY_DEFAULT,
+                        BluetoothCodecConfig.SAMPLE_RATE_44100
+                                | BluetoothCodecConfig.SAMPLE_RATE_48000,
+                        BluetoothCodecConfig.BITS_PER_SAMPLE_16,
+                        BluetoothCodecConfig.CHANNEL_MODE_STEREO,
+                        0,
+                        0,
+                        0,
+                        0), // Codec-specific fields
+                buildBluetoothCodecConfig(
+                        BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX_HD,
+                        APTX_HD_PRIORITY_DEFAULT,
+                        BluetoothCodecConfig.SAMPLE_RATE_44100
+                                | BluetoothCodecConfig.SAMPLE_RATE_48000,
+                        BluetoothCodecConfig.BITS_PER_SAMPLE_24,
+                        BluetoothCodecConfig.CHANNEL_MODE_STEREO,
+                        0,
+                        0,
+                        0,
+                        0), // Codec-specific fields
+                buildBluetoothCodecConfig(
+                        BluetoothCodecConfig.SOURCE_CODEC_TYPE_LDAC,
+                        LDAC_PRIORITY_DEFAULT,
+                        BluetoothCodecConfig.SAMPLE_RATE_44100
+                                | BluetoothCodecConfig.SAMPLE_RATE_48000
+                                | BluetoothCodecConfig.SAMPLE_RATE_88200
+                                | BluetoothCodecConfig.SAMPLE_RATE_96000,
+                        BluetoothCodecConfig.BITS_PER_SAMPLE_16
+                                | BluetoothCodecConfig.BITS_PER_SAMPLE_24
+                                | BluetoothCodecConfig.BITS_PER_SAMPLE_32,
+                        BluetoothCodecConfig.CHANNEL_MODE_STEREO,
+                        0,
+                        0,
+                        0,
+                        0), // Codec-specific fields
+                buildBluetoothCodecConfig(
+                        BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS,
+                        OPUS_PRIORITY_DEFAULT,
+                        BluetoothCodecConfig.SAMPLE_RATE_48000,
+                        BluetoothCodecConfig.BITS_PER_SAMPLE_16,
+                        BluetoothCodecConfig.CHANNEL_MODE_STEREO,
+                        0,
+                        0,
+                        0,
+                        0) // Codec-specific fields
+            };
 
-    private static final BluetoothCodecConfig[] sDefaultCodecConfigs = new BluetoothCodecConfig[] {
-            buildBluetoothCodecConfig(BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC,
-                                     SBC_PRIORITY_DEFAULT,
-                                     BluetoothCodecConfig.SAMPLE_RATE_44100,
-                                     BluetoothCodecConfig.BITS_PER_SAMPLE_16,
-                                     BluetoothCodecConfig.CHANNEL_MODE_STEREO,
-                                     0, 0, 0, 0),       // Codec-specific fields
-            buildBluetoothCodecConfig(BluetoothCodecConfig.SOURCE_CODEC_TYPE_AAC,
-                                     AAC_PRIORITY_DEFAULT,
-                                     BluetoothCodecConfig.SAMPLE_RATE_44100,
-                                     BluetoothCodecConfig.BITS_PER_SAMPLE_16,
-                                     BluetoothCodecConfig.CHANNEL_MODE_STEREO,
-                                     0, 0, 0, 0),       // Codec-specific fields
-            buildBluetoothCodecConfig(BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX,
-                                     APTX_PRIORITY_DEFAULT,
-                                     BluetoothCodecConfig.SAMPLE_RATE_48000,
-                                     BluetoothCodecConfig.BITS_PER_SAMPLE_16,
-                                     BluetoothCodecConfig.CHANNEL_MODE_STEREO,
-                                     0, 0, 0, 0),       // Codec-specific fields
-            buildBluetoothCodecConfig(BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX_HD,
-                                     APTX_HD_PRIORITY_DEFAULT,
-                                     BluetoothCodecConfig.SAMPLE_RATE_48000,
-                                     BluetoothCodecConfig.BITS_PER_SAMPLE_24,
-                                     BluetoothCodecConfig.CHANNEL_MODE_STEREO,
-                                     0, 0, 0, 0),       // Codec-specific fields
-            buildBluetoothCodecConfig(BluetoothCodecConfig.SOURCE_CODEC_TYPE_LDAC,
-                                     LDAC_PRIORITY_DEFAULT,
-                                     BluetoothCodecConfig.SAMPLE_RATE_96000,
-                                     BluetoothCodecConfig.BITS_PER_SAMPLE_32,
-                                     BluetoothCodecConfig.CHANNEL_MODE_STEREO,
-                                     0, 0, 0, 0),       // Codec-specific fields
-            buildBluetoothCodecConfig(BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS,
-                                     OPUS_PRIORITY_DEFAULT,
-                                     BluetoothCodecConfig.SAMPLE_RATE_48000,
-                                     BluetoothCodecConfig.BITS_PER_SAMPLE_16,
-                                     BluetoothCodecConfig.CHANNEL_MODE_STEREO,
-                                     0, 0, 0, 0)        // Codec-specific fields
-    };
+    private static final BluetoothCodecConfig[] sDefaultCodecConfigs =
+            new BluetoothCodecConfig[] {
+                buildBluetoothCodecConfig(
+                        BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC,
+                        SBC_PRIORITY_DEFAULT,
+                        BluetoothCodecConfig.SAMPLE_RATE_44100,
+                        BluetoothCodecConfig.BITS_PER_SAMPLE_16,
+                        BluetoothCodecConfig.CHANNEL_MODE_STEREO,
+                        0,
+                        0,
+                        0,
+                        0), // Codec-specific fields
+                buildBluetoothCodecConfig(
+                        BluetoothCodecConfig.SOURCE_CODEC_TYPE_AAC,
+                        AAC_PRIORITY_DEFAULT,
+                        BluetoothCodecConfig.SAMPLE_RATE_44100,
+                        BluetoothCodecConfig.BITS_PER_SAMPLE_16,
+                        BluetoothCodecConfig.CHANNEL_MODE_STEREO,
+                        0,
+                        0,
+                        0,
+                        0), // Codec-specific fields
+                buildBluetoothCodecConfig(
+                        BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX,
+                        APTX_PRIORITY_DEFAULT,
+                        BluetoothCodecConfig.SAMPLE_RATE_48000,
+                        BluetoothCodecConfig.BITS_PER_SAMPLE_16,
+                        BluetoothCodecConfig.CHANNEL_MODE_STEREO,
+                        0,
+                        0,
+                        0,
+                        0), // Codec-specific fields
+                buildBluetoothCodecConfig(
+                        BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX_HD,
+                        APTX_HD_PRIORITY_DEFAULT,
+                        BluetoothCodecConfig.SAMPLE_RATE_48000,
+                        BluetoothCodecConfig.BITS_PER_SAMPLE_24,
+                        BluetoothCodecConfig.CHANNEL_MODE_STEREO,
+                        0,
+                        0,
+                        0,
+                        0), // Codec-specific fields
+                buildBluetoothCodecConfig(
+                        BluetoothCodecConfig.SOURCE_CODEC_TYPE_LDAC,
+                        LDAC_PRIORITY_DEFAULT,
+                        BluetoothCodecConfig.SAMPLE_RATE_96000,
+                        BluetoothCodecConfig.BITS_PER_SAMPLE_32,
+                        BluetoothCodecConfig.CHANNEL_MODE_STEREO,
+                        0,
+                        0,
+                        0,
+                        0), // Codec-specific fields
+                buildBluetoothCodecConfig(
+                        BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS,
+                        OPUS_PRIORITY_DEFAULT,
+                        BluetoothCodecConfig.SAMPLE_RATE_48000,
+                        BluetoothCodecConfig.BITS_PER_SAMPLE_16,
+                        BluetoothCodecConfig.CHANNEL_MODE_STEREO,
+                        0,
+                        0,
+                        0,
+                        0) // Codec-specific fields
+            };
 
     @Before
     public void setUp() throws Exception {
@@ -182,20 +233,20 @@ public class A2dpCodecConfigTest {
         mA2dpCodecConfig = new A2dpCodecConfig(mMockContext, mA2dpNativeInterface);
         mTestDevice = BluetoothAdapter.getDefaultAdapter().getRemoteDevice("00:01:02:03:04:05");
 
-        doReturn(true).when(mA2dpNativeInterface).setCodecConfigPreference(
-                any(BluetoothDevice.class),
-                any(BluetoothCodecConfig[].class));
+        doReturn(true)
+                .when(mA2dpNativeInterface)
+                .setCodecConfigPreference(
+                        any(BluetoothDevice.class), any(BluetoothCodecConfig[].class));
     }
 
     @After
-    public void tearDown() throws Exception {
-    }
+    public void tearDown() throws Exception {}
 
     @Test
     public void testAssignCodecConfigPriorities() {
         BluetoothCodecConfig[] codecConfigs = mA2dpCodecConfig.codecConfigPriorities();
         for (BluetoothCodecConfig config : codecConfigs) {
-            switch(config.getCodecType()) {
+            switch (config.getCodecType()) {
                 case BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC:
                     Assert.assertEquals(config.getCodecPriority(), SBC_PRIORITY_DEFAULT);
                     break;
@@ -218,122 +269,168 @@ public class A2dpCodecConfigTest {
         }
     }
 
-    /**
-     * Test that we can fallback to default codec by lower the codec priority we changed before.
-     */
+    /** Test that we can fallback to default codec by lower the codec priority we changed before. */
     @Test
     public void testSetCodecPreference_priorityHighToDefault() {
         testCodecPriorityChangeHelper(
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC, SBC_PRIORITY_DEFAULT,
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC, PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC,
+                SBC_PRIORITY_DEFAULT,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC,
+                PRIORITY_HIGH,
                 true);
         testCodecPriorityChangeHelper(
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_AAC, AAC_PRIORITY_DEFAULT,
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_AAC, PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_AAC,
+                AAC_PRIORITY_DEFAULT,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_AAC,
+                PRIORITY_HIGH,
                 true);
         testCodecPriorityChangeHelper(
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX, APTX_PRIORITY_DEFAULT,
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX, PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX,
+                APTX_PRIORITY_DEFAULT,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX,
+                PRIORITY_HIGH,
                 true);
         testCodecPriorityChangeHelper(
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX_HD, APTX_HD_PRIORITY_DEFAULT,
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX_HD, PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX_HD,
+                APTX_HD_PRIORITY_DEFAULT,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX_HD,
+                PRIORITY_HIGH,
                 true);
         testCodecPriorityChangeHelper(
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_LDAC, LDAC_PRIORITY_DEFAULT,
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_LDAC, PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_LDAC,
+                LDAC_PRIORITY_DEFAULT,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_LDAC,
+                PRIORITY_HIGH,
                 true);
         testCodecPriorityChangeHelper(
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS, OPUS_PRIORITY_DEFAULT,
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS, PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS,
+                OPUS_PRIORITY_DEFAULT,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS,
+                PRIORITY_HIGH,
                 false);
     }
 
     /**
-     * Test that we can change the default codec to another by raising the codec priority.
-     * LDAC is the default highest codec, so no need to test others.
+     * Test that we can change the default codec to another by raising the codec priority. LDAC is
+     * the default highest codec, so no need to test others.
      */
     @Test
     public void testSetCodecPreference_priorityDefaultToRaiseHigh() {
         testCodecPriorityChangeHelper(
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC, PRIORITY_HIGH,
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS, OPUS_PRIORITY_DEFAULT,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC,
+                PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS,
+                OPUS_PRIORITY_DEFAULT,
                 true);
         testCodecPriorityChangeHelper(
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_AAC, PRIORITY_HIGH,
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS, OPUS_PRIORITY_DEFAULT,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_AAC,
+                PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS,
+                OPUS_PRIORITY_DEFAULT,
                 true);
         testCodecPriorityChangeHelper(
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX, PRIORITY_HIGH,
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS, OPUS_PRIORITY_DEFAULT,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX,
+                PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS,
+                OPUS_PRIORITY_DEFAULT,
                 true);
         testCodecPriorityChangeHelper(
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX_HD, PRIORITY_HIGH,
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS, OPUS_PRIORITY_DEFAULT,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX_HD,
+                PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS,
+                OPUS_PRIORITY_DEFAULT,
                 true);
         testCodecPriorityChangeHelper(
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_LDAC, PRIORITY_HIGH,
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS, OPUS_PRIORITY_DEFAULT,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_LDAC,
+                PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS,
+                OPUS_PRIORITY_DEFAULT,
                 true);
         testCodecPriorityChangeHelper(
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS, PRIORITY_HIGH,
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS, OPUS_PRIORITY_DEFAULT,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS,
+                PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS,
+                OPUS_PRIORITY_DEFAULT,
                 false);
     }
 
     @Test
     public void testSetCodecPreference_prioritySbcHighToOthersHigh() {
         testCodecPriorityChangeHelper(
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC, PRIORITY_HIGH,
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC, PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC,
+                PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC,
+                PRIORITY_HIGH,
                 false);
         testCodecPriorityChangeHelper(
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_AAC, PRIORITY_HIGH,
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC, PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_AAC,
+                PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC,
+                PRIORITY_HIGH,
                 true);
         testCodecPriorityChangeHelper(
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX, PRIORITY_HIGH,
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC, PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX,
+                PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC,
+                PRIORITY_HIGH,
                 true);
         testCodecPriorityChangeHelper(
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX_HD, PRIORITY_HIGH,
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC, PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX_HD,
+                PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC,
+                PRIORITY_HIGH,
                 true);
         testCodecPriorityChangeHelper(
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_LDAC, PRIORITY_HIGH,
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC, PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_LDAC,
+                PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC,
+                PRIORITY_HIGH,
                 true);
         testCodecPriorityChangeHelper(
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS, PRIORITY_HIGH,
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC, PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS,
+                PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC,
+                PRIORITY_HIGH,
                 true);
     }
 
     @Test
     public void testSetCodecPreference_priorityAacHighToOthersHigh() {
         testCodecPriorityChangeHelper(
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC, PRIORITY_HIGH,
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_AAC, PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC,
+                PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_AAC,
+                PRIORITY_HIGH,
                 true);
         testCodecPriorityChangeHelper(
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_AAC, PRIORITY_HIGH,
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_AAC, PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_AAC,
+                PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_AAC,
+                PRIORITY_HIGH,
                 false);
         testCodecPriorityChangeHelper(
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX, PRIORITY_HIGH,
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_AAC, PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX,
+                PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_AAC,
+                PRIORITY_HIGH,
                 true);
         testCodecPriorityChangeHelper(
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX_HD, PRIORITY_HIGH,
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_AAC, PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_APTX_HD,
+                PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_AAC,
+                PRIORITY_HIGH,
                 true);
         testCodecPriorityChangeHelper(
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_LDAC, PRIORITY_HIGH,
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_AAC, PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_LDAC,
+                PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_AAC,
+                PRIORITY_HIGH,
                 true);
         testCodecPriorityChangeHelper(
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS, PRIORITY_HIGH,
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_AAC, PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS,
+                PRIORITY_HIGH,
+                BluetoothCodecConfig.SOURCE_CODEC_TYPE_AAC,
+                PRIORITY_HIGH,
                 true);
     }
 
@@ -608,15 +705,18 @@ public class A2dpCodecConfigTest {
 
     @Test
     public void testDisableOptionalCodecs() {
-        BluetoothCodecConfig[] codecConfigsArray =
-                new BluetoothCodecConfig[6];
-        codecConfigsArray[0] = buildBluetoothCodecConfig(
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC,
-                BluetoothCodecConfig.CODEC_PRIORITY_HIGHEST,
-                BluetoothCodecConfig.SAMPLE_RATE_NONE,
-                BluetoothCodecConfig.BITS_PER_SAMPLE_NONE,
-                BluetoothCodecConfig.CHANNEL_MODE_NONE,
-                0, 0, 0, 0);       // Codec-specific fields
+        BluetoothCodecConfig[] codecConfigsArray = new BluetoothCodecConfig[6];
+        codecConfigsArray[0] =
+                buildBluetoothCodecConfig(
+                        BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC,
+                        BluetoothCodecConfig.CODEC_PRIORITY_HIGHEST,
+                        BluetoothCodecConfig.SAMPLE_RATE_NONE,
+                        BluetoothCodecConfig.BITS_PER_SAMPLE_NONE,
+                        BluetoothCodecConfig.CHANNEL_MODE_NONE,
+                        0,
+                        0,
+                        0,
+                        0); // Codec-specific fields
 
         // shouldn't invoke to native when current codec is SBC
         mA2dpCodecConfig.disableOptionalCodecs(
@@ -624,16 +724,16 @@ public class A2dpCodecConfigTest {
                 getDefaultCodecConfigByType(
                         BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC,
                         BluetoothCodecConfig.CODEC_PRIORITY_DEFAULT));
-        verify(mA2dpNativeInterface, times(0)).setCodecConfigPreference(mTestDevice,
-                                                                        codecConfigsArray);
+        verify(mA2dpNativeInterface, times(0))
+                .setCodecConfigPreference(mTestDevice, codecConfigsArray);
 
         // should invoke to native when current codec is an optional codec
         int invokedCounter = 0;
         for (int codecType : sOptionalCodecTypes) {
             mA2dpCodecConfig.disableOptionalCodecs(
                     mTestDevice,
-                    getDefaultCodecConfigByType(codecType,
-                                                BluetoothCodecConfig.CODEC_PRIORITY_DEFAULT));
+                    getDefaultCodecConfigByType(
+                            codecType, BluetoothCodecConfig.CODEC_PRIORITY_DEFAULT));
             verify(mA2dpNativeInterface, times(++invokedCounter))
                     .setCodecConfigPreference(mTestDevice, codecConfigsArray);
         }
@@ -641,21 +741,25 @@ public class A2dpCodecConfigTest {
 
     @Test
     public void testEnableOptionalCodecs() {
-        BluetoothCodecConfig[] codecConfigsArray =
-                new BluetoothCodecConfig[6];
-        codecConfigsArray[0] = buildBluetoothCodecConfig(
-                BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC,
-                SBC_PRIORITY_DEFAULT,
-                BluetoothCodecConfig.SAMPLE_RATE_NONE,
-                BluetoothCodecConfig.BITS_PER_SAMPLE_NONE,
-                BluetoothCodecConfig.CHANNEL_MODE_NONE,
-                0, 0, 0, 0);       // Codec-specific fields
+        BluetoothCodecConfig[] codecConfigsArray = new BluetoothCodecConfig[6];
+        codecConfigsArray[0] =
+                buildBluetoothCodecConfig(
+                        BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC,
+                        SBC_PRIORITY_DEFAULT,
+                        BluetoothCodecConfig.SAMPLE_RATE_NONE,
+                        BluetoothCodecConfig.BITS_PER_SAMPLE_NONE,
+                        BluetoothCodecConfig.CHANNEL_MODE_NONE,
+                        0,
+                        0,
+                        0,
+                        0); // Codec-specific fields
 
         // should invoke to native when current codec is SBC
         mA2dpCodecConfig.enableOptionalCodecs(
                 mTestDevice,
-                getDefaultCodecConfigByType(BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC,
-                                            BluetoothCodecConfig.CODEC_PRIORITY_DEFAULT));
+                getDefaultCodecConfigByType(
+                        BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC,
+                        BluetoothCodecConfig.CODEC_PRIORITY_DEFAULT));
         verify(mA2dpNativeInterface, times(1))
                 .setCodecConfigPreference(mTestDevice, codecConfigsArray);
 
@@ -663,8 +767,8 @@ public class A2dpCodecConfigTest {
         for (int codecType : sOptionalCodecTypes) {
             mA2dpCodecConfig.enableOptionalCodecs(
                     mTestDevice,
-                    getDefaultCodecConfigByType(codecType,
-                                                BluetoothCodecConfig.CODEC_PRIORITY_DEFAULT));
+                    getDefaultCodecConfigByType(
+                            codecType, BluetoothCodecConfig.CODEC_PRIORITY_DEFAULT));
             verify(mA2dpNativeInterface, times(1))
                     .setCodecConfigPreference(mTestDevice, codecConfigsArray);
         }
@@ -678,14 +782,20 @@ public class A2dpCodecConfigTest {
             return buildBluetoothCodecConfig(
                     codecConfig.getCodecType(),
                     (codecPriority != BluetoothCodecConfig.CODEC_PRIORITY_DEFAULT
-                     ? codecPriority : codecConfig.getCodecPriority()),
-                    codecConfig.getSampleRate(), codecConfig.getBitsPerSample(),
-                    codecConfig.getChannelMode(), codecConfig.getCodecSpecific1(),
-                    codecConfig.getCodecSpecific2(), codecConfig.getCodecSpecific3(),
+                            ? codecPriority
+                            : codecConfig.getCodecPriority()),
+                    codecConfig.getSampleRate(),
+                    codecConfig.getBitsPerSample(),
+                    codecConfig.getChannelMode(),
+                    codecConfig.getCodecSpecific1(),
+                    codecConfig.getCodecSpecific2(),
+                    codecConfig.getCodecSpecific3(),
                     codecConfig.getCodecSpecific4());
         }
-        Assert.fail("getDefaultCodecConfigByType: No such codecType=" + codecType
-                + " in sDefaultCodecConfigs");
+        Assert.fail(
+                "getDefaultCodecConfigByType: No such codecType="
+                        + codecType
+                        + " in sDefaultCodecConfigs");
         return null;
     }
 
@@ -695,135 +805,177 @@ public class A2dpCodecConfigTest {
                 continue;
             }
             return buildBluetoothCodecConfig(
-                    codecCapabilities.getCodecType(), codecCapabilities.getCodecPriority(),
-                    codecCapabilities.getSampleRate(), codecCapabilities.getBitsPerSample(),
-                    codecCapabilities.getChannelMode(), codecCapabilities.getCodecSpecific1(),
-                    codecCapabilities.getCodecSpecific2(), codecCapabilities.getCodecSpecific3(),
+                    codecCapabilities.getCodecType(),
+                    codecCapabilities.getCodecPriority(),
+                    codecCapabilities.getSampleRate(),
+                    codecCapabilities.getBitsPerSample(),
+                    codecCapabilities.getChannelMode(),
+                    codecCapabilities.getCodecSpecific1(),
+                    codecCapabilities.getCodecSpecific2(),
+                    codecCapabilities.getCodecSpecific3(),
                     codecCapabilities.getCodecSpecific4());
         }
-        Assert.fail("getCodecCapabilitiesByType: No such codecType=" + codecType
-                + " in sCodecCapabilities");
+        Assert.fail(
+                "getCodecCapabilitiesByType: No such codecType="
+                        + codecType
+                        + " in sCodecCapabilities");
         return null;
     }
 
-    private void testCodecParametersChangeHelper(int newCodecType, int oldCodecType,
-            int sampleRate, int bitsPerSample, int channelMode, boolean invokeNative) {
+    private void testCodecParametersChangeHelper(
+            int newCodecType,
+            int oldCodecType,
+            int sampleRate,
+            int bitsPerSample,
+            int channelMode,
+            boolean invokeNative) {
         BluetoothCodecConfig oldCodecConfig =
                 getDefaultCodecConfigByType(oldCodecType, PRIORITY_HIGH);
-        BluetoothCodecConfig[] newCodecConfigsArray = new BluetoothCodecConfig[] {
-                buildBluetoothCodecConfig(newCodecType,
-                                         PRIORITY_HIGH,
-                                         sampleRate, bitsPerSample, channelMode,
-                                         0, 0, 0, 0)       // Codec-specific fields
-        };
+        BluetoothCodecConfig[] newCodecConfigsArray =
+                new BluetoothCodecConfig[] {
+                    buildBluetoothCodecConfig(
+                            newCodecType,
+                            PRIORITY_HIGH,
+                            sampleRate,
+                            bitsPerSample,
+                            channelMode,
+                            0,
+                            0,
+                            0,
+                            0) // Codec-specific fields
+                };
 
         // Test cases: 1. no mandatory; 2. mandatory + old + new; 3. all codecs
         BluetoothCodecConfig[] minimumCodecsArray;
         if (!oldCodecConfig.isMandatoryCodec() && !newCodecConfigsArray[0].isMandatoryCodec()) {
             BluetoothCodecConfig[] optionalCodecsArray;
             if (oldCodecType != newCodecType) {
-                optionalCodecsArray = new BluetoothCodecConfig[] {
-                        getCodecCapabilitiesByType(oldCodecType),
-                        getCodecCapabilitiesByType(newCodecType)
-                };
-                minimumCodecsArray = new BluetoothCodecConfig[] {
-                        getCodecCapabilitiesByType(BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC),
-                        getCodecCapabilitiesByType(oldCodecType),
-                        getCodecCapabilitiesByType(newCodecType)
-                };
+                optionalCodecsArray =
+                        new BluetoothCodecConfig[] {
+                            getCodecCapabilitiesByType(oldCodecType),
+                            getCodecCapabilitiesByType(newCodecType)
+                        };
+                minimumCodecsArray =
+                        new BluetoothCodecConfig[] {
+                            getCodecCapabilitiesByType(BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC),
+                            getCodecCapabilitiesByType(oldCodecType),
+                            getCodecCapabilitiesByType(newCodecType)
+                        };
             } else {
-                optionalCodecsArray = new BluetoothCodecConfig[]
-                        {getCodecCapabilitiesByType(oldCodecType)};
-                minimumCodecsArray = new BluetoothCodecConfig[] {
-                        getCodecCapabilitiesByType(BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC),
-                        getCodecCapabilitiesByType(oldCodecType)
-                };
+                optionalCodecsArray =
+                        new BluetoothCodecConfig[] {getCodecCapabilitiesByType(oldCodecType)};
+                minimumCodecsArray =
+                        new BluetoothCodecConfig[] {
+                            getCodecCapabilitiesByType(BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC),
+                            getCodecCapabilitiesByType(oldCodecType)
+                        };
             }
-            BluetoothCodecStatus codecStatus = new BluetoothCodecStatus(oldCodecConfig,
-                                                        Arrays.asList(sCodecCapabilities),
-                                                        Arrays.asList(optionalCodecsArray));
-            mA2dpCodecConfig.setCodecConfigPreference(mTestDevice,
-                                                      codecStatus,
-                                                      newCodecConfigsArray[0]);
+            BluetoothCodecStatus codecStatus =
+                    new BluetoothCodecStatus(
+                            oldCodecConfig,
+                            Arrays.asList(sCodecCapabilities),
+                            Arrays.asList(optionalCodecsArray));
+            mA2dpCodecConfig.setCodecConfigPreference(
+                    mTestDevice, codecStatus, newCodecConfigsArray[0]);
             // no mandatory codec in selectable, and should not apply
-            verify(mA2dpNativeInterface, times(0)).setCodecConfigPreference(mTestDevice,
-                                                                            newCodecConfigsArray);
-
+            verify(mA2dpNativeInterface, times(0))
+                    .setCodecConfigPreference(mTestDevice, newCodecConfigsArray);
 
         } else {
             if (oldCodecType != newCodecType) {
-                minimumCodecsArray = new BluetoothCodecConfig[] {
-                        getCodecCapabilitiesByType(oldCodecType),
-                        getCodecCapabilitiesByType(newCodecType)
-                };
+                minimumCodecsArray =
+                        new BluetoothCodecConfig[] {
+                            getCodecCapabilitiesByType(oldCodecType),
+                            getCodecCapabilitiesByType(newCodecType)
+                        };
             } else {
-                minimumCodecsArray = new BluetoothCodecConfig[] {
-                        getCodecCapabilitiesByType(oldCodecType),
-                };
+                minimumCodecsArray =
+                        new BluetoothCodecConfig[] {
+                            getCodecCapabilitiesByType(oldCodecType),
+                        };
             }
         }
 
         // 2. mandatory + old + new codecs only
         BluetoothCodecStatus codecStatus =
-                new BluetoothCodecStatus(oldCodecConfig,
+                new BluetoothCodecStatus(
+                        oldCodecConfig,
                         Arrays.asList(sCodecCapabilities),
                         Arrays.asList(minimumCodecsArray));
-        mA2dpCodecConfig.setCodecConfigPreference(mTestDevice,
-                                                  codecStatus,
-                                                  newCodecConfigsArray[0]);
+        mA2dpCodecConfig.setCodecConfigPreference(
+                mTestDevice, codecStatus, newCodecConfigsArray[0]);
         verify(mA2dpNativeInterface, times(invokeNative ? 1 : 0))
                 .setCodecConfigPreference(mTestDevice, newCodecConfigsArray);
 
         // 3. all codecs were selectable
-        codecStatus = new BluetoothCodecStatus(oldCodecConfig,
+        codecStatus =
+                new BluetoothCodecStatus(
+                        oldCodecConfig,
                         Arrays.asList(sCodecCapabilities),
                         Arrays.asList(sCodecCapabilities));
-        mA2dpCodecConfig.setCodecConfigPreference(mTestDevice,
-                                                  codecStatus,
-                                                  newCodecConfigsArray[0]);
+        mA2dpCodecConfig.setCodecConfigPreference(
+                mTestDevice, codecStatus, newCodecConfigsArray[0]);
         verify(mA2dpNativeInterface, times(invokeNative ? 2 : 0))
                 .setCodecConfigPreference(mTestDevice, newCodecConfigsArray);
     }
 
-    private void testCodecSpecificParametersChangeHelper(int newCodecType, int newCodecSpecific,
-            int oldCodecType, int oldCodecSpecific, boolean invokeNative) {
+    private void testCodecSpecificParametersChangeHelper(
+            int newCodecType,
+            int newCodecSpecific,
+            int oldCodecType,
+            int oldCodecSpecific,
+            boolean invokeNative) {
         BluetoothCodecConfig codecDefaultTemp =
                 getDefaultCodecConfigByType(oldCodecType, PRIORITY_HIGH);
         BluetoothCodecConfig oldCodecConfig =
-                buildBluetoothCodecConfig(codecDefaultTemp.getCodecType(),
-                                         codecDefaultTemp.getCodecPriority(),
-                                         codecDefaultTemp.getSampleRate(),
-                                         codecDefaultTemp.getBitsPerSample(),
-                                         codecDefaultTemp.getChannelMode(),
-                                         oldCodecSpecific, 0, 0, 0);       // Codec-specific fields
+                buildBluetoothCodecConfig(
+                        codecDefaultTemp.getCodecType(),
+                        codecDefaultTemp.getCodecPriority(),
+                        codecDefaultTemp.getSampleRate(),
+                        codecDefaultTemp.getBitsPerSample(),
+                        codecDefaultTemp.getChannelMode(),
+                        oldCodecSpecific,
+                        0,
+                        0,
+                        0); // Codec-specific fields
         codecDefaultTemp = getDefaultCodecConfigByType(newCodecType, PRIORITY_HIGH);
-        BluetoothCodecConfig[] newCodecConfigsArray = new BluetoothCodecConfig[] {
-                buildBluetoothCodecConfig(codecDefaultTemp.getCodecType(),
-                                         codecDefaultTemp.getCodecPriority(),
-                                         codecDefaultTemp.getSampleRate(),
-                                         codecDefaultTemp.getBitsPerSample(),
-                                         codecDefaultTemp.getChannelMode(),
-                                         newCodecSpecific, 0, 0, 0)       // Codec-specific fields
-        };
-        BluetoothCodecStatus codecStatus = new BluetoothCodecStatus(oldCodecConfig,
+        BluetoothCodecConfig[] newCodecConfigsArray =
+                new BluetoothCodecConfig[] {
+                    buildBluetoothCodecConfig(
+                            codecDefaultTemp.getCodecType(),
+                            codecDefaultTemp.getCodecPriority(),
+                            codecDefaultTemp.getSampleRate(),
+                            codecDefaultTemp.getBitsPerSample(),
+                            codecDefaultTemp.getChannelMode(),
+                            newCodecSpecific,
+                            0,
+                            0,
+                            0) // Codec-specific fields
+                };
+        BluetoothCodecStatus codecStatus =
+                new BluetoothCodecStatus(
+                        oldCodecConfig,
                         Arrays.asList(sCodecCapabilities),
                         Arrays.asList(sCodecCapabilities));
-        mA2dpCodecConfig.setCodecConfigPreference(mTestDevice,
-                                                  codecStatus,
-                                                  newCodecConfigsArray[0]);
+        mA2dpCodecConfig.setCodecConfigPreference(
+                mTestDevice, codecStatus, newCodecConfigsArray[0]);
         verify(mA2dpNativeInterface, times(invokeNative ? 1 : 0))
                 .setCodecConfigPreference(mTestDevice, newCodecConfigsArray);
     }
 
-    private void testCodecPriorityChangeHelper(int newCodecType, int newCodecPriority,
-            int oldCodecType, int oldCodecPriority, boolean shouldApplyWhenAllSelectable) {
+    private void testCodecPriorityChangeHelper(
+            int newCodecType,
+            int newCodecPriority,
+            int oldCodecType,
+            int oldCodecPriority,
+            boolean shouldApplyWhenAllSelectable) {
 
         BluetoothCodecConfig[] newCodecConfigsArray =
                 new BluetoothCodecConfig[] {
-                        getDefaultCodecConfigByType(newCodecType, newCodecPriority)
+                    getDefaultCodecConfigByType(newCodecType, newCodecPriority)
                 };
-        BluetoothCodecConfig oldCodecConfig = getDefaultCodecConfigByType(oldCodecType,
-                                                                          oldCodecPriority);
+        BluetoothCodecConfig oldCodecConfig =
+                getDefaultCodecConfigByType(oldCodecType, oldCodecPriority);
 
         // Test cases: 1. no mandatory; 2. no new codec; 3. mandatory + old + new; 4. all codecs
         BluetoothCodecConfig[] minimumCodecsArray;
@@ -832,30 +984,35 @@ public class A2dpCodecConfigTest {
             if (oldCodecType == newCodecType || newCodecConfigsArray[0].isMandatoryCodec()) {
                 // selectable: {-mandatory, +oldCodec = newCodec}, or
                 // selectable: {-mandatory = newCodec, +oldCodec}. Not applied
-                BluetoothCodecConfig[] poorCodecsArray = new BluetoothCodecConfig[]
-                        {getCodecCapabilitiesByType(oldCodecType)};
-                BluetoothCodecStatus codecStatus = new BluetoothCodecStatus(oldCodecConfig,
+                BluetoothCodecConfig[] poorCodecsArray =
+                        new BluetoothCodecConfig[] {getCodecCapabilitiesByType(oldCodecType)};
+                BluetoothCodecStatus codecStatus =
+                        new BluetoothCodecStatus(
+                                oldCodecConfig,
                                 Arrays.asList(sCodecCapabilities),
                                 Arrays.asList(poorCodecsArray));
-                mA2dpCodecConfig.setCodecConfigPreference(mTestDevice,
-                                                          codecStatus,
-                                                          newCodecConfigsArray[0]);
+                mA2dpCodecConfig.setCodecConfigPreference(
+                        mTestDevice, codecStatus, newCodecConfigsArray[0]);
                 verify(mA2dpNativeInterface, times(0))
                         .setCodecConfigPreference(mTestDevice, newCodecConfigsArray);
 
                 // selectable: {+mandatory, +oldCodec = newCodec}, or
                 // selectable: {+mandatory = newCodec, +oldCodec}.
-                minimumCodecsArray = new BluetoothCodecConfig[] {
-                        getCodecCapabilitiesByType(BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC),
-                        getCodecCapabilitiesByType(oldCodecType)
-                };
+                minimumCodecsArray =
+                        new BluetoothCodecConfig[] {
+                            getCodecCapabilitiesByType(BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC),
+                            getCodecCapabilitiesByType(oldCodecType)
+                        };
             } else {
                 // selectable: {-mandatory, +oldCodec, +newCodec}. Not applied
-                BluetoothCodecConfig[] poorCodecsArray = new BluetoothCodecConfig[] {
-                        getCodecCapabilitiesByType(oldCodecType),
-                        getCodecCapabilitiesByType(newCodecType)
-                };
-                BluetoothCodecStatus codecStatus = new BluetoothCodecStatus(oldCodecConfig,
+                BluetoothCodecConfig[] poorCodecsArray =
+                        new BluetoothCodecConfig[] {
+                            getCodecCapabilitiesByType(oldCodecType),
+                            getCodecCapabilitiesByType(newCodecType)
+                        };
+                BluetoothCodecStatus codecStatus =
+                        new BluetoothCodecStatus(
+                                oldCodecConfig,
                                 Arrays.asList(sCodecCapabilities),
                                 Arrays.asList(poorCodecsArray));
                 mA2dpCodecConfig.setCodecConfigPreference(
@@ -864,31 +1021,35 @@ public class A2dpCodecConfigTest {
                         .setCodecConfigPreference(mTestDevice, newCodecConfigsArray);
 
                 // selectable: {+mandatory, +oldCodec, -newCodec}. Not applied
-                poorCodecsArray = new BluetoothCodecConfig[] {
-                        getCodecCapabilitiesByType(BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC),
-                        getCodecCapabilitiesByType(oldCodecType)
-                };
-                codecStatus = new BluetoothCodecStatus(oldCodecConfig,
+                poorCodecsArray =
+                        new BluetoothCodecConfig[] {
+                            getCodecCapabilitiesByType(BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC),
+                            getCodecCapabilitiesByType(oldCodecType)
+                        };
+                codecStatus =
+                        new BluetoothCodecStatus(
+                                oldCodecConfig,
                                 Arrays.asList(sCodecCapabilities),
                                 Arrays.asList(poorCodecsArray));
-                mA2dpCodecConfig.setCodecConfigPreference(mTestDevice,
-                                                          codecStatus,
-                                                          newCodecConfigsArray[0]);
+                mA2dpCodecConfig.setCodecConfigPreference(
+                        mTestDevice, codecStatus, newCodecConfigsArray[0]);
                 verify(mA2dpNativeInterface, times(0))
                         .setCodecConfigPreference(mTestDevice, newCodecConfigsArray);
 
                 // selectable: {+mandatory, +oldCodec, +newCodec}.
-                minimumCodecsArray = new BluetoothCodecConfig[] {
-                      getCodecCapabilitiesByType(BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC),
-                      getCodecCapabilitiesByType(oldCodecType),
-                      getCodecCapabilitiesByType(newCodecType)
-                };
+                minimumCodecsArray =
+                        new BluetoothCodecConfig[] {
+                            getCodecCapabilitiesByType(BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC),
+                            getCodecCapabilitiesByType(oldCodecType),
+                            getCodecCapabilitiesByType(newCodecType)
+                        };
             }
             // oldCodec priority should be reset to default, so compare with the default
             if (newCodecConfigsArray[0].getCodecPriority()
-                    > getDefaultCodecConfigByType(
-                            oldCodecType,
-                            BluetoothCodecConfig.CODEC_PRIORITY_DEFAULT).getCodecPriority()
+                            > getDefaultCodecConfigByType(
+                                            oldCodecType,
+                                            BluetoothCodecConfig.CODEC_PRIORITY_DEFAULT)
+                                    .getCodecPriority()
                     && oldCodecType != newCodecType) {
                 isMinimumCodecsArraySelectable = true;
             } else {
@@ -897,68 +1058,79 @@ public class A2dpCodecConfigTest {
             }
         } else if (oldCodecType != newCodecType) {
             // selectable: {+mandatory = oldCodec, -newCodec}. Not applied
-            BluetoothCodecConfig[] poorCodecsArray = new BluetoothCodecConfig[]
-                    {getCodecCapabilitiesByType(oldCodecType)};
+            BluetoothCodecConfig[] poorCodecsArray =
+                    new BluetoothCodecConfig[] {getCodecCapabilitiesByType(oldCodecType)};
             BluetoothCodecStatus codecStatus =
-                        new BluetoothCodecStatus(oldCodecConfig,
-                                Arrays.asList(sCodecCapabilities),
-                                Arrays.asList(poorCodecsArray));
-            mA2dpCodecConfig.setCodecConfigPreference(mTestDevice,
-                                                      codecStatus,
-                                                      newCodecConfigsArray[0]);
+                    new BluetoothCodecStatus(
+                            oldCodecConfig,
+                            Arrays.asList(sCodecCapabilities),
+                            Arrays.asList(poorCodecsArray));
+            mA2dpCodecConfig.setCodecConfigPreference(
+                    mTestDevice, codecStatus, newCodecConfigsArray[0]);
             verify(mA2dpNativeInterface, times(0))
                     .setCodecConfigPreference(mTestDevice, newCodecConfigsArray);
 
             // selectable: {+mandatory = oldCodec, +newCodec}.
-            minimumCodecsArray = new BluetoothCodecConfig[] {
-                    getCodecCapabilitiesByType(oldCodecType),
-                    getCodecCapabilitiesByType(newCodecType)
-            };
+            minimumCodecsArray =
+                    new BluetoothCodecConfig[] {
+                        getCodecCapabilitiesByType(oldCodecType),
+                        getCodecCapabilitiesByType(newCodecType)
+                    };
             isMinimumCodecsArraySelectable = true;
         } else {
             // selectable: {mandatory = oldCodec = newCodec}.
-            minimumCodecsArray = new BluetoothCodecConfig[]
-                    {getCodecCapabilitiesByType(BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC)};
+            minimumCodecsArray =
+                    new BluetoothCodecConfig[] {
+                        getCodecCapabilitiesByType(BluetoothCodecConfig.SOURCE_CODEC_TYPE_SBC)
+                    };
             isMinimumCodecsArraySelectable = false;
         }
 
         // 3. mandatory + old + new codecs only
         int invokedCounter = (isMinimumCodecsArraySelectable ? 1 : 0);
         BluetoothCodecStatus codecStatus =
-                new BluetoothCodecStatus(oldCodecConfig,
+                new BluetoothCodecStatus(
+                        oldCodecConfig,
                         Arrays.asList(sCodecCapabilities),
                         Arrays.asList(minimumCodecsArray));
-        mA2dpCodecConfig.setCodecConfigPreference(mTestDevice,
-                                                  codecStatus,
-                                                  newCodecConfigsArray[0]);
+        mA2dpCodecConfig.setCodecConfigPreference(
+                mTestDevice, codecStatus, newCodecConfigsArray[0]);
         verify(mA2dpNativeInterface, times(invokedCounter))
                 .setCodecConfigPreference(mTestDevice, newCodecConfigsArray);
 
         // 4. all codecs were selectable
         invokedCounter += (shouldApplyWhenAllSelectable ? 1 : 0);
-        codecStatus = new BluetoothCodecStatus(oldCodecConfig,
-                                Arrays.asList(sCodecCapabilities),
-                                Arrays.asList(sCodecCapabilities));
-        mA2dpCodecConfig.setCodecConfigPreference(mTestDevice,
-                                                  codecStatus,
-                                                  newCodecConfigsArray[0]);
+        codecStatus =
+                new BluetoothCodecStatus(
+                        oldCodecConfig,
+                        Arrays.asList(sCodecCapabilities),
+                        Arrays.asList(sCodecCapabilities));
+        mA2dpCodecConfig.setCodecConfigPreference(
+                mTestDevice, codecStatus, newCodecConfigsArray[0]);
         verify(mA2dpNativeInterface, times(invokedCounter))
                 .setCodecConfigPreference(mTestDevice, newCodecConfigsArray);
     }
 
-    private static BluetoothCodecConfig buildBluetoothCodecConfig(int sourceCodecType,
-            int codecPriority, int sampleRate, int bitsPerSample, int channelMode,
-            long codecSpecific1, long codecSpecific2, long codecSpecific3, long codecSpecific4) {
+    private static BluetoothCodecConfig buildBluetoothCodecConfig(
+            int sourceCodecType,
+            int codecPriority,
+            int sampleRate,
+            int bitsPerSample,
+            int channelMode,
+            long codecSpecific1,
+            long codecSpecific2,
+            long codecSpecific3,
+            long codecSpecific4) {
         return new BluetoothCodecConfig.Builder()
-                    .setCodecType(sourceCodecType)
-                    .setCodecPriority(codecPriority)
-                    .setSampleRate(sampleRate)
-                    .setBitsPerSample(bitsPerSample)
-                    .setChannelMode(channelMode)
-                    .setCodecSpecific1(codecSpecific1)
-                    .setCodecSpecific2(codecSpecific2)
-                    .setCodecSpecific3(codecSpecific3)
-                    .setCodecSpecific4(codecSpecific4)
-                    .build();
+                .setCodecType(sourceCodecType)
+                .setCodecPriority(codecPriority)
+                .setSampleRate(sampleRate)
+                .setBitsPerSample(bitsPerSample)
+                .setChannelMode(channelMode)
+                .setCodecSpecific1(codecSpecific1)
+                .setCodecSpecific2(codecSpecific2)
+                .setCodecSpecific3(codecSpecific3)
+                .setCodecSpecific4(codecSpecific4)
+                .build();
     }
 }

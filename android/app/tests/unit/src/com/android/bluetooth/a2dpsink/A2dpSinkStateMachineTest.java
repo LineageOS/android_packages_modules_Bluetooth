@@ -101,13 +101,15 @@ public class A2dpSinkStateMachineTest {
     }
 
     private void sendConnectionEvent(int state) {
-        mStateMachine.sendMessage(A2dpSinkStateMachine.STACK_EVENT,
+        mStateMachine.sendMessage(
+                A2dpSinkStateMachine.STACK_EVENT,
                 StackEvent.connectionStateChanged(mDevice, state));
         syncHandler(A2dpSinkStateMachine.STACK_EVENT);
     }
 
     private void sendAudioConfigChangedEvent(int sampleRate, int channelCount) {
-        mStateMachine.sendMessage(A2dpSinkStateMachine.STACK_EVENT,
+        mStateMachine.sendMessage(
+                A2dpSinkStateMachine.STACK_EVENT,
                 StackEvent.audioConfigChanged(mDevice, sampleRate, channelCount));
         syncHandler(A2dpSinkStateMachine.STACK_EVENT);
     }

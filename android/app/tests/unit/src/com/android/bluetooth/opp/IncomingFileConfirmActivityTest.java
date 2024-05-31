@@ -74,10 +74,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class IncomingFileConfirmActivityTest {
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    Cursor mCursor;
-    @Spy
-    BluetoothMethodProxy mBluetoothMethodProxy;
+    @Mock Cursor mCursor;
+    @Spy BluetoothMethodProxy mBluetoothMethodProxy;
 
     List<BluetoothOppTestUtils.CursorMockData> mCursorMockDataList;
 
@@ -104,38 +102,50 @@ public class IncomingFileConfirmActivityTest {
         mIntent.setClass(mTargetContext, BluetoothOppIncomingFileConfirmActivity.class);
         mIntent.setData(dataUrl);
 
-        doReturn(mCursor).when(mBluetoothMethodProxy).contentResolverQuery(any(), eq(dataUrl),
-                eq(null), eq(null),
-                eq(null), eq(null));
+        doReturn(mCursor)
+                .when(mBluetoothMethodProxy)
+                .contentResolverQuery(any(), eq(dataUrl), eq(null), eq(null), eq(null), eq(null));
 
-        doReturn(1).when(mBluetoothMethodProxy).contentResolverUpdate(any(), eq(dataUrl),
-                any(), eq(null), eq(null));
+        doReturn(1)
+                .when(mBluetoothMethodProxy)
+                .contentResolverUpdate(any(), eq(dataUrl), any(), eq(null), eq(null));
 
         int idValue = 1234;
         Long timestampValue = 123456789L;
         String destinationValue = "AA:BB:CC:00:11:22";
         String fileTypeValue = "text/plain";
 
-        mCursorMockDataList = new ArrayList<>(List.of(
-                new BluetoothOppTestUtils.CursorMockData(BluetoothShare.STATUS, 1,
-                        BluetoothShare.STATUS_PENDING),
-                new BluetoothOppTestUtils.CursorMockData(BluetoothShare.DIRECTION, 2,
-                        BluetoothShare.DIRECTION_OUTBOUND),
-                new BluetoothOppTestUtils.CursorMockData(BluetoothShare.TOTAL_BYTES, 3, 100),
-                new BluetoothOppTestUtils.CursorMockData(BluetoothShare.CURRENT_BYTES, 4, 0),
-                new BluetoothOppTestUtils.CursorMockData(BluetoothShare._ID, 0, idValue),
-                new BluetoothOppTestUtils.CursorMockData(BluetoothShare.MIMETYPE, 5, fileTypeValue),
-                new BluetoothOppTestUtils.CursorMockData(BluetoothShare.TIMESTAMP, 6,
-                        timestampValue),
-                new BluetoothOppTestUtils.CursorMockData(BluetoothShare.DESTINATION, 7,
-                        destinationValue),
-                new BluetoothOppTestUtils.CursorMockData(BluetoothShare._DATA, 8, null),
-                new BluetoothOppTestUtils.CursorMockData(BluetoothShare.FILENAME_HINT, 9, null),
-                new BluetoothOppTestUtils.CursorMockData(BluetoothShare.URI, 10,
-                        "content://textfile.txt"),
-                new BluetoothOppTestUtils.CursorMockData(BluetoothShare.USER_CONFIRMATION, 11,
-                        BluetoothShare.USER_CONFIRMATION_HANDOVER_CONFIRMED)
-        ));
+        mCursorMockDataList =
+                new ArrayList<>(
+                        List.of(
+                                new BluetoothOppTestUtils.CursorMockData(
+                                        BluetoothShare.STATUS, 1, BluetoothShare.STATUS_PENDING),
+                                new BluetoothOppTestUtils.CursorMockData(
+                                        BluetoothShare.DIRECTION,
+                                        2,
+                                        BluetoothShare.DIRECTION_OUTBOUND),
+                                new BluetoothOppTestUtils.CursorMockData(
+                                        BluetoothShare.TOTAL_BYTES, 3, 100),
+                                new BluetoothOppTestUtils.CursorMockData(
+                                        BluetoothShare.CURRENT_BYTES, 4, 0),
+                                new BluetoothOppTestUtils.CursorMockData(
+                                        BluetoothShare._ID, 0, idValue),
+                                new BluetoothOppTestUtils.CursorMockData(
+                                        BluetoothShare.MIMETYPE, 5, fileTypeValue),
+                                new BluetoothOppTestUtils.CursorMockData(
+                                        BluetoothShare.TIMESTAMP, 6, timestampValue),
+                                new BluetoothOppTestUtils.CursorMockData(
+                                        BluetoothShare.DESTINATION, 7, destinationValue),
+                                new BluetoothOppTestUtils.CursorMockData(
+                                        BluetoothShare._DATA, 8, null),
+                                new BluetoothOppTestUtils.CursorMockData(
+                                        BluetoothShare.FILENAME_HINT, 9, null),
+                                new BluetoothOppTestUtils.CursorMockData(
+                                        BluetoothShare.URI, 10, "content://textfile.txt"),
+                                new BluetoothOppTestUtils.CursorMockData(
+                                        BluetoothShare.USER_CONFIRMATION,
+                                        11,
+                                        BluetoothShare.USER_CONFIRMATION_HANDOVER_CONFIRMED)));
 
         BluetoothOppTestUtils.enableActivity(
                 BluetoothOppIncomingFileConfirmActivity.class, true, mTargetContext);
@@ -156,10 +166,9 @@ public class IncomingFileConfirmActivityTest {
             throws InterruptedException {
         BluetoothOppTestUtils.setUpMockCursor(mCursor, mCursorMockDataList);
 
-        ActivityScenario<BluetoothOppIncomingFileConfirmActivity> activityScenario
-                = ActivityScenario.launch(mIntent);
-        activityScenario.onActivity(activity -> {
-        });
+        ActivityScenario<BluetoothOppIncomingFileConfirmActivity> activityScenario =
+                ActivityScenario.launch(mIntent);
+        activityScenario.onActivity(activity -> {});
 
         // To work around (possibly) ActivityScenario's bug.
         // The dialog button is clicked (no error throw) but onClick() is not triggered.
@@ -169,13 +178,21 @@ public class IncomingFileConfirmActivityTest {
                 .inRoot(isDialog())
                 .perform(ViewActions.scrollTo());
         onView(withText(mTargetContext.getText(R.string.incoming_file_confirm_cancel).toString()))
-                .inRoot(isDialog()).check(matches(isDisplayed())).perform(click());
+                .inRoot(isDialog())
+                .check(matches(isDisplayed()))
+                .perform(click());
 
-        verify(mBluetoothMethodProxy).contentResolverUpdate(any(), any(), argThat(
-                argument -> Objects.equal(
-                        BluetoothShare.USER_CONFIRMATION_DENIED,
-                        argument.get(BluetoothShare.USER_CONFIRMATION))
-        ), nullable(String.class), nullable(String[].class));
+        verify(mBluetoothMethodProxy)
+                .contentResolverUpdate(
+                        any(),
+                        any(),
+                        argThat(
+                                argument ->
+                                        Objects.equal(
+                                                BluetoothShare.USER_CONFIRMATION_DENIED,
+                                                argument.get(BluetoothShare.USER_CONFIRMATION))),
+                        nullable(String.class),
+                        nullable(String[].class));
     }
 
     @Test
@@ -193,13 +210,21 @@ public class IncomingFileConfirmActivityTest {
                 .inRoot(isDialog())
                 .perform(ViewActions.scrollTo());
         onView(withText(mTargetContext.getText(R.string.incoming_file_confirm_ok).toString()))
-                .inRoot(isDialog()).check(matches(isDisplayed())).perform(click());
+                .inRoot(isDialog())
+                .check(matches(isDisplayed()))
+                .perform(click());
 
-        verify(mBluetoothMethodProxy).contentResolverUpdate(any(), any(), argThat(
-                argument -> Objects.equal(
-                        BluetoothShare.USER_CONFIRMATION_CONFIRMED,
-                        argument.get(BluetoothShare.USER_CONFIRMATION))
-        ), nullable(String.class), nullable(String[].class));
+        verify(mBluetoothMethodProxy)
+                .contentResolverUpdate(
+                        any(),
+                        any(),
+                        argThat(
+                                argument ->
+                                        Objects.equal(
+                                                BluetoothShare.USER_CONFIRMATION_CONFIRMED,
+                                                argument.get(BluetoothShare.USER_CONFIRMATION))),
+                        nullable(String.class),
+                        nullable(String[].class));
     }
 
     @Test
@@ -212,8 +237,9 @@ public class IncomingFileConfirmActivityTest {
         Intent in = new Intent(BluetoothShare.USER_CONFIRMATION_TIMEOUT_ACTION);
         mTargetContext.sendBroadcast(in);
 
-        verify(mBluetoothMethodProxy, timeout(TIMEOUT_MS)).handlerSendMessageDelayed(any(),
-                eq(DISMISS_TIMEOUT_DIALOG), eq((long) DISMISS_TIMEOUT_DIALOG_VALUE));
+        verify(mBluetoothMethodProxy, timeout(TIMEOUT_MS))
+                .handlerSendMessageDelayed(
+                        any(), eq(DISMISS_TIMEOUT_DIALOG), eq((long) DISMISS_TIMEOUT_DIALOG_VALUE));
     }
 
     @Test
@@ -222,19 +248,26 @@ public class IncomingFileConfirmActivityTest {
         ActivityScenario<BluetoothOppIncomingFileConfirmActivity> scenario =
                 ActivityScenario.launch(mIntent);
         AtomicBoolean atomicBoolean = new AtomicBoolean();
-        scenario.onActivity(activity -> {
-            atomicBoolean.set(activity.onKeyDown(KeyEvent.KEYCODE_A,
-                    new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_A)));
-        });
+        scenario.onActivity(
+                activity -> {
+                    atomicBoolean.set(
+                            activity.onKeyDown(
+                                    KeyEvent.KEYCODE_A,
+                                    new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_A)));
+                });
 
         assertThat(atomicBoolean.get()).isFalse();
         assertThat(scenario.getState()).isNotEqualTo(Lifecycle.State.DESTROYED);
 
-        scenario.onActivity(activity -> {
-            atomicBoolean.set(activity.onKeyDown(KeyEvent.KEYCODE_BACK,
-                    new KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK))
-                    && activity.isFinishing());
-        });
+        scenario.onActivity(
+                activity -> {
+                    atomicBoolean.set(
+                            activity.onKeyDown(
+                                            KeyEvent.KEYCODE_BACK,
+                                            new KeyEvent(
+                                                    KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_BACK))
+                                    && activity.isFinishing());
+                });
 
         assertThat(atomicBoolean.get()).isTrue();
     }

@@ -53,11 +53,9 @@ public class AvrcpVolumeManagerTest {
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    AvrcpNativeInterface mNativeInterface;
+    @Mock AvrcpNativeInterface mNativeInterface;
 
-    @Mock
-    AudioManager mAudioManager;
+    @Mock AudioManager mAudioManager;
 
     Context mContext;
     BluetoothDevice mRemoteDevice;

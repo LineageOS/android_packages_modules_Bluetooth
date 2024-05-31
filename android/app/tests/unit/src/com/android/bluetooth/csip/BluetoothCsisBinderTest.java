@@ -38,8 +38,7 @@ public class BluetoothCsisBinderTest {
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    private CsipSetCoordinatorService mService;
+    @Mock private CsipSetCoordinatorService mService;
 
     private AttributionSource mAttributionSource;
     private BluetoothDevice mTestDevice;
@@ -73,7 +72,7 @@ public class BluetoothCsisBinderTest {
 
     @Test
     public void getDevicesMatchingConnectionStates() {
-        int[] states = new int[] { BluetoothProfile.STATE_CONNECTED };
+        int[] states = new int[] {BluetoothProfile.STATE_CONNECTED};
         mBinder.getDevicesMatchingConnectionStates(states, mAttributionSource);
         verify(mService).getDevicesMatchingConnectionStates(states);
     }

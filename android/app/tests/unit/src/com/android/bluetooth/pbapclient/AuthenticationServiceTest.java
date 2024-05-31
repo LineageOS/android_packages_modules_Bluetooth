@@ -42,8 +42,7 @@ public class AuthenticationServiceTest {
 
     Context mTargetContext;
 
-    @Rule
-    public final ServiceTestRule mServiceRule = new ServiceTestRule();
+    @Rule public final ServiceTestRule mServiceRule = new ServiceTestRule();
 
     @Before
     public void setUp() {
@@ -65,11 +64,11 @@ public class AuthenticationServiceTest {
     }
 
     private void enableService(boolean enable) {
-        int enabledState = enable ? COMPONENT_ENABLED_STATE_ENABLED
-                : COMPONENT_ENABLED_STATE_DEFAULT;
-        ComponentName serviceName = new ComponentName(
-                mTargetContext, AuthenticationService.class);
-        mTargetContext.getPackageManager().setComponentEnabledSetting(
-                serviceName, enabledState, DONT_KILL_APP);
+        int enabledState =
+                enable ? COMPONENT_ENABLED_STATE_ENABLED : COMPONENT_ENABLED_STATE_DEFAULT;
+        ComponentName serviceName = new ComponentName(mTargetContext, AuthenticationService.class);
+        mTargetContext
+                .getPackageManager()
+                .setComponentEnabledSetting(serviceName, enabledState, DONT_KILL_APP);
     }
 }

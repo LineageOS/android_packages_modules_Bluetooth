@@ -84,45 +84,66 @@ public class HidHostServiceTest {
         Assert.assertNotNull(HidHostService.getHidHostService());
     }
 
-    /**
-     *  Test okToConnect method using various test cases
-     */
+    /** Test okToConnect method using various test cases */
     @Test
     public void testOkToConnect() {
         int badPriorityValue = 1024;
         int badBondState = 42;
-        testOkToConnectCase(mTestDevice,
-                BluetoothDevice.BOND_NONE, BluetoothProfile.CONNECTION_POLICY_UNKNOWN, false);
-        testOkToConnectCase(mTestDevice,
-                BluetoothDevice.BOND_NONE, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN, false);
-        testOkToConnectCase(mTestDevice,
-                BluetoothDevice.BOND_NONE, BluetoothProfile.CONNECTION_POLICY_ALLOWED, false);
-        testOkToConnectCase(mTestDevice,
-                BluetoothDevice.BOND_NONE, badPriorityValue, false);
-        testOkToConnectCase(mTestDevice,
-                BluetoothDevice.BOND_BONDING, BluetoothProfile.CONNECTION_POLICY_UNKNOWN, false);
-        testOkToConnectCase(mTestDevice,
-                BluetoothDevice.BOND_BONDING, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN, false);
-        testOkToConnectCase(mTestDevice,
-                BluetoothDevice.BOND_BONDING, BluetoothProfile.CONNECTION_POLICY_ALLOWED, false);
-        testOkToConnectCase(mTestDevice,
-                BluetoothDevice.BOND_BONDING, badPriorityValue, false);
-        testOkToConnectCase(mTestDevice,
-                BluetoothDevice.BOND_BONDED, BluetoothProfile.CONNECTION_POLICY_UNKNOWN, true);
-        testOkToConnectCase(mTestDevice,
-                BluetoothDevice.BOND_BONDED, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN, false);
-        testOkToConnectCase(mTestDevice,
-                BluetoothDevice.BOND_BONDED, BluetoothProfile.CONNECTION_POLICY_ALLOWED, true);
-        testOkToConnectCase(mTestDevice,
-                BluetoothDevice.BOND_BONDED, badPriorityValue, false);
-        testOkToConnectCase(mTestDevice,
-                badBondState, BluetoothProfile.CONNECTION_POLICY_UNKNOWN, false);
-        testOkToConnectCase(mTestDevice,
-                badBondState, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN, false);
-        testOkToConnectCase(mTestDevice,
-                badBondState, BluetoothProfile.CONNECTION_POLICY_ALLOWED, false);
-        testOkToConnectCase(mTestDevice,
-                badBondState, badPriorityValue, false);
+        testOkToConnectCase(
+                mTestDevice,
+                BluetoothDevice.BOND_NONE,
+                BluetoothProfile.CONNECTION_POLICY_UNKNOWN,
+                false);
+        testOkToConnectCase(
+                mTestDevice,
+                BluetoothDevice.BOND_NONE,
+                BluetoothProfile.CONNECTION_POLICY_FORBIDDEN,
+                false);
+        testOkToConnectCase(
+                mTestDevice,
+                BluetoothDevice.BOND_NONE,
+                BluetoothProfile.CONNECTION_POLICY_ALLOWED,
+                false);
+        testOkToConnectCase(mTestDevice, BluetoothDevice.BOND_NONE, badPriorityValue, false);
+        testOkToConnectCase(
+                mTestDevice,
+                BluetoothDevice.BOND_BONDING,
+                BluetoothProfile.CONNECTION_POLICY_UNKNOWN,
+                false);
+        testOkToConnectCase(
+                mTestDevice,
+                BluetoothDevice.BOND_BONDING,
+                BluetoothProfile.CONNECTION_POLICY_FORBIDDEN,
+                false);
+        testOkToConnectCase(
+                mTestDevice,
+                BluetoothDevice.BOND_BONDING,
+                BluetoothProfile.CONNECTION_POLICY_ALLOWED,
+                false);
+        testOkToConnectCase(mTestDevice, BluetoothDevice.BOND_BONDING, badPriorityValue, false);
+        testOkToConnectCase(
+                mTestDevice,
+                BluetoothDevice.BOND_BONDED,
+                BluetoothProfile.CONNECTION_POLICY_UNKNOWN,
+                true);
+        testOkToConnectCase(
+                mTestDevice,
+                BluetoothDevice.BOND_BONDED,
+                BluetoothProfile.CONNECTION_POLICY_FORBIDDEN,
+                false);
+        testOkToConnectCase(
+                mTestDevice,
+                BluetoothDevice.BOND_BONDED,
+                BluetoothProfile.CONNECTION_POLICY_ALLOWED,
+                true);
+        testOkToConnectCase(mTestDevice, BluetoothDevice.BOND_BONDED, badPriorityValue, false);
+        testOkToConnectCase(
+                mTestDevice, badBondState, BluetoothProfile.CONNECTION_POLICY_UNKNOWN, false);
+        testOkToConnectCase(
+                mTestDevice, badBondState, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN, false);
+        testOkToConnectCase(
+                mTestDevice, badBondState, BluetoothProfile.CONNECTION_POLICY_ALLOWED, false);
+        testOkToConnectCase(mTestDevice, badBondState, badPriorityValue, false);
     }
 
     @Test
@@ -138,8 +159,8 @@ public class HidHostServiceTest {
      * @param priority value, could be invalid, could be invalid
      * @param expected expected result from okToConnect()
      */
-    private void testOkToConnectCase(BluetoothDevice device, int bondState, int priority,
-            boolean expected) {
+    private void testOkToConnectCase(
+            BluetoothDevice device, int bondState, int priority, boolean expected) {
         doReturn(bondState).when(mAdapterService).getBondState(device);
         when(mDatabaseManager.getProfileConnectionPolicy(device, BluetoothProfile.HID_HOST))
                 .thenReturn(priority);

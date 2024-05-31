@@ -51,10 +51,8 @@ public class VendorCommandResponseProcessorTest {
     @Mock private NativeInterface mNativeInterface;
     private VendorCommandResponseProcessor mProcessor;
 
-    @Mock
-    private AdapterService mAdapterService;
-    @Mock
-    private HeadsetClientService mHeadsetClientService;
+    @Mock private AdapterService mAdapterService;
+    @Mock private HeadsetClientService mHeadsetClientService;
 
     @Before
     public void setUp() throws Exception {
@@ -94,9 +92,14 @@ public class VendorCommandResponseProcessorTest {
     @Test
     public void sendCommand_withEqualSign() {
         String atCommand = "+XAPL=";
-        doReturn(true).when(mNativeInterface).sendATCmd(mTestDevice,
-                HeadsetClientHalConstants.HANDSFREECLIENT_AT_CMD_VENDOR_SPECIFIC_CMD, 0, 0,
-                atCommand);
+        doReturn(true)
+                .when(mNativeInterface)
+                .sendATCmd(
+                        mTestDevice,
+                        HeadsetClientHalConstants.HANDSFREECLIENT_AT_CMD_VENDOR_SPECIFIC_CMD,
+                        0,
+                        0,
+                        atCommand);
 
         assertThat(mProcessor.sendCommand(TEST_VENDOR_ID, atCommand, mTestDevice)).isTrue();
     }
@@ -104,9 +107,14 @@ public class VendorCommandResponseProcessorTest {
     @Test
     public void sendCommand_withQuestionMarkSign() {
         String atCommand = "+APLSIRI?";
-        doReturn(true).when(mNativeInterface).sendATCmd(mTestDevice,
-                HeadsetClientHalConstants.HANDSFREECLIENT_AT_CMD_VENDOR_SPECIFIC_CMD, 0, 0,
-                atCommand);
+        doReturn(true)
+                .when(mNativeInterface)
+                .sendATCmd(
+                        mTestDevice,
+                        HeadsetClientHalConstants.HANDSFREECLIENT_AT_CMD_VENDOR_SPECIFIC_CMD,
+                        0,
+                        0,
+                        atCommand);
 
         assertThat(mProcessor.sendCommand(TEST_VENDOR_ID, atCommand, mTestDevice)).isTrue();
     }
@@ -114,9 +122,14 @@ public class VendorCommandResponseProcessorTest {
     @Test
     public void sendCommand_failingToSendATCommand() {
         String atCommand = "+APLSIRI?";
-        doReturn(false).when(mNativeInterface).sendATCmd(mTestDevice,
-                HeadsetClientHalConstants.HANDSFREECLIENT_AT_CMD_VENDOR_SPECIFIC_CMD, 0, 0,
-                atCommand);
+        doReturn(false)
+                .when(mNativeInterface)
+                .sendATCmd(
+                        mTestDevice,
+                        HeadsetClientHalConstants.HANDSFREECLIENT_AT_CMD_VENDOR_SPECIFIC_CMD,
+                        0,
+                        0,
+                        atCommand);
 
         assertThat(mProcessor.sendCommand(TEST_VENDOR_ID, atCommand, mTestDevice)).isFalse();
     }

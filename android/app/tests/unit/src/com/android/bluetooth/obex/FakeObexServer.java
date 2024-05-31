@@ -29,8 +29,8 @@ import java.io.IOException;
  * A fake obex server for testing obex clients. Test cases should implement *Validator functions to
  * validate input and return appropriate responses for individual tests.
  *
- * Note: it is important to not perform any testing Assert operations within the validators as that
- * would crash the testing framework.
+ * <p>Note: it is important to not perform any testing Assert operations within the validators as
+ * that would crash the testing framework.
  */
 public abstract class FakeObexServer {
 
@@ -52,8 +52,8 @@ public abstract class FakeObexServer {
 
     public abstract int onPutValidator(Operation op);
 
-    public abstract int onSetPathValidator(HeaderSet request, HeaderSet reply,
-            boolean backup, boolean create);
+    public abstract int onSetPathValidator(
+            HeaderSet request, HeaderSet reply, boolean backup, boolean create);
 
     class Server extends ServerRequestHandler {
 
@@ -63,8 +63,7 @@ public abstract class FakeObexServer {
         }
 
         @Override
-        public void onDisconnect(final HeaderSet request, HeaderSet reply) {
-        }
+        public void onDisconnect(final HeaderSet request, HeaderSet reply) {}
 
         @Override
         public int onGet(final Operation op) {
@@ -82,13 +81,15 @@ public abstract class FakeObexServer {
         }
 
         @Override
-        public int onSetPath(final HeaderSet request, HeaderSet reply, final boolean backup,
+        public int onSetPath(
+                final HeaderSet request,
+                HeaderSet reply,
+                final boolean backup,
                 final boolean create) {
             return onSetPathValidator(request, reply, backup, create);
         }
 
         @Override
-        public void onClose() {
-        }
+        public void onClose() {}
     }
 }

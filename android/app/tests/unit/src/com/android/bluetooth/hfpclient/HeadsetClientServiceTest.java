@@ -120,10 +120,7 @@ public class HeadsetClientServiceTest {
 
         // Expect send BIEV to state machine
         verify(mStateMachine, timeout(STANDARD_WAIT_MILLIS).times(1))
-                .sendMessage(
-                    eq(HeadsetClientStateMachine.SEND_BIEV),
-                    eq(2),
-                    anyInt());
+                .sendMessage(eq(HeadsetClientStateMachine.SEND_BIEV), eq(2), anyInt());
     }
 
     @Test
@@ -141,10 +138,7 @@ public class HeadsetClientServiceTest {
 
         // Expect send BIEV to state machine
         verify(mStateMachine, timeout(STANDARD_WAIT_MILLIS).times(1))
-                .sendMessage(
-                    eq(HeadsetClientStateMachine.SEND_BIEV),
-                    eq(2),
-                    anyInt());
+                .sendMessage(eq(HeadsetClientStateMachine.SEND_BIEV), eq(2), anyInt());
     }
 
     @Test

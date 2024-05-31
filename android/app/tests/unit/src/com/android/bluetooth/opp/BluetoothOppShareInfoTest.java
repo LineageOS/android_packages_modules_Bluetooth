@@ -48,9 +48,22 @@ public class BluetoothOppShareInfoTest {
 
     @Before
     public void setUp() throws Exception {
-        mBluetoothOppShareInfo = new BluetoothOppShareInfo(0, uri, hintString, filename,
-                mimetype, direction, destination, visibility, confirm, status, totalBytes,
-                currentBytes, timestamp, mediaScanned);
+        mBluetoothOppShareInfo =
+                new BluetoothOppShareInfo(
+                        0,
+                        uri,
+                        hintString,
+                        filename,
+                        mimetype,
+                        direction,
+                        destination,
+                        visibility,
+                        confirm,
+                        status,
+                        totalBytes,
+                        currentBytes,
+                        timestamp,
+                        mediaScanned);
     }
 
     @Test

@@ -50,12 +50,9 @@ public class McpServiceTest {
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    private AdapterService mAdapterService;
-    @Mock
-    private MediaControlGattService mMockMcpService;
-    @Mock
-    private MediaControlProfile mMediaControlProfile;
+    @Mock private AdapterService mAdapterService;
+    @Mock private MediaControlGattService mMockMcpService;
+    @Mock private MediaControlProfile mMediaControlProfile;
 
     @Before
     public void setUp() throws Exception {
@@ -108,8 +105,8 @@ public class McpServiceTest {
 
         mMcpService.setDeviceAuthorized(device1, false);
         verify(mMediaControlProfile).onDeviceAuthorizationSet(eq(device1));
-        Assert.assertEquals(BluetoothDevice.ACCESS_REJECTED,
-                mMcpService.getDeviceAuthorization(device1));
+        Assert.assertEquals(
+                BluetoothDevice.ACCESS_REJECTED, mMcpService.getDeviceAuthorization(device1));
     }
 
     @Test

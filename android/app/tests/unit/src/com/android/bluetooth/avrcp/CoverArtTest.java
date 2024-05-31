@@ -58,8 +58,8 @@ public class CoverArtTest {
 
     @Before
     public void setUp() throws Exception {
-        mTestResources = TestUtils.getTestApplicationResources(
-                InstrumentationRegistry.getTargetContext());
+        mTestResources =
+                TestUtils.getTestApplicationResources(InstrumentationRegistry.getTargetContext());
 
         m200by200Image = loadImage(com.android.bluetooth.tests.R.raw.image_200_200);
         m200by200ImageBlue = loadImage(com.android.bluetooth.tests.R.raw.image_200_200_blue);
@@ -129,18 +129,14 @@ public class CoverArtTest {
         return (200 == image.getHeight() && 200 == image.getWidth());
     }
 
-    /**
-     * Make sure you can create an image from an Image object
-     */
+    /** Make sure you can create an image from an Image object */
     @Test
     public void testCreateCoverArtFromImage() {
         CoverArt artwork = new CoverArt(mImage);
         assertThat(artwork.getImage()).isNotNull();
     }
 
-    /**
-     * Make sure you get an image hash from a valid image
-     */
+    /** Make sure you get an image hash from a valid image */
     @Test
     public void testGetImageHash() {
         CoverArt artwork = new CoverArt(mImage);
@@ -148,9 +144,7 @@ public class CoverArtTest {
         assertThat(hash).isNotNull();
     }
 
-    /**
-     * Make sure you get the same image hash from several calls to the same object
-     */
+    /** Make sure you get the same image hash from several calls to the same object */
     @Test
     public void testGetImageHashSameForMultipleCalls() {
         CoverArt artwork = new CoverArt(mImage);
@@ -160,9 +154,7 @@ public class CoverArtTest {
         assertThat(artwork.getImageHash()).isEqualTo(hash); // extra call 2
     }
 
-    /**
-     * Make sure you get the same image hash from separate objects created from the same image
-     */
+    /** Make sure you get the same image hash from separate objects created from the same image */
     @Test
     public void testGetImageHashSameForSameImages() {
         CoverArt artwork = new CoverArt(mImage);
@@ -190,9 +182,7 @@ public class CoverArtTest {
         assertThat(hash).isNotEqualTo(hash2);
     }
 
-    /**
-     * Make sure you get an image when asking for the native image
-     */
+    /** Make sure you get an image when asking for the native image */
     @Test
     public void testGetNativeImage() {
         CoverArt artwork = new CoverArt(mImage);
@@ -200,9 +190,7 @@ public class CoverArtTest {
         assertThat(image).isNotNull();
     }
 
-    /**
-     * Make sure you getThumbnailImage returns an image as a 200 by 200 JPEG
-     */
+    /** Make sure you getThumbnailImage returns an image as a 200 by 200 JPEG */
     @Test
     public void testGetThumbnailImage() {
         CoverArt artwork = new CoverArt(mImage);
@@ -212,9 +200,7 @@ public class CoverArtTest {
         assertThat(isThumbnailFormat(image)).isTrue();
     }
 
-    /**
-     * Make sure you can set the image handle associated with this object
-     */
+    /** Make sure you can set the image handle associated with this object */
     @Test
     public void testGetAndSetImageHandle() {
         CoverArt artwork = new CoverArt(mImage);
@@ -224,8 +210,8 @@ public class CoverArtTest {
     }
 
     /**
-     * Make sure a getImageProperties() yields a set of image properties. The thumbnail format
-     * MUST be contained in that set
+     * Make sure a getImageProperties() yields a set of image properties. The thumbnail format MUST
+     * be contained in that set
      */
     @Test
     public void testGetImageProperties() {
@@ -236,9 +222,7 @@ public class CoverArtTest {
         assertThat(containsThumbnailFormat(properties)).isTrue();
     }
 
-    /**
-     * Make sure a getImage(<valid descriptor>) yield an image in the format you asked for
-     */
+    /** Make sure a getImage(<valid descriptor>) yield an image in the format you asked for */
     @Test
     public void testGetImageWithValidDescriptor() {
         CoverArt artwork = new CoverArt(mImage);
@@ -247,9 +231,7 @@ public class CoverArtTest {
         assertThat(image).isNotNull();
     }
 
-    /**
-     * Make sure a getImage(<thumbnail descriptor>) yields the image in the thumbnail format
-     */
+    /** Make sure a getImage(<thumbnail descriptor>) yields the image in the thumbnail format */
     @Test
     public void testGetImageWithThumbnailDescriptor() {
         CoverArt artwork = new CoverArt(mImage);
@@ -260,9 +242,7 @@ public class CoverArtTest {
         assertThat(isThumbnailFormat(image)).isTrue();
     }
 
-    /**
-     * Make sure a getImage(<invalid descriptor>) yields a null
-     */
+    /** Make sure a getImage(<invalid descriptor>) yields a null */
     @Test
     public void testGetImageWithInvalidDescriptor() {
         CoverArt artwork = new CoverArt(mImage);
@@ -271,9 +251,7 @@ public class CoverArtTest {
         assertThat(image).isNull();
     }
 
-    /**
-     * Make sure a getImage(<null descriptor>) yields the native image
-     */
+    /** Make sure a getImage(<null descriptor>) yields the native image */
     @Test
     public void testGetImageWithoutDescriptor() {
         CoverArt artwork = new CoverArt(mImage);
@@ -282,18 +260,14 @@ public class CoverArtTest {
         assertThat(Arrays.equals(nativeImage, image)).isTrue();
     }
 
-    /**
-     * Make sure we can get a valid string representation of the CoverArt
-     */
+    /** Make sure we can get a valid string representation of the CoverArt */
     @Test
     public void testGetSize() {
         CoverArt artwork = new CoverArt(mImage);
         assertThat(artwork.size() > 0).isTrue();
     }
 
-    /**
-     * Make sure we can get a valid string representation of the CoverArt
-     */
+    /** Make sure we can get a valid string representation of the CoverArt */
     @Test
     public void testToString() {
         CoverArt artwork = new CoverArt(mImage);

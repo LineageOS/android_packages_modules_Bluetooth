@@ -37,8 +37,15 @@ public class HeadsetClccResponseTest {
 
     @Test
     public void constructor() {
-        HeadsetClccResponse response = new HeadsetClccResponse(TEST_INDEX, TEST_DIRECTION,
-                TEST_STATUS, TEST_MODE, TEST_MPTY, TEST_NUMBER, TEST_TYPE);
+        HeadsetClccResponse response =
+                new HeadsetClccResponse(
+                        TEST_INDEX,
+                        TEST_DIRECTION,
+                        TEST_STATUS,
+                        TEST_MODE,
+                        TEST_MPTY,
+                        TEST_NUMBER,
+                        TEST_TYPE);
 
         assertThat(response.mIndex).isEqualTo(TEST_INDEX);
         assertThat(response.mDirection).isEqualTo(TEST_DIRECTION);
@@ -51,33 +58,71 @@ public class HeadsetClccResponseTest {
 
     @Test
     public void buildString() {
-        HeadsetClccResponse response = new HeadsetClccResponse(TEST_INDEX, TEST_DIRECTION,
-                TEST_STATUS, TEST_MODE, TEST_MPTY, TEST_NUMBER, TEST_TYPE);
+        HeadsetClccResponse response =
+                new HeadsetClccResponse(
+                        TEST_INDEX,
+                        TEST_DIRECTION,
+                        TEST_STATUS,
+                        TEST_MODE,
+                        TEST_MPTY,
+                        TEST_NUMBER,
+                        TEST_TYPE);
         StringBuilder builder = new StringBuilder();
 
         response.buildString(builder);
 
         String expectedString =
-                response.getClass().getSimpleName() + "[index=" + TEST_INDEX + ", direction="
-                        + TEST_DIRECTION + ", status=" + TEST_STATUS + ", callMode=" + TEST_MODE
-                        + ", isMultiParty=" + TEST_MPTY + ", number=" + "***" + ", type="
-                        + TEST_TYPE + "]";
+                response.getClass().getSimpleName()
+                        + "[index="
+                        + TEST_INDEX
+                        + ", direction="
+                        + TEST_DIRECTION
+                        + ", status="
+                        + TEST_STATUS
+                        + ", callMode="
+                        + TEST_MODE
+                        + ", isMultiParty="
+                        + TEST_MPTY
+                        + ", number="
+                        + "***"
+                        + ", type="
+                        + TEST_TYPE
+                        + "]";
         assertThat(response.toString()).isEqualTo(expectedString);
     }
 
     @Test
     public void buildString_withNoNumber() {
-        HeadsetClccResponse response = new HeadsetClccResponse(TEST_INDEX, TEST_DIRECTION,
-                TEST_STATUS, TEST_MODE, TEST_MPTY, null, TEST_TYPE);
+        HeadsetClccResponse response =
+                new HeadsetClccResponse(
+                        TEST_INDEX,
+                        TEST_DIRECTION,
+                        TEST_STATUS,
+                        TEST_MODE,
+                        TEST_MPTY,
+                        null,
+                        TEST_TYPE);
         StringBuilder builder = new StringBuilder();
 
         response.buildString(builder);
 
         String expectedString =
-                response.getClass().getSimpleName() + "[index=" + TEST_INDEX + ", direction="
-                        + TEST_DIRECTION + ", status=" + TEST_STATUS + ", callMode=" + TEST_MODE
-                        + ", isMultiParty=" + TEST_MPTY + ", number=" + "null" + ", type="
-                        + TEST_TYPE + "]";
+                response.getClass().getSimpleName()
+                        + "[index="
+                        + TEST_INDEX
+                        + ", direction="
+                        + TEST_DIRECTION
+                        + ", status="
+                        + TEST_STATUS
+                        + ", callMode="
+                        + TEST_MODE
+                        + ", isMultiParty="
+                        + TEST_MPTY
+                        + ", number="
+                        + "null"
+                        + ", type="
+                        + TEST_TYPE
+                        + "]";
         assertThat(response.toString()).isEqualTo(expectedString);
     }
 }

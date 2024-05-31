@@ -60,8 +60,7 @@ public class CallLogPullRequestTest {
     private Context mTargetContext;
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Spy
-    private BluetoothMethodProxy mMapMethodProxy = BluetoothMethodProxy.getInstance();
+    @Spy private BluetoothMethodProxy mMapMethodProxy = BluetoothMethodProxy.getInstance();
 
     @Before
     public void setUp() {
@@ -77,8 +76,8 @@ public class CallLogPullRequestTest {
     @Test
     public void testToString() {
         final String path = PbapClientConnectionHandler.ICH_PATH;
-        final CallLogPullRequest request = new CallLogPullRequest(
-                mTargetContext, path, mCallCounter, mAccount);
+        final CallLogPullRequest request =
+                new CallLogPullRequest(mTargetContext, path, mCallCounter, mAccount);
 
         assertThat(request.toString()).isNotEmpty();
     }
@@ -86,8 +85,8 @@ public class CallLogPullRequestTest {
     @Test
     public void onPullComplete_whenResultsAreNull() {
         final String path = PbapClientConnectionHandler.ICH_PATH;
-        final CallLogPullRequest request = new CallLogPullRequest(
-                mTargetContext, path, mCallCounter, mAccount);
+        final CallLogPullRequest request =
+                new CallLogPullRequest(mTargetContext, path, mCallCounter, mAccount);
         request.setResults(null);
 
         request.onPullComplete();
@@ -99,8 +98,8 @@ public class CallLogPullRequestTest {
     @Test
     public void onPullComplete_whenPathIsInvalid() {
         final String invalidPath = "invalidPath";
-        final CallLogPullRequest request = new CallLogPullRequest(
-                mTargetContext, invalidPath, mCallCounter, mAccount);
+        final CallLogPullRequest request =
+                new CallLogPullRequest(mTargetContext, invalidPath, mCallCounter, mAccount);
         List<VCardEntry> results = new ArrayList<>();
         request.setResults(results);
 
@@ -113,8 +112,8 @@ public class CallLogPullRequestTest {
     @Test
     public void onPullComplete_whenResultsAreEmpty() {
         final String path = PbapClientConnectionHandler.ICH_PATH;
-        final CallLogPullRequest request = new CallLogPullRequest(
-                mTargetContext, path, mCallCounter, mAccount);
+        final CallLogPullRequest request =
+                new CallLogPullRequest(mTargetContext, path, mCallCounter, mAccount);
         List<VCardEntry> results = new ArrayList<>();
         request.setResults(results);
 
@@ -127,8 +126,8 @@ public class CallLogPullRequestTest {
     @Test
     public void onPullComplete_whenThereIsNoPhoneProperty() {
         final String path = PbapClientConnectionHandler.MCH_PATH;
-        final CallLogPullRequest request = new CallLogPullRequest(
-                mTargetContext, path, mCallCounter, mAccount);
+        final CallLogPullRequest request =
+                new CallLogPullRequest(mTargetContext, path, mCallCounter, mAccount);
 
         // Add some property which is NOT a phone number
         VCardProperty property = new VCardProperty();
@@ -151,8 +150,8 @@ public class CallLogPullRequestTest {
     @Test
     public void onPullComplete_success() {
         final String path = PbapClientConnectionHandler.OCH_PATH;
-        final CallLogPullRequest request = new CallLogPullRequest(
-                mTargetContext, path, mCallCounter, mAccount);
+        final CallLogPullRequest request =
+                new CallLogPullRequest(mTargetContext, path, mCallCounter, mAccount);
         List<VCardEntry> results = new ArrayList<>();
 
         final String phoneNum = "tel:0123456789";
@@ -180,15 +179,16 @@ public class CallLogPullRequestTest {
     @Test
     public void updateTimesContacted_cursorIsClosed() {
         final String path = PbapClientConnectionHandler.OCH_PATH;
-        final CallLogPullRequest request = new CallLogPullRequest(
-                mTargetContext, path, mCallCounter, mAccount);
+        final CallLogPullRequest request =
+                new CallLogPullRequest(mTargetContext, path, mCallCounter, mAccount);
         mCallCounter.put("key", 1);
 
-        MatrixCursor cursor = new MatrixCursor(
-                new String[] {ContactsContract.PhoneLookup.CONTACT_ID});
+        MatrixCursor cursor =
+                new MatrixCursor(new String[] {ContactsContract.PhoneLookup.CONTACT_ID});
         cursor.addRow(new Object[] {"contact_id"});
-        doReturn(cursor).when(mMapMethodProxy).contentResolverQuery(any(), any(), eq(null),
-                eq(null), eq(null));
+        doReturn(cursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(any(), any(), eq(null), eq(null), eq(null));
         assertThat(cursor.isClosed()).isFalse();
 
         request.updateTimesContacted();

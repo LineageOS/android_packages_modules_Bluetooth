@@ -49,16 +49,13 @@ import org.mockito.junit.MockitoRule;
 
 import java.util.UUID;
 
-/**
- * Test cases for {@link ContextMap}.
- */
+/** Test cases for {@link ContextMap}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class ContextMapTest {
     private static final String APP_NAME = "com.android.what.a.name";
 
-    @Rule
-    public final ServiceTestRule mServiceRule = new ServiceTestRule();
+    @Rule public final ServiceTestRule mServiceRule = new ServiceTestRule();
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
@@ -68,8 +65,7 @@ public class ContextMapTest {
     @Mock private TransitionalScanHelper mMockScanHelper;
     @Mock private PackageManager mMockPackageManager;
 
-    @Spy
-    private BluetoothMethodProxy mMapMethodProxy = BluetoothMethodProxy.getInstance();
+    @Spy private BluetoothMethodProxy mMapMethodProxy = BluetoothMethodProxy.getInstance();
 
     @Before
     public void setUp() throws Exception {
