@@ -279,6 +279,19 @@ typedef void(tPORT_MGMT_CALLBACK)(const tPORT_RESULT code,
 
 /*******************************************************************************
  *
+ * Function         PORT_SetEventMask
+ *
+ * Description      This function is called to close the specified connection.
+ *
+ * Parameters:      handle - Handle of the port returned in the Open
+ *                  mask   - specifies events to be enabled.  A value
+ *                           of zero disables all events.
+ *
+ ******************************************************************************/
+[[nodiscard]] int PORT_SetEventMask(uint16_t port_handle, uint32_t mask);
+
+/*******************************************************************************
+ *
  * Function         PORT_SetEventCallback
  *
  * Description      Set event callback the specified connection.
@@ -306,19 +319,6 @@ typedef void(tPORT_MGMT_CALLBACK)(const tPORT_RESULT code,
 
 [[nodiscard]] int PORT_SetDataCOCallback(uint16_t port_handle,
                                          tPORT_DATA_CO_CALLBACK* p_port_cb);
-/*******************************************************************************
- *
- * Function         PORT_SetEventMask
- *
- * Description      This function is called to close the specified connection.
- *
- * Parameters:      handle - Handle of the port returned in the Open
- *                  mask   - specifies events to be enabled.  A value
- *                           of zero disables all events.
- *
- ******************************************************************************/
-[[nodiscard]] int PORT_SetEventMask(uint16_t port_handle, uint32_t mask);
-
 /*******************************************************************************
  *
  * Function         PORT_CheckConnection
