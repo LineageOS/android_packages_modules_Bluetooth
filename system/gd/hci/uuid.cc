@@ -176,12 +176,6 @@ const UUID128Bit& Uuid::To128BitBE() const {
   return uu;
 }
 
-Uuid Uuid::GetRandom() {
-  Uuid uuid;
-  RAND_bytes(uuid.uu.data(), uuid.uu.size());
-  return uuid;
-}
-
 bool Uuid::IsEmpty() const {
   return *this == kEmpty;
 }

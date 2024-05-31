@@ -22,8 +22,6 @@
 #include "bluetooth/uuid.h"
 #include "raw_address.h"
 
-using bluetooth::Uuid;
-
 __BEGIN_DECLS
 
 #define BTSOCK_FLAG_ENCRYPT 1
@@ -116,12 +114,13 @@ typedef struct {
   /**
    * Get L2CAP local channel ID with the associated connection uuid.
    */
-  bt_status_t (*get_l2cap_local_cid)(Uuid& conn_uuid, uint16_t* cid);
+  bt_status_t (*get_l2cap_local_cid)(bluetooth::Uuid& conn_uuid, uint16_t* cid);
 
   /**
    * Get L2CAP remote channel ID with the associated connection uuid.
    */
-  bt_status_t (*get_l2cap_remote_cid)(Uuid& conn_uuid, uint16_t* cid);
+  bt_status_t (*get_l2cap_remote_cid)(bluetooth::Uuid& conn_uuid,
+                                      uint16_t* cid);
 
 } btsock_interface_t;
 
