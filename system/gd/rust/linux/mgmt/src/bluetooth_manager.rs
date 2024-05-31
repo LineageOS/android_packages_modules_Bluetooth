@@ -4,6 +4,9 @@ use std::collections::HashMap;
 use std::process::Command;
 use std::sync::{Arc, Mutex};
 
+use configparser::ini::Ini;
+use glob::glob;
+
 use crate::powerd_suspend_manager::SuspendManagerContext;
 
 use crate::iface_bluetooth_experimental::IBluetoothExperimental;
@@ -215,6 +218,56 @@ impl IBluetoothManager for BluetoothManager {
     }
 }
 
+/// Helper function that check if there is at least one LE device in Floss config file.
+fn config_with_le_device_entry(filename: &str) -> bool {
+    let mut floss_conf = Ini::new_cs();
+    let floss_map = match floss_conf.load(filename) {
+        Ok(map) => map,
+        Err(err) => {
+            warn!("Error opening ini file while loading Floss devices for {}: {}", filename, err);
+            return false;
+        }
+    };
+    for (sec, props) in floss_map {
+        // Skip all the non-device sections
+        if !sec.contains(":") {
+            continue;
+        }
+        // Invalid entries have no DevType
+        if !props.contains_key("DevType") {
+            continue;
+        }
+        for (k, v) in props {
+            if k == "DevType" {
+                let val = v.unwrap_or_default().to_string();
+                // "1" BREDR, "2" LE, "3" DUAL
+                if val != "1" {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
+/// Check if there are any LE Floss devices in storage.
+fn floss_have_le_devices() -> bool {
+    let globbed = match glob(migrate::FLOSS_CONF_FILE) {
+        Ok(v) => v,
+        Err(_) => {
+            warn!("Didn't find Floss conf file to search devices");
+            return false;
+        }
+    };
+
+    for entry in globbed {
+        if config_with_le_device_entry(entry.unwrap_or_default().to_str().unwrap_or_default()) {
+            return true;
+        }
+    }
+    return false;
+}
+
 /// Implementation of IBluetoothExperimental
 impl IBluetoothExperimental for BluetoothManager {
     fn set_ll_privacy(&mut self, enabled: bool) -> bool {
@@ -223,17 +276,34 @@ impl IBluetoothExperimental for BluetoothManager {
             Ok(true) => true,
             _ => false,
         };
+        let current_address_status = match config_util::read_floss_address_privacy_enabled() {
+            Ok(true) => true,
+            _ => false,
+        };
 
-        if current_status == enabled {
-            return true;
+        let mut need_restart = current_status != enabled;
+
+        if current_status != enabled {
+            if let Err(e) = config_util::write_floss_ll_privacy_enabled(enabled) {
+                error!("Failed to write ll privacy status: {}", e);
+                return false;
+            }
         }
 
-        if let Err(e) = config_util::write_floss_ll_privacy_enabled(enabled) {
-            error!("Failed to write ll privacy status: {}", e);
-            return false;
+        // Make change only when LL privacy status is not consistent with address policy and
+        // there is no LE devices in storage.
+        if current_address_status != enabled && !floss_have_le_devices() {
+            // Keep address policy aligned with LL privacy status.
+            if let Err(e) = config_util::write_floss_address_privacy_enabled(enabled) {
+                error!("Failed to write address privacy status {}: {}", enabled, e);
+            } else {
+                need_restart = true;
+            }
         }
 
-        self.restart_adapters();
+        if need_restart {
+            self.restart_adapters();
+        }
 
         return true;
     }
