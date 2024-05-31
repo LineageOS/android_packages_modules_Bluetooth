@@ -547,6 +547,7 @@ impl CommandHandler {
                 let multi_adv_supported = adapter_dbus.is_multi_advertisement_supported();
                 let le_ext_adv_supported = adapter_dbus.is_le_extended_advertising_supported();
                 let wbs_supported = adapter_dbus.is_wbs_supported();
+                let le_audio_supported = adapter_dbus.is_le_audio_supported();
                 let supported_profiles = UuidHelper::get_supported_profiles();
                 let connected_profiles: Vec<(Profile, ProfileConnectionState)> = supported_profiles
                     .iter()
@@ -573,6 +574,7 @@ impl CommandHandler {
                 print_info!("IsLeExtendedAdvertisingSupported: {}", le_ext_adv_supported);
                 print_info!("Connected profiles: {:?}", connected_profiles);
                 print_info!("IsWbsSupported: {}", wbs_supported);
+                print_info!("IsLeAudioSupported: {}", le_audio_supported);
                 print_info!(
                     "Uuids: {}",
                     DisplayList(

@@ -34,6 +34,7 @@ class ControllerIntf {
 
   RawAddress read_local_addr() const;
   uint64_t get_ble_supported_states() const;
+  uint64_t get_ble_local_supported_features() const;
 
  private:
   const hci::ControllerInterface* controller_;
