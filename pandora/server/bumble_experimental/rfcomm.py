@@ -106,3 +106,9 @@ class RFCOMMService(RFCOMMServicer):
         self.server_uuid = None
 
         return StopServerResponse()
+
+    @utils.rpc
+    async def Receive(self, request: RxRequest, context: grpc.ServicerContext) -> RxResponse:
+        logging.info(f"Receive")
+        received_data = await self.data_queue.get()
+        return RxResponse(data=received_data)
