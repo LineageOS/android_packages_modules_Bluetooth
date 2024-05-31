@@ -244,6 +244,48 @@ class RfcommTest {
         }
     }
 
+    @Test
+    fun clientReceiveDataOverInsecureSocket() {
+        startServer {
+            val serverId = it
+            runBlocking { withTimeout(BOND_TIMEOUT.toMillis()) { bondDevice(mBumbleDevice) } }
+
+            val (insecureSocket, connection) = createAndConnectSocket(isSecure = false, serverId)
+            val buffer = ByteArray(64)
+            val socketIs = insecureSocket.inputStream
+            val data: ByteString =
+                ByteString.copyFromUtf8("Test data for clientReceiveDataOverInsecureSocket")
+
+            val txRequest =
+                RfcommProto.TxRequest.newBuilder().setConnection(connection).setData(data).build()
+            mBumble.rfcommBlocking().send(txRequest)
+            val numBytesFromBumble = socketIs.read(buffer)
+            Truth.assertThat(ByteString.copyFrom(buffer).substring(0, numBytesFromBumble))
+                .isEqualTo(data)
+        }
+    }
+
+    @Test
+    fun clientReceiveDataOverSecureSocket() {
+        startServer {
+            val serverId = it
+            runBlocking { withTimeout(BOND_TIMEOUT.toMillis()) { bondDevice(mBumbleDevice) } }
+
+            val (secureSocket, connection) = createAndConnectSocket(isSecure = true, serverId)
+            val buffer = ByteArray(64)
+            val socketIs = secureSocket.inputStream
+            val data: ByteString =
+                ByteString.copyFromUtf8("Test data for clientReceiveDataOverSecureSocket")
+
+            val txRequest =
+                RfcommProto.TxRequest.newBuilder().setConnection(connection).setData(data).build()
+            mBumble.rfcommBlocking().send(txRequest)
+            val numBytesFromBumble = socketIs.read(buffer)
+            Truth.assertThat(ByteString.copyFrom(buffer).substring(0, numBytesFromBumble))
+                .isEqualTo(data)
+        }
+    }
+
     private fun createAndConnectSocket(
         isSecure: Boolean,
         server: ServerId
