@@ -21,10 +21,10 @@ import static com.google.common.truth.Truth.assertThat;
 import androidx.test.filters.SmallTest;
 import androidx.test.runner.AndroidJUnit4;
 
-import java.util.Calendar;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.util.Calendar;
 
 @SmallTest
 @RunWith(AndroidJUnit4.class)

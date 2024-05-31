@@ -22,11 +22,11 @@ import android.bluetooth.BluetoothLeBroadcastMetadata;
 
 import com.google.common.primitives.Bytes;
 
-import java.util.Random;
-
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
+
+import java.util.Random;
 
 @RunWith(JUnit4.class)
 public class PublicBroadcastDataTest {

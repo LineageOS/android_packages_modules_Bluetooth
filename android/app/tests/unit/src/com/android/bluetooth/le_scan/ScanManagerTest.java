@@ -16,8 +16,8 @@
 
 package com.android.bluetooth.le_scan;
 
-import static android.bluetooth.BluetoothDevice.PHY_LE_CODED;
 import static android.bluetooth.BluetoothDevice.PHY_LE_1M_MASK;
+import static android.bluetooth.BluetoothDevice.PHY_LE_CODED;
 import static android.bluetooth.BluetoothDevice.PHY_LE_CODED_MASK;
 import static android.bluetooth.le.ScanSettings.CALLBACK_TYPE_ALL_MATCHES_AUTO_BATCH;
 import static android.bluetooth.le.ScanSettings.PHY_LE_ALL_SUPPORTED;

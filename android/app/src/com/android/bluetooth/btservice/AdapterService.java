@@ -154,9 +154,9 @@ import com.android.internal.annotations.VisibleForTesting;
 import com.android.modules.utils.BackgroundThread;
 import com.android.modules.utils.BytesMatcher;
 
-import com.google.protobuf.InvalidProtocolBufferException;
-
 import libcore.util.SneakyThrow;
+
+import com.google.protobuf.InvalidProtocolBufferException;
 
 import java.io.FileDescriptor;
 import java.io.FileOutputStream;

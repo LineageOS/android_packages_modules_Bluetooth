@@ -54,10 +54,9 @@ import androidx.test.runner.AndroidJUnit4;
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.CompanionManager;
-import com.android.bluetooth.gatt.GattObjectsFactory;
-import com.android.bluetooth.gatt.GattNativeInterface;
-
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.gatt.GattNativeInterface;
+import com.android.bluetooth.gatt.GattObjectsFactory;
 
 import org.junit.After;
 import org.junit.Before;
