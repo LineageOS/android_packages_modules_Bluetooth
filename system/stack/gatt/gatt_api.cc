@@ -56,7 +56,7 @@ using namespace bluetooth;
 using bluetooth::Uuid;
 
 /**
- * Add an service handle range to the list in decending order of the start
+ * Add a service handle range to the list in descending order of the start
  * handle. Return reference to the newly added element.
  **/
 tGATT_HDL_LIST_ELEM& gatt_add_an_item_to_list(uint16_t s_handle) {
@@ -83,7 +83,7 @@ tGATT_HDL_LIST_ELEM& gatt_add_an_item_to_list(uint16_t s_handle) {
  *                  NV save callback function.  There can be one and only one
  *                  NV save callback function.
  *
- * Parameter        p_cb_info : callback informaiton
+ * Parameter        p_cb_info : callback information
  *
  * Returns          true if registered OK, else false
  *
@@ -178,7 +178,7 @@ tGATT_STATUS GATTS_AddService(tGATT_IF gatt_if, btgatt_db_element_t* service,
   log::info("");
 
   if (!p_reg) {
-    log::error("Inavlid gatt_if={}", gatt_if);
+    log::error("Invalid gatt_if={}", gatt_if);
     return GATT_INTERNAL_ERROR;
   }
 
@@ -249,7 +249,7 @@ tGATT_STATUS GATTS_AddService(tGATT_IF gatt_if, btgatt_db_element_t* service,
 
       if (is_gatt_attr_type(uuid)) {
         log::error(
-            "attept to add characteristic with UUID equal to GATT Attribute "
+            "attempt to add characteristic with UUID equal to GATT Attribute "
             "Type {}",
             uuid);
         return GATT_INTERNAL_ERROR;
@@ -266,7 +266,7 @@ tGATT_STATUS GATTS_AddService(tGATT_IF gatt_if, btgatt_db_element_t* service,
     } else if (el->type == BTGATT_DB_DESCRIPTOR) {
       if (is_gatt_attr_type(uuid)) {
         log::error(
-            "attept to add descriptor with UUID equal to GATT Attribute Type "
+            "attempt to add descriptor with UUID equal to GATT Attribute Type "
             "{}",
             uuid);
         return GATT_INTERNAL_ERROR;
@@ -369,7 +369,7 @@ bool GATTS_DeleteService(tGATT_IF gatt_if, Uuid* p_svc_uuid,
 
   tGATT_REG* p_reg = gatt_get_regcb(gatt_if);
   if (p_reg == NULL) {
-    log::error("Applicaiton not foud");
+    log::error("Application not found");
     return false;
   }
 
@@ -439,7 +439,7 @@ void GATTS_StopService(uint16_t service_handle) {
  *                  val_len: Length of the indicated attribute value.
  *                  p_val: Pointer to the indicated attribute value data.
  *
- * Returns          GATT_SUCCESS if sucessfully sent or queued; otherwise error
+ * Returns          GATT_SUCCESS if successfully sent or queued; otherwise error
  *                  code.
  *
  ******************************************************************************/
@@ -492,7 +492,7 @@ tGATT_STATUS GATTS_HandleValueIndication(uint16_t conn_id, uint16_t attr_handle,
 }
 
 #if (GATT_UPPER_TESTER_MULT_VARIABLE_LENGTH_NOTIF == TRUE)
-static tGATT_STATUS GATTS_HandleMultileValueNotification(
+static tGATT_STATUS GATTS_HandleMultipleValueNotification(
     tGATT_TCB* p_tcb, std::vector<tGATT_VALUE> gatt_notif_vector) {
   log::info("");
 
@@ -535,7 +535,7 @@ static tGATT_STATUS GATTS_HandleMultileValueNotification(
  *                  val_len: Length of the indicated attribute value.
  *                  p_val: Pointer to the indicated attribute value data.
  *
- * Returns          GATT_SUCCESS if sucessfully sent; otherwise error code.
+ * Returns          GATT_SUCCESS if successfully sent; otherwise error code.
  *
  ******************************************************************************/
 tGATT_STATUS GATTS_HandleValueNotification(uint16_t conn_id,
@@ -592,7 +592,7 @@ tGATT_STATUS GATTS_HandleValueNotification(uint16_t conn_id,
 
       notif.auth_req = GATT_AUTH_REQ_NONE;
 
-      return GATTS_HandleMultileValueNotification(p_tcb, gatt_notif_vector);
+      return GATTS_HandleMultipleValueNotification(p_tcb, gatt_notif_vector);
     }
 
     log::error("PTS Mode: Invalid tcb_idx: {}, cached_tcb_idx: {}", tcb_idx,
@@ -634,7 +634,7 @@ tGATT_STATUS GATTS_HandleValueNotification(uint16_t conn_id,
  *                  status: response status
  *                  p_msg: pointer to message parameters structure.
  *
- * Returns          GATT_SUCCESS if sucessfully sent; otherwise error code.
+ * Returns          GATT_SUCCESS if successfully sent; otherwise error code.
  *
  ******************************************************************************/
 tGATT_STATUS GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id,
@@ -741,7 +741,7 @@ tGATT_STATUS GATTC_ConfigureMTU(uint16_t conn_id, uint16_t mtu) {
  * Function         GATTC_TryMtuRequest
  *
  * Description      This function shall be called before calling
- *                  GATTC_ConfgureMTU in order to check if operation is
+ *                  GATTC_ConfigureMTU in order to check if operation is
  *                  available to do.
  *
  * Parameters        remote_bda : peer device address. (input)
@@ -1136,7 +1136,7 @@ tGATT_STATUS GATTC_SendHandleValueConfirm(uint16_t conn_id, uint16_t cid) {
   }
 
   if (p_tcb->ind_count == 0) {
-    log::info("conn_id: 0x{:04x} ignored not waiting for indicaiton ack",
+    log::info("conn_id: 0x{:04x} ignored not waiting for indication ack",
               conn_id);
     return GATT_SUCCESS;
   }
@@ -1162,7 +1162,7 @@ tGATT_STATUS GATTC_SendHandleValueConfirm(uint16_t conn_id, uint16_t cid) {
  * Function         GATT_SetIdleTimeout
  *
  * Description      This function (common to both client and server) sets the
- *                  idle timeout for a tansport connection
+ *                  idle timeout for a transport connection
  *
  * Parameter        bd_addr:   target device bd address.
  *                  idle_tout: timeout value in seconds.
@@ -1265,7 +1265,7 @@ tGATT_IF GATT_Register(const Uuid& app_uuid128, const std::string& name,
  *
  * Description      This function deregistered the application from GATT.
  *
- * Parameters       gatt_if: applicaiton interface.
+ * Parameters       gatt_if: application interface.
  *
  * Returns          None.
  *
@@ -1281,9 +1281,9 @@ void GATT_Deregister(tGATT_IF gatt_if) {
   }
 
   /* stop all services  */
-  /* todo an applcaiton can not be deregistered if its services is also used by
+  /* todo an application can not be deregistered if its services is also used by
     other application
-    deregisteration need to bed performed in an orderly fashion
+    deregistration need to be performed in an orderly fashion
     no check for now */
   for (auto it = gatt_cb.srv_list_info->begin();
        it != gatt_cb.srv_list_info->end();) {
@@ -1339,7 +1339,7 @@ void GATT_Deregister(tGATT_IF gatt_if) {
  *                  receiving callbacks for registered interface.  Function may
  *                  call back with connection status and queued notifications
  *
- * Parameter        gatt_if: applicaiton interface.
+ * Parameter        gatt_if: application interface.
  *
  * Returns          None.
  *
@@ -1379,12 +1379,12 @@ void GATT_StartIf(tGATT_IF gatt_if) {
  *
  * Function         GATT_Connect
  *
- * Description      This function initiate a connecttion to a remote device on
+ * Description      This function initiate a connection to a remote device on
  *                  GATT channel.
  *
- * Parameters       gatt_if: applicaiton interface
+ * Parameters       gatt_if: application interface
  *                  bd_addr: peer device address.
- *                  connection_type: is a direct conenection or a background
+ *                  connection_type: is a direct connection or a background
  *                  auto connection or targeted announcements
  *
  * Returns          true if connection started; false if connection start
@@ -1518,7 +1518,7 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr,
  *
  * Function         GATT_CancelConnect
  *
- * Description      This function terminate the connection initaition to a
+ * Description      This function terminates the connection initiation to a
  *                  remote device on GATT channel.
  *
  * Parameters       gatt_if: client interface. If 0 used as unconditionally
@@ -1614,10 +1614,10 @@ tGATT_STATUS GATT_Disconnect(uint16_t conn_id) {
  *                  and application interface
  *
  * Parameters        conn_id: connection id  (input)
- *                   p_gatt_if: applicaiton interface (output)
+ *                   p_gatt_if: application interface (output)
  *                   bd_addr: peer device address. (output)
  *
- * Returns          true the ligical link information is found for conn_id
+ * Returns          true the logical link information is found for conn_id
  *
  ******************************************************************************/
 bool GATT_GetConnectionInfor(uint16_t conn_id, tGATT_IF* p_gatt_if,
@@ -1641,10 +1641,10 @@ bool GATT_GetConnectionInfor(uint16_t conn_id, tGATT_IF* p_gatt_if,
  *
  * Function         GATT_GetConnIdIfConnected
  *
- * Description      This function find the conn_id if the logical link for BD
- *                  address and applciation interface is connected
+ * Description      This function finds the conn_id if the logical link for BD
+ *                  address and application interface is connected
  *
- * Parameters        gatt_if: applicaiton interface (input)
+ * Parameters        gatt_if: application interface (input)
  *                   bd_addr: peer device address. (input)
  *                   p_conn_id: connection id  (output)
  *                   transport: transport option
@@ -1686,7 +1686,7 @@ static bool gatt_load_bonded_is_enabled() {
 
 /* Initialize GATTS list of bonded device service change updates.
  *
- * Addresses for bonded devices (publict for BR/EDR or pseudo for BLE) are added
+ * Addresses for bonded devices (public for BR/EDR or pseudo for BLE) are added
  * to GATTS service change control list so that updates are sent to bonded
  * devices on next connect after any handles for GATTS services change due to
  * services added/removed.
