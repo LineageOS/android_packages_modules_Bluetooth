@@ -206,3 +206,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "le_scan_use_address_type"
+    namespace: "bluetooth"
+    description: "Fix an issue that le scanner omits athe ddress type for MATCH_FIRST scan"
+    bug: "342127181"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
