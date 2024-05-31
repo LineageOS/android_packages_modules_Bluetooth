@@ -49,6 +49,11 @@ uint64_t ControllerIntf::get_ble_supported_states() const {
   return controller_->GetLeSupportedStates();
 }
 
+uint64_t ControllerIntf::get_ble_local_supported_features() const {
+  if (!controller_) std::abort();
+  return controller_->GetControllerLeLocalSupportedFeatures();
+}
+
 }  // namespace rust
 }  // namespace topshim
 }  // namespace bluetooth
