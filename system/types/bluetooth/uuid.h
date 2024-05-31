@@ -47,9 +47,6 @@ class Uuid final {
 
   Uuid() = default;
 
-  // Creates and returns a random 128-bit UUID.
-  static Uuid GetRandom();
-
   // Returns the shortest possible representation of this UUID in bytes. Either
   // kNumBytes16, kNumBytes32, or kNumBytes128
   size_t GetShortestRepresentationSize() const;

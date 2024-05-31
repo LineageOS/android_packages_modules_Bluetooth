@@ -155,6 +155,9 @@ cc_library_static {
         "libcom.android.sysprop.bluetooth.wrapped",
         "liblc3",
     ],
+    shared_libs: [
+        "libcrypto",
+    ],
     generated_headers: [
         "LeAudioSetConfigSchemas_h",
     ],
@@ -219,6 +222,9 @@ cc_library_static {
         "libcom.android.sysprop.bluetooth.wrapped",
         "libflatbuffers-cpp",
         "server_configurable_flags",
+    ],
+    shared_libs: [
+        "libcrypto",
     ],
     apex_available: [
         "com.android.btservices",

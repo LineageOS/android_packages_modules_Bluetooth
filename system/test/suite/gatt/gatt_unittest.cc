@@ -21,13 +21,15 @@
 #include <unistd.h>
 
 #include "gatt/gatt_test.h"
+#include "gd/os/rand.h"
 #include "types/bluetooth/uuid.h"
 
 namespace bttest {
 
 TEST_F(GattTest, GattClientRegister) {
   // Registers gatt client.
-  bluetooth::Uuid gatt_client_uuid = bluetooth::Uuid::GetRandom();
+  bluetooth::Uuid gatt_client_uuid = bluetooth::Uuid::From128BitBE(
+      bluetooth::os::GenerateRandom<bluetooth::Uuid::kNumBytes128>());
   gatt_client_interface()->register_client(gatt_client_uuid, false);
   semaphore_wait(register_client_callback_sem_);
   EXPECT_TRUE(status() == BT_STATUS_SUCCESS)
@@ -39,7 +41,8 @@ TEST_F(GattTest, GattClientRegister) {
 
 TEST_F(GattTest, GattServerRegister) {
   // Registers gatt server.
-  bluetooth::Uuid gatt_server_uuid = bluetooth::Uuid::GetRandom();
+  bluetooth::Uuid gatt_server_uuid = bluetooth::Uuid::From128BitBE(
+      bluetooth::os::GenerateRandom<bluetooth::Uuid::kNumBytes128>());
   gatt_server_interface()->register_server(gatt_server_uuid, false);
   semaphore_wait(register_server_callback_sem_);
   EXPECT_TRUE(status() == BT_STATUS_SUCCESS)
@@ -51,20 +54,24 @@ TEST_F(GattTest, GattServerRegister) {
 
 TEST_F(GattTest, GattServerBuild) {
   // Registers gatt server.
-  bluetooth::Uuid gatt_server_uuid = bluetooth::Uuid::GetRandom();
+  bluetooth::Uuid gatt_server_uuid = bluetooth::Uuid::From128BitBE(
+      bluetooth::os::GenerateRandom<bluetooth::Uuid::kNumBytes128>());
   gatt_server_interface()->register_server(gatt_server_uuid, false);
   semaphore_wait(register_server_callback_sem_);
   EXPECT_TRUE(status() == BT_STATUS_SUCCESS)
       << "Error registering GATT server app callback.";
 
   // Service UUID.
-  bluetooth::Uuid srvc_uuid = bluetooth::Uuid::GetRandom();
+  bluetooth::Uuid srvc_uuid = bluetooth::Uuid::From128BitBE(
+      bluetooth::os::GenerateRandom<bluetooth::Uuid::kNumBytes128>());
 
   // Characteristics UUID.
-  bluetooth::Uuid char_uuid = bluetooth::Uuid::GetRandom();
+  bluetooth::Uuid char_uuid = bluetooth::Uuid::From128BitBE(
+      bluetooth::os::GenerateRandom<bluetooth::Uuid::kNumBytes128>());
 
   // Descriptor UUID.
-  bluetooth::Uuid desc_uuid = bluetooth::Uuid::GetRandom();
+  bluetooth::Uuid desc_uuid = bluetooth::Uuid::From128BitBE(
+      bluetooth::os::GenerateRandom<bluetooth::Uuid::kNumBytes128>());
 
   // Adds service.
   int server_if = server_interface_id();

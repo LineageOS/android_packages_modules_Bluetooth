@@ -2186,6 +2186,7 @@ cc_test {
         "liblog",
     ],
     shared_libs: [
+        "libcrypto",
         "libcutils",
         "server_configurable_flags",
     ],
