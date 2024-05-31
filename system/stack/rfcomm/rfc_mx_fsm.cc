@@ -123,7 +123,8 @@ void rfc_mx_sm_execute(tRFC_MCB* p_mcb, tRFC_MX_EVENT event, void* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-void rfc_mx_sm_state_idle(tRFC_MCB* p_mcb, tRFC_MX_EVENT event, void* p_data) {
+void rfc_mx_sm_state_idle(tRFC_MCB* p_mcb, tRFC_MX_EVENT event,
+                          void* /* p_data */) {
   switch (event) {
     case RFC_MX_EVENT_START_REQ: {
       /* Initialize L2CAP MTU */
@@ -646,7 +647,7 @@ void rfc_on_l2cap_error(uint16_t lcid, uint16_t result) {
  *                  on DLCI 0.  T1 is still running.
  *
  ******************************************************************************/
-static void rfc_mx_conf_cnf(tRFC_MCB* p_mcb, uint16_t result) {
+static void rfc_mx_conf_cnf(tRFC_MCB* p_mcb, uint16_t /* result */) {
   if (p_mcb->state == RFC_MX_STATE_CONFIGURE) {
     if (p_mcb->is_initiator) {
       p_mcb->state = RFC_MX_STATE_SABME_WAIT_UA;

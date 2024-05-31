@@ -275,7 +275,7 @@ static tGATT_STATUS read_attr_value(tGATT_ATTR& attr16, uint16_t offset,
  ******************************************************************************/
 tGATT_STATUS gatts_db_read_attr_value_by_type(
     tGATT_TCB& tcb, uint16_t cid, tGATT_SVC_DB* p_db, uint8_t op_code,
-    BT_HDR* p_rsp, uint16_t s_handle, uint16_t e_handle, const Uuid& type,
+    BT_HDR* p_rsp, uint16_t s_handle, uint16_t /* e_handle */, const Uuid& type,
     uint16_t* p_len, tGATT_SEC_FLAG sec_flag, uint8_t key_size,
     uint32_t trans_id, uint16_t* p_cur_handle) {
   tGATT_STATUS status = GATT_NOT_FOUND;

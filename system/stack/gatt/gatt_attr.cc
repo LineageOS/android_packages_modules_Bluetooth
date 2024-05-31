@@ -34,9 +34,6 @@
 #include "gatt_api.h"
 #include "gatt_int.h"
 #include "internal_include/bt_target.h"
-#include "internal_include/bt_trace.h"
-#include "os/log.h"
-#include "os/logging/log_adapter.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_sec_api.h"
@@ -365,7 +362,7 @@ static void gatt_request_cback(uint16_t conn_id, uint32_t trans_id,
  ******************************************************************************/
 static void gatt_connect_cback(tGATT_IF /* gatt_if */, const RawAddress& bda,
                                uint16_t conn_id, bool connected,
-                               tGATT_DISCONN_REASON reason,
+                               tGATT_DISCONN_REASON /* reason */,
                                tBT_TRANSPORT transport) {
   log::verbose("from {} connected: {}, conn_id: 0x{:x}", bda, connected,
                conn_id);
@@ -518,7 +515,8 @@ static void gatt_disc_res_cback(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
  * Returns          void
  *
  ******************************************************************************/
-static void gatt_disc_cmpl_cback(uint16_t conn_id, tGATT_DISC_TYPE disc_type,
+static void gatt_disc_cmpl_cback(uint16_t conn_id,
+                                 tGATT_DISC_TYPE /* disc_type */,
                                  tGATT_STATUS status) {
   tGATT_PROFILE_CLCB* p_clcb = gatt_profile_find_clcb_by_conn_id(conn_id);
   if (p_clcb == NULL) {
@@ -560,8 +558,8 @@ static bool gatt_svc_read_cl_supp_feat_req(uint16_t conn_id) {
 
   gatt_op_cb_data cb_data;
 
-  cb_data.cb =
-      base::BindOnce([](const RawAddress& bdaddr, uint8_t support) { return; });
+  cb_data.cb = base::BindOnce(
+      [](const RawAddress& /* bdaddr */, uint8_t /* support */) { return; });
   cb_data.op_uuid = GATT_UUID_CLIENT_SUP_FEAT;
   OngoingOps[conn_id].emplace_back(std::move(cb_data));
 
@@ -624,8 +622,8 @@ static void gatt_cl_op_cmpl_cback(uint16_t conn_id, tGATTC_OPTYPE op,
       iter->second.pop_front();
       /* Read server supported features here supported */
       read_sr_supported_feat_req(
-          conn_id, base::BindOnce([](const RawAddress& bdaddr,
-                                     uint8_t support) { return; }));
+          conn_id, base::BindOnce([](const RawAddress& /* bdaddr */,
+                                     uint8_t /* support */) { return; }));
     } else {
       log::debug("Not interested in that write response");
     }
@@ -750,8 +748,8 @@ static void gatt_cl_start_config_ccc(tGATT_PROFILE_CLCB* p_clcb) {
       }
 
       gatt_op_cb_data cb_data;
-      cb_data.cb = base::BindOnce(
-          [](const RawAddress& bdaddr, uint8_t support) { return; });
+      cb_data.cb = base::BindOnce([](const RawAddress& /* bdaddr */,
+                                     uint8_t /* support */) { return; });
       cb_data.op_uuid = GATT_UUID_GATT_SRV_CHGD;
       OngoingOps[p_clcb->conn_id].emplace_back(std::move(cb_data));
 
@@ -769,8 +767,8 @@ static void gatt_cl_start_config_ccc(tGATT_PROFILE_CLCB* p_clcb) {
  * Returns          none
  *
  ******************************************************************************/
-void GATT_ConfigServiceChangeCCC(const RawAddress& remote_bda, bool enable,
-                                 tBT_TRANSPORT transport) {
+void GATT_ConfigServiceChangeCCC(const RawAddress& remote_bda,
+                                 bool /* enable */, tBT_TRANSPORT transport) {
   tGATT_PROFILE_CLCB* p_clcb =
       gatt_profile_find_clcb_by_bd_addr(remote_bda, transport);
 
