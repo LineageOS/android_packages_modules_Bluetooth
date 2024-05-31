@@ -426,8 +426,9 @@ void sdp_init(void) {
   sdp_cb.reg_info.pL2CA_Error_Cb = sdp_on_l2cap_error;
 
   /* Now, register with L2CAP */
-  if (!L2CA_Register2(BT_PSM_SDP, sdp_cb.reg_info, true /* enable_snoop */,
-                      nullptr, SDP_MTU_SIZE, 0, BTM_SEC_NONE)) {
+  if (!L2CA_RegisterWithSecurity(BT_PSM_SDP, sdp_cb.reg_info,
+                                 true /* enable_snoop */, nullptr, SDP_MTU_SIZE,
+                                 0, BTM_SEC_NONE)) {
     log::error("SDP Registration failed");
   }
 }

@@ -138,8 +138,8 @@ void gatt_init(void) {
       osi_property_get_bool("bluetooth.gatt.over_bredr.enabled", true);
   /* Now, register with L2CAP for ATT PSM over BR/EDR */
   if (gatt_cb.over_br_enabled &&
-      !L2CA_Register2(BT_PSM_ATT, dyn_info, false /* enable_snoop */, nullptr,
-                      GATT_MAX_MTU_SIZE, 0, BTM_SEC_NONE)) {
+      !L2CA_RegisterWithSecurity(BT_PSM_ATT, dyn_info, false /* enable_snoop */,
+                                 nullptr, GATT_MAX_MTU_SIZE, 0, BTM_SEC_NONE)) {
     log::error("ATT Dynamic Registration failed");
   }
 

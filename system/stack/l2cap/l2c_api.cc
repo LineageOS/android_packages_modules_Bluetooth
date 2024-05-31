@@ -65,10 +65,10 @@ tBT_TRANSPORT l2c_get_transport_from_fixed_cid(uint16_t fixed_cid) {
   return BT_TRANSPORT_BR_EDR;
 }
 
-uint16_t L2CA_Register2(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
-                        bool enable_snoop, tL2CAP_ERTM_INFO* p_ertm_info,
-                        uint16_t my_mtu, uint16_t required_remote_mtu,
-                        uint16_t sec_level) {
+uint16_t L2CA_RegisterWithSecurity(
+    uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info, bool enable_snoop,
+    tL2CAP_ERTM_INFO* p_ertm_info, uint16_t my_mtu,
+    uint16_t required_remote_mtu, uint16_t sec_level) {
   auto ret = L2CA_Register(psm, p_cb_info, enable_snoop, p_ertm_info, my_mtu,
                            required_remote_mtu, sec_level);
   get_btm_client_interface().security.BTM_SetSecurityLevel(

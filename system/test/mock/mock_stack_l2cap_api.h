@@ -49,11 +49,11 @@ struct l2c_get_transport_from_fixed_cid {
   tBT_TRANSPORT operator()(uint16_t fixed_cid) { return body(fixed_cid); };
 };
 extern struct l2c_get_transport_from_fixed_cid l2c_get_transport_from_fixed_cid;
-// Name: L2CA_Register2
+// Name: L2CA_RegisterWithSecurity
 // Params: uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info, bool enable_snoop,
 // tL2CAP_ERTM_INFO* p_ertm_info, uint16_t my_mtu, uint16_t required_remote_mtu,
 // uint16_t sec_level Returns: uint16_t
-struct L2CA_Register2 {
+struct L2CA_RegisterWithSecurity {
   std::function<uint16_t(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
                          bool enable_snoop, tL2CAP_ERTM_INFO* p_ertm_info,
                          uint16_t my_mtu, uint16_t required_remote_mtu,
@@ -70,7 +70,7 @@ struct L2CA_Register2 {
                 required_remote_mtu, sec_level);
   };
 };
-extern struct L2CA_Register2 L2CA_Register2;
+extern struct L2CA_RegisterWithSecurity L2CA_RegisterWithSecurity;
 // Name: L2CA_Register
 // Params: uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info, bool enable_snoop,
 // tL2CAP_ERTM_INFO* p_ertm_info, uint16_t my_mtu, uint16_t required_remote_mtu,

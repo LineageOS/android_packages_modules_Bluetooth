@@ -582,9 +582,9 @@ tHID_STATUS hidd_conn_reg(void) {
   hd_cb.l2cap_intr_cfg.mtu_present = TRUE;
   hd_cb.l2cap_intr_cfg.mtu = HID_DEV_MTU_SIZE;
 
-  if (!L2CA_Register2(HID_PSM_CONTROL, dev_reg_info, false /* enable_snoop */,
-                      nullptr, HID_DEV_MTU_SIZE, 0,
-                      BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)) {
+  if (!L2CA_RegisterWithSecurity(
+          HID_PSM_CONTROL, dev_reg_info, false /* enable_snoop */, nullptr,
+          HID_DEV_MTU_SIZE, 0, BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)) {
     log::error("HID Control (device) registration failed");
     log_counter_metrics(android::bluetooth::CodePathCounterKeyEnum::
                             HIDD_ERR_L2CAP_FAILED_CONTROL,
@@ -592,9 +592,9 @@ tHID_STATUS hidd_conn_reg(void) {
     return (HID_ERR_L2CAP_FAILED);
   }
 
-  if (!L2CA_Register2(HID_PSM_INTERRUPT, dev_reg_info, false /* enable_snoop */,
-                      nullptr, HID_DEV_MTU_SIZE, 0,
-                      BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)) {
+  if (!L2CA_RegisterWithSecurity(
+          HID_PSM_INTERRUPT, dev_reg_info, false /* enable_snoop */, nullptr,
+          HID_DEV_MTU_SIZE, 0, BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)) {
     L2CA_Deregister(HID_PSM_CONTROL);
     log::error("HID Interrupt (device) registration failed");
     log_counter_metrics(android::bluetooth::CodePathCounterKeyEnum::
