@@ -16,7 +16,6 @@
 
 #include "test/fake/fake_thread.h"
 
-#include <base/strings/stringprintf.h>
 #include <bluetooth/log.h>
 #include <gtest/gtest.h>
 #include <stdlib.h>

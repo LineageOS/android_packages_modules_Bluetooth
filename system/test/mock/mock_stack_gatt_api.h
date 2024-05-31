@@ -28,8 +28,6 @@
 
 // Original included files, if any
 
-#include <base/strings/string_number_conversions.h>
-
 #include <string>
 
 #include "stack/include/gatt_api.h"

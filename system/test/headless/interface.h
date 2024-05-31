@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include <base/strings/stringprintf.h>
 #include <bluetooth/log.h>
 
 #include <deque>
@@ -48,6 +47,7 @@ inline std::string callback_text(const Callback& callback) {
     CASE_RETURN_TEXT(Callback::DiscoveryStateChanged);
     CASE_RETURN_TEXT(Callback::RemoteDeviceProperties);
   }
+  RETURN_UNKNOWN_TYPE_STRING(Callback, callback);
 }
 
 struct callback_data_t {
@@ -144,15 +144,15 @@ struct acl_state_changed_params_t : public callback_params_t {
   uint16_t acl_handle;
 
   std::string ToString() const override {
-    return base::StringPrintf(
-        "status:%s remote_bd_addr:%s state:%s transport:%s reason:%s"
-        " direction:%s handle:%hu",
-        bt_status_text(status).c_str(), remote_bd_addr.ToString().c_str(),
+    return fmt::format(
+        "status:{} remote_bd_addr:{} state:{} transport:{} reason:{}"
+        " direction:{} handle:{}",
+        bt_status_text(status), remote_bd_addr.ToString(),
         (state == BT_ACL_STATE_CONNECTED) ? "CONNECTED" : "DISCONNECTED",
-        bt_transport_text(static_cast<const tBT_TRANSPORT>(transport_link_type))
-            .c_str(),
-        bt_status_text(static_cast<const bt_status_t>(hci_reason)).c_str(),
-        bt_conn_direction_text(direction).c_str(), acl_handle);
+        bt_transport_text(
+            static_cast<const tBT_TRANSPORT>(transport_link_type)),
+        bt_status_text(static_cast<const bt_status_t>(hci_reason)),
+        bt_conn_direction_text(direction), acl_handle);
   }
 };
 
@@ -168,8 +168,7 @@ struct discovery_state_changed_params_t : public callback_params_t {
 
   bt_discovery_state_t state;
   std::string ToString() const override {
-    return base::StringPrintf("state:%s",
-                              bt_discovery_state_text(state).c_str());
+    return fmt::format("state:{}", bt_discovery_state_text(state));
   }
 };
 
@@ -187,8 +186,8 @@ struct adapter_properties_params_t : public callback_params_with_properties_t {
   bt_status_t status;
 
   std::string ToString() const override {
-    return base::StringPrintf("status:%s num_properties:%zu",
-                              bt_status_text(status).c_str(), num_properties());
+    return fmt::format("status:{} num_properties:{}", bt_status_text(status),
+                       num_properties());
   }
 };
 
@@ -210,9 +209,9 @@ struct remote_device_properties_params_t
   RawAddress bd_addr;
 
   std::string ToString() const override {
-    return base::StringPrintf("status:%s bd_addr:%s num_properties:%zu",
-                              bt_status_text(status).c_str(),
-                              bd_addr.ToString().c_str(), num_properties());
+    return fmt::format("status:{} bd_addr:{} num_properties:{}",
+                       bt_status_text(status), bd_addr.ToString(),
+                       num_properties());
   }
 };
 
@@ -225,7 +224,7 @@ struct device_found_params_t : public callback_params_with_properties_t {
   virtual ~device_found_params_t() {}
 
   std::string ToString() const override {
-    return base::StringPrintf("num_properties:%zu", num_properties());
+    return fmt::format("num_properties:{}", num_properties());
   }
 };
 
