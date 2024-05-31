@@ -22,6 +22,7 @@
 
 #include <cstdint>
 
+#include "gd/os/rand.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
@@ -138,7 +139,8 @@ class StackSdpAsClientParseTest : public StackSdpParserInitTest {
 
   tCONN_CB* p_ccb_{nullptr};
   const bluetooth::Uuid p_uuid_list[1]{
-      bluetooth::Uuid::GetRandom(),
+      bluetooth::Uuid::From128BitBE(
+          bluetooth::os::GenerateRandom<bluetooth::Uuid::kNumBytes128>()),
   };
 
   void parse_sdp_responses(const bluetooth::testing::raw_packet_t* pkts,
