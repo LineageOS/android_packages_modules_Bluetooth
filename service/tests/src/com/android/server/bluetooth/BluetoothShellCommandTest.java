@@ -56,8 +56,7 @@ import java.io.PrintWriter;
 public class BluetoothShellCommandTest {
     @Rule public final Expect expect = Expect.create();
 
-    @Mock
-    BluetoothManagerService mManagerService;
+    @Mock BluetoothManagerService mManagerService;
 
     @Mock BluetoothServiceBinder mBinder;
 
@@ -70,8 +69,12 @@ public class BluetoothShellCommandTest {
 
         mShellCommand = new BluetoothShellCommand(mManagerService);
         mShellCommand.init(
-                mock(Binder.class), mock(FileDescriptor.class), mock(FileDescriptor.class),
-                mock(FileDescriptor.class), new String[0], -1);
+                mock(Binder.class),
+                mock(FileDescriptor.class),
+                mock(FileDescriptor.class),
+                mock(FileDescriptor.class),
+                new String[0],
+                -1);
     }
 
     @After
@@ -112,15 +115,13 @@ public class BluetoothShellCommandTest {
 
         expect.that(waitCmd.getName()).isEqualTo("wait-for-state");
         String[] validCmd = {
-            "wait-for-state:STATE_OFF",
-            "wait-for-state:STATE_ON",
+            "wait-for-state:STATE_OFF", "wait-for-state:STATE_ON",
         };
         for (String m : validCmd) {
             expect.that(waitCmd.isMatch(m)).isTrue();
         }
         String[] falseCmd = {
-            "wait-for-stateSTATE_ON",
-            "wait-for-foo:STATE_ON",
+            "wait-for-stateSTATE_ON", "wait-for-foo:STATE_ON",
         };
         for (String m : falseCmd) {
             expect.that(waitCmd.isMatch(m)).isFalse();

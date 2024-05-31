@@ -30,8 +30,7 @@ class BluetoothServerProxy {
     private static final Object INSTANCE_LOCK = new Object();
     private static BluetoothServerProxy sInstance;
 
-    private BluetoothServerProxy() {
-    }
+    private BluetoothServerProxy() {}
 
     /**
      * Get the singleton instance of proxy
