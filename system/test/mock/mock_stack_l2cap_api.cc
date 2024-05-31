@@ -40,7 +40,7 @@ struct L2CA_Register L2CA_Register;
 struct L2CA_Deregister L2CA_Deregister;
 struct L2CA_AllocateLePSM L2CA_AllocateLePSM;
 struct L2CA_FreeLePSM L2CA_FreeLePSM;
-struct L2CA_ConnectReq2 L2CA_ConnectReq2;
+struct L2CA_ConnectReqWithSecurity L2CA_ConnectReqWithSecurity;
 struct L2CA_ConnectReq L2CA_ConnectReq;
 struct L2CA_RegisterLECoc L2CA_RegisterLECoc;
 struct L2CA_DeregisterLECoc L2CA_DeregisterLECoc;
@@ -114,11 +114,11 @@ void L2CA_FreeLePSM(uint16_t psm) {
   inc_func_call_count(__func__);
   test::mock::stack_l2cap_api::L2CA_FreeLePSM(psm);
 }
-uint16_t L2CA_ConnectReq2(uint16_t psm, const RawAddress& p_bd_addr,
-                          uint16_t sec_level) {
+uint16_t L2CA_ConnectReqWithSecurity(uint16_t psm, const RawAddress& p_bd_addr,
+                                     uint16_t sec_level) {
   inc_func_call_count(__func__);
-  return test::mock::stack_l2cap_api::L2CA_ConnectReq2(psm, p_bd_addr,
-                                                       sec_level);
+  return test::mock::stack_l2cap_api::L2CA_ConnectReqWithSecurity(
+      psm, p_bd_addr, sec_level);
 }
 uint16_t L2CA_ConnectReq(uint16_t psm, const RawAddress& p_bd_addr) {
   inc_func_call_count(__func__);

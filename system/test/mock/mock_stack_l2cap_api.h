@@ -117,10 +117,10 @@ struct L2CA_FreeLePSM {
   void operator()(uint16_t psm) { body(psm); };
 };
 extern struct L2CA_FreeLePSM L2CA_FreeLePSM;
-// Name: L2CA_ConnectReq2
+// Name: L2CA_ConnectReqWithSecurity
 // Params: uint16_t psm, const RawAddress& p_bd_addr, uint16_t sec_level
 // Returns: uint16_t
-struct L2CA_ConnectReq2 {
+struct L2CA_ConnectReqWithSecurity {
   std::function<uint16_t(uint16_t psm, const RawAddress& p_bd_addr,
                          uint16_t sec_level)>
       body{[](uint16_t /* psm */, const RawAddress& /* p_bd_addr */,
@@ -130,7 +130,7 @@ struct L2CA_ConnectReq2 {
     return body(psm, p_bd_addr, sec_level);
   };
 };
-extern struct L2CA_ConnectReq2 L2CA_ConnectReq2;
+extern struct L2CA_ConnectReqWithSecurity L2CA_ConnectReqWithSecurity;
 // Name: L2CA_ConnectReq
 // Params: uint16_t psm, const RawAddress& p_bd_addr
 // Returns: uint16_t

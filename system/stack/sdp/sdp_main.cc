@@ -286,7 +286,7 @@ tCONN_CB* sdp_conn_originate(const RawAddress& bd_addr) {
   if (!bluetooth::common::init_flags::sdp_serialization_is_enabled() ||
       cid == 0) {
     p_ccb->con_state = SDP_STATE_CONN_SETUP;
-    cid = L2CA_ConnectReq2(BT_PSM_SDP, bd_addr, BTM_SEC_NONE);
+    cid = L2CA_ConnectReqWithSecurity(BT_PSM_SDP, bd_addr, BTM_SEC_NONE);
   } else {
     p_ccb->con_state = SDP_STATE_CONN_PEND;
     log::warn("SDP already active for peer {}. cid={:#0x}", bd_addr, cid);

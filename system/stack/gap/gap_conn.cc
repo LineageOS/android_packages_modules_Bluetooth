@@ -279,7 +279,7 @@ uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
 
     /* Check if L2CAP started the connection process */
     if (p_rem_bda && (transport == BT_TRANSPORT_BR_EDR)) {
-      cid = L2CA_ConnectReq2(p_ccb->psm, *p_rem_bda, security);
+      cid = L2CA_ConnectReqWithSecurity(p_ccb->psm, *p_rem_bda, security);
       if (cid != 0) {
         p_ccb->connection_id = cid;
         return (p_ccb->gap_handle);

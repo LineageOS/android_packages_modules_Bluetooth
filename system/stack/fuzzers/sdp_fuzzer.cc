@@ -83,7 +83,7 @@ class FakeL2cap {
   FakeL2cap() {
     test::mock::stack_l2cap_api::L2CA_ConnectReq.body =
         [](uint16_t psm, const RawAddress& raw_address) { return kDummyCID; };
-    test::mock::stack_l2cap_api::L2CA_ConnectReq2.body =
+    test::mock::stack_l2cap_api::L2CA_ConnectReqWithSecurity.body =
         [](uint16_t psm, const RawAddress& p_bd_addr, uint16_t sec_level) {
           return L2CA_ConnectReq(psm, p_bd_addr);
         };
@@ -107,7 +107,7 @@ class FakeL2cap {
 
   ~FakeL2cap() {
     test::mock::stack_l2cap_api::L2CA_ConnectReq = {};
-    test::mock::stack_l2cap_api::L2CA_ConnectReq2 = {};
+    test::mock::stack_l2cap_api::L2CA_ConnectReqWithSecurity = {};
     test::mock::stack_l2cap_api::L2CA_DataWrite = {};
     test::mock::stack_l2cap_api::L2CA_DisconnectReq = {};
     test::mock::stack_l2cap_api::L2CA_Register2 = {};
