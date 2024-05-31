@@ -29,7 +29,6 @@
 #include "crypto_toolbox/crypto_toolbox.h"
 #include "device/include/interop.h"
 #include "internal_include/bt_target.h"
-#include "os/log.h"
 #include "p_256_ecc_pp.h"
 #include "smp_int.h"
 #include "stack/btm/btm_ble_sec.h"
@@ -287,7 +286,7 @@ void smp_send_pair_fail(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  * Function     smp_send_pair_req
  * Description  actions related to sending pairing request
  ******************************************************************************/
-void smp_send_pair_req(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+void smp_send_pair_req(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(p_cb->pairing_bda);
   log::verbose("addr:{}", p_cb->pairing_bda);
 
@@ -302,7 +301,7 @@ void smp_send_pair_req(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  * Function     smp_send_pair_rsp
  * Description  actions related to sending pairing response
  ******************************************************************************/
-void smp_send_pair_rsp(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+void smp_send_pair_rsp(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   log::verbose("addr:{}", p_cb->pairing_bda);
 
   p_cb->local_i_key &= p_cb->peer_i_key;
@@ -320,7 +319,7 @@ void smp_send_pair_rsp(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  * Function     smp_send_confirm
  * Description  send confirmation to the peer
  ******************************************************************************/
-void smp_send_confirm(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+void smp_send_confirm(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   log::verbose("addr:{}", p_cb->pairing_bda);
   smp_send_cmd(SMP_OPCODE_CONFIRM, p_cb);
 }
@@ -329,7 +328,7 @@ void smp_send_confirm(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  * Function     smp_send_rand
  * Description  send pairing random to the peer
  ******************************************************************************/
-void smp_send_rand(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+void smp_send_rand(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   log::verbose("addr:{}", p_cb->pairing_bda);
   smp_send_cmd(SMP_OPCODE_RAND, p_cb);
 }
@@ -338,7 +337,7 @@ void smp_send_rand(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  * Function     smp_send_pair_public_key
  * Description  send pairing public key command to the peer
  ******************************************************************************/
-void smp_send_pair_public_key(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+void smp_send_pair_public_key(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   log::verbose("addr:{}", p_cb->pairing_bda);
   smp_send_cmd(SMP_OPCODE_PAIR_PUBLIC_KEY, p_cb);
 }
@@ -347,7 +346,7 @@ void smp_send_pair_public_key(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  * Function     SMP_SEND_COMMITMENT
  * Description send commitment command to the peer
  ******************************************************************************/
-void smp_send_commitment(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+void smp_send_commitment(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   log::verbose("addr:{}", p_cb->pairing_bda);
   smp_send_cmd(SMP_OPCODE_PAIR_COMMITM, p_cb);
 }
@@ -356,7 +355,7 @@ void smp_send_commitment(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  * Function     smp_send_dhkey_check
  * Description send DHKey Check command to the peer
  ******************************************************************************/
-void smp_send_dhkey_check(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+void smp_send_dhkey_check(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   log::verbose("addr:{}", p_cb->pairing_bda);
   smp_send_cmd(SMP_OPCODE_PAIR_DHKEY_CHECK, p_cb);
 }
@@ -374,7 +373,7 @@ void smp_send_keypress_notification(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  * Function     smp_send_enc_info
  * Description  send encryption information command.
  ******************************************************************************/
-void smp_send_enc_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+void smp_send_enc_info(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   log::verbose("p_cb->loc_enc_size={}", p_cb->loc_enc_size);
   smp_update_key_mask(p_cb, SMP_SEC_KEY_TYPE_ENC, false);
 
@@ -402,7 +401,7 @@ void smp_send_enc_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  * Function     smp_send_id_info
  * Description  send ID information command.
  ******************************************************************************/
-void smp_send_id_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+void smp_send_id_info(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   log::verbose("addr:{}", p_cb->pairing_bda);
   smp_update_key_mask(p_cb, SMP_SEC_KEY_TYPE_ID, false);
 
@@ -417,7 +416,7 @@ void smp_send_id_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
 }
 
 /**  send CSRK command. */
-void smp_send_csrk_info(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+void smp_send_csrk_info(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   log::verbose("addr:{}", p_cb->pairing_bda);
   smp_update_key_mask(p_cb, SMP_SEC_KEY_TYPE_CSRK, false);
 
@@ -899,7 +898,8 @@ void smp_br_process_security_grant(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  * Description  sets the SMP kes to be derived/distribute over BR/EDR transport
  *              before starting the distribution/derivation
  ******************************************************************************/
-void smp_br_check_authorization_request(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+void smp_br_check_authorization_request(tSMP_CB* p_cb,
+                                        tSMP_INT_DATA* /* p_data */) {
   log::verbose("rcvs i_keys=0x{:x} r_keys=0x{:x} (i-initiator r-responder)",
                p_cb->local_i_key, p_cb->local_r_key);
 
@@ -1178,7 +1178,7 @@ void smp_start_enc(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  * Function     smp_proc_discard
  * Description   processing for discard security request
  ******************************************************************************/
-void smp_proc_discard(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+void smp_proc_discard(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   log::verbose("addr:{}", p_cb->pairing_bda);
   if (!(p_cb->flags & SMP_PAIR_FLAGS_WE_STARTED_DD))
     smp_reset_control_value(p_cb);
@@ -1381,7 +1381,7 @@ void smp_key_distribution(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  *                  STK generation and to start STK generation process.
  *
  ******************************************************************************/
-void smp_decide_association_model(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+void smp_decide_association_model(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   tSMP_EVENT int_evt = SMP_NOP_EVT;
   tSMP_INT_DATA smp_int_data;
 
@@ -1477,7 +1477,7 @@ void smp_decide_association_model(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  * Function     smp_process_io_response
  * Description  process IO response for a peripheral device.
  ******************************************************************************/
-void smp_process_io_response(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+void smp_process_io_response(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   log::verbose("addr:{}", p_cb->pairing_bda);
   if (p_cb->flags & SMP_PAIR_FLAGS_WE_STARTED_DD) {
     /* pairing started by local (peripheral) Security Request */
@@ -1551,7 +1551,7 @@ void smp_process_io_response(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  *              (BR/EDR transport).
  ******************************************************************************/
 void smp_br_process_peripheral_keys_response(tSMP_CB* p_cb,
-                                             tSMP_INT_DATA* p_data) {
+                                             tSMP_INT_DATA* /* p_data */) {
   smp_br_send_pair_response(p_cb, NULL);
 }
 
@@ -1560,7 +1560,7 @@ void smp_br_process_peripheral_keys_response(tSMP_CB* p_cb,
  * Description  actions related to sending pairing response over BR/EDR
  *              transport.
  ******************************************************************************/
-void smp_br_send_pair_response(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+void smp_br_send_pair_response(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   log::verbose("addr:{}", p_cb->pairing_bda);
 
   p_cb->local_i_key &= p_cb->peer_i_key;
@@ -1574,7 +1574,7 @@ void smp_br_send_pair_response(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  * Description      This function is called to send the pairing complete
  *                  callback and remove the connection if needed.
  ******************************************************************************/
-void smp_pairing_cmpl(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+void smp_pairing_cmpl(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   if (p_cb->total_tx_unacked == 0) {
     /* process the pairing complete */
     smp_proc_pairing_cmpl(p_cb);
@@ -1586,7 +1586,7 @@ void smp_pairing_cmpl(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  * Description      This function is called to send the pairing complete
  *                  callback and remove the connection if needed.
  ******************************************************************************/
-void smp_pair_terminate(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+void smp_pair_terminate(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   log::verbose("addr:{}", p_cb->pairing_bda);
   p_cb->status = SMP_CONN_TOUT;
   smp_proc_pairing_cmpl(p_cb);
@@ -1597,7 +1597,7 @@ void smp_pair_terminate(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  * Description      This function calledin idle state to determine to send
  *                  authentication complete or not.
  ******************************************************************************/
-void smp_idle_terminate(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+void smp_idle_terminate(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   if (p_cb->flags & SMP_PAIR_FLAGS_WE_STARTED_DD) {
     log::verbose("Pairing terminated at IDLE state.");
     p_cb->status = SMP_FAIL;
@@ -1615,7 +1615,7 @@ void smp_idle_terminate(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  *peer.
  *              - invokes SC phase 1 process.
  ******************************************************************************/
-void smp_both_have_public_keys(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+void smp_both_have_public_keys(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   log::verbose("addr:{}", p_cb->pairing_bda);
 
   /* invokes DHKey computation */
@@ -1634,7 +1634,8 @@ void smp_both_have_public_keys(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  *              to the peer messages appropriate for the role and association
  *              model.
  ******************************************************************************/
-void smp_start_secure_connection_phase1(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+void smp_start_secure_connection_phase1(tSMP_CB* p_cb,
+                                        tSMP_INT_DATA* /* p_data */) {
   log::verbose("addr:{}", p_cb->pairing_bda);
 
   if (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_JUSTWORKS) {
@@ -1679,7 +1680,7 @@ void smp_start_secure_connection_phase1(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  *
  * Note         It is supposed to be called in SC phase1.
  ******************************************************************************/
-void smp_process_local_nonce(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+void smp_process_local_nonce(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   log::verbose("addr:{}", p_cb->pairing_bda);
 
   switch (p_cb->selected_association_model) {
@@ -1743,7 +1744,7 @@ void smp_process_local_nonce(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  *
  * Note         It is supposed to be called in SC phase1.
  ******************************************************************************/
-void smp_process_peer_nonce(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+void smp_process_peer_nonce(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   log::verbose("addr:{}, selected_association_model:{}", p_cb->pairing_bda,
                p_cb->selected_association_model);
 
@@ -1883,7 +1884,7 @@ void smp_match_dhkey_checks(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  * Note         SM is supposed to be in the state SMP_STATE_SEC_CONN_PHS2_START.
  ******************************************************************************/
 void smp_move_to_secure_connections_phase2(tSMP_CB* p_cb,
-                                           tSMP_INT_DATA* p_data) {
+                                           tSMP_INT_DATA* /* p_data */) {
   log::verbose("addr:{}", p_cb->pairing_bda);
   smp_sm_event(p_cb, SMP_SC_PHASE1_CMPLT_EVT, NULL);
 }
@@ -1898,7 +1899,7 @@ void smp_move_to_secure_connections_phase2(tSMP_CB* p_cb,
  *              calculated.
  ******************************************************************************/
 void smp_phase_2_dhkey_checks_are_present(tSMP_CB* p_cb,
-                                          tSMP_INT_DATA* p_data) {
+                                          tSMP_INT_DATA* /* p_data */) {
   log::verbose("addr:{}", p_cb->pairing_bda);
 
   if (p_cb->flags & SMP_PAIR_FLAG_HAVE_PEER_DHK_CHK)
@@ -1913,7 +1914,7 @@ void smp_phase_2_dhkey_checks_are_present(tSMP_CB* p_cb,
  * Note         on the peripheral it is used to prevent race condition.
  *
  ******************************************************************************/
-void smp_wait_for_both_public_keys(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+void smp_wait_for_both_public_keys(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   log::verbose("addr:{}", p_cb->pairing_bda);
 
   if ((p_cb->flags & SMP_PAIR_FLAG_HAVE_PEER_PUBL_KEY) &&
@@ -1950,7 +1951,7 @@ void smp_start_passkey_verification(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  * Description  Processes local/peer SC OOB data received from somewhere.
  ******************************************************************************/
 void smp_process_secure_connection_oob_data(tSMP_CB* p_cb,
-                                            tSMP_INT_DATA* p_data) {
+                                            tSMP_INT_DATA* /* p_data */) {
   log::verbose("addr:{}", p_cb->pairing_bda);
 
   tSMP_SC_OOB_DATA* p_sc_oob_data = &p_cb->sc_oob_data;
@@ -1996,7 +1997,7 @@ void smp_process_secure_connection_oob_data(tSMP_CB* p_cb,
  *              sc_oob_data.loc_oob_data, starts nonce generation
  *              (to be saved in sc_oob_data.loc_oob_data.randomizer).
  ******************************************************************************/
-void smp_set_local_oob_keys(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+void smp_set_local_oob_keys(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   log::verbose("addr:{}", p_cb->pairing_bda);
 
   memcpy(p_cb->sc_oob_data.loc_oob_data.private_key_used, p_cb->private_key,
@@ -2011,7 +2012,8 @@ void smp_set_local_oob_keys(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  *              sc_oob_data.loc_oob_data, passes sc_oob_data.loc_oob_data up
  *              for safekeeping.
  ******************************************************************************/
-void smp_set_local_oob_random_commitment(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+void smp_set_local_oob_random_commitment(tSMP_CB* p_cb,
+                                         tSMP_INT_DATA* /* p_data */) {
   log::verbose("{}", p_cb->pairing_bda);
   p_cb->sc_oob_data.loc_oob_data.randomizer = p_cb->rand;
 
@@ -2145,7 +2147,7 @@ void smp_process_secure_connection_long_term_key(void) {
  * Returns          void
  *
  ******************************************************************************/
-void smp_set_derive_link_key(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+void smp_set_derive_link_key(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   log::verbose("addr:{}", p_cb->pairing_bda);
   p_cb->derive_lk = true;
   smp_update_key_mask(p_cb, SMP_SEC_KEY_TYPE_LK, false);
@@ -2162,7 +2164,7 @@ void smp_set_derive_link_key(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  *
  ******************************************************************************/
 void smp_derive_link_key_from_long_term_key(tSMP_CB* p_cb,
-                                            tSMP_INT_DATA* p_data) {
+                                            tSMP_INT_DATA* /* p_data */) {
   tSMP_STATUS status = SMP_PAIR_FAIL_UNKNOWN;
 
   log::verbose("addr:{}", p_cb->pairing_bda);
@@ -2186,7 +2188,7 @@ void smp_derive_link_key_from_long_term_key(tSMP_CB* p_cb,
  * Returns          void
  *
  ******************************************************************************/
-void smp_br_process_link_key(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+void smp_br_process_link_key(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   tSMP_STATUS status = SMP_PAIR_FAIL_UNKNOWN;
 
   log::verbose("addr:{}", p_cb->pairing_bda);
@@ -2218,7 +2220,7 @@ void smp_br_process_link_key(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  *              smp_key_distribution(...) or smp_br_key_distribution(...).
  ******************************************************************************/
 static void smp_key_distribution_by_transport(tSMP_CB* p_cb,
-                                              tSMP_INT_DATA* p_data) {
+                                              tSMP_INT_DATA* /* p_data */) {
   log::verbose("addr:{}", p_cb->pairing_bda);
   if (p_cb->smp_over_br) {
     smp_br_select_next_key(p_cb, NULL);
@@ -2232,7 +2234,7 @@ static void smp_key_distribution_by_transport(tSMP_CB* p_cb,
  * Description      This function is called to send the pairing complete
  *                  callback and remove the connection if needed.
  ******************************************************************************/
-void smp_br_pairing_complete(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+void smp_br_pairing_complete(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   log::verbose("addr:{}", p_cb->pairing_bda);
 
   if (p_cb->total_tx_unacked == 0) {

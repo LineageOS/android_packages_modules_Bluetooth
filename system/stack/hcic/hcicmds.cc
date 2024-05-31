@@ -1485,8 +1485,9 @@ void btsnd_hcic_read_rssi(uint16_t handle) {
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
-static void read_encryption_key_size_complete(ReadEncKeySizeCb cb, uint8_t* return_parameters,
-                                              uint16_t return_parameters_length) {
+static void read_encryption_key_size_complete(
+    ReadEncKeySizeCb cb, uint8_t* return_parameters,
+    uint16_t /* return_parameters_length */) {
   uint8_t status;
   uint16_t handle;
   uint8_t key_size;
