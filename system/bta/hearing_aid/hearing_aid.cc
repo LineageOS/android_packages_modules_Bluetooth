@@ -1041,12 +1041,14 @@ class HearingAidImpl : public HearingAid {
       return;
     }
 
-    if (len > 2) {
+    if (len < 2) {
       log::error("Bad PSM Lengh");
       return;
     }
 
-    uint16_t psm = *((uint16_t*)value);
+    uint16_t psm = 0;
+    STREAM_TO_UINT16(psm, value);
+
     log::debug("read psm:0x{:x}", psm);
 
     if (hearingDevice->gap_handle == GAP_INVALID_HANDLE &&
