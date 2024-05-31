@@ -292,6 +292,8 @@ pub trait IBluetoothMediaCallback: RPCProxy {
     );
 
     fn on_lea_group_stream_status(&mut self, group_id: i32, status: BtLeAudioGroupStreamStatus);
+
+    fn on_lea_group_volume_changed(&mut self, group_id: i32, volume: u8);
 }
 
 pub trait IBluetoothTelephony {
@@ -470,6 +472,7 @@ pub struct BluetoothMedia {
     uhid: HashMap<RawAddress, UHid>,
     le_audio: Option<LeAudioClient>,
     le_audio_group_status: HashMap<i32, BtLeAudioGroupStatus>,
+    le_audio_group_volume: HashMap<i32, u8>,
     le_audio_groups: HashMap<i32, HashSet<RawAddress>>,
     le_audio_node_to_group: HashMap<RawAddress, i32>,
     le_audio_states: HashMap<RawAddress, BtLeAudioConnectionState>,
@@ -536,6 +539,7 @@ impl BluetoothMedia {
             uhid: HashMap::new(),
             le_audio: None,
             le_audio_group_status: HashMap::new(),
+            le_audio_group_volume: HashMap::new(),
             le_audio_groups: HashMap::new(),
             le_audio_node_to_group: HashMap::new(),
             le_audio_states: HashMap::new(),
@@ -830,6 +834,21 @@ impl BluetoothMedia {
                     "VolumeControlCallbacks::GroupVolumeState: group_id={}, volume={}, mute={}, is_autonomous={}",
                     group_id, volume, mute, is_autonomous
                 );
+
+                if let Some(old_volume) = self.le_audio_group_volume.insert(group_id, volume) {
+                    if old_volume == volume {
+                        return;
+                    }
+                }
+
+                // This can come with ~300ms delay, thus notify only when
+                // triggered by the headset. Otherwise expect the audio server
+                // to know the expected volume.
+                if is_autonomous {
+                    self.callbacks.lock().unwrap().for_all_callbacks(|callback| {
+                        callback.on_lea_group_volume_changed(group_id, volume);
+                    });
+                }
             }
             VolumeControlCallbacks::DeviceAvailable(addr, num_offset) => {
                 info!(
@@ -995,6 +1014,11 @@ impl BluetoothMedia {
                                     old_group.remove(&addr);
                                     if old_group.is_empty() {
                                         self.le_audio_groups.remove(&old_group_id);
+                                        self.le_audio_group_status.remove(&old_group_id);
+                                        self.le_audio_group_volume.remove(&old_group_id);
+                                        self.le_audio_group_stream_status.remove(&old_group_id);
+                                        self.le_audio_delayed_audio_conf_updates
+                                            .remove(&old_group_id);
                                     }
                                 }
                             }
@@ -1017,6 +1041,10 @@ impl BluetoothMedia {
                                 old_group.remove(&addr);
                                 if old_group.is_empty() {
                                     self.le_audio_groups.remove(&old_group_id);
+                                    self.le_audio_group_status.remove(&old_group_id);
+                                    self.le_audio_group_volume.remove(&old_group_id);
+                                    self.le_audio_group_stream_status.remove(&old_group_id);
+                                    self.le_audio_delayed_audio_conf_updates.remove(&old_group_id);
                                 }
                             }
                         } else {

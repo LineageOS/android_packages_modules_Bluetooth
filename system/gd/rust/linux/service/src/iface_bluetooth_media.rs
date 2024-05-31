@@ -174,6 +174,11 @@ impl IBluetoothMediaCallback for BluetoothMediaCallbackDBus {
     fn on_lea_group_stream_status(&mut self, group_id: i32, status: BtLeAudioGroupStreamStatus) {
         dbus_generated!()
     }
+
+    #[dbus_method("OnLeaGroupVolumeChanged")]
+    fn on_lea_group_volume_changed(&mut self, group_id: i32, volume: u8) {
+        dbus_generated!()
+    }
 }
 
 #[allow(dead_code)]
