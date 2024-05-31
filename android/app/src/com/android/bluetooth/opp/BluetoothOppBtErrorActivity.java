@@ -42,9 +42,7 @@ import android.widget.TextView;
 
 import com.android.bluetooth.R;
 
-/**
- * This class is designed to show BT error messages;
- */
+/** This class is designed to show BT error messages; */
 public class BluetoothOppBtErrorActivity extends AlertActivity {
 
     @Override
@@ -70,5 +68,4 @@ public class BluetoothOppBtErrorActivity extends AlertActivity {
         contentView.setText(errorContent);
         return view;
     }
-
 }

@@ -27,15 +27,18 @@ public class HfpClientConference extends Conference {
     private final BluetoothDevice mDevice;
     private final HeadsetClientServiceInterface mServiceInterface;
 
-    public HfpClientConference(BluetoothDevice device, PhoneAccountHandle handle,
+    public HfpClientConference(
+            BluetoothDevice device,
+            PhoneAccountHandle handle,
             HeadsetClientServiceInterface serviceInterface) {
         super(handle);
         mDevice = device;
         mServiceInterface = serviceInterface;
         boolean manage = mServiceInterface.hasHfpClientEcc(device);
         setConnectionCapabilities(
-                Connection.CAPABILITY_SUPPORT_HOLD | Connection.CAPABILITY_HOLD | (manage
-                        ? Connection.CAPABILITY_MANAGE_CONFERENCE : 0));
+                Connection.CAPABILITY_SUPPORT_HOLD
+                        | Connection.CAPABILITY_HOLD
+                        | (manage ? Connection.CAPABILITY_MANAGE_CONFERENCE : 0));
         setActive();
     }
 

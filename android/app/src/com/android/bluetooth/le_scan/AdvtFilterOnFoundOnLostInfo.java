@@ -38,9 +38,20 @@ public class AdvtFilterOnFoundOnLostInfo {
     private int mRssiValue;
     private int mTimeStamp;
 
-    public AdvtFilterOnFoundOnLostInfo(int clientIf, int advPktLen, byte[] advPkt, int scanRspLen,
-            byte[] scanRsp, int filtIndex, int advState, int advInfoPresent, String address,
-            int addrType, int txPower, int rssiValue, int timeStamp) {
+    public AdvtFilterOnFoundOnLostInfo(
+            int clientIf,
+            int advPktLen,
+            byte[] advPkt,
+            int scanRspLen,
+            byte[] scanRsp,
+            int filtIndex,
+            int advState,
+            int advInfoPresent,
+            String address,
+            int addrType,
+            int txPower,
+            int rssiValue,
+            int timeStamp) {
 
         mClientIf = clientIf;
         mAdvPktLen = advPktLen;
@@ -118,6 +129,4 @@ public class AdvtFilterOnFoundOnLostInfo {
         }
         return result;
     }
-
 }
-

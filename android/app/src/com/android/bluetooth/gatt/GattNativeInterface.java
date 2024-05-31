@@ -24,9 +24,7 @@ import com.android.internal.annotations.VisibleForTesting;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * GATT Profile Native Interface to/from JNI.
- */
+/** GATT Profile Native Interface to/from JNI. */
 public class GattNativeInterface {
     private static final String TAG = GattNativeInterface.class.getSimpleName();
 
@@ -99,10 +97,11 @@ public class GattNativeInterface {
         getGattService().onServiceChanged(connId);
     }
 
-    void onClientSubrateChange(int connId, int subrateFactor, int latency, int contNum, int timeout,
-            int status) throws RemoteException {
-        getGattService().onClientSubrateChange(connId, subrateFactor, latency, contNum, timeout,
-                status);
+    void onClientSubrateChange(
+            int connId, int subrateFactor, int latency, int contNum, int timeout, int status)
+            throws RemoteException {
+        getGattService()
+                .onClientSubrateChange(connId, subrateFactor, latency, contNum, timeout, status);
     }
 
     void onServerPhyUpdate(int connId, int txPhy, int rxPhy, int status) throws RemoteException {
@@ -119,11 +118,11 @@ public class GattNativeInterface {
         getGattService().onServerConnUpdate(connId, interval, latency, timeout, status);
     }
 
-    void onServerSubrateChange(int connId, int subrateFactor, int latency, int contNum, int timeout,
-            int status)
+    void onServerSubrateChange(
+            int connId, int subrateFactor, int latency, int contNum, int timeout, int status)
             throws RemoteException {
-        getGattService().onServerSubrateChange(connId, subrateFactor, latency, contNum, timeout,
-                status);
+        getGattService()
+                .onServerSubrateChange(connId, subrateFactor, latency, contNum, timeout, status);
     }
 
     void onSearchCompleted(int connId, int status) throws RemoteException {
@@ -207,8 +206,9 @@ public class GattNativeInterface {
         getGattService().onClientConnected(address, connected, connId, serverIf);
     }
 
-    void onServerReadCharacteristic(String address, int connId, int transId, int handle, int offset,
-            boolean isLong) throws RemoteException {
+    void onServerReadCharacteristic(
+            String address, int connId, int transId, int handle, int offset, boolean isLong)
+            throws RemoteException {
         getGattService()
                 .onServerReadCharacteristic(address, connId, transId, handle, offset, isLong);
     }
@@ -230,12 +230,22 @@ public class GattNativeInterface {
             boolean isPrep,
             byte[] data)
             throws RemoteException {
-        getGattService().onServerWriteCharacteristic(address, connId, transId, handle, offset,
-                length, needRsp, isPrep, data);
+        getGattService()
+                .onServerWriteCharacteristic(
+                        address, connId, transId, handle, offset, length, needRsp, isPrep, data);
     }
 
-    void onServerWriteDescriptor(String address, int connId, int transId, int handle, int offset,
-            int length, boolean needRsp, boolean isPrep, byte[] data) throws RemoteException {
+    void onServerWriteDescriptor(
+            String address,
+            int connId,
+            int transId,
+            int handle,
+            int offset,
+            int length,
+            boolean needRsp,
+            boolean isPrep,
+            byte[] data)
+            throws RemoteException {
         getGattService()
                 .onServerWriteDescriptor(
                         address, connId, transId, handle, offset, length, needRsp, isPrep, data);
@@ -269,74 +279,136 @@ public class GattNativeInterface {
     private native void initializeNative();
 
     private native void cleanupNative();
+
     private native int gattClientGetDeviceTypeNative(String address);
-    private native void gattClientRegisterAppNative(long appUuidLsb, long appUuidMsb,
-            boolean eattSupport);
+
+    private native void gattClientRegisterAppNative(
+            long appUuidLsb, long appUuidMsb, boolean eattSupport);
+
     private native void gattClientUnregisterAppNative(int clientIf);
-    private native void gattClientConnectNative(int clientIf, String address, int addressType,
-            boolean isDirect, int transport, boolean opportunistic, int initiatingPhys);
+
+    private native void gattClientConnectNative(
+            int clientIf,
+            String address,
+            int addressType,
+            boolean isDirect,
+            int transport,
+            boolean opportunistic,
+            int initiatingPhys);
+
     private native void gattClientDisconnectNative(int clientIf, String address, int connId);
-    private native void gattClientSetPreferredPhyNative(int clientIf, String address, int txPhy,
-            int rxPhy, int phyOptions);
+
+    private native void gattClientSetPreferredPhyNative(
+            int clientIf, String address, int txPhy, int rxPhy, int phyOptions);
+
     private native void gattClientReadPhyNative(int clientIf, String address);
+
     private native void gattClientRefreshNative(int clientIf, String address);
-    private native void gattClientSearchServiceNative(int connId, boolean searchAll,
-            long serviceUuidLsb, long serviceUuidMsb);
-    private native void gattClientDiscoverServiceByUuidNative(int connId, long serviceUuidLsb,
-            long serviceUuidMsb);
+
+    private native void gattClientSearchServiceNative(
+            int connId, boolean searchAll, long serviceUuidLsb, long serviceUuidMsb);
+
+    private native void gattClientDiscoverServiceByUuidNative(
+            int connId, long serviceUuidLsb, long serviceUuidMsb);
+
     private native void gattClientGetGattDbNative(int connId);
+
     private native void gattClientReadCharacteristicNative(int connId, int handle, int authReq);
-    private native void gattClientReadUsingCharacteristicUuidNative(int connId, long uuidMsb,
-            long uuidLsb, int sHandle, int eHandle, int authReq);
+
+    private native void gattClientReadUsingCharacteristicUuidNative(
+            int connId, long uuidMsb, long uuidLsb, int sHandle, int eHandle, int authReq);
+
     private native void gattClientReadDescriptorNative(int connId, int handle, int authReq);
-    private native void gattClientWriteCharacteristicNative(int connId, int handle, int writeType,
-            int authReq, byte[] value);
-    private native void gattClientWriteDescriptorNative(int connId, int handle, int authReq,
-            byte[] value);
+
+    private native void gattClientWriteCharacteristicNative(
+            int connId, int handle, int writeType, int authReq, byte[] value);
+
+    private native void gattClientWriteDescriptorNative(
+            int connId, int handle, int authReq, byte[] value);
+
     private native void gattClientExecuteWriteNative(int connId, boolean execute);
-    private native void gattClientRegisterForNotificationsNative(int clientIf, String address,
-            int handle, boolean enable);
+
+    private native void gattClientRegisterForNotificationsNative(
+            int clientIf, String address, int handle, boolean enable);
+
     private native void gattClientReadRemoteRssiNative(int clientIf, String address);
+
     private native void gattClientConfigureMTUNative(int connId, int mtu);
-    private native void gattConnectionParameterUpdateNative(int clientIf, String address,
-            int minInterval, int maxInterval, int latency, int timeout, int minConnectionEventLen,
+
+    private native void gattConnectionParameterUpdateNative(
+            int clientIf,
+            String address,
+            int minInterval,
+            int maxInterval,
+            int latency,
+            int timeout,
+            int minConnectionEventLen,
             int maxConnectionEventLen);
-    private native void gattServerRegisterAppNative(long appUuidLsb, long appUuidMsb,
-            boolean eattSupport);
+
+    private native void gattServerRegisterAppNative(
+            long appUuidLsb, long appUuidMsb, boolean eattSupport);
+
     private native void gattServerUnregisterAppNative(int serverIf);
 
     private native void gattServerConnectNative(
             int serverIf, String address, int addressType, boolean isDirect, int transport);
 
     private native void gattServerDisconnectNative(int serverIf, String address, int connId);
-    private native void gattServerSetPreferredPhyNative(int clientIf, String address, int txPhy,
-            int rxPhy, int phyOptions);
-    private native void gattServerReadPhyNative(int clientIf, String address);
-    private native void gattServerAddServiceNative(int serverIf, List<GattDbElement> service);
-    private native void gattServerStopServiceNative(int serverIf, int svcHandle);
-    private native void gattServerDeleteServiceNative(int serverIf, int svcHandle);
-    private native void gattServerSendIndicationNative(int serverIf, int attrHandle, int connId,
-            byte[] val);
-    private native void gattServerSendNotificationNative(int serverIf, int attrHandle, int connId,
-            byte[] val);
-    private native void gattServerSendResponseNative(int serverIf, int connId, int transId,
-            int status, int handle, int offset, byte[] val, int authReq);
-    private native void gattSubrateRequestNative(int clientIf, String address, int subrateMin,
-            int subrateMax, int maxLatency, int contNumber, int supervisionTimeout);
-    private native void gattTestNative(int command, long uuid1Lsb, long uuid1Msb, String bda1,
-            int p1, int p2, int p3, int p4, int p5);
 
-    /**
-     * Initialize the native interface and native components
-     */
+    private native void gattServerSetPreferredPhyNative(
+            int clientIf, String address, int txPhy, int rxPhy, int phyOptions);
+
+    private native void gattServerReadPhyNative(int clientIf, String address);
+
+    private native void gattServerAddServiceNative(int serverIf, List<GattDbElement> service);
+
+    private native void gattServerStopServiceNative(int serverIf, int svcHandle);
+
+    private native void gattServerDeleteServiceNative(int serverIf, int svcHandle);
+
+    private native void gattServerSendIndicationNative(
+            int serverIf, int attrHandle, int connId, byte[] val);
+
+    private native void gattServerSendNotificationNative(
+            int serverIf, int attrHandle, int connId, byte[] val);
+
+    private native void gattServerSendResponseNative(
+            int serverIf,
+            int connId,
+            int transId,
+            int status,
+            int handle,
+            int offset,
+            byte[] val,
+            int authReq);
+
+    private native void gattSubrateRequestNative(
+            int clientIf,
+            String address,
+            int subrateMin,
+            int subrateMax,
+            int maxLatency,
+            int contNumber,
+            int supervisionTimeout);
+
+    private native void gattTestNative(
+            int command,
+            long uuid1Lsb,
+            long uuid1Msb,
+            String bda1,
+            int p1,
+            int p2,
+            int p3,
+            int p4,
+            int p5);
+
+    /** Initialize the native interface and native components */
     public void init(GattService gattService) {
         mGattService = gattService;
         initializeNative();
     }
 
-    /**
-     * Clean up the native interface and native components
-     */
+    /** Clean up the native interface and native components */
     public void cleanup() {
         cleanupNative();
         mGattService = null;
@@ -353,124 +425,103 @@ public class GattNativeInterface {
     }
 
     /**
-     * Register the given client
-     * It will invoke {@link #onClientRegistered(int, int, long, long)}.
+     * Register the given client It will invoke {@link #onClientRegistered(int, int, long, long)}.
      */
     public void gattClientRegisterApp(long appUuidLsb, long appUuidMsb, boolean eattSupport) {
         gattClientRegisterAppNative(appUuidLsb, appUuidMsb, eattSupport);
     }
 
-    /**
-     * Unregister the client
-     */
+    /** Unregister the client */
     public void gattClientUnregisterApp(int clientIf) {
         gattClientUnregisterAppNative(clientIf);
     }
 
     /**
      * Connect to the remote Gatt server
+     *
      * @see {@link BluetoothDevice#connectGatt} for parameters.
      */
-    public void gattClientConnect(int clientIf, String address, int addressType,
-            boolean isDirect, int transport, boolean opportunistic, int initiatingPhys) {
-        gattClientConnectNative(clientIf, address, addressType, isDirect, transport,
-                opportunistic, initiatingPhys);
+    public void gattClientConnect(
+            int clientIf,
+            String address,
+            int addressType,
+            boolean isDirect,
+            int transport,
+            boolean opportunistic,
+            int initiatingPhys) {
+        gattClientConnectNative(
+                clientIf, address, addressType, isDirect, transport, opportunistic, initiatingPhys);
     }
 
-    /**
-     * Disconnect from the remote Gatt server
-     */
+    /** Disconnect from the remote Gatt server */
     public void gattClientDisconnect(int clientIf, String address, int connId) {
         gattClientDisconnectNative(clientIf, address, connId);
     }
 
-    /**
-     * Set the preferred connection PHY for the client
-     */
-    public void gattClientSetPreferredPhy(int clientIf, String address, int txPhy,
-            int rxPhy, int phyOptions) {
+    /** Set the preferred connection PHY for the client */
+    public void gattClientSetPreferredPhy(
+            int clientIf, String address, int txPhy, int rxPhy, int phyOptions) {
         gattClientSetPreferredPhyNative(clientIf, address, txPhy, rxPhy, phyOptions);
     }
 
-    /**
-     * Read the current transmitter PHY and receiver PHY of the client
-     */
+    /** Read the current transmitter PHY and receiver PHY of the client */
     public void gattClientReadPhy(int clientIf, String address) {
         gattClientReadPhyNative(clientIf, address);
     }
 
-    /**
-     * Clear the internal cache and force a refresh of the services from the remote device
-     */
+    /** Clear the internal cache and force a refresh of the services from the remote device */
     public void gattClientRefresh(int clientIf, String address) {
         gattClientRefreshNative(clientIf, address);
     }
 
-    /**
-     * Discover GATT services
-     */
-    public void gattClientSearchService(int connId, boolean searchAll, long serviceUuidLsb,
-            long serviceUuidMsb) {
+    /** Discover GATT services */
+    public void gattClientSearchService(
+            int connId, boolean searchAll, long serviceUuidLsb, long serviceUuidMsb) {
         gattClientSearchServiceNative(connId, searchAll, serviceUuidLsb, serviceUuidMsb);
     }
 
-    /**
-     * Discover the GATT service by the given UUID
-     */
-    public void gattClientDiscoverServiceByUuid(int connId, long serviceUuidLsb,
-            long serviceUuidMsb) {
+    /** Discover the GATT service by the given UUID */
+    public void gattClientDiscoverServiceByUuid(
+            int connId, long serviceUuidLsb, long serviceUuidMsb) {
         gattClientDiscoverServiceByUuidNative(connId, serviceUuidLsb, serviceUuidMsb);
     }
 
-    /**
-     * Get GATT DB of the remote device
-     */
+    /** Get GATT DB of the remote device */
     public void gattClientGetGattDb(int connId) {
         gattClientGetGattDbNative(connId);
     }
 
-    /**
-     * Read a characteristic by the given handle
-     */
+    /** Read a characteristic by the given handle */
     public void gattClientReadCharacteristic(int connId, int handle, int authReq) {
         gattClientReadCharacteristicNative(connId, handle, authReq);
     }
 
-
-    /**
-     * Read a characteristic by the given UUID
-     */
-    public void gattClientReadUsingCharacteristicUuid(int connId, long uuidMsb,
-            long uuidLsb, int sHandle, int eHandle, int authReq) {
-        gattClientReadUsingCharacteristicUuidNative(connId, uuidMsb, uuidLsb, sHandle, eHandle,
-                authReq);
+    /** Read a characteristic by the given UUID */
+    public void gattClientReadUsingCharacteristicUuid(
+            int connId, long uuidMsb, long uuidLsb, int sHandle, int eHandle, int authReq) {
+        gattClientReadUsingCharacteristicUuidNative(
+                connId, uuidMsb, uuidLsb, sHandle, eHandle, authReq);
     }
 
-    /**
-     * Read a descriptor by the given handle
-     */
+    /** Read a descriptor by the given handle */
     public void gattClientReadDescriptor(int connId, int handle, int authReq) {
         gattClientReadDescriptorNative(connId, handle, authReq);
     }
 
-    /**
-     * Write a characteristic by the given handle
-     */
-    public void gattClientWriteCharacteristic(int connId, int handle, int writeType,
-            int authReq, byte[] value) {
+    /** Write a characteristic by the given handle */
+    public void gattClientWriteCharacteristic(
+            int connId, int handle, int writeType, int authReq, byte[] value) {
         gattClientWriteCharacteristicNative(connId, handle, writeType, authReq, value);
     }
 
-    /**
-     * Write a descriptor by the given handle
-     */
-    public void gattClientWriteDescriptor(int connId, int handle, int authReq,
-            byte[] value) {
+    /** Write a descriptor by the given handle */
+    public void gattClientWriteDescriptor(int connId, int handle, int authReq, byte[] value) {
         gattClientWriteDescriptorNative(connId, handle, authReq, value);
     }
 
     /**
      * Execute a reliable write transaction
+     *
      * @param connId
      * @param execute
      */
@@ -478,16 +529,15 @@ public class GattNativeInterface {
         gattClientExecuteWriteNative(connId, execute);
     }
 
-    /**
-     * Register notification for the characteristic
-     */
-    public void gattClientRegisterForNotifications(int clientIf, String address,
-            int handle, boolean enable) {
+    /** Register notification for the characteristic */
+    public void gattClientRegisterForNotifications(
+            int clientIf, String address, int handle, boolean enable) {
         gattClientRegisterForNotificationsNative(clientIf, address, handle, enable);
     }
 
     /**
      * Read the RSSI for a connected remote device
+     *
      * @param clientIf
      * @param address
      */
@@ -495,42 +545,57 @@ public class GattNativeInterface {
         gattClientReadRemoteRssiNative(clientIf, address);
     }
 
-    /**
-     * Configure MTU size used for the connection
-     */
+    /** Configure MTU size used for the connection */
     public void gattClientConfigureMTU(int connId, int mtu) {
         gattClientConfigureMTUNative(connId, mtu);
     }
 
-    /**
-     * Update connection parameter.
-     */
-    public void gattConnectionParameterUpdate(int clientIf, String address,
-            int minInterval, int maxInterval, int latency, int timeout, int minConnectionEventLen,
+    /** Update connection parameter. */
+    public void gattConnectionParameterUpdate(
+            int clientIf,
+            String address,
+            int minInterval,
+            int maxInterval,
+            int latency,
+            int timeout,
+            int minConnectionEventLen,
             int maxConnectionEventLen) {
-        gattConnectionParameterUpdateNative(clientIf, address, minInterval, maxInterval, latency,
-                timeout, minConnectionEventLen, maxConnectionEventLen);
+        gattConnectionParameterUpdateNative(
+                clientIf,
+                address,
+                minInterval,
+                maxInterval,
+                latency,
+                timeout,
+                minConnectionEventLen,
+                maxConnectionEventLen);
     }
 
-    /**
-     * Update connection parameter.
-     */
-    public void gattSubrateRequest(int clientIf, String address, int subrateMin, int subrateMax,
-            int maxLatency, int contNumber, int supervisionTimeout) {
-        gattSubrateRequestNative(clientIf, address, subrateMin, subrateMax, maxLatency, contNumber,
+    /** Update connection parameter. */
+    public void gattSubrateRequest(
+            int clientIf,
+            String address,
+            int subrateMin,
+            int subrateMax,
+            int maxLatency,
+            int contNumber,
+            int supervisionTimeout) {
+        gattSubrateRequestNative(
+                clientIf,
+                address,
+                subrateMin,
+                subrateMax,
+                maxLatency,
+                contNumber,
                 supervisionTimeout);
     }
 
-    /**
-     * Register GATT server
-     */
+    /** Register GATT server */
     public void gattServerRegisterApp(long appUuidLsb, long appUuidMsb, boolean eattSupport) {
         gattServerRegisterAppNative(appUuidLsb, appUuidMsb, eattSupport);
     }
 
-    /**
-     * Unregister GATT server
-     */
+    /** Unregister GATT server */
     public void gattServerUnregisterApp(int serverIf) {
         gattServerUnregisterAppNative(serverIf);
     }
@@ -541,80 +606,72 @@ public class GattNativeInterface {
         gattServerConnectNative(serverIf, address, addressType, isDirect, transport);
     }
 
-    /**
-     * Disconnects from a remote device as a GATT server role
-     */
+    /** Disconnects from a remote device as a GATT server role */
     public void gattServerDisconnect(int serverIf, String address, int connId) {
         gattServerDisconnectNative(serverIf, address, connId);
     }
 
-    /**
-     * Set the preferred connection PHY as a GATT server role
-     */
-    public void gattServerSetPreferredPhy(int clientIf, String address, int txPhy,
-            int rxPhy, int phyOptions) {
+    /** Set the preferred connection PHY as a GATT server role */
+    public void gattServerSetPreferredPhy(
+            int clientIf, String address, int txPhy, int rxPhy, int phyOptions) {
         gattServerSetPreferredPhyNative(clientIf, address, txPhy, rxPhy, phyOptions);
     }
 
-    /**
-     * Read the current transmitter PHY and receiver PHY of the connection
-     */
+    /** Read the current transmitter PHY and receiver PHY of the connection */
     public void gattServerReadPhy(int clientIf, String address) {
         gattServerReadPhyNative(clientIf, address);
     }
 
-    /**
-     * Add a service to the list of services to be hosted.
-     */
+    /** Add a service to the list of services to be hosted. */
     public void gattServerAddService(int serverIf, List<GattDbElement> service) {
         gattServerAddServiceNative(serverIf, service);
     }
 
-    /**
-     * Stop a service
-     */
+    /** Stop a service */
     public void gattServerStopService(int serverIf, int svcHandle) {
         gattServerStopServiceNative(serverIf, svcHandle);
     }
 
-    /**
-     * Removes a service from the list of services to be provided
-     */
+    /** Removes a service from the list of services to be provided */
     public void gattServerDeleteService(int serverIf, int svcHandle) {
         gattServerDeleteServiceNative(serverIf, svcHandle);
     }
 
-    /**
-     * Send an indication of the characteristic
-     */
-    public void gattServerSendIndication(int serverIf, int attrHandle, int connId,
-            byte[] val) {
+    /** Send an indication of the characteristic */
+    public void gattServerSendIndication(int serverIf, int attrHandle, int connId, byte[] val) {
         gattServerSendIndicationNative(serverIf, attrHandle, connId, val);
     }
 
-    /**
-     * Send a notification of the characteristic
-     */
-    public void gattServerSendNotification(int serverIf, int attrHandle, int connId,
-            byte[] val) {
+    /** Send a notification of the characteristic */
+    public void gattServerSendNotification(int serverIf, int attrHandle, int connId, byte[] val) {
         gattServerSendNotificationNative(serverIf, attrHandle, connId, val);
     }
 
-    /**
-     * Send a response as a GATT server role
-     */
-    public void gattServerSendResponse(int serverIf, int connId, int transId,
-            int status, int handle, int offset, byte[] val, int authReq) {
-        gattServerSendResponseNative(serverIf, connId, transId, status, handle, offset, val,
-                authReq);
+    /** Send a response as a GATT server role */
+    public void gattServerSendResponse(
+            int serverIf,
+            int connId,
+            int transId,
+            int status,
+            int handle,
+            int offset,
+            byte[] val,
+            int authReq) {
+        gattServerSendResponseNative(
+                serverIf, connId, transId, status, handle, offset, val, authReq);
     }
 
-    /**
-     * Send a test command
-     */
-    public void gattTest(int command, long uuid1Lsb, long uuid1Msb, String bda1,
-            int p1, int p2, int p3, int p4, int p5) {
+    /** Send a test command */
+    public void gattTest(
+            int command,
+            long uuid1Lsb,
+            long uuid1Msb,
+            String bda1,
+            int p1,
+            int p2,
+            int p3,
+            int p4,
+            int p5) {
         gattTestNative(command, uuid1Lsb, uuid1Msb, bda1, p1, p2, p3, p4, p5);
     }
 }
-

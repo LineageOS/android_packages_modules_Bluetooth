@@ -25,31 +25,29 @@ import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.UUID;
 
-/**
- * Helper class containing useful tools for GATT service debugging.
- */
+/** Helper class containing useful tools for GATT service debugging. */
 /*package*/ class GattDebugUtils {
     private static final String TAG = GattServiceConfig.TAG_PREFIX + "DebugUtils";
     private static final boolean DEBUG_ADMIN = GattServiceConfig.DEBUG_ADMIN;
 
     @VisibleForTesting
-    static final String ACTION_GATT_PAIRING_CONFIG =
-            "android.bluetooth.action.GATT_PAIRING_CONFIG";
+    static final String ACTION_GATT_PAIRING_CONFIG = "android.bluetooth.action.GATT_PAIRING_CONFIG";
 
     @VisibleForTesting
     static final String ACTION_GATT_TEST_USAGE = "android.bluetooth.action.GATT_TEST_USAGE";
+
     @VisibleForTesting
-    static final String ACTION_GATT_TEST_ENABLE =
-            "android.bluetooth.action.GATT_TEST_ENABLE";
+    static final String ACTION_GATT_TEST_ENABLE = "android.bluetooth.action.GATT_TEST_ENABLE";
+
     @VisibleForTesting
-    static final String ACTION_GATT_TEST_CONNECT =
-            "android.bluetooth.action.GATT_TEST_CONNECT";
+    static final String ACTION_GATT_TEST_CONNECT = "android.bluetooth.action.GATT_TEST_CONNECT";
+
     @VisibleForTesting
     static final String ACTION_GATT_TEST_DISCONNECT =
             "android.bluetooth.action.GATT_TEST_DISCONNECT";
+
     @VisibleForTesting
-    static final String ACTION_GATT_TEST_DISCOVER =
-            "android.bluetooth.action.GATT_TEST_DISCOVER";
+    static final String ACTION_GATT_TEST_DISCOVER = "android.bluetooth.action.GATT_TEST_DISCOVER";
 
     private static final String EXTRA_ENABLE = "enable";
     private static final String EXTRA_ADDRESS = "address";
@@ -65,17 +63,15 @@ import java.util.UUID;
     private static final String EXTRA_MAX_KEY = "max_key";
 
     /**
-     * Handles intents passed in via GattService.onStartCommand().
-     * This allows sending debug actions to the running service.
-     * To trigger a debug action, invoke the following shell command:
+     * Handles intents passed in via GattService.onStartCommand(). This allows sending debug actions
+     * to the running service. To trigger a debug action, invoke the following shell command:
      *
-     *   adb shell am startservice -a <action> <component>
+     * <p>adb shell am startservice -a <action> <component>
      *
-     * Where <action> represents one of the ACTION_* constants defines above
-     * and  <component> identifies the GATT service.
+     * <p>Where <action> represents one of the ACTION_* constants defines above and <component>
+     * identifies the GATT service.
      *
-     * For example:
-     *   import com.android.bluetooth.gatt.GattService;
+     * <p>For example: import com.android.bluetooth.gatt.GattService;
      */
     static boolean handleDebugAction(GattService svc, Intent intent) {
         if (!DEBUG_ADMIN && !Utils.isInstrumentationTestMode()) {
@@ -127,10 +123,7 @@ import java.util.UUID;
         return true;
     }
 
-    /**
-     * Attempts to retrieve an extra from an intent first as hex value,
-     * then as an ineger.
-     */
+    /** Attempts to retrieve an extra from an intent first as hex value, then as an ineger. */
     private static int getHandleExtra(Intent intent, String extra, int defaultValue) {
         Bundle extras = intent.getExtras();
         Object uuid = extras != null ? extras.get(extra) : null;
@@ -146,9 +139,8 @@ import java.util.UUID;
     }
 
     /**
-     * Retrieves the EXTRA_UUID parameter.
-     * If a string of length 4 is detected, a 16-bit hex UUID is assumed and
-     * the default Bluetooth UUID is appended.
+     * Retrieves the EXTRA_UUID parameter. If a string of length 4 is detected, a 16-bit hex UUID is
+     * assumed and the default Bluetooth UUID is appended.
      */
     private static UUID getUuidExtra(Intent intent) {
         String uuidStr = intent.getStringExtra(EXTRA_UUID);

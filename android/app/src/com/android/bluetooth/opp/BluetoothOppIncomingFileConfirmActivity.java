@@ -65,11 +65,9 @@ import com.android.internal.annotations.VisibleForTesting;
 public class BluetoothOppIncomingFileConfirmActivity extends AlertActivity {
     private static final String TAG = "BluetoothIncomingFileConfirmActivity";
 
-    @VisibleForTesting
-    static final int DISMISS_TIMEOUT_DIALOG = 0;
+    @VisibleForTesting static final int DISMISS_TIMEOUT_DIALOG = 0;
 
-    @VisibleForTesting
-    static final int DISMISS_TIMEOUT_DIALOG_VALUE = 2000;
+    @VisibleForTesting static final int DISMISS_TIMEOUT_DIALOG_VALUE = 2000;
 
     private static final String PREFERENCE_USER_TIMEOUT = "user_timeout";
 
@@ -107,9 +105,10 @@ public class BluetoothOppIncomingFileConfirmActivity extends AlertActivity {
 
         mAlertBuilder.setTitle(getString(R.string.incoming_file_confirm_content));
         mAlertBuilder.setView(createView());
-        mAlertBuilder.setPositiveButton(R.string.incoming_file_confirm_ok,
-                (dialog, which) -> onIncomingFileConfirmOk());
-        mAlertBuilder.setNegativeButton(R.string.incoming_file_confirm_cancel,
+        mAlertBuilder.setPositiveButton(
+                R.string.incoming_file_confirm_ok, (dialog, which) -> onIncomingFileConfirmOk());
+        mAlertBuilder.setNegativeButton(
+                R.string.incoming_file_confirm_cancel,
                 (dialog, which) -> onIncomingFileConfirmCancel());
 
         setupAlert();
@@ -120,15 +119,17 @@ public class BluetoothOppIncomingFileConfirmActivity extends AlertActivity {
 
         Log.v(TAG, "BluetoothIncomingFileConfirmActivity: Got uri:" + mUri);
 
-        mReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                if (!BluetoothShare.USER_CONFIRMATION_TIMEOUT_ACTION.equals(intent.getAction())) {
-                    return;
-                }
-                onTimeout();
-            }
-        };
+        mReceiver =
+                new BroadcastReceiver() {
+                    @Override
+                    public void onReceive(Context context, Intent intent) {
+                        if (!BluetoothShare.USER_CONFIRMATION_TIMEOUT_ACTION.equals(
+                                intent.getAction())) {
+                            return;
+                        }
+                        onTimeout();
+                    }
+                };
         IntentFilter filter = new IntentFilter(BluetoothShare.USER_CONFIRMATION_TIMEOUT_ACTION);
         filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
         registerReceiver(mReceiver, filter);
@@ -140,14 +141,11 @@ public class BluetoothOppIncomingFileConfirmActivity extends AlertActivity {
         ((TextView) view.findViewById(R.id.from_content)).setText(mTransInfo.mDeviceName);
         String fileName = mTransInfo.mFileName;
         if (fileName != null) {
-            fileName = fileName
-                    .replace('\t', ' ')
-                    .replace('\n', ' ')
-                    .replace('\r', ' ');
+            fileName = fileName.replace('\t', ' ').replace('\n', ' ').replace('\r', ' ');
         }
         ((TextView) view.findViewById(R.id.filename_content)).setText(fileName);
-        ((TextView) view.findViewById(R.id.size_content)).setText(
-                Formatter.formatFileSize(this, mTransInfo.mTotalBytes));
+        ((TextView) view.findViewById(R.id.size_content))
+                .setText(Formatter.formatFileSize(this, mTransInfo.mTotalBytes));
 
         return view;
     }
@@ -156,10 +154,11 @@ public class BluetoothOppIncomingFileConfirmActivity extends AlertActivity {
         if (!mTimeout) {
             // Update database
             mUpdateValues = new ContentValues();
-            mUpdateValues.put(BluetoothShare.USER_CONFIRMATION,
-                    BluetoothShare.USER_CONFIRMATION_CONFIRMED);
-            BluetoothMethodProxy.getInstance().contentResolverUpdate(this.getContentResolver(),
-                    mUri, mUpdateValues, null, null);
+            mUpdateValues.put(
+                    BluetoothShare.USER_CONFIRMATION, BluetoothShare.USER_CONFIRMATION_CONFIRMED);
+            BluetoothMethodProxy.getInstance()
+                    .contentResolverUpdate(
+                            this.getContentResolver(), mUri, mUpdateValues, null, null);
 
             Toast.makeText(this, getString(R.string.bt_toast_1), Toast.LENGTH_SHORT).show();
         }
@@ -168,10 +167,10 @@ public class BluetoothOppIncomingFileConfirmActivity extends AlertActivity {
     private void onIncomingFileConfirmCancel() {
         // Update database
         mUpdateValues = new ContentValues();
-        mUpdateValues.put(BluetoothShare.USER_CONFIRMATION,
-                BluetoothShare.USER_CONFIRMATION_DENIED);
-        BluetoothMethodProxy.getInstance().contentResolverUpdate(this.getContentResolver(),
-                mUri, mUpdateValues, null, null);
+        mUpdateValues.put(
+                BluetoothShare.USER_CONFIRMATION, BluetoothShare.USER_CONFIRMATION_DENIED);
+        BluetoothMethodProxy.getInstance()
+                .contentResolverUpdate(this.getContentResolver(), mUri, mUpdateValues, null, null);
     }
 
     @Override
@@ -212,29 +211,30 @@ public class BluetoothOppIncomingFileConfirmActivity extends AlertActivity {
     private void onTimeout() {
         mTimeout = true;
 
-        changeTitle(getString(
-                R.string.incoming_file_confirm_timeout_content,
-                mTransInfo.mDeviceName));
+        changeTitle(
+                getString(R.string.incoming_file_confirm_timeout_content, mTransInfo.mDeviceName));
         changeButtonVisibility(DialogInterface.BUTTON_NEGATIVE, View.GONE);
         changeButtonText(
                 DialogInterface.BUTTON_POSITIVE,
                 getString(R.string.incoming_file_confirm_timeout_ok));
 
-        BluetoothMethodProxy.getInstance().handlerSendMessageDelayed(mTimeoutHandler,
-                DISMISS_TIMEOUT_DIALOG, DISMISS_TIMEOUT_DIALOG_VALUE);
+        BluetoothMethodProxy.getInstance()
+                .handlerSendMessageDelayed(
+                        mTimeoutHandler, DISMISS_TIMEOUT_DIALOG, DISMISS_TIMEOUT_DIALOG_VALUE);
     }
 
-    private final Handler mTimeoutHandler = new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case DISMISS_TIMEOUT_DIALOG:
-                    Log.v(TAG, "Received DISMISS_TIMEOUT_DIALOG msg.");
-                    finish();
-                    break;
-                default:
-                    break;
-            }
-        }
-    };
+    private final Handler mTimeoutHandler =
+            new Handler() {
+                @Override
+                public void handleMessage(Message msg) {
+                    switch (msg.what) {
+                        case DISMISS_TIMEOUT_DIALOG:
+                            Log.v(TAG, "Received DISMISS_TIMEOUT_DIALOG msg.");
+                            finish();
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            };
 }

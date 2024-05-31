@@ -38,9 +38,8 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * A base implementation of the BluetoothMapEmailContract.
- * A base class for a ContentProvider that allows access to Email messages from a Bluetooth
- * device through the Message Access Profile.
+ * A base implementation of the BluetoothMapEmailContract. A base class for a ContentProvider that
+ * allows access to Email messages from a Bluetooth device through the Message Access Profile.
  */
 public abstract class BluetoothMapEmailProvider extends ContentProvider {
 
@@ -57,32 +56,35 @@ public abstract class BluetoothMapEmailProvider extends ContentProvider {
     private String mAuthority;
     private UriMatcher mMatcher;
 
-
     private PipeReader mPipeReader = new PipeReader();
     private PipeWriter mPipeWriter = new PipeWriter();
 
     /**
      * Write the content of a message to a stream as MIME encoded RFC-2822 data.
+     *
      * @param accountId the ID of the account to which the message belong
      * @param messageId the ID of the message to write to the stream
      * @param includeAttachment true if attachments should be included
-     * @param download true if any missing part of the message shall be downloaded
-     *        before written to the stream. The download flag will determine
-     *        whether or not attachments shall be downloaded or only the message content.
+     * @param download true if any missing part of the message shall be downloaded before written to
+     *     the stream. The download flag will determine whether or not attachments shall be
+     *     downloaded or only the message content.
      * @param out the FileOurputStream to write to.
      * @throws IOException
      */
-    protected abstract void WriteMessageToStream(long accountId, long messageId,
-            boolean includeAttachment, boolean download, FileOutputStream out) throws IOException;
+    protected abstract void WriteMessageToStream(
+            long accountId,
+            long messageId,
+            boolean includeAttachment,
+            boolean download,
+            FileOutputStream out)
+            throws IOException;
 
     /**
      * @return the CONTENT_URI exposed. This will be used to send out notifications.
      */
     protected abstract Uri getContentUri();
 
-    /**
-     * Implementation is provided by the parent class.
-     */
+    /** Implementation is provided by the parent class. */
     @Override
     public void attachInfo(Context context, ProviderInfo info) {
         mAuthority = info.authority;
@@ -105,37 +107,35 @@ public abstract class BluetoothMapEmailProvider extends ContentProvider {
         super.attachInfo(context, info);
     }
 
-
     /**
-     * Interface to write a stream of data to a pipe.  Use with
-     * {@link ContentProvider#openPipeHelper}.
+     * Interface to write a stream of data to a pipe. Use with {@link
+     * ContentProvider#openPipeHelper}.
      */
     public interface PipeDataReader<T> {
         /**
-         * Called from a background thread to stream data from a pipe.
-         * Note that the pipe is blocking, so this thread can block on
-         * reads for an arbitrary amount of time if the client is slow
-         * at writing.
+         * Called from a background thread to stream data from a pipe. Note that the pipe is
+         * blocking, so this thread can block on reads for an arbitrary amount of time if the client
+         * is slow at writing.
          *
-         * @param input The pipe where data should be read. This will be
-         * closed for you upon returning from this function.
+         * @param input The pipe where data should be read. This will be closed for you upon
+         *     returning from this function.
          * @param uri The URI whose data is to be written.
          * @param mimeType The desired type of data to be written.
          * @param opts Options supplied by caller.
          * @param args Your own custom arguments.
          */
-        void readDataFromPipe(ParcelFileDescriptor input, Uri uri, String mimeType, Bundle opts,
-                T args);
+        void readDataFromPipe(
+                ParcelFileDescriptor input, Uri uri, String mimeType, Bundle opts, T args);
     }
 
     public class PipeReader implements PipeDataReader<Cursor> {
         /**
-         * Read the data from the pipe and generate a message.
-         * Use the message to do an update of the message specified by the URI.
+         * Read the data from the pipe and generate a message. Use the message to do an update of
+         * the message specified by the URI.
          */
         @Override
-        public void readDataFromPipe(ParcelFileDescriptor input, Uri uri, String mimeType,
-                Bundle opts, Cursor args) {
+        public void readDataFromPipe(
+                ParcelFileDescriptor input, Uri uri, String mimeType, Bundle opts, Cursor args) {
             Log.v(TAG, "readDataFromPipe(): uri=" + uri.toString());
             FileInputStream fIn = null;
             try {
@@ -162,29 +162,30 @@ public abstract class BluetoothMapEmailProvider extends ContentProvider {
     }
 
     /**
-     * Read a MIME encoded RFC-2822 fileStream and update the message content.
-     * The Date and/or From headers may not be present in the MIME encoded
-     * message, and this function shall add appropriate values if the headers
-     * are missing. From should be set to the owner of the account.
+     * Read a MIME encoded RFC-2822 fileStream and update the message content. The Date and/or From
+     * headers may not be present in the MIME encoded message, and this function shall add
+     * appropriate values if the headers are missing. From should be set to the owner of the
+     * account.
      *
      * @param input the file stream to read data from
      * @param accountId the accountId
      * @param messageId ID of the message to update
      */
-    protected abstract void UpdateMimeMessageFromStream(FileInputStream input, long accountId,
-            long messageId) throws IOException;
+    protected abstract void UpdateMimeMessageFromStream(
+            FileInputStream input, long accountId, long messageId) throws IOException;
 
     public class PipeWriter implements PipeDataWriter<Cursor> {
-        /**
-         * Generate a message based on the cursor, and write the encoded data to the stream.
-         */
-
+        /** Generate a message based on the cursor, and write the encoded data to the stream. */
         @Override
-        public void writeDataToPipe(ParcelFileDescriptor output, Uri uri, String mimeType,
-                Bundle opts, Cursor c) {
+        public void writeDataToPipe(
+                ParcelFileDescriptor output, Uri uri, String mimeType, Bundle opts, Cursor c) {
             if (D) {
-                Log.d(TAG, "writeDataToPipe(): uri=" + uri.toString() + " - getLastPathSegment() = "
-                        + uri.getLastPathSegment());
+                Log.d(
+                        TAG,
+                        "writeDataToPipe(): uri="
+                                + uri.toString()
+                                + " - getLastPathSegment() = "
+                                + uri.getLastPathSegment());
             }
 
             FileOutputStream fout = null;
@@ -232,10 +233,11 @@ public abstract class BluetoothMapEmailProvider extends ContentProvider {
     }
 
     /**
-     * This function shall be called when any Account database content have changed
-     * to Notify any attached observers.
-     * @param accountId the ID of the account that changed. Null is a valid value,
-     *        if accountId is unknown or multiple accounts changed.
+     * This function shall be called when any Account database content have changed to Notify any
+     * attached observers.
+     *
+     * @param accountId the ID of the account that changed. Null is a valid value, if accountId is
+     *     unknown or multiple accounts changed.
      */
     protected void onAccountChanged(String accountId) {
         Uri newUri = null;
@@ -255,12 +257,13 @@ public abstract class BluetoothMapEmailProvider extends ContentProvider {
     }
 
     /**
-     * This function shall be called when any Message database content have changed
-     * to notify any attached observers.
-     * @param accountId Null is a valid value, if accountId is unknown, but
-     *        recommended for increased performance.
-     * @param messageId Null is a valid value, if multiple messages changed or the
-     *        messageId is unknown, but recommended for increased performance.
+     * This function shall be called when any Message database content have changed to notify any
+     * attached observers.
+     *
+     * @param accountId Null is a valid value, if accountId is unknown, but recommended for
+     *     increased performance.
+     * @param messageId Null is a valid value, if multiple messages changed or the messageId is
+     *     unknown, but recommended for increased performance.
      */
     protected void onMessageChanged(String accountId, String messageId) {
         Uri newUri = null;
@@ -275,61 +278,65 @@ public abstract class BluetoothMapEmailProvider extends ContentProvider {
             if (messageId == null) {
                 newUri = BluetoothMapContract.buildMessageUri(mAuthority, accountId);
             } else {
-                newUri = BluetoothMapContract.buildMessageUriWithId(mAuthority, accountId,
-                        messageId);
+                newUri =
+                        BluetoothMapContract.buildMessageUriWithId(
+                                mAuthority, accountId, messageId);
             }
         }
         if (D) {
-            Log.d(TAG, "onMessageChanged() accountId = " + accountId + " messageId = " + messageId
-                    + " URI: " + newUri);
+            Log.d(
+                    TAG,
+                    "onMessageChanged() accountId = "
+                            + accountId
+                            + " messageId = "
+                            + messageId
+                            + " URI: "
+                            + newUri);
         }
         mResolver.notifyChange(newUri, null);
     }
 
-    /**
-     * Not used, this is just a dummy implementation.
-     */
+    /** Not used, this is just a dummy implementation. */
     @Override
     public String getType(Uri uri) {
         return "Email";
     }
 
     /**
-     * Open a file descriptor to a message.
-     * Two modes supported for read: With and without attachments.
-     * One mode exist for write and the actual content will be with or without
+     * Open a file descriptor to a message. Two modes supported for read: With and without
+     * attachments. One mode exist for write and the actual content will be with or without
      * attachments.
      *
-     * Mode will be "r" or "w".
+     * <p>Mode will be "r" or "w".
      *
-     * URI format:
-     * The URI scheme is as follows.
-     * For messages with attachments:
-     *   content://com.android.mail.bluetoothprovider/Messages/msgId#
+     * <p>URI format: The URI scheme is as follows. For messages with attachments:
+     * content://com.android.mail.bluetoothprovider/Messages/msgId#
      *
-     * For messages without attachments:
-     *   content://com.android.mail.bluetoothprovider/Messages/msgId#/NO_ATTACHMENTS
+     * <p>For messages without attachments:
+     * content://com.android.mail.bluetoothprovider/Messages/msgId#/NO_ATTACHMENTS
      *
-     * UPDATE: For write.
-     *         First create a message in the DB using insert into the message DB
-     *         Then open a file handle to the #id
-     *         write the data to a stream created from the fileHandle.
+     * <p>UPDATE: For write. First create a message in the DB using insert into the message DB Then
+     * open a file handle to the #id write the data to a stream created from the fileHandle.
      *
      * @param uri the URI to open. ../Messages/#id
-     * @param mode the mode to use. The following modes exist: - UPDATE do not work - use URI
-     *  - "read_with_attachments" - to read an e-mail including any attachments
-     *  - "read_no_attachments" - to read an e-mail excluding any attachments
-     *  - "write" - to add a mime encoded message to the database. This write
-     *              should not trigger the message to be send.
+     * @param mode the mode to use. The following modes exist: - UPDATE do not work - use URI -
+     *     "read_with_attachments" - to read an e-mail including any attachments -
+     *     "read_no_attachments" - to read an e-mail excluding any attachments - "write" - to add a
+     *     mime encoded message to the database. This write should not trigger the message to be
+     *     send.
      * @return the ParcelFileDescriptor
-     *  @throws FileNotFoundException
+     * @throws FileNotFoundException
      */
     @Override
     public ParcelFileDescriptor openFile(Uri uri, String mode) throws FileNotFoundException {
         final long callingId = Binder.clearCallingIdentity();
         if (D) {
-            Log.d(TAG, "openFile(): uri=" + uri.toString() + " - getLastPathSegment() = "
-                    + uri.getLastPathSegment());
+            Log.d(
+                    TAG,
+                    "openFile(): uri="
+                            + uri.toString()
+                            + " - getLastPathSegment() = "
+                            + uri.getLastPathSegment());
         }
         try {
             /* To be able to do abstraction of the file IO, we simply ignore the URI at this
@@ -348,40 +355,42 @@ public abstract class BluetoothMapEmailProvider extends ContentProvider {
     }
 
     /**
-     * A helper function for implementing {@link #openFile}, for
-     * creating a data pipe and background thread allowing you to stream
-     * data back from the client.  This function returns a new
-     * ParcelFileDescriptor that should be returned to the caller (the caller
-     * is responsible for closing it).
+     * A helper function for implementing {@link #openFile}, for creating a data pipe and background
+     * thread allowing you to stream data back from the client. This function returns a new
+     * ParcelFileDescriptor that should be returned to the caller (the caller is responsible for
+     * closing it).
      *
      * @param uri The URI whose data is to be written.
      * @param mimeType The desired type of data to be written.
      * @param opts Options supplied by caller.
      * @param args Your own custom arguments.
-     * @param func Interface implementing the function that will actually
-     * stream the data.
-     * @return Returns a new ParcelFileDescriptor holding the read side of
-     * the pipe.  This should be returned to the caller for reading; the caller
-     * is responsible for closing it when done.
+     * @param func Interface implementing the function that will actually stream the data.
+     * @return Returns a new ParcelFileDescriptor holding the read side of the pipe. This should be
+     *     returned to the caller for reading; the caller is responsible for closing it when done.
      */
-    private <T> ParcelFileDescriptor openInversePipeHelper(final Uri uri, final String mimeType,
-            final Bundle opts, final T args, final PipeDataReader<T> func)
+    private <T> ParcelFileDescriptor openInversePipeHelper(
+            final Uri uri,
+            final String mimeType,
+            final Bundle opts,
+            final T args,
+            final PipeDataReader<T> func)
             throws FileNotFoundException {
         try {
             final ParcelFileDescriptor[] fds = ParcelFileDescriptor.createPipe();
 
-            AsyncTask<Object, Object, Object> task = new AsyncTask<Object, Object, Object>() {
-                @Override
-                protected Object doInBackground(Object... params) {
-                    func.readDataFromPipe(fds[0], uri, mimeType, opts, args);
-                    try {
-                        fds[0].close();
-                    } catch (IOException e) {
-                        Log.w(TAG, "Failure closing pipe", e);
-                    }
-                    return null;
-                }
-            };
+            AsyncTask<Object, Object, Object> task =
+                    new AsyncTask<Object, Object, Object>() {
+                        @Override
+                        protected Object doInBackground(Object... params) {
+                            func.readDataFromPipe(fds[0], uri, mimeType, opts, args);
+                            try {
+                                fds[0].close();
+                            } catch (IOException e) {
+                                Log.w(TAG, "Failure closing pipe", e);
+                            }
+                            return null;
+                        }
+                    };
             task.executeOnExecutor(AsyncTask.THREAD_POOL_EXECUTOR, (Object[]) null);
 
             return fds[1];
@@ -392,9 +401,8 @@ public abstract class BluetoothMapEmailProvider extends ContentProvider {
 
     /**
      * The MAP specification states that a delete request from MAP client is a folder shift to the
-     * 'deleted' folder.
-     * Only use case of delete() is when transparency is requested for push messages, then
-     * message should not remain in sent folder and therefore must be deleted
+     * 'deleted' folder. Only use case of delete() is when transparency is requested for push
+     * messages, then message should not remain in sent folder and therefore must be deleted
      */
     @Override
     public int delete(Uri uri, String where, String[] selectionArgs) {
@@ -412,7 +420,6 @@ public abstract class BluetoothMapEmailProvider extends ContentProvider {
         if (messageId == null) {
             throw new IllegalArgumentException("Message ID missing in update values!");
         }
-
 
         String accountId = getAccountId(uri);
         if (accountId == null) {
@@ -436,6 +443,7 @@ public abstract class BluetoothMapEmailProvider extends ContentProvider {
 
     /**
      * This function deletes a message.
+     *
      * @param accountId the ID of the Account
      * @param messageId the ID of the message to delete.
      * @return the number of messages deleted - 0 if the message was not found.
@@ -443,12 +451,9 @@ public abstract class BluetoothMapEmailProvider extends ContentProvider {
     protected abstract int deleteMessage(String accountId, String messageId);
 
     /**
-     * Insert is used to add new messages to the data base.
-     * Insert message approach:
-     *   - Insert an empty message to get an _id with only a folder_id
-     *   - Open the _id for write
-     *   - Write the message content
-     *     (When the writer completes, this provider should do an update of the message)
+     * Insert is used to add new messages to the data base. Insert message approach: - Insert an
+     * empty message to get an _id with only a folder_id - Open the _id for write - Write the
+     * message content (When the writer completes, this provider should do an update of the message)
      */
     @Override
     public Uri insert(Uri uri, ContentValues values) {
@@ -464,8 +469,12 @@ public abstract class BluetoothMapEmailProvider extends ContentProvider {
 
         String id; // the id of the entry inserted into the database
         final long callingId = Binder.clearCallingIdentity();
-        Log.d(TAG, "insert(): uri=" + uri.toString() + " - getLastPathSegment() = "
-                + uri.getLastPathSegment());
+        Log.d(
+                TAG,
+                "insert(): uri="
+                        + uri.toString()
+                        + " - getLastPathSegment() = "
+                        + uri.getLastPathSegment());
         try {
             if (table.equals(BluetoothMapContract.TABLE_MESSAGE)) {
                 id = insertMessage(accountId, folderId.toString());
@@ -482,10 +491,10 @@ public abstract class BluetoothMapEmailProvider extends ContentProvider {
         }
     }
 
-
     /**
-     * Inserts an empty message into the Message data base in the specified folder.
-     * This is done before the actual message content is written by fileIO.
+     * Inserts an empty message into the Message data base in the specified folder. This is done
+     * before the actual message content is written by fileIO.
+     *
      * @param accountId the ID of the account
      * @param folderId the ID of the folder to create a new message in.
      * @return the message id as a string
@@ -495,9 +504,10 @@ public abstract class BluetoothMapEmailProvider extends ContentProvider {
     /**
      * Utility function to build a projection based on a projectionMap.
      *
-     *   "btColumnName" -> "emailColumnName as btColumnName" for each entry.
+     * <p>"btColumnName" -> "emailColumnName as btColumnName" for each entry.
      *
-     * This supports SQL statements in the emailColumnName entry.
+     * <p>This supports SQL statements in the emailColumnName entry.
+     *
      * @param projection
      * @param projectionMap <btColumnName, emailColumnName>
      * @return the converted projection
@@ -511,11 +521,15 @@ public abstract class BluetoothMapEmailProvider extends ContentProvider {
     }
 
     /**
-     * This query needs to map from the data used in the e-mail client to BluetoothMapContract
-     * type of data.
+     * This query needs to map from the data used in the e-mail client to BluetoothMapContract type
+     * of data.
      */
     @Override
-    public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
+    public Cursor query(
+            Uri uri,
+            String[] projection,
+            String selection,
+            String[] selectionArgs,
             String sortOrder) {
         final long callingId = Binder.clearCallingIdentity();
         try {
@@ -538,21 +552,22 @@ public abstract class BluetoothMapEmailProvider extends ContentProvider {
     }
 
     /**
-     * Query account information.
-     * This function shall return only exposable e-mail accounts. Hence shall not
-     * return accounts that has policies suggesting not to be shared them.
+     * Query account information. This function shall return only exposable e-mail accounts. Hence
+     * shall not return accounts that has policies suggesting not to be shared them.
+     *
      * @param projection
      * @param selection
      * @param selectionArgs
      * @param sortOrder
      * @return a cursor to the accounts that are subject to exposure over BT.
      */
-    protected abstract Cursor queryAccount(String[] projection, String selection,
-            String[] selectionArgs, String sortOrder);
+    protected abstract Cursor queryAccount(
+            String[] projection, String selection, String[] selectionArgs, String sortOrder);
 
     /**
-     * Filter out the non usable folders and ensure to name the mandatory folders
-     * inbox, outbox, sent, deleted and draft.
+     * Filter out the non usable folders and ensure to name the mandatory folders inbox, outbox,
+     * sent, deleted and draft.
+     *
      * @param accountId
      * @param projection
      * @param selection
@@ -560,20 +575,20 @@ public abstract class BluetoothMapEmailProvider extends ContentProvider {
      * @param sortOrder
      * @return
      */
-    protected abstract Cursor queryFolder(String accountId, String[] projection, String selection,
-            String[] selectionArgs, String sortOrder);
+    protected abstract Cursor queryFolder(
+            String accountId,
+            String[] projection,
+            String selection,
+            String[] selectionArgs,
+            String sortOrder);
 
     /**
      * For the message table the selection (where clause) can only include the following columns:
-     *    date: less than, greater than and equals
-     *    flagRead: = 1 or = 0
-     *    flagPriority: = 1 or = 0
-     *    folder_id: the ID of the folder only equals
-     *    toList: partial name/address search
-     *    ccList: partial name/address search
-     *    bccList: partial name/address search
-     *    fromList: partial name/address search
-     * Additionally the COUNT and OFFSET shall be supported.
+     * date: less than, greater than and equals flagRead: = 1 or = 0 flagPriority: = 1 or = 0
+     * folder_id: the ID of the folder only equals toList: partial name/address search ccList:
+     * partial name/address search bccList: partial name/address search fromList: partial
+     * name/address search Additionally the COUNT and OFFSET shall be supported.
+     *
      * @param accountId the ID of the account
      * @param projection
      * @param selection
@@ -581,18 +596,19 @@ public abstract class BluetoothMapEmailProvider extends ContentProvider {
      * @param sortOrder
      * @return a cursor to query result
      */
-    protected abstract Cursor queryMessage(String accountId, String[] projection, String selection,
-            String[] selectionArgs, String sortOrder);
+    protected abstract Cursor queryMessage(
+            String accountId,
+            String[] projection,
+            String selection,
+            String[] selectionArgs,
+            String sortOrder);
 
     /**
-     * update()
-     * Messages can be modified in the following cases:
-     *  - the folder_key of a message - hence the message can be moved to a new folder,
-     *                                  but the content cannot be modified.
-     *  - the FLAG_READ state can be changed.
-     * The selection statement will always be selection of a message ID, when updating a message,
-     * hence this function will be called multiple times if multiple messages must be updated
-     * due to the nature of the Bluetooth Message Access profile.
+     * update() Messages can be modified in the following cases: - the folder_key of a message -
+     * hence the message can be moved to a new folder, but the content cannot be modified. - the
+     * FLAG_READ state can be changed. The selection statement will always be selection of a message
+     * ID, when updating a message, hence this function will be called multiple times if multiple
+     * messages must be updated due to the nature of the Bluetooth Message Access profile.
      */
     @Override
     public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
@@ -608,8 +624,12 @@ public abstract class BluetoothMapEmailProvider extends ContentProvider {
 
         final long callingId = Binder.clearCallingIdentity();
         if (D) {
-            Log.w(TAG, "update(): uri=" + uri.toString() + " - getLastPathSegment() = "
-                    + uri.getLastPathSegment());
+            Log.w(
+                    TAG,
+                    "update(): uri="
+                            + uri.toString()
+                            + " - getLastPathSegment() = "
+                            + uri.getLastPathSegment());
         }
         try {
             if (table.equals(BluetoothMapContract.TABLE_ACCOUNT)) {
@@ -647,8 +667,9 @@ public abstract class BluetoothMapEmailProvider extends ContentProvider {
     }
 
     /**
-     * Update an entry in the account table. Only the expose flag will be
-     * changed through this interface.
+     * Update an entry in the account table. Only the expose flag will be changed through this
+     * interface.
+     *
      * @param accountId the ID of the account to change.
      * @param flagExpose the updated value.
      * @return the number of entries changed - 0 if account not found or value cannot be changed.
@@ -657,22 +678,28 @@ public abstract class BluetoothMapEmailProvider extends ContentProvider {
 
     /**
      * Update an entry in the message table.
+     *
      * @param accountId ID of the account to which the messageId relates
      * @param messageId the ID of the message to update
      * @param folderId the new folder ID value to set - ignore if null.
      * @param flagRead the new flagRead value to set - ignore if null.
      * @return
      */
-    protected abstract int updateMessage(String accountId, Long messageId, Long folderId,
-            Boolean flagRead);
-
+    protected abstract int updateMessage(
+            String accountId, Long messageId, Long folderId, Boolean flagRead);
 
     @Override
     public Bundle call(String method, String arg, Bundle extras) {
         final long callingId = Binder.clearCallingIdentity();
         if (D) {
-            Log.d(TAG, "call(): method=" + method + " arg=" + arg + "ThreadId: "
-                    + Thread.currentThread().getId());
+            Log.d(
+                    TAG,
+                    "call(): method="
+                            + method
+                            + " arg="
+                            + arg
+                            + "ThreadId: "
+                            + Thread.currentThread().getId());
         }
 
         try {
@@ -701,23 +728,20 @@ public abstract class BluetoothMapEmailProvider extends ContentProvider {
 
     /**
      * Trigger a sync of the specified folder.
+     *
      * @param accountId the ID of the account that owns the folder
      * @param folderId the ID of the folder.
      * @return 0 at success
      */
     protected abstract int syncFolder(long accountId, long folderId);
 
-    /**
-     * Need this to suppress warning in unit tests.
-     */
+    /** Need this to suppress warning in unit tests. */
     @Override
     public void shutdown() {
         // Don't call super.shutdown(), which emits a warning...
     }
 
-    /**
-     * Extract the BluetoothMapContract.AccountColumns._ID from the given URI.
-     */
+    /** Extract the BluetoothMapContract.AccountColumns._ID from the given URI. */
     public static String getAccountId(Uri uri) {
         final List<String> segments = uri.getPathSegments();
         if (segments.size() < 1) {

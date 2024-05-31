@@ -18,9 +18,7 @@ package com.android.bluetooth.avrcp;
 
 import android.os.SystemProperties;
 
-/**
- * A class to represent an AVRCP version
- */
+/** A class to represent an AVRCP version */
 final class AvrcpVersion {
     public static final AvrcpVersion AVRCP_VERSION_1_3 = new AvrcpVersion(1, 3);
     public static final AvrcpVersion AVRCP_VERSION_1_4 = new AvrcpVersion(1, 4);

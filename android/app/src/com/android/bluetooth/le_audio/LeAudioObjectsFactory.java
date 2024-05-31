@@ -22,9 +22,7 @@ import android.util.Log;
 import com.android.bluetooth.Utils;
 import com.android.internal.annotations.VisibleForTesting;
 
-/**
- * Factory class for object initialization to help with unit testing
- */
+/** Factory class for object initialization to help with unit testing */
 public class LeAudioObjectsFactory {
     private static final String TAG = LeAudioObjectsFactory.class.getSimpleName();
     private static LeAudioObjectsFactory sInstance;

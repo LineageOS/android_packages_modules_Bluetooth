@@ -17,9 +17,7 @@
 
 package com.android.bluetooth.mcp;
 
-/**
- * Player state fields definition
- */
+/** Player state fields definition */
 public enum PlayerStateField {
     PLAYBACK_STATE,
     PLAYBACK_SPEED,

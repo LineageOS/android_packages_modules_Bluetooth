@@ -18,32 +18,20 @@ package com.android.bluetooth.sap;
 
 import android.hardware.radio.sap.ISap;
 
-/**
- * ISapRilReceiver is used to send messages
- */
+/** ISapRilReceiver is used to send messages */
 public interface ISapRilReceiver extends ISap {
-    /**
-     * Set mSapProxy to null
-     */
+    /** Set mSapProxy to null */
     void resetSapProxy();
 
-    /**
-     * Notify SapServer that this class is ready for shutdown.
-     */
+    /** Notify SapServer that this class is ready for shutdown. */
     void notifyShutdown();
 
-    /**
-     * Notify SapServer that the RIL socket is connected
-     */
+    /** Notify SapServer that the RIL socket is connected */
     void sendRilConnectMessage();
 
-    /**
-     * Get mSapProxyLock
-     */
+    /** Get mSapProxyLock */
     Object getSapProxyLock();
 
-    /**
-     * Verifies mSapProxy is not null
-     */
+    /** Verifies mSapProxy is not null */
     boolean isProxyValid();
 }

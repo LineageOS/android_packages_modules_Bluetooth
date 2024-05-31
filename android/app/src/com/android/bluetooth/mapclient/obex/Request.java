@@ -52,9 +52,7 @@ abstract class Request {
     protected static final byte OAP_TAGID_STATUS_VALUE = 0x18;
     protected static final byte OAP_TAGID_MSE_TIME = 0x19;
     /* used for PUT requests which require filler byte */
-    protected static final byte[] FILLER_BYTE = {
-            0x30
-    };
+    protected static final byte[] FILLER_BYTE = {0x30};
     protected static final byte NOTIFICATION_ON = 0x01;
     protected static final byte NOTIFICATION_OFF = 0x00;
     protected static final byte ATTACHMENT_ON = 0x01;

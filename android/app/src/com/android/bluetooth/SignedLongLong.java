@@ -1,18 +1,17 @@
 /*
-* Copyright (C) 2015 Samsung System LSI
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*      http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
-
+ * Copyright (C) 2015 Samsung System LSI
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package com.android.bluetooth;
 
@@ -22,10 +21,9 @@ import java.io.UnsupportedEncodingException;
 import java.util.Objects;
 
 /**
- * Class to represent a 128bit value using two long member variables.
- * Has functionality to convert to/from hex-strings.
- * Mind that since signed variables are used to store the value internally
- * is used, the MSB/LSB long values can be negative.
+ * Class to represent a 128bit value using two long member variables. Has functionality to convert
+ * to/from hex-strings. Mind that since signed variables are used to store the value internally is
+ * used, the MSB/LSB long values can be negative.
  */
 public class SignedLongLong implements Comparable<SignedLongLong> {
 
@@ -39,6 +37,7 @@ public class SignedLongLong implements Comparable<SignedLongLong> {
 
     /**
      * Create a SignedLongLong from a Hex-String without "0x" prefix
+     *
      * @param value the hex-string
      * @return the created object
      * @throws UnsupportedEncodingException if "US-ASCII" charset is not supported,
@@ -92,7 +91,6 @@ public class SignedLongLong implements Comparable<SignedLongLong> {
     }
 
     /**
-     *
      * @return a hex-string representation of the object values
      */
     public String toHexString() {
@@ -132,5 +130,4 @@ public class SignedLongLong implements Comparable<SignedLongLong> {
     public long getLeastSignificantBits() {
         return mLeastSigBits;
     }
-
 }

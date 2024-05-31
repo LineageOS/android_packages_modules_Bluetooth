@@ -26,9 +26,7 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.internal.annotations.VisibleForTesting;
 
-/**
- * Factory class for object initialization to help with unit testing
- */
+/** Factory class for object initialization to help with unit testing */
 public class BassObjectsFactory {
     private static final String TAG = BassObjectsFactory.class.getSimpleName();
     private static BassObjectsFactory sInstance;

@@ -52,7 +52,12 @@ class HandleMap {
             this.serviceType = serviceType;
         }
 
-        Entry(int serverIf, int handle, UUID uuid, int serviceType, int instance,
+        Entry(
+                int serverIf,
+                int handle,
+                UUID uuid,
+                int serviceType,
+                int instance,
                 boolean advertisePreferred) {
             this.serverIf = serverIf;
             this.type = TYPE_SERVICE;
@@ -95,7 +100,12 @@ class HandleMap {
         mRequestMap.clear();
     }
 
-    void addService(int serverIf, int handle, UUID uuid, int serviceType, int instance,
+    void addService(
+            int serverIf,
+            int handle,
+            UUID uuid,
+            int serviceType,
+            int instance,
             boolean advertisePreferred) {
         mEntries.add(new Entry(serverIf, handle, uuid, serviceType, instance, advertisePreferred));
     }
@@ -106,13 +116,20 @@ class HandleMap {
     }
 
     void addDescriptor(int serverIf, int handle, UUID uuid, int serviceHandle) {
-        mEntries.add(new Entry(serverIf, TYPE_DESCRIPTOR, handle, uuid, serviceHandle,
-                mLastCharacteristic));
+        mEntries.add(
+                new Entry(
+                        serverIf,
+                        TYPE_DESCRIPTOR,
+                        handle,
+                        uuid,
+                        serviceHandle,
+                        mLastCharacteristic));
     }
 
     void setStarted(int serverIf, int handle, boolean started) {
         for (Entry entry : mEntries) {
-            if (entry.type != TYPE_SERVICE || entry.serverIf != serverIf
+            if (entry.type != TYPE_SERVICE
+                    || entry.serverIf != serverIf
                     || entry.handle != handle) {
                 continue;
             }
@@ -142,8 +159,11 @@ class HandleMap {
     }
 
     void deleteService(int serverIf, int serviceHandle) {
-        mEntries.removeIf(entry -> ((entry.serverIf == serverIf)
-                && (entry.handle == serviceHandle || entry.serviceHandle == serviceHandle)));
+        mEntries.removeIf(
+                entry ->
+                        ((entry.serverIf == serverIf)
+                                && (entry.handle == serviceHandle
+                                        || entry.serviceHandle == serviceHandle)));
     }
 
     List<Entry> getEntries() {
@@ -167,10 +187,7 @@ class HandleMap {
         return getByHandle(handle);
     }
 
-
-    /**
-     * Logs debug information.
-     */
+    /** Logs debug information. */
     void dump(StringBuilder sb) {
         sb.append("  Entries: " + mEntries.size() + "\n");
         sb.append("  Requests: " + mRequestMap.size() + "\n");

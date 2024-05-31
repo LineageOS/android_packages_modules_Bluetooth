@@ -52,47 +52,40 @@ import java.util.List;
 public class BluetoothPbapSimVcardManager {
     private static final String TAG = "PbapSIMvCardComposer";
 
-
     @VisibleForTesting
     public static final String FAILURE_REASON_FAILED_TO_GET_DATABASE_INFO =
-        "Failed to get database information";
+            "Failed to get database information";
 
     @VisibleForTesting
-    public static final String FAILURE_REASON_NO_ENTRY =
-        "There's no exportable in the database";
+    public static final String FAILURE_REASON_NO_ENTRY = "There's no exportable in the database";
 
     @VisibleForTesting
     public static final String FAILURE_REASON_NOT_INITIALIZED =
-        "The vCard composer object is not correctly initialized";
+            "The vCard composer object is not correctly initialized";
 
     /** Should be visible only from developers... (no need to translate, hopefully) */
     @VisibleForTesting
     public static final String FAILURE_REASON_UNSUPPORTED_URI =
-        "The Uri vCard composer received is not supported by the composer.";
+            "The Uri vCard composer received is not supported by the composer.";
 
-    @VisibleForTesting
-    public static final String NO_ERROR = "No error";
+    @VisibleForTesting public static final String NO_ERROR = "No error";
 
-    @VisibleForTesting
-    public static final Uri SIM_URI = Uri.parse("content://icc/adn");
+    @VisibleForTesting public static final Uri SIM_URI = Uri.parse("content://icc/adn");
 
-    @VisibleForTesting
-    public static final String SIM_PATH = "/SIM1/telecom";
+    @VisibleForTesting public static final String SIM_PATH = "/SIM1/telecom";
 
-    private static final String[] SIM_PROJECTION = new String[] {
-        Contacts.DISPLAY_NAME,
-        CommonDataKinds.Phone.NUMBER,
-        CommonDataKinds.Phone.TYPE,
-        CommonDataKinds.Phone.LABEL
-    };
+    private static final String[] SIM_PROJECTION =
+            new String[] {
+                Contacts.DISPLAY_NAME,
+                CommonDataKinds.Phone.NUMBER,
+                CommonDataKinds.Phone.TYPE,
+                CommonDataKinds.Phone.LABEL
+            };
 
-    @VisibleForTesting
-    public static final int NAME_COLUMN_INDEX = 0;
-    @VisibleForTesting
-    public static final int NUMBER_COLUMN_INDEX = 1;
+    @VisibleForTesting public static final int NAME_COLUMN_INDEX = 0;
+    @VisibleForTesting public static final int NUMBER_COLUMN_INDEX = 1;
     private static final int NUMBERTYPE_COLUMN_INDEX = 2;
     private static final int NUMBERLABEL_COLUMN_INDEX = 3;
-
 
     private final Context mContext;
     private ContentResolver mContentResolver;
@@ -105,16 +98,26 @@ public class BluetoothPbapSimVcardManager {
         mContentResolver = context.getContentResolver();
     }
 
-    public boolean init(final Uri contentUri, final String selection,
-            final String[] selectionArgs, final String sortOrder) {
+    public boolean init(
+            final Uri contentUri,
+            final String selection,
+            final String[] selectionArgs,
+            final String sortOrder) {
         if (!SIM_URI.equals(contentUri)) {
             mErrorReason = FAILURE_REASON_UNSUPPORTED_URI;
             return false;
         }
 
-        //checkpoint Figure out if we can apply selection, projection and sort order.
-        mCursor = BluetoothMethodProxy.getInstance().contentResolverQuery(mContentResolver,
-                contentUri, SIM_PROJECTION, null, null, sortOrder);
+        // checkpoint Figure out if we can apply selection, projection and sort order.
+        mCursor =
+                BluetoothMethodProxy.getInstance()
+                        .contentResolverQuery(
+                                mContentResolver,
+                                contentUri,
+                                SIM_PROJECTION,
+                                null,
+                                null,
+                                sortOrder);
 
         if (mCursor == null) {
             mErrorReason = FAILURE_REASON_FAILED_TO_GET_DATABASE_INFO;
@@ -152,9 +155,11 @@ public class BluetoothPbapSimVcardManager {
     }
 
     private String createOnevCardEntryInternal(boolean vcardVer21) {
-        final int vcardType = (vcardVer21 ? VCardConfig.VCARD_TYPE_V21_GENERIC :
-                VCardConfig.VCARD_TYPE_V30_GENERIC) |
-                VCardConfig.FLAG_REFRAIN_PHONE_NUMBER_FORMATTING;
+        final int vcardType =
+                (vcardVer21
+                                ? VCardConfig.VCARD_TYPE_V21_GENERIC
+                                : VCardConfig.VCARD_TYPE_V30_GENERIC)
+                        | VCardConfig.FLAG_REFRAIN_PHONE_NUMBER_FORMATTING;
         final VCardBuilder builder = new VCardBuilder(vcardType);
         String name = mCursor.getString(NAME_COLUMN_INDEX);
         if (TextUtils.isEmpty(name)) {
@@ -229,10 +234,10 @@ public class BluetoothPbapSimVcardManager {
     }
 
     public void moveToPosition(final int position, boolean sortalpha) {
-        if(mCursor == null) {
+        if (mCursor == null) {
             return;
         }
-        if(sortalpha) {
+        if (sortalpha) {
             setPositionByAlpha(position);
             return;
         }
@@ -244,12 +249,11 @@ public class BluetoothPbapSimVcardManager {
     }
 
     private void setPositionByAlpha(int position) {
-        if(mCursor == null) {
+        if (mCursor == null) {
             return;
         }
         ArrayList<String> nameList = new ArrayList<String>();
-        for (mCursor.moveToFirst(); !mCursor.isAfterLast(); mCursor
-                        .moveToNext()) {
+        for (mCursor.moveToFirst(); !mCursor.isAfterLast(); mCursor.moveToNext()) {
             String name = mCursor.getString(NAME_COLUMN_INDEX);
             if (TextUtils.isEmpty(name)) {
                 name = mContext.getString(android.R.string.unknownName);
@@ -257,18 +261,19 @@ public class BluetoothPbapSimVcardManager {
             nameList.add(name);
         }
 
-        Collections.sort(nameList, new Comparator <String> () {
-            @Override
-            public int compare(String str1, String str2){
-                return str1.compareToIgnoreCase(str2);
-            }
-        });
+        Collections.sort(
+                nameList,
+                new Comparator<String>() {
+                    @Override
+                    public int compare(String str1, String str2) {
+                        return str1.compareToIgnoreCase(str2);
+                    }
+                });
 
         for (mCursor.moveToFirst(); !mCursor.isAfterLast(); mCursor.moveToNext()) {
-            if(mCursor.getString(NAME_COLUMN_INDEX).equals(nameList.get(position))) {
-              break;
+            if (mCursor.getString(NAME_COLUMN_INDEX).equals(nameList.get(position))) {
+                break;
             }
-
         }
     }
 
@@ -276,8 +281,10 @@ public class BluetoothPbapSimVcardManager {
         int size = 0;
         Cursor contactCursor = null;
         try {
-            contactCursor = BluetoothMethodProxy.getInstance().contentResolverQuery(
-                    mContentResolver, SIM_URI, SIM_PROJECTION, null,null, null);
+            contactCursor =
+                    BluetoothMethodProxy.getInstance()
+                            .contentResolverQuery(
+                                    mContentResolver, SIM_URI, SIM_PROJECTION, null, null, null);
             if (contactCursor != null) {
                 size = contactCursor.getCount();
             }
@@ -292,15 +299,18 @@ public class BluetoothPbapSimVcardManager {
     public final ArrayList<String> getSIMPhonebookNameList(final int orderByWhat) {
         ArrayList<String> nameList = new ArrayList<String>();
         nameList.add(BluetoothPbapService.getLocalPhoneName());
-        //Since owner card should always be 0.vcf, maintain a separate list to avoid sorting
+        // Since owner card should always be 0.vcf, maintain a separate list to avoid sorting
         ArrayList<String> allnames = new ArrayList<String>();
         Cursor contactCursor = null;
         try {
-            contactCursor = BluetoothMethodProxy.getInstance().contentResolverQuery(
-                    mContentResolver, SIM_URI, SIM_PROJECTION, null,null,null);
+            contactCursor =
+                    BluetoothMethodProxy.getInstance()
+                            .contentResolverQuery(
+                                    mContentResolver, SIM_URI, SIM_PROJECTION, null, null, null);
             if (contactCursor != null) {
-                for (contactCursor.moveToFirst(); !contactCursor.isAfterLast(); contactCursor
-                        .moveToNext()) {
+                for (contactCursor.moveToFirst();
+                        !contactCursor.isAfterLast();
+                        contactCursor.moveToNext()) {
                     String name = contactCursor.getString(NAME_COLUMN_INDEX);
                     if (TextUtils.isEmpty(name)) {
                         name = mContext.getString(android.R.string.unknownName);
@@ -317,32 +327,35 @@ public class BluetoothPbapSimVcardManager {
             Log.v(TAG, "getPhonebookNameList, order by index");
         } else if (orderByWhat == BluetoothPbapObexServer.ORDER_BY_ALPHABETICAL) {
             Log.v(TAG, "getPhonebookNameList, order by alpha");
-            Collections.sort(allnames, new Comparator <String> () {
-                @Override
-                public int compare(String str1, String str2) {
-                    return str1.compareToIgnoreCase(str2);
-                }
-            });
+            Collections.sort(
+                    allnames,
+                    new Comparator<String>() {
+                        @Override
+                        public int compare(String str1, String str2) {
+                            return str1.compareToIgnoreCase(str2);
+                        }
+                    });
         }
 
         nameList.addAll(allnames);
         return nameList;
-
     }
 
-    public final ArrayList<String> getSIMContactNamesByNumber(
-            final String phoneNumber) {
+    public final ArrayList<String> getSIMContactNamesByNumber(final String phoneNumber) {
         ArrayList<String> nameList = new ArrayList<String>();
         ArrayList<String> startNameList = new ArrayList<String>();
         Cursor contactCursor = null;
 
         try {
-            contactCursor = BluetoothMethodProxy.getInstance().contentResolverQuery(
-                    mContentResolver, SIM_URI, SIM_PROJECTION, null, null, null);
+            contactCursor =
+                    BluetoothMethodProxy.getInstance()
+                            .contentResolverQuery(
+                                    mContentResolver, SIM_URI, SIM_PROJECTION, null, null, null);
 
             if (contactCursor != null) {
-                for (contactCursor.moveToFirst(); !contactCursor.isAfterLast(); contactCursor
-                        .moveToNext()) {
+                for (contactCursor.moveToFirst();
+                        !contactCursor.isAfterLast();
+                        contactCursor.moveToNext()) {
                     String number = contactCursor.getString(NUMBER_COLUMN_INDEX);
                     if (number == null) {
                         Log.v(TAG, "number is null");
@@ -375,15 +388,18 @@ public class BluetoothPbapSimVcardManager {
         int startListSize = startNameList.size();
         for (int index = 0; index < startListSize; index++) {
             String object = startNameList.get(index);
-            if (!nameList.contains(object))
-                nameList.add(object);
+            if (!nameList.contains(object)) nameList.add(object);
         }
 
         return nameList;
     }
 
-    public static final int composeAndSendSIMPhonebookVcards(Context context, Operation op,
-            final int startPoint, final int endPoint, final boolean vcardType21,
+    public static final int composeAndSendSIMPhonebookVcards(
+            Context context,
+            Operation op,
+            final int startPoint,
+            final int endPoint,
+            final boolean vcardType21,
             String ownerVCard) {
         if (startPoint < 1 || startPoint > endPoint) {
             Log.e(TAG, "internal error: startPoint or endPoint is not correct.");
@@ -404,16 +420,20 @@ public class BluetoothPbapSimVcardManager {
                 return ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
             }
             composer.moveToPosition(startPoint - 1, false);
-            for (int count =startPoint -1; count < endPoint; count++) {
+            for (int count = startPoint - 1; count < endPoint; count++) {
                 if (BluetoothPbapObexServer.sIsAborted) {
-                    ((ServerOperation)op).setAborted(true);
+                    ((ServerOperation) op).setAborted(true);
                     BluetoothPbapObexServer.sIsAborted = false;
                     break;
                 }
                 String vcard = composer.createOneEntry(vcardType21);
                 if (vcard == null) {
-                    Log.e(TAG, "Failed to read a contact. Error reason: "
-                            + composer.getErrorReason() + ", count:" + count);
+                    Log.e(
+                            TAG,
+                            "Failed to read a contact. Error reason: "
+                                    + composer.getErrorReason()
+                                    + ", count:"
+                                    + count);
                     ContentProfileErrorReportUtils.report(
                             BluetoothProfile.PBAP,
                             BluetoothProtoEnums.BLUETOOTH_PBAP_SIM_VCARD_MANAGER,
@@ -435,8 +455,12 @@ public class BluetoothPbapSimVcardManager {
         return ResponseCodes.OBEX_HTTP_OK;
     }
 
-    public static final int composeAndSendSIMPhonebookOneVcard(Context context, Operation op,
-            final int offset, final boolean vcardType21, String ownerVCard,
+    public static final int composeAndSendSIMPhonebookOneVcard(
+            Context context,
+            Operation op,
+            final int offset,
+            final boolean vcardType21,
+            String ownerVCard,
             int orderByWhat) {
         if (offset < 1) {
             Log.e(TAG, "Internal error: offset is not correct.");
@@ -457,18 +481,17 @@ public class BluetoothPbapSimVcardManager {
                 return ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
             }
             if (orderByWhat == BluetoothPbapObexServer.ORDER_BY_INDEXED) {
-                composer.moveToPosition(offset -1, false);
+                composer.moveToPosition(offset - 1, false);
             } else if (orderByWhat == BluetoothPbapObexServer.ORDER_BY_ALPHABETICAL) {
-                composer.moveToPosition(offset -1, true);
+                composer.moveToPosition(offset - 1, true);
             }
             if (BluetoothPbapObexServer.sIsAborted) {
-                ((ServerOperation)op).setAborted(true);
-                 BluetoothPbapObexServer.sIsAborted = false;
+                ((ServerOperation) op).setAborted(true);
+                BluetoothPbapObexServer.sIsAborted = false;
             }
             String vcard = composer.createOneEntry(vcardType21);
             if (vcard == null) {
-                Log.e(TAG, "Failed to read a contact. Error reason: "
-                            + composer.getErrorReason());
+                Log.e(TAG, "Failed to read a contact. Error reason: " + composer.getErrorReason());
                 ContentProfileErrorReportUtils.report(
                         BluetoothProfile.PBAP,
                         BluetoothProtoEnums.BLUETOOTH_PBAP_SIM_VCARD_MANAGER,
@@ -489,16 +512,20 @@ public class BluetoothPbapSimVcardManager {
         return ResponseCodes.OBEX_HTTP_OK;
     }
 
-    protected boolean isSimPhoneBook(String name, String type, String PB,
-            String SIM1, String TYPE_PB, String TYPE_LISTING, String  mCurrentPath) {
+    protected boolean isSimPhoneBook(
+            String name,
+            String type,
+            String PB,
+            String SIM1,
+            String TYPE_PB,
+            String TYPE_LISTING,
+            String mCurrentPath) {
 
         return ((name.contains(PB.subSequence(0, PB.length()))
-                && name.contains(SIM1.subSequence(0,
-                        SIM1.length())))
-                && (type.equals(TYPE_PB)))
-                || (((name.contains(
-                        PB.subSequence(0, PB.length())))
-                        && (mCurrentPath.equals(SIM_PATH)))
+                                && name.contains(SIM1.subSequence(0, SIM1.length())))
+                        && (type.equals(TYPE_PB)))
+                || (((name.contains(PB.subSequence(0, PB.length())))
+                                && (mCurrentPath.equals(SIM_PATH)))
                         && (type.equals(TYPE_LISTING)));
     }
 

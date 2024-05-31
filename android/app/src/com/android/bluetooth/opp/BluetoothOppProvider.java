@@ -97,10 +97,9 @@ public final class BluetoothOppProvider extends ContentProvider {
     private SQLiteOpenHelper mOpenHelper = null;
 
     /**
-     * Creates and updated database on demand when opening it. Helper class to
-     * create database the first time the provider is initialized and upgrade it
-     * when a new version of the provider needs an updated version of the
-     * database.
+     * Creates and updated database on demand when opening it. Helper class to create database the
+     * first time the provider is initialized and upgrade it when a new version of the provider
+     * needs an updated version of the database.
      */
     private static final class DatabaseHelper extends SQLiteOpenHelper {
 
@@ -108,9 +107,7 @@ public final class BluetoothOppProvider extends ContentProvider {
             super(context, DB_NAME, null, DB_VERSION);
         }
 
-        /**
-         * Creates database the first time we try to open it.
-         */
+        /** Creates database the first time we try to open it. */
         @Override
         public void onCreate(final SQLiteDatabase db) {
             Log.v(TAG, "populating new database");
@@ -118,8 +115,8 @@ public final class BluetoothOppProvider extends ContentProvider {
         }
 
         /**
-         * Updates the database format when a content provider is used with a
-         * database that was created with a different format.
+         * Updates the database format when a content provider is used with a database that was
+         * created with a different format.
          */
         @Override
         public void onUpgrade(final SQLiteDatabase db, int oldV, final int newV) {
@@ -131,26 +128,52 @@ public final class BluetoothOppProvider extends ContentProvider {
                 // Upgrading from NOP_FROM is the same as upgrading from NOP_TO.
                 oldV = DB_VERSION_NOP_UPGRADE_TO;
             }
-            Log.i(TAG, "Upgrading downloads database from version " + oldV + " to " + newV
-                    + ", which will destroy all old data");
+            Log.i(
+                    TAG,
+                    "Upgrading downloads database from version "
+                            + oldV
+                            + " to "
+                            + newV
+                            + ", which will destroy all old data");
             dropTable(db);
             createTable(db);
         }
-
     }
 
     private static void createTable(SQLiteDatabase db) {
         try {
-            db.execSQL("CREATE TABLE " + DB_TABLE + "(" + BluetoothShare._ID
-                    + " INTEGER PRIMARY KEY AUTOINCREMENT," + BluetoothShare.URI + " TEXT, "
-                    + BluetoothShare.FILENAME_HINT + " TEXT, " + BluetoothShare._DATA + " TEXT, "
-                    + BluetoothShare.MIMETYPE + " TEXT, " + BluetoothShare.DIRECTION + " INTEGER, "
-                    + BluetoothShare.DESTINATION + " TEXT, " + BluetoothShare.VISIBILITY
-                    + " INTEGER, " + BluetoothShare.USER_CONFIRMATION + " INTEGER, "
-                    + BluetoothShare.STATUS + " INTEGER, " + BluetoothShare.TOTAL_BYTES
-                    + " INTEGER, " + BluetoothShare.CURRENT_BYTES + " INTEGER, "
-                    + BluetoothShare.TIMESTAMP + " INTEGER," + Constants.MEDIA_SCANNED
-                    + " INTEGER); ");
+            db.execSQL(
+                    "CREATE TABLE "
+                            + DB_TABLE
+                            + "("
+                            + BluetoothShare._ID
+                            + " INTEGER PRIMARY KEY AUTOINCREMENT,"
+                            + BluetoothShare.URI
+                            + " TEXT, "
+                            + BluetoothShare.FILENAME_HINT
+                            + " TEXT, "
+                            + BluetoothShare._DATA
+                            + " TEXT, "
+                            + BluetoothShare.MIMETYPE
+                            + " TEXT, "
+                            + BluetoothShare.DIRECTION
+                            + " INTEGER, "
+                            + BluetoothShare.DESTINATION
+                            + " TEXT, "
+                            + BluetoothShare.VISIBILITY
+                            + " INTEGER, "
+                            + BluetoothShare.USER_CONFIRMATION
+                            + " INTEGER, "
+                            + BluetoothShare.STATUS
+                            + " INTEGER, "
+                            + BluetoothShare.TOTAL_BYTES
+                            + " INTEGER, "
+                            + BluetoothShare.CURRENT_BYTES
+                            + " INTEGER, "
+                            + BluetoothShare.TIMESTAMP
+                            + " INTEGER,"
+                            + Constants.MEDIA_SCANNED
+                            + " INTEGER); ");
         } catch (SQLException ex) {
             ContentProfileErrorReportUtils.report(
                     BluetoothProfile.OPP,
@@ -213,9 +236,11 @@ public final class BluetoothOppProvider extends ContentProvider {
     private static void putString(String key, Cursor from, ContentValues to) {
         to.put(key, from.getString(from.getColumnIndexOrThrow(key)));
     }
+
     private static void putInteger(String key, Cursor from, ContentValues to) {
         to.put(key, from.getInt(from.getColumnIndexOrThrow(key)));
     }
+
     private static void putLong(String key, Cursor from, ContentValues to) {
         to.put(key, from.getLong(from.getColumnIndexOrThrow(key)));
     }
@@ -227,28 +252,33 @@ public final class BluetoothOppProvider extends ContentProvider {
             try {
                 ContentValues values = new ContentValues();
 
-                final List<String> stringKeys =  new ArrayList<>(Arrays.asList(
-                            BluetoothShare.URI,
-                            BluetoothShare.FILENAME_HINT,
-                            BluetoothShare.MIMETYPE,
-                            BluetoothShare.DESTINATION));
+                final List<String> stringKeys =
+                        new ArrayList<>(
+                                Arrays.asList(
+                                        BluetoothShare.URI,
+                                        BluetoothShare.FILENAME_HINT,
+                                        BluetoothShare.MIMETYPE,
+                                        BluetoothShare.DESTINATION));
                 for (String k : stringKeys) {
                     putString(k, cursor, values);
                 }
 
-                final List<String> integerKeys =  new ArrayList<>(Arrays.asList(
-                            BluetoothShare.VISIBILITY,
-                            BluetoothShare.USER_CONFIRMATION,
-                            BluetoothShare.DIRECTION,
-                            BluetoothShare.STATUS,
-                            Constants.MEDIA_SCANNED));
+                final List<String> integerKeys =
+                        new ArrayList<>(
+                                Arrays.asList(
+                                        BluetoothShare.VISIBILITY,
+                                        BluetoothShare.USER_CONFIRMATION,
+                                        BluetoothShare.DIRECTION,
+                                        BluetoothShare.STATUS,
+                                        Constants.MEDIA_SCANNED));
                 for (String k : integerKeys) {
                     putInteger(k, cursor, values);
                 }
 
-                final List<String> longKeys =  new ArrayList<>(Arrays.asList(
-                            BluetoothShare.TOTAL_BYTES,
-                            BluetoothShare.TIMESTAMP));
+                final List<String> longKeys =
+                        new ArrayList<>(
+                                Arrays.asList(
+                                        BluetoothShare.TOTAL_BYTES, BluetoothShare.TIMESTAMP));
                 for (String k : longKeys) {
                     putLong(k, cursor, values);
                 }
@@ -338,7 +368,11 @@ public final class BluetoothOppProvider extends ContentProvider {
     }
 
     @Override
-    public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
+    public Cursor query(
+            Uri uri,
+            String[] projection,
+            String selection,
+            String[] selectionArgs,
             String sortOrder) {
         SQLiteDatabase db = mOpenHelper.getReadableDatabase();
 
@@ -429,28 +463,29 @@ public final class BluetoothOppProvider extends ContentProvider {
         int match = sURIMatcher.match(uri);
         switch (match) {
             case SHARES:
-            case SHARES_ID: {
-                String myWhere;
-                if (selection != null) {
-                    if (match == SHARES) {
-                        myWhere = "( " + selection + " )";
+            case SHARES_ID:
+                {
+                    String myWhere;
+                    if (selection != null) {
+                        if (match == SHARES) {
+                            myWhere = "( " + selection + " )";
+                        } else {
+                            myWhere = "( " + selection + " ) AND ";
+                        }
                     } else {
-                        myWhere = "( " + selection + " ) AND ";
+                        myWhere = "";
                     }
-                } else {
-                    myWhere = "";
-                }
-                if (match == SHARES_ID) {
-                    String segment = uri.getPathSegments().get(1);
-                    rowId = Long.parseLong(segment);
-                    myWhere += " ( " + BluetoothShare._ID + " = " + rowId + " ) ";
-                }
+                    if (match == SHARES_ID) {
+                        String segment = uri.getPathSegments().get(1);
+                        rowId = Long.parseLong(segment);
+                        myWhere += " ( " + BluetoothShare._ID + " = " + rowId + " ) ";
+                    }
 
-                if (values.size() > 0) {
-                    count = db.update(DB_TABLE, values, myWhere, selectionArgs);
+                    if (values.size() > 0) {
+                        count = db.update(DB_TABLE, values, myWhere, selectionArgs);
+                    }
+                    break;
                 }
-                break;
-            }
             default:
                 throw new UnsupportedOperationException("Cannot update unknown URI: " + uri);
         }
@@ -466,26 +501,27 @@ public final class BluetoothOppProvider extends ContentProvider {
         int match = sURIMatcher.match(uri);
         switch (match) {
             case SHARES:
-            case SHARES_ID: {
-                String myWhere;
-                if (selection != null) {
-                    if (match == SHARES) {
-                        myWhere = "( " + selection + " )";
+            case SHARES_ID:
+                {
+                    String myWhere;
+                    if (selection != null) {
+                        if (match == SHARES) {
+                            myWhere = "( " + selection + " )";
+                        } else {
+                            myWhere = "( " + selection + " ) AND ";
+                        }
                     } else {
-                        myWhere = "( " + selection + " ) AND ";
+                        myWhere = "";
                     }
-                } else {
-                    myWhere = "";
-                }
-                if (match == SHARES_ID) {
-                    String segment = uri.getPathSegments().get(1);
-                    long rowId = Long.parseLong(segment);
-                    myWhere += " ( " + BluetoothShare._ID + " = " + rowId + " ) ";
-                }
+                    if (match == SHARES_ID) {
+                        String segment = uri.getPathSegments().get(1);
+                        long rowId = Long.parseLong(segment);
+                        myWhere += " ( " + BluetoothShare._ID + " = " + rowId + " ) ";
+                    }
 
-                count = db.delete(DB_TABLE, myWhere, selectionArgs);
-                break;
-            }
+                    count = db.delete(DB_TABLE, myWhere, selectionArgs);
+                    break;
+                }
             default:
                 throw new UnsupportedOperationException("Cannot delete unknown URI: " + uri);
         }

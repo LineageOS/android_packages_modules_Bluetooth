@@ -23,9 +23,7 @@ import android.util.Log;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.internal.annotations.VisibleForTesting;
 
-/**
- * Utility method to report exceptions and error/warn logs in content profiles.
- */
+/** Utility method to report exceptions and error/warn logs in content profiles. */
 public class ContentProfileErrorReportUtils {
     private static final String TAG = ContentProfileErrorReportUtils.class.getSimpleName();
 

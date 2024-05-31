@@ -21,9 +21,7 @@ import static java.util.Map.entry;
 
 import java.util.Map;
 
-/**
- * Media control request, from client to Media Player
- */
+/** Media control request, from client to Media Player */
 public final class Request {
     private final int mOpcode;
     private final Integer mIntArg;
@@ -32,7 +30,7 @@ public final class Request {
      * Media control request constructor
      *
      * @param opcode Control request opcode
-     * @param arg    Control request argument
+     * @param arg Control request argument
      */
     public Request(int opcode, int arg) {
         this.mOpcode = opcode;
@@ -57,9 +55,7 @@ public final class Request {
         return mIntArg;
     }
 
-    /**
-     * Media control request results definition
-     */
+    /** Media control request results definition */
     public enum Results {
         SUCCESS(0x01),
         OPCODE_NOT_SUPPORTED(0x02),
@@ -77,10 +73,8 @@ public final class Request {
         }
     }
 
-    /**
-     * Media control request supported opcodes definition
-     */
-    public final static class SupportedOpcodes {
+    /** Media control request supported opcodes definition */
+    public static final class SupportedOpcodes {
         public static final int NONE = 0x00;
         public static final int PLAY = 0x01;
         public static final int PAUSE = 0x02;
@@ -174,10 +168,8 @@ public final class Request {
         }
     }
 
-    /**
-     * Media control request opcodes definition
-     */
-    public final static class Opcodes {
+    /** Media control request opcodes definition */
+    public static final class Opcodes {
         public static final int PLAY = 0x01;
         public static final int PAUSE = 0x02;
         public static final int FAST_REWIND = 0x03;
@@ -201,7 +193,7 @@ public final class Request {
         public static final int GOTO_GROUP = 0x44;
 
         static String toString(int opcode) {
-            switch(opcode) {
+            switch (opcode) {
                 case 0x01:
                     return "PLAY(0x01)";
                 case 0x02:
@@ -253,27 +245,27 @@ public final class Request {
     /* Map opcodes which are written to 'Media Control Point' characteristics to their corresponding
      * feature bit masks used in 'Media Control Point Opcodes Supported' characteristic.
      */
-    public final static Map<Integer, Integer> OpcodeToOpcodeSupport = Map.ofEntries(
-            entry(Opcodes.PLAY, SupportedOpcodes.PLAY),
-            entry(Opcodes.PAUSE, SupportedOpcodes.PAUSE),
-            entry(Opcodes.FAST_REWIND, SupportedOpcodes.FAST_REWIND),
-            entry(Opcodes.FAST_FORWARD, SupportedOpcodes.FAST_FORWARD),
-            entry(Opcodes.STOP, SupportedOpcodes.STOP),
-            entry(Opcodes.MOVE_RELATIVE, SupportedOpcodes.MOVE_RELATIVE),
-            entry(Opcodes.PREVIOUS_SEGMENT, SupportedOpcodes.PREVIOUS_SEGMENT),
-            entry(Opcodes.NEXT_SEGMENT, SupportedOpcodes.NEXT_SEGMENT),
-            entry(Opcodes.FIRST_SEGMENT, SupportedOpcodes.FIRST_SEGMENT),
-            entry(Opcodes.LAST_SEGMENT, SupportedOpcodes.LAST_SEGMENT),
-            entry(Opcodes.GOTO_SEGMENT, SupportedOpcodes.GOTO_SEGMENT),
-            entry(Opcodes.PREVIOUS_TRACK, SupportedOpcodes.PREVIOUS_TRACK),
-            entry(Opcodes.NEXT_TRACK, SupportedOpcodes.NEXT_TRACK),
-            entry(Opcodes.FIRST_TRACK, SupportedOpcodes.FIRST_TRACK),
-            entry(Opcodes.LAST_TRACK, SupportedOpcodes.LAST_TRACK),
-            entry(Opcodes.GOTO_TRACK, SupportedOpcodes.GOTO_TRACK),
-            entry(Opcodes.PREVIOUS_GROUP, SupportedOpcodes.PREVIOUS_GROUP),
-            entry(Opcodes.NEXT_GROUP, SupportedOpcodes.NEXT_GROUP),
-            entry(Opcodes.FIRST_GROUP, SupportedOpcodes.FIRST_GROUP),
-            entry(Opcodes.LAST_GROUP, SupportedOpcodes.LAST_GROUP),
-            entry(Opcodes.GOTO_GROUP, SupportedOpcodes.GOTO_GROUP));
-
+    public static final Map<Integer, Integer> OpcodeToOpcodeSupport =
+            Map.ofEntries(
+                    entry(Opcodes.PLAY, SupportedOpcodes.PLAY),
+                    entry(Opcodes.PAUSE, SupportedOpcodes.PAUSE),
+                    entry(Opcodes.FAST_REWIND, SupportedOpcodes.FAST_REWIND),
+                    entry(Opcodes.FAST_FORWARD, SupportedOpcodes.FAST_FORWARD),
+                    entry(Opcodes.STOP, SupportedOpcodes.STOP),
+                    entry(Opcodes.MOVE_RELATIVE, SupportedOpcodes.MOVE_RELATIVE),
+                    entry(Opcodes.PREVIOUS_SEGMENT, SupportedOpcodes.PREVIOUS_SEGMENT),
+                    entry(Opcodes.NEXT_SEGMENT, SupportedOpcodes.NEXT_SEGMENT),
+                    entry(Opcodes.FIRST_SEGMENT, SupportedOpcodes.FIRST_SEGMENT),
+                    entry(Opcodes.LAST_SEGMENT, SupportedOpcodes.LAST_SEGMENT),
+                    entry(Opcodes.GOTO_SEGMENT, SupportedOpcodes.GOTO_SEGMENT),
+                    entry(Opcodes.PREVIOUS_TRACK, SupportedOpcodes.PREVIOUS_TRACK),
+                    entry(Opcodes.NEXT_TRACK, SupportedOpcodes.NEXT_TRACK),
+                    entry(Opcodes.FIRST_TRACK, SupportedOpcodes.FIRST_TRACK),
+                    entry(Opcodes.LAST_TRACK, SupportedOpcodes.LAST_TRACK),
+                    entry(Opcodes.GOTO_TRACK, SupportedOpcodes.GOTO_TRACK),
+                    entry(Opcodes.PREVIOUS_GROUP, SupportedOpcodes.PREVIOUS_GROUP),
+                    entry(Opcodes.NEXT_GROUP, SupportedOpcodes.NEXT_GROUP),
+                    entry(Opcodes.FIRST_GROUP, SupportedOpcodes.FIRST_GROUP),
+                    entry(Opcodes.LAST_GROUP, SupportedOpcodes.LAST_GROUP),
+                    entry(Opcodes.GOTO_GROUP, SupportedOpcodes.GOTO_GROUP));
 }

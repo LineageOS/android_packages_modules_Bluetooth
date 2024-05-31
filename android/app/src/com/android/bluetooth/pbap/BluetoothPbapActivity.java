@@ -54,11 +54,9 @@ public class BluetoothPbapActivity extends AlertActivity
         implements Preference.OnPreferenceChangeListener, TextWatcher {
     private static final String TAG = "BluetoothPbapActivity";
 
-
     private static final int BLUETOOTH_OBEX_AUTHKEY_MAX_LENGTH = 16;
 
-    @VisibleForTesting
-    static final int DIALOG_YES_NO_AUTH = 1;
+    @VisibleForTesting static final int DIALOG_YES_NO_AUTH = 1;
 
     private static final String KEY_USER_TIMEOUT = "user_timeout";
 
@@ -70,8 +68,7 @@ public class BluetoothPbapActivity extends AlertActivity
 
     private String mSessionKey = "";
 
-    @VisibleForTesting
-    int mCurrentDialog;
+    @VisibleForTesting int mCurrentDialog;
 
     private boolean mTimeout = false;
 
@@ -82,15 +79,17 @@ public class BluetoothPbapActivity extends AlertActivity
     private BluetoothDevice mDevice;
 
     @VisibleForTesting
-    BroadcastReceiver mReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (!BluetoothPbapService.USER_CONFIRM_TIMEOUT_ACTION.equals(intent.getAction())) {
-                return;
-            }
-            onTimeout();
-        }
-    };
+    BroadcastReceiver mReceiver =
+            new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    if (!BluetoothPbapService.USER_CONFIRM_TIMEOUT_ACTION.equals(
+                            intent.getAction())) {
+                        return;
+                    }
+                    onTimeout();
+                }
+            };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -125,10 +124,10 @@ public class BluetoothPbapActivity extends AlertActivity
             case DIALOG_YES_NO_AUTH:
                 mAlertBuilder.setTitle(getString(R.string.pbap_session_key_dialog_header));
                 mAlertBuilder.setView(createView(DIALOG_YES_NO_AUTH));
-                mAlertBuilder.setPositiveButton(android.R.string.ok,
-                        (dialog, which) -> onPositive());
-                mAlertBuilder.setNegativeButton(android.R.string.cancel,
-                        (dialog, which) -> onNegative());
+                mAlertBuilder.setPositiveButton(
+                        android.R.string.ok, (dialog, which) -> onPositive());
+                mAlertBuilder.setNegativeButton(
+                        android.R.string.cancel, (dialog, which) -> onNegative());
                 setupAlert();
                 changeButtonEnabled(DialogInterface.BUTTON_POSITIVE, false);
                 break;
@@ -155,9 +154,8 @@ public class BluetoothPbapActivity extends AlertActivity
                 mMessageView.setText(createDisplayText(id));
                 mKeyView = (EditText) mView.findViewById(R.id.text);
                 mKeyView.addTextChangedListener(this);
-                mKeyView.setFilters(new InputFilter[]{
-                        new LengthFilter(BLUETOOTH_OBEX_AUTHKEY_MAX_LENGTH)
-                });
+                mKeyView.setFilters(
+                        new InputFilter[] {new LengthFilter(BLUETOOTH_OBEX_AUTHKEY_MAX_LENGTH)});
                 return mView;
             default:
                 return null;
@@ -172,8 +170,10 @@ public class BluetoothPbapActivity extends AlertActivity
 
         if (!mTimeout) {
             if (mCurrentDialog == DIALOG_YES_NO_AUTH) {
-                sendIntentToReceiver(BluetoothPbapService.AUTH_RESPONSE_ACTION,
-                        BluetoothPbapService.EXTRA_SESSION_KEY, mSessionKey);
+                sendIntentToReceiver(
+                        BluetoothPbapService.AUTH_RESPONSE_ACTION,
+                        BluetoothPbapService.EXTRA_SESSION_KEY,
+                        mSessionKey);
                 mKeyView.removeTextChangedListener(this);
             }
         }
@@ -190,8 +190,8 @@ public class BluetoothPbapActivity extends AlertActivity
         finish();
     }
 
-    private void sendIntentToReceiver(final String intentName, final String extraName,
-            final String extraValue) {
+    private void sendIntentToReceiver(
+            final String intentName, final String extraName, final String extraValue) {
         Intent intent = new Intent(intentName);
         intent.setPackage(getPackageName());
         intent.putExtra(BluetoothPbapService.EXTRA_DEVICE, mDevice);
@@ -246,12 +246,10 @@ public class BluetoothPbapActivity extends AlertActivity
     }
 
     @Override
-    public void beforeTextChanged(CharSequence s, int start, int before, int after) {
-    }
+    public void beforeTextChanged(CharSequence s, int start, int before, int after) {}
 
     @Override
-    public void onTextChanged(CharSequence s, int start, int before, int count) {
-    }
+    public void onTextChanged(CharSequence s, int start, int before, int count) {}
 
     @Override
     public void afterTextChanged(android.text.Editable s) {
@@ -260,17 +258,18 @@ public class BluetoothPbapActivity extends AlertActivity
         }
     }
 
-    private final Handler mTimeoutHandler = new Handler() {
-        @Override
-        public void handleMessage(Message msg) {
-            switch (msg.what) {
-                case DISMISS_TIMEOUT_DIALOG:
-                    Log.v(TAG, "Received DISMISS_TIMEOUT_DIALOG msg.");
-                    finish();
-                    break;
-                default:
-                    break;
-            }
-        }
-    };
+    private final Handler mTimeoutHandler =
+            new Handler() {
+                @Override
+                public void handleMessage(Message msg) {
+                    switch (msg.what) {
+                        case DISMISS_TIMEOUT_DIALOG:
+                            Log.v(TAG, "Received DISMISS_TIMEOUT_DIALOG msg.");
+                            finish();
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            };
 }

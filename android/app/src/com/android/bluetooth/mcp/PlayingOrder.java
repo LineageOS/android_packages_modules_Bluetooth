@@ -17,9 +17,7 @@
 
 package com.android.bluetooth.mcp;
 
-/**
- * Playing order definition
- */
+/** Playing order definition */
 public enum PlayingOrder {
     SINGLE_ONCE(0x01),
     SINGLE_REPEAT(0x02),

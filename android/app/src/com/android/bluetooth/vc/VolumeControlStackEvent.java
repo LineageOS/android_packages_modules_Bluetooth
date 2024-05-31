@@ -91,20 +91,20 @@ public class VolumeControlStackEvent {
             case EVENT_TYPE_CONNECTION_STATE_CHANGED:
                 switch (value) {
                     case CONNECTION_STATE_DISCONNECTED:
-                        return  "CONNECTION_STATE_DISCONNECTED";
+                        return "CONNECTION_STATE_DISCONNECTED";
                     case CONNECTION_STATE_CONNECTING:
-                        return  "CONNECTION_STATE_CONNECTING";
+                        return "CONNECTION_STATE_CONNECTING";
                     case CONNECTION_STATE_CONNECTED:
-                        return  "CONNECTION_STATE_CONNECTED";
+                        return "CONNECTION_STATE_CONNECTED";
                     case CONNECTION_STATE_DISCONNECTING:
-                        return  "CONNECTION_STATE_DISCONNECTING";
+                        return "CONNECTION_STATE_DISCONNECTING";
                     default:
                         return "UNKNOWN";
                 }
             case EVENT_TYPE_VOLUME_STATE_CHANGED:
                 return "{group_id:" + value + "}";
             case EVENT_TYPE_DEVICE_AVAILABLE:
-                return "{num_ext_outputs:"  + value + "}";
+                return "{num_ext_outputs:" + value + "}";
             case EVENT_TYPE_EXT_AUDIO_OUT_VOL_OFFSET_CHANGED:
             case EVENT_TYPE_EXT_AUDIO_OUT_LOCATION_CHANGED:
             case EVENT_TYPE_EXT_AUDIO_OUT_DESCRIPTION_CHANGED:
@@ -120,13 +120,13 @@ public class VolumeControlStackEvent {
             case EVENT_TYPE_CONNECTION_STATE_CHANGED:
                 switch (value) {
                     case CONNECTION_STATE_DISCONNECTED:
-                        return  "CONNECTION_STATE_DISCONNECTED";
+                        return "CONNECTION_STATE_DISCONNECTED";
                     case CONNECTION_STATE_CONNECTING:
-                        return  "CONNECTION_STATE_CONNECTING";
+                        return "CONNECTION_STATE_CONNECTING";
                     case CONNECTION_STATE_CONNECTED:
-                        return  "CONNECTION_STATE_CONNECTED";
+                        return "CONNECTION_STATE_CONNECTED";
                     case CONNECTION_STATE_DISCONNECTING:
-                        return  "CONNECTION_STATE_DISCONNECTING";
+                        return "CONNECTION_STATE_DISCONNECTING";
                     default:
                         return "UNKNOWN";
                 }

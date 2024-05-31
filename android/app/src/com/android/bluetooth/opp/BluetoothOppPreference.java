@@ -45,8 +45,8 @@ import com.android.bluetooth.flags.Flags;
 import java.util.HashMap;
 
 /**
- * This class cache Bluetooth device name and channel locally. Its a temp
- * solution which should be replaced by bluetooth_devices in SettingsProvider
+ * This class cache Bluetooth device name and channel locally. Its a temp solution which should be
+ * replaced by bluetooth_devices in SettingsProvider
  */
 public class BluetoothOppPreference {
     private static final String TAG = "BluetoothOppPreference";
@@ -88,11 +88,12 @@ public class BluetoothOppPreference {
 
         mContext = context;
 
-        mNamePreference = mContext.getSharedPreferences(Constants.BLUETOOTHOPP_NAME_PREFERENCE,
-                Context.MODE_PRIVATE);
+        mNamePreference =
+                mContext.getSharedPreferences(
+                        Constants.BLUETOOTHOPP_NAME_PREFERENCE, Context.MODE_PRIVATE);
         mChannelPreference =
-                mContext.getSharedPreferences(Constants.BLUETOOTHOPP_CHANNEL_PREFERENCE,
-                        Context.MODE_PRIVATE);
+                mContext.getSharedPreferences(
+                        Constants.BLUETOOTHOPP_CHANNEL_PREFERENCE, Context.MODE_PRIVATE);
 
         mNames = (HashMap<String, String>) mNamePreference.getAll();
         mChannels = (HashMap<String, Integer>) mChannelPreference.getAll();

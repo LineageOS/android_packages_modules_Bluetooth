@@ -33,8 +33,8 @@ import java.util.HashMap;
 /**
  * The AVRCP Cover Art Service
  *
- * This service handles allocation of image handles and storage of images. It also owns the
- * BIP OBEX server that handles requests to get AVRCP cover artwork.
+ * <p>This service handles allocation of image handles and storage of images. It also owns the BIP
+ * OBEX server that handles requests to get AVRCP cover artwork.
  */
 public class AvrcpCoverArtService {
     private static final String TAG = AvrcpCoverArtService.class.getSimpleName();
@@ -42,8 +42,8 @@ public class AvrcpCoverArtService {
     private static final int COVER_ART_STORAGE_MAX_ITEMS = 32;
 
     /**
-     * Limiting transmit packet size because some carkits are disconnected if
-     * AVRCP Cover Art OBEX packet size exceed 1024 bytes.
+     * Limiting transmit packet size because some carkits are disconnected if AVRCP Cover Art OBEX
+     * packet size exceed 1024 bytes.
      */
     private static final int MAX_TRANSMIT_PACKET_SIZE = 1024;
 
@@ -71,7 +71,7 @@ public class AvrcpCoverArtService {
     /**
      * Start the AVRCP Cover Art Service.
      *
-     * This will start up a BIP OBEX server and record the l2cap psm in the SDP record, and begin
+     * <p>This will start up a BIP OBEX server and record the l2cap psm in the SDP record, and begin
      * accepting connections.
      */
     public boolean start() {
@@ -87,7 +87,7 @@ public class AvrcpCoverArtService {
     /**
      * Stop the AVRCP Cover Art Service.
      *
-     * Tear down existing connections, remove ourselved from the SDP record.
+     * <p>Tear down existing connections, remove ourselved from the SDP record.
      */
     public boolean stop() {
         debug("Stopping service");
@@ -142,35 +142,27 @@ public class AvrcpCoverArtService {
         }
     }
 
-    /**
-     * Store an image with the service and gets the image handle it's associated with.
-     */
+    /** Store an image with the service and gets the image handle it's associated with. */
     public String storeImage(Image image) {
         debug("storeImage(image='" + image + "')");
         if (image == null || image.getImage() == null) return null;
         return mStorage.storeImage(new CoverArt(image));
     }
 
-    /**
-     * Get the image stored at the given image handle, if it exists
-     */
+    /** Get the image stored at the given image handle, if it exists */
     public CoverArt getImage(String imageHandle) {
         debug("getImage(" + imageHandle + ")");
         return mStorage.getImage(imageHandle);
     }
 
-    /**
-     * Add a BIP L2CAP PSM to the AVRCP Target SDP Record
-     */
+    /** Add a BIP L2CAP PSM to the AVRCP Target SDP Record */
     private void registerBipServer(int psm) {
         debug("Add our PSM (" + psm + ") to the AVRCP Target SDP record");
         mNativeInterface.registerBipServer(psm);
         return;
     }
 
-    /**
-     * Remove any BIP L2CAP PSM from the AVRCP Target SDP Record
-     */
+    /** Remove any BIP L2CAP PSM from the AVRCP Target SDP Record */
     private void unregisterBipServer() {
         debug("Remove the PSM remove the AVRCP Target SDP record");
         mNativeInterface.unregisterBipServer();
@@ -180,8 +172,8 @@ public class AvrcpCoverArtService {
     /**
      * Connect a device with the server
      *
-     * Since the server cannot explicitly make clients connect, this function is internal only and
-     * provides a place for us to do required book keeping when we've decided to accept a client
+     * <p>Since the server cannot explicitly make clients connect, this function is internal only
+     * and provides a place for us to do required book keeping when we've decided to accept a client
      */
     private boolean connect(BluetoothDevice device, BluetoothSocket socket) {
         debug("Connect '" + device + "'");
@@ -210,9 +202,11 @@ public class AvrcpCoverArtService {
                                     disconnect(device);
                                 }
                             });
-            BluetoothObexTransport transport = new BluetoothObexTransport(socket,
-                    MAX_TRANSMIT_PACKET_SIZE,
-                    BluetoothObexTransport.PACKET_SIZE_UNSPECIFIED);
+            BluetoothObexTransport transport =
+                    new BluetoothObexTransport(
+                            socket,
+                            MAX_TRANSMIT_PACKET_SIZE,
+                            BluetoothObexTransport.PACKET_SIZE_UNSPECIFIED);
             transport.setConnectionForCoverArt(true);
             try {
                 ServerSession session = new ServerSession(transport, s, null);
@@ -225,9 +219,7 @@ public class AvrcpCoverArtService {
         }
     }
 
-    /**
-     * Explicitly disconnect a device from our BIP server if its connected.
-     */
+    /** Explicitly disconnect a device from our BIP server if its connected. */
     public void disconnect(BluetoothDevice device) {
         debug("disconnect '" + device + "'");
         // Closing the server session closes the underlying transport, which closes the underlying
@@ -245,7 +237,7 @@ public class AvrcpCoverArtService {
     /**
      * A Socket Acceptor to handle incoming connections to our BIP Server.
      *
-     * If we are accepting connections and the device is permitted, then this class will create a
+     * <p>If we are accepting connections and the device is permitted, then this class will create a
      * session with our AvrcpBipObexServer.
      */
     private class SocketAcceptor implements IObexConnectionHandler {
@@ -269,9 +261,7 @@ public class AvrcpCoverArtService {
         }
     }
 
-    /**
-     * Dump useful debug information about this service to a string
-     */
+    /** Dump useful debug information about this service to a string */
     public void dump(StringBuilder sb) {
         int psm = getL2capPsm();
         sb.append("AvrcpCoverArtService:");
@@ -283,16 +273,12 @@ public class AvrcpCoverArtService {
         sb.append("\n");
     }
 
-    /**
-     * Print a message to DEBUG if debug output is enabled
-     */
+    /** Print a message to DEBUG if debug output is enabled */
     private void debug(String msg) {
         Log.d(TAG, msg);
     }
 
-    /**
-     * Print a message to ERROR
-     */
+    /** Print a message to ERROR */
     private void error(String msg) {
         Log.e(TAG, msg);
     }

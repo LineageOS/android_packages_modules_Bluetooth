@@ -25,27 +25,19 @@ import java.util.List;
 
 @Dao
 interface MetadataDao {
-    /**
-     * Load all items in the database
-     */
+    /** Load all items in the database */
     @Query("SELECT * FROM metadata ORDER BY last_active_time DESC")
     List<Metadata> load();
 
-    /**
-     * Create or update a Metadata in the database
-     */
+    /** Create or update a Metadata in the database */
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     void insert(Metadata... metadata);
 
-    /**
-     * Delete a Metadata in the database
-     */
+    /** Delete a Metadata in the database */
     @Query("DELETE FROM metadata WHERE address = :address")
     void delete(String address);
 
-    /**
-     * Delete all Metadatas in the database
-     */
+    /** Delete all Metadatas in the database */
     @Query("DELETE FROM metadata")
     void deleteAll();
 }

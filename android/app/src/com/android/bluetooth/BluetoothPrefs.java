@@ -20,9 +20,7 @@ import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
 
-/**
- * Activity that routes to Bluetooth settings when launched
- */
+/** Activity that routes to Bluetooth settings when launched */
 public class BluetoothPrefs extends Activity {
 
     public static final String BLUETOOTH_SETTING_ACTION = "android.settings.BLUETOOTH_SETTINGS";

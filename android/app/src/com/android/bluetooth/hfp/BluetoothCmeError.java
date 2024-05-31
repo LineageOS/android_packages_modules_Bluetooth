@@ -41,4 +41,3 @@ public class BluetoothCmeError {
     public static final int NO_SERVICE = 30;
     public static final int ONLY_911_ALLOWED = 32;
 }
-

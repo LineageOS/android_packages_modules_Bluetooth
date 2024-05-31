@@ -21,9 +21,7 @@ import android.os.WorkSource;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Class for general helper methods for WorkSource operations.
- */
+/** Class for general helper methods for WorkSource operations. */
 public class WorkSourceUtil {
     private final int[] mUids;
     private final String[] mTags;

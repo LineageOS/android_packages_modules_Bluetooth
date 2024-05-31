@@ -73,8 +73,8 @@ class AvrcpPlayer {
         mId = id;
         mName = name;
         mPlayerFeatures = Arrays.copyOf(playerFeatures, playerFeatures.length);
-        PlaybackStateCompat.Builder playbackStateBuilder = new PlaybackStateCompat.Builder()
-                .setActions(mAvailableActions);
+        PlaybackStateCompat.Builder playbackStateBuilder =
+                new PlaybackStateCompat.Builder().setActions(mAvailableActions);
         mPlaybackStateCompat = playbackStateBuilder.build();
         updateAvailableActions();
         setPlayStatus(playStatus);
@@ -94,9 +94,10 @@ class AvrcpPlayer {
 
     public void setPlayTime(int playTime) {
         mPlayTime = playTime;
-        mPlaybackStateCompat = new PlaybackStateCompat.Builder(mPlaybackStateCompat).setState(
-                mPlayStatus, mPlayTime,
-                mPlaySpeed).build();
+        mPlaybackStateCompat =
+                new PlaybackStateCompat.Builder(mPlaybackStateCompat)
+                        .setState(mPlayStatus, mPlayTime, mPlaySpeed)
+                        .build();
     }
 
     public long getPlayTime() {
@@ -105,8 +106,10 @@ class AvrcpPlayer {
 
     public void setPlayStatus(int playStatus) {
         if (mPlayTime != PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN) {
-            mPlayTime += mPlaySpeed * (SystemClock.elapsedRealtime()
-                    - mPlaybackStateCompat.getLastPositionUpdateTime());
+            mPlayTime +=
+                    mPlaySpeed
+                            * (SystemClock.elapsedRealtime()
+                                    - mPlaybackStateCompat.getLastPositionUpdateTime());
         }
         mPlayStatus = playStatus;
         switch (mPlayStatus) {
@@ -127,9 +130,10 @@ class AvrcpPlayer {
                 break;
         }
 
-        mPlaybackStateCompat = new PlaybackStateCompat.Builder(mPlaybackStateCompat).setState(
-                mPlayStatus, mPlayTime,
-                mPlaySpeed).build();
+        mPlaybackStateCompat =
+                new PlaybackStateCompat.Builder(mPlaybackStateCompat)
+                        .setState(mPlayStatus, mPlayTime, mPlaySpeed)
+                        .build();
     }
 
     public void setSupportedPlayerApplicationSettings(
@@ -143,10 +147,12 @@ class AvrcpPlayer {
         Log.d(TAG, "Play application settings changed, settings=" + playerApplicationSettings);
         mCurrentPlayerApplicationSettings = playerApplicationSettings;
         MediaSessionCompat session = BluetoothMediaBrowserService.getSession();
-        session.setRepeatMode(mCurrentPlayerApplicationSettings.getSetting(
-                PlayerApplicationSettings.REPEAT_STATUS));
-        session.setShuffleMode(mCurrentPlayerApplicationSettings.getSetting(
-                PlayerApplicationSettings.SHUFFLE_STATUS));
+        session.setRepeatMode(
+                mCurrentPlayerApplicationSettings.getSetting(
+                        PlayerApplicationSettings.REPEAT_STATUS));
+        session.setShuffleMode(
+                mCurrentPlayerApplicationSettings.getSetting(
+                        PlayerApplicationSettings.SHUFFLE_STATUS));
     }
 
     public int getPlayStatus() {
@@ -171,9 +177,10 @@ class AvrcpPlayer {
     public synchronized void updateCurrentTrack(AvrcpItem update) {
         if (update != null) {
             long trackNumber = update.getTrackNumber();
-            mPlaybackStateCompat = new PlaybackStateCompat.Builder(
-                    mPlaybackStateCompat).setActiveQueueItemId(
-                    trackNumber - 1).build();
+            mPlaybackStateCompat =
+                    new PlaybackStateCompat.Builder(mPlaybackStateCompat)
+                            .setActiveQueueItemId(trackNumber - 1)
+                            .build();
         }
         mCurrentTrack = update;
     }
@@ -224,22 +231,28 @@ class AvrcpPlayer {
                 PlayerApplicationSettings.SHUFFLE_STATUS)) {
             mAvailableActions |= PlaybackStateCompat.ACTION_SET_SHUFFLE_MODE;
         }
-        mPlaybackStateCompat = new PlaybackStateCompat.Builder(mPlaybackStateCompat)
-                .setActions(mAvailableActions).build();
+        mPlaybackStateCompat =
+                new PlaybackStateCompat.Builder(mPlaybackStateCompat)
+                        .setActions(mAvailableActions)
+                        .build();
 
         Log.d(TAG, "Supported Actions = " + mAvailableActions);
     }
 
     @Override
     public String toString() {
-        return "<AvrcpPlayer id=" + mId + " name=" + mName + " track=" + mCurrentTrack
+        return "<AvrcpPlayer id="
+                + mId
+                + " name="
+                + mName
+                + " track="
+                + mCurrentTrack
                 + " playState="
-                + AvrcpControllerUtils.playbackStateCompatToString(mPlaybackStateCompat) + ">";
+                + AvrcpControllerUtils.playbackStateCompatToString(mPlaybackStateCompat)
+                + ">";
     }
 
-    /**
-     * A Builder object for an AvrcpPlayer
-     */
+    /** A Builder object for an AvrcpPlayer */
     public static class Builder {
         private BluetoothDevice mDevice = null;
         private int mPlayerId = AvrcpPlayer.DEFAULT_ID;

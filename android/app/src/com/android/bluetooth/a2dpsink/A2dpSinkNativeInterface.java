@@ -27,9 +27,7 @@ import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.Objects;
 
-/**
- * A2DP Sink Native Interface to/from JNI.
- */
+/** A2DP Sink Native Interface to/from JNI. */
 public class A2dpSinkNativeInterface {
     private static final String TAG = A2dpSinkNativeInterface.class.getSimpleName();
     private AdapterService mAdapterService;
@@ -40,13 +38,13 @@ public class A2dpSinkNativeInterface {
     private static final Object INSTANCE_LOCK = new Object();
 
     private A2dpSinkNativeInterface() {
-        mAdapterService = Objects.requireNonNull(AdapterService.getAdapterService(),
-                "AdapterService cannot be null when A2dpSinkNativeInterface init");
+        mAdapterService =
+                Objects.requireNonNull(
+                        AdapterService.getAdapterService(),
+                        "AdapterService cannot be null when A2dpSinkNativeInterface init");
     }
 
-    /**
-     * Get singleton instance.
-     */
+    /** Get singleton instance. */
     public static A2dpSinkNativeInterface getInstance() {
         synchronized (INSTANCE_LOCK) {
             if (sInstance == null) {
@@ -73,9 +71,7 @@ public class A2dpSinkNativeInterface {
         initNative(maxConnectedAudioDevices);
     }
 
-    /**
-     * Cleanup the native interface.
-     */
+    /** Cleanup the native interface. */
     public void cleanup() {
         cleanupNative();
     }
@@ -115,10 +111,10 @@ public class A2dpSinkNativeInterface {
     /**
      * Set a BluetoothDevice as the active device
      *
-     * The active device is the only one that will receive passthrough commands and the only one
+     * <p>The active device is the only one that will receive passthrough commands and the only one
      * that will have its audio decoded.
      *
-     * Sending null for the active device will make no device active.
+     * <p>Sending null for the active device will make no device active.
      *
      * @param device
      * @return True if the active device request has been scheduled
@@ -152,9 +148,7 @@ public class A2dpSinkNativeInterface {
         informAudioTrackGainNative(gain);
     }
 
-    /**
-     * Send a stack event up to the A2DP Sink Service
-     */
+    /** Send a stack event up to the A2DP Sink Service */
     private void sendMessageToService(StackEvent event) {
         A2dpSinkService service = A2dpSinkService.getA2dpSinkService();
         if (service != null) {
@@ -164,41 +158,40 @@ public class A2dpSinkNativeInterface {
         }
     }
 
-    /**
-     * For the JNI to send messages about connection state changes
-     */
+    /** For the JNI to send messages about connection state changes */
     public void onConnectionStateChanged(byte[] address, int state) {
-        StackEvent event =
-                StackEvent.connectionStateChanged(getDevice(address), state);
+        StackEvent event = StackEvent.connectionStateChanged(getDevice(address), state);
         Log.d(TAG, "onConnectionStateChanged: " + event);
         sendMessageToService(event);
     }
 
-    /**
-     * For the JNI to send messages about audio stream state changes
-     */
+    /** For the JNI to send messages about audio stream state changes */
     public void onAudioStateChanged(byte[] address, int state) {
         StackEvent event = StackEvent.audioStateChanged(getDevice(address), state);
         Log.d(TAG, "onAudioStateChanged: " + event);
         sendMessageToService(event);
     }
 
-    /**
-     * For the JNI to send messages about audio configuration changes
-     */
+    /** For the JNI to send messages about audio configuration changes */
     public void onAudioConfigChanged(byte[] address, int sampleRate, int channelCount) {
-        StackEvent event = StackEvent.audioConfigChanged(
-                getDevice(address), sampleRate, channelCount);
+        StackEvent event =
+                StackEvent.audioConfigChanged(getDevice(address), sampleRate, channelCount);
         Log.d(TAG, "onAudioConfigChanged: " + event);
         sendMessageToService(event);
     }
 
     // Native methods that call into the JNI interface
     private native void initNative(int maxConnectedAudioDevices);
+
     private native void cleanupNative();
+
     private native boolean connectA2dpNative(byte[] address);
+
     private native boolean disconnectA2dpNative(byte[] address);
+
     private native boolean setActiveDeviceNative(byte[] address);
+
     private native void informAudioFocusStateNative(int focusGranted);
+
     private native void informAudioTrackGainNative(float gain);
 }

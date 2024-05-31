@@ -58,15 +58,14 @@ public class BluetoothPbapConfig {
         }
     }
 
-    /**
-     * If true, owner vcard will be generated from the "Me" profile
-     */
+    /** If true, owner vcard will be generated from the "Me" profile */
     public static boolean useProfileForOwnerVcard() {
         return sUseProfileForOwnerVcard;
     }
 
     /**
      * If true, include photos in contact information returned to PCE
+     *
      * @return
      */
     public static boolean includePhotosInVcard() {

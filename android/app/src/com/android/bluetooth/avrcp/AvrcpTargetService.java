@@ -117,16 +117,21 @@ public class AvrcpTargetService extends ProfileService {
             boolean state = !MediaPlayerWrapper.playstateEquals(mCurrentData.state, data.state);
             boolean queue = !Objects.equals(mCurrentData.queue, data.queue);
 
-            Log.d(TAG, "onMediaUpdated: track_changed=" + metadata
-                    + " state=" + state + " queue=" + queue);
+            Log.d(
+                    TAG,
+                    "onMediaUpdated: track_changed="
+                            + metadata
+                            + " state="
+                            + state
+                            + " queue="
+                            + queue);
             mCurrentData = data;
 
             mNativeInterface.sendMediaUpdate(metadata, state, queue);
         }
 
         @Override
-        public void run(boolean availablePlayers, boolean addressedPlayers,
-                boolean uids) {
+        public void run(boolean availablePlayers, boolean addressedPlayers, boolean uids) {
             if (mNativeInterface == null) return;
 
             mNativeInterface.sendFolderUpdate(availablePlayers, addressedPlayers, uids);
@@ -403,7 +408,8 @@ public class AvrcpTargetService extends ProfileService {
 
     /** Returns the current play status of the active player from {@link MediaPlayerList}. */
     PlayStatus getPlayState() {
-        return PlayStatus.fromPlaybackState(mMediaPlayerList.getCurrentPlayStatus(),
+        return PlayStatus.fromPlaybackState(
+                mMediaPlayerList.getCurrentPlayStatus(),
                 Long.parseLong(getCurrentSongInfo().duration));
     }
 

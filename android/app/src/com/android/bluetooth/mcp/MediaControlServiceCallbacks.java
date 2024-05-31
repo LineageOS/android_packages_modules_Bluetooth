@@ -21,19 +21,34 @@ package com.android.bluetooth.mcp;
  * Media Control Service callback interface. These callbacks are sent GATT servers => Media Players
  */
 interface MediaControlServiceCallbacks {
-    void onServiceInstanceRegistered(ServiceStatus status, MediaControlGattServiceInterface serviceProxy);
+    void onServiceInstanceRegistered(
+            ServiceStatus status, MediaControlGattServiceInterface serviceProxy);
+
     void onServiceInstanceUnregistered(ServiceStatus status);
+
     void onMediaControlRequest(Request request);
+
     void onSearchRequest(SearchRequest request);
+
     void onSetObjectIdRequest(int objField, long objectId);
+
     void onTrackPositionSetRequest(long position);
+
     void onPlaybackSpeedSetRequest(float speed);
+
     void onPlayingOrderSetRequest(int order);
+
     void onCurrentTrackObjectIdSet(long objectId);
+
     void onNextTrackObjectIdSet(long objectId);
+
     void onCurrentGroupObjectIdSet(long objectId);
+
     void onCurrentTrackMetadataRequest();
+
     void onPlayerStateRequest(PlayerStateField[] stateFields);
+
     long onGetFeatureFlags();
+
     long onGetCurrentTrackPosition();
 }

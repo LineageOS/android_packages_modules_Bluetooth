@@ -95,7 +95,9 @@ public class AdvertiseManager {
         public AdvertisingSetDeathRecipient deathRecipient;
         public IAdvertisingSetCallback callback;
 
-        AdvertiserInfo(Integer id, AdvertisingSetDeathRecipient deathRecipient,
+        AdvertiserInfo(
+                Integer id,
+                AdvertisingSetDeathRecipient deathRecipient,
                 IAdvertisingSetCallback callback) {
             this.id = id;
             this.deathRecipient = deathRecipient;
@@ -118,9 +120,7 @@ public class AdvertiseManager {
 
         @Override
         public void binderDied() {
-            Log.d(
-                    TAG,
-                    "Binder is dead - unregistering advertising set (" + mPackageName + ")!");
+            Log.d(TAG, "Binder is dead - unregistering advertising set (" + mPackageName + ")!");
             stopAdvertisingSet(callback);
         }
     }
@@ -138,9 +138,14 @@ public class AdvertiseManager {
 
     void onAdvertisingSetStarted(int regId, int advertiserId, int txPower, int status)
             throws Exception {
-        Log.d(TAG,
-                "onAdvertisingSetStarted() - regId=" + regId + ", advertiserId=" + advertiserId
-                        + ", status=" + status);
+        Log.d(
+                TAG,
+                "onAdvertisingSetStarted() - regId="
+                        + regId
+                        + ", advertiserId="
+                        + advertiserId
+                        + ", status="
+                        + status);
 
         Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(regId);
 
@@ -175,13 +180,21 @@ public class AdvertiseManager {
     }
 
     void onAdvertisingEnabled(int advertiserId, boolean enable, int status) throws Exception {
-        Log.d(TAG, "onAdvertisingSetEnabled() - advertiserId=" + advertiserId + ", enable="
-                + enable + ", status=" + status);
+        Log.d(
+                TAG,
+                "onAdvertisingSetEnabled() - advertiserId="
+                        + advertiserId
+                        + ", enable="
+                        + enable
+                        + ", status="
+                        + status);
 
         Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {
-            Log.i(TAG, "onAdvertisingSetEnable() - no callback found for advertiserId "
-                    + advertiserId);
+            Log.i(
+                    TAG,
+                    "onAdvertisingSetEnable() - no callback found for advertiserId "
+                            + advertiserId);
             return;
         }
 
@@ -196,9 +209,15 @@ public class AdvertiseManager {
         }
     }
 
-    void startAdvertisingSet(AdvertisingSetParameters parameters, AdvertiseData advertiseData,
-            AdvertiseData scanResponse, PeriodicAdvertisingParameters periodicParameters,
-            AdvertiseData periodicData, int duration, int maxExtAdvEvents, int serverIf,
+    void startAdvertisingSet(
+            AdvertisingSetParameters parameters,
+            AdvertiseData advertiseData,
+            AdvertiseData scanResponse,
+            PeriodicAdvertisingParameters periodicParameters,
+            AdvertiseData periodicData,
+            int duration,
+            int maxExtAdvEvents,
+            int serverIf,
             IAdvertisingSetCallback callback) {
         // If we are using an isolated server, force usage of an NRPA
         if (serverIf != 0
@@ -246,8 +265,15 @@ public class AdvertiseManager {
             Log.d(TAG, "startAdvertisingSet() - reg_id=" + cbId + ", callback: " + binder);
 
             mAdvertiserMap.add(cbId, callback, mService);
-            mAdvertiserMap.recordAdvertiseStart(cbId, parameters, advertiseData,
-                    scanResponse, periodicParameters, periodicData, duration, maxExtAdvEvents);
+            mAdvertiserMap.recordAdvertiseStart(
+                    cbId,
+                    parameters,
+                    advertiseData,
+                    scanResponse,
+                    periodicParameters,
+                    periodicData,
+                    duration,
+                    maxExtAdvEvents);
 
             mNativeInterface.startAdvertisingSet(
                     parameters,
@@ -333,8 +359,7 @@ public class AdvertiseManager {
         }
         mNativeInterface.enableAdvertisingSet(advertiserId, enable, duration, maxExtAdvEvents);
 
-        mAdvertiserMap.enableAdvertisingSet(advertiserId,
-                enable, duration, maxExtAdvEvents);
+        mAdvertiserMap.enableAdvertisingSet(advertiserId, enable, duration, maxExtAdvEvents);
     }
 
     void setAdvertisingData(int advertiserId, AdvertiseData data) {
@@ -351,8 +376,8 @@ public class AdvertiseManager {
             mAdvertiserMap.setAdvertisingData(advertiserId, data);
         } catch (IllegalArgumentException e) {
             try {
-                onAdvertisingDataSet(advertiserId,
-                        AdvertiseCallback.ADVERTISE_FAILED_DATA_TOO_LARGE);
+                onAdvertisingDataSet(
+                        advertiserId, AdvertiseCallback.ADVERTISE_FAILED_DATA_TOO_LARGE);
             } catch (Exception exception) {
                 Log.e(TAG, "Failed to callback:" + Log.getStackTraceString(exception));
             }
@@ -373,8 +398,8 @@ public class AdvertiseManager {
             mAdvertiserMap.setScanResponseData(advertiserId, data);
         } catch (IllegalArgumentException e) {
             try {
-                onScanResponseDataSet(advertiserId,
-                        AdvertiseCallback.ADVERTISE_FAILED_DATA_TOO_LARGE);
+                onScanResponseDataSet(
+                        advertiserId, AdvertiseCallback.ADVERTISE_FAILED_DATA_TOO_LARGE);
             } catch (Exception exception) {
                 Log.e(TAG, "Failed to callback:" + Log.getStackTraceString(exception));
             }
@@ -392,8 +417,8 @@ public class AdvertiseManager {
         mAdvertiserMap.setAdvertisingParameters(advertiserId, parameters);
     }
 
-    void setPeriodicAdvertisingParameters(int advertiserId,
-            PeriodicAdvertisingParameters parameters) {
+    void setPeriodicAdvertisingParameters(
+            int advertiserId, PeriodicAdvertisingParameters parameters) {
         Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {
             Log.w(TAG, "setPeriodicAdvertisingParameters() - bad advertiserId " + advertiserId);
@@ -418,8 +443,8 @@ public class AdvertiseManager {
             mAdvertiserMap.setPeriodicAdvertisingData(advertiserId, data);
         } catch (IllegalArgumentException e) {
             try {
-                onPeriodicAdvertisingDataSet(advertiserId,
-                        AdvertiseCallback.ADVERTISE_FAILED_DATA_TOO_LARGE);
+                onPeriodicAdvertisingDataSet(
+                        advertiserId, AdvertiseCallback.ADVERTISE_FAILED_DATA_TOO_LARGE);
             } catch (Exception exception) {
                 Log.e(TAG, "Failed to callback:" + Log.getStackTraceString(exception));
             }
@@ -436,8 +461,7 @@ public class AdvertiseManager {
     }
 
     void onAdvertisingDataSet(int advertiserId, int status) throws Exception {
-        Log.d(TAG,
-                "onAdvertisingDataSet() advertiserId=" + advertiserId + ", status=" + status);
+        Log.d(TAG, "onAdvertisingDataSet() advertiserId=" + advertiserId + ", status=" + status);
 
         Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {
@@ -450,8 +474,7 @@ public class AdvertiseManager {
     }
 
     void onScanResponseDataSet(int advertiserId, int status) throws Exception {
-        Log.d(TAG,
-                "onScanResponseDataSet() advertiserId=" + advertiserId + ", status=" + status);
+        Log.d(TAG, "onScanResponseDataSet() advertiserId=" + advertiserId + ", status=" + status);
 
         Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {
@@ -465,9 +488,14 @@ public class AdvertiseManager {
 
     void onAdvertisingParametersUpdated(int advertiserId, int txPower, int status)
             throws Exception {
-        Log.d(TAG,
-                "onAdvertisingParametersUpdated() advertiserId=" + advertiserId + ", txPower="
-                        + txPower + ", status=" + status);
+        Log.d(
+                TAG,
+                "onAdvertisingParametersUpdated() advertiserId="
+                        + advertiserId
+                        + ", txPower="
+                        + txPower
+                        + ", status="
+                        + status);
 
         Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {
@@ -480,12 +508,17 @@ public class AdvertiseManager {
     }
 
     void onPeriodicAdvertisingParametersUpdated(int advertiserId, int status) throws Exception {
-        Log.d(TAG, "onPeriodicAdvertisingParametersUpdated() advertiserId=" + advertiserId
-                + ", status=" + status);
+        Log.d(
+                TAG,
+                "onPeriodicAdvertisingParametersUpdated() advertiserId="
+                        + advertiserId
+                        + ", status="
+                        + status);
 
         Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {
-            Log.i(TAG,
+            Log.i(
+                    TAG,
                     "onPeriodicAdvertisingParametersUpdated() - bad advertiserId " + advertiserId);
             return;
         }
@@ -495,8 +528,12 @@ public class AdvertiseManager {
     }
 
     void onPeriodicAdvertisingDataSet(int advertiserId, int status) throws Exception {
-        Log.d(TAG, "onPeriodicAdvertisingDataSet() advertiserId=" + advertiserId + ", status="
-                + status);
+        Log.d(
+                TAG,
+                "onPeriodicAdvertisingDataSet() advertiserId="
+                        + advertiserId
+                        + ", status="
+                        + status);
 
         Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {
@@ -510,8 +547,12 @@ public class AdvertiseManager {
 
     void onPeriodicAdvertisingEnabled(int advertiserId, boolean enable, int status)
             throws Exception {
-        Log.d(TAG, "onPeriodicAdvertisingEnabled() advertiserId=" + advertiserId + ", status="
-                + status);
+        Log.d(
+                TAG,
+                "onPeriodicAdvertisingEnabled() advertiserId="
+                        + advertiserId
+                        + ", status="
+                        + status);
 
         Map.Entry<IBinder, AdvertiserInfo> entry = findAdvertiser(advertiserId);
         if (entry == null) {

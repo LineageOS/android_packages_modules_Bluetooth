@@ -37,9 +37,8 @@ import android.util.Log;
 import com.android.internal.annotations.GuardedBy;
 
 /**
- * This class tracks the data connection associated with Bluetooth
- * reverse tethering. PanService calls it when a reverse tethered
- * connection needs to be activated or deactivated.
+ * This class tracks the data connection associated with Bluetooth reverse tethering. PanService
+ * calls it when a reverse tethered connection needs to be activated or deactivated.
  */
 public class BluetoothTetheringNetworkFactory extends NetworkFactory {
     private static final String NETWORK_TYPE = "Bluetooth Tethering";
@@ -52,8 +51,10 @@ public class BluetoothTetheringNetworkFactory extends NetworkFactory {
 
     // All accesses to these must be synchronized(this).
     private IIpClient mIpClient;
+
     @GuardedBy("this")
     private int mIpClientStartIndex = 0;
+
     private String mInterfaceName;
     private NetworkAgent mNetworkAgent;
 
@@ -85,10 +86,12 @@ public class BluetoothTetheringNetworkFactory extends NetworkFactory {
                 }
                 mIpClient = ipClient;
                 try {
-                    mIpClient.startProvisioning(new ProvisioningConfiguration.Builder()
-                            .withoutMultinetworkPolicyTracker()
-                            .withoutIpReachabilityMonitor()
-                            .build().toStableParcelable());
+                    mIpClient.startProvisioning(
+                            new ProvisioningConfiguration.Builder()
+                                    .withoutMultinetworkPolicyTracker()
+                                    .withoutIpReachabilityMonitor()
+                                    .build()
+                                    .toStableParcelable());
                 } catch (RemoteException e) {
                     Log.e(TAG, "Error starting IpClient provisioning", e);
                 }
@@ -133,55 +136,74 @@ public class BluetoothTetheringNetworkFactory extends NetworkFactory {
         // TODO: Figure out how to replace this thread with simple invocations
         // of IpClient. This will likely necessitate a rethink about
         // NetworkAgent and associated instance lifetimes.
-        Thread ipProvisioningThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                final WaitForProvisioningCallbacks ipcCallback;
-                final int ipClientStartIndex;
+        Thread ipProvisioningThread =
+                new Thread(
+                        new Runnable() {
+                            @Override
+                            public void run() {
+                                final WaitForProvisioningCallbacks ipcCallback;
+                                final int ipClientStartIndex;
 
-                synchronized (BluetoothTetheringNetworkFactory.this) {
-                    if (TextUtils.isEmpty(mInterfaceName)) {
-                        Log.e(TAG, "attempted to reverse tether without interface name");
-                        return;
-                    }
-                    log("ipProvisioningThread(+" + mInterfaceName + ") start IP provisioning");
-                    ipcCallback = startIpClientLocked();
-                    ipClientStartIndex = mIpClientStartIndex;
-                }
-
-                final LinkProperties linkProperties = ipcCallback.waitForProvisioning();
-                if (linkProperties == null) {
-                    Log.e(TAG, "IP provisioning error.");
-                    synchronized (BluetoothTetheringNetworkFactory.this) {
-                        stopIpClientLocked();
-                        setScoreFilter(-1);
-                    }
-                    return;
-                }
-                final NetworkAgentConfig config = new NetworkAgentConfig.Builder()
-                        .setLegacyType(ConnectivityManager.TYPE_BLUETOOTH)
-                        .setLegacyTypeName(NETWORK_TYPE)
-                        .build();
-
-                synchronized (BluetoothTetheringNetworkFactory.this) {
-                    // Reverse tethering has been stopped, and stopping won the race : there is
-                    // no point in creating the agent (and it would be leaked), so bail.
-                    if (ipClientStartIndex != mIpClientStartIndex) return;
-                    // Create our NetworkAgent.
-                    mNetworkAgent =
-                            new NetworkAgent(mContext, getLooper(), NETWORK_TYPE,
-                                    mNetworkCapabilities, linkProperties, NETWORK_SCORE,
-                                    config, getProvider()) {
-                                @Override
-                                public void onNetworkUnwanted() {
-                                    BluetoothTetheringNetworkFactory.this.onCancelRequest();
+                                synchronized (BluetoothTetheringNetworkFactory.this) {
+                                    if (TextUtils.isEmpty(mInterfaceName)) {
+                                        Log.e(
+                                                TAG,
+                                                "attempted to reverse tether without interface"
+                                                        + " name");
+                                        return;
+                                    }
+                                    log(
+                                            "ipProvisioningThread(+"
+                                                    + mInterfaceName
+                                                    + ") start IP provisioning");
+                                    ipcCallback = startIpClientLocked();
+                                    ipClientStartIndex = mIpClientStartIndex;
                                 }
-                            };
-                    mNetworkAgent.register();
-                    mNetworkAgent.markConnected();
-                }
-            }
-        });
+
+                                final LinkProperties linkProperties =
+                                        ipcCallback.waitForProvisioning();
+                                if (linkProperties == null) {
+                                    Log.e(TAG, "IP provisioning error.");
+                                    synchronized (BluetoothTetheringNetworkFactory.this) {
+                                        stopIpClientLocked();
+                                        setScoreFilter(-1);
+                                    }
+                                    return;
+                                }
+                                final NetworkAgentConfig config =
+                                        new NetworkAgentConfig.Builder()
+                                                .setLegacyType(ConnectivityManager.TYPE_BLUETOOTH)
+                                                .setLegacyTypeName(NETWORK_TYPE)
+                                                .build();
+
+                                synchronized (BluetoothTetheringNetworkFactory.this) {
+                                    // Reverse tethering has been stopped, and stopping won the race
+                                    // : there is
+                                    // no point in creating the agent (and it would be leaked), so
+                                    // bail.
+                                    if (ipClientStartIndex != mIpClientStartIndex) return;
+                                    // Create our NetworkAgent.
+                                    mNetworkAgent =
+                                            new NetworkAgent(
+                                                    mContext,
+                                                    getLooper(),
+                                                    NETWORK_TYPE,
+                                                    mNetworkCapabilities,
+                                                    linkProperties,
+                                                    NETWORK_SCORE,
+                                                    config,
+                                                    getProvider()) {
+                                                @Override
+                                                public void onNetworkUnwanted() {
+                                                    BluetoothTetheringNetworkFactory.this
+                                                            .onCancelRequest();
+                                                }
+                                            };
+                                    mNetworkAgent.register();
+                                    mNetworkAgent.markConnected();
+                                }
+                            }
+                        });
         ipProvisioningThread.start();
     }
 
@@ -243,17 +265,18 @@ public class BluetoothTetheringNetworkFactory extends NetworkFactory {
     }
 
     private NetworkCapabilities initNetworkCapabilities() {
-        final NetworkCapabilities.Builder builder = new NetworkCapabilities.Builder()
-                .addTransportType(NetworkCapabilities.TRANSPORT_BLUETOOTH)
-                .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
-                .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED)
-                .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_ROAMING)
-                .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_SUSPENDED)
-                .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VCN_MANAGED)
-                // Bluetooth v3 and v4 go up to 24 Mbps.
-                // TODO: Adjust this to actual connection bandwidth.
-                .setLinkUpstreamBandwidthKbps(24 * 1000)
-                .setLinkDownstreamBandwidthKbps(24 * 1000);
+        final NetworkCapabilities.Builder builder =
+                new NetworkCapabilities.Builder()
+                        .addTransportType(NetworkCapabilities.TRANSPORT_BLUETOOTH)
+                        .addCapability(NetworkCapabilities.NET_CAPABILITY_INTERNET)
+                        .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_RESTRICTED)
+                        .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_ROAMING)
+                        .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_SUSPENDED)
+                        .addCapability(NetworkCapabilities.NET_CAPABILITY_NOT_VCN_MANAGED)
+                        // Bluetooth v3 and v4 go up to 24 Mbps.
+                        // TODO: Adjust this to actual connection bandwidth.
+                        .setLinkUpstreamBandwidthKbps(24 * 1000)
+                        .setLinkDownstreamBandwidthKbps(24 * 1000);
         return builder.build();
     }
 }

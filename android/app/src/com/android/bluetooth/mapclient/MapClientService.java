@@ -62,8 +62,7 @@ public class MapClientService extends ProfileService {
     private AdapterService mAdapterService;
     private DatabaseManager mDatabaseManager;
     private static MapClientService sMapClientService;
-    @VisibleForTesting
-    private Handler mHandler;
+    @VisibleForTesting private Handler mHandler;
 
     private Looper mSmLooper;
 
@@ -113,15 +112,18 @@ public class MapClientService extends ProfileService {
      */
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)
     public synchronized boolean connect(BluetoothDevice device) {
-        enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED,
-                "Need BLUETOOTH_PRIVILEGED permission");
+        enforceCallingOrSelfPermission(
+                BLUETOOTH_PRIVILEGED, "Need BLUETOOTH_PRIVILEGED permission");
         if (device == null) {
             throw new IllegalArgumentException("Null device");
         }
         Log.d(TAG, "connect(device= " + device + "): devices=" + mMapInstanceMap.keySet());
         if (getConnectionPolicy(device) == BluetoothProfile.CONNECTION_POLICY_FORBIDDEN) {
-            Log.w(TAG, "Connection not allowed: <" + device.getAddress()
-                    + "> is CONNECTION_POLICY_FORBIDDEN");
+            Log.w(
+                    TAG,
+                    "Connection not allowed: <"
+                            + device.getAddress()
+                            + "> is CONNECTION_POLICY_FORBIDDEN");
             return false;
         }
         MceStateMachine mapStateMachine = mMapInstanceMap.get(device);
@@ -138,8 +140,11 @@ public class MapClientService extends ProfileService {
                     addDeviceToMapAndConnect(device);
                     return true;
                 } else {
-                    Log.e(TAG, "Maxed out on the number of allowed MAP connections. "
-                            + "Connect request rejected on " + device);
+                    Log.e(
+                            TAG,
+                            "Maxed out on the number of allowed MAP connections. "
+                                    + "Connect request rejected on "
+                                    + device);
                     return false;
                 }
             }
@@ -175,8 +180,8 @@ public class MapClientService extends ProfileService {
 
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)
     public synchronized boolean disconnect(BluetoothDevice device) {
-        enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED,
-                "Need BLUETOOTH_PRIVILEGED permission");
+        enforceCallingOrSelfPermission(
+                BLUETOOTH_PRIVILEGED, "Need BLUETOOTH_PRIVILEGED permission");
         Log.d(TAG, "disconnect(device= " + device + "): devices=" + mMapInstanceMap.keySet());
         MceStateMachine mapStateMachine = mMapInstanceMap.get(device);
         // a map state machine instance doesn't exist. maybe it is already gone?
@@ -189,13 +194,12 @@ public class MapClientService extends ProfileService {
             return false;
         }
         mapStateMachine.disconnect();
-        Log.d(TAG, "disconnect(device= " + device + "): end devices="
-                + mMapInstanceMap.keySet());
+        Log.d(TAG, "disconnect(device= " + device + "): end devices=" + mMapInstanceMap.keySet());
         return true;
     }
 
     public List<BluetoothDevice> getConnectedDevices() {
-        return getDevicesMatchingConnectionStates(new int[]{BluetoothAdapter.STATE_CONNECTED});
+        return getDevicesMatchingConnectionStates(new int[] {BluetoothAdapter.STATE_CONNECTED});
     }
 
     MceStateMachine getMceStateMachineForDevice(BluetoothDevice device) {
@@ -223,20 +227,20 @@ public class MapClientService extends ProfileService {
     public synchronized int getConnectionState(BluetoothDevice device) {
         MceStateMachine mapStateMachine = mMapInstanceMap.get(device);
         // a map state machine instance doesn't exist yet, create a new one if we can.
-        return (mapStateMachine == null) ? BluetoothProfile.STATE_DISCONNECTED
+        return (mapStateMachine == null)
+                ? BluetoothProfile.STATE_DISCONNECTED
                 : mapStateMachine.getState();
     }
 
     /**
-     * Set connection policy of the profile and connects it if connectionPolicy is
-     * {@link BluetoothProfile#CONNECTION_POLICY_ALLOWED} or disconnects if connectionPolicy is
-     * {@link BluetoothProfile#CONNECTION_POLICY_FORBIDDEN}
+     * Set connection policy of the profile and connects it if connectionPolicy is {@link
+     * BluetoothProfile#CONNECTION_POLICY_ALLOWED} or disconnects if connectionPolicy is {@link
+     * BluetoothProfile#CONNECTION_POLICY_FORBIDDEN}
      *
-     * <p> The device should already be paired.
-     * Connection policy can be one of:
-     * {@link BluetoothProfile#CONNECTION_POLICY_ALLOWED},
-     * {@link BluetoothProfile#CONNECTION_POLICY_FORBIDDEN},
-     * {@link BluetoothProfile#CONNECTION_POLICY_UNKNOWN}
+     * <p>The device should already be paired. Connection policy can be one of: {@link
+     * BluetoothProfile#CONNECTION_POLICY_ALLOWED}, {@link
+     * BluetoothProfile#CONNECTION_POLICY_FORBIDDEN}, {@link
+     * BluetoothProfile#CONNECTION_POLICY_UNKNOWN}
      *
      * @param device Paired bluetooth device
      * @param connectionPolicy is the connection policy to set to for this profile
@@ -245,11 +249,11 @@ public class MapClientService extends ProfileService {
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.v(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
-        enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED,
-                "Need BLUETOOTH_PRIVILEGED permission");
+        enforceCallingOrSelfPermission(
+                BLUETOOTH_PRIVILEGED, "Need BLUETOOTH_PRIVILEGED permission");
 
-        if (!mDatabaseManager.setProfileConnectionPolicy(device, BluetoothProfile.MAP_CLIENT,
-                  connectionPolicy)) {
+        if (!mDatabaseManager.setProfileConnectionPolicy(
+                device, BluetoothProfile.MAP_CLIENT, connectionPolicy)) {
             return false;
         }
         if (connectionPolicy == BluetoothProfile.CONNECTION_POLICY_ALLOWED) {
@@ -263,24 +267,26 @@ public class MapClientService extends ProfileService {
     /**
      * Get the connection policy of the profile.
      *
-     * <p> The connection policy can be any of:
-     * {@link BluetoothProfile#CONNECTION_POLICY_ALLOWED},
-     * {@link BluetoothProfile#CONNECTION_POLICY_FORBIDDEN},
-     * {@link BluetoothProfile#CONNECTION_POLICY_UNKNOWN}
+     * <p>The connection policy can be any of: {@link BluetoothProfile#CONNECTION_POLICY_ALLOWED},
+     * {@link BluetoothProfile#CONNECTION_POLICY_FORBIDDEN}, {@link
+     * BluetoothProfile#CONNECTION_POLICY_UNKNOWN}
      *
      * @param device Bluetooth device
      * @return connection policy of the device
      */
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)
     public int getConnectionPolicy(BluetoothDevice device) {
-        enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED,
-                "Need BLUETOOTH_PRIVILEGED permission");
-        return mDatabaseManager
-                .getProfileConnectionPolicy(device, BluetoothProfile.MAP_CLIENT);
+        enforceCallingOrSelfPermission(
+                BLUETOOTH_PRIVILEGED, "Need BLUETOOTH_PRIVILEGED permission");
+        return mDatabaseManager.getProfileConnectionPolicy(device, BluetoothProfile.MAP_CLIENT);
     }
 
-    public synchronized boolean sendMessage(BluetoothDevice device, Uri[] contacts, String message,
-            PendingIntent sentIntent, PendingIntent deliveredIntent) {
+    public synchronized boolean sendMessage(
+            BluetoothDevice device,
+            Uri[] contacts,
+            String message,
+            PendingIntent sentIntent,
+            PendingIntent deliveredIntent) {
         MceStateMachine mapStateMachine = mMapInstanceMap.get(device);
         return mapStateMachine != null
                 && mapStateMachine.sendMapMessage(contacts, message, sentIntent, deliveredIntent);
@@ -296,8 +302,10 @@ public class MapClientService extends ProfileService {
         Log.d(TAG, "start()");
 
         mAdapterService = AdapterService.getAdapterService();
-        mDatabaseManager = Objects.requireNonNull(AdapterService.getAdapterService().getDatabase(),
-                "DatabaseManager cannot be null when MapClientService starts");
+        mDatabaseManager =
+                Objects.requireNonNull(
+                        AdapterService.getAdapterService().getDatabase(),
+                        "DatabaseManager cannot be null when MapClientService starts");
 
         mHandler = new Handler(Looper.getMainLooper());
 
@@ -387,6 +395,7 @@ public class MapClientService extends ProfileService {
 
     /**
      * Returns the SDP record's MapSupportedFeatures field (see Bluetooth MAP 1.4 spec, page 114).
+     *
      * @param device The Bluetooth device to get this value for.
      * @return the SDP record's MapSupportedFeatures field.
      */
@@ -399,7 +408,8 @@ public class MapClientService extends ProfileService {
         return mapStateMachine.getSupportedFeatures();
     }
 
-    public synchronized boolean setMessageStatus(BluetoothDevice device, String handle, int status) {
+    public synchronized boolean setMessageStatus(
+            BluetoothDevice device, String handle, int status) {
         MceStateMachine mapStateMachine = mMapInstanceMap.get(device);
         if (mapStateMachine == null) {
             return false;
@@ -415,11 +425,11 @@ public class MapClientService extends ProfileService {
         }
     }
 
-    //Binder object: Must be static class or memory leak may occur
+    // Binder object: Must be static class or memory leak may occur
 
     /**
-     * This class implements the IClient interface - or actually it validates the
-     * preconditions for calling the actual functionality in the MapClientService, and calls it.
+     * This class implements the IClient interface - or actually it validates the preconditions for
+     * calling the actual functionality in the MapClientService, and calls it.
      */
     @VisibleForTesting
     static class Binder extends IBluetoothMapClient.Stub implements IProfileServiceBinder {
@@ -620,8 +630,12 @@ public class MapClientService extends ProfileService {
             return;
         }
 
-        Log.i(TAG, "Received ACL disconnection event, device=" + device.toString()
-                + ", transport=" + transport);
+        Log.i(
+                TAG,
+                "Received ACL disconnection event, device="
+                        + device.toString()
+                        + ", transport="
+                        + transport);
 
         if (transport != BluetoothDevice.TRANSPORT_BREDR) {
             return;

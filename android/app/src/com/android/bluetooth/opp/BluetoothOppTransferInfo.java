@@ -33,8 +33,8 @@
 package com.android.bluetooth.opp;
 
 /**
- * This is currently used by Application codes. This class stores information
- * about a single OBEX transfer (operation)
+ * This is currently used by Application codes. This class stores information about a single OBEX
+ * transfer (operation)
  */
 public class BluetoothOppTransferInfo {
     int mID;

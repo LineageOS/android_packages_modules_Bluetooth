@@ -95,16 +95,14 @@ public class TbsCall {
     }
 
     public static TbsCall create(BluetoothLeCall call) {
-        return new TbsCall(call.getState(), call.getUri(), call.getCallFlags(),
-                call.getFriendlyName());
+        return new TbsCall(
+                call.getState(), call.getUri(), call.getCallFlags(), call.getFriendlyName());
     }
 
     @Override
     public boolean equals(Object o) {
-        if (this == o)
-            return true;
-        if (o == null || getClass() != o.getClass())
-            return false;
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
         TbsCall that = (TbsCall) o;
         // check the state only
         return mState == that.mState;
@@ -143,7 +141,8 @@ public class TbsCall {
      *
      * @return safe Friendly Name
      */
-    public String getSafeFriendlyName() {;
+    public String getSafeFriendlyName() {
+        ;
         if (mFriendlyName == null) {
             return null;
         }
