@@ -16,7 +16,6 @@
 
 package android.bluetooth;
 
-
 import android.annotation.SuppressLint;
 import android.compat.annotation.UnsupportedAppUsage;
 import android.os.Handler;
