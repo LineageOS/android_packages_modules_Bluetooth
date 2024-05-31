@@ -30,82 +30,80 @@ import java.util.Map;
 import java.util.TreeMap;
 
 public class LeAudioDeviceStateWrapper {
-        public BluetoothDevice device;
-        public LeAudioData leAudioData = null;
-        public VolumeControlData volumeControlData = null;
-        public BassData bassData = null;
-        public HapData hapData = null;
+    public BluetoothDevice device;
+    public LeAudioData leAudioData = null;
+    public VolumeControlData volumeControlData = null;
+    public BassData bassData = null;
+    public HapData hapData = null;
 
-        public LeAudioDeviceStateWrapper(BluetoothDevice device) {
-                this.device = device;
-        }
+    public LeAudioDeviceStateWrapper(BluetoothDevice device) {
+        this.device = device;
+    }
 
-        public static class LeAudioData {
-                public MutableLiveData<Boolean> isConnectedMutable = new MutableLiveData<>();
-                public MutableLiveData<Pair<Integer, Integer>> nodeStatusMutable =
-                                new MutableLiveData<>();
-                public MutableLiveData<Pair<Integer, Pair<Integer, Integer>>> groupStatusMutable =
-                                new MutableLiveData<>();
-                public MutableLiveData<Pair<Integer, Boolean>> groupLockStateMutable =
-                                new MutableLiveData<>();
-                public MutableLiveData<Integer> microphoneStateMutable = new MutableLiveData<>();
+    public static class LeAudioData {
+        public MutableLiveData<Boolean> isConnectedMutable = new MutableLiveData<>();
+        public MutableLiveData<Pair<Integer, Integer>> nodeStatusMutable = new MutableLiveData<>();
+        public MutableLiveData<Pair<Integer, Pair<Integer, Integer>>> groupStatusMutable =
+                new MutableLiveData<>();
+        public MutableLiveData<Pair<Integer, Boolean>> groupLockStateMutable =
+                new MutableLiveData<>();
+        public MutableLiveData<Integer> microphoneStateMutable = new MutableLiveData<>();
 
-                public Object viewsData = null;
-        }
+        public Object viewsData = null;
+    }
 
-        public static class HapData {
-                public MutableLiveData<Integer> hapStateMutable = new MutableLiveData<>();
-                public MutableLiveData<String> hapStatusMutable = new MutableLiveData<>();
-                public MutableLiveData<Integer> hapFeaturesMutable = new MutableLiveData<>();
-                public MutableLiveData<Integer> hapActivePresetIndexMutable =
-                                new MutableLiveData<>();
-                public MutableLiveData<List<BluetoothHapPresetInfo>> hapPresetsMutable =
-                                new MutableLiveData<>();
+    public static class HapData {
+        public MutableLiveData<Integer> hapStateMutable = new MutableLiveData<>();
+        public MutableLiveData<String> hapStatusMutable = new MutableLiveData<>();
+        public MutableLiveData<Integer> hapFeaturesMutable = new MutableLiveData<>();
+        public MutableLiveData<Integer> hapActivePresetIndexMutable = new MutableLiveData<>();
+        public MutableLiveData<List<BluetoothHapPresetInfo>> hapPresetsMutable =
+                new MutableLiveData<>();
 
-                public Object viewsData = null;
-        }
+        public Object viewsData = null;
+    }
 
-        public static class VolumeControlData {
-                public MutableLiveData<Boolean> isConnectedMutable = new MutableLiveData<>(false);
-                public MutableLiveData<Integer> numInputsMutable = new MutableLiveData<>(0);
-                public MutableLiveData<Integer> numOffsetsMutable = new MutableLiveData<>(0);
-                public MutableLiveData<Integer> volumeStateMutable = new MutableLiveData<>(0);
-                public MutableLiveData<Boolean> mutedStateMutable = new MutableLiveData<>(false);
+    public static class VolumeControlData {
+        public MutableLiveData<Boolean> isConnectedMutable = new MutableLiveData<>(false);
+        public MutableLiveData<Integer> numInputsMutable = new MutableLiveData<>(0);
+        public MutableLiveData<Integer> numOffsetsMutable = new MutableLiveData<>(0);
+        public MutableLiveData<Integer> volumeStateMutable = new MutableLiveData<>(0);
+        public MutableLiveData<Boolean> mutedStateMutable = new MutableLiveData<>(false);
 
-                public MutableLiveData<Map<Integer, String>> inputDescriptionsMutable =
-                                new MutableLiveData<>(new TreeMap<>());
-                public MutableLiveData<Map<Integer, Integer>> inputStateGainMutable =
-                                new MutableLiveData<>(new TreeMap<>());
-                public MutableLiveData<Map<Integer, Integer>> inputStateGainModeMutable =
-                                new MutableLiveData<>(new TreeMap<>());
-                public MutableLiveData<Map<Integer, Integer>> inputStateGainUnitMutable =
-                                new MutableLiveData<>(new TreeMap<>());
-                public MutableLiveData<Map<Integer, Integer>> inputStateGainMinMutable =
-                                new MutableLiveData<>(new TreeMap<>());
-                public MutableLiveData<Map<Integer, Integer>> inputStateGainMaxMutable =
-                                new MutableLiveData<>(new TreeMap<>());
-                public MutableLiveData<Map<Integer, Boolean>> inputStateMuteMutable =
-                                new MutableLiveData<>(new TreeMap<>());
-                public MutableLiveData<Map<Integer, Integer>> inputStatusMutable =
-                                new MutableLiveData<>(new TreeMap<>());
-                public MutableLiveData<Map<Integer, Integer>> inputTypeMutable =
-                                new MutableLiveData<>(new TreeMap<>());
+        public MutableLiveData<Map<Integer, String>> inputDescriptionsMutable =
+                new MutableLiveData<>(new TreeMap<>());
+        public MutableLiveData<Map<Integer, Integer>> inputStateGainMutable =
+                new MutableLiveData<>(new TreeMap<>());
+        public MutableLiveData<Map<Integer, Integer>> inputStateGainModeMutable =
+                new MutableLiveData<>(new TreeMap<>());
+        public MutableLiveData<Map<Integer, Integer>> inputStateGainUnitMutable =
+                new MutableLiveData<>(new TreeMap<>());
+        public MutableLiveData<Map<Integer, Integer>> inputStateGainMinMutable =
+                new MutableLiveData<>(new TreeMap<>());
+        public MutableLiveData<Map<Integer, Integer>> inputStateGainMaxMutable =
+                new MutableLiveData<>(new TreeMap<>());
+        public MutableLiveData<Map<Integer, Boolean>> inputStateMuteMutable =
+                new MutableLiveData<>(new TreeMap<>());
+        public MutableLiveData<Map<Integer, Integer>> inputStatusMutable =
+                new MutableLiveData<>(new TreeMap<>());
+        public MutableLiveData<Map<Integer, Integer>> inputTypeMutable =
+                new MutableLiveData<>(new TreeMap<>());
 
-                public MutableLiveData<Map<Integer, Integer>> outputVolumeOffsetMutable =
-                                new MutableLiveData<>(new TreeMap<>());
-                public MutableLiveData<Map<Integer, Integer>> outputLocationMutable =
-                                new MutableLiveData<>(new TreeMap<>());
-                public MutableLiveData<Map<Integer, String>> outputDescriptionMutable =
-                                new MutableLiveData<>(new TreeMap<>());
+        public MutableLiveData<Map<Integer, Integer>> outputVolumeOffsetMutable =
+                new MutableLiveData<>(new TreeMap<>());
+        public MutableLiveData<Map<Integer, Integer>> outputLocationMutable =
+                new MutableLiveData<>(new TreeMap<>());
+        public MutableLiveData<Map<Integer, String>> outputDescriptionMutable =
+                new MutableLiveData<>(new TreeMap<>());
 
-                public Object viewsData = null;
-        }
+        public Object viewsData = null;
+    }
 
-        public static class BassData {
-                public MutableLiveData<Boolean> isConnectedMutable = new MutableLiveData<>();
-                public MutableLiveData<HashMap<Integer, BluetoothLeBroadcastReceiveState>>
-                        receiverStatesMutable = new MutableLiveData<>();
+    public static class BassData {
+        public MutableLiveData<Boolean> isConnectedMutable = new MutableLiveData<>();
+        public MutableLiveData<HashMap<Integer, BluetoothLeBroadcastReceiveState>>
+                receiverStatesMutable = new MutableLiveData<>();
 
-                public Object viewsData = null;
-        }
+        public Object viewsData = null;
+    }
 }

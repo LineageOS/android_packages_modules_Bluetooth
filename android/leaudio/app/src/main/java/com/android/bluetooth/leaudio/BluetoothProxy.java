@@ -76,214 +76,271 @@ public class BluetoothProxy {
 
     private boolean mLeAudioCallbackRegistered = false;
     private BluetoothLeAudio.Callback mLeAudioCallbacks =
-    new BluetoothLeAudio.Callback() {
-        @Override
-        public void onCodecConfigChanged(int groupId, BluetoothLeAudioCodecStatus status) {}
-        @Override
-        public void onGroupStatusChanged(int groupId, int groupStatus) {
-            List<LeAudioDeviceStateWrapper> valid_devices = null;
-            valid_devices = allLeAudioDevicesMutable.getValue().stream().filter(
-                                state -> state.leAudioData.nodeStatusMutable.getValue() != null
-                                        && state.leAudioData.nodeStatusMutable.getValue().first
-                                                .equals(groupId))
-                                .collect(Collectors.toList());
-            for (LeAudioDeviceStateWrapper dev : valid_devices) {
-                dev.leAudioData.groupStatusMutable.postValue(
-                        new Pair<>(groupId, new Pair<>(groupStatus, 0)));
-            }
-        }
-        @Override
-        public void onGroupNodeAdded(BluetoothDevice device, int groupId) {
-            Log.d("LeCB:", device + " group added " + groupId);
-            if (device == null || groupId == BluetoothLeAudio.GROUP_ID_INVALID) {
-                Log.d("LeCB:", "invalid parameter");
-                return;
-            }
-            Optional<LeAudioDeviceStateWrapper> valid_device_opt = allLeAudioDevicesMutable
-                            .getValue().stream()
-                            .filter(state -> state.device.getAddress().equals(device.getAddress()))
-                            .findAny();
+            new BluetoothLeAudio.Callback() {
+                @Override
+                public void onCodecConfigChanged(int groupId, BluetoothLeAudioCodecStatus status) {}
 
-            if (!valid_device_opt.isPresent()) {
-                Log.d("LeCB:", "Device not present");
-                return;
-            }
+                @Override
+                public void onGroupStatusChanged(int groupId, int groupStatus) {
+                    List<LeAudioDeviceStateWrapper> valid_devices = null;
+                    valid_devices =
+                            allLeAudioDevicesMutable.getValue().stream()
+                                    .filter(
+                                            state ->
+                                                    state.leAudioData.nodeStatusMutable.getValue()
+                                                                    != null
+                                                            && state.leAudioData
+                                                                    .nodeStatusMutable
+                                                                    .getValue()
+                                                                    .first
+                                                                    .equals(groupId))
+                                    .collect(Collectors.toList());
+                    for (LeAudioDeviceStateWrapper dev : valid_devices) {
+                        dev.leAudioData.groupStatusMutable.postValue(
+                                new Pair<>(groupId, new Pair<>(groupStatus, 0)));
+                    }
+                }
 
-            LeAudioDeviceStateWrapper valid_device = valid_device_opt.get();
-            LeAudioDeviceStateWrapper.LeAudioData svc_data = valid_device.leAudioData;
+                @Override
+                public void onGroupNodeAdded(BluetoothDevice device, int groupId) {
+                    Log.d("LeCB:", device + " group added " + groupId);
+                    if (device == null || groupId == BluetoothLeAudio.GROUP_ID_INVALID) {
+                        Log.d("LeCB:", "invalid parameter");
+                        return;
+                    }
+                    Optional<LeAudioDeviceStateWrapper> valid_device_opt =
+                            allLeAudioDevicesMutable.getValue().stream()
+                                    .filter(
+                                            state ->
+                                                    state.device
+                                                            .getAddress()
+                                                            .equals(device.getAddress()))
+                                    .findAny();
 
-            svc_data.nodeStatusMutable.postValue(new Pair<>(groupId, GROUP_NODE_ADDED));
-            svc_data.groupStatusMutable.postValue(new Pair<>(groupId, new Pair<>(-1, -1)));
-        }
-        @Override
-        public void onGroupNodeRemoved(BluetoothDevice device, int groupId) {
-            if (device == null || groupId == BluetoothLeAudio.GROUP_ID_INVALID) {
-                Log.d("LeCB:", "invalid parameter");
-                return;
-            }
+                    if (!valid_device_opt.isPresent()) {
+                        Log.d("LeCB:", "Device not present");
+                        return;
+                    }
 
-            Log.d("LeCB:", device + " group added " + groupId);
-            if (device == null || groupId == BluetoothLeAudio.GROUP_ID_INVALID) {
-                Log.d("LeCB:", "invalid parameter");
-                return;
-            }
+                    LeAudioDeviceStateWrapper valid_device = valid_device_opt.get();
+                    LeAudioDeviceStateWrapper.LeAudioData svc_data = valid_device.leAudioData;
 
-            Optional<LeAudioDeviceStateWrapper> valid_device_opt = allLeAudioDevicesMutable
-            .getValue().stream()
-            .filter(state -> state.device.getAddress().equals(device.getAddress()))
-            .findAny();
+                    svc_data.nodeStatusMutable.postValue(new Pair<>(groupId, GROUP_NODE_ADDED));
+                    svc_data.groupStatusMutable.postValue(new Pair<>(groupId, new Pair<>(-1, -1)));
+                }
 
-            if (!valid_device_opt.isPresent()) {
-                Log.d("LeCB:", "Device not present");
-                return;
-            }
+                @Override
+                public void onGroupNodeRemoved(BluetoothDevice device, int groupId) {
+                    if (device == null || groupId == BluetoothLeAudio.GROUP_ID_INVALID) {
+                        Log.d("LeCB:", "invalid parameter");
+                        return;
+                    }
 
-            LeAudioDeviceStateWrapper valid_device = valid_device_opt.get();
-            LeAudioDeviceStateWrapper.LeAudioData svc_data = valid_device.leAudioData;
+                    Log.d("LeCB:", device + " group added " + groupId);
+                    if (device == null || groupId == BluetoothLeAudio.GROUP_ID_INVALID) {
+                        Log.d("LeCB:", "invalid parameter");
+                        return;
+                    }
 
-            svc_data.nodeStatusMutable.postValue(new Pair<>(groupId, GROUP_NODE_REMOVED));
-            svc_data.groupStatusMutable.postValue(new Pair<>(groupId, new Pair<>(-1, -1)));
-        }
-    };
+                    Optional<LeAudioDeviceStateWrapper> valid_device_opt =
+                            allLeAudioDevicesMutable.getValue().stream()
+                                    .filter(
+                                            state ->
+                                                    state.device
+                                                            .getAddress()
+                                                            .equals(device.getAddress()))
+                                    .findAny();
+
+                    if (!valid_device_opt.isPresent()) {
+                        Log.d("LeCB:", "Device not present");
+                        return;
+                    }
+
+                    LeAudioDeviceStateWrapper valid_device = valid_device_opt.get();
+                    LeAudioDeviceStateWrapper.LeAudioData svc_data = valid_device.leAudioData;
+
+                    svc_data.nodeStatusMutable.postValue(new Pair<>(groupId, GROUP_NODE_REMOVED));
+                    svc_data.groupStatusMutable.postValue(new Pair<>(groupId, new Pair<>(-1, -1)));
+                }
+            };
 
     private final MutableLiveData<Boolean> enabledBluetoothMutable;
-    private final BroadcastReceiver adapterIntentReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (BluetoothAdapter.ACTION_STATE_CHANGED.equals(action)) {
-                int toState =
-                        intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
-                if (toState == BluetoothAdapter.STATE_ON) {
-                    enabledBluetoothMutable.postValue(true);
-                } else if (toState == BluetoothAdapter.STATE_OFF) {
-                    enabledBluetoothMutable.postValue(false);
+    private final BroadcastReceiver adapterIntentReceiver =
+            new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    String action = intent.getAction();
+                    if (BluetoothAdapter.ACTION_STATE_CHANGED.equals(action)) {
+                        int toState =
+                                intent.getIntExtra(
+                                        BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
+                        if (toState == BluetoothAdapter.STATE_ON) {
+                            enabledBluetoothMutable.postValue(true);
+                        } else if (toState == BluetoothAdapter.STATE_OFF) {
+                            enabledBluetoothMutable.postValue(false);
+                        }
+                    }
                 }
-            }
-        }
-    };
+            };
     private final MutableLiveData<List<LeAudioDeviceStateWrapper>> allLeAudioDevicesMutable;
-    private final BroadcastReceiver leAudioIntentReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+    private final BroadcastReceiver leAudioIntentReceiver =
+            new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    String action = intent.getAction();
+                    final BluetoothDevice device =
+                            intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 
-            if (allLeAudioDevicesMutable.getValue() != null) {
-                if (device != null) {
-                    Optional<LeAudioDeviceStateWrapper> valid_device_opt = allLeAudioDevicesMutable
-                            .getValue().stream()
-                            .filter(state -> state.device.getAddress().equals(device.getAddress()))
-                            .findAny();
+                    if (allLeAudioDevicesMutable.getValue() != null) {
+                        if (device != null) {
+                            Optional<LeAudioDeviceStateWrapper> valid_device_opt =
+                                    allLeAudioDevicesMutable.getValue().stream()
+                                            .filter(
+                                                    state ->
+                                                            state.device
+                                                                    .getAddress()
+                                                                    .equals(device.getAddress()))
+                                            .findAny();
 
-                    if (valid_device_opt.isPresent()) {
-                        LeAudioDeviceStateWrapper valid_device = valid_device_opt.get();
-                        LeAudioDeviceStateWrapper.LeAudioData svc_data = valid_device.leAudioData;
-                        int group_id;
+                            if (valid_device_opt.isPresent()) {
+                                LeAudioDeviceStateWrapper valid_device = valid_device_opt.get();
+                                LeAudioDeviceStateWrapper.LeAudioData svc_data =
+                                        valid_device.leAudioData;
+                                int group_id;
 
-                        // Handle Le Audio actions
-                        switch (action) {
-                            case BluetoothLeAudio.ACTION_LE_AUDIO_CONNECTION_STATE_CHANGED: {
-                                final int toState =
-                                        intent.getIntExtra(BluetoothLeAudio.EXTRA_STATE, -1);
-                                if (toState == BluetoothLeAudio.STATE_CONNECTED
-                                        || toState == BluetoothLeAudio.STATE_DISCONNECTED)
-                                    svc_data.isConnectedMutable
-                                            .postValue(toState == BluetoothLeAudio.STATE_CONNECTED);
+                                // Handle Le Audio actions
+                                switch (action) {
+                                    case BluetoothLeAudio.ACTION_LE_AUDIO_CONNECTION_STATE_CHANGED:
+                                        {
+                                            final int toState =
+                                                    intent.getIntExtra(
+                                                            BluetoothLeAudio.EXTRA_STATE, -1);
+                                            if (toState == BluetoothLeAudio.STATE_CONNECTED
+                                                    || toState
+                                                            == BluetoothLeAudio.STATE_DISCONNECTED)
+                                                svc_data.isConnectedMutable.postValue(
+                                                        toState
+                                                                == BluetoothLeAudio
+                                                                        .STATE_CONNECTED);
 
-                                group_id = bluetoothLeAudio.getGroupId(device);
-                                svc_data.nodeStatusMutable.postValue(
-                                        new Pair<>(group_id, GROUP_NODE_ADDED));
-                                svc_data.groupStatusMutable
-                                        .postValue(new Pair<>(group_id, new Pair<>(-1, -1)));
-                                break;
+                                            group_id = bluetoothLeAudio.getGroupId(device);
+                                            svc_data.nodeStatusMutable.postValue(
+                                                    new Pair<>(group_id, GROUP_NODE_ADDED));
+                                            svc_data.groupStatusMutable.postValue(
+                                                    new Pair<>(group_id, new Pair<>(-1, -1)));
+                                            break;
+                                        }
+                                }
                             }
                         }
                     }
                 }
-            }
-        }
-    };
+            };
 
-    private final BroadcastReceiver hapClientIntentReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+    private final BroadcastReceiver hapClientIntentReceiver =
+            new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    String action = intent.getAction();
+                    final BluetoothDevice device =
+                            intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 
-            if (allLeAudioDevicesMutable.getValue() != null) {
-                if (device != null) {
-                    Optional<LeAudioDeviceStateWrapper> valid_device_opt = allLeAudioDevicesMutable
-                            .getValue().stream()
-                            .filter(state -> state.device.getAddress().equals(device.getAddress()))
-                            .findAny();
+                    if (allLeAudioDevicesMutable.getValue() != null) {
+                        if (device != null) {
+                            Optional<LeAudioDeviceStateWrapper> valid_device_opt =
+                                    allLeAudioDevicesMutable.getValue().stream()
+                                            .filter(
+                                                    state ->
+                                                            state.device
+                                                                    .getAddress()
+                                                                    .equals(device.getAddress()))
+                                            .findAny();
 
-                    if (valid_device_opt.isPresent()) {
-                        LeAudioDeviceStateWrapper valid_device = valid_device_opt.get();
-                        LeAudioDeviceStateWrapper.HapData svc_data = valid_device.hapData;
+                            if (valid_device_opt.isPresent()) {
+                                LeAudioDeviceStateWrapper valid_device = valid_device_opt.get();
+                                LeAudioDeviceStateWrapper.HapData svc_data = valid_device.hapData;
 
-                        switch (action) {
-                            case BluetoothHapClient.ACTION_HAP_CONNECTION_STATE_CHANGED: {
-                                final int toState =
-                                        intent.getIntExtra(BluetoothHapClient.EXTRA_STATE, -1);
-                                svc_data.hapStateMutable.postValue(toState);
-                                break;
+                                switch (action) {
+                                    case BluetoothHapClient.ACTION_HAP_CONNECTION_STATE_CHANGED:
+                                        {
+                                            final int toState =
+                                                    intent.getIntExtra(
+                                                            BluetoothHapClient.EXTRA_STATE, -1);
+                                            svc_data.hapStateMutable.postValue(toState);
+                                            break;
+                                        }
+                                        // Hidden API
+                                    case "android.bluetooth.action.HAP_DEVICE_AVAILABLE":
+                                        {
+                                            final int features =
+                                                    intent.getIntExtra(
+                                                            "android.bluetooth.extra.HAP_FEATURES",
+                                                            -1);
+                                            svc_data.hapFeaturesMutable.postValue(features);
+                                            break;
+                                        }
+                                    default:
+                                        // Do nothing
+                                        break;
+                                }
                             }
-                            // Hidden API
-                            case "android.bluetooth.action.HAP_DEVICE_AVAILABLE": {
-                                final int features = intent
-                                        .getIntExtra("android.bluetooth.extra.HAP_FEATURES", -1);
-                                svc_data.hapFeaturesMutable.postValue(features);
-                                break;
-                            }
-                            default:
-                                // Do nothing
-                                break;
                         }
                     }
                 }
-            }
-        }
-    };
+            };
 
-    private final BroadcastReceiver volumeControlIntentReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            final BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+    private final BroadcastReceiver volumeControlIntentReceiver =
+            new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    String action = intent.getAction();
+                    final BluetoothDevice device =
+                            intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
 
-            if (allLeAudioDevicesMutable.getValue() != null) {
-                if (device != null) {
-                    Optional<LeAudioDeviceStateWrapper> valid_device_opt = allLeAudioDevicesMutable
-                            .getValue().stream()
-                            .filter(state -> state.device.getAddress().equals(device.getAddress()))
-                            .findAny();
+                    if (allLeAudioDevicesMutable.getValue() != null) {
+                        if (device != null) {
+                            Optional<LeAudioDeviceStateWrapper> valid_device_opt =
+                                    allLeAudioDevicesMutable.getValue().stream()
+                                            .filter(
+                                                    state ->
+                                                            state.device
+                                                                    .getAddress()
+                                                                    .equals(device.getAddress()))
+                                            .findAny();
 
-                    if (valid_device_opt.isPresent()) {
-                        LeAudioDeviceStateWrapper valid_device = valid_device_opt.get();
-                        LeAudioDeviceStateWrapper.VolumeControlData svc_data =
-                                valid_device.volumeControlData;
+                            if (valid_device_opt.isPresent()) {
+                                LeAudioDeviceStateWrapper valid_device = valid_device_opt.get();
+                                LeAudioDeviceStateWrapper.VolumeControlData svc_data =
+                                        valid_device.volumeControlData;
 
-                        switch (action) {
-                            case BluetoothVolumeControl.ACTION_CONNECTION_STATE_CHANGED:
-                                final int toState =
-                                        intent.getIntExtra(BluetoothVolumeControl.EXTRA_STATE, -1);
-                                if (toState == BluetoothVolumeControl.STATE_CONNECTED
-                                        || toState == BluetoothVolumeControl.STATE_DISCONNECTED)
-                                    svc_data.isConnectedMutable.postValue(
-                                            toState == BluetoothVolumeControl.STATE_CONNECTED);
-                                break;
+                                switch (action) {
+                                    case BluetoothVolumeControl.ACTION_CONNECTION_STATE_CHANGED:
+                                        final int toState =
+                                                intent.getIntExtra(
+                                                        BluetoothVolumeControl.EXTRA_STATE, -1);
+                                        if (toState == BluetoothVolumeControl.STATE_CONNECTED
+                                                || toState
+                                                        == BluetoothVolumeControl
+                                                                .STATE_DISCONNECTED)
+                                            svc_data.isConnectedMutable.postValue(
+                                                    toState
+                                                            == BluetoothVolumeControl
+                                                                    .STATE_CONNECTED);
+                                        break;
+                                }
+                            }
                         }
                     }
                 }
-            }
-        }
-    };
+            };
     private final MutableLiveData<BluetoothLeBroadcastMetadata> mBroadcastUpdateMutableLive;
-    private final MutableLiveData<Pair<Integer /* reason */, Integer /* broadcastId */>> mBroadcastPlaybackStartedMutableLive;
-    private final MutableLiveData<Pair<Integer /* reason */, Integer /* broadcastId */>> mBroadcastPlaybackStoppedMutableLive;
+    private final MutableLiveData<Pair<Integer /* reason */, Integer /* broadcastId */>>
+            mBroadcastPlaybackStartedMutableLive;
+    private final MutableLiveData<Pair<Integer /* reason */, Integer /* broadcastId */>>
+            mBroadcastPlaybackStoppedMutableLive;
     private final MutableLiveData<Integer /* broadcastId */> mBroadcastAddedMutableLive;
-    private final MutableLiveData<Pair<Integer /* reason */, Integer /* broadcastId */>> mBroadcastRemovedMutableLive;
+    private final MutableLiveData<Pair<Integer /* reason */, Integer /* broadcastId */>>
+            mBroadcastRemovedMutableLive;
     private final MutableLiveData<String> mBroadcastStatusMutableLive;
     private final BluetoothLeBroadcast.Callback mBroadcasterCallback =
             new BluetoothLeBroadcast.Callback() {
@@ -291,8 +348,11 @@ public class BluetoothProxy {
                 public void onBroadcastStarted(int reason, int broadcastId) {
                     if ((reason != BluetoothStatusCodes.REASON_LOCAL_APP_REQUEST)
                             && (reason != BluetoothStatusCodes.REASON_LOCAL_STACK_REQUEST)) {
-                        mBroadcastStatusMutableLive.postValue("Unable to create broadcast: "
-                                + broadcastId + ", reason: " + reason);
+                        mBroadcastStatusMutableLive.postValue(
+                                "Unable to create broadcast: "
+                                        + broadcastId
+                                        + ", reason: "
+                                        + reason);
                     }
 
                     mBroadcastAddedMutableLive.postValue(broadcastId);
@@ -303,8 +363,8 @@ public class BluetoothProxy {
 
                 @Override
                 public void onBroadcastStartFailed(int reason) {
-                    mBroadcastStatusMutableLive
-                            .postValue("Unable to START broadcast due to reason: " + reason);
+                    mBroadcastStatusMutableLive.postValue(
+                            "Unable to START broadcast due to reason: " + reason);
                 }
 
                 @Override
@@ -317,8 +377,8 @@ public class BluetoothProxy {
 
                 @Override
                 public void onBroadcastStopFailed(int reason) {
-                    mBroadcastStatusMutableLive
-                            .postValue("Unable to STOP broadcast due to reason: " + reason);
+                    mBroadcastStatusMutableLive.postValue(
+                            "Unable to STOP broadcast due to reason: " + reason);
                 }
 
                 @Override
@@ -333,8 +393,11 @@ public class BluetoothProxy {
 
                 @Override
                 public void onBroadcastUpdated(int reason, int broadcastId) {
-                    mBroadcastStatusMutableLive.postValue("Broadcast " + broadcastId
-                            + "has been updated due to reason: " + reason);
+                    mBroadcastStatusMutableLive.postValue(
+                            "Broadcast "
+                                    + broadcastId
+                                    + "has been updated due to reason: "
+                                    + reason);
                     if (mLocalBroadcastEventListener != null) {
                         mLocalBroadcastEventListener.onBroadcastUpdated(broadcastId);
                     }
@@ -342,13 +405,16 @@ public class BluetoothProxy {
 
                 @Override
                 public void onBroadcastUpdateFailed(int reason, int broadcastId) {
-                    mBroadcastStatusMutableLive.postValue("Unable to UPDATE broadcast "
-                            + broadcastId + " due to reason: " + reason);
+                    mBroadcastStatusMutableLive.postValue(
+                            "Unable to UPDATE broadcast "
+                                    + broadcastId
+                                    + " due to reason: "
+                                    + reason);
                 }
 
                 @Override
-                public void onBroadcastMetadataChanged(int broadcastId,
-                        BluetoothLeBroadcastMetadata metadata) {
+                public void onBroadcastMetadataChanged(
+                        int broadcastId, BluetoothLeBroadcastMetadata metadata) {
                     mBroadcastUpdateMutableLive.postValue(metadata);
                     if (mLocalBroadcastEventListener != null) {
                         mLocalBroadcastEventListener.onBroadcastMetadataChanged(
@@ -360,134 +426,144 @@ public class BluetoothProxy {
     // TODO: Add behaviors in empty methods if necessary.
     private final BluetoothLeBroadcastAssistant.Callback mBroadcastAssistantCallback =
             new BluetoothLeBroadcastAssistant.Callback() {
-        @Override
-        public void onSearchStarted(int reason) {}
+                @Override
+                public void onSearchStarted(int reason) {}
 
-        @Override
-        public void onSearchStartFailed(int reason) {}
+                @Override
+                public void onSearchStartFailed(int reason) {}
 
-        @Override
-        public void onSearchStopped(int reason) {}
+                @Override
+                public void onSearchStopped(int reason) {}
 
-        @Override
-        public void onSearchStopFailed(int reason) {}
+                @Override
+                public void onSearchStopFailed(int reason) {}
 
-        @Override
-        public void onSourceFound(BluetoothLeBroadcastMetadata source) {
-            Log.d("BluetoothProxy", "onSourceFound");
-            if (mBassEventListener != null) {
-                mBassEventListener.onSourceFound(source);
-            }
-        }
-
-        @Override
-        public void onSourceAdded(BluetoothDevice sink, int sourceId, int reason) {}
-
-        @Override
-        public void onSourceAddFailed(BluetoothDevice sink,
-                BluetoothLeBroadcastMetadata source, int reason) {}
-
-        @Override
-        public void onSourceModified(BluetoothDevice sink, int sourceId, int reason) {}
-
-        @Override
-        public void onSourceModifyFailed(BluetoothDevice sink, int sourceId, int reason) {}
-
-        @Override
-        public void onSourceRemoved(BluetoothDevice sink, int sourceId, int reason) {}
-
-        @Override
-        public void onSourceRemoveFailed(BluetoothDevice sink, int sourceId, int reason) {}
-
-        @Override
-        public void onReceiveStateChanged(BluetoothDevice sink, int sourceId,
-                BluetoothLeBroadcastReceiveState state) {
-            Log.d("BluetoothProxy", "onReceiveStateChanged");
-            if (allLeAudioDevicesMutable.getValue() != null) {
-                Optional<LeAudioDeviceStateWrapper> valid_device_opt = allLeAudioDevicesMutable
-                        .getValue().stream()
-                        .filter(stateWrapper -> stateWrapper.device.getAddress().equals(
-                                sink.getAddress()))
-                        .findAny();
-
-                if (!valid_device_opt.isPresent())
-                    return;
-
-                LeAudioDeviceStateWrapper valid_device = valid_device_opt.get();
-                LeAudioDeviceStateWrapper.BassData svc_data = valid_device.bassData;
-
-                /**
-                 * From "Introducing-Bluetooth-LE-Audio-book" 8.6.3.1:
-                 *
-                 * The Source_ID is an Acceptor generated number which is used to identify a
-                 * specific set of
-                 * broadcast device and BIG information. It is local to an Acceptor and used as a
-                 * reference for
-                 * a Broadcast Assistant. In the case of a Coordinated Set of Acceptors, such as
-                 * a left and right
-                 * earbud, the Source_IDs are not related and may be different, even if both are
-                 * receiving the
-                 * same BIS, as each Acceptor independently creates their own Source ID values
-                 */
-
-                /**
-                 * Broadcast receiver's endpoint identifier.
-                 */
-                synchronized(this) {
-                    HashMap<Integer, BluetoothLeBroadcastReceiveState> states =
-                            svc_data.receiverStatesMutable.getValue();
-                    if (states == null)
-                        states = new HashMap<>();
-                    states.put(state.getSourceId(), state);
-
-                    // Use SetValue instead of PostValue() since we want to make it
-                    // synchronous due to getValue() we do here as well
-                    // Otherwise we could miss the update and store only the last
-                    // receiver ID
-//                    svc_data.receiverStatesMutable.setValue(states);
-                    svc_data.receiverStatesMutable.postValue(states);
+                @Override
+                public void onSourceFound(BluetoothLeBroadcastMetadata source) {
+                    Log.d("BluetoothProxy", "onSourceFound");
+                    if (mBassEventListener != null) {
+                        mBassEventListener.onSourceFound(source);
+                    }
                 }
-            }
-        }
-    };
 
-    private final BroadcastReceiver bassIntentReceiver = new BroadcastReceiver() {
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            String action = intent.getAction();
-            if (action.equals(BluetoothLeBroadcastAssistant.ACTION_CONNECTION_STATE_CHANGED)) {
-                final BluetoothDevice device = intent.getParcelableExtra(
-                        BluetoothDevice.EXTRA_DEVICE, BluetoothDevice.class);
+                @Override
+                public void onSourceAdded(BluetoothDevice sink, int sourceId, int reason) {}
 
-                if (allLeAudioDevicesMutable.getValue() != null) {
-                    if (device != null) {
+                @Override
+                public void onSourceAddFailed(
+                        BluetoothDevice sink, BluetoothLeBroadcastMetadata source, int reason) {}
+
+                @Override
+                public void onSourceModified(BluetoothDevice sink, int sourceId, int reason) {}
+
+                @Override
+                public void onSourceModifyFailed(BluetoothDevice sink, int sourceId, int reason) {}
+
+                @Override
+                public void onSourceRemoved(BluetoothDevice sink, int sourceId, int reason) {}
+
+                @Override
+                public void onSourceRemoveFailed(BluetoothDevice sink, int sourceId, int reason) {}
+
+                @Override
+                public void onReceiveStateChanged(
+                        BluetoothDevice sink,
+                        int sourceId,
+                        BluetoothLeBroadcastReceiveState state) {
+                    Log.d("BluetoothProxy", "onReceiveStateChanged");
+                    if (allLeAudioDevicesMutable.getValue() != null) {
                         Optional<LeAudioDeviceStateWrapper> valid_device_opt =
-                                allLeAudioDevicesMutable
-                                        .getValue().stream()
-                                        .filter(state -> state.device.getAddress().equals(
-                                                device.getAddress()))
+                                allLeAudioDevicesMutable.getValue().stream()
+                                        .filter(
+                                                stateWrapper ->
+                                                        stateWrapper
+                                                                .device
+                                                                .getAddress()
+                                                                .equals(sink.getAddress()))
                                         .findAny();
 
-                        if (valid_device_opt.isPresent()) {
-                            LeAudioDeviceStateWrapper valid_device = valid_device_opt.get();
-                            LeAudioDeviceStateWrapper.BassData svc_data = valid_device.bassData;
+                        if (!valid_device_opt.isPresent()) return;
 
-                            final int toState = intent
-                                    .getIntExtra(BluetoothProfile.EXTRA_STATE, -1);
-                            if (toState == BluetoothProfile.STATE_CONNECTED
-                                    || toState == BluetoothProfile.STATE_DISCONNECTED)
-                                svc_data.isConnectedMutable.postValue(
-                                        toState == BluetoothProfile.STATE_CONNECTED);
+                        LeAudioDeviceStateWrapper valid_device = valid_device_opt.get();
+                        LeAudioDeviceStateWrapper.BassData svc_data = valid_device.bassData;
+
+                        /**
+                         * From "Introducing-Bluetooth-LE-Audio-book" 8.6.3.1:
+                         *
+                         * <p>The Source_ID is an Acceptor generated number which is used to
+                         * identify a specific set of broadcast device and BIG information. It is
+                         * local to an Acceptor and used as a reference for a Broadcast Assistant.
+                         * In the case of a Coordinated Set of Acceptors, such as a left and right
+                         * earbud, the Source_IDs are not related and may be different, even if both
+                         * are receiving the same BIS, as each Acceptor independently creates their
+                         * own Source ID values
+                         */
+
+                        /** Broadcast receiver's endpoint identifier. */
+                        synchronized (this) {
+                            HashMap<Integer, BluetoothLeBroadcastReceiveState> states =
+                                    svc_data.receiverStatesMutable.getValue();
+                            if (states == null) states = new HashMap<>();
+                            states.put(state.getSourceId(), state);
+
+                            // Use SetValue instead of PostValue() since we want to make it
+                            // synchronous due to getValue() we do here as well
+                            // Otherwise we could miss the update and store only the last
+                            // receiver ID
+                            //                    svc_data.receiverStatesMutable.setValue(states);
+                            svc_data.receiverStatesMutable.postValue(states);
                         }
                     }
                 }
-            }
-            // TODO: Remove this if unnecessary.
-//          case BluetoothBroadcastAudioScan.ACTION_BASS_BROADCAST_ANNONCEMENT_AVAILABLE:
-//              // FIXME: Never happen since there is no valid device with this intent
-//              break;
-        }
-    };
+            };
+
+    private final BroadcastReceiver bassIntentReceiver =
+            new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    String action = intent.getAction();
+                    if (action.equals(
+                            BluetoothLeBroadcastAssistant.ACTION_CONNECTION_STATE_CHANGED)) {
+                        final BluetoothDevice device =
+                                intent.getParcelableExtra(
+                                        BluetoothDevice.EXTRA_DEVICE, BluetoothDevice.class);
+
+                        if (allLeAudioDevicesMutable.getValue() != null) {
+                            if (device != null) {
+                                Optional<LeAudioDeviceStateWrapper> valid_device_opt =
+                                        allLeAudioDevicesMutable.getValue().stream()
+                                                .filter(
+                                                        state ->
+                                                                state.device
+                                                                        .getAddress()
+                                                                        .equals(
+                                                                                device
+                                                                                        .getAddress()))
+                                                .findAny();
+
+                                if (valid_device_opt.isPresent()) {
+                                    LeAudioDeviceStateWrapper valid_device = valid_device_opt.get();
+                                    LeAudioDeviceStateWrapper.BassData svc_data =
+                                            valid_device.bassData;
+
+                                    final int toState =
+                                            intent.getIntExtra(BluetoothProfile.EXTRA_STATE, -1);
+                                    if (toState == BluetoothProfile.STATE_CONNECTED
+                                            || toState == BluetoothProfile.STATE_DISCONNECTED)
+                                        svc_data.isConnectedMutable.postValue(
+                                                toState == BluetoothProfile.STATE_CONNECTED);
+                                }
+                            }
+                        }
+                    }
+                    // TODO: Remove this if unnecessary.
+                    //          case
+                    // BluetoothBroadcastAudioScan.ACTION_BASS_BROADCAST_ANNONCEMENT_AVAILABLE:
+                    //              // FIXME: Never happen since there is no valid device with this
+                    // intent
+                    //              break;
+                }
+            };
 
     private BluetoothProxy(Application application) {
         this.application = application;
@@ -511,14 +587,14 @@ public class BluetoothProxy {
         adapterIntentFilter = new IntentFilter();
         adapterIntentFilter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
         adapterIntentFilter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
-        application.registerReceiver(adapterIntentReceiver, adapterIntentFilter,
-                Context.RECEIVER_EXPORTED);
+        application.registerReceiver(
+                adapterIntentReceiver, adapterIntentFilter, Context.RECEIVER_EXPORTED);
 
         bassIntentFilter = new IntentFilter();
         bassIntentFilter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
         bassIntentFilter.addAction(BluetoothLeBroadcastAssistant.ACTION_CONNECTION_STATE_CHANGED);
-        application.registerReceiver(bassIntentReceiver, bassIntentFilter,
-                Context.RECEIVER_EXPORTED);
+        application.registerReceiver(
+                bassIntentReceiver, bassIntentFilter, Context.RECEIVER_EXPORTED);
     }
 
     // Lazy constructing Singleton acquire method
@@ -532,173 +608,220 @@ public class BluetoothProxy {
     public void initProfiles() {
         if (profileListener != null) return;
 
-        hapCallback = new BluetoothHapClient.Callback() {
-            @Override
-            public void onPresetSelected(BluetoothDevice device, int presetIndex, int statusCode) {
-                Optional<LeAudioDeviceStateWrapper> valid_device_opt = allLeAudioDevicesMutable
-                        .getValue().stream()
-                        .filter(state -> state.device.getAddress().equals(device.getAddress()))
-                        .findAny();
+        hapCallback =
+                new BluetoothHapClient.Callback() {
+                    @Override
+                    public void onPresetSelected(
+                            BluetoothDevice device, int presetIndex, int statusCode) {
+                        Optional<LeAudioDeviceStateWrapper> valid_device_opt =
+                                allLeAudioDevicesMutable.getValue().stream()
+                                        .filter(
+                                                state ->
+                                                        state.device
+                                                                .getAddress()
+                                                                .equals(device.getAddress()))
+                                        .findAny();
 
-                if (!valid_device_opt.isPresent())
-                    return;
+                        if (!valid_device_opt.isPresent()) return;
 
-                LeAudioDeviceStateWrapper valid_device = valid_device_opt.get();
-                LeAudioDeviceStateWrapper.HapData svc_data = valid_device.hapData;
+                        LeAudioDeviceStateWrapper valid_device = valid_device_opt.get();
+                        LeAudioDeviceStateWrapper.HapData svc_data = valid_device.hapData;
 
-                svc_data.hapActivePresetIndexMutable.postValue(presetIndex);
+                        svc_data.hapActivePresetIndexMutable.postValue(presetIndex);
 
-                svc_data.hapStatusMutable
-                        .postValue("Preset changed to " + presetIndex + ", reason: " + statusCode);
-            }
-
-            @Override
-            public void onPresetSelectionFailed(BluetoothDevice device, int statusCode) {
-                Optional<LeAudioDeviceStateWrapper> valid_device_opt = allLeAudioDevicesMutable
-                        .getValue().stream()
-                        .filter(state -> state.device.getAddress().equals(device.getAddress()))
-                        .findAny();
-
-                if (!valid_device_opt.isPresent())
-                    return;
-
-                LeAudioDeviceStateWrapper valid_device = valid_device_opt.get();
-                LeAudioDeviceStateWrapper.HapData svc_data = valid_device.hapData;
-
-                svc_data.hapStatusMutable
-                        .postValue("Select preset failed with status " + statusCode);
-            }
-
-            @Override
-            public void onPresetSelectionForGroupFailed(int hapGroupId, int statusCode) {
-                List<LeAudioDeviceStateWrapper> valid_devices = null;
-                if (hapGroupId != BluetoothCsipSetCoordinator.GROUP_ID_INVALID)
-                    valid_devices = allLeAudioDevicesMutable.getValue().stream()
-                            .filter(state -> state.leAudioData.nodeStatusMutable.getValue() != null
-                                    && state.leAudioData.nodeStatusMutable.getValue().first
-                                            .equals(hapGroupId))
-                            .collect(Collectors.toList());
-
-                if (valid_devices != null) {
-                    for (LeAudioDeviceStateWrapper device : valid_devices) {
-                        device.hapData.hapStatusMutable.postValue("Select preset for group "
-                                + hapGroupId + " failed with status " + statusCode);
+                        svc_data.hapStatusMutable.postValue(
+                                "Preset changed to " + presetIndex + ", reason: " + statusCode);
                     }
-                }
-            }
 
-            @Override
-            public void onPresetInfoChanged(BluetoothDevice device,
-                    List<BluetoothHapPresetInfo> presetInfoList, int statusCode) {
-                Optional<LeAudioDeviceStateWrapper> valid_device_opt = allLeAudioDevicesMutable
-                        .getValue().stream()
-                        .filter(state -> state.device.getAddress().equals(device.getAddress()))
-                        .findAny();
+                    @Override
+                    public void onPresetSelectionFailed(BluetoothDevice device, int statusCode) {
+                        Optional<LeAudioDeviceStateWrapper> valid_device_opt =
+                                allLeAudioDevicesMutable.getValue().stream()
+                                        .filter(
+                                                state ->
+                                                        state.device
+                                                                .getAddress()
+                                                                .equals(device.getAddress()))
+                                        .findAny();
 
-                if (!valid_device_opt.isPresent())
-                    return;
+                        if (!valid_device_opt.isPresent()) return;
 
-                LeAudioDeviceStateWrapper valid_device = valid_device_opt.get();
-                LeAudioDeviceStateWrapper.HapData svc_data = valid_device.hapData;
+                        LeAudioDeviceStateWrapper valid_device = valid_device_opt.get();
+                        LeAudioDeviceStateWrapper.HapData svc_data = valid_device.hapData;
 
-                svc_data.hapStatusMutable
-                        .postValue("Preset list changed due to status " + statusCode);
-                svc_data.hapPresetsMutable.postValue(presetInfoList);
-            }
-
-            @Override
-            public void onSetPresetNameFailed(BluetoothDevice device, int status) {
-                Optional<LeAudioDeviceStateWrapper> valid_device_opt = allLeAudioDevicesMutable
-                        .getValue().stream()
-                        .filter(state -> state.device.getAddress().equals(device.getAddress()))
-                        .findAny();
-
-                if (!valid_device_opt.isPresent())
-                    return;
-
-                LeAudioDeviceStateWrapper valid_device = valid_device_opt.get();
-                LeAudioDeviceStateWrapper.HapData svc_data = valid_device.hapData;
-
-                svc_data.hapStatusMutable.postValue("Name set error: " + status);
-            }
-
-            @Override
-            public void onSetPresetNameForGroupFailed(int hapGroupId, int status) {
-                List<LeAudioDeviceStateWrapper> valid_devices = null;
-                if (hapGroupId != BluetoothCsipSetCoordinator.GROUP_ID_INVALID)
-                    valid_devices = allLeAudioDevicesMutable.getValue().stream()
-                            .filter(state -> state.leAudioData.nodeStatusMutable.getValue() != null
-                                    && state.leAudioData.nodeStatusMutable.getValue().first
-                                            .equals(hapGroupId))
-                            .collect(Collectors.toList());
-
-                if (valid_devices != null) {
-                    for (LeAudioDeviceStateWrapper device : valid_devices) {
-                        device.hapData.hapStatusMutable
-                                .postValue("Group Name set error: " + status);
+                        svc_data.hapStatusMutable.postValue(
+                                "Select preset failed with status " + statusCode);
                     }
-                }
-            }
-        };
 
-        profileListener = new BluetoothProfile.ServiceListener() {
-            @Override
-            public void onServiceConnected(int i, BluetoothProfile bluetoothProfile) {
-                Log.d("BluetoothProxy", "onServiceConnected(): i = " + i + " bluetoothProfile = " +
-                        bluetoothProfile);
-                switch (i) {
-                    case BluetoothProfile.CSIP_SET_COORDINATOR:
-                        bluetoothCsis = (BluetoothCsipSetCoordinator) bluetoothProfile;
-                        break;
-                    case BluetoothProfile.LE_AUDIO:
-                        bluetoothLeAudio = (BluetoothLeAudio) bluetoothProfile;
-                        if (!mLeAudioCallbackRegistered) {
-                            try {
-                            bluetoothLeAudio.registerCallback(mExecutor, mLeAudioCallbacks);
-                            mLeAudioCallbackRegistered = true;
-                            } catch (Exception e){
-                                Log.e("Unicast:" ,
-                                    " Probably not supported: Exception on registering callbacks: " + e);
+                    @Override
+                    public void onPresetSelectionForGroupFailed(int hapGroupId, int statusCode) {
+                        List<LeAudioDeviceStateWrapper> valid_devices = null;
+                        if (hapGroupId != BluetoothCsipSetCoordinator.GROUP_ID_INVALID)
+                            valid_devices =
+                                    allLeAudioDevicesMutable.getValue().stream()
+                                            .filter(
+                                                    state ->
+                                                            state.leAudioData.nodeStatusMutable
+                                                                                    .getValue()
+                                                                            != null
+                                                                    && state.leAudioData
+                                                                            .nodeStatusMutable
+                                                                            .getValue()
+                                                                            .first
+                                                                            .equals(hapGroupId))
+                                            .collect(Collectors.toList());
+
+                        if (valid_devices != null) {
+                            for (LeAudioDeviceStateWrapper device : valid_devices) {
+                                device.hapData.hapStatusMutable.postValue(
+                                        "Select preset for group "
+                                                + hapGroupId
+                                                + " failed with status "
+                                                + statusCode);
                             }
                         }
-                        break;
-                    case BluetoothProfile.VOLUME_CONTROL:
-                        bluetoothVolumeControl = (BluetoothVolumeControl) bluetoothProfile;
-                        break;
-                    case BluetoothProfile.HAP_CLIENT:
-                        bluetoothHapClient = (BluetoothHapClient) bluetoothProfile;
-                        try {
-                            bluetoothHapClient.registerCallback(mExecutor, hapCallback);
-                        } catch (IllegalArgumentException e) {
-                            Log.e("HAP", "Application callback already registered.");
-                        }
-                        break;
-                    case BluetoothProfile.LE_AUDIO_BROADCAST:
-                        mBluetoothLeBroadcast = (BluetoothLeBroadcast) bluetoothProfile;
-                        try {
-                            mBluetoothLeBroadcast.registerCallback(mExecutor, mBroadcasterCallback);
-                        } catch (IllegalArgumentException e) {
-                            Log.e("Broadcast", "Application callback already registered.");
-                        }
-                        break;
-                    case BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT:
-                        Log.d("BluetoothProxy", "LE_AUDIO_BROADCAST_ASSISTANT Service connected");
-                        mBluetoothLeBroadcastAssistant = (BluetoothLeBroadcastAssistant)
-                                bluetoothProfile;
-                        try {
-                            mBluetoothLeBroadcastAssistant.registerCallback(mExecutor,
-                                mBroadcastAssistantCallback);
-                        } catch (IllegalArgumentException e) {
-                            Log.e("BASS", "Application callback already registered.");
-                        }
-                        break;
-                }
-                queryLeAudioDevices();
-            }
+                    }
 
-            @Override
-            public void onServiceDisconnected(int i) {}
-        };
+                    @Override
+                    public void onPresetInfoChanged(
+                            BluetoothDevice device,
+                            List<BluetoothHapPresetInfo> presetInfoList,
+                            int statusCode) {
+                        Optional<LeAudioDeviceStateWrapper> valid_device_opt =
+                                allLeAudioDevicesMutable.getValue().stream()
+                                        .filter(
+                                                state ->
+                                                        state.device
+                                                                .getAddress()
+                                                                .equals(device.getAddress()))
+                                        .findAny();
+
+                        if (!valid_device_opt.isPresent()) return;
+
+                        LeAudioDeviceStateWrapper valid_device = valid_device_opt.get();
+                        LeAudioDeviceStateWrapper.HapData svc_data = valid_device.hapData;
+
+                        svc_data.hapStatusMutable.postValue(
+                                "Preset list changed due to status " + statusCode);
+                        svc_data.hapPresetsMutable.postValue(presetInfoList);
+                    }
+
+                    @Override
+                    public void onSetPresetNameFailed(BluetoothDevice device, int status) {
+                        Optional<LeAudioDeviceStateWrapper> valid_device_opt =
+                                allLeAudioDevicesMutable.getValue().stream()
+                                        .filter(
+                                                state ->
+                                                        state.device
+                                                                .getAddress()
+                                                                .equals(device.getAddress()))
+                                        .findAny();
+
+                        if (!valid_device_opt.isPresent()) return;
+
+                        LeAudioDeviceStateWrapper valid_device = valid_device_opt.get();
+                        LeAudioDeviceStateWrapper.HapData svc_data = valid_device.hapData;
+
+                        svc_data.hapStatusMutable.postValue("Name set error: " + status);
+                    }
+
+                    @Override
+                    public void onSetPresetNameForGroupFailed(int hapGroupId, int status) {
+                        List<LeAudioDeviceStateWrapper> valid_devices = null;
+                        if (hapGroupId != BluetoothCsipSetCoordinator.GROUP_ID_INVALID)
+                            valid_devices =
+                                    allLeAudioDevicesMutable.getValue().stream()
+                                            .filter(
+                                                    state ->
+                                                            state.leAudioData.nodeStatusMutable
+                                                                                    .getValue()
+                                                                            != null
+                                                                    && state.leAudioData
+                                                                            .nodeStatusMutable
+                                                                            .getValue()
+                                                                            .first
+                                                                            .equals(hapGroupId))
+                                            .collect(Collectors.toList());
+
+                        if (valid_devices != null) {
+                            for (LeAudioDeviceStateWrapper device : valid_devices) {
+                                device.hapData.hapStatusMutable.postValue(
+                                        "Group Name set error: " + status);
+                            }
+                        }
+                    }
+                };
+
+        profileListener =
+                new BluetoothProfile.ServiceListener() {
+                    @Override
+                    public void onServiceConnected(int i, BluetoothProfile bluetoothProfile) {
+                        Log.d(
+                                "BluetoothProxy",
+                                "onServiceConnected(): i = "
+                                        + i
+                                        + " bluetoothProfile = "
+                                        + bluetoothProfile);
+                        switch (i) {
+                            case BluetoothProfile.CSIP_SET_COORDINATOR:
+                                bluetoothCsis = (BluetoothCsipSetCoordinator) bluetoothProfile;
+                                break;
+                            case BluetoothProfile.LE_AUDIO:
+                                bluetoothLeAudio = (BluetoothLeAudio) bluetoothProfile;
+                                if (!mLeAudioCallbackRegistered) {
+                                    try {
+                                        bluetoothLeAudio.registerCallback(
+                                                mExecutor, mLeAudioCallbacks);
+                                        mLeAudioCallbackRegistered = true;
+                                    } catch (Exception e) {
+                                        Log.e(
+                                                "Unicast:",
+                                                " Probably not supported: Exception on registering"
+                                                        + " callbacks: "
+                                                        + e);
+                                    }
+                                }
+                                break;
+                            case BluetoothProfile.VOLUME_CONTROL:
+                                bluetoothVolumeControl = (BluetoothVolumeControl) bluetoothProfile;
+                                break;
+                            case BluetoothProfile.HAP_CLIENT:
+                                bluetoothHapClient = (BluetoothHapClient) bluetoothProfile;
+                                try {
+                                    bluetoothHapClient.registerCallback(mExecutor, hapCallback);
+                                } catch (IllegalArgumentException e) {
+                                    Log.e("HAP", "Application callback already registered.");
+                                }
+                                break;
+                            case BluetoothProfile.LE_AUDIO_BROADCAST:
+                                mBluetoothLeBroadcast = (BluetoothLeBroadcast) bluetoothProfile;
+                                try {
+                                    mBluetoothLeBroadcast.registerCallback(
+                                            mExecutor, mBroadcasterCallback);
+                                } catch (IllegalArgumentException e) {
+                                    Log.e("Broadcast", "Application callback already registered.");
+                                }
+                                break;
+                            case BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT:
+                                Log.d(
+                                        "BluetoothProxy",
+                                        "LE_AUDIO_BROADCAST_ASSISTANT Service connected");
+                                mBluetoothLeBroadcastAssistant =
+                                        (BluetoothLeBroadcastAssistant) bluetoothProfile;
+                                try {
+                                    mBluetoothLeBroadcastAssistant.registerCallback(
+                                            mExecutor, mBroadcastAssistantCallback);
+                                } catch (IllegalArgumentException e) {
+                                    Log.e("BASS", "Application callback already registered.");
+                                }
+                                break;
+                        }
+                        queryLeAudioDevices();
+                    }
+
+                    @Override
+                    public void onServiceDisconnected(int i) {}
+                };
 
         initCsisProxy();
         initLeAudioProxy();
@@ -724,8 +847,8 @@ public class BluetoothProxy {
     private void initCsisProxy() {
         if (!isCoordinatedSetProfileSupported()) return;
         if (bluetoothCsis == null) {
-            bluetoothAdapter.getProfileProxy(this.application, profileListener,
-                    BluetoothProfile.CSIP_SET_COORDINATOR);
+            bluetoothAdapter.getProfileProxy(
+                    this.application, profileListener, BluetoothProfile.CSIP_SET_COORDINATOR);
         }
     }
 
@@ -739,15 +862,15 @@ public class BluetoothProxy {
     private void initLeAudioProxy() {
         if (!isLeAudioUnicastSupported()) return;
         if (bluetoothLeAudio == null) {
-            bluetoothAdapter.getProfileProxy(this.application, profileListener,
-                    BluetoothProfile.LE_AUDIO);
+            bluetoothAdapter.getProfileProxy(
+                    this.application, profileListener, BluetoothProfile.LE_AUDIO);
         }
 
         intentFilter = new IntentFilter();
         intentFilter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
         intentFilter.addAction(BluetoothLeAudio.ACTION_LE_AUDIO_CONNECTION_STATE_CHANGED);
-        application.registerReceiver(leAudioIntentReceiver, intentFilter,
-                Context.RECEIVER_EXPORTED);
+        application.registerReceiver(
+                leAudioIntentReceiver, intentFilter, Context.RECEIVER_EXPORTED);
     }
 
     private void cleanupLeAudioProxy() {
@@ -760,36 +883,36 @@ public class BluetoothProxy {
 
     private void initVolumeControlProxy() {
         if (!isVolumeControlClientSupported()) return;
-        bluetoothAdapter.getProfileProxy(this.application, profileListener,
-                BluetoothProfile.VOLUME_CONTROL);
+        bluetoothAdapter.getProfileProxy(
+                this.application, profileListener, BluetoothProfile.VOLUME_CONTROL);
 
         intentFilter = new IntentFilter();
         intentFilter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
         intentFilter.addAction(BluetoothVolumeControl.ACTION_CONNECTION_STATE_CHANGED);
-        application.registerReceiver(volumeControlIntentReceiver, intentFilter,
-                Context.RECEIVER_EXPORTED);
+        application.registerReceiver(
+                volumeControlIntentReceiver, intentFilter, Context.RECEIVER_EXPORTED);
     }
 
     private void cleanupVolumeControlProxy() {
         if (!isVolumeControlClientSupported()) return;
         if (bluetoothVolumeControl != null) {
-            bluetoothAdapter.closeProfileProxy(BluetoothProfile.VOLUME_CONTROL,
-                    bluetoothVolumeControl);
+            bluetoothAdapter.closeProfileProxy(
+                    BluetoothProfile.VOLUME_CONTROL, bluetoothVolumeControl);
             application.unregisterReceiver(volumeControlIntentReceiver);
         }
     }
 
     private void initHapProxy() {
         if (!isLeAudioHearingAccessClientSupported()) return;
-        bluetoothAdapter.getProfileProxy(this.application, profileListener,
-                BluetoothProfile.HAP_CLIENT);
+        bluetoothAdapter.getProfileProxy(
+                this.application, profileListener, BluetoothProfile.HAP_CLIENT);
 
         intentFilter = new IntentFilter();
         intentFilter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
         intentFilter.addAction(BluetoothHapClient.ACTION_HAP_CONNECTION_STATE_CHANGED);
         intentFilter.addAction("android.bluetooth.action.HAP_DEVICE_AVAILABLE");
-        application.registerReceiver(hapClientIntentReceiver, intentFilter,
-                Context.RECEIVER_EXPORTED);
+        application.registerReceiver(
+                hapClientIntentReceiver, intentFilter, Context.RECEIVER_EXPORTED);
     }
 
     private void cleanupHapProxy() {
@@ -803,16 +926,16 @@ public class BluetoothProxy {
 
     private void initBassProxy() {
         if (!isLeAudioBroadcastScanAssistanSupported()) return;
-        bluetoothAdapter.getProfileProxy(this.application, profileListener,
-                BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT);
+        bluetoothAdapter.getProfileProxy(
+                this.application, profileListener, BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT);
     }
 
     private void cleanupBassProxy() {
         if (!isLeAudioBroadcastScanAssistanSupported()) return;
         if (mBluetoothLeBroadcastAssistant != null) {
             mBluetoothLeBroadcastAssistant.unregisterCallback(mBroadcastAssistantCallback);
-            bluetoothAdapter.closeProfileProxy(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT,
-                    mBluetoothLeBroadcastAssistant);
+            bluetoothAdapter.closeProfileProxy(
+                    BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT, mBluetoothLeBroadcastAssistant);
         }
     }
 
@@ -835,99 +958,110 @@ public class BluetoothProxy {
                 Boolean valid_device = false;
 
                 if (Arrays.asList(dev.getUuids() != null ? dev.getUuids() : new ParcelUuid[0])
-                        .contains(ParcelUuid
-                                .fromString(application.getString(R.string.svc_uuid_le_audio)))) {
+                        .contains(
+                                ParcelUuid.fromString(
+                                        application.getString(R.string.svc_uuid_le_audio)))) {
                     if (state_wrapper.leAudioData == null)
                         state_wrapper.leAudioData = new LeAudioDeviceStateWrapper.LeAudioData();
                     valid_device = true;
 
                     if (bluetoothLeAudio != null) {
-                        state_wrapper.leAudioData.isConnectedMutable.postValue(bluetoothLeAudio
-                                .getConnectionState(dev) == BluetoothLeAudio.STATE_CONNECTED);
+                        state_wrapper.leAudioData.isConnectedMutable.postValue(
+                                bluetoothLeAudio.getConnectionState(dev)
+                                        == BluetoothLeAudio.STATE_CONNECTED);
                         int group_id = bluetoothLeAudio.getGroupId(dev);
-                        state_wrapper.leAudioData.nodeStatusMutable
-                                .setValue(new Pair<>(group_id, GROUP_NODE_ADDED));
-                        state_wrapper.leAudioData.groupStatusMutable
-                                .setValue(new Pair<>(group_id, new Pair<>(-1, -1)));
+                        state_wrapper.leAudioData.nodeStatusMutable.setValue(
+                                new Pair<>(group_id, GROUP_NODE_ADDED));
+                        state_wrapper.leAudioData.groupStatusMutable.setValue(
+                                new Pair<>(group_id, new Pair<>(-1, -1)));
                     }
                 }
 
                 if (Arrays.asList(dev.getUuids() != null ? dev.getUuids() : new ParcelUuid[0])
-                        .contains(ParcelUuid.fromString(
-                                application.getString(R.string.svc_uuid_volume_control)))) {
+                        .contains(
+                                ParcelUuid.fromString(
+                                        application.getString(R.string.svc_uuid_volume_control)))) {
                     if (state_wrapper.volumeControlData == null)
                         state_wrapper.volumeControlData =
                                 new LeAudioDeviceStateWrapper.VolumeControlData();
                     valid_device = true;
 
                     if (bluetoothVolumeControl != null) {
-                        state_wrapper.volumeControlData.isConnectedMutable
-                                .postValue(bluetoothVolumeControl.getConnectionState(
-                                        dev) == BluetoothVolumeControl.STATE_CONNECTED);
+                        state_wrapper.volumeControlData.isConnectedMutable.postValue(
+                                bluetoothVolumeControl.getConnectionState(dev)
+                                        == BluetoothVolumeControl.STATE_CONNECTED);
                         // FIXME: We don't have the api to get the volume and mute states? :(
                     }
                 }
 
                 if (Arrays.asList(dev.getUuids() != null ? dev.getUuids() : new ParcelUuid[0])
-                        .contains(ParcelUuid
-                                .fromString(application.getString(R.string.svc_uuid_has)))) {
+                        .contains(
+                                ParcelUuid.fromString(
+                                        application.getString(R.string.svc_uuid_has)))) {
                     if (state_wrapper.hapData == null)
                         state_wrapper.hapData = new LeAudioDeviceStateWrapper.HapData();
                     valid_device = true;
 
                     if (bluetoothHapClient != null) {
-                        state_wrapper.hapData.hapStateMutable
-                                .postValue(bluetoothHapClient.getConnectionState(dev));
-                        boolean is_connected = bluetoothHapClient
-                                .getConnectionState(dev) == BluetoothHapClient.STATE_CONNECTED;
+                        state_wrapper.hapData.hapStateMutable.postValue(
+                                bluetoothHapClient.getConnectionState(dev));
+                        boolean is_connected =
+                                bluetoothHapClient.getConnectionState(dev)
+                                        == BluetoothHapClient.STATE_CONNECTED;
                         if (is_connected) {
                             // Use hidden API
                             try {
-                                Method getFeaturesMethod = BluetoothHapClient.class
-                                        .getDeclaredMethod("getFeatures", BluetoothDevice.class);
+                                Method getFeaturesMethod =
+                                        BluetoothHapClient.class.getDeclaredMethod(
+                                                "getFeatures", BluetoothDevice.class);
                                 getFeaturesMethod.setAccessible(true);
-                                state_wrapper.hapData.hapFeaturesMutable
-                                        .postValue((Integer) getFeaturesMethod
-                                                .invoke(bluetoothHapClient, dev));
-                            } catch (NoSuchMethodException | IllegalAccessException
+                                state_wrapper.hapData.hapFeaturesMutable.postValue(
+                                        (Integer)
+                                                getFeaturesMethod.invoke(bluetoothHapClient, dev));
+                            } catch (NoSuchMethodException
+                                    | IllegalAccessException
                                     | InvocationTargetException e) {
-                                state_wrapper.hapData.hapStatusMutable
-                                        .postValue("Hidden API for getFeatures not accessible.");
+                                state_wrapper.hapData.hapStatusMutable.postValue(
+                                        "Hidden API for getFeatures not accessible.");
                             }
 
-                            state_wrapper.hapData.hapPresetsMutable
-                                    .postValue(bluetoothHapClient.getAllPresetInfo(dev));
+                            state_wrapper.hapData.hapPresetsMutable.postValue(
+                                    bluetoothHapClient.getAllPresetInfo(dev));
                             try {
                                 Method getActivePresetIndexMethod =
                                         BluetoothHapClient.class.getDeclaredMethod(
                                                 "getActivePresetIndex", BluetoothDevice.class);
                                 getActivePresetIndexMethod.setAccessible(true);
-                                state_wrapper.hapData.hapActivePresetIndexMutable
-                                        .postValue((Integer) getActivePresetIndexMethod
-                                                .invoke(bluetoothHapClient, dev));
-                            } catch (NoSuchMethodException | IllegalAccessException
+                                state_wrapper.hapData.hapActivePresetIndexMutable.postValue(
+                                        (Integer)
+                                                getActivePresetIndexMethod.invoke(
+                                                        bluetoothHapClient, dev));
+                            } catch (NoSuchMethodException
+                                    | IllegalAccessException
                                     | InvocationTargetException e) {
-                                state_wrapper.hapData.hapStatusMutable
-                                        .postValue("Hidden API for getFeatures not accessible.");
+                                state_wrapper.hapData.hapStatusMutable.postValue(
+                                        "Hidden API for getFeatures not accessible.");
                             }
                         }
                     }
                 }
 
                 if (Arrays.asList(dev.getUuids() != null ? dev.getUuids() : new ParcelUuid[0])
-                        .contains(ParcelUuid.fromString(
-                                application.getString(R.string.svc_uuid_broadcast_audio)))) {
+                        .contains(
+                                ParcelUuid.fromString(
+                                        application.getString(
+                                                R.string.svc_uuid_broadcast_audio)))) {
                     if (state_wrapper.bassData == null)
                         state_wrapper.bassData = new LeAudioDeviceStateWrapper.BassData();
                     valid_device = true;
 
                     if (mBluetoothLeBroadcastAssistant != null) {
-                        boolean is_connected = mBluetoothLeBroadcastAssistant
-                                .getConnectionState(dev) == BluetoothProfile.STATE_CONNECTED;
+                        boolean is_connected =
+                                mBluetoothLeBroadcastAssistant.getConnectionState(dev)
+                                        == BluetoothProfile.STATE_CONNECTED;
                         state_wrapper.bassData.isConnectedMutable.setValue(is_connected);
                     }
                 }
-
 
                 if (valid_device) validDevices.add(state_wrapper);
             }
@@ -941,21 +1075,25 @@ public class BluetoothProxy {
         if (bluetoothLeAudio != null) {
             if (connect) {
                 try {
-                    Method connectMethod = BluetoothLeAudio.class.getDeclaredMethod("connect",
-                            BluetoothDevice.class);
+                    Method connectMethod =
+                            BluetoothLeAudio.class.getDeclaredMethod(
+                                    "connect", BluetoothDevice.class);
                     connectMethod.setAccessible(true);
                     connectMethod.invoke(bluetoothLeAudio, device);
-                } catch (NoSuchMethodException | IllegalAccessException
+                } catch (NoSuchMethodException
+                        | IllegalAccessException
                         | InvocationTargetException e) {
                     // Do nothing
                 }
             } else {
                 try {
-                    Method disconnectMethod = BluetoothLeAudio.class.getDeclaredMethod("disconnect",
-                            BluetoothDevice.class);
+                    Method disconnectMethod =
+                            BluetoothLeAudio.class.getDeclaredMethod(
+                                    "disconnect", BluetoothDevice.class);
                     disconnectMethod.setAccessible(true);
                     disconnectMethod.invoke(bluetoothLeAudio, device);
-                } catch (NoSuchMethodException | IllegalAccessException
+                } catch (NoSuchMethodException
+                        | IllegalAccessException
                         | InvocationTargetException e) {
                     // Do nothing
                 }
@@ -988,8 +1126,9 @@ public class BluetoothProxy {
         if (bluetoothLeAudio == null) return;
 
         try {
-            Method groupAddNodeMethod = BluetoothLeAudio.class.getDeclaredMethod("groupAddNode",
-                    int.class, BluetoothDevice.class);
+            Method groupAddNodeMethod =
+                    BluetoothLeAudio.class.getDeclaredMethod(
+                            "groupAddNode", int.class, BluetoothDevice.class);
             groupAddNodeMethod.setAccessible(true);
             groupAddNodeMethod.invoke(bluetoothLeAudio, group_id, device);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
@@ -1001,8 +1140,9 @@ public class BluetoothProxy {
         if (bluetoothLeAudio == null) return;
 
         try {
-            Method groupRemoveNodeMethod = BluetoothLeAudio.class
-                    .getDeclaredMethod("groupRemoveNode", int.class, BluetoothDevice.class);
+            Method groupRemoveNodeMethod =
+                    BluetoothLeAudio.class.getDeclaredMethod(
+                            "groupRemoveNode", int.class, BluetoothDevice.class);
             groupRemoveNodeMethod.setAccessible(true);
             groupRemoveNodeMethod.invoke(bluetoothLeAudio, group_id, device);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
@@ -1016,32 +1156,54 @@ public class BluetoothProxy {
         Log.d("Lock", "lock: " + lock);
         if (lock) {
             if (mGroupLocks.containsKey(group_id)) {
-                Log.e("Lock", "group" + group_id + " is already in locking process or locked: " + lock);
+                Log.e(
+                        "Lock",
+                        "group" + group_id + " is already in locking process or locked: " + lock);
                 return;
             }
 
-            UUID uuid = bluetoothCsis.lockGroup(group_id, mExecutor,
-                    (int group, int op_status, boolean is_locked) -> {
-                        Log.d("LockCb", "lock: " + is_locked + " status: " + op_status);
-                        if (((op_status == BluetoothStatusCodes.SUCCESS)
-                                || (op_status == BluetoothStatusCodes.ERROR_CSIP_LOCKED_GROUP_MEMBER_LOST))
-                                && (group != BluetoothLeAudio.GROUP_ID_INVALID)) {
-                            allLeAudioDevicesMutable.getValue().forEach((dev_wrapper) -> {
-                                if (dev_wrapper.leAudioData.nodeStatusMutable.getValue() != null
-                                        && dev_wrapper.leAudioData.nodeStatusMutable
-                                                .getValue().first.equals(group_id)) {
-                                    dev_wrapper.leAudioData.groupLockStateMutable.postValue(
-                                            new Pair<Integer, Boolean>(group, is_locked));
+            UUID uuid =
+                    bluetoothCsis.lockGroup(
+                            group_id,
+                            mExecutor,
+                            (int group, int op_status, boolean is_locked) -> {
+                                Log.d("LockCb", "lock: " + is_locked + " status: " + op_status);
+                                if (((op_status == BluetoothStatusCodes.SUCCESS)
+                                                || (op_status
+                                                        == BluetoothStatusCodes
+                                                                .ERROR_CSIP_LOCKED_GROUP_MEMBER_LOST))
+                                        && (group != BluetoothLeAudio.GROUP_ID_INVALID)) {
+                                    allLeAudioDevicesMutable
+                                            .getValue()
+                                            .forEach(
+                                                    (dev_wrapper) -> {
+                                                        if (dev_wrapper.leAudioData
+                                                                                .nodeStatusMutable
+                                                                                .getValue()
+                                                                        != null
+                                                                && dev_wrapper
+                                                                        .leAudioData
+                                                                        .nodeStatusMutable
+                                                                        .getValue()
+                                                                        .first
+                                                                        .equals(group_id)) {
+                                                            dev_wrapper.leAudioData
+                                                                    .groupLockStateMutable
+                                                                    .postValue(
+                                                                            new Pair<
+                                                                                    Integer,
+                                                                                    Boolean>(
+                                                                                    group,
+                                                                                    is_locked));
+                                                        }
+                                                    });
+                                } else {
+                                    // TODO: Set error status so it could be notified/toasted to the
+                                    // user
                                 }
-                            });
-                        } else {
-                            // TODO: Set error status so it could be notified/toasted to the
-                            // user
-                        }
 
-                        if (!is_locked)
-                            mGroupLocks.remove(group_id);
-                    });
+                                if (!is_locked) mGroupLocks.remove(group_id);
+                            });
             // Store the lock key
             mGroupLocks.put(group_id, uuid);
         } else {
@@ -1056,11 +1218,11 @@ public class BluetoothProxy {
     public void connectBass(BluetoothDevice device, boolean connect) {
         if (mBluetoothLeBroadcastAssistant != null) {
             if (connect) {
-                mBluetoothLeBroadcastAssistant.setConnectionPolicy(device,
-                        BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+                mBluetoothLeBroadcastAssistant.setConnectionPolicy(
+                        device, BluetoothProfile.CONNECTION_POLICY_ALLOWED);
             } else {
-                mBluetoothLeBroadcastAssistant.setConnectionPolicy(device,
-                        BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
+                mBluetoothLeBroadcastAssistant.setConnectionPolicy(
+                        device, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
             }
         }
     }
@@ -1120,14 +1282,16 @@ public class BluetoothProxy {
     }
 
     // TODO: Uncomment this method if necessary
-//    public boolean getBroadcastReceiverState(BluetoothDevice device, int receiver_id) {
-//        if (mBluetoothLeBroadcastAssistant != null) {
-//            return mBluetoothLeBroadcastAssistant.getBroadcastReceiverState(device, receiver_id);
-//        }
-//        return false;
-//    }
+    //    public boolean getBroadcastReceiverState(BluetoothDevice device, int receiver_id) {
+    //        if (mBluetoothLeBroadcastAssistant != null) {
+    //            return mBluetoothLeBroadcastAssistant.getBroadcastReceiverState(device,
+    // receiver_id);
+    //        }
+    //        return false;
+    //    }
 
-    public boolean addBroadcastSource(BluetoothDevice sink, BluetoothLeBroadcastMetadata sourceMetadata) {
+    public boolean addBroadcastSource(
+            BluetoothDevice sink, BluetoothLeBroadcastMetadata sourceMetadata) {
         if (mBluetoothLeBroadcastAssistant != null) {
             mBluetoothLeBroadcastAssistant.addSource(sink, sourceMetadata, true /* isGroupOp */);
             return true;
@@ -1135,8 +1299,8 @@ public class BluetoothProxy {
         return false;
     }
 
-    public boolean modifyBroadcastSource(BluetoothDevice sink, int sourceId,
-            BluetoothLeBroadcastMetadata metadata) {
+    public boolean modifyBroadcastSource(
+            BluetoothDevice sink, int sourceId, BluetoothLeBroadcastMetadata metadata) {
         if (mBluetoothLeBroadcastAssistant != null) {
             mBluetoothLeBroadcastAssistant.modifySource(sink, sourceId, metadata);
             return true;
@@ -1171,49 +1335,48 @@ public class BluetoothProxy {
     public void connectHap(BluetoothDevice device, boolean connect) {
         if (bluetoothHapClient != null) {
             if (connect) {
-                bluetoothHapClient.setConnectionPolicy(device,
-                        BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+                bluetoothHapClient.setConnectionPolicy(
+                        device, BluetoothProfile.CONNECTION_POLICY_ALLOWED);
             } else {
-                bluetoothHapClient.setConnectionPolicy(device,
-                        BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
+                bluetoothHapClient.setConnectionPolicy(
+                        device, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
             }
         }
     }
 
     public boolean hapReadPresetInfo(BluetoothDevice device, int preset_index) {
-        if (bluetoothHapClient == null)
-            return false;
+        if (bluetoothHapClient == null) return false;
 
         BluetoothHapPresetInfo new_preset = null;
 
         // Use hidden API
         try {
-            Method getPresetInfoMethod = BluetoothHapClient.class.getDeclaredMethod("getPresetInfo",
-                    BluetoothDevice.class, int.class);
+            Method getPresetInfoMethod =
+                    BluetoothHapClient.class.getDeclaredMethod(
+                            "getPresetInfo", BluetoothDevice.class, int.class);
             getPresetInfoMethod.setAccessible(true);
 
-            new_preset = (BluetoothHapPresetInfo) getPresetInfoMethod.invoke(bluetoothHapClient,
-                    device, preset_index);
-            if (new_preset == null)
-                return false;
+            new_preset =
+                    (BluetoothHapPresetInfo)
+                            getPresetInfoMethod.invoke(bluetoothHapClient, device, preset_index);
+            if (new_preset == null) return false;
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
             // Do nothing'
             return false;
         }
 
-        Optional<LeAudioDeviceStateWrapper> valid_device_opt = allLeAudioDevicesMutable.getValue()
-                .stream().filter(state -> state.device.getAddress().equals(device.getAddress()))
-                .findAny();
+        Optional<LeAudioDeviceStateWrapper> valid_device_opt =
+                allLeAudioDevicesMutable.getValue().stream()
+                        .filter(state -> state.device.getAddress().equals(device.getAddress()))
+                        .findAny();
 
-        if (!valid_device_opt.isPresent())
-            return false;
+        if (!valid_device_opt.isPresent()) return false;
 
         LeAudioDeviceStateWrapper valid_device = valid_device_opt.get();
         LeAudioDeviceStateWrapper.HapData svc_data = valid_device.hapData;
 
         List current_presets = svc_data.hapPresetsMutable.getValue();
-        if (current_presets == null)
-            current_presets = new ArrayList<BluetoothHapPresetInfo>();
+        if (current_presets == null) current_presets = new ArrayList<BluetoothHapPresetInfo>();
 
         // Remove old one and add back the new one
         ListIterator<BluetoothHapPresetInfo> iter = current_presets.listIterator();
@@ -1229,16 +1392,14 @@ public class BluetoothProxy {
     }
 
     public boolean hapSetActivePreset(BluetoothDevice device, int preset_index) {
-        if (bluetoothHapClient == null)
-            return false;
+        if (bluetoothHapClient == null) return false;
 
         bluetoothHapClient.selectPreset(device, preset_index);
         return true;
     }
 
     public boolean hapSetActivePresetForGroup(BluetoothDevice device, int preset_index) {
-        if (bluetoothHapClient == null)
-            return false;
+        if (bluetoothHapClient == null) return false;
 
         int groupId = bluetoothLeAudio.getGroupId(device);
         bluetoothHapClient.selectPresetForGroup(groupId, preset_index);
@@ -1246,21 +1407,20 @@ public class BluetoothProxy {
     }
 
     public boolean hapChangePresetName(BluetoothDevice device, int preset_index, String name) {
-        if (bluetoothHapClient == null)
-            return false;
+        if (bluetoothHapClient == null) return false;
 
         bluetoothHapClient.setPresetName(device, preset_index, name);
         return true;
     }
 
     public boolean hapPreviousDevicePreset(BluetoothDevice device) {
-        if (bluetoothHapClient == null)
-            return false;
+        if (bluetoothHapClient == null) return false;
 
         // Use hidden API
         try {
-            Method switchToPreviousPresetMethod = BluetoothHapClient.class
-                    .getDeclaredMethod("switchToPreviousPreset", BluetoothDevice.class);
+            Method switchToPreviousPresetMethod =
+                    BluetoothHapClient.class.getDeclaredMethod(
+                            "switchToPreviousPreset", BluetoothDevice.class);
             switchToPreviousPresetMethod.setAccessible(true);
 
             switchToPreviousPresetMethod.invoke(bluetoothHapClient, device);
@@ -1271,13 +1431,13 @@ public class BluetoothProxy {
     }
 
     public boolean hapNextDevicePreset(BluetoothDevice device) {
-        if (bluetoothHapClient == null)
-            return false;
+        if (bluetoothHapClient == null) return false;
 
         // Use hidden API
         try {
-            Method switchToNextPresetMethod = BluetoothHapClient.class
-                    .getDeclaredMethod("switchToNextPreset", BluetoothDevice.class);
+            Method switchToNextPresetMethod =
+                    BluetoothHapClient.class.getDeclaredMethod(
+                            "switchToNextPreset", BluetoothDevice.class);
             switchToNextPresetMethod.setAccessible(true);
 
             switchToNextPresetMethod.invoke(bluetoothHapClient, device);
@@ -1288,13 +1448,13 @@ public class BluetoothProxy {
     }
 
     public boolean hapPreviousGroupPreset(int group_id) {
-        if (bluetoothHapClient == null)
-            return false;
+        if (bluetoothHapClient == null) return false;
 
         // Use hidden API
         try {
-            Method switchToPreviousPresetForGroupMethod = BluetoothHapClient.class
-                    .getDeclaredMethod("switchToPreviousPresetForGroup", int.class);
+            Method switchToPreviousPresetForGroupMethod =
+                    BluetoothHapClient.class.getDeclaredMethod(
+                            "switchToPreviousPresetForGroup", int.class);
             switchToPreviousPresetForGroupMethod.setAccessible(true);
 
             switchToPreviousPresetForGroupMethod.invoke(bluetoothHapClient, group_id);
@@ -1305,13 +1465,13 @@ public class BluetoothProxy {
     }
 
     public boolean hapNextGroupPreset(int group_id) {
-        if (bluetoothHapClient == null)
-            return false;
+        if (bluetoothHapClient == null) return false;
 
         // Use hidden API
         try {
-            Method switchToNextPresetForGroupMethod = BluetoothHapClient.class
-                    .getDeclaredMethod("switchToNextPresetForGroup", int.class);
+            Method switchToNextPresetForGroupMethod =
+                    BluetoothHapClient.class.getDeclaredMethod(
+                            "switchToNextPresetForGroup", int.class);
             switchToNextPresetForGroupMethod.setAccessible(true);
 
             switchToNextPresetForGroupMethod.invoke(bluetoothHapClient, group_id);
@@ -1322,13 +1482,13 @@ public class BluetoothProxy {
     }
 
     public int hapGetHapGroup(BluetoothDevice device) {
-        if (bluetoothHapClient == null)
-            return BluetoothCsipSetCoordinator.GROUP_ID_INVALID;
+        if (bluetoothHapClient == null) return BluetoothCsipSetCoordinator.GROUP_ID_INVALID;
 
         // Use hidden API
         try {
-            Method getHapGroupMethod = BluetoothHapClient.class.getDeclaredMethod("getHapGroup",
-                    BluetoothDevice.class);
+            Method getHapGroupMethod =
+                    BluetoothHapClient.class.getDeclaredMethod(
+                            "getHapGroup", BluetoothDevice.class);
             getHapGroupMethod.setAccessible(true);
 
             return (Integer) getHapGroupMethod.invoke(bluetoothHapClient, device);
@@ -1341,16 +1501,16 @@ public class BluetoothProxy {
     private void initLeAudioBroadcastProxy() {
         if (!isLeAudioBroadcastSourceSupported()) return;
         if (mBluetoothLeBroadcast == null) {
-            bluetoothAdapter.getProfileProxy(this.application, profileListener,
-                    BluetoothProfile.LE_AUDIO_BROADCAST);
+            bluetoothAdapter.getProfileProxy(
+                    this.application, profileListener, BluetoothProfile.LE_AUDIO_BROADCAST);
         }
     }
 
     private void cleanupLeAudioBroadcastProxy() {
         if (!isLeAudioBroadcastSourceSupported()) return;
         if (mBluetoothLeBroadcast != null) {
-            bluetoothAdapter.closeProfileProxy(BluetoothProfile.LE_AUDIO_BROADCAST,
-                    mBluetoothLeBroadcast);
+            bluetoothAdapter.closeProfileProxy(
+                    BluetoothProfile.LE_AUDIO_BROADCAST, mBluetoothLeBroadcast);
         }
     }
 
@@ -1358,11 +1518,13 @@ public class BluetoothProxy {
         return mBroadcastUpdateMutableLive;
     }
 
-    public LiveData<Pair<Integer /* reason */, Integer /* broadcastId */>> getBroadcastPlaybackStartedMutableLive() {
+    public LiveData<Pair<Integer /* reason */, Integer /* broadcastId */>>
+            getBroadcastPlaybackStartedMutableLive() {
         return mBroadcastPlaybackStartedMutableLive;
     }
 
-    public LiveData<Pair<Integer /* reason */, Integer /* broadcastId */>> getBroadcastPlaybackStoppedMutableLive() {
+    public LiveData<Pair<Integer /* reason */, Integer /* broadcastId */>>
+            getBroadcastPlaybackStoppedMutableLive() {
         return mBroadcastPlaybackStoppedMutableLive;
     }
 
@@ -1370,7 +1532,8 @@ public class BluetoothProxy {
         return mBroadcastAddedMutableLive;
     }
 
-    public LiveData<Pair<Integer /* reason */, Integer /* broadcastId */>> getBroadcastRemovedMutableLive() {
+    public LiveData<Pair<Integer /* reason */, Integer /* broadcastId */>>
+            getBroadcastRemovedMutableLive() {
         return mBroadcastRemovedMutableLive;
     }
 
@@ -1379,8 +1542,7 @@ public class BluetoothProxy {
     }
 
     public boolean startBroadcast(BluetoothLeBroadcastSettings settings) {
-        if (mBluetoothLeBroadcast == null)
-            return false;
+        if (mBluetoothLeBroadcast == null) return false;
         mBluetoothLeBroadcast.startBroadcast(settings);
         return true;
     }
@@ -1417,8 +1579,7 @@ public class BluetoothProxy {
     }
 
     boolean isLeAudioUnicastSupported() {
-        return (bluetoothAdapter
-                .isLeAudioSupported() == BluetoothStatusCodes.FEATURE_SUPPORTED);
+        return (bluetoothAdapter.isLeAudioSupported() == BluetoothStatusCodes.FEATURE_SUPPORTED);
     }
 
     boolean isCoordinatedSetProfileSupported() {
@@ -1434,13 +1595,13 @@ public class BluetoothProxy {
     }
 
     public boolean isLeAudioBroadcastSourceSupported() {
-        return (bluetoothAdapter
-                .isLeAudioBroadcastSourceSupported() == BluetoothStatusCodes.FEATURE_SUPPORTED);
+        return (bluetoothAdapter.isLeAudioBroadcastSourceSupported()
+                == BluetoothStatusCodes.FEATURE_SUPPORTED);
     }
 
     public boolean isLeAudioBroadcastScanAssistanSupported() {
-        return (bluetoothAdapter
-                .isLeAudioBroadcastAssistantSupported() == BluetoothStatusCodes.FEATURE_SUPPORTED);
+        return (bluetoothAdapter.isLeAudioBroadcastAssistantSupported()
+                == BluetoothStatusCodes.FEATURE_SUPPORTED);
     }
 
     public void setOnBassEventListener(OnBassEventListener listener) {
@@ -1450,6 +1611,7 @@ public class BluetoothProxy {
     // Used by BroadcastScanViewModel
     public interface OnBassEventListener {
         void onSourceFound(BluetoothLeBroadcastMetadata source);
+
         void onScanningStateChanged(boolean isScanning);
     }
 
@@ -1461,8 +1623,11 @@ public class BluetoothProxy {
     public interface OnLocalBroadcastEventListener {
         // TODO: Add arguments in methods
         void onBroadcastStarted(int broadcastId);
+
         void onBroadcastStopped(int broadcastId);
+
         void onBroadcastUpdated(int broadcastId);
+
         void onBroadcastMetadataChanged(int broadcastId, BluetoothLeBroadcastMetadata metadata);
     }
 }
