@@ -20,7 +20,7 @@ use glob::glob;
 use log::{debug, error, info, warn};
 
 const BT_LIBDIR: &str = "/var/lib/bluetooth";
-const FLOSS_CONF_FILE: &str = "/var/lib/bluetooth/bt_config.conf";
+pub const FLOSS_CONF_FILE: &str = "/var/lib/bluetooth/bt_config.conf";
 
 const ADAPTER_SECTION_NAME: &str = "Adapter";
 const GENERAL_SECTION_NAME: &str = "General";
