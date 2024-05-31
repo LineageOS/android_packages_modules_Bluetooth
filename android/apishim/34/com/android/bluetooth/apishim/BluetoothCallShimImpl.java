@@ -28,21 +28,21 @@ import androidx.annotation.RequiresApi;
 import com.android.bluetooth.apishim.common.BluetoothCallShim;
 
 @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-public class BluetoothCallShimImpl extends
-        com.android.bluetooth.apishim.api33.BluetoothCallShimImpl {
+public class BluetoothCallShimImpl
+        extends com.android.bluetooth.apishim.api33.BluetoothCallShimImpl {
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     public static BluetoothCallShim newInstance() {
         if (!isAtLeastU()) {
-            return com.android.bluetooth.apishim.api33.BluetoothCallShimImpl
-                    .newInstance();
+            return com.android.bluetooth.apishim.api33.BluetoothCallShimImpl.newInstance();
         }
         return new BluetoothCallShimImpl();
     }
 
     @Override
     public boolean isSilentRingingRequested(@Nullable Bundle extras) {
-        return extras != null && (extras.getBoolean(Call.EXTRA_SILENT_RINGING_REQUESTED)
-                || extras.getBoolean(Call.EXTRA_IS_SUPPRESSED_BY_DO_NOT_DISTURB));
+        return extras != null
+                && (extras.getBoolean(Call.EXTRA_SILENT_RINGING_REQUESTED)
+                        || extras.getBoolean(Call.EXTRA_IS_SUPPRESSED_BY_DO_NOT_DISTURB));
     }
 }

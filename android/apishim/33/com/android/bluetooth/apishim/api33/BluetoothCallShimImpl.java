@@ -33,8 +33,7 @@ public class BluetoothCallShimImpl implements BluetoothCallShim {
     }
 
     @Override
-	public boolean isSilentRingingRequested(@Nullable Bundle extras) {
-        return extras != null
-            && extras.getBoolean(Call.EXTRA_SILENT_RINGING_REQUESTED);
-	}
+    public boolean isSilentRingingRequested(@Nullable Bundle extras) {
+        return extras != null && extras.getBoolean(Call.EXTRA_SILENT_RINGING_REQUESTED);
+    }
 }

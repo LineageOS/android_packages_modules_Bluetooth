@@ -54,10 +54,6 @@ import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 import org.mockito.invocation.Invocation;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Collection;
-import java.util.UUID;
-
 import pandora.GattProto.AttStatusCode;
 import pandora.GattProto.GattCharacteristicParams;
 import pandora.GattProto.GattServiceParams;
@@ -69,6 +65,10 @@ import pandora.GattProto.RegisterServiceRequest;
 import pandora.HostProto.AdvertiseRequest;
 import pandora.HostProto.AdvertiseResponse;
 import pandora.HostProto.OwnAddressType;
+
+import java.nio.charset.StandardCharsets;
+import java.util.Collection;
+import java.util.UUID;
 
 @RunWith(TestParameterInjector.class)
 public class GattClientTest {

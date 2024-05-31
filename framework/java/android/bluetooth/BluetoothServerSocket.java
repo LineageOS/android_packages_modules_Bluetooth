@@ -16,13 +16,11 @@
 
 package android.bluetooth;
 
-
 import android.annotation.SuppressLint;
 import android.compat.annotation.UnsupportedAppUsage;
 import android.os.Handler;
 import android.os.ParcelUuid;
 import android.util.Log;
-
 
 import java.io.Closeable;
 import java.io.IOException;
