@@ -529,7 +529,6 @@ class GdAndroidDevice(GdDeviceBase):
         self.push_or_die(*generate_dir_pair(local_dir, self.DEVICE_LIB_DIR, "libprotobuf-cpp-full.so"))
         self.push_or_die(*generate_dir_pair(local_dir, self.DEVICE_LIB_DIR, "libssl.so"), overwrite_existing=False)
         self.push_or_die(*generate_dir_pair(local_dir, self.DEVICE_LIB_DIR, "libgrpc++.so"))
-        self.push_or_die(*generate_dir_pair(local_dir, self.DEVICE_LIB_DIR, "libstatslog_bt.so"))
         self.push_or_die(
             *generate_dir_pair(local_dir, self.DEVICE_LIB_DIR, "libunwindstack.so"), overwrite_existing=False)
         self.push_or_die(*generate_dir_pair(local_dir, self.DEVICE_LIB_DIR, "libutils.so"), overwrite_existing=False)
