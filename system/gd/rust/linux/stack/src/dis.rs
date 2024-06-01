@@ -10,7 +10,7 @@ use crate::bluetooth_gatt::{
 };
 use crate::uuid::{Profile, UuidHelper};
 use crate::{Message, RPCProxy};
-use bt_topshim::btif::RawAddress;
+use bt_topshim::btif::{RawAddress, Uuid};
 use bt_topshim::profiles::gatt::{GattStatus, LePhy};
 use bt_topshim::sysprop;
 
@@ -71,7 +71,7 @@ impl DeviceInformation {
                 );
 
                 service.characteristics.push(BluetoothGattCharacteristic::new(
-                    UuidHelper::from_string(PNP_ID_CHAR_UUID).expect("PNP ID uuid is malformed"),
+                    Uuid::from_string(PNP_ID_CHAR_UUID).expect("PNP ID uuid is malformed"),
                     /*instance_id=*/ 0,
                     BluetoothGattCharacteristic::PROPERTY_READ,
                     BluetoothGattCharacteristic::PERMISSION_READ,
@@ -86,7 +86,7 @@ impl DeviceInformation {
                 }
 
                 let pnp_uuid =
-                    UuidHelper::from_string(PNP_ID_CHAR_UUID).expect("PNP ID uuid is malformed");
+                    Uuid::from_string(PNP_ID_CHAR_UUID).expect("PNP ID uuid is malformed");
 
                 // Find the PNP ID characteristic we inserted before and store
                 // the handle for it.

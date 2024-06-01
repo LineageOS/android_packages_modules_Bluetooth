@@ -2,9 +2,8 @@
 
 use btif_macros::{btif_callback, btif_callbacks_dispatcher};
 
-use bt_topshim::bindings::root::bluetooth::Uuid;
 use bt_topshim::btif::{
-    BluetoothInterface, BtStatus, BtTransport, DisplayAddress, RawAddress, Uuid128Bit,
+    BluetoothInterface, BtStatus, BtTransport, DisplayAddress, RawAddress, Uuid,
 };
 use bt_topshim::profiles::gatt::{
     ffi::RustAdvertisingTrackInfo, AdvertisingStatus, BtGattDbElement, BtGattNotifyParams,
@@ -26,7 +25,6 @@ use crate::bluetooth_adv::{
     BtifGattAdvCallbacks, IAdvertisingSetCallback, PeriodicAdvertisingParameters,
 };
 use crate::callbacks::Callbacks;
-use crate::uuid::UuidHelper;
 use crate::{APIMessage, BluetoothAPI, Message, RPCProxy, SuspendMode};
 use log::{info, warn};
 use num_derive::{FromPrimitive, ToPrimitive};
@@ -42,7 +40,7 @@ use tokio::time;
 struct Client {
     id: Option<i32>,
     cbid: u32,
-    uuid: Uuid128Bit,
+    uuid: Uuid,
     is_congested: bool,
 
     // Queued on_characteristic_write callback.
@@ -77,7 +75,7 @@ impl ContextMap {
         }
     }
 
-    fn get_by_uuid(&self, uuid: &Uuid128Bit) -> Option<&Client> {
+    fn get_by_uuid(&self, uuid: &Uuid) -> Option<&Client> {
         self.clients.iter().find(|client| client.uuid == *uuid)
     }
 
@@ -118,7 +116,7 @@ impl ContextMap {
         self.get_by_client_id_mut(client_id)
     }
 
-    fn add(&mut self, uuid: &Uuid128Bit, callback: GattClientCallback) {
+    fn add(&mut self, uuid: &Uuid, callback: GattClientCallback) {
         if self.get_by_uuid(uuid).is_some() {
             return;
         }
@@ -148,13 +146,10 @@ impl ContextMap {
         self.callbacks.remove_callback(callback_id);
     }
 
-    fn set_client_id(&mut self, uuid: &Uuid128Bit, id: i32) {
-        let client = self.clients.iter_mut().find(|client| client.uuid == *uuid);
-        if client.is_none() {
-            return;
+    fn set_client_id(&mut self, uuid: &Uuid, id: i32) {
+        if let Some(client) = self.clients.iter_mut().find(|client| client.uuid == *uuid) {
+            client.id = Some(id);
         }
-
-        client.unwrap().id = Some(id);
     }
 
     fn add_connection(&mut self, client_id: i32, conn_id: i32, address: &RawAddress) {
@@ -199,7 +194,7 @@ impl ContextMap {
 struct Server {
     id: Option<i32>,
     cbid: u32,
-    uuid: Uuid128Bit,
+    uuid: Uuid,
     services: Vec<BluetoothGattService>,
     is_congested: bool,
 
@@ -233,7 +228,7 @@ impl ServerContextMap {
         }
     }
 
-    fn get_by_uuid(&self, uuid: &Uuid128Bit) -> Option<&Server> {
+    fn get_by_uuid(&self, uuid: &Uuid) -> Option<&Server> {
         self.servers.iter().find(|server| server.uuid == *uuid)
     }
 
@@ -263,7 +258,7 @@ impl ServerContextMap {
             .and_then(move |server_id| self.get_mut_by_server_id(server_id))
     }
 
-    fn add(&mut self, uuid: &Uuid128Bit, callback: GattServerCallback) {
+    fn add(&mut self, uuid: &Uuid, callback: GattServerCallback) {
         if self.get_by_uuid(uuid).is_some() {
             return;
         }
@@ -293,7 +288,7 @@ impl ServerContextMap {
         self.callbacks.remove_callback(callback_id);
     }
 
-    fn set_server_id(&mut self, uuid: &Uuid128Bit, id: i32) {
+    fn set_server_id(&mut self, uuid: &Uuid, id: i32) {
         let server = self.servers.iter_mut().find(|server| server.uuid == *uuid);
         if let Some(s) = server {
             s.id = Some(id);
@@ -384,7 +379,7 @@ pub trait IBluetoothGatt {
     ///
     /// `callback_id`: The callback to receive updates about the scanner state.
     /// Returns the UUID of the registered scanner.
-    fn register_scanner(&mut self, callback_id: u32) -> Uuid128Bit;
+    fn register_scanner(&mut self, callback_id: u32) -> Uuid;
 
     /// Unregisters an LE scanner identified by the given scanner id.
     fn unregister_scanner(&mut self, scanner_id: u8) -> bool;
@@ -695,13 +690,13 @@ pub trait IBluetoothGatt {
 #[derive(Debug, Default, Clone)]
 /// Represents a GATT Descriptor.
 pub struct BluetoothGattDescriptor {
-    pub uuid: Uuid128Bit,
+    pub uuid: Uuid,
     pub instance_id: i32,
     pub permissions: i32,
 }
 
 impl BluetoothGattDescriptor {
-    pub fn new(uuid: Uuid128Bit, instance_id: i32, permissions: i32) -> BluetoothGattDescriptor {
+    pub fn new(uuid: Uuid, instance_id: i32, permissions: i32) -> BluetoothGattDescriptor {
         BluetoothGattDescriptor { uuid, instance_id, permissions }
     }
 }
@@ -709,7 +704,7 @@ impl BluetoothGattDescriptor {
 #[derive(Debug, Default, Clone)]
 /// Represents a GATT Characteristic.
 pub struct BluetoothGattCharacteristic {
-    pub uuid: Uuid128Bit,
+    pub uuid: Uuid,
     pub instance_id: i32,
     pub properties: i32,
     pub permissions: i32,
@@ -740,7 +735,7 @@ impl BluetoothGattCharacteristic {
     pub const PERMISSION_WRITE_SIGNED_MITM: i32 = 1 << 8;
 
     pub fn new(
-        uuid: Uuid128Bit,
+        uuid: Uuid,
         instance_id: i32,
         properties: i32,
         permissions: i32,
@@ -765,7 +760,7 @@ impl BluetoothGattCharacteristic {
 #[derive(Debug, Default, Clone)]
 /// Represents a GATT Service.
 pub struct BluetoothGattService {
-    pub uuid: Uuid128Bit,
+    pub uuid: Uuid,
     pub instance_id: i32,
     pub service_type: i32,
     pub characteristics: Vec<BluetoothGattCharacteristic>,
@@ -773,7 +768,7 @@ pub struct BluetoothGattService {
 }
 
 impl BluetoothGattService {
-    pub fn new(uuid: Uuid128Bit, instance_id: i32, service_type: i32) -> BluetoothGattService {
+    pub fn new(uuid: Uuid, instance_id: i32, service_type: i32) -> BluetoothGattService {
         BluetoothGattService {
             uuid,
             instance_id,
@@ -793,7 +788,7 @@ impl BluetoothGattService {
             match GattDbElementType::from_u32(elem.type_).unwrap() {
                 GattDbElementType::PrimaryService | GattDbElementType::SecondaryService => {
                     db_out.push(BluetoothGattService::new(
-                        elem.uuid.uu,
+                        elem.uuid,
                         elem.attribute_handle as i32,
                         elem.type_ as i32,
                     ));
@@ -803,7 +798,7 @@ impl BluetoothGattService {
                 GattDbElementType::Characteristic => {
                     match db_out.last_mut() {
                         Some(s) => s.characteristics.push(BluetoothGattCharacteristic::new(
-                            elem.uuid.uu,
+                            elem.uuid,
                             elem.attribute_handle as i32,
                             elem.properties as i32,
                             elem.permissions as i32,
@@ -819,7 +814,7 @@ impl BluetoothGattService {
                     match db_out.last_mut() {
                         Some(s) => match s.characteristics.last_mut() {
                             Some(c) => c.descriptors.push(BluetoothGattDescriptor::new(
-                                elem.uuid.uu,
+                                elem.uuid,
                                 elem.attribute_handle as i32,
                                 elem.permissions as i32,
                             )),
@@ -841,7 +836,7 @@ impl BluetoothGattService {
                     match db_out.last_mut() {
                         Some(s) => {
                             s.included_services.push(BluetoothGattService::new(
-                                elem.uuid.uu,
+                                elem.uuid,
                                 elem.attribute_handle as i32,
                                 elem.type_ as i32,
                             ));
@@ -864,7 +859,7 @@ impl BluetoothGattService {
         let mut db_out: Vec<BtGattDbElement> = vec![];
         db_out.push(BtGattDbElement {
             id: service.instance_id as u16,
-            uuid: Uuid::from(service.uuid),
+            uuid: service.uuid,
             type_: service.service_type as u32,
             attribute_handle: service.instance_id as u16,
             start_handle: service.instance_id as u16,
@@ -877,7 +872,7 @@ impl BluetoothGattService {
         for char in service.characteristics {
             db_out.push(BtGattDbElement {
                 id: char.instance_id as u16,
-                uuid: Uuid::from(char.uuid),
+                uuid: char.uuid,
                 type_: GattDbElementType::Characteristic as u32,
                 attribute_handle: char.instance_id as u16,
                 start_handle: 0,
@@ -890,7 +885,7 @@ impl BluetoothGattService {
             for desc in char.descriptors {
                 db_out.push(BtGattDbElement {
                     id: desc.instance_id as u16,
-                    uuid: Uuid::from(desc.uuid),
+                    uuid: desc.uuid,
                     type_: GattDbElementType::Descriptor as u32,
                     attribute_handle: desc.instance_id as u16,
                     start_handle: 0,
@@ -906,16 +901,13 @@ impl BluetoothGattService {
             if !services.iter().any(|s| {
                 s.instance_id == included_service.instance_id && s.uuid == included_service.uuid
             }) {
-                log::error!(
-                    "Included service with uuid {} not found",
-                    Uuid::from(included_service.uuid)
-                );
+                log::error!("Included service with uuid {} not found", included_service.uuid);
                 continue;
             }
 
             db_out.push(BtGattDbElement {
                 id: included_service.instance_id as u16,
-                uuid: Uuid::from(included_service.uuid),
+                uuid: included_service.uuid,
                 type_: included_service.service_type as u32,
                 attribute_handle: included_service.instance_id as u16,
                 start_handle: 0,
@@ -1126,7 +1118,7 @@ pub trait IBluetoothGattServerCallback: RPCProxy {
 /// `IBluetoothGatt::register_scanner_callback`.
 pub trait IScannerCallback: RPCProxy {
     /// When the `register_scanner` request is done.
-    fn on_scanner_registered(&mut self, uuid: Uuid128Bit, scanner_id: u8, status: GattStatus);
+    fn on_scanner_registered(&mut self, uuid: Uuid, scanner_id: u8, status: GattStatus);
 
     /// When an LE advertisement matching aggregate filters is detected. This callback is shared
     /// among all scanner callbacks and is triggered for *every* advertisement that the controller
@@ -1244,7 +1236,7 @@ pub struct ScanResult {
     pub rssi: i8,
     pub periodic_adv_int: u16,
     pub flags: u8,
-    pub service_uuids: Vec<Uuid128Bit>,
+    pub service_uuids: Vec<Uuid>,
     /// A map of 128-bit UUID and its corresponding service data.
     pub service_data: HashMap<String, Vec<u8>>,
     pub manufacturer_data: HashMap<u16, Vec<u8>>,
@@ -2133,9 +2125,9 @@ impl IBluetoothGatt for BluetoothGatt {
         self.remove_scanner_callback(callback_id)
     }
 
-    fn register_scanner(&mut self, callback_id: u32) -> Uuid128Bit {
+    fn register_scanner(&mut self, callback_id: u32) -> Uuid {
         if !self.enabled {
-            return Uuid::empty().uu;
+            return Uuid::empty();
         }
 
         let mut bytes: [u8; 16] = [0; 16];
@@ -2149,7 +2141,7 @@ impl IBluetoothGatt for BluetoothGatt {
         // functions as a unique identifier of the scanner.
         self.gatt.as_ref().unwrap().lock().unwrap().scanner.register_scanner(uuid);
 
-        uuid.uu
+        uuid
     }
 
     fn unregister_scanner(&mut self, scanner_id: u8) -> bool {
@@ -2422,14 +2414,11 @@ impl IBluetoothGatt for BluetoothGatt {
         callback: Box<dyn IBluetoothGattCallback + Send>,
         eatt_support: bool,
     ) {
-        let uuid = match UuidHelper::parse_string(&app_uuid) {
-            Some(id) => id,
-            None => {
-                log::info!("Uuid is malformed: {}", app_uuid);
-                return;
-            }
+        let Some(uuid) = Uuid::from_string(app_uuid.clone()) else {
+            warn!("register_client: Uuid is malformed: {}", app_uuid);
+            return;
         };
-        self.context_map.add(&uuid.uu, callback);
+        self.context_map.add(&uuid, callback);
         self.gatt
             .as_ref()
             .expect("GATT has not been initialized")
@@ -2490,7 +2479,7 @@ impl IBluetoothGatt for BluetoothGatt {
             return;
         };
 
-        let uuid = UuidHelper::parse_string(uuid);
+        let uuid = Uuid::from_string(uuid);
         if uuid.is_none() {
             return;
         }
@@ -2503,11 +2492,7 @@ impl IBluetoothGatt for BluetoothGatt {
             None => return,
             Some(id) => id,
         };
-
-        let uuid = match UuidHelper::parse_string(uuid) {
-            None => return,
-            Some(uuid) => uuid,
-        };
+        let Some(uuid) = Uuid::from_string(uuid) else { return };
 
         self.gatt
             .as_ref()
@@ -2544,17 +2529,13 @@ impl IBluetoothGatt for BluetoothGatt {
         let Some(conn_id) = self.context_map.get_conn_id_from_address(client_id, &addr) else {
             return;
         };
-
-        let uuid = UuidHelper::parse_string(uuid);
-        if uuid.is_none() {
-            return;
-        }
+        let Some(uuid) = Uuid::from_string(uuid) else { return };
 
         // TODO(b/200065274): Perform check on restricted handles.
 
         self.gatt.as_ref().unwrap().lock().unwrap().client.read_using_characteristic_uuid(
             conn_id,
-            &uuid.unwrap(),
+            &uuid,
             start_handle as u16,
             end_handle as u16,
             auth_req,
@@ -2745,14 +2726,11 @@ impl IBluetoothGatt for BluetoothGatt {
         callback: Box<dyn IBluetoothGattServerCallback + Send>,
         eatt_support: bool,
     ) {
-        let uuid = match UuidHelper::parse_string(&app_uuid) {
-            Some(id) => id,
-            None => {
-                log::info!("Uuid is malformed: {}", app_uuid);
-                return;
-            }
+        let Some(uuid) = Uuid::from_string(app_uuid.clone()) else {
+            warn!("register_server: Uuid is malformed: {}", app_uuid);
+            return;
         };
-        self.server_context_map.add(&uuid.uu, callback);
+        self.server_context_map.add(&uuid, callback);
         self.gatt
             .as_ref()
             .expect("GATT has not been initialized")
@@ -3012,9 +2990,9 @@ pub(crate) trait BtifGattClientCallbacks {
 
 impl BtifGattClientCallbacks for BluetoothGatt {
     fn register_client_cb(&mut self, status: GattStatus, client_id: i32, app_uuid: Uuid) {
-        self.context_map.set_client_id(&app_uuid.uu, client_id);
+        self.context_map.set_client_id(&app_uuid, client_id);
 
-        let client = self.context_map.get_by_uuid(&app_uuid.uu);
+        let client = self.context_map.get_by_uuid(&app_uuid);
         match client {
             Some(c) => {
                 let cbid = c.cbid;
@@ -3392,9 +3370,9 @@ pub(crate) trait BtifGattServerCallbacks {
 
 impl BtifGattServerCallbacks for BluetoothGatt {
     fn register_server_cb(&mut self, status: GattStatus, server_id: i32, app_uuid: Uuid) {
-        self.server_context_map.set_server_id(&app_uuid.uu, server_id);
+        self.server_context_map.set_server_id(&app_uuid, server_id);
 
-        let cbid = self.server_context_map.get_by_uuid(&app_uuid.uu).map(|server| server.cbid);
+        let cbid = self.server_context_map.get_by_uuid(&app_uuid).map(|server| server.cbid);
         match cbid {
             Some(cbid) => {
                 if let Some(cb) =
@@ -3990,7 +3968,7 @@ impl BtifGattScannerCallbacks for BluetoothGatt {
         if let Some(info) = scanner_info {
             info.scanner_id = Some(scanner_id);
             if let Some(cb) = self.scanner_callbacks.get_by_id_mut(info.callback_id) {
-                cb.on_scanner_registered(uuid.uu, scanner_id, status);
+                cb.on_scanner_registered(uuid, scanner_id, status);
             } else {
                 log::warn!("There is no callback for scanner UUID {}", uuid);
             }
@@ -4337,10 +4315,10 @@ mod tests {
 
     #[test]
     fn test_uuid_from_string() {
-        let uuid = UuidHelper::parse_string("abcdef");
+        let uuid = Uuid::from_string("abcdef");
         assert!(uuid.is_none());
 
-        let uuid = UuidHelper::parse_string("0123456789abcdef0123456789abcdef");
+        let uuid = Uuid::from_string("0123456789abcdef0123456789abcdef");
         assert!(uuid.is_some());
         let expected: [u8; 16] = [
             0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef, 0x01, 0x23, 0x45, 0x67, 0x89, 0xab,
@@ -4356,7 +4334,7 @@ mod tests {
 
         // Add client 1.
         let callback1 = Box::new(TestBluetoothGattCallback::new(String::from("Callback 1")));
-        let uuid1 = UuidHelper::parse_string("00000000000000000000000000000001").unwrap().uu;
+        let uuid1 = Uuid::from_string("00000000000000000000000000000001").unwrap();
         map.add(&uuid1, callback1);
         let found = map.get_by_uuid(&uuid1);
         assert!(found.is_some());
@@ -4376,7 +4354,7 @@ mod tests {
 
         // Add client 2.
         let callback2 = Box::new(TestBluetoothGattCallback::new(String::from("Callback 2")));
-        let uuid2 = UuidHelper::parse_string("00000000000000000000000000000002").unwrap().uu;
+        let uuid2 = Uuid::from_string("00000000000000000000000000000002").unwrap();
         map.add(&uuid2, callback2);
         let found = map.get_by_uuid(&uuid2);
         assert!(found.is_some());
