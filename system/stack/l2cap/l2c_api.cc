@@ -116,7 +116,7 @@ static const bool enforce_assert = check_l2cap_credit();
 uint16_t L2CA_Register(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
                        bool enable_snoop, tL2CAP_ERTM_INFO* p_ertm_info,
                        uint16_t my_mtu, uint16_t required_remote_mtu,
-                       uint16_t sec_level) {
+                       uint16_t /* sec_level */) {
   const bool config_cfm_cb = (p_cb_info.pL2CA_ConfigCfm_Cb != nullptr);
   const bool config_ind_cb = (p_cb_info.pL2CA_ConfigInd_Cb != nullptr);
   const bool data_ind_cb = (p_cb_info.pL2CA_DataInd_Cb != nullptr);
@@ -842,7 +842,7 @@ std::vector<uint16_t> L2CA_ConnectCreditBasedReq(uint16_t psm,
  *
  ******************************************************************************/
 
-bool L2CA_ReconfigCreditBasedConnsReq(const RawAddress& bda,
+bool L2CA_ReconfigCreditBasedConnsReq(const RawAddress& /* bda */,
                                       std::vector<uint16_t>& lcids,
                                       tL2CAP_LE_CFG_INFO* p_cfg) {
   tL2C_CCB* p_ccb;

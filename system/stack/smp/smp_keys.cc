@@ -34,8 +34,6 @@
 #include "crypto_toolbox/crypto_toolbox.h"
 #include "hci/controller_interface.h"
 #include "main/shim/entry.h"
-#include "os/log.h"
-#include "osi/include/osi.h"
 #include "p_256_ecc_pp.h"
 #include "smp_int.h"
 #include "stack/btm/btm_ble_sec.h"
@@ -85,8 +83,9 @@ bool smp_has_local_oob_data() {
   return !is_oob_data_empty(&saved_local_oob_data);
 }
 
-void smp_debug_print_nbyte_little_endian(uint8_t* p, const char* key_name,
-                                         uint8_t len) {}
+void smp_debug_print_nbyte_little_endian(uint8_t* /* p */,
+                                         const char* /* key_name */,
+                                         uint8_t /* len */) {}
 
 inline void smp_debug_print_nbyte_little_endian(const Octet16& p,
                                                 const char* key_name,
@@ -95,8 +94,9 @@ inline void smp_debug_print_nbyte_little_endian(const Octet16& p,
                                       len);
 }
 
-void smp_debug_print_nbyte_big_endian(uint8_t* p, const char* key_name,
-                                      uint8_t len) {}
+void smp_debug_print_nbyte_big_endian(uint8_t* /* p */,
+                                      const char* /* key_name */,
+                                      uint8_t /* len */) {}
 
 /** This function is called to process a passkey. */
 void smp_proc_passkey(tSMP_CB* p_cb, uint64_t rand) {
@@ -600,7 +600,7 @@ Octet16 smp_calculate_legacy_short_term_key(tSMP_CB* p_cb) {
  * Returns          void
  *
  ******************************************************************************/
-void smp_create_private_key(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+void smp_create_private_key(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   log::verbose("addr:{}", p_cb->pairing_bda);
 
   // Only use the stored OOB data if we are in an oob association model
@@ -666,7 +666,7 @@ void smp_create_private_key(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-void smp_use_oob_private_key(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+void smp_use_oob_private_key(tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   log::info("req_oob_type:{}, role:{}", p_cb->req_oob_type, p_cb->role);
 
   switch (p_cb->req_oob_type) {
@@ -860,8 +860,8 @@ Octet16 smp_calculate_peer_commitment(tSMP_CB* p_cb) {
  * Returns          void
  *
  ******************************************************************************/
-void smp_calculate_numeric_comparison_display_number(tSMP_CB* p_cb,
-                                                     tSMP_INT_DATA* p_data) {
+void smp_calculate_numeric_comparison_display_number(
+    tSMP_CB* p_cb, tSMP_INT_DATA* /* p_data */) {
   log::verbose("addr:{}", p_cb->pairing_bda);
 
   if (p_cb->role == HCI_ROLE_CENTRAL) {
@@ -902,7 +902,8 @@ void smp_calculate_numeric_comparison_display_number(tSMP_CB* p_cb,
  * Returns          void
  *
  ******************************************************************************/
-void smp_calculate_local_dhkey_check(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+void smp_calculate_local_dhkey_check(tSMP_CB* p_cb,
+                                     tSMP_INT_DATA* /* p_data */) {
   uint8_t iocap[3], a[7], b[7];
 
   log::verbose("addr:{}", p_cb->pairing_bda);
@@ -926,7 +927,8 @@ void smp_calculate_local_dhkey_check(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-void smp_calculate_peer_dhkey_check(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
+void smp_calculate_peer_dhkey_check(tSMP_CB* p_cb,
+                                    tSMP_INT_DATA* /* p_data */) {
   uint8_t iocap[3], a[7], b[7];
   tSMP_KEY key;
 
