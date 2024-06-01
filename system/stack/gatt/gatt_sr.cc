@@ -854,7 +854,7 @@ static void gatts_process_mtu_req(tGATT_TCB& tcb, uint16_t cid, uint16_t len,
   gatt_sr_msg.mtu = gatt_get_local_mtu();
 
   log::info("MTU {} request from remote ({}), resulted MTU {}", mtu,
-            tcb.peer_bda.ToString(), tcb.payload_size);
+            tcb.peer_bda, tcb.payload_size);
 
   BTM_SetBleDataLength(tcb.peer_bda, tcb.payload_size + L2CAP_PKT_OVERHEAD);
 
