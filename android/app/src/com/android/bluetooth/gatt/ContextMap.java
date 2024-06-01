@@ -28,7 +28,6 @@ import android.os.UserHandle;
 import android.os.WorkSource;
 import android.util.Log;
 
-
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_scan.AppScanStats;

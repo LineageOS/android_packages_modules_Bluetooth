@@ -18,7 +18,6 @@ package com.android.bluetooth.pbapclient;
 
 import static com.google.common.truth.Truth.assertThat;
 
-
 import android.content.Context;
 
 import androidx.test.filters.SmallTest;

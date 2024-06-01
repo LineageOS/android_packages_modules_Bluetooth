@@ -35,20 +35,15 @@ import android.service.media.MediaBrowserService;
 import android.util.Log;
 
 import androidx.test.InstrumentationRegistry;
-import androidx.test.rule.ServiceTestRule;
 import androidx.test.uiautomator.UiDevice;
 
 import com.android.bluetooth.avrcpcontroller.BluetoothMediaBrowserService;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.ProfileService;
-import com.android.bluetooth.gatt.GattService;
 
 import org.junit.Assert;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;
-import org.mockito.ArgumentCaptor;
-import org.mockito.internal.util.MockUtil;
 
 import java.io.BufferedReader;
 import java.io.FileReader;
@@ -57,7 +52,6 @@ import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 import java.util.stream.IntStream;
 
 /**
