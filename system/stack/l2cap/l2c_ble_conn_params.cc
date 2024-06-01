@@ -31,7 +31,6 @@
 #include "internal_include/stack_config.h"
 #include "main/shim/acl_api.h"
 #include "main/shim/entry.h"
-#include "os/log.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/btm_ble_api_types.h"
@@ -285,8 +284,9 @@ void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
  *
  ******************************************************************************/
 void l2cble_process_conn_update_evt(uint16_t handle, uint8_t status,
-                                    uint16_t interval, uint16_t latency,
-                                    uint16_t timeout) {
+                                    uint16_t /* interval */,
+                                    uint16_t /* latency */,
+                                    uint16_t /* timeout */) {
   log::verbose("");
 
   /* See if we have a link control block for the remote device */
@@ -501,9 +501,10 @@ bool L2CA_SubrateRequest(const RawAddress& rem_bda, uint16_t subrate_min,
  *
  ******************************************************************************/
 void l2cble_process_subrate_change_evt(uint16_t handle, uint8_t status,
-                                       uint16_t subrate_factor,
-                                       uint16_t peripheral_latency,
-                                       uint16_t cont_num, uint16_t timeout) {
+                                       uint16_t /* subrate_factor */,
+                                       uint16_t /* peripheral_latency */,
+                                       uint16_t /* cont_num */,
+                                       uint16_t /* timeout */) {
   log::verbose("");
 
   /* See if we have a link control block for the remote device */

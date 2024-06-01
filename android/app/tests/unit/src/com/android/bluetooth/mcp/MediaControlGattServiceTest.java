@@ -28,6 +28,7 @@ import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothLeBroadcastMetadata;
 import android.content.Context;
 import android.os.Looper;
+import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.InstrumentationRegistry;
 import androidx.test.filters.MediumTest;
@@ -37,7 +38,6 @@ import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.LeAudioService;
-import android.platform.test.flag.junit.SetFlagsRule;
 
 import org.junit.After;
 import org.junit.Assert;

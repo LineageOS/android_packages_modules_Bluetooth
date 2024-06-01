@@ -364,8 +364,8 @@ void SMP_ConfirmReply(const RawAddress& bd_addr, uint8_t res) {
  *                  p_data      - simple pairing Randomizer  C.
  *
  ******************************************************************************/
-void SMP_OobDataReply(const RawAddress& bd_addr, tSMP_STATUS res, uint8_t len,
-                      uint8_t* p_data) {
+void SMP_OobDataReply(const RawAddress& /* bd_addr */, tSMP_STATUS res,
+                      uint8_t len, uint8_t* p_data) {
   tSMP_CB* p_cb = &smp_cb;
   tSMP_KEY key;
 

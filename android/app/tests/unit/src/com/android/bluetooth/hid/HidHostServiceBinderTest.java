@@ -17,13 +17,17 @@
 package com.android.bluetooth.hid;
 
 import static org.mockito.Mockito.verify;
-import android.platform.test.flag.junit.SetFlagsRule;
+
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
+import android.platform.test.flag.junit.SetFlagsRule;
+
 import androidx.test.filters.SmallTest;
 import androidx.test.runner.AndroidJUnit4;
+
 import com.android.bluetooth.flags.Flags;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;

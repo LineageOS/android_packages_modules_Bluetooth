@@ -122,7 +122,7 @@ void l2cble_notify_le_connection(const RawAddress& bda) {
 /** This function is called when an HCI Connection Complete event is received.
  */
 bool l2cble_conn_comp(uint16_t handle, uint8_t role, const RawAddress& bda,
-                      tBLE_ADDR_TYPE type, uint16_t conn_interval,
+                      tBLE_ADDR_TYPE /* type */, uint16_t conn_interval,
                       uint16_t conn_latency, uint16_t conn_timeout) {
   // role == HCI_ROLE_CENTRAL => scanner completed connection
   // role == HCI_ROLE_PERIPHERAL => advertiser completed connection
@@ -1111,7 +1111,7 @@ static bool is_legal_tx_data_len(const uint16_t& tx_data_len) {
 
 void l2cble_process_data_length_change_event(uint16_t handle,
                                              uint16_t tx_data_len,
-                                             uint16_t rx_data_len) {
+                                             uint16_t /* rx_data_len */) {
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_handle(handle);
   if (p_lcb == nullptr) {
     log::warn(
@@ -1249,7 +1249,7 @@ void l2cble_send_peer_disc_req(tL2C_CCB* p_ccb) {
  *
  ******************************************************************************/
 void l2cble_sec_comp(const RawAddress* bda, tBT_TRANSPORT transport,
-                     void* p_ref_data, tBTM_STATUS status) {
+                     void* /* p_ref_data */, tBTM_STATUS status) {
   const RawAddress& p_bda = *bda;
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(p_bda, BT_TRANSPORT_LE);
   tL2CAP_SEC_DATA* p_buf = NULL;

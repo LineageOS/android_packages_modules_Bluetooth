@@ -19,18 +19,15 @@ package com.android.server.bluetooth;
 import android.compat.annotation.ChangeId;
 import android.compat.annotation.EnabledSince;
 
-/**
- * All the {@link ChangeId} used in the Bluetooth service .
- */
+/** All the {@link ChangeId} used in the Bluetooth service . */
 class ChangeIds {
-    private ChangeIds(){}
+    private ChangeIds() {}
 
     /**
-     * Starting with {@link android.os.Build.VERSION_CODES#TIRAMISU}, applications are
-     * not allowed to enable/disable Bluetooth.
+     * Starting with {@link android.os.Build.VERSION_CODES#TIRAMISU}, applications are not allowed
+     * to enable/disable Bluetooth.
      */
     @ChangeId
     @EnabledSince(targetSdkVersion = android.os.Build.VERSION_CODES.TIRAMISU)
     static final long RESTRICT_ENABLE_DISABLE = 218493289L;
 }
-

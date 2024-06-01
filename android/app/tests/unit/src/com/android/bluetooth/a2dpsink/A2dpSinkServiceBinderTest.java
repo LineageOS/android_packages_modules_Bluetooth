@@ -33,7 +33,6 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
-
 public class A2dpSinkServiceBinderTest {
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 

@@ -457,12 +457,11 @@ public final class BluetoothSocket implements Closeable {
             synchronized (this) {
                 Log.i(TAG, "connect(), SocketState: " + mSocketState + ", mPfd: " + mPfd);
                 if (mSocketState == SocketState.CLOSED) {
-                    throw new BluetoothSocketException(
-                            BluetoothSocketException.SOCKET_CLOSED);
+                    throw new BluetoothSocketException(BluetoothSocketException.SOCKET_CLOSED);
                 }
                 if (mPfd == null) {
                     throw new BluetoothSocketException(
-                        BluetoothSocketException.UNIX_FILE_SOCKET_CREATION_FAILURE);
+                            BluetoothSocketException.UNIX_FILE_SOCKET_CREATION_FAILURE);
                 }
                 FileDescriptor fd = mPfd.getFileDescriptor();
                 mSocket = new LocalSocket(fd);
