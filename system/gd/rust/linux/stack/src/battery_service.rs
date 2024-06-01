@@ -7,11 +7,10 @@ use crate::bluetooth_gatt::{
     BluetoothGatt, BluetoothGattService, IBluetoothGatt, IBluetoothGattCallback,
 };
 use crate::callbacks::Callbacks;
-use crate::uuid::UuidHelper;
 use crate::Message;
 use crate::RPCProxy;
 use crate::{uuid, APIMessage, BluetoothAPI};
-use bt_topshim::btif::{BtTransport, DisplayAddress, RawAddress};
+use bt_topshim::btif::{BtTransport, DisplayAddress, RawAddress, Uuid};
 use bt_topshim::profiles::gatt::{GattStatus, LePhy};
 use log::debug;
 use std::collections::HashMap;
@@ -166,14 +165,14 @@ impl BatteryService {
                     return;
                 }
                 let (bas_uuid, battery_level_uuid) = match (
-                    UuidHelper::parse_string(uuid::BAS),
-                    UuidHelper::parse_string(CHARACTERISTIC_BATTERY_LEVEL),
+                    Uuid::from_string(uuid::BAS),
+                    Uuid::from_string(CHARACTERISTIC_BATTERY_LEVEL),
                 ) {
                     (Some(bas_uuid), Some(battery_level_uuid)) => (bas_uuid, battery_level_uuid),
                     _ => return,
                 };
                 // TODO(b/233101174): handle multiple instances of BAS
-                let bas = match services.iter().find(|service| service.uuid == bas_uuid.uu) {
+                let bas = match services.iter().find(|service| service.uuid == bas_uuid) {
                     Some(bas) => bas,
                     None => {
                         self.callbacks.for_all_callbacks(|callback| {
@@ -188,7 +187,7 @@ impl BatteryService {
                 let battery_level = match bas
                     .characteristics
                     .iter()
-                    .find(|characteristic| characteristic.uuid == battery_level_uuid.uu)
+                    .find(|characteristic| characteristic.uuid == battery_level_uuid)
                 {
                     Some(battery_level) => battery_level,
                     None => {

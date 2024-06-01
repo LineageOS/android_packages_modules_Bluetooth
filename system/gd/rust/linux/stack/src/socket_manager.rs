@@ -21,7 +21,6 @@ use tokio::time;
 use crate::bluetooth::BluetoothDevice;
 use crate::bluetooth_admin::{BluetoothAdmin, IBluetoothAdmin};
 use crate::callbacks::Callbacks;
-use crate::uuid::UuidHelper;
 use crate::Message;
 use crate::RPCProxy;
 
@@ -174,7 +173,7 @@ impl fmt::Display for BluetoothServerSocket {
             self.sock_type,
             self.name.as_ref().unwrap_or(&String::new()),
             match self.uuid {
-                Some(u) => UuidHelper::to_string(&u.uu),
+                Some(u) => u.to_string(),
                 None => "".to_string(),
             }
         )
@@ -257,7 +256,7 @@ impl fmt::Display for BluetoothSocket {
             self.port,
             self.sock_type,
             match self.uuid {
-                Some(u) => UuidHelper::to_string(&u.uu),
+                Some(u) => u.to_string(),
                 None => "".to_string(),
             }
         )
@@ -589,7 +588,7 @@ impl BluetoothSocketManager {
         cbid: CallbackId,
     ) -> SocketResult {
         if let Some(uuid) = socket_info.uuid {
-            if !self.admin.lock().unwrap().is_service_allowed(uuid.into()) {
+            if !self.admin.lock().unwrap().is_service_allowed(uuid) {
                 log::debug!("service {} is blocked by admin policy", uuid);
                 return SocketResult::new(BtStatus::AuthRejected, INVALID_SOCKET_ID);
             }
@@ -608,10 +607,7 @@ impl BluetoothSocketManager {
             self.sock.as_ref().expect("Socket Manager not initialized").listen(
                 socket_info.sock_type.clone(),
                 socket_info.name.as_ref().unwrap_or(&String::new()).clone(),
-                match socket_info.uuid {
-                    Some(u) => Some(u.uu.clone()),
-                    None => None,
-                },
+                socket_info.uuid,
                 match socket_info.sock_type {
                     SocketType::Rfcomm => socket_info.channel.unwrap_or(DYNAMIC_CHANNEL),
                     SocketType::L2cap | SocketType::L2capLe => {
@@ -691,7 +687,7 @@ impl BluetoothSocketManager {
         cbid: CallbackId,
     ) -> SocketResult {
         if let Some(uuid) = socket_info.uuid {
-            if !self.admin.lock().unwrap().is_service_allowed(uuid.into()) {
+            if !self.admin.lock().unwrap().is_service_allowed(uuid) {
                 log::debug!("service {} is blocked by admin policy", uuid);
                 return SocketResult::new(BtStatus::AuthRejected, INVALID_SOCKET_ID);
             }
@@ -702,10 +698,7 @@ impl BluetoothSocketManager {
             self.sock.as_ref().expect("Socket manager not initialized").connect(
                 socket_info.remote_device.address,
                 socket_info.sock_type.clone(),
-                match socket_info.uuid {
-                    Some(u) => Some(u.uu.clone()),
-                    None => None,
-                },
+                socket_info.uuid,
                 socket_info.port,
                 socket_info.flags,
                 self.get_caller_uid(),
@@ -1215,9 +1208,7 @@ impl BluetoothSocketManager {
             .filter(|sock| {
                 sock.uuid
                     // Don't need to close L2cap socket (indicated by no uuid).
-                    .map_or(false, |uuid| {
-                        !self.admin.lock().unwrap().is_service_allowed(uuid.into())
-                    })
+                    .map_or(false, |uuid| !self.admin.lock().unwrap().is_service_allowed(uuid))
             })
             .map(|sock| (sock.socket_id, sock.tx.clone(), sock.uuid.unwrap()))
             .collect::<Vec<(u64, Sender<SocketRunnerActions>, Uuid)>>();

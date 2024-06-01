@@ -10,7 +10,7 @@ use crate::callbacks::Callbacks;
 use crate::uuid::UuidHelper;
 use crate::{Message, RPCProxy};
 
-use bt_topshim::btif::{BluetoothProperty, Uuid128Bit};
+use bt_topshim::btif::{BluetoothProperty, Uuid};
 use log::{info, warn};
 use serde_json::{json, Value};
 use tokio::sync::mpsc::Sender;
@@ -18,11 +18,11 @@ use tokio::sync::mpsc::Sender;
 /// Defines the Admin API
 pub trait IBluetoothAdmin {
     /// Check if the given UUID is in the allowlist
-    fn is_service_allowed(&self, service: Uuid128Bit) -> bool;
+    fn is_service_allowed(&self, service: Uuid) -> bool;
     /// Overwrite the current settings and store it to a file.
-    fn set_allowed_services(&mut self, services: Vec<Uuid128Bit>) -> bool;
+    fn set_allowed_services(&mut self, services: Vec<Uuid>) -> bool;
     /// Get the allowlist in UUIDs
-    fn get_allowed_services(&self) -> Vec<Uuid128Bit>;
+    fn get_allowed_services(&self) -> Vec<Uuid>;
     /// Get the PolicyEffect struct of a device
     fn get_device_policy_effect(&self, device: BluetoothDevice) -> Option<PolicyEffect>;
     /// Register client callback
@@ -38,14 +38,14 @@ pub trait IBluetoothAdmin {
 #[derive(PartialEq, Clone, Debug)]
 pub struct PolicyEffect {
     /// Array of services that are blocked by policy
-    pub service_blocked: Vec<Uuid128Bit>,
+    pub service_blocked: Vec<Uuid>,
     /// Indicate if the device has an adapter-supported profile that is blocked by the policy
     pub affected: bool,
 }
 
 pub trait IBluetoothAdminPolicyCallback: RPCProxy {
     /// This gets called when service allowlist changed.
-    fn on_service_allowlist_changed(&mut self, allowlist: Vec<Uuid128Bit>);
+    fn on_service_allowlist_changed(&mut self, allowlist: Vec<Uuid>);
     /// This gets called when
     /// 1. a new device is found by adapter
     /// 2. the policy effect to a device is changed due to
@@ -61,7 +61,7 @@ pub trait IBluetoothAdminPolicyCallback: RPCProxy {
 pub struct BluetoothAdmin {
     path: String,
     adapter: Option<Arc<Mutex<Box<Bluetooth>>>>,
-    allowed_services: HashSet<Uuid128Bit>,
+    allowed_services: HashSet<Uuid>,
     callbacks: Callbacks<dyn IBluetoothAdminPolicyCallback + Send>,
     device_policy_affect_cache: HashMap<BluetoothDevice, Option<PolicyEffect>>,
     tx: Sender<Message>,
@@ -89,15 +89,11 @@ impl BluetoothAdmin {
         self.adapter = Some(adapter.clone());
     }
 
-    fn get_blocked_services(&self, remote_uuids: &Vec<Uuid128Bit>) -> Vec<Uuid128Bit> {
-        remote_uuids
-            .iter()
-            .filter(|&s| !self.is_service_allowed(s.clone()))
-            .cloned()
-            .collect::<Vec<Uuid128Bit>>()
+    fn get_blocked_services(&self, remote_uuids: &Vec<Uuid>) -> Vec<Uuid> {
+        remote_uuids.iter().filter(|&&uu| !self.is_service_allowed(uu)).cloned().collect()
     }
 
-    fn get_affected_status(&self, blocked_services: &Vec<Uuid128Bit>) -> bool {
+    fn get_affected_status(&self, blocked_services: &Vec<Uuid>) -> bool {
         // return true if a supported profile is in blocked services.
         blocked_services
             .iter()
@@ -120,11 +116,11 @@ impl BluetoothAdmin {
     }
 
     fn load_config_from_json(&mut self, json: &Value) -> Option<bool> {
-        let allowed_services: Vec<Uuid128Bit> = json
+        let allowed_services: Vec<Uuid> = json
             .get("allowed_services")?
             .as_array()?
             .iter()
-            .filter_map(|v| UuidHelper::from_string(v.as_str()?))
+            .filter_map(|v| Uuid::from_string(v.as_str()?))
             .collect();
         self.set_allowed_services(allowed_services);
         Some(true)
@@ -143,14 +139,14 @@ impl BluetoothAdmin {
             "allowed_services":
                 self.get_allowed_services()
                     .iter()
-                    .map(UuidHelper::to_string)
+                    .map(|uu| uu.to_string())
                     .collect::<Vec<String>>()
         }))
         .ok()
         .unwrap()
     }
 
-    fn new_device_policy_effect(&self, uuids: Option<Vec<Uuid128Bit>>) -> Option<PolicyEffect> {
+    fn new_device_policy_effect(&self, uuids: Option<Vec<Uuid>>) -> Option<PolicyEffect> {
         uuids.map(|uuids| {
             let service_blocked = self.get_blocked_services(&uuids);
             let affected = self.get_affected_status(&service_blocked);
@@ -177,9 +173,7 @@ impl BluetoothAdmin {
         properties: &Vec<BluetoothProperty>,
     ) {
         let new_uuids = properties.iter().find_map(|p| match p {
-            BluetoothProperty::Uuids(uuids) => {
-                Some(uuids.iter().map(|&x| x.uu.clone()).collect::<Vec<Uuid128Bit>>())
-            }
+            BluetoothProperty::Uuids(uuids) => Some(uuids.clone()),
             _ => None,
         });
 
@@ -201,11 +195,11 @@ impl BluetoothAdmin {
 }
 
 impl IBluetoothAdmin for BluetoothAdmin {
-    fn is_service_allowed(&self, service: Uuid128Bit) -> bool {
+    fn is_service_allowed(&self, service: Uuid) -> bool {
         self.allowed_services.is_empty() || self.allowed_services.contains(&service)
     }
 
-    fn set_allowed_services(&mut self, services: Vec<Uuid128Bit>) -> bool {
+    fn set_allowed_services(&mut self, services: Vec<Uuid>) -> bool {
         if self.get_allowed_services() == services {
             // Allowlist is not changed.
             return true;
@@ -214,7 +208,7 @@ impl IBluetoothAdmin for BluetoothAdmin {
         self.allowed_services.clear();
 
         for service in services.iter() {
-            self.allowed_services.insert(service.clone());
+            self.allowed_services.insert(*service);
         }
 
         if let Some(adapter) = &self.adapter {
@@ -251,7 +245,7 @@ impl IBluetoothAdmin for BluetoothAdmin {
         false
     }
 
-    fn get_allowed_services(&self) -> Vec<Uuid128Bit> {
+    fn get_allowed_services(&self) -> Vec<Uuid> {
         self.allowed_services.iter().cloned().collect()
     }
 
@@ -279,9 +273,8 @@ impl IBluetoothAdmin for BluetoothAdmin {
 #[cfg(test)]
 mod tests {
     use crate::bluetooth_admin::{BluetoothAdmin, IBluetoothAdmin};
-    use crate::uuid::UuidHelper;
     use crate::Stack;
-    use bt_topshim::btif::Uuid128Bit;
+    use bt_topshim::btif::Uuid;
 
     // A workaround needed for linking. For more details, check the comment in
     // system/gd/rust/topshim/facade/src/main.rs
@@ -293,32 +286,32 @@ mod tests {
     fn test_set_service_allowed() {
         let (tx, _) = Stack::create_channel();
         let mut admin = BluetoothAdmin::new(String::from(""), tx.clone());
-        let uuid1: Uuid128Bit = [1; 16];
-        let uuid2: Uuid128Bit = [2; 16];
-        let uuid3: Uuid128Bit = [3; 16];
-        let uuids = vec![uuid1.clone(), uuid2.clone(), uuid3.clone()];
+        let uuid1: Uuid = [1; 16].into();
+        let uuid2: Uuid = [2; 16].into();
+        let uuid3: Uuid = [3; 16].into();
+        let uuids = vec![uuid1, uuid2, uuid3];
 
         // Default admin allows everything
         assert!(admin.is_service_allowed(uuid1));
         assert!(admin.is_service_allowed(uuid2));
         assert!(admin.is_service_allowed(uuid3));
-        assert_eq!(admin.get_blocked_services(&uuids), Vec::<Uuid128Bit>::new());
+        assert_eq!(admin.get_blocked_services(&uuids), Vec::<Uuid>::new());
 
-        admin.set_allowed_services(vec![uuid1.clone(), uuid3.clone()]);
+        admin.set_allowed_services(vec![uuid1, uuid3]);
 
         // Admin disallows uuid2 now
         assert!(admin.is_service_allowed(uuid1));
         assert!(!admin.is_service_allowed(uuid2));
         assert!(admin.is_service_allowed(uuid3));
-        assert_eq!(admin.get_blocked_services(&uuids), vec![uuid2.clone()]);
+        assert_eq!(admin.get_blocked_services(&uuids), vec![uuid2]);
 
-        admin.set_allowed_services(vec![uuid2.clone()]);
+        admin.set_allowed_services(vec![uuid2]);
 
         // Allowed services were overwritten.
         assert!(!admin.is_service_allowed(uuid1));
         assert!(admin.is_service_allowed(uuid2));
         assert!(!admin.is_service_allowed(uuid3));
-        assert_eq!(admin.get_blocked_services(&uuids), vec![uuid1.clone(), uuid3.clone()]);
+        assert_eq!(admin.get_blocked_services(&uuids), vec![uuid1, uuid3]);
     }
 
     fn get_sorted_allowed_services_from_config(admin: &BluetoothAdmin) -> Vec<String> {
@@ -335,9 +328,9 @@ mod tests {
         v
     }
 
-    fn get_sorted_allowed_services(admin: &BluetoothAdmin) -> Vec<Uuid128Bit> {
+    fn get_sorted_allowed_services(admin: &BluetoothAdmin) -> Vec<Uuid> {
         let mut v = admin.get_allowed_services();
-        v.sort();
+        v.sort_by(|lhs, rhs| lhs.uu.cmp(&rhs.uu));
         v
     }
 
@@ -345,33 +338,36 @@ mod tests {
     fn test_config() {
         let (tx, _) = Stack::create_channel();
         let mut admin = BluetoothAdmin::new(String::from(""), tx.clone());
-        let a2dp_sink = "0000110b-0000-1000-8000-00805f9b34fb";
-        let a2dp_source = "0000110a-0000-1000-8000-00805f9b34fb";
+        let a2dp_sink_str = "0000110b-0000-1000-8000-00805f9b34fb";
+        let a2dp_source_str = "0000110a-0000-1000-8000-00805f9b34fb";
 
-        let a2dp_sink_uuid128 = UuidHelper::from_string(a2dp_sink).unwrap();
-        let a2dp_source_uuid128 = UuidHelper::from_string(a2dp_source).unwrap();
+        let a2dp_sink_uuid = Uuid::from_string(a2dp_sink_str).unwrap();
+        let a2dp_source_uuid = Uuid::from_string(a2dp_source_str).unwrap();
 
-        let mut allowed_services = vec![a2dp_sink, a2dp_source];
+        let mut allowed_services_str = vec![a2dp_sink_str, a2dp_source_str];
 
-        let mut allowed_services_128 = vec![a2dp_sink_uuid128, a2dp_source_uuid128];
+        let mut allowed_services_uuid = vec![a2dp_sink_uuid, a2dp_source_uuid];
 
-        allowed_services.sort();
-        allowed_services_128.sort();
+        allowed_services_str.sort();
+        allowed_services_uuid.sort_by(|lhs, rhs| lhs.uu.cmp(&rhs.uu));
 
         // valid configuration
         assert_eq!(
             admin.load_config_from_json(&json!({
-                "allowed_services": allowed_services.clone()
+                "allowed_services": allowed_services_str.clone()
             })),
             Some(true)
         );
-        assert_eq!(get_sorted_allowed_services(&admin), allowed_services_128);
-        assert_eq!(get_sorted_allowed_services_from_config(&admin), allowed_services);
+        assert_eq!(get_sorted_allowed_services(&admin), allowed_services_uuid);
+        assert_eq!(get_sorted_allowed_services_from_config(&admin), allowed_services_str);
 
         // invalid configuration
-        assert_eq!(admin.load_config_from_json(&json!({ "allowed_services": a2dp_sink })), None);
+        assert_eq!(
+            admin.load_config_from_json(&json!({ "allowed_services": a2dp_sink_str })),
+            None
+        );
         // config should remain unchanged
-        assert_eq!(get_sorted_allowed_services(&admin), allowed_services_128);
-        assert_eq!(get_sorted_allowed_services_from_config(&admin), allowed_services);
+        assert_eq!(get_sorted_allowed_services(&admin), allowed_services_uuid);
+        assert_eq!(get_sorted_allowed_services_from_config(&admin), allowed_services_str);
     }
 }
