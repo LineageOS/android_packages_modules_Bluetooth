@@ -52,14 +52,17 @@ class BluetoothShellCommand extends BasicShellCommandHandler {
         String getName() {
             return mName;
         }
+
         boolean isMatch(String cmd) {
             return mName.equals(cmd);
         }
+
         boolean isPrivileged() {
             return mIsPrivileged;
         }
 
         abstract int exec(String cmd) throws RemoteException;
+
         abstract void onHelp(PrintWriter pw);
     }
 
@@ -116,12 +119,14 @@ class BluetoothShellCommand extends BasicShellCommandHandler {
         Enable() {
             super(false, "enable");
         }
+
         @Override
         public int exec(String cmd) throws RemoteException {
             return mManagerService.getBinder().enable(AttributionSource.myAttributionSource())
                     ? 0
                     : -1;
         }
+
         @Override
         public void onHelp(PrintWriter pw) {
             pw.println("  " + getName());
@@ -134,6 +139,7 @@ class BluetoothShellCommand extends BasicShellCommandHandler {
         Disable() {
             super(false, "disable");
         }
+
         @Override
         public int exec(String cmd) throws RemoteException {
             return mManagerService
@@ -142,6 +148,7 @@ class BluetoothShellCommand extends BasicShellCommandHandler {
                     ? 0
                     : -1;
         }
+
         @Override
         public void onHelp(PrintWriter pw) {
             pw.println("  " + getName());
@@ -154,6 +161,7 @@ class BluetoothShellCommand extends BasicShellCommandHandler {
         WaitForAdapterState() {
             super(false, "wait-for-state");
         }
+
         private int getWaitingState(String in) {
             if (!in.startsWith(getName() + ":")) return -1;
             String[] split = in.split(":", 2);
@@ -179,21 +187,25 @@ class BluetoothShellCommand extends BasicShellCommandHandler {
                     throw new IllegalArgumentException();
             }
         }
+
         @Override
         boolean isMatch(String cmd) {
             return getWaitingState(cmd) != -1;
         }
+
         @Override
         public int exec(String cmd) throws RemoteException {
             int ret = mManagerService.waitForManagerState(getWaitingState(cmd)) ? 0 : -1;
             Log.d(TAG, cmd + ": Return value is " + ret); // logging as this method can take time
             return ret;
         }
+
         @Override
         public void onHelp(PrintWriter pw) {
             pw.println("  " + getName() + ":<STATE>");
-            pw.println("    Wait until the adapter state is <STATE>."
-                    + " <STATE> can be one of STATE_OFF | STATE_ON");
+            pw.println(
+                    "    Wait until the adapter state is <STATE>."
+                            + " <STATE> can be one of STATE_OFF | STATE_ON");
             pw.println("    Note: This command can timeout and failed");
         }
     }
@@ -211,8 +223,12 @@ class BluetoothShellCommand extends BasicShellCommandHandler {
             if (bt_cmd.isPrivileged()) {
                 final int uid = Binder.getCallingUid();
                 if (uid != Process.ROOT_UID) {
-                    throw new SecurityException("Uid " + uid + " does not have access to "
-                            + cmd + " bluetooth command");
+                    throw new SecurityException(
+                            "Uid "
+                                    + uid
+                                    + " does not have access to "
+                                    + cmd
+                                    + " bluetooth command");
                 }
             }
             try {
@@ -246,6 +262,7 @@ class BluetoothShellCommand extends BasicShellCommandHandler {
             bt_cmd.onHelp(pw);
         }
     }
+
     @Override
     public void onHelp() {
         printHelp(getOutPrintWriter());

@@ -17,11 +17,14 @@
 package com.android.bluetooth.channelsoundingtestapp;
 
 import android.app.Application;
+
 import androidx.annotation.NonNull;
 import androidx.lifecycle.AndroidViewModel;
 import androidx.lifecycle.LiveData;
 import androidx.lifecycle.MutableLiveData;
+
 import com.android.bluetooth.channelsoundingtestapp.DistanceMeasurementInitiator.BtDistanceMeasurementCallback;
+
 import java.util.List;
 
 /** ViewModel for the Initiator. */

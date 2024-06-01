@@ -31,7 +31,9 @@ import android.bluetooth.le.DistanceMeasurementResult;
 import android.bluetooth.le.DistanceMeasurementSession;
 import android.content.Context;
 import android.util.Pair;
+
 import androidx.annotation.Nullable;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
