@@ -10,9 +10,7 @@ use crate::dbus_iface::{
 };
 use crate::{console_red, console_yellow, print_error, print_info};
 use crate::{ClientContext, GattRequest};
-use bt_topshim::btif::{
-    BtBondState, BtPropertyType, BtSspVariant, BtStatus, RawAddress, Uuid128Bit,
-};
+use bt_topshim::btif::{BtBondState, BtPropertyType, BtSspVariant, BtStatus, RawAddress, Uuid};
 use bt_topshim::profiles::gatt::{AdvertisingStatus, GattStatus, LePhy};
 use bt_topshim::profiles::hfp::HfpCodecId;
 use bt_topshim::profiles::le_audio::{
@@ -39,7 +37,6 @@ use btstack::socket_manager::{
     IBluetoothSocketManagerCallbacks, SocketId,
 };
 use btstack::suspend::ISuspendCallback;
-use btstack::uuid::UuidWrapper;
 use btstack::{RPCProxy, SuspendMode};
 use chrono::{TimeZone, Utc};
 use dbus::nonblock::SyncConnection;
@@ -304,14 +301,14 @@ impl IBluetoothCallback for BtCallback {
     fn on_sdp_search_complete(
         &mut self,
         remote_device: BluetoothDevice,
-        searched_uuid: Uuid128Bit,
+        searched_uuid: Uuid,
         sdp_records: Vec<BtSdpRecord>,
     ) {
         print_info!(
             "SDP search of [{}: {:?}] for UUID {} returned {} results",
             remote_device.address.to_string(),
             remote_device.name,
-            UuidWrapper(&searched_uuid),
+            searched_uuid,
             sdp_records.len()
         );
         if !sdp_records.is_empty() {
@@ -419,17 +416,13 @@ impl ScannerCallback {
 }
 
 impl IScannerCallback for ScannerCallback {
-    fn on_scanner_registered(&mut self, uuid: Uuid128Bit, scanner_id: u8, status: GattStatus) {
+    fn on_scanner_registered(&mut self, uuid: Uuid, scanner_id: u8, status: GattStatus) {
         if status != GattStatus::Success {
             print_error!("Failed registering scanner, status = {}", status);
             return;
         }
 
-        print_info!(
-            "Scanner callback registered, uuid = {}, id = {}",
-            UuidWrapper(&uuid),
-            scanner_id
-        );
+        print_info!("Scanner callback registered, uuid = {}, id = {}", uuid, scanner_id);
     }
 
     fn on_scan_result(&mut self, scan_result: ScanResult) {
@@ -491,8 +484,11 @@ impl AdminCallback {
 }
 
 impl IBluetoothAdminPolicyCallback for AdminCallback {
-    fn on_service_allowlist_changed(&mut self, allowlist: Vec<Uuid128Bit>) {
-        print_info!("new allowlist: {:?}", allowlist);
+    fn on_service_allowlist_changed(&mut self, allowlist: Vec<Uuid>) {
+        print_info!(
+            "new allowlist: [{}]",
+            allowlist.into_iter().map(|uu| uu.to_string()).collect::<Vec<String>>().join(", ")
+        );
     }
 
     fn on_device_policy_effect_changed(

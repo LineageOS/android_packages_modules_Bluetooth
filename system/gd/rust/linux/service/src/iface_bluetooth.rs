@@ -1,7 +1,6 @@
 use bt_topshim::btif::{
     BtAddrType, BtBondState, BtConnectionState, BtDeviceType, BtDiscMode, BtPropertyType,
     BtSspVariant, BtStatus, BtTransport, BtVendorProductInfo, DisplayAddress, RawAddress, Uuid,
-    Uuid128Bit,
 };
 use bt_topshim::profiles::socket::SocketType;
 use bt_topshim::profiles::ProfileConnectionState;
@@ -42,16 +41,28 @@ use std::sync::{Arc, Mutex};
 use crate::dbus_arg::{DBusArg, DBusArgError, DirectDBus, RefArgToRust};
 
 // Represents Uuid as an array in D-Bus.
-impl_dbus_arg_from_into!(Uuid, Vec<u8>);
+impl DBusArg for Uuid {
+    type DBusType = Vec<u8>;
+    fn from_dbus(
+        data: Vec<u8>,
+        _conn: Option<Arc<SyncConnection>>,
+        _remote: Option<dbus::strings::BusName<'static>>,
+        _disconnect_watcher: Option<Arc<Mutex<dbus_projection::DisconnectWatcher>>>,
+    ) -> Result<Uuid, Box<dyn std::error::Error>> {
+        Ok(Uuid::try_from(data.clone()).or_else(|_| {
+            Err(format!(
+                "Invalid Uuid: first 4 bytes={:?}",
+                data.iter().take(4).collect::<Vec<_>>()
+            ))
+        })?)
+    }
 
-impl RefArgToRust for Uuid {
-    type RustType = Vec<u8>;
+    fn to_dbus(data: Uuid) -> Result<Vec<u8>, Box<dyn std::error::Error>> {
+        Ok(data.try_into()?)
+    }
 
-    fn ref_arg_to_rust(
-        arg: &(dyn dbus::arg::RefArg + 'static),
-        name: String,
-    ) -> Result<Self::RustType, Box<dyn std::error::Error>> {
-        <Vec<u8> as RefArgToRust>::ref_arg_to_rust(arg, name)
+    fn log(data: &Uuid) -> String {
+        format!("{}", data)
     }
 }
 
@@ -146,7 +157,7 @@ impl IBluetoothCallback for BluetoothCallbackDBus {
     fn on_sdp_search_complete(
         &mut self,
         remote_device: BluetoothDevice,
-        searched_uuid: Uuid128Bit,
+        searched_uuid: Uuid,
         sdp_records: Vec<BtSdpRecord>,
     ) {
         dbus_generated!()
@@ -515,7 +526,7 @@ impl IBluetooth for IBluetoothDBus {
     }
 
     #[dbus_method("GetUuids", DBusLog::Disable)]
-    fn get_uuids(&self) -> Vec<Uuid128Bit> {
+    fn get_uuids(&self) -> Vec<Uuid> {
         dbus_generated!()
     }
 
@@ -690,12 +701,12 @@ impl IBluetooth for IBluetoothDBus {
     }
 
     #[dbus_method("GetProfileConnectionState", DBusLog::Disable)]
-    fn get_profile_connection_state(&self, profile: Uuid128Bit) -> ProfileConnectionState {
+    fn get_profile_connection_state(&self, profile: Uuid) -> ProfileConnectionState {
         dbus_generated!()
     }
 
     #[dbus_method("GetRemoteUuids", DBusLog::Disable)]
-    fn get_remote_uuids(&self, device: BluetoothDevice) -> Vec<Uuid128Bit> {
+    fn get_remote_uuids(&self, device: BluetoothDevice) -> Vec<Uuid> {
         dbus_generated!()
     }
 
@@ -705,7 +716,7 @@ impl IBluetooth for IBluetoothDBus {
     }
 
     #[dbus_method("SdpSearch")]
-    fn sdp_search(&self, device: BluetoothDevice, uuid: Uuid128Bit) -> bool {
+    fn sdp_search(&self, device: BluetoothDevice, uuid: Uuid) -> bool {
         dbus_generated!()
     }
 

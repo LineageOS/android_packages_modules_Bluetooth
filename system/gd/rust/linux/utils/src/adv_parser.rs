@@ -3,7 +3,6 @@
 use std::collections::HashMap;
 
 use bt_topshim::bindings::root::bluetooth::Uuid;
-use bt_topshim::btif::Uuid128Bit;
 
 // Advertising data types.
 const FLAGS: u8 = 0x01;
@@ -55,19 +54,19 @@ pub fn extract_flags(bytes: &[u8]) -> u8 {
 }
 
 // Helper function to extract service uuids (128bit) from advertising data
-pub fn extract_service_uuids(bytes: &[u8]) -> Vec<Uuid128Bit> {
+pub fn extract_service_uuids(bytes: &[u8]) -> Vec<Uuid> {
     iterate_adv_data(bytes, COMPLETE_LIST_16_BIT_SERVICE_UUIDS)
         .flat_map(|slice| slice.chunks(2))
-        .filter_map(|chunk| Uuid::try_from_little_endian(chunk).ok().map(|uuid| uuid.uu))
+        .filter_map(|chunk| Uuid::try_from_little_endian(chunk).ok())
         .chain(
             iterate_adv_data(bytes, COMPLETE_LIST_32_BIT_SERVICE_UUIDS)
                 .flat_map(|slice| slice.chunks(4))
-                .filter_map(|chunk| Uuid::try_from_little_endian(chunk).ok().map(|uuid| uuid.uu)),
+                .filter_map(|chunk| Uuid::try_from_little_endian(chunk).ok()),
         )
         .chain(
             iterate_adv_data(bytes, COMPLETE_LIST_128_BIT_SERVICE_UUIDS)
                 .flat_map(|slice| slice.chunks(16))
-                .filter_map(|chunk| Uuid::try_from_little_endian(chunk).ok().map(|uuid| uuid.uu)),
+                .filter_map(|chunk| Uuid::try_from_little_endian(chunk).ok()),
         )
         .collect()
 }
@@ -190,7 +189,6 @@ mod tests {
                 0x0, 0x0, 0xFE, 0x2C, 0x0, 0x0, 0x10, 0x0, 0x80, 0x0, 0x0, 0x80, 0x5f, 0x9b, 0x34,
                 0xfb
             ])
-            .uu
         );
         assert_eq!(
             uuids[1],
@@ -198,9 +196,8 @@ mod tests {
                 0x5, 0x4, 0x3, 0x2, 0x0, 0x0, 0x10, 0x0, 0x80, 0x0, 0x0, 0x80, 0x5f, 0x9b, 0x34,
                 0xfb
             ])
-            .uu
         );
-        assert_eq!(uuids[2], Uuid::from([15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0]).uu);
+        assert_eq!(uuids[2], Uuid::from([15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0]));
     }
 
     #[test]
