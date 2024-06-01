@@ -299,7 +299,7 @@ void cl_op_cmpl(tGAP_CLCB& clcb, bool status, uint16_t len, uint8_t* p_name) {
 
 /** Client connection callback */
 void client_connect_cback(tGATT_IF, const RawAddress& bda, uint16_t conn_id,
-                          bool connected, tGATT_DISCONN_REASON reason,
+                          bool connected, tGATT_DISCONN_REASON /* reason */,
                           tBT_TRANSPORT) {
   tGAP_CLCB* p_clcb = find_clcb_by_bd_addr(bda);
   if (p_clcb == NULL) {

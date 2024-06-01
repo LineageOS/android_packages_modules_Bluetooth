@@ -207,7 +207,7 @@ static uint8_t srvc_eng_process_read_req(uint8_t clcb_idx,
 /*******************************************************************************
  *   Service Engine Server Attributes Database write Request process
  ******************************************************************************/
-static uint8_t srvc_eng_process_write_req(uint8_t clcb_idx,
+static uint8_t srvc_eng_process_write_req(uint8_t /* clcb_idx */,
                                           tGATT_WRITE_REQ* p_data,
                                           tGATTS_RSP* /* p_rsp */,
                                           tGATT_STATUS* p_status) {
@@ -321,7 +321,8 @@ static void srvc_eng_c_cmpl_cback(uint16_t conn_id, tGATTC_OPTYPE op,
  ******************************************************************************/
 static void srvc_eng_connect_cback(tGATT_IF /* gatt_if */,
                                    const RawAddress& bda, uint16_t conn_id,
-                                   bool connected, tGATT_DISCONN_REASON reason,
+                                   bool connected,
+                                   tGATT_DISCONN_REASON /* reason */,
                                    tBT_TRANSPORT /* transport */) {
   log::verbose("from {} connected:{} conn_id={}", bda, connected, conn_id);
 

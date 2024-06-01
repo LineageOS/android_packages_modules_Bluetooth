@@ -217,7 +217,7 @@ void gatt_free(void) {
  ******************************************************************************/
 bool gatt_connect(const RawAddress& rem_bda, tBLE_ADDR_TYPE addr_type,
                   tGATT_TCB* p_tcb, tBT_TRANSPORT transport,
-                  uint8_t initiating_phys, tGATT_IF gatt_if) {
+                  uint8_t /* initiating_phys */, tGATT_IF gatt_if) {
   if (gatt_get_ch_state(p_tcb) != GATT_CH_OPEN)
     gatt_set_ch_state(p_tcb, GATT_CH_CONN);
 
@@ -466,7 +466,7 @@ bool gatt_act_connect(tGATT_REG* p_reg, const RawAddress& bd_addr,
 }
 
 namespace connection_manager {
-void on_connection_timed_out(uint8_t app_id, const RawAddress& address) {
+void on_connection_timed_out(uint8_t /* app_id */, const RawAddress& address) {
   if (com::android::bluetooth::flags::enumerate_gatt_errors()) {
     gatt_le_connect_cback(L2CAP_ATT_CID, address, false, 0x08, BT_TRANSPORT_LE);
   } else {
@@ -478,9 +478,9 @@ void on_connection_timed_out(uint8_t app_id, const RawAddress& address) {
 /** This callback function is called by L2CAP to indicate that the ATT fixed
  * channel for LE is connected (conn = true)/disconnected (conn = false).
  */
-static void gatt_le_connect_cback(uint16_t chan, const RawAddress& bd_addr,
-                                  bool connected, uint16_t reason,
-                                  tBT_TRANSPORT transport) {
+static void gatt_le_connect_cback(uint16_t /* chan */,
+                                  const RawAddress& bd_addr, bool connected,
+                                  uint16_t reason, tBT_TRANSPORT transport) {
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, transport);
   bool check_srv_chg = false;
   tGATTS_SRV_CHG* p_srv_chg_clt = NULL;
@@ -738,9 +738,8 @@ static void gatt_le_cong_cback(const RawAddress& remote_bda, bool congested) {
  * Returns          void
  *
  ******************************************************************************/
-static void gatt_le_data_ind(uint16_t chan, const RawAddress& bd_addr,
+static void gatt_le_data_ind(uint16_t /* chan */, const RawAddress& bd_addr,
                              BT_HDR* p_buf) {
-
   /* Find CCB based on bd addr */
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, BT_TRANSPORT_LE);
   if (p_tcb) {
@@ -772,7 +771,7 @@ static void gatt_le_data_ind(uint16_t chan, const RawAddress& bd_addr,
  ******************************************************************************/
 static void gatt_l2cif_connect_ind_cback(const RawAddress& bd_addr,
                                          uint16_t lcid, uint16_t /* psm */,
-                                         uint8_t id) {
+                                         uint8_t /* id */) {
   uint8_t result = L2CAP_CONN_OK;
   log::info("Connection indication cid = {}", lcid);
 
@@ -804,7 +803,7 @@ static void gatt_l2cif_connect_ind_cback(const RawAddress& bd_addr,
   gatt_set_ch_state(p_tcb, GATT_CH_CFG);
 }
 
-static void gatt_on_l2cap_error(uint16_t lcid, uint16_t result) {
+static void gatt_on_l2cap_error(uint16_t lcid, uint16_t /* result */) {
   tGATT_TCB* p_tcb = gatt_find_tcb_by_cid(lcid);
   if (p_tcb == nullptr) return;
   if (gatt_get_ch_state(p_tcb) == GATT_CH_CONN) {
@@ -834,7 +833,7 @@ static void gatt_l2cif_connect_cfm_cback(uint16_t lcid, uint16_t result) {
 }
 
 /** This is the L2CAP config confirm callback function */
-void gatt_l2cif_config_cfm_cback(uint16_t lcid, uint16_t initiator,
+void gatt_l2cif_config_cfm_cback(uint16_t lcid, uint16_t /* initiator */,
                                  tL2CAP_CFG_INFO* p_cfg) {
   gatt_l2cif_config_ind_cback(lcid, p_cfg);
 
@@ -874,8 +873,7 @@ void gatt_l2cif_config_ind_cback(uint16_t lcid, tL2CAP_CFG_INFO* p_cfg) {
 }
 
 /** This is the L2CAP disconnect indication callback function */
-void gatt_l2cif_disconnect_ind_cback(uint16_t lcid, bool ack_needed) {
-
+void gatt_l2cif_disconnect_ind_cback(uint16_t lcid, bool /* ack_needed */) {
   /* look up clcb for this channel */
   tGATT_TCB* p_tcb = gatt_find_tcb_by_cid(lcid);
   if (!p_tcb) return;

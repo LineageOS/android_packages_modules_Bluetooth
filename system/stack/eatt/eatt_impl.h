@@ -132,8 +132,9 @@ struct eatt_impl {
   }
 
   bool eatt_l2cap_connect_ind_common(const RawAddress& bda,
-                                     std::vector<uint16_t>& lcids, uint16_t psm,
-                                     uint16_t peer_mtu, uint8_t identifier) {
+                                     std::vector<uint16_t>& lcids,
+                                     uint16_t /* psm */, uint16_t peer_mtu,
+                                     uint8_t identifier) {
     /* The assumption is that L2CAP layer already check parameters etc.
      * Get our capabilities and accept all the channels.
      */
@@ -504,7 +505,7 @@ struct eatt_impl {
     }
   }
 
-  void eatt_l2cap_disconnect_ind(uint16_t lcid, bool please_confirm) {
+  void eatt_l2cap_disconnect_ind(uint16_t lcid, bool /* please_confirm */) {
     log::info("cid: 0x{:x}", lcid);
     eatt_device* eatt_dev = find_device_by_cid(lcid);
     if (!eatt_dev) {
