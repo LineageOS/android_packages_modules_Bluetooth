@@ -192,7 +192,7 @@ bool btif_get_device_clockoffset(const RawAddress& bda, int* p_clock_offset) {
                            p_clock_offset))
     return false;
 
-  log::debug("Device [{}] clock_offset {}", bd_addr_str, *p_clock_offset);
+  log::debug("Device [{}] clock_offset {}", bda, *p_clock_offset);
   return true;
 }
 
@@ -205,7 +205,7 @@ bool btif_set_device_clockoffset(const RawAddress& bda, int clock_offset) {
                            clock_offset))
     return false;
 
-  log::debug("Device [{}] clock_offset {}", bd_addr_str, clock_offset);
+  log::debug("Device [{}] clock_offset {}", bda, clock_offset);
   return true;
 }
 
