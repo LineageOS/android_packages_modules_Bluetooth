@@ -35,6 +35,7 @@ import pandora.DckGrpc;
 import pandora.GATTGrpc;
 import pandora.HostGrpc;
 import pandora.HostProto;
+import pandora.RFCOMMGrpc;
 import pandora.SecurityGrpc;
 
 public final class PandoraDevice extends ExternalResource {
@@ -140,5 +141,15 @@ public final class PandoraDevice extends ExternalResource {
     /** Get Pandora GATT blocking service */
     public GATTGrpc.GATTBlockingStub gattBlocking() {
         return GATTGrpc.newBlockingStub(mChannel);
+    }
+
+    /** Get Pandora RFCOMM service */
+    public RFCOMMGrpc.RFCOMMStub rfcomm() {
+        return RFCOMMGrpc.newStub(mChannel);
+    }
+
+    /** Get Pandora RFCOMM blocking service */
+    public RFCOMMGrpc.RFCOMMBlockingStub rfcommBlocking() {
+        return RFCOMMGrpc.newBlockingStub(mChannel);
     }
 }

@@ -23,10 +23,12 @@ from bumble.pandora import PandoraDevice, Config, serve
 from bumble_experimental.asha import AshaService
 from bumble_experimental.dck import DckService
 from bumble_experimental.gatt import GATTService
+from bumble_experimental.rfcomm import RFCOMMService
 
 from pandora_experimental.asha_grpc_aio import add_AshaServicer_to_server
 from pandora_experimental.dck_grpc_aio import add_DckServicer_to_server
 from pandora_experimental.gatt_grpc_aio import add_GATTServicer_to_server
+from pandora_experimental.rfcomm_grpc_aio import add_RFCOMMServicer_to_server
 
 from typing import Dict, Any
 
@@ -73,6 +75,8 @@ def register_experimental_services():
         lambda bumble, _, server: add_DckServicer_to_server(DckService(bumble.device), server))
     bumble_server.register_servicer_hook(
         lambda bumble, _, server: add_GATTServicer_to_server(GATTService(bumble.device), server))
+    bumble_server.register_servicer_hook(
+        lambda bumble, _, server: add_RFCOMMServicer_to_server(RFCOMMService(bumble.device), server))
 
 
 def retrieve_config(config: str) -> Dict[str, Any]:

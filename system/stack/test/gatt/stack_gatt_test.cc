@@ -25,6 +25,7 @@
 #include <string>
 
 #include "common/strings.h"
+#include "gd/os/rand.h"
 #include "osi/include/allocator.h"
 #include "stack/gatt/gatt_int.h"
 #include "stack/include/bt_types.h"
@@ -159,8 +160,10 @@ TEST_F(StackGattTest, GATT_Register_Deregister) {
 
   for (int i = 0; i < GATT_MAX_APPS - 1; i++) {
     std::string name = bluetooth::common::StringFormat("name%02d", i);
-    apps[i] = GATT_Register(bluetooth::Uuid::GetRandom(), name, &gatt_callbacks,
-                            false);
+
+    bluetooth::Uuid uuid = bluetooth::Uuid::From128BitBE(
+        bluetooth::os::GenerateRandom<bluetooth::Uuid::kNumBytes128>());
+    apps[i] = GATT_Register(uuid, name, &gatt_callbacks, false);
   }
 
   for (int i = 0; i < GATT_MAX_APPS - 1; i++) {

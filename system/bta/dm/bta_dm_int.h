@@ -43,8 +43,6 @@
  *  Constants and data types
  ****************************************************************************/
 
-#define BTA_DM_MSG_LEN 50
-
 #define BTA_DM_NUM_PEER_DEVICE 7
 
 enum class tBTA_DM_CONN_STATE : uint8_t {

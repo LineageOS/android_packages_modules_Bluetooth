@@ -32,6 +32,7 @@
 #include "btif/include/btif_sock_thread.h"
 #include "btif/include/btif_sock_util.h"
 #include "btif/include/btif_uid.h"
+#include "gd/os/rand.h"
 #include "include/hardware/bluetooth.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
@@ -514,7 +515,9 @@ static void on_srv_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open,
   accept_rs->tx_mtu = sock->tx_mtu = p_open->tx_mtu;
   accept_rs->local_cid = p_open->local_cid;
   accept_rs->remote_cid = p_open->remote_cid;
-  accept_rs->conn_uuid = Uuid::GetRandom();
+  Uuid uuid =
+      Uuid::From128BitBE(bluetooth::os::GenerateRandom<Uuid::kNumBytes128>());
+  accept_rs->conn_uuid = uuid;
 
   /* Swap IDs to hand over the GAP connection to the accepted socket, and start
      a new server on the newly create socket ID. */
@@ -554,7 +557,9 @@ static void on_cl_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open,
   sock->tx_mtu = p_open->tx_mtu;
   sock->local_cid = p_open->local_cid;
   sock->remote_cid = p_open->remote_cid;
-  sock->conn_uuid = Uuid::GetRandom();
+  Uuid uuid =
+      Uuid::From128BitBE(bluetooth::os::GenerateRandom<Uuid::kNumBytes128>());
+  sock->conn_uuid = uuid;
 
   if (!send_app_psm_or_chan_l(sock)) {
     log::error("Unable to send l2cap socket to application socket_id:{}",
