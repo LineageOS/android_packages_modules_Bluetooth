@@ -70,7 +70,7 @@ public class AdapterServiceBinderTest {
     @Test
     public void dump() {
         FileDescriptor fd = new FileDescriptor();
-        String[] args = new String[] { };
+        String[] args = new String[] {};
         mBinder.dump(fd, args);
         verify(mService).dump(any(), any(), any());
 

@@ -24,7 +24,9 @@ final class DiscoveringPackage {
     private @Nullable String mPermission;
     private boolean mHasDisavowedLocation;
 
-    DiscoveringPackage(@NonNull String packageName, @Nullable String permission,
+    DiscoveringPackage(
+            @NonNull String packageName,
+            @Nullable String permission,
             boolean hasDisavowedLocation) {
         mPackageName = packageName;
         mPermission = permission;

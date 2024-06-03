@@ -32,20 +32,20 @@ import com.android.bluetooth.avrcpcontroller.AvrcpControllerService;
 /**
  * Bluetooth A2DP SINK Streaming Handler.
  *
- * This handler defines how the stack behaves once the A2DP connection is established and both
+ * <p>This handler defines how the stack behaves once the A2DP connection is established and both
  * devices are ready for streaming. For simplification we assume that the connection can either
  * stream music immediately (i.e. data packets coming in or have potential to come in) or it cannot
  * stream (i.e. Idle and Open states are treated alike). See Fig 4-1 of GAVDP Spec 1.0.
  *
- * Note: There are several different audio tracks that a connected phone may like to transmit over
- * the A2DP stream including Music, Navigation, Assistant, and Notifications.  Music is the only
+ * <p>Note: There are several different audio tracks that a connected phone may like to transmit
+ * over the A2DP stream including Music, Navigation, Assistant, and Notifications. Music is the only
  * track that is almost always accompanied with an AVRCP play/pause command.
  *
- * Streaming is initiated by either an explicit play command from user interaction or audio coming
- * from the phone.  Streaming is terminated when either the user pauses the audio, the audio stream
- * from the phone ends, the phone disconnects, or audio focus is lost.  During playback if there is
- * a change to audio focus playback may be temporarily paused and then resumed when focus is
- * restored.
+ * <p>Streaming is initiated by either an explicit play command from user interaction or audio
+ * coming from the phone. Streaming is terminated when either the user pauses the audio, the audio
+ * stream from the phone ends, the phone disconnects, or audio focus is lost. During playback if
+ * there is a change to audio focus playback may be temporarily paused and then resumed when focus
+ * is restored.
  */
 public class A2dpSinkStreamHandler extends Handler {
     private static final String TAG = A2dpSinkStreamHandler.class.getSimpleName();
@@ -89,25 +89,25 @@ public class A2dpSinkStreamHandler extends Handler {
     private MediaPlayer mMediaPlayer = null;
 
     // Focus changes when we are currently holding focus.
-    private OnAudioFocusChangeListener mAudioFocusListener = new OnAudioFocusChangeListener() {
-        @Override
-        public void onAudioFocusChange(int focusChange) {
-            Log.d(TAG, "onAudioFocusChangeListener(focusChange= " + focusChange + ")");
-            A2dpSinkStreamHandler.this.obtainMessage(AUDIO_FOCUS_CHANGE, focusChange)
-                    .sendToTarget();
-        }
-    };
+    private OnAudioFocusChangeListener mAudioFocusListener =
+            new OnAudioFocusChangeListener() {
+                @Override
+                public void onAudioFocusChange(int focusChange) {
+                    Log.d(TAG, "onAudioFocusChangeListener(focusChange= " + focusChange + ")");
+                    A2dpSinkStreamHandler.this
+                            .obtainMessage(AUDIO_FOCUS_CHANGE, focusChange)
+                            .sendToTarget();
+                }
+            };
 
-    public A2dpSinkStreamHandler(A2dpSinkService a2dpSinkService,
-            A2dpSinkNativeInterface nativeInterface) {
+    public A2dpSinkStreamHandler(
+            A2dpSinkService a2dpSinkService, A2dpSinkNativeInterface nativeInterface) {
         mA2dpSinkService = a2dpSinkService;
         mNativeInterface = nativeInterface;
         mAudioManager = mA2dpSinkService.getSystemService(AudioManager.class);
     }
 
-    /**
-     * Safely clean up this stream handler object
-     */
+    /** Safely clean up this stream handler object */
     public void cleanup() {
         abandonAudioFocus();
         removeCallbacksAndMessages(null);
@@ -124,7 +124,7 @@ public class A2dpSinkStreamHandler extends Handler {
     boolean isPlaying() {
         return (mStreamAvailable
                 && (mAudioFocus == AudioManager.AUDIOFOCUS_GAIN
-                || mAudioFocus == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK));
+                        || mAudioFocus == AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK));
     }
 
     @Override
@@ -177,8 +177,12 @@ public class A2dpSinkStreamHandler extends Handler {
 
             case AUDIO_FOCUS_CHANGE:
                 final int focusChangeCode = (int) message.obj;
-                Log.d(TAG, "New audioFocus =  " + focusChangeCode
-                        + " Previous audio focus = " + mAudioFocus);
+                Log.d(
+                        TAG,
+                        "New audioFocus =  "
+                                + focusChangeCode
+                                + " Previous audio focus = "
+                                + mAudioFocus);
                 mAudioFocus = focusChangeCode;
                 // message.obj is the newly granted audio focus.
                 switch (mAudioFocus) {
@@ -189,8 +193,10 @@ public class A2dpSinkStreamHandler extends Handler {
 
                     case AudioManager.AUDIOFOCUS_LOSS_TRANSIENT_CAN_DUCK:
                         // Make the volume duck.
-                        int duckPercent = mA2dpSinkService.getResources()
-                                .getInteger(R.integer.a2dp_sink_duck_percent);
+                        int duckPercent =
+                                mA2dpSinkService
+                                        .getResources()
+                                        .getInteger(R.integer.a2dp_sink_duck_percent);
                         if (duckPercent < 0 || duckPercent > 100) {
                             Log.e(TAG, "Invalid duck percent using default.");
                             duckPercent = DEFAULT_DUCK_PERCENT;
@@ -226,9 +232,7 @@ public class A2dpSinkStreamHandler extends Handler {
         }
     }
 
-    /**
-     * Utility functions.
-     */
+    /** Utility functions. */
     private void requestAudioFocusIfNone() {
         Log.d(TAG, "requestAudioFocusIfNone()");
         if (mAudioFocus != AudioManager.AUDIOFOCUS_GAIN) {
@@ -241,21 +245,22 @@ public class A2dpSinkStreamHandler extends Handler {
         // Bluetooth A2DP may carry Music, Audio Books, Navigation, or other sounds so mark content
         // type unknown.
         AudioAttributes streamAttributes =
-                new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA)
+                new AudioAttributes.Builder()
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
                         .setContentType(AudioAttributes.CONTENT_TYPE_UNKNOWN)
                         .build();
         // Bluetooth ducking is handled at the native layer at the request of AudioManager.
         AudioFocusRequest focusRequest =
-                new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN).setAudioAttributes(
-                        streamAttributes)
+                new AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+                        .setAudioAttributes(streamAttributes)
                         .setOnAudioFocusChangeListener(mAudioFocusListener, this)
                         .build();
         int focusRequestStatus = mAudioManager.requestAudioFocus(focusRequest);
         // If the request is granted begin streaming immediately and schedule an upgrade.
         if (focusRequestStatus == AudioManager.AUDIOFOCUS_REQUEST_GRANTED) {
             mAudioFocus = AudioManager.AUDIOFOCUS_GAIN;
-            final Message a2dpSinkStreamHandlerMessage = A2dpSinkStreamHandler.this
-                    .obtainMessage(AUDIO_FOCUS_CHANGE, mAudioFocus);
+            final Message a2dpSinkStreamHandlerMessage =
+                    A2dpSinkStreamHandler.this.obtainMessage(AUDIO_FOCUS_CHANGE, mAudioFocus);
             A2dpSinkStreamHandler.this.sendMessageAtFrontOfQueue(a2dpSinkStreamHandlerMessage);
         } else {
             Log.e(TAG, "Audio focus was not granted:" + focusRequestStatus);
@@ -267,32 +272,36 @@ public class A2dpSinkStreamHandler extends Handler {
      * Plays a silent audio sample so that MediaSessionService will be aware of the fact that
      * Bluetooth is playing audio.
      *
-     * Creates a new MediaPlayer if one does not already exist. Repeat calls to this function are
+     * <p>Creates a new MediaPlayer if one does not already exist. Repeat calls to this function are
      * safe and will result in the silent audio sample again.
      *
-     * This allows the MediaSession in AVRCP Controller to be routed media key events, if we've
+     * <p>This allows the MediaSession in AVRCP Controller to be routed media key events, if we've
      * chosen to use it.
      */
     private synchronized void requestMediaKeyFocus() {
         Log.d(TAG, "requestMediaKeyFocus()");
         if (mMediaPlayer == null) {
-            AudioAttributes attrs = new AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_MEDIA)
-                    .build();
+            AudioAttributes attrs =
+                    new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_MEDIA).build();
 
-            mMediaPlayer = MediaPlayer.create(mA2dpSinkService, R.raw.silent, attrs,
-                    mAudioManager.generateAudioSessionId());
+            mMediaPlayer =
+                    MediaPlayer.create(
+                            mA2dpSinkService,
+                            R.raw.silent,
+                            attrs,
+                            mAudioManager.generateAudioSessionId());
             if (mMediaPlayer == null) {
                 Log.e(TAG, "Failed to initialize media player. You may not get media key events");
                 return;
             }
 
             mMediaPlayer.setLooping(false);
-            mMediaPlayer.setOnErrorListener((mp, what, extra) -> {
-                Log.e(TAG, "Silent media player error: " + what + ", " + extra);
-                releaseMediaKeyFocus();
-                return false;
-            });
+            mMediaPlayer.setOnErrorListener(
+                    (mp, what, extra) -> {
+                        Log.e(TAG, "Silent media player error: " + what + ", " + extra);
+                        releaseMediaKeyFocus();
+                        return false;
+                    });
         }
 
         mMediaPlayer.start();
@@ -306,8 +315,8 @@ public class A2dpSinkStreamHandler extends Handler {
     }
 
     /**
-     * Destroys the silent audio sample MediaPlayer, notifying MediaSessionService of the fact
-     * we're no longer playing audio.
+     * Destroys the silent audio sample MediaPlayer, notifying MediaSessionService of the fact we're
+     * no longer playing audio.
      */
     private synchronized void releaseMediaKeyFocus() {
         Log.d(TAG, "releaseMediaKeyFocus()");
@@ -335,17 +344,20 @@ public class A2dpSinkStreamHandler extends Handler {
     }
 
     private boolean isIotDevice() {
-        return mA2dpSinkService.getPackageManager().hasSystemFeature(
-                PackageManager.FEATURE_EMBEDDED);
+        return mA2dpSinkService
+                .getPackageManager()
+                .hasSystemFeature(PackageManager.FEATURE_EMBEDDED);
     }
 
     private boolean isTvDevice() {
-        return mA2dpSinkService.getPackageManager().hasSystemFeature(
-                PackageManager.FEATURE_LEANBACK);
+        return mA2dpSinkService
+                .getPackageManager()
+                .hasSystemFeature(PackageManager.FEATURE_LEANBACK);
     }
 
     private boolean shouldRequestFocus() {
-        return mA2dpSinkService.getResources()
+        return mA2dpSinkService
+                .getResources()
                 .getBoolean(R.bool.a2dp_sink_automatically_request_audio_focus);
     }
 }

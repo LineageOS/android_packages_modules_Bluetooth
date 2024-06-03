@@ -36,7 +36,9 @@ public class BluetoothPbapRequestPullPhoneBookSizeTest {
 
     @Before
     public void setUp() {
-        mRequest = new BluetoothPbapRequestPullPhoneBookSize(/*pbName=*/"phonebook", /*filter=*/1);
+        mRequest =
+                new BluetoothPbapRequestPullPhoneBookSize(
+                        /* pbName= */ "phonebook", /* filter= */ 1);
     }
 
     @Test

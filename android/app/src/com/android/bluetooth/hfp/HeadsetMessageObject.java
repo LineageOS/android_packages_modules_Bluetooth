@@ -17,9 +17,7 @@ package com.android.bluetooth.hfp;
 
 import android.os.Message;
 
-/**
- * An object passed through {@link Message#obj} on state machines
- */
+/** An object passed through {@link Message#obj} on state machines */
 public abstract class HeadsetMessageObject {
     /**
      * Build a representation of this object in a {@link StringBuilder}

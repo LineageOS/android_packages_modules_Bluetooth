@@ -17,9 +17,7 @@
 
 package com.android.bluetooth.mcp;
 
-/**
- * Objects IDs definition
- */
+/** Objects IDs definition */
 public final class ObjectIds {
     public static final int PLAYER_ICON_OBJ_ID = (int) ServiceFeature.PLAYER_ICON_OBJ_ID;
     public static final int CURRENT_TRACK_SEGMENT_OBJ_ID =
@@ -29,6 +27,7 @@ public final class ObjectIds {
     public static final int CURRENT_GROUP_OBJ_ID = (int) ServiceFeature.CURRENT_GROUP_OBJ_ID;
     public static final int PARENT_GROUP_OBJ_ID = (int) ServiceFeature.PARENT_GROUP_OBJ_ID;
     public static final int SEARCH_RESULT_OBJ_ID = (int) ServiceFeature.SEARCH_RESULT_OBJ_ID;
+
     private ObjectIds() {
         // not called
     }

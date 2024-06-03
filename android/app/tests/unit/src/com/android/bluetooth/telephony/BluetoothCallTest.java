@@ -80,8 +80,8 @@ public class BluetoothCallTest {
 
     @Test
     public void getRemainingPostDialSequence_whenInnerCallIsNull_throwsNPE() {
-        assertThrows(NullPointerException.class,
-                () -> mBluetoothCall.getRemainingPostDialSequence());
+        assertThrows(
+                NullPointerException.class, () -> mBluetoothCall.getRemainingPostDialSequence());
     }
 
     @Test
@@ -116,13 +116,14 @@ public class BluetoothCallTest {
 
     @Test
     public void enterBackgroundAudioProcessing_whenInnerCallIsNull_throwsNPE() {
-        assertThrows(NullPointerException.class,
-                () -> mBluetoothCall.enterBackgroundAudioProcessing());
+        assertThrows(
+                NullPointerException.class, () -> mBluetoothCall.enterBackgroundAudioProcessing());
     }
 
     @Test
     public void exitBackgroundAudioProcessing_whenInnerCallIsNull_throwsNPE() {
-        assertThrows(NullPointerException.class,
+        assertThrows(
+                NullPointerException.class,
                 () -> mBluetoothCall.exitBackgroundAudioProcessing(true));
     }
 
@@ -143,8 +144,8 @@ public class BluetoothCallTest {
 
     @Test
     public void phoneAccountSelected_whenInnerCallIsNull_throwsNPE() {
-        assertThrows(NullPointerException.class,
-                () -> mBluetoothCall.phoneAccountSelected(null, true));
+        assertThrows(
+                NullPointerException.class, () -> mBluetoothCall.phoneAccountSelected(null, true));
     }
 
     @Test
@@ -288,7 +289,8 @@ public class BluetoothCallTest {
 
     @Test
     public void getGenericConferenceActiveChildCallId_whenInnerCallIsNull_throwsNPE() {
-        assertThrows(NullPointerException.class,
+        assertThrows(
+                NullPointerException.class,
                 () -> mBluetoothCall.getGenericConferenceActiveChildCallId());
     }
 
@@ -366,8 +368,8 @@ public class BluetoothCallTest {
 
     @Test
     public void wasConferencePreviouslyMerged_whenInnerCallIsNull_throwsNPE() {
-        assertThrows(NullPointerException.class,
-                () -> mBluetoothCall.wasConferencePreviouslyMerged());
+        assertThrows(
+                NullPointerException.class, () -> mBluetoothCall.wasConferencePreviouslyMerged());
     }
 
     @Test

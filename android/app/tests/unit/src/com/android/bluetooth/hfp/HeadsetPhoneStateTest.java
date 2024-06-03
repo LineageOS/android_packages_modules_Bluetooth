@@ -48,9 +48,7 @@ import org.mockito.junit.MockitoRule;
 
 import java.util.HashMap;
 
-/**
- * Unit test to verify various methods in {@link HeadsetPhoneState}
- */
+/** Unit test to verify various methods in {@link HeadsetPhoneState} */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class HeadsetPhoneStateTest {
@@ -81,18 +79,18 @@ public class HeadsetPhoneStateTest {
         when(mISubBinder.queryLocalInterface(anyString())).thenReturn(mISub);
         mServiceManagerMockedServices.put("isub", mISubBinder);
         mServiceManagerOriginalServices =
-                TestUtils.replaceField(ServiceManager.class, "sCache", null,
-                        mServiceManagerMockedServices);
+                TestUtils.replaceField(
+                        ServiceManager.class, "sCache", null, mServiceManagerMockedServices);
         // Stub other methods
-        when(mHeadsetService.getSystemService(Context.TELEPHONY_SERVICE)).thenReturn(
-                mTelephonyManager);
-        when(mHeadsetService.getSystemServiceName(TelephonyManager.class)).thenReturn(
-                Context.TELEPHONY_SERVICE);
+        when(mHeadsetService.getSystemService(Context.TELEPHONY_SERVICE))
+                .thenReturn(mTelephonyManager);
+        when(mHeadsetService.getSystemServiceName(TelephonyManager.class))
+                .thenReturn(Context.TELEPHONY_SERVICE);
         when(mTelephonyManager.createForSubscriptionId(anyInt())).thenReturn(mTelephonyManager);
-        when(mHeadsetService.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE)).thenReturn(
-                mSubscriptionManager);
-        when(mHeadsetService.getSystemServiceName(SubscriptionManager.class)).thenReturn(
-                Context.TELEPHONY_SUBSCRIPTION_SERVICE);
+        when(mHeadsetService.getSystemService(Context.TELEPHONY_SUBSCRIPTION_SERVICE))
+                .thenReturn(mSubscriptionManager);
+        when(mHeadsetService.getSystemServiceName(SubscriptionManager.class))
+                .thenReturn(Context.TELEPHONY_SUBSCRIPTION_SERVICE);
         mHandlerThread = new HandlerThread("HeadsetStateMachineTestHandlerThread");
         mHandlerThread.start();
         when(mHeadsetService.getStateMachinesThreadLooper()).thenReturn(mHandlerThread.getLooper());
@@ -104,16 +102,14 @@ public class HeadsetPhoneStateTest {
         mHeadsetPhoneState.cleanup();
         mHandlerThread.quit();
         if (mServiceManagerOriginalServices != null) {
-            TestUtils.replaceField(ServiceManager.class, "sCache", null,
-                    mServiceManagerOriginalServices);
+            TestUtils.replaceField(
+                    ServiceManager.class, "sCache", null, mServiceManagerOriginalServices);
             mServiceManagerOriginalServices = null;
         }
         TelephonyManager.enableServiceHandleCaching();
     }
 
-    /**
-     * Verify that {@link PhoneStateListener#LISTEN_NONE} should result in no subscription
-     */
+    /** Verify that {@link PhoneStateListener#LISTEN_NONE} should result in no subscription */
     @Test
     public void testListenForPhoneState_NoneResultsNoListen() {
         BluetoothDevice device1 = TestUtils.getTestDevice(mAdapter, 1);
@@ -130,25 +126,30 @@ public class HeadsetPhoneStateTest {
         BluetoothDevice device1 = TestUtils.getTestDevice(mAdapter, 1);
         mHeadsetPhoneState.listenForPhoneState(device1, PhoneStateListener.LISTEN_SERVICE_STATE);
         verify(mTelephonyManager).listen(any(), eq(PhoneStateListener.LISTEN_SERVICE_STATE));
-        verify(mTelephonyManager).clearSignalStrengthUpdateRequest(
-                any(SignalStrengthUpdateRequest.class));
+        verify(mTelephonyManager)
+                .clearSignalStrengthUpdateRequest(any(SignalStrengthUpdateRequest.class));
         verifyNoMoreInteractions(mTelephonyManager);
     }
 
     /**
-     * Verify that {@link PhoneStateListener#LISTEN_SERVICE_STATE} and
-     * {@link PhoneStateListener#LISTEN_SIGNAL_STRENGTHS} should result in corresponding
-     * subscription
+     * Verify that {@link PhoneStateListener#LISTEN_SERVICE_STATE} and {@link
+     * PhoneStateListener#LISTEN_SIGNAL_STRENGTHS} should result in corresponding subscription
      */
     @Test
     public void testListenForPhoneState_ServiceAndSignalStrength() {
         BluetoothDevice device1 = TestUtils.getTestDevice(mAdapter, 1);
-        mHeadsetPhoneState.listenForPhoneState(device1, PhoneStateListener.LISTEN_SERVICE_STATE
-                | PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
-        verify(mTelephonyManager).listen(any(), eq(PhoneStateListener.LISTEN_SERVICE_STATE
-                | PhoneStateListener.LISTEN_SIGNAL_STRENGTHS));
-        verify(mTelephonyManager).setSignalStrengthUpdateRequest(
-                any(SignalStrengthUpdateRequest.class));
+        mHeadsetPhoneState.listenForPhoneState(
+                device1,
+                PhoneStateListener.LISTEN_SERVICE_STATE
+                        | PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
+        verify(mTelephonyManager)
+                .listen(
+                        any(),
+                        eq(
+                                PhoneStateListener.LISTEN_SERVICE_STATE
+                                        | PhoneStateListener.LISTEN_SIGNAL_STRENGTHS));
+        verify(mTelephonyManager)
+                .setSignalStrengthUpdateRequest(any(SignalStrengthUpdateRequest.class));
     }
 
     /**
@@ -158,37 +159,47 @@ public class HeadsetPhoneStateTest {
     @Test
     public void testListenForPhoneState_ServiceAndSignalStrengthUpdateTurnOffSignalStrengh() {
         BluetoothDevice device1 = TestUtils.getTestDevice(mAdapter, 1);
-        mHeadsetPhoneState.listenForPhoneState(device1, PhoneStateListener.LISTEN_SERVICE_STATE
-                | PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
-        verify(mTelephonyManager).listen(any(), eq(PhoneStateListener.LISTEN_SERVICE_STATE
-                | PhoneStateListener.LISTEN_SIGNAL_STRENGTHS));
-        verify(mTelephonyManager).setSignalStrengthUpdateRequest(
-                any(SignalStrengthUpdateRequest.class));
+        mHeadsetPhoneState.listenForPhoneState(
+                device1,
+                PhoneStateListener.LISTEN_SERVICE_STATE
+                        | PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
+        verify(mTelephonyManager)
+                .listen(
+                        any(),
+                        eq(
+                                PhoneStateListener.LISTEN_SERVICE_STATE
+                                        | PhoneStateListener.LISTEN_SIGNAL_STRENGTHS));
+        verify(mTelephonyManager)
+                .setSignalStrengthUpdateRequest(any(SignalStrengthUpdateRequest.class));
 
         mHeadsetPhoneState.listenForPhoneState(device1, PhoneStateListener.LISTEN_SERVICE_STATE);
         verify(mTelephonyManager).listen(any(), eq(PhoneStateListener.LISTEN_NONE));
         verify(mTelephonyManager).listen(any(), eq(PhoneStateListener.LISTEN_SERVICE_STATE));
-        verify(mTelephonyManager, times(2)).clearSignalStrengthUpdateRequest(
-                any(SignalStrengthUpdateRequest.class));
+        verify(mTelephonyManager, times(2))
+                .clearSignalStrengthUpdateRequest(any(SignalStrengthUpdateRequest.class));
     }
 
-    /**
-     * Verify that completely disabling all updates should unsubscribe from everything
-     */
+    /** Verify that completely disabling all updates should unsubscribe from everything */
     @Test
     public void testListenForPhoneState_ServiceAndSignalStrengthUpdateTurnOffAll() {
         BluetoothDevice device1 = TestUtils.getTestDevice(mAdapter, 1);
-        mHeadsetPhoneState.listenForPhoneState(device1, PhoneStateListener.LISTEN_SERVICE_STATE
-                | PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
-        verify(mTelephonyManager).listen(any(), eq(PhoneStateListener.LISTEN_SERVICE_STATE
-                | PhoneStateListener.LISTEN_SIGNAL_STRENGTHS));
-        verify(mTelephonyManager).setSignalStrengthUpdateRequest(
-                any(SignalStrengthUpdateRequest.class));
+        mHeadsetPhoneState.listenForPhoneState(
+                device1,
+                PhoneStateListener.LISTEN_SERVICE_STATE
+                        | PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
+        verify(mTelephonyManager)
+                .listen(
+                        any(),
+                        eq(
+                                PhoneStateListener.LISTEN_SERVICE_STATE
+                                        | PhoneStateListener.LISTEN_SIGNAL_STRENGTHS));
+        verify(mTelephonyManager)
+                .setSignalStrengthUpdateRequest(any(SignalStrengthUpdateRequest.class));
 
         mHeadsetPhoneState.listenForPhoneState(device1, PhoneStateListener.LISTEN_NONE);
         verify(mTelephonyManager).listen(any(), eq(PhoneStateListener.LISTEN_NONE));
-        verify(mTelephonyManager, times(2)).clearSignalStrengthUpdateRequest(
-                any(SignalStrengthUpdateRequest.class));
+        verify(mTelephonyManager, times(2))
+                .clearSignalStrengthUpdateRequest(any(SignalStrengthUpdateRequest.class));
     }
 
     /**
@@ -201,23 +212,31 @@ public class HeadsetPhoneStateTest {
         BluetoothDevice device1 = TestUtils.getTestDevice(mAdapter, 1);
         BluetoothDevice device2 = TestUtils.getTestDevice(mAdapter, 2);
         // Enabling updates from first device should trigger subscription
-        mHeadsetPhoneState.listenForPhoneState(device1, PhoneStateListener.LISTEN_SERVICE_STATE
-                | PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
-        verify(mTelephonyManager).listen(any(), eq(PhoneStateListener.LISTEN_SERVICE_STATE
-                | PhoneStateListener.LISTEN_SIGNAL_STRENGTHS));
-        verify(mTelephonyManager).setSignalStrengthUpdateRequest(
-                any(SignalStrengthUpdateRequest.class));
+        mHeadsetPhoneState.listenForPhoneState(
+                device1,
+                PhoneStateListener.LISTEN_SERVICE_STATE
+                        | PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
+        verify(mTelephonyManager)
+                .listen(
+                        any(),
+                        eq(
+                                PhoneStateListener.LISTEN_SERVICE_STATE
+                                        | PhoneStateListener.LISTEN_SIGNAL_STRENGTHS));
+        verify(mTelephonyManager)
+                .setSignalStrengthUpdateRequest(any(SignalStrengthUpdateRequest.class));
 
         // Enabling updates from second device should not trigger the same subscription
-        mHeadsetPhoneState.listenForPhoneState(device2, PhoneStateListener.LISTEN_SERVICE_STATE
-                | PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
+        mHeadsetPhoneState.listenForPhoneState(
+                device2,
+                PhoneStateListener.LISTEN_SERVICE_STATE
+                        | PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
         // Disabling updates from first device should not cancel subscription
         mHeadsetPhoneState.listenForPhoneState(device1, PhoneStateListener.LISTEN_NONE);
         // Disabling updates from second device should cancel subscription
         mHeadsetPhoneState.listenForPhoneState(device2, PhoneStateListener.LISTEN_NONE);
         verify(mTelephonyManager).listen(any(), eq(PhoneStateListener.LISTEN_NONE));
-        verify(mTelephonyManager, times(2)).clearSignalStrengthUpdateRequest(
-                any(SignalStrengthUpdateRequest.class));
+        verify(mTelephonyManager, times(2))
+                .clearSignalStrengthUpdateRequest(any(SignalStrengthUpdateRequest.class));
     }
 
     /**
@@ -232,27 +251,29 @@ public class HeadsetPhoneStateTest {
         // Partially enabling updates from first device should trigger partial subscription
         mHeadsetPhoneState.listenForPhoneState(device1, PhoneStateListener.LISTEN_SERVICE_STATE);
         verify(mTelephonyManager).listen(any(), eq(PhoneStateListener.LISTEN_SERVICE_STATE));
-        verify(mTelephonyManager).clearSignalStrengthUpdateRequest(
-                any(SignalStrengthUpdateRequest.class));
+        verify(mTelephonyManager)
+                .clearSignalStrengthUpdateRequest(any(SignalStrengthUpdateRequest.class));
         verifyNoMoreInteractions(mTelephonyManager);
         // Partially enabling updates from second device should trigger partial subscription
-        mHeadsetPhoneState.listenForPhoneState(device2,
-                PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
+        mHeadsetPhoneState.listenForPhoneState(device2, PhoneStateListener.LISTEN_SIGNAL_STRENGTHS);
         verify(mTelephonyManager).listen(any(), eq(PhoneStateListener.LISTEN_NONE));
-        verify(mTelephonyManager).listen(any(), eq(PhoneStateListener.LISTEN_SERVICE_STATE
-                | PhoneStateListener.LISTEN_SIGNAL_STRENGTHS));
-        verify(mTelephonyManager).setSignalStrengthUpdateRequest(
-                any(SignalStrengthUpdateRequest.class));
+        verify(mTelephonyManager)
+                .listen(
+                        any(),
+                        eq(
+                                PhoneStateListener.LISTEN_SERVICE_STATE
+                                        | PhoneStateListener.LISTEN_SIGNAL_STRENGTHS));
+        verify(mTelephonyManager)
+                .setSignalStrengthUpdateRequest(any(SignalStrengthUpdateRequest.class));
 
         // Partially disabling updates from first device should not cancel all subscription
         mHeadsetPhoneState.listenForPhoneState(device1, PhoneStateListener.LISTEN_NONE);
         verify(mTelephonyManager, times(2)).listen(any(), eq(PhoneStateListener.LISTEN_NONE));
-        verify(mTelephonyManager).listen(
-                any(), eq(PhoneStateListener.LISTEN_SIGNAL_STRENGTHS));
+        verify(mTelephonyManager).listen(any(), eq(PhoneStateListener.LISTEN_SIGNAL_STRENGTHS));
         // Partially disabling updates from second device should cancel subscription
         mHeadsetPhoneState.listenForPhoneState(device2, PhoneStateListener.LISTEN_NONE);
         verify(mTelephonyManager, times(3)).listen(any(), eq(PhoneStateListener.LISTEN_NONE));
-        verify(mTelephonyManager, times(4)).clearSignalStrengthUpdateRequest(
-                any(SignalStrengthUpdateRequest.class));
+        verify(mTelephonyManager, times(4))
+                .clearSignalStrengthUpdateRequest(any(SignalStrengthUpdateRequest.class));
     }
 }

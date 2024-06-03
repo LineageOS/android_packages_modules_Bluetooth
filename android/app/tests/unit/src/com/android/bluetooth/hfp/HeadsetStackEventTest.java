@@ -39,8 +39,9 @@ public class HeadsetStackEventTest {
         HeadsetStackEvent event = new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_NONE, device);
         assertThat(event.getTypeString()).isEqualTo("EVENT_TYPE_NONE");
 
-        event = new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED,
-                device);
+        event =
+                new HeadsetStackEvent(
+                        HeadsetStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED, device);
         assertThat(event.getTypeString()).isEqualTo("EVENT_TYPE_CONNECTION_STATE_CHANGED");
 
         event = new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_AUDIO_STATE_CHANGED, device);
@@ -70,8 +71,9 @@ public class HeadsetStackEventTest {
         event = new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_AT_CHLD, device);
         assertThat(event.getTypeString()).isEqualTo("EVENT_TYPE_AT_CHLD");
 
-        event = new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_SUBSCRIBER_NUMBER_REQUEST,
-                device);
+        event =
+                new HeadsetStackEvent(
+                        HeadsetStackEvent.EVENT_TYPE_SUBSCRIBER_NUMBER_REQUEST, device);
         assertThat(event.getTypeString()).isEqualTo("EVENT_TYPE_SUBSCRIBER_NUMBER_REQUEST");
 
         event = new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_AT_CIND, device);

@@ -73,8 +73,7 @@ public class BluetoothOppLauncherActivityTest {
     BluetoothMethodProxy mMethodProxy;
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    BluetoothOppManager mBluetoothOppManager;
+    @Mock BluetoothOppManager mBluetoothOppManager;
 
     // Activity tests can sometimes flaky because of external factors like system dialog, etc.
     // making the expected Espresso's root not focused or the activity doesn't show up.
@@ -85,8 +84,7 @@ public class BluetoothOppLauncherActivityTest {
     public void setUp() throws Exception {
         Assume.assumeTrue(BluetoothProperties.isProfileOppEnabled().orElse(false));
 
-        mTargetContext = spy(new ContextWrapper(
-                ApplicationProvider.getApplicationContext()));
+        mTargetContext = spy(new ContextWrapper(ApplicationProvider.getApplicationContext()));
         mMethodProxy = spy(BluetoothMethodProxy.getInstance());
         BluetoothMethodProxy.setInstanceForTesting(mMethodProxy);
 
@@ -112,16 +110,16 @@ public class BluetoothOppLauncherActivityTest {
 
     @Test
     public void onCreate_withNoAction_returnImmediately() throws Exception {
-        ActivityScenario<BluetoothOppLauncherActivity> activityScenario = ActivityScenario.launch(
-                mIntent);
+        ActivityScenario<BluetoothOppLauncherActivity> activityScenario =
+                ActivityScenario.launch(mIntent);
         assertActivityState(activityScenario, Lifecycle.State.DESTROYED);
     }
 
     @Test
     public void onCreate_withActionSend_withoutMetadata_finishImmediately() throws Exception {
         mIntent.setAction(Intent.ACTION_SEND);
-        ActivityScenario<BluetoothOppLauncherActivity> activityScenario = ActivityScenario.launch(
-                mIntent);
+        ActivityScenario<BluetoothOppLauncherActivity> activityScenario =
+                ActivityScenario.launch(mIntent);
         assertActivityState(activityScenario, Lifecycle.State.DESTROYED);
     }
 
@@ -129,8 +127,8 @@ public class BluetoothOppLauncherActivityTest {
     public void onCreate_withActionSendMultiple_withoutMetadata_finishImmediately()
             throws Exception {
         mIntent.setAction(Intent.ACTION_SEND_MULTIPLE);
-        ActivityScenario<BluetoothOppLauncherActivity> activityScenario = ActivityScenario.launch(
-                mIntent);
+        ActivityScenario<BluetoothOppLauncherActivity> activityScenario =
+                ActivityScenario.launch(mIntent);
         assertActivityState(activityScenario, Lifecycle.State.DESTROYED);
     }
 
@@ -186,10 +184,10 @@ public class BluetoothOppLauncherActivityTest {
         final String shareContent =
                 "\na < b & c > a string to trigger pattern match with url: \r"
                         + "www.google.com, phone number: +821023456798, and email: abc@test.com";
-        scenario.onActivity(activity -> {
-            fileUri[0] = activity.createFileForSharedContent(activity, shareContent);
-
-        });
+        scenario.onActivity(
+                activity -> {
+                    fileUri[0] = activity.createFileForSharedContent(activity, shareContent);
+                });
         assertThat(fileUri[0].toString().endsWith(".html")).isTrue();
 
         File file = new File(fileUri[0].getPath());
@@ -204,11 +202,13 @@ public class BluetoothOppLauncherActivityTest {
         // Unsupported action, the activity will stay without being finished right the way
         mIntent.setAction("unsupported-action");
         ActivityScenario<BluetoothOppLauncherActivity> scenario = ActivityScenario.launch(mIntent);
-        doThrow(new IllegalArgumentException()).when(mBluetoothOppManager).saveSendingFileInfo(
-                any(), any(String.class), any(), any());
-        scenario.onActivity(activity -> {
-            activity.sendFileInfo("text/plain", "content:///abc.txt", false, false);
-        });
+        doThrow(new IllegalArgumentException())
+                .when(mBluetoothOppManager)
+                .saveSendingFileInfo(any(), any(String.class), any(), any());
+        scenario.onActivity(
+                activity -> {
+                    activity.sendFileInfo("text/plain", "content:///abc.txt", false, false);
+                });
 
         assertActivityState(scenario, Lifecycle.State.DESTROYED);
     }
@@ -219,17 +219,19 @@ public class BluetoothOppLauncherActivityTest {
         assertThat(activityScenario.getState()).isEqualTo(state);
     }
 
-
     private void enableActivity(boolean enable) {
-        int enabledState = enable ? COMPONENT_ENABLED_STATE_ENABLED
-                : COMPONENT_ENABLED_STATE_DEFAULT;
+        int enabledState =
+                enable ? COMPONENT_ENABLED_STATE_ENABLED : COMPONENT_ENABLED_STATE_DEFAULT;
 
-        mTargetContext.getPackageManager().setApplicationEnabledSetting(
-                mTargetContext.getPackageName(), enabledState, DONT_KILL_APP);
+        mTargetContext
+                .getPackageManager()
+                .setApplicationEnabledSetting(
+                        mTargetContext.getPackageName(), enabledState, DONT_KILL_APP);
 
-        ComponentName activityName = new ComponentName(mTargetContext,
-                BluetoothOppLauncherActivity.class);
-        mTargetContext.getPackageManager().setComponentEnabledSetting(
-                activityName, enabledState, DONT_KILL_APP);
+        ComponentName activityName =
+                new ComponentName(mTargetContext, BluetoothOppLauncherActivity.class);
+        mTargetContext
+                .getPackageManager()
+                .setComponentEnabledSetting(activityName, enabledState, DONT_KILL_APP);
     }
 }

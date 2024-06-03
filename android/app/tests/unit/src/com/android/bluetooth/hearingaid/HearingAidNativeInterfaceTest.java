@@ -75,20 +75,20 @@ public class HearingAidNativeInterfaceTest {
     @Test
     public void onConnectionStateChanged() {
         BluetoothDevice device = TestUtils.getTestDevice(mAdapter, 0);
-        mNativeInterface.onConnectionStateChanged(BluetoothProfile.STATE_CONNECTED,
-                mNativeInterface.getByteAddress(device));
+        mNativeInterface.onConnectionStateChanged(
+                BluetoothProfile.STATE_CONNECTED, mNativeInterface.getByteAddress(device));
 
         ArgumentCaptor<HearingAidStackEvent> event =
                 ArgumentCaptor.forClass(HearingAidStackEvent.class);
         verify(mService).messageFromNative(event.capture());
-        assertThat(event.getValue().type).isEqualTo(
-                HearingAidStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
+        assertThat(event.getValue().type)
+                .isEqualTo(HearingAidStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         assertThat(event.getValue().valueInt1).isEqualTo(BluetoothProfile.STATE_CONNECTED);
 
         Mockito.clearInvocations(mService);
         HearingAidService.setHearingAidService(null);
-        mNativeInterface.onConnectionStateChanged(BluetoothProfile.STATE_CONNECTED,
-                mNativeInterface.getByteAddress(device));
+        mNativeInterface.onConnectionStateChanged(
+                BluetoothProfile.STATE_CONNECTED, mNativeInterface.getByteAddress(device));
         verify(mService, never()).messageFromNative(any());
     }
 
@@ -97,21 +97,21 @@ public class HearingAidNativeInterfaceTest {
         BluetoothDevice device = TestUtils.getTestDevice(mAdapter, 0);
         byte capabilities = 0;
         long hiSyncId = 100;
-        mNativeInterface.onDeviceAvailable(capabilities, hiSyncId,
-                mNativeInterface.getByteAddress(device));
+        mNativeInterface.onDeviceAvailable(
+                capabilities, hiSyncId, mNativeInterface.getByteAddress(device));
 
         ArgumentCaptor<HearingAidStackEvent> event =
                 ArgumentCaptor.forClass(HearingAidStackEvent.class);
         verify(mService).messageFromNative(event.capture());
-        assertThat(event.getValue().type).isEqualTo(
-                HearingAidStackEvent.EVENT_TYPE_DEVICE_AVAILABLE);
+        assertThat(event.getValue().type)
+                .isEqualTo(HearingAidStackEvent.EVENT_TYPE_DEVICE_AVAILABLE);
         assertThat(event.getValue().valueInt1).isEqualTo(capabilities);
         assertThat(event.getValue().valueLong2).isEqualTo(hiSyncId);
 
         Mockito.clearInvocations(mService);
         HearingAidService.setHearingAidService(null);
-        mNativeInterface.onDeviceAvailable(capabilities, hiSyncId,
-                mNativeInterface.getByteAddress(device));
+        mNativeInterface.onDeviceAvailable(
+                capabilities, hiSyncId, mNativeInterface.getByteAddress(device));
         verify(mService, never()).messageFromNative(any());
     }
 }

@@ -17,9 +17,7 @@
 
 package com.android.bluetooth.mcp;
 
-/**
- * Supported playing order definition
- */
+/** Supported playing order definition */
 public final class SupportedPlayingOrder {
     public static final int SINGLE_ONCE = 0x0001;
     public static final int SINGLE_REPEAT = 0x0002;

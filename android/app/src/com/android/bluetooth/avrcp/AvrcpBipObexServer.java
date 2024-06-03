@@ -31,33 +31,32 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Arrays;
 
-/**
- * A class responsible for handling requests from a specific client connection
- */
+/** A class responsible for handling requests from a specific client connection */
 public class AvrcpBipObexServer extends ServerRequestHandler {
     private static final String TAG = AvrcpBipObexServer.class.getSimpleName();
 
     private final AvrcpCoverArtService mAvrcpCoverArtService;
 
     // AVRCP Controller BIP Image Initiator/Cover Art UUID - AVRCP 1.6 Section 5.14.2.1
-    private static final byte[] BLUETOOTH_UUID_AVRCP_COVER_ART = new byte[] {
-        (byte) 0x71,
-        (byte) 0x63,
-        (byte) 0xDD,
-        (byte) 0x54,
-        (byte) 0x4A,
-        (byte) 0x7E,
-        (byte) 0x11,
-        (byte) 0xE2,
-        (byte) 0xB4,
-        (byte) 0x7C,
-        (byte) 0x00,
-        (byte) 0x50,
-        (byte) 0xC2,
-        (byte) 0x49,
-        (byte) 0x00,
-        (byte) 0x48
-    };
+    private static final byte[] BLUETOOTH_UUID_AVRCP_COVER_ART =
+            new byte[] {
+                (byte) 0x71,
+                (byte) 0x63,
+                (byte) 0xDD,
+                (byte) 0x54,
+                (byte) 0x4A,
+                (byte) 0x7E,
+                (byte) 0x11,
+                (byte) 0xE2,
+                (byte) 0xB4,
+                (byte) 0x7C,
+                (byte) 0x00,
+                (byte) 0x50,
+                (byte) 0xC2,
+                (byte) 0x49,
+                (byte) 0x00,
+                (byte) 0x48
+            };
 
     private static final String TYPE_GET_LINKED_THUMBNAIL = "x-bt/img-thm";
     private static final String TYPE_GET_IMAGE_PROPERTIES = "x-bt/img-properties";
@@ -68,22 +67,15 @@ public class AvrcpBipObexServer extends ServerRequestHandler {
 
     private final Callback mCallback;
 
-    /**
-     * A set of callbacks to notify the creator of important AVRCP BIP events.
-     */
+    /** A set of callbacks to notify the creator of important AVRCP BIP events. */
     public interface Callback {
-        /**
-         * Receive a notification when this server session connects to a device
-         */
+        /** Receive a notification when this server session connects to a device */
         void onConnected();
 
-        /**
-         * Receive a notification when this server session disconnects with a device
-         */
+        /** Receive a notification when this server session disconnects with a device */
         void onDisconnected();
-         /**
-          * Receive a notification when this server session closes a connection with a device
-          */
+
+        /** Receive a notification when this server session closes a connection with a device */
         void onClose();
     }
 
@@ -164,8 +156,8 @@ public class AvrcpBipObexServer extends ServerRequestHandler {
     }
 
     @Override
-    public int onSetPath(final HeaderSet request, HeaderSet reply, final boolean backup,
-            final boolean create) {
+    public int onSetPath(
+            final HeaderSet request, HeaderSet reply, final boolean backup, final boolean create) {
         return ResponseCodes.OBEX_HTTP_NOT_IMPLEMENTED;
     }
 
@@ -180,9 +172,9 @@ public class AvrcpBipObexServer extends ServerRequestHandler {
     /**
      * Determine if a given image handle is valid in format
      *
-     * An image handle a 9 character string of numbers 0-9 only. Anything else is invalid. This is
-     * defined in section 4.4.4 (Image Handles) of the BIP specification, which is inherited by the
-     * AVRCP specification.
+     * <p>An image handle a 9 character string of numbers 0-9 only. Anything else is invalid. This
+     * is defined in section 4.4.4 (Image Handles) of the BIP specification, which is inherited by
+     * the AVRCP specification.
      *
      * @return True if the image handle is valid, false otherwise.
      */
@@ -195,7 +187,7 @@ public class AvrcpBipObexServer extends ServerRequestHandler {
         return true;
     }
 
-    private int handleGetImageThumbnail(Operation op)throws IOException  {
+    private int handleGetImageThumbnail(Operation op) throws IOException {
         HeaderSet request = op.getReceivedHeader();
         String imageHandle = (String) request.getHeader(HEADER_ID_IMG_HANDLE);
 
@@ -312,9 +304,7 @@ public class AvrcpBipObexServer extends ServerRequestHandler {
         return sendResponse(op, replyHeaders, imageBytes);
     }
 
-    /**
-     * Send a response to the given operation using the given headers and bytes.
-     */
+    /** Send a response to the given operation using the given headers and bytes. */
     private int sendResponse(Operation op, HeaderSet replyHeaders, byte[] bytes) {
         if (op != null && bytes != null && replyHeaders != null) {
             OutputStream outStream = null;
@@ -337,7 +327,8 @@ public class AvrcpBipObexServer extends ServerRequestHandler {
                 if (outStream != null) {
                     try {
                         outStream.close();
-                    } catch (IOException e) { }
+                    } catch (IOException e) {
+                    }
                 }
             }
             // If we didn't write everything then send the error code

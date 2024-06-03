@@ -57,11 +57,13 @@ public class MediaPlayerWrapper {
 
     @GuardedBy("mCallbackLock")
     private MediaControllerListener mControllerCallbacks = null;
+
     private final Object mCallbackLock = new Object();
     private Callback mRegisteredCallback = null;
 
     public interface Callback {
         void mediaUpdatedCallback(MediaData data);
+
         void sessionUpdatedCallback(String packageName);
     }
 
@@ -163,18 +165,17 @@ public class MediaPlayerWrapper {
 
     // We don't return the cached info here in order to always provide the freshest data.
     MediaData getCurrentMediaData() {
-        MediaData data = new MediaData(
-                getCurrentMetadata(),
-                getPlaybackState(),
-                getCurrentQueue());
+        MediaData data = new MediaData(getCurrentMetadata(), getPlaybackState(), getCurrentQueue());
         return data;
     }
 
     void playItemFromQueue(long qid) {
         // Return immediately if no queue exists.
         if (getQueue() == null) {
-            Log.w(TAG, "playItemFromQueue: Trying to play item for player that has no queue: "
-                    + mPackageName);
+            Log.w(
+                    TAG,
+                    "playItemFromQueue: Trying to play item for player that has no queue: "
+                            + mPackageName);
             return;
         }
 
@@ -253,9 +254,7 @@ public class MediaPlayerWrapper {
         return;
     }
 
-    /**
-     * Return whether the queue, metadata, and queueID are all in sync.
-     */
+    /** Return whether the queue, metadata, and queueID are all in sync. */
     boolean isMetadataSynced() {
         List<MediaSession.QueueItem> queue = getQueue();
         if (queue != null && getActiveQueueID() != -1) {
@@ -293,8 +292,8 @@ public class MediaPlayerWrapper {
     }
 
     /**
-     * Register a callback which gets called when media updates happen. The callbacks are
-     * called on the same Looper that was passed in to create this object.
+     * Register a callback which gets called when media updates happen. The callbacks are called on
+     * the same Looper that was passed in to create this object.
      */
     void registerCallback(Callback callback) {
         if (callback == null) {
@@ -308,19 +307,18 @@ public class MediaPlayerWrapper {
 
         // Update the current data since it could have changed while we weren't registered for
         // updates
-        mCurrentData = new MediaData(
-                Util.toMetadata(mContext, getMetadata()),
-                getPlaybackState(),
-                Util.toMetadataList(mContext, getQueue()));
+        mCurrentData =
+                new MediaData(
+                        Util.toMetadata(mContext, getMetadata()),
+                        getPlaybackState(),
+                        Util.toMetadataList(mContext, getQueue()));
 
         synchronized (mCallbackLock) {
             mControllerCallbacks = new MediaControllerListener(mMediaController, mLooper);
         }
     }
 
-    /**
-     * Unregisters from updates. Note, this doesn't require the looper to be shut down.
-     */
+    /** Unregisters from updates. Note, this doesn't require the looper to be shut down. */
     void unregisterCallback() {
         // Prevent a race condition where a callback could be called while shutting down
         synchronized (mCallbackLock) {
@@ -346,10 +344,11 @@ public class MediaPlayerWrapper {
 
             // Update the current data since it could be different on the new controller for the
             // player
-            mCurrentData = new MediaData(
-                    Util.toMetadata(mContext, getMetadata()),
-                    getPlaybackState(),
-                    Util.toMetadataList(mContext, getQueue()));
+            mCurrentData =
+                    new MediaData(
+                            Util.toMetadata(mContext, getMetadata()),
+                            getPlaybackState(),
+                            Util.toMetadataList(mContext, getQueue()));
 
             mControllerCallbacks = new MediaControllerListener(mMediaController, mLooper);
         }
@@ -357,10 +356,11 @@ public class MediaPlayerWrapper {
     }
 
     private void sendMediaUpdate() {
-        MediaData newData = new MediaData(
-                Util.toMetadata(mContext, getMetadata()),
-                getPlaybackState(),
-                Util.toMetadataList(mContext, getQueue()));
+        MediaData newData =
+                new MediaData(
+                        Util.toMetadata(mContext, getMetadata()),
+                        getPlaybackState(),
+                        Util.toMetadataList(mContext, getQueue()));
 
         if (newData.equals(mCurrentData)) {
             // This may happen if the controller is fully synced by the time the
@@ -371,8 +371,7 @@ public class MediaPlayerWrapper {
 
         synchronized (mCallbackLock) {
             if (mRegisteredCallback == null) {
-                Log.e(TAG, mPackageName
-                        + ": Trying to send an update with no registered callback");
+                Log.e(TAG, mPackageName + ": Trying to send an update with no registered callback");
                 return;
             }
 
@@ -399,7 +398,7 @@ public class MediaPlayerWrapper {
             }
 
             Log.e(TAG, "Timeout while waiting for metadata to sync for " + mPackageName);
-            Log.e(TAG, "  └ Current Metadata: " +  Util.toMetadata(mContext, getMetadata()));
+            Log.e(TAG, "  └ Current Metadata: " + Util.toMetadata(mContext, getMetadata()));
             Log.e(TAG, "  └ Current Playstate: " + getPlaybackState());
             List<Metadata> current_queue = Util.toMetadataList(mContext, getQueue());
             for (int i = 0; i < current_queue.size(); i++) {
@@ -446,8 +445,8 @@ public class MediaPlayerWrapper {
 
                 if (!isMetadataSynced()) {
                     d("trySendMediaUpdate(): Starting media update timeout");
-                    mTimeoutHandler.sendEmptyMessageDelayed(TimeoutHandler.MSG_TIMEOUT,
-                            TimeoutHandler.CALLBACK_TIMEOUT_MS);
+                    mTimeoutHandler.sendEmptyMessageDelayed(
+                            TimeoutHandler.MSG_TIMEOUT, TimeoutHandler.CALLBACK_TIMEOUT_MS);
                     return;
                 }
             }
@@ -466,8 +465,12 @@ public class MediaPlayerWrapper {
                 return;
             }
 
-            Log.v(TAG, "onMetadataChanged(): " + mPackageName + " : "
-                    + Util.toMetadata(mContext, mediaMetadata));
+            Log.v(
+                    TAG,
+                    "onMetadataChanged(): "
+                            + mPackageName
+                            + " : "
+                            + Util.toMetadata(mContext, mediaMetadata));
 
             if (!Objects.equals(mediaMetadata, getMetadata())) {
                 e("The callback metadata doesn't match controller metadata");
@@ -482,8 +485,11 @@ public class MediaPlayerWrapper {
             // twice in a row with the only difference being that the song duration is rounded to
             // the nearest second.
             if (Objects.equals(Util.toMetadata(mContext, mediaMetadata), mCurrentData.metadata)) {
-                Log.w(TAG, "onMetadataChanged(): " + mPackageName
-                        + " tried to update with no new data");
+                Log.w(
+                        TAG,
+                        "onMetadataChanged(): "
+                                + mPackageName
+                                + " tried to update with no new data");
                 return;
             }
 
@@ -509,8 +515,11 @@ public class MediaPlayerWrapper {
             }
 
             if (playstateEquals(state, mCurrentData.state)) {
-                Log.w(TAG, "onPlaybackStateChanged(): " + mPackageName
-                        + " tried to update with no new data");
+                Log.w(
+                        TAG,
+                        "onPlaybackStateChanged(): "
+                                + mPackageName
+                                + " tried to update with no new data");
                 return;
             }
 
@@ -526,8 +535,7 @@ public class MediaPlayerWrapper {
         @Override
         public void onQueueChanged(@Nullable List<MediaSession.QueueItem> queue) {
             if (!isPlaybackStateReady() || !isMetadataReady()) {
-                Log.v(TAG, "onQueueChanged(): " + mPackageName
-                        + " tried to update with no queue");
+                Log.v(TAG, "onQueueChanged(): " + mPackageName + " tried to update with no queue");
                 return;
             }
 
@@ -539,8 +547,9 @@ public class MediaPlayerWrapper {
 
             List<Metadata> current_queue = Util.toMetadataList(mContext, queue);
             if (current_queue.equals(mCurrentData.queue)) {
-                Log.w(TAG, "onQueueChanged(): " + mPackageName
-                        + " tried to update with no new data");
+                Log.w(
+                        TAG,
+                        "onQueueChanged(): " + mPackageName + " tried to update with no new data");
                 return;
             }
 
@@ -572,14 +581,16 @@ public class MediaPlayerWrapper {
      * certain amount of deviation between the position fields of the PlaybackStates. This is to
      * prevent matches from failing when updates happen in quick succession.
      *
-     * The maximum allowed deviation is defined by PLAYSTATE_BOUNCE_IGNORE_PERIOD and is measured
+     * <p>The maximum allowed deviation is defined by PLAYSTATE_BOUNCE_IGNORE_PERIOD and is measured
      * in milliseconds.
      */
     private static final long PLAYSTATE_BOUNCE_IGNORE_PERIOD = 500;
+
     public static boolean playstateEquals(PlaybackState a, PlaybackState b) {
         if (a == b) return true;
 
-        if (a != null && b != null
+        if (a != null
+                && b != null
                 && a.getState() == b.getState()
                 && a.getActiveQueueItemId() == b.getActiveQueueItemId()
                 && Math.abs(a.getPosition() - b.getPosition()) < PLAYSTATE_BOUNCE_IGNORE_PERIOD) {

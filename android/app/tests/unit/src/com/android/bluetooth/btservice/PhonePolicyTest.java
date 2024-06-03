@@ -149,8 +149,7 @@ public class PhonePolicyTest {
 
     /**
      * Test that when new UUIDs are refreshed for a device then we set the priorities for various
-     * profiles accurately. The following profiles should have ON priorities:
-     *     A2DP, HFP, HID and PAN
+     * profiles accurately. The following profiles should have ON priorities: A2DP, HFP, HID and PAN
      */
     @Test
     public void testProcessInitProfilePriorities() {
@@ -362,19 +361,25 @@ public class PhonePolicyTest {
         // Does not auto connect and allow HFP and A2DP to be connected
         processInitProfilePriorities_LeAudioHelper(true, false, false, false);
         verify(mDatabaseManager, timeout(ASYNC_CALL_TIMEOUT_MILLIS).times(1))
-                .setProfileConnectionPolicy(device, BluetoothProfile.LE_AUDIO,
+                .setProfileConnectionPolicy(
+                        device,
+                        BluetoothProfile.LE_AUDIO,
                         BluetoothProfile.CONNECTION_POLICY_ALLOWED);
         verify(mDatabaseManager, timeout(ASYNC_CALL_TIMEOUT_MILLIS).times(1))
-                .setProfileConnectionPolicy(device, BluetoothProfile.A2DP,
-                        BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+                .setProfileConnectionPolicy(
+                        device, BluetoothProfile.A2DP, BluetoothProfile.CONNECTION_POLICY_ALLOWED);
         verify(mDatabaseManager, timeout(ASYNC_CALL_TIMEOUT_MILLIS).times(1))
-                .setProfileConnectionPolicy(device, BluetoothProfile.HEADSET,
+                .setProfileConnectionPolicy(
+                        device,
+                        BluetoothProfile.HEADSET,
                         BluetoothProfile.CONNECTION_POLICY_ALLOWED);
 
         // Auto connect to HFP and A2DP but disallow LE Audio
         processInitProfilePriorities_LeAudioHelper(false, true, false, false);
         verify(mDatabaseManager, timeout(ASYNC_CALL_TIMEOUT_MILLIS).times(1))
-                .setProfileConnectionPolicy(device, BluetoothProfile.LE_AUDIO,
+                .setProfileConnectionPolicy(
+                        device,
+                        BluetoothProfile.LE_AUDIO,
                         BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
         verify(mA2dpService, timeout(ASYNC_CALL_TIMEOUT_MILLIS).times(2))
                 .setConnectionPolicy(device, BluetoothProfile.CONNECTION_POLICY_ALLOWED);
@@ -384,13 +389,17 @@ public class PhonePolicyTest {
         // Does not auto connect and disallow LE Audio to be connected
         processInitProfilePriorities_LeAudioHelper(false, false, false, false);
         verify(mDatabaseManager, timeout(ASYNC_CALL_TIMEOUT_MILLIS).times(2))
-                .setProfileConnectionPolicy(device, BluetoothProfile.LE_AUDIO,
+                .setProfileConnectionPolicy(
+                        device,
+                        BluetoothProfile.LE_AUDIO,
                         BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
         verify(mDatabaseManager, timeout(ASYNC_CALL_TIMEOUT_MILLIS).times(2))
-                .setProfileConnectionPolicy(device, BluetoothProfile.A2DP,
-                        BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+                .setProfileConnectionPolicy(
+                        device, BluetoothProfile.A2DP, BluetoothProfile.CONNECTION_POLICY_ALLOWED);
         verify(mDatabaseManager, timeout(ASYNC_CALL_TIMEOUT_MILLIS).times(2))
-                .setProfileConnectionPolicy(device, BluetoothProfile.HEADSET,
+                .setProfileConnectionPolicy(
+                        device,
+                        BluetoothProfile.HEADSET,
                         BluetoothProfile.CONNECTION_POLICY_ALLOWED);
     }
 
@@ -411,13 +420,17 @@ public class PhonePolicyTest {
         // Does not auto connect and allow HFP and A2DP to be connected
         processInitProfilePriorities_LeAudioHelper(true, false, true, false);
         verify(mDatabaseManager, timeout(ASYNC_CALL_TIMEOUT_MILLIS).times(1))
-                .setProfileConnectionPolicy(device, BluetoothProfile.LE_AUDIO,
+                .setProfileConnectionPolicy(
+                        device,
+                        BluetoothProfile.LE_AUDIO,
                         BluetoothProfile.CONNECTION_POLICY_ALLOWED);
         verify(mDatabaseManager, timeout(ASYNC_CALL_TIMEOUT_MILLIS).times(1))
-                .setProfileConnectionPolicy(device, BluetoothProfile.A2DP,
-                        BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+                .setProfileConnectionPolicy(
+                        device, BluetoothProfile.A2DP, BluetoothProfile.CONNECTION_POLICY_ALLOWED);
         verify(mDatabaseManager, timeout(ASYNC_CALL_TIMEOUT_MILLIS).times(1))
-                .setProfileConnectionPolicy(device, BluetoothProfile.HEADSET,
+                .setProfileConnectionPolicy(
+                        device,
+                        BluetoothProfile.HEADSET,
                         BluetoothProfile.CONNECTION_POLICY_ALLOWED);
 
         // Auto connect to LE audio but disallow HFP and A2DP
@@ -425,22 +438,32 @@ public class PhonePolicyTest {
         verify(mLeAudioService, timeout(ASYNC_CALL_TIMEOUT_MILLIS).times(2))
                 .setConnectionPolicy(device, BluetoothProfile.CONNECTION_POLICY_ALLOWED);
         verify(mDatabaseManager, timeout(ASYNC_CALL_TIMEOUT_MILLIS).times(1))
-                .setProfileConnectionPolicy(device, BluetoothProfile.HEADSET,
+                .setProfileConnectionPolicy(
+                        device,
+                        BluetoothProfile.HEADSET,
                         BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
         verify(mDatabaseManager, timeout(ASYNC_CALL_TIMEOUT_MILLIS).times(1))
-                .setProfileConnectionPolicy(device, BluetoothProfile.A2DP,
+                .setProfileConnectionPolicy(
+                        device,
+                        BluetoothProfile.A2DP,
                         BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
 
         // Does not auto connect and disallow HFP and A2DP to be connected
         processInitProfilePriorities_LeAudioHelper(false, false, true, false);
         verify(mDatabaseManager, timeout(ASYNC_CALL_TIMEOUT_MILLIS).times(2))
-                .setProfileConnectionPolicy(device, BluetoothProfile.LE_AUDIO,
+                .setProfileConnectionPolicy(
+                        device,
+                        BluetoothProfile.LE_AUDIO,
                         BluetoothProfile.CONNECTION_POLICY_ALLOWED);
         verify(mDatabaseManager, timeout(ASYNC_CALL_TIMEOUT_MILLIS).times(2))
-                .setProfileConnectionPolicy(device, BluetoothProfile.HEADSET,
+                .setProfileConnectionPolicy(
+                        device,
+                        BluetoothProfile.HEADSET,
                         BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
         verify(mDatabaseManager, timeout(ASYNC_CALL_TIMEOUT_MILLIS).times(2))
-                .setProfileConnectionPolicy(device, BluetoothProfile.A2DP,
+                .setProfileConnectionPolicy(
+                        device,
+                        BluetoothProfile.A2DP,
                         BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
     }
 
@@ -733,10 +756,10 @@ public class PhonePolicyTest {
         when(mAdapterService.getBondState(bondedDevice)).thenReturn(BluetoothDevice.BOND_BONDED);
 
         // Return CONNECTION_POLICY_ALLOWED over HFP and A2DP
-        when(mHeadsetService.getConnectionPolicy(bondedDevice)).thenReturn(
-                BluetoothProfile.CONNECTION_POLICY_ALLOWED);
-        when(mA2dpService.getConnectionPolicy(bondedDevice)).thenReturn(
-                BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+        when(mHeadsetService.getConnectionPolicy(bondedDevice))
+                .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+        when(mA2dpService.getConnectionPolicy(bondedDevice))
+                .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
 
         // Inject an event that the adapter is turned on.
         mPhonePolicy.onBluetoothStateChange(BluetoothAdapter.STATE_OFF, BluetoothAdapter.STATE_ON);
@@ -746,9 +769,7 @@ public class PhonePolicyTest {
         verify(mHeadsetService).connect(eq(bondedDevice));
     }
 
-    /**
-     * Test that when an active device is disconnected, we will not auto connect it
-     */
+    /** Test that when an active device is disconnected, we will not auto connect it */
     @Test
     public void testDisconnectNoAutoConnect() {
         // Return desired values from the mocked object(s)
@@ -762,18 +783,18 @@ public class PhonePolicyTest {
         connectionOrder.add(getTestDevice(mAdapter, 2));
         connectionOrder.add(getTestDevice(mAdapter, 3));
 
-        when(mDatabaseManager.getMostRecentlyConnectedA2dpDevice()).thenReturn(
-                connectionOrder.get(0));
+        when(mDatabaseManager.getMostRecentlyConnectedA2dpDevice())
+                .thenReturn(connectionOrder.get(0));
 
         // Make all devices auto connect
-        when(mHeadsetService.getConnectionPolicy(connectionOrder.get(0))).thenReturn(
-                BluetoothProfile.CONNECTION_POLICY_ALLOWED);
-        when(mHeadsetService.getConnectionPolicy(connectionOrder.get(1))).thenReturn(
-                BluetoothProfile.CONNECTION_POLICY_ALLOWED);
-        when(mHeadsetService.getConnectionPolicy(connectionOrder.get(2))).thenReturn(
-                BluetoothProfile.CONNECTION_POLICY_ALLOWED);
-        when(mHeadsetService.getConnectionPolicy(connectionOrder.get(3))).thenReturn(
-                BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
+        when(mHeadsetService.getConnectionPolicy(connectionOrder.get(0)))
+                .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+        when(mHeadsetService.getConnectionPolicy(connectionOrder.get(1)))
+                .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+        when(mHeadsetService.getConnectionPolicy(connectionOrder.get(2)))
+                .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+        when(mHeadsetService.getConnectionPolicy(connectionOrder.get(3)))
+                .thenReturn(BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
 
         // Make one of the device active
         mPhonePolicy.profileActiveDeviceChanged(BluetoothProfile.A2DP, connectionOrder.get(0));
@@ -801,8 +822,8 @@ public class PhonePolicyTest {
         verify(mDatabaseManager, never()).setConnection(eq(connectionOrder.get(3)), anyInt());
 
         // Disconnect a2dp for the device from previous STATE_CONNECTED
-        when(mHeadsetService.getConnectionState(connectionOrder.get(1))).thenReturn(
-                BluetoothProfile.STATE_DISCONNECTED);
+        when(mHeadsetService.getConnectionState(connectionOrder.get(1)))
+                .thenReturn(BluetoothProfile.STATE_DISCONNECTED);
         mPhonePolicy.profileConnectionStateChanged(
                 BluetoothProfile.A2DP,
                 connectionOrder.get(1),
@@ -864,10 +885,10 @@ public class PhonePolicyTest {
 
         // Return PRIORITY_AUTO_CONNECT over HFP and A2DP. This would imply that the profiles are
         // auto-connectable.
-        when(mHeadsetService.getConnectionPolicy(bondedDevices[0])).thenReturn(
-                BluetoothProfile.CONNECTION_POLICY_ALLOWED);
-        when(mA2dpService.getConnectionPolicy(bondedDevices[0])).thenReturn(
-                BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+        when(mHeadsetService.getConnectionPolicy(bondedDevices[0]))
+                .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+        when(mA2dpService.getConnectionPolicy(bondedDevices[0]))
+                .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
 
         when(mAdapterService.getState()).thenReturn(BluetoothAdapter.STATE_ON);
 
@@ -878,8 +899,8 @@ public class PhonePolicyTest {
         hsConnectedDevices.add(bondedDevices[0]);
         when(mHeadsetService.getConnectedDevices()).thenReturn(hsConnectedDevices);
         // Also the A2DP should say that its not connected for same device
-        when(mA2dpService.getConnectionState(bondedDevices[0])).thenReturn(
-                BluetoothProfile.STATE_DISCONNECTED);
+        when(mA2dpService.getConnectionState(bondedDevices[0]))
+                .thenReturn(BluetoothProfile.STATE_DISCONNECTED);
 
         // ACL is connected, lets simulate this.
         when(mAdapterService.getConnectionState(bondedDevices[0]))
@@ -887,12 +908,15 @@ public class PhonePolicyTest {
 
         // We send a connection successful for one profile since the re-connect *only* works if we
         // have already connected successfully over one of the profiles
-        updateProfileConnectionStateHelper(bondedDevices[0], BluetoothProfile.HEADSET,
-                BluetoothProfile.STATE_CONNECTED, BluetoothProfile.STATE_DISCONNECTED);
+        updateProfileConnectionStateHelper(
+                bondedDevices[0],
+                BluetoothProfile.HEADSET,
+                BluetoothProfile.STATE_CONNECTED,
+                BluetoothProfile.STATE_DISCONNECTED);
 
         // Check that we get a call to A2DP connect
-        verify(mA2dpService, timeout(CONNECT_OTHER_PROFILES_TIMEOUT_WAIT_MILLIS)).connect(
-                eq(bondedDevices[0]));
+        verify(mA2dpService, timeout(CONNECT_OTHER_PROFILES_TIMEOUT_WAIT_MILLIS))
+                .connect(eq(bondedDevices[0]));
     }
 
     /**
@@ -958,15 +982,15 @@ public class PhonePolicyTest {
         when(mAdapterService.getConnectionState(testDevice))
                 .thenReturn(BluetoothProfile.STATE_CONNECTED);
 
-        when(mDatabaseManager.getMostRecentlyConnectedA2dpDevice()).thenReturn(
-                connectionOrder.get(0));
+        when(mDatabaseManager.getMostRecentlyConnectedA2dpDevice())
+                .thenReturn(connectionOrder.get(0));
 
         // Return PRIORITY_AUTO_CONNECT over HFP and A2DP. This would imply that the profiles are
         // auto-connectable.
-        when(mHeadsetService.getConnectionPolicy(connectionOrder.get(0))).thenReturn(
-                BluetoothProfile.CONNECTION_POLICY_ALLOWED);
-        when(mA2dpService.getConnectionPolicy(connectionOrder.get(0))).thenReturn(
-                BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+        when(mHeadsetService.getConnectionPolicy(connectionOrder.get(0)))
+                .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+        when(mA2dpService.getConnectionPolicy(connectionOrder.get(0)))
+                .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
 
         when(mAdapterService.getState()).thenReturn(BluetoothAdapter.STATE_ON);
 
@@ -977,22 +1001,28 @@ public class PhonePolicyTest {
         hsConnectedDevices.add(connectionOrder.get(0));
         when(mHeadsetService.getConnectedDevices()).thenReturn(hsConnectedDevices);
         // Also the A2DP should say that its not connected for same device
-        when(mA2dpService.getConnectionState(connectionOrder.get(0))).thenReturn(
-                BluetoothProfile.STATE_DISCONNECTED);
+        when(mA2dpService.getConnectionState(connectionOrder.get(0)))
+                .thenReturn(BluetoothProfile.STATE_DISCONNECTED);
 
         // We send a connection success event for one profile since the re-connect *only* works if
         // we have already connected successfully over one of the profiles
-        updateProfileConnectionStateHelper(connectionOrder.get(0), BluetoothProfile.HEADSET,
-                BluetoothProfile.STATE_CONNECTED, BluetoothProfile.STATE_DISCONNECTED);
+        updateProfileConnectionStateHelper(
+                connectionOrder.get(0),
+                BluetoothProfile.HEADSET,
+                BluetoothProfile.STATE_CONNECTED,
+                BluetoothProfile.STATE_DISCONNECTED);
 
         // Check that we get a call to A2DP reconnect
-        verify(mA2dpService, timeout(CONNECT_OTHER_PROFILES_TIMEOUT_WAIT_MILLIS)).connect(
-                connectionOrder.get(0));
+        verify(mA2dpService, timeout(CONNECT_OTHER_PROFILES_TIMEOUT_WAIT_MILLIS))
+                .connect(connectionOrder.get(0));
 
         // We send a connection failure event for the attempted profile, and keep the connected
         // profile connected.
-        updateProfileConnectionStateHelper(connectionOrder.get(0), BluetoothProfile.A2DP,
-                BluetoothProfile.STATE_DISCONNECTED, BluetoothProfile.STATE_CONNECTING);
+        updateProfileConnectionStateHelper(
+                connectionOrder.get(0),
+                BluetoothProfile.A2DP,
+                BluetoothProfile.STATE_DISCONNECTED,
+                BluetoothProfile.STATE_CONNECTING);
 
         waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
 
@@ -1000,17 +1030,23 @@ public class PhonePolicyTest {
         verify(mA2dpService, never()).setConnectionPolicy(eq(connectionOrder.get(0)), anyInt());
 
         // Send a connection success event for one profile again without disconnecting all profiles
-        updateProfileConnectionStateHelper(connectionOrder.get(0), BluetoothProfile.HEADSET,
-                BluetoothProfile.STATE_CONNECTED, BluetoothProfile.STATE_DISCONNECTED);
+        updateProfileConnectionStateHelper(
+                connectionOrder.get(0),
+                BluetoothProfile.HEADSET,
+                BluetoothProfile.STATE_CONNECTED,
+                BluetoothProfile.STATE_DISCONNECTED);
 
         // Check that we won't get a call to A2DP reconnect again before all profiles disconnected
-        verify(mA2dpService, timeout(CONNECT_OTHER_PROFILES_TIMEOUT_WAIT_MILLIS)).connect(
-                connectionOrder.get(0));
+        verify(mA2dpService, timeout(CONNECT_OTHER_PROFILES_TIMEOUT_WAIT_MILLIS))
+                .connect(connectionOrder.get(0));
 
         // Send a disconnection event for all connected profiles
         hsConnectedDevices.remove(connectionOrder.get(0));
-        updateProfileConnectionStateHelper(connectionOrder.get(0), BluetoothProfile.HEADSET,
-                BluetoothProfile.STATE_DISCONNECTED, BluetoothProfile.STATE_CONNECTED);
+        updateProfileConnectionStateHelper(
+                connectionOrder.get(0),
+                BluetoothProfile.HEADSET,
+                BluetoothProfile.STATE_DISCONNECTED,
+                BluetoothProfile.STATE_CONNECTED);
 
         waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
 
@@ -1173,9 +1209,9 @@ public class PhonePolicyTest {
     /**
      * Test that a second device will auto-connect if there is already one connected device.
      *
-     * Even though we currently only set one device to be auto connect. The consumer of the auto
-     * connect property works independently so that we will connect to all devices that are in
-     * auto connect mode.
+     * <p>Even though we currently only set one device to be auto connect. The consumer of the auto
+     * connect property works independently so that we will connect to all devices that are in auto
+     * connect mode.
      */
     @Test
     public void testAutoConnectMultipleDevices() {
@@ -1196,10 +1232,10 @@ public class PhonePolicyTest {
 
             // Return PRIORITY_AUTO_CONNECT over HFP and A2DP. This would imply that the profiles
             // are auto-connectable.
-            when(mHeadsetService.getConnectionPolicy(testDevice)).thenReturn(
-                    BluetoothProfile.CONNECTION_POLICY_ALLOWED);
-            when(mA2dpService.getConnectionPolicy(testDevice)).thenReturn(
-                    BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+            when(mHeadsetService.getConnectionPolicy(testDevice))
+                    .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+            when(mA2dpService.getConnectionPolicy(testDevice))
+                    .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
             // We want to trigger (in CONNECT_OTHER_PROFILES_TIMEOUT) a call to connect A2DP
             // To enable that we need to make sure that HeadsetService returns the device as list
             // of connected devices.
@@ -1217,35 +1253,39 @@ public class PhonePolicyTest {
         when(mHeadsetService.getConnectedDevices()).thenReturn(hsConnectedDevices);
         when(mA2dpService.getConnectedDevices()).thenReturn(a2dpConnectedDevices);
         // Two of the A2DP devices are not connected
-        when(mA2dpService.getConnectionState(a2dpNotConnectedDevice1)).thenReturn(
-                BluetoothProfile.STATE_DISCONNECTED);
-        when(mA2dpService.getConnectionState(a2dpNotConnectedDevice2)).thenReturn(
+        when(mA2dpService.getConnectionState(a2dpNotConnectedDevice1))
+                .thenReturn(BluetoothProfile.STATE_DISCONNECTED);
+        when(mA2dpService.getConnectionState(a2dpNotConnectedDevice2))
+                .thenReturn(BluetoothProfile.STATE_DISCONNECTED);
+
+        // We send a connection successful for one profile since the re-connect *only* works if we
+        // have already connected successfully over one of the profiles
+        updateProfileConnectionStateHelper(
+                a2dpNotConnectedDevice1,
+                BluetoothProfile.HEADSET,
+                BluetoothProfile.STATE_CONNECTED,
                 BluetoothProfile.STATE_DISCONNECTED);
 
         // We send a connection successful for one profile since the re-connect *only* works if we
         // have already connected successfully over one of the profiles
-        updateProfileConnectionStateHelper(a2dpNotConnectedDevice1, BluetoothProfile.HEADSET,
-                BluetoothProfile.STATE_CONNECTED, BluetoothProfile.STATE_DISCONNECTED);
-
-        // We send a connection successful for one profile since the re-connect *only* works if we
-        // have already connected successfully over one of the profiles
-        updateProfileConnectionStateHelper(a2dpNotConnectedDevice2, BluetoothProfile.HEADSET,
-                BluetoothProfile.STATE_CONNECTED, BluetoothProfile.STATE_DISCONNECTED);
+        updateProfileConnectionStateHelper(
+                a2dpNotConnectedDevice2,
+                BluetoothProfile.HEADSET,
+                BluetoothProfile.STATE_CONNECTED,
+                BluetoothProfile.STATE_DISCONNECTED);
 
         // Check that we get a call to A2DP connect
-        verify(mA2dpService, timeout(CONNECT_OTHER_PROFILES_TIMEOUT_WAIT_MILLIS)).connect(
-                eq(a2dpNotConnectedDevice1));
-        verify(mA2dpService, timeout(CONNECT_OTHER_PROFILES_TIMEOUT_WAIT_MILLIS)).connect(
-                eq(a2dpNotConnectedDevice2));
+        verify(mA2dpService, timeout(CONNECT_OTHER_PROFILES_TIMEOUT_WAIT_MILLIS))
+                .connect(eq(a2dpNotConnectedDevice1));
+        verify(mA2dpService, timeout(CONNECT_OTHER_PROFILES_TIMEOUT_WAIT_MILLIS))
+                .connect(eq(a2dpNotConnectedDevice2));
     }
 
     /**
      * Test that the connection policy of all devices are set as appropriate if there is one
-     * connected device.
-     * - The HFP and A2DP connect priority for connected devices is set to
-     *   BluetoothProfile.PRIORITY_AUTO_CONNECT
-     * - The HFP and A2DP connect priority for bonded devices is set to
-     *   BluetoothProfile.CONNECTION_POLICY_ALLOWED
+     * connected device. - The HFP and A2DP connect priority for connected devices is set to
+     * BluetoothProfile.PRIORITY_AUTO_CONNECT - The HFP and A2DP connect priority for bonded devices
+     * is set to BluetoothProfile.CONNECTION_POLICY_ALLOWED
      */
     @Test
     public void testSetConnectionPolicyMultipleDevices() {
@@ -1271,29 +1311,29 @@ public class PhonePolicyTest {
             if (i == 0) {
                 hsConnectedDevices.add(testDevice);
                 a2dpConnectedDevices.add(testDevice);
-                when(mHeadsetService.getConnectionPolicy(testDevice)).thenReturn(
-                        BluetoothProfile.CONNECTION_POLICY_ALLOWED);
-                when(mA2dpService.getConnectionPolicy(testDevice)).thenReturn(
-                        BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+                when(mHeadsetService.getConnectionPolicy(testDevice))
+                        .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+                when(mA2dpService.getConnectionPolicy(testDevice))
+                        .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
             }
             if (i == 1) {
                 hsConnectedDevices.add(testDevice);
-                when(mHeadsetService.getConnectionPolicy(testDevice)).thenReturn(
-                        BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+                when(mHeadsetService.getConnectionPolicy(testDevice))
+                        .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
                 when(mA2dpService.getConnectionPolicy(testDevice))
                         .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
             }
             if (i == 2) {
                 a2dpConnectedDevices.add(testDevice);
-                when(mHeadsetService.getConnectionPolicy(testDevice)).thenReturn(
-                        BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+                when(mHeadsetService.getConnectionPolicy(testDevice))
+                        .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
                 when(mA2dpService.getConnectionPolicy(testDevice))
                         .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
             }
             if (i == 3) {
                 // Device not connected
-                when(mHeadsetService.getConnectionPolicy(testDevice)).thenReturn(
-                        BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+                when(mHeadsetService.getConnectionPolicy(testDevice))
+                        .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
                 when(mA2dpService.getConnectionPolicy(testDevice))
                         .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
             }
@@ -1304,41 +1344,43 @@ public class PhonePolicyTest {
         when(mA2dpService.getConnectedDevices()).thenReturn(a2dpConnectedDevices);
         // Some of the devices are not connected
         // testDevices[0] - connected for both HFP and A2DP
-        when(mHeadsetService.getConnectionState(testDevices[0])).thenReturn(
-                BluetoothProfile.STATE_CONNECTED);
-        when(mA2dpService.getConnectionState(testDevices[0])).thenReturn(
-                BluetoothProfile.STATE_CONNECTED);
+        when(mHeadsetService.getConnectionState(testDevices[0]))
+                .thenReturn(BluetoothProfile.STATE_CONNECTED);
+        when(mA2dpService.getConnectionState(testDevices[0]))
+                .thenReturn(BluetoothProfile.STATE_CONNECTED);
         // testDevices[1] - connected only for HFP - will auto-connect for A2DP
-        when(mHeadsetService.getConnectionState(testDevices[1])).thenReturn(
-                BluetoothProfile.STATE_CONNECTED);
-        when(mA2dpService.getConnectionState(testDevices[1])).thenReturn(
-                BluetoothProfile.STATE_DISCONNECTED);
+        when(mHeadsetService.getConnectionState(testDevices[1]))
+                .thenReturn(BluetoothProfile.STATE_CONNECTED);
+        when(mA2dpService.getConnectionState(testDevices[1]))
+                .thenReturn(BluetoothProfile.STATE_DISCONNECTED);
         // testDevices[2] - connected only for A2DP - will auto-connect for HFP
-        when(mHeadsetService.getConnectionState(testDevices[2])).thenReturn(
-                BluetoothProfile.STATE_DISCONNECTED);
-        when(mA2dpService.getConnectionState(testDevices[2])).thenReturn(
-                BluetoothProfile.STATE_CONNECTED);
+        when(mHeadsetService.getConnectionState(testDevices[2]))
+                .thenReturn(BluetoothProfile.STATE_DISCONNECTED);
+        when(mA2dpService.getConnectionState(testDevices[2]))
+                .thenReturn(BluetoothProfile.STATE_CONNECTED);
         // testDevices[3] - not connected
-        when(mHeadsetService.getConnectionState(testDevices[3])).thenReturn(
-                BluetoothProfile.STATE_DISCONNECTED);
-        when(mA2dpService.getConnectionState(testDevices[3])).thenReturn(
-                BluetoothProfile.STATE_DISCONNECTED);
-
+        when(mHeadsetService.getConnectionState(testDevices[3]))
+                .thenReturn(BluetoothProfile.STATE_DISCONNECTED);
+        when(mA2dpService.getConnectionState(testDevices[3]))
+                .thenReturn(BluetoothProfile.STATE_DISCONNECTED);
 
         // Generate connection state changed for HFP for testDevices[1] and trigger
         // auto-connect for A2DP.
-        updateProfileConnectionStateHelper(testDevices[1], BluetoothProfile.HEADSET,
-                BluetoothProfile.STATE_CONNECTED, BluetoothProfile.STATE_DISCONNECTED);
+        updateProfileConnectionStateHelper(
+                testDevices[1],
+                BluetoothProfile.HEADSET,
+                BluetoothProfile.STATE_CONNECTED,
+                BluetoothProfile.STATE_DISCONNECTED);
 
         // Check that we get a call to A2DP connect
-        verify(mA2dpService, timeout(CONNECT_OTHER_PROFILES_TIMEOUT_WAIT_MILLIS)).connect(
-                eq(testDevices[1]));
+        verify(mA2dpService, timeout(CONNECT_OTHER_PROFILES_TIMEOUT_WAIT_MILLIS))
+                .connect(eq(testDevices[1]));
 
         // testDevices[1] auto-connect completed for A2DP
         a2dpConnectedDevices.add(testDevices[1]);
         when(mA2dpService.getConnectedDevices()).thenReturn(a2dpConnectedDevices);
-        when(mA2dpService.getConnectionState(testDevices[1])).thenReturn(
-                BluetoothProfile.STATE_CONNECTED);
+        when(mA2dpService.getConnectionState(testDevices[1]))
+                .thenReturn(BluetoothProfile.STATE_CONNECTED);
 
         // Check the connect priorities for all devices
         // - testDevices[0] - connected for HFP and A2DP: setConnectionPolicy() should not be called
@@ -1350,8 +1392,9 @@ public class PhonePolicyTest {
         //                    called
         verify(mHeadsetService, times(0)).setConnectionPolicy(eq(testDevices[0]), anyInt());
         verify(mA2dpService, times(0)).setConnectionPolicy(eq(testDevices[0]), anyInt());
-        verify(mHeadsetService, times(0)).setConnectionPolicy(eq(testDevices[1]),
-                eq(BluetoothProfile.PRIORITY_AUTO_CONNECT));
+        verify(mHeadsetService, times(0))
+                .setConnectionPolicy(
+                        eq(testDevices[1]), eq(BluetoothProfile.PRIORITY_AUTO_CONNECT));
         verify(mA2dpService, times(0)).setConnectionPolicy(eq(testDevices[1]), anyInt());
         verify(mHeadsetService, times(0)).setConnectionPolicy(eq(testDevices[2]), anyInt());
         verify(mA2dpService, times(0)).setConnectionPolicy(eq(testDevices[2]), anyInt());
@@ -1361,18 +1404,21 @@ public class PhonePolicyTest {
 
         // Generate connection state changed for A2DP for testDevices[2] and trigger
         // auto-connect for HFP.
-        updateProfileConnectionStateHelper(testDevices[2], BluetoothProfile.A2DP,
-                BluetoothProfile.STATE_CONNECTED, BluetoothProfile.STATE_DISCONNECTED);
+        updateProfileConnectionStateHelper(
+                testDevices[2],
+                BluetoothProfile.A2DP,
+                BluetoothProfile.STATE_CONNECTED,
+                BluetoothProfile.STATE_DISCONNECTED);
 
         // Check that we get a call to HFP connect
-        verify(mHeadsetService, timeout(CONNECT_OTHER_PROFILES_TIMEOUT_WAIT_MILLIS)).connect(
-                eq(testDevices[2]));
+        verify(mHeadsetService, timeout(CONNECT_OTHER_PROFILES_TIMEOUT_WAIT_MILLIS))
+                .connect(eq(testDevices[2]));
 
         // testDevices[2] auto-connect completed for HFP
         hsConnectedDevices.add(testDevices[2]);
         when(mHeadsetService.getConnectedDevices()).thenReturn(hsConnectedDevices);
-        when(mHeadsetService.getConnectionState(testDevices[2])).thenReturn(
-                BluetoothProfile.STATE_CONNECTED);
+        when(mHeadsetService.getConnectionState(testDevices[2]))
+                .thenReturn(BluetoothProfile.STATE_CONNECTED);
 
         // Check the connect priorities for all devices
         // - testDevices[0] - connected for HFP and A2DP: setConnectionPolicy() should not be called
@@ -1387,16 +1433,15 @@ public class PhonePolicyTest {
         verify(mHeadsetService, times(0)).setConnectionPolicy(eq(testDevices[1]), anyInt());
         verify(mA2dpService, times(0)).setConnectionPolicy(eq(testDevices[1]), anyInt());
         verify(mHeadsetService, times(0)).setConnectionPolicy(eq(testDevices[2]), anyInt());
-        verify(mA2dpService, times(0)).setConnectionPolicy(eq(testDevices[2]),
-                eq(BluetoothProfile.PRIORITY_AUTO_CONNECT));
+        verify(mA2dpService, times(0))
+                .setConnectionPolicy(
+                        eq(testDevices[2]), eq(BluetoothProfile.PRIORITY_AUTO_CONNECT));
         verify(mHeadsetService, times(0)).setConnectionPolicy(eq(testDevices[3]), anyInt());
         verify(mA2dpService, times(0)).setConnectionPolicy(eq(testDevices[3]), anyInt());
         clearInvocations(mHeadsetService, mA2dpService);
     }
 
-    /**
-     * Test that we will not try to reconnect on a profile if all the connections failed
-     */
+    /** Test that we will not try to reconnect on a profile if all the connections failed */
     @Test
     public void testNoReconnectOnNoConnect() {
         // Return a list of bonded devices (just one)
@@ -1406,10 +1451,10 @@ public class PhonePolicyTest {
 
         // Return PRIORITY_AUTO_CONNECT over HFP and A2DP. This would imply that the profiles are
         // auto-connectable.
-        when(mHeadsetService.getConnectionPolicy(bondedDevices[0])).thenReturn(
-                BluetoothProfile.CONNECTION_POLICY_ALLOWED);
-        when(mA2dpService.getConnectionPolicy(bondedDevices[0])).thenReturn(
-                BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+        when(mHeadsetService.getConnectionPolicy(bondedDevices[0]))
+                .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+        when(mA2dpService.getConnectionPolicy(bondedDevices[0]))
+                .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
 
         when(mAdapterService.getState()).thenReturn(BluetoothAdapter.STATE_ON);
 
@@ -1418,23 +1463,23 @@ public class PhonePolicyTest {
         when(mA2dpService.getConnectedDevices()).thenReturn(Collections.emptyList());
 
         // Both A2DP and HFP should say this device is not connected, except for the intent
-        when(mA2dpService.getConnectionState(bondedDevices[0])).thenReturn(
-                BluetoothProfile.STATE_DISCONNECTED);
-        when(mHeadsetService.getConnectionState(bondedDevices[0])).thenReturn(
-                BluetoothProfile.STATE_DISCONNECTED);
+        when(mA2dpService.getConnectionState(bondedDevices[0]))
+                .thenReturn(BluetoothProfile.STATE_DISCONNECTED);
+        when(mHeadsetService.getConnectionState(bondedDevices[0]))
+                .thenReturn(BluetoothProfile.STATE_DISCONNECTED);
 
         mPhonePolicy.handleAclConnected(bondedDevices[0]);
         waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
 
         // Check that we don't get any calls to reconnect
-        verify(mA2dpService, after(CONNECT_OTHER_PROFILES_TIMEOUT_WAIT_MILLIS).never()).connect(
-                eq(bondedDevices[0]));
+        verify(mA2dpService, after(CONNECT_OTHER_PROFILES_TIMEOUT_WAIT_MILLIS).never())
+                .connect(eq(bondedDevices[0]));
         verify(mHeadsetService, never()).connect(eq(bondedDevices[0]));
     }
 
     /**
-     * Test that we will not try to reconnect on a profile if all the connections failed
-     * with multiple devices
+     * Test that we will not try to reconnect on a profile if all the connections failed with
+     * multiple devices
      */
     @Test
     public void testNoReconnectOnNoConnect_MultiDevice() {
@@ -1446,32 +1491,32 @@ public class PhonePolicyTest {
 
         // Return PRIORITY_AUTO_CONNECT over HFP and A2DP. This would imply that the profiles are
         // auto-connectable.
-        when(mHeadsetService.getConnectionPolicy(bondedDevices[0])).thenReturn(
-                BluetoothProfile.CONNECTION_POLICY_ALLOWED);
-        when(mA2dpService.getConnectionPolicy(bondedDevices[0])).thenReturn(
-                BluetoothProfile.CONNECTION_POLICY_ALLOWED);
-        when(mHeadsetService.getConnectionPolicy(bondedDevices[1])).thenReturn(
-                BluetoothProfile.CONNECTION_POLICY_ALLOWED);
-        when(mA2dpService.getConnectionPolicy(bondedDevices[1])).thenReturn(
-                BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+        when(mHeadsetService.getConnectionPolicy(bondedDevices[0]))
+                .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+        when(mA2dpService.getConnectionPolicy(bondedDevices[0]))
+                .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+        when(mHeadsetService.getConnectionPolicy(bondedDevices[1]))
+                .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+        when(mA2dpService.getConnectionPolicy(bondedDevices[1]))
+                .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
 
         when(mAdapterService.getState()).thenReturn(BluetoothAdapter.STATE_ON);
 
         // Return an a list with only the second device as connected
-        when(mHeadsetService.getConnectedDevices()).thenReturn(
-                Collections.singletonList(bondedDevices[1]));
-        when(mA2dpService.getConnectedDevices()).thenReturn(
-                Collections.singletonList(bondedDevices[1]));
+        when(mHeadsetService.getConnectedDevices())
+                .thenReturn(Collections.singletonList(bondedDevices[1]));
+        when(mA2dpService.getConnectedDevices())
+                .thenReturn(Collections.singletonList(bondedDevices[1]));
 
         // Both A2DP and HFP should say this device is not connected, except for the intent
-        when(mA2dpService.getConnectionState(bondedDevices[0])).thenReturn(
-                BluetoothProfile.STATE_DISCONNECTED);
-        when(mHeadsetService.getConnectionState(bondedDevices[0])).thenReturn(
-                BluetoothProfile.STATE_DISCONNECTED);
-        when(mA2dpService.getConnectionState(bondedDevices[1])).thenReturn(
-                BluetoothProfile.STATE_CONNECTED);
-        when(mHeadsetService.getConnectionState(bondedDevices[1])).thenReturn(
-                BluetoothProfile.STATE_CONNECTED);
+        when(mA2dpService.getConnectionState(bondedDevices[0]))
+                .thenReturn(BluetoothProfile.STATE_DISCONNECTED);
+        when(mHeadsetService.getConnectionState(bondedDevices[0]))
+                .thenReturn(BluetoothProfile.STATE_DISCONNECTED);
+        when(mA2dpService.getConnectionState(bondedDevices[1]))
+                .thenReturn(BluetoothProfile.STATE_CONNECTED);
+        when(mHeadsetService.getConnectionState(bondedDevices[1]))
+                .thenReturn(BluetoothProfile.STATE_CONNECTED);
 
         // ACL is connected for both devices.
         when(mAdapterService.getConnectionState(bondedDevices[0]))
@@ -1485,8 +1530,8 @@ public class PhonePolicyTest {
         waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
 
         // Check that we don't get any calls to reconnect
-        verify(mA2dpService, after(CONNECT_OTHER_PROFILES_TIMEOUT_WAIT_MILLIS).never()).connect(
-                eq(bondedDevices[0]));
+        verify(mA2dpService, after(CONNECT_OTHER_PROFILES_TIMEOUT_WAIT_MILLIS).never())
+                .connect(eq(bondedDevices[0]));
         verify(mHeadsetService, never()).connect(eq(bondedDevices[0]));
     }
 
@@ -1503,29 +1548,29 @@ public class PhonePolicyTest {
 
         // Return PRIORITY_AUTO_CONNECT over HFP and A2DP. This would imply that the profiles are
         // auto-connectable.
-        when(mHeadsetService.getConnectionPolicy(bondedDevices[0])).thenReturn(
-                BluetoothProfile.CONNECTION_POLICY_ALLOWED);
-        when(mA2dpService.getConnectionPolicy(bondedDevices[0])).thenReturn(
-                BluetoothProfile.CONNECTION_POLICY_ALLOWED);
-        when(mHeadsetService.getConnectionPolicy(bondedDevices[1])).thenReturn(
-                BluetoothProfile.CONNECTION_POLICY_ALLOWED);
-        when(mA2dpService.getConnectionPolicy(bondedDevices[1])).thenReturn(
-                BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+        when(mHeadsetService.getConnectionPolicy(bondedDevices[0]))
+                .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+        when(mA2dpService.getConnectionPolicy(bondedDevices[0]))
+                .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+        when(mHeadsetService.getConnectionPolicy(bondedDevices[1]))
+                .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+        when(mA2dpService.getConnectionPolicy(bondedDevices[1]))
+                .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
 
         when(mAdapterService.getState()).thenReturn(BluetoothAdapter.STATE_ON);
 
         // Return an a list with only the second device as connected
-        when(mHeadsetService.getConnectedDevices()).thenReturn(
-                Collections.singletonList(bondedDevices[1]));
+        when(mHeadsetService.getConnectedDevices())
+                .thenReturn(Collections.singletonList(bondedDevices[1]));
         when(mA2dpService.getConnectedDevices()).thenReturn(Collections.emptyList());
 
         // Both A2DP and HFP should say this device is not connected, except for the intent
-        when(mA2dpService.getConnectionState(bondedDevices[0])).thenReturn(
-                BluetoothProfile.STATE_DISCONNECTED);
-        when(mHeadsetService.getConnectionState(bondedDevices[0])).thenReturn(
-                BluetoothProfile.STATE_DISCONNECTED);
-        when(mA2dpService.getConnectionState(bondedDevices[1])).thenReturn(
-                BluetoothProfile.STATE_DISCONNECTED);
+        when(mA2dpService.getConnectionState(bondedDevices[0]))
+                .thenReturn(BluetoothProfile.STATE_DISCONNECTED);
+        when(mHeadsetService.getConnectionState(bondedDevices[0]))
+                .thenReturn(BluetoothProfile.STATE_DISCONNECTED);
+        when(mA2dpService.getConnectionState(bondedDevices[1]))
+                .thenReturn(BluetoothProfile.STATE_DISCONNECTED);
 
         // ACL is connected, lets simulate this.
         when(mAdapterService.getConnectionState(bondedDevices[1]))
@@ -1533,8 +1578,11 @@ public class PhonePolicyTest {
 
         // We send a connection successful for one profile since the re-connect *only* works if we
         // have already connected successfully over one of the profiles
-        updateProfileConnectionStateHelper(bondedDevices[1], BluetoothProfile.HEADSET,
-                BluetoothProfile.STATE_CONNECTED, BluetoothProfile.STATE_DISCONNECTED);
+        updateProfileConnectionStateHelper(
+                bondedDevices[1],
+                BluetoothProfile.HEADSET,
+                BluetoothProfile.STATE_CONNECTED,
+                BluetoothProfile.STATE_DISCONNECTED);
 
         // Check that we do get A2DP call to reconnect, because HEADSET just got connected
         verify(mA2dpService, timeout(CONNECT_OTHER_PROFILES_TIMEOUT_WAIT_MILLIS))
@@ -1560,15 +1608,14 @@ public class PhonePolicyTest {
         mPhonePolicy.onUuidsDiscovered(device, null);
 
         // Check that we do not crash and not call any setPriority methods
-        verify(mHeadsetService,
-                after(CONNECT_OTHER_PROFILES_TIMEOUT_WAIT_MILLIS).never())
+        verify(mHeadsetService, after(CONNECT_OTHER_PROFILES_TIMEOUT_WAIT_MILLIS).never())
                 .setConnectionPolicy(eq(device), eq(BluetoothProfile.CONNECTION_POLICY_ALLOWED));
         verify(mA2dpService, never())
                 .setConnectionPolicy(eq(device), eq(BluetoothProfile.CONNECTION_POLICY_ALLOWED));
     }
 
-    private void updateProfileConnectionStateHelper(BluetoothDevice device, int profileId,
-            int nextState, int prevState) {
+    private void updateProfileConnectionStateHelper(
+            BluetoothDevice device, int profileId, int nextState, int prevState) {
         switch (profileId) {
             case BluetoothProfile.A2DP:
                 when(mA2dpService.getConnectionState(device)).thenReturn(nextState);

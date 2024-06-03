@@ -57,9 +57,7 @@ import javax.crypto.NoSuchPaddingException;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
 
-/**
- * Service used for handling encryption and decryption of the bt_config.conf
- */
+/** Service used for handling encryption and decryption of the bt_config.conf */
 public class BluetoothKeystoreService {
     private static final String TAG = BluetoothKeystoreService.class.getSimpleName();
 
@@ -103,8 +101,15 @@ public class BluetoothKeystoreService {
     private Map<String, String> mNameDecryptKey = new HashMap<>();
     private BlockingQueue<String> mPendingDecryptKey = new LinkedBlockingQueue<>();
     private BlockingQueue<String> mPendingEncryptKey = new LinkedBlockingQueue<>();
-    private final List<String> mEncryptKeyNameList = List.of("LinkKey", "LE_KEY_PENC", "LE_KEY_PID",
-            "LE_KEY_LID", "LE_KEY_PCSRK", "LE_KEY_LENC", "LE_KEY_LCSRK");
+    private final List<String> mEncryptKeyNameList =
+            List.of(
+                    "LinkKey",
+                    "LE_KEY_PENC",
+                    "LE_KEY_PID",
+                    "LE_KEY_LID",
+                    "LE_KEY_PCSRK",
+                    "LE_KEY_LENC",
+                    "LE_KEY_LCSRK");
 
     private Base64.Decoder mDecoder = Base64.getDecoder();
     private Base64.Encoder mEncoder = Base64.getEncoder();
@@ -118,9 +123,7 @@ public class BluetoothKeystoreService {
         startThread();
     }
 
-    /**
-     * Start and initialize the BluetoothKeystoreService
-     */
+    /** Start and initialize the BluetoothKeystoreService */
     public void start() {
         debugLog("start");
         KeyStore keyStore;
@@ -152,9 +155,7 @@ public class BluetoothKeystoreService {
         loadConfigData();
     }
 
-    /**
-     * Factory reset the keystore service.
-     */
+    /** Factory reset the keystore service. */
     public void factoryReset() {
         try {
             cleanupAll();
@@ -163,9 +164,7 @@ public class BluetoothKeystoreService {
         }
     }
 
-    /**
-     * Cleans up the keystore service.
-     */
+    /** Cleans up the keystore service. */
     public void cleanup() {
         debugLog("cleanup");
 
@@ -184,9 +183,7 @@ public class BluetoothKeystoreService {
         }
     }
 
-    /**
-     * Clean up if Common Criteria mode is enabled.
-     */
+    /** Clean up if Common Criteria mode is enabled. */
     @VisibleForTesting
     public void cleanupForCommonCriteriaModeEnable() {
         try {
@@ -202,18 +199,14 @@ public class BluetoothKeystoreService {
         stopThread();
     }
 
-    /**
-     * Clean up if Common Criteria mode is disabled.
-     */
+    /** Clean up if Common Criteria mode is disabled. */
     @VisibleForTesting
     public void cleanupForCommonCriteriaModeDisable() {
         mNameDecryptKey.clear();
         mNameEncryptKey.clear();
     }
 
-    /**
-     * Load decryption data from file.
-     */
+    /** Load decryption data from file. */
     @VisibleForTesting
     public void loadConfigData() {
         try {
@@ -270,9 +263,7 @@ public class BluetoothKeystoreService {
         return SystemProperties.getBoolean("persist.bluetooth.factoryreset", false);
     }
 
-    /**
-     * Init JNI
-     */
+    /** Init JNI */
     public void initJni() {
         debugLog("initJni()");
         // Need to make sure all keys are decrypted.
@@ -282,9 +273,7 @@ public class BluetoothKeystoreService {
         mBluetoothKeystoreNativeInterface.init(this);
     }
 
-    /**
-     * Gets result of the checksum comparison
-     */
+    /** Gets result of the checksum comparison */
     public int getCompareResult() {
         debugLog("getCompareResult: " + mCompareResult);
         return mCompareResult;
@@ -293,9 +282,9 @@ public class BluetoothKeystoreService {
     /**
      * Sets or removes the encryption key value.
      *
-     * <p>If the value of decryptedString matches {@link #CONFIG_FILE_HASH} then
-     * read the hash file and decrypt the keys and place them into {@link mPendingEncryptKey}
-     * otherwise cleanup all data and remove the keys.
+     * <p>If the value of decryptedString matches {@link #CONFIG_FILE_HASH} then read the hash file
+     * and decrypt the keys and place them into {@link mPendingEncryptKey} otherwise cleanup all
+     * data and remove the keys.
      *
      * @param prefixString key to use
      * @param decryptedString string to decrypt
@@ -329,9 +318,7 @@ public class BluetoothKeystoreService {
         }
     }
 
-    /**
-     * Clean up memory and all files.
-     */
+    /** Clean up memory and all files. */
     @VisibleForTesting
     public void cleanupAll() throws IOException {
         cleanupFile();
@@ -344,9 +331,7 @@ public class BluetoothKeystoreService {
         Files.deleteIfExists(Paths.get(CONFIG_BACKUP_ENCRYPTION_PATH));
     }
 
-    /**
-     * Clean up memory.
-     */
+    /** Clean up memory. */
     @VisibleForTesting
     public void cleanupMemory() {
         stopThread();
@@ -355,9 +340,7 @@ public class BluetoothKeystoreService {
         startThread();
     }
 
-    /**
-     * Stop encrypt/decrypt thread.
-     */
+    /** Stop encrypt/decrypt thread. */
     @VisibleForTesting
     public void stopThread() {
         try {
@@ -381,9 +364,7 @@ public class BluetoothKeystoreService {
         mDecryptDataThread.start();
     }
 
-    /**
-     * Get key value from the mNameDecryptKey.
-     */
+    /** Get key value from the mNameDecryptKey. */
     public String getKey(String prefixString) {
         infoLog("getKey: prefix: " + prefixString);
         if (!mNameDecryptKey.containsKey(prefixString)) {
@@ -393,9 +374,7 @@ public class BluetoothKeystoreService {
         return mNameDecryptKey.get(prefixString);
     }
 
-    /**
-     * Save encryption key into the encryption file.
-     */
+    /** Save encryption key into the encryption file. */
     @VisibleForTesting
     public void saveEncryptedKey() {
         stopThread();
@@ -450,9 +429,7 @@ public class BluetoothKeystoreService {
         return (mCompareResult & item) == item;
     }
 
-    /**
-     * Compare config file checksum.
-     */
+    /** Compare config file checksum. */
     @VisibleForTesting
     public boolean compareFileHash(String hashFilePathString)
             throws InterruptedException, IOException, NoSuchAlgorithmException {
@@ -475,8 +452,9 @@ public class BluetoothKeystoreService {
         readHashFile(hashFilePathString, prefixString);
 
         if (!mNameEncryptKey.containsKey(prefixString)) {
-            errorLog("compareFileHash: NameEncryptKey doesn't contain the key, prefix:"
-                    + prefixString);
+            errorLog(
+                    "compareFileHash: NameEncryptKey doesn't contain the key, prefix:"
+                            + prefixString);
             return false;
         }
         String encryptedData = mNameEncryptKey.get(prefixString);
@@ -492,7 +470,7 @@ public class BluetoothKeystoreService {
     private void readHashFile(String filePathString, String prefixString)
             throws InterruptedException, NoSuchAlgorithmException {
         byte[] dataBuffer = new byte[BUFFER_SIZE];
-        int bytesRead  = 0;
+        int bytesRead = 0;
         boolean successful = false;
         int counter = 0;
         while (!successful && counter < TRY_MAX) {
@@ -506,8 +484,9 @@ public class BluetoothKeystoreService {
                 byte[] messageDigestBytes = messageDigest.digest();
                 StringBuilder hashString = new StringBuilder();
                 for (int index = 0; index < messageDigestBytes.length; index++) {
-                    hashString.append(Integer.toString((
-                            messageDigestBytes[index] & 0xff) + 0x100, 16).substring(1));
+                    hashString.append(
+                            Integer.toString((messageDigestBytes[index] & 0xff) + 0x100, 16)
+                                    .substring(1));
                 }
 
                 mNameDecryptKey.put(prefixString, hashString.toString());
@@ -523,12 +502,9 @@ public class BluetoothKeystoreService {
         }
     }
 
-    /**
-     * Parses a file to search for the key and put it into the pending compute queue
-     */
+    /** Parses a file to search for the key and put it into the pending compute queue */
     @VisibleForTesting
-    public void parseConfigFile(String filePathString)
-            throws IOException, InterruptedException {
+    public void parseConfigFile(String filePathString) throws IOException, InterruptedException {
         String prefixString = null;
         String dataString = null;
         String name = null;
@@ -570,9 +546,7 @@ public class BluetoothKeystoreService {
         }
     }
 
-    /**
-     * Load encryption file and push into mNameEncryptKey and pendingDecryptKey.
-     */
+    /** Load encryption file and push into mNameEncryptKey and pendingDecryptKey. */
     @VisibleForTesting
     public void loadEncryptionFile(String filePathString, boolean doDecrypt)
             throws InterruptedException {
@@ -640,9 +614,12 @@ public class BluetoothKeystoreService {
 
             if (secretKeyReference != null) {
                 cipher.init(Cipher.ENCRYPT_MODE, secretKeyReference);
-                protobuf = BluetoothKeystoreProto.EncryptedData.newBuilder()
-                    .setEncryptedData(ByteString.copyFrom(cipher.doFinal(data.getBytes())))
-                    .setInitVector(ByteString.copyFrom(cipher.getIV())).build();
+                protobuf =
+                        BluetoothKeystoreProto.EncryptedData.newBuilder()
+                                .setEncryptedData(
+                                        ByteString.copyFrom(cipher.doFinal(data.getBytes())))
+                                .setInitVector(ByteString.copyFrom(cipher.getIV()))
+                                .build();
 
                 outputBytes = protobuf.toByteArray();
                 if (outputBytes == null) {
@@ -701,8 +678,8 @@ public class BluetoothKeystoreService {
         } catch (com.google.protobuf.InvalidProtocolBufferException e) {
             reportBluetoothKeystoreException(e, "decrypt: Failed to parse EncryptedData protobuf.");
         } catch (NoSuchAlgorithmException e) {
-            reportKeystoreException(e,
-                    "decrypt could not find cipher algorithm " + CIPHER_ALGORITHM);
+            reportKeystoreException(
+                    e, "decrypt could not find cipher algorithm " + CIPHER_ALGORITHM);
         } catch (NoSuchPaddingException e) {
             reportKeystoreException(e, "decrypt could not find padding algorithm");
         } catch (IllegalBlockSizeException e) {
@@ -725,7 +702,9 @@ public class BluetoothKeystoreService {
             try {
                 keyStore = KeyStore.getInstance("AndroidKeyStore");
                 keyStore.load(null);
-            } catch (KeyStoreException | CertificateException | NoSuchAlgorithmException
+            } catch (KeyStoreException
+                    | CertificateException
+                    | NoSuchAlgorithmException
                     | IOException e) {
                 reportKeystoreException(e, "cannot open keystore");
             }
@@ -740,8 +719,8 @@ public class BluetoothKeystoreService {
         try {
             KeyStore keyStore = getKeyStore();
             if (keyStore.containsAlias(KEYALIAS)) { // The key exists in key store. Get the key.
-                KeyStore.SecretKeyEntry secretKeyEntry = (KeyStore.SecretKeyEntry) keyStore
-                        .getEntry(KEYALIAS, null);
+                KeyStore.SecretKeyEntry secretKeyEntry =
+                        (KeyStore.SecretKeyEntry) keyStore.getEntry(KEYALIAS, null);
 
                 if (secretKeyEntry != null) {
                     secretKey = secretKeyEntry.getSecretKey();
@@ -750,15 +729,18 @@ public class BluetoothKeystoreService {
                 }
             } else {
                 // The key does not exist in key store. Create the key and store it.
-                KeyGenerator keyGenerator = KeyGenerator
-                        .getInstance(KeyProperties.KEY_ALGORITHM_AES, KEY_STORE);
+                KeyGenerator keyGenerator =
+                        KeyGenerator.getInstance(KeyProperties.KEY_ALGORITHM_AES, KEY_STORE);
 
-                KeyGenParameterSpec keyGenParameterSpec = new KeyGenParameterSpec.Builder(KEYALIAS,
-                        KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
-                        .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
-                        .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-                        .setKeySize(KEY_LENGTH)
-                        .build();
+                KeyGenParameterSpec keyGenParameterSpec =
+                        new KeyGenParameterSpec.Builder(
+                                        KEYALIAS,
+                                        KeyProperties.PURPOSE_ENCRYPT
+                                                | KeyProperties.PURPOSE_DECRYPT)
+                                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
+                                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
+                                .setKeySize(KEY_LENGTH)
+                                .build();
 
                 keyGenerator.init(keyGenParameterSpec);
                 secretKey = keyGenerator.generateKey();
@@ -772,8 +754,8 @@ public class BluetoothKeystoreService {
         } catch (NoSuchProviderException e) {
             reportKeystoreException(e, "getOrCreateSecretKey cannot find crypto provider");
         } catch (UnrecoverableEntryException e) {
-            reportKeystoreException(e,
-                    "getOrCreateSecretKey had an unrecoverable entry exception.");
+            reportKeystoreException(
+                    e, "getOrCreateSecretKey had an unrecoverable entry exception.");
         } catch (ProviderException e) {
             reportKeystoreException(e, "getOrCreateSecretKey had a provider exception.");
         }
@@ -800,9 +782,7 @@ public class BluetoothKeystoreService {
         Log.e(TAG, msg);
     }
 
-    /**
-     * A thread that decrypt data if the queue has new decrypt task.
-     */
+    /** A thread that decrypt data if the queue has new decrypt task. */
     private class ComputeDataThread extends Thread {
         private Map<String, String> mSourceDataMap;
         private Map<String, String> mTargetDataMap;
@@ -842,8 +822,11 @@ public class BluetoothKeystoreService {
                         if (targetData != null) {
                             mTargetDataMap.put(prefixString, targetData);
                         } else {
-                            errorLog("Computing of Data failed with prefixString: " + prefixString
-                                    + ", doEncrypt: " + mDoEncrypt);
+                            errorLog(
+                                    "Computing of Data failed with prefixString: "
+                                            + prefixString
+                                            + ", doEncrypt: "
+                                            + mDoEncrypt);
                         }
                     }
                 } catch (InterruptedException e) {

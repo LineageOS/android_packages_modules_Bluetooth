@@ -128,15 +128,19 @@ public class PbapClientServiceTest {
 
     @Test
     public void testSetConnectionPolicy_withNullDevice_throwsIAE() {
-        assertThrows(IllegalArgumentException.class, () -> mService.setConnectionPolicy(
-                null, BluetoothProfile.CONNECTION_POLICY_ALLOWED));
+        assertThrows(
+                IllegalArgumentException.class,
+                () ->
+                        mService.setConnectionPolicy(
+                                null, BluetoothProfile.CONNECTION_POLICY_ALLOWED));
     }
 
     @Test
     public void testSetConnectionPolicy() {
         int connectionPolicy = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
         when(mDatabaseManager.setProfileConnectionPolicy(
-                mRemoteDevice, BluetoothProfile.PBAP_CLIENT, connectionPolicy)).thenReturn(true);
+                        mRemoteDevice, BluetoothProfile.PBAP_CLIENT, connectionPolicy))
+                .thenReturn(true);
 
         assertThat(mService.setConnectionPolicy(mRemoteDevice, connectionPolicy)).isTrue();
     }
@@ -150,7 +154,8 @@ public class PbapClientServiceTest {
     public void testGetConnectionPolicy() {
         int connectionPolicy = BluetoothProfile.CONNECTION_POLICY_ALLOWED;
         when(mDatabaseManager.getProfileConnectionPolicy(
-                mRemoteDevice, BluetoothProfile.PBAP_CLIENT)).thenReturn(connectionPolicy);
+                        mRemoteDevice, BluetoothProfile.PBAP_CLIENT))
+                .thenReturn(connectionPolicy);
 
         assertThat(mService.getConnectionPolicy(mRemoteDevice)).isEqualTo(connectionPolicy);
     }
@@ -164,7 +169,8 @@ public class PbapClientServiceTest {
     public void testConnect_whenPolicyIsForbidden_returnsFalse() {
         int connectionPolicy = BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
         when(mDatabaseManager.getProfileConnectionPolicy(
-                mRemoteDevice, BluetoothProfile.PBAP_CLIENT)).thenReturn(connectionPolicy);
+                        mRemoteDevice, BluetoothProfile.PBAP_CLIENT))
+                .thenReturn(connectionPolicy);
 
         assertThat(mService.connect(mRemoteDevice)).isFalse();
     }
@@ -173,7 +179,8 @@ public class PbapClientServiceTest {
     public void testConnect_whenPolicyIsAllowed_returnsTrue() {
         int connectionPolicy = BluetoothProfile.CONNECTION_POLICY_ALLOWED;
         when(mDatabaseManager.getProfileConnectionPolicy(
-                mRemoteDevice, BluetoothProfile.PBAP_CLIENT)).thenReturn(connectionPolicy);
+                        mRemoteDevice, BluetoothProfile.PBAP_CLIENT))
+                .thenReturn(connectionPolicy);
 
         assertThat(mService.connect(mRemoteDevice)).isTrue();
     }
@@ -361,8 +368,12 @@ public class PbapClientServiceTest {
                 BluetoothProfile.STATE_DISCONNECTED);
 
         ArgumentCaptor<Object> selectionArgsCaptor = ArgumentCaptor.forClass(Object.class);
-        verify(methodProxy).contentResolverDelete(any(), eq(CallLog.Calls.CONTENT_URI), any(),
-                (String[]) selectionArgsCaptor.capture());
+        verify(methodProxy)
+                .contentResolverDelete(
+                        any(),
+                        eq(CallLog.Calls.CONTENT_URI),
+                        any(),
+                        (String[]) selectionArgsCaptor.capture());
 
         assertThat(((String[]) selectionArgsCaptor.getValue())[0])
                 .isEqualTo(mRemoteDevice.getAddress());

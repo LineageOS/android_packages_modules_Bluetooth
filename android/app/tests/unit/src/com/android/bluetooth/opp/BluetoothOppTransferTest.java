@@ -83,10 +83,8 @@ public class BluetoothOppTransferTest {
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
     @Rule public final SetFlagsRule mSetFlagRule = new SetFlagsRule();
 
-    @Mock
-    BluetoothOppObexSession mSession;
-    @Mock
-    BluetoothMethodProxy mCallProxy;
+    @Mock BluetoothOppObexSession mSession;
+    @Mock BluetoothMethodProxy mCallProxy;
     Context mContext;
     BluetoothOppBatch mBluetoothOppBatch;
     BluetoothOppTransfer mTransfer;
@@ -96,18 +94,42 @@ public class BluetoothOppTransferTest {
     @Before
     public void setUp() throws Exception {
         BluetoothMethodProxy.setInstanceForTesting(mCallProxy);
-        doReturn(0).when(mCallProxy).contentResolverDelete(any(), nullable(Uri.class),
-                nullable(String.class), nullable(String[].class));
-        doReturn(0).when(mCallProxy).contentResolverUpdate(any(), nullable(Uri.class),
-                nullable(ContentValues.class), nullable(String.class), nullable(String[].class));
+        doReturn(0)
+                .when(mCallProxy)
+                .contentResolverDelete(
+                        any(),
+                        nullable(Uri.class),
+                        nullable(String.class),
+                        nullable(String[].class));
+        doReturn(0)
+                .when(mCallProxy)
+                .contentResolverUpdate(
+                        any(),
+                        nullable(Uri.class),
+                        nullable(ContentValues.class),
+                        nullable(String.class),
+                        nullable(String[].class));
 
-        mInitShareInfo = new BluetoothOppShareInfo(8765, mUri, mHintString, mFilename, mMimetype,
-                mDirection, mDestination, mVisibility, mConfirm, mStatus, mTotalBytes,
-                mCurrentBytes,
-                mTimestamp, mMediaScanned);
-        mContext = spy(
-                new ContextWrapper(
-                        InstrumentationRegistry.getInstrumentation().getTargetContext()));
+        mInitShareInfo =
+                new BluetoothOppShareInfo(
+                        8765,
+                        mUri,
+                        mHintString,
+                        mFilename,
+                        mMimetype,
+                        mDirection,
+                        mDestination,
+                        mVisibility,
+                        mConfirm,
+                        mStatus,
+                        mTotalBytes,
+                        mCurrentBytes,
+                        mTimestamp,
+                        mMediaScanned);
+        mContext =
+                spy(
+                        new ContextWrapper(
+                                InstrumentationRegistry.getInstrumentation().getTargetContext()));
         mBluetoothOppBatch = spy(new BluetoothOppBatch(mContext, mInitShareInfo));
         mTransfer = new BluetoothOppTransfer(mContext, mBluetoothOppBatch, mSession);
         mEventHandler = mTransfer.new EventHandler(Looper.getMainLooper());
@@ -120,17 +142,31 @@ public class BluetoothOppTransferTest {
 
     @Test
     public void onShareAdded_checkFirstPendingShare() {
-        BluetoothOppShareInfo newShareInfo = new BluetoothOppShareInfo(1, mUri, mHintString,
-                mFilename, mMimetype, BluetoothShare.DIRECTION_INBOUND, mDestination, mVisibility,
-                BluetoothShare.USER_CONFIRMATION_AUTO_CONFIRMED, mStatus, mTotalBytes,
-                mCurrentBytes,
-                mTimestamp, mMediaScanned);
+        BluetoothOppShareInfo newShareInfo =
+                new BluetoothOppShareInfo(
+                        1,
+                        mUri,
+                        mHintString,
+                        mFilename,
+                        mMimetype,
+                        BluetoothShare.DIRECTION_INBOUND,
+                        mDestination,
+                        mVisibility,
+                        BluetoothShare.USER_CONFIRMATION_AUTO_CONFIRMED,
+                        mStatus,
+                        mTotalBytes,
+                        mCurrentBytes,
+                        mTimestamp,
+                        mMediaScanned);
 
-        doAnswer(invocation -> {
-            assertThat((BluetoothOppShareInfo) invocation.getArgument(0))
-                    .isEqualTo(mInitShareInfo);
-            return null;
-        }).when(mSession).addShare(any(BluetoothOppShareInfo.class));
+        doAnswer(
+                        invocation -> {
+                            assertThat((BluetoothOppShareInfo) invocation.getArgument(0))
+                                    .isEqualTo(mInitShareInfo);
+                            return null;
+                        })
+                .when(mSession)
+                .addShare(any(BluetoothOppShareInfo.class));
 
         // This will trigger mTransfer.onShareAdded(), which will call mTransfer
         // .processCurrentShare(),
@@ -179,14 +215,14 @@ public class BluetoothOppTransferTest {
         assertThat(mBluetoothOppBatch.mStatus).isEqualTo(Constants.BATCH_STATUS_FAILED);
     }
 
-// TODO: try to use ShadowBluetoothDevice
-//    @Test
-//    public void eventHandler_handleMessage_SOCKET_ERROR_RETRY_connectThreadInitiated() {
-//        BluetoothDevice bluetoothDevice = ShadowBluetoothDevice();
-//        Message message = Message.obtain(mEventHandler, SOCKET_ERROR_RETRY, bluetoothDevice);
-//        mEventHandler.handleMessage(message);
-//        assertThat(mTransfer.mConnectThread).isNotNull();
-//    }
+    // TODO: try to use ShadowBluetoothDevice
+    //    @Test
+    //    public void eventHandler_handleMessage_SOCKET_ERROR_RETRY_connectThreadInitiated() {
+    //        BluetoothDevice bluetoothDevice = ShadowBluetoothDevice();
+    //        Message message = Message.obtain(mEventHandler, SOCKET_ERROR_RETRY, bluetoothDevice);
+    //        mEventHandler.handleMessage(message);
+    //        assertThat(mTransfer.mConnectThread).isNotNull();
+    //    }
 
     @Test
     public void eventHandler_handleMessage_TRANSPORT_CONNECTED_obexSessionStarted() {
@@ -200,12 +236,26 @@ public class BluetoothOppTransferTest {
     public void eventHandler_handleMessage_MSG_SHARE_COMPLETE_shareAdded() {
         Message message = Message.obtain(mEventHandler, BluetoothOppObexSession.MSG_SHARE_COMPLETE);
 
-        mInitShareInfo = new BluetoothOppShareInfo(123, mUri, mHintString, mFilename, mMimetype,
-                BluetoothShare.DIRECTION_OUTBOUND, mDestination, mVisibility, mConfirm, mStatus,
-                mTotalBytes, mCurrentBytes, mTimestamp, mMediaScanned);
-        mContext = spy(
-                new ContextWrapper(
-                        InstrumentationRegistry.getInstrumentation().getTargetContext()));
+        mInitShareInfo =
+                new BluetoothOppShareInfo(
+                        123,
+                        mUri,
+                        mHintString,
+                        mFilename,
+                        mMimetype,
+                        BluetoothShare.DIRECTION_OUTBOUND,
+                        mDestination,
+                        mVisibility,
+                        mConfirm,
+                        mStatus,
+                        mTotalBytes,
+                        mCurrentBytes,
+                        mTimestamp,
+                        mMediaScanned);
+        mContext =
+                spy(
+                        new ContextWrapper(
+                                InstrumentationRegistry.getInstrumentation().getTargetContext()));
         mBluetoothOppBatch = spy(new BluetoothOppBatch(mContext, mInitShareInfo));
         mTransfer = new BluetoothOppTransfer(mContext, mBluetoothOppBatch, mSession);
         mEventHandler = mTransfer.new EventHandler(Looper.getMainLooper());
@@ -218,9 +268,8 @@ public class BluetoothOppTransferTest {
     @Test
     public void eventHandler_handleMessage_MSG_SESSION_COMPLETE_batchFinished() {
         BluetoothOppShareInfo info = mock(BluetoothOppShareInfo.class);
-        Message message = Message.obtain(mEventHandler,
-                BluetoothOppObexSession.MSG_SESSION_COMPLETE,
-                info);
+        Message message =
+                Message.obtain(mEventHandler, BluetoothOppObexSession.MSG_SESSION_COMPLETE, info);
         mEventHandler.handleMessage(message);
 
         assertThat(mBluetoothOppBatch.mStatus).isEqualTo(Constants.BATCH_STATUS_FINISHED);
@@ -229,8 +278,8 @@ public class BluetoothOppTransferTest {
     @Test
     public void eventHandler_handleMessage_MSG_SESSION_ERROR_batchFailed() {
         BluetoothOppShareInfo info = mock(BluetoothOppShareInfo.class);
-        Message message = Message.obtain(mEventHandler, BluetoothOppObexSession.MSG_SESSION_ERROR,
-                info);
+        Message message =
+                Message.obtain(mEventHandler, BluetoothOppObexSession.MSG_SESSION_ERROR, info);
         mEventHandler.handleMessage(message);
 
         assertThat(mBluetoothOppBatch.mStatus).isEqualTo(Constants.BATCH_STATUS_FAILED);
@@ -239,17 +288,29 @@ public class BluetoothOppTransferTest {
     @Test
     public void eventHandler_handleMessage_MSG_SHARE_INTERRUPTED_batchFailed() {
 
-        mInitShareInfo = new BluetoothOppShareInfo(123, mUri, mHintString, mFilename, mMimetype,
-                BluetoothShare.DIRECTION_OUTBOUND, mDestination, mVisibility, mConfirm, mStatus,
-                mTotalBytes, mCurrentBytes, mTimestamp, mMediaScanned);
+        mInitShareInfo =
+                new BluetoothOppShareInfo(
+                        123,
+                        mUri,
+                        mHintString,
+                        mFilename,
+                        mMimetype,
+                        BluetoothShare.DIRECTION_OUTBOUND,
+                        mDestination,
+                        mVisibility,
+                        mConfirm,
+                        mStatus,
+                        mTotalBytes,
+                        mCurrentBytes,
+                        mTimestamp,
+                        mMediaScanned);
         mBluetoothOppBatch = spy(new BluetoothOppBatch(mContext, mInitShareInfo));
         mTransfer = new BluetoothOppTransfer(mContext, mBluetoothOppBatch, mSession);
         mEventHandler = mTransfer.new EventHandler(Looper.getMainLooper());
 
         BluetoothOppShareInfo info = mock(BluetoothOppShareInfo.class);
-        Message message = Message.obtain(mEventHandler,
-                BluetoothOppObexSession.MSG_SHARE_INTERRUPTED,
-                info);
+        Message message =
+                Message.obtain(mEventHandler, BluetoothOppObexSession.MSG_SHARE_INTERRUPTED, info);
         mEventHandler.handleMessage(message);
 
         assertThat(mBluetoothOppBatch.mStatus).isEqualTo(Constants.BATCH_STATUS_FAILED);
@@ -257,24 +318,45 @@ public class BluetoothOppTransferTest {
 
     @Test
     public void eventHandler_handleMessage_MSG_CONNECT_TIMEOUT() {
-        Message message = Message.obtain(mEventHandler,
-                BluetoothOppObexSession.MSG_CONNECT_TIMEOUT);
-        BluetoothOppShareInfo newInfo = new BluetoothOppShareInfo(321, mUri, mHintString,
-                mFilename, mMimetype, mDirection, mDestination, mVisibility, mConfirm, mStatus,
-                mTotalBytes, mCurrentBytes, mTimestamp, mMediaScanned);
+        Message message =
+                Message.obtain(mEventHandler, BluetoothOppObexSession.MSG_CONNECT_TIMEOUT);
+        BluetoothOppShareInfo newInfo =
+                new BluetoothOppShareInfo(
+                        321,
+                        mUri,
+                        mHintString,
+                        mFilename,
+                        mMimetype,
+                        mDirection,
+                        mDestination,
+                        mVisibility,
+                        mConfirm,
+                        mStatus,
+                        mTotalBytes,
+                        mCurrentBytes,
+                        mTimestamp,
+                        mMediaScanned);
         // Adding new info will assign value to mCurrentShare
         mBluetoothOppBatch.addShare(newInfo);
         mEventHandler.handleMessage(message);
 
-        verify(mContext).sendBroadcast(argThat(
-                arg -> arg.getAction().equals(BluetoothShare.USER_CONFIRMATION_TIMEOUT_ACTION)));
+        verify(mContext)
+                .sendBroadcast(
+                        argThat(
+                                arg ->
+                                        arg.getAction()
+                                                .equals(
+                                                        BluetoothShare
+                                                                .USER_CONFIRMATION_TIMEOUT_ACTION)));
     }
 
     @Test
     public void socketConnectThreadConstructors() {
         String address = "AA:BB:CC:EE:DD:11";
-        BluetoothDevice device = (mContext.getSystemService(BluetoothManager.class))
-                .getAdapter().getRemoteDevice(address);
+        BluetoothDevice device =
+                (mContext.getSystemService(BluetoothManager.class))
+                        .getAdapter()
+                        .getRemoteDevice(address);
         BluetoothOppTransfer transfer = new BluetoothOppTransfer(mContext, mBluetoothOppBatch);
         BluetoothOppTransfer.SocketConnectThread socketConnectThread =
                 transfer.new SocketConnectThread(device, true);
@@ -287,8 +369,10 @@ public class BluetoothOppTransferTest {
     @Test
     public void socketConnectThreadInterrupt() {
         String address = "AA:BB:CC:EE:DD:11";
-        BluetoothDevice device = (mContext.getSystemService(BluetoothManager.class))
-                .getAdapter().getRemoteDevice(address);
+        BluetoothDevice device =
+                (mContext.getSystemService(BluetoothManager.class))
+                        .getAdapter()
+                        .getRemoteDevice(address);
         BluetoothOppTransfer transfer = new BluetoothOppTransfer(mContext, mBluetoothOppBatch);
         BluetoothOppTransfer.SocketConnectThread socketConnectThread =
                 transfer.new SocketConnectThread(device, true);
@@ -300,8 +384,10 @@ public class BluetoothOppTransferTest {
     @SuppressWarnings("DoNotCall")
     public void socketConnectThreadRun_bluetoothDisabled_connectionFailed() {
         String address = "AA:BB:CC:EE:DD:11";
-        BluetoothDevice device = (mContext.getSystemService(BluetoothManager.class))
-                .getAdapter().getRemoteDevice(address);
+        BluetoothDevice device =
+                (mContext.getSystemService(BluetoothManager.class))
+                        .getAdapter()
+                        .getRemoteDevice(address);
         BluetoothOppTransfer transfer = new BluetoothOppTransfer(mContext, mBluetoothOppBatch);
         BluetoothOppTransfer.SocketConnectThread socketConnectThread =
                 transfer.new SocketConnectThread(device, true);
@@ -313,8 +399,10 @@ public class BluetoothOppTransferTest {
 
     @Test
     public void oppConnectionReceiver_onReceiveWithActionAclDisconnected_sendsConnectTimeout() {
-        BluetoothDevice device = (mContext.getSystemService(BluetoothManager.class))
-                .getAdapter().getRemoteDevice(mDestination);
+        BluetoothDevice device =
+                (mContext.getSystemService(BluetoothManager.class))
+                        .getAdapter()
+                        .getRemoteDevice(mDestination);
         BluetoothOppTransfer transfer = new BluetoothOppTransfer(mContext, mBluetoothOppBatch);
         transfer.mCurrentShare = mInitShareInfo;
         transfer.mCurrentShare.mConfirm = BluetoothShare.USER_CONFIRMATION_PENDING;
@@ -325,15 +413,17 @@ public class BluetoothOppTransferTest {
 
         transfer.mSessionHandler = mEventHandler;
         receiver.onReceive(mContext, intent);
-        verify(mCallProxy).handlerSendEmptyMessage(any(),
-                eq(BluetoothOppObexSession.MSG_CONNECT_TIMEOUT));
+        verify(mCallProxy)
+                .handlerSendEmptyMessage(any(), eq(BluetoothOppObexSession.MSG_CONNECT_TIMEOUT));
     }
 
     @Test
     public void oppConnectionReceiver_onReceiveWithActionSdpRecord_withoutSdpRecord() {
         mSetFlagRule.enableFlags(Flags.FLAG_IDENTITY_ADDRESS_NULL_IF_UNKNOWN);
-        BluetoothDevice device = (mContext.getSystemService(BluetoothManager.class))
-                .getAdapter().getRemoteDevice(mDestination);
+        BluetoothDevice device =
+                (mContext.getSystemService(BluetoothManager.class))
+                        .getAdapter()
+                        .getRemoteDevice(mDestination);
 
         BluetoothOppTransfer transfer = new BluetoothOppTransfer(mContext, mBluetoothOppBatch);
         transfer.mCurrentShare = mInitShareInfo;

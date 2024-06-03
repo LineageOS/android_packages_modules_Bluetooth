@@ -442,10 +442,7 @@ public class TransitionalScanHelper {
             if (!hasPermission || !matchResult) {
                 Log.v(
                         TAG,
-                        "Skipping client: permission="
-                                + hasPermission
-                                + " matches="
-                                + matchResult);
+                        "Skipping client: permission=" + hasPermission + " matches=" + matchResult);
                 continue;
             }
 
@@ -645,9 +642,7 @@ public class TransitionalScanHelper {
 
     /** Callback method for configuration of batch scan storage. */
     public void onBatchScanStorageConfigured(int status, int clientIf) {
-        Log.d(
-                TAG,
-                "onBatchScanStorageConfigured() - clientIf=" + clientIf + ", status=" + status);
+        Log.d(TAG, "onBatchScanStorageConfigured() - clientIf=" + clientIf + ", status=" + status);
         mScanManager.callbackDone(clientIf, status);
     }
 
@@ -1383,7 +1378,7 @@ public class TransitionalScanHelper {
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
     public int numHwTrackFiltersAvailable(AttributionSource attributionSource) {
         if (!Utils.checkConnectPermissionForDataDelivery(
-            mContext, attributionSource, "ScanHelper numHwTrackFiltersAvailable")) {
+                mContext, attributionSource, "ScanHelper numHwTrackFiltersAvailable")) {
             return 0;
         }
         return (AdapterService.getAdapterService().getTotalNumOfTrackableAdvertisements()

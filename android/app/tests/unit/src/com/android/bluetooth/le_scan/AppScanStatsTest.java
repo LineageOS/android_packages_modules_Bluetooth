@@ -47,20 +47,16 @@ import org.mockito.junit.MockitoRule;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Test cases for {@link AppScanStats}.
- */
+/** Test cases for {@link AppScanStats}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class AppScanStatsTest {
 
-    @Rule
-    public final ServiceTestRule mServiceRule = new ServiceTestRule();
+    @Rule public final ServiceTestRule mServiceRule = new ServiceTestRule();
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    private ContextMap map;
+    @Mock private ContextMap map;
 
     @Mock private Context mMockContext;
     @Mock private TransitionalScanHelper mMockScanHelper;

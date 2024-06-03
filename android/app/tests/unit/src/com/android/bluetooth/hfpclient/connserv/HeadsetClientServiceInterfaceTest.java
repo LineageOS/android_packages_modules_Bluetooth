@@ -45,17 +45,26 @@ import java.util.Set;
 public class HeadsetClientServiceInterfaceTest {
     private static final String TEST_DEVICE_ADDRESS = "00:11:22:33:44:55";
     private static final BluetoothDevice TEST_DEVICE =
-            ((BluetoothManager) InstrumentationRegistry.getTargetContext()
-                    .getSystemService(Context.BLUETOOTH_SERVICE))
-            .getAdapter().getRemoteDevice(TEST_DEVICE_ADDRESS);
+            ((BluetoothManager)
+                            InstrumentationRegistry.getTargetContext()
+                                    .getSystemService(Context.BLUETOOTH_SERVICE))
+                    .getAdapter()
+                    .getRemoteDevice(TEST_DEVICE_ADDRESS);
     private static final String TEST_NUMBER = "000-111-2222";
     private static final byte TEST_CODE = 0;
     private static final int TEST_CALL_INDEX = 0;
-    private static final HfpClientCall TEST_CALL = new HfpClientCall(TEST_DEVICE, /* id= */ 0,
-            HfpClientCall.CALL_STATE_ACTIVE, /* number= */ TEST_NUMBER,
-            /* multiParty= */ false, /* outgoing= */false, /* inBandRing= */true);
+    private static final HfpClientCall TEST_CALL =
+            new HfpClientCall(
+                    TEST_DEVICE,
+                    /* id= */ 0,
+                    HfpClientCall.CALL_STATE_ACTIVE,
+                    /* number= */ TEST_NUMBER,
+                    /* multiParty= */ false,
+                    /* outgoing= */ false,
+                    /* inBandRing= */ true);
     private static final int TEST_FLAGS = 0;
     private static final Bundle TEST_BUNDLE = new Bundle();
+
     static {
         TEST_BUNDLE.putInt("test_int", 0);
     }
@@ -80,7 +89,7 @@ public class HeadsetClientServiceInterfaceTest {
     private void makeHeadsetClientServiceAvailable() {
         when(mMockHeadsetClientService.isAvailable()).thenReturn(true);
         assertThat(HeadsetClientService.getHeadsetClientService())
-            .isEqualTo(mMockHeadsetClientService);
+                .isEqualTo(mMockHeadsetClientService);
     }
 
     @Test
@@ -97,11 +106,13 @@ public class HeadsetClientServiceInterfaceTest {
         assertThat(mServiceInterface.enterPrivateMode(TEST_DEVICE, TEST_CALL_INDEX)).isFalse();
         makeHeadsetClientServiceAvailable();
 
-        doReturn(false).when(mMockHeadsetClientService)
-            .enterPrivateMode(TEST_DEVICE, TEST_CALL_INDEX);
+        doReturn(false)
+                .when(mMockHeadsetClientService)
+                .enterPrivateMode(TEST_DEVICE, TEST_CALL_INDEX);
         assertThat(mServiceInterface.enterPrivateMode(TEST_DEVICE, TEST_CALL_INDEX)).isFalse();
-        doReturn(true).when(mMockHeadsetClientService)
-            .enterPrivateMode(TEST_DEVICE, TEST_CALL_INDEX);
+        doReturn(true)
+                .when(mMockHeadsetClientService)
+                .enterPrivateMode(TEST_DEVICE, TEST_CALL_INDEX);
         assertThat(mServiceInterface.enterPrivateMode(TEST_DEVICE, TEST_CALL_INDEX)).isTrue();
     }
 
@@ -121,10 +132,12 @@ public class HeadsetClientServiceInterfaceTest {
         assertThat(mServiceInterface.terminateCall(TEST_DEVICE, TEST_CALL)).isFalse();
         makeHeadsetClientServiceAvailable();
 
-        doReturn(true).when(mMockHeadsetClientService)
+        doReturn(true)
+                .when(mMockHeadsetClientService)
                 .terminateCall(TEST_DEVICE, TEST_CALL.getUUID());
         assertThat(mServiceInterface.terminateCall(TEST_DEVICE, TEST_CALL)).isTrue();
-        doReturn(false).when(mMockHeadsetClientService)
+        doReturn(false)
+                .when(mMockHeadsetClientService)
                 .terminateCall(TEST_DEVICE, TEST_CALL.getUUID());
         assertThat(mServiceInterface.terminateCall(TEST_DEVICE, TEST_CALL)).isFalse();
     }
@@ -237,4 +250,3 @@ public class HeadsetClientServiceInterfaceTest {
         assertThat(mServiceInterface.hasHfpClientEcc(TEST_DEVICE)).isTrue();
     }
 }
-

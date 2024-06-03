@@ -1,17 +1,17 @@
 /*
-* Copyright (C) 2015 Samsung System LSI
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*      http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (C) 2015 Samsung System LSI
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.android.bluetooth.map;
 
 import android.bluetooth.BluetoothProfile;
@@ -47,7 +47,6 @@ public class BluetoothMapFolderElement implements Comparable<BluetoothMapFolderE
     private boolean mIgnore = false;
 
     private HashMap<String, BluetoothMapFolderElement> mSubFolders;
-
 
     private static final String TAG = "BluetoothMapFolderElement";
 
@@ -103,6 +102,7 @@ public class BluetoothMapFolderElement implements Comparable<BluetoothMapFolderE
 
     /**
      * Fetch the parent folder.
+     *
      * @return the parent folder or null if we are at the root folder.
      */
     public BluetoothMapFolderElement getParent() {
@@ -111,6 +111,7 @@ public class BluetoothMapFolderElement implements Comparable<BluetoothMapFolderE
 
     /**
      * Build the full path to this folder
+     *
      * @return a string representing the full path.
      */
     public String getFullPath() {
@@ -122,10 +123,9 @@ public class BluetoothMapFolderElement implements Comparable<BluetoothMapFolderE
             }
             current = current.getParent();
         }
-        //sb.insert(0, "/"); Should this be included? The MAP spec. do not include it in examples.
+        // sb.insert(0, "/"); Should this be included? The MAP spec. do not include it in examples.
         return sb.toString();
     }
-
 
     public BluetoothMapFolderElement getFolderByName(String name) {
         BluetoothMapFolderElement folderElement = this.getRoot();
@@ -142,22 +142,24 @@ public class BluetoothMapFolderElement implements Comparable<BluetoothMapFolderE
         return getFolderById(id, this);
     }
 
-    public static BluetoothMapFolderElement getFolderById(long id,
-            BluetoothMapFolderElement folderStructure) {
+    public static BluetoothMapFolderElement getFolderById(
+            long id, BluetoothMapFolderElement folderStructure) {
         if (folderStructure == null) {
             return null;
         }
         return findFolderById(id, folderStructure.getRoot());
     }
 
-    private static BluetoothMapFolderElement findFolderById(long id,
-            BluetoothMapFolderElement folder) {
+    private static BluetoothMapFolderElement findFolderById(
+            long id, BluetoothMapFolderElement folder) {
         if (folder.getFolderId() == id) {
             return folder;
         }
         /* Else */
-        for (BluetoothMapFolderElement subFolder : folder.mSubFolders.values()
-                .toArray(new BluetoothMapFolderElement[folder.mSubFolders.size()])) {
+        for (BluetoothMapFolderElement subFolder :
+                folder.mSubFolders
+                        .values()
+                        .toArray(new BluetoothMapFolderElement[folder.mSubFolders.size()])) {
             BluetoothMapFolderElement ret = findFolderById(id, subFolder);
             if (ret != null) {
                 return ret;
@@ -166,9 +168,9 @@ public class BluetoothMapFolderElement implements Comparable<BluetoothMapFolderE
         return null;
     }
 
-
     /**
      * Fetch the root folder.
+     *
      * @return the root folder.
      */
     public BluetoothMapFolderElement getRoot() {
@@ -181,6 +183,7 @@ public class BluetoothMapFolderElement implements Comparable<BluetoothMapFolderE
 
     /**
      * Add a virtual folder.
+     *
      * @param name the name of the folder to add.
      * @return the added folder element.
      */
@@ -199,6 +202,7 @@ public class BluetoothMapFolderElement implements Comparable<BluetoothMapFolderE
 
     /**
      * Add a sms/mms folder.
+     *
      * @param name the name of the folder to add.
      * @return the added folder element.
      */
@@ -211,6 +215,7 @@ public class BluetoothMapFolderElement implements Comparable<BluetoothMapFolderE
 
     /**
      * Add a im folder.
+     *
      * @param name the name of the folder to add.
      * @return the added folder element.
      */
@@ -224,6 +229,7 @@ public class BluetoothMapFolderElement implements Comparable<BluetoothMapFolderE
 
     /**
      * Add an Email folder.
+     *
      * @param name the name of the folder to add.
      * @return the added folder element.
      */
@@ -237,6 +243,7 @@ public class BluetoothMapFolderElement implements Comparable<BluetoothMapFolderE
 
     /**
      * Fetch the number of sub folders.
+     *
      * @return returns the number of sub folders.
      */
     public int getSubFolderCount() {
@@ -245,6 +252,7 @@ public class BluetoothMapFolderElement implements Comparable<BluetoothMapFolderE
 
     /**
      * Returns the subFolder element matching the supplied folder name.
+     *
      * @param folderName the name of the subFolder to find.
      * @return the subFolder element if found {@code null} otherwise.
      */
@@ -315,11 +323,10 @@ public class BluetoothMapFolderElement implements Comparable<BluetoothMapFolderE
      * */
 
     /**
-     * Append sub folders from an XML document as specified in the MAP specification.
-     * Attributes will be inherited from parent folder - with regards to message types in the
-     * folder.
-     * @param xmlDocument - InputStream with the document
+     * Append sub folders from an XML document as specified in the MAP specification. Attributes
+     * will be inherited from parent folder - with regards to message types in the folder.
      *
+     * @param xmlDocument - InputStream with the document
      * @throws XmlPullParserException
      * @throws IOException
      */
@@ -352,6 +359,7 @@ public class BluetoothMapFolderElement implements Comparable<BluetoothMapFolderE
 
     /**
      * Parses folder elements, and add to mSubFolders.
+     *
      * @param parser the Xml Parser currently pointing to an folder-listing tag.
      * @throws XmlPullParserException
      * @throws IOException
@@ -389,9 +397,7 @@ public class BluetoothMapFolderElement implements Comparable<BluetoothMapFolderE
         }
     }
 
-    /**
-     * Recursive compare of all folder names
-     */
+    /** Recursive compare of all folder names */
     @Override
     public int compareTo(BluetoothMapFolderElement another) {
         if (another == null) {
@@ -417,8 +423,12 @@ public class BluetoothMapFolderElement implements Comparable<BluetoothMapFolderE
                     }
                 }
             } else {
-                Log.d(TAG, "mSubFolders.size(): " + mSubFolders.size()
-                        + " another.mSubFolders.size(): " + another.mSubFolders.size());
+                Log.d(
+                        TAG,
+                        "mSubFolders.size(): "
+                                + mSubFolders.size()
+                                + " another.mSubFolders.size(): "
+                                + another.mSubFolders.size());
             }
         } else {
             Log.d(TAG, "mName: " + mName + " another.mName: " + another.mName);

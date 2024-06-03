@@ -30,8 +30,8 @@ public class HeadsetAgIndicatorEnableStateTest {
 
     @Test
     public void hashCode_returnsCorrectResult() {
-        HeadsetAgIndicatorEnableState state = new HeadsetAgIndicatorEnableState(true, true, true,
-                true);
+        HeadsetAgIndicatorEnableState state =
+                new HeadsetAgIndicatorEnableState(true, true, true, true);
 
         assertThat(state.hashCode()).isEqualTo(15);
     }

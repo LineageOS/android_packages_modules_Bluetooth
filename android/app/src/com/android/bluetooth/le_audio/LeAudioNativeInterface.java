@@ -33,9 +33,7 @@ import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.Arrays;
 
-/**
- * LeAudio Native Interface to/from JNI.
- */
+/** LeAudio Native Interface to/from JNI. */
 public class LeAudioNativeInterface {
     private static final String TAG = LeAudioNativeInterface.class.getSimpleName();
 
@@ -53,9 +51,7 @@ public class LeAudioNativeInterface {
         }
     }
 
-    /**
-     * Get singleton instance.
-     */
+    /** Get singleton instance. */
     public static LeAudioNativeInterface getInstance() {
         synchronized (INSTANCE_LOCK) {
             if (sInstance == null) {
@@ -139,8 +135,12 @@ public class LeAudioNativeInterface {
     }
 
     @VisibleForTesting
-    void onAudioConf(int direction, int groupId, int sinkAudioLocation,
-                             int sourceAudioLocation, int availableContexts) {
+    void onAudioConf(
+            int direction,
+            int groupId,
+            int sinkAudioLocation,
+            int sourceAudioLocation,
+            int availableContexts) {
         LeAudioStackEvent event =
                 new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_AUDIO_CONF_CHANGED);
         event.valueInt1 = direction;
@@ -166,8 +166,8 @@ public class LeAudioNativeInterface {
 
     @VisibleForTesting
     void onAudioLocalCodecCapabilities(
-                            BluetoothLeAudioCodecConfig[] localInputCodecCapabilities,
-                            BluetoothLeAudioCodecConfig[] localOutputCodecCapabilities) {
+            BluetoothLeAudioCodecConfig[] localInputCodecCapabilities,
+            BluetoothLeAudioCodecConfig[] localOutputCodecCapabilities) {
         LeAudioStackEvent event =
                 new LeAudioStackEvent(
                         LeAudioStackEvent.EVENT_TYPE_AUDIO_LOCAL_CODEC_CONFIG_CAPA_CHANGED);
@@ -261,15 +261,13 @@ public class LeAudioNativeInterface {
     /**
      * Initializes the native interface.
      *
-     * priorities to configure.
+     * <p>priorities to configure.
      */
     public void init(BluetoothLeAudioCodecConfig[] codecConfigOffloading) {
         initNative(codecConfigOffloading);
     }
 
-    /**
-     * Cleanup the native interface.
-     */
+    /** Cleanup the native interface. */
     public void cleanup() {
         cleanupNative();
     }
@@ -307,15 +305,17 @@ public class LeAudioNativeInterface {
 
     /**
      * Add new Node into a group.
+     *
      * @param groupId group identifier
      * @param device remote device
      */
-     public boolean groupAddNode(int groupId, BluetoothDevice device) {
+    public boolean groupAddNode(int groupId, BluetoothDevice device) {
         return groupAddNodeNative(groupId, getByteAddress(device));
     }
 
     /**
      * Add new Node into a group.
+     *
      * @param groupId group identifier
      * @param device remote device
      */
@@ -325,6 +325,7 @@ public class LeAudioNativeInterface {
 
     /**
      * Set active group.
+     *
      * @param groupId group ID to set as active
      */
     public void groupSetActive(int groupId) {
@@ -333,11 +334,13 @@ public class LeAudioNativeInterface {
 
     /**
      * Set codec config preference.
+     *
      * @param groupId group ID for the preference
      * @param inputCodecConfig input codec configuration
      * @param outputCodecConfig output codec configuration
      */
-    public void setCodecConfigPreference(int groupId,
+    public void setCodecConfigPreference(
+            int groupId,
             BluetoothLeAudioCodecConfig inputCodecConfig,
             BluetoothLeAudioCodecConfig outputCodecConfig) {
         setCodecConfigPreferenceNative(groupId, inputCodecConfig, outputCodecConfig);
@@ -345,6 +348,7 @@ public class LeAudioNativeInterface {
 
     /**
      * Set content control id (Ccid) along with context type.
+     *
      * @param ccid content control id
      * @param contextType assigned contextType
      */
@@ -355,6 +359,7 @@ public class LeAudioNativeInterface {
 
     /**
      * Set in call call flag.
+     *
      * @param inCall true when device in call (any state), false otherwise
      */
     public void setInCall(boolean inCall) {
@@ -366,8 +371,8 @@ public class LeAudioNativeInterface {
      * Set unicast monitor mode flag.
      *
      * @param direction direction for which monitor mode should be used
-     * @param enable true when LE Audio device should be listening for streaming status
-     *     on direction stream. false otherwise
+     * @param enable true when LE Audio device should be listening for streaming status on direction
+     *     stream. false otherwise
      */
     public void setUnicastMonitorMode(int direction, boolean enable) {
         Log.d(TAG, "setUnicastMonitorMode enable: " + enable + ", direction : " + direction);
@@ -381,13 +386,18 @@ public class LeAudioNativeInterface {
      * @param isOutputPreferenceLeAudio whether LEA is preferred for OUTPUT_ONLY
      * @param isDuplexPreferenceLeAudio whether LEA is preferred for DUPLEX
      */
-    public void sendAudioProfilePreferences(int groupId, boolean isOutputPreferenceLeAudio,
-            boolean isDuplexPreferenceLeAudio) {
-        Log.d(TAG, "sendAudioProfilePreferences groupId=" + groupId
-                + ", isOutputPreferenceLeAudio=" + isOutputPreferenceLeAudio
-                + ", isDuplexPreferenceLeAudio=" + isDuplexPreferenceLeAudio);
-        sendAudioProfilePreferencesNative(groupId, isOutputPreferenceLeAudio,
-                isDuplexPreferenceLeAudio);
+    public void sendAudioProfilePreferences(
+            int groupId, boolean isOutputPreferenceLeAudio, boolean isDuplexPreferenceLeAudio) {
+        Log.d(
+                TAG,
+                "sendAudioProfilePreferences groupId="
+                        + groupId
+                        + ", isOutputPreferenceLeAudio="
+                        + isOutputPreferenceLeAudio
+                        + ", isDuplexPreferenceLeAudio="
+                        + isDuplexPreferenceLeAudio);
+        sendAudioProfilePreferencesNative(
+                groupId, isOutputPreferenceLeAudio, isDuplexPreferenceLeAudio);
     }
 
     /**
@@ -412,24 +422,37 @@ public class LeAudioNativeInterface {
 
     // Native methods that call into the JNI interface
     private native void initNative(BluetoothLeAudioCodecConfig[] codecConfigOffloading);
+
     private native void cleanupNative();
+
     private native boolean connectLeAudioNative(byte[] address);
+
     private native boolean disconnectLeAudioNative(byte[] address);
+
     private native boolean setEnableStateNative(byte[] address, boolean enabled);
+
     private native boolean groupAddNodeNative(int groupId, byte[] address);
+
     private native boolean groupRemoveNodeNative(int groupId, byte[] address);
+
     private native void groupSetActiveNative(int groupId);
-    private native void setCodecConfigPreferenceNative(int groupId,
+
+    private native void setCodecConfigPreferenceNative(
+            int groupId,
             BluetoothLeAudioCodecConfig inputCodecConfig,
             BluetoothLeAudioCodecConfig outputCodecConfig);
+
     private native void setCcidInformationNative(int ccid, int contextType);
+
     private native void setInCallNative(boolean inCall);
 
     private native void setUnicastMonitorModeNative(int direction, boolean enable);
+
     private native void confirmUnicastStreamRequestNative();
+
     /*package*/
-    private native void sendAudioProfilePreferencesNative(int groupId,
-            boolean isOutputPreferenceLeAudio, boolean isDuplexPreferenceLeAudio);
+    private native void sendAudioProfilePreferencesNative(
+            int groupId, boolean isOutputPreferenceLeAudio, boolean isDuplexPreferenceLeAudio);
 
     private native void setGroupAllowedContextMaskNative(
             int groupId, int sinkContextTypes, int sourceContextTypes);

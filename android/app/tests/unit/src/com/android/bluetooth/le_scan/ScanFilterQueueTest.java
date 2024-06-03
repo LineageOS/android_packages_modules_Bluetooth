@@ -29,9 +29,7 @@ import org.junit.runner.RunWith;
 
 import java.util.UUID;
 
-/**
- * Test cases for {@link ScanFilterQueue}.
- */
+/** Test cases for {@link ScanFilterQueue}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class ScanFilterQueueTest {
@@ -42,7 +40,7 @@ public class ScanFilterQueueTest {
 
         String address = "address";
         byte type = 1;
-        byte[] irk = new byte[]{0x02};
+        byte[] irk = new byte[] {0x02};
         queue.addDeviceAddress(address, type, irk);
 
         queue.addServiceChanged();
@@ -61,20 +59,20 @@ public class ScanFilterQueueTest {
         queue.addName(name);
 
         int company = 2;
-        byte[] data = new byte[]{0x04};
+        byte[] data = new byte[] {0x04};
         queue.addManufacturerData(company, data);
 
         int companyMask = 2;
-        byte[] dataMask = new byte[]{0x05};
+        byte[] dataMask = new byte[] {0x05};
         queue.addManufacturerData(company, companyMask, data, dataMask);
 
-        byte[] serviceData = new byte[]{0x06};
-        byte[] serviceDataMask = new byte[]{0x08};
+        byte[] serviceData = new byte[] {0x06};
+        byte[] serviceDataMask = new byte[] {0x08};
         queue.addServiceData(serviceData, serviceDataMask);
 
         int adType = 3;
-        byte[] adData = new byte[]{0x10};
-        byte[] adDataMask = new byte[]{0x12};
+        byte[] adData = new byte[] {0x10};
+        byte[] adDataMask = new byte[] {0x12};
         queue.addAdvertisingDataType(adType, adData, adDataMask);
 
         ScanFilterQueue.Entry[] entries = queue.toArray();
@@ -130,8 +128,8 @@ public class ScanFilterQueueTest {
     public void popFromQueue() {
         ScanFilterQueue queue = new ScanFilterQueue();
 
-        byte[] serviceData = new byte[]{0x02};
-        byte[] serviceDataMask = new byte[]{0x04};
+        byte[] serviceData = new byte[] {0x02};
+        byte[] serviceDataMask = new byte[] {0x04};
         queue.addServiceData(serviceData, serviceDataMask);
 
         ScanFilterQueue.Entry entry = queue.pop();
@@ -143,8 +141,8 @@ public class ScanFilterQueueTest {
     public void checkFeatureSelection() {
         ScanFilterQueue queue = new ScanFilterQueue();
 
-        byte[] serviceData = new byte[]{0x02};
-        byte[] serviceDataMask = new byte[]{0x04};
+        byte[] serviceData = new byte[] {0x02};
+        byte[] serviceDataMask = new byte[] {0x04};
         queue.addServiceData(serviceData, serviceDataMask);
 
         int feature = 1 << ScanFilterQueue.TYPE_SERVICE_DATA;
@@ -155,8 +153,8 @@ public class ScanFilterQueueTest {
     public void convertQueueToArray() {
         ScanFilterQueue queue = new ScanFilterQueue();
 
-        byte[] serviceData = new byte[]{0x02};
-        byte[] serviceDataMask = new byte[]{0x04};
+        byte[] serviceData = new byte[] {0x02};
+        byte[] serviceDataMask = new byte[] {0x04};
         queue.addServiceData(serviceData, serviceDataMask);
 
         ScanFilterQueue.Entry[] entries = queue.toArray();
@@ -182,15 +180,16 @@ public class ScanFilterQueueTest {
         byte[] serviceData = new byte[0];
         int advertisingDataType = 1;
 
-        ScanFilter filter = new ScanFilter.Builder()
-                .setDeviceName(name)
-                .setDeviceAddress(deviceAddress)
-                .setServiceUuid(serviceUuid)
-                .setServiceSolicitationUuid(serviceSolicitationUuid)
-                .setManufacturerData(manufacturerId, manufacturerData)
-                .setServiceData(serviceDataUuid, serviceData)
-                .setAdvertisingDataType(advertisingDataType)
-                .build();
+        ScanFilter filter =
+                new ScanFilter.Builder()
+                        .setDeviceName(name)
+                        .setDeviceAddress(deviceAddress)
+                        .setServiceUuid(serviceUuid)
+                        .setServiceSolicitationUuid(serviceSolicitationUuid)
+                        .setManufacturerData(manufacturerId, manufacturerData)
+                        .setServiceData(serviceDataUuid, serviceData)
+                        .setAdvertisingDataType(advertisingDataType)
+                        .build();
         queue.addScanFilter(filter);
 
         int numOfEntries = 7;

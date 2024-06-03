@@ -38,14 +38,12 @@ import com.android.internal.annotations.VisibleForTesting;
  * @see #setupAlert()
  */
 @SuppressLint("AndroidFrameworkBluetoothPermission")
-public abstract class AlertActivity extends Activity implements DialogInterface.OnDismissListener,
-        DialogInterface.OnCancelListener {
+public abstract class AlertActivity extends Activity
+        implements DialogInterface.OnDismissListener, DialogInterface.OnCancelListener {
 
-    /**
-     * The model for the alert.
-     *
-     */
+    /** The model for the alert. */
     protected AlertDialog.Builder mAlertBuilder;
+
     private AlertDialog mAlert;
 
     public AlertActivity() {}
@@ -80,14 +78,15 @@ public abstract class AlertActivity extends Activity implements DialogInterface.
         return dispatchPopulateAccessibilityEvent(this, event);
     }
 
-    private static boolean dispatchPopulateAccessibilityEvent(Activity act,
-            AccessibilityEvent event) {
+    private static boolean dispatchPopulateAccessibilityEvent(
+            Activity act, AccessibilityEvent event) {
         event.setClassName(Dialog.class.getName());
         event.setPackageName(act.getPackageName());
 
         ViewGroup.LayoutParams params = act.getWindow().getAttributes();
-        boolean isFullScreen = (params.width == ViewGroup.LayoutParams.MATCH_PARENT)
-                && (params.height == ViewGroup.LayoutParams.MATCH_PARENT);
+        boolean isFullScreen =
+                (params.width == ViewGroup.LayoutParams.MATCH_PARENT)
+                        && (params.height == ViewGroup.LayoutParams.MATCH_PARENT);
         event.setFullScreen(isFullScreen);
 
         return false;
@@ -102,6 +101,7 @@ public abstract class AlertActivity extends Activity implements DialogInterface.
         if (mAlert == null) return;
         mAlert.setIconAttribute(attrId);
     }
+
     protected void changeTitle(CharSequence title) {
         if (mAlert == null) return;
         mAlert.setTitle(title);
@@ -134,5 +134,4 @@ public abstract class AlertActivity extends Activity implements DialogInterface.
         }
         super.onDestroy();
     }
-
 }

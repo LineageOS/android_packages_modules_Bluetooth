@@ -29,9 +29,7 @@ import com.android.bluetooth.Utils;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
-/**
- * HearingAid Native Interface to/from JNI.
- */
+/** HearingAid Native Interface to/from JNI. */
 public class HearingAidNativeInterface {
     private static final String TAG = "HearingAidNativeInterface";
     private BluetoothAdapter mAdapter;
@@ -48,9 +46,7 @@ public class HearingAidNativeInterface {
         }
     }
 
-    /**
-     * Get singleton instance.
-     */
+    /** Get singleton instance. */
     public static HearingAidNativeInterface getInstance() {
         synchronized (INSTANCE_LOCK) {
             if (sInstance == null) {
@@ -71,16 +67,14 @@ public class HearingAidNativeInterface {
     /**
      * Initializes the native interface.
      *
-     * priorities to configure.
+     * <p>priorities to configure.
      */
     @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
     public void init() {
         initNative();
     }
 
-    /**
-     * Cleanup the native interface.
-     */
+    /** Cleanup the native interface. */
     @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
     public void cleanup() {
         cleanupNative();
@@ -121,6 +115,7 @@ public class HearingAidNativeInterface {
 
     /**
      * Sets the HearingAid volume
+     *
      * @param volume
      */
     @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
@@ -167,8 +162,8 @@ public class HearingAidNativeInterface {
 
     @VisibleForTesting
     void onDeviceAvailable(byte capabilities, long hiSyncId, byte[] address) {
-        HearingAidStackEvent event = new HearingAidStackEvent(
-                HearingAidStackEvent.EVENT_TYPE_DEVICE_AVAILABLE);
+        HearingAidStackEvent event =
+                new HearingAidStackEvent(HearingAidStackEvent.EVENT_TYPE_DEVICE_AVAILABLE);
         event.device = getDevice(address);
         event.valueInt1 = capabilities;
         event.valueLong2 = hiSyncId;
@@ -179,9 +174,14 @@ public class HearingAidNativeInterface {
 
     // Native methods that call into the JNI interface
     private native void initNative();
+
     private native void cleanupNative();
+
     private native boolean connectHearingAidNative(byte[] address);
+
     private native boolean disconnectHearingAidNative(byte[] address);
+
     private native boolean addToAcceptlistNative(byte[] address);
+
     private native void setVolumeNative(int volume);
 }

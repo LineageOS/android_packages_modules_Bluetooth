@@ -51,4 +51,3 @@ public final class MediaPlayerWrapperFactory {
         sInjectedWrapper = wrapper;
     }
 }
-

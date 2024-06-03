@@ -69,7 +69,7 @@ import java.util.UUID;
  * the GATT Service logic, allowing the higher level layer to control the service state and react to
  * bluetooth peer device requests through the method calls and callback mechanism.
  *
- * Implemented according to Media Control Service v1.0 specification.
+ * <p>Implemented according to Media Control Service v1.0 specification.
  */
 public class MediaControlGattService implements MediaControlGattServiceInterface {
     private static final String TAG = "MediaControlGattService";
@@ -214,9 +214,15 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
             WRITE_DESCRIPTOR,
         }
 
-        GattOpContext(Operation operation, int requestId,
-                BluetoothGattCharacteristic characteristic, BluetoothGattDescriptor descriptor,
-                boolean preparedWrite, boolean responseNeeded, int offset, byte[] value) {
+        GattOpContext(
+                Operation operation,
+                int requestId,
+                BluetoothGattCharacteristic characteristic,
+                BluetoothGattDescriptor descriptor,
+                boolean preparedWrite,
+                boolean responseNeeded,
+                int offset,
+                byte[] value) {
             mOperation = operation;
             mRequestId = requestId;
             mCharacteristic = characteristic;
@@ -227,8 +233,11 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
             mValue = value;
         }
 
-        GattOpContext(Operation operation, int requestId,
-                BluetoothGattCharacteristic characteristic, BluetoothGattDescriptor descriptor) {
+        GattOpContext(
+                Operation operation,
+                int requestId,
+                BluetoothGattCharacteristic characteristic,
+                BluetoothGattDescriptor descriptor) {
             mOperation = operation;
             mRequestId = requestId;
             mCharacteristic = characteristic;
@@ -249,122 +258,182 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
         public byte[] mValue;
     }
 
-    private final Map<UUID, CharacteristicWriteHandler> mCharWriteCallback = Map.of(
-            UUID_TRACK_POSITION,
-            (device, requestId, characteristic, preparedWrite, responseNeeded, offset, value) -> {
-                Log.d(TAG, "TRACK_POSITION write request");
-                int status = BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH;
-                if (value.length == 4) {
-                    status = BluetoothGatt.GATT_SUCCESS;
-                    ByteBuffer bb = ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN);
-                    handleTrackPositionRequest(bb.getInt());
-                }
-                if (responseNeeded) {
-                    mBluetoothGattServer.sendResponse(device, requestId, status, offset, value);
-                }
-            },
-            UUID_PLAYBACK_SPEED,
-            (device, requestId, characteristic, preparedWrite, responseNeeded, offset, value) -> {
-                Log.d(TAG, "PLAYBACK_SPEED write request");
-                int status = BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH;
-                if (value.length == 1) {
-                    status = BluetoothGatt.GATT_SUCCESS;
+    private final Map<UUID, CharacteristicWriteHandler> mCharWriteCallback =
+            Map.of(
+                    UUID_TRACK_POSITION,
+                    (device,
+                            requestId,
+                            characteristic,
+                            preparedWrite,
+                            responseNeeded,
+                            offset,
+                            value) -> {
+                        Log.d(TAG, "TRACK_POSITION write request");
+                        int status = BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH;
+                        if (value.length == 4) {
+                            status = BluetoothGatt.GATT_SUCCESS;
+                            ByteBuffer bb = ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN);
+                            handleTrackPositionRequest(bb.getInt());
+                        }
+                        if (responseNeeded) {
+                            mBluetoothGattServer.sendResponse(
+                                    device, requestId, status, offset, value);
+                        }
+                    },
+                    UUID_PLAYBACK_SPEED,
+                    (device,
+                            requestId,
+                            characteristic,
+                            preparedWrite,
+                            responseNeeded,
+                            offset,
+                            value) -> {
+                        Log.d(TAG, "PLAYBACK_SPEED write request");
+                        int status = BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH;
+                        if (value.length == 1) {
+                            status = BluetoothGatt.GATT_SUCCESS;
 
-                    Integer intVal = characteristic.getIntValue(
-                            BluetoothGattCharacteristic.FORMAT_SINT8, 0);
-                    // Don't bother player with the same value
-                    if (intVal == value[0]) {
-                        notifyCharacteristic(characteristic, null);
-                    } else {
-                        handlePlaybackSpeedRequest(value[0]);
-                    }
-                }
-                if (responseNeeded) {
-                    mBluetoothGattServer.sendResponse(device, requestId, status, offset, value);
-                }
-            },
-            UUID_CURRENT_TRACK_OBJ_ID,
-            (device, requestId, characteristic, preparedWrite, responseNeeded, offset, value) -> {
-                Log.d(TAG, "CURRENT_TRACK_OBJ_ID write request");
-                int status = BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH;
-                if (value.length == 6) {
-                    status = BluetoothGatt.GATT_SUCCESS;
-                    handleObjectIdRequest(
-                            ObjectIds.CURRENT_TRACK_OBJ_ID, byteArray2ObjId(value));
-                }
-                if (responseNeeded) {
-                    mBluetoothGattServer.sendResponse(device, requestId, status, offset, value);
-                }
-            },
-            UUID_NEXT_TRACK_OBJ_ID,
-            (device, requestId, characteristic, preparedWrite, responseNeeded, offset, value) -> {
-                Log.d(TAG, "NEXT_TRACK_OBJ_ID write request");
-                int status = BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH;
-                if (value.length == 6) {
-                    status = BluetoothGatt.GATT_SUCCESS;
-                    handleObjectIdRequest(ObjectIds.NEXT_TRACK_OBJ_ID, byteArray2ObjId(value));
-                }
-                if (responseNeeded) {
-                    mBluetoothGattServer.sendResponse(device, requestId, status, offset, value);
-                }
-            },
-            UUID_CURRENT_GROUP_OBJ_ID,
-            (device, requestId, characteristic, preparedWrite, responseNeeded, offset, value) -> {
-                Log.d(TAG, "CURRENT_GROUP_OBJ_ID write request");
-                int status = BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH;
-                if (value.length == 6) {
-                    status = BluetoothGatt.GATT_SUCCESS;
-                    handleObjectIdRequest(
-                            ObjectIds.CURRENT_GROUP_OBJ_ID, byteArray2ObjId(value));
-                }
-                if (responseNeeded) {
-                    mBluetoothGattServer.sendResponse(device, requestId, status, offset, value);
-                }
-            },
-            UUID_PLAYING_ORDER,
-            (device, requestId, characteristic, preparedWrite, responseNeeded, offset, value) -> {
-                Log.d(TAG, "PLAYING_ORDER write request");
-                int status = BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH;
-                Integer currentPlayingOrder = null;
+                            Integer intVal =
+                                    characteristic.getIntValue(
+                                            BluetoothGattCharacteristic.FORMAT_SINT8, 0);
+                            // Don't bother player with the same value
+                            if (intVal == value[0]) {
+                                notifyCharacteristic(characteristic, null);
+                            } else {
+                                handlePlaybackSpeedRequest(value[0]);
+                            }
+                        }
+                        if (responseNeeded) {
+                            mBluetoothGattServer.sendResponse(
+                                    device, requestId, status, offset, value);
+                        }
+                    },
+                    UUID_CURRENT_TRACK_OBJ_ID,
+                    (device,
+                            requestId,
+                            characteristic,
+                            preparedWrite,
+                            responseNeeded,
+                            offset,
+                            value) -> {
+                        Log.d(TAG, "CURRENT_TRACK_OBJ_ID write request");
+                        int status = BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH;
+                        if (value.length == 6) {
+                            status = BluetoothGatt.GATT_SUCCESS;
+                            handleObjectIdRequest(
+                                    ObjectIds.CURRENT_TRACK_OBJ_ID, byteArray2ObjId(value));
+                        }
+                        if (responseNeeded) {
+                            mBluetoothGattServer.sendResponse(
+                                    device, requestId, status, offset, value);
+                        }
+                    },
+                    UUID_NEXT_TRACK_OBJ_ID,
+                    (device,
+                            requestId,
+                            characteristic,
+                            preparedWrite,
+                            responseNeeded,
+                            offset,
+                            value) -> {
+                        Log.d(TAG, "NEXT_TRACK_OBJ_ID write request");
+                        int status = BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH;
+                        if (value.length == 6) {
+                            status = BluetoothGatt.GATT_SUCCESS;
+                            handleObjectIdRequest(
+                                    ObjectIds.NEXT_TRACK_OBJ_ID, byteArray2ObjId(value));
+                        }
+                        if (responseNeeded) {
+                            mBluetoothGattServer.sendResponse(
+                                    device, requestId, status, offset, value);
+                        }
+                    },
+                    UUID_CURRENT_GROUP_OBJ_ID,
+                    (device,
+                            requestId,
+                            characteristic,
+                            preparedWrite,
+                            responseNeeded,
+                            offset,
+                            value) -> {
+                        Log.d(TAG, "CURRENT_GROUP_OBJ_ID write request");
+                        int status = BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH;
+                        if (value.length == 6) {
+                            status = BluetoothGatt.GATT_SUCCESS;
+                            handleObjectIdRequest(
+                                    ObjectIds.CURRENT_GROUP_OBJ_ID, byteArray2ObjId(value));
+                        }
+                        if (responseNeeded) {
+                            mBluetoothGattServer.sendResponse(
+                                    device, requestId, status, offset, value);
+                        }
+                    },
+                    UUID_PLAYING_ORDER,
+                    (device,
+                            requestId,
+                            characteristic,
+                            preparedWrite,
+                            responseNeeded,
+                            offset,
+                            value) -> {
+                        Log.d(TAG, "PLAYING_ORDER write request");
+                        int status = BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH;
+                        Integer currentPlayingOrder = null;
 
-                if (characteristic.getValue() != null) {
-                    currentPlayingOrder = characteristic.getIntValue(
-                            BluetoothGattCharacteristic.FORMAT_UINT8, 0);
-                }
+                        if (characteristic.getValue() != null) {
+                            currentPlayingOrder =
+                                    characteristic.getIntValue(
+                                            BluetoothGattCharacteristic.FORMAT_UINT8, 0);
+                        }
 
-                if (value.length == 1
-                        && (currentPlayingOrder == null || currentPlayingOrder != value[0])) {
-                    status = BluetoothGatt.GATT_SUCCESS;
-                    BluetoothGattCharacteristic supportedPlayingOrderChar =
-                            mCharacteristics.get(CharId.PLAYING_ORDER_SUPPORTED);
-                    Integer supportedPlayingOrder =
-                            supportedPlayingOrderChar.getIntValue(
-                                    BluetoothGattCharacteristic.FORMAT_UINT16, 0);
+                        if (value.length == 1
+                                && (currentPlayingOrder == null
+                                        || currentPlayingOrder != value[0])) {
+                            status = BluetoothGatt.GATT_SUCCESS;
+                            BluetoothGattCharacteristic supportedPlayingOrderChar =
+                                    mCharacteristics.get(CharId.PLAYING_ORDER_SUPPORTED);
+                            Integer supportedPlayingOrder =
+                                    supportedPlayingOrderChar.getIntValue(
+                                            BluetoothGattCharacteristic.FORMAT_UINT16, 0);
 
-                    if ((supportedPlayingOrder & (1 << (value[0] - 1))) != 0) {
-                        handlePlayingOrderRequest(value[0]);
-                    }
-                }
-                if (responseNeeded) {
-                    mBluetoothGattServer.sendResponse(device, requestId, status, offset, value);
-                }
-            },
-            UUID_MEDIA_CONTROL_POINT,
-            (device, requestId, characteristic, preparedWrite, responseNeeded, offset, value) -> {
-                Log.d(TAG, "MEDIA_CONTROL_POINT write request");
-                int status = handleMediaControlPointRequest(device, value);
-                if (responseNeeded) {
-                    mBluetoothGattServer.sendResponse(device, requestId, status, offset, value);
-                }
-            },
-            UUID_SEARCH_CONTROL_POINT,
-            (device, requestId, characteristic, preparedWrite, responseNeeded, offset, value) -> {
-                Log.d(TAG, "SEARCH_CONTROL_POINT write request");
-                // TODO: There is no Object Trasfer Service implementation.
-                if (responseNeeded) {
-                    mBluetoothGattServer.sendResponse(device, requestId, 0, offset, value);
-                }
-            });
+                            if ((supportedPlayingOrder & (1 << (value[0] - 1))) != 0) {
+                                handlePlayingOrderRequest(value[0]);
+                            }
+                        }
+                        if (responseNeeded) {
+                            mBluetoothGattServer.sendResponse(
+                                    device, requestId, status, offset, value);
+                        }
+                    },
+                    UUID_MEDIA_CONTROL_POINT,
+                    (device,
+                            requestId,
+                            characteristic,
+                            preparedWrite,
+                            responseNeeded,
+                            offset,
+                            value) -> {
+                        Log.d(TAG, "MEDIA_CONTROL_POINT write request");
+                        int status = handleMediaControlPointRequest(device, value);
+                        if (responseNeeded) {
+                            mBluetoothGattServer.sendResponse(
+                                    device, requestId, status, offset, value);
+                        }
+                    },
+                    UUID_SEARCH_CONTROL_POINT,
+                    (device,
+                            requestId,
+                            characteristic,
+                            preparedWrite,
+                            responseNeeded,
+                            offset,
+                            value) -> {
+                        Log.d(TAG, "SEARCH_CONTROL_POINT write request");
+                        // TODO: There is no Object Trasfer Service implementation.
+                        if (responseNeeded) {
+                            mBluetoothGattServer.sendResponse(device, requestId, 0, offset, value);
+                        }
+                    });
 
     private long millisecondsToMcsInterval(long interval) {
         /* MCS presents time in 0.01s intervals */
@@ -512,7 +581,7 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                         + (charUuid != null ? mcsUuidToString(charUuid) : "UNKNOWN"));
 
         switch (op.mOperation) {
-            /* Allow not yet authorized devices to subscribe for notifications */
+                /* Allow not yet authorized devices to subscribe for notifications */
             case READ_DESCRIPTOR:
                 if (op.mOffset > 1) {
                     mBluetoothGattServer.sendResponse(
@@ -602,8 +671,9 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
         switch (op.mOperation) {
             case READ_CHARACTERISTIC:
                 // Always ask for the latest position
-                if (op.mCharacteristic.getUuid().equals(
-                        mCharacteristics.get(CharId.TRACK_POSITION).getUuid())) {
+                if (op.mCharacteristic
+                        .getUuid()
+                        .equals(mCharacteristics.get(CharId.TRACK_POSITION).getUuid())) {
                     long positionMs = mCallbacks.onGetCurrentTrackPosition();
                     final int position =
                             (positionMs != TRACK_POSITION_UNAVAILABLE)
@@ -614,23 +684,36 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                             ByteBuffer.allocate(Integer.BYTES).order(ByteOrder.LITTLE_ENDIAN);
                     bb.putInt(position);
 
-                    mBluetoothGattServer.sendResponse(device, op.mRequestId,
-                            BluetoothGatt.GATT_SUCCESS, op.mOffset,
+                    mBluetoothGattServer.sendResponse(
+                            device,
+                            op.mRequestId,
+                            BluetoothGatt.GATT_SUCCESS,
+                            op.mOffset,
                             Arrays.copyOfRange(bb.array(), op.mOffset, Integer.BYTES));
                     return;
                 }
 
                 if (op.mCharacteristic.getValue() != null) {
-                    mBluetoothGattServer.sendResponse(device, op.mRequestId,
-                            BluetoothGatt.GATT_SUCCESS, op.mOffset,
-                            Arrays.copyOfRange(op.mCharacteristic.getValue(), op.mOffset,
+                    mBluetoothGattServer.sendResponse(
+                            device,
+                            op.mRequestId,
+                            BluetoothGatt.GATT_SUCCESS,
+                            op.mOffset,
+                            Arrays.copyOfRange(
+                                    op.mCharacteristic.getValue(),
+                                    op.mOffset,
                                     op.mCharacteristic.getValue().length));
                 } else {
-                    Log.e(TAG,
+                    Log.e(
+                            TAG,
                             "Missing characteristic value for char: "
                                     + op.mCharacteristic.getUuid());
-                    mBluetoothGattServer.sendResponse(device, op.mRequestId,
-                            BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH, op.mOffset, new byte[]{});
+                    mBluetoothGattServer.sendResponse(
+                            device,
+                            op.mRequestId,
+                            BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH,
+                            op.mOffset,
+                            new byte[] {});
                 }
                 break;
 
@@ -643,8 +726,13 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                     CharacteristicWriteHandler handler =
                             mCharWriteCallback.get(op.mCharacteristic.getUuid());
                     handler.onCharacteristicWriteRequest(
-                            device, op.mRequestId, op.mCharacteristic, op.mPreparedWrite,
-                            op.mResponseNeeded, op.mOffset, op.mValue);
+                            device,
+                            op.mRequestId,
+                            op.mCharacteristic,
+                            op.mPreparedWrite,
+                            op.mResponseNeeded,
+                            op.mOffset,
+                            op.mValue);
                     break;
                 }
 
@@ -656,8 +744,12 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
 
             case READ_DESCRIPTOR:
                 if (op.mOffset > 1) {
-                    mBluetoothGattServer.sendResponse(device, op.mRequestId,
-                            BluetoothGatt.GATT_INVALID_OFFSET, op.mOffset, null);
+                    mBluetoothGattServer.sendResponse(
+                            device,
+                            op.mRequestId,
+                            BluetoothGatt.GATT_INVALID_OFFSET,
+                            op.mOffset,
+                            null);
                     break;
                 }
 
@@ -680,8 +772,12 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                     status = BluetoothGatt.GATT_INVALID_OFFSET;
                 } else {
                     status = BluetoothGatt.GATT_SUCCESS;
-                    setCcc(device, op.mDescriptor.getCharacteristic().getUuid(), op.mOffset,
-                            op.mValue, true);
+                    setCcc(
+                            device,
+                            op.mDescriptor.getCharacteristic().getUuid(),
+                            op.mOffset,
+                            op.mValue,
+                            true);
                 }
 
                 if (op.mResponseNeeded) {
@@ -714,13 +810,21 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
         switch (op.mOperation) {
             case READ_CHARACTERISTIC:
             case READ_DESCRIPTOR:
-                mBluetoothGattServer.sendResponse(device, op.mRequestId,
-                        BluetoothGatt.GATT_INSUFFICIENT_AUTHORIZATION, op.mOffset, null);
+                mBluetoothGattServer.sendResponse(
+                        device,
+                        op.mRequestId,
+                        BluetoothGatt.GATT_INSUFFICIENT_AUTHORIZATION,
+                        op.mOffset,
+                        null);
                 break;
             case WRITE_CHARACTERISTIC:
                 if (op.mResponseNeeded) {
-                    mBluetoothGattServer.sendResponse(device, op.mRequestId,
-                            BluetoothGatt.GATT_INSUFFICIENT_AUTHORIZATION, op.mOffset, null);
+                    mBluetoothGattServer.sendResponse(
+                            device,
+                            op.mRequestId,
+                            BluetoothGatt.GATT_INSUFFICIENT_AUTHORIZATION,
+                            op.mOffset,
+                            null);
                 } else {
                     // In case of control point operations we can send an application error code
                     if (op.mCharacteristic.getUuid().equals(UUID_MEDIA_CONTROL_POINT)) {
@@ -734,8 +838,12 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                 break;
             case WRITE_DESCRIPTOR:
                 if (op.mResponseNeeded) {
-                    mBluetoothGattServer.sendResponse(device, op.mRequestId,
-                            BluetoothGatt.GATT_INSUFFICIENT_AUTHORIZATION, op.mOffset, null);
+                    mBluetoothGattServer.sendResponse(
+                            device,
+                            op.mRequestId,
+                            BluetoothGatt.GATT_INSUFFICIENT_AUTHORIZATION,
+                            op.mOffset,
+                            null);
                 }
                 break;
 
@@ -786,8 +894,12 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                 mEventLogger.logd(
                         TAG,
                         "restoreCccValuesForStoredDevices: device= " + device + ", char= " + uuid);
-                setCcc(device, uuid.getUuid(), 0,
-                        BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE, false);
+                setCcc(
+                        device,
+                        uuid.getUuid(),
+                        0,
+                        BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE,
+                        false);
             }
         }
     }
@@ -806,157 +918,228 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
             };
 
     @VisibleForTesting
-    final BluetoothGattServerCallback mServerCallback = new BluetoothGattServerCallback() {
-        @Override
-        public void onConnectionStateChange(BluetoothDevice device, int status, int newState) {
-            super.onConnectionStateChange(device, status, newState);
-            Log.d(TAG, "BluetoothGattServerCallback: onConnectionStateChange");
-            if (newState == BluetoothProfile.STATE_DISCONNECTED) {
-                ClearUnauthorizedGattOperations(device);
-            }
-        }
+    final BluetoothGattServerCallback mServerCallback =
+            new BluetoothGattServerCallback() {
+                @Override
+                public void onConnectionStateChange(
+                        BluetoothDevice device, int status, int newState) {
+                    super.onConnectionStateChange(device, status, newState);
+                    Log.d(TAG, "BluetoothGattServerCallback: onConnectionStateChange");
+                    if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                        ClearUnauthorizedGattOperations(device);
+                    }
+                }
 
-        @Override
-        public void onServiceAdded(int status, BluetoothGattService service) {
-            super.onServiceAdded(status, service);
-            Log.d(TAG, "BluetoothGattServerCallback: onServiceAdded");
+                @Override
+                public void onServiceAdded(int status, BluetoothGattService service) {
+                    super.onServiceAdded(status, service);
+                    Log.d(TAG, "BluetoothGattServerCallback: onServiceAdded");
 
-            if (mCallbacks != null) {
-                mCallbacks.onServiceInstanceRegistered((status != BluetoothGatt.GATT_SUCCESS)
-                                ? ServiceStatus.UNKNOWN_ERROR
-                                : ServiceStatus.OK,
-                        MediaControlGattService.this);
-            }
+                    if (mCallbacks != null) {
+                        mCallbacks.onServiceInstanceRegistered(
+                                (status != BluetoothGatt.GATT_SUCCESS)
+                                        ? ServiceStatus.UNKNOWN_ERROR
+                                        : ServiceStatus.OK,
+                                MediaControlGattService.this);
+                    }
 
-            mCharacteristics.get(CharId.CONTENT_CONTROL_ID)
-                    .setValue(mCcid, BluetoothGattCharacteristic.FORMAT_UINT8, 0);
-            restoreCccValuesForStoredDevices();
-            setInitialCharacteristicValuesAndNotify();
-            initialStateRequest();
-        }
+                    mCharacteristics
+                            .get(CharId.CONTENT_CONTROL_ID)
+                            .setValue(mCcid, BluetoothGattCharacteristic.FORMAT_UINT8, 0);
+                    restoreCccValuesForStoredDevices();
+                    setInitialCharacteristicValuesAndNotify();
+                    initialStateRequest();
+                }
 
-        @Override
-        public void onCharacteristicReadRequest(BluetoothDevice device, int requestId, int offset,
-                BluetoothGattCharacteristic characteristic) {
-            super.onCharacteristicReadRequest(device, requestId, offset, characteristic);
-            Log.d(TAG, "BluetoothGattServerCallback: onCharacteristicReadRequest offset= "
-                    + offset + " entire value= " + Arrays.toString(characteristic.getValue()));
+                @Override
+                public void onCharacteristicReadRequest(
+                        BluetoothDevice device,
+                        int requestId,
+                        int offset,
+                        BluetoothGattCharacteristic characteristic) {
+                    super.onCharacteristicReadRequest(device, requestId, offset, characteristic);
+                    Log.d(
+                            TAG,
+                            "BluetoothGattServerCallback: onCharacteristicReadRequest offset= "
+                                    + offset
+                                    + " entire value= "
+                                    + Arrays.toString(characteristic.getValue()));
 
-            if ((characteristic.getProperties() & PROPERTY_READ) == 0) {
-                mBluetoothGattServer.sendResponse(device, requestId,
-                        BluetoothGatt.GATT_REQUEST_NOT_SUPPORTED, offset, null);
-                return;
-            }
+                    if ((characteristic.getProperties() & PROPERTY_READ) == 0) {
+                        mBluetoothGattServer.sendResponse(
+                                device,
+                                requestId,
+                                BluetoothGatt.GATT_REQUEST_NOT_SUPPORTED,
+                                offset,
+                                null);
+                        return;
+                    }
 
-            GattOpContext op = new GattOpContext(
-                    GattOpContext.Operation.READ_CHARACTERISTIC, requestId, characteristic, null);
-            switch (getDeviceAuthorization(device)) {
-                case BluetoothDevice.ACCESS_REJECTED:
-                    onRejectedAuthorizationGattOperation(device, op);
-                    break;
-                case BluetoothDevice.ACCESS_UNKNOWN:
-                    onUnauthorizedGattOperation(device, op);
-                    break;
-                default:
-                    onAuthorizedGattOperation(device, op);
-                    break;
-            }
-        }
+                    GattOpContext op =
+                            new GattOpContext(
+                                    GattOpContext.Operation.READ_CHARACTERISTIC,
+                                    requestId,
+                                    characteristic,
+                                    null);
+                    switch (getDeviceAuthorization(device)) {
+                        case BluetoothDevice.ACCESS_REJECTED:
+                            onRejectedAuthorizationGattOperation(device, op);
+                            break;
+                        case BluetoothDevice.ACCESS_UNKNOWN:
+                            onUnauthorizedGattOperation(device, op);
+                            break;
+                        default:
+                            onAuthorizedGattOperation(device, op);
+                            break;
+                    }
+                }
 
-        @Override
-        public void onCharacteristicWriteRequest(BluetoothDevice device, int requestId,
-                BluetoothGattCharacteristic characteristic, boolean preparedWrite,
-                boolean responseNeeded, int offset, byte[] value) {
-            super.onCharacteristicWriteRequest(device, requestId, characteristic, preparedWrite,
-                    responseNeeded, offset, value);
-            Log.d(TAG,
-                    "BluetoothGattServerCallback: "
-                            + "onCharacteristicWriteRequest");
+                @Override
+                public void onCharacteristicWriteRequest(
+                        BluetoothDevice device,
+                        int requestId,
+                        BluetoothGattCharacteristic characteristic,
+                        boolean preparedWrite,
+                        boolean responseNeeded,
+                        int offset,
+                        byte[] value) {
+                    super.onCharacteristicWriteRequest(
+                            device,
+                            requestId,
+                            characteristic,
+                            preparedWrite,
+                            responseNeeded,
+                            offset,
+                            value);
+                    Log.d(TAG, "BluetoothGattServerCallback: " + "onCharacteristicWriteRequest");
 
-            if ((characteristic.getProperties() & PROPERTY_WRITE)
-                    == 0) {
-                mBluetoothGattServer.sendResponse(
-                        device, requestId, BluetoothGatt.GATT_REQUEST_NOT_SUPPORTED, offset, value);
-                return;
-            }
+                    if ((characteristic.getProperties() & PROPERTY_WRITE) == 0) {
+                        mBluetoothGattServer.sendResponse(
+                                device,
+                                requestId,
+                                BluetoothGatt.GATT_REQUEST_NOT_SUPPORTED,
+                                offset,
+                                value);
+                        return;
+                    }
 
-            GattOpContext op = new GattOpContext(GattOpContext.Operation.WRITE_CHARACTERISTIC,
-                    requestId, characteristic, null, preparedWrite, responseNeeded, offset, value);
-            switch (getDeviceAuthorization(device)) {
-                case BluetoothDevice.ACCESS_REJECTED:
-                    onRejectedAuthorizationGattOperation(device, op);
-                    break;
-                case BluetoothDevice.ACCESS_UNKNOWN:
-                    onUnauthorizedGattOperation(device, op);
-                    break;
-                default:
-                    onAuthorizedGattOperation(device, op);
-                    break;
-            }
-        }
+                    GattOpContext op =
+                            new GattOpContext(
+                                    GattOpContext.Operation.WRITE_CHARACTERISTIC,
+                                    requestId,
+                                    characteristic,
+                                    null,
+                                    preparedWrite,
+                                    responseNeeded,
+                                    offset,
+                                    value);
+                    switch (getDeviceAuthorization(device)) {
+                        case BluetoothDevice.ACCESS_REJECTED:
+                            onRejectedAuthorizationGattOperation(device, op);
+                            break;
+                        case BluetoothDevice.ACCESS_UNKNOWN:
+                            onUnauthorizedGattOperation(device, op);
+                            break;
+                        default:
+                            onAuthorizedGattOperation(device, op);
+                            break;
+                    }
+                }
 
-        @Override
-        public void onDescriptorReadRequest(BluetoothDevice device, int requestId, int offset,
-                BluetoothGattDescriptor descriptor) {
-            super.onDescriptorReadRequest(device, requestId, offset, descriptor);
-            Log.d(TAG,
-                    "BluetoothGattServerCallback: "
-                            + "onDescriptorReadRequest");
+                @Override
+                public void onDescriptorReadRequest(
+                        BluetoothDevice device,
+                        int requestId,
+                        int offset,
+                        BluetoothGattDescriptor descriptor) {
+                    super.onDescriptorReadRequest(device, requestId, offset, descriptor);
+                    Log.d(TAG, "BluetoothGattServerCallback: " + "onDescriptorReadRequest");
 
-            if ((descriptor.getPermissions() & BluetoothGattDescriptor.PERMISSION_READ_ENCRYPTED)
-                    == 0) {
-                mBluetoothGattServer.sendResponse(
-                        device, requestId, BluetoothGatt.GATT_READ_NOT_PERMITTED, offset, null);
-                return;
-            }
+                    if ((descriptor.getPermissions()
+                                    & BluetoothGattDescriptor.PERMISSION_READ_ENCRYPTED)
+                            == 0) {
+                        mBluetoothGattServer.sendResponse(
+                                device,
+                                requestId,
+                                BluetoothGatt.GATT_READ_NOT_PERMITTED,
+                                offset,
+                                null);
+                        return;
+                    }
 
-            GattOpContext op = new GattOpContext(
-                    GattOpContext.Operation.READ_DESCRIPTOR, requestId, null, descriptor);
-            switch (getDeviceAuthorization(device)) {
-                case BluetoothDevice.ACCESS_REJECTED:
-                    onRejectedAuthorizationGattOperation(device, op);
-                    break;
-                case BluetoothDevice.ACCESS_UNKNOWN:
-                    onUnauthorizedGattOperation(device, op);
-                    break;
-                default:
-                    onAuthorizedGattOperation(device, op);
-                    break;
-            }
-        }
+                    GattOpContext op =
+                            new GattOpContext(
+                                    GattOpContext.Operation.READ_DESCRIPTOR,
+                                    requestId,
+                                    null,
+                                    descriptor);
+                    switch (getDeviceAuthorization(device)) {
+                        case BluetoothDevice.ACCESS_REJECTED:
+                            onRejectedAuthorizationGattOperation(device, op);
+                            break;
+                        case BluetoothDevice.ACCESS_UNKNOWN:
+                            onUnauthorizedGattOperation(device, op);
+                            break;
+                        default:
+                            onAuthorizedGattOperation(device, op);
+                            break;
+                    }
+                }
 
-        @Override
-        public void onDescriptorWriteRequest(BluetoothDevice device, int requestId,
-                BluetoothGattDescriptor descriptor, boolean preparedWrite, boolean responseNeeded,
-                int offset, byte[] value) {
-            super.onDescriptorWriteRequest(
-                    device, requestId, descriptor, preparedWrite, responseNeeded, offset, value);
-            Log.d(TAG,
-                    "BluetoothGattServerCallback: "
-                            + "onDescriptorWriteRequest");
+                @Override
+                public void onDescriptorWriteRequest(
+                        BluetoothDevice device,
+                        int requestId,
+                        BluetoothGattDescriptor descriptor,
+                        boolean preparedWrite,
+                        boolean responseNeeded,
+                        int offset,
+                        byte[] value) {
+                    super.onDescriptorWriteRequest(
+                            device,
+                            requestId,
+                            descriptor,
+                            preparedWrite,
+                            responseNeeded,
+                            offset,
+                            value);
+                    Log.d(TAG, "BluetoothGattServerCallback: " + "onDescriptorWriteRequest");
 
-            if ((descriptor.getPermissions() & BluetoothGattDescriptor.PERMISSION_WRITE_ENCRYPTED)
-                    == 0) {
-                mBluetoothGattServer.sendResponse(
-                        device, requestId, BluetoothGatt.GATT_WRITE_NOT_PERMITTED, offset, value);
-                return;
-            }
+                    if ((descriptor.getPermissions()
+                                    & BluetoothGattDescriptor.PERMISSION_WRITE_ENCRYPTED)
+                            == 0) {
+                        mBluetoothGattServer.sendResponse(
+                                device,
+                                requestId,
+                                BluetoothGatt.GATT_WRITE_NOT_PERMITTED,
+                                offset,
+                                value);
+                        return;
+                    }
 
-            GattOpContext op = new GattOpContext(GattOpContext.Operation.WRITE_DESCRIPTOR,
-                    requestId, null, descriptor, preparedWrite, responseNeeded, offset, value);
-            switch (getDeviceAuthorization(device)) {
-                case BluetoothDevice.ACCESS_REJECTED:
-                    onRejectedAuthorizationGattOperation(device, op);
-                    break;
-                case BluetoothDevice.ACCESS_UNKNOWN:
-                    onUnauthorizedGattOperation(device, op);
-                    break;
-                default:
-                    onAuthorizedGattOperation(device, op);
-                    break;
-            }
-        }
-    };
+                    GattOpContext op =
+                            new GattOpContext(
+                                    GattOpContext.Operation.WRITE_DESCRIPTOR,
+                                    requestId,
+                                    null,
+                                    descriptor,
+                                    preparedWrite,
+                                    responseNeeded,
+                                    offset,
+                                    value);
+                    switch (getDeviceAuthorization(device)) {
+                        case BluetoothDevice.ACCESS_REJECTED:
+                            onRejectedAuthorizationGattOperation(device, op);
+                            break;
+                        case BluetoothDevice.ACCESS_UNKNOWN:
+                            onUnauthorizedGattOperation(device, op);
+                            break;
+                        default:
+                            onAuthorizedGattOperation(device, op);
+                            break;
+                    }
+                }
+            };
 
     private void initialStateRequest() {
         List<PlayerStateField> field_list = new ArrayList<>();
@@ -1019,8 +1202,8 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
     /**
      * A proxy class that facilitates testing of the McpService class.
      *
-     * This is necessary due to the "final" attribute of the BluetoothGattServer class. In order to
-     * test the correct functioning of the McpService class, the final class must be put into a
+     * <p>This is necessary due to the "final" attribute of the BluetoothGattServer class. In order
+     * to test the correct functioning of the McpService class, the final class must be put into a
      * container that can be mocked correctly.
      */
     public class BluetoothGattServerProxy {
@@ -1049,8 +1232,10 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
             return mBluetoothGattServer.sendResponse(device, requestId, status, offset, value);
         }
 
-        public boolean notifyCharacteristicChanged(BluetoothDevice device,
-                BluetoothGattCharacteristic characteristic, boolean confirm) {
+        public boolean notifyCharacteristicChanged(
+                BluetoothDevice device,
+                BluetoothGattCharacteristic characteristic,
+                boolean confirm) {
             return mBluetoothGattServer.notifyCharacteristicChanged(
                     device, characteristic, confirm);
         }
@@ -1065,15 +1250,17 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
         }
     }
 
-    protected MediaControlGattService(McpService mcpService,
-            @NonNull MediaControlServiceCallbacks callbacks, int ccid) {
+    protected MediaControlGattService(
+            McpService mcpService, @NonNull MediaControlServiceCallbacks callbacks, int ccid) {
         mContext = mcpService;
         mCallbacks = callbacks;
         mCcid = ccid;
 
         mMcpService = mcpService;
-        mAdapterService =  Objects.requireNonNull(AdapterService.getAdapterService(),
-                "AdapterService shouldn't be null when creating MediaControlCattService");
+        mAdapterService =
+                Objects.requireNonNull(
+                        AdapterService.getAdapterService(),
+                        "AdapterService shouldn't be null when creating MediaControlCattService");
 
         mAdapterService.registerBluetoothStateCallback(
                 mContext.getMainExecutor(), mBluetoothStateChangeCallback);
@@ -1116,9 +1303,10 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
     }
 
     private void handleTrackPositionRequest(long position) {
-        final long positionMs = (position != INTERVAL_UNAVAILABLE)
-                ? mcsIntervalToMilliseconds(position)
-                : TRACK_POSITION_UNAVAILABLE;
+        final long positionMs =
+                (position != INTERVAL_UNAVAILABLE)
+                        ? mcsIntervalToMilliseconds(position)
+                        : TRACK_POSITION_UNAVAILABLE;
         mEventLogger.add("handleTrackPositionRequest: positionMs= " + positionMs);
         mCallbacks.onTrackPositionSetRequest(positionMs);
     }
@@ -1142,18 +1330,25 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
 
         // Test for RFU bits and currently supported opcodes
         if (!isOpcodeSupported(opcode)) {
-            Log.i(TAG, "handleMediaControlPointRequest: " + Request.Opcodes.toString(opcode)
-                     + " not supported");
-            mHandler.post(() -> {
-                setMediaControlRequestResult(new Request(opcode, 0),
-                        Request.Results.OPCODE_NOT_SUPPORTED);
-            });
+            Log.i(
+                    TAG,
+                    "handleMediaControlPointRequest: "
+                            + Request.Opcodes.toString(opcode)
+                            + " not supported");
+            mHandler.post(
+                    () -> {
+                        setMediaControlRequestResult(
+                                new Request(opcode, 0), Request.Results.OPCODE_NOT_SUPPORTED);
+                    });
             return BluetoothGatt.GATT_SUCCESS;
         }
 
         if (getMediaControlPointRequestPayloadLength(opcode) != (value.length - payloadOffset)) {
-            Log.w(TAG, "handleMediaControlPointRequest: " + Request.Opcodes.toString(opcode)
-                    + " bad payload length");
+            Log.w(
+                    TAG,
+                    "handleMediaControlPointRequest: "
+                            + Request.Opcodes.toString(opcode)
+                            + " bad payload length");
             return BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH;
         }
 
@@ -1163,9 +1358,10 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                 || opcode == Request.Opcodes.GOTO_SEGMENT
                 || opcode == Request.Opcodes.GOTO_TRACK
                 || opcode == Request.Opcodes.GOTO_GROUP) {
-            intVal = ByteBuffer.wrap(value, payloadOffset, value.length - payloadOffset)
-                    .order(ByteOrder.LITTLE_ENDIAN)
-                    .getInt();
+            intVal =
+                    ByteBuffer.wrap(value, payloadOffset, value.length - payloadOffset)
+                            .order(ByteOrder.LITTLE_ENDIAN)
+                            .getInt();
 
             // If the argument is time interval, convert to milliseconds time domain
             if (opcode == Request.Opcodes.MOVE_RELATIVE) {
@@ -1227,7 +1423,7 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
             BluetoothGattServer server = manager.openGattServer(mContext, mServerCallback);
             if (server == null) {
                 Log.e(TAG, "Failed to start BluetoothGattServer for MCP");
-                //TODO: This now effectively makes MCP unusable, but fixes tests
+                // TODO: This now effectively makes MCP unusable, but fixes tests
                 // Handle this error more gracefully, verify BluetoothInstrumentationTests
                 // are passing after fix is applied
                 return false;
@@ -1243,18 +1439,19 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
             UUID uuid = entry.first;
             Log.d(TAG, "Checking uuid: " + uuid);
             if ((mFeatures & desc.featureFlag) != 0) {
-                int notifyProp = (((mFeatures & desc.ntfFeatureFlag) != 0)
-                        ? PROPERTY_NOTIFY
-                        : 0);
+                int notifyProp = (((mFeatures & desc.ntfFeatureFlag) != 0) ? PROPERTY_NOTIFY : 0);
 
-                BluetoothGattCharacteristic myChar = new BluetoothGattCharacteristic(
-                        uuid, desc.properties | notifyProp, desc.permissions);
+                BluetoothGattCharacteristic myChar =
+                        new BluetoothGattCharacteristic(
+                                uuid, desc.properties | notifyProp, desc.permissions);
 
                 // Add CCC descriptor if notification is supported
                 if ((myChar.getProperties() & PROPERTY_NOTIFY) != 0) {
-                    BluetoothGattDescriptor cccDesc = new BluetoothGattDescriptor(UUID_CCCD,
-                            BluetoothGattDescriptor.PERMISSION_READ_ENCRYPTED
-                                    | BluetoothGattDescriptor.PERMISSION_WRITE_ENCRYPTED);
+                    BluetoothGattDescriptor cccDesc =
+                            new BluetoothGattDescriptor(
+                                    UUID_CCCD,
+                                    BluetoothGattDescriptor.PERMISSION_READ_ENCRYPTED
+                                            | BluetoothGattDescriptor.PERMISSION_WRITE_ENCRYPTED);
                     Log.d(TAG, "Adding descriptor: " + cccDesc);
                     myChar.addDescriptor(cccDesc);
                 }
@@ -1276,8 +1473,8 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
             mCccDescriptorValues.put(device.getAddress(), characteristicCcc);
         }
 
-        characteristicCcc.put(charUuid,
-                ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN).getShort());
+        characteristicCcc.put(
+                charUuid, ByteBuffer.wrap(value).order(ByteOrder.LITTLE_ENDIAN).getShort());
 
         if (!store) {
             return;
@@ -1321,8 +1518,7 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
     int getMediaStateChar() {
         if (!isFeatureSupported(ServiceFeature.MEDIA_STATE)) return MediaState.INACTIVE.getValue();
 
-        BluetoothGattCharacteristic stateChar =
-                mCharacteristics.get(CharId.MEDIA_STATE);
+        BluetoothGattCharacteristic stateChar = mCharacteristics.get(CharId.MEDIA_STATE);
 
         if (stateChar.getValue() != null) {
             return stateChar.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0);
@@ -1339,8 +1535,7 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
 
         mEventLogger.logd(TAG, "updateMediaStateChar: state= " + MediaState.toString(state));
 
-        BluetoothGattCharacteristic stateChar =
-                mCharacteristics.get(CharId.MEDIA_STATE);
+        BluetoothGattCharacteristic stateChar = mCharacteristics.get(CharId.MEDIA_STATE);
         stateChar.setValue(state, BluetoothGattCharacteristic.FORMAT_UINT8, 0);
         notifyCharacteristic(stateChar, null);
     }
@@ -1357,8 +1552,8 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                         + CharId.FromFeature(feature)
                         + ", objId= "
                         + objectIdValue);
-        updateObjectIdChar(mCharacteristics.get(CharId.FromFeature(feature)),
-                objectIdValue, null, notify);
+        updateObjectIdChar(
+                mCharacteristics.get(CharId.FromFeature(feature)), objectIdValue, null, notify);
     }
 
     @Override
@@ -1367,8 +1562,7 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
     }
 
     @Override
-    public void setMediaControlRequestResult(Request request,
-            Request.Results resultStatus) {
+    public void setMediaControlRequestResult(Request request, Request.Results resultStatus) {
         Log.d(TAG, "setMediaControlRequestResult");
 
         if (getMediaStateChar() == MediaState.INACTIVE.getValue()) {
@@ -1386,14 +1580,14 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
     }
 
     @Override
-    public void setSearchRequestResult(SearchRequest request,
-            SearchRequest.Results resultStatus, long resultObjectId) {
+    public void setSearchRequestResult(
+            SearchRequest request, SearchRequest.Results resultStatus, long resultObjectId) {
         Log.d(TAG, "setSearchRequestResult");
 
         // TODO: There is no Object Trasfer Service implementation.
         BluetoothGattCharacteristic characteristic =
                 mCharacteristics.get(CharId.SEARCH_CONTROL_POINT);
-        characteristic.setValue(new byte[]{SEARCH_CONTROL_POINT_RESULT_FAILURE});
+        characteristic.setValue(new byte[] {SEARCH_CONTROL_POINT_RESULT_FAILURE});
         notifyCharacteristic(characteristic, null);
     }
 
@@ -1406,7 +1600,8 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
         if (stateFields.containsKey(PlayerStateField.PLAYBACK_STATE)) {
             MediaState playbackState =
                     (MediaState) stateFields.get(PlayerStateField.PLAYBACK_STATE);
-            Log.d(TAG,
+            Log.d(
+                    TAG,
                     "updatePlayerState: playbackState= "
                             + stateFields.get(PlayerStateField.PLAYBACK_STATE));
 
@@ -1430,7 +1625,8 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
         }
 
         if (stateFields.containsKey(PlayerStateField.PLAYING_ORDER)) {
-            updatePlayingOrderChar((PlayingOrder) stateFields.get(PlayerStateField.PLAYING_ORDER),
+            updatePlayingOrderChar(
+                    (PlayingOrder) stateFields.get(PlayerStateField.PLAYING_ORDER),
                     doNotifyValueChange);
         }
 
@@ -1487,7 +1683,8 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
             String newTitle = (String) stateFields.get(PlayerStateField.TRACK_TITLE);
 
             if (getTrackTitleChar().compareTo(newTitle) != 0) {
-                updateTrackTitleChar((String) stateFields.get(PlayerStateField.TRACK_TITLE),
+                updateTrackTitleChar(
+                        (String) stateFields.get(PlayerStateField.TRACK_TITLE),
                         doNotifyValueChange);
                 notifyTrackChange = true;
             }
@@ -1502,8 +1699,7 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
         }
 
         if (stateFields.containsKey(PlayerStateField.PLAYBACK_STATE)) {
-            mCurrentMediaState =
-                    (MediaState) stateFields.get(PlayerStateField.PLAYBACK_STATE);
+            mCurrentMediaState = (MediaState) stateFields.get(PlayerStateField.PLAYBACK_STATE);
         }
 
         int mediaState = getMediaStateChar();
@@ -1516,7 +1712,8 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
             // Seeking speed should be 1.0f (char. value of 0) when not in seeking state.
             // [Ref. Media Control Service v1.0, sec. 3.9]
             if (playbackState == MediaState.SEEKING.getValue()) {
-                updateSeekingSpeedChar((float) stateFields.get(PlayerStateField.SEEKING_SPEED),
+                updateSeekingSpeedChar(
+                        (float) stateFields.get(PlayerStateField.SEEKING_SPEED),
                         doNotifyValueChange);
             } else {
                 updateSeekingSpeedChar(1.0f, doNotifyValueChange);
@@ -1527,9 +1724,8 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
         // [Ref. Media Control Service v1.0, sec. 3.4.1]
         if (notifyTrackChange) {
             if (isFeatureSupported(ServiceFeature.TRACK_CHANGED)) {
-                BluetoothGattCharacteristic myChar =
-                        mCharacteristics.get(CharId.TRACK_CHANGED);
-                myChar.setValue(new byte[]{});
+                BluetoothGattCharacteristic myChar = mCharacteristics.get(CharId.TRACK_CHANGED);
+                myChar.setValue(new byte[] {});
                 notifyCharacteristic(myChar, null);
             }
         }
@@ -1630,11 +1826,11 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
 
         byte[] ccc = getCccBytes(device, characteristic.getUuid());
         Log.d(
-                    TAG,
-                    "notifyCharacteristic: char= "
-                            + characteristic.getUuid().toString()
-                            + " cccVal= "
-                            + ByteBuffer.wrap(ccc).order(ByteOrder.LITTLE_ENDIAN).getShort());
+                TAG,
+                "notifyCharacteristic: char= "
+                        + characteristic.getUuid().toString()
+                        + " cccVal= "
+                        + ByteBuffer.wrap(ccc).order(ByteOrder.LITTLE_ENDIAN).getShort());
         if (!Arrays.equals(ccc, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE)) return;
 
         Log.d(TAG, "notifyCharacteristic: sending notification");
@@ -1677,8 +1873,7 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
         Float speed = null;
 
         if (isFeatureSupported(ServiceFeature.SEEKING_SPEED)) {
-            BluetoothGattCharacteristic characteristic =
-                    mCharacteristics.get(CharId.SEEKING_SPEED);
+            BluetoothGattCharacteristic characteristic = mCharacteristics.get(CharId.SEEKING_SPEED);
             if (characteristic.getValue() != null) {
                 Integer intVal =
                         characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT8, 0);
@@ -1702,8 +1897,7 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                     notifyCharacteristic(characteristic, null);
                 }
                 mEventLogger.logd(
-                        TAG,
-                        "updateSeekingSpeedChar: intSpeed=" + intSpeed + ", speed= " + speed);
+                        TAG, "updateSeekingSpeedChar: intSpeed=" + intSpeed + ", speed= " + speed);
             }
         }
     }
@@ -1740,8 +1934,7 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                 notifyCharacteristic(characteristic, null);
             }
             mEventLogger.logd(
-                    TAG,
-                    "updatePlaybackSpeedChar: intSpeed=" + intSpeed + ", speed= " + speed);
+                    TAG, "updatePlaybackSpeedChar: intSpeed=" + intSpeed + ", speed= " + speed);
         }
     }
 
@@ -1755,8 +1948,7 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                         ? (int) millisecondsToMcsInterval(positionMs)
                         : INTERVAL_UNAVAILABLE;
 
-        BluetoothGattCharacteristic characteristic =
-                mCharacteristics.get(CharId.TRACK_POSITION);
+        BluetoothGattCharacteristic characteristic = mCharacteristics.get(CharId.TRACK_POSITION);
         characteristic.setValue(position, BluetoothGattCharacteristic.FORMAT_SINT32, 0);
 
         if (isFeatureSupported(ServiceFeature.TRACK_POSITION_NOTIFY)) {
@@ -1778,9 +1970,9 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
 
         BluetoothGattCharacteristic characteristic = mCharacteristics.get(CharId.TRACK_DURATION);
         if (characteristic.getValue() != null) {
-            int duration =
-                    characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT32, 0);
-            return (duration != INTERVAL_UNAVAILABLE) ? mcsIntervalToMilliseconds(duration)
+            int duration = characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT32, 0);
+            return (duration != INTERVAL_UNAVAILABLE)
+                    ? mcsIntervalToMilliseconds(duration)
                     : TRACK_DURATION_UNAVAILABLE;
         }
         return TRACK_DURATION_UNAVAILABLE;
@@ -1812,8 +2004,7 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
 
     private String getTrackTitleChar() {
         if (isFeatureSupported(ServiceFeature.TRACK_TITLE)) {
-            BluetoothGattCharacteristic characteristic =
-                    mCharacteristics.get(CharId.TRACK_TITLE);
+            BluetoothGattCharacteristic characteristic = mCharacteristics.get(CharId.TRACK_TITLE);
             if (characteristic.getValue() != null) {
                 return characteristic.getStringValue(0);
             }
@@ -1826,8 +2017,7 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
     void updateTrackTitleChar(String title, boolean notify) {
         Log.d(TAG, "updateTrackTitleChar: " + title);
         if (isFeatureSupported(ServiceFeature.TRACK_TITLE)) {
-            BluetoothGattCharacteristic characteristic =
-                    mCharacteristics.get(CharId.TRACK_TITLE);
+            BluetoothGattCharacteristic characteristic = mCharacteristics.get(CharId.TRACK_TITLE);
             characteristic.setValue(title);
             if (notify && isFeatureSupported(ServiceFeature.TRACK_TITLE_NOTIFY)) {
                 notifyCharacteristic(characteristic, null);
@@ -1844,18 +2034,19 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                         + Request.SupportedOpcodes.toString(opcodes));
         if (!isFeatureSupported(ServiceFeature.MEDIA_CONTROL_POINT_OPCODES_SUPPORTED)) return;
 
-        BluetoothGattCharacteristic characteristic = mCharacteristics.get(
-                CharId.MEDIA_CONTROL_POINT_OPCODES_SUPPORTED);
+        BluetoothGattCharacteristic characteristic =
+                mCharacteristics.get(CharId.MEDIA_CONTROL_POINT_OPCODES_SUPPORTED);
         // Do nothing if nothing has changed
         if (characteristic.getValue() != null
-                && characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 0) == opcodes) {
+                && characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 0)
+                        == opcodes) {
             return;
         }
 
         characteristic.setValue(opcodes, BluetoothGattCharacteristic.FORMAT_UINT32, 0);
         if (notify
                 && isFeatureSupported(
-                ServiceFeature.MEDIA_CONTROL_POINT_OPCODES_SUPPORTED_NOTIFY)) {
+                        ServiceFeature.MEDIA_CONTROL_POINT_OPCODES_SUPPORTED_NOTIFY)) {
             notifyCharacteristic(characteristic, null);
         }
         mEventLogger.logd(
@@ -1868,7 +2059,8 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
     void updatePlayingOrderSupportedChar(int supportedOrder) {
         Log.d(TAG, "updatePlayingOrderSupportedChar: " + supportedOrder);
         if (isFeatureSupported(ServiceFeature.PLAYING_ORDER_SUPPORTED)) {
-            mCharacteristics.get(CharId.PLAYING_ORDER_SUPPORTED)
+            mCharacteristics
+                    .get(CharId.PLAYING_ORDER_SUPPORTED)
                     .setValue(supportedOrder, BluetoothGattCharacteristic.FORMAT_UINT16, 0);
             mEventLogger.logd(TAG, "updatePlayingOrderSupportedChar: order= " + supportedOrder);
         }
@@ -1882,8 +2074,7 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
                             + CharId.PLAYER_ICON_OBJ_ID
                             + ", objId= "
                             + objId);
-            updateObjectIdChar(mCharacteristics.get(CharId.PLAYER_ICON_OBJ_ID), objId,
-                    null, true);
+            updateObjectIdChar(mCharacteristics.get(CharId.PLAYER_ICON_OBJ_ID), objId, null, true);
         }
     }
 
@@ -1909,8 +2100,11 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
         return bb.array();
     }
 
-    private void updateObjectIdChar(BluetoothGattCharacteristic characteristic, long objId,
-            BluetoothDevice originDevice, boolean notify) {
+    private void updateObjectIdChar(
+            BluetoothGattCharacteristic characteristic,
+            long objId,
+            BluetoothDevice originDevice,
+            boolean notify) {
         characteristic.setValue(objId2ByteArray(objId));
         if ((characteristic.getProperties() & PROPERTY_NOTIFY) != 0) {
             // Notify all clients but not the originDevice
@@ -1944,8 +2138,7 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
 
         if (!isFeatureSupported(ServiceFeature.PLAYER_NAME)) return;
 
-        BluetoothGattCharacteristic characteristic =
-                mCharacteristics.get(CharId.PLAYER_NAME);
+        BluetoothGattCharacteristic characteristic = mCharacteristics.get(CharId.PLAYER_NAME);
         characteristic.setValue(name);
         mEventLogger.logd(TAG, "updatePlayerNameChar: name= '" + name + "'");
         if (notify && isFeatureSupported(ServiceFeature.PLAYER_NAME_NOTIFY)) {
@@ -1954,8 +2147,12 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
     }
 
     private boolean isFeatureSupported(long featureBit) {
-        Log.w(TAG, "Feature " + ServiceFeature.toString(featureBit) + " support: "
-                + ((mFeatures & featureBit) != 0));
+        Log.w(
+                TAG,
+                "Feature "
+                        + ServiceFeature.toString(featureBit)
+                        + " support: "
+                        + ((mFeatures & featureBit) != 0));
         return (mFeatures & featureBit) != 0;
     }
 
@@ -1986,15 +2183,22 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
         Integer opcodeSupportBit = Request.OpcodeToOpcodeSupport.get(opcode);
         if (opcodeSupportBit == null) return false;
 
-        return (mCharacteristics.get(CharId.MEDIA_CONTROL_POINT_OPCODES_SUPPORTED)
-                    .getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 0)
-                & opcodeSupportBit) == opcodeSupportBit;
+        return (mCharacteristics
+                                .get(CharId.MEDIA_CONTROL_POINT_OPCODES_SUPPORTED)
+                                .getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 0)
+                        & opcodeSupportBit)
+                == opcodeSupportBit;
     }
 
     private interface CharacteristicWriteHandler {
-        void onCharacteristicWriteRequest(BluetoothDevice device, int requestId,
-                BluetoothGattCharacteristic characteristic, boolean preparedWrite,
-                boolean responseNeeded, int offset, byte[] value);
+        void onCharacteristicWriteRequest(
+                BluetoothDevice device,
+                int requestId,
+                BluetoothGattCharacteristic characteristic,
+                boolean preparedWrite,
+                boolean responseNeeded,
+                int offset,
+                byte[] value);
     }
 
     private static final class CharacteristicData {
@@ -2014,7 +2218,7 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
         }
     }
 
-    private final static class CharId {
+    private static final class CharId {
         public static final int PLAYER_NAME =
                 Long.numberOfTrailingZeros(ServiceFeature.PLAYER_NAME);
         public static final int PLAYER_ICON_OBJ_ID =
@@ -2072,115 +2276,214 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
      */
     private static List<Pair<UUID, CharacteristicData>> getUuidCharacteristicList() {
         List<Pair<UUID, CharacteristicData>> characteristics = new ArrayList<>();
-        characteristics.add(new Pair<>(UUID_PLAYER_NAME,
-                new CharacteristicData(CharId.PLAYER_NAME, ServiceFeature.PLAYER_NAME,
-                        ServiceFeature.PLAYER_NAME_NOTIFY, PROPERTY_READ,
-                        PERMISSION_READ_ENCRYPTED)));
-        characteristics.add(new Pair<>(UUID_PLAYER_ICON_OBJ_ID,
-                new CharacteristicData(CharId.PLAYER_ICON_OBJ_ID, ServiceFeature.PLAYER_ICON_OBJ_ID,
-                        // Notifications unsupported
-                        0, PROPERTY_READ, PERMISSION_READ_ENCRYPTED)));
-        characteristics.add(new Pair<>(UUID_PLAYER_ICON_URL,
-                new CharacteristicData(CharId.PLAYER_ICON_URL, ServiceFeature.PLAYER_ICON_URL,
-                        // Notifications unsupported
-                        0, PROPERTY_READ, PERMISSION_READ_ENCRYPTED)));
-        characteristics.add(new Pair<>(UUID_TRACK_CHANGED,
-                new CharacteristicData(CharId.TRACK_CHANGED, ServiceFeature.TRACK_CHANGED,
-                        // Mandatory notification if char. exists.
-                        ServiceFeature.TRACK_CHANGED, PROPERTY_NOTIFY, 0)));
-        characteristics.add(new Pair<>(UUID_TRACK_TITLE,
-                new CharacteristicData(CharId.TRACK_TITLE, ServiceFeature.TRACK_TITLE,
-                        ServiceFeature.TRACK_TITLE_NOTIFY, PROPERTY_READ,
-                        PERMISSION_READ_ENCRYPTED)));
-        characteristics.add(new Pair<>(UUID_TRACK_DURATION,
-                new CharacteristicData(CharId.TRACK_DURATION, ServiceFeature.TRACK_DURATION,
-                        ServiceFeature.TRACK_DURATION_NOTIFY, PROPERTY_READ,
-                        PERMISSION_READ_ENCRYPTED)));
-        characteristics.add(new Pair<>(UUID_TRACK_POSITION,
-                new CharacteristicData(CharId.TRACK_POSITION, ServiceFeature.TRACK_POSITION,
-                        ServiceFeature.TRACK_POSITION_NOTIFY,
-                        PROPERTY_READ | PROPERTY_WRITE | PROPERTY_WRITE_NO_RESPONSE,
-                        PERMISSION_READ_ENCRYPTED | PERMISSION_WRITE_ENCRYPTED)));
-        characteristics.add(new Pair<>(UUID_PLAYBACK_SPEED,
-                new CharacteristicData(CharId.PLAYBACK_SPEED, ServiceFeature.PLAYBACK_SPEED,
-                        ServiceFeature.PLAYBACK_SPEED_NOTIFY,
-                        PROPERTY_READ | PROPERTY_WRITE | PROPERTY_WRITE_NO_RESPONSE,
-                        PERMISSION_READ_ENCRYPTED | PERMISSION_WRITE_ENCRYPTED)));
-        characteristics.add(new Pair<>(UUID_SEEKING_SPEED,
-                new CharacteristicData(CharId.SEEKING_SPEED, ServiceFeature.SEEKING_SPEED,
-                        ServiceFeature.SEEKING_SPEED_NOTIFY, PROPERTY_READ,
-                        PERMISSION_READ_ENCRYPTED)));
-        characteristics.add(new Pair<>(UUID_CURRENT_TRACK_SEGMENT_OBJ_ID,
-                new CharacteristicData(CharId.CURRENT_TRACK_SEGMENT_OBJ_ID,
-                        ServiceFeature.CURRENT_TRACK_SEGMENT_OBJ_ID,
-                        // Notifications unsupported
-                        0, PROPERTY_READ, PERMISSION_READ_ENCRYPTED)));
-        characteristics.add(new Pair<>(UUID_CURRENT_TRACK_OBJ_ID,
-                new CharacteristicData(CharId.CURRENT_TRACK_OBJ_ID,
-                        ServiceFeature.CURRENT_TRACK_OBJ_ID,
-                        ServiceFeature.CURRENT_TRACK_OBJ_ID_NOTIFY,
-                        PROPERTY_READ | PROPERTY_WRITE | PROPERTY_WRITE_NO_RESPONSE,
-                        PERMISSION_READ_ENCRYPTED | PERMISSION_WRITE_ENCRYPTED)));
-        characteristics.add(new Pair<>(UUID_NEXT_TRACK_OBJ_ID,
-                new CharacteristicData(CharId.NEXT_TRACK_OBJ_ID, ServiceFeature.NEXT_TRACK_OBJ_ID,
-                        ServiceFeature.NEXT_TRACK_OBJ_ID_NOTIFY,
-                        PROPERTY_READ | PROPERTY_WRITE | PROPERTY_WRITE_NO_RESPONSE,
-                        PERMISSION_READ_ENCRYPTED | PERMISSION_WRITE_ENCRYPTED)));
-        characteristics.add(new Pair<>(UUID_CURRENT_GROUP_OBJ_ID,
-                new CharacteristicData(CharId.CURRENT_GROUP_OBJ_ID,
-                        ServiceFeature.CURRENT_GROUP_OBJ_ID,
-                        ServiceFeature.CURRENT_GROUP_OBJ_ID_NOTIFY,
-                        PROPERTY_READ | PROPERTY_WRITE | PROPERTY_WRITE_NO_RESPONSE,
-                        PERMISSION_READ_ENCRYPTED | PERMISSION_WRITE_ENCRYPTED)));
-        characteristics.add(new Pair<>(UUID_PARENT_GROUP_OBJ_ID,
-                new CharacteristicData(CharId.PARENT_GROUP_OBJ_ID,
-                        ServiceFeature.PARENT_GROUP_OBJ_ID,
-                        ServiceFeature.PARENT_GROUP_OBJ_ID_NOTIFY, PROPERTY_READ,
-                        PERMISSION_READ_ENCRYPTED)));
-        characteristics.add(new Pair<>(UUID_PLAYING_ORDER,
-                new CharacteristicData(CharId.PLAYING_ORDER, ServiceFeature.PLAYING_ORDER,
-                        ServiceFeature.PLAYING_ORDER_NOTIFY,
-                        PROPERTY_READ | PROPERTY_WRITE | PROPERTY_WRITE_NO_RESPONSE,
-                        PERMISSION_READ_ENCRYPTED | PERMISSION_WRITE_ENCRYPTED)));
-        characteristics.add(new Pair<>(UUID_PLAYING_ORDER_SUPPORTED,
-                new CharacteristicData(CharId.PLAYING_ORDER_SUPPORTED,
-                        ServiceFeature.PLAYING_ORDER_SUPPORTED,
-                        // Notifications unsupported
-                        0, PROPERTY_READ, PERMISSION_READ_ENCRYPTED)));
-        characteristics.add(new Pair<>(UUID_MEDIA_STATE,
-                new CharacteristicData(CharId.MEDIA_STATE, ServiceFeature.MEDIA_STATE,
-                        // Mandatory notification if char. exists.
-                        ServiceFeature.MEDIA_STATE, PROPERTY_READ | PROPERTY_NOTIFY,
-                        PERMISSION_READ_ENCRYPTED)));
-        characteristics.add(new Pair<>(UUID_MEDIA_CONTROL_POINT,
-                new CharacteristicData(CharId.MEDIA_CONTROL_POINT,
-                        ServiceFeature.MEDIA_CONTROL_POINT,
-                        // Mandatory notification if char. exists.
-                        ServiceFeature.MEDIA_CONTROL_POINT,
-                        PROPERTY_WRITE | PROPERTY_WRITE_NO_RESPONSE | PROPERTY_NOTIFY,
-                        PERMISSION_WRITE_ENCRYPTED)));
-        characteristics.add(new Pair<>(UUID_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED,
-                new CharacteristicData(CharId.MEDIA_CONTROL_POINT_OPCODES_SUPPORTED,
-                        ServiceFeature.MEDIA_CONTROL_POINT_OPCODES_SUPPORTED,
-                        ServiceFeature.MEDIA_CONTROL_POINT_OPCODES_SUPPORTED_NOTIFY, PROPERTY_READ,
-                        PERMISSION_READ_ENCRYPTED)));
-        characteristics.add(new Pair<>(UUID_SEARCH_RESULT_OBJ_ID,
-                new CharacteristicData(CharId.SEARCH_RESULT_OBJ_ID,
-                        ServiceFeature.SEARCH_RESULT_OBJ_ID,
-                        // Mandatory notification if char. exists.
-                        ServiceFeature.SEARCH_RESULT_OBJ_ID, PROPERTY_READ | PROPERTY_NOTIFY,
-                        PERMISSION_READ_ENCRYPTED)));
-        characteristics.add(new Pair<>(UUID_SEARCH_CONTROL_POINT,
-                new CharacteristicData(CharId.SEARCH_CONTROL_POINT,
-                        ServiceFeature.SEARCH_CONTROL_POINT,
-                        // Mandatory notification if char. exists.
-                        ServiceFeature.SEARCH_CONTROL_POINT,
-                        PROPERTY_WRITE | PROPERTY_WRITE_NO_RESPONSE | PROPERTY_NOTIFY,
-                        PERMISSION_WRITE_ENCRYPTED)));
-        characteristics.add(new Pair<>(UUID_CONTENT_CONTROL_ID,
-                new CharacteristicData(CharId.CONTENT_CONTROL_ID, ServiceFeature.CONTENT_CONTROL_ID,
-                        // Notifications unsupported
-                        0, PROPERTY_READ, PERMISSION_READ_ENCRYPTED)));
+        characteristics.add(
+                new Pair<>(
+                        UUID_PLAYER_NAME,
+                        new CharacteristicData(
+                                CharId.PLAYER_NAME,
+                                ServiceFeature.PLAYER_NAME,
+                                ServiceFeature.PLAYER_NAME_NOTIFY,
+                                PROPERTY_READ,
+                                PERMISSION_READ_ENCRYPTED)));
+        characteristics.add(
+                new Pair<>(
+                        UUID_PLAYER_ICON_OBJ_ID,
+                        new CharacteristicData(
+                                CharId.PLAYER_ICON_OBJ_ID,
+                                ServiceFeature.PLAYER_ICON_OBJ_ID,
+                                // Notifications unsupported
+                                0,
+                                PROPERTY_READ,
+                                PERMISSION_READ_ENCRYPTED)));
+        characteristics.add(
+                new Pair<>(
+                        UUID_PLAYER_ICON_URL,
+                        new CharacteristicData(
+                                CharId.PLAYER_ICON_URL,
+                                ServiceFeature.PLAYER_ICON_URL,
+                                // Notifications unsupported
+                                0,
+                                PROPERTY_READ,
+                                PERMISSION_READ_ENCRYPTED)));
+        characteristics.add(
+                new Pair<>(
+                        UUID_TRACK_CHANGED,
+                        new CharacteristicData(
+                                CharId.TRACK_CHANGED,
+                                ServiceFeature.TRACK_CHANGED,
+                                // Mandatory notification if char. exists.
+                                ServiceFeature.TRACK_CHANGED,
+                                PROPERTY_NOTIFY,
+                                0)));
+        characteristics.add(
+                new Pair<>(
+                        UUID_TRACK_TITLE,
+                        new CharacteristicData(
+                                CharId.TRACK_TITLE,
+                                ServiceFeature.TRACK_TITLE,
+                                ServiceFeature.TRACK_TITLE_NOTIFY,
+                                PROPERTY_READ,
+                                PERMISSION_READ_ENCRYPTED)));
+        characteristics.add(
+                new Pair<>(
+                        UUID_TRACK_DURATION,
+                        new CharacteristicData(
+                                CharId.TRACK_DURATION,
+                                ServiceFeature.TRACK_DURATION,
+                                ServiceFeature.TRACK_DURATION_NOTIFY,
+                                PROPERTY_READ,
+                                PERMISSION_READ_ENCRYPTED)));
+        characteristics.add(
+                new Pair<>(
+                        UUID_TRACK_POSITION,
+                        new CharacteristicData(
+                                CharId.TRACK_POSITION,
+                                ServiceFeature.TRACK_POSITION,
+                                ServiceFeature.TRACK_POSITION_NOTIFY,
+                                PROPERTY_READ | PROPERTY_WRITE | PROPERTY_WRITE_NO_RESPONSE,
+                                PERMISSION_READ_ENCRYPTED | PERMISSION_WRITE_ENCRYPTED)));
+        characteristics.add(
+                new Pair<>(
+                        UUID_PLAYBACK_SPEED,
+                        new CharacteristicData(
+                                CharId.PLAYBACK_SPEED,
+                                ServiceFeature.PLAYBACK_SPEED,
+                                ServiceFeature.PLAYBACK_SPEED_NOTIFY,
+                                PROPERTY_READ | PROPERTY_WRITE | PROPERTY_WRITE_NO_RESPONSE,
+                                PERMISSION_READ_ENCRYPTED | PERMISSION_WRITE_ENCRYPTED)));
+        characteristics.add(
+                new Pair<>(
+                        UUID_SEEKING_SPEED,
+                        new CharacteristicData(
+                                CharId.SEEKING_SPEED,
+                                ServiceFeature.SEEKING_SPEED,
+                                ServiceFeature.SEEKING_SPEED_NOTIFY,
+                                PROPERTY_READ,
+                                PERMISSION_READ_ENCRYPTED)));
+        characteristics.add(
+                new Pair<>(
+                        UUID_CURRENT_TRACK_SEGMENT_OBJ_ID,
+                        new CharacteristicData(
+                                CharId.CURRENT_TRACK_SEGMENT_OBJ_ID,
+                                ServiceFeature.CURRENT_TRACK_SEGMENT_OBJ_ID,
+                                // Notifications unsupported
+                                0,
+                                PROPERTY_READ,
+                                PERMISSION_READ_ENCRYPTED)));
+        characteristics.add(
+                new Pair<>(
+                        UUID_CURRENT_TRACK_OBJ_ID,
+                        new CharacteristicData(
+                                CharId.CURRENT_TRACK_OBJ_ID,
+                                ServiceFeature.CURRENT_TRACK_OBJ_ID,
+                                ServiceFeature.CURRENT_TRACK_OBJ_ID_NOTIFY,
+                                PROPERTY_READ | PROPERTY_WRITE | PROPERTY_WRITE_NO_RESPONSE,
+                                PERMISSION_READ_ENCRYPTED | PERMISSION_WRITE_ENCRYPTED)));
+        characteristics.add(
+                new Pair<>(
+                        UUID_NEXT_TRACK_OBJ_ID,
+                        new CharacteristicData(
+                                CharId.NEXT_TRACK_OBJ_ID,
+                                ServiceFeature.NEXT_TRACK_OBJ_ID,
+                                ServiceFeature.NEXT_TRACK_OBJ_ID_NOTIFY,
+                                PROPERTY_READ | PROPERTY_WRITE | PROPERTY_WRITE_NO_RESPONSE,
+                                PERMISSION_READ_ENCRYPTED | PERMISSION_WRITE_ENCRYPTED)));
+        characteristics.add(
+                new Pair<>(
+                        UUID_CURRENT_GROUP_OBJ_ID,
+                        new CharacteristicData(
+                                CharId.CURRENT_GROUP_OBJ_ID,
+                                ServiceFeature.CURRENT_GROUP_OBJ_ID,
+                                ServiceFeature.CURRENT_GROUP_OBJ_ID_NOTIFY,
+                                PROPERTY_READ | PROPERTY_WRITE | PROPERTY_WRITE_NO_RESPONSE,
+                                PERMISSION_READ_ENCRYPTED | PERMISSION_WRITE_ENCRYPTED)));
+        characteristics.add(
+                new Pair<>(
+                        UUID_PARENT_GROUP_OBJ_ID,
+                        new CharacteristicData(
+                                CharId.PARENT_GROUP_OBJ_ID,
+                                ServiceFeature.PARENT_GROUP_OBJ_ID,
+                                ServiceFeature.PARENT_GROUP_OBJ_ID_NOTIFY,
+                                PROPERTY_READ,
+                                PERMISSION_READ_ENCRYPTED)));
+        characteristics.add(
+                new Pair<>(
+                        UUID_PLAYING_ORDER,
+                        new CharacteristicData(
+                                CharId.PLAYING_ORDER,
+                                ServiceFeature.PLAYING_ORDER,
+                                ServiceFeature.PLAYING_ORDER_NOTIFY,
+                                PROPERTY_READ | PROPERTY_WRITE | PROPERTY_WRITE_NO_RESPONSE,
+                                PERMISSION_READ_ENCRYPTED | PERMISSION_WRITE_ENCRYPTED)));
+        characteristics.add(
+                new Pair<>(
+                        UUID_PLAYING_ORDER_SUPPORTED,
+                        new CharacteristicData(
+                                CharId.PLAYING_ORDER_SUPPORTED,
+                                ServiceFeature.PLAYING_ORDER_SUPPORTED,
+                                // Notifications unsupported
+                                0,
+                                PROPERTY_READ,
+                                PERMISSION_READ_ENCRYPTED)));
+        characteristics.add(
+                new Pair<>(
+                        UUID_MEDIA_STATE,
+                        new CharacteristicData(
+                                CharId.MEDIA_STATE,
+                                ServiceFeature.MEDIA_STATE,
+                                // Mandatory notification if char. exists.
+                                ServiceFeature.MEDIA_STATE,
+                                PROPERTY_READ | PROPERTY_NOTIFY,
+                                PERMISSION_READ_ENCRYPTED)));
+        characteristics.add(
+                new Pair<>(
+                        UUID_MEDIA_CONTROL_POINT,
+                        new CharacteristicData(
+                                CharId.MEDIA_CONTROL_POINT,
+                                ServiceFeature.MEDIA_CONTROL_POINT,
+                                // Mandatory notification if char. exists.
+                                ServiceFeature.MEDIA_CONTROL_POINT,
+                                PROPERTY_WRITE | PROPERTY_WRITE_NO_RESPONSE | PROPERTY_NOTIFY,
+                                PERMISSION_WRITE_ENCRYPTED)));
+        characteristics.add(
+                new Pair<>(
+                        UUID_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED,
+                        new CharacteristicData(
+                                CharId.MEDIA_CONTROL_POINT_OPCODES_SUPPORTED,
+                                ServiceFeature.MEDIA_CONTROL_POINT_OPCODES_SUPPORTED,
+                                ServiceFeature.MEDIA_CONTROL_POINT_OPCODES_SUPPORTED_NOTIFY,
+                                PROPERTY_READ,
+                                PERMISSION_READ_ENCRYPTED)));
+        characteristics.add(
+                new Pair<>(
+                        UUID_SEARCH_RESULT_OBJ_ID,
+                        new CharacteristicData(
+                                CharId.SEARCH_RESULT_OBJ_ID,
+                                ServiceFeature.SEARCH_RESULT_OBJ_ID,
+                                // Mandatory notification if char. exists.
+                                ServiceFeature.SEARCH_RESULT_OBJ_ID,
+                                PROPERTY_READ | PROPERTY_NOTIFY,
+                                PERMISSION_READ_ENCRYPTED)));
+        characteristics.add(
+                new Pair<>(
+                        UUID_SEARCH_CONTROL_POINT,
+                        new CharacteristicData(
+                                CharId.SEARCH_CONTROL_POINT,
+                                ServiceFeature.SEARCH_CONTROL_POINT,
+                                // Mandatory notification if char. exists.
+                                ServiceFeature.SEARCH_CONTROL_POINT,
+                                PROPERTY_WRITE | PROPERTY_WRITE_NO_RESPONSE | PROPERTY_NOTIFY,
+                                PERMISSION_WRITE_ENCRYPTED)));
+        characteristics.add(
+                new Pair<>(
+                        UUID_CONTENT_CONTROL_ID,
+                        new CharacteristicData(
+                                CharId.CONTENT_CONTROL_ID,
+                                ServiceFeature.CONTENT_CONTROL_ID,
+                                // Notifications unsupported
+                                0,
+                                PROPERTY_READ,
+                                PERMISSION_READ_ENCRYPTED)));
         return characteristics;
     }
 
@@ -2189,8 +2492,7 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
         sb.append("\n\t\tCcid = " + mCcid);
         sb.append("\n\t\tFeatures:" + ServiceFeature.featuresToString(mFeatures, "\n\t\t\t"));
 
-        BluetoothGattCharacteristic characteristic =
-                mCharacteristics.get(CharId.PLAYER_NAME);
+        BluetoothGattCharacteristic characteristic = mCharacteristics.get(CharId.PLAYER_NAME);
         if (characteristic == null) {
             sb.append("\n\t\tPlayer name: <No Player>");
         } else {
@@ -2199,11 +2501,16 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
 
         sb.append("\n\t\tCurrentPlaybackState = " + mCurrentMediaState);
         for (Map.Entry<String, Map<UUID, Short>> deviceEntry : mCccDescriptorValues.entrySet()) {
-            sb.append("\n\t\tCCC states for device: " + "xx:xx:xx:xx:"
-                    + deviceEntry.getKey().substring(12));
+            sb.append(
+                    "\n\t\tCCC states for device: "
+                            + "xx:xx:xx:xx:"
+                            + deviceEntry.getKey().substring(12));
             for (Map.Entry<UUID, Short> entry : deviceEntry.getValue().entrySet()) {
-                sb.append("\n\t\t\tCharacteristic: " + mcsUuidToString(entry.getKey()) + ", value: "
-                        + Utils.cccIntToStr(entry.getValue()));
+                sb.append(
+                        "\n\t\t\tCharacteristic: "
+                                + mcsUuidToString(entry.getKey())
+                                + ", value: "
+                                + Utils.cccIntToStr(entry.getValue()));
             }
         }
 

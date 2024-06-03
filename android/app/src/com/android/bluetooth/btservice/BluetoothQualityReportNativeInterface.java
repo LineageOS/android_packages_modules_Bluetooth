@@ -70,9 +70,7 @@ public class BluetoothQualityReportNativeInterface {
         cleanupNative();
     }
 
-    /**
-     * Callback from the native stack back into the Java framework.
-     */
+    /** Callback from the native stack back into the Java framework. */
     private void bqrDeliver(
             byte[] remoteAddr, int lmpVer, int lmpSubVer, int manufacturerId, byte[] bqrRawData) {
         BluetoothClass remoteBtClass = null;
@@ -91,8 +89,12 @@ public class BluetoothQualityReportNativeInterface {
             remoteName = device.getName();
             remoteBtClass = device.getBluetoothClass();
         } else {
-            Log.e(TAG, "bqrDeliver failed: "
-                    + (remoteAddress == null ? "remoteAddress is null" : "adapter is null"));
+            Log.e(
+                    TAG,
+                    "bqrDeliver failed: "
+                            + (remoteAddress == null
+                                    ? "remoteAddress is null"
+                                    : "adapter is null"));
             return;
         }
 

@@ -60,8 +60,7 @@ public class BatteryServiceTest {
     @Mock private AdapterService mAdapterService;
     @Mock private DatabaseManager mDatabaseManager;
 
-    @Rule
-    public final MockitoRule mockito = MockitoJUnit.rule();
+    @Rule public final MockitoRule mockito = MockitoJUnit.rule();
 
     @Before
     public void setUp() throws Exception {
@@ -78,11 +77,12 @@ public class BatteryServiceTest {
         startService();
 
         // Override the timeout value to speed up the test
-        BatteryStateMachine.sConnectTimeoutMs = CONNECTION_TIMEOUT_MS;    // 1s
+        BatteryStateMachine.sConnectTimeoutMs = CONNECTION_TIMEOUT_MS; // 1s
 
         // Get a device for testing
         mDevice = TestUtils.getTestDevice(mAdapter, 0);
-        doReturn(BluetoothDevice.BOND_BONDED).when(mAdapterService)
+        doReturn(BluetoothDevice.BOND_BONDED)
+                .when(mAdapterService)
                 .getBondState(any(BluetoothDevice.class));
     }
 
@@ -104,108 +104,121 @@ public class BatteryServiceTest {
         Assert.assertNull(mService);
     }
 
-    /**
-     * Test get Battery Service
-     */
+    /** Test get Battery Service */
     @Test
     public void testGetBatteryService() {
         Assert.assertEquals(mService, BatteryService.getBatteryService());
     }
 
-    /**
-     * Test get/set policy for BluetoothDevice
-     */
+    /** Test get/set policy for BluetoothDevice */
     @Test
     public void testGetSetPolicy() {
-        when(mDatabaseManager
-                .getProfileConnectionPolicy(mDevice, BluetoothProfile.BATTERY))
+        when(mDatabaseManager.getProfileConnectionPolicy(mDevice, BluetoothProfile.BATTERY))
                 .thenReturn(BluetoothProfile.CONNECTION_POLICY_UNKNOWN);
-        Assert.assertEquals("Initial device policy",
+        Assert.assertEquals(
+                "Initial device policy",
                 BluetoothProfile.CONNECTION_POLICY_UNKNOWN,
                 mService.getConnectionPolicy(mDevice));
 
-        when(mDatabaseManager
-                .getProfileConnectionPolicy(mDevice, BluetoothProfile.BATTERY))
+        when(mDatabaseManager.getProfileConnectionPolicy(mDevice, BluetoothProfile.BATTERY))
                 .thenReturn(BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
-        Assert.assertEquals("Setting device policy to POLICY_FORBIDDEN",
+        Assert.assertEquals(
+                "Setting device policy to POLICY_FORBIDDEN",
                 BluetoothProfile.CONNECTION_POLICY_FORBIDDEN,
                 mService.getConnectionPolicy(mDevice));
 
-        when(mDatabaseManager
-                .getProfileConnectionPolicy(mDevice, BluetoothProfile.BATTERY))
+        when(mDatabaseManager.getProfileConnectionPolicy(mDevice, BluetoothProfile.BATTERY))
                 .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
-        Assert.assertEquals("Setting device policy to POLICY_ALLOWED",
+        Assert.assertEquals(
+                "Setting device policy to POLICY_ALLOWED",
                 BluetoothProfile.CONNECTION_POLICY_ALLOWED,
                 mService.getConnectionPolicy(mDevice));
     }
 
-    /**
-     * Test if getProfileConnectionPolicy works after the service is stopped.
-     */
+    /** Test if getProfileConnectionPolicy works after the service is stopped. */
     @Test
     public void testGetPolicyAfterStopped() {
         mService.stop();
-        when(mDatabaseManager
-                .getProfileConnectionPolicy(mDevice, BluetoothProfile.BATTERY))
+        when(mDatabaseManager.getProfileConnectionPolicy(mDevice, BluetoothProfile.BATTERY))
                 .thenReturn(BluetoothProfile.CONNECTION_POLICY_UNKNOWN);
-        Assert.assertEquals("Initial device policy",
+        Assert.assertEquals(
+                "Initial device policy",
                 BluetoothProfile.CONNECTION_POLICY_UNKNOWN,
                 mService.getConnectionPolicy(mDevice));
     }
 
-    /**
-     *  Test okToConnect method using various test cases
-     */
+    /** Test okToConnect method using various test cases */
     @Test
     public void testCanConnect() {
         int badPolicyValue = 1024;
         int badBondState = 42;
-        testCanConnectCase(mDevice,
-                BluetoothDevice.BOND_NONE, BluetoothProfile.CONNECTION_POLICY_UNKNOWN, false);
-        testCanConnectCase(mDevice,
-                BluetoothDevice.BOND_NONE, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN, false);
-        testCanConnectCase(mDevice,
-                BluetoothDevice.BOND_NONE, BluetoothProfile.CONNECTION_POLICY_ALLOWED, false);
-        testCanConnectCase(mDevice,
-                BluetoothDevice.BOND_NONE, badPolicyValue, false);
-        testCanConnectCase(mDevice,
-                BluetoothDevice.BOND_BONDING, BluetoothProfile.CONNECTION_POLICY_UNKNOWN, false);
-        testCanConnectCase(mDevice,
-                BluetoothDevice.BOND_BONDING, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN, false);
-        testCanConnectCase(mDevice,
-                BluetoothDevice.BOND_BONDING, BluetoothProfile.CONNECTION_POLICY_ALLOWED, false);
-        testCanConnectCase(mDevice,
-                BluetoothDevice.BOND_BONDING, badPolicyValue, false);
-        testCanConnectCase(mDevice,
-                BluetoothDevice.BOND_BONDED, BluetoothProfile.CONNECTION_POLICY_UNKNOWN, true);
-        testCanConnectCase(mDevice,
-                BluetoothDevice.BOND_BONDED, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN, false);
-        testCanConnectCase(mDevice,
-                BluetoothDevice.BOND_BONDED, BluetoothProfile.CONNECTION_POLICY_ALLOWED, true);
-        testCanConnectCase(mDevice,
-                BluetoothDevice.BOND_BONDED, badPolicyValue, false);
-        testCanConnectCase(mDevice,
-                badBondState, BluetoothProfile.CONNECTION_POLICY_UNKNOWN, false);
-        testCanConnectCase(mDevice,
-                badBondState, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN, false);
-        testCanConnectCase(mDevice,
-                badBondState, BluetoothProfile.CONNECTION_POLICY_ALLOWED, false);
-        testCanConnectCase(mDevice,
-                badBondState, badPolicyValue, false);
+        testCanConnectCase(
+                mDevice,
+                BluetoothDevice.BOND_NONE,
+                BluetoothProfile.CONNECTION_POLICY_UNKNOWN,
+                false);
+        testCanConnectCase(
+                mDevice,
+                BluetoothDevice.BOND_NONE,
+                BluetoothProfile.CONNECTION_POLICY_FORBIDDEN,
+                false);
+        testCanConnectCase(
+                mDevice,
+                BluetoothDevice.BOND_NONE,
+                BluetoothProfile.CONNECTION_POLICY_ALLOWED,
+                false);
+        testCanConnectCase(mDevice, BluetoothDevice.BOND_NONE, badPolicyValue, false);
+        testCanConnectCase(
+                mDevice,
+                BluetoothDevice.BOND_BONDING,
+                BluetoothProfile.CONNECTION_POLICY_UNKNOWN,
+                false);
+        testCanConnectCase(
+                mDevice,
+                BluetoothDevice.BOND_BONDING,
+                BluetoothProfile.CONNECTION_POLICY_FORBIDDEN,
+                false);
+        testCanConnectCase(
+                mDevice,
+                BluetoothDevice.BOND_BONDING,
+                BluetoothProfile.CONNECTION_POLICY_ALLOWED,
+                false);
+        testCanConnectCase(mDevice, BluetoothDevice.BOND_BONDING, badPolicyValue, false);
+        testCanConnectCase(
+                mDevice,
+                BluetoothDevice.BOND_BONDED,
+                BluetoothProfile.CONNECTION_POLICY_UNKNOWN,
+                true);
+        testCanConnectCase(
+                mDevice,
+                BluetoothDevice.BOND_BONDED,
+                BluetoothProfile.CONNECTION_POLICY_FORBIDDEN,
+                false);
+        testCanConnectCase(
+                mDevice,
+                BluetoothDevice.BOND_BONDED,
+                BluetoothProfile.CONNECTION_POLICY_ALLOWED,
+                true);
+        testCanConnectCase(mDevice, BluetoothDevice.BOND_BONDED, badPolicyValue, false);
+        testCanConnectCase(
+                mDevice, badBondState, BluetoothProfile.CONNECTION_POLICY_UNKNOWN, false);
+        testCanConnectCase(
+                mDevice, badBondState, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN, false);
+        testCanConnectCase(
+                mDevice, badBondState, BluetoothProfile.CONNECTION_POLICY_ALLOWED, false);
+        testCanConnectCase(mDevice, badBondState, badPolicyValue, false);
     }
 
-    /**
-     * Test that an outgoing connection to device
-     */
+    /** Test that an outgoing connection to device */
     @Test
     public void testConnectAndDump() {
         // Update the device policy so okToConnect() returns true
         when(mAdapterService.getDatabase()).thenReturn(mDatabaseManager);
-        when(mDatabaseManager
-                .getProfileConnectionPolicy(mDevice, BluetoothProfile.BATTERY))
+        when(mDatabaseManager.getProfileConnectionPolicy(mDevice, BluetoothProfile.BATTERY))
                 .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
         // Return Battery UUID
-        doReturn(new ParcelUuid[]{BluetoothUuid.BATTERY}).when(mAdapterService)
+        doReturn(new ParcelUuid[] {BluetoothUuid.BATTERY})
+                .when(mAdapterService)
                 .getRemoteUuids(any(BluetoothDevice.class));
         // Send a connect request
         Assert.assertTrue("Connect expected to succeed", mService.connect(mDevice));
@@ -214,15 +227,12 @@ public class BatteryServiceTest {
         mService.dump(new StringBuilder());
     }
 
-    /**
-     * Test that an outgoing connection to device with POLICY_FORBIDDEN is rejected
-     */
+    /** Test that an outgoing connection to device with POLICY_FORBIDDEN is rejected */
     @Test
     public void testForbiddenPolicy_FailsToConnect() {
         // Set the device policy to POLICY_FORBIDDEN so connect() should fail
         when(mAdapterService.getDatabase()).thenReturn(mDatabaseManager);
-        when(mDatabaseManager
-                .getProfileConnectionPolicy(mDevice, BluetoothProfile.BATTERY))
+        when(mDatabaseManager.getProfileConnectionPolicy(mDevice, BluetoothProfile.BATTERY))
                 .thenReturn(BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
 
         // Send a connect request
@@ -231,8 +241,8 @@ public class BatteryServiceTest {
 
     @Test
     public void getConnectionState_whenNoDevicesAreConnected_returnsDisconnectedState() {
-        Assert.assertEquals(mService.getConnectionState(mDevice),
-                BluetoothProfile.STATE_DISCONNECTED);
+        Assert.assertEquals(
+                mService.getConnectionState(mDevice), BluetoothProfile.STATE_DISCONNECTED);
     }
 
     @Test
@@ -250,20 +260,21 @@ public class BatteryServiceTest {
 
     @Test
     public void setConnectionPolicy() {
-        Assert.assertTrue(mService.setConnectionPolicy(
-                mDevice, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN));
+        Assert.assertTrue(
+                mService.setConnectionPolicy(
+                        mDevice, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN));
     }
 
     /**
-     *  Helper function to test okToConnect() method
+     * Helper function to test okToConnect() method
      *
-     *  @param device test device
-     *  @param bondState bond state value, could be invalid
-     *  @param policy value, could be invalid
-     *  @param expected expected result from okToConnect()
+     * @param device test device
+     * @param bondState bond state value, could be invalid
+     * @param policy value, could be invalid
+     * @param expected expected result from okToConnect()
      */
-    private void testCanConnectCase(BluetoothDevice device, int bondState, int policy,
-            boolean expected) {
+    private void testCanConnectCase(
+            BluetoothDevice device, int bondState, int policy, boolean expected) {
         doReturn(bondState).when(mAdapterService).getBondState(device);
         when(mAdapterService.getDatabase()).thenReturn(mDatabaseManager);
         when(mDatabaseManager.getProfileConnectionPolicy(device, BluetoothProfile.BATTERY))

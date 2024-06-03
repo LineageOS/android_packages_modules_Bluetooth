@@ -40,8 +40,13 @@ final class BluetoothPbapRequestPullPhoneBook extends BluetoothPbapRequest {
 
     private final byte mFormat;
 
-    BluetoothPbapRequestPullPhoneBook(String pbName, Account account, long filter, byte format,
-            int maxListCount, int listStartOffset) {
+    BluetoothPbapRequestPullPhoneBook(
+            String pbName,
+            Account account,
+            long filter,
+            byte format,
+            int maxListCount,
+            int listStartOffset) {
         mAccount = account;
         if (maxListCount < 0 || maxListCount > 65535) {
             throw new IllegalArgumentException("maxListCount should be [0..65535]");

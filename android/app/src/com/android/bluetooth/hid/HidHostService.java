@@ -57,10 +57,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-/**
- * Provides Bluetooth Hid Host profile, as a service in
- * the Bluetooth application.
- */
+/** Provides Bluetooth Hid Host profile, as a service in the Bluetooth application. */
 public class HidHostService extends ProfileService {
     private static final String TAG = HidHostService.class.getSimpleName();
 
@@ -991,10 +988,9 @@ public class HidHostService extends ProfileService {
             return service.getIdleTime(device);
         }
     }
-
     ;
 
-    //APIs
+    // APIs
 
     /**
      * Connects the hid host profile for the passed in device
@@ -1048,10 +1044,10 @@ public class HidHostService extends ProfileService {
      * Get the current connection state of the profile
      *
      * @param device is the remote bluetooth device
-     * @return {@link BluetoothProfile#STATE_DISCONNECTED} if this profile is disconnected,
-     * {@link BluetoothProfile#STATE_CONNECTING} if this profile is being connected,
-     * {@link BluetoothProfile#STATE_CONNECTED} if this profile is connected, or
-     * {@link BluetoothProfile#STATE_DISCONNECTING} if this profile is being disconnected
+     * @return {@link BluetoothProfile#STATE_DISCONNECTED} if this profile is disconnected, {@link
+     *     BluetoothProfile#STATE_CONNECTING} if this profile is being connected, {@link
+     *     BluetoothProfile#STATE_CONNECTED} if this profile is connected, or {@link
+     *     BluetoothProfile#STATE_DISCONNECTING} if this profile is being disconnected
      */
     public int getConnectionState(BluetoothDevice device) {
         Log.d(TAG, "getConnectionState: device=" + device);
@@ -1071,15 +1067,14 @@ public class HidHostService extends ProfileService {
     }
 
     /**
-     * Set connection policy of the profile and connects it if connectionPolicy is
-     * {@link BluetoothProfile#CONNECTION_POLICY_ALLOWED} or disconnects if connectionPolicy is
-     * {@link BluetoothProfile#CONNECTION_POLICY_FORBIDDEN}
+     * Set connection policy of the profile and connects it if connectionPolicy is {@link
+     * BluetoothProfile#CONNECTION_POLICY_ALLOWED} or disconnects if connectionPolicy is {@link
+     * BluetoothProfile#CONNECTION_POLICY_FORBIDDEN}
      *
-     * <p> The device should already be paired.
-     * Connection policy can be one of:
-     * {@link BluetoothProfile#CONNECTION_POLICY_ALLOWED},
-     * {@link BluetoothProfile#CONNECTION_POLICY_FORBIDDEN},
-     * {@link BluetoothProfile#CONNECTION_POLICY_UNKNOWN}
+     * <p>The device should already be paired. Connection policy can be one of: {@link
+     * BluetoothProfile#CONNECTION_POLICY_ALLOWED}, {@link
+     * BluetoothProfile#CONNECTION_POLICY_FORBIDDEN}, {@link
+     * BluetoothProfile#CONNECTION_POLICY_UNKNOWN}
      *
      * @param device Paired bluetooth device
      * @param connectionPolicy is the connection policy to set to for this profile
@@ -1088,8 +1083,8 @@ public class HidHostService extends ProfileService {
     public boolean setConnectionPolicy(BluetoothDevice device, int connectionPolicy) {
         Log.d(TAG, "setConnectionPolicy: device=" + device);
 
-        if (!mDatabaseManager.setProfileConnectionPolicy(device, BluetoothProfile.HID_HOST,
-                  connectionPolicy)) {
+        if (!mDatabaseManager.setProfileConnectionPolicy(
+                device, BluetoothProfile.HID_HOST, connectionPolicy)) {
             return false;
         }
         Log.d(TAG, "Saved connectionPolicy=" + connectionPolicy + " for device=" + device);
@@ -1139,18 +1134,16 @@ public class HidHostService extends ProfileService {
     /**
      * Get the connection policy of the profile.
      *
-     * <p> The connection policy can be any of:
-     * {@link BluetoothProfile#CONNECTION_POLICY_ALLOWED},
-     * {@link BluetoothProfile#CONNECTION_POLICY_FORBIDDEN},
-     * {@link BluetoothProfile#CONNECTION_POLICY_UNKNOWN}
+     * <p>The connection policy can be any of: {@link BluetoothProfile#CONNECTION_POLICY_ALLOWED},
+     * {@link BluetoothProfile#CONNECTION_POLICY_FORBIDDEN}, {@link
+     * BluetoothProfile#CONNECTION_POLICY_UNKNOWN}
      *
      * @param device Bluetooth device
      * @return connection policy of the device
      */
     public int getConnectionPolicy(BluetoothDevice device) {
         Log.d(TAG, "getConnectionPolicy: device=" + device);
-        return mDatabaseManager
-                .getProfileConnectionPolicy(device, BluetoothProfile.HID_HOST);
+        return mDatabaseManager.getProfileConnectionPolicy(device, BluetoothProfile.HID_HOST);
     }
 
     /**
@@ -1241,10 +1234,7 @@ public class HidHostService extends ProfileService {
 
         if (!Flags.allowSwitchingHidAndHogp()) {
             return mNativeInterface.sendData(
-                    getByteAddress(device),
-                    getAddressType(device),
-                    getTransport(device),
-                    report);
+                    getByteAddress(device), getAddressType(device), getTransport(device), report);
         }
 
         Message msg = mHandler.obtainMessage(MESSAGE_SEND_DATA, device);
@@ -1473,8 +1463,8 @@ public class HidHostService extends ProfileService {
     }
 
     /**
-     * Check whether can connect to a peer device.
-     * The check considers a number of factors during the evaluation.
+     * Check whether can connect to a peer device. The check considers a number of factors during
+     * the evaluation.
      *
      * @param device the peer device to connect to
      * @return true if connection is allowed, otherwise false

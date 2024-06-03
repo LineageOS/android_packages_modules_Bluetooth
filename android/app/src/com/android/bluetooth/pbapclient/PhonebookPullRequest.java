@@ -31,8 +31,7 @@ import java.util.ArrayList;
 public class PhonebookPullRequest extends PullRequest {
     private static final String TAG = "PhonebookPullRequest";
 
-    @VisibleForTesting
-    static final int MAX_OPS = 250;
+    @VisibleForTesting static final int MAX_OPS = 250;
 
     private final Context mContext;
     public boolean complete = false;
@@ -41,7 +40,6 @@ public class PhonebookPullRequest extends PullRequest {
         mContext = context;
         path = PbapClientConnectionHandler.PB_PATH;
     }
-
 
     @Override
     public void onPullComplete() {

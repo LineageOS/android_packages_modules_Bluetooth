@@ -38,10 +38,8 @@ import java.util.concurrent.Executor;
 /**
  * Class that manages Telephony states
  *
- * Note:
- * The methods in this class are not thread safe, don't call them from
- * multiple threads. Call them from the HeadsetPhoneStateMachine message
- * handler only.
+ * <p>Note: The methods in this class are not thread safe, don't call them from multiple threads.
+ * Call them from the HeadsetPhoneStateMachine message handler only.
  */
 public class HeadsetPhoneState {
     private static final String TAG = "HeadsetPhoneState";
@@ -89,16 +87,15 @@ public class HeadsetPhoneState {
             mOnSubscriptionsChangedListener = new HeadsetPhoneStateOnSubscriptionChangedListener();
             mSubscriptionManager.addOnSubscriptionsChangedListener(
                     command -> mHandler.post(command), mOnSubscriptionsChangedListener);
-            mSignalStrengthUpdateRequest = new SignalStrengthUpdateRequest.Builder()
-                    .setSignalThresholdInfos(Collections.EMPTY_LIST)
-                    .setSystemThresholdReportingRequestedWhileIdle(true)
-                    .build();
+            mSignalStrengthUpdateRequest =
+                    new SignalStrengthUpdateRequest.Builder()
+                            .setSignalThresholdInfos(Collections.EMPTY_LIST)
+                            .setSystemThresholdReportingRequestedWhileIdle(true)
+                            .build();
         }
     }
 
-    /**
-     * Cleanup this instance. Instance can no longer be used after calling this method.
-     */
+    /** Cleanup this instance. Instance can no longer be used after calling this method. */
     public void cleanup() {
         synchronized (mDeviceEventMap) {
             mDeviceEventMap.clear();
@@ -109,16 +106,28 @@ public class HeadsetPhoneState {
 
     @Override
     public String toString() {
-        return "HeadsetPhoneState [mTelephonyServiceAvailability=" + mCindService + ", mNumActive="
-                + mNumActive + ", mCallState=" + mCallState + ", mNumHeld=" + mNumHeld
-                + ", mSignal=" + mCindSignal + ", mRoam=" + mCindRoam + ", mBatteryCharge="
-                + mCindBatteryCharge + ", TelephonyEvents=" + getTelephonyEventsToListen() + "]";
+        return "HeadsetPhoneState [mTelephonyServiceAvailability="
+                + mCindService
+                + ", mNumActive="
+                + mNumActive
+                + ", mCallState="
+                + mCallState
+                + ", mNumHeld="
+                + mNumHeld
+                + ", mSignal="
+                + mCindSignal
+                + ", mRoam="
+                + mCindRoam
+                + ", mBatteryCharge="
+                + mCindBatteryCharge
+                + ", TelephonyEvents="
+                + getTelephonyEventsToListen()
+                + "]";
     }
 
     private int getTelephonyEventsToListen() {
         synchronized (mDeviceEventMap) {
-            return mDeviceEventMap.values()
-                    .stream()
+            return mDeviceEventMap.values().stream()
                     .reduce(PhoneStateListener.LISTEN_NONE, (a, b) -> a | b);
         }
     }
@@ -179,8 +188,10 @@ public class HeadsetPhoneState {
                 Log.i(TAG, "stopListenForPhoneState(), no listener indicates nothing is listening");
                 return;
             }
-            Log.i(TAG, "stopListenForPhoneState(), stopping listener, enabled_events="
-                    + getTelephonyEventsToListen());
+            Log.i(
+                    TAG,
+                    "stopListenForPhoneState(), stopping listener, enabled_events="
+                            + getTelephonyEventsToListen());
             mTelephonyManager.listen(mPhoneStateListener, PhoneStateListener.LISTEN_NONE);
             mPhoneStateListener = null;
         }
@@ -255,9 +266,16 @@ public class HeadsetPhoneState {
         // use the service indicator, but only the signal indicator
         int signal = mCindService == HeadsetHalConstants.NETWORK_STATE_AVAILABLE ? mCindSignal : 0;
 
-        Log.d(TAG, "sendDeviceStateChanged. mService=" + mCindService
-                + " mSignal=" + mCindSignal + " mRoam=" + mCindRoam
-                + " mBatteryCharge=" + mCindBatteryCharge);
+        Log.d(
+                TAG,
+                "sendDeviceStateChanged. mService="
+                        + mCindService
+                        + " mSignal="
+                        + mCindSignal
+                        + " mRoam="
+                        + mCindRoam
+                        + " mBatteryCharge="
+                        + mCindBatteryCharge);
         mHeadsetService.onDeviceStateChanged(
                 new HeadsetDeviceState(mCindService, mCindRoam, signal, mCindBatteryCharge));
     }
@@ -294,11 +312,14 @@ public class HeadsetPhoneState {
         @Override
         public synchronized void onServiceStateChanged(ServiceState serviceState) {
             mServiceState = serviceState;
-            int cindService = (serviceState.getState() == ServiceState.STATE_IN_SERVICE)
-                    ? HeadsetHalConstants.NETWORK_STATE_AVAILABLE
-                    : HeadsetHalConstants.NETWORK_STATE_NOT_AVAILABLE;
-            int newRoam = serviceState.getRoaming() ? HeadsetHalConstants.SERVICE_TYPE_ROAMING
-                    : HeadsetHalConstants.SERVICE_TYPE_HOME;
+            int cindService =
+                    (serviceState.getState() == ServiceState.STATE_IN_SERVICE)
+                            ? HeadsetHalConstants.NETWORK_STATE_AVAILABLE
+                            : HeadsetHalConstants.NETWORK_STATE_NOT_AVAILABLE;
+            int newRoam =
+                    serviceState.getRoaming()
+                            ? HeadsetHalConstants.SERVICE_TYPE_ROAMING
+                            : HeadsetHalConstants.SERVICE_TYPE_HOME;
 
             if (cindService == mCindService && newRoam == mCindRoam) {
                 // De-bounce the state change

@@ -51,8 +51,10 @@ public class PbapParserTest {
     @Before
     public void setUp() {
         mTargetContext = InstrumentationRegistry.getTargetContext();
-        mAccount = new Account(TEST_ACCOUNT_NAME,
-                mTargetContext.getString(com.android.bluetooth.R.string.pbap_account_type));
+        mAccount =
+                new Account(
+                        TEST_ACCOUNT_NAME,
+                        mTargetContext.getString(com.android.bluetooth.R.string.pbap_account_type));
         mTestResources = TestUtils.getTestApplicationResources(mTargetContext);
         cleanupCallLog();
         cleanupPhonebook();
@@ -62,14 +64,19 @@ public class PbapParserTest {
     @Test
     public void testNoTimestamp() throws IOException {
         InputStream fileStream;
-        fileStream = mTestResources.openRawResource(
-                com.android.bluetooth.tests.R.raw.no_timestamp_call_log);
-        BluetoothPbapVcardList pbapVCardList = new BluetoothPbapVcardList(mAccount, fileStream,
-                PbapClientConnectionHandler.VCARD_TYPE_30);
+        fileStream =
+                mTestResources.openRawResource(
+                        com.android.bluetooth.tests.R.raw.no_timestamp_call_log);
+        BluetoothPbapVcardList pbapVCardList =
+                new BluetoothPbapVcardList(
+                        mAccount, fileStream, PbapClientConnectionHandler.VCARD_TYPE_30);
         Assert.assertEquals(1, pbapVCardList.getCount());
         CallLogPullRequest processor =
-                new CallLogPullRequest(mTargetContext, PbapClientConnectionHandler.MCH_PATH,
-                    new HashMap<>(), mAccount);
+                new CallLogPullRequest(
+                        mTargetContext,
+                        PbapClientConnectionHandler.MCH_PATH,
+                        new HashMap<>(),
+                        mAccount);
         processor.setResults(pbapVCardList.getList());
 
         // Verify that these entries aren't in the call log to start.
@@ -84,14 +91,19 @@ public class PbapParserTest {
     @Test
     public void testMissedCall() throws IOException {
         InputStream fileStream;
-        fileStream = mTestResources.openRawResource(
-                com.android.bluetooth.tests.R.raw.single_missed_call);
-        BluetoothPbapVcardList pbapVCardList = new BluetoothPbapVcardList(mAccount, fileStream,
-                PbapClientConnectionHandler.VCARD_TYPE_30);
+        fileStream =
+                mTestResources.openRawResource(
+                        com.android.bluetooth.tests.R.raw.single_missed_call);
+        BluetoothPbapVcardList pbapVCardList =
+                new BluetoothPbapVcardList(
+                        mAccount, fileStream, PbapClientConnectionHandler.VCARD_TYPE_30);
         Assert.assertEquals(1, pbapVCardList.getCount());
         CallLogPullRequest processor =
-                new CallLogPullRequest(mTargetContext, PbapClientConnectionHandler.MCH_PATH,
-                    new HashMap<>(), mAccount);
+                new CallLogPullRequest(
+                        mTargetContext,
+                        PbapClientConnectionHandler.MCH_PATH,
+                        new HashMap<>(),
+                        mAccount);
         processor.setResults(pbapVCardList.getList());
 
         // Verify that these entries aren't in the call log to start.
@@ -105,14 +117,19 @@ public class PbapParserTest {
     @Test
     public void testUnknownCall() throws IOException {
         InputStream fileStream;
-        fileStream = mTestResources.openRawResource(
-                com.android.bluetooth.tests.R.raw.unknown_number_call);
-        BluetoothPbapVcardList pbapVCardList = new BluetoothPbapVcardList(mAccount, fileStream,
-                PbapClientConnectionHandler.VCARD_TYPE_30);
+        fileStream =
+                mTestResources.openRawResource(
+                        com.android.bluetooth.tests.R.raw.unknown_number_call);
+        BluetoothPbapVcardList pbapVCardList =
+                new BluetoothPbapVcardList(
+                        mAccount, fileStream, PbapClientConnectionHandler.VCARD_TYPE_30);
         Assert.assertEquals(2, pbapVCardList.getCount());
         CallLogPullRequest processor =
-                new CallLogPullRequest(mTargetContext, PbapClientConnectionHandler.MCH_PATH,
-                    new HashMap<>(), mAccount);
+                new CallLogPullRequest(
+                        mTargetContext,
+                        PbapClientConnectionHandler.MCH_PATH,
+                        new HashMap<>(),
+                        mAccount);
         processor.setResults(pbapVCardList.getList());
 
         // Verify that these entries aren't in the call log to start.
@@ -128,10 +145,10 @@ public class PbapParserTest {
     @Test
     public void testPullPhoneBook() throws IOException {
         InputStream fileStream;
-        fileStream = mTestResources.openRawResource(
-                com.android.bluetooth.tests.R.raw.v30_simple);
-        BluetoothPbapVcardList pbapVCardList = new BluetoothPbapVcardList(mAccount, fileStream,
-                PbapClientConnectionHandler.VCARD_TYPE_30);
+        fileStream = mTestResources.openRawResource(com.android.bluetooth.tests.R.raw.v30_simple);
+        BluetoothPbapVcardList pbapVCardList =
+                new BluetoothPbapVcardList(
+                        mAccount, fileStream, PbapClientConnectionHandler.VCARD_TYPE_30);
         Assert.assertEquals(1, pbapVCardList.getCount());
         PhonebookPullRequest processor = new PhonebookPullRequest(mTargetContext);
         processor.setResults(pbapVCardList.getList());
@@ -145,17 +162,24 @@ public class PbapParserTest {
     }
 
     private void cleanupPhonebook() {
-        mTargetContext.getContentResolver().delete(ContactsContract.RawContacts.CONTENT_URI,
-                null, null);
+        mTargetContext
+                .getContentResolver()
+                .delete(ContactsContract.RawContacts.CONTENT_URI, null, null);
     }
 
     // Find Entries in call log with type matching number and date.
     // If number or date is null it will match any number or date respectively.
     private boolean verifyCallLog(String number, String date, String type) {
-        String[] query = new String[]{Calls.NUMBER, Calls.DATE, Calls.TYPE};
-        Cursor cursor = mTargetContext.getContentResolver()
-                .query(Calls.CONTENT_URI, query, Calls.TYPE + "= " + type, null,
-                        Calls.DATE + ", " + Calls.NUMBER);
+        String[] query = new String[] {Calls.NUMBER, Calls.DATE, Calls.TYPE};
+        Cursor cursor =
+                mTargetContext
+                        .getContentResolver()
+                        .query(
+                                Calls.CONTENT_URI,
+                                query,
+                                Calls.TYPE + "= " + type,
+                                null,
+                                Calls.DATE + ", " + Calls.NUMBER);
         if (date != null) {
             date = adjDate(date);
         }
@@ -163,8 +187,8 @@ public class PbapParserTest {
             while (cursor.moveToNext()) {
                 String foundNumber = cursor.getString(cursor.getColumnIndex(Calls.NUMBER));
                 String foundDate = cursor.getString(cursor.getColumnIndex(Calls.DATE));
-                if ((number == null || number.equals(foundNumber)) && (date == null || date.equals(
-                        foundDate))) {
+                if ((number == null || number.equals(foundNumber))
+                        && (date == null || date.equals(foundDate))) {
                     return true;
                 }
             }
@@ -181,18 +205,18 @@ public class PbapParserTest {
     }
 
     private boolean verifyPhonebook(String name, String number) {
-        Uri uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI,
-                Uri.encode(number));
+        Uri uri =
+                Uri.withAppendedPath(
+                        ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(number));
         Cursor c = mTargetContext.getContentResolver().query(uri, null, null, null);
         if (c != null && c.getCount() > 0) {
             c.moveToNext();
-            String displayName = c.getString(
-                    c.getColumnIndex(ContactsContract.PhoneLookup.DISPLAY_NAME));
+            String displayName =
+                    c.getString(c.getColumnIndex(ContactsContract.PhoneLookup.DISPLAY_NAME));
             if (displayName.equals(name)) {
                 return true;
             }
         }
         return false;
     }
-
 }

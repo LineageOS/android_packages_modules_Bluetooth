@@ -100,8 +100,10 @@ public class BluetoothMapServiceTest {
     public void getDevicesMatchingConnectionStates_whenNoDeviceIsConnected_returnsEmptyList() {
         when(mAdapterService.getBondedDevices()).thenReturn(new BluetoothDevice[] {mRemoteDevice});
 
-        assertThat(mService.getDevicesMatchingConnectionStates(
-                new int[] {BluetoothProfile.STATE_CONNECTED})).isEmpty();
+        assertThat(
+                        mService.getDevicesMatchingConnectionStates(
+                                new int[] {BluetoothProfile.STATE_CONNECTED}))
+                .isEmpty();
     }
 
     @Test
@@ -118,8 +120,8 @@ public class BluetoothMapServiceTest {
 
         mService.sendConnectCancelMessage();
 
-        verify(handler, timeout(1_000)).messageArrived(
-                eq(MSG_MAS_CONNECT_CANCEL), anyInt(), anyInt(), any());
+        verify(handler, timeout(1_000))
+                .messageArrived(eq(MSG_MAS_CONNECT_CANCEL), anyInt(), anyInt(), any());
     }
 
     @Test
@@ -129,8 +131,7 @@ public class BluetoothMapServiceTest {
 
         mService.sendConnectTimeoutMessage();
 
-        verify(handler, timeout(1_000)).messageArrived(
-                eq(USER_TIMEOUT), anyInt(), anyInt(), any());
+        verify(handler, timeout(1_000)).messageArrived(eq(USER_TIMEOUT), anyInt(), anyInt(), any());
     }
 
     @Test
@@ -141,8 +142,8 @@ public class BluetoothMapServiceTest {
 
         mService.updateMasInstances(action);
 
-        verify(handler, timeout(1_000)).messageArrived(
-                eq(UPDATE_MAS_INSTANCES), eq(action), anyInt(), any());
+        verify(handler, timeout(1_000))
+                .messageArrived(eq(UPDATE_MAS_INSTANCES), eq(action), anyInt(), any());
     }
 
     public static class TestableHandler extends Handler {

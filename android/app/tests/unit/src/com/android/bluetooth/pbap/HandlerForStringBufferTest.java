@@ -46,11 +46,9 @@ public class HandlerForStringBufferTest {
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    private Operation mOperation;
+    @Mock private Operation mOperation;
 
-    @Mock
-    private OutputStream mOutputStream;
+    @Mock private OutputStream mOutputStream;
 
     @Before
     public void setUp() throws Exception {
@@ -110,7 +108,8 @@ public class HandlerForStringBufferTest {
     @Test
     public void writeVCard_withIOExceptionWhenWritingToStream_returnsFalse() throws Exception {
         doThrow(new IOException()).when(mOutputStream).write(any(byte[].class));
-        HandlerForStringBuffer buffer = new HandlerForStringBuffer(mOperation, /*ownerVcard=*/null);
+        HandlerForStringBuffer buffer =
+                new HandlerForStringBuffer(mOperation, /* ownerVcard= */ null);
         buffer.init();
 
         String newVCard = "newVCard";

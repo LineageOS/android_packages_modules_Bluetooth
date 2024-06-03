@@ -32,9 +32,7 @@ import org.junit.runner.RunWith;
 
 import java.util.UUID;
 
-/**
- * Test cases for {@link AdvertiseHelper}.
- */
+/** Test cases for {@link AdvertiseHelper}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class AdvertiseHelperTest {
@@ -46,27 +44,23 @@ public class AdvertiseHelperTest {
         assertThat(emptyBytes.length).isEqualTo(0);
 
         int manufacturerId = 1;
-        byte[] manufacturerData = new byte[]{
-                0x30, 0x31, 0x32, 0x34
-        };
+        byte[] manufacturerData = new byte[] {0x30, 0x31, 0x32, 0x34};
 
-        byte[] serviceData = new byte[]{
-                0x10, 0x12, 0x14
-        };
+        byte[] serviceData = new byte[] {0x10, 0x12, 0x14};
 
-        byte[] transportDiscoveryData = new byte[]{
-                0x40, 0x44, 0x48
-        };
+        byte[] transportDiscoveryData = new byte[] {0x40, 0x44, 0x48};
 
-        AdvertiseData advertiseData = new AdvertiseData.Builder()
-                .setIncludeDeviceName(true)
-                .addManufacturerData(manufacturerId, manufacturerData)
-                .setIncludeTxPowerLevel(true)
-                .addServiceUuid(new ParcelUuid(UUID.randomUUID()))
-                .addServiceData(new ParcelUuid(UUID.randomUUID()), serviceData)
-                .addServiceSolicitationUuid(new ParcelUuid(UUID.randomUUID()))
-                .addTransportDiscoveryData(new TransportDiscoveryData(transportDiscoveryData))
-                .build();
+        AdvertiseData advertiseData =
+                new AdvertiseData.Builder()
+                        .setIncludeDeviceName(true)
+                        .addManufacturerData(manufacturerId, manufacturerData)
+                        .setIncludeTxPowerLevel(true)
+                        .addServiceUuid(new ParcelUuid(UUID.randomUUID()))
+                        .addServiceData(new ParcelUuid(UUID.randomUUID()), serviceData)
+                        .addServiceSolicitationUuid(new ParcelUuid(UUID.randomUUID()))
+                        .addTransportDiscoveryData(
+                                new TransportDiscoveryData(transportDiscoveryData))
+                        .build();
         String deviceName = "TestDeviceName";
 
         int expectedAdvDataBytesLength = 86;
@@ -77,17 +71,14 @@ public class AdvertiseHelperTest {
         assertThat(advDataBytes.length).isEqualTo(expectedAdvDataBytesLength);
 
         int expectedAdvDataBytesLongNameLength = 98;
-        byte[] advDataBytesLongName = AdvertiseHelper
-                .advertiseDataToBytes(advertiseData, deviceNameLong);
+        byte[] advDataBytesLongName =
+                AdvertiseHelper.advertiseDataToBytes(advertiseData, deviceNameLong);
 
         assertThat(advDataBytesLongName.length).isEqualTo(expectedAdvDataBytesLongNameLength);
     }
 
     @Test
     public void checkLength_withGT255_throwsException() {
-        assertThrows(
-                IllegalArgumentException.class,
-                () -> AdvertiseHelper.check_length(0X00, 256)
-        );
+        assertThrows(IllegalArgumentException.class, () -> AdvertiseHelper.check_length(0X00, 256));
     }
 }

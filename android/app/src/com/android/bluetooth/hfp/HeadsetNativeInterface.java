@@ -29,9 +29,9 @@ import com.android.internal.annotations.VisibleForTesting;
 import java.util.Objects;
 
 /**
- * Defines native calls that are used by state machine/service to either send or receive
- * messages to/from the native stack. This file is registered for the native methods in
- * corresponding CPP file.
+ * Defines native calls that are used by state machine/service to either send or receive messages
+ * to/from the native stack. This file is registered for the native methods in corresponding CPP
+ * file.
  */
 public class HeadsetNativeInterface {
     private static final String TAG = "HeadsetNativeInterface";
@@ -46,8 +46,10 @@ public class HeadsetNativeInterface {
     private AdapterService mAdapterService;
 
     private HeadsetNativeInterface() {
-        mAdapterService = Objects.requireNonNull(AdapterService.getAdapterService(),
-                "AdapterService cannot be null when HeadsetNativeInterface init");
+        mAdapterService =
+                Objects.requireNonNull(
+                        AdapterService.getAdapterService(),
+                        "AdapterService cannot be null when HeadsetNativeInterface init");
     }
 
     /**
@@ -101,7 +103,9 @@ public class HeadsetNativeInterface {
 
     void onConnectionStateChanged(int state, byte[] address) {
         HeadsetStackEvent event =
-                new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED, state,
+                new HeadsetStackEvent(
+                        HeadsetStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED,
+                        state,
                         getDevice(address));
         sendMessageToService(event);
     }
@@ -110,15 +114,17 @@ public class HeadsetNativeInterface {
 
     private void onAudioStateChanged(int state, byte[] address) {
         HeadsetStackEvent event =
-                new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_AUDIO_STATE_CHANGED, state,
+                new HeadsetStackEvent(
+                        HeadsetStackEvent.EVENT_TYPE_AUDIO_STATE_CHANGED,
+                        state,
                         getDevice(address));
         sendMessageToService(event);
     }
 
     private void onVrStateChanged(int state, byte[] address) {
         HeadsetStackEvent event =
-                new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_VR_STATE_CHANGED, state,
-                        getDevice(address));
+                new HeadsetStackEvent(
+                        HeadsetStackEvent.EVENT_TYPE_VR_STATE_CHANGED, state, getDevice(address));
         sendMessageToService(event);
     }
 
@@ -136,28 +142,33 @@ public class HeadsetNativeInterface {
 
     private void onVolumeChanged(int type, int volume, byte[] address) {
         HeadsetStackEvent event =
-                new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_VOLUME_CHANGED, type, volume,
+                new HeadsetStackEvent(
+                        HeadsetStackEvent.EVENT_TYPE_VOLUME_CHANGED,
+                        type,
+                        volume,
                         getDevice(address));
         sendMessageToService(event);
     }
 
     private void onDialCall(String number, byte[] address) {
         HeadsetStackEvent event =
-                new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_DIAL_CALL, number,
-                        getDevice(address));
+                new HeadsetStackEvent(
+                        HeadsetStackEvent.EVENT_TYPE_DIAL_CALL, number, getDevice(address));
         sendMessageToService(event);
     }
 
     private void onSendDtmf(int dtmf, byte[] address) {
         HeadsetStackEvent event =
-                new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_SEND_DTMF, dtmf,
-                        getDevice(address));
+                new HeadsetStackEvent(
+                        HeadsetStackEvent.EVENT_TYPE_SEND_DTMF, dtmf, getDevice(address));
         sendMessageToService(event);
     }
 
     private void onNoiseReductionEnable(boolean enable, byte[] address) {
         HeadsetStackEvent event =
-                new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_NOISE_REDUCTION, enable ? 1 : 0,
+                new HeadsetStackEvent(
+                        HeadsetStackEvent.EVENT_TYPE_NOISE_REDUCTION,
+                        enable ? 1 : 0,
                         getDevice(address));
         sendMessageToService(event);
     }
@@ -176,15 +187,16 @@ public class HeadsetNativeInterface {
     }
 
     private void onAtChld(int chld, byte[] address) {
-        HeadsetStackEvent event = new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_AT_CHLD, chld,
-                getDevice(address));
+        HeadsetStackEvent event =
+                new HeadsetStackEvent(
+                        HeadsetStackEvent.EVENT_TYPE_AT_CHLD, chld, getDevice(address));
         sendMessageToService(event);
     }
 
     private void onAtCnum(byte[] address) {
         HeadsetStackEvent event =
-                new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_SUBSCRIBER_NUMBER_REQUEST,
-                        getDevice(address));
+                new HeadsetStackEvent(
+                        HeadsetStackEvent.EVENT_TYPE_SUBSCRIBER_NUMBER_REQUEST, getDevice(address));
         sendMessageToService(event);
     }
 
@@ -208,8 +220,8 @@ public class HeadsetNativeInterface {
 
     private void onUnknownAt(String atString, byte[] address) {
         HeadsetStackEvent event =
-                new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_UNKNOWN_AT, atString,
-                        getDevice(address));
+                new HeadsetStackEvent(
+                        HeadsetStackEvent.EVENT_TYPE_UNKNOWN_AT, atString, getDevice(address));
         sendMessageToService(event);
     }
 
@@ -220,24 +232,27 @@ public class HeadsetNativeInterface {
     }
 
     private void onATBind(String atString, byte[] address) {
-        HeadsetStackEvent event = new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_BIND, atString,
-                getDevice(address));
+        HeadsetStackEvent event =
+                new HeadsetStackEvent(
+                        HeadsetStackEvent.EVENT_TYPE_BIND, atString, getDevice(address));
         sendMessageToService(event);
     }
 
     private void onATBiev(int indId, int indValue, byte[] address) {
         HeadsetStackEvent event =
-                new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_BIEV, indId, indValue,
-                        getDevice(address));
+                new HeadsetStackEvent(
+                        HeadsetStackEvent.EVENT_TYPE_BIEV, indId, indValue, getDevice(address));
         sendMessageToService(event);
     }
 
-    private void onAtBia(boolean service, boolean roam, boolean signal, boolean battery,
-            byte[] address) {
+    private void onAtBia(
+            boolean service, boolean roam, boolean signal, boolean battery, byte[] address) {
         HeadsetAgIndicatorEnableState agIndicatorEnableState =
                 new HeadsetAgIndicatorEnableState(service, roam, signal, battery);
         HeadsetStackEvent event =
-                new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_BIA, agIndicatorEnableState,
+                new HeadsetStackEvent(
+                        HeadsetStackEvent.EVENT_TYPE_BIA,
+                        agIndicatorEnableState,
                         getDevice(address));
         sendMessageToService(event);
     }
@@ -255,9 +270,7 @@ public class HeadsetNativeInterface {
         initializeNative(maxHfClients, inbandRingingEnabled);
     }
 
-    /**
-     * Closes the interface
-     */
+    /** Closes the interface */
     @VisibleForTesting
     public void cleanup() {
         cleanupNative();
@@ -364,7 +377,6 @@ public class HeadsetNativeInterface {
         return startVoiceRecognitionNative(getByteAddress(device));
     }
 
-
     /**
      * Stop voice recognition
      *
@@ -403,10 +415,24 @@ public class HeadsetNativeInterface {
      * @return True on success, False on failure
      */
     @VisibleForTesting
-    public boolean cindResponse(BluetoothDevice device, int service, int numActive, int numHeld,
-            int callState, int signal, int roam, int batteryCharge) {
-        return cindResponseNative(service, numActive, numHeld, callState, signal, roam,
-                batteryCharge, getByteAddress(device));
+    public boolean cindResponse(
+            BluetoothDevice device,
+            int service,
+            int numActive,
+            int numHeld,
+            int callState,
+            int signal,
+            int roam,
+            int batteryCharge) {
+        return cindResponseNative(
+                service,
+                numActive,
+                numHeld,
+                callState,
+                signal,
+                roam,
+                batteryCharge,
+                getByteAddress(device));
     }
 
     /**
@@ -418,8 +444,12 @@ public class HeadsetNativeInterface {
      */
     @VisibleForTesting
     public boolean notifyDeviceStatus(BluetoothDevice device, HeadsetDeviceState deviceState) {
-        return notifyDeviceStatusNative(deviceState.mService, deviceState.mRoam,
-                deviceState.mSignal, deviceState.mBatteryCharge, getByteAddress(device));
+        return notifyDeviceStatusNative(
+                deviceState.mService,
+                deviceState.mRoam,
+                deviceState.mSignal,
+                deviceState.mBatteryCharge,
+                getByteAddress(device));
     }
 
     /**
@@ -427,25 +457,32 @@ public class HeadsetNativeInterface {
      * will be treated as NULL termination (Completes response)
      *
      * @param device target device
-     * @param index index of the call given by the sequence of setting up or receiving the calls
-     * as seen by the served subscriber. Calls hold their number until they are released. New
-     * calls take the lowest available number.
+     * @param index index of the call given by the sequence of setting up or receiving the calls as
+     *     seen by the served subscriber. Calls hold their number until they are released. New calls
+     *     take the lowest available number.
      * @param dir direction of the call, 0 (outgoing), 1 (incoming)
-     * @param status 0 = Active, 1 = Held, 2 = Dialing (outgoing calls only), 3 = Alerting
-     * (outgoing calls only), 4 = Incoming (incoming calls only), 5 = Waiting (incoming calls
-     * only), 6 = Call held by Response and Hold
+     * @param status 0 = Active, 1 = Held, 2 = Dialing (outgoing calls only), 3 = Alerting (outgoing
+     *     calls only), 4 = Incoming (incoming calls only), 5 = Waiting (incoming calls only), 6 =
+     *     Call held by Response and Hold
      * @param mode 0 (Voice), 1 (Data), 2 (FAX)
-     * @param mpty 0 - this call is NOT a member of a multi-party (conference) call, 1 - this
-     * call IS a member of a multi-party (conference) call
+     * @param mpty 0 - this call is NOT a member of a multi-party (conference) call, 1 - this call
+     *     IS a member of a multi-party (conference) call
      * @param number optional
      * @param type optional
      * @return True on success, False on failure
      */
     @VisibleForTesting
-    public boolean clccResponse(BluetoothDevice device, int index, int dir, int status, int mode,
-            boolean mpty, String number, int type) {
-        return clccResponseNative(index, dir, status, mode, mpty, number, type,
-                getByteAddress(device));
+    public boolean clccResponse(
+            BluetoothDevice device,
+            int index,
+            int dir,
+            int status,
+            int mode,
+            boolean mpty,
+            String number,
+            int type) {
+        return clccResponseNative(
+                index, dir, status, mode, mpty, number, type, getByteAddress(device));
     }
 
     /**
@@ -461,12 +498,9 @@ public class HeadsetNativeInterface {
     }
 
     /**
-     *  Notify of a call state change
-     *  Each update notifies
-     *    1. Number of active/held/ringing calls
-     *    2. call_state: This denotes the state change that triggered this msg
-     *                   This will take one of the values from BtHfCallState
-     *    3. number & type: valid only for incoming & waiting call
+     * Notify of a call state change Each update notifies 1. Number of active/held/ringing calls 2.
+     * call_state: This denotes the state change that triggered this msg This will take one of the
+     * values from BtHfCallState 3. number & type: valid only for incoming & waiting call
      *
      * @param device target device for this update
      * @param callState callstate structure
@@ -474,8 +508,13 @@ public class HeadsetNativeInterface {
      */
     @VisibleForTesting
     public boolean phoneStateChange(BluetoothDevice device, HeadsetCallState callState) {
-        return phoneStateChangeNative(callState.mNumActive, callState.mNumHeld,
-                callState.mCallState, callState.mNumber, callState.mType, callState.mName,
+        return phoneStateChangeNative(
+                callState.mNumActive,
+                callState.mNumHeld,
+                callState.mCallState,
+                callState.mNumber,
+                callState.mType,
+                callState.mName,
                 getByteAddress(device));
     }
 
@@ -504,6 +543,7 @@ public class HeadsetNativeInterface {
 
     /**
      * Set the current active headset device for SCO audio
+     *
      * @param device current active SCO device
      * @return true on success
      */
@@ -552,19 +592,39 @@ public class HeadsetNativeInterface {
 
     private native boolean setVolumeNative(int volumeType, int volume, byte[] address);
 
-    private native boolean cindResponseNative(int service, int numActive, int numHeld,
-            int callState, int signal, int roam, int batteryCharge, byte[] address);
+    private native boolean cindResponseNative(
+            int service,
+            int numActive,
+            int numHeld,
+            int callState,
+            int signal,
+            int roam,
+            int batteryCharge,
+            byte[] address);
 
-    private native boolean notifyDeviceStatusNative(int networkState, int serviceType, int signal,
-            int batteryCharge, byte[] address);
+    private native boolean notifyDeviceStatusNative(
+            int networkState, int serviceType, int signal, int batteryCharge, byte[] address);
 
-    private native boolean clccResponseNative(int index, int dir, int status, int mode,
-            boolean mpty, String number, int type, byte[] address);
+    private native boolean clccResponseNative(
+            int index,
+            int dir,
+            int status,
+            int mode,
+            boolean mpty,
+            String number,
+            int type,
+            byte[] address);
 
     private native boolean copsResponseNative(String operatorName, byte[] address);
 
-    private native boolean phoneStateChangeNative(int numActive, int numHeld, int callState,
-            String number, int type, String name, byte[] address);
+    private native boolean phoneStateChangeNative(
+            int numActive,
+            int numHeld,
+            int callState,
+            String number,
+            int type,
+            String name,
+            byte[] address);
 
     private native boolean setScoAllowedNative(boolean value);
 

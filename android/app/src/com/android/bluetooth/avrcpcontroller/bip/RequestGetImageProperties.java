@@ -59,8 +59,11 @@ public class RequestGetImageProperties extends BipRequest {
     protected void readResponse(InputStream stream) throws IOException {
         try {
             mImageProperties = new BipImageProperties(stream);
-            debug("Response GetImageProperties - handle: " + mImageHandle + ", properties: "
-                    + mImageProperties.toString());
+            debug(
+                    "Response GetImageProperties - handle: "
+                            + mImageHandle
+                            + ", properties: "
+                            + mImageProperties.toString());
         } catch (ParseException e) {
             error("Failed to parse incoming properties object");
             mImageProperties = null;

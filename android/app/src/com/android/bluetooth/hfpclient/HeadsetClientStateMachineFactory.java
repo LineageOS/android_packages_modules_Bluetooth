@@ -22,13 +22,10 @@ import com.android.bluetooth.hfp.HeadsetService;
 
 // Factory so that StateMachine objected can be mocked
 public class HeadsetClientStateMachineFactory {
-    /**
-     * Factory method to create state machine for headset client
-     *
-     */
-    public HeadsetClientStateMachine make(HeadsetClientService context, HandlerThread t,
-            NativeInterface nativeInterface) {
-        return HeadsetClientStateMachine.make(context, HeadsetService.getHeadsetService(),
-                t.getLooper(), nativeInterface);
+    /** Factory method to create state machine for headset client */
+    public HeadsetClientStateMachine make(
+            HeadsetClientService context, HandlerThread t, NativeInterface nativeInterface) {
+        return HeadsetClientStateMachine.make(
+                context, HeadsetService.getHeadsetService(), t.getLooper(), nativeInterface);
     }
 }

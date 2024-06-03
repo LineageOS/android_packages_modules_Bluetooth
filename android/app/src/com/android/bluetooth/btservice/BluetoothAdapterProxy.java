@@ -24,9 +24,9 @@ import com.android.internal.annotations.VisibleForTesting;
 /**
  * A proxy class that facilitates testing of the ScanManager.
  *
- * This is necessary due to the "final" attribute of the BluetoothAdapter class. In order to
- * test the correct functioning of the ScanManager class, the final class must be put
- * into a container that can be mocked correctly.
+ * <p>This is necessary due to the "final" attribute of the BluetoothAdapter class. In order to test
+ * the correct functioning of the ScanManager class, the final class must be put into a container
+ * that can be mocked correctly.
  */
 public class BluetoothAdapterProxy {
     private static final String TAG = BluetoothAdapterProxy.class.getSimpleName();

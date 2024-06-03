@@ -102,20 +102,21 @@ class BrowsedPlayerWrapper {
     // TODO (apanicke): Investigate if there is a way to create this just by passing in the
     // MediaBrowser. Right now there is no obvious way to create the browser then update the
     // connection callback without being forced to re-create the object every time.
-    private BrowsedPlayerWrapper(Context context, Looper looper, String packageName,
-                    String className) {
+    private BrowsedPlayerWrapper(
+            Context context, Looper looper, String packageName, String className) {
         mContext = context;
         mPackageName = packageName;
         mLooper = looper;
-        mWrappedBrowser = MediaBrowserFactory.make(
-                context,
-                new ComponentName(packageName, className),
-                new MediaConnectionCallback(),
-                null);
+        mWrappedBrowser =
+                MediaBrowserFactory.make(
+                        context,
+                        new ComponentName(packageName, className),
+                        new MediaConnectionCallback(),
+                        null);
     }
 
-    static BrowsedPlayerWrapper wrap(Context context, Looper looper, String packageName,
-                    String className) {
+    static BrowsedPlayerWrapper wrap(
+            Context context, Looper looper, String packageName, String className) {
         Log.i(TAG, "Wrapping Media Browser " + packageName);
         BrowsedPlayerWrapper wrapper =
                 new BrowsedPlayerWrapper(context, looper, packageName, className);
@@ -125,7 +126,7 @@ class BrowsedPlayerWrapper {
     /**
      * Connect to the media application's MediaBrowserService
      *
-     * Connections are asynchronous in nature. The given callback will be invoked once the
+     * <p>Connections are asynchronous in nature. The given callback will be invoked once the
      * connection is established. The connection will be torn down once your callback is executed
      * when using this function. If you wish to control the lifecycle of the connection on your own
      * then use {@link #setCallbackAndConnect(ConnectionCallback)} instead.
@@ -135,19 +136,19 @@ class BrowsedPlayerWrapper {
      */
     boolean connect(ConnectionCallback cb) {
         if (cb == null) {
-            Log.wtf(TAG, "connect: Trying to connect to " + mPackageName
-                    + "with null callback");
+            Log.wtf(TAG, "connect: Trying to connect to " + mPackageName + "with null callback");
         }
-        return setCallbackAndConnect((int status, BrowsedPlayerWrapper wrapper) -> {
-            cb.run(status, wrapper);
-            disconnect();
-        });
+        return setCallbackAndConnect(
+                (int status, BrowsedPlayerWrapper wrapper) -> {
+                    cb.run(status, wrapper);
+                    disconnect();
+                });
     }
 
     /**
      * Disconnect from the media application's MediaBrowserService
      *
-     * This clears any pending requests. This function is safe to call even if a connection isn't
+     * <p>This clears any pending requests. This function is safe to call even if a connection isn't
      * currently open.
      */
     void disconnect() {
@@ -205,26 +206,32 @@ class BrowsedPlayerWrapper {
      */
     public boolean playItem(String mediaId) {
         Log.d(TAG, "playItem: Play item from media ID: " + mediaId);
-        return setCallbackAndConnect((int status, BrowsedPlayerWrapper wrapper) -> {
-            Log.d(TAG, "playItem: Connected to browsable player " + mPackageName);
-            MediaController controller = MediaControllerFactory.make(mContext,
-                    wrapper.mWrappedBrowser.getSessionToken());
-            MediaController.TransportControls ctrl = controller.getTransportControls();
-            Log.i(TAG, "playItem: Playing " + mediaId);
-            ctrl.playFromMediaId(mediaId, null);
+        return setCallbackAndConnect(
+                (int status, BrowsedPlayerWrapper wrapper) -> {
+                    Log.d(TAG, "playItem: Connected to browsable player " + mPackageName);
+                    MediaController controller =
+                            MediaControllerFactory.make(
+                                    mContext, wrapper.mWrappedBrowser.getSessionToken());
+                    MediaController.TransportControls ctrl = controller.getTransportControls();
+                    Log.i(TAG, "playItem: Playing " + mediaId);
+                    ctrl.playFromMediaId(mediaId, null);
 
-            MediaPlaybackListener mpl = new MediaPlaybackListener(mLooper, controller);
-            mpl.waitForPlayback((int playbackStatus) -> {
-                Log.i(TAG, "playItem: Media item playback returned, status: " + playbackStatus);
-                disconnect();
-            });
-        });
+                    MediaPlaybackListener mpl = new MediaPlaybackListener(mLooper, controller);
+                    mpl.waitForPlayback(
+                            (int playbackStatus) -> {
+                                Log.i(
+                                        TAG,
+                                        "playItem: Media item playback returned, status: "
+                                                + playbackStatus);
+                                disconnect();
+                            });
+                });
     }
 
     /**
      * Request the contents of a folder item identified by the given media ID
      *
-     * Contents must be loaded from a service and are returned asynchronously.
+     * <p>Contents must be loaded from a service and are returned asynchronously.
      *
      * @param mediaId A string indicating the piece of media you would like to play
      * @param cb A Callback that returns the loaded contents of the requested media ID
@@ -244,18 +251,22 @@ class BrowsedPlayerWrapper {
         }
 
         if (cb == null) {
-            Log.wtf(TAG, "getFolderItems: Trying to connect to " + mPackageName
-                    + "with null browse callback");
+            Log.wtf(
+                    TAG,
+                    "getFolderItems: Trying to connect to "
+                            + mPackageName
+                            + "with null browse callback");
         }
 
         Log.d(TAG, "getFolderItems: Connecting to browsable player: " + mPackageName);
-        return setCallbackAndConnect((int status, BrowsedPlayerWrapper wrapper) -> {
-            Log.i(TAG, "getFolderItems: Connected to browsable player: " + mPackageName);
-            if (status != STATUS_SUCCESS) {
-                cb.run(status, "", new ArrayList<ListItem>());
-            }
-            getFolderItemsInternal(mediaId, cb);
-        });
+        return setCallbackAndConnect(
+                (int status, BrowsedPlayerWrapper wrapper) -> {
+                    Log.i(TAG, "getFolderItems: Connected to browsable player: " + mPackageName);
+                    if (status != STATUS_SUCCESS) {
+                        cb.run(status, "", new ArrayList<ListItem>());
+                    }
+                    getFolderItemsInternal(mediaId, cb);
+                });
     }
 
     // Internal function to call once the Browser is connected
@@ -278,7 +289,6 @@ class BrowsedPlayerWrapper {
 
             executeCallback(STATUS_SUCCESS, BrowsedPlayerWrapper.this);
         }
-
 
         @Override
         public void onConnectionFailed() {
@@ -362,8 +372,8 @@ class BrowsedPlayerWrapper {
                     Log.d(TAG, "MediaPlayback: Waiting for media to play for " + mPackageName);
                     mTimeoutHandler = new TimeoutHandler(mLooper, mPlaybackCallback);
                     mController.registerCallback(this, mTimeoutHandler);
-                    mTimeoutHandler.sendEmptyMessageDelayed(TimeoutHandler.MSG_TIMEOUT,
-                                TimeoutHandler.CALLBACK_TIMEOUT_MS);
+                    mTimeoutHandler.sendEmptyMessageDelayed(
+                            TimeoutHandler.MSG_TIMEOUT, TimeoutHandler.CALLBACK_TIMEOUT_MS);
                 } else {
                     Log.d(TAG, "MediaPlayback: Media is already playing for " + mPackageName);
                     mPlaybackCallback.run(STATUS_SUCCESS);
@@ -412,8 +422,8 @@ class BrowsedPlayerWrapper {
             mBrowseCallback = cb;
             mLooper = looper;
             mTimeoutHandler = new TimeoutHandler(mLooper, cb, mediaId);
-            mTimeoutHandler.sendEmptyMessageDelayed(TimeoutHandler.MSG_TIMEOUT,
-                    TimeoutHandler.SUBSCRIPTION_TIMEOUT_MS);
+            mTimeoutHandler.sendEmptyMessageDelayed(
+                    TimeoutHandler.MSG_TIMEOUT, TimeoutHandler.SUBSCRIPTION_TIMEOUT_MS);
         }
 
         @Override
@@ -426,8 +436,11 @@ class BrowsedPlayerWrapper {
             Log.d(TAG, "onChildrenLoaded: mediaId=" + parentId + " size= " + children.size());
 
             if (mBrowseCallback == null) {
-                Log.w(TAG, "onChildrenLoaded: " + mPackageName
-                        + " children loaded while callback is null");
+                Log.w(
+                        TAG,
+                        "onChildrenLoaded: "
+                                + mPackageName
+                                + " children loaded while callback is null");
             }
 
             // TODO (apanicke): Instead of always unsubscribing, only unsubscribe from folders
@@ -438,8 +451,13 @@ class BrowsedPlayerWrapper {
             ArrayList<ListItem> return_list = new ArrayList<ListItem>();
 
             for (MediaItem item : children) {
-                Log.d(TAG, "onChildrenLoaded: Child=\"" + item.toString()
-                        + "\",  ID=\"" + item.getMediaId() + "\"");
+                Log.d(
+                        TAG,
+                        "onChildrenLoaded: Child=\""
+                                + item.toString()
+                                + "\",  ID=\""
+                                + item.getMediaId()
+                                + "\"");
 
                 if (item.isBrowsable()) {
                     CharSequence titleCharSequence = item.getDescription().getTitle();

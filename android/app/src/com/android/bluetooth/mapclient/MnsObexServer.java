@@ -33,27 +33,27 @@ class MnsObexServer extends ServerRequestHandler {
     private static final String TAG = MnsObexServer.class.getSimpleName();
 
     @VisibleForTesting
-    static final byte[] MNS_TARGET = new byte[]{
-            (byte) 0xbb,
-            0x58,
-            0x2b,
-            0x41,
-            0x42,
-            0x0c,
-            0x11,
-            (byte) 0xdb,
-            (byte) 0xb0,
-            (byte) 0xde,
-            0x08,
-            0x00,
-            0x20,
-            0x0c,
-            (byte) 0x9a,
-            0x66
-    };
+    static final byte[] MNS_TARGET =
+            new byte[] {
+                (byte) 0xbb,
+                0x58,
+                0x2b,
+                0x41,
+                0x42,
+                0x0c,
+                0x11,
+                (byte) 0xdb,
+                (byte) 0xb0,
+                (byte) 0xde,
+                0x08,
+                0x00,
+                0x20,
+                0x0c,
+                (byte) 0x9a,
+                0x66
+            };
 
-    @VisibleForTesting
-    static final String TYPE = "x-bt/MAP-event-report";
+    @VisibleForTesting static final String TYPE = "x-bt/MAP-event-report";
 
     private final WeakReference<MceStateMachine> mStateMachineReference;
 
@@ -131,8 +131,8 @@ class MnsObexServer extends ServerRequestHandler {
     }
 
     @Override
-    public int onSetPath(final HeaderSet request, HeaderSet reply, final boolean backup,
-            final boolean create) {
+    public int onSetPath(
+            final HeaderSet request, HeaderSet reply, final boolean backup, final boolean create) {
         Log.v(TAG, "onSetPath");
         return ResponseCodes.OBEX_HTTP_BAD_REQUEST;
     }

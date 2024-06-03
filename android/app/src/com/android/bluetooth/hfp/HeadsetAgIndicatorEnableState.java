@@ -15,17 +15,15 @@
  */
 package com.android.bluetooth.hfp;
 
-/**
- * An object that represents AG indicator enable states
- */
+/** An object that represents AG indicator enable states */
 public class HeadsetAgIndicatorEnableState extends HeadsetMessageObject {
     public boolean service;
     public boolean roam;
     public boolean signal;
     public boolean battery;
 
-    HeadsetAgIndicatorEnableState(boolean newService, boolean newRoam, boolean newSignal,
-            boolean newBattery) {
+    HeadsetAgIndicatorEnableState(
+            boolean newService, boolean newRoam, boolean newSignal, boolean newBattery) {
         service = newService;
         roam = newRoam;
         signal = newSignal;
@@ -38,7 +36,9 @@ public class HeadsetAgIndicatorEnableState extends HeadsetMessageObject {
             return false;
         }
         HeadsetAgIndicatorEnableState other = (HeadsetAgIndicatorEnableState) obj;
-        return service == other.service && roam == other.roam && signal == other.signal
+        return service == other.service
+                && roam == other.roam
+                && signal == other.signal
                 && battery == other.battery;
     }
 

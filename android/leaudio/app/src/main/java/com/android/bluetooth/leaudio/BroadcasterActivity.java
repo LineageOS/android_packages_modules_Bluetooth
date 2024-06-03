@@ -404,50 +404,97 @@ public class BroadcasterActivity extends AppCompatActivity {
         itemsAdapter.updateBroadcastsMetadata(metadata.isEmpty() ? new ArrayList<>() : metadata);
 
         // Put a watch on updates
-        mViewModel.getBroadcastUpdateMetadataLive().observe(this, audioBroadcast -> {
-            itemsAdapter.updateBroadcastMetadata(audioBroadcast);
+        mViewModel
+                .getBroadcastUpdateMetadataLive()
+                .observe(
+                        this,
+                        audioBroadcast -> {
+                            itemsAdapter.updateBroadcastMetadata(audioBroadcast);
 
-            Toast.makeText(BroadcasterActivity.this,
-                    "Updated broadcast " + audioBroadcast.getBroadcastId(), Toast.LENGTH_SHORT)
-                    .show();
-        });
+                            Toast.makeText(
+                                            BroadcasterActivity.this,
+                                            "Updated broadcast " + audioBroadcast.getBroadcastId(),
+                                            Toast.LENGTH_SHORT)
+                                    .show();
+                        });
 
         // Put a watch on any error reports
-        mViewModel.getBroadcastStatusMutableLive().observe(this, msg -> {
-            Toast.makeText(BroadcasterActivity.this, msg, Toast.LENGTH_SHORT).show();
-        });
+        mViewModel
+                .getBroadcastStatusMutableLive()
+                .observe(
+                        this,
+                        msg -> {
+                            Toast.makeText(BroadcasterActivity.this, msg, Toast.LENGTH_SHORT)
+                                    .show();
+                        });
 
         // Put a watch on broadcast playback states
-        mViewModel.getBroadcastPlaybackStartedMutableLive().observe(this, reasonAndBidPair -> {
-            Toast.makeText(BroadcasterActivity.this, "Playing broadcast " + reasonAndBidPair.second
-                    + ", reason " + reasonAndBidPair.first, Toast.LENGTH_SHORT).show();
+        mViewModel
+                .getBroadcastPlaybackStartedMutableLive()
+                .observe(
+                        this,
+                        reasonAndBidPair -> {
+                            Toast.makeText(
+                                            BroadcasterActivity.this,
+                                            "Playing broadcast "
+                                                    + reasonAndBidPair.second
+                                                    + ", reason "
+                                                    + reasonAndBidPair.first,
+                                            Toast.LENGTH_SHORT)
+                                    .show();
 
-            itemsAdapter.updateBroadcastPlayback(reasonAndBidPair.second, true);
-        });
+                            itemsAdapter.updateBroadcastPlayback(reasonAndBidPair.second, true);
+                        });
 
-        mViewModel.getBroadcastPlaybackStoppedMutableLive().observe(this, reasonAndBidPair -> {
-            Toast.makeText(BroadcasterActivity.this, "Paused broadcast " + reasonAndBidPair.second
-                    + ", reason " + reasonAndBidPair.first, Toast.LENGTH_SHORT).show();
+        mViewModel
+                .getBroadcastPlaybackStoppedMutableLive()
+                .observe(
+                        this,
+                        reasonAndBidPair -> {
+                            Toast.makeText(
+                                            BroadcasterActivity.this,
+                                            "Paused broadcast "
+                                                    + reasonAndBidPair.second
+                                                    + ", reason "
+                                                    + reasonAndBidPair.first,
+                                            Toast.LENGTH_SHORT)
+                                    .show();
 
-            itemsAdapter.updateBroadcastPlayback(reasonAndBidPair.second, false);
-        });
+                            itemsAdapter.updateBroadcastPlayback(reasonAndBidPair.second, false);
+                        });
 
-        mViewModel.getBroadcastAddedMutableLive().observe(this, broadcastId -> {
-            itemsAdapter.addBroadcasts(broadcastId);
+        mViewModel
+                .getBroadcastAddedMutableLive()
+                .observe(
+                        this,
+                        broadcastId -> {
+                            itemsAdapter.addBroadcasts(broadcastId);
 
-            Toast.makeText(BroadcasterActivity.this,
-                    "Broadcast was added broadcastId: " + broadcastId, Toast.LENGTH_SHORT).show();
-        });
+                            Toast.makeText(
+                                            BroadcasterActivity.this,
+                                            "Broadcast was added broadcastId: " + broadcastId,
+                                            Toast.LENGTH_SHORT)
+                                    .show();
+                        });
 
         // Put a watch on broadcast removal
-        mViewModel.getBroadcastRemovedMutableLive().observe(this, reasonAndBidPair -> {
-            itemsAdapter.removeBroadcast(reasonAndBidPair.second);
+        mViewModel
+                .getBroadcastRemovedMutableLive()
+                .observe(
+                        this,
+                        reasonAndBidPair -> {
+                            itemsAdapter.removeBroadcast(reasonAndBidPair.second);
 
-            Toast.makeText(
-                    BroadcasterActivity.this, "Broadcast was removed " + " broadcastId: "
-                            + reasonAndBidPair.second + ", reason: " + reasonAndBidPair.first,
-                    Toast.LENGTH_SHORT).show();
-        });
+                            Toast.makeText(
+                                            BroadcasterActivity.this,
+                                            "Broadcast was removed "
+                                                    + " broadcastId: "
+                                                    + reasonAndBidPair.second
+                                                    + ", reason: "
+                                                    + reasonAndBidPair.first,
+                                            Toast.LENGTH_SHORT)
+                                    .show();
+                        });
 
         // Prevent destruction when loses focus
         this.setFinishOnTouchOutside(false);

@@ -68,9 +68,8 @@ public class EventTest {
         }
         Context mockContext = mock(Context.class);
         MockContentResolver mockResolver = new MockContentResolver();
-        BluetoothMapContentObserverTest.ExceptionTestProvider
-                mockProvider = new BluetoothMapContentObserverTest.ExceptionTestProvider(
-                mockContext);
+        BluetoothMapContentObserverTest.ExceptionTestProvider mockProvider =
+                new BluetoothMapContentObserverTest.ExceptionTestProvider(mockContext);
         mockResolver.addProvider("sms", mockProvider);
 
         TelephonyManager mockTelephony = mock(TelephonyManager.class);
@@ -90,8 +89,8 @@ public class EventTest {
 
     @Test
     public void constructor() {
-        BluetoothMapContentObserver.Event event = mObserver.new Event(TEST_EVENT_TYPE, TEST_HANDLE,
-                TEST_FOLDER, TEST_TYPE);
+        BluetoothMapContentObserver.Event event =
+                mObserver.new Event(TEST_EVENT_TYPE, TEST_HANDLE, TEST_FOLDER, TEST_TYPE);
 
         assertThat(event.eventType).isEqualTo(TEST_EVENT_TYPE);
         assertThat(event.handle).isEqualTo(TEST_HANDLE);
@@ -100,8 +99,8 @@ public class EventTest {
 
     @Test
     public void constructor_withNullOldFolder() {
-        BluetoothMapContentObserver.Event event = mObserver.new Event(TEST_EVENT_TYPE, TEST_HANDLE,
-                TEST_FOLDER, null, TEST_TYPE);
+        BluetoothMapContentObserver.Event event =
+                mObserver.new Event(TEST_EVENT_TYPE, TEST_HANDLE, TEST_FOLDER, null, TEST_TYPE);
 
         assertThat(event.eventType).isEqualTo(TEST_EVENT_TYPE);
         assertThat(event.handle).isEqualTo(TEST_HANDLE);
@@ -111,8 +110,9 @@ public class EventTest {
 
     @Test
     public void constructor_withNonNullOldFolder() {
-        BluetoothMapContentObserver.Event event = mObserver.new Event(TEST_EVENT_TYPE, TEST_HANDLE,
-                TEST_FOLDER, TEST_OLD_FOLDER, TEST_TYPE);
+        BluetoothMapContentObserver.Event event =
+                mObserver
+                .new Event(TEST_EVENT_TYPE, TEST_HANDLE, TEST_FOLDER, TEST_OLD_FOLDER, TEST_TYPE);
 
         assertThat(event.eventType).isEqualTo(TEST_EVENT_TYPE);
         assertThat(event.handle).isEqualTo(TEST_HANDLE);
@@ -122,44 +122,73 @@ public class EventTest {
 
     @Test
     public void constructor_forExtendedEventTypeOnePointOne() {
-        BluetoothMapContentObserver.Event event = mObserver.new Event(TEST_EVENT_TYPE, TEST_HANDLE,
-                TEST_FOLDER, TEST_TYPE, TEST_DATETIME, TEST_SUBJECT, TEST_SENDER_NAME,
-                TEST_PRIORITY);
+        BluetoothMapContentObserver.Event event =
+                mObserver
+                .new Event(
+                        TEST_EVENT_TYPE,
+                        TEST_HANDLE,
+                        TEST_FOLDER,
+                        TEST_TYPE,
+                        TEST_DATETIME,
+                        TEST_SUBJECT,
+                        TEST_SENDER_NAME,
+                        TEST_PRIORITY);
 
         assertThat(event.eventType).isEqualTo(TEST_EVENT_TYPE);
         assertThat(event.handle).isEqualTo(TEST_HANDLE);
         assertThat(event.msgType).isEqualTo(TEST_TYPE);
         assertThat(event.datetime).isEqualTo(TEST_DATETIME);
         assertThat(event.subject).isEqualTo(BluetoothMapUtils.stripInvalidChars(TEST_SUBJECT));
-        assertThat(event.senderName).isEqualTo(
-                BluetoothMapUtils.stripInvalidChars(TEST_SENDER_NAME));
+        assertThat(event.senderName)
+                .isEqualTo(BluetoothMapUtils.stripInvalidChars(TEST_SENDER_NAME));
         assertThat(event.priority).isEqualTo(TEST_PRIORITY);
     }
 
     @Test
     public void constructor_forExtendedEventTypeOnePointTwo_withMessageEvents() {
-        BluetoothMapContentObserver.Event event = mObserver.new Event(TEST_EVENT_TYPE, TEST_HANDLE,
-                TEST_FOLDER, TEST_TYPE, TEST_DATETIME, TEST_SUBJECT, TEST_SENDER_NAME,
-                TEST_PRIORITY, TEST_CONVERSATION_ID, TEST_CONVERSATION_NAME);
+        BluetoothMapContentObserver.Event event =
+                mObserver
+                .new Event(
+                        TEST_EVENT_TYPE,
+                        TEST_HANDLE,
+                        TEST_FOLDER,
+                        TEST_TYPE,
+                        TEST_DATETIME,
+                        TEST_SUBJECT,
+                        TEST_SENDER_NAME,
+                        TEST_PRIORITY,
+                        TEST_CONVERSATION_ID,
+                        TEST_CONVERSATION_NAME);
 
         assertThat(event.eventType).isEqualTo(TEST_EVENT_TYPE);
         assertThat(event.handle).isEqualTo(TEST_HANDLE);
         assertThat(event.msgType).isEqualTo(TEST_TYPE);
         assertThat(event.datetime).isEqualTo(TEST_DATETIME);
         assertThat(event.subject).isEqualTo(BluetoothMapUtils.stripInvalidChars(TEST_SUBJECT));
-        assertThat(event.senderName).isEqualTo(
-                BluetoothMapUtils.stripInvalidChars(TEST_SENDER_NAME));
+        assertThat(event.senderName)
+                .isEqualTo(BluetoothMapUtils.stripInvalidChars(TEST_SENDER_NAME));
         assertThat(event.priority).isEqualTo(TEST_PRIORITY);
         assertThat(event.conversationID).isEqualTo(TEST_CONVERSATION_ID);
-        assertThat(event.conversationName).isEqualTo(
-                BluetoothMapUtils.stripInvalidChars(TEST_CONVERSATION_NAME));
+        assertThat(event.conversationName)
+                .isEqualTo(BluetoothMapUtils.stripInvalidChars(TEST_CONVERSATION_NAME));
     }
 
     @Test
     public void constructor_forExtendedEventTypeOnePointTwo_withConversationEvents() {
-        BluetoothMapContentObserver.Event event = mObserver.new Event(TEST_EVENT_TYPE, TEST_UCI,
-                TEST_TYPE, TEST_NAME, TEST_PRIORITY, TEST_LAST_ACTIVITY, TEST_CONVERSATION_ID,
-                TEST_CONVERSATION_NAME, TEST_PRESENCE_STATE, TEST_PRESENCE_STATUS, TEST_CHAT_STATE);
+        BluetoothMapContentObserver.Event event =
+                mObserver
+                .new Event(
+                        TEST_EVENT_TYPE,
+                        TEST_UCI,
+                        TEST_TYPE,
+                        TEST_NAME,
+                        TEST_PRIORITY,
+                        TEST_LAST_ACTIVITY,
+                        TEST_CONVERSATION_ID,
+                        TEST_CONVERSATION_NAME,
+                        TEST_PRESENCE_STATE,
+                        TEST_PRESENCE_STATUS,
+                        TEST_CHAT_STATE);
 
         assertThat(event.eventType).isEqualTo(TEST_EVENT_TYPE);
         assertThat(event.uci).isEqualTo(TEST_UCI);
@@ -168,11 +197,11 @@ public class EventTest {
         assertThat(event.priority).isEqualTo(TEST_PRIORITY);
         assertThat(event.datetime).isEqualTo(TEST_LAST_ACTIVITY);
         assertThat(event.conversationID).isEqualTo(TEST_CONVERSATION_ID);
-        assertThat(event.conversationName).isEqualTo(
-                BluetoothMapUtils.stripInvalidChars(TEST_CONVERSATION_NAME));
+        assertThat(event.conversationName)
+                .isEqualTo(BluetoothMapUtils.stripInvalidChars(TEST_CONVERSATION_NAME));
         assertThat(event.presenceState).isEqualTo(TEST_PRESENCE_STATE);
-        assertThat(event.presenceStatus).isEqualTo(
-                BluetoothMapUtils.stripInvalidChars(TEST_PRESENCE_STATUS));
+        assertThat(event.presenceStatus)
+                .isEqualTo(BluetoothMapUtils.stripInvalidChars(TEST_PRESENCE_STATUS));
         assertThat(event.chatState).isEqualTo(TEST_CHAT_STATE);
     }
 

@@ -37,8 +37,8 @@ public class PlayerApplicationSettingsTest {
         btAvrcpAttributeList[1] = 1;
         btAvrcpAttributeList[2] = PlayerApplicationSettings.JNI_REPEAT_STATUS_ALL_TRACK_REPEAT;
 
-        PlayerApplicationSettings settings = PlayerApplicationSettings.makeSupportedSettings(
-                btAvrcpAttributeList);
+        PlayerApplicationSettings settings =
+                PlayerApplicationSettings.makeSupportedSettings(btAvrcpAttributeList);
 
         assertThat(settings.supportsSetting(PlayerApplicationSettings.REPEAT_STATUS)).isTrue();
     }
@@ -49,11 +49,11 @@ public class PlayerApplicationSettingsTest {
         btAvrcpAttributeList[0] = PlayerApplicationSettings.REPEAT_STATUS;
         btAvrcpAttributeList[1] = PlayerApplicationSettings.JNI_REPEAT_STATUS_GROUP_REPEAT;
 
-        PlayerApplicationSettings settings = PlayerApplicationSettings.makeSettings(
-                btAvrcpAttributeList);
+        PlayerApplicationSettings settings =
+                PlayerApplicationSettings.makeSettings(btAvrcpAttributeList);
 
-        assertThat(settings.getSetting(PlayerApplicationSettings.REPEAT_STATUS)).isEqualTo(
-                PlaybackStateCompat.REPEAT_MODE_GROUP);
+        assertThat(settings.getSetting(PlayerApplicationSettings.REPEAT_STATUS))
+                .isEqualTo(PlaybackStateCompat.REPEAT_MODE_GROUP);
     }
 
     @Test
@@ -61,84 +61,98 @@ public class PlayerApplicationSettingsTest {
         byte[] btAvrcpAttributeList = new byte[2];
         btAvrcpAttributeList[0] = PlayerApplicationSettings.REPEAT_STATUS;
         btAvrcpAttributeList[1] = PlayerApplicationSettings.JNI_REPEAT_STATUS_GROUP_REPEAT;
-        PlayerApplicationSettings settings = PlayerApplicationSettings.makeSettings(
-                btAvrcpAttributeList);
+        PlayerApplicationSettings settings =
+                PlayerApplicationSettings.makeSettings(btAvrcpAttributeList);
         PlayerApplicationSettings settingsFromSetSupport = new PlayerApplicationSettings();
 
         settingsFromSetSupport.setSupport(settings);
 
-        assertThat(settingsFromSetSupport.getSetting(
-                PlayerApplicationSettings.REPEAT_STATUS)).isEqualTo(
-                PlaybackStateCompat.REPEAT_MODE_GROUP);
+        assertThat(settingsFromSetSupport.getSetting(PlayerApplicationSettings.REPEAT_STATUS))
+                .isEqualTo(PlaybackStateCompat.REPEAT_MODE_GROUP);
     }
 
     @Test
     public void mapAttribIdValtoAvrcpPlayerSetting() {
-        assertThat(PlayerApplicationSettings.mapAttribIdValtoAvrcpPlayerSetting(
-                PlayerApplicationSettings.REPEAT_STATUS,
-                PlayerApplicationSettings.JNI_REPEAT_STATUS_ALL_TRACK_REPEAT)).isEqualTo(
-                PlaybackStateCompat.REPEAT_MODE_ALL);
-        assertThat(PlayerApplicationSettings.mapAttribIdValtoAvrcpPlayerSetting(
-                PlayerApplicationSettings.REPEAT_STATUS,
-                PlayerApplicationSettings.JNI_REPEAT_STATUS_GROUP_REPEAT)).isEqualTo(
-                PlaybackStateCompat.REPEAT_MODE_GROUP);
-        assertThat(PlayerApplicationSettings.mapAttribIdValtoAvrcpPlayerSetting(
-                PlayerApplicationSettings.REPEAT_STATUS,
-                PlayerApplicationSettings.JNI_REPEAT_STATUS_OFF)).isEqualTo(
-                PlaybackStateCompat.REPEAT_MODE_NONE);
-        assertThat(PlayerApplicationSettings.mapAttribIdValtoAvrcpPlayerSetting(
-                PlayerApplicationSettings.REPEAT_STATUS,
-                PlayerApplicationSettings.JNI_REPEAT_STATUS_SINGLE_TRACK_REPEAT)).isEqualTo(
-                PlaybackStateCompat.REPEAT_MODE_ONE);
-        assertThat(PlayerApplicationSettings.mapAttribIdValtoAvrcpPlayerSetting(
-                PlayerApplicationSettings.SHUFFLE_STATUS,
-                PlayerApplicationSettings.JNI_SHUFFLE_STATUS_ALL_TRACK_SHUFFLE)).isEqualTo(
-                PlaybackStateCompat.SHUFFLE_MODE_ALL);
-        assertThat(PlayerApplicationSettings.mapAttribIdValtoAvrcpPlayerSetting(
-                PlayerApplicationSettings.SHUFFLE_STATUS,
-                PlayerApplicationSettings.JNI_SHUFFLE_STATUS_GROUP_SHUFFLE)).isEqualTo(
-                PlaybackStateCompat.SHUFFLE_MODE_GROUP);
-        assertThat(PlayerApplicationSettings.mapAttribIdValtoAvrcpPlayerSetting(
-                PlayerApplicationSettings.SHUFFLE_STATUS,
-                PlayerApplicationSettings.JNI_SHUFFLE_STATUS_OFF)).isEqualTo(
-                PlaybackStateCompat.SHUFFLE_MODE_NONE);
-        assertThat(PlayerApplicationSettings.mapAttribIdValtoAvrcpPlayerSetting(
-                PlayerApplicationSettings.JNI_STATUS_INVALID,
-                PlayerApplicationSettings.JNI_STATUS_INVALID)).isEqualTo(
-                PlayerApplicationSettings.JNI_STATUS_INVALID);
+        assertThat(
+                        PlayerApplicationSettings.mapAttribIdValtoAvrcpPlayerSetting(
+                                PlayerApplicationSettings.REPEAT_STATUS,
+                                PlayerApplicationSettings.JNI_REPEAT_STATUS_ALL_TRACK_REPEAT))
+                .isEqualTo(PlaybackStateCompat.REPEAT_MODE_ALL);
+        assertThat(
+                        PlayerApplicationSettings.mapAttribIdValtoAvrcpPlayerSetting(
+                                PlayerApplicationSettings.REPEAT_STATUS,
+                                PlayerApplicationSettings.JNI_REPEAT_STATUS_GROUP_REPEAT))
+                .isEqualTo(PlaybackStateCompat.REPEAT_MODE_GROUP);
+        assertThat(
+                        PlayerApplicationSettings.mapAttribIdValtoAvrcpPlayerSetting(
+                                PlayerApplicationSettings.REPEAT_STATUS,
+                                PlayerApplicationSettings.JNI_REPEAT_STATUS_OFF))
+                .isEqualTo(PlaybackStateCompat.REPEAT_MODE_NONE);
+        assertThat(
+                        PlayerApplicationSettings.mapAttribIdValtoAvrcpPlayerSetting(
+                                PlayerApplicationSettings.REPEAT_STATUS,
+                                PlayerApplicationSettings.JNI_REPEAT_STATUS_SINGLE_TRACK_REPEAT))
+                .isEqualTo(PlaybackStateCompat.REPEAT_MODE_ONE);
+        assertThat(
+                        PlayerApplicationSettings.mapAttribIdValtoAvrcpPlayerSetting(
+                                PlayerApplicationSettings.SHUFFLE_STATUS,
+                                PlayerApplicationSettings.JNI_SHUFFLE_STATUS_ALL_TRACK_SHUFFLE))
+                .isEqualTo(PlaybackStateCompat.SHUFFLE_MODE_ALL);
+        assertThat(
+                        PlayerApplicationSettings.mapAttribIdValtoAvrcpPlayerSetting(
+                                PlayerApplicationSettings.SHUFFLE_STATUS,
+                                PlayerApplicationSettings.JNI_SHUFFLE_STATUS_GROUP_SHUFFLE))
+                .isEqualTo(PlaybackStateCompat.SHUFFLE_MODE_GROUP);
+        assertThat(
+                        PlayerApplicationSettings.mapAttribIdValtoAvrcpPlayerSetting(
+                                PlayerApplicationSettings.SHUFFLE_STATUS,
+                                PlayerApplicationSettings.JNI_SHUFFLE_STATUS_OFF))
+                .isEqualTo(PlaybackStateCompat.SHUFFLE_MODE_NONE);
+        assertThat(
+                        PlayerApplicationSettings.mapAttribIdValtoAvrcpPlayerSetting(
+                                PlayerApplicationSettings.JNI_STATUS_INVALID,
+                                PlayerApplicationSettings.JNI_STATUS_INVALID))
+                .isEqualTo(PlayerApplicationSettings.JNI_STATUS_INVALID);
     }
 
     @Test
     public void mapAvrcpPlayerSettingstoBTattribVal() {
-        assertThat(PlayerApplicationSettings.mapAvrcpPlayerSettingstoBTattribVal(
-                PlayerApplicationSettings.REPEAT_STATUS,
-                PlaybackStateCompat.REPEAT_MODE_NONE)).isEqualTo(
-                PlayerApplicationSettings.JNI_REPEAT_STATUS_OFF);
-        assertThat(PlayerApplicationSettings.mapAvrcpPlayerSettingstoBTattribVal(
-                PlayerApplicationSettings.REPEAT_STATUS,
-                PlaybackStateCompat.REPEAT_MODE_ONE)).isEqualTo(
-                PlayerApplicationSettings.JNI_REPEAT_STATUS_SINGLE_TRACK_REPEAT);
-        assertThat(PlayerApplicationSettings.mapAvrcpPlayerSettingstoBTattribVal(
-                PlayerApplicationSettings.REPEAT_STATUS,
-                PlaybackStateCompat.REPEAT_MODE_ALL)).isEqualTo(
-                PlayerApplicationSettings.JNI_REPEAT_STATUS_ALL_TRACK_REPEAT);
-        assertThat(PlayerApplicationSettings.mapAvrcpPlayerSettingstoBTattribVal(
-                PlayerApplicationSettings.REPEAT_STATUS,
-                PlaybackStateCompat.REPEAT_MODE_GROUP)).isEqualTo(
-                PlayerApplicationSettings.JNI_REPEAT_STATUS_GROUP_REPEAT);
-        assertThat(PlayerApplicationSettings.mapAvrcpPlayerSettingstoBTattribVal(
-                PlayerApplicationSettings.SHUFFLE_STATUS,
-                PlaybackStateCompat.SHUFFLE_MODE_NONE)).isEqualTo(
-                PlayerApplicationSettings.JNI_SHUFFLE_STATUS_OFF);
-        assertThat(PlayerApplicationSettings.mapAvrcpPlayerSettingstoBTattribVal(
-                PlayerApplicationSettings.SHUFFLE_STATUS,
-                PlaybackStateCompat.SHUFFLE_MODE_ALL)).isEqualTo(
-                PlayerApplicationSettings.JNI_SHUFFLE_STATUS_ALL_TRACK_SHUFFLE);
-        assertThat(PlayerApplicationSettings.mapAvrcpPlayerSettingstoBTattribVal(
-                PlayerApplicationSettings.SHUFFLE_STATUS,
-                PlaybackStateCompat.SHUFFLE_MODE_GROUP)).isEqualTo(
-                PlayerApplicationSettings.JNI_SHUFFLE_STATUS_GROUP_SHUFFLE);
-        assertThat(PlayerApplicationSettings.mapAvrcpPlayerSettingstoBTattribVal(-1, -1)).isEqualTo(
-                PlayerApplicationSettings.JNI_STATUS_INVALID);
+        assertThat(
+                        PlayerApplicationSettings.mapAvrcpPlayerSettingstoBTattribVal(
+                                PlayerApplicationSettings.REPEAT_STATUS,
+                                PlaybackStateCompat.REPEAT_MODE_NONE))
+                .isEqualTo(PlayerApplicationSettings.JNI_REPEAT_STATUS_OFF);
+        assertThat(
+                        PlayerApplicationSettings.mapAvrcpPlayerSettingstoBTattribVal(
+                                PlayerApplicationSettings.REPEAT_STATUS,
+                                PlaybackStateCompat.REPEAT_MODE_ONE))
+                .isEqualTo(PlayerApplicationSettings.JNI_REPEAT_STATUS_SINGLE_TRACK_REPEAT);
+        assertThat(
+                        PlayerApplicationSettings.mapAvrcpPlayerSettingstoBTattribVal(
+                                PlayerApplicationSettings.REPEAT_STATUS,
+                                PlaybackStateCompat.REPEAT_MODE_ALL))
+                .isEqualTo(PlayerApplicationSettings.JNI_REPEAT_STATUS_ALL_TRACK_REPEAT);
+        assertThat(
+                        PlayerApplicationSettings.mapAvrcpPlayerSettingstoBTattribVal(
+                                PlayerApplicationSettings.REPEAT_STATUS,
+                                PlaybackStateCompat.REPEAT_MODE_GROUP))
+                .isEqualTo(PlayerApplicationSettings.JNI_REPEAT_STATUS_GROUP_REPEAT);
+        assertThat(
+                        PlayerApplicationSettings.mapAvrcpPlayerSettingstoBTattribVal(
+                                PlayerApplicationSettings.SHUFFLE_STATUS,
+                                PlaybackStateCompat.SHUFFLE_MODE_NONE))
+                .isEqualTo(PlayerApplicationSettings.JNI_SHUFFLE_STATUS_OFF);
+        assertThat(
+                        PlayerApplicationSettings.mapAvrcpPlayerSettingstoBTattribVal(
+                                PlayerApplicationSettings.SHUFFLE_STATUS,
+                                PlaybackStateCompat.SHUFFLE_MODE_ALL))
+                .isEqualTo(PlayerApplicationSettings.JNI_SHUFFLE_STATUS_ALL_TRACK_SHUFFLE);
+        assertThat(
+                        PlayerApplicationSettings.mapAvrcpPlayerSettingstoBTattribVal(
+                                PlayerApplicationSettings.SHUFFLE_STATUS,
+                                PlaybackStateCompat.SHUFFLE_MODE_GROUP))
+                .isEqualTo(PlayerApplicationSettings.JNI_SHUFFLE_STATUS_GROUP_SHUFFLE);
+        assertThat(PlayerApplicationSettings.mapAvrcpPlayerSettingstoBTattribVal(-1, -1))
+                .isEqualTo(PlayerApplicationSettings.JNI_STATUS_INVALID);
     }
 }

@@ -50,15 +50,14 @@ import com.android.bluetooth.R;
 import java.util.Date;
 
 /**
- * This class is used to represent the data for the transfer history list box.
- * The only real work done by this class is to construct a custom view for the
- * line items.
+ * This class is used to represent the data for the transfer history list box. The only real work
+ * done by this class is to construct a custom view for the line items.
  */
 public class BluetoothOppTransferAdapter extends ResourceCursorAdapter {
     private Context mContext;
 
     public BluetoothOppTransferAdapter(Context context, int layout, Cursor c) {
-        super(context, layout, c, true /* autoRequery */ );
+        super(context, layout, c, true /* autoRequery */);
         mContext = context;
     }
 
@@ -107,11 +106,15 @@ public class BluetoothOppTransferAdapter extends ResourceCursorAdapter {
             } else {
                 String completeText;
                 if (dir == BluetoothShare.DIRECTION_INBOUND) {
-                    completeText = r.getString(R.string.download_success,
-                            Formatter.formatFileSize(mContext, totalBytes));
+                    completeText =
+                            r.getString(
+                                    R.string.download_success,
+                                    Formatter.formatFileSize(mContext, totalBytes));
                 } else {
-                    completeText = r.getString(R.string.upload_success,
-                            Formatter.formatFileSize(mContext, totalBytes));
+                    completeText =
+                            r.getString(
+                                    R.string.upload_success,
+                                    Formatter.formatFileSize(mContext, totalBytes));
                 }
                 tv.setText(completeText);
             }
@@ -120,7 +123,8 @@ public class BluetoothOppTransferAdapter extends ResourceCursorAdapter {
             long time = cursor.getLong(dateColumnId);
             Date d = new Date(time);
             CharSequence str =
-                    DateUtils.isToday(time) ? DateFormat.getTimeFormat(mContext).format(d)
+                    DateUtils.isToday(time)
+                            ? DateFormat.getTimeFormat(mContext).format(d)
                             : DateFormat.getDateFormat(mContext).format(d);
             tv = (TextView) view.findViewById(R.id.complete_date);
             tv.setVisibility(View.VISIBLE);

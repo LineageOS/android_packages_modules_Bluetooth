@@ -26,9 +26,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Arrays;
 
-/**
- * Test cases for {@link CallbackInfo}.
- */
+/** Test cases for {@link CallbackInfo}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class CallbackInfoTest {
@@ -40,10 +38,8 @@ public class CallbackInfoTest {
         int handle = 1;
         byte[] value = "Test Value Byte Array".getBytes();
 
-        CallbackInfo callbackInfo = new CallbackInfo.Builder(address, status)
-                .setHandle(handle)
-                .setValue(value)
-                .build();
+        CallbackInfo callbackInfo =
+                new CallbackInfo.Builder(address, status).setHandle(handle).setValue(value).build();
 
         assertThat(callbackInfo.address).isEqualTo(address);
         assertThat(callbackInfo.status).isEqualTo(status);

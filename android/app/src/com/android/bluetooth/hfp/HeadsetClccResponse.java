@@ -18,54 +18,43 @@ package com.android.bluetooth.hfp;
 /**
  * A blob of response data to AT+CLCC command from HF
  *
- * Example:
- *   AT+CLCC
- *   +CLCC:[index],[direction],[status],[mode],[mpty][,[number],[type]]
+ * <p>Example: AT+CLCC +CLCC:[index],[direction],[status],[mode],[mpty][,[number],[type]]
  */
 class HeadsetClccResponse extends HeadsetMessageObject {
-    /**
-     * Index of the call, starting with 1, by the sequence of setup or receiving the calls
-     */
+    /** Index of the call, starting with 1, by the sequence of setup or receiving the calls */
     int mIndex;
-    /**
-     * Direction of the call, 0 is outgoing, 1 is incoming
-     */
+
+    /** Direction of the call, 0 is outgoing, 1 is incoming */
     int mDirection;
+
     /**
-     * Status of the call, currently defined in bthf_call_state_t of bt_hf.h or
-     * {@link com.android.server.telecom.BluetoothPhoneServiceImpl} or {@link HeadsetHalConstants}
+     * Status of the call, currently defined in bthf_call_state_t of bt_hf.h or {@link
+     * com.android.server.telecom.BluetoothPhoneServiceImpl} or {@link HeadsetHalConstants}
      *
-     * 0 - Active
-     * 1 - Held
-     * 2 - Dialing
-     * 3 - Alerting
-     * 4 - Incoming
-     * 5 - Waiting
-     * 6 - Call held by response and hold
+     * <p>0 - Active 1 - Held 2 - Dialing 3 - Alerting 4 - Incoming 5 - Waiting 6 - Call held by
+     * response and hold
      */
     int mStatus;
-    /**
-     * Call mode, 0 is Voice, 1 is Data, 2 is Fax
-     */
+
+    /** Call mode, 0 is Voice, 1 is Data, 2 is Fax */
     int mMode;
+
     /**
      * Multi-party indicator
      *
-     * 0 - this call is NOT a member of a multi-party (conference) call
-     * 1 - this call IS a multi-party (conference) call
+     * <p>0 - this call is NOT a member of a multi-party (conference) call 1 - this call IS a
+     * multi-party (conference) call
      */
     boolean mMpty;
-    /**
-     * Phone number of the call (optional)
-     */
+
+    /** Phone number of the call (optional) */
     String mNumber;
-    /**
-     * Phone number type (optional)
-     */
+
+    /** Phone number type (optional) */
     int mType;
 
-    HeadsetClccResponse(int index, int direction, int status, int mode, boolean mpty, String number,
-            int type) {
+    HeadsetClccResponse(
+            int index, int direction, int status, int mode, boolean mpty, String number, int type) {
         mIndex = index;
         mDirection = direction;
         mStatus = status;

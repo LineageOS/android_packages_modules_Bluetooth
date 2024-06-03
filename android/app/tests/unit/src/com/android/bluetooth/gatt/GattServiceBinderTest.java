@@ -68,8 +68,7 @@ public class GattServiceBinderTest {
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    private GattService mService;
+    @Mock private GattService mService;
     @Mock private TransitionalScanHelper mScanHelper;
 
     private Context mContext;
@@ -83,8 +82,8 @@ public class GattServiceBinderTest {
     public void setUp() throws Exception {
         mContext = InstrumentationRegistry.getTargetContext();
         Intent intent = new Intent();
-        mPendingIntent = PendingIntent.getBroadcast(mContext, 0, intent,
-                PendingIntent.FLAG_IMMUTABLE);
+        mPendingIntent =
+                PendingIntent.getBroadcast(mContext, 0, intent, PendingIntent.FLAG_IMMUTABLE);
         when(mService.isAvailable()).thenReturn(true);
         when(mService.getTransitionalScanHelper()).thenReturn(mScanHelper);
         mBinder = new GattService.BluetoothGattBinder(mService);
@@ -207,8 +206,16 @@ public class GattServiceBinderTest {
                 phy,
                 mAttributionSource);
 
-        verify(mService).clientConnect(clientIf, address, addressType, isDirect, transport,
-                opportunistic, phy, mAttributionSource);
+        verify(mService)
+                .clientConnect(
+                        clientIf,
+                        address,
+                        addressType,
+                        isDirect,
+                        transport,
+                        opportunistic,
+                        phy,
+                        mAttributionSource);
     }
 
     @Test
@@ -232,8 +239,9 @@ public class GattServiceBinderTest {
         mBinder.clientSetPreferredPhy(
                 clientIf, address, txPhy, rxPhy, phyOptions, mAttributionSource);
 
-        verify(mService).clientSetPreferredPhy(clientIf, address, txPhy, rxPhy, phyOptions,
-                mAttributionSource);
+        verify(mService)
+                .clientSetPreferredPhy(
+                        clientIf, address, txPhy, rxPhy, phyOptions, mAttributionSource);
     }
 
     @Test
@@ -307,8 +315,15 @@ public class GattServiceBinderTest {
                 authReq,
                 mAttributionSource);
 
-        verify(mService).readUsingCharacteristicUuid(clientIf, address, uuid, startHandle,
-                endHandle, authReq, mAttributionSource);
+        verify(mService)
+                .readUsingCharacteristicUuid(
+                        clientIf,
+                        address,
+                        uuid,
+                        startHandle,
+                        endHandle,
+                        authReq,
+                        mAttributionSource);
     }
 
     @Test
@@ -323,8 +338,9 @@ public class GattServiceBinderTest {
         mBinder.writeCharacteristic(
                 clientIf, address, handle, writeType, authReq, value, mAttributionSource);
 
-        verify(mService).writeCharacteristic(clientIf, address, handle, writeType, authReq, value,
-                mAttributionSource);
+        verify(mService)
+                .writeCharacteristic(
+                        clientIf, address, handle, writeType, authReq, value, mAttributionSource);
     }
 
     @Test
@@ -349,8 +365,8 @@ public class GattServiceBinderTest {
 
         mBinder.writeDescriptor(clientIf, address, handle, authReq, value, mAttributionSource);
 
-        verify(mService).writeDescriptor(clientIf, address, handle, authReq, value,
-                mAttributionSource);
+        verify(mService)
+                .writeDescriptor(clientIf, address, handle, authReq, value, mAttributionSource);
     }
 
     @Test
@@ -383,8 +399,8 @@ public class GattServiceBinderTest {
 
         mBinder.registerForNotification(clientIf, address, handle, enable, mAttributionSource);
 
-        verify(mService).registerForNotification(clientIf, address, handle, enable,
-                mAttributionSource);
+        verify(mService)
+                .registerForNotification(clientIf, address, handle, enable, mAttributionSource);
     }
 
     @Test
@@ -417,8 +433,9 @@ public class GattServiceBinderTest {
         mBinder.connectionParameterUpdate(
                 clientIf, address, connectionPriority, mAttributionSource);
 
-        verify(mService).connectionParameterUpdate(clientIf, address, connectionPriority,
-                mAttributionSource);
+        verify(mService)
+                .connectionParameterUpdate(
+                        clientIf, address, connectionPriority, mAttributionSource);
     }
 
     @Test
@@ -443,10 +460,17 @@ public class GattServiceBinderTest {
                 maxConnectionEventLen,
                 mAttributionSource);
 
-        verify(mService).leConnectionUpdate(
-                clientIf, address, minConnectionInterval, maxConnectionInterval,
-                peripheralLatency, supervisionTimeout, minConnectionEventLen,
-                maxConnectionEventLen, mAttributionSource);
+        verify(mService)
+                .leConnectionUpdate(
+                        clientIf,
+                        address,
+                        minConnectionInterval,
+                        maxConnectionInterval,
+                        peripheralLatency,
+                        supervisionTimeout,
+                        minConnectionEventLen,
+                        maxConnectionEventLen,
+                        mAttributionSource);
     }
 
     @Test
@@ -506,8 +530,9 @@ public class GattServiceBinderTest {
         mBinder.serverSetPreferredPhy(
                 serverIf, address, txPhy, rxPhy, phyOptions, mAttributionSource);
 
-        verify(mService).serverSetPreferredPhy(serverIf, address, txPhy, rxPhy, phyOptions,
-                mAttributionSource);
+        verify(mService)
+                .serverSetPreferredPhy(
+                        serverIf, address, txPhy, rxPhy, phyOptions, mAttributionSource);
     }
 
     @Test
@@ -561,8 +586,9 @@ public class GattServiceBinderTest {
         mBinder.sendResponse(
                 serverIf, address, requestId, status, offset, value, mAttributionSource);
 
-        verify(mService).sendResponse(serverIf, address, requestId, status, offset, value,
-                mAttributionSource);
+        verify(mService)
+                .sendResponse(
+                        serverIf, address, requestId, status, offset, value, mAttributionSource);
     }
 
     @Test
@@ -575,8 +601,8 @@ public class GattServiceBinderTest {
 
         mBinder.sendNotification(serverIf, address, handle, confirm, value, mAttributionSource);
 
-        verify(mService).sendNotification(serverIf, address, handle, confirm, value,
-                mAttributionSource);
+        verify(mService)
+                .sendNotification(serverIf, address, handle, confirm, value, mAttributionSource);
     }
 
     @Test
@@ -604,9 +630,18 @@ public class GattServiceBinderTest {
                 callback,
                 mAttributionSource);
 
-        verify(mService).startAdvertisingSet(parameters, advertiseData, scanResponse,
-                periodicParameters, periodicData, duration, maxExtAdvEvents,
-                serverIf, callback, mAttributionSource);
+        verify(mService)
+                .startAdvertisingSet(
+                        parameters,
+                        advertiseData,
+                        scanResponse,
+                        periodicParameters,
+                        periodicData,
+                        duration,
+                        maxExtAdvEvents,
+                        serverIf,
+                        callback,
+                        mAttributionSource);
     }
 
     @Test
@@ -637,8 +672,9 @@ public class GattServiceBinderTest {
         mBinder.enableAdvertisingSet(
                 advertiserId, enable, duration, maxExtAdvEvents, mAttributionSource);
 
-        verify(mService).enableAdvertisingSet(advertiserId, enable, duration, maxExtAdvEvents,
-                mAttributionSource);
+        verify(mService)
+                .enableAdvertisingSet(
+                        advertiserId, enable, duration, maxExtAdvEvents, mAttributionSource);
     }
 
     @Test
@@ -679,8 +715,8 @@ public class GattServiceBinderTest {
 
         mBinder.setPeriodicAdvertisingParameters(advertiserId, parameters, mAttributionSource);
 
-        verify(mService).setPeriodicAdvertisingParameters(advertiserId, parameters,
-                mAttributionSource);
+        verify(mService)
+                .setPeriodicAdvertisingParameters(advertiserId, parameters, mAttributionSource);
     }
 
     @Test

@@ -19,9 +19,7 @@ package com.android.bluetooth.bass_client;
 import android.bluetooth.BluetoothDevice;
 import android.util.Log;
 
-/**
- * Periodic Advertisement Result
- */
+/** Periodic Advertisement Result */
 public class PeriodicAdvertisementResult {
     private static final String TAG = PeriodicAdvertisementResult.class.getSimpleName();
 
@@ -35,14 +33,15 @@ public class PeriodicAdvertisementResult {
     private PublicBroadcastData mPbData;
     private String mBroadcastName;
 
-    PeriodicAdvertisementResult(BluetoothDevice device,
-                                int addressType,
-                                int syncHandle,
-                                int advSid,
-                                int paInterval,
-                                int broadcastId,
-                                PublicBroadcastData pbData,
-                                String broadcastName) {
+    PeriodicAdvertisementResult(
+            BluetoothDevice device,
+            int addressType,
+            int syncHandle,
+            int advSid,
+            int paInterval,
+            int broadcastId,
+            PublicBroadcastData pbData,
+            String broadcastName) {
         mDevice = device;
         mAddressType = addressType;
         mAdvSid = advSid;
@@ -54,23 +53,17 @@ public class PeriodicAdvertisementResult {
         mBroadcastName = broadcastName;
     }
 
-    /**
-     * Update Sync handle
-     */
+    /** Update Sync handle */
     public void updateSyncHandle(int syncHandle) {
         mSyncHandle = syncHandle;
     }
 
-    /**
-     * Get Sync handle
-     */
+    /** Get Sync handle */
     public int getSyncHandle() {
         return mSyncHandle;
     }
 
-    /**
-     * Get mIsNotified flag
-     */
+    /** Get mIsNotified flag */
     public boolean isNotified() {
         synchronized (this) {
             return mIsNotified;
@@ -83,93 +76,67 @@ public class PeriodicAdvertisementResult {
         }
     }
 
-    /**
-     * Update Adv ID
-     */
+    /** Update Adv ID */
     public void updateAdvSid(int advSid) {
         mAdvSid = advSid;
     }
 
-    /**
-     * Get Adv ID
-     */
+    /** Get Adv ID */
     public int getAdvSid() {
         return mAdvSid;
     }
 
-    /**
-     * Update address type
-     */
+    /** Update address type */
     public void updateAddressType(int addressType) {
         mAddressType = addressType;
     }
 
-    /**
-     * Get address type
-     */
+    /** Get address type */
     public int getAddressType() {
         return mAddressType;
     }
 
-    /**
-     * Update Adv interval
-     */
+    /** Update Adv interval */
     public void updateAdvInterval(int advInterval) {
         mPAInterval = advInterval;
     }
 
-    /**
-     * Get Adv interval
-     */
+    /** Get Adv interval */
     public int getAdvInterval() {
         return mPAInterval;
     }
 
-    /**
-     * Update broadcast ID
-     */
+    /** Update broadcast ID */
     public void updateBroadcastId(int broadcastId) {
         mBroadcastId = broadcastId;
     }
 
-    /**
-     * Get broadcast ID
-     */
+    /** Get broadcast ID */
     public int getBroadcastId() {
         return mBroadcastId;
     }
 
-    /**
-     * Update public broadcast data
-     */
+    /** Update public broadcast data */
     public void updatePublicBroadcastData(PublicBroadcastData pbData) {
         mPbData = pbData;
     }
 
-    /**
-     * Get public broadcast data
-     */
+    /** Get public broadcast data */
     public PublicBroadcastData getPublicBroadcastData() {
         return mPbData;
     }
 
-    /**
-     * Update broadcast name
-     */
+    /** Update broadcast name */
     public void updateBroadcastName(String broadcastName) {
         mBroadcastName = broadcastName;
     }
 
-    /**
-     * Get broadcast name
-     */
+    /** Get broadcast name */
     public String getBroadcastName() {
         return mBroadcastName;
     }
 
-    /**
-     * print
-     */
+    /** print */
     public void print() {
         log("-- PeriodicAdvertisementResult --");
         log("mDevice:" + mDevice);

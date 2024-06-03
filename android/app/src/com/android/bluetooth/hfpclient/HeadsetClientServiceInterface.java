@@ -26,7 +26,7 @@ import java.util.Set;
 /**
  * Interface for talking to the HeadsetClientService
  *
- * Deals with service lifecycle and returns consistent error values
+ * <p>Deals with service lifecycle and returns consistent error values
  */
 public class HeadsetClientServiceInterface {
     private static final String TAG = "HeadsetClientServiceInterface";
@@ -36,8 +36,7 @@ public class HeadsetClientServiceInterface {
     public static final int CALL_ACCEPT_HOLD = 1;
     public static final int CALL_ACCEPT_TERMINATE = 2;
 
-    public HeadsetClientServiceInterface() {
-    }
+    public HeadsetClientServiceInterface() {}
 
     private boolean isServiceAvailable(HeadsetClientService service) {
         if (service == null) {

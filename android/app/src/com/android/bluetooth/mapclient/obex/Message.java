@@ -25,9 +25,8 @@ import java.util.HashMap;
 
 /**
  * Object representation of message received in messages listing
- * <p>
- * This object will be received in
- * {@link Client#EVENT_GET_MESSAGES_LISTING} callback message.
+ *
+ * <p>This object will be received in {@link Client#EVENT_GET_MESSAGES_LISTING} callback message.
  */
 public class Message {
 
@@ -83,13 +82,12 @@ public class Message {
 
         mSubject = attrs.get("subject");
         String dateTime = attrs.get("datetime");
-        //Handle possible NPE when not able to retreive datetime attribute
+        // Handle possible NPE when not able to retreive datetime attribute
         if (dateTime != null) {
             mDateTime = (new ObexTime(dateTime)).getTime();
         } else {
             mDateTime = null;
         }
-
 
         mSenderName = attrs.get("sender_name");
 
@@ -192,146 +190,139 @@ public class Message {
     }
 
     /**
-     * @return value corresponding to <code>handle</code> parameter in MAP
-     * specification
+     * @return value corresponding to <code>handle</code> parameter in MAP specification
      */
     public String getHandle() {
         return mHandle;
     }
 
     /**
-     * @return value corresponding to <code>subject</code> parameter in MAP
-     * specification
+     * @return value corresponding to <code>subject</code> parameter in MAP specification
      */
     public String getSubject() {
         return mSubject;
     }
 
     /**
-     * @return <code>Date</code> object corresponding to <code>datetime</code>
-     * parameter in MAP specification
+     * @return <code>Date</code> object corresponding to <code>datetime</code> parameter in MAP
+     *     specification
      */
     public Date getDateTime() {
         return mDateTime;
     }
 
     /**
-     * @return value corresponding to <code>sender_name</code> parameter in MAP
-     * specification
+     * @return value corresponding to <code>sender_name</code> parameter in MAP specification
      */
     public String getSenderName() {
         return mSenderName;
     }
 
     /**
-     * @return value corresponding to <code>sender_addressing</code> parameter
-     * in MAP specification
+     * @return value corresponding to <code>sender_addressing</code> parameter in MAP specification
      */
     public String getSenderAddressing() {
         return mSenderAddressing;
     }
 
     /**
-     * @return value corresponding to <code>replyto_addressing</code> parameter
-     * in MAP specification
+     * @return value corresponding to <code>replyto_addressing</code> parameter in MAP specification
      */
     public String getReplytoAddressing() {
         return mReplytoAddressing;
     }
 
     /**
-     * @return value corresponding to <code>recipient_name</code> parameter in
-     * MAP specification
+     * @return value corresponding to <code>recipient_name</code> parameter in MAP specification
      */
     public String getRecipientName() {
         return mRecipientName;
     }
 
     /**
-     * @return value corresponding to <code>recipient_addressing</code>
-     * parameter in MAP specification
+     * @return value corresponding to <code>recipient_addressing</code> parameter in MAP
+     *     specification
      */
     public String getRecipientAddressing() {
         return mRecipientAddressing;
     }
 
     /**
-     * @return {@link Type} object corresponding to <code>type</code> parameter
-     * in MAP specification
+     * @return {@link Type} object corresponding to <code>type</code> parameter in MAP specification
      */
     public Type getType() {
         return mType;
     }
 
     /**
-     * @return value corresponding to <code>size</code> parameter in MAP
-     * specification
+     * @return value corresponding to <code>size</code> parameter in MAP specification
      */
     public int getSize() {
         return mSize;
     }
 
     /**
-     * @return {@link .ReceptionStatus} object corresponding to
-     * <code>reception_status</code> parameter in MAP specification
+     * @return {@link .ReceptionStatus} object corresponding to <code>reception_status</code>
+     *     parameter in MAP specification
      */
     public ReceptionStatus getReceptionStatus() {
         return mReceptionStatus;
     }
 
     /**
-     * @return value corresponding to <code>attachment_size</code> parameter in
-     * MAP specification
+     * @return value corresponding to <code>attachment_size</code> parameter in MAP specification
      */
     public int getAttachmentSize() {
         return mAttachmentSize;
     }
 
     /**
-     * @return value corresponding to <code>text</code> parameter in MAP
-     * specification
+     * @return value corresponding to <code>text</code> parameter in MAP specification
      */
     public boolean isText() {
         return mText;
     }
 
     /**
-     * @return value corresponding to <code>priority</code> parameter in MAP
-     * specification
+     * @return value corresponding to <code>priority</code> parameter in MAP specification
      */
     public boolean isPriority() {
         return mPriority;
     }
 
     /**
-     * @return value corresponding to <code>read</code> parameter in MAP
-     * specification
+     * @return value corresponding to <code>read</code> parameter in MAP specification
      */
     public boolean isRead() {
         return mRead;
     }
 
     /**
-     * @return value corresponding to <code>sent</code> parameter in MAP
-     * specification
+     * @return value corresponding to <code>sent</code> parameter in MAP specification
      */
     public boolean isSent() {
         return mSent;
     }
 
     /**
-     * @return value corresponding to <code>protected</code> parameter in MAP
-     * specification
+     * @return value corresponding to <code>protected</code> parameter in MAP specification
      */
     public boolean isProtected() {
         return mProtected;
     }
 
     public enum Type {
-        UNKNOWN, EMAIL, SMS_GSM, SMS_CDMA, MMS
+        UNKNOWN,
+        EMAIL,
+        SMS_GSM,
+        SMS_CDMA,
+        MMS
     }
 
     public enum ReceptionStatus {
-        UNKNOWN, COMPLETE, FRACTIONED, NOTIFICATION
+        UNKNOWN,
+        COMPLETE,
+        FRACTIONED,
+        NOTIFICATION
     }
 }

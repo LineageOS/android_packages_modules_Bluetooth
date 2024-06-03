@@ -53,18 +53,24 @@ public class BluetoothLeCallControlProxy {
     }
 
     public void closeBluetoothLeCallControlProxy(Context context) {
-        final BluetoothManager btManager =
-                context.getSystemService(BluetoothManager.class);
+        final BluetoothManager btManager = context.getSystemService(BluetoothManager.class);
         if (btManager != null) {
-            btManager.getAdapter().closeProfileProxy(BluetoothProfile.LE_CALL_CONTROL,
-                    mBluetoothLeCallControl);
+            btManager
+                    .getAdapter()
+                    .closeProfileProxy(BluetoothProfile.LE_CALL_CONTROL, mBluetoothLeCallControl);
         }
     }
 
-    public boolean registerBearer(String uci, List<String> uriSchemes, int featureFlags,
-            String provider, int technology, Executor executor, BluetoothLeCallControl.Callback callback) {
-        return mBluetoothLeCallControl.registerBearer(uci, uriSchemes, featureFlags, provider, technology,
-                executor, callback);
+    public boolean registerBearer(
+            String uci,
+            List<String> uriSchemes,
+            int featureFlags,
+            String provider,
+            int technology,
+            Executor executor,
+            BluetoothLeCallControl.Callback callback) {
+        return mBluetoothLeCallControl.registerBearer(
+                uci, uriSchemes, featureFlags, provider, technology, executor, callback);
     }
 
     public void unregisterBearer() {

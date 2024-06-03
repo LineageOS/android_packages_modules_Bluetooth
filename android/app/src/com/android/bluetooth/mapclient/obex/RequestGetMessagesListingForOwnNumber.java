@@ -34,20 +34,20 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Request to get a listing of messages in directory. Listing is used to determine the
- * remote device's own phone number. Searching the SENT folder is the most reliable way
- * since there should only be one Originator (From:), as opposed to the INBOX folder,
- * where there can be multiple Recipients (To: and Cc:).
+ * Request to get a listing of messages in directory. Listing is used to determine the remote
+ * device's own phone number. Searching the SENT folder is the most reliable way since there should
+ * only be one Originator (From:), as opposed to the INBOX folder, where there can be multiple
+ * Recipients (To: and Cc:).
  *
- * Ideally, only a single message is needed; however, the Originator (From:) field in the listing
- * is optional (not required by specs). Hence, a geometrically increasing sliding window is used
- * to request additional message listings until either a number is found or folders have been
+ * <p>Ideally, only a single message is needed; however, the Originator (From:) field in the listing
+ * is optional (not required by specs). Hence, a geometrically increasing sliding window is used to
+ * request additional message listings until either a number is found or folders have been
  * exhausted.
  *
- * The sliding window is automated (i.e., offset and size, transitions across folders). Simply use
- * the same {@link RequestGetMessagesListingForOwnNumber} repeatedly with {@link
- * MasClient#makeRequest}. {@link #isSearchCompleted} indicates when the search is complete,
- * i.e., the object cannot be used further.
+ * <p>The sliding window is automated (i.e., offset and size, transitions across folders). Simply
+ * use the same {@link RequestGetMessagesListingForOwnNumber} repeatedly with {@link
+ * MasClient#makeRequest}. {@link #isSearchCompleted} indicates when the search is complete, i.e.,
+ * the object cannot be used further.
  */
 class RequestGetMessagesListingForOwnNumber extends Request {
     private static final String TAG = RequestGetMessagesListingForOwnNumber.class.getSimpleName();
@@ -56,25 +56,22 @@ class RequestGetMessagesListingForOwnNumber extends Request {
 
     // Search for sent messages (MMS or SMS) first. If that fails, search for received SMS.
     @VisibleForTesting
-    static final List<String> FOLDERS_TO_SEARCH = new ArrayList<>(Arrays.asList(
-            MceStateMachine.FOLDER_SENT,
-            MceStateMachine.FOLDER_INBOX
-    ));
+    static final List<String> FOLDERS_TO_SEARCH =
+            new ArrayList<>(
+                    Arrays.asList(MceStateMachine.FOLDER_SENT, MceStateMachine.FOLDER_INBOX));
 
     private static final int MAX_LIST_COUNT_INITIAL = 1;
     // NOTE: the value is not "final" so that it can be modified in the unit tests
-    @VisibleForTesting
-    static int sMaxListCountUpperLimit = 65535;
+    @VisibleForTesting static int sMaxListCountUpperLimit = 65535;
     private static final int LIST_START_OFFSET_INITIAL = 0;
     // NOTE: the value is not "final" so that it can be modified in the unit tests
-    @VisibleForTesting
-    static int sListStartOffsetUpperLimit = 65535;
+    @VisibleForTesting static int sListStartOffsetUpperLimit = 65535;
 
     /**
      * A geometrically increasing sliding window for messages to list.
      *
-     * E.g., if we don't find the phone number in the 1st message, try the next 2, then the next 4,
-     * then the next 8, etc.
+     * <p>E.g., if we don't find the phone number in the 1st message, try the next 2, then the next
+     * 4, then the next 8, etc.
      */
     private static class MessagesSlidingWindow {
         private int mListStartOffset;
@@ -84,9 +81,7 @@ class RequestGetMessagesListingForOwnNumber extends Request {
             reset();
         }
 
-        /**
-         * Returns false if start of window exceeds range; o.w. returns true.
-         */
+        /** Returns false if start of window exceeds range; o.w. returns true. */
         public boolean moveWindow() {
             if (mListStartOffset > sListStartOffsetUpperLimit) {
                 return false;
@@ -96,9 +91,12 @@ class RequestGetMessagesListingForOwnNumber extends Request {
                 return false;
             }
             mMaxListCount = min(2 * mMaxListCount, sMaxListCountUpperLimit);
-            logD(String.format(Locale.US,
-                    "MessagesSlidingWindow, moveWindow: startOffset=%d, maxCount=%d",
-                    mListStartOffset, mMaxListCount));
+            logD(
+                    String.format(
+                            Locale.US,
+                            "MessagesSlidingWindow, moveWindow: startOffset=%d, maxCount=%d",
+                            mListStartOffset,
+                            mMaxListCount));
             return true;
         }
 
@@ -115,6 +113,7 @@ class RequestGetMessagesListingForOwnNumber extends Request {
             return mMaxListCount;
         }
     }
+
     private MessagesSlidingWindow mMessageListingWindow;
 
     private ObexAppParameters mOap;
@@ -162,19 +161,21 @@ class RequestGetMessagesListingForOwnNumber extends Request {
         // Search through message listing for own phone number.
         // Message listings by spec arrive ordered newest first.
         String folderName = FOLDERS_TO_SEARCH.get(mFolderCounter);
-        logD(String.format(Locale.US,
-                "readResponse: Folder=%s, # of msgs=%d, startOffset=%d, maxCount=%d",
-                folderName, messageListing.size(),
-                mMessageListingWindow.getStartOffset(), mMessageListingWindow.getMaxCount()));
+        logD(
+                String.format(
+                        Locale.US,
+                        "readResponse: Folder=%s, # of msgs=%d, startOffset=%d, maxCount=%d",
+                        folderName,
+                        messageListing.size(),
+                        mMessageListingWindow.getStartOffset(),
+                        mMessageListingWindow.getMaxCount()));
         String number = null;
         for (int i = 0; i < messageListing.size(); i++) {
             Message msg = messageListing.get(i);
             if (MceStateMachine.FOLDER_INBOX.equals(folderName)) {
-                number = PhoneNumberUtils.extractNetworkPortion(
-                        msg.getRecipientAddressing());
+                number = PhoneNumberUtils.extractNetworkPortion(msg.getRecipientAddressing());
             } else if (MceStateMachine.FOLDER_SENT.equals(folderName)) {
-                number = PhoneNumberUtils.extractNetworkPortion(
-                        msg.getSenderAddressing());
+                number = PhoneNumberUtils.extractNetworkPortion(msg.getSenderAddressing());
             }
             if (number != null && !number.trim().isEmpty()) {
                 // Search is completed when a phone number is found
@@ -195,7 +196,7 @@ class RequestGetMessagesListingForOwnNumber extends Request {
     /**
      * Move on to next folder to start searching (sliding window).
      *
-     * Overall search for own-phone-number is completed when we run out of folders to search.
+     * <p>Overall search for own-phone-number is completed when we run out of folders to search.
      */
     private void moveToNextFolder() {
         if (mFolderCounter < FOLDERS_TO_SEARCH.size() - 1) {
@@ -208,15 +209,14 @@ class RequestGetMessagesListingForOwnNumber extends Request {
     }
 
     /**
-     * Tries sliding the window in the current folder.
-     *   - If successful (didn't exceed range), update the headers to reflect new window's
-     *     offset and size.
-     *   - If fails (exceeded range), move on to the next folder.
+     * Tries sliding the window in the current folder. - If successful (didn't exceed range), update
+     * the headers to reflect new window's offset and size. - If fails (exceeded range), move on to
+     * the next folder.
      */
     private void moveToNextWindow() {
         if (mMessageListingWindow.moveWindow()) {
-            setListOffsetAndMaxCountInHeaderSet(mMessageListingWindow.getMaxCount(),
-                    mMessageListingWindow.getStartOffset());
+            setListOffsetAndMaxCountInHeaderSet(
+                    mMessageListingWindow.getMaxCount(), mMessageListingWindow.getStartOffset());
         } else {
             // Can't slide window anymore, exceeded range; move on to next folder
             logD("moveToNextWindow: can't slide window anymore, folder complete");
@@ -225,10 +225,8 @@ class RequestGetMessagesListingForOwnNumber extends Request {
     }
 
     /**
-     * Set up the current folder for searching:
-     *   1. Updates headers to reflect new folder name.
-     *   2. Resets the sliding window.
-     *   3. Updates headers to reflect new window's offset and size.
+     * Set up the current folder for searching: 1. Updates headers to reflect new folder name. 2.
+     * Resets the sliding window. 3. Updates headers to reflect new window's offset and size.
      */
     private void setupCurrentFolderForSearch() {
         String folderName = FOLDERS_TO_SEARCH.get(mFolderCounter);
@@ -242,15 +240,22 @@ class RequestGetMessagesListingForOwnNumber extends Request {
         int maxCount = mMessageListingWindow.getMaxCount();
         int offset = mMessageListingWindow.getStartOffset();
         setListOffsetAndMaxCountInHeaderSet(maxCount, offset);
-        logD(String.format(Locale.US,
-                "setupCurrentFolderForSearch: folder=%s, filter=%d, offset=%d, maxCount=%d",
-                folderName, filter, maxCount, offset));
+        logD(
+                String.format(
+                        Locale.US,
+                        "setupCurrentFolderForSearch: folder=%s, filter=%d, offset=%d, maxCount=%d",
+                        folderName,
+                        filter,
+                        maxCount,
+                        offset));
     }
 
     private byte messageTypeBasedOnFolder(String folderName) {
-        byte messageType = (byte) (MessagesFilter.MESSAGE_TYPE_SMS_GSM
-                | MessagesFilter.MESSAGE_TYPE_SMS_CDMA
-                | MessagesFilter.MESSAGE_TYPE_MMS);
+        byte messageType =
+                (byte)
+                        (MessagesFilter.MESSAGE_TYPE_SMS_GSM
+                                | MessagesFilter.MESSAGE_TYPE_SMS_CDMA
+                                | MessagesFilter.MESSAGE_TYPE_MMS);
 
         // If trying to grab own number from messages received by the remote device,
         // only use SMS messages since SMS will only have one recipient (the remote device),
@@ -259,8 +264,10 @@ class RequestGetMessagesListingForOwnNumber extends Request {
         // Bluetooth in a group MMS, it may not necessarily correspond to the remote device;
         // there is no specification governing the `To:` and `Cc:` fields in the MMS specs.
         if (MceStateMachine.FOLDER_INBOX.equals(folderName)) {
-            messageType = (byte) (MessagesFilter.MESSAGE_TYPE_SMS_GSM
-                    | MessagesFilter.MESSAGE_TYPE_SMS_CDMA);
+            messageType =
+                    (byte)
+                            (MessagesFilter.MESSAGE_TYPE_SMS_GSM
+                                    | MessagesFilter.MESSAGE_TYPE_SMS_CDMA);
         }
 
         return messageType;
@@ -274,10 +281,10 @@ class RequestGetMessagesListingForOwnNumber extends Request {
     }
 
     /**
-     * Returns {@code null} if {@code readResponse} has not completed or if no
-     * phone number was obtained from the Message Listing.
+     * Returns {@code null} if {@code readResponse} has not completed or if no phone number was
+     * obtained from the Message Listing.
      *
-     * Otherwise, returns the remote device's own phone number.
+     * <p>Otherwise, returns the remote device's own phone number.
      */
     public String getOwnNumber() {
         return mPhoneNumber;
