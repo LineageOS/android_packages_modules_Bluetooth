@@ -430,9 +430,9 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, const tBTA_SYS_ID id,
   tBTA_DM_PEER_DEVICE* p_dev;
   tBTA_DM_PM_REQ pm_req = BTA_DM_PM_NEW_REQ;
 
-  log::debug("Power management callback status:{}[{}] id:{}[{}], app:{}",
-             bta_sys_conn_status_text(status), status, BtaIdSysText(id), id,
-             app_id);
+  log::verbose("Power management callback status:{}[{}] id:{}[{}], app:{}",
+               bta_sys_conn_status_text(status), status, BtaIdSysText(id), id,
+               app_id);
 
   /* find if there is an power mode entry for the service */
   for (i = 1; i <= p_bta_dm_pm_cfg[0].app_id; i++) {
@@ -450,13 +450,13 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, const tBTA_SYS_ID id,
     return;
   }
 
-  log::debug("Stopped all timers for service to device:{} id:{}[{}]", peer_addr,
-             BtaIdSysText(id), id);
+  log::verbose("Stopped all timers for service to device:{} id:{}[{}]",
+               peer_addr, BtaIdSysText(id), id);
   bta_dm_pm_stop_timer_by_srvc_id(peer_addr, static_cast<uint8_t>(id));
 
   p_dev = bta_dm_find_peer_device(peer_addr);
   if (p_dev) {
-    log::debug("Device info:{}", p_dev->info_text());
+    log::verbose("Device info:{}", p_dev->info_text());
   } else {
     log::error("Unable to find peer device...yet soldiering on...");
   }
@@ -639,7 +639,7 @@ static void bta_dm_pm_set_mode(const RawAddress& peer_addr,
       p_act1 = &p_pm_spec->actn_tbl[p_srvcs->state][1];
 
       allowed_modes |= p_pm_spec->allow_mask;
-      log::debug(
+      log::verbose(
           "Service:{}[{}] state:{}[{}] allowed_modes:0x{:02x} service_index:{}",
           BtaIdSysText(p_srvcs->id), p_srvcs->id,
           bta_sys_conn_status_text(p_srvcs->state), p_srvcs->state,
@@ -744,8 +744,8 @@ static void bta_dm_pm_set_mode(const RawAddress& peer_addr,
   } else if (pm_action & BTA_DM_PM_SNIFF) {
     /* dont initiate SNIFF, if link_policy has it disabled */
     if (BTM_is_sniff_allowed_for(peer_addr)) {
-      log::debug("Link policy allows sniff mode so setting mode peer:{}",
-                 peer_addr);
+      log::verbose("Link policy allows sniff mode so setting mode peer:{}",
+                   peer_addr);
       p_peer_device->pm_mode_attempted = BTA_DM_PM_SNIFF;
       bta_dm_pm_sniff(p_peer_device, (uint8_t)(pm_action & 0x0F));
     } else {
@@ -753,7 +753,7 @@ static void bta_dm_pm_set_mode(const RawAddress& peer_addr,
                  peer_addr);
     }
   } else if (pm_action == BTA_DM_PM_ACTIVE) {
-    log::debug("Setting link to active mode peer:{}", peer_addr);
+    log::verbose("Setting link to active mode peer:{}", peer_addr);
     bta_dm_pm_active(peer_addr);
   }
 }
@@ -1082,7 +1082,7 @@ static void bta_dm_pm_timer_cback(void* data) {
 static void bta_dm_pm_btm_status(const RawAddress& bd_addr,
                                  tBTM_PM_STATUS status, uint16_t interval,
                                  tHCI_STATUS hci_status) {
-  log::debug(
+  log::verbose(
       "Power mode notification event status:{} peer:{} interval:{} "
       "hci_status:{}",
       power_mode_status_text(status), bd_addr, interval,
@@ -1164,11 +1164,13 @@ static void bta_dm_pm_btm_status(const RawAddress& bd_addr,
     case BTM_PM_STS_ERROR:
       p_dev->reset_sniff_command_sent();
       break;
+    case BTM_PM_STS_PENDING:
+      break;
 
     default:
       log::error("Received unknown power mode status event:{}", status);
       break;
-      }
+  }
 }
 
 /** Process pm timer event from btm */
