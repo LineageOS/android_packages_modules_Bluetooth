@@ -58,6 +58,7 @@ java_defaults {
         enabled: true,
         javacflags: [
             "-Xep:AlmostJavadoc:ERROR",
+            "-Xep:CatchFail:ERROR",
             "-Xep:EmptyCatch:ERROR",
             "-Xep:InvalidInlineTag:ERROR",
             "-Xep:NonApiType:ERROR",

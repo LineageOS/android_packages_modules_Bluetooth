@@ -22,6 +22,7 @@ java_defaults {
         enabled: true,
         javacflags: [
             "-Xep:AlreadyChecked:ERROR",
+            "-Xep:CatchFail:ERROR",
             "-Xep:CheckReturnValue:ERROR",
             "-Xep:ClassCanBeStatic:ERROR",
             "-Xep:EmptyCatch:ERROR",
