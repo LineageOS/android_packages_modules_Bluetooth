@@ -27,6 +27,7 @@ java_defaults {
             "-Xep:EqualsIncompatibleType:ERROR",
             "-Xep:InvalidInlineTag:ERROR",
             "-Xep:ReferenceEquality:ERROR",
+            "-Xep:UnnecessaryAsync:ERROR",
             "-Xep:UnusedMethod:ERROR",
             "-Xep:UnusedVariable:ERROR",
         ],

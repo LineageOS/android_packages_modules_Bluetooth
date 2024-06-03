@@ -59,6 +59,7 @@ java_defaults {
         javacflags: [
             "-Xep:AlmostJavadoc:ERROR",
             "-Xep:InvalidInlineTag:ERROR",
+            "-Xep:UnnecessaryAsync:ERROR",
             "-Xep:UnusedMethod:ERROR",
         ],
     },
