@@ -27,6 +27,7 @@ java_defaults {
             "-Xep:EmptyCatch:ERROR",
             "-Xep:EqualsIncompatibleType:ERROR",
             "-Xep:InvalidInlineTag:ERROR",
+            "-Xep:NonApiType:ERROR",
             "-Xep:ReferenceEquality:ERROR",
             "-Xep:UnnecessaryAssignment:ERROR",
             "-Xep:UnnecessaryAsync:ERROR",
