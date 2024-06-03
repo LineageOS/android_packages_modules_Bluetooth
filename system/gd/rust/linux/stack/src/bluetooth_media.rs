@@ -293,6 +293,8 @@ pub trait IBluetoothMediaCallback: RPCProxy {
 
     fn on_lea_group_stream_status(&mut self, group_id: i32, status: BtLeAudioGroupStreamStatus);
 
+    fn on_lea_vc_connected(&mut self, addr: RawAddress, group_id: i32);
+
     fn on_lea_group_volume_changed(&mut self, group_id: i32, volume: u8);
 }
 
@@ -479,6 +481,7 @@ pub struct BluetoothMedia {
     le_audio_unicast_monitor_mode_status: HashMap<i32, BtLeAudioUnicastMonitorModeStatus>,
     le_audio_group_stream_status: HashMap<i32, BtLeAudioGroupStreamStatus>,
     le_audio_delayed_audio_conf_updates: HashMap<i32, LEAAudioConf>,
+    le_audio_delayed_vc_connection_updates: HashSet<RawAddress>,
     vc: Option<VolumeControl>,
     vc_states: HashMap<RawAddress, BtVcConnectionState>,
     csis: Option<CsisClient>,
@@ -546,6 +549,7 @@ impl BluetoothMedia {
             le_audio_unicast_monitor_mode_status: HashMap::new(),
             le_audio_group_stream_status: HashMap::new(),
             le_audio_delayed_audio_conf_updates: HashMap::new(),
+            le_audio_delayed_vc_connection_updates: HashSet::new(),
             vc: None,
             vc_states: HashMap::new(),
             csis: None,
@@ -597,6 +601,13 @@ impl BluetoothMedia {
         }
 
         self.notify_media_capability_updated(addr);
+    }
+
+    fn is_group_connected(&self, group: HashSet<RawAddress>) -> bool {
+        group.iter().any(|&addr| {
+            *self.le_audio_states.get(&addr).unwrap_or(&BtLeAudioConnectionState::Disconnected)
+                == BtLeAudioConnectionState::Connected
+        })
     }
 
     pub fn set_adapter(&mut self, adapter: Arc<Mutex<Box<Bluetooth>>>) {
@@ -817,6 +828,17 @@ impl BluetoothMedia {
                             .get(&addr)
                             .unwrap_or(&LEA_UNKNOWN_GROUP_ID);
 
+                        let group =
+                            self.le_audio_groups.get(&group_id).unwrap_or(&HashSet::new()).clone();
+
+                        if self.is_group_connected(group) {
+                            self.callbacks.lock().unwrap().for_all_callbacks(|callback| {
+                                callback.on_lea_vc_connected(addr, group_id);
+                            });
+                        } else {
+                            self.le_audio_delayed_vc_connection_updates.insert(addr);
+                        }
+
                         // Sync group volume in case this new member has not been adjusted.
                         if let Some(volume) = self.le_audio_group_volume.get(&group_id) {
                             self.set_group_volume(group_id, *volume);
@@ -961,6 +983,12 @@ impl BluetoothMedia {
                             }
                         }
 
+                        if self.le_audio_delayed_vc_connection_updates.remove(&addr) {
+                            self.callbacks.lock().unwrap().for_all_callbacks(|callback| {
+                                callback.on_lea_vc_connected(addr, group_id);
+                            });
+                        }
+
                         self.le_audio_states.insert(addr, state);
                     }
                     BtLeAudioConnectionState::Disconnected => {
@@ -1091,15 +1119,7 @@ impl BluetoothMedia {
 
                 let group = self.le_audio_groups.get(&group_id).unwrap_or(&HashSet::new()).clone();
 
-                let is_group_connected = group.iter().any(|&addr| {
-                    *self
-                        .le_audio_states
-                        .get(&addr)
-                        .unwrap_or(&BtLeAudioConnectionState::Disconnected)
-                        == BtLeAudioConnectionState::Connected
-                });
-
-                if is_group_connected {
+                if self.is_group_connected(group) {
                     self.callbacks.lock().unwrap().for_all_callbacks(|callback| {
                         callback.on_lea_audio_conf(
                             direction,

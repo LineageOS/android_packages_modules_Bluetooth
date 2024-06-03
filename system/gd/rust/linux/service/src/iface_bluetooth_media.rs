@@ -175,6 +175,11 @@ impl IBluetoothMediaCallback for BluetoothMediaCallbackDBus {
         dbus_generated!()
     }
 
+    #[dbus_method("OnLeaVcConnected")]
+    fn on_lea_vc_connected(&mut self, addr: RawAddress, group_id: i32) {
+        dbus_generated!()
+    }
+
     #[dbus_method("OnLeaGroupVolumeChanged")]
     fn on_lea_group_volume_changed(&mut self, group_id: i32, volume: u8) {
         dbus_generated!()
