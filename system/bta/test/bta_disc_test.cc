@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
+#define LOG_TAG "bt_bta_dm_test"
+
 #include <base/strings/stringprintf.h>
 #include <base/test/bind_test_util.h>
+#include <bluetooth/log.h>
 #include <com_android_bluetooth_flags.h>
 #include <flag_macros.h>
 #include <gmock/gmock.h>
@@ -34,6 +37,8 @@
 #include "types/bt_transport.h"
 
 #define TEST_BT com::android::bluetooth::flags
+
+using namespace bluetooth;
 
 namespace {
 const RawAddress kRawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
@@ -252,6 +257,131 @@ TEST_F_WITH_FLAGS(BtaInitializedTest,
   EXPECT_EQ(gatt_call_cnt, 1);
   EXPECT_EQ(gatt_service_cb_call_cnt, 1);
 
+  bta_dm_disc_override_gatt_performer_for_testing({});
+}
+
+// must be global, as capturing lambda can't be treated as function
+int service_cb_both_call_cnt = 0;
+int gatt_service_cb_both_call_cnt = 0;
+
+/* This test exercises the usual service discovery flow when bonding to
+ * dual-mode, CTKD capable device on LE transport.
+ */
+TEST_F_WITH_FLAGS(
+    BtaInitializedTest, bta_dm_disc_both_transports_flag_disabled,
+    REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT,
+                                        separate_service_and_device_discovery)),
+    REQUIRES_FLAGS_DISABLED(ACONFIG_FLAG(TEST_BT, bta_dm_discover_both))) {
+  bta_dm_disc_start(true);
+
+  std::promise<void> gatt_triggered;
+  int gatt_call_cnt = 0;
+  base::RepeatingCallback<void(const RawAddress&)> gatt_performer =
+      base::BindLambdaForTesting([&](const RawAddress& bd_addr) {
+        gatt_call_cnt++;
+        gatt_triggered.set_value();
+      });
+  bta_dm_disc_override_gatt_performer_for_testing(gatt_performer);
+
+  int sdp_call_cnt = 0;
+  base::RepeatingCallback<void(tBTA_DM_SDP_STATE*)> sdp_performer =
+      base::BindLambdaForTesting(
+          [&](tBTA_DM_SDP_STATE* sdp_state) { sdp_call_cnt++; });
+  bta_dm_disc_override_sdp_performer_for_testing(sdp_performer);
+
+  gatt_service_cb_both_call_cnt = 0;
+  service_cb_both_call_cnt = 0;
+
+  bta_dm_disc_start_service_discovery(
+      {[](RawAddress, BD_NAME, std::vector<bluetooth::Uuid>&, bool) {}, nullptr,
+       nullptr,
+       [](RawAddress addr, const std::vector<bluetooth::Uuid>&, tBTA_STATUS) {
+         service_cb_both_call_cnt++;
+       }},
+      kRawAddress, BT_TRANSPORT_BR_EDR);
+  EXPECT_EQ(sdp_call_cnt, 1);
+
+  bta_dm_disc_start_service_discovery(
+      {[](RawAddress, BD_NAME, std::vector<bluetooth::Uuid>&, bool) {
+         gatt_service_cb_both_call_cnt++;
+       },
+       nullptr, nullptr,
+       [](RawAddress addr, const std::vector<bluetooth::Uuid>&, tBTA_STATUS) {
+       }},
+      kRawAddress, BT_TRANSPORT_LE);
+
+  // GATT discovery is queued, until SDP finishes
+  EXPECT_EQ(gatt_call_cnt, 0);
+
+  bta_dm_sdp_finished(kRawAddress, BTA_SUCCESS, {}, {});
+  EXPECT_EQ(service_cb_both_call_cnt, 1);
+
+  // SDP finished, wait until GATT is triggered.
+  EXPECT_EQ(std::future_status::ready,
+            gatt_triggered.get_future().wait_for(std::chrono::seconds(1)));
+  bta_dm_gatt_finished(kRawAddress, BTA_SUCCESS);
+  EXPECT_EQ(gatt_service_cb_both_call_cnt, 1);
+
+  bta_dm_disc_override_sdp_performer_for_testing({});
+  bta_dm_disc_override_gatt_performer_for_testing({});
+}
+
+/* This test exercises the usual service discovery flow when bonding to
+ * dual-mode, CTKD capable device on LE transport.
+ */
+TEST_F_WITH_FLAGS(BtaInitializedTest, bta_dm_disc_both_transports_flag_enabled,
+                  REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT,
+                                                      bta_dm_discover_both))) {
+  bta_dm_disc_start(true);
+
+  int gatt_call_cnt = 0;
+  base::RepeatingCallback<void(const RawAddress&)> gatt_performer =
+      base::BindLambdaForTesting(
+          [&](const RawAddress& bd_addr) { gatt_call_cnt++; });
+  bta_dm_disc_override_gatt_performer_for_testing(gatt_performer);
+
+  int sdp_call_cnt = 0;
+  base::RepeatingCallback<void(tBTA_DM_SDP_STATE*)> sdp_performer =
+      base::BindLambdaForTesting(
+          [&](tBTA_DM_SDP_STATE* sdp_state) { sdp_call_cnt++; });
+  bta_dm_disc_override_sdp_performer_for_testing(sdp_performer);
+
+  gatt_service_cb_both_call_cnt = 0;
+  service_cb_both_call_cnt = 0;
+
+  bta_dm_disc_start_service_discovery(
+      {[](RawAddress, BD_NAME, std::vector<bluetooth::Uuid>&, bool) {
+         gatt_service_cb_both_call_cnt++;
+       },
+       nullptr, nullptr,
+       [](RawAddress addr, const std::vector<bluetooth::Uuid>&, tBTA_STATUS) {
+         service_cb_both_call_cnt++;
+       }},
+      kRawAddress, BT_TRANSPORT_BR_EDR);
+  EXPECT_EQ(sdp_call_cnt, 1);
+
+  bta_dm_disc_start_service_discovery(
+      {[](RawAddress, BD_NAME, std::vector<bluetooth::Uuid>&, bool) {
+         gatt_service_cb_both_call_cnt++;
+       },
+       nullptr, nullptr,
+       [](RawAddress addr, const std::vector<bluetooth::Uuid>&, tBTA_STATUS) {
+         service_cb_both_call_cnt++;
+       }},
+      kRawAddress, BT_TRANSPORT_LE);
+
+  // GATT discovery on same device is immediately started
+  EXPECT_EQ(gatt_call_cnt, 1);
+
+  // GATT finished first
+  bta_dm_gatt_finished(kRawAddress, BTA_SUCCESS);
+  EXPECT_EQ(gatt_service_cb_both_call_cnt, 1);
+
+  // SDP finishes too
+  bta_dm_sdp_finished(kRawAddress, BTA_SUCCESS, {}, {});
+  EXPECT_EQ(service_cb_both_call_cnt, 1);
+
+  bta_dm_disc_override_sdp_performer_for_testing({});
   bta_dm_disc_override_gatt_performer_for_testing({});
 }
 
