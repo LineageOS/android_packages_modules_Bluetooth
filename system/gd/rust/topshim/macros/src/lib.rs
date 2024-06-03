@@ -220,3 +220,81 @@ fn generate_profile_enabled_or_tokenstream(item: TokenStream, attr_string: Strin
 
     output.into()
 }
+
+/// Generate impl cxx::ExternType for the trivial types in bindings.
+///
+/// This is only needed if they need to be share with the cxx-bridge blocks.
+///
+/// Usage (assume the C++ type some::ns::sample_t is defined in types/some_samples.h):
+/// ```ignore
+/// #[gen_cxx_extern_trivial]
+/// type SampleType = bindings::some::ns::sample_t;
+/// ```
+///
+/// Which generates the type info below for cxx-bridge:
+/// ```ignore
+/// unsafe impl cxx::ExternType for SampleType {
+///     type Id = cxx::type_id!("some::ns::sample_t");
+///     type Kind = cxx::kind::Trivial;
+/// }
+/// ```
+///
+/// To use the binding type in a cxx::bridge block, include the header and (optionally) assign
+/// the namespace and name for the C++ type.
+/// ```ignore
+/// #[cxx::bridge]
+/// mod ffi {
+///     unsafe extern "C++" {
+///         include!("types/some_samples.h");
+///
+///         #[namespace = "some::ns"]
+///         #[cxx_name = "sample_t"]
+///         type SampleType = super::SampleType;
+///     }
+/// }
+/// ```
+#[proc_macro_attribute]
+pub fn gen_cxx_extern_trivial(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    let input = syn::parse_macro_input!(item as syn::ItemType);
+
+    let ident = input.ident.clone();
+
+    let segs = match *input.ty {
+        Type::Path(syn::TypePath {
+            qself: None,
+            path: Path { leading_colon: None, ref segments },
+        }) => segments,
+        _ => panic!("Unsupported type"),
+    };
+
+    let mut iter = segs.into_iter();
+
+    match iter.next() {
+        Some(seg) if seg.ident == "bindings" => {}
+        _ => panic!("Unexpected type: Must starts with \"bindings::\""),
+    }
+
+    match iter.clone().next() {
+        Some(seg) if seg.ident == "root" => {
+            // Skip the "root" module in bindings
+            iter.next();
+        }
+        _ => {}
+    }
+
+    let cxx_ident = iter.map(|seg| seg.ident.to_string()).collect::<Vec<String>>().join("::");
+
+    if cxx_ident.is_empty() {
+        panic!("Empty cxx ident");
+    }
+
+    quote! {
+        #input
+
+        unsafe impl cxx::ExternType for #ident {
+            type Id = cxx::type_id!(#cxx_ident);
+            type Kind = cxx::kind::Trivial;
+        }
+    }
+    .into()
+}
