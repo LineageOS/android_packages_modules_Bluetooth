@@ -36,18 +36,13 @@ import java.util.List;
 @Entity(tableName = "metadata")
 @VisibleForTesting
 public class Metadata {
-    @PrimaryKey
-    @NonNull
-    private String address;
+    @PrimaryKey @NonNull private String address;
 
     public boolean migrated;
 
-    @Embedded
-    public ProfilePrioritiesEntity profileConnectionPolicies;
+    @Embedded public ProfilePrioritiesEntity profileConnectionPolicies;
 
-    @Embedded
-    @NonNull
-    public CustomizedMetadataEntity publicMetadata;
+    @Embedded @NonNull public CustomizedMetadataEntity publicMetadata;
 
     public @OptionalCodecsSupportStatus int a2dpSupportsOptionalCodecs;
     public @OptionalCodecsPreferenceStatus int a2dpOptionalCodecsEnabled;
@@ -57,8 +52,7 @@ public class Metadata {
 
     public boolean isActiveHfpDevice;
 
-    @Embedded
-    public AudioPolicyEntity audioPolicyMetadata;
+    @Embedded public AudioPolicyEntity audioPolicyMetadata;
 
     /**
      * The preferred profile to be used for {@link BluetoothDevice#AUDIO_MODE_OUTPUT_ONLY}. This can
@@ -69,9 +63,9 @@ public class Metadata {
     public int preferred_output_only_profile;
 
     /**
-     * The preferred profile to be used for {@link BluetoothDevice#AUDIO_MODE_DUPLEX}. This can
-     * be either {@link BluetoothProfile#HEADSET} or {@link BluetoothProfile#LE_AUDIO}. This value
-     * is only used if the remote device supports both HFP and LE Audio and both transports are
+     * The preferred profile to be used for {@link BluetoothDevice#AUDIO_MODE_DUPLEX}. This can be
+     * either {@link BluetoothProfile#HEADSET} or {@link BluetoothProfile#LE_AUDIO}. This value is
+     * only used if the remote device supports both HFP and LE Audio and both transports are
      * connected and active.
      */
     public int preferred_duplex_profile;
@@ -131,7 +125,8 @@ public class Metadata {
     /**
      * Returns the anonymized hardware address. The first three octets will be suppressed for
      * anonymization.
-     * <p> For example, "XX:XX:XX:AA:BB:CC".
+     *
+     * <p>For example, "XX:XX:XX:AA:BB:CC".
      *
      * @return Anonymized bluetooth hardware address as string
      */

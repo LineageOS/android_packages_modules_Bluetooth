@@ -23,9 +23,7 @@ import android.bluetooth.le.ScanSettings;
 
 import java.util.List;
 
-/**
- * Helper class to mock {@link BluetoothLeScanner} which is final.
- */
+/** Helper class to mock {@link BluetoothLeScanner} which is final. */
 public class BluetoothLeScannerWrapper {
 
     BluetoothLeScanner mBluetoothLeScanner;
@@ -34,17 +32,13 @@ public class BluetoothLeScannerWrapper {
         mBluetoothLeScanner = scanner;
     }
 
-    /**
-     * Starts Bluetooth LE scanning
-     */
-    public void startScan(List<ScanFilter> filters, ScanSettings settings,
-            final ScanCallback callback) {
+    /** Starts Bluetooth LE scanning */
+    public void startScan(
+            List<ScanFilter> filters, ScanSettings settings, final ScanCallback callback) {
         mBluetoothLeScanner.startScan(filters, settings, callback);
     }
 
-    /**
-     * Stops Bluetooth LE scanning
-     */
+    /** Stops Bluetooth LE scanning */
     public void stopScan(ScanCallback callback) {
         mBluetoothLeScanner.stopScan(callback);
     }

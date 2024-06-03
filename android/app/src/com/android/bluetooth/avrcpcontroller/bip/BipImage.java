@@ -24,7 +24,7 @@ import java.io.InputStream;
 /**
  * An image object sent over BIP.
  *
- * The image is sent as bytes in the payload of a GetImage request. The format of those bytes is
+ * <p>The image is sent as bytes in the payload of a GetImage request. The format of those bytes is
  * determined by the BipImageDescriptor used when making the request.
  */
 public class BipImage {

@@ -83,17 +83,17 @@ public class BleBroadcastAssistantBinderTest {
 
     @Test
     public void getDevicesMatchingConnectionStates() {
-        int[] states = new int[] { STATE_DISCONNECTED };
+        int[] states = new int[] {STATE_DISCONNECTED};
         mBinder.getDevicesMatchingConnectionStates(states);
         verify(mService).getDevicesMatchingConnectionStates(states);
 
         doThrow(new RuntimeException()).when(mService).getDevicesMatchingConnectionStates(states);
-        assertThat(mBinder.getDevicesMatchingConnectionStates(states)).isEqualTo(
-                Collections.emptyList());
+        assertThat(mBinder.getDevicesMatchingConnectionStates(states))
+                .isEqualTo(Collections.emptyList());
 
         mBinder.cleanup();
-        assertThat(mBinder.getDevicesMatchingConnectionStates(states)).isEqualTo(
-                Collections.emptyList());
+        assertThat(mBinder.getDevicesMatchingConnectionStates(states))
+                .isEqualTo(Collections.emptyList());
     }
 
     @Test
@@ -114,7 +114,8 @@ public class BleBroadcastAssistantBinderTest {
         mBinder.setConnectionPolicy(device, BluetoothProfile.CONNECTION_POLICY_ALLOWED);
         verify(mService).setConnectionPolicy(device, BluetoothProfile.CONNECTION_POLICY_ALLOWED);
 
-        doThrow(new RuntimeException()).when(mService)
+        doThrow(new RuntimeException())
+                .when(mService)
                 .setConnectionPolicy(device, BluetoothProfile.CONNECTION_POLICY_ALLOWED);
         assertThat(mBinder.setConnectionPolicy(device, BluetoothProfile.CONNECTION_POLICY_ALLOWED))
                 .isFalse();
@@ -175,7 +176,7 @@ public class BleBroadcastAssistantBinderTest {
 
     @Test
     public void startSearchingForSources() {
-        List<ScanFilter> filters =  Collections.EMPTY_LIST;
+        List<ScanFilter> filters = Collections.EMPTY_LIST;
         mBinder.startSearchingForSources(filters);
         verify(mService).startSearchingForSources(filters);
 

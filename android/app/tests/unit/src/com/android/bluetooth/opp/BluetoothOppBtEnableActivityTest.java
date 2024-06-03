@@ -77,15 +77,17 @@ public class BluetoothOppBtEnableActivityTest {
 
     @Test
     public void onCreate_clickOnEnable_launchEnablingActivity() {
-        ActivityScenario<BluetoothOppBtEnableActivity> activityScenario = ActivityScenario.launch(
-                mIntent);
+        ActivityScenario<BluetoothOppBtEnableActivity> activityScenario =
+                ActivityScenario.launch(mIntent);
         activityScenario.onActivity(
                 activity -> activity.mOppManager = mock(BluetoothOppManager.class));
         onView(withText(mTargetContext.getText(R.string.bt_enable_ok).toString()))
                 .inRoot(isDialog())
                 .perform(ViewActions.scrollTo());
-        onView(withText(mTargetContext.getText(R.string.bt_enable_ok).toString())).inRoot(
-                isDialog()).check(matches(isDisplayed())).perform(click());
+        onView(withText(mTargetContext.getText(R.string.bt_enable_ok).toString()))
+                .inRoot(isDialog())
+                .check(matches(isDisplayed()))
+                .perform(click());
         intended(hasComponent(BluetoothOppBtEnablingActivity.class.getName()));
     }
 }

@@ -130,15 +130,16 @@ public class LeAudioViewModel extends AndroidViewModel {
     }
 
     // TODO: Uncomment this method if necessary
-//    public boolean getBroadcastReceiverState(BluetoothDevice device, int receiver_id) {
-//        return bluetoothProxy.getBroadcastReceiverState(device, receiver_id);
-//    }
+    //    public boolean getBroadcastReceiverState(BluetoothDevice device, int receiver_id) {
+    //        return bluetoothProxy.getBroadcastReceiverState(device, receiver_id);
+    //    }
 
     // TODO: Uncomment this method if necessary
-//    public boolean modifyBroadcastSource(BluetoothDevice device, int receiver_id, boolean sync_pa,
-//            List<BluetoothBroadcastAudioScanBaseConfig> configs) {
-//        return bluetoothProxy.modifyBroadcastSource(device, receiver_id, sync_pa, configs);
-//    }
+    //    public boolean modifyBroadcastSource(BluetoothDevice device, int receiver_id, boolean
+    // sync_pa,
+    //            List<BluetoothBroadcastAudioScanBaseConfig> configs) {
+    //        return bluetoothProxy.modifyBroadcastSource(device, receiver_id, sync_pa, configs);
+    //    }
 
     public boolean removeBroadcastSource(BluetoothDevice sink, int receiver_id) {
         // TODO: Find source ID from receiver_id. What is receiver_id?

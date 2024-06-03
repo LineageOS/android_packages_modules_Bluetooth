@@ -21,9 +21,7 @@ import android.bluetooth.BluetoothStatusCodes;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
-/**
- * Distance Measurement Native Interface to/from JNI.
- */
+/** Distance Measurement Native Interface to/from JNI. */
 @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
 public class DistanceMeasurementNativeInterface {
     private static final String TAG = DistanceMeasurementNativeInterface.class.getSimpleName();
@@ -36,10 +34,11 @@ public class DistanceMeasurementNativeInterface {
     private DistanceMeasurementManager mDistanceMeasurementManager;
 
     /**
-     * Do not modify without updating distance_measurement_manager.h
-     * match up with DistanceMeasurementErrorCode enum of distance_measurement_manager.h
+     * Do not modify without updating distance_measurement_manager.h match up with
+     * DistanceMeasurementErrorCode enum of distance_measurement_manager.h
      */
     private static final int REASON_FEATURE_NOT_SUPPORTED_LOCAL = 0;
+
     private static final int REASON_FEATURE_NOT_SUPPORTED_REMOTE = 1;
     private static final int REASON_LOCAL_REQUEST = 2;
     private static final int REASON_REMOTE_REQUEST = 3;
@@ -47,7 +46,6 @@ public class DistanceMeasurementNativeInterface {
     private static final int REASON_NO_LE_CONNECTION = 5;
     private static final int REASON_INVALID_PARAMETERS = 6;
     private static final int REASON_INTERNAL_ERROR = 7;
-
 
     private DistanceMeasurementNativeInterface() {}
 
@@ -95,20 +93,32 @@ public class DistanceMeasurementNativeInterface {
     }
 
     void onDistanceMeasurementStartFail(String address, int reason, int method) {
-        mDistanceMeasurementManager.onDistanceMeasurementStartFail(address,
-                convertErrorCode(reason), method);
+        mDistanceMeasurementManager.onDistanceMeasurementStartFail(
+                address, convertErrorCode(reason), method);
     }
 
     void onDistanceMeasurementStopped(String address, int reason, int method) {
-        mDistanceMeasurementManager.onDistanceMeasurementStopped(address,
-                convertErrorCode(reason), method);
+        mDistanceMeasurementManager.onDistanceMeasurementStopped(
+                address, convertErrorCode(reason), method);
     }
 
-    void onDistanceMeasurementResult(String address, int centimeter, int errorCentimeter,
-            int azimuthAngle, int errorAzimuthAngle, int altitudeAngle, int errorAltitudeAngle,
+    void onDistanceMeasurementResult(
+            String address,
+            int centimeter,
+            int errorCentimeter,
+            int azimuthAngle,
+            int errorAzimuthAngle,
+            int altitudeAngle,
+            int errorAltitudeAngle,
             int method) {
-        mDistanceMeasurementManager.onDistanceMeasurementResult(address, centimeter,
-                errorCentimeter, azimuthAngle, errorAzimuthAngle, altitudeAngle, errorAltitudeAngle,
+        mDistanceMeasurementManager.onDistanceMeasurementResult(
+                address,
+                centimeter,
+                errorCentimeter,
+                azimuthAngle,
+                errorAzimuthAngle,
+                altitudeAngle,
+                errorAltitudeAngle,
                 method);
     }
 

@@ -41,14 +41,19 @@ class LeAudioCodecConfig {
             return;
         }
 
-        mCodecConfigOffloading = audioManager.getHwOffloadFormatsSupportedForLeAudio()
-                                             .toArray(mCodecConfigOffloading);
+        mCodecConfigOffloading =
+                audioManager
+                        .getHwOffloadFormatsSupportedForLeAudio()
+                        .toArray(mCodecConfigOffloading);
 
         Log.i(TAG, "mCodecConfigOffloading size for le -> " + mCodecConfigOffloading.length);
 
         for (int idx = 0; idx < mCodecConfigOffloading.length; idx++) {
-            Log.i(TAG, String.format("mCodecConfigOffloading[%d] -> %s",
-                    idx, mCodecConfigOffloading[idx].toString()));
+            Log.i(
+                    TAG,
+                    String.format(
+                            "mCodecConfigOffloading[%d] -> %s",
+                            idx, mCodecConfigOffloading[idx].toString()));
         }
     }
 
@@ -56,4 +61,3 @@ class LeAudioCodecConfig {
         return mCodecConfigOffloading;
     }
 }
-

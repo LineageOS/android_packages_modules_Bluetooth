@@ -52,17 +52,31 @@ public class BluetoothMapConvoListingElementTest {
     private static final String TEST_SMS_MMS_CONTACTS = "test_sms_mms_contacts";
 
     private final BluetoothMapConvoContactElement TEST_CONTACT_ELEMENT_ONE =
-            new BluetoothMapConvoContactElement("test_uci_one", "test_name_one",
-                    "test_display_name_one", "test_presence_status_one", 2, TEST_LAST_ACTIVITY, 2,
-                    1, "1111");
+            new BluetoothMapConvoContactElement(
+                    "test_uci_one",
+                    "test_name_one",
+                    "test_display_name_one",
+                    "test_presence_status_one",
+                    2,
+                    TEST_LAST_ACTIVITY,
+                    2,
+                    1,
+                    "1111");
 
     private final BluetoothMapConvoContactElement TEST_CONTACT_ELEMENT_TWO =
-            new BluetoothMapConvoContactElement("test_uci_two", "test_name_two",
-                    "test_display_name_two", "test_presence_status_two", 1, TEST_LAST_ACTIVITY, 1,
-                    2, "1112");
+            new BluetoothMapConvoContactElement(
+                    "test_uci_two",
+                    "test_name_two",
+                    "test_display_name_two",
+                    "test_presence_status_two",
+                    1,
+                    TEST_LAST_ACTIVITY,
+                    1,
+                    2,
+                    "1112");
 
-    private final List<BluetoothMapConvoContactElement> TEST_CONTACTS = new ArrayList<>(
-            Arrays.asList(TEST_CONTACT_ELEMENT_ONE, TEST_CONTACT_ELEMENT_TWO));
+    private final List<BluetoothMapConvoContactElement> TEST_CONTACTS =
+            new ArrayList<>(Arrays.asList(TEST_CONTACT_ELEMENT_ONE, TEST_CONTACT_ELEMENT_TWO));
 
     private final SignedLongLong signedLongLong = new SignedLongLong(TEST_ID, 0);
 
@@ -95,8 +109,8 @@ public class BluetoothMapConvoListingElementTest {
         assertThat(mListingElement.getRead()).isEqualTo("READ");
         assertThat(mListingElement.getReadBool()).isEqualTo(TEST_READ);
         assertThat(mListingElement.getConvoId()).isEqualTo(signedLongLong.toHexString());
-        assertThat(mListingElement.getCpConvoId()).isEqualTo(
-                signedLongLong.getLeastSignificantBits());
+        assertThat(mListingElement.getCpConvoId())
+                .isEqualTo(signedLongLong.getLeastSignificantBits());
         assertThat(mListingElement.getFullSummary()).isEqualTo(TEST_SUMMARY);
         assertThat(mListingElement.getSmsMmsContacts()).isEqualTo(TEST_SMS_MMS_CONTACTS);
     }
@@ -168,8 +182,7 @@ public class BluetoothMapConvoListingElementTest {
 
     @Test
     public void equalsWithDifferentRead_returnsFalse() {
-        BluetoothMapConvoListingElement
-                listingElement = new BluetoothMapConvoListingElement();
+        BluetoothMapConvoListingElement listingElement = new BluetoothMapConvoListingElement();
 
         BluetoothMapConvoListingElement listingElementWithDifferentRead =
                 new BluetoothMapConvoListingElement();
@@ -180,8 +193,7 @@ public class BluetoothMapConvoListingElementTest {
 
     @Test
     public void compareToWithSameValues_returnsZero() {
-        BluetoothMapConvoListingElement
-                listingElement = new BluetoothMapConvoListingElement();
+        BluetoothMapConvoListingElement listingElement = new BluetoothMapConvoListingElement();
         listingElement.setLastActivity(TEST_LAST_ACTIVITY);
 
         BluetoothMapConvoListingElement listingElementSameLastActivity =

@@ -40,8 +40,7 @@ import org.mockito.junit.MockitoRule;
 public class LeAudioNativeInterfaceTest {
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    private LeAudioService mMockService;
+    @Mock private LeAudioService mMockService;
 
     private LeAudioNativeInterface mNativeInterface;
 
@@ -60,30 +59,28 @@ public class LeAudioNativeInterfaceTest {
     @Test
     public void onConnectionStateChanged() {
         int state = LeAudioStackEvent.CONNECTION_STATE_CONNECTED;
-        byte[] address = new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05 };
+        byte[] address = new byte[] {0x00, 0x01, 0x02, 0x03, 0x04, 0x05};
 
         mNativeInterface.onConnectionStateChanged(state, address);
 
-        ArgumentCaptor<LeAudioStackEvent> event =
-                ArgumentCaptor.forClass(LeAudioStackEvent.class);
+        ArgumentCaptor<LeAudioStackEvent> event = ArgumentCaptor.forClass(LeAudioStackEvent.class);
         verify(mMockService).messageFromNative(event.capture());
-        assertThat(event.getValue().type).isEqualTo(
-                LeAudioStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
+        assertThat(event.getValue().type)
+                .isEqualTo(LeAudioStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
     }
 
     @Test
     public void onGroupNodeStatus() {
-        byte[] address = new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05 };
+        byte[] address = new byte[] {0x00, 0x01, 0x02, 0x03, 0x04, 0x05};
         int groupId = 1;
         int nodeStatus = LeAudioStackEvent.GROUP_NODE_ADDED;
 
         mNativeInterface.onGroupNodeStatus(address, groupId, nodeStatus);
 
-        ArgumentCaptor<LeAudioStackEvent> event =
-                ArgumentCaptor.forClass(LeAudioStackEvent.class);
+        ArgumentCaptor<LeAudioStackEvent> event = ArgumentCaptor.forClass(LeAudioStackEvent.class);
         verify(mMockService).messageFromNative(event.capture());
-        assertThat(event.getValue().type).isEqualTo(
-                LeAudioStackEvent.EVENT_TYPE_GROUP_NODE_STATUS_CHANGED);
+        assertThat(event.getValue().type)
+                .isEqualTo(LeAudioStackEvent.EVENT_TYPE_GROUP_NODE_STATUS_CHANGED);
     }
 
     @Test
@@ -97,44 +94,40 @@ public class LeAudioNativeInterfaceTest {
         mNativeInterface.onAudioConf(
                 direction, groupId, sinkAudioLocation, sourceAudioLocation, availableContexts);
 
-        ArgumentCaptor<LeAudioStackEvent> event =
-                ArgumentCaptor.forClass(LeAudioStackEvent.class);
+        ArgumentCaptor<LeAudioStackEvent> event = ArgumentCaptor.forClass(LeAudioStackEvent.class);
         verify(mMockService).messageFromNative(event.capture());
-        assertThat(event.getValue().type).isEqualTo(
-                LeAudioStackEvent.EVENT_TYPE_AUDIO_CONF_CHANGED);
+        assertThat(event.getValue().type)
+                .isEqualTo(LeAudioStackEvent.EVENT_TYPE_AUDIO_CONF_CHANGED);
     }
 
     @Test
     public void onSinkAudioLocationAvailable() {
-        byte[] address = new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05 };
+        byte[] address = new byte[] {0x00, 0x01, 0x02, 0x03, 0x04, 0x05};
         int sinkAudioLocation = BluetoothLeAudio.AUDIO_LOCATION_INVALID;
 
         mNativeInterface.onSinkAudioLocationAvailable(address, sinkAudioLocation);
 
-        ArgumentCaptor<LeAudioStackEvent> event =
-                ArgumentCaptor.forClass(LeAudioStackEvent.class);
+        ArgumentCaptor<LeAudioStackEvent> event = ArgumentCaptor.forClass(LeAudioStackEvent.class);
         verify(mMockService).messageFromNative(event.capture());
-        assertThat(event.getValue().type).isEqualTo(
-                LeAudioStackEvent.EVENT_TYPE_SINK_AUDIO_LOCATION_AVAILABLE);
+        assertThat(event.getValue().type)
+                .isEqualTo(LeAudioStackEvent.EVENT_TYPE_SINK_AUDIO_LOCATION_AVAILABLE);
     }
 
     @Test
     public void onAudioLocalCodecCapabilities() {
-        BluetoothLeAudioCodecConfig emptyConfig =
-                new BluetoothLeAudioCodecConfig.Builder().build();
+        BluetoothLeAudioCodecConfig emptyConfig = new BluetoothLeAudioCodecConfig.Builder().build();
         BluetoothLeAudioCodecConfig[] localInputCodecCapabilities =
-                new BluetoothLeAudioCodecConfig[] { emptyConfig };
+                new BluetoothLeAudioCodecConfig[] {emptyConfig};
         BluetoothLeAudioCodecConfig[] localOutputCodecCapabilities =
-                new BluetoothLeAudioCodecConfig[] { emptyConfig };
+                new BluetoothLeAudioCodecConfig[] {emptyConfig};
 
         mNativeInterface.onAudioLocalCodecCapabilities(
                 localInputCodecCapabilities, localOutputCodecCapabilities);
 
-        ArgumentCaptor<LeAudioStackEvent> event =
-                ArgumentCaptor.forClass(LeAudioStackEvent.class);
+        ArgumentCaptor<LeAudioStackEvent> event = ArgumentCaptor.forClass(LeAudioStackEvent.class);
         verify(mMockService).messageFromNative(event.capture());
-        assertThat(event.getValue().type).isEqualTo(
-                LeAudioStackEvent.EVENT_TYPE_AUDIO_LOCAL_CODEC_CONFIG_CAPA_CHANGED);
+        assertThat(event.getValue().type)
+                .isEqualTo(LeAudioStackEvent.EVENT_TYPE_AUDIO_LOCAL_CODEC_CONFIG_CAPA_CHANGED);
     }
 
     @Test
@@ -155,20 +148,18 @@ public class LeAudioNativeInterfaceTest {
     @Test
     public void onAudioGroupSelectableCodecConf() {
         int groupId = 1;
-        BluetoothLeAudioCodecConfig inputConfig =
-                new BluetoothLeAudioCodecConfig.Builder().build();
+        BluetoothLeAudioCodecConfig inputConfig = new BluetoothLeAudioCodecConfig.Builder().build();
         BluetoothLeAudioCodecConfig outputConfig =
                 new BluetoothLeAudioCodecConfig.Builder().build();
         BluetoothLeAudioCodecConfig[] inputSelectableCodecConfig =
-                new BluetoothLeAudioCodecConfig[] { inputConfig };
+                new BluetoothLeAudioCodecConfig[] {inputConfig};
         BluetoothLeAudioCodecConfig[] outputSelectableCodecConfig =
-                new BluetoothLeAudioCodecConfig[] { outputConfig };
+                new BluetoothLeAudioCodecConfig[] {outputConfig};
 
         mNativeInterface.onAudioGroupSelectableCodecConf(
                 groupId, inputSelectableCodecConfig, outputSelectableCodecConfig);
 
-        ArgumentCaptor<LeAudioStackEvent> event =
-                ArgumentCaptor.forClass(LeAudioStackEvent.class);
+        ArgumentCaptor<LeAudioStackEvent> event = ArgumentCaptor.forClass(LeAudioStackEvent.class);
         verify(mMockService).messageFromNative(event.capture());
         assertThat(event.getValue().type)
                 .isEqualTo(

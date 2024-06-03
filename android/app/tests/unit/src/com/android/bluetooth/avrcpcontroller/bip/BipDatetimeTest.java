@@ -27,9 +27,7 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
-/**
- * A test suite for the BipDateTime class
- */
+/** A test suite for the BipDateTime class */
 @RunWith(AndroidJUnit4.class)
 public class BipDatetimeTest {
 
@@ -47,14 +45,18 @@ public class BipDatetimeTest {
         return makeDate(month, day, year, hours, min, sec, null);
     }
 
-    private String makeTzAdjustedString(int month, int day, int year, int hours, int min,
-            int sec) {
+    private String makeTzAdjustedString(int month, int day, int year, int hours, int min, int sec) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(makeDate(month, day, year, hours, min, sec));
         cal.setTimeZone(TimeZone.getDefault());
-        return String.format(Locale.US, "%04d%02d%02dT%02d%02d%02d", cal.get(Calendar.YEAR),
-                cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DATE),
-                cal.get(Calendar.HOUR_OF_DAY), cal.get(Calendar.MINUTE),
+        return String.format(
+                Locale.US,
+                "%04d%02d%02dT%02d%02d%02d",
+                cal.get(Calendar.YEAR),
+                cal.get(Calendar.MONTH) + 1,
+                cal.get(Calendar.DATE),
+                cal.get(Calendar.HOUR_OF_DAY),
+                cal.get(Calendar.MINUTE),
                 cal.get(Calendar.SECOND));
     }
 
@@ -74,19 +76,40 @@ public class BipDatetimeTest {
 
     @Test
     public void testCreateFromValidString() {
-        testParse("20000101T000000", makeDate(1, 1, 2000, 0, 0, 0), false,
+        testParse(
+                "20000101T000000",
+                makeDate(1, 1, 2000, 0, 0, 0),
+                false,
                 makeTzAdjustedString(1, 1, 2000, 0, 0, 0));
-        testParse("20000101T060115", makeDate(1, 1, 2000, 6, 1, 15), false,
+        testParse(
+                "20000101T060115",
+                makeDate(1, 1, 2000, 6, 1, 15),
+                false,
                 makeTzAdjustedString(1, 1, 2000, 6, 1, 15));
-        testParse("20000101T060000", makeDate(1, 1, 2000, 6, 0, 0), false,
+        testParse(
+                "20000101T060000",
+                makeDate(1, 1, 2000, 6, 0, 0),
+                false,
                 makeTzAdjustedString(1, 1, 2000, 6, 0, 0));
-        testParse("20000101T071500", makeDate(1, 1, 2000, 7, 15, 0), false,
+        testParse(
+                "20000101T071500",
+                makeDate(1, 1, 2000, 7, 15, 0),
+                false,
                 makeTzAdjustedString(1, 1, 2000, 7, 15, 0));
-        testParse("20000101T151700", makeDate(1, 1, 2000, 15, 17, 0), false,
+        testParse(
+                "20000101T151700",
+                makeDate(1, 1, 2000, 15, 17, 0),
+                false,
                 makeTzAdjustedString(1, 1, 2000, 15, 17, 0));
-        testParse("20000101T235959", makeDate(1, 1, 2000, 23, 59, 59), false,
+        testParse(
+                "20000101T235959",
+                makeDate(1, 1, 2000, 23, 59, 59),
+                false,
                 makeTzAdjustedString(1, 1, 2000, 23, 59, 59));
-        testParse("20501127T235959", makeDate(11, 27, 2050, 23, 59, 59), false,
+        testParse(
+                "20501127T235959",
+                makeDate(11, 27, 2050, 23, 59, 59),
+                false,
                 makeTzAdjustedString(11, 27, 2050, 23, 59, 59));
     }
 
@@ -94,19 +117,23 @@ public class BipDatetimeTest {
     public void testParseFromValidStringWithUtc() {
         TimeZone utc = TimeZone.getTimeZone("UTC");
         utc.setRawOffset(0);
-        testParse("20000101T000000Z", makeDate(1, 1, 2000, 0, 0, 0, utc), true,
-                "20000101T000000Z");
-        testParse("20000101T060115Z", makeDate(1, 1, 2000, 6, 1, 15, utc), true,
-                "20000101T060115Z");
-        testParse("20000101T060000Z", makeDate(1, 1, 2000, 6, 0, 0, utc), true,
-                "20000101T060000Z");
-        testParse("20000101T071500Z", makeDate(1, 1, 2000, 7, 15, 0, utc), true,
-                "20000101T071500Z");
-        testParse("20000101T151700Z", makeDate(1, 1, 2000, 15, 17, 0, utc), true,
-                "20000101T151700Z");
-        testParse("20000101T235959Z", makeDate(1, 1, 2000, 23, 59, 59, utc), true,
+        testParse("20000101T000000Z", makeDate(1, 1, 2000, 0, 0, 0, utc), true, "20000101T000000Z");
+        testParse(
+                "20000101T060115Z", makeDate(1, 1, 2000, 6, 1, 15, utc), true, "20000101T060115Z");
+        testParse("20000101T060000Z", makeDate(1, 1, 2000, 6, 0, 0, utc), true, "20000101T060000Z");
+        testParse(
+                "20000101T071500Z", makeDate(1, 1, 2000, 7, 15, 0, utc), true, "20000101T071500Z");
+        testParse(
+                "20000101T151700Z", makeDate(1, 1, 2000, 15, 17, 0, utc), true, "20000101T151700Z");
+        testParse(
+                "20000101T235959Z",
+                makeDate(1, 1, 2000, 23, 59, 59, utc),
+                true,
                 "20000101T235959Z");
-        testParse("20501127T235959Z", makeDate(11, 27, 2050, 23, 59, 59, utc), true,
+        testParse(
+                "20501127T235959Z",
+                makeDate(11, 27, 2050, 23, 59, 59, utc),
+                true,
                 "20501127T235959Z");
     }
 

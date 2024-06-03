@@ -21,9 +21,7 @@ import android.bluetooth.BluetoothDevice;
 
 import java.util.UUID;
 
-/**
- * CSIP Set Coordinator role stack event
- */
+/** CSIP Set Coordinator role stack event */
 public class CsipSetCoordinatorStackEvent {
     // Event types for STACK_EVENT message (coming from native)
     private static final int EVENT_TYPE_NONE = 0;

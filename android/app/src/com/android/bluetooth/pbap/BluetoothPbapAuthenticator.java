@@ -61,7 +61,8 @@ public class BluetoothPbapAuthenticator implements Authenticator {
 
     private void waitUserConfirmation() {
         mPbapStateMachine.sendMessage(PbapStateMachine.CREATE_NOTIFICATION);
-        mPbapStateMachine.sendMessageDelayed(PbapStateMachine.REMOVE_NOTIFICATION,
+        mPbapStateMachine.sendMessageDelayed(
+                PbapStateMachine.REMOVE_NOTIFICATION,
                 BluetoothPbapService.USER_CONFIRM_TIMEOUT_VALUE);
         synchronized (this) {
             while (!mChallenged && !mAuthCancelled) {
@@ -81,8 +82,8 @@ public class BluetoothPbapAuthenticator implements Authenticator {
     }
 
     @Override
-    public PasswordAuthentication onAuthenticationChallenge(final String description,
-            final boolean isUserIdRequired, final boolean isFullAccess) {
+    public PasswordAuthentication onAuthenticationChallenge(
+            final String description, final boolean isUserIdRequired, final boolean isFullAccess) {
         waitUserConfirmation();
         if (mSessionKey.trim().length() != 0) {
             return new PasswordAuthentication(null, mSessionKey.getBytes());

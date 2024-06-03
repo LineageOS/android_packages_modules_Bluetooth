@@ -50,9 +50,7 @@ import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
-/**
- * Test for Utils.java
- */
+/** Test for Utils.java */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class UtilsTest {
@@ -72,10 +70,10 @@ public class UtilsTest {
 
     @Test
     public void uuidsToByteArray() {
-        ParcelUuid[] uuids = new ParcelUuid[] {
-                new ParcelUuid(new UUID(10, 20)),
-                new ParcelUuid(new UUID(30, 40))
-        };
+        ParcelUuid[] uuids =
+                new ParcelUuid[] {
+                    new ParcelUuid(new UUID(10, 20)), new ParcelUuid(new UUID(30, 40))
+                };
         ByteBuffer converter = ByteBuffer.allocate(uuids.length * 16);
         converter.order(ByteOrder.BIG_ENDIAN);
         converter.putLong(0, 10);
@@ -216,8 +214,7 @@ public class UtilsTest {
                 .isEqualTo("STATE_TURNING_ON");
         assertThat(Utils.debugGetAdapterStateString(BluetoothAdapter.STATE_TURNING_OFF))
                 .isEqualTo("STATE_TURNING_OFF");
-        assertThat(Utils.debugGetAdapterStateString(-124))
-                .isEqualTo("UNKNOWN");
+        assertThat(Utils.debugGetAdapterStateString(-124)).isEqualTo("UNKNOWN");
     }
 
     @Test

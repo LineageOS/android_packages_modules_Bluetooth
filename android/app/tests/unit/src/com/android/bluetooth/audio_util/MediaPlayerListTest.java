@@ -74,22 +74,22 @@ public class MediaPlayerListTest {
         }
         Assert.assertNotNull(Looper.myLooper());
 
-
         AudioManager mockAudioManager = mock(AudioManager.class);
         when(mMockContext.getSystemService(Context.AUDIO_SERVICE)).thenReturn(mockAudioManager);
         when(mMockContext.getSystemServiceName(AudioManager.class))
-            .thenReturn(Context.AUDIO_SERVICE);
+                .thenReturn(Context.AUDIO_SERVICE);
 
-        mMediaSessionManager = InstrumentationRegistry.getTargetContext()
-                .getSystemService(MediaSessionManager.class);
+        mMediaSessionManager =
+                InstrumentationRegistry.getTargetContext()
+                        .getSystemService(MediaSessionManager.class);
         PackageManager mockPackageManager = mock(PackageManager.class);
         when(mMockContext.getSystemService(Context.MEDIA_SESSION_SERVICE))
-            .thenReturn(mMediaSessionManager);
+                .thenReturn(mMediaSessionManager);
         when(mMockContext.getSystemServiceName(MediaSessionManager.class))
-            .thenReturn(Context.MEDIA_SESSION_SERVICE);
+                .thenReturn(Context.MEDIA_SESSION_SERVICE);
 
         mMediaPlayerList =
-            new MediaPlayerList(Looper.myLooper(), InstrumentationRegistry.getTargetContext());
+                new MediaPlayerList(Looper.myLooper(), InstrumentationRegistry.getTargetContext());
 
         when(mMockContext.registerReceiver(any(), any())).thenReturn(null);
         when(mMockContext.getApplicationContext()).thenReturn(mMockContext);
@@ -115,7 +115,6 @@ public class MediaPlayerListTest {
     public void tearDown() throws Exception {
         BrowsablePlayerConnector.setInstanceForTesting(null);
 
-
         MediaControllerFactory.inject(null);
         MediaPlayerWrapperFactory.inject(null);
         mMediaPlayerList.cleanup();
@@ -129,10 +128,7 @@ public class MediaPlayerListTest {
         builder.setState(playbackState, 0, 1);
         ArrayList<Metadata> list = new ArrayList<Metadata>();
         list.add(Util.empty_data());
-        MediaData newData = new MediaData(
-                Util.empty_data(),
-                builder.build(),
-                list);
+        MediaData newData = new MediaData(Util.empty_data(), builder.build(), list);
 
         return newData;
     }
@@ -141,7 +137,8 @@ public class MediaPlayerListTest {
     public void testUpdateMeidaDataForAudioPlaybackWhenAcitvePlayNotPlaying() {
         // Verify update media data with playing state
         doReturn(prepareMediaData(PlaybackState.STATE_PAUSED))
-            .when(mMockPlayerWrapper).getCurrentMediaData();
+                .when(mMockPlayerWrapper)
+                .getCurrentMediaData();
         mMediaPlayerList.injectAudioPlaybacActive(true);
         verify(mMediaUpdateCallback).run(mMediaUpdateData.capture());
         MediaData data = mMediaUpdateData.getValue();
@@ -173,7 +170,8 @@ public class MediaPlayerListTest {
     public void testNotUdpateMediaDataForAudioPlaybackWhenActivePlayerIsPlaying() {
         // Verify not update media data for Audio Playback when active player is playing
         doReturn(prepareMediaData(PlaybackState.STATE_PLAYING))
-            .when(mMockPlayerWrapper).getCurrentMediaData();
+                .when(mMockPlayerWrapper)
+                .getCurrentMediaData();
         mMediaPlayerList.injectAudioPlaybacActive(true);
         mMediaPlayerList.injectAudioPlaybacActive(false);
         verify(mMediaUpdateCallback, never()).run(any());
@@ -182,7 +180,8 @@ public class MediaPlayerListTest {
     @Test
     public void testNotUdpateMediaDataForActivePlayerWhenAudioPlaybackIsActive() {
         doReturn(prepareMediaData(PlaybackState.STATE_PLAYING))
-            .when(mMockPlayerWrapper).getCurrentMediaData();
+                .when(mMockPlayerWrapper)
+                .getCurrentMediaData();
         mMediaPlayerList.injectAudioPlaybacActive(true);
         verify(mMediaUpdateCallback, never()).run(any());
 
@@ -197,11 +196,13 @@ public class MediaPlayerListTest {
         MediaPlayerWrapper activeMediaPlayer = mMediaPlayerList.getActivePlayer();
 
         // Create MediaSession with GLOBAL_PRIORITY flag.
-        MediaSession session = new MediaSession(
-                InstrumentationRegistry.getTargetContext(),
-                MediaPlayerListTest.class.getSimpleName());
-        session.setFlags(MediaSession.FLAG_EXCLUSIVE_GLOBAL_PRIORITY
-                | MediaSession.FLAG_HANDLES_MEDIA_BUTTONS);
+        MediaSession session =
+                new MediaSession(
+                        InstrumentationRegistry.getTargetContext(),
+                        MediaPlayerListTest.class.getSimpleName());
+        session.setFlags(
+                MediaSession.FLAG_EXCLUSIVE_GLOBAL_PRIORITY
+                        | MediaSession.FLAG_HANDLES_MEDIA_BUTTONS);
 
         // Use MediaPlayerList onMediaKeyEventSessionChanged callback to send the new session.
         mMediaPlayerList.mMediaKeyEventSessionChangedListener.onMediaKeyEventSessionChanged(
@@ -210,12 +211,11 @@ public class MediaPlayerListTest {
         // Retrieve the current available controllers
         ArrayList<android.media.session.MediaController> currentControllers =
                 new ArrayList<android.media.session.MediaController>(
-                mMediaSessionManager.getActiveSessions(null));
+                        mMediaSessionManager.getActiveSessions(null));
         // Add the new session
         currentControllers.add(session.getController());
         // Use MediaPlayerList onActiveSessionsChanged callback to send the new session.
-        mMediaPlayerList.mActiveSessionsChangedListener.onActiveSessionsChanged(
-                currentControllers);
+        mMediaPlayerList.mActiveSessionsChangedListener.onActiveSessionsChanged(currentControllers);
 
         // Retrieve the new active MediaSession.
         MediaPlayerWrapper newActiveMediaPlayer = mMediaPlayerList.getActivePlayer();

@@ -76,8 +76,7 @@ public class LeAudioBinderTest {
     private BluetoothAdapter mAdapter;
 
     private static final String TEST_BROADCAST_NAME = "TEST";
-    private static final int TEST_QUALITY =
-            BluetoothLeBroadcastSubgroupSettings.QUALITY_STANDARD;
+    private static final int TEST_QUALITY = BluetoothLeBroadcastSubgroupSettings.QUALITY_STANDARD;
 
     @Before
     public void setUp() throws Exception {
@@ -145,7 +144,7 @@ public class LeAudioBinderTest {
 
     @Test
     public void getDevicesMatchingConnectionStates() {
-        int[] states = new int[] {BluetoothProfile.STATE_DISCONNECTED };
+        int[] states = new int[] {BluetoothProfile.STATE_DISCONNECTED};
         AttributionSource source = new AttributionSource.Builder(0).build();
 
         mBinder.getDevicesMatchingConnectionStates(states, source);
@@ -410,8 +409,7 @@ public class LeAudioBinderTest {
     @Test
     public void setCodecConfigPreference() {
         int groupId = 1;
-        BluetoothLeAudioCodecConfig inputConfig =
-                new BluetoothLeAudioCodecConfig.Builder().build();
+        BluetoothLeAudioCodecConfig inputConfig = new BluetoothLeAudioCodecConfig.Builder().build();
         BluetoothLeAudioCodecConfig outputConfig =
                 new BluetoothLeAudioCodecConfig.Builder().build();
         AttributionSource source = new AttributionSource.Builder(0).build();
@@ -429,10 +427,11 @@ public class LeAudioBinderTest {
 
         BluetoothLeBroadcastSubgroupSettings.Builder subgroupBuilder =
                 new BluetoothLeBroadcastSubgroupSettings.Builder()
-                .setPreferredQuality(TEST_QUALITY)
-                .setContentMetadata(metadata);
+                        .setPreferredQuality(TEST_QUALITY)
+                        .setContentMetadata(metadata);
 
-        BluetoothLeBroadcastSettings.Builder builder = new BluetoothLeBroadcastSettings.Builder()
+        BluetoothLeBroadcastSettings.Builder builder =
+                new BluetoothLeBroadcastSettings.Builder()
                         .setPublicBroadcast(false)
                         .setBroadcastName(TEST_BROADCAST_NAME)
                         .setBroadcastCode(null)

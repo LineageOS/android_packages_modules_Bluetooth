@@ -45,19 +45,22 @@ import java.util.List;
 import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity {
-    private static final String[] REQUIRED_PERMISSIONS = new String[] {
-            Manifest.permission.BLUETOOTH_ADMIN, Manifest.permission.BLUETOOTH_CONNECT,
-            Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_PRIVILEGED,
-            Manifest.permission.BLUETOOTH_ADVERTISE, Manifest.permission.INTERACT_ACROSS_USERS_FULL,
-            Manifest.permission.ACCESS_FINE_LOCATION,};
+    private static final String[] REQUIRED_PERMISSIONS =
+            new String[] {
+                Manifest.permission.BLUETOOTH_ADMIN, Manifest.permission.BLUETOOTH_CONNECT,
+                Manifest.permission.BLUETOOTH_SCAN, Manifest.permission.BLUETOOTH_PRIVILEGED,
+                Manifest.permission.BLUETOOTH_ADVERTISE,
+                        Manifest.permission.INTERACT_ACROSS_USERS_FULL,
+                Manifest.permission.ACCESS_FINE_LOCATION,
+            };
     LeAudioRecycleViewAdapter recyclerViewAdapter;
     private LeAudioViewModel leAudioViewModel;
 
     /** Returns true if any of the required permissions is missing. */
     private boolean isPermissionMissing() {
         for (String permission : REQUIRED_PERMISSIONS) {
-            if (ContextCompat.checkSelfPermission(this,
-                    permission) != PackageManager.PERMISSION_GRANTED) {
+            if (ContextCompat.checkSelfPermission(this, permission)
+                    != PackageManager.PERMISSION_GRANTED) {
                 return true;
             }
         }
@@ -76,28 +79,33 @@ public class MainActivity extends AppCompatActivity {
 
         // The 'refresh devices' button
         FloatingActionButton fab = findViewById(R.id.fab);
-        fab.setOnClickListener(view -> {
-            leAudioViewModel.queryDevices();
-            ObjectAnimator.ofFloat(fab, "rotation", 0f, 360f).setDuration(500).start();
-        });
+        fab.setOnClickListener(
+                view -> {
+                    leAudioViewModel.queryDevices();
+                    ObjectAnimator.ofFloat(fab, "rotation", 0f, 360f).setDuration(500).start();
+                });
     }
 
     /** Request permission if missing. */
     private void setupPermissions() {
         if (isPermissionMissing()) {
-            ActivityResultLauncher<String[]> permissionLauncher = registerForActivityResult(
-                    new ActivityResultContracts.RequestMultiplePermissions(), result -> {
-                        for (String permission : REQUIRED_PERMISSIONS) {
-                            if (!Objects.requireNonNull(result.get(permission))) {
-                                Toast.makeText(getApplicationContext(),
-                                        "LeAudio test apk permission denied.", Toast.LENGTH_SHORT)
-                                        .show();
-                                finish();
-                                return;
-                            }
-                        }
-                        initialize();
-                    });
+            ActivityResultLauncher<String[]> permissionLauncher =
+                    registerForActivityResult(
+                            new ActivityResultContracts.RequestMultiplePermissions(),
+                            result -> {
+                                for (String permission : REQUIRED_PERMISSIONS) {
+                                    if (!Objects.requireNonNull(result.get(permission))) {
+                                        Toast.makeText(
+                                                        getApplicationContext(),
+                                                        "LeAudio test apk permission denied.",
+                                                        Toast.LENGTH_SHORT)
+                                                .show();
+                                        finish();
+                                        return;
+                                    }
+                                }
+                                initialize();
+                            });
 
             permissionLauncher.launch(REQUIRED_PERMISSIONS);
         } else {
@@ -150,8 +158,11 @@ public class MainActivity extends AppCompatActivity {
                     intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
                     startActivityForResult(intent, 0);
                 } else {
-                    Toast.makeText(MainActivity.this, "Broadcast Source is not supported.",
-                            Toast.LENGTH_SHORT).show();
+                    Toast.makeText(
+                                    MainActivity.this,
+                                    "Broadcast Source is not supported.",
+                                    Toast.LENGTH_SHORT)
+                            .show();
                 }
                 return true;
             default:
@@ -169,8 +180,11 @@ public class MainActivity extends AppCompatActivity {
         if (requestCode == 0xc0de) {
             if (intent != null) {
                 String message = intent.getStringExtra("MESSAGE");
-                Toast.makeText(MainActivity.this, message + "(" + resultCode + ")",
-                        Toast.LENGTH_SHORT).show();
+                Toast.makeText(
+                                MainActivity.this,
+                                message + "(" + resultCode + ")",
+                                Toast.LENGTH_SHORT)
+                        .show();
             }
 
             // TODO: Depending on the resultCode we should either stop the sync or try the PAST
@@ -188,21 +202,28 @@ public class MainActivity extends AppCompatActivity {
         leAudioViewModel = ViewModelProviders.of(this).get(LeAudioViewModel.class);
 
         // Observe bluetooth adapter state
-        leAudioViewModel.getBluetoothEnabledLive().observe(this, is_enabled -> {
-            if (is_enabled) {
-                List<LeAudioDeviceStateWrapper> deviceList =
-                        leAudioViewModel.getAllLeAudioDevicesLive().getValue();
-                if (deviceList == null || deviceList.size() == 0)
-                    leAudioViewModel.queryDevices();
-            } else {
-                Intent enableBtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-                startActivityForResult(enableBtIntent, 1);
-            }
+        leAudioViewModel
+                .getBluetoothEnabledLive()
+                .observe(
+                        this,
+                        is_enabled -> {
+                            if (is_enabled) {
+                                List<LeAudioDeviceStateWrapper> deviceList =
+                                        leAudioViewModel.getAllLeAudioDevicesLive().getValue();
+                                if (deviceList == null || deviceList.size() == 0)
+                                    leAudioViewModel.queryDevices();
+                            } else {
+                                Intent enableBtIntent =
+                                        new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
+                                startActivityForResult(enableBtIntent, 1);
+                            }
 
-            Toast.makeText(MainActivity.this,
-                    "Bluetooth is " + (is_enabled ? "enabled" : "disabled"), Toast.LENGTH_SHORT)
-                    .show();
-        });
+                            Toast.makeText(
+                                            MainActivity.this,
+                                            "Bluetooth is " + (is_enabled ? "enabled" : "disabled"),
+                                            Toast.LENGTH_SHORT)
+                                    .show();
+                        });
     }
 
     private void cleanupLeAudioViewModel() {
@@ -229,9 +250,10 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void setupViewsListItemClickListener() {
-        recyclerViewAdapter.setOnItemClickListener(device -> {
-            // Not used anymore
-        });
+        recyclerViewAdapter.setOnItemClickListener(
+                device -> {
+                    // Not used anymore
+                });
     }
 
     private void cleanupViewsListItemClickListener() {
@@ -244,27 +266,33 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onConnectClick(
                             LeAudioDeviceStateWrapper leAudioDeviceStateWrapper) {
-                        Toast.makeText(MainActivity.this,
-                                "Connecting Le Audio to "
-                                        + leAudioDeviceStateWrapper.device.toString(),
-                                Toast.LENGTH_SHORT).show();
+                        Toast.makeText(
+                                        MainActivity.this,
+                                        "Connecting Le Audio to "
+                                                + leAudioDeviceStateWrapper.device.toString(),
+                                        Toast.LENGTH_SHORT)
+                                .show();
                         leAudioViewModel.connectLeAudio(leAudioDeviceStateWrapper.device, true);
                     }
 
                     @Override
                     public void onDisconnectClick(
                             LeAudioDeviceStateWrapper leAudioDeviceStateWrapper) {
-                        Toast.makeText(MainActivity.this,
-                                "Disconnecting Le Audio from "
-                                        + leAudioDeviceStateWrapper.device.toString(),
-                                Toast.LENGTH_SHORT).show();
+                        Toast.makeText(
+                                        MainActivity.this,
+                                        "Disconnecting Le Audio from "
+                                                + leAudioDeviceStateWrapper.device.toString(),
+                                        Toast.LENGTH_SHORT)
+                                .show();
                         leAudioViewModel.connectLeAudio(leAudioDeviceStateWrapper.device, false);
                     }
 
                     @Override
                     public void onStreamActionClicked(
-                            LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, Integer group_id,
-                            Integer content_type, Integer action) {
+                            LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
+                            Integer group_id,
+                            Integer content_type,
+                            Integer action) {
                         leAudioViewModel.streamAction(group_id, action, content_type);
                     }
 
@@ -284,25 +312,31 @@ public class MainActivity extends AppCompatActivity {
                     public void onGroupDestroyClicked(
                             LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, Integer group_id) {
                         // Not available anymore
-                        Toast.makeText(MainActivity.this,
-                                "Operation not supported on this API version", Toast.LENGTH_SHORT)
+                        Toast.makeText(
+                                        MainActivity.this,
+                                        "Operation not supported on this API version",
+                                        Toast.LENGTH_SHORT)
                                 .show();
                     }
 
                     @Override
                     public void onGroupSetLockClicked(
-                            LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, Integer group_id,
+                            LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
+                            Integer group_id,
                             boolean lock) {
                         leAudioViewModel.groupSetLock(group_id, lock);
                     }
 
                     @Override
                     public void onMicrophoneMuteChanged(
-                            LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, boolean mute,
+                            LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
+                            boolean mute,
                             boolean is_from_user) {
                         // Not available anymore
-                        Toast.makeText(MainActivity.this,
-                                "Operation not supported on this API version", Toast.LENGTH_SHORT)
+                        Toast.makeText(
+                                        MainActivity.this,
+                                        "Operation not supported on this API version",
+                                        Toast.LENGTH_SHORT)
                                 .show();
                     }
                 });
@@ -313,8 +347,10 @@ public class MainActivity extends AppCompatActivity {
                     public void onConnectClick(
                             LeAudioDeviceStateWrapper leAudioDeviceStateWrapper) {
                         // Not available anymore
-                        Toast.makeText(MainActivity.this,
-                                "Operation not supported on this API version", Toast.LENGTH_SHORT)
+                        Toast.makeText(
+                                        MainActivity.this,
+                                        "Operation not supported on this API version",
+                                        Toast.LENGTH_SHORT)
                                 .show();
                     }
 
@@ -322,14 +358,18 @@ public class MainActivity extends AppCompatActivity {
                     public void onDisconnectClick(
                             LeAudioDeviceStateWrapper leAudioDeviceStateWrapper) {
                         // Not available anymore
-                        Toast.makeText(MainActivity.this,
-                                "Operation not supported on this API version", Toast.LENGTH_SHORT)
+                        Toast.makeText(
+                                        MainActivity.this,
+                                        "Operation not supported on this API version",
+                                        Toast.LENGTH_SHORT)
                                 .show();
                     }
 
                     @Override
-                    public void onVolumeChanged(LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
-                            int volume, boolean is_from_user) {
+                    public void onVolumeChanged(
+                            LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
+                            int volume,
+                            boolean is_from_user) {
                         if (is_from_user) {
                             leAudioViewModel.setVolume(leAudioDeviceStateWrapper.device, volume);
                         }
@@ -340,8 +380,10 @@ public class MainActivity extends AppCompatActivity {
                             LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
                             boolean is_checked) {
                         // Not available anymore
-                        Toast.makeText(MainActivity.this,
-                                "Operation not supported on this API version", Toast.LENGTH_SHORT)
+                        Toast.makeText(
+                                        MainActivity.this,
+                                        "Operation not supported on this API version",
+                                        Toast.LENGTH_SHORT)
                                 .show();
                     }
 
@@ -349,38 +391,49 @@ public class MainActivity extends AppCompatActivity {
                     public void onInputGetStateButtonClicked(
                             LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, int input_id) {
                         // Not available anymore
-                        Toast.makeText(MainActivity.this,
-                                "Operation not supported on this API version", Toast.LENGTH_SHORT)
+                        Toast.makeText(
+                                        MainActivity.this,
+                                        "Operation not supported on this API version",
+                                        Toast.LENGTH_SHORT)
                                 .show();
                     }
 
                     @Override
                     public void onInputGainValueChanged(
-                            LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, int input_id,
+                            LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
+                            int input_id,
                             int value) {
                         // Not available anymore
-                        Toast.makeText(MainActivity.this,
-                                "Operation not supported on this API version", Toast.LENGTH_SHORT)
+                        Toast.makeText(
+                                        MainActivity.this,
+                                        "Operation not supported on this API version",
+                                        Toast.LENGTH_SHORT)
                                 .show();
                     }
 
                     @Override
                     public void onInputMuteSwitched(
-                            LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, int input_id,
+                            LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
+                            int input_id,
                             boolean is_muted) {
                         // Not available anymore
-                        Toast.makeText(MainActivity.this,
-                                "Operation not supported on this API version", Toast.LENGTH_SHORT)
+                        Toast.makeText(
+                                        MainActivity.this,
+                                        "Operation not supported on this API version",
+                                        Toast.LENGTH_SHORT)
                                 .show();
                     }
 
                     @Override
                     public void onInputSetGainModeButtonClicked(
-                            LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, int input_id,
+                            LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
+                            int input_id,
                             boolean is_auto) {
                         // Not available anymore
-                        Toast.makeText(MainActivity.this,
-                                "Operation not supported on this API version", Toast.LENGTH_SHORT)
+                        Toast.makeText(
+                                        MainActivity.this,
+                                        "Operation not supported on this API version",
+                                        Toast.LENGTH_SHORT)
                                 .show();
                     }
 
@@ -388,8 +441,10 @@ public class MainActivity extends AppCompatActivity {
                     public void onInputGetGainPropsButtonClicked(
                             LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, int input_id) {
                         // Not available anymore
-                        Toast.makeText(MainActivity.this,
-                                "Operation not supported on this API version", Toast.LENGTH_SHORT)
+                        Toast.makeText(
+                                        MainActivity.this,
+                                        "Operation not supported on this API version",
+                                        Toast.LENGTH_SHORT)
                                 .show();
                     }
 
@@ -397,8 +452,10 @@ public class MainActivity extends AppCompatActivity {
                     public void onInputGetTypeButtonClicked(
                             LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, int input_id) {
                         // Not available anymore
-                        Toast.makeText(MainActivity.this,
-                                "Operation not supported on this API version", Toast.LENGTH_SHORT)
+                        Toast.makeText(
+                                        MainActivity.this,
+                                        "Operation not supported on this API version",
+                                        Toast.LENGTH_SHORT)
                                 .show();
                     }
 
@@ -406,8 +463,10 @@ public class MainActivity extends AppCompatActivity {
                     public void onInputGetStatusButton(
                             LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, int input_id) {
                         // Not available anymore
-                        Toast.makeText(MainActivity.this,
-                                "Operation not supported on this API version", Toast.LENGTH_SHORT)
+                        Toast.makeText(
+                                        MainActivity.this,
+                                        "Operation not supported on this API version",
+                                        Toast.LENGTH_SHORT)
                                 .show();
                     }
 
@@ -415,18 +474,23 @@ public class MainActivity extends AppCompatActivity {
                     public void onInputGetDescriptionButtonClicked(
                             LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, int input_id) {
                         // Not available anymore
-                        Toast.makeText(MainActivity.this,
-                                "Operation not supported on this API version", Toast.LENGTH_SHORT)
+                        Toast.makeText(
+                                        MainActivity.this,
+                                        "Operation not supported on this API version",
+                                        Toast.LENGTH_SHORT)
                                 .show();
                     }
 
                     @Override
                     public void onInputSetDescriptionButtonClicked(
-                            LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, int input_id,
+                            LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
+                            int input_id,
                             String description) {
                         // Not available anymore
-                        Toast.makeText(MainActivity.this,
-                                "Operation not supported on this API version", Toast.LENGTH_SHORT)
+                        Toast.makeText(
+                                        MainActivity.this,
+                                        "Operation not supported on this API version",
+                                        Toast.LENGTH_SHORT)
                                 .show();
                     }
 
@@ -434,18 +498,23 @@ public class MainActivity extends AppCompatActivity {
                     public void onOutputGetGainButtonClicked(
                             LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, int output_id) {
                         // Not available anymore
-                        Toast.makeText(MainActivity.this,
-                                "Operation not supported on this API version", Toast.LENGTH_SHORT)
+                        Toast.makeText(
+                                        MainActivity.this,
+                                        "Operation not supported on this API version",
+                                        Toast.LENGTH_SHORT)
                                 .show();
                     }
 
                     @Override
                     public void onOutputGainOffsetGainValueChanged(
-                            LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, int output_id,
+                            LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
+                            int output_id,
                             int value) {
                         // Not available anymore
-                        Toast.makeText(MainActivity.this,
-                                "Operation not supported on this API version", Toast.LENGTH_SHORT)
+                        Toast.makeText(
+                                        MainActivity.this,
+                                        "Operation not supported on this API version",
+                                        Toast.LENGTH_SHORT)
                                 .show();
                     }
 
@@ -453,18 +522,23 @@ public class MainActivity extends AppCompatActivity {
                     public void onOutputGetLocationButtonClicked(
                             LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, int output_id) {
                         // Not available anymore
-                        Toast.makeText(MainActivity.this,
-                                "Operation not supported on this API version", Toast.LENGTH_SHORT)
+                        Toast.makeText(
+                                        MainActivity.this,
+                                        "Operation not supported on this API version",
+                                        Toast.LENGTH_SHORT)
                                 .show();
                     }
 
                     @Override
                     public void onOutputSetLocationButtonClicked(
-                            LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, int output_id,
+                            LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
+                            int output_id,
                             int location) {
                         // Not available anymore
-                        Toast.makeText(MainActivity.this,
-                                "Operation not supported on this API version", Toast.LENGTH_SHORT)
+                        Toast.makeText(
+                                        MainActivity.this,
+                                        "Operation not supported on this API version",
+                                        Toast.LENGTH_SHORT)
                                 .show();
                     }
 
@@ -472,18 +546,23 @@ public class MainActivity extends AppCompatActivity {
                     public void onOutputGetDescriptionButtonClicked(
                             LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, int output_id) {
                         // Not available anymore
-                        Toast.makeText(MainActivity.this,
-                                "Operation not supported on this API version", Toast.LENGTH_SHORT)
+                        Toast.makeText(
+                                        MainActivity.this,
+                                        "Operation not supported on this API version",
+                                        Toast.LENGTH_SHORT)
                                 .show();
                     }
 
                     @Override
                     public void onOutputSetDescriptionButton(
-                            LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, int output_id,
+                            LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
+                            int output_id,
                             String description) {
                         // Not available anymore
-                        Toast.makeText(MainActivity.this,
-                                "Operation not supported on this API version", Toast.LENGTH_SHORT)
+                        Toast.makeText(
+                                        MainActivity.this,
+                                        "Operation not supported on this API version",
+                                        Toast.LENGTH_SHORT)
                                 .show();
                     }
                 });
@@ -493,19 +572,24 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onConnectClick(
                             LeAudioDeviceStateWrapper leAudioDeviceStateWrapper) {
-                        Toast.makeText(MainActivity.this,
-                                "Connecting HAP to " + leAudioDeviceStateWrapper.device.toString(),
-                                Toast.LENGTH_SHORT).show();
+                        Toast.makeText(
+                                        MainActivity.this,
+                                        "Connecting HAP to "
+                                                + leAudioDeviceStateWrapper.device.toString(),
+                                        Toast.LENGTH_SHORT)
+                                .show();
                         leAudioViewModel.connectHap(leAudioDeviceStateWrapper.device, true);
                     }
 
                     @Override
                     public void onDisconnectClick(
                             LeAudioDeviceStateWrapper leAudioDeviceStateWrapper) {
-                        Toast.makeText(MainActivity.this,
-                                "Disconnecting HAP from "
-                                        + leAudioDeviceStateWrapper.device.toString(),
-                                Toast.LENGTH_SHORT).show();
+                        Toast.makeText(
+                                        MainActivity.this,
+                                        "Disconnecting HAP from "
+                                                + leAudioDeviceStateWrapper.device.toString(),
+                                        Toast.LENGTH_SHORT)
+                                .show();
                         leAudioViewModel.connectHap(leAudioDeviceStateWrapper.device, false);
                     }
 
@@ -520,13 +604,14 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     @Override
-                    public void onSetActivePresetForGroupClicked(BluetoothDevice device, int preset_index) {
+                    public void onSetActivePresetForGroupClicked(
+                            BluetoothDevice device, int preset_index) {
                         leAudioViewModel.hapSetActivePresetForGroup(device, preset_index);
                     }
 
                     @Override
-                    public void onChangePresetNameClicked(BluetoothDevice device, int preset_index,
-                            String name) {
+                    public void onChangePresetNameClicked(
+                            BluetoothDevice device, int preset_index, String name) {
                         leAudioViewModel.hapChangePresetName(device, preset_index, name);
                     }
 
@@ -545,8 +630,10 @@ public class MainActivity extends AppCompatActivity {
                         final int group_id = leAudioViewModel.hapGetHapGroup(device);
                         final boolean sent = leAudioViewModel.hapPreviousGroupPreset(group_id);
                         if (!sent)
-                            Toast.makeText(MainActivity.this,
-                                    "Group " + group_id + " operation failed", Toast.LENGTH_SHORT)
+                            Toast.makeText(
+                                            MainActivity.this,
+                                            "Group " + group_id + " operation failed",
+                                            Toast.LENGTH_SHORT)
                                     .show();
                     }
 
@@ -555,8 +642,10 @@ public class MainActivity extends AppCompatActivity {
                         final int group_id = leAudioViewModel.hapGetHapGroup(device);
                         final boolean sent = leAudioViewModel.hapNextGroupPreset(group_id);
                         if (!sent)
-                            Toast.makeText(MainActivity.this,
-                                    "Group " + group_id + " operation failed", Toast.LENGTH_SHORT)
+                            Toast.makeText(
+                                            MainActivity.this,
+                                            "Group " + group_id + " operation failed",
+                                            Toast.LENGTH_SHORT)
                                     .show();
                     }
                 });
@@ -566,19 +655,24 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onConnectClick(
                             LeAudioDeviceStateWrapper leAudioDeviceStateWrapper) {
-                        Toast.makeText(MainActivity.this,
-                                "Connecting BASS to " + leAudioDeviceStateWrapper.device.toString(),
-                                Toast.LENGTH_SHORT).show();
+                        Toast.makeText(
+                                        MainActivity.this,
+                                        "Connecting BASS to "
+                                                + leAudioDeviceStateWrapper.device.toString(),
+                                        Toast.LENGTH_SHORT)
+                                .show();
                         leAudioViewModel.connectBass(leAudioDeviceStateWrapper.device, true);
                     }
 
                     @Override
                     public void onDisconnectClick(
                             LeAudioDeviceStateWrapper leAudioDeviceStateWrapper) {
-                        Toast.makeText(MainActivity.this,
-                                "Disconnecting BASS from "
-                                        + leAudioDeviceStateWrapper.device.toString(),
-                                Toast.LENGTH_SHORT).show();
+                        Toast.makeText(
+                                        MainActivity.this,
+                                        "Disconnecting BASS from "
+                                                + leAudioDeviceStateWrapper.device.toString(),
+                                        Toast.LENGTH_SHORT)
+                                .show();
                         leAudioViewModel.connectBass(leAudioDeviceStateWrapper.device, false);
                     }
 
@@ -590,8 +684,8 @@ public class MainActivity extends AppCompatActivity {
                     }
 
                     @Override
-                    public void onBroadcastCodeEntered(BluetoothDevice device, int receiver_id,
-                            byte[] broadcast_code) {
+                    public void onBroadcastCodeEntered(
+                            BluetoothDevice device, int receiver_id, byte[] broadcast_code) {
                         leAudioViewModel.setBroadcastCode(device, receiver_id, broadcast_code);
                     }
 
@@ -599,14 +693,20 @@ public class MainActivity extends AppCompatActivity {
                     public void onStopSyncReq(BluetoothDevice device, int receiver_id) {
                         // TODO: When is onStopSyncReq called? and what does below code do?
 
-//                        List<BluetoothBroadcastAudioScanBaseConfig> configs = new ArrayList<>();
-//                        // JT@CC: How come you can call this with null metadata when the
-//                        // constructor has the @Nonull annotation for the param?
-//                        BluetoothBroadcastAudioScanBaseConfig stop_config =
-//                                new BluetoothBroadcastAudioScanBaseConfig(0, new byte[] {});
-//                        configs.add(stop_config);
-//
-//                        leAudioViewModel.modifyBroadcastSource(device, receiver_id, false, configs);
+                        //                        List<BluetoothBroadcastAudioScanBaseConfig>
+                        // configs = new ArrayList<>();
+                        //                        // JT@CC: How come you can call this with null
+                        // metadata when the
+                        //                        // constructor has the @Nonull annotation for the
+                        // param?
+                        //                        BluetoothBroadcastAudioScanBaseConfig stop_config
+                        // =
+                        //                                new
+                        // BluetoothBroadcastAudioScanBaseConfig(0, new byte[] {});
+                        //                        configs.add(stop_config);
+                        //
+                        //                        leAudioViewModel.modifyBroadcastSource(device,
+                        // receiver_id, false, configs);
                     }
 
                     @Override
@@ -633,11 +733,14 @@ public class MainActivity extends AppCompatActivity {
         List<LeAudioDeviceStateWrapper> devices =
                 leAudioViewModel.getAllLeAudioDevicesLive().getValue();
 
-        if (devices != null)
-            recyclerViewAdapter.updateLeAudioDeviceList(devices);
-        leAudioViewModel.getAllLeAudioDevicesLive().observe(this, bluetoothDevices -> {
-            recyclerViewAdapter.updateLeAudioDeviceList(bluetoothDevices);
-        });
+        if (devices != null) recyclerViewAdapter.updateLeAudioDeviceList(devices);
+        leAudioViewModel
+                .getAllLeAudioDevicesLive()
+                .observe(
+                        this,
+                        bluetoothDevices -> {
+                            recyclerViewAdapter.updateLeAudioDeviceList(bluetoothDevices);
+                        });
     }
 
     private void cleanupViewModelObservers() {

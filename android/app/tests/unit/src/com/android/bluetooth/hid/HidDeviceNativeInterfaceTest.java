@@ -37,13 +37,11 @@ import org.mockito.junit.MockitoRule;
 
 public class HidDeviceNativeInterfaceTest {
     private static final byte[] TEST_DEVICE_ADDRESS =
-            new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+            new byte[] {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    HidDeviceService mService;
-    @Mock
-    AdapterService mAdapterService;
+    @Mock HidDeviceService mService;
+    @Mock AdapterService mAdapterService;
 
     private HidDeviceNativeInterface mNativeInterface;
 
@@ -69,8 +67,8 @@ public class HidDeviceNativeInterfaceTest {
 
     @Test
     public void onConnectStateChanged() {
-        mNativeInterface.onConnectStateChanged(TEST_DEVICE_ADDRESS,
-                BluetoothHidDevice.STATE_DISCONNECTED);
+        mNativeInterface.onConnectStateChanged(
+                TEST_DEVICE_ADDRESS, BluetoothHidDevice.STATE_DISCONNECTED);
         verify(mService).onConnectStateChangedFromNative(any(), anyInt());
     }
 
@@ -87,7 +85,7 @@ public class HidDeviceNativeInterfaceTest {
     public void onSetReport() {
         byte reportType = 1;
         byte reportId = 2;
-        byte[] data = new byte[] { 0x00, 0x00 };
+        byte[] data = new byte[] {0x00, 0x00};
         mNativeInterface.onSetReport(reportType, reportId, data);
         verify(mService).onSetReportFromNative(reportType, reportId, data);
     }
@@ -102,7 +100,7 @@ public class HidDeviceNativeInterfaceTest {
     @Test
     public void onInterruptData() {
         byte reportId = 3;
-        byte[] data = new byte[] { 0x00, 0x00 };
+        byte[] data = new byte[] {0x00, 0x00};
         mNativeInterface.onInterruptData(reportId, data);
         verify(mService).onInterruptDataFromNative(reportId, data);
     }

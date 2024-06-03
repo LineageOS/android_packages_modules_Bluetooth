@@ -130,7 +130,6 @@ public class ProfileServiceTest {
         }
         Assert.assertNotNull(Looper.myLooper());
 
-
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
         doNothing().when(mAdapterService).addProfile(any());
         doNothing().when(mAdapterService).removeProfile(any());

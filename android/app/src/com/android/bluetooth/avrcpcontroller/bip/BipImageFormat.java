@@ -24,16 +24,15 @@ import java.util.Objects;
  * Describes a single native or variant format available for an image, coming from a
  * BipImageProperties object.
  *
- * This is not an object by specification, per say. It abstracts all the various native and variant
- * formats available in a given set of image properties.
+ * <p>This is not an object by specification, per say. It abstracts all the various native and
+ * variant formats available in a given set of image properties.
  *
- * This BipImageFormat can be used to choose a specific BipImageDescriptor when downloading an image
+ * <p>This BipImageFormat can be used to choose a specific BipImageDescriptor when downloading an
+ * image
  *
- * Examples:
- *   <native encoding="JPEG" pixel="1280*1024” size="1048576"/>
- *   <variant encoding="JPEG" pixel="640*480"/>
- *   <variant encoding="JPEG" pixel="160*120"/>
- *   <variant encoding="GIF" pixel="80*60-640*480"/>
+ * <p>Examples: <native encoding="JPEG" pixel="1280*1024” size="1048576"/> <variant encoding="JPEG"
+ * pixel="640*480"/> <variant encoding="JPEG" pixel="160*120"/> <variant encoding="GIF"
+ * pixel="80*60-640*480"/>
  */
 public class BipImageFormat {
     private static final String TAG = "avrcpcontroller.BipImageFormat";
@@ -41,46 +40,34 @@ public class BipImageFormat {
     public static final int FORMAT_NATIVE = 0;
     public static final int FORMAT_VARIANT = 1;
 
-    /**
-     * Create a native BipImageFormat from the given string fields
-     */
+    /** Create a native BipImageFormat from the given string fields */
     public static BipImageFormat parseNative(String encoding, String pixel, String size) {
         return new BipImageFormat(BipImageFormat.FORMAT_NATIVE, encoding, pixel, size, null, null);
     }
 
-    /**
-     * Create a variant BipImageFormat from the given string fields
-     */
-    public static BipImageFormat parseVariant(String encoding, String pixel, String maxSize,
-            String transformation) {
-        return new BipImageFormat(BipImageFormat.FORMAT_VARIANT, encoding, pixel, null, maxSize,
-                transformation);
+    /** Create a variant BipImageFormat from the given string fields */
+    public static BipImageFormat parseVariant(
+            String encoding, String pixel, String maxSize, String transformation) {
+        return new BipImageFormat(
+                BipImageFormat.FORMAT_VARIANT, encoding, pixel, null, maxSize, transformation);
     }
 
-    /**
-     * Create a native BipImageFormat from the given parameters
-     */
+    /** Create a native BipImageFormat from the given parameters */
     public static BipImageFormat createNative(BipEncoding encoding, BipPixel pixel, int size) {
         return new BipImageFormat(BipImageFormat.FORMAT_NATIVE, encoding, pixel, size, -1, null);
     }
 
-    /**
-     * Create a variant BipImageFormat from the given parameters
-     */
-    public static BipImageFormat createVariant(BipEncoding encoding, BipPixel pixel, int maxSize,
-            BipTransformation transformation) {
-        return new BipImageFormat(BipImageFormat.FORMAT_VARIANT, encoding, pixel, -1, maxSize,
-                transformation);
+    /** Create a variant BipImageFormat from the given parameters */
+    public static BipImageFormat createVariant(
+            BipEncoding encoding, BipPixel pixel, int maxSize, BipTransformation transformation) {
+        return new BipImageFormat(
+                BipImageFormat.FORMAT_VARIANT, encoding, pixel, -1, maxSize, transformation);
     }
 
-    /**
-     * The 'flavor' of this image format, from the format constants above.
-     */
+    /** The 'flavor' of this image format, from the format constants above. */
     private final int mFormatType;
 
-    /**
-     * The encoding method in which this image is available, required by the specification
-     */
+    /** The encoding method in which this image is available, required by the specification */
     private final BipEncoding mEncoding;
 
     /**
@@ -90,30 +77,35 @@ public class BipImageFormat {
     private final BipPixel mPixel;
 
     /**
-     * The list of supported image transformation methods, any of:
-     *   - 'stretch' : Image server is capable of stretching the image to fit a space
-     *   - 'fill' : Image server is capable of filling the image padding data to fit a space
-     *   - 'crop' : Image server is capable of cropping the image down to fit a space
+     * The list of supported image transformation methods, any of: - 'stretch' : Image server is
+     * capable of stretching the image to fit a space - 'fill' : Image server is capable of filling
+     * the image padding data to fit a space - 'crop' : Image server is capable of cropping the
+     * image down to fit a space
      *
-     * Used by the variant type only
+     * <p>Used by the variant type only
      */
     private final BipTransformation mTransformation;
 
     /**
      * Size in bytes of the image.
      *
-     * Used by the native type only
+     * <p>Used by the native type only
      */
     private final int mSize;
 
     /**
      * The estimated maximum size of an image after a transformation is performed.
      *
-     * Used by the variant type only
+     * <p>Used by the variant type only
      */
     private final int mMaxSize;
 
-    private BipImageFormat(int type, BipEncoding encoding, BipPixel pixel, int size, int maxSize,
+    private BipImageFormat(
+            int type,
+            BipEncoding encoding,
+            BipPixel pixel,
+            int size,
+            int maxSize,
             BipTransformation transformation) {
         mFormatType = type;
         mEncoding = Objects.requireNonNull(encoding, "Encoding cannot be null");
@@ -123,7 +115,12 @@ public class BipImageFormat {
         mMaxSize = maxSize;
     }
 
-    private BipImageFormat(int type, String encoding, String pixel, String size, String maxSize,
+    private BipImageFormat(
+            int type,
+            String encoding,
+            String pixel,
+            String size,
+            String maxSize,
             String transformation) {
         mFormatType = type;
         mEncoding = new BipEncoding(encoding);
@@ -183,10 +180,14 @@ public class BipImageFormat {
 
     @Override
     public String toString() {
-        if (mEncoding == null || mEncoding.getType() == BipEncoding.UNKNOWN || mPixel == null
+        if (mEncoding == null
+                || mEncoding.getType() == BipEncoding.UNKNOWN
+                || mPixel == null
                 || mPixel.getType() == BipPixel.TYPE_UNKNOWN) {
-            error("Missing required fields [ " + (mEncoding == null ? "encoding " : "")
-                    + (mPixel == null ? "pixel " : ""));
+            error(
+                    "Missing required fields [ "
+                            + (mEncoding == null ? "encoding " : "")
+                            + (mPixel == null ? "pixel " : ""));
             return null;
         }
 

@@ -32,7 +32,7 @@ public class HfpClientConnection extends Connection {
 
     private static final String EVENT_SCO_CONNECT = "com.android.bluetooth.hfpclient.SCO_CONNECT";
     private static final String EVENT_SCO_DISCONNECT =
-             "com.android.bluetooth.hfpclient.SCO_DISCONNECT";
+            "com.android.bluetooth.hfpclient.SCO_DISCONNECT";
 
     private final BluetoothDevice mDevice;
     private HfpClientCall mCurrentCall;
@@ -47,8 +47,11 @@ public class HfpClientConnection extends Connection {
 
     // Constructor to be used when there's an existing call (such as that created on the AG or
     // when connection happens and we see calls for the first time).
-    public HfpClientConnection(BluetoothDevice device, HfpClientCall call,
-            HfpClientConnectionService connServ, HeadsetClientServiceInterface serviceInterface) {
+    public HfpClientConnection(
+            BluetoothDevice device,
+            HfpClientCall call,
+            HfpClientConnectionService connServ,
+            HeadsetClientServiceInterface serviceInterface) {
         mDevice = device;
         mConnServ = connServ;
         mServiceInterface = serviceInterface;
@@ -60,8 +63,11 @@ public class HfpClientConnection extends Connection {
 
     // Constructor to be used when a call is intiated on the HF. The call handle is obtained by
     // using the dial() command.
-    public HfpClientConnection(BluetoothDevice device, Uri number,
-            HfpClientConnectionService connServ, HeadsetClientServiceInterface serviceInterface) {
+    public HfpClientConnection(
+            BluetoothDevice device,
+            Uri number,
+            HfpClientConnectionService connServ,
+            HeadsetClientServiceInterface serviceInterface) {
         mDevice = device;
         mConnServ = connServ;
         mServiceInterface = serviceInterface;
@@ -82,9 +88,12 @@ public class HfpClientConnection extends Connection {
         Uri number = Uri.fromParts(PhoneAccount.SCHEME_TEL, mCurrentCall.getNumber(), null);
         setAddress(number, TelecomManager.PRESENTATION_ALLOWED);
         setConnectionCapabilities(
-                CAPABILITY_SUPPORT_HOLD | CAPABILITY_MUTE | CAPABILITY_SEPARATE_FROM_CONFERENCE
-                        | CAPABILITY_DISCONNECT_FROM_CONFERENCE | (
-                        getState() == STATE_ACTIVE || getState() == STATE_HOLDING ? CAPABILITY_HOLD
+                CAPABILITY_SUPPORT_HOLD
+                        | CAPABILITY_MUTE
+                        | CAPABILITY_SEPARATE_FROM_CONFERENCE
+                        | CAPABILITY_DISCONNECT_FROM_CONFERENCE
+                        | (getState() == STATE_ACTIVE || getState() == STATE_HOLDING
+                                ? CAPABILITY_HOLD
                                 : 0));
     }
 
@@ -105,7 +114,9 @@ public class HfpClientConnection extends Connection {
     }
 
     public boolean inConference() {
-        return mAdded && mCurrentCall != null && mCurrentCall.isMultiParty()
+        return mAdded
+                && mCurrentCall != null
+                && mCurrentCall.isMultiParty()
                 && getState() != Connection.STATE_DISCONNECTED;
     }
 
@@ -275,8 +286,13 @@ public class HfpClientConnection extends Connection {
 
     @Override
     public String toString() {
-        return "HfpClientConnection{" + getAddress() + "," + stateToString(getState()) + ","
-                + mCurrentCall + "}";
+        return "HfpClientConnection{"
+                + getAddress()
+                + ","
+                + stateToString(getState())
+                + ","
+                + mCurrentCall
+                + "}";
     }
 
     private void debug(String message) {

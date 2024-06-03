@@ -65,7 +65,7 @@ import java.util.List;
 @RunWith(AndroidJUnit4.class)
 public class AvrcpControllerServiceTest {
     private static final String REMOTE_DEVICE_ADDRESS = "00:00:00:00:00:00";
-    private static final byte[] REMOTE_DEVICE_ADDRESS_AS_ARRAY = new byte[]{0, 0, 0, 0, 0, 0};
+    private static final byte[] REMOTE_DEVICE_ADDRESS_AS_ARRAY = new byte[] {0, 0, 0, 0, 0, 0};
     private static final String REMOTE_DEVICE_ADDRESS_2 = "11:11:11:11:11:11";
     private static final byte[] REMOTE_DEVICE_ADDRESS_AS_ARRAY_2 =
             new byte[] {11, 11, 11, 11, 11, 11};
@@ -162,8 +162,7 @@ public class AvrcpControllerServiceTest {
 
     @Test
     public void getConnectedDevices() {
-        when(mAdapterService.getBondedDevices()).thenReturn(
-                new BluetoothDevice[]{mRemoteDevice});
+        when(mAdapterService.getBondedDevices()).thenReturn(new BluetoothDevice[] {mRemoteDevice});
         when(mStateMachine.getState()).thenReturn(BluetoothProfile.STATE_CONNECTED);
 
         assertThat(mService.getConnectedDevices()).contains(mRemoteDevice);
@@ -215,9 +214,9 @@ public class AvrcpControllerServiceTest {
     }
 
     /**
-     * Pre-conditions: No node in BrowseTree for specified media ID
-     * Test: Call AvrcpControllerService.getContents()
-     * Expected Output: BrowseResult object with status ERROR_MEDIA_ID_INVALID
+     * Pre-conditions: No node in BrowseTree for specified media ID Test: Call
+     * AvrcpControllerService.getContents() Expected Output: BrowseResult object with status
+     * ERROR_MEDIA_ID_INVALID
      */
     @Test
     public void testGetContentsNoNode_returnInvalidMediaIdStatus() {
@@ -230,8 +229,8 @@ public class AvrcpControllerServiceTest {
 
     /**
      * Pre-conditions: No device is connected - parent media ID is at the root of the BrowseTree
-     * Test: Call AvrcpControllerService.getContents()
-     * Expected Output: BrowseResult object with status NO_DEVICE_CONNECTED
+     * Test: Call AvrcpControllerService.getContents() Expected Output: BrowseResult object with
+     * status NO_DEVICE_CONNECTED
      */
     @Test
     public void getContentsNoDeviceConnected_returnNoDeviceConnectedStatus() {
@@ -242,9 +241,8 @@ public class AvrcpControllerServiceTest {
     }
 
     /**
-     * Pre-conditions: At least one device is connected
-     * Test: Call AvrcpControllerService.getContents()
-     * Expected Output: BrowseResult object with status SUCCESS
+     * Pre-conditions: At least one device is connected Test: Call
+     * AvrcpControllerService.getContents() Expected Output: BrowseResult object with status SUCCESS
      */
     @Test
     public void getContentsOneDeviceConnected_returnSuccessStatus() {
@@ -256,13 +254,12 @@ public class AvrcpControllerServiceTest {
     }
 
     /**
-     * Pre-conditions: Node for specified media ID is not cached
-     * Test: {@link BrowseTree.BrowseNode#getContents} returns {@code null} when the node has no
-     * children/items and the node is not cached.
-     * When {@link AvrcpControllerService#getContents} receives a node that is not cached,
-     * it should interpret the status as `DOWNLOAD_PENDING`.
-     * Expected Output: BrowseResult object with status DOWNLOAD_PENDING; verify that a download
-     * request has been sent by checking if mStateMachine.requestContents() is called
+     * Pre-conditions: Node for specified media ID is not cached Test: {@link
+     * BrowseTree.BrowseNode#getContents} returns {@code null} when the node has no children/items
+     * and the node is not cached. When {@link AvrcpControllerService#getContents} receives a node
+     * that is not cached, it should interpret the status as `DOWNLOAD_PENDING`. Expected Output:
+     * BrowseResult object with status DOWNLOAD_PENDING; verify that a download request has been
+     * sent by checking if mStateMachine.requestContents() is called
      */
     @Test
     public void getContentsNodeNotCached_returnDownloadPendingStatus() {
@@ -280,9 +277,8 @@ public class AvrcpControllerServiceTest {
     }
 
     /**
-     * Pre-conditions: Parent media ID that is not BrowseTree.ROOT; isCached returns true
-     * Test: Call AvrcpControllerService.getContents()
-     * Expected Output: BrowseResult object with status SUCCESS
+     * Pre-conditions: Parent media ID that is not BrowseTree.ROOT; isCached returns true Test: Call
+     * AvrcpControllerService.getContents() Expected Output: BrowseResult object with status SUCCESS
      */
     @Test
     public void getContentsNoErrorConditions_returnsSuccessStatus() {
@@ -381,8 +377,9 @@ public class AvrcpControllerServiceTest {
 
         mService.getRcPsm(mRemoteDevice, psm);
 
-        verify(mStateMachine).sendMessage(
-                AvrcpControllerStateMachine.MESSAGE_PROCESS_RECEIVED_COVER_ART_PSM, psm);
+        verify(mStateMachine)
+                .sendMessage(
+                        AvrcpControllerStateMachine.MESSAGE_PROCESS_RECEIVED_COVER_ART_PSM, psm);
     }
 
     @Test
@@ -435,8 +432,11 @@ public class AvrcpControllerServiceTest {
 
         mService.onPlayPositionChanged(mRemoteDevice, songLen, currSongPos);
 
-        verify(mStateMachine).sendMessage(
-                AvrcpControllerStateMachine.MESSAGE_PROCESS_PLAY_POS_CHANGED, songLen, currSongPos);
+        verify(mStateMachine)
+                .sendMessage(
+                        AvrcpControllerStateMachine.MESSAGE_PROCESS_PLAY_POS_CHANGED,
+                        songLen,
+                        currSongPos);
     }
 
     @Test
@@ -445,9 +445,10 @@ public class AvrcpControllerServiceTest {
 
         mService.onPlayStatusChanged(mRemoteDevice, status);
 
-        verify(mStateMachine).sendMessage(
-                AvrcpControllerStateMachine.MESSAGE_PROCESS_PLAY_STATUS_CHANGED,
-                PlaybackStateCompat.STATE_REWINDING);
+        verify(mStateMachine)
+                .sendMessage(
+                        AvrcpControllerStateMachine.MESSAGE_PROCESS_PLAY_STATUS_CHANGED,
+                        PlaybackStateCompat.STATE_REWINDING);
     }
 
     @Test

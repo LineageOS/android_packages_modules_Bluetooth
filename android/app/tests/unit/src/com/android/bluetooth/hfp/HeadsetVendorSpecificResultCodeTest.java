@@ -45,8 +45,8 @@ public class HeadsetVendorSpecificResultCodeTest {
 
     @Test
     public void constructor() {
-        HeadsetVendorSpecificResultCode code = new HeadsetVendorSpecificResultCode(mTestDevice,
-                TEST_COMMAND, TEST_ARG);
+        HeadsetVendorSpecificResultCode code =
+                new HeadsetVendorSpecificResultCode(mTestDevice, TEST_COMMAND, TEST_ARG);
 
         assertThat(code.mDevice).isEqualTo(mTestDevice);
         assertThat(code.mCommand).isEqualTo(TEST_COMMAND);
@@ -55,15 +55,21 @@ public class HeadsetVendorSpecificResultCodeTest {
 
     @Test
     public void buildString() {
-        HeadsetVendorSpecificResultCode code = new HeadsetVendorSpecificResultCode(mTestDevice,
-                TEST_COMMAND, TEST_ARG);
+        HeadsetVendorSpecificResultCode code =
+                new HeadsetVendorSpecificResultCode(mTestDevice, TEST_COMMAND, TEST_ARG);
         StringBuilder builder = new StringBuilder();
 
         code.buildString(builder);
 
         String expectedString =
-                code.getClass().getSimpleName() + "[device=" + mTestDevice + ", command="
-                        + TEST_COMMAND + ", arg=" + TEST_ARG + "]";
+                code.getClass().getSimpleName()
+                        + "[device="
+                        + mTestDevice
+                        + ", command="
+                        + TEST_COMMAND
+                        + ", arg="
+                        + TEST_ARG
+                        + "]";
         assertThat(builder.toString()).isEqualTo(expectedString);
     }
 }

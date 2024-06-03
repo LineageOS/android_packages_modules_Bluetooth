@@ -44,8 +44,7 @@ class BluetoothPbapVcardList {
 
     class CardEntryHandler implements VCardEntryHandler {
         @Override
-        public void onStart() {
-        }
+        public void onStart() {}
 
         @Override
         public void onEntryCreated(VCardEntry entry) {
@@ -53,8 +52,7 @@ class BluetoothPbapVcardList {
         }
 
         @Override
-        public void onEnd() {
-        }
+        public void onEnd() {}
     }
 
     BluetoothPbapVcardList(Account account, InputStream in, byte format) throws IOException {
@@ -116,8 +114,8 @@ class BluetoothPbapVcardList {
      *
      * @param parser -- the {@link VCardParser} to use.
      * @param in -- the {@link InputStream} to parse.
-     * @return {@code true} if there was a {@link VCardVersionException}; {@code false} if there
-     *         is any other {@link VCardException} or succeeds (i.e., no {@link VCardException}).
+     * @return {@code true} if there was a {@link VCardVersionException}; {@code false} if there is
+     *     any other {@link VCardException} or succeeds (i.e., no {@link VCardException}).
      * @throws IOException if there's an issue reading the {@link InputStream}.
      */
     private boolean parsedWithVcardVersionException(VCardParser parser, InputStream in)

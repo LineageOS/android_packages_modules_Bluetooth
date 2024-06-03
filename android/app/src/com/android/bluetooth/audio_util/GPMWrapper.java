@@ -23,8 +23,8 @@ import android.util.Log;
 
 /**
  * Google Play Music hides some of the metadata behind a specific key in the Extras of the
- * MediaDescription in the MediaSession.QueueItem. This class exists to provide alternate
- * methods to allow Google Play Music to match the default behaviour of MediaPlayerWrapper.
+ * MediaDescription in the MediaSession.QueueItem. This class exists to provide alternate methods to
+ * allow Google Play Music to match the default behaviour of MediaPlayerWrapper.
  */
 class GPMWrapper extends MediaPlayerWrapper {
     private static final String TAG = "AvrcpGPMWrapper";

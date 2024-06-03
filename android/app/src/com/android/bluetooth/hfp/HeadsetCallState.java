@@ -17,38 +17,31 @@ package com.android.bluetooth.hfp;
 
 import java.util.Objects;
 
-/**
- * A blob of data representing an overall call state on the phone
- */
+/** A blob of data representing an overall call state on the phone */
 class HeadsetCallState extends HeadsetMessageObject {
-    /**
-     * Number of active calls
-     */
+    /** Number of active calls */
     int mNumActive;
-    /**
-     * Number of held calls
-     */
+
+    /** Number of held calls */
     int mNumHeld;
+
     /**
-     * Current call setup state as defined in bthf_call_state_t of bt_hf.h or
-     * {@link com.android.server.telecom.BluetoothPhoneServiceImpl} or {@link HeadsetHalConstants}
+     * Current call setup state as defined in bthf_call_state_t of bt_hf.h or {@link
+     * com.android.server.telecom.BluetoothPhoneServiceImpl} or {@link HeadsetHalConstants}
      */
     int mCallState;
-    /**
-     * Currently active call's phone number
-     */
+
+    /** Currently active call's phone number */
     String mNumber;
-    /**
-     * Phone number type
-     */
+
+    /** Phone number type */
     int mType;
-    /**
-     * Caller display name
-     */
+
+    /** Caller display name */
     String mName;
 
-    HeadsetCallState(int numActive, int numHeld, int callState, String number, int type,
-            String name) {
+    HeadsetCallState(
+            int numActive, int numHeld, int callState, String number, int type, String name) {
         mNumActive = numActive;
         mNumHeld = numHeld;
         mCallState = callState;
@@ -93,9 +86,12 @@ class HeadsetCallState extends HeadsetMessageObject {
             return false;
         }
         HeadsetCallState that = (HeadsetCallState) object;
-        return mNumActive == that.mNumActive && mNumHeld == that.mNumHeld
-                && mCallState == that.mCallState && Objects.equals(mNumber, that.mNumber)
-                && mType == that.mType && Objects.equals(mName, that.mName);
+        return mNumActive == that.mNumActive
+                && mNumHeld == that.mNumHeld
+                && mCallState == that.mCallState
+                && Objects.equals(mNumber, that.mNumber)
+                && mType == that.mType
+                && Objects.equals(mName, that.mName);
     }
 
     @Override

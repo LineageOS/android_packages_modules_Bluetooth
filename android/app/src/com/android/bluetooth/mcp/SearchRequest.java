@@ -19,9 +19,7 @@ package com.android.bluetooth.mcp;
 
 import android.annotation.NonNull;
 
-/**
- * Media search request, from client to Media Player
- */
+/** Media search request, from client to Media Player */
 public final class SearchRequest {
     private final int mType;
     private final String mStringArg;
@@ -30,7 +28,7 @@ public final class SearchRequest {
      * Media search request constructor
      *
      * @param type Search request type
-     * @param arg  Search request argument
+     * @param arg Search request argument
      */
     public SearchRequest(int type, String arg) {
         this.mType = type;
@@ -55,9 +53,7 @@ public final class SearchRequest {
         return mStringArg;
     }
 
-    /**
-     * Media search request results definition
-     */
+    /** Media search request results definition */
     public enum Results {
         SUCCESS(0x01),
         FAILURE(0x02);
@@ -73,10 +69,8 @@ public final class SearchRequest {
         }
     }
 
-    /**
-     * Media search request types definition
-     */
-    public final static class Types {
+    /** Media search request types definition */
+    public static final class Types {
         public static final int TRACK_NAME = 0x01;
         public static final int ARTIST_NAME = 0x02;
         public static final int ALBUM_NAME = 0x03;
@@ -86,9 +80,9 @@ public final class SearchRequest {
         public static final int GENRE = 0x07;
         public static final int ONLY_TRACKS = 0x08;
         public static final int ONLY_GROUPS = 0x09;
+
         private Types() {
             // not called
         }
     }
-
 }

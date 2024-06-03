@@ -15,34 +15,18 @@
  */
 
 /**
- * Bluetooth A2DP StateMachine. There is one instance per remote device.
- *  - "Disconnected" and "Connected" are steady states.
- *  - "Connecting" and "Disconnecting" are transient states until the
- *     connection / disconnection is completed.
+ * Bluetooth A2DP StateMachine. There is one instance per remote device. - "Disconnected" and
+ * "Connected" are steady states. - "Connecting" and "Disconnecting" are transient states until the
+ * connection / disconnection is completed.
  *
+ * <p>(Disconnected) | ^ CONNECT | | DISCONNECTED V | (Connecting)<--->(Disconnecting) | ^ CONNECTED
+ * | | DISCONNECT V | (Connected) NOTES: - If state machine is in "Connecting" state and the remote
+ * device sends DISCONNECT request, the state machine transitions to "Disconnecting" state. -
+ * Similarly, if the state machine is in "Disconnecting" state and the remote device sends CONNECT
+ * request, the state machine transitions to "Connecting" state.
  *
- *                        (Disconnected)
- *                           |       ^
- *                   CONNECT |       | DISCONNECTED
- *                           V       |
- *                 (Connecting)<--->(Disconnecting)
- *                           |       ^
- *                 CONNECTED |       | DISCONNECT
- *                           V       |
- *                          (Connected)
- * NOTES:
- *  - If state machine is in "Connecting" state and the remote device sends
- *    DISCONNECT request, the state machine transitions to "Disconnecting" state.
- *  - Similarly, if the state machine is in "Disconnecting" state and the remote device
- *    sends CONNECT request, the state machine transitions to "Connecting" state.
- *
- *                    DISCONNECT
- *    (Connecting) ---------------> (Disconnecting)
- *                 <---------------
- *                      CONNECT
- *
+ * <p>DISCONNECT (Connecting) ---------------> (Disconnecting) <--------------- CONNECT
  */
-
 package com.android.bluetooth.a2dp;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
@@ -78,13 +62,11 @@ final class A2dpStateMachine extends StateMachine {
 
     static final int CONNECT = 1;
     static final int DISCONNECT = 2;
-    @VisibleForTesting
-    static final int STACK_EVENT = 101;
+    @VisibleForTesting static final int STACK_EVENT = 101;
     private static final int CONNECT_TIMEOUT = 201;
 
     // NOTE: the value is not "final" - it is modified in the unit tests
-    @VisibleForTesting
-    static int sConnectTimeoutMs = 30000;        // 30s
+    @VisibleForTesting static int sConnectTimeoutMs = 30000; // 30s
 
     private Disconnected mDisconnected;
     private Connecting mConnecting;
@@ -95,14 +77,16 @@ final class A2dpStateMachine extends StateMachine {
 
     private A2dpService mA2dpService;
     private A2dpNativeInterface mA2dpNativeInterface;
-    @VisibleForTesting
-    boolean mA2dpOffloadEnabled = false;
+    @VisibleForTesting boolean mA2dpOffloadEnabled = false;
     private final BluetoothDevice mDevice;
     private boolean mIsPlaying = false;
     private BluetoothCodecStatus mCodecStatus;
 
-    A2dpStateMachine(BluetoothDevice device, A2dpService a2dpService,
-                     A2dpNativeInterface a2dpNativeInterface, Looper looper) {
+    A2dpStateMachine(
+            BluetoothDevice device,
+            A2dpService a2dpService,
+            A2dpNativeInterface a2dpNativeInterface,
+            Looper looper) {
         super(TAG, looper);
 
         // Let the logging framework enforce the log level. TAG is set above in the parent
@@ -127,11 +111,14 @@ final class A2dpStateMachine extends StateMachine {
         setInitialState(mDisconnected);
     }
 
-    static A2dpStateMachine make(BluetoothDevice device, A2dpService a2dpService,
-                                 A2dpNativeInterface a2dpNativeInterface, Looper looper) {
+    static A2dpStateMachine make(
+            BluetoothDevice device,
+            A2dpService a2dpService,
+            A2dpNativeInterface a2dpNativeInterface,
+            Looper looper) {
         Log.i(TAG, "make for device " + device);
-        A2dpStateMachine a2dpSm = new A2dpStateMachine(device, a2dpService, a2dpNativeInterface,
-                                                       looper);
+        A2dpStateMachine a2dpSm =
+                new A2dpStateMachine(device, a2dpService, a2dpNativeInterface, looper);
         a2dpSm.start();
         return a2dpSm;
     }
@@ -142,8 +129,7 @@ final class A2dpStateMachine extends StateMachine {
             // Stop if auido is still playing
             log("doQuit: stopped playing " + mDevice);
             mIsPlaying = false;
-            broadcastAudioState(BluetoothA2dp.STATE_NOT_PLAYING,
-                                BluetoothA2dp.STATE_PLAYING);
+            broadcastAudioState(BluetoothA2dp.STATE_NOT_PLAYING, BluetoothA2dp.STATE_PLAYING);
         }
         quitNow();
     }
@@ -157,8 +143,14 @@ final class A2dpStateMachine extends StateMachine {
         @Override
         public void enter() {
             Message currentMessage = getCurrentMessage();
-            Log.i(TAG, "Enter Disconnected(" + mDevice + "): " + (currentMessage == null ? "null"
-                    : messageWhatToString(currentMessage.what)));
+            Log.i(
+                    TAG,
+                    "Enter Disconnected("
+                            + mDevice
+                            + "): "
+                            + (currentMessage == null
+                                    ? "null"
+                                    : messageWhatToString(currentMessage.what)));
             mConnectionState = BluetoothProfile.STATE_DISCONNECTED;
 
             removeDeferredMessages(DISCONNECT);
@@ -169,8 +161,8 @@ final class A2dpStateMachine extends StateMachine {
                 if (mIsPlaying) {
                     Log.i(TAG, "Disconnected: stopped playing: " + mDevice);
                     mIsPlaying = false;
-                    broadcastAudioState(BluetoothA2dp.STATE_NOT_PLAYING,
-                                        BluetoothA2dp.STATE_PLAYING);
+                    broadcastAudioState(
+                            BluetoothA2dp.STATE_NOT_PLAYING, BluetoothA2dp.STATE_PLAYING);
                 }
             }
 
@@ -180,15 +172,23 @@ final class A2dpStateMachine extends StateMachine {
         @Override
         public void exit() {
             Message currentMessage = getCurrentMessage();
-            log("Exit Disconnected(" + mDevice + "): " + (currentMessage == null ? "null"
-                    : messageWhatToString(currentMessage.what)));
+            log(
+                    "Exit Disconnected("
+                            + mDevice
+                            + "): "
+                            + (currentMessage == null
+                                    ? "null"
+                                    : messageWhatToString(currentMessage.what)));
             mLastConnectionState = BluetoothProfile.STATE_DISCONNECTED;
         }
 
         @Override
         public boolean processMessage(Message message) {
-            log("Disconnected process message(" + mDevice + "): "
-                    + messageWhatToString(message.what));
+            log(
+                    "Disconnected process message("
+                            + mDevice
+                            + "): "
+                            + messageWhatToString(message.what));
 
             switch (message.what) {
                 case CONNECT:
@@ -294,8 +294,14 @@ final class A2dpStateMachine extends StateMachine {
         @Override
         public void enter() {
             Message currentMessage = getCurrentMessage();
-            Log.i(TAG, "Enter Connecting(" + mDevice + "): " + (currentMessage == null ? "null"
-                    : messageWhatToString(currentMessage.what)));
+            Log.i(
+                    TAG,
+                    "Enter Connecting("
+                            + mDevice
+                            + "): "
+                            + (currentMessage == null
+                                    ? "null"
+                                    : messageWhatToString(currentMessage.what)));
             sendMessageDelayed(CONNECT_TIMEOUT, sConnectTimeoutMs);
             mConnectionState = BluetoothProfile.STATE_CONNECTING;
             broadcastConnectionState(mConnectionState, mLastConnectionState);
@@ -304,33 +310,43 @@ final class A2dpStateMachine extends StateMachine {
         @Override
         public void exit() {
             Message currentMessage = getCurrentMessage();
-            log("Exit Connecting(" + mDevice + "): " + (currentMessage == null ? "null"
-                    : messageWhatToString(currentMessage.what)));
+            log(
+                    "Exit Connecting("
+                            + mDevice
+                            + "): "
+                            + (currentMessage == null
+                                    ? "null"
+                                    : messageWhatToString(currentMessage.what)));
             mLastConnectionState = BluetoothProfile.STATE_CONNECTING;
             removeMessages(CONNECT_TIMEOUT);
         }
 
         @Override
         public boolean processMessage(Message message) {
-            log("Connecting process message(" + mDevice + "): "
-                    + messageWhatToString(message.what));
+            log(
+                    "Connecting process message("
+                            + mDevice
+                            + "): "
+                            + messageWhatToString(message.what));
 
             switch (message.what) {
                 case CONNECT:
                     deferMessage(message);
                     break;
-                case CONNECT_TIMEOUT: {
-                    Log.w(TAG, "Connecting connection timeout: " + mDevice);
-                    mA2dpNativeInterface.disconnectA2dp(mDevice);
-                    A2dpStackEvent event =
-                            new A2dpStackEvent(A2dpStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
-                    event.device = mDevice;
-                    event.valueInt = A2dpStackEvent.CONNECTION_STATE_DISCONNECTED;
-                    sendMessage(STACK_EVENT, event);
-                    MetricsLogger.getInstance().count(
-                            BluetoothProtoEnums.A2DP_CONNECTION_TIMEOUT, 1);
-                    break;
-                }
+                case CONNECT_TIMEOUT:
+                    {
+                        Log.w(TAG, "Connecting connection timeout: " + mDevice);
+                        mA2dpNativeInterface.disconnectA2dp(mDevice);
+                        A2dpStackEvent event =
+                                new A2dpStackEvent(
+                                        A2dpStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
+                        event.device = mDevice;
+                        event.valueInt = A2dpStackEvent.CONNECTION_STATE_DISCONNECTED;
+                        sendMessage(STACK_EVENT, event);
+                        MetricsLogger.getInstance()
+                                .count(BluetoothProtoEnums.A2DP_CONNECTION_TIMEOUT, 1);
+                        break;
+                    }
                 case DISCONNECT:
                     // Cancel connection
                     Log.i(TAG, "Connecting: connection canceled to " + mDevice);
@@ -392,8 +408,14 @@ final class A2dpStateMachine extends StateMachine {
         @Override
         public void enter() {
             Message currentMessage = getCurrentMessage();
-            Log.i(TAG, "Enter Disconnecting(" + mDevice + "): " + (currentMessage == null ? "null"
-                    : messageWhatToString(currentMessage.what)));
+            Log.i(
+                    TAG,
+                    "Enter Disconnecting("
+                            + mDevice
+                            + "): "
+                            + (currentMessage == null
+                                    ? "null"
+                                    : messageWhatToString(currentMessage.what)));
             sendMessageDelayed(CONNECT_TIMEOUT, sConnectTimeoutMs);
             mConnectionState = BluetoothProfile.STATE_DISCONNECTING;
             broadcastConnectionState(mConnectionState, mLastConnectionState);
@@ -402,31 +424,41 @@ final class A2dpStateMachine extends StateMachine {
         @Override
         public void exit() {
             Message currentMessage = getCurrentMessage();
-            log("Exit Disconnecting(" + mDevice + "): " + (currentMessage == null ? "null"
-                    : messageWhatToString(currentMessage.what)));
+            log(
+                    "Exit Disconnecting("
+                            + mDevice
+                            + "): "
+                            + (currentMessage == null
+                                    ? "null"
+                                    : messageWhatToString(currentMessage.what)));
             mLastConnectionState = BluetoothProfile.STATE_DISCONNECTING;
             removeMessages(CONNECT_TIMEOUT);
         }
 
         @Override
         public boolean processMessage(Message message) {
-            log("Disconnecting process message(" + mDevice + "): "
-                    + messageWhatToString(message.what));
+            log(
+                    "Disconnecting process message("
+                            + mDevice
+                            + "): "
+                            + messageWhatToString(message.what));
 
             switch (message.what) {
                 case CONNECT:
                     deferMessage(message);
                     break;
-                case CONNECT_TIMEOUT: {
-                    Log.w(TAG, "Disconnecting connection timeout: " + mDevice);
-                    mA2dpNativeInterface.disconnectA2dp(mDevice);
-                    A2dpStackEvent event =
-                            new A2dpStackEvent(A2dpStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
-                    event.device = mDevice;
-                    event.valueInt = A2dpStackEvent.CONNECTION_STATE_DISCONNECTED;
-                    sendMessage(STACK_EVENT, event);
-                    break;
-                }
+                case CONNECT_TIMEOUT:
+                    {
+                        Log.w(TAG, "Disconnecting connection timeout: " + mDevice);
+                        mA2dpNativeInterface.disconnectA2dp(mDevice);
+                        A2dpStackEvent event =
+                                new A2dpStackEvent(
+                                        A2dpStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
+                        event.device = mDevice;
+                        event.valueInt = A2dpStackEvent.CONNECTION_STATE_DISCONNECTED;
+                        sendMessage(STACK_EVENT, event);
+                        break;
+                    }
                 case DISCONNECT:
                     deferMessage(message);
                     break;
@@ -497,8 +529,14 @@ final class A2dpStateMachine extends StateMachine {
         @Override
         public void enter() {
             Message currentMessage = getCurrentMessage();
-            Log.i(TAG, "Enter Connected(" + mDevice + "): " + (currentMessage == null ? "null"
-                    : messageWhatToString(currentMessage.what)));
+            Log.i(
+                    TAG,
+                    "Enter Connected("
+                            + mDevice
+                            + "): "
+                            + (currentMessage == null
+                                    ? "null"
+                                    : messageWhatToString(currentMessage.what)));
             mConnectionState = BluetoothProfile.STATE_CONNECTED;
 
             removeDeferredMessages(CONNECT);
@@ -518,8 +556,13 @@ final class A2dpStateMachine extends StateMachine {
         @Override
         public void exit() {
             Message currentMessage = getCurrentMessage();
-            log("Exit Connected(" + mDevice + "): " + (currentMessage == null ? "null"
-                    : messageWhatToString(currentMessage.what)));
+            log(
+                    "Exit Connected("
+                            + mDevice
+                            + "): "
+                            + (currentMessage == null
+                                    ? "null"
+                                    : messageWhatToString(currentMessage.what)));
             mLastConnectionState = BluetoothProfile.STATE_CONNECTED;
         }
 
@@ -531,17 +574,19 @@ final class A2dpStateMachine extends StateMachine {
                 case CONNECT:
                     Log.w(TAG, "Connected: CONNECT ignored: " + mDevice);
                     break;
-                case DISCONNECT: {
-                    Log.i(TAG, "Disconnecting from " + mDevice);
-                    if (!mA2dpNativeInterface.disconnectA2dp(mDevice)) {
-                        // If error in the native stack, transition directly to Disconnected state.
-                        Log.e(TAG, "Connected: error disconnecting from " + mDevice);
-                        transitionTo(mDisconnected);
-                        break;
+                case DISCONNECT:
+                    {
+                        Log.i(TAG, "Disconnecting from " + mDevice);
+                        if (!mA2dpNativeInterface.disconnectA2dp(mDevice)) {
+                            // If error in the native stack, transition directly to Disconnected
+                            // state.
+                            Log.e(TAG, "Connected: error disconnecting from " + mDevice);
+                            transitionTo(mDisconnected);
+                            break;
+                        }
+                        transitionTo(mDisconnecting);
                     }
-                    transitionTo(mDisconnecting);
-                }
-                break;
+                    break;
                 case STACK_EVENT:
                     A2dpStackEvent event = (A2dpStackEvent) message.obj;
                     log("Connected: stack event: " + event);
@@ -600,8 +645,8 @@ final class A2dpStateMachine extends StateMachine {
                         if (!mIsPlaying) {
                             Log.i(TAG, "Connected: started playing: " + mDevice);
                             mIsPlaying = true;
-                            broadcastAudioState(BluetoothA2dp.STATE_PLAYING,
-                                                BluetoothA2dp.STATE_NOT_PLAYING);
+                            broadcastAudioState(
+                                    BluetoothA2dp.STATE_PLAYING, BluetoothA2dp.STATE_NOT_PLAYING);
                         }
                     }
                     break;
@@ -611,8 +656,8 @@ final class A2dpStateMachine extends StateMachine {
                         if (mIsPlaying) {
                             Log.i(TAG, "Connected: stopped playing: " + mDevice);
                             mIsPlaying = false;
-                            broadcastAudioState(BluetoothA2dp.STATE_NOT_PLAYING,
-                                                BluetoothA2dp.STATE_PLAYING);
+                            broadcastAudioState(
+                                    BluetoothA2dp.STATE_NOT_PLAYING, BluetoothA2dp.STATE_PLAYING);
                         }
                     }
                     break;
@@ -679,10 +724,13 @@ final class A2dpStateMachine extends StateMachine {
         // The following is a large enough debug operation such that we want to guard it was an
         // isLoggable check
         if (Log.isLoggable(TAG, Log.DEBUG)) {
-            Log.d(TAG, "A2DP Codec Config: " + prevCodecConfig + "->"
-                    + newCodecStatus.getCodecConfig());
-            for (BluetoothCodecConfig codecConfig :
-                    newCodecStatus.getCodecsLocalCapabilities()) {
+            Log.d(
+                    TAG,
+                    "A2DP Codec Config: "
+                            + prevCodecConfig
+                            + "->"
+                            + newCodecStatus.getCodecConfig());
+            for (BluetoothCodecConfig codecConfig : newCodecStatus.getCodecsLocalCapabilities()) {
                 Log.d(TAG, "A2DP Codec Local Capability: " + codecConfig);
             }
             for (BluetoothCodecConfig codecConfig :
@@ -707,17 +755,17 @@ final class A2dpStateMachine extends StateMachine {
             } else if (!newCodecConfig.sameAudioFeedingParameters(prevCodecConfig)) {
                 update = true;
             } else if ((newCodecConfig.getCodecType()
-                        == BluetoothCodecConfig.SOURCE_CODEC_TYPE_LDAC)
+                            == BluetoothCodecConfig.SOURCE_CODEC_TYPE_LDAC)
                     && (prevCodecConfig != null)
                     && (prevCodecConfig.getCodecSpecific1()
-                        != newCodecConfig.getCodecSpecific1())) {
+                            != newCodecConfig.getCodecSpecific1())) {
                 update = true;
             } else if ((newCodecConfig.getCodecType()
-                        == BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS)
+                            == BluetoothCodecConfig.SOURCE_CODEC_TYPE_OPUS)
                     && (prevCodecConfig != null)
                     // check framesize field
                     && (prevCodecConfig.getCodecSpecific1()
-                        != newCodecConfig.getCodecSpecific1())) {
+                            != newCodecConfig.getCodecSpecific1())) {
                 update = true;
             }
             if (update) {
@@ -733,14 +781,20 @@ final class A2dpStateMachine extends StateMachine {
 
     // This method does not check for error condition (newState == prevState)
     private void broadcastConnectionState(int newState, int prevState) {
-        log("Connection state " + mDevice + ": " + profileStateToString(prevState)
-                    + "->" + profileStateToString(newState));
+        log(
+                "Connection state "
+                        + mDevice
+                        + ": "
+                        + profileStateToString(prevState)
+                        + "->"
+                        + profileStateToString(newState));
 
         Intent intent = new Intent(BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED);
         intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState);
         intent.putExtra(BluetoothProfile.EXTRA_STATE, newState);
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, mDevice);
-        intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT
+        intent.addFlags(
+                Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT
                         | Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
         mA2dpService.handleConnectionStateChanged(mDevice, prevState, newState);
         mA2dpService.sendBroadcast(
@@ -748,8 +802,13 @@ final class A2dpStateMachine extends StateMachine {
     }
 
     private void broadcastAudioState(int newState, int prevState) {
-        log("A2DP Playing state : device: " + mDevice + " State:" + audioStateToString(prevState)
-                + "->" + audioStateToString(newState));
+        log(
+                "A2DP Playing state : device: "
+                        + mDevice
+                        + " State:"
+                        + audioStateToString(prevState)
+                        + "->"
+                        + audioStateToString(newState));
         Intent intent = new Intent(BluetoothA2dp.ACTION_PLAYING_STATE_CHANGED);
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, mDevice);
         intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState);
@@ -773,8 +832,8 @@ final class A2dpStateMachine extends StateMachine {
         return builder.toString();
     }
 
-    private static boolean sameSelectableCodec(BluetoothCodecStatus prevCodecStatus,
-            BluetoothCodecStatus newCodecStatus) {
+    private static boolean sameSelectableCodec(
+            BluetoothCodecStatus prevCodecStatus, BluetoothCodecStatus newCodecStatus) {
         if (prevCodecStatus == null || newCodecStatus == null) {
             return false;
         }
@@ -838,16 +897,23 @@ final class A2dpStateMachine extends StateMachine {
 
     public void dump(StringBuilder sb) {
         boolean isActive = Objects.equals(mDevice, mA2dpService.getActiveDevice());
-        ProfileService.println(sb,
-                "=== A2dpStateMachine for " + mDevice + (isActive ? " (Active) ===" : " ==="));
-        ProfileService.println(sb,
-                "  getConnectionPolicy: " + mA2dpService.getConnectionPolicy(mDevice));
-        ProfileService.println(sb, "  mConnectionState: " + profileStateToString(mConnectionState)
-                + ", mLastConnectionState: " + profileStateToString(mLastConnectionState));
+        ProfileService.println(
+                sb, "=== A2dpStateMachine for " + mDevice + (isActive ? " (Active) ===" : " ==="));
+        ProfileService.println(
+                sb, "  getConnectionPolicy: " + mA2dpService.getConnectionPolicy(mDevice));
+        ProfileService.println(
+                sb,
+                "  mConnectionState: "
+                        + profileStateToString(mConnectionState)
+                        + ", mLastConnectionState: "
+                        + profileStateToString(mLastConnectionState));
         ProfileService.println(sb, "  mIsPlaying: " + mIsPlaying);
-        ProfileService.println(sb,
-                "  getSupportsOptionalCodecs: " + mA2dpService.getSupportsOptionalCodecs(mDevice)
-                + ", getOptionalCodecsEnabled: " + mA2dpService.getOptionalCodecsEnabled(mDevice));
+        ProfileService.println(
+                sb,
+                "  getSupportsOptionalCodecs: "
+                        + mA2dpService.getSupportsOptionalCodecs(mDevice)
+                        + ", getOptionalCodecsEnabled: "
+                        + mA2dpService.getOptionalCodecsEnabled(mDevice));
         synchronized (this) {
             if (mCodecStatus != null) {
                 ProfileService.println(sb, "  mCodecConfig: " + mCodecStatus.getCodecConfig());
@@ -861,7 +927,7 @@ final class A2dpStateMachine extends StateMachine {
         // Dump the state machine logs
         StringWriter stringWriter = new StringWriter();
         PrintWriter printWriter = new PrintWriter(stringWriter);
-        super.dump(new FileDescriptor(), printWriter, new String[]{});
+        super.dump(new FileDescriptor(), printWriter, new String[] {});
         printWriter.flush();
         stringWriter.flush();
         ProfileService.println(sb, "  StateMachineLog:");

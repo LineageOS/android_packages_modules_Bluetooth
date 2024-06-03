@@ -42,23 +42,18 @@ import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
-/**
- * Test cases for {@link AppAdvertiseStats}.
- */
+/** Test cases for {@link AppAdvertiseStats}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class AppAdvertiseStatsTest {
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    private ContextMap map;
+    @Mock private ContextMap map;
 
-    @Mock
-    private GattService service;
+    @Mock private GattService service;
 
-    @Mock
-    private MetricsLogger  mMetricsLogger;
+    @Mock private MetricsLogger mMetricsLogger;
 
     @Before
     public void setUp() throws Exception {
@@ -89,8 +84,7 @@ public class AppAdvertiseStatsTest {
 
         AppAdvertiseStats appAdvertiseStats = new AppAdvertiseStats(id, name, map, service);
 
-        assertThat(appAdvertiseStats.mAdvertiserRecords.size())
-                .isEqualTo(0);
+        assertThat(appAdvertiseStats.mAdvertiserRecords.size()).isEqualTo(0);
 
         int duration = 1;
         int maxExtAdvEvents = 2;
@@ -111,13 +105,11 @@ public class AppAdvertiseStatsTest {
                 periodicParameters,
                 periodicData,
                 duration,
-                maxExtAdvEvents
-        );
+                maxExtAdvEvents);
 
         int numOfExpectedRecords = 2;
 
-        assertThat(appAdvertiseStats.mAdvertiserRecords.size())
-                .isEqualTo(numOfExpectedRecords);
+        assertThat(appAdvertiseStats.mAdvertiserRecords.size()).isEqualTo(numOfExpectedRecords);
     }
 
     @Test
@@ -130,8 +122,7 @@ public class AppAdvertiseStatsTest {
         int duration = 1;
         int maxExtAdvEvents = 2;
 
-        assertThat(appAdvertiseStats.mAdvertiserRecords.size())
-                .isEqualTo(0);
+        assertThat(appAdvertiseStats.mAdvertiserRecords.size()).isEqualTo(0);
 
         appAdvertiseStats.recordAdvertiseStart(duration, maxExtAdvEvents);
 
@@ -149,15 +140,13 @@ public class AppAdvertiseStatsTest {
                 periodicParameters,
                 periodicData,
                 duration,
-                maxExtAdvEvents
-        );
+                maxExtAdvEvents);
 
         appAdvertiseStats.recordAdvertiseStop();
 
         int numOfExpectedRecords = 2;
 
-        assertThat(appAdvertiseStats.mAdvertiserRecords.size())
-                .isEqualTo(numOfExpectedRecords);
+        assertThat(appAdvertiseStats.mAdvertiserRecords.size()).isEqualTo(numOfExpectedRecords);
     }
 
     @Test
@@ -170,16 +159,14 @@ public class AppAdvertiseStatsTest {
         int duration = 1;
         int maxExtAdvEvents = 2;
 
-        assertThat(appAdvertiseStats.mAdvertiserRecords.size())
-                .isEqualTo(0);
+        assertThat(appAdvertiseStats.mAdvertiserRecords.size()).isEqualTo(0);
 
         appAdvertiseStats.enableAdvertisingSet(true, duration, maxExtAdvEvents);
         appAdvertiseStats.enableAdvertisingSet(false, duration, maxExtAdvEvents);
 
         int numOfExpectedRecords = 1;
 
-        assertThat(appAdvertiseStats.mAdvertiserRecords.size())
-                .isEqualTo(numOfExpectedRecords);
+        assertThat(appAdvertiseStats.mAdvertiserRecords.size()).isEqualTo(numOfExpectedRecords);
     }
 
     @Test
@@ -269,8 +256,7 @@ public class AppAdvertiseStatsTest {
                 periodicParameters,
                 periodicData,
                 duration,
-                maxExtAdvEvents
-        );
+                maxExtAdvEvents);
 
         AppAdvertiseStats.dumpToString(sb, appAdvertiseStats);
     }
@@ -282,8 +268,8 @@ public class AppAdvertiseStatsTest {
 
         AppAdvertiseStats appAdvertiseStats = new AppAdvertiseStats(id, name, map, service);
 
-        AdvertisingSetParameters parameters = new AdvertisingSetParameters.Builder()
-                .setConnectable(true).build();
+        AdvertisingSetParameters parameters =
+                new AdvertisingSetParameters.Builder().setConnectable(true).build();
         AdvertiseData advertiseData = new AdvertiseData.Builder().build();
         AdvertiseData scanResponse = new AdvertiseData.Builder().build();
         PeriodicAdvertisingParameters periodicParameters =
@@ -291,34 +277,29 @@ public class AppAdvertiseStatsTest {
         AdvertiseData periodicData = new AdvertiseData.Builder().build();
 
         appAdvertiseStats.recordAdvertiseStart(
-                parameters,
-                advertiseData,
-                scanResponse,
-                periodicParameters,
-                periodicData,
-                0,
-                0
-        );
-        verify(mMetricsLogger, times(1)).cacheCount(
-                eq(BluetoothProtoEnums.LE_ADV_COUNT_ENABLE), eq((long) 1));
-        verify(mMetricsLogger, times(1)).cacheCount(
-                eq(BluetoothProtoEnums.LE_ADV_COUNT_CONNECTABLE_ENABLE), eq((long)1));
-        verify(mMetricsLogger, times(1)).cacheCount(
-                eq(BluetoothProtoEnums.LE_ADV_COUNT_PERIODIC_ENABLE), eq((long) 1));
+                parameters, advertiseData, scanResponse, periodicParameters, periodicData, 0, 0);
+        verify(mMetricsLogger, times(1))
+                .cacheCount(eq(BluetoothProtoEnums.LE_ADV_COUNT_ENABLE), eq((long) 1));
+        verify(mMetricsLogger, times(1))
+                .cacheCount(eq(BluetoothProtoEnums.LE_ADV_COUNT_CONNECTABLE_ENABLE), eq((long) 1));
+        verify(mMetricsLogger, times(1))
+                .cacheCount(eq(BluetoothProtoEnums.LE_ADV_COUNT_PERIODIC_ENABLE), eq((long) 1));
         Mockito.clearInvocations(mMetricsLogger);
 
         appAdvertiseStats.recordAdvertiseStop();
-        verify(mMetricsLogger, times(1)).cacheCount(
-                eq(BluetoothProtoEnums.LE_ADV_COUNT_DISABLE), eq((long) 1));
-        verify(mMetricsLogger, times(1)).cacheCount(
-                eq(BluetoothProtoEnums.LE_ADV_COUNT_CONNECTABLE_DISABLE), eq((long)1));
-        verify(mMetricsLogger, times(1)).cacheCount(
-                eq(BluetoothProtoEnums.LE_ADV_COUNT_PERIODIC_DISABLE), eq((long) 1));
-        verify(mMetricsLogger, times(1)).cacheCount(
-                eq(BluetoothProtoEnums.LE_ADV_DURATION_COUNT_TOTAL_1M), eq((long) 1));
-        verify(mMetricsLogger, times(1)).cacheCount(
-                eq(BluetoothProtoEnums.LE_ADV_DURATION_COUNT_CONNECTABLE_1M), eq((long) 1));
-        verify(mMetricsLogger, times(1)).cacheCount(
-                eq(BluetoothProtoEnums.LE_ADV_DURATION_COUNT_PERIODIC_1M), eq((long) 1));
+        verify(mMetricsLogger, times(1))
+                .cacheCount(eq(BluetoothProtoEnums.LE_ADV_COUNT_DISABLE), eq((long) 1));
+        verify(mMetricsLogger, times(1))
+                .cacheCount(eq(BluetoothProtoEnums.LE_ADV_COUNT_CONNECTABLE_DISABLE), eq((long) 1));
+        verify(mMetricsLogger, times(1))
+                .cacheCount(eq(BluetoothProtoEnums.LE_ADV_COUNT_PERIODIC_DISABLE), eq((long) 1));
+        verify(mMetricsLogger, times(1))
+                .cacheCount(eq(BluetoothProtoEnums.LE_ADV_DURATION_COUNT_TOTAL_1M), eq((long) 1));
+        verify(mMetricsLogger, times(1))
+                .cacheCount(
+                        eq(BluetoothProtoEnums.LE_ADV_DURATION_COUNT_CONNECTABLE_1M), eq((long) 1));
+        verify(mMetricsLogger, times(1))
+                .cacheCount(
+                        eq(BluetoothProtoEnums.LE_ADV_DURATION_COUNT_PERIODIC_1M), eq((long) 1));
     }
 }

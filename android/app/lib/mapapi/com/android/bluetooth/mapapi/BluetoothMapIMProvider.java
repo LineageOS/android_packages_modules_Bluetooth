@@ -1,17 +1,17 @@
 /*
-* Copyright (C) 2015 Samsung System LSI
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*      http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (C) 2015 Samsung System LSI
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package com.android.bluetooth.mapapi;
 
@@ -33,9 +33,8 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 /**
- * A base implementation of the BluetoothMapContract.
- * A base class for a ContentProvider that allows access to Instant messages from a Bluetooth
- * device through the Message Access Profile.
+ * A base implementation of the BluetoothMapContract. A base class for a ContentProvider that allows
+ * access to Instant messages from a Bluetooth device through the Message Access Profile.
  */
 public abstract class BluetoothMapIMProvider extends ContentProvider {
 
@@ -58,9 +57,7 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
      */
     protected abstract Uri getContentUri();
 
-    /**
-     * Implementation is provided by the parent class.
-     */
+    /** Implementation is provided by the parent class. */
     @Override
     public void attachInfo(Context context, ProviderInfo info) {
         mAuthority = info.authority;
@@ -68,10 +65,10 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
         mMatcher = new UriMatcher(UriMatcher.NO_MATCH);
         mMatcher.addURI(mAuthority, BluetoothMapContract.TABLE_ACCOUNT, MATCH_ACCOUNT);
         mMatcher.addURI(mAuthority, "#/" + BluetoothMapContract.TABLE_MESSAGE, MATCH_MESSAGE);
-        mMatcher.addURI(mAuthority, "#/" + BluetoothMapContract.TABLE_CONVERSATION,
-                MATCH_CONVERSATION);
-        mMatcher.addURI(mAuthority, "#/" + BluetoothMapContract.TABLE_CONVOCONTACT,
-                MATCH_CONVOCONTACT);
+        mMatcher.addURI(
+                mAuthority, "#/" + BluetoothMapContract.TABLE_CONVERSATION, MATCH_CONVERSATION);
+        mMatcher.addURI(
+                mAuthority, "#/" + BluetoothMapContract.TABLE_CONVOCONTACT, MATCH_CONVOCONTACT);
 
         // Sanity check our setup
         if (!info.exported) {
@@ -91,10 +88,11 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
     }
 
     /**
-     * This function shall be called when any Account database content have changed
-     * to Notify any attached observers.
-     * @param accountId the ID of the account that changed. Null is a valid value,
-     *        if accountId is unknown or multiple accounts changed.
+     * This function shall be called when any Account database content have changed to Notify any
+     * attached observers.
+     *
+     * @param accountId the ID of the account that changed. Null is a valid value, if accountId is
+     *     unknown or multiple accounts changed.
      */
     protected void onAccountChanged(String accountId) {
         Uri newUri = null;
@@ -115,12 +113,13 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
     }
 
     /**
-     * This function shall be called when any Message database content have changed
-     * to notify any attached observers.
-     * @param accountId Null is a valid value, if accountId is unknown, but
-     *        recommended for increased performance.
-     * @param messageId Null is a valid value, if multiple messages changed or the
-     *        messageId is unknown, but recommended for increased performance.
+     * This function shall be called when any Message database content have changed to notify any
+     * attached observers.
+     *
+     * @param accountId Null is a valid value, if accountId is unknown, but recommended for
+     *     increased performance.
+     * @param messageId Null is a valid value, if multiple messages changed or the messageId is
+     *     unknown, but recommended for increased performance.
      */
     protected void onMessageChanged(String accountId, String messageId) {
         Uri newUri = null;
@@ -134,25 +133,32 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
             if (messageId == null) {
                 newUri = BluetoothMapContract.buildMessageUri(mAuthority, accountId);
             } else {
-                newUri = BluetoothMapContract.buildMessageUriWithId(mAuthority, accountId,
-                        messageId);
+                newUri =
+                        BluetoothMapContract.buildMessageUriWithId(
+                                mAuthority, accountId, messageId);
             }
         }
         if (D) {
-            Log.d(TAG, "onMessageChanged() accountId = " + accountId + " messageId = " + messageId
-                    + " URI: " + newUri);
+            Log.d(
+                    TAG,
+                    "onMessageChanged() accountId = "
+                            + accountId
+                            + " messageId = "
+                            + messageId
+                            + " URI: "
+                            + newUri);
         }
         mResolver.notifyChange(newUri, null);
     }
 
-
     /**
-     * This function shall be called when any Message database content have changed
-     * to notify any attached observers.
-     * @param accountId Null is a valid value, if accountId is unknown, but
-     *        recommended for increased performance.
-     * @param contactId Null is a valid value, if multiple contacts changed or the
-     *        contactId is unknown, but recommended for increased performance.
+     * This function shall be called when any Message database content have changed to notify any
+     * attached observers.
+     *
+     * @param accountId Null is a valid value, if accountId is unknown, but recommended for
+     *     increased performance.
+     * @param contactId Null is a valid value, if multiple contacts changed or the contactId is
+     *     unknown, but recommended for increased performance.
      */
     protected void onContactChanged(String accountId, String contactId) {
         Uri newUri = null;
@@ -166,20 +172,27 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
             if (contactId == null) {
                 newUri = BluetoothMapContract.buildConvoContactsUri(mAuthority, accountId);
             } else {
-                newUri = BluetoothMapContract.buildConvoContactsUriWithId(mAuthority, accountId,
-                        contactId);
+                newUri =
+                        BluetoothMapContract.buildConvoContactsUriWithId(
+                                mAuthority, accountId, contactId);
             }
         }
         if (D) {
-            Log.d(TAG, "onContactChanged() accountId = " + accountId + " contactId = " + contactId
-                    + " URI: " + newUri);
+            Log.d(
+                    TAG,
+                    "onContactChanged() accountId = "
+                            + accountId
+                            + " contactId = "
+                            + contactId
+                            + " URI: "
+                            + newUri);
         }
         mResolver.notifyChange(newUri, null);
     }
 
     /**
-     * Not used, this is just a dummy implementation.
-     * TODO: We might need to something intelligent here after introducing IM
+     * Not used, this is just a dummy implementation. TODO: We might need to something intelligent
+     * here after introducing IM
      */
     @Override
     public String getType(Uri uri) {
@@ -188,9 +201,8 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
 
     /**
      * The MAP specification states that a delete request from MAP client is a folder shift to the
-     * 'deleted' folder.
-     * Only use case of delete() is when transparency is requested for push messages, then
-     * message should not remain in sent folder and therefore must be deleted
+     * 'deleted' folder. Only use case of delete() is when transparency is requested for push
+     * messages, then message should not remain in sent folder and therefore must be deleted
      */
     @Override
     public int delete(Uri uri, String where, String[] selectionArgs) {
@@ -231,6 +243,7 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
 
     /**
      * This function deletes a message.
+     *
      * @param accountId the ID of the Account
      * @param messageId the ID of the message to delete.
      * @return the number of messages deleted - 0 if the message was not found.
@@ -238,12 +251,9 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
     protected abstract int deleteMessage(String accountId, String messageId);
 
     /**
-     * Insert is used to add new messages to the data base.
-     * Insert message approach:
-     *   - Insert an empty message to get an _id with only a folder_id
-     *   - Open the _id for write
-     *   - Write the message content
-     *     (When the writer completes, this provider should do an update of the message)
+     * Insert is used to add new messages to the data base. Insert message approach: - Insert an
+     * empty message to get an _id with only a folder_id - Open the _id for write - Write the
+     * message content (When the writer completes, this provider should do an update of the message)
      */
     @Override
     public Uri insert(Uri uri, ContentValues values) {
@@ -261,8 +271,12 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
 
         String id; // the id of the entry inserted into the database
         final long callingId = Binder.clearCallingIdentity();
-        Log.d(TAG, "insert(): uri=" + uri.toString() + " - getLastPathSegment() = "
-                + uri.getLastPathSegment());
+        Log.d(
+                TAG,
+                "insert(): uri="
+                        + uri.toString()
+                        + " - getLastPathSegment() = "
+                        + uri.getLastPathSegment());
         try {
             if (table.equals(BluetoothMapContract.TABLE_MESSAGE)) {
                 id = insertMessage(accountId, values);
@@ -279,10 +293,10 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
         }
     }
 
-
     /**
-     * Inserts an empty message into the Message data base in the specified folder.
-     * This is done before the actual message content is written by fileIO.
+     * Inserts an empty message into the Message data base in the specified folder. This is done
+     * before the actual message content is written by fileIO.
+     *
      * @param accountId the ID of the account
      * @param folderId the ID of the folder to create a new message in.
      * @return the message id as a string
@@ -292,9 +306,10 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
     /**
      * Utility function to build a projection based on a projectionMap.
      *
-     *   "btColumnName" -> "imColumnName as btColumnName" for each entry.
+     * <p>"btColumnName" -> "imColumnName as btColumnName" for each entry.
      *
-     * This supports SQL statements in the column name entry.
+     * <p>This supports SQL statements in the column name entry.
+     *
      * @param projection
      * @param projectionMap <string, string>
      * @return the converted projection
@@ -308,11 +323,15 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
     }
 
     /**
-     * This query needs to map from the data used in the e-mail client to
-     * BluetoothMapContract type of data.
+     * This query needs to map from the data used in the e-mail client to BluetoothMapContract type
+     * of data.
      */
     @Override
-    public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
+    public Cursor query(
+            Uri uri,
+            String[] projection,
+            String selection,
+            String[] selectionArgs,
             String sortOrder) {
         final long callingId = Binder.clearCallingIdentity();
         try {
@@ -353,13 +372,20 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
                     if (value != null) {
                         threadId = Long.parseLong(value);
                     }
-                    return queryConversation(accountId, threadId, read, periodEnd, periodBegin,
-                            searchString, projection, sortOrder);
+                    return queryConversation(
+                            accountId,
+                            threadId,
+                            read,
+                            periodEnd,
+                            periodBegin,
+                            searchString,
+                            projection,
+                            sortOrder);
                 case MATCH_CONVOCONTACT:
                     accountId = getAccountId(uri);
                     long contactId = 0;
-                    return queryConvoContact(accountId, contactId, projection, selection,
-                            selectionArgs, sortOrder);
+                    return queryConvoContact(
+                            accountId, contactId, projection, selection, selectionArgs, sortOrder);
                 default:
                     throw new UnsupportedOperationException("Unsupported Uri " + uri);
             }
@@ -369,27 +395,24 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
     }
 
     /**
-     * Query account information.
-     * This function shall return only exposable e-mail accounts. Hence shall not
-     * return accounts that has policies suggesting not to be shared them.
+     * Query account information. This function shall return only exposable e-mail accounts. Hence
+     * shall not return accounts that has policies suggesting not to be shared them.
+     *
      * @param projection
      * @param selection
      * @param selectionArgs
      * @param sortOrder
      * @return a cursor to the accounts that are subject to exposure over BT.
      */
-    protected abstract Cursor queryAccount(String[] projection, String selection,
-            String[] selectionArgs, String sortOrder);
+    protected abstract Cursor queryAccount(
+            String[] projection, String selection, String[] selectionArgs, String sortOrder);
 
     /**
      * For the message table the selection (where clause) can only include the following columns:
-     *    date: less than, greater than and equals
-     *    flagRead: = 1 or = 0
-     *    flagPriority: = 1 or = 0
-     *    folder_id: the ID of the folder only equals
-     *    toList: partial name/address search
-     *    fromList: partial name/address search
-     * Additionally the COUNT and OFFSET shall be supported.
+     * date: less than, greater than and equals flagRead: = 1 or = 0 flagPriority: = 1 or = 0
+     * folder_id: the ID of the folder only equals toList: partial name/address search fromList:
+     * partial name/address search Additionally the COUNT and OFFSET shall be supported.
+     *
      * @param accountId the ID of the account
      * @param projection
      * @param selection
@@ -397,17 +420,19 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
      * @param sortOrder
      * @return a cursor to query result
      */
-    protected abstract Cursor queryMessage(String accountId, String[] projection, String selection,
-            String[] selectionArgs, String sortOrder);
+    protected abstract Cursor queryMessage(
+            String accountId,
+            String[] projection,
+            String selection,
+            String[] selectionArgs,
+            String sortOrder);
 
     /**
-     * For the Conversation table the selection (where clause) can only include
-     * the following columns:
-     *    _id: the ID of the conversation only equals
-     *    name: partial name search
-     *    last_activity: less than, greater than and equals
-     *    version_counter: updated IDs are regenerated
-     * Additionally the COUNT and OFFSET shall be supported.
+     * For the Conversation table the selection (where clause) can only include the following
+     * columns: _id: the ID of the conversation only equals name: partial name search last_activity:
+     * less than, greater than and equals version_counter: updated IDs are regenerated Additionally
+     * the COUNT and OFFSET shall be supported.
+     *
      * @param accountId the ID of the account
      * @param threadId the ID of the conversation
      * @param projection
@@ -416,51 +441,46 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
      * @param sortOrder
      * @return a cursor to query result
      */
-//    abstract protected Cursor queryConversation(Long threadId, String[] projection,
-//    String selection, String[] selectionArgs, String sortOrder);
+    //    abstract protected Cursor queryConversation(Long threadId, String[] projection,
+    //    String selection, String[] selectionArgs, String sortOrder);
 
     /**
-     * Query for conversations with contact information. The expected result is a cursor pointing
-     * to one row for each contact in a conversation.
-     * E.g.:
-     * ThreadId | ThreadName | ... | ContactName | ContactPrecence | ... |
-     *        1 |  "Bowling" | ... |        Hans |               1 | ... |
-     *        1 |  "Bowling" | ... |       Peter |               2 | ... |
-     *        2 |         "" | ... |       Peter |               2 | ... |
-     *        3 |         "" | ... |        Hans |               1 | ... |
+     * Query for conversations with contact information. The expected result is a cursor pointing to
+     * one row for each contact in a conversation. E.g.: ThreadId | ThreadName | ... | ContactName |
+     * ContactPrecence | ... | 1 | "Bowling" | ... | Hans | 1 | ... | 1 | "Bowling" | ... | Peter |
+     * 2 | ... | 2 | "" | ... | Peter | 2 | ... | 3 | "" | ... | Hans | 1 | ... |
      *
      * @param accountId the ID of the account
      * @param threadId filter on a single threadId - null if no filtering is needed.
-     * @param read filter on a read status:
-     *             null: no filtering on read is needed.
-     *             true: return only threads that has NO unread messages.
-     *             false: return only threads that has unread messages.
-     * @param periodEnd   last_activity time stamp of the the newest thread to include in the
-     *                    result.
+     * @param read filter on a read status: null: no filtering on read is needed. true: return only
+     *     threads that has NO unread messages. false: return only threads that has unread messages.
+     * @param periodEnd last_activity time stamp of the the newest thread to include in the result.
      * @param periodBegin last_activity time stamp of the the oldest thread to include in the
-     *                    result.
+     *     result.
      * @param searchString if not null, include only threads that has contacts that matches the
-     *                     searchString as part of the contact name or nickName.
+     *     searchString as part of the contact name or nickName.
      * @param projection A list of the columns that is needed in the result
-     * @param sortOrder  the sort order
+     * @param sortOrder the sort order
      * @return a Cursor representing the query result.
      */
-    protected abstract Cursor queryConversation(String accountId, Long threadId, Boolean read,
-            Long periodEnd, Long periodBegin, String searchString, String[] projection,
+    protected abstract Cursor queryConversation(
+            String accountId,
+            Long threadId,
+            Boolean read,
+            Long periodEnd,
+            Long periodBegin,
+            String searchString,
+            String[] projection,
             String sortOrder);
 
     /**
-     * For the ConvoContact table the selection (where clause) can only include the
-     * following columns:
-     *    _id: the ID of the contact only equals
-     *    convo_id: id of conversation contact is part of
-     *    name: partial name search
-     *    x_bt_uid: the ID of the bt uid only equals
-     *    chat_state: active, inactive, gone, composing, paused
-     *    last_active: less than, greater than and equals
-     *    presence_state: online, do_not_disturb, away, offline
-     *    priority: level of priority 0 - 100
-     *    last_online: less than, greater than and equals
+     * For the ConvoContact table the selection (where clause) can only include the following
+     * columns: _id: the ID of the contact only equals convo_id: id of conversation contact is part
+     * of name: partial name search x_bt_uid: the ID of the bt uid only equals chat_state: active,
+     * inactive, gone, composing, paused last_active: less than, greater than and equals
+     * presence_state: online, do_not_disturb, away, offline priority: level of priority 0 - 100
+     * last_online: less than, greater than and equals
+     *
      * @param accountId the ID of the account
      * @param contactId the ID of the contact
      * @param projection
@@ -469,27 +489,27 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
      * @param sortOrder
      * @return a cursor to query result
      */
-    protected abstract Cursor queryConvoContact(String accountId, Long contactId,
-            String[] projection, String selection, String[] selectionArgs, String sortOrder);
+    protected abstract Cursor queryConvoContact(
+            String accountId,
+            Long contactId,
+            String[] projection,
+            String selection,
+            String[] selectionArgs,
+            String sortOrder);
 
     /**
-     * update()
-     * Messages can be modified in the following cases:
-     *  - the folder_key of a message - hence the message can be moved to a new folder,
-     *                                  but the content cannot be modified.
-     *  - the FLAG_READ state can be changed.
-     * Conversations can be modified in the following cases:
-     *  - the read status - changing between read, unread
-     *  - the last activity - the time stamp of last message sent of received in the conversation
-     * ConvoContacts can be modified in the following cases:
-     *  - the chat_state - chat status of the contact in conversation
-     *  - the last_active - the time stamp of last action in the conversation
-     *  - the presence_state - the time stamp of last time contact online
-     *  - the status - the status text of the contact available in a conversation
-     *  - the last_online - the time stamp of last time contact online
-     * The selection statement will always be selection of a message ID, when updating a message,
-     * hence this function will be called multiple times if multiple messages must be updated
-     * due to the nature of the Bluetooth Message Access profile.
+     * update() Messages can be modified in the following cases: - the folder_key of a message -
+     * hence the message can be moved to a new folder, but the content cannot be modified. - the
+     * FLAG_READ state can be changed. Conversations can be modified in the following cases: - the
+     * read status - changing between read, unread - the last activity - the time stamp of last
+     * message sent of received in the conversation ConvoContacts can be modified in the following
+     * cases: - the chat_state - chat status of the contact in conversation - the last_active - the
+     * time stamp of last action in the conversation - the presence_state - the time stamp of last
+     * time contact online - the status - the status text of the contact available in a conversation
+     * - the last_online - the time stamp of last time contact online The selection statement will
+     * always be selection of a message ID, when updating a message, hence this function will be
+     * called multiple times if multiple messages must be updated due to the nature of the Bluetooth
+     * Message Access profile.
      */
     @Override
     public int update(Uri uri, ContentValues values, String selection, String[] selectionArgs) {
@@ -505,8 +525,12 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
 
         final long callingId = Binder.clearCallingIdentity();
         if (D) {
-            Log.w(TAG, "update(): uri=" + uri.toString() + " - getLastPathSegment() = "
-                    + uri.getLastPathSegment());
+            Log.w(
+                    TAG,
+                    "update(): uri="
+                            + uri.toString()
+                            + " - getLastPathSegment() = "
+                            + uri.getLastPathSegment());
         }
         try {
             if (table.equals(BluetoothMapContract.TABLE_ACCOUNT)) {
@@ -551,8 +575,9 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
     }
 
     /**
-     * Update an entry in the account table. Only the expose flag will be
-     * changed through this interface.
+     * Update an entry in the account table. Only the expose flag will be changed through this
+     * interface.
+     *
      * @param accountId the ID of the account to change.
      * @param flagExpose the updated value.
      * @return the number of entries changed - 0 if account not found or value cannot be changed.
@@ -561,26 +586,27 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
 
     /**
      * Update an entry in the message table.
+     *
      * @param accountId ID of the account to which the messageId relates
      * @param messageId the ID of the message to update
      * @param folderId the new folder ID value to set - ignore if null.
      * @param flagRead the new flagRead value to set - ignore if null.
      * @return
      */
-    protected abstract int updateMessage(String accountId, Long messageId, Long folderId,
-            Boolean flagRead);
+    protected abstract int updateMessage(
+            String accountId, Long messageId, Long folderId, Boolean flagRead);
 
     /**
-     * Utility function to Creates a ContentValues object based on a modified valuesSet.
-     * To be used after changing the keys and optionally values of a valueSet obtained
-     * from a ContentValues object received in update().
+     * Utility function to Creates a ContentValues object based on a modified valuesSet. To be used
+     * after changing the keys and optionally values of a valueSet obtained from a ContentValues
+     * object received in update().
+     *
      * @param valueSet the values as received in the contentProvider
      * @param keyMap the key map <btKey, emailKey>
-     * @return a new ContentValues object with the keys replaced as specified in the
-     * keyMap
+     * @return a new ContentValues object with the keys replaced as specified in the keyMap
      */
-    protected ContentValues createContentValues(Set<Entry<String, Object>> valueSet,
-            Map<String, String> keyMap) {
+    protected ContentValues createContentValues(
+            Set<Entry<String, Object>> valueSet, Map<String, String> keyMap) {
         ContentValues values = new ContentValues(valueSet.size());
         for (Entry<String, Object> ent : valueSet) {
             String key = keyMap.get(ent.getKey()); // Convert the key name
@@ -616,8 +642,14 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
     public Bundle call(String method, String arg, Bundle extras) {
         final long callingId = Binder.clearCallingIdentity();
         if (D) {
-            Log.w(TAG, "call(): method=" + method + " arg=" + arg + "ThreadId: "
-                    + Thread.currentThread().getId());
+            Log.w(
+                    TAG,
+                    "call(): method="
+                            + method
+                            + " arg="
+                            + arg
+                            + "ThreadId: "
+                            + Thread.currentThread().getId());
         }
         int ret = -1;
         try {
@@ -658,6 +690,7 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
 
     /**
      * Trigger a sync of the specified folder.
+     *
      * @param accountId the ID of the account that owns the folder
      * @param folderId the ID of the folder.
      * @return 0 at success
@@ -665,9 +698,10 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
     protected abstract int syncFolder(long accountId, long folderId);
 
     /**
-     * Set the properties that should change presence or chat state of owner
-     * e.g. when the owner is active on a BT client device but not on the BT server device
-     * where the IM application is installed, it should still be possible to show an active status.
+     * Set the properties that should change presence or chat state of owner e.g. when the owner is
+     * active on a BT client device but not on the BT server device where the IM application is
+     * installed, it should still be possible to show an active status.
+     *
      * @param presenceState should follow the contract specified values
      * @param presenceStatus string the owners current status
      * @param lastActive time stamp of the owners last activity
@@ -675,28 +709,28 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
      * @param convoId ID to the conversation to change
      * @return 0 at success
      */
-    protected abstract int setOwnerStatus(int presenceState, String presenceStatus, long lastActive,
-            int chatState, String convoId);
+    protected abstract int setOwnerStatus(
+            int presenceState,
+            String presenceStatus,
+            long lastActive,
+            int chatState,
+            String convoId);
 
     /**
      * Notify the application of the Bluetooth state
+     *
      * @param bluetoothState 'on' of 'off'
      * @return 0 at success
      */
     protected abstract int setBluetoothStatus(boolean bluetoothState);
 
-
-    /**
-     * Need this to suppress warning in unit tests.
-     */
+    /** Need this to suppress warning in unit tests. */
     @Override
     public void shutdown() {
         // Don't call super.shutdown(), which emits a warning...
     }
 
-    /**
-     * Extract the BluetoothMapContract.AccountColumns._ID from the given URI.
-     */
+    /** Extract the BluetoothMapContract.AccountColumns._ID from the given URI. */
     public static String getAccountId(Uri uri) {
         final List<String> segments = uri.getPathSegments();
         if (segments.size() < 1) {

@@ -23,10 +23,9 @@ import android.os.Bundle;
 import com.android.internal.annotations.VisibleForTesting;
 
 /**
- * Provide a method to inject custom MediaBrowser objects for testing. By using the factory
- * methods instead of calling the constructor of MediaBrowser directly, we can inject a custom
- * MediaBrowser that can be used with JUnit and Mockito to set expectations and validate
- * behaviour in tests.
+ * Provide a method to inject custom MediaBrowser objects for testing. By using the factory methods
+ * instead of calling the constructor of MediaBrowser directly, we can inject a custom MediaBrowser
+ * that can be used with JUnit and Mockito to set expectations and validate behaviour in tests.
  */
 public final class MediaBrowserFactory {
     private static MediaBrowser sInjectedBrowser;
@@ -36,8 +35,11 @@ public final class MediaBrowserFactory {
         return (delegate != null) ? new MediaBrowser(delegate) : null;
     }
 
-    static MediaBrowser make(Context context, ComponentName serviceComponent,
-            MediaBrowser.ConnectionCallback callback, Bundle rootHints) {
+    static MediaBrowser make(
+            Context context,
+            ComponentName serviceComponent,
+            MediaBrowser.ConnectionCallback callback,
+            Bundle rootHints) {
         if (sInjectedBrowser != null) {
             sInjectedBrowser.testInit(context, serviceComponent, callback, rootHints);
             return sInjectedBrowser;

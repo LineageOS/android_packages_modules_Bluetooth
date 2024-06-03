@@ -17,9 +17,7 @@
 
 package com.android.bluetooth.mcp;
 
-/**
- * Service status definition
- */
+/** Service status definition */
 public enum ServiceStatus {
     OK,
     INVALID_FEATURE_FLAGS,

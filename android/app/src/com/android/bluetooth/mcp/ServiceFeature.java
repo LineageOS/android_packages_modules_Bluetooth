@@ -19,9 +19,7 @@ package com.android.bluetooth.mcp;
 
 import java.util.BitSet;
 
-/**
- * Service features definition
- */
+/** Service features definition */
 public final class ServiceFeature {
     // LS word is used for the characteristic support bits
     public static final long PLAYER_NAME = 0x00000001;
@@ -64,8 +62,14 @@ public final class ServiceFeature {
 
     // This is set according to the Media Control Service Specification, v1.0, Section 3,
     // Table 3.1.
-    public static final long ALL_MANDATORY_SERVICE_FEATURES = PLAYER_NAME | TRACK_CHANGED
-            | TRACK_TITLE | TRACK_DURATION | TRACK_POSITION | MEDIA_STATE | CONTENT_CONTROL_ID;
+    public static final long ALL_MANDATORY_SERVICE_FEATURES =
+            PLAYER_NAME
+                    | TRACK_CHANGED
+                    | TRACK_TITLE
+                    | TRACK_DURATION
+                    | TRACK_POSITION
+                    | MEDIA_STATE
+                    | CONTENT_CONTROL_ID;
 
     static String toString(long serviceFeature) {
         if (serviceFeature == PLAYER_NAME) return "PLAYER_NAME(BIT 1)";
@@ -77,7 +81,8 @@ public final class ServiceFeature {
         if (serviceFeature == TRACK_POSITION) return "TRACK_POSITION(BIT 7)";
         if (serviceFeature == PLAYBACK_SPEED) return "PLAYBACK_SPEED(BIT 8)";
         if (serviceFeature == SEEKING_SPEED) return "SEEKING_SPEED(BIT 9)";
-        if (serviceFeature == CURRENT_TRACK_SEGMENT_OBJ_ID) return "CURRENT_TRACK_SEGMENT_OBJ_ID(BIT 10)";
+        if (serviceFeature == CURRENT_TRACK_SEGMENT_OBJ_ID)
+            return "CURRENT_TRACK_SEGMENT_OBJ_ID(BIT 10)";
         if (serviceFeature == CURRENT_TRACK_OBJ_ID) return "CURRENT_TRACK_OBJ_ID(BIT 11)";
         if (serviceFeature == NEXT_TRACK_OBJ_ID) return "NEXT_TRACK_OBJ_ID(BIT 12)";
         if (serviceFeature == CURRENT_GROUP_OBJ_ID) return "CURRENT_GROUP_OBJ_ID(BIT 13)";
@@ -86,7 +91,8 @@ public final class ServiceFeature {
         if (serviceFeature == PLAYING_ORDER_SUPPORTED) return "PLAYING_ORDER_SUPPORTED(BIT 16)";
         if (serviceFeature == MEDIA_STATE) return "MEDIA_STATE(BIT 17)";
         if (serviceFeature == MEDIA_CONTROL_POINT) return "MEDIA_CONTROL_POINT(BIT 18)";
-        if (serviceFeature == MEDIA_CONTROL_POINT_OPCODES_SUPPORTED) return "MEDIA_CONTROL_POINT_OPCODES_SUPPORTED(BIT 19)";
+        if (serviceFeature == MEDIA_CONTROL_POINT_OPCODES_SUPPORTED)
+            return "MEDIA_CONTROL_POINT_OPCODES_SUPPORTED(BIT 19)";
         if (serviceFeature == SEARCH_RESULT_OBJ_ID) return "SEARCH_RESULT_OBJ_ID(BIT 20)";
         if (serviceFeature == SEARCH_CONTROL_POINT) return "SEARCH_CONTROL_POINT(BIT 21)";
         if (serviceFeature == CONTENT_CONTROL_ID) return "CONTENT_CONTROL_ID(BIT 22)";
@@ -101,7 +107,8 @@ public final class ServiceFeature {
         if (serviceFeature == CURRENT_GROUP_OBJ_ID_NOTIFY) return "CURRENT_GROUP_OBJ_ID_NOTIFY";
         if (serviceFeature == PARENT_GROUP_OBJ_ID_NOTIFY) return "PARENT_GROUP_OBJ_ID_NOTIFY";
         if (serviceFeature == PLAYING_ORDER_NOTIFY) return "PLAYING_ORDER_NOTIFY";
-        if (serviceFeature == MEDIA_CONTROL_POINT_OPCODES_SUPPORTED_NOTIFY) return "MEDIA_CONTROL_POINT_OPCODES_SUPPORTED_NOTIFY";
+        if (serviceFeature == MEDIA_CONTROL_POINT_OPCODES_SUPPORTED_NOTIFY)
+            return "MEDIA_CONTROL_POINT_OPCODES_SUPPORTED_NOTIFY";
 
         return "UNKNOWN(0x" + Long.toHexString(serviceFeature) + ")";
     }

@@ -64,7 +64,6 @@ public class MapClientTest {
     @Mock private MnsService mMockMnsService;
     @Mock private DatabaseManager mDatabaseManager;
 
-
     @Before
     public void setUp() throws Exception {
         mTargetContext = InstrumentationRegistry.getTargetContext();
@@ -108,9 +107,7 @@ public class MapClientTest {
         Assert.assertNotNull(MapClientService.getMapClientService());
     }
 
-    /**
-     * Test connection of one device.
-     */
+    /** Test connection of one device. */
     @Test
     public void testConnect() {
         // make sure there is no statemachine already defined for this device
@@ -134,9 +131,7 @@ public class MapClientTest {
         Assert.assertNull(mService.getInstanceMap().get(device));
     }
 
-    /**
-     * Test that a PRIORITY_OFF device is not connected to
-     */
+    /** Test that a PRIORITY_OFF device is not connected to */
     @Test
     public void testConnectPriorityOffDevice() {
         // make sure there is no statemachine already defined for this device
@@ -153,9 +148,7 @@ public class MapClientTest {
         Assert.assertNull(map.get(device));
     }
 
-    /**
-     * Test connecting MAXIMUM_CONNECTED_DEVICES devices.
-     */
+    /** Test connecting MAXIMUM_CONNECTED_DEVICES devices. */
     @Test
     public void testConnectMaxDevices() {
         // Create bluetoothdevice & mock statemachine objects to be used in this test
@@ -188,9 +181,7 @@ public class MapClientTest {
         Assert.assertFalse(mService.connect(last));
     }
 
-    /**
-     * Test calling connect via Binder
-     */
+    /** Test calling connect via Binder */
     @Test
     public void testConnectViaBinder() {
         BluetoothDevice device = makeBluetoothDevice("11:11:11:11:11:11");

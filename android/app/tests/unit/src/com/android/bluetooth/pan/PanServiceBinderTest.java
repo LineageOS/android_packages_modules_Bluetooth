@@ -40,8 +40,7 @@ public class PanServiceBinderTest {
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    private PanService mService;
+    @Mock private PanService mService;
 
     BluetoothDevice mRemoteDevice;
 

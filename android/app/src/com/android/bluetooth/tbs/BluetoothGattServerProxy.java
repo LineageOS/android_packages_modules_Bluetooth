@@ -32,9 +32,9 @@ import java.util.UUID;
 /**
  * A proxy class that facilitates testing of the TbsService class.
  *
- * This is necessary due to the "final" attribute of the BluetoothGattServer class. In order to test
- * the correct functioning of the TbsService class, the final class must be put into a container
- * that can be mocked correctly.
+ * <p>This is necessary due to the "final" attribute of the BluetoothGattServer class. In order to
+ * test the correct functioning of the TbsService class, the final class must be put into a
+ * container that can be mocked correctly.
  */
 public class BluetoothGattServerProxy {
 
@@ -65,26 +65,26 @@ public class BluetoothGattServerProxy {
     }
 
     /**
-     * A proxy that Returns a {@link BluetoothGattService} from the list of services offered
-     * by this device.
+     * A proxy that Returns a {@link BluetoothGattService} from the list of services offered by this
+     * device.
      *
-     * <p>If multiple instances of the same service (as identified by UUID)
-     * exist, the first instance of the service is returned.
+     * <p>If multiple instances of the same service (as identified by UUID) exist, the first
+     * instance of the service is returned.
      *
      * @param uuid UUID of the requested service
      * @return BluetoothGattService if supported, or null if the requested service is not offered by
-     * this device.
+     *     this device.
      */
     public BluetoothGattService getService(UUID uuid) {
         return mBluetoothGattServer.getService(uuid);
     }
 
     /**
-    * See {@link android.bluetooth.BluetoothGattServer#sendResponse(
-    * android.bluetooth.BluetoothDevice, int, int, int, byte[])}
-    */
-    public boolean sendResponse(BluetoothDevice device, int requestId, int status, int offset,
-            byte[] value) {
+     * See {@link android.bluetooth.BluetoothGattServer#sendResponse(
+     * android.bluetooth.BluetoothDevice, int, int, int, byte[])}
+     */
+    public boolean sendResponse(
+            BluetoothDevice device, int requestId, int status, int offset, byte[] value) {
         return mBluetoothGattServer.sendResponse(device, requestId, status, offset, value);
     }
 
@@ -92,23 +92,27 @@ public class BluetoothGattServerProxy {
      * See {@link android.bluetooth.BluetoothGattServer#notifyCharacteristicChanged(
      * android.bluetooth.BluetoothDevice, BluetoothGattCharacteristic, boolean, byte[])}.
      */
-    public int notifyCharacteristicChanged(BluetoothDevice device,
-            BluetoothGattCharacteristic characteristic, boolean confirm, byte[] value) {
-        return mBluetoothGattServer.notifyCharacteristicChanged(device, characteristic, confirm,
-                                                                value);
+    public int notifyCharacteristicChanged(
+            BluetoothDevice device,
+            BluetoothGattCharacteristic characteristic,
+            boolean confirm,
+            byte[] value) {
+        return mBluetoothGattServer.notifyCharacteristicChanged(
+                device, characteristic, confirm, value);
     }
 
     /**
      * See {@link android.bluetooth.BluetoothGattServer#notifyCharacteristicChanged(
      * android.bluetooth.BluetoothDevice, BluetoothGattCharacteristic, boolean)}.
      */
-    public boolean notifyCharacteristicChanged(BluetoothDevice device,
-            BluetoothGattCharacteristic characteristic, boolean confirm) {
+    public boolean notifyCharacteristicChanged(
+            BluetoothDevice device, BluetoothGattCharacteristic characteristic, boolean confirm) {
         return mBluetoothGattServer.notifyCharacteristicChanged(device, characteristic, confirm);
     }
 
     /**
      * Get connected devices
+     *
      * @return list of connected devices
      */
     public List<BluetoothDevice> getConnectedDevices() {

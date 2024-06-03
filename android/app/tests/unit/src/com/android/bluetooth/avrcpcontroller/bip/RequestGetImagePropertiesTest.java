@@ -31,18 +31,18 @@ public class RequestGetImagePropertiesTest {
 
     @Test
     public void constructor() {
-        RequestGetImageProperties requestGetImageProperties = new RequestGetImageProperties(
-                TEST_IMAGE_HANDLE);
+        RequestGetImageProperties requestGetImageProperties =
+                new RequestGetImageProperties(TEST_IMAGE_HANDLE);
 
         assertThat(requestGetImageProperties.getImageHandle()).isEqualTo(TEST_IMAGE_HANDLE);
     }
 
     @Test
     public void getType() {
-        RequestGetImageProperties requestGetImageProperties = new RequestGetImageProperties(
-                TEST_IMAGE_HANDLE);
+        RequestGetImageProperties requestGetImageProperties =
+                new RequestGetImageProperties(TEST_IMAGE_HANDLE);
 
-        assertThat(requestGetImageProperties.getType()).isEqualTo(
-                BipRequest.TYPE_GET_IMAGE_PROPERTIES);
+        assertThat(requestGetImageProperties.getType())
+                .isEqualTo(BipRequest.TYPE_GET_IMAGE_PROPERTIES);
     }
 }

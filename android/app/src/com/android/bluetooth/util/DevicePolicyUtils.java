@@ -43,12 +43,13 @@ public final class DevicePolicyUtils {
     }
 
     /**
-     * Returns a URI to query all phones on the device. If a managed profile exists
-     * and the policy allows, it will be a URI that supports the managed profile.
+     * Returns a URI to query all phones on the device. If a managed profile exists and the policy
+     * allows, it will be a URI that supports the managed profile.
      */
     // TODO: Make primary profile can also support getBluetoothContactSharingDisabled()
     public static Uri getEnterprisePhoneUri(Context context) {
-        return isBluetoothWorkContactSharingDisabled(context) ? Phone.CONTENT_URI
+        return isBluetoothWorkContactSharingDisabled(context)
+                ? Phone.CONTENT_URI
                 : Phone.ENTERPRISE_CONTENT_URI;
     }
 }

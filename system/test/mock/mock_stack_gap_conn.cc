@@ -19,8 +19,6 @@
  *   Functions generated:13
  */
 
-#include <base/strings/stringprintf.h>
-
 #include "gap_api.h"
 #include "l2c_api.h"
 #include "stack/include/bt_hdr.h"

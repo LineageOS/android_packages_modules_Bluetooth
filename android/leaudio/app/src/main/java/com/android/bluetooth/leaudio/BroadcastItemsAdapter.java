@@ -44,8 +44,9 @@ public class BroadcastItemsAdapter
     @NonNull
     @Override
     public BroadcastItemHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View item_view = LayoutInflater.from(parent.getContext()).inflate(R.layout.broadcast_item,
-                parent, false);
+        View item_view =
+                LayoutInflater.from(parent.getContext())
+                        .inflate(R.layout.broadcast_item, parent, false);
         return new BroadcastItemHolder(item_view, mOnItemClickListener);
     }
 
@@ -60,7 +61,7 @@ public class BroadcastItemsAdapter
         Boolean isPlaybackStateKnown = mBroadcastPlaybackMap.containsKey(broadcastId);
 
         String broadcastText =
-            "ID: " + broadcastId + "(" + String.format("0x%06x", broadcastId) + ")";
+                "ID: " + broadcastId + "(" + String.format("0x%06x", broadcastId) + ")";
 
         ColorStateList color = ColorStateList.valueOf(Color.WHITE);
 
@@ -69,10 +70,10 @@ public class BroadcastItemsAdapter
             Boolean isPlaying = mBroadcastPlaybackMap.getOrDefault(broadcastId, false);
 
             if (isPlaying) {
-              color = ColorStateList.valueOf(Color.parseColor("#92b141"));
-              broadcastText += " ▶️";
+                color = ColorStateList.valueOf(Color.parseColor("#92b141"));
+                broadcastText += " ▶️";
             } else {
-              broadcastText += " ⏸";
+                broadcastText += " ⏸";
             }
         }
 
@@ -123,7 +124,7 @@ public class BroadcastItemsAdapter
             if (mBroadcastPlaybackMap.containsKey(broadcastId)) {
                 continue;
             }
-//          mBroadcastPlaybackMap.remove(broadcastId);
+            //          mBroadcastPlaybackMap.remove(broadcastId);
             mBroadcastPlaybackMap.put(broadcastId, false);
         }
         notifyDataSetChanged();
@@ -148,15 +149,17 @@ public class BroadcastItemsAdapter
             mTextViewBroadcastId = itemView.findViewById(R.id.broadcast_id_text);
             background = itemView.findViewById(R.id.broadcast_item_card_view);
 
-            itemView.setOnClickListener(v -> {
-                if (listener == null) return;
+            itemView.setOnClickListener(
+                    v -> {
+                        if (listener == null) return;
 
-                int position = getAdapterPosition();
-                if (position != RecyclerView.NO_POSITION) {
-                    Integer broadcastId = mBroadcastMetadataList.get(position).getBroadcastId();
-                    listener.onItemClick(broadcastId);
-                }
-            });
+                        int position = getAdapterPosition();
+                        if (position != RecyclerView.NO_POSITION) {
+                            Integer broadcastId =
+                                    mBroadcastMetadataList.get(position).getBroadcastId();
+                            listener.onItemClick(broadcastId);
+                        }
+                    });
         }
     }
 }

@@ -57,16 +57,13 @@ import java.io.OutputStream;
 import java.util.List;
 import java.util.Set;
 
-/**
- * Proxy class for method calls to help with unit testing
- */
+/** Proxy class for method calls to help with unit testing */
 public class BluetoothMethodProxy {
     private static final String TAG = BluetoothMethodProxy.class.getSimpleName();
     private static final Object INSTANCE_LOCK = new Object();
     private static BluetoothMethodProxy sInstance;
 
-    private BluetoothMethodProxy() {
-    }
+    private BluetoothMethodProxy() {}
 
     /**
      * Get the singleton instance of proxy
@@ -96,52 +93,55 @@ public class BluetoothMethodProxy {
         }
     }
 
-    /**
-     * Proxies {@link ContentResolver#query(Uri, String[], String, String[], String)}.
-     */
-    public Cursor contentResolverQuery(ContentResolver contentResolver, final Uri contentUri,
-            final String[] projection, final String selection, final String[] selectionArgs,
+    /** Proxies {@link ContentResolver#query(Uri, String[], String, String[], String)}. */
+    public Cursor contentResolverQuery(
+            ContentResolver contentResolver,
+            final Uri contentUri,
+            final String[] projection,
+            final String selection,
+            final String[] selectionArgs,
             final String sortOrder) {
         return contentResolver.query(contentUri, projection, selection, selectionArgs, sortOrder);
     }
 
-    /**
-     * Proxies {@link ContentResolver#query(Uri, String[], Bundle, CancellationSignal)}.
-     */
-    public Cursor contentResolverQuery(ContentResolver contentResolver, final Uri contentUri,
-            final String[] projection, final Bundle queryArgs,
+    /** Proxies {@link ContentResolver#query(Uri, String[], Bundle, CancellationSignal)}. */
+    public Cursor contentResolverQuery(
+            ContentResolver contentResolver,
+            final Uri contentUri,
+            final String[] projection,
+            final Bundle queryArgs,
             final CancellationSignal cancellationSignal) {
         return contentResolver.query(contentUri, projection, queryArgs, cancellationSignal);
     }
 
-    /**
-     * Proxies {@link ContentResolver#insert(Uri, ContentValues)}.
-     */
-    public Uri contentResolverInsert(ContentResolver contentResolver, final Uri contentUri,
+    /** Proxies {@link ContentResolver#insert(Uri, ContentValues)}. */
+    public Uri contentResolverInsert(
+            ContentResolver contentResolver,
+            final Uri contentUri,
             final ContentValues contentValues) {
         return contentResolver.insert(contentUri, contentValues);
     }
 
-    /**
-     * Proxies {@link ContentResolver#update(Uri, ContentValues, String, String[])}.
-     */
-    public int contentResolverUpdate(ContentResolver contentResolver, final Uri contentUri,
-            final ContentValues contentValues, String where, String[] selectionArgs) {
+    /** Proxies {@link ContentResolver#update(Uri, ContentValues, String, String[])}. */
+    public int contentResolverUpdate(
+            ContentResolver contentResolver,
+            final Uri contentUri,
+            final ContentValues contentValues,
+            String where,
+            String[] selectionArgs) {
         return contentResolver.update(contentUri, contentValues, where, selectionArgs);
     }
 
-    /**
-     * Proxies {@link ContentResolver#delete(Uri, String, String[])}.
-     */
-    public int contentResolverDelete(ContentResolver contentResolver, final Uri url,
+    /** Proxies {@link ContentResolver#delete(Uri, String, String[])}. */
+    public int contentResolverDelete(
+            ContentResolver contentResolver,
+            final Uri url,
             final String where,
             final String[] selectionArgs) {
         return contentResolver.delete(url, where, selectionArgs);
     }
 
-    /**
-     * Proxies {@link BluetoothAdapter#isEnabled()}.
-     */
+    /** Proxies {@link BluetoothAdapter#isEnabled()}. */
     public boolean bluetoothAdapterIsEnabled(BluetoothAdapter adapter) {
         return adapter.isEnabled();
     }
@@ -153,86 +153,65 @@ public class BluetoothMethodProxy {
         return BluetoothAdapter.getDefaultAdapter().getRemoteLeDevice(address, addressType);
     }
 
-    /**
-     * Proxies {@link ContentResolver#openFileDescriptor(Uri, String)}.
-     */
-    public ParcelFileDescriptor contentResolverOpenFileDescriptor(ContentResolver contentResolver,
-            final Uri uri, final String mode) throws FileNotFoundException {
+    /** Proxies {@link ContentResolver#openFileDescriptor(Uri, String)}. */
+    public ParcelFileDescriptor contentResolverOpenFileDescriptor(
+            ContentResolver contentResolver, final Uri uri, final String mode)
+            throws FileNotFoundException {
         return contentResolver.openFileDescriptor(uri, mode);
     }
 
-    /**
-     * Proxies {@link ContentResolver#openAssetFileDescriptor(Uri, String)}.
-     */
+    /** Proxies {@link ContentResolver#openAssetFileDescriptor(Uri, String)}. */
     public AssetFileDescriptor contentResolverOpenAssetFileDescriptor(
             ContentResolver contentResolver, final Uri uri, final String mode)
             throws FileNotFoundException {
         return contentResolver.openAssetFileDescriptor(uri, mode);
     }
 
-    /**
-     * Proxies {@link ContentResolver#openInputStream(Uri)}.
-     */
-    public InputStream contentResolverOpenInputStream(ContentResolver contentResolver,
-            final Uri uri) throws FileNotFoundException {
+    /** Proxies {@link ContentResolver#openInputStream(Uri)}. */
+    public InputStream contentResolverOpenInputStream(
+            ContentResolver contentResolver, final Uri uri) throws FileNotFoundException {
         return contentResolver.openInputStream(uri);
     }
 
-    /**
-     * Proxies {@link ContentResolver#acquireUnstableContentProviderClient(String)}.
-     */
+    /** Proxies {@link ContentResolver#acquireUnstableContentProviderClient(String)}. */
     public ContentProviderClient contentResolverAcquireUnstableContentProviderClient(
             ContentResolver contentResolver, @NonNull String name) {
         return contentResolver.acquireUnstableContentProviderClient(name);
     }
 
-    /**
-     * Proxies {@link ContentResolver#openOutputStream(Uri)}.
-     */
+    /** Proxies {@link ContentResolver#openOutputStream(Uri)}. */
     public OutputStream contentResolverOpenOutputStream(ContentResolver contentResolver, Uri uri)
             throws FileNotFoundException {
         return contentResolver.openOutputStream(uri);
     }
 
-    /**
-     * Proxies {@link Context#sendBroadcast(Intent)}.
-     */
+    /** Proxies {@link Context#sendBroadcast(Intent)}. */
     public void contextSendBroadcast(Context context, @RequiresPermission Intent intent) {
         context.sendBroadcast(intent);
     }
 
-    /**
-     * Proxies {@link Handler#sendEmptyMessage(int)}}.
-     */
+    /** Proxies {@link Handler#sendEmptyMessage(int)}}. */
     public boolean handlerSendEmptyMessage(Handler handler, final int what) {
         return handler.sendEmptyMessage(what);
     }
 
-    /**
-     * Proxies {@link Handler#sendMessageDelayed(Message, long)}.
-     */
-    public boolean handlerSendMessageDelayed(Handler handler, final int what,
-            final long delayMillis) {
+    /** Proxies {@link Handler#sendMessageDelayed(Message, long)}. */
+    public boolean handlerSendMessageDelayed(
+            Handler handler, final int what, final long delayMillis) {
         return handler.sendMessageDelayed(handler.obtainMessage(what), delayMillis);
     }
 
-    /**
-     * Proxies {@link HeaderSet#getHeader}.
-     */
+    /** Proxies {@link HeaderSet#getHeader}. */
     public Object getHeader(HeaderSet headerSet, int headerId) throws IOException {
         return headerSet.getHeader(headerId);
     }
 
-    /**
-     * Proxies {@link Context#getSystemService(Class)}.
-     */
+    /** Proxies {@link Context#getSystemService(Class)}. */
     public <T> T getSystemService(Context context, Class<T> serviceClass) {
         return context.getSystemService(serviceClass);
     }
 
-    /**
-     * Proxies {@link Telephony.Threads#getOrCreateThreadId(Context, Set <String>)}.
-     */
+    /** Proxies {@link Telephony.Threads#getOrCreateThreadId(Context, Set <String>)}. */
     public long telephonyGetOrCreateThreadId(Context context, Set<String> recipients) {
         return Telephony.Threads.getOrCreateThreadId(context, recipients);
     }
@@ -250,9 +229,13 @@ public class BluetoothMethodProxy {
      * Proxies {@link PeriodicAdvertisingManager#registerSync(ScanResult, int, int,
      * PeriodicAdvertisingCallback, Handler)}.
      */
-    public void periodicAdvertisingManagerRegisterSync(PeriodicAdvertisingManager manager,
-            ScanResult scanResult, int skip, int timeout,
-            PeriodicAdvertisingCallback callback, Handler handler) {
+    public void periodicAdvertisingManagerRegisterSync(
+            PeriodicAdvertisingManager manager,
+            ScanResult scanResult,
+            int skip,
+            int timeout,
+            PeriodicAdvertisingCallback callback,
+            Handler handler) {
         manager.registerSync(scanResult, skip, timeout, callback, handler);
     }
 
@@ -261,20 +244,23 @@ public class BluetoothMethodProxy {
             PeriodicAdvertisingManager manager, PeriodicAdvertisingCallback callback) {
         manager.unregisterSync(callback);
     }
-    /**
-     * Proxies {@link PeriodicAdvertisingManager#transferSync}.
-     */
-    public void periodicAdvertisingManagerTransferSync(PeriodicAdvertisingManager manager,
-            BluetoothDevice bda, int serviceData, int syncHandle) {
+
+    /** Proxies {@link PeriodicAdvertisingManager#transferSync}. */
+    public void periodicAdvertisingManagerTransferSync(
+            PeriodicAdvertisingManager manager,
+            BluetoothDevice bda,
+            int serviceData,
+            int syncHandle) {
         manager.transferSync(bda, serviceData, syncHandle);
     }
 
-    /**
-     * Proxies {@link PeriodicAdvertisingManager#transferSetInfo}.
-     */
+    /** Proxies {@link PeriodicAdvertisingManager#transferSetInfo}. */
     public void periodicAdvertisingManagerTransferSetInfo(
-            PeriodicAdvertisingManager manager, BluetoothDevice bda, int serviceData,
-            int advHandle, PeriodicAdvertisingCallback callback) {
+            PeriodicAdvertisingManager manager,
+            BluetoothDevice bda,
+            int serviceData,
+            int advHandle,
+            PeriodicAdvertisingCallback callback) {
         manager.transferSetInfo(bda, serviceData, advHandle, callback);
     }
 

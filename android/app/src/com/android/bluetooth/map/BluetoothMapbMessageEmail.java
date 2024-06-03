@@ -1,17 +1,17 @@
 /*
-* Copyright (C) 2013 Samsung System LSI
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*      http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (C) 2013 Samsung System LSI
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.android.bluetooth.map;
 
 import android.bluetooth.BluetoothProfile;
@@ -49,8 +49,7 @@ public class BluetoothMapbMessageEmail extends BluetoothMapbMessage {
     }
 
     /**
-     * Set initial values before parsing - will be called is a message body is found
-     * during parsing.
+     * Set initial values before parsing - will be called is a message body is found during parsing.
      */
     @Override
     public void parseMsgInit() {
@@ -62,8 +61,8 @@ public class BluetoothMapbMessageEmail extends BluetoothMapbMessage {
         ArrayList<byte[]> bodyFragments = new ArrayList<byte[]>();
 
         /* Store the messages in an ArrayList to be able to handle the different message types in
-         a generic way.
-         * We use byte[] since we need to extract the length in bytes. */
+        a generic way.
+        * We use byte[] since we need to extract the length in bytes. */
         if (mEmailBody != null) {
             String tmpBody =
                     mEmailBody.replaceAll(
@@ -81,5 +80,4 @@ public class BluetoothMapbMessageEmail extends BluetoothMapbMessage {
         }
         return encodeGeneric(bodyFragments);
     }
-
 }

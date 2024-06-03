@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.opp;
 
-
 import static com.android.bluetooth.opp.BluetoothOppTestUtils.CursorMockData;
 import static com.android.bluetooth.opp.BluetoothOppTransferActivity.DIALOG_RECEIVE_COMPLETE_FAIL;
 import static com.android.bluetooth.opp.BluetoothOppTransferActivity.DIALOG_RECEIVE_COMPLETE_SUCCESS;
@@ -62,10 +61,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class BluetoothOppTransferActivityTest {
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    Cursor mCursor;
-    @Spy
-    BluetoothMethodProxy mBluetoothMethodProxy;
+    @Mock Cursor mCursor;
+    @Spy BluetoothMethodProxy mBluetoothMethodProxy;
 
     List<CursorMockData> mCursorMockDataList;
 
@@ -89,29 +86,34 @@ public class BluetoothOppTransferActivityTest {
         mIntent.setClass(mTargetContext, BluetoothOppTransferActivity.class);
         mIntent.setData(dataUrl);
 
-        doReturn(mCursor).when(mBluetoothMethodProxy).contentResolverQuery(any(), eq(dataUrl),
-                eq(null), eq(null),
-                eq(null), eq(null));
+        doReturn(mCursor)
+                .when(mBluetoothMethodProxy)
+                .contentResolverQuery(any(), eq(dataUrl), eq(null), eq(null), eq(null), eq(null));
 
-        doReturn(1).when(mBluetoothMethodProxy).contentResolverUpdate(any(), eq(dataUrl),
-                any(), eq(null), eq(null));
+        doReturn(1)
+                .when(mBluetoothMethodProxy)
+                .contentResolverUpdate(any(), eq(dataUrl), any(), eq(null), eq(null));
 
         int idValue = 1234;
         Long timestampValue = 123456789L;
         String destinationValue = "AA:BB:CC:00:11:22";
         String fileTypeValue = "text/plain";
 
-        mCursorMockDataList = new ArrayList<>(List.of(
-                new CursorMockData(BluetoothShare._ID, 0, idValue),
-                new CursorMockData(BluetoothShare.MIMETYPE, 5, fileTypeValue),
-                new CursorMockData(BluetoothShare.TIMESTAMP, 6, timestampValue),
-                new CursorMockData(BluetoothShare.DESTINATION, 7, destinationValue),
-                new CursorMockData(BluetoothShare._DATA, 8, null),
-                new CursorMockData(BluetoothShare.FILENAME_HINT, 9, null),
-                new CursorMockData(BluetoothShare.URI, 10, "content://textfile.txt"),
-                new CursorMockData(BluetoothShare.USER_CONFIRMATION, 11,
-                        BluetoothShare.USER_CONFIRMATION_HANDOVER_CONFIRMED)
-        ));
+        mCursorMockDataList =
+                new ArrayList<>(
+                        List.of(
+                                new CursorMockData(BluetoothShare._ID, 0, idValue),
+                                new CursorMockData(BluetoothShare.MIMETYPE, 5, fileTypeValue),
+                                new CursorMockData(BluetoothShare.TIMESTAMP, 6, timestampValue),
+                                new CursorMockData(BluetoothShare.DESTINATION, 7, destinationValue),
+                                new CursorMockData(BluetoothShare._DATA, 8, null),
+                                new CursorMockData(BluetoothShare.FILENAME_HINT, 9, null),
+                                new CursorMockData(
+                                        BluetoothShare.URI, 10, "content://textfile.txt"),
+                                new CursorMockData(
+                                        BluetoothShare.USER_CONFIRMATION,
+                                        11,
+                                        BluetoothShare.USER_CONFIRMATION_HANDOVER_CONFIRMED)));
         BluetoothOppTestUtils.enableActivity(
                 BluetoothOppTransferActivity.class, true, mTargetContext);
         TestUtils.setUpUiTest();
@@ -131,19 +133,19 @@ public class BluetoothOppTransferActivityTest {
         mCursorMockDataList.add(
                 new CursorMockData(BluetoothShare.STATUS, 1, BluetoothShare.STATUS_PENDING));
         mCursorMockDataList.add(
-                new CursorMockData(BluetoothShare.DIRECTION, 2, BluetoothShare.DIRECTION_OUTBOUND)
-        );
+                new CursorMockData(BluetoothShare.DIRECTION, 2, BluetoothShare.DIRECTION_OUTBOUND));
         mCursorMockDataList.add(new CursorMockData(BluetoothShare.TOTAL_BYTES, 3, 100));
         mCursorMockDataList.add(new CursorMockData(BluetoothShare.CURRENT_BYTES, 4, 0));
         BluetoothOppTestUtils.setUpMockCursor(mCursor, mCursorMockDataList);
 
         AtomicBoolean check = new AtomicBoolean(false);
-        ActivityScenario<BluetoothOppTransferActivity> activityScenario = ActivityScenario.launch(
-                mIntent);
+        ActivityScenario<BluetoothOppTransferActivity> activityScenario =
+                ActivityScenario.launch(mIntent);
 
-        activityScenario.onActivity(activity -> {
-            check.set(activity.mWhichDialog == DIALOG_SEND_ONGOING);
-        });
+        activityScenario.onActivity(
+                activity -> {
+                    check.set(activity.mWhichDialog == DIALOG_SEND_ONGOING);
+                });
 
         assertThat(check.get()).isTrue();
     }
@@ -151,23 +153,21 @@ public class BluetoothOppTransferActivityTest {
     @Test
     public void onCreate_showSendCompleteSuccessDialog() {
         mCursorMockDataList.add(
-                new CursorMockData(BluetoothShare.STATUS, 1, BluetoothShare.STATUS_SUCCESS)
-        );
+                new CursorMockData(BluetoothShare.STATUS, 1, BluetoothShare.STATUS_SUCCESS));
         mCursorMockDataList.add(
-                new CursorMockData(BluetoothShare.DIRECTION, 2, BluetoothShare.DIRECTION_OUTBOUND)
-        );
+                new CursorMockData(BluetoothShare.DIRECTION, 2, BluetoothShare.DIRECTION_OUTBOUND));
         mCursorMockDataList.add(new CursorMockData(BluetoothShare.TOTAL_BYTES, 3, 100));
-        mCursorMockDataList.add(
-                new CursorMockData(BluetoothShare.CURRENT_BYTES, 4, 100));
+        mCursorMockDataList.add(new CursorMockData(BluetoothShare.CURRENT_BYTES, 4, 100));
         BluetoothOppTestUtils.setUpMockCursor(mCursor, mCursorMockDataList);
 
         AtomicBoolean check = new AtomicBoolean(false);
-        ActivityScenario<BluetoothOppTransferActivity> activityScenario = ActivityScenario.launch(
-                mIntent);
+        ActivityScenario<BluetoothOppTransferActivity> activityScenario =
+                ActivityScenario.launch(mIntent);
 
-        activityScenario.onActivity(activity -> {
-            check.set(activity.mWhichDialog == DIALOG_SEND_COMPLETE_SUCCESS);
-        });
+        activityScenario.onActivity(
+                activity -> {
+                    check.set(activity.mWhichDialog == DIALOG_SEND_COMPLETE_SUCCESS);
+                });
 
         assertThat(check.get()).isTrue();
     }
@@ -177,19 +177,19 @@ public class BluetoothOppTransferActivityTest {
         mCursorMockDataList.add(
                 new CursorMockData(BluetoothShare.STATUS, 1, BluetoothShare.STATUS_FORBIDDEN));
         mCursorMockDataList.add(
-                new CursorMockData(BluetoothShare.DIRECTION, 2, BluetoothShare.DIRECTION_OUTBOUND)
-        );
+                new CursorMockData(BluetoothShare.DIRECTION, 2, BluetoothShare.DIRECTION_OUTBOUND));
         mCursorMockDataList.add(new CursorMockData(BluetoothShare.TOTAL_BYTES, 3, 100));
         mCursorMockDataList.add(new CursorMockData(BluetoothShare.CURRENT_BYTES, 4, 42));
         BluetoothOppTestUtils.setUpMockCursor(mCursor, mCursorMockDataList);
 
         AtomicBoolean check = new AtomicBoolean(false);
-        ActivityScenario<BluetoothOppTransferActivity> activityScenario = ActivityScenario.launch(
-                mIntent);
+        ActivityScenario<BluetoothOppTransferActivity> activityScenario =
+                ActivityScenario.launch(mIntent);
 
-        activityScenario.onActivity(activity -> {
-            check.set(activity.mWhichDialog == DIALOG_SEND_COMPLETE_FAIL);
-        });
+        activityScenario.onActivity(
+                activity -> {
+                    check.set(activity.mWhichDialog == DIALOG_SEND_COMPLETE_FAIL);
+                });
 
         assertThat(check.get()).isTrue();
     }
@@ -199,19 +199,19 @@ public class BluetoothOppTransferActivityTest {
         mCursorMockDataList.add(
                 new CursorMockData(BluetoothShare.STATUS, 1, BluetoothShare.STATUS_PENDING));
         mCursorMockDataList.add(
-                new CursorMockData(BluetoothShare.DIRECTION, 2, BluetoothShare.DIRECTION_INBOUND)
-        );
+                new CursorMockData(BluetoothShare.DIRECTION, 2, BluetoothShare.DIRECTION_INBOUND));
         mCursorMockDataList.add(new CursorMockData(BluetoothShare.TOTAL_BYTES, 3, 100));
         mCursorMockDataList.add(new CursorMockData(BluetoothShare.CURRENT_BYTES, 4, 0));
         BluetoothOppTestUtils.setUpMockCursor(mCursor, mCursorMockDataList);
 
         AtomicBoolean check = new AtomicBoolean(false);
-        ActivityScenario<BluetoothOppTransferActivity> activityScenario = ActivityScenario.launch(
-                mIntent);
+        ActivityScenario<BluetoothOppTransferActivity> activityScenario =
+                ActivityScenario.launch(mIntent);
 
-        activityScenario.onActivity(activity -> {
-            check.set(activity.mWhichDialog == DIALOG_RECEIVE_ONGOING);
-        });
+        activityScenario.onActivity(
+                activity -> {
+                    check.set(activity.mWhichDialog == DIALOG_RECEIVE_ONGOING);
+                });
 
         assertThat(check.get()).isTrue();
     }
@@ -221,22 +221,20 @@ public class BluetoothOppTransferActivityTest {
         mCursorMockDataList.add(
                 new CursorMockData(BluetoothShare.STATUS, 1, BluetoothShare.STATUS_SUCCESS));
         mCursorMockDataList.add(
-                new CursorMockData(BluetoothShare.DIRECTION, 2, BluetoothShare.DIRECTION_INBOUND)
-        );
+                new CursorMockData(BluetoothShare.DIRECTION, 2, BluetoothShare.DIRECTION_INBOUND));
         mCursorMockDataList.add(new CursorMockData(BluetoothShare.TOTAL_BYTES, 3, 100));
-        mCursorMockDataList.add(
-                new CursorMockData(BluetoothShare.CURRENT_BYTES, 4, 100)
-        );
+        mCursorMockDataList.add(new CursorMockData(BluetoothShare.CURRENT_BYTES, 4, 100));
 
         BluetoothOppTestUtils.setUpMockCursor(mCursor, mCursorMockDataList);
 
         AtomicBoolean check = new AtomicBoolean(false);
-        ActivityScenario<BluetoothOppTransferActivity> activityScenario = ActivityScenario.launch(
-                mIntent);
+        ActivityScenario<BluetoothOppTransferActivity> activityScenario =
+                ActivityScenario.launch(mIntent);
 
-        activityScenario.onActivity(activity -> {
-            check.set(activity.mWhichDialog == DIALOG_RECEIVE_COMPLETE_SUCCESS);
-        });
+        activityScenario.onActivity(
+                activity -> {
+                    check.set(activity.mWhichDialog == DIALOG_RECEIVE_COMPLETE_SUCCESS);
+                });
 
         assertThat(check.get()).isTrue();
     }
@@ -246,20 +244,20 @@ public class BluetoothOppTransferActivityTest {
         mCursorMockDataList.add(
                 new CursorMockData(BluetoothShare.STATUS, 1, BluetoothShare.STATUS_FORBIDDEN));
         mCursorMockDataList.add(
-                new CursorMockData(BluetoothShare.DIRECTION, 2, BluetoothShare.DIRECTION_INBOUND)
-        );
+                new CursorMockData(BluetoothShare.DIRECTION, 2, BluetoothShare.DIRECTION_INBOUND));
         mCursorMockDataList.add(new CursorMockData(BluetoothShare.TOTAL_BYTES, 3, 100));
         mCursorMockDataList.add(new CursorMockData(BluetoothShare.CURRENT_BYTES, 4, 42));
 
         BluetoothOppTestUtils.setUpMockCursor(mCursor, mCursorMockDataList);
 
         AtomicBoolean check = new AtomicBoolean(false);
-        ActivityScenario<BluetoothOppTransferActivity> activityScenario = ActivityScenario.launch(
-                mIntent);
+        ActivityScenario<BluetoothOppTransferActivity> activityScenario =
+                ActivityScenario.launch(mIntent);
 
-        activityScenario.onActivity(activity -> {
-            check.set(activity.mWhichDialog == DIALOG_RECEIVE_COMPLETE_FAIL);
-        });
+        activityScenario.onActivity(
+                activity -> {
+                    check.set(activity.mWhichDialog == DIALOG_RECEIVE_COMPLETE_FAIL);
+                });
 
         assertThat(check.get()).isTrue();
     }

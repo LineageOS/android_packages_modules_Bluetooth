@@ -62,27 +62,24 @@ import java.io.OutputStream;
 public class BluetoothOppObexServerSessionTest {
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    BluetoothMethodProxy mMethodProxy;
+    @Mock BluetoothMethodProxy mMethodProxy;
 
     Context mTargetContext;
-    @Mock
-    BluetoothObexTransport mTransport;
+    @Mock BluetoothObexTransport mTransport;
 
-    @Mock
-    BluetoothOppService mBluetoothOppService;
-    @Mock
-    Operation mOperation;
+    @Mock BluetoothOppService mBluetoothOppService;
+    @Mock Operation mOperation;
 
     BluetoothOppObexServerSession mServerSession;
 
     @Before
     public void setUp() throws IOException {
-        mTargetContext = spy(
-                new ContextWrapper(
-                        InstrumentationRegistry.getInstrumentation().getTargetContext()));
-        mServerSession = new BluetoothOppObexServerSession(mTargetContext, mTransport,
-                mBluetoothOppService);
+        mTargetContext =
+                spy(
+                        new ContextWrapper(
+                                InstrumentationRegistry.getInstrumentation().getTargetContext()));
+        mServerSession =
+                new BluetoothOppObexServerSession(mTargetContext, mTransport, mBluetoothOppService);
 
         // to control the mServerSession.mSession
         InputStream input = mock(InputStream.class);
@@ -101,8 +98,8 @@ public class BluetoothOppObexServerSessionTest {
 
     @Test
     public void constructor_createInstanceCorrectly() {
-        mServerSession = new BluetoothOppObexServerSession(mTargetContext, mTransport,
-                mBluetoothOppService);
+        mServerSession =
+                new BluetoothOppObexServerSession(mTargetContext, mTransport, mBluetoothOppService);
         assertThat(mServerSession.mBluetoothOppService).isEqualTo(mBluetoothOppService);
         assertThat(mServerSession.mTransport).isEqualTo(mTransport);
         assertThat(mServerSession.mContext).isEqualTo(mTargetContext);
@@ -146,9 +143,22 @@ public class BluetoothOppObexServerSessionTest {
         int currentBytes = 42;
         int timestamp = 123456789;
         boolean mediaScanned = false;
-        BluetoothOppShareInfo info = new BluetoothOppShareInfo(0, uri, hintString, filename,
-                mimetype, direction, destination, visibility, confirm, status, totalBytes,
-                currentBytes, timestamp, mediaScanned);
+        BluetoothOppShareInfo info =
+                new BluetoothOppShareInfo(
+                        0,
+                        uri,
+                        hintString,
+                        filename,
+                        mimetype,
+                        direction,
+                        destination,
+                        visibility,
+                        confirm,
+                        status,
+                        totalBytes,
+                        currentBytes,
+                        timestamp,
+                        mediaScanned);
 
         mServerSession.addShare(info);
         assertThat(mServerSession.mInfo).isEqualTo(info);
@@ -176,8 +186,8 @@ public class BluetoothOppObexServerSessionTest {
         headerSet.setHeader(HeaderSet.NAME, name);
         headerSet.setHeader(HeaderSet.LENGTH, length);
         headerSet.setHeader(HeaderSet.TYPE, mimeType);
-        assertThat(mServerSession.onPut(mOperation)).isEqualTo(
-                ResponseCodes.OBEX_HTTP_LENGTH_REQUIRED);
+        assertThat(mServerSession.onPut(mOperation))
+                .isEqualTo(ResponseCodes.OBEX_HTTP_LENGTH_REQUIRED);
     }
 
     @Test
@@ -216,8 +226,8 @@ public class BluetoothOppObexServerSessionTest {
         headerSet.setHeader(HeaderSet.LENGTH, length);
         headerSet.setHeader(HeaderSet.TYPE, mimeType);
         doReturn(headerSet).when(mOperation).getReceivedHeader();
-        assertThat(mServerSession.onPut(mOperation)).isEqualTo(
-                ResponseCodes.OBEX_HTTP_UNSUPPORTED_TYPE);
+        assertThat(mServerSession.onPut(mOperation))
+                .isEqualTo(ResponseCodes.OBEX_HTTP_UNSUPPORTED_TYPE);
     }
 
     @Test
@@ -228,7 +238,8 @@ public class BluetoothOppObexServerSessionTest {
         // unblock the server and remove timeout message
         // modify mInfo & mFileInfo, manipulate receiveFile() then return ResponseCodes.OBEX_HTTP_OK
 
-        Assume.assumeTrue("Ignore test when if there is not media mounted",
+        Assume.assumeTrue(
+                "Ignore test when if there is not media mounted",
                 Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED));
         String name = "randomFile.txt";
         long length = 10;
@@ -245,9 +256,22 @@ public class BluetoothOppObexServerSessionTest {
         int currentBytes = 42;
         int timestamp = 123456789;
         boolean mediaScanned = false;
-        mServerSession.mInfo = new BluetoothOppShareInfo(0, uri, hint, name,
-                mimeType, direction, destination, visibility, confirm, status, totalBytes,
-                currentBytes, timestamp, mediaScanned);
+        mServerSession.mInfo =
+                new BluetoothOppShareInfo(
+                        0,
+                        uri,
+                        hint,
+                        name,
+                        mimeType,
+                        direction,
+                        destination,
+                        visibility,
+                        confirm,
+                        status,
+                        totalBytes,
+                        currentBytes,
+                        timestamp,
+                        mediaScanned);
         mServerSession.mFileInfo = new BluetoothOppReceiveFileInfo(name, length, uri, status);
 
         HeaderSet headerSet = new HeaderSet();
@@ -256,20 +280,25 @@ public class BluetoothOppObexServerSessionTest {
         headerSet.setHeader(HeaderSet.TYPE, mimeType);
         doReturn(headerSet).when(mOperation).getReceivedHeader();
 
-        doReturn(contentUri).when(mMethodProxy)
+        doReturn(contentUri)
+                .when(mMethodProxy)
                 .contentResolverInsert(any(), eq(BluetoothShare.CONTENT_URI), any());
 
         // unblocking the session
         mServerSession.unblock();
         mServerSession.mAccepted = BluetoothShare.USER_CONFIRMATION_CONFIRMED;
         Handler handler = mock(Handler.class);
-        doAnswer(arg -> {
-            mServerSession.unblock();
-            // to ignore removeMessage, which is not mockable
-            mServerSession.mTimeoutMsgSent = false;
-            return true;
-        }).when(handler).sendMessageAtTime(
-                argThat(arg -> arg.what == BluetoothOppObexSession.MSG_CONNECT_TIMEOUT), anyLong());
+        doAnswer(
+                        arg -> {
+                            mServerSession.unblock();
+                            // to ignore removeMessage, which is not mockable
+                            mServerSession.mTimeoutMsgSent = false;
+                            return true;
+                        })
+                .when(handler)
+                .sendMessageAtTime(
+                        argThat(arg -> arg.what == BluetoothOppObexSession.MSG_CONNECT_TIMEOUT),
+                        anyLong());
         mServerSession.start(handler, 0);
 
         // manipulate ReceiveFile
@@ -289,8 +318,8 @@ public class BluetoothOppObexServerSessionTest {
         HeaderSet reply = new HeaderSet();
         byte[] target = new byte[10];
         request.setHeader(HeaderSet.TARGET, target);
-        assertThat(mServerSession.onConnect(request, reply)).isEqualTo(
-                ResponseCodes.OBEX_HTTP_NOT_ACCEPTABLE);
+        assertThat(mServerSession.onConnect(request, reply))
+                .isEqualTo(ResponseCodes.OBEX_HTTP_NOT_ACCEPTABLE);
     }
 
     @Test
@@ -298,12 +327,13 @@ public class BluetoothOppObexServerSessionTest {
         HeaderSet request = new HeaderSet();
         HeaderSet reply = new HeaderSet();
         request.setHeader(HeaderSet.TARGET, null);
-        BluetoothOppManager bluetoothOppManager = spy(
-                BluetoothOppManager.getInstance(mTargetContext));
+        BluetoothOppManager bluetoothOppManager =
+                spy(BluetoothOppManager.getInstance(mTargetContext));
         BluetoothOppManager.setInstance(bluetoothOppManager);
         doReturn(true).when(bluetoothOppManager).isAcceptlisted(any());
-        doNothing().when(mTargetContext).sendBroadcast(any(),
-                eq(Constants.HANDOVER_STATUS_PERMISSION), any());
+        doNothing()
+                .when(mTargetContext)
+                .sendBroadcast(any(), eq(Constants.HANDOVER_STATUS_PERMISSION), any());
 
         assertThat(mServerSession.onConnect(request, reply)).isEqualTo(ResponseCodes.OBEX_HTTP_OK);
         BluetoothOppManager.setInstance(null);

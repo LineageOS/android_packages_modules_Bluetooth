@@ -1,17 +1,17 @@
 /*
-* Copyright (C) 2014 Samsung System LSI
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*      http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (C) 2014 Samsung System LSI
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.android.bluetooth.map;
 
 import android.bluetooth.BluetoothAdapter;
@@ -47,8 +47,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class BluetoothMapMasInstance implements IObexConnectionHandler {
     private static final String TAG = "BluetoothMapMasInstance";
 
-    @VisibleForTesting
-    static volatile int sInstanceCounter = 0;
+    @VisibleForTesting static volatile int sInstanceCounter = 0;
 
     private final int mObjectInstanceId;
 
@@ -79,15 +78,15 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
     // The remote connected device
     private BluetoothAdapter mAdapter;
 
-    private volatile boolean mShutdown = false;         // Used to interrupt socket accept thread
+    private volatile boolean mShutdown = false; // Used to interrupt socket accept thread
     private volatile boolean mAcceptNewConnections = false;
 
-    private Handler mServiceHandler = null;             // MAP service message handler
-    private BluetoothMapService mMapService = null;     // Handle to the outer MAP service
-    private Context mContext = null;                    // MAP service context
-    private BluetoothMnsObexClient mMnsClient = null;   // Shared MAP MNS client
-    private BluetoothMapAccountItem mAccount = null;    //
-    private String mBaseUri = null;                     // Client base URI for this instance
+    private Handler mServiceHandler = null; // MAP service message handler
+    private BluetoothMapService mMapService = null; // Handle to the outer MAP service
+    private Context mContext = null; // MAP service context
+    private BluetoothMnsObexClient mMnsClient = null; // Shared MAP MNS client
+    private BluetoothMapAccountItem mAccount = null; //
+    private String mBaseUri = null; // Client base URI for this instance
     private int mMasInstanceId = -1;
     private boolean mEnableSmsMms = false;
     BluetoothMapContentObserver mObserver;
@@ -118,13 +117,18 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
 
     /**
      * Create a e-mail MAS instance
+     *
      * @param callback
      * @param context
      * @param mns
      * @param emailBaseUri - use null to create a SMS/MMS MAS instance
      */
-    public BluetoothMapMasInstance(BluetoothMapService mapService, Context context,
-            BluetoothMapAccountItem account, int masId, boolean enableSmsMms) {
+    public BluetoothMapMasInstance(
+            BluetoothMapService mapService,
+            Context context,
+            BluetoothMapAccountItem account,
+            int masId,
+            boolean enableSmsMms) {
         mObjectInstanceId = sInstanceCounter++;
         mMapService = mapService;
         mServiceHandler = mapService.getHandler();
@@ -141,8 +145,13 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
     private void removeSdpRecord() {
         SdpManagerNativeInterface nativeInterface = SdpManagerNativeInterface.getInstance();
         if (mAdapter != null && mSdpHandle >= 0 && nativeInterface.isAvailable()) {
-            verbose("Removing SDP record for MAS instance: " + mMasInstanceId
-                        + " Object reference: " + this + ", SDP handle: " + mSdpHandle);
+            verbose(
+                    "Removing SDP record for MAS instance: "
+                            + mMasInstanceId
+                            + " Object reference: "
+                            + this
+                            + ", SDP handle: "
+                            + mSdpHandle);
             boolean status = nativeInterface.removeSdpRecord(mSdpHandle);
             debug("RemoveSDPrecord returns " + status);
             mSdpHandle = -1;
@@ -159,32 +168,29 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
     }
 
     /**
-     * The data base identifier is used by connecting MCE devices to evaluate if cached data
-     * is still valid, hence only update this value when something actually invalidates the data.
-     * Situations where this must be called:
-     * - MAS ID's vs. server channels are scrambled (As neither MAS ID, name or server channels)
-     *   can be used by a client to uniquely identify a specific message database - except MAS id 0
-     *   we should change this value if the server channel is changed.
-     * - If a MAS instance folderVersionCounter roles over - will not happen before a long
-     *   is too small to hold a unix time-stamp, hence is not handled.
+     * The data base identifier is used by connecting MCE devices to evaluate if cached data is
+     * still valid, hence only update this value when something actually invalidates the data.
+     * Situations where this must be called: - MAS ID's vs. server channels are scrambled (As
+     * neither MAS ID, name or server channels) can be used by a client to uniquely identify a
+     * specific message database - except MAS id 0 we should change this value if the server channel
+     * is changed. - If a MAS instance folderVersionCounter roles over - will not happen before a
+     * long is too small to hold a unix time-stamp, hence is not handled.
      */
     private void updateDbIdentifier() {
         mDbIndetifier.set(Calendar.getInstance().getTime().getTime());
     }
 
     /**
-     * update the time stamp used for FOLDER version counter.
-     * Call once when a content provider notification caused applicable changes to the
-     * list of messages.
+     * update the time stamp used for FOLDER version counter. Call once when a content provider
+     * notification caused applicable changes to the list of messages.
      */
     /* package */ void updateFolderVersionCounter() {
         mFolderVersionCounter.incrementAndGet();
     }
 
     /**
-     * update the CONVO LIST version counter.
-     * Call once when a content provider notification caused applicable changes to the
-     * list of contacts, or when an update is manually triggered.
+     * update the CONVO LIST version counter. Call once when a content provider notification caused
+     * applicable changes to the list of contacts, or when an update is manually triggered.
      */
     /* package */ void updateSmsMmsConvoListVersionCounter() {
         mSmsMmsConvoListVersionCounter.incrementAndGet();
@@ -264,9 +270,7 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
         return combinedVersionCounter;
     }
 
-    /**
-     * Start Obex Server Sockets and create the SDP record.
-     */
+    /** Start Obex Server Sockets and create the SDP record. */
     public synchronized void startSocketListeners() {
         debug("Map Service startSocketListeners");
 
@@ -301,17 +305,24 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
                 return;
             }
             removeSdpRecord();
-            mSdpHandle = createMasSdpRecord(mServerSockets.getRfcommChannel(),
-                    mServerSockets.getL2capPsm());
+            mSdpHandle =
+                    createMasSdpRecord(
+                            mServerSockets.getRfcommChannel(), mServerSockets.getL2capPsm());
             // Here we might have changed crucial data, hence reset DB identifier
-            verbose("Creating new SDP record for MAS instance: " + mMasInstanceId
-                    + " Object reference: " + this + ", SDP handle: " + mSdpHandle);
+            verbose(
+                    "Creating new SDP record for MAS instance: "
+                            + mMasInstanceId
+                            + " Object reference: "
+                            + this
+                            + ", SDP handle: "
+                            + mSdpHandle);
             updateDbIdentifier();
         }
     }
 
     /**
      * Create the MAS SDP record with the information stored in the instance.
+     *
      * @param rfcommChannel the rfcomm channel ID
      * @param l2capPsm the l2capPsm - set to -1 to exclude
      */
@@ -388,12 +399,13 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
             }
 
             mMnsClient = mnsClient;
-            mObserver = new BluetoothMapContentObserver(mContext, mMnsClient, this, mAccount,
-                    mEnableSmsMms);
+            mObserver =
+                    new BluetoothMapContentObserver(
+                            mContext, mMnsClient, this, mAccount, mEnableSmsMms);
             mObserver.init();
             mMapServer =
-                    new BluetoothMapObexServer(mServiceHandler, mContext, mObserver, this, mAccount,
-                            mEnableSmsMms);
+                    new BluetoothMapObexServer(
+                            mServiceHandler, mContext, mObserver, this, mAccount, mEnableSmsMms);
             mMapServer.setRemoteFeatureMask(mRemoteFeatureMask);
             // setup transport
             BluetoothObexTransport transport = new BluetoothObexTransport(mConnSocket);
@@ -415,6 +427,7 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
 
     /**
      * Check if this instance is started.
+     *
      * @return true if started
      */
     public boolean isStarted() {
@@ -441,14 +454,11 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
         closeServerSockets(false);
     }
 
-    /**
-     * Signal to the ServerSockets handler that a new connection may be accepted.
-     */
+    /** Signal to the ServerSockets handler that a new connection may be accepted. */
     public void restartObexServerSession() {
         debug("MAP Service restartObexServerSession()");
         startSocketListeners();
     }
-
 
     private synchronized void closeServerSockets(boolean block) {
         // exit SocketAcceptThread early

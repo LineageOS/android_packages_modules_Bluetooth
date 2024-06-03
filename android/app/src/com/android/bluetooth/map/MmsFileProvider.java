@@ -1,17 +1,17 @@
 /*
-* Copyright (C) 2014 Samsung System LSI
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*      http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (C) 2014 Samsung System LSI
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.android.bluetooth.map;
 
 import android.bluetooth.BluetoothProfile;
@@ -55,7 +55,11 @@ public class MmsFileProvider extends ContentProvider {
     }
 
     @Override
-    public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
+    public Cursor query(
+            Uri uri,
+            String[] projection,
+            String selection,
+            String[] selectionArgs,
             String sortOrder) {
         // Don't support queries.
         return null;
@@ -107,17 +111,17 @@ public class MmsFileProvider extends ContentProvider {
         return openPipeHelper(messageUri, null, null, null, mPipeWriter);
     }
 
-
     public class PipeWriter implements PipeDataWriter<Cursor> {
-        /**
-         * Generate a message based on the cursor, and write the encoded data to the stream.
-         */
-
+        /** Generate a message based on the cursor, and write the encoded data to the stream. */
         @Override
-        public void writeDataToPipe(ParcelFileDescriptor output, Uri uri, String mimeType,
-                Bundle opts, Cursor c) {
-            Log.d(TAG, "writeDataToPipe(): uri=" + uri.toString() + " - getLastPathSegment() = "
-                    + uri.getLastPathSegment());
+        public void writeDataToPipe(
+                ParcelFileDescriptor output, Uri uri, String mimeType, Bundle opts, Cursor c) {
+            Log.d(
+                    TAG,
+                    "writeDataToPipe(): uri="
+                            + uri.toString()
+                            + " - getLastPathSegment() = "
+                            + uri.getLastPathSegment());
 
             FileOutputStream fout = null;
             GenericPdu pdu = null;
@@ -179,6 +183,4 @@ public class MmsFileProvider extends ContentProvider {
             }
         }
     }
-
-
 }

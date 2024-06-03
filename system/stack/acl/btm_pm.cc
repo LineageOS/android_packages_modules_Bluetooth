@@ -521,7 +521,7 @@ static tBTM_STATUS btm_pm_snd_md_req(uint16_t handle, uint8_t pm_id,
   mode = btm_pm_get_set_mode(pm_id, p_cb, p_mode, &md_res);
   md_res.mode = mode;
 
-  log::debug("Found controller in mode:{}", power_mode_text(mode));
+  log::verbose("Found controller in mode:{}", power_mode_text(mode));
 
   if (p_cb->state == mode) {
     log::info("Link already in requested mode pm_id:{} link_ind:{} mode:{}[{}]",
@@ -671,13 +671,13 @@ void btm_pm_proc_cmd_status(tHCI_STATUS status) {
   /* notify the caller is appropriate */
   if ((pm_pend_id != BTM_PM_SET_ONLY_ID) && (pm_reg_db.mask & BTM_PM_REG_SET)) {
     const RawAddress bd_addr = pm_mode_db[pm_pend_link].bda_;
-    log::debug("Notifying callback that link power mode is complete peer:{}",
-               bd_addr);
+    log::verbose("Notifying callback that link power mode is complete peer:{}",
+                 bd_addr);
     (*pm_reg_db.cback)(bd_addr, pm_status, 0, status);
   }
 
-  log::info("Clearing pending power mode link state:{}",
-            power_mode_state_text(p_cb->state));
+  log::verbose("Clearing pending power mode link state:{}",
+               power_mode_state_text(p_cb->state));
   pm_pend_link = 0;
 
   btm_pm_continue_pending_mode_changes();
@@ -776,10 +776,11 @@ void process_ssr_event(tHCI_STATUS status, uint16_t handle,
 
   bool use_ssr = true;
   if (p_cb->interval == max_rx_lat) {
-    log::debug("Sniff subrating unsupported so dropping to legacy sniff mode");
+    log::verbose(
+        "Sniff subrating unsupported so dropping to legacy sniff mode");
     use_ssr = false;
   } else {
-    log::debug("Sniff subrating enabled");
+    log::verbose("Sniff subrating enabled");
   }
 
   int cnt = 0;

@@ -42,8 +42,8 @@ import com.android.bluetooth.BluetoothMethodProxy;
 import java.util.ArrayList;
 
 /**
- * This class stores information about a batch of OPP shares that should be
- * transferred in one session.
+ * This class stores information about a batch of OPP shares that should be transferred in one
+ * session.
  */
 /*There are a few cases: 1. create a batch for a single file to send
  * 2. create a batch for multiple files to send
@@ -73,30 +73,29 @@ public class BluetoothOppBatch {
     private final ArrayList<BluetoothOppShareInfo> mShares;
     private final Context mContext;
 
-    /**
-     * An interface for notifying when BluetoothOppTransferBatch is changed
-     */
+    /** An interface for notifying when BluetoothOppTransferBatch is changed */
     public interface BluetoothOppBatchListener {
         /**
          * Called to notify when a share is added into the batch
+         *
          * @param id , BluetoothOppShareInfo.id
          */
         void onShareAdded(int id);
 
         /**
          * Called to notify when a share is deleted from the batch
+         *
          * @param id , BluetoothOppShareInfo.id
          */
         void onShareDeleted(int id);
 
-        /**
-         * Called to notify when the batch is canceled
-         */
+        /** Called to notify when the batch is canceled */
         void onBatchCanceled();
     }
 
     /**
      * A batch is always created with at least one ShareInfo
+     *
      * @param context, Context
      * @param info, BluetoothOppShareInfo
      */
@@ -113,9 +112,7 @@ public class BluetoothOppBatch {
         Log.v(TAG, "New Batch created for info " + info.mId);
     }
 
-    /**
-     * Add one share into the batch.
-     */
+    /** Add one share into the batch. */
     /* There are 2 cases: Service scans the databases and it's multiple send
      * Service receives database update and know additional file should be received
      */
@@ -126,9 +123,7 @@ public class BluetoothOppBatch {
         }
     }
 
-    /**
-     * Cancel the whole batch.
-     */
+    /** Cancel the whole batch. */
     /* 1) If the batch is running, stop the transfer
      * 2) Go through mShares list and mark all incomplete share as CANCELED status
      * 3) update ContentProvider for these canceled transfer
@@ -139,15 +134,15 @@ public class BluetoothOppBatch {
         if (mListener != null) {
             mListener.onBatchCanceled();
         }
-        //TODO investigate if below code is redundant
+        // TODO investigate if below code is redundant
         for (int i = mShares.size() - 1; i >= 0; i--) {
             BluetoothOppShareInfo info = mShares.get(i);
 
             if (info.mStatus < 200) {
                 if (info.mDirection == BluetoothShare.DIRECTION_INBOUND && info.mUri != null) {
-                    BluetoothMethodProxy.getInstance().contentResolverDelete(
-                            mContext.getContentResolver(), info.mUri, null, null
-                    );
+                    BluetoothMethodProxy.getInstance()
+                            .contentResolverDelete(
+                                    mContext.getContentResolver(), info.mUri, null, null);
                 }
                 Log.v(TAG, "Cancel batch for info " + info.mId);
 
@@ -173,6 +168,7 @@ public class BluetoothOppBatch {
 
     /**
      * Get the running status of the batch
+     *
      * @return
      */
 
@@ -183,8 +179,8 @@ public class BluetoothOppBatch {
 
     /**
      * Get the first pending ShareInfo of the batch
-     * @return BluetoothOppShareInfo, for the first pending share, or null if
-     *         none exists
+     *
+     * @return BluetoothOppShareInfo, for the first pending share, or null if none exists
      */
     public BluetoothOppShareInfo getPendingShare() {
         for (int i = 0; i < mShares.size(); i++) {

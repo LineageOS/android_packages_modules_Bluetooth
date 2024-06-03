@@ -22,14 +22,18 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-/**
- * A test suite for the BipPixel class
- */
+/** A test suite for the BipPixel class */
 @RunWith(AndroidJUnit4.class)
 public class BipPixelTest {
 
-    private void testParse(String input, int pixelType, int minWidth, int minHeight, int maxWidth,
-            int maxHeight, String pixelStr) {
+    private void testParse(
+            String input,
+            int pixelType,
+            int minWidth,
+            int minHeight,
+            int maxWidth,
+            int maxHeight,
+            String pixelStr) {
         BipPixel pixel = new BipPixel(input);
         Assert.assertEquals(pixelType, pixel.getType());
         Assert.assertEquals(minWidth, pixel.getMinWidth());
@@ -49,8 +53,8 @@ public class BipPixelTest {
         Assert.assertEquals(pixelStr, pixel.toString());
     }
 
-    private void testResizableModified(int minWidth, int minHeight, int maxWidth, int maxHeight,
-            String pixelStr) {
+    private void testResizableModified(
+            int minWidth, int minHeight, int maxWidth, int maxHeight, String pixelStr) {
         BipPixel pixel = BipPixel.createResizableModified(minWidth, minHeight, maxWidth, maxHeight);
         Assert.assertEquals(BipPixel.TYPE_RESIZE_MODIFIED_ASPECT_RATIO, pixel.getType());
         Assert.assertEquals(minWidth, pixel.getMinWidth());
@@ -60,8 +64,7 @@ public class BipPixelTest {
         Assert.assertEquals(pixelStr, pixel.toString());
     }
 
-    private void testResizableFixed(int minWidth, int maxWidth, int maxHeight,
-            String pixelStr) {
+    private void testResizableFixed(int minWidth, int maxWidth, int maxHeight, String pixelStr) {
         int minHeight = (minWidth * maxHeight) / maxWidth; // spec defined
         BipPixel pixel = BipPixel.createResizableFixed(minWidth, maxWidth, maxHeight);
         Assert.assertEquals(BipPixel.TYPE_RESIZE_FIXED_ASPECT_RATIO, pixel.getType());
@@ -82,25 +85,73 @@ public class BipPixelTest {
 
     @Test
     public void testParseResizableModified() {
-        testParse("0*0-200*200", BipPixel.TYPE_RESIZE_MODIFIED_ASPECT_RATIO, 0, 0, 200, 200,
+        testParse(
+                "0*0-200*200",
+                BipPixel.TYPE_RESIZE_MODIFIED_ASPECT_RATIO,
+                0,
+                0,
+                200,
+                200,
                 "0*0-200*200");
-        testParse("200*200-600*600", BipPixel.TYPE_RESIZE_MODIFIED_ASPECT_RATIO, 200, 200, 600, 600,
+        testParse(
+                "200*200-600*600",
+                BipPixel.TYPE_RESIZE_MODIFIED_ASPECT_RATIO,
+                200,
+                200,
+                600,
+                600,
                 "200*200-600*600");
-        testParse("12*67-34*89", BipPixel.TYPE_RESIZE_MODIFIED_ASPECT_RATIO, 12, 67, 34, 89,
+        testParse(
+                "12*67-34*89",
+                BipPixel.TYPE_RESIZE_MODIFIED_ASPECT_RATIO,
+                12,
+                67,
+                34,
+                89,
                 "12*67-34*89");
-        testParse("123*456-1000*1000", BipPixel.TYPE_RESIZE_MODIFIED_ASPECT_RATIO, 123, 456, 1000,
-                1000, "123*456-1000*1000");
+        testParse(
+                "123*456-1000*1000",
+                BipPixel.TYPE_RESIZE_MODIFIED_ASPECT_RATIO,
+                123,
+                456,
+                1000,
+                1000,
+                "123*456-1000*1000");
     }
 
     @Test
     public void testParseResizableFixed() {
-        testParse("0**-200*200", BipPixel.TYPE_RESIZE_FIXED_ASPECT_RATIO, 0, 0, 200, 200,
+        testParse(
+                "0**-200*200",
+                BipPixel.TYPE_RESIZE_FIXED_ASPECT_RATIO,
+                0,
+                0,
+                200,
+                200,
                 "0**-200*200");
-        testParse("200**-600*600", BipPixel.TYPE_RESIZE_FIXED_ASPECT_RATIO, 200, 200, 600, 600,
+        testParse(
+                "200**-600*600",
+                BipPixel.TYPE_RESIZE_FIXED_ASPECT_RATIO,
+                200,
+                200,
+                600,
+                600,
                 "200**-600*600");
-        testParse("123**-1000*1000", BipPixel.TYPE_RESIZE_FIXED_ASPECT_RATIO, 123, 123, 1000, 1000,
+        testParse(
+                "123**-1000*1000",
+                BipPixel.TYPE_RESIZE_FIXED_ASPECT_RATIO,
+                123,
+                123,
+                1000,
+                1000,
                 "123**-1000*1000");
-        testParse("12**-35*89", BipPixel.TYPE_RESIZE_FIXED_ASPECT_RATIO, 12, (12 * 89) / 35, 35, 89,
+        testParse(
+                "12**-35*89",
+                BipPixel.TYPE_RESIZE_FIXED_ASPECT_RATIO,
+                12,
+                (12 * 89) / 35,
+                35,
+                89,
                 "12**-35*89");
     }
 

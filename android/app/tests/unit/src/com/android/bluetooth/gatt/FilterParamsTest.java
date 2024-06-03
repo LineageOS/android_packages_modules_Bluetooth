@@ -24,9 +24,7 @@ import androidx.test.runner.AndroidJUnit4;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-/**
- * Test cases for {@link FilterParams}.
- */
+/** Test cases for {@link FilterParams}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class FilterParamsTest {
@@ -46,20 +44,20 @@ public class FilterParamsTest {
         int foundTimeOutCnt = 10;
         int numOfTrackEntries = 11;
 
-        FilterParams filterParams = new FilterParams(
-                clientIf,
-                filtIndex,
-                featSeln,
-                listLogicType,
-                filtLogicType,
-                rssiHighValue,
-                rssiLowValue,
-                delyMode,
-                foundTimeOut,
-                lostTimeOut,
-                foundTimeOutCnt,
-                numOfTrackEntries
-        );
+        FilterParams filterParams =
+                new FilterParams(
+                        clientIf,
+                        filtIndex,
+                        featSeln,
+                        listLogicType,
+                        filtLogicType,
+                        rssiHighValue,
+                        rssiLowValue,
+                        delyMode,
+                        foundTimeOut,
+                        lostTimeOut,
+                        foundTimeOutCnt,
+                        numOfTrackEntries);
 
         assertThat(filterParams).isNotNull();
 

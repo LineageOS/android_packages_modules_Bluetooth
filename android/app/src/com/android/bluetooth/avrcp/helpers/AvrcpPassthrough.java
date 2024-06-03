@@ -126,7 +126,7 @@ public class AvrcpPassthrough {
             case BluetoothAvrcp.PASSTHROUGH_ID_ANGLE:
             case BluetoothAvrcp.PASSTHROUGH_ID_SUBPICT:
             case BluetoothAvrcp.PASSTHROUGH_ID_VENDOR:
-            // Fallthrough for all unknown key mappings
+                // Fallthrough for all unknown key mappings
             default:
                 return KeyEvent.KEYCODE_UNKNOWN;
         }

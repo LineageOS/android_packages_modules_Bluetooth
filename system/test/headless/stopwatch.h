@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include <base/strings/stringprintf.h>
+#include <bluetooth/log.h>
 
 #include <chrono>
 #include <cstdint>
@@ -40,9 +40,8 @@ class Stopwatch {
   std::string ToString() { return ToString(""); }
 
   std::string ToString(const std::string& comment) {
-    return base::StringPrintf("%s: %lu ms %s", name_.c_str(),
-                              static_cast<unsigned long>(LapMs()),
-                              comment.c_str());
+    return fmt::format("{}: {} ms {}", name_,
+                       static_cast<unsigned long>(LapMs()), comment);
   }
 
  private:

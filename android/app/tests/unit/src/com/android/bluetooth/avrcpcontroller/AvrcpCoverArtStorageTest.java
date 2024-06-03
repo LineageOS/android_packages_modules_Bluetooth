@@ -37,9 +37,7 @@ import org.junit.runner.RunWith;
 
 import java.io.InputStream;
 
-/**
- * A test suite for the AvrcpCoverArtStorage class.
- */
+/** A test suite for the AvrcpCoverArtStorage class. */
 @RunWith(AndroidJUnit4.class)
 public final class AvrcpCoverArtStorageTest {
     private Context mTargetContext;
@@ -58,11 +56,11 @@ public final class AvrcpCoverArtStorageTest {
         mTestResources = TestUtils.getTestApplicationResources(mTargetContext);
         mDevice1 = BluetoothAdapter.getDefaultAdapter().getRemoteDevice("AA:BB:CC:DD:EE:FF");
         mDevice2 = BluetoothAdapter.getDefaultAdapter().getRemoteDevice("BB:CC:DD:EE:FF:AA");
-        InputStream is = mTestResources.openRawResource(
-                com.android.bluetooth.tests.R.raw.image_200_200);
+        InputStream is =
+                mTestResources.openRawResource(com.android.bluetooth.tests.R.raw.image_200_200);
         mImage1 = BitmapFactory.decodeStream(is);
-        InputStream is2 = mTestResources.openRawResource(
-                com.android.bluetooth.tests.R.raw.image_600_600);
+        InputStream is2 =
+                mTestResources.openRawResource(com.android.bluetooth.tests.R.raw.image_600_600);
         mImage2 = BitmapFactory.decodeStream(is2);
 
         mAvrcpCoverArtStorage = new AvrcpCoverArtStorage(mTargetContext);
@@ -332,8 +330,15 @@ public final class AvrcpCoverArtStorageTest {
     @Test
     public void toString_returnsDeviceInfo() {
         String expectedString =
-                "CoverArtStorage:\n" + "  " + mDevice1 + " (" + 1 + "):" + "\n    "
-                        + mHandle1 + "\n";
+                "CoverArtStorage:\n"
+                        + "  "
+                        + mDevice1
+                        + " ("
+                        + 1
+                        + "):"
+                        + "\n    "
+                        + mHandle1
+                        + "\n";
 
         mAvrcpCoverArtStorage.addImage(mDevice1, mHandle1, mImage1);
 

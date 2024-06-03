@@ -43,18 +43,18 @@ public class BluetoothMapbMessageTest {
     private static final String TEST_FORMATTED_NAME = "test_formatted_name";
     private static final String TEST_FIRST_PHONE_NUMBER = "111-1111-1111";
     private static final String[] TEST_PHONE_NUMBERS =
-            new String[]{TEST_FIRST_PHONE_NUMBER, "222-2222-2222"};
+            new String[] {TEST_FIRST_PHONE_NUMBER, "222-2222-2222"};
     private static final String TEST_FIRST_EMAIL = "testFirst@email.com";
     private static final String[] TEST_EMAIL_ADDRESSES =
-            new String[]{TEST_FIRST_EMAIL, "testSecond@email.com"};
+            new String[] {TEST_FIRST_EMAIL, "testSecond@email.com"};
     private static final String TEST_FIRST_BT_UCI = "test_first_bt_uci";
     private static final String[] TEST_BT_UCIS =
-            new String[]{TEST_FIRST_BT_UCI, "test_second_bt_uci"};
+            new String[] {TEST_FIRST_BT_UCI, "test_second_bt_uci"};
     private static final String TEST_FIRST_BT_UID = "1111";
-    private static final String[] TEST_BT_UIDS = new String[]{TEST_FIRST_BT_UID, "1112"};
+    private static final String[] TEST_BT_UIDS = new String[] {TEST_FIRST_BT_UID, "1112"};
 
-    private static final VCard TEST_VCARD = new VCard(TEST_NAME, TEST_PHONE_NUMBERS,
-            TEST_EMAIL_ADDRESSES);
+    private static final VCard TEST_VCARD =
+            new VCard(TEST_NAME, TEST_PHONE_NUMBERS, TEST_EMAIL_ADDRESSES);
 
     @Test
     public void settersAndGetters() {
@@ -85,8 +85,8 @@ public class BluetoothMapbMessageTest {
         BluetoothMapbMessage messageMime = new BluetoothMapbMessageMime();
         messageMime.addOriginator(TEST_NAME, TEST_PHONE_NUMBERS, TEST_EMAIL_ADDRESSES);
         assertThat(messageMime.getOriginators().get(0).getName()).isEqualTo(TEST_NAME);
-        assertThat(messageMime.getOriginators().get(0).getFirstPhoneNumber()).isEqualTo(
-                PhoneNumberUtils.stripSeparators(TEST_FIRST_PHONE_NUMBER));
+        assertThat(messageMime.getOriginators().get(0).getFirstPhoneNumber())
+                .isEqualTo(PhoneNumberUtils.stripSeparators(TEST_FIRST_PHONE_NUMBER));
         assertThat(messageMime.getOriginators().get(0).getFirstEmail()).isEqualTo(TEST_FIRST_EMAIL);
     }
 
@@ -100,22 +100,27 @@ public class BluetoothMapbMessageTest {
     @Test
     public void addOriginator_forVCardVersionThree() {
         BluetoothMapbMessage messageMime = new BluetoothMapbMessageMime();
-        messageMime.addOriginator(TEST_NAME, TEST_FORMATTED_NAME, TEST_PHONE_NUMBERS,
-                TEST_EMAIL_ADDRESSES, TEST_BT_UIDS, TEST_BT_UCIS);
+        messageMime.addOriginator(
+                TEST_NAME,
+                TEST_FORMATTED_NAME,
+                TEST_PHONE_NUMBERS,
+                TEST_EMAIL_ADDRESSES,
+                TEST_BT_UIDS,
+                TEST_BT_UCIS);
         assertThat(messageMime.getOriginators().get(0).getName()).isEqualTo(TEST_NAME);
-        assertThat(messageMime.getOriginators().get(0).getFirstPhoneNumber()).isEqualTo(
-                PhoneNumberUtils.stripSeparators(TEST_FIRST_PHONE_NUMBER));
+        assertThat(messageMime.getOriginators().get(0).getFirstPhoneNumber())
+                .isEqualTo(PhoneNumberUtils.stripSeparators(TEST_FIRST_PHONE_NUMBER));
         assertThat(messageMime.getOriginators().get(0).getFirstEmail()).isEqualTo(TEST_FIRST_EMAIL);
-        assertThat(messageMime.getOriginators().get(0).getFirstBtUci()).isEqualTo(
-                TEST_FIRST_BT_UCI);
+        assertThat(messageMime.getOriginators().get(0).getFirstBtUci())
+                .isEqualTo(TEST_FIRST_BT_UCI);
     }
 
     @Test
     public void addOriginator_forVCardVersionThree_withOnlyBtUcisAndBtUids() {
         BluetoothMapbMessage messageMime = new BluetoothMapbMessageMime();
         messageMime.addOriginator(TEST_BT_UCIS, TEST_BT_UIDS);
-        assertThat(messageMime.getOriginators().get(0).getFirstBtUci()).isEqualTo(
-                TEST_FIRST_BT_UCI);
+        assertThat(messageMime.getOriginators().get(0).getFirstBtUci())
+                .isEqualTo(TEST_FIRST_BT_UCI);
     }
 
     @Test
@@ -123,19 +128,24 @@ public class BluetoothMapbMessageTest {
         BluetoothMapbMessage messageMime = new BluetoothMapbMessageMime();
         messageMime.addRecipient(TEST_NAME, TEST_PHONE_NUMBERS, TEST_EMAIL_ADDRESSES);
         assertThat(messageMime.getRecipients().get(0).getName()).isEqualTo(TEST_NAME);
-        assertThat(messageMime.getRecipients().get(0).getFirstPhoneNumber()).isEqualTo(
-                PhoneNumberUtils.stripSeparators(TEST_FIRST_PHONE_NUMBER));
+        assertThat(messageMime.getRecipients().get(0).getFirstPhoneNumber())
+                .isEqualTo(PhoneNumberUtils.stripSeparators(TEST_FIRST_PHONE_NUMBER));
         assertThat(messageMime.getRecipients().get(0).getFirstEmail()).isEqualTo(TEST_FIRST_EMAIL);
     }
 
     @Test
     public void addRecipient_forVCardVersionThree() {
         BluetoothMapbMessage messageMime = new BluetoothMapbMessageMime();
-        messageMime.addRecipient(TEST_NAME, TEST_FORMATTED_NAME, TEST_PHONE_NUMBERS,
-                TEST_EMAIL_ADDRESSES, TEST_BT_UIDS, TEST_BT_UCIS);
+        messageMime.addRecipient(
+                TEST_NAME,
+                TEST_FORMATTED_NAME,
+                TEST_PHONE_NUMBERS,
+                TEST_EMAIL_ADDRESSES,
+                TEST_BT_UIDS,
+                TEST_BT_UCIS);
         assertThat(messageMime.getRecipients().get(0).getName()).isEqualTo(TEST_NAME);
-        assertThat(messageMime.getRecipients().get(0).getFirstPhoneNumber()).isEqualTo(
-                PhoneNumberUtils.stripSeparators(TEST_FIRST_PHONE_NUMBER));
+        assertThat(messageMime.getRecipients().get(0).getFirstPhoneNumber())
+                .isEqualTo(PhoneNumberUtils.stripSeparators(TEST_FIRST_PHONE_NUMBER));
         assertThat(messageMime.getRecipients().get(0).getFirstEmail()).isEqualTo(TEST_FIRST_EMAIL);
         assertThat(messageMime.getRecipients().get(0).getFirstBtUci()).isEqualTo(TEST_FIRST_BT_UCI);
     }
@@ -155,18 +165,28 @@ public class BluetoothMapbMessageTest {
         messageMimeToEncode.setType(TEST_TYPE);
         messageMimeToEncode.setCompleteFolder(TEST_FOLDER);
         messageMimeToEncode.setEncoding(TEST_ENCODING);
-        messageMimeToEncode.addOriginator(TEST_NAME, TEST_FORMATTED_NAME, TEST_PHONE_NUMBERS,
-                TEST_EMAIL_ADDRESSES, TEST_BT_UIDS, TEST_BT_UCIS);
-        messageMimeToEncode.addRecipient(TEST_NAME, TEST_FORMATTED_NAME, TEST_PHONE_NUMBERS,
-                TEST_EMAIL_ADDRESSES, TEST_BT_UIDS, TEST_BT_UCIS);
+        messageMimeToEncode.addOriginator(
+                TEST_NAME,
+                TEST_FORMATTED_NAME,
+                TEST_PHONE_NUMBERS,
+                TEST_EMAIL_ADDRESSES,
+                TEST_BT_UIDS,
+                TEST_BT_UCIS);
+        messageMimeToEncode.addRecipient(
+                TEST_NAME,
+                TEST_FORMATTED_NAME,
+                TEST_PHONE_NUMBERS,
+                TEST_EMAIL_ADDRESSES,
+                TEST_BT_UIDS,
+                TEST_BT_UCIS);
 
         byte[] encodedMessageMime = messageMimeToEncode.encode();
         InputStream inputStream = new ByteArrayInputStream(encodedMessageMime);
 
         BluetoothMapbMessage messageMimeParsed = BluetoothMapbMessage.parse(inputStream, 1);
         assertThat(messageMimeParsed.mAppParamCharset).isEqualTo(1);
-        assertThat(messageMimeParsed.getVersionString()).isEqualTo(
-                "VERSION:" + TEST_VERSION_STRING);
+        assertThat(messageMimeParsed.getVersionString())
+                .isEqualTo("VERSION:" + TEST_VERSION_STRING);
         assertThat(messageMimeParsed.getType()).isEqualTo(TEST_TYPE);
         assertThat(messageMimeParsed.getFolder()).isEqualTo(TEST_FOLDER);
         assertThat(messageMimeParsed.getRecipients().size()).isEqualTo(1);

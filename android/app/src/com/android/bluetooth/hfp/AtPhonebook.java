@@ -42,29 +42,28 @@ import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.HashMap;
 
-/**
- * Helper for managing phonebook presentation over AT commands
- */
+/** Helper for managing phonebook presentation over AT commands */
 public class AtPhonebook {
     private static final String TAG = "BluetoothAtPhonebook";
 
-    /** The projection to use when querying the call log database in response
-     *  to AT+CPBR for the MC, RC, and DC phone books (missed, received, and
-     *   dialed calls respectively)
+    /**
+     * The projection to use when querying the call log database in response to AT+CPBR for the MC,
+     * RC, and DC phone books (missed, received, and dialed calls respectively)
      */
-    private static final String[] CALLS_PROJECTION = new String[]{
-            Calls._ID, Calls.NUMBER, Calls.NUMBER_PRESENTATION
-    };
+    private static final String[] CALLS_PROJECTION =
+            new String[] {Calls._ID, Calls.NUMBER, Calls.NUMBER_PRESENTATION};
 
-    /** The projection to use when querying the contacts database in response
-     *   to AT+CPBR for the ME phonebook (saved phone numbers).
+    /**
+     * The projection to use when querying the contacts database in response to AT+CPBR for the ME
+     * phonebook (saved phone numbers).
      */
-    private static final String[] PHONES_PROJECTION = new String[]{
-            Phone._ID, Phone.DISPLAY_NAME, Phone.NUMBER, Phone.TYPE
-    };
+    private static final String[] PHONES_PROJECTION =
+            new String[] {Phone._ID, Phone.DISPLAY_NAME, Phone.NUMBER, Phone.TYPE};
 
-    /** Android supports as many phonebook entries as the flash can hold, but
-     *  BT periphals don't. Limit the number we'll report. */
+    /**
+     * Android supports as many phonebook entries as the flash can hold, but BT periphals don't.
+     * Limit the number we'll report.
+     */
     private static final int MAX_PHONEBOOK_SIZE = 16384;
 
     private static final String OUTGOING_CALL_WHERE = Calls.TYPE + "=" + Calls.OUTGOING_TYPE;
@@ -83,21 +82,17 @@ public class AtPhonebook {
     private Context mContext;
     private ContentResolver mContentResolver;
     private HeadsetNativeInterface mNativeInterface;
-    @VisibleForTesting
-    String mCurrentPhonebook;
-    @VisibleForTesting
-    String mCharacterSet = "UTF-8";
+    @VisibleForTesting String mCurrentPhonebook;
+    @VisibleForTesting String mCharacterSet = "UTF-8";
 
-    @VisibleForTesting
-    int mCpbrIndex1, mCpbrIndex2;
+    @VisibleForTesting int mCpbrIndex1, mCpbrIndex2;
     private boolean mCheckingAccessPermission;
 
     // package and class name to which we send intent to check phone book access permission
     private final String mPairingPackage;
 
     @VisibleForTesting
-    final HashMap<String, PhonebookResult> mPhonebooks =
-            new HashMap<String, PhonebookResult>(4);
+    final HashMap<String, PhonebookResult> mPhonebooks = new HashMap<String, PhonebookResult>(4);
 
     static final int TYPE_UNKNOWN = -1;
     static final int TYPE_READ = 0;
@@ -106,16 +101,16 @@ public class AtPhonebook {
 
     public AtPhonebook(Context context, HeadsetNativeInterface nativeInterface) {
         mContext = context;
-        mPairingPackage = SystemProperties.get(
-            Utils.PAIRING_UI_PROPERTY,
-            context.getString(R.string.pairing_ui_package));
+        mPairingPackage =
+                SystemProperties.get(
+                        Utils.PAIRING_UI_PROPERTY, context.getString(R.string.pairing_ui_package));
         mContentResolver = context.getContentResolver();
         mNativeInterface = nativeInterface;
-        mPhonebooks.put("DC", new PhonebookResult());  // dialled calls
-        mPhonebooks.put("RC", new PhonebookResult());  // received calls
-        mPhonebooks.put("MC", new PhonebookResult());  // missed calls
-        mPhonebooks.put("ME", new PhonebookResult());  // mobile phonebook
-        mCurrentPhonebook = "ME";  // default to mobile phonebook
+        mPhonebooks.put("DC", new PhonebookResult()); // dialled calls
+        mPhonebooks.put("RC", new PhonebookResult()); // received calls
+        mPhonebooks.put("MC", new PhonebookResult()); // missed calls
+        mPhonebooks.put("ME", new PhonebookResult()); // mobile phonebook
+        mCurrentPhonebook = "ME"; // default to mobile phonebook
         mCpbrIndex1 = mCpbrIndex2 = -1;
     }
 
@@ -127,8 +122,8 @@ public class AtPhonebook {
     public String getLastDialledNumber() {
         String[] projection = {Calls.NUMBER};
         Bundle queryArgs = new Bundle();
-        queryArgs.putString(ContentResolver.QUERY_ARG_SQL_SELECTION,
-                Calls.TYPE + "=" + Calls.OUTGOING_TYPE);
+        queryArgs.putString(
+                ContentResolver.QUERY_ARG_SQL_SELECTION, Calls.TYPE + "=" + Calls.OUTGOING_TYPE);
         queryArgs.putString(ContentResolver.QUERY_ARG_SQL_SORT_ORDER, Calls.DEFAULT_SORT_ORDER);
         queryArgs.putInt(ContentResolver.QUERY_ARG_LIMIT, 1);
 
@@ -188,8 +183,10 @@ public class AtPhonebook {
                 }
                 String characterSet = ((atString.split("="))[1]);
                 characterSet = characterSet.replace("\"", "");
-                if (characterSet.equals("GSM") || characterSet.equals("IRA") || characterSet.equals(
-                        "UTF-8") || characterSet.equals("UTF8")) {
+                if (characterSet.equals("GSM")
+                        || characterSet.equals("IRA")
+                        || characterSet.equals("UTF-8")
+                        || characterSet.equals("UTF8")) {
                     mCharacterSet = characterSet;
                     atCommandResult = HeadsetHalConstants.AT_RESPONSE_OK;
                 } else {
@@ -229,8 +226,12 @@ public class AtPhonebook {
                 }
                 int size = pbr.cursor.getCount();
                 atCommandResponse =
-                        "+CPBS: \"" + mCurrentPhonebook + "\"," + size + "," + getMaxPhoneBookSize(
-                                size);
+                        "+CPBS: \""
+                                + mCurrentPhonebook
+                                + "\","
+                                + size
+                                + ","
+                                + getMaxPhoneBookSize(size);
                 pbr.cursor.close();
                 pbr.cursor = null;
                 atCommandResult = HeadsetHalConstants.AT_RESPONSE_OK;
@@ -291,11 +292,11 @@ public class AtPhonebook {
                 if ("SM".equals(mCurrentPhonebook)) {
                     size = 0;
                 } else {
-                    PhonebookResult pbr = getPhonebookResult(mCurrentPhonebook, true); //false);
+                    PhonebookResult pbr = getPhonebookResult(mCurrentPhonebook, true); // false);
                     if (pbr == null) {
                         atCommandErrorCode = BluetoothCmeError.OPERATION_NOT_ALLOWED;
-                        mNativeInterface.atResponseCode(remoteDevice, atCommandResult,
-                                atCommandErrorCode);
+                        mNativeInterface.atResponseCode(
+                                remoteDevice, atCommandResult, atCommandErrorCode);
                         break;
                     }
                     size = pbr.cursor.getCount();
@@ -312,30 +313,30 @@ public class AtPhonebook {
                 mNativeInterface.atResponseString(remoteDevice, atCommandResponse);
                 mNativeInterface.atResponseCode(remoteDevice, atCommandResult, atCommandErrorCode);
                 break;
-            // Read PhoneBook Entries
+                // Read PhoneBook Entries
             case TYPE_READ:
             case TYPE_SET: // Set & read
                 // Phone Book Read Request
                 // AT+CPBR=<index1>[,<index2>]
                 Log.d(TAG, "handleCpbrCommand - set/read command");
                 if (mCpbrIndex1 != -1) {
-                   /* handling a CPBR at the moment, reject this CPBR command */
+                    /* handling a CPBR at the moment, reject this CPBR command */
                     atCommandErrorCode = BluetoothCmeError.OPERATION_NOT_ALLOWED;
-                    mNativeInterface.atResponseCode(remoteDevice, atCommandResult,
-                            atCommandErrorCode);
+                    mNativeInterface.atResponseCode(
+                            remoteDevice, atCommandResult, atCommandErrorCode);
                     break;
                 }
                 // Parse indexes
                 int index1;
                 int index2;
                 if ((atString.split("=")).length < 2) {
-                    mNativeInterface.atResponseCode(remoteDevice, atCommandResult,
-                            atCommandErrorCode);
+                    mNativeInterface.atResponseCode(
+                            remoteDevice, atCommandResult, atCommandErrorCode);
                     break;
                 }
                 String atCommand = (atString.split("="))[1];
                 String[] indices = atCommand.split(",");
-                //replace AT command separator ';' from the index if any
+                // replace AT command separator ';' from the index if any
                 for (int i = 0; i < indices.length; i++) {
                     indices[i] = indices[i].replace(';', ' ').trim();
                 }
@@ -349,8 +350,8 @@ public class AtPhonebook {
                 } catch (Exception e) {
                     Log.d(TAG, "handleCpbrCommand - exception - invalid chars: " + e.toString());
                     atCommandErrorCode = BluetoothCmeError.TEXT_HAS_INVALID_CHARS;
-                    mNativeInterface.atResponseCode(remoteDevice, atCommandResult,
-                            atCommandErrorCode);
+                    mNativeInterface.atResponseCode(
+                            remoteDevice, atCommandResult, atCommandErrorCode);
                     break;
                 }
                 mCpbrIndex1 = index1;
@@ -362,14 +363,16 @@ public class AtPhonebook {
                     mCheckingAccessPermission = false;
                     atCommandResult = processCpbrCommand(remoteDevice);
                     mCpbrIndex1 = mCpbrIndex2 = -1;
-                    mNativeInterface.atResponseCode(remoteDevice, atCommandResult,
-                            atCommandErrorCode);
+                    mNativeInterface.atResponseCode(
+                            remoteDevice, atCommandResult, atCommandErrorCode);
                     break;
                 } else if (permission == BluetoothDevice.ACCESS_REJECTED) {
                     mCheckingAccessPermission = false;
                     mCpbrIndex1 = mCpbrIndex2 = -1;
-                    mNativeInterface.atResponseCode(remoteDevice,
-                            HeadsetHalConstants.AT_RESPONSE_ERROR, BluetoothCmeError.AG_FAILURE);
+                    mNativeInterface.atResponseCode(
+                            remoteDevice,
+                            HeadsetHalConstants.AT_RESPONSE_ERROR,
+                            BluetoothCmeError.AG_FAILURE);
                 }
                 // If checkAccessPermission(remoteDevice) has returned
                 // BluetoothDevice.ACCESS_UNKNOWN, we will continue the process in
@@ -384,10 +387,9 @@ public class AtPhonebook {
         }
     }
 
-    /** Get the most recent result for the given phone book,
-     *  with the cursor ready to go.
-     *  If force then re-query that phonebook
-     *  Returns null if the cursor is not ready
+    /**
+     * Get the most recent result for the given phone book, with the cursor ready to go. If force
+     * then re-query that phonebook Returns null if the cursor is not ready
      */
     @VisibleForTesting
     synchronized PhonebookResult getPhonebookResult(String pb, boolean force) {
@@ -434,8 +436,14 @@ public class AtPhonebook {
             queryArgs.putString(ContentResolver.QUERY_ARG_SQL_SELECTION, where);
             queryArgs.putString(ContentResolver.QUERY_ARG_SQL_SORT_ORDER, Calls.DEFAULT_SORT_ORDER);
             queryArgs.putInt(ContentResolver.QUERY_ARG_LIMIT, MAX_PHONEBOOK_SIZE);
-            pbr.cursor = BluetoothMethodProxy.getInstance().contentResolverQuery(mContentResolver,
-                    Calls.CONTENT_URI, CALLS_PROJECTION, queryArgs, null);
+            pbr.cursor =
+                    BluetoothMethodProxy.getInstance()
+                            .contentResolverQuery(
+                                    mContentResolver,
+                                    Calls.CONTENT_URI,
+                                    CALLS_PROJECTION,
+                                    queryArgs,
+                                    null);
 
             if (pbr.cursor == null) {
                 return false;
@@ -450,8 +458,14 @@ public class AtPhonebook {
             queryArgs.putString(ContentResolver.QUERY_ARG_SQL_SELECTION, where);
             queryArgs.putInt(ContentResolver.QUERY_ARG_LIMIT, MAX_PHONEBOOK_SIZE);
             final Uri phoneContentUri = DevicePolicyUtils.getEnterprisePhoneUri(mContext);
-            pbr.cursor = BluetoothMethodProxy.getInstance().contentResolverQuery(mContentResolver,
-                    phoneContentUri, PHONES_PROJECTION, queryArgs, null);
+            pbr.cursor =
+                    BluetoothMethodProxy.getInstance()
+                            .contentResolverQuery(
+                                    mContentResolver,
+                                    phoneContentUri,
+                                    PHONES_PROJECTION,
+                                    queryArgs,
+                                    null);
 
             if (pbr.cursor == null) {
                 return false;
@@ -509,7 +523,7 @@ public class AtPhonebook {
         }
 
         // Check phonebook
-        PhonebookResult pbr = getPhonebookResult(mCurrentPhonebook, true); //false);
+        PhonebookResult pbr = getPhonebookResult(mCurrentPhonebook, true); // false);
         if (pbr == null) {
             Log.e(TAG, "pbr is null");
             return atCommandResult;
@@ -519,7 +533,9 @@ public class AtPhonebook {
         // Send OK instead of ERROR if these checks fail.
         // When we send error, certain kits like BMW disconnect the
         // Handsfree connection.
-        if (pbr.cursor.getCount() == 0 || mCpbrIndex1 <= 0 || mCpbrIndex2 < mCpbrIndex1
+        if (pbr.cursor.getCount() == 0
+                || mCpbrIndex1 <= 0
+                || mCpbrIndex2 < mCpbrIndex1
                 || mCpbrIndex1 > pbr.cursor.getCount()) {
             atCommandResult = HeadsetHalConstants.AT_RESPONSE_OK;
             Log.e(TAG, "Invalid request or no results, returning");
@@ -527,8 +543,10 @@ public class AtPhonebook {
         }
 
         if (mCpbrIndex2 > pbr.cursor.getCount()) {
-            Log.w(TAG, "max index requested is greater than number of records"
-                    + " available, resetting it");
+            Log.w(
+                    TAG,
+                    "max index requested is greater than number of records"
+                            + " available, resetting it");
             mCpbrIndex2 = pbr.cursor.getCount();
         }
         // Process
@@ -647,7 +665,8 @@ public class AtPhonebook {
             Log.d(TAG, "checkAccessPermission - ACTION_CONNECTION_ACCESS_REQUEST");
             Intent intent = new Intent(BluetoothDevice.ACTION_CONNECTION_ACCESS_REQUEST);
             intent.setPackage(mPairingPackage);
-            intent.putExtra(BluetoothDevice.EXTRA_ACCESS_REQUEST_TYPE,
+            intent.putExtra(
+                    BluetoothDevice.EXTRA_ACCESS_REQUEST_TYPE,
                     BluetoothDevice.REQUEST_TYPE_PHONEBOOK_ACCESS);
             intent.putExtra(BluetoothDevice.EXTRA_DEVICE, remoteDevice);
             // Leave EXTRA_PACKAGE_NAME and EXTRA_CLASS_NAME field empty.

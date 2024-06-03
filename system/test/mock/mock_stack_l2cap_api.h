@@ -26,8 +26,6 @@
 
 // Original included files, if any
 
-#include <base/strings/stringprintf.h>
-
 #include <cstdint>
 
 #include "stack/include/bt_hdr.h"

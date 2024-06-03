@@ -48,14 +48,17 @@ public class BluetoothOppPreferenceTest {
 
     @Before
     public void setUp() {
-        mContext = spy(new ContextWrapper(
-                InstrumentationRegistry.getInstrumentation().getTargetContext()));
+        mContext =
+                spy(
+                        new ContextWrapper(
+                                InstrumentationRegistry.getInstrumentation().getTargetContext()));
 
         mCallProxy = spy(BluetoothMethodProxy.getInstance());
         BluetoothMethodProxy.setInstanceForTesting(mCallProxy);
 
-        doReturn(null).when(mCallProxy).contentResolverInsert(
-                any(), eq(BluetoothShare.CONTENT_URI), any());
+        doReturn(null)
+                .when(mCallProxy)
+                .contentResolverInsert(any(), eq(BluetoothShare.CONTENT_URI), any());
     }
 
     @After
@@ -75,12 +78,13 @@ public class BluetoothOppPreferenceTest {
     public void setNameAndGetNameAndRemoveName_setsAndGetsAndRemovesNameCorrectly() {
         String address = "AA:BB:CC:DD:EE:FF";
         String name = "randomName";
-        BluetoothDevice device = (mContext.getSystemService(BluetoothManager.class))
-                .getAdapter().getRemoteDevice(address);
+        BluetoothDevice device =
+                (mContext.getSystemService(BluetoothManager.class))
+                        .getAdapter()
+                        .getRemoteDevice(address);
         BluetoothOppPreference.getInstance(mContext).setName(device, name);
 
         assertThat(BluetoothOppPreference.getInstance(mContext).getName(device)).isEqualTo(name);
-
 
         // Undo the change so this will not be saved on share preference
         BluetoothOppPreference.getInstance(mContext).removeName(device);
@@ -92,15 +96,17 @@ public class BluetoothOppPreferenceTest {
         String address = "AA:BB:CC:DD:EE:FF";
         int uuid = 1234;
         int channel = 78910;
-        BluetoothDevice device = (mContext.getSystemService(BluetoothManager.class))
-                .getAdapter().getRemoteDevice(address);
+        BluetoothDevice device =
+                (mContext.getSystemService(BluetoothManager.class))
+                        .getAdapter()
+                        .getRemoteDevice(address);
         BluetoothOppPreference.getInstance(mContext).setChannel(device, uuid, channel);
-        assertThat(BluetoothOppPreference.getInstance(mContext).getChannel(device, uuid)).isEqualTo(
-                channel);
+        assertThat(BluetoothOppPreference.getInstance(mContext).getChannel(device, uuid))
+                .isEqualTo(channel);
 
         // Undo the change so this will not be saved on share preference
         BluetoothOppPreference.getInstance(mContext).removeChannel(device, uuid);
-        assertThat(BluetoothOppPreference.getInstance(mContext).getChannel(device, uuid)).isEqualTo(
-                -1);
+        assertThat(BluetoothOppPreference.getInstance(mContext).getChannel(device, uuid))
+                .isEqualTo(-1);
     }
 }

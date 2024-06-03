@@ -68,6 +68,8 @@ class RequestSetPath extends Request {
     }
 
     enum SetPathDir {
-        ROOT, UP, DOWN
+        ROOT,
+        UP,
+        DOWN
     }
 }

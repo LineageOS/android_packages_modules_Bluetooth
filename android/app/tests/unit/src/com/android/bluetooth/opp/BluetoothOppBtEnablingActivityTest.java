@@ -60,8 +60,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public class BluetoothOppBtEnablingActivityTest {
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Spy
-    BluetoothMethodProxy mBluetoothMethodProxy;
+    @Spy BluetoothMethodProxy mBluetoothMethodProxy;
 
     Intent mIntent;
     Context mTargetContext;
@@ -104,13 +103,14 @@ public class BluetoothOppBtEnablingActivityTest {
         BluetoothOppBtEnablingActivity.sBtEnablingTimeoutMs = spedUpTimeoutValue;
         doReturn(false).when(mBluetoothMethodProxy).bluetoothAdapterIsEnabled(any());
 
-        ActivityScenario<BluetoothOppBtEnablingActivity> activityScenario = ActivityScenario.launch(
-                mIntent);
+        ActivityScenario<BluetoothOppBtEnablingActivity> activityScenario =
+                ActivityScenario.launch(mIntent);
         final BluetoothOppManager[] mOppManager = new BluetoothOppManager[1];
-        activityScenario.onActivity(activity -> {
-            // Should be cancelled after timeout
-            mOppManager[0] = BluetoothOppManager.getInstance(activity);
-        });
+        activityScenario.onActivity(
+                activity -> {
+                    // Should be cancelled after timeout
+                    mOppManager[0] = BluetoothOppManager.getInstance(activity);
+                });
         Thread.sleep(spedUpTimeoutValue);
         assertThat(mOppManager[0].mSendingFlag).isEqualTo(false);
         assertActivityState(activityScenario, DESTROYED);
@@ -119,8 +119,8 @@ public class BluetoothOppBtEnablingActivityTest {
     @Test
     public void onKeyDown_cancelProgress() throws Exception {
         doReturn(false).when(mBluetoothMethodProxy).bluetoothAdapterIsEnabled(any());
-        ActivityScenario<BluetoothOppBtEnablingActivity> activityScenario = ActivityScenario.launch(
-                mIntent);
+        ActivityScenario<BluetoothOppBtEnablingActivity> activityScenario =
+                ActivityScenario.launch(mIntent);
 
         AtomicBoolean finishCalled = new AtomicBoolean(false);
 
@@ -141,16 +141,16 @@ public class BluetoothOppBtEnablingActivityTest {
     @Test
     public void onCreate_bluetoothAlreadyEnabled_finishImmediately() throws Exception {
         doReturn(true).when(mBluetoothMethodProxy).bluetoothAdapterIsEnabled(any());
-        ActivityScenario<BluetoothOppBtEnablingActivity> activityScenario = ActivityScenario.launch(
-                mIntent);
+        ActivityScenario<BluetoothOppBtEnablingActivity> activityScenario =
+                ActivityScenario.launch(mIntent);
         assertActivityState(activityScenario, DESTROYED);
     }
 
     @Test
     public void broadcastReceiver_onReceive_finishImmediately() throws Exception {
         doReturn(false).when(mBluetoothMethodProxy).bluetoothAdapterIsEnabled(any());
-        ActivityScenario<BluetoothOppBtEnablingActivity> activityScenario = ActivityScenario.launch(
-                mIntent);
+        ActivityScenario<BluetoothOppBtEnablingActivity> activityScenario =
+                ActivityScenario.launch(mIntent);
 
         AtomicBoolean finishCalled = new AtomicBoolean(false);
         activityScenario.onActivity(
@@ -165,22 +165,25 @@ public class BluetoothOppBtEnablingActivityTest {
     }
 
     private void assertActivityState(ActivityScenario activityScenario, Lifecycle.State state)
-      throws Exception {
+            throws Exception {
         // TODO: Change this into an event driven systems
         Thread.sleep(3_000);
         assertThat(activityScenario.getState()).isEqualTo(state);
     }
 
     private void enableActivity(boolean enable) {
-        int enabledState = enable ? COMPONENT_ENABLED_STATE_ENABLED
-                : COMPONENT_ENABLED_STATE_DEFAULT;
+        int enabledState =
+                enable ? COMPONENT_ENABLED_STATE_ENABLED : COMPONENT_ENABLED_STATE_DEFAULT;
 
-        mTargetContext.getPackageManager().setApplicationEnabledSetting(
-                mTargetContext.getPackageName(), enabledState, DONT_KILL_APP);
+        mTargetContext
+                .getPackageManager()
+                .setApplicationEnabledSetting(
+                        mTargetContext.getPackageName(), enabledState, DONT_KILL_APP);
 
-        ComponentName activityName = new ComponentName(mTargetContext,
-                BluetoothOppTransferActivity.class);
-        mTargetContext.getPackageManager().setComponentEnabledSetting(
-                activityName, enabledState, DONT_KILL_APP);
+        ComponentName activityName =
+                new ComponentName(mTargetContext, BluetoothOppTransferActivity.class);
+        mTargetContext
+                .getPackageManager()
+                .setComponentEnabledSetting(activityName, enabledState, DONT_KILL_APP);
     }
 }

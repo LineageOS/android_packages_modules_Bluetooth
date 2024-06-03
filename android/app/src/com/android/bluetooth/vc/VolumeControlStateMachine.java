@@ -43,14 +43,11 @@ public class VolumeControlStateMachine extends StateMachine {
 
     static final int CONNECT = 1;
     static final int DISCONNECT = 2;
-    @VisibleForTesting
-    static final int STACK_EVENT = 101;
-    @VisibleForTesting
-    static final int CONNECT_TIMEOUT = 201;
+    @VisibleForTesting static final int STACK_EVENT = 101;
+    @VisibleForTesting static final int CONNECT_TIMEOUT = 201;
 
     // NOTE: the value is not "final" - it is modified in the unit tests
-    @VisibleForTesting
-    static int sConnectTimeoutMs = 30000;        // 30s
+    @VisibleForTesting static int sConnectTimeoutMs = 30000; // 30s
 
     private Disconnected mDisconnected;
     private Connecting mConnecting;
@@ -63,8 +60,11 @@ public class VolumeControlStateMachine extends StateMachine {
 
     private final BluetoothDevice mDevice;
 
-    VolumeControlStateMachine(BluetoothDevice device, VolumeControlService svc,
-                              VolumeControlNativeInterface nativeInterface, Looper looper) {
+    VolumeControlStateMachine(
+            BluetoothDevice device,
+            VolumeControlService svc,
+            VolumeControlNativeInterface nativeInterface,
+            Looper looper) {
 
         super(TAG, looper);
         mDevice = device;
@@ -84,11 +84,14 @@ public class VolumeControlStateMachine extends StateMachine {
         setInitialState(mDisconnected);
     }
 
-    static VolumeControlStateMachine make(BluetoothDevice device, VolumeControlService svc,
-                                      VolumeControlNativeInterface nativeInterface, Looper looper) {
+    static VolumeControlStateMachine make(
+            BluetoothDevice device,
+            VolumeControlService svc,
+            VolumeControlNativeInterface nativeInterface,
+            Looper looper) {
         Log.i(TAG, "make for device " + device);
-        VolumeControlStateMachine VolumeControlSm = new VolumeControlStateMachine(device, svc,
-                nativeInterface, looper);
+        VolumeControlStateMachine VolumeControlSm =
+                new VolumeControlStateMachine(device, svc, nativeInterface, looper);
         VolumeControlSm.start();
         return VolumeControlSm;
     }
@@ -106,29 +109,38 @@ public class VolumeControlStateMachine extends StateMachine {
     class Disconnected extends State {
         @Override
         public void enter() {
-            Log.i(TAG, "Enter Disconnected(" + mDevice + "): " + messageWhatToString(
-                    getCurrentMessage().what));
+            Log.i(
+                    TAG,
+                    "Enter Disconnected("
+                            + mDevice
+                            + "): "
+                            + messageWhatToString(getCurrentMessage().what));
 
             removeDeferredMessages(DISCONNECT);
 
             if (mLastConnectionState != -1) {
                 // Don't broadcast during startup
-                broadcastConnectionState(BluetoothProfile.STATE_DISCONNECTED,
-                        mLastConnectionState);
+                broadcastConnectionState(BluetoothProfile.STATE_DISCONNECTED, mLastConnectionState);
             }
         }
 
         @Override
         public void exit() {
-            log("Exit Disconnected(" + mDevice + "): " + messageWhatToString(
-                    getCurrentMessage().what));
+            log(
+                    "Exit Disconnected("
+                            + mDevice
+                            + "): "
+                            + messageWhatToString(getCurrentMessage().what));
             mLastConnectionState = BluetoothProfile.STATE_DISCONNECTED;
         }
 
         @Override
         public boolean processMessage(Message message) {
-            log("Disconnected process message(" + mDevice + "): " + messageWhatToString(
-                    message.what));
+            log(
+                    "Disconnected process message("
+                            + mDevice
+                            + "): "
+                            + messageWhatToString(message.what));
 
             switch (message.what) {
                 case CONNECT:
@@ -141,8 +153,9 @@ public class VolumeControlStateMachine extends StateMachine {
                         transitionTo(mConnecting);
                     } else {
                         // Reject the request and stay in Disconnected state
-                        Log.w(TAG, "Outgoing VolumeControl Connecting request rejected: "
-                                + mDevice);
+                        Log.w(
+                                TAG,
+                                "Outgoing VolumeControl Connecting request rejected: " + mDevice);
                     }
                     break;
                 case DISCONNECT:
@@ -177,26 +190,28 @@ public class VolumeControlStateMachine extends StateMachine {
                     break;
                 case VolumeControlStackEvent.CONNECTION_STATE_CONNECTING:
                     if (mService.okToConnect(mDevice)) {
-                        Log.i(TAG, "Incoming VolumeControl Connecting request accepted: "
-                                + mDevice);
+                        Log.i(
+                                TAG,
+                                "Incoming VolumeControl Connecting request accepted: " + mDevice);
                         transitionTo(mConnecting);
                     } else {
                         // Reject the connection and stay in Disconnected state itself
-                        Log.w(TAG, "Incoming Volume Control Connecting request rejected: "
-                                + mDevice);
+                        Log.w(
+                                TAG,
+                                "Incoming Volume Control Connecting request rejected: " + mDevice);
                         mNativeInterface.disconnectVolumeControl(mDevice);
                     }
                     break;
                 case VolumeControlStackEvent.CONNECTION_STATE_CONNECTED:
                     Log.w(TAG, "VolumeControl Connected from Disconnected state: " + mDevice);
                     if (mService.okToConnect(mDevice)) {
-                        Log.i(TAG, "Incoming Volume Control Connected request accepted: "
-                                + mDevice);
+                        Log.i(
+                                TAG,
+                                "Incoming Volume Control Connected request accepted: " + mDevice);
                         transitionTo(mConnected);
                     } else {
                         // Reject the connection and stay in Disconnected state itself
-                        Log.w(TAG, "Incoming VolumeControl Connected request rejected: "
-                                + mDevice);
+                        Log.w(TAG, "Incoming VolumeControl Connected request rejected: " + mDevice);
                         mNativeInterface.disconnectVolumeControl(mDevice);
                     }
                     break;
@@ -210,29 +225,38 @@ public class VolumeControlStateMachine extends StateMachine {
         }
     }
 
-
     @VisibleForTesting
     class Connecting extends State {
         @Override
         public void enter() {
-            Log.i(TAG, "Enter Connecting(" + mDevice + "): "
-                    + messageWhatToString(getCurrentMessage().what));
+            Log.i(
+                    TAG,
+                    "Enter Connecting("
+                            + mDevice
+                            + "): "
+                            + messageWhatToString(getCurrentMessage().what));
             sendMessageDelayed(CONNECT_TIMEOUT, sConnectTimeoutMs);
             broadcastConnectionState(BluetoothProfile.STATE_CONNECTING, mLastConnectionState);
         }
 
         @Override
         public void exit() {
-            log("Exit Connecting(" + mDevice + "): "
-                    + messageWhatToString(getCurrentMessage().what));
+            log(
+                    "Exit Connecting("
+                            + mDevice
+                            + "): "
+                            + messageWhatToString(getCurrentMessage().what));
             mLastConnectionState = BluetoothProfile.STATE_CONNECTING;
             removeMessages(CONNECT_TIMEOUT);
         }
 
         @Override
         public boolean processMessage(Message message) {
-            log("Connecting process message(" + mDevice + "): "
-                    + messageWhatToString(message.what));
+            log(
+                    "Connecting process message("
+                            + mDevice
+                            + "): "
+                            + messageWhatToString(message.what));
 
             switch (message.what) {
                 case CONNECT:
@@ -319,41 +343,53 @@ public class VolumeControlStateMachine extends StateMachine {
     class Disconnecting extends State {
         @Override
         public void enter() {
-            Log.i(TAG, "Enter Disconnecting(" + mDevice + "): "
-                    + messageWhatToString(getCurrentMessage().what));
+            Log.i(
+                    TAG,
+                    "Enter Disconnecting("
+                            + mDevice
+                            + "): "
+                            + messageWhatToString(getCurrentMessage().what));
             sendMessageDelayed(CONNECT_TIMEOUT, sConnectTimeoutMs);
             broadcastConnectionState(BluetoothProfile.STATE_DISCONNECTING, mLastConnectionState);
         }
 
         @Override
         public void exit() {
-            log("Exit Disconnecting(" + mDevice + "): "
-                    + messageWhatToString(getCurrentMessage().what));
+            log(
+                    "Exit Disconnecting("
+                            + mDevice
+                            + "): "
+                            + messageWhatToString(getCurrentMessage().what));
             mLastConnectionState = BluetoothProfile.STATE_DISCONNECTING;
             removeMessages(CONNECT_TIMEOUT);
         }
 
         @Override
         public boolean processMessage(Message message) {
-            log("Disconnecting process message(" + mDevice + "): "
-                    + messageWhatToString(message.what));
+            log(
+                    "Disconnecting process message("
+                            + mDevice
+                            + "): "
+                            + messageWhatToString(message.what));
 
             switch (message.what) {
                 case CONNECT:
                     deferMessage(message);
                     break;
-                case CONNECT_TIMEOUT: {
-                    Log.w(TAG, "Disconnecting connection timeout: " + mDevice);
-                    mNativeInterface.disconnectVolumeControl(mDevice);
-                    VolumeControlStackEvent disconnectEvent =
-                            new VolumeControlStackEvent(
-                                    VolumeControlStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
-                    disconnectEvent.device = mDevice;
-                    disconnectEvent.valueInt1 =
-                            VolumeControlStackEvent.CONNECTION_STATE_DISCONNECTED;
-                    sendMessage(STACK_EVENT, disconnectEvent);
-                    break;
-                }
+                case CONNECT_TIMEOUT:
+                    {
+                        Log.w(TAG, "Disconnecting connection timeout: " + mDevice);
+                        mNativeInterface.disconnectVolumeControl(mDevice);
+                        VolumeControlStackEvent disconnectEvent =
+                                new VolumeControlStackEvent(
+                                        VolumeControlStackEvent
+                                                .EVENT_TYPE_CONNECTION_STATE_CHANGED);
+                        disconnectEvent.device = mDevice;
+                        disconnectEvent.valueInt1 =
+                                VolumeControlStackEvent.CONNECTION_STATE_DISCONNECTED;
+                        sendMessage(STACK_EVENT, disconnectEvent);
+                        break;
+                    }
                 case DISCONNECT:
                     deferMessage(message);
                     break;
@@ -391,8 +427,7 @@ public class VolumeControlStateMachine extends StateMachine {
                         transitionTo(mConnected);
                     } else {
                         // Reject the connection and stay in Disconnecting state
-                        Log.w(TAG, "Incoming VolumeControl Connected request rejected: "
-                                + mDevice);
+                        Log.w(TAG, "Incoming VolumeControl Connected request rejected: " + mDevice);
                         mNativeInterface.disconnectVolumeControl(mDevice);
                     }
                     break;
@@ -402,8 +437,9 @@ public class VolumeControlStateMachine extends StateMachine {
                         transitionTo(mConnecting);
                     } else {
                         // Reject the connection and stay in Disconnecting state
-                        Log.w(TAG, "Incoming VolumeControl Connecting request rejected: "
-                                + mDevice);
+                        Log.w(
+                                TAG,
+                                "Incoming VolumeControl Connecting request rejected: " + mDevice);
                         mNativeInterface.disconnectVolumeControl(mDevice);
                     }
                     break;
@@ -420,23 +456,29 @@ public class VolumeControlStateMachine extends StateMachine {
     class Connected extends State {
         @Override
         public void enter() {
-            Log.i(TAG, "Enter Connected(" + mDevice + "): "
-                    + messageWhatToString(getCurrentMessage().what));
+            Log.i(
+                    TAG,
+                    "Enter Connected("
+                            + mDevice
+                            + "): "
+                            + messageWhatToString(getCurrentMessage().what));
             removeDeferredMessages(CONNECT);
             broadcastConnectionState(BluetoothProfile.STATE_CONNECTED, mLastConnectionState);
         }
 
         @Override
         public void exit() {
-            log("Exit Connected(" + mDevice + "): "
-                    + messageWhatToString(getCurrentMessage().what));
+            log(
+                    "Exit Connected("
+                            + mDevice
+                            + "): "
+                            + messageWhatToString(getCurrentMessage().what));
             mLastConnectionState = BluetoothProfile.STATE_CONNECTED;
         }
 
         @Override
         public boolean processMessage(Message message) {
-            log("Connected process message(" + mDevice + "): "
-                    + messageWhatToString(message.what));
+            log("Connected process message(" + mDevice + "): " + messageWhatToString(message.what));
 
             switch (message.what) {
                 case CONNECT:
@@ -490,6 +532,7 @@ public class VolumeControlStateMachine extends StateMachine {
             }
         }
     }
+
     BluetoothDevice getDevice() {
         return mDevice;
     }
@@ -500,16 +543,22 @@ public class VolumeControlStateMachine extends StateMachine {
 
     // This method does not check for error condition (newState == prevState)
     private void broadcastConnectionState(int newState, int prevState) {
-        log("Connection state " + mDevice + ": " + profileStateToString(prevState)
-                + "->" + profileStateToString(newState));
+        log(
+                "Connection state "
+                        + mDevice
+                        + ": "
+                        + profileStateToString(prevState)
+                        + "->"
+                        + profileStateToString(newState));
 
         mService.handleConnectionStateChanged(mDevice, prevState, newState);
         Intent intent = new Intent(BluetoothVolumeControl.ACTION_CONNECTION_STATE_CHANGED);
         intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState);
         intent.putExtra(BluetoothProfile.EXTRA_STATE, newState);
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, mDevice);
-        intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT
-                | Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
+        intent.addFlags(
+                Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT
+                        | Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
         mService.sendBroadcast(intent, BLUETOOTH_CONNECT);
     }
 
@@ -551,7 +600,7 @@ public class VolumeControlStateMachine extends StateMachine {
         // Dump the state machine logs
         StringWriter stringWriter = new StringWriter();
         PrintWriter printWriter = new PrintWriter(stringWriter);
-        super.dump(new FileDescriptor(), printWriter, new String[]{});
+        super.dump(new FileDescriptor(), printWriter, new String[] {});
         printWriter.flush();
         stringWriter.flush();
         ProfileService.println(sb, "  StateMachineLog:");

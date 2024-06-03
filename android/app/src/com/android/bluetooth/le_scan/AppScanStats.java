@@ -43,10 +43,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
 
-/**
- * ScanStats class helps keep track of information about scans
- * on a per application basis.
- */
+/** ScanStats class helps keep track of information about scans on a per application basis. */
 public class AppScanStats {
     private static final String TAG = AppScanStats.class.getSimpleName();
 
@@ -74,8 +71,10 @@ public class AppScanStats {
     private final AdapterService mAdapterService;
 
     private static Object sLock = new Object();
+
     @GuardedBy("sLock")
     static long sRadioStartTime = 0;
+
     static int sRadioScanMode;
     static boolean sIsRadioStarted = false;
     static boolean sIsScreenOn = false;
@@ -100,8 +99,13 @@ public class AppScanStats {
         public int scanCallbackType;
         public String filterString;
 
-        LastScan(long timestamp, boolean isFilterScan, boolean isCallbackScan, int scannerId,
-                int scanMode, int scanCallbackType) {
+        LastScan(
+                long timestamp,
+                boolean isFilterScan,
+                boolean isCallbackScan,
+                int scannerId,
+                int scanMode,
+                int scanCallbackType) {
             this.duration = 0;
             this.timestamp = timestamp;
             this.isOpportunisticScan = false;
@@ -122,6 +126,7 @@ public class AppScanStats {
             this.filterString = "";
         }
     }
+
     public String appName;
     private WorkSource mWorkSource; // Used for BatteryStatsManager
     private final WorkSourceUtil mWorkSourceUtil; // Used for BluetoothStatsLog
@@ -177,8 +182,11 @@ public class AppScanStats {
             // to lower the cost of the binder transaction
             if (scan.results % 100 == 0) {
                 mBatteryStatsManager.reportBleScanResults(mWorkSource, 100);
-                BluetoothStatsLog.write(BluetoothStatsLog.BLE_SCAN_RESULT_RECEIVED,
-                        mWorkSourceUtil.getUids(), mWorkSourceUtil.getTags(), 100);
+                BluetoothStatsLog.write(
+                        BluetoothStatsLog.BLE_SCAN_RESULT_RECEIVED,
+                        mWorkSourceUtil.getUids(),
+                        mWorkSourceUtil.getTags(),
+                        100);
             }
         }
 
@@ -217,8 +225,12 @@ public class AppScanStats {
         return scan.isAutoBatchScan;
     }
 
-    public synchronized void recordScanStart(ScanSettings settings, List<ScanFilter> filters,
-            boolean isFilterScan, boolean isCallbackScan, int scannerId) {
+    public synchronized void recordScanStart(
+            ScanSettings settings,
+            List<ScanFilter> filters,
+            boolean isFilterScan,
+            boolean isCallbackScan,
+            int scannerId) {
         LastScan existingScan = getScanFromScannerId(scannerId);
         if (existingScan != null) {
             return;
@@ -226,15 +238,21 @@ public class AppScanStats {
         this.mScansStarted++;
         startTime = SystemClock.elapsedRealtime();
 
-        LastScan scan = new LastScan(startTime, isFilterScan, isCallbackScan, scannerId,
-                settings.getScanMode(), settings.getCallbackType());
+        LastScan scan =
+                new LastScan(
+                        startTime,
+                        isFilterScan,
+                        isCallbackScan,
+                        scannerId,
+                        settings.getScanMode(),
+                        settings.getCallbackType());
         if (settings != null) {
             scan.isOpportunisticScan = scan.scanMode == ScanSettings.SCAN_MODE_OPPORTUNISTIC;
             scan.isBackgroundScan =
                     (scan.scanCallbackType & ScanSettings.CALLBACK_TYPE_FIRST_MATCH) != 0;
             scan.isBatchScan =
                     settings.getCallbackType() == ScanSettings.CALLBACK_TYPE_ALL_MATCHES
-                    && settings.getReportDelayMillis() != 0;
+                            && settings.getReportDelayMillis() != 0;
             switch (scan.scanMode) {
                 case ScanSettings.SCAN_MODE_OPPORTUNISTIC:
                     mOppScan++;
@@ -256,17 +274,20 @@ public class AppScanStats {
 
         if (isFilterScan) {
             for (ScanFilter filter : filters) {
-                scan.filterString +=
-                      "\n      └ " + filterToStringWithoutNullParam(filter);
+                scan.filterString += "\n      └ " + filterToStringWithoutNullParam(filter);
             }
         }
 
-        BluetoothMetricsProto.ScanEvent scanEvent = BluetoothMetricsProto.ScanEvent.newBuilder()
-                .setScanEventType(BluetoothMetricsProto.ScanEvent.ScanEventType.SCAN_EVENT_START)
-                .setScanTechnologyType(
-                        BluetoothMetricsProto.ScanEvent.ScanTechnologyType.SCAN_TECH_TYPE_LE)
-                .setEventTimeMillis(System.currentTimeMillis())
-                .setInitiator(truncateAppName(appName)).build();
+        BluetoothMetricsProto.ScanEvent scanEvent =
+                BluetoothMetricsProto.ScanEvent.newBuilder()
+                        .setScanEventType(
+                                BluetoothMetricsProto.ScanEvent.ScanEventType.SCAN_EVENT_START)
+                        .setScanTechnologyType(
+                                BluetoothMetricsProto.ScanEvent.ScanTechnologyType
+                                        .SCAN_TECH_TYPE_LE)
+                        .setEventTimeMillis(System.currentTimeMillis())
+                        .setInitiator(truncateAppName(appName))
+                        .build();
         mScanHelper.addScanEvent(scanEvent);
 
         if (!isScanning()) {
@@ -275,10 +296,14 @@ public class AppScanStats {
         boolean isUnoptimized =
                 !(scan.isFilterScan || scan.isBackgroundScan || scan.isOpportunisticScan);
         mBatteryStatsManager.reportBleScanStarted(mWorkSource, isUnoptimized);
-        BluetoothStatsLog.write(BluetoothStatsLog.BLE_SCAN_STATE_CHANGED,
-                mWorkSourceUtil.getUids(), mWorkSourceUtil.getTags(),
+        BluetoothStatsLog.write(
+                BluetoothStatsLog.BLE_SCAN_STATE_CHANGED,
+                mWorkSourceUtil.getUids(),
+                mWorkSourceUtil.getTags(),
                 BluetoothStatsLog.BLE_SCAN_STATE_CHANGED__STATE__ON,
-                scan.isFilterScan, scan.isBackgroundScan, scan.isOpportunisticScan);
+                scan.isFilterScan,
+                scan.isBackgroundScan,
+                scan.isOpportunisticScan);
         recordScanAppCountMetricsStart(scan);
 
         mOngoingScans.put(scannerId, scan);
@@ -304,14 +329,17 @@ public class AppScanStats {
         }
         mLastScans.add(scan);
 
-        BluetoothMetricsProto.ScanEvent scanEvent = BluetoothMetricsProto.ScanEvent.newBuilder()
-                .setScanEventType(BluetoothMetricsProto.ScanEvent.ScanEventType.SCAN_EVENT_STOP)
-                .setScanTechnologyType(
-                        BluetoothMetricsProto.ScanEvent.ScanTechnologyType.SCAN_TECH_TYPE_LE)
-                .setEventTimeMillis(System.currentTimeMillis())
-                .setInitiator(truncateAppName(appName))
-                .setNumberResults(scan.results)
-                .build();
+        BluetoothMetricsProto.ScanEvent scanEvent =
+                BluetoothMetricsProto.ScanEvent.newBuilder()
+                        .setScanEventType(
+                                BluetoothMetricsProto.ScanEvent.ScanEventType.SCAN_EVENT_STOP)
+                        .setScanTechnologyType(
+                                BluetoothMetricsProto.ScanEvent.ScanTechnologyType
+                                        .SCAN_TECH_TYPE_LE)
+                        .setEventTimeMillis(System.currentTimeMillis())
+                        .setInitiator(truncateAppName(appName))
+                        .setNumberResults(scan.results)
+                        .build();
         mScanHelper.addScanEvent(scanEvent);
 
         mTotalScanTime += scanDuration;
@@ -340,12 +368,19 @@ public class AppScanStats {
                 !(scan.isFilterScan || scan.isBackgroundScan || scan.isOpportunisticScan);
         mBatteryStatsManager.reportBleScanResults(mWorkSource, scan.results % 100);
         mBatteryStatsManager.reportBleScanStopped(mWorkSource, isUnoptimized);
-        BluetoothStatsLog.write(BluetoothStatsLog.BLE_SCAN_RESULT_RECEIVED,
-                mWorkSourceUtil.getUids(), mWorkSourceUtil.getTags(), scan.results % 100);
-        BluetoothStatsLog.write(BluetoothStatsLog.BLE_SCAN_STATE_CHANGED,
-                mWorkSourceUtil.getUids(), mWorkSourceUtil.getTags(),
+        BluetoothStatsLog.write(
+                BluetoothStatsLog.BLE_SCAN_RESULT_RECEIVED,
+                mWorkSourceUtil.getUids(),
+                mWorkSourceUtil.getTags(),
+                scan.results % 100);
+        BluetoothStatsLog.write(
+                BluetoothStatsLog.BLE_SCAN_STATE_CHANGED,
+                mWorkSourceUtil.getUids(),
+                mWorkSourceUtil.getTags(),
                 BluetoothStatsLog.BLE_SCAN_STATE_CHANGED__STATE__OFF,
-                scan.isFilterScan, scan.isBackgroundScan, scan.isOpportunisticScan);
+                scan.isFilterScan,
+                scan.isBackgroundScan,
+                scan.isOpportunisticScan);
         recordScanAppCountMetricsStop(scan);
     }
 
@@ -642,7 +677,7 @@ public class AppScanStats {
         }
         if (filter.getServiceSolicitationUuidMask() != null) {
             filterString +=
-                  " ServiceSolicitationUuidMask=" + filter.getServiceSolicitationUuidMask();
+                    " ServiceSolicitationUuidMask=" + filter.getServiceSolicitationUuidMask();
         }
         if (filter.getServiceDataUuid() != null) {
             filterString += " ServiceDataUuid=" + Objects.toString(filter.getServiceDataUuid());
@@ -661,12 +696,11 @@ public class AppScanStats {
         }
         if (filter.getManufacturerDataMask() != null) {
             filterString +=
-                  " ManufacturerDataMask=" +  Arrays.toString(filter.getManufacturerDataMask());
+                    " ManufacturerDataMask=" + Arrays.toString(filter.getManufacturerDataMask());
         }
         filterString += " ]";
         return filterString;
     }
-
 
     private static String scanModeToString(int scanMode) {
         switch (scanMode) {
@@ -696,9 +730,11 @@ public class AppScanStats {
             case ScanSettings.CALLBACK_TYPE_ALL_MATCHES_AUTO_BATCH:
                 return "ALL_MATCHES_AUTO_BATCH";
             default:
-                return callbackType == (ScanSettings.CALLBACK_TYPE_FIRST_MATCH
-                    | ScanSettings.CALLBACK_TYPE_MATCH_LOST) ? "[FIRST_MATCH | LOST]" : "UNKNOWN: "
-                    + callbackType;
+                return callbackType
+                                == (ScanSettings.CALLBACK_TYPE_FIRST_MATCH
+                                        | ScanSettings.CALLBACK_TYPE_MATCH_LOST)
+                        ? "[FIRST_MATCH | LOST]"
+                        : "UNKNOWN: " + callbackType;
         }
     }
 
@@ -768,23 +804,49 @@ public class AppScanStats {
             sb.append(" (Registered)");
         }
 
-        sb.append("\n  LE scans (started/stopped)                                  : "
-                + mScansStarted + " / " + mScansStopped);
-        sb.append("\n  Scan time in ms (active/suspend/total)                      : "
-                + totalActiveTime + " / " + totalSuspendTime + " / " + totalScanTime);
-        sb.append("\n  Scan time with mode in ms "
-                + "(Opp/LowPower/Balanced/LowLatency/AmbientDiscovery):"
-                + oppScanTime + " / " + lowPowerScanTime + " / " + balancedScanTime + " / "
-                + lowLatencyScanTime + " / " + ambientDiscoveryScanTime);
-        sb.append("\n  Scan mode counter (Opp/LowPower/Balanced/LowLatency/AmbientDiscovery):"
-                + oppScan + " / " + lowPowerScan + " / " + balancedScan + " / " + lowLatencyScan
-                + " / " + ambientDiscoveryScan);
+        sb.append(
+                "\n  LE scans (started/stopped)                                  : "
+                        + mScansStarted
+                        + " / "
+                        + mScansStopped);
+        sb.append(
+                "\n  Scan time in ms (active/suspend/total)                      : "
+                        + totalActiveTime
+                        + " / "
+                        + totalSuspendTime
+                        + " / "
+                        + totalScanTime);
+        sb.append(
+                "\n  Scan time with mode in ms "
+                        + "(Opp/LowPower/Balanced/LowLatency/AmbientDiscovery):"
+                        + oppScanTime
+                        + " / "
+                        + lowPowerScanTime
+                        + " / "
+                        + balancedScanTime
+                        + " / "
+                        + lowLatencyScanTime
+                        + " / "
+                        + ambientDiscoveryScanTime);
+        sb.append(
+                "\n  Scan mode counter (Opp/LowPower/Balanced/LowLatency/AmbientDiscovery):"
+                        + oppScan
+                        + " / "
+                        + lowPowerScan
+                        + " / "
+                        + balancedScan
+                        + " / "
+                        + lowLatencyScan
+                        + " / "
+                        + ambientDiscoveryScan);
         sb.append("\n  Score                                                       : " + Score);
         sb.append("\n  Total number of results                                     : " + results);
 
         if (!mLastScans.isEmpty()) {
-            sb.append("\n  Last " + mLastScans.size()
-                    + " scans                                                :");
+            sb.append(
+                    "\n  Last "
+                            + mLastScans.size()
+                            + " scans                                                :");
 
             for (int i = 0; i < mLastScans.size(); i++) {
                 LastScan scan = mLastScans.get(i);
@@ -819,12 +881,20 @@ public class AppScanStats {
                 }
                 if (scan.suspendDuration != 0) {
                     activeDuration = scan.duration - scan.suspendDuration;
-                    sb.append("\n      └ " + "Suspended Time: " + scan.suspendDuration
-                            + "ms, Active Time: " + activeDuration);
+                    sb.append(
+                            "\n      └ "
+                                    + "Suspended Time: "
+                                    + scan.suspendDuration
+                                    + "ms, Active Time: "
+                                    + activeDuration);
                 }
-                sb.append("\n      └ " + "Scan Config: [ ScanMode="
-                        + scanModeToString(scan.scanMode) + ", callbackType="
-                        + callbackTypeToString(scan.scanCallbackType) + " ]");
+                sb.append(
+                        "\n      └ "
+                                + "Scan Config: [ ScanMode="
+                                + scanModeToString(scan.scanMode)
+                                + ", callbackType="
+                                + callbackTypeToString(scan.scanCallbackType)
+                                + " ]");
                 if (scan.isFilterScan) {
                     sb.append(scan.filterString);
                 }
@@ -869,12 +939,20 @@ public class AppScanStats {
                 }
                 if (scan.suspendStartTime != 0) {
                     activeDuration = scan.duration - scan.suspendDuration;
-                    sb.append("\n      └ " + "Suspended Time:" + scan.suspendDuration
-                            + "ms, Active Time:" + activeDuration);
+                    sb.append(
+                            "\n      └ "
+                                    + "Suspended Time:"
+                                    + scan.suspendDuration
+                                    + "ms, Active Time:"
+                                    + activeDuration);
                 }
-                sb.append("\n      └ " + "Scan Config: [ ScanMode="
-                        + scanModeToString(scan.scanMode) + ", callbackType="
-                        + callbackTypeToString(scan.scanCallbackType) + " ]");
+                sb.append(
+                        "\n      └ "
+                                + "Scan Config: [ ScanMode="
+                                + scanModeToString(scan.scanMode)
+                                + ", callbackType="
+                                + callbackTypeToString(scan.scanCallbackType)
+                                + " ]");
                 if (scan.isFilterScan) {
                     sb.append(scan.filterString);
                 }

@@ -75,20 +75,14 @@ public class TbsGattTest {
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    private AdapterService mAdapterService;
-    @Mock
-    private BluetoothGattServerProxy mMockGattServer;
-    @Mock
-    private TbsGatt.Callback mMockTbsGattCallback;
-    @Mock
-    private TbsService mMockTbsService;
+    @Mock private AdapterService mAdapterService;
+    @Mock private BluetoothGattServerProxy mMockGattServer;
+    @Mock private TbsGatt.Callback mMockTbsGattCallback;
+    @Mock private TbsService mMockTbsService;
 
-    @Rule
-    public final ServiceTestRule mServiceRule = new ServiceTestRule();
+    @Rule public final ServiceTestRule mServiceRule = new ServiceTestRule();
 
-    @Captor
-    private ArgumentCaptor<BluetoothGattService> mGattServiceCaptor;
+    @Captor private ArgumentCaptor<BluetoothGattService> mGattServiceCaptor;
 
     @Before
     public void setUp() throws Exception {
@@ -98,13 +92,13 @@ public class TbsGattTest {
 
         getInstrumentation().getUiAutomation().adoptShellPermissionIdentity();
 
-
         TestUtils.setAdapterService(mAdapterService);
         mAdapter = BluetoothAdapter.getDefaultAdapter();
 
         doReturn(true).when(mMockGattServer).addService(any(BluetoothGattService.class));
         doReturn(true).when(mMockGattServer).open(any(BluetoothGattServerCallback.class));
-        doReturn(BluetoothDevice.ACCESS_ALLOWED).when(mMockTbsService)
+        doReturn(BluetoothDevice.ACCESS_ALLOWED)
+                .when(mMockTbsService)
                 .getDeviceAuthorization(any(BluetoothDevice.class));
 
         mTbsGatt = new TbsGatt(mMockTbsService);
@@ -113,8 +107,8 @@ public class TbsGattTest {
         mFirstDevice = TestUtils.getTestDevice(mAdapter, 0);
         mSecondDevice = TestUtils.getTestDevice(mAdapter, 1);
 
-        when(mMockTbsService.getDeviceAuthorization(any(BluetoothDevice.class))).thenReturn(
-                BluetoothDevice.ACCESS_ALLOWED);
+        when(mMockTbsService.getDeviceAuthorization(any(BluetoothDevice.class)))
+                .thenReturn(BluetoothDevice.ACCESS_ALLOWED);
     }
 
     @After
@@ -132,8 +126,16 @@ public class TbsGattTest {
         mCurrentProviderName = "unknown";
         mCurrentTechnology = 0x00;
 
-        Assert.assertTrue(mTbsGatt.init(mCurrentCcid, mCurrentUci, mCurrentUriSchemes, true, true,
-                mCurrentProviderName, mCurrentTechnology, mMockTbsGattCallback));
+        Assert.assertTrue(
+                mTbsGatt.init(
+                        mCurrentCcid,
+                        mCurrentUci,
+                        mCurrentUriSchemes,
+                        true,
+                        true,
+                        mCurrentProviderName,
+                        mCurrentTechnology,
+                        mMockTbsGattCallback));
         Assert.assertNotNull(mMockGattServer);
 
         verify(mMockGattServer).addService(mGattServiceCaptor.capture());
@@ -149,22 +151,33 @@ public class TbsGattTest {
         return characteristic;
     }
 
-    private void configureNotifications(BluetoothDevice device,
-            BluetoothGattCharacteristic characteristic, boolean enable) {
+    private void configureNotifications(
+            BluetoothDevice device, BluetoothGattCharacteristic characteristic, boolean enable) {
         BluetoothGattDescriptor descriptor =
                 characteristic.getDescriptor(TbsGatt.UUID_CLIENT_CHARACTERISTIC_CONFIGURATION);
         Assert.assertNotNull(descriptor);
 
-        mTbsGatt.mGattServerCallback.onDescriptorWriteRequest(device, 1, descriptor, false, true, 0,
-                enable ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+        mTbsGatt.mGattServerCallback.onDescriptorWriteRequest(
+                device,
+                1,
+                descriptor,
+                false,
+                true,
+                0,
+                enable
+                        ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
                         : BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE);
-        verify(mMockGattServer).sendResponse(eq(device), eq(1),
-                eq(BluetoothGatt.GATT_SUCCESS), eq(0), any());
+        verify(mMockGattServer)
+                .sendResponse(eq(device), eq(1), eq(BluetoothGatt.GATT_SUCCESS), eq(0), any());
         reset(mMockGattServer);
     }
 
-    private void verifySetValue(BluetoothGattCharacteristic characteristic, Object value,
-            boolean shouldNotify, BluetoothDevice device, boolean clearGattMock) {
+    private void verifySetValue(
+            BluetoothGattCharacteristic characteristic,
+            Object value,
+            boolean shouldNotify,
+            BluetoothDevice device,
+            boolean clearGattMock) {
         boolean notifyWithValue = false;
 
         if (characteristic.getUuid().equals(TbsGatt.UUID_BEARER_PROVIDER_NAME)) {
@@ -178,10 +191,12 @@ public class TbsGattTest {
 
         } else if (characteristic.getUuid().equals(TbsGatt.UUID_BEARER_TECHNOLOGY)) {
             Assert.assertTrue(mTbsGatt.setBearerTechnology((Integer) value));
-            Assert.assertEquals((Integer) value,
+            Assert.assertEquals(
+                    (Integer) value,
                     characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0));
 
-        } else if (characteristic.getUuid()
+        } else if (characteristic
+                .getUuid()
                 .equals(TbsGatt.UUID_BEARER_URI_SCHEMES_SUPPORTED_LIST)) {
             String valueString = String.join(",", (List<String>) value);
             boolean valueChanged = !characteristic.getStringValue(0).equals(valueString);
@@ -236,8 +251,10 @@ public class TbsGattTest {
                     mTbsGatt.setTerminationReason(indexReasonPair.first, indexReasonPair.second));
             Assert.assertTrue(
                     Arrays.equals(
-                            new byte[] {(byte) indexReasonPair.first.byteValue(),
-                                    indexReasonPair.second.byteValue()},
+                            new byte[] {
+                                (byte) indexReasonPair.first.byteValue(),
+                                indexReasonPair.second.byteValue()
+                            },
                             characteristic.getValue()));
 
         } else if (characteristic.getUuid().equals(TbsGatt.UUID_INCOMING_CALL)) {
@@ -248,10 +265,12 @@ public class TbsGattTest {
                 Pair<Integer, String> indexStrPair = (Pair<Integer, String>) value;
                 Assert.assertTrue(
                         mTbsGatt.setIncomingCall(indexStrPair.first, indexStrPair.second));
-                Assert.assertTrue(Arrays.equals(
-                        Bytes.concat(new byte[] {(byte) indexStrPair.first.byteValue()},
-                                indexStrPair.second.getBytes(StandardCharsets.UTF_8)),
-                        characteristic.getValue()));
+                Assert.assertTrue(
+                        Arrays.equals(
+                                Bytes.concat(
+                                        new byte[] {(byte) indexStrPair.first.byteValue()},
+                                        indexStrPair.second.getBytes(StandardCharsets.UTF_8)),
+                                characteristic.getValue()));
             }
 
         } else if (characteristic.getUuid().equals(TbsGatt.UUID_CALL_FRIENDLY_NAME)) {
@@ -262,29 +281,33 @@ public class TbsGattTest {
                 Pair<Integer, String> indexNamePair = (Pair<Integer, String>) value;
                 Assert.assertTrue(
                         mTbsGatt.setCallFriendlyName(indexNamePair.first, indexNamePair.second));
-                Assert.assertTrue(Arrays.equals(
-                        Bytes.concat(new byte[] {(byte) indexNamePair.first.byteValue()},
-                                indexNamePair.second.getBytes(StandardCharsets.UTF_8)),
-                        characteristic.getValue()));
+                Assert.assertTrue(
+                        Arrays.equals(
+                                Bytes.concat(
+                                        new byte[] {(byte) indexNamePair.first.byteValue()},
+                                        indexNamePair.second.getBytes(StandardCharsets.UTF_8)),
+                                characteristic.getValue()));
             }
         }
 
         if (shouldNotify) {
-                if (notifyWithValue) {
-                        verify(mMockGattServer).notifyCharacteristicChanged(eq(device),
-                                eq(characteristic), eq(false), any());
-                } else {
-                        verify(mMockGattServer).notifyCharacteristicChanged(eq(device),
-                                eq(characteristic), eq(false));
-                }
+            if (notifyWithValue) {
+                verify(mMockGattServer)
+                        .notifyCharacteristicChanged(
+                                eq(device), eq(characteristic), eq(false), any());
+            } else {
+                verify(mMockGattServer)
+                        .notifyCharacteristicChanged(eq(device), eq(characteristic), eq(false));
+            }
         } else {
-                if (notifyWithValue) {
-                        verify(mMockGattServer, times(0)).notifyCharacteristicChanged(eq(device),
-                                eq(characteristic), anyBoolean(), any());
-                } else {
-                        verify(mMockGattServer, times(0)).notifyCharacteristicChanged(eq(device),
-                                eq(characteristic), anyBoolean());
-                }
+            if (notifyWithValue) {
+                verify(mMockGattServer, times(0))
+                        .notifyCharacteristicChanged(
+                                eq(device), eq(characteristic), anyBoolean(), any());
+            } else {
+                verify(mMockGattServer, times(0))
+                        .notifyCharacteristicChanged(eq(device), eq(characteristic), anyBoolean());
+            }
         }
 
         if (clearGattMock) {
@@ -330,13 +353,21 @@ public class TbsGattTest {
 
         // Check with notifications enabled
         configureNotifications(mFirstDevice, characteristic, true);
-        verifySetValue(characteristic, new ArrayList<>(Arrays.asList("uri2", "uri3")), true,
-                mFirstDevice, true);
+        verifySetValue(
+                characteristic,
+                new ArrayList<>(Arrays.asList("uri2", "uri3")),
+                true,
+                mFirstDevice,
+                true);
 
         // Check with notifications disabled
         configureNotifications(mFirstDevice, characteristic, false);
-        verifySetValue(characteristic, new ArrayList<>(Arrays.asList("uri4", "uri5")), false,
-                mFirstDevice, true);
+        verifySetValue(
+                characteristic,
+                new ArrayList<>(Arrays.asList("uri4", "uri5")),
+                false,
+                mFirstDevice,
+                true);
     }
 
     @Test
@@ -348,50 +379,104 @@ public class TbsGattTest {
         // Check with notifications enabled
         configureNotifications(mFirstDevice, characteristic, true);
         Map<Integer, TbsCall> callsMap = new TreeMap<>();
-        callsMap.put(0x0A, TbsCall.create(
-                new BluetoothLeCall(UUID.randomUUID(), "tel:123456789", "John Doe", 0x03, 0x00)));
-        byte[] packetExpected = new byte[] {
-                // First call
-                (byte) 0x10, // Length of this entry (incl. URI length, excl. this length field
-                             // byte)
-                0x0A, // Call index
-                0x03, // Active call state
-                0x00, // Bit0:0-incoming,1-outgoing | Bit1:0-not-withheld,1-withheld |
-                      // Bit2:0-provided-by-netw.,1-withheld-by-netw.
-                0x74, 0x65, 0x6c, 0x3a, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39,
-                // URI: tel:123456789
-        };
-        verifySetValue(characteristic,
-                new Pair<Map<Integer, TbsCall>, byte[]>(callsMap, packetExpected), true,
-                mFirstDevice, true);
+        callsMap.put(
+                0x0A,
+                TbsCall.create(
+                        new BluetoothLeCall(
+                                UUID.randomUUID(), "tel:123456789", "John Doe", 0x03, 0x00)));
+        byte[] packetExpected =
+                new byte[] {
+                    // First call
+                    (byte) 0x10, // Length of this entry (incl. URI length, excl. this length field
+                    // byte)
+                    0x0A, // Call index
+                    0x03, // Active call state
+                    0x00, // Bit0:0-incoming,1-outgoing | Bit1:0-not-withheld,1-withheld |
+                    // Bit2:0-provided-by-netw.,1-withheld-by-netw.
+                    0x74,
+                    0x65,
+                    0x6c,
+                    0x3a,
+                    0x31,
+                    0x32,
+                    0x33,
+                    0x34,
+                    0x35,
+                    0x36,
+                    0x37,
+                    0x38,
+                    0x39,
+                    // URI: tel:123456789
+                };
+        verifySetValue(
+                characteristic,
+                new Pair<Map<Integer, TbsCall>, byte[]>(callsMap, packetExpected),
+                true,
+                mFirstDevice,
+                true);
 
         // Check with notifications disabled
         configureNotifications(mFirstDevice, characteristic, false);
-        callsMap.put(0x0B, TbsCall.create(new BluetoothLeCall(UUID.randomUUID(), "tel:987654321",
-                "Kate", 0x01, BluetoothLeCall.FLAG_OUTGOING_CALL)));
-        packetExpected = new byte[] {
-                // First call
-                (byte) 0x10, // Length of this entry (incl. URI length, excl. this length field
-                             // byte)
-                0x0A, // Call index
-                0x03, // Active call state
-                0x00, // Bit0:0-incoming,1-outgoing | Bit1:0-not-withheld,1-withheld |
-                      // Bit2:0-provided-by-netw.,1-withheld-by-netw.
-                0x74, 0x65, 0x6c, 0x3a, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39,
-                // URI: tel:123456789
-                // Second call
-                (byte) 0x10, // Length of this entry (incl. URI length, excl. this length field
-                             // byte)
-                0x0B, // Call index
-                0x01, // Dialing call state
-                0x01, // Bit0:0-incoming,1-outgoing | Bit1:0-not-withheld,1-withheld |
-                      // Bit2:0-provided-by-netw.,1-withheld-by-netw.
-                0x74, 0x65, 0x6c, 0x3a, 0x39, 0x38, 0x37, 0x36, 0x35, 0x34, 0x33, 0x32, 0x31,
-                // URI: tel:987654321
-        };
-        verifySetValue(characteristic,
-                new Pair<Map<Integer, TbsCall>, byte[]>(callsMap, packetExpected), false,
-                mFirstDevice, true);
+        callsMap.put(
+                0x0B,
+                TbsCall.create(
+                        new BluetoothLeCall(
+                                UUID.randomUUID(),
+                                "tel:987654321",
+                                "Kate",
+                                0x01,
+                                BluetoothLeCall.FLAG_OUTGOING_CALL)));
+        packetExpected =
+                new byte[] {
+                    // First call
+                    (byte) 0x10, // Length of this entry (incl. URI length, excl. this length field
+                    // byte)
+                    0x0A, // Call index
+                    0x03, // Active call state
+                    0x00, // Bit0:0-incoming,1-outgoing | Bit1:0-not-withheld,1-withheld |
+                    // Bit2:0-provided-by-netw.,1-withheld-by-netw.
+                    0x74,
+                    0x65,
+                    0x6c,
+                    0x3a,
+                    0x31,
+                    0x32,
+                    0x33,
+                    0x34,
+                    0x35,
+                    0x36,
+                    0x37,
+                    0x38,
+                    0x39,
+                    // URI: tel:123456789
+                    // Second call
+                    (byte) 0x10, // Length of this entry (incl. URI length, excl. this length field
+                    // byte)
+                    0x0B, // Call index
+                    0x01, // Dialing call state
+                    0x01, // Bit0:0-incoming,1-outgoing | Bit1:0-not-withheld,1-withheld |
+                    // Bit2:0-provided-by-netw.,1-withheld-by-netw.
+                    0x74,
+                    0x65,
+                    0x6c,
+                    0x3a,
+                    0x39,
+                    0x38,
+                    0x37,
+                    0x36,
+                    0x35,
+                    0x34,
+                    0x33,
+                    0x32,
+                    0x31,
+                    // URI: tel:987654321
+                };
+        verifySetValue(
+                characteristic,
+                new Pair<Map<Integer, TbsCall>, byte[]>(callsMap, packetExpected),
+                false,
+                mFirstDevice,
+                true);
     }
 
     @Test
@@ -401,18 +486,27 @@ public class TbsGattTest {
 
         // Check with notifications enabled
         configureNotifications(mFirstDevice, characteristic, true);
-        verifySetValue(characteristic,
+        verifySetValue(
+                characteristic,
                 new Pair<Integer, Boolean>(TbsGatt.STATUS_FLAG_INBAND_RINGTONE_ENABLED, true),
-                true, mFirstDevice, true);
-        verifySetValue(characteristic,
-                new Pair<Integer, Boolean>(TbsGatt.STATUS_FLAG_SILENT_MODE_ENABLED, true), true,
-                mFirstDevice, true);
+                true,
+                mFirstDevice,
+                true);
+        verifySetValue(
+                characteristic,
+                new Pair<Integer, Boolean>(TbsGatt.STATUS_FLAG_SILENT_MODE_ENABLED, true),
+                true,
+                mFirstDevice,
+                true);
 
         // Check with notifications disabled
         configureNotifications(mFirstDevice, characteristic, false);
-        verifySetValue(characteristic,
-                new Pair<Integer, Boolean>(TbsGatt.STATUS_FLAG_SILENT_MODE_ENABLED, false), false,
-                mFirstDevice, true);
+        verifySetValue(
+                characteristic,
+                new Pair<Integer, Boolean>(TbsGatt.STATUS_FLAG_SILENT_MODE_ENABLED, false),
+                false,
+                mFirstDevice,
+                true);
     }
 
     @Test
@@ -422,34 +516,50 @@ public class TbsGattTest {
 
         // Check with notifications enabled
         configureNotifications(mFirstDevice, characteristic, true);
-        byte[] packetExpected = new byte[] {(byte) 0x0A, // Call index
-                0x03, // Active call state
-                0x00, // Bit0:0-incoming,1-outgoing | Bit1:0-not-withheld,1-withheld |
-                      // Bit2:0-provided-by-netw.,1-withheld-by-netw.
-        };
+        byte[] packetExpected =
+                new byte[] {
+                    (byte) 0x0A, // Call index
+                    0x03, // Active call state
+                    0x00, // Bit0:0-incoming,1-outgoing | Bit1:0-not-withheld,1-withheld |
+                    // Bit2:0-provided-by-netw.,1-withheld-by-netw.
+                };
         Map<Integer, TbsCall> callsMap = new TreeMap<>();
-        callsMap.put(0x0A, TbsCall.create(
-                new BluetoothLeCall(UUID.randomUUID(), "tel:123456789", "John Doe", 0x03, 0x00)));
-        verifySetValue(characteristic,
-                new Pair<Map<Integer, TbsCall>, byte[]>(callsMap, packetExpected), true,
-                mFirstDevice, true);
+        callsMap.put(
+                0x0A,
+                TbsCall.create(
+                        new BluetoothLeCall(
+                                UUID.randomUUID(), "tel:123456789", "John Doe", 0x03, 0x00)));
+        verifySetValue(
+                characteristic,
+                new Pair<Map<Integer, TbsCall>, byte[]>(callsMap, packetExpected),
+                true,
+                mFirstDevice,
+                true);
 
         // Check with notifications disabled
         configureNotifications(mFirstDevice, characteristic, false);
-        packetExpected = new byte[] {(byte) 0x0A, // Call index
-                0x03, // Active call state
-                0x00, // Bit0:0-incoming,1-outgoing | Bit1:0-not-withheld,1-withheld |
-                      // Bit2:0-provided-by-netw.,1-withheld-by-netw.
-                (byte) 0x0B, // Call index
-                0x04, // Locally Held call state
-                0x00, // Bit0:0-incoming,1-outgoing | Bit1:0-not-withheld,1-withheld |
-                      // Bit2:0-provided-by-netw.,1-withheld-by-netw.
-        };
-        callsMap.put(0x0B, TbsCall.create(
-                new BluetoothLeCall(UUID.randomUUID(), "tel:987654321", "Kate", 0x04, 0x00)));
-        verifySetValue(characteristic,
-                new Pair<Map<Integer, TbsCall>, byte[]>(callsMap, packetExpected), false,
-                mFirstDevice, true);
+        packetExpected =
+                new byte[] {
+                    (byte) 0x0A, // Call index
+                    0x03, // Active call state
+                    0x00, // Bit0:0-incoming,1-outgoing | Bit1:0-not-withheld,1-withheld |
+                    // Bit2:0-provided-by-netw.,1-withheld-by-netw.
+                    (byte) 0x0B, // Call index
+                    0x04, // Locally Held call state
+                    0x00, // Bit0:0-incoming,1-outgoing | Bit1:0-not-withheld,1-withheld |
+                    // Bit2:0-provided-by-netw.,1-withheld-by-netw.
+                };
+        callsMap.put(
+                0x0B,
+                TbsCall.create(
+                        new BluetoothLeCall(
+                                UUID.randomUUID(), "tel:987654321", "Kate", 0x04, 0x00)));
+        verifySetValue(
+                characteristic,
+                new Pair<Map<Integer, TbsCall>, byte[]>(callsMap, packetExpected),
+                false,
+                mFirstDevice,
+                true);
     }
 
     @Test
@@ -465,11 +575,16 @@ public class TbsGattTest {
         // Check with notifications enabled
         configureNotifications(mFirstDevice, characteristic, true);
         mTbsGatt.setCallControlPointResult(mFirstDevice, requestedOpcode, callIndex, result);
-        Assert.assertTrue(Arrays.equals(characteristic.getValue(),
-                new byte[] {(byte) (requestedOpcode & 0xff), (byte) (callIndex & 0xff),
-                        (byte) (result & 0xff)}));
-        verify(mMockGattServer, after(2000)).notifyCharacteristicChanged(eq(mFirstDevice),
-                eq(characteristic), eq(false));
+        Assert.assertTrue(
+                Arrays.equals(
+                        characteristic.getValue(),
+                        new byte[] {
+                            (byte) (requestedOpcode & 0xff),
+                            (byte) (callIndex & 0xff),
+                            (byte) (result & 0xff)
+                        }));
+        verify(mMockGattServer, after(2000))
+                .notifyCharacteristicChanged(eq(mFirstDevice), eq(characteristic), eq(false));
         reset(mMockGattServer);
 
         callIndex = 0x02;
@@ -477,11 +592,16 @@ public class TbsGattTest {
         // Check with notifications disabled
         configureNotifications(mFirstDevice, characteristic, false);
         mTbsGatt.setCallControlPointResult(mFirstDevice, requestedOpcode, callIndex, result);
-        Assert.assertTrue(Arrays.equals(characteristic.getValue(),
-                new byte[] {(byte) (requestedOpcode & 0xff), (byte) (callIndex & 0xff),
-                        (byte) (result & 0xff)}));
-        verify(mMockGattServer, after(2000).times(0)).notifyCharacteristicChanged(any(), any(),
-                anyBoolean());
+        Assert.assertTrue(
+                Arrays.equals(
+                        characteristic.getValue(),
+                        new byte[] {
+                            (byte) (requestedOpcode & 0xff),
+                            (byte) (callIndex & 0xff),
+                            (byte) (result & 0xff)
+                        }));
+        verify(mMockGattServer, after(2000).times(0))
+                .notifyCharacteristicChanged(any(), any(), anyBoolean());
     }
 
     @Test
@@ -491,18 +611,18 @@ public class TbsGattTest {
                 getCharacteristic(TbsGatt.UUID_TERMINATION_REASON);
 
         // Check with no CCC configured
-        verifySetValue(characteristic, new Pair<Integer, Integer>(0x0A, 0x01), false, mFirstDevice,
-                true);
+        verifySetValue(
+                characteristic, new Pair<Integer, Integer>(0x0A, 0x01), false, mFirstDevice, true);
 
         // Check with notifications enabled
         configureNotifications(mFirstDevice, characteristic, true);
-        verifySetValue(characteristic, new Pair<Integer, Integer>(0x0B, 0x02), true, mFirstDevice,
-                true);
+        verifySetValue(
+                characteristic, new Pair<Integer, Integer>(0x0B, 0x02), true, mFirstDevice, true);
 
         // Check with notifications disabled
         configureNotifications(mFirstDevice, characteristic, false);
-        verifySetValue(characteristic, new Pair<Integer, Integer>(0x0C, 0x02), false, mFirstDevice,
-                true);
+        verifySetValue(
+                characteristic, new Pair<Integer, Integer>(0x0C, 0x02), false, mFirstDevice, true);
     }
 
     @Test
@@ -511,21 +631,33 @@ public class TbsGattTest {
         BluetoothGattCharacteristic characteristic = getCharacteristic(TbsGatt.UUID_INCOMING_CALL);
 
         // Check with no CCC configured
-        verifySetValue(characteristic, new Pair<Integer, String>(0x0A, "tel:123456789"), false,
-                mFirstDevice, true);
+        verifySetValue(
+                characteristic,
+                new Pair<Integer, String>(0x0A, "tel:123456789"),
+                false,
+                mFirstDevice,
+                true);
 
         // Check with notifications enabled
         configureNotifications(mFirstDevice, characteristic, true);
-        verifySetValue(characteristic, new Pair<Integer, String>(0x0A, "tel:987654321"), true,
-                mFirstDevice, true);
+        verifySetValue(
+                characteristic,
+                new Pair<Integer, String>(0x0A, "tel:987654321"),
+                true,
+                mFirstDevice,
+                true);
 
         // No incoming call (should not send any notification)
         verifySetValue(characteristic, null, false, mFirstDevice, true);
 
         // Check with notifications disabled
         configureNotifications(mFirstDevice, characteristic, false);
-        verifySetValue(characteristic, new Pair<Integer, String>(0x0A, "tel:123456789"), false,
-                mFirstDevice, true);
+        verifySetValue(
+                characteristic,
+                new Pair<Integer, String>(0x0A, "tel:123456789"),
+                false,
+                mFirstDevice,
+                true);
     }
 
     @Test
@@ -535,21 +667,33 @@ public class TbsGattTest {
                 getCharacteristic(TbsGatt.UUID_CALL_FRIENDLY_NAME);
 
         // Check with no CCC configured
-        verifySetValue(characteristic, new Pair<Integer, String>(0x0A, "PersonA"), false,
-                mFirstDevice, true);
+        verifySetValue(
+                characteristic,
+                new Pair<Integer, String>(0x0A, "PersonA"),
+                false,
+                mFirstDevice,
+                true);
 
         // Check with notifications enabled
         configureNotifications(mFirstDevice, characteristic, true);
-        verifySetValue(characteristic, new Pair<Integer, String>(0x0B, "PersonB"), true,
-                mFirstDevice, true);
+        verifySetValue(
+                characteristic,
+                new Pair<Integer, String>(0x0B, "PersonB"),
+                true,
+                mFirstDevice,
+                true);
 
         // Clear freindly name (should not send any notification)
         verifySetValue(characteristic, null, false, mFirstDevice, true);
 
         // Check with notifications disabled
         configureNotifications(mFirstDevice, characteristic, false);
-        verifySetValue(characteristic, new Pair<Integer, String>(0x0C, "PersonC"), false,
-                mFirstDevice, true);
+        verifySetValue(
+                characteristic,
+                new Pair<Integer, String>(0x0C, "PersonC"),
+                false,
+                mFirstDevice,
+                true);
     }
 
     @Test
@@ -560,15 +704,20 @@ public class TbsGattTest {
 
         // Call the internal GATT callback as if peer device accepts the call
         byte[] value = new byte[] {0x00 /* opcode */, 0x0A /* argument */};
-        mTbsGatt.mGattServerCallback.onCharacteristicWriteRequest(mFirstDevice, 1, characteristic,
-                false, true, 0, value);
+        mTbsGatt.mGattServerCallback.onCharacteristicWriteRequest(
+                mFirstDevice, 1, characteristic, false, true, 0, value);
 
-        verify(mMockGattServer).sendResponse(eq(mFirstDevice), eq(1),
-                eq(BluetoothGatt.GATT_SUCCESS), eq(0), aryEq(new byte[] {0x00, 0x0A}));
+        verify(mMockGattServer)
+                .sendResponse(
+                        eq(mFirstDevice),
+                        eq(1),
+                        eq(BluetoothGatt.GATT_SUCCESS),
+                        eq(0),
+                        aryEq(new byte[] {0x00, 0x0A}));
 
         // Verify the higher layer callback call
-        verify(mMockTbsGattCallback).onCallControlPointRequest(eq(mFirstDevice), eq(0x00),
-                aryEq(new byte[] {0x0A}));
+        verify(mMockTbsGattCallback)
+                .onCallControlPointRequest(eq(mFirstDevice), eq(0x00), aryEq(new byte[] {0x0A}));
     }
 
     @Test
@@ -579,11 +728,16 @@ public class TbsGattTest {
 
         // Call the internal GATT callback as if peer device accepts the call
         byte[] value = new byte[] {0x00 /* opcode */};
-        mTbsGatt.mGattServerCallback.onCharacteristicWriteRequest(mFirstDevice, 1, characteristic,
-                false, true, 0, value);
+        mTbsGatt.mGattServerCallback.onCharacteristicWriteRequest(
+                mFirstDevice, 1, characteristic, false, true, 0, value);
 
-        verify(mMockGattServer).sendResponse(eq(mFirstDevice), eq(1),
-                eq(BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH), eq(0), aryEq(new byte[] {0x00}));
+        verify(mMockGattServer)
+                .sendResponse(
+                        eq(mFirstDevice),
+                        eq(1),
+                        eq(BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH),
+                        eq(0),
+                        aryEq(new byte[] {0x00}));
     }
 
     @Test
@@ -604,15 +758,17 @@ public class TbsGattTest {
         mTbsGatt.setInbandRingtoneFlag(mFirstDevice);
         mTbsGatt.setInbandRingtoneFlag(mFirstDevice);
 
-        verify(mMockGattServer, times(1)).notifyCharacteristicChanged(eq(mFirstDevice),
-                                eq(characteristic), eq(false), eq(valueBytes));
+        verify(mMockGattServer, times(1))
+                .notifyCharacteristicChanged(
+                        eq(mFirstDevice), eq(characteristic), eq(false), eq(valueBytes));
 
         reset(mMockGattServer);
         mTbsGatt.setInbandRingtoneFlag(mSecondDevice);
         mTbsGatt.setInbandRingtoneFlag(mSecondDevice);
 
-        verify(mMockGattServer, times(1)).notifyCharacteristicChanged(eq(mSecondDevice),
-                                eq(characteristic), eq(false), eq(valueBytes));
+        verify(mMockGattServer, times(1))
+                .notifyCharacteristicChanged(
+                        eq(mSecondDevice), eq(characteristic), eq(false), eq(valueBytes));
     }
 
     @Test
@@ -628,16 +784,17 @@ public class TbsGattTest {
         valueBytes[0] = (byte) (statusFlagValue & 0xFF);
         valueBytes[1] = (byte) ((statusFlagValue >> 8) & 0xFF);
 
-
         mTbsGatt.setInbandRingtoneFlag(mFirstDevice);
-        verify(mMockGattServer, times(1)).notifyCharacteristicChanged(eq(mFirstDevice),
-                                eq(characteristic), eq(false), eq(valueBytes));
+        verify(mMockGattServer, times(1))
+                .notifyCharacteristicChanged(
+                        eq(mFirstDevice), eq(characteristic), eq(false), eq(valueBytes));
 
         reset(mMockGattServer);
 
         mTbsGatt.setInbandRingtoneFlag(mSecondDevice);
-        verify(mMockGattServer, times(1)).notifyCharacteristicChanged(eq(mSecondDevice),
-                                eq(characteristic), eq(false), eq(valueBytes));
+        verify(mMockGattServer, times(1))
+                .notifyCharacteristicChanged(
+                        eq(mSecondDevice), eq(characteristic), eq(false), eq(valueBytes));
 
         reset(mMockGattServer);
 
@@ -648,14 +805,16 @@ public class TbsGattTest {
 
         mTbsGatt.clearInbandRingtoneFlag(mFirstDevice);
         mTbsGatt.clearInbandRingtoneFlag(mFirstDevice);
-        verify(mMockGattServer, times(1)).notifyCharacteristicChanged(eq(mFirstDevice),
-                                eq(characteristic), eq(false), eq(valueBytes));
+        verify(mMockGattServer, times(1))
+                .notifyCharacteristicChanged(
+                        eq(mFirstDevice), eq(characteristic), eq(false), eq(valueBytes));
 
         reset(mMockGattServer);
         mTbsGatt.clearInbandRingtoneFlag(mSecondDevice);
         mTbsGatt.clearInbandRingtoneFlag(mSecondDevice);
-        verify(mMockGattServer, times(1)).notifyCharacteristicChanged(eq(mSecondDevice),
-                                eq(characteristic), eq(false), eq(valueBytes));
+        verify(mMockGattServer, times(1))
+                .notifyCharacteristicChanged(
+                        eq(mSecondDevice), eq(characteristic), eq(false), eq(valueBytes));
     }
 
     @Test
@@ -675,26 +834,29 @@ public class TbsGattTest {
         mTbsGatt.setSilentModeFlag();
         mTbsGatt.setSilentModeFlag();
         mTbsGatt.setSilentModeFlag();
-        verify(mMockGattServer, times(2)).notifyCharacteristicChanged(any(),
-                                eq(characteristic), eq(false), eq(valueBytes));
+        verify(mMockGattServer, times(2))
+                .notifyCharacteristicChanged(any(), eq(characteristic), eq(false), eq(valueBytes));
 
         reset(mMockGattServer);
 
-        statusFlagValue = TbsGatt.STATUS_FLAG_INBAND_RINGTONE_ENABLED
-                                        | TbsGatt.STATUS_FLAG_SILENT_MODE_ENABLED;
+        statusFlagValue =
+                TbsGatt.STATUS_FLAG_INBAND_RINGTONE_ENABLED
+                        | TbsGatt.STATUS_FLAG_SILENT_MODE_ENABLED;
         valueBytes[0] = (byte) (statusFlagValue & 0xFF);
         valueBytes[1] = (byte) ((statusFlagValue >> 8) & 0xFF);
 
         mTbsGatt.setInbandRingtoneFlag(mFirstDevice);
 
-        verify(mMockGattServer, times(1)).notifyCharacteristicChanged(eq(mFirstDevice),
-                                eq(characteristic), eq(false), eq(valueBytes));
+        verify(mMockGattServer, times(1))
+                .notifyCharacteristicChanged(
+                        eq(mFirstDevice), eq(characteristic), eq(false), eq(valueBytes));
 
         reset(mMockGattServer);
         mTbsGatt.setInbandRingtoneFlag(mSecondDevice);
 
-        verify(mMockGattServer, times(1)).notifyCharacteristicChanged(eq(mSecondDevice),
-                                eq(characteristic), eq(false), eq(valueBytes));
+        verify(mMockGattServer, times(1))
+                .notifyCharacteristicChanged(
+                        eq(mSecondDevice), eq(characteristic), eq(false), eq(valueBytes));
         reset(mMockGattServer);
 
         statusFlagValue = TbsGatt.STATUS_FLAG_INBAND_RINGTONE_ENABLED;
@@ -705,18 +867,17 @@ public class TbsGattTest {
         mTbsGatt.clearSilentModeFlag();
         mTbsGatt.clearSilentModeFlag();
         mTbsGatt.clearSilentModeFlag();
-        verify(mMockGattServer, times(2)).notifyCharacteristicChanged(any(),
-                                eq(characteristic), eq(false), eq(valueBytes));
+        verify(mMockGattServer, times(2))
+                .notifyCharacteristicChanged(any(), eq(characteristic), eq(false), eq(valueBytes));
     }
 
     @Test
     public void testHandleIsInbandRingtoneEnabled() {
         prepareDefaultService();
-        BluetoothGattCharacteristic characteristic =
-                getCharacteristic(TbsGatt.UUID_STATUS_FLAGS);
+        BluetoothGattCharacteristic characteristic = getCharacteristic(TbsGatt.UUID_STATUS_FLAGS);
 
-        mTbsGatt.mGattServerCallback.onCharacteristicReadRequest(mFirstDevice, 1, 0,
-                characteristic);
+        mTbsGatt.mGattServerCallback.onCharacteristicReadRequest(
+                mFirstDevice, 1, 0, characteristic);
         // Verify the higher layer callback call
         verify(mMockTbsGattCallback).isInbandRingtoneEnabled(eq(mFirstDevice));
     }
@@ -732,25 +893,37 @@ public class TbsGattTest {
 
         // Check with no configuration
         mTbsGatt.mGattServerCallback.onDescriptorReadRequest(mFirstDevice, 1, 0, descriptor);
-        verify(mMockGattServer).sendResponse(eq(mFirstDevice), eq(1),
-                eq(BluetoothGatt.GATT_SUCCESS), eq(0),
-                eq(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE));
+        verify(mMockGattServer)
+                .sendResponse(
+                        eq(mFirstDevice),
+                        eq(1),
+                        eq(BluetoothGatt.GATT_SUCCESS),
+                        eq(0),
+                        eq(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE));
         reset(mMockGattServer);
 
         // Check with notifications enabled
         configureNotifications(mFirstDevice, characteristic, true);
         mTbsGatt.mGattServerCallback.onDescriptorReadRequest(mFirstDevice, 1, 0, descriptor);
-        verify(mMockGattServer).sendResponse(eq(mFirstDevice), eq(1),
-                eq(BluetoothGatt.GATT_SUCCESS), eq(0),
-                eq(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE));
+        verify(mMockGattServer)
+                .sendResponse(
+                        eq(mFirstDevice),
+                        eq(1),
+                        eq(BluetoothGatt.GATT_SUCCESS),
+                        eq(0),
+                        eq(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE));
         reset(mMockGattServer);
 
         // Check with notifications disabled
         configureNotifications(mFirstDevice, characteristic, false);
         mTbsGatt.mGattServerCallback.onDescriptorReadRequest(mFirstDevice, 1, 0, descriptor);
-        verify(mMockGattServer).sendResponse(eq(mFirstDevice), eq(1),
-                eq(BluetoothGatt.GATT_SUCCESS), eq(0),
-                eq(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE));
+        verify(mMockGattServer)
+                .sendResponse(
+                        eq(mFirstDevice),
+                        eq(1),
+                        eq(BluetoothGatt.GATT_SUCCESS),
+                        eq(0),
+                        eq(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE));
     }
 
     @Test
@@ -764,67 +937,94 @@ public class TbsGattTest {
 
         // Check with no configuration
         mTbsGatt.mGattServerCallback.onDescriptorReadRequest(mFirstDevice, 1, 0, descriptor);
-        verify(mMockGattServer).sendResponse(eq(mFirstDevice), eq(1),
-                eq(BluetoothGatt.GATT_SUCCESS), eq(0),
-                eq(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE));
+        verify(mMockGattServer)
+                .sendResponse(
+                        eq(mFirstDevice),
+                        eq(1),
+                        eq(BluetoothGatt.GATT_SUCCESS),
+                        eq(0),
+                        eq(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE));
 
         mTbsGatt.mGattServerCallback.onDescriptorReadRequest(mSecondDevice, 1, 0, descriptor);
-        verify(mMockGattServer).sendResponse(eq(mSecondDevice), eq(1),
-                eq(BluetoothGatt.GATT_SUCCESS), eq(0),
-                eq(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE));
+        verify(mMockGattServer)
+                .sendResponse(
+                        eq(mSecondDevice),
+                        eq(1),
+                        eq(BluetoothGatt.GATT_SUCCESS),
+                        eq(0),
+                        eq(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE));
         reset(mMockGattServer);
 
         // Check with notifications enabled for first device
         configureNotifications(mFirstDevice, characteristic, true);
         verifySetValue(characteristic, 4, true, mFirstDevice, true);
         mTbsGatt.mGattServerCallback.onDescriptorReadRequest(mFirstDevice, 1, 0, descriptor);
-        verify(mMockGattServer).sendResponse(eq(mFirstDevice), eq(1),
-                eq(BluetoothGatt.GATT_SUCCESS), eq(0),
-                eq(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE));
+        verify(mMockGattServer)
+                .sendResponse(
+                        eq(mFirstDevice),
+                        eq(1),
+                        eq(BluetoothGatt.GATT_SUCCESS),
+                        eq(0),
+                        eq(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE));
         reset(mMockGattServer);
 
         // Check if second device is still not subscribed for notifications and will not get it
         verifySetValue(characteristic, 5, false, mSecondDevice, false);
-        verify(mMockGattServer).notifyCharacteristicChanged(eq(mFirstDevice),
-                                eq(characteristic), eq(false));
+        verify(mMockGattServer)
+                .notifyCharacteristicChanged(eq(mFirstDevice), eq(characteristic), eq(false));
         mTbsGatt.mGattServerCallback.onDescriptorReadRequest(mSecondDevice, 1, 0, descriptor);
-        verify(mMockGattServer).sendResponse(eq(mSecondDevice), eq(1),
-                eq(BluetoothGatt.GATT_SUCCESS), eq(0),
-                eq(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE));
+        verify(mMockGattServer)
+                .sendResponse(
+                        eq(mSecondDevice),
+                        eq(1),
+                        eq(BluetoothGatt.GATT_SUCCESS),
+                        eq(0),
+                        eq(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE));
         reset(mMockGattServer);
 
         // Check with notifications enabled for first and second device
         configureNotifications(mSecondDevice, characteristic, true);
         verifySetValue(characteristic, 6, true, mSecondDevice, false);
-        verify(mMockGattServer).notifyCharacteristicChanged(eq(mFirstDevice),
-                                eq(characteristic), eq(false));
+        verify(mMockGattServer)
+                .notifyCharacteristicChanged(eq(mFirstDevice), eq(characteristic), eq(false));
         mTbsGatt.mGattServerCallback.onDescriptorReadRequest(mSecondDevice, 1, 0, descriptor);
-        verify(mMockGattServer).sendResponse(eq(mSecondDevice), eq(1),
-                eq(BluetoothGatt.GATT_SUCCESS), eq(0),
-                eq(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE));
+        verify(mMockGattServer)
+                .sendResponse(
+                        eq(mSecondDevice),
+                        eq(1),
+                        eq(BluetoothGatt.GATT_SUCCESS),
+                        eq(0),
+                        eq(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE));
         reset(mMockGattServer);
 
         // Disable notification for first device, check if second will get notification
         configureNotifications(mFirstDevice, characteristic, false);
         verifySetValue(characteristic, 7, false, mFirstDevice, false);
-        verify(mMockGattServer).notifyCharacteristicChanged(eq(mSecondDevice),
-                                eq(characteristic), eq(false));
+        verify(mMockGattServer)
+                .notifyCharacteristicChanged(eq(mSecondDevice), eq(characteristic), eq(false));
         mTbsGatt.mGattServerCallback.onDescriptorReadRequest(mFirstDevice, 1, 0, descriptor);
-        verify(mMockGattServer).sendResponse(eq(mFirstDevice), eq(1),
-                eq(BluetoothGatt.GATT_SUCCESS), eq(0),
-                eq(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE));
+        verify(mMockGattServer)
+                .sendResponse(
+                        eq(mFirstDevice),
+                        eq(1),
+                        eq(BluetoothGatt.GATT_SUCCESS),
+                        eq(0),
+                        eq(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE));
         reset(mMockGattServer);
 
         // Check with notifications disabled of both device
         configureNotifications(mSecondDevice, characteristic, false);
         verifySetValue(characteristic, 4, false, mFirstDevice, false);
-        verify(mMockGattServer, times(0)).notifyCharacteristicChanged(eq(mSecondDevice),
-                                eq(characteristic), eq(false));
+        verify(mMockGattServer, times(0))
+                .notifyCharacteristicChanged(eq(mSecondDevice), eq(characteristic), eq(false));
         mTbsGatt.mGattServerCallback.onDescriptorReadRequest(mSecondDevice, 1, 0, descriptor);
-        verify(mMockGattServer).sendResponse(eq(mSecondDevice), eq(1),
-                eq(BluetoothGatt.GATT_SUCCESS), eq(0),
-                eq(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE));
-
+        verify(mMockGattServer)
+                .sendResponse(
+                        eq(mSecondDevice),
+                        eq(1),
+                        eq(BluetoothGatt.GATT_SUCCESS),
+                        eq(0),
+                        eq(BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE));
     }
 
     @Test
@@ -842,8 +1042,12 @@ public class TbsGattTest {
                 mFirstDevice, 1, 0, characteristic);
 
         verify(mMockGattServer)
-                .sendResponse(eq(mFirstDevice), eq(1),
-                        eq(BluetoothGatt.GATT_INSUFFICIENT_AUTHORIZATION), eq(0), any());
+                .sendResponse(
+                        eq(mFirstDevice),
+                        eq(1),
+                        eq(BluetoothGatt.GATT_INSUFFICIENT_AUTHORIZATION),
+                        eq(0),
+                        any());
     }
 
     @Test
@@ -919,14 +1123,21 @@ public class TbsGattTest {
                 .when(mMockTbsService)
                 .getDeviceAuthorization(any(BluetoothDevice.class));
 
-        byte[] value = new byte[] {0x00, /* opcode */ 0x0A, /* argument */ };
+        byte[] value =
+                new byte[] {
+                    0x00, /* opcode */ 0x0A, /* argument */
+                };
 
         mTbsGatt.mGattServerCallback.onCharacteristicWriteRequest(
                 mFirstDevice, 1, characteristic, false, true, 0, value);
 
         verify(mMockGattServer)
-                .sendResponse(eq(mFirstDevice), eq(1),
-                        eq(BluetoothGatt.GATT_INSUFFICIENT_AUTHORIZATION), eq(0), any());
+                .sendResponse(
+                        eq(mFirstDevice),
+                        eq(1),
+                        eq(BluetoothGatt.GATT_INSUFFICIENT_AUTHORIZATION),
+                        eq(0),
+                        any());
     }
 
     @Test
@@ -940,7 +1151,10 @@ public class TbsGattTest {
                 .when(mMockTbsService)
                 .getDeviceAuthorization(any(BluetoothDevice.class));
 
-        byte[] value = new byte[] {0x00, /* opcode */ 0x0A, /* argument */ };
+        byte[] value =
+                new byte[] {
+                    0x00, /* opcode */ 0x0A, /* argument */
+                };
 
         mTbsGatt.mGattServerCallback.onCharacteristicWriteRequest(
                 mFirstDevice, 1, characteristic, false, true, 0, value);
@@ -964,8 +1178,12 @@ public class TbsGattTest {
         mTbsGatt.mGattServerCallback.onDescriptorReadRequest(mFirstDevice, 1, 0, descriptor);
 
         verify(mMockGattServer)
-                .sendResponse(eq(mFirstDevice), eq(1),
-                        eq(BluetoothGatt.GATT_INSUFFICIENT_AUTHORIZATION), eq(0), any());
+                .sendResponse(
+                        eq(mFirstDevice),
+                        eq(1),
+                        eq(BluetoothGatt.GATT_INSUFFICIENT_AUTHORIZATION),
+                        eq(0),
+                        any());
     }
 
     @Test
@@ -999,14 +1217,21 @@ public class TbsGattTest {
                 .when(mMockTbsService)
                 .getDeviceAuthorization(any(BluetoothDevice.class));
 
-        byte[] value = new byte[] {0x00, /* opcode */ 0x0A, /* argument */ };
+        byte[] value =
+                new byte[] {
+                    0x00, /* opcode */ 0x0A, /* argument */
+                };
 
         mTbsGatt.mGattServerCallback.onDescriptorWriteRequest(
                 mFirstDevice, 1, descriptor, false, true, 0, value);
 
         verify(mMockGattServer)
-                .sendResponse(eq(mFirstDevice), eq(1),
-                        eq(BluetoothGatt.GATT_INSUFFICIENT_AUTHORIZATION), eq(0), any());
+                .sendResponse(
+                        eq(mFirstDevice),
+                        eq(1),
+                        eq(BluetoothGatt.GATT_INSUFFICIENT_AUTHORIZATION),
+                        eq(0),
+                        any());
     }
 
     @Test
@@ -1022,7 +1247,10 @@ public class TbsGattTest {
                 .when(mMockTbsService)
                 .getDeviceAuthorization(any(BluetoothDevice.class));
 
-        byte[] value = new byte[] {0x00, /* opcode */ 0x0A, /* argument */ };
+        byte[] value =
+                new byte[] {
+                    0x00, /* opcode */ 0x0A, /* argument */
+                };
 
         mTbsGatt.mGattServerCallback.onDescriptorWriteRequest(
                 mFirstDevice, 1, descriptor, false, true, 0, value);

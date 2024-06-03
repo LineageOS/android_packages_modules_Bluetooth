@@ -48,14 +48,13 @@ import java.io.FileNotFoundException;
 public class AvrcpCoverArtProviderTest {
     private static final String TEST_MODE = "test_mode";
 
-    private final byte[] mTestAddress = new byte[]{01, 01, 01, 01, 01, 01};
+    private final byte[] mTestAddress = new byte[] {01, 01, 01, 01, 01, 01};
 
     private BluetoothAdapter mAdapter;
     private BluetoothDevice mTestDevice = null;
     private AvrcpCoverArtProvider mArtProvider;
 
-    @Rule
-    public final ServiceTestRule mServiceRule = new ServiceTestRule();
+    @Rule public final ServiceTestRule mServiceRule = new ServiceTestRule();
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock private Uri mUri;
@@ -111,8 +110,12 @@ public class AvrcpCoverArtProviderTest {
     @Test
     public void getImageUri_withValidImageUuid() {
         String uuid = "1111";
-        Uri expectedUri = AvrcpCoverArtProvider.CONTENT_URI.buildUpon().appendQueryParameter(
-                "device", mTestDevice.getAddress()).appendQueryParameter("uuid", uuid).build();
+        Uri expectedUri =
+                AvrcpCoverArtProvider.CONTENT_URI
+                        .buildUpon()
+                        .appendQueryParameter("device", mTestDevice.getAddress())
+                        .appendQueryParameter("uuid", uuid)
+                        .build();
 
         assertThat(AvrcpCoverArtProvider.getImageUri(mTestDevice, uuid)).isEqualTo(expectedUri);
     }

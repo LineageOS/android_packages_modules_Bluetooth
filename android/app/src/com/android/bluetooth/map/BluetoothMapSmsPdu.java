@@ -1,17 +1,17 @@
 /*
-* Copyright (C) 2013 Samsung System LSI
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*      http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (C) 2013 Samsung System LSI
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.android.bluetooth.map;
 
 import static android.telephony.TelephonyManager.PHONE_TYPE_CDMA;
@@ -47,29 +47,22 @@ public class BluetoothMapSmsPdu {
     public static final int SMS_TYPE_GSM = 1;
     public static final int SMS_TYPE_CDMA = 2;
 
-    /**
-     * from SMS user data header information element identifiers.
-     * (see TS 23.040 9.2.3.24)
-     */
-    private static final int ELT_ID_NATIONAL_LANGUAGE_SINGLE_SHIFT     = 0x24;
-    private static final int ELT_ID_NATIONAL_LANGUAGE_LOCKING_SHIFT    = 0x25;
+    /** from SMS user data header information element identifiers. (see TS 23.040 9.2.3.24) */
+    private static final int ELT_ID_NATIONAL_LANGUAGE_SINGLE_SHIFT = 0x24;
 
-    /**
-     * Supported message types for CDMA SMS messages
-     * (See 3GPP2 C.S0015-B, v2.0, table 4.5.1-1)
-     */
+    private static final int ELT_ID_NATIONAL_LANGUAGE_LOCKING_SHIFT = 0x25;
+
+    /** Supported message types for CDMA SMS messages (See 3GPP2 C.S0015-B, v2.0, table 4.5.1-1) */
     private static final int MESSAGE_TYPE_DELIVER = 0x01;
 
     /**
-     * We need to handle the SC-address mentioned in errata 4335.
-     * Since the definition could be read in three different ways, I have asked
-     * the car working group for clarification, and are awaiting confirmation that
-     * this clarification will go into the MAP spec:
-     *    The native format should be <sc_addr><tpdu> where <sc_addr> is <length><ton><1..10 octet
-     *    of address> coded according to 24.011. The IEI is not to be used, as the fixed order of
-     *    the data makes a type 4 LV information element sufficient. <length> is a single octet
-     *    which value is the length of the value-field in octets including both the <ton> and the
-     *    <address>.
+     * We need to handle the SC-address mentioned in errata 4335. Since the definition could be read
+     * in three different ways, I have asked the car working group for clarification, and are
+     * awaiting confirmation that this clarification will go into the MAP spec: The native format
+     * should be <sc_addr><tpdu> where <sc_addr> is <length><ton><1..10 octet of address> coded
+     * according to 24.011. The IEI is not to be used, as the fixed order of the data makes a type 4
+     * LV information element sufficient. <length> is a single octet which value is the length of
+     * the value-field in octets including both the <ton> and the <address>.
      */
     public static class SmsPdu {
         private byte[] mData;
@@ -96,6 +89,7 @@ public class BluetoothMapSmsPdu {
 
         /**
          * Create a pdu instance based on the data generated on this device.
+         *
          * @param data
          * @param encoding
          * @param type
@@ -153,7 +147,6 @@ public class BluetoothMapSmsPdu {
             return mMsgSeptetCount;
         }
 
-
         /* PDU parsing/modification functionality */
         private static final byte ORIGINATING_ADDRESS = 0x02;
         private static final byte ORIGINATING_SUB_ADDRESS = 0x03;
@@ -163,10 +156,11 @@ public class BluetoothMapSmsPdu {
 
         /**
          * Find and return the offset to the specified parameter ID
+         *
          * @param parameterId The parameter ID to find
-         * @return the offset in number of bytes to the parameterID entry in the pdu data.
-         * The byte at the offset contains the parameter ID, the byte following contains the
-         * parameter length, and offset + 2 is the first byte of the parameter data.
+         * @return the offset in number of bytes to the parameterID entry in the pdu data. The byte
+         *     at the offset contains the parameter ID, the byte following contains the parameter
+         *     length, and offset + 2 is the first byte of the parameter data.
          */
         private int cdmaGetParameterOffset(byte parameterId) {
             ByteArrayInputStream pdu = new ByteArrayInputStream(mData);
@@ -245,7 +239,6 @@ public class BluetoothMapSmsPdu {
             }
         }
 
-
         public void cdmaChangeToDeliverPdu(long date) {
             /* Things to change:
              *  - Message Type in bearer data (Not the overall point-to-point type)
@@ -271,8 +264,9 @@ public class BluetoothMapSmsPdu {
             offset = cdmaGetSubParameterOffset(BEARER_DATA_MSG_ID);
 
             if (mData.length > (2 + offset)) {
-                int tmp = mData[offset + 2]
-                        & 0xff; // Skip the subParam ID and length, and read the first byte.
+                int tmp =
+                        mData[offset + 2]
+                                & 0xff; // Skip the subParam ID and length, and read the first byte.
                 // Mask out the type
                 tmp &= 0x0f;
                 // Set the new type
@@ -283,12 +277,12 @@ public class BluetoothMapSmsPdu {
             } else {
                 throw new IllegalArgumentException("Unable to convert PDU to Deliver type");
             }
-                /* TODO: Do we need to change anything in the user data? Not sure if the user
-                data is
-                 *        just encoded using GSM encoding, or it is an actual GSM submit PDU
-                 *        embedded
-                 *        in the user data?
-                 */
+            /* TODO: Do we need to change anything in the user data? Not sure if the user
+            data is
+             *        just encoded using GSM encoding, or it is an actual GSM submit PDU
+             *        embedded
+             *        in the user data?
+             */
         }
 
         private static final byte TP_MIT_DELIVER = 0x00; // bit 0 and 1
@@ -374,8 +368,10 @@ public class BluetoothMapSmsPdu {
                     mUserDataSeptetPadding = (headerSeptets * 7) - headerBits;
                     mMsgSeptetCount = userDataLength - headerSeptets;
                 }
-                mUserDataMsgOffset = gsmSubmitGetTpUdOffset() + userDataHeaderLength
-                        + 1; // Add the byte containing the length
+                mUserDataMsgOffset =
+                        gsmSubmitGetTpUdOffset()
+                                + userDataHeaderLength
+                                + 1; // Add the byte containing the length
             } else {
                 mUserDataSeptetPadding = 0;
                 mMsgSeptetCount = userDataLength;
@@ -398,13 +394,15 @@ public class BluetoothMapSmsPdu {
             byte[] timeChars = timeStr.getBytes("US-ASCII");
 
             for (int i = 0, n = timeStr.length(); i < n; i += 2) {
-                header.write((timeChars[i + 1] - 0x30) << 4 | (timeChars[i]
-                        - 0x30)); // Offset from ascii char to decimal value
+                header.write(
+                        (timeChars[i + 1] - 0x30) << 4
+                                | (timeChars[i] - 0x30)); // Offset from ascii char to decimal value
             }
 
             Calendar cal = Calendar.getInstance();
-            int offset = (cal.get(Calendar.ZONE_OFFSET) + cal.get(Calendar.DST_OFFSET)) / (15 * 60
-                    * 1000); /* offset in quarters of an hour */
+            int offset =
+                    (cal.get(Calendar.ZONE_OFFSET) + cal.get(Calendar.DST_OFFSET))
+                            / (15 * 60 * 1000); /* offset in quarters of an hour */
             String offsetString;
             if (offset < 0) {
                 offsetString = String.format("%1$02d", -(offset));
@@ -417,7 +415,7 @@ public class BluetoothMapSmsPdu {
             }
         }
 
-/*        private void gsmSubmitExtractUserData() {
+        /*        private void gsmSubmitExtractUserData() {
             int userDataLength = data[gsmSubmitGetTpUdlOffset()];
             userData = new byte[userDataLength];
             System.arraycopy(userData, 0, data, gsmSubmitGetTpUdOffset(), userDataLength);
@@ -425,16 +423,15 @@ public class BluetoothMapSmsPdu {
         }*/
 
         /**
-         * Change the GSM Submit Pdu data in this object to a deliver PDU:
-         *  - Build the new header with deliver PDU type, originator and time stamp.
-         *  - Extract encoding details from the submit PDU
-         *  - Extract user data length and user data from the submitPdu
-         *  - Build the new PDU
-         * @param date the time stamp to include (The value is the number of milliseconds since
-         * Jan. 1, 1970 GMT.)
+         * Change the GSM Submit Pdu data in this object to a deliver PDU: - Build the new header
+         * with deliver PDU type, originator and time stamp. - Extract encoding details from the
+         * submit PDU - Extract user data length and user data from the submitPdu - Build the new
+         * PDU
+         *
+         * @param date the time stamp to include (The value is the number of milliseconds since Jan.
+         *     1, 1970 GMT.)
          * @param originator the phone number to include in the deliver PDU header. Any undesired
-         * characters,
-         *                    such as '-' will be striped from this string.
+         *     characters, such as '-' will be striped from this string.
          */
         public void gsmChangeToDeliverPdu(long date, String originator) {
             ByteArrayOutputStream newPdu =
@@ -443,19 +440,25 @@ public class BluetoothMapSmsPdu {
             int userDataLength = 0;
             try {
                 newPdu.write(
-                        TP_MIT_DELIVER | TP_MMS_NO_MORE | TP_RP_NO_REPLY_PATH | TP_SRI_NO_REPORT
+                        TP_MIT_DELIVER
+                                | TP_MMS_NO_MORE
+                                | TP_RP_NO_REPLY_PATH
+                                | TP_SRI_NO_REPORT
                                 | (mData[0] & 0xff) & TP_UDHI_MASK);
                 encodedAddress =
                         PhoneNumberUtils.networkPortionToCalledPartyBCDWithLength(originator);
                 if (encodedAddress != null) {
                     int padding =
                             (encodedAddress[encodedAddress.length - 1] & 0xf0) == 0xf0 ? 1 : 0;
-                    encodedAddress[0] = (byte) ((encodedAddress[0] - 1) * 2
-                            - padding); // Convert from octet length to semi octet length
+                    encodedAddress[0] =
+                            (byte)
+                                    ((encodedAddress[0] - 1) * 2
+                                            - padding); // Convert from octet length to semi octet
+                    // length
                     // Insert originator address into the header - this includes the length
                     newPdu.write(encodedAddress);
                 } else {
-                    newPdu.write(0);    /* zero length */
+                    newPdu.write(0); /* zero length */
                     newPdu.write(0x81); /* International type */
                 }
 
@@ -467,8 +470,8 @@ public class BluetoothMapSmsPdu {
                 newPdu.write(userDataLength);
                 // Copy the pdu user data - keep in mind that the userDataLength is not the
                 // length in bytes for 7-bit encoding.
-                newPdu.write(mData, gsmSubmitGetTpUdOffset(),
-                        mData.length - gsmSubmitGetTpUdOffset());
+                newPdu.write(
+                        mData, gsmSubmitGetTpUdOffset(), mData.length - gsmSubmitGetTpUdOffset());
             } catch (IOException e) {
                 ContentProfileErrorReportUtils.report(
                         BluetoothProfile.MAP,
@@ -526,14 +529,13 @@ public class BluetoothMapSmsPdu {
         return sConcatenatedRef;
     }
 
-    public static ArrayList<SmsPdu> getSubmitPdus(Context context, String messageText,
-            String address) {
+    public static ArrayList<SmsPdu> getSubmitPdus(
+            Context context, String messageText, String address) {
         /* Use the generic GSM/CDMA SMS Message functionality within Android to generate the
          * SMS PDU's as once generated to send the SMS message.
          */
 
-        int activePhone = context.getSystemService(TelephonyManager.class)
-                .getCurrentPhoneType();
+        int activePhone = context.getSystemService(TelephonyManager.class).getCurrentPhoneType();
         int phoneType;
         int[] ted = SmsMessage.calculateLength((CharSequence) messageText, false);
 
@@ -561,17 +563,26 @@ public class BluetoothMapSmsPdu {
         }
 
         if (msgCount == 1) {
-            data = SmsMessage.getSubmitPdu(null, destinationAddress, smsFragments.get(0),
-                    false).encodedMessage;
+            data =
+                    SmsMessage.getSubmitPdu(null, destinationAddress, smsFragments.get(0), false)
+                            .encodedMessage;
             newPdu = new SmsPdu(data, encoding, phoneType, languageTable);
             pdus.add(newPdu);
         } else {
             /* This code is a reduced copy of the actual code used in the Android SMS sub system,
              * hence the comments have been left untouched. */
             for (int i = 0; i < msgCount; i++) {
-                data = SmsMessage.getSubmitPduEncodedMessage(phoneType == SMS_TYPE_GSM,
-                        destinationAddress, smsFragments.get(i), encoding, languageTable,
-                        languageShiftTable, refNumber, i + 1, msgCount);
+                data =
+                        SmsMessage.getSubmitPduEncodedMessage(
+                                phoneType == SMS_TYPE_GSM,
+                                destinationAddress,
+                                smsFragments.get(i),
+                                encoding,
+                                languageTable,
+                                languageShiftTable,
+                                refNumber,
+                                i + 1,
+                                msgCount);
                 newPdu = new SmsPdu(data, encoding, phoneType, languageTable);
                 pdus.add(newPdu);
             }
@@ -582,15 +593,15 @@ public class BluetoothMapSmsPdu {
 
     /**
      * Generate a list of deliver PDUs. The messageText and address parameters must be different
-     * from null,
-     * for CDMA the date can be omitted (and will be ignored if supplied)
+     * from null, for CDMA the date can be omitted (and will be ignored if supplied)
+     *
      * @param messageText The text to include.
      * @param address The originator address.
      * @param date The delivery time stamp.
      * @return
      */
-    public static ArrayList<SmsPdu> getDeliverPdus(Context context, String messageText,
-            String address, long date) {
+    public static ArrayList<SmsPdu> getDeliverPdus(
+            Context context, String messageText, String address, long date) {
         ArrayList<SmsPdu> deliverPdus = getSubmitPdus(context, messageText, address);
 
         /*
@@ -603,7 +614,8 @@ public class BluetoothMapSmsPdu {
         for (SmsPdu currentPdu : deliverPdus) {
             if (currentPdu.getType() == SMS_TYPE_CDMA) {
                 currentPdu.cdmaChangeToDeliverPdu(date);
-            } else { /* SMS_TYPE_GSM */
+            } else {
+                /* SMS_TYPE_GSM */
                 currentPdu.gsmChangeToDeliverPdu(date, address);
             }
         }
@@ -611,11 +623,10 @@ public class BluetoothMapSmsPdu {
         return deliverPdus;
     }
 
-
     /**
-     * The decoding only supports decoding the actual textual content of the PDU received
-     * from the MAP client. (As the Android system has no interface to send pre encoded PDUs)
-     * The destination address must be extracted from the bmessage vCard(s).
+     * The decoding only supports decoding the actual textual content of the PDU received from the
+     * MAP client. (As the Android system has no interface to send pre encoded PDUs) The destination
+     * address must be extracted from the bmessage vCard(s).
      */
     public static String decodePdu(byte[] data, int type) {
         String ret = "";
@@ -671,8 +682,11 @@ public class BluetoothMapSmsPdu {
             userDataCompressed = (0 != (dataCodingScheme & 0x20));
 
             if (userDataCompressed) {
-                Log.w(TAG, "4 - Unsupported SMS data coding scheme " + "(compression) " + (
-                        dataCodingScheme & 0xff));
+                Log.w(
+                        TAG,
+                        "4 - Unsupported SMS data coding scheme "
+                                + "(compression) "
+                                + (dataCodingScheme & 0xff));
                 ContentProfileErrorReportUtils.report(
                         BluetoothProfile.MAP,
                         BluetoothProtoEnums.BLUETOOTH_MAP_SMS_PDU,
@@ -690,8 +704,10 @@ public class BluetoothMapSmsPdu {
 
                     case 1: // 8 bit data
                     case 3: // reserved
-                        Log.w(TAG, "1 - Unsupported SMS data coding scheme " + (dataCodingScheme
-                                & 0xff));
+                        Log.w(
+                                TAG,
+                                "1 - Unsupported SMS data coding scheme "
+                                        + (dataCodingScheme & 0xff));
                         ContentProfileErrorReportUtils.report(
                                 BluetoothProfile.MAP,
                                 BluetoothProtoEnums.BLUETOOTH_MAP_SMS_PDU,
@@ -712,7 +728,8 @@ public class BluetoothMapSmsPdu {
                 // 8 bit data
                 encodingType = SmsConstants.ENCODING_8BIT;
             }
-        } else if ((dataCodingScheme & 0xF0) == 0xC0 || (dataCodingScheme & 0xF0) == 0xD0
+        } else if ((dataCodingScheme & 0xF0) == 0xC0
+                || (dataCodingScheme & 0xF0) == 0xD0
                 || (dataCodingScheme & 0xF0) == 0xE0) {
             // 3GPP TS 23.038 V7.0.0 (2006-03) section 4
 
@@ -770,23 +787,35 @@ public class BluetoothMapSmsPdu {
                     break;
 
                 case SmsConstants.ENCODING_7BIT:
-                    messageBody = GsmAlphabet.gsm7BitPackedToString(pdu.getData(),
-                            pdu.getUserDataMsgOffset(), pdu.getMsgSeptetCount(),
-                            pdu.getUserDataSeptetPadding(), pdu.getLanguageTable(),
-                            pdu.getLanguageShiftTable());
+                    messageBody =
+                            GsmAlphabet.gsm7BitPackedToString(
+                                    pdu.getData(),
+                                    pdu.getUserDataMsgOffset(),
+                                    pdu.getMsgSeptetCount(),
+                                    pdu.getUserDataSeptetPadding(),
+                                    pdu.getLanguageTable(),
+                                    pdu.getLanguageShiftTable());
                     Log.i(TAG, "Decoded as 7BIT: " + messageBody);
 
                     break;
 
                 case SmsConstants.ENCODING_16BIT:
-                    messageBody = new String(pdu.getData(), pdu.getUserDataMsgOffset(),
-                            pdu.getUserDataMsgSize(), "utf-16");
+                    messageBody =
+                            new String(
+                                    pdu.getData(),
+                                    pdu.getUserDataMsgOffset(),
+                                    pdu.getUserDataMsgSize(),
+                                    "utf-16");
                     Log.i(TAG, "Decoded as 16BIT: " + messageBody);
                     break;
 
                 case SmsConstants.ENCODING_KSC5601:
-                    messageBody = new String(pdu.getData(), pdu.getUserDataMsgOffset(),
-                            pdu.getUserDataMsgSize(), "KSC5601");
+                    messageBody =
+                            new String(
+                                    pdu.getData(),
+                                    pdu.getUserDataMsgOffset(),
+                                    pdu.getUserDataMsgSize(),
+                                    "KSC5601");
                     Log.i(TAG, "Decoded as KSC5601: " + messageBody);
                     break;
             }
@@ -805,8 +834,7 @@ public class BluetoothMapSmsPdu {
 
     private static int[] getTableFromByteArray(byte[] data) {
         ByteArrayInputStream inStream = new ByteArrayInputStream(data);
-        /** tableValue[0]: languageTable
-         *  tableValue[1]: languageShiftTable */
+        /** tableValue[0]: languageTable tableValue[1]: languageShiftTable */
         int[] tableValue = new int[2];
         while (inStream.available() > 0) {
             int id = inStream.read();
@@ -828,20 +856,16 @@ public class BluetoothMapSmsPdu {
     private static class SmsConstants {
         /** User data text encoding code unit size */
         public static final int ENCODING_UNKNOWN = 0;
+
         public static final int ENCODING_7BIT = 1;
         public static final int ENCODING_8BIT = 2;
         public static final int ENCODING_16BIT = 3;
 
-        /**
-         * This value is not defined in global standard. Only in Korea, this is used.
-         */
+        /** This value is not defined in global standard. Only in Korea, this is used. */
         public static final int ENCODING_KSC5601 = 4;
 
-        /**
-         * SMS Class enumeration.
-         * See TS 23.038.
-         */
-        public enum MessageClass{
+        /** SMS Class enumeration. See TS 23.038. */
+        public enum MessageClass {
             UNKNOWN,
             CLASS_0,
             CLASS_1,
@@ -849,5 +873,4 @@ public class BluetoothMapSmsPdu {
             CLASS_3;
         }
     }
-
 }

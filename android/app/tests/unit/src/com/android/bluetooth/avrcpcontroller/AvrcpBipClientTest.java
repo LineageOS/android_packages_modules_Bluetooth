@@ -76,12 +76,12 @@ public class AvrcpBipClientTest {
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         mTestDevice = mAdapter.getRemoteDevice("00:01:02:03:04:05");
 
-        AvrcpCoverArtManager.Callback callback = (device, event) -> {
-        };
+        AvrcpCoverArtManager.Callback callback = (device, event) -> {};
         mArtManager = new AvrcpCoverArtManager(mService, callback);
 
-        mClient = new AvrcpBipClient(mTestDevice, TEST_PSM,
-                mArtManager.new BipClientCallback(mTestDevice));
+        mClient =
+                new AvrcpBipClient(
+                        mTestDevice, TEST_PSM, mArtManager.new BipClientCallback(mTestDevice));
     }
 
     @After
@@ -96,22 +96,26 @@ public class AvrcpBipClientTest {
 
     @Test
     public void constructor() {
-        AvrcpBipClient client = new AvrcpBipClient(mTestDevice, TEST_PSM,
-                mArtManager.new BipClientCallback(mTestDevice));
+        AvrcpBipClient client =
+                new AvrcpBipClient(
+                        mTestDevice, TEST_PSM, mArtManager.new BipClientCallback(mTestDevice));
 
         assertThat(client.getL2capPsm()).isEqualTo(TEST_PSM);
     }
 
     @Test
     public void constructor_withNullDevice() {
-        assertThrows(NullPointerException.class, () -> new AvrcpBipClient(null, TEST_PSM,
-                mArtManager.new BipClientCallback(mTestDevice)));
+        assertThrows(
+                NullPointerException.class,
+                () ->
+                        new AvrcpBipClient(
+                                null, TEST_PSM, mArtManager.new BipClientCallback(mTestDevice)));
     }
 
     @Test
     public void constructor_withNullCallback() {
-        assertThrows(NullPointerException.class, () -> new AvrcpBipClient(mTestDevice, TEST_PSM,
-                null));
+        assertThrows(
+                NullPointerException.class, () -> new AvrcpBipClient(mTestDevice, TEST_PSM, null));
     }
 
     @Test

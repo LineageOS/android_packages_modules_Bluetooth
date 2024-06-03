@@ -34,9 +34,8 @@ import java.util.HashMap;
 
 /**
  * Object representation of event report received by MNS
- * <p>
- * This object will be received in {@link Client#EVENT_EVENT_REPORT}
- * callback message.
+ *
+ * <p>This object will be received in {@link Client#EVENT_EVENT_REPORT} callback message.
  */
 public class EventReport {
     private static final String TAG = "EventReport";
@@ -148,48 +147,45 @@ public class EventReport {
     }
 
     /**
-     * @return {@link EventReport.Type} object corresponding to
-     * <code>type</code> application parameter in MAP specification
+     * @return {@link EventReport.Type} object corresponding to <code>type</code> application
+     *     parameter in MAP specification
      */
     public Type getType() {
         return mType;
     }
 
     /**
-     * @return value corresponding to <code>handle</code> parameter in MAP
-     * specification
+     * @return value corresponding to <code>handle</code> parameter in MAP specification
      */
     public String getHandle() {
         return mHandle;
     }
 
     /**
-     * @return value corresponding to <code>folder</code> parameter in MAP
-     * specification
+     * @return value corresponding to <code>folder</code> parameter in MAP specification
      */
     public String getFolder() {
         return mFolder;
     }
 
     /**
-     * @return value corresponding to <code>old_folder</code> parameter in MAP
-     * specification
+     * @return value corresponding to <code>old_folder</code> parameter in MAP specification
      */
     public String getOldFolder() {
         return mOldFolder;
     }
 
     /**
-     * @return {@link Bmessage.Type} object corresponding to
-     * <code>msg_type</code> application parameter in MAP specification
+     * @return {@link Bmessage.Type} object corresponding to <code>msg_type</code> application
+     *     parameter in MAP specification
      */
     public Bmessage.Type getMsgType() {
         return mMsgType;
     }
 
     /**
-     * @return value corresponding to <code>datetime</code> parameter in MAP
-     * specification for NEW_MESSAGE (can be null)
+     * @return value corresponding to <code>datetime</code> parameter in MAP specification for
+     *     NEW_MESSAGE (can be null)
      */
     @Nullable
     public String getDateTime() {
@@ -198,7 +194,7 @@ public class EventReport {
 
     /**
      * @return timestamp from the value corresponding to <code>datetime</code> parameter in MAP
-     * specification for NEW_MESSAGE (can be null)
+     *     specification for NEW_MESSAGE (can be null)
      */
     @Nullable
     public Long getTimestamp() {

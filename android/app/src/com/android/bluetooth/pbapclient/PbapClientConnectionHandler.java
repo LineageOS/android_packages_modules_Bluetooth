@@ -65,24 +65,25 @@ class PbapClientConnectionHandler extends Handler {
 
     // The following constants are pulled from the Bluetooth Phone Book Access Profile specification
     // 1.1
-    private static final byte[] PBAP_TARGET = new byte[]{
-            0x79,
-            0x61,
-            0x35,
-            (byte) 0xf0,
-            (byte) 0xf0,
-            (byte) 0xc5,
-            0x11,
-            (byte) 0xd8,
-            0x09,
-            0x66,
-            0x08,
-            0x00,
-            0x20,
-            0x0c,
-            (byte) 0x9a,
-            0x66
-    };
+    private static final byte[] PBAP_TARGET =
+            new byte[] {
+                0x79,
+                0x61,
+                0x35,
+                (byte) 0xf0,
+                (byte) 0xf0,
+                (byte) 0xc5,
+                0x11,
+                (byte) 0xd8,
+                0x09,
+                0x66,
+                0x08,
+                0x00,
+                0x20,
+                0x0c,
+                (byte) 0x9a,
+                0x66
+            };
 
     private static final int PBAP_FEATURE_DEFAULT_IMAGE_FORMAT = 0x00000200;
     private static final int PBAP_FEATURE_DOWNLOADING = 0x00000001;
@@ -99,11 +100,16 @@ class PbapClientConnectionHandler extends Handler {
     private static final int PBAP_SUPPORTED_FEATURE =
             PBAP_FEATURE_DEFAULT_IMAGE_FORMAT | PBAP_FEATURE_DOWNLOADING;
     private static final long PBAP_REQUESTED_FIELDS =
-            PBAP_FILTER_VERSION | PBAP_FILTER_FN | PBAP_FILTER_N | PBAP_FILTER_PHOTO
-                    | PBAP_FILTER_ADR | PBAP_FILTER_EMAIL | PBAP_FILTER_TEL | PBAP_FILTER_NICKNAME;
+            PBAP_FILTER_VERSION
+                    | PBAP_FILTER_FN
+                    | PBAP_FILTER_N
+                    | PBAP_FILTER_PHOTO
+                    | PBAP_FILTER_ADR
+                    | PBAP_FILTER_EMAIL
+                    | PBAP_FILTER_TEL
+                    | PBAP_FILTER_NICKNAME;
 
-    @VisibleForTesting
-    static final int L2CAP_INVALID_PSM = -1;
+    @VisibleForTesting static final int L2CAP_INVALID_PSM = -1;
 
     public static final String PB_PATH = "telecom/pb.vcf";
     public static final String FAV_PATH = "telecom/fav.vcf";
@@ -139,7 +145,7 @@ class PbapClientConnectionHandler extends Handler {
     /**
      * Constructs PCEConnectionHandler object
      *
-     * @param Builder To build  BluetoothPbapClientHandler Instance.
+     * @param Builder To build BluetoothPbapClientHandler Instance.
      */
     PbapClientConnectionHandler(Builder pceHandlerbuild) {
         super(pceHandlerbuild.mLooper);
@@ -183,7 +189,6 @@ class PbapClientConnectionHandler extends Handler {
             PbapClientConnectionHandler pbapClientHandler = new PbapClientConnectionHandler(this);
             return pbapClientHandler;
         }
-
     }
 
     @Override
@@ -324,7 +329,8 @@ class PbapClientConnectionHandler extends Handler {
                 ObexAppParameters oap = new ObexAppParameters();
 
                 if (mPseRec.getProfileVersion() >= PBAP_V1_2) {
-                    oap.add(BluetoothPbapRequest.OAP_TAGID_PBAP_SUPPORTED_FEATURES,
+                    oap.add(
+                            BluetoothPbapRequest.OAP_TAGID_PBAP_SUPPORTED_FEATURES,
                             PBAP_SUPPORTED_FEATURE);
                 }
 
@@ -373,8 +379,7 @@ class PbapClientConnectionHandler extends Handler {
 
             // Download contacts in batches of size DEFAULT_BATCH_SIZE
             BluetoothPbapRequestPullPhoneBookSize requestPbSize =
-                    new BluetoothPbapRequestPullPhoneBookSize(path,
-                            PBAP_REQUESTED_FIELDS);
+                    new BluetoothPbapRequestPullPhoneBookSize(path, PBAP_REQUESTED_FIELDS);
             requestPbSize.execute(mObexSession);
 
             int numberOfContactsRemaining = requestPbSize.getSize();
@@ -390,12 +395,17 @@ class PbapClientConnectionHandler extends Handler {
 
             while ((numberOfContactsRemaining > 0) && (startOffset <= UPPER_LIMIT)) {
                 int numberOfContactsToDownload =
-                        Math.min(Math.min(DEFAULT_BATCH_SIZE, numberOfContactsRemaining),
-                        UPPER_LIMIT - startOffset + 1);
+                        Math.min(
+                                Math.min(DEFAULT_BATCH_SIZE, numberOfContactsRemaining),
+                                UPPER_LIMIT - startOffset + 1);
                 BluetoothPbapRequestPullPhoneBook request =
-                        new BluetoothPbapRequestPullPhoneBook(path, mAccount,
-                                PBAP_REQUESTED_FIELDS, VCARD_TYPE_30,
-                                numberOfContactsToDownload, startOffset);
+                        new BluetoothPbapRequestPullPhoneBook(
+                                path,
+                                mAccount,
+                                PBAP_REQUESTED_FIELDS,
+                                VCARD_TYPE_30,
+                                numberOfContactsToDownload,
+                                startOffset);
                 request.execute(mObexSession);
                 ArrayList<VCardEntry> vcards = request.getList();
                 if (path == FAV_PATH) {
@@ -427,8 +437,8 @@ class PbapClientConnectionHandler extends Handler {
                     new BluetoothPbapRequestPullPhoneBook(path, mAccount, 0, VCARD_TYPE_30, 0, 0);
             request.execute(mObexSession);
             CallLogPullRequest processor =
-                    new CallLogPullRequest(mPbapClientStateMachine.getContext(), path,
-                        callCounter, mAccount);
+                    new CallLogPullRequest(
+                            mPbapClientStateMachine.getContext(), path, callCounter, mAccount);
             processor.setResults(request.getList());
             processor.onPullComplete();
         } catch (IOException e) {
@@ -464,8 +474,11 @@ class PbapClientConnectionHandler extends Handler {
                 Log.d(TAG, "CallLog ContentResolver is not found");
                 return;
             }
-            mContext.getContentResolver().delete(CallLog.Calls.CONTENT_URI,
-                    Calls.PHONE_ACCOUNT_ID + "=?", new String[]{mAccount.name});
+            mContext.getContentResolver()
+                    .delete(
+                            CallLog.Calls.CONTENT_URI,
+                            Calls.PHONE_ACCOUNT_ID + "=?",
+                            new String[] {mAccount.name});
         } catch (IllegalArgumentException e) {
             Log.d(TAG, "Call Logs could not be deleted, they may not exist yet.");
         }

@@ -126,9 +126,7 @@ public class PeriodicScanNativeInterface {
     void onBigInfoReport(int syncHandle, boolean encrypted) throws Exception {
         Log.d(
                 TAG,
-                "onBigInfoReport():"
-                        + (" syncHandle=" + syncHandle)
-                        + (" encrypted=" + encrypted));
+                "onBigInfoReport():" + (" syncHandle=" + syncHandle) + (" encrypted=" + encrypted));
         mManager.onBigInfoReport(syncHandle, encrypted);
     }
 

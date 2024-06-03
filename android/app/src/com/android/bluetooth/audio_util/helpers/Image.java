@@ -30,7 +30,7 @@ import java.io.InputStream;
 /**
  * An object to represent an image from the Media Framework
  *
- * This object abstracts away the method used to get the bitmap and provides a way for us to
+ * <p>This object abstracts away the method used to get the bitmap and provides a way for us to
  * determine image equality in an application/folder/item agnostic way.
  */
 public class Image {
@@ -49,9 +49,7 @@ public class Image {
     // solution has picked for this image and pass this object on directly.
     private String mImageHandle = null;
 
-    /**
-     * Create an Image object from a MediaMetadata object
-     */
+    /** Create an Image object from a MediaMetadata object */
     public Image(Context context, MediaMetadata metadata) {
         mContext = context;
 
@@ -83,9 +81,7 @@ public class Image {
         }
     }
 
-    /**
-     * Create an image out of a bundle of MediaMetadata keyed values
-     */
+    /** Create an image out of a bundle of MediaMetadata keyed values */
     public Image(Context context, Bundle bundle) {
         mContext = context;
 
@@ -117,9 +113,7 @@ public class Image {
         }
     }
 
-    /**
-     * Create an Image object from a MediaDescription object
-     */
+    /** Create an Image object from a MediaDescription object */
     public Image(Context context, MediaDescription desc) {
         mContext = context;
         Uri uri = desc.getIconUri();
@@ -131,34 +125,26 @@ public class Image {
         }
     }
 
-    /**
-     * Create an Image object from a raw image uri
-     */
+    /** Create an Image object from a raw image uri */
     public Image(Context context, Uri uri) {
         mContext = context;
         setImage(uri);
     }
 
-    /**
-     * Create an Image object from a raw image
-     */
+    /** Create an Image object from a raw image */
     public Image(Context context, Bitmap image) {
         mContext = context;
         setImage(image);
     }
 
-    /**
-     * Set the image by resolving a URI to a bitmap
-     */
+    /** Set the image by resolving a URI to a bitmap */
     private void setImage(String uriString) {
         if (uriString == null) return;
         Uri uri = Uri.parse(uriString);
         setImage(uri);
     }
 
-    /**
-     * Set the image by resolving a URI to a bitmap
-     */
+    /** Set the image by resolving a URI to a bitmap */
     private void setImage(Uri uri) {
         if (uri == null) return;
         Bitmap image = getImageFromUri(uri);
@@ -167,18 +153,14 @@ public class Image {
         setSource(SOURCE_URI);
     }
 
-    /**
-     * Set the image directly from a bitmap
-     */
+    /** Set the image directly from a bitmap */
     private void setImage(Bitmap image) {
         if (image == null) return;
         mImage = image;
         setSource(SOURCE_BITMAP);
     }
 
-    /**
-     * Get the bitmap associated with this Image
-     */
+    /** Get the bitmap associated with this Image */
     public Bitmap getImage() {
         return mImage;
     }
@@ -186,7 +168,7 @@ public class Image {
     /**
      * Get an image Bitmap from a Uri
      *
-     * Used to convert Uris into the images they represent
+     * <p>Used to convert Uris into the images they represent
      *
      * @param uri A Uri pointing to an image
      * @return A Bitmap object representing the image at the given Uri
@@ -216,7 +198,7 @@ public class Image {
     /**
      * Get the source of the image, if known
      *
-     * Images currently come from either raw bitmaps or a URI that points to a ContentProvider.
+     * <p>Images currently come from either raw bitmaps or a URI that points to a ContentProvider.
      * This allows us to set where it came from, largely used for debug purposes.
      */
     public int getSource() {
@@ -226,30 +208,24 @@ public class Image {
     /**
      * Set the source of the image.
      *
-     * Images currently come from either raw bitmaps or a URI that points to a ContentProvider.
+     * <p>Images currently come from either raw bitmaps or a URI that points to a ContentProvider.
      * This allows us to set where it came from, largely used for debug purposes.
      */
     private void setSource(int source) {
         mSource = source;
     }
 
-    /**
-     * Assign a handle value from your storage solution to this image
-     */
+    /** Assign a handle value from your storage solution to this image */
     public void setImageHandle(String handle) {
         mImageHandle = handle;
     }
 
-    /**
-     * Get the handle value associated with this image from your storage situation
-     */
+    /** Get the handle value associated with this image from your storage situation */
     public String getImageHandle() {
         return mImageHandle;
     }
 
-    /**
-     * Determine if two image objects are the same.
-     */
+    /** Determine if two image objects are the same. */
     public static boolean sameAs(Image l, Image r) {
         if (l == null && r == null) return true;
         if (l == null || r == null) return false;
@@ -258,9 +234,7 @@ public class Image {
         return bmp.sameAs(r.getImage());
     }
 
-    /**
-     * Get a string representation of the image and its metadata
-     */
+    /** Get a string representation of the image and its metadata */
     @Override
     public String toString() {
         return "<Image source=" + mSource + ">";

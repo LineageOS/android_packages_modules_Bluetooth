@@ -39,9 +39,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- * Provides Media Control Profile, as a service in the Bluetooth application.
- */
+/** Provides Media Control Profile, as a service in the Bluetooth application. */
 public class McpService extends ProfileService {
     private static final String TAG = "BluetoothMcpService";
 
@@ -49,8 +47,10 @@ public class McpService extends ProfileService {
     private static MediaControlProfile sGmcsForTesting;
 
     private final Object mLock = new Object();
+
     @GuardedBy("mLock")
     private MediaControlProfile mGmcs;
+
     private Map<BluetoothDevice, Integer> mDeviceAuthorizations = new HashMap<>();
     private Handler mHandler = new Handler(Looper.getMainLooper());
 
@@ -114,13 +114,14 @@ public class McpService extends ProfileService {
                 }
                 mGmcs = new MediaControlProfile(this);
                 // Requires this service to be already started thus we have to make it an async call
-                mHandler.post(() -> {
-                    synchronized (mLock) {
-                        if (mGmcs != null) {
-                            mGmcs.init();
-                        }
-                    }
-                });
+                mHandler.post(
+                        () -> {
+                            synchronized (mLock) {
+                                if (mGmcs != null) {
+                                    mGmcs.init();
+                                }
+                            }
+                        });
             }
         }
     }
@@ -200,10 +201,11 @@ public class McpService extends ProfileService {
     }
 
     public void setDeviceAuthorized(BluetoothDevice device, boolean isAuthorized) {
-        Log.i(TAG, "\tsetDeviceAuthorized(): device: " + device + ", isAuthorized: "
-                + isAuthorized);
-        int authorization = isAuthorized ? BluetoothDevice.ACCESS_ALLOWED
-                : BluetoothDevice.ACCESS_REJECTED;
+        Log.i(
+                TAG,
+                "\tsetDeviceAuthorized(): device: " + device + ", isAuthorized: " + isAuthorized);
+        int authorization =
+                isAuthorized ? BluetoothDevice.ACCESS_ALLOWED : BluetoothDevice.ACCESS_REJECTED;
         mDeviceAuthorizations.put(device, authorization);
 
         synchronized (mLock) {
@@ -220,8 +222,12 @@ public class McpService extends ProfileService {
          * 2. authorized devices
          * 3. Any LeAudio devices which are allowed to connect
          */
-        int authorization = mDeviceAuthorizations.getOrDefault(device, Utils.isPtsTestMode()
-                ? BluetoothDevice.ACCESS_ALLOWED : BluetoothDevice.ACCESS_UNKNOWN);
+        int authorization =
+                mDeviceAuthorizations.getOrDefault(
+                        device,
+                        Utils.isPtsTestMode()
+                                ? BluetoothDevice.ACCESS_ALLOWED
+                                : BluetoothDevice.ACCESS_UNKNOWN);
         if (authorization != BluetoothDevice.ACCESS_UNKNOWN) {
             return authorization;
         }
@@ -272,11 +278,9 @@ public class McpService extends ProfileService {
         }
     }
 
-    /**
-     * Binder object: must be a static class or memory leak may occur
-     */
-    static class BluetoothMcpServiceBinder
-            extends IBluetoothMcpServiceManager.Stub implements IProfileServiceBinder {
+    /** Binder object: must be a static class or memory leak may occur */
+    static class BluetoothMcpServiceBinder extends IBluetoothMcpServiceManager.Stub
+            implements IProfileServiceBinder {
         private McpService mService;
 
         BluetoothMcpServiceBinder(McpService svc) {
@@ -292,8 +296,8 @@ public class McpService extends ProfileService {
         }
 
         @Override
-        public void setDeviceAuthorized(BluetoothDevice device, boolean isAuthorized,
-                AttributionSource source) {
+        public void setDeviceAuthorized(
+                BluetoothDevice device, boolean isAuthorized, AttributionSource source) {
             McpService service = getService();
             if (service == null) {
                 return;

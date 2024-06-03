@@ -68,8 +68,11 @@ class BmessageBuilder {
     }
 
     private void build(Bmessage bmsg) {
-        int bodyLen = MSG_BEGIN.length() + MSG_END.length() + 3 * CRLF.length()
-                + bmsg.mMessage.getBytes().length;
+        int bodyLen =
+                MSG_BEGIN.length()
+                        + MSG_END.length()
+                        + 3 * CRLF.length()
+                        + bmsg.mMessage.getBytes().length;
 
         mBmsg.append(BMSG_BEGIN).append(CRLF);
 

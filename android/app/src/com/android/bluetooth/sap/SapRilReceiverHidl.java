@@ -28,9 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-/**
- * SapRiilReceiverHidl is the HIDL implementation of ISapRilReceiver
- */
+/** SapRiilReceiverHidl is the HIDL implementation of ISapRilReceiver */
 public class SapRilReceiverHidl implements ISapRilReceiver {
     private static final String TAG = "SapRilReceiver";
 
@@ -60,21 +58,20 @@ public class SapRilReceiverHidl implements ISapRilReceiver {
     /**
      * TRANSFER_APDU_REQ from SAP 1.1 spec 5.1.6
      *
-     * @param serial  Id to match req-resp. Resp must include same serial.
-     * @param type    APDU command type
+     * @param serial Id to match req-resp. Resp must include same serial.
+     * @param type APDU command type
      * @param command CommandAPDU/CommandAPDU7816 parameter depending on type
      */
     @Override
     public void apduReq(int serial, int type, byte[] command) throws RemoteException {
         ArrayList<Byte> commandHidl = primitiveArrayToContainerArrayList(command);
         mSapProxy.apduReq(serial, type, commandHidl);
-
     }
 
     /**
      * CONNECT_REQ from SAP 1.1 spec 5.1.1
      *
-     * @param serial          Id to match req-resp. Resp must include same serial.
+     * @param serial Id to match req-resp. Resp must include same serial.
      * @param maxMsgSizeBytes MaxMsgSize to be used for SIM Access Profile connection
      */
     @Override
@@ -95,7 +92,7 @@ public class SapRilReceiverHidl implements ISapRilReceiver {
     /**
      * POWER_SIM_OFF_REQ and POWER_SIM_ON_REQ from SAP 1.1 spec 5.1.10 + 5.1.12
      *
-     * @param serial  Id to match req-resp. Resp must include same serial.
+     * @param serial Id to match req-resp. Resp must include same serial.
      * @param powerOn true for on, false for off
      */
     @Override
@@ -127,7 +124,7 @@ public class SapRilReceiverHidl implements ISapRilReceiver {
     /**
      * SET_TRANSPORT_PROTOCOL_REQ from SAP 1.1 spec 5.1.20
      *
-     * @param serial           Id to match req-resp. Resp must include same serial.
+     * @param serial Id to match req-resp. Resp must include same serial.
      * @param transferProtocol Transport Protocol
      */
     @Override
@@ -197,8 +194,12 @@ public class SapRilReceiverHidl implements ISapRilReceiver {
 
     private void removeOngoingReqAndSendMessage(int token, SapMessage sapMessage) {
         Integer reqType = SapMessage.sOngoingRequests.remove(token);
-        Log.v(TAG, "removeOngoingReqAndSendMessage: token " + token + " reqType " + (
-                reqType == null ? "null" : SapMessage.getMsgTypeName(reqType)));
+        Log.v(
+                TAG,
+                "removeOngoingReqAndSendMessage: token "
+                        + token
+                        + " reqType "
+                        + (reqType == null ? "null" : SapMessage.getMsgTypeName(reqType)));
         sendSapMessage(sapMessage);
     }
 
@@ -218,8 +219,14 @@ public class SapRilReceiverHidl implements ISapRilReceiver {
     class SapCallback extends ISapCallback.Stub {
         @Override
         public void connectResponse(int token, int sapConnectRsp, int maxMsgSize) {
-            Log.d(TAG, "connectResponse: token " + token + " sapConnectRsp " + sapConnectRsp
-                    + " maxMsgSize " + maxMsgSize);
+            Log.d(
+                    TAG,
+                    "connectResponse: token "
+                            + token
+                            + " sapConnectRsp "
+                            + sapConnectRsp
+                            + " maxMsgSize "
+                            + maxMsgSize);
             SapService.notifyUpdateWakeLock(mSapServiceHandler);
             SapMessage sapMessage = new SapMessage(SapMessage.ID_CONNECT_RESP);
             sapMessage.setConnectionStatus(sapConnectRsp);
@@ -241,7 +248,8 @@ public class SapRilReceiverHidl implements ISapRilReceiver {
 
         @Override
         public void disconnectIndication(int token, int disconnectType) {
-            Log.d(TAG,
+            Log.d(
+                    TAG,
                     "disconnectIndication: token " + token + " disconnectType " + disconnectType);
             SapService.notifyUpdateWakeLock(mSapServiceHandler);
             SapMessage sapMessage = new SapMessage(SapMessage.ID_RIL_UNSOL_DISCONNECT_IND);
@@ -278,8 +286,10 @@ public class SapRilReceiverHidl implements ISapRilReceiver {
             Log.d(TAG, "powerResponse: token " + token + " resultCode " + resultCode);
             SapService.notifyUpdateWakeLock(mSapServiceHandler);
             Integer reqType = SapMessage.sOngoingRequests.remove(token);
-            Log.v(TAG, "powerResponse: reqType " + (reqType == null ? "null"
-                    : SapMessage.getMsgTypeName(reqType)));
+            Log.v(
+                    TAG,
+                    "powerResponse: reqType "
+                            + (reqType == null ? "null" : SapMessage.getMsgTypeName(reqType)));
             SapMessage sapMessage;
             if (reqType == SapMessage.ID_POWER_SIM_OFF_REQ) {
                 sapMessage = new SapMessage(SapMessage.ID_POWER_SIM_OFF_RESP);
@@ -311,11 +321,16 @@ public class SapRilReceiverHidl implements ISapRilReceiver {
         }
 
         @Override
-        public void transferCardReaderStatusResponse(int token, int resultCode,
-                int cardReaderStatus) {
-            Log.d(TAG,
-                    "transferCardReaderStatusResponse: token " + token + " resultCode " + resultCode
-                            + " cardReaderStatus " + cardReaderStatus);
+        public void transferCardReaderStatusResponse(
+                int token, int resultCode, int cardReaderStatus) {
+            Log.d(
+                    TAG,
+                    "transferCardReaderStatusResponse: token "
+                            + token
+                            + " resultCode "
+                            + resultCode
+                            + " cardReaderStatus "
+                            + cardReaderStatus);
             SapService.notifyUpdateWakeLock(mSapServiceHandler);
             SapMessage sapMessage = new SapMessage(SapMessage.ID_TRANSFER_CARD_READER_STATUS_RESP);
             sapMessage.setResultCode(resultCode);
@@ -356,9 +371,7 @@ public class SapRilReceiverHidl implements ISapRilReceiver {
         return mSapProxy != null;
     }
 
-    /**
-     * Obtain a valid sapProxy
-     */
+    /** Obtain a valid sapProxy */
     public ISap getSapProxy() {
         synchronized (mSapProxyLock) {
             if (mSapProxy != null) {
@@ -368,8 +381,8 @@ public class SapRilReceiverHidl implements ISapRilReceiver {
             try {
                 mSapProxy = ISap.getService(SERVICE_NAME_RIL_BT);
                 if (mSapProxy != null) {
-                    mSapProxy.linkToDeath(mSapProxyDeathRecipient,
-                            mSapProxyCookie.incrementAndGet());
+                    mSapProxy.linkToDeath(
+                            mSapProxyDeathRecipient, mSapProxyCookie.incrementAndGet());
                     mSapProxy.setCallback(mSapCallback);
                 } else {
                     Log.e(TAG, "getSapProxy: mSapProxy == null");
@@ -383,8 +396,9 @@ public class SapRilReceiverHidl implements ISapRilReceiver {
                 // if service is not up, treat it like death notification to try to get service
                 // again
                 mSapServerMsgHandler.sendMessageDelayed(
-                        mSapServerMsgHandler.obtainMessage(SapServer.SAP_PROXY_DEAD,
-                                mSapProxyCookie.get()), SapServer.ISAP_GET_SERVICE_DELAY_MILLIS);
+                        mSapServerMsgHandler.obtainMessage(
+                                SapServer.SAP_PROXY_DEAD, mSapProxyCookie.get()),
+                        SapServer.ISAP_GET_SERVICE_DELAY_MILLIS);
             }
             return mSapProxy;
         }
@@ -448,9 +462,7 @@ public class SapRilReceiverHidl implements ISapRilReceiver {
         mSapServerMsgHandler.sendMessage(newMsg);
     }
 
-    /**
-     * Send a shutdown signal to SapServer to indicate the
-     */
+    /** Send a shutdown signal to SapServer to indicate the */
     private void sendShutdownMessage() {
         if (mSapServerMsgHandler != null) {
             mSapServerMsgHandler.sendEmptyMessage(SapServer.SAP_RIL_SOCK_CLOSED);

@@ -32,9 +32,9 @@ import com.android.internal.annotations.VisibleForTesting;
 import java.util.Objects;
 
 /**
- * Defines native calls that are used by state machine/service to either send or receive
- * messages to/from the native stack. This file is registered for the native methods in
- * corresponding CPP file.
+ * Defines native calls that are used by state machine/service to either send or receive messages
+ * to/from the native stack. This file is registered for the native methods in corresponding CPP
+ * file.
  */
 public class NativeInterface {
     private static final String TAG = NativeInterface.class.getSimpleName();
@@ -47,8 +47,10 @@ public class NativeInterface {
     private static final Object INSTANCE_LOCK = new Object();
 
     private NativeInterface() {
-        mAdapterService = Objects.requireNonNull(AdapterService.getAdapterService(),
-                "AdapterService cannot be null when NativeInterface init");
+        mAdapterService =
+                Objects.requireNonNull(
+                        AdapterService.getAdapterService(),
+                        "AdapterService cannot be null when NativeInterface init");
     }
 
     /**
@@ -74,17 +76,13 @@ public class NativeInterface {
     }
 
     // Native wrappers to help unit testing
-    /**
-     * Initialize native stack
-     */
+    /** Initialize native stack */
     @VisibleForTesting
     public void initialize() {
         initializeNative();
     }
 
-    /**
-     * Close and clean up native stack
-     */
+    /** Close and clean up native stack */
     @VisibleForTesting
     public void cleanup() {
         cleanupNative();
@@ -159,9 +157,8 @@ public class NativeInterface {
      * Set volume to the specified paired device
      *
      * @param device target device
-     * @param volumeType type of volume as in
-     *                  HeadsetClientHalConstants.VOLUME_TYPE_xxxx
-     * @param volume  volume level
+     * @param volumeType type of volume as in HeadsetClientHalConstants.VOLUME_TYPE_xxxx
+     * @param volume volume level
      * @return True on success, False on failure
      */
     @VisibleForTesting
@@ -173,7 +170,7 @@ public class NativeInterface {
      * dial number from the specified paired device
      *
      * @param device target device
-     * @param number  phone number to be dialed
+     * @param number phone number to be dialed
      * @return True on success, False on failure
      */
     @VisibleForTesting
@@ -185,7 +182,7 @@ public class NativeInterface {
      * Memory dialing from the specified paired device
      *
      * @param device target device
-     * @param location  memory location
+     * @param location memory location
      * @return True on success, False on failure
      */
     @VisibleForTesting
@@ -235,7 +232,7 @@ public class NativeInterface {
      * @return True on success, False on failure
      */
     @VisibleForTesting
-    public  boolean retrieveSubscriberInfo(BluetoothDevice device) {
+    public boolean retrieveSubscriberInfo(BluetoothDevice device) {
         return retrieveSubscriberInfoNative(getByteAddress(device));
     }
 
@@ -330,8 +327,8 @@ public class NativeInterface {
 
     private static native boolean requestLastVoiceTagNumberNative(byte[] address);
 
-    private static native boolean sendATCmdNative(byte[] address, int atCmd, int val1, int val2,
-            String arg);
+    private static native boolean sendATCmdNative(
+            byte[] address, int atCmd, int val1, int val2, String arg);
 
     private static native boolean sendAndroidAtNative(byte[] address, String cmd);
 
@@ -377,8 +374,10 @@ public class NativeInterface {
         if (service != null) {
             service.messageFromNative(event);
         } else {
-            Log.w(TAG, "onAudioStateChanged: Ignoring message because service not available: "
-                    + event);
+            Log.w(
+                    TAG,
+                    "onAudioStateChanged: Ignoring message because service not available: "
+                            + event);
         }
     }
 
@@ -393,7 +392,8 @@ public class NativeInterface {
         if (service != null) {
             service.messageFromNative(event);
         } else {
-            Log.w(TAG,
+            Log.w(
+                    TAG,
                     "onVrStateChanged: Ignoring message because service not available: " + event);
         }
     }
@@ -409,7 +409,8 @@ public class NativeInterface {
         if (service != null) {
             service.messageFromNative(event);
         } else {
-            Log.w(TAG,
+            Log.w(
+                    TAG,
                     "onNetworkStateChanged: Ignoring message because service not available: "
                             + event);
         }
@@ -425,7 +426,8 @@ public class NativeInterface {
         if (service != null) {
             service.messageFromNative(event);
         } else {
-            Log.w(TAG,
+            Log.w(
+                    TAG,
                     "onNetworkRoaming: Ignoring message because service not available: " + event);
         }
     }
@@ -468,7 +470,8 @@ public class NativeInterface {
         if (service != null) {
             service.messageFromNative(event);
         } else {
-            Log.w(TAG,
+            Log.w(
+                    TAG,
                     "onCurrentOperator: Ignoring message because service not available: " + event);
         }
     }
@@ -490,11 +493,8 @@ public class NativeInterface {
     /**
      * CIEV (Call indicators) notifying if call(s) are getting set up.
      *
-     * Values include:
-     * 0 - No current call is in setup
-     * 1 - Incoming call process ongoing
-     * 2 - Outgoing call process ongoing
-     * 3 - Remote party being alerted for outgoing call
+     * <p>Values include: 0 - No current call is in setup 1 - Incoming call process ongoing 2 -
+     * Outgoing call process ongoing 3 - Remote party being alerted for outgoing call
      */
     @VisibleForTesting
     void onCallSetup(int callsetup, byte[] address) {
@@ -514,11 +514,8 @@ public class NativeInterface {
     /**
      * CIEV (Call indicators) notifying call held states.
      *
-     * Values include:
-     * 0 - No calls held
-     * 1 - Call is placed on hold or active/held calls wapped (The AG has both an ACTIVE and HELD
-     * call)
-     * 2 - Call on hold, no active call
+     * <p>Values include: 0 - No calls held 1 - Call is placed on hold or active/held calls wapped
+     * (The AG has both an ACTIVE and HELD call) 2 - Call on hold, no active call
      */
     @VisibleForTesting
     void onCallHeld(int callheld, byte[] address) {
@@ -577,8 +574,7 @@ public class NativeInterface {
     }
 
     @VisibleForTesting
-    void onCurrentCalls(int index, int dir, int state, int mparty, String number,
-            byte[] address) {
+    void onCurrentCalls(int index, int dir, int state, int mparty, String number, byte[] address) {
         StackEvent event = new StackEvent(StackEvent.EVENT_TYPE_CURRENT_CALLS);
         event.valueInt = index;
         event.valueInt2 = dir;
@@ -636,7 +632,8 @@ public class NativeInterface {
         if (service != null) {
             service.messageFromNative(event);
         } else {
-            Log.w(TAG,
+            Log.w(
+                    TAG,
                     "onSubscriberInfo: Ignoring message because service not available: " + event);
         }
     }
@@ -651,8 +648,7 @@ public class NativeInterface {
         if (service != null) {
             service.messageFromNative(event);
         } else {
-            Log.w(TAG,
-                    "onInBandRing: Ignoring message because service not available: " + event);
+            Log.w(TAG, "onInBandRing: Ignoring message because service not available: " + event);
         }
     }
 
@@ -670,7 +666,8 @@ public class NativeInterface {
         if (service != null) {
             service.messageFromNative(event);
         } else {
-            Log.w(TAG,
+            Log.w(
+                    TAG,
                     "onRingIndication: Ignoring message because service not available: " + event);
         }
     }
@@ -685,9 +682,7 @@ public class NativeInterface {
         if (service != null) {
             service.messageFromNative(event);
         } else {
-            Log.w(TAG,
-                    "onUnknowEvent: Ignoring message because service not available: " + event);
+            Log.w(TAG, "onUnknowEvent: Ignoring message because service not available: " + event);
         }
     }
-
 }

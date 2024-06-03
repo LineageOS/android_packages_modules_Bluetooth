@@ -24,9 +24,7 @@ import androidx.test.runner.AndroidJUnit4;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-/**
- * Test cases for {@link AdvtFilterOnFoundOnLostInfoTest}.
- */
+/** Test cases for {@link AdvtFilterOnFoundOnLostInfoTest}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class AdvtFilterOnFoundOnLostInfoTest {
@@ -35,9 +33,9 @@ public class AdvtFilterOnFoundOnLostInfoTest {
     public void advtFilterOnFoundOnLostInfoParams() {
         int clientIf = 0;
         int advPktLen = 1;
-        byte[] advPkt = new byte[]{0x02};
+        byte[] advPkt = new byte[] {0x02};
         int scanRspLen = 3;
-        byte[] scanRsp = new byte[]{0x04};
+        byte[] scanRsp = new byte[] {0x04};
         int filtIndex = 5;
         int advState = 6;
         int advInfoPresent = 7;
@@ -47,21 +45,21 @@ public class AdvtFilterOnFoundOnLostInfoTest {
         int rssiValue = 10;
         int timeStamp = 11;
 
-        AdvtFilterOnFoundOnLostInfo advtFilterOnFoundOnLostInfo = new AdvtFilterOnFoundOnLostInfo(
-                clientIf,
-                advPktLen,
-                advPkt,
-                scanRspLen,
-                scanRsp,
-                filtIndex,
-                advState,
-                advInfoPresent,
-                address,
-                addrType,
-                txPower,
-                rssiValue,
-                timeStamp
-        );
+        AdvtFilterOnFoundOnLostInfo advtFilterOnFoundOnLostInfo =
+                new AdvtFilterOnFoundOnLostInfo(
+                        clientIf,
+                        advPktLen,
+                        advPkt,
+                        scanRspLen,
+                        scanRsp,
+                        filtIndex,
+                        advState,
+                        advInfoPresent,
+                        address,
+                        addrType,
+                        txPower,
+                        rssiValue,
+                        timeStamp);
 
         assertThat(advtFilterOnFoundOnLostInfo.getClientIf()).isEqualTo(clientIf);
         assertThat(advtFilterOnFoundOnLostInfo.getFiltIndex()).isEqualTo(filtIndex);
@@ -77,7 +75,7 @@ public class AdvtFilterOnFoundOnLostInfoTest {
         assertThat(advtFilterOnFoundOnLostInfo.getScanRspData()).isEqualTo(scanRsp);
         assertThat(advtFilterOnFoundOnLostInfo.getScanRspLen()).isEqualTo(scanRspLen);
 
-        byte[] resultByteArray = new byte[]{2, 4};
+        byte[] resultByteArray = new byte[] {2, 4};
         assertThat(advtFilterOnFoundOnLostInfo.getResult()).isEqualTo(resultByteArray);
     }
 }
