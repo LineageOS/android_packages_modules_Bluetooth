@@ -30,6 +30,7 @@ java_defaults {
             "-Xep:InvalidInlineTag:ERROR",
             "-Xep:NonApiType:ERROR",
             "-Xep:ReferenceEquality:ERROR",
+            "-Xep:StringCharset:ERROR",
             "-Xep:UnnecessaryAssignment:ERROR",
             "-Xep:UnnecessaryAsync:ERROR",
             "-Xep:UnusedMethod:ERROR",

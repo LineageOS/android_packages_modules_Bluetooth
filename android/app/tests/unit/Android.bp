@@ -62,6 +62,7 @@ java_defaults {
             "-Xep:EmptyCatch:ERROR",
             "-Xep:InvalidInlineTag:ERROR",
             "-Xep:NonApiType:ERROR",
+            "-Xep:StringCharset:ERROR",
             "-Xep:UnnecessaryAssignment:ERROR",
             "-Xep:UnnecessaryAsync:ERROR",
             "-Xep:UnusedMethod:ERROR",
