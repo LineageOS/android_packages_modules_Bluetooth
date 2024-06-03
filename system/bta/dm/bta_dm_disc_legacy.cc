@@ -1994,7 +1994,6 @@ static void bta_dm_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
       }
       break;
 
-    case BTA_GATTC_ACL_EVT:
     case BTA_GATTC_CANCEL_OPEN_EVT:
     case BTA_GATTC_CFG_MTU_EVT:
     case BTA_GATTC_CONGEST_EVT:
