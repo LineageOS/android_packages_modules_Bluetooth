@@ -22,8 +22,6 @@
 #include <cstdint>
 
 #define LOG_TAG "bt_btu_hcif"
-#include <base/functional/bind.h>
-#include <base/functional/callback.h>
 #include <base/location.h>
 
 #include "stack/include/bt_hdr.h"

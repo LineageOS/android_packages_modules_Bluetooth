@@ -30,9 +30,6 @@
 //       still applies, but crafting proper inclusion is out of scope
 //       for this effort.  This compilation unit may compile as-is, or
 //       may need attention to prune from (or add to ) the inclusion set.
-#include <base/strings/stringprintf.h>
-
-#include "stack/include/bt_hdr.h"
 
 // Original usings
 
