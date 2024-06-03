@@ -14,16 +14,12 @@
  * limitations under the License.
  */
 
-#include <base/location.h>
-#include <base/strings/stringprintf.h>
-
 #include <cstdint>
 #include <future>
 #include <memory>
 #include <optional>
 #include <string>
 
-#include "common/sync_map_count.h"
 #include "hci/acl_manager.h"
 #include "hci/acl_manager/classic_acl_connection.h"
 #include "hci/acl_manager/le_acl_connection.h"

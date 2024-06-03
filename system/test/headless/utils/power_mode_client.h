@@ -18,7 +18,6 @@
 
 #define LOG_TAG "bt_headless_mode"
 
-#include <base/strings/stringprintf.h>
 #include <bluetooth/log.h>
 
 #include <future>
@@ -67,10 +66,9 @@ struct power_mode_callback_t {
   tHCI_STATUS hci_status;
 
   std::string ToString() const {
-    return base::StringPrintf("bd_addr:%s pm_status:%s value:%hu hci_status:%s",
-                              bd_addr.ToString().c_str(),
-                              power_mode_status_text(status).c_str(), value,
-                              hci_status_code_text(hci_status).c_str());
+    return fmt::format("bd_addr:{} pm_status:{} value:{} hci_status:{}",
+                       bd_addr.ToString(), power_mode_status_text(status),
+                       value, hci_status_code_text(hci_status));
   }
 };
 
