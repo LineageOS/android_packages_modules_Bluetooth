@@ -34,9 +34,7 @@ import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.Objects;
 
-/**
- * HID Device Native Interface to/from JNI.
- */
+/** HID Device Native Interface to/from JNI. */
 public class HidDeviceNativeInterface {
     private static final String TAG = "HidDeviceNativeInterface";
     private BluetoothAdapter mAdapter;
@@ -53,13 +51,13 @@ public class HidDeviceNativeInterface {
         if (mAdapter == null) {
             Log.wtf(TAG, "No Bluetooth Adapter Available");
         }
-        mAdapterService = Objects.requireNonNull(AdapterService.getAdapterService(),
-                "AdapterService cannot be null when HidDeviceNativeInterface init");
+        mAdapterService =
+                Objects.requireNonNull(
+                        AdapterService.getAdapterService(),
+                        "AdapterService cannot be null when HidDeviceNativeInterface init");
     }
 
-    /**
-     * Get the singleton instance.
-     */
+    /** Get the singleton instance. */
     public static HidDeviceNativeInterface getInstance() {
         synchronized (INSTANCE_LOCK) {
             if (sInstance == null) {
@@ -77,16 +75,12 @@ public class HidDeviceNativeInterface {
         }
     }
 
-    /**
-     * Initializes the native interface.
-     */
+    /** Initializes the native interface. */
     public void init() {
         initNative();
     }
 
-    /**
-     * Cleanup the native interface.
-     */
+    /** Cleanup the native interface. */
     public void cleanup() {
         cleanupNative();
     }
@@ -103,8 +97,14 @@ public class HidDeviceNativeInterface {
      * @param outQos outgoing QoS settings
      * @return the result of the native call
      */
-    public boolean registerApp(String name, String description, String provider,
-            byte subclass, byte[] descriptors, int[] inQos, int[] outQos) {
+    public boolean registerApp(
+            String name,
+            String description,
+            String provider,
+            byte subclass,
+            byte[] descriptors,
+            int[] inQos,
+            int[] outQos) {
         return registerAppNative(name, description, provider, subclass, descriptors, inQos, outQos);
     }
 
@@ -184,8 +184,10 @@ public class HidDeviceNativeInterface {
         if (service != null) {
             service.onApplicationStateChangedFromNative(getDevice(address), registered);
         } else {
-            Log.wtf(TAG, "FATAL: onApplicationStateChanged() "
-                    + "is called from the stack while service is not available.");
+            Log.wtf(
+                    TAG,
+                    "FATAL: onApplicationStateChanged() "
+                            + "is called from the stack while service is not available.");
         }
     }
 
@@ -195,8 +197,10 @@ public class HidDeviceNativeInterface {
         if (service != null) {
             service.onConnectStateChangedFromNative(getDevice(address), state);
         } else {
-            Log.wtf(TAG, "FATAL: onConnectStateChanged() "
-                    + "is called from the stack while service is not available.");
+            Log.wtf(
+                    TAG,
+                    "FATAL: onConnectStateChanged() "
+                            + "is called from the stack while service is not available.");
         }
     }
 
@@ -206,8 +210,10 @@ public class HidDeviceNativeInterface {
         if (service != null) {
             service.onGetReportFromNative(type, id, bufferSize);
         } else {
-            Log.wtf(TAG, "FATAL: onGetReport() "
-                    + "is called from the stack while service is not available.");
+            Log.wtf(
+                    TAG,
+                    "FATAL: onGetReport() "
+                            + "is called from the stack while service is not available.");
         }
     }
 
@@ -217,8 +223,10 @@ public class HidDeviceNativeInterface {
         if (service != null) {
             service.onSetReportFromNative(reportType, reportId, data);
         } else {
-            Log.wtf(TAG, "FATAL: onSetReport() "
-                    + "is called from the stack while service is not available.");
+            Log.wtf(
+                    TAG,
+                    "FATAL: onSetReport() "
+                            + "is called from the stack while service is not available.");
         }
     }
 
@@ -228,8 +236,10 @@ public class HidDeviceNativeInterface {
         if (service != null) {
             service.onSetProtocolFromNative(protocol);
         } else {
-            Log.wtf(TAG, "FATAL: onSetProtocol() "
-                    + "is called from the stack while service is not available.");
+            Log.wtf(
+                    TAG,
+                    "FATAL: onSetProtocol() "
+                            + "is called from the stack while service is not available.");
         }
     }
 
@@ -239,8 +249,10 @@ public class HidDeviceNativeInterface {
         if (service != null) {
             service.onInterruptDataFromNative(reportId, data);
         } else {
-            Log.wtf(TAG, "FATAL: onInterruptData() "
-                    + "is called from the stack while service is not available.");
+            Log.wtf(
+                    TAG,
+                    "FATAL: onInterruptData() "
+                            + "is called from the stack while service is not available.");
         }
     }
 
@@ -250,8 +262,10 @@ public class HidDeviceNativeInterface {
         if (service != null) {
             service.onVirtualCableUnplugFromNative();
         } else {
-            Log.wtf(TAG, "FATAL: onVirtualCableUnplug() "
-                    + "is called from the stack while service is not available.");
+            Log.wtf(
+                    TAG,
+                    "FATAL: onVirtualCableUnplug() "
+                            + "is called from the stack while service is not available.");
         }
     }
 
@@ -274,8 +288,14 @@ public class HidDeviceNativeInterface {
 
     private native void cleanupNative();
 
-    private native boolean registerAppNative(String name, String description, String provider,
-            byte subclass, byte[] descriptors, int[] inQos, int[] outQos);
+    private native boolean registerAppNative(
+            String name,
+            String description,
+            String provider,
+            byte subclass,
+            byte[] descriptors,
+            int[] inQos,
+            int[] outQos);
 
     private native boolean unregisterAppNative();
 

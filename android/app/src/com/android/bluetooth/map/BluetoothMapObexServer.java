@@ -1,17 +1,17 @@
 /*
-* Copyright (C) 2015 Samsung System LSI
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*      http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (C) 2015 Samsung System LSI
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.android.bluetooth.map;
 
 import android.bluetooth.BluetoothProfile;
@@ -55,7 +55,6 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
 
     private static final String TAG = "BluetoothMapObexServer";
 
-
     private static final int UUID_LENGTH = 16;
 
     private static final long PROVIDER_ANR_TIMEOUT = 20 * DateUtils.SECOND_IN_MILLIS;
@@ -65,24 +64,25 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
     private static final long THREAD_MAIL_KEY = 0x534c5349;
 
     // 128 bit UUID for MAP
-    private static final byte[] MAP_TARGET = new byte[]{
-            (byte) 0xBB,
-            (byte) 0x58,
-            (byte) 0x2B,
-            (byte) 0x40,
-            (byte) 0x42,
-            (byte) 0x0C,
-            (byte) 0x11,
-            (byte) 0xDB,
-            (byte) 0xB0,
-            (byte) 0xDE,
-            (byte) 0x08,
-            (byte) 0x00,
-            (byte) 0x20,
-            (byte) 0x0C,
-            (byte) 0x9A,
-            (byte) 0x66
-    };
+    private static final byte[] MAP_TARGET =
+            new byte[] {
+                (byte) 0xBB,
+                (byte) 0x58,
+                (byte) 0x2B,
+                (byte) 0x40,
+                (byte) 0x42,
+                (byte) 0x0C,
+                (byte) 0x11,
+                (byte) 0xDB,
+                (byte) 0xB0,
+                (byte) 0xDE,
+                (byte) 0x08,
+                (byte) 0x00,
+                (byte) 0x20,
+                (byte) 0x0C,
+                (byte) 0x9A,
+                (byte) 0x66
+            };
     public static final ParcelUuid MAP =
             ParcelUuid.fromString("00001134-0000-1000-8000-00805F9B34FB");
     public static final ParcelUuid MNS =
@@ -126,9 +126,14 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
     private ContentResolver mResolver;
     private ContentProviderClient mProviderClient = null;
 
-    public BluetoothMapObexServer(Handler callback, Context context,
-            BluetoothMapContentObserver observer, BluetoothMapMasInstance mas,
-            BluetoothMapAccountItem account, boolean enableSmsMms) throws RemoteException {
+    public BluetoothMapObexServer(
+            Handler callback,
+            Context context,
+            BluetoothMapContentObserver observer,
+            BluetoothMapMasInstance mas,
+            BluetoothMapAccountItem account,
+            boolean enableSmsMms)
+            throws RemoteException {
         super();
         mCallback = callback;
         mContext = context;
@@ -155,19 +160,17 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
         }
 
         buildFolderStructure(); /* Build the default folder structure, and set
-                                   mCurrentFolder to root folder */
+                                mCurrentFolder to root folder */
         mObserver.setFolderStructure(mCurrentFolder.getRoot());
 
         mOutContent = new BluetoothMapContent(mContext, mAccount, mMasInstance);
-
     }
 
-    /**
-     *
-     */
+    /** */
     private ContentProviderClient acquireUnstableContentProviderOrThrow() throws RemoteException {
-        ContentProviderClient providerClient = BluetoothMethodProxy.getInstance()
-                .contentResolverAcquireUnstableContentProviderClient(mResolver, mAuthority);
+        ContentProviderClient providerClient =
+                BluetoothMethodProxy.getInstance()
+                        .contentResolverAcquireUnstableContentProviderClient(mResolver, mAuthority);
         if (providerClient == null) {
             throw new RemoteException("Failed to acquire provider for " + mAuthority);
         }
@@ -175,11 +178,9 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
         return providerClient;
     }
 
-    /**
-     * Build the default minimal folder structure, as defined in the MAP specification.
-     */
+    /** Build the default minimal folder structure, as defined in the MAP specification. */
     private void buildFolderStructure() throws RemoteException {
-        //This will be the root element
+        // This will be the root element
         mCurrentFolder = new BluetoothMapFolderElement("root", null);
         mCurrentFolder.setHasSmsMmsContent(mEnableSmsMms);
         boolean hasIM = false;
@@ -201,7 +202,7 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
         tmpFolder.setHasImContent(hasIM);
         tmpFolder.setHasEmailContent(hasEmail);
 
-        tmpFolder = tmpFolder.addFolder("msg");          // root/telecom/msg
+        tmpFolder = tmpFolder.addFolder("msg"); // root/telecom/msg
         tmpFolder.setHasSmsMmsContent(mEnableSmsMms);
         tmpFolder.setHasImContent(hasIM);
         tmpFolder.setHasEmailContent(hasEmail);
@@ -220,65 +221,67 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
         }
     }
 
-    /**
-     * Add base (Inbox/Outbox/Sent/Deleted)
-     */
+    /** Add base (Inbox/Outbox/Sent/Deleted) */
     private void addBaseFolders(BluetoothMapFolderElement root) {
-        root.addFolder(BluetoothMapContract.FOLDER_NAME_INBOX);         // root/telecom/msg/inbox
+        root.addFolder(BluetoothMapContract.FOLDER_NAME_INBOX); // root/telecom/msg/inbox
         root.addFolder(BluetoothMapContract.FOLDER_NAME_OUTBOX);
         root.addFolder(BluetoothMapContract.FOLDER_NAME_SENT);
         root.addFolder(BluetoothMapContract.FOLDER_NAME_DELETED);
     }
 
-    /**
-     * Add SMS / MMS Base folders
-     */
+    /** Add SMS / MMS Base folders */
     private void addSmsMmsFolders(BluetoothMapFolderElement root) {
-        root.addSmsMmsFolder(BluetoothMapContract.FOLDER_NAME_INBOX);   // root/telecom/msg/inbox
+        root.addSmsMmsFolder(BluetoothMapContract.FOLDER_NAME_INBOX); // root/telecom/msg/inbox
         root.addSmsMmsFolder(BluetoothMapContract.FOLDER_NAME_OUTBOX);
         root.addSmsMmsFolder(BluetoothMapContract.FOLDER_NAME_SENT);
         root.addSmsMmsFolder(BluetoothMapContract.FOLDER_NAME_DELETED);
         root.addSmsMmsFolder(BluetoothMapContract.FOLDER_NAME_DRAFT);
     }
 
-
     private void addImFolders(BluetoothMapFolderElement root) throws RemoteException {
         // Select all parent folders
-        root.addImFolder(BluetoothMapContract.FOLDER_NAME_INBOX,
-                BluetoothMapContract.FOLDER_ID_INBOX);       // root/telecom/msg/inbox
-        root.addImFolder(BluetoothMapContract.FOLDER_NAME_OUTBOX,
-                BluetoothMapContract.FOLDER_ID_OUTBOX);
-        root.addImFolder(BluetoothMapContract.FOLDER_NAME_SENT,
-                BluetoothMapContract.FOLDER_ID_SENT);
-        root.addImFolder(BluetoothMapContract.FOLDER_NAME_DELETED,
-                BluetoothMapContract.FOLDER_ID_DELETED);
-        root.addImFolder(BluetoothMapContract.FOLDER_NAME_DRAFT,
-                BluetoothMapContract.FOLDER_ID_DRAFT);
+        root.addImFolder(
+                BluetoothMapContract.FOLDER_NAME_INBOX,
+                BluetoothMapContract.FOLDER_ID_INBOX); // root/telecom/msg/inbox
+        root.addImFolder(
+                BluetoothMapContract.FOLDER_NAME_OUTBOX, BluetoothMapContract.FOLDER_ID_OUTBOX);
+        root.addImFolder(
+                BluetoothMapContract.FOLDER_NAME_SENT, BluetoothMapContract.FOLDER_ID_SENT);
+        root.addImFolder(
+                BluetoothMapContract.FOLDER_NAME_DELETED, BluetoothMapContract.FOLDER_ID_DELETED);
+        root.addImFolder(
+                BluetoothMapContract.FOLDER_NAME_DRAFT, BluetoothMapContract.FOLDER_ID_DRAFT);
     }
 
     /**
-     * Recursively adds folders based on the folders in the email content provider.
-     *       Add a content observer? - to refresh the folder list if any change occurs.
-     *       Consider simply deleting the entire table, and then rebuild using
-     *       buildFolderStructure()
-     *       WARNING: there is no way to notify the client about these changes - hence
-     *       we need to either keep the folder structure constant, disconnect or fail anything
-     *       referring to currentFolder.
-     *       It is unclear what to set as current folder to be able to go one level up...
-     *       The best solution would be to keep the folder structure constant during a connection.
+     * Recursively adds folders based on the folders in the email content provider. Add a content
+     * observer? - to refresh the folder list if any change occurs. Consider simply deleting the
+     * entire table, and then rebuild using buildFolderStructure() WARNING: there is no way to
+     * notify the client about these changes - hence we need to either keep the folder structure
+     * constant, disconnect or fail anything referring to currentFolder. It is unclear what to set
+     * as current folder to be able to go one level up... The best solution would be to keep the
+     * folder structure constant during a connection.
+     *
      * @param parentFolder the parent folder to which subFolders needs to be added. The
-     *        folder.getFolderId() will be used to query sub-folders.
-     *        Use a parentFolder with id -1 to get all folders from root.
+     *     folder.getFolderId() will be used to query sub-folders. Use a parentFolder with id -1 to
+     *     get all folders from root.
      */
     @VisibleForTesting
     void addEmailFolders(BluetoothMapFolderElement parentFolder) throws RemoteException {
         // Select all parent folders
         BluetoothMapFolderElement newFolder;
 
-        String where = BluetoothMapContract.FolderColumns.PARENT_FOLDER_ID + " = "
-                + parentFolder.getFolderId();
-        Cursor c = mProviderClient.query(mEmailFolderUri, BluetoothMapContract.BT_FOLDER_PROJECTION,
-                where, null, null);
+        String where =
+                BluetoothMapContract.FolderColumns.PARENT_FOLDER_ID
+                        + " = "
+                        + parentFolder.getFolderId();
+        Cursor c =
+                mProviderClient.query(
+                        mEmailFolderUri,
+                        BluetoothMapContract.BT_FOLDER_PROJECTION,
+                        where,
+                        null,
+                        null);
         try {
             if (c != null) {
                 c.moveToPosition(-1);
@@ -326,7 +329,7 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
         Log.d(TAG, "onConnect():");
         logHeader(request);
         mThreadIdSupport = false; // Always assume not supported at new connect.
-        //always assume version 1.0 to start with
+        // always assume version 1.0 to start with
         mMessageVersion = BluetoothMapUtils.MAP_V10_STR;
         notifyUpdateWakeLock();
         Long threadedMailKey = null;
@@ -466,12 +469,16 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                 Log.v(TAG, "TYPE_MESSAGE_UPDATE:");
                 return updateInbox();
             } else if (type.equals(TYPE_SET_NOTIFICATION_REGISTRATION)) {
-                Log.v(TAG, "TYPE_SET_NOTIFICATION_REGISTRATION: NotificationStatus: "
-                        + appParams.getNotificationStatus());
+                Log.v(
+                        TAG,
+                        "TYPE_SET_NOTIFICATION_REGISTRATION: NotificationStatus: "
+                                + appParams.getNotificationStatus());
                 return mObserver.setNotificationRegistration(appParams.getNotificationStatus());
             } else if (type.equals(TYPE_SET_NOTIFICATION_FILTER)) {
-                Log.v(TAG, "TYPE_SET_NOTIFICATION_FILTER: NotificationFilter: "
-                        + appParams.getNotificationFilter());
+                Log.v(
+                        TAG,
+                        "TYPE_SET_NOTIFICATION_FILTER: NotificationFilter: "
+                                + appParams.getNotificationFilter());
                 if (!isUserUnlocked()) {
                     Log.e(TAG, "Storage locked, " + type + " failed");
                     ContentProfileErrorReportUtils.report(
@@ -525,12 +532,19 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                 }
                 return pushMessage(op, name, appParams, mMessageVersion);
             } else if (type.equals(TYPE_SET_OWNER_STATUS)) {
-                Log.v(TAG, "TYPE_SET_OWNER_STATUS:" + " PresenceAvailability "
-                        + appParams.getPresenceAvailability() + ", PresenceStatus: " + appParams
-                        .getPresenceStatus() + ", LastActivity: "
-                        + appParams.getLastActivityString() + ", ChatStatus: "
-                        + appParams.getChatState() + ", ChatStatusConvoId: "
-                        + appParams.getChatStateConvoIdString());
+                Log.v(
+                        TAG,
+                        "TYPE_SET_OWNER_STATUS:"
+                                + " PresenceAvailability "
+                                + appParams.getPresenceAvailability()
+                                + ", PresenceStatus: "
+                                + appParams.getPresenceStatus()
+                                + ", LastActivity: "
+                                + appParams.getLastActivityString()
+                                + ", ChatStatus: "
+                                + appParams.getChatState()
+                                + ", ChatStatusConvoId: "
+                                + appParams.getChatStateConvoIdString());
                 return setOwnerStatus(appParams);
             }
 
@@ -540,7 +554,7 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                     BluetoothProtoEnums.BLUETOOTH_MAP_OBEX_SERVER,
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                     7);
-            //reload the providerClient and return error
+            // reload the providerClient and return error
             try {
                 mProviderClient = acquireUnstableContentProviderOrThrow();
             } catch (RemoteException e2) {
@@ -549,7 +563,7 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                         BluetoothProtoEnums.BLUETOOTH_MAP_OBEX_SERVER,
                         BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                         8);
-                //should not happen
+                // should not happen
             }
             return ResponseCodes.OBEX_HTTP_BAD_REQUEST;
         } catch (Exception e) {
@@ -574,8 +588,12 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                     mCurrentFolder.getFolderByName(BluetoothMapContract.FOLDER_NAME_INBOX);
             if (inboxFolder != null) {
                 long accountId = mAccountId;
-                Log.d(TAG, "updateInbox inbox=" + inboxFolder.getName() + "id="
-                        + inboxFolder.getFolderId());
+                Log.d(
+                        TAG,
+                        "updateInbox inbox="
+                                + inboxFolder.getName()
+                                + "id="
+                                + inboxFolder.getFolderId());
 
                 final Bundle extras = new Bundle(2);
                 if (accountId != -1) {
@@ -595,8 +613,8 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                 try {
                     Log.d(TAG, "updateInbox call()...");
                     Bundle myBundle =
-                            mProviderClient.call(BluetoothMapContract.METHOD_UPDATE_FOLDER, null,
-                                    extras);
+                            mProviderClient.call(
+                                    BluetoothMapContract.METHOD_UPDATE_FOLDER, null, extras);
                     if (myBundle != null) {
                         return ResponseCodes.OBEX_HTTP_OK;
                     } else {
@@ -643,23 +661,35 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
 
         if (folderName == null || folderName.trim().isEmpty()) {
             folderElement = mCurrentFolder;
-            Log.d(TAG, "no folder name supplied, setting folder to current: "
-                    + folderElement.getName());
+            Log.d(
+                    TAG,
+                    "no folder name supplied, setting folder to current: "
+                            + folderElement.getName());
         } else {
             folderElement = mCurrentFolder.getSubFolder(folderName);
             if (folderElement != null) {
-                Log.d(TAG, "Folder name: " + folderName + " resulted in this element: "
-                        + folderElement.getName());
+                Log.d(
+                        TAG,
+                        "Folder name: "
+                                + folderName
+                                + " resulted in this element: "
+                                + folderElement.getName());
             }
         }
         return folderElement;
     }
 
-    private int pushMessage(final Operation op, String folderName, BluetoothMapAppParams appParams,
+    private int pushMessage(
+            final Operation op,
+            String folderName,
+            BluetoothMapAppParams appParams,
             String messageVersion) {
         if (appParams.getCharset() == BluetoothMapAppParams.INVALID_VALUE_PARAMETER) {
-            Log.d(TAG, "pushMessage: Missing charset - unable to decode message content. "
-                    + "appParams.getCharset() = " + appParams.getCharset());
+            Log.d(
+                    TAG,
+                    "pushMessage: Missing charset - unable to decode message content. "
+                            + "appParams.getCharset() = "
+                            + appParams.getCharset());
             return ResponseCodes.OBEX_HTTP_PRECON_FAILED;
         }
         InputStream bMsgStream = null;
@@ -678,8 +708,11 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
             }
             if (!folderName.equalsIgnoreCase(BluetoothMapContract.FOLDER_NAME_OUTBOX)
                     && !folderName.equalsIgnoreCase(BluetoothMapContract.FOLDER_NAME_DRAFT)) {
-                Log.d(TAG, "pushMessage: Is only allowed to outbox and draft. " + "folderName="
-                        + folderName);
+                Log.d(
+                        TAG,
+                        "pushMessage: Is only allowed to outbox and draft. "
+                                + "folderName="
+                                + folderName);
                 return ResponseCodes.OBEX_HTTP_NOT_ACCEPTABLE;
             }
 
@@ -692,8 +725,15 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
             // Decode the messageBody
             message = BluetoothMapbMessage.parse(bMsgStream, appParams.getCharset());
             message.setVersionString(messageVersion);
-            Log.d(TAG, "pushMessage: charset" + appParams.getCharset() + "folderId: "
-                            + folderElement.getFolderId() + "Name: " + folderName + "TYPE: "
+            Log.d(
+                    TAG,
+                    "pushMessage: charset"
+                            + appParams.getCharset()
+                            + "folderId: "
+                            + folderElement.getFolderId()
+                            + "Name: "
+                            + folderName
+                            + "TYPE: "
                             + message.getType());
             if (message.getType().equals(TYPE.SMS_GSM) || message.getType().equals(TYPE.SMS_CDMA)) {
                 // Convert messages to the default network type.
@@ -754,7 +794,7 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                     BluetoothProtoEnums.BLUETOOTH_MAP_OBEX_SERVER,
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                     17);
-            //reload the providerClient and return error
+            // reload the providerClient and return error
             try {
                 mProviderClient = acquireUnstableContentProviderOrThrow();
             } catch (RemoteException e2) {
@@ -825,7 +865,7 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
         if (msgHandle == null) {
             return ResponseCodes.OBEX_HTTP_PRECON_FAILED;
         } else if ((indicator == BluetoothMapAppParams.INVALID_VALUE_PARAMETER
-                || value == BluetoothMapAppParams.INVALID_VALUE_PARAMETER)
+                        || value == BluetoothMapAppParams.INVALID_VALUE_PARAMETER)
                 && extendedData == null) {
             return ResponseCodes.OBEX_HTTP_PRECON_FAILED;
         }
@@ -862,8 +902,8 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
         }
 
         if (indicator == BluetoothMapAppParams.STATUS_INDICATOR_DELETED) {
-            if (!mObserver.setMessageStatusDeleted(handle, msgType, mCurrentFolder, mBaseUriString,
-                    value)) {
+            if (!mObserver.setMessageStatusDeleted(
+                    handle, msgType, mCurrentFolder, mBaseUriString, value)) {
                 Log.w(TAG, "setMessageStatusDeleted failed");
                 ContentProfileErrorReportUtils.report(
                         BluetoothProfile.MAP,
@@ -898,8 +938,7 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
     }
 
     @VisibleForTesting
-    int setOwnerStatus(BluetoothMapAppParams appParams)
-            throws RemoteException {
+    int setOwnerStatus(BluetoothMapAppParams appParams) throws RemoteException {
         // This does only work for IM
         if (mAccount != null && mAccount.getType() == BluetoothMapUtils.TYPE.IM) {
             final Bundle extras = new Bundle(5);
@@ -938,8 +977,8 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
             try {
                 Log.d(TAG, "setOwnerStatus call()...");
                 Bundle myBundle =
-                        mProviderClient.call(BluetoothMapContract.METHOD_SET_OWNER_STATUS, null,
-                                extras);
+                        mProviderClient.call(
+                                BluetoothMapContract.METHOD_SET_OWNER_STATUS, null, extras);
                 if (myBundle != null) {
                     return ResponseCodes.OBEX_HTTP_OK;
                 } else {
@@ -976,7 +1015,10 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
     }
 
     @Override
-    public int onSetPath(final HeaderSet request, final HeaderSet reply, final boolean backup,
+    public int onSetPath(
+            final HeaderSet request,
+            final HeaderSet reply,
+            final boolean backup,
             final boolean create) {
         String folderName;
         BluetoothMapFolderElement folder;
@@ -994,8 +1036,7 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
         }
 
         logHeader(request);
-        Log.d(TAG, "onSetPath name is " + folderName + " backup: " + backup + " create: "
-                + create);
+        Log.d(TAG, "onSetPath name is " + folderName + " backup: " + backup + " create: " + create);
 
         if (backup) {
             if (mCurrentFolder.getParent() != null) {
@@ -1029,7 +1070,6 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
             msg.arg1 = mMasId;
             msg.sendToTarget();
             Log.d(TAG, "onClose(): msg MSG_SERVERSESSION_CLOSE sent out.");
-
         }
         if (mProviderClient != null) {
             mProviderClient.close();
@@ -1065,34 +1105,63 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
 
             if (type.equals(TYPE_GET_FOLDER_LISTING)) {
                 if (appParams != null) {
-                    Log.v(TAG, "TYPE_GET_FOLDER_LISTING: MaxListCount = "
-                            + appParams.getMaxListCount() + ", ListStartOffset = "
-                            + appParams.getStartOffset());
+                    Log.v(
+                            TAG,
+                            "TYPE_GET_FOLDER_LISTING: MaxListCount = "
+                                    + appParams.getMaxListCount()
+                                    + ", ListStartOffset = "
+                                    + appParams.getStartOffset());
                 }
                 // Block until all packets have been send.
                 return sendFolderListingRsp(op, appParams);
             } else if (type.equals(TYPE_GET_MESSAGE_LISTING)) {
                 name = (String) request.getHeader(HeaderSet.NAME);
                 if (appParams != null) {
-                    Log.v(TAG, "TYPE_GET_MESSAGE_LISTING: folder name is: " + name
-                            + ", MaxListCount = " + appParams.getMaxListCount()
-                            + ", ListStartOffset = " + appParams.getStartOffset());
-                    Log.v(TAG, "SubjectLength = " + appParams.getSubjectLength()
-                            + ", ParameterMask = " + appParams.getParameterMask());
+                    Log.v(
+                            TAG,
+                            "TYPE_GET_MESSAGE_LISTING: folder name is: "
+                                    + name
+                                    + ", MaxListCount = "
+                                    + appParams.getMaxListCount()
+                                    + ", ListStartOffset = "
+                                    + appParams.getStartOffset());
+                    Log.v(
+                            TAG,
+                            "SubjectLength = "
+                                    + appParams.getSubjectLength()
+                                    + ", ParameterMask = "
+                                    + appParams.getParameterMask());
                     Log.v(TAG, "FilterMessageType = " + appParams.getFilterMessageType());
-                    Log.v(TAG, "FilterPeriodBegin = " + appParams.getFilterPeriodBeginString()
-                            + ", FilterPeriodEnd = " + appParams.getFilterPeriodEndString()
-                            + ", FilterReadStatus = " + appParams.getFilterReadStatus());
-                    Log.v(TAG, "FilterRecipient = " + appParams.getFilterRecipient()
-                            + ", FilterOriginator = " + appParams.getFilterOriginator());
+                    Log.v(
+                            TAG,
+                            "FilterPeriodBegin = "
+                                    + appParams.getFilterPeriodBeginString()
+                                    + ", FilterPeriodEnd = "
+                                    + appParams.getFilterPeriodEndString()
+                                    + ", FilterReadStatus = "
+                                    + appParams.getFilterReadStatus());
+                    Log.v(
+                            TAG,
+                            "FilterRecipient = "
+                                    + appParams.getFilterRecipient()
+                                    + ", FilterOriginator = "
+                                    + appParams.getFilterOriginator());
                     Log.v(TAG, "FilterPriority = " + appParams.getFilterPriority());
                     long tmpLong = appParams.getFilterMsgHandle();
-                    Log.v(TAG, "FilterMsgHandle = " + (
-                            (tmpLong == BluetoothMapAppParams.INVALID_VALUE_PARAMETER) ? ""
-                                    : Long.toHexString(tmpLong)));
+                    Log.v(
+                            TAG,
+                            "FilterMsgHandle = "
+                                    + ((tmpLong == BluetoothMapAppParams.INVALID_VALUE_PARAMETER)
+                                            ? ""
+                                            : Long.toHexString(tmpLong)));
                     SignedLongLong tmpLongLong = appParams.getFilterConvoId();
-                    Log.v(TAG, "FilterConvoId = " + ((tmpLongLong == null) ? ""
-                            : Long.toHexString(tmpLongLong.getLeastSignificantBits())));
+                    Log.v(
+                            TAG,
+                            "FilterConvoId = "
+                                    + ((tmpLongLong == null)
+                                            ? ""
+                                            : Long.toHexString(
+                                                    tmpLongLong.getLeastSignificantBits())));
                 }
                 if (!isUserUnlocked()) {
                     Log.e(TAG, "Storage locked, " + type + " failed");
@@ -1110,13 +1179,18 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
             } else if (type.equals(TYPE_GET_CONVO_LISTING)) {
                 name = (String) request.getHeader(HeaderSet.NAME);
                 if (appParams != null) {
-                    Log.v(TAG, "TYPE_GET_CONVO_LISTING: name is" + name + ", MaxListCount = "
-                            + appParams.getMaxListCount() + ", ListStartOffset = "
-                            + appParams.getStartOffset());
-                    Log.v(TAG, "FilterLastActivityBegin = "
-                            + appParams.getFilterLastActivityBegin());
-                    Log.v(TAG, "FilterLastActivityEnd = "
-                            + appParams.getFilterLastActivityEnd());
+                    Log.v(
+                            TAG,
+                            "TYPE_GET_CONVO_LISTING: name is"
+                                    + name
+                                    + ", MaxListCount = "
+                                    + appParams.getMaxListCount()
+                                    + ", ListStartOffset = "
+                                    + appParams.getStartOffset());
+                    Log.v(
+                            TAG,
+                            "FilterLastActivityBegin = " + appParams.getFilterLastActivityBegin());
+                    Log.v(TAG, "FilterLastActivityEnd = " + appParams.getFilterLastActivityEnd());
                     Log.v(TAG, "FilterReadStatus = " + appParams.getFilterReadStatus());
                     Log.v(TAG, "FilterRecipient = " + appParams.getFilterRecipient());
                 }
@@ -1134,18 +1208,25 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                 return sendConvoListingRsp(op, appParams);
             } else if (type.equals(TYPE_GET_MAS_INSTANCE_INFORMATION)) {
                 if (appParams != null) {
-                    Log.v(TAG, "TYPE_MESSAGE (GET): MASInstandeId = "
-                            + appParams.getMasInstanceId());
+                    Log.v(
+                            TAG,
+                            "TYPE_MESSAGE (GET): MASInstandeId = " + appParams.getMasInstanceId());
                 }
                 // Block until all packets have been send.
                 return sendMASInstanceInformationRsp(op, appParams);
             } else if (type.equals(TYPE_MESSAGE)) {
                 name = (String) request.getHeader(HeaderSet.NAME);
                 if (appParams != null) {
-                    Log.v(TAG, "TYPE_MESSAGE (GET): name is" + name + ", Attachment = "
-                            + appParams.getAttachment() + ", Charset = "
-                            + appParams.getCharset() + ", FractionRequest = "
-                            + appParams.getFractionRequest());
+                    Log.v(
+                            TAG,
+                            "TYPE_MESSAGE (GET): name is"
+                                    + name
+                                    + ", Attachment = "
+                                    + appParams.getAttachment()
+                                    + ", Charset = "
+                                    + appParams.getCharset()
+                                    + ", FractionRequest = "
+                                    + appParams.getFractionRequest());
                 }
                 if (!isUserUnlocked()) {
                     Log.e(TAG, "Storage locked, " + type + " failed");
@@ -1245,8 +1326,10 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
         } else {
             folderToList = getFolderElementFromName(folderName);
             if (folderToList == null) {
-                Log.w(TAG, "sendMessageListingRsp: folderToList == "
-                        + "null-sending OBEX_HTTP_BAD_REQUEST");
+                Log.w(
+                        TAG,
+                        "sendMessageListingRsp: folderToList == "
+                                + "null-sending OBEX_HTTP_BAD_REQUEST");
                 ContentProfileErrorReportUtils.report(
                         BluetoothProfile.MAP,
                         BluetoothProtoEnums.BLUETOOTH_MAP_OBEX_SERVER,
@@ -1254,9 +1337,14 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                         40);
                 return ResponseCodes.OBEX_HTTP_BAD_REQUEST;
             }
-            Log.v(TAG, "sendMessageListingRsp: has sms " + folderToList.hasSmsMmsContent()
-                    + ", has email " + folderToList.hasEmailContent() + ", has IM "
-                    + folderToList.hasImContent());
+            Log.v(
+                    TAG,
+                    "sendMessageListingRsp: has sms "
+                            + folderToList.hasSmsMmsContent()
+                            + ", has email "
+                            + folderToList.hasEmailContent()
+                            + ", has IM "
+                            + folderToList.hasImContent());
         }
 
         try {
@@ -1274,8 +1362,9 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                 // Generate the byte stream
                 outAppParams.setMessageListingSize(outList.getCount());
                 String version;
-                if (0 < (mRemoteFeatureMask
-                        & BluetoothMapUtils.MAP_FEATURE_MESSAGE_LISTING_FORMAT_V11_BIT)) {
+                if (0
+                        < (mRemoteFeatureMask
+                                & BluetoothMapUtils.MAP_FEATURE_MESSAGE_LISTING_FORMAT_V11_BIT)) {
                     version = BluetoothMapUtils.MAP_V11_STR;
                 } else {
                     version = BluetoothMapUtils.MAP_V10_STR;
@@ -1346,8 +1435,11 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                     BluetoothProtoEnums.BLUETOOTH_MAP_OBEX_SERVER,
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                     43);
-            Log.w(TAG, "sendMessageListingRsp: IllegalArgumentException"
-                    + " - sending OBEX_HTTP_BAD_REQUEST", e);
+            Log.w(
+                    TAG,
+                    "sendMessageListingRsp: IllegalArgumentException"
+                            + " - sending OBEX_HTTP_BAD_REQUEST",
+                    e);
             if (outStream != null) {
                 try {
                     outStream.close();
@@ -1396,8 +1488,10 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                 }
             }
             if (bytesWritten != outBytes.length && !mIsAborted) {
-                Log.w(TAG, "sendMessageListingRsp: bytesWritten != outBytes.length"
-                        + " - sending OBEX_HTTP_BAD_REQUEST");
+                Log.w(
+                        TAG,
+                        "sendMessageListingRsp: bytesWritten != outBytes.length"
+                                + " - sending OBEX_HTTP_BAD_REQUEST");
                 ContentProfileErrorReportUtils.report(
                         BluetoothProfile.MAP,
                         BluetoothProtoEnums.BLUETOOTH_MAP_OBEX_SERVER,
@@ -1464,23 +1558,20 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
     }
 
     /**
-     * Generate and send the Conversation listing response based on an application
-     * parameter header. This function call will block until complete or aborted
-     * by the peer. Fragmentation of packets larger than the obex packet size
-     * will be handled by this function.
+     * Generate and send the Conversation listing response based on an application parameter header.
+     * This function call will block until complete or aborted by the peer. Fragmentation of packets
+     * larger than the obex packet size will be handled by this function.
      *
-     * @param op
-     *            The OBEX operation.
-     * @param appParams
-     *            The application parameter header
-     * @return {@link ResponseCodes.OBEX_HTTP_OK} on success or
-     *         {@link ResponseCodes.OBEX_HTTP_BAD_REQUEST} on error.
+     * @param op The OBEX operation.
+     * @param appParams The application parameter header
+     * @return {@link ResponseCodes.OBEX_HTTP_OK} on success or {@link
+     *     ResponseCodes.OBEX_HTTP_BAD_REQUEST} on error.
      */
     private int sendConvoListingRsp(Operation op, BluetoothMapAppParams appParams) {
         OutputStream outStream = null;
         byte[] outBytes = null;
         int maxChunkSize, bytesToWrite, bytesWritten = 0;
-        //boolean hasUnread = false;
+        // boolean hasUnread = false;
         HeaderSet replyHeaders = new HeaderSet();
         BluetoothMapAppParams outAppParams = new BluetoothMapAppParams();
         BluetoothMapConvoListing outList;
@@ -1520,15 +1611,20 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                 }
                 // Force update of version counter if needed
                 mObserver.refreshConvoListVersionCounter();
-                if (0 < (mRemoteFeatureMask
-                        & BluetoothMapUtils.MAP_FEATURE_CONVERSATION_VERSION_COUNTER_BIT)) {
+                if (0
+                        < (mRemoteFeatureMask
+                                & BluetoothMapUtils.MAP_FEATURE_CONVERSATION_VERSION_COUNTER_BIT)) {
                     outAppParams.setConvoListingVerCounter(
                             mMasInstance.getCombinedConvoListVersionCounter(), 0);
                 }
                 op.noBodyHeader();
             }
-            Log.d(TAG, "outList size:" + outList.getCount() + " MaxListCount: "
-                    + appParams.getMaxListCount());
+            Log.d(
+                    TAG,
+                    "outList size:"
+                            + outList.getCount()
+                            + " MaxListCount: "
+                            + appParams.getMaxListCount());
             outList = null; // We don't need it anymore - we might as well give it up for GC
             outAppParams.setDatabaseIdentifier(0, mMasInstance.getDbIdentifier());
 
@@ -1572,8 +1668,11 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                     BluetoothProtoEnums.BLUETOOTH_MAP_OBEX_SERVER,
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                     51);
-            Log.w(TAG, "sendConvoListingRsp: IllegalArgumentException"
-                    + " - sending OBEX_HTTP_BAD_REQUEST", e);
+            Log.w(
+                    TAG,
+                    "sendConvoListingRsp: IllegalArgumentException"
+                            + " - sending OBEX_HTTP_BAD_REQUEST",
+                    e);
             if (outStream != null) {
                 try {
                     outStream.close();
@@ -1616,8 +1715,10 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                 }
             }
             if (bytesWritten != outBytes.length && !mIsAborted) {
-                Log.w(TAG, "sendConvoListingRsp: bytesWritten != outBytes.length"
-                        + " - sending OBEX_HTTP_BAD_REQUEST");
+                Log.w(
+                        TAG,
+                        "sendConvoListingRsp: bytesWritten != outBytes.length"
+                                + " - sending OBEX_HTTP_BAD_REQUEST");
                 ContentProfileErrorReportUtils.report(
                         BluetoothProfile.MAP,
                         BluetoothProtoEnums.BLUETOOTH_MAP_OBEX_SERVER,
@@ -1700,8 +1801,11 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                     BluetoothProtoEnums.BLUETOOTH_MAP_OBEX_SERVER,
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                     56);
-            Log.w(TAG, "sendFolderListingRsp: IOException"
-                    + " - sending OBEX_HTTP_BAD_REQUEST Exception:", e1);
+            Log.w(
+                    TAG,
+                    "sendFolderListingRsp: IOException"
+                            + " - sending OBEX_HTTP_BAD_REQUEST Exception:",
+                    e1);
             if (outStream != null) {
                 try {
                     outStream.close();
@@ -1727,8 +1831,11 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                     BluetoothProtoEnums.BLUETOOTH_MAP_OBEX_SERVER,
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                     58);
-            Log.w(TAG, "sendFolderListingRsp: IllegalArgumentException"
-                    + " - sending OBEX_HTTP_BAD_REQUEST Exception:", e1);
+            Log.w(
+                    TAG,
+                    "sendFolderListingRsp: IllegalArgumentException"
+                            + " - sending OBEX_HTTP_BAD_REQUEST Exception:",
+                    e1);
             if (outStream != null) {
                 try {
                     outStream.close();
@@ -1776,8 +1883,7 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                     }
                 }
             }
-            Log.v(TAG,
-                    "sendFolderList sent " + bytesWritten + " bytes out of " + outBytes.length);
+            Log.v(TAG, "sendFolderList sent " + bytesWritten + " bytes out of " + outBytes.length);
             if (bytesWritten == outBytes.length || mIsAborted) {
                 return ResponseCodes.OBEX_HTTP_OK;
             } else {
@@ -1807,8 +1913,10 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
             if (mMasId == appParams.getMasInstanceId()) {
                 if (mAccount != null) {
                     if (mAccount.getType() == TYPE.EMAIL) {
-                        outString = (mAccount.getName() != null) ? mAccount.getName()
-                                : BluetoothMapMasInstance.TYPE_EMAIL_STR;
+                        outString =
+                                (mAccount.getName() != null)
+                                        ? mAccount.getName()
+                                        : BluetoothMapMasInstance.TYPE_EMAIL_STR;
                     } else if (mAccount.getType() == TYPE.IM) {
                         outString = mAccount.getUciFull();
                         if (outString == null) {
@@ -1838,8 +1946,9 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
             }
 
             /* Ensure byte array max length is 200 containing valid UTF-8 characters */
-            outBytes = BluetoothMapUtils.truncateUtf8StringToBytearray(outString,
-                    MAS_INSTANCE_INFORMATION_LENGTH);
+            outBytes =
+                    BluetoothMapUtils.truncateUtf8StringToBytearray(
+                            outString, MAS_INSTANCE_INFORMATION_LENGTH);
 
             // Open the OBEX body stream
             outStream = op.openOutputStream();
@@ -1850,8 +1959,11 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                     BluetoothProtoEnums.BLUETOOTH_MAP_OBEX_SERVER,
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                     62);
-            Log.w(TAG, "sendMASInstanceInformationRsp: IOException"
-                    + " - sending OBEX_HTTP_BAD_REQUEST", e);
+            Log.w(
+                    TAG,
+                    "sendMASInstanceInformationRsp: IOException"
+                            + " - sending OBEX_HTTP_BAD_REQUEST",
+                    e);
             if (mIsAborted) {
                 Log.d(TAG, "sendMASInstanceInformationRsp Operation Aborted");
                 return ResponseCodes.OBEX_HTTP_OK;
@@ -1891,8 +2003,12 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                     }
                 }
             }
-            Log.v(TAG, "sendMASInstanceInformationRsp sent " + bytesWritten + " bytes out of "
-                    + outBytes.length);
+            Log.v(
+                    TAG,
+                    "sendMASInstanceInformationRsp sent "
+                            + bytesWritten
+                            + " bytes out of "
+                            + outBytes.length);
             if (bytesWritten == outBytes.length || mIsAborted) {
                 return ResponseCodes.OBEX_HTTP_OK;
             } else {
@@ -1903,22 +2019,18 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
     }
 
     /**
-     * Generate and send the get message response based on an application
-     * parameter header and a handle.
+     * Generate and send the get message response based on an application parameter header and a
+     * handle.
      *
-     * @param op
-     *            The OBEX operation.
-     * @param handle
-     *            The handle of the requested message
-     * @param appParams
-     *            The application parameter header
-     * @param version
-     *              The string representation of the version number(i.e. "1.0")
-     * @return {@link ResponseCodes.OBEX_HTTP_OK} on success or
-     *         {@link ResponseCodes.OBEX_HTTP_BAD_REQUEST} on error.
+     * @param op The OBEX operation.
+     * @param handle The handle of the requested message
+     * @param appParams The application parameter header
+     * @param version The string representation of the version number(i.e. "1.0")
+     * @return {@link ResponseCodes.OBEX_HTTP_OK} on success or {@link
+     *     ResponseCodes.OBEX_HTTP_BAD_REQUEST} on error.
      */
-    private int sendGetMessageRsp(Operation op, String handle, BluetoothMapAppParams appParams,
-            String version) {
+    private int sendGetMessageRsp(
+            Operation op, String handle, BluetoothMapAppParams appParams, String version) {
         OutputStream outStream = null;
         byte[] outBytes = null;
         int maxChunkSize, bytesToWrite, bytesWritten = 0;
@@ -1928,18 +2040,20 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
 
             // If it is a fraction request of Email message, set header before responding
             if ((BluetoothMapUtils.getMsgTypeFromHandle(handle).equals(TYPE.EMAIL)
-                    || (BluetoothMapUtils.getMsgTypeFromHandle(handle).equals(TYPE.IM))) && (
-                    appParams.getFractionRequest()
+                            || (BluetoothMapUtils.getMsgTypeFromHandle(handle).equals(TYPE.IM)))
+                    && (appParams.getFractionRequest()
                             == BluetoothMapAppParams.FRACTION_REQUEST_FIRST)) {
                 BluetoothMapAppParams outAppParams = new BluetoothMapAppParams();
                 HeaderSet replyHeaders = new HeaderSet();
                 outAppParams.setFractionDeliver(BluetoothMapAppParams.FRACTION_DELIVER_LAST);
                 // Build and set the application parameter header
-                replyHeaders.setHeader(HeaderSet.APPLICATION_PARAMETER,
-                        outAppParams.encodeParams());
+                replyHeaders.setHeader(
+                        HeaderSet.APPLICATION_PARAMETER, outAppParams.encodeParams());
                 op.sendHeaders(replyHeaders);
-                Log.v(TAG, "sendGetMessageRsp fractionRequest - "
-                        + "set FRACTION_DELIVER_LAST header");
+                Log.v(
+                        TAG,
+                        "sendGetMessageRsp fractionRequest - "
+                                + "set FRACTION_DELIVER_LAST header");
             }
             outStream = op.openOutputStream();
 
@@ -1975,8 +2089,11 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                     BluetoothProtoEnums.BLUETOOTH_MAP_OBEX_SERVER,
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                     67);
-            Log.w(TAG, "sendGetMessageRsp: IllegalArgumentException (e.g. invalid handle) - "
-                    + "sending OBEX_HTTP_BAD_REQUEST", e);
+            Log.w(
+                    TAG,
+                    "sendGetMessageRsp: IllegalArgumentException (e.g. invalid handle) - "
+                            + "sending OBEX_HTTP_BAD_REQUEST",
+                    e);
             if (outStream != null) {
                 try {
                     outStream.close();
@@ -2057,17 +2174,26 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
             }
             Log.d(TAG, "type = " + type + ", name = " + name);
             if (type.equals(TYPE_SET_NOTIFICATION_FILTER)) {
-                Log.v(TAG, "TYPE_SET_NOTIFICATION_FILTER: NotificationFilter: "
-                        + appParams.getNotificationFilter());
+                Log.v(
+                        TAG,
+                        "TYPE_SET_NOTIFICATION_FILTER: NotificationFilter: "
+                                + appParams.getNotificationFilter());
                 mObserver.setNotificationFilter(appParams.getNotificationFilter());
                 return ResponseCodes.OBEX_HTTP_OK;
             } else if (type.equals(TYPE_SET_OWNER_STATUS)) {
-                Log.v(TAG, "TYPE_SET_OWNER_STATUS:" + " PresenceAvailability "
-                        + appParams.getPresenceAvailability() + ", PresenceStatus: " + appParams
-                        .getPresenceStatus() + ", LastActivity: "
-                        + appParams.getLastActivityString() + ", ChatStatus: "
-                        + appParams.getChatState() + ", ChatStatusConvoId: "
-                        + appParams.getChatStateConvoIdString());
+                Log.v(
+                        TAG,
+                        "TYPE_SET_OWNER_STATUS:"
+                                + " PresenceAvailability "
+                                + appParams.getPresenceAvailability()
+                                + ", PresenceStatus: "
+                                + appParams.getPresenceStatus()
+                                + ", LastActivity: "
+                                + appParams.getLastActivityString()
+                                + ", ChatStatus: "
+                                + appParams.getChatState()
+                                + ", ChatStatusConvoId: "
+                                + appParams.getChatStateConvoIdString());
                 return setOwnerStatus(appParams);
             }
 
@@ -2077,7 +2203,7 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                     BluetoothProtoEnums.BLUETOOTH_MAP_OBEX_SERVER,
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                     71);
-            //reload the providerClient and return error
+            // reload the providerClient and return error
             try {
                 mProviderClient = acquireUnstableContentProviderOrThrow();
             } catch (RemoteException e2) {
@@ -2086,7 +2212,7 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
                         BluetoothProtoEnums.BLUETOOTH_MAP_OBEX_SERVER,
                         BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                         72);
-                //should not happen
+                // should not happen
             }
             return ResponseCodes.OBEX_HTTP_BAD_REQUEST;
         } catch (Exception e) {

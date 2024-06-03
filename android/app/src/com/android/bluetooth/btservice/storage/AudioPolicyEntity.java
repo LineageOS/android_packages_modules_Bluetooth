@@ -25,8 +25,10 @@ import androidx.room.Entity;
 class AudioPolicyEntity {
     @ColumnInfo(name = "call_establish_audio_policy")
     public int callEstablishAudioPolicy;
+
     @ColumnInfo(name = "connecting_time_audio_policy")
     public int connectingTimeAudioPolicy;
+
     @ColumnInfo(name = "in_band_ringtone_audio_policy")
     public int inBandRingtoneAudioPolicy;
 

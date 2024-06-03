@@ -81,12 +81,9 @@ public class LeAudioBroadcastServiceTest {
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock private ActiveDeviceManager mActiveDeviceManager;
-    @Mock
-    private AdapterService mAdapterService;
-    @Mock
-    private DatabaseManager mDatabaseManager;
-    @Mock
-    private AudioManager mAudioManager;
+    @Mock private AdapterService mAdapterService;
+    @Mock private DatabaseManager mDatabaseManager;
+    @Mock private AudioManager mAudioManager;
     @Mock private LeAudioBroadcasterNativeInterface mLeAudioBroadcasterNativeInterface;
     @Mock private LeAudioNativeInterface mLeAudioNativeInterface;
     @Mock private LeAudioTmapGattServer mTmapGattServer;
@@ -199,7 +196,6 @@ public class LeAudioBroadcastServiceTest {
     public void setUp() throws Exception {
         mTargetContext = InstrumentationRegistry.getTargetContext();
 
-
         // Use spied objects factory
         doNothing().when(mTmapGattServer).start(anyInt());
         doNothing().when(mTmapGattServer).stop();
@@ -213,8 +209,11 @@ public class LeAudioBroadcastServiceTest {
         TestUtils.setAdapterService(mAdapterService);
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
         doReturn(true).when(mAdapterService).isLeAudioBroadcastSourceSupported();
-        doReturn((long)(1 << BluetoothProfile.LE_AUDIO_BROADCAST) | (1 << BluetoothProfile.LE_AUDIO))
-                .when(mAdapterService).getSupportedProfilesBitMask();
+        doReturn(
+                        (long) (1 << BluetoothProfile.LE_AUDIO_BROADCAST)
+                                | (1 << BluetoothProfile.LE_AUDIO))
+                .when(mAdapterService)
+                .getSupportedProfilesBitMask();
         doReturn(mActiveDeviceManager).when(mAdapterService).getActiveDeviceManager();
 
         mAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -270,9 +269,7 @@ public class LeAudioBroadcastServiceTest {
         Assert.assertNull(mService);
     }
 
-    /**
-     * Test getting LeAudio Service
-     */
+    /** Test getting LeAudio Service */
     @Test
     public void testGetLeAudioService() {
         Assert.assertEquals(mService, LeAudioService.getLeAudioService());
@@ -289,12 +286,10 @@ public class LeAudioBroadcastServiceTest {
     void verifyBroadcastStarted(int broadcastId, BluetoothLeBroadcastSettings settings) {
         mService.createBroadcast(settings);
 
-        List<BluetoothLeBroadcastSubgroupSettings> settingsList =
-                settings.getSubgroupSettings();
+        List<BluetoothLeBroadcastSubgroupSettings> settingsList = settings.getSubgroupSettings();
 
         int[] expectedQualityArray =
-                settingsList.stream()
-                        .mapToInt(setting -> setting.getPreferredQuality()).toArray();
+                settingsList.stream().mapToInt(setting -> setting.getPreferredQuality()).toArray();
         byte[][] expectedDataArray =
                 settingsList.stream()
                         .map(setting -> setting.getContentMetadata().getRawMetadata())
@@ -411,10 +406,10 @@ public class LeAudioBroadcastServiceTest {
         mService.createBroadcast(settings);
 
         // Test data with only one subgroup
-        int[] expectedQualityArray =
-                {settings.getSubgroupSettings().get(0).getPreferredQuality()};
-        byte[][] expectedDataArray =
-                {settings.getSubgroupSettings().get(0).getContentMetadata().getRawMetadata()};
+        int[] expectedQualityArray = {settings.getSubgroupSettings().get(0).getPreferredQuality()};
+        byte[][] expectedDataArray = {
+            settings.getSubgroupSettings().get(0).getContentMetadata().getRawMetadata()
+        };
 
         verify(mLeAudioBroadcasterNativeInterface, times(1))
                 .createBroadcast(
@@ -565,11 +560,11 @@ public class LeAudioBroadcastServiceTest {
 
         // Update metadata for non-existing broadcast
         BluetoothLeAudioContentMetadata.Builder meta_builder =
-        new BluetoothLeAudioContentMetadata.Builder();
+                new BluetoothLeAudioContentMetadata.Builder();
         meta_builder.setLanguage("eng");
         meta_builder.setProgramInfo("Public broadcast info");
-        mService.updateBroadcast(broadcastId,
-                buildBroadcastSettingsFromMetadata(meta_builder.build(), null, 1));
+        mService.updateBroadcast(
+                broadcastId, buildBroadcastSettingsFromMetadata(meta_builder.build(), null, 1));
 
         TestUtils.waitForLooperToFinishScheduledTask(mService.getMainLooper());
 
@@ -580,35 +575,41 @@ public class LeAudioBroadcastServiceTest {
     private BluetoothLeBroadcastSubgroup createBroadcastSubgroup() {
         BluetoothLeAudioCodecConfigMetadata codecMetadata =
                 new BluetoothLeAudioCodecConfigMetadata.Builder()
-                        .setAudioLocation(TEST_AUDIO_LOCATION_FRONT_LEFT).build();
+                        .setAudioLocation(TEST_AUDIO_LOCATION_FRONT_LEFT)
+                        .build();
         BluetoothLeAudioContentMetadata contentMetadata =
                 new BluetoothLeAudioContentMetadata.Builder()
-                        .setProgramInfo(TEST_PROGRAM_INFO).setLanguage(TEST_LANGUAGE).build();
-        BluetoothLeBroadcastSubgroup.Builder builder = new BluetoothLeBroadcastSubgroup.Builder()
-                .setCodecId(TEST_CODEC_ID)
-                .setCodecSpecificConfig(codecMetadata)
-                .setContentMetadata(contentMetadata);
+                        .setProgramInfo(TEST_PROGRAM_INFO)
+                        .setLanguage(TEST_LANGUAGE)
+                        .build();
+        BluetoothLeBroadcastSubgroup.Builder builder =
+                new BluetoothLeBroadcastSubgroup.Builder()
+                        .setCodecId(TEST_CODEC_ID)
+                        .setCodecSpecificConfig(codecMetadata)
+                        .setContentMetadata(contentMetadata);
 
         BluetoothLeAudioCodecConfigMetadata channelCodecMetadata =
                 new BluetoothLeAudioCodecConfigMetadata.Builder()
-                        .setAudioLocation(TEST_AUDIO_LOCATION_FRONT_RIGHT).build();
+                        .setAudioLocation(TEST_AUDIO_LOCATION_FRONT_RIGHT)
+                        .build();
 
         // builder expect at least one channel
         BluetoothLeBroadcastChannel channel =
-        new BluetoothLeBroadcastChannel.Builder()
-                .setSelected(true)
-                .setChannelIndex(TEST_CHANNEL_INDEX)
-                .setCodecMetadata(channelCodecMetadata)
-                .build();
+                new BluetoothLeBroadcastChannel.Builder()
+                        .setSelected(true)
+                        .setChannelIndex(TEST_CHANNEL_INDEX)
+                        .setCodecMetadata(channelCodecMetadata)
+                        .build();
         builder.addChannel(channel);
         return builder.build();
     }
 
     private BluetoothLeBroadcastMetadata createBroadcastMetadata() {
         BluetoothDevice testDevice =
-        mAdapter.getRemoteLeDevice(TEST_MAC_ADDRESS, BluetoothDevice.ADDRESS_TYPE_RANDOM);
+                mAdapter.getRemoteLeDevice(TEST_MAC_ADDRESS, BluetoothDevice.ADDRESS_TYPE_RANDOM);
 
-        BluetoothLeBroadcastMetadata.Builder builder = new BluetoothLeBroadcastMetadata.Builder()
+        BluetoothLeBroadcastMetadata.Builder builder =
+                new BluetoothLeBroadcastMetadata.Builder()
                         .setEncrypted(false)
                         .setSourceDevice(testDevice, BluetoothDevice.ADDRESS_TYPE_RANDOM)
                         .setSourceAdvertisingSid(TEST_ADVERTISER_SID)
@@ -731,7 +732,7 @@ public class LeAudioBroadcastServiceTest {
 
         /* Initialize native */
         LeAudioStackEvent stackEvent =
-        new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_NATIVE_INITIALIZED);
+                new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_NATIVE_INITIALIZED);
         mService.messageFromNative(stackEvent);
         Assert.assertTrue(mService.mLeAudioNativeIsInitialized);
 
@@ -1150,7 +1151,8 @@ public class LeAudioBroadcastServiceTest {
         Assert.assertEquals(activeGroup, groupId);
 
         /* Imitate group change request by Bluetooth Sink HAL suspend request */
-        create_event = new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_UNICAST_MONITOR_MODE_STATUS);
+        create_event =
+                new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_UNICAST_MONITOR_MODE_STATUS);
         create_event.valueInt1 = LeAudioStackEvent.DIRECTION_SINK;
         create_event.valueInt2 = LeAudioStackEvent.STATUS_LOCAL_STREAM_SUSPENDED;
         mService.messageFromNative(create_event);
@@ -1199,7 +1201,8 @@ public class LeAudioBroadcastServiceTest {
                         .setContentMetadata(contentMetadata)
                         .setPreferredQuality(BluetoothLeBroadcastSubgroupSettings.QUALITY_HIGH);
 
-        BluetoothLeBroadcastSettings.Builder builder = new BluetoothLeBroadcastSettings.Builder()
+        BluetoothLeBroadcastSettings.Builder builder =
+                new BluetoothLeBroadcastSettings.Builder()
                         .setPublicBroadcast(true)
                         .setBroadcastName(TEST_BROADCAST_NAME)
                         .setBroadcastCode(broadcastCode)

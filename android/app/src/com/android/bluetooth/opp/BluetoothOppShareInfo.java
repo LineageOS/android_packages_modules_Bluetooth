@@ -35,8 +35,8 @@ package com.android.bluetooth.opp;
 import android.net.Uri;
 
 /**
- * This class stores information about a single OBEX share, e.g. one object
- * send/receive to a destination address.
+ * This class stores information about a single OBEX share, e.g. one object send/receive to a
+ * destination address.
  */
 public class BluetoothOppShareInfo {
 
@@ -68,9 +68,21 @@ public class BluetoothOppShareInfo {
 
     public boolean mMediaScanned;
 
-    public BluetoothOppShareInfo(int id, Uri uri, String hint, String filename, String mimetype,
-            int direction, String destination, int visibility, int confirm, int status,
-            long totalBytes, long currentBytes, long timestamp, boolean mediaScanned) {
+    public BluetoothOppShareInfo(
+            int id,
+            Uri uri,
+            String hint,
+            String filename,
+            String mimetype,
+            int direction,
+            String destination,
+            int visibility,
+            int confirm,
+            int status,
+            long totalBytes,
+            long currentBytes,
+            long timestamp,
+            boolean mediaScanned) {
         mId = id;
         mUri = uri;
         mHint = hint;
@@ -98,7 +110,7 @@ public class BluetoothOppShareInfo {
             }
         } else if (mDirection == BluetoothShare.DIRECTION_INBOUND) {
             if (mStatus == BluetoothShare.STATUS_PENDING) {
-                //&& mConfirm != BluetoothShare.USER_CONFIRMATION_PENDING) {
+                // && mConfirm != BluetoothShare.USER_CONFIRMATION_PENDING) {
                 return true;
             }
         }
@@ -115,9 +127,7 @@ public class BluetoothOppShareInfo {
         return false;
     }
 
-    /**
-     * Check if a ShareInfo is invalid because of previous error
-     */
+    /** Check if a ShareInfo is invalid because of previous error */
     public boolean isObsolete() {
         if (BluetoothShare.STATUS_RUNNING == mStatus) {
             return true;
@@ -129,5 +139,4 @@ public class BluetoothOppShareInfo {
     public String toString() {
         return "BluetoothOppShareInfo<mId=" + mId + ">";
     }
-
 }

@@ -102,7 +102,7 @@ public class BaseDataTest {
 
         BaseData data = BaseData.parseBaseData(serviceData);
         BaseData.BaseInformation level = data.getLevelOne();
-        assertThat(level.presentationDelay).isEqualTo(new byte[] { 0x01, 0x02, 0x03 });
+        assertThat(level.presentationDelay).isEqualTo(new byte[] {0x01, 0x02, 0x03});
         assertThat(level.numSubGroups).isEqualTo(1);
 
         assertThat(data.getLevelTwo().size()).isEqualTo(1);

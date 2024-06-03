@@ -36,13 +36,11 @@ import org.mockito.junit.MockitoRule;
 
 public class HfpNativeInterfaceTest {
     private static final byte[] TEST_DEVICE_ADDRESS =
-            new byte[] { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 };
+            new byte[] {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    HeadsetClientService mService;
-    @Mock
-    AdapterService mAdapterService;
+    @Mock HeadsetClientService mService;
+    @Mock AdapterService mAdapterService;
 
     private NativeInterface mNativeInterface;
 

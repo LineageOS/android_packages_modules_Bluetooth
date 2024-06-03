@@ -52,9 +52,9 @@ public class HfpClientConnectionService extends ConnectionService {
 
     private final Map<BluetoothDevice, HfpClientDeviceBlock> mDeviceBlocks = new HashMap<>();
 
-    //--------------------------------------------------------------------------------------------//
+    // --------------------------------------------------------------------------------------------//
     // SINGLETON MANAGEMENT                                                                       //
-    //--------------------------------------------------------------------------------------------//
+    // --------------------------------------------------------------------------------------------//
 
     private static final Object INSTANCE_LOCK = new Object();
     private static HfpClientConnectionService sHfpClientConnectionService;
@@ -79,15 +79,13 @@ public class HfpClientConnectionService extends ConnectionService {
         }
     }
 
-    //--------------------------------------------------------------------------------------------//
+    // --------------------------------------------------------------------------------------------//
     // MESSAGES FROM HEADSET CLIENT SERVICE                                                       //
-    //--------------------------------------------------------------------------------------------//
+    // --------------------------------------------------------------------------------------------//
 
-    /**
-     * Send a device connection state changed event to this service
-     */
-    public static void onConnectionStateChanged(BluetoothDevice device, int newState,
-            int oldState) {
+    /** Send a device connection state changed event to this service */
+    public static void onConnectionStateChanged(
+            BluetoothDevice device, int newState, int oldState) {
         HfpClientConnectionService service = getInstance();
         if (service == null) {
             Log.e(TAG, "onConnectionStateChanged: HFP Client Connection Service not started");
@@ -96,9 +94,7 @@ public class HfpClientConnectionService extends ConnectionService {
         service.onConnectionStateChangedInternal(device, newState, oldState);
     }
 
-    /**
-     * Send a device call state changed event to this service
-     */
+    /** Send a device call state changed event to this service */
     public static void onCallChanged(BluetoothDevice device, HfpClientCall call) {
         HfpClientConnectionService service = getInstance();
         if (service == null) {
@@ -108,9 +104,7 @@ public class HfpClientConnectionService extends ConnectionService {
         service.onCallChangedInternal(device, call);
     }
 
-    /**
-     * Send a device audio state changed event to this service
-     */
+    /** Send a device audio state changed event to this service */
     public static void onAudioStateChanged(BluetoothDevice device, int newState, int oldState) {
         HfpClientConnectionService service = getInstance();
         if (service == null) {
@@ -120,12 +114,12 @@ public class HfpClientConnectionService extends ConnectionService {
         service.onAudioStateChangedInternal(device, newState, oldState);
     }
 
-    //--------------------------------------------------------------------------------------------//
+    // --------------------------------------------------------------------------------------------//
     // HANDLE MESSAGES FROM HEADSET CLIENT SERVICE                                                //
-    //--------------------------------------------------------------------------------------------//
+    // --------------------------------------------------------------------------------------------//
 
-    private void onConnectionStateChangedInternal(BluetoothDevice device, int newState,
-            int oldState) {
+    private void onConnectionStateChangedInternal(
+            BluetoothDevice device, int newState, int oldState) {
         if (newState == BluetoothProfile.STATE_CONNECTED) {
             Log.d(TAG, "Established connection with " + device);
 
@@ -185,9 +179,9 @@ public class HfpClientConnectionService extends ConnectionService {
         block.onAudioStateChange(newState, oldState);
     }
 
-    //--------------------------------------------------------------------------------------------//
+    // --------------------------------------------------------------------------------------------//
     // SERVICE SETUP AND TEAR DOWN                                                                //
-    //--------------------------------------------------------------------------------------------//
+    // --------------------------------------------------------------------------------------------//
 
     @Override
     public void onCreate() {
@@ -219,7 +213,8 @@ public class HfpClientConnectionService extends ConnectionService {
 
     private synchronized void disconnectAll() {
         for (Iterator<Map.Entry<BluetoothDevice, HfpClientDeviceBlock>> it =
-                mDeviceBlocks.entrySet().iterator(); it.hasNext(); ) {
+                        mDeviceBlocks.entrySet().iterator();
+                it.hasNext(); ) {
             it.next().getValue().cleanup();
             it.remove();
         }
@@ -231,8 +226,8 @@ public class HfpClientConnectionService extends ConnectionService {
         // In order to make sure that the service is sticky (recovers from errors when HFP
         // connection is still active) and to stop it we need a special intent since stopService
         // only recreates it.
-        if (intent != null && intent.getBooleanExtra(HeadsetClientService.HFP_CLIENT_STOP_TAG,
-                false)) {
+        if (intent != null
+                && intent.getBooleanExtra(HeadsetClientService.HFP_CLIENT_STOP_TAG, false)) {
             // Stop the service.
             stopSelf();
             return 0;
@@ -240,16 +235,15 @@ public class HfpClientConnectionService extends ConnectionService {
         return START_STICKY;
     }
 
-    //--------------------------------------------------------------------------------------------//
+    // --------------------------------------------------------------------------------------------//
     // TELECOM CONNECTION SERVICE FUNCTIONS                                                       //
-    //--------------------------------------------------------------------------------------------//
+    // --------------------------------------------------------------------------------------------//
 
     // This method is called whenever there is a new incoming call (or right after BT connection).
     @Override
-    public Connection onCreateIncomingConnection(PhoneAccountHandle connectionManagerAccount,
-            ConnectionRequest request) {
-        Log.d(TAG,
-                "onCreateIncomingConnection " + connectionManagerAccount + " req: " + request);
+    public Connection onCreateIncomingConnection(
+            PhoneAccountHandle connectionManagerAccount, ConnectionRequest request) {
+        Log.d(TAG, "onCreateIncomingConnection " + connectionManagerAccount + " req: " + request);
 
         HfpClientDeviceBlock block = findBlockForHandle(connectionManagerAccount);
         if (block == null) {
@@ -267,8 +261,8 @@ public class HfpClientConnectionService extends ConnectionService {
 
     // This method is called *only if* Dialer UI is used to place an outgoing call.
     @Override
-    public Connection onCreateOutgoingConnection(PhoneAccountHandle connectionManagerAccount,
-            ConnectionRequest request) {
+    public Connection onCreateOutgoingConnection(
+            PhoneAccountHandle connectionManagerAccount, ConnectionRequest request) {
         Log.d(TAG, "onCreateOutgoingConnection " + connectionManagerAccount);
         HfpClientDeviceBlock block = findBlockForHandle(connectionManagerAccount);
         if (block == null) {
@@ -283,8 +277,8 @@ public class HfpClientConnectionService extends ConnectionService {
     // 1. Outgoing call created from the AG.
     // 2. Call transfer from AG -> HF (on connection when existed call present).
     @Override
-    public Connection onCreateUnknownConnection(PhoneAccountHandle connectionManagerAccount,
-            ConnectionRequest request) {
+    public Connection onCreateUnknownConnection(
+            PhoneAccountHandle connectionManagerAccount, ConnectionRequest request) {
         Log.d(TAG, "onCreateUnknownConnection " + connectionManagerAccount);
         HfpClientDeviceBlock block = findBlockForHandle(connectionManagerAccount);
         if (block == null) {
@@ -308,9 +302,17 @@ public class HfpClientConnectionService extends ConnectionService {
         BluetoothDevice bd2 = ((HfpClientConnection) connection2).getDevice();
         // We can only conference two connections on same device
         if (!Objects.equals(bd1, bd2)) {
-            Log.e(TAG,
-                    "Cannot conference calls from two different devices " + "bd1 " + bd1 + " bd2 "
-                            + bd2 + " conn1 " + connection1 + "connection2 " + connection2);
+            Log.e(
+                    TAG,
+                    "Cannot conference calls from two different devices "
+                            + "bd1 "
+                            + bd1
+                            + " bd2 "
+                            + bd2
+                            + " conn1 "
+                            + connection1
+                            + "connection2 "
+                            + connection2);
             return;
         }
 
@@ -318,9 +320,9 @@ public class HfpClientConnectionService extends ConnectionService {
         block.onConference(connection1, connection2);
     }
 
-    //--------------------------------------------------------------------------------------------//
+    // --------------------------------------------------------------------------------------------//
     // DEVICE MANAGEMENT                                                                          //
-    //--------------------------------------------------------------------------------------------//
+    // --------------------------------------------------------------------------------------------//
 
     private BluetoothDevice getDevice(PhoneAccountHandle handle) {
         BluetoothAdapter adapter = getSystemService(BluetoothManager.class).getAdapter();
@@ -360,19 +362,23 @@ public class HfpClientConnectionService extends ConnectionService {
     PhoneAccount createAccount(BluetoothDevice device) {
         Uri addr = Uri.fromParts(HfpClientConnectionService.HFP_SCHEME, device.getAddress(), null);
         PhoneAccountHandle handle =
-                new PhoneAccountHandle(new ComponentName(this, HfpClientConnectionService.class),
+                new PhoneAccountHandle(
+                        new ComponentName(this, HfpClientConnectionService.class),
                         device.getAddress());
 
         int capabilities = PhoneAccount.CAPABILITY_CALL_PROVIDER;
-        if (getApplicationContext().getResources().getBoolean(
-                com.android.bluetooth.R.bool
-                .hfp_client_connection_service_support_emergency_call)) {
+        if (getApplicationContext()
+                .getResources()
+                .getBoolean(
+                        com.android.bluetooth.R.bool
+                                .hfp_client_connection_service_support_emergency_call)) {
             // Need to have an emergency call capability to place emergency call
             capabilities |= PhoneAccount.CAPABILITY_PLACE_EMERGENCY_CALLS;
         }
 
         PhoneAccount account =
-                new PhoneAccount.Builder(handle, "HFP " + device.toString()).setAddress(addr)
+                new PhoneAccount.Builder(handle, "HFP " + device.toString())
+                        .setAddress(addr)
                         .setSupportedUriSchemes(Arrays.asList(PhoneAccount.SCHEME_TEL))
                         .setCapabilities(capabilities)
                         .build();
@@ -384,9 +390,7 @@ public class HfpClientConnectionService extends ConnectionService {
         return mDeviceBlocks;
     }
 
-    /**
-     * Dump the state of the HfpClientConnectionService and internal objects
-     */
+    /** Dump the state of the HfpClientConnectionService and internal objects */
     public static void dump(StringBuilder sb) {
         HfpClientConnectionService instance = getInstance();
         sb.append("  HfpClientConnectionService:\n");

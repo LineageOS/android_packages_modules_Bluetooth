@@ -35,10 +35,23 @@ public class StackEventTest {
         int type = StackEvent.EVENT_TYPE_RING_INDICATION;
 
         StackEvent event = new StackEvent(type);
-        String expectedString = "StackEvent {type:" + StackEvent.eventTypeToString(type)
-                + ", value1:" + event.valueInt + ", value2:" + event.valueInt2 + ", value3:"
-                + event.valueInt3 + ", value4:" + event.valueInt4 + ", string: \""
-                + event.valueString + "\"" + ", device:" + event.device + "}";
+        String expectedString =
+                "StackEvent {type:"
+                        + StackEvent.eventTypeToString(type)
+                        + ", value1:"
+                        + event.valueInt
+                        + ", value2:"
+                        + event.valueInt2
+                        + ", value3:"
+                        + event.valueInt3
+                        + ", value4:"
+                        + event.valueInt4
+                        + ", string: \""
+                        + event.valueString
+                        + "\""
+                        + ", device:"
+                        + event.device
+                        + "}";
 
         assertThat(event.toString()).isEqualTo(expectedString);
     }
@@ -54,8 +67,8 @@ public class StackEventTest {
                 if (t == int.class) {
                     int stackEventType = field.getInt(null);
                     if (fieldName.equals("EVENT_TYPE_UNKNOWN_EVENT")) {
-                        assertThat(StackEvent.eventTypeToString(stackEventType)).isEqualTo(
-                                "EVENT_TYPE_UNKNOWN:" + stackEventType);
+                        assertThat(StackEvent.eventTypeToString(stackEventType))
+                                .isEqualTo("EVENT_TYPE_UNKNOWN:" + stackEventType);
                     } else {
                         String eventTypeToString = StackEvent.eventTypeToString(stackEventType);
                         assertThat(eventTypeToString).isEqualTo(fieldName);

@@ -19,9 +19,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
-/**
- * Class to generate a default Device Bloomfilter
- */
+/** Class to generate a default Device Bloomfilter */
 public class DeviceBloomfilterGenerator {
 
     public static final String BLOOM_FILTER_DEFAULT =
@@ -373,8 +371,10 @@ public class DeviceBloomfilterGenerator {
         int len = s.length();
         byte[] data = new byte[len / 2];
         for (int i = 0; i < len; i += 2) {
-            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
-                    + Character.digit(s.charAt(i + 1), 16));
+            data[i / 2] =
+                    (byte)
+                            ((Character.digit(s.charAt(i), 16) << 4)
+                                    + Character.digit(s.charAt(i + 1), 16));
         }
         return data;
     }

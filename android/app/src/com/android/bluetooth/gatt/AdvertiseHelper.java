@@ -178,7 +178,6 @@ class AdvertiseHelper {
             }
         }
 
-
         if (data.getServiceSolicitationUuids() != null) {
             ByteArrayOutputStream serviceUuids16 = new ByteArrayOutputStream();
             ByteArrayOutputStream serviceUuids32 = new ByteArrayOutputStream();
@@ -220,8 +219,7 @@ class AdvertiseHelper {
 
         for (TransportDiscoveryData transportDiscoveryData : data.getTransportDiscoveryData()) {
             ret.write(transportDiscoveryData.totalBytes());
-            ret.write(transportDiscoveryData.toByteArray(),
-                    0, transportDiscoveryData.totalBytes());
+            ret.write(transportDiscoveryData.toByteArray(), 0, transportDiscoveryData.totalBytes());
         }
         return ret.toByteArray();
     }
@@ -239,4 +237,3 @@ class AdvertiseHelper {
         }
     }
 }
-

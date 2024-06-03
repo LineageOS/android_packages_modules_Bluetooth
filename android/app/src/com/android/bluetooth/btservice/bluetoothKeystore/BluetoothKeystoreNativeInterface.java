@@ -65,9 +65,7 @@ public class BluetoothKeystoreNativeInterface {
         initNative();
     }
 
-    /**
-     * Cleanup the native interface.
-     */
+    /** Cleanup the native interface. */
     public void cleanup() {
         cleanupNative();
         mBluetoothKeystoreService = null;
@@ -112,5 +110,6 @@ public class BluetoothKeystoreNativeInterface {
 
     // Native methods that call into the JNI interface
     private native void initNative();
+
     private native void cleanupNative();
 }

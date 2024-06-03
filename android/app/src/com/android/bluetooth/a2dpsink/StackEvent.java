@@ -56,8 +56,11 @@ final class StackEvent {
                 s += "EVENT_TYPE_AUDIO_STATE_CHANGED, state=" + mState;
                 break;
             case EVENT_TYPE_AUDIO_CONFIG_CHANGED:
-                s += "EVENT_TYPE_AUDIO_CONFIG_CHANGED, sampleRate=" + mSampleRate
-                        + ", channelCount=" + mChannelCount;
+                s +=
+                        "EVENT_TYPE_AUDIO_CONFIG_CHANGED, sampleRate="
+                                + mSampleRate
+                                + ", channelCount="
+                                + mChannelCount;
                 break;
             default:
                 s += "Unknown";
@@ -81,8 +84,7 @@ final class StackEvent {
         return event;
     }
 
-    static StackEvent audioConfigChanged(BluetoothDevice device, int sampleRate,
-            int channelCount) {
+    static StackEvent audioConfigChanged(BluetoothDevice device, int sampleRate, int channelCount) {
         StackEvent event = new StackEvent(StackEvent.EVENT_TYPE_AUDIO_CONFIG_CHANGED);
         event.mDevice = device;
         event.mSampleRate = sampleRate;

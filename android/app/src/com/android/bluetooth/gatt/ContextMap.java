@@ -49,15 +49,13 @@ import java.util.UUID;
 import java.util.function.Predicate;
 
 /**
- * Helper class that keeps track of registered GATT applications.
- * This class manages application callbacks and keeps track of GATT connections.
+ * Helper class that keeps track of registered GATT applications. This class manages application
+ * callbacks and keeps track of GATT connections.
  */
 public class ContextMap<C, T> {
     private static final String TAG = GattServiceConfig.TAG_PREFIX + "ContextMap";
 
-    /**
-     * Connection class helps map connection IDs to device addresses.
-     */
+    /** Connection class helps map connection IDs to device addresses. */
     public static class Connection {
         public int connId;
         public String address;
@@ -72,9 +70,7 @@ public class ContextMap<C, T> {
         }
     }
 
-    /**
-     * Application entry mapping UUIDs to appIDs and callbacks.
-     */
+    /** Application entry mapping UUIDs to appIDs and callbacks. */
     public class App {
         /** The UUID of the application */
         public UUID uuid;
@@ -93,6 +89,7 @@ public class ContextMap<C, T> {
 
         /** Context information */
         public T info;
+
         /** Death receipient */
         private IBinder.DeathRecipient mDeathRecipient;
 
@@ -127,9 +124,7 @@ public class ContextMap<C, T> {
         /** Internal callback info queue, waiting to be send on congestion clear */
         private List<CallbackInfo> mCongestionQueue = new ArrayList<CallbackInfo>();
 
-        /**
-         * Creates a new app context.
-         */
+        /** Creates a new app context. */
         App(UUID uuid, C callback, T info, String name, AppScanStats appScanStats) {
             this.uuid = uuid;
             this.callback = callback;
@@ -138,9 +133,7 @@ public class ContextMap<C, T> {
             this.appScanStats = appScanStats;
         }
 
-        /**
-         * Creates a new app context for advertiser.
-         */
+        /** Creates a new app context for advertiser. */
         App(int id, C callback, String name) {
             this.id = id;
             this.callback = callback;
@@ -188,6 +181,7 @@ public class ContextMap<C, T> {
 
     /** Our internal application list */
     private final Object mAppsLock = new Object();
+
     @GuardedBy("mAppsLock")
     private List<App> mApps = new ArrayList<App>();
 
@@ -318,9 +312,7 @@ public class ContextMap<C, T> {
         return appIds;
     }
 
-    /**
-     * Add a new connection for a given application ID.
-     */
+    /** Add a new connection for a given application ID. */
     void addConnection(int id, int connId, String address) {
         synchronized (mConnectionsLock) {
             App entry = getById(id);
@@ -330,9 +322,7 @@ public class ContextMap<C, T> {
         }
     }
 
-    /**
-     * Remove a connection with the given ID.
-     */
+    /** Remove a connection with the given ID. */
     void removeConnection(int id, int connId) {
         synchronized (mConnectionsLock) {
             if (Flags.bleContextMapRemoveFix()) {
@@ -350,9 +340,7 @@ public class ContextMap<C, T> {
         }
     }
 
-    /**
-     * Remove all connections for a given application ID.
-     */
+    /** Remove all connections for a given application ID. */
     void removeConnectionsByAppId(int appId) {
         synchronized (mConnectionsLock) {
             mConnections.removeIf(conn -> conn.appId == appId);
@@ -416,34 +404,26 @@ public class ContextMap<C, T> {
         return null;
     }
 
-    /**
-     * Get Logging info by application UID
-     */
+    /** Get Logging info by application UID */
     public AppScanStats getAppScanStatsByUid(int uid) {
         return mAppScanStats.get(uid);
     }
 
-    /**
-     * Remove the context for a given application ID.
-     */
+    /** Remove the context for a given application ID. */
     void removeAppAdvertiseStats(int id) {
         synchronized (this) {
             mAppAdvertiseStats.remove(id);
         }
     }
 
-    /**
-     * Get Logging info by ID
-     */
+    /** Get Logging info by ID */
     AppAdvertiseStats getAppAdvertiseStatsById(int id) {
         synchronized (this) {
             return mAppAdvertiseStats.get(id);
         }
     }
 
-    /**
-     * update the advertiser ID by the regiseter ID
-     */
+    /** update the advertiser ID by the regiseter ID */
     void setAdvertiserIdByRegId(int regId, int advertiserId) {
         synchronized (this) {
             AppAdvertiseStats stats = mAppAdvertiseStats.get(regId);
@@ -456,17 +436,28 @@ public class ContextMap<C, T> {
         }
     }
 
-    void recordAdvertiseStart(int id, AdvertisingSetParameters parameters,
-            AdvertiseData advertiseData, AdvertiseData scanResponse,
-            PeriodicAdvertisingParameters periodicParameters, AdvertiseData periodicData,
-            int duration, int maxExtAdvEvents) {
+    void recordAdvertiseStart(
+            int id,
+            AdvertisingSetParameters parameters,
+            AdvertiseData advertiseData,
+            AdvertiseData scanResponse,
+            PeriodicAdvertisingParameters periodicParameters,
+            AdvertiseData periodicData,
+            int duration,
+            int maxExtAdvEvents) {
         synchronized (this) {
             AppAdvertiseStats stats = mAppAdvertiseStats.get(id);
             if (stats == null) {
                 return;
             }
-            stats.recordAdvertiseStart(parameters, advertiseData, scanResponse,
-                    periodicParameters, periodicData, duration, maxExtAdvEvents);
+            stats.recordAdvertiseStart(
+                    parameters,
+                    advertiseData,
+                    scanResponse,
+                    periodicParameters,
+                    periodicData,
+                    duration,
+                    maxExtAdvEvents);
             int advertiseInstanceCount = mAppAdvertiseStats.size();
             Log.d(TAG, "advertiseInstanceCount is " + advertiseInstanceCount);
             AppAdvertiseStats.recordAdvertiseInstanceCount(advertiseInstanceCount);
@@ -555,9 +546,7 @@ public class ContextMap<C, T> {
         }
     }
 
-    /**
-     * Get the device addresses for all connected devices
-     */
+    /** Get the device addresses for all connected devices */
     Set<String> getConnectedDevices() {
         Set<String> addresses = new HashSet<String>();
         synchronized (mConnectionsLock) {
@@ -568,9 +557,7 @@ public class ContextMap<C, T> {
         return addresses;
     }
 
-    /**
-     * Get an application context by a connection ID.
-     */
+    /** Get an application context by a connection ID. */
     App getByConnId(int connId) {
         int appId = -1;
         synchronized (mConnectionsLock) {
@@ -587,9 +574,7 @@ public class ContextMap<C, T> {
         return null;
     }
 
-    /**
-     * Returns a connection ID for a given device address.
-     */
+    /** Returns a connection ID for a given device address. */
     Integer connIdByAddress(int id, String address) {
         App entry = getById(id);
         if (entry == null) {
@@ -605,9 +590,7 @@ public class ContextMap<C, T> {
         return null;
     }
 
-    /**
-     * Returns the device address for a given connection ID.
-     */
+    /** Returns the device address for a given connection ID. */
     String addressByConnId(int connId) {
         synchronized (mConnectionsLock) {
             for (Connection connection : mConnections) {
@@ -653,9 +636,7 @@ public class ContextMap<C, T> {
         }
     }
 
-    /**
-     * Returns connect device map with addr and appid
-     */
+    /** Returns connect device map with addr and appid */
     Map<Integer, String> getConnectedMap() {
         Map<Integer, String> connectedmap = new HashMap<Integer, String>();
         synchronized (mConnectionsLock) {
@@ -666,9 +647,7 @@ public class ContextMap<C, T> {
         return connectedmap;
     }
 
-    /**
-     * Logs debug information.
-     */
+    /** Logs debug information. */
     protected void dump(StringBuilder sb) {
         sb.append("  Entries: " + mAppScanStats.size() + "\n\n");
         for (AppScanStats appScanStats : mAppScanStats.values()) {
@@ -676,9 +655,7 @@ public class ContextMap<C, T> {
         }
     }
 
-    /**
-     * Logs advertiser debug information.
-     */
+    /** Logs advertiser debug information. */
     void dumpAdvertiser(StringBuilder sb) {
         synchronized (this) {
             if (!mLastAdvertises.isEmpty()) {
@@ -690,8 +667,9 @@ public class ContextMap<C, T> {
             }
 
             if (!mAppAdvertiseStats.isEmpty()) {
-                sb.append("  Total number of ongoing advertising                   : "
-                        + mAppAdvertiseStats.size());
+                sb.append(
+                        "  Total number of ongoing advertising                   : "
+                                + mAppAdvertiseStats.size());
                 sb.append("\n  Ongoing advertising:");
                 for (Integer key : mAppAdvertiseStats.keySet()) {
                     AppAdvertiseStats stats = mAppAdvertiseStats.get(key);

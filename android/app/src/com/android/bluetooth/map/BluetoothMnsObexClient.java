@@ -1,17 +1,17 @@
 /*
-* Copyright (C) 2014 Samsung System LSI
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*      http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (C) 2014 Samsung System LSI
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.android.bluetooth.map;
 
 import android.bluetooth.BluetoothDevice;
@@ -65,16 +65,15 @@ public class BluetoothMnsObexClient {
     public static final int MSG_MNS_SEND_EVENT = 2;
     public static final int MSG_MNS_SDP_SEARCH_REGISTRATION = 3;
 
-    //Copy SdpManager.SDP_INTENT_DELAY - The timeout to wait for reply from native.
+    // Copy SdpManager.SDP_INTENT_DELAY - The timeout to wait for reply from native.
     private static final int MNS_SDP_SEARCH_DELAY = 6000;
     public MnsSdpSearchInfo mMnsLstRegRqst = null;
     private static final int MNS_NOTIFICATION_DELAY = 10;
     public static final ParcelUuid BLUETOOTH_UUID_OBEX_MNS =
             ParcelUuid.fromString("00001133-0000-1000-8000-00805F9B34FB");
 
-
-    public BluetoothMnsObexClient(BluetoothDevice remoteDevice, SdpMnsRecord mnsRecord,
-            Handler callback) {
+    public BluetoothMnsObexClient(
+            BluetoothDevice remoteDevice, SdpMnsRecord mnsRecord, Handler callback) {
         if (remoteDevice == null) {
             throw new NullPointerException("Obex transport is null");
         }
@@ -82,7 +81,7 @@ public class BluetoothMnsObexClient {
         HandlerThread thread = new HandlerThread("BluetoothMnsObexClient");
         thread.start();
         /* This will block until the looper have started, hence it will be safe to use it,
-           when the constructor completes */
+        when the constructor completes */
         Looper looper = thread.getLooper();
         mHandler = new MnsObexClientHandler(looper);
         mCallback = callback;
@@ -126,22 +125,22 @@ public class BluetoothMnsObexClient {
                     if (isValidMnsRecord()) {
                         handleRegistration(msg.arg1 /*masId*/, msg.arg2 /*status*/);
                     } else {
-                        //Should not happen
+                        // Should not happen
                         Log.d(TAG, "MNS SDP info not available yet - Cannot Connect.");
                     }
                     break;
                 case MSG_MNS_SEND_EVENT:
-                    sendEventHandler((byte[]) msg.obj/*byte[]*/, msg.arg1 /*masId*/);
+                    sendEventHandler((byte[]) msg.obj /*byte[]*/, msg.arg1 /*masId*/);
                     break;
                 case MSG_MNS_SDP_SEARCH_REGISTRATION:
-                    //Initiate SDP Search
+                    // Initiate SDP Search
                     notifyMnsSdpSearch();
-                    //Save the mns search info
+                    // Save the mns search info
                     mMnsLstRegRqst = new MnsSdpSearchInfo(true, msg.arg1, msg.arg2);
-                    //Handle notification registration.
+                    // Handle notification registration.
                     Message msgReg =
-                            mHandler.obtainMessage(MSG_MNS_NOTIFICATION_REGISTRATION, msg.arg1,
-                                    msg.arg2);
+                            mHandler.obtainMessage(
+                                    MSG_MNS_NOTIFICATION_REGISTRATION, msg.arg1, msg.arg2);
                     Log.v(TAG, "SearchReg  masId:  " + msg.arg1 + " notfStatus: " + msg.arg2);
                     mHandler.sendMessageDelayed(msgReg, MNS_SDP_SEARCH_DELAY);
                     break;
@@ -156,8 +155,8 @@ public class BluetoothMnsObexClient {
     }
 
     /**
-     * Disconnect the connection to MNS server.
-     * Call this when the MAS client requests a de-registration on events.
+     * Disconnect the connection to MNS server. Call this when the MAS client requests a
+     * de-registration on events.
      */
     public synchronized void disconnect() {
         try {
@@ -206,9 +205,7 @@ public class BluetoothMnsObexClient {
         }
     }
 
-    /**
-     * Shutdown the MNS.
-     */
+    /** Shutdown the MNS. */
     public synchronized void shutdown() {
         /* should shutdown handler thread first to make sure
          * handleRegistration won't be called when disconnect
@@ -230,6 +227,7 @@ public class BluetoothMnsObexClient {
 
     /**
      * We store a list of registered MasIds only to control connect/disconnect
+     *
      * @param masId
      * @param notificationStatus
      */
@@ -239,7 +237,7 @@ public class BluetoothMnsObexClient {
         if (notificationStatus == BluetoothMapAppParams.NOTIFICATION_STATUS_NO) {
             mRegisteredMasIds.delete(masId);
             if (mMnsLstRegRqst != null && mMnsLstRegRqst.lastMasId == masId) {
-                //Clear last saved MNSSdpSearchInfo , if Disconnect requested for same MasId.
+                // Clear last saved MNSSdpSearchInfo , if Disconnect requested for same MasId.
                 mMnsLstRegRqst = null;
             }
         } else if (notificationStatus == BluetoothMapAppParams.NOTIFICATION_STATUS_YES) {
@@ -263,7 +261,7 @@ public class BluetoothMnsObexClient {
             disconnect();
         }
 
-        //Register ContentObserver After connect/disconnect MNS channel.
+        // Register ContentObserver After connect/disconnect MNS channel.
         Log.v(TAG, "Send  registerObserver: " + sendObserverRegistration);
         if (mCallback != null && sendObserverRegistration) {
             Message msg = Message.obtain(mCallback);
@@ -290,11 +288,11 @@ public class BluetoothMnsObexClient {
         }
         mMnsRecord = mnsRecord;
         if (mMnsLstRegRqst != null) {
-            //SDP Search completed.
+            // SDP Search completed.
             mMnsLstRegRqst.setIsSearchInProgress(false);
             if (mHandler.hasMessages(MSG_MNS_NOTIFICATION_REGISTRATION)) {
                 mHandler.removeMessages(MSG_MNS_NOTIFICATION_REGISTRATION);
-                //Search Result obtained within MNS_SDP_SEARCH_DELAY timeout
+                // Search Result obtained within MNS_SDP_SEARCH_DELAY timeout
                 if (!isValidMnsRecord()) {
                     // SDP info still not available for last trial.
                     // Clear saved info.
@@ -304,9 +302,8 @@ public class BluetoothMnsObexClient {
                     Message msgReg = mHandler.obtainMessage(MSG_MNS_NOTIFICATION_REGISTRATION);
                     msgReg.arg1 = mMnsLstRegRqst.lastMasId;
                     msgReg.arg2 = mMnsLstRegRqst.lastNotificationStatus;
-                    Log.v(TAG, "SearchReg  masId:  " + msgReg.arg1 + " notfStatus: "
-                            + msgReg.arg2);
-                    //Handle notification registration.
+                    Log.v(TAG, "SearchReg  masId:  " + msgReg.arg1 + " notfStatus: " + msgReg.arg2);
+                    // Handle notification registration.
                     mHandler.sendMessageDelayed(msgReg, MNS_NOTIFICATION_DELAY);
                 }
             }
@@ -410,6 +407,7 @@ public class BluetoothMnsObexClient {
 
     /**
      * Call this method to queue an event report to be send to the MNS server.
+     *
      * @param eventBytes the encoded event data.
      * @param masInstanceId the MasId of the instance sending the event.
      */

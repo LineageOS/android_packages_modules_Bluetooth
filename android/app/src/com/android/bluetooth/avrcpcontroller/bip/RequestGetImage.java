@@ -30,8 +30,7 @@ import java.io.InputStream;
 public class RequestGetImage extends BipRequest {
     // Expected inputs
     private final String mImageHandle;
-    @VisibleForTesting
-    final BipImageDescriptor mImageDescriptor;
+    @VisibleForTesting final BipImageDescriptor mImageDescriptor;
 
     // Expected return type
     private static final String TYPE = "x-bt/img-img";

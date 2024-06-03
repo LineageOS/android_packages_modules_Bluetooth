@@ -181,7 +181,6 @@ public class AdapterServiceTest {
     private static final int NATIVE_INIT_MS = 8000;
     private static final int NATIVE_DISABLE_MS = 8000;
 
-
     private PackageManager mMockPackageManager;
     private MockContentResolver mMockContentResolver;
     private int mForegroundUserId;
@@ -248,12 +247,14 @@ public class AdapterServiceTest {
         Context targetContext = InstrumentationRegistry.getTargetContext();
 
         mMockContentResolver = new MockContentResolver(targetContext);
-        mMockContentResolver.addProvider(Settings.AUTHORITY, new MockContentProvider() {
-            @Override
-            public Bundle call(String method, String request, Bundle args) {
-                return Bundle.EMPTY;
-            }
-        });
+        mMockContentResolver.addProvider(
+                Settings.AUTHORITY,
+                new MockContentProvider() {
+                    @Override
+                    public Bundle call(String method, String request, Bundle args) {
+                        return Bundle.EMPTY;
+                    }
+                });
 
         mBluetoothManager = targetContext.getSystemService(BluetoothManager.class);
         mCompanionDeviceManager = targetContext.getSystemService(CompanionDeviceManager.class);
@@ -268,8 +269,8 @@ public class AdapterServiceTest {
         when(mMockContext.getApplicationInfo()).thenReturn(mMockApplicationInfo);
         when(mMockContext.getContentResolver()).thenReturn(mMockContentResolver);
         when(mMockContext.getApplicationContext()).thenReturn(mMockContext);
-        when(mMockContext.createContextAsUser(UserHandle.SYSTEM, /* flags= */ 0)).thenReturn(
-                mMockContext);
+        when(mMockContext.createContextAsUser(UserHandle.SYSTEM, /* flags= */ 0))
+                .thenReturn(mMockContext);
         when(mMockContext.getResources()).thenReturn(mMockResources);
         when(mMockContext.getUserId()).thenReturn(Process.BLUETOOTH_UID);
         when(mMockContext.getPackageManager()).thenReturn(mMockPackageManager);
@@ -304,10 +305,10 @@ public class AdapterServiceTest {
                                 "AdapterServiceTestPrefs", Context.MODE_PRIVATE));
 
         doAnswer(
-                invocation -> {
-                    Object[] args = invocation.getArguments();
-                    return targetContext.getDatabasePath((String) args[0]);
-                })
+                        invocation -> {
+                            Object[] args = invocation.getArguments();
+                            return targetContext.getDatabasePath((String) args[0]);
+                        })
                 .when(mMockContext)
                 .getDatabasePath(anyString());
 
@@ -319,7 +320,8 @@ public class AdapterServiceTest {
 
         when(mIBluetoothCallback.asBinder()).thenReturn(mBinder);
 
-        doReturn(Process.BLUETOOTH_UID).when(mMockPackageManager)
+        doReturn(Process.BLUETOOTH_UID)
+                .when(mMockPackageManager)
                 .getPackageUidAsUser(any(), anyInt(), anyInt());
 
         when(mMockGattService.getName()).thenReturn("GattService");
@@ -573,10 +575,7 @@ public class AdapterServiceTest {
         Log.e(TAG, "doDisable() complete success");
     }
 
-    /**
-     * Test: Turn Bluetooth on.
-     * Check whether the AdapterService gets started.
-     */
+    /** Test: Turn Bluetooth on. Check whether the AdapterService gets started. */
     @Test
     public void testEnable() {
         doEnable(false);
@@ -598,10 +597,7 @@ public class AdapterServiceTest {
         assertThat(mAdapterService.getScanMode()).isEqualTo(BluetoothAdapter.SCAN_MODE_CONNECTABLE);
     }
 
-    /**
-     * Test: Turn Bluetooth on/off.
-     * Check whether the AdapterService gets started and stopped.
-     */
+    /** Test: Turn Bluetooth on/off. Check whether the AdapterService gets started and stopped. */
     @Test
     public void testEnableDisable() {
         doEnable(false);
@@ -609,8 +605,8 @@ public class AdapterServiceTest {
     }
 
     /**
-     * Test: Turn Bluetooth on/off with only GATT supported.
-     * Check whether the AdapterService gets started and stopped.
+     * Test: Turn Bluetooth on/off with only GATT supported. Check whether the AdapterService gets
+     * started and stopped.
      */
     @Test
     public void testEnableDisableOnlyGatt() {
@@ -633,10 +629,7 @@ public class AdapterServiceTest {
         doDisable(true);
     }
 
-    /**
-     * Test: Don't start GATT
-     * Check whether the AdapterService quits gracefully
-     */
+    /** Test: Don't start GATT Check whether the AdapterService quits gracefully */
     @Test
     public void testGattStartTimeout() {
         assertThat(mAdapterService.getState()).isEqualTo(STATE_OFF);
@@ -671,10 +664,7 @@ public class AdapterServiceTest {
         assertThat(mAdapterService.getState()).isEqualTo(STATE_OFF);
     }
 
-    /**
-     * Test: Don't stop GATT
-     * Check whether the AdapterService quits gracefully
-     */
+    /** Test: Don't stop GATT Check whether the AdapterService quits gracefully */
     @Test
     public void testGattStopTimeout() {
         doEnable(false);
@@ -841,10 +831,7 @@ public class AdapterServiceTest {
         mAdapterService.unregisterRemoteCallback(callback);
     }
 
-    /**
-     * Test: Don't start a classic profile
-     * Check whether the AdapterService quits gracefully
-     */
+    /** Test: Don't start a classic profile Check whether the AdapterService quits gracefully */
     @Test
     public void testProfileStartTimeout() {
         assertThat(mAdapterService.getState()).isEqualTo(STATE_OFF);
@@ -922,15 +909,12 @@ public class AdapterServiceTest {
         assertThat(mAdapterService.getState()).isEqualTo(STATE_OFF);
     }
 
-    /**
-     * Test: Toggle snoop logging setting
-     * Check whether the AdapterService restarts fully
-     */
+    /** Test: Toggle snoop logging setting Check whether the AdapterService restarts fully */
     @Test
     public void testSnoopLoggingChange() {
         BluetoothProperties.snoop_log_mode_values snoopSetting =
                 BluetoothProperties.snoop_log_mode()
-                .orElse(BluetoothProperties.snoop_log_mode_values.EMPTY);
+                        .orElse(BluetoothProperties.snoop_log_mode_values.EMPTY);
         BluetoothProperties.snoop_log_mode(BluetoothProperties.snoop_log_mode_values.DISABLED);
         doEnable(false);
 
@@ -974,11 +958,10 @@ public class AdapterServiceTest {
         BluetoothProperties.snoop_log_mode(snoopSetting);
     }
 
-
     /**
-     * Test: Obfuscate a null Bluetooth
-     * Check if returned value from {@link AdapterService#obfuscateAddress(BluetoothDevice)} is
-     * an empty array when device address is null
+     * Test: Obfuscate a null Bluetooth Check if returned value from {@link
+     * AdapterService#obfuscateAddress(BluetoothDevice)} is an empty array when device address is
+     * null
      */
     @Test
     public void testObfuscateBluetoothAddress_NullAddress() {
@@ -1069,7 +1052,8 @@ public class AdapterServiceTest {
         }
 
         // Trigger address consolidate callback
-        remoteDevices.addressConsolidateCallback(Utils.getBytesFromAddress(TEST_BT_ADDR_1),
+        remoteDevices.addressConsolidateCallback(
+                Utils.getBytesFromAddress(TEST_BT_ADDR_1),
                 Utils.getBytesFromAddress(TEST_BT_ADDR_2));
 
         // Verify we can get correct identity address
@@ -1127,9 +1111,8 @@ public class AdapterServiceTest {
     }
 
     /**
-     * Test: Get id for null address
-     * Check if returned value from {@link AdapterService#getMetricId(BluetoothDevice)} is
-     * 0 when device address is null
+     * Test: Get id for null address Check if returned value from {@link
+     * AdapterService#getMetricId(BluetoothDevice)} is 0 when device address is null
      */
     @Test
     public void testGetMetricId_NullAddress() {
@@ -1183,8 +1166,8 @@ public class AdapterServiceTest {
         FileDescriptor fd = new FileDescriptor();
         PrintWriter writer = mock(PrintWriter.class);
 
-        mAdapterService.dump(fd, writer, new String[]{});
-        mAdapterService.dump(fd, writer, new String[]{"set-test-mode", "enabled"});
+        mAdapterService.dump(fd, writer, new String[] {});
+        mAdapterService.dump(fd, writer, new String[] {"set-test-mode", "enabled"});
         doReturn(new byte[0]).when(mNativeInterface).dumpMetrics();
         mAdapterService.dump(fd, writer, new String[] {"--proto-bin"});
         mAdapterService.dump(fd, writer, new String[] {"random", "arguments"});

@@ -21,9 +21,7 @@ import android.util.Log;
 
 import java.util.Arrays;
 
-/**
- * Helper class to parse the Public Broadcast Announcement data
- */
+/** Helper class to parse the Public Broadcast Announcement data */
 class PublicBroadcastData {
     private static final String TAG = "Bassclient.PublicBroadcastData";
     private static final int FEATURES_ENCRYPTION_BIT = 0x01 << 0;

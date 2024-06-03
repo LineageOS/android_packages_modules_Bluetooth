@@ -38,8 +38,7 @@ public final class MessagesFilter {
 
     public byte priority = PRIORITY_ANY;
 
-    public MessagesFilter() {
-    }
+    public MessagesFilter() {}
 
     public MessagesFilter(MessagesFilter filter) {
         this.messageType = filter.messageType;
@@ -56,7 +55,7 @@ public final class MessagesFilter {
     }
 
     public void setPeriod(Date filterBegin, Date filterEnd) {
-        //Handle possible NPE for obexTime constructor utility
+        // Handle possible NPE for obexTime constructor utility
         if (filterBegin != null) {
             periodBegin = (new ObexTime(filterBegin)).toString();
         }

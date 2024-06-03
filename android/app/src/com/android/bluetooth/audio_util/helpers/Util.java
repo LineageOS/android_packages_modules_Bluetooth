@@ -34,17 +34,13 @@ class Util {
     // TODO (apanicke): Remove this prefix later, for now it makes debugging easier.
     public static final String NOW_PLAYING_PREFIX = "NowPlayingId";
 
-    /**
-     * Get an empty set of Metadata
-     */
+    /** Get an empty set of Metadata */
     public static final Metadata empty_data() {
         Metadata.Builder builder = new Metadata.Builder();
         return builder.useDefaults().build();
     }
 
-    /**
-     * Determine if a set of Metadata is "empty" as defined by audio_util.
-     */
+    /** Determine if a set of Metadata is "empty" as defined by audio_util. */
     public static final boolean isEmptyData(Metadata data) {
         if (data == null) return true;
         // Note: We need both equals() and an explicit media id check because equals() does
@@ -55,16 +51,14 @@ class Util {
     /**
      * Get whether or not Bluetooth is configured to support URI images or not.
      *
-     * Note that creating URI images will dramatically increase memory usage.
+     * <p>Note that creating URI images will dramatically increase memory usage.
      */
     public static boolean areUriImagesSupported(Context context) {
         if (context == null) return false;
         return context.getResources().getBoolean(R.bool.avrcp_target_cover_art_uri_images);
     }
 
-    /**
-     * Translate a MediaItem to audio_util's Metadata
-     */
+    /** Translate a MediaItem to audio_util's Metadata */
     public static Metadata toMetadata(Context context, MediaItem item) {
         Metadata.Builder builder = new Metadata.Builder();
         try {
@@ -75,9 +69,7 @@ class Util {
         }
     }
 
-    /**
-     * Translate a MediaSession.QueueItem to audio_util's Metadata
-     */
+    /** Translate a MediaSession.QueueItem to audio_util's Metadata */
     public static Metadata toMetadata(Context context, MediaSession.QueueItem item) {
         Metadata.Builder builder = new Metadata.Builder();
 
@@ -95,28 +87,27 @@ class Util {
         return builder.build();
     }
 
-    /**
-     * Translate a MediaMetadata to audio_util's Metadata
-     */
+    /** Translate a MediaMetadata to audio_util's Metadata */
     public static Metadata toMetadata(Context context, MediaMetadata data) {
         Metadata.Builder builder = new Metadata.Builder();
         // This will always be currsong. The AVRCP service will overwrite the mediaId if it needs to
         // TODO (apanicke): Remove when the service is ready, right now it makes debugging much more
         // convenient
         try {
-            return builder.useContext(context).useDefaults().fromMediaMetadata(data)
-                    .setMediaId("currsong").build();
+            return builder.useContext(context)
+                    .useDefaults()
+                    .fromMediaMetadata(data)
+                    .setMediaId("currsong")
+                    .build();
         } catch (Exception e) {
             Log.e(TAG, "Failed to build Metadata from MediaMetadata, returning empty data", e);
             return empty_data();
         }
     }
 
-    /**
-     * Translate a list of MediaSession.QueueItem to a list of audio_util's Metadata
-     */
-    public static List<Metadata> toMetadataList(Context context,
-            List<MediaSession.QueueItem> items) {
+    /** Translate a list of MediaSession.QueueItem to a list of audio_util's Metadata */
+    public static List<Metadata> toMetadataList(
+            Context context, List<MediaSession.QueueItem> items) {
         ArrayList<Metadata> list = new ArrayList<>();
 
         if (items == null) return list;

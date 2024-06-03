@@ -53,8 +53,7 @@ public class LeAudioTmapGattServerTest {
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    private LeAudioTmapGattServer.BluetoothGattServerProxy mGattServerProxy;
+    @Mock private LeAudioTmapGattServer.BluetoothGattServerProxy mGattServerProxy;
 
     private LeAudioTmapGattServer mServer;
 

@@ -23,9 +23,7 @@ import android.util.Log;
 
 import com.android.bluetooth.avrcp.AvrcpTargetService;
 
-/**
- * Manager class for player apps.
- */
+/** Manager class for player apps. */
 public class PlayerSettingsManager {
     private static final String TAG = PlayerSettingsManager.class.getSimpleName();
 
@@ -49,8 +47,10 @@ public class PlayerSettingsManager {
 
         MediaPlayerWrapper wrapper = mMediaPlayerList.getActivePlayer();
         if (wrapper != null) {
-            mActivePlayerController = new MediaControllerCompat(mService,
-                    MediaSessionCompat.Token.fromToken(wrapper.getSessionToken()));
+            mActivePlayerController =
+                    new MediaControllerCompat(
+                            mService,
+                            MediaSessionCompat.Token.fromToken(wrapper.getSessionToken()));
             if (!registerMediaControllerCallback(mActivePlayerController, mControllerCallback)) {
                 mActivePlayerController = null;
             }
@@ -59,9 +59,7 @@ public class PlayerSettingsManager {
         }
     }
 
-    /**
-     * Unregister callbacks
-     */
+    /** Unregister callbacks */
     public void cleanup() {
         updateRemoteDevice();
         if (mActivePlayerController != null) {
@@ -69,16 +67,17 @@ public class PlayerSettingsManager {
         }
     }
 
-    /**
-     * Updates the active player controller.
-     */
+    /** Updates the active player controller. */
     private void activePlayerChanged(MediaPlayerWrapper mediaPlayerWrapper) {
         if (mActivePlayerController != null) {
             unregisterMediaControllerCallback(mActivePlayerController, mControllerCallback);
         }
         if (mediaPlayerWrapper != null) {
-            mActivePlayerController = new MediaControllerCompat(mService,
-                    MediaSessionCompat.Token.fromToken(mediaPlayerWrapper.getSessionToken()));
+            mActivePlayerController =
+                    new MediaControllerCompat(
+                            mService,
+                            MediaSessionCompat.Token.fromToken(
+                                    mediaPlayerWrapper.getSessionToken()));
             if (!registerMediaControllerCallback(mActivePlayerController, mControllerCallback)) {
                 mActivePlayerController = null;
                 updateRemoteDevice();
@@ -92,12 +91,9 @@ public class PlayerSettingsManager {
     /**
      * Sends the MediaController values of the active player to the remote device.
      *
-     * This is called when:
-     * - The class is created and the session is ready
-     * - The class is destroyed
-     * - The active player changed and the session is ready
-     * - The last active player has been removed
-     * - The repeat / shuffle player state changed
+     * <p>This is called when: - The class is created and the session is ready - The class is
+     * destroyed - The active player changed and the session is ready - The last active player has
+     * been removed - The repeat / shuffle player state changed
      */
     private void updateRemoteDevice() {
         int repeatMode = getPlayerRepeatMode();
@@ -111,9 +107,7 @@ public class PlayerSettingsManager {
         mService.sendPlayerSettings(repeatMode, shuffleMode);
     }
 
-    /**
-     * Called from remote device to set the active player repeat mode.
-     */
+    /** Called from remote device to set the active player repeat mode. */
     public boolean setPlayerRepeatMode(int repeatMode) {
         if (mActivePlayerController == null) {
             return false;
@@ -144,9 +138,7 @@ public class PlayerSettingsManager {
         }
     }
 
-    /**
-     * Called from remote device to set the active player shuffle mode.
-     */
+    /** Called from remote device to set the active player shuffle mode. */
     public boolean setPlayerShuffleMode(int shuffleMode) {
         if (mActivePlayerController == null) {
             Log.i(TAG, "setPlayerShuffleMode: no active player");
@@ -283,58 +275,36 @@ public class PlayerSettingsManager {
         }
     }
 
-    /**
-     * Class containing all the Shuffle/Repeat values as defined in the BT spec.
-     */
+    /** Class containing all the Shuffle/Repeat values as defined in the BT spec. */
     public static final class PlayerSettingsValues {
-        /**
-         * Repeat setting, as defined by Bluetooth specification.
-         */
+        /** Repeat setting, as defined by Bluetooth specification. */
         public static final int SETTING_REPEAT = 2;
 
-        /**
-         * Shuffle setting, as defined by Bluetooth specification.
-         */
+        /** Shuffle setting, as defined by Bluetooth specification. */
         public static final int SETTING_SHUFFLE = 3;
 
-        /**
-         * Repeat OFF state, as defined by Bluetooth specification.
-         */
+        /** Repeat OFF state, as defined by Bluetooth specification. */
         public static final int STATE_REPEAT_OFF = 1;
 
-        /**
-         * Single track repeat, as defined by Bluetooth specification.
-         */
+        /** Single track repeat, as defined by Bluetooth specification. */
         public static final int STATE_REPEAT_SINGLE_TRACK = 2;
 
-        /**
-         * All track repeat, as defined by Bluetooth specification.
-         */
+        /** All track repeat, as defined by Bluetooth specification. */
         public static final int STATE_REPEAT_ALL_TRACK = 3;
 
-        /**
-         * Group repeat, as defined by Bluetooth specification.
-         */
+        /** Group repeat, as defined by Bluetooth specification. */
         public static final int STATE_REPEAT_GROUP = 4;
 
-        /**
-         * Shuffle OFF state, as defined by Bluetooth specification.
-         */
+        /** Shuffle OFF state, as defined by Bluetooth specification. */
         public static final int STATE_SHUFFLE_OFF = 1;
 
-        /**
-         * All track shuffle, as defined by Bluetooth specification.
-         */
+        /** All track shuffle, as defined by Bluetooth specification. */
         public static final int STATE_SHUFFLE_ALL_TRACK = 2;
 
-        /**
-         * Group shuffle, as defined by Bluetooth specification.
-         */
+        /** Group shuffle, as defined by Bluetooth specification. */
         public static final int STATE_SHUFFLE_GROUP = 3;
 
-        /**
-         * Default state off.
-         */
+        /** Default state off. */
         public static final int STATE_DEFAULT_OFF = 1;
     }
 

@@ -25,7 +25,11 @@ import com.android.obex.HeaderSet;
 import java.io.IOException;
 
 final class RequestSetMessageStatus extends Request {
-    public enum StatusIndicator { READ, DELETED }
+    public enum StatusIndicator {
+        READ,
+        DELETED
+    }
+
     private static final String TAG = "RequestSetMessageStatus";
     private static final String TYPE = "x-bt/messageStatus";
     private static StatusIndicator mStatusInd;
@@ -36,11 +40,12 @@ final class RequestSetMessageStatus extends Request {
         mHeaderSet.setHeader(HeaderSet.NAME, handle);
 
         ObexAppParameters oap = new ObexAppParameters();
-        oap.add(OAP_TAGID_STATUS_INDICATOR,
-                statusInd == StatusIndicator.READ ? STATUS_INDICATOR_READ
-                                                  : STATUS_INDICATOR_DELETED);
-        oap.add(OAP_TAGID_STATUS_VALUE, value == STATUS_YES ? STATUS_YES
-                                                            : STATUS_NO);
+        oap.add(
+                OAP_TAGID_STATUS_INDICATOR,
+                statusInd == StatusIndicator.READ
+                        ? STATUS_INDICATOR_READ
+                        : STATUS_INDICATOR_DELETED);
+        oap.add(OAP_TAGID_STATUS_VALUE, value == STATUS_YES ? STATUS_YES : STATUS_NO);
         oap.addToHeaderSet(mHeaderSet);
         mStatusInd = statusInd;
         mValue = value;

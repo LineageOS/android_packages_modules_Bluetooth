@@ -64,9 +64,11 @@ import java.util.List;
 public class HfpClientConnectionServiceTest {
     private static final String TEST_DEVICE_ADDRESS = "00:11:22:33:44:55";
     private static final BluetoothDevice TEST_DEVICE =
-            ((BluetoothManager) InstrumentationRegistry.getTargetContext()
-                    .getSystemService(Context.BLUETOOTH_SERVICE))
-            .getAdapter().getRemoteDevice(TEST_DEVICE_ADDRESS);
+            ((BluetoothManager)
+                            InstrumentationRegistry.getTargetContext()
+                                    .getSystemService(Context.BLUETOOTH_SERVICE))
+                    .getAdapter()
+                    .getRemoteDevice(TEST_DEVICE_ADDRESS);
     private static final String TEST_NUMBER = "000-111-2222";
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -100,24 +102,31 @@ public class HfpClientConnectionServiceTest {
         // attachBaseContext, but until we need a full context this is simpler.
         mHfpClientConnectionService = spy(new HfpClientConnectionService());
 
-        doReturn("com.android.bluetooth.hfpclient").when(mHfpClientConnectionService)
+        doReturn("com.android.bluetooth.hfpclient")
+                .when(mHfpClientConnectionService)
                 .getPackageName();
-        doReturn(mHfpClientConnectionService).when(mHfpClientConnectionService)
+        doReturn(mHfpClientConnectionService)
+                .when(mHfpClientConnectionService)
                 .getApplicationContext();
         doReturn(mMockResources).when(mHfpClientConnectionService).getResources();
-        doReturn(true).when(mMockResources)
+        doReturn(true)
+                .when(mMockResources)
                 .getBoolean(R.bool.hfp_client_connection_service_support_emergency_call);
 
-        doReturn(Context.TELECOM_SERVICE).when(mHfpClientConnectionService)
+        doReturn(Context.TELECOM_SERVICE)
+                .when(mHfpClientConnectionService)
                 .getSystemServiceName(TelecomManager.class);
-        doReturn(mMockTelecomManager).when(mHfpClientConnectionService)
+        doReturn(mMockTelecomManager)
+                .when(mHfpClientConnectionService)
                 .getSystemService(Context.TELECOM_SERVICE);
         doReturn(getPhoneAccount(TEST_DEVICE)).when(mMockTelecomManager).getPhoneAccount(any());
 
-        doReturn(Context.BLUETOOTH_SERVICE).when(mHfpClientConnectionService)
+        doReturn(Context.BLUETOOTH_SERVICE)
+                .when(mHfpClientConnectionService)
                 .getSystemServiceName(BluetoothManager.class);
         doReturn(targetContext.getSystemService(BluetoothManager.class))
-                .when(mHfpClientConnectionService).getSystemService(Context.BLUETOOTH_SERVICE);
+                .when(mHfpClientConnectionService)
+                .getSystemService(Context.BLUETOOTH_SERVICE);
     }
 
     @After
@@ -130,8 +139,9 @@ public class HfpClientConnectionServiceTest {
     }
 
     private PhoneAccountHandle getPhoneAccountHandle(BluetoothDevice device) {
-        return new PhoneAccountHandle(new ComponentName(mHfpClientConnectionService,
-                HfpClientConnectionService.class), device.getAddress());
+        return new PhoneAccountHandle(
+                new ComponentName(mHfpClientConnectionService, HfpClientConnectionService.class),
+                device.getAddress());
     }
 
     private PhoneAccount getPhoneAccount(BluetoothDevice device) {
@@ -145,8 +155,8 @@ public class HfpClientConnectionServiceTest {
     }
 
     private void setupDeviceConnection(BluetoothDevice device) throws Exception {
-        mHfpClientConnectionService.onConnectionStateChanged(device,
-                BluetoothProfile.STATE_CONNECTED, BluetoothProfile.STATE_CONNECTING);
+        mHfpClientConnectionService.onConnectionStateChanged(
+                device, BluetoothProfile.STATE_CONNECTED, BluetoothProfile.STATE_CONNECTING);
         HfpClientDeviceBlock block = mHfpClientConnectionService.findBlockForDevice(TEST_DEVICE);
         assertThat(block).isNotNull();
         assertThat(block.getDevice()).isEqualTo(TEST_DEVICE);
@@ -171,8 +181,8 @@ public class HfpClientConnectionServiceTest {
     public void disconnectDevice_blockIsRemoved() throws Exception {
         createService();
         setupDeviceConnection(TEST_DEVICE);
-        HfpClientConnectionService.onConnectionStateChanged(TEST_DEVICE,
-                BluetoothProfile.STATE_DISCONNECTED, BluetoothProfile.STATE_CONNECTED);
+        HfpClientConnectionService.onConnectionStateChanged(
+                TEST_DEVICE, BluetoothProfile.STATE_DISCONNECTED, BluetoothProfile.STATE_CONNECTED);
         assertThat(mHfpClientConnectionService.findBlockForDevice(TEST_DEVICE)).isNull();
     }
 
@@ -180,9 +190,15 @@ public class HfpClientConnectionServiceTest {
     public void callChanged_callAdded() throws Exception {
         createService();
         setupDeviceConnection(TEST_DEVICE);
-        HfpClientCall call = new HfpClientCall(TEST_DEVICE, /* id= */0,
-                HfpClientCall.CALL_STATE_ACTIVE, /* number= */ TEST_NUMBER,
-                /* multiParty= */ false, /* outgoing= */false, /* inBandRing= */true);
+        HfpClientCall call =
+                new HfpClientCall(
+                        TEST_DEVICE,
+                        /* id= */ 0,
+                        HfpClientCall.CALL_STATE_ACTIVE,
+                        /* number= */ TEST_NUMBER,
+                        /* multiParty= */ false,
+                        /* outgoing= */ false,
+                        /* inBandRing= */ true);
         HfpClientConnectionService.onCallChanged(TEST_DEVICE, call);
         HfpClientDeviceBlock block = mHfpClientConnectionService.findBlockForDevice(TEST_DEVICE);
         assertThat(block).isNotNull();
@@ -194,7 +210,8 @@ public class HfpClientConnectionServiceTest {
     public void audioStateChanged_scoStateChanged() throws Exception {
         createService();
         setupDeviceConnection(TEST_DEVICE);
-        HfpClientConnectionService.onAudioStateChanged(TEST_DEVICE,
+        HfpClientConnectionService.onAudioStateChanged(
+                TEST_DEVICE,
                 HeadsetClientHalConstants.AUDIO_STATE_CONNECTED,
                 HeadsetClientHalConstants.AUDIO_STATE_CONNECTING);
         HfpClientDeviceBlock block = mHfpClientConnectionService.findBlockForDevice(TEST_DEVICE);
@@ -209,21 +226,27 @@ public class HfpClientConnectionServiceTest {
         createService();
         setupDeviceConnection(TEST_DEVICE);
 
-        HfpClientCall call = new HfpClientCall(TEST_DEVICE, /* id= */0,
-                HfpClientCall.CALL_STATE_ACTIVE, /* number= */ TEST_NUMBER,
-                /* multiParty= */ false, /* outgoing= */false, /* inBandRing= */true);
+        HfpClientCall call =
+                new HfpClientCall(
+                        TEST_DEVICE,
+                        /* id= */ 0,
+                        HfpClientCall.CALL_STATE_ACTIVE,
+                        /* number= */ TEST_NUMBER,
+                        /* multiParty= */ false,
+                        /* outgoing= */ false,
+                        /* inBandRing= */ true);
 
         Bundle extras = new Bundle();
-        extras.putParcelable(TelecomManager.EXTRA_INCOMING_CALL_EXTRAS,
-                new ParcelUuid(call.getUUID()));
-        ConnectionRequest connectionRequest = new ConnectionRequest.Builder().setExtras(
-                extras).build();
+        extras.putParcelable(
+                TelecomManager.EXTRA_INCOMING_CALL_EXTRAS, new ParcelUuid(call.getUUID()));
+        ConnectionRequest connectionRequest =
+                new ConnectionRequest.Builder().setExtras(extras).build();
 
         HfpClientConnectionService.onCallChanged(TEST_DEVICE, call);
 
-        Connection connection = mHfpClientConnectionService.onCreateIncomingConnection(
-                getPhoneAccountHandle(TEST_DEVICE),
-                connectionRequest);
+        Connection connection =
+                mHfpClientConnectionService.onCreateIncomingConnection(
+                        getPhoneAccountHandle(TEST_DEVICE), connectionRequest);
 
         assertThat(connection).isNotNull();
         assertThat(((HfpClientConnection) connection).getDevice()).isEqualTo(TEST_DEVICE);
@@ -235,22 +258,30 @@ public class HfpClientConnectionServiceTest {
         createService();
         setupDeviceConnection(TEST_DEVICE);
 
-        HfpClientCall call = new HfpClientCall(TEST_DEVICE, /* id= */0,
-                HfpClientCall.CALL_STATE_ACTIVE, /* number= */ TEST_NUMBER,
-                /* multiParty= */ false, /* outgoing= */true, /* inBandRing= */true);
+        HfpClientCall call =
+                new HfpClientCall(
+                        TEST_DEVICE,
+                        /* id= */ 0,
+                        HfpClientCall.CALL_STATE_ACTIVE,
+                        /* number= */ TEST_NUMBER,
+                        /* multiParty= */ false,
+                        /* outgoing= */ true,
+                        /* inBandRing= */ true);
 
         doReturn(call).when(mMockHeadsetClientService).dial(TEST_DEVICE, TEST_NUMBER);
 
         Bundle extras = new Bundle();
-        extras.putParcelable(TelecomManager.EXTRA_OUTGOING_CALL_EXTRAS,
-                new ParcelUuid(call.getUUID()));
-        ConnectionRequest connectionRequest = new ConnectionRequest.Builder().setExtras(
-                extras).setAddress(Uri.fromParts(
-                PhoneAccount.SCHEME_TEL, TEST_NUMBER, null)).build();
+        extras.putParcelable(
+                TelecomManager.EXTRA_OUTGOING_CALL_EXTRAS, new ParcelUuid(call.getUUID()));
+        ConnectionRequest connectionRequest =
+                new ConnectionRequest.Builder()
+                        .setExtras(extras)
+                        .setAddress(Uri.fromParts(PhoneAccount.SCHEME_TEL, TEST_NUMBER, null))
+                        .build();
 
-        Connection connection = mHfpClientConnectionService.onCreateOutgoingConnection(
-                getPhoneAccountHandle(TEST_DEVICE),
-                connectionRequest);
+        Connection connection =
+                mHfpClientConnectionService.onCreateOutgoingConnection(
+                        getPhoneAccountHandle(TEST_DEVICE), connectionRequest);
 
         assertThat(connection).isNotNull();
         assertThat(((HfpClientConnection) connection).getDevice()).isEqualTo(TEST_DEVICE);
@@ -262,22 +293,30 @@ public class HfpClientConnectionServiceTest {
         createService();
         setupDeviceConnection(TEST_DEVICE);
 
-        HfpClientCall call = new HfpClientCall(TEST_DEVICE, /* id= */0,
-                HfpClientCall.CALL_STATE_ACTIVE, /* number= */ TEST_NUMBER,
-                /* multiParty= */ false, /* outgoing= */true, /* inBandRing= */true);
+        HfpClientCall call =
+                new HfpClientCall(
+                        TEST_DEVICE,
+                        /* id= */ 0,
+                        HfpClientCall.CALL_STATE_ACTIVE,
+                        /* number= */ TEST_NUMBER,
+                        /* multiParty= */ false,
+                        /* outgoing= */ true,
+                        /* inBandRing= */ true);
 
         Bundle extras = new Bundle();
-        extras.putParcelable(TelecomManager.EXTRA_OUTGOING_CALL_EXTRAS,
-                new ParcelUuid(call.getUUID()));
-        ConnectionRequest connectionRequest = new ConnectionRequest.Builder().setExtras(
-                extras).setAddress(Uri.fromParts(
-                PhoneAccount.SCHEME_TEL, TEST_NUMBER, null)).build();
+        extras.putParcelable(
+                TelecomManager.EXTRA_OUTGOING_CALL_EXTRAS, new ParcelUuid(call.getUUID()));
+        ConnectionRequest connectionRequest =
+                new ConnectionRequest.Builder()
+                        .setExtras(extras)
+                        .setAddress(Uri.fromParts(PhoneAccount.SCHEME_TEL, TEST_NUMBER, null))
+                        .build();
 
         HfpClientConnectionService.onCallChanged(TEST_DEVICE, call);
 
-        Connection connection = mHfpClientConnectionService.onCreateUnknownConnection(
-                getPhoneAccountHandle(TEST_DEVICE),
-                connectionRequest);
+        Connection connection =
+                mHfpClientConnectionService.onCreateUnknownConnection(
+                        getPhoneAccountHandle(TEST_DEVICE), connectionRequest);
 
         assertThat(connection).isNotNull();
         assertThat(((HfpClientConnection) connection).getDevice()).isEqualTo(TEST_DEVICE);
@@ -285,82 +324,101 @@ public class HfpClientConnectionServiceTest {
     }
 
     @Test
-    public void onCreateIncomingConnection_phoneAccountIsNull_returnsNull() throws Exception{
+    public void onCreateIncomingConnection_phoneAccountIsNull_returnsNull() throws Exception {
         doReturn(null).when(mMockTelecomManager).getPhoneAccount(any());
         createService();
         setupDeviceConnection(TEST_DEVICE);
 
-        HfpClientCall call = new HfpClientCall(TEST_DEVICE, /* id= */0,
-                HfpClientCall.CALL_STATE_ACTIVE, /* number= */ TEST_NUMBER,
-                /* multiParty= */ false, /* outgoing= */false, /* inBandRing= */true);
+        HfpClientCall call =
+                new HfpClientCall(
+                        TEST_DEVICE,
+                        /* id= */ 0,
+                        HfpClientCall.CALL_STATE_ACTIVE,
+                        /* number= */ TEST_NUMBER,
+                        /* multiParty= */ false,
+                        /* outgoing= */ false,
+                        /* inBandRing= */ true);
 
         Bundle extras = new Bundle();
-        extras.putParcelable(TelecomManager.EXTRA_INCOMING_CALL_EXTRAS,
-                new ParcelUuid(call.getUUID()));
-        ConnectionRequest connectionRequest = new ConnectionRequest.Builder().setExtras(
-                extras).build();
+        extras.putParcelable(
+                TelecomManager.EXTRA_INCOMING_CALL_EXTRAS, new ParcelUuid(call.getUUID()));
+        ConnectionRequest connectionRequest =
+                new ConnectionRequest.Builder().setExtras(extras).build();
 
         HfpClientConnectionService.onCallChanged(TEST_DEVICE, call);
 
-        Connection connection = mHfpClientConnectionService.onCreateIncomingConnection(
-                getPhoneAccountHandle(TEST_DEVICE),
-                connectionRequest);
+        Connection connection =
+                mHfpClientConnectionService.onCreateIncomingConnection(
+                        getPhoneAccountHandle(TEST_DEVICE), connectionRequest);
 
         assertThat(connection).isNull();
     }
 
-
     @Test
-    public void onCreateOutgoingConnection_phoneAccountIsNull_returnsNull() throws Exception{
+    public void onCreateOutgoingConnection_phoneAccountIsNull_returnsNull() throws Exception {
         doReturn(null).when(mMockTelecomManager).getPhoneAccount(any());
         createService();
         setupDeviceConnection(TEST_DEVICE);
 
-        HfpClientCall call = new HfpClientCall(TEST_DEVICE, /* id= */0,
-                HfpClientCall.CALL_STATE_ACTIVE, /* number= */ TEST_NUMBER,
-                /* multiParty= */ false, /* outgoing= */true, /* inBandRing= */true);
+        HfpClientCall call =
+                new HfpClientCall(
+                        TEST_DEVICE,
+                        /* id= */ 0,
+                        HfpClientCall.CALL_STATE_ACTIVE,
+                        /* number= */ TEST_NUMBER,
+                        /* multiParty= */ false,
+                        /* outgoing= */ true,
+                        /* inBandRing= */ true);
 
         doReturn(call).when(mMockHeadsetClientService).dial(TEST_DEVICE, TEST_NUMBER);
 
         Bundle extras = new Bundle();
-        extras.putParcelable(TelecomManager.EXTRA_OUTGOING_CALL_EXTRAS,
-                new ParcelUuid(call.getUUID()));
-        ConnectionRequest connectionRequest = new ConnectionRequest.Builder().setExtras(
-                extras).setAddress(Uri.fromParts(
-                PhoneAccount.SCHEME_TEL, TEST_NUMBER, null)).build();
+        extras.putParcelable(
+                TelecomManager.EXTRA_OUTGOING_CALL_EXTRAS, new ParcelUuid(call.getUUID()));
+        ConnectionRequest connectionRequest =
+                new ConnectionRequest.Builder()
+                        .setExtras(extras)
+                        .setAddress(Uri.fromParts(PhoneAccount.SCHEME_TEL, TEST_NUMBER, null))
+                        .build();
 
-        Connection connection = mHfpClientConnectionService.onCreateOutgoingConnection(
-                getPhoneAccountHandle(TEST_DEVICE),
-                connectionRequest);
+        Connection connection =
+                mHfpClientConnectionService.onCreateOutgoingConnection(
+                        getPhoneAccountHandle(TEST_DEVICE), connectionRequest);
 
         assertThat(connection).isNull();
     }
 
-
     @Test
-    public void onCreateUnknownConnection_phoneAccountIsNull_returnsNull() throws Exception{
+    public void onCreateUnknownConnection_phoneAccountIsNull_returnsNull() throws Exception {
         doReturn(null).when(mMockTelecomManager).getPhoneAccount(any());
         createService();
         setupDeviceConnection(TEST_DEVICE);
 
-        HfpClientCall call = new HfpClientCall(TEST_DEVICE, /* id= */0,
-                HfpClientCall.CALL_STATE_ACTIVE, /* number= */ TEST_NUMBER,
-                /* multiParty= */ false, /* outgoing= */true, /* inBandRing= */true);
+        HfpClientCall call =
+                new HfpClientCall(
+                        TEST_DEVICE,
+                        /* id= */ 0,
+                        HfpClientCall.CALL_STATE_ACTIVE,
+                        /* number= */ TEST_NUMBER,
+                        /* multiParty= */ false,
+                        /* outgoing= */ true,
+                        /* inBandRing= */ true);
 
         Bundle extras = new Bundle();
-        extras.putParcelable(TelecomManager.EXTRA_OUTGOING_CALL_EXTRAS,
-                new ParcelUuid(call.getUUID()));
-        ConnectionRequest connectionRequest = new ConnectionRequest.Builder().setExtras(
-                extras).setAddress(Uri.fromParts(
-                PhoneAccount.SCHEME_TEL, TEST_NUMBER, null)).build();
+        extras.putParcelable(
+                TelecomManager.EXTRA_OUTGOING_CALL_EXTRAS, new ParcelUuid(call.getUUID()));
+        ConnectionRequest connectionRequest =
+                new ConnectionRequest.Builder()
+                        .setExtras(extras)
+                        .setAddress(Uri.fromParts(PhoneAccount.SCHEME_TEL, TEST_NUMBER, null))
+                        .build();
 
         HfpClientConnectionService.onCallChanged(TEST_DEVICE, call);
 
-        Connection connection = mHfpClientConnectionService.onCreateUnknownConnection(
-                getPhoneAccountHandle(TEST_DEVICE),
-                connectionRequest);
+        Connection connection =
+                mHfpClientConnectionService.onCreateUnknownConnection(
+                        getPhoneAccountHandle(TEST_DEVICE), connectionRequest);
 
         assertThat(connection).isNull();
     }
-
 }

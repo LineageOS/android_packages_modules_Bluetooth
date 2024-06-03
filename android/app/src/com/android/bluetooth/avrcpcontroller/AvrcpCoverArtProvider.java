@@ -33,15 +33,15 @@ import java.io.IOException;
 /**
  * A provider of downloaded cover art images.
  *
- * Cover art images are downloaded from remote devices and are promised to be "good" for the life of
- * a connection.
+ * <p>Cover art images are downloaded from remote devices and are promised to be "good" for the life
+ * of a connection.
  *
- * Android applications are provided a Uri with their MediaMetadata and MediaItem objects that
+ * <p>Android applications are provided a Uri with their MediaMetadata and MediaItem objects that
  * points back to this provider. Uris are in the following format:
  *
- *   content://com.android.bluetooth.avrcpcontroller.AvrcpCoverArtProvider/<device>/<image-handle>
+ * <p>content://com.android.bluetooth.avrcpcontroller.AvrcpCoverArtProvider/<device>/<image-handle>
  *
- * It's expected by the Media framework that artwork at URIs will be available using the
+ * <p>It's expected by the Media framework that artwork at URIs will be available using the
  * ContentResolver#openInputStream and BitmapFactory#decodeStream functions. Our provider must
  * enable that usage pattern.
  */
@@ -50,8 +50,7 @@ public class AvrcpCoverArtProvider extends ContentProvider {
 
     private BluetoothAdapter mAdapter;
 
-    public AvrcpCoverArtProvider() {
-    }
+    public AvrcpCoverArtProvider() {}
 
     static final String AUTHORITY = "com.android.bluetooth.avrcpcontroller.AvrcpCoverArtProvider";
     static final Uri CONTENT_URI = Uri.parse("content://" + AUTHORITY);
@@ -65,9 +64,12 @@ public class AvrcpCoverArtProvider extends ContentProvider {
      */
     public static Uri getImageUri(BluetoothDevice device, String imageUuid) {
         if (device == null || imageUuid == null || "".equals(imageUuid)) return null;
-        Uri uri = CONTENT_URI.buildUpon().appendQueryParameter("device", device.getAddress())
-                .appendQueryParameter("uuid", imageUuid)
-                .build();
+        Uri uri =
+                CONTENT_URI
+                        .buildUpon()
+                        .appendQueryParameter("device", device.getAddress())
+                        .appendQueryParameter("uuid", imageUuid)
+                        .build();
         debug("getImageUri -> " + uri.toString());
         return uri;
     }
@@ -97,19 +99,20 @@ public class AvrcpCoverArtProvider extends ContentProvider {
         }
 
         final ParcelFileDescriptor[] pipe = ParcelFileDescriptor.createPipe();
-        Thread transferThread = new Thread() {
-            public void run() {
-                try {
-                    FileOutputStream fout =
-                            new ParcelFileDescriptor.AutoCloseOutputStream(pipe[1]);
-                    image.compress(Bitmap.CompressFormat.PNG, 100, fout);
-                    fout.flush();
-                    fout.close();
-                } catch (IOException e) {
-                    /* Something bad must have happened writing the image data */
-                }
-            }
-        };
+        Thread transferThread =
+                new Thread() {
+                    public void run() {
+                        try {
+                            FileOutputStream fout =
+                                    new ParcelFileDescriptor.AutoCloseOutputStream(pipe[1]);
+                            image.compress(Bitmap.CompressFormat.PNG, 100, fout);
+                            fout.flush();
+                            fout.close();
+                        } catch (IOException e) {
+                            /* Something bad must have happened writing the image data */
+                        }
+                    }
+                };
         transferThread.start();
         return pipe[0];
     }
@@ -150,7 +153,11 @@ public class AvrcpCoverArtProvider extends ContentProvider {
     }
 
     @Override
-    public Cursor query(Uri uri, String[] projection, String selection, String[] selectionArgs,
+    public Cursor query(
+            Uri uri,
+            String[] projection,
+            String selection,
+            String[] selectionArgs,
             String sortOrder) {
         return null;
     }

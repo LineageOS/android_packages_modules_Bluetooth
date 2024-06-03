@@ -34,7 +34,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Manager of all AVRCP Controller connections to remote devices' BIP servers for retrieving cover
  * art.
  *
- * When given an image handle and device, this manager will negotiate the downloaded image
+ * <p>When given an image handle and device, this manager will negotiate the downloaded image
  * properties, download the image, and place it into a Content Provider for others to retrieve from
  */
 public class AvrcpCoverArtManager {
@@ -60,13 +60,16 @@ public class AvrcpCoverArtManager {
     public class DownloadEvent {
         final String mImageUuid;
         final Uri mUri;
+
         public DownloadEvent(String uuid, Uri uri) {
             mImageUuid = uuid;
             mUri = uri;
         }
+
         public String getUuid() {
             return mImageUuid;
         }
+
         public Uri getUri() {
             return mUri;
         }
@@ -83,10 +86,10 @@ public class AvrcpCoverArtManager {
     }
 
     /**
-     * A thread-safe collection of BIP connection specific imformation meant to be cleared each
-     * time a client disconnects from the Target's BIP OBEX server.
+     * A thread-safe collection of BIP connection specific imformation meant to be cleared each time
+     * a client disconnects from the Target's BIP OBEX server.
      *
-     * Currently contains the mapping of image handles seen to assigned UUIDs.
+     * <p>Currently contains the mapping of image handles seen to assigned UUIDs.
      */
     private class AvrcpBipSession {
         private Map<String, String> mUuids = new ConcurrentHashMap<>(1); /* handle -> UUID */
@@ -118,7 +121,7 @@ public class AvrcpCoverArtManager {
     /**
      * Validate an image handle meets the AVRCP and BIP specifications
      *
-     * By the BIP specification that AVRCP uses, "Image handles are 7 character long strings
+     * <p>By the BIP specification that AVRCP uses, "Image handles are 7 character long strings
      * containing only the digits 0 to 9."
      *
      * @return True if the input string is a valid image handle
@@ -137,8 +140,7 @@ public class AvrcpCoverArtManager {
         mService = service;
         mCoverArtStorage = new AvrcpCoverArtStorage(mService);
         mCallback = callback;
-        mDownloadScheme =
-                SystemProperties.get(AVRCP_CONTROLLER_COVER_ART_SCHEME, SCHEME_THUMBNAIL);
+        mDownloadScheme = SystemProperties.get(AVRCP_CONTROLLER_COVER_ART_SCHEME, SCHEME_THUMBNAIL);
         mCoverArtStorage.clear();
     }
 
@@ -199,7 +201,7 @@ public class AvrcpCoverArtManager {
     /**
      * Cleanup all cover art related resources
      *
-     * Please call when you've committed to shutting down the service.
+     * <p>Please call when you've committed to shutting down the service.
      */
     public synchronized void cleanup() {
         debug("Clean up and shutdown");
@@ -220,21 +222,21 @@ public class AvrcpCoverArtManager {
         return client.getState();
     }
 
-     /**
+    /**
      * Get the UUID for an image handle coming from a particular device.
      *
-     * This UUID is used to request and track downloads.
+     * <p>This UUID is used to request and track downloads.
      *
-     * Image handles are only good for the life of the BIP client. Since this connection is torn
-     * down frequently by specification, we have a layer of indirection to the images in the form
-     * of an UUID. This UUID will allow images to be identified outside the connection lifecycle.
-     * It also allows handles to be reused by the target in ways that won't impact image consumer's
+     * <p>Image handles are only good for the life of the BIP client. Since this connection is torn
+     * down frequently by specification, we have a layer of indirection to the images in the form of
+     * an UUID. This UUID will allow images to be identified outside the connection lifecycle. It
+     * also allows handles to be reused by the target in ways that won't impact image consumer's
      * cache schemes.
      *
      * @param device The Bluetooth device you want a handle from
      * @param handle The image handle you want a UUID for
      * @return A string UUID by which the handle can be identified during the life of the BIP
-     *         connection.
+     *     connection.
      */
     public String getUuidForHandle(BluetoothDevice device, String handle) {
         AvrcpBipSession session = getSession(device);
@@ -245,7 +247,7 @@ public class AvrcpCoverArtManager {
     /**
      * Get the handle thats associated with a particular UUID.
      *
-     * The handle must have been seen during this connection.
+     * <p>The handle must have been seen during this connection.
      *
      * @param device The Bluetooth device you want a handle from
      * @param uuid The UUID you want the associated handle for
@@ -280,16 +282,15 @@ public class AvrcpCoverArtManager {
     /**
      * Download an image from a remote device and make it findable via the given uri
      *
-     * Downloading happens in three steps:
-     *   1) Get the available image formats by requesting the Image Properties
-     *   2) Determine the specific format we want the image in and turn it into an image descriptor
-     *   3) Get the image using the chosen descriptor
+     * <p>Downloading happens in three steps: 1) Get the available image formats by requesting the
+     * Image Properties 2) Determine the specific format we want the image in and turn it into an
+     * image descriptor 3) Get the image using the chosen descriptor
      *
-     * Getting image properties and the image are both asynchronous in nature.
+     * <p>Getting image properties and the image are both asynchronous in nature.
      *
      * @param device The remote Bluetooth device you wish to download from
      * @param imageUuid The UUID associated with the image you wish to download. This will be
-     *                  translated into an image handle.
+     *     translated into an image handle.
      * @return A Uri that will be assign to the image once the download is complete
      */
     public Uri downloadImage(BluetoothDevice device, String imageUuid) {
@@ -365,8 +366,8 @@ public class AvrcpCoverArtManager {
      * Determines our preferred download descriptor from the list of available image download
      * formats presented in the image properties object.
      *
-     * Our goal is ensure the image arrives in a format Android can consume and to minimize transfer
-     * size if possible.
+     * <p>Our goal is ensure the image arrives in a format Android can consume and to minimize
+     * transfer size if possible.
      *
      * @param properties The set of available formats and image is downloadable in
      * @return A descriptor containing the desirable download format
@@ -377,10 +378,10 @@ public class AvrcpCoverArtManager {
         }
         BipImageDescriptor.Builder builder = new BipImageDescriptor.Builder();
         switch (mDownloadScheme) {
-            // BIP Specification says a blank/null descriptor signals to pull the native format
+                // BIP Specification says a blank/null descriptor signals to pull the native format
             case SCHEME_NATIVE:
                 return null;
-            // AVRCP 1.6.2 defined "thumbnail" size is guaranteed so we'll do that for now
+                // AVRCP 1.6.2 defined "thumbnail" size is guaranteed so we'll do that for now
             case SCHEME_THUMBNAIL:
             default:
                 builder.setEncoding(BipEncoding.JPEG);
@@ -390,9 +391,7 @@ public class AvrcpCoverArtManager {
         return builder.build();
     }
 
-    /**
-     * Callback for facilitating image download
-     */
+    /** Callback for facilitating image download */
     class BipClientCallback implements AvrcpBipClient.Callback {
         final BluetoothDevice mDevice;
 
@@ -422,11 +421,15 @@ public class AvrcpCoverArtManager {
         }
 
         @Override
-        public void onGetImagePropertiesComplete(int status, String imageHandle,
-                BipImageProperties properties) {
+        public void onGetImagePropertiesComplete(
+                int status, String imageHandle, BipImageProperties properties) {
             if (status != ResponseCodes.OBEX_HTTP_OK || properties == null) {
-                warn(mDevice + ": GetImageProperties() failed - Handle: " + imageHandle
-                        + ", Code: " + status);
+                warn(
+                        mDevice
+                                + ": GetImageProperties() failed - Handle: "
+                                + imageHandle
+                                + ", Code: "
+                                + status);
                 return;
             }
             BipImageDescriptor descriptor = determineImageDescriptor(properties);
@@ -434,8 +437,11 @@ public class AvrcpCoverArtManager {
 
             AvrcpBipClient client = getClient(mDevice);
             if (client == null) {
-                warn(mDevice + ": Could not getImage() for " + imageHandle
-                        + " because client has disconnected.");
+                warn(
+                        mDevice
+                                + ": Could not getImage() for "
+                                + imageHandle
+                                + " because client has disconnected.");
                 return;
             }
             client.getImage(imageHandle, descriptor);
@@ -444,13 +450,23 @@ public class AvrcpCoverArtManager {
         @Override
         public void onGetImageComplete(int status, String imageHandle, BipImage image) {
             if (status != ResponseCodes.OBEX_HTTP_OK) {
-                warn(mDevice + ": GetImage() failed - Handle: " + imageHandle
-                        + ", Code: " + status);
+                warn(
+                        mDevice
+                                + ": GetImage() failed - Handle: "
+                                + imageHandle
+                                + ", Code: "
+                                + status);
                 return;
             }
             String imageUuid = getUuidForHandle(mDevice, imageHandle);
-            debug(mDevice + ": Received image data for handle: " + imageHandle
-                    + ", uuid: " + imageUuid + ", image: " + image);
+            debug(
+                    mDevice
+                            + ": Received image data for handle: "
+                            + imageHandle
+                            + ", uuid: "
+                            + imageUuid
+                            + ", image: "
+                            + image);
             Uri uri = mCoverArtStorage.addImage(mDevice, imageUuid, image.getImage());
             if (uri == null) {
                 error("Could not store downloaded image");
@@ -479,23 +495,17 @@ public class AvrcpCoverArtManager {
         return s;
     }
 
-    /**
-     * Print to debug if debug is enabled for this class
-     */
+    /** Print to debug if debug is enabled for this class */
     private void debug(String msg) {
         Log.d(TAG, msg);
     }
 
-    /**
-     * Print to warn
-     */
+    /** Print to warn */
     private void warn(String msg) {
         Log.w(TAG, msg);
     }
 
-    /**
-     * Print to error
-     */
+    /** Print to error */
     private void error(String msg) {
         Log.e(TAG, msg);
     }

@@ -63,12 +63,9 @@ public class HapClientStateMachineTest {
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    private AdapterService mAdapterService;
-    @Mock
-    private HapClientService mHapClientService;
-    @Mock
-    private HapClientNativeInterface mHearingAccessGattClientInterface;
+    @Mock private AdapterService mAdapterService;
+    @Mock private HapClientService mHapClientService;
+    @Mock private HapClientNativeInterface mHearingAccessGattClientInterface;
 
     @Before
     public void setUp() throws Exception {
@@ -83,10 +80,14 @@ public class HapClientStateMachineTest {
         // Set up thread and looper
         mHandlerThread = new HandlerThread("HapClientStateMachineTestHandlerThread");
         mHandlerThread.start();
-        mHapClientStateMachine = new HapClientStateMachine(mTestDevice,
-                mHapClientService, mHearingAccessGattClientInterface, mHandlerThread.getLooper());
+        mHapClientStateMachine =
+                new HapClientStateMachine(
+                        mTestDevice,
+                        mHapClientService,
+                        mHearingAccessGattClientInterface,
+                        mHandlerThread.getLooper());
         // Override the timeout value to speed up the test
-        HapClientStateMachine.sConnectTimeoutMs = 1000;     // 1s
+        HapClientStateMachine.sConnectTimeoutMs = 1000; // 1s
         mHapClientStateMachine.start();
     }
 
@@ -102,13 +103,11 @@ public class HapClientStateMachineTest {
         TestUtils.clearAdapterService(mAdapterService);
     }
 
-    /**
-     * Test that default state is disconnected
-     */
+    /** Test that default state is disconnected */
     @Test
     public void testDefaultDisconnectedState() {
-        Assert.assertEquals(BluetoothProfile.STATE_DISCONNECTED,
-                mHapClientStateMachine.getConnectionState());
+        Assert.assertEquals(
+                BluetoothProfile.STATE_DISCONNECTED, mHapClientStateMachine.getConnectionState());
     }
 
     /**
@@ -120,53 +119,50 @@ public class HapClientStateMachineTest {
         doReturn(allow).when(mHapClientService).okToConnect(any(BluetoothDevice.class));
     }
 
-    /**
-     * Test that an incoming connection with policy forbidding connection is rejected
-     */
+    /** Test that an incoming connection with policy forbidding connection is rejected */
     @Test
     public void testIncomingPolicyReject() {
         allowConnection(false);
 
         // Inject an event for when incoming connection is requested
         HapClientStackEvent connStCh =
-                new HapClientStackEvent(
-                        HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
+                new HapClientStackEvent(HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         connStCh.device = mTestDevice;
         connStCh.valueInt1 = HapClientStackEvent.CONNECTION_STATE_CONNECTED;
         mHapClientStateMachine.sendMessage(HapClientStateMachine.STACK_EVENT, connStCh);
 
         // Verify that no connection state broadcast is executed
-        verify(mHapClientService, after(TIMEOUT_MS).never()).sendBroadcast(any(Intent.class),
-                anyString());
+        verify(mHapClientService, after(TIMEOUT_MS).never())
+                .sendBroadcast(any(Intent.class), anyString());
         // Check that we are in Disconnected state
-        Assert.assertThat(mHapClientStateMachine.getCurrentState(),
+        Assert.assertThat(
+                mHapClientStateMachine.getCurrentState(),
                 IsInstanceOf.instanceOf(HapClientStateMachine.Disconnected.class));
     }
 
-    /**
-     * Test that an incoming connection with policy allowing connection is accepted
-     */
+    /** Test that an incoming connection with policy allowing connection is accepted */
     @Test
     public void testIncomingPolicyAccept() {
         allowConnection(true);
 
         // Inject an event for when incoming connection is requested
         HapClientStackEvent connStCh =
-                new HapClientStackEvent(
-                        HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
+                new HapClientStackEvent(HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         connStCh.device = mTestDevice;
         connStCh.valueInt1 = HapClientStackEvent.CONNECTION_STATE_CONNECTING;
         mHapClientStateMachine.sendMessage(HapClientStateMachine.STACK_EVENT, connStCh);
 
         // Verify that one connection state broadcast is executed
         ArgumentCaptor<Intent> intentArgument1 = ArgumentCaptor.forClass(Intent.class);
-        verify(mHapClientService, timeout(TIMEOUT_MS).times(1)).sendBroadcast(
-                intentArgument1.capture(), anyString());
-        Assert.assertEquals(BluetoothProfile.STATE_CONNECTING,
+        verify(mHapClientService, timeout(TIMEOUT_MS).times(1))
+                .sendBroadcast(intentArgument1.capture(), anyString());
+        Assert.assertEquals(
+                BluetoothProfile.STATE_CONNECTING,
                 intentArgument1.getValue().getIntExtra(BluetoothProfile.EXTRA_STATE, -1));
 
         // Check that we are in Connecting state
-        Assert.assertThat(mHapClientStateMachine.getCurrentState(),
+        Assert.assertThat(
+                mHapClientStateMachine.getCurrentState(),
                 IsInstanceOf.instanceOf(HapClientStateMachine.Connecting.class));
 
         // Send a message to trigger connection completed
@@ -174,98 +170,103 @@ public class HapClientStateMachineTest {
                 new HapClientStackEvent(HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         connCompletedEvent.device = mTestDevice;
         connCompletedEvent.valueInt1 = HapClientStackEvent.CONNECTION_STATE_CONNECTED;
-        mHapClientStateMachine.sendMessage(HapClientStateMachine.STACK_EVENT,
-                connCompletedEvent);
+        mHapClientStateMachine.sendMessage(HapClientStateMachine.STACK_EVENT, connCompletedEvent);
 
         // Verify that the expected number of broadcasts are executed:
         // - two calls to broadcastConnectionState(): Disconnected -> Connecting -> Connected
         ArgumentCaptor<Intent> intentArgument2 = ArgumentCaptor.forClass(Intent.class);
-        verify(mHapClientService, timeout(TIMEOUT_MS).times(2)).sendBroadcast(
-                intentArgument2.capture(), anyString());
+        verify(mHapClientService, timeout(TIMEOUT_MS).times(2))
+                .sendBroadcast(intentArgument2.capture(), anyString());
         // Check that we are in Connected state
-        Assert.assertThat(mHapClientStateMachine.getCurrentState(),
+        Assert.assertThat(
+                mHapClientStateMachine.getCurrentState(),
                 IsInstanceOf.instanceOf(HapClientStateMachine.Connected.class));
     }
 
-    /**
-     * Test that an outgoing connection times out
-     */
+    /** Test that an outgoing connection times out */
     @Test
     public void testOutgoingTimeout() {
         allowConnection(true);
-        doReturn(true).when(mHearingAccessGattClientInterface).connectHapClient(any(
-                BluetoothDevice.class));
-        doReturn(true).when(mHearingAccessGattClientInterface).disconnectHapClient(any(
-                BluetoothDevice.class));
+        doReturn(true)
+                .when(mHearingAccessGattClientInterface)
+                .connectHapClient(any(BluetoothDevice.class));
+        doReturn(true)
+                .when(mHearingAccessGattClientInterface)
+                .disconnectHapClient(any(BluetoothDevice.class));
 
         // Send a connect request
         mHapClientStateMachine.sendMessage(HapClientStateMachine.CONNECT, mTestDevice);
 
         // Verify that one connection state broadcast is executed
         ArgumentCaptor<Intent> intentArgument1 = ArgumentCaptor.forClass(Intent.class);
-        verify(mHapClientService, timeout(TIMEOUT_MS).times(1)).sendBroadcast(
-                intentArgument1.capture(),
-                anyString());
-        Assert.assertEquals(BluetoothProfile.STATE_CONNECTING,
+        verify(mHapClientService, timeout(TIMEOUT_MS).times(1))
+                .sendBroadcast(intentArgument1.capture(), anyString());
+        Assert.assertEquals(
+                BluetoothProfile.STATE_CONNECTING,
                 intentArgument1.getValue().getIntExtra(BluetoothProfile.EXTRA_STATE, -1));
 
         // Check that we are in Connecting state
-        Assert.assertThat(mHapClientStateMachine.getCurrentState(),
+        Assert.assertThat(
+                mHapClientStateMachine.getCurrentState(),
                 IsInstanceOf.instanceOf(HapClientStateMachine.Connecting.class));
 
         // Verify that one connection state broadcast is executed
         ArgumentCaptor<Intent> intentArgument2 = ArgumentCaptor.forClass(Intent.class);
-        verify(mHapClientService, timeout(HapClientStateMachine.sConnectTimeoutMs * 2).times(
-                2)).sendBroadcast(intentArgument2.capture(), anyString());
-        Assert.assertEquals(BluetoothProfile.STATE_DISCONNECTED,
+        verify(mHapClientService, timeout(HapClientStateMachine.sConnectTimeoutMs * 2).times(2))
+                .sendBroadcast(intentArgument2.capture(), anyString());
+        Assert.assertEquals(
+                BluetoothProfile.STATE_DISCONNECTED,
                 intentArgument2.getValue().getIntExtra(BluetoothProfile.EXTRA_STATE, -1));
 
         // Check that we are in Disconnected state
-        Assert.assertThat(mHapClientStateMachine.getCurrentState(),
+        Assert.assertThat(
+                mHapClientStateMachine.getCurrentState(),
                 IsInstanceOf.instanceOf(HapClientStateMachine.Disconnected.class));
         verify(mHearingAccessGattClientInterface).disconnectHapClient(eq(mTestDevice));
     }
 
-    /**
-     * Test that an incoming connection times out
-     */
+    /** Test that an incoming connection times out */
     @Test
     public void testIncomingTimeout() {
         allowConnection(true);
-        doReturn(true).when(mHearingAccessGattClientInterface).connectHapClient(any(
-                BluetoothDevice.class));
-        doReturn(true).when(mHearingAccessGattClientInterface).disconnectHapClient(any(
-                BluetoothDevice.class));
+        doReturn(true)
+                .when(mHearingAccessGattClientInterface)
+                .connectHapClient(any(BluetoothDevice.class));
+        doReturn(true)
+                .when(mHearingAccessGattClientInterface)
+                .disconnectHapClient(any(BluetoothDevice.class));
 
         // Inject an event for when incoming connection is requested
         HapClientStackEvent connStCh =
-                new HapClientStackEvent(
-                        HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
+                new HapClientStackEvent(HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         connStCh.device = mTestDevice;
         connStCh.valueInt1 = HapClientStackEvent.CONNECTION_STATE_CONNECTING;
         mHapClientStateMachine.sendMessage(HapClientStateMachine.STACK_EVENT, connStCh);
 
         // Verify that one connection state broadcast is executed
         ArgumentCaptor<Intent> intentArgument1 = ArgumentCaptor.forClass(Intent.class);
-        verify(mHapClientService, timeout(TIMEOUT_MS).times(1)).sendBroadcast(
-                intentArgument1.capture(),
-                anyString());
-        Assert.assertEquals(BluetoothProfile.STATE_CONNECTING,
+        verify(mHapClientService, timeout(TIMEOUT_MS).times(1))
+                .sendBroadcast(intentArgument1.capture(), anyString());
+        Assert.assertEquals(
+                BluetoothProfile.STATE_CONNECTING,
                 intentArgument1.getValue().getIntExtra(BluetoothProfile.EXTRA_STATE, -1));
 
         // Check that we are in Connecting state
-        Assert.assertThat(mHapClientStateMachine.getCurrentState(),
+        Assert.assertThat(
+                mHapClientStateMachine.getCurrentState(),
                 IsInstanceOf.instanceOf(HapClientStateMachine.Connecting.class));
 
         // Verify that one connection state broadcast is executed
         ArgumentCaptor<Intent> intentArgument2 = ArgumentCaptor.forClass(Intent.class);
-        verify(mHapClientService, timeout(HapClientStateMachine.sConnectTimeoutMs * 2).times(
-                2)).sendBroadcast(intentArgument2.capture(), anyString());
-        Assert.assertEquals(BluetoothProfile.STATE_DISCONNECTED,
+        verify(mHapClientService, timeout(HapClientStateMachine.sConnectTimeoutMs * 2).times(2))
+                .sendBroadcast(intentArgument2.capture(), anyString());
+        Assert.assertEquals(
+                BluetoothProfile.STATE_DISCONNECTED,
                 intentArgument2.getValue().getIntExtra(BluetoothProfile.EXTRA_STATE, -1));
 
         // Check that we are in Disconnected state
-        Assert.assertThat(mHapClientStateMachine.getCurrentState(),
+        Assert.assertThat(
+                mHapClientStateMachine.getCurrentState(),
                 IsInstanceOf.instanceOf(HapClientStateMachine.Disconnected.class));
         verify(mHearingAccessGattClientInterface).disconnectHapClient(eq(mTestDevice));
     }
@@ -273,11 +274,13 @@ public class HapClientStateMachineTest {
     @Test
     public void testStatesChangesWithMessages() {
         allowConnection(true);
-        doReturn(true).when(mHearingAccessGattClientInterface).connectHapClient(any(
-                BluetoothDevice.class));
+        doReturn(true)
+                .when(mHearingAccessGattClientInterface)
+                .connectHapClient(any(BluetoothDevice.class));
 
         // Check that we are in Disconnected state
-        Assert.assertThat(mHapClientStateMachine.getCurrentState(),
+        Assert.assertThat(
+                mHapClientStateMachine.getCurrentState(),
                 IsInstanceOf.instanceOf(HapClientStateMachine.Disconnected.class));
 
         mHapClientStateMachine.sendMessage(HapClientStateMachine.DISCONNECT);
@@ -308,32 +311,29 @@ public class HapClientStateMachineTest {
                 mHapClientStateMachine.obtainMessage(HapClientStateMachine.CONNECT),
                 HapClientStateMachine.Connecting.class);
         // connecting -> disconnecting
-        HapClientStackEvent connStCh = new HapClientStackEvent(
-                HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
+        HapClientStackEvent connStCh =
+                new HapClientStackEvent(HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         connStCh.device = mTestDevice;
         connStCh.valueInt1 = HapClientStackEvent.CONNECTION_STATE_DISCONNECTING;
         sendMessageAndVerifyTransition(
                 mHapClientStateMachine.obtainMessage(HapClientStateMachine.STACK_EVENT, connStCh),
                 HapClientStateMachine.Disconnecting.class);
         // disconnecting -> connecting
-        connStCh = new HapClientStackEvent(
-                HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
+        connStCh = new HapClientStackEvent(HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         connStCh.device = mTestDevice;
         connStCh.valueInt1 = HapClientStackEvent.CONNECTION_STATE_CONNECTING;
         sendMessageAndVerifyTransition(
                 mHapClientStateMachine.obtainMessage(HapClientStateMachine.STACK_EVENT, connStCh),
                 HapClientStateMachine.Connecting.class);
         // connecting -> connected
-        connStCh = new HapClientStackEvent(
-                HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
+        connStCh = new HapClientStackEvent(HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         connStCh.device = mTestDevice;
         connStCh.valueInt1 = HapClientStackEvent.CONNECTION_STATE_CONNECTED;
         sendMessageAndVerifyTransition(
                 mHapClientStateMachine.obtainMessage(HapClientStateMachine.STACK_EVENT, connStCh),
                 HapClientStateMachine.Connected.class);
         // connected -> disconnecting
-        connStCh = new HapClientStackEvent(
-                HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
+        connStCh = new HapClientStackEvent(HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         connStCh.device = mTestDevice;
         connStCh.valueInt1 = HapClientStackEvent.CONNECTION_STATE_DISCONNECTING;
         sendMessageAndVerifyTransition(
@@ -345,8 +345,7 @@ public class HapClientStateMachineTest {
                 HapClientStateMachine.Disconnected.class);
 
         // disconnected -> connected
-        connStCh = new HapClientStackEvent(
-                HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
+        connStCh = new HapClientStackEvent(HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         connStCh.device = mTestDevice;
         connStCh.valueInt1 = HapClientStackEvent.CONNECTION_STATE_CONNECTED;
         sendMessageAndVerifyTransition(
@@ -358,16 +357,14 @@ public class HapClientStateMachineTest {
                 HapClientStateMachine.Disconnected.class);
 
         // disconnected -> connected
-        connStCh = new HapClientStackEvent(
-                HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
+        connStCh = new HapClientStackEvent(HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         connStCh.device = mTestDevice;
         connStCh.valueInt1 = HapClientStackEvent.CONNECTION_STATE_CONNECTED;
         sendMessageAndVerifyTransition(
                 mHapClientStateMachine.obtainMessage(HapClientStateMachine.STACK_EVENT, connStCh),
                 HapClientStateMachine.Connected.class);
         // connected -> disconnected
-        connStCh = new HapClientStackEvent(
-                HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
+        connStCh = new HapClientStackEvent(HapClientStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
         connStCh.device = mTestDevice;
         connStCh.valueInt1 = HapClientStackEvent.CONNECTION_STATE_DISCONNECTED;
         sendMessageAndVerifyTransition(
@@ -379,8 +376,8 @@ public class HapClientStateMachineTest {
         Mockito.clearInvocations(mHapClientService);
         mHapClientStateMachine.sendMessage(msg);
         // Verify that one connection state broadcast is executed
-        verify(mHapClientService, timeout(TIMEOUT_MS).times(1)).sendBroadcast(
-                any(Intent.class), anyString());
+        verify(mHapClientService, timeout(TIMEOUT_MS).times(1))
+                .sendBroadcast(any(Intent.class), anyString());
         Assert.assertThat(mHapClientStateMachine.getCurrentState(), IsInstanceOf.instanceOf(type));
     }
 }

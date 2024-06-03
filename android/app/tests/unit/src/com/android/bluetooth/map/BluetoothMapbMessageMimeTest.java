@@ -45,22 +45,23 @@ public class BluetoothMapbMessageMimeTest {
     private static final boolean TEST_TEXT_ONLY = true;
     private static final boolean TEST_INCLUDE_ATTACHMENTS = true;
 
-    private final SimpleDateFormat format = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z",
-            Locale.US);
+    private final SimpleDateFormat format =
+            new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss Z", Locale.US);
     private final Date date = new Date(TEST_DATE);
 
-    private final ArrayList<Rfc822Token> TEST_FROM = new ArrayList<>(
-            Arrays.asList(new Rfc822Token("from_name", "from_address", null)));
-    private final ArrayList<Rfc822Token> TEST_SENDER = new ArrayList<>(
-            Arrays.asList(new Rfc822Token("sender_name", "sender_address", null)));
-    private static final ArrayList<Rfc822Token> TEST_TO = new ArrayList<>(
-            Arrays.asList(new Rfc822Token("to_name", "to_address", null)));
-    private static final ArrayList<Rfc822Token> TEST_CC = new ArrayList<>(
-            Arrays.asList(new Rfc822Token("cc_name", "cc_address", null)));
-    private final ArrayList<Rfc822Token> TEST_BCC = new ArrayList<>(
-            Arrays.asList(new Rfc822Token("bcc_name", "bcc_address", null)));
-    private final ArrayList<Rfc822Token> TEST_REPLY_TO = new ArrayList<>(
-            Arrays.asList(new Rfc822Token("reply_to_name", "reply_to_address", null)));
+    private final ArrayList<Rfc822Token> TEST_FROM =
+            new ArrayList<>(Arrays.asList(new Rfc822Token("from_name", "from_address", null)));
+    private final ArrayList<Rfc822Token> TEST_SENDER =
+            new ArrayList<>(Arrays.asList(new Rfc822Token("sender_name", "sender_address", null)));
+    private static final ArrayList<Rfc822Token> TEST_TO =
+            new ArrayList<>(Arrays.asList(new Rfc822Token("to_name", "to_address", null)));
+    private static final ArrayList<Rfc822Token> TEST_CC =
+            new ArrayList<>(Arrays.asList(new Rfc822Token("cc_name", "cc_address", null)));
+    private final ArrayList<Rfc822Token> TEST_BCC =
+            new ArrayList<>(Arrays.asList(new Rfc822Token("bcc_name", "bcc_address", null)));
+    private final ArrayList<Rfc822Token> TEST_REPLY_TO =
+            new ArrayList<>(
+                    Arrays.asList(new Rfc822Token("reply_to_name", "reply_to_address", null)));
 
     private BluetoothMapbMessageMime mMime;
 
@@ -113,7 +114,7 @@ public class BluetoothMapbMessageMimeTest {
 
     @Test
     public void testUpdateCharset() {
-        mMime.getMimeParts().get(0).mContentType = TEST_CONTENT_TYPE/*="text/plain*/;
+        mMime.getMimeParts().get(0).mContentType = TEST_CONTENT_TYPE /*="text/plain*/;
         mMime.updateCharset();
         assertThat(mMime.mCharset).isEqualTo("UTF-8");
     }
@@ -133,8 +134,8 @@ public class BluetoothMapbMessageMimeTest {
         final String nameToAdd = "name_to_add";
         final String addressToAdd = "address_to_add";
         mime.addSender(nameToAdd, addressToAdd);
-        assertThat(mime.getSender().get(0)).isEqualTo(
-                new Rfc822Token(nameToAdd, addressToAdd, null));
+        assertThat(mime.getSender().get(0))
+                .isEqualTo(new Rfc822Token(nameToAdd, addressToAdd, null));
     }
 
     @Test
@@ -170,8 +171,8 @@ public class BluetoothMapbMessageMimeTest {
         final String nameToAdd = "name_to_add";
         final String addressToAdd = "address_to_add";
         mime.addReplyTo(nameToAdd, addressToAdd);
-        assertThat(mime.getReplyTo().get(0)).isEqualTo(
-                new Rfc822Token(nameToAdd, addressToAdd, null));
+        assertThat(mime.getReplyTo().get(0))
+                .isEqualTo(new Rfc822Token(nameToAdd, addressToAdd, null));
     }
 
     @Test
@@ -187,30 +188,30 @@ public class BluetoothMapbMessageMimeTest {
         assertThat(mimeToCreateByParsing.getMessageId()).isEqualTo(TEST_MESSAGE_ID);
         assertThat(mimeToCreateByParsing.getContentType()).isEqualTo(TEST_CONTENT_TYPE);
 
-        assertThat(mimeToCreateByParsing.getFrom().get(0).getName()).isEqualTo(
-                TEST_FROM.get(0).getName());
-        assertThat(mimeToCreateByParsing.getFrom().get(0).getAddress()).isEqualTo(
-                TEST_FROM.get(0).getAddress());
+        assertThat(mimeToCreateByParsing.getFrom().get(0).getName())
+                .isEqualTo(TEST_FROM.get(0).getName());
+        assertThat(mimeToCreateByParsing.getFrom().get(0).getAddress())
+                .isEqualTo(TEST_FROM.get(0).getAddress());
 
-        assertThat(mimeToCreateByParsing.getTo().get(0).getName()).isEqualTo(
-                TEST_TO.get(0).getName());
-        assertThat(mimeToCreateByParsing.getTo().get(0).getAddress()).isEqualTo(
-                TEST_TO.get(0).getAddress());
+        assertThat(mimeToCreateByParsing.getTo().get(0).getName())
+                .isEqualTo(TEST_TO.get(0).getName());
+        assertThat(mimeToCreateByParsing.getTo().get(0).getAddress())
+                .isEqualTo(TEST_TO.get(0).getAddress());
 
-        assertThat(mimeToCreateByParsing.getCc().get(0).getName()).isEqualTo(
-                TEST_CC.get(0).getName());
-        assertThat(mimeToCreateByParsing.getCc().get(0).getAddress()).isEqualTo(
-                TEST_CC.get(0).getAddress());
+        assertThat(mimeToCreateByParsing.getCc().get(0).getName())
+                .isEqualTo(TEST_CC.get(0).getName());
+        assertThat(mimeToCreateByParsing.getCc().get(0).getAddress())
+                .isEqualTo(TEST_CC.get(0).getAddress());
 
-        assertThat(mimeToCreateByParsing.getBcc().get(0).getName()).isEqualTo(
-                TEST_BCC.get(0).getName());
-        assertThat(mimeToCreateByParsing.getBcc().get(0).getAddress()).isEqualTo(
-                TEST_BCC.get(0).getAddress());
+        assertThat(mimeToCreateByParsing.getBcc().get(0).getName())
+                .isEqualTo(TEST_BCC.get(0).getName());
+        assertThat(mimeToCreateByParsing.getBcc().get(0).getAddress())
+                .isEqualTo(TEST_BCC.get(0).getAddress());
 
-        assertThat(mimeToCreateByParsing.getReplyTo().get(0).getName()).isEqualTo(
-                TEST_REPLY_TO.get(0).getName());
-        assertThat(mimeToCreateByParsing.getReplyTo().get(0).getAddress()).isEqualTo(
-                TEST_REPLY_TO.get(0).getAddress());
+        assertThat(mimeToCreateByParsing.getReplyTo().get(0).getName())
+                .isEqualTo(TEST_REPLY_TO.get(0).getName());
+        assertThat(mimeToCreateByParsing.getReplyTo().get(0).getAddress())
+                .isEqualTo(TEST_REPLY_TO.get(0).getAddress());
     }
 
     @Test

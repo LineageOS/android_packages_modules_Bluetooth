@@ -29,11 +29,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * Class for regrouping the migration that occur when going mainline
- */
+/** Class for regrouping the migration that occur when going mainline */
 public final class BluetoothDatabaseMigration {
     private static final String TAG = "BluetoothDatabaseMigration";
+
     public static boolean run(Context ctx, Cursor cursor) {
         boolean result = true;
         MetadataDatabase database = MetadataDatabase.createDatabaseWithoutMigration(ctx);
@@ -67,82 +66,100 @@ public final class BluetoothDatabaseMigration {
 
     private static final List<Pair<Integer, String>> CONNECTION_POLICIES =
             Arrays.asList(
-            new Pair(BluetoothProfile.A2DP, "a2dp_connection_policy"),
-            new Pair(BluetoothProfile.A2DP_SINK, "a2dp_sink_connection_policy"),
-            new Pair(BluetoothProfile.HEADSET, "hfp_connection_policy"),
-            new Pair(BluetoothProfile.HEADSET_CLIENT, "hfp_client_connection_policy"),
-            new Pair(BluetoothProfile.HID_HOST, "hid_host_connection_policy"),
-            new Pair(BluetoothProfile.PAN, "pan_connection_policy"),
-            new Pair(BluetoothProfile.PBAP, "pbap_connection_policy"),
-            new Pair(BluetoothProfile.PBAP_CLIENT, "pbap_client_connection_policy"),
-            new Pair(BluetoothProfile.MAP, "map_connection_policy"),
-            new Pair(BluetoothProfile.SAP, "sap_connection_policy"),
-            new Pair(BluetoothProfile.HEARING_AID, "hearing_aid_connection_policy"),
-            new Pair(BluetoothProfile.HAP_CLIENT, "hap_client_connection_policy"),
-            new Pair(BluetoothProfile.MAP_CLIENT, "map_client_connection_policy"),
-            new Pair(BluetoothProfile.LE_AUDIO, "le_audio_connection_policy"),
-            new Pair(BluetoothProfile.VOLUME_CONTROL, "volume_control_connection_policy"),
-            new Pair(BluetoothProfile.CSIP_SET_COORDINATOR,
-                "csip_set_coordinator_connection_policy"),
-            new Pair(BluetoothProfile.LE_CALL_CONTROL, "le_call_control_connection_policy"),
-            new Pair(BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT,
-                "bass_client_connection_policy"),
-            new Pair(BluetoothProfile.BATTERY, "battery_connection_policy")
-    );
+                    new Pair(BluetoothProfile.A2DP, "a2dp_connection_policy"),
+                    new Pair(BluetoothProfile.A2DP_SINK, "a2dp_sink_connection_policy"),
+                    new Pair(BluetoothProfile.HEADSET, "hfp_connection_policy"),
+                    new Pair(BluetoothProfile.HEADSET_CLIENT, "hfp_client_connection_policy"),
+                    new Pair(BluetoothProfile.HID_HOST, "hid_host_connection_policy"),
+                    new Pair(BluetoothProfile.PAN, "pan_connection_policy"),
+                    new Pair(BluetoothProfile.PBAP, "pbap_connection_policy"),
+                    new Pair(BluetoothProfile.PBAP_CLIENT, "pbap_client_connection_policy"),
+                    new Pair(BluetoothProfile.MAP, "map_connection_policy"),
+                    new Pair(BluetoothProfile.SAP, "sap_connection_policy"),
+                    new Pair(BluetoothProfile.HEARING_AID, "hearing_aid_connection_policy"),
+                    new Pair(BluetoothProfile.HAP_CLIENT, "hap_client_connection_policy"),
+                    new Pair(BluetoothProfile.MAP_CLIENT, "map_client_connection_policy"),
+                    new Pair(BluetoothProfile.LE_AUDIO, "le_audio_connection_policy"),
+                    new Pair(BluetoothProfile.VOLUME_CONTROL, "volume_control_connection_policy"),
+                    new Pair(
+                            BluetoothProfile.CSIP_SET_COORDINATOR,
+                            "csip_set_coordinator_connection_policy"),
+                    new Pair(BluetoothProfile.LE_CALL_CONTROL, "le_call_control_connection_policy"),
+                    new Pair(
+                            BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT,
+                            "bass_client_connection_policy"),
+                    new Pair(BluetoothProfile.BATTERY, "battery_connection_policy"));
 
     private static final List<Pair<Integer, String>> CUSTOMIZED_META_KEYS =
             Arrays.asList(
-            new Pair(BluetoothDevice.METADATA_MANUFACTURER_NAME, "manufacturer_name"),
-            new Pair(BluetoothDevice.METADATA_MODEL_NAME, "model_name"),
-            new Pair(BluetoothDevice.METADATA_SOFTWARE_VERSION, "software_version"),
-            new Pair(BluetoothDevice.METADATA_HARDWARE_VERSION, "hardware_version"),
-            new Pair(BluetoothDevice.METADATA_COMPANION_APP, "companion_app"),
-            new Pair(BluetoothDevice.METADATA_MAIN_ICON, "main_icon"),
-            new Pair(BluetoothDevice.METADATA_IS_UNTETHERED_HEADSET, "is_untethered_headset"),
-            new Pair(BluetoothDevice.METADATA_UNTETHERED_LEFT_ICON, "untethered_left_icon"),
-            new Pair(BluetoothDevice.METADATA_UNTETHERED_RIGHT_ICON, "untethered_right_icon"),
-            new Pair(BluetoothDevice.METADATA_UNTETHERED_CASE_ICON, "untethered_case_icon"),
-            new Pair(BluetoothDevice.METADATA_UNTETHERED_LEFT_BATTERY,
-                "untethered_left_battery"),
-            new Pair(BluetoothDevice.METADATA_UNTETHERED_RIGHT_BATTERY,
-                "untethered_right_battery"),
-            new Pair(BluetoothDevice.METADATA_UNTETHERED_CASE_BATTERY,
-                "untethered_case_battery"),
-            new Pair(BluetoothDevice.METADATA_UNTETHERED_LEFT_CHARGING,
-                "untethered_left_charging"),
-            new Pair(BluetoothDevice.METADATA_UNTETHERED_RIGHT_CHARGING,
-                "untethered_right_charging"),
-            new Pair(BluetoothDevice.METADATA_UNTETHERED_CASE_CHARGING,
-                    "untethered_case_charging"),
-            new Pair(BluetoothDevice.METADATA_ENHANCED_SETTINGS_UI_URI,
-                    "enhanced_settings_ui_uri"),
-            new Pair(BluetoothDevice.METADATA_DEVICE_TYPE, "device_type"),
-            new Pair(BluetoothDevice.METADATA_MAIN_BATTERY, "main_battery"),
-            new Pair(BluetoothDevice.METADATA_MAIN_CHARGING, "main_charging"),
-            new Pair(BluetoothDevice.METADATA_MAIN_LOW_BATTERY_THRESHOLD,
-                    "main_low_battery_threshold"),
-            new Pair(BluetoothDevice.METADATA_UNTETHERED_LEFT_LOW_BATTERY_THRESHOLD,
-                    "untethered_left_low_battery_threshold"),
-            new Pair(BluetoothDevice.METADATA_UNTETHERED_RIGHT_LOW_BATTERY_THRESHOLD,
-                    "untethered_right_low_battery_threshold"),
-            new Pair(BluetoothDevice.METADATA_UNTETHERED_CASE_LOW_BATTERY_THRESHOLD,
-                    "untethered_case_low_battery_threshold"),
-            new Pair(BluetoothDevice.METADATA_SPATIAL_AUDIO, "spatial_audio"),
-            new Pair(BluetoothDevice.METADATA_FAST_PAIR_CUSTOMIZED_FIELDS,
-                    "fastpair_customized")
-    );
+                    new Pair(BluetoothDevice.METADATA_MANUFACTURER_NAME, "manufacturer_name"),
+                    new Pair(BluetoothDevice.METADATA_MODEL_NAME, "model_name"),
+                    new Pair(BluetoothDevice.METADATA_SOFTWARE_VERSION, "software_version"),
+                    new Pair(BluetoothDevice.METADATA_HARDWARE_VERSION, "hardware_version"),
+                    new Pair(BluetoothDevice.METADATA_COMPANION_APP, "companion_app"),
+                    new Pair(BluetoothDevice.METADATA_MAIN_ICON, "main_icon"),
+                    new Pair(
+                            BluetoothDevice.METADATA_IS_UNTETHERED_HEADSET,
+                            "is_untethered_headset"),
+                    new Pair(BluetoothDevice.METADATA_UNTETHERED_LEFT_ICON, "untethered_left_icon"),
+                    new Pair(
+                            BluetoothDevice.METADATA_UNTETHERED_RIGHT_ICON,
+                            "untethered_right_icon"),
+                    new Pair(BluetoothDevice.METADATA_UNTETHERED_CASE_ICON, "untethered_case_icon"),
+                    new Pair(
+                            BluetoothDevice.METADATA_UNTETHERED_LEFT_BATTERY,
+                            "untethered_left_battery"),
+                    new Pair(
+                            BluetoothDevice.METADATA_UNTETHERED_RIGHT_BATTERY,
+                            "untethered_right_battery"),
+                    new Pair(
+                            BluetoothDevice.METADATA_UNTETHERED_CASE_BATTERY,
+                            "untethered_case_battery"),
+                    new Pair(
+                            BluetoothDevice.METADATA_UNTETHERED_LEFT_CHARGING,
+                            "untethered_left_charging"),
+                    new Pair(
+                            BluetoothDevice.METADATA_UNTETHERED_RIGHT_CHARGING,
+                            "untethered_right_charging"),
+                    new Pair(
+                            BluetoothDevice.METADATA_UNTETHERED_CASE_CHARGING,
+                            "untethered_case_charging"),
+                    new Pair(
+                            BluetoothDevice.METADATA_ENHANCED_SETTINGS_UI_URI,
+                            "enhanced_settings_ui_uri"),
+                    new Pair(BluetoothDevice.METADATA_DEVICE_TYPE, "device_type"),
+                    new Pair(BluetoothDevice.METADATA_MAIN_BATTERY, "main_battery"),
+                    new Pair(BluetoothDevice.METADATA_MAIN_CHARGING, "main_charging"),
+                    new Pair(
+                            BluetoothDevice.METADATA_MAIN_LOW_BATTERY_THRESHOLD,
+                            "main_low_battery_threshold"),
+                    new Pair(
+                            BluetoothDevice.METADATA_UNTETHERED_LEFT_LOW_BATTERY_THRESHOLD,
+                            "untethered_left_low_battery_threshold"),
+                    new Pair(
+                            BluetoothDevice.METADATA_UNTETHERED_RIGHT_LOW_BATTERY_THRESHOLD,
+                            "untethered_right_low_battery_threshold"),
+                    new Pair(
+                            BluetoothDevice.METADATA_UNTETHERED_CASE_LOW_BATTERY_THRESHOLD,
+                            "untethered_case_low_battery_threshold"),
+                    new Pair(BluetoothDevice.METADATA_SPATIAL_AUDIO, "spatial_audio"),
+                    new Pair(
+                            BluetoothDevice.METADATA_FAST_PAIR_CUSTOMIZED_FIELDS,
+                            "fastpair_customized"));
 
     private static int fetchInt(Cursor cursor, String key) {
         return cursor.getInt(cursor.getColumnIndexOrThrow(key));
     }
 
-    private static void migrate_a2dpSupportsOptionalCodecs(Cursor cursor, String logKey,
-            Metadata metadata) {
+    private static void migrate_a2dpSupportsOptionalCodecs(
+            Cursor cursor, String logKey, Metadata metadata) {
         final String key = "a2dpSupportsOptionalCodecs";
-        final List<Integer> allowedValue =  new ArrayList<>(Arrays.asList(
-                BluetoothA2dp.OPTIONAL_CODECS_SUPPORT_UNKNOWN,
-                BluetoothA2dp.OPTIONAL_CODECS_NOT_SUPPORTED,
-                BluetoothA2dp.OPTIONAL_CODECS_SUPPORTED));
+        final List<Integer> allowedValue =
+                new ArrayList<>(
+                        Arrays.asList(
+                                BluetoothA2dp.OPTIONAL_CODECS_SUPPORT_UNKNOWN,
+                                BluetoothA2dp.OPTIONAL_CODECS_NOT_SUPPORTED,
+                                BluetoothA2dp.OPTIONAL_CODECS_SUPPORTED));
         final int value = fetchInt(cursor, key);
         if (!allowedValue.contains(value)) {
             throw new IllegalArgumentException(logKey + ": Bad value for [" + key + "]: " + value);
@@ -150,13 +167,15 @@ public final class BluetoothDatabaseMigration {
         metadata.a2dpSupportsOptionalCodecs = value;
     }
 
-    private static void migrate_a2dpOptionalCodecsEnabled(Cursor cursor, String logKey,
-            Metadata metadata) {
+    private static void migrate_a2dpOptionalCodecsEnabled(
+            Cursor cursor, String logKey, Metadata metadata) {
         final String key = "a2dpOptionalCodecsEnabled";
-        final List<Integer> allowedValue =  new ArrayList<>(Arrays.asList(
-                BluetoothA2dp.OPTIONAL_CODECS_PREF_UNKNOWN,
-                BluetoothA2dp.OPTIONAL_CODECS_PREF_DISABLED,
-                BluetoothA2dp.OPTIONAL_CODECS_PREF_ENABLED));
+        final List<Integer> allowedValue =
+                new ArrayList<>(
+                        Arrays.asList(
+                                BluetoothA2dp.OPTIONAL_CODECS_PREF_UNKNOWN,
+                                BluetoothA2dp.OPTIONAL_CODECS_PREF_DISABLED,
+                                BluetoothA2dp.OPTIONAL_CODECS_PREF_ENABLED));
         final int value = fetchInt(cursor, key);
         if (!allowedValue.contains(value)) {
             throw new IllegalArgumentException(logKey + ": Bad value for [" + key + "]: " + value);
@@ -164,20 +183,24 @@ public final class BluetoothDatabaseMigration {
         metadata.a2dpOptionalCodecsEnabled = value;
     }
 
-    private static void migrate_connectionPolicy(Cursor cursor, String logKey,
-            Metadata metadata) {
-        final List<Integer> allowedValue =  new ArrayList<>(Arrays.asList(
-                BluetoothProfile.CONNECTION_POLICY_UNKNOWN,
-                BluetoothProfile.CONNECTION_POLICY_FORBIDDEN,
-                BluetoothProfile.CONNECTION_POLICY_ALLOWED));
+    private static void migrate_connectionPolicy(Cursor cursor, String logKey, Metadata metadata) {
+        final List<Integer> allowedValue =
+                new ArrayList<>(
+                        Arrays.asList(
+                                BluetoothProfile.CONNECTION_POLICY_UNKNOWN,
+                                BluetoothProfile.CONNECTION_POLICY_FORBIDDEN,
+                                BluetoothProfile.CONNECTION_POLICY_ALLOWED));
         for (Pair<Integer, String> p : CONNECTION_POLICIES) {
             final int policy = cursor.getInt(cursor.getColumnIndexOrThrow(p.second));
             if (allowedValue.contains(policy)) {
                 metadata.setProfileConnectionPolicy(p.first, policy);
             } else {
-                throw new IllegalArgumentException(logKey + ": Bad value for ["
-                        + BluetoothProfile.getProfileName(p.first)
-                        + "]: " + policy);
+                throw new IllegalArgumentException(
+                        logKey
+                                + ": Bad value for ["
+                                + BluetoothProfile.getProfileName(p.first)
+                                + "]: "
+                                + policy);
             }
         }
     }
@@ -189,5 +212,4 @@ public final class BluetoothDatabaseMigration {
             metadata.setCustomizedMeta(p.first, blob);
         }
     }
-
 }

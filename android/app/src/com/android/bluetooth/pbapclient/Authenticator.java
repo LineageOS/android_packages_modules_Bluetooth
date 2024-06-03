@@ -40,8 +40,9 @@ public class Authenticator extends AbstractAccountAuthenticator {
 
     // Don't add additional accounts
     @Override
-    public Bundle addAccount(AccountAuthenticatorResponse r, String s, String s2, String[] strings,
-            Bundle bundle) throws NetworkErrorException {
+    public Bundle addAccount(
+            AccountAuthenticatorResponse r, String s, String s2, String[] strings, Bundle bundle)
+            throws NetworkErrorException {
         Log.d(TAG, "got call", new Exception());
         // Don't allow accounts to be added.
         throw new UnsupportedOperationException();
@@ -57,8 +58,9 @@ public class Authenticator extends AbstractAccountAuthenticator {
 
     // Getting an authentication token is not supported
     @Override
-    public Bundle getAuthToken(AccountAuthenticatorResponse r, Account account, String s,
-            Bundle bundle) throws NetworkErrorException {
+    public Bundle getAuthToken(
+            AccountAuthenticatorResponse r, Account account, String s, Bundle bundle)
+            throws NetworkErrorException {
         Log.d(TAG, "got call", new Exception());
         throw new UnsupportedOperationException();
     }
@@ -72,8 +74,9 @@ public class Authenticator extends AbstractAccountAuthenticator {
 
     // Updating user credentials is not supported
     @Override
-    public Bundle updateCredentials(AccountAuthenticatorResponse r, Account account, String s,
-            Bundle bundle) throws NetworkErrorException {
+    public Bundle updateCredentials(
+            AccountAuthenticatorResponse r, Account account, String s, Bundle bundle)
+            throws NetworkErrorException {
         Log.d(TAG, "got call", new Exception());
         return null;
     }

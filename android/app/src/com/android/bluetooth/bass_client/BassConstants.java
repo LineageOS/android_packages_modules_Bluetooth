@@ -20,14 +20,11 @@ import android.os.ParcelUuid;
 
 import java.util.UUID;
 
-/**
- * Broadcast Audio Scan Service constants class
- */
+/** Broadcast Audio Scan Service constants class */
 public class BassConstants {
     public static final ParcelUuid BAAS_UUID =
             ParcelUuid.fromString("00001852-0000-1000-8000-00805F9B34FB");
-    public static final UUID BASS_UUID =
-            UUID.fromString("0000184F-0000-1000-8000-00805F9B34FB");
+    public static final UUID BASS_UUID = UUID.fromString("0000184F-0000-1000-8000-00805F9B34FB");
     public static final UUID BASS_BCAST_AUDIO_SCAN_CTRL_POINT =
             UUID.fromString("00002BC7-0000-1000-8000-00805F9B34FB");
     public static final UUID BASS_BCAST_RECEIVER_STATE =

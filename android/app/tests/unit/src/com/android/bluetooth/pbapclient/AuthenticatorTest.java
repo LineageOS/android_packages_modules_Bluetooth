@@ -42,11 +42,9 @@ public class AuthenticatorTest {
     private Context mTargetContext;
     private Authenticator mAuthenticator;
 
-    @Mock
-    AccountAuthenticatorResponse mResponse;
+    @Mock AccountAuthenticatorResponse mResponse;
 
-    @Mock
-    Account mAccount;
+    @Mock Account mAccount;
 
     @Before
     public void setUp() throws Exception {
@@ -56,13 +54,15 @@ public class AuthenticatorTest {
 
     @Test
     public void editProperties_throwsUnsupportedOperationException() {
-        assertThrows(UnsupportedOperationException.class,
+        assertThrows(
+                UnsupportedOperationException.class,
                 () -> mAuthenticator.editProperties(mResponse, null));
     }
 
     @Test
     public void addAccount_throwsUnsupportedOperationException() {
-        assertThrows(UnsupportedOperationException.class,
+        assertThrows(
+                UnsupportedOperationException.class,
                 () -> mAuthenticator.addAccount(mResponse, null, null, null, null));
     }
 
@@ -73,7 +73,8 @@ public class AuthenticatorTest {
 
     @Test
     public void getAuthToken_throwsUnsupportedOperationException() {
-        assertThrows(UnsupportedOperationException.class,
+        assertThrows(
+                UnsupportedOperationException.class,
                 () -> mAuthenticator.getAuthToken(mResponse, mAccount, null, null));
     }
 

@@ -43,16 +43,15 @@ import java.util.List;
 public class CallLogPullRequest extends PullRequest {
     private static final String TAG = "CallLogPullRequest";
 
-    @VisibleForTesting
-    static final String TIMESTAMP_PROPERTY = "X-IRMC-CALL-DATETIME";
+    @VisibleForTesting static final String TIMESTAMP_PROPERTY = "X-IRMC-CALL-DATETIME";
     private static final String TIMESTAMP_FORMAT = "yyyyMMdd'T'HHmmss";
 
     private final Account mAccount;
     private Context mContext;
     private HashMap<String, Integer> mCallCounter;
 
-    public CallLogPullRequest(Context context, String path, HashMap<String, Integer> map,
-            Account account) {
+    public CallLogPullRequest(
+            Context context, String path, HashMap<String, Integer> map, Account account) {
         mContext = context;
         this.path = path;
         mCallCounter = map;
@@ -87,7 +86,8 @@ public class CallLogPullRequest extends PullRequest {
                 values.put(CallLog.Calls.TYPE, type);
                 values.put(Calls.PHONE_ACCOUNT_ID, mAccount.name);
                 List<PhoneData> phones = vcard.getPhoneList();
-                if (phones == null || phones.get(0).getNumber().equals(";")
+                if (phones == null
+                        || phones.get(0).getNumber().equals(";")
                         || phones.get(0).getNumber().length() == 0) {
                     values.put(CallLog.Calls.NUMBER, "");
                 } else {
@@ -113,14 +113,15 @@ public class CallLogPullRequest extends PullRequest {
                         }
                     }
                 }
-                ops.add(ContentProviderOperation.newInsert(CallLog.Calls.CONTENT_URI)
-                        .withValues(values)
-                        .withYieldAllowed(true)
-                        .build());
+                ops.add(
+                        ContentProviderOperation.newInsert(CallLog.Calls.CONTENT_URI)
+                                .withValues(values)
+                                .withYieldAllowed(true)
+                                .build());
             }
             mContext.getContentResolver().applyBatch(CallLog.AUTHORITY, ops);
             Log.d(TAG, "Updated call logs.");
-            //OUTGOING_TYPE is the last callLog we fetched.
+            // OUTGOING_TYPE is the last callLog we fetched.
             if (type == CallLog.Calls.OUTGOING_TYPE) {
                 updateTimesContacted();
             }
@@ -138,22 +139,24 @@ public class CallLogPullRequest extends PullRequest {
         for (String key : mCallCounter.keySet()) {
             ContentValues values = new ContentValues();
             values.put(ContactsContract.RawContacts.TIMES_CONTACTED, mCallCounter.get(key));
-            Uri uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI,
-                    Uri.encode(key));
-            try (Cursor c = BluetoothMethodProxy.getInstance().contentResolverQuery(
-                    mContext.getContentResolver(), uri, null, null, null)) {
+            Uri uri =
+                    Uri.withAppendedPath(
+                            ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(key));
+            try (Cursor c =
+                    BluetoothMethodProxy.getInstance()
+                            .contentResolverQuery(
+                                    mContext.getContentResolver(), uri, null, null, null)) {
                 if (c != null && c.getCount() > 0) {
                     c.moveToNext();
-                    String contactId = c.getString(c.getColumnIndex(
-                            ContactsContract.PhoneLookup.CONTACT_ID));
+                    String contactId =
+                            c.getString(c.getColumnIndex(ContactsContract.PhoneLookup.CONTACT_ID));
                     Log.d(TAG, "onPullComplete: ID " + contactId + " key : " + key);
                     String where = ContactsContract.RawContacts.CONTACT_ID + "=" + contactId;
-                    mContext.getContentResolver().update(
-                            ContactsContract.RawContacts.CONTENT_URI, values, where, null);
+                    mContext.getContentResolver()
+                            .update(ContactsContract.RawContacts.CONTENT_URI, values, where, null);
                 }
             }
         }
         Log.d(TAG, "Updated TIMES_CONTACTED");
     }
-
 }

@@ -35,8 +35,8 @@ public class BluetoothMapContractTest {
 
     @Test
     public void testBuildAccountUri() {
-        final String expectedUriString = "content://" + TEST_AUTHORITY + "/"
-                + BluetoothMapContract.TABLE_ACCOUNT;
+        final String expectedUriString =
+                "content://" + TEST_AUTHORITY + "/" + BluetoothMapContract.TABLE_ACCOUNT;
 
         Uri result = BluetoothMapContract.buildAccountUri(TEST_AUTHORITY);
         assertThat(result.toString()).isEqualTo(expectedUriString);
@@ -44,8 +44,13 @@ public class BluetoothMapContractTest {
 
     @Test
     public void testBuildAccountUriWithId() {
-        final String expectedUriString = "content://" + TEST_AUTHORITY + "/"
-                + BluetoothMapContract.TABLE_ACCOUNT + "/" + ACCOUNT_ID;
+        final String expectedUriString =
+                "content://"
+                        + TEST_AUTHORITY
+                        + "/"
+                        + BluetoothMapContract.TABLE_ACCOUNT
+                        + "/"
+                        + ACCOUNT_ID;
 
         Uri result = BluetoothMapContract.buildAccountUriwithId(TEST_AUTHORITY, ACCOUNT_ID);
         assertThat(result.toString()).isEqualTo(expectedUriString);
@@ -53,8 +58,8 @@ public class BluetoothMapContractTest {
 
     @Test
     public void testBuildMessageUri() {
-        final String expectedUriString = "content://" + TEST_AUTHORITY + "/"
-                + BluetoothMapContract.TABLE_MESSAGE;
+        final String expectedUriString =
+                "content://" + TEST_AUTHORITY + "/" + BluetoothMapContract.TABLE_MESSAGE;
 
         Uri result = BluetoothMapContract.buildMessageUri(TEST_AUTHORITY);
         assertThat(result.toString()).isEqualTo(expectedUriString);
@@ -62,8 +67,13 @@ public class BluetoothMapContractTest {
 
     @Test
     public void testBuildMessageUri_withAccountId() {
-        final String expectedUriString = "content://" + TEST_AUTHORITY + "/"
-                + ACCOUNT_ID + "/" + BluetoothMapContract.TABLE_MESSAGE;
+        final String expectedUriString =
+                "content://"
+                        + TEST_AUTHORITY
+                        + "/"
+                        + ACCOUNT_ID
+                        + "/"
+                        + BluetoothMapContract.TABLE_MESSAGE;
 
         Uri result = BluetoothMapContract.buildMessageUri(TEST_AUTHORITY, ACCOUNT_ID);
         assertThat(result.toString()).isEqualTo(expectedUriString);
@@ -71,18 +81,30 @@ public class BluetoothMapContractTest {
 
     @Test
     public void testBuildMessageUriWithId() {
-        final String expectedUriString = "content://" + TEST_AUTHORITY + "/"
-                + ACCOUNT_ID + "/" + BluetoothMapContract.TABLE_MESSAGE + "/" + MESSAGE_ID;
+        final String expectedUriString =
+                "content://"
+                        + TEST_AUTHORITY
+                        + "/"
+                        + ACCOUNT_ID
+                        + "/"
+                        + BluetoothMapContract.TABLE_MESSAGE
+                        + "/"
+                        + MESSAGE_ID;
 
-        Uri result = BluetoothMapContract.buildMessageUriWithId(
-                TEST_AUTHORITY, ACCOUNT_ID, MESSAGE_ID);
+        Uri result =
+                BluetoothMapContract.buildMessageUriWithId(TEST_AUTHORITY, ACCOUNT_ID, MESSAGE_ID);
         assertThat(result.toString()).isEqualTo(expectedUriString);
     }
 
     @Test
     public void testBuildFolderUri() {
-        final String expectedUriString = "content://" + TEST_AUTHORITY + "/"
-                + ACCOUNT_ID + "/" + BluetoothMapContract.TABLE_FOLDER;
+        final String expectedUriString =
+                "content://"
+                        + TEST_AUTHORITY
+                        + "/"
+                        + ACCOUNT_ID
+                        + "/"
+                        + BluetoothMapContract.TABLE_FOLDER;
 
         Uri result = BluetoothMapContract.buildFolderUri(TEST_AUTHORITY, ACCOUNT_ID);
         assertThat(result.toString()).isEqualTo(expectedUriString);
@@ -90,8 +112,13 @@ public class BluetoothMapContractTest {
 
     @Test
     public void testBuildConversationUri() {
-        final String expectedUriString = "content://" + TEST_AUTHORITY + "/"
-                + ACCOUNT_ID + "/" + BluetoothMapContract.TABLE_CONVERSATION;
+        final String expectedUriString =
+                "content://"
+                        + TEST_AUTHORITY
+                        + "/"
+                        + ACCOUNT_ID
+                        + "/"
+                        + BluetoothMapContract.TABLE_CONVERSATION;
 
         Uri result = BluetoothMapContract.buildConversationUri(TEST_AUTHORITY, ACCOUNT_ID);
         assertThat(result.toString()).isEqualTo(expectedUriString);
@@ -99,8 +126,8 @@ public class BluetoothMapContractTest {
 
     @Test
     public void testBuildConvoContactsUri() {
-        final String expectedUriString = "content://" + TEST_AUTHORITY + "/"
-                + BluetoothMapContract.TABLE_CONVOCONTACT;
+        final String expectedUriString =
+                "content://" + TEST_AUTHORITY + "/" + BluetoothMapContract.TABLE_CONVOCONTACT;
 
         Uri result = BluetoothMapContract.buildConvoContactsUri(TEST_AUTHORITY);
         assertThat(result.toString()).isEqualTo(expectedUriString);
@@ -108,8 +135,13 @@ public class BluetoothMapContractTest {
 
     @Test
     public void testBuildConvoContactsUri_withAccountId() {
-        final String expectedUriString = "content://" + TEST_AUTHORITY + "/"
-                + ACCOUNT_ID + "/" + BluetoothMapContract.TABLE_CONVOCONTACT;
+        final String expectedUriString =
+                "content://"
+                        + TEST_AUTHORITY
+                        + "/"
+                        + ACCOUNT_ID
+                        + "/"
+                        + BluetoothMapContract.TABLE_CONVOCONTACT;
 
         Uri result = BluetoothMapContract.buildConvoContactsUri(TEST_AUTHORITY, ACCOUNT_ID);
         assertThat(result.toString()).isEqualTo(expectedUriString);
@@ -117,11 +149,19 @@ public class BluetoothMapContractTest {
 
     @Test
     public void testBuildConvoContactsUriWithId() {
-        final String expectedUriString = "content://" + TEST_AUTHORITY + "/"
-                + ACCOUNT_ID + "/" + BluetoothMapContract.TABLE_CONVOCONTACT + "/" + CONTACT_ID;
+        final String expectedUriString =
+                "content://"
+                        + TEST_AUTHORITY
+                        + "/"
+                        + ACCOUNT_ID
+                        + "/"
+                        + BluetoothMapContract.TABLE_CONVOCONTACT
+                        + "/"
+                        + CONTACT_ID;
 
-        Uri result = BluetoothMapContract.buildConvoContactsUriWithId(
-                TEST_AUTHORITY, ACCOUNT_ID, CONTACT_ID);
+        Uri result =
+                BluetoothMapContract.buildConvoContactsUriWithId(
+                        TEST_AUTHORITY, ACCOUNT_ID, CONTACT_ID);
         assertThat(result.toString()).isEqualTo(expectedUriString);
     }
 }

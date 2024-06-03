@@ -24,20 +24,15 @@ import java.util.HashSet;
  * Represents the set of possible transformations available for a variant of an image to get the
  * image to a particular pixel size.
  *
- * The transformations supported by BIP v1.2.1 include:
- *   - Stretch
- *   - Fill
- *   - Crop
+ * <p>The transformations supported by BIP v1.2.1 include: - Stretch - Fill - Crop
  *
- * Example in an image properties/format:
- *   <variant encoding=“GIF” pixel=“80*60-640*480” transformation="stretch fill"/>
- *   <variant encoding=“GIF” pixel=“80*60-640*480” transformation="fill"/>
- *   <variant encoding=“GIF” pixel=“80*60-640*480” transformation="stretch fill crop"/>
+ * <p>Example in an image properties/format: <variant encoding=“GIF” pixel=“80*60-640*480”
+ * transformation="stretch fill"/> <variant encoding=“GIF” pixel=“80*60-640*480”
+ * transformation="fill"/> <variant encoding=“GIF” pixel=“80*60-640*480” transformation="stretch
+ * fill crop"/>
  *
- * Example in an image descriptor:
- *   <image-descriptor version=“1.0”>
- *   <image encoding=“JPEG” pixel=“1280*960” size=“500000” transformation="stretch"/>
- *   </image-descriptor>
+ * <p>Example in an image descriptor: <image-descriptor version=“1.0”> <image encoding=“JPEG”
+ * pixel=“1280*960” size=“500000” transformation="stretch"/> </image-descriptor>
  */
 public class BipTransformation {
     private static final String TAG = "avrcpcontroller.BipTransformation";
@@ -49,15 +44,10 @@ public class BipTransformation {
 
     public final HashSet<Integer> mSupportedTransformations = new HashSet<Integer>(3);
 
-    /**
-     * Create an empty set of BIP Transformations
-     */
-    public BipTransformation() {
-    }
+    /** Create an empty set of BIP Transformations */
+    public BipTransformation() {}
 
-    /**
-     * Create a set of BIP Transformations from an attribute value from an Image Format string
-     */
+    /** Create a set of BIP Transformations from an attribute value from an Image Format string */
     public BipTransformation(String transformations) {
         if (transformations == null) return;
 
@@ -81,16 +71,12 @@ public class BipTransformation {
         }
     }
 
-    /**
-     * Create a set of BIP Transformations from a single supported transformation
-     */
+    /** Create a set of BIP Transformations from a single supported transformation */
     public BipTransformation(int transformation) {
         addTransformation(transformation);
     }
 
-    /**
-     * Create a set of BIP Transformations from a set of supported transformations
-     */
+    /** Create a set of BIP Transformations from a set of supported transformations */
     public BipTransformation(int[] transformations) {
         for (int transformation : transformations) {
             addTransformation(transformation);
@@ -104,8 +90,8 @@ public class BipTransformation {
      */
     public void addTransformation(int transformation) {
         if (!isValid(transformation)) {
-            throw new IllegalArgumentException("Invalid transformation ID '" + transformation
-                    + "'");
+            throw new IllegalArgumentException(
+                    "Invalid transformation ID '" + transformation + "'");
         }
         mSupportedTransformations.add(transformation);
     }
@@ -117,8 +103,8 @@ public class BipTransformation {
      */
     public void removeTransformation(int transformation) {
         if (!isValid(transformation)) {
-            throw new IllegalArgumentException("Invalid transformation ID '" + transformation
-                    + "'");
+            throw new IllegalArgumentException(
+                    "Invalid transformation ID '" + transformation + "'");
         }
         mSupportedTransformations.remove(transformation);
     }
@@ -127,7 +113,7 @@ public class BipTransformation {
      * Determine if a given transformations is valid
      *
      * @param transformation The integer encoding ID of the transformation. Should be one of the
-     *                       BipTransformation.* constants, but doesn't *have* to be
+     *     BipTransformation.* constants, but doesn't *have* to be
      * @return True if the transformation constant is valid, False otherwise
      */
     private boolean isValid(int transformation) {

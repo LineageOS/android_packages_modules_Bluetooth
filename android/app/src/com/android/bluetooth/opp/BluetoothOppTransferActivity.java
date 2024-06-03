@@ -85,8 +85,7 @@ public class BluetoothOppTransferActivity extends AlertActivity
 
     private TextView mLine1View, mLine2View, mLine3View, mLine5View;
 
-    @VisibleForTesting
-    int mWhichDialog;
+    @VisibleForTesting int mWhichDialog;
 
     // Dialogs definition:
     // Receive progress dialog
@@ -155,8 +154,8 @@ public class BluetoothOppTransferActivity extends AlertActivity
         // update progress bar for ongoing transfer
         if (!mIsComplete) {
             mObserver = new BluetoothTransferContentObserver();
-            getContentResolver().registerContentObserver(BluetoothShare.CONTENT_URI, true,
-                    mObserver);
+            getContentResolver()
+                    .registerContentObserver(BluetoothShare.CONTENT_URI, true, mObserver);
         }
 
         if (mWhichDialog != DIALOG_SEND_ONGOING && mWhichDialog != DIALOG_RECEIVE_ONGOING) {
@@ -207,8 +206,13 @@ public class BluetoothOppTransferActivity extends AlertActivity
             }
         }
 
-        Log.v(TAG, " WhichDialog/dir/isComplete/failOrSuccess" + mWhichDialog + direction
-                + isComplete + isSuccess);
+        Log.v(
+                TAG,
+                " WhichDialog/dir/isComplete/failOrSuccess"
+                        + mWhichDialog
+                        + direction
+                        + isComplete
+                        + isSuccess);
     }
 
     private void setUpDialog() {
@@ -247,9 +251,7 @@ public class BluetoothOppTransferActivity extends AlertActivity
         return mView;
     }
 
-    /**
-     * customize the content of view
-     */
+    /** customize the content of view */
     private void customizeViewContent() {
         String tmp;
 
@@ -262,8 +264,10 @@ public class BluetoothOppTransferActivity extends AlertActivity
             tmp = getString(R.string.download_line2, mTransInfo.mFileName);
             mLine2View.setText(tmp);
             mLine3View = (TextView) mView.findViewById(R.id.line3_view);
-            tmp = getString(R.string.download_line3,
-                    Formatter.formatFileSize(this, mTransInfo.mTotalBytes));
+            tmp =
+                    getString(
+                            R.string.download_line3,
+                            Formatter.formatFileSize(this, mTransInfo.mTotalBytes));
             mLine3View.setText(tmp);
             mLine5View = (TextView) mView.findViewById(R.id.line5_view);
             if (mWhichDialog == DIALOG_RECEIVE_ONGOING) {
@@ -281,8 +285,11 @@ public class BluetoothOppTransferActivity extends AlertActivity
             tmp = getString(R.string.download_line2, mTransInfo.mFileName);
             mLine2View.setText(tmp);
             mLine3View = (TextView) mView.findViewById(R.id.line3_view);
-            tmp = getString(R.string.upload_line3, mTransInfo.mFileType,
-                    Formatter.formatFileSize(this, mTransInfo.mTotalBytes));
+            tmp =
+                    getString(
+                            R.string.upload_line3,
+                            mTransInfo.mFileType,
+                            Formatter.formatFileSize(this, mTransInfo.mTotalBytes));
             mLine3View.setText(tmp);
             mLine5View = (TextView) mView.findViewById(R.id.line5_view);
             if (mWhichDialog == DIALOG_SEND_ONGOING) {
@@ -294,17 +301,20 @@ public class BluetoothOppTransferActivity extends AlertActivity
         } else if (mWhichDialog == DIALOG_RECEIVE_COMPLETE_FAIL) {
             if (mTransInfo.mStatus == BluetoothShare.STATUS_ERROR_SDCARD_FULL) {
                 mLine1View = (TextView) mView.findViewById(R.id.line1_view);
-                int id = BluetoothOppUtility.deviceHasNoSdCard()
-                        ? R.string.bt_sm_2_1_nosdcard
-                        : R.string.bt_sm_2_1_default;
+                int id =
+                        BluetoothOppUtility.deviceHasNoSdCard()
+                                ? R.string.bt_sm_2_1_nosdcard
+                                : R.string.bt_sm_2_1_default;
                 tmp = getString(id);
                 mLine1View.setText(tmp);
                 mLine2View = (TextView) mView.findViewById(R.id.line2_view);
                 tmp = getString(R.string.download_fail_line2, mTransInfo.mFileName);
                 mLine2View.setText(tmp);
                 mLine3View = (TextView) mView.findViewById(R.id.line3_view);
-                tmp = getString(R.string.bt_sm_2_2,
-                        Formatter.formatFileSize(this, mTransInfo.mTotalBytes));
+                tmp =
+                        getString(
+                                R.string.bt_sm_2_2,
+                                Formatter.formatFileSize(this, mTransInfo.mTotalBytes));
                 mLine3View.setText(tmp);
             } else {
                 mLine1View = (TextView) mView.findViewById(R.id.line1_view);
@@ -314,9 +324,11 @@ public class BluetoothOppTransferActivity extends AlertActivity
                 tmp = getString(R.string.download_fail_line2, mTransInfo.mFileName);
                 mLine2View.setText(tmp);
                 mLine3View = (TextView) mView.findViewById(R.id.line3_view);
-                tmp = getString(R.string.download_fail_line3,
-                        BluetoothOppUtility.getStatusDescription(this, mTransInfo.mStatus,
-                                mTransInfo.mDeviceName));
+                tmp =
+                        getString(
+                                R.string.download_fail_line3,
+                                BluetoothOppUtility.getStatusDescription(
+                                        this, mTransInfo.mStatus, mTransInfo.mDeviceName));
                 mLine3View.setText(tmp);
             }
             mLine5View = (TextView) mView.findViewById(R.id.line5_view);
@@ -329,9 +341,11 @@ public class BluetoothOppTransferActivity extends AlertActivity
             tmp = getString(R.string.upload_fail_line1_2, mTransInfo.mFileName);
             mLine2View.setText(tmp);
             mLine3View = (TextView) mView.findViewById(R.id.line3_view);
-            tmp = getString(R.string.download_fail_line3,
-                    BluetoothOppUtility.getStatusDescription(this, mTransInfo.mStatus,
-                            mTransInfo.mDeviceName));
+            tmp =
+                    getString(
+                            R.string.download_fail_line3,
+                            BluetoothOppUtility.getStatusDescription(
+                                    this, mTransInfo.mStatus, mTransInfo.mDeviceName));
             mLine3View.setText(tmp);
             mLine5View = (TextView) mView.findViewById(R.id.line5_view);
             mLine5View.setVisibility(View.GONE);
@@ -349,8 +363,12 @@ public class BluetoothOppTransferActivity extends AlertActivity
             case DialogInterface.BUTTON_POSITIVE:
                 if (mWhichDialog == DIALOG_RECEIVE_COMPLETE_SUCCESS) {
                     // "Open" - open receive file
-                    BluetoothOppUtility.openReceivedFile(this, mTransInfo.mFileName,
-                            mTransInfo.mFileType, mTransInfo.mTimeStamp, mUri);
+                    BluetoothOppUtility.openReceivedFile(
+                            this,
+                            mTransInfo.mFileName,
+                            mTransInfo.mFileType,
+                            mTransInfo.mTimeStamp,
+                            mUri);
 
                     // make current transfer "hidden"
                     BluetoothOppUtility.updateVisibilityToHidden(this, mUri);
@@ -386,9 +404,7 @@ public class BluetoothOppTransferActivity extends AlertActivity
         finish();
     }
 
-    /**
-     * Update progress bar per data got from content provider
-     */
+    /** Update progress bar per data got from content provider */
     private void updateProgressbar() {
         mTransInfo = BluetoothOppUtility.queryRecord(this, mUri);
         if (mTransInfo == null) {
@@ -405,23 +421,31 @@ public class BluetoothOppTransferActivity extends AlertActivity
         mProgressTransfer.setMax(100);
 
         if (mTransInfo.mTotalBytes != 0) {
-            Log.v(TAG, "mCurrentBytes: " + mTransInfo.mCurrentBytes + " mTotalBytes: "
-                    + mTransInfo.mTotalBytes + " (" + (int) ((mTransInfo.mCurrentBytes * 100)
-                    / mTransInfo.mTotalBytes) + "%)");
+            Log.v(
+                    TAG,
+                    "mCurrentBytes: "
+                            + mTransInfo.mCurrentBytes
+                            + " mTotalBytes: "
+                            + mTransInfo.mTotalBytes
+                            + " ("
+                            + (int) ((mTransInfo.mCurrentBytes * 100) / mTransInfo.mTotalBytes)
+                            + "%)");
             mProgressTransfer.setProgress(
                     (int) ((mTransInfo.mCurrentBytes * 100) / mTransInfo.mTotalBytes));
         } else {
             mProgressTransfer.setProgress(100);
         }
 
-        mPercentView.setText(BluetoothOppUtility.formatProgressText(mTransInfo.mTotalBytes,
-                mTransInfo.mCurrentBytes));
+        mPercentView.setText(
+                BluetoothOppUtility.formatProgressText(
+                        mTransInfo.mTotalBytes, mTransInfo.mCurrentBytes));
 
         // Handle the case when DIALOG_RECEIVE_ONGOING evolve to
         // DIALOG_RECEIVE_COMPLETE_SUCCESS/DIALOG_RECEIVE_COMPLETE_FAIL
         // Handle the case when DIALOG_SEND_ONGOING evolve to
         // DIALOG_SEND_COMPLETE_SUCCESS/DIALOG_SEND_COMPLETE_FAIL
-        if (!mIsComplete && BluetoothShare.isStatusCompleted(mTransInfo.mStatus)
+        if (!mIsComplete
+                && BluetoothShare.isStatusCompleted(mTransInfo.mStatus)
                 && mNeedUpdateButton) {
             if (mObserver != null) {
                 getContentResolver().unregisterContentObserver(mObserver);
@@ -433,31 +457,22 @@ public class BluetoothOppTransferActivity extends AlertActivity
         }
     }
 
-    /**
-     * Update button when one transfer goto complete from ongoing
-     */
+    /** Update button when one transfer goto complete from ongoing */
     private void updateButton() {
         if (mWhichDialog == DIALOG_RECEIVE_COMPLETE_SUCCESS) {
             changeButtonVisibility(DialogInterface.BUTTON_NEGATIVE, View.GONE);
-            changeButtonText(
-                    DialogInterface.BUTTON_POSITIVE,
-                    getString(R.string.download_succ_ok));
+            changeButtonText(DialogInterface.BUTTON_POSITIVE, getString(R.string.download_succ_ok));
         } else if (mWhichDialog == DIALOG_RECEIVE_COMPLETE_FAIL) {
             changeIconAttribute(android.R.attr.alertDialogIcon);
             changeButtonVisibility(DialogInterface.BUTTON_NEGATIVE, View.GONE);
-            changeButtonText(
-                    DialogInterface.BUTTON_POSITIVE,
-                    getString(R.string.download_fail_ok));
+            changeButtonText(DialogInterface.BUTTON_POSITIVE, getString(R.string.download_fail_ok));
         } else if (mWhichDialog == DIALOG_SEND_COMPLETE_SUCCESS) {
             changeButtonVisibility(DialogInterface.BUTTON_NEGATIVE, View.GONE);
-            changeButtonText(
-                    DialogInterface.BUTTON_POSITIVE,
-                    getString(R.string.upload_succ_ok));
+            changeButtonText(DialogInterface.BUTTON_POSITIVE, getString(R.string.upload_succ_ok));
         } else if (mWhichDialog == DIALOG_SEND_COMPLETE_FAIL) {
             changeIconAttribute(android.R.attr.alertDialogIcon);
             changeButtonText(
-                    DialogInterface.BUTTON_NEGATIVE,
-                    getString(R.string.upload_fail_cancel));
+                    DialogInterface.BUTTON_NEGATIVE, getString(R.string.upload_fail_cancel));
         }
     }
 }

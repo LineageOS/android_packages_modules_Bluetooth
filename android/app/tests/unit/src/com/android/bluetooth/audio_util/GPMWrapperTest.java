@@ -62,23 +62,24 @@ public class GPMWrapperTest {
     @Test
     public void isMetadataSynced_whenOutOfSync_returnsFalse() {
         long activeQueueItemId = 3;
-        PlaybackState state = new PlaybackState.Builder()
-                .setActiveQueueItemId(activeQueueItemId).build();
+        PlaybackState state =
+                new PlaybackState.Builder().setActiveQueueItemId(activeQueueItemId).build();
         when(mMediaController.getPlaybackState()).thenReturn(state);
 
         List<MediaSession.QueueItem> queue = new ArrayList<>();
-        MediaDescription description = new MediaDescription.Builder()
-                .setTitle("Title from queue item")
-                .build();
-        MediaSession.QueueItem queueItem = new MediaSession.QueueItem(
-                description, activeQueueItemId);
+        MediaDescription description =
+                new MediaDescription.Builder().setTitle("Title from queue item").build();
+        MediaSession.QueueItem queueItem =
+                new MediaSession.QueueItem(description, activeQueueItemId);
         queue.add(queueItem);
         when(mMediaController.getQueue()).thenReturn(queue);
 
-        MediaMetadata metadata = new MediaMetadata.Builder()
-                .putString(MediaMetadata.METADATA_KEY_TITLE,
-                        "Different Title from MediaMetadata")
-                .build();
+        MediaMetadata metadata =
+                new MediaMetadata.Builder()
+                        .putString(
+                                MediaMetadata.METADATA_KEY_TITLE,
+                                "Different Title from MediaMetadata")
+                        .build();
         when(mMediaController.getMetadata()).thenReturn(metadata);
 
         GPMWrapper wrapper = new GPMWrapper(mContext, mMediaController, null);
@@ -91,22 +92,21 @@ public class GPMWrapperTest {
         String title = "test_title";
 
         long activeQueueItemId = 3;
-        PlaybackState state = new PlaybackState.Builder()
-                .setActiveQueueItemId(activeQueueItemId).build();
+        PlaybackState state =
+                new PlaybackState.Builder().setActiveQueueItemId(activeQueueItemId).build();
         when(mMediaController.getPlaybackState()).thenReturn(state);
 
         List<MediaSession.QueueItem> queue = new ArrayList<>();
-        MediaDescription description = new MediaDescription.Builder()
-                .setTitle(title)
-                .build();
-        MediaSession.QueueItem queueItem = new MediaSession.QueueItem(
-                description, activeQueueItemId);
+        MediaDescription description = new MediaDescription.Builder().setTitle(title).build();
+        MediaSession.QueueItem queueItem =
+                new MediaSession.QueueItem(description, activeQueueItemId);
         queue.add(queueItem);
         when(mMediaController.getQueue()).thenReturn(queue);
 
-        MediaMetadata metadata = new MediaMetadata.Builder()
-                .putString(MediaMetadata.METADATA_KEY_TITLE, title)
-                .build();
+        MediaMetadata metadata =
+                new MediaMetadata.Builder()
+                        .putString(MediaMetadata.METADATA_KEY_TITLE, title)
+                        .build();
         when(mMediaController.getMetadata()).thenReturn(metadata);
 
         GPMWrapper wrapper = new GPMWrapper(mContext, mMediaController, null);

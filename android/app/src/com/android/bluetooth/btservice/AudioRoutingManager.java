@@ -564,25 +564,26 @@ public class AudioRoutingManager extends ActiveDeviceManager {
                             + ", "
                             + device
                             + ")");
-            boolean activated = switch (profile) {
-                case BluetoothProfile.A2DP -> {
-                    A2dpService service = mFactory.getA2dpService();
-                    yield service == null ? false : service.setActiveDevice(device);
-                }
-                case BluetoothProfile.HEADSET -> {
-                    HeadsetService service = mFactory.getHeadsetService();
-                    yield service == null ? false : service.setActiveDevice(device);
-                }
-                case BluetoothProfile.LE_AUDIO -> {
-                    LeAudioService service = mFactory.getLeAudioService();
-                    yield service == null ? false : service.setActiveDevice(device);
-                }
-                case BluetoothProfile.HEARING_AID -> {
-                    HearingAidService service = mFactory.getHearingAidService();
-                    yield service == null ? false : service.setActiveDevice(device);
-                }
-                default -> false;
-            };
+            boolean activated =
+                    switch (profile) {
+                        case BluetoothProfile.A2DP -> {
+                            A2dpService service = mFactory.getA2dpService();
+                            yield service == null ? false : service.setActiveDevice(device);
+                        }
+                        case BluetoothProfile.HEADSET -> {
+                            HeadsetService service = mFactory.getHeadsetService();
+                            yield service == null ? false : service.setActiveDevice(device);
+                        }
+                        case BluetoothProfile.LE_AUDIO -> {
+                            LeAudioService service = mFactory.getLeAudioService();
+                            yield service == null ? false : service.setActiveDevice(device);
+                        }
+                        case BluetoothProfile.HEARING_AID -> {
+                            HearingAidService service = mFactory.getHearingAidService();
+                            yield service == null ? false : service.setActiveDevice(device);
+                        }
+                        default -> false;
+                    };
             if (activated) {
                 List<BluetoothDevice> activeDevices = mActiveDevices.get(profile);
                 if (activeDevices == null) {
@@ -756,19 +757,22 @@ public class AudioRoutingManager extends ActiveDeviceManager {
             public boolean canActivateNow(int profile) {
                 if (!connectedProfiles.contains(profile)) return false;
                 return switch (profile) {
-                    case BluetoothProfile.HEADSET -> !supportedProfiles.contains(
-                                    BluetoothProfile.A2DP)
-                            || connectedProfiles.contains(BluetoothProfile.A2DP);
-                    case BluetoothProfile.A2DP -> !supportedProfiles.contains(
-                                    BluetoothProfile.HEADSET)
-                            || connectedProfiles.contains(BluetoothProfile.HEADSET);
-                    case BluetoothProfile.LE_AUDIO -> !Utils.isDualModeAudioEnabled()
-                            // Check all supported A2DP and HFP are connected if dual mode enabled
-                            || ((connectedProfiles.contains(BluetoothProfile.A2DP)
-                                            || !supportedProfiles.contains(BluetoothProfile.A2DP))
-                                    && (connectedProfiles.contains(BluetoothProfile.HEADSET)
-                                            || !supportedProfiles.contains(
-                                                    BluetoothProfile.HEADSET)));
+                    case BluetoothProfile.HEADSET ->
+                            !supportedProfiles.contains(BluetoothProfile.A2DP)
+                                    || connectedProfiles.contains(BluetoothProfile.A2DP);
+                    case BluetoothProfile.A2DP ->
+                            !supportedProfiles.contains(BluetoothProfile.HEADSET)
+                                    || connectedProfiles.contains(BluetoothProfile.HEADSET);
+                    case BluetoothProfile.LE_AUDIO ->
+                            !Utils.isDualModeAudioEnabled()
+                                    // Check all supported A2DP and HFP are connected if dual mode
+                                    // enabled
+                                    || ((connectedProfiles.contains(BluetoothProfile.A2DP)
+                                                    || !supportedProfiles.contains(
+                                                            BluetoothProfile.A2DP))
+                                            && (connectedProfiles.contains(BluetoothProfile.HEADSET)
+                                                    || !supportedProfiles.contains(
+                                                            BluetoothProfile.HEADSET)));
                     default -> true;
                 };
             }

@@ -22,27 +22,27 @@ import java.util.regex.Pattern;
 /**
  * The pixel size or range of pixel sizes in which the image is available
  *
- * A FIXED size is represented as the following, where W is width and H is height. The domain
- * of values is [0, 65535]
+ * <p>A FIXED size is represented as the following, where W is width and H is height. The domain of
+ * values is [0, 65535]
  *
- *   W*H
+ * <p>W*H
  *
- * A RESIZABLE size that allows a modified aspect ratio is represented as the following, where
- * W_1*H_1 is the minimum width and height pair and W2*H2 is the maximum width and height pair.
- * The domain of values is [0, 65535]
+ * <p>A RESIZABLE size that allows a modified aspect ratio is represented as the following, where
+ * W_1*H_1 is the minimum width and height pair and W2*H2 is the maximum width and height pair. The
+ * domain of values is [0, 65535]
  *
- *   W_1*H_1-W2*H2
+ * <p>W_1*H_1-W2*H2
  *
- * A RESIZABLE size that allows a fixed aspect ratio is represented as the following, where
- * W_1 is the minimum width and W2*H2 is the maximum width and height pair.
- * The domain of values is [0, 65535]
+ * <p>A RESIZABLE size that allows a fixed aspect ratio is represented as the following, where W_1
+ * is the minimum width and W2*H2 is the maximum width and height pair. The domain of values is [0,
+ * 65535]
  *
- *   W_1**-W2*H2
+ * <p>W_1**-W2*H2
  *
- * For each possible intermediate width value, the corresponding height is calculated using the
+ * <p>For each possible intermediate width value, the corresponding height is calculated using the
  * formula
  *
- *   H=(W*H2)/W2
+ * <p>H=(W*H2)/W2
  */
 public class BipPixel {
     private static final String TAG = "avrcpcontroller.BipPixel";
@@ -64,37 +64,33 @@ public class BipPixel {
     private final int mMaxWidth;
     private final int mMaxHeight;
 
-    /**
-     * Create a fixed size BipPixel object
-     */
+    /** Create a fixed size BipPixel object */
     public static BipPixel createFixed(int width, int height) {
         return new BipPixel(TYPE_FIXED, width, height, width, height);
     }
 
-    /**
-     * Create a resizable modifiable aspect ratio BipPixel object
-     */
-    public static BipPixel createResizableModified(int minWidth, int minHeight, int maxWidth,
-            int maxHeight) {
-        return new BipPixel(TYPE_RESIZE_MODIFIED_ASPECT_RATIO, minWidth, minHeight, maxWidth,
-                maxHeight);
+    /** Create a resizable modifiable aspect ratio BipPixel object */
+    public static BipPixel createResizableModified(
+            int minWidth, int minHeight, int maxWidth, int maxHeight) {
+        return new BipPixel(
+                TYPE_RESIZE_MODIFIED_ASPECT_RATIO, minWidth, minHeight, maxWidth, maxHeight);
     }
 
-    /**
-     * Create a resizable fixed aspect ratio BipPixel object
-     */
+    /** Create a resizable fixed aspect ratio BipPixel object */
     public static BipPixel createResizableFixed(int minWidth, int maxWidth, int maxHeight) {
         int minHeight = (minWidth * maxHeight) / maxWidth;
-        return new BipPixel(TYPE_RESIZE_FIXED_ASPECT_RATIO, minWidth, minHeight,
-                maxWidth, maxHeight);
+        return new BipPixel(
+                TYPE_RESIZE_FIXED_ASPECT_RATIO, minWidth, minHeight, maxWidth, maxHeight);
     }
 
     /**
      * Directly create a BipPixel object knowing your exact type and dimensions. Internal use only
      */
     private BipPixel(int type, int minWidth, int minHeight, int maxWidth, int maxHeight) {
-        if (isDimensionInvalid(minWidth) || isDimensionInvalid(maxWidth)
-                || isDimensionInvalid(minHeight) || isDimensionInvalid(maxHeight)) {
+        if (isDimensionInvalid(minWidth)
+                || isDimensionInvalid(maxWidth)
+                || isDimensionInvalid(minHeight)
+                || isDimensionInvalid(maxHeight)) {
             throw new IllegalArgumentException("Dimension's must be in [0, " + PIXEL_MAX + "]");
         }
 
@@ -105,9 +101,7 @@ public class BipPixel {
         mMaxHeight = maxHeight;
     }
 
-    /**
-    * Create a BipPixel object from an Image Format pixel attribute string
-     */
+    /** Create a BipPixel object from an Image Format pixel attribute string */
     public BipPixel(String pixel) {
         int type = TYPE_UNKNOWN;
         int minWidth = -1;
@@ -129,8 +123,8 @@ public class BipPixel {
                 }
                 break;
             case TYPE_RESIZE_MODIFIED_ASPECT_RATIO:
-                Pattern modifiedRatio = Pattern.compile(
-                        "^(\\d{1,5})\\*(\\d{1,5})-(\\d{1,5})\\*(\\d{1,5})$");
+                Pattern modifiedRatio =
+                        Pattern.compile("^(\\d{1,5})\\*(\\d{1,5})-(\\d{1,5})\\*(\\d{1,5})$");
                 Matcher m2 = modifiedRatio.matcher(pixel);
                 if (m2.matches()) {
                     type = TYPE_RESIZE_MODIFIED_ASPECT_RATIO;
@@ -157,8 +151,10 @@ public class BipPixel {
         if (type == TYPE_UNKNOWN) {
             throw new ParseException("Failed to determine type of '" + pixel + "'");
         }
-        if (isDimensionInvalid(minWidth) || isDimensionInvalid(maxWidth)
-                || isDimensionInvalid(minHeight) || isDimensionInvalid(maxHeight)) {
+        if (isDimensionInvalid(minWidth)
+                || isDimensionInvalid(maxWidth)
+                || isDimensionInvalid(minHeight)
+                || isDimensionInvalid(maxHeight)) {
             throw new ParseException("Parsed dimensions must be in [0, " + PIXEL_MAX + "]");
         }
 
@@ -193,8 +189,8 @@ public class BipPixel {
      * Determines the type of the pixel string by counting the number of '*' delimiters in the
      * string.
      *
-     * Note that the overall maximum size of any pixel string is 23 characters in length due to the
-     * max size of each dimension
+     * <p>Note that the overall maximum size of any pixel string is 23 characters in length due to
+     * the max size of each dimension
      *
      * @return The corresponding type we should assume the given pixel string is
      */

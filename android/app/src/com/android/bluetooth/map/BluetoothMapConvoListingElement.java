@@ -1,17 +1,17 @@
 /*
-* Copyright (C) 2013 Samsung System LSI
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*      http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (C) 2013 Samsung System LSI
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.android.bluetooth.map;
 
 import android.bluetooth.BluetoothProfile;
@@ -50,7 +50,7 @@ public class BluetoothMapConvoListingElement
     private static final String TAG = "BluetoothMapConvoListingElement";
 
     private SignedLongLong mId = null;
-    private String mName = ""; //title of the conversation #REQUIRED, but allowed empty
+    private String mName = ""; // title of the conversation #REQUIRED, but allowed empty
     private long mLastActivity = -1;
     private boolean mRead = false;
     private boolean mReportRead = false; // TODO: Is this needed? - false means UNKNOWN
@@ -140,7 +140,6 @@ public class BluetoothMapConvoListingElement
         mContacts.remove(index);
     }
 
-
     public long getLastActivity() {
         return mLastActivity;
     }
@@ -191,8 +190,9 @@ public class BluetoothMapConvoListingElement
 
     /**
      * Set the conversation ID
-     * @param type 0 if the thread ID is valid across all message types in the instance - else
-     * use one of the CONVO_ID_xxx types.
+     *
+     * @param type 0 if the thread ID is valid across all message types in the instance - else use
+     *     one of the CONVO_ID_xxx types.
      * @param threadId the conversation ID
      */
     public void setConvoId(long type, long threadId) {
@@ -263,8 +263,8 @@ public class BluetoothMapConvoListingElement
         xmlConvoElement.startTag(null, XML_TAG_CONVERSATION);
         xmlConvoElement.attribute(null, XML_ATT_ID, mId.toHexString());
         if (mName != null) {
-            xmlConvoElement.attribute(null, XML_ATT_NAME,
-                    BluetoothMapUtils.stripInvalidChars(mName));
+            xmlConvoElement.attribute(
+                    null, XML_ATT_NAME, BluetoothMapUtils.stripInvalidChars(mName));
         }
         if (mLastActivity != -1) {
             xmlConvoElement.attribute(null, XML_ATT_LAST_ACTIVITY, getLastActivityString());
@@ -274,8 +274,8 @@ public class BluetoothMapConvoListingElement
             xmlConvoElement.attribute(null, XML_ATT_READ, getRead());
         }
         if (mVersionCounter != -1) {
-            xmlConvoElement.attribute(null, XML_ATT_VERSION_COUNTER,
-                    Long.toString(getVersionCounter()));
+            xmlConvoElement.attribute(
+                    null, XML_ATT_VERSION_COUNTER, Long.toString(getVersionCounter()));
         }
         if (mSummary != null) {
             xmlConvoElement.attribute(null, XML_ATT_SUMMARY, getSummary());
@@ -286,12 +286,12 @@ public class BluetoothMapConvoListingElement
             }
         }
         xmlConvoElement.endTag(null, XML_TAG_CONVERSATION);
-
     }
 
     /**
      * Consumes a conversation tag. It is expected that the parser is beyond the start-tag event,
      * with the name "conversation".
+     *
      * @param parser
      * @return
      * @throws XmlPullParserException
@@ -390,7 +390,7 @@ public class BluetoothMapConvoListingElement
         return true;
     }
 
-/*    @Override
+    /*    @Override
     public boolean equals(Object o) {
 
         return true;
@@ -398,5 +398,3 @@ public class BluetoothMapConvoListingElement
     */
 
 }
-
-

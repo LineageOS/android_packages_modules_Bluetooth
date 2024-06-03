@@ -42,8 +42,8 @@ final class StackEvent {
         }
     }
 
-    static StackEvent connectionStateChanged(boolean remoteControlConnected,
-            boolean browsingConnected) {
+    static StackEvent connectionStateChanged(
+            boolean remoteControlConnected, boolean browsingConnected) {
         StackEvent event = new StackEvent(EVENT_TYPE_CONNECTION_STATE_CHANGED);
         event.mRemoteControlConnected = remoteControlConnected;
         event.mBrowsingConnected = browsingConnected;

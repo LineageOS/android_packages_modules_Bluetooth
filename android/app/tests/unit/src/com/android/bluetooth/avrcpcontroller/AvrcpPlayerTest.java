@@ -40,14 +40,13 @@ public class AvrcpPlayerTest {
     private static final int TEST_PLAY_TIME = 1;
 
     private final AvrcpItem mAvrcpItem = new AvrcpItem.Builder().build();
-    private final byte[] mTestAddress = new byte[]{01, 01, 01, 01, 01, 01};
+    private final byte[] mTestAddress = new byte[] {01, 01, 01, 01, 01, 01};
     private BluetoothAdapter mAdapter;
     private BluetoothDevice mTestDevice = null;
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    private PlayerApplicationSettings mPlayerApplicationSettings;
+    @Mock private PlayerApplicationSettings mPlayerApplicationSettings;
 
     @Before
     public void setUp() {
@@ -73,8 +72,8 @@ public class AvrcpPlayerTest {
         assertThat(avrcpPlayer.supportsFeature(TEST_FEATURE)).isTrue();
         assertThat(avrcpPlayer.getPlayStatus()).isEqualTo(TEST_PLAY_STATUS);
         assertThat(avrcpPlayer.getCurrentTrack()).isEqualTo(mAvrcpItem);
-        assertThat(avrcpPlayer.getPlaybackState().getActions()).isEqualTo(
-                PlaybackStateCompat.ACTION_PREPARE | PlaybackStateCompat.ACTION_PLAY);
+        assertThat(avrcpPlayer.getPlaybackState().getActions())
+                .isEqualTo(PlaybackStateCompat.ACTION_PREPARE | PlaybackStateCompat.ACTION_PLAY);
     }
 
     @Test
@@ -106,13 +105,14 @@ public class AvrcpPlayerTest {
 
     @Test
     public void setSupportedPlayerApplicationSettings() {
-        when(mPlayerApplicationSettings.supportsSetting(
-                PlayerApplicationSettings.REPEAT_STATUS)).thenReturn(true);
-        when(mPlayerApplicationSettings.supportsSetting(
-                PlayerApplicationSettings.SHUFFLE_STATUS)).thenReturn(true);
+        when(mPlayerApplicationSettings.supportsSetting(PlayerApplicationSettings.REPEAT_STATUS))
+                .thenReturn(true);
+        when(mPlayerApplicationSettings.supportsSetting(PlayerApplicationSettings.SHUFFLE_STATUS))
+                .thenReturn(true);
         AvrcpPlayer avrcpPlayer = new AvrcpPlayer.Builder().build();
         long expectedActions =
-                PlaybackStateCompat.ACTION_PREPARE | PlaybackStateCompat.ACTION_SET_REPEAT_MODE
+                PlaybackStateCompat.ACTION_PREPARE
+                        | PlaybackStateCompat.ACTION_SET_REPEAT_MODE
                         | PlaybackStateCompat.ACTION_SET_SHUFFLE_MODE;
 
         avrcpPlayer.setSupportedPlayerApplicationSettings(mPlayerApplicationSettings);
@@ -124,8 +124,8 @@ public class AvrcpPlayerTest {
     public void supportsSetting() {
         int settingType = 1;
         int settingValue = 1;
-        when(mPlayerApplicationSettings.supportsSetting(settingType, settingValue)).thenReturn(
-                true);
+        when(mPlayerApplicationSettings.supportsSetting(settingType, settingValue))
+                .thenReturn(true);
         AvrcpPlayer avrcpPlayer = new AvrcpPlayer.Builder().build();
 
         avrcpPlayer.setSupportedPlayerApplicationSettings(mPlayerApplicationSettings);
@@ -142,21 +142,29 @@ public class AvrcpPlayerTest {
         setSupportedFeature(supportedFeatures, AvrcpPlayer.FEATURE_FAST_FORWARD);
         setSupportedFeature(supportedFeatures, AvrcpPlayer.FEATURE_FORWARD);
         setSupportedFeature(supportedFeatures, AvrcpPlayer.FEATURE_PREVIOUS);
-        long expectedActions = PlaybackStateCompat.ACTION_PREPARE | PlaybackStateCompat.ACTION_STOP
-                | PlaybackStateCompat.ACTION_PAUSE | PlaybackStateCompat.ACTION_REWIND
-                | PlaybackStateCompat.ACTION_FAST_FORWARD | PlaybackStateCompat.ACTION_SKIP_TO_NEXT
-                | PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS;
+        long expectedActions =
+                PlaybackStateCompat.ACTION_PREPARE
+                        | PlaybackStateCompat.ACTION_STOP
+                        | PlaybackStateCompat.ACTION_PAUSE
+                        | PlaybackStateCompat.ACTION_REWIND
+                        | PlaybackStateCompat.ACTION_FAST_FORWARD
+                        | PlaybackStateCompat.ACTION_SKIP_TO_NEXT
+                        | PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS;
 
-        AvrcpPlayer avrcpPlayer = new AvrcpPlayer.Builder().setSupportedFeatures(
-                supportedFeatures).build();
+        AvrcpPlayer avrcpPlayer =
+                new AvrcpPlayer.Builder().setSupportedFeatures(supportedFeatures).build();
 
         assertThat(avrcpPlayer.getPlaybackState().getActions()).isEqualTo(expectedActions);
     }
 
     @Test
     public void toString_returnsInfo() {
-        AvrcpPlayer avrcpPlayer = new AvrcpPlayer.Builder().setPlayerId(TEST_PLAYER_ID).setName(
-                TEST_NAME).setCurrentTrack(mAvrcpItem).build();
+        AvrcpPlayer avrcpPlayer =
+                new AvrcpPlayer.Builder()
+                        .setPlayerId(TEST_PLAYER_ID)
+                        .setName(TEST_NAME)
+                        .setCurrentTrack(mAvrcpItem)
+                        .build();
 
         assertThat(avrcpPlayer.toString()).isNotNull();
     }

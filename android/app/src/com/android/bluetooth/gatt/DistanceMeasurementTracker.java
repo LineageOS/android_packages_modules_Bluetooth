@@ -25,9 +25,7 @@ import android.os.Looper;
 import java.util.Objects;
 import java.util.UUID;
 
-/**
- * Manages information of apps that registered distance measurement
- */
+/** Manages information of apps that registered distance measurement */
 class DistanceMeasurementTracker {
     private static final String TAG = "DistanceMeasurementTracker";
 
@@ -61,12 +59,14 @@ class DistanceMeasurementTracker {
 
     void startTimer(Looper looper) {
         mHandler = new Handler(looper);
-        mHandler.postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                mManager.stopDistanceMeasurement(mUuid, mDevice, mMethod, true);
-            }
-        }, mDuration * 1000L);
+        mHandler.postDelayed(
+                new Runnable() {
+                    @Override
+                    public void run() {
+                        mManager.stopDistanceMeasurement(mUuid, mDevice, mMethod, true);
+                    }
+                },
+                mDuration * 1000L);
     }
 
     void cancelTimer() {

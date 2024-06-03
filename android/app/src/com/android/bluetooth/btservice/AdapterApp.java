@@ -20,7 +20,7 @@ import android.util.Log;
 
 public class AdapterApp extends Application {
     private static final String TAG = "BluetoothAdapterApp";
-    //For Debugging only
+    // For Debugging only
     private static int sRefCount = 0;
 
     public AdapterApp() {

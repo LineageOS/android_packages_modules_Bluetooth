@@ -64,14 +64,17 @@ public class BluetoothOppManagerTest {
 
     @Before
     public void setUp() {
-        mContext = spy(new ContextWrapper(
-                InstrumentationRegistry.getInstrumentation().getTargetContext()));
+        mContext =
+                spy(
+                        new ContextWrapper(
+                                InstrumentationRegistry.getInstrumentation().getTargetContext()));
 
         mCallProxy = spy(BluetoothMethodProxy.getInstance());
         BluetoothMethodProxy.setInstanceForTesting(mCallProxy);
 
-        doReturn(null).when(mCallProxy).contentResolverInsert(
-                any(), eq(BluetoothShare.CONTENT_URI), any());
+        doReturn(null)
+                .when(mCallProxy)
+                .contentResolverInsert(any(), eq(BluetoothShare.CONTENT_URI), any());
 
         Intents.init();
     }
@@ -88,54 +91,58 @@ public class BluetoothOppManagerTest {
 
     @Test
     public void
-    restoreApplicationData_afterSavingSingleSendingFileInfo_containsSendingFileInfoSaved() {
+            restoreApplicationData_afterSavingSingleSendingFileInfo_containsSendingFileInfoSaved() {
         BluetoothOppManager bluetoothOppManager = BluetoothOppManager.getInstance(mContext);
         bluetoothOppManager.mSendingFlag = true;
-        bluetoothOppManager.saveSendingFileInfo("text/plain", "content:///abc/xyz.txt", false,
-                true);
+        bluetoothOppManager.saveSendingFileInfo(
+                "text/plain", "content:///abc/xyz.txt", false, true);
 
         BluetoothOppManager.sInstance = null;
-        BluetoothOppManager restartedBluetoothOppManager = BluetoothOppManager.getInstance(
-                mContext);
-        assertThat(bluetoothOppManager.mSendingFlag).isEqualTo(
-                restartedBluetoothOppManager.mSendingFlag);
-        assertThat(bluetoothOppManager.mMultipleFlag).isEqualTo(
-                restartedBluetoothOppManager.mMultipleFlag);
-        assertThat(bluetoothOppManager.mUriOfSendingFile).isEqualTo(
-                restartedBluetoothOppManager.mUriOfSendingFile);
-        assertThat(bluetoothOppManager.mUrisOfSendingFiles).isEqualTo(
-                restartedBluetoothOppManager.mUrisOfSendingFiles);
-        assertThat(bluetoothOppManager.mMimeTypeOfSendingFile).isEqualTo(
-                restartedBluetoothOppManager.mMimeTypeOfSendingFile);
-        assertThat(bluetoothOppManager.mMimeTypeOfSendingFiles).isEqualTo(
-                restartedBluetoothOppManager.mMimeTypeOfSendingFiles);
+        BluetoothOppManager restartedBluetoothOppManager =
+                BluetoothOppManager.getInstance(mContext);
+        assertThat(bluetoothOppManager.mSendingFlag)
+                .isEqualTo(restartedBluetoothOppManager.mSendingFlag);
+        assertThat(bluetoothOppManager.mMultipleFlag)
+                .isEqualTo(restartedBluetoothOppManager.mMultipleFlag);
+        assertThat(bluetoothOppManager.mUriOfSendingFile)
+                .isEqualTo(restartedBluetoothOppManager.mUriOfSendingFile);
+        assertThat(bluetoothOppManager.mUrisOfSendingFiles)
+                .isEqualTo(restartedBluetoothOppManager.mUrisOfSendingFiles);
+        assertThat(bluetoothOppManager.mMimeTypeOfSendingFile)
+                .isEqualTo(restartedBluetoothOppManager.mMimeTypeOfSendingFile);
+        assertThat(bluetoothOppManager.mMimeTypeOfSendingFiles)
+                .isEqualTo(restartedBluetoothOppManager.mMimeTypeOfSendingFiles);
     }
 
     @Test
     public void
-    restoreApplicationData_afterSavingMultipleSendingFileInfo_containsSendingFileInfoSaved() {
+            restoreApplicationData_afterSavingMultipleSendingFileInfo_containsSendingFileInfoSaved() {
         BluetoothOppManager bluetoothOppManager = BluetoothOppManager.getInstance(mContext);
         bluetoothOppManager.mSendingFlag = true;
-        bluetoothOppManager.saveSendingFileInfo("text/plain", new ArrayList<Uri>(
-                        List.of(Uri.parse("content:///abc/xyz.txt"), Uri.parse("content:///123"
-                                + "/456.txt"))),
-                false, true);
+        bluetoothOppManager.saveSendingFileInfo(
+                "text/plain",
+                new ArrayList<Uri>(
+                        List.of(
+                                Uri.parse("content:///abc/xyz.txt"),
+                                Uri.parse("content:///123" + "/456.txt"))),
+                false,
+                true);
 
         BluetoothOppManager.sInstance = null;
-        BluetoothOppManager restartedBluetoothOppManager = BluetoothOppManager.getInstance(
-                mContext);
-        assertThat(bluetoothOppManager.mSendingFlag).isEqualTo(
-                restartedBluetoothOppManager.mSendingFlag);
-        assertThat(bluetoothOppManager.mMultipleFlag).isEqualTo(
-                restartedBluetoothOppManager.mMultipleFlag);
-        assertThat(bluetoothOppManager.mUriOfSendingFile).isEqualTo(
-                restartedBluetoothOppManager.mUriOfSendingFile);
-        assertThat(bluetoothOppManager.mUrisOfSendingFiles).isEqualTo(
-                restartedBluetoothOppManager.mUrisOfSendingFiles);
-        assertThat(bluetoothOppManager.mMimeTypeOfSendingFile).isEqualTo(
-                restartedBluetoothOppManager.mMimeTypeOfSendingFile);
-        assertThat(bluetoothOppManager.mMimeTypeOfSendingFiles).isEqualTo(
-                restartedBluetoothOppManager.mMimeTypeOfSendingFiles);
+        BluetoothOppManager restartedBluetoothOppManager =
+                BluetoothOppManager.getInstance(mContext);
+        assertThat(bluetoothOppManager.mSendingFlag)
+                .isEqualTo(restartedBluetoothOppManager.mSendingFlag);
+        assertThat(bluetoothOppManager.mMultipleFlag)
+                .isEqualTo(restartedBluetoothOppManager.mMultipleFlag);
+        assertThat(bluetoothOppManager.mUriOfSendingFile)
+                .isEqualTo(restartedBluetoothOppManager.mUriOfSendingFile);
+        assertThat(bluetoothOppManager.mUrisOfSendingFiles)
+                .isEqualTo(restartedBluetoothOppManager.mUrisOfSendingFiles);
+        assertThat(bluetoothOppManager.mMimeTypeOfSendingFile)
+                .isEqualTo(restartedBluetoothOppManager.mMimeTypeOfSendingFile);
+        assertThat(bluetoothOppManager.mMimeTypeOfSendingFiles)
+                .isEqualTo(restartedBluetoothOppManager.mMimeTypeOfSendingFiles);
     }
 
     @Test
@@ -165,30 +172,38 @@ public class BluetoothOppManagerTest {
     public void startTransfer_withMultipleUris_contentResolverInsertMultipleTimes() {
         BluetoothOppManager bluetoothOppManager = BluetoothOppManager.getInstance(mContext);
         String address = "AA:BB:CC:DD:EE:FF";
-        bluetoothOppManager.saveSendingFileInfo("text/plain", new ArrayList<Uri>(
-                List.of(Uri.parse("content:///abc/xyz.txt"),
-                        Uri.parse("content:///a/b/c/d/x/y/z.docs"),
-                        Uri.parse("content:///123/456.txt"))), false, true);
-        BluetoothDevice device = (mContext.getSystemService(BluetoothManager.class))
-                .getAdapter().getRemoteDevice(address);
+        bluetoothOppManager.saveSendingFileInfo(
+                "text/plain",
+                new ArrayList<Uri>(
+                        List.of(
+                                Uri.parse("content:///abc/xyz.txt"),
+                                Uri.parse("content:///a/b/c/d/x/y/z.docs"),
+                                Uri.parse("content:///123/456.txt"))),
+                false,
+                true);
+        BluetoothDevice device =
+                (mContext.getSystemService(BluetoothManager.class))
+                        .getAdapter()
+                        .getRemoteDevice(address);
         bluetoothOppManager.startTransfer(device);
         // add 2 files
-        verify(mCallProxy, timeout(5_000)
-                .times(3)).contentResolverInsert(any(), nullable(Uri.class),
-                nullable(ContentValues.class));
+        verify(mCallProxy, timeout(5_000).times(3))
+                .contentResolverInsert(any(), nullable(Uri.class), nullable(ContentValues.class));
     }
 
     @Test
     public void startTransfer_withOneUri_contentResolverInsertOnce() {
         BluetoothOppManager bluetoothOppManager = BluetoothOppManager.getInstance(mContext);
         String address = "AA:BB:CC:DD:EE:FF";
-        bluetoothOppManager.saveSendingFileInfo("text/plain", "content:///abc/xyz.txt",
-                false, true);
-        BluetoothDevice device = (mContext.getSystemService(BluetoothManager.class))
-                .getAdapter().getRemoteDevice(address);
+        bluetoothOppManager.saveSendingFileInfo(
+                "text/plain", "content:///abc/xyz.txt", false, true);
+        BluetoothDevice device =
+                (mContext.getSystemService(BluetoothManager.class))
+                        .getAdapter()
+                        .getRemoteDevice(address);
         bluetoothOppManager.startTransfer(device);
-        verify(mCallProxy, timeout(5_000).times(1)).contentResolverInsert(any(),
-                nullable(Uri.class), nullable(ContentValues.class));
+        verify(mCallProxy, timeout(5_000).times(1))
+                .contentResolverInsert(any(), nullable(Uri.class), nullable(ContentValues.class));
     }
 
     @Ignore("b/267270055")
@@ -197,18 +212,21 @@ public class BluetoothOppManagerTest {
             throws InterruptedException {
         BluetoothOppManager bluetoothOppManager = BluetoothOppManager.getInstance(mContext);
         String address = "AA:BB:CC:DD:EE:FF";
-        bluetoothOppManager.saveSendingFileInfo("text/plain", "content:///abc/xyz.txt",
-                false, true);
-        BluetoothDevice device = (mContext.getSystemService(BluetoothManager.class))
-                .getAdapter().getRemoteDevice(address);
+        bluetoothOppManager.saveSendingFileInfo(
+                "text/plain", "content:///abc/xyz.txt", false, true);
+        BluetoothDevice device =
+                (mContext.getSystemService(BluetoothManager.class))
+                        .getAdapter()
+                        .getRemoteDevice(address);
 
         AtomicBoolean intended = new AtomicBoolean(false);
-        intending(anyIntent()).respondWithFunction(
-                intent -> {
-                    // verify that at least one exceeding thread is blocked
-                    intended.set(true);
-                    return null;
-                });
+        intending(anyIntent())
+                .respondWithFunction(
+                        intent -> {
+                            // verify that at least one exceeding thread is blocked
+                            intended.set(true);
+                            return null;
+                        });
 
         // try flushing the transferring queue,
         for (int i = 0; i < ALLOWED_INSERT_SHARE_THREAD_NUMBER + 15; i++) {
@@ -216,9 +234,8 @@ public class BluetoothOppManagerTest {
         }
 
         // success at least ALLOWED_INSERT_SHARE_THREAD_NUMBER times
-        verify(mCallProxy,
-                timeout(5_000).atLeast(ALLOWED_INSERT_SHARE_THREAD_NUMBER)).contentResolverInsert(
-                any(), nullable(Uri.class), nullable(ContentValues.class));
+        verify(mCallProxy, timeout(5_000).atLeast(ALLOWED_INSERT_SHARE_THREAD_NUMBER))
+                .contentResolverInsert(any(), nullable(Uri.class), nullable(ContentValues.class));
 
         // there is at least a failed attempt
         assertThat(intended.get()).isTrue();
@@ -238,8 +255,8 @@ public class BluetoothOppManagerTest {
         BluetoothOppUtility.sSendFileMap.clear();
         Uri uri = Uri.parse("content:///a/new/folder/abc/xyz.txt");
         assertThat(BluetoothOppUtility.sSendFileMap.size()).isEqualTo(0);
-        BluetoothOppManager.getInstance(mContext).saveSendingFileInfo("text/plain",
-                uri.toString(), false, true);
+        BluetoothOppManager.getInstance(mContext)
+                .saveSendingFileInfo("text/plain", uri.toString(), false, true);
         assertThat(BluetoothOppUtility.sSendFileMap.size()).isEqualTo(1);
 
         BluetoothOppManager.getInstance(mContext).cleanUpSendingFileInfo();

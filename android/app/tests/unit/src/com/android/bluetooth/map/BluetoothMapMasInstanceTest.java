@@ -51,25 +51,37 @@ public class BluetoothMapMasInstanceTest {
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    private Context mContext;
-    @Mock
-    private BluetoothMapService mMapService;
+    @Mock private Context mContext;
+    @Mock private BluetoothMapService mMapService;
 
     @Before
     public void setUp() {
 
-        mAccountItem = BluetoothMapAccountItem.create(TEST_ID, TEST_NAME, TEST_PACKAGE_NAME,
-                TEST_PROVIDER_AUTHORITY, TEST_DRAWABLE, TEST_TYPE, TEST_UCI, TEST_UCI_PREFIX);
+        mAccountItem =
+                BluetoothMapAccountItem.create(
+                        TEST_ID,
+                        TEST_NAME,
+                        TEST_PACKAGE_NAME,
+                        TEST_PROVIDER_AUTHORITY,
+                        TEST_DRAWABLE,
+                        TEST_TYPE,
+                        TEST_UCI,
+                        TEST_UCI_PREFIX);
     }
 
     @Test
     public void toString_returnsInfo() {
-        BluetoothMapMasInstance instance = new BluetoothMapMasInstance(mMapService, mContext,
-                mAccountItem, TEST_MAS_ID, TEST_ENABLE_SMS_MMS);
+        BluetoothMapMasInstance instance =
+                new BluetoothMapMasInstance(
+                        mMapService, mContext, mAccountItem, TEST_MAS_ID, TEST_ENABLE_SMS_MMS);
 
-        String expected = "MasId: " + TEST_MAS_ID + " Uri:" + mAccountItem.mBase_uri + " SMS/MMS:"
-                + TEST_ENABLE_SMS_MMS;
+        String expected =
+                "MasId: "
+                        + TEST_MAS_ID
+                        + " Uri:"
+                        + mAccountItem.mBase_uri
+                        + " SMS/MMS:"
+                        + TEST_ENABLE_SMS_MMS;
         assertThat(instance.toString()).isEqualTo(expected);
     }
 }

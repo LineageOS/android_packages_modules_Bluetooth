@@ -22,9 +22,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/**
- * A class abstracting the storage method of cover art images
- */
+/** A class abstracting the storage method of cover art images */
 final class AvrcpCoverArtStorage {
     private static final String TAG = AvrcpCoverArtStorage.class.getSimpleName();
 
@@ -36,16 +34,12 @@ final class AvrcpCoverArtStorage {
     private final Map<String, String> mImageHandles;
     private final Map<String, CoverArt> mImages;
 
-    /**
-     * Make an image storage object with no bounds on the amount of images it can store
-     */
+    /** Make an image storage object with no bounds on the amount of images it can store */
     AvrcpCoverArtStorage() {
         this(0);
     }
 
-    /**
-     * Make an image storage object with a bound on the amount of images it can store
-     */
+    /** Make an image storage object with a bound on the amount of images it can store */
     AvrcpCoverArtStorage(int maxSize) {
         if (maxSize < 0) {
             throw new IllegalArgumentException("maxSize < 0");
@@ -60,9 +54,7 @@ final class AvrcpCoverArtStorage {
         mImages = new LinkedHashMap<String, CoverArt>(0, 0.75f /* default load factor */, true);
     }
 
-    /**
-     * Store an image and get the image handle it's been associated with.
-     */
+    /** Store an image and get the image handle it's been associated with. */
     public String storeImage(CoverArt coverArt) {
         debug("storeImage(CoverArt='" + coverArt + "')");
         if (coverArt == null || coverArt.getImage() == null) {
@@ -103,9 +95,7 @@ final class AvrcpCoverArtStorage {
         return imageHandle;
     }
 
-    /**
-     * Get the image stored at the given image handle, if it exists
-     */
+    /** Get the image stored at the given image handle, if it exists */
     public CoverArt getImage(String imageHandle) {
         debug("getImage(" + imageHandle + ")");
         if (imageHandle == null) return null;
@@ -116,9 +106,7 @@ final class AvrcpCoverArtStorage {
         }
     }
 
-    /**
-     * Clear out all stored images and image handles
-     */
+    /** Clear out all stored images and image handles */
     public void clear() {
         synchronized (mImagesLock) {
             mImages.clear();
@@ -147,8 +135,8 @@ final class AvrcpCoverArtStorage {
     /**
      * Get the next available image handle value if one is available.
      *
-     * Values are integers in the domain [0, 9999999], represented as zero-padded strings. Getting
-     * an image handle assumes you will use it.
+     * <p>Values are integers in the domain [0, 9999999], represented as zero-padded strings.
+     * Getting an image handle assumes you will use it.
      */
     private String getNextImageHandle() {
         synchronized (mHandlesLock) {
@@ -193,16 +181,12 @@ final class AvrcpCoverArtStorage {
         sb.append("\n\tImage bytes: " + bytes);
     }
 
-    /**
-     * Print a message to DEBUG if debug output is enabled
-     */
+    /** Print a message to DEBUG if debug output is enabled */
     private void debug(String msg) {
         Log.d(TAG, msg);
     }
 
-    /**
-     * Print a message to ERROR
-     */
+    /** Print a message to ERROR */
     private void error(String msg) {
         Log.e(TAG, msg);
     }

@@ -15,7 +15,6 @@
  */
 package com.android.bluetooth.mapclient;
 
-
 import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothAdapter;
@@ -41,8 +40,7 @@ public class MapClientServiceBinderTest {
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    private MapClientService mService;
+    @Mock private MapClientService mService;
 
     BluetoothDevice mRemoteDevice;
 

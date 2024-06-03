@@ -36,9 +36,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * Manages Bluetooth LE Periodic scans
- */
+/** Manages Bluetooth LE Periodic scans */
 @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
 public class PeriodicScanManager {
     private static final String TAG = GattServiceConfig.TAG_PREFIX + "SyncManager";
@@ -86,7 +84,12 @@ public class PeriodicScanManager {
         public SyncDeathRecipient deathRecipient;
         public IPeriodicAdvertisingCallback callback;
 
-        SyncInfo(Integer id, Integer advSid, String address, Integer skip, Integer timeout,
+        SyncInfo(
+                Integer id,
+                Integer advSid,
+                String address,
+                Integer skip,
+                Integer timeout,
                 SyncDeathRecipient deathRecipient,
                 IPeriodicAdvertisingCallback callback) {
             this.id = id;
@@ -155,19 +158,30 @@ public class PeriodicScanManager {
             if (e.getValue().id != syncHandle) {
                 continue;
             }
-            syncMap.put(e.getKey(), new SyncInfo(e.getValue().id,
-                                                 e.getValue().advSid,
-                                                 e.getValue().address,
-                                                 e.getValue().skip,
-                                                 e.getValue().timeout,
-                                                 e.getValue().deathRecipient,
-                                                 e.getValue().callback));
+            syncMap.put(
+                    e.getKey(),
+                    new SyncInfo(
+                            e.getValue().id,
+                            e.getValue().advSid,
+                            e.getValue().address,
+                            e.getValue().skip,
+                            e.getValue().timeout,
+                            e.getValue().deathRecipient,
+                            e.getValue().callback));
         }
         return syncMap;
     }
 
-    void onSyncStarted(int regId, int syncHandle, int sid, int addressType, String address, int phy,
-            int interval, int status) throws Exception {
+    void onSyncStarted(
+            int regId,
+            int syncHandle,
+            int sid,
+            int addressType,
+            String address,
+            int phy,
+            int interval,
+            int status)
+            throws Exception {
         Map<IBinder, SyncInfo> syncMap = findAllSync(regId);
         if (syncMap.size() == 0) {
             Log.d(TAG, "onSyncStarted() - no callback found for regId " + regId);
@@ -183,9 +197,15 @@ public class PeriodicScanManager {
                 IPeriodicAdvertisingCallback callback = e.getValue().callback;
                 if (status == 0) {
                     Log.d(TAG, "onSyncStarted: updating id with syncHandle " + syncHandle);
-                    e.setValue(new SyncInfo(syncHandle, sid, address, e.getValue().skip,
-                                            e.getValue().timeout, e.getValue().deathRecipient,
-                                            callback));
+                    e.setValue(
+                            new SyncInfo(
+                                    syncHandle,
+                                    sid,
+                                    address,
+                                    e.getValue().skip,
+                                    e.getValue().timeout,
+                                    e.getValue().deathRecipient,
+                                    callback));
                     callback.onSyncEstablished(
                             syncHandle,
                             mAdapter.getRemoteLeDevice(address, addressType),
@@ -216,11 +236,11 @@ public class PeriodicScanManager {
             Log.i(TAG, "onSyncReport() - no callback found for syncHandle " + syncHandle);
             return;
         }
-        for (Map.Entry<IBinder, SyncInfo> e :syncMap.entrySet()) {
+        for (Map.Entry<IBinder, SyncInfo> e : syncMap.entrySet()) {
             IPeriodicAdvertisingCallback callback = e.getValue().callback;
             PeriodicAdvertisingReport report =
-                    new PeriodicAdvertisingReport(syncHandle, txPower, rssi, dataStatus,
-                            ScanRecord.parseFromBytes(data));
+                    new PeriodicAdvertisingReport(
+                            syncHandle, txPower, rssi, dataStatus, ScanRecord.parseFromBytes(data));
             callback.onPeriodicAdvertisingReport(report);
         }
     }
@@ -231,14 +251,13 @@ public class PeriodicScanManager {
             Log.i(TAG, "onSyncLost() - no callback found for syncHandle " + syncHandle);
             return;
         }
-        for (Map.Entry<IBinder, SyncInfo> e :syncMap.entrySet()) {
+        for (Map.Entry<IBinder, SyncInfo> e : syncMap.entrySet()) {
             IPeriodicAdvertisingCallback callback = e.getValue().callback;
             IBinder binder = toBinder(callback);
             synchronized (mSyncs) {
                 mSyncs.remove(binder);
             }
             callback.onSyncLost(syncHandle);
-
         }
     }
 
@@ -254,8 +273,8 @@ public class PeriodicScanManager {
         }
     }
 
-    public void startSync(ScanResult scanResult, int skip, int timeout,
-            IPeriodicAdvertisingCallback callback) {
+    public void startSync(
+            ScanResult scanResult, int skip, int timeout, IPeriodicAdvertisingCallback callback) {
         SyncDeathRecipient deathRecipient = new SyncDeathRecipient(callback);
         IBinder binder = toBinder(callback);
         try {
@@ -278,11 +297,18 @@ public class PeriodicScanManager {
         synchronized (mSyncs) {
             Map.Entry<IBinder, SyncInfo> entry = findMatchingSync(sid, address);
             if (entry != null) {
-                //Found matching sync. Copy sync handle
+                // Found matching sync. Copy sync handle
                 Log.d(TAG, "startSync: Matching entry found");
-                mSyncs.put(binder, new SyncInfo(entry.getValue().id, sid, address,
-                        entry.getValue().skip, entry.getValue().timeout, deathRecipient,
-                        callback));
+                mSyncs.put(
+                        binder,
+                        new SyncInfo(
+                                entry.getValue().id,
+                                sid,
+                                address,
+                                entry.getValue().skip,
+                                entry.getValue().timeout,
+                                deathRecipient,
+                                callback));
                 if (entry.getValue().id >= 0) {
                     try {
                         callback.onSyncEstablished(
@@ -303,8 +329,8 @@ public class PeriodicScanManager {
         }
 
         int cbId = --sTempRegistrationId;
-        mSyncs.put(binder, new SyncInfo(cbId, sid, address, skip, timeout,
-                deathRecipient, callback));
+        mSyncs.put(
+                binder, new SyncInfo(cbId, sid, address, skip, timeout, deathRecipient, callback));
 
         Log.d(TAG, "startSync() - reg_id=" + cbId + ", callback: " + binder);
         mNativeInterface.startSync(sid, address, skip, timeout, cbId);
@@ -362,14 +388,17 @@ public class PeriodicScanManager {
             Log.d(TAG, "transferSync: callback not registered");
             return;
         }
-        //check for duplicate transfers
-        mSyncTransfers.put(entry.getKey(), new SyncTransferInfo(bda.getAddress(),
-                           entry.getValue().callback));
+        // check for duplicate transfers
+        mSyncTransfers.put(
+                entry.getKey(), new SyncTransferInfo(bda.getAddress(), entry.getValue().callback));
         mNativeInterface.syncTransfer(bda, serviceData, syncHandle);
     }
 
-    public void transferSetInfo(BluetoothDevice bda, int serviceData,
-                  int advHandle, IPeriodicAdvertisingCallback callback) {
+    public void transferSetInfo(
+            BluetoothDevice bda,
+            int serviceData,
+            int advHandle,
+            IPeriodicAdvertisingCallback callback) {
         SyncDeathRecipient deathRecipient = new SyncDeathRecipient(callback);
         IBinder binder = toBinder(callback);
         Log.d(TAG, "transferSetInfo() " + binder);

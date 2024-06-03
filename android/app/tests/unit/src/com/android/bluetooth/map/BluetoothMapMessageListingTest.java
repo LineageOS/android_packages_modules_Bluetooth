@@ -126,8 +126,8 @@ public class BluetoothMapMessageListingTest {
 
         assertThat(listingToAppend.getList().size()).isEqualTo(2);
 
-        final InputStream listingStream = new ByteArrayInputStream(
-                listingToAppend.encode(false, TEST_VERSION));
+        final InputStream listingStream =
+                new ByteArrayInputStream(listingToAppend.encode(false, TEST_VERSION));
 
         BluetoothMapMessageListing listing = new BluetoothMapMessageListing();
         appendFromXml(listingStream, listing);
@@ -188,8 +188,10 @@ public class BluetoothMapMessageListingTest {
             String attributeName = parser.getAttributeName(i).trim();
             String attributeValue = parser.getAttributeValue(i);
             if (attributeName.equalsIgnoreCase("datetime")) {
-                newElement.setDateTime(LocalDateTime.parse(attributeValue, formatter).toInstant(
-                        ZoneOffset.ofTotalSeconds(0)).toEpochMilli());
+                newElement.setDateTime(
+                        LocalDateTime.parse(attributeValue, formatter)
+                                .toInstant(ZoneOffset.ofTotalSeconds(0))
+                                .toEpochMilli());
             } else if (attributeName.equalsIgnoreCase("read")) {
                 newElement.setRead(true, true);
             }

@@ -91,7 +91,6 @@ public class MediaControlGattServiceTest {
             Looper.prepare();
         }
 
-
         TestUtils.setAdapterService(mAdapterService);
         mAdapter = BluetoothAdapter.getDefaultAdapter();
 
@@ -103,8 +102,8 @@ public class MediaControlGattServiceTest {
         mMcpService.setServiceManagerForTesting(mMockMcpService);
         mMcpService.setLeAudioServiceForTesting(mMockLeAudioService);
 
-        when(mMockMcpService.getDeviceAuthorization(any(BluetoothDevice.class))).thenReturn(
-                BluetoothDevice.ACCESS_ALLOWED);
+        when(mMockMcpService.getDeviceAuthorization(any(BluetoothDevice.class)))
+                .thenReturn(BluetoothDevice.ACCESS_ALLOWED);
     }
 
     @After
@@ -156,24 +155,36 @@ public class MediaControlGattServiceTest {
     }
 
     private BluetoothGattService initAllFeaturesGattService() {
-        long features = ServiceFeature.ALL_MANDATORY_SERVICE_FEATURES
-                | ServiceFeature.PLAYER_ICON_OBJ_ID | ServiceFeature.PLAYER_ICON_URL
-                | ServiceFeature.PLAYBACK_SPEED | ServiceFeature.SEEKING_SPEED
-                | ServiceFeature.CURRENT_TRACK_SEGMENT_OBJ_ID | ServiceFeature.CURRENT_TRACK_OBJ_ID
-                | ServiceFeature.NEXT_TRACK_OBJ_ID | ServiceFeature.CURRENT_GROUP_OBJ_ID
-                | ServiceFeature.PARENT_GROUP_OBJ_ID | ServiceFeature.PLAYING_ORDER
-                | ServiceFeature.PLAYING_ORDER_SUPPORTED | ServiceFeature.MEDIA_CONTROL_POINT
-                | ServiceFeature.MEDIA_CONTROL_POINT_OPCODES_SUPPORTED
-                | ServiceFeature.SEARCH_RESULT_OBJ_ID | ServiceFeature.SEARCH_CONTROL_POINT
-                // Notifications
-                | ServiceFeature.PLAYER_NAME_NOTIFY | ServiceFeature.TRACK_TITLE_NOTIFY
-                | ServiceFeature.TRACK_DURATION_NOTIFY | ServiceFeature.TRACK_POSITION_NOTIFY
-                | ServiceFeature.PLAYBACK_SPEED_NOTIFY | ServiceFeature.SEEKING_SPEED_NOTIFY
-                | ServiceFeature.CURRENT_TRACK_OBJ_ID_NOTIFY
-                | ServiceFeature.NEXT_TRACK_OBJ_ID_NOTIFY
-                | ServiceFeature.CURRENT_GROUP_OBJ_ID_NOTIFY
-                | ServiceFeature.PARENT_GROUP_OBJ_ID_NOTIFY | ServiceFeature.PLAYING_ORDER_NOTIFY
-                | ServiceFeature.MEDIA_CONTROL_POINT_OPCODES_SUPPORTED_NOTIFY;
+        long features =
+                ServiceFeature.ALL_MANDATORY_SERVICE_FEATURES
+                        | ServiceFeature.PLAYER_ICON_OBJ_ID
+                        | ServiceFeature.PLAYER_ICON_URL
+                        | ServiceFeature.PLAYBACK_SPEED
+                        | ServiceFeature.SEEKING_SPEED
+                        | ServiceFeature.CURRENT_TRACK_SEGMENT_OBJ_ID
+                        | ServiceFeature.CURRENT_TRACK_OBJ_ID
+                        | ServiceFeature.NEXT_TRACK_OBJ_ID
+                        | ServiceFeature.CURRENT_GROUP_OBJ_ID
+                        | ServiceFeature.PARENT_GROUP_OBJ_ID
+                        | ServiceFeature.PLAYING_ORDER
+                        | ServiceFeature.PLAYING_ORDER_SUPPORTED
+                        | ServiceFeature.MEDIA_CONTROL_POINT
+                        | ServiceFeature.MEDIA_CONTROL_POINT_OPCODES_SUPPORTED
+                        | ServiceFeature.SEARCH_RESULT_OBJ_ID
+                        | ServiceFeature.SEARCH_CONTROL_POINT
+                        // Notifications
+                        | ServiceFeature.PLAYER_NAME_NOTIFY
+                        | ServiceFeature.TRACK_TITLE_NOTIFY
+                        | ServiceFeature.TRACK_DURATION_NOTIFY
+                        | ServiceFeature.TRACK_POSITION_NOTIFY
+                        | ServiceFeature.PLAYBACK_SPEED_NOTIFY
+                        | ServiceFeature.SEEKING_SPEED_NOTIFY
+                        | ServiceFeature.CURRENT_TRACK_OBJ_ID_NOTIFY
+                        | ServiceFeature.NEXT_TRACK_OBJ_ID_NOTIFY
+                        | ServiceFeature.CURRENT_GROUP_OBJ_ID_NOTIFY
+                        | ServiceFeature.PARENT_GROUP_OBJ_ID_NOTIFY
+                        | ServiceFeature.PLAYING_ORDER_NOTIFY
+                        | ServiceFeature.MEDIA_CONTROL_POINT_OPCODES_SUPPORTED_NOTIFY;
 
         doReturn(features).when(mMockMcsCallbacks).onGetFeatureFlags();
         Assert.assertTrue(mMcpService.init(UUID_GMCS));
@@ -188,8 +199,8 @@ public class MediaControlGattServiceTest {
         // called
         mMcpService.mServerCallback.onServiceAdded(BluetoothGatt.GATT_SUCCESS, service);
         verify(mMockMcsCallbacks)
-                .onServiceInstanceRegistered(any(ServiceStatus.class), any(
-                        MediaControlGattServiceInterface.class));
+                .onServiceInstanceRegistered(
+                        any(ServiceStatus.class), any(MediaControlGattServiceInterface.class));
 
         return service;
     }
@@ -202,51 +213,62 @@ public class MediaControlGattServiceTest {
         BluetoothGattCharacteristic characteristic =
                 service.getCharacteristic(MediaControlGattService.UUID_PLAYER_NAME);
         Assert.assertNotNull(characteristic);
-        Assert.assertEquals(characteristic.getProperties(),
+        Assert.assertEquals(
+                characteristic.getProperties(),
                 BluetoothGattCharacteristic.PROPERTY_READ
                         | BluetoothGattCharacteristic.PROPERTY_NOTIFY);
         Assert.assertEquals("", characteristic.getStringValue(0));
 
         characteristic = service.getCharacteristic(MediaControlGattService.UUID_TRACK_TITLE);
         Assert.assertNotNull(characteristic);
-        Assert.assertEquals(characteristic.getProperties(),
+        Assert.assertEquals(
+                characteristic.getProperties(),
                 BluetoothGattCharacteristic.PROPERTY_READ
                         | BluetoothGattCharacteristic.PROPERTY_NOTIFY);
         Assert.assertEquals("", characteristic.getStringValue(0));
 
         characteristic = service.getCharacteristic(MediaControlGattService.UUID_TRACK_DURATION);
         Assert.assertNotNull(characteristic);
-        Assert.assertEquals(characteristic.getProperties(),
+        Assert.assertEquals(
+                characteristic.getProperties(),
                 BluetoothGattCharacteristic.PROPERTY_READ
                         | BluetoothGattCharacteristic.PROPERTY_NOTIFY);
-        Assert.assertEquals(0xFFFFFFFF,
-                characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT32, 0)
+        Assert.assertEquals(
+                0xFFFFFFFF,
+                characteristic
+                        .getIntValue(BluetoothGattCharacteristic.FORMAT_SINT32, 0)
                         .intValue());
 
         characteristic = service.getCharacteristic(MediaControlGattService.UUID_TRACK_POSITION);
         Assert.assertNotNull(characteristic);
-        Assert.assertEquals(characteristic.getProperties(),
+        Assert.assertEquals(
+                characteristic.getProperties(),
                 BluetoothGattCharacteristic.PROPERTY_READ
                         | BluetoothGattCharacteristic.PROPERTY_WRITE
                         | BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE
                         | BluetoothGattCharacteristic.PROPERTY_NOTIFY);
-        Assert.assertEquals(0xFFFFFFFF,
-                characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT32, 0)
+        Assert.assertEquals(
+                0xFFFFFFFF,
+                characteristic
+                        .getIntValue(BluetoothGattCharacteristic.FORMAT_SINT32, 0)
                         .intValue());
 
         characteristic = service.getCharacteristic(MediaControlGattService.UUID_MEDIA_STATE);
         Assert.assertNotNull(characteristic);
-        Assert.assertEquals(characteristic.getProperties(),
+        Assert.assertEquals(
+                characteristic.getProperties(),
                 BluetoothGattCharacteristic.PROPERTY_READ
                         | BluetoothGattCharacteristic.PROPERTY_NOTIFY);
-        Assert.assertEquals(MediaState.INACTIVE.getValue(),
+        Assert.assertEquals(
+                MediaState.INACTIVE.getValue(),
                 characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0).intValue());
 
         characteristic = service.getCharacteristic(MediaControlGattService.UUID_CONTENT_CONTROL_ID);
         Assert.assertNotNull(characteristic);
         Assert.assertEquals(
                 characteristic.getProperties(), BluetoothGattCharacteristic.PROPERTY_READ);
-        Assert.assertEquals(TEST_CCID,
+        Assert.assertEquals(
+                TEST_CCID,
                 characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0).intValue());
 
         // Check initial state of all optional characteristics
@@ -269,20 +291,24 @@ public class MediaControlGattServiceTest {
 
         characteristic = service.getCharacteristic(MediaControlGattService.UUID_PLAYBACK_SPEED);
         Assert.assertNotNull(characteristic);
-        Assert.assertEquals(characteristic.getProperties(),
+        Assert.assertEquals(
+                characteristic.getProperties(),
                 BluetoothGattCharacteristic.PROPERTY_READ
                         | BluetoothGattCharacteristic.PROPERTY_WRITE
                         | BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE
                         | BluetoothGattCharacteristic.PROPERTY_NOTIFY);
-        Assert.assertEquals(0,
+        Assert.assertEquals(
+                0,
                 characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT8, 0).intValue());
 
         characteristic = service.getCharacteristic(MediaControlGattService.UUID_SEEKING_SPEED);
         Assert.assertNotNull(characteristic);
-        Assert.assertEquals(characteristic.getProperties(),
+        Assert.assertEquals(
+                characteristic.getProperties(),
                 BluetoothGattCharacteristic.PROPERTY_READ
                         | BluetoothGattCharacteristic.PROPERTY_NOTIFY);
-        Assert.assertEquals(0,
+        Assert.assertEquals(
+                0,
                 characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT8, 0).intValue());
 
         characteristic =
@@ -293,10 +319,11 @@ public class MediaControlGattServiceTest {
                 characteristic.getProperties(), BluetoothGattCharacteristic.PROPERTY_READ);
         Assert.assertTrue(characteristic.getValue().length == 0);
 
-        characteristic = service.getCharacteristic(
-                MediaControlGattService.UUID_CURRENT_TRACK_OBJ_ID);
+        characteristic =
+                service.getCharacteristic(MediaControlGattService.UUID_CURRENT_TRACK_OBJ_ID);
         Assert.assertNotNull(characteristic);
-        Assert.assertEquals(characteristic.getProperties(),
+        Assert.assertEquals(
+                characteristic.getProperties(),
                 BluetoothGattCharacteristic.PROPERTY_READ
                         | BluetoothGattCharacteristic.PROPERTY_WRITE
                         | BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE
@@ -305,62 +332,72 @@ public class MediaControlGattServiceTest {
 
         characteristic = service.getCharacteristic(MediaControlGattService.UUID_NEXT_TRACK_OBJ_ID);
         Assert.assertNotNull(characteristic);
-        Assert.assertEquals(characteristic.getProperties(),
+        Assert.assertEquals(
+                characteristic.getProperties(),
                 BluetoothGattCharacteristic.PROPERTY_READ
                         | BluetoothGattCharacteristic.PROPERTY_WRITE
                         | BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE
                         | BluetoothGattCharacteristic.PROPERTY_NOTIFY);
         Assert.assertTrue(characteristic.getValue().length == 0);
 
-        characteristic = service.getCharacteristic(
-                MediaControlGattService.UUID_CURRENT_GROUP_OBJ_ID);
+        characteristic =
+                service.getCharacteristic(MediaControlGattService.UUID_CURRENT_GROUP_OBJ_ID);
         Assert.assertNotNull(characteristic);
-        Assert.assertEquals(characteristic.getProperties(),
+        Assert.assertEquals(
+                characteristic.getProperties(),
                 BluetoothGattCharacteristic.PROPERTY_READ
                         | BluetoothGattCharacteristic.PROPERTY_WRITE
                         | BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE
                         | BluetoothGattCharacteristic.PROPERTY_NOTIFY);
         Assert.assertTrue(characteristic.getValue().length == 0);
 
-        characteristic = service.getCharacteristic(
-                MediaControlGattService.UUID_PARENT_GROUP_OBJ_ID);
+        characteristic =
+                service.getCharacteristic(MediaControlGattService.UUID_PARENT_GROUP_OBJ_ID);
         Assert.assertNotNull(characteristic);
-        Assert.assertEquals(characteristic.getProperties(),
+        Assert.assertEquals(
+                characteristic.getProperties(),
                 BluetoothGattCharacteristic.PROPERTY_READ
                         | BluetoothGattCharacteristic.PROPERTY_NOTIFY);
         Assert.assertTrue(characteristic.getValue().length == 0);
 
         characteristic = service.getCharacteristic(MediaControlGattService.UUID_PLAYING_ORDER);
         Assert.assertNotNull(characteristic);
-        Assert.assertEquals(characteristic.getProperties(),
+        Assert.assertEquals(
+                characteristic.getProperties(),
                 BluetoothGattCharacteristic.PROPERTY_READ
                         | BluetoothGattCharacteristic.PROPERTY_WRITE
                         | BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE
                         | BluetoothGattCharacteristic.PROPERTY_NOTIFY);
-        Assert.assertEquals(PlayingOrder.SINGLE_ONCE.getValue(),
+        Assert.assertEquals(
+                PlayingOrder.SINGLE_ONCE.getValue(),
                 characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0).intValue());
 
-        characteristic = service.getCharacteristic(
-                MediaControlGattService.UUID_PLAYING_ORDER_SUPPORTED);
+        characteristic =
+                service.getCharacteristic(MediaControlGattService.UUID_PLAYING_ORDER_SUPPORTED);
         Assert.assertNotNull(characteristic);
         Assert.assertEquals(
                 characteristic.getProperties(), BluetoothGattCharacteristic.PROPERTY_READ);
-        Assert.assertEquals(SupportedPlayingOrder.SINGLE_ONCE,
-                characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 0)
+        Assert.assertEquals(
+                SupportedPlayingOrder.SINGLE_ONCE,
+                characteristic
+                        .getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 0)
                         .intValue());
 
-        characteristic = service.getCharacteristic(
-                MediaControlGattService.UUID_MEDIA_CONTROL_POINT);
+        characteristic =
+                service.getCharacteristic(MediaControlGattService.UUID_MEDIA_CONTROL_POINT);
         Assert.assertNotNull(characteristic);
-        Assert.assertEquals(characteristic.getProperties(),
+        Assert.assertEquals(
+                characteristic.getProperties(),
                 BluetoothGattCharacteristic.PROPERTY_NOTIFY
                         | BluetoothGattCharacteristic.PROPERTY_WRITE
                         | BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE);
 
-        characteristic = service.getCharacteristic(
-                MediaControlGattService.UUID_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED);
+        characteristic =
+                service.getCharacteristic(
+                        MediaControlGattService.UUID_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED);
         Assert.assertNotNull(characteristic);
-        Assert.assertEquals(characteristic.getProperties(),
+        Assert.assertEquals(
+                characteristic.getProperties(),
                 BluetoothGattCharacteristic.PROPERTY_READ
                         | BluetoothGattCharacteristic.PROPERTY_NOTIFY);
         Assert.assertEquals(
@@ -369,18 +406,20 @@ public class MediaControlGattServiceTest {
                         .getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 0)
                         .intValue());
 
-        characteristic = service.getCharacteristic(
-                MediaControlGattService.UUID_SEARCH_RESULT_OBJ_ID);
+        characteristic =
+                service.getCharacteristic(MediaControlGattService.UUID_SEARCH_RESULT_OBJ_ID);
         Assert.assertNotNull(characteristic);
-        Assert.assertEquals(characteristic.getProperties(),
+        Assert.assertEquals(
+                characteristic.getProperties(),
                 BluetoothGattCharacteristic.PROPERTY_READ
                         | BluetoothGattCharacteristic.PROPERTY_NOTIFY);
         Assert.assertTrue(characteristic.getValue().length == 0);
 
-        characteristic = service.getCharacteristic(
-                MediaControlGattService.UUID_SEARCH_CONTROL_POINT);
+        characteristic =
+                service.getCharacteristic(MediaControlGattService.UUID_SEARCH_CONTROL_POINT);
         Assert.assertNotNull(characteristic);
-        Assert.assertEquals(characteristic.getProperties(),
+        Assert.assertEquals(
+                characteristic.getProperties(),
                 BluetoothGattCharacteristic.PROPERTY_NOTIFY
                         | BluetoothGattCharacteristic.PROPERTY_WRITE
                         | BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE);
@@ -396,33 +435,40 @@ public class MediaControlGattServiceTest {
         String player_name = "TestPlayerName";
         String icon_url = "www.testiconurl.com";
         Long icon_obj_id = 7L;
-        Integer playing_order_supported = SupportedPlayingOrder.IN_ORDER_REPEAT
-                | SupportedPlayingOrder.SINGLE_ONCE | SupportedPlayingOrder.SINGLE_REPEAT
-                | SupportedPlayingOrder.IN_ORDER_ONCE | SupportedPlayingOrder.IN_ORDER_REPEAT
-                | SupportedPlayingOrder.OLDEST_ONCE | SupportedPlayingOrder.OLDEST_REPEAT
-                | SupportedPlayingOrder.NEWEST_ONCE | SupportedPlayingOrder.NEWEST_REPEAT
-                | SupportedPlayingOrder.SHUFFLE_ONCE | SupportedPlayingOrder.SHUFFLE_REPEAT;
-        Integer opcodes_supported = Request.SupportedOpcodes.NONE
-                | Request.SupportedOpcodes.PLAY
-                | Request.SupportedOpcodes.PAUSE
-                | Request.SupportedOpcodes.FAST_REWIND
-                | Request.SupportedOpcodes.FAST_FORWARD
-                | Request.SupportedOpcodes.STOP
-                | Request.SupportedOpcodes.MOVE_RELATIVE
-                | Request.SupportedOpcodes.PREVIOUS_SEGMENT
-                | Request.SupportedOpcodes.NEXT_SEGMENT
-                | Request.SupportedOpcodes.FIRST_SEGMENT
-                | Request.SupportedOpcodes.LAST_SEGMENT
-                | Request.SupportedOpcodes.GOTO_SEGMENT
-                | Request.SupportedOpcodes.PREVIOUS_TRACK
-                | Request.SupportedOpcodes.NEXT_TRACK
-                | Request.SupportedOpcodes.FIRST_TRACK
-                | Request.SupportedOpcodes.LAST_TRACK
-                | Request.SupportedOpcodes.GOTO_TRACK
-                | Request.SupportedOpcodes.PREVIOUS_GROUP
-                | Request.SupportedOpcodes.NEXT_GROUP
-                | Request.SupportedOpcodes.FIRST_GROUP
-                | Request.SupportedOpcodes.LAST_GROUP;
+        Integer playing_order_supported =
+                SupportedPlayingOrder.IN_ORDER_REPEAT
+                        | SupportedPlayingOrder.SINGLE_ONCE
+                        | SupportedPlayingOrder.SINGLE_REPEAT
+                        | SupportedPlayingOrder.IN_ORDER_ONCE
+                        | SupportedPlayingOrder.IN_ORDER_REPEAT
+                        | SupportedPlayingOrder.OLDEST_ONCE
+                        | SupportedPlayingOrder.OLDEST_REPEAT
+                        | SupportedPlayingOrder.NEWEST_ONCE
+                        | SupportedPlayingOrder.NEWEST_REPEAT
+                        | SupportedPlayingOrder.SHUFFLE_ONCE
+                        | SupportedPlayingOrder.SHUFFLE_REPEAT;
+        Integer opcodes_supported =
+                Request.SupportedOpcodes.NONE
+                        | Request.SupportedOpcodes.PLAY
+                        | Request.SupportedOpcodes.PAUSE
+                        | Request.SupportedOpcodes.FAST_REWIND
+                        | Request.SupportedOpcodes.FAST_FORWARD
+                        | Request.SupportedOpcodes.STOP
+                        | Request.SupportedOpcodes.MOVE_RELATIVE
+                        | Request.SupportedOpcodes.PREVIOUS_SEGMENT
+                        | Request.SupportedOpcodes.NEXT_SEGMENT
+                        | Request.SupportedOpcodes.FIRST_SEGMENT
+                        | Request.SupportedOpcodes.LAST_SEGMENT
+                        | Request.SupportedOpcodes.GOTO_SEGMENT
+                        | Request.SupportedOpcodes.PREVIOUS_TRACK
+                        | Request.SupportedOpcodes.NEXT_TRACK
+                        | Request.SupportedOpcodes.FIRST_TRACK
+                        | Request.SupportedOpcodes.LAST_TRACK
+                        | Request.SupportedOpcodes.GOTO_TRACK
+                        | Request.SupportedOpcodes.PREVIOUS_GROUP
+                        | Request.SupportedOpcodes.NEXT_GROUP
+                        | Request.SupportedOpcodes.FIRST_GROUP
+                        | Request.SupportedOpcodes.LAST_GROUP;
         String track_title = "Test Song";
         long track_duration = 1000;
         MediaState playback_state = MediaState.SEEKING;
@@ -450,14 +496,17 @@ public class MediaControlGattServiceTest {
 
         characteristic = service.getCharacteristic(MediaControlGattService.UUID_PLAYING_ORDER);
         Assert.assertNotNull(characteristic);
-        Assert.assertEquals(playing_order.getValue(),
+        Assert.assertEquals(
+                playing_order.getValue(),
                 characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0).intValue());
 
         characteristic = service.getCharacteristic(MediaControlGattService.UUID_TRACK_POSITION);
         Assert.assertNotNull(characteristic);
         // Set value as ms, kept in characteristic as 0.01s
-        Assert.assertEquals(track_position / 10,
-                characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT32, 0)
+        Assert.assertEquals(
+                track_position / 10,
+                characteristic
+                        .getIntValue(BluetoothGattCharacteristic.FORMAT_SINT32, 0)
                         .intValue());
 
         characteristic = service.getCharacteristic(MediaControlGattService.UUID_PLAYER_NAME);
@@ -473,18 +522,23 @@ public class MediaControlGattServiceTest {
         Assert.assertEquals(
                 icon_obj_id.longValue(), mMcpService.byteArray2ObjId(characteristic.getValue()));
 
-        characteristic = service.getCharacteristic(
-                MediaControlGattService.UUID_PLAYING_ORDER_SUPPORTED);
+        characteristic =
+                service.getCharacteristic(MediaControlGattService.UUID_PLAYING_ORDER_SUPPORTED);
         Assert.assertNotNull(characteristic);
-        Assert.assertEquals(playing_order_supported.intValue(),
-                characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 0)
+        Assert.assertEquals(
+                playing_order_supported.intValue(),
+                characteristic
+                        .getIntValue(BluetoothGattCharacteristic.FORMAT_UINT16, 0)
                         .intValue());
 
-        characteristic = service.getCharacteristic(
-                MediaControlGattService.UUID_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED);
+        characteristic =
+                service.getCharacteristic(
+                        MediaControlGattService.UUID_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED);
         Assert.assertNotNull(characteristic);
-        Assert.assertEquals(opcodes_supported.intValue(),
-                characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 0)
+        Assert.assertEquals(
+                opcodes_supported.intValue(),
+                characteristic
+                        .getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 0)
                         .intValue());
 
         characteristic = service.getCharacteristic(MediaControlGattService.UUID_TRACK_TITLE);
@@ -494,13 +548,16 @@ public class MediaControlGattServiceTest {
         characteristic = service.getCharacteristic(MediaControlGattService.UUID_TRACK_DURATION);
         Assert.assertNotNull(characteristic);
         // Set value as ms, kept in characteristic as 0.01s
-        Assert.assertEquals(track_duration / 10,
-                characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_SINT32, 0)
+        Assert.assertEquals(
+                track_duration / 10,
+                characteristic
+                        .getIntValue(BluetoothGattCharacteristic.FORMAT_SINT32, 0)
                         .intValue());
 
         characteristic = service.getCharacteristic(MediaControlGattService.UUID_MEDIA_STATE);
         Assert.assertNotNull(characteristic);
-        Assert.assertEquals(playback_state.getValue(),
+        Assert.assertEquals(
+                playback_state.getValue(),
                 characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT8, 0).intValue());
 
         characteristic = service.getCharacteristic(MediaControlGattService.UUID_SEEKING_SPEED);
@@ -510,13 +567,23 @@ public class MediaControlGattServiceTest {
 
     private void verifyWriteObjIdsValid(
             BluetoothGattCharacteristic characteristic, long value, int id) {
-        mMcpService.mServerCallback.onCharacteristicWriteRequest(mCurrentDevice, 1, characteristic,
-                false, true, 0, mMcpService.objId2ByteArray(value));
+        mMcpService.mServerCallback.onCharacteristicWriteRequest(
+                mCurrentDevice,
+                1,
+                characteristic,
+                false,
+                true,
+                0,
+                mMcpService.objId2ByteArray(value));
 
         verify(mMockMcsCallbacks).onSetObjectIdRequest(eq(id), eq(value));
 
         verify(mMockGattServer)
-                .sendResponse(eq(mCurrentDevice), eq(1), eq(BluetoothGatt.GATT_SUCCESS), eq(0),
+                .sendResponse(
+                        eq(mCurrentDevice),
+                        eq(1),
+                        eq(BluetoothGatt.GATT_SUCCESS),
+                        eq(0),
                         eq(mMcpService.objId2ByteArray(value)));
     }
 
@@ -544,7 +611,11 @@ public class MediaControlGattServiceTest {
         verify(mMockMcsCallbacks).onTrackPositionSetRequest(eq(track_position * 10L));
 
         verify(mMockGattServer)
-                .sendResponse(eq(mCurrentDevice), eq(1), eq(BluetoothGatt.GATT_SUCCESS), eq(0),
+                .sendResponse(
+                        eq(mCurrentDevice),
+                        eq(1),
+                        eq(BluetoothGatt.GATT_SUCCESS),
+                        eq(0),
                         eq(bb.array()));
 
         characteristic = service.getCharacteristic(MediaControlGattService.UUID_PLAYBACK_SPEED);
@@ -559,24 +630,28 @@ public class MediaControlGattServiceTest {
                 .onPlaybackSpeedSetRequest(eq((float) Math.pow(2, playback_speed / 64)));
 
         verify(mMockGattServer)
-                .sendResponse(eq(mCurrentDevice), eq(1), eq(BluetoothGatt.GATT_SUCCESS), eq(0),
+                .sendResponse(
+                        eq(mCurrentDevice),
+                        eq(1),
+                        eq(BluetoothGatt.GATT_SUCCESS),
+                        eq(0),
                         eq(bb.array()));
 
-        characteristic = service.getCharacteristic(
-                MediaControlGattService.UUID_CURRENT_TRACK_OBJ_ID);
+        characteristic =
+                service.getCharacteristic(MediaControlGattService.UUID_CURRENT_TRACK_OBJ_ID);
         verifyWriteObjIdsValid(
                 characteristic, current_track_obj_id, ObjectIds.CURRENT_TRACK_OBJ_ID);
 
         characteristic = service.getCharacteristic(MediaControlGattService.UUID_NEXT_TRACK_OBJ_ID);
         verifyWriteObjIdsValid(characteristic, next_track_obj_id, ObjectIds.NEXT_TRACK_OBJ_ID);
 
-        characteristic = service.getCharacteristic(
-                MediaControlGattService.UUID_CURRENT_GROUP_OBJ_ID);
+        characteristic =
+                service.getCharacteristic(MediaControlGattService.UUID_CURRENT_GROUP_OBJ_ID);
         verifyWriteObjIdsValid(
                 characteristic, current_group_obj_id, ObjectIds.CURRENT_GROUP_OBJ_ID);
 
-        characteristic = service.getCharacteristic(
-                MediaControlGattService.UUID_PLAYING_ORDER_SUPPORTED);
+        characteristic =
+                service.getCharacteristic(MediaControlGattService.UUID_PLAYING_ORDER_SUPPORTED);
         characteristic.setValue(
                 playing_order_supported, BluetoothGattCharacteristic.FORMAT_UINT16, 0);
         characteristic = service.getCharacteristic(MediaControlGattService.UUID_PLAYING_ORDER);
@@ -589,19 +664,27 @@ public class MediaControlGattServiceTest {
         verify(mMockMcsCallbacks).onPlayingOrderSetRequest(eq(playing_order.getValue()));
 
         verify(mMockGattServer)
-                .sendResponse(eq(mCurrentDevice), eq(1), eq(BluetoothGatt.GATT_SUCCESS), eq(0),
+                .sendResponse(
+                        eq(mCurrentDevice),
+                        eq(1),
+                        eq(BluetoothGatt.GATT_SUCCESS),
+                        eq(0),
                         eq(bb.array()));
     }
 
     private void verifyWriteObjIdsInvalid(
             BluetoothGattCharacteristic characteristic, int id, byte diffByte) {
-        byte[] value = new byte[]{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, diffByte};
+        byte[] value = new byte[] {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, diffByte};
         mMcpService.mServerCallback.onCharacteristicWriteRequest(
                 mCurrentDevice, 1, characteristic, false, true, 0, value);
 
         verify(mMockGattServer)
-                .sendResponse(eq(mCurrentDevice), eq(1),
-                        eq(BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH), eq(0), eq(value));
+                .sendResponse(
+                        eq(mCurrentDevice),
+                        eq(1),
+                        eq(BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH),
+                        eq(0),
+                        eq(value));
     }
 
     @Test
@@ -624,8 +707,12 @@ public class MediaControlGattServiceTest {
                 mCurrentDevice, 1, characteristic, false, true, 0, bb.array());
 
         verify(mMockGattServer)
-                .sendResponse(eq(mCurrentDevice), eq(1),
-                        eq(BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH), eq(0), eq(bb.array()));
+                .sendResponse(
+                        eq(mCurrentDevice),
+                        eq(1),
+                        eq(BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH),
+                        eq(0),
+                        eq(bb.array()));
 
         characteristic = service.getCharacteristic(MediaControlGattService.UUID_PLAYBACK_SPEED);
 
@@ -637,18 +724,22 @@ public class MediaControlGattServiceTest {
                 mCurrentDevice, 1, characteristic, false, true, 0, bb.array());
 
         verify(mMockGattServer)
-                .sendResponse(eq(mCurrentDevice), eq(1),
-                        eq(BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH), eq(0), eq(bb.array()));
+                .sendResponse(
+                        eq(mCurrentDevice),
+                        eq(1),
+                        eq(BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH),
+                        eq(0),
+                        eq(bb.array()));
 
-        characteristic = service.getCharacteristic(
-                MediaControlGattService.UUID_CURRENT_TRACK_OBJ_ID);
+        characteristic =
+                service.getCharacteristic(MediaControlGattService.UUID_CURRENT_TRACK_OBJ_ID);
         verifyWriteObjIdsInvalid(characteristic, ObjectIds.CURRENT_TRACK_OBJ_ID, diff_byte++);
 
         characteristic = service.getCharacteristic(MediaControlGattService.UUID_NEXT_TRACK_OBJ_ID);
         verifyWriteObjIdsInvalid(characteristic, ObjectIds.NEXT_TRACK_OBJ_ID, diff_byte++);
 
-        characteristic = service.getCharacteristic(
-                MediaControlGattService.UUID_CURRENT_GROUP_OBJ_ID);
+        characteristic =
+                service.getCharacteristic(MediaControlGattService.UUID_CURRENT_GROUP_OBJ_ID);
         verifyWriteObjIdsInvalid(characteristic, ObjectIds.CURRENT_GROUP_OBJ_ID, diff_byte++);
 
         characteristic = service.getCharacteristic(MediaControlGattService.UUID_PLAYING_ORDER);
@@ -660,8 +751,12 @@ public class MediaControlGattServiceTest {
                 mCurrentDevice, 1, characteristic, false, true, 0, bb.array());
 
         verify(mMockGattServer)
-                .sendResponse(eq(mCurrentDevice), eq(1),
-                        eq(BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH), eq(0), eq(bb.array()));
+                .sendResponse(
+                        eq(mCurrentDevice),
+                        eq(1),
+                        eq(BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH),
+                        eq(0),
+                        eq(bb.array()));
     }
 
     private void testNotify(boolean registerForNotification) {
@@ -676,30 +771,32 @@ public class MediaControlGattServiceTest {
         PlayingOrder playing_order = PlayingOrder.IN_ORDER_REPEAT;
         int playing_order_supported = SupportedPlayingOrder.IN_ORDER_REPEAT;
         int playback_state = MediaState.SEEKING.getValue();
-        Integer opcodes_supported = Request.SupportedOpcodes.NONE
-                | Request.SupportedOpcodes.PLAY
-                | Request.SupportedOpcodes.PAUSE
-                | Request.SupportedOpcodes.FAST_REWIND
-                | Request.SupportedOpcodes.FAST_FORWARD
-                | Request.SupportedOpcodes.STOP
-                | Request.SupportedOpcodes.MOVE_RELATIVE
-                | Request.SupportedOpcodes.PREVIOUS_SEGMENT
-                | Request.SupportedOpcodes.NEXT_SEGMENT
-                | Request.SupportedOpcodes.FIRST_SEGMENT
-                | Request.SupportedOpcodes.LAST_SEGMENT
-                | Request.SupportedOpcodes.GOTO_SEGMENT
-                | Request.SupportedOpcodes.PREVIOUS_TRACK
-                | Request.SupportedOpcodes.NEXT_TRACK
-                | Request.SupportedOpcodes.FIRST_TRACK
-                | Request.SupportedOpcodes.LAST_TRACK
-                | Request.SupportedOpcodes.GOTO_TRACK
-                | Request.SupportedOpcodes.PREVIOUS_GROUP
-                | Request.SupportedOpcodes.NEXT_GROUP
-                | Request.SupportedOpcodes.FIRST_GROUP
-                | Request.SupportedOpcodes.LAST_GROUP;
-        byte[] ccc_val = registerForNotification
-                ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE.clone()
-                : BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE.clone();
+        Integer opcodes_supported =
+                Request.SupportedOpcodes.NONE
+                        | Request.SupportedOpcodes.PLAY
+                        | Request.SupportedOpcodes.PAUSE
+                        | Request.SupportedOpcodes.FAST_REWIND
+                        | Request.SupportedOpcodes.FAST_FORWARD
+                        | Request.SupportedOpcodes.STOP
+                        | Request.SupportedOpcodes.MOVE_RELATIVE
+                        | Request.SupportedOpcodes.PREVIOUS_SEGMENT
+                        | Request.SupportedOpcodes.NEXT_SEGMENT
+                        | Request.SupportedOpcodes.FIRST_SEGMENT
+                        | Request.SupportedOpcodes.LAST_SEGMENT
+                        | Request.SupportedOpcodes.GOTO_SEGMENT
+                        | Request.SupportedOpcodes.PREVIOUS_TRACK
+                        | Request.SupportedOpcodes.NEXT_TRACK
+                        | Request.SupportedOpcodes.FIRST_TRACK
+                        | Request.SupportedOpcodes.LAST_TRACK
+                        | Request.SupportedOpcodes.GOTO_TRACK
+                        | Request.SupportedOpcodes.PREVIOUS_GROUP
+                        | Request.SupportedOpcodes.NEXT_GROUP
+                        | Request.SupportedOpcodes.FIRST_GROUP
+                        | Request.SupportedOpcodes.LAST_GROUP;
+        byte[] ccc_val =
+                registerForNotification
+                        ? BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE.clone()
+                        : BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE.clone();
         int times_cnt = registerForNotification ? 1 : 0;
         int media_control_request_opcode = Request.Opcodes.MOVE_RELATIVE;
 
@@ -746,8 +843,8 @@ public class MediaControlGattServiceTest {
         verify(mMockGattServer, times(times_cnt))
                 .notifyCharacteristicChanged(eq(mCurrentDevice), eq(characteristic), eq(false));
 
-        characteristic = service.getCharacteristic(
-                MediaControlGattService.UUID_CURRENT_TRACK_OBJ_ID);
+        characteristic =
+                service.getCharacteristic(MediaControlGattService.UUID_CURRENT_TRACK_OBJ_ID);
         prepareConnectedDevicesCccVal(characteristic, ccc_val);
         mMcpService.updateObjectID(ObjectIds.CURRENT_TRACK_OBJ_ID, obj_id);
         verify(mMockGattServer, times(times_cnt))
@@ -759,15 +856,15 @@ public class MediaControlGattServiceTest {
         verify(mMockGattServer, times(times_cnt))
                 .notifyCharacteristicChanged(eq(mCurrentDevice), eq(characteristic), eq(false));
 
-        characteristic = service.getCharacteristic(
-                MediaControlGattService.UUID_CURRENT_GROUP_OBJ_ID);
+        characteristic =
+                service.getCharacteristic(MediaControlGattService.UUID_CURRENT_GROUP_OBJ_ID);
         prepareConnectedDevicesCccVal(characteristic, ccc_val);
         mMcpService.updateObjectID(ObjectIds.CURRENT_GROUP_OBJ_ID, obj_id);
         verify(mMockGattServer, times(times_cnt))
                 .notifyCharacteristicChanged(eq(mCurrentDevice), eq(characteristic), eq(false));
 
-        characteristic = service.getCharacteristic(
-                MediaControlGattService.UUID_PARENT_GROUP_OBJ_ID);
+        characteristic =
+                service.getCharacteristic(MediaControlGattService.UUID_PARENT_GROUP_OBJ_ID);
         prepareConnectedDevicesCccVal(characteristic, ccc_val);
         mMcpService.updateObjectID(ObjectIds.PARENT_GROUP_OBJ_ID, obj_id);
         verify(mMockGattServer, times(times_cnt))
@@ -780,31 +877,31 @@ public class MediaControlGattServiceTest {
         verify(mMockGattServer, times(times_cnt))
                 .notifyCharacteristicChanged(eq(mCurrentDevice), eq(characteristic), eq(false));
 
-        characteristic = service.getCharacteristic(
-                MediaControlGattService.UUID_MEDIA_CONTROL_POINT);
+        characteristic =
+                service.getCharacteristic(MediaControlGattService.UUID_MEDIA_CONTROL_POINT);
         prepareConnectedDevicesCccVal(characteristic, ccc_val);
         mMcpService.setMediaControlRequestResult(
-                new Request(media_control_request_opcode, 0),
-                Request.Results.SUCCESS);
+                new Request(media_control_request_opcode, 0), Request.Results.SUCCESS);
         verify(mMockGattServer, times(times_cnt))
                 .notifyCharacteristicChanged(eq(mCurrentDevice), eq(characteristic), eq(false));
 
-        characteristic = service.getCharacteristic(
-                MediaControlGattService.UUID_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED);
+        characteristic =
+                service.getCharacteristic(
+                        MediaControlGattService.UUID_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED);
         prepareConnectedDevicesCccVal(characteristic, ccc_val);
         mMcpService.updateSupportedOpcodesChar(opcodes_supported, true);
         verify(mMockGattServer, times(times_cnt))
                 .notifyCharacteristicChanged(eq(mCurrentDevice), eq(characteristic), eq(false));
 
-        characteristic = service.getCharacteristic(
-                MediaControlGattService.UUID_SEARCH_RESULT_OBJ_ID);
+        characteristic =
+                service.getCharacteristic(MediaControlGattService.UUID_SEARCH_RESULT_OBJ_ID);
         prepareConnectedDevicesCccVal(characteristic, ccc_val);
         mMcpService.updateObjectID(ObjectIds.SEARCH_RESULT_OBJ_ID, obj_id);
         verify(mMockGattServer, times(times_cnt))
                 .notifyCharacteristicChanged(eq(mCurrentDevice), eq(characteristic), eq(false));
 
-        characteristic = service.getCharacteristic(
-                MediaControlGattService.UUID_SEARCH_CONTROL_POINT);
+        characteristic =
+                service.getCharacteristic(MediaControlGattService.UUID_SEARCH_CONTROL_POINT);
         prepareConnectedDevicesCccVal(characteristic, ccc_val);
         mMcpService.setSearchRequestResult(null, SearchRequest.Results.SUCCESS, obj_id);
         verify(mMockGattServer, times(times_cnt))
@@ -821,8 +918,12 @@ public class MediaControlGattServiceTest {
         testNotify(false);
     }
 
-    private void verifyMediaControlPointRequest(BluetoothGattService service, int opcode,
-            Integer value, int expectedGattResult, int invocation_count) {
+    private void verifyMediaControlPointRequest(
+            BluetoothGattService service,
+            int opcode,
+            Integer value,
+            int expectedGattResult,
+            int invocation_count) {
         BluetoothGattCharacteristic characteristic =
                 service.getCharacteristic(MediaControlGattService.UUID_MEDIA_CONTROL_POINT);
         ByteBuffer bb;
@@ -830,15 +931,17 @@ public class MediaControlGattServiceTest {
         if (expectedGattResult == BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH) {
             bb = ByteBuffer.allocate(6).order(ByteOrder.LITTLE_ENDIAN);
         } else {
-            bb = ByteBuffer.allocate(value != null ? (Integer.BYTES + Byte.BYTES) : Byte.BYTES)
-                    .order(ByteOrder.LITTLE_ENDIAN);
+            bb =
+                    ByteBuffer.allocate(value != null ? (Integer.BYTES + Byte.BYTES) : Byte.BYTES)
+                            .order(ByteOrder.LITTLE_ENDIAN);
         }
         bb.put((byte) opcode);
         if (value != null) {
             bb.putInt(value);
         }
 
-        Assert.assertEquals(expectedGattResult,
+        Assert.assertEquals(
+                expectedGattResult,
                 mMcpService.handleMediaControlPointRequest(mCurrentDevice, bb.array()));
 
         if (expectedGattResult == BluetoothGatt.GATT_SUCCESS) {
@@ -851,81 +954,112 @@ public class MediaControlGattServiceTest {
     private void verifyMediaControlPointRequests(int expectedGattResult) {
         BluetoothGattService service = initAllFeaturesGattService();
         int invocation_count = 1;
-        Integer opcodes_supported = Request.SupportedOpcodes.PLAY
-                | Request.SupportedOpcodes.PAUSE
-                | Request.SupportedOpcodes.FAST_REWIND
-                | Request.SupportedOpcodes.FAST_FORWARD
-                | Request.SupportedOpcodes.STOP
-                | Request.SupportedOpcodes.MOVE_RELATIVE
-                | Request.SupportedOpcodes.PREVIOUS_SEGMENT
-                | Request.SupportedOpcodes.NEXT_SEGMENT
-                | Request.SupportedOpcodes.FIRST_SEGMENT
-                | Request.SupportedOpcodes.LAST_SEGMENT
-                | Request.SupportedOpcodes.GOTO_SEGMENT
-                | Request.SupportedOpcodes.PREVIOUS_TRACK
-                | Request.SupportedOpcodes.NEXT_TRACK
-                | Request.SupportedOpcodes.FIRST_TRACK
-                | Request.SupportedOpcodes.LAST_TRACK
-                | Request.SupportedOpcodes.GOTO_TRACK
-                | Request.SupportedOpcodes.PREVIOUS_GROUP
-                | Request.SupportedOpcodes.NEXT_GROUP
-                | Request.SupportedOpcodes.FIRST_GROUP
-                | Request.SupportedOpcodes.LAST_GROUP
-                | Request.SupportedOpcodes.GOTO_GROUP;
+        Integer opcodes_supported =
+                Request.SupportedOpcodes.PLAY
+                        | Request.SupportedOpcodes.PAUSE
+                        | Request.SupportedOpcodes.FAST_REWIND
+                        | Request.SupportedOpcodes.FAST_FORWARD
+                        | Request.SupportedOpcodes.STOP
+                        | Request.SupportedOpcodes.MOVE_RELATIVE
+                        | Request.SupportedOpcodes.PREVIOUS_SEGMENT
+                        | Request.SupportedOpcodes.NEXT_SEGMENT
+                        | Request.SupportedOpcodes.FIRST_SEGMENT
+                        | Request.SupportedOpcodes.LAST_SEGMENT
+                        | Request.SupportedOpcodes.GOTO_SEGMENT
+                        | Request.SupportedOpcodes.PREVIOUS_TRACK
+                        | Request.SupportedOpcodes.NEXT_TRACK
+                        | Request.SupportedOpcodes.FIRST_TRACK
+                        | Request.SupportedOpcodes.LAST_TRACK
+                        | Request.SupportedOpcodes.GOTO_TRACK
+                        | Request.SupportedOpcodes.PREVIOUS_GROUP
+                        | Request.SupportedOpcodes.NEXT_GROUP
+                        | Request.SupportedOpcodes.FIRST_GROUP
+                        | Request.SupportedOpcodes.LAST_GROUP
+                        | Request.SupportedOpcodes.GOTO_GROUP;
 
-        BluetoothGattCharacteristic characteristic = service.getCharacteristic(
-                MediaControlGattService.UUID_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED);
+        BluetoothGattCharacteristic characteristic =
+                service.getCharacteristic(
+                        MediaControlGattService.UUID_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED);
         prepareConnectedDevicesCccVal(
                 characteristic, BluetoothGattDescriptor.DISABLE_NOTIFICATION_VALUE.clone());
         mMcpService.updateSupportedOpcodesChar(opcodes_supported, true);
         verify(mMockGattServer, times(0))
                 .notifyCharacteristicChanged(eq(mCurrentDevice), eq(characteristic), eq(false));
 
-        verifyMediaControlPointRequest(service, Request.Opcodes.PLAY, null,
-                expectedGattResult, invocation_count++);
-        verifyMediaControlPointRequest(service, Request.Opcodes.PAUSE, null,
-                expectedGattResult, invocation_count++);
-        verifyMediaControlPointRequest(service, Request.Opcodes.FAST_REWIND,
-                null, expectedGattResult, invocation_count++);
-        verifyMediaControlPointRequest(service, Request.Opcodes.FAST_FORWARD,
-                null, expectedGattResult, invocation_count++);
-        verifyMediaControlPointRequest(service, Request.Opcodes.STOP, null,
-                expectedGattResult, invocation_count++);
-        verifyMediaControlPointRequest(service, Request.Opcodes.MOVE_RELATIVE,
-                100, expectedGattResult, invocation_count++);
-        verifyMediaControlPointRequest(service,
-                Request.Opcodes.PREVIOUS_SEGMENT, null, expectedGattResult,
+        verifyMediaControlPointRequest(
+                service, Request.Opcodes.PLAY, null, expectedGattResult, invocation_count++);
+        verifyMediaControlPointRequest(
+                service, Request.Opcodes.PAUSE, null, expectedGattResult, invocation_count++);
+        verifyMediaControlPointRequest(
+                service, Request.Opcodes.FAST_REWIND, null, expectedGattResult, invocation_count++);
+        verifyMediaControlPointRequest(
+                service,
+                Request.Opcodes.FAST_FORWARD,
+                null,
+                expectedGattResult,
                 invocation_count++);
-        verifyMediaControlPointRequest(service, Request.Opcodes.NEXT_SEGMENT,
-                null, expectedGattResult, invocation_count++);
-        verifyMediaControlPointRequest(service, Request.Opcodes.FIRST_SEGMENT,
-                null, expectedGattResult, invocation_count++);
-        verifyMediaControlPointRequest(service, Request.Opcodes.LAST_SEGMENT,
-                null, expectedGattResult, invocation_count++);
-        verifyMediaControlPointRequest(service, Request.Opcodes.GOTO_SEGMENT,
-                10, expectedGattResult, invocation_count++);
-        verifyMediaControlPointRequest(service,
-                Request.Opcodes.PREVIOUS_TRACK, null, expectedGattResult,
+        verifyMediaControlPointRequest(
+                service, Request.Opcodes.STOP, null, expectedGattResult, invocation_count++);
+        verifyMediaControlPointRequest(
+                service,
+                Request.Opcodes.MOVE_RELATIVE,
+                100,
+                expectedGattResult,
                 invocation_count++);
-        verifyMediaControlPointRequest(service, Request.Opcodes.NEXT_TRACK,
-                null, expectedGattResult, invocation_count++);
-        verifyMediaControlPointRequest(service, Request.Opcodes.FIRST_TRACK,
-                null, expectedGattResult, invocation_count++);
-        verifyMediaControlPointRequest(service, Request.Opcodes.LAST_TRACK,
-                null, expectedGattResult, invocation_count++);
-        verifyMediaControlPointRequest(service, Request.Opcodes.GOTO_TRACK, 7,
-                expectedGattResult, invocation_count++);
-        verifyMediaControlPointRequest(service,
-                Request.Opcodes.PREVIOUS_GROUP, null, expectedGattResult,
+        verifyMediaControlPointRequest(
+                service,
+                Request.Opcodes.PREVIOUS_SEGMENT,
+                null,
+                expectedGattResult,
                 invocation_count++);
-        verifyMediaControlPointRequest(service, Request.Opcodes.NEXT_GROUP,
-                null, expectedGattResult, invocation_count++);
-        verifyMediaControlPointRequest(service, Request.Opcodes.FIRST_GROUP,
-                null, expectedGattResult, invocation_count++);
-        verifyMediaControlPointRequest(service, Request.Opcodes.LAST_GROUP,
-                null, expectedGattResult, invocation_count++);
-        verifyMediaControlPointRequest(service, Request.Opcodes.GOTO_GROUP,
-                10, expectedGattResult, invocation_count++);
+        verifyMediaControlPointRequest(
+                service,
+                Request.Opcodes.NEXT_SEGMENT,
+                null,
+                expectedGattResult,
+                invocation_count++);
+        verifyMediaControlPointRequest(
+                service,
+                Request.Opcodes.FIRST_SEGMENT,
+                null,
+                expectedGattResult,
+                invocation_count++);
+        verifyMediaControlPointRequest(
+                service,
+                Request.Opcodes.LAST_SEGMENT,
+                null,
+                expectedGattResult,
+                invocation_count++);
+        verifyMediaControlPointRequest(
+                service, Request.Opcodes.GOTO_SEGMENT, 10, expectedGattResult, invocation_count++);
+        verifyMediaControlPointRequest(
+                service,
+                Request.Opcodes.PREVIOUS_TRACK,
+                null,
+                expectedGattResult,
+                invocation_count++);
+        verifyMediaControlPointRequest(
+                service, Request.Opcodes.NEXT_TRACK, null, expectedGattResult, invocation_count++);
+        verifyMediaControlPointRequest(
+                service, Request.Opcodes.FIRST_TRACK, null, expectedGattResult, invocation_count++);
+        verifyMediaControlPointRequest(
+                service, Request.Opcodes.LAST_TRACK, null, expectedGattResult, invocation_count++);
+        verifyMediaControlPointRequest(
+                service, Request.Opcodes.GOTO_TRACK, 7, expectedGattResult, invocation_count++);
+        verifyMediaControlPointRequest(
+                service,
+                Request.Opcodes.PREVIOUS_GROUP,
+                null,
+                expectedGattResult,
+                invocation_count++);
+        verifyMediaControlPointRequest(
+                service, Request.Opcodes.NEXT_GROUP, null, expectedGattResult, invocation_count++);
+        verifyMediaControlPointRequest(
+                service, Request.Opcodes.FIRST_GROUP, null, expectedGattResult, invocation_count++);
+        verifyMediaControlPointRequest(
+                service, Request.Opcodes.LAST_GROUP, null, expectedGattResult, invocation_count++);
+        verifyMediaControlPointRequest(
+                service, Request.Opcodes.GOTO_GROUP, 10, expectedGattResult, invocation_count++);
     }
 
     @Test
@@ -942,8 +1076,7 @@ public class MediaControlGattServiceTest {
     public void testMediaControlPointRequestInvalid() {
         Integer opcodes_supported = Request.SupportedOpcodes.NONE;
 
-        Assert.assertFalse(
-                mMcpService.isOpcodeSupported(Request.Opcodes.PLAY));
+        Assert.assertFalse(mMcpService.isOpcodeSupported(Request.Opcodes.PLAY));
     }
 
     @Test
@@ -952,8 +1085,8 @@ public class MediaControlGattServiceTest {
         BluetoothGattService service = initAllFeaturesGattService();
         prepareConnectedDevice();
         mMcpService.updateSupportedOpcodesChar(Request.SupportedOpcodes.PLAY, true);
-        verifyMediaControlPointRequest(service, Request.Opcodes.PLAY, null,
-                BluetoothGatt.GATT_SUCCESS, 1);
+        verifyMediaControlPointRequest(
+                service, Request.Opcodes.PLAY, null, BluetoothGatt.GATT_SUCCESS, 1);
         if (!Flags.leaudioBroadcastFeatureSupport()) {
             verify(mMockLeAudioService).setActiveDevice(any(BluetoothDevice.class));
         } else {
@@ -996,30 +1129,32 @@ public class MediaControlGattServiceTest {
     @Test
     public void testUpdateSupportedOpcodesChar() {
         BluetoothGattService service = initAllFeaturesGattService();
-        Integer opcodes_supported = Request.SupportedOpcodes.PLAY
-                | Request.SupportedOpcodes.PAUSE
-                | Request.SupportedOpcodes.FAST_REWIND
-                | Request.SupportedOpcodes.FAST_FORWARD
-                | Request.SupportedOpcodes.STOP
-                | Request.SupportedOpcodes.MOVE_RELATIVE
-                | Request.SupportedOpcodes.PREVIOUS_SEGMENT
-                | Request.SupportedOpcodes.NEXT_SEGMENT
-                | Request.SupportedOpcodes.FIRST_SEGMENT
-                | Request.SupportedOpcodes.LAST_SEGMENT
-                | Request.SupportedOpcodes.GOTO_SEGMENT
-                | Request.SupportedOpcodes.PREVIOUS_TRACK
-                | Request.SupportedOpcodes.NEXT_TRACK
-                | Request.SupportedOpcodes.FIRST_TRACK
-                | Request.SupportedOpcodes.LAST_TRACK
-                | Request.SupportedOpcodes.GOTO_TRACK
-                | Request.SupportedOpcodes.PREVIOUS_GROUP
-                | Request.SupportedOpcodes.NEXT_GROUP
-                | Request.SupportedOpcodes.FIRST_GROUP
-                | Request.SupportedOpcodes.LAST_GROUP
-                | Request.SupportedOpcodes.GOTO_GROUP;
+        Integer opcodes_supported =
+                Request.SupportedOpcodes.PLAY
+                        | Request.SupportedOpcodes.PAUSE
+                        | Request.SupportedOpcodes.FAST_REWIND
+                        | Request.SupportedOpcodes.FAST_FORWARD
+                        | Request.SupportedOpcodes.STOP
+                        | Request.SupportedOpcodes.MOVE_RELATIVE
+                        | Request.SupportedOpcodes.PREVIOUS_SEGMENT
+                        | Request.SupportedOpcodes.NEXT_SEGMENT
+                        | Request.SupportedOpcodes.FIRST_SEGMENT
+                        | Request.SupportedOpcodes.LAST_SEGMENT
+                        | Request.SupportedOpcodes.GOTO_SEGMENT
+                        | Request.SupportedOpcodes.PREVIOUS_TRACK
+                        | Request.SupportedOpcodes.NEXT_TRACK
+                        | Request.SupportedOpcodes.FIRST_TRACK
+                        | Request.SupportedOpcodes.LAST_TRACK
+                        | Request.SupportedOpcodes.GOTO_TRACK
+                        | Request.SupportedOpcodes.PREVIOUS_GROUP
+                        | Request.SupportedOpcodes.NEXT_GROUP
+                        | Request.SupportedOpcodes.FIRST_GROUP
+                        | Request.SupportedOpcodes.LAST_GROUP
+                        | Request.SupportedOpcodes.GOTO_GROUP;
 
-        BluetoothGattCharacteristic characteristic = service.getCharacteristic(
-                MediaControlGattService.UUID_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED);
+        BluetoothGattCharacteristic characteristic =
+                service.getCharacteristic(
+                        MediaControlGattService.UUID_MEDIA_CONTROL_POINT_OPCODES_SUPPORTED);
         prepareConnectedDevicesCccVal(
                 characteristic, BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE.clone());
 
@@ -1088,8 +1223,12 @@ public class MediaControlGattServiceTest {
                 mCurrentDevice, 1, 0, characteristic);
 
         verify(mMockGattServer)
-                .sendResponse(eq(mCurrentDevice), eq(1),
-                        eq(BluetoothGatt.GATT_INSUFFICIENT_AUTHORIZATION), eq(0), any());
+                .sendResponse(
+                        eq(mCurrentDevice),
+                        eq(1),
+                        eq(BluetoothGatt.GATT_INSUFFICIENT_AUTHORIZATION),
+                        eq(0),
+                        any());
     }
 
     @Test
@@ -1185,8 +1324,12 @@ public class MediaControlGattServiceTest {
                 mCurrentDevice, 1, characteristic, false, true, 0, bb.array());
 
         verify(mMockGattServer)
-                .sendResponse(eq(mCurrentDevice), eq(1),
-                        eq(BluetoothGatt.GATT_INSUFFICIENT_AUTHORIZATION), eq(0), any());
+                .sendResponse(
+                        eq(mCurrentDevice),
+                        eq(1),
+                        eq(BluetoothGatt.GATT_INSUFFICIENT_AUTHORIZATION),
+                        eq(0),
+                        any());
     }
 
     @Test
@@ -1228,8 +1371,12 @@ public class MediaControlGattServiceTest {
         mMcpService.mServerCallback.onDescriptorReadRequest(mCurrentDevice, 1, 0, descriptor);
 
         verify(mMockGattServer)
-                .sendResponse(eq(mCurrentDevice), eq(1),
-                        eq(BluetoothGatt.GATT_INSUFFICIENT_AUTHORIZATION), eq(0), any());
+                .sendResponse(
+                        eq(mCurrentDevice),
+                        eq(1),
+                        eq(BluetoothGatt.GATT_INSUFFICIENT_AUTHORIZATION),
+                        eq(0),
+                        any());
     }
 
     @Test
@@ -1279,8 +1426,12 @@ public class MediaControlGattServiceTest {
                 mCurrentDevice, 1, descriptor, false, true, 0, bb.array());
 
         verify(mMockGattServer)
-                .sendResponse(eq(mCurrentDevice), eq(1),
-                        eq(BluetoothGatt.GATT_INSUFFICIENT_AUTHORIZATION), eq(0), any());
+                .sendResponse(
+                        eq(mCurrentDevice),
+                        eq(1),
+                        eq(BluetoothGatt.GATT_INSUFFICIENT_AUTHORIZATION),
+                        eq(0),
+                        any());
     }
 
     @Test

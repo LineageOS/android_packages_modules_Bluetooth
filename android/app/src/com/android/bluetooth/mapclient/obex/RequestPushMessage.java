@@ -42,8 +42,8 @@ public class RequestPushMessage extends Request {
         mHeaderSet.setHeader(HeaderSet.NAME, folder);
     }
 
-    RequestPushMessage(String folder, Bmessage msg, CharsetType charset, boolean transparent,
-            boolean retry) {
+    RequestPushMessage(
+            String folder, Bmessage msg, CharsetType charset, boolean transparent, boolean retry) {
         this(folder);
         mMsg = msg;
         ObexAppParameters oap = new ObexAppParameters();

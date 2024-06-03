@@ -171,9 +171,11 @@ public class BluetoothPbapServiceTest {
     @Test
     public void broadcastReceiver_onReceive_withActionConnectionAccessReply() {
         Intent intent = new Intent(BluetoothDevice.ACTION_CONNECTION_ACCESS_REPLY);
-        intent.putExtra(BluetoothDevice.EXTRA_ACCESS_REQUEST_TYPE,
+        intent.putExtra(
+                BluetoothDevice.EXTRA_ACCESS_REQUEST_TYPE,
                 BluetoothDevice.REQUEST_TYPE_PHONEBOOK_ACCESS);
-        intent.putExtra(BluetoothDevice.EXTRA_CONNECTION_ACCESS_RESULT,
+        intent.putExtra(
+                BluetoothDevice.EXTRA_CONNECTION_ACCESS_RESULT,
                 BluetoothDevice.CONNECTION_ACCESS_YES);
         intent.putExtra(BluetoothDevice.EXTRA_ALWAYS_ALLOWED, true);
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, mRemoteDevice);

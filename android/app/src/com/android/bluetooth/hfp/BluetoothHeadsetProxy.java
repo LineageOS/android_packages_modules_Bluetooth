@@ -27,9 +27,9 @@ import java.util.List;
 /**
  * A proxy class that facilitates testing of the BluetoothInCallService class.
  *
- * This is necessary due to the "final" attribute of the BluetoothHeadset class. In order to
- * test the correct functioning of the BluetoothInCallService class, the final class must be put
- * into a container that can be mocked correctly.
+ * <p>This is necessary due to the "final" attribute of the BluetoothHeadset class. In order to test
+ * the correct functioning of the BluetoothInCallService class, the final class must be put into a
+ * container that can be mocked correctly.
  */
 public class BluetoothHeadsetProxy {
 
@@ -40,24 +40,22 @@ public class BluetoothHeadsetProxy {
     }
 
     public void closeBluetoothHeadsetProxy(Context context) {
-        final BluetoothManager btManager =
-                context.getSystemService(BluetoothManager.class);
+        final BluetoothManager btManager = context.getSystemService(BluetoothManager.class);
         if (btManager != null) {
             btManager.getAdapter().closeProfileProxy(BluetoothProfile.HEADSET, mBluetoothHeadset);
         }
     }
 
-    public void clccResponse(int index, int direction, int status, int mode, boolean mpty,
-            String number, int type) {
+    public void clccResponse(
+            int index, int direction, int status, int mode, boolean mpty, String number, int type) {
 
         mBluetoothHeadset.clccResponse(index, direction, status, mode, mpty, number, type);
     }
 
-    public void phoneStateChanged(int numActive, int numHeld, int callState, String number,
-            int type, String name) {
+    public void phoneStateChanged(
+            int numActive, int numHeld, int callState, String number, int type, String name) {
 
-        mBluetoothHeadset.phoneStateChanged(numActive, numHeld, callState, number, type,
-                name);
+        mBluetoothHeadset.phoneStateChanged(numActive, numHeld, callState, number, type, name);
     }
 
     public List<BluetoothDevice> getConnectedDevices() {

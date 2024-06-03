@@ -71,57 +71,76 @@ public class BluetoothMapObexServerTest {
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    private Context mContext;
-    @Mock
-    private BluetoothMapService mMapService;
-    @Mock
-    private ContentProviderClient mProviderClient;
-    @Mock
-    private BluetoothMapContentObserver mObserver;
-    @Spy
-    private BluetoothMethodProxy mMapMethodProxy = BluetoothMethodProxy.getInstance();
+    @Mock private Context mContext;
+    @Mock private BluetoothMapService mMapService;
+    @Mock private ContentProviderClient mProviderClient;
+    @Mock private BluetoothMapContentObserver mObserver;
+    @Spy private BluetoothMethodProxy mMapMethodProxy = BluetoothMethodProxy.getInstance();
 
     @Before
     public void setUp() throws Exception {
         BluetoothMethodProxy.setInstanceForTesting(mMapMethodProxy);
-        doReturn(mProviderClient).when(
-                mMapMethodProxy).contentResolverAcquireUnstableContentProviderClient(any(), any());
-        mAccountItem = BluetoothMapAccountItem.create(TEST_ID, TEST_NAME, TEST_PACKAGE_NAME,
-                TEST_PROVIDER_AUTHORITY, TEST_DRAWABLE, TEST_TYPE, TEST_UCI, TEST_UCI_PREFIX);
-        mMasInstance = new BluetoothMapMasInstance(mMapService, mContext,
-                mAccountItem, TEST_MAS_ID, TEST_ENABLE_SMS_MMS);
+        doReturn(mProviderClient)
+                .when(mMapMethodProxy)
+                .contentResolverAcquireUnstableContentProviderClient(any(), any());
+        mAccountItem =
+                BluetoothMapAccountItem.create(
+                        TEST_ID,
+                        TEST_NAME,
+                        TEST_PACKAGE_NAME,
+                        TEST_PROVIDER_AUTHORITY,
+                        TEST_DRAWABLE,
+                        TEST_TYPE,
+                        TEST_UCI,
+                        TEST_UCI_PREFIX);
+        mMasInstance =
+                new BluetoothMapMasInstance(
+                        mMapService, mContext, mAccountItem, TEST_MAS_ID, TEST_ENABLE_SMS_MMS);
         mParams = new BluetoothMapAppParams();
-        mObexServer = new BluetoothMapObexServer(null, mContext, mObserver, mMasInstance,
-                mAccountItem, TEST_ENABLE_SMS_MMS);
+        mObexServer =
+                new BluetoothMapObexServer(
+                        null, mContext, mObserver, mMasInstance, mAccountItem, TEST_ENABLE_SMS_MMS);
     }
 
     @Test
     public void setOwnerStatus_withAccountTypeEmail() throws Exception {
         doReturn(null).when(mProviderClient).query(any(), any(), any(), any(), any());
-        BluetoothMapAccountItem accountItemWithTypeEmail = BluetoothMapAccountItem.create(TEST_ID,
-                TEST_NAME, TEST_PACKAGE_NAME, TEST_PROVIDER_AUTHORITY, TEST_DRAWABLE,
-                BluetoothMapUtils.TYPE.EMAIL, TEST_UCI, TEST_UCI_PREFIX);
-        BluetoothMapObexServer obexServer = new BluetoothMapObexServer(null, mContext, mObserver,
-                mMasInstance, accountItemWithTypeEmail, TEST_ENABLE_SMS_MMS);
+        BluetoothMapAccountItem accountItemWithTypeEmail =
+                BluetoothMapAccountItem.create(
+                        TEST_ID,
+                        TEST_NAME,
+                        TEST_PACKAGE_NAME,
+                        TEST_PROVIDER_AUTHORITY,
+                        TEST_DRAWABLE,
+                        BluetoothMapUtils.TYPE.EMAIL,
+                        TEST_UCI,
+                        TEST_UCI_PREFIX);
+        BluetoothMapObexServer obexServer =
+                new BluetoothMapObexServer(
+                        null,
+                        mContext,
+                        mObserver,
+                        mMasInstance,
+                        accountItemWithTypeEmail,
+                        TEST_ENABLE_SMS_MMS);
 
-        assertThat(obexServer.setOwnerStatus(mParams)).isEqualTo(
-                ResponseCodes.OBEX_HTTP_UNAVAILABLE);
+        assertThat(obexServer.setOwnerStatus(mParams))
+                .isEqualTo(ResponseCodes.OBEX_HTTP_UNAVAILABLE);
     }
 
     @Test
     public void setOwnerStatus_withAppParamsInvalid() throws Exception {
         BluetoothMapAppParams params = mock(BluetoothMapAppParams.class);
-        when(params.getPresenceAvailability()).thenReturn(
-                BluetoothMapAppParams.INVALID_VALUE_PARAMETER);
+        when(params.getPresenceAvailability())
+                .thenReturn(BluetoothMapAppParams.INVALID_VALUE_PARAMETER);
         when(params.getPresenceStatus()).thenReturn(null);
-        when(params.getLastActivity()).thenReturn(
-                (long) BluetoothMapAppParams.INVALID_VALUE_PARAMETER);
+        when(params.getLastActivity())
+                .thenReturn((long) BluetoothMapAppParams.INVALID_VALUE_PARAMETER);
         when(params.getChatState()).thenReturn(BluetoothMapAppParams.INVALID_VALUE_PARAMETER);
         when(params.getChatStateConvoIdString()).thenReturn(null);
 
-        assertThat(mObexServer.setOwnerStatus(params)).isEqualTo(
-                ResponseCodes.OBEX_HTTP_PRECON_FAILED);
+        assertThat(mObexServer.setOwnerStatus(params))
+                .isEqualTo(ResponseCodes.OBEX_HTTP_PRECON_FAILED);
     }
 
     @Test
@@ -130,8 +149,7 @@ public class BluetoothMapObexServerTest {
         Bundle bundle = new Bundle();
         when(mProviderClient.call(any(), any(), any())).thenReturn(bundle);
 
-        assertThat(mObexServer.setOwnerStatus(mParams)).isEqualTo(
-                ResponseCodes.OBEX_HTTP_OK);
+        assertThat(mObexServer.setOwnerStatus(mParams)).isEqualTo(ResponseCodes.OBEX_HTTP_OK);
     }
 
     @Test
@@ -139,8 +157,8 @@ public class BluetoothMapObexServerTest {
         setUpBluetoothMapAppParams(mParams);
         when(mProviderClient.call(any(), any(), any())).thenReturn(null);
 
-        assertThat(mObexServer.setOwnerStatus(mParams)).isEqualTo(
-                ResponseCodes.OBEX_HTTP_NOT_IMPLEMENTED);
+        assertThat(mObexServer.setOwnerStatus(mParams))
+                .isEqualTo(ResponseCodes.OBEX_HTTP_NOT_IMPLEMENTED);
     }
 
     @Test
@@ -148,8 +166,8 @@ public class BluetoothMapObexServerTest {
         setUpBluetoothMapAppParams(mParams);
         doThrow(RemoteException.class).when(mProviderClient).call(any(), any(), any());
 
-        assertThat(mObexServer.setOwnerStatus(mParams)).isEqualTo(
-                ResponseCodes.OBEX_HTTP_UNAVAILABLE);
+        assertThat(mObexServer.setOwnerStatus(mParams))
+                .isEqualTo(ResponseCodes.OBEX_HTTP_UNAVAILABLE);
     }
 
     @Test
@@ -157,8 +175,8 @@ public class BluetoothMapObexServerTest {
         setUpBluetoothMapAppParams(mParams);
         doThrow(NullPointerException.class).when(mProviderClient).call(any(), any(), any());
 
-        assertThat(mObexServer.setOwnerStatus(mParams)).isEqualTo(
-                ResponseCodes.OBEX_HTTP_UNAVAILABLE);
+        assertThat(mObexServer.setOwnerStatus(mParams))
+                .isEqualTo(ResponseCodes.OBEX_HTTP_UNAVAILABLE);
     }
 
     @Test
@@ -166,23 +184,32 @@ public class BluetoothMapObexServerTest {
         setUpBluetoothMapAppParams(mParams);
         doThrow(IllegalArgumentException.class).when(mProviderClient).call(any(), any(), any());
 
-        assertThat(mObexServer.setOwnerStatus(mParams)).isEqualTo(
-                ResponseCodes.OBEX_HTTP_UNAVAILABLE);
+        assertThat(mObexServer.setOwnerStatus(mParams))
+                .isEqualTo(ResponseCodes.OBEX_HTTP_UNAVAILABLE);
     }
 
     @Test
     public void addEmailFolders() throws Exception {
-        MatrixCursor cursor = new MatrixCursor(new String[]{BluetoothMapContract.FolderColumns.NAME,
-                BluetoothMapContract.FolderColumns._ID});
+        MatrixCursor cursor =
+                new MatrixCursor(
+                        new String[] {
+                            BluetoothMapContract.FolderColumns.NAME,
+                            BluetoothMapContract.FolderColumns._ID
+                        });
         long parentId = 1;
         long childId = 2;
-        cursor.addRow(new Object[]{"test_name", childId});
+        cursor.addRow(new Object[] {"test_name", childId});
         cursor.moveToFirst();
         BluetoothMapFolderElement parentFolder = new BluetoothMapFolderElement("parent", null);
         parentFolder.setFolderId(parentId);
-        doReturn(cursor).when(mProviderClient).query(any(), any(),
-                eq(BluetoothMapContract.FolderColumns.PARENT_FOLDER_ID + " = " + parentId), any(),
-                any());
+        doReturn(cursor)
+                .when(mProviderClient)
+                .query(
+                        any(),
+                        any(),
+                        eq(BluetoothMapContract.FolderColumns.PARENT_FOLDER_ID + " = " + parentId),
+                        any(),
+                        any());
 
         mObexServer.addEmailFolders(parentFolder);
 
@@ -191,8 +218,8 @@ public class BluetoothMapObexServerTest {
 
     @Test
     public void setMsgTypeFilterParams_withAccountNull_andOverwriteTrue() throws Exception {
-        BluetoothMapObexServer obexServer = new BluetoothMapObexServer(null, mContext, mObserver,
-                mMasInstance, null, false);
+        BluetoothMapObexServer obexServer =
+                new BluetoothMapObexServer(null, mContext, mObserver, mMasInstance, null, false);
 
         obexServer.setMsgTypeFilterParams(mParams, true);
 
@@ -207,24 +234,51 @@ public class BluetoothMapObexServerTest {
 
     @Test
     public void setMsgTypeFilterParams_withInvalidFilterMessageType() throws Exception {
-        BluetoothMapAccountItem accountItemWithTypeEmail = BluetoothMapAccountItem.create(TEST_ID,
-                TEST_NAME, TEST_PACKAGE_NAME, TEST_PROVIDER_AUTHORITY, TEST_DRAWABLE,
-                BluetoothMapUtils.TYPE.EMAIL, TEST_UCI, TEST_UCI_PREFIX);
-        BluetoothMapObexServer obexServer = new BluetoothMapObexServer(null, mContext, mObserver,
-                mMasInstance, accountItemWithTypeEmail, TEST_ENABLE_SMS_MMS);
+        BluetoothMapAccountItem accountItemWithTypeEmail =
+                BluetoothMapAccountItem.create(
+                        TEST_ID,
+                        TEST_NAME,
+                        TEST_PACKAGE_NAME,
+                        TEST_PROVIDER_AUTHORITY,
+                        TEST_DRAWABLE,
+                        BluetoothMapUtils.TYPE.EMAIL,
+                        TEST_UCI,
+                        TEST_UCI_PREFIX);
+        BluetoothMapObexServer obexServer =
+                new BluetoothMapObexServer(
+                        null,
+                        mContext,
+                        mObserver,
+                        mMasInstance,
+                        accountItemWithTypeEmail,
+                        TEST_ENABLE_SMS_MMS);
 
         // Passing mParams without any previous settings pass invalid filter message type
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> obexServer.setMsgTypeFilterParams(mParams, false));
     }
 
     @Test
     public void setMsgTypeFilterParams_withValidFilterMessageType() throws Exception {
-        BluetoothMapAccountItem accountItemWithTypeIm = BluetoothMapAccountItem.create(TEST_ID,
-                TEST_NAME, TEST_PACKAGE_NAME, TEST_PROVIDER_AUTHORITY, TEST_DRAWABLE,
-                BluetoothMapUtils.TYPE.IM, TEST_UCI, TEST_UCI_PREFIX);
-        BluetoothMapObexServer obexServer = new BluetoothMapObexServer(null, mContext, mObserver,
-                mMasInstance, accountItemWithTypeIm, TEST_ENABLE_SMS_MMS);
+        BluetoothMapAccountItem accountItemWithTypeIm =
+                BluetoothMapAccountItem.create(
+                        TEST_ID,
+                        TEST_NAME,
+                        TEST_PACKAGE_NAME,
+                        TEST_PROVIDER_AUTHORITY,
+                        TEST_DRAWABLE,
+                        BluetoothMapUtils.TYPE.IM,
+                        TEST_UCI,
+                        TEST_UCI_PREFIX);
+        BluetoothMapObexServer obexServer =
+                new BluetoothMapObexServer(
+                        null,
+                        mContext,
+                        mObserver,
+                        mMasInstance,
+                        accountItemWithTypeIm,
+                        TEST_ENABLE_SMS_MMS);
         int expectedMask = 1;
         mParams.setFilterMessageType(expectedMask);
 

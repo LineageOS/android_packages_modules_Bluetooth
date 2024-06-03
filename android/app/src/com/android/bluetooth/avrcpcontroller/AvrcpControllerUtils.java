@@ -18,14 +18,10 @@ package com.android.bluetooth.avrcpcontroller;
 
 import android.support.v4.media.session.PlaybackStateCompat;
 
-/**
- * A package global set of utilities for the AVRCP Controller implementation to leverage
- */
+/** A package global set of utilities for the AVRCP Controller implementation to leverage */
 public final class AvrcpControllerUtils {
 
-    /**
-     * Convert an AVRCP Passthrough command id to a human readable version of the key
-     */
+    /** Convert an AVRCP Passthrough command id to a human readable version of the key */
     public static String passThruIdToString(int id) {
         StringBuilder sb = new StringBuilder();
         switch (id) {
@@ -64,9 +60,7 @@ public final class AvrcpControllerUtils {
         return sb.toString();
     }
 
-    /**
-     * Convert an entire PlaybackStateCompat to a string that contains human readable states
-     */
+    /** Convert an entire PlaybackStateCompat to a string that contains human readable states */
     public static String playbackStateCompatToString(PlaybackStateCompat playbackState) {
         if (playbackState == null) {
             return null;
@@ -87,9 +81,7 @@ public final class AvrcpControllerUtils {
         return sb.toString();
     }
 
-    /**
-     * Convert a playback state constant to a human readable version of the state
-     */
+    /** Convert a playback state constant to a human readable version of the state */
     public static String playbackStateToString(int playbackState) {
         StringBuilder sb = new StringBuilder();
         switch (playbackState) {

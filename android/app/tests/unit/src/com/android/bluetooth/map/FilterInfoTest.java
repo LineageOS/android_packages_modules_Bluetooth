@@ -44,22 +44,25 @@ public class FilterInfoTest {
 
     @Test
     public void setMessageColumns() {
-        MatrixCursor cursor = new MatrixCursor(new String[] {
-                BluetoothMapContract.MessageColumns._ID,
-                BluetoothMapContract.MessageColumns.DATE,
-                BluetoothMapContract.MessageColumns.SUBJECT,
-                BluetoothMapContract.MessageColumns.FOLDER_ID,
-                BluetoothMapContract.MessageColumns.FLAG_READ,
-                BluetoothMapContract.MessageColumns.MESSAGE_SIZE,
-                BluetoothMapContract.MessageColumns.FROM_LIST,
-                BluetoothMapContract.MessageColumns.TO_LIST,
-                BluetoothMapContract.MessageColumns.FLAG_ATTACHMENT,
-                BluetoothMapContract.MessageColumns.ATTACHMENT_SIZE,
-                BluetoothMapContract.MessageColumns.FLAG_HIGH_PRIORITY,
-                BluetoothMapContract.MessageColumns.FLAG_PROTECTED,
-                BluetoothMapContract.MessageColumns.RECEPTION_STATE,
-                BluetoothMapContract.MessageColumns.DEVILERY_STATE,
-                BluetoothMapContract.MessageColumns.THREAD_ID});
+        MatrixCursor cursor =
+                new MatrixCursor(
+                        new String[] {
+                            BluetoothMapContract.MessageColumns._ID,
+                            BluetoothMapContract.MessageColumns.DATE,
+                            BluetoothMapContract.MessageColumns.SUBJECT,
+                            BluetoothMapContract.MessageColumns.FOLDER_ID,
+                            BluetoothMapContract.MessageColumns.FLAG_READ,
+                            BluetoothMapContract.MessageColumns.MESSAGE_SIZE,
+                            BluetoothMapContract.MessageColumns.FROM_LIST,
+                            BluetoothMapContract.MessageColumns.TO_LIST,
+                            BluetoothMapContract.MessageColumns.FLAG_ATTACHMENT,
+                            BluetoothMapContract.MessageColumns.ATTACHMENT_SIZE,
+                            BluetoothMapContract.MessageColumns.FLAG_HIGH_PRIORITY,
+                            BluetoothMapContract.MessageColumns.FLAG_PROTECTED,
+                            BluetoothMapContract.MessageColumns.RECEPTION_STATE,
+                            BluetoothMapContract.MessageColumns.DEVILERY_STATE,
+                            BluetoothMapContract.MessageColumns.THREAD_ID
+                        });
 
         mFilterInfo.setMessageColumns(cursor);
 
@@ -82,10 +85,13 @@ public class FilterInfoTest {
 
     @Test
     public void setEmailMessageColumns() {
-        MatrixCursor cursor = new MatrixCursor(
-                new String[] {BluetoothMapContract.MessageColumns.CC_LIST,
-                        BluetoothMapContract.MessageColumns.BCC_LIST,
-                        BluetoothMapContract.MessageColumns.REPLY_TO_LIST});
+        MatrixCursor cursor =
+                new MatrixCursor(
+                        new String[] {
+                            BluetoothMapContract.MessageColumns.CC_LIST,
+                            BluetoothMapContract.MessageColumns.BCC_LIST,
+                            BluetoothMapContract.MessageColumns.REPLY_TO_LIST
+                        });
 
         mFilterInfo.setEmailMessageColumns(cursor);
 
@@ -96,10 +102,13 @@ public class FilterInfoTest {
 
     @Test
     public void setImMessageColumns() {
-        MatrixCursor cursor = new MatrixCursor(
-                new String[] {BluetoothMapContract.MessageColumns.THREAD_NAME,
-                        BluetoothMapContract.MessageColumns.ATTACHMENT_MINE_TYPES,
-                        BluetoothMapContract.MessageColumns.BODY});
+        MatrixCursor cursor =
+                new MatrixCursor(
+                        new String[] {
+                            BluetoothMapContract.MessageColumns.THREAD_NAME,
+                            BluetoothMapContract.MessageColumns.ATTACHMENT_MINE_TYPES,
+                            BluetoothMapContract.MessageColumns.BODY
+                        });
 
         mFilterInfo.setImMessageColumns(cursor);
 
@@ -110,13 +119,16 @@ public class FilterInfoTest {
 
     @Test
     public void setEmailImConvoColumns() {
-        MatrixCursor cursor = new MatrixCursor(
-                new String[] {BluetoothMapContract.ConversationColumns.THREAD_ID,
-                        BluetoothMapContract.ConversationColumns.LAST_THREAD_ACTIVITY,
-                        BluetoothMapContract.ConversationColumns.THREAD_NAME,
-                        BluetoothMapContract.ConversationColumns.READ_STATUS,
-                        BluetoothMapContract.ConversationColumns.VERSION_COUNTER,
-                        BluetoothMapContract.ConversationColumns.SUMMARY});
+        MatrixCursor cursor =
+                new MatrixCursor(
+                        new String[] {
+                            BluetoothMapContract.ConversationColumns.THREAD_ID,
+                            BluetoothMapContract.ConversationColumns.LAST_THREAD_ACTIVITY,
+                            BluetoothMapContract.ConversationColumns.THREAD_NAME,
+                            BluetoothMapContract.ConversationColumns.READ_STATUS,
+                            BluetoothMapContract.ConversationColumns.VERSION_COUNTER,
+                            BluetoothMapContract.ConversationColumns.SUMMARY
+                        });
 
         mFilterInfo.setEmailImConvoColumns(cursor);
 
@@ -130,16 +142,19 @@ public class FilterInfoTest {
 
     @Test
     public void setEmailImConvoContactColumns() {
-        MatrixCursor cursor = new MatrixCursor(
-                new String[] {BluetoothMapContract.ConvoContactColumns.X_BT_UID,
-                        BluetoothMapContract.ConvoContactColumns.CHAT_STATE,
-                        BluetoothMapContract.ConvoContactColumns.UCI,
-                        BluetoothMapContract.ConvoContactColumns.NICKNAME,
-                        BluetoothMapContract.ConvoContactColumns.LAST_ACTIVE,
-                        BluetoothMapContract.ConvoContactColumns.NAME,
-                        BluetoothMapContract.ConvoContactColumns.PRESENCE_STATE,
-                        BluetoothMapContract.ConvoContactColumns.STATUS_TEXT,
-                        BluetoothMapContract.ConvoContactColumns.PRIORITY});
+        MatrixCursor cursor =
+                new MatrixCursor(
+                        new String[] {
+                            BluetoothMapContract.ConvoContactColumns.X_BT_UID,
+                            BluetoothMapContract.ConvoContactColumns.CHAT_STATE,
+                            BluetoothMapContract.ConvoContactColumns.UCI,
+                            BluetoothMapContract.ConvoContactColumns.NICKNAME,
+                            BluetoothMapContract.ConvoContactColumns.LAST_ACTIVE,
+                            BluetoothMapContract.ConvoContactColumns.NAME,
+                            BluetoothMapContract.ConvoContactColumns.PRESENCE_STATE,
+                            BluetoothMapContract.ConvoContactColumns.STATUS_TEXT,
+                            BluetoothMapContract.ConvoContactColumns.PRIORITY
+                        });
 
         mFilterInfo.setEmailImConvoContactColumns(cursor);
 
@@ -156,8 +171,17 @@ public class FilterInfoTest {
 
     @Test
     public void setSmsColumns() {
-        MatrixCursor cursor = new MatrixCursor(new String[]{BaseColumns._ID, Sms.TYPE, Sms.READ,
-                Sms.BODY, Sms.ADDRESS, Sms.DATE, Sms.THREAD_ID});
+        MatrixCursor cursor =
+                new MatrixCursor(
+                        new String[] {
+                            BaseColumns._ID,
+                            Sms.TYPE,
+                            Sms.READ,
+                            Sms.BODY,
+                            Sms.ADDRESS,
+                            Sms.DATE,
+                            Sms.THREAD_ID
+                        });
 
         mFilterInfo.setSmsColumns(cursor);
 
@@ -173,9 +197,18 @@ public class FilterInfoTest {
 
     @Test
     public void setMmsColumns() {
-        MatrixCursor cursor = new MatrixCursor(
-                new String[] {BaseColumns._ID, Mms.MESSAGE_BOX, Mms.READ, Mms.MESSAGE_SIZE,
-                        Mms.TEXT_ONLY, Mms.DATE, Mms.SUBJECT, Mms.THREAD_ID});
+        MatrixCursor cursor =
+                new MatrixCursor(
+                        new String[] {
+                            BaseColumns._ID,
+                            Mms.MESSAGE_BOX,
+                            Mms.READ,
+                            Mms.MESSAGE_SIZE,
+                            Mms.TEXT_ONLY,
+                            Mms.DATE,
+                            Mms.SUBJECT,
+                            Mms.THREAD_ID
+                        });
 
         mFilterInfo.setMmsColumns(cursor);
 

@@ -52,8 +52,8 @@ public class BluetoothMapbMessageEmailTest {
         byte[] encodedMessageEmail = messageEmailToEncode.encode();
         InputStream inputStream = new ByteArrayInputStream(encodedMessageEmail);
 
-        BluetoothMapbMessage messageParsed = BluetoothMapbMessage.parse(inputStream,
-                BluetoothMapAppParams.CHARSET_UTF8);
+        BluetoothMapbMessage messageParsed =
+                BluetoothMapbMessage.parse(inputStream, BluetoothMapAppParams.CHARSET_UTF8);
         assertThat(messageParsed).isInstanceOf(BluetoothMapbMessageEmail.class);
         BluetoothMapbMessageEmail messageEmailParsed = (BluetoothMapbMessageEmail) messageParsed;
         assertThat(messageEmailParsed.getEmailBody()).isEqualTo(TEST_EMAIL_BODY);
@@ -69,8 +69,8 @@ public class BluetoothMapbMessageEmailTest {
         byte[] encodedMessageEmail = messageEmailToEncode.encode();
         InputStream inputStream = new ByteArrayInputStream(encodedMessageEmail);
 
-        BluetoothMapbMessage messageParsed = BluetoothMapbMessage.parse(inputStream,
-                BluetoothMapAppParams.CHARSET_UTF8);
+        BluetoothMapbMessage messageParsed =
+                BluetoothMapbMessage.parse(inputStream, BluetoothMapAppParams.CHARSET_UTF8);
         assertThat(messageParsed).isInstanceOf(BluetoothMapbMessageEmail.class);
         BluetoothMapbMessageEmail messageEmailParsed = (BluetoothMapbMessageEmail) messageParsed;
         assertThat(messageEmailParsed.getEmailBody()).isEqualTo("");

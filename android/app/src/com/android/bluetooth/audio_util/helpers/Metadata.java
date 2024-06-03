@@ -93,14 +93,26 @@ public class Metadata implements Cloneable {
 
     @Override
     public String toString() {
-        return "{ mediaId=\"" + mediaId + "\" title=\"" + title + "\" artist=\"" + artist
-                + "\" album=\"" + album + "\" duration=" + duration
-                + " trackPosition=" + trackNum + "/" + numTracks + " image=" + image + " }";
+        return "{ mediaId=\""
+                + mediaId
+                + "\" title=\""
+                + title
+                + "\" artist=\""
+                + artist
+                + "\" album=\""
+                + album
+                + "\" duration="
+                + duration
+                + " trackPosition="
+                + trackNum
+                + "/"
+                + numTracks
+                + " image="
+                + image
+                + " }";
     }
 
-    /**
-     * Replaces default values by {@code filledMetadata} non default values.
-     */
+    /** Replaces default values by {@code filledMetadata} non default values. */
     public void replaceDefaults(Metadata filledMetadata) {
         if (filledMetadata == null) {
             return;
@@ -137,32 +149,24 @@ public class Metadata implements Cloneable {
         }
     }
 
-    /**
-     * A Builder object to populate a Metadata from various different Media Framework objects
-     */
+    /** A Builder object to populate a Metadata from various different Media Framework objects */
     public static class Builder {
         private Metadata mMetadata = new Metadata();
         private Context mContext = null;
 
-        /**
-         * Set the Media ID fot the Metadata Object
-         */
+        /** Set the Media ID fot the Metadata Object */
         public Builder setMediaId(String id) {
             mMetadata.mediaId = id;
             return this;
         }
 
-        /**
-         * Set the context this builder should use when resolving images
-         */
+        /** Set the context this builder should use when resolving images */
         public Builder useContext(Context context) {
             mContext = context;
             return this;
         }
 
-        /**
-         * Extract the fields from a MediaMetadata object into a Metadata, if they exist
-         */
+        /** Extract the fields from a MediaMetadata object into a Metadata, if they exist */
         public Builder fromMediaMetadata(MediaMetadata data) {
             if (data == null) return this;
 
@@ -194,10 +198,12 @@ public class Metadata implements Cloneable {
             if (data.containsKey(MediaMetadata.METADATA_KEY_DURATION)) {
                 mMetadata.duration = "" + data.getLong(MediaMetadata.METADATA_KEY_DURATION);
             }
-            if ((mContext != null && Util.areUriImagesSupported(mContext)
-                    && (data.containsKey(MediaMetadata.METADATA_KEY_ART_URI)
-                    || data.containsKey(MediaMetadata.METADATA_KEY_ALBUM_ART_URI)
-                    || data.containsKey(MediaMetadata.METADATA_KEY_DISPLAY_ICON_URI)))
+            if ((mContext != null
+                            && Util.areUriImagesSupported(mContext)
+                            && (data.containsKey(MediaMetadata.METADATA_KEY_ART_URI)
+                                    || data.containsKey(MediaMetadata.METADATA_KEY_ALBUM_ART_URI)
+                                    || data.containsKey(
+                                            MediaMetadata.METADATA_KEY_DISPLAY_ICON_URI)))
                     || data.containsKey(MediaMetadata.METADATA_KEY_ART)
                     || data.containsKey(MediaMetadata.METADATA_KEY_ALBUM_ART)
                     || data.containsKey(MediaMetadata.METADATA_KEY_DISPLAY_ICON)) {
@@ -206,17 +212,13 @@ public class Metadata implements Cloneable {
             return this;
         }
 
-        /**
-         * Extract the fields from a MediaItem object into a Metadata, if they exist
-         */
+        /** Extract the fields from a MediaItem object into a Metadata, if they exist */
         public Builder fromMediaItem(MediaItem item) {
             if (item == null) return this;
             return fromMediaDescription(item.getDescription()).setMediaId(item.getMediaId());
         }
 
-        /**
-         * Extract the fields from a MediaDescription object into a Metadata, if they exist
-         */
+        /** Extract the fields from a MediaDescription object into a Metadata, if they exist */
         public Builder fromMediaDescription(MediaDescription desc) {
             if (desc == null) return this;
 
@@ -228,7 +230,8 @@ public class Metadata implements Cloneable {
             // Check for artwork
             if (desc.getIconBitmap() != null) {
                 mMetadata.image = new Image(mContext, desc.getIconBitmap());
-            } else if (mContext != null && Util.areUriImagesSupported(mContext)
+            } else if (mContext != null
+                    && Util.areUriImagesSupported(mContext)
                     && desc.getIconUri() != null) {
                 mMetadata.image = new Image(mContext, desc.getIconUri());
             }
@@ -275,10 +278,12 @@ public class Metadata implements Cloneable {
             if (bundle.containsKey(MediaMetadata.METADATA_KEY_DURATION)) {
                 mMetadata.duration = "" + bundle.getLong(MediaMetadata.METADATA_KEY_DURATION);
             }
-            if ((mContext != null && Util.areUriImagesSupported(mContext)
-                    && (bundle.containsKey(MediaMetadata.METADATA_KEY_ART_URI)
-                    || bundle.containsKey(MediaMetadata.METADATA_KEY_ALBUM_ART_URI)
-                    || bundle.containsKey(MediaMetadata.METADATA_KEY_DISPLAY_ICON_URI)))
+            if ((mContext != null
+                            && Util.areUriImagesSupported(mContext)
+                            && (bundle.containsKey(MediaMetadata.METADATA_KEY_ART_URI)
+                                    || bundle.containsKey(MediaMetadata.METADATA_KEY_ALBUM_ART_URI)
+                                    || bundle.containsKey(
+                                            MediaMetadata.METADATA_KEY_DISPLAY_ICON_URI)))
                     || bundle.containsKey(MediaMetadata.METADATA_KEY_ART)
                     || bundle.containsKey(MediaMetadata.METADATA_KEY_ALBUM_ART)
                     || bundle.containsKey(MediaMetadata.METADATA_KEY_DISPLAY_ICON)) {
@@ -287,17 +292,14 @@ public class Metadata implements Cloneable {
             return this;
         }
 
-        /**
-         * Elect to use default values in the Metadata in place of any missing values
-         */
+        /** Elect to use default values in the Metadata in place of any missing values */
         public Builder useDefaults() {
             if (mMetadata.mediaId == null) {
                 mMetadata.mediaId = EMPTY_MEDIA_ID;
             }
             if (mMetadata.title == null) {
                 mMetadata.title =
-                        mContext != null ? mContext.getString(R.string.not_provided)
-                                : EMPTY_TITLE;
+                        mContext != null ? mContext.getString(R.string.not_provided) : EMPTY_TITLE;
             }
             if (mMetadata.artist == null) mMetadata.artist = EMPTY_ARTIST;
             if (mMetadata.album == null) mMetadata.album = EMPTY_ALBUM;
@@ -309,9 +311,7 @@ public class Metadata implements Cloneable {
             return this;
         }
 
-        /**
-         * Get the final Metadata objects you're building
-         */
+        /** Get the final Metadata objects you're building */
         public Metadata build() {
             return mMetadata.clone();
         }

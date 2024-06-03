@@ -28,16 +28,13 @@ import com.android.bluetooth.le_scan.ScanManager;
 import com.android.bluetooth.le_scan.ScanNativeInterface;
 import com.android.bluetooth.le_scan.TransitionalScanHelper;
 
-/**
- * Factory class for object initialization to help with unit testing
- */
+/** Factory class for object initialization to help with unit testing */
 public class GattObjectsFactory {
     private static final String TAG = GattObjectsFactory.class.getSimpleName();
     private static GattObjectsFactory sInstance;
     private static final Object INSTANCE_LOCK = new Object();
 
-    private GattObjectsFactory() {
-    }
+    private GattObjectsFactory() {}
 
     /**
      * Get the singleton instance of object factory

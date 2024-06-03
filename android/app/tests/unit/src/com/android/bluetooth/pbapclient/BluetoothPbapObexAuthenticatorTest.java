@@ -41,8 +41,11 @@ public class BluetoothPbapObexAuthenticatorTest {
     @Test
     public void onAuthenticationChallenge() {
         // Note: onAuthenticationChallenge() does not use any arguments
-        PasswordAuthentication passwordAuthentication = mAuthenticator.onAuthenticationChallenge(
-                /*description=*/ null, /*isUserIdRequired=*/ false, /*isFullAccess=*/ false);
+        PasswordAuthentication passwordAuthentication =
+                mAuthenticator.onAuthenticationChallenge(
+                        /* description= */ null,
+                        /* isUserIdRequired= */ false,
+                        /* isFullAccess= */ false);
 
         assertThat(passwordAuthentication.getPassword())
                 .isEqualTo(mAuthenticator.mSessionKey.getBytes());

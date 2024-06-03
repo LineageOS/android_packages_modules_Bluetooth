@@ -1,17 +1,17 @@
 /*
-* Copyright (C) 2013 Samsung System LSI
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*      http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (C) 2013 Samsung System LSI
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package com.android.bluetooth.map;
 
 import com.android.bluetooth.DeviceWorkArounds;
@@ -272,26 +272,28 @@ public class BluetoothMapMessageListingElement
         if (mSubject != null) {
             String stripped = BluetoothMapUtils.stripInvalidChars(mSubject);
 
-            if (DeviceWorkArounds.addressStartsWith(BluetoothMapService
-                    .getRemoteDevice().getAddress(), DeviceWorkArounds
-                    .MERCEDES_BENZ_CARKIT)) {
+            if (DeviceWorkArounds.addressStartsWith(
+                    BluetoothMapService.getRemoteDevice().getAddress(),
+                    DeviceWorkArounds.MERCEDES_BENZ_CARKIT)) {
                 stripped = stripped.replaceAll("[\\P{ASCII}&\"><]", "");
                 if (stripped.isEmpty()) {
                     stripped = "---";
                 }
             }
 
-            xmlMsgElement.attribute(null, "subject",
+            xmlMsgElement.attribute(
+                    null,
+                    "subject",
                     stripped.substring(0, stripped.length() < 256 ? stripped.length() : 256));
         }
 
         if (mDateTime != 0) {
-            xmlMsgElement.attribute(null, "datetime",
-                    BluetoothMapUtils.getDateTimeString(this.getDateTime()));
+            xmlMsgElement.attribute(
+                    null, "datetime", BluetoothMapUtils.getDateTimeString(this.getDateTime()));
         }
         if (mSenderName != null) {
-            xmlMsgElement.attribute(null, "sender_name",
-                    BluetoothMapUtils.stripInvalidChars(mSenderName));
+            xmlMsgElement.attribute(
+                    null, "sender_name", BluetoothMapUtils.stripInvalidChars(mSenderName));
         }
         if (mSenderAddressing != null) {
             xmlMsgElement.attribute(null, "sender_addressing", mSenderAddressing);
@@ -300,13 +302,13 @@ public class BluetoothMapMessageListingElement
             xmlMsgElement.attribute(null, "replyto_addressing", mReplytoAddressing);
         }
         if (mRecipientName != null) {
-            xmlMsgElement.attribute(null, "recipient_name",
-                    BluetoothMapUtils.stripInvalidChars(mRecipientName));
+            xmlMsgElement.attribute(
+                    null, "recipient_name", BluetoothMapUtils.stripInvalidChars(mRecipientName));
         }
         if (mRecipientAddressing != null) {
             xmlMsgElement.attribute(null, "recipient_addressing", mRecipientAddressing);
         }
-            /* Avoid NPE for possible "null" value of mType */
+        /* Avoid NPE for possible "null" value of mType */
         if (mMsgTypeAppParamSet && mType != null) {
             xmlMsgElement.attribute(null, "type", mType.name());
         }
@@ -350,8 +352,5 @@ public class BluetoothMapMessageListingElement
             xmlMsgElement.attribute(null, "folder_type", mFolderType);
         }
         xmlMsgElement.endTag(null, "msg");
-
     }
 }
-
-

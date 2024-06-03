@@ -90,8 +90,9 @@ public class LeAudioRecycleViewAdapter
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        View v = LayoutInflater.from(parent.getContext()).inflate(R.layout.le_audio_device_fragment,
-                parent, false);
+        View v =
+                LayoutInflater.from(parent.getContext())
+                        .inflate(R.layout.le_audio_device_fragment, parent, false);
         return new ViewHolder(v);
     }
 
@@ -103,28 +104,51 @@ public class LeAudioRecycleViewAdapter
         LeAudioDeviceStateWrapper leAudioDeviceStateWrapper = devices.get(position);
 
         if (leAudioDeviceStateWrapper != null) {
-            holder.deviceName.setText(parent.getString(R.string.notes_icon) + " "
-                    + leAudioDeviceStateWrapper.device.getName() + " ["
-                    + leAudioDeviceStateWrapper.device + "]");
+            holder.deviceName.setText(
+                    parent.getString(R.string.notes_icon)
+                            + " "
+                            + leAudioDeviceStateWrapper.device.getName()
+                            + " ["
+                            + leAudioDeviceStateWrapper.device
+                            + "]");
 
             if (leAudioDeviceStateWrapper.device.getUuids() != null) {
-                holder.itemView.findViewById(R.id.le_audio_switch)
-                        .setEnabled(Arrays.asList(leAudioDeviceStateWrapper.device.getUuids())
-                                .contains(ParcelUuid
-                                        .fromString(parent.getString(R.string.svc_uuid_le_audio))));
+                holder.itemView
+                        .findViewById(R.id.le_audio_switch)
+                        .setEnabled(
+                                Arrays.asList(leAudioDeviceStateWrapper.device.getUuids())
+                                        .contains(
+                                                ParcelUuid.fromString(
+                                                        parent.getString(
+                                                                R.string.svc_uuid_le_audio))));
 
-                holder.itemView.findViewById(R.id.vc_switch)
-                        .setEnabled(Arrays.asList(leAudioDeviceStateWrapper.device.getUuids())
-                                .contains(ParcelUuid.fromString(
-                                        parent.getString(R.string.svc_uuid_volume_control))));
+                holder.itemView
+                        .findViewById(R.id.vc_switch)
+                        .setEnabled(
+                                Arrays.asList(leAudioDeviceStateWrapper.device.getUuids())
+                                        .contains(
+                                                ParcelUuid.fromString(
+                                                        parent.getString(
+                                                                R.string
+                                                                        .svc_uuid_volume_control))));
 
-                holder.itemView.findViewById(R.id.hap_switch).setEnabled(
-                        Arrays.asList(leAudioDeviceStateWrapper.device.getUuids()).contains(
-                                ParcelUuid.fromString(parent.getString(R.string.svc_uuid_has))));
+                holder.itemView
+                        .findViewById(R.id.hap_switch)
+                        .setEnabled(
+                                Arrays.asList(leAudioDeviceStateWrapper.device.getUuids())
+                                        .contains(
+                                                ParcelUuid.fromString(
+                                                        parent.getString(R.string.svc_uuid_has))));
 
-                holder.itemView.findViewById(R.id.bass_switch)
-                        .setEnabled(Arrays.asList(leAudioDeviceStateWrapper.device.getUuids())
-                                .contains(ParcelUuid.fromString(parent.getString(R.string.svc_uuid_broadcast_audio))));
+                holder.itemView
+                        .findViewById(R.id.bass_switch)
+                        .setEnabled(
+                                Arrays.asList(leAudioDeviceStateWrapper.device.getUuids())
+                                        .contains(
+                                                ParcelUuid.fromString(
+                                                        parent.getString(
+                                                                R.string
+                                                                        .svc_uuid_broadcast_audio))));
             }
         }
 
@@ -137,67 +161,82 @@ public class LeAudioRecycleViewAdapter
         setBassUiStateObservers(holder, leAudioDeviceStateWrapper);
     }
 
-    private void setLeAudioStateObservers(@NonNull ViewHolder holder,
-            LeAudioDeviceStateWrapper leAudioDeviceStateWrapper) {
+    private void setLeAudioStateObservers(
+            @NonNull ViewHolder holder, LeAudioDeviceStateWrapper leAudioDeviceStateWrapper) {
         LeAudioDeviceStateWrapper.LeAudioData le_audio_svc_data =
                 leAudioDeviceStateWrapper.leAudioData;
         if (le_audio_svc_data != null) {
             if (le_audio_svc_data.isConnectedMutable.hasObservers())
                 le_audio_svc_data.isConnectedMutable.removeObservers(this.parent);
-            le_audio_svc_data.isConnectedMutable.observe(this.parent, is_connected -> {
-                // FIXME: How to prevent the callback from firing when we set this by code
-                if (is_connected != holder.leAudioConnectionSwitch.isChecked()) {
-                    holder.leAudioConnectionSwitch.setActivated(false);
-                    holder.leAudioConnectionSwitch.setChecked(is_connected);
-                    holder.leAudioConnectionSwitch.setActivated(true);
-                }
+            le_audio_svc_data.isConnectedMutable.observe(
+                    this.parent,
+                    is_connected -> {
+                        // FIXME: How to prevent the callback from firing when we set this by code
+                        if (is_connected != holder.leAudioConnectionSwitch.isChecked()) {
+                            holder.leAudioConnectionSwitch.setActivated(false);
+                            holder.leAudioConnectionSwitch.setChecked(is_connected);
+                            holder.leAudioConnectionSwitch.setActivated(true);
+                        }
 
-                if (holder.itemView.findViewById(R.id.le_audio_layout)
-                        .getVisibility() != (is_connected ? View.VISIBLE : View.GONE))
-                    holder.itemView.findViewById(R.id.le_audio_layout)
-                            .setVisibility(is_connected ? View.VISIBLE : View.GONE);
-            });
+                        if (holder.itemView.findViewById(R.id.le_audio_layout).getVisibility()
+                                != (is_connected ? View.VISIBLE : View.GONE))
+                            holder.itemView
+                                    .findViewById(R.id.le_audio_layout)
+                                    .setVisibility(is_connected ? View.VISIBLE : View.GONE);
+                    });
 
-            holder.itemView.findViewById(R.id.le_audio_layout)
-                    .setVisibility(le_audio_svc_data.isConnectedMutable.getValue() != null
-                            && le_audio_svc_data.isConnectedMutable.getValue() ? View.VISIBLE
+            holder.itemView
+                    .findViewById(R.id.le_audio_layout)
+                    .setVisibility(
+                            le_audio_svc_data.isConnectedMutable.getValue() != null
+                                            && le_audio_svc_data.isConnectedMutable.getValue()
+                                    ? View.VISIBLE
                                     : View.GONE);
 
             if (le_audio_svc_data.nodeStatusMutable.hasObservers())
                 le_audio_svc_data.nodeStatusMutable.removeObservers(this.parent);
-            le_audio_svc_data.nodeStatusMutable.observe(this.parent, group_id_node_status_pair -> {
-                final Integer status = group_id_node_status_pair.second;
-                final Integer group_id = group_id_node_status_pair.first;
+            le_audio_svc_data.nodeStatusMutable.observe(
+                    this.parent,
+                    group_id_node_status_pair -> {
+                        final Integer status = group_id_node_status_pair.second;
+                        final Integer group_id = group_id_node_status_pair.first;
 
-                if (status == GROUP_NODE_REMOVED)
-                    holder.leAudioGroupIdText
-                            .setText(((Integer) BluetoothLeAudio.GROUP_ID_INVALID).toString());
-                else
-                    holder.leAudioGroupIdText.setText(group_id.toString());
-            });
+                        if (status == GROUP_NODE_REMOVED)
+                            holder.leAudioGroupIdText.setText(
+                                    ((Integer) BluetoothLeAudio.GROUP_ID_INVALID).toString());
+                        else holder.leAudioGroupIdText.setText(group_id.toString());
+                    });
 
             if (le_audio_svc_data.groupStatusMutable.hasObservers())
                 le_audio_svc_data.groupStatusMutable.removeObservers(this.parent);
-            le_audio_svc_data.groupStatusMutable.observe(this.parent, group_id_node_status_pair -> {
-                final Integer group_id = group_id_node_status_pair.first;
-                final Integer status = group_id_node_status_pair.second.first;
-                final Integer flags = group_id_node_status_pair.second.second;
+            le_audio_svc_data.groupStatusMutable.observe(
+                    this.parent,
+                    group_id_node_status_pair -> {
+                        final Integer group_id = group_id_node_status_pair.first;
+                        final Integer status = group_id_node_status_pair.second.first;
+                        final Integer flags = group_id_node_status_pair.second.second;
 
-                // If our group.. actually we shouldn't get this event if it's nor ours,
-                // right?
-                if (holder.leAudioGroupIdText.getText().equals(group_id.toString())) {
-                    holder.leAudioGroupStatusText.setText(status >= 0
-                            ? this.parent.getResources()
-                                    .getStringArray(R.array.group_statuses)[status]
-                            : this.parent.getResources().getString(R.string.unknown));
-                    holder.leAudioGroupFlagsText.setText(flags > 0 ? flags.toString()
-                            : this.parent.getResources().getString(R.string.none));
-                }
-            });
+                        // If our group.. actually we shouldn't get this event if it's nor ours,
+                        // right?
+                        if (holder.leAudioGroupIdText.getText().equals(group_id.toString())) {
+                            holder.leAudioGroupStatusText.setText(
+                                    status >= 0
+                                            ? this.parent.getResources()
+                                                    .getStringArray(R.array.group_statuses)[status]
+                                            : this.parent
+                                                    .getResources()
+                                                    .getString(R.string.unknown));
+                            holder.leAudioGroupFlagsText.setText(
+                                    flags > 0
+                                            ? flags.toString()
+                                            : this.parent.getResources().getString(R.string.none));
+                        }
+                    });
 
             if (le_audio_svc_data.groupLockStateMutable.hasObservers())
                 le_audio_svc_data.groupLockStateMutable.removeObservers(this.parent);
-            le_audio_svc_data.groupLockStateMutable.observe(this.parent,
+            le_audio_svc_data.groupLockStateMutable.observe(
+                    this.parent,
                     group_id_node_status_pair -> {
                         final Integer group_id = group_id_node_status_pair.first;
                         final Boolean locked = group_id_node_status_pair.second;
@@ -205,398 +244,522 @@ public class LeAudioRecycleViewAdapter
                         // If our group.. actually we shouldn't get this event if it's nor ours,
                         // right?
                         if (holder.leAudioGroupIdText.getText().equals(group_id.toString())) {
-                            holder.leAudioSetLockStateText.setText(this.parent.getResources()
-                                    .getString(locked ? R.string.group_locked
-                                            : R.string.group_unlocked));
+                            holder.leAudioSetLockStateText.setText(
+                                    this.parent
+                                            .getResources()
+                                            .getString(
+                                                    locked
+                                                            ? R.string.group_locked
+                                                            : R.string.group_unlocked));
                         }
                     });
 
             if (le_audio_svc_data.microphoneStateMutable.hasObservers())
                 le_audio_svc_data.microphoneStateMutable.removeObservers(this.parent);
-            le_audio_svc_data.microphoneStateMutable.observe(this.parent, microphone_state -> {
-                holder.leAudioGroupMicrophoneState.setText(this.parent.getResources()
-                        .getStringArray(R.array.mic_states)[microphone_state]);
-                holder.leAudioGroupMicrophoneSwitch.setActivated(false);
-            });
+            le_audio_svc_data.microphoneStateMutable.observe(
+                    this.parent,
+                    microphone_state -> {
+                        holder.leAudioGroupMicrophoneState.setText(
+                                this.parent.getResources()
+                                        .getStringArray(R.array.mic_states)[microphone_state]);
+                        holder.leAudioGroupMicrophoneSwitch.setActivated(false);
+                    });
         }
     }
 
-    private void setHasStateObservers(@NonNull ViewHolder holder,
-            LeAudioDeviceStateWrapper leAudioDeviceStateWrapper) {
+    private void setHasStateObservers(
+            @NonNull ViewHolder holder, LeAudioDeviceStateWrapper leAudioDeviceStateWrapper) {
         LeAudioDeviceStateWrapper.HapData hap_svc_data = leAudioDeviceStateWrapper.hapData;
         if (hap_svc_data != null) {
             if (hap_svc_data.hapStateMutable.hasObservers())
                 hap_svc_data.hapStateMutable.removeObservers(this.parent);
-            hap_svc_data.hapStateMutable.observe(this.parent, hap_state -> {
-                holder.leAudioHapState.setText(this.parent.getResources()
-                        .getStringArray(R.array.profile_states)[hap_state]);
+            hap_svc_data.hapStateMutable.observe(
+                    this.parent,
+                    hap_state -> {
+                        holder.leAudioHapState.setText(
+                                this.parent.getResources()
+                                        .getStringArray(R.array.profile_states)[hap_state]);
 
-                boolean is_connected = (hap_state == BluetoothHapClient.STATE_CONNECTED);
-                if (is_connected != holder.hapConnectionSwitch.isChecked()) {
-                    holder.hapConnectionSwitch.setActivated(false);
-                    holder.hapConnectionSwitch.setChecked(is_connected);
-                    holder.hapConnectionSwitch.setActivated(true);
-                }
+                        boolean is_connected = (hap_state == BluetoothHapClient.STATE_CONNECTED);
+                        if (is_connected != holder.hapConnectionSwitch.isChecked()) {
+                            holder.hapConnectionSwitch.setActivated(false);
+                            holder.hapConnectionSwitch.setChecked(is_connected);
+                            holder.hapConnectionSwitch.setActivated(true);
+                        }
 
-                if (holder.itemView.findViewById(R.id.hap_layout)
-                        .getVisibility() != (is_connected ? View.VISIBLE : View.GONE))
-                    holder.itemView.findViewById(R.id.hap_layout)
-                            .setVisibility(is_connected ? View.VISIBLE : View.GONE);
-            });
+                        if (holder.itemView.findViewById(R.id.hap_layout).getVisibility()
+                                != (is_connected ? View.VISIBLE : View.GONE))
+                            holder.itemView
+                                    .findViewById(R.id.hap_layout)
+                                    .setVisibility(is_connected ? View.VISIBLE : View.GONE);
+                    });
 
             if (hap_svc_data.hapFeaturesMutable.hasObservers())
                 hap_svc_data.hapFeaturesMutable.removeObservers(this.parent);
 
-            hap_svc_data.hapFeaturesMutable.observe(this.parent, features -> {
-                try {
-                    // Get hidden feature bits
-                    Field field =
-                            BluetoothHapClient.class.getDeclaredField("FEATURE_TYPE_MONAURAL");
-                    field.setAccessible(true);
-                    Integer FEATURE_TYPE_MONAURAL = (Integer) field.get(null);
+            hap_svc_data.hapFeaturesMutable.observe(
+                    this.parent,
+                    features -> {
+                        try {
+                            // Get hidden feature bits
+                            Field field =
+                                    BluetoothHapClient.class.getDeclaredField(
+                                            "FEATURE_TYPE_MONAURAL");
+                            field.setAccessible(true);
+                            Integer FEATURE_TYPE_MONAURAL = (Integer) field.get(null);
 
-                    field = BluetoothHapClient.class.getDeclaredField("FEATURE_TYPE_BANDED");
-                    field.setAccessible(true);
-                    Integer FEATURE_TYPE_BANDED = (Integer) field.get(null);
+                            field =
+                                    BluetoothHapClient.class.getDeclaredField(
+                                            "FEATURE_TYPE_BANDED");
+                            field.setAccessible(true);
+                            Integer FEATURE_TYPE_BANDED = (Integer) field.get(null);
 
-                    field = BluetoothHapClient.class
-                            .getDeclaredField("FEATURE_SYNCHRONIZATED_PRESETS");
-                    field.setAccessible(true);
-                    Integer FEATURE_SYNCHRONIZATED_PRESETS = (Integer) field.get(null);
+                            field =
+                                    BluetoothHapClient.class.getDeclaredField(
+                                            "FEATURE_SYNCHRONIZATED_PRESETS");
+                            field.setAccessible(true);
+                            Integer FEATURE_SYNCHRONIZATED_PRESETS = (Integer) field.get(null);
 
-                    field = BluetoothHapClient.class
-                            .getDeclaredField("FEATURE_INDEPENDENT_PRESETS");
-                    field.setAccessible(true);
-                    Integer FEATURE_INDEPENDENT_PRESETS = (Integer) field.get(null);
+                            field =
+                                    BluetoothHapClient.class.getDeclaredField(
+                                            "FEATURE_INDEPENDENT_PRESETS");
+                            field.setAccessible(true);
+                            Integer FEATURE_INDEPENDENT_PRESETS = (Integer) field.get(null);
 
-                    field = BluetoothHapClient.class.getDeclaredField("FEATURE_DYNAMIC_PRESETS");
-                    field.setAccessible(true);
-                    Integer FEATURE_DYNAMIC_PRESETS = (Integer) field.get(null);
+                            field =
+                                    BluetoothHapClient.class.getDeclaredField(
+                                            "FEATURE_DYNAMIC_PRESETS");
+                            field.setAccessible(true);
+                            Integer FEATURE_DYNAMIC_PRESETS = (Integer) field.get(null);
 
-                    field = BluetoothHapClient.class.getDeclaredField("FEATURE_WRITABLE_PRESETS");
-                    field.setAccessible(true);
-                    Integer FEATURE_WRITABLE_PRESETS = (Integer) field.get(null);
+                            field =
+                                    BluetoothHapClient.class.getDeclaredField(
+                                            "FEATURE_WRITABLE_PRESETS");
+                            field.setAccessible(true);
+                            Integer FEATURE_WRITABLE_PRESETS = (Integer) field.get(null);
 
-                    int hearing_aid_type_idx = (features & FEATURE_TYPE_MONAURAL) != 0 ? 0
-                            : ((features & FEATURE_TYPE_BANDED) != 0 ? 1 : 2);
-                    String hearing_aid_type = this.parent.getResources()
-                            .getStringArray(R.array.hearing_aid_types)[hearing_aid_type_idx];
-                    String preset_synchronization_support = this.parent.getResources()
-                            .getStringArray(R.array.preset_synchronization_support)[(features
-                                    & FEATURE_SYNCHRONIZATED_PRESETS) != 0 ? 1 : 0];
-                    String independent_presets = this.parent.getResources()
-                            .getStringArray(R.array.independent_presets)[(features
-                                    & FEATURE_INDEPENDENT_PRESETS) != 0 ? 1 : 0];
-                    String dynamic_presets = this.parent.getResources().getStringArray(
-                            R.array.dynamic_presets)[(features & FEATURE_DYNAMIC_PRESETS) != 0 ? 1
-                                    : 0];
-                    String writable_presets_support = this.parent.getResources()
-                            .getStringArray(R.array.writable_presets_support)[(features
-                                    & FEATURE_WRITABLE_PRESETS) != 0 ? 1 : 0];
-                    holder.leAudioHapFeatures.setText(hearing_aid_type + " / "
-                            + preset_synchronization_support + " / " + independent_presets + " / "
-                            + dynamic_presets + " / " + writable_presets_support);
+                            int hearing_aid_type_idx =
+                                    (features & FEATURE_TYPE_MONAURAL) != 0
+                                            ? 0
+                                            : ((features & FEATURE_TYPE_BANDED) != 0 ? 1 : 2);
+                            String hearing_aid_type =
+                                    this.parent.getResources()
+                                            .getStringArray(R.array.hearing_aid_types)[
+                                            hearing_aid_type_idx];
+                            String preset_synchronization_support =
+                                    this.parent.getResources()
+                                            .getStringArray(R.array.preset_synchronization_support)[
+                                            (features & FEATURE_SYNCHRONIZATED_PRESETS) != 0
+                                                    ? 1
+                                                    : 0];
+                            String independent_presets =
+                                    this.parent.getResources()
+                                            .getStringArray(R.array.independent_presets)[
+                                            (features & FEATURE_INDEPENDENT_PRESETS) != 0 ? 1 : 0];
+                            String dynamic_presets =
+                                    this.parent.getResources()
+                                            .getStringArray(R.array.dynamic_presets)[
+                                            (features & FEATURE_DYNAMIC_PRESETS) != 0 ? 1 : 0];
+                            String writable_presets_support =
+                                    this.parent.getResources()
+                                            .getStringArray(R.array.writable_presets_support)[
+                                            (features & FEATURE_WRITABLE_PRESETS) != 0 ? 1 : 0];
+                            holder.leAudioHapFeatures.setText(
+                                    hearing_aid_type
+                                            + " / "
+                                            + preset_synchronization_support
+                                            + " / "
+                                            + independent_presets
+                                            + " / "
+                                            + dynamic_presets
+                                            + " / "
+                                            + writable_presets_support);
 
-                } catch (IllegalAccessException | NoSuchFieldException e) {
-                    // Do nothing
-                    holder.leAudioHapFeatures.setText("Hidden API for feature fields unavailable.");
-                }
-            });
+                        } catch (IllegalAccessException | NoSuchFieldException e) {
+                            // Do nothing
+                            holder.leAudioHapFeatures.setText(
+                                    "Hidden API for feature fields unavailable.");
+                        }
+                    });
 
             if (hap_svc_data.hapPresetsMutable.hasActiveObservers())
                 hap_svc_data.hapPresetsMutable.removeObservers(this.parent);
-            hap_svc_data.hapPresetsMutable.observe(this.parent, hapPresetsList -> {
-                List<String> all_ids = hapPresetsList.stream()
-                        .map(info -> "" + info.getIndex() + " " + info.getName()
-                                + (info.isWritable() ? " [wr" : " [")
-                                + (info.isAvailable() ? "a]" : "]"))
-                        .collect(Collectors.toList());
+            hap_svc_data.hapPresetsMutable.observe(
+                    this.parent,
+                    hapPresetsList -> {
+                        List<String> all_ids =
+                                hapPresetsList.stream()
+                                        .map(
+                                                info ->
+                                                        ""
+                                                                + info.getIndex()
+                                                                + " "
+                                                                + info.getName()
+                                                                + (info.isWritable()
+                                                                        ? " [wr"
+                                                                        : " [")
+                                                                + (info.isAvailable() ? "a]" : "]"))
+                                        .collect(Collectors.toList());
 
-                ArrayAdapter<Integer> adapter = new ArrayAdapter(this.parent,
-                        android.R.layout.simple_spinner_item, all_ids);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                holder.leAudioHapPresetsSpinner.setAdapter(adapter);
+                        ArrayAdapter<Integer> adapter =
+                                new ArrayAdapter(
+                                        this.parent, android.R.layout.simple_spinner_item, all_ids);
+                        adapter.setDropDownViewResource(
+                                android.R.layout.simple_spinner_dropdown_item);
+                        holder.leAudioHapPresetsSpinner.setAdapter(adapter);
 
-                if (hap_svc_data.viewsData != null) {
-                    Integer select_pos =
-                            ((ViewHolderHapPersistentData) hap_svc_data.viewsData).selectedPresetPositionMutable
-                                    .getValue();
-                    if (select_pos != null)
-                        holder.leAudioHapPresetsSpinner.setSelection(select_pos);
-                }
-            });
+                        if (hap_svc_data.viewsData != null) {
+                            Integer select_pos =
+                                    ((ViewHolderHapPersistentData) hap_svc_data.viewsData)
+                                            .selectedPresetPositionMutable.getValue();
+                            if (select_pos != null)
+                                holder.leAudioHapPresetsSpinner.setSelection(select_pos);
+                        }
+                    });
 
             if (hap_svc_data.hapActivePresetIndexMutable.hasObservers())
                 hap_svc_data.hapActivePresetIndexMutable.removeObservers(this.parent);
-            hap_svc_data.hapActivePresetIndexMutable.observe(this.parent, active_preset_index -> {
-                holder.leAudioHapActivePresetIndex.setText(String.valueOf(active_preset_index));
-            });
+            hap_svc_data.hapActivePresetIndexMutable.observe(
+                    this.parent,
+                    active_preset_index -> {
+                        holder.leAudioHapActivePresetIndex.setText(
+                                String.valueOf(active_preset_index));
+                    });
 
             if (hap_svc_data.hapActivePresetIndexMutable.hasObservers())
                 hap_svc_data.hapActivePresetIndexMutable.removeObservers(this.parent);
-            hap_svc_data.hapActivePresetIndexMutable.observe(this.parent, active_preset_index -> {
-                holder.leAudioHapActivePresetIndex.setText(String.valueOf(active_preset_index));
-            });
+            hap_svc_data.hapActivePresetIndexMutable.observe(
+                    this.parent,
+                    active_preset_index -> {
+                        holder.leAudioHapActivePresetIndex.setText(
+                                String.valueOf(active_preset_index));
+                    });
         } else {
             holder.itemView.findViewById(R.id.hap_layout).setVisibility(View.GONE);
         }
     }
 
-    private void setVolumeControlStateObservers(@NonNull ViewHolder holder,
-            LeAudioDeviceStateWrapper leAudioDeviceStateWrapper) {
+    private void setVolumeControlStateObservers(
+            @NonNull ViewHolder holder, LeAudioDeviceStateWrapper leAudioDeviceStateWrapper) {
         LeAudioDeviceStateWrapper.VolumeControlData vc_svc_data =
                 leAudioDeviceStateWrapper.volumeControlData;
         if (vc_svc_data != null) {
             if (vc_svc_data.isConnectedMutable.hasObservers())
                 vc_svc_data.isConnectedMutable.removeObservers(this.parent);
-            vc_svc_data.isConnectedMutable.observe(this.parent, is_connected -> {
-                // FIXME: How to prevent the callback from firing when we set this by code
-                if (is_connected != holder.vcConnectionSwitch.isChecked()) {
-                    holder.vcConnectionSwitch.setActivated(false);
-                    holder.vcConnectionSwitch.setChecked(is_connected);
-                    holder.vcConnectionSwitch.setActivated(true);
-                }
+            vc_svc_data.isConnectedMutable.observe(
+                    this.parent,
+                    is_connected -> {
+                        // FIXME: How to prevent the callback from firing when we set this by code
+                        if (is_connected != holder.vcConnectionSwitch.isChecked()) {
+                            holder.vcConnectionSwitch.setActivated(false);
+                            holder.vcConnectionSwitch.setChecked(is_connected);
+                            holder.vcConnectionSwitch.setActivated(true);
+                        }
 
-                if (holder.itemView.findViewById(R.id.vc_layout)
-                        .getVisibility() != (is_connected ? View.VISIBLE : View.GONE))
-                    holder.itemView.findViewById(R.id.vc_layout)
-                            .setVisibility(is_connected ? View.VISIBLE : View.GONE);
-            });
+                        if (holder.itemView.findViewById(R.id.vc_layout).getVisibility()
+                                != (is_connected ? View.VISIBLE : View.GONE))
+                            holder.itemView
+                                    .findViewById(R.id.vc_layout)
+                                    .setVisibility(is_connected ? View.VISIBLE : View.GONE);
+                    });
 
-            holder.itemView.findViewById(R.id.vc_layout)
-                    .setVisibility(vc_svc_data.isConnectedMutable.getValue() != null
-                            && vc_svc_data.isConnectedMutable.getValue() ? View.VISIBLE
+            holder.itemView
+                    .findViewById(R.id.vc_layout)
+                    .setVisibility(
+                            vc_svc_data.isConnectedMutable.getValue() != null
+                                            && vc_svc_data.isConnectedMutable.getValue()
+                                    ? View.VISIBLE
                                     : View.GONE);
 
             if (vc_svc_data.volumeStateMutable.hasObservers())
                 vc_svc_data.volumeStateMutable.removeObservers(this.parent);
-            vc_svc_data.volumeStateMutable.observe(this.parent, state -> {
-                holder.volumeSeekBar.setProgress(state);
-            });
+            vc_svc_data.volumeStateMutable.observe(
+                    this.parent,
+                    state -> {
+                        holder.volumeSeekBar.setProgress(state);
+                    });
 
             if (vc_svc_data.mutedStateMutable.hasObservers())
                 vc_svc_data.mutedStateMutable.removeObservers(this.parent);
-            vc_svc_data.mutedStateMutable.observe(this.parent, state -> {
-                holder.muteSwitch.setActivated(false);
-                holder.muteSwitch.setChecked(state);
-                holder.muteSwitch.setActivated(true);
-            });
+            vc_svc_data.mutedStateMutable.observe(
+                    this.parent,
+                    state -> {
+                        holder.muteSwitch.setActivated(false);
+                        holder.muteSwitch.setChecked(state);
+                        holder.muteSwitch.setActivated(true);
+                    });
 
             if (vc_svc_data.numInputsMutable.hasObservers())
                 vc_svc_data.numInputsMutable.removeObservers(this.parent);
-            vc_svc_data.numInputsMutable.observe(this.parent, num_inputs -> {
-                List<Integer> range = new ArrayList<>();
-                if (num_inputs != 0)
-                    range = IntStream.rangeClosed(1, num_inputs).boxed()
-                            .collect(Collectors.toList());
-                ArrayAdapter<Integer> adapter =
-                        new ArrayAdapter(this.parent, android.R.layout.simple_spinner_item, range);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                holder.inputIdxSpinner.setAdapter(adapter);
-            });
+            vc_svc_data.numInputsMutable.observe(
+                    this.parent,
+                    num_inputs -> {
+                        List<Integer> range = new ArrayList<>();
+                        if (num_inputs != 0)
+                            range =
+                                    IntStream.rangeClosed(1, num_inputs)
+                                            .boxed()
+                                            .collect(Collectors.toList());
+                        ArrayAdapter<Integer> adapter =
+                                new ArrayAdapter(
+                                        this.parent, android.R.layout.simple_spinner_item, range);
+                        adapter.setDropDownViewResource(
+                                android.R.layout.simple_spinner_dropdown_item);
+                        holder.inputIdxSpinner.setAdapter(adapter);
+                    });
 
             if (vc_svc_data.viewsData != null) {
                 Integer select_pos =
                         ((ViewHolderVcPersistentData) vc_svc_data.viewsData).selectedInputPosition;
-                if (select_pos != null)
-                    holder.inputIdxSpinner.setSelection(select_pos);
+                if (select_pos != null) holder.inputIdxSpinner.setSelection(select_pos);
             }
 
             if (vc_svc_data.inputDescriptionsMutable.hasObservers())
                 vc_svc_data.inputDescriptionsMutable.removeObservers(this.parent);
-            vc_svc_data.inputDescriptionsMutable.observe(this.parent, integerStringMap -> {
-                if (holder.inputIdxSpinner.getSelectedItem() != null) {
-                    Integer input_id =
-                            Integer.valueOf(holder.inputIdxSpinner.getSelectedItem().toString());
-                    holder.inputDescriptionText
-                            .setText(integerStringMap.getOrDefault(input_id, ""));
-                }
-            });
+            vc_svc_data.inputDescriptionsMutable.observe(
+                    this.parent,
+                    integerStringMap -> {
+                        if (holder.inputIdxSpinner.getSelectedItem() != null) {
+                            Integer input_id =
+                                    Integer.valueOf(
+                                            holder.inputIdxSpinner.getSelectedItem().toString());
+                            holder.inputDescriptionText.setText(
+                                    integerStringMap.getOrDefault(input_id, ""));
+                        }
+                    });
 
             if (vc_svc_data.inputStateGainMutable.hasObservers())
                 vc_svc_data.inputStateGainMutable.removeObservers(this.parent);
-            vc_svc_data.inputStateGainMutable.observe(this.parent, integerIntegerMap -> {
-                if (holder.inputIdxSpinner.getSelectedItem() != null) {
-                    Integer input_id =
-                            Integer.valueOf(holder.inputIdxSpinner.getSelectedItem().toString());
-                    holder.inputGainSeekBar
-                            .setProgress(integerIntegerMap.getOrDefault(input_id, 0));
-                }
-            });
+            vc_svc_data.inputStateGainMutable.observe(
+                    this.parent,
+                    integerIntegerMap -> {
+                        if (holder.inputIdxSpinner.getSelectedItem() != null) {
+                            Integer input_id =
+                                    Integer.valueOf(
+                                            holder.inputIdxSpinner.getSelectedItem().toString());
+                            holder.inputGainSeekBar.setProgress(
+                                    integerIntegerMap.getOrDefault(input_id, 0));
+                        }
+                    });
 
             if (vc_svc_data.inputStateGainModeMutable.hasObservers())
                 vc_svc_data.inputStateGainModeMutable.removeObservers(this.parent);
-            vc_svc_data.inputStateGainModeMutable.observe(this.parent, integerIntegerMap -> {
-                if (holder.inputIdxSpinner.getSelectedItem() != null) {
-                    Integer input_id =
-                            Integer.valueOf(holder.inputIdxSpinner.getSelectedItem().toString());
-                    holder.inputGainModeText.setText(this.parent.getResources().getStringArray(
-                            R.array.gain_modes)[integerIntegerMap.getOrDefault(input_id, 1)]);
-                }
-            });
+            vc_svc_data.inputStateGainModeMutable.observe(
+                    this.parent,
+                    integerIntegerMap -> {
+                        if (holder.inputIdxSpinner.getSelectedItem() != null) {
+                            Integer input_id =
+                                    Integer.valueOf(
+                                            holder.inputIdxSpinner.getSelectedItem().toString());
+                            holder.inputGainModeText.setText(
+                                    this.parent.getResources()
+                                            .getStringArray(R.array.gain_modes)[
+                                            integerIntegerMap.getOrDefault(input_id, 1)]);
+                        }
+                    });
 
             if (vc_svc_data.inputStateGainUnitMutable.hasObservers())
                 vc_svc_data.inputStateGainUnitMutable.removeObservers(this.parent);
-            vc_svc_data.inputStateGainUnitMutable.observe(this.parent, integerIntegerMap -> {
-                if (holder.inputIdxSpinner.getSelectedItem() != null) {
-                    // TODO: Use string map with units instead of plain numbers
-                    Integer input_id =
-                            Integer.valueOf(holder.inputIdxSpinner.getSelectedItem().toString());
-                    holder.inputGainPropsUnitText
-                            .setText(integerIntegerMap.getOrDefault(input_id, 0).toString());
-                }
-            });
+            vc_svc_data.inputStateGainUnitMutable.observe(
+                    this.parent,
+                    integerIntegerMap -> {
+                        if (holder.inputIdxSpinner.getSelectedItem() != null) {
+                            // TODO: Use string map with units instead of plain numbers
+                            Integer input_id =
+                                    Integer.valueOf(
+                                            holder.inputIdxSpinner.getSelectedItem().toString());
+                            holder.inputGainPropsUnitText.setText(
+                                    integerIntegerMap.getOrDefault(input_id, 0).toString());
+                        }
+                    });
 
             if (vc_svc_data.inputStateGainMinMutable.hasObservers())
                 vc_svc_data.inputStateGainMinMutable.removeObservers(this.parent);
-            vc_svc_data.inputStateGainMinMutable.observe(this.parent, integerIntegerMap -> {
-                if (holder.inputIdxSpinner.getSelectedItem() != null) {
-                    Integer input_id =
-                            Integer.valueOf(holder.inputIdxSpinner.getSelectedItem().toString());
-                    holder.inputGainPropsMinText
-                            .setText(integerIntegerMap.getOrDefault(input_id, 0).toString());
-                    holder.inputGainSeekBar.setMin(integerIntegerMap.getOrDefault(input_id, -255));
-                }
-            });
+            vc_svc_data.inputStateGainMinMutable.observe(
+                    this.parent,
+                    integerIntegerMap -> {
+                        if (holder.inputIdxSpinner.getSelectedItem() != null) {
+                            Integer input_id =
+                                    Integer.valueOf(
+                                            holder.inputIdxSpinner.getSelectedItem().toString());
+                            holder.inputGainPropsMinText.setText(
+                                    integerIntegerMap.getOrDefault(input_id, 0).toString());
+                            holder.inputGainSeekBar.setMin(
+                                    integerIntegerMap.getOrDefault(input_id, -255));
+                        }
+                    });
 
             if (vc_svc_data.inputStateGainMaxMutable.hasObservers())
                 vc_svc_data.inputStateGainMaxMutable.removeObservers(this.parent);
-            vc_svc_data.inputStateGainMaxMutable.observe(this.parent, integerIntegerMap -> {
-                if (holder.inputIdxSpinner.getSelectedItem() != null) {
-                    Integer input_id =
-                            Integer.valueOf(holder.inputIdxSpinner.getSelectedItem().toString());
-                    holder.inputGainPropsMaxText
-                            .setText(integerIntegerMap.getOrDefault(input_id, 0).toString());
-                    holder.inputGainSeekBar.setMax(integerIntegerMap.getOrDefault(input_id, 255));
-                }
-            });
+            vc_svc_data.inputStateGainMaxMutable.observe(
+                    this.parent,
+                    integerIntegerMap -> {
+                        if (holder.inputIdxSpinner.getSelectedItem() != null) {
+                            Integer input_id =
+                                    Integer.valueOf(
+                                            holder.inputIdxSpinner.getSelectedItem().toString());
+                            holder.inputGainPropsMaxText.setText(
+                                    integerIntegerMap.getOrDefault(input_id, 0).toString());
+                            holder.inputGainSeekBar.setMax(
+                                    integerIntegerMap.getOrDefault(input_id, 255));
+                        }
+                    });
 
             if (vc_svc_data.inputStateMuteMutable.hasObservers())
                 vc_svc_data.inputStateMuteMutable.removeObservers(this.parent);
-            vc_svc_data.inputStateMuteMutable.observe(this.parent, integerIntegerMap -> {
-                if (holder.inputIdxSpinner.getSelectedItem() != null) {
-                    Integer input_id =
-                            Integer.valueOf(holder.inputIdxSpinner.getSelectedItem().toString());
-                    holder.inputMuteSwitch.setActivated(false);
-                    holder.inputMuteSwitch
-                            .setChecked(integerIntegerMap.getOrDefault(input_id, false));
-                    holder.inputMuteSwitch.setActivated(true);
-                }
-            });
+            vc_svc_data.inputStateMuteMutable.observe(
+                    this.parent,
+                    integerIntegerMap -> {
+                        if (holder.inputIdxSpinner.getSelectedItem() != null) {
+                            Integer input_id =
+                                    Integer.valueOf(
+                                            holder.inputIdxSpinner.getSelectedItem().toString());
+                            holder.inputMuteSwitch.setActivated(false);
+                            holder.inputMuteSwitch.setChecked(
+                                    integerIntegerMap.getOrDefault(input_id, false));
+                            holder.inputMuteSwitch.setActivated(true);
+                        }
+                    });
 
             if (vc_svc_data.inputStatusMutable.hasObservers())
                 vc_svc_data.inputStatusMutable.removeObservers(this.parent);
-            vc_svc_data.inputStatusMutable.observe(this.parent, integerIntegerMap -> {
-                if (holder.inputIdxSpinner.getSelectedItem() != null) {
-                    Integer input_id =
-                            Integer.valueOf(holder.inputIdxSpinner.getSelectedItem().toString());
-                    // TODO: Use string map with units instead of plain numbers
-                    holder.inputStatusText
-                            .setText(integerIntegerMap.getOrDefault(input_id, -1).toString());
-                }
-            });
+            vc_svc_data.inputStatusMutable.observe(
+                    this.parent,
+                    integerIntegerMap -> {
+                        if (holder.inputIdxSpinner.getSelectedItem() != null) {
+                            Integer input_id =
+                                    Integer.valueOf(
+                                            holder.inputIdxSpinner.getSelectedItem().toString());
+                            // TODO: Use string map with units instead of plain numbers
+                            holder.inputStatusText.setText(
+                                    integerIntegerMap.getOrDefault(input_id, -1).toString());
+                        }
+                    });
 
             if (vc_svc_data.inputTypeMutable.hasObservers())
                 vc_svc_data.inputTypeMutable.removeObservers(this.parent);
-            vc_svc_data.inputTypeMutable.observe(this.parent, integerIntegerMap -> {
-                if (holder.inputIdxSpinner.getSelectedItem() != null) {
-                    Integer input_id =
-                            Integer.valueOf(holder.inputIdxSpinner.getSelectedItem().toString());
-                    // TODO: Use string map with units instead of plain numbers
-                    holder.inputTypeText
-                            .setText(integerIntegerMap.getOrDefault(input_id, -1).toString());
-                }
-            });
+            vc_svc_data.inputTypeMutable.observe(
+                    this.parent,
+                    integerIntegerMap -> {
+                        if (holder.inputIdxSpinner.getSelectedItem() != null) {
+                            Integer input_id =
+                                    Integer.valueOf(
+                                            holder.inputIdxSpinner.getSelectedItem().toString());
+                            // TODO: Use string map with units instead of plain numbers
+                            holder.inputTypeText.setText(
+                                    integerIntegerMap.getOrDefault(input_id, -1).toString());
+                        }
+                    });
 
-            vc_svc_data.numOffsetsMutable.observe(this.parent, num_offsets -> {
-                List<Integer> range = new ArrayList<>();
-                if (num_offsets != 0)
-                    range = IntStream.rangeClosed(1, num_offsets).boxed()
-                            .collect(Collectors.toList());
-                ArrayAdapter<Integer> adapter =
-                        new ArrayAdapter(this.parent, android.R.layout.simple_spinner_item, range);
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                holder.outputIdxSpinner.setAdapter(adapter);
-            });
+            vc_svc_data.numOffsetsMutable.observe(
+                    this.parent,
+                    num_offsets -> {
+                        List<Integer> range = new ArrayList<>();
+                        if (num_offsets != 0)
+                            range =
+                                    IntStream.rangeClosed(1, num_offsets)
+                                            .boxed()
+                                            .collect(Collectors.toList());
+                        ArrayAdapter<Integer> adapter =
+                                new ArrayAdapter(
+                                        this.parent, android.R.layout.simple_spinner_item, range);
+                        adapter.setDropDownViewResource(
+                                android.R.layout.simple_spinner_dropdown_item);
+                        holder.outputIdxSpinner.setAdapter(adapter);
+                    });
 
             if (vc_svc_data.viewsData != null) {
                 Integer select_pos =
                         ((ViewHolderVcPersistentData) vc_svc_data.viewsData).selectedOutputPosition;
-                if (select_pos != null)
-                    holder.outputIdxSpinner.setSelection(select_pos);
+                if (select_pos != null) holder.outputIdxSpinner.setSelection(select_pos);
             }
 
             if (vc_svc_data.outputVolumeOffsetMutable.hasObservers())
                 vc_svc_data.outputVolumeOffsetMutable.removeObservers(this.parent);
-            vc_svc_data.outputVolumeOffsetMutable.observe(this.parent, integerIntegerMap -> {
-                if (holder.outputIdxSpinner.getSelectedItem() != null) {
-                    Integer output_id =
-                            Integer.valueOf(holder.outputIdxSpinner.getSelectedItem().toString());
-                    holder.outputGainOffsetSeekBar
-                            .setProgress(integerIntegerMap.getOrDefault(output_id, 0));
-                }
-            });
+            vc_svc_data.outputVolumeOffsetMutable.observe(
+                    this.parent,
+                    integerIntegerMap -> {
+                        if (holder.outputIdxSpinner.getSelectedItem() != null) {
+                            Integer output_id =
+                                    Integer.valueOf(
+                                            holder.outputIdxSpinner.getSelectedItem().toString());
+                            holder.outputGainOffsetSeekBar.setProgress(
+                                    integerIntegerMap.getOrDefault(output_id, 0));
+                        }
+                    });
 
             if (vc_svc_data.outputLocationMutable.hasObservers())
                 vc_svc_data.outputLocationMutable.removeObservers(this.parent);
-            vc_svc_data.outputLocationMutable.observe(this.parent, integerIntegerMap -> {
-                if (holder.outputIdxSpinner.getSelectedItem() != null) {
-                    Integer output_id =
-                            Integer.valueOf(holder.outputIdxSpinner.getSelectedItem().toString());
-                    holder.outputLocationText.setText(this.parent.getResources().getStringArray(
-                            R.array.audio_locations)[integerIntegerMap.getOrDefault(output_id, 0)]);
-                }
-            });
+            vc_svc_data.outputLocationMutable.observe(
+                    this.parent,
+                    integerIntegerMap -> {
+                        if (holder.outputIdxSpinner.getSelectedItem() != null) {
+                            Integer output_id =
+                                    Integer.valueOf(
+                                            holder.outputIdxSpinner.getSelectedItem().toString());
+                            holder.outputLocationText.setText(
+                                    this.parent.getResources()
+                                            .getStringArray(R.array.audio_locations)[
+                                            integerIntegerMap.getOrDefault(output_id, 0)]);
+                        }
+                    });
 
             if (vc_svc_data.outputDescriptionMutable.hasObservers())
                 vc_svc_data.outputDescriptionMutable.removeObservers(this.parent);
-            vc_svc_data.outputDescriptionMutable.observe(this.parent, integerStringMap -> {
-                if (holder.outputIdxSpinner.getSelectedItem() != null) {
-                    Integer output_id =
-                            Integer.valueOf(holder.outputIdxSpinner.getSelectedItem().toString());
-                    holder.outputDescriptionText
-                            .setText(integerStringMap.getOrDefault(output_id, "no description"));
-                }
-            });
+            vc_svc_data.outputDescriptionMutable.observe(
+                    this.parent,
+                    integerStringMap -> {
+                        if (holder.outputIdxSpinner.getSelectedItem() != null) {
+                            Integer output_id =
+                                    Integer.valueOf(
+                                            holder.outputIdxSpinner.getSelectedItem().toString());
+                            holder.outputDescriptionText.setText(
+                                    integerStringMap.getOrDefault(output_id, "no description"));
+                        }
+                    });
         } else {
             holder.itemView.findViewById(R.id.vc_layout).setVisibility(View.GONE);
         }
     }
 
-    private void setVolumeControlUiStateObservers(@NonNull ViewHolder holder,
-            LeAudioDeviceStateWrapper leAudioDeviceStateWrapper) {
-        if (leAudioDeviceStateWrapper.volumeControlData == null)
-            return;
+    private void setVolumeControlUiStateObservers(
+            @NonNull ViewHolder holder, LeAudioDeviceStateWrapper leAudioDeviceStateWrapper) {
+        if (leAudioDeviceStateWrapper.volumeControlData == null) return;
 
         ViewHolderVcPersistentData vData =
                 (ViewHolderVcPersistentData) leAudioDeviceStateWrapper.volumeControlData.viewsData;
-        if (vData == null)
-            return;
+        if (vData == null) return;
 
         if (vData.isInputsCollapsedMutable.hasObservers())
             vData.isInputsCollapsedMutable.removeObservers(this.parent);
-        vData.isInputsCollapsedMutable.observe(this.parent, aBoolean -> {
-            Float rbegin = aBoolean ? 0.0f : 180.0f;
-            Float rend = aBoolean ? 180.0f : 0.0f;
+        vData.isInputsCollapsedMutable.observe(
+                this.parent,
+                aBoolean -> {
+                    Float rbegin = aBoolean ? 0.0f : 180.0f;
+                    Float rend = aBoolean ? 180.0f : 0.0f;
 
-            ObjectAnimator.ofFloat(holder.inputFoldableIcon, "rotation", rbegin, rend)
-                    .setDuration(300).start();
-            holder.inputFoldable.setVisibility(aBoolean ? View.GONE : View.VISIBLE);
-        });
+                    ObjectAnimator.ofFloat(holder.inputFoldableIcon, "rotation", rbegin, rend)
+                            .setDuration(300)
+                            .start();
+                    holder.inputFoldable.setVisibility(aBoolean ? View.GONE : View.VISIBLE);
+                });
         vData.isInputsCollapsedMutable.setValue(holder.inputFoldable.getVisibility() == View.GONE);
 
         if (vData.isOutputsCollapsedMutable.hasObservers())
             vData.isOutputsCollapsedMutable.removeObservers(this.parent);
-        vData.isOutputsCollapsedMutable.observe(this.parent, aBoolean -> {
-            Float rbegin = aBoolean ? 0.0f : 180.0f;
-            Float rend = aBoolean ? 180.0f : 0.0f;
+        vData.isOutputsCollapsedMutable.observe(
+                this.parent,
+                aBoolean -> {
+                    Float rbegin = aBoolean ? 0.0f : 180.0f;
+                    Float rend = aBoolean ? 180.0f : 0.0f;
 
-            ObjectAnimator.ofFloat(holder.outputFoldableIcon, "rotation", rbegin, rend)
-                    .setDuration(300).start();
-            holder.outputFoldable.setVisibility(aBoolean ? View.GONE : View.VISIBLE);
-        });
-        vData.isOutputsCollapsedMutable
-                .setValue(holder.outputFoldable.getVisibility() == View.GONE);
+                    ObjectAnimator.ofFloat(holder.outputFoldableIcon, "rotation", rbegin, rend)
+                            .setDuration(300)
+                            .start();
+                    holder.outputFoldable.setVisibility(aBoolean ? View.GONE : View.VISIBLE);
+                });
+        vData.isOutputsCollapsedMutable.setValue(
+                holder.outputFoldable.getVisibility() == View.GONE);
     }
 
     private void setBassStateObservers(
@@ -605,19 +768,22 @@ public class LeAudioRecycleViewAdapter
         if (bass_svc_data != null) {
             if (bass_svc_data.isConnectedMutable.hasObservers())
                 bass_svc_data.isConnectedMutable.removeObservers(this.parent);
-            bass_svc_data.isConnectedMutable.observe(this.parent, is_connected -> {
-                // FIXME: How to prevent the callback from firing when we set this by code
-                if (is_connected != holder.bassConnectionSwitch.isChecked()) {
-                    holder.bassConnectionSwitch.setActivated(false);
-                    holder.bassConnectionSwitch.setChecked(is_connected);
-                    holder.bassConnectionSwitch.setActivated(true);
-                }
+            bass_svc_data.isConnectedMutable.observe(
+                    this.parent,
+                    is_connected -> {
+                        // FIXME: How to prevent the callback from firing when we set this by code
+                        if (is_connected != holder.bassConnectionSwitch.isChecked()) {
+                            holder.bassConnectionSwitch.setActivated(false);
+                            holder.bassConnectionSwitch.setChecked(is_connected);
+                            holder.bassConnectionSwitch.setActivated(true);
+                        }
 
-                if (holder.itemView.findViewById(R.id.bass_layout)
-                        .getVisibility() != (is_connected ? View.VISIBLE : View.GONE))
-                    holder.itemView.findViewById(R.id.bass_layout)
-                            .setVisibility(is_connected ? View.VISIBLE : View.GONE);
-            });
+                        if (holder.itemView.findViewById(R.id.bass_layout).getVisibility()
+                                != (is_connected ? View.VISIBLE : View.GONE))
+                            holder.itemView
+                                    .findViewById(R.id.bass_layout)
+                                    .setVisibility(is_connected ? View.VISIBLE : View.GONE);
+                    });
 
             holder.itemView
                     .findViewById(R.id.bass_layout)
@@ -629,21 +795,25 @@ public class LeAudioRecycleViewAdapter
 
             if (bass_svc_data.receiverStatesMutable.hasActiveObservers())
                 bass_svc_data.receiverStatesMutable.removeObservers(this.parent);
-            bass_svc_data.receiverStatesMutable.observe(this.parent,
+            bass_svc_data.receiverStatesMutable.observe(
+                    this.parent,
                     integerReceiverStateHashMap -> {
-                        List<Integer> all_ids = integerReceiverStateHashMap.entrySet().stream()
-                                .map(Map.Entry::getKey).collect(Collectors.toList());
+                        List<Integer> all_ids =
+                                integerReceiverStateHashMap.entrySet().stream()
+                                        .map(Map.Entry::getKey)
+                                        .collect(Collectors.toList());
 
-                        ArrayAdapter<Integer> adapter = new ArrayAdapter(this.parent,
-                                android.R.layout.simple_spinner_item, all_ids);
+                        ArrayAdapter<Integer> adapter =
+                                new ArrayAdapter(
+                                        this.parent, android.R.layout.simple_spinner_item, all_ids);
                         adapter.setDropDownViewResource(
                                 android.R.layout.simple_spinner_dropdown_item);
                         holder.bassReceiverIdSpinner.setAdapter(adapter);
 
                         if (bass_svc_data.viewsData != null) {
                             Integer select_pos =
-                                    ((ViewHolderBassPersistentData) bass_svc_data.viewsData).selectedReceiverPositionMutable
-                                            .getValue();
+                                    ((ViewHolderBassPersistentData) bass_svc_data.viewsData)
+                                            .selectedReceiverPositionMutable.getValue();
                             if (select_pos != null)
                                 holder.bassReceiverIdSpinner.setSelection(select_pos);
                         }
@@ -653,13 +823,13 @@ public class LeAudioRecycleViewAdapter
         }
     }
 
-    private void setBassUiStateObservers(@NonNull ViewHolder holder, LeAudioDeviceStateWrapper leAudioDeviceStateWrapper) {
-        if (leAudioDeviceStateWrapper.bassData == null)
-            return;
+    private void setBassUiStateObservers(
+            @NonNull ViewHolder holder, LeAudioDeviceStateWrapper leAudioDeviceStateWrapper) {
+        if (leAudioDeviceStateWrapper.bassData == null) return;
 
-        ViewHolderBassPersistentData vData = (ViewHolderBassPersistentData)leAudioDeviceStateWrapper.bassData.viewsData;
-        if (vData == null)
-            return;
+        ViewHolderBassPersistentData vData =
+                (ViewHolderBassPersistentData) leAudioDeviceStateWrapper.bassData.viewsData;
+        if (vData == null) return;
 
         if (vData.selectedReceiverPositionMutable.hasObservers())
             vData.selectedReceiverPositionMutable.removeObservers(this.parent);
@@ -858,23 +1028,30 @@ public class LeAudioRecycleViewAdapter
 
         void onDisconnectClick(LeAudioDeviceStateWrapper leAudioDeviceStateWrapper);
 
-        void onStreamActionClicked(LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
-                Integer group_id, Integer content_type, Integer action);
+        void onStreamActionClicked(
+                LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
+                Integer group_id,
+                Integer content_type,
+                Integer action);
 
-        void onGroupSetClicked(LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
-                Integer group_id);
+        void onGroupSetClicked(
+                LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, Integer group_id);
 
-        void onGroupUnsetClicked(LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
-                Integer group_id);
+        void onGroupUnsetClicked(
+                LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, Integer group_id);
 
-        void onGroupDestroyClicked(LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
-                Integer group_id);
+        void onGroupDestroyClicked(
+                LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, Integer group_id);
 
-        void onGroupSetLockClicked(LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
-                Integer group_id, boolean lock);
+        void onGroupSetLockClicked(
+                LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
+                Integer group_id,
+                boolean lock);
 
-        void onMicrophoneMuteChanged(LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
-                boolean mute, boolean is_from_user);
+        void onMicrophoneMuteChanged(
+                LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
+                boolean mute,
+                boolean is_from_user);
     }
 
     public interface OnVolumeControlInteractionListener {
@@ -882,56 +1059,64 @@ public class LeAudioRecycleViewAdapter
 
         void onDisconnectClick(LeAudioDeviceStateWrapper leAudioDeviceStateWrapper);
 
-        void onVolumeChanged(LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, int value,
+        void onVolumeChanged(
+                LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
+                int value,
                 boolean is_from_user);
 
-        void onCheckedChanged(LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
-                boolean is_checked);
+        void onCheckedChanged(
+                LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, boolean is_checked);
 
-        void onInputGetStateButtonClicked(LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
-                int input_id);
+        void onInputGetStateButtonClicked(
+                LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, int input_id);
 
-        void onInputGainValueChanged(LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
-                int input_id, int value);
+        void onInputGainValueChanged(
+                LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, int input_id, int value);
 
-        void onInputMuteSwitched(LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, int input_id,
+        void onInputMuteSwitched(
+                LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
+                int input_id,
                 boolean is_muted);
 
-        void onInputSetGainModeButtonClicked(LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
-                int input_id, boolean is_auto);
+        void onInputSetGainModeButtonClicked(
+                LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, int input_id, boolean is_auto);
 
-        void onInputGetGainPropsButtonClicked(LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
-                int input_id);
+        void onInputGetGainPropsButtonClicked(
+                LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, int input_id);
 
-        void onInputGetTypeButtonClicked(LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
-                int input_id);
+        void onInputGetTypeButtonClicked(
+                LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, int input_id);
 
-        void onInputGetStatusButton(LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
-                int input_id);
+        void onInputGetStatusButton(
+                LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, int input_id);
 
-        void onInputGetDescriptionButtonClicked(LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
-                int input_id);
+        void onInputGetDescriptionButtonClicked(
+                LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, int input_id);
 
-        void onInputSetDescriptionButtonClicked(LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
-                int input_id, String description);
+        void onInputSetDescriptionButtonClicked(
+                LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
+                int input_id,
+                String description);
 
-        void onOutputGetGainButtonClicked(LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
-                int output_id);
+        void onOutputGetGainButtonClicked(
+                LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, int output_id);
 
-        void onOutputGainOffsetGainValueChanged(LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
-                int output_id, int value);
+        void onOutputGainOffsetGainValueChanged(
+                LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, int output_id, int value);
 
-        void onOutputGetLocationButtonClicked(LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
-                int output_id);
+        void onOutputGetLocationButtonClicked(
+                LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, int output_id);
 
-        void onOutputSetLocationButtonClicked(LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
-                int output_id, int location);
+        void onOutputSetLocationButtonClicked(
+                LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, int output_id, int location);
 
         void onOutputGetDescriptionButtonClicked(
                 LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, int output_id);
 
-        void onOutputSetDescriptionButton(LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
-                int output_id, String description);
+        void onOutputSetDescriptionButton(
+                LeAudioDeviceStateWrapper leAudioDeviceStateWrapper,
+                int output_id,
+                String description);
     }
 
     public interface OnHapInteractionListener {
@@ -961,7 +1146,8 @@ public class LeAudioRecycleViewAdapter
 
         void onDisconnectClick(LeAudioDeviceStateWrapper leAudioDeviceStateWrapper);
 
-        void onReceiverSelected(LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, int receiver_id);
+        void onReceiverSelected(
+                LeAudioDeviceStateWrapper leAudioDeviceStateWrapper, int receiver_id);
 
         void onBroadcastCodeEntered(BluetoothDevice device, int receiver_id, byte[] broadcast_code);
 
@@ -1066,31 +1252,32 @@ public class LeAudioRecycleViewAdapter
             setupBassView(itemView);
 
             // Notify viewmodel via parent's click listener
-            itemView.setOnClickListener(view -> {
-                Integer position = getAdapterPosition();
-                if (clickListener != null && position != RecyclerView.NO_POSITION) {
-                    clickListener.onItemClick(devices.get(position));
-                }
-            });
+            itemView.setOnClickListener(
+                    view -> {
+                        Integer position = getAdapterPosition();
+                        if (clickListener != null && position != RecyclerView.NO_POSITION) {
+                            clickListener.onItemClick(devices.get(position));
+                        }
+                    });
         }
 
         private void setupHapView(@NonNull View itemView) {
             hapConnectionSwitch = itemView.findViewById(R.id.hap_switch);
             hapConnectionSwitch.setActivated(true);
 
-            hapConnectionSwitch.setOnCheckedChangeListener((compoundButton, b) -> {
-                if (!compoundButton.isActivated())
-                    return;
+            hapConnectionSwitch.setOnCheckedChangeListener(
+                    (compoundButton, b) -> {
+                        if (!compoundButton.isActivated()) return;
 
-                if (bassInteractionListener != null) {
-                    if (b)
-                        hapInteractionListener
-                                .onConnectClick(devices.get(ViewHolder.this.getAdapterPosition()));
-                    else
-                        hapInteractionListener.onDisconnectClick(
-                                devices.get(ViewHolder.this.getAdapterPosition()));
-                }
-            });
+                        if (bassInteractionListener != null) {
+                            if (b)
+                                hapInteractionListener.onConnectClick(
+                                        devices.get(ViewHolder.this.getAdapterPosition()));
+                            else
+                                hapInteractionListener.onDisconnectClick(
+                                        devices.get(ViewHolder.this.getAdapterPosition()));
+                        }
+                    });
 
             leAudioHapState = itemView.findViewById(R.id.hap_profile_state_text);
             leAudioHapFeatures = itemView.findViewById(R.id.hap_profile_features_text);
@@ -1114,15 +1301,15 @@ public class LeAudioRecycleViewAdapter
             leAudioHapPreviousGroupPresetButton =
                     itemView.findViewById(R.id.hap_previous_group_preset_button);
 
-            leAudioHapPresetsSpinner
-                    .setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            leAudioHapPresetsSpinner.setOnItemSelectedListener(
+                    new AdapterView.OnItemSelectedListener() {
                         @Override
-                        public void onItemSelected(AdapterView<?> adapterView, View view,
-                                int position, long l) {
+                        public void onItemSelected(
+                                AdapterView<?> adapterView, View view, int position, long l) {
                             LeAudioDeviceStateWrapper device =
                                     devices.get(ViewHolder.this.getAdapterPosition());
-                            ((ViewHolderHapPersistentData) device.leAudioData.viewsData).selectedPresetPositionMutable
-                                    .setValue(position);
+                            ((ViewHolderHapPersistentData) device.leAudioData.viewsData)
+                                    .selectedPresetPositionMutable.setValue(position);
                         }
 
                         @Override
@@ -1131,104 +1318,150 @@ public class LeAudioRecycleViewAdapter
                         }
                     });
 
-            leAudioHapChangePresetNameButton.setOnClickListener(view -> {
-                if (hapInteractionListener != null) {
-                    if (leAudioHapPresetsSpinner.getSelectedItem() == null) {
-                        Toast.makeText(view.getContext(), "No known preset, please reconnect.",
-                                Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+            leAudioHapChangePresetNameButton.setOnClickListener(
+                    view -> {
+                        if (hapInteractionListener != null) {
+                            if (leAudioHapPresetsSpinner.getSelectedItem() == null) {
+                                Toast.makeText(
+                                                view.getContext(),
+                                                "No known preset, please reconnect.",
+                                                Toast.LENGTH_SHORT)
+                                        .show();
+                                return;
+                            }
 
-                    AlertDialog.Builder alert = new AlertDialog.Builder(itemView.getContext());
-                    alert.setTitle("Set a name");
-                    final EditText input = new EditText(itemView.getContext());
-                    alert.setView(input);
-                    alert.setPositiveButton("Ok", (dialog, whichButton) -> {
-                        Integer index = Integer.valueOf(leAudioHapPresetsSpinner.getSelectedItem()
-                                .toString().split("\\s")[0]);
-                        hapInteractionListener.onChangePresetNameClicked(
-                                devices.get(ViewHolder.this.getAdapterPosition()).device, index,
-                                input.getText().toString());
+                            AlertDialog.Builder alert =
+                                    new AlertDialog.Builder(itemView.getContext());
+                            alert.setTitle("Set a name");
+                            final EditText input = new EditText(itemView.getContext());
+                            alert.setView(input);
+                            alert.setPositiveButton(
+                                    "Ok",
+                                    (dialog, whichButton) -> {
+                                        Integer index =
+                                                Integer.valueOf(
+                                                        leAudioHapPresetsSpinner
+                                                                .getSelectedItem()
+                                                                .toString()
+                                                                .split("\\s")[0]);
+                                        hapInteractionListener.onChangePresetNameClicked(
+                                                devices.get(ViewHolder.this.getAdapterPosition())
+                                                        .device,
+                                                index,
+                                                input.getText().toString());
+                                    });
+                            alert.setNegativeButton(
+                                    "Cancel",
+                                    (dialog, whichButton) -> {
+                                        // Do nothing
+                                    });
+                            alert.show();
+                        }
                     });
-                    alert.setNegativeButton("Cancel", (dialog, whichButton) -> {
-                        // Do nothing
+
+            leAudioHapSetActivePresetButton.setOnClickListener(
+                    view -> {
+                        if (hapInteractionListener != null) {
+                            if (leAudioHapPresetsSpinner.getSelectedItem() == null) {
+                                Toast.makeText(
+                                                view.getContext(),
+                                                "No known preset, please reconnect.",
+                                                Toast.LENGTH_SHORT)
+                                        .show();
+                                return;
+                            }
+
+                            Integer index =
+                                    Integer.valueOf(
+                                            leAudioHapPresetsSpinner
+                                                    .getSelectedItem()
+                                                    .toString()
+                                                    .split("\\s")[0]);
+                            hapInteractionListener.onSetActivePresetClicked(
+                                    devices.get(ViewHolder.this.getAdapterPosition()).device,
+                                    index);
+                        }
                     });
-                    alert.show();
-                }
-            });
 
-            leAudioHapSetActivePresetButton.setOnClickListener(view -> {
-                if (hapInteractionListener != null) {
-                    if (leAudioHapPresetsSpinner.getSelectedItem() == null) {
-                        Toast.makeText(view.getContext(), "No known preset, please reconnect.",
-                                Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+            leAudioHapSetActivePresetForGroupButton.setOnClickListener(
+                    view -> {
+                        if (hapInteractionListener != null) {
+                            if (leAudioHapPresetsSpinner.getSelectedItem() == null) {
+                                Toast.makeText(
+                                                view.getContext(),
+                                                "No known preset, please reconnect.",
+                                                Toast.LENGTH_SHORT)
+                                        .show();
+                                return;
+                            }
 
-                    Integer index = Integer.valueOf(
-                            leAudioHapPresetsSpinner.getSelectedItem().toString().split("\\s")[0]);
-                    hapInteractionListener.onSetActivePresetClicked(
-                            devices.get(ViewHolder.this.getAdapterPosition()).device, index);
-                }
-            });
+                            Integer index =
+                                    Integer.valueOf(
+                                            leAudioHapPresetsSpinner
+                                                    .getSelectedItem()
+                                                    .toString()
+                                                    .split("\\s")[0]);
+                            hapInteractionListener.onSetActivePresetForGroupClicked(
+                                    devices.get(ViewHolder.this.getAdapterPosition()).device,
+                                    index);
+                        }
+                    });
 
-            leAudioHapSetActivePresetForGroupButton.setOnClickListener(view -> {
-                if (hapInteractionListener != null) {
-                    if (leAudioHapPresetsSpinner.getSelectedItem() == null) {
-                        Toast.makeText(view.getContext(), "No known preset, please reconnect.",
-                                Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+            leAudioHapReadPresetInfoButton.setOnClickListener(
+                    view -> {
+                        if (hapInteractionListener != null) {
+                            if (leAudioHapPresetsSpinner.getSelectedItem() == null) {
+                                Toast.makeText(
+                                                view.getContext(),
+                                                "No known preset, please reconnect.",
+                                                Toast.LENGTH_SHORT)
+                                        .show();
+                                return;
+                            }
 
-                    Integer index = Integer.valueOf(
-                            leAudioHapPresetsSpinner.getSelectedItem().toString().split("\\s")[0]);
-                    hapInteractionListener.onSetActivePresetForGroupClicked(
-                            devices.get(ViewHolder.this.getAdapterPosition()).device, index);
-                }
-            });
+                            Integer index =
+                                    Integer.valueOf(
+                                            leAudioHapPresetsSpinner
+                                                    .getSelectedItem()
+                                                    .toString()
+                                                    .split("\\s")[0]);
+                            hapInteractionListener.onReadPresetInfoClicked(
+                                    devices.get(ViewHolder.this.getAdapterPosition()).device,
+                                    index);
+                        }
+                    });
 
-            leAudioHapReadPresetInfoButton.setOnClickListener(view -> {
-                if (hapInteractionListener != null) {
-                    if (leAudioHapPresetsSpinner.getSelectedItem() == null) {
-                        Toast.makeText(view.getContext(), "No known preset, please reconnect.",
-                                Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+            leAudioHapNextDevicePresetButton.setOnClickListener(
+                    view -> {
+                        if (hapInteractionListener != null) {
+                            hapInteractionListener.onNextDevicePresetClicked(
+                                    devices.get(ViewHolder.this.getAdapterPosition()).device);
+                        }
+                    });
 
-                    Integer index = Integer.valueOf(
-                            leAudioHapPresetsSpinner.getSelectedItem().toString().split("\\s")[0]);
-                    hapInteractionListener.onReadPresetInfoClicked(
-                            devices.get(ViewHolder.this.getAdapterPosition()).device, index);
-                }
-            });
+            leAudioHapPreviousDevicePresetButton.setOnClickListener(
+                    view -> {
+                        if (hapInteractionListener != null) {
+                            hapInteractionListener.onPreviousDevicePresetClicked(
+                                    devices.get(ViewHolder.this.getAdapterPosition()).device);
+                        }
+                    });
 
-            leAudioHapNextDevicePresetButton.setOnClickListener(view -> {
-                if (hapInteractionListener != null) {
-                    hapInteractionListener.onNextDevicePresetClicked(
-                            devices.get(ViewHolder.this.getAdapterPosition()).device);
-                }
-            });
+            leAudioHapNextGroupPresetButton.setOnClickListener(
+                    view -> {
+                        if (hapInteractionListener != null) {
+                            hapInteractionListener.onNextGroupPresetClicked(
+                                    devices.get(ViewHolder.this.getAdapterPosition()).device);
+                        }
+                    });
 
-            leAudioHapPreviousDevicePresetButton.setOnClickListener(view -> {
-                if (hapInteractionListener != null) {
-                    hapInteractionListener.onPreviousDevicePresetClicked(
-                            devices.get(ViewHolder.this.getAdapterPosition()).device);
-                }
-            });
-
-            leAudioHapNextGroupPresetButton.setOnClickListener(view -> {
-                if (hapInteractionListener != null) {
-                    hapInteractionListener.onNextGroupPresetClicked(
-                            devices.get(ViewHolder.this.getAdapterPosition()).device);
-                }
-            });
-
-            leAudioHapPreviousGroupPresetButton.setOnClickListener(view -> {
-                if (hapInteractionListener != null) {
-                    hapInteractionListener.onPreviousGroupPresetClicked(
-                            devices.get(ViewHolder.this.getAdapterPosition()).device);
-                }
-            });
+            leAudioHapPreviousGroupPresetButton.setOnClickListener(
+                    view -> {
+                        if (hapInteractionListener != null) {
+                            hapInteractionListener.onPreviousGroupPresetClicked(
+                                    devices.get(ViewHolder.this.getAdapterPosition()).device);
+                        }
+                    });
         }
 
         private void SetupLeAudioView(@NonNull View itemView) {
@@ -1248,144 +1481,198 @@ public class LeAudioRecycleViewAdapter
             leAudioGroupMicrophoneSwitch = itemView.findViewById(R.id.group_mic_mute_state_switch);
             leAudioGroupMicrophoneState = itemView.findViewById(R.id.group_mic_mute_state_text);
 
-            leAudioConnectionSwitch.setOnCheckedChangeListener((compoundButton, b) -> {
-                if (!compoundButton.isActivated())
-                    return;
+            leAudioConnectionSwitch.setOnCheckedChangeListener(
+                    (compoundButton, b) -> {
+                        if (!compoundButton.isActivated()) return;
 
-                if (leAudioInteractionListener != null) {
-                    if (b)
-                        leAudioInteractionListener
-                                .onConnectClick(devices.get(ViewHolder.this.getAdapterPosition()));
-                    else
-                        leAudioInteractionListener.onDisconnectClick(
-                                devices.get(ViewHolder.this.getAdapterPosition()));
-                }
-            });
+                        if (leAudioInteractionListener != null) {
+                            if (b)
+                                leAudioInteractionListener.onConnectClick(
+                                        devices.get(ViewHolder.this.getAdapterPosition()));
+                            else
+                                leAudioInteractionListener.onDisconnectClick(
+                                        devices.get(ViewHolder.this.getAdapterPosition()));
+                        }
+                    });
 
-            leAudioStartStreamButton.setOnClickListener(view -> {
-                AlertDialog.Builder alert = new AlertDialog.Builder(itemView.getContext());
-                alert.setTitle("Pick a content type");
-                NumberPicker input = new NumberPicker(itemView.getContext());
-                input.setMinValue(1);
-                input.setMaxValue(
-                        itemView.getResources().getStringArray(R.array.content_types).length - 1);
-                input.setDisplayedValues(
-                        itemView.getResources().getStringArray(R.array.content_types));
-                alert.setView(input);
-                alert.setPositiveButton("Ok", (dialog, whichButton) -> {
-                    final Integer group_id = Integer
-                            .parseInt(ViewHolder.this.leAudioGroupIdText.getText().toString());
-                    if (leAudioInteractionListener != null && group_id != null)
-                        leAudioInteractionListener.onStreamActionClicked(
-                                devices.get(ViewHolder.this.getAdapterPosition()), group_id,
-                                1 << (input.getValue() - 1), 0);
-                });
-                alert.setNegativeButton("Cancel", (dialog, whichButton) -> {
-                    // Do nothing
-                });
-                alert.show();
-            });
+            leAudioStartStreamButton.setOnClickListener(
+                    view -> {
+                        AlertDialog.Builder alert = new AlertDialog.Builder(itemView.getContext());
+                        alert.setTitle("Pick a content type");
+                        NumberPicker input = new NumberPicker(itemView.getContext());
+                        input.setMinValue(1);
+                        input.setMaxValue(
+                                itemView.getResources().getStringArray(R.array.content_types).length
+                                        - 1);
+                        input.setDisplayedValues(
+                                itemView.getResources().getStringArray(R.array.content_types));
+                        alert.setView(input);
+                        alert.setPositiveButton(
+                                "Ok",
+                                (dialog, whichButton) -> {
+                                    final Integer group_id =
+                                            Integer.parseInt(
+                                                    ViewHolder.this
+                                                            .leAudioGroupIdText
+                                                            .getText()
+                                                            .toString());
+                                    if (leAudioInteractionListener != null && group_id != null)
+                                        leAudioInteractionListener.onStreamActionClicked(
+                                                devices.get(ViewHolder.this.getAdapterPosition()),
+                                                group_id,
+                                                1 << (input.getValue() - 1),
+                                                0);
+                                });
+                        alert.setNegativeButton(
+                                "Cancel",
+                                (dialog, whichButton) -> {
+                                    // Do nothing
+                                });
+                        alert.show();
+                    });
 
-            leAudioSuspendStreamButton.setOnClickListener(view -> {
-                final Integer group_id =
-                        Integer.parseInt(ViewHolder.this.leAudioGroupIdText.getText().toString());
-                if (leAudioInteractionListener != null && group_id != null)
-                    leAudioInteractionListener.onStreamActionClicked(
-                            devices.get(ViewHolder.this.getAdapterPosition()), group_id, 0, 1);
-            });
+            leAudioSuspendStreamButton.setOnClickListener(
+                    view -> {
+                        final Integer group_id =
+                                Integer.parseInt(
+                                        ViewHolder.this.leAudioGroupIdText.getText().toString());
+                        if (leAudioInteractionListener != null && group_id != null)
+                            leAudioInteractionListener.onStreamActionClicked(
+                                    devices.get(ViewHolder.this.getAdapterPosition()),
+                                    group_id,
+                                    0,
+                                    1);
+                    });
 
-            leAudioStopStreamButton.setOnClickListener(view -> {
-                final Integer group_id =
-                        Integer.parseInt(ViewHolder.this.leAudioGroupIdText.getText().toString());
-                if (leAudioInteractionListener != null && group_id != null)
-                    leAudioInteractionListener.onStreamActionClicked(
-                            devices.get(ViewHolder.this.getAdapterPosition()), group_id, 0, 2);
-            });
+            leAudioStopStreamButton.setOnClickListener(
+                    view -> {
+                        final Integer group_id =
+                                Integer.parseInt(
+                                        ViewHolder.this.leAudioGroupIdText.getText().toString());
+                        if (leAudioInteractionListener != null && group_id != null)
+                            leAudioInteractionListener.onStreamActionClicked(
+                                    devices.get(ViewHolder.this.getAdapterPosition()),
+                                    group_id,
+                                    0,
+                                    2);
+                    });
 
-            leAudioGroupSetButton.setOnClickListener(view -> {
-                AlertDialog.Builder alert = new AlertDialog.Builder(itemView.getContext());
-                alert.setTitle("Pick a group ID");
-                final EditText input = new EditText(itemView.getContext());
-                input.setInputType(InputType.TYPE_CLASS_NUMBER);
-                input.setRawInputType(Configuration.KEYBOARD_12KEY);
-                alert.setView(input);
-                alert.setPositiveButton("Ok", (dialog, whichButton) -> {
-                    final Integer group_id = Integer.valueOf(input.getText().toString());
-                    leAudioInteractionListener.onGroupSetClicked(
-                            devices.get(ViewHolder.this.getAdapterPosition()), group_id);
-                });
-                alert.setNegativeButton("Cancel", (dialog, whichButton) -> {
-                    // Do nothing
-                });
-                alert.show();
-            });
+            leAudioGroupSetButton.setOnClickListener(
+                    view -> {
+                        AlertDialog.Builder alert = new AlertDialog.Builder(itemView.getContext());
+                        alert.setTitle("Pick a group ID");
+                        final EditText input = new EditText(itemView.getContext());
+                        input.setInputType(InputType.TYPE_CLASS_NUMBER);
+                        input.setRawInputType(Configuration.KEYBOARD_12KEY);
+                        alert.setView(input);
+                        alert.setPositiveButton(
+                                "Ok",
+                                (dialog, whichButton) -> {
+                                    final Integer group_id =
+                                            Integer.valueOf(input.getText().toString());
+                                    leAudioInteractionListener.onGroupSetClicked(
+                                            devices.get(ViewHolder.this.getAdapterPosition()),
+                                            group_id);
+                                });
+                        alert.setNegativeButton(
+                                "Cancel",
+                                (dialog, whichButton) -> {
+                                    // Do nothing
+                                });
+                        alert.show();
+                    });
 
-            leAudioGroupUnsetButton.setOnClickListener(view -> {
-                final Integer group_id = Integer.parseInt(
-                        ViewHolder.this.leAudioGroupIdText.getText().toString().equals("Unknown")
-                                ? "0"
-                                : ViewHolder.this.leAudioGroupIdText.getText().toString());
-                if (leAudioInteractionListener != null)
-                    leAudioInteractionListener.onGroupUnsetClicked(
-                            devices.get(ViewHolder.this.getAdapterPosition()), group_id);
-            });
+            leAudioGroupUnsetButton.setOnClickListener(
+                    view -> {
+                        final Integer group_id =
+                                Integer.parseInt(
+                                        ViewHolder.this
+                                                        .leAudioGroupIdText
+                                                        .getText()
+                                                        .toString()
+                                                        .equals("Unknown")
+                                                ? "0"
+                                                : ViewHolder.this
+                                                        .leAudioGroupIdText
+                                                        .getText()
+                                                        .toString());
+                        if (leAudioInteractionListener != null)
+                            leAudioInteractionListener.onGroupUnsetClicked(
+                                    devices.get(ViewHolder.this.getAdapterPosition()), group_id);
+                    });
 
-            leAudioGroupDestroyButton.setOnClickListener(view -> {
-                final Integer group_id =
-                        Integer.parseInt(ViewHolder.this.leAudioGroupIdText.getText().toString());
-                if (leAudioInteractionListener != null)
-                    leAudioInteractionListener.onGroupDestroyClicked(
-                            devices.get(ViewHolder.this.getAdapterPosition()), group_id);
-            });
+            leAudioGroupDestroyButton.setOnClickListener(
+                    view -> {
+                        final Integer group_id =
+                                Integer.parseInt(
+                                        ViewHolder.this.leAudioGroupIdText.getText().toString());
+                        if (leAudioInteractionListener != null)
+                            leAudioInteractionListener.onGroupDestroyClicked(
+                                    devices.get(ViewHolder.this.getAdapterPosition()), group_id);
+                    });
 
-            leAudioSetLockButton.setOnClickListener(view -> {
-                AlertDialog.Builder alert = new AlertDialog.Builder(itemView.getContext());
-                alert.setTitle("Pick a group ID");
-                final EditText input = new EditText(itemView.getContext());
-                input.setInputType(InputType.TYPE_CLASS_NUMBER);
-                input.setRawInputType(Configuration.KEYBOARD_12KEY);
-                alert.setView(input);
-                alert.setPositiveButton("Ok", (dialog, whichButton) -> {
-                    final Integer group_id = Integer.valueOf(input.getText().toString());
-                    if (leAudioInteractionListener != null)
-                        leAudioInteractionListener.onGroupSetLockClicked(
-                            devices.get(ViewHolder.this.getAdapterPosition()), group_id, true);
+            leAudioSetLockButton.setOnClickListener(
+                    view -> {
+                        AlertDialog.Builder alert = new AlertDialog.Builder(itemView.getContext());
+                        alert.setTitle("Pick a group ID");
+                        final EditText input = new EditText(itemView.getContext());
+                        input.setInputType(InputType.TYPE_CLASS_NUMBER);
+                        input.setRawInputType(Configuration.KEYBOARD_12KEY);
+                        alert.setView(input);
+                        alert.setPositiveButton(
+                                "Ok",
+                                (dialog, whichButton) -> {
+                                    final Integer group_id =
+                                            Integer.valueOf(input.getText().toString());
+                                    if (leAudioInteractionListener != null)
+                                        leAudioInteractionListener.onGroupSetLockClicked(
+                                                devices.get(ViewHolder.this.getAdapterPosition()),
+                                                group_id,
+                                                true);
+                                });
+                        alert.setNegativeButton(
+                                "Cancel",
+                                (dialog, whichButton) -> {
+                                    // Do nothing
+                                });
+                        alert.show();
+                    });
 
-                });
-                alert.setNegativeButton("Cancel", (dialog, whichButton) -> {
-                    // Do nothing
-                });
-                alert.show();
-            });
+            leAudioSetUnlockButton.setOnClickListener(
+                    view -> {
+                        AlertDialog.Builder alert = new AlertDialog.Builder(itemView.getContext());
+                        alert.setTitle("Pick a group ID");
+                        final EditText input = new EditText(itemView.getContext());
+                        input.setInputType(InputType.TYPE_CLASS_NUMBER);
+                        input.setRawInputType(Configuration.KEYBOARD_12KEY);
+                        alert.setView(input);
+                        alert.setPositiveButton(
+                                "Ok",
+                                (dialog, whichButton) -> {
+                                    final Integer group_id =
+                                            Integer.valueOf(input.getText().toString());
+                                    if (leAudioInteractionListener != null)
+                                        leAudioInteractionListener.onGroupSetLockClicked(
+                                                devices.get(ViewHolder.this.getAdapterPosition()),
+                                                group_id,
+                                                false);
+                                });
+                        alert.setNegativeButton(
+                                "Cancel",
+                                (dialog, whichButton) -> {
+                                    // Do nothing
+                                });
+                        alert.show();
+                    });
 
-            leAudioSetUnlockButton.setOnClickListener(view -> {
-                AlertDialog.Builder alert = new AlertDialog.Builder(itemView.getContext());
-                alert.setTitle("Pick a group ID");
-                final EditText input = new EditText(itemView.getContext());
-                input.setInputType(InputType.TYPE_CLASS_NUMBER);
-                input.setRawInputType(Configuration.KEYBOARD_12KEY);
-                alert.setView(input);
-                alert.setPositiveButton("Ok", (dialog, whichButton) -> {
-                    final Integer group_id = Integer.valueOf(input.getText().toString());
-                    if (leAudioInteractionListener != null)
-                        leAudioInteractionListener.onGroupSetLockClicked(
-                            devices.get(ViewHolder.this.getAdapterPosition()), group_id, false);
+            leAudioGroupMicrophoneSwitch.setOnCheckedChangeListener(
+                    (compoundButton, b) -> {
+                        if (!compoundButton.isActivated()) return;
 
-                });
-                alert.setNegativeButton("Cancel", (dialog, whichButton) -> {
-                    // Do nothing
-                });
-                alert.show();
-            });
-
-            leAudioGroupMicrophoneSwitch.setOnCheckedChangeListener((compoundButton, b) -> {
-                if (!compoundButton.isActivated())
-                    return;
-
-                if (leAudioInteractionListener != null)
-                    leAudioInteractionListener.onMicrophoneMuteChanged(
-                            devices.get(ViewHolder.this.getAdapterPosition()), b, true);
-            });
+                        if (leAudioInteractionListener != null)
+                            leAudioInteractionListener.onMicrophoneMuteChanged(
+                                    devices.get(ViewHolder.this.getAdapterPosition()), b, true);
+                    });
         }
 
         private void setupVcView(@NonNull View itemView) {
@@ -1427,288 +1714,366 @@ public class LeAudioRecycleViewAdapter
             outputLocationText = itemView.findViewById(R.id.outputLocationText);
             outputDescriptionText = itemView.findViewById(R.id.outputDescriptionText);
 
-            vcConnectionSwitch.setOnCheckedChangeListener((compoundButton, b) -> {
-                if (!compoundButton.isActivated())
-                    return;
+            vcConnectionSwitch.setOnCheckedChangeListener(
+                    (compoundButton, b) -> {
+                        if (!compoundButton.isActivated()) return;
 
-                if (volumeControlInteractionListener != null) {
-                    if (b)
-                        volumeControlInteractionListener
-                                .onConnectClick(devices.get(ViewHolder.this.getAdapterPosition()));
-                    else
-                        volumeControlInteractionListener.onDisconnectClick(
-                                devices.get(ViewHolder.this.getAdapterPosition()));
-                }
-            });
+                        if (volumeControlInteractionListener != null) {
+                            if (b)
+                                volumeControlInteractionListener.onConnectClick(
+                                        devices.get(ViewHolder.this.getAdapterPosition()));
+                            else
+                                volumeControlInteractionListener.onDisconnectClick(
+                                        devices.get(ViewHolder.this.getAdapterPosition()));
+                        }
+                    });
 
-            volumeSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-                @Override
-                public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
-                    // Nothing to do here
-                }
+            volumeSeekBar.setOnSeekBarChangeListener(
+                    new SeekBar.OnSeekBarChangeListener() {
+                        @Override
+                        public void onProgressChanged(SeekBar seekBar, int i, boolean b) {
+                            // Nothing to do here
+                        }
 
-                @Override
-                public void onStartTrackingTouch(SeekBar seekBar) {
-                    // Nothing to do here
-                }
+                        @Override
+                        public void onStartTrackingTouch(SeekBar seekBar) {
+                            // Nothing to do here
+                        }
 
-                @Override
-                public void onStopTrackingTouch(SeekBar seekBar) {
-                    // Set value only on release
-                    if (volumeControlInteractionListener != null)
-                        volumeControlInteractionListener.onVolumeChanged(
-                                devices.get(ViewHolder.this.getAdapterPosition()),
-                                seekBar.getProgress(), true);
-                }
-            });
+                        @Override
+                        public void onStopTrackingTouch(SeekBar seekBar) {
+                            // Set value only on release
+                            if (volumeControlInteractionListener != null)
+                                volumeControlInteractionListener.onVolumeChanged(
+                                        devices.get(ViewHolder.this.getAdapterPosition()),
+                                        seekBar.getProgress(),
+                                        true);
+                        }
+                    });
 
-            muteSwitch.setOnCheckedChangeListener((compoundButton, b) -> {
-                if (!compoundButton.isActivated())
-                    return;
+            muteSwitch.setOnCheckedChangeListener(
+                    (compoundButton, b) -> {
+                        if (!compoundButton.isActivated()) return;
 
-                if (volumeControlInteractionListener != null)
-                    volumeControlInteractionListener
-                            .onCheckedChanged(devices.get(ViewHolder.this.getAdapterPosition()), b);
-            });
+                        if (volumeControlInteractionListener != null)
+                            volumeControlInteractionListener.onCheckedChanged(
+                                    devices.get(ViewHolder.this.getAdapterPosition()), b);
+                    });
 
-            inputFoldableIcon.setOnClickListener(view -> {
-                ViewHolderVcPersistentData vData = (ViewHolderVcPersistentData) devices
-                        .get(ViewHolder.this.getAdapterPosition()).volumeControlData.viewsData;
-                if (vData != null)
-                    vData.isInputsCollapsedMutable
-                            .setValue(!vData.isInputsCollapsedMutable.getValue());
-            });
+            inputFoldableIcon.setOnClickListener(
+                    view -> {
+                        ViewHolderVcPersistentData vData =
+                                (ViewHolderVcPersistentData)
+                                        devices.get(ViewHolder.this.getAdapterPosition())
+                                                .volumeControlData
+                                                .viewsData;
+                        if (vData != null)
+                            vData.isInputsCollapsedMutable.setValue(
+                                    !vData.isInputsCollapsedMutable.getValue());
+                    });
 
-            inputIdxSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-                @Override
-                public void onItemSelected(AdapterView<?> adapterView, View view, int position,
-                        long l) {
-                    Integer index = ViewHolder.this.getAdapterPosition();
-                    ((ViewHolderVcPersistentData) devices
-                            .get(index).volumeControlData.viewsData).selectedInputPosition =
+            inputIdxSpinner.setOnItemSelectedListener(
+                    new AdapterView.OnItemSelectedListener() {
+                        @Override
+                        public void onItemSelected(
+                                AdapterView<?> adapterView, View view, int position, long l) {
+                            Integer index = ViewHolder.this.getAdapterPosition();
+                            ((ViewHolderVcPersistentData)
+                                                    devices.get(index).volumeControlData.viewsData)
+                                            .selectedInputPosition =
                                     position;
-                }
+                        }
 
-                @Override
-                public void onNothingSelected(AdapterView<?> adapterView) {
-                    // Nothing to do here
-                }
-            });
+                        @Override
+                        public void onNothingSelected(AdapterView<?> adapterView) {
+                            // Nothing to do here
+                        }
+                    });
 
-            outputFoldableIcon.setOnClickListener(view -> {
-                ViewHolderVcPersistentData vData = (ViewHolderVcPersistentData) devices
-                        .get(ViewHolder.this.getAdapterPosition()).volumeControlData.viewsData;
-                vData.isOutputsCollapsedMutable
-                        .setValue(!vData.isOutputsCollapsedMutable.getValue());
-            });
+            outputFoldableIcon.setOnClickListener(
+                    view -> {
+                        ViewHolderVcPersistentData vData =
+                                (ViewHolderVcPersistentData)
+                                        devices.get(ViewHolder.this.getAdapterPosition())
+                                                .volumeControlData
+                                                .viewsData;
+                        vData.isOutputsCollapsedMutable.setValue(
+                                !vData.isOutputsCollapsedMutable.getValue());
+                    });
 
-            outputIdxSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-                @Override
-                public void onItemSelected(AdapterView<?> adapterView, View view, int position,
-                        long l) {
-                    Integer index = ViewHolder.this.getAdapterPosition();
-                    ((ViewHolderVcPersistentData) devices
-                            .get(index).volumeControlData.viewsData).selectedOutputPosition =
+            outputIdxSpinner.setOnItemSelectedListener(
+                    new AdapterView.OnItemSelectedListener() {
+                        @Override
+                        public void onItemSelected(
+                                AdapterView<?> adapterView, View view, int position, long l) {
+                            Integer index = ViewHolder.this.getAdapterPosition();
+                            ((ViewHolderVcPersistentData)
+                                                    devices.get(index).volumeControlData.viewsData)
+                                            .selectedOutputPosition =
                                     position;
-                }
+                        }
 
-                @Override
-                public void onNothingSelected(AdapterView<?> adapterView) {
-                    // Nothing to do here
-                }
-            });
+                        @Override
+                        public void onNothingSelected(AdapterView<?> adapterView) {
+                            // Nothing to do here
+                        }
+                    });
 
-            inputGetStateButton.setOnClickListener(view -> {
-                if (volumeControlInteractionListener != null) {
-                    if (inputIdxSpinner.getSelectedItem() == null) {
-                        Toast.makeText(view.getContext(), "No known ext. input, please reconnect.",
-                                Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    Integer input_id =
-                            Integer.valueOf(inputIdxSpinner.getSelectedItem().toString());
-                    volumeControlInteractionListener.onInputGetStateButtonClicked(
-                            devices.get(ViewHolder.this.getAdapterPosition()), input_id);
-                }
-            });
+            inputGetStateButton.setOnClickListener(
+                    view -> {
+                        if (volumeControlInteractionListener != null) {
+                            if (inputIdxSpinner.getSelectedItem() == null) {
+                                Toast.makeText(
+                                                view.getContext(),
+                                                "No known ext. input, please reconnect.",
+                                                Toast.LENGTH_SHORT)
+                                        .show();
+                                return;
+                            }
+                            Integer input_id =
+                                    Integer.valueOf(inputIdxSpinner.getSelectedItem().toString());
+                            volumeControlInteractionListener.onInputGetStateButtonClicked(
+                                    devices.get(ViewHolder.this.getAdapterPosition()), input_id);
+                        }
+                    });
 
-            inputGainSeekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-                @Override
-                public void onProgressChanged(SeekBar seekBar, int i, boolean is_user_set) {
-                    // Nothing to do here
-                }
+            inputGainSeekBar.setOnSeekBarChangeListener(
+                    new SeekBar.OnSeekBarChangeListener() {
+                        @Override
+                        public void onProgressChanged(SeekBar seekBar, int i, boolean is_user_set) {
+                            // Nothing to do here
+                        }
 
-                @Override
-                public void onStartTrackingTouch(SeekBar seekBar) {
-                    // Nothing to do here
-                }
+                        @Override
+                        public void onStartTrackingTouch(SeekBar seekBar) {
+                            // Nothing to do here
+                        }
 
-                @Override
-                public void onStopTrackingTouch(SeekBar seekBar) {
-                    if (volumeControlInteractionListener != null) {
-                        if (inputIdxSpinner.getSelectedItem() == null) {
-                            Toast.makeText(seekBar.getContext(),
-                                    "No known ext. input, please reconnect.", Toast.LENGTH_SHORT)
+                        @Override
+                        public void onStopTrackingTouch(SeekBar seekBar) {
+                            if (volumeControlInteractionListener != null) {
+                                if (inputIdxSpinner.getSelectedItem() == null) {
+                                    Toast.makeText(
+                                                    seekBar.getContext(),
+                                                    "No known ext. input, please reconnect.",
+                                                    Toast.LENGTH_SHORT)
+                                            .show();
+                                    return;
+                                }
+                                Integer input_id =
+                                        Integer.valueOf(
+                                                inputIdxSpinner.getSelectedItem().toString());
+                                volumeControlInteractionListener.onInputGainValueChanged(
+                                        devices.get(ViewHolder.this.getAdapterPosition()),
+                                        input_id,
+                                        seekBar.getProgress());
+                            }
+                        }
+                    });
+
+            inputMuteSwitch.setOnCheckedChangeListener(
+                    (compoundButton, b) -> {
+                        if (!compoundButton.isActivated()) return;
+
+                        if (volumeControlInteractionListener != null) {
+                            if (inputIdxSpinner.getSelectedItem() == null) {
+                                Toast.makeText(
+                                                compoundButton.getContext(),
+                                                "No known ext. input, please reconnect.",
+                                                Toast.LENGTH_SHORT)
+                                        .show();
+                                return;
+                            }
+                            Integer input_id =
+                                    Integer.valueOf(inputIdxSpinner.getSelectedItem().toString());
+                            volumeControlInteractionListener.onInputMuteSwitched(
+                                    devices.get(ViewHolder.this.getAdapterPosition()), input_id, b);
+                        }
+                    });
+
+            inputSetGainModeButton.setOnClickListener(
+                    view -> {
+                        if (volumeControlInteractionListener != null) {
+                            if (inputIdxSpinner.getSelectedItem() == null) {
+                                Toast.makeText(
+                                                view.getContext(),
+                                                "No known ext. input, please reconnect.",
+                                                Toast.LENGTH_SHORT)
+                                        .show();
+                                return;
+                            }
+
+                            AlertDialog.Builder alert =
+                                    new AlertDialog.Builder(itemView.getContext());
+                            alert.setTitle("Select Gain mode");
+                            NumberPicker input = new NumberPicker(itemView.getContext());
+                            input.setMinValue(0);
+                            input.setMaxValue(2);
+                            input.setDisplayedValues(
+                                    itemView.getResources().getStringArray(R.array.gain_modes));
+                            alert.setView(input);
+                            alert.setPositiveButton(
+                                    "Ok",
+                                    (dialog, whichButton) -> {
+                                        Integer input_id =
+                                                Integer.valueOf(
+                                                        inputIdxSpinner
+                                                                .getSelectedItem()
+                                                                .toString());
+                                        volumeControlInteractionListener
+                                                .onInputSetGainModeButtonClicked(
+                                                        devices.get(
+                                                                ViewHolder.this
+                                                                        .getAdapterPosition()),
+                                                        input_id,
+                                                        input.getValue() == 2);
+                                    });
+                            alert.setNegativeButton(
+                                    "Cancel",
+                                    (dialog, whichButton) -> {
+                                        // Do nothing
+                                    });
+                            alert.show();
+                        }
+                    });
+
+            inputGetGainPropsButton.setOnClickListener(
+                    view -> {
+                        if (volumeControlInteractionListener != null) {
+                            if (inputIdxSpinner.getSelectedItem() == null) {
+                                Toast.makeText(
+                                                view.getContext(),
+                                                "No known ext. input, please reconnect.",
+                                                Toast.LENGTH_SHORT)
+                                        .show();
+                                return;
+                            }
+                            Integer input_id =
+                                    Integer.valueOf(inputIdxSpinner.getSelectedItem().toString());
+                            volumeControlInteractionListener.onInputGetGainPropsButtonClicked(
+                                    devices.get(ViewHolder.this.getAdapterPosition()), input_id);
+                        }
+                    });
+
+            inputGetTypeButton.setOnClickListener(
+                    view -> {
+                        if (volumeControlInteractionListener != null) {
+                            if (inputIdxSpinner.getSelectedItem() == null) {
+                                Toast.makeText(
+                                                view.getContext(),
+                                                "No known ext. input, please reconnect.",
+                                                Toast.LENGTH_SHORT)
+                                        .show();
+                                return;
+                            }
+                            Integer input_id =
+                                    Integer.valueOf(inputIdxSpinner.getSelectedItem().toString());
+                            volumeControlInteractionListener.onInputGetTypeButtonClicked(
+                                    devices.get(ViewHolder.this.getAdapterPosition()), input_id);
+                        }
+                    });
+
+            inputGetStatusButton.setOnClickListener(
+                    view -> {
+                        if (volumeControlInteractionListener != null) {
+                            if (inputIdxSpinner.getSelectedItem() == null) {
+                                Toast.makeText(
+                                                view.getContext(),
+                                                "No known ext. input, please reconnect.",
+                                                Toast.LENGTH_SHORT)
+                                        .show();
+                                return;
+                            }
+                            Integer input_id =
+                                    Integer.valueOf(inputIdxSpinner.getSelectedItem().toString());
+                            volumeControlInteractionListener.onInputGetStatusButton(
+                                    devices.get(ViewHolder.this.getAdapterPosition()), input_id);
+                        }
+                    });
+
+            inputGetDescriptionButton.setOnClickListener(
+                    view -> {
+                        if (volumeControlInteractionListener != null) {
+                            if (inputIdxSpinner.getSelectedItem() == null) {
+                                Toast.makeText(
+                                                view.getContext(),
+                                                "No known ext. input, please reconnect.",
+                                                Toast.LENGTH_SHORT)
+                                        .show();
+                                return;
+                            }
+                            Integer input_id =
+                                    Integer.valueOf(inputIdxSpinner.getSelectedItem().toString());
+                            volumeControlInteractionListener.onInputGetDescriptionButtonClicked(
+                                    devices.get(ViewHolder.this.getAdapterPosition()), input_id);
+                        }
+                    });
+
+            inputSetDescriptionButton.setOnClickListener(
+                    view -> {
+                        if (volumeControlInteractionListener != null) {
+                            if (inputIdxSpinner.getSelectedItem() == null) {
+                                Toast.makeText(
+                                                view.getContext(),
+                                                "No known ext. input, please reconnect.",
+                                                Toast.LENGTH_SHORT)
+                                        .show();
+                                return;
+                            }
+
+                            AlertDialog.Builder alert =
+                                    new AlertDialog.Builder(itemView.getContext());
+                            alert.setTitle("Set a description");
+                            final EditText input = new EditText(itemView.getContext());
+                            alert.setView(input);
+                            alert.setPositiveButton(
+                                    "Ok",
+                                    (dialog, whichButton) -> {
+                                        Integer input_id =
+                                                Integer.valueOf(
+                                                        inputIdxSpinner
+                                                                .getSelectedItem()
+                                                                .toString());
+                                        volumeControlInteractionListener
+                                                .onInputSetDescriptionButtonClicked(
+                                                        devices.get(
+                                                                ViewHolder.this
+                                                                        .getAdapterPosition()),
+                                                        input_id,
+                                                        input.getText().toString());
+                                    });
+                            alert.setNegativeButton(
+                                    "Cancel",
+                                    (dialog, whichButton) -> {
+                                        // Do nothing
+                                    });
+                            alert.show();
+                        }
+                    });
+
+            outpuGetGainButton.setOnClickListener(
+                    view -> {
+                        if (outputIdxSpinner.getSelectedItem() == null) {
+                            Toast.makeText(
+                                            view.getContext(),
+                                            "No known ext. output, please reconnect.",
+                                            Toast.LENGTH_SHORT)
                                     .show();
                             return;
                         }
-                        Integer input_id =
-                                Integer.valueOf(inputIdxSpinner.getSelectedItem().toString());
-                        volumeControlInteractionListener.onInputGainValueChanged(
-                                devices.get(ViewHolder.this.getAdapterPosition()), input_id,
-                                seekBar.getProgress());
-                    }
-                }
-            });
 
-            inputMuteSwitch.setOnCheckedChangeListener((compoundButton, b) -> {
-                if (!compoundButton.isActivated())
-                    return;
-
-                if (volumeControlInteractionListener != null) {
-                    if (inputIdxSpinner.getSelectedItem() == null) {
-                        Toast.makeText(compoundButton.getContext(),
-                                "No known ext. input, please reconnect.", Toast.LENGTH_SHORT)
-                                .show();
-                        return;
-                    }
-                    Integer input_id =
-                            Integer.valueOf(inputIdxSpinner.getSelectedItem().toString());
-                    volumeControlInteractionListener.onInputMuteSwitched(
-                            devices.get(ViewHolder.this.getAdapterPosition()), input_id, b);
-                }
-            });
-
-            inputSetGainModeButton.setOnClickListener(view -> {
-                if (volumeControlInteractionListener != null) {
-                    if (inputIdxSpinner.getSelectedItem() == null) {
-                        Toast.makeText(view.getContext(), "No known ext. input, please reconnect.",
-                                Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-
-                    AlertDialog.Builder alert = new AlertDialog.Builder(itemView.getContext());
-                    alert.setTitle("Select Gain mode");
-                    NumberPicker input = new NumberPicker(itemView.getContext());
-                    input.setMinValue(0);
-                    input.setMaxValue(2);
-                    input.setDisplayedValues(
-                            itemView.getResources().getStringArray(R.array.gain_modes));
-                    alert.setView(input);
-                    alert.setPositiveButton("Ok", (dialog, whichButton) -> {
-                        Integer input_id =
-                                Integer.valueOf(inputIdxSpinner.getSelectedItem().toString());
-                        volumeControlInteractionListener.onInputSetGainModeButtonClicked(
-                                devices.get(ViewHolder.this.getAdapterPosition()), input_id,
-                                input.getValue() == 2);
+                        Integer output_id =
+                                Integer.valueOf(outputIdxSpinner.getSelectedItem().toString());
+                        if (volumeControlInteractionListener != null)
+                            volumeControlInteractionListener.onOutputGetGainButtonClicked(
+                                    devices.get(ViewHolder.this.getAdapterPosition()), output_id);
                     });
-                    alert.setNegativeButton("Cancel", (dialog, whichButton) -> {
-                        // Do nothing
-                    });
-                    alert.show();
-                }
-            });
 
-            inputGetGainPropsButton.setOnClickListener(view -> {
-                if (volumeControlInteractionListener != null) {
-                    if (inputIdxSpinner.getSelectedItem() == null) {
-                        Toast.makeText(view.getContext(), "No known ext. input, please reconnect.",
-                                Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    Integer input_id =
-                            Integer.valueOf(inputIdxSpinner.getSelectedItem().toString());
-                    volumeControlInteractionListener.onInputGetGainPropsButtonClicked(
-                            devices.get(ViewHolder.this.getAdapterPosition()), input_id);
-                }
-            });
-
-            inputGetTypeButton.setOnClickListener(view -> {
-                if (volumeControlInteractionListener != null) {
-                    if (inputIdxSpinner.getSelectedItem() == null) {
-                        Toast.makeText(view.getContext(), "No known ext. input, please reconnect.",
-                                Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    Integer input_id =
-                            Integer.valueOf(inputIdxSpinner.getSelectedItem().toString());
-                    volumeControlInteractionListener.onInputGetTypeButtonClicked(
-                            devices.get(ViewHolder.this.getAdapterPosition()), input_id);
-                }
-            });
-
-            inputGetStatusButton.setOnClickListener(view -> {
-                if (volumeControlInteractionListener != null) {
-                    if (inputIdxSpinner.getSelectedItem() == null) {
-                        Toast.makeText(view.getContext(), "No known ext. input, please reconnect.",
-                                Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    Integer input_id =
-                            Integer.valueOf(inputIdxSpinner.getSelectedItem().toString());
-                    volumeControlInteractionListener.onInputGetStatusButton(
-                            devices.get(ViewHolder.this.getAdapterPosition()), input_id);
-                }
-            });
-
-            inputGetDescriptionButton.setOnClickListener(view -> {
-                if (volumeControlInteractionListener != null) {
-                    if (inputIdxSpinner.getSelectedItem() == null) {
-                        Toast.makeText(view.getContext(), "No known ext. input, please reconnect.",
-                                Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-                    Integer input_id =
-                            Integer.valueOf(inputIdxSpinner.getSelectedItem().toString());
-                    volumeControlInteractionListener.onInputGetDescriptionButtonClicked(
-                            devices.get(ViewHolder.this.getAdapterPosition()), input_id);
-                }
-            });
-
-            inputSetDescriptionButton.setOnClickListener(view -> {
-                if (volumeControlInteractionListener != null) {
-                    if (inputIdxSpinner.getSelectedItem() == null) {
-                        Toast.makeText(view.getContext(), "No known ext. input, please reconnect.",
-                                Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-
-                    AlertDialog.Builder alert = new AlertDialog.Builder(itemView.getContext());
-                    alert.setTitle("Set a description");
-                    final EditText input = new EditText(itemView.getContext());
-                    alert.setView(input);
-                    alert.setPositiveButton("Ok", (dialog, whichButton) -> {
-                        Integer input_id =
-                                Integer.valueOf(inputIdxSpinner.getSelectedItem().toString());
-                        volumeControlInteractionListener.onInputSetDescriptionButtonClicked(
-                                devices.get(ViewHolder.this.getAdapterPosition()), input_id,
-                                input.getText().toString());
-                    });
-                    alert.setNegativeButton("Cancel", (dialog, whichButton) -> {
-                        // Do nothing
-                    });
-                    alert.show();
-                }
-            });
-
-            outpuGetGainButton.setOnClickListener(view -> {
-                if (outputIdxSpinner.getSelectedItem() == null) {
-                    Toast.makeText(view.getContext(), "No known ext. output, please reconnect.",
-                            Toast.LENGTH_SHORT).show();
-                    return;
-                }
-
-                Integer output_id = Integer.valueOf(outputIdxSpinner.getSelectedItem().toString());
-                if (volumeControlInteractionListener != null)
-                    volumeControlInteractionListener.onOutputGetGainButtonClicked(
-                            devices.get(ViewHolder.this.getAdapterPosition()), output_id);
-            });
-
-            outputGainOffsetSeekBar
-                    .setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+            outputGainOffsetSeekBar.setOnSeekBarChangeListener(
+                    new SeekBar.OnSeekBarChangeListener() {
                         @Override
-                        public void onProgressChanged(SeekBar seekBar, int value,
-                                boolean is_from_user) {
+                        public void onProgressChanged(
+                                SeekBar seekBar, int value, boolean is_from_user) {
                             // Do nothing here
                         }
 
@@ -1720,9 +2085,11 @@ public class LeAudioRecycleViewAdapter
                         @Override
                         public void onStopTrackingTouch(SeekBar seekBar) {
                             if (outputIdxSpinner.getSelectedItem() == null) {
-                                Toast.makeText(seekBar.getContext(),
-                                        "No known ext. output, please reconnect.",
-                                        Toast.LENGTH_SHORT).show();
+                                Toast.makeText(
+                                                seekBar.getContext(),
+                                                "No known ext. output, please reconnect.",
+                                                Toast.LENGTH_SHORT)
+                                        .show();
                                 return;
                             }
 
@@ -1731,97 +2098,141 @@ public class LeAudioRecycleViewAdapter
                             if (volumeControlInteractionListener != null)
                                 volumeControlInteractionListener.onOutputGainOffsetGainValueChanged(
                                         devices.get(ViewHolder.this.getAdapterPosition()),
-                                        output_id, seekBar.getProgress());
+                                        output_id,
+                                        seekBar.getProgress());
                         }
                     });
 
-            outputGetLocationButton.setOnClickListener(view -> {
-                if (volumeControlInteractionListener != null) {
-                    if (outputIdxSpinner.getSelectedItem() == null) {
-                        Toast.makeText(view.getContext(), "No known ext. output, please reconnect.",
-                                Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+            outputGetLocationButton.setOnClickListener(
+                    view -> {
+                        if (volumeControlInteractionListener != null) {
+                            if (outputIdxSpinner.getSelectedItem() == null) {
+                                Toast.makeText(
+                                                view.getContext(),
+                                                "No known ext. output, please reconnect.",
+                                                Toast.LENGTH_SHORT)
+                                        .show();
+                                return;
+                            }
 
-                    Integer output_id =
-                            Integer.valueOf(outputIdxSpinner.getSelectedItem().toString());
-                    volumeControlInteractionListener.onOutputGetLocationButtonClicked(
-                            devices.get(ViewHolder.this.getAdapterPosition()), output_id);
-                }
-            });
-
-            outputSetLocationButton.setOnClickListener(view -> {
-                if (volumeControlInteractionListener != null) {
-                    if (outputIdxSpinner.getSelectedItem() == null) {
-                        Toast.makeText(view.getContext(), "No known ext. output, please reconnect.",
-                                Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-
-                    AlertDialog.Builder alert = new AlertDialog.Builder(itemView.getContext());
-                    alert.setTitle("Pick an Audio Location");
-                    NumberPicker input = new NumberPicker(itemView.getContext());
-                    input.setMinValue(0);
-                    input.setMaxValue(
-                            itemView.getResources().getStringArray(R.array.audio_locations).length
-                                    - 1);
-                    input.setDisplayedValues(
-                            itemView.getResources().getStringArray(R.array.audio_locations));
-                    alert.setView(input);
-                    alert.setPositiveButton("Ok", (dialog, whichButton) -> {
-                        Integer output_id =
-                                Integer.valueOf(outputIdxSpinner.getSelectedItem().toString());
-                        volumeControlInteractionListener.onOutputSetLocationButtonClicked(
-                                devices.get(ViewHolder.this.getAdapterPosition()), output_id,
-                                input.getValue());
+                            Integer output_id =
+                                    Integer.valueOf(outputIdxSpinner.getSelectedItem().toString());
+                            volumeControlInteractionListener.onOutputGetLocationButtonClicked(
+                                    devices.get(ViewHolder.this.getAdapterPosition()), output_id);
+                        }
                     });
-                    alert.setNegativeButton("Cancel", (dialog, whichButton) -> {
-                        // Do nothing
+
+            outputSetLocationButton.setOnClickListener(
+                    view -> {
+                        if (volumeControlInteractionListener != null) {
+                            if (outputIdxSpinner.getSelectedItem() == null) {
+                                Toast.makeText(
+                                                view.getContext(),
+                                                "No known ext. output, please reconnect.",
+                                                Toast.LENGTH_SHORT)
+                                        .show();
+                                return;
+                            }
+
+                            AlertDialog.Builder alert =
+                                    new AlertDialog.Builder(itemView.getContext());
+                            alert.setTitle("Pick an Audio Location");
+                            NumberPicker input = new NumberPicker(itemView.getContext());
+                            input.setMinValue(0);
+                            input.setMaxValue(
+                                    itemView.getResources()
+                                                    .getStringArray(R.array.audio_locations)
+                                                    .length
+                                            - 1);
+                            input.setDisplayedValues(
+                                    itemView.getResources()
+                                            .getStringArray(R.array.audio_locations));
+                            alert.setView(input);
+                            alert.setPositiveButton(
+                                    "Ok",
+                                    (dialog, whichButton) -> {
+                                        Integer output_id =
+                                                Integer.valueOf(
+                                                        outputIdxSpinner
+                                                                .getSelectedItem()
+                                                                .toString());
+                                        volumeControlInteractionListener
+                                                .onOutputSetLocationButtonClicked(
+                                                        devices.get(
+                                                                ViewHolder.this
+                                                                        .getAdapterPosition()),
+                                                        output_id,
+                                                        input.getValue());
+                                    });
+                            alert.setNegativeButton(
+                                    "Cancel",
+                                    (dialog, whichButton) -> {
+                                        // Do nothing
+                                    });
+                            alert.show();
+                        }
                     });
-                    alert.show();
-                }
-            });
 
-            outputGetDescriptionButton.setOnClickListener(view -> {
-                if (volumeControlInteractionListener != null) {
-                    if (outputIdxSpinner.getSelectedItem() == null) {
-                        Toast.makeText(view.getContext(), "No known ext. output, please reconnect.",
-                                Toast.LENGTH_SHORT).show();
-                        return;
-                    }
+            outputGetDescriptionButton.setOnClickListener(
+                    view -> {
+                        if (volumeControlInteractionListener != null) {
+                            if (outputIdxSpinner.getSelectedItem() == null) {
+                                Toast.makeText(
+                                                view.getContext(),
+                                                "No known ext. output, please reconnect.",
+                                                Toast.LENGTH_SHORT)
+                                        .show();
+                                return;
+                            }
 
-                    Integer output_id =
-                            Integer.valueOf(outputIdxSpinner.getSelectedItem().toString());
-                    volumeControlInteractionListener.onOutputGetDescriptionButtonClicked(
-                            devices.get(ViewHolder.this.getAdapterPosition()), output_id);
-                }
-            });
-
-            outputSetDescriptionButton.setOnClickListener(view -> {
-                if (volumeControlInteractionListener != null) {
-                    if (outputIdxSpinner.getSelectedItem() == null) {
-                        Toast.makeText(view.getContext(), "No known ext. output, please reconnect.",
-                                Toast.LENGTH_SHORT).show();
-                        return;
-                    }
-
-                    AlertDialog.Builder alert = new AlertDialog.Builder(itemView.getContext());
-                    alert.setTitle("Set a description");
-                    final EditText input = new EditText(itemView.getContext());
-                    alert.setView(input);
-                    alert.setPositiveButton("Ok", (dialog, whichButton) -> {
-                        Integer output_id =
-                                Integer.valueOf(outputIdxSpinner.getSelectedItem().toString());
-                        volumeControlInteractionListener.onOutputSetDescriptionButton(
-                                devices.get(ViewHolder.this.getAdapterPosition()), output_id,
-                                input.getText().toString());
+                            Integer output_id =
+                                    Integer.valueOf(outputIdxSpinner.getSelectedItem().toString());
+                            volumeControlInteractionListener.onOutputGetDescriptionButtonClicked(
+                                    devices.get(ViewHolder.this.getAdapterPosition()), output_id);
+                        }
                     });
-                    alert.setNegativeButton("Cancel", (dialog, whichButton) -> {
-                        // Do nothing
+
+            outputSetDescriptionButton.setOnClickListener(
+                    view -> {
+                        if (volumeControlInteractionListener != null) {
+                            if (outputIdxSpinner.getSelectedItem() == null) {
+                                Toast.makeText(
+                                                view.getContext(),
+                                                "No known ext. output, please reconnect.",
+                                                Toast.LENGTH_SHORT)
+                                        .show();
+                                return;
+                            }
+
+                            AlertDialog.Builder alert =
+                                    new AlertDialog.Builder(itemView.getContext());
+                            alert.setTitle("Set a description");
+                            final EditText input = new EditText(itemView.getContext());
+                            alert.setView(input);
+                            alert.setPositiveButton(
+                                    "Ok",
+                                    (dialog, whichButton) -> {
+                                        Integer output_id =
+                                                Integer.valueOf(
+                                                        outputIdxSpinner
+                                                                .getSelectedItem()
+                                                                .toString());
+                                        volumeControlInteractionListener
+                                                .onOutputSetDescriptionButton(
+                                                        devices.get(
+                                                                ViewHolder.this
+                                                                        .getAdapterPosition()),
+                                                        output_id,
+                                                        input.getText().toString());
+                                    });
+                            alert.setNegativeButton(
+                                    "Cancel",
+                                    (dialog, whichButton) -> {
+                                        // Do nothing
+                                    });
+                            alert.show();
+                        }
                     });
-                    alert.show();
-                }
-            });
         }
 
         private void setupBassView(@NonNull View itemView) {
@@ -1833,32 +2244,36 @@ public class LeAudioRecycleViewAdapter
             bassReceiverBisStateText = itemView.findViewById(R.id.receiver_bis_state_text);
             bassScanButton = itemView.findViewById(R.id.broadcast_button);
 
-            bassConnectionSwitch.setOnCheckedChangeListener((compoundButton, b) -> {
-                if (!compoundButton.isActivated())
-                    return;
+            bassConnectionSwitch.setOnCheckedChangeListener(
+                    (compoundButton, b) -> {
+                        if (!compoundButton.isActivated()) return;
 
-                if (bassInteractionListener != null) {
-                    if (b)
-                        bassInteractionListener.onConnectClick(
-                                devices.get(ViewHolder.this.getAdapterPosition()));
-                    else
-                        bassInteractionListener.onDisconnectClick(
-                                devices.get(ViewHolder.this.getAdapterPosition()));
-                }
-            });
+                        if (bassInteractionListener != null) {
+                            if (b)
+                                bassInteractionListener.onConnectClick(
+                                        devices.get(ViewHolder.this.getAdapterPosition()));
+                            else
+                                bassInteractionListener.onDisconnectClick(
+                                        devices.get(ViewHolder.this.getAdapterPosition()));
+                        }
+                    });
 
-            bassReceiverIdSpinner.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-                @Override
-                public void onItemSelected(AdapterView<?> adapterView, View view, int position, long l) {
-                    LeAudioDeviceStateWrapper device = devices.get(ViewHolder.this.getAdapterPosition());
-                    ((ViewHolderBassPersistentData) device.bassData.viewsData).selectedReceiverPositionMutable.setValue(position);
-                }
+            bassReceiverIdSpinner.setOnItemSelectedListener(
+                    new AdapterView.OnItemSelectedListener() {
+                        @Override
+                        public void onItemSelected(
+                                AdapterView<?> adapterView, View view, int position, long l) {
+                            LeAudioDeviceStateWrapper device =
+                                    devices.get(ViewHolder.this.getAdapterPosition());
+                            ((ViewHolderBassPersistentData) device.bassData.viewsData)
+                                    .selectedReceiverPositionMutable.setValue(position);
+                        }
 
-                @Override
-                public void onNothingSelected(AdapterView<?> adapterView) {
-                    // Nothing to do here
-                }
-            });
+                        @Override
+                        public void onNothingSelected(AdapterView<?> adapterView) {
+                            // Nothing to do here
+                        }
+                    });
 
             bassScanButton.setOnClickListener(
                     view -> {

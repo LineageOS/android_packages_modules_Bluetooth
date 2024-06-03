@@ -17,9 +17,7 @@
 
 package com.android.bluetooth.mcp;
 
-/**
- * Playback states definition
- */
+/** Playback states definition */
 public enum MediaState {
     INACTIVE(0x00),
     PLAYING(0x01),

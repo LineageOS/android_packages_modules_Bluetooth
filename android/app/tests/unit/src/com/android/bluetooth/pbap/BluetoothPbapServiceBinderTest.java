@@ -40,8 +40,7 @@ public class BluetoothPbapServiceBinderTest {
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    private BluetoothPbapService mService;
+    @Mock private BluetoothPbapService mService;
 
     BluetoothDevice mRemoteDevice;
 
