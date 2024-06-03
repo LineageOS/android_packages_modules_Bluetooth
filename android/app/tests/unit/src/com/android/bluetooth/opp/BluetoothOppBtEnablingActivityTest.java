@@ -170,20 +170,4 @@ public class BluetoothOppBtEnablingActivityTest {
         Thread.sleep(3_000);
         assertThat(activityScenario.getState()).isEqualTo(state);
     }
-
-    private void enableActivity(boolean enable) {
-        int enabledState =
-                enable ? COMPONENT_ENABLED_STATE_ENABLED : COMPONENT_ENABLED_STATE_DEFAULT;
-
-        mTargetContext
-                .getPackageManager()
-                .setApplicationEnabledSetting(
-                        mTargetContext.getPackageName(), enabledState, DONT_KILL_APP);
-
-        ComponentName activityName =
-                new ComponentName(mTargetContext, BluetoothOppTransferActivity.class);
-        mTargetContext
-                .getPackageManager()
-                .setComponentEnabledSetting(activityName, enabledState, DONT_KILL_APP);
-    }
 }

@@ -54,6 +54,14 @@ java_defaults {
         "mts-bluetooth",
     ],
 
+    errorprone: {
+        enabled: true,
+        javacflags: [
+            "-Xep:AlmostJavadoc:ERROR",
+            "-Xep:UnusedMethod:ERROR",
+        ],
+    },
+
     instrumentation_for: "Bluetooth",
 }
 

@@ -19,6 +19,7 @@ package {
 java_defaults {
     name: "service-bluetooth-buildflags",
     errorprone: {
+        enabled: true,
         javacflags: [
             "-Xep:AlreadyChecked:ERROR",
             "-Xep:CheckReturnValue:ERROR",

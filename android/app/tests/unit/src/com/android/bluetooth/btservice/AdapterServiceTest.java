@@ -394,15 +394,6 @@ public class AdapterServiceTest {
         }
     }
 
-    private static void verifyStateChange(
-            IBluetoothCallback cb, int prevState, int currState, int timeoutMs) {
-        try {
-            verify(cb, timeout(timeoutMs)).onBluetoothStateChange(prevState, currState);
-        } catch (RemoteException e) {
-            // the mocked onBluetoothStateChange doesn't throw RemoteException
-        }
-    }
-
     private static void verifyStateChange(IBluetoothCallback cb, int prevState, int currState) {
         try {
             verify(cb).onBluetoothStateChange(prevState, currState);
