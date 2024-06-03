@@ -24,6 +24,7 @@ java_defaults {
             "-Xep:AlreadyChecked:ERROR",
             "-Xep:CheckReturnValue:ERROR",
             "-Xep:ClassCanBeStatic:ERROR",
+            "-Xep:EmptyCatch:ERROR",
             "-Xep:EqualsIncompatibleType:ERROR",
             "-Xep:InvalidInlineTag:ERROR",
             "-Xep:ReferenceEquality:ERROR",

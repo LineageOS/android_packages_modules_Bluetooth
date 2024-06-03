@@ -256,6 +256,7 @@ public class TestUtils {
                     try {
                         wait();
                     } catch (InterruptedException e) {
+                        Log.w(TAG, "waitForIdle got interrupted", e);
                     }
                 }
             }
@@ -454,6 +455,7 @@ public class TestUtils {
                     try {
                         wait();
                     } catch (InterruptedException e) {
+                        Log.w(TAG, "waitForComplete got interrupted", e);
                     }
                 }
             }
