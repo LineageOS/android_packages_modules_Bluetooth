@@ -185,7 +185,6 @@ static void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
       break;
     }
 
-    case BTA_GATTC_ACL_EVT:
     case BTA_GATTC_DEREG_EVT:
     case BTA_GATTC_SEARCH_RES_EVT:
     case BTA_GATTC_CANCEL_OPEN_EVT:
