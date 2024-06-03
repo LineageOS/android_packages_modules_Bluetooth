@@ -33,10 +33,10 @@ import java.security.NoSuchAlgorithmException;
 /**
  * An object to represent a piece of cover artwork/
  *
- * This object abstracts away the actual storage method and provides a means for others to
+ * <p>This object abstracts away the actual storage method and provides a means for others to
  * understand available formats and get the underlying image in a particular format.
  *
- * All return values are ready to use by a BIP server.
+ * <p>All return values are ready to use by a BIP server.
  */
 public class CoverArt {
     private static final String TAG = CoverArt.class.getSimpleName();
@@ -45,9 +45,7 @@ public class CoverArt {
     private String mImageHandle = null;
     private Bitmap mImage = null;
 
-    /**
-     * Create a CoverArt object from an audio_util Image abstraction
-     */
+    /** Create a CoverArt object from an audio_util Image abstraction */
     CoverArt(Image image) {
         // Create a scaled version of the image for now, as consumers don't need
         // anything larger than this at the moment. Also makes each image gathered
@@ -58,7 +56,7 @@ public class CoverArt {
     /**
      * Get the image handle that has been associated with this image.
      *
-     * If this returns null then you will fail to generate image properties
+     * <p>If this returns null then you will fail to generate image properties
      */
     public String getImageHandle() {
         return mImageHandle;
@@ -67,26 +65,22 @@ public class CoverArt {
     /**
      * Set the image handle that has been associated with this image.
      *
-     * This is required to generate image properties
+     * <p>This is required to generate image properties
      */
     public void setImageHandle(String handle) {
         mImageHandle = handle;
     }
 
-    /**
-     * Covert a Bitmap to a byte array with an image format without lossy compression
-     */
+    /** Covert a Bitmap to a byte array with an image format without lossy compression */
     private byte[] toByteArray(Bitmap bitmap) {
         if (bitmap == null) return null;
-        ByteArrayOutputStream buffer = new ByteArrayOutputStream(
-                    bitmap.getWidth() * bitmap.getHeight());
+        ByteArrayOutputStream buffer =
+                new ByteArrayOutputStream(bitmap.getWidth() * bitmap.getHeight());
         bitmap.compress(Bitmap.CompressFormat.PNG, 100, buffer);
         return buffer.toByteArray();
     }
 
-    /**
-     * Get a hash code of this CoverArt image
-     */
+    /** Get a hash code of this CoverArt image */
     public String getImageHash() {
         byte[] image = toByteArray(mImage);
         if (image == null) return null;
@@ -107,9 +101,7 @@ public class CoverArt {
         return hash;
     }
 
-    /**
-     * Get the cover artwork image bytes in the native format
-     */
+    /** Get the cover artwork image bytes in the native format */
     public byte[] getImage() {
         debug("GetImage(native)");
         if (mImage == null) return null;
@@ -118,9 +110,7 @@ public class CoverArt {
         return outputStream.toByteArray();
     }
 
-    /**
-     * Get the cover artwork image bytes in the given encoding and pixel size
-     */
+    /** Get the cover artwork image bytes in the given encoding and pixel size */
     public byte[] getImage(BipImageDescriptor descriptor) {
         debug("GetImage(descriptor=" + descriptor);
         if (mImage == null) return null;
@@ -135,9 +125,7 @@ public class CoverArt {
         return outputStream.toByteArray();
     }
 
-    /**
-     * Determine if a given image descriptor is valid
-     */
+    /** Determine if a given image descriptor is valid */
     private boolean isDescriptorValid(BipImageDescriptor descriptor) {
         debug("isDescriptorValid(descriptor=" + descriptor + ")");
         if (descriptor == null) return false;
@@ -151,9 +139,7 @@ public class CoverArt {
         return false;
     }
 
-    /**
-     * Get the cover artwork image bytes as a 200 x 200 JPEG thumbnail
-     */
+    /** Get the cover artwork image bytes as a 200 x 200 JPEG thumbnail */
     public byte[] getThumbnail() {
         debug("GetImageThumbnail()");
         if (mImage == null) return null;
@@ -162,9 +148,7 @@ public class CoverArt {
         return outputStream.toByteArray();
     }
 
-    /**
-     * Get the set of image properties that the cover artwork can be turned into
-     */
+    /** Get the set of image properties that the cover artwork can be turned into */
     public BipImageProperties getImageProperties() {
         debug("GetImageProperties()");
         if (mImage == null) {
@@ -187,9 +171,7 @@ public class CoverArt {
         return properties;
     }
 
-    /**
-     * Get the storage size of this image in bytes
-     */
+    /** Get the storage size of this image in bytes */
     public int size() {
         return mImage != null ? mImage.getAllocationByteCount() : 0;
     }
@@ -199,16 +181,12 @@ public class CoverArt {
         return "{handle=" + mImageHandle + ", size=" + size() + " }";
     }
 
-    /**
-     * Print a message to DEBUG if debug output is enabled
-     */
+    /** Print a message to DEBUG if debug output is enabled */
     private void debug(String msg) {
         Log.d(TAG, msg);
     }
 
-    /**
-     * Print a message to ERROR
-     */
+    /** Print a message to ERROR */
     private void error(String msg) {
         Log.e(TAG, msg);
     }

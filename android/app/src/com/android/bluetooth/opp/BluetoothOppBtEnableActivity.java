@@ -45,12 +45,9 @@ import androidx.annotation.VisibleForTesting;
 
 import com.android.bluetooth.R;
 
-/**
- * This class is designed to show BT enable confirmation dialog;
- */
+/** This class is designed to show BT enable confirmation dialog; */
 public class BluetoothOppBtEnableActivity extends AlertActivity {
-    @VisibleForTesting
-    BluetoothOppManager mOppManager;
+    @VisibleForTesting BluetoothOppManager mOppManager;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,8 +61,8 @@ public class BluetoothOppBtEnableActivity extends AlertActivity {
         mAlertBuilder.setIconAttribute(android.R.attr.alertDialogIcon);
         mAlertBuilder.setTitle(getString(R.string.bt_enable_title));
         mAlertBuilder.setView(createView());
-        mAlertBuilder.setPositiveButton(R.string.bt_enable_ok,
-                (dialog, which) -> onEnableBluetooth());
+        mAlertBuilder.setPositiveButton(
+                R.string.bt_enable_ok, (dialog, which) -> onEnableBluetooth());
         mAlertBuilder.setNegativeButton(R.string.bt_enable_cancel, (dialog, which) -> finish());
         setupAlert();
     }
@@ -74,7 +71,9 @@ public class BluetoothOppBtEnableActivity extends AlertActivity {
         View view = getLayoutInflater().inflate(R.layout.confirm_dialog, null);
         TextView contentView = (TextView) view.findViewById(R.id.content);
         contentView.setText(
-                getString(R.string.bt_enable_line1) + "\n\n" + getString(R.string.bt_enable_line2)
+                getString(R.string.bt_enable_line1)
+                        + "\n\n"
+                        + getString(R.string.bt_enable_line2)
                         + "\n");
 
         return view;
@@ -84,8 +83,8 @@ public class BluetoothOppBtEnableActivity extends AlertActivity {
         mOppManager.enableBluetooth(); // this is an asyn call
         mOppManager.mSendingFlag = true;
 
-        Toast.makeText(this, getString(R.string.enabling_progress_content),
-                Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, getString(R.string.enabling_progress_content), Toast.LENGTH_SHORT)
+                .show();
 
         Intent in = new Intent(this, BluetoothOppBtEnablingActivity.class);
         in.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);

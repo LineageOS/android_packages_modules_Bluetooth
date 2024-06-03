@@ -47,8 +47,7 @@ public class MnsObexServerTest {
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    MceStateMachine mStateMachine;
+    @Mock MceStateMachine mStateMachine;
 
     MnsObexServer mServer;
 
@@ -59,7 +58,7 @@ public class MnsObexServerTest {
 
     @Test
     public void onConnect_whenUuidIsWrong() {
-        byte[] wrongUuid = new byte[]{};
+        byte[] wrongUuid = new byte[] {};
         HeaderSet request = new HeaderSet();
         request.setHeader(HeaderSet.TARGET, wrongUuid);
         HeaderSet reply = new HeaderSet();
@@ -115,14 +114,15 @@ public class MnsObexServerTest {
         xml.append("    old_folder=\"test_old_folder\"\n");
         xml.append("    msg_type=\"MMS\"\n");
         xml.append("/>\n");
-        DataInputStream stream = new DataInputStream(
-                new ByteArrayInputStream(xml.toString().getBytes()));
+        DataInputStream stream =
+                new DataInputStream(new ByteArrayInputStream(xml.toString().getBytes()));
 
-        byte[] applicationParameter = new byte[] {
-                Request.OAP_TAGID_MAS_INSTANCE_ID,
-                1, // length in byte
-                (byte) 55
-        };
+        byte[] applicationParameter =
+                new byte[] {
+                    Request.OAP_TAGID_MAS_INSTANCE_ID,
+                    1, // length in byte
+                    (byte) 55
+                };
 
         HeaderSet headerSet = new HeaderSet();
         headerSet.setHeader(HeaderSet.TYPE, MnsObexServer.TYPE);

@@ -37,24 +37,16 @@ class PlayerApplicationSettings {
     static final byte REPEAT_STATUS = 0x02;
     static final byte SHUFFLE_STATUS = 0x03;
 
-    @VisibleForTesting
-    static final byte JNI_REPEAT_STATUS_OFF = 0x01;
-    @VisibleForTesting
-    static final byte JNI_REPEAT_STATUS_SINGLE_TRACK_REPEAT = 0x02;
-    @VisibleForTesting
-    static final byte JNI_REPEAT_STATUS_ALL_TRACK_REPEAT = 0x03;
-    @VisibleForTesting
-    static final byte JNI_REPEAT_STATUS_GROUP_REPEAT = 0x04;
+    @VisibleForTesting static final byte JNI_REPEAT_STATUS_OFF = 0x01;
+    @VisibleForTesting static final byte JNI_REPEAT_STATUS_SINGLE_TRACK_REPEAT = 0x02;
+    @VisibleForTesting static final byte JNI_REPEAT_STATUS_ALL_TRACK_REPEAT = 0x03;
+    @VisibleForTesting static final byte JNI_REPEAT_STATUS_GROUP_REPEAT = 0x04;
 
-    @VisibleForTesting
-    static final byte JNI_SHUFFLE_STATUS_OFF = 0x01;
-    @VisibleForTesting
-    static final byte JNI_SHUFFLE_STATUS_ALL_TRACK_SHUFFLE = 0x02;
-    @VisibleForTesting
-    static final byte JNI_SHUFFLE_STATUS_GROUP_SHUFFLE = 0x03;
+    @VisibleForTesting static final byte JNI_SHUFFLE_STATUS_OFF = 0x01;
+    @VisibleForTesting static final byte JNI_SHUFFLE_STATUS_ALL_TRACK_SHUFFLE = 0x02;
+    @VisibleForTesting static final byte JNI_SHUFFLE_STATUS_GROUP_SHUFFLE = 0x03;
 
-    @VisibleForTesting
-    static final byte JNI_STATUS_INVALID = -1;
+    @VisibleForTesting static final byte JNI_STATUS_INVALID = -1;
 
     /*
      * Hash map of current settings.
@@ -96,7 +88,8 @@ class PlayerApplicationSettings {
             for (int i = 0; i < btAvrcpAttributeList.length; ) {
                 byte attrId = btAvrcpAttributeList[i++];
 
-                newObj.mSettings.put(attrId,
+                newObj.mSettings.put(
+                        attrId,
                         mapAttribIdValtoAvrcpPlayerSetting(attrId, btAvrcpAttributeList[i++]));
             }
         } catch (ArrayIndexOutOfBoundsException exception) {
@@ -207,8 +200,10 @@ class PlayerApplicationSettings {
     @Override
     public String toString() {
         return "<PlayerApplicationSettings"
-                + " repeat=" + repeatStatusToString(getSetting(REPEAT_STATUS))
-                + " shuffle=" + shuffleStatusToString(getSetting(SHUFFLE_STATUS))
+                + " repeat="
+                + repeatStatusToString(getSetting(REPEAT_STATUS))
+                + " shuffle="
+                + shuffleStatusToString(getSetting(SHUFFLE_STATUS))
                 + ">";
     }
 }

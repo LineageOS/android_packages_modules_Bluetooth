@@ -44,8 +44,7 @@ public class HidHostServiceBinderTest {
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    private HidHostService mService;
+    @Mock private HidHostService mService;
 
     BluetoothDevice mRemoteDevice;
 
@@ -75,8 +74,8 @@ public class HidHostServiceBinderTest {
     public void getConnectedDevices_callsServiceMethod() {
         mBinder.getConnectedDevices(null);
 
-        verify(mService).getDevicesMatchingConnectionStates(
-                new int[] { BluetoothProfile.STATE_CONNECTED });
+        verify(mService)
+                .getDevicesMatchingConnectionStates(new int[] {BluetoothProfile.STATE_CONNECTED});
     }
 
     @Test

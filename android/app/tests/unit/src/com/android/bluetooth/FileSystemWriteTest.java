@@ -25,10 +25,7 @@ import org.junit.runner.RunWith;
 import java.io.File;
 import java.io.IOException;
 
-/**
- * Test Bluetooth's ability to write to the different directories that it
- * is supposed to own
- */
+/** Test Bluetooth's ability to write to the different directories that it is supposed to own */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class FileSystemWriteTest {

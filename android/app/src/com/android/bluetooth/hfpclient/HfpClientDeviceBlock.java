@@ -51,7 +51,9 @@ public class HfpClientDeviceBlock {
     private Bundle mScoState;
     private final HeadsetClientServiceInterface mServiceInterface;
 
-    HfpClientDeviceBlock(BluetoothDevice device, HfpClientConnectionService connServ,
+    HfpClientDeviceBlock(
+            BluetoothDevice device,
+            HfpClientConnectionService connServ,
             HeadsetClientServiceInterface serviceInterface) {
         mDevice = device;
         mConnServ = connServ;
@@ -66,7 +68,6 @@ public class HfpClientDeviceBlock {
 
         mScoState = getScoStateFromDevice(device);
         debug("SCO state = " + mScoState);
-
 
         List<HfpClientCall> calls = mServiceInterface.getCurrentCalls(mDevice);
         debug("Got calls " + calls);
@@ -140,8 +141,9 @@ public class HfpClientDeviceBlock {
 
     synchronized void onConference(Connection connection1, Connection connection2) {
         if (mConference == null) {
-            mConference = new HfpClientConference(mDevice, mPhoneAccount.getAccountHandle(),
-                    mServiceInterface);
+            mConference =
+                    new HfpClientConference(
+                            mDevice, mPhoneAccount.getAccountHandle(), mServiceInterface);
             mConference.setExtras(mScoState);
         }
 
@@ -196,14 +198,14 @@ public class HfpClientDeviceBlock {
                     || call.getState() == HfpClientCall.CALL_STATE_HELD) {
                 // This is an outgoing call. Even if it is an active call we do not have a way of
                 // putting that parcelable in a seaprate field.
-                b.putParcelable(TelecomManager.EXTRA_OUTGOING_CALL_EXTRAS,
-                        new ParcelUuid(call.getUUID()));
+                b.putParcelable(
+                        TelecomManager.EXTRA_OUTGOING_CALL_EXTRAS, new ParcelUuid(call.getUUID()));
                 mTelecomManager.addNewUnknownCall(mPhoneAccount.getAccountHandle(), b);
             } else if (call.getState() == HfpClientCall.CALL_STATE_INCOMING
                     || call.getState() == HfpClientCall.CALL_STATE_WAITING) {
                 // This is an incoming call.
-                b.putParcelable(TelecomManager.EXTRA_INCOMING_CALL_EXTRAS,
-                        new ParcelUuid(call.getUUID()));
+                b.putParcelable(
+                        TelecomManager.EXTRA_INCOMING_CALL_EXTRAS, new ParcelUuid(call.getUUID()));
                 b.putBoolean(TelecomManager.EXTRA_CALL_HAS_IN_BAND_RINGTONE, call.isInBandRing());
                 mTelecomManager.addNewIncomingCall(mPhoneAccount.getAccountHandle(), b);
             }
@@ -235,18 +237,17 @@ public class HfpClientDeviceBlock {
         }
     }
 
-    private boolean isDisconnectingToActive(HfpClientConnection prevConn,
-            HfpClientCall newCall) {
+    private boolean isDisconnectingToActive(HfpClientConnection prevConn, HfpClientCall newCall) {
         debug("prevConn " + prevConn.isClosing() + " new call " + newCall.getState());
-        if (prevConn.isClosing() && prevConn.getCall().getState() != newCall.getState()
+        if (prevConn.isClosing()
+                && prevConn.getCall().getState() != newCall.getState()
                 && newCall.getState() != HfpClientCall.CALL_STATE_TERMINATED) {
             return true;
         }
         return false;
     }
 
-    private synchronized HfpClientConnection buildConnection(HfpClientCall call,
-            Uri number) {
+    private synchronized HfpClientConnection buildConnection(HfpClientCall call, Uri number) {
         if (call == null && number == null) {
             error("Both call and number cannot be null.");
             return null;
@@ -254,9 +255,10 @@ public class HfpClientDeviceBlock {
 
         debug("Creating connection on " + mDevice + " for " + call + "/" + number);
 
-        HfpClientConnection connection = (call != null
-                ? new HfpClientConnection(mDevice, call, mConnServ, mServiceInterface)
-                : new HfpClientConnection(mDevice, number, mConnServ, mServiceInterface));
+        HfpClientConnection connection =
+                (call != null
+                        ? new HfpClientConnection(mDevice, call, mConnServ, mServiceInterface)
+                        : new HfpClientConnection(mDevice, number, mConnServ, mServiceInterface));
         connection.setExtras(mScoState);
 
         debug("Connection extras = " + connection.getExtras().toString());
@@ -291,8 +293,9 @@ public class HfpClientDeviceBlock {
             if (((HfpClientConnection) otherConn).inConference()) {
                 // If this is the first connection with conference, create the conference first.
                 if (mConference == null) {
-                    mConference = new HfpClientConference(mDevice, mPhoneAccount.getAccountHandle(),
-                            mServiceInterface);
+                    mConference =
+                            new HfpClientConference(
+                                    mDevice, mPhoneAccount.getAccountHandle(), mServiceInterface);
                     mConference.setExtras(mScoState);
                 }
                 if (mConference.addConnection(otherConn)) {
@@ -338,7 +341,7 @@ public class HfpClientDeviceBlock {
         sb.append(" account=" + mPhoneAccount);
         sb.append(" connections=[");
         boolean first = true;
-        for (HfpClientConnection connection :  mConnections.values()) {
+        for (HfpClientConnection connection : mConnections.values()) {
             if (!first) {
                 sb.append(", ");
             }
@@ -351,9 +354,7 @@ public class HfpClientDeviceBlock {
         return sb.toString();
     }
 
-    /**
-     * Factory class for {@link HfpClientDeviceBlock}
-     */
+    /** Factory class for {@link HfpClientDeviceBlock} */
     public static class Factory {
         private static Factory sInstance = new Factory();
 
@@ -362,21 +363,20 @@ public class HfpClientDeviceBlock {
             sInstance = instance;
         }
 
-        /**
-         * Returns an instance of {@link HfpClientDeviceBlock}
-         */
-        public static HfpClientDeviceBlock build(BluetoothDevice device,
+        /** Returns an instance of {@link HfpClientDeviceBlock} */
+        public static HfpClientDeviceBlock build(
+                BluetoothDevice device,
                 HfpClientConnectionService connServ,
                 HeadsetClientServiceInterface serviceInterface) {
             return sInstance.buildInternal(device, connServ, serviceInterface);
         }
 
-        protected HfpClientDeviceBlock buildInternal(BluetoothDevice device,
+        protected HfpClientDeviceBlock buildInternal(
+                BluetoothDevice device,
                 HfpClientConnectionService connServ,
                 HeadsetClientServiceInterface serviceInterface) {
             return new HfpClientDeviceBlock(device, connServ, serviceInterface);
         }
-
     }
 
     // Per-Device logging

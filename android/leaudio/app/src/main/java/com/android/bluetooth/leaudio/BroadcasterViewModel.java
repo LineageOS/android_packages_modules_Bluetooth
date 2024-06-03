@@ -68,11 +68,13 @@ public class BroadcasterViewModel extends AndroidViewModel {
         return mBluetooth.getBroadcastUpdateMetadataLive();
     }
 
-    public LiveData<Pair<Integer /* reason */, Integer /* broadcastId */>> getBroadcastPlaybackStartedMutableLive() {
+    public LiveData<Pair<Integer /* reason */, Integer /* broadcastId */>>
+            getBroadcastPlaybackStartedMutableLive() {
         return mBluetooth.getBroadcastPlaybackStartedMutableLive();
     }
 
-    public LiveData<Pair<Integer /* reason */, Integer /* broadcastId */>> getBroadcastPlaybackStoppedMutableLive() {
+    public LiveData<Pair<Integer /* reason */, Integer /* broadcastId */>>
+            getBroadcastPlaybackStoppedMutableLive() {
         return mBluetooth.getBroadcastPlaybackStoppedMutableLive();
     }
 
@@ -80,7 +82,8 @@ public class BroadcasterViewModel extends AndroidViewModel {
         return mBluetooth.getBroadcastAddedMutableLive();
     }
 
-    public LiveData<Pair<Integer /* reason */, Integer /* broadcastId */>> getBroadcastRemovedMutableLive() {
+    public LiveData<Pair<Integer /* reason */, Integer /* broadcastId */>>
+            getBroadcastRemovedMutableLive() {
         return mBluetooth.getBroadcastRemovedMutableLive();
     }
 

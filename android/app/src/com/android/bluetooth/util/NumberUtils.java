@@ -16,21 +16,15 @@
 
 package com.android.bluetooth.util;
 
-/**
- * Utility for parsing numbers in Bluetooth.
- */
+/** Utility for parsing numbers in Bluetooth. */
 public class NumberUtils {
 
-    /**
-     * Convert a byte to unsigned int.
-     */
+    /** Convert a byte to unsigned int. */
     public static int unsignedByteToInt(byte b) {
         return b & 0xFF;
     }
 
-    /**
-     * Convert a little endian byte array to integer.
-     */
+    /** Convert a little endian byte array to integer. */
     public static int littleEndianByteArrayToInt(byte[] bytes) {
         int length = bytes.length;
         if (length == 0) {

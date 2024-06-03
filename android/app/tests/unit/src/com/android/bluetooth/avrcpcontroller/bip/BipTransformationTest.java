@@ -22,9 +22,7 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-/**
- * A test suite for the BipTransformation class
- */
+/** A test suite for the BipTransformation class */
 @RunWith(AndroidJUnit4.class)
 public class BipTransformationTest {
 
@@ -257,7 +255,7 @@ public class BipTransformationTest {
 
     @Test
     public void testCreate_cropArray() {
-        BipTransformation trans = new BipTransformation(new int[]{BipTransformation.CROP});
+        BipTransformation trans = new BipTransformation(new int[] {BipTransformation.CROP});
         Assert.assertFalse(trans.isSupported(BipTransformation.STRETCH));
         Assert.assertFalse(trans.isSupported(BipTransformation.FILL));
         Assert.assertTrue(trans.isSupported(BipTransformation.CROP));
@@ -266,8 +264,9 @@ public class BipTransformationTest {
 
     @Test
     public void testCreate_stretchFill() {
-        BipTransformation trans = new BipTransformation(new int[]{BipTransformation.STRETCH,
-                BipTransformation.FILL});
+        BipTransformation trans =
+                new BipTransformation(
+                        new int[] {BipTransformation.STRETCH, BipTransformation.FILL});
         Assert.assertTrue(trans.isSupported(BipTransformation.STRETCH));
         Assert.assertTrue(trans.isSupported(BipTransformation.FILL));
         Assert.assertFalse(trans.isSupported(BipTransformation.CROP));
@@ -276,8 +275,13 @@ public class BipTransformationTest {
 
     @Test
     public void testCreate_stretchFillCrop() {
-        BipTransformation trans = new BipTransformation(new int[]{BipTransformation.STRETCH,
-                BipTransformation.FILL, BipTransformation.CROP});
+        BipTransformation trans =
+                new BipTransformation(
+                        new int[] {
+                            BipTransformation.STRETCH,
+                            BipTransformation.FILL,
+                            BipTransformation.CROP
+                        });
         Assert.assertTrue(trans.isSupported(BipTransformation.STRETCH));
         Assert.assertTrue(trans.isSupported(BipTransformation.FILL));
         Assert.assertTrue(trans.isSupported(BipTransformation.CROP));
@@ -286,8 +290,13 @@ public class BipTransformationTest {
 
     @Test
     public void testCreate_stretchFillCropOrderChanged() {
-        BipTransformation trans = new BipTransformation(new int[]{BipTransformation.CROP,
-                BipTransformation.FILL, BipTransformation.STRETCH});
+        BipTransformation trans =
+                new BipTransformation(
+                        new int[] {
+                            BipTransformation.CROP,
+                            BipTransformation.FILL,
+                            BipTransformation.STRETCH
+                        });
         Assert.assertTrue(trans.isSupported(BipTransformation.STRETCH));
         Assert.assertTrue(trans.isSupported(BipTransformation.FILL));
         Assert.assertTrue(trans.isSupported(BipTransformation.CROP));
@@ -301,7 +310,7 @@ public class BipTransformationTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testCreate_badTransformation() {
-        BipTransformation trans = new BipTransformation(new int[]{BipTransformation.CROP, -7});
+        BipTransformation trans = new BipTransformation(new int[] {BipTransformation.CROP, -7});
     }
 
     @Test

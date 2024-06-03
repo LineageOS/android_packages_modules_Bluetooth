@@ -42,8 +42,7 @@ public class BluetoothPbapAuthenticatorTest {
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    PbapStateMachine mMockPbapStateMachine;
+    @Mock PbapStateMachine mMockPbapStateMachine;
 
     @Before
     public void setUp() throws Exception {
@@ -90,34 +89,48 @@ public class BluetoothPbapAuthenticatorTest {
     @Test
     public void testOnAuthenticationChallenge() {
         final String sessionKey = "test_session_key";
-        doAnswer(invocation -> {
-            mAuthenticator.setSessionKey(sessionKey);
-            mAuthenticator.setChallenged(true);
-            return null;
-        }).when(mMockPbapStateMachine).sendMessage(PbapStateMachine.CREATE_NOTIFICATION);
+        doAnswer(
+                        invocation -> {
+                            mAuthenticator.setSessionKey(sessionKey);
+                            mAuthenticator.setChallenged(true);
+                            return null;
+                        })
+                .when(mMockPbapStateMachine)
+                .sendMessage(PbapStateMachine.CREATE_NOTIFICATION);
 
         // Note: onAuthenticationChallenge() does not use any arguments
-        PasswordAuthentication passwordAuthentication = mAuthenticator.onAuthenticationChallenge(
-                /*description=*/ null, /*isUserIdRequired=*/ false, /*isFullAccess=*/ false);
+        PasswordAuthentication passwordAuthentication =
+                mAuthenticator.onAuthenticationChallenge(
+                        /* description= */ null,
+                        /* isUserIdRequired= */ false,
+                        /* isFullAccess= */ false);
 
         verify(mMockPbapStateMachine).sendMessage(PbapStateMachine.CREATE_NOTIFICATION);
-        verify(mMockPbapStateMachine).sendMessageDelayed(PbapStateMachine.REMOVE_NOTIFICATION,
-                BluetoothPbapService.USER_CONFIRM_TIMEOUT_VALUE);
+        verify(mMockPbapStateMachine)
+                .sendMessageDelayed(
+                        PbapStateMachine.REMOVE_NOTIFICATION,
+                        BluetoothPbapService.USER_CONFIRM_TIMEOUT_VALUE);
         assertThat(passwordAuthentication.getPassword()).isEqualTo(sessionKey.getBytes());
     }
 
     @Test
     public void testOnAuthenticationChallenge_returnsNullWhenSessionKeyIsEmpty() {
         final String emptySessionKey = "";
-        doAnswer(invocation -> {
-            mAuthenticator.setSessionKey(emptySessionKey);
-            mAuthenticator.setChallenged(true);
-            return null;
-        }).when(mMockPbapStateMachine).sendMessage(PbapStateMachine.CREATE_NOTIFICATION);
+        doAnswer(
+                        invocation -> {
+                            mAuthenticator.setSessionKey(emptySessionKey);
+                            mAuthenticator.setChallenged(true);
+                            return null;
+                        })
+                .when(mMockPbapStateMachine)
+                .sendMessage(PbapStateMachine.CREATE_NOTIFICATION);
 
         // Note: onAuthenticationChallenge() does not use any arguments
-        PasswordAuthentication passwordAuthentication = mAuthenticator.onAuthenticationChallenge(
-                /*description=*/ null, /*isUserIdRequired=*/ false, /*isFullAccess=*/ false);
+        PasswordAuthentication passwordAuthentication =
+                mAuthenticator.onAuthenticationChallenge(
+                        /* description= */ null,
+                        /* isUserIdRequired= */ false,
+                        /* isFullAccess= */ false);
         assertThat(passwordAuthentication).isNull();
     }
 

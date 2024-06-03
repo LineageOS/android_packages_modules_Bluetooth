@@ -57,8 +57,7 @@ public class CallInfoTest {
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    private TelecomManager mMockTelecomManager;
+    @Mock private TelecomManager mMockTelecomManager;
 
     private BluetoothInCallService mBluetoothInCallService;
     private BluetoothInCallService.CallInfo mMockCallInfo;
@@ -269,8 +268,8 @@ public class CallInfoTest {
         List<PhoneAccountHandle> handles = new ArrayList<>();
         PhoneAccountHandle testHandle = makeQuickAccountHandle(testId);
         handles.add(testHandle);
-        when(mMockTelecomManager.getPhoneAccountsSupportingScheme(
-                PhoneAccount.SCHEME_TEL)).thenReturn(handles);
+        when(mMockTelecomManager.getPhoneAccountsSupportingScheme(PhoneAccount.SCHEME_TEL))
+                .thenReturn(handles);
 
         PhoneAccount fakePhoneAccount = makeQuickAccount(testId, TEST_ACCOUNT_INDEX);
         when(mMockTelecomManager.getPhoneAccount(testHandle)).thenReturn(fakePhoneAccount);
@@ -280,13 +279,14 @@ public class CallInfoTest {
     }
 
     private static ComponentName makeQuickConnectionServiceComponentName() {
-        return new ComponentName("com.placeholder.connectionservice.package.name",
+        return new ComponentName(
+                "com.placeholder.connectionservice.package.name",
                 "com.placeholder.connectionservice.class.name");
     }
 
     private static PhoneAccountHandle makeQuickAccountHandle(String id) {
-        return new PhoneAccountHandle(makeQuickConnectionServiceComponentName(), id,
-                Process.myUserHandle());
+        return new PhoneAccountHandle(
+                makeQuickConnectionServiceComponentName(), id, Process.myUserHandle());
     }
 
     private PhoneAccount.Builder makeQuickAccountBuilder(String id, int idx) {

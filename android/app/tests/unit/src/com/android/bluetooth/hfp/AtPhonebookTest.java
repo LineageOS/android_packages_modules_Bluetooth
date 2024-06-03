@@ -67,8 +67,7 @@ public class AtPhonebookTest {
     @Mock private HeadsetNativeInterface mNativeInterface;
 
     private AtPhonebook mAtPhonebook;
-    @Spy
-    private BluetoothMethodProxy mHfpMethodProxy = BluetoothMethodProxy.getInstance();
+    @Spy private BluetoothMethodProxy mHfpMethodProxy = BluetoothMethodProxy.getInstance();
 
     @Before
     public void setUp() throws Exception {
@@ -90,8 +89,8 @@ public class AtPhonebookTest {
 
     @Test
     public void checkAccessPermission_returnsCorrectPermission() {
-        assertThat(mAtPhonebook.checkAccessPermission(mTestDevice)).isEqualTo(
-                BluetoothDevice.ACCESS_UNKNOWN);
+        assertThat(mAtPhonebook.checkAccessPermission(mTestDevice))
+                .isEqualTo(BluetoothDevice.ACCESS_UNKNOWN);
     }
 
     @Test
@@ -104,28 +103,33 @@ public class AtPhonebookTest {
     @Test
     public void handleCscsCommand() {
         mAtPhonebook.handleCscsCommand(INVALID_COMMAND, AtPhonebook.TYPE_READ, mTestDevice);
-        verify(mNativeInterface).atResponseString(mTestDevice,
-                "+CSCS: \"" + "UTF-8" + "\"");
+        verify(mNativeInterface).atResponseString(mTestDevice, "+CSCS: \"" + "UTF-8" + "\"");
 
         mAtPhonebook.handleCscsCommand(INVALID_COMMAND, AtPhonebook.TYPE_TEST, mTestDevice);
-        verify(mNativeInterface).atResponseString(mTestDevice,
-                "+CSCS: (\"UTF-8\",\"IRA\",\"GSM\")");
+        verify(mNativeInterface)
+                .atResponseString(mTestDevice, "+CSCS: (\"UTF-8\",\"IRA\",\"GSM\")");
 
         mAtPhonebook.handleCscsCommand(INVALID_COMMAND, AtPhonebook.TYPE_SET, mTestDevice);
-        verify(mNativeInterface, atLeastOnce()).atResponseCode(mTestDevice,
-                HeadsetHalConstants.AT_RESPONSE_ERROR, -1);
+        verify(mNativeInterface, atLeastOnce())
+                .atResponseCode(mTestDevice, HeadsetHalConstants.AT_RESPONSE_ERROR, -1);
 
         mAtPhonebook.handleCscsCommand("command=GSM", AtPhonebook.TYPE_SET, mTestDevice);
-        verify(mNativeInterface, atLeastOnce()).atResponseCode(mTestDevice,
-                HeadsetHalConstants.AT_RESPONSE_OK, -1);
+        verify(mNativeInterface, atLeastOnce())
+                .atResponseCode(mTestDevice, HeadsetHalConstants.AT_RESPONSE_OK, -1);
 
         mAtPhonebook.handleCscsCommand("command=ERR", AtPhonebook.TYPE_SET, mTestDevice);
-        verify(mNativeInterface).atResponseCode(mTestDevice, HeadsetHalConstants.AT_RESPONSE_ERROR,
-                BluetoothCmeError.OPERATION_NOT_SUPPORTED);
+        verify(mNativeInterface)
+                .atResponseCode(
+                        mTestDevice,
+                        HeadsetHalConstants.AT_RESPONSE_ERROR,
+                        BluetoothCmeError.OPERATION_NOT_SUPPORTED);
 
         mAtPhonebook.handleCscsCommand(INVALID_COMMAND, AtPhonebook.TYPE_UNKNOWN, mTestDevice);
-        verify(mNativeInterface).atResponseCode(mTestDevice, HeadsetHalConstants.AT_RESPONSE_ERROR,
-                BluetoothCmeError.TEXT_HAS_INVALID_CHARS);
+        verify(mNativeInterface)
+                .atResponseCode(
+                        mTestDevice,
+                        HeadsetHalConstants.AT_RESPONSE_ERROR,
+                        BluetoothCmeError.TEXT_HAS_INVALID_CHARS);
     }
 
     @Test
@@ -133,28 +137,37 @@ public class AtPhonebookTest {
         mAtPhonebook.handleCpbsCommand(INVALID_COMMAND, AtPhonebook.TYPE_READ, mTestDevice);
         int size = mAtPhonebook.getPhonebookResult("ME", true).cursor.getCount();
         int maxSize = mAtPhonebook.getMaxPhoneBookSize(size);
-        verify(mNativeInterface).atResponseString(mTestDevice,
-                "+CPBS: \"" + "ME" + "\"," + size + "," + maxSize);
+        verify(mNativeInterface)
+                .atResponseString(mTestDevice, "+CPBS: \"" + "ME" + "\"," + size + "," + maxSize);
 
         mAtPhonebook.handleCpbsCommand(INVALID_COMMAND, AtPhonebook.TYPE_TEST, mTestDevice);
-        verify(mNativeInterface).atResponseString(mTestDevice,
-                "+CPBS: (\"ME\",\"SM\",\"DC\",\"RC\",\"MC\")");
+        verify(mNativeInterface)
+                .atResponseString(mTestDevice, "+CPBS: (\"ME\",\"SM\",\"DC\",\"RC\",\"MC\")");
 
         mAtPhonebook.handleCpbsCommand(INVALID_COMMAND, AtPhonebook.TYPE_SET, mTestDevice);
-        verify(mNativeInterface).atResponseCode(mTestDevice, HeadsetHalConstants.AT_RESPONSE_ERROR,
-                BluetoothCmeError.OPERATION_NOT_SUPPORTED);
+        verify(mNativeInterface)
+                .atResponseCode(
+                        mTestDevice,
+                        HeadsetHalConstants.AT_RESPONSE_ERROR,
+                        BluetoothCmeError.OPERATION_NOT_SUPPORTED);
 
         mAtPhonebook.handleCpbsCommand("command=ERR", AtPhonebook.TYPE_SET, mTestDevice);
-        verify(mNativeInterface).atResponseCode(mTestDevice, HeadsetHalConstants.AT_RESPONSE_ERROR,
-                BluetoothCmeError.OPERATION_NOT_ALLOWED);
+        verify(mNativeInterface)
+                .atResponseCode(
+                        mTestDevice,
+                        HeadsetHalConstants.AT_RESPONSE_ERROR,
+                        BluetoothCmeError.OPERATION_NOT_ALLOWED);
 
         mAtPhonebook.handleCpbsCommand("command=SM", AtPhonebook.TYPE_SET, mTestDevice);
-        verify(mNativeInterface, atLeastOnce()).atResponseCode(mTestDevice,
-                HeadsetHalConstants.AT_RESPONSE_OK, -1);
+        verify(mNativeInterface, atLeastOnce())
+                .atResponseCode(mTestDevice, HeadsetHalConstants.AT_RESPONSE_OK, -1);
 
         mAtPhonebook.handleCpbsCommand(INVALID_COMMAND, AtPhonebook.TYPE_UNKNOWN, mTestDevice);
-        verify(mNativeInterface).atResponseCode(mTestDevice, HeadsetHalConstants.AT_RESPONSE_ERROR,
-                BluetoothCmeError.TEXT_HAS_INVALID_CHARS);
+        verify(mNativeInterface)
+                .atResponseCode(
+                        mTestDevice,
+                        HeadsetHalConstants.AT_RESPONSE_ERROR,
+                        BluetoothCmeError.TEXT_HAS_INVALID_CHARS);
     }
 
     @Test
@@ -165,53 +178,60 @@ public class AtPhonebookTest {
             size = 1;
         }
         verify(mNativeInterface).atResponseString(mTestDevice, "+CPBR: (1-" + size + "),30,30");
-        verify(mNativeInterface).atResponseCode(mTestDevice, HeadsetHalConstants.AT_RESPONSE_OK,
-                -1);
+        verify(mNativeInterface)
+                .atResponseCode(mTestDevice, HeadsetHalConstants.AT_RESPONSE_OK, -1);
 
         mAtPhonebook.handleCpbrCommand(INVALID_COMMAND, AtPhonebook.TYPE_SET, mTestDevice);
-        verify(mNativeInterface).atResponseCode(mTestDevice, HeadsetHalConstants.AT_RESPONSE_ERROR,
-                -1);
+        verify(mNativeInterface)
+                .atResponseCode(mTestDevice, HeadsetHalConstants.AT_RESPONSE_ERROR, -1);
 
         mAtPhonebook.handleCpbrCommand("command=ERR", AtPhonebook.TYPE_SET, mTestDevice);
-        verify(mNativeInterface).atResponseCode(mTestDevice, HeadsetHalConstants.AT_RESPONSE_ERROR,
-                BluetoothCmeError.TEXT_HAS_INVALID_CHARS);
+        verify(mNativeInterface)
+                .atResponseCode(
+                        mTestDevice,
+                        HeadsetHalConstants.AT_RESPONSE_ERROR,
+                        BluetoothCmeError.TEXT_HAS_INVALID_CHARS);
 
         mAtPhonebook.handleCpbrCommand("command=123,123", AtPhonebook.TYPE_SET, mTestDevice);
         assertThat(mAtPhonebook.getCheckingAccessPermission()).isTrue();
 
         mAtPhonebook.handleCpbrCommand(INVALID_COMMAND, AtPhonebook.TYPE_UNKNOWN, mTestDevice);
-        verify(mNativeInterface, atLeastOnce()).atResponseCode(mTestDevice,
-                HeadsetHalConstants.AT_RESPONSE_ERROR, BluetoothCmeError.TEXT_HAS_INVALID_CHARS);
+        verify(mNativeInterface, atLeastOnce())
+                .atResponseCode(
+                        mTestDevice,
+                        HeadsetHalConstants.AT_RESPONSE_ERROR,
+                        BluetoothCmeError.TEXT_HAS_INVALID_CHARS);
     }
 
     @Test
     public void processCpbrCommand() {
         mAtPhonebook.handleCpbsCommand("command=SM", AtPhonebook.TYPE_SET, mTestDevice);
-        assertThat(mAtPhonebook.processCpbrCommand(mTestDevice)).isEqualTo(
-                HeadsetHalConstants.AT_RESPONSE_OK);
+        assertThat(mAtPhonebook.processCpbrCommand(mTestDevice))
+                .isEqualTo(HeadsetHalConstants.AT_RESPONSE_OK);
 
         mAtPhonebook.handleCpbsCommand("command=ME", AtPhonebook.TYPE_SET, mTestDevice);
-        assertThat(mAtPhonebook.processCpbrCommand(mTestDevice)).isEqualTo(
-                HeadsetHalConstants.AT_RESPONSE_OK);
+        assertThat(mAtPhonebook.processCpbrCommand(mTestDevice))
+                .isEqualTo(HeadsetHalConstants.AT_RESPONSE_OK);
 
         mAtPhonebook.mCurrentPhonebook = "ER";
-        assertThat(mAtPhonebook.processCpbrCommand(mTestDevice)).isEqualTo(
-                HeadsetHalConstants.AT_RESPONSE_ERROR);
+        assertThat(mAtPhonebook.processCpbrCommand(mTestDevice))
+                .isEqualTo(HeadsetHalConstants.AT_RESPONSE_ERROR);
     }
 
     @Test
     public void processCpbrCommand_withMobilePhonebook() {
         Cursor mockCursorOne = mock(Cursor.class);
         when(mockCursorOne.getCount()).thenReturn(1);
-        when(mockCursorOne.getColumnIndex(Phone.TYPE)).thenReturn(1); //TypeColumn
-        when(mockCursorOne.getColumnIndex(Phone.NUMBER)).thenReturn(2); //numberColumn
+        when(mockCursorOne.getColumnIndex(Phone.TYPE)).thenReturn(1); // TypeColumn
+        when(mockCursorOne.getColumnIndex(Phone.NUMBER)).thenReturn(2); // numberColumn
         when(mockCursorOne.getColumnIndex(Phone.DISPLAY_NAME)).thenReturn(3); // nameColumn
         when(mockCursorOne.getInt(1)).thenReturn(Phone.TYPE_WORK);
         when(mockCursorOne.getString(2)).thenReturn(null);
         when(mockCursorOne.getString(3)).thenReturn(null);
         when(mockCursorOne.moveToNext()).thenReturn(false);
-        doReturn(mockCursorOne).when(mHfpMethodProxy).contentResolverQuery(any(), any(), any(),
-                any(), any());
+        doReturn(mockCursorOne)
+                .when(mHfpMethodProxy)
+                .contentResolverQuery(any(), any(), any(), any(), any());
 
         mAtPhonebook.mCurrentPhonebook = "ME";
         mAtPhonebook.mCpbrIndex1 = 1;
@@ -219,8 +239,19 @@ public class AtPhonebookTest {
 
         mAtPhonebook.processCpbrCommand(mTestDevice);
 
-        String expected = "+CPBR: " + 1 + ",\"" + "" + "\"," + PhoneNumberUtils.toaFromString("")
-                + ",\"" + "" + "/" + AtPhonebook.getPhoneType(Phone.TYPE_WORK) + "\"" + "\r\n\r\n";
+        String expected =
+                "+CPBR: "
+                        + 1
+                        + ",\""
+                        + ""
+                        + "\","
+                        + PhoneNumberUtils.toaFromString("")
+                        + ",\""
+                        + ""
+                        + "/"
+                        + AtPhonebook.getPhoneType(Phone.TYPE_WORK)
+                        + "\""
+                        + "\r\n\r\n";
         verify(mNativeInterface).atResponseString(mTestDevice, expected);
     }
 
@@ -233,16 +264,18 @@ public class AtPhonebookTest {
         String number = "1".repeat(31);
         when(mockCursorOne.getString(1)).thenReturn(number);
         when(mockCursorOne.getInt(2)).thenReturn(CallLog.Calls.PRESENTATION_RESTRICTED);
-        doReturn(mockCursorOne).when(mHfpMethodProxy).contentResolverQuery(any(), any(), any(),
-                any(), any());
+        doReturn(mockCursorOne)
+                .when(mHfpMethodProxy)
+                .contentResolverQuery(any(), any(), any(), any(), any());
 
         Cursor mockCursorTwo = mock(Cursor.class);
         when(mockCursorTwo.moveToFirst()).thenReturn(true);
         String name = "k".repeat(30);
         when(mockCursorTwo.getString(0)).thenReturn(name);
         when(mockCursorTwo.getInt(1)).thenReturn(1);
-        doReturn(mockCursorTwo).when(mHfpMethodProxy).contentResolverQuery(any(), any(), any(),
-                any(), any(), any());
+        doReturn(mockCursorTwo)
+                .when(mHfpMethodProxy)
+                .contentResolverQuery(any(), any(), any(), any(), any(), any());
 
         mAtPhonebook.mCurrentPhonebook = "MC";
         mAtPhonebook.mCpbrIndex1 = 1;
@@ -250,9 +283,17 @@ public class AtPhonebookTest {
 
         mAtPhonebook.processCpbrCommand(mTestDevice);
 
-        String expected = "+CPBR: " + 1 + ",\"" + "" + "\"," + PhoneNumberUtils.toaFromString(
-                number) + ",\"" + mTargetContext.getString(R.string.unknownNumber) + "\""
-                + "\r\n\r\n";
+        String expected =
+                "+CPBR: "
+                        + 1
+                        + ",\""
+                        + ""
+                        + "\","
+                        + PhoneNumberUtils.toaFromString(number)
+                        + ",\""
+                        + mTargetContext.getString(R.string.unknownNumber)
+                        + "\""
+                        + "\r\n\r\n";
         verify(mNativeInterface).atResponseString(mTestDevice, expected);
     }
 
@@ -265,16 +306,18 @@ public class AtPhonebookTest {
         String number = "1".repeat(31);
         when(mockCursorOne.getString(1)).thenReturn(number);
         when(mockCursorOne.getInt(2)).thenReturn(CallLog.Calls.PRESENTATION_RESTRICTED);
-        doReturn(mockCursorOne).when(mHfpMethodProxy).contentResolverQuery(any(), any(), any(),
-                any(), any());
+        doReturn(mockCursorOne)
+                .when(mHfpMethodProxy)
+                .contentResolverQuery(any(), any(), any(), any(), any());
 
         Cursor mockCursorTwo = mock(Cursor.class);
         when(mockCursorTwo.moveToFirst()).thenReturn(true);
         String name = "k".repeat(30);
         when(mockCursorTwo.getString(0)).thenReturn(name);
         when(mockCursorTwo.getInt(1)).thenReturn(1);
-        doReturn(mockCursorTwo).when(mHfpMethodProxy).contentResolverQuery(any(), any(), any(),
-                any(), any(), any());
+        doReturn(mockCursorTwo)
+                .when(mHfpMethodProxy)
+                .contentResolverQuery(any(), any(), any(), any(), any(), any());
 
         mAtPhonebook.mCurrentPhonebook = "RC";
         mAtPhonebook.mCpbrIndex1 = 1;
@@ -284,8 +327,17 @@ public class AtPhonebookTest {
         mAtPhonebook.processCpbrCommand(mTestDevice);
 
         String expectedName = new String(GsmAlphabet.stringToGsm8BitPacked(name.substring(0, 28)));
-        String expected = "+CPBR: " + 1 + ",\"" + number.substring(0, 30) + "\","
-                + PhoneNumberUtils.toaFromString(number) + ",\"" + expectedName + "\"" + "\r\n\r\n";
+        String expected =
+                "+CPBR: "
+                        + 1
+                        + ",\""
+                        + number.substring(0, 30)
+                        + "\","
+                        + PhoneNumberUtils.toaFromString(number)
+                        + ",\""
+                        + expectedName
+                        + "\""
+                        + "\r\n\r\n";
         verify(mNativeInterface).atResponseString(mTestDevice, expected);
     }
 

@@ -36,18 +36,21 @@ public class ConvoContactInfoTest {
     public void setConvoColumns() {
         BluetoothMapContentObserver.ConvoContactInfo info =
                 new BluetoothMapContentObserver.ConvoContactInfo();
-        MatrixCursor cursor = new MatrixCursor(
-                new String[]{BluetoothMapContract.ConvoContactColumns.CONVO_ID,
-                        BluetoothMapContract.ConvoContactColumns.NAME,
-                        BluetoothMapContract.ConvoContactColumns.NICKNAME,
-                        BluetoothMapContract.ConvoContactColumns.X_BT_UID,
-                        BluetoothMapContract.ConvoContactColumns.CHAT_STATE,
-                        BluetoothMapContract.ConvoContactColumns.UCI,
-                        BluetoothMapContract.ConvoContactColumns.LAST_ACTIVE,
-                        BluetoothMapContract.ConvoContactColumns.PRESENCE_STATE,
-                        BluetoothMapContract.ConvoContactColumns.STATUS_TEXT,
-                        BluetoothMapContract.ConvoContactColumns.PRIORITY,
-                        BluetoothMapContract.ConvoContactColumns.LAST_ONLINE});
+        MatrixCursor cursor =
+                new MatrixCursor(
+                        new String[] {
+                            BluetoothMapContract.ConvoContactColumns.CONVO_ID,
+                            BluetoothMapContract.ConvoContactColumns.NAME,
+                            BluetoothMapContract.ConvoContactColumns.NICKNAME,
+                            BluetoothMapContract.ConvoContactColumns.X_BT_UID,
+                            BluetoothMapContract.ConvoContactColumns.CHAT_STATE,
+                            BluetoothMapContract.ConvoContactColumns.UCI,
+                            BluetoothMapContract.ConvoContactColumns.LAST_ACTIVE,
+                            BluetoothMapContract.ConvoContactColumns.PRESENCE_STATE,
+                            BluetoothMapContract.ConvoContactColumns.STATUS_TEXT,
+                            BluetoothMapContract.ConvoContactColumns.PRIORITY,
+                            BluetoothMapContract.ConvoContactColumns.LAST_ONLINE
+                        });
 
         info.setConvoColunms(cursor);
 

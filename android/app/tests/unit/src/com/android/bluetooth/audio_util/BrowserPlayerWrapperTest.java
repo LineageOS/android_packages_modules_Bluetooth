@@ -80,15 +80,15 @@ public class BrowserPlayerWrapperTest {
     private MockContentResolver mTestContentResolver;
 
     private static final String TEST_AUTHORITY = "com.android.bluetooth.avrcp.test";
-    private static final Uri TEST_CONTENT_URI = new Uri.Builder()
-            .scheme(ContentResolver.SCHEME_CONTENT)
-            .authority(TEST_AUTHORITY)
-            .build();
+    private static final Uri TEST_CONTENT_URI =
+            new Uri.Builder()
+                    .scheme(ContentResolver.SCHEME_CONTENT)
+                    .authority(TEST_AUTHORITY)
+                    .build();
 
     private static final String IMAGE_HANDLE_1 = "0000001";
-    private static final Uri IMAGE_URI_1 = TEST_CONTENT_URI.buildUpon()
-            .appendQueryParameter("handle", IMAGE_HANDLE_1)
-            .build();
+    private static final Uri IMAGE_URI_1 =
+            TEST_CONTENT_URI.buildUpon().appendQueryParameter("handle", IMAGE_HANDLE_1).build();
     private static final String IMAGE_STRING_1 = IMAGE_URI_1.toString();
 
     private Bitmap mTestBitmap = null;
@@ -102,17 +102,20 @@ public class BrowserPlayerWrapperTest {
         mTestBitmap = loadImage(com.android.bluetooth.tests.R.raw.image_200_200);
 
         mTestContentResolver = new MockContentResolver(mTargetContext);
-        mTestContentResolver.addProvider(TEST_AUTHORITY, new MockContentProvider() {
-            @Override
-            public AssetFileDescriptor openTypedAssetFile(Uri url, String mimeType, Bundle opts) {
-                String handle = url.getQueryParameter("handle");
-                if (IMAGE_URI_1.equals(url)) {
-                    return mTestResources.openRawResourceFd(
-                            com.android.bluetooth.tests.R.raw.image_200_200);
-                }
-                return null;
-            }
-        });
+        mTestContentResolver.addProvider(
+                TEST_AUTHORITY,
+                new MockContentProvider() {
+                    @Override
+                    public AssetFileDescriptor openTypedAssetFile(
+                            Uri url, String mimeType, Bundle opts) {
+                        String handle = url.getQueryParameter("handle");
+                        if (IMAGE_URI_1.equals(url)) {
+                            return mTestResources.openRawResourceFd(
+                                    com.android.bluetooth.tests.R.raw.image_200_200);
+                        }
+                        return null;
+                    }
+                });
 
         when(mMockContext.getContentResolver()).thenReturn(mTestContentResolver);
         when(mMockResources.getBoolean(R.bool.avrcp_target_cover_art_uri_images)).thenReturn(true);
@@ -144,13 +147,20 @@ public class BrowserPlayerWrapperTest {
         return BitmapFactory.decodeStream(imageInputStream);
     }
 
-    private MediaDescription getMediaDescription(String id, String title, String artist,
-            String album, Bitmap bitmap, Uri uri, Bundle extras) {
-        MediaDescription.Builder builder = new MediaDescription.Builder()
-                .setMediaId(id)
-                .setTitle(title)
-                .setSubtitle(artist)
-                .setDescription(album);
+    private MediaDescription getMediaDescription(
+            String id,
+            String title,
+            String artist,
+            String album,
+            Bitmap bitmap,
+            Uri uri,
+            Bundle extras) {
+        MediaDescription.Builder builder =
+                new MediaDescription.Builder()
+                        .setMediaId(id)
+                        .setTitle(title)
+                        .setSubtitle(artist)
+                        .setDescription(album);
         if (bitmap != null) {
             builder.setIconBitmap(bitmap);
         }
@@ -372,8 +382,11 @@ public class BrowserPlayerWrapperTest {
 
         subscriptionCb.onChildrenLoaded("test_folder", items);
         verify(mMockBrowser).unsubscribe(eq("test_folder"));
-        verify(mBrowseCb).run(eq(BrowsedPlayerWrapper.STATUS_SUCCESS), eq("test_folder"),
-                mWrapperBrowseCb.capture());
+        verify(mBrowseCb)
+                .run(
+                        eq(BrowsedPlayerWrapper.STATUS_SUCCESS),
+                        eq("test_folder"),
+                        mWrapperBrowseCb.capture());
 
         // Verify returned ListItems
         List<ListItem> item_list = mWrapperBrowseCb.getValue();

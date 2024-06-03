@@ -37,9 +37,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Scanner;
 
-/**
- * CSIP Set Coordinator role device state machine
- */
+/** CSIP Set Coordinator role device state machine */
 public class CsipSetCoordinatorStateMachine extends StateMachine {
     private static final String TAG = "CsipSetCoordinatorStateMachine";
 
@@ -62,8 +60,11 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
 
     private final BluetoothDevice mDevice;
 
-    CsipSetCoordinatorStateMachine(BluetoothDevice device, CsipSetCoordinatorService svc,
-            CsipSetCoordinatorNativeInterface nativeInterface, Looper looper) {
+    CsipSetCoordinatorStateMachine(
+            BluetoothDevice device,
+            CsipSetCoordinatorService svc,
+            CsipSetCoordinatorNativeInterface nativeInterface,
+            Looper looper) {
         super(TAG, looper);
         mDevice = device;
         mService = svc;
@@ -82,8 +83,10 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
         setInitialState(mDisconnected);
     }
 
-    static CsipSetCoordinatorStateMachine make(BluetoothDevice device,
-            CsipSetCoordinatorService svc, CsipSetCoordinatorNativeInterface nativeInterface,
+    static CsipSetCoordinatorStateMachine make(
+            BluetoothDevice device,
+            CsipSetCoordinatorService svc,
+            CsipSetCoordinatorNativeInterface nativeInterface,
             Looper looper) {
         Log.i(TAG, "make for device " + device);
         CsipSetCoordinatorStateMachine CsisSm =
@@ -92,17 +95,13 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
         return CsisSm;
     }
 
-    /**
-     * Quit state machine execution
-     */
+    /** Quit state machine execution */
     public void doQuit() {
         log("doQuit for device " + mDevice);
         quitNow();
     }
 
-    /**
-     * Clean up
-     */
+    /** Clean up */
     public void cleanup() {
         log("cleanup for device " + mDevice);
     }
@@ -111,9 +110,12 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
     class Disconnected extends State {
         @Override
         public void enter() {
-            Log.i(TAG,
-                    "Enter Disconnected(" + mDevice
-                            + "): " + messageWhatToString(getCurrentMessage().what));
+            Log.i(
+                    TAG,
+                    "Enter Disconnected("
+                            + mDevice
+                            + "): "
+                            + messageWhatToString(getCurrentMessage().what));
 
             removeDeferredMessages(DISCONNECT);
 
@@ -124,15 +126,21 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
 
         @Override
         public void exit() {
-            log("Exit Disconnected(" + mDevice
-                    + "): " + messageWhatToString(getCurrentMessage().what));
+            log(
+                    "Exit Disconnected("
+                            + mDevice
+                            + "): "
+                            + messageWhatToString(getCurrentMessage().what));
             mLastConnectionState = BluetoothProfile.STATE_DISCONNECTED;
         }
 
         @Override
         public boolean processMessage(Message message) {
-            log("Disconnected process message(" + mDevice
-                    + "): " + messageWhatToString(message.what));
+            log(
+                    "Disconnected process message("
+                            + mDevice
+                            + "): "
+                            + messageWhatToString(message.what));
 
             switch (message.what) {
                 case CONNECT:
@@ -145,7 +153,8 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
                         transitionTo(mConnecting);
                     } else {
                         // Reject the request and stay in Disconnected state
-                        Log.w(TAG,
+                        Log.w(
+                                TAG,
                                 "Outgoing CsipSetCoordinator Connecting request rejected: "
                                         + mDevice);
                     }
@@ -182,13 +191,15 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
                     break;
                 case CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTING:
                     if (mService.okToConnect(mDevice)) {
-                        Log.i(TAG,
+                        Log.i(
+                                TAG,
                                 "Incoming CsipSetCoordinator Connecting request accepted: "
                                         + mDevice);
                         transitionTo(mConnecting);
                     } else {
                         // Reject the connection and stay in Disconnected state itself
-                        Log.w(TAG,
+                        Log.w(
+                                TAG,
                                 "Incoming CsipSetCoordinator Connecting request rejected: "
                                         + mDevice);
                         mNativeInterface.disconnect(mDevice);
@@ -197,13 +208,15 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
                 case CsipSetCoordinatorStackEvent.CONNECTION_STATE_CONNECTED:
                     Log.w(TAG, "CsipSetCoordinator Connected from Disconnected state: " + mDevice);
                     if (mService.okToConnect(mDevice)) {
-                        Log.i(TAG,
+                        Log.i(
+                                TAG,
                                 "Incoming CsipSetCoordinator Connected request accepted: "
                                         + mDevice);
                         transitionTo(mConnected);
                     } else {
                         // Reject the connection and stay in Disconnected state itself
-                        Log.w(TAG,
+                        Log.w(
+                                TAG,
                                 "Incoming CsipSetCoordinator Connected request rejected: "
                                         + mDevice);
                         mNativeInterface.disconnect(mDevice);
@@ -223,25 +236,34 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
     class Connecting extends State {
         @Override
         public void enter() {
-            Log.i(TAG,
-                    "Enter Connecting(" + mDevice
-                            + "): " + messageWhatToString(getCurrentMessage().what));
+            Log.i(
+                    TAG,
+                    "Enter Connecting("
+                            + mDevice
+                            + "): "
+                            + messageWhatToString(getCurrentMessage().what));
             sendMessageDelayed(CONNECT_TIMEOUT, sConnectTimeoutMs);
             csipConnectionState(BluetoothProfile.STATE_CONNECTING, mLastConnectionState);
         }
 
         @Override
         public void exit() {
-            log("Exit Connecting(" + mDevice
-                    + "): " + messageWhatToString(getCurrentMessage().what));
+            log(
+                    "Exit Connecting("
+                            + mDevice
+                            + "): "
+                            + messageWhatToString(getCurrentMessage().what));
             mLastConnectionState = BluetoothProfile.STATE_CONNECTING;
             removeMessages(CONNECT_TIMEOUT);
         }
 
         @Override
         public boolean processMessage(Message message) {
-            log("Connecting process message(" + mDevice
-                    + "): " + messageWhatToString(message.what));
+            log(
+                    "Connecting process message("
+                            + mDevice
+                            + "): "
+                            + messageWhatToString(message.what));
 
             switch (message.what) {
                 case CONNECT:
@@ -250,8 +272,10 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
                 case CONNECT_TIMEOUT:
                     Log.w(TAG, "Connecting connection timeout: " + mDevice);
                     mNativeInterface.disconnect(mDevice);
-                    CsipSetCoordinatorStackEvent disconnectEvent = new CsipSetCoordinatorStackEvent(
-                            CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
+                    CsipSetCoordinatorStackEvent disconnectEvent =
+                            new CsipSetCoordinatorStackEvent(
+                                    CsipSetCoordinatorStackEvent
+                                            .EVENT_TYPE_CONNECTION_STATE_CHANGED);
                     disconnectEvent.device = mDevice;
                     disconnectEvent.valueInt1 =
                             CsipSetCoordinatorStackEvent.CONNECTION_STATE_DISCONNECTED;
@@ -310,41 +334,53 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
     class Disconnecting extends State {
         @Override
         public void enter() {
-            Log.i(TAG,
-                    "Enter Disconnecting(" + mDevice
-                            + "): " + messageWhatToString(getCurrentMessage().what));
+            Log.i(
+                    TAG,
+                    "Enter Disconnecting("
+                            + mDevice
+                            + "): "
+                            + messageWhatToString(getCurrentMessage().what));
             sendMessageDelayed(CONNECT_TIMEOUT, sConnectTimeoutMs);
             csipConnectionState(BluetoothProfile.STATE_DISCONNECTING, mLastConnectionState);
         }
 
         @Override
         public void exit() {
-            log("Exit Disconnecting(" + mDevice
-                    + "): " + messageWhatToString(getCurrentMessage().what));
+            log(
+                    "Exit Disconnecting("
+                            + mDevice
+                            + "): "
+                            + messageWhatToString(getCurrentMessage().what));
             mLastConnectionState = BluetoothProfile.STATE_DISCONNECTING;
             removeMessages(CONNECT_TIMEOUT);
         }
 
         @Override
         public boolean processMessage(Message message) {
-            log("Disconnecting process message(" + mDevice
-                    + "): " + messageWhatToString(message.what));
+            log(
+                    "Disconnecting process message("
+                            + mDevice
+                            + "): "
+                            + messageWhatToString(message.what));
 
             switch (message.what) {
                 case CONNECT:
                     deferMessage(message);
                     break;
-                case CONNECT_TIMEOUT: {
-                    Log.w(TAG, "Disconnecting connection timeout: " + mDevice);
-                    mNativeInterface.disconnect(mDevice);
-                    CsipSetCoordinatorStackEvent disconnectEvent = new CsipSetCoordinatorStackEvent(
-                            CsipSetCoordinatorStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
-                    disconnectEvent.device = mDevice;
-                    disconnectEvent.valueInt1 =
-                            CsipSetCoordinatorStackEvent.CONNECTION_STATE_DISCONNECTED;
-                    sendMessage(STACK_EVENT, disconnectEvent);
-                    break;
-                }
+                case CONNECT_TIMEOUT:
+                    {
+                        Log.w(TAG, "Disconnecting connection timeout: " + mDevice);
+                        mNativeInterface.disconnect(mDevice);
+                        CsipSetCoordinatorStackEvent disconnectEvent =
+                                new CsipSetCoordinatorStackEvent(
+                                        CsipSetCoordinatorStackEvent
+                                                .EVENT_TYPE_CONNECTION_STATE_CHANGED);
+                        disconnectEvent.device = mDevice;
+                        disconnectEvent.valueInt1 =
+                                CsipSetCoordinatorStackEvent.CONNECTION_STATE_DISCONNECTED;
+                        sendMessage(STACK_EVENT, disconnectEvent);
+                        break;
+                    }
                 case DISCONNECT:
                     deferMessage(message);
                     break;
@@ -382,7 +418,8 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
                         transitionTo(mConnected);
                     } else {
                         // Reject the connection and stay in Disconnecting state
-                        Log.w(TAG,
+                        Log.w(
+                                TAG,
                                 "Incoming CsipSetCoordinator Connected request rejected: "
                                         + mDevice);
                         mNativeInterface.disconnect(mDevice);
@@ -394,7 +431,8 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
                         transitionTo(mConnecting);
                     } else {
                         // Reject the connection and stay in Disconnecting state
-                        Log.w(TAG,
+                        Log.w(
+                                TAG,
                                 "Incoming CsipSetCoordinator Connecting request rejected: "
                                         + mDevice);
                         mNativeInterface.disconnect(mDevice);
@@ -413,17 +451,23 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
     class Connected extends State {
         @Override
         public void enter() {
-            Log.i(TAG,
-                    "Enter Connected(" + mDevice
-                            + "): " + messageWhatToString(getCurrentMessage().what));
+            Log.i(
+                    TAG,
+                    "Enter Connected("
+                            + mDevice
+                            + "): "
+                            + messageWhatToString(getCurrentMessage().what));
             removeDeferredMessages(CONNECT);
             csipConnectionState(BluetoothProfile.STATE_CONNECTED, mLastConnectionState);
         }
 
         @Override
         public void exit() {
-            log("Exit Connected(" + mDevice
-                    + "): " + messageWhatToString(getCurrentMessage().what));
+            log(
+                    "Exit Connected("
+                            + mDevice
+                            + "): "
+                            + messageWhatToString(getCurrentMessage().what));
             mLastConnectionState = BluetoothProfile.STATE_CONNECTED;
         }
 
@@ -511,8 +555,13 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
 
     // This method does not check for error condition (newState == prevState)
     private void csipConnectionState(int newState, int prevState) {
-        log("Connection state " + mDevice + ": " + profileStateToString(prevState) + "->"
-                + profileStateToString(newState));
+        log(
+                "Connection state "
+                        + mDevice
+                        + ": "
+                        + profileStateToString(prevState)
+                        + "->"
+                        + profileStateToString(newState));
         mService.handleConnectionStateChanged(mDevice, prevState, newState);
 
         Intent intent =
@@ -520,8 +569,9 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
         intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState);
         intent.putExtra(BluetoothProfile.EXTRA_STATE, newState);
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, mDevice);
-        intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT
-                | Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
+        intent.addFlags(
+                Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT
+                        | Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
         mService.sendBroadcast(intent, BLUETOOTH_CONNECT);
     }
 
@@ -557,9 +607,7 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
         return Integer.toString(state);
     }
 
-    /**
-     * Dump the state machine logs
-     */
+    /** Dump the state machine logs */
     public void dump(StringBuilder sb) {
         ProfileService.println(sb, "mDevice: " + mDevice);
         ProfileService.println(sb, "  StateMachine: " + this);

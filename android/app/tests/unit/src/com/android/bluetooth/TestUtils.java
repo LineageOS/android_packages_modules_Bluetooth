@@ -54,11 +54,9 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
 
-/**
- * A set of methods useful in Bluetooth instrumentation tests
- */
+/** A set of methods useful in Bluetooth instrumentation tests */
 public class TestUtils {
-    private static final int SERVICE_TOGGLE_TIMEOUT_MS = 1000;    // 1s
+    private static final int SERVICE_TOGGLE_TIMEOUT_MS = 1000; // 1s
 
     private static String sSystemScreenOffTimeout = "10000";
 
@@ -67,17 +65,18 @@ public class TestUtils {
     /**
      * Utility method to replace obj.fieldName with newValue where obj is of type c
      *
-     * @param c         type of obj
+     * @param c type of obj
      * @param fieldName field name to be replaced
-     * @param obj       instance of type c whose fieldName is to be replaced, null for static fields
-     * @param newValue  object used to replace fieldName
-     * @return the old value of fieldName that got replaced, caller is responsible for restoring
-     * it back to obj
-     * @throws NoSuchFieldException   when fieldName is not found in type c
+     * @param obj instance of type c whose fieldName is to be replaced, null for static fields
+     * @param newValue object used to replace fieldName
+     * @return the old value of fieldName that got replaced, caller is responsible for restoring it
+     *     back to obj
+     * @throws NoSuchFieldException when fieldName is not found in type c
      * @throws IllegalAccessException when fieldName cannot be accessed in type c
      */
-    public static Object replaceField(final Class c, final String fieldName, final Object obj,
-            final Object newValue) throws NoSuchFieldException, IllegalAccessException {
+    public static Object replaceField(
+            final Class c, final String fieldName, final Object obj, final Object newValue)
+            throws NoSuchFieldException, IllegalAccessException {
         Field field = c.getDeclaredField(fieldName);
         field.setAccessible(true);
 
@@ -93,8 +92,10 @@ public class TestUtils {
      *     mocked or spied
      */
     public static void setAdapterService(AdapterService adapterService) {
-        Assert.assertNull("AdapterService.getAdapterService() must be null before setting another"
-                + " AdapterService", AdapterService.getAdapterService());
+        Assert.assertNull(
+                "AdapterService.getAdapterService() must be null before setting another"
+                        + " AdapterService",
+                AdapterService.getAdapterService());
         Assert.assertNotNull("Adapter service should not be null", adapterService);
         // We cannot mock AdapterService.getAdapterService() with Mockito.
         // Hence we need to set AdapterService.sAdapterService field.
@@ -108,8 +109,10 @@ public class TestUtils {
      *     TestUtils#setAdapterService(AdapterService)}
      */
     public static void clearAdapterService(AdapterService adapterService) {
-        Assert.assertSame("AdapterService.getAdapterService() must return the same object as the"
-                        + " supplied adapterService in this method", adapterService,
+        Assert.assertSame(
+                "AdapterService.getAdapterService() must return the same object as the"
+                        + " supplied adapterService in this method",
+                adapterService,
                 AdapterService.getAdapterService());
         Assert.assertNotNull("Adapter service should not be null", adapterService);
         AdapterService.clearAdapterService(adapterService);
@@ -134,7 +137,7 @@ public class TestUtils {
      * Create a test device.
      *
      * @param bluetoothAdapter the Bluetooth adapter to use
-     * @param id               the test device ID. It must be an integer in the interval [0, 0xFF].
+     * @param id the test device ID. It must be an integer in the interval [0, 0xFF].
      * @return {@link BluetoothDevice} test device for the device ID
      */
     public static BluetoothDevice getTestDevice(BluetoothAdapter bluetoothAdapter, int id) {
@@ -148,11 +151,13 @@ public class TestUtils {
 
     public static Resources getTestApplicationResources(Context context) {
         try {
-            return context.getPackageManager().getResourcesForApplication(
-                    "com.android.bluetooth.tests");
+            return context.getPackageManager()
+                    .getResourcesForApplication("com.android.bluetooth.tests");
         } catch (PackageManager.NameNotFoundException e) {
-            assertWithMessage("Setup Failure: Unable to get test application resources"
-                    + e.toString()).fail();
+            assertWithMessage(
+                            "Setup Failure: Unable to get test application resources"
+                                    + e.toString())
+                    .fail();
             return null;
         }
     }
@@ -161,7 +166,7 @@ public class TestUtils {
      * Wait and verify that an intent has been received.
      *
      * @param timeoutMs the time (in milliseconds) to wait for the intent
-     * @param queue     the queue for the intent
+     * @param queue the queue for the intent
      * @return the received intent
      */
     public static Intent waitForIntent(int timeoutMs, BlockingQueue<Intent> queue) {
@@ -178,9 +183,8 @@ public class TestUtils {
     /**
      * Wait and verify that no intent has been received.
      *
-     * @param timeoutMs the time (in milliseconds) to wait and verify no intent
-     *                  has been received
-     * @param queue     the queue for the intent
+     * @param timeoutMs the time (in milliseconds) to wait and verify no intent has been received
+     * @param queue the queue for the intent
      * @return the received intent. Should be null under normal circumstances
      */
     public static Intent waitForNoIntent(int timeoutMs, BlockingQueue<Intent> queue) {
@@ -200,9 +204,11 @@ public class TestUtils {
      * @param looper looper of interest
      */
     public static void waitForLooperToFinishScheduledTask(Looper looper) {
-        runOnLooperSync(looper, () -> {
-            // do nothing, just need to make sure looper finishes current task
-        });
+        runOnLooperSync(
+                looper,
+                () -> {
+                    // do nothing, just need to make sure looper finishes current task
+                });
     }
 
     /**
@@ -263,19 +269,18 @@ public class TestUtils {
     }
 
     /**
-     * Run synchronously a runnable action on a looper.
-     * The method will return after the action has been execution to completion.
+     * Run synchronously a runnable action on a looper. The method will return after the action has
+     * been execution to completion.
      *
-     * Example:
-     * <pre>
-     * {@code
+     * <p>Example:
+     *
+     * <pre>{@code
      * TestUtils.runOnMainSync(new Runnable() {
      *       public void run() {
      *           Assert.assertTrue(mA2dpService.stop());
      *       }
      *   });
-     * }
-     * </pre>
+     * }</pre>
      *
      * @param looper the looper used to run the action
      * @param action the action to run
@@ -295,15 +300,13 @@ public class TestUtils {
     /**
      * Read Bluetooth adapter configuration from the filesystem
      *
-     * @return A {@link HashMap} of Bluetooth configs in the format:
-     * section -> key1 -> value1
-     * -> key2 -> value2
-     * Assume no empty section name, no duplicate keys in the same section
+     * @return A {@link HashMap} of Bluetooth configs in the format: section -> key1 -> value1 ->
+     *     key2 -> value2 Assume no empty section name, no duplicate keys in the same section
      */
     public static HashMap<String, HashMap<String, String>> readAdapterConfig() {
         HashMap<String, HashMap<String, String>> adapterConfig = new HashMap<>();
         try (BufferedReader reader =
-                     new BufferedReader(new FileReader("/data/misc/bluedroid/bt_config.conf"))) {
+                new BufferedReader(new FileReader("/data/misc/bluedroid/bt_config.conf"))) {
             String section = "";
             for (String line; (line = reader.readLine()) != null; ) {
                 line = line.trim();
@@ -319,8 +322,11 @@ public class TestUtils {
                     adapterConfig.put(section, new HashMap<>());
                 } else {
                     String[] keyValue = line.split("=");
-                    adapterConfig.get(section).put(keyValue[0].trim(),
-                            keyValue.length == 1 ? "" : keyValue[1].trim());
+                    adapterConfig
+                            .get(section)
+                            .put(
+                                    keyValue[0].trim(),
+                                    keyValue.length == 1 ? "" : keyValue[1].trim());
                 }
             }
         } catch (IOException e) {
@@ -336,15 +342,18 @@ public class TestUtils {
      * @return intent with the appropriate component & action set.
      */
     public static Intent prepareIntentToStartBluetoothBrowserMediaService() {
-        final Intent intent = new Intent(InstrumentationRegistry.getTargetContext(),
-                BluetoothMediaBrowserService.class);
+        final Intent intent =
+                new Intent(
+                        InstrumentationRegistry.getTargetContext(),
+                        BluetoothMediaBrowserService.class);
         intent.setAction(MediaBrowserService.SERVICE_INTERFACE);
         return intent;
     }
 
     public static void setUpUiTest() throws Exception {
-        final UiDevice device = UiDevice.getInstance(
-                androidx.test.platform.app.InstrumentationRegistry.getInstrumentation());
+        final UiDevice device =
+                UiDevice.getInstance(
+                        androidx.test.platform.app.InstrumentationRegistry.getInstrumentation());
         // Disable animation
         device.executeShellCommand("settings put global window_animation_scale 0.0");
         device.executeShellCommand("settings put global transition_animation_scale 0.0");
@@ -364,8 +373,9 @@ public class TestUtils {
     }
 
     public static void tearDownUiTest() throws Exception {
-        final UiDevice device = UiDevice.getInstance(
-                androidx.test.platform.app.InstrumentationRegistry.getInstrumentation());
+        final UiDevice device =
+                UiDevice.getInstance(
+                        androidx.test.platform.app.InstrumentationRegistry.getInstrumentation());
         device.executeShellCommand("wm dismiss-keyguard");
 
         // Re-enable animation
@@ -374,8 +384,8 @@ public class TestUtils {
         device.executeShellCommand("settings put global animator_duration_scale 1.0");
 
         // restore screen_off_timeout
-        device.executeShellCommand("settings put system screen_off_timeout "
-                + sSystemScreenOffTimeout);
+        device.executeShellCommand(
+                "settings put system screen_off_timeout " + sSystemScreenOffTimeout);
     }
 
     public static class RetryTestRule implements TestRule {
@@ -420,9 +430,7 @@ public class TestUtils {
         }
     }
 
-    /**
-     * Helper class used to run synchronously a runnable action on a looper.
-     */
+    /** Helper class used to run synchronously a runnable action on a looper. */
     private static final class SyncRunnable implements Runnable {
         private final Runnable mTarget;
         private volatile boolean mComplete = false;

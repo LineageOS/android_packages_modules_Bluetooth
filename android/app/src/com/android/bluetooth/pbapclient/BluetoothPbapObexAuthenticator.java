@@ -31,13 +31,12 @@ import java.util.Arrays;
 class BluetoothPbapObexAuthenticator implements Authenticator {
     private static final String TAG = "PbapClientObexAuth";
 
-    //Default session key for legacy devices is 0000
-    @VisibleForTesting
-    String mSessionKey = "0000";
+    // Default session key for legacy devices is 0000
+    @VisibleForTesting String mSessionKey = "0000";
 
     @Override
-    public PasswordAuthentication onAuthenticationChallenge(String description,
-            boolean isUserIdRequired, boolean isFullAccess) {
+    public PasswordAuthentication onAuthenticationChallenge(
+            String description, boolean isUserIdRequired, boolean isFullAccess) {
         PasswordAuthentication pa = null;
         Log.d(TAG, "onAuthenticationChallenge: starting");
 
@@ -45,8 +44,7 @@ class BluetoothPbapObexAuthenticator implements Authenticator {
             Log.d(TAG, "onAuthenticationChallenge: mSessionKey=" + mSessionKey);
             pa = new PasswordAuthentication(null, mSessionKey.getBytes());
         } else {
-            Log.d(TAG,
-                    "onAuthenticationChallenge: mSessionKey is empty, timeout/cancel occurred");
+            Log.d(TAG, "onAuthenticationChallenge: mSessionKey is empty, timeout/cancel occurred");
         }
 
         return pa;

@@ -175,7 +175,8 @@ public class PanServiceTest {
     public void setConnectionPolicy_whenDatabaseManagerRefuses_returnsFalse() {
         int connectionPolicy = BluetoothProfile.CONNECTION_POLICY_ALLOWED;
         when(mDatabaseManager.setProfileConnectionPolicy(
-                mRemoteDevice, BluetoothProfile.PAN, connectionPolicy)).thenReturn(false);
+                        mRemoteDevice, BluetoothProfile.PAN, connectionPolicy))
+                .thenReturn(false);
 
         assertThat(mService.setConnectionPolicy(mRemoteDevice, connectionPolicy)).isFalse();
     }
@@ -183,16 +184,24 @@ public class PanServiceTest {
     @Test
     public void setConnectionPolicy_returnsTrue() {
         when(mDatabaseManager.setProfileConnectionPolicy(
-                mRemoteDevice, BluetoothProfile.PAN, BluetoothProfile.CONNECTION_POLICY_ALLOWED))
+                        mRemoteDevice,
+                        BluetoothProfile.PAN,
+                        BluetoothProfile.CONNECTION_POLICY_ALLOWED))
                 .thenReturn(true);
-        assertThat(mService.setConnectionPolicy(
-                mRemoteDevice, BluetoothProfile.CONNECTION_POLICY_ALLOWED)).isTrue();
+        assertThat(
+                        mService.setConnectionPolicy(
+                                mRemoteDevice, BluetoothProfile.CONNECTION_POLICY_ALLOWED))
+                .isTrue();
 
         when(mDatabaseManager.setProfileConnectionPolicy(
-                mRemoteDevice, BluetoothProfile.PAN, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN))
+                        mRemoteDevice,
+                        BluetoothProfile.PAN,
+                        BluetoothProfile.CONNECTION_POLICY_FORBIDDEN))
                 .thenReturn(true);
-        assertThat(mService.setConnectionPolicy(
-                mRemoteDevice, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN)).isTrue();
+        assertThat(
+                        mService.setConnectionPolicy(
+                                mRemoteDevice, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN))
+                .isTrue();
     }
 
     @Test
@@ -202,8 +211,9 @@ public class PanServiceTest {
         int localRole = 3;
         int remoteRole = 4;
 
-        PanService.ConnectState connectState = new PanService.ConnectState(
-                REMOTE_DEVICE_ADDRESS_AS_ARRAY, state, error, localRole, remoteRole);
+        PanService.ConnectState connectState =
+                new PanService.ConnectState(
+                        REMOTE_DEVICE_ADDRESS_AS_ARRAY, state, error, localRole, remoteRole);
 
         assertThat(connectState.addr).isEqualTo(REMOTE_DEVICE_ADDRESS_AS_ARRAY);
         assertThat(connectState.state).isEqualTo(state);

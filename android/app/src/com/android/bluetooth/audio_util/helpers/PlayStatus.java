@@ -18,9 +18,7 @@ package com.android.bluetooth.audio_util;
 
 import android.media.session.PlaybackState;
 
-/**
- * Carries the playback status information in a custom object.
- */
+/** Carries the playback status information in a custom object. */
 // TODO(apanicke): Send the current active song ID along with this object so that all information
 // is carried by our custom types.
 public class PlayStatus {

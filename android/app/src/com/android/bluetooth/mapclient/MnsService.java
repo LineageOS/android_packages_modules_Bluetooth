@@ -30,9 +30,7 @@ import com.android.obex.ServerSession;
 
 import java.io.IOException;
 
-/**
- * Message Notification Server implementation
- */
+/** Message Notification Server implementation */
 public class MnsService {
     private static final String TAG = MnsService.class.getSimpleName();
 
@@ -46,7 +44,7 @@ public class MnsService {
     private static ObexServerSockets sServerSockets = null;
 
     private static MapClientService sContext;
-    private volatile boolean mShutdown = false;         // Used to interrupt socket accept thread
+    private volatile boolean mShutdown = false; // Used to interrupt socket accept thread
     private int mSdpHandle = -1;
 
     MnsService(MapClientService context) {
@@ -103,9 +101,8 @@ public class MnsService {
     private class SocketAcceptor implements IObexConnectionHandler {
 
         /**
-         * Called when an unrecoverable error occurred in an accept thread.
-         * Close down the server socket, and restart.
-         * TODO: Change to message, to call start in correct context.
+         * Called when an unrecoverable error occurred in an accept thread. Close down the server
+         * socket, and restart. TODO: Change to message, to call start in correct context.
          */
         @Override
         public synchronized void onAcceptFailed() {
@@ -122,13 +119,22 @@ public class MnsService {
             /* Signal to the service that we have received an incoming connection.*/
             MceStateMachine stateMachine = sContext.getMceStateMachineForDevice(device);
             if (stateMachine == null) {
-                Log.e(TAG, "Error: NO statemachine for device: " + device
-                        + " (name: " + Utils.getName(device));
+                Log.e(
+                        TAG,
+                        "Error: NO statemachine for device: "
+                                + device
+                                + " (name: "
+                                + Utils.getName(device));
                 return false;
             } else if (stateMachine.getState() != BluetoothProfile.STATE_CONNECTED) {
-                Log.e(TAG, "Error: statemachine for device: " + device
-                        + " (name: " + Utils.getName(device) + ") is not currently CONNECTED : "
-                        + stateMachine.getCurrentState());
+                Log.e(
+                        TAG,
+                        "Error: statemachine for device: "
+                                + device
+                                + " (name: "
+                                + Utils.getName(device)
+                                + ") is not currently CONNECTED : "
+                                + stateMachine.getCurrentState());
                 return false;
             }
             MnsObexServer srv = new MnsObexServer(stateMachine);

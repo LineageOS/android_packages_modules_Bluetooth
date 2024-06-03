@@ -40,8 +40,7 @@ public class AvrcpControllerServiceBinderTest {
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    private AvrcpControllerService mService;
+    @Mock private AvrcpControllerService mService;
 
     BluetoothDevice mRemoteDevice;
 

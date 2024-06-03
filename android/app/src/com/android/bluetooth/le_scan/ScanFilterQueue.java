@@ -28,9 +28,7 @@ import java.util.Iterator;
 import java.util.Set;
 import java.util.UUID;
 
-/**
- * Helper class used to manage advertisement package filters.
- */
+/** Helper class used to manage advertisement package filters. */
 /* package */ class ScanFilterQueue {
     public static final int TYPE_DEVICE_ADDRESS = 0;
     public static final int TYPE_SERVICE_DATA_CHANGED = 1;
@@ -154,8 +152,14 @@ import java.util.UUID;
         mEntries.add(entry);
     }
 
-    void addTransportDiscoveryData(int orgId, int tdsFlags, int tdsFlagsMask,
-            byte[] transportData, byte[] transportDataMask, int metaDataType, byte[] metaData) {
+    void addTransportDiscoveryData(
+            int orgId,
+            int tdsFlags,
+            int tdsFlagsMask,
+            byte[] transportData,
+            byte[] transportDataMask,
+            int metaDataType,
+            byte[] metaData) {
         Entry entry = new Entry();
         entry.type = TYPE_TRANSPORT_DISCOVERY_DATA;
         entry.org_id = orgId;
@@ -187,9 +191,7 @@ import java.util.UUID;
         return entry;
     }
 
-    /**
-     * Compute feature selection based on the filters presented.
-     */
+    /** Compute feature selection based on the filters presented. */
     int getFeatureSelection() {
         int selc = 0;
         for (Entry entry : mEntries) {
@@ -202,9 +204,7 @@ import java.util.UUID;
         return mEntries.toArray(new ScanFilterQueue.Entry[mEntries.size()]);
     }
 
-    /**
-     * Add ScanFilter to scan filter queue.
-     */
+    /** Add ScanFilter to scan filter queue. */
     void addScanFilter(ScanFilter filter) {
         if (filter == null) {
             return;
@@ -218,8 +218,8 @@ import java.util.UUID;
              * however, the host stack will force the type to 0x02 for the APCF filter in
              * btm_ble_adv_filter.cc#BTM_LE_PF_addr_filter(...)
              */
-            addDeviceAddress(filter.getDeviceAddress(), (byte) filter.getAddressType(),
-                    filter.getIrk());
+            addDeviceAddress(
+                    filter.getDeviceAddress(), (byte) filter.getAddressType(), filter.getIrk());
         }
         if (filter.getServiceUuid() != null) {
             if (filter.getServiceUuidMask() == null) {
@@ -232,7 +232,8 @@ import java.util.UUID;
             if (filter.getServiceSolicitationUuidMask() == null) {
                 addSolicitUuid(filter.getServiceSolicitationUuid().getUuid());
             } else {
-                addSolicitUuid(filter.getServiceSolicitationUuid().getUuid(),
+                addSolicitUuid(
+                        filter.getServiceSolicitationUuid().getUuid(),
                         filter.getServiceSolicitationUuidMask().getUuid());
             }
         }
@@ -240,8 +241,11 @@ import java.util.UUID;
             if (filter.getManufacturerDataMask() == null) {
                 addManufacturerData(filter.getManufacturerId(), filter.getManufacturerData());
             } else {
-                addManufacturerData(filter.getManufacturerId(), 0xFFFF,
-                        filter.getManufacturerData(), filter.getManufacturerDataMask());
+                addManufacturerData(
+                        filter.getManufacturerId(),
+                        0xFFFF,
+                        filter.getManufacturerData(),
+                        filter.getManufacturerDataMask());
             }
         }
         if (filter.getServiceDataUuid() != null && filter.getServiceData() != null) {
@@ -259,23 +263,33 @@ import java.util.UUID;
             }
         }
         if (filter.getAdvertisingDataType() > 0) {
-            addAdvertisingDataType(filter.getAdvertisingDataType(),
-                    filter.getAdvertisingData(), filter.getAdvertisingDataMask());
+            addAdvertisingDataType(
+                    filter.getAdvertisingDataType(),
+                    filter.getAdvertisingData(),
+                    filter.getAdvertisingDataMask());
         }
         final TransportBlockFilter transportBlockFilter = filter.getTransportBlockFilter();
         if (transportBlockFilter != null) {
             if (transportBlockFilter.getOrgId()
                     == OrganizationId.WIFI_ALLIANCE_NEIGHBOR_AWARENESS_NETWORKING) {
-                addTransportDiscoveryData(transportBlockFilter.getOrgId(),
-                        transportBlockFilter.getTdsFlags(), transportBlockFilter.getTdsFlagsMask(),
-                        null, null, TYPE_WIFI_NAN_HASH, transportBlockFilter.getWifiNanHash());
+                addTransportDiscoveryData(
+                        transportBlockFilter.getOrgId(),
+                        transportBlockFilter.getTdsFlags(),
+                        transportBlockFilter.getTdsFlagsMask(),
+                        null,
+                        null,
+                        TYPE_WIFI_NAN_HASH,
+                        transportBlockFilter.getWifiNanHash());
             } else {
-                addTransportDiscoveryData(transportBlockFilter.getOrgId(),
-                        transportBlockFilter.getTdsFlags(), transportBlockFilter.getTdsFlagsMask(),
+                addTransportDiscoveryData(
+                        transportBlockFilter.getOrgId(),
+                        transportBlockFilter.getTdsFlags(),
+                        transportBlockFilter.getTdsFlagsMask(),
                         transportBlockFilter.getTransportData(),
-                        transportBlockFilter.getTransportDataMask(), TYPE_INVALID, null);
+                        transportBlockFilter.getTransportDataMask(),
+                        TYPE_INVALID,
+                        null);
             }
-
         }
     }
 

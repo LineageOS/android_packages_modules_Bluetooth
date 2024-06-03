@@ -40,8 +40,10 @@ public class ObexAppParametersTest {
     public void constructorWithByteArrays_withOneInvalidElement() {
         final int length = 4;
 
-        byte[] byteArray = new byte[] {KEY, length, 0x12, 0x34, 0x56, 0x78,
-                0x66}; // Last one is invalid. It will be filtered out.
+        byte[] byteArray =
+                new byte[] {
+                    KEY, length, 0x12, 0x34, 0x56, 0x78, 0x66
+                }; // Last one is invalid. It will be filtered out.
 
         ObexAppParameters params = new ObexAppParameters(byteArray);
         assertThat(params.exists(KEY)).isTrue();
@@ -53,8 +55,10 @@ public class ObexAppParametersTest {
     @Test
     public void constructorWithByteArrays_withTwoInvalidElements() {
         final int length = 4;
-        byte[] byteArray = new byte[] {KEY, length, 0x12, 0x34, 0x56, 0x78,
-                0x66, 0x77}; // Last two are invalid. It will be filtered out.
+        byte[] byteArray =
+                new byte[] {
+                    KEY, length, 0x12, 0x34, 0x56, 0x78, 0x66, 0x77
+                }; // Last two are invalid. It will be filtered out.
 
         ObexAppParameters params = new ObexAppParameters(byteArray);
         assertThat(params.exists(KEY)).isTrue();

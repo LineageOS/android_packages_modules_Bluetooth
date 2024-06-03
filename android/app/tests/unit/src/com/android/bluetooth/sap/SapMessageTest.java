@@ -76,10 +76,10 @@ public class SapMessageTest {
         int cardReaderStatus = STATUS_CARD_INSERTED;
         int statusChange = 1;
         int transportProtocol = TRANS_PROTO_T0;
-        byte[] apdu = new byte[]{0x01, 0x02};
-        byte[] apdu7816 = new byte[]{0x03, 0x04};
-        byte[] apduResp = new byte[]{0x05, 0x06};
-        byte[] atr = new byte[]{0x07, 0x08};
+        byte[] apdu = new byte[] {0x01, 0x02};
+        byte[] apdu7816 = new byte[] {0x03, 0x04};
+        byte[] apduResp = new byte[] {0x05, 0x06};
+        byte[] atr = new byte[] {0x07, 0x08};
         boolean sendToRil = true;
         boolean clearRilQueue = true;
         int testMode = TEST_MODE_ENABLE;
@@ -130,7 +130,7 @@ public class SapMessageTest {
 
     @Test
     public void getNumPendingRilMessages() {
-        SapMessage.sOngoingRequests.put(/*rilSerial=*/10000, ID_CONNECT_REQ);
+        SapMessage.sOngoingRequests.put(/* rilSerial= */ 10000, ID_CONNECT_REQ);
         assertThat(SapMessage.getNumPendingRilMessages()).isEqualTo(1);
 
         SapMessage.resetPendingRilMessages();
@@ -147,10 +147,10 @@ public class SapMessageTest {
         int cardReaderStatus = STATUS_CARD_INSERTED;
         int statusChange = 1;
         int transportProtocol = TRANS_PROTO_T0;
-        byte[] apdu = new byte[]{0x01, 0x02};
-        byte[] apdu7816 = new byte[]{0x03, 0x04};
-        byte[] apduResp = new byte[]{0x05, 0x06};
-        byte[] atr = new byte[]{0x07, 0x08};
+        byte[] apdu = new byte[] {0x01, 0x02};
+        byte[] apdu7816 = new byte[] {0x03, 0x04};
+        byte[] apduResp = new byte[] {0x05, 0x06};
+        byte[] atr = new byte[] {0x07, 0x08};
 
         mMessage.setMsgType(msgType);
         mMessage.setMaxMsgSize(maxMsgSize);
@@ -195,8 +195,8 @@ public class SapMessageTest {
     @Test
     public void send() throws Exception {
         int maxMsgSize = 512;
-        byte[] apdu = new byte[]{0x01, 0x02};
-        byte[] apdu7816 = new byte[]{0x03, 0x04};
+        byte[] apdu = new byte[] {0x01, 0x02};
+        byte[] apdu7816 = new byte[] {0x03, 0x04};
 
         ISapRilReceiver sapProxy = mock(ISapRilReceiver.class);
         mMessage.setClearRilQueue(true);

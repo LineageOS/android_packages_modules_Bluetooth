@@ -149,9 +149,10 @@ public class BluetoothMapAppParamsTest {
         assertThat(appParamsDecoded.getPresenceStatus()).isEqualTo(TEST_PRESENCE_STATUS);
         assertThat(appParamsDecoded.getLastActivity()).isEqualTo(TEST_LAST_ACTIVITY);
         assertThat(appParamsDecoded.getConvoListingSize()).isEqualTo(TEST_CONVO_LISTING_SIZE);
-        assertThat(appParamsDecoded.getChatStateConvoId()).isEqualTo(new SignedLongLong(
-                TEST_ID_HIGH, TEST_ID_LOW));
+        assertThat(appParamsDecoded.getChatStateConvoId())
+                .isEqualTo(new SignedLongLong(TEST_ID_HIGH, TEST_ID_LOW));
     }
+
     @Test
     public void settersAndGetters() throws Exception {
         ByteBuffer ret = ByteBuffer.allocate(16);
@@ -204,22 +205,25 @@ public class BluetoothMapAppParamsTest {
         assertThat(appParams.getAttachment()).isEqualTo(TEST_ATTACHMENT);
         assertThat(appParams.getCharset()).isEqualTo(TEST_CHARSET);
         assertThat(appParams.getChatState()).isEqualTo(TEST_CHAT_STATE);
-        assertThat(appParams.getChatStateConvoId()).isEqualTo(new SignedLongLong(
-                TEST_ID_HIGH, TEST_ID_LOW));
+        assertThat(appParams.getChatStateConvoId())
+                .isEqualTo(new SignedLongLong(TEST_ID_HIGH, TEST_ID_LOW));
         assertThat(appParams.getChatStateConvoIdByteArray()).isEqualTo(ret.array());
         assertThat(appParams.getChatStateConvoIdString()).isEqualTo(new String(ret.array()));
         assertThat(appParams.getConvoListingSize()).isEqualTo(TEST_CONVO_LISTING_SIZE);
         assertThat(appParams.getConvoListingVerCounter()).isEqualTo(ret.array());
         assertThat(appParams.getConvoParameterMask()).isEqualTo(TEST_CONVO_PARAMETER_MASK);
         assertThat(appParams.getDatabaseIdentifier()).isEqualTo(ret.array());
-        assertThat(appParams.getFilterConvoId()).isEqualTo(
-                SignedLongLong.fromString(TEST_FILTER_CONVO_ID));
-        assertThat(appParams.getFilterConvoIdString()).isEqualTo(BluetoothMapUtils.getLongAsString(
-                SignedLongLong.fromString(TEST_FILTER_CONVO_ID).getLeastSignificantBits()));
-        assertThat(appParams.getFilterMsgHandle()).isEqualTo(
-                BluetoothMapUtils.getLongFromString(TEST_FILTER_MSG_HANDLE));
-        assertThat(appParams.getFilterMsgHandleString()).isEqualTo(
-                BluetoothMapUtils.getLongAsString(appParams.getFilterMsgHandle()));
+        assertThat(appParams.getFilterConvoId())
+                .isEqualTo(SignedLongLong.fromString(TEST_FILTER_CONVO_ID));
+        assertThat(appParams.getFilterConvoIdString())
+                .isEqualTo(
+                        BluetoothMapUtils.getLongAsString(
+                                SignedLongLong.fromString(TEST_FILTER_CONVO_ID)
+                                        .getLeastSignificantBits()));
+        assertThat(appParams.getFilterMsgHandle())
+                .isEqualTo(BluetoothMapUtils.getLongFromString(TEST_FILTER_MSG_HANDLE));
+        assertThat(appParams.getFilterMsgHandleString())
+                .isEqualTo(BluetoothMapUtils.getLongAsString(appParams.getFilterMsgHandle()));
         assertThat(appParams.getFilterOriginator()).isEqualTo(TEST_FILTER_ORIGINATOR);
         assertThat(appParams.getFilterPresence()).isEqualTo(TEST_FILTER_PRESENCE);
         assertThat(appParams.getFilterReadStatus()).isEqualTo(TEST_FILTER_READ_STATUS);
@@ -254,8 +258,8 @@ public class BluetoothMapAppParamsTest {
         appParams.setFilterLastActivityBegin(lastActivityBeginString);
         appParams.setFilterLastActivityEnd(lastActivityEndString);
 
-        assertThat(appParams.getFilterLastActivityBegin()).isEqualTo(
-                TEST_FILTER_LAST_ACTIVITY_BEGIN);
+        assertThat(appParams.getFilterLastActivityBegin())
+                .isEqualTo(TEST_FILTER_LAST_ACTIVITY_BEGIN);
         assertThat(appParams.getFilterLastActivityEnd()).isEqualTo(TEST_FILTER_LAST_ACTIVITY_END);
     }
 
@@ -302,59 +306,84 @@ public class BluetoothMapAppParamsTest {
         int ILLEGAL_PARAMETER_INT = -2;
         long ILLEGAL_PARAMETER_LONG = -2;
 
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> appParams.setAttachment(ILLEGAL_PARAMETER_INT));
-        assertThrows(IllegalArgumentException.class,
-                () -> appParams.setCharset(ILLEGAL_PARAMETER_INT));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class, () -> appParams.setCharset(ILLEGAL_PARAMETER_INT));
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> appParams.setChatState(ILLEGAL_PARAMETER_INT));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> appParams.setConvoListingSize(ILLEGAL_PARAMETER_INT));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> appParams.setConvoParameterMask(ILLEGAL_PARAMETER_LONG));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> appParams.setFilterMessageType(ILLEGAL_PARAMETER_INT));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> appParams.setFilterPresence(ILLEGAL_PARAMETER_INT));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> appParams.setFilterPriority(ILLEGAL_PARAMETER_INT));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> appParams.setFilterReadStatus(ILLEGAL_PARAMETER_INT));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> appParams.setFilterUidPresent(ILLEGAL_PARAMETER_INT));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> appParams.setFolderListingSize(ILLEGAL_PARAMETER_INT));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> appParams.setFractionDeliver(ILLEGAL_PARAMETER_INT));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> appParams.setFractionRequest(ILLEGAL_PARAMETER_INT));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> appParams.setMasInstanceId(ILLEGAL_PARAMETER_INT));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> appParams.setMaxListCount(ILLEGAL_PARAMETER_INT));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> appParams.setMessageListingSize(ILLEGAL_PARAMETER_INT));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> appParams.setNewMessage(ILLEGAL_PARAMETER_INT));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> appParams.setNotificationFilter(ILLEGAL_PARAMETER_LONG));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> appParams.setNotificationStatus(ILLEGAL_PARAMETER_INT));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> appParams.setParameterMask(ILLEGAL_PARAMETER_LONG));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> appParams.setPresenceAvailability(ILLEGAL_PARAMETER_INT));
-        assertThrows(IllegalArgumentException.class,
-                () -> appParams.setRetry(ILLEGAL_PARAMETER_INT));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class, () -> appParams.setRetry(ILLEGAL_PARAMETER_INT));
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> appParams.setStartOffset(ILLEGAL_PARAMETER_INT));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> appParams.setStatusIndicator(ILLEGAL_PARAMETER_INT));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> appParams.setStatusValue(ILLEGAL_PARAMETER_INT));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> appParams.setSubjectLength(ILLEGAL_PARAMETER_INT));
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(
+                IllegalArgumentException.class,
                 () -> appParams.setTransparent(ILLEGAL_PARAMETER_INT));
     }
 

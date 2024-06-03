@@ -57,10 +57,11 @@ class BmessageParser {
     private static final int CRLF_LEN = 2;
 
     /**
-     * length of "container" for 'message' in bmessage-body-content:
-     * BEGIN:MSG<CRLF> + <CRLF> + END:MSG<CRFL>
+     * length of "container" for 'message' in bmessage-body-content: BEGIN:MSG<CRLF> + <CRLF> +
+     * END:MSG<CRFL>
      */
     private static final int MSG_CONTAINER_LEN = 22;
+
     private final Bmessage mBmsg;
     private BmsgTokenizer mParser;
 
@@ -179,7 +180,6 @@ class BmessageParser {
 
             } else if (prop.name.equals("FOLDER")) {
                 mBmsg.mBmsgFolder = prop.value;
-
             }
 
         } while (!prop.equals(BEGIN_VCARD) && !prop.equals(BEGIN_BENV));
@@ -275,7 +275,6 @@ class BmessageParser {
                 } catch (NumberFormatException e) {
                     throw new ParseException("Invalid LENGTH value", mParser.pos());
                 }
-
             }
 
         } while (!prop.equals(BEGIN_MSG));
@@ -421,8 +420,8 @@ class BmessageParser {
         }
 
         if (vcard == null) {
-            throw new ParseException("Cannot parse vCard object (neither 2.1 nor 3.0?)",
-                    mParser.pos());
+            throw new ParseException(
+                    "Cannot parse vCard object (neither 2.1 nor 3.0?)", mParser.pos());
         }
 
         return vcard;
@@ -432,8 +431,7 @@ class BmessageParser {
         public VCardEntry vcard;
 
         @Override
-        public void onStart() {
-        }
+        public void onStart() {}
 
         @Override
         public void onEntryCreated(VCardEntry entry) {
@@ -441,7 +439,6 @@ class BmessageParser {
         }
 
         @Override
-        public void onEnd() {
-        }
+        public void onEnd() {}
     }
 }

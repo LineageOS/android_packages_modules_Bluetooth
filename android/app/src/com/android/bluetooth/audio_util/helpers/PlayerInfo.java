@@ -16,9 +16,7 @@
 
 package com.android.bluetooth.audio_util;
 
-/**
- * Carries Media Player Information
- */
+/** Carries Media Player Information */
 public class PlayerInfo {
     public int id;
     public String name;

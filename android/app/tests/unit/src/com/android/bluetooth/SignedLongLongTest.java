@@ -25,9 +25,7 @@ import androidx.test.runner.AndroidJUnit4;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-/**
- * Test for SignedLongLong.java
- */
+/** Test for SignedLongLong.java */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class SignedLongLongTest {
@@ -125,15 +123,13 @@ public class SignedLongLongTest {
     public void fromString_whenLengthIsNotGreaterThan16() throws Exception {
         String strValue = "1";
 
-        assertThat(SignedLongLong.fromString(strValue))
-                .isEqualTo(new SignedLongLong(1, 0));
+        assertThat(SignedLongLong.fromString(strValue)).isEqualTo(new SignedLongLong(1, 0));
     }
 
     @Test
     public void fromString_whenLengthIsGreaterThan16() throws Exception {
         String strValue = "B0000000000000002";
 
-        assertThat(SignedLongLong.fromString(strValue))
-                .isEqualTo(new SignedLongLong(2, 11));
+        assertThat(SignedLongLong.fromString(strValue)).isEqualTo(new SignedLongLong(2, 11));
     }
 }

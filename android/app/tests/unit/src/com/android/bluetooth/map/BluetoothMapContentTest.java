@@ -115,20 +115,13 @@ public class BluetoothMapContentTest {
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    private BluetoothMapAccountItem mAccountItem;
-    @Mock
-    private BluetoothMapMasInstance mMasInstance;
-    @Mock
-    private Context mContext;
-    @Mock
-    private TelephonyManager mTelephonyManager;
-    @Mock
-    private ContentResolver mContentResolver;
-    @Mock
-    private BluetoothMapAppParams mParams;
-    @Spy
-    private BluetoothMethodProxy mMapMethodProxy = BluetoothMethodProxy.getInstance();
+    @Mock private BluetoothMapAccountItem mAccountItem;
+    @Mock private BluetoothMapMasInstance mMasInstance;
+    @Mock private Context mContext;
+    @Mock private TelephonyManager mTelephonyManager;
+    @Mock private ContentResolver mContentResolver;
+    @Mock private BluetoothMapAppParams mParams;
+    @Spy private BluetoothMethodProxy mMapMethodProxy = BluetoothMethodProxy.getInstance();
 
     private BluetoothMapContent mContent;
     private FilterInfo mInfo;
@@ -154,8 +147,7 @@ public class BluetoothMapContentTest {
 
     @Test
     public void constructor_withNonNullAccountItem() {
-        BluetoothMapContent content = new BluetoothMapContent(mContext, mAccountItem,
-                mMasInstance);
+        BluetoothMapContent content = new BluetoothMapContent(mContext, mAccountItem, mMasInstance);
 
         assertThat(content.mBaseUri).isNotNull();
     }
@@ -176,8 +168,9 @@ public class BluetoothMapContentTest {
         when(cursor.getString(1)).thenReturn("text/plain");
         when(cursor.getColumnIndex("text")).thenReturn(2);
         when(cursor.getString(2)).thenReturn(TEST_TEXT);
-        doReturn(cursor).when(mMapMethodProxy).contentResolverQuery(any(), any(), any(), any(),
-                any(), any());
+        doReturn(cursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(any(), any(), any(), any(), any(), any());
 
         assertThat(BluetoothMapContent.getTextPartsMms(mContentResolver, id)).isEqualTo(TEST_TEXT);
     }
@@ -189,12 +182,12 @@ public class BluetoothMapContentTest {
         when(cursor.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME)).thenReturn(1);
         when(cursor.getCount()).thenReturn(1);
         when(cursor.getString(1)).thenReturn(TEST_TEXT);
-        doReturn(cursor).when(mMapMethodProxy).contentResolverQuery(any(), any(), any(), any(),
-                any(), any());
+        doReturn(cursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(any(), any(), any(), any(), any(), any());
 
-        assertThat(
-                BluetoothMapContent.getContactNameFromPhone(phoneName, mContentResolver)).isEqualTo(
-                TEST_TEXT);
+        assertThat(BluetoothMapContent.getContactNameFromPhone(phoneName, mContentResolver))
+                .isEqualTo(TEST_TEXT);
     }
 
     @Test
@@ -205,12 +198,12 @@ public class BluetoothMapContentTest {
         when(cursor.getString(0)).thenReturn("recipientIdOne recipientIdTwo");
         when(cursor.getColumnIndex(Telephony.CanonicalAddressesColumns.ADDRESS)).thenReturn(1);
         when(cursor.getString(1)).thenReturn("recipientAddress");
-        doReturn(cursor).when(mMapMethodProxy).contentResolverQuery(any(), any(), any(), any(),
-                any(), any());
+        doReturn(cursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(any(), any(), any(), any(), any(), any());
 
-        assertThat(
-                BluetoothMapContent.getCanonicalAddressSms(mContentResolver, threadId)).isEqualTo(
-                "recipientAddress");
+        assertThat(BluetoothMapContent.getCanonicalAddressSms(mContentResolver, threadId))
+                .isEqualTo("recipientAddress");
     }
 
     @Test
@@ -221,23 +214,24 @@ public class BluetoothMapContentTest {
         when(cursor.moveToFirst()).thenReturn(true);
         when(cursor.getColumnIndex(Telephony.Mms.Addr.ADDRESS)).thenReturn(1);
         when(cursor.getString(1)).thenReturn(TEST_TEXT);
-        doReturn(cursor).when(mMapMethodProxy).contentResolverQuery(any(), any(), any(), any(),
-                any(), any());
+        doReturn(cursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(any(), any(), any(), any(), any(), any());
 
-        assertThat(BluetoothMapContent.getAddressMms(mContentResolver, id, type)).isEqualTo(
-                TEST_TEXT);
+        assertThat(BluetoothMapContent.getAddressMms(mContentResolver, id, type))
+                .isEqualTo(TEST_TEXT);
     }
 
     @Test
     public void setAttachment_withTypeMms() {
-        when(mParams.getParameterMask()).thenReturn(
-                (long) BluetoothMapContent.MASK_ATTACHMENT_SIZE);
+        when(mParams.getParameterMask())
+                .thenReturn((long) BluetoothMapContent.MASK_ATTACHMENT_SIZE);
         mInfo.mMsgType = FilterInfo.TYPE_MMS;
         mInfo.mMmsColTextOnly = 0;
         mInfo.mMmsColAttachmentSize = 1;
-        MatrixCursor cursor = new MatrixCursor(
-                new String[]{"MmsColTextOnly", "MmsColAttachmentSize"});
-        cursor.addRow(new Object[]{0, -1});
+        MatrixCursor cursor =
+                new MatrixCursor(new String[] {"MmsColTextOnly", "MmsColAttachmentSize"});
+        cursor.addRow(new Object[] {0, -1});
         cursor.moveToFirst();
 
         mContent.setAttachment(mMessageListingElement, cursor, mInfo, mParams);
@@ -247,14 +241,14 @@ public class BluetoothMapContentTest {
 
     @Test
     public void setAttachment_withTypeEmail() {
-        when(mParams.getParameterMask()).thenReturn(
-                (long) BluetoothMapContent.MASK_ATTACHMENT_SIZE);
+        when(mParams.getParameterMask())
+                .thenReturn((long) BluetoothMapContent.MASK_ATTACHMENT_SIZE);
         mInfo.mMsgType = FilterInfo.TYPE_EMAIL;
         mInfo.mMessageColAttachment = 0;
         mInfo.mMessageColAttachmentSize = 1;
-        MatrixCursor cursor = new MatrixCursor(new String[]{"MessageColAttachment",
-                "MessageColAttachmentSize"});
-        cursor.addRow(new Object[]{1, 0});
+        MatrixCursor cursor =
+                new MatrixCursor(new String[] {"MessageColAttachment", "MessageColAttachmentSize"});
+        cursor.addRow(new Object[] {1, 0});
         cursor.moveToFirst();
 
         mContent.setAttachment(mMessageListingElement, cursor, mInfo, mParams);
@@ -271,10 +265,14 @@ public class BluetoothMapContentTest {
         mInfo.mMessageColAttachment = 0;
         mInfo.mMessageColAttachmentSize = 1;
         mInfo.mMessageColAttachmentMime = 2;
-        MatrixCursor cursor = new MatrixCursor(new String[]{"MessageColAttachment",
-                "MessageColAttachmentSize",
-                "MessageColAttachmentMime"});
-        cursor.addRow(new Object[]{1, 0, "test_mime_type"});
+        MatrixCursor cursor =
+                new MatrixCursor(
+                        new String[] {
+                            "MessageColAttachment",
+                            "MessageColAttachmentSize",
+                            "MessageColAttachmentMime"
+                        });
+        cursor.addRow(new Object[] {1, 0, "test_mime_type"});
         cursor.moveToFirst();
 
         mContent.setRemoteFeatureMask(featureMask);
@@ -291,8 +289,8 @@ public class BluetoothMapContentTest {
         mContent.setRemoteFeatureMask(featureMask);
 
         assertThat(mContent.getRemoteFeatureMask()).isEqualTo(featureMask);
-        assertThat(mContent.mMsgListingVersion).isEqualTo(
-                BluetoothMapUtils.MAP_MESSAGE_LISTING_FORMAT_V11);
+        assertThat(mContent.mMsgListingVersion)
+                .isEqualTo(BluetoothMapUtils.MAP_MESSAGE_LISTING_FORMAT_V11);
     }
 
     @Test
@@ -311,14 +309,8 @@ public class BluetoothMapContentTest {
         StringBuilder expected = new StringBuilder();
         expected.append(" AND ").append(Threads.READ).append(" = 0");
         expected.append(" AND ").append(Threads.READ).append(" = 1");
-        expected.append(" AND ")
-                .append(Threads.DATE)
-                .append(" >= ")
-                .append(lastActivity);
-        expected.append(" AND ")
-                .append(Threads.DATE)
-                .append(" <= ")
-                .append(lastActivity);
+        expected.append(" AND ").append(Threads.DATE).append(" >= ").append(lastActivity);
+        expected.append(" AND ").append(Threads.DATE).append(" <= ").append(lastActivity);
         expected.append(" AND ")
                 .append(Threads._ID)
                 .append(" = ")
@@ -331,8 +323,8 @@ public class BluetoothMapContentTest {
         when(mParams.getParameterMask()).thenReturn((long) BluetoothMapContent.MASK_DATETIME);
         mInfo.mMsgType = FilterInfo.TYPE_SMS;
         mInfo.mSmsColDate = 0;
-        MatrixCursor cursor = new MatrixCursor(new String[]{"SmsColDate"});
-        cursor.addRow(new Object[]{2L});
+        MatrixCursor cursor = new MatrixCursor(new String[] {"SmsColDate"});
+        cursor.addRow(new Object[] {2L});
         cursor.moveToFirst();
 
         mContent.setDateTime(mMessageListingElement, cursor, mInfo, mParams);
@@ -345,8 +337,8 @@ public class BluetoothMapContentTest {
         when(mParams.getParameterMask()).thenReturn((long) BluetoothMapContent.MASK_DATETIME);
         mInfo.mMsgType = FilterInfo.TYPE_MMS;
         mInfo.mMmsColDate = 0;
-        MatrixCursor cursor = new MatrixCursor(new String[]{"MmsColDate"});
-        cursor.addRow(new Object[]{2L});
+        MatrixCursor cursor = new MatrixCursor(new String[] {"MmsColDate"});
+        cursor.addRow(new Object[] {2L});
         cursor.moveToFirst();
 
         mContent.setDateTime(mMessageListingElement, cursor, mInfo, mParams);
@@ -359,8 +351,8 @@ public class BluetoothMapContentTest {
         when(mParams.getParameterMask()).thenReturn((long) BluetoothMapContent.MASK_DATETIME);
         mInfo.mMsgType = FilterInfo.TYPE_IM;
         mInfo.mMessageColDate = 0;
-        MatrixCursor cursor = new MatrixCursor(new String[]{"MessageColDate"});
-        cursor.addRow(new Object[]{2L});
+        MatrixCursor cursor = new MatrixCursor(new String[] {"MessageColDate"});
+        cursor.addRow(new Object[] {2L});
         cursor.moveToFirst();
 
         mContent.setDateTime(mMessageListingElement, cursor, mInfo, mParams);
@@ -370,12 +362,12 @@ public class BluetoothMapContentTest {
 
     @Test
     public void setDeliveryStatus() {
-        when(mParams.getParameterMask()).thenReturn(
-                (long) BluetoothMapContent.MASK_DELIVERY_STATUS);
+        when(mParams.getParameterMask())
+                .thenReturn((long) BluetoothMapContent.MASK_DELIVERY_STATUS);
         mInfo.mMsgType = FilterInfo.TYPE_EMAIL;
         mInfo.mMessageColDelivery = 0;
-        MatrixCursor cursor = new MatrixCursor(new String[]{"MessageColDelivery"});
-        cursor.addRow(new Object[]{"test_delivery_status"});
+        MatrixCursor cursor = new MatrixCursor(new String[] {"MessageColDelivery"});
+        cursor.addRow(new Object[] {"test_delivery_status"});
         cursor.moveToFirst();
 
         mContent.setDeliveryStatus(mMessageListingElement, cursor, mInfo, mParams);
@@ -397,8 +389,8 @@ public class BluetoothMapContentTest {
 
     @Test
     public void smsSelected_withInvalidFilter() {
-        when(mParams.getFilterMessageType()).thenReturn(
-                BluetoothMapAppParams.INVALID_VALUE_PARAMETER);
+        when(mParams.getFilterMessageType())
+                .thenReturn(BluetoothMapAppParams.INVALID_VALUE_PARAMETER);
 
         assertThat(mContent.smsSelected(mInfo, mParams)).isTrue();
     }
@@ -443,8 +435,8 @@ public class BluetoothMapContentTest {
 
     @Test
     public void mmsSelected_withInvalidFilter() {
-        when(mParams.getFilterMessageType()).thenReturn(
-                BluetoothMapAppParams.INVALID_VALUE_PARAMETER);
+        when(mParams.getFilterMessageType())
+                .thenReturn(BluetoothMapAppParams.INVALID_VALUE_PARAMETER);
 
         assertThat(mContent.mmsSelected(mParams)).isTrue();
     }
@@ -469,9 +461,12 @@ public class BluetoothMapContentTest {
         mInfo.mMessageColCcAddress = 1;
         mInfo.mMessageColBccAddress = 2;
 
-        MatrixCursor cursor = new MatrixCursor(
-                new String[]{"MessageColToAddress", "MessageColCcAddress", "MessageColBccAddress"});
-        cursor.addRow(new Object[]{TEST_TO_ADDRESS, TEST_CC_ADDRESS, TEST_BCC_ADDRESS});
+        MatrixCursor cursor =
+                new MatrixCursor(
+                        new String[] {
+                            "MessageColToAddress", "MessageColCcAddress", "MessageColBccAddress"
+                        });
+        cursor.addRow(new Object[] {TEST_TO_ADDRESS, TEST_CC_ADDRESS, TEST_BCC_ADDRESS});
         cursor.moveToFirst();
 
         StringBuilder expected = new StringBuilder();
@@ -480,8 +475,7 @@ public class BluetoothMapContentTest {
         expected.append(Rfc822Tokenizer.tokenize(TEST_CC_ADDRESS)[0].getName());
         expected.append("; ");
         expected.append(Rfc822Tokenizer.tokenize(TEST_BCC_ADDRESS)[0].getName());
-        assertThat(mContent.getRecipientNameEmail(cursor, mInfo)).isEqualTo(
-                expected.toString());
+        assertThat(mContent.getRecipientNameEmail(cursor, mInfo)).isEqualTo(expected.toString());
     }
 
     @Test
@@ -490,9 +484,12 @@ public class BluetoothMapContentTest {
         mInfo.mMessageColCcAddress = 1;
         mInfo.mMessageColBccAddress = 2;
 
-        MatrixCursor cursor = new MatrixCursor(
-                new String[]{"MessageColToAddress", "MessageColCcAddress", "MessageColBccAddress"});
-        cursor.addRow(new Object[]{TEST_TO_ADDRESS, TEST_CC_ADDRESS, TEST_BCC_ADDRESS});
+        MatrixCursor cursor =
+                new MatrixCursor(
+                        new String[] {
+                            "MessageColToAddress", "MessageColCcAddress", "MessageColBccAddress"
+                        });
+        cursor.addRow(new Object[] {TEST_TO_ADDRESS, TEST_CC_ADDRESS, TEST_BCC_ADDRESS});
         cursor.moveToFirst();
 
         StringBuilder expected = new StringBuilder();
@@ -501,14 +498,14 @@ public class BluetoothMapContentTest {
         expected.append(Rfc822Tokenizer.tokenize(TEST_CC_ADDRESS)[0].getAddress());
         expected.append("; ");
         expected.append(Rfc822Tokenizer.tokenize(TEST_BCC_ADDRESS)[0].getAddress());
-        assertThat(mContent.getRecipientAddressingEmail(cursor, mInfo)).isEqualTo(
-                expected.toString());
+        assertThat(mContent.getRecipientAddressingEmail(cursor, mInfo))
+                .isEqualTo(expected.toString());
     }
 
     @Test
     public void setRecipientAddressing_withFilterMsgTypeSms_andSmsMsgTypeInbox() {
-        when(mParams.getParameterMask()).thenReturn(
-                (long) BluetoothMapContent.MASK_RECIPIENT_ADDRESSING);
+        when(mParams.getParameterMask())
+                .thenReturn((long) BluetoothMapContent.MASK_RECIPIENT_ADDRESSING);
         mInfo.mMsgType = FilterInfo.TYPE_SMS;
         mInfo.mPhoneNum = TEST_ADDRESS;
         mInfo.mSmsColType = 0;
@@ -523,15 +520,27 @@ public class BluetoothMapContentTest {
 
     @Test
     public void setRecipientAddressing_withFilterMsgTypeSms_andSmsMsgTypeDraft() {
-        when(mParams.getParameterMask()).thenReturn(
-                (long) BluetoothMapContent.MASK_RECIPIENT_ADDRESSING);
+        when(mParams.getParameterMask())
+                .thenReturn((long) BluetoothMapContent.MASK_RECIPIENT_ADDRESSING);
         mInfo.mMsgType = FilterInfo.TYPE_SMS;
         mInfo.mSmsColType = 2;
-        MatrixCursor cursor = new MatrixCursor(new String[] {"RecipientIds",
-                Telephony.CanonicalAddressesColumns.ADDRESS, "SmsColType",
-                Telephony.Sms.ADDRESS, Telephony.Sms.THREAD_ID});
-        cursor.addRow(new Object[] {"recipientIdOne recipientIdTwo", "recipientAddress",
-                Telephony.Sms.MESSAGE_TYPE_DRAFT, null, "0"});
+        MatrixCursor cursor =
+                new MatrixCursor(
+                        new String[] {
+                            "RecipientIds",
+                            Telephony.CanonicalAddressesColumns.ADDRESS,
+                            "SmsColType",
+                            Telephony.Sms.ADDRESS,
+                            Telephony.Sms.THREAD_ID
+                        });
+        cursor.addRow(
+                new Object[] {
+                    "recipientIdOne recipientIdTwo",
+                    "recipientAddress",
+                    Telephony.Sms.MESSAGE_TYPE_DRAFT,
+                    null,
+                    "0"
+                });
         cursor.moveToFirst();
 
         mContent.setRecipientAddressing(mMessageListingElement, cursor, mInfo, mParams);
@@ -541,15 +550,16 @@ public class BluetoothMapContentTest {
 
     @Test
     public void setRecipientAddressing_withFilterMsgTypeMms() {
-        when(mParams.getParameterMask()).thenReturn(
-                (long) BluetoothMapContent.MASK_RECIPIENT_ADDRESSING);
+        when(mParams.getParameterMask())
+                .thenReturn((long) BluetoothMapContent.MASK_RECIPIENT_ADDRESSING);
         mInfo.mMsgType = FilterInfo.TYPE_MMS;
-        MatrixCursor cursor = new MatrixCursor(
-                new String[]{BaseColumns._ID, Telephony.Mms.Addr.ADDRESS});
+        MatrixCursor cursor =
+                new MatrixCursor(new String[] {BaseColumns._ID, Telephony.Mms.Addr.ADDRESS});
         cursor.addRow(new Object[] {Telephony.Sms.MESSAGE_TYPE_INBOX, null});
         cursor.moveToFirst();
-        doReturn(cursor).when(mMapMethodProxy).contentResolverQuery(any(), any(), any(), any(),
-                any(), any());
+        doReturn(cursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(any(), any(), any(), any(), any(), any());
 
         mContent.setRecipientAddressing(mMessageListingElement, cursor, mInfo, mParams);
 
@@ -558,15 +568,18 @@ public class BluetoothMapContentTest {
 
     @Test
     public void setRecipientAddressing_withFilterMsgTypeEmail() {
-        when(mParams.getParameterMask()).thenReturn(
-                (long) BluetoothMapContent.MASK_RECIPIENT_ADDRESSING);
+        when(mParams.getParameterMask())
+                .thenReturn((long) BluetoothMapContent.MASK_RECIPIENT_ADDRESSING);
         mInfo.mMsgType = FilterInfo.TYPE_EMAIL;
         mInfo.mMessageColToAddress = 0;
         mInfo.mMessageColCcAddress = 1;
         mInfo.mMessageColBccAddress = 2;
-        MatrixCursor cursor = new MatrixCursor(
-                new String[]{"MessageColToAddress", "MessageColCcAddress", "MessageColBccAddress"});
-        cursor.addRow(new Object[]{TEST_TO_ADDRESS, TEST_CC_ADDRESS, TEST_BCC_ADDRESS});
+        MatrixCursor cursor =
+                new MatrixCursor(
+                        new String[] {
+                            "MessageColToAddress", "MessageColCcAddress", "MessageColBccAddress"
+                        });
+        cursor.addRow(new Object[] {TEST_TO_ADDRESS, TEST_CC_ADDRESS, TEST_BCC_ADDRESS});
         cursor.moveToFirst();
 
         mContent.setRecipientAddressing(mMessageListingElement, cursor, mInfo, mParams);
@@ -582,27 +595,28 @@ public class BluetoothMapContentTest {
 
     @Test
     public void setSenderAddressing_withFilterMsgTypeSms_andSmsMsgTypeInbox() {
-        when(mParams.getParameterMask()).thenReturn(
-                (long) BluetoothMapContent.MASK_SENDER_ADDRESSING);
+        when(mParams.getParameterMask())
+                .thenReturn((long) BluetoothMapContent.MASK_SENDER_ADDRESSING);
         mInfo.mMsgType = FilterInfo.TYPE_SMS;
         mInfo.mSmsColType = 0;
         mInfo.mSmsColAddress = 1;
         MatrixCursor cursor = new MatrixCursor(new String[] {"SmsColType", "SmsColAddress"});
         cursor.addRow(new Object[] {Telephony.Sms.MESSAGE_TYPE_INBOX, TEST_ADDRESS});
         cursor.moveToFirst();
-        doReturn(cursor).when(mMapMethodProxy).contentResolverQuery(any(), any(), any(), any(),
-                any(), any());
+        doReturn(cursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(any(), any(), any(), any(), any(), any());
 
         mContent.setSenderAddressing(mMessageListingElement, cursor, mInfo, mParams);
 
-        assertThat(mMessageListingElement.getSenderAddressing()).isEqualTo(
-                PhoneNumberUtils.extractNetworkPortion(TEST_ADDRESS));
+        assertThat(mMessageListingElement.getSenderAddressing())
+                .isEqualTo(PhoneNumberUtils.extractNetworkPortion(TEST_ADDRESS));
     }
 
     @Test
     public void setSenderAddressing_withFilterMsgTypeSms_andSmsMsgTypeDraft() {
-        when(mParams.getParameterMask()).thenReturn(
-                (long) BluetoothMapContent.MASK_SENDER_ADDRESSING);
+        when(mParams.getParameterMask())
+                .thenReturn((long) BluetoothMapContent.MASK_SENDER_ADDRESSING);
         mInfo.mMsgType = FilterInfo.TYPE_SMS;
         mInfo.mPhoneNum = null;
         mInfo.mSmsColType = 0;
@@ -617,16 +631,17 @@ public class BluetoothMapContentTest {
 
     @Test
     public void setSenderAddressing_withFilterMsgTypeMms() {
-        when(mParams.getParameterMask()).thenReturn(
-                (long) BluetoothMapContent.MASK_SENDER_ADDRESSING);
+        when(mParams.getParameterMask())
+                .thenReturn((long) BluetoothMapContent.MASK_SENDER_ADDRESSING);
         mInfo.mMsgType = FilterInfo.TYPE_MMS;
         mInfo.mMmsColId = 0;
-        MatrixCursor cursor = new MatrixCursor(
-                new String[]{"MmsColId", Telephony.Mms.Addr.ADDRESS});
+        MatrixCursor cursor =
+                new MatrixCursor(new String[] {"MmsColId", Telephony.Mms.Addr.ADDRESS});
         cursor.addRow(new Object[] {0, ""});
         cursor.moveToFirst();
-        doReturn(cursor).when(mMapMethodProxy).contentResolverQuery(any(), any(), any(), any(),
-                any(), any());
+        doReturn(cursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(any(), any(), any(), any(), any(), any());
 
         mContent.setSenderAddressing(mMessageListingElement, cursor, mInfo, mParams);
 
@@ -635,13 +650,12 @@ public class BluetoothMapContentTest {
 
     @Test
     public void setSenderAddressing_withFilterTypeEmail() {
-        when(mParams.getParameterMask()).thenReturn(
-                (long) BluetoothMapContent.MASK_SENDER_ADDRESSING);
+        when(mParams.getParameterMask())
+                .thenReturn((long) BluetoothMapContent.MASK_SENDER_ADDRESSING);
         mInfo.mMsgType = FilterInfo.TYPE_EMAIL;
         mInfo.mMessageColFromAddress = 0;
-        MatrixCursor cursor = new MatrixCursor(
-                new String[]{"MessageColFromAddress"});
-        cursor.addRow(new Object[]{TEST_FROM_ADDRESS});
+        MatrixCursor cursor = new MatrixCursor(new String[] {"MessageColFromAddress"});
+        cursor.addRow(new Object[] {TEST_FROM_ADDRESS});
         cursor.moveToFirst();
 
         mContent.setSenderAddressing(mMessageListingElement, cursor, mInfo, mParams);
@@ -653,16 +667,20 @@ public class BluetoothMapContentTest {
 
     @Test
     public void setSenderAddressing_withFilterTypeIm() {
-        when(mParams.getParameterMask()).thenReturn(
-                (long) BluetoothMapContent.MASK_SENDER_ADDRESSING);
+        when(mParams.getParameterMask())
+                .thenReturn((long) BluetoothMapContent.MASK_SENDER_ADDRESSING);
         mInfo.mMsgType = FilterInfo.TYPE_IM;
         mInfo.mMessageColFromAddress = 0;
-        MatrixCursor cursor = new MatrixCursor(new String[] {"MessageColFromAddress",
-                BluetoothMapContract.ConvoContactColumns.UCI});
+        MatrixCursor cursor =
+                new MatrixCursor(
+                        new String[] {
+                            "MessageColFromAddress", BluetoothMapContract.ConvoContactColumns.UCI
+                        });
         cursor.addRow(new Object[] {(long) 1, TEST_ADDRESS});
         cursor.moveToFirst();
-        doReturn(cursor).when(mMapMethodProxy).contentResolverQuery(any(), any(), any(), any(),
-                any(), any());
+        doReturn(cursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(any(), any(), any(), any(), any(), any());
 
         mContent.setSenderAddressing(mMessageListingElement, cursor, mInfo, mParams);
 
@@ -674,12 +692,18 @@ public class BluetoothMapContentTest {
         when(mParams.getParameterMask()).thenReturn((long) BluetoothMapContent.MASK_SENDER_NAME);
         mInfo.mMsgType = FilterInfo.TYPE_SMS;
         mInfo.mSmsColAddress = 1;
-        MatrixCursor cursor = new MatrixCursor(new String[] {Telephony.Sms.TYPE, "SmsColAddress",
-                ContactsContract.Contacts.DISPLAY_NAME});
+        MatrixCursor cursor =
+                new MatrixCursor(
+                        new String[] {
+                            Telephony.Sms.TYPE,
+                            "SmsColAddress",
+                            ContactsContract.Contacts.DISPLAY_NAME
+                        });
         cursor.addRow(new Object[] {Telephony.Sms.MESSAGE_TYPE_INBOX, TEST_PHONE, TEST_PHONE_NAME});
         cursor.moveToFirst();
-        doReturn(cursor).when(mMapMethodProxy).contentResolverQuery(any(), any(), any(), any(),
-                any(), any());
+        doReturn(cursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(any(), any(), any(), any(), any(), any());
 
         mContent.setSenderName(mMessageListingElement, cursor, mInfo, mParams);
 
@@ -694,8 +718,9 @@ public class BluetoothMapContentTest {
         MatrixCursor cursor = new MatrixCursor(new String[] {Telephony.Sms.TYPE});
         cursor.addRow(new Object[] {Telephony.Sms.MESSAGE_TYPE_DRAFT});
         cursor.moveToFirst();
-        doReturn(cursor).when(mMapMethodProxy).contentResolverQuery(any(), any(), any(), any(),
-                any(), any());
+        doReturn(cursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(any(), any(), any(), any(), any(), any());
 
         mContent.setSenderName(mMessageListingElement, cursor, mInfo, mParams);
 
@@ -708,12 +733,18 @@ public class BluetoothMapContentTest {
         mInfo.mMsgType = FilterInfo.TYPE_MMS;
         mInfo.mMmsColId = 0;
         mMessageListingElement.setSenderAddressing(TEST_ADDRESS);
-        MatrixCursor cursor = new MatrixCursor(new String[] {"MmsColId", Telephony.Mms.Addr.ADDRESS,
-                ContactsContract.Contacts.DISPLAY_NAME});
+        MatrixCursor cursor =
+                new MatrixCursor(
+                        new String[] {
+                            "MmsColId",
+                            Telephony.Mms.Addr.ADDRESS,
+                            ContactsContract.Contacts.DISPLAY_NAME
+                        });
         cursor.addRow(new Object[] {0, TEST_PHONE, TEST_PHONE_NAME});
         cursor.moveToFirst();
-        doReturn(cursor).when(mMapMethodProxy).contentResolverQuery(any(), any(), any(), any(),
-                any(), any());
+        doReturn(cursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(any(), any(), any(), any(), any(), any());
 
         mContent.setSenderName(mMessageListingElement, cursor, mInfo, mParams);
 
@@ -728,8 +759,9 @@ public class BluetoothMapContentTest {
         MatrixCursor cursor = new MatrixCursor(new String[] {"MmsColId"});
         cursor.addRow(new Object[] {0});
         cursor.moveToFirst();
-        doReturn(cursor).when(mMapMethodProxy).contentResolverQuery(any(), any(), any(), any(),
-                any(), any());
+        doReturn(cursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(any(), any(), any(), any(), any(), any());
 
         mContent.setSenderName(mMessageListingElement, cursor, mInfo, mParams);
 
@@ -757,12 +789,16 @@ public class BluetoothMapContentTest {
         when(mParams.getParameterMask()).thenReturn((long) BluetoothMapContent.MASK_SENDER_NAME);
         mInfo.mMsgType = FilterInfo.TYPE_IM;
         mInfo.mMessageColFromAddress = 0;
-        MatrixCursor cursor = new MatrixCursor(new String[] {"MessageColFromAddress",
-                BluetoothMapContract.ConvoContactColumns.NAME});
+        MatrixCursor cursor =
+                new MatrixCursor(
+                        new String[] {
+                            "MessageColFromAddress", BluetoothMapContract.ConvoContactColumns.NAME
+                        });
         cursor.addRow(new Object[] {(long) 1, TEST_NAME});
         cursor.moveToFirst();
-        doReturn(cursor).when(mMapMethodProxy).contentResolverQuery(any(), any(), any(), any(),
-                any(), any());
+        doReturn(cursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(any(), any(), any(), any(), any(), any());
 
         mContent.setSenderName(mMessageListingElement, cursor, mInfo, mParams);
 
@@ -789,8 +825,8 @@ public class BluetoothMapContentTest {
     public void setLastActivity_withFilterTypeSms() {
         mInfo.mMsgType = FilterInfo.TYPE_SMS;
         mInfo.mConvoColLastActivity = 0;
-        MatrixCursor cursor = new MatrixCursor(new String[] {"ConvoColLastActivity",
-                "MmsSmsThreadColDate"});
+        MatrixCursor cursor =
+                new MatrixCursor(new String[] {"ConvoColLastActivity", "MmsSmsThreadColDate"});
         cursor.addRow(new Object[] {TEST_DATE_EMAIL, TEST_DATE_SMS});
         cursor.moveToFirst();
 
@@ -803,8 +839,8 @@ public class BluetoothMapContentTest {
     public void setLastActivity_withFilterTypeEmail() {
         mInfo.mMsgType = FilterInfo.TYPE_EMAIL;
         mInfo.mConvoColLastActivity = 0;
-        MatrixCursor cursor = new MatrixCursor(new String[] {"ConvoColLastActivity",
-                "MmsSmsThreadColDate"});
+        MatrixCursor cursor =
+                new MatrixCursor(new String[] {"ConvoColLastActivity", "MmsSmsThreadColDate"});
         cursor.addRow(new Object[] {TEST_DATE_EMAIL, TEST_DATE_SMS});
         cursor.moveToFirst();
 
@@ -817,19 +853,22 @@ public class BluetoothMapContentTest {
     public void getEmailMessage_withCharsetNative() {
         when(mParams.getCharset()).thenReturn(BluetoothMapContent.MAP_MESSAGE_CHARSET_NATIVE);
 
-        assertThrows(IllegalArgumentException.class, () -> mContent.getEmailMessage(TEST_ID,
-                mParams, mCurrentFolder));
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> mContent.getEmailMessage(TEST_ID, mParams, mCurrentFolder));
     }
 
     @Test
     public void getEmailMessage_withEmptyCursor() {
         when(mParams.getCharset()).thenReturn(BluetoothMapContent.MAP_MESSAGE_CHARSET_UTF8);
         MatrixCursor cursor = new MatrixCursor(new String[] {});
-        doReturn(cursor).when(mMapMethodProxy).contentResolverQuery(any(), any(), any(), any(),
-                any(), any());
+        doReturn(cursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(any(), any(), any(), any(), any(), any());
 
-        assertThrows(IllegalArgumentException.class, () -> mContent.getEmailMessage(TEST_ID,
-                mParams, mCurrentFolder));
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> mContent.getEmailMessage(TEST_ID, mParams, mCurrentFolder));
     }
 
     @Test
@@ -838,41 +877,51 @@ public class BluetoothMapContentTest {
         when(mParams.getFractionRequest()).thenReturn(BluetoothMapAppParams.FRACTION_REQUEST_FIRST);
         when(mParams.getAttachment()).thenReturn(0);
 
-        MatrixCursor cursor = new MatrixCursor(new String[] {
-                BluetoothMapContract.MessageColumns.RECEPTION_STATE,
-                BluetoothMapContract.MessageColumns.FLAG_READ,
-                BluetoothMapContract.MessageColumns.FOLDER_ID,
-                BluetoothMapContract.MessageColumns.TO_LIST,
-                BluetoothMapContract.MessageColumns.FROM_LIST
-        });
-        cursor.addRow(new Object[] {BluetoothMapContract.RECEPTION_STATE_FRACTIONED, "1",
-        TEST_INBOX_FOLDER_ID, TEST_TO_ADDRESS, TEST_FROM_ADDRESS});
+        MatrixCursor cursor =
+                new MatrixCursor(
+                        new String[] {
+                            BluetoothMapContract.MessageColumns.RECEPTION_STATE,
+                            BluetoothMapContract.MessageColumns.FLAG_READ,
+                            BluetoothMapContract.MessageColumns.FOLDER_ID,
+                            BluetoothMapContract.MessageColumns.TO_LIST,
+                            BluetoothMapContract.MessageColumns.FROM_LIST
+                        });
+        cursor.addRow(
+                new Object[] {
+                    BluetoothMapContract.RECEPTION_STATE_FRACTIONED,
+                    "1",
+                    TEST_INBOX_FOLDER_ID,
+                    TEST_TO_ADDRESS,
+                    TEST_FROM_ADDRESS
+                });
         cursor.moveToFirst();
-        doReturn(cursor).when(mMapMethodProxy).contentResolverQuery(any(), any(), any(), any(),
-                any(), any());
+        doReturn(cursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(any(), any(), any(), any(), any(), any());
 
         mCurrentFolder.setFolderId(TEST_INBOX_FOLDER_ID);
         // This mock sets up FileNotFoundException during email body access
-        doThrow(FileNotFoundException.class).when(
-                mMapMethodProxy).contentResolverOpenFileDescriptor(any(), any(), any());
+        doThrow(FileNotFoundException.class)
+                .when(mMapMethodProxy)
+                .contentResolverOpenFileDescriptor(any(), any(), any());
 
         byte[] encodedMessageEmail = mContent.getEmailMessage(TEST_ID, mParams, mCurrentFolder);
         InputStream inputStream = new ByteArrayInputStream(encodedMessageEmail);
-        BluetoothMapbMessage messageParsed = BluetoothMapbMessage.parse(inputStream,
-                BluetoothMapAppParams.CHARSET_UTF8);
+        BluetoothMapbMessage messageParsed =
+                BluetoothMapbMessage.parse(inputStream, BluetoothMapAppParams.CHARSET_UTF8);
 
         assertThat(messageParsed.getType()).isEqualTo(TYPE.EMAIL);
-        assertThat(messageParsed.getVersionString()).isEqualTo("VERSION:" +
-                mContent.mMessageVersion);
+        assertThat(messageParsed.getVersionString())
+                .isEqualTo("VERSION:" + mContent.mMessageVersion);
         assertThat(messageParsed.getFolder()).isEqualTo(mCurrentFolder.getFullPath());
-        assertThat(messageParsed.getRecipients().get(0).getName()).isEqualTo(
-                Rfc822Tokenizer.tokenize(TEST_TO_ADDRESS)[0].getName());
-        assertThat(messageParsed.getRecipients().get(0).getFirstEmail()).isEqualTo(
-                Rfc822Tokenizer.tokenize(TEST_TO_ADDRESS)[0].getAddress());
-        assertThat(messageParsed.getOriginators().get(0).getName()).isEqualTo(
-                Rfc822Tokenizer.tokenize(TEST_FROM_ADDRESS)[0].getName());
-        assertThat(messageParsed.getOriginators().get(0).getFirstEmail()).isEqualTo(
-                Rfc822Tokenizer.tokenize(TEST_FROM_ADDRESS)[0].getAddress());
+        assertThat(messageParsed.getRecipients().get(0).getName())
+                .isEqualTo(Rfc822Tokenizer.tokenize(TEST_TO_ADDRESS)[0].getName());
+        assertThat(messageParsed.getRecipients().get(0).getFirstEmail())
+                .isEqualTo(Rfc822Tokenizer.tokenize(TEST_TO_ADDRESS)[0].getAddress());
+        assertThat(messageParsed.getOriginators().get(0).getName())
+                .isEqualTo(Rfc822Tokenizer.tokenize(TEST_FROM_ADDRESS)[0].getName());
+        assertThat(messageParsed.getOriginators().get(0).getFirstEmail())
+                .isEqualTo(Rfc822Tokenizer.tokenize(TEST_FROM_ADDRESS)[0].getAddress());
     }
 
     @Test
@@ -881,41 +930,51 @@ public class BluetoothMapContentTest {
         when(mParams.getFractionRequest()).thenReturn(BluetoothMapAppParams.FRACTION_REQUEST_FIRST);
         when(mParams.getAttachment()).thenReturn(0);
 
-        MatrixCursor cursor = new MatrixCursor(new String[] {
-                BluetoothMapContract.MessageColumns.RECEPTION_STATE,
-                BluetoothMapContract.MessageColumns.FLAG_READ,
-                BluetoothMapContract.MessageColumns.FOLDER_ID,
-                BluetoothMapContract.MessageColumns.TO_LIST,
-                BluetoothMapContract.MessageColumns.FROM_LIST
-        });
-        cursor.addRow(new Object[] {BluetoothMapContract.RECEPTION_STATE_FRACTIONED, null,
-                TEST_INBOX_FOLDER_ID, TEST_TO_ADDRESS, TEST_FROM_ADDRESS});
+        MatrixCursor cursor =
+                new MatrixCursor(
+                        new String[] {
+                            BluetoothMapContract.MessageColumns.RECEPTION_STATE,
+                            BluetoothMapContract.MessageColumns.FLAG_READ,
+                            BluetoothMapContract.MessageColumns.FOLDER_ID,
+                            BluetoothMapContract.MessageColumns.TO_LIST,
+                            BluetoothMapContract.MessageColumns.FROM_LIST
+                        });
+        cursor.addRow(
+                new Object[] {
+                    BluetoothMapContract.RECEPTION_STATE_FRACTIONED,
+                    null,
+                    TEST_INBOX_FOLDER_ID,
+                    TEST_TO_ADDRESS,
+                    TEST_FROM_ADDRESS
+                });
         cursor.moveToFirst();
-        doReturn(cursor).when(mMapMethodProxy).contentResolverQuery(any(), any(), any(), any(),
-                any(), any());
+        doReturn(cursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(any(), any(), any(), any(), any(), any());
 
         mCurrentFolder.setFolderId(TEST_INBOX_FOLDER_ID);
         // This mock sets up NullPointerException during email body access
-        doThrow(NullPointerException.class).when(
-                mMapMethodProxy).contentResolverOpenFileDescriptor(any(), any(), any());
+        doThrow(NullPointerException.class)
+                .when(mMapMethodProxy)
+                .contentResolverOpenFileDescriptor(any(), any(), any());
 
         byte[] encodedMessageEmail = mContent.getEmailMessage(TEST_ID, mParams, mCurrentFolder);
         InputStream inputStream = new ByteArrayInputStream(encodedMessageEmail);
-        BluetoothMapbMessage messageParsed = BluetoothMapbMessage.parse(inputStream,
-                BluetoothMapAppParams.CHARSET_UTF8);
+        BluetoothMapbMessage messageParsed =
+                BluetoothMapbMessage.parse(inputStream, BluetoothMapAppParams.CHARSET_UTF8);
 
         assertThat(messageParsed.getType()).isEqualTo(TYPE.EMAIL);
-        assertThat(messageParsed.getVersionString()).isEqualTo("VERSION:" +
-                mContent.mMessageVersion);
+        assertThat(messageParsed.getVersionString())
+                .isEqualTo("VERSION:" + mContent.mMessageVersion);
         assertThat(messageParsed.getFolder()).isEqualTo(mCurrentFolder.getFullPath());
-        assertThat(messageParsed.getRecipients().get(0).getName()).isEqualTo(
-                Rfc822Tokenizer.tokenize(TEST_TO_ADDRESS)[0].getName());
-        assertThat(messageParsed.getRecipients().get(0).getFirstEmail()).isEqualTo(
-                Rfc822Tokenizer.tokenize(TEST_TO_ADDRESS)[0].getAddress());
-        assertThat(messageParsed.getOriginators().get(0).getName()).isEqualTo(
-                Rfc822Tokenizer.tokenize(TEST_FROM_ADDRESS)[0].getName());
-        assertThat(messageParsed.getOriginators().get(0).getFirstEmail()).isEqualTo(
-                Rfc822Tokenizer.tokenize(TEST_FROM_ADDRESS)[0].getAddress());
+        assertThat(messageParsed.getRecipients().get(0).getName())
+                .isEqualTo(Rfc822Tokenizer.tokenize(TEST_TO_ADDRESS)[0].getName());
+        assertThat(messageParsed.getRecipients().get(0).getFirstEmail())
+                .isEqualTo(Rfc822Tokenizer.tokenize(TEST_TO_ADDRESS)[0].getAddress());
+        assertThat(messageParsed.getOriginators().get(0).getName())
+                .isEqualTo(Rfc822Tokenizer.tokenize(TEST_FROM_ADDRESS)[0].getName());
+        assertThat(messageParsed.getOriginators().get(0).getFirstEmail())
+                .isEqualTo(Rfc822Tokenizer.tokenize(TEST_FROM_ADDRESS)[0].getAddress());
     }
 
     @Test
@@ -924,18 +983,27 @@ public class BluetoothMapContentTest {
         when(mParams.getFractionRequest()).thenReturn(BluetoothMapAppParams.FRACTION_REQUEST_FIRST);
         when(mParams.getAttachment()).thenReturn(0);
 
-        MatrixCursor cursor = new MatrixCursor(new String[] {
-                BluetoothMapContract.MessageColumns.RECEPTION_STATE,
-                BluetoothMapContract.MessageColumns.FLAG_READ,
-                BluetoothMapContract.MessageColumns.FOLDER_ID,
-                BluetoothMapContract.MessageColumns.TO_LIST,
-                BluetoothMapContract.MessageColumns.FROM_LIST
-        });
-        cursor.addRow(new Object[] {BluetoothMapContract.RECEPTION_STATE_FRACTIONED, "1",
-                TEST_INBOX_FOLDER_ID, TEST_TO_ADDRESS, TEST_FROM_ADDRESS});
+        MatrixCursor cursor =
+                new MatrixCursor(
+                        new String[] {
+                            BluetoothMapContract.MessageColumns.RECEPTION_STATE,
+                            BluetoothMapContract.MessageColumns.FLAG_READ,
+                            BluetoothMapContract.MessageColumns.FOLDER_ID,
+                            BluetoothMapContract.MessageColumns.TO_LIST,
+                            BluetoothMapContract.MessageColumns.FROM_LIST
+                        });
+        cursor.addRow(
+                new Object[] {
+                    BluetoothMapContract.RECEPTION_STATE_FRACTIONED,
+                    "1",
+                    TEST_INBOX_FOLDER_ID,
+                    TEST_TO_ADDRESS,
+                    TEST_FROM_ADDRESS
+                });
         cursor.moveToFirst();
-        doReturn(cursor).when(mMapMethodProxy).contentResolverQuery(any(), any(), any(), any(),
-                any(), any());
+        doReturn(cursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(any(), any(), any(), any(), any(), any());
 
         mCurrentFolder.setFolderId(TEST_INBOX_FOLDER_ID);
         FileDescriptor fd = new FileDescriptor();
@@ -945,29 +1013,30 @@ public class BluetoothMapContentTest {
 
         byte[] encodedMessageEmail = mContent.getEmailMessage(TEST_ID, mParams, mCurrentFolder);
         InputStream inputStream = new ByteArrayInputStream(encodedMessageEmail);
-        BluetoothMapbMessage messageParsed = BluetoothMapbMessage.parse(inputStream,
-                BluetoothMapAppParams.CHARSET_UTF8);
+        BluetoothMapbMessage messageParsed =
+                BluetoothMapbMessage.parse(inputStream, BluetoothMapAppParams.CHARSET_UTF8);
 
         assertThat(messageParsed.getType()).isEqualTo(TYPE.EMAIL);
-        assertThat(messageParsed.getVersionString()).isEqualTo("VERSION:" +
-                mContent.mMessageVersion);
+        assertThat(messageParsed.getVersionString())
+                .isEqualTo("VERSION:" + mContent.mMessageVersion);
         assertThat(messageParsed.getFolder()).isEqualTo(mCurrentFolder.getFullPath());
-        assertThat(messageParsed.getRecipients().get(0).getName()).isEqualTo(
-                Rfc822Tokenizer.tokenize(TEST_TO_ADDRESS)[0].getName());
-        assertThat(messageParsed.getRecipients().get(0).getFirstEmail()).isEqualTo(
-                Rfc822Tokenizer.tokenize(TEST_TO_ADDRESS)[0].getAddress());
-        assertThat(messageParsed.getOriginators().get(0).getName()).isEqualTo(
-                Rfc822Tokenizer.tokenize(TEST_FROM_ADDRESS)[0].getName());
-        assertThat(messageParsed.getOriginators().get(0).getFirstEmail()).isEqualTo(
-                Rfc822Tokenizer.tokenize(TEST_FROM_ADDRESS)[0].getAddress());
+        assertThat(messageParsed.getRecipients().get(0).getName())
+                .isEqualTo(Rfc822Tokenizer.tokenize(TEST_TO_ADDRESS)[0].getName());
+        assertThat(messageParsed.getRecipients().get(0).getFirstEmail())
+                .isEqualTo(Rfc822Tokenizer.tokenize(TEST_TO_ADDRESS)[0].getAddress());
+        assertThat(messageParsed.getOriginators().get(0).getName())
+                .isEqualTo(Rfc822Tokenizer.tokenize(TEST_FROM_ADDRESS)[0].getName());
+        assertThat(messageParsed.getOriginators().get(0).getFirstEmail())
+                .isEqualTo(Rfc822Tokenizer.tokenize(TEST_FROM_ADDRESS)[0].getAddress());
     }
 
     @Test
     public void getIMMessage_withCharsetNative() {
         when(mParams.getCharset()).thenReturn(BluetoothMapContent.MAP_MESSAGE_CHARSET_NATIVE);
 
-        assertThrows(IllegalArgumentException.class, () -> mContent.getIMMessage(TEST_ID,
-                mParams, mCurrentFolder));
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> mContent.getIMMessage(TEST_ID, mParams, mCurrentFolder));
     }
 
     @Test
@@ -975,11 +1044,13 @@ public class BluetoothMapContentTest {
         when(mParams.getCharset()).thenReturn(BluetoothMapContent.MAP_MESSAGE_CHARSET_UTF8);
         MatrixCursor cursor = new MatrixCursor(new String[] {});
         cursor.moveToFirst();
-        doReturn(cursor).when(mMapMethodProxy).contentResolverQuery(any(), any(), any(), any(),
-                any(), any());
+        doReturn(cursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(any(), any(), any(), any(), any(), any());
 
-        assertThrows(IllegalArgumentException.class, () -> mContent.getIMMessage(TEST_ID,
-                mParams, mCurrentFolder));
+        assertThrows(
+                IllegalArgumentException.class,
+                () -> mContent.getIMMessage(TEST_ID, mParams, mCurrentFolder));
     }
 
     @Test
@@ -987,26 +1058,41 @@ public class BluetoothMapContentTest {
         when(mParams.getCharset()).thenReturn(BluetoothMapContent.MAP_MESSAGE_CHARSET_UTF8);
         when(mParams.getAttachment()).thenReturn(1);
 
-        MatrixCursor cursor = new MatrixCursor(new String[] {
-                BluetoothMapContract.MessageColumns.FLAG_READ,
-                BluetoothMapContract.MessageColumns.THREAD_ID,
-                BluetoothMapContract.MessageColumns.FOLDER_ID,
-                BluetoothMapContract.MessageColumns.SUBJECT,
-                BluetoothMapContract.MessageColumns._ID,
-                BluetoothMapContract.MessageColumns.DATE,
-                BluetoothMapContract.MessageColumns.ATTACHMENT_SIZE,
-                BluetoothMapContract.MessageColumns.BODY,
-                BluetoothMapContract.ConvoContactColumns.NAME,
-                BluetoothMapContract.ConvoContactColumns.X_BT_UID,
-                BluetoothMapContract.ConvoContactColumns.NICKNAME,
-                BluetoothMapContract.ConvoContactColumns.UCI,
-        });
-        cursor.addRow(new Object[] {1, 1, TEST_SENT_FOLDER_ID, TEST_SUBJECT, TEST_MESSAGE_ID,
-                TEST_DATE, 0, "body", TEST_NAME, TEST_FIRST_BT_UID, TEST_FORMATTED_NAME,
-                TEST_FIRST_BT_UCI_RECIPIENT});
+        MatrixCursor cursor =
+                new MatrixCursor(
+                        new String[] {
+                            BluetoothMapContract.MessageColumns.FLAG_READ,
+                            BluetoothMapContract.MessageColumns.THREAD_ID,
+                            BluetoothMapContract.MessageColumns.FOLDER_ID,
+                            BluetoothMapContract.MessageColumns.SUBJECT,
+                            BluetoothMapContract.MessageColumns._ID,
+                            BluetoothMapContract.MessageColumns.DATE,
+                            BluetoothMapContract.MessageColumns.ATTACHMENT_SIZE,
+                            BluetoothMapContract.MessageColumns.BODY,
+                            BluetoothMapContract.ConvoContactColumns.NAME,
+                            BluetoothMapContract.ConvoContactColumns.X_BT_UID,
+                            BluetoothMapContract.ConvoContactColumns.NICKNAME,
+                            BluetoothMapContract.ConvoContactColumns.UCI,
+                        });
+        cursor.addRow(
+                new Object[] {
+                    1,
+                    1,
+                    TEST_SENT_FOLDER_ID,
+                    TEST_SUBJECT,
+                    TEST_MESSAGE_ID,
+                    TEST_DATE,
+                    0,
+                    "body",
+                    TEST_NAME,
+                    TEST_FIRST_BT_UID,
+                    TEST_FORMATTED_NAME,
+                    TEST_FIRST_BT_UCI_RECIPIENT
+                });
         cursor.moveToFirst();
-        doReturn(cursor).when(mMapMethodProxy).contentResolverQuery(any(), any(), any(), any(),
-                any(), any());
+        doReturn(cursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(any(), any(), any(), any(), any(), any());
 
         mCurrentFolder.setFolderId(TEST_SENT_FOLDER_ID);
         when(mAccountItem.getUciFull()).thenReturn(TEST_FIRST_BT_UCI_ORIGINATOR);
@@ -1017,14 +1103,14 @@ public class BluetoothMapContentTest {
 
         assertThat(messageMimeParsed.mAppParamCharset).isEqualTo(1);
         assertThat(messageMimeParsed.getType()).isEqualTo(TYPE.IM);
-        assertThat(messageMimeParsed.getVersionString()).isEqualTo("VERSION:" +
-                mContent.mMessageVersion);
+        assertThat(messageMimeParsed.getVersionString())
+                .isEqualTo("VERSION:" + mContent.mMessageVersion);
         assertThat(messageMimeParsed.getFolder()).isEqualTo(mCurrentFolder.getFullPath());
         assertThat(messageMimeParsed.getRecipients().size()).isEqualTo(1);
         assertThat(messageMimeParsed.getOriginators().size()).isEqualTo(1);
         assertThat(messageMimeParsed.getOriginators().get(0).getName()).isEmpty();
-        assertThat(messageMimeParsed.getRecipients().get(0).getName()).isEqualTo(
-                TEST_FORMATTED_NAME);
+        assertThat(messageMimeParsed.getRecipients().get(0).getName())
+                .isEqualTo(TEST_FORMATTED_NAME);
     }
 
     @Test
@@ -1032,26 +1118,41 @@ public class BluetoothMapContentTest {
         when(mParams.getCharset()).thenReturn(BluetoothMapContent.MAP_MESSAGE_CHARSET_UTF8);
         when(mParams.getAttachment()).thenReturn(1);
 
-        MatrixCursor cursor = new MatrixCursor(new String[] {
-                BluetoothMapContract.MessageColumns.FLAG_READ,
-                BluetoothMapContract.MessageColumns.THREAD_ID,
-                BluetoothMapContract.MessageColumns.FOLDER_ID,
-                BluetoothMapContract.MessageColumns.SUBJECT,
-                BluetoothMapContract.MessageColumns._ID,
-                BluetoothMapContract.MessageColumns.DATE,
-                BluetoothMapContract.MessageColumns.ATTACHMENT_SIZE,
-                BluetoothMapContract.MessageColumns.BODY,
-                BluetoothMapContract.ConvoContactColumns.NAME,
-                BluetoothMapContract.ConvoContactColumns.X_BT_UID,
-                BluetoothMapContract.ConvoContactColumns.NICKNAME,
-                BluetoothMapContract.ConvoContactColumns.UCI,
-        });
-        cursor.addRow(new Object[] {0, 1, TEST_INBOX_FOLDER_ID, TEST_SUBJECT, TEST_MESSAGE_ID,
-                TEST_DATE, 0, "body", TEST_NAME, TEST_FIRST_BT_UID, TEST_FORMATTED_NAME,
-                TEST_FIRST_BT_UCI_ORIGINATOR});
+        MatrixCursor cursor =
+                new MatrixCursor(
+                        new String[] {
+                            BluetoothMapContract.MessageColumns.FLAG_READ,
+                            BluetoothMapContract.MessageColumns.THREAD_ID,
+                            BluetoothMapContract.MessageColumns.FOLDER_ID,
+                            BluetoothMapContract.MessageColumns.SUBJECT,
+                            BluetoothMapContract.MessageColumns._ID,
+                            BluetoothMapContract.MessageColumns.DATE,
+                            BluetoothMapContract.MessageColumns.ATTACHMENT_SIZE,
+                            BluetoothMapContract.MessageColumns.BODY,
+                            BluetoothMapContract.ConvoContactColumns.NAME,
+                            BluetoothMapContract.ConvoContactColumns.X_BT_UID,
+                            BluetoothMapContract.ConvoContactColumns.NICKNAME,
+                            BluetoothMapContract.ConvoContactColumns.UCI,
+                        });
+        cursor.addRow(
+                new Object[] {
+                    0,
+                    1,
+                    TEST_INBOX_FOLDER_ID,
+                    TEST_SUBJECT,
+                    TEST_MESSAGE_ID,
+                    TEST_DATE,
+                    0,
+                    "body",
+                    TEST_NAME,
+                    TEST_FIRST_BT_UID,
+                    TEST_FORMATTED_NAME,
+                    TEST_FIRST_BT_UCI_ORIGINATOR
+                });
         cursor.moveToFirst();
-        doReturn(cursor).when(mMapMethodProxy).contentResolverQuery(any(), any(), any(), any(),
-                any(), any());
+        doReturn(cursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(any(), any(), any(), any(), any(), any());
 
         mCurrentFolder.setFolderId(TEST_INBOX_FOLDER_ID);
         when(mAccountItem.getUciFull()).thenReturn(TEST_FIRST_BT_UCI_RECIPIENT);
@@ -1062,55 +1163,88 @@ public class BluetoothMapContentTest {
 
         assertThat(messageMimeParsed.mAppParamCharset).isEqualTo(1);
         assertThat(messageMimeParsed.getType()).isEqualTo(TYPE.IM);
-        assertThat(messageMimeParsed.getVersionString()).isEqualTo("VERSION:" +
-                mContent.mMessageVersion);
+        assertThat(messageMimeParsed.getVersionString())
+                .isEqualTo("VERSION:" + mContent.mMessageVersion);
         assertThat(messageMimeParsed.getFolder()).isEqualTo(mCurrentFolder.getFullPath());
         assertThat(messageMimeParsed.getRecipients().size()).isEqualTo(1);
         assertThat(messageMimeParsed.getOriginators().size()).isEqualTo(1);
-        assertThat(messageMimeParsed.getOriginators().get(0).getName()).isEqualTo(
-                TEST_FORMATTED_NAME);
+        assertThat(messageMimeParsed.getOriginators().get(0).getName())
+                .isEqualTo(TEST_FORMATTED_NAME);
         assertThat(messageMimeParsed.getRecipients().get(0).getName()).isEmpty();
     }
 
     @Test
     public void convoListing_withNullFilterRecipient() {
-        when(mParams.getConvoParameterMask()).thenReturn(
-                (long) BluetoothMapAppParams.INVALID_VALUE_PARAMETER);
+        when(mParams.getConvoParameterMask())
+                .thenReturn((long) BluetoothMapAppParams.INVALID_VALUE_PARAMETER);
         when(mParams.getFilterMessageType()).thenReturn(TEST_NO_FILTER);
         when(mParams.getMaxListCount()).thenReturn(2);
         when(mParams.getStartOffset()).thenReturn(0);
         // This mock sets filter recipient to null
         when(mParams.getFilterRecipient()).thenReturn(null);
 
-        MatrixCursor smsMmsCursor = new MatrixCursor(new String[] {"MmsSmsThreadColId",
-                "MmsSmsThreadColDate", "MmsSmsThreadColSnippet", "MmsSmsThreadSnippetCharset",
-                "MmsSmsThreadColRead", "MmsSmsThreadColRecipientIds"});
-        smsMmsCursor.addRow(new Object[] {TEST_ID, TEST_DATE_SMS, "test_col_snippet",
-                "test_col_snippet_cs", 1, "test_recipient_ids"});
+        MatrixCursor smsMmsCursor =
+                new MatrixCursor(
+                        new String[] {
+                            "MmsSmsThreadColId",
+                            "MmsSmsThreadColDate",
+                            "MmsSmsThreadColSnippet",
+                            "MmsSmsThreadSnippetCharset",
+                            "MmsSmsThreadColRead",
+                            "MmsSmsThreadColRecipientIds"
+                        });
+        smsMmsCursor.addRow(
+                new Object[] {
+                    TEST_ID,
+                    TEST_DATE_SMS,
+                    "test_col_snippet",
+                    "test_col_snippet_cs",
+                    1,
+                    "test_recipient_ids"
+                });
         smsMmsCursor.moveToFirst();
-        doReturn(smsMmsCursor).when(mMapMethodProxy).contentResolverQuery(any(), any(),
-                eq(BluetoothMapContent.MMS_SMS_THREAD_PROJECTION), any(), any(), any());
+        doReturn(smsMmsCursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(
+                        any(),
+                        any(),
+                        eq(BluetoothMapContent.MMS_SMS_THREAD_PROJECTION),
+                        any(),
+                        any(),
+                        any());
 
-        MatrixCursor imEmailCursor = new MatrixCursor(
-                new String[] {BluetoothMapContract.ConversationColumns.THREAD_ID,
-                        BluetoothMapContract.ConversationColumns.LAST_THREAD_ACTIVITY,
-                        BluetoothMapContract.ConversationColumns.THREAD_NAME,
-                        BluetoothMapContract.ConversationColumns.READ_STATUS,
-                        BluetoothMapContract.ConversationColumns.VERSION_COUNTER,
-                        BluetoothMapContract.ConversationColumns.SUMMARY,
-                        BluetoothMapContract.ConvoContactColumns.X_BT_UID,
-                        BluetoothMapContract.ConvoContactColumns.CHAT_STATE,
-                        BluetoothMapContract.ConvoContactColumns.UCI,
-                        BluetoothMapContract.ConvoContactColumns.NICKNAME,
-                        BluetoothMapContract.ConvoContactColumns.LAST_ACTIVE,
-                        BluetoothMapContract.ConvoContactColumns.NAME,
-                        BluetoothMapContract.ConvoContactColumns.PRESENCE_STATE,
-                        BluetoothMapContract.ConvoContactColumns.STATUS_TEXT,
-                        BluetoothMapContract.ConvoContactColumns.PRIORITY});
-        imEmailCursor.addRow(new Object[] {TEST_ID, TEST_DATE_EMAIL, TEST_NAME, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0});
-        doReturn(imEmailCursor).when(mMapMethodProxy).contentResolverQuery(any(), any(),
-                eq(BluetoothMapContract.BT_CONVERSATION_PROJECTION), any(), any(), any());
+        MatrixCursor imEmailCursor =
+                new MatrixCursor(
+                        new String[] {
+                            BluetoothMapContract.ConversationColumns.THREAD_ID,
+                            BluetoothMapContract.ConversationColumns.LAST_THREAD_ACTIVITY,
+                            BluetoothMapContract.ConversationColumns.THREAD_NAME,
+                            BluetoothMapContract.ConversationColumns.READ_STATUS,
+                            BluetoothMapContract.ConversationColumns.VERSION_COUNTER,
+                            BluetoothMapContract.ConversationColumns.SUMMARY,
+                            BluetoothMapContract.ConvoContactColumns.X_BT_UID,
+                            BluetoothMapContract.ConvoContactColumns.CHAT_STATE,
+                            BluetoothMapContract.ConvoContactColumns.UCI,
+                            BluetoothMapContract.ConvoContactColumns.NICKNAME,
+                            BluetoothMapContract.ConvoContactColumns.LAST_ACTIVE,
+                            BluetoothMapContract.ConvoContactColumns.NAME,
+                            BluetoothMapContract.ConvoContactColumns.PRESENCE_STATE,
+                            BluetoothMapContract.ConvoContactColumns.STATUS_TEXT,
+                            BluetoothMapContract.ConvoContactColumns.PRIORITY
+                        });
+        imEmailCursor.addRow(
+                new Object[] {
+                    TEST_ID, TEST_DATE_EMAIL, TEST_NAME, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+                });
+        doReturn(imEmailCursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(
+                        any(),
+                        any(),
+                        eq(BluetoothMapContract.BT_CONVERSATION_PROJECTION),
+                        any(),
+                        any(),
+                        any());
 
         BluetoothMapConvoListing listing = mContent.convoListing(mParams, false);
 
@@ -1129,55 +1263,92 @@ public class BluetoothMapContentTest {
 
     @Test
     public void convoListing_withNonNullFilterRecipient() {
-        when(mParams.getConvoParameterMask()).thenReturn(
-                (long) BluetoothMapAppParams.INVALID_VALUE_PARAMETER);
+        when(mParams.getConvoParameterMask())
+                .thenReturn((long) BluetoothMapAppParams.INVALID_VALUE_PARAMETER);
         when(mParams.getFilterMessageType()).thenReturn(BluetoothMapAppParams.FILTER_NO_EMAIL);
         when(mParams.getMaxListCount()).thenReturn(2);
         when(mParams.getStartOffset()).thenReturn(0);
         // This mock sets filter recipient to non null
         when(mParams.getFilterRecipient()).thenReturn(TEST_CONTACT_NAME_FILTER);
 
-        MatrixCursor smsMmsCursor = new MatrixCursor(new String[] {"MmsSmsThreadColId",
-                "MmsSmsThreadColDate", "MmsSmsThreadColSnippet", "MmsSmsThreadSnippetCharset",
-                "MmsSmsThreadColRead", "MmsSmsThreadColRecipientIds"});
-        smsMmsCursor.addRow(new Object[] {TEST_ID, TEST_DATE_SMS, "test_col_snippet",
-                "test_col_snippet_cs", 1, String.valueOf(TEST_ID)});
+        MatrixCursor smsMmsCursor =
+                new MatrixCursor(
+                        new String[] {
+                            "MmsSmsThreadColId",
+                            "MmsSmsThreadColDate",
+                            "MmsSmsThreadColSnippet",
+                            "MmsSmsThreadSnippetCharset",
+                            "MmsSmsThreadColRead",
+                            "MmsSmsThreadColRecipientIds"
+                        });
+        smsMmsCursor.addRow(
+                new Object[] {
+                    TEST_ID,
+                    TEST_DATE_SMS,
+                    "test_col_snippet",
+                    "test_col_snippet_cs",
+                    1,
+                    String.valueOf(TEST_ID)
+                });
         smsMmsCursor.moveToFirst();
-        doReturn(smsMmsCursor).when(mMapMethodProxy).contentResolverQuery(any(), any(),
-                eq(BluetoothMapContent.MMS_SMS_THREAD_PROJECTION), any(), any(), any());
+        doReturn(smsMmsCursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(
+                        any(),
+                        any(),
+                        eq(BluetoothMapContent.MMS_SMS_THREAD_PROJECTION),
+                        any(),
+                        any(),
+                        any());
 
-        MatrixCursor addressCursor = new MatrixCursor(new String[] {"COL_ADDR_ID",
-                "COL_ADDR_ADDR"});
-        addressCursor.addRow(new Object[]{TEST_ID, TEST_ADDRESS});
-        doReturn(addressCursor).when(mMapMethodProxy).contentResolverQuery(any(), any(),
-                eq(SmsMmsContacts.ADDRESS_PROJECTION), any(), any(), any());
+        MatrixCursor addressCursor =
+                new MatrixCursor(new String[] {"COL_ADDR_ID", "COL_ADDR_ADDR"});
+        addressCursor.addRow(new Object[] {TEST_ID, TEST_ADDRESS});
+        doReturn(addressCursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(
+                        any(), any(), eq(SmsMmsContacts.ADDRESS_PROJECTION), any(), any(), any());
 
-        MatrixCursor contactCursor = new MatrixCursor(new String[] {"COL_CONTACT_ID",
-                "COL_CONTACT_NAME"});
-        contactCursor.addRow(new Object[]{TEST_ID, TEST_NAME});
-        doReturn(contactCursor).when(mMapMethodProxy).contentResolverQuery(any(), any(),
-                eq(SmsMmsContacts.CONTACT_PROJECTION), any(), any(), any());
+        MatrixCursor contactCursor =
+                new MatrixCursor(new String[] {"COL_CONTACT_ID", "COL_CONTACT_NAME"});
+        contactCursor.addRow(new Object[] {TEST_ID, TEST_NAME});
+        doReturn(contactCursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(
+                        any(), any(), eq(SmsMmsContacts.CONTACT_PROJECTION), any(), any(), any());
 
-        MatrixCursor imEmailCursor = new MatrixCursor(
-                new String[] {BluetoothMapContract.ConversationColumns.THREAD_ID,
-                        BluetoothMapContract.ConversationColumns.LAST_THREAD_ACTIVITY,
-                        BluetoothMapContract.ConversationColumns.THREAD_NAME,
-                        BluetoothMapContract.ConversationColumns.READ_STATUS,
-                        BluetoothMapContract.ConversationColumns.VERSION_COUNTER,
-                        BluetoothMapContract.ConversationColumns.SUMMARY,
-                        BluetoothMapContract.ConvoContactColumns.X_BT_UID,
-                        BluetoothMapContract.ConvoContactColumns.CHAT_STATE,
-                        BluetoothMapContract.ConvoContactColumns.UCI,
-                        BluetoothMapContract.ConvoContactColumns.NICKNAME,
-                        BluetoothMapContract.ConvoContactColumns.LAST_ACTIVE,
-                        BluetoothMapContract.ConvoContactColumns.NAME,
-                        BluetoothMapContract.ConvoContactColumns.PRESENCE_STATE,
-                        BluetoothMapContract.ConvoContactColumns.STATUS_TEXT,
-                        BluetoothMapContract.ConvoContactColumns.PRIORITY});
-        imEmailCursor.addRow(new Object[] {TEST_ID, TEST_DATE_EMAIL, TEST_NAME, 0, 0, 0, 0, 0, 0, 0,
-                0, 0, 0, 0, 0});
-        doReturn(imEmailCursor).when(mMapMethodProxy).contentResolverQuery(any(), any(),
-                eq(BluetoothMapContract.BT_CONVERSATION_PROJECTION), any(), any(), any());
+        MatrixCursor imEmailCursor =
+                new MatrixCursor(
+                        new String[] {
+                            BluetoothMapContract.ConversationColumns.THREAD_ID,
+                            BluetoothMapContract.ConversationColumns.LAST_THREAD_ACTIVITY,
+                            BluetoothMapContract.ConversationColumns.THREAD_NAME,
+                            BluetoothMapContract.ConversationColumns.READ_STATUS,
+                            BluetoothMapContract.ConversationColumns.VERSION_COUNTER,
+                            BluetoothMapContract.ConversationColumns.SUMMARY,
+                            BluetoothMapContract.ConvoContactColumns.X_BT_UID,
+                            BluetoothMapContract.ConvoContactColumns.CHAT_STATE,
+                            BluetoothMapContract.ConvoContactColumns.UCI,
+                            BluetoothMapContract.ConvoContactColumns.NICKNAME,
+                            BluetoothMapContract.ConvoContactColumns.LAST_ACTIVE,
+                            BluetoothMapContract.ConvoContactColumns.NAME,
+                            BluetoothMapContract.ConvoContactColumns.PRESENCE_STATE,
+                            BluetoothMapContract.ConvoContactColumns.STATUS_TEXT,
+                            BluetoothMapContract.ConvoContactColumns.PRIORITY
+                        });
+        imEmailCursor.addRow(
+                new Object[] {
+                    TEST_ID, TEST_DATE_EMAIL, TEST_NAME, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+                });
+        doReturn(imEmailCursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(
+                        any(),
+                        any(),
+                        eq(BluetoothMapContract.BT_CONVERSATION_PROJECTION),
+                        any(),
+                        any(),
+                        any());
 
         BluetoothMapConvoListing listing = mContent.convoListing(mParams, false);
 
@@ -1196,8 +1367,8 @@ public class BluetoothMapContentTest {
 
     @Test
     public void msgListing_withSmsCursorOnly() {
-        when(mParams.getParameterMask()).thenReturn(
-                (long) BluetoothMapAppParams.INVALID_VALUE_PARAMETER);
+        when(mParams.getParameterMask())
+                .thenReturn((long) BluetoothMapAppParams.INVALID_VALUE_PARAMETER);
         int noMms = BluetoothMapAppParams.FILTER_NO_MMS;
         when(mParams.getFilterMessageType()).thenReturn(noMms);
         when(mParams.getMaxListCount()).thenReturn(1);
@@ -1207,16 +1378,46 @@ public class BluetoothMapContentTest {
         mCurrentFolder.setFolderId(TEST_ID);
         mContent.mMsgListingVersion = BluetoothMapUtils.MAP_MESSAGE_LISTING_FORMAT_V11;
 
-        MatrixCursor smsCursor = new MatrixCursor(new String[] {BaseColumns._ID, Telephony.Sms.TYPE,
-                Telephony.Sms.READ, Telephony.Sms.BODY, Telephony.Sms.ADDRESS, Telephony.Sms.DATE,
-                Telephony.Sms.THREAD_ID, ContactsContract.Contacts.DISPLAY_NAME});
-        smsCursor.addRow(new Object[] {TEST_ID, TEST_SENT_NO, TEST_READ_TRUE, TEST_SUBJECT,
-                TEST_ADDRESS, TEST_DATE_SMS, TEST_THREAD_ID, TEST_PHONE_NAME});
-        doReturn(smsCursor).when(mMapMethodProxy).contentResolverQuery(any(), any(),
-                eq(BluetoothMapContent.SMS_PROJECTION), any(), any(), any());
-        doReturn(smsCursor).when(mMapMethodProxy).contentResolverQuery(any(), any(),
-                eq(new String[] {ContactsContract.Contacts._ID,
-                        ContactsContract.Contacts.DISPLAY_NAME}), any(), any(), any());
+        MatrixCursor smsCursor =
+                new MatrixCursor(
+                        new String[] {
+                            BaseColumns._ID,
+                            Telephony.Sms.TYPE,
+                            Telephony.Sms.READ,
+                            Telephony.Sms.BODY,
+                            Telephony.Sms.ADDRESS,
+                            Telephony.Sms.DATE,
+                            Telephony.Sms.THREAD_ID,
+                            ContactsContract.Contacts.DISPLAY_NAME
+                        });
+        smsCursor.addRow(
+                new Object[] {
+                    TEST_ID,
+                    TEST_SENT_NO,
+                    TEST_READ_TRUE,
+                    TEST_SUBJECT,
+                    TEST_ADDRESS,
+                    TEST_DATE_SMS,
+                    TEST_THREAD_ID,
+                    TEST_PHONE_NAME
+                });
+        doReturn(smsCursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(
+                        any(), any(), eq(BluetoothMapContent.SMS_PROJECTION), any(), any(), any());
+        doReturn(smsCursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(
+                        any(),
+                        any(),
+                        eq(
+                                new String[] {
+                                    ContactsContract.Contacts._ID,
+                                    ContactsContract.Contacts.DISPLAY_NAME
+                                }),
+                        any(),
+                        any(),
+                        any());
 
         BluetoothMapMessageListing listing = mContent.msgListing(mCurrentFolder, mParams);
         assertThat(listing.getCount()).isEqualTo(1);
@@ -1226,8 +1427,8 @@ public class BluetoothMapContentTest {
         assertThat(smsElement.getDateTime()).isEqualTo(TEST_DATE_SMS);
         assertThat(smsElement.getType()).isEqualTo(TYPE.SMS_GSM);
         assertThat(smsElement.getReadBool()).isTrue();
-        assertThat(smsElement.getSenderAddressing()).isEqualTo(
-                PhoneNumberUtils.extractNetworkPortion(TEST_ADDRESS));
+        assertThat(smsElement.getSenderAddressing())
+                .isEqualTo(PhoneNumberUtils.extractNetworkPortion(TEST_ADDRESS));
         assertThat(smsElement.getSenderName()).isEqualTo(TEST_PHONE_NAME);
         assertThat(smsElement.getSize()).isEqualTo(TEST_SUBJECT.length());
         assertThat(smsElement.getPriority()).isEqualTo(TEST_NO);
@@ -1240,10 +1441,11 @@ public class BluetoothMapContentTest {
 
     @Test
     public void msgListing_withMmsCursorOnly() {
-        when(mParams.getParameterMask()).thenReturn(
-                (long) BluetoothMapAppParams.INVALID_VALUE_PARAMETER);
+        when(mParams.getParameterMask())
+                .thenReturn((long) BluetoothMapAppParams.INVALID_VALUE_PARAMETER);
         int onlyMms =
-                BluetoothMapAppParams.FILTER_NO_EMAIL | BluetoothMapAppParams.FILTER_NO_SMS_CDMA
+                BluetoothMapAppParams.FILTER_NO_EMAIL
+                        | BluetoothMapAppParams.FILTER_NO_SMS_CDMA
                         | BluetoothMapAppParams.FILTER_NO_SMS_GSM
                         | BluetoothMapAppParams.FILTER_NO_IM;
         when(mParams.getFilterMessageType()).thenReturn(onlyMms);
@@ -1254,21 +1456,61 @@ public class BluetoothMapContentTest {
         mCurrentFolder.setFolderId(TEST_ID);
         mContent.mMsgListingVersion = BluetoothMapUtils.MAP_MESSAGE_LISTING_FORMAT_V11;
 
-        MatrixCursor mmsCursor = new MatrixCursor(new String[] {BaseColumns._ID,
-                Telephony.Mms.MESSAGE_BOX, Telephony.Mms.READ, Telephony.Mms.MESSAGE_SIZE,
-                Telephony.Mms.TEXT_ONLY, Telephony.Mms.DATE, Telephony.Mms.SUBJECT,
-                Telephony.Mms.THREAD_ID, Telephony.Mms.Addr.ADDRESS,
-                ContactsContract.Contacts.DISPLAY_NAME, Telephony.Mms.PRIORITY});
-        mmsCursor.addRow(new Object[] {TEST_ID, TEST_SENT_NO, TEST_READ_FALSE, TEST_SIZE,
-                TEST_TEXT_ONLY, TEST_DATE_MMS, TEST_SUBJECT, TEST_THREAD_ID, TEST_PHONE,
-                TEST_PHONE_NAME, PduHeaders.PRIORITY_HIGH});
-        doReturn(mmsCursor).when(mMapMethodProxy).contentResolverQuery(any(), any(),
-                eq(BluetoothMapContent.MMS_PROJECTION), any(), any(), any());
-        doReturn(mmsCursor).when(mMapMethodProxy).contentResolverQuery(any(), any(),
-                eq(new String[] {Telephony.Mms.Addr.ADDRESS}), any(), any(), any());
-        doReturn(mmsCursor).when(mMapMethodProxy).contentResolverQuery(any(), any(),
-                eq(new String[] {ContactsContract.Contacts._ID,
-                        ContactsContract.Contacts.DISPLAY_NAME}), any(), any(), any());
+        MatrixCursor mmsCursor =
+                new MatrixCursor(
+                        new String[] {
+                            BaseColumns._ID,
+                            Telephony.Mms.MESSAGE_BOX,
+                            Telephony.Mms.READ,
+                            Telephony.Mms.MESSAGE_SIZE,
+                            Telephony.Mms.TEXT_ONLY,
+                            Telephony.Mms.DATE,
+                            Telephony.Mms.SUBJECT,
+                            Telephony.Mms.THREAD_ID,
+                            Telephony.Mms.Addr.ADDRESS,
+                            ContactsContract.Contacts.DISPLAY_NAME,
+                            Telephony.Mms.PRIORITY
+                        });
+        mmsCursor.addRow(
+                new Object[] {
+                    TEST_ID,
+                    TEST_SENT_NO,
+                    TEST_READ_FALSE,
+                    TEST_SIZE,
+                    TEST_TEXT_ONLY,
+                    TEST_DATE_MMS,
+                    TEST_SUBJECT,
+                    TEST_THREAD_ID,
+                    TEST_PHONE,
+                    TEST_PHONE_NAME,
+                    PduHeaders.PRIORITY_HIGH
+                });
+        doReturn(mmsCursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(
+                        any(), any(), eq(BluetoothMapContent.MMS_PROJECTION), any(), any(), any());
+        doReturn(mmsCursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(
+                        any(),
+                        any(),
+                        eq(new String[] {Telephony.Mms.Addr.ADDRESS}),
+                        any(),
+                        any(),
+                        any());
+        doReturn(mmsCursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(
+                        any(),
+                        any(),
+                        eq(
+                                new String[] {
+                                    ContactsContract.Contacts._ID,
+                                    ContactsContract.Contacts.DISPLAY_NAME
+                                }),
+                        any(),
+                        any(),
+                        any());
 
         BluetoothMapMessageListing listing = mContent.msgListing(mCurrentFolder, mParams);
         assertThat(listing.getCount()).isEqualTo(1);
@@ -1291,10 +1533,11 @@ public class BluetoothMapContentTest {
 
     @Test
     public void msgListing_withEmailCursorOnly() {
-        when(mParams.getParameterMask()).thenReturn(
-                (long) BluetoothMapAppParams.INVALID_VALUE_PARAMETER);
+        when(mParams.getParameterMask())
+                .thenReturn((long) BluetoothMapAppParams.INVALID_VALUE_PARAMETER);
         int onlyEmail =
-                BluetoothMapAppParams.FILTER_NO_MMS | BluetoothMapAppParams.FILTER_NO_SMS_CDMA
+                BluetoothMapAppParams.FILTER_NO_MMS
+                        | BluetoothMapAppParams.FILTER_NO_SMS_CDMA
                         | BluetoothMapAppParams.FILTER_NO_SMS_GSM
                         | BluetoothMapAppParams.FILTER_NO_IM;
         when(mParams.getFilterMessageType()).thenReturn(onlyEmail);
@@ -1305,31 +1548,58 @@ public class BluetoothMapContentTest {
         mCurrentFolder.setFolderId(TEST_ID);
         mContent.mMsgListingVersion = BluetoothMapUtils.MAP_MESSAGE_LISTING_FORMAT_V11;
 
-        MatrixCursor emailCursor = new MatrixCursor(new String[] {
-                BluetoothMapContract.MessageColumns._ID,
-                BluetoothMapContract.MessageColumns.DATE,
-                BluetoothMapContract.MessageColumns.SUBJECT,
-                BluetoothMapContract.MessageColumns.FOLDER_ID,
-                BluetoothMapContract.MessageColumns.FLAG_READ,
-                BluetoothMapContract.MessageColumns.MESSAGE_SIZE,
-                BluetoothMapContract.MessageColumns.FROM_LIST,
-                BluetoothMapContract.MessageColumns.TO_LIST,
-                BluetoothMapContract.MessageColumns.FLAG_ATTACHMENT,
-                BluetoothMapContract.MessageColumns.ATTACHMENT_SIZE,
-                BluetoothMapContract.MessageColumns.FLAG_HIGH_PRIORITY,
-                BluetoothMapContract.MessageColumns.FLAG_PROTECTED,
-                BluetoothMapContract.MessageColumns.RECEPTION_STATE,
-                BluetoothMapContract.MessageColumns.DEVILERY_STATE,
-                BluetoothMapContract.MessageColumns.THREAD_ID,
-                BluetoothMapContract.MessageColumns.CC_LIST,
-                BluetoothMapContract.MessageColumns.BCC_LIST,
-                BluetoothMapContract.MessageColumns.REPLY_TO_LIST});
-        emailCursor.addRow(new Object[] {TEST_ID, TEST_DATE_EMAIL, TEST_SUBJECT, TEST_SENT_YES,
-                TEST_READ_TRUE, TEST_SIZE, TEST_FROM_ADDRESS, TEST_TO_ADDRESS, TEST_ATTACHMENT_TRUE,
-                0, TEST_PRIORITY_HIGH, TEST_PROTECTED, 0, TEST_DELIVERY_STATE,
-                TEST_THREAD_ID, TEST_CC_ADDRESS, TEST_BCC_ADDRESS, TEST_TO_ADDRESS});
-        doReturn(emailCursor).when(mMapMethodProxy).contentResolverQuery(any(), any(),
-                eq(BluetoothMapContract.BT_MESSAGE_PROJECTION), any(), any(), any());
+        MatrixCursor emailCursor =
+                new MatrixCursor(
+                        new String[] {
+                            BluetoothMapContract.MessageColumns._ID,
+                            BluetoothMapContract.MessageColumns.DATE,
+                            BluetoothMapContract.MessageColumns.SUBJECT,
+                            BluetoothMapContract.MessageColumns.FOLDER_ID,
+                            BluetoothMapContract.MessageColumns.FLAG_READ,
+                            BluetoothMapContract.MessageColumns.MESSAGE_SIZE,
+                            BluetoothMapContract.MessageColumns.FROM_LIST,
+                            BluetoothMapContract.MessageColumns.TO_LIST,
+                            BluetoothMapContract.MessageColumns.FLAG_ATTACHMENT,
+                            BluetoothMapContract.MessageColumns.ATTACHMENT_SIZE,
+                            BluetoothMapContract.MessageColumns.FLAG_HIGH_PRIORITY,
+                            BluetoothMapContract.MessageColumns.FLAG_PROTECTED,
+                            BluetoothMapContract.MessageColumns.RECEPTION_STATE,
+                            BluetoothMapContract.MessageColumns.DEVILERY_STATE,
+                            BluetoothMapContract.MessageColumns.THREAD_ID,
+                            BluetoothMapContract.MessageColumns.CC_LIST,
+                            BluetoothMapContract.MessageColumns.BCC_LIST,
+                            BluetoothMapContract.MessageColumns.REPLY_TO_LIST
+                        });
+        emailCursor.addRow(
+                new Object[] {
+                    TEST_ID,
+                    TEST_DATE_EMAIL,
+                    TEST_SUBJECT,
+                    TEST_SENT_YES,
+                    TEST_READ_TRUE,
+                    TEST_SIZE,
+                    TEST_FROM_ADDRESS,
+                    TEST_TO_ADDRESS,
+                    TEST_ATTACHMENT_TRUE,
+                    0,
+                    TEST_PRIORITY_HIGH,
+                    TEST_PROTECTED,
+                    0,
+                    TEST_DELIVERY_STATE,
+                    TEST_THREAD_ID,
+                    TEST_CC_ADDRESS,
+                    TEST_BCC_ADDRESS,
+                    TEST_TO_ADDRESS
+                });
+        doReturn(emailCursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(
+                        any(),
+                        any(),
+                        eq(BluetoothMapContract.BT_MESSAGE_PROJECTION),
+                        any(),
+                        any(),
+                        any());
 
         BluetoothMapMessageListing listing = mContent.msgListing(mCurrentFolder, mParams);
         assertThat(listing.getCount()).isEqualTo(1);
@@ -1356,10 +1626,13 @@ public class BluetoothMapContentTest {
 
     @Test
     public void msgListing_withImCursorOnly() {
-        when(mParams.getParameterMask()).thenReturn(
-                (long) BluetoothMapAppParams.INVALID_VALUE_PARAMETER);
-        int onlyIm = BluetoothMapAppParams.FILTER_NO_MMS | BluetoothMapAppParams.FILTER_NO_SMS_CDMA
-                | BluetoothMapAppParams.FILTER_NO_SMS_GSM | BluetoothMapAppParams.FILTER_NO_EMAIL;
+        when(mParams.getParameterMask())
+                .thenReturn((long) BluetoothMapAppParams.INVALID_VALUE_PARAMETER);
+        int onlyIm =
+                BluetoothMapAppParams.FILTER_NO_MMS
+                        | BluetoothMapAppParams.FILTER_NO_SMS_CDMA
+                        | BluetoothMapAppParams.FILTER_NO_SMS_GSM
+                        | BluetoothMapAppParams.FILTER_NO_EMAIL;
         when(mParams.getFilterMessageType()).thenReturn(onlyIm);
         when(mParams.getMaxListCount()).thenReturn(1);
         when(mParams.getStartOffset()).thenReturn(0);
@@ -1368,35 +1641,71 @@ public class BluetoothMapContentTest {
         mCurrentFolder.setFolderId(TEST_ID);
         mContent.mMsgListingVersion = BluetoothMapUtils.MAP_MESSAGE_LISTING_FORMAT_V11;
 
-        MatrixCursor imCursor = new MatrixCursor(new String[] {
-                BluetoothMapContract.MessageColumns._ID,
-                BluetoothMapContract.MessageColumns.DATE,
-                BluetoothMapContract.MessageColumns.SUBJECT,
-                BluetoothMapContract.MessageColumns.FOLDER_ID,
-                BluetoothMapContract.MessageColumns.FLAG_READ,
-                BluetoothMapContract.MessageColumns.MESSAGE_SIZE,
-                BluetoothMapContract.MessageColumns.FROM_LIST,
-                BluetoothMapContract.MessageColumns.TO_LIST,
-                BluetoothMapContract.MessageColumns.FLAG_ATTACHMENT,
-                BluetoothMapContract.MessageColumns.ATTACHMENT_SIZE,
-                BluetoothMapContract.MessageColumns.FLAG_HIGH_PRIORITY,
-                BluetoothMapContract.MessageColumns.FLAG_PROTECTED,
-                BluetoothMapContract.MessageColumns.RECEPTION_STATE,
-                BluetoothMapContract.MessageColumns.DEVILERY_STATE,
-                BluetoothMapContract.MessageColumns.THREAD_ID,
-                BluetoothMapContract.MessageColumns.THREAD_NAME,
-                BluetoothMapContract.MessageColumns.ATTACHMENT_MINE_TYPES,
-                BluetoothMapContract.MessageColumns.BODY,
-                BluetoothMapContract.ConvoContactColumns.UCI,
-                BluetoothMapContract.ConvoContactColumns.NAME});
-        imCursor.addRow(new Object[] {TEST_ID, TEST_DATE_IM, TEST_SUBJECT, TEST_SENT_NO,
-                TEST_READ_FALSE, TEST_SIZE, TEST_ID, TEST_TO_ADDRESS, TEST_ATTACHMENT_TRUE,
-                0 /*=attachment size*/, TEST_PRIORITY_HIGH, TEST_PROTECTED, 0, TEST_DELIVERY_STATE,
-                TEST_THREAD_ID, TEST_NAME, TEST_ATTACHMENT_MIME_TYPE, 0, TEST_ADDRESS, TEST_NAME});
-        doReturn(imCursor).when(mMapMethodProxy).contentResolverQuery(any(), any(),
-                eq(BluetoothMapContract.BT_INSTANT_MESSAGE_PROJECTION), any(), any(), any());
-        doReturn(imCursor).when(mMapMethodProxy).contentResolverQuery(any(), any(),
-                eq(BluetoothMapContract.BT_CONTACT_PROJECTION), any(), any(), any());
+        MatrixCursor imCursor =
+                new MatrixCursor(
+                        new String[] {
+                            BluetoothMapContract.MessageColumns._ID,
+                            BluetoothMapContract.MessageColumns.DATE,
+                            BluetoothMapContract.MessageColumns.SUBJECT,
+                            BluetoothMapContract.MessageColumns.FOLDER_ID,
+                            BluetoothMapContract.MessageColumns.FLAG_READ,
+                            BluetoothMapContract.MessageColumns.MESSAGE_SIZE,
+                            BluetoothMapContract.MessageColumns.FROM_LIST,
+                            BluetoothMapContract.MessageColumns.TO_LIST,
+                            BluetoothMapContract.MessageColumns.FLAG_ATTACHMENT,
+                            BluetoothMapContract.MessageColumns.ATTACHMENT_SIZE,
+                            BluetoothMapContract.MessageColumns.FLAG_HIGH_PRIORITY,
+                            BluetoothMapContract.MessageColumns.FLAG_PROTECTED,
+                            BluetoothMapContract.MessageColumns.RECEPTION_STATE,
+                            BluetoothMapContract.MessageColumns.DEVILERY_STATE,
+                            BluetoothMapContract.MessageColumns.THREAD_ID,
+                            BluetoothMapContract.MessageColumns.THREAD_NAME,
+                            BluetoothMapContract.MessageColumns.ATTACHMENT_MINE_TYPES,
+                            BluetoothMapContract.MessageColumns.BODY,
+                            BluetoothMapContract.ConvoContactColumns.UCI,
+                            BluetoothMapContract.ConvoContactColumns.NAME
+                        });
+        imCursor.addRow(
+                new Object[] {
+                    TEST_ID,
+                    TEST_DATE_IM,
+                    TEST_SUBJECT,
+                    TEST_SENT_NO,
+                    TEST_READ_FALSE,
+                    TEST_SIZE,
+                    TEST_ID,
+                    TEST_TO_ADDRESS,
+                    TEST_ATTACHMENT_TRUE,
+                    0 /*=attachment size*/,
+                    TEST_PRIORITY_HIGH,
+                    TEST_PROTECTED,
+                    0,
+                    TEST_DELIVERY_STATE,
+                    TEST_THREAD_ID,
+                    TEST_NAME,
+                    TEST_ATTACHMENT_MIME_TYPE,
+                    0,
+                    TEST_ADDRESS,
+                    TEST_NAME
+                });
+        doReturn(imCursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(
+                        any(),
+                        any(),
+                        eq(BluetoothMapContract.BT_INSTANT_MESSAGE_PROJECTION),
+                        any(),
+                        any(),
+                        any());
+        doReturn(imCursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(
+                        any(),
+                        any(),
+                        eq(BluetoothMapContract.BT_CONTACT_PROJECTION),
+                        any(),
+                        any(),
+                        any());
 
         BluetoothMapMessageListing listing = mContent.msgListing(mCurrentFolder, mParams);
         assertThat(listing.getCount()).isEqualTo(1);
@@ -1430,26 +1739,44 @@ public class BluetoothMapContentTest {
         MatrixCursor smsCursor = new MatrixCursor(new String[] {"Placeholder"});
         // Making cursor.getCount() as 1
         smsCursor.addRow(new Object[] {1});
-        doReturn(smsCursor).when(mMapMethodProxy).contentResolverQuery(any(), any(),
-                eq(BluetoothMapContent.SMS_PROJECTION), any(), any(), any());
+        doReturn(smsCursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(
+                        any(), any(), eq(BluetoothMapContent.SMS_PROJECTION), any(), any(), any());
 
         MatrixCursor mmsCursor = new MatrixCursor(new String[] {"Placeholder"});
         // Making cursor.getCount() as 1
         mmsCursor.addRow(new Object[] {1});
-        doReturn(mmsCursor).when(mMapMethodProxy).contentResolverQuery(any(), any(),
-                eq(BluetoothMapContent.MMS_PROJECTION), any(), any(), any());
+        doReturn(mmsCursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(
+                        any(), any(), eq(BluetoothMapContent.MMS_PROJECTION), any(), any(), any());
 
         MatrixCursor emailCursor = new MatrixCursor(new String[] {"Placeholder"});
         // Making cursor.getCount() as 1
         emailCursor.addRow(new Object[] {1});
-        doReturn(emailCursor).when(mMapMethodProxy).contentResolverQuery(any(), any(),
-                eq(BluetoothMapContract.BT_MESSAGE_PROJECTION), any(), any(), any());
+        doReturn(emailCursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(
+                        any(),
+                        any(),
+                        eq(BluetoothMapContract.BT_MESSAGE_PROJECTION),
+                        any(),
+                        any(),
+                        any());
 
         MatrixCursor imCursor = new MatrixCursor(new String[] {"Placeholder"});
         // Making cursor.getCount() as 1
         imCursor.addRow(new Object[] {1});
-        doReturn(imCursor).when(mMapMethodProxy).contentResolverQuery(any(), any(),
-                eq(BluetoothMapContract.BT_INSTANT_MESSAGE_PROJECTION), any(), any(), any());
+        doReturn(imCursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(
+                        any(),
+                        any(),
+                        eq(BluetoothMapContract.BT_INSTANT_MESSAGE_PROJECTION),
+                        any(),
+                        any(),
+                        any());
 
         assertThat(mContent.msgListingSize(mCurrentFolder, mParams)).isEqualTo(4);
     }
@@ -1465,49 +1792,92 @@ public class BluetoothMapContentTest {
         MatrixCursor smsCursor = new MatrixCursor(new String[] {"Placeholder"});
         // Making cursor.getCount() as 1
         smsCursor.addRow(new Object[] {1});
-        doReturn(smsCursor).when(mMapMethodProxy).contentResolverQuery(any(), any(),
-                eq(BluetoothMapContent.SMS_PROJECTION), any(), any(), any());
+        doReturn(smsCursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(
+                        any(), any(), eq(BluetoothMapContent.SMS_PROJECTION), any(), any(), any());
 
         MatrixCursor mmsCursor = new MatrixCursor(new String[] {"Placeholder"});
         // Making cursor.getCount() as 1
         mmsCursor.addRow(new Object[] {1});
-        doReturn(mmsCursor).when(mMapMethodProxy).contentResolverQuery(any(), any(),
-                eq(BluetoothMapContent.MMS_PROJECTION), any(), any(), any());
+        doReturn(mmsCursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(
+                        any(), any(), eq(BluetoothMapContent.MMS_PROJECTION), any(), any(), any());
 
         MatrixCursor emailCursor = new MatrixCursor(new String[] {"Placeholder"});
         // Making cursor.getCount() as 1
         emailCursor.addRow(new Object[] {1});
-        doReturn(emailCursor).when(mMapMethodProxy).contentResolverQuery(any(), any(),
-                eq(BluetoothMapContract.BT_MESSAGE_PROJECTION), any(), any(), any());
+        doReturn(emailCursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(
+                        any(),
+                        any(),
+                        eq(BluetoothMapContract.BT_MESSAGE_PROJECTION),
+                        any(),
+                        any(),
+                        any());
 
         MatrixCursor imCursor = new MatrixCursor(new String[] {"Placeholder"});
         // Making cursor.getCount() as 1
         imCursor.addRow(new Object[] {1});
-        doReturn(imCursor).when(mMapMethodProxy).contentResolverQuery(any(), any(),
-                eq(BluetoothMapContract.BT_INSTANT_MESSAGE_PROJECTION), any(), any(), any());
+        doReturn(imCursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(
+                        any(),
+                        any(),
+                        eq(BluetoothMapContract.BT_INSTANT_MESSAGE_PROJECTION),
+                        any(),
+                        any(),
+                        any());
 
         assertThat(mContent.msgListingHasUnread(mCurrentFolder, mParams)).isTrue();
     }
 
     @Test
     public void extractMmsAddresses_withTypeMmsFrom() {
-        MatrixCursor addressCursor = new MatrixCursor(new String[] {Telephony.Mms.Addr.ADDRESS,
-                Telephony.Mms.Addr.TYPE});
+        MatrixCursor addressCursor =
+                new MatrixCursor(
+                        new String[] {Telephony.Mms.Addr.ADDRESS, Telephony.Mms.Addr.TYPE});
         addressCursor.addRow(new Object[] {TEST_ADDRESS, BluetoothMapContent.MMS_FROM});
-        doReturn(addressCursor).when(mMapMethodProxy).contentResolverQuery(any(), any(), any(),
-                eq(Telephony.Mms.Addr.MSG_ID + "=" + TEST_ID), any(), any());
+        doReturn(addressCursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(
+                        any(),
+                        any(),
+                        any(),
+                        eq(Telephony.Mms.Addr.MSG_ID + "=" + TEST_ID),
+                        any(),
+                        any());
 
-        MatrixCursor contactCursor = new MatrixCursor(new String[] {ContactsContract.Contacts._ID,
-                ContactsContract.Contacts.DISPLAY_NAME});
+        MatrixCursor contactCursor =
+                new MatrixCursor(
+                        new String[] {
+                            ContactsContract.Contacts._ID, ContactsContract.Contacts.DISPLAY_NAME
+                        });
         contactCursor.addRow(new Object[] {TEST_ID_STRING, TEST_NAME});
-        doReturn(contactCursor).when(mMapMethodProxy).contentResolverQuery(any(), any(), any(),
-                eq(ContactsContract.Contacts.IN_VISIBLE_GROUP + "=1"), any(), any());
+        doReturn(contactCursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(
+                        any(),
+                        any(),
+                        any(),
+                        eq(ContactsContract.Contacts.IN_VISIBLE_GROUP + "=1"),
+                        any(),
+                        any());
 
-        MatrixCursor emailCursor = new MatrixCursor(
-                new String[]{ContactsContract.CommonDataKinds.Email.ADDRESS});
+        MatrixCursor emailCursor =
+                new MatrixCursor(new String[] {ContactsContract.CommonDataKinds.Email.ADDRESS});
         emailCursor.addRow(new Object[] {TEST_EMAIL});
-        doReturn(emailCursor).when(mMapMethodProxy).contentResolverQuery(any(), any(), any(),
-                eq(ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?"), any(), any());
+        doReturn(emailCursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(
+                        any(),
+                        any(),
+                        any(),
+                        eq(ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?"),
+                        any(),
+                        any());
 
         BluetoothMapbMessageMime mime = new BluetoothMapbMessageMime();
         mContent.extractMmsAddresses(TEST_ID, mime);
@@ -1519,23 +1889,48 @@ public class BluetoothMapContentTest {
 
     @Test
     public void extractMmsAddresses_withTypeMmsTo() {
-        MatrixCursor addressCursor = new MatrixCursor(new String[] {Telephony.Mms.Addr.ADDRESS,
-                Telephony.Mms.Addr.TYPE});
+        MatrixCursor addressCursor =
+                new MatrixCursor(
+                        new String[] {Telephony.Mms.Addr.ADDRESS, Telephony.Mms.Addr.TYPE});
         addressCursor.addRow(new Object[] {TEST_ADDRESS, BluetoothMapContent.MMS_TO});
-        doReturn(addressCursor).when(mMapMethodProxy).contentResolverQuery(any(), any(), any(),
-                eq(Telephony.Mms.Addr.MSG_ID + "=" + TEST_ID), any(), any());
+        doReturn(addressCursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(
+                        any(),
+                        any(),
+                        any(),
+                        eq(Telephony.Mms.Addr.MSG_ID + "=" + TEST_ID),
+                        any(),
+                        any());
 
-        MatrixCursor contactCursor = new MatrixCursor(new String[] {ContactsContract.Contacts._ID,
-                ContactsContract.Contacts.DISPLAY_NAME});
+        MatrixCursor contactCursor =
+                new MatrixCursor(
+                        new String[] {
+                            ContactsContract.Contacts._ID, ContactsContract.Contacts.DISPLAY_NAME
+                        });
         contactCursor.addRow(new Object[] {TEST_ID_STRING, TEST_NAME});
-        doReturn(contactCursor).when(mMapMethodProxy).contentResolverQuery(any(), any(), any(),
-                eq(ContactsContract.Contacts.IN_VISIBLE_GROUP + "=1"), any(), any());
+        doReturn(contactCursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(
+                        any(),
+                        any(),
+                        any(),
+                        eq(ContactsContract.Contacts.IN_VISIBLE_GROUP + "=1"),
+                        any(),
+                        any());
 
-        MatrixCursor emailCursor = new MatrixCursor(
-                new String[]{ContactsContract.CommonDataKinds.Email.ADDRESS});
+        MatrixCursor emailCursor =
+                new MatrixCursor(new String[] {ContactsContract.CommonDataKinds.Email.ADDRESS});
         emailCursor.addRow(new Object[] {TEST_EMAIL});
-        doReturn(emailCursor).when(mMapMethodProxy).contentResolverQuery(any(), any(), any(),
-                eq(ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?"), any(), any());
+        doReturn(emailCursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(
+                        any(),
+                        any(),
+                        any(),
+                        eq(ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?"),
+                        any(),
+                        any());
 
         BluetoothMapbMessageMime mime = new BluetoothMapbMessageMime();
         mContent.extractMmsAddresses(TEST_ID, mime);
@@ -1547,23 +1942,48 @@ public class BluetoothMapContentTest {
 
     @Test
     public void extractMmsAddresses_withTypeMmsCc() {
-        MatrixCursor addressCursor = new MatrixCursor(new String[] {Telephony.Mms.Addr.ADDRESS,
-                Telephony.Mms.Addr.TYPE});
+        MatrixCursor addressCursor =
+                new MatrixCursor(
+                        new String[] {Telephony.Mms.Addr.ADDRESS, Telephony.Mms.Addr.TYPE});
         addressCursor.addRow(new Object[] {TEST_ADDRESS, BluetoothMapContent.MMS_CC});
-        doReturn(addressCursor).when(mMapMethodProxy).contentResolverQuery(any(), any(), any(),
-                eq(Telephony.Mms.Addr.MSG_ID + "=" + TEST_ID), any(), any());
+        doReturn(addressCursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(
+                        any(),
+                        any(),
+                        any(),
+                        eq(Telephony.Mms.Addr.MSG_ID + "=" + TEST_ID),
+                        any(),
+                        any());
 
-        MatrixCursor contactCursor = new MatrixCursor(new String[] {ContactsContract.Contacts._ID,
-                ContactsContract.Contacts.DISPLAY_NAME});
+        MatrixCursor contactCursor =
+                new MatrixCursor(
+                        new String[] {
+                            ContactsContract.Contacts._ID, ContactsContract.Contacts.DISPLAY_NAME
+                        });
         contactCursor.addRow(new Object[] {TEST_ID_STRING, TEST_NAME});
-        doReturn(contactCursor).when(mMapMethodProxy).contentResolverQuery(any(), any(), any(),
-                eq(ContactsContract.Contacts.IN_VISIBLE_GROUP + "=1"), any(), any());
+        doReturn(contactCursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(
+                        any(),
+                        any(),
+                        any(),
+                        eq(ContactsContract.Contacts.IN_VISIBLE_GROUP + "=1"),
+                        any(),
+                        any());
 
-        MatrixCursor emailCursor = new MatrixCursor(
-                new String[]{ContactsContract.CommonDataKinds.Email.ADDRESS});
+        MatrixCursor emailCursor =
+                new MatrixCursor(new String[] {ContactsContract.CommonDataKinds.Email.ADDRESS});
         emailCursor.addRow(new Object[] {TEST_EMAIL});
-        doReturn(emailCursor).when(mMapMethodProxy).contentResolverQuery(any(), any(), any(),
-                eq(ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?"), any(), any());
+        doReturn(emailCursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(
+                        any(),
+                        any(),
+                        any(),
+                        eq(ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?"),
+                        any(),
+                        any());
 
         BluetoothMapbMessageMime mime = new BluetoothMapbMessageMime();
         mContent.extractMmsAddresses(TEST_ID, mime);
@@ -1575,23 +1995,48 @@ public class BluetoothMapContentTest {
 
     @Test
     public void extractMmsAddresses_withTypeMmsBcc() {
-        MatrixCursor addressCursor = new MatrixCursor(new String[] {Telephony.Mms.Addr.ADDRESS,
-                Telephony.Mms.Addr.TYPE});
+        MatrixCursor addressCursor =
+                new MatrixCursor(
+                        new String[] {Telephony.Mms.Addr.ADDRESS, Telephony.Mms.Addr.TYPE});
         addressCursor.addRow(new Object[] {TEST_ADDRESS, BluetoothMapContent.MMS_BCC});
-        doReturn(addressCursor).when(mMapMethodProxy).contentResolverQuery(any(), any(), any(),
-                eq(Telephony.Mms.Addr.MSG_ID + "=" + TEST_ID), any(), any());
+        doReturn(addressCursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(
+                        any(),
+                        any(),
+                        any(),
+                        eq(Telephony.Mms.Addr.MSG_ID + "=" + TEST_ID),
+                        any(),
+                        any());
 
-        MatrixCursor contactCursor = new MatrixCursor(new String[] {ContactsContract.Contacts._ID,
-                ContactsContract.Contacts.DISPLAY_NAME});
+        MatrixCursor contactCursor =
+                new MatrixCursor(
+                        new String[] {
+                            ContactsContract.Contacts._ID, ContactsContract.Contacts.DISPLAY_NAME
+                        });
         contactCursor.addRow(new Object[] {TEST_ID_STRING, TEST_NAME});
-        doReturn(contactCursor).when(mMapMethodProxy).contentResolverQuery(any(), any(), any(),
-                eq(ContactsContract.Contacts.IN_VISIBLE_GROUP + "=1"), any(), any());
+        doReturn(contactCursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(
+                        any(),
+                        any(),
+                        any(),
+                        eq(ContactsContract.Contacts.IN_VISIBLE_GROUP + "=1"),
+                        any(),
+                        any());
 
-        MatrixCursor emailCursor = new MatrixCursor(
-                new String[]{ContactsContract.CommonDataKinds.Email.ADDRESS});
+        MatrixCursor emailCursor =
+                new MatrixCursor(new String[] {ContactsContract.CommonDataKinds.Email.ADDRESS});
         emailCursor.addRow(new Object[] {TEST_EMAIL});
-        doReturn(emailCursor).when(mMapMethodProxy).contentResolverQuery(any(), any(), any(),
-                eq(ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?"), any(), any());
+        doReturn(emailCursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(
+                        any(),
+                        any(),
+                        any(),
+                        eq(ContactsContract.CommonDataKinds.Phone.CONTACT_ID + " = ?"),
+                        any(),
+                        any());
 
         BluetoothMapbMessageMime mime = new BluetoothMapbMessageMime();
         mContent.extractMmsAddresses(TEST_ID, mime);
@@ -1603,21 +2048,45 @@ public class BluetoothMapContentTest {
 
     @Test
     public void extractMmsParts() {
-        MatrixCursor cursor = new MatrixCursor(
-                new String[] {BaseColumns._ID, Telephony.Mms.Part.CONTENT_TYPE,
-                        Telephony.Mms.Part.NAME, Telephony.Mms.Part.CHARSET,
-                        Telephony.Mms.Part.FILENAME, Telephony.Mms.Part.TEXT,
-                        Telephony.Mms.Part._DATA, Telephony.Mms.Part.CONTENT_ID,
-                        Telephony.Mms.Part.CONTENT_LOCATION,
-                        Telephony.Mms.Part.CONTENT_DISPOSITION});
-        doReturn(cursor).when(mMapMethodProxy).contentResolverQuery(any(),
-                eq(Uri.parse(Telephony.Mms.CONTENT_URI + "/" + TEST_ID + "/part")), any(),
-                eq(Telephony.Mms.Part.MSG_ID + "=" + TEST_ID), any(), any());
+        MatrixCursor cursor =
+                new MatrixCursor(
+                        new String[] {
+                            BaseColumns._ID,
+                            Telephony.Mms.Part.CONTENT_TYPE,
+                            Telephony.Mms.Part.NAME,
+                            Telephony.Mms.Part.CHARSET,
+                            Telephony.Mms.Part.FILENAME,
+                            Telephony.Mms.Part.TEXT,
+                            Telephony.Mms.Part._DATA,
+                            Telephony.Mms.Part.CONTENT_ID,
+                            Telephony.Mms.Part.CONTENT_LOCATION,
+                            Telephony.Mms.Part.CONTENT_DISPOSITION
+                        });
+        doReturn(cursor)
+                .when(mMapMethodProxy)
+                .contentResolverQuery(
+                        any(),
+                        eq(Uri.parse(Telephony.Mms.CONTENT_URI + "/" + TEST_ID + "/part")),
+                        any(),
+                        eq(Telephony.Mms.Part.MSG_ID + "=" + TEST_ID),
+                        any(),
+                        any());
         String filename = "test_filename";
         String location = "test_content_location";
         String disposition = "test_content_disposition";
-        cursor.addRow(new Object[] {TEST_ID, TEST_ATTACHMENT_MIME_TYPE, TEST_NAME, "test_charset",
-                filename, TEST_TEXT, 1, TEST_ID_STRING, location, disposition});
+        cursor.addRow(
+                new Object[] {
+                    TEST_ID,
+                    TEST_ATTACHMENT_MIME_TYPE,
+                    TEST_NAME,
+                    "test_charset",
+                    filename,
+                    TEST_TEXT,
+                    1,
+                    TEST_ID_STRING,
+                    location,
+                    disposition
+                });
 
         BluetoothMapbMessageMime mime = new BluetoothMapbMessageMime();
         mime.setIncludeAttachments(false);

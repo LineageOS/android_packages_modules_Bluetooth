@@ -76,6 +76,7 @@ import java.util.concurrent.ConcurrentHashMap;
 // Next tag value for ContentProfileErrorReportUtils.report(): 10
 public class BluetoothOppUtility {
     private static final String TAG = "BluetoothOppUtility";
+
     /** Whether the device has the "nosdcard" characteristic, or null if not-yet-known. */
     private static Boolean sNoSdCard = null;
 
@@ -93,9 +94,10 @@ public class BluetoothOppUtility {
 
     public static BluetoothOppTransferInfo queryRecord(Context context, Uri uri) {
         BluetoothOppTransferInfo info = new BluetoothOppTransferInfo();
-        Cursor cursor = BluetoothMethodProxy.getInstance().contentResolverQuery(
-                context.getContentResolver(), uri, null, null, null, null
-        );
+        Cursor cursor =
+                BluetoothMethodProxy.getInstance()
+                        .contentResolverQuery(
+                                context.getContentResolver(), uri, null, null, null, null);
         if (cursor != null) {
             if (cursor.moveToFirst()) {
                 fillRecord(context, cursor, info);
@@ -153,27 +155,27 @@ public class BluetoothOppUtility {
         Log.v(TAG, "Get data from db:" + info.mFileName + info.mFileType + info.mDestAddr);
     }
 
-    /**
-     * Organize Array list for transfers in one batch
-     */
+    /** Organize Array list for transfers in one batch */
     // This function is used when UI show batch transfer. Currently only show single transfer.
     public static ArrayList<String> queryTransfersInBatch(Context context, Long timeStamp) {
         ArrayList<String> uris = new ArrayList();
         final String where = BluetoothShare.TIMESTAMP + " == " + timeStamp;
-        Cursor metadataCursor = BluetoothMethodProxy.getInstance().contentResolverQuery(
-                context.getContentResolver(),
-                BluetoothShare.CONTENT_URI,
-                new String[]{BluetoothShare._DATA},
-                where,
-                null,
-                BluetoothShare._ID
-        );
+        Cursor metadataCursor =
+                BluetoothMethodProxy.getInstance()
+                        .contentResolverQuery(
+                                context.getContentResolver(),
+                                BluetoothShare.CONTENT_URI,
+                                new String[] {BluetoothShare._DATA},
+                                where,
+                                null,
+                                BluetoothShare._ID);
 
         if (metadataCursor == null) {
             return null;
         }
 
-        for (metadataCursor.moveToFirst(); !metadataCursor.isAfterLast();
+        for (metadataCursor.moveToFirst();
+                !metadataCursor.isAfterLast();
                 metadataCursor.moveToNext()) {
             String fileName = metadataCursor.getString(0);
             Uri path = Uri.parse(fileName);
@@ -189,11 +191,11 @@ public class BluetoothOppUtility {
     }
 
     /**
-     * Open the received file with appropriate application, if can not find
-     * application to handle, display error dialog.
+     * Open the received file with appropriate application, if can not find application to handle,
+     * display error dialog.
      */
-    public static void openReceivedFile(Context context, String fileName, String mimetype,
-            Long timeStamp, Uri uri) {
+    public static void openReceivedFile(
+            Context context, String fileName, String mimetype, Long timeStamp, Uri uri) {
         if (fileName == null || mimetype == null) {
             Log.e(TAG, "ERROR: Para fileName ==null, or mimetype == null");
             ContentProfileErrorReportUtils.report(
@@ -215,10 +217,15 @@ public class BluetoothOppUtility {
         }
 
         Uri path = null;
-        Cursor metadataCursor = BluetoothMethodProxy.getInstance().contentResolverQuery(
-                context.getContentResolver(), uri, new String[]{BluetoothShare.URI},
-                null, null, null
-        );
+        Cursor metadataCursor =
+                BluetoothMethodProxy.getInstance()
+                        .contentResolverQuery(
+                                context.getContentResolver(),
+                                uri,
+                                new String[] {BluetoothShare.URI},
+                                null,
+                                null,
+                                null);
         if (metadataCursor != null) {
             try {
                 if (metadataCursor.moveToFirst()) {
@@ -249,8 +256,8 @@ public class BluetoothOppUtility {
             // Due to the file is not existing, delete related info in btopp db
             // to prevent this file from appearing in live folder
             Log.v(TAG, "This uri will be deleted: " + uri);
-            BluetoothMethodProxy.getInstance().contentResolverDelete(context.getContentResolver(),
-                    uri, null, null);
+            BluetoothMethodProxy.getInstance()
+                    .contentResolverDelete(context.getContentResolver(), uri, null, null);
             return;
         }
 
@@ -299,10 +306,7 @@ public class BluetoothOppUtility {
         return false;
     }
 
-    /**
-     * To judge if the file type supported (can be handled by some app) by phone
-     * system.
-     */
+    /** To judge if the file type supported (can be handled by some app) by phone system. */
     public static boolean isRecognizedFileType(Context context, Uri fileUri, String mimetype) {
         boolean ret = true;
 
@@ -310,8 +314,9 @@ public class BluetoothOppUtility {
 
         Intent mimetypeIntent = new Intent(Intent.ACTION_VIEW);
         mimetypeIntent.setDataAndTypeAndNormalize(fileUri, mimetype);
-        List<ResolveInfo> list = context.getPackageManager()
-                .queryIntentActivities(mimetypeIntent, PackageManager.MATCH_DEFAULT_ONLY);
+        List<ResolveInfo> list =
+                context.getPackageManager()
+                        .queryIntentActivities(mimetypeIntent, PackageManager.MATCH_DEFAULT_ONLY);
 
         if (list.size() == 0) {
             Log.d(TAG, "NO application to handle MIME type " + mimetype);
@@ -320,19 +325,15 @@ public class BluetoothOppUtility {
         return ret;
     }
 
-    /**
-     * update visibility to Hidden
-     */
+    /** update visibility to Hidden */
     public static void updateVisibilityToHidden(Context context, Uri uri) {
         ContentValues updateValues = new ContentValues();
         updateValues.put(BluetoothShare.VISIBILITY, BluetoothShare.VISIBILITY_HIDDEN);
-        BluetoothMethodProxy.getInstance().contentResolverUpdate(context.getContentResolver(), uri,
-                updateValues, null, null);
+        BluetoothMethodProxy.getInstance()
+                .contentResolverUpdate(context.getContentResolver(), uri, updateValues, null, null);
     }
 
-    /**
-     * Helper function to build the progress text.
-     */
+    /** Helper function to build the progress text. */
     public static String formatProgressText(long totalBytes, long currentBytes) {
         DecimalFormat df = new DecimalFormat("0%");
         df.setRoundingMode(RoundingMode.DOWN);
@@ -343,9 +344,7 @@ public class BluetoothOppUtility {
         return df.format(percent);
     }
 
-    /**
-     * Helper function to build the result notification text content.
-     */
+    /** Helper function to build the result notification text content. */
     static String formatResultText(int countSuccess, int countUnsuccessful, Context context) {
         if (context == null) {
             return null;
@@ -356,16 +355,22 @@ public class BluetoothOppUtility {
         Map<String, Object> mapSuccess = new HashMap<>();
         mapSuccess.put("count", countSuccess);
 
-        return new MessageFormat(context.getResources().getString(R.string.noti_caption_success,
-                new MessageFormat(context.getResources().getString(
-                        R.string.noti_caption_unsuccessful),
-                        Locale.getDefault()).format(mapUnsuccessful)),
-                Locale.getDefault()).format(mapSuccess);
+        return new MessageFormat(
+                        context.getResources()
+                                .getString(
+                                        R.string.noti_caption_success,
+                                        new MessageFormat(
+                                                        context.getResources()
+                                                                .getString(
+                                                                        R.string
+                                                                                .noti_caption_unsuccessful),
+                                                        Locale.getDefault())
+                                                .format(mapUnsuccessful)),
+                        Locale.getDefault())
+                .format(mapSuccess);
     }
 
-    /**
-     * Whether the device has the "nosdcard" characteristic or not.
-     */
+    /** Whether the device has the "nosdcard" characteristic or not. */
     public static boolean deviceHasNoSdCard() {
         if (sNoSdCard == null) {
             String characteristics = SystemProperties.get("ro.build.characteristics", "");
@@ -374,9 +379,7 @@ public class BluetoothOppUtility {
         return sNoSdCard;
     }
 
-    /**
-     * Get status description according to status code.
-     */
+    /** Get status description according to status code. */
     public static String getStatusDescription(Context context, int statusCode, String deviceName) {
         String ret;
         if (statusCode == BluetoothShare.STATUS_PENDING) {
@@ -394,20 +397,21 @@ public class BluetoothOppUtility {
         } else if (statusCode == BluetoothShare.STATUS_FILE_ERROR) {
             ret = context.getString(R.string.status_file_error);
         } else if (statusCode == BluetoothShare.STATUS_ERROR_NO_SDCARD) {
-            int id = deviceHasNoSdCard()
-                    ? R.string.status_no_sd_card_nosdcard
-                    : R.string.status_no_sd_card_default;
+            int id =
+                    deviceHasNoSdCard()
+                            ? R.string.status_no_sd_card_nosdcard
+                            : R.string.status_no_sd_card_default;
             ret = context.getString(id);
         } else if (statusCode == BluetoothShare.STATUS_CONNECTION_ERROR) {
             ret = context.getString(R.string.status_connection_error);
         } else if (statusCode == BluetoothShare.STATUS_ERROR_SDCARD_FULL) {
             int id = deviceHasNoSdCard() ? R.string.bt_sm_2_1_nosdcard : R.string.bt_sm_2_1_default;
             ret = context.getString(id);
-        } else if ((statusCode == BluetoothShare.STATUS_BAD_REQUEST) || (statusCode
-                == BluetoothShare.STATUS_LENGTH_REQUIRED) || (statusCode
-                == BluetoothShare.STATUS_PRECONDITION_FAILED) || (statusCode
-                == BluetoothShare.STATUS_UNHANDLED_OBEX_CODE) || (statusCode
-                == BluetoothShare.STATUS_OBEX_DATA_ERROR)) {
+        } else if ((statusCode == BluetoothShare.STATUS_BAD_REQUEST)
+                || (statusCode == BluetoothShare.STATUS_LENGTH_REQUIRED)
+                || (statusCode == BluetoothShare.STATUS_PRECONDITION_FAILED)
+                || (statusCode == BluetoothShare.STATUS_UNHANDLED_OBEX_CODE)
+                || (statusCode == BluetoothShare.STATUS_OBEX_DATA_ERROR)) {
             ret = context.getString(R.string.status_protocol_error);
         } else {
             ret = context.getString(R.string.status_unknown_error);
@@ -415,9 +419,7 @@ public class BluetoothOppUtility {
         return ret;
     }
 
-    /**
-     * Retry the failed transfer: Will insert a new transfer session to db
-     */
+    /** Retry the failed transfer: Will insert a new transfer session to db */
     public static void retryTransfer(Context context, BluetoothOppTransferInfo transInfo) {
         ContentValues values = new ContentValues();
         values.put(BluetoothShare.URI, transInfo.mFileUri);
@@ -426,8 +428,7 @@ public class BluetoothOppUtility {
 
         final Uri contentUri =
                 context.getContentResolver().insert(BluetoothShare.CONTENT_URI, values);
-        Log.v(TAG,
-                "Insert contentUri: " + contentUri + "  to device: " + transInfo.mDeviceName);
+        Log.v(TAG, "Insert contentUri: " + contentUri + "  to device: " + transInfo.mDeviceName);
     }
 
     static Uri originalUri(Uri uri) {
@@ -486,9 +487,8 @@ public class BluetoothOppUtility {
     }
 
     /**
-     * Checks if the URI is in Environment.getExternalStorageDirectory() as it
-     * is the only directory that is possibly readable by both the sender and
-     * the Bluetooth process.
+     * Checks if the URI is in Environment.getExternalStorageDirectory() as it is the only directory
+     * that is possibly readable by both the sender and the Bluetooth process.
      */
     static boolean isInExternalStorageDir(Uri uri) {
         if (!ContentResolver.SCHEME_FILE.equals(uri.getScheme())) {
@@ -514,22 +514,22 @@ public class BluetoothOppUtility {
                 canonicalPath = uri.getPath();
             }
             File file = new File(canonicalPath);
-            //if emulated
+            // if emulated
             if (Environment.isExternalStorageEmulated()) {
-                //Gets legacy external storage path
-                final String legacyPath = new File(
-                        System.getenv("EXTERNAL_STORAGE")).toString();
+                // Gets legacy external storage path
+                final String legacyPath = new File(System.getenv("EXTERNAL_STORAGE")).toString();
                 // Splice in user-specific path when legacy path is found
                 if (canonicalPath.startsWith(legacyPath)) {
-                    file = new File(
-                            Environment.getExternalStorageDirectory().toString(),
-                            canonicalPath.substring(legacyPath.length() + 1));
+                    file =
+                            new File(
+                                    Environment.getExternalStorageDirectory().toString(),
+                                    canonicalPath.substring(legacyPath.length() + 1));
                 }
             }
             return isSameOrSubDirectory(Environment.getExternalStorageDirectory(), file);
         }
-        return isSameOrSubDirectory(Environment.getExternalStorageDirectory(),
-                new File(uri.getPath()));
+        return isSameOrSubDirectory(
+                Environment.getExternalStorageDirectory(), new File(uri.getPath()));
     }
 
     static boolean isForbiddenContent(Uri uri) {
@@ -540,8 +540,8 @@ public class BluetoothOppUtility {
     }
 
     /**
-     * Checks, whether the child directory is the same as, or a sub-directory of the base
-     * directory. Neither base nor child should be null.
+     * Checks, whether the child directory is the same as, or a sub-directory of the base directory.
+     * Neither base nor child should be null.
      */
     static boolean isSameOrSubDirectory(File base, File child) {
         try {
@@ -570,5 +570,4 @@ public class BluetoothOppUtility {
         NotificationManager nm = ctx.getSystemService(NotificationManager.class);
         nm.cancel(BluetoothOppNotification.NOTIFICATION_ID_PROGRESS);
     }
-
 }

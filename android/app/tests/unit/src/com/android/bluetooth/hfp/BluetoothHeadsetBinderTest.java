@@ -35,8 +35,7 @@ public class BluetoothHeadsetBinderTest {
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    private HeadsetService mService;
+    @Mock private HeadsetService mService;
 
     private AttributionSource mAttributionSource;
     private BluetoothDevice mTestDevice;
@@ -70,7 +69,7 @@ public class BluetoothHeadsetBinderTest {
 
     @Test
     public void getDevicesMatchingConnectionStates() {
-        int[] states = new int[] { BluetoothProfile.STATE_CONNECTED };
+        int[] states = new int[] {BluetoothProfile.STATE_CONNECTED};
         mBinder.getDevicesMatchingConnectionStates(states, mAttributionSource);
         verify(mService).getDevicesMatchingConnectionStates(states);
     }
@@ -190,7 +189,7 @@ public class BluetoothHeadsetBinderTest {
         String name = "Unknown";
         mBinder.phoneStateChanged(
                 numActive, numHeld, callState, number, type, name, mAttributionSource);
-        verify(mService).phoneStateChanged(
-                numActive, numHeld, callState, number, type, name, false);
+        verify(mService)
+                .phoneStateChanged(numActive, numHeld, callState, number, type, name, false);
     }
 }

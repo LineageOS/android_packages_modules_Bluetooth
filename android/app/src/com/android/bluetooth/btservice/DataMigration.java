@@ -32,21 +32,17 @@ import com.android.internal.annotations.VisibleForTesting;
 import java.util.List;
 
 final class DataMigration {
-    private DataMigration(){}
+    private DataMigration() {}
+
     private static final String TAG = "DataMigration";
 
-    @VisibleForTesting
-    static final String AUTHORITY = "bluetooth_legacy.provider";
+    @VisibleForTesting static final String AUTHORITY = "bluetooth_legacy.provider";
 
-    @VisibleForTesting
-    static final String START_MIGRATION_CALL = "start_legacy_migration";
-    @VisibleForTesting
-    static final String FINISH_MIGRATION_CALL = "finish_legacy_migration";
+    @VisibleForTesting static final String START_MIGRATION_CALL = "start_legacy_migration";
+    @VisibleForTesting static final String FINISH_MIGRATION_CALL = "finish_legacy_migration";
 
-    @VisibleForTesting
-    static final String BLUETOOTH_DATABASE = "bluetooth_db";
-    @VisibleForTesting
-    static final String OPP_DATABASE = "btopp.db";
+    @VisibleForTesting static final String BLUETOOTH_DATABASE = "bluetooth_db";
+    @VisibleForTesting static final String OPP_DATABASE = "btopp.db";
 
     // AvrcpVolumeManager.VOLUME_MAP
     private static final String VOLUME_MAP_PREFERENCE_FILE = "bluetooth_volume_map";
@@ -78,26 +74,18 @@ final class DataMigration {
     };
 
     // Main key use for storing all the key in the associate bundle
-    @VisibleForTesting
-    static final String KEY_LIST = "key_list";
+    @VisibleForTesting static final String KEY_LIST = "key_list";
 
-    @VisibleForTesting
-    static final String BLUETOOTH_CONFIG = "bluetooth_config";
+    @VisibleForTesting static final String BLUETOOTH_CONFIG = "bluetooth_config";
     static final String MIGRATION_DONE_PROPERTY = "migration_done";
-    @VisibleForTesting
-    static final String MIGRATION_ATTEMPT_PROPERTY = "migration_attempt";
+    @VisibleForTesting static final String MIGRATION_ATTEMPT_PROPERTY = "migration_attempt";
 
-    @VisibleForTesting
-    public static final int MIGRATION_STATUS_TO_BE_DONE = 0;
-    @VisibleForTesting
-    public static final int MIGRATION_STATUS_COMPLETED = 1;
-    @VisibleForTesting
-    public static final int MIGRATION_STATUS_MISSING_APK = 2;
-    @VisibleForTesting
-    public static final int MIGRATION_STATUS_MAX_ATTEMPT = 3;
+    @VisibleForTesting public static final int MIGRATION_STATUS_TO_BE_DONE = 0;
+    @VisibleForTesting public static final int MIGRATION_STATUS_COMPLETED = 1;
+    @VisibleForTesting public static final int MIGRATION_STATUS_MISSING_APK = 2;
+    @VisibleForTesting public static final int MIGRATION_STATUS_MAX_ATTEMPT = 3;
 
-    @VisibleForTesting
-    static final int MAX_ATTEMPT = 3;
+    @VisibleForTesting static final int MAX_ATTEMPT = 3;
 
     static int run(Context ctx) {
         if (migrationStatus(ctx) == MIGRATION_STATUS_COMPLETED) {
@@ -115,7 +103,7 @@ final class DataMigration {
             return MIGRATION_STATUS_MAX_ATTEMPT;
         }
 
-        for (String pref: sharedPreferencesKeys) {
+        for (String pref : sharedPreferencesKeys) {
             sharedPreferencesMigration(pref, ctx);
         }
         // Migration for DefaultSharedPreferences used in PbapUtils. Contains Long
@@ -133,9 +121,13 @@ final class DataMigration {
     static boolean bluetoothDatabaseMigration(Context ctx) {
         final String logHeader = BLUETOOTH_DATABASE + ": ";
         ContentResolver resolver = ctx.getContentResolver();
-        Cursor cursor = resolver.query(
-                Uri.parse("content://" + AUTHORITY + "/" + BLUETOOTH_DATABASE),
-                null, null, null, null);
+        Cursor cursor =
+                resolver.query(
+                        Uri.parse("content://" + AUTHORITY + "/" + BLUETOOTH_DATABASE),
+                        null,
+                        null,
+                        null,
+                        null);
         if (cursor == null) {
             Log.d(TAG, logHeader + "Nothing to migrate");
             return true;
@@ -155,9 +147,13 @@ final class DataMigration {
     static boolean oppDatabaseMigration(Context ctx) {
         final String logHeader = OPP_DATABASE + ": ";
         ContentResolver resolver = ctx.getContentResolver();
-        Cursor cursor = resolver.query(
-                Uri.parse("content://" + AUTHORITY + "/" + OPP_DATABASE),
-                null, null, null, null);
+        Cursor cursor =
+                resolver.query(
+                        Uri.parse("content://" + AUTHORITY + "/" + OPP_DATABASE),
+                        null,
+                        null,
+                        null,
+                        null);
         if (cursor == null) {
             Log.d(TAG, logHeader + "Nothing to migrate");
             return true;
@@ -173,8 +169,8 @@ final class DataMigration {
         return status;
     }
 
-    private static boolean writeObjectToEditor(SharedPreferences.Editor editor, Bundle b,
-            String itemKey) {
+    private static boolean writeObjectToEditor(
+            SharedPreferences.Editor editor, Bundle b, String itemKey) {
         Object value = b.get(itemKey);
         if (value == null) {
             Log.e(TAG, itemKey + ": No value associated with this itemKey");
@@ -189,8 +185,12 @@ final class DataMigration {
         } else if (value instanceof String) {
             editor.putString(itemKey, (String) value);
         } else {
-            Log.e(TAG, itemKey + ": Failed to migrate: "
-                     + value.getClass().getSimpleName() + ": Data type not handled");
+            Log.e(
+                    TAG,
+                    itemKey
+                            + ": Failed to migrate: "
+                            + value.getClass().getSimpleName()
+                            + ": Data type not handled");
             return false;
         }
         return true;
@@ -241,9 +241,7 @@ final class DataMigration {
     static boolean incrementeMigrationAttempt(Context ctx) {
         SharedPreferences pref = ctx.getSharedPreferences(BLUETOOTH_CONFIG, Context.MODE_PRIVATE);
         int currentAttempt = Math.min(pref.getInt(MIGRATION_ATTEMPT_PROPERTY, 0), MAX_ATTEMPT);
-        pref.edit()
-            .putInt(MIGRATION_ATTEMPT_PROPERTY, currentAttempt + 1)
-            .apply();
+        pref.edit().putInt(MIGRATION_ATTEMPT_PROPERTY, currentAttempt + 1).apply();
         return currentAttempt < MAX_ATTEMPT;
     }
 
@@ -261,8 +259,8 @@ final class DataMigration {
     @VisibleForTesting
     static void markMigrationStatus(Context ctx, int status) {
         ctx.getSharedPreferences(BLUETOOTH_CONFIG, Context.MODE_PRIVATE)
-            .edit()
-            .putInt(MIGRATION_DONE_PROPERTY, status)
-            .apply();
+                .edit()
+                .putInt(MIGRATION_DONE_PROPERTY, status)
+                .apply();
     }
 }

@@ -114,13 +114,13 @@ public class TestActivity extends Activity {
                  * Email.ACCEPTABLE_ATTACHMENT_SEND_TYPES)) {
                  * addAttachment(stream);
                  */
-                Log.v(Constants.TAG,
+                Log.v(
+                        Constants.TAG,
                         " Get share intent with Uri " + stream + " mimetype is " + type);
                 // Log.v(Constants.TAG, " trying Uri function " +
                 // stream.getAuthority() + " " + Uri.parse(stream));
                 Cursor cursor = c.getContentResolver().query(stream, null, null, null, null);
                 cursor.close();
-
             }
             /* start insert a record */
             /*
@@ -212,149 +212,164 @@ public class TestActivity extends Activity {
 
     }
 
-    public OnClickListener insertRecordListener = new OnClickListener() {
-        @Override
-        public void onClick(View view) {
-
-            String address = null;
-            if (mAddressView.getText().length() != 0) {
-                address = mAddressView.getText().toString();
-                Log.v(Constants.TAG, "Send to address  " + address);
-            }
-            if (address == null) {
-                address = "00:17:83:58:5D:CC";
-            }
-
-            Integer media = null;
-            if (mMediaView.getText().length() != 0) {
-                media = Integer.parseInt(mMediaView.getText().toString().trim());
-                Log.v(Constants.TAG, "Send media no.  " + media);
-            }
-            if (media == null) {
-                media = 1;
-            }
-            ContentValues values = new ContentValues();
-            values.put(BluetoothShare.URI, "content://media/external/images/media/" + media);
-            // values.put(BluetoothShare.DESTINATION, "FF:FF:FF:00:00:00");
-            // baibai Q9 test
-            // values.put(BluetoothShare.DESTINATION, "12:34:56:78:9A:BC");
-            // java's nokia
-            // values.put(BluetoothShare.DESTINATION, "00:1B:33:F0:58:FB");
-            // Assis phone
-            // values.put(BluetoothShare.DESTINATION, "00:17:E5:5D:74:F3");
-            // Jackson E6
-            // values.put(BluetoothShare.DESTINATION, "00:1A:1B:7F:1E:F0");
-            // Baibai V950
-            // values.put(BluetoothShare.DESTINATION, "00:17:83:58:5D:CC");
-            // Baibai NSC1173
-            // values.put(BluetoothShare.DESTINATION, "00:16:41:49:5B:F3");
-
-            values.put(BluetoothShare.DESTINATION, address);
-
-            values.put(BluetoothShare.DIRECTION, BluetoothShare.DIRECTION_OUTBOUND);
-
-            Long ts = System.currentTimeMillis();
-            values.put(BluetoothShare.TIMESTAMP, ts);
-
-            Integer records = null;
-            if (mInsertView.getText().length() != 0) {
-                records = Integer.parseInt(mInsertView.getText().toString().trim());
-                Log.v(Constants.TAG, "parseInt  " + records);
-            }
-            if (records == null) {
-                records = 1;
-            }
-            for (int i = 0; i < records; i++) {
-                Uri contentUri = getContentResolver().insert(BluetoothShare.CONTENT_URI, values);
-                Log.v(Constants.TAG, "insert contentUri: " + contentUri);
-                currentInsert = contentUri.getPathSegments().get(1);
-                Log.v(Constants.TAG, "currentInsert = " + currentInsert);
-            }
-
-        }
-    };
-
-    public OnClickListener deleteRecordListener = new OnClickListener() {
-        @Override
-        public void onClick(View view) {
-            Uri contentUri =
-                    Uri.parse(BluetoothShare.CONTENT_URI + "/" + mDeleteView.getText().toString());
-            getContentResolver().delete(contentUri, null, null);
-        }
-    };
-
-    public OnClickListener updateRecordListener = new OnClickListener() {
-        @Override
-        public void onClick(View view) {
-            Uri contentUri =
-                    Uri.parse(BluetoothShare.CONTENT_URI + "/" + mUpdateView.getText().toString());
-            ContentValues updateValues = new ContentValues();
-            // mCurrentByte ++;
-            // updateValues.put(BluetoothShare.TOTAL_BYTES, "120000");
-            // updateValues.put(BluetoothShare.CURRENT_BYTES, mCurrentByte);
-            // updateValues.put(BluetoothShare.VISIBILITY,
-            // BluetoothShare.VISIBILITY_HIDDEN);
-            updateValues.put(BluetoothShare.USER_CONFIRMATION,
-                    BluetoothShare.USER_CONFIRMATION_CONFIRMED);
-            getContentResolver().update(contentUri, updateValues, null, null);
-        }
-    };
-
-    public OnClickListener ackRecordListener = new OnClickListener() {
-        @Override
-        public void onClick(View view) {
-            Uri contentUri =
-                    Uri.parse(BluetoothShare.CONTENT_URI + "/" + mAckView.getText().toString());
-            ContentValues updateValues = new ContentValues();
-            // mCurrentByte ++;
-            // updateValues.put(BluetoothShare.TOTAL_BYTES, "120000");
-            // updateValues.put(BluetoothShare.CURRENT_BYTES, mCurrentByte);
-            updateValues.put(BluetoothShare.VISIBILITY, BluetoothShare.VISIBILITY_HIDDEN);
-            // updateValues.put(BluetoothShare.USER_CONFIRMATION,
-            // BluetoothShare.USER_CONFIRMATION_CONFIRMED);
-            getContentResolver().update(contentUri, updateValues, null, null);
-        }
-    };
-
-    public OnClickListener deleteAllRecordListener = new OnClickListener() {
-        @Override
-        public void onClick(View view) {
-            Uri contentUri = Uri.parse(String.valueOf(BluetoothShare.CONTENT_URI));
-            getContentResolver().delete(contentUri, null, null);
-        }
-    };
-
-    public OnClickListener startTcpServerListener = new OnClickListener() {
-        @Override
-        public void onClick(View view) {
-            mServer = new TestTcpServer();
-            Thread serverThread = new Thread(mServer);
-            serverThread.start();
-        }
-    };
-
-    public OnClickListener notifyTcpServerListener = new OnClickListener() {
-        @Override
-        public void onClick(View view) {
-            final Thread notifyThread = new Thread() {
+    public OnClickListener insertRecordListener =
+            new OnClickListener() {
                 @Override
-                public void run() {
-                    synchronized (mServer) {
-                        mServer.a = true;
-                        mServer.notify();
+                public void onClick(View view) {
+
+                    String address = null;
+                    if (mAddressView.getText().length() != 0) {
+                        address = mAddressView.getText().toString();
+                        Log.v(Constants.TAG, "Send to address  " + address);
+                    }
+                    if (address == null) {
+                        address = "00:17:83:58:5D:CC";
+                    }
+
+                    Integer media = null;
+                    if (mMediaView.getText().length() != 0) {
+                        media = Integer.parseInt(mMediaView.getText().toString().trim());
+                        Log.v(Constants.TAG, "Send media no.  " + media);
+                    }
+                    if (media == null) {
+                        media = 1;
+                    }
+                    ContentValues values = new ContentValues();
+                    values.put(
+                            BluetoothShare.URI, "content://media/external/images/media/" + media);
+                    // values.put(BluetoothShare.DESTINATION, "FF:FF:FF:00:00:00");
+                    // baibai Q9 test
+                    // values.put(BluetoothShare.DESTINATION, "12:34:56:78:9A:BC");
+                    // java's nokia
+                    // values.put(BluetoothShare.DESTINATION, "00:1B:33:F0:58:FB");
+                    // Assis phone
+                    // values.put(BluetoothShare.DESTINATION, "00:17:E5:5D:74:F3");
+                    // Jackson E6
+                    // values.put(BluetoothShare.DESTINATION, "00:1A:1B:7F:1E:F0");
+                    // Baibai V950
+                    // values.put(BluetoothShare.DESTINATION, "00:17:83:58:5D:CC");
+                    // Baibai NSC1173
+                    // values.put(BluetoothShare.DESTINATION, "00:16:41:49:5B:F3");
+
+                    values.put(BluetoothShare.DESTINATION, address);
+
+                    values.put(BluetoothShare.DIRECTION, BluetoothShare.DIRECTION_OUTBOUND);
+
+                    Long ts = System.currentTimeMillis();
+                    values.put(BluetoothShare.TIMESTAMP, ts);
+
+                    Integer records = null;
+                    if (mInsertView.getText().length() != 0) {
+                        records = Integer.parseInt(mInsertView.getText().toString().trim());
+                        Log.v(Constants.TAG, "parseInt  " + records);
+                    }
+                    if (records == null) {
+                        records = 1;
+                    }
+                    for (int i = 0; i < records; i++) {
+                        Uri contentUri =
+                                getContentResolver().insert(BluetoothShare.CONTENT_URI, values);
+                        Log.v(Constants.TAG, "insert contentUri: " + contentUri);
+                        currentInsert = contentUri.getPathSegments().get(1);
+                        Log.v(Constants.TAG, "currentInsert = " + currentInsert);
                     }
                 }
-
             };
-            notifyThread.start();
-        }
 
-    };
+    public OnClickListener deleteRecordListener =
+            new OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Uri contentUri =
+                            Uri.parse(
+                                    BluetoothShare.CONTENT_URI
+                                            + "/"
+                                            + mDeleteView.getText().toString());
+                    getContentResolver().delete(contentUri, null, null);
+                }
+            };
+
+    public OnClickListener updateRecordListener =
+            new OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Uri contentUri =
+                            Uri.parse(
+                                    BluetoothShare.CONTENT_URI
+                                            + "/"
+                                            + mUpdateView.getText().toString());
+                    ContentValues updateValues = new ContentValues();
+                    // mCurrentByte ++;
+                    // updateValues.put(BluetoothShare.TOTAL_BYTES, "120000");
+                    // updateValues.put(BluetoothShare.CURRENT_BYTES, mCurrentByte);
+                    // updateValues.put(BluetoothShare.VISIBILITY,
+                    // BluetoothShare.VISIBILITY_HIDDEN);
+                    updateValues.put(
+                            BluetoothShare.USER_CONFIRMATION,
+                            BluetoothShare.USER_CONFIRMATION_CONFIRMED);
+                    getContentResolver().update(contentUri, updateValues, null, null);
+                }
+            };
+
+    public OnClickListener ackRecordListener =
+            new OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Uri contentUri =
+                            Uri.parse(
+                                    BluetoothShare.CONTENT_URI
+                                            + "/"
+                                            + mAckView.getText().toString());
+                    ContentValues updateValues = new ContentValues();
+                    // mCurrentByte ++;
+                    // updateValues.put(BluetoothShare.TOTAL_BYTES, "120000");
+                    // updateValues.put(BluetoothShare.CURRENT_BYTES, mCurrentByte);
+                    updateValues.put(BluetoothShare.VISIBILITY, BluetoothShare.VISIBILITY_HIDDEN);
+                    // updateValues.put(BluetoothShare.USER_CONFIRMATION,
+                    // BluetoothShare.USER_CONFIRMATION_CONFIRMED);
+                    getContentResolver().update(contentUri, updateValues, null, null);
+                }
+            };
+
+    public OnClickListener deleteAllRecordListener =
+            new OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Uri contentUri = Uri.parse(String.valueOf(BluetoothShare.CONTENT_URI));
+                    getContentResolver().delete(contentUri, null, null);
+                }
+            };
+
+    public OnClickListener startTcpServerListener =
+            new OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    mServer = new TestTcpServer();
+                    Thread serverThread = new Thread(mServer);
+                    serverThread.start();
+                }
+            };
+
+    public OnClickListener notifyTcpServerListener =
+            new OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    final Thread notifyThread =
+                            new Thread() {
+                                @Override
+                                public void run() {
+                                    synchronized (mServer) {
+                                        mServer.a = true;
+                                        mServer.notify();
+                                    }
+                                }
+                            };
+                    notifyThread.start();
+                }
+            };
 }
 
-/**
- * This class listens on OPUSH channel for incoming connection
- */
+/** This class listens on OPUSH channel for incoming connection */
 class TestTcpListener {
 
     private static final String TAG = "BtOppRfcommListener";
@@ -388,66 +403,73 @@ class TestTcpListener {
     public synchronized boolean start(Handler callback) {
         if (mSocketAcceptThread == null) {
             mCallback = callback;
-            mSocketAcceptThread = new Thread(TAG) {
-                ServerSocket mServerSocket;
+            mSocketAcceptThread =
+                    new Thread(TAG) {
+                        ServerSocket mServerSocket;
 
-                @Override
-                public void run() {
-                    if (D) {
-                        Log.d(TAG, "RfcommSocket listen thread starting");
-                    }
-                    try {
-                        if (V) {
-                            Log.v(TAG,
-                                    "Create server RfcommSocket on channel" + mBtOppRfcommChannel);
-                        }
-                        mServerSocket = new ServerSocket(6500, 1);
-                    } catch (IOException e) {
-                        Log.e(TAG, "Error listing on channel" + mBtOppRfcommChannel);
-                        mInterrupted = true;
-                    }
-                    while (!mInterrupted) {
-                        try {
-                            mServerSocket.setSoTimeout(ACCEPT_WAIT_TIMEOUT);
-                            Socket clientSocket = mServerSocket.accept();
-                            if (clientSocket == null) {
-                                if (V) {
-                                    Log.v(TAG, "incomming connection time out");
-                                }
-                            } else {
-                                if (D) {
-                                    Log.d(TAG, "RfcommSocket connected!");
-                                }
-                                Log.d(TAG,
-                                        "remote addr is " + clientSocket.getRemoteSocketAddress());
-                                TestTcpTransport transport = new TestTcpTransport(clientSocket);
-                                Message msg = Message.obtain();
-                                msg.setTarget(mCallback);
-                                msg.what = MSG_INCOMING_BTOPP_CONNECTION;
-                                msg.obj = transport;
-                                msg.sendToTarget();
+                        @Override
+                        public void run() {
+                            if (D) {
+                                Log.d(TAG, "RfcommSocket listen thread starting");
                             }
-                        } catch (SocketException e) {
-                            Log.e(TAG, "Error accept connection " + e);
-                        } catch (IOException e) {
-                            Log.e(TAG, "Error accept connection " + e);
-                        }
+                            try {
+                                if (V) {
+                                    Log.v(
+                                            TAG,
+                                            "Create server RfcommSocket on channel"
+                                                    + mBtOppRfcommChannel);
+                                }
+                                mServerSocket = new ServerSocket(6500, 1);
+                            } catch (IOException e) {
+                                Log.e(TAG, "Error listing on channel" + mBtOppRfcommChannel);
+                                mInterrupted = true;
+                            }
+                            while (!mInterrupted) {
+                                try {
+                                    mServerSocket.setSoTimeout(ACCEPT_WAIT_TIMEOUT);
+                                    Socket clientSocket = mServerSocket.accept();
+                                    if (clientSocket == null) {
+                                        if (V) {
+                                            Log.v(TAG, "incomming connection time out");
+                                        }
+                                    } else {
+                                        if (D) {
+                                            Log.d(TAG, "RfcommSocket connected!");
+                                        }
+                                        Log.d(
+                                                TAG,
+                                                "remote addr is "
+                                                        + clientSocket.getRemoteSocketAddress());
+                                        TestTcpTransport transport =
+                                                new TestTcpTransport(clientSocket);
+                                        Message msg = Message.obtain();
+                                        msg.setTarget(mCallback);
+                                        msg.what = MSG_INCOMING_BTOPP_CONNECTION;
+                                        msg.obj = transport;
+                                        msg.sendToTarget();
+                                    }
+                                } catch (SocketException e) {
+                                    Log.e(TAG, "Error accept connection " + e);
+                                } catch (IOException e) {
+                                    Log.e(TAG, "Error accept connection " + e);
+                                }
 
-                        if (mInterrupted) {
-                            Log.e(TAG, "socketAcceptThread thread was interrupted (2), exiting");
+                                if (mInterrupted) {
+                                    Log.e(
+                                            TAG,
+                                            "socketAcceptThread thread was interrupted (2),"
+                                                    + " exiting");
+                                }
+                            }
+                            if (D) {
+                                Log.d(TAG, "RfcommSocket listen thread finished");
+                            }
                         }
-                    }
-                    if (D) {
-                        Log.d(TAG, "RfcommSocket listen thread finished");
-                    }
-                }
-            };
+                    };
             mInterrupted = false;
             mSocketAcceptThread.start();
-
         }
         return true;
-
     }
 
     public synchronized void stop() {
@@ -471,7 +493,6 @@ class TestTcpListener {
             }
         }
     }
-
 }
 
 class TestTcpServer extends ServerRequestHandler implements Runnable {
@@ -528,8 +549,11 @@ class TestTcpServer extends ServerRequestHandler implements Runnable {
         try {
             java.io.InputStream is = op.openInputStream();
 
-            updateStatus("Got data bytes " + is.available() + " name " + op.getReceivedHeader()
-                    .getHeader(HeaderSet.NAME));
+            updateStatus(
+                    "Got data bytes "
+                            + is.available()
+                            + " name "
+                            + op.getReceivedHeader().getHeader(HeaderSet.NAME));
 
             File f = new File((String) op.getReceivedHeader().getHeader(HeaderSet.NAME));
             fos = new FileOutputStream(f);
@@ -567,8 +591,7 @@ class TestTcpServer extends ServerRequestHandler implements Runnable {
     }
 
     @Override
-    public void onAuthenticationFailure(byte[] userName) {
-    }
+    public void onAuthenticationFailure(byte[] userName) {}
 
     @Override
     public int onSetPath(HeaderSet request, HeaderSet reply, boolean backup, boolean create) {
@@ -585,7 +608,6 @@ class TestTcpServer extends ServerRequestHandler implements Runnable {
     public int onGet(Operation op) {
         return ResponseCodes.OBEX_HTTP_NOT_IMPLEMENTED;
     }
-
 }
 
 class TestTcpSessionNotifier {
@@ -613,15 +635,12 @@ class TestTcpSessionNotifier {
         TestTcpTransport tt = new TestTcpTransport(mConn);
 
         return new ServerSession((ObexTransport) tt, handler, auth);
-
     }
 
     public ServerSession acceptAndOpen(ServerRequestHandler handler) throws IOException {
 
         return acceptAndOpen(handler, null);
-
     }
-
 }
 
 class TestTcpTransport implements ObexTransport {

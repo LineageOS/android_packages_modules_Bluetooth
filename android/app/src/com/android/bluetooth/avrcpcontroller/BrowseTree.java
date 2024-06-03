@@ -38,18 +38,8 @@ import java.util.UUID;
 /**
  * An object that holds the browse tree of available media from a remote device.
  *
- * Browsing hierarchy follows the AVRCP specification's description of various scopes and
- * looks like follows:
- *    Root:
- *      Player1:
- *        Now_Playing:
- *           MediaItem1
- *           MediaItem2
- *        Folder1
- *        Folder2
- *          ....
- *        Player2
- *          ....
+ * <p>Browsing hierarchy follows the AVRCP specification's description of various scopes and looks
+ * like follows: Root: Player1: Now_Playing: MediaItem1 MediaItem2 Folder1 Folder2 .... Player2 ....
  */
 public class BrowseTree {
     private static final String TAG = BrowseTree.class.getSimpleName();
@@ -64,6 +54,7 @@ public class BrowseTree {
     // Static instance of Folder ID <-> Folder Instance (for navigation purposes)
     @VisibleForTesting
     final HashMap<String, BrowseNode> mBrowseMap = new HashMap<String, BrowseNode>();
+
     private BrowseNode mCurrentBrowseNode;
     private BrowseNode mCurrentBrowsedPlayer;
     private BrowseNode mCurrentAddressedPlayer;
@@ -78,13 +69,23 @@ public class BrowseTree {
 
     BrowseTree(BluetoothDevice device) {
         if (device == null) {
-            mRootNode = new BrowseNode(new AvrcpItem.Builder()
-                    .setUuid(ROOT).setTitle(ROOT).setBrowsable(true).build());
+            mRootNode =
+                    new BrowseNode(
+                            new AvrcpItem.Builder()
+                                    .setUuid(ROOT)
+                                    .setTitle(ROOT)
+                                    .setBrowsable(true)
+                                    .build());
             mRootNode.setCached(true);
         } else if (!Flags.randomizeDeviceLevelMediaIds()) {
-            mRootNode = new BrowseNode(new AvrcpItem.Builder().setDevice(device)
-                    .setUuid(ROOT + device.getAddress().toString())
-                    .setTitle(Utils.getName(device)).setBrowsable(true).build());
+            mRootNode =
+                    new BrowseNode(
+                            new AvrcpItem.Builder()
+                                    .setDevice(device)
+                                    .setUuid(ROOT + device.getAddress().toString())
+                                    .setTitle(Utils.getName(device))
+                                    .setBrowsable(true)
+                                    .build());
         } else {
             mRootNode =
                     new BrowseNode(
@@ -102,12 +103,21 @@ public class BrowseTree {
         mRootNode.mBrowseScope = AvrcpControllerService.BROWSE_SCOPE_PLAYER_LIST;
         mRootNode.setExpectedChildren(DEFAULT_FOLDER_SIZE);
 
-        mNavigateUpNode = new BrowseNode(new AvrcpItem.Builder()
-                .setUuid(UP).setTitle(UP).setBrowsable(true).build());
+        mNavigateUpNode =
+                new BrowseNode(
+                        new AvrcpItem.Builder()
+                                .setUuid(UP)
+                                .setTitle(UP)
+                                .setBrowsable(true)
+                                .build());
 
-        mNowPlayingNode = new BrowseNode(new AvrcpItem.Builder()
-                .setUuid(NOW_PLAYING_PREFIX).setTitle(NOW_PLAYING_PREFIX)
-                .setBrowsable(true).build());
+        mNowPlayingNode =
+                new BrowseNode(
+                        new AvrcpItem.Builder()
+                                .setUuid(NOW_PLAYING_PREFIX)
+                                .setTitle(NOW_PLAYING_PREFIX)
+                                .setBrowsable(true)
+                                .build());
         mNowPlayingNode.mBrowseScope = AvrcpControllerService.BROWSE_SCOPE_NOW_PLAYING;
         mNowPlayingNode.setExpectedChildren(DEFAULT_FOLDER_SIZE);
         mBrowseMap.put(mRootNode.getID(), mRootNode);
@@ -363,9 +373,13 @@ public class BrowseTree {
 
         @Override
         public synchronized String toString() {
-            return "[Id: " + getID()
-                    + " Name: " + getMediaItem().getDescription().getTitle()
-                    + " Size: " + mChildren.size() + "]";
+            return "[Id: "
+                    + getID()
+                    + " Name: "
+                    + getMediaItem().getDescription().getTitle()
+                    + " Size: "
+                    + mChildren.size()
+                    + "]";
         }
 
         // Returns true if target is a descendant of this.
@@ -452,9 +466,7 @@ public class BrowseTree {
         mCoverArtMap.get(handle).add(nodeId);
     }
 
-    /**
-     * Indicate that a node in the tree no longer needs a specific piece of cover art.
-     */
+    /** Indicate that a node in the tree no longer needs a specific piece of cover art. */
     synchronized void indicateCoverArtUnused(String nodeId, String handle) {
         if (mCoverArtMap.containsKey(handle) && mCoverArtMap.get(handle).contains(nodeId)) {
             mCoverArtMap.get(handle).remove(nodeId);
@@ -483,8 +495,8 @@ public class BrowseTree {
 
     /**
      * Adds the Uri of a newly downloaded image to all tree nodes using that specific handle.
-     * Returns the set of parent nodes that have children impacted by the new art so clients can
-     * be notified of the change.
+     * Returns the set of parent nodes that have children impacted by the new art so clients can be
+     * notified of the change.
      */
     synchronized Set<BrowseNode> notifyImageDownload(String uuid, Uri uri) {
         Log.d(TAG, "Received downloaded image handle to cascade to BrowseNodes using it");
@@ -505,9 +517,7 @@ public class BrowseTree {
         return parents;
     }
 
-    /**
-     * Dump the state of the AVRCP browse tree
-     */
+    /** Dump the state of the AVRCP browse tree */
     public void dump(StringBuilder sb) {
         mRootNode.toTreeString(0, sb);
         sb.append("\n  Image handles in use (" + mCoverArtMap.size() + "):");
@@ -556,8 +566,7 @@ public class BrowseTree {
     static BrowseNode getEldestChild(BrowseNode ancestor, BrowseNode target) {
         // ancestor is an ancestor of target
         BrowseNode descendant = target;
-        Log.d(TAG, "NAVIGATING ancestor" + ancestor.toString() + "Target"
-                + target.toString());
+        Log.d(TAG, "NAVIGATING ancestor" + ancestor.toString() + "Target" + target.toString());
         while (!ancestor.equals(descendant.mParent)) {
             descendant = descendant.mParent;
             if (descendant == null) {

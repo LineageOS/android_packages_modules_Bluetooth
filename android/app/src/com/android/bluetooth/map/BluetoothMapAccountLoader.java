@@ -1,17 +1,17 @@
 /*
-* Copyright (C) 2014 Samsung System LSI
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*      http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright (C) 2014 Samsung System LSI
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package com.android.bluetooth.map;
 
@@ -59,8 +59,9 @@ public class BluetoothMapAccountLoader {
      * Method to look through all installed packages system-wide and find those that contain one of
      * the BT-MAP intents in their manifest file. For each app the list of accounts are fetched
      * using the method parseAccounts().
-     * @return LinkedHashMap with the packages as keys(BluetoothMapAccountItem) and
-     *          values as ArrayLists of BluetoothMapAccountItems.
+     *
+     * @return LinkedHashMap with the packages as keys(BluetoothMapAccountItem) and values as
+     *     ArrayLists of BluetoothMapAccountItems.
      */
     public LinkedHashMap<BluetoothMapAccountItem, ArrayList<BluetoothMapAccountItem>> parsePackages(
             boolean includeIcon) {
@@ -68,7 +69,7 @@ public class BluetoothMapAccountLoader {
         LinkedHashMap<BluetoothMapAccountItem, ArrayList<BluetoothMapAccountItem>> groups =
                 new LinkedHashMap<BluetoothMapAccountItem, ArrayList<BluetoothMapAccountItem>>();
         Intent[] searchIntents = new Intent[2];
-        //Array <Intent> searchIntents = new Array <Intent>();
+        // Array <Intent> searchIntents = new Array <Intent>();
         searchIntents[0] = new Intent(BluetoothMapContract.PROVIDER_INTERFACE_EMAIL);
         searchIntents[1] = new Intent(BluetoothMapContract.PROVIDER_INTERFACE_IM);
         // reset the counter every time this method is called.
@@ -82,11 +83,18 @@ public class BluetoothMapAccountLoader {
             List<ResolveInfo> resInfos =
                     mPackageManager.queryIntentContentProviders(searchIntent, 0);
             if (resInfos != null) {
-                Log.d(TAG, "Found " + resInfos.size() + " application(s) with intent "
-                        + searchIntent.getAction());
-                BluetoothMapUtils.TYPE msgType = (Objects.equals(searchIntent.getAction(),
-                        BluetoothMapContract.PROVIDER_INTERFACE_EMAIL))
-                        ? BluetoothMapUtils.TYPE.EMAIL : BluetoothMapUtils.TYPE.IM;
+                Log.d(
+                        TAG,
+                        "Found "
+                                + resInfos.size()
+                                + " application(s) with intent "
+                                + searchIntent.getAction());
+                BluetoothMapUtils.TYPE msgType =
+                        (Objects.equals(
+                                        searchIntent.getAction(),
+                                        BluetoothMapContract.PROVIDER_INTERFACE_EMAIL))
+                                ? BluetoothMapUtils.TYPE.EMAIL
+                                : BluetoothMapUtils.TYPE.IM;
                 for (ResolveInfo rInfo : resInfos) {
                     Log.d(TAG, "ResolveInfo " + rInfo.toString());
                     // We cannot rely on apps that have been force-stopped in the
@@ -111,8 +119,11 @@ public class BluetoothMapAccountLoader {
                             }
                         }
                     } else {
-                        Log.d(TAG, "Ignoring force-stopped authority "
-                                + rInfo.providerInfo.authority + "\n");
+                        Log.d(
+                                TAG,
+                                "Ignoring force-stopped authority "
+                                        + rInfo.providerInfo.authority
+                                        + "\n");
                     }
                 }
             } else {
@@ -122,17 +133,26 @@ public class BluetoothMapAccountLoader {
         return groups;
     }
 
-    public BluetoothMapAccountItem createAppItem(ResolveInfo rInfo, boolean includeIcon,
-            BluetoothMapUtils.TYPE type) {
+    public BluetoothMapAccountItem createAppItem(
+            ResolveInfo rInfo, boolean includeIcon, BluetoothMapUtils.TYPE type) {
         String provider = rInfo.providerInfo.authority;
         if (provider != null) {
             String name = rInfo.loadLabel(mPackageManager).toString();
-            Log.d(TAG,
-                    rInfo.providerInfo.packageName + " - " + name + " - meta-data(provider = "
-                            + provider + ")\n");
+            Log.d(
+                    TAG,
+                    rInfo.providerInfo.packageName
+                            + " - "
+                            + name
+                            + " - meta-data(provider = "
+                            + provider
+                            + ")\n");
             BluetoothMapAccountItem app =
-                    BluetoothMapAccountItem.create("0", name, rInfo.providerInfo.packageName,
-                            provider, (!includeIcon) ? null : rInfo.loadIcon(mPackageManager),
+                    BluetoothMapAccountItem.create(
+                            "0",
+                            name,
+                            rInfo.providerInfo.packageName,
+                            provider,
+                            (!includeIcon) ? null : rInfo.loadIcon(mPackageManager),
                             type);
             return app;
         }
@@ -142,6 +162,7 @@ public class BluetoothMapAccountLoader {
 
     /**
      * Method for getting the accounts under a given contentprovider from a package.
+     *
      * @param app The parent app object
      * @return An ArrayList of BluetoothMapAccountItems containing all the accounts from the app
      */
@@ -152,8 +173,9 @@ public class BluetoothMapAccountLoader {
         // Get the list of accounts from the email apps content resolver (if possible)
         mResolver = mContext.getContentResolver();
         try {
-            mProviderClient = mResolver.acquireUnstableContentProviderClient(
-                    Uri.parse(app.mBase_uri_no_account));
+            mProviderClient =
+                    mResolver.acquireUnstableContentProviderClient(
+                            Uri.parse(app.mBase_uri_no_account));
             if (mProviderClient == null) {
                 throw new RemoteException("Failed to acquire provider for " + app.getPackageName());
             }
@@ -163,8 +185,13 @@ public class BluetoothMapAccountLoader {
                     Uri.parse(app.mBase_uri_no_account + "/" + BluetoothMapContract.TABLE_ACCOUNT);
 
             if (app.getType() == TYPE.IM) {
-                c = mProviderClient.query(uri, BluetoothMapContract.BT_IM_ACCOUNT_PROJECTION, null,
-                        null, BluetoothMapContract.AccountColumns._ID + " DESC");
+                c =
+                        mProviderClient.query(
+                                uri,
+                                BluetoothMapContract.BT_IM_ACCOUNT_PROJECTION,
+                                null,
+                                null,
+                                BluetoothMapContract.AccountColumns._ID + " DESC");
             } else {
                 c =
                         mProviderClient.query(
@@ -180,8 +207,11 @@ public class BluetoothMapAccountLoader {
                     BluetoothProtoEnums.BLUETOOTH_MAP_ACCOUNT_LOADER,
                     BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                     0);
-            Log.d(TAG, "Could not establish ContentProviderClient for " + app.getPackageName()
-                    + " - returning empty account list");
+            Log.d(
+                    TAG,
+                    "Could not establish ContentProviderClient for "
+                            + app.getPackageName()
+                            + " - returning empty account list");
             return children;
         } finally {
             if (mProviderClient != null) {
@@ -199,8 +229,12 @@ public class BluetoothMapAccountLoader {
             int uciPreIndex =
                     c.getColumnIndex(BluetoothMapContract.AccountColumns.ACCOUNT_UCI_PREFIX);
             while (c.moveToNext()) {
-                Log.d(TAG, "Adding account " + c.getString(dispNameIndex) + " with ID " + String
-                        .valueOf(c.getInt(idIndex)));
+                Log.d(
+                        TAG,
+                        "Adding account "
+                                + c.getString(dispNameIndex)
+                                + " with ID "
+                                + String.valueOf(c.getInt(idIndex)));
                 String uci = null;
                 String uciPrefix = null;
                 if (app.getType() == TYPE.IM) {
@@ -210,9 +244,15 @@ public class BluetoothMapAccountLoader {
                 }
 
                 BluetoothMapAccountItem child =
-                        BluetoothMapAccountItem.create(String.valueOf((c.getInt(idIndex))),
-                                c.getString(dispNameIndex), app.getPackageName(),
-                                app.getProviderAuthority(), null, app.getType(), uci, uciPrefix);
+                        BluetoothMapAccountItem.create(
+                                String.valueOf((c.getInt(idIndex))),
+                                c.getString(dispNameIndex),
+                                app.getPackageName(),
+                                app.getProviderAuthority(),
+                                null,
+                                app.getType(),
+                                uci,
+                                uciPrefix);
 
                 child.mIsChecked = (c.getInt(exposeIndex) != 0);
                 child.mIsChecked = true; // TODO: Revert when this works
@@ -231,14 +271,13 @@ public class BluetoothMapAccountLoader {
     }
 
     /**
-     * Gets the number of enabled accounts in total across all supported apps.
-     * NOTE that this method should not be called before the parsePackages method
-     * has been successfully called.
+     * Gets the number of enabled accounts in total across all supported apps. NOTE that this method
+     * should not be called before the parsePackages method has been successfully called.
+     *
      * @return number of enabled accounts
      */
     public int getAccountsEnabledCount() {
         Log.d(TAG, "Enabled Accounts count:" + mAccountsEnabledCount);
         return mAccountsEnabledCount;
     }
-
 }

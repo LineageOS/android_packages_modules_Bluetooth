@@ -22,33 +22,33 @@ import android.bluetooth.BluetoothDevice;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Media Control Service interface. These are sent Media Players => GATT Servers
- */
+/** Media Control Service interface. These are sent Media Players => GATT Servers */
 public interface MediaControlGattServiceInterface {
-    /**
-     * Track position unavailable definition
-     */
+    /** Track position unavailable definition */
     static final long TRACK_POSITION_UNAVAILABLE = -1L;
 
-    /**
-     * Track duration unavailable definition
-     */
+    /** Track duration unavailable definition */
     static final long TRACK_DURATION_UNAVAILABLE = -1L;
 
-    /**
-     * API for Media Control Profile service control
-     */
+    /** API for Media Control Profile service control */
     void updatePlaybackState(MediaState state);
+
     void updatePlayerState(Map stateFields);
+
     void updateObjectID(int objField, long objectId);
-    void setMediaControlRequestResult(Request request,
-            Request.Results resultStatus);
-    void setSearchRequestResult(SearchRequest request,
-            SearchRequest.Results resultStatus, long resultObjectId);
+
+    void setMediaControlRequestResult(Request request, Request.Results resultStatus);
+
+    void setSearchRequestResult(
+            SearchRequest request, SearchRequest.Results resultStatus, long resultObjectId);
+
     int getContentControlId();
+
     UUID getServiceUuid();
+
     void onDeviceAuthorizationSet(BluetoothDevice device);
+
     void destroy();
+
     void dump(StringBuilder sb);
 }

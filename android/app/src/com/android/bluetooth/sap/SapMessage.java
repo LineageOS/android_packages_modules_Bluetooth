@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 /**
  * SapMessage is used for incoming and outgoing messages.
  *
- * For incoming messages
+ * <p>For incoming messages
  */
 public class SapMessage {
 
@@ -371,7 +371,7 @@ public class SapMessage {
      * Construct a SapMessage based on the incoming rfcomm request.
      *
      * @param requestType The type of the request
-     * @param is          the input stream to read the data from
+     * @param is the input stream to read the data from
      * @return the resulting message, or null if an error occurs
      */
     @SuppressWarnings("unused")
@@ -417,14 +417,14 @@ public class SapMessage {
                 }
                 newMessage.setSendToRil(true);
                 break;
-            case ID_TRANSFER_ATR_REQ:  /* No params */
+            case ID_TRANSFER_ATR_REQ: /* No params */
             case ID_POWER_SIM_OFF_REQ: /* No params */
-            case ID_POWER_SIM_ON_REQ:  /* No params */
-            case ID_RESET_SIM_REQ:     /* No params */
+            case ID_POWER_SIM_ON_REQ: /* No params */
+            case ID_RESET_SIM_REQ: /* No params */
             case ID_TRANSFER_CARD_READER_STATUS_REQ: /* No params */
                 newMessage.setSendToRil(true);
                 break;
-            case ID_DISCONNECT_REQ:    /* No params */
+            case ID_DISCONNECT_REQ: /* No params */
                 break;
             default:
                 Log.e(TAG, "Unknown request type");
@@ -436,9 +436,9 @@ public class SapMessage {
     /**
      * Blocking read of an entire array of data.
      *
-     * @param is     the input stream to read from
-     * @param buffer the buffer to read into - the length of the buffer will
-     *               determine how many bytes will be read.
+     * @param is the input stream to read from
+     * @param buffer the buffer to read into - the length of the buffer will determine how many
+     *     bytes will be read.
      */
     private static void read(InputStream is, byte[] buffer) throws IOException {
         int bytesToRead = buffer.length;
@@ -457,7 +457,7 @@ public class SapMessage {
     /**
      * Skip a number of bytes in an InputStream.
      *
-     * @param is    the input stream
+     * @param is the input stream
      * @param count the number of bytes to skip
      * @throws IOException In case of reaching EOF or a stream error
      */
@@ -468,12 +468,11 @@ public class SapMessage {
     }
 
     /**
-     * Read the parameters from the stream and update the relevant members.
-     * This function will ensure that all parameters are read from the stream, even
-     * if an error is detected.
+     * Read the parameters from the stream and update the relevant members. This function will
+     * ensure that all parameters are read from the stream, even if an error is detected.
      *
      * @param count the number of parameters to read
-     * @param is    the input stream
+     * @param is the input stream
      * @return True if all parameters were successfully parsed, False if an error were detected.
      */
     private boolean parseParameters(int count, InputStream is) throws IOException {
@@ -497,8 +496,11 @@ public class SapMessage {
             switch (paramId) {
                 case PARAM_MAX_MSG_SIZE_ID:
                     if (paramLength != PARAM_MAX_MSG_SIZE_LENGTH) {
-                        Log.e(TAG, "Received PARAM_MAX_MSG_SIZE with wrong length: " + paramLength
-                                + " skipping this parameter.");
+                        Log.e(
+                                TAG,
+                                "Received PARAM_MAX_MSG_SIZE with wrong length: "
+                                        + paramLength
+                                        + " skipping this parameter.");
                         skip(is, paramLength + skipLen);
                         success = false;
                     } else {
@@ -519,8 +521,11 @@ public class SapMessage {
                     break;
                 case PARAM_TRANSPORT_PROTOCOL_ID:
                     if (paramLength != PARAM_TRANSPORT_PROTOCOL_LENGTH) {
-                        Log.e(TAG, "Received PARAM_TRANSPORT_PROTOCOL with wrong length: "
-                                + paramLength + " skipping this parameter.");
+                        Log.e(
+                                TAG,
+                                "Received PARAM_TRANSPORT_PROTOCOL with wrong length: "
+                                        + paramLength
+                                        + " skipping this parameter.");
                         skip(is, paramLength + skipLen);
                         success = false;
                     } else {
@@ -531,8 +536,10 @@ public class SapMessage {
                 case PARAM_CONNECTION_STATUS_ID:
                     // not needed for server role, but used for module test
                     if (paramLength != PARAM_CONNECTION_STATUS_LENGTH) {
-                        Log.e(TAG,
-                                "Received PARAM_CONNECTION_STATUS with wrong length: " + paramLength
+                        Log.e(
+                                TAG,
+                                "Received PARAM_CONNECTION_STATUS with wrong length: "
+                                        + paramLength
                                         + " skipping this parameter.");
                         skip(is, paramLength + skipLen);
                         success = false;
@@ -544,8 +551,11 @@ public class SapMessage {
                 case PARAM_CARD_READER_STATUS_ID:
                     // not needed for server role, but used for module test
                     if (paramLength != PARAM_CARD_READER_STATUS_LENGTH) {
-                        Log.e(TAG, "Received PARAM_CARD_READER_STATUS with wrong length: "
-                                + paramLength + " skipping this parameter.");
+                        Log.e(
+                                TAG,
+                                "Received PARAM_CARD_READER_STATUS with wrong length: "
+                                        + paramLength
+                                        + " skipping this parameter.");
                         skip(is, paramLength + skipLen);
                         success = false;
                     } else {
@@ -556,8 +566,11 @@ public class SapMessage {
                 case PARAM_STATUS_CHANGE_ID:
                     // not needed for server role, but used for module test
                     if (paramLength != PARAM_STATUS_CHANGE_LENGTH) {
-                        Log.e(TAG, "Received PARAM_STATUS_CHANGE with wrong length: " + paramLength
-                                + " skipping this parameter.");
+                        Log.e(
+                                TAG,
+                                "Received PARAM_STATUS_CHANGE with wrong length: "
+                                        + paramLength
+                                        + " skipping this parameter.");
                         skip(is, paramLength + skipLen);
                         success = false;
                     } else {
@@ -568,8 +581,11 @@ public class SapMessage {
                 case PARAM_RESULT_CODE_ID:
                     // not needed for server role, but used for module test
                     if (paramLength != PARAM_RESULT_CODE_LENGTH) {
-                        Log.e(TAG, "Received PARAM_RESULT_CODE with wrong length: " + paramLength
-                                + " skipping this parameter.");
+                        Log.e(
+                                TAG,
+                                "Received PARAM_RESULT_CODE with wrong length: "
+                                        + paramLength
+                                        + " skipping this parameter.");
                         skip(is, paramLength + skipLen);
                         success = false;
                     } else {
@@ -580,8 +596,11 @@ public class SapMessage {
                 case PARAM_DISCONNECT_TYPE_ID:
                     // not needed for server role, but used for module test
                     if (paramLength != PARAM_DISCONNECT_TYPE_LENGTH) {
-                        Log.e(TAG, "Received PARAM_DISCONNECT_TYPE_ID with wrong length: "
-                                + paramLength + " skipping this parameter.");
+                        Log.e(
+                                TAG,
+                                "Received PARAM_DISCONNECT_TYPE_ID with wrong length: "
+                                        + paramLength
+                                        + " skipping this parameter.");
                         skip(is, paramLength + skipLen);
                         success = false;
                     } else {
@@ -602,8 +621,12 @@ public class SapMessage {
                     skip(is, skipLen);
                     break;
                 default:
-                    Log.e(TAG,
-                            "Received unknown parameter ID: " + paramId + " length: " + paramLength
+                    Log.e(
+                            TAG,
+                            "Received unknown parameter ID: "
+                                    + paramId
+                                    + " length: "
+                                    + paramLength
                                     + " skipping this parameter.");
                     skip(is, paramLength + skipLen);
             }
@@ -614,9 +637,9 @@ public class SapMessage {
     /**
      * Writes a single value parameter of 1 or 2 bytes in length.
      *
-     * @param os     The BufferedOutputStream to write to.
-     * @param id     The Parameter ID
-     * @param value  The parameter value
+     * @param os The BufferedOutputStream to write to.
+     * @param id The Parameter ID
+     * @param value The parameter value
      * @param length The length of the parameter value
      * @throws IOException if the write to os fails
      */
@@ -650,8 +673,8 @@ public class SapMessage {
     /**
      * Writes a byte[] parameter of any length.
      *
-     * @param os    The BufferedOutputStream to write to.
-     * @param id    The Parameter ID
+     * @param os The BufferedOutputStream to write to.
+     * @param id The Parameter ID
      * @param value The byte array to write, the length will be extracted from the array.
      * @throws IOException if the write to os fails
      */
@@ -681,7 +704,10 @@ public class SapMessage {
 
         /* write the parameters */
         if (mConnectionStatus != INVALID_VALUE) {
-            writeParameter(os, PARAM_CONNECTION_STATUS_ID, mConnectionStatus,
+            writeParameter(
+                    os,
+                    PARAM_CONNECTION_STATUS_ID,
+                    mConnectionStatus,
                     PARAM_CONNECTION_STATUS_LENGTH);
         }
         if (mMaxMsgSize != INVALID_VALUE) {
@@ -691,18 +717,24 @@ public class SapMessage {
             writeParameter(os, PARAM_RESULT_CODE_ID, mResultCode, PARAM_RESULT_CODE_LENGTH);
         }
         if (mDisconnectionType != INVALID_VALUE) {
-            writeParameter(os, PARAM_DISCONNECT_TYPE_ID, mDisconnectionType,
-                    PARAM_DISCONNECT_TYPE_LENGTH);
+            writeParameter(
+                    os, PARAM_DISCONNECT_TYPE_ID, mDisconnectionType, PARAM_DISCONNECT_TYPE_LENGTH);
         }
         if (mCardReaderStatus != INVALID_VALUE) {
-            writeParameter(os, PARAM_CARD_READER_STATUS_ID, mCardReaderStatus,
+            writeParameter(
+                    os,
+                    PARAM_CARD_READER_STATUS_ID,
+                    mCardReaderStatus,
                     PARAM_CARD_READER_STATUS_LENGTH);
         }
         if (mStatusChange != INVALID_VALUE) {
             writeParameter(os, PARAM_STATUS_CHANGE_ID, mStatusChange, PARAM_STATUS_CHANGE_LENGTH);
         }
         if (mTransportProtocol != INVALID_VALUE) {
-            writeParameter(os, PARAM_TRANSPORT_PROTOCOL_ID, mTransportProtocol,
+            writeParameter(
+                    os,
+                    PARAM_TRANSPORT_PROTOCOL_ID,
+                    mTransportProtocol,
                     PARAM_TRANSPORT_PROTOCOL_LENGTH);
         }
         if (mApdu != null) {
@@ -723,10 +755,7 @@ public class SapMessage {
      * RILD Interface message conversion functions.
      ***************************************************************************/
 
-
-    /**
-     * Send the message by calling corresponding ISap api.
-     */
+    /** Send the message by calling corresponding ISap api. */
     public void send(ISapRilReceiver sapProxy) throws RemoteException, RuntimeException {
         int rilSerial = sNextSerial.getAndIncrement();
 
@@ -740,64 +769,76 @@ public class SapMessage {
         sOngoingRequests.put(rilSerial, mMsgType);
 
         switch (mMsgType) {
-            case ID_CONNECT_REQ: {
-                sapProxy.connectReq(rilSerial, mMaxMsgSize);
-                break;
-            }
-            case ID_DISCONNECT_REQ: {
-                sapProxy.disconnectReq(rilSerial);
-                break;
-            }
-            case ID_TRANSFER_APDU_REQ: {
-                int type;
-                byte[] command;
-                if (mApdu != null) {
-                    type = SapApduType.APDU;
-                    command = mApdu;
-                } else if (mApdu7816 != null) {
-                    type = SapApduType.APDU7816;
-                    command = mApdu7816;
-                } else {
-                    Log.e(TAG, "Missing Apdu parameter in TRANSFER_APDU_REQ");
-                    throw new IllegalArgumentException();
+            case ID_CONNECT_REQ:
+                {
+                    sapProxy.connectReq(rilSerial, mMaxMsgSize);
+                    break;
                 }
-                sapProxy.apduReq(rilSerial, type, command);
-                break;
-            }
-            case ID_SET_TRANSPORT_PROTOCOL_REQ: {
-                int transportProtocol;
-                if (mTransportProtocol == TRANS_PROTO_T0) {
-                    transportProtocol = SapTransferProtocol.T0;
-                } else if (mTransportProtocol == TRANS_PROTO_T1) {
-                    transportProtocol = SapTransferProtocol.T1;
-                } else {
-                    Log.e(TAG, "Missing or invalid TransportProtocol parameter in"
-                            + " SET_TRANSPORT_PROTOCOL_REQ: " + mTransportProtocol);
-                    throw new IllegalArgumentException();
+            case ID_DISCONNECT_REQ:
+                {
+                    sapProxy.disconnectReq(rilSerial);
+                    break;
                 }
-                sapProxy.setTransferProtocolReq(rilSerial, transportProtocol);
-                break;
-            }
-            case ID_TRANSFER_ATR_REQ: {
-                sapProxy.transferAtrReq(rilSerial);
-                break;
-            }
-            case ID_POWER_SIM_OFF_REQ: {
-                sapProxy.powerReq(rilSerial, false);
-                break;
-            }
-            case ID_POWER_SIM_ON_REQ: {
-                sapProxy.powerReq(rilSerial, true);
-                break;
-            }
-            case ID_RESET_SIM_REQ: {
-                sapProxy.resetSimReq(rilSerial);
-                break;
-            }
-            case ID_TRANSFER_CARD_READER_STATUS_REQ: {
-                sapProxy.transferCardReaderStatusReq(rilSerial);
-                break;
-            }
+            case ID_TRANSFER_APDU_REQ:
+                {
+                    int type;
+                    byte[] command;
+                    if (mApdu != null) {
+                        type = SapApduType.APDU;
+                        command = mApdu;
+                    } else if (mApdu7816 != null) {
+                        type = SapApduType.APDU7816;
+                        command = mApdu7816;
+                    } else {
+                        Log.e(TAG, "Missing Apdu parameter in TRANSFER_APDU_REQ");
+                        throw new IllegalArgumentException();
+                    }
+                    sapProxy.apduReq(rilSerial, type, command);
+                    break;
+                }
+            case ID_SET_TRANSPORT_PROTOCOL_REQ:
+                {
+                    int transportProtocol;
+                    if (mTransportProtocol == TRANS_PROTO_T0) {
+                        transportProtocol = SapTransferProtocol.T0;
+                    } else if (mTransportProtocol == TRANS_PROTO_T1) {
+                        transportProtocol = SapTransferProtocol.T1;
+                    } else {
+                        Log.e(
+                                TAG,
+                                "Missing or invalid TransportProtocol parameter in"
+                                        + " SET_TRANSPORT_PROTOCOL_REQ: "
+                                        + mTransportProtocol);
+                        throw new IllegalArgumentException();
+                    }
+                    sapProxy.setTransferProtocolReq(rilSerial, transportProtocol);
+                    break;
+                }
+            case ID_TRANSFER_ATR_REQ:
+                {
+                    sapProxy.transferAtrReq(rilSerial);
+                    break;
+                }
+            case ID_POWER_SIM_OFF_REQ:
+                {
+                    sapProxy.powerReq(rilSerial, false);
+                    break;
+                }
+            case ID_POWER_SIM_ON_REQ:
+                {
+                    sapProxy.powerReq(rilSerial, true);
+                    break;
+                }
+            case ID_RESET_SIM_REQ:
+                {
+                    sapProxy.resetSimReq(rilSerial);
+                    break;
+                }
+            case ID_TRANSFER_CARD_READER_STATUS_REQ:
+                {
+                    sapProxy.transferCardReaderStatusReq(rilSerial);
+                    break;
+                }
             default:
                 Log.e(TAG, "Unknown request type");
                 throw new IllegalArgumentException();
@@ -831,42 +872,47 @@ public class SapMessage {
     private void createUnsolicited(MsgHeader msg)
             throws IOException, InvalidProtocolBufferMicroException {
         switch (msg.getId()) {
-// TODO:
-//        Not sure when we use these?        case RIL_UNSOL_RIL_CONNECTED:
-//            if(VERBOSE) Log.i(TAG, "RIL_UNSOL_RIL_CONNECTED received, ignoring");
-//            msgType = ID_RIL_UNSOL_CONNECTED;
-//            break;
-            case SapApi.RIL_SIM_SAP_STATUS: {
-                Log.v(TAG, "RIL_SIM_SAP_STATUS_IND received");
-                RIL_SIM_SAP_STATUS_IND indMsg =
-                        RIL_SIM_SAP_STATUS_IND.parseFrom(msg.getPayload().toByteArray());
-                mMsgType = ID_STATUS_IND;
-                if (indMsg.hasStatusChange()) {
-                    setStatusChange(indMsg.getStatusChange());
-                    Log.v(TAG,
-                            "RIL_UNSOL_SIM_SAP_STATUS_IND received value = " + mStatusChange);
-                } else {
-                    Log.v(TAG, "Wrong number of parameters in SAP_STATUS_IND, ignoring...");
-                    mMsgType = ID_RIL_UNKNOWN;
+                // TODO:
+                //        Not sure when we use these?        case RIL_UNSOL_RIL_CONNECTED:
+                //            if(VERBOSE) Log.i(TAG, "RIL_UNSOL_RIL_CONNECTED received, ignoring");
+                //            msgType = ID_RIL_UNSOL_CONNECTED;
+                //            break;
+            case SapApi.RIL_SIM_SAP_STATUS:
+                {
+                    Log.v(TAG, "RIL_SIM_SAP_STATUS_IND received");
+                    RIL_SIM_SAP_STATUS_IND indMsg =
+                            RIL_SIM_SAP_STATUS_IND.parseFrom(msg.getPayload().toByteArray());
+                    mMsgType = ID_STATUS_IND;
+                    if (indMsg.hasStatusChange()) {
+                        setStatusChange(indMsg.getStatusChange());
+                        Log.v(
+                                TAG,
+                                "RIL_UNSOL_SIM_SAP_STATUS_IND received value = " + mStatusChange);
+                    } else {
+                        Log.v(TAG, "Wrong number of parameters in SAP_STATUS_IND, ignoring...");
+                        mMsgType = ID_RIL_UNKNOWN;
+                    }
+                    break;
                 }
-                break;
-            }
-            case SapApi.RIL_SIM_SAP_DISCONNECT: {
-                Log.v(TAG, "RIL_SIM_SAP_DISCONNECT_IND received");
+            case SapApi.RIL_SIM_SAP_DISCONNECT:
+                {
+                    Log.v(TAG, "RIL_SIM_SAP_DISCONNECT_IND received");
 
-                RIL_SIM_SAP_DISCONNECT_IND indMsg =
-                        RIL_SIM_SAP_DISCONNECT_IND.parseFrom(msg.getPayload().toByteArray());
-                mMsgType = ID_RIL_UNSOL_DISCONNECT_IND; // don't use ID_DISCONNECT_IND;
-                if (indMsg.hasDisconnectType()) {
-                    setDisconnectionType(indMsg.getDisconnectType());
-                    Log.v(TAG, "RIL_UNSOL_SIM_SAP_STATUS_IND received value = "
-                            + mDisconnectionType);
-                } else {
-                    Log.v(TAG, "Wrong number of parameters in SAP_STATUS_IND, ignoring...");
-                    mMsgType = ID_RIL_UNKNOWN;
+                    RIL_SIM_SAP_DISCONNECT_IND indMsg =
+                            RIL_SIM_SAP_DISCONNECT_IND.parseFrom(msg.getPayload().toByteArray());
+                    mMsgType = ID_RIL_UNSOL_DISCONNECT_IND; // don't use ID_DISCONNECT_IND;
+                    if (indMsg.hasDisconnectType()) {
+                        setDisconnectionType(indMsg.getDisconnectType());
+                        Log.v(
+                                TAG,
+                                "RIL_UNSOL_SIM_SAP_STATUS_IND received value = "
+                                        + mDisconnectionType);
+                    } else {
+                        Log.v(TAG, "Wrong number of parameters in SAP_STATUS_IND, ignoring...");
+                        mMsgType = ID_RIL_UNKNOWN;
+                    }
+                    break;
                 }
-                break;
-            }
             default:
                 Log.v(TAG, "Unused unsolicited message received, ignoring: " + msg.getId());
                 mMsgType = ID_RIL_UNKNOWN;
@@ -885,8 +931,14 @@ public class SapMessage {
         int serial = msg.getToken();
         int error = msg.getError();
         Integer reqType = sOngoingRequests.remove(serial);
-        Log.v(TAG, "RIL SOLICITED serial: " + serial + ", error: " + error + " SapReqType: " + (
-                (reqType == null) ? "null" : getMsgTypeName(reqType)));
+        Log.v(
+                TAG,
+                "RIL SOLICITED serial: "
+                        + serial
+                        + ", error: "
+                        + error
+                        + " SapReqType: "
+                        + ((reqType == null) ? "null" : getMsgTypeName(reqType)));
 
         if (reqType == null) {
             /* This can happen if we get a resp. for a canceled request caused by a power off,
@@ -898,243 +950,253 @@ public class SapMessage {
         mResultCode = mapRilErrorCode(error);
 
         switch (reqType) {
-            case ID_CONNECT_REQ: {
-                RIL_SIM_SAP_CONNECT_RSP resMsg =
-                        RIL_SIM_SAP_CONNECT_RSP.parseFrom(msg.getPayload().toByteArray());
-                mMsgType = ID_CONNECT_RESP;
-                if (resMsg.hasMaxMessageSize()) {
-                    mMaxMsgSize = resMsg.getMaxMessageSize();
-
+            case ID_CONNECT_REQ:
+                {
+                    RIL_SIM_SAP_CONNECT_RSP resMsg =
+                            RIL_SIM_SAP_CONNECT_RSP.parseFrom(msg.getPayload().toByteArray());
+                    mMsgType = ID_CONNECT_RESP;
+                    if (resMsg.hasMaxMessageSize()) {
+                        mMaxMsgSize = resMsg.getMaxMessageSize();
+                    }
+                    switch (resMsg.getResponse()) {
+                        case RIL_SIM_SAP_CONNECT_RSP.RIL_E_SUCCESS:
+                            mConnectionStatus = CON_STATUS_OK;
+                            break;
+                        case RIL_SIM_SAP_CONNECT_RSP.RIL_E_SAP_CONNECT_OK_CALL_ONGOING:
+                            mConnectionStatus = CON_STATUS_OK_ONGOING_CALL;
+                            break;
+                        case RIL_SIM_SAP_CONNECT_RSP.RIL_E_SAP_CONNECT_FAILURE:
+                            mConnectionStatus = CON_STATUS_ERROR_CONNECTION;
+                            break;
+                        case RIL_SIM_SAP_CONNECT_RSP.RIL_E_SAP_MSG_SIZE_TOO_LARGE:
+                            mConnectionStatus = CON_STATUS_ERROR_MAX_MSG_SIZE_UNSUPPORTED;
+                            break;
+                        case RIL_SIM_SAP_CONNECT_RSP.RIL_E_SAP_MSG_SIZE_TOO_SMALL:
+                            mConnectionStatus = CON_STATUS_ERROR_MAX_MSG_SIZE_TOO_SMALL;
+                            break;
+                        default:
+                            mConnectionStatus = CON_STATUS_ERROR_CONNECTION; // Cannot happen!
+                            break;
+                    }
+                    mResultCode = INVALID_VALUE;
+                    Log.v(
+                            TAG,
+                            "  ID_CONNECT_REQ: mMaxMsgSize: "
+                                    + mMaxMsgSize
+                                    + "  mConnectionStatus: "
+                                    + mConnectionStatus);
+                    break;
                 }
-                switch (resMsg.getResponse()) {
-                    case RIL_SIM_SAP_CONNECT_RSP.RIL_E_SUCCESS:
-                        mConnectionStatus = CON_STATUS_OK;
-                        break;
-                    case RIL_SIM_SAP_CONNECT_RSP.RIL_E_SAP_CONNECT_OK_CALL_ONGOING:
-                        mConnectionStatus = CON_STATUS_OK_ONGOING_CALL;
-                        break;
-                    case RIL_SIM_SAP_CONNECT_RSP.RIL_E_SAP_CONNECT_FAILURE:
-                        mConnectionStatus = CON_STATUS_ERROR_CONNECTION;
-                        break;
-                    case RIL_SIM_SAP_CONNECT_RSP.RIL_E_SAP_MSG_SIZE_TOO_LARGE:
-                        mConnectionStatus = CON_STATUS_ERROR_MAX_MSG_SIZE_UNSUPPORTED;
-                        break;
-                    case RIL_SIM_SAP_CONNECT_RSP.RIL_E_SAP_MSG_SIZE_TOO_SMALL:
-                        mConnectionStatus = CON_STATUS_ERROR_MAX_MSG_SIZE_TOO_SMALL;
-                        break;
-                    default:
-                        mConnectionStatus = CON_STATUS_ERROR_CONNECTION; // Cannot happen!
-                        break;
-                }
-                mResultCode = INVALID_VALUE;
-                Log.v(TAG, "  ID_CONNECT_REQ: mMaxMsgSize: " + mMaxMsgSize
-                        + "  mConnectionStatus: " + mConnectionStatus);
-                break;
-            }
             case ID_DISCONNECT_REQ:
                 mMsgType = ID_DISCONNECT_RESP;
                 mResultCode = INVALID_VALUE;
                 break;
-            case ID_TRANSFER_APDU_REQ: {
-                RIL_SIM_SAP_APDU_RSP resMsg =
-                        RIL_SIM_SAP_APDU_RSP.parseFrom(msg.getPayload().toByteArray());
-                mMsgType = ID_TRANSFER_APDU_RESP;
-                switch (resMsg.getResponse()) {
-                    case RIL_SIM_SAP_APDU_RSP.RIL_E_SUCCESS:
-                        mResultCode = RESULT_OK;
-                        /* resMsg.getType is unused as the client knows the type of request used. */
-                        if (resMsg.hasApduResponse()) {
-                            mApduResp = resMsg.getApduResponse().toByteArray();
-                        }
-                        break;
-                    case RIL_SIM_SAP_APDU_RSP.RIL_E_GENERIC_FAILURE:
-                        mResultCode = RESULT_ERROR_NO_REASON;
-                        break;
-                    case RIL_SIM_SAP_APDU_RSP.RIL_E_SIM_ABSENT:
-                        mResultCode = RESULT_ERROR_CARD_NOT_ACCESSIBLE;
-                        break;
-                    case RIL_SIM_SAP_APDU_RSP.RIL_E_SIM_ALREADY_POWERED_OFF:
-                        mResultCode = RESULT_ERROR_CARD_POWERED_OFF;
-                        break;
-                    case RIL_SIM_SAP_APDU_RSP.RIL_E_SIM_NOT_READY:
-                        mResultCode = RESULT_ERROR_CARD_REMOVED;
-                        break;
-                    default:
-                        mResultCode = RESULT_ERROR_NO_REASON;
-                        break;
+            case ID_TRANSFER_APDU_REQ:
+                {
+                    RIL_SIM_SAP_APDU_RSP resMsg =
+                            RIL_SIM_SAP_APDU_RSP.parseFrom(msg.getPayload().toByteArray());
+                    mMsgType = ID_TRANSFER_APDU_RESP;
+                    switch (resMsg.getResponse()) {
+                        case RIL_SIM_SAP_APDU_RSP.RIL_E_SUCCESS:
+                            mResultCode = RESULT_OK;
+                            /* resMsg.getType is unused as the client knows the type of request used. */
+                            if (resMsg.hasApduResponse()) {
+                                mApduResp = resMsg.getApduResponse().toByteArray();
+                            }
+                            break;
+                        case RIL_SIM_SAP_APDU_RSP.RIL_E_GENERIC_FAILURE:
+                            mResultCode = RESULT_ERROR_NO_REASON;
+                            break;
+                        case RIL_SIM_SAP_APDU_RSP.RIL_E_SIM_ABSENT:
+                            mResultCode = RESULT_ERROR_CARD_NOT_ACCESSIBLE;
+                            break;
+                        case RIL_SIM_SAP_APDU_RSP.RIL_E_SIM_ALREADY_POWERED_OFF:
+                            mResultCode = RESULT_ERROR_CARD_POWERED_OFF;
+                            break;
+                        case RIL_SIM_SAP_APDU_RSP.RIL_E_SIM_NOT_READY:
+                            mResultCode = RESULT_ERROR_CARD_REMOVED;
+                            break;
+                        default:
+                            mResultCode = RESULT_ERROR_NO_REASON;
+                            break;
+                    }
+                    break;
                 }
-                break;
-            }
-            case ID_SET_TRANSPORT_PROTOCOL_REQ: {
-                RIL_SIM_SAP_SET_TRANSFER_PROTOCOL_RSP resMsg =
-                        RIL_SIM_SAP_SET_TRANSFER_PROTOCOL_RSP.parseFrom(
-                                msg.getPayload().toByteArray());
-                mMsgType = ID_SET_TRANSPORT_PROTOCOL_RESP;
-                switch (resMsg.getResponse()) {
-                    case RIL_SIM_SAP_SET_TRANSFER_PROTOCOL_RSP.RIL_E_SUCCESS:
-                        mResultCode = RESULT_OK;
-                        break;
-                    case RIL_SIM_SAP_SET_TRANSFER_PROTOCOL_RSP.RIL_E_GENERIC_FAILURE:
-                        mResultCode = RESULT_ERROR_NOT_SUPPORTED;
-                        break;
-                    case RIL_SIM_SAP_SET_TRANSFER_PROTOCOL_RSP.RIL_E_SIM_ABSENT:
-                        mResultCode = RESULT_ERROR_CARD_NOT_ACCESSIBLE;
-                        break;
-                    case RIL_SIM_SAP_SET_TRANSFER_PROTOCOL_RSP.RIL_E_SIM_ALREADY_POWERED_OFF:
-                        mResultCode = RESULT_ERROR_CARD_POWERED_OFF;
-                        break;
-                    case RIL_SIM_SAP_SET_TRANSFER_PROTOCOL_RSP.RIL_E_SIM_NOT_READY:
-                        mResultCode = RESULT_ERROR_CARD_REMOVED;
-                        break;
-                    default:
-                        mResultCode = RESULT_ERROR_NOT_SUPPORTED;
-                        break;
+            case ID_SET_TRANSPORT_PROTOCOL_REQ:
+                {
+                    RIL_SIM_SAP_SET_TRANSFER_PROTOCOL_RSP resMsg =
+                            RIL_SIM_SAP_SET_TRANSFER_PROTOCOL_RSP.parseFrom(
+                                    msg.getPayload().toByteArray());
+                    mMsgType = ID_SET_TRANSPORT_PROTOCOL_RESP;
+                    switch (resMsg.getResponse()) {
+                        case RIL_SIM_SAP_SET_TRANSFER_PROTOCOL_RSP.RIL_E_SUCCESS:
+                            mResultCode = RESULT_OK;
+                            break;
+                        case RIL_SIM_SAP_SET_TRANSFER_PROTOCOL_RSP.RIL_E_GENERIC_FAILURE:
+                            mResultCode = RESULT_ERROR_NOT_SUPPORTED;
+                            break;
+                        case RIL_SIM_SAP_SET_TRANSFER_PROTOCOL_RSP.RIL_E_SIM_ABSENT:
+                            mResultCode = RESULT_ERROR_CARD_NOT_ACCESSIBLE;
+                            break;
+                        case RIL_SIM_SAP_SET_TRANSFER_PROTOCOL_RSP.RIL_E_SIM_ALREADY_POWERED_OFF:
+                            mResultCode = RESULT_ERROR_CARD_POWERED_OFF;
+                            break;
+                        case RIL_SIM_SAP_SET_TRANSFER_PROTOCOL_RSP.RIL_E_SIM_NOT_READY:
+                            mResultCode = RESULT_ERROR_CARD_REMOVED;
+                            break;
+                        default:
+                            mResultCode = RESULT_ERROR_NOT_SUPPORTED;
+                            break;
+                    }
+                    break;
                 }
-                break;
-            }
-            case ID_TRANSFER_ATR_REQ: {
-                RIL_SIM_SAP_TRANSFER_ATR_RSP resMsg =
-                        RIL_SIM_SAP_TRANSFER_ATR_RSP.parseFrom(msg.getPayload().toByteArray());
-                mMsgType = ID_TRANSFER_ATR_RESP;
-                if (resMsg.hasAtr()) {
-                    mAtr = resMsg.getAtr().toByteArray();
-                }
-                switch (resMsg.getResponse()) {
-                    case RIL_SIM_SAP_TRANSFER_ATR_RSP.RIL_E_SUCCESS:
-                        mResultCode = RESULT_OK;
-                        break;
-                    case RIL_SIM_SAP_TRANSFER_ATR_RSP.RIL_E_GENERIC_FAILURE:
-                        mResultCode = RESULT_ERROR_NO_REASON;
-                        break;
-                    case RIL_SIM_SAP_TRANSFER_ATR_RSP.RIL_E_SIM_ABSENT:
-                        mResultCode = RESULT_ERROR_CARD_NOT_ACCESSIBLE;
-                        break;
-                    case RIL_SIM_SAP_TRANSFER_ATR_RSP.RIL_E_SIM_ALREADY_POWERED_OFF:
-                        mResultCode = RESULT_ERROR_CARD_POWERED_OFF;
-                        break;
-                    case RIL_SIM_SAP_TRANSFER_ATR_RSP.RIL_E_SIM_ALREADY_POWERED_ON:
-                        mResultCode = RESULT_ERROR_CARD_POWERED_ON;
-                        break;
-                    case RIL_SIM_SAP_TRANSFER_ATR_RSP.RIL_E_SIM_DATA_NOT_AVAILABLE:
-                        mResultCode = RESULT_ERROR_DATA_NOT_AVAILABLE;
-                        break;
-                    default:
-                        mResultCode = RESULT_ERROR_NO_REASON;
-                        break;
-                }
-                break;
-            }
-            case ID_POWER_SIM_OFF_REQ: {
-                RIL_SIM_SAP_POWER_RSP resMsg =
-                        RIL_SIM_SAP_POWER_RSP.parseFrom(msg.getPayload().toByteArray());
-                mMsgType = ID_POWER_SIM_OFF_RESP;
-                switch (resMsg.getResponse()) {
-                    case RIL_SIM_SAP_POWER_RSP.RIL_E_SUCCESS:
-                        mResultCode = RESULT_OK;
-                        break;
-                    case RIL_SIM_SAP_POWER_RSP.RIL_E_GENERIC_FAILURE:
-                        mResultCode = RESULT_ERROR_NO_REASON;
-                        break;
-                    case RIL_SIM_SAP_POWER_RSP.RIL_E_SIM_ABSENT:
-                        mResultCode = RESULT_ERROR_CARD_NOT_ACCESSIBLE;
-                        break;
-                    case RIL_SIM_SAP_POWER_RSP.RIL_E_SIM_ALREADY_POWERED_OFF:
-                        mResultCode = RESULT_ERROR_CARD_POWERED_OFF;
-                        break;
-                    case RIL_SIM_SAP_POWER_RSP.RIL_E_SIM_ALREADY_POWERED_ON:
-                        mResultCode = RESULT_ERROR_CARD_POWERED_ON;
-                        break;
-                    default:
-                        mResultCode = RESULT_ERROR_NO_REASON;
-                        break;
-                }
-                break;
-            }
-            case ID_POWER_SIM_ON_REQ: {
-                RIL_SIM_SAP_POWER_RSP resMsg =
-                        RIL_SIM_SAP_POWER_RSP.parseFrom(msg.getPayload().toByteArray());
-                mMsgType = ID_POWER_SIM_ON_RESP;
-                switch (resMsg.getResponse()) {
-                    case RIL_SIM_SAP_POWER_RSP.RIL_E_SUCCESS:
-                        mResultCode = RESULT_OK;
-                        break;
-                    case RIL_SIM_SAP_POWER_RSP.RIL_E_GENERIC_FAILURE:
-                        mResultCode = RESULT_ERROR_NO_REASON;
-                        break;
-                    case RIL_SIM_SAP_POWER_RSP.RIL_E_SIM_ABSENT:
-                        mResultCode = RESULT_ERROR_CARD_NOT_ACCESSIBLE;
-                        break;
-                    case RIL_SIM_SAP_POWER_RSP.RIL_E_SIM_ALREADY_POWERED_OFF:
-                        mResultCode = RESULT_ERROR_CARD_POWERED_OFF;
-                        break;
-                    case RIL_SIM_SAP_POWER_RSP.RIL_E_SIM_ALREADY_POWERED_ON:
-                        mResultCode = RESULT_ERROR_CARD_POWERED_ON;
-                        break;
-                    default:
-                        mResultCode = RESULT_ERROR_NO_REASON;
-                        break;
-                }
-                break;
-            }
-            case ID_RESET_SIM_REQ: {
-                RIL_SIM_SAP_RESET_SIM_RSP resMsg =
-                        RIL_SIM_SAP_RESET_SIM_RSP.parseFrom(msg.getPayload().toByteArray());
-                mMsgType = ID_RESET_SIM_RESP;
-                switch (resMsg.getResponse()) {
-                    case RIL_SIM_SAP_RESET_SIM_RSP.RIL_E_SUCCESS:
-                        mResultCode = RESULT_OK;
-                        break;
-                    case RIL_SIM_SAP_RESET_SIM_RSP.RIL_E_GENERIC_FAILURE:
-                        mResultCode = RESULT_ERROR_NO_REASON;
-                        break;
-                    case RIL_SIM_SAP_RESET_SIM_RSP.RIL_E_SIM_ABSENT:
-                        mResultCode = RESULT_ERROR_CARD_NOT_ACCESSIBLE;
-                        break;
-                    case RIL_SIM_SAP_RESET_SIM_RSP.RIL_E_SIM_ALREADY_POWERED_OFF:
-                        mResultCode = RESULT_ERROR_CARD_POWERED_OFF;
-                        break;
-                    default:
-                        mResultCode = RESULT_ERROR_NO_REASON;
-                        break;
-                }
-                break;
-            }
-            case ID_TRANSFER_CARD_READER_STATUS_REQ: {
-                RIL_SIM_SAP_TRANSFER_CARD_READER_STATUS_RSP resMsg =
-                        RIL_SIM_SAP_TRANSFER_CARD_READER_STATUS_RSP.parseFrom(
-                                msg.getPayload().toByteArray());
-                mMsgType = ID_TRANSFER_CARD_READER_STATUS_RESP;
-                switch (resMsg.getResponse()) {
-                    case RIL_SIM_SAP_TRANSFER_CARD_READER_STATUS_RSP.RIL_E_SUCCESS:
-                        mResultCode = RESULT_OK;
-                        if (resMsg.hasCardReaderStatus()) {
-                            mCardReaderStatus = resMsg.getCardReaderStatus();
-                        } else {
+            case ID_TRANSFER_ATR_REQ:
+                {
+                    RIL_SIM_SAP_TRANSFER_ATR_RSP resMsg =
+                            RIL_SIM_SAP_TRANSFER_ATR_RSP.parseFrom(msg.getPayload().toByteArray());
+                    mMsgType = ID_TRANSFER_ATR_RESP;
+                    if (resMsg.hasAtr()) {
+                        mAtr = resMsg.getAtr().toByteArray();
+                    }
+                    switch (resMsg.getResponse()) {
+                        case RIL_SIM_SAP_TRANSFER_ATR_RSP.RIL_E_SUCCESS:
+                            mResultCode = RESULT_OK;
+                            break;
+                        case RIL_SIM_SAP_TRANSFER_ATR_RSP.RIL_E_GENERIC_FAILURE:
+                            mResultCode = RESULT_ERROR_NO_REASON;
+                            break;
+                        case RIL_SIM_SAP_TRANSFER_ATR_RSP.RIL_E_SIM_ABSENT:
+                            mResultCode = RESULT_ERROR_CARD_NOT_ACCESSIBLE;
+                            break;
+                        case RIL_SIM_SAP_TRANSFER_ATR_RSP.RIL_E_SIM_ALREADY_POWERED_OFF:
+                            mResultCode = RESULT_ERROR_CARD_POWERED_OFF;
+                            break;
+                        case RIL_SIM_SAP_TRANSFER_ATR_RSP.RIL_E_SIM_ALREADY_POWERED_ON:
+                            mResultCode = RESULT_ERROR_CARD_POWERED_ON;
+                            break;
+                        case RIL_SIM_SAP_TRANSFER_ATR_RSP.RIL_E_SIM_DATA_NOT_AVAILABLE:
                             mResultCode = RESULT_ERROR_DATA_NOT_AVAILABLE;
-                        }
-                        break;
-                    case RIL_SIM_SAP_TRANSFER_CARD_READER_STATUS_RSP.RIL_E_GENERIC_FAILURE:
-                        mResultCode = RESULT_ERROR_NO_REASON;
-                        break;
-                    case RIL_SIM_SAP_TRANSFER_CARD_READER_STATUS_RSP.RIL_E_SIM_DATA_NOT_AVAILABLE:
-                        mResultCode = RESULT_ERROR_DATA_NOT_AVAILABLE;
-                        break;
-                    default:
-                        mResultCode = RESULT_ERROR_NO_REASON;
-                        break;
+                            break;
+                        default:
+                            mResultCode = RESULT_ERROR_NO_REASON;
+                            break;
+                    }
+                    break;
                 }
-                break;
-            }
+            case ID_POWER_SIM_OFF_REQ:
+                {
+                    RIL_SIM_SAP_POWER_RSP resMsg =
+                            RIL_SIM_SAP_POWER_RSP.parseFrom(msg.getPayload().toByteArray());
+                    mMsgType = ID_POWER_SIM_OFF_RESP;
+                    switch (resMsg.getResponse()) {
+                        case RIL_SIM_SAP_POWER_RSP.RIL_E_SUCCESS:
+                            mResultCode = RESULT_OK;
+                            break;
+                        case RIL_SIM_SAP_POWER_RSP.RIL_E_GENERIC_FAILURE:
+                            mResultCode = RESULT_ERROR_NO_REASON;
+                            break;
+                        case RIL_SIM_SAP_POWER_RSP.RIL_E_SIM_ABSENT:
+                            mResultCode = RESULT_ERROR_CARD_NOT_ACCESSIBLE;
+                            break;
+                        case RIL_SIM_SAP_POWER_RSP.RIL_E_SIM_ALREADY_POWERED_OFF:
+                            mResultCode = RESULT_ERROR_CARD_POWERED_OFF;
+                            break;
+                        case RIL_SIM_SAP_POWER_RSP.RIL_E_SIM_ALREADY_POWERED_ON:
+                            mResultCode = RESULT_ERROR_CARD_POWERED_ON;
+                            break;
+                        default:
+                            mResultCode = RESULT_ERROR_NO_REASON;
+                            break;
+                    }
+                    break;
+                }
+            case ID_POWER_SIM_ON_REQ:
+                {
+                    RIL_SIM_SAP_POWER_RSP resMsg =
+                            RIL_SIM_SAP_POWER_RSP.parseFrom(msg.getPayload().toByteArray());
+                    mMsgType = ID_POWER_SIM_ON_RESP;
+                    switch (resMsg.getResponse()) {
+                        case RIL_SIM_SAP_POWER_RSP.RIL_E_SUCCESS:
+                            mResultCode = RESULT_OK;
+                            break;
+                        case RIL_SIM_SAP_POWER_RSP.RIL_E_GENERIC_FAILURE:
+                            mResultCode = RESULT_ERROR_NO_REASON;
+                            break;
+                        case RIL_SIM_SAP_POWER_RSP.RIL_E_SIM_ABSENT:
+                            mResultCode = RESULT_ERROR_CARD_NOT_ACCESSIBLE;
+                            break;
+                        case RIL_SIM_SAP_POWER_RSP.RIL_E_SIM_ALREADY_POWERED_OFF:
+                            mResultCode = RESULT_ERROR_CARD_POWERED_OFF;
+                            break;
+                        case RIL_SIM_SAP_POWER_RSP.RIL_E_SIM_ALREADY_POWERED_ON:
+                            mResultCode = RESULT_ERROR_CARD_POWERED_ON;
+                            break;
+                        default:
+                            mResultCode = RESULT_ERROR_NO_REASON;
+                            break;
+                    }
+                    break;
+                }
+            case ID_RESET_SIM_REQ:
+                {
+                    RIL_SIM_SAP_RESET_SIM_RSP resMsg =
+                            RIL_SIM_SAP_RESET_SIM_RSP.parseFrom(msg.getPayload().toByteArray());
+                    mMsgType = ID_RESET_SIM_RESP;
+                    switch (resMsg.getResponse()) {
+                        case RIL_SIM_SAP_RESET_SIM_RSP.RIL_E_SUCCESS:
+                            mResultCode = RESULT_OK;
+                            break;
+                        case RIL_SIM_SAP_RESET_SIM_RSP.RIL_E_GENERIC_FAILURE:
+                            mResultCode = RESULT_ERROR_NO_REASON;
+                            break;
+                        case RIL_SIM_SAP_RESET_SIM_RSP.RIL_E_SIM_ABSENT:
+                            mResultCode = RESULT_ERROR_CARD_NOT_ACCESSIBLE;
+                            break;
+                        case RIL_SIM_SAP_RESET_SIM_RSP.RIL_E_SIM_ALREADY_POWERED_OFF:
+                            mResultCode = RESULT_ERROR_CARD_POWERED_OFF;
+                            break;
+                        default:
+                            mResultCode = RESULT_ERROR_NO_REASON;
+                            break;
+                    }
+                    break;
+                }
+            case ID_TRANSFER_CARD_READER_STATUS_REQ:
+                {
+                    RIL_SIM_SAP_TRANSFER_CARD_READER_STATUS_RSP resMsg =
+                            RIL_SIM_SAP_TRANSFER_CARD_READER_STATUS_RSP.parseFrom(
+                                    msg.getPayload().toByteArray());
+                    mMsgType = ID_TRANSFER_CARD_READER_STATUS_RESP;
+                    switch (resMsg.getResponse()) {
+                        case RIL_SIM_SAP_TRANSFER_CARD_READER_STATUS_RSP.RIL_E_SUCCESS:
+                            mResultCode = RESULT_OK;
+                            if (resMsg.hasCardReaderStatus()) {
+                                mCardReaderStatus = resMsg.getCardReaderStatus();
+                            } else {
+                                mResultCode = RESULT_ERROR_DATA_NOT_AVAILABLE;
+                            }
+                            break;
+                        case RIL_SIM_SAP_TRANSFER_CARD_READER_STATUS_RSP.RIL_E_GENERIC_FAILURE:
+                            mResultCode = RESULT_ERROR_NO_REASON;
+                            break;
+                        case RIL_SIM_SAP_TRANSFER_CARD_READER_STATUS_RSP
+                                .RIL_E_SIM_DATA_NOT_AVAILABLE:
+                            mResultCode = RESULT_ERROR_DATA_NOT_AVAILABLE;
+                            break;
+                        default:
+                            mResultCode = RESULT_ERROR_NO_REASON;
+                            break;
+                    }
+                    break;
+                }
 
             case ID_RIL_SIM_ACCESS_TEST_REQ: // TODO: implement in RILD
                 mMsgType = ID_RIL_SIM_ACCESS_TEST_RESP;
                 break;
             default:
                 Log.e(TAG, "Unknown request type: " + reqType);
-
         }
     }
-
 
     /* Map from RIL header error codes to SAP error codes */
     private static int mapRilErrorCode(int rilErrorCode) {
@@ -1155,7 +1217,6 @@ public class SapMessage {
                 return RESULT_ERROR_NO_REASON;
         }
     }
-
 
     public static String getMsgTypeName(int msgType) {
         switch (msgType) {

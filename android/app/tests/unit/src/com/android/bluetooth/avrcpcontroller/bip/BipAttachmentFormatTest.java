@@ -26,9 +26,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
-/**
- * A test suite for the BipAttachmentFormat class
- */
+/** A test suite for the BipAttachmentFormat class */
 @RunWith(AndroidJUnit4.class)
 public class BipAttachmentFormatTest {
 
@@ -46,12 +44,20 @@ public class BipAttachmentFormatTest {
         return makeDate(month, day, year, hours, min, sec, null);
     }
 
-    private void testParse(String contentType, String charset, String name, String size,
-            String created, String modified, Date expectedCreated, boolean isCreatedUtc,
-            Date expectedModified, boolean isModifiedUtc) {
+    private void testParse(
+            String contentType,
+            String charset,
+            String name,
+            String size,
+            String created,
+            String modified,
+            Date expectedCreated,
+            boolean isCreatedUtc,
+            Date expectedModified,
+            boolean isModifiedUtc) {
         int expectedSize = (size != null ? Integer.parseInt(size) : -1);
-        BipAttachmentFormat attachment = new BipAttachmentFormat(contentType, charset, name,
-                size, created, modified);
+        BipAttachmentFormat attachment =
+                new BipAttachmentFormat(contentType, charset, name, size, created, modified);
         Assert.assertEquals(contentType, attachment.getContentType());
         Assert.assertEquals(charset, attachment.getCharset());
         Assert.assertEquals(name, attachment.getName());
@@ -72,10 +78,15 @@ public class BipAttachmentFormatTest {
         }
     }
 
-    private void testCreate(String contentType, String charset, String name, int size,
-            Date created, Date modified) {
-        BipAttachmentFormat attachment = new BipAttachmentFormat(contentType, charset, name,
-                size, created, modified);
+    private void testCreate(
+            String contentType,
+            String charset,
+            String name,
+            int size,
+            Date created,
+            Date modified) {
+        BipAttachmentFormat attachment =
+                new BipAttachmentFormat(contentType, charset, name, size, created, modified);
         Assert.assertEquals(contentType, attachment.getContentType());
         Assert.assertEquals(charset, attachment.getCharset());
         Assert.assertEquals(name, attachment.getName());
@@ -104,52 +115,141 @@ public class BipAttachmentFormatTest {
         Date dateUtc = makeDate(1, 1, 1990, 12, 34, 56, utc);
 
         // Well defined fields
-        testParse("text/plain", "ISO-8859-1", "thisisatextfile.txt", "2048", "19900101T123456",
-                "19900101T123456", date, false, date, false);
+        testParse(
+                "text/plain",
+                "ISO-8859-1",
+                "thisisatextfile.txt",
+                "2048",
+                "19900101T123456",
+                "19900101T123456",
+                date,
+                false,
+                date,
+                false);
 
         // Well defined fields with UTC date
-        testParse("text/plain", "ISO-8859-1", "thisisatextfile.txt", "2048", "19900101T123456Z",
-                "19900101T123456Z", dateUtc, true, dateUtc, true);
+        testParse(
+                "text/plain",
+                "ISO-8859-1",
+                "thisisatextfile.txt",
+                "2048",
+                "19900101T123456Z",
+                "19900101T123456Z",
+                dateUtc,
+                true,
+                dateUtc,
+                true);
 
         // Change up the content type and file name
-        testParse("audio/basic", "ISO-8859-1", "thisisawavfile.wav", "1024", "19900101T123456",
-                "19900101T123456", date, false, date, false);
+        testParse(
+                "audio/basic",
+                "ISO-8859-1",
+                "thisisawavfile.wav",
+                "1024",
+                "19900101T123456",
+                "19900101T123456",
+                date,
+                false,
+                date,
+                false);
 
         // Use a null modified date
-        testParse("text/plain", "ISO-8859-1", "thisisatextfile.txt", "2048", "19900101T123456",
-                null, date, false, null, false);
+        testParse(
+                "text/plain",
+                "ISO-8859-1",
+                "thisisatextfile.txt",
+                "2048",
+                "19900101T123456",
+                null,
+                date,
+                false,
+                null,
+                false);
 
         // Use a null created date
-        testParse("text/plain", "ISO-8859-1", "thisisatextfile.txt", "2048", null,
-                "19900101T123456", null, false, date, false);
+        testParse(
+                "text/plain",
+                "ISO-8859-1",
+                "thisisatextfile.txt",
+                "2048",
+                null,
+                "19900101T123456",
+                null,
+                false,
+                date,
+                false);
 
         // Use all null dates
-        testParse("text/plain", "ISO-8859-1", "thisisatextfile.txt", "123", null, null, null, false,
-                null, false);
+        testParse(
+                "text/plain",
+                "ISO-8859-1",
+                "thisisatextfile.txt",
+                "123",
+                null,
+                null,
+                null,
+                false,
+                null,
+                false);
 
         // Use a null size
-        testParse("text/plain", "ISO-8859-1", "thisisatextfile.txt", null, null, null, null, false,
-                null, false);
+        testParse(
+                "text/plain",
+                "ISO-8859-1",
+                "thisisatextfile.txt",
+                null,
+                null,
+                null,
+                null,
+                false,
+                null,
+                false);
 
         // Use a null charset
-        testParse("text/plain", null, "thisisatextfile.txt", "2048", null, null, null, false, null,
+        testParse(
+                "text/plain",
+                null,
+                "thisisatextfile.txt",
+                "2048",
+                null,
+                null,
+                null,
+                false,
+                null,
                 false);
 
         // Use only required fields
-        testParse("text/plain", null, "thisisatextfile.txt", null, null, null, null, false, null,
+        testParse(
+                "text/plain",
+                null,
+                "thisisatextfile.txt",
+                null,
+                null,
+                null,
+                null,
+                false,
+                null,
                 false);
     }
 
     @Test(expected = ParseException.class)
     public void testParseNullContentType() {
-        testParse(null, "ISO-8859-1", "thisisatextfile.txt", null, null, null, null, false, null,
+        testParse(
+                null,
+                "ISO-8859-1",
+                "thisisatextfile.txt",
+                null,
+                null,
+                null,
+                null,
+                false,
+                null,
                 false);
     }
 
     @Test(expected = ParseException.class)
     public void testParseNullName() {
-        testParse("text/plain", "ISO-8859-1", null, null, null, null, null, false, null,
-                false);
+        testParse("text/plain", "ISO-8859-1", null, null, null, null, null, false, null, false);
     }
 
     @Test
@@ -189,54 +289,75 @@ public class BipAttachmentFormatTest {
         Date dateUtc = makeDate(1, 1, 1990, 12, 34, 56, utc);
         BipAttachmentFormat attachment = null;
 
-        String expected = "<attachment content-type=\"text/plain\" charset=\"ISO-8859-1\""
-                + " name=\"thisisatextfile.txt\" size=\"2048\""
-                + " created=\"19900101T123456\" modified=\"19900101T123456\" />";
+        String expected =
+                "<attachment content-type=\"text/plain\" charset=\"ISO-8859-1\""
+                        + " name=\"thisisatextfile.txt\" size=\"2048\""
+                        + " created=\"19900101T123456\" modified=\"19900101T123456\" />";
 
-        String expectedUtc = "<attachment content-type=\"text/plain\" charset=\"ISO-8859-1\""
-                + " name=\"thisisatextfile.txt\" size=\"2048\""
-                + " created=\"19900101T123456Z\" modified=\"19900101T123456Z\" />";
+        String expectedUtc =
+                "<attachment content-type=\"text/plain\" charset=\"ISO-8859-1\""
+                        + " name=\"thisisatextfile.txt\" size=\"2048\""
+                        + " created=\"19900101T123456Z\" modified=\"19900101T123456Z\" />";
 
-        String expectedNoDates = "<attachment content-type=\"text/plain\" charset=\"ISO-8859-1\""
-                + " name=\"thisisatextfile.txt\" size=\"2048\" />";
+        String expectedNoDates =
+                "<attachment content-type=\"text/plain\" charset=\"ISO-8859-1\""
+                        + " name=\"thisisatextfile.txt\" size=\"2048\" />";
 
-        String expectedNoSizeNoDates = "<attachment content-type=\"text/plain\""
-                + " charset=\"ISO-8859-1\" name=\"thisisatextfile.txt\" />";
+        String expectedNoSizeNoDates =
+                "<attachment content-type=\"text/plain\""
+                        + " charset=\"ISO-8859-1\" name=\"thisisatextfile.txt\" />";
 
-        String expectedNoCharsetNoDates = "<attachment content-type=\"text/plain\""
-                + " name=\"thisisatextfile.txt\" size=\"2048\" />";
+        String expectedNoCharsetNoDates =
+                "<attachment content-type=\"text/plain\""
+                        + " name=\"thisisatextfile.txt\" size=\"2048\" />";
 
-        String expectedRequiredOnly = "<attachment content-type=\"text/plain\""
-                + " name=\"thisisatextfile.txt\" />";
+        String expectedRequiredOnly =
+                "<attachment content-type=\"text/plain\"" + " name=\"thisisatextfile.txt\" />";
 
         // Create by parsing, all fields
-        attachment = new BipAttachmentFormat("text/plain", "ISO-8859-1", "thisisatextfile.txt",
-                "2048", "19900101T123456", "19900101T123456");
+        attachment =
+                new BipAttachmentFormat(
+                        "text/plain",
+                        "ISO-8859-1",
+                        "thisisatextfile.txt",
+                        "2048",
+                        "19900101T123456",
+                        "19900101T123456");
         Assert.assertEquals(expected, attachment.toString());
 
         // Create by parsing, all fields with utc dates
-        attachment = new BipAttachmentFormat("text/plain", "ISO-8859-1", "thisisatextfile.txt",
-                "2048", "19900101T123456Z", "19900101T123456Z");
+        attachment =
+                new BipAttachmentFormat(
+                        "text/plain",
+                        "ISO-8859-1",
+                        "thisisatextfile.txt",
+                        "2048",
+                        "19900101T123456Z",
+                        "19900101T123456Z");
         Assert.assertEquals(expectedUtc, attachment.toString());
 
         // Create by parsing, no timestamps
-        attachment = new BipAttachmentFormat("text/plain", "ISO-8859-1", "thisisatextfile.txt",
-                "2048", null, null);
+        attachment =
+                new BipAttachmentFormat(
+                        "text/plain", "ISO-8859-1", "thisisatextfile.txt", "2048", null, null);
         Assert.assertEquals(expectedNoDates, attachment.toString());
 
         // Create by parsing, no size, no dates
-        attachment = new BipAttachmentFormat("text/plain", "ISO-8859-1", "thisisatextfile.txt",
-                null, null, null);
+        attachment =
+                new BipAttachmentFormat(
+                        "text/plain", "ISO-8859-1", "thisisatextfile.txt", null, null, null);
         Assert.assertEquals(expectedNoSizeNoDates, attachment.toString());
 
         // Create by parsing, no charset, no dates
-        attachment = new BipAttachmentFormat("text/plain", null, "thisisatextfile.txt", "2048",
-                null, null);
+        attachment =
+                new BipAttachmentFormat(
+                        "text/plain", null, "thisisatextfile.txt", "2048", null, null);
         Assert.assertEquals(expectedNoCharsetNoDates, attachment.toString());
 
         // Create by parsing, content type only
-        attachment = new BipAttachmentFormat("text/plain", null, "thisisatextfile.txt", null, null,
-                null);
+        attachment =
+                new BipAttachmentFormat(
+                        "text/plain", null, "thisisatextfile.txt", null, null, null);
         Assert.assertEquals(expectedRequiredOnly, attachment.toString());
     }
 
@@ -247,61 +368,69 @@ public class BipAttachmentFormatTest {
         Date date = makeDate(1, 1, 1990, 12, 34, 56, utc);
         BipAttachmentFormat attachment = null;
 
-        String expected = "<attachment content-type=\"text/plain\" charset=\"ISO-8859-1\""
-                + " name=\"thisisatextfile.txt\" size=\"2048\""
-                + " created=\"19900101T123456Z\" modified=\"19900101T123456Z\" />";
+        String expected =
+                "<attachment content-type=\"text/plain\" charset=\"ISO-8859-1\""
+                        + " name=\"thisisatextfile.txt\" size=\"2048\""
+                        + " created=\"19900101T123456Z\" modified=\"19900101T123456Z\" />";
 
-        String expectedNoDates = "<attachment content-type=\"text/plain\" charset=\"ISO-8859-1\""
-                + " name=\"thisisatextfile.txt\" size=\"2048\" />";
+        String expectedNoDates =
+                "<attachment content-type=\"text/plain\" charset=\"ISO-8859-1\""
+                        + " name=\"thisisatextfile.txt\" size=\"2048\" />";
 
-        String expectedNoSizeNoDates = "<attachment content-type=\"text/plain\""
-                + " charset=\"ISO-8859-1\" name=\"thisisatextfile.txt\" />";
+        String expectedNoSizeNoDates =
+                "<attachment content-type=\"text/plain\""
+                        + " charset=\"ISO-8859-1\" name=\"thisisatextfile.txt\" />";
 
-        String expectedNoCharsetNoDates = "<attachment content-type=\"text/plain\""
-                + " name=\"thisisatextfile.txt\" size=\"2048\" />";
+        String expectedNoCharsetNoDates =
+                "<attachment content-type=\"text/plain\""
+                        + " name=\"thisisatextfile.txt\" size=\"2048\" />";
 
-        String expectedRequiredOnly = "<attachment content-type=\"text/plain\""
-                + " name=\"thisisatextfile.txt\" />";
+        String expectedRequiredOnly =
+                "<attachment content-type=\"text/plain\"" + " name=\"thisisatextfile.txt\" />";
 
         // Create with objects, all fields. Now we Use UTC since all Date objects eventually become
         // UTC anyway and this will be timezone agnostic
-        attachment = new BipAttachmentFormat("text/plain", "ISO-8859-1", "thisisatextfile.txt",
-                2048, date, date);
+        attachment =
+                new BipAttachmentFormat(
+                        "text/plain", "ISO-8859-1", "thisisatextfile.txt", 2048, date, date);
         Assert.assertEquals(expected, attachment.toString());
 
         // Create with objects, no dates
-        attachment = new BipAttachmentFormat("text/plain", "ISO-8859-1", "thisisatextfile.txt",
-                2048, null, null);
+        attachment =
+                new BipAttachmentFormat(
+                        "text/plain", "ISO-8859-1", "thisisatextfile.txt", 2048, null, null);
         Assert.assertEquals(expectedNoDates, attachment.toString());
 
         // Create with objects, no size and no dates
-        attachment = new BipAttachmentFormat("text/plain", "ISO-8859-1", "thisisatextfile.txt",
-                -1, null, null);
+        attachment =
+                new BipAttachmentFormat(
+                        "text/plain", "ISO-8859-1", "thisisatextfile.txt", -1, null, null);
         Assert.assertEquals(expectedNoSizeNoDates, attachment.toString());
 
         // Create with objects, no charset, no dates
-        attachment = new BipAttachmentFormat("text/plain", null, "thisisatextfile.txt", 2048, null,
-                null);
+        attachment =
+                new BipAttachmentFormat(
+                        "text/plain", null, "thisisatextfile.txt", 2048, null, null);
         Assert.assertEquals(expectedNoCharsetNoDates, attachment.toString());
 
         // Create with objects, content type only
-        attachment = new BipAttachmentFormat("text/plain", null, "thisisatextfile.txt", -1, null,
-                null);
+        attachment =
+                new BipAttachmentFormat("text/plain", null, "thisisatextfile.txt", -1, null, null);
         Assert.assertEquals(expectedRequiredOnly, attachment.toString());
     }
 
     @Test
     public void testEquals_withSameInstance() {
-        BipAttachmentFormat attachment = new BipAttachmentFormat("text/plain", null,
-                "thisisatextfile.txt", -1, null, null);
+        BipAttachmentFormat attachment =
+                new BipAttachmentFormat("text/plain", null, "thisisatextfile.txt", -1, null, null);
 
         Assert.assertTrue(attachment.equals(attachment));
     }
 
     @Test
     public void testEquals_withDifferentClass() {
-        BipAttachmentFormat attachment = new BipAttachmentFormat("text/plain", null,
-                "thisisatextfile.txt", -1, null, null);
+        BipAttachmentFormat attachment =
+                new BipAttachmentFormat("text/plain", null, "thisisatextfile.txt", -1, null, null);
         String notAttachment = "notAttachment";
 
         Assert.assertFalse(attachment.equals(notAttachment));
@@ -309,10 +438,10 @@ public class BipAttachmentFormatTest {
 
     @Test
     public void testEquals_withSameInfo() {
-        BipAttachmentFormat attachment = new BipAttachmentFormat("text/plain", null,
-                "thisisatextfile.txt", -1, null, null);
-        BipAttachmentFormat attachmentEqual = new BipAttachmentFormat("text/plain", null,
-                "thisisatextfile.txt", -1, null, null);
+        BipAttachmentFormat attachment =
+                new BipAttachmentFormat("text/plain", null, "thisisatextfile.txt", -1, null, null);
+        BipAttachmentFormat attachmentEqual =
+                new BipAttachmentFormat("text/plain", null, "thisisatextfile.txt", -1, null, null);
 
         Assert.assertTrue(attachment.equals(attachmentEqual));
     }

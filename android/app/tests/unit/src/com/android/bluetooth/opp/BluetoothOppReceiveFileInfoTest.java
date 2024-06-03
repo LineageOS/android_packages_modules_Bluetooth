@@ -50,14 +50,17 @@ public class BluetoothOppReceiveFileInfoTest {
 
     @Before
     public void setUp() {
-        mContext = spy(new ContextWrapper(
-                InstrumentationRegistry.getInstrumentation().getTargetContext()));
+        mContext =
+                spy(
+                        new ContextWrapper(
+                                InstrumentationRegistry.getInstrumentation().getTargetContext()));
 
         mCallProxy = spy(BluetoothMethodProxy.getInstance());
         BluetoothMethodProxy.setInstanceForTesting(mCallProxy);
 
-        doReturn(null).when(mCallProxy).contentResolverInsert(
-                any(), eq(BluetoothShare.CONTENT_URI), any());
+        doReturn(null)
+                .when(mCallProxy)
+                .contentResolverInsert(any(), eq(BluetoothShare.CONTENT_URI), any());
     }
 
     @After
@@ -103,21 +106,32 @@ public class BluetoothOppReceiveFileInfoTest {
 
     @Test
     public void generateFileInfo_wrongHint_fileError() {
-        Assume.assumeTrue("Ignore test when if there is no media mounted",
+        Assume.assumeTrue(
+                "Ignore test when if there is no media mounted",
                 Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED));
         int id = 0;
         long fileLength = 100;
         String hint = "content:///arandomhint/";
         String mimeType = "text/plain";
 
-        mCursor = new MatrixCursor(
-                new String[]{BluetoothShare.FILENAME_HINT, BluetoothShare.TOTAL_BYTES,
-                        BluetoothShare.MIMETYPE});
-        mCursor.addRow(new Object[]{hint, fileLength, mimeType});
+        mCursor =
+                new MatrixCursor(
+                        new String[] {
+                            BluetoothShare.FILENAME_HINT,
+                            BluetoothShare.TOTAL_BYTES,
+                            BluetoothShare.MIMETYPE
+                        });
+        mCursor.addRow(new Object[] {hint, fileLength, mimeType});
 
-        doReturn(mCursor).when(mCallProxy).contentResolverQuery(
-                any(), eq(Uri.parse(BluetoothShare.CONTENT_URI + "/" + id)), any(), any(), any(),
-                any());
+        doReturn(mCursor)
+                .when(mCallProxy)
+                .contentResolverQuery(
+                        any(),
+                        eq(Uri.parse(BluetoothShare.CONTENT_URI + "/" + id)),
+                        any(),
+                        any(),
+                        any(),
+                        any());
 
         BluetoothOppReceiveFileInfo info =
                 BluetoothOppReceiveFileInfo.generateFileInfo(mContext, id);
@@ -127,7 +141,8 @@ public class BluetoothOppReceiveFileInfoTest {
 
     @Test
     public void generateFileInfo_noMediaMounted_noSdcardError() {
-        Assume.assumeTrue("Ignore test when if there is media mounted",
+        Assume.assumeTrue(
+                "Ignore test when if there is media mounted",
                 !Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED));
         int id = 0;
 
@@ -139,24 +154,36 @@ public class BluetoothOppReceiveFileInfoTest {
 
     @Test
     public void generateFileInfo_noInsertUri_returnFileError() {
-        Assume.assumeTrue("Ignore test when if there is not media mounted",
+        Assume.assumeTrue(
+                "Ignore test when if there is not media mounted",
                 Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED));
         int id = 0;
         long fileLength = 100;
         String hint = "content:///arandomhint.txt";
         String mimeType = "text/plain";
 
-        mCursor = new MatrixCursor(
-                new String[]{BluetoothShare.FILENAME_HINT, BluetoothShare.TOTAL_BYTES,
-                        BluetoothShare.MIMETYPE});
-        mCursor.addRow(new Object[]{hint, fileLength, mimeType});
+        mCursor =
+                new MatrixCursor(
+                        new String[] {
+                            BluetoothShare.FILENAME_HINT,
+                            BluetoothShare.TOTAL_BYTES,
+                            BluetoothShare.MIMETYPE
+                        });
+        mCursor.addRow(new Object[] {hint, fileLength, mimeType});
 
-        doReturn(mCursor).when(mCallProxy).contentResolverQuery(
-                any(), eq(Uri.parse(BluetoothShare.CONTENT_URI + "/" + id)), any(), any(), any(),
-                any());
+        doReturn(mCursor)
+                .when(mCallProxy)
+                .contentResolverQuery(
+                        any(),
+                        eq(Uri.parse(BluetoothShare.CONTENT_URI + "/" + id)),
+                        any(),
+                        any(),
+                        any(),
+                        any());
 
-        doReturn(null).when(mCallProxy).contentResolverInsert(
-                any(), eq(MediaStore.Downloads.EXTERNAL_CONTENT_URI), any());
+        doReturn(null)
+                .when(mCallProxy)
+                .contentResolverInsert(any(), eq(MediaStore.Downloads.EXTERNAL_CONTENT_URI), any());
 
         BluetoothOppReceiveFileInfo info =
                 BluetoothOppReceiveFileInfo.generateFileInfo(mContext, id);
@@ -166,7 +193,8 @@ public class BluetoothOppReceiveFileInfoTest {
 
     @Test
     public void generateFileInfo_withInsertUri_workCorrectly() {
-        Assume.assumeTrue("Ignore test when if there is not media mounted",
+        Assume.assumeTrue(
+                "Ignore test when if there is not media mounted",
                 Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED));
         int id = 0;
         long fileLength = 100;
@@ -174,17 +202,28 @@ public class BluetoothOppReceiveFileInfoTest {
         String mimeType = "text/plain";
         Uri insertUri = Uri.parse("content:///abc/xyz");
 
-        mCursor = new MatrixCursor(
-                new String[]{BluetoothShare.FILENAME_HINT, BluetoothShare.TOTAL_BYTES,
-                        BluetoothShare.MIMETYPE});
-        mCursor.addRow(new Object[]{hint, fileLength, mimeType});
+        mCursor =
+                new MatrixCursor(
+                        new String[] {
+                            BluetoothShare.FILENAME_HINT,
+                            BluetoothShare.TOTAL_BYTES,
+                            BluetoothShare.MIMETYPE
+                        });
+        mCursor.addRow(new Object[] {hint, fileLength, mimeType});
 
-        doReturn(mCursor).when(mCallProxy).contentResolverQuery(
-                any(), eq(Uri.parse(BluetoothShare.CONTENT_URI + "/" + id)), any(), any(), any(),
-                any());
+        doReturn(mCursor)
+                .when(mCallProxy)
+                .contentResolverQuery(
+                        any(),
+                        eq(Uri.parse(BluetoothShare.CONTENT_URI + "/" + id)),
+                        any(),
+                        any(),
+                        any(),
+                        any());
 
-        doReturn(insertUri).when(mCallProxy).contentResolverInsert(
-                any(), eq(MediaStore.Downloads.EXTERNAL_CONTENT_URI), any());
+        doReturn(insertUri)
+                .when(mCallProxy)
+                .contentResolverInsert(any(), eq(MediaStore.Downloads.EXTERNAL_CONTENT_URI), any());
 
         assertThat(mCursor.moveToFirst()).isTrue();
 
@@ -198,7 +237,8 @@ public class BluetoothOppReceiveFileInfoTest {
 
     @Test
     public void generateFileInfo_longFileName_trimFileName() {
-        Assume.assumeTrue("Ignore test when if there is not media mounted",
+        Assume.assumeTrue(
+                "Ignore test when if there is not media mounted",
                 Environment.getExternalStorageState().equals(Environment.MEDIA_MOUNTED));
         int id = 0;
         long fileLength = 100;
@@ -206,17 +246,28 @@ public class BluetoothOppReceiveFileInfoTest {
         String mimeType = "text/plain";
         Uri insertUri = Uri.parse("content:///abc/xyz");
 
-        mCursor = new MatrixCursor(
-                new String[]{BluetoothShare.FILENAME_HINT, BluetoothShare.TOTAL_BYTES,
-                        BluetoothShare.MIMETYPE});
-        mCursor.addRow(new Object[]{hint, fileLength, mimeType});
+        mCursor =
+                new MatrixCursor(
+                        new String[] {
+                            BluetoothShare.FILENAME_HINT,
+                            BluetoothShare.TOTAL_BYTES,
+                            BluetoothShare.MIMETYPE
+                        });
+        mCursor.addRow(new Object[] {hint, fileLength, mimeType});
 
-        doReturn(mCursor).when(mCallProxy).contentResolverQuery(
-                any(), eq(Uri.parse(BluetoothShare.CONTENT_URI + "/" + id)), any(), any(), any(),
-                any());
+        doReturn(mCursor)
+                .when(mCallProxy)
+                .contentResolverQuery(
+                        any(),
+                        eq(Uri.parse(BluetoothShare.CONTENT_URI + "/" + id)),
+                        any(),
+                        any(),
+                        any(),
+                        any());
 
-        doReturn(insertUri).when(mCallProxy).contentResolverInsert(
-                any(), eq(MediaStore.Downloads.EXTERNAL_CONTENT_URI), any());
+        doReturn(insertUri)
+                .when(mCallProxy)
+                .contentResolverInsert(any(), eq(MediaStore.Downloads.EXTERNAL_CONTENT_URI), any());
 
         assertThat(mCursor.moveToFirst()).isTrue();
 

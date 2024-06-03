@@ -64,8 +64,7 @@ public class BluetoothPbapSimVcardManagerTest {
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Spy
-    BluetoothMethodProxy mPbapMethodProxy = BluetoothMethodProxy.getInstance();
+    @Spy BluetoothMethodProxy mPbapMethodProxy = BluetoothMethodProxy.getInstance();
 
     Context mContext;
     BluetoothPbapSimVcardManager mManager;
@@ -75,7 +74,7 @@ public class BluetoothPbapSimVcardManagerTest {
     @Before
     public void setUp() {
         BluetoothMethodProxy.setInstanceForTesting(mPbapMethodProxy);
-        mContext =  InstrumentationRegistry.getTargetContext();
+        mContext = InstrumentationRegistry.getTargetContext();
         mManager = new BluetoothPbapSimVcardManager(mContext);
     }
 
@@ -86,19 +85,18 @@ public class BluetoothPbapSimVcardManagerTest {
 
     @Test
     public void testInit_whenUriIsUnsupported() {
-        assertThat(mManager.init(WRONG_URI, null, null, null))
-                .isFalse();
+        assertThat(mManager.init(WRONG_URI, null, null, null)).isFalse();
         assertThat(mManager.getErrorReason())
                 .isEqualTo(BluetoothPbapSimVcardManager.FAILURE_REASON_UNSUPPORTED_URI);
     }
 
     @Test
     public void testInit_whenCursorIsNull() {
-        doReturn(null).when(mPbapMethodProxy)
+        doReturn(null)
+                .when(mPbapMethodProxy)
                 .contentResolverQuery(any(), any(), any(), any(), any(), any());
 
-        assertThat(mManager.init(BluetoothPbapSimVcardManager.SIM_URI, null, null, null))
-                .isFalse();
+        assertThat(mManager.init(BluetoothPbapSimVcardManager.SIM_URI, null, null, null)).isFalse();
         assertThat(mManager.getErrorReason())
                 .isEqualTo(BluetoothPbapSimVcardManager.FAILURE_REASON_FAILED_TO_GET_DATABASE_INFO);
     }
@@ -107,11 +105,11 @@ public class BluetoothPbapSimVcardManagerTest {
     public void testInit_whenCursorHasNoEntry() {
         Cursor cursor = mock(Cursor.class);
         when(cursor.getCount()).thenReturn(0);
-        doReturn(cursor).when(mPbapMethodProxy)
+        doReturn(cursor)
+                .when(mPbapMethodProxy)
                 .contentResolverQuery(any(), any(), any(), any(), any(), any());
 
-        assertThat(mManager.init(BluetoothPbapSimVcardManager.SIM_URI, null, null, null))
-                .isFalse();
+        assertThat(mManager.init(BluetoothPbapSimVcardManager.SIM_URI, null, null, null)).isFalse();
         verify(cursor).close();
         assertThat(mManager.getErrorReason())
                 .isEqualTo(BluetoothPbapSimVcardManager.FAILURE_REASON_NO_ENTRY);
@@ -122,11 +120,11 @@ public class BluetoothPbapSimVcardManagerTest {
         Cursor cursor = mock(Cursor.class);
         when(cursor.getCount()).thenReturn(1);
         when(cursor.moveToFirst()).thenReturn(true);
-        doReturn(cursor).when(mPbapMethodProxy)
+        doReturn(cursor)
+                .when(mPbapMethodProxy)
                 .contentResolverQuery(any(), any(), any(), any(), any(), any());
 
-        assertThat(mManager.init(BluetoothPbapSimVcardManager.SIM_URI, null, null, null))
-                .isTrue();
+        assertThat(mManager.init(BluetoothPbapSimVcardManager.SIM_URI, null, null, null)).isTrue();
         assertThat(mManager.getErrorReason()).isEqualTo(BluetoothPbapSimVcardManager.NO_ERROR);
     }
 
@@ -185,8 +183,8 @@ public class BluetoothPbapSimVcardManagerTest {
     @Test
     public void testMoveToPosition_beforeInit() {
         try {
-            mManager.moveToPosition(0, /*sortByAlphabet=*/ true);
-            mManager.moveToPosition(0, /*sortByAlphabet=*/ false);
+            mManager.moveToPosition(0, /* sortByAlphabet= */ true);
+            mManager.moveToPosition(0, /* sortByAlphabet= */ false);
         } catch (Exception e) {
             assertWithMessage("This should not throw exception").fail();
         }
@@ -200,23 +198,35 @@ public class BluetoothPbapSimVcardManagerTest {
         // Implement Cursor iteration
         final int size = nameList.size();
         AtomicInteger currentPosition = new AtomicInteger(0);
-        when(cursor.moveToFirst()).then((Answer<Boolean>) i -> {
-            currentPosition.set(0);
-            return true;
-        });
-        when(cursor.isAfterLast()).then((Answer<Boolean>) i -> {
-            return currentPosition.get() >= size;
-        });
-        when(cursor.moveToNext()).then((Answer<Boolean>) i -> {
-            int pos = currentPosition.addAndGet(1);
-            return pos < size;
-        });
-        when(cursor.getString(anyInt())).then((Answer<String>) i -> {
-            return nameList.get(currentPosition.get());
-        });
+        when(cursor.moveToFirst())
+                .then(
+                        (Answer<Boolean>)
+                                i -> {
+                                    currentPosition.set(0);
+                                    return true;
+                                });
+        when(cursor.isAfterLast())
+                .then(
+                        (Answer<Boolean>)
+                                i -> {
+                                    return currentPosition.get() >= size;
+                                });
+        when(cursor.moveToNext())
+                .then(
+                        (Answer<Boolean>)
+                                i -> {
+                                    int pos = currentPosition.addAndGet(1);
+                                    return pos < size;
+                                });
+        when(cursor.getString(anyInt()))
+                .then(
+                        (Answer<String>)
+                                i -> {
+                                    return nameList.get(currentPosition.get());
+                                });
         // Find first one in alphabetical order ("A")
         int position = 0;
-        mManager.moveToPosition(position, /*sortByAlphabet=*/ true);
+        mManager.moveToPosition(position, /* sortByAlphabet= */ true);
 
         assertThat(currentPosition.get()).isEqualTo(2);
     }
@@ -226,7 +236,7 @@ public class BluetoothPbapSimVcardManagerTest {
         Cursor cursor = initManager();
         int position = 3;
 
-        mManager.moveToPosition(position, /*sortByAlphabet=*/ false);
+        mManager.moveToPosition(position, /* sortByAlphabet= */ false);
 
         verify(cursor).moveToPosition(position);
     }
@@ -253,23 +263,35 @@ public class BluetoothPbapSimVcardManagerTest {
             // Implement Cursor iteration
             final int size = nameList.size();
             AtomicInteger currentPosition = new AtomicInteger(0);
-            when(cursor.moveToFirst()).then((Answer<Boolean>) i -> {
-                currentPosition.set(0);
-                return true;
-            });
-            when(cursor.isAfterLast()).then((Answer<Boolean>) i -> {
-                return currentPosition.get() >= size;
-            });
-            when(cursor.moveToNext()).then((Answer<Boolean>) i -> {
-                int pos = currentPosition.addAndGet(1);
-                return pos < size;
-            });
-            when(cursor.getString(anyInt())).then((Answer<String>) i -> {
-                return nameList.get(currentPosition.get());
-            });
+            when(cursor.moveToFirst())
+                    .then(
+                            (Answer<Boolean>)
+                                    i -> {
+                                        currentPosition.set(0);
+                                        return true;
+                                    });
+            when(cursor.isAfterLast())
+                    .then(
+                            (Answer<Boolean>)
+                                    i -> {
+                                        return currentPosition.get() >= size;
+                                    });
+            when(cursor.moveToNext())
+                    .then(
+                            (Answer<Boolean>)
+                                    i -> {
+                                        int pos = currentPosition.addAndGet(1);
+                                        return pos < size;
+                                    });
+            when(cursor.getString(anyInt()))
+                    .then(
+                            (Answer<String>)
+                                    i -> {
+                                        return nameList.get(currentPosition.get());
+                                    });
 
-            ArrayList<String> result = mManager.getSIMPhonebookNameList(
-                    BluetoothPbapObexServer.ORDER_BY_INDEXED);
+            ArrayList<String> result =
+                    mManager.getSIMPhonebookNameList(BluetoothPbapObexServer.ORDER_BY_INDEXED);
 
             ArrayList<String> expectedResult = new ArrayList<>();
             expectedResult.add(localPhoneName);
@@ -293,23 +315,35 @@ public class BluetoothPbapSimVcardManagerTest {
             // Implement Cursor iteration
             final int size = nameList.size();
             AtomicInteger currentPosition = new AtomicInteger(0);
-            when(cursor.moveToFirst()).then((Answer<Boolean>) i -> {
-                currentPosition.set(0);
-                return true;
-            });
-            when(cursor.isAfterLast()).then((Answer<Boolean>) i -> {
-                return currentPosition.get() >= size;
-            });
-            when(cursor.moveToNext()).then((Answer<Boolean>) i -> {
-                int pos = currentPosition.addAndGet(1);
-                return pos < size;
-            });
-            when(cursor.getString(anyInt())).then((Answer<String>) i -> {
-                return nameList.get(currentPosition.get());
-            });
+            when(cursor.moveToFirst())
+                    .then(
+                            (Answer<Boolean>)
+                                    i -> {
+                                        currentPosition.set(0);
+                                        return true;
+                                    });
+            when(cursor.isAfterLast())
+                    .then(
+                            (Answer<Boolean>)
+                                    i -> {
+                                        return currentPosition.get() >= size;
+                                    });
+            when(cursor.moveToNext())
+                    .then(
+                            (Answer<Boolean>)
+                                    i -> {
+                                        int pos = currentPosition.addAndGet(1);
+                                        return pos < size;
+                                    });
+            when(cursor.getString(anyInt()))
+                    .then(
+                            (Answer<String>)
+                                    i -> {
+                                        return nameList.get(currentPosition.get());
+                                    });
 
-            List<String> result = mManager.getSIMPhonebookNameList(
-                    BluetoothPbapObexServer.ORDER_BY_ALPHABETICAL);
+            List<String> result =
+                    mManager.getSIMPhonebookNameList(BluetoothPbapObexServer.ORDER_BY_ALPHABETICAL);
 
             List<String> expectedResult = new ArrayList<>(nameList);
             Collections.sort(expectedResult, String.CASE_INSENSITIVE_ORDER);
@@ -325,35 +359,45 @@ public class BluetoothPbapSimVcardManagerTest {
     public void testGetSIMContactNamesByNumber() {
         Cursor cursor = initManager();
         List<String> nameList = Arrays.asList("A", "B", "C", "D");
-        List<String> numberList = Arrays.asList(
-                "000123456789",
-                "123456789000",
-                "000111111000",
-                "123456789123");
+        List<String> numberList =
+                Arrays.asList("000123456789", "123456789000", "000111111000", "123456789123");
         final String query = "000";
 
         // Implement Cursor iteration
         final int size = nameList.size();
         AtomicInteger currentPosition = new AtomicInteger(0);
-        when(cursor.moveToFirst()).then((Answer<Boolean>) i -> {
-            currentPosition.set(0);
-            return true;
-        });
-        when(cursor.isAfterLast()).then((Answer<Boolean>) i -> {
-            return currentPosition.get() >= size;
-        });
-        when(cursor.moveToNext()).then((Answer<Boolean>) i -> {
-            int pos = currentPosition.addAndGet(1);
-            return pos < size;
-        });
-        when(cursor.getString(BluetoothPbapSimVcardManager.NAME_COLUMN_INDEX)).then(
-                (Answer<String>) i -> {
-                    return nameList.get(currentPosition.get());
-                });
-        when(cursor.getString(BluetoothPbapSimVcardManager.NUMBER_COLUMN_INDEX)).then(
-                (Answer<String>) i -> {
-                    return numberList.get(currentPosition.get());
-                });
+        when(cursor.moveToFirst())
+                .then(
+                        (Answer<Boolean>)
+                                i -> {
+                                    currentPosition.set(0);
+                                    return true;
+                                });
+        when(cursor.isAfterLast())
+                .then(
+                        (Answer<Boolean>)
+                                i -> {
+                                    return currentPosition.get() >= size;
+                                });
+        when(cursor.moveToNext())
+                .then(
+                        (Answer<Boolean>)
+                                i -> {
+                                    int pos = currentPosition.addAndGet(1);
+                                    return pos < size;
+                                });
+        when(cursor.getString(BluetoothPbapSimVcardManager.NAME_COLUMN_INDEX))
+                .then(
+                        (Answer<String>)
+                                i -> {
+                                    return nameList.get(currentPosition.get());
+                                });
+        when(cursor.getString(BluetoothPbapSimVcardManager.NUMBER_COLUMN_INDEX))
+                .then(
+                        (Answer<String>)
+                                i -> {
+                                    return numberList.get(currentPosition.get());
+                                });
 
         // Find the names whose number ends with 'query', and then
         // also the names whose number starts with 'query'.
@@ -367,8 +411,14 @@ public class BluetoothPbapSimVcardManagerTest {
         Operation operation = mock(Operation.class);
         final int incorrectStartPoint = 0; // Should be greater than zero
 
-        int result = BluetoothPbapSimVcardManager.composeAndSendSIMPhonebookVcards(mContext,
-                operation, incorrectStartPoint, 0, /*vcardType21=*/false, /*ownerVCard=*/null);
+        int result =
+                BluetoothPbapSimVcardManager.composeAndSendSIMPhonebookVcards(
+                        mContext,
+                        operation,
+                        incorrectStartPoint,
+                        0,
+                        /* vcardType21= */ false,
+                        /* ownerVCard= */ null);
         assertThat(result).isEqualTo(ResponseCodes.OBEX_HTTP_INTERNAL_ERROR);
     }
 
@@ -378,8 +428,14 @@ public class BluetoothPbapSimVcardManagerTest {
         final int startPoint = 1;
         final int endPoint = 0; // Should be equal or greater than startPoint
 
-        int result = BluetoothPbapSimVcardManager.composeAndSendSIMPhonebookVcards(mContext,
-                operation, startPoint, endPoint, /*vcardType21=*/false, /*ownerVCard=*/null);
+        int result =
+                BluetoothPbapSimVcardManager.composeAndSendSIMPhonebookVcards(
+                        mContext,
+                        operation,
+                        startPoint,
+                        endPoint,
+                        /* vcardType21= */ false,
+                        /* ownerVCard= */ null);
         assertThat(result).isEqualTo(ResponseCodes.OBEX_HTTP_INTERNAL_ERROR);
     }
 
@@ -388,11 +444,18 @@ public class BluetoothPbapSimVcardManagerTest {
         Operation operation = mock(Operation.class);
         final int startPoint = 1;
         final int endPoint = 1;
-        doReturn(null).when(mPbapMethodProxy)
+        doReturn(null)
+                .when(mPbapMethodProxy)
                 .contentResolverQuery(any(), any(), any(), any(), any(), any());
 
-        int result = BluetoothPbapSimVcardManager.composeAndSendSIMPhonebookVcards(mContext,
-                operation, startPoint, endPoint, /*vcardType21=*/false, /*ownerVCard=*/null);
+        int result =
+                BluetoothPbapSimVcardManager.composeAndSendSIMPhonebookVcards(
+                        mContext,
+                        operation,
+                        startPoint,
+                        endPoint,
+                        /* vcardType21= */ false,
+                        /* ownerVCard= */ null);
         assertThat(result).isEqualTo(ResponseCodes.OBEX_HTTP_INTERNAL_ERROR);
     }
 
@@ -402,7 +465,8 @@ public class BluetoothPbapSimVcardManagerTest {
         when(cursor.getCount()).thenReturn(10);
         when(cursor.moveToFirst()).thenReturn(true);
         when(cursor.isAfterLast()).thenReturn(false);
-        doReturn(cursor).when(mPbapMethodProxy)
+        doReturn(cursor)
+                .when(mPbapMethodProxy)
                 .contentResolverQuery(any(), any(), any(), any(), any(), any());
         Operation operation = mock(Operation.class);
         OutputStream outputStream = mock(OutputStream.class);
@@ -411,8 +475,14 @@ public class BluetoothPbapSimVcardManagerTest {
         final int endPoint = 1;
         final String testOwnerVcard = "owner_v_card";
 
-        int result = BluetoothPbapSimVcardManager.composeAndSendSIMPhonebookVcards(mContext,
-                operation, startPoint, endPoint, /*vcardType21=*/false, testOwnerVcard);
+        int result =
+                BluetoothPbapSimVcardManager.composeAndSendSIMPhonebookVcards(
+                        mContext,
+                        operation,
+                        startPoint,
+                        endPoint,
+                        /* vcardType21= */ false,
+                        testOwnerVcard);
         assertThat(result).isEqualTo(ResponseCodes.OBEX_HTTP_OK);
     }
 
@@ -421,9 +491,14 @@ public class BluetoothPbapSimVcardManagerTest {
         Operation operation = mock(Operation.class);
         final int offset = 0; // Should be greater than zero
 
-        int result = BluetoothPbapSimVcardManager.composeAndSendSIMPhonebookOneVcard(mContext,
-                operation, offset, /*vcardType21=*/false, /*ownerVCard=*/null,
-                BluetoothPbapObexServer.ORDER_BY_INDEXED);
+        int result =
+                BluetoothPbapSimVcardManager.composeAndSendSIMPhonebookOneVcard(
+                        mContext,
+                        operation,
+                        offset,
+                        /* vcardType21= */ false,
+                        /* ownerVCard= */ null,
+                        BluetoothPbapObexServer.ORDER_BY_INDEXED);
         assertThat(result).isEqualTo(ResponseCodes.OBEX_HTTP_INTERNAL_ERROR);
     }
 
@@ -433,7 +508,8 @@ public class BluetoothPbapSimVcardManagerTest {
         when(cursor.getCount()).thenReturn(10);
         when(cursor.moveToFirst()).thenReturn(true);
         when(cursor.isAfterLast()).thenReturn(false);
-        doReturn(cursor).when(mPbapMethodProxy)
+        doReturn(cursor)
+                .when(mPbapMethodProxy)
                 .contentResolverQuery(any(), any(), any(), any(), any(), any());
         Operation operation = mock(Operation.class);
         OutputStream outputStream = mock(OutputStream.class);
@@ -441,9 +517,14 @@ public class BluetoothPbapSimVcardManagerTest {
         final int offset = 1;
         final String testOwnerVcard = "owner_v_card";
 
-        int result = BluetoothPbapSimVcardManager.composeAndSendSIMPhonebookOneVcard(mContext,
-                operation, offset, /*vcardType21=*/false, testOwnerVcard,
-                BluetoothPbapObexServer.ORDER_BY_INDEXED);
+        int result =
+                BluetoothPbapSimVcardManager.composeAndSendSIMPhonebookOneVcard(
+                        mContext,
+                        operation,
+                        offset,
+                        /* vcardType21= */ false,
+                        testOwnerVcard,
+                        BluetoothPbapObexServer.ORDER_BY_INDEXED);
         assertThat(result).isEqualTo(ResponseCodes.OBEX_HTTP_OK);
     }
 
@@ -452,7 +533,8 @@ public class BluetoothPbapSimVcardManagerTest {
         when(cursor.getCount()).thenReturn(10);
         when(cursor.moveToFirst()).thenReturn(true);
         when(cursor.isAfterLast()).thenReturn(false);
-        doReturn(cursor).when(mPbapMethodProxy)
+        doReturn(cursor)
+                .when(mPbapMethodProxy)
                 .contentResolverQuery(any(), any(), any(), any(), any(), any());
         mManager.init(BluetoothPbapSimVcardManager.SIM_URI, null, null, null);
 

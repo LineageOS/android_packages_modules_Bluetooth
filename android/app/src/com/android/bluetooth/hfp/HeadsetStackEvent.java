@@ -20,9 +20,7 @@ import android.bluetooth.BluetoothDevice;
 
 import java.util.Objects;
 
-/**
- * Callback events from native layer
- */
+/** Callback events from native layer */
 public class HeadsetStackEvent extends HeadsetMessageObject {
     public static final int EVENT_TYPE_NONE = 0;
     public static final int EVENT_TYPE_CONNECTION_STATE_CHANGED = 1;
@@ -119,8 +117,13 @@ public class HeadsetStackEvent extends HeadsetMessageObject {
      * @param valueObject an object value in the event
      * @param device device of interest
      */
-    public HeadsetStackEvent(int type, int valueInt, int valueInt2, String valueString,
-            HeadsetMessageObject valueObject, BluetoothDevice device) {
+    public HeadsetStackEvent(
+            int type,
+            int valueInt,
+            int valueInt2,
+            String valueString,
+            HeadsetMessageObject valueObject,
+            BluetoothDevice device) {
         this.type = type;
         this.valueInt = valueInt;
         this.valueInt2 = valueInt2;

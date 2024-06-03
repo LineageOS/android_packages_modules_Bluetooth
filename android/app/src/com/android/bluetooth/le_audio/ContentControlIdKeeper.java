@@ -32,9 +32,7 @@ import java.util.Objects;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-/**
- * This class keeps Content Control Ids for LE Audio profiles.
- */
+/** This class keeps Content Control Ids for LE Audio profiles. */
 public class ContentControlIdKeeper {
     private static final String TAG = "ContentControlIdKeeper";
 
@@ -54,9 +52,9 @@ public class ContentControlIdKeeper {
     }
 
     /**
-     * Functions is used to acquire Content Control ID (Ccid). Ccid is connected
-     * with a context type  and the user uuid. In most of cases user uuid is the GATT service
-     * UUID which makes use of Ccid
+     * Functions is used to acquire Content Control ID (Ccid). Ccid is connected with a context type
+     * and the user uuid. In most of cases user uuid is the GATT service UUID which makes use of
+     * Ccid
      *
      * @param userUuid user identifier (GATT service)
      * @param contextType the context types as defined in {@link BluetoothLeAudio}
@@ -92,7 +90,7 @@ public class ContentControlIdKeeper {
             }
         }
 
-        if (ccid != CCID_INVALID)  {
+        if (ccid != CCID_INVALID) {
             sAssignedCcidList.add(ccid);
             sUuidToCcidContextPair.put(userUuid, new Pair(ccid, contextType));
 

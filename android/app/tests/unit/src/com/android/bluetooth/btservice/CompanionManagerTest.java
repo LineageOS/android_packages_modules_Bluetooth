@@ -53,12 +53,9 @@ public class CompanionManagerTest {
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    private AdapterService mAdapterService;
-    @Mock
-    SharedPreferences mSharedPreferences;
-    @Mock
-    SharedPreferences.Editor mEditor;
+    @Mock private AdapterService mAdapterService;
+    @Mock SharedPreferences mSharedPreferences;
+    @Mock SharedPreferences.Editor mEditor;
 
     @Before
     public void setUp() throws Exception {
@@ -72,8 +69,10 @@ public class CompanionManagerTest {
         doReturn(mHandlerThread.getLooper()).when(mAdapterService).getMainLooper();
         // Mock SharedPreferences
         when(mSharedPreferences.edit()).thenReturn(mEditor);
-        doReturn(mSharedPreferences).when(mAdapterService).getSharedPreferences(eq(
-                CompanionManager.COMPANION_INFO), eq(Context.MODE_PRIVATE));
+        doReturn(mSharedPreferences)
+                .when(mAdapterService)
+                .getSharedPreferences(
+                        eq(CompanionManager.COMPANION_INFO), eq(Context.MODE_PRIVATE));
         // Tell the AdapterService that it is a mock (see isMock documentation)
         doReturn(true).when(mAdapterService).isMock();
         // Use the resources in the instrumentation instead of the mocked AdapterService
@@ -147,20 +146,20 @@ public class CompanionManagerTest {
 
     private void checkReasonableConnParameterHelper(int priority) {
         // Max/Min values from the Bluetooth spec Version 5.3 | Vol 4, Part E | 7.8.18
-        final int minInterval = 6;    // 0x0006
+        final int minInterval = 6; // 0x0006
         final int maxInterval = 3200; // 0x0C80
-        final int minLatency = 0;     // 0x0000
-        final int maxLatency = 499;   // 0x01F3
+        final int minLatency = 0; // 0x0000
+        final int maxLatency = 499; // 0x01F3
 
-        int min = mCompanionManager.getGattConnParameters(
-                TEST_DEVICE, CompanionManager.GATT_CONN_INTERVAL_MIN,
-                priority);
-        int max = mCompanionManager.getGattConnParameters(
-                TEST_DEVICE, CompanionManager.GATT_CONN_INTERVAL_MAX,
-                priority);
-        int latency = mCompanionManager.getGattConnParameters(
-                TEST_DEVICE, CompanionManager.GATT_CONN_LATENCY,
-                priority);
+        int min =
+                mCompanionManager.getGattConnParameters(
+                        TEST_DEVICE, CompanionManager.GATT_CONN_INTERVAL_MIN, priority);
+        int max =
+                mCompanionManager.getGattConnParameters(
+                        TEST_DEVICE, CompanionManager.GATT_CONN_INTERVAL_MAX, priority);
+        int latency =
+                mCompanionManager.getGattConnParameters(
+                        TEST_DEVICE, CompanionManager.GATT_CONN_LATENCY, priority);
 
         Assert.assertTrue(max >= min);
         Assert.assertTrue(max >= minInterval);

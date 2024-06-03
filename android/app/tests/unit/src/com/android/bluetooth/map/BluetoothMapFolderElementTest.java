@@ -55,7 +55,6 @@ public class BluetoothMapFolderElementTest {
     private BluetoothMapFolderElement mParentFolderElement;
     private BluetoothMapFolderElement mTestFolderElement;
 
-
     @Before
     public void setUp() throws Exception {
         mRootFolderElement.setFolderId(TEST_ROOT_FOLDER_ID);
@@ -73,7 +72,6 @@ public class BluetoothMapFolderElementTest {
         mTestFolderElement.setHasImContent(TEST_HAS_IM_CONTENT);
     }
 
-
     @Test
     public void getters() {
         assertThat(mTestFolderElement.shouldIgnore()).isEqualTo(TEST_IGNORE);
@@ -85,8 +83,8 @@ public class BluetoothMapFolderElementTest {
 
     @Test
     public void getFullPath() {
-        assertThat(mTestFolderElement.getFullPath()).isEqualTo(
-                String.format("%s/%s", TEST_PARENT_FOLDER_NAME, TEST_FOLDER_NAME));
+        assertThat(mTestFolderElement.getFullPath())
+                .isEqualTo(String.format("%s/%s", TEST_PARENT_FOLDER_NAME, TEST_FOLDER_NAME));
     }
 
     @Test
@@ -100,12 +98,12 @@ public class BluetoothMapFolderElementTest {
         mTestFolderElement.addImFolder(TEST_IM_FOLDER_NAME, TEST_IM_FOLDER_ID);
         mTestFolderElement.addEmailFolder(TEST_EMAIL_FOLDER_NAME, TEST_EMAIL_FOLDER_ID);
 
-        assertThat(mTestFolderElement.getSubFolder(TEST_SMS_MMS_FOLDER_NAME).getName()).isEqualTo(
-                TEST_SMS_MMS_FOLDER_NAME);
-        assertThat(mTestFolderElement.getSubFolder(TEST_IM_FOLDER_NAME).getName()).isEqualTo(
-                TEST_IM_FOLDER_NAME);
-        assertThat(mTestFolderElement.getSubFolder(TEST_EMAIL_FOLDER_NAME).getName()).isEqualTo(
-                TEST_EMAIL_FOLDER_NAME);
+        assertThat(mTestFolderElement.getSubFolder(TEST_SMS_MMS_FOLDER_NAME).getName())
+                .isEqualTo(TEST_SMS_MMS_FOLDER_NAME);
+        assertThat(mTestFolderElement.getSubFolder(TEST_IM_FOLDER_NAME).getName())
+                .isEqualTo(TEST_IM_FOLDER_NAME);
+        assertThat(mTestFolderElement.getSubFolder(TEST_EMAIL_FOLDER_NAME).getName())
+                .isEqualTo(TEST_EMAIL_FOLDER_NAME);
 
         mTestFolderElement.addFolder(TEST_SMS_MMS_FOLDER_NAME);
         assertThat(mTestFolderElement.getSubFolderCount()).isEqualTo(3);
@@ -114,24 +112,26 @@ public class BluetoothMapFolderElementTest {
     @Test
     public void getFolderById() {
         assertThat(mTestFolderElement.getFolderById(TEST_FOLDER_ID)).isEqualTo(mTestFolderElement);
-        assertThat(mRootFolderElement.getFolderById(TEST_ROOT_FOLDER_ID)).isEqualTo(
-                mRootFolderElement);
+        assertThat(mRootFolderElement.getFolderById(TEST_ROOT_FOLDER_ID))
+                .isEqualTo(mRootFolderElement);
         assertThat(BluetoothMapFolderElement.getFolderById(TEST_FOLDER_ID, null)).isNull();
-        assertThat(BluetoothMapFolderElement.getFolderById(TEST_PLACEHOLDER_ID,
-                mTestFolderElement)).isNull();
+        assertThat(BluetoothMapFolderElement.getFolderById(TEST_PLACEHOLDER_ID, mTestFolderElement))
+                .isNull();
     }
 
     @Test
     public void getFolderByName() {
         mRootFolderElement.addFolder(TEST_TELECOM_FOLDER_NAME);
         mRootFolderElement.getSubFolder(TEST_TELECOM_FOLDER_NAME).addFolder(TEST_MSG_FOLDER_NAME);
-        BluetoothMapFolderElement placeholderFolderElement = mRootFolderElement.getSubFolder(
-                TEST_TELECOM_FOLDER_NAME).getSubFolder(TEST_MSG_FOLDER_NAME).addFolder(
-                TEST_PLACEHOLDER_FOLDER_NAME);
+        BluetoothMapFolderElement placeholderFolderElement =
+                mRootFolderElement
+                        .getSubFolder(TEST_TELECOM_FOLDER_NAME)
+                        .getSubFolder(TEST_MSG_FOLDER_NAME)
+                        .addFolder(TEST_PLACEHOLDER_FOLDER_NAME);
         assertThat(mRootFolderElement.getFolderByName(TEST_PLACEHOLDER_FOLDER_NAME)).isNull();
         placeholderFolderElement.setFolderId(TEST_PLACEHOLDER_ID);
-        assertThat(mRootFolderElement.getFolderByName(TEST_PLACEHOLDER_FOLDER_NAME)).isEqualTo(
-                placeholderFolderElement);
+        assertThat(mRootFolderElement.getFolderByName(TEST_PLACEHOLDER_FOLDER_NAME))
+                .isEqualTo(placeholderFolderElement);
     }
 
     @Test
@@ -161,11 +161,10 @@ public class BluetoothMapFolderElementTest {
 
         mTestFolderElement.addSmsMmsFolder(TEST_SMS_MMS_FOLDER_NAME);
         folderElementWithDifferentSubFoldersSize.addSmsMmsFolder(TEST_SMS_MMS_FOLDER_NAME);
-        folderElementWithDifferentSubFoldersSize.addImFolder(TEST_IM_FOLDER_NAME,
-                TEST_IM_FOLDER_ID);
-        assertThat(
-                mTestFolderElement.compareTo(folderElementWithDifferentSubFoldersSize)).isEqualTo(
-                -1);
+        folderElementWithDifferentSubFoldersSize.addImFolder(
+                TEST_IM_FOLDER_NAME, TEST_IM_FOLDER_ID);
+        assertThat(mTestFolderElement.compareTo(folderElementWithDifferentSubFoldersSize))
+                .isEqualTo(-1);
     }
 
     @Test
@@ -175,10 +174,10 @@ public class BluetoothMapFolderElementTest {
 
         mTestFolderElement.addSmsMmsFolder(TEST_SMS_MMS_FOLDER_NAME);
         folderElementWithDifferentSubFoldersTree.addSmsMmsFolder(TEST_SMS_MMS_FOLDER_NAME);
-        folderElementWithDifferentSubFoldersTree.getSubFolder(TEST_SMS_MMS_FOLDER_NAME).addFolder(
-                TEST_PLACEHOLDER_FOLDER_NAME);
-        assertThat(
-                mTestFolderElement.compareTo(folderElementWithDifferentSubFoldersTree)).isEqualTo(
-                -1);
+        folderElementWithDifferentSubFoldersTree
+                .getSubFolder(TEST_SMS_MMS_FOLDER_NAME)
+                .addFolder(TEST_PLACEHOLDER_FOLDER_NAME);
+        assertThat(mTestFolderElement.compareTo(folderElementWithDifferentSubFoldersTree))
+                .isEqualTo(-1);
     }
 }

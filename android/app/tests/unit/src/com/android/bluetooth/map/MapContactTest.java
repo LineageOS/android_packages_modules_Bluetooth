@@ -52,8 +52,8 @@ public class MapContactTest {
     public void getXBtUidString_withNonZeroId() {
         MapContact contact = MapContact.create(TEST_NON_ZERO_ID, TEST_NAME);
 
-        assertThat(contact.getXBtUidString()).isEqualTo(
-                BluetoothMapUtils.getLongLongAsString(TEST_NON_ZERO_ID, 0));
+        assertThat(contact.getXBtUidString())
+                .isEqualTo(BluetoothMapUtils.getLongLongAsString(TEST_NON_ZERO_ID, 0));
     }
 
     @Test

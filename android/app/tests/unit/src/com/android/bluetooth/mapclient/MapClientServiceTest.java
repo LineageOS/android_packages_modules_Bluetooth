@@ -123,7 +123,8 @@ public class MapClientServiceTest {
     public void setConnectionPolicy() {
         int connectionPolicy = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
         when(mDatabaseManager.setProfileConnectionPolicy(
-                mRemoteDevice, BluetoothProfile.MAP_CLIENT, connectionPolicy)).thenReturn(true);
+                        mRemoteDevice, BluetoothProfile.MAP_CLIENT, connectionPolicy))
+                .thenReturn(true);
 
         assertThat(mService.setConnectionPolicy(mRemoteDevice, connectionPolicy)).isTrue();
     }
@@ -132,7 +133,8 @@ public class MapClientServiceTest {
     public void getConnectionPolicy() {
         int connectionPolicy = BluetoothProfile.CONNECTION_POLICY_ALLOWED;
         when(mDatabaseManager.getProfileConnectionPolicy(
-                mRemoteDevice, BluetoothProfile.MAP_CLIENT)).thenReturn(connectionPolicy);
+                        mRemoteDevice, BluetoothProfile.MAP_CLIENT))
+                .thenReturn(connectionPolicy);
 
         assertThat(mService.getConnectionPolicy(mRemoteDevice)).isEqualTo(connectionPolicy);
     }
@@ -141,7 +143,8 @@ public class MapClientServiceTest {
     public void connect_whenPolicyIsForbidden_returnsFalse() {
         int connectionPolicy = BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
         when(mDatabaseManager.getProfileConnectionPolicy(
-                mRemoteDevice, BluetoothProfile.MAP_CLIENT)).thenReturn(connectionPolicy);
+                        mRemoteDevice, BluetoothProfile.MAP_CLIENT))
+                .thenReturn(connectionPolicy);
 
         assertThat(mService.connect(mRemoteDevice)).isFalse();
     }
@@ -150,7 +153,8 @@ public class MapClientServiceTest {
     public void connect_whenPolicyIsAllowed_returnsTrue() {
         int connectionPolicy = BluetoothProfile.CONNECTION_POLICY_ALLOWED;
         when(mDatabaseManager.getProfileConnectionPolicy(
-                mRemoteDevice, BluetoothProfile.MAP_CLIENT)).thenReturn(connectionPolicy);
+                        mRemoteDevice, BluetoothProfile.MAP_CLIENT))
+                .thenReturn(connectionPolicy);
 
         assertThat(mService.connect(mRemoteDevice)).isTrue();
     }

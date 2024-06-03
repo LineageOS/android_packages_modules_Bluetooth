@@ -38,34 +38,35 @@ import java.lang.ref.WeakReference;
  * A client to a remote device's BIP Image Pull Server, as defined by a PSM passed in at
  * construction time.
  *
- * Once the client connection is established you can use this client to get image properties and
+ * <p>Once the client connection is established you can use this client to get image properties and
  * download images. The connection to the server is held open to service multiple requests.
  *
- * Client is good for one connection lifecycle. Please call shutdown() to clean up safely. Once a
+ * <p>Client is good for one connection lifecycle. Please call shutdown() to clean up safely. Once a
  * disconnection has occurred, please create a new client.
  */
 public class AvrcpBipClient {
     private static final String TAG = AvrcpBipClient.class.getSimpleName();
 
     // AVRCP Controller BIP Image Initiator/Cover Art UUID - AVRCP 1.6 Section 5.14.2.1
-    private static final byte[] BLUETOOTH_UUID_AVRCP_COVER_ART = new byte[] {
-        (byte) 0x71,
-        (byte) 0x63,
-        (byte) 0xDD,
-        (byte) 0x54,
-        (byte) 0x4A,
-        (byte) 0x7E,
-        (byte) 0x11,
-        (byte) 0xE2,
-        (byte) 0xB4,
-        (byte) 0x7C,
-        (byte) 0x00,
-        (byte) 0x50,
-        (byte) 0xC2,
-        (byte) 0x49,
-        (byte) 0x00,
-        (byte) 0x48
-    };
+    private static final byte[] BLUETOOTH_UUID_AVRCP_COVER_ART =
+            new byte[] {
+                (byte) 0x71,
+                (byte) 0x63,
+                (byte) 0xDD,
+                (byte) 0x54,
+                (byte) 0x4A,
+                (byte) 0x7E,
+                (byte) 0x11,
+                (byte) 0xE2,
+                (byte) 0xB4,
+                (byte) 0x7C,
+                (byte) 0x00,
+                (byte) 0x50,
+                (byte) 0xC2,
+                (byte) 0x49,
+                (byte) 0x00,
+                (byte) 0x48
+            };
 
     private static final int CONNECT = 0;
     private static final int DISCONNECT = 1;
@@ -85,9 +86,7 @@ public class AvrcpBipClient {
 
     private final Callback mCallback;
 
-    /**
-     * Callback object used to be notified of when a request has been completed.
-     */
+    /** Callback object used to be notified of when a request has been completed. */
     interface Callback {
 
         /**
@@ -104,8 +103,8 @@ public class AvrcpBipClient {
          * @param status A status code to indicate a success or error
          * @param properties The BipImageProperties object returned if successful, null otherwise
          */
-        void onGetImagePropertiesComplete(int status, String imageHandle,
-                BipImageProperties properties);
+        void onGetImagePropertiesComplete(
+                int status, String imageHandle, BipImageProperties properties);
 
         /**
          * Notify of a get image operation completing
@@ -141,9 +140,7 @@ public class AvrcpBipClient {
         mHandler = new AvrcpBipClientHandler(looper, this);
     }
 
-    /**
-     * Refreshes this client's OBEX session
-     */
+    /** Refreshes this client's OBEX session */
     public void refreshSession() {
         debug("Refresh client session");
         if (!isConnected()) {
@@ -159,9 +156,7 @@ public class AvrcpBipClient {
         }
     }
 
-    /**
-     * Safely disconnects the client from the server
-     */
+    /** Safely disconnects the client from the server */
     public void shutdown() {
         debug("Shutdown client");
         try {
@@ -201,11 +196,9 @@ public class AvrcpBipClient {
         return mPsm;
     }
 
-    /**
-     * Retrieve the image properties associated with the given imageHandle
-     */
+    /** Retrieve the image properties associated with the given imageHandle */
     public boolean getImageProperties(String imageHandle) {
-        RequestGetImageProperties request =  new RequestGetImageProperties(imageHandle);
+        RequestGetImageProperties request = new RequestGetImageProperties(imageHandle);
         boolean status = mHandler.sendMessage(mHandler.obtainMessage(REQUEST, request));
         if (!status) {
             error("Adding messages failed, connection state: " + isConnected());
@@ -214,11 +207,9 @@ public class AvrcpBipClient {
         return true;
     }
 
-    /**
-     * Download the image object associated with the given imageHandle
-     */
+    /** Download the image object associated with the given imageHandle */
     public boolean getImage(String imageHandle, BipImageDescriptor descriptor) {
-        RequestGetImage request =  new RequestGetImage(imageHandle, descriptor);
+        RequestGetImage request = new RequestGetImage(imageHandle, descriptor);
         boolean status = mHandler.sendMessage(mHandler.obtainMessage(REQUEST, request));
         if (!status) {
             error("Adding messages failed, connection state: " + isConnected());
@@ -227,9 +218,7 @@ public class AvrcpBipClient {
         return true;
     }
 
-    /**
-     * Update our client's connection state and notify of the new status
-     */
+    /** Update our client's connection state and notify of the new status */
     @VisibleForTesting
     void setConnectionState(int state) {
         int oldState = -1;
@@ -237,7 +226,7 @@ public class AvrcpBipClient {
             oldState = mState;
             mState = state;
         }
-        if (oldState != state)  {
+        if (oldState != state) {
             mCallback.onConnectionStateChanged(oldState, mState);
         }
     }
@@ -247,9 +236,7 @@ public class AvrcpBipClient {
         mHandler.obtainMessage(CONNECT).sendToTarget();
     }
 
-    /**
-     * Connects to the remote device's BIP Image Pull server
-     */
+    /** Connects to the remote device's BIP Image Pull server */
     private synchronized void connect() {
         debug("Connect using psm: " + mPsm);
         if (isConnected()) {
@@ -284,9 +271,7 @@ public class AvrcpBipClient {
         }
     }
 
-    /**
-     * Disconnect and reconnect the OBEX session.
-     */
+    /** Disconnect and reconnect the OBEX session. */
     private synchronized void refreshObexSession() {
         if (mSession == null) return;
 
@@ -359,8 +344,7 @@ public class AvrcpBipClient {
 
     private void executeRequest(BipRequest request) {
         if (!isConnected()) {
-            error("Cannot execute request " + request.toString()
-                    + ", we're not connected");
+            error("Cannot execute request " + request.toString() + ", we're not connected");
             notifyCaller(request);
             return;
         }
@@ -397,9 +381,7 @@ public class AvrcpBipClient {
         }
     }
 
-    /**
-     * Handles this AVRCP BIP Image Pull Client's requests
-     */
+    /** Handles this AVRCP BIP Image Pull Client's requests */
     private static class AvrcpBipClientHandler extends Handler {
         WeakReference<AvrcpBipClient> mInst;
 
@@ -457,27 +439,27 @@ public class AvrcpBipClient {
 
     @Override
     public String toString() {
-        return "<AvrcpBipClient" + " device=" + mDevice + " psm=" + mPsm
-                + " state=" + getStateName() + ">";
+        return "<AvrcpBipClient"
+                + " device="
+                + mDevice
+                + " psm="
+                + mPsm
+                + " state="
+                + getStateName()
+                + ">";
     }
 
-    /**
-     * Print to debug if debug is enabled for this class
-     */
+    /** Print to debug if debug is enabled for this class */
     private void debug(String msg) {
         Log.d(TAG, "[" + mDevice + "] " + msg);
     }
 
-    /**
-     * Print to warn
-     */
+    /** Print to warn */
     private void warn(String msg) {
         Log.w(TAG, "[" + mDevice + "] " + msg);
     }
 
-    /**
-     * Print to error
-     */
+    /** Print to error */
     private void error(String msg) {
         Log.e(TAG, "[" + mDevice + "] " + msg);
     }

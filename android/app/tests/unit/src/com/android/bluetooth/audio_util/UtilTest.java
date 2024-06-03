@@ -47,8 +47,10 @@ public class UtilTest {
     @Test
     public void getDisplayName() throws Exception {
         PackageManager manager = mContext.getPackageManager();
-        String displayName =  manager.getApplicationLabel(
-                manager.getApplicationInfo(mContext.getPackageName(), 0)).toString();
+        String displayName =
+                manager.getApplicationLabel(
+                                manager.getApplicationInfo(mContext.getPackageName(), 0))
+                        .toString();
         assertThat(Util.getDisplayName(mContext, mContext.getPackageName())).isEqualTo(displayName);
 
         String invalidPackage = "invalidPackage";
@@ -57,8 +59,8 @@ public class UtilTest {
 
     @Test
     public void toMetadata_withMediaItem() {
-        Metadata metadata = Util.toMetadata(mContext,
-                new MediaBrowser.MediaItem(createDescription(), 0));
+        Metadata metadata =
+                Util.toMetadata(mContext, new MediaBrowser.MediaItem(createDescription(), 0));
         assertThat(metadata.mediaId).isEqualTo(SONG_MEDIA_ID);
         assertThat(metadata.title).isEqualTo(SONG_TITLE);
         assertThat(metadata.artist).isEqualTo(SONG_ARTIST);
@@ -69,8 +71,8 @@ public class UtilTest {
     public void toMetadata_withQueueItem() {
         // This will change the media ID to NOW_PLAYING_PREFIX ('NowPlayingId') + the given id
         long queueId = 1;
-        Metadata metadata = Util.toMetadata(mContext,
-                new MediaSession.QueueItem(createDescription(), queueId));
+        Metadata metadata =
+                Util.toMetadata(mContext, new MediaSession.QueueItem(createDescription(), queueId));
         assertThat(metadata.mediaId).isEqualTo(Util.NOW_PLAYING_PREFIX + queueId);
         assertThat(metadata.title).isEqualTo(SONG_TITLE);
         assertThat(metadata.artist).isEqualTo(SONG_ARTIST);
@@ -79,11 +81,12 @@ public class UtilTest {
 
     @Test
     public void toMetadata_withMediaMetadata() {
-        MediaMetadata.Builder builder = new MediaMetadata.Builder()
-                .putString(MediaMetadata.METADATA_KEY_MEDIA_ID, SONG_MEDIA_ID)
-                .putString(MediaMetadata.METADATA_KEY_TITLE, SONG_TITLE)
-                .putString(MediaMetadata.METADATA_KEY_ARTIST, SONG_ARTIST)
-                .putString(MediaMetadata.METADATA_KEY_ALBUM, SONG_ALBUM);
+        MediaMetadata.Builder builder =
+                new MediaMetadata.Builder()
+                        .putString(MediaMetadata.METADATA_KEY_MEDIA_ID, SONG_MEDIA_ID)
+                        .putString(MediaMetadata.METADATA_KEY_TITLE, SONG_TITLE)
+                        .putString(MediaMetadata.METADATA_KEY_ARTIST, SONG_ARTIST)
+                        .putString(MediaMetadata.METADATA_KEY_ALBUM, SONG_ALBUM);
         // This will change the media ID to "currsong".
         Metadata metadata = Util.toMetadata(mContext, builder.build());
         assertThat(metadata.mediaId).isEqualTo("currsong");
@@ -123,16 +126,16 @@ public class UtilTest {
 
         assertThat(PlayStatus.playbackStateToAvrcpState(PlaybackState.STATE_ERROR))
                 .isEqualTo(PlayStatus.ERROR);
-        assertThat(PlayStatus.playbackStateToAvrcpState(-100))
-                .isEqualTo(PlayStatus.ERROR);
+        assertThat(PlayStatus.playbackStateToAvrcpState(-100)).isEqualTo(PlayStatus.ERROR);
     }
 
     MediaDescription createDescription() {
-        MediaDescription.Builder builder = new MediaDescription.Builder()
-                .setMediaId(SONG_MEDIA_ID)
-                .setTitle(SONG_TITLE)
-                .setSubtitle(SONG_ARTIST)
-                .setDescription(SONG_ALBUM);
+        MediaDescription.Builder builder =
+                new MediaDescription.Builder()
+                        .setMediaId(SONG_MEDIA_ID)
+                        .setTitle(SONG_TITLE)
+                        .setSubtitle(SONG_ARTIST)
+                        .setDescription(SONG_ALBUM);
         return builder.build();
     }
 }

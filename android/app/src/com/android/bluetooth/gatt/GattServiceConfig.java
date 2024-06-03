@@ -16,9 +16,7 @@
 
 package com.android.bluetooth.gatt;
 
-/**
- * GattService configuration.
- */
+/** GattService configuration. */
 public class GattServiceConfig {
     public static final String TAG_PREFIX = "BtGatt.";
     public static final boolean DEBUG_ADMIN = false;

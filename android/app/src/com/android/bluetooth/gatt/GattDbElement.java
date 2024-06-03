@@ -19,8 +19,8 @@ package com.android.bluetooth.gatt;
 import java.util.UUID;
 
 /**
- * Helper class for passing gatt db elements between java and JNI, equal to
- * native btgatt_db_element_t.
+ * Helper class for passing gatt db elements between java and JNI, equal to native
+ * btgatt_db_element_t.
  */
 public class GattDbElement {
 

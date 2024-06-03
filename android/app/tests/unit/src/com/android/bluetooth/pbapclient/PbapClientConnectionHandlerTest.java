@@ -65,11 +65,9 @@ public class PbapClientConnectionHandlerTest {
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    private AdapterService mAdapterService;
+    @Mock private AdapterService mAdapterService;
 
-    @Mock
-    private DatabaseManager mDatabaseManager;
+    @Mock private DatabaseManager mDatabaseManager;
 
     private BluetoothAdapter mAdapter;
 
@@ -81,8 +79,10 @@ public class PbapClientConnectionHandlerTest {
 
     @Before
     public void setUp() throws Exception {
-        mTargetContext = spy(new ContextWrapper(
-                InstrumentationRegistry.getInstrumentation().getTargetContext()));
+        mTargetContext =
+                spy(
+                        new ContextWrapper(
+                                InstrumentationRegistry.getInstrumentation().getTargetContext()));
 
         if (Looper.myLooper() == null) {
             Looper.prepare();
@@ -102,12 +102,13 @@ public class PbapClientConnectionHandlerTest {
 
         when(mStateMachine.getContext()).thenReturn(mTargetContext);
 
-        mHandler = new PbapClientConnectionHandler.Builder()
-                .setLooper(mLooper)
-                .setClientSM(mStateMachine)
-                .setContext(mTargetContext)
-                .setRemoteDevice(mRemoteDevice)
-                .build();
+        mHandler =
+                new PbapClientConnectionHandler.Builder()
+                        .setLooper(mLooper)
+                        .setClientSM(mStateMachine)
+                        .setContext(mTargetContext)
+                        .setRemoteDevice(mRemoteDevice)
+                        .build();
     }
 
     @After

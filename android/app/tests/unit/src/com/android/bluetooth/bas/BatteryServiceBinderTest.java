@@ -36,8 +36,7 @@ import org.mockito.junit.MockitoRule;
 public class BatteryServiceBinderTest {
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock
-    private BatteryService mService;
+    @Mock private BatteryService mService;
     private BatteryService.BluetoothBatteryBinder mBinder;
     private BluetoothAdapter mAdapter;
 
@@ -80,7 +79,7 @@ public class BatteryServiceBinderTest {
 
     @Test
     public void getDevicesMatchingConnectionStates() {
-        int[] states = new int[] { BluetoothProfile.STATE_CONNECTED };
+        int[] states = new int[] {BluetoothProfile.STATE_CONNECTED};
         AttributionSource source = new AttributionSource.Builder(0).build();
 
         mBinder.getDevicesMatchingConnectionStates(states, source);

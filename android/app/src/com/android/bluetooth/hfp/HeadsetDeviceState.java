@@ -15,31 +15,27 @@
  */
 package com.android.bluetooth.hfp;
 
-/**
- * A blob of data representing AG's device state in response to an AT+CIND command from HF
- */
+/** A blob of data representing AG's device state in response to an AT+CIND command from HF */
 class HeadsetDeviceState extends HeadsetMessageObject {
     /**
      * Service availability indicator
      *
-     * 0 - no service, no home/roam network is available
-     * 1 - presence of service, home/roam network available
+     * <p>0 - no service, no home/roam network is available 1 - presence of service, home/roam
+     * network available
      */
     int mService;
+
     /**
      * Roaming status indicator
      *
-     * 0 - roaming is not active
-     * 1 - roaming is active
+     * <p>0 - roaming is not active 1 - roaming is active
      */
     int mRoam;
-    /**
-     * Signal strength indicator, value ranges from 0 to 5
-     */
+
+    /** Signal strength indicator, value ranges from 0 to 5 */
     int mSignal;
-    /**
-     * Battery charge indicator from AG, value ranges from 0 to 5
-     */
+
+    /** Battery charge indicator from AG, value ranges from 0 to 5 */
     int mBatteryCharge;
 
     HeadsetDeviceState(int service, int roam, int signal, int batteryCharge) {

@@ -16,9 +16,7 @@
 
 package com.android.bluetooth.avrcpcontroller;
 
-/**
- * Thrown when has parsing.
- */
+/** Thrown when has parsing. */
 public class ParseException extends RuntimeException {
     public ParseException(String msg) {
         super(msg);
