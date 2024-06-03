@@ -811,6 +811,16 @@ impl BluetoothMedia {
                 match state {
                     BtVcConnectionState::Connected => {
                         self.vc_states.insert(addr, state);
+
+                        let group_id = *self
+                            .le_audio_node_to_group
+                            .get(&addr)
+                            .unwrap_or(&LEA_UNKNOWN_GROUP_ID);
+
+                        // Sync group volume in case this new member has not been adjusted.
+                        if let Some(volume) = self.le_audio_group_volume.get(&group_id) {
+                            self.set_group_volume(group_id, *volume);
+                        }
                     }
                     BtVcConnectionState::Disconnected => {
                         self.vc_states.remove(&addr);
@@ -1025,6 +1035,10 @@ impl BluetoothMedia {
                         }
 
                         self.le_audio_groups.entry(group_id).or_insert(HashSet::new()).insert(addr);
+
+                        if let Some(volume) = self.le_audio_group_volume.get(&group_id) {
+                            self.set_group_volume(group_id, *volume);
+                        }
                     }
                     BtLeAudioGroupNodeStatus::Removed => {
                         if let Some(old_group_id) = self.le_audio_node_to_group.remove(&addr) {
