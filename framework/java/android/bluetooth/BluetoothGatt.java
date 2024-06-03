@@ -367,6 +367,7 @@ public final class BluetoothGatt implements BluetoothProfile {
                                 "onClientConnectionState() -"
                                         + (" status=" + status)
                                         + (" clientIf=" + clientIf)
+                                        + (" connected=" + connected)
                                         + (" device=" + address));
                     }
                     if (!address.equals(mDevice.getAddress())) {
