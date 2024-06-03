@@ -124,10 +124,10 @@ impl GattServiceImpl {
             filt_logic_type: 0,
             rssi_high_thres: 0,
             rssi_low_thres: 0,
-            delay_mode: 0,
+            dely_mode: 0,
             found_timeout: 0,
             lost_timeout: 0,
-            found_timeout_count: 0,
+            found_timeout_cnt: 0,
             num_of_tracking_entries: 0,
         }
     }

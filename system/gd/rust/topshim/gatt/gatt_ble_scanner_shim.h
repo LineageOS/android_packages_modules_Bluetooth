@@ -19,7 +19,6 @@
 #include <memory>
 
 #include "include/hardware/ble_scanner.h"
-#include "include/hardware/bt_gatt.h"
 #include "rust/cxx.h"
 
 namespace bluetooth {
@@ -28,8 +27,6 @@ namespace rust {
 
 struct RustApcfCommand;
 struct RustMsftAdvMonitor;
-struct RustGattFilterParam;
-struct RustUuid;
 
 class BleScannerIntf : public ScanningCallbacks {
  public:
@@ -81,7 +78,7 @@ class BleScannerIntf : public ScanningCallbacks {
 
   // Register a scanner for a Uuid. Response comes back via
   // |OnRegisterCallback|.
-  void RegisterScanner(RustUuid uuid);
+  void RegisterScanner(bluetooth::Uuid uuid);
 
   // Unregister a scanner with a |scanner_id|.
   void Unregister(uint8_t scanner_id);
@@ -91,7 +88,11 @@ class BleScannerIntf : public ScanningCallbacks {
 
   // Setup scan filter parameters. Get responses via
   // |OnFilterParamSetupCallback|.
-  void ScanFilterParamSetup(uint8_t scanner_id, uint8_t action, uint8_t filter_index, RustGattFilterParam filter_param);
+  void ScanFilterParamSetup(
+      uint8_t scanner_id,
+      uint8_t action,
+      uint8_t filter_index,
+      btgatt_filt_param_setup_t filter_param);
 
   // Adds filters to given filter index. Gets responses via
   // |OnFilterConfigCallback|.
@@ -174,7 +175,7 @@ class BleScannerIntf : public ScanningCallbacks {
   // callbacks don't have all the parameters coming back in the original
   // callback and will need the values to be base::Bind at the callsite.
 
-  void OnRegisterCallback(RustUuid uuid, uint8_t scanner_id, uint8_t btm_status);
+  void OnRegisterCallback(bluetooth::Uuid uuid, uint8_t scanner_id, uint8_t btm_status);
   void OnStatusCallback(uint8_t scanner_id, uint8_t btm_status);
   void OnEnableCallback(uint8_t action, uint8_t btm_status);
   void OnFilterParamSetupCallback(uint8_t scanner_id, uint8_t avbl_space, uint8_t action_type, uint8_t btm_status);
