@@ -603,6 +603,11 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
   if (state == BT_BOND_STATE_NONE) {
     forget_device_from_metric_id_allocator(bd_addr);
 
+    if (com::android::bluetooth::flags::
+            bond_transport_after_bond_cancel_fix()) {
+      btif_config_remove_device(bd_addr.ToString());
+    }
+
     if (bluetooth::common::init_flags::
             pbap_pse_dynamic_version_upgrade_is_enabled()) {
       if (btif_storage_is_pce_version_102(bd_addr)) {
