@@ -28,6 +28,7 @@ java_defaults {
             "-Xep:ClassCanBeStatic:ERROR",
             "-Xep:EmptyCatch:ERROR",
             "-Xep:EqualsIncompatibleType:ERROR",
+            "-Xep:FutureReturnValueIgnored:ERROR",
             "-Xep:InlineMeInliner:ERROR",
             "-Xep:InvalidBlockTag:ERROR",
             "-Xep:InvalidInlineTag:ERROR",
