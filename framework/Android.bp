@@ -93,6 +93,7 @@ java_sdk_library {
 
             "-Xep:EmptyCatch:ERROR",
             "-Xep:InvalidInlineTag:ERROR",
+            "-Xep:UnnecessaryAssignment:ERROR",
             "-Xep:UnnecessaryAsync:ERROR",
 
             "-XepExcludedPaths:.*/srcjars/.*", // Exclude generated files

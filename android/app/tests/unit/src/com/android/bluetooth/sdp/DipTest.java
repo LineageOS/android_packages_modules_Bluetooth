@@ -63,7 +63,7 @@ public class DipTest {
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock private AdapterService mAdapterService = null;
+    @Mock private AdapterService mAdapterService;
     @Mock private SdpManagerNativeInterface mNativeInterface;
 
     @Before

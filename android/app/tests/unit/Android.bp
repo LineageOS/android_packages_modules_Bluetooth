@@ -60,6 +60,7 @@ java_defaults {
             "-Xep:AlmostJavadoc:ERROR",
             "-Xep:EmptyCatch:ERROR",
             "-Xep:InvalidInlineTag:ERROR",
+            "-Xep:UnnecessaryAssignment:ERROR",
             "-Xep:UnnecessaryAsync:ERROR",
             "-Xep:UnusedMethod:ERROR",
         ],
