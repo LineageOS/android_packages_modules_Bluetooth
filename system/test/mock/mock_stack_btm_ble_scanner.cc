@@ -14,11 +14,6 @@
  * limitations under the License.
  */
 
-#include <base/functional/bind.h>
-#include <base/location.h>
-#include <base/memory/weak_ptr.h>
-#include <base/strings/string_number_conversions.h>
-
 #include "stack/btm/ble_scanner_hci_interface.h"
 #include "stack/btm/btm_ble_int.h"
 #include "stack/include/ble_scanner.h"

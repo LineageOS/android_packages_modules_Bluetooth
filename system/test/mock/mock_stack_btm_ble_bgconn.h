@@ -24,8 +24,6 @@
 #include <functional>
 
 // Original included files, if any
-#include <base/functional/bind.h>
-
 #include "stack/include/btm_ble_api_types.h"
 #include "types/raw_address.h"
 

@@ -16,18 +16,14 @@
 
 #include "test/fake/fake_looper.h"
 
-#include <base/strings/stringprintf.h>
 #include <bluetooth/log.h>
 #include <gtest/gtest.h>
 #include <stddef.h>
 #include <stdlib.h>
 
-#include <condition_variable>
-#include <deque>
 #include <mutex>
 #include <queue>
 
-#include "os/log.h"
 #include "osi/include/allocator.h"
 #include "test/fake/fake_thread.h"
 
