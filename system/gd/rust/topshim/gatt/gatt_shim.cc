@@ -17,10 +17,7 @@
 #include "rust/topshim/gatt/gatt_shim.h"
 
 #include "base/functional/bind.h"
-#include "base/functional/callback.h"
-#include "rust/cxx.h"
 #include "src/profiles/gatt.rs.h"
-#include "types/raw_address.h"
 
 namespace bluetooth {
 namespace topshim {

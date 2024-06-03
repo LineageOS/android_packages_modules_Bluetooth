@@ -137,7 +137,8 @@ impl TryFrom<i32> for HfpCodecFormat {
 #[cxx::bridge(namespace = bluetooth::topshim::rust)]
 pub mod ffi {
     unsafe extern "C++" {
-        include!("gd/rust/topshim/common/type_alias.h");
+        include!("types/raw_address.h");
+        #[namespace = ""]
         type RawAddress = crate::btif::RawAddress;
     }
 
