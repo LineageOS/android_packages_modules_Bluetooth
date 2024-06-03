@@ -708,6 +708,7 @@ typedef enum : uint16_t {
 
 /* Page scan period modes */
 #define HCI_PAGE_SCAN_REP_MODE_R1 0x01
+#define HCI_PAGE_SCAN_REP_MODE_RESERVED_START 0x03
 
 /* Page scan modes */
 #define HCI_MANDATARY_PAGE_SCAN_MODE 0x00
