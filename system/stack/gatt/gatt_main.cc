@@ -527,7 +527,7 @@ static void gatt_le_connect_cback(uint16_t chan, const RawAddress& bd_addr,
   else {
     p_tcb = gatt_allocate_tcb_by_bdaddr(bd_addr, BT_TRANSPORT_LE);
     if (!p_tcb) {
-      log::error("CCB max out, no rsources");
+      log::error("CCB max out, no resources");
       if (com::android::bluetooth::flags::
               gatt_drop_acl_on_out_of_resources_fix()) {
         log::error("Disconnecting address:{} due to out of resources.",
@@ -1002,7 +1002,7 @@ void gatt_consolidate(const RawAddress& identity_addr, const RawAddress& rpa) {
 }
 /*******************************************************************************
  *
- * Function         gatt_le_data_ind
+ * Function         gatt_data_process
  *
  * Description      This function is called when data is received from L2CAP.
  *                  if we are the originator of the connection, we are the ATT
@@ -1066,7 +1066,7 @@ void gatt_add_a_bonded_dev_for_srv_chg(const RawAddress& bda) {
                                           NULL);
 }
 
-/** This function is called to send a service chnaged indication to the
+/** This function is called to send a service changed indication to the
  * specified bd address */
 void gatt_send_srv_chg_ind(const RawAddress& peer_bda) {
   static const uint16_t sGATT_DEFAULT_START_HANDLE =
@@ -1098,7 +1098,7 @@ void gatt_send_srv_chg_ind(const RawAddress& peer_bda) {
   }
 }
 
-/** Check sending service chnaged Indication is required or not if required then
+/** Check sending service changed Indication is required or not if required then
  * send the Indication */
 void gatt_chk_srv_chg(tGATTS_SRV_CHG* p_srv_chg_clt) {
   log::verbose("srv_changed={}", p_srv_chg_clt->srv_changed);
