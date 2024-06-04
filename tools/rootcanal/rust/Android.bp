@@ -36,14 +36,14 @@ rust_ffi {
 
 genrule {
     name: "rootcanal_lmp_packets_rust_gen",
-    defaults: ["pdl_rust_generator_defaults"],
+    defaults: ["pdl_rust_legacy_generator_defaults"],
     srcs: ["lmp_packets.pdl"],
     out: ["lmp_packets.rs"],
 }
 
 genrule {
     name: "rootcanal_llcp_packets_rust_gen",
-    defaults: ["pdl_rust_generator_defaults"],
+    defaults: ["pdl_rust_legacy_generator_defaults"],
     srcs: ["llcp_packets.pdl"],
     out: ["llcp_packets.rs"],
 }
