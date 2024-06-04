@@ -5269,7 +5269,7 @@ static bt_status_t send_groupnavigation_cmd(const RawAddress& bd_addr,
                  key_code, key_state, tran_status);
     }
   } else {
-    status = BT_STATUS_FAIL;
+    status = BT_STATUS_UNSUPPORTED;
     log::verbose("feature not supported");
   }
   return (bt_status_t)status;
@@ -5315,7 +5315,7 @@ static bt_status_t send_passthrough_cmd(const RawAddress& bd_addr,
                  key_code, key_state, tran_status);
     }
   } else {
-    status = BT_STATUS_FAIL;
+    status = BT_STATUS_UNSUPPORTED;
     log::verbose("feature not supported");
   }
   return (bt_status_t)status;
@@ -5477,7 +5477,7 @@ rc_transaction_t* get_transaction_by_lbl(btif_rc_device_cb_t* p_dev,
 static bt_status_t get_transaction(btif_rc_device_cb_t* p_dev,
                                    rc_transaction_context_t& context,
                                    rc_transaction_t** ptransaction) {
-  if (p_dev == NULL) return BT_STATUS_FAIL;
+  if (p_dev == NULL) return BT_STATUS_PARM_INVALID;
   rc_transaction_set_t* transaction_set = &(p_dev->transaction_set);
   std::unique_lock<std::recursive_mutex> lock(transaction_set->label_lock);
 

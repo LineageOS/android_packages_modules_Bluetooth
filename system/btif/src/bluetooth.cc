@@ -540,7 +540,7 @@ static int set_adapter_property(const bt_property_t* property) {
     case BT_PROPERTY_CLASS_OF_DEVICE:
       break;
     default:
-      return BT_STATUS_FAIL;
+      return BT_STATUS_UNHANDLED;
   }
 
   do_in_main_thread(FROM_HERE, base::BindOnce(
@@ -680,7 +680,9 @@ static int pin_reply(const RawAddress* bd_addr, uint8_t accept, uint8_t pin_len,
                      bt_pin_code_t* pin_code) {
   bt_pin_code_t tmp_pin_code;
   if (!interface_ready()) return BT_STATUS_NOT_READY;
-  if (pin_code == nullptr || pin_len > PIN_CODE_LEN) return BT_STATUS_FAIL;
+  if (pin_code == nullptr || pin_len > PIN_CODE_LEN) {
+    return BT_STATUS_PARM_INVALID;
+  }
 
   memcpy(&tmp_pin_code, pin_code, pin_len);
 
@@ -692,7 +694,7 @@ static int pin_reply(const RawAddress* bd_addr, uint8_t accept, uint8_t pin_len,
 static int ssp_reply(const RawAddress* bd_addr, bt_ssp_variant_t variant,
                      uint8_t accept, uint32_t /* passkey */) {
   if (!interface_ready()) return BT_STATUS_NOT_READY;
-  if (variant == BT_SSP_VARIANT_PASSKEY_ENTRY) return BT_STATUS_FAIL;
+  if (variant == BT_SSP_VARIANT_PASSKEY_ENTRY) return BT_STATUS_PARM_INVALID;
 
   do_in_main_thread(
       FROM_HERE, base::BindOnce(btif_dm_ssp_reply, *bd_addr, variant, accept));
