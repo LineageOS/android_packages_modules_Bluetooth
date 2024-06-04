@@ -1279,20 +1279,15 @@ public class RemoteDevices {
     }
 
     private void removeAddressMapping(String address) {
-        synchronized (mDevices) {
-            mDevices.remove(address);
-            mDeviceQueue.remove(address); // Remove from LRU cache
-
-            // Remove from dual mode device mappings
-            mDualDevicesMap.values().remove(address);
-            mDualDevicesMap.remove(address);
-        }
-    }
-
-    void onBondStateChange(BluetoothDevice device, int oldState, int newState) {
-        String address = device.getAddress();
-        if (Flags.temporaryPairingDeviceProperties() && oldState != BluetoothDevice.BOND_BONDED) {
+        if (Flags.temporaryPairingDeviceProperties()) {
             DeviceProperties deviceProperties = mDevices.get(address);
+            if (deviceProperties != null) {
+                String pseudoAddress = mDualDevicesMap.get(address);
+                if (pseudoAddress != null) {
+                    deviceProperties = mDevices.get(pseudoAddress);
+                }
+            }
+
             if (deviceProperties != null) {
                 int leConnectionHandle =
                         deviceProperties.getConnectionHandle(BluetoothDevice.TRANSPORT_LE);
@@ -1305,6 +1300,19 @@ public class RemoteDevices {
                 }
             }
         }
+
+        synchronized (mDevices) {
+            mDevices.remove(address);
+            mDeviceQueue.remove(address); // Remove from LRU cache
+
+            // Remove from dual mode device mappings
+            mDualDevicesMap.values().remove(address);
+            mDualDevicesMap.remove(address);
+        }
+    }
+
+    void onBondStateChange(BluetoothDevice device, int newState) {
+        String address = device.getAddress();
 
         if (Flags.removeAddressMapOnUnbond() && newState == BluetoothDevice.BOND_NONE) {
             removeAddressMapping(address);
