@@ -20,11 +20,13 @@ import static java.util.Objects.requireNonNull;
 
 import android.annotation.NonNull;
 import android.annotation.Nullable;
+import android.annotation.RequiresPermission;
 import android.annotation.SystemApi;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothDevice.AddressType;
 import android.bluetooth.BluetoothStatusCodes;
+import android.bluetooth.annotations.RequiresBluetoothScanPermission;
 import android.bluetooth.le.ScanRecord.AdvertisingDataType;
 import android.os.Parcel;
 import android.os.ParcelUuid;
@@ -1037,6 +1039,12 @@ public final class ScanFilter implements Parcelable {
          * @hide
          */
         @SystemApi
+        @RequiresBluetoothScanPermission
+        @RequiresPermission(
+                allOf = {
+                    android.Manifest.permission.BLUETOOTH_SCAN,
+                    android.Manifest.permission.BLUETOOTH_PRIVILEGED,
+                })
         @NonNull
         public Builder setTransportBlockFilter(@NonNull TransportBlockFilter transportBlockFilter) {
             BluetoothAdapter bluetoothAdapter = BluetoothAdapter.getDefaultAdapter();
