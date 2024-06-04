@@ -92,6 +92,7 @@ java_sdk_library {
             "-Xep:InlineMeSuggester:OFF", // The @InlineMe annotation is not available
 
             "-Xep:CatchFail:ERROR",
+            "-Xep:ClassCanBeStatic:ERROR",
             "-Xep:EmptyCatch:ERROR",
             "-Xep:InvalidInlineTag:ERROR",
             "-Xep:NonApiType:ERROR",

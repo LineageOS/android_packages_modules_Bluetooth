@@ -146,12 +146,12 @@ public class GattService extends ProfileService {
     private AdvertiserMap mAdvertiserMap = new AdvertiserMap();
 
     /** List of our registered clients. */
-    class ClientMap extends ContextMap<IBluetoothGattCallback, Void> {}
+    static class ClientMap extends ContextMap<IBluetoothGattCallback, Void> {}
 
     ClientMap mClientMap = new ClientMap();
 
     /** List of our registered server apps. */
-    class ServerMap extends ContextMap<IBluetoothGattServerCallback, Void> {}
+    static class ServerMap extends ContextMap<IBluetoothGattServerCallback, Void> {}
 
     ServerMap mServerMap = new ServerMap();
 

@@ -92,7 +92,7 @@ public class BluetoothMnsObexClient {
         return mHandler;
     }
 
-    class MnsSdpSearchInfo {
+    static class MnsSdpSearchInfo {
         private boolean mIsSearchInProgress;
         public int lastMasId;
         public int lastNotificationStatus;

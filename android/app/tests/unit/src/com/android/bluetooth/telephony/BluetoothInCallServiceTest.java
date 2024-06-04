@@ -109,7 +109,7 @@ public class BluetoothInCallServiceTest {
     @Mock private TelephonyManager mMockTelephonyManager;
     @Mock private Context mContext;
 
-    public class TestableBluetoothInCallService extends BluetoothInCallService {
+    private static class TestableBluetoothInCallService extends BluetoothInCallService {
         @Override
         public IBinder onBind(Intent intent) {
             IBinder binder = super.onBind(intent);

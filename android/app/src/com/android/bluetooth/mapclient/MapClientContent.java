@@ -846,7 +846,7 @@ class MapClientContent {
      * <p>Helper class to store associations between remote and local provider based on message
      * handle and read status
      */
-    class MessageStatus {
+    static class MessageStatus {
 
         String mHandle;
         int mRead;

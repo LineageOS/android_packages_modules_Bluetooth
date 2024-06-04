@@ -536,7 +536,7 @@ public class MapClientContentTest {
         mTestMessage2.addRecipient(mOriginator);
     }
 
-    public class FakeContentProvider extends MockContentProvider {
+    static class FakeContentProvider extends MockContentProvider {
 
         Map<Uri, ContentValues> mContentValues = new HashMap<>();
 
@@ -593,7 +593,7 @@ public class MapClientContentTest {
         }
     }
 
-    public class MissingContentProvider extends FakeContentProvider {
+    public static class MissingContentProvider extends FakeContentProvider {
         MissingContentProvider(Context context) {
             super(context);
         }

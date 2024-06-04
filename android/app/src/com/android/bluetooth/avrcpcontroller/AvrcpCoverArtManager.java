@@ -57,7 +57,7 @@ public class AvrcpCoverArtManager {
      * An object representing an image download event. Contains the information necessary to
      * retrieve the image from storage.
      */
-    public class DownloadEvent {
+    public static class DownloadEvent {
         final String mImageUuid;
         final Uri mUri;
 
@@ -91,7 +91,7 @@ public class AvrcpCoverArtManager {
      *
      * <p>Currently contains the mapping of image handles seen to assigned UUIDs.
      */
-    private class AvrcpBipSession {
+    private static class AvrcpBipSession {
         private Map<String, String> mUuids = new ConcurrentHashMap<>(1); /* handle -> UUID */
         private Map<String, String> mHandles = new ConcurrentHashMap<>(1); /* UUID -> handle */
 

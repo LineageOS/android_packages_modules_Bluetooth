@@ -910,7 +910,7 @@ public class ScanManager {
     }
 
     /** Parameters for batch scans. */
-    class BatchScanParams {
+    static class BatchScanParams {
         public int scanMode;
         public int fullScanscannerId;
         public int truncatedScanscannerId;

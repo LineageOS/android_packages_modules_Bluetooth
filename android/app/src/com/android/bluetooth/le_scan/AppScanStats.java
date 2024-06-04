@@ -79,7 +79,7 @@ public class AppScanStats {
     static boolean sIsRadioStarted = false;
     static boolean sIsScreenOn = false;
 
-    class LastScan {
+    static class LastScan {
         public long duration;
         public long suspendDuration;
         public long suspendStartTime;
