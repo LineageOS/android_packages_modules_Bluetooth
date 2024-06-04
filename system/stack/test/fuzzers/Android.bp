@@ -83,5 +83,6 @@ cc_defaults {
         "libstatssocket",
         "libutils",
         "server_configurable_flags",
+        "libaconfig_storage_read_api_cc",
     ],
 }

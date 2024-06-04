@@ -9,7 +9,9 @@ package {
 
 cc_defaults {
     name: "fluoride_defaults",
-    defaults: ["bluetooth_cflags"],
+    defaults: [
+        "bluetooth_cflags",
+    ],
     cflags: [
         "-DEXPORT_SYMBOL=__attribute__((visibility(\"default\")))",
         "-DLOG_NDEBUG=0",
