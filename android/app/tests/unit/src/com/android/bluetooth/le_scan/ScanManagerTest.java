@@ -135,7 +135,8 @@ public class ScanManagerTest {
     @Mock private TransitionalScanHelper mMockScanHelper;
     @Mock private BluetoothAdapterProxy mBluetoothAdapterProxy;
     @Mock private LocationManager mLocationManager;
-    @Spy private GattObjectsFactory mFactory = GattObjectsFactory.getInstance();
+    @Spy private GattObjectsFactory mGattObjectsFactory = GattObjectsFactory.getInstance();
+    @Spy private ScanObjectsFactory mScanObjectsFactory = ScanObjectsFactory.getInstance();
     @Mock private GattNativeInterface mNativeInterface;
     @Mock private ScanNativeInterface mScanNativeInterface;
     @Mock private MetricsLogger mMetricsLogger;
@@ -186,9 +187,10 @@ public class ScanManagerTest {
         // Needed to mock Native call/callback when hw offload scan filter is enabled
         when(mBluetoothAdapterProxy.isOffloadedScanFilteringSupported()).thenReturn(true);
 
-        GattObjectsFactory.setInstanceForTesting(mFactory);
-        doReturn(mNativeInterface).when(mFactory).getNativeInterface();
-        doReturn(mScanNativeInterface).when(mFactory).getScanNativeInterface();
+        GattObjectsFactory.setInstanceForTesting(mGattObjectsFactory);
+        ScanObjectsFactory.setInstanceForTesting(mScanObjectsFactory);
+        doReturn(mNativeInterface).when(mGattObjectsFactory).getNativeInterface();
+        doReturn(mScanNativeInterface).when(mScanObjectsFactory).getScanNativeInterface();
         // Mock JNI callback in ScanNativeInterface
         doReturn(true).when(mScanNativeInterface).waitForCallback(anyInt());
 
@@ -224,6 +226,7 @@ public class ScanManagerTest {
         TestUtils.clearAdapterService(mAdapterService);
         BluetoothAdapterProxy.setInstanceForTesting(null);
         GattObjectsFactory.setInstanceForTesting(null);
+        ScanObjectsFactory.setInstanceForTesting(null);
         MetricsLogger.setInstanceForTesting(null);
         MetricsLogger.getInstance();
     }
