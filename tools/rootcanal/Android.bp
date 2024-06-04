@@ -457,7 +457,7 @@ genrule {
 
 genrule {
     name: "rootcanal_link_layer_packets_rust_gen",
-    defaults: ["pdl_rust_generator_defaults"],
+    defaults: ["pdl_rust_legacy_generator_defaults"],
     srcs: ["packets/link_layer_packets.pdl"],
     out: ["link_layer_packets.rs"],
 }
@@ -485,7 +485,7 @@ genrule {
 
 genrule {
     name: "rootcanal_hci_packets_rust_gen",
-    defaults: ["pdl_rust_generator_defaults"],
+    defaults: ["pdl_rust_legacy_generator_defaults"],
     srcs: ["packets/hci_packets.pdl"],
     out: ["hci_packets.rs"],
 }
