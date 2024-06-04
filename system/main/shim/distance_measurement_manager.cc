@@ -63,36 +63,30 @@ class DistanceMeasurementInterfaceImpl
   // Callbacks of bluetooth::hci::DistanceMeasurementCallbacks
   void OnDistanceMeasurementStarted(bluetooth::hci::Address address,
                                     DistanceMeasurementMethod method) override {
-    do_in_jni_thread(
-        FROM_HERE,
-        base::BindOnce(
-            &::DistanceMeasurementCallbacks::OnDistanceMeasurementStarted,
-            base::Unretained(distance_measurement_callbacks_),
-            bluetooth::ToRawAddress(address), static_cast<uint8_t>(method)));
+    do_in_jni_thread(base::BindOnce(
+        &::DistanceMeasurementCallbacks::OnDistanceMeasurementStarted,
+        base::Unretained(distance_measurement_callbacks_),
+        bluetooth::ToRawAddress(address), static_cast<uint8_t>(method)));
   }
 
   void OnDistanceMeasurementStartFail(
       bluetooth::hci::Address address, DistanceMeasurementErrorCode reason,
       DistanceMeasurementMethod method) override {
-    do_in_jni_thread(
-        FROM_HERE,
-        base::BindOnce(
-            &::DistanceMeasurementCallbacks::OnDistanceMeasurementStartFail,
-            base::Unretained(distance_measurement_callbacks_),
-            bluetooth::ToRawAddress(address), static_cast<uint8_t>(reason),
-            static_cast<uint8_t>(method)));
+    do_in_jni_thread(base::BindOnce(
+        &::DistanceMeasurementCallbacks::OnDistanceMeasurementStartFail,
+        base::Unretained(distance_measurement_callbacks_),
+        bluetooth::ToRawAddress(address), static_cast<uint8_t>(reason),
+        static_cast<uint8_t>(method)));
   }
 
   void OnDistanceMeasurementStopped(bluetooth::hci::Address address,
                                     DistanceMeasurementErrorCode reason,
                                     DistanceMeasurementMethod method) override {
-    do_in_jni_thread(
-        FROM_HERE,
-        base::BindOnce(
-            &::DistanceMeasurementCallbacks::OnDistanceMeasurementStopped,
-            base::Unretained(distance_measurement_callbacks_),
-            bluetooth::ToRawAddress(address), static_cast<uint8_t>(reason),
-            static_cast<uint8_t>(method)));
+    do_in_jni_thread(base::BindOnce(
+        &::DistanceMeasurementCallbacks::OnDistanceMeasurementStopped,
+        base::Unretained(distance_measurement_callbacks_),
+        bluetooth::ToRawAddress(address), static_cast<uint8_t>(reason),
+        static_cast<uint8_t>(method)));
   }
 
   void OnDistanceMeasurementResult(bluetooth::hci::Address address,
@@ -101,14 +95,12 @@ class DistanceMeasurementInterfaceImpl
                                    int error_azimuth_angle, int altitude_angle,
                                    int error_altitude_angle,
                                    DistanceMeasurementMethod method) override {
-    do_in_jni_thread(
-        FROM_HERE,
-        base::BindOnce(
-            &::DistanceMeasurementCallbacks::OnDistanceMeasurementResult,
-            base::Unretained(distance_measurement_callbacks_),
-            bluetooth::ToRawAddress(address), centimeter, error_centimeter,
-            azimuth_angle, error_azimuth_angle, altitude_angle,
-            error_altitude_angle, static_cast<uint8_t>(method)));
+    do_in_jni_thread(base::BindOnce(
+        &::DistanceMeasurementCallbacks::OnDistanceMeasurementResult,
+        base::Unretained(distance_measurement_callbacks_),
+        bluetooth::ToRawAddress(address), centimeter, error_centimeter,
+        azimuth_angle, error_azimuth_angle, altitude_angle,
+        error_altitude_angle, static_cast<uint8_t>(method)));
   }
 
   void OnRasFragmentReady(bluetooth::hci::Address address,

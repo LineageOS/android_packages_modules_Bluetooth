@@ -31,8 +31,7 @@
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
-bt_status_t do_in_jni_thread(const base::Location& from_here,
-                             base::OnceClosure task);
+bt_status_t do_in_jni_thread(base::OnceClosure task);
 
 namespace {
 std::optional<RawAddress> AddressOfConnection(uint16_t conn_id) {
@@ -65,16 +64,14 @@ void GattServerCallbacks::OnServerRead(uint16_t conn_id, uint32_t trans_id,
 
   switch (attr_type) {
     case AttributeBackingType::CHARACTERISTIC:
-      do_in_jni_thread(
-          FROM_HERE,
-          base::BindOnce(callbacks.request_read_characteristic_cb, conn_id,
-                         trans_id, addr.value(), attr_handle, offset, is_long));
+      do_in_jni_thread(base::BindOnce(callbacks.request_read_characteristic_cb,
+                                      conn_id, trans_id, addr.value(),
+                                      attr_handle, offset, is_long));
       break;
     case AttributeBackingType::DESCRIPTOR:
-      do_in_jni_thread(
-          FROM_HERE,
-          base::BindOnce(callbacks.request_read_descriptor_cb, conn_id,
-                         trans_id, addr.value(), attr_handle, offset, is_long));
+      do_in_jni_thread(base::BindOnce(callbacks.request_read_descriptor_cb,
+                                      conn_id, trans_id, addr.value(),
+                                      attr_handle, offset, is_long));
       break;
     default:
       log::fatal("Unexpected backing type {}", attr_type);
@@ -98,20 +95,16 @@ void GattServerCallbacks::OnServerWrite(
 
   switch (attr_type) {
     case AttributeBackingType::CHARACTERISTIC:
-      do_in_jni_thread(
-          FROM_HERE,
-          base::BindOnce(callbacks.request_write_characteristic_cb, conn_id,
-                         trans_id, addr.value(), attr_handle, offset,
-                         need_response, is_prepare, base::Owned(buf),
-                         value.size()));
+      do_in_jni_thread(base::BindOnce(
+          callbacks.request_write_characteristic_cb, conn_id, trans_id,
+          addr.value(), attr_handle, offset, need_response, is_prepare,
+          base::Owned(buf), value.size()));
       break;
     case AttributeBackingType::DESCRIPTOR:
-      do_in_jni_thread(
-          FROM_HERE,
-          base::BindOnce(callbacks.request_write_descriptor_cb, conn_id,
-                         trans_id, addr.value(), attr_handle, offset,
-                         need_response, is_prepare, base::Owned(buf),
-                         value.size()));
+      do_in_jni_thread(base::BindOnce(
+          callbacks.request_write_descriptor_cb, conn_id, trans_id,
+          addr.value(), attr_handle, offset, need_response, is_prepare,
+          base::Owned(buf), value.size()));
       break;
     default:
       log::fatal("Unexpected backing type {}", attr_type);
@@ -121,7 +114,7 @@ void GattServerCallbacks::OnServerWrite(
 void GattServerCallbacks::OnIndicationSentConfirmation(uint16_t conn_id,
                                                        int status) const {
   do_in_jni_thread(
-      FROM_HERE, base::BindOnce(callbacks.indication_sent_cb, conn_id, status));
+      base::BindOnce(callbacks.indication_sent_cb, conn_id, status));
 }
 
 void GattServerCallbacks::OnExecute(uint16_t conn_id, uint32_t trans_id,
@@ -133,8 +126,7 @@ void GattServerCallbacks::OnExecute(uint16_t conn_id, uint32_t trans_id,
     return;
   }
 
-  do_in_jni_thread(FROM_HERE,
-                   base::BindOnce(callbacks.request_exec_write_cb, conn_id,
+  do_in_jni_thread(base::BindOnce(callbacks.request_exec_write_cb, conn_id,
                                   trans_id, addr.value(), execute));
 }
 

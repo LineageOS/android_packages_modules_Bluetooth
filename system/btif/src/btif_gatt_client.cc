@@ -663,8 +663,8 @@ static bt_status_t btif_gattc_read_phy(
     const RawAddress& bd_addr,
     base::Callback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb) {
   CHECK_BTGATT_INIT();
-  do_in_main_thread(FROM_HERE, Bind(&BTM_BleReadPhy, bd_addr,
-                                    jni_thread_wrapper(FROM_HERE, cb)));
+  do_in_main_thread(FROM_HERE,
+                    Bind(&BTM_BleReadPhy, bd_addr, jni_thread_wrapper(cb)));
   return BT_STATUS_SUCCESS;
 }
 
