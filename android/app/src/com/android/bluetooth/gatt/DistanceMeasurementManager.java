@@ -469,13 +469,15 @@ public class DistanceMeasurementManager {
                         + BluetoothUtils.toAnonymizedAddress(address)
                         + ", centimeter "
                         + centimeter);
+        DistanceMeasurementResult result =
+                new DistanceMeasurementResult.Builder(centimeter / 100.0, errorCentimeter / 100.0)
+                        .build();
         switch (method) {
             case DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_RSSI:
-                DistanceMeasurementResult result =
-                        new DistanceMeasurementResult.Builder(
-                                        centimeter / 100.0, errorCentimeter / 100.0)
-                                .build();
                 handleRssiResult(address, result);
+                break;
+            case DistanceMeasurementMethod.DISTANCE_MEASUREMENT_METHOD_CHANNEL_SOUNDING:
+                handleCsResult(address, result);
                 break;
             default:
                 Log.w(TAG, "onDistanceMeasurementResult: invalid method " + method);
@@ -489,10 +491,28 @@ public class DistanceMeasurementManager {
             return;
         }
         for (DistanceMeasurementTracker tracker : set) {
-            try {
-                if (!tracker.mStarted) {
+            if (!tracker.mStarted) {
                     continue;
-                }
+            }
+            try {
+                tracker.mCallback.onResult(tracker.mDevice, result);
+            } catch (RemoteException e) {
+                Log.e(TAG, "Exception: " + e);
+            }
+        }
+    }
+
+    void handleCsResult(String address, DistanceMeasurementResult result) {
+        CopyOnWriteArraySet<DistanceMeasurementTracker> set = mCsTrackers.get(address);
+        if (set == null) {
+            Log.w(TAG, "Can't find cs tracker");
+            return;
+        }
+        for (DistanceMeasurementTracker tracker : set) {
+            if (!tracker.mStarted) {
+                continue;
+            }
+            try {
                 tracker.mCallback.onResult(tracker.mDevice, result);
             } catch (RemoteException e) {
                 Log.e(TAG, "Exception: " + e);

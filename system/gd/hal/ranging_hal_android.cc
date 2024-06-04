@@ -76,8 +76,12 @@ class BluetoothChannelSoundingSessionTracker : public BnBluetoothChannelSounding
   ::ndk::ScopedAStatus onResult(
       const ::aidl::android::hardware::bluetooth::ranging::RangingResult& in_result) {
     log::verbose("resultMeters {}", in_result.resultMeters);
+    hal::RangingResult ranging_result;
+    ranging_result.result_meters_ = in_result.resultMeters;
+    ranging_hal_callback_->OnResult(connection_handle_, ranging_result);
     return ::ndk::ScopedAStatus::ok();
   };
+
   ::ndk::ScopedAStatus onClose(::aidl::android::hardware::bluetooth::ranging::Reason in_reason) {
     log::info("reason {}", (uint16_t)in_reason);
     bluetooth_channel_sounding_session_ = nullptr;
@@ -184,6 +188,45 @@ class RangingHalAndroid : public RangingHal {
     auto& tracker = session_trackers_[connection_handle];
     bluetooth_channel_sounding_->openSession(parameters, tracker, &tracker->GetSession());
   }
+
+  void WriteRawData(uint16_t connection_handle, const ChannelSoundingRawData& raw_data) {
+    if (session_trackers_.find(connection_handle) == session_trackers_.end()) {
+      log::error("Can't find session for connection_handle:0x{:04x}", connection_handle);
+      return;
+    } else if (session_trackers_[connection_handle]->GetSession() == nullptr) {
+      log::error("Session not opened");
+      return;
+    }
+
+    ChannelSoudingRawData hal_raw_data;
+    hal_raw_data.numAntennaPaths = raw_data.num_antenna_paths_;
+    hal_raw_data.stepChannels = raw_data.step_channel_;
+    hal_raw_data.initiatorData.stepTonePcts.emplace(std::vector<std::optional<StepTonePct>>{});
+    hal_raw_data.reflectorData.stepTonePcts.emplace(std::vector<std::optional<StepTonePct>>{});
+    for (uint8_t i = 0; i < raw_data.tone_pct_initiator_.size(); i++) {
+      StepTonePct step_tone_pct;
+      for (uint8_t j = 0; j < raw_data.tone_pct_initiator_[i].size(); j++) {
+        ComplexNumber complex_number;
+        complex_number.imaginary = raw_data.tone_pct_initiator_[i][j].imag();
+        complex_number.real = raw_data.tone_pct_initiator_[i][j].real();
+        step_tone_pct.tonePcts.emplace_back(complex_number);
+      }
+      step_tone_pct.toneQualityIndicator = raw_data.tone_quality_indicator_initiator_[i];
+      hal_raw_data.initiatorData.stepTonePcts.value().emplace_back(step_tone_pct);
+    }
+    for (uint8_t i = 0; i < raw_data.tone_pct_reflector_.size(); i++) {
+      StepTonePct step_tone_pct;
+      for (uint8_t j = 0; j < raw_data.tone_pct_reflector_[i].size(); j++) {
+        ComplexNumber complex_number;
+        complex_number.imaginary = raw_data.tone_pct_reflector_[i][j].imag();
+        complex_number.real = raw_data.tone_pct_reflector_[i][j].real();
+        step_tone_pct.tonePcts.emplace_back(complex_number);
+      }
+      step_tone_pct.toneQualityIndicator = raw_data.tone_quality_indicator_reflector_[i];
+      hal_raw_data.reflectorData.stepTonePcts.value().emplace_back(step_tone_pct);
+    }
+    session_trackers_[connection_handle]->GetSession()->writeRawData(hal_raw_data);
+  };
 
   void CopyVendorSpecificData(
       const std::vector<hal::VendorSpecificCharacteristic>& source,

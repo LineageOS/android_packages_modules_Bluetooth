@@ -178,6 +178,26 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
         cs_trackers_[connection_handle].address, success);
   }
 
+  void OnResult(uint16_t connection_handle, const bluetooth::hal::RangingResult& ranging_result) {
+    if (cs_trackers_.find(connection_handle) == cs_trackers_.end()) {
+      log::warn("Can't find CS tracker for connection_handle {}", connection_handle);
+      return;
+    }
+    log::debug(
+        "address {}, resultMeters {}",
+        cs_trackers_[connection_handle].address,
+        ranging_result.result_meters_);
+    distance_measurement_callbacks_->OnDistanceMeasurementResult(
+        cs_trackers_[connection_handle].address,
+        ranging_result.result_meters_ * 100,
+        0.0,
+        -1,
+        -1,
+        -1,
+        -1,
+        DistanceMeasurementMethod::METHOD_CS);
+  }
+
   ~impl() {}
   void start(
       os::Handler* handler,
@@ -347,7 +367,7 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
     log::info(
         "address:{}, connection_handle 0x{:04x}, att_handle 0x{:04x}, size of "
         "vendor_specific_data {}",
-        address.ToString().c_str(),
+        address,
         connection_handle,
         att_handle,
         vendor_specific_data.size());
@@ -1178,6 +1198,21 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
           (uint16_t)procedure_data->step_channel.size(),
           (uint16_t)cs_trackers_[connection_handle].main_mode_type,
           (uint16_t)cs_trackers_[connection_handle].sub_mode_type);
+
+      if (ranging_hal_->IsBound()) {
+        // Use algorithm in the HAL
+        bluetooth::hal::ChannelSoundingRawData raw_data;
+        raw_data.num_antenna_paths_ = procedure_data->num_antenna_paths;
+        raw_data.step_channel_ = procedure_data->step_channel;
+        raw_data.tone_pct_initiator_ = procedure_data->tone_pct_initiator;
+        raw_data.tone_quality_indicator_initiator_ =
+            procedure_data->tone_quality_indicator_initiator;
+        raw_data.tone_pct_reflector_ = procedure_data->tone_pct_reflector;
+        raw_data.tone_quality_indicator_reflector_ =
+            procedure_data->tone_quality_indicator_reflector;
+        ranging_hal_->WriteRawData(connection_handle, raw_data);
+        return;
+      }
     }
 
     // If the procedure is completed or aborted, delete all previous data
