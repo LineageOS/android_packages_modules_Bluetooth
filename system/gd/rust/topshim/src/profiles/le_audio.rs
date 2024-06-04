@@ -257,6 +257,12 @@ impl From<i32> for BtLeAudioGroupStatus {
     }
 }
 
+impl Default for BtLeAudioGroupStatus {
+    fn default() -> Self {
+        BtLeAudioGroupStatus::Inactive
+    }
+}
+
 impl From<BtLeAudioGroupNodeStatus> for i32 {
     fn from(value: BtLeAudioGroupNodeStatus) -> Self {
         match value {
@@ -429,6 +435,12 @@ impl From<i32> for BtLeAudioGroupStreamStatus {
             7 => BtLeAudioGroupStreamStatus::Destroyed,
             _ => panic!("Invalid value {} to BtLeAudioGroupStreamStatus", value),
         }
+    }
+}
+
+impl Default for BtLeAudioGroupStreamStatus {
+    fn default() -> Self {
+        BtLeAudioGroupStreamStatus::Idle
     }
 }
 
