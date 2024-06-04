@@ -705,6 +705,10 @@ public class BluetoothMapUtils {
         return result.getBytes(); /* return the result as "UTF-8" bytes */
     }
 
+    private static final byte ESCAPE_CHAR = '=';
+    private static final byte TAB = 9;
+    private static final byte SPACE = 32;
+
     /**
      * Encodes an array of bytes into an array of quoted-printable 7-bit characters. Unsafe
      * characters are escaped. Simplified version of encoder from QuetedPrintableCodec.java (Apache
@@ -713,11 +717,6 @@ public class BluetoothMapUtils {
      * @param bytes array of bytes to be encoded
      * @return UTF-8 string containing quoted-printable characters
      */
-    private static final byte ESCAPE_CHAR = '=';
-
-    private static final byte TAB = 9;
-    private static final byte SPACE = 32;
-
     public static final String encodeQuotedPrintable(byte[] bytes) {
         if (bytes == null) {
             return null;

@@ -323,6 +323,7 @@ android_app {
             "-Xep:AlmostJavadoc:ERROR",
             "-Xep:BadImport:ERROR",
             "-Xep:ClassCanBeStatic:ERROR",
+            "-Xep:InvalidBlockTag:ERROR",
             "-Xep:UnusedMethod:ERROR",
             "-Xep:UnusedVariable:ERROR",
             "-XepExcludedPaths:.*/srcjars/.*", // Exclude generated files

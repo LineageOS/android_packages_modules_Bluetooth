@@ -62,6 +62,7 @@ java_defaults {
             "-Xep:CatchFail:ERROR",
             "-Xep:ClassCanBeStatic:ERROR",
             "-Xep:EmptyCatch:ERROR",
+            "-Xep:InvalidBlockTag:ERROR",
             "-Xep:InvalidInlineTag:ERROR",
             "-Xep:NonApiType:ERROR",
             "-Xep:StringCharset:ERROR",
