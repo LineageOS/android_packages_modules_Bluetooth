@@ -240,7 +240,7 @@ impl DBusArg for PlayerMetadata {
     }
 
     fn log(metadata: &PlayerMetadata) -> String {
-        String::from(format!("{:?}", metadata))
+        format!("{:?}", metadata)
     }
 }
 
