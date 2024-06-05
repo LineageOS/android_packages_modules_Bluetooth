@@ -20,6 +20,7 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
+#include <map>
 #include <memory>
 
 #include "btif/include/core_callbacks.h"
@@ -58,6 +59,16 @@ const std::vector<uint8_t> lc3_zero_packet{
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x00, 0x38, 0x24, 0xf9, 0x4a, 0x0d, 0x00, 0x00, 0x03};
+
+// Maps irregular packet size to expected decode buffer size.
+// See |btm_wbs_supported_pkt_size| and |btm_wbs_msbc_buffer_size|.
+const std::map<size_t, size_t> irregular_packet_to_buffer_size{
+    {72, 360},
+    {24, 120},
+};
+
+// The encoded packet size is 60 regardless of the codec.
+const int ENCODED_PACKET_SIZE = 60;
 
 struct MsbcCodecInterface : bluetooth::core::CodecInterface {
   MsbcCodecInterface() : bluetooth::core::CodecInterface(){};
@@ -352,6 +363,121 @@ TEST_F(ScoHciSwbWithInitCleanTest, SwbDecode) {
   // No remaining data to decode
   ASSERT_EQ(bluetooth::audio::sco::swb::decode(&decoded), size_t(0));
   ASSERT_EQ(decoded, nullptr);
+}
+
+TEST_F(ScoHciWbsTest, WbsDecodeWithIrregularOffset) {
+  for (auto [pkt_size, buf_size] : irregular_packet_to_buffer_size) {
+    ASSERT_EQ(buf_size % pkt_size, 0u);
+
+    bluetooth::audio::sco::wbs::init(pkt_size);
+
+    const uint8_t* decoded = nullptr;
+
+    // No data to decode
+    ASSERT_EQ(bluetooth::audio::sco::wbs::decode(&decoded), size_t(0));
+    ASSERT_EQ(decoded, nullptr);
+
+    // Start the payload with an irregular offset that misaligns with the
+    // packet size.
+    std::vector<uint8_t> payload = std::vector<uint8_t>(1, 0);
+    while (payload.size() <= pkt_size) {
+      payload.insert(payload.end(), msbc_zero_packet.begin(),
+                     msbc_zero_packet.end());
+    }
+    size_t packet_offset =
+        msbc_zero_packet.size() - (payload.size() - pkt_size);
+    payload.resize(pkt_size);
+
+    // Try to decode as many packets as to hit the boundary.
+    for (size_t iter = 0, decodable = 0; iter < 2 * buf_size / pkt_size;
+         ++iter) {
+      ASSERT_EQ(bluetooth::audio::sco::wbs::enqueue_packet(payload, false),
+                true);
+      decodable += payload.size() - !iter;  // compensate for the first offset
+
+      while (decodable >= ENCODED_PACKET_SIZE) {
+        decoded = nullptr;
+        ASSERT_EQ(bluetooth::audio::sco::wbs::decode(&decoded),
+                  size_t(BTM_MSBC_CODE_SIZE));
+        ASSERT_NE(decoded, nullptr);
+        for (size_t i = 0; i < BTM_MSBC_CODE_SIZE; i++) {
+          ASSERT_EQ(decoded[i], 0);
+        }
+        decodable -= ENCODED_PACKET_SIZE;
+      }
+
+      payload = std::vector<uint8_t>(msbc_zero_packet.begin() + packet_offset,
+                                     msbc_zero_packet.end());
+      while (payload.size() < pkt_size) {
+        payload.insert(payload.end(), msbc_zero_packet.begin(),
+                       msbc_zero_packet.end());
+      }
+      packet_offset += msbc_zero_packet.size() - packet_offset;
+      packet_offset += msbc_zero_packet.size() -
+                       (payload.size() - pkt_size) % msbc_zero_packet.size();
+      packet_offset %= msbc_zero_packet.size();
+      payload.resize(pkt_size);
+    }
+
+    bluetooth::audio::sco::wbs::cleanup();
+  }
+}
+
+TEST_F(ScoHciSwbTest, SwbDecodeWithIrregularOffset) {
+  for (auto [pkt_size, buf_size] : irregular_packet_to_buffer_size) {
+    ASSERT_EQ(buf_size % pkt_size, 0u);
+
+    bluetooth::audio::sco::swb::init(pkt_size);
+
+    const uint8_t* decoded = nullptr;
+
+    // No data to decode
+    ASSERT_EQ(bluetooth::audio::sco::swb::decode(&decoded), size_t(0));
+    ASSERT_EQ(decoded, nullptr);
+
+    // Start the payload with an irregular offset that misaligns with the
+    // packet size.
+    std::vector<uint8_t> payload = std::vector<uint8_t>(1, 0);
+    while (payload.size() <= pkt_size) {
+      payload.insert(payload.end(), lc3_zero_packet.begin(),
+                     lc3_zero_packet.end());
+    }
+    size_t packet_offset = lc3_zero_packet.size() - (payload.size() - pkt_size);
+    payload.resize(pkt_size);
+
+    // Try to decode as many packets as to hit the boundary.
+    for (size_t iter = 0, decodable = 0; iter < 2 * buf_size / pkt_size;
+         ++iter) {
+      ASSERT_EQ(bluetooth::audio::sco::swb::enqueue_packet(payload, false),
+                true);
+      decodable += payload.size() - !iter;  // compensate for the first offset
+
+      while (decodable >= ENCODED_PACKET_SIZE) {
+        decoded = nullptr;
+        ASSERT_EQ(bluetooth::audio::sco::swb::decode(&decoded),
+                  size_t(BTM_LC3_CODE_SIZE));
+        ASSERT_NE(decoded, nullptr);
+        for (size_t i = 0; i < BTM_LC3_CODE_SIZE; i++) {
+          ASSERT_EQ(decoded[i], 0);
+        }
+        decodable -= ENCODED_PACKET_SIZE;
+      }
+
+      payload = std::vector<uint8_t>(lc3_zero_packet.begin() + packet_offset,
+                                     lc3_zero_packet.end());
+      while (payload.size() < pkt_size) {
+        payload.insert(payload.end(), lc3_zero_packet.begin(),
+                       lc3_zero_packet.end());
+      }
+      packet_offset += lc3_zero_packet.size() - packet_offset;
+      packet_offset += lc3_zero_packet.size() -
+                       (payload.size() - pkt_size) % lc3_zero_packet.size();
+      packet_offset %= lc3_zero_packet.size();
+      payload.resize(pkt_size);
+    }
+
+    bluetooth::audio::sco::swb::cleanup();
+  }
 }
 
 TEST_F(ScoHciWbsTest, WbsEncodeWithoutInit) {
