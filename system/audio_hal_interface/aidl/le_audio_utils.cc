@@ -523,6 +523,15 @@ GetStackDataPathFromAidlFormat(
     config.dataPathConfig = *dp.dataPathConfiguration.configuration;
   }
 
+  // Due to AIDL not having the Transparent codec type, it uses the boolean and
+  // we should manually align the codecId.
+  if (config.isoDataPathConfig.isTransparent) {
+    config.isoDataPathConfig.codecId.coding_format =
+        bluetooth::hci::kIsoCodingFormatTransparent;
+    config.isoDataPathConfig.codecId.vendor_codec_id = 0x00;
+    config.isoDataPathConfig.codecId.vendor_company_id = 0x00;
+  }
+
   if (dp.isoDataPathConfiguration.configuration) {
     config.isoDataPathConfig.configuration =
         *dp.isoDataPathConfiguration.configuration;
