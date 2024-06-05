@@ -84,6 +84,7 @@ rust_defaults {
         "libgrpc_wrap",
         "liblog",
         "server_configurable_flags",
+        "libaconfig_storage_read_api_cc",
     ],
     proc_macros: [
         "libpaste",

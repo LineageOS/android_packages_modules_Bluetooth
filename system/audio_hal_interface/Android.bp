@@ -167,6 +167,7 @@ cc_test {
         "aidl/a2dp_provider_info_unittest.cc",
     ],
     shared_libs: [
+        "libaconfig_storage_read_api_cc",
         "libbinder_ndk",
         "libcutils",
         "libhidlbase",
