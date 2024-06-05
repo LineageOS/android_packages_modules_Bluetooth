@@ -165,10 +165,9 @@ public class LeAudioService extends ProfileService {
             leaudioApiSynchronizedBlockFix() ? mGroupReadWriteLock.readLock() : mGroupLock;
     private final Lock mGroupWriteLock =
             leaudioApiSynchronizedBlockFix() ? mGroupReadWriteLock.writeLock() : mGroupLock;
-    private final Context mContext;
     ServiceFactory mServiceFactory = new ServiceFactory();
 
-    LeAudioNativeInterface mLeAudioNativeInterface;
+    private final LeAudioNativeInterface mNativeInterface;
     boolean mLeAudioNativeIsInitialized = false;
     boolean mLeAudioInbandRingtoneSupportedByPlatform = true;
     boolean mBluetoothEnabled = false;
@@ -218,15 +217,13 @@ public class LeAudioService extends ProfileService {
     ScanCallback mScanCallback;
 
     public LeAudioService(Context ctx) {
-        super(ctx);
-        mContext = ctx;
+        this(ctx, LeAudioNativeInterface.getInstance());
     }
 
     @VisibleForTesting
     LeAudioService(Context ctx, LeAudioNativeInterface nativeInterface) {
         super(ctx);
-        mLeAudioNativeInterface = nativeInterface;
-        mContext = ctx;
+        mNativeInterface = Objects.requireNonNull(nativeInterface);
     }
 
     private class LeAudioGroupDescriptor {
@@ -423,12 +420,6 @@ public class LeAudioService extends ProfileService {
                 Objects.requireNonNull(
                         AdapterService.getAdapterService(),
                         "AdapterService cannot be null when LeAudioService starts");
-        if (mLeAudioNativeInterface == null) {
-            mLeAudioNativeInterface =
-                    Objects.requireNonNull(
-                            LeAudioNativeInterface.getInstance(),
-                            "LeAudioNativeInterface cannot be null when LeAudioService starts");
-        }
         mDatabaseManager =
                 Objects.requireNonNull(
                         mAdapterService.getDatabase(),
@@ -503,16 +494,10 @@ public class LeAudioService extends ProfileService {
             mTmapStarted = registerTmap();
         }
 
-        LeAudioNativeInterface nativeInterface = mLeAudioNativeInterface;
-        if (nativeInterface == null) {
-            Log.w(TAG, "the service is stopped. ignore init()");
-            return;
-        }
-        nativeInterface.init(mLeAudioCodecConfig.getCodecConfigOffloading());
+        mNativeInterface.init(mLeAudioCodecConfig.getCodecConfigOffloading());
 
         if (leaudioUseAudioModeListener()) {
-            mAudioManager.addOnModeChangedListener(
-                    mContext.getMainExecutor(), mAudioModeChangeListener);
+            mAudioManager.addOnModeChangedListener(getMainExecutor(), mAudioModeChangeListener);
         }
     }
 
@@ -594,8 +579,7 @@ public class LeAudioService extends ProfileService {
         }
 
         // Cleanup native interfaces
-        mLeAudioNativeInterface.cleanup();
-        mLeAudioNativeInterface = null;
+        mNativeInterface.cleanup();
         mLeAudioNativeIsInitialized = false;
         mBluetoothEnabled = false;
         mHfpHandoverDevice = null;
@@ -718,7 +702,7 @@ public class LeAudioService extends ProfileService {
             Log.e(TAG, "setEnabledState, mLeAudioNativeIsInitialized is not initialized");
             return;
         }
-        mLeAudioNativeInterface.setEnableState(device, enabled);
+        mNativeInterface.setEnableState(device, enabled);
     }
 
     public boolean connect(BluetoothDevice device) {
@@ -965,7 +949,7 @@ public class LeAudioService extends ProfileService {
             Log.e(TAG, "Le Audio not initialized properly.");
             return false;
         }
-        return mLeAudioNativeInterface.groupAddNode(groupId, device);
+        return mNativeInterface.groupAddNode(groupId, device);
     }
 
     /**
@@ -980,7 +964,7 @@ public class LeAudioService extends ProfileService {
             Log.e(TAG, "Le Audio not initialized properly.");
             return false;
         }
-        return mLeAudioNativeInterface.groupRemoveNode(groupId, device);
+        return mNativeInterface.groupRemoveNode(groupId, device);
     }
 
     /**
@@ -1108,8 +1092,7 @@ public class LeAudioService extends ProfileService {
                             + " group is deactivated.");
             mCreateBroadcastQueue.add(broadcastSettings);
             if (Flags.leaudioBroadcastAudioHandoverPolicies()) {
-                mLeAudioNativeInterface.setUnicastMonitorMode(
-                        LeAudioStackEvent.DIRECTION_SINK, true);
+                mNativeInterface.setUnicastMonitorMode(LeAudioStackEvent.DIRECTION_SINK, true);
             }
             removeActiveDevice(true);
 
@@ -1329,7 +1312,7 @@ public class LeAudioService extends ProfileService {
 
         Log.d(TAG, "destroyBroadcast");
         if (Flags.leaudioBroadcastAudioHandoverPolicies()) {
-            mLeAudioNativeInterface.setUnicastMonitorMode(LeAudioStackEvent.DIRECTION_SINK, false);
+            mNativeInterface.setUnicastMonitorMode(LeAudioStackEvent.DIRECTION_SINK, false);
         }
         mLeAudioBroadcasterNativeInterface.destroyBroadcast(broadcastId);
     }
@@ -1409,11 +1392,10 @@ public class LeAudioService extends ProfileService {
 
         if (active) {
             mIsSourceStreamMonitorModeEnabled = true;
-            mLeAudioNativeInterface.setUnicastMonitorMode(LeAudioStackEvent.DIRECTION_SOURCE, true);
+            mNativeInterface.setUnicastMonitorMode(LeAudioStackEvent.DIRECTION_SOURCE, true);
         } else {
             if (mIsSourceStreamMonitorModeEnabled) {
-                mLeAudioNativeInterface.setUnicastMonitorMode(
-                        LeAudioStackEvent.DIRECTION_SOURCE, false);
+                mNativeInterface.setUnicastMonitorMode(LeAudioStackEvent.DIRECTION_SOURCE, false);
             }
 
             mIsSourceStreamMonitorModeEnabled = false;
@@ -2022,8 +2004,7 @@ public class LeAudioService extends ProfileService {
                     && ((newSupportedAudioDirections & AUDIO_DIRECTION_INPUT_BIT) != 0)) {
                 newInDevice = getLeadDeviceForTheGroup(groupId);
             } else if (Flags.leaudioBroadcastAudioHandoverPolicies() && wasSetSinkListeningMode()) {
-                mLeAudioNativeInterface.setUnicastMonitorMode(
-                        LeAudioStackEvent.DIRECTION_SINK, false);
+                mNativeInterface.setUnicastMonitorMode(LeAudioStackEvent.DIRECTION_SINK, false);
             }
         }
 
@@ -2212,7 +2193,7 @@ public class LeAudioService extends ProfileService {
             }
         }
 
-        mLeAudioNativeInterface.groupSetActive(groupId);
+        mNativeInterface.groupSetActive(groupId);
         if (groupId == LE_AUDIO_GROUP_ID_INVALID) {
             /* Native will clear its states and send us group Inactive.
              * However we would like to notify audio framework that LeAudio is not
@@ -2623,8 +2604,7 @@ public class LeAudioService extends ProfileService {
         if (bassClientService == null) {
             Log.e(TAG, "handleSourceStreamStatusChange: BASS Client service is not available");
 
-            mLeAudioNativeInterface.setUnicastMonitorMode(
-                    LeAudioStackEvent.DIRECTION_SOURCE, false);
+            mNativeInterface.setUnicastMonitorMode(LeAudioStackEvent.DIRECTION_SOURCE, false);
         }
 
         bassClientService.handleUnicastSourceStreamStatusChange(status);
@@ -2689,8 +2669,7 @@ public class LeAudioService extends ProfileService {
 
         groupDescriptor.updateAllowedContexts(sinkContextTypes, sourceContextTypes);
 
-        mLeAudioNativeInterface.setGroupAllowedContextMask(
-                groupId, sinkContextTypes, sourceContextTypes);
+        mNativeInterface.setGroupAllowedContextMask(groupId, sinkContextTypes, sourceContextTypes);
     }
 
     @VisibleForTesting
@@ -2881,7 +2860,7 @@ public class LeAudioService extends ProfileService {
 
         if (!leaudioUseAudioModeListener()) {
             if (mQueuedInCallValue.isPresent()) {
-                mLeAudioNativeInterface.setInCall(mQueuedInCallValue.get());
+                mNativeInterface.setInCall(mQueuedInCallValue.get());
                 mQueuedInCallValue = Optional.empty();
             }
         }
@@ -3538,7 +3517,7 @@ public class LeAudioService extends ProfileService {
 
         sm =
                 LeAudioStateMachine.make(
-                        device, this, mLeAudioNativeInterface, mStateMachinesThread.getLooper());
+                        device, this, mNativeInterface, mStateMachinesThread.getLooper());
         descriptor.mStateMachine = sm;
         return sm;
     }
@@ -3574,7 +3553,7 @@ public class LeAudioService extends ProfileService {
 
                 if (descriptor.mGroupId != LE_AUDIO_GROUP_ID_INVALID) {
                     /* In case device is still in the group, let's remove it */
-                    mLeAudioNativeInterface.groupRemoveNode(descriptor.mGroupId, device);
+                    mNativeInterface.groupRemoveNode(descriptor.mGroupId, device);
                 }
 
                 descriptor.mGroupId = LE_AUDIO_GROUP_ID_INVALID;
@@ -3943,7 +3922,7 @@ public class LeAudioService extends ProfileService {
             }
         }
 
-        mLeAudioNativeInterface.setInCall(inCall);
+        mNativeInterface.setInCall(inCall);
 
         if (!leaudioUseAudioModeListener()) {
             /* For clearing inCall mode */
@@ -3974,7 +3953,7 @@ public class LeAudioService extends ProfileService {
             Log.e(TAG, "Le Audio not initialized properly.");
             return;
         }
-        mLeAudioNativeInterface.sendAudioProfilePreferences(
+        mNativeInterface.sendAudioProfilePreferences(
                 groupId, isOutputPreferenceLeAudio, isDuplexPreferenceLeAudio);
     }
 
@@ -4184,7 +4163,7 @@ public class LeAudioService extends ProfileService {
             Log.e(TAG, "Le Audio not initialized properly.");
             return;
         }
-        mLeAudioNativeInterface.setCcidInformation(ccid, contextType);
+        mNativeInterface.setCcidInformation(ccid, contextType);
     }
 
     /**
@@ -4785,8 +4764,7 @@ public class LeAudioService extends ProfileService {
             return;
         }
 
-        mLeAudioNativeInterface.setCodecConfigPreference(
-                groupId, inputCodecConfig, outputCodecConfig);
+        mNativeInterface.setCodecConfigPreference(groupId, inputCodecConfig, outputCodecConfig);
     }
 
     /**

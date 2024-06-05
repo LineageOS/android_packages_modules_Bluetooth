@@ -51,8 +51,8 @@ public class McpService extends ProfileService {
     @GuardedBy("mLock")
     private MediaControlProfile mGmcs;
 
-    private Map<BluetoothDevice, Integer> mDeviceAuthorizations = new HashMap<>();
-    private Handler mHandler = new Handler(Looper.getMainLooper());
+    private final Map<BluetoothDevice, Integer> mDeviceAuthorizations = new HashMap<>();
+    private final Handler mHandler = new Handler(Looper.getMainLooper());
 
     public McpService(Context ctx) {
         super(ctx);
@@ -234,7 +234,7 @@ public class McpService extends ProfileService {
 
         LeAudioService leAudioService = LeAudioService.getLeAudioService();
         if (leAudioService == null) {
-            Log.e(TAG, "MCS access not permited. LeAudioService not available");
+            Log.e(TAG, "MCS access not permitted. LeAudioService not available");
             return BluetoothDevice.ACCESS_UNKNOWN;
         }
 
@@ -245,7 +245,7 @@ public class McpService extends ProfileService {
             return BluetoothDevice.ACCESS_ALLOWED;
         }
 
-        Log.e(TAG, "MCS access not permited");
+        Log.e(TAG, "MCS access not permitted");
         return BluetoothDevice.ACCESS_UNKNOWN;
     }
 
