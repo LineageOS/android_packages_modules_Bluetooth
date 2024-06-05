@@ -7,3 +7,13 @@ flag {
     description: "Use MITM initially to avoid abrupt peer disconnection b/312840315"
     bug: "316824288"
 }
+
+flag {
+    name: "rfcomm_bypass_post_to_main"
+    namespace: "bluetooth"
+    description: "Remove unnecessary posts to main thread to prevent race condition b/321318665"
+    bug: "344994073"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
