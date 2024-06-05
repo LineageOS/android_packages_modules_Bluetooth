@@ -210,10 +210,11 @@ static void Fuzz(const uint8_t* data, size_t size) {
                                                   bool, tL2CAP_LE_CFG_INFO*) {},
       .pL2CA_CreditBasedCollisionInd_Cb = [](const RawAddress&) {},
   };
-  log::assert_that(L2CA_Register2(BT_PSM_ATT, appl_info, false, nullptr,
-                                  L2CAP_MTU_SIZE, 0, BTM_SEC_NONE),
-                   "assert failed: L2CA_Register2(BT_PSM_ATT, appl_info, "
-                   "false, nullptr, L2CAP_MTU_SIZE, 0, BTM_SEC_NONE)");
+  log::assert_that(
+      L2CA_RegisterWithSecurity(BT_PSM_ATT, appl_info, false, nullptr,
+                                L2CAP_MTU_SIZE, 0, BTM_SEC_NONE),
+      "assert failed: L2CA_RegisterWithSecurity(BT_PSM_ATT, appl_info, "
+      "false, nullptr, L2CAP_MTU_SIZE, 0, BTM_SEC_NONE)");
   log::assert_that(L2CA_RegisterLECoc(BT_PSM_EATT, appl_info, BTM_SEC_NONE, {}),
                    "assert failed: L2CA_RegisterLECoc(BT_PSM_EATT, appl_info, "
                    "BTM_SEC_NONE, {{}})");

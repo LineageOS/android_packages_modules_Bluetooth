@@ -361,7 +361,7 @@ void l2c_free();
  ****************************************************************************/
 
 // Also does security for you
-[[nodiscard]] uint16_t L2CA_Register2(
+[[nodiscard]] uint16_t L2CA_RegisterWithSecurity(
     uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info, bool enable_snoop,
     tL2CAP_ERTM_INFO* p_ertm_info, uint16_t my_mtu,
     uint16_t required_remote_mtu, uint16_t sec_level);
@@ -420,9 +420,9 @@ void L2CA_Deregister(uint16_t psm);
  ******************************************************************************/
 void L2CA_FreeLePSM(uint16_t psm);
 
-[[nodiscard]] uint16_t L2CA_ConnectReq2(uint16_t psm,
-                                        const RawAddress& p_bd_addr,
-                                        uint16_t sec_level);
+[[nodiscard]] uint16_t L2CA_ConnectReqWithSecurity(uint16_t psm,
+                                                   const RawAddress& p_bd_addr,
+                                                   uint16_t sec_level);
 /*******************************************************************************
  *
  * Function         L2CA_ConnectReq

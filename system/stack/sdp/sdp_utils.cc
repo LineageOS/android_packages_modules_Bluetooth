@@ -527,8 +527,8 @@ bool sdpu_process_pend_ccb_new_cid(tCONN_CB& ccb) {
       if (!new_conn) {
         // Only change state of the first ccb
         p_ccb->con_state = SDP_STATE_CONN_SETUP;
-        new_cid =
-            L2CA_ConnectReq2(BT_PSM_SDP, p_ccb->device_address, BTM_SEC_NONE);
+        new_cid = L2CA_ConnectReqWithSecurity(BT_PSM_SDP, p_ccb->device_address,
+                                              BTM_SEC_NONE);
         new_conn = true;
       }
       // Check if L2CAP started the connection process
