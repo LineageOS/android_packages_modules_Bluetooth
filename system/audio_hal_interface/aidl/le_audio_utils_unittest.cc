@@ -73,6 +73,14 @@ static const ::bluetooth::le_audio::types::LeAudioCodecId kStackCodecVendor1 = {
 aidl::android::hardware::bluetooth::audio::CodecId::Vendor kAidlCodecVendor1{
     .id = 0xC0DE, .codecId = 0xF00D};
 
+static const ::bluetooth::le_audio::types::LeAudioCodecId
+    kStackCodecTransparent = {
+        .coding_format = ::bluetooth::hci::kIsoCodingFormatTransparent,
+        .vendor_company_id =
+            ::bluetooth::le_audio::types::kLeAudioVendorCompanyIdUndefined,
+        .vendor_codec_id =
+            ::bluetooth::le_audio::types::kLeAudioVendorCodecIdUndefined};
+
 namespace test_utils {
 
 static auto PrepareStackMetadataLtv() {
@@ -208,7 +216,9 @@ PrepareReferenceLeAudioDataPathConfigurationVendor() {
   ::bluetooth::le_audio::types::DataPathConfiguration stack_config;
   stack_config.dataPathId = config.dataPathId;
   stack_config.dataPathConfig = *config.dataPathConfiguration.configuration;
-  stack_config.isoDataPathConfig.codecId = kStackCodecVendor1;
+  stack_config.isoDataPathConfig.codecId =
+      config.isoDataPathConfiguration.isTransparent ? kStackCodecTransparent
+                                                    : kStackCodecVendor1;
   stack_config.isoDataPathConfig.isTransparent =
       config.isoDataPathConfiguration.isTransparent;
   stack_config.isoDataPathConfig.controllerDelayUs =
@@ -243,7 +253,9 @@ PrepareReferenceLeAudioDataPathConfigurationLc3() {
   ::bluetooth::le_audio::types::DataPathConfiguration stack_config;
   stack_config.dataPathId = config.dataPathId;
   stack_config.dataPathConfig = *config.dataPathConfiguration.configuration;
-  stack_config.isoDataPathConfig.codecId = kStackCodecLc3;
+  stack_config.isoDataPathConfig.codecId =
+      config.isoDataPathConfiguration.isTransparent ? kStackCodecTransparent
+                                                    : kStackCodecLc3;
   stack_config.isoDataPathConfig.isTransparent =
       config.isoDataPathConfiguration.isTransparent;
   stack_config.isoDataPathConfig.controllerDelayUs =
