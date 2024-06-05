@@ -94,7 +94,7 @@ bt_status_t BTA_HfClientOpen(const RawAddress& bd_addr, uint16_t* p_handle) {
 
   if (!bta_hf_client_allocate_handle(bd_addr, p_handle)) {
     log::error("could not allocate handle");
-    return BT_STATUS_FAIL;
+    return BT_STATUS_NOMEM;
   }
 
   p_buf->hdr.event = BTA_HF_CLIENT_API_OPEN_EVT;
