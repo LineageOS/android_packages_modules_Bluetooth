@@ -345,6 +345,23 @@ size_t LeAudioClientInterface::Sink::Read(uint8_t* p_buf, uint32_t len) {
   return bytes_read;
 }
 
+std::optional<::bluetooth::le_audio::set_configurations::AudioSetConfiguration>
+LeAudioClientInterface::Sink::GetUnicastConfig(
+    const ::bluetooth::le_audio::CodecManager::UnicastConfigurationRequirements&
+        requirements) const {
+  return std::nullopt;
+}
+
+std::optional<::bluetooth::le_audio::broadcaster::BroadcastConfiguration>
+LeAudioClientInterface::Sink::GetBroadcastConfig(
+    const std::vector<
+        std::pair<::bluetooth::le_audio::types::LeAudioContextType, uint8_t>>&
+        subgroup_quality,
+    const std::optional<
+        std::vector<::bluetooth::le_audio::types::acs_ac_record>>& pacs) const {
+  return std::nullopt;
+}
+
 void LeAudioClientInterface::Source::Cleanup() {
   log::info("");
 

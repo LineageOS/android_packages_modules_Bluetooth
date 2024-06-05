@@ -800,6 +800,16 @@ LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(
 
     for (auto direction :
          {types::kLeAudioDirectionSink, types::kLeAudioDirectionSource}) {
+      // Do not put any requirements on the Source if Sink only scenario is used
+      // Note: With the RINGTONE we should already prepare for a call.
+      if ((direction == types::kLeAudioDirectionSource) &&
+          ((types::kLeAudioContextAllRemoteSinkOnly.test(ctx_type) &&
+            (ctx_type != types::LeAudioContextType::RINGTONE)) ||
+           ctx_type == types::LeAudioContextType::UNSPECIFIED)) {
+        log::debug("Skipping the remote source requirements.");
+        continue;
+      }
+
       if (device->GetAseCount(direction) == 0) {
         log::warn("Device {} has no ASEs for direction: {}", device->address_,
                   (int)direction);
@@ -825,13 +835,17 @@ LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(
                             DeviceDirectionRequirements>();
       }
 
-      // Pass the audio channel allocation requirement
-      auto locations = dev_locations.to_ulong();
+      // Pass the audio channel allocation requirement according to TMAP
+      auto locations = dev_locations.to_ulong() &
+                       (codec_spec_conf::kLeAudioLocationFrontLeft |
+                        codec_spec_conf::kLeAudioLocationFrontRight);
       CodecManager::UnicastConfigurationRequirements::
           DeviceDirectionRequirements config_req;
       config_req.params.Add(
           codec_spec_conf::kLeAudioLtvTypeAudioChannelAllocation,
           (uint32_t)locations);
+      config_req.target_latency =
+          utils::GetTargetLatencyForAudioContext(ctx_type);
       log::warn("Device {} pushes requirement, location: {}, direction: {}",
                 device->address_, (int)locations, (int)direction);
       direction_req->push_back(std::move(config_req));

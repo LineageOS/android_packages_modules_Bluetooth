@@ -93,7 +93,7 @@ public class TransitionalScanHelper {
     private static final int NUM_SCAN_EVENTS_KEPT = 20;
 
     // onFoundLost related constants
-    private static final int ADVT_STATE_ONFOUND = 0;
+    @VisibleForTesting static final int ADVT_STATE_ONFOUND = 0;
     private static final int ADVT_STATE_ONLOST = 1;
 
     private static final int ET_LEGACY_MASK = 0x10;
@@ -956,17 +956,28 @@ public class TransitionalScanHelper {
                         + trackingInfo.getClientIf()
                         + " address = "
                         + trackingInfo.getAddress()
+                        + " addressType = "
+                        + trackingInfo.getAddressType()
                         + " adv_state = "
                         + trackingInfo.getAdvState());
 
+        @SuppressWarnings("NonCanonicalType")
         ScannerMap.App app = mScannerMap.getById(trackingInfo.getClientIf());
         if (app == null || (app.callback == null && app.info == null)) {
             Log.e(TAG, "app or callback is null");
             return;
         }
 
-        BluetoothDevice device =
-                BluetoothAdapter.getDefaultAdapter().getRemoteDevice(trackingInfo.getAddress());
+        BluetoothDevice device;
+        if (Flags.leScanUseAddressType()) {
+            device =
+                    BluetoothAdapter.getDefaultAdapter()
+                            .getRemoteLeDevice(
+                                    trackingInfo.getAddress(), trackingInfo.getAddressType());
+        } else {
+            device =
+                    BluetoothAdapter.getDefaultAdapter().getRemoteDevice(trackingInfo.getAddress());
+        }
         int advertiserState = trackingInfo.getAdvState();
         ScanResult result =
                 new ScanResult(

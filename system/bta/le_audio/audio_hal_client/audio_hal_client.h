@@ -18,9 +18,12 @@
 #pragma once
 
 #include <memory>
+#include <optional>
 #include <vector>
 
 #include "audio_hal_interface/le_audio_software.h"
+#include "le_audio/codec_manager.h"
+#include "le_audio/le_audio_types.h"
 
 namespace bluetooth::le_audio {
 /* Represents configuration used to configure the local audio sessions and
@@ -92,6 +95,21 @@ struct LeAudioCodecConfiguration {
   }
 };
 
+class LeAudioCommonAudioHalClient {
+ public:
+  virtual ~LeAudioCommonAudioHalClient() = default;
+  virtual std::optional<broadcaster::BroadcastConfiguration> GetBroadcastConfig(
+      const std::vector<std::pair<types::LeAudioContextType, uint8_t>>&
+          subgroup_quality,
+      const std::optional<
+          std::vector<::bluetooth::le_audio::types::acs_ac_record>>& pacs)
+      const = 0;
+  virtual std::optional<
+      ::bluetooth::le_audio::set_configurations::AudioSetConfiguration>
+  GetUnicastConfig(const CodecManager::UnicastConfigurationRequirements&
+                       requirements) const = 0;
+};
+
 /* Used by the local BLE Audio Sink device to pass the audio data
  * received from a remote BLE Audio Source to the Audio HAL.
  */
@@ -135,7 +153,7 @@ class LeAudioSinkAudioHalClient {
 /* Used by the local BLE Audio Source device to get data from the
  * Audio HAL, so we could send it over to a remote BLE Audio Sink device.
  */
-class LeAudioSourceAudioHalClient {
+class LeAudioSourceAudioHalClient : public LeAudioCommonAudioHalClient {
  public:
   class Callbacks {
    public:

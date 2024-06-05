@@ -21,6 +21,8 @@
 #include <bluetooth/log.h>
 #include <com_android_bluetooth_flags.h>
 
+#include <optional>
+
 #include "audio/asrc/asrc_resampler.h"
 #include "audio_hal_client.h"
 #include "audio_hal_interface/le_audio_software.h"
@@ -66,6 +68,16 @@ class SourceImpl : public LeAudioSourceAudioHalClient {
   void UpdateRemoteDelay(uint16_t remote_delay_ms) override;
   void UpdateAudioConfigToHal(
       const ::bluetooth::le_audio::offload_config& config) override;
+  std::optional<broadcaster::BroadcastConfiguration> GetBroadcastConfig(
+      const std::vector<std::pair<types::LeAudioContextType, uint8_t>>&
+          subgroup_quality,
+      const std::optional<
+          std::vector<::bluetooth::le_audio::types::acs_ac_record>>& pacs)
+      const override;
+  std::optional<
+      ::bluetooth::le_audio::set_configurations::AudioSetConfiguration>
+  GetUnicastConfig(const CodecManager::UnicastConfigurationRequirements&
+                       requirements) const override;
   void UpdateBroadcastAudioConfigToHal(
       const ::bluetooth::le_audio::broadcast_offload_config& config) override;
   void SuspendedForReconfiguration() override;
@@ -483,6 +495,33 @@ void SourceImpl::UpdateAudioConfigToHal(
   log::info("");
   halSinkInterface_->UpdateAudioConfigToHal(config);
 }
+
+std::optional<broadcaster::BroadcastConfiguration>
+SourceImpl::GetBroadcastConfig(
+    const std::vector<std::pair<types::LeAudioContextType, uint8_t>>&
+        subgroup_quality,
+    const std::optional<
+        std::vector<::bluetooth::le_audio::types::acs_ac_record>>& pacs) const {
+  if (halSinkInterface_ == nullptr) {
+    log::error("Audio HAL Audio sink is null!");
+    return std::nullopt;
+  }
+
+  log::info("");
+  return halSinkInterface_->GetBroadcastConfig(subgroup_quality, pacs);
+}
+
+std::optional<::bluetooth::le_audio::set_configurations::AudioSetConfiguration>
+SourceImpl::GetUnicastConfig(
+    const CodecManager::UnicastConfigurationRequirements& requirements) const {
+  if (halSinkInterface_ == nullptr) {
+    log::error("Audio HAL Audio sink is null!");
+    return std::nullopt;
+  }
+
+  log::info("");
+  return halSinkInterface_->GetUnicastConfig(requirements);
+};
 
 void SourceImpl::UpdateBroadcastAudioConfigToHal(
     const ::bluetooth::le_audio::broadcast_offload_config& config) {

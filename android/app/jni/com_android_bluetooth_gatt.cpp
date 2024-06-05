@@ -102,7 +102,6 @@ namespace android {
 /**
  * Client callback methods
  */
-
 static jmethodID method_onClientRegistered;
 static jmethodID method_onConnected;
 static jmethodID method_onDisconnected;
@@ -185,6 +184,7 @@ static jmethodID method_onSyncReport;
 static jmethodID method_onSyncStarted;
 static jmethodID method_onSyncTransferredCallback;
 static jmethodID method_onBigInfoReport;
+
 /**
  * Distance Measurement callback methods
  */
@@ -1921,6 +1921,7 @@ static void gattClientReadScanReportsNative(JNIEnv* /* env */,
 /**
  * Native server functions
  */
+
 static void gattServerRegisterAppNative(JNIEnv* /* env */, jobject /* object */,
                                         jlong app_uuid_lsb, jlong app_uuid_msb,
                                         jboolean eatt_support) {
@@ -2578,15 +2579,10 @@ static void stopDistanceMeasurementNative(JNIEnv* env, jobject /* object */,
 }
 
 /**
- * JNI function definitinos
+ * JNI function definitions
  */
 
-// JNI functions defined in AdvertiseManagerNativeInterface class.
-
-// JNI functions defined in PeriodicScanManager class.
-// JNI functions defined in DistanceMeasurementManager class.
-
-// JNI functions defined in GattNativeInterface class.
+// JNI functions defined in ScanNativeInterface class.
 static int register_com_android_bluetooth_gatt_scan(JNIEnv* env) {
   const JNINativeMethod methods[] = {
       {"initializeNative", "()V", (void*)scanInitializeNative},
@@ -2657,6 +2653,7 @@ static int register_com_android_bluetooth_gatt_scan(JNIEnv* env) {
   return 0;
 }
 
+// JNI functions defined in AdvertiseManagerNativeInterface class.
 static int register_com_android_bluetooth_gatt_advertise_manager(JNIEnv* env) {
   const JNINativeMethod methods[] = {
       {"initializeNative", "()V", (void*)advertiseInitializeNative},
@@ -2707,10 +2704,10 @@ static int register_com_android_bluetooth_gatt_advertise_manager(JNIEnv* env) {
   GET_JAVA_METHODS(env,
                    "com/android/bluetooth/gatt/AdvertiseManagerNativeInterface",
                    javaMethods);
-
   return 0;
 }
 
+// JNI functions defined in PeriodicScanNativeInterface class.
 static int register_com_android_bluetooth_gatt_periodic_scan(JNIEnv* env) {
   const JNINativeMethod methods[] = {
       {"initializeNative", "()V", (void*)periodicScanInitializeNative},
@@ -2724,7 +2721,8 @@ static int register_com_android_bluetooth_gatt_periodic_scan(JNIEnv* env) {
        (void*)transferSetInfoNative},
   };
   const int result = REGISTER_NATIVE_METHODS(
-      env, "com/android/bluetooth/le_scan/PeriodicScanNativeInterface", methods);
+      env, "com/android/bluetooth/le_scan/PeriodicScanNativeInterface",
+      methods);
   if (result != 0) {
     return result;
   }
@@ -2740,10 +2738,10 @@ static int register_com_android_bluetooth_gatt_periodic_scan(JNIEnv* env) {
   GET_JAVA_METHODS(env,
                    "com/android/bluetooth/le_scan/PeriodicScanNativeInterface",
                    javaMethods);
-
   return 0;
 }
 
+// JNI functions defined in DistanceMeasurementNativeInterface class.
 static int register_com_android_bluetooth_gatt_distance_measurement(
     JNIEnv* env) {
   const JNINativeMethod methods[] = {
@@ -2774,10 +2772,10 @@ static int register_com_android_bluetooth_gatt_distance_measurement(
   GET_JAVA_METHODS(
       env, "com/android/bluetooth/gatt/DistanceMeasurementNativeInterface",
       javaMethods);
-
   return 0;
 }
 
+// JNI functions defined in GattNativeInterface class.
 static int register_com_android_bluetooth_gatt_(JNIEnv* env) {
   const JNINativeMethod methods[] = {
       {"initializeNative", "()V", (void*)initializeNative},

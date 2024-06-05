@@ -138,8 +138,8 @@ void gatt_init(void) {
       osi_property_get_bool("bluetooth.gatt.over_bredr.enabled", true);
   /* Now, register with L2CAP for ATT PSM over BR/EDR */
   if (gatt_cb.over_br_enabled &&
-      !L2CA_Register2(BT_PSM_ATT, dyn_info, false /* enable_snoop */, nullptr,
-                      GATT_MAX_MTU_SIZE, 0, BTM_SEC_NONE)) {
+      !L2CA_RegisterWithSecurity(BT_PSM_ATT, dyn_info, false /* enable_snoop */,
+                                 nullptr, GATT_MAX_MTU_SIZE, 0, BTM_SEC_NONE)) {
     log::error("ATT Dynamic Registration failed");
   }
 
@@ -222,7 +222,8 @@ bool gatt_connect(const RawAddress& rem_bda, tBLE_ADDR_TYPE addr_type,
     gatt_set_ch_state(p_tcb, GATT_CH_CONN);
 
   if (transport != BT_TRANSPORT_LE) {
-    p_tcb->att_lcid = L2CA_ConnectReq2(BT_PSM_ATT, rem_bda, BTM_SEC_NONE);
+    p_tcb->att_lcid =
+        L2CA_ConnectReqWithSecurity(BT_PSM_ATT, rem_bda, BTM_SEC_NONE);
     return p_tcb->att_lcid != 0;
   }
 
@@ -527,7 +528,7 @@ static void gatt_le_connect_cback(uint16_t /* chan */,
   else {
     p_tcb = gatt_allocate_tcb_by_bdaddr(bd_addr, BT_TRANSPORT_LE);
     if (!p_tcb) {
-      log::error("CCB max out, no rsources");
+      log::error("CCB max out, no resources");
       if (com::android::bluetooth::flags::
               gatt_drop_acl_on_out_of_resources_fix()) {
         log::error("Disconnecting address:{} due to out of resources.",
@@ -1000,7 +1001,7 @@ void gatt_consolidate(const RawAddress& identity_addr, const RawAddress& rpa) {
 }
 /*******************************************************************************
  *
- * Function         gatt_le_data_ind
+ * Function         gatt_data_process
  *
  * Description      This function is called when data is received from L2CAP.
  *                  if we are the originator of the connection, we are the ATT
@@ -1064,7 +1065,7 @@ void gatt_add_a_bonded_dev_for_srv_chg(const RawAddress& bda) {
                                           NULL);
 }
 
-/** This function is called to send a service chnaged indication to the
+/** This function is called to send a service changed indication to the
  * specified bd address */
 void gatt_send_srv_chg_ind(const RawAddress& peer_bda) {
   static const uint16_t sGATT_DEFAULT_START_HANDLE =
@@ -1096,7 +1097,7 @@ void gatt_send_srv_chg_ind(const RawAddress& peer_bda) {
   }
 }
 
-/** Check sending service chnaged Indication is required or not if required then
+/** Check sending service changed Indication is required or not if required then
  * send the Indication */
 void gatt_chk_srv_chg(tGATTS_SRV_CHG* p_srv_chg_clt) {
   log::verbose("srv_changed={}", p_srv_chg_clt->srv_changed);

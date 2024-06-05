@@ -21,9 +21,9 @@
 
 #include <optional>
 
+#include "bta/include/bta_le_audio_api.h"
+#include "bta/include/bta_le_audio_broadcaster_api.h"
 #include "bta/le_audio/le_audio_types.h"
-#include "bta_le_audio_api.h"
-#include "bta_le_audio_broadcaster_api.h"
 
 /* Types used internally by various modules of the broadcaster but not exposed
  * in the API.
@@ -184,7 +184,7 @@ struct BroadcastSubgroupCodecConfig {
 
     // Currently not a single software vendor codec was integrated and only the
     // LTVs parameters are understood by the BT stack.
-    auto opt_ltvs = GetBisCodecSpecData(bis_idx);
+    auto opt_ltvs = GetBisCodecSpecData(bis_idx, 0);
     if (opt_ltvs) {
       return opt_ltvs->GetAsCoreCodecConfig().octets_per_codec_frame.value_or(
                  0) *
@@ -202,9 +202,11 @@ struct BroadcastSubgroupCodecConfig {
   }
 
   std::optional<types::LeAudioLtvMap> GetBisCodecSpecData(
-      uint8_t bis_idx) const {
+      uint8_t bis_idx, uint8_t bis_config_idx) const {
     if (bis_codec_configs_.empty()) return std::nullopt;
-    auto config = bis_codec_configs_.at(0);
+    log::assert_that(bis_config_idx < bis_codec_configs_.size(),
+                     "Invalid bis config index");
+    auto config = bis_codec_configs_.at(bis_config_idx);
     if ((bis_idx != 0) && (bis_idx < bis_codec_configs_.size())) {
       config = bis_codec_configs_.at(bis_idx);
     }
@@ -216,7 +218,7 @@ struct BroadcastSubgroupCodecConfig {
     auto cfg = config.GetCodecSpecData();
     /* Set the audio locations if not set */
     if (!cfg.Find(codec_spec_conf::kLeAudioLtvTypeAudioChannelAllocation)) {
-      switch (bis_idx) {
+      switch (bis_config_idx + bis_idx) {
         case 0:
           cfg.Add(codec_spec_conf::kLeAudioLtvTypeAudioChannelAllocation,
                   codec_spec_conf::kLeAudioLocationFrontLeft);

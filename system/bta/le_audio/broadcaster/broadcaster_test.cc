@@ -73,6 +73,14 @@ void btsnd_hcic_ble_rand(base::Callback<void(BT_OCTET8)> cb) {
   generator_cb = cb;
 }
 
+namespace server_configurable_flags {
+std::string GetServerConfigurableFlag(
+    const std::string& experiment_category_name,
+    const std::string& experiment_flag_name, const std::string& default_value) {
+  return "";
+}
+}  // namespace server_configurable_flags
+
 std::atomic<int> num_async_tasks;
 bluetooth::common::MessageLoopThread message_loop_thread("test message loop");
 bluetooth::common::MessageLoopThread* get_main_thread() {
@@ -237,6 +245,17 @@ class MockAudioHalClientEndpoint : public LeAudioSourceAudioHalClient {
   MOCK_METHOD((void), UpdateRemoteDelay, (uint16_t delay), (override));
   MOCK_METHOD((void), UpdateAudioConfigToHal,
               (const ::bluetooth::le_audio::offload_config&), (override));
+  MOCK_METHOD(
+      (std::optional<broadcaster::BroadcastConfiguration>), GetBroadcastConfig,
+      ((const std::vector<std::pair<types::LeAudioContextType, uint8_t>>&),
+       (const std::optional<
+           std::vector<::bluetooth::le_audio::types::acs_ac_record>>&)),
+      (const override));
+  MOCK_METHOD(
+      (std::optional<::le_audio::set_configurations::AudioSetConfiguration>),
+      GetUnicastConfig,
+      (const CodecManager::UnicastConfigurationRequirements& requirements),
+      (const override));
   MOCK_METHOD((void), UpdateBroadcastAudioConfigToHal,
               (const ::bluetooth::le_audio::broadcast_offload_config&),
               (override));
@@ -647,6 +666,8 @@ TEST_F(BroadcasterTest, DestroyAudioBroadcast) {
 
   Mock::VerifyAndClearExpectations(mock_codec_manager_);
   Mock::VerifyAndClearExpectations(&mock_broadcaster_callbacks_);
+  // Verify the expectations before the CleanUp, which may call Stop()
+  Mock::VerifyAndClearExpectations(mock_audio_source_);
 }
 
 TEST_F(BroadcasterTest, GetBroadcastAllStates) {
@@ -751,7 +772,7 @@ static BasicAudioAnnouncementData prepareAnnouncement(
       }
 
       // Check for non vendor LTVs
-      auto config_ltv = codec_config.GetBisCodecSpecData(bis_num);
+      auto config_ltv = codec_config.GetBisCodecSpecData(bis_num, cfg_idx);
       if (config_ltv) {
         bis_config.codec_specific_params = config_ltv->Values();
       }

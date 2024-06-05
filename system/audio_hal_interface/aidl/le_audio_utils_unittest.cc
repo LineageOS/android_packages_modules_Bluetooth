@@ -73,6 +73,14 @@ static const ::bluetooth::le_audio::types::LeAudioCodecId kStackCodecVendor1 = {
 aidl::android::hardware::bluetooth::audio::CodecId::Vendor kAidlCodecVendor1{
     .id = 0xC0DE, .codecId = 0xF00D};
 
+static const ::bluetooth::le_audio::types::LeAudioCodecId
+    kStackCodecTransparent = {
+        .coding_format = ::bluetooth::hci::kIsoCodingFormatTransparent,
+        .vendor_company_id =
+            ::bluetooth::le_audio::types::kLeAudioVendorCompanyIdUndefined,
+        .vendor_codec_id =
+            ::bluetooth::le_audio::types::kLeAudioVendorCodecIdUndefined};
+
 namespace test_utils {
 
 static auto PrepareStackMetadataLtv() {
@@ -208,7 +216,9 @@ PrepareReferenceLeAudioDataPathConfigurationVendor() {
   ::bluetooth::le_audio::types::DataPathConfiguration stack_config;
   stack_config.dataPathId = config.dataPathId;
   stack_config.dataPathConfig = *config.dataPathConfiguration.configuration;
-  stack_config.isoDataPathConfig.codecId = kStackCodecVendor1;
+  stack_config.isoDataPathConfig.codecId =
+      config.isoDataPathConfiguration.isTransparent ? kStackCodecTransparent
+                                                    : kStackCodecVendor1;
   stack_config.isoDataPathConfig.isTransparent =
       config.isoDataPathConfiguration.isTransparent;
   stack_config.isoDataPathConfig.controllerDelayUs =
@@ -243,7 +253,9 @@ PrepareReferenceLeAudioDataPathConfigurationLc3() {
   ::bluetooth::le_audio::types::DataPathConfiguration stack_config;
   stack_config.dataPathId = config.dataPathId;
   stack_config.dataPathConfig = *config.dataPathConfiguration.configuration;
-  stack_config.isoDataPathConfig.codecId = kStackCodecLc3;
+  stack_config.isoDataPathConfig.codecId =
+      config.isoDataPathConfiguration.isTransparent ? kStackCodecTransparent
+                                                    : kStackCodecLc3;
   stack_config.isoDataPathConfig.isTransparent =
       config.isoDataPathConfiguration.isTransparent;
   stack_config.isoDataPathConfig.controllerDelayUs =
@@ -394,8 +406,10 @@ PrepareReferenceAseDirectionConfigLc3(bool is_left, bool is_right,
   auto [aidl_metadata, _] = PrepareReferenceMetadata();
   aidl_ase_config.aseConfiguration.metadata = aidl_metadata;
 
-  // FIXME: Seems redundant if audio allocations in .codec.params is mandatory
-  // stack_ase_config.codec.channel_count_per_iso_stream = ?
+  auto stack_codec_params = stack_params.GetAsCoreCodecConfig();
+  stack_ase_config.codec.channel_count_per_iso_stream =
+      std::bitset<32>(stack_codec_params.audio_channel_allocation.value_or(1))
+          .count();
 
   /* QoS configuration */
   if (has_qos) {

@@ -1,6 +1,8 @@
 //! Implementation of the Socket API (IBluetoothSocketManager).
 
-use bt_topshim::btif::{BluetoothInterface, BtStatus, DisplayAddress, RawAddress, Uuid};
+use bt_topshim::btif::{
+    BluetoothInterface, BtStatus, DisplayAddress, DisplayUuid, RawAddress, Uuid,
+};
 use bt_topshim::profiles::socket;
 use log;
 use nix::sys::socket::{recvmsg, ControlMessageOwned};
@@ -173,7 +175,7 @@ impl fmt::Display for BluetoothServerSocket {
             self.sock_type,
             self.name.as_ref().unwrap_or(&String::new()),
             match self.uuid {
-                Some(u) => u.to_string(),
+                Some(u) => DisplayUuid(&u).to_string(),
                 None => "".to_string(),
             }
         )
@@ -256,7 +258,7 @@ impl fmt::Display for BluetoothSocket {
             self.port,
             self.sock_type,
             match self.uuid {
-                Some(u) => u.to_string(),
+                Some(u) => DisplayUuid(&u).to_string(),
                 None => "".to_string(),
             }
         )
@@ -589,7 +591,7 @@ impl BluetoothSocketManager {
     ) -> SocketResult {
         if let Some(uuid) = socket_info.uuid {
             if !self.admin.lock().unwrap().is_service_allowed(uuid) {
-                log::debug!("service {} is blocked by admin policy", uuid);
+                log::debug!("service {} is blocked by admin policy", DisplayUuid(&uuid));
                 return SocketResult::new(BtStatus::AuthRejected, INVALID_SOCKET_ID);
             }
             if self
@@ -597,7 +599,7 @@ impl BluetoothSocketManager {
                 .iter()
                 .any(|(_, v)| v.iter().any(|s| s.uuid.map_or(false, |u| u == uuid)))
             {
-                log::warn!("Service {} already exists", uuid);
+                log::warn!("Service {} already exists", DisplayUuid(&uuid));
                 return SocketResult::new(BtStatus::Fail, INVALID_SOCKET_ID);
             }
         }
@@ -688,7 +690,7 @@ impl BluetoothSocketManager {
     ) -> SocketResult {
         if let Some(uuid) = socket_info.uuid {
             if !self.admin.lock().unwrap().is_service_allowed(uuid) {
-                log::debug!("service {} is blocked by admin policy", uuid);
+                log::debug!("service {} is blocked by admin policy", DisplayUuid(&uuid));
                 return SocketResult::new(BtStatus::AuthRejected, INVALID_SOCKET_ID);
             }
         }
@@ -1218,7 +1220,7 @@ impl BluetoothSocketManager {
                 log::debug!(
                     "socket id {} is not allowed by admin policy due to uuid {}, closing",
                     id,
-                    uuid
+                    DisplayUuid(&uuid)
                 );
                 let _ = tx.send(SocketRunnerActions::Close(id)).await;
             }

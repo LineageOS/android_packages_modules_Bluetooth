@@ -22,11 +22,13 @@
 #include <bluetooth/log.h>
 #include <com_android_bluetooth_flags.h>
 
-#include <unordered_map>
 #include <vector>
 
+#include "aidl/android/hardware/bluetooth/audio/AudioContext.h"
 #include "aidl/le_audio_software_aidl.h"
+#include "aidl/le_audio_utils.h"
 #include "bta/le_audio/codec_manager.h"
+#include "bta/le_audio/le_audio_types.h"
 #include "hal_version_manager.h"
 #include "hidl/le_audio_software_hidl.h"
 #include "os/log.h"
@@ -34,6 +36,13 @@
 
 namespace bluetooth {
 namespace audio {
+
+using aidl::GetAidlLeAudioBroadcastConfigurationRequirementFromStackFormat;
+using aidl::GetAidlLeAudioDeviceCapabilitiesFromStackFormat;
+using aidl::GetAidlLeAudioUnicastConfigurationRequirementsFromStackFormat;
+using aidl::GetStackBroadcastConfigurationFromAidlFormat;
+using aidl::GetStackUnicastConfigurationFromAidlFormat;
+
 namespace le_audio {
 
 namespace {
@@ -43,6 +52,8 @@ using AudioConfiguration_2_1 =
     ::android::hardware::bluetooth::audio::V2_1::AudioConfiguration;
 using AudioConfigurationAIDL =
     ::aidl::android::hardware::bluetooth::audio::AudioConfiguration;
+using ::aidl::android::hardware::bluetooth::audio::AudioContext;
+using ::aidl::android::hardware::bluetooth::audio::IBluetoothAudioProvider;
 using ::aidl::android::hardware::bluetooth::audio::LatencyMode;
 using ::aidl::android::hardware::bluetooth::audio::LeAudioCodecConfiguration;
 
@@ -412,6 +423,74 @@ void LeAudioClientInterface::Sink::UpdateAudioConfigToHal(
   get_aidl_client_interface(is_broadcaster_)
       ->UpdateAudioConfig(
           aidl::le_audio::offload_config_to_hal_audio_config(offload_config));
+}
+
+std::optional<::bluetooth::le_audio::broadcaster::BroadcastConfiguration>
+LeAudioClientInterface::Sink::GetBroadcastConfig(
+    const std::vector<
+        std::pair<::bluetooth::le_audio::types::LeAudioContextType, uint8_t>>&
+        subgroup_quality,
+    const std::optional<
+        std::vector<::bluetooth::le_audio::types::acs_ac_record>>& pacs) const {
+  if (HalVersionManager::GetHalTransport() ==
+      BluetoothAudioHalTransport::HIDL) {
+    return std::nullopt;
+  }
+
+  if (!is_broadcaster_ || !is_aidl_offload_encoding_session(is_broadcaster_)) {
+    return std::nullopt;
+  }
+
+  auto aidl_pacs = GetAidlLeAudioDeviceCapabilitiesFromStackFormat(pacs);
+  auto reqs = GetAidlLeAudioBroadcastConfigurationRequirementFromStackFormat(
+      subgroup_quality);
+  auto aidl_broadcast_config =
+      aidl::le_audio::LeAudioSourceTransport::
+          interface->getLeAudioBroadcastConfiguration(aidl_pacs, reqs);
+
+  return GetStackBroadcastConfigurationFromAidlFormat(aidl_broadcast_config);
+}
+
+// This API is for requesting a single configuration.
+// Note: We need a bulk API as well to get multiple configurations for caching
+std::optional<::bluetooth::le_audio::set_configurations::AudioSetConfiguration>
+LeAudioClientInterface::Sink::GetUnicastConfig(
+    const ::bluetooth::le_audio::CodecManager::UnicastConfigurationRequirements&
+        requirements) const {
+  log::debug("Requirements: {}", requirements);
+
+  auto aidl_sink_pacs =
+      GetAidlLeAudioDeviceCapabilitiesFromStackFormat(requirements.sink_pacs);
+
+  auto aidl_source_pacs =
+      GetAidlLeAudioDeviceCapabilitiesFromStackFormat(requirements.source_pacs);
+
+  std::vector<IBluetoothAudioProvider::LeAudioConfigurationRequirement> reqs;
+  reqs.push_back(GetAidlLeAudioUnicastConfigurationRequirementsFromStackFormat(
+      requirements.audio_context_type, requirements.sink_requirements,
+      requirements.source_requirements));
+
+  log::debug("Making an AIDL call");
+  auto aidl_configs =
+      get_aidl_client_interface(is_broadcaster_)
+          ->GetLeAudioAseConfiguration(aidl_sink_pacs, aidl_source_pacs, reqs);
+
+  log::debug("Received {} configs", aidl_configs.size());
+
+  if (aidl_configs.size() == 0) {
+    log::error("Expecting a single configuration, but received none.");
+    return std::nullopt;
+  }
+
+  /* Given a single requirement we should get a single response config
+   * Note: For a bulk request we need to implement GetUnicastConfigs() method
+   */
+  if (aidl_configs.size() > 1) {
+    log::warn("Expected a single configuration, but received {}",
+              aidl_configs.size());
+  }
+  return GetStackUnicastConfigurationFromAidlFormat(
+      requirements.audio_context_type, aidl_configs.at(0));
 }
 
 void LeAudioClientInterface::Sink::UpdateBroadcastAudioConfigToHal(

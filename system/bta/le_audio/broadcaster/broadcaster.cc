@@ -232,7 +232,8 @@ class LeAudioBroadcasterImpl : public LeAudioBroadcaster, public BigCallbacks {
           }
 
           // Check for non vendor LTVs
-          auto config_ltv = subgroup_config.GetBisCodecSpecData(bis_num);
+          auto config_ltv =
+              subgroup_config.GetBisCodecSpecData(bis_num, bis_cfg_idx);
           if (config_ltv) {
             // Remove the part which is common with the parent subgroup
             // parameters

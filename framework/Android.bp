@@ -89,6 +89,14 @@ java_sdk_library {
     errorprone: {
         javacflags: [
             "-Xep:InlineMeSuggester:OFF", // The @InlineMe annotation is not available
+
+            "-Xep:CatchFail:ERROR",
+            "-Xep:EmptyCatch:ERROR",
+            "-Xep:InvalidInlineTag:ERROR",
+            "-Xep:NonApiType:ERROR",
+            "-Xep:UnnecessaryAssignment:ERROR",
+            "-Xep:UnnecessaryAsync:ERROR",
+
             "-XepExcludedPaths:.*/srcjars/.*", // Exclude generated files
         ],
         enabled: true,
