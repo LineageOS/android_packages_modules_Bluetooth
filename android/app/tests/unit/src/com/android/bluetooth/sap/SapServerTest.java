@@ -638,12 +638,10 @@ public class SapServerTest {
     @Test
     public void handleMessage_forProxyDeadMsg_notifiesShutDown() throws Exception {
         ISapRilReceiver mockReceiver = mock(ISapRilReceiver.class);
-        AtomicLong cookie = new AtomicLong(23);
         mSapServer.mRilBtReceiver = mockReceiver;
 
         Message message = Message.obtain();
         message.what = SAP_PROXY_DEAD;
-        message.obj = cookie.get();
 
         try {
             mSapServer.handleMessage(message);

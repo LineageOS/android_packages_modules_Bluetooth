@@ -107,7 +107,7 @@ public class HeadsetTestUtils {
 
     /**
      * Helper function to check if {@link HeadsetPhoneState} is set to correct values indicated in
-     * {@param headsetCallState}
+     * {@code headsetCallState}
      *
      * @param headsetPhoneState a mocked {@link HeadsetPhoneState}
      * @param headsetCallState intended headset call state
