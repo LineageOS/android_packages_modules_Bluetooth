@@ -44,6 +44,7 @@ import android.os.Binder;
 import android.os.RemoteException;
 import android.os.WorkSource;
 import android.os.test.TestLooper;
+import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.test.InstrumentationRegistry;
@@ -55,6 +56,7 @@ import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.CompanionManager;
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.gatt.ContextMap;
 import com.android.bluetooth.gatt.GattNativeInterface;
 import com.android.bluetooth.gatt.GattObjectsFactory;
 
@@ -63,6 +65,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.ArgumentMatcher;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -82,7 +85,6 @@ public class TransitionalScanHelperTest {
     private TransitionalScanHelper mScanHelper;
     @Mock private TransitionalScanHelper.ScannerMap mScannerMap;
 
-    @SuppressWarnings("NonCanonicalType")
     @Mock
     private TransitionalScanHelper.ScannerMap.App mApp;
 
@@ -395,5 +397,65 @@ public class TransitionalScanHelperTest {
                         BluetoothProfile.A2DP,
                         BluetoothProfile.STATE_CONNECTING,
                         BluetoothProfile.STATE_CONNECTED);
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_LE_SCAN_USE_ADDRESS_TYPE)
+    public void onTrackAdvFoundLost() throws Exception {
+        int scannerId = 1;
+        int advPktLen = 1;
+        byte[] advPkt = new byte[] {0x02};
+        int scanRspLen = 3;
+        byte[] scanRsp = new byte[] {0x04};
+        int filtIndex = 5;
+
+        int advState = TransitionalScanHelper.ADVT_STATE_ONFOUND;
+        int advInfoPresent = 7;
+        String address = "00:11:22:33:FF:EE";
+        int addrType = BluetoothDevice.ADDRESS_TYPE_RANDOM;
+        int txPower = 9;
+        int rssiValue = 10;
+        int timeStamp = 11;
+
+        ScanClient scanClient = new ScanClient(scannerId);
+        scanClient.hasNetworkSettingsPermission = true;
+        scanClient.settings =
+                new ScanSettings.Builder()
+                        .setCallbackType(ScanSettings.CALLBACK_TYPE_FIRST_MATCH)
+                        .setLegacy(false)
+                        .build();
+        Set<ScanClient> scanClientSet = Collections.singleton(scanClient);
+
+        ContextMap.App app = mock(ContextMap.App.class);
+        IScannerCallback callback = mock(IScannerCallback.class);
+
+        app.callback = callback;
+        app.info = mock(TransitionalScanHelper.PendingIntentInfo.class);
+
+        doReturn(app).when(mScannerMap).getById(scannerId);
+        doReturn(scanClientSet).when(mScanManager).getRegularScanQueue();
+
+        AdvtFilterOnFoundOnLostInfo advtFilterOnFoundOnLostInfo =
+                new AdvtFilterOnFoundOnLostInfo(
+                        scannerId,
+                        advPktLen,
+                        advPkt,
+                        scanRspLen,
+                        scanRsp,
+                        filtIndex,
+                        advState,
+                        advInfoPresent,
+                        address,
+                        addrType,
+                        txPower,
+                        rssiValue,
+                        timeStamp);
+
+        mScanHelper.onTrackAdvFoundLost(advtFilterOnFoundOnLostInfo);
+        ArgumentCaptor<ScanResult> result = ArgumentCaptor.forClass(ScanResult.class);
+        verify(callback).onFoundOrLost(eq(true), result.capture());
+        assertThat(result.getValue().getDevice()).isNotNull();
+        assertThat(result.getValue().getDevice().getAddress()).isEqualTo(address);
+        assertThat(result.getValue().getDevice().getAddressType()).isEqualTo(addrType);
     }
 }
