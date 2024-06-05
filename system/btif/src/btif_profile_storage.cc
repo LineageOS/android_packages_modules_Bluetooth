@@ -148,7 +148,7 @@ bt_status_t btif_storage_add_hid_device_info(
 
   if (link_spec.transport == BT_TRANSPORT_AUTO) {
     log::error("Unexpected transport!");
-    return BT_STATUS_FAIL;
+    return BT_STATUS_UNHANDLED;
   }
   btif_config_set_int(bdstr, BTIF_STORAGE_KEY_HID_DB_VERSION,
                       STORAGE_HID_DB_VERSION);
