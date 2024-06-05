@@ -1908,7 +1908,7 @@ static bt_status_t set_protocol(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
   } else if (protocolMode != BTA_HH_PROTO_RPT_MODE &&
              protocolMode != BTA_HH_PROTO_BOOT_MODE) {
     log::warn("device proto_mode = {}", proto_mode);
-    return BT_STATUS_FAIL;
+    return BT_STATUS_PARM_INVALID;
   } else {
     BTA_HhSetProtoMode(p_dev->dev_handle, protocolMode);
   }
@@ -1952,7 +1952,7 @@ static bt_status_t get_report(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
     log_counter_metrics_btif(android::bluetooth::CodePathCounterKeyEnum::
                                  HIDH_COUNT_WRONG_REPORT_TYPE,
                              1);
-    return BT_STATUS_FAIL;
+    return BT_STATUS_UNSUPPORTED;
   } else {
     BTA_HhGetReport(p_dev->dev_handle, reportType, reportId, bufferSize);
   }
@@ -2029,7 +2029,7 @@ static bt_status_t set_report(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
     log_counter_metrics_btif(android::bluetooth::CodePathCounterKeyEnum::
                                  HIDH_COUNT_WRONG_REPORT_TYPE,
                              1);
-    return BT_STATUS_FAIL;
+    return BT_STATUS_UNSUPPORTED;
   } else {
     int hex_bytes_filled;
     size_t len = (strlen(report) + 1) / 2;
@@ -2044,7 +2044,7 @@ static bt_status_t set_report(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
       if (p_buf == NULL) {
         log::error("failed to allocate RPT buffer, len = {}", hex_bytes_filled);
         osi_free(hexbuf);
-        return BT_STATUS_FAIL;
+        return BT_STATUS_NOMEM;
       }
       BTA_HhSetReport(p_dev->dev_handle, reportType, p_buf);
       osi_free(hexbuf);
@@ -2094,7 +2094,7 @@ static bt_status_t send_data(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
       if (p_buf == NULL) {
         log::error("failed to allocate RPT buffer, len = {}", hex_bytes_filled);
         osi_free(hexbuf);
-        return BT_STATUS_FAIL;
+        return BT_STATUS_NOMEM;
       }
       p_buf->layer_specific = BTA_HH_RPTT_OUTPUT;
       BTA_HhSendData(p_dev->dev_handle, link_spec, p_buf);

@@ -557,7 +557,7 @@ static bt_status_t handle_call_action(const RawAddress* bd_addr,
     case BTHF_CLIENT_CALL_ACTION_CHLD_1x:
       if (cb->peer_feat & BTA_HF_CLIENT_PEER_ECC) {
         if (idx < 1) {
-          return BT_STATUS_FAIL;
+          return BT_STATUS_UNHANDLED;
         }
         BTA_HfClientSendAT(cb->handle, BTA_HF_CLIENT_AT_CMD_CHLD, 1, idx, NULL);
         break;
@@ -566,7 +566,7 @@ static bt_status_t handle_call_action(const RawAddress* bd_addr,
     case BTHF_CLIENT_CALL_ACTION_CHLD_2x:
       if (cb->peer_feat & BTA_HF_CLIENT_PEER_ECC) {
         if (idx < 1) {
-          return BT_STATUS_FAIL;
+          return BT_STATUS_UNHANDLED;
         }
         BTA_HfClientSendAT(cb->handle, BTA_HF_CLIENT_AT_CMD_CHLD, 2, idx, NULL);
         break;
@@ -588,7 +588,7 @@ static bt_status_t handle_call_action(const RawAddress* bd_addr,
       BTA_HfClientSendAT(cb->handle, BTA_HF_CLIENT_AT_CMD_BTRH, 2, 0, NULL);
       break;
     default:
-      return BT_STATUS_FAIL;
+      return BT_STATUS_UNHANDLED;
   }
 
   return BT_STATUS_SUCCESS;
