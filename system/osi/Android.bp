@@ -95,6 +95,7 @@ cc_library_static {
         "libbt-platform-protos-lite",
         "libbt_shim_bridge",
         "server_configurable_flags",
+        "libaconfig_storage_read_api_cc",
     ],
 }
 
@@ -130,6 +131,7 @@ cc_test {
         "libcutils",
         "liblog",
         "server_configurable_flags",
+        "libaconfig_storage_read_api_cc",
     ],
     local_include_dirs: [
         "include_internal",
