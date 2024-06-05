@@ -206,13 +206,13 @@ fn read_propmap_value<T: 'static + DirectDBus>(
 ) -> Result<T, Box<dyn std::error::Error>> {
     let output = propmap
         .get(key)
-        .ok_or(Box::new(DBusArgError::new(String::from(format!("Key {} does not exist", key,)))))?;
+        .ok_or(Box::new(DBusArgError::new(format!("Key {} does not exist", key,))))?;
     let output = <T as RefArgToRust>::ref_arg_to_rust(
-        output.as_static_inner(0).ok_or(Box::new(DBusArgError::new(String::from(format!(
+        output.as_static_inner(0).ok_or(Box::new(DBusArgError::new(format!(
             "Unable to convert propmap[\"{}\"] to {}",
             key,
             stringify!(T),
-        )))))?,
+        ))))?,
         String::from(stringify!(T)),
     )?;
     Ok(output)
@@ -227,13 +227,13 @@ where
 {
     let output = propmap
         .get(key)
-        .ok_or(Box::new(DBusArgError::new(String::from(format!("Key {} does not exist", key,)))))?;
+        .ok_or(Box::new(DBusArgError::new(format!("Key {} does not exist", key,))))?;
     let output = <<T as DBusArg>::DBusType as RefArgToRust>::ref_arg_to_rust(
-        output.as_static_inner(0).ok_or(Box::new(DBusArgError::new(String::from(format!(
+        output.as_static_inner(0).ok_or(Box::new(DBusArgError::new(format!(
             "Unable to convert propmap[\"{}\"] to {}",
             key,
             stringify!(T),
-        )))))?,
+        ))))?,
         format!("{}", stringify!(T)),
     )?;
     let output = T::from_dbus(output, None, None, None)?;
@@ -490,18 +490,18 @@ impl DBusArg for ScanFilterCondition {
         let variant = match data.get("patterns") {
             Some(variant) => variant,
             None => {
-                return Err(Box::new(DBusArgError::new(String::from(format!(
+                return Err(Box::new(DBusArgError::new(String::from(
                     "ScanFilterCondition does not contain any enum variant",
-                )))));
+                ))));
             }
         };
 
         match variant.arg_type() {
             dbus::arg::ArgType::Variant => {}
             _ => {
-                return Err(Box::new(DBusArgError::new(String::from(format!(
+                return Err(Box::new(DBusArgError::new(String::from(
                     "ScanFilterCondition::Patterns must be a variant",
-                )))));
+                ))));
             }
         };
 
