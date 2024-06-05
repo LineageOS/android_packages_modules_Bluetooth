@@ -66,7 +66,6 @@ typedef enum : uint8_t {
   BTA_GATTC_SRVC_DISC_DONE_EVT = 8, /* GATT service discovery done event */
   BTA_GATTC_NOTIF_EVT = 10,         /* GATT attribute notification event */
   BTA_GATTC_EXEC_EVT = 12,          /* execute write complete event */
-  BTA_GATTC_ACL_EVT = 13,           /* ACL up event */
   BTA_GATTC_CANCEL_OPEN_EVT = 14,   /* cancel open event */
   BTA_GATTC_SRVC_CHG_EVT = 15,      /* service change event */
   BTA_GATTC_ENC_CMPL_CB_EVT = 17,   /* encryption complete callback event */
@@ -87,7 +86,6 @@ inline std::string gatt_client_event_text(const tBTA_GATTC_EVT& event) {
     CASE_RETURN_TEXT(BTA_GATTC_SRVC_DISC_DONE_EVT);
     CASE_RETURN_TEXT(BTA_GATTC_NOTIF_EVT);
     CASE_RETURN_TEXT(BTA_GATTC_EXEC_EVT);
-    CASE_RETURN_TEXT(BTA_GATTC_ACL_EVT);
     CASE_RETURN_TEXT(BTA_GATTC_CANCEL_OPEN_EVT);
     CASE_RETURN_TEXT(BTA_GATTC_SRVC_CHG_EVT);
     CASE_RETURN_TEXT(BTA_GATTC_ENC_CMPL_CB_EVT);

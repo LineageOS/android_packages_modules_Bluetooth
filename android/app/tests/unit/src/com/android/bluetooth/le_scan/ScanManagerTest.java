@@ -1697,7 +1697,7 @@ public class ScanManagerTest {
             int expectedScanMode = scanModeMap.get(ScanMode);
             int expectedPhy;
 
-            if (adapterServiceSupportsCoded) expectedPhy = PHY_LE_1M_MASK & PHY_LE_CODED_MASK;
+            if (adapterServiceSupportsCoded) expectedPhy = PHY_LE_1M_MASK | PHY_LE_CODED_MASK;
             else expectedPhy = PHY_LE_1M_MASK;
 
             Log.d(

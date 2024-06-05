@@ -327,11 +327,11 @@ impl IsoManager {
     }
 
     fn send_hci_event<E: Into<hci::Event>>(&self, event: E) {
-        self.ops.send_hci_event(&event.into().to_vec())
+        self.ops.send_hci_event(&event.into().encode_to_vec().unwrap())
     }
 
     fn send_llcp_packet<P: Into<llcp::LlcpPacket>>(&self, acl_connection_handle: u16, packet: P) {
-        self.ops.send_llcp_packet(acl_connection_handle, &packet.into().to_vec())
+        self.ops.send_llcp_packet(acl_connection_handle, &packet.into().encode_to_vec().unwrap())
     }
 
     fn get_le_features(&self) -> u64 {

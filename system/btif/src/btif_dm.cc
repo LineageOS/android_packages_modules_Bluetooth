@@ -603,6 +603,11 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
   if (state == BT_BOND_STATE_NONE) {
     forget_device_from_metric_id_allocator(bd_addr);
 
+    if (com::android::bluetooth::flags::
+            bond_transport_after_bond_cancel_fix()) {
+      btif_config_remove_device(bd_addr.ToString());
+    }
+
     if (bluetooth::common::init_flags::
             pbap_pse_dynamic_version_upgrade_is_enabled()) {
       if (btif_storage_is_pce_version_102(bd_addr)) {
@@ -1204,7 +1209,7 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
                                              pairing_cb.pin_code_len);
       } else {
         log::warn("bd_addr is empty");
-        ret = BT_STATUS_FAIL;
+        ret = BT_STATUS_PARM_INVALID;
       }
       ASSERTC(ret == BT_STATUS_SUCCESS, "storing link key failed", ret);
     } else {
@@ -1376,7 +1381,7 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
         break;
 
       default:
-        status = BT_STATUS_FAIL;
+        status = BT_STATUS_UNHANDLED;
     }
     /* Special Handling for HID Devices */
     if (check_cod_hid_major(bd_addr, COD_HID_POINTING)) {
@@ -1740,18 +1745,38 @@ static void btif_on_service_discovery_results(
     }
 
     Uuid existing_uuids[BT_MAX_NUM_UUIDS] = {};
-    btif_get_existing_uuids(&bd_addr, existing_uuids);
+    bt_status_t existing_lookup_result =
+        btif_get_existing_uuids(&pairing_cb.bd_addr, existing_uuids);
 
-    for (int i = 0; i < BT_MAX_NUM_UUIDS; i++) {
-      Uuid uuid = existing_uuids[i];
-      if (btif_should_ignore_uuid(uuid)) {
-        continue;
-      }
-      if (btif_is_interesting_le_service(uuid)) {
-        log::info("interesting le service {} insert", uuid.ToString());
-        uuids.insert(uuid);
+    if (existing_lookup_result != BT_STATUS_FAIL) {
+      for (int i = 0; i < BT_MAX_NUM_UUIDS; i++) {
+        Uuid uuid = existing_uuids[i];
+        if (btif_should_ignore_uuid(uuid)) {
+          continue;
+        }
+        if (btif_is_interesting_le_service(uuid)) {
+          log::info("interesting le service {} insert", uuid.ToString());
+          uuids.insert(uuid);
+        }
       }
     }
+
+    existing_lookup_result =
+        btif_get_existing_uuids(&pairing_cb.static_bdaddr, existing_uuids);
+
+    if (existing_lookup_result != BT_STATUS_FAIL) {
+      for (int i = 0; i < BT_MAX_NUM_UUIDS; i++) {
+        Uuid uuid = existing_uuids[i];
+        if (btif_should_ignore_uuid(uuid)) {
+          continue;
+        }
+        if (btif_is_interesting_le_service(uuid)) {
+          log::info("interesting le service {} insert", uuid.ToString());
+          uuids.insert(uuid);
+        }
+      }
+    }
+
     for (auto& uuid : uuids) {
       auto uuid_128bit = uuid.To128BitBE();
       property_value.insert(property_value.end(), uuid_128bit.begin(),
@@ -2000,10 +2025,19 @@ void btif_on_gatt_results(RawAddress bd_addr, BD_NAME bd_name,
     num_properties++;
   }
 
-  /* If services were returned as part of SDP discovery, we will immediately
-   * send them with rest of SDP results in on_service_discovery_results */
   if (!transport_le) {
+    /* If services were returned as part of SDP discovery, we will immediately
+     * send them with rest of SDP results in on_service_discovery_results */
     return;
+  } else {
+    if (pairing_cb.sdp_over_classic ==
+            btif_dm_pairing_cb_t::ServiceDiscoveryState::SCHEDULED &&
+        com::android::bluetooth::flags::bta_dm_discover_both()) {
+      /* Don't report services yet, they will be reported together once SDP
+       * finishes. */
+      log::info("will report services later, with SDP results {}", bd_addr);
+      return;
+    }
   }
 
   /* Send the event to the BTIF */
@@ -3648,7 +3682,7 @@ static void btif_dm_ble_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
         break;
       default:
         btif_dm_remove_ble_bonding_keys();
-        status = BT_STATUS_FAIL;
+        status = BT_STATUS_UNHANDLED;
         break;
     }
   }

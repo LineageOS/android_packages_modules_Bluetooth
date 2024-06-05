@@ -66,7 +66,6 @@ LOCAL_target_libraries := \
 	$(TARGET_OUT_SHARED_LIBRARIES)/liblzma.so \
 	$(TARGET_OUT_SHARED_LIBRARIES)/libprotobuf-cpp-full.so \
 	$(TARGET_OUT_SHARED_LIBRARIES)/libssl.so \
-	$(TARGET_OUT_SHARED_LIBRARIES)/libstatslog_bt.so \
 	$(TARGET_OUT_SHARED_LIBRARIES)/libunwindstack.so \
 	$(TARGET_OUT_SHARED_LIBRARIES)/libutils.so \
 	$(TARGET_OUT_SHARED_LIBRARIES)/libz.so \

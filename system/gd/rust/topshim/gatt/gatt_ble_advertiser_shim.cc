@@ -37,35 +37,6 @@ namespace rust {
 
 namespace rusty = ::bluetooth::topshim::rust;
 
-namespace internal {
-AdvertiseParameters ConvertRustAdvParams(const RustAdvertiseParameters& params) {
-  AdvertiseParameters converted = {
-      .advertising_event_properties = params.advertising_event_properties,
-      .min_interval = params.min_interval,
-      .max_interval = params.max_interval,
-      .channel_map = params.channel_map,
-      .tx_power = params.tx_power,
-      .primary_advertising_phy = params.primary_advertising_phy,
-      .secondary_advertising_phy = params.secondary_advertising_phy,
-      .scan_request_notification_enable = params.scan_request_notification_enable,
-      .own_address_type = params.own_address_type,
-  };
-
-  return converted;
-}
-PeriodicAdvertisingParameters ConvertRustPeriodicAdvParams(const RustPeriodicAdvertisingParameters& params) {
-  PeriodicAdvertisingParameters converted = {
-      .enable = params.enable,
-      .include_adi = params.include_adi,
-      .min_interval = params.min_interval,
-      .max_interval = params.max_interval,
-      .periodic_advertising_properties = params.periodic_advertising_properties,
-  };
-
-  return converted;
-}
-}  // namespace internal
-
 // AdvertisingCallbacks implementations
 
 void BleAdvertiserIntf::OnAdvertisingSetStarted(int reg_id, uint8_t advertiser_id, int8_t tx_power, uint8_t status) {
@@ -111,10 +82,11 @@ void BleAdvertiserIntf::GetOwnAddress(uint8_t adv_id) {
       adv_id, base::Bind(&BleAdvertiserIntf::OnGetAddressCallback, base::Unretained(this), adv_id));
 }
 
-void BleAdvertiserIntf::SetParameters(uint8_t adv_id, RustAdvertiseParameters params) {
-  AdvertiseParameters converted = internal::ConvertRustAdvParams(params);
+void BleAdvertiserIntf::SetParameters(uint8_t adv_id, AdvertiseParameters params) {
   adv_intf_->SetParameters(
-      adv_id, converted, base::Bind(&BleAdvertiserIntf::OnParametersCallback, base::Unretained(this), adv_id));
+      adv_id,
+      params,
+      base::Bind(&BleAdvertiserIntf::OnParametersCallback, base::Unretained(this), adv_id));
 }
 
 void BleAdvertiserIntf::SetData(uint8_t adv_id, bool set_scan_rsp, ::rust::Vec<uint8_t> data) {
@@ -140,11 +112,10 @@ void BleAdvertiserIntf::Enable(uint8_t adv_id, bool enable, uint16_t duration, u
 
 void BleAdvertiserIntf::StartAdvertising(
     uint8_t adv_id,
-    RustAdvertiseParameters params,
+    AdvertiseParameters params,
     ::rust::Vec<uint8_t> advertise_data,
     ::rust::Vec<uint8_t> scan_response_data,
     int32_t timeout_in_sec) {
-  AdvertiseParameters converted_params = internal::ConvertRustAdvParams(params);
   std::vector<uint8_t> converted_adv_data, converted_scan_rsp_data;
   std::copy(advertise_data.begin(), advertise_data.end(), std::back_inserter(converted_adv_data));
   std::copy(scan_response_data.begin(), scan_response_data.end(), std::back_inserter(converted_scan_rsp_data));
@@ -152,7 +123,7 @@ void BleAdvertiserIntf::StartAdvertising(
   adv_intf_->StartAdvertising(
       adv_id,
       base::Bind(&BleAdvertiserIntf::OnIdStatusCallback, base::Unretained(this), adv_id),
-      converted_params,
+      params,
       converted_adv_data,
       converted_scan_rsp_data,
       timeout_in_sec,
@@ -161,15 +132,13 @@ void BleAdvertiserIntf::StartAdvertising(
 
 void BleAdvertiserIntf::StartAdvertisingSet(
     int32_t reg_id,
-    RustAdvertiseParameters params,
+    AdvertiseParameters params,
     ::rust::Vec<uint8_t> advertise_data,
     ::rust::Vec<uint8_t> scan_response_data,
-    RustPeriodicAdvertisingParameters periodic_params,
+    PeriodicAdvertisingParameters periodic_params,
     ::rust::Vec<uint8_t> periodic_data,
     uint16_t duration,
     uint8_t max_ext_adv_events) {
-  AdvertiseParameters converted_params = internal::ConvertRustAdvParams(params);
-  PeriodicAdvertisingParameters converted_periodic_params = internal::ConvertRustPeriodicAdvParams(periodic_params);
   std::vector<uint8_t> converted_adv_data, converted_scan_rsp_data, converted_periodic_data;
   std::copy(advertise_data.begin(), advertise_data.end(), std::back_inserter(converted_adv_data));
   std::copy(scan_response_data.begin(), scan_response_data.end(), std::back_inserter(converted_scan_rsp_data));
@@ -179,21 +148,22 @@ void BleAdvertiserIntf::StartAdvertisingSet(
       kAdvertiserClientIdJni,
       reg_id,
       base::Bind(&BleAdvertiserIntf::OnIdTxPowerStatusCallback, base::Unretained(this)),
-      converted_params,
+      params,
       converted_adv_data,
       converted_scan_rsp_data,
-      converted_periodic_params,
+      periodic_params,
       converted_periodic_data,
       duration,
       max_ext_adv_events,
       base::Bind(&BleAdvertiserIntf::OnIdStatusCallback, base::Unretained(this)));
 }
 
-void BleAdvertiserIntf::SetPeriodicAdvertisingParameters(uint8_t adv_id, RustPeriodicAdvertisingParameters params) {
-  PeriodicAdvertisingParameters converted = internal::ConvertRustPeriodicAdvParams(params);
-
+void BleAdvertiserIntf::SetPeriodicAdvertisingParameters(
+    uint8_t adv_id, PeriodicAdvertisingParameters params) {
   adv_intf_->SetPeriodicAdvertisingParameters(
-      adv_id, converted, base::Bind(&BleAdvertiserIntf::OnIdStatusCallback, base::Unretained(this), adv_id));
+      adv_id,
+      params,
+      base::Bind(&BleAdvertiserIntf::OnIdStatusCallback, base::Unretained(this), adv_id));
 }
 
 void BleAdvertiserIntf::SetPeriodicAdvertisingData(uint8_t adv_id, ::rust::Vec<uint8_t> data) {

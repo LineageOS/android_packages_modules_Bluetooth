@@ -348,12 +348,13 @@ cc_binary {
                 "libbinder_ndk",
                 "libcutils",
                 "libhidlbase",
-                "libstatslog_bt",
+                "libstatssocket",
                 "libutils",
             ],
             static_libs: [
                 "android.system.suspend-V1-ndk",
                 "android.system.suspend.control-V1-ndk",
+                "libstatslog_bt",
             ],
         },
         host: {

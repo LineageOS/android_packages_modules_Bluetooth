@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <complex>
+
 #include "module.h"
 
 namespace bluetooth {
@@ -26,6 +28,19 @@ struct VendorSpecificCharacteristic {
   std::vector<uint8_t> value_;
 };
 
+struct ChannelSoundingRawData {
+  uint8_t num_antenna_paths_;
+  std::vector<uint8_t> step_channel_;
+  std::vector<std::vector<std::complex<double>>> tone_pct_initiator_;
+  std::vector<std::vector<std::complex<double>>> tone_pct_reflector_;
+  std::vector<std::vector<uint8_t>> tone_quality_indicator_initiator_;
+  std::vector<std::vector<uint8_t>> tone_quality_indicator_reflector_;
+};
+
+struct RangingResult {
+  double result_meters_;
+};
+
 class RangingHalCallback {
  public:
   virtual ~RangingHalCallback() = default;
@@ -34,6 +49,7 @@ class RangingHalCallback {
       const std::vector<VendorSpecificCharacteristic>& vendor_specific_reply) = 0;
   virtual void OnOpenFailed(uint16_t connection_handle) = 0;
   virtual void OnHandleVendorSpecificReplyComplete(uint16_t connection_handle, bool success) = 0;
+  virtual void OnResult(uint16_t connection_handle, const RangingResult& ranging_result) = 0;
 };
 
 class RangingHal : public ::bluetooth::Module {
@@ -51,6 +67,7 @@ class RangingHal : public ::bluetooth::Module {
   virtual void HandleVendorSpecificReply(
       uint16_t connection_handle,
       const std::vector<hal::VendorSpecificCharacteristic>& vendor_specific_reply) = 0;
+  virtual void WriteRawData(uint16_t connection_handle, const ChannelSoundingRawData& raw_data) = 0;
 };
 
 }  // namespace hal
