@@ -751,7 +751,7 @@ static BasicAudioAnnouncementData prepareAnnouncement(
       }
 
       // Check for non vendor LTVs
-      auto config_ltv = codec_config.GetBisCodecSpecData(bis_num);
+      auto config_ltv = codec_config.GetBisCodecSpecData(bis_num, cfg_idx);
       if (config_ltv) {
         bis_config.codec_specific_params = config_ltv->Values();
       }
