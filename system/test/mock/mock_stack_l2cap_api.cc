@@ -51,7 +51,7 @@ struct L2CA_ConnectCreditBasedReq L2CA_ConnectCreditBasedReq;
 struct L2CA_ReconfigCreditBasedConnsReq L2CA_ReconfigCreditBasedConnsReq;
 struct L2CA_DisconnectReq L2CA_DisconnectReq;
 struct L2CA_DisconnectLECocReq L2CA_DisconnectLECocReq;
-struct L2CA_GetRemoteCid L2CA_GetRemoteCid;
+struct L2CA_GetRemoteChannelId L2CA_GetRemoteChannelId;
 struct L2CA_SetIdleTimeoutByBdAddr L2CA_SetIdleTimeoutByBdAddr;
 struct L2CA_UseLatencyMode L2CA_UseLatencyMode;
 struct L2CA_SetAclPriority L2CA_SetAclPriority;
@@ -173,9 +173,9 @@ bool L2CA_DisconnectLECocReq(uint16_t cid) {
   inc_func_call_count(__func__);
   return test::mock::stack_l2cap_api::L2CA_DisconnectLECocReq(cid);
 }
-bool L2CA_GetRemoteCid(uint16_t lcid, uint16_t* rcid) {
+bool L2CA_GetRemoteChannelId(uint16_t lcid, uint16_t* rcid) {
   inc_func_call_count(__func__);
-  return test::mock::stack_l2cap_api::L2CA_GetRemoteCid(lcid, rcid);
+  return test::mock::stack_l2cap_api::L2CA_GetRemoteChannelId(lcid, rcid);
 }
 bool L2CA_SetIdleTimeoutByBdAddr(const RawAddress& bd_addr, uint16_t timeout,
                                  tBT_TRANSPORT transport) {

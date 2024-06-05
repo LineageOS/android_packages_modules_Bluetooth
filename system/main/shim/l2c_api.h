@@ -226,12 +226,6 @@ uint8_t L2CA_DataWrite(uint16_t cid, BT_HDR* p_data);
 
 uint8_t L2CA_LECocDataWrite(uint16_t cid, BT_HDR* p_data);
 
-// Given a local channel identifier, |lcid|, this function returns the bound
-// remote channel identifier, |rcid|. If
-// |lcid| is not known or is invalid, this function returns false and does not
-// modify the value pointed at by |rcid|. |rcid| may be NULL.
-bool L2CA_GetRemoteCid(uint16_t lcid, uint16_t* rcid);
-
 /*******************************************************************************
  *
  * Function         L2CA_SetIdleTimeoutByBdAddr
