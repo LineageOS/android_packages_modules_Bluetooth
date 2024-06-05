@@ -50,6 +50,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.IntStream;
@@ -256,6 +257,7 @@ public class TestUtils {
                     try {
                         wait();
                     } catch (InterruptedException e) {
+                        Log.w(TAG, "waitForIdle got interrupted", e);
                     }
                 }
             }
@@ -303,8 +305,8 @@ public class TestUtils {
      * @return A {@link HashMap} of Bluetooth configs in the format: section -> key1 -> value1 ->
      *     key2 -> value2 Assume no empty section name, no duplicate keys in the same section
      */
-    public static HashMap<String, HashMap<String, String>> readAdapterConfig() {
-        HashMap<String, HashMap<String, String>> adapterConfig = new HashMap<>();
+    public static Map<String, Map<String, String>> readAdapterConfig() {
+        Map<String, Map<String, String>> adapterConfig = new HashMap<>();
         try (BufferedReader reader =
                 new BufferedReader(new FileReader("/data/misc/bluedroid/bt_config.conf"))) {
             String section = "";
@@ -454,6 +456,7 @@ public class TestUtils {
                     try {
                         wait();
                     } catch (InterruptedException e) {
+                        Log.w(TAG, "waitForComplete got interrupted", e);
                     }
                 }
             }

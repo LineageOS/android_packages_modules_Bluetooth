@@ -81,13 +81,6 @@ public class CoverArtTest {
         return BitmapFactory.decodeStream(imageInputStream);
     }
 
-    private InputStream toInputSteam(Bitmap bitmap) {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        bitmap.compress(Bitmap.CompressFormat.PNG, 0, outputStream);
-        byte[] imageBytes = outputStream.toByteArray();
-        return new ByteArrayInputStream(imageBytes);
-    }
-
     private Bitmap toBitmap(byte[] imageBytes) {
         ByteArrayInputStream inputStream = new ByteArrayInputStream(imageBytes);
         return BitmapFactory.decodeStream(inputStream);
