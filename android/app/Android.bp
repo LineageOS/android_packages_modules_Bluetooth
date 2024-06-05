@@ -315,6 +315,7 @@ android_app {
         "com.android.btservices",
     ],
     errorprone: {
+        enabled: true,
         javacflags: [
             // "-Xep:AndroidFrameworkRequiresPermission:ERROR",
             "-Xep:AlmostJavadoc:ERROR",

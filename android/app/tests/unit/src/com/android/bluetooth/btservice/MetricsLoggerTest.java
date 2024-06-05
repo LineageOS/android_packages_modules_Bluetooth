@@ -157,7 +157,7 @@ public class MetricsLoggerTest {
         MetricsLogger.dumpProto(metricsBuilder);
         BluetoothLog metricsProto = metricsBuilder.build();
         Assert.assertEquals(2, metricsProto.getProfileConnectionStatsCount());
-        HashMap<ProfileId, ProfileConnectionStats> profileConnectionCountMap =
+        Map<ProfileId, ProfileConnectionStats> profileConnectionCountMap =
                 getProfileUsageStatsMap(metricsProto.getProfileConnectionStatsList());
         Assert.assertTrue(profileConnectionCountMap.containsKey(ProfileId.AVRCP));
         Assert.assertEquals(
@@ -172,7 +172,7 @@ public class MetricsLoggerTest {
         Assert.assertEquals(0, metricsProtoAfterDump.getProfileConnectionStatsCount());
     }
 
-    private static HashMap<ProfileId, ProfileConnectionStats> getProfileUsageStatsMap(
+    private static Map<ProfileId, ProfileConnectionStats> getProfileUsageStatsMap(
             List<ProfileConnectionStats> profileUsageStats) {
         HashMap<ProfileId, ProfileConnectionStats> profileUsageStatsMap = new HashMap<>();
         profileUsageStats.forEach(item -> profileUsageStatsMap.put(item.getProfileId(), item));

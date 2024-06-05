@@ -19,12 +19,19 @@ package {
 java_defaults {
     name: "service-bluetooth-buildflags",
     errorprone: {
+        enabled: true,
         javacflags: [
             "-Xep:AlreadyChecked:ERROR",
+            "-Xep:CatchFail:ERROR",
             "-Xep:CheckReturnValue:ERROR",
             "-Xep:ClassCanBeStatic:ERROR",
+            "-Xep:EmptyCatch:ERROR",
             "-Xep:EqualsIncompatibleType:ERROR",
+            "-Xep:InvalidInlineTag:ERROR",
+            "-Xep:NonApiType:ERROR",
             "-Xep:ReferenceEquality:ERROR",
+            "-Xep:UnnecessaryAssignment:ERROR",
+            "-Xep:UnnecessaryAsync:ERROR",
             "-Xep:UnusedMethod:ERROR",
             "-Xep:UnusedVariable:ERROR",
         ],

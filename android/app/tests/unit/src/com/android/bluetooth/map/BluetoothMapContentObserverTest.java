@@ -16,6 +16,7 @@
 
 package com.android.bluetooth.map;
 
+import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.*;
 
 import android.app.Activity;
@@ -64,7 +65,6 @@ import org.mockito.Spy;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
-import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.time.Instant;
 import java.util.Calendar;
@@ -202,7 +202,7 @@ public class BluetoothMapContentObserverTest {
     }
 
     @Test
-    public void testPushGroupMMS() {
+    public void testPushGroupMMS() throws RemoteException {
         if (Looper.myLooper() == null) {
             Looper.prepare();
         }
@@ -216,31 +216,20 @@ public class BluetoothMapContentObserverTest {
         message.addRecipient("One", new String[] {TEST_NUMBER_ONE}, null);
         message.addRecipient("Two", new String[] {TEST_NUMBER_TWO}, null);
         BluetoothMapbMessageMime.MimePart body = message.addMimePart();
-        try {
-            body.mContentType = "text/plain";
-            body.mData = "HelloWorld".getBytes("utf-8");
-        } catch (Exception e) {
-            Assert.fail("Failed to setup test message");
-        }
+
+        body.mContentType = "text/plain";
+        body.mData = "HelloWorld".getBytes(java.nio.charset.StandardCharsets.UTF_8);
 
         BluetoothMapAppParams appParams = new BluetoothMapAppParams();
         BluetoothMapFolderElement folderElement = new BluetoothMapFolderElement("outbox", null);
 
-        try {
-            // The constructor of BluetoothMapContentObserver calls initMsgList
-            BluetoothMapContentObserver observer =
-                    new BluetoothMapContentObserver(mContext, null, mInstance, null, true);
-            observer.pushMessage(message, folderElement, appParams, null);
-        } catch (RemoteException e) {
-            Assert.fail("Failed to created BluetoothMapContentObserver object");
-        } catch (SQLiteException e) {
-            Assert.fail("Threw SQLiteException instead of Assert.failing cleanly");
-        } catch (IOException e) {
-            Assert.fail("Threw IOException");
-        } catch (NullPointerException e) {
-            // expected that the test case will end in a NPE as part of the sendMultimediaMessage
-            // pendingSendIntent
-        }
+        BluetoothMapContentObserver observer =
+                new BluetoothMapContentObserver(mContext, null, mInstance, null, true);
+
+        // The test end in a NPE as part of the sendMultimediaMessage pendingSendIntent
+        assertThrows(
+                NullPointerException.class,
+                () -> observer.pushMessage(message, folderElement, appParams, null));
 
         // Validate that 3 addresses were inserted into the database with 2 being the recipients
         Assert.assertEquals(3, mProvider.mContents.size());

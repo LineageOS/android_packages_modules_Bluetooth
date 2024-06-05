@@ -116,13 +116,9 @@ public class MediaControlProfileTest {
         doReturn(packageName).when(mMockMcpService).getPackageName();
         doReturn(name).when(mMockMediaPlayerWrapper).getPackageName();
         doReturn(charSequence).when(mMockApplicationInfo).loadLabel(any(PackageManager.class));
-        try {
-            doReturn(mMockApplicationInfo)
-                    .when(mMockPackageManager)
-                    .getApplicationInfo(anyString(), anyInt());
-        } catch (PackageManager.NameNotFoundException e) {
-            Assert.fail();
-        }
+        doReturn(mMockApplicationInfo)
+                .when(mMockPackageManager)
+                .getApplicationInfo(anyString(), anyInt());
 
         mPendingStateRequest = new ArrayList<>();
 

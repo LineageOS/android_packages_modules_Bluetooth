@@ -107,7 +107,7 @@ public class BluetoothInCallServiceTest {
     @Mock private BluetoothLeCallControlProxy mMockBluetoothLeCallControl;
     @Mock private BluetoothInCallService.CallInfo mMockCallInfo;
     @Mock private TelephonyManager mMockTelephonyManager;
-    @Mock private Context mContext = ApplicationProvider.getApplicationContext();
+    @Mock private Context mContext;
 
     public class TestableBluetoothInCallService extends BluetoothInCallService {
         @Override

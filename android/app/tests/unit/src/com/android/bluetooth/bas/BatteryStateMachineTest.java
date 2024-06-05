@@ -23,7 +23,6 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.after;
@@ -297,11 +296,7 @@ public class BatteryStateMachineTest {
         allowConnection(true);
         allowConnectGatt(true);
 
-        try {
-            mBatteryStateMachine.updateBatteryLevel(new byte[0]);
-        } catch (Exception ex) {
-            fail();
-        }
+        mBatteryStateMachine.updateBatteryLevel(new byte[0]);
 
         verify(mBatteryService, after(WAIT_MS).never())
                 .handleBatteryChanged(any(BluetoothDevice.class), anyInt());

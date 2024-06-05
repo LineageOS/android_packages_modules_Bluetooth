@@ -73,7 +73,7 @@ import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnit;
 import org.mockito.junit.MockitoRule;
 
-import java.util.HashMap;
+import java.util.Map;
 
 @MediumTest
 @RunWith(AndroidJUnit4.class)
@@ -116,7 +116,7 @@ public class AdapterServiceRestartTest {
 
     private PackageManager mMockPackageManager;
     private MockContentResolver mMockContentResolver;
-    private HashMap<String, HashMap<String, String>> mAdapterConfig;
+    private Map<String, Map<String, String>> mAdapterConfig;
     private int mForegroundUserId;
     private TestLooper mLooper;
 
