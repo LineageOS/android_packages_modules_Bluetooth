@@ -602,7 +602,7 @@ bt_status_t btif_storage_get_adapter_property(bt_property_t* property) {
     if (bluetooth::shim::GetController() == nullptr) {
       log::error("Controller not ready! Unable to return Bluetooth Address");
       *bd_addr = RawAddress::kEmpty;
-      return BT_STATUS_FAIL;
+      return BT_STATUS_NOT_READY;
     } else {
       log::info("Controller ready!");
       *bd_addr = bluetooth::ToRawAddress(

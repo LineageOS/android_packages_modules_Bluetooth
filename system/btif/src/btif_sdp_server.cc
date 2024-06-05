@@ -288,7 +288,7 @@ bt_status_t create_sdp_record(bluetooth_sdp_record* record,
   handle = alloc_sdp_slot(record);
   log::verbose("handle = 0x{:08x}", handle);
 
-  if (handle < 0) return BT_STATUS_FAIL;
+  if (handle < 0) return BT_STATUS_NOMEM;
 
   BTA_SdpCreateRecordByUser(INT_TO_PTR(handle));
 
@@ -346,7 +346,7 @@ bt_status_t remove_sdp_record(int record_id) {
     return BT_STATUS_SUCCESS;
   }
   log::verbose("Sdp Server - record already removed - or never created");
-  return BT_STATUS_FAIL;
+  return BT_STATUS_DONE;
 }
 
 /******************************************************************************

@@ -107,7 +107,7 @@ bt_status_t do_in_jni_thread(const base::Location& from_here,
                              base::OnceClosure task) {
   if (!jni_thread.DoInThread(from_here, std::move(task))) {
     log::error("Post task to task runner failed!");
-    return BT_STATUS_FAIL;
+    return BT_STATUS_JNI_THREAD_ATTACH_ERROR;
   }
   return BT_STATUS_SUCCESS;
 }
