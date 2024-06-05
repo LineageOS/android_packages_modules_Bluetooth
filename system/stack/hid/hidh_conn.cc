@@ -106,18 +106,18 @@ tHID_STATUS hidh_conn_reg(void) {
   hh_cb.l2cap_cfg.mtu = HID_HOST_MTU;
 
   /* Now, register with L2CAP */
-  if (!L2CA_Register2(HID_PSM_CONTROL, hst_reg_info, false /* enable_snoop */,
-                      nullptr, HID_HOST_MTU, 0,
-                      BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)) {
+  if (!L2CA_RegisterWithSecurity(
+          HID_PSM_CONTROL, hst_reg_info, false /* enable_snoop */, nullptr,
+          HID_HOST_MTU, 0, BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)) {
     log::error("HID-Host Control Registration failed");
     log_counter_metrics(android::bluetooth::CodePathCounterKeyEnum::
                             HIDH_ERR_L2CAP_FAILED_AT_REGISTER_CONTROL,
                         1);
     return (HID_ERR_L2CAP_FAILED);
   }
-  if (!L2CA_Register2(HID_PSM_INTERRUPT, hst_reg_info, false /* enable_snoop */,
-                      nullptr, HID_HOST_MTU, 0,
-                      BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)) {
+  if (!L2CA_RegisterWithSecurity(
+          HID_PSM_INTERRUPT, hst_reg_info, false /* enable_snoop */, nullptr,
+          HID_HOST_MTU, 0, BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)) {
     L2CA_Deregister(HID_PSM_CONTROL);
     log::error("HID-Host Interrupt Registration failed");
     log_counter_metrics(android::bluetooth::CodePathCounterKeyEnum::
@@ -445,9 +445,9 @@ static void hidh_l2cif_config_cfm(uint16_t l2cap_cid, uint16_t initiator,
                                                     CLOSE_EVT: Connection
                                                     Attempt was made but failed
                                                     */
-      p_hcon->intr_cid =
-          L2CA_ConnectReq2(HID_PSM_INTERRUPT, hh_cb.devices[dhandle].addr,
-                           BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT);
+      p_hcon->intr_cid = L2CA_ConnectReqWithSecurity(
+          HID_PSM_INTERRUPT, hh_cb.devices[dhandle].addr,
+          BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT);
       if (p_hcon->intr_cid == 0) {
         log::warn("HID-Host INTR Originate failed");
         reason = HID_L2CAP_REQ_FAIL;
@@ -896,7 +896,7 @@ tHID_STATUS hidh_conn_initiate(uint8_t dhandle) {
   p_dev->conn.conn_flags = HID_CONN_FLAGS_IS_ORIG;
 
   /* Check if L2CAP started the connection process */
-  p_dev->conn.ctrl_cid = L2CA_ConnectReq2(
+  p_dev->conn.ctrl_cid = L2CA_ConnectReqWithSecurity(
       HID_PSM_CONTROL, p_dev->addr, BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT);
   if (p_dev->conn.ctrl_cid == 0) {
     log::warn("HID-Host Originate failed");
