@@ -1072,8 +1072,8 @@ public final class BluetoothGatt implements BluetoothProfile {
     /**
      * Register an application callback to start using GATT.
      *
-     * <p>This is an asynchronous call. The callback {@link BluetoothGattCallback#onAppRegistered}
-     * is used to notify success or failure if the function returns true.
+     * <p>This is an asynchronous call. If registration is successful, client connection will be
+     * initiated.
      *
      * @param callback GATT callback handler that will receive asynchronous callbacks.
      * @return If true, the callback will be called to notify success or failure, false on immediate
@@ -1089,8 +1089,8 @@ public final class BluetoothGatt implements BluetoothProfile {
     /**
      * Register an application callback to start using GATT.
      *
-     * <p>This is an asynchronous call. The callback {@link BluetoothGattCallback#onAppRegistered}
-     * is used to notify success or failure if the function returns true.
+     * <p>This is an asynchronous call. If registration is successful, client connection will be
+     * initiated.
      *
      * @param callback GATT callback handler that will receive asynchronous callbacks.
      * @param eattSupport indicate to allow for eatt support
