@@ -48,16 +48,18 @@ namespace {
 const RawAddress kRawAddress = RawAddress({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
 constexpr size_t kSdpDbSize = BTA_DM_SDP_DB_SIZE * 16;
 constexpr size_t kSdpPacketStartOffset = 9;
-int L2CA_ConnectReq2_cid = 0x42;
+int L2CA_ConnectReqWithSecurity_cid = 0x42;
 
 class StackSdpParserWithMocksTest : public ::testing::Test {
  protected:
   void SetUp() override {
     reset_mock_function_count_map();
     fake_osi_ = std::make_unique<test::fake::FakeOsi>();
-    test::mock::stack_l2cap_api::L2CA_ConnectReq2.body =
+    test::mock::stack_l2cap_api::L2CA_ConnectReqWithSecurity.body =
         [](uint16_t /* psm */, const RawAddress& /* p_bd_addr */,
-           uint16_t /* sec_level */) { return ++L2CA_ConnectReq2_cid; };
+           uint16_t /* sec_level */) {
+          return ++L2CA_ConnectReqWithSecurity_cid;
+        };
     test::mock::stack_l2cap_api::L2CA_DataWrite.body = [](uint16_t /* cid */,
                                                           BT_HDR* p_data) {
       osi_free_and_reset((void**)&p_data);
@@ -65,7 +67,7 @@ class StackSdpParserWithMocksTest : public ::testing::Test {
     };
     test::mock::stack_l2cap_api::L2CA_DisconnectReq.body =
         [](uint16_t /* cid */) { return true; };
-    test::mock::stack_l2cap_api::L2CA_Register2.body =
+    test::mock::stack_l2cap_api::L2CA_RegisterWithSecurity.body =
         [](uint16_t psm, const tL2CAP_APPL_INFO& /* p_cb_info */,
            bool /* enable_snoop */, tL2CAP_ERTM_INFO* /* p_ertm_info */,
            uint16_t /* my_mtu */, uint16_t /* required_remote_mtu */,
@@ -73,10 +75,10 @@ class StackSdpParserWithMocksTest : public ::testing::Test {
   }
 
   void TearDown() override {
-    test::mock::stack_l2cap_api::L2CA_Register2 = {};
+    test::mock::stack_l2cap_api::L2CA_RegisterWithSecurity = {};
     test::mock::stack_l2cap_api::L2CA_DisconnectReq = {};
     test::mock::stack_l2cap_api::L2CA_DataWrite = {};
-    test::mock::stack_l2cap_api::L2CA_ConnectReq2 = {};
+    test::mock::stack_l2cap_api::L2CA_ConnectReqWithSecurity = {};
     fake_osi_.reset();
   }
 
