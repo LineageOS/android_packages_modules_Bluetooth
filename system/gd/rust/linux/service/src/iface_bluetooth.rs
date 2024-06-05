@@ -1,6 +1,7 @@
 use bt_topshim::btif::{
     BtAddrType, BtBondState, BtConnectionState, BtDeviceType, BtDiscMode, BtPropertyType,
-    BtSspVariant, BtStatus, BtTransport, BtVendorProductInfo, DisplayAddress, RawAddress, Uuid,
+    BtSspVariant, BtStatus, BtTransport, BtVendorProductInfo, DisplayAddress, DisplayUuid,
+    RawAddress, Uuid,
 };
 use bt_topshim::profiles::socket::SocketType;
 use bt_topshim::profiles::ProfileConnectionState;
@@ -62,7 +63,7 @@ impl DBusArg for Uuid {
     }
 
     fn log(data: &Uuid) -> String {
-        format!("{}", data)
+        format!("{}", DisplayUuid(&data))
     }
 }
 
@@ -294,13 +295,13 @@ fn read_propmap_value<T: 'static + DirectDBus>(
 ) -> Result<T, Box<dyn std::error::Error>> {
     let output = propmap
         .get(key)
-        .ok_or(Box::new(DBusArgError::new(String::from(format!("Key {} does not exist", key,)))))?;
+        .ok_or(Box::new(DBusArgError::new(format!("Key {} does not exist", key,))))?;
     let output = <T as RefArgToRust>::ref_arg_to_rust(
-        output.as_static_inner(0).ok_or(Box::new(DBusArgError::new(String::from(format!(
+        output.as_static_inner(0).ok_or(Box::new(DBusArgError::new(format!(
             "Unable to convert propmap[\"{}\"] to {}",
             key,
             stringify!(T),
-        )))))?,
+        ))))?,
         String::from(stringify!(T)),
     )?;
     Ok(output)
@@ -315,13 +316,13 @@ where
 {
     let output = propmap
         .get(key)
-        .ok_or(Box::new(DBusArgError::new(String::from(format!("Key {} does not exist", key,)))))?;
+        .ok_or(Box::new(DBusArgError::new(format!("Key {} does not exist", key,))))?;
     let output = <<T as DBusArg>::DBusType as RefArgToRust>::ref_arg_to_rust(
-        output.as_static_inner(0).ok_or(Box::new(DBusArgError::new(String::from(format!(
+        output.as_static_inner(0).ok_or(Box::new(DBusArgError::new(format!(
             "Unable to convert propmap[\"{}\"] to {}",
             key,
             stringify!(T),
-        )))))?,
+        ))))?,
         format!("{}", stringify!(T)),
     )?;
     let output = T::from_dbus(output, None, None, None)?;
@@ -433,7 +434,7 @@ impl DBusArg for BtSdpRecord {
     }
 
     fn log(record: &BtSdpRecord) -> String {
-        String::from(format!("{:?}", record))
+        format!("{:?}", record)
     }
 }
 
