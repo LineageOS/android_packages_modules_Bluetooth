@@ -42,7 +42,7 @@ using bluetooth::Uuid;
 using namespace bluetooth;
 
 /**********************************************************************
- *   ATT protocl message building utility                              *
+ *   ATT protocol message building utility                              *
  **********************************************************************/
 /*******************************************************************************
  *
@@ -448,11 +448,10 @@ BT_HDR* attp_build_sr_msg(tGATT_TCB& tcb, uint8_t op_code, tGATT_SR_MSG* p_msg,
  * Description      This function sends the server response or indication
  *                  message to client.
  *
- * Parameter        p_tcb: pointer to the connecton control block.
+ * Parameter        p_tcb: pointer to the connection control block.
  *                  p_msg: pointer to message parameters structure.
  *
- * Returns          GATT_SUCCESS if sucessfully sent; otherwise error code.
- *
+ * Returns          GATT_SUCCESS if successfully sent; otherwise error code.
  *
  ******************************************************************************/
 tGATT_STATUS attp_send_sr_msg(tGATT_TCB& tcb, uint16_t cid, BT_HDR* p_msg) {
@@ -559,12 +558,12 @@ tGATT_STATUS attp_send_cl_confirmation_msg(tGATT_TCB& tcb, uint16_t cid) {
  * Description      This function sends the client request or confirmation
  *                  message to server.
  *
- * Parameter        p_tcb: pointer to the connectino control block.
+ * Parameter        p_tcb: pointer to the connection control block.
  *                  p_clcb: clcb
  *                  op_code: message op code.
  *                  p_msg: pointer to message parameters structure.
  *
- * Returns          GATT_SUCCESS if sucessfully sent; otherwise error code.
+ * Returns          GATT_SUCCESS if successfully sent; otherwise error code.
  *
  *
  ******************************************************************************/
