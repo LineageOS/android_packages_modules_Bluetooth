@@ -2384,7 +2384,7 @@ public class HeadsetService extends ProfileService {
                 }
 
                 // Unsuspend A2DP when SCO connection is gone and call state is idle
-                if (mSystemInterface.isCallIdle()) {
+                if (mSystemInterface.isCallIdle() && !Utils.isScoManagedByAudioEnabled()) {
                     mSystemInterface.getAudioManager().setA2dpSuspended(false);
                     if (isAtLeastU()) {
                         mSystemInterface.getAudioManager().setLeAudioSuspended(false);

@@ -1306,6 +1306,11 @@ class HeadsetStateMachine extends StateMachine {
                     break;
                 case CONNECT_AUDIO:
                     stateLogD("CONNECT_AUDIO, device=" + mDevice);
+                    if (Utils.isScoManagedByAudioEnabled()) {
+                        stateLogD("ScoManagedByAudioEnabled, BT does not CONNECT_AUDIO");
+                        transitionTo(mAudioConnecting);
+                        break;
+                    }
                     mSystemInterface.getAudioManager().setA2dpSuspended(true);
                     if (isAtLeastU()) {
                         mSystemInterface.getAudioManager().setLeAudioSuspended(true);
