@@ -21,9 +21,9 @@
 
 #include <optional>
 
+#include "bta/include/bta_le_audio_api.h"
+#include "bta/include/bta_le_audio_broadcaster_api.h"
 #include "bta/le_audio/le_audio_types.h"
-#include "bta_le_audio_api.h"
-#include "bta_le_audio_broadcaster_api.h"
 
 /* Types used internally by various modules of the broadcaster but not exposed
  * in the API.
