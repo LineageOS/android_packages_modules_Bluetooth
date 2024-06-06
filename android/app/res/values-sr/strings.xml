@@ -135,9 +135,7 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Уређај памти да не треба да искључује Bluetooth у режиму рада у авиону. Искључите Bluetooth ако не желите да остане укључен."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"WiFi и Bluetooth остају укључени"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Уређај памти да не треба да искључује WiFi и Bluetooth у режиму рада у авиону. Искључите WiFi и Bluetooth ако не желите да остану укључени."</string>
-    <!-- no translation found for bluetooth_enabled_auto_on_title (8983664142805050578) -->
-    <skip />
-    <!-- no translation found for bluetooth_enabled_auto_on_message (2790514825041114851) -->
-    <skip />
+    <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Bluetooth је поново укључен"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="2790514825041114851">"То увек можете да промените у Подешавањима"</string>
     <string name="bluetooth_notification_group" msgid="7251886707585872194">"Аутоматски статус Bluetooth-а је промењен"</string>
 </resources>
