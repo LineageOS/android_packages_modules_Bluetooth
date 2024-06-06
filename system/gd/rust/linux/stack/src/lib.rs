@@ -271,7 +271,7 @@ impl Stack {
                 // When pairing is busy for any reason, the bond cannot be created.
                 // Allow retries until it is ready for bonding.
                 Message::CreateBondWithRetry(device, bt_transport, num_attempts, retry_delay) => {
-                    if num_attempts <= 0 {
+                    if num_attempts == 0 {
                         continue;
                     }
 
