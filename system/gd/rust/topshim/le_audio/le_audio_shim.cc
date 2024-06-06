@@ -485,12 +485,27 @@ BtLePcmConfig LeAudioClientIntf::get_peer_pcm_config() {
   return to_rust_btle_pcm_params(::bluetooth::audio::le_audio::GetPeerPcmConfig());
 }
 
-bool LeAudioClientIntf::get_host_stream_started() {
-  return ::bluetooth::audio::le_audio::GetHostStreamStarted();
+static BtLeStreamStartedStatus to_rust_btle_stream_started_status(
+    audio::le_audio::btle_stream_started_status status) {
+  switch (status) {
+    case audio::le_audio::btle_stream_started_status::CANCELED:
+      return BtLeStreamStartedStatus::Canceled;
+    case audio::le_audio::btle_stream_started_status::IDLE:
+      return BtLeStreamStartedStatus::Idle;
+    case audio::le_audio::btle_stream_started_status::STARTED:
+      return BtLeStreamStartedStatus::Started;
+    default:
+      log::assert_that(false, "Unhandled enum value from C++");
+  }
+  return BtLeStreamStartedStatus{};
 }
 
-bool LeAudioClientIntf::get_peer_stream_started() {
-  return ::bluetooth::audio::le_audio::GetPeerStreamStarted();
+BtLeStreamStartedStatus LeAudioClientIntf::get_host_stream_started() {
+  return to_rust_btle_stream_started_status(::bluetooth::audio::le_audio::GetHostStreamStarted());
+}
+
+BtLeStreamStartedStatus LeAudioClientIntf::get_peer_stream_started() {
+  return to_rust_btle_stream_started_status(::bluetooth::audio::le_audio::GetPeerStreamStarted());
 }
 
 void LeAudioClientIntf::source_metadata_changed(::rust::Vec<SourceMetadata> metadata) {
