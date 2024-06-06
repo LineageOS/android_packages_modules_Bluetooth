@@ -55,3 +55,10 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "hid_report_queuing"
+    namespace: "bluetooth"
+    description: "Queue incoming HID reports if UHID is not ready"
+    bug: "345498287"
+}
