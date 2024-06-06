@@ -462,10 +462,10 @@ public final class Utils {
             AttributionSource attributionSource, String message) {
         // STOPSHIP(b/188391719): enable this security enforcement
         // attributionSource.enforceCallingUid();
-        AttributionSource currentAttribution = new AttributionSource
-                .Builder(context.getAttributionSource())
-                .setNext(attributionSource)
-                .build();
+        AttributionSource currentAttribution =
+                new AttributionSource.Builder(context.getAttributionSource())
+                        .setNext(Objects.requireNonNull(attributionSource))
+                        .build();
         PermissionManager pm = context.getSystemService(PermissionManager.class);
         if (pm == null) {
             return false;
@@ -711,10 +711,10 @@ public final class Utils {
             Log.e(TAG, "Permission denial: Location is off.");
             return false;
         }
-        AttributionSource currentAttribution = new AttributionSource
-                .Builder(context.getAttributionSource())
-                .setNext(attributionSource)
-                .build();
+        AttributionSource currentAttribution =
+                new AttributionSource.Builder(context.getAttributionSource())
+                        .setNext(Objects.requireNonNull(attributionSource))
+                        .build();
         // STOPSHIP(b/188391719): enable this security enforcement
         // attributionSource.enforceCallingUid();
         PermissionManager pm = context.getSystemService(PermissionManager.class);
@@ -745,10 +745,10 @@ public final class Utils {
             return false;
         }
 
-        final AttributionSource currentAttribution = new AttributionSource
-                .Builder(context.getAttributionSource())
-                .setNext(attributionSource)
-                .build();
+        final AttributionSource currentAttribution =
+                new AttributionSource.Builder(context.getAttributionSource())
+                        .setNext(Objects.requireNonNull(attributionSource))
+                        .build();
         // STOPSHIP(b/188391719): enable this security enforcement
         // attributionSource.enforceCallingUid();
         PermissionManager pm = context.getSystemService(PermissionManager.class);
@@ -783,10 +783,10 @@ public final class Utils {
             return false;
         }
 
-        AttributionSource currentAttribution = new AttributionSource
-                .Builder(context.getAttributionSource())
-                .setNext(attributionSource)
-                .build();
+        AttributionSource currentAttribution =
+                new AttributionSource.Builder(context.getAttributionSource())
+                        .setNext(Objects.requireNonNull(attributionSource))
+                        .build();
         // STOPSHIP(b/188391719): enable this security enforcement
         // attributionSource.enforceCallingUid();
         PermissionManager pm = context.getSystemService(PermissionManager.class);
