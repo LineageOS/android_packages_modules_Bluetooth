@@ -398,22 +398,21 @@ static void add_service_impl(int server_if,
   if (service[0].uuid == Uuid::From16Bit(UUID_SERVCLASS_GATT_SERVER) ||
       service[0].uuid == Uuid::From16Bit(UUID_SERVCLASS_GAP_SERVER)) {
     log::error("Attept to register restricted service");
-    HAL_CBACK(bt_gatt_callbacks, server->service_added_cb, BT_STATUS_FAIL,
-              server_if, service.data(), service.size());
+    HAL_CBACK(bt_gatt_callbacks, server->service_added_cb,
+              BT_STATUS_AUTH_REJECTED, server_if, service.data(),
+              service.size());
     return;
   }
 
-  BTA_GATTS_AddService(
-      server_if, service,
-      jni_thread_wrapper(FROM_HERE, base::Bind(&on_service_added_cb)));
+  BTA_GATTS_AddService(server_if, service,
+                       jni_thread_wrapper(base::Bind(&on_service_added_cb)));
 }
 
 static bt_status_t btif_gatts_add_service(int server_if,
                                           const btgatt_db_element_t* service,
                                           size_t service_count) {
   CHECK_BTGATT_INIT();
-  return do_in_jni_thread(FROM_HERE,
-                          Bind(&add_service_impl, server_if,
+  return do_in_jni_thread(Bind(&add_service_impl, server_if,
                                std::vector(service, service + service_count)));
 }
 
@@ -476,8 +475,8 @@ static bt_status_t btif_gatts_read_phy(
     const RawAddress& bd_addr,
     base::Callback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb) {
   CHECK_BTGATT_INIT();
-  do_in_main_thread(FROM_HERE, Bind(&BTM_BleReadPhy, bd_addr,
-                                    jni_thread_wrapper(FROM_HERE, cb)));
+  do_in_main_thread(FROM_HERE,
+                    Bind(&BTM_BleReadPhy, bd_addr, jni_thread_wrapper(cb)));
   return BT_STATUS_SUCCESS;
 }
 

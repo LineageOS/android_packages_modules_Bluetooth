@@ -602,7 +602,7 @@ bt_status_t btif_storage_get_adapter_property(bt_property_t* property) {
     if (bluetooth::shim::GetController() == nullptr) {
       log::error("Controller not ready! Unable to return Bluetooth Address");
       *bd_addr = RawAddress::kEmpty;
-      return BT_STATUS_FAIL;
+      return BT_STATUS_NOT_READY;
     } else {
       log::info("Controller ready!");
       *bd_addr = bluetooth::ToRawAddress(
@@ -1348,18 +1348,17 @@ bt_status_t btif_storage_get_remote_addr_type(const RawAddress* remote_bd_addr,
 
 /** Stores information about GATT server supported features */
 void btif_storage_set_gatt_sr_supp_feat(const RawAddress& addr, uint8_t feat) {
-  do_in_jni_thread(
-      FROM_HERE, Bind(
-                     [](const RawAddress& addr, uint8_t feat) {
-                       std::string bdstr = addr.ToString();
-                       log::verbose(
-                           "GATT server supported features for: {} features: "
-                           "{}",
-                           addr, feat);
-                       btif_config_set_int(
-                           bdstr, BTIF_STORAGE_KEY_GATT_SERVER_SUPPORTED, feat);
-                     },
-                     addr, feat));
+  do_in_jni_thread(Bind(
+      [](const RawAddress& addr, uint8_t feat) {
+        std::string bdstr = addr.ToString();
+        log::verbose(
+            "GATT server supported features for: {} features: "
+            "{}",
+            addr, feat);
+        btif_config_set_int(bdstr, BTIF_STORAGE_KEY_GATT_SERVER_SUPPORTED,
+                            feat);
+      },
+      addr, feat));
 }
 
 /** Gets information about GATT server supported features */
@@ -1406,16 +1405,14 @@ bool btif_storage_get_stored_remote_name(const RawAddress& bd_addr,
 /** Stores information about GATT Client supported features support */
 void btif_storage_set_gatt_cl_supp_feat(const RawAddress& bd_addr,
                                         uint8_t feat) {
-  do_in_jni_thread(
-      FROM_HERE, Bind(
-                     [](const RawAddress& bd_addr, uint8_t feat) {
-                       std::string bdstr = bd_addr.ToString();
-                       log::verbose("saving gatt client supported feat: {}",
-                                    bd_addr);
-                       btif_config_set_int(
-                           bdstr, BTIF_STORAGE_KEY_GATT_CLIENT_SUPPORTED, feat);
-                     },
-                     bd_addr, feat));
+  do_in_jni_thread(Bind(
+      [](const RawAddress& bd_addr, uint8_t feat) {
+        std::string bdstr = bd_addr.ToString();
+        log::verbose("saving gatt client supported feat: {}", bd_addr);
+        btif_config_set_int(bdstr, BTIF_STORAGE_KEY_GATT_CLIENT_SUPPORTED,
+                            feat);
+      },
+      bd_addr, feat));
 }
 
 /** Get client supported features */
@@ -1432,30 +1429,25 @@ uint8_t btif_storage_get_gatt_cl_supp_feat(const RawAddress& bd_addr) {
 
 /** Remove client supported features */
 void btif_storage_remove_gatt_cl_supp_feat(const RawAddress& bd_addr) {
-  do_in_jni_thread(
-      FROM_HERE, Bind(
-                     [](const RawAddress& bd_addr) {
-                       auto bdstr = bd_addr.ToString();
-                       if (btif_config_exist(
-                               bdstr, BTIF_STORAGE_KEY_GATT_CLIENT_SUPPORTED)) {
-                         btif_config_remove(
-                             bdstr, BTIF_STORAGE_KEY_GATT_CLIENT_SUPPORTED);
-                       }
-                     },
-                     bd_addr));
+  do_in_jni_thread(Bind(
+      [](const RawAddress& bd_addr) {
+        auto bdstr = bd_addr.ToString();
+        if (btif_config_exist(bdstr, BTIF_STORAGE_KEY_GATT_CLIENT_SUPPORTED)) {
+          btif_config_remove(bdstr, BTIF_STORAGE_KEY_GATT_CLIENT_SUPPORTED);
+        }
+      },
+      bd_addr));
 }
 
 /** Store last server database hash for remote client */
 void btif_storage_set_gatt_cl_db_hash(const RawAddress& bd_addr, Octet16 hash) {
-  do_in_jni_thread(FROM_HERE, Bind(
-                                  [](const RawAddress& bd_addr, Octet16 hash) {
-                                    auto bdstr = bd_addr.ToString();
-                                    btif_config_set_bin(
-                                        bdstr,
-                                        BTIF_STORAGE_KEY_GATT_CLIENT_DB_HASH,
-                                        hash.data(), hash.size());
-                                  },
-                                  bd_addr, hash));
+  do_in_jni_thread(Bind(
+      [](const RawAddress& bd_addr, Octet16 hash) {
+        auto bdstr = bd_addr.ToString();
+        btif_config_set_bin(bdstr, BTIF_STORAGE_KEY_GATT_CLIENT_DB_HASH,
+                            hash.data(), hash.size());
+      },
+      bd_addr, hash));
 }
 
 /** Get last server database hash for remote client */
@@ -1472,17 +1464,14 @@ Octet16 btif_storage_get_gatt_cl_db_hash(const RawAddress& bd_addr) {
 
 /** Remove las server database hash for remote client */
 void btif_storage_remove_gatt_cl_db_hash(const RawAddress& bd_addr) {
-  do_in_jni_thread(FROM_HERE,
-                   Bind(
-                       [](const RawAddress& bd_addr) {
-                         auto bdstr = bd_addr.ToString();
-                         if (btif_config_exist(
-                                 bdstr, BTIF_STORAGE_KEY_GATT_CLIENT_DB_HASH)) {
-                           btif_config_remove(
-                               bdstr, BTIF_STORAGE_KEY_GATT_CLIENT_DB_HASH);
-                         }
-                       },
-                       bd_addr));
+  do_in_jni_thread(Bind(
+      [](const RawAddress& bd_addr) {
+        auto bdstr = bd_addr.ToString();
+        if (btif_config_exist(bdstr, BTIF_STORAGE_KEY_GATT_CLIENT_DB_HASH)) {
+          btif_config_remove(bdstr, BTIF_STORAGE_KEY_GATT_CLIENT_DB_HASH);
+        }
+      },
+      bd_addr));
 }
 
 void btif_debug_linkkey_type_dump(int fd) {

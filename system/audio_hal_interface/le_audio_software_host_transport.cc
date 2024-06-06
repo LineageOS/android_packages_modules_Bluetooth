@@ -155,10 +155,13 @@ void LeAudioTransport::LeAudioSetSelectedHalPcmConfig(uint32_t sample_rate_hz,
 StartRequestState LeAudioTransport::GetStartRequestState(void) {
   return start_request_state_;
 }
+
 void LeAudioTransport::ClearStartRequestState(void) {
+  log::verbose("");
   start_request_state_ = StartRequestState::IDLE;
   remote_delay_report_ms_ = 0;
 }
+
 void LeAudioTransport::SetStartRequestState(StartRequestState state) {
   start_request_state_ = state;
 }
@@ -243,9 +246,12 @@ void LeAudioSinkTransport::LeAudioSetSelectedHalPcmConfig(
 StartRequestState LeAudioSinkTransport::GetStartRequestState(void) {
   return transport_->GetStartRequestState();
 }
+
 void LeAudioSinkTransport::ClearStartRequestState(void) {
+  log::verbose("");
   transport_->ClearStartRequestState();
 }
+
 void LeAudioSinkTransport::SetStartRequestState(StartRequestState state) {
   transport_->SetStartRequestState(state);
 }
@@ -312,9 +318,12 @@ void LeAudioSourceTransport::LeAudioSetSelectedHalPcmConfig(
 StartRequestState LeAudioSourceTransport::GetStartRequestState(void) {
   return transport_->GetStartRequestState();
 }
+
 void LeAudioSourceTransport::ClearStartRequestState(void) {
+  log::verbose("");
   transport_->ClearStartRequestState();
 }
+
 void LeAudioSourceTransport::SetStartRequestState(StartRequestState state) {
   transport_->SetStartRequestState(state);
 }

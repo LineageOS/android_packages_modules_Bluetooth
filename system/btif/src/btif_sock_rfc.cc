@@ -331,7 +331,7 @@ bt_status_t btsock_rfc_listen(const char* service_name,
       alloc_rfc_slot(NULL, service_name, *service_uuid, channel, flags, true);
   if (!slot) {
     log::error("unable to allocate RFCOMM slot");
-    return BT_STATUS_FAIL;
+    return BT_STATUS_NOMEM;
   }
   log::info("Adding listening socket service_name: {} - channel: {}",
             service_name, channel);
@@ -379,7 +379,7 @@ bt_status_t btsock_rfc_connect(const RawAddress* bd_addr,
       alloc_rfc_slot(bd_addr, NULL, *service_uuid, channel, flags, false);
   if (!slot) {
     log::error("unable to allocate RFCOMM slot. bd_addr:{}", *bd_addr);
-    return BT_STATUS_FAIL;
+    return BT_STATUS_NOMEM;
   }
 
   if (!service_uuid || service_uuid->IsEmpty()) {

@@ -50,7 +50,6 @@ class VolumeControlInterfaceImpl : public VolumeControlInterface,
         FROM_HERE,
         Bind(&VolumeControl::Initialize, this,
              jni_thread_wrapper(
-                 FROM_HERE,
                  Bind(&btif_storage_load_bonded_volume_control_devices))));
 
     /* It might be not yet initialized, but setting this flag here is safe,
@@ -61,30 +60,27 @@ class VolumeControlInterfaceImpl : public VolumeControlInterface,
 
   void OnConnectionState(ConnectionState state,
                          const RawAddress& address) override {
-    do_in_jni_thread(FROM_HERE, Bind(&VolumeControlCallbacks::OnConnectionState,
-                                     Unretained(callbacks_), state, address));
+    do_in_jni_thread(Bind(&VolumeControlCallbacks::OnConnectionState,
+                          Unretained(callbacks_), state, address));
   }
 
   void OnVolumeStateChanged(const RawAddress& address, uint8_t volume,
                             bool mute, bool isAutonomous) override {
-    do_in_jni_thread(
-        FROM_HERE,
-        Bind(&VolumeControlCallbacks::OnVolumeStateChanged,
-             Unretained(callbacks_), address, volume, mute, isAutonomous));
+    do_in_jni_thread(Bind(&VolumeControlCallbacks::OnVolumeStateChanged,
+                          Unretained(callbacks_), address, volume, mute,
+                          isAutonomous));
   }
 
   void OnGroupVolumeStateChanged(int group_id, uint8_t volume, bool mute,
                                  bool isAutonomous) override {
-    do_in_jni_thread(
-        FROM_HERE,
-        Bind(&VolumeControlCallbacks::OnGroupVolumeStateChanged,
-             Unretained(callbacks_), group_id, volume, mute, isAutonomous));
+    do_in_jni_thread(Bind(&VolumeControlCallbacks::OnGroupVolumeStateChanged,
+                          Unretained(callbacks_), group_id, volume, mute,
+                          isAutonomous));
   }
 
   void OnDeviceAvailable(const RawAddress& address,
                          uint8_t num_offset) override {
-    do_in_jni_thread(FROM_HERE,
-                     Bind(&VolumeControlCallbacks::OnDeviceAvailable,
+    do_in_jni_thread(Bind(&VolumeControlCallbacks::OnDeviceAvailable,
                           Unretained(callbacks_), address, num_offset));
   }
 
@@ -95,7 +91,6 @@ class VolumeControlInterfaceImpl : public VolumeControlInterface,
                                         uint8_t ext_output_id,
                                         int16_t offset) override {
     do_in_jni_thread(
-        FROM_HERE,
         Bind(&VolumeControlCallbacks::OnExtAudioOutVolumeOffsetChanged,
              Unretained(callbacks_), address, ext_output_id, offset));
   }
@@ -103,17 +98,15 @@ class VolumeControlInterfaceImpl : public VolumeControlInterface,
   void OnExtAudioOutLocationChanged(const RawAddress& address,
                                     uint8_t ext_output_id,
                                     uint32_t location) override {
-    do_in_jni_thread(
-        FROM_HERE,
-        Bind(&VolumeControlCallbacks::OnExtAudioOutLocationChanged,
-             Unretained(callbacks_), address, ext_output_id, location));
+    do_in_jni_thread(Bind(&VolumeControlCallbacks::OnExtAudioOutLocationChanged,
+                          Unretained(callbacks_), address, ext_output_id,
+                          location));
   }
 
   void OnExtAudioOutDescriptionChanged(const RawAddress& address,
                                        uint8_t ext_output_id,
                                        std::string descr) override {
     do_in_jni_thread(
-        FROM_HERE,
         Bind(&VolumeControlCallbacks::OnExtAudioOutDescriptionChanged,
              Unretained(callbacks_), address, ext_output_id, descr));
   }

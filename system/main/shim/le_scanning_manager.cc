@@ -202,8 +202,7 @@ void BleScannerInterfaceImpl::Scan(bool start) {
     return;
   }
 
-  do_in_jni_thread(FROM_HERE,
-                   base::BindOnce(&BleScannerInterfaceImpl::AddressCache::init,
+  do_in_jni_thread(base::BindOnce(&BleScannerInterfaceImpl::AddressCache::init,
                                   base::Unretained(&address_cache_)));
 }
 
@@ -243,8 +242,7 @@ void BleScannerInterfaceImpl::ScanFilterParamSetup(
   bluetooth::shim::GetScanning()->ScanFilterParameterSetup(
       apcf_action, filter_index, advertising_filter_parameter);
   // TODO refactor callback mechanism
-  do_in_jni_thread(FROM_HERE,
-                   base::BindOnce(cb, 0, 0, btm_status_value(BTM_SUCCESS)));
+  do_in_jni_thread(base::BindOnce(cb, 0, 0, btm_status_value(BTM_SUCCESS)));
 }
 
 /** Configure a scan filter condition  */
@@ -263,8 +261,7 @@ void BleScannerInterfaceImpl::ScanFilterAdd(int filter_index,
     new_filters.push_back(command);
   }
   bluetooth::shim::GetScanning()->ScanFilterAdd(filter_index, new_filters);
-  do_in_jni_thread(FROM_HERE,
-                   base::BindOnce(cb, 0, 0, 0, btm_status_value(BTM_SUCCESS)));
+  do_in_jni_thread(base::BindOnce(cb, 0, 0, 0, btm_status_value(BTM_SUCCESS)));
 }
 
 /** Clear all scan filter conditions for specific filter index*/
@@ -280,8 +277,7 @@ void BleScannerInterfaceImpl::ScanFilterEnable(bool enable, EnableCallback cb) {
   bluetooth::shim::GetScanning()->ScanFilterEnable(enable);
 
   uint8_t action = enable ? 1 : 0;
-  do_in_jni_thread(FROM_HERE,
-                   base::BindOnce(cb, action, btm_status_value(BTM_SUCCESS)));
+  do_in_jni_thread(base::BindOnce(cb, action, btm_status_value(BTM_SUCCESS)));
 }
 
 #if TARGET_FLOSS
@@ -382,8 +378,7 @@ void BleScannerInterfaceImpl::BatchscanConfigStorage(
   bluetooth::shim::GetScanning()->BatchScanConifgStorage(
       batch_scan_full_max, batch_scan_trunc_max, batch_scan_notify_threshold,
       client_if);
-  do_in_jni_thread(FROM_HERE,
-                   base::BindOnce(cb, btm_status_value(BTM_SUCCESS)));
+  do_in_jni_thread(base::BindOnce(cb, btm_status_value(BTM_SUCCESS)));
 }
 
 /* Enable batchscan */
@@ -397,16 +392,14 @@ void BleScannerInterfaceImpl::BatchscanEnable(int scan_mode, int scan_interval,
       static_cast<bluetooth::hci::BatchScanDiscardRule>(discard_rule);
   bluetooth::shim::GetScanning()->BatchScanEnable(
       batch_scan_mode, scan_window, scan_interval, batch_scan_discard_rule);
-  do_in_jni_thread(FROM_HERE,
-                   base::BindOnce(cb, btm_status_value(BTM_SUCCESS)));
+  do_in_jni_thread(base::BindOnce(cb, btm_status_value(BTM_SUCCESS)));
 }
 
 /* Disable batchscan */
 void BleScannerInterfaceImpl::BatchscanDisable(Callback cb) {
   log::info("in shim layer");
   bluetooth::shim::GetScanning()->BatchScanDisable();
-  do_in_jni_thread(FROM_HERE,
-                   base::BindOnce(cb, btm_status_value(BTM_SUCCESS)));
+  do_in_jni_thread(base::BindOnce(cb, btm_status_value(BTM_SUCCESS)));
 }
 
 /* Read out batchscan reports */
@@ -510,19 +503,16 @@ void BleScannerInterfaceImpl::OnScannerRegistered(
     const bluetooth::hci::Uuid app_uuid, bluetooth::hci::ScannerId scanner_id,
     ScanningStatus status) {
   auto uuid = bluetooth::Uuid::From128BitBE(app_uuid.To128BitBE());
-  do_in_jni_thread(FROM_HERE,
-                   base::BindOnce(&ScanningCallbacks::OnScannerRegistered,
+  do_in_jni_thread(base::BindOnce(&ScanningCallbacks::OnScannerRegistered,
                                   base::Unretained(scanning_callbacks_), uuid,
                                   scanner_id, status));
 }
 
 void BleScannerInterfaceImpl::OnSetScannerParameterComplete(
     bluetooth::hci::ScannerId scanner_id, ScanningStatus status) {
-  do_in_jni_thread(
-      FROM_HERE,
-      base::BindOnce(&ScanningCallbacks::OnSetScannerParameterComplete,
-                     base::Unretained(scanning_callbacks_), scanner_id,
-                     status));
+  do_in_jni_thread(base::BindOnce(
+      &ScanningCallbacks::OnSetScannerParameterComplete,
+      base::Unretained(scanning_callbacks_), scanner_id, status));
 }
 
 void BleScannerInterfaceImpl::OnScanResult(
@@ -538,19 +528,15 @@ void BleScannerInterfaceImpl::OnScanResult(
     btm_ble_process_adv_addr(raw_address, &ble_addr_type);
   }
 
-  do_in_jni_thread(
-      FROM_HERE,
-      base::BindOnce(&BleScannerInterfaceImpl::handle_remote_properties,
-                     base::Unretained(this), raw_address, ble_addr_type,
-                     advertising_data));
+  do_in_jni_thread(base::BindOnce(
+      &BleScannerInterfaceImpl::handle_remote_properties,
+      base::Unretained(this), raw_address, ble_addr_type, advertising_data));
 
-  do_in_jni_thread(
-      FROM_HERE,
-      base::BindOnce(&ScanningCallbacks::OnScanResult,
-                     base::Unretained(scanning_callbacks_), event_type,
-                     static_cast<uint8_t>(address_type), raw_address,
-                     primary_phy, secondary_phy, advertising_sid, tx_power,
-                     rssi, periodic_advertising_interval, advertising_data));
+  do_in_jni_thread(base::BindOnce(
+      &ScanningCallbacks::OnScanResult, base::Unretained(scanning_callbacks_),
+      event_type, static_cast<uint8_t>(address_type), raw_address, primary_phy,
+      secondary_phy, advertising_sid, tx_power, rssi,
+      periodic_advertising_interval, advertising_data));
 
   // TODO: Remove when StartInquiry in GD part implemented
   btm_ble_process_adv_pkt_cont_for_inquiry(
@@ -595,26 +581,23 @@ void BleScannerInterfaceImpl::OnTrackAdvFoundLost(
     track_info.scan_response.insert(track_info.scan_response.end(),
                                     scan_rsp_data.begin(), scan_rsp_data.end());
   }
-  do_in_jni_thread(
-      FROM_HERE,
-      base::BindOnce(&ScanningCallbacks::OnTrackAdvFoundLost,
-                     base::Unretained(scanning_callbacks_), track_info));
+  do_in_jni_thread(base::BindOnce(&ScanningCallbacks::OnTrackAdvFoundLost,
+                                  base::Unretained(scanning_callbacks_),
+                                  track_info));
 }
 
 void BleScannerInterfaceImpl::OnBatchScanReports(int client_if, int status,
                                                  int report_format,
                                                  int num_records,
                                                  std::vector<uint8_t> data) {
-  do_in_jni_thread(
-      FROM_HERE,
-      base::BindOnce(&ScanningCallbacks::OnBatchScanReports,
-                     base::Unretained(scanning_callbacks_), client_if, status,
-                     report_format, num_records, data));
+  do_in_jni_thread(base::BindOnce(&ScanningCallbacks::OnBatchScanReports,
+                                  base::Unretained(scanning_callbacks_),
+                                  client_if, status, report_format, num_records,
+                                  data));
 }
 
 void BleScannerInterfaceImpl::OnBatchScanThresholdCrossed(int client_if) {
   do_in_jni_thread(
-      FROM_HERE,
       base::BindOnce(&ScanningCallbacks::OnBatchScanThresholdCrossed,
                      base::Unretained(scanning_callbacks_), client_if));
 }
@@ -630,8 +613,7 @@ void BleScannerInterfaceImpl::OnPeriodicSyncStarted(
     btm_identity_addr_to_random_pseudo(&raw_address, &ble_addr_type, true);
   }
 
-  do_in_jni_thread(FROM_HERE,
-                   base::BindOnce(&ScanningCallbacks::OnPeriodicSyncStarted,
+  do_in_jni_thread(base::BindOnce(&ScanningCallbacks::OnPeriodicSyncStarted,
                                   base::Unretained(scanning_callbacks_), reg_id,
                                   status, sync_handle, advertising_sid,
                                   static_cast<int>(ble_addr_type), raw_address,
@@ -642,32 +624,29 @@ void BleScannerInterfaceImpl::OnPeriodicSyncReport(uint16_t sync_handle,
                                                    int8_t tx_power, int8_t rssi,
                                                    uint8_t status,
                                                    std::vector<uint8_t> data) {
-  do_in_jni_thread(
-      FROM_HERE,
-      base::BindOnce(&ScanningCallbacks::OnPeriodicSyncReport,
-                     base::Unretained(scanning_callbacks_), sync_handle,
-                     tx_power, rssi, status, std::move(data)));
+  do_in_jni_thread(base::BindOnce(&ScanningCallbacks::OnPeriodicSyncReport,
+                                  base::Unretained(scanning_callbacks_),
+                                  sync_handle, tx_power, rssi, status,
+                                  std::move(data)));
 }
 
 void BleScannerInterfaceImpl::OnPeriodicSyncLost(uint16_t sync_handle) {
-  do_in_jni_thread(
-      FROM_HERE,
-      base::BindOnce(&ScanningCallbacks::OnPeriodicSyncLost,
-                     base::Unretained(scanning_callbacks_), sync_handle));
+  do_in_jni_thread(base::BindOnce(&ScanningCallbacks::OnPeriodicSyncLost,
+                                  base::Unretained(scanning_callbacks_),
+                                  sync_handle));
 }
 
 void BleScannerInterfaceImpl::OnPeriodicSyncTransferred(
     int pa_source, uint8_t status, bluetooth::hci::Address address) {
-  do_in_jni_thread(FROM_HERE,
-                   base::BindOnce(&ScanningCallbacks::OnPeriodicSyncTransferred,
+  do_in_jni_thread(base::BindOnce(&ScanningCallbacks::OnPeriodicSyncTransferred,
                                   base::Unretained(scanning_callbacks_),
                                   pa_source, status, ToRawAddress(address)));
 }
 
 void BleScannerInterfaceImpl::OnBigInfoReport(uint16_t sync_handle, bool encrypted) {
-  do_in_jni_thread(FROM_HERE,
-                   base::BindOnce(&ScanningCallbacks::OnBigInfoReport,
-                   base::Unretained(scanning_callbacks_), sync_handle, encrypted));
+  do_in_jni_thread(base::BindOnce(&ScanningCallbacks::OnBigInfoReport,
+                                  base::Unretained(scanning_callbacks_),
+                                  sync_handle, encrypted));
 }
 
 void BleScannerInterfaceImpl::OnTimeout() {}

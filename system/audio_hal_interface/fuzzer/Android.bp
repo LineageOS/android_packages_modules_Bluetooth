@@ -37,6 +37,7 @@ cc_defaults {
     shared_libs: [
         "libPlatformProperties",
         "libaaudio",
+        "libaconfig_storage_read_api_cc",
         "libbinder_ndk",
         "libcrypto",
         "libfmq",

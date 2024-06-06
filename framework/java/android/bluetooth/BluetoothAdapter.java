@@ -110,7 +110,8 @@ import java.util.function.BiFunction;
  * create a {@link BluetoothServerSocket} to listen for incoming RFComm connection requests with
  * {@link #listenUsingRfcommWithServiceRecord(String, UUID)}; listen for incoming L2CAP
  * Connection-oriented Channels (CoC) connection requests with {@link #listenUsingL2capChannel()};
- * or start a scan for Bluetooth LE devices with {@link #startLeScan(LeScanCallback callback)}.
+ * or start a scan for Bluetooth LE devices with {@link BluetoothLeScanner#startScan(ScanCallback)}
+ * using the scanner from {@link #getBluetoothLeScanner()}.
  *
  * <p>This class is thread safe. <div class="special reference">
  *

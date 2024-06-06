@@ -53,8 +53,7 @@ class CsipSetCoordinatorServiceInterfaceImpl : public CsisClientInterface,
     do_in_main_thread(
         FROM_HERE,
         Bind(&CsisClient::Initialize, this,
-             jni_thread_wrapper(FROM_HERE,
-                                Bind(&btif_storage_load_bonded_csis_devices))));
+             jni_thread_wrapper(Bind(&btif_storage_load_bonded_csis_devices))));
     /* It might be not yet initialized, but setting this flag here is safe,
      * because other calls will check this and the native instance
      */
@@ -92,14 +91,14 @@ class CsipSetCoordinatorServiceInterfaceImpl : public CsisClientInterface,
           "being not ready");
 
       /* Clear storage */
-      do_in_jni_thread(FROM_HERE, Bind(&btif_storage_remove_csis_device, addr));
+      do_in_jni_thread(Bind(&btif_storage_remove_csis_device, addr));
       return;
     }
 
     do_in_main_thread(FROM_HERE, Bind(&CsisClient::RemoveDevice,
                                       Unretained(CsisClient::Get()), addr));
     /* Clear storage */
-    do_in_jni_thread(FROM_HERE, Bind(&btif_storage_remove_csis_device, addr));
+    do_in_jni_thread(Bind(&btif_storage_remove_csis_device, addr));
   }
 
   void LockGroup(int group_id, bool lock) override {
@@ -129,27 +128,26 @@ class CsipSetCoordinatorServiceInterfaceImpl : public CsisClientInterface,
 
   void OnConnectionState(const RawAddress& addr,
                          ConnectionState state) override {
-    do_in_jni_thread(FROM_HERE, Bind(&CsisClientCallbacks::OnConnectionState,
-                                     Unretained(callbacks_), addr, state));
+    do_in_jni_thread(Bind(&CsisClientCallbacks::OnConnectionState,
+                          Unretained(callbacks_), addr, state));
   }
 
   void OnDeviceAvailable(const RawAddress& addr, int group_id, int group_size,
                          int rank, const bluetooth::Uuid& uuid) override {
-    do_in_jni_thread(FROM_HERE, Bind(&CsisClientCallbacks::OnDeviceAvailable,
-                                     Unretained(callbacks_), addr, group_id,
-                                     group_size, rank, uuid));
+    do_in_jni_thread(Bind(&CsisClientCallbacks::OnDeviceAvailable,
+                          Unretained(callbacks_), addr, group_id, group_size,
+                          rank, uuid));
   }
 
   void OnSetMemberAvailable(const RawAddress& addr, int group_id) override {
-    do_in_jni_thread(FROM_HERE, Bind(&CsisClientCallbacks::OnSetMemberAvailable,
-                                     Unretained(callbacks_), addr, group_id));
+    do_in_jni_thread(Bind(&CsisClientCallbacks::OnSetMemberAvailable,
+                          Unretained(callbacks_), addr, group_id));
   }
 
   /* Callback for lock changed in the group */
   virtual void OnGroupLockChanged(int group_id, bool locked,
                                   CsisGroupLockStatus status) override {
-    do_in_jni_thread(FROM_HERE,
-                     Bind(&CsisClientCallbacks::OnGroupLockChanged,
+    do_in_jni_thread(Bind(&CsisClientCallbacks::OnGroupLockChanged,
                           Unretained(callbacks_), group_id, locked, status));
   }
 

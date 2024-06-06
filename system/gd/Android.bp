@@ -185,6 +185,7 @@ cc_defaults {
         "libcom.android.sysprop.bluetooth.wrapped",
         "libosi",
         "server_configurable_flags",
+        "libaconfig_storage_read_api_cc",
     ],
     include_dirs: [
         "packages/modules/Bluetooth/system/include",
@@ -339,6 +340,7 @@ cc_binary {
         "libprotobuf-cpp-full",
         "libunwindstack",
         "server_configurable_flags",
+        "libaconfig_storage_read_api_cc",
     ],
     target: {
         android: {
@@ -508,6 +510,7 @@ cc_test {
         "libPlatformProperties",
         "libcrypto",
         "server_configurable_flags",
+        "libaconfig_storage_read_api_cc",
     ],
     sanitize: {
         address: true,
@@ -567,6 +570,7 @@ cc_test {
         "liblog",
         "libosi",
         "server_configurable_flags",
+        "libaconfig_storage_read_api_cc",
     ],
     shared_libs: [
         "libcrypto",
@@ -662,6 +666,7 @@ cc_defaults {
         "libgrpc_wrap",
         "liblog",
         "server_configurable_flags",
+        "libaconfig_storage_read_api_cc",
     ],
     cflags: [
         "-DFUZZ_TARGET",

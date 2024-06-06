@@ -2942,12 +2942,10 @@ static void btif_report_connection_state(const RawAddress& peer_address,
 
     if (peer->IsSink()) {
       do_in_jni_thread(
-          FROM_HERE,
           base::BindOnce(btif_av_source.Callbacks()->connection_state_cb,
                          peer_address, state, btav_error_t{}));
     } else if (peer->IsSource()) {
       do_in_jni_thread(
-          FROM_HERE,
           base::BindOnce(btif_av_sink.Callbacks()->connection_state_cb,
                          peer_address, state, btav_error_t{}));
     }
@@ -2955,17 +2953,13 @@ static void btif_report_connection_state(const RawAddress& peer_address,
   }
 
   if (btif_av_source.Enabled()) {
-    do_in_jni_thread(
-        FROM_HERE,
-        base::BindOnce(
-            btif_av_source.Callbacks()->connection_state_cb, peer_address,
-            state, btav_error_t{.status = status, .error_code = error_code}));
+    do_in_jni_thread(base::BindOnce(
+        btif_av_source.Callbacks()->connection_state_cb, peer_address, state,
+        btav_error_t{.status = status, .error_code = error_code}));
   } else if (btif_av_sink.Enabled()) {
-    do_in_jni_thread(
-        FROM_HERE,
-        base::BindOnce(
-            btif_av_sink.Callbacks()->connection_state_cb, peer_address, state,
-            btav_error_t{.status = status, .error_code = error_code}));
+    do_in_jni_thread(base::BindOnce(
+        btif_av_sink.Callbacks()->connection_state_cb, peer_address, state,
+        btav_error_t{.status = status, .error_code = error_code}));
   }
 }
 
@@ -2986,23 +2980,19 @@ static void btif_report_audio_state(const RawAddress& peer_address,
   if (btif_av_both_enable()) {
     BtifAvPeer* peer = btif_av_find_peer(peer_address, local_a2dp_type);
     if (peer->IsSink()) {
-      do_in_jni_thread(
-          FROM_HERE, base::BindOnce(btif_av_source.Callbacks()->audio_state_cb,
-                                    peer_address, state));
+      do_in_jni_thread(base::BindOnce(
+          btif_av_source.Callbacks()->audio_state_cb, peer_address, state));
     } else if (peer->IsSource()) {
-      do_in_jni_thread(FROM_HERE,
-                       base::BindOnce(btif_av_sink.Callbacks()->audio_state_cb,
+      do_in_jni_thread(base::BindOnce(btif_av_sink.Callbacks()->audio_state_cb,
                                       peer_address, state));
     }
     return;
   }
   if (btif_av_source.Enabled()) {
-    do_in_jni_thread(FROM_HERE,
-                     base::BindOnce(btif_av_source.Callbacks()->audio_state_cb,
+    do_in_jni_thread(base::BindOnce(btif_av_source.Callbacks()->audio_state_cb,
                                     peer_address, state));
   } else if (btif_av_sink.Enabled()) {
-    do_in_jni_thread(FROM_HERE,
-                     base::BindOnce(btif_av_sink.Callbacks()->audio_state_cb,
+    do_in_jni_thread(base::BindOnce(btif_av_sink.Callbacks()->audio_state_cb,
                                     peer_address, state));
   }
 
@@ -3035,11 +3025,9 @@ void btif_av_report_source_codec_state(
         codecs_selectable_capabilities) {
   log::verbose("peer={}", peer_address);
   if (btif_av_source.Enabled()) {
-    do_in_jni_thread(
-        FROM_HERE,
-        base::BindOnce(btif_av_source.Callbacks()->audio_config_cb,
-                       peer_address, codec_config, codecs_local_capabilities,
-                       codecs_selectable_capabilities));
+    do_in_jni_thread(base::BindOnce(
+        btif_av_source.Callbacks()->audio_config_cb, peer_address, codec_config,
+        codecs_local_capabilities, codecs_selectable_capabilities));
   }
 }
 
@@ -3055,8 +3043,7 @@ static void btif_av_report_sink_audio_config_state(
   log::info("peer={} sample_rate={} channel_count={}", peer_address,
             sample_rate, channel_count);
   if (btif_av_sink.Enabled()) {
-    do_in_jni_thread(FROM_HERE,
-                     base::BindOnce(btif_av_sink.Callbacks()->audio_config_cb,
+    do_in_jni_thread(base::BindOnce(btif_av_sink.Callbacks()->audio_config_cb,
                                     peer_address, sample_rate, channel_count));
   }
 }
@@ -3091,7 +3078,7 @@ static void btif_av_query_mandatory_codec_priority(
     }
   };
   if (btif_av_source.Enabled()) {
-    do_in_jni_thread(FROM_HERE, base::BindOnce(query_priority, peer_address));
+    do_in_jni_thread(base::BindOnce(query_priority, peer_address));
   }
 }
 

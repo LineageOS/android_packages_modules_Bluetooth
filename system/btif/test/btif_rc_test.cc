@@ -110,11 +110,10 @@ bool btif_av_peer_is_source(const RawAddress& peer_address) { return true; }
 bool btif_av_both_enable(void) { return true; }
 
 static bluetooth::common::MessageLoopThread jni_thread("bt_jni_thread");
-bt_status_t do_in_jni_thread(const base::Location& from_here,
-                             base::OnceClosure task) {
-  if (!jni_thread.DoInThread(from_here, std::move(task))) {
+bt_status_t do_in_jni_thread(base::OnceClosure task) {
+  if (!jni_thread.DoInThread(FROM_HERE, std::move(task))) {
     log::error("Post task to task runner failed!");
-    return BT_STATUS_FAIL;
+    return BT_STATUS_JNI_THREAD_ATTACH_ERROR;
   }
   return BT_STATUS_SUCCESS;
 }
