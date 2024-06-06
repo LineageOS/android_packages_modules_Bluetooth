@@ -27,8 +27,9 @@ namespace bluetooth {
 namespace topshim {
 namespace rust {
 
-struct BtLeAudioCodecConfig;
 enum class BtLeAudioDirection : uint8_t;
+enum class BtLeStreamStartedStatus : int32_t;
+struct BtLeAudioCodecConfig;
 struct BtLePcmConfig;
 struct SourceMetadata;
 struct SinkMetadata;
@@ -67,8 +68,8 @@ const std::vector<le_audio::btle_audio_codec_config_t>& offloading_preference
   void peer_stop_audio_request();
   BtLePcmConfig get_host_pcm_config();
   BtLePcmConfig get_peer_pcm_config();
-  bool get_host_stream_started();
-  bool get_peer_stream_started();
+  BtLeStreamStartedStatus get_host_stream_started();
+  BtLeStreamStartedStatus get_peer_stream_started();
   void source_metadata_changed(::rust::Vec<SourceMetadata> metadata);
   void sink_metadata_changed(::rust::Vec<SinkMetadata> metadata);
 

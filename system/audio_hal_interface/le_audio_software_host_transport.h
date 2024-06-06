@@ -30,6 +30,7 @@ namespace le_audio {
 using ::bluetooth::le_audio::set_configurations::AudioSetConfiguration;
 using ::bluetooth::le_audio::set_configurations::CodecConfigSetting;
 
+using ::bluetooth::audio::le_audio::btle_stream_started_status;
 using ::bluetooth::audio::le_audio::LeAudioClientInterface;
 using ::bluetooth::audio::le_audio::StartRequestState;
 using ::bluetooth::audio::le_audio::StreamCallbacks;
@@ -119,7 +120,8 @@ class LeAudioSinkTransport {
   void SetStartRequestState(StartRequestState state);
 
   static inline LeAudioSinkTransport* instance = nullptr;
-  static inline bool stream_started = false;
+  static inline btle_stream_started_status stream_started =
+      btle_stream_started_status::IDLE;
 
  private:
   LeAudioTransport* transport_;
@@ -162,7 +164,8 @@ class LeAudioSourceTransport {
   void SetStartRequestState(StartRequestState state);
 
   static inline LeAudioSourceTransport* instance = nullptr;
-  static inline bool stream_started = false;
+  static inline btle_stream_started_status stream_started =
+      btle_stream_started_status::IDLE;
 
  private:
   LeAudioTransport* transport_;

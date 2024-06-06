@@ -1466,6 +1466,8 @@ impl IBluetoothMediaCallback for MediaCallback {
     ) {
     }
     fn on_lea_group_stream_status(&mut self, _group_id: i32, _status: BtLeAudioGroupStreamStatus) {}
+    fn on_lea_vc_connected(&mut self, _addr: RawAddress, _group_id: i32) {}
+    fn on_lea_group_volume_changed(&mut self, _group_id: i32, _volume: u8) {}
     fn on_bluetooth_audio_device_added(&mut self, _device: BluetoothAudioDevice) {}
     fn on_bluetooth_audio_device_removed(&mut self, _addr: RawAddress) {}
     fn on_absolute_volume_supported_changed(&mut self, _supported: bool) {}
