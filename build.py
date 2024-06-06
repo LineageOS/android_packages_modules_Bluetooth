@@ -76,6 +76,7 @@ VALID_TARGETS = [
     'prepare',  # Prepare the output directory (gn gen + rust setup)
     'rust',  # Build only the rust components + copy artifacts to output dir
     'test',  # Run the unit tests
+    'clippy',  # Run cargo clippy
     'utils',  # Build Floss utils
 ]
 
@@ -494,6 +495,12 @@ class HostBuild():
                              cwd=os.path.join(self.output_dir),
                              env=self.env)
 
+    def _target_clippy(self):
+        """ Runs cargo clippy, a collection of lints to catch common mistakes.
+        """
+        cmd = ['cargo', 'clippy']
+        self.run_command('rust', cmd, cwd=os.path.join(self.platform_dir, 'bt'), env=self.env)
+
     def _target_utils(self):
         """ Builds the utility applications.
         """
@@ -605,6 +612,8 @@ class HostBuild():
             self._target_main()
         elif self.target == 'test':
             self._target_test()
+        elif self.target == 'clippy':
+            self._target_clippy()
         elif self.target == 'clean':
             self._target_clean()
         elif self.target == 'install':
