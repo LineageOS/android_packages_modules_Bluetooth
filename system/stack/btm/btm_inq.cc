@@ -92,10 +92,6 @@
 namespace {
 constexpr char kBtmLogTag[] = "SCAN";
 
-struct {
-  bool inq_by_rssi{false};
-} internal_;
-
 void btm_log_history_scan_mode(uint8_t scan_mode) {
   static uint8_t scan_mode_cached_ = 0xff;
   if (scan_mode_cached_ == scan_mode) return;
@@ -258,6 +254,9 @@ void SendRemoteNameRequest(const RawAddress& raw_address) {
 }
 static void btm_process_cancel_complete(tHCI_STATUS status, uint8_t mode);
 static void on_incoming_hci_event(bluetooth::hci::EventView event);
+static bool is_inquery_by_rssi() {
+  return osi_property_get_bool(PROPERTY_INQ_BY_RSSI, false);
+}
 /*******************************************************************************
  *
  * Function         BTM_SetDiscoverability
@@ -1078,10 +1077,6 @@ void btm_inq_db_reset(void) {
   return;
 }
 
-void btm_inq_db_set_inq_by_rssi(void) {
-  internal_.inq_by_rssi = osi_property_get_bool(PROPERTY_INQ_BY_RSSI, false);
-}
-
 /*******************************************************************************
  *
  * Function         btm_inq_clear_ssp
@@ -1254,7 +1249,7 @@ tINQ_DB_ENT* btm_inq_db_new(const RawAddress& p_bda, bool is_ble) {
       return (p_ent);
     }
 
-    if (internal_.inq_by_rssi) {
+    if (is_inquery_by_rssi()) {
       if (p_ent->inq_info.results.rssi < i_rssi) {
         p_old = p_ent;
         i_rssi = p_ent->inq_info.results.rssi;
