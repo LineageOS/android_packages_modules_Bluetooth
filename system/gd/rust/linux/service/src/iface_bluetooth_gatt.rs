@@ -617,7 +617,7 @@ impl IBluetoothGatt for IBluetoothGattDBus {
         dbus_generated!()
     }
 
-    #[dbus_method("UnregisterScanner", DBusLog::Disable)]
+    #[dbus_method("UnregisterScanner")]
     fn unregister_scanner(&mut self, scanner_id: u8) -> bool {
         dbus_generated!()
     }
