@@ -30,6 +30,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.provider.Settings
 import android.util.Log
 import androidx.test.platform.app.InstrumentationRegistry
 import kotlin.time.Duration
@@ -49,6 +50,8 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 
 private const val TAG: String = "BlockingBluetoothAdapter"
+// There is no access to the module only API Settings.Global.BLE_SCAN_ALWAYS_AVAILABLE
+private const val BLE_SCAN_ALWAYS_AVAILABLE = "ble_scan_always_enabled"
 
 object BlockingBluetoothAdapter {
     private val context = InstrumentationRegistry.getInstrumentation().getContext()
@@ -65,9 +68,13 @@ object BlockingBluetoothAdapter {
 
     /** Set Bluetooth in BLE mode. Only works if it was OFF before */
     @JvmStatic
-    fun enableBLE(): Boolean {
+    fun enableBLE(toggleScanSetting: Boolean): Boolean {
         if (!state.eq(STATE_OFF)) {
             throw IllegalStateException("Invalid call to enableBLE while current state is: $state")
+        }
+        if (toggleScanSetting) {
+            Log.d(TAG, "Allowing the scan to be perform while Bluetooth is OFF")
+            Settings.Global.putInt(context.contentResolver, BLE_SCAN_ALWAYS_AVAILABLE, 1)
         }
         Log.d(TAG, "Call to enableBLE")
         if (!withPermissions(BLUETOOTH_CONNECT).use { adapter.enableBLE() }) {
@@ -88,6 +95,8 @@ object BlockingBluetoothAdapter {
             Log.e(TAG, "disableBLE: Failed")
             return false
         }
+        Log.d(TAG, "Disallowing the scan to be perform while Bluetooth is OFF")
+        Settings.Global.putInt(context.contentResolver, BLE_SCAN_ALWAYS_AVAILABLE, 0)
         return state.waitForStateWithTimeout(stateChangeTimeout, STATE_OFF)
     }
 

@@ -51,20 +51,4 @@ public class BTAdapterUtils {
             BluetoothAdapter adapter, boolean persist, Context ctx) {
         return BlockingBluetoothAdapter.disable(persist);
     }
-
-    /**
-     * @deprecated see {@link android.bluetooth.test_utils.BlockingBluetoothAdapter#enableBLE}
-     */
-    @Deprecated
-    public static final boolean enableBLE(BluetoothAdapter adapter, Context ctx) {
-        return BlockingBluetoothAdapter.enableBLE();
-    }
-
-    /**
-     * @deprecated see {@link android.bluetooth.test_utils.BlockingBluetoothAdapter#disableBLE}
-     */
-    @Deprecated
-    public static final boolean disableBLE(BluetoothAdapter adapter, Context ctx) {
-        return BlockingBluetoothAdapter.disableBLE();
-    }
 }
