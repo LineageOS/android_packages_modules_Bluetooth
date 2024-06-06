@@ -29,7 +29,7 @@
 
     <target_preparer class="com.android.tradefed.targetprep.RunCommandTargetPreparer">
         <option name="run-command" value="setprop persist.bluetooth.btsnooplogmode full" />
-        <option name="run-command" value="setprop log.tag.bluetooth VERBOSE" />
+        <option name="run-command" value="setprop persist.bluetooth.btsnoopsize 0xfffffffffffffff" />
     </target_preparer>
 
     <target_preparer class="com.android.tradefed.targetprep.PythonVirtualenvPreparer">
@@ -39,6 +39,11 @@
         <!-- Re-enable when A2DP audio streaming tests are active, disabling to speed up atest runtime
         (installation takes roughly 30s each time, never cached) -->
         <!-- <option name="dep-module" value="scipy" /> -->
+    </target_preparer>
+
+    <target_preparer class="com.android.tradefed.targetprep.DeviceSetup">
+     <option name="set-property" key="persist.log.tag.bluetooth" value="VERBOSE"/>
+     <option name="restore-properties" value="true"/>
     </target_preparer>
 
     <test class="com.android.tradefed.testtype.pandora.PtsBotTest" >
