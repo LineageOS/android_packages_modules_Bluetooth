@@ -182,13 +182,12 @@ class A2dpCodecConfig {
   // If there is any change in the codec configuration, flag |p_config_updated|
   // is set to true.
   // Returns true on success, otherwise false.
-  virtual bool setCodecUserConfig(
-      const btav_a2dp_codec_config_t& codec_user_config,
-      const btav_a2dp_codec_config_t& codec_audio_config,
-      const tA2DP_ENCODER_INIT_PEER_PARAMS* p_peer_params,
-      const uint8_t* p_peer_codec_info, bool is_capability,
-      uint8_t* p_result_codec_config, bool* p_restart_input,
-      bool* p_restart_output, bool* p_config_updated);
+  bool setCodecUserConfig(const btav_a2dp_codec_config_t& codec_user_config,
+                          const btav_a2dp_codec_config_t& codec_audio_config,
+                          const tA2DP_ENCODER_INIT_PEER_PARAMS* p_peer_params,
+                          const uint8_t* p_peer_codec_info, bool is_capability,
+                          uint8_t* p_result_codec_config, bool* p_restart_input,
+                          bool* p_restart_output, bool* p_config_updated);
 
   // Sets the codec capabilities for a peer.
   // |p_peer_codec_capabiltities| is the peer codec capabilities to set.
