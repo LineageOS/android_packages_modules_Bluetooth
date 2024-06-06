@@ -37,13 +37,9 @@ using bluetooth::hearing_aid::HearingAidInterface;
 
 // template specialization
 template <>
-base::Callback<void()> jni_thread_wrapper(const base::Location& from_here,
-                                          base::Callback<void()> cb) {
-  return base::Bind(
-      [](const base::Location& from_here, base::Callback<void()> cb) {
-        do_in_jni_thread(from_here, cb);
-      },
-      from_here, std::move(cb));
+base::Callback<void()> jni_thread_wrapper(base::Callback<void()> cb) {
+  return base::Bind([](base::Callback<void()> cb) { do_in_jni_thread(cb); },
+                    std::move(cb));
 }
 
 namespace {
@@ -60,21 +56,20 @@ class HearingAidInterfaceImpl
     do_in_main_thread(
         FROM_HERE,
         Bind(&HearingAid::Initialize, this,
-             jni_thread_wrapper(FROM_HERE,
-                                Bind(&btif_storage_load_bonded_hearing_aids))));
+             jni_thread_wrapper(Bind(&btif_storage_load_bonded_hearing_aids))));
   }
 
   void OnConnectionState(ConnectionState state,
                          const RawAddress& address) override {
-    do_in_jni_thread(FROM_HERE, Bind(&HearingAidCallbacks::OnConnectionState,
-                                     Unretained(callbacks), state, address));
+    do_in_jni_thread(Bind(&HearingAidCallbacks::OnConnectionState,
+                          Unretained(callbacks), state, address));
   }
 
   void OnDeviceAvailable(uint8_t capabilities, uint64_t hiSyncId,
                          const RawAddress& address) override {
-    do_in_jni_thread(FROM_HERE, Bind(&HearingAidCallbacks::OnDeviceAvailable,
-                                     Unretained(callbacks), capabilities,
-                                     hiSyncId, address));
+    do_in_jni_thread(Bind(&HearingAidCallbacks::OnDeviceAvailable,
+                          Unretained(callbacks), capabilities, hiSyncId,
+                          address));
   }
 
   void Connect(const RawAddress& address) override {
@@ -83,14 +78,14 @@ class HearingAidInterfaceImpl
 
   void Disconnect(const RawAddress& address) override {
     do_in_main_thread(FROM_HERE, Bind(&HearingAid::Disconnect, address));
-    do_in_jni_thread(FROM_HERE, Bind(&btif_storage_set_hearing_aid_acceptlist,
-                                     address, false));
+    do_in_jni_thread(
+        Bind(&btif_storage_set_hearing_aid_acceptlist, address, false));
   }
 
   void AddToAcceptlist(const RawAddress& address) override {
     do_in_main_thread(FROM_HERE, Bind(&HearingAid::AddToAcceptlist, address));
-    do_in_jni_thread(FROM_HERE, Bind(&btif_storage_set_hearing_aid_acceptlist,
-                                     address, true));
+    do_in_jni_thread(
+        Bind(&btif_storage_set_hearing_aid_acceptlist, address, true));
   }
 
   void SetVolume(int8_t volume) override {
@@ -103,8 +98,7 @@ class HearingAidInterfaceImpl
       do_in_main_thread(FROM_HERE, Bind(&HearingAid::Disconnect, address));
     }
 
-    do_in_jni_thread(FROM_HERE,
-                     Bind(&btif_storage_remove_hearing_aid, address));
+    do_in_jni_thread(Bind(&btif_storage_remove_hearing_aid, address));
   }
 
   void Cleanup(void) override {
