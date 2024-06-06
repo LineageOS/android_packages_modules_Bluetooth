@@ -86,6 +86,8 @@ bool HostStartRequest() {
     return false;
   }
 
+  host::le_audio::LeAudioSinkTransport::stream_started =
+      btle_stream_started_status::IDLE;
   host::le_audio::LeAudioSinkTransport::instance->ResetPresentationPosition();
   return host::le_audio::LeAudioSinkTransport::instance->StartRequest();
 }
@@ -125,6 +127,8 @@ bool PeerStartRequest() {
     return false;
   }
 
+  host::le_audio::LeAudioSourceTransport::stream_started =
+      btle_stream_started_status::IDLE;
   host::le_audio::LeAudioSourceTransport::instance->ResetPresentationPosition();
   return host::le_audio::LeAudioSourceTransport::instance->StartRequest();
 }
@@ -157,11 +161,11 @@ btle_pcm_parameters GetPeerPcmConfig() {
   return pcm_config;
 }
 
-bool GetHostStreamStarted() {
+btle_stream_started_status GetHostStreamStarted() {
   return host::le_audio::LeAudioSinkTransport::stream_started;
 }
 
-bool GetPeerStreamStarted() {
+btle_stream_started_status GetPeerStreamStarted() {
   return host::le_audio::LeAudioSourceTransport::stream_started;
 }
 
@@ -248,7 +252,8 @@ void LeAudioClientInterface::Sink::StopSession() {
     host::le_audio::LeAudioSinkTransport::instance->ClearStartRequestState();
   }
 
-  host::le_audio::LeAudioSinkTransport::stream_started = false;
+  host::le_audio::LeAudioSinkTransport::stream_started =
+      btle_stream_started_status::IDLE;
 }
 
 void LeAudioClientInterface::Sink::ConfirmStreamingRequest() {
@@ -275,7 +280,8 @@ void LeAudioClientInterface::Sink::ConfirmStreamingRequest() {
       log::info("Response after sending PENDING to audio HAL");
       instance->ClearStartRequestState();
       lea_data_path_open();
-      host::le_audio::LeAudioSinkTransport::stream_started = true;
+      host::le_audio::LeAudioSinkTransport::stream_started =
+          btle_stream_started_status::STARTED;
       return;
     case StartRequestState::CONFIRMED:
     case StartRequestState::CANCELED:
@@ -310,6 +316,8 @@ void LeAudioClientInterface::Sink::CancelStreamingRequest() {
     case StartRequestState::PENDING_AFTER_RESUME:
       log::info("Response after sending PENDING to audio HAL");
       instance->ClearStartRequestState();
+      host::le_audio::LeAudioSinkTransport::stream_started =
+          btle_stream_started_status::CANCELED;
       return;
     case StartRequestState::CONFIRMED:
     case StartRequestState::CANCELED:
@@ -411,7 +419,8 @@ void LeAudioClientInterface::Source::StopSession() {
     host::le_audio::LeAudioSourceTransport::instance->ClearStartRequestState();
   }
 
-  host::le_audio::LeAudioSourceTransport::stream_started = false;
+  host::le_audio::LeAudioSourceTransport::stream_started =
+      btle_stream_started_status::IDLE;
 }
 
 void LeAudioClientInterface::Source::ConfirmStreamingRequest() {
@@ -438,7 +447,8 @@ void LeAudioClientInterface::Source::ConfirmStreamingRequest() {
       log::info("Response after sending PENDING to audio HAL");
       instance->ClearStartRequestState();
       lea_data_path_open();
-      host::le_audio::LeAudioSourceTransport::stream_started = true;
+      host::le_audio::LeAudioSourceTransport::stream_started =
+          btle_stream_started_status::STARTED;
       return;
     case StartRequestState::CONFIRMED:
     case StartRequestState::CANCELED:
@@ -473,6 +483,8 @@ void LeAudioClientInterface::Source::CancelStreamingRequest() {
     case StartRequestState::PENDING_AFTER_RESUME:
       log::info("Response after sending PENDING to audio HAL");
       instance->ClearStartRequestState();
+      host::le_audio::LeAudioSourceTransport::stream_started =
+          btle_stream_started_status::CANCELED;
       return;
     case StartRequestState::CANCELED:
     case StartRequestState::CONFIRMED:
