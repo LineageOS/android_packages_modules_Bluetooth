@@ -351,6 +351,16 @@ flag {
 }
 
 flag {
+    name: "leaudio_synchronize_start"
+    namespace: "bluetooth"
+    description: "Do not post on main looper when starting le_audio"
+    bug: "341385684"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "leaudio_broadcast_stop_on_streaming_request"
     namespace: "bluetooth"
     description: "Stop instead of pause on unicast stream request"
