@@ -40,28 +40,5 @@ void bluetooth::avrcp::AvrcpService::ConnectDevice(RawAddress const&) {
   inc_func_call_count(__func__);
 }
 
-namespace test {
-namespace mock {
-namespace btif_avrcp_service {
-
-// Function state capture and return values, if needed
-struct do_in_avrcp_jni do_in_avrcp_jni;
-
-}  // namespace btif_avrcp_service
-}  // namespace mock
-}  // namespace test
-
-// Mocked function return values, if any
-namespace test {
-namespace mock {
-namespace btif_avrcp_service {}  // namespace btif_avrcp_service
-}  // namespace mock
-}  // namespace test
-
-// Mocked functions, if any
-void do_in_avrcp_jni(const base::Closure& task) {
-  inc_func_call_count(__func__);
-  test::mock::btif_avrcp_service::do_in_avrcp_jni(task);
-}
 // Mocked functions complete
 // END mockcify generation

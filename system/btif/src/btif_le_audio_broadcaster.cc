@@ -104,21 +104,18 @@ class LeAudioBroadcasterInterfaceImpl : public LeAudioBroadcasterInterface,
   }
 
   void OnBroadcastCreated(uint32_t broadcast_id, bool success) override {
-    do_in_jni_thread(FROM_HERE,
-                     Bind(&LeAudioBroadcasterCallbacks::OnBroadcastCreated,
+    do_in_jni_thread(Bind(&LeAudioBroadcasterCallbacks::OnBroadcastCreated,
                           Unretained(callbacks_), broadcast_id, success));
   }
 
   void OnBroadcastDestroyed(uint32_t broadcast_id) override {
-    do_in_jni_thread(FROM_HERE,
-                     Bind(&LeAudioBroadcasterCallbacks::OnBroadcastDestroyed,
+    do_in_jni_thread(Bind(&LeAudioBroadcasterCallbacks::OnBroadcastDestroyed,
                           Unretained(callbacks_), broadcast_id));
   }
 
   void OnBroadcastStateChanged(uint32_t broadcast_id,
                                BroadcastState state) override {
-    do_in_jni_thread(FROM_HERE,
-                     Bind(&LeAudioBroadcasterCallbacks::OnBroadcastStateChanged,
+    do_in_jni_thread(Bind(&LeAudioBroadcasterCallbacks::OnBroadcastStateChanged,
                           Unretained(callbacks_), broadcast_id, state));
   }
 
@@ -126,7 +123,6 @@ class LeAudioBroadcasterInterfaceImpl : public LeAudioBroadcasterInterface,
                                   const bluetooth::le_audio::BroadcastMetadata&
                                       broadcast_metadata) override {
     do_in_jni_thread(
-        FROM_HERE,
         Bind(&LeAudioBroadcasterCallbacks::OnBroadcastMetadataChanged,
              Unretained(callbacks_), broadcast_id, broadcast_metadata));
   }

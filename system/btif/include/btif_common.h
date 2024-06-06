@@ -99,8 +99,6 @@ typedef struct {
  ******************************************************************************/
 
 bt_status_t do_in_jni_thread(base::OnceClosure task);
-bt_status_t do_in_jni_thread(const base::Location& from_here,
-                             base::OnceClosure task);
 bool is_on_jni_thread();
 
 using BtJniClosure = std::function<void()>;
@@ -111,15 +109,12 @@ void post_on_bt_jni(BtJniClosure closure);
  * thread
  */
 template <typename R, typename... Args>
-base::Callback<R(Args...)> jni_thread_wrapper(const base::Location& from_here,
-                                              base::Callback<R(Args...)> cb) {
+base::Callback<R(Args...)> jni_thread_wrapper(base::Callback<R(Args...)> cb) {
   return base::Bind(
-      [](const base::Location& from_here, base::Callback<R(Args...)> cb,
-         Args... args) {
-        do_in_jni_thread(from_here,
-                         base::BindOnce(cb, std::forward<Args>(args)...));
+      [](base::Callback<R(Args...)> cb, Args... args) {
+        do_in_jni_thread(base::BindOnce(cb, std::forward<Args>(args)...));
       },
-      from_here, std::move(cb));
+      std::move(cb));
 }
 
 tBTA_SERVICE_MASK btif_get_enabled_services_mask(void);
