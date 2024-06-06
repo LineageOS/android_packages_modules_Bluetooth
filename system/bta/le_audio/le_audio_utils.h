@@ -35,9 +35,9 @@ namespace utils {
 types::LeAudioContextType AudioContentToLeAudioContext(
     audio_content_type_t content_type, audio_usage_t usage);
 types::AudioContexts GetAudioContextsFromSourceMetadata(
-    const source_metadata_v7& source_metadata);
+    const std::vector<struct playback_track_metadata_v7>& source_metadata);
 types::AudioContexts GetAudioContextsFromSinkMetadata(
-    const sink_metadata_v7& sink_metadata);
+    const std::vector<struct record_track_metadata_v7>& sink_metadata);
 inline uint8_t GetTargetLatencyForAudioContext(types::LeAudioContextType ctx) {
   switch (ctx) {
     case types::LeAudioContextType::GAME:
