@@ -31,11 +31,11 @@ extern tBTA_JV_CB bta_jv_cb;
 
 /*******************************************************************************
  *
- * Function         BTM_AllocateSCN
+ * Function         BTA_AllocateSCN
  *
  * Description      Look through the Server Channel Numbers for a free one.
  *
- * Returns          Allocated SCN number or 0 if none.
+ * Returns          Allocated SCN or 0 if none.
  *
  ******************************************************************************/
 uint8_t BTA_AllocateSCN(void) {
@@ -50,13 +50,13 @@ uint8_t BTA_AllocateSCN(void) {
     }
   }
 
-  // In order to avoid OOB, btm_available_index must be no more than
+  // In order to avoid OOB, scn_search_index must be no more than
   // RFCOMM_MAX_SCN.
   bta_jv_cb.scn_search_index =
       std::min(bta_jv_cb.scn_search_index, (uint8_t)(RFCOMM_MAX_SCN));
 
+  // If there's no empty SCN from scn_search_index to RFCOMM_MAX_SCN
   // Start from index 1 because index 0 (scn 1) is reserved for HFP
-  // If there's no empty SCN from _last_index to BTM_MAX_SCN.
   for (uint8_t i = 1; i < bta_jv_cb.scn_search_index; ++i) {
     if (!bta_jv_cb.scn_in_use[i]) {
       bta_jv_cb.scn_in_use[i] = true;
@@ -71,11 +71,11 @@ uint8_t BTA_AllocateSCN(void) {
 
 /*******************************************************************************
  *
- * Function         BTM_TryAllocateSCN
+ * Function         BTA_TryAllocateSCN
  *
  * Description      Try to allocate a fixed server channel
  *
- * Returns          Returns true if server channel was available
+ * Returns          true if SCN was available, false otherwise
  *
  ******************************************************************************/
 
@@ -97,11 +97,11 @@ bool BTA_TryAllocateSCN(uint8_t scn) {
 
 /*******************************************************************************
  *
- * Function         BTM_FreeSCN
+ * Function         BTA_FreeSCN
  *
  * Description      Free the specified SCN.
  *
- * Returns          true or false
+ * Returns          true if SCN was freed, false if SCN was invalid
  *
  ******************************************************************************/
 bool BTA_FreeSCN(uint8_t scn) {
