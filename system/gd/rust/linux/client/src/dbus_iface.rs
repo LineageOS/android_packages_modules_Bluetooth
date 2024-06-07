@@ -1035,6 +1035,11 @@ impl IBluetooth for BluetoothDBus {
     fn is_dual_mode_audio_sink_device(&self, device: BluetoothDevice) -> bool {
         dbus_generated!()
     }
+
+    #[dbus_method("GetDumpsys")]
+    fn get_dumpsys(&self) -> String {
+        dbus_generated!()
+    }
 }
 
 pub(crate) struct BluetoothQALegacyDBus {
