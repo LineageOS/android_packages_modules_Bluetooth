@@ -135,9 +135,7 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"อุปกรณ์จำว่าจะต้องเปิดบลูทูธไว้ในโหมดบนเครื่องบิน ปิดบลูทูธหากคุณไม่ต้องการให้เปิดไว้"</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi และบลูทูธยังเปิดอยู่"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"อุปกรณ์จำว่าจะต้องเปิด Wi-Fi และบลูทูธไว้ในโหมดบนเครื่องบิน ปิด Wi-Fi และบลูทูธหากคุณไม่ต้องการให้เปิดไว้"</string>
-    <!-- no translation found for bluetooth_enabled_auto_on_title (8983664142805050578) -->
-    <skip />
-    <!-- no translation found for bluetooth_enabled_auto_on_message (2790514825041114851) -->
-    <skip />
+    <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"เปิดบลูทูธใหม่แล้ว"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="2790514825041114851">"คุณเปลี่ยนตัวเลือกนี้ได้ทุกเมื่อในการตั้งค่า"</string>
     <string name="bluetooth_notification_group" msgid="7251886707585872194">"การเปลี่ยนสถานะ \"อัตโนมัติ\" ของบลูทูธ"</string>
 </resources>

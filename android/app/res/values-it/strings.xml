@@ -135,9 +135,7 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Il dispositivo memorizza che deve tenere attivo il Bluetooth in modalità aereo. Disattiva il Bluetooth se non vuoi tenerlo attivo."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi e Bluetooth rimangono attivi"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Il dispositivo memorizza che deve tenere attivi il Wi‑Fi e il Bluetooth in modalità aereo. Disattiva il Wi-Fi e il Bluetooth se non vuoi tenerli attivi."</string>
-    <!-- no translation found for bluetooth_enabled_auto_on_title (8983664142805050578) -->
-    <skip />
-    <!-- no translation found for bluetooth_enabled_auto_on_message (2790514825041114851) -->
-    <skip />
+    <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Bluetooth riattivato"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="2790514825041114851">"Puoi modificare questa preferenza in qualsiasi momento nelle Impostazioni"</string>
     <string name="bluetooth_notification_group" msgid="7251886707585872194">"Modifica dello stato automatico del Bluetooth"</string>
 </resources>
