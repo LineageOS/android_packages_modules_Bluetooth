@@ -2,10 +2,16 @@ package: "com.android.bluetooth.flags"
 container: "com.android.btservices"
 
 flag {
+    name: "enable_hap_by_default"
+    namespace: "bluetooth"
+    description: "On device that support HAP, enable it by default and disable ASHA"
+    bug: "345826775"
+}
+
+flag {
     name: "settings_can_control_hap_preset"
     is_exported: true
     namespace: "bluetooth"
     description: "Allow user to control the preset of hearing aid devices"
     bug: "306236481"
 }
-
