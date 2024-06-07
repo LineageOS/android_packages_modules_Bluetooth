@@ -47,8 +47,6 @@ import android.util.Log;
 import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
-import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.vcard.VCardConstants;
 import com.android.vcard.VCardEntry;
 import com.android.vcard.VCardProperty;
@@ -96,9 +94,6 @@ public class MapClientContentTest {
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
-    @Mock private AdapterService mAdapterService;
-    @Mock private DatabaseManager mDatabaseManager;
-    @Mock private MapClientService mMockMapClientService;
     @Mock private Context mMockContext;
     @Mock private MapClientContent.Callbacks mCallbacks;
 

@@ -66,6 +66,7 @@ java_defaults {
             "-Xep:InlineMeInliner:ERROR",
             "-Xep:InvalidBlockTag:ERROR",
             "-Xep:InvalidInlineTag:ERROR",
+            "-Xep:MockNotUsedInProduction:ERROR",
             "-Xep:NonApiType:ERROR",
             "-Xep:StringCharset:ERROR",
             "-Xep:UnnecessaryAssignment:ERROR",

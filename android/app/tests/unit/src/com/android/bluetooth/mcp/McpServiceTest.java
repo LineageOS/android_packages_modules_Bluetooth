@@ -51,7 +51,6 @@ public class McpServiceTest {
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
     @Mock private AdapterService mAdapterService;
-    @Mock private MediaControlGattService mMockMcpService;
     @Mock private MediaControlProfile mMediaControlProfile;
 
     @Before

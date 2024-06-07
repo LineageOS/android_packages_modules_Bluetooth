@@ -325,6 +325,7 @@ android_app {
             "-Xep:ClassCanBeStatic:ERROR",
             "-Xep:InlineMeInliner:ERROR",
             "-Xep:InvalidBlockTag:ERROR",
+            "-Xep:MockNotUsedInProduction:ERROR",
             "-Xep:UnusedMethod:ERROR",
             "-Xep:UnusedVariable:ERROR",
             "-XepExcludedPaths:.*/srcjars/.*", // Exclude generated files
