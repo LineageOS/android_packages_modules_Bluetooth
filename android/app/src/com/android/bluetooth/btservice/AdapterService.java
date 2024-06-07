@@ -151,6 +151,7 @@ import com.android.bluetooth.telephony.BluetoothInCallService;
 import com.android.bluetooth.vc.VolumeControlService;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
+import com.android.modules.expresslog.Counter;
 import com.android.modules.utils.BackgroundThread;
 import com.android.modules.utils.BytesMatcher;
 
@@ -2314,8 +2315,7 @@ public class AdapterService extends Service {
             mService.enforceCallingPermission(
                     android.Manifest.permission.BLUETOOTH_PRIVILEGED, null);
 
-            // Post on the main handler to be sure the cleanup has completed before calling exit
-            mService.mHandler.post(
+            Runnable killAction =
                     () -> {
                         if (Flags.killInsteadOfExit()) {
                             Log.i(TAG, "killBluetoothProcess: Calling killProcess(myPid())");
@@ -2324,7 +2324,24 @@ public class AdapterService extends Service {
                             Log.i(TAG, "killBluetoothProcess: Calling System.exit");
                             System.exit(0);
                         }
-                    });
+                    };
+
+            // Post on the main handler to let the cleanup complete before calling exit
+            mService.mHandler.post(killAction);
+
+            try {
+                // Wait for Bluetooth to be killed from its main thread
+                Thread.sleep(950); // SystemServer is waiting 1000 ms, we need to wait less here
+            } catch (InterruptedException e) {
+                Log.e(TAG, "killBluetoothProcess: Interrupted while waiting for kill");
+            }
+
+            // Bluetooth cannot be killed on the main thread; it is in a deadLock.
+            // Trying to recover by killing the Bluetooth from the binder thread.
+            // This is bad :(
+            Counter.logIncrement("bluetooth.value_kill_from_binder_thread");
+            Log.wtf(TAG, "Failed to kill Bluetooth using its main thread. Trying from binder");
+            killAction.run();
         }
 
         @Override
