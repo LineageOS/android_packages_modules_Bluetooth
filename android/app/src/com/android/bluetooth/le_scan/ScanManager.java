@@ -2096,6 +2096,5 @@ public class ScanManager {
                         toState,
                         Integer.valueOf(profile))
                 .sendToTarget();
-        return;
     }
 }

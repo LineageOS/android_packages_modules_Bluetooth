@@ -35,6 +35,7 @@ java_defaults {
             "-Xep:MockNotUsedInProduction:ERROR",
             "-Xep:NonApiType:ERROR",
             "-Xep:ReferenceEquality:ERROR",
+            "-Xep:ReturnAtTheEndOfVoidFunction:ERROR",
             "-Xep:StringCharset:ERROR",
             "-Xep:UnnecessaryAssignment:ERROR",
             "-Xep:UnnecessaryAsync:ERROR",

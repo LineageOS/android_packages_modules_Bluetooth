@@ -159,14 +159,12 @@ public class AvrcpCoverArtService {
     private void registerBipServer(int psm) {
         debug("Add our PSM (" + psm + ") to the AVRCP Target SDP record");
         mNativeInterface.registerBipServer(psm);
-        return;
     }
 
     /** Remove any BIP L2CAP PSM from the AVRCP Target SDP Record */
     private void unregisterBipServer() {
         debug("Remove the PSM remove the AVRCP Target SDP record");
         mNativeInterface.unregisterBipServer();
-        return;
     }
 
     /**

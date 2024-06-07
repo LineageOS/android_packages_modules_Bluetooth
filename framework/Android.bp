@@ -101,6 +101,7 @@ java_sdk_library {
             "-Xep:InvalidInlineTag:ERROR",
             "-Xep:MockNotUsedInProduction:ERROR",
             "-Xep:NonApiType:ERROR",
+            "-Xep:ReturnAtTheEndOfVoidFunction:ERROR",
             "-Xep:StringCharset:ERROR",
             "-Xep:UnnecessaryAssignment:ERROR",
             "-Xep:UnnecessaryAsync:ERROR",

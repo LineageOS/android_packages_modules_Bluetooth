@@ -264,7 +264,6 @@ class PbapClientConnectionHandler extends Handler {
             default:
                 Log.w(TAG, "Received Unexpected Message");
         }
-        return;
     }
 
     @VisibleForTesting
