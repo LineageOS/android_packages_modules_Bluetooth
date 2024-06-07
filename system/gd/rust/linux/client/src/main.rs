@@ -521,7 +521,7 @@ async fn handle_client_command(
         });
     }
 
-    'readline: loop {
+    'foreground_actions: loop {
         let m = rx.recv().await;
 
         if m.is_none() {
@@ -788,31 +788,26 @@ async fn handle_client_command(
                     break;
                 }
                 Ok(line) => {
-                    // Currently Chrome OS uses Rust 1.60 so use the 1-time loop block to
-                    // workaround this.
-                    // With Rust 1.65 onwards we can convert this loop hack into a named block:
-                    // https://blog.rust-lang.org/2022/11/03/Rust-1.65.0.html#break-from-labeled-blocks
-                    // TODO: Use named block when Android and Chrome OS Rust upgrade Rust to 1.65.
-                    loop {
+                    'readline: {
                         let args = match shell_words::split(line.as_str()) {
                             Ok(words) => words,
                             Err(e) => {
                                 print_error!("Error parsing arguments: {}", e);
-                                break;
+                                break 'readline;
                             }
                         };
 
                         let (cmd, rest) = match args.split_first() {
                             Some(pair) => pair,
-                            None => break,
+                            None => break 'readline,
                         };
 
                         if cmd == "quit" {
-                            break 'readline;
+                            break 'foreground_actions;
                         }
 
                         handler.process_cmd_line(cmd, &rest.to_vec());
-                        break;
+                        break 'readline;
                     }
 
                     // Ready to do readline again.
