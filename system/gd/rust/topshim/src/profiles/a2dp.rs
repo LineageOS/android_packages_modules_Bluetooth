@@ -95,6 +95,7 @@ pub struct A2dpError {
 }
 
 bitflags! {
+    #[derive(Clone, Copy, Debug, PartialEq)]
     pub struct A2dpCodecSampleRate: i32 {
         const RATE_NONE = 0x0;
         const RATE_44100 = 0x01;
@@ -129,6 +130,7 @@ impl TryFrom<i32> for A2dpCodecSampleRate {
 }
 
 bitflags! {
+    #[derive(Clone, Copy, Debug, PartialEq)]
     pub struct A2dpCodecBitsPerSample: i32 {
         const SAMPLE_NONE = 0x0;
         const SAMPLE_16 = 0x01;
@@ -158,6 +160,7 @@ impl TryFrom<i32> for A2dpCodecBitsPerSample {
 }
 
 bitflags! {
+    #[derive(Clone, Copy, Debug, PartialEq)]
     pub struct A2dpCodecChannelMode: i32 {
         const MODE_NONE = 0x0;
         const MODE_MONO = 0x01;
