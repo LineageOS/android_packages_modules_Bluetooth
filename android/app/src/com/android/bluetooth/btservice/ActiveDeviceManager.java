@@ -57,35 +57,55 @@ import java.util.Set;
  * The active device manager selects a fallback device when the currently active device is
  * disconnected, and it selects BT devices that are lastly activated one.
  *
- * <p>Current policy (subject to change): 1) If the maximum number of connected devices is one, the
- * manager doesn't do anything. Each profile is responsible for automatically selecting the
- * connected device as active. Only if the maximum number of connected devices is more than one, the
- * rules below will apply. 2) The selected A2DP active device is the one used for AVRCP as well. 3)
- * The HFP active device might be different from the A2DP active device. 4) The Active Device
- * Manager always listens for the change of active devices. When it changed (e.g., triggered
- * indirectly by user action on the UI), the new active device is marked as the current active
- * device for that profile. 5) If there is a HearingAid active device, then A2DP, HFP and LE audio
- * active devices must be set to null (i.e., A2DP, HFP and LE audio cannot have active devices). The
- * reason is that A2DP, HFP or LE audio cannot be used together with HearingAid. 6) If there are no
- * connected devices (e.g., during startup, or after all devices have been disconnected, the active
- * device per profile (A2DP/HFP/HearingAid/LE audio) is selected as follows: 6.1) The last connected
- * HearingAid device is selected as active. If there is an active A2DP, HFP or LE audio device,
- * those must be set to null. 6.2) The last connected A2DP, HFP or LE audio device is selected as
- * active. However, if there is an active HearingAid device, then the A2DP, HFP, or LE audio active
- * device is not set (must remain null). 7) If the currently active device (per profile) is
- * disconnected, the Active Device Manager just marks that the profile has no active device, and the
- * lastly activated BT device that is still connected would be selected. 8) If there is already an
- * active device, however, if active device change notified with a null device, the corresponding
- * profile is marked as having no active device. 9) If a wired audio device is connected, the audio
- * output is switched by the Audio Framework itself to that device. We detect this here, and the
- * active device for each profile (A2DP/HFP/HearingAid/LE audio) is set to null to reflect the
- * output device state change. However, if the wired audio device is disconnected, we don't do
- * anything explicit and apply the default behavior instead: 9.1) If the wired headset is still the
- * selected output device (i.e. the active device is set to null), the Phone itself will become the
- * output device (i.e., the active device will remain null). If music was playing, it will stop.
- * 9.2) If one of the Bluetooth devices is the selected active device (e.g., by the user in the UI),
- * disconnecting the wired audio device will have no impact. E.g., music will continue streaming
- * over the active Bluetooth device.
+ * <p>Current policy (subject to change):
+ *
+ * <p>1) If the maximum number of connected devices is one, the manager doesn't do anything. Each
+ * profile is responsible for automatically selecting the connected device as active. Only if the
+ * maximum number of connected devices is more than one, the rules below will apply.
+ *
+ * <p>2) The selected A2DP active device is the one used for AVRCP as well.
+ *
+ * <p>3) The HFP active device might be different from the A2DP active device.
+ *
+ * <p>4) The Active Device Manager always listens for the change of active devices. When it changed
+ * (e.g., triggered indirectly by user action on the UI), the new active device is marked as the
+ * current active device for that profile.
+ *
+ * <p>5) If there is a HearingAid active device, then A2DP, HFP and LE audio active devices must be
+ * set to null (i.e., A2DP, HFP and LE audio cannot have active devices). The reason is that A2DP,
+ * HFP or LE audio cannot be used together with HearingAid.
+ *
+ * <p>6) If there are no connected devices (e.g., during startup, or after all devices have been
+ * disconnected, the active device per profile (A2DP/HFP/HearingAid/LE audio) is selected as
+ * follows:
+ *
+ * <p>6.1) The last connected HearingAid device is selected as active. If there is an active A2DP,
+ * HFP or LE audio device, those must be set to null.
+ *
+ * <p>6.2) The last connected A2DP, HFP or LE audio device is selected as active. However, if there
+ * is an active HearingAid device, then the A2DP, HFP, or LE audio active device is not set (must
+ * remain null).
+ *
+ * <p>7) If the currently active device (per profile) is disconnected, the Active Device Manager
+ * just marks that the profile has no active device, and the lastly activated BT device that is
+ * still connected would be selected.
+ *
+ * <p>8) If there is already an active device, however, if active device change notified with a null
+ * device, the corresponding profile is marked as having no active device.
+ *
+ * <p>9) If a wired audio device is connected, the audio output is switched by the Audio Framework
+ * itself to that device. We detect this here, and the active device for each profile
+ * (A2DP/HFP/HearingAid/LE audio) is set to null to reflect the output device state change. However,
+ * if the wired audio device is disconnected, we don't do anything explicit and apply the default
+ * behavior instead:
+ *
+ * <p>9.1) If the wired headset is still the selected output device (i.e. the active device is set
+ * to null), the Phone itself will become the output device (i.e. the active device will remain
+ * null). If music was playing, it will stop.
+ *
+ * <p>9.2) If one of the Bluetooth devices is the selected active device (e.g., by the user in the
+ * UI), disconnecting the wired audio device will have no impact. E.g., music will continue
+ * streaming over the active Bluetooth device.
  */
 public class ActiveDeviceManager implements AdapterService.BluetoothStateCallback {
     private static final String TAG = ActiveDeviceManager.class.getSimpleName();
