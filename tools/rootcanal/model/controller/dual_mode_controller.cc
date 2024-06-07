@@ -3109,7 +3109,7 @@ void DualModeController::LeApcf(CommandView command) {
     }
     case bluetooth::hci::ApcfOpcode::TRANSPORT_DISCOVERY_SERVICE: {
       auto subcommand_view =
-          bluetooth::hci::LeApcfServiceDataView::Create(command_view);
+          bluetooth::hci::LeApcfTransportDiscoveryServiceView::Create(command_view);
       CHECK_PACKET_VIEW(subcommand_view);
 
       DEBUG(id_, "<< LE APCF Transport Discovery Service");
