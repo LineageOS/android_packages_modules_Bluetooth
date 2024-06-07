@@ -740,7 +740,7 @@ static uint8_t bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda,
           sec_event.auth_cmpl.bd_name,
           get_btm_client_interface().security.BTM_SecReadDevName(bda));
 
-      if (p_data->complt.reason != HCI_SUCCESS) {
+      if (p_data->complt.reason != SMP_SUCCESS) {
         // TODO This is not a proper use of this type
         sec_event.auth_cmpl.fail_reason =
             static_cast<tHCI_STATUS>(BTA_DM_AUTH_CONVERT_SMP_CODE(
