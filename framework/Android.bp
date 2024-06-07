@@ -102,6 +102,7 @@ java_sdk_library {
             "-Xep:InvalidParam:ERROR",
             "-Xep:MockNotUsedInProduction:ERROR",
             "-Xep:NonApiType:ERROR",
+            "-Xep:NonCanonicalType:ERROR",
             "-Xep:ReturnAtTheEndOfVoidFunction:ERROR",
             "-Xep:StringCharset:ERROR",
             "-Xep:UnnecessaryAssignment:ERROR",

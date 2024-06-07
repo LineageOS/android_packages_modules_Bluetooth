@@ -327,6 +327,7 @@ android_app {
             "-Xep:InvalidBlockTag:ERROR",
             "-Xep:InvalidParam:ERROR",
             "-Xep:MockNotUsedInProduction:ERROR",
+            "-Xep:NonCanonicalType:ERROR",
             "-Xep:ReturnAtTheEndOfVoidFunction:ERROR",
             "-Xep:UnusedMethod:ERROR",
             "-Xep:UnusedVariable:ERROR",

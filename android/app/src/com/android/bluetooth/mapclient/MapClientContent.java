@@ -54,6 +54,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 class MapClientContent {
@@ -328,7 +329,7 @@ class MapClientContent {
                 }
             }
         }
-        for (HashMap.Entry record : duplicateUriToHandleMap.entrySet()) {
+        for (Map.Entry record : duplicateUriToHandleMap.entrySet()) {
             verbose("Deleted " + ((MessageStatus) record.getValue()).mHandle);
             originalUriToHandleMap.remove(record.getKey());
             mCallbacks.onMessageStatusChanged(

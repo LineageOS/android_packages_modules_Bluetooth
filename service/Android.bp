@@ -35,6 +35,7 @@ java_defaults {
             "-Xep:InvalidParam:ERROR",
             "-Xep:MockNotUsedInProduction:ERROR",
             "-Xep:NonApiType:ERROR",
+            "-Xep:NonCanonicalType:ERROR",
             "-Xep:ReferenceEquality:ERROR",
             "-Xep:ReturnAtTheEndOfVoidFunction:ERROR",
             "-Xep:StringCharset:ERROR",
