@@ -79,7 +79,7 @@ impl From<u32> for BthfAudioState {
 // This is used for codec-negotiation related methods that do not
 // concern with the coding format. Do not confuse this with |HfpCodecFormat|.
 bitflags! {
-    #[derive(Default)]
+    #[derive(Clone, Debug, Default)]
     pub struct HfpCodecBitId: i32 {
         const NONE = 0b000;
         const CVSD = 0b001;
@@ -110,7 +110,7 @@ impl TryFrom<i32> for HfpCodecBitId {
 }
 
 bitflags! {
-    #[derive(Default)]
+    #[derive(Clone, Copy, Debug, Default, PartialEq)]
     pub struct HfpCodecFormat: i32 {
         const NONE =             0b0000;
         const CVSD =             0b0001;
