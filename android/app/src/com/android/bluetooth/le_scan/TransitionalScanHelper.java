@@ -57,7 +57,6 @@ import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.BluetoothAdapterProxy;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.gatt.ContextMap;
-import com.android.bluetooth.gatt.GattObjectsFactory;
 import com.android.bluetooth.gatt.GattServiceConfig;
 import com.android.bluetooth.util.NumberUtils;
 import com.android.internal.annotations.VisibleForTesting;
@@ -197,7 +196,7 @@ public class TransitionalScanHelper {
         mCompanionManager = mContext.getSystemService(CompanionDeviceManager.class);
         mAdapterService = AdapterService.getAdapterService();
         mScanManager =
-                GattObjectsFactory.getInstance()
+                ScanObjectsFactory.getInstance()
                         .createScanManager(
                                 mContext,
                                 this,
@@ -206,7 +205,7 @@ public class TransitionalScanHelper {
                                 looper);
 
         mPeriodicScanManager =
-                GattObjectsFactory.getInstance().createPeriodicScanManager(mAdapterService);
+                ScanObjectsFactory.getInstance().createPeriodicScanManager(mAdapterService);
     }
 
     /** Stops the scanning component. */
