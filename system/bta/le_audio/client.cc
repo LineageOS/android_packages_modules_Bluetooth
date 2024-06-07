@@ -1275,6 +1275,12 @@ class LeAudioClientImpl : public LeAudioClient {
         return;
       }
       log::info("switching active group to: {}", group_id);
+
+      auto result =
+          CodecManager::GetInstance()->UpdateActiveUnicastAudioHalClient(
+              le_audio_source_hal_client_.get(),
+              le_audio_sink_hal_client_.get(), false);
+      log::assert_that(result, "Could not update session to codec manager");
     }
 
     if (!le_audio_source_hal_client_) {
