@@ -263,11 +263,7 @@ public class BluetoothOppLauncherActivity extends Activity {
         }
     }
 
-    /**
-     * Turns on Bluetooth if not already on, or launches device picker if Bluetooth is on
-     *
-     * @return
-     */
+    /** Turns on Bluetooth if not already on, or launches device picker if Bluetooth is on */
     @VisibleForTesting
     void launchDevicePicker() {
         // TODO: In the future, we may send intent to DevicePickerActivity

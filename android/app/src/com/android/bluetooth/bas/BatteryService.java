@@ -231,11 +231,7 @@ public class BatteryService extends ProfileService {
         return true;
     }
 
-    /**
-     * Gets devices that battery service is connected.
-     *
-     * @return
-     */
+    /** Gets devices that battery service is connected. */
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)
     public List<BluetoothDevice> getConnectedDevices() {
         enforceCallingOrSelfPermission(

@@ -1153,9 +1153,6 @@ class MceStateMachine extends StateMachine {
         /**
          * Retrieves the URIs of all the participants of a group conversation, besides the sender of
          * the message.
-         *
-         * @param recipients
-         * @return
          */
         private String[] getRecipientsUri(ArrayList<VCardEntry> recipients) {
             Set<String> uris = new HashSet<>();

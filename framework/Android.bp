@@ -94,6 +94,7 @@ java_sdk_library {
             "-Xep:BadImport:ERROR",
             "-Xep:CatchFail:ERROR",
             "-Xep:ClassCanBeStatic:ERROR",
+            "-Xep:EmptyBlockTag:ERROR",
             "-Xep:EmptyCatch:ERROR",
             "-Xep:FutureReturnValueIgnored:ERROR",
             "-Xep:InlineMeInliner:ERROR",

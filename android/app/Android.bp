@@ -323,6 +323,7 @@ android_app {
             "-Xep:AlmostJavadoc:ERROR",
             "-Xep:BadImport:ERROR",
             "-Xep:ClassCanBeStatic:ERROR",
+            "-Xep:EmptyBlockTag:ERROR",
             "-Xep:InlineMeInliner:ERROR",
             "-Xep:InvalidBlockTag:ERROR",
             "-Xep:InvalidParam:ERROR",
