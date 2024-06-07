@@ -1517,14 +1517,6 @@ void shim::legacy::Acl::CancelClassicConnection(const hci::Address& address) {
                  "classic");
 }
 
-void shim::legacy::Acl::DeviceAlreadyConnected(
-    const hci::AddressWithType& address_with_type, std::promise<bool> promise) {
-  auto handle =
-      GetAclManager()->HACK_GetLeHandle(address_with_type.GetAddress());
-  // 0xffff(kIllegalConnectionHandle) is the invalid handle.
-  promise.set_value(handle != 0xffff);
-}
-
 void shim::legacy::Acl::AcceptLeConnectionFrom(
     const hci::AddressWithType& address_with_type, bool is_direct,
     std::promise<bool> promise) {
