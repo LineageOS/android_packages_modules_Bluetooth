@@ -99,6 +99,7 @@ java_sdk_library {
             "-Xep:InlineMeInliner:ERROR",
             "-Xep:InvalidBlockTag:ERROR",
             "-Xep:InvalidInlineTag:ERROR",
+            "-Xep:InvalidParam:ERROR",
             "-Xep:MockNotUsedInProduction:ERROR",
             "-Xep:NonApiType:ERROR",
             "-Xep:ReturnAtTheEndOfVoidFunction:ERROR",
