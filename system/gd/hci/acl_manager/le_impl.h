@@ -79,6 +79,10 @@ static const std::string kPropertyConnScanWindow2mFast = "bluetooth.core.le.conn
 static const std::string kPropertyConnScanWindowCodedFast = "bluetooth.core.le.connection_scan_window_coded_fast";
 static const std::string kPropertyConnScanIntervalSlow = "bluetooth.core.le.connection_scan_interval_slow";
 static const std::string kPropertyConnScanWindowSlow = "bluetooth.core.le.connection_scan_window_slow";
+static const std::string kPropertyConnScanIntervalSystemSuspend =
+    "bluetooth.core.le.connection_scan_interval_system_suspend";
+static const std::string kPropertyConnScanWindowSystemSuspend =
+    "bluetooth.core.le.connection_scan_window_system_suspend";
 static const std::string kPropertyEnableBlePrivacy = "bluetooth.core.gap.le.privacy.enabled";
 static const std::string kPropertyEnableBleOnlyInit1mPhy = "bluetooth.core.gap.le.conn.only_init_1m_phy.enabled";
 
@@ -829,8 +833,10 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     }
     // Use specific parameters when in system suspend.
     if (system_suspend_) {
-      le_scan_interval = kScanIntervalSystemSuspend;
-      le_scan_window = kScanWindowSystemSuspend;
+      le_scan_interval = os::GetSystemPropertyUint32(
+          kPropertyConnScanIntervalSystemSuspend, kScanIntervalSystemSuspend);
+      le_scan_window = os::GetSystemPropertyUint32(
+          kPropertyConnScanWindowSystemSuspend, kScanWindowSystemSuspend);
       le_scan_window_2m = le_scan_window;
       le_scan_window_coded = le_scan_window;
     }
