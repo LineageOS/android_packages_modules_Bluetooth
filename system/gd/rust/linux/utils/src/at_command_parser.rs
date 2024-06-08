@@ -77,10 +77,8 @@ pub fn parse_at_command_data(at_string: String) -> Result<AtCommand, String> {
     };
     // We want to keep the flow of this method consistent, but AtCommandType::Execute commands do
     // not have arguments. To resolve this we split those commands differently.
-    let mut command_parts = match at_type {
-        AtCommandType::Execute => clean_at_string.splitn(1, at_type_delimiter),
-        _ => clean_at_string.splitn(2, at_type_delimiter),
-    };
+    let mut command_parts = clean_at_string
+        .splitn(if at_type == AtCommandType::Execute { 1 } else { 2 }, at_type_delimiter);
     let command = match command_parts.next() {
         Some(command) => command,
         // In practice this cannot happen as parse_at_command_type already found the delimiter.

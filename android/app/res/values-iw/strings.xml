@@ -135,9 +135,7 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"‏חיבור ה-Bluetooth במכשיר יישאר מופעל במצב טיסה. אפשר להשבית את ה-Bluetooth אם לא רוצים שהוא יפעל."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"‏חיבורי ה-Wi‑Fi וה-Bluetooth יישארו מופעלים"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"‏חיבורי ה-Wi‑Fi וה-Bluetooth במכשיר יישארו מופעלים במצב טיסה. אפשר להשבית את ה-Wi-Fi וה-Bluetooth אם לא רוצים שהם יפעלו."</string>
-    <!-- no translation found for bluetooth_enabled_auto_on_title (8983664142805050578) -->
-    <skip />
-    <!-- no translation found for bluetooth_enabled_auto_on_message (2790514825041114851) -->
-    <skip />
+    <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"‏ה-Bluetooth הופעל מחדש"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="2790514825041114851">"תמיד אפשר לשנות את זה ב\'הגדרות\'"</string>
     <string name="bluetooth_notification_group" msgid="7251886707585872194">"‏החלפת מצב אוטומטית של Bluetooth"</string>
 </resources>

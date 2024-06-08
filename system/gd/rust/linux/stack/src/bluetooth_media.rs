@@ -2094,10 +2094,7 @@ impl BluetoothMedia {
         // Defaults to Idle if no calls are present.
         // Revisit this logic if the system supports multiple concurrent calls in the future (e.g., three-way-call).
         let mut call_state = CallState::Idle;
-        for c in self.call_list.iter() {
-            call_state = c.state;
-            break;
-        }
+        self.call_list.first().map(|c| call_state = c.state);
         self.telephony_callbacks.lock().unwrap().for_all_callbacks(|callback| {
             callback.on_telephony_event(*addr, u8::from(event), u8::from(call_state));
         });

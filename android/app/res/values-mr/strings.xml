@@ -135,9 +135,7 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"तुमचे डिव्हाइस विमान मोडमध्ये ब्लूटूथ सुरू ठेवण्याचे लक्षात ठेवते. तुम्हाला ब्लूटूथ सुरू ठेवायचे नसल्यास ते बंद करा."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"वाय-फाय आणि ब्लूटूथ सुरू राहते"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"तुमचे डिव्हाइस विमान मोडमध्ये वाय-फाय आणि ब्लूटूथ सुरू ठेवण्याचे लक्षात ठेवते. तुम्हाला वाय-फाय आणि ब्लूटूथ सुरू ठेवायचे नसल्यास ते बंद करा."</string>
-    <!-- no translation found for bluetooth_enabled_auto_on_title (8983664142805050578) -->
-    <skip />
-    <!-- no translation found for bluetooth_enabled_auto_on_message (2790514825041114851) -->
-    <skip />
+    <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"ब्लूटूथ पुन्हा सुरू केले आहे"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="2790514825041114851">"तुम्ही हे सेटिंग्ज मध्ये कधीही बदलू शकता"</string>
     <string name="bluetooth_notification_group" msgid="7251886707585872194">"ब्लूटूथची स्थिती आपोआप बदलणे"</string>
 </resources>

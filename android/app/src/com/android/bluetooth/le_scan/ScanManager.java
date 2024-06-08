@@ -49,7 +49,6 @@ import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.BluetoothAdapterProxy;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.gatt.FilterParams;
-import com.android.bluetooth.gatt.GattObjectsFactory;
 import com.android.bluetooth.gatt.GattServiceConfig;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
@@ -982,7 +981,7 @@ public class ScanManager {
         private ScanNativeInterface mNativeInterface;
 
         ScanNative(TransitionalScanHelper scanHelper) {
-            mNativeInterface = GattObjectsFactory.getInstance().getScanNativeInterface();
+            mNativeInterface = ScanObjectsFactory.getInstance().getScanNativeInterface();
             mNativeInterface.init(scanHelper);
             mFilterIndexStack = new ArrayDeque<Integer>();
             mClientFilterIndexMap = new HashMap<Integer, Deque<Integer>>();

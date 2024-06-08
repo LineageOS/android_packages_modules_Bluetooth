@@ -2246,7 +2246,7 @@ impl IBluetooth for Bluetooth {
         let intf = self.intf.lock().unwrap();
 
         // Checks if the duration is valid.
-        if mode == BtDiscMode::LimitedDiscoverable && (duration > 60 || duration <= 0) {
+        if mode == BtDiscMode::LimitedDiscoverable && (duration > 60 || duration == 0) {
             warn!("Invalid duration for setting the device into limited discoverable mode. The valid duration is 1~60 seconds.");
             return false;
         }
