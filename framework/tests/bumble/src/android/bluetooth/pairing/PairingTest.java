@@ -170,11 +170,10 @@ public class PairingTest {
      * <ol>
      *   <li>1. Bumble resets, enables inquiry and page scan, and sets I/O cap to no display no
      *       input
-     *   <li>2. Android connects to Bumble via its MAC address
-     *   <li>3. Android tries to create bond, emitting bonding intent 4. Android confirms the
-     *       pairing via pairing request intent
-     *   <li>5. Bumble confirms the pairing internally (optional, added only for test confirmation)
-     *   <li>6. Android verifies bonded intent
+     *   <li>2. Android tries to create bond via MAC address, emitting bonding intent
+     *   <li>3. Android confirms the pairing via pairing request intent
+     *   <li>4. Bumble confirms the pairing internally (optional, added only for test confirmation)
+     *   <li>5. Android verifies bonded intent
      * </ol>
      */
     @Test
@@ -215,6 +214,70 @@ public class PairingTest {
 
         unregisterIntentActions(
                 BluetoothDevice.ACTION_BOND_STATE_CHANGED, BluetoothDevice.ACTION_PAIRING_REQUEST);
+    }
+
+    /**
+     * Test a simple BR/EDR just works pairing flow in the follow steps:
+     *
+     * <ol>
+     *   <li>1. Bumble resets, enables inquiry and page scan, and sets I/O cap to no display no
+     *       input
+     *   <li>2. Android connects to Bumble via its MAC address
+     *   <li>3. Android tries to create bond, emitting bonding intent
+     *   <li>4. Android confirms the pairing via pairing request intent
+     *   <li>5. Bumble confirms the pairing internally (optional, added only for test confirmation)
+     *   <li>6. Android verifies bonded intent
+     * </ol>
+     */
+    @Test
+    public void testBrEdrPairing_phoneInitiatedBrEdrInquiryOnlyJustWorksWhileSdpConnected() {
+        registerIntentActions(
+                BluetoothDevice.ACTION_ACL_CONNECTED,
+                BluetoothDevice.ACTION_BOND_STATE_CHANGED,
+                BluetoothDevice.ACTION_PAIRING_REQUEST);
+
+        // Start SDP.  This will create an ACL connection before the bonding starts.
+        assertThat(mBumbleDevice.fetchUuidsWithSdp(BluetoothDevice.TRANSPORT_BREDR)).isTrue();
+
+        verifyIntentReceived(
+                hasAction(BluetoothDevice.ACTION_ACL_CONNECTED),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice));
+
+        StreamObserver<PairingEventAnswer> pairingEventAnswerObserver =
+                mBumble.security()
+                        .withDeadlineAfter(BOND_INTENT_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS)
+                        .onPairing(mPairingEventStreamObserver);
+
+        assertThat(mBumbleDevice.createBond()).isTrue();
+        verifyIntentReceived(
+                hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
+                hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDING));
+
+        verifyIntentReceived(
+                hasAction(BluetoothDevice.ACTION_PAIRING_REQUEST),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
+                hasExtra(
+                        BluetoothDevice.EXTRA_PAIRING_VARIANT,
+                        BluetoothDevice.PAIRING_VARIANT_CONSENT));
+        mBumbleDevice.setPairingConfirmation(true);
+
+        PairingEvent pairingEvent = mPairingEventStreamObserver.iterator().next();
+        assertThat(pairingEvent.hasJustWorks()).isTrue();
+        pairingEventAnswerObserver.onNext(
+                PairingEventAnswer.newBuilder().setEvent(pairingEvent).setConfirm(true).build());
+
+        verifyIntentReceived(
+                hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
+                hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDED));
+
+        verifyNoMoreInteractions(mReceiver);
+
+        unregisterIntentActions(
+                BluetoothDevice.ACTION_ACL_CONNECTED,
+                BluetoothDevice.ACTION_BOND_STATE_CHANGED,
+                BluetoothDevice.ACTION_PAIRING_REQUEST);
     }
 
     /**

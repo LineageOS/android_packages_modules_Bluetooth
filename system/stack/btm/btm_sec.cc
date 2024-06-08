@@ -2214,11 +2214,11 @@ void btm_sec_abort_access_req(const RawAddress& bd_addr) {
 static tBTM_STATUS btm_sec_dd_create_conn(tBTM_SEC_DEV_REC* p_dev_rec) {
   tBTM_STATUS status = l2cu_ConnectAclForSecurity(p_dev_rec->bd_addr);
   if (status == BTM_CMD_STARTED) {
+    btm_sec_cb.change_pairing_state(BTM_PAIR_STATE_WAIT_PIN_REQ);
     /* If already connected, start pending security procedure */
     if (BTM_IsAclConnectionUp(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR)) {
       return BTM_SUCCESS;
     }
-    btm_sec_cb.change_pairing_state(BTM_PAIR_STATE_WAIT_PIN_REQ);
     return BTM_CMD_STARTED;
   } else if (status == BTM_NO_RESOURCES) {
     return BTM_NO_RESOURCES;
