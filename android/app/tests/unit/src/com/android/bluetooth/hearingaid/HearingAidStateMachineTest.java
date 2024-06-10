@@ -49,7 +49,6 @@ import org.mockito.junit.MockitoRule;
 @RunWith(AndroidJUnit4.class)
 public class HearingAidStateMachineTest {
     private BluetoothAdapter mAdapter;
-    private Context mTargetContext;
     private HandlerThread mHandlerThread;
     private HearingAidStateMachine mHearingAidStateMachine;
     private BluetoothDevice mTestDevice;
@@ -63,7 +62,6 @@ public class HearingAidStateMachineTest {
 
     @Before
     public void setUp() throws Exception {
-        mTargetContext = InstrumentationRegistry.getTargetContext();
         TestUtils.setAdapterService(mAdapterService);
 
         mAdapter = BluetoothAdapter.getDefaultAdapter();

@@ -161,7 +161,7 @@ public class BluetoothOppTransferHistoryTest {
             mIntent.putExtra(Constants.EXTRA_DIRECTION, BluetoothShare.DIRECTION_INBOUND);
         }
 
-        ActivityScenario<BluetoothOppTransferHistory> scenario = ActivityScenario.launch(mIntent);
+        ActivityScenario.launch(mIntent);
         InstrumentationRegistry.getInstrumentation().waitForIdleSync();
 
         onView(withText(mTargetContext.getText(R.string.inbound_history_title).toString()))
@@ -184,7 +184,7 @@ public class BluetoothOppTransferHistoryTest {
             mIntent.putExtra(Constants.EXTRA_DIRECTION, BluetoothShare.DIRECTION_OUTBOUND);
         }
 
-        ActivityScenario<BluetoothOppTransferHistory> scenario = ActivityScenario.launch(mIntent);
+        ActivityScenario.launch(mIntent);
         InstrumentationRegistry.getInstrumentation().waitForIdleSync();
 
         onView(withText(mTargetContext.getText(R.string.outbound_history_title).toString()))

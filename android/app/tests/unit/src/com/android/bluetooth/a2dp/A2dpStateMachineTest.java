@@ -56,7 +56,6 @@ import java.util.Arrays;
 @RunWith(AndroidJUnit4.class)
 public class A2dpStateMachineTest {
     private BluetoothAdapter mAdapter;
-    private Context mTargetContext;
     private HandlerThread mHandlerThread;
     private A2dpStateMachine mA2dpStateMachine;
     private BluetoothDevice mTestDevice;
@@ -76,7 +75,6 @@ public class A2dpStateMachineTest {
 
     @Before
     public void setUp() throws Exception {
-        mTargetContext = InstrumentationRegistry.getTargetContext();
         doReturn(mActiveDeviceManager).when(mAdapterService).getActiveDeviceManager();
         doReturn(mSilenceDeviceManager).when(mAdapterService).getSilenceDeviceManager();
 

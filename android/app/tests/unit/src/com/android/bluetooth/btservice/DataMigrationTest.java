@@ -229,9 +229,7 @@ public class DataMigrationTest {
             super(ctx);
         }
 
-        String mLastMethod = null;
         int mCallCount = 0;
-        int mBundleCount = 0;
 
         @Override
         public Cursor query(
@@ -240,14 +238,12 @@ public class DataMigrationTest {
                 String selection,
                 String[] selectionArgs,
                 String sortOrder) {
-            mBundleCount++;
             return null;
         }
 
         @Override
         public Bundle call(String method, String arg, Bundle extras) {
             mCallCount++;
-            mLastMethod = method;
             assertThat(method).isNotNull();
             assertThat(arg).isNotNull();
             assertThat(extras).isNull();
@@ -437,10 +433,7 @@ public class DataMigrationTest {
             super(ctx);
         }
 
-        String mLastMethod = null;
         Cursor mCursor = null;
-        int mCallCount = 0;
-        int mBundleCount = 0;
 
         @Override
         public Cursor query(
@@ -449,13 +442,11 @@ public class DataMigrationTest {
                 String selection,
                 String[] selectionArgs,
                 String sortOrder) {
-            mBundleCount++;
             return mCursor;
         }
 
         @Override
         public Bundle call(String method, String arg, Bundle extras) {
-            mCallCount++;
             return null;
         }
     }

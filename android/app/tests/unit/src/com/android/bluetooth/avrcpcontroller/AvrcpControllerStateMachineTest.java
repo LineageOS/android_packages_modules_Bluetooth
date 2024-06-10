@@ -69,7 +69,6 @@ import java.util.UUID;
 @RunWith(AndroidJUnit4.class)
 public class AvrcpControllerStateMachineTest {
     private static final int ASYNC_CALL_TIMEOUT_MILLIS = 100;
-    private static final int CONNECT_TIMEOUT_TEST_MILLIS = 1000;
     private static final int KEY_DOWN = 0;
     private static final int KEY_UP = 1;
     private static final int UUID_START = 0;
@@ -725,7 +724,6 @@ public class AvrcpControllerStateMachineTest {
         BrowseTree.BrowseNode results = mAvrcpStateMachine.mBrowseTree.mRootNode;
 
         // Request fetch the list of players
-        BrowseTree.BrowseNode playerNodes = mAvrcpStateMachine.findNode(results.getID());
         mAvrcpStateMachine.requestContents(results);
         verify(mNativeInterface, timeout(ASYNC_CALL_TIMEOUT_MILLIS).times(1))
                 .getPlayerList(eq(mTestAddress), eq(0), eq(19));
@@ -741,7 +739,6 @@ public class AvrcpControllerStateMachineTest {
         TestUtils.waitForLooperToFinishScheduledTask(mAvrcpStateMachine.getHandler().getLooper());
 
         // Verify that the player object is available.
-        playerNodes = mAvrcpStateMachine.findNode(results.getID());
         Assert.assertEquals(true, results.isCached());
         Assert.assertEquals(
                 "MediaItem{mFlags=1, mDescription=" + playerName + ", null, null}",
@@ -902,7 +899,6 @@ public class AvrcpControllerStateMachineTest {
         BrowseTree.BrowseNode results = mAvrcpStateMachine.mBrowseTree.mRootNode;
 
         // Request fetch the list of players
-        BrowseTree.BrowseNode playerNodes = mAvrcpStateMachine.findNode(results.getID());
         mAvrcpStateMachine.requestContents(results);
         verify(mNativeInterface, timeout(ASYNC_CALL_TIMEOUT_MILLIS).times(1))
                 .getPlayerList(eq(mTestAddress), eq(0), eq(19));
@@ -963,7 +959,6 @@ public class AvrcpControllerStateMachineTest {
         BrowseTree.BrowseNode rootNode = mAvrcpStateMachine.mBrowseTree.mRootNode;
 
         // Request fetch the list of players
-        BrowseTree.BrowseNode playerNodes = mAvrcpStateMachine.findNode(rootNode.getID());
         mAvrcpStateMachine.requestContents(rootNode);
 
         // Provide back a player object
@@ -1018,7 +1013,6 @@ public class AvrcpControllerStateMachineTest {
         BrowseTree.BrowseNode rootNode = mAvrcpStateMachine.mBrowseTree.mRootNode;
 
         // Request fetch the list of players
-        BrowseTree.BrowseNode playerNodes = mAvrcpStateMachine.findNode(rootNode.getID());
         mAvrcpStateMachine.requestContents(rootNode);
 
         // Send available players set that contains our addressed player
@@ -1068,13 +1062,11 @@ public class AvrcpControllerStateMachineTest {
     @Test
     public void testPlayWhileBrowsing() {
         setUpConnectedState(true, true);
-        final String playerName = "Player 1";
 
         // Get the root of the device
         BrowseTree.BrowseNode results = mAvrcpStateMachine.mBrowseTree.mRootNode;
 
         // Request fetch the list of players
-        BrowseTree.BrowseNode playerNodes = mAvrcpStateMachine.findNode(results.getID());
         mAvrcpStateMachine.requestContents(results);
 
         MediaControllerCompat.TransportControls transportControls =

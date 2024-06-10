@@ -87,9 +87,8 @@ public class BipImageFormatTest {
         trans.addTransformation(BipTransformation.FILL);
         trans.addTransformation(BipTransformation.CROP);
 
-        BipImageFormat format = null;
-
-        format = BipImageFormat.parseVariant("JPEG", "1280*1024", null, "stretch fill crop");
+        BipImageFormat format =
+                BipImageFormat.parseVariant("JPEG", "1280*1024", null, "stretch fill crop");
         Assert.assertEquals(trans, format.getTransformation());
         Assert.assertEquals(expected, format.toString());
 
@@ -112,9 +111,8 @@ public class BipImageFormatTest {
         trans.addTransformation(BipTransformation.FILL);
         trans.addTransformation(BipTransformation.CROP);
 
-        BipImageFormat format = null;
-
-        format = BipImageFormat.parseVariant("JPEG", "1280*1024", "1048576", "stretch fill crop");
+        BipImageFormat format =
+                BipImageFormat.parseVariant("JPEG", "1280*1024", "1048576", "stretch fill crop");
         Assert.assertEquals(BipImageFormat.FORMAT_VARIANT, format.getType());
         Assert.assertEquals(new BipEncoding(BipEncoding.JPEG, null), format.getEncoding());
         Assert.assertEquals(BipPixel.createFixed(1280, 1024), format.getPixel());
@@ -268,44 +266,42 @@ public class BipImageFormatTest {
 
     @Test(expected = ParseException.class)
     public void testParseNative_noEncoding() {
-        BipImageFormat format = BipImageFormat.parseNative(null, "1024*960", "1048576");
+        BipImageFormat.parseNative(null, "1024*960", "1048576");
     }
 
     @Test(expected = ParseException.class)
     public void testParseNative_emptyEncoding() {
-        BipImageFormat format = BipImageFormat.parseNative("", "1024*960", "1048576");
+        BipImageFormat.parseNative("", "1024*960", "1048576");
     }
 
     @Test(expected = ParseException.class)
     public void testParseNative_badEncoding() {
-        BipImageFormat format = BipImageFormat.parseNative("JIF", "1024*960", "1048576");
+        BipImageFormat.parseNative("JIF", "1024*960", "1048576");
     }
 
     @Test(expected = ParseException.class)
     public void testParseNative_noPixel() {
-        BipImageFormat format = BipImageFormat.parseNative("JPEG", null, "1048576");
+        BipImageFormat.parseNative("JPEG", null, "1048576");
     }
 
     @Test(expected = ParseException.class)
     public void testParseNative_emptyPixel() {
-        BipImageFormat format = BipImageFormat.parseNative("JPEG", "", "1048576");
+        BipImageFormat.parseNative("JPEG", "", "1048576");
     }
 
     @Test(expected = ParseException.class)
     public void testParseNative_badPixel() {
-        BipImageFormat format = BipImageFormat.parseNative("JPEG", "abc*123", "1048576");
+        BipImageFormat.parseNative("JPEG", "abc*123", "1048576");
     }
 
     @Test(expected = NullPointerException.class)
     public void testCreateFormat_noEncoding() {
-        BipImageFormat format =
-                BipImageFormat.createNative(null, BipPixel.createFixed(1280, 1024), -1);
+        BipImageFormat.createNative(null, BipPixel.createFixed(1280, 1024), -1);
     }
 
     @Test(expected = NullPointerException.class)
     public void testCreateFormat_noPixel() {
-        BipImageFormat format =
-                BipImageFormat.createNative(new BipEncoding(BipEncoding.JPEG, null), null, -1);
+        BipImageFormat.createNative(new BipEncoding(BipEncoding.JPEG, null), null, -1);
     }
 
     @Test

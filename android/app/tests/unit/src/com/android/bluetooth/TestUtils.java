@@ -57,8 +57,6 @@ import java.util.stream.IntStream;
 
 /** A set of methods useful in Bluetooth instrumentation tests */
 public class TestUtils {
-    private static final int SERVICE_TOGGLE_TIMEOUT_MS = 1000; // 1s
-
     private static String sSystemScreenOffTimeout = "10000";
 
     private static final String TAG = "BluetoothTestUtils";

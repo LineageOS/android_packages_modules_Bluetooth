@@ -52,7 +52,6 @@ public final class AvrcpItemTest {
 
     @Before
     public void setUp() {
-        Context context = InstrumentationRegistry.getTargetContext();
         mDevice = BluetoothAdapter.getDefaultAdapter().getRemoteDevice("AA:BB:CC:DD:EE:FF");
     }
 
@@ -72,7 +71,6 @@ public final class AvrcpItemTest {
         long playingTime = 301;
         String artHandle = "0000001";
         Uri uri = Uri.parse("content://somewhere");
-        Uri uri2 = Uri.parse("content://somewhereelse");
 
         AvrcpItem.Builder builder = new AvrcpItem.Builder();
         builder.setItemType(AvrcpItem.TYPE_MEDIA);

@@ -68,10 +68,8 @@ public class CsipSetCoordinatorServiceTest {
     private BluetoothDevice mTestDevice2;
     private BluetoothDevice mTestDevice3;
     private CsipSetCoordinatorService mService;
-    private HashMap<BluetoothDevice, LinkedBlockingQueue<Intent>> mTestDeviceQueueMap;
     private HashMap<BluetoothDevice, LinkedBlockingQueue<Intent>> mIntentQueue;
     private BroadcastReceiver mCsipSetCoordinatorIntentReceiver;
-    private CsipSetCoordinatorStateMachine mCsipSetCoordinatorStateMachine;
     private static final int TIMEOUT_MS = 1000;
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
@@ -298,7 +296,6 @@ public class CsipSetCoordinatorServiceTest {
         int group_size = 0x01;
         long uuidLsb = 0x01;
         long uuidMsb = 0x01;
-        UUID uuid = new UUID(uuidMsb, uuidLsb);
 
         doCallRealMethod()
                 .when(mCsipSetCoordinatorNativeInterface)
@@ -348,7 +345,6 @@ public class CsipSetCoordinatorServiceTest {
         int group_size = 0x01;
         long uuidLsb = 0x01;
         long uuidMsb = 0x01;
-        UUID uuid = new UUID(uuidMsb, uuidLsb);
 
         doCallRealMethod()
                 .when(mCsipSetCoordinatorNativeInterface)

@@ -154,11 +154,11 @@ public class BipEncodingTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testCreateInvalidEncoding() {
-        BipEncoding encoding = new BipEncoding(-5, null);
+        new BipEncoding(-5, null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testCreateProprietary_nullId() {
-        BipEncoding encoding = new BipEncoding(BipEncoding.USR_XXX, null);
+        new BipEncoding(BipEncoding.USR_XXX, null);
     }
 }

@@ -23,14 +23,12 @@ import static org.mockito.Mockito.*;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.UserHandle;
 
-import androidx.test.InstrumentationRegistry;
 import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
@@ -52,8 +50,6 @@ import org.mockito.junit.MockitoRule;
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class SilenceDeviceManagerTest {
-    private BluetoothAdapter mAdapter;
-    private Context mContext;
     private BluetoothDevice mTestDevice;
     private SilenceDeviceManager mSilenceDeviceManager;
     private HandlerThread mHandlerThread;
@@ -70,8 +66,6 @@ public class SilenceDeviceManagerTest {
 
     @Before
     public void setUp() throws Exception {
-        mContext = InstrumentationRegistry.getTargetContext();
-
         TestUtils.setAdapterService(mAdapterService);
         when(mServiceFactory.getA2dpService()).thenReturn(mA2dpService);
         when(mServiceFactory.getHeadsetService()).thenReturn(mHeadsetService);
