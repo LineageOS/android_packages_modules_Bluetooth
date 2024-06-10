@@ -170,11 +170,9 @@ static void bta_hf_client_mgmt_cback(const tPORT_RESULT code,
  *
  ******************************************************************************/
 void bta_hf_client_setup_port(uint16_t handle) {
-  if (PORT_SetEventMask(handle, PORT_EV_RXCHAR) != PORT_SUCCESS) {
-    log::warn("Unable to set RFCOMM event mask handle:{}", handle);
-  }
-  if (PORT_SetEventCallback(handle, bta_hf_client_port_cback) != PORT_SUCCESS) {
-    log::warn("Unable to set RFCOMM event callback handle:{}", handle);
+  if (PORT_SetEventMaskAndCallback(handle, PORT_EV_RXCHAR,
+                                   bta_hf_client_port_cback) != PORT_SUCCESS) {
+    log::warn("Unable to set RFCOMM event mask and callbackhandle:{}", handle);
   }
 }
 

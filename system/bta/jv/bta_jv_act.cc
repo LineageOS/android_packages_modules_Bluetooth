@@ -1507,13 +1507,11 @@ void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, uint8_t remote_scn,
       p_pcb->rfcomm_slot_id = rfcomm_slot_id;
       bta_jv.rfc_cl_init.use_co = true;
 
-      if (PORT_SetEventMask(handle, event_mask) != PORT_SUCCESS) {
-        log::warn("Unable to set RFCOMM client event mask handle:{}", handle);
-      }
-      if (PORT_SetEventCallback(handle, bta_jv_port_event_cl_cback) !=
-          PORT_SUCCESS) {
-        log::warn("Unable to set RFCOMM client event callback handle:{}",
-                  handle);
+      if (PORT_SetEventMaskAndCallback(
+              handle, event_mask, bta_jv_port_event_cl_cback) != PORT_SUCCESS) {
+        log::warn(
+            "Unable to set RFCOMM client event mask and callback handle:{}",
+            handle);
       }
       if (PORT_SetDataCOCallback(handle, bta_jv_port_data_co_cback) !=
           PORT_SUCCESS) {
@@ -1772,14 +1770,12 @@ static tBTA_JV_PCB* bta_jv_add_rfc_port(tBTA_JV_RFC_CB* p_cb,
           log::warn("Unable to clear RFCOMM server keep handle flag handle:{}",
                     p_pcb->port_handle);
         }
-        if (PORT_SetEventMask(p_pcb->port_handle, event_mask) != PORT_SUCCESS) {
-          log::warn("Unable to set RFCOMM server event mask handle:{}",
-                    p_pcb->port_handle);
-        }
-        if (PORT_SetEventCallback(p_pcb->port_handle,
-                                  bta_jv_port_event_sr_cback) != PORT_SUCCESS) {
-          log::warn("Unable to set RFCOMM server event callback handle:{}",
-                    p_pcb->port_handle);
+        if (PORT_SetEventMaskAndCallback(p_pcb->port_handle, event_mask,
+                                         bta_jv_port_event_sr_cback) !=
+            PORT_SUCCESS) {
+          log::warn(
+              "Unable to set RFCOMM server event mask and callback handle:{}",
+              p_pcb->port_handle);
         }
         if (PORT_SetDataCOCallback(p_pcb->port_handle,
                                    bta_jv_port_data_co_cback) != PORT_SUCCESS) {
@@ -1854,12 +1850,9 @@ void bta_jv_rfcomm_start_server(tBTA_SEC sec_mask, uint8_t local_scn,
       log::warn("Unable to clear RFCOMM server keep handle flag handle:{}",
                 handle);
     }
-    if (PORT_SetEventMask(handle, event_mask) != PORT_SUCCESS) {
-      log::warn("Unable to set RFCOMM server event mask handle:{}", handle);
-    }
-    if (PORT_SetEventCallback(handle, bta_jv_port_event_sr_cback) !=
-        PORT_SUCCESS) {
-      log::warn("Unable to clear RFCOMM server event callback handle:{}",
+    if (PORT_SetEventMaskAndCallback(
+            handle, event_mask, bta_jv_port_event_sr_cback) != PORT_SUCCESS) {
+      log::warn("Unable to set RFCOMM server event mask and callback handle:{}",
                 handle);
     }
     if (PORT_GetState(handle, &port_state) != PORT_SUCCESS) {
