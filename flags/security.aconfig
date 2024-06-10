@@ -9,6 +9,13 @@ flag {
 }
 
 flag {
+    name: "key_missing_as_ordered_broadcast"
+    namespace: "bluetooth"
+    description: "Key missing broadcast would be send as ordered broadcast"
+    bug: "333634398"
+}
+
+flag {
     name: "correct_bond_type_of_loaded_devices"
     namespace: "bluetooth"
     description: "Mark the bond type of loaded device as persistent"
