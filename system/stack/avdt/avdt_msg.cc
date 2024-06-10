@@ -1544,7 +1544,6 @@ void avdt_msg_ind(AvdtpCcb* p_ccb, BT_HDR* p_buf) {
   /* parse the message header */
   AVDT_MSG_PRS_HDR(p, label, pkt_type, msg_type);
 
-  log::verbose("msg_type={}, sig={}", msg_type, sig);
   /* set up label and ccb_idx in message hdr */
   msg.hdr.label = label;
   msg.hdr.ccb_idx = avdt_ccb_to_idx(p_ccb);
@@ -1579,6 +1578,8 @@ void avdt_msg_ind(AvdtpCcb* p_ccb, BT_HDR* p_buf) {
       }
     }
   }
+
+  log::verbose("msg_type={}, sig={}", msg_type, sig);
 
   if (ok && !gen_rej) {
     /* skip over header (msg length already verified during reassembly) */
