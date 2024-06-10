@@ -167,6 +167,11 @@ void CodecManager::ClearCisConfiguration(uint8_t direction) {
   if (pimpl_) return pimpl_->ClearCisConfiguration(direction);
 }
 
+bool CodecManager::IsUsingCodecExtensibility() const {
+  if (pimpl_) return pimpl_->IsUsingCodecExtensibility();
+  return false;
+}
+
 std::ostream& operator<<(
     std::ostream& os, const CodecManager::UnicastConfigurationRequirements&) {
   return os;
