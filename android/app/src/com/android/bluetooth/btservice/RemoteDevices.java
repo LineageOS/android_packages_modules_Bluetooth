@@ -43,6 +43,8 @@ import android.os.RemoteException;
 import android.os.SystemProperties;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
@@ -1012,19 +1014,19 @@ public class RemoteDevices {
         // The device properties are already registered - we can send the intent
         // now
         BluetoothDevice device = getDevice(address);
-        debugLog("deviceFoundCallback: Remote Address is:" + device);
         DeviceProperties deviceProp = getDeviceProperties(device);
         if (deviceProp == null) {
-            errorLog("Device Properties is null for Device:" + device);
+            errorLog("deviceFoundCallback: Device Properties is null for Device:" + device);
             return;
         }
         boolean restrict_device_found =
                 SystemProperties.getBoolean("bluetooth.restrict_discovered_device.enabled", false);
         if (restrict_device_found && (deviceProp.mName == null || deviceProp.mName.isEmpty())) {
-            debugLog("Device name is null or empty: " + device);
+            warnLog("deviceFoundCallback: Device name is null or empty: " + device);
             return;
         }
 
+        infoLog("deviceFoundCallback: Remote Address is:" + device);
         Intent intent = new Intent(BluetoothDevice.ACTION_FOUND);
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
         intent.putExtra(
@@ -1173,15 +1175,7 @@ public class RemoteDevices {
             deviceProperties.setConnectionHandle(BluetoothDevice.ERROR, transportLinkType);
             if (device.getBondState() == BluetoothDevice.BOND_BONDING) {
                 // Send PAIRING_CANCEL intent to dismiss any dialog requesting bonding.
-                intent = new Intent(BluetoothDevice.ACTION_PAIRING_CANCEL);
-                intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
-                intent.setPackage(
-                        SystemProperties.get(
-                                Utils.PAIRING_UI_PROPERTY,
-                                mAdapterService.getString(R.string.pairing_ui_package)));
-
-                mAdapterService.sendBroadcast(
-                        intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastOptions().toBundle());
+                sendPairingCancelIntent(device);
             } else if (device.getBondState() == BluetoothDevice.BOND_NONE) {
                 removeAddressMapping(Utils.getAddressStringFromByte(address));
             }
@@ -1276,6 +1270,20 @@ public class RemoteDevices {
                     "aclStateChangeCallback intent is null. deviceBondState: "
                             + device.getBondState());
         }
+    }
+
+    @NonNull
+    private void sendPairingCancelIntent(BluetoothDevice device) {
+        Intent intent = new Intent(BluetoothDevice.ACTION_PAIRING_CANCEL);
+        intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
+        intent.setPackage(
+                SystemProperties.get(
+                        Utils.PAIRING_UI_PROPERTY,
+                        mAdapterService.getString(R.string.pairing_ui_package)));
+
+        Log.i(TAG, "sendPairingCancelIntent: device=" + device);
+        mAdapterService.sendBroadcast(
+                intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastOptions().toBundle());
     }
 
     private void removeAddressMapping(String address) {
