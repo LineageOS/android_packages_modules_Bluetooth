@@ -240,7 +240,6 @@ struct tBTM_INQUIRY_VAR_ST {
   uint16_t page_scan_type; /* current page scan type */
 
   RawAddress remname_bda; /* Name of bd addr for active remote name request */
-#define BTM_RMT_NAME_EXT 0x1 /* Initiated through API */
   bool remname_active; /* State of a remote name request by external API */
   tBT_DEVICE_TYPE remname_dev_type; /* Whether it's LE or BREDR name request */
 
