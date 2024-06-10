@@ -18,11 +18,12 @@
 
 #include "raw_address.h"
 
-#include <base/strings/string_split.h>
-#include <base/strings/stringprintf.h>
 #include <stdint.h>
+
 #include <algorithm>
 #include <array>
+#include <iomanip>
+#include <sstream>
 #include <vector>
 
 static_assert(sizeof(RawAddress) == 6, "RawAddress must be 6 bytes long!");
@@ -41,9 +42,15 @@ RawAddress::RawAddress(const std::array<uint8_t, kLength> mac) {
 std::string RawAddress::ToString() const { return ToColonSepHexString(); }
 
 std::string RawAddress::ToColonSepHexString() const {
-  return base::StringPrintf("%02x:%02x:%02x:%02x:%02x:%02x", address[0],
-                            address[1], address[2], address[3], address[4],
-                            address[5]);
+  std::stringstream addr;
+  addr << std::hex << std::setfill('0');
+  for (size_t i = 0; i < 6; i++) {
+    addr << std::setw(2) << +address[i];
+    if (i != 5) {
+      addr << ":";
+    }
+  }
+  return addr.str();
 }
 
 std::string RawAddress::ToStringForLogging() const {
@@ -54,7 +61,12 @@ std::string RawAddress::ToRedactedStringForLogging() const {
   if (*this == RawAddress::kAny || *this == RawAddress::kEmpty) {
     return ToStringForLogging();
   }
-  return base::StringPrintf("xx:xx:xx:xx:%02x:%02x", address[4], address[5]);
+  std::stringstream addr;
+  addr << std::hex << std::setfill('0');
+  addr << "xx:xx:xx:xx:";
+  addr << std::setw(2) << +address[4] << ":";
+  addr << std::setw(2) << +address[5];
+  return addr.str();
 }
 
 std::array<uint8_t, RawAddress::kLength> RawAddress::ToArray() const {
@@ -67,19 +79,34 @@ bool RawAddress::FromString(const std::string& from, RawAddress& to) {
   RawAddress new_addr;
   if (from.length() != 17) return false;
 
-  std::vector<std::string> byte_tokens =
-      base::SplitString(from, ":", base::TRIM_WHITESPACE, base::SPLIT_WANT_ALL);
+  std::istringstream stream(from);
+  std::string token;
+  int index = 0;
+  while (getline(stream, token, ':')) {
+    if (index >= 6) {
+      return false;
+    }
 
-  if (byte_tokens.size() != 6) return false;
-
-  for (int i = 0; i < 6; i++) {
-    const auto& token = byte_tokens[i];
-
-    if (token.length() != 2) return false;
+    if (token.length() != 2) {
+      return false;
+    }
 
     char* temp = nullptr;
-    new_addr.address[i] = strtol(token.c_str(), &temp, 16);
-    if (*temp != '\0') return false;
+    new_addr.address[index] = std::strtol(token.c_str(), &temp, 16);
+    if (temp == token.c_str()) {
+      // string token is empty or has wrong format
+      return false;
+    }
+    if (temp != (token.c_str() + token.size())) {
+      // cannot parse whole string
+      return false;
+    }
+
+    index++;
+  }
+
+  if (index != 6) {
+    return false;
   }
 
   to = new_addr;
