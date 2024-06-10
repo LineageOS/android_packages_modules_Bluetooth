@@ -488,13 +488,15 @@ final class BondStateMachine extends StateMachine {
     }
 
     private void sendDisplayPinIntent(byte[] address, Optional<Integer> maybePin, int variant) {
+        BluetoothDevice device = mRemoteDevices.getDevice(address);
         Intent intent = new Intent(BluetoothDevice.ACTION_PAIRING_REQUEST);
-        intent.putExtra(BluetoothDevice.EXTRA_DEVICE, mRemoteDevices.getDevice(address));
+        intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
         maybePin.ifPresent(pin -> intent.putExtra(BluetoothDevice.EXTRA_PAIRING_KEY, pin));
         intent.putExtra(BluetoothDevice.EXTRA_PAIRING_VARIANT, variant);
         intent.setFlags(Intent.FLAG_RECEIVER_FOREGROUND);
         // Workaround for Android Auto until pre-accepting pairing requests is added.
         intent.addFlags(Intent.FLAG_RECEIVER_INCLUDE_BACKGROUND);
+        Log.i(TAG, "sendDisplayPinIntent: device=" + device + ", variant=" + variant);
         mAdapterService.sendOrderedBroadcast(
                 intent,
                 BLUETOOTH_CONNECT,
