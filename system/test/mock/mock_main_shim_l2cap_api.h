@@ -315,15 +315,6 @@ struct L2CA_LockBleConnParamsForProfileConnection {
 };
 extern struct L2CA_LockBleConnParamsForProfileConnection
     L2CA_LockBleConnParamsForProfileConnection;
-// Name: L2CA_GetRemoteCid
-// Params: uint16_t lcid, uint16_t* rcid
-// Returns: bool
-struct L2CA_GetRemoteCid {
-  std::function<bool(uint16_t lcid, uint16_t* rcid)> body{
-      [](uint16_t lcid, uint16_t* rcid) { return false; }};
-  bool operator()(uint16_t lcid, uint16_t* rcid) { return body(lcid, rcid); };
-};
-extern struct L2CA_GetRemoteCid L2CA_GetRemoteCid;
 // Name: L2CA_SetTxPriority
 // Params: uint16_t cid, tL2CAP_CHNL_PRIORITY priority
 // Returns: bool
