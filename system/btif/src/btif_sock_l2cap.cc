@@ -840,7 +840,7 @@ static bt_status_t btsock_l2cap_listen_or_connect(const char* name,
         channel = 0;
       } else if (channel <= 0) {
         log::error("type BTSOCK_L2CAP_LE: invalid channel={}", channel);
-        return BT_STATUS_FAIL;
+        return BT_STATUS_SOCKET_ERROR;
       }
     } else {
       // Ensure device is in inquiry database during L2CAP CoC connection
@@ -1043,7 +1043,7 @@ bt_status_t btsock_l2cap_get_l2cap_local_cid(Uuid& conn_uuid, uint16_t* cid) {
   if (!sock) {
     log::error("Unable to find l2cap socket with conn_uuid:{}",
                conn_uuid.ToString());
-    return BT_STATUS_FAIL;
+    return BT_STATUS_SOCKET_ERROR;
   }
   *cid = sock->local_cid;
   return BT_STATUS_SUCCESS;
@@ -1057,7 +1057,7 @@ bt_status_t btsock_l2cap_get_l2cap_remote_cid(Uuid& conn_uuid, uint16_t* cid) {
   if (!sock) {
     log::error("Unable to find l2cap socket with conn_uuid:{}",
                conn_uuid.ToString());
-    return BT_STATUS_FAIL;
+    return BT_STATUS_SOCKET_ERROR;
   }
   *cid = sock->remote_cid;
   return BT_STATUS_SUCCESS;
