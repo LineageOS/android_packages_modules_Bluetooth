@@ -31,11 +31,16 @@ import io.grpc.stub.StreamObserver
 import java.time.Duration
 import java.util.UUID
 import java.util.concurrent.TimeUnit
-import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.awaitClose
+import kotlinx.coroutines.channels.trySendBlocking
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Before
 import org.junit.Rule
@@ -315,6 +320,10 @@ class RfcommTest {
 
     @OptIn(ExperimentalCoroutinesApi::class)
     private suspend fun bondDevice(remoteDevice: BluetoothDevice) {
+        // TODO: b/345842833
+        // HFP will try to connect, and bumble doesn't support HFP yet
+        disableHfp()
+
         if (mAdapter.bondedDevices.contains(remoteDevice)) {
             Log.d(TAG, "bondDevice(): The device is already bonded")
             return
@@ -355,6 +364,34 @@ class RfcommTest {
                     RfcommProto.StopServerRequest.newBuilder().setServer(response.server).build()
                 )
             runBlocking { removeBondIfBonded(mBumbleDevice) }
+        }
+    }
+
+    private fun disableHfp() =
+        runBlocking<Unit> {
+            val proxy = headsetFlow().first()
+            proxy.setConnectionPolicy(mBumbleDevice, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN)
+        }
+
+    private suspend fun headsetFlow(): Flow<BluetoothHeadset> {
+        return callbackFlow {
+            val listener =
+                object : BluetoothProfile.ServiceListener {
+                    lateinit var mBluetoothHeadset: BluetoothHeadset
+
+                    override fun onServiceConnected(profile: Int, proxy: BluetoothProfile) {
+                        mBluetoothHeadset = proxy as BluetoothHeadset
+                        trySend(mBluetoothHeadset)
+                    }
+
+                    override fun onServiceDisconnected(profile: Int) {}
+                }
+
+            mAdapter.getProfileProxy(mContext, listener, BluetoothProfile.HEADSET)
+
+            awaitClose {
+                mAdapter.closeProfileProxy(BluetoothProfile.HEADSET, listener.mBluetoothHeadset)
+            }
         }
     }
 
