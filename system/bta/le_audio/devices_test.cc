@@ -2100,10 +2100,6 @@ TEST_P(LeAudioAseConfigurationTest, test_unsupported_codec) {
 }
 
 TEST_P(LeAudioAseConfigurationTest, test_reconnection_media) {
-  // Skip this test as it uses LC3 codec configuration provider for PACs
-  // creation, which is not going to work with the Vendor Codec Provider.
-  if (codec_coding_format_ != kLeAudioCodingFormatLC3) GTEST_SKIP();
-
   LeAudioDevice* left = AddTestDevice(2, 1);
   LeAudioDevice* right = AddTestDevice(2, 1);
 
@@ -2449,6 +2445,38 @@ TEST_P(LeAudioAseConfigurationTest, test_config_support) {
 
   ASSERT_TRUE(left->IsAudioSetConfigurationSupported(test_config));
   ASSERT_TRUE(right->IsAudioSetConfigurationSupported(test_config));
+}
+
+TEST_P(LeAudioAseConfigurationTest,
+       test_vendor_codec_configure_incomplete_group) {
+  // A group of two earbuds
+  LeAudioDevice* left = AddTestDevice(2, 1);
+  LeAudioDevice* right = AddTestDevice(2, 1);
+
+  /* Change location as by default it is stereo */
+  left->snk_audio_locations_ =
+      ::bluetooth::le_audio::codec_spec_conf::kLeAudioLocationFrontLeft;
+  left->src_audio_locations_ =
+      ::bluetooth::le_audio::codec_spec_conf::kLeAudioLocationFrontLeft;
+  right->snk_audio_locations_ =
+      ::bluetooth::le_audio::codec_spec_conf::kLeAudioLocationFrontRight;
+  right->src_audio_locations_ =
+      ::bluetooth::le_audio::codec_spec_conf::kLeAudioLocationFrontRight;
+  group_->ReloadAudioLocations();
+
+  // The Right earbud is currently disconnected
+  right->SetConnectionState(DeviceConnectState::DISCONNECTED);
+
+  uint8_t direction_to_verify = kLeAudioDirectionSink;
+  uint8_t devices_to_verify = 1;
+  TestGroupAseConfigurationData data[] = {
+      {left, kLeAudioCodecChannelCountSingleChannel,
+       kLeAudioCodecChannelCountSingleChannel, 1, 0},
+      {right, kLeAudioCodecChannelCountSingleChannel,
+       kLeAudioCodecChannelCountSingleChannel, 0, 0}};
+
+  TestGroupAseConfiguration(LeAudioContextType::MEDIA, data, devices_to_verify,
+                            direction_to_verify);
 }
 
 INSTANTIATE_TEST_CASE_P(Test, LeAudioAseConfigurationTest,
