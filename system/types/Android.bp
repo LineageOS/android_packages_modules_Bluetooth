@@ -43,7 +43,6 @@ cc_library_static {
         "bluetooth/uuid.cc",
         "raw_address.cc",
     ],
-    static_libs: ["libchrome"],
     header_libs: ["libbluetooth-types-header"],
     export_header_lib_headers: ["libbluetooth-types-header"],
     apex_available: [
@@ -56,9 +55,9 @@ cc_library_static {
 cc_test {
     name: "net_test_types",
     static_libs: [
+        "libbase",
         "libbluetooth-types",
         "libbluetooth_log",
-        "libchrome",
         "libosi", // strlcpy
     ],
     test_suites: ["general-tests"],
