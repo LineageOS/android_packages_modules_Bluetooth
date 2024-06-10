@@ -30,6 +30,7 @@
 #include "stack/include/bt_octets.h"
 #include "stack/include/hcidefs.h"
 #include "stack/include/smp_api_types.h"
+#include "stack/include/smp_status.h"
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
 
@@ -495,7 +496,7 @@ typedef struct {
 
 /* data type for tBTM_LE_COMPLT */
 typedef struct {
-  uint8_t reason;
+  tSMP_STATUS reason;
   uint8_t sec_level;
   bool is_pair_cancel;
   bool smp_over_br;
