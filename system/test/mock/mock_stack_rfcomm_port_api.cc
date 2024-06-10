@@ -58,12 +58,9 @@ int PORT_SetDataCOCallback(uint16_t /* port_handle */,
   inc_func_call_count(__func__);
   return 0;
 }
-int PORT_SetEventCallback(uint16_t /* port_handle */,
-                          tPORT_CALLBACK* /* p_port_cb */) {
-  inc_func_call_count(__func__);
-  return 0;
-}
-int PORT_SetEventMask(uint16_t /* port_handle */, uint32_t /* mask */) {
+int PORT_SetEventMaskAndCallback(uint16_t /* port_handle */,
+                                 uint32_t /* mask */,
+                                 tPORT_CALLBACK* /* p_port_cb */) {
   inc_func_call_count(__func__);
   return 0;
 }

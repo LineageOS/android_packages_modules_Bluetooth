@@ -371,17 +371,8 @@ int RFCOMM_RemoveServer(uint16_t handle) {
   return (PORT_SUCCESS);
 }
 
-/*******************************************************************************
- *
- * Function         PORT_SetEventMask
- *
- * Description      This function is called to close the specified connection.
- *
- * Parameters:      handle     - Handle returned in the RFCOMM_CreateConnection
- *                  mask   - Bitmask of the events the host is interested in
- *
- ******************************************************************************/
-int PORT_SetEventMask(uint16_t handle, uint32_t mask) {
+int PORT_SetEventMaskAndCallback(uint16_t handle, uint32_t mask,
+                                 tPORT_CALLBACK* p_port_cb) {
   log::verbose("PORT_SetEventMask() handle:{} mask:0x{:x}", handle, mask);
   tPORT* p_port = get_port_from_handle(handle);
   if (p_port == nullptr) {
@@ -394,42 +385,11 @@ int PORT_SetEventMask(uint16_t handle, uint32_t mask) {
   }
 
   p_port->ev_mask = mask;
-
-  return (PORT_SUCCESS);
-}
-
-/*******************************************************************************
- *
- * Function         PORT_SetEventCallback
- *
- * Description      This function is called to provide an address of the
- *                  function which will be called when one of the events
- *                  specified in the mask occures.
- *
- * Parameters:      handle     - Handle returned in the RFCOMM_CreateConnection
- *                  p_callback - address of the callback function which should
- *                               be called from the RFCOMM when an event
- *                               specified in the mask occures.
- *
- *
- ******************************************************************************/
-int PORT_SetEventCallback(uint16_t handle, tPORT_CALLBACK* p_port_cb) {
-  tPORT* p_port = get_port_from_handle(handle);
-  if (p_port == nullptr) {
-    log::error("Unable to get RFCOMM port control block bad handle:{}", handle);
-    return (PORT_BAD_HANDLE);
-  }
-
-  if (!p_port->in_use || (p_port->state == PORT_CONNECTION_STATE_CLOSED)) {
-    return (PORT_NOT_OPENED);
-  }
-
-  log::verbose("PORT_SetEventCallback() handle:{}", handle);
-
   p_port->p_callback = p_port_cb;
 
   return (PORT_SUCCESS);
 }
+
 /*******************************************************************************
  *
  * Function         PORT_ClearKeepHandleFlag
