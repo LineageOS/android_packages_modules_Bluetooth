@@ -22,7 +22,6 @@ import android.annotation.RequiresPermission;
 import android.annotation.SystemService;
 import android.bluetooth.annotations.RequiresBluetoothConnectPermission;
 import android.bluetooth.annotations.RequiresLegacyBluetoothPermission;
-import android.content.AttributionSource;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.os.RemoteException;
@@ -50,16 +49,15 @@ import java.util.List;
 @SystemService(Context.BLUETOOTH_SERVICE)
 @RequiresFeature(PackageManager.FEATURE_BLUETOOTH)
 public final class BluetoothManager {
-    private static final String TAG = "BluetoothManager";
-    private static final boolean DBG = false;
+    private static final String TAG = BluetoothManager.class.getSimpleName();
 
-    private final AttributionSource mAttributionSource;
     private final BluetoothAdapter mAdapter;
+    private final Context mContext;
 
     /** @hide */
     public BluetoothManager(Context context) {
-        mAttributionSource = context.getAttributionSource();
-        mAdapter = BluetoothAdapter.createAdapter(mAttributionSource);
+        mAdapter = BluetoothAdapter.createAdapter(context.getAttributionSource());
+        mContext = context;
     }
 
     /**
@@ -89,8 +87,6 @@ public final class BluetoothManager {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
     public int getConnectionState(BluetoothDevice device, int profile) {
-        if (DBG) Log.d(TAG, "getConnectionState()");
-
         List<BluetoothDevice> connectedDevices = getConnectedDevices(profile);
         for (BluetoothDevice connectedDevice : connectedDevices) {
             if (device.equals(connectedDevice)) {
@@ -117,7 +113,6 @@ public final class BluetoothManager {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
     public List<BluetoothDevice> getConnectedDevices(int profile) {
-        if (DBG) Log.d(TAG, "getConnectedDevices");
         return getDevicesMatchingConnectionStates(
                 profile, new int[] {BluetoothProfile.STATE_CONNECTED});
     }
@@ -141,8 +136,6 @@ public final class BluetoothManager {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)
     public List<BluetoothDevice> getDevicesMatchingConnectionStates(int profile, int[] states) {
-        if (DBG) Log.d(TAG, "getDevicesMatchingConnectionStates");
-
         if (profile != BluetoothProfile.GATT && profile != BluetoothProfile.GATT_SERVER) {
             throw new IllegalArgumentException("Profile not supported: " + profile);
         }
@@ -154,8 +147,9 @@ public final class BluetoothManager {
             if (iGatt == null) return devices;
             devices =
                     Attributable.setAttributionSource(
-                            iGatt.getDevicesMatchingConnectionStates(states, mAttributionSource),
-                            mAttributionSource);
+                            iGatt.getDevicesMatchingConnectionStates(
+                                    states, mContext.getAttributionSource()),
+                            mContext.getAttributionSource());
         } catch (RemoteException e) {
             Log.e(TAG, "", e);
         }
