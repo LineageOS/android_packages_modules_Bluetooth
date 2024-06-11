@@ -78,6 +78,15 @@ void GattServerCallbacks::OnServerRead(uint16_t conn_id, uint32_t trans_id,
   }
 }
 
+static void request_write_with_vec(request_write_callback cb, int conn_id,
+                                   int trans_id, const RawAddress& bda,
+                                   int attr_handle, int offset, bool need_rsp,
+                                   bool is_prep,
+                                   const std::vector<uint8_t>& value) {
+  cb(conn_id, trans_id, bda, attr_handle, offset, need_rsp, is_prep,
+     value.data(), value.size());
+}
+
 void GattServerCallbacks::OnServerWrite(
     uint16_t conn_id, uint32_t trans_id, uint16_t attr_handle,
     AttributeBackingType attr_type, uint32_t offset, bool need_response,
@@ -90,21 +99,20 @@ void GattServerCallbacks::OnServerWrite(
     return;
   }
 
-  auto buf = new uint8_t[value.size()];
-  std::copy(value.begin(), value.end(), buf);
+  auto buf = std::vector<uint8_t>(value.begin(), value.end());
 
   switch (attr_type) {
     case AttributeBackingType::CHARACTERISTIC:
       do_in_jni_thread(base::BindOnce(
-          callbacks.request_write_characteristic_cb, conn_id, trans_id,
-          addr.value(), attr_handle, offset, need_response, is_prepare,
-          base::Owned(buf), value.size()));
+          request_write_with_vec, callbacks.request_write_characteristic_cb,
+          conn_id, trans_id, addr.value(), attr_handle, offset, need_response,
+          is_prepare, std::move(buf)));
       break;
     case AttributeBackingType::DESCRIPTOR:
       do_in_jni_thread(base::BindOnce(
-          callbacks.request_write_descriptor_cb, conn_id, trans_id,
-          addr.value(), attr_handle, offset, need_response, is_prepare,
-          base::Owned(buf), value.size()));
+          request_write_with_vec, callbacks.request_write_descriptor_cb,
+          conn_id, trans_id, addr.value(), attr_handle, offset, need_response,
+          is_prepare, std::move(buf)));
       break;
     default:
       log::fatal("Unexpected backing type {}", attr_type);
