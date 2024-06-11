@@ -971,12 +971,11 @@ static void bta_hh_le_pri_service_discovery(tBTA_HH_DEV_CB* p_cb) {
  * Returns          None
  *
  ******************************************************************************/
-static void bta_hh_le_encrypt_cback(const RawAddress* bd_addr,
-                                    tBT_TRANSPORT transport,
+static void bta_hh_le_encrypt_cback(RawAddress bd_addr, tBT_TRANSPORT transport,
                                     void* /* p_ref_data */,
                                     tBTM_STATUS result) {
   tAclLinkSpec link_spec;
-  link_spec.addrt.bda = *bd_addr;
+  link_spec.addrt.bda = bd_addr;
   link_spec.addrt.type = BLE_ADDR_PUBLIC;
   link_spec.transport = transport;
 
