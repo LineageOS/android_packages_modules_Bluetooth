@@ -47,7 +47,7 @@ use crate::bluetooth_admin::{BluetoothAdmin, IBluetoothAdmin};
 use crate::bluetooth_gatt::{
     BluetoothGatt, GattActions, IBluetoothGatt, IScannerCallback, ScanResult,
 };
-use crate::bluetooth_media::{BluetoothMedia, IBluetoothMedia, MediaActions};
+use crate::bluetooth_media::{BluetoothMedia, IBluetoothMedia, MediaActions, LEA_UNKNOWN_GROUP_ID};
 use crate::callbacks::Callbacks;
 use crate::socket_manager::SocketActions;
 use crate::uuid::{Profile, UuidHelper};
@@ -258,6 +258,10 @@ pub trait IBluetooth {
 
     /// Returns whether LE Audio is supported.
     fn is_le_audio_supported(&self) -> bool;
+
+    /// Returns whether the remote device is a dual mode audio sink device (supports both classic and
+    /// LE Audio sink roles).
+    fn is_dual_mode_audio_sink_device(&self, device: BluetoothDevice) -> bool;
 }
 
 /// Adapter API for Bluetooth qualification and verification.
@@ -2970,6 +2974,29 @@ impl IBluetooth for Bluetooth {
         // We determine LE Audio support by checking CIS Central support
         // See Core 5.3, Vol 6, 4.6 FEATURE SUPPORT
         self.le_local_supported_features >> 28 & 1 == 1u64
+    }
+
+    fn is_dual_mode_audio_sink_device(&self, device: BluetoothDevice) -> bool {
+        fn is_dual_mode(uuids: Vec<Uuid>) -> bool {
+            fn get_unwrapped_uuid(profile: Profile) -> Uuid {
+                *UuidHelper::get_profile_uuid(&profile).unwrap_or(&Uuid::empty())
+            }
+
+            uuids.contains(&get_unwrapped_uuid(Profile::LeAudio))
+                && (uuids.contains(&get_unwrapped_uuid(Profile::A2dpSink))
+                    || uuids.contains(&get_unwrapped_uuid(Profile::Hfp)))
+        }
+
+        let media = self.bluetooth_media.lock().unwrap();
+        let group_id = media.get_group_id(device.address);
+        if group_id == LEA_UNKNOWN_GROUP_ID {
+            return is_dual_mode(self.get_remote_uuids(device));
+        }
+
+        // Check if any device in the CSIP group is a dual mode audio sink device
+        media.get_group_devices(group_id).iter().any(|addr| {
+            is_dual_mode(self.get_remote_uuids(BluetoothDevice::new(*addr, "".to_string())))
+        })
     }
 }
 
