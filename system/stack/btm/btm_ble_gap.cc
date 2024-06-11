@@ -1871,8 +1871,12 @@ tBTM_STATUS btm_ble_read_remote_name(const RawAddress& remote_bda,
   }
 
   /* read remote device name using GATT procedure */
-  if (btm_cb.btm_inq_vars.remname_active) return BTM_BUSY;
-
+  if (btm_cb.btm_inq_vars.remname_active) {
+    log::warn(
+        "Unable to start GATT RNR procedure for peer:{} busy with peer:{}",
+        remote_bda, btm_cb.btm_inq_vars.remname_bda);
+    return BTM_BUSY;
+  }
   if (!GAP_BleReadPeerDevName(remote_bda, btm_ble_read_remote_name_cmpl))
     return BTM_BUSY;
 
