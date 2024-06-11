@@ -17,3 +17,14 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "opp_ignore_content_observer_after_service_stop"
+    namespace: "bluetooth"
+    description: "When OppService.stop() is called, previously posted ContentObserver.onChange() should not run"
+    bug: "346467641"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
