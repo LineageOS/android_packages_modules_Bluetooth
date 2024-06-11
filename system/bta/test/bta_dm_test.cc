@@ -24,7 +24,6 @@
 
 #include <string>
 
-#include "bta/dm/bta_dm_device_search.h"
 #include "bta/dm/bta_dm_device_search_int.h"
 #include "bta/dm/bta_dm_disc.h"
 #include "bta/dm/bta_dm_int.h"
@@ -33,8 +32,6 @@
 #include "bta/hf_client/bta_hf_client_int.h"
 #include "bta/include/bta_api.h"
 #include "bta/test/bta_test_fixtures.h"
-#include "osi/include/compat.h"
-#include "osi/include/osi.h"
 #include "stack/include/btm_status.h"
 #include "test/common/main_handler.h"
 #include "test/common/mock_functions.h"
@@ -448,6 +445,12 @@ TEST_F(BtaDmTest, bta_dm_search_evt_text) {
 }
 
 TEST_F(BtaDmTest, bta_dm_remote_name_cmpl) {
+  reset_mock_btm_client_interface();
+  mock_btm_client_interface.db.BTM_InqDbRead =
+      [](const RawAddress& bd_addr) -> tBTM_INQ_INFO* {
+    inc_func_call_count("BTM_InqDbRead");
+    return nullptr;
+  };
   tBTA_DM_REMOTE_NAME remote_name_msg{
       // tBTA_DM_REMOTE_NAME
       .bd_addr = kRawAddress,

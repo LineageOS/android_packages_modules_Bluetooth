@@ -18,12 +18,11 @@
  * Generated mock file from original source file
  */
 
-#include "stack/include/btm_api.h"
 #include "stack/include/btm_ble_api_types.h"
 #include "stack/include/btm_ble_sec_api_types.h"
 #include "stack/include/btm_client_interface.h"
-#include "stack/include/btm_sec_api.h"
 #include "stack/include/btm_sec_api_types.h"
+#include "stack/include/btm_status.h"
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
 
@@ -42,7 +41,9 @@ struct btm_client_interface_t default_btm_client_interface = {
                                    tBT_TRANSPORT /* transport */) -> uint16_t {
           return 0;
         },
-        .BTM_VendorSpecificCommand = BTM_VendorSpecificCommand,
+        .BTM_VendorSpecificCommand =
+            [](uint16_t /* opcode */, uint8_t /* param_len */,
+               uint8_t* /* p_param_buf */, tBTM_VSC_CMPL_CB* /* p_cb */) {},
         .ACL_RegisterClient =
             [](struct acl_client_callback_s* /* callbacks */) {},
         .ACL_UnregisterClient =
@@ -61,8 +62,13 @@ struct btm_client_interface_t default_btm_client_interface = {
         .BTM_ReadConnectedTransportAddress =
             [](RawAddress* /* remote_bda */,
                tBT_TRANSPORT /* transport */) -> bool { return false; },
-        .BTM_CancelRemoteDeviceName = BTM_CancelRemoteDeviceName,
-        .BTM_ReadRemoteDeviceName = BTM_ReadRemoteDeviceName,
+        .BTM_CancelRemoteDeviceName = []() -> tBTM_STATUS {
+          return BTM_SUCCESS;
+        },
+        .BTM_ReadRemoteDeviceName = [](const RawAddress& /* remote_bda */,
+                                       tBTM_NAME_CMPL_CB* /* p_cb */,
+                                       tBT_TRANSPORT /* transport */)
+            -> tBTM_STATUS { return BTM_SUCCESS; },
         .BTM_ReadRemoteFeatures = [](const RawAddress& /* addr */) -> uint8_t* {
           return hci_feature_bytes_per_page;
         },
@@ -99,7 +105,7 @@ struct btm_client_interface_t default_btm_client_interface = {
         .BTM_default_unblock_role_switch = []() {},
         .BTM_unblock_role_switch_for = [](const RawAddress& /* peer_addr */) {},
         .BTM_unblock_sniff_mode_for = [](const RawAddress& /* peer_addr */) {},
-        .BTM_WritePageTimeout = BTM_WritePageTimeout,
+        .BTM_WritePageTimeout = [](uint16_t /* timeout */) {},
     },
     .link_controller = {
         .BTM_GetLinkSuperTout = [](const RawAddress& /* remote_bda */,
@@ -114,27 +120,25 @@ struct btm_client_interface_t default_btm_client_interface = {
     .security = {
         .BTM_Sec_Init = []() {},
         .BTM_Sec_Free = []() {},
-
         .BTM_SecRegister = [](const tBTM_APPL_INFO* /* p_cb_info */) -> bool {
           return false;
         },
-
         .BTM_BleLoadLocalKeys = [](uint8_t /* key_type */,
                                    tBTM_BLE_LOCAL_KEYS* /* p_key */) {},
-
-        .BTM_SecAddDevice = BTM_SecAddDevice,
+        .BTM_SecAddDevice = [](const RawAddress& /* bd_addr */,
+                               DEV_CLASS /* dev_class */,
+                               LinkKey /* link_key */, uint8_t /* key_type */,
+                               uint8_t /* pin_length */) {},
         .BTM_SecAddBleDevice = [](const RawAddress& /* bd_addr */,
                                   tBT_DEVICE_TYPE /* dev_type */,
                                   tBLE_ADDR_TYPE /* addr_type */) {},
-
-        .BTM_SecDeleteDevice = BTM_SecDeleteDevice,
-
+        .BTM_SecDeleteDevice = [](const RawAddress& /* bd_addr */) -> bool {
+          return true;
+        },
         .BTM_SecAddBleKey = [](const RawAddress& /* bd_addr */,
                                tBTM_LE_KEY_VALUE* /* p_le_key */,
                                tBTM_LE_KEY_TYPE /* key_type */) {},
-
-        .BTM_SecClearSecurityFlags = BTM_SecClearSecurityFlags,
-
+        .BTM_SecClearSecurityFlags = [](const RawAddress& /* bd_addr */) {},
         .BTM_SetEncryption =
             [](const RawAddress& /* bd_addr */, tBT_TRANSPORT /* transport */,
                tBTM_SEC_CALLBACK* /* p_callback */, void* /* p_ref_data */,
@@ -151,14 +155,12 @@ struct btm_client_interface_t default_btm_client_interface = {
                                  tBT_TRANSPORT /* transport */) -> bool {
           return false;
         },
-
         .BTM_SecClrService = [](uint8_t /* service_id */) -> uint8_t {
           return 0;
         },
         .BTM_SecClrServiceByPsm = [](uint16_t /* psm */) -> uint8_t {
           return 0;
         },
-
         .BTM_SecBond = [](const RawAddress& /* bd_addr */,
                           tBLE_ADDR_TYPE /* addr_type */,
                           tBT_TRANSPORT /* transport */,
@@ -181,12 +183,9 @@ struct btm_client_interface_t default_btm_client_interface = {
                                             uint8_t /* res */) {},
         .BTM_BlePasskeyReply = [](const RawAddress& /* bd_addr */,
                                   uint8_t /* res */, uint32_t /* passkey */) {},
-
         .BTM_GetSecurityMode = []() -> uint8_t { return 0; },
-
         .BTM_SecReadDevName = [](const RawAddress& /* bd_addr */)
             -> const char* { return nullptr; },
-
         .BTM_SecAddRmtNameNotifyCallback =
             [](tBTM_RMT_NAME_CALLBACK* /* p_callback */) -> bool {
           return false;
@@ -210,7 +209,6 @@ struct btm_client_interface_t default_btm_client_interface = {
         .BTM_SetBleDataLength = [](const RawAddress& /* bd_addr */,
                                    uint16_t /* tx_pdu_length */)
             -> tBTM_STATUS { return BTM_SUCCESS; },
-
         .BTM_BleReadControllerFeatures =
             [](tBTM_BLE_CTRL_FEATURES_CBACK* /* p_vsc_cback */) {},
         .BTM_BleSetPhy = [](const RawAddress& /* bd_addr */,
@@ -224,26 +222,44 @@ struct btm_client_interface_t default_btm_client_interface = {
           return false;
         },
     },
-    .sco =
-        {
-            .BTM_CreateSco = BTM_CreateSco,
-            .BTM_RegForEScoEvts = BTM_RegForEScoEvts,
-            .BTM_RemoveSco = BTM_RemoveSco,
-            .BTM_WriteVoiceSettings = BTM_WriteVoiceSettings,
-            .BTM_EScoConnRsp = BTM_EScoConnRsp,
-            .BTM_GetNumScoLinks = BTM_GetNumScoLinks,
-            .BTM_SetEScoMode = BTM_SetEScoMode,
+    .sco = {
+        .BTM_CreateSco = [](const RawAddress* /* remote_bda */,
+                            bool /* is_orig */, uint16_t /* pkt_types */,
+                            uint16_t* /* p_sco_inx */,
+                            tBTM_SCO_CB* /* p_conn_cb */,
+                            tBTM_SCO_CB* /* p_disc_cb */) -> tBTM_STATUS {
+          return BTM_SUCCESS;
         },
-    .local =
-        {
-            .BTM_ReadLocalDeviceName = BTM_ReadLocalDeviceName,
-            .BTM_ReadLocalDeviceNameFromController =
-                BTM_ReadLocalDeviceNameFromController,
-            .BTM_SetLocalDeviceName = BTM_SetLocalDeviceName,
-            .BTM_SetDeviceClass = BTM_SetDeviceClass,
-            .BTM_IsDeviceUp = BTM_IsDeviceUp,
-            .BTM_ReadDeviceClass = BTM_ReadDeviceClass,
+        .BTM_RegForEScoEvts = [](uint16_t /* sco_inx */,
+                                 tBTM_ESCO_CBACK* /* p_esco_cback */)
+            -> tBTM_STATUS { return BTM_SUCCESS; },
+        .BTM_RemoveSco = [](uint16_t /* sco_inx */) -> tBTM_STATUS {
+          return BTM_SUCCESS;
         },
+        .BTM_WriteVoiceSettings = [](uint16_t /* settings */) {},
+        .BTM_EScoConnRsp = [](uint16_t /* sco_inx */, uint8_t /* hci_status */,
+                              enh_esco_params_t* /* p_parms */) {},
+        .BTM_GetNumScoLinks = []() -> uint8_t { return 0; },
+        .BTM_SetEScoMode = [](enh_esco_params_t* /* p_parms */) -> tBTM_STATUS {
+          return BTM_SUCCESS;
+        },
+    },
+    .local = {
+        .BTM_ReadLocalDeviceName = [](const char** /* p_name */)
+            -> tBTM_STATUS { return BTM_SUCCESS; },
+        .BTM_ReadLocalDeviceNameFromController =
+            [](tBTM_CMPL_CB* /* p_rln_cmpl_cback */) -> tBTM_STATUS {
+          return BTM_SUCCESS;
+        },
+        .BTM_SetLocalDeviceName = [](const char* /* p_name */) -> tBTM_STATUS {
+          return BTM_SUCCESS;
+        },
+        .BTM_SetDeviceClass = [](DEV_CLASS /* dev_class */) -> tBTM_STATUS {
+          return BTM_SUCCESS;
+        },
+        .BTM_IsDeviceUp = []() -> bool { return true; },
+        .BTM_ReadDeviceClass = []() -> DEV_CLASS { return kDevClassEmpty; },
+    },
     .eir = {
         .BTM_WriteEIR = [](BT_HDR* /* p_buff */) -> tBTM_STATUS {
           return BTM_SUCCESS;
@@ -262,13 +278,18 @@ struct btm_client_interface_t default_btm_client_interface = {
         .BTM_RemoveEirService = [](uint32_t* /* p_eir_uuid */,
                                    uint16_t /* uuid16 */) {},
     },
-    .db =
-        {
-            .BTM_InqDbRead = BTM_InqDbRead,
-            .BTM_InqDbFirst = BTM_InqDbFirst,
-            .BTM_InqDbNext = BTM_InqDbNext,
-            .BTM_ClearInqDb = BTM_ClearInqDb,
+    .db = {
+        .BTM_InqDbRead = [](const RawAddress& /* p_bda */) -> tBTM_INQ_INFO* {
+          return nullptr;
         },
+        .BTM_InqDbFirst = []() -> tBTM_INQ_INFO* { return nullptr; },
+        .BTM_InqDbNext = [](tBTM_INQ_INFO* /* p_cur */) -> tBTM_INQ_INFO* {
+          return nullptr;
+        },
+        .BTM_ClearInqDb = [](const RawAddress* /* p_bda */) -> tBTM_STATUS {
+          return BTM_SUCCESS;
+        },
+    },
 };
 
 }  // namespace
