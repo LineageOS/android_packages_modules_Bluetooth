@@ -255,35 +255,25 @@ void BTA_GATTC_ConfigureMTU(uint16_t conn_id, uint16_t mtu,
   bta_sys_sendmsg(p_buf);
 }
 
-/*******************************************************************************
- *
- * Function         BTA_GATTC_ServiceSearchRequest
- *
- * Description      This function is called to request a GATT service discovery
- *                  on a GATT server. This function report service search
- *                  result by a callback event, and followed by a service search
- *                  complete event.
- *
- * Parameters       conn_id: connection ID.
- *                  p_srvc_uuid: a UUID of the service application is interested
- *                               in.
- *                              If Null, discover for all services.
- *
- * Returns          None
- *
- ******************************************************************************/
-void BTA_GATTC_ServiceSearchRequest(uint16_t conn_id, const Uuid* p_srvc_uuid) {
+void BTA_GATTC_ServiceSearchAllRequest(uint16_t conn_id) {
+  const size_t len = sizeof(tBTA_GATTC_API_SEARCH);
+  tBTA_GATTC_API_SEARCH* p_buf = (tBTA_GATTC_API_SEARCH*)osi_calloc(len);
+
+  p_buf->hdr.event = BTA_GATTC_API_SEARCH_EVT;
+  p_buf->hdr.layer_specific = conn_id;
+  p_buf->p_srvc_uuid = NULL;
+
+  bta_sys_sendmsg(p_buf);
+}
+
+void BTA_GATTC_ServiceSearchRequest(uint16_t conn_id, Uuid p_srvc_uuid) {
   const size_t len = sizeof(tBTA_GATTC_API_SEARCH) + sizeof(Uuid);
   tBTA_GATTC_API_SEARCH* p_buf = (tBTA_GATTC_API_SEARCH*)osi_calloc(len);
 
   p_buf->hdr.event = BTA_GATTC_API_SEARCH_EVT;
   p_buf->hdr.layer_specific = conn_id;
-  if (p_srvc_uuid) {
-    p_buf->p_srvc_uuid = (Uuid*)(p_buf + 1);
-    *p_buf->p_srvc_uuid = *p_srvc_uuid;
-  } else {
-    p_buf->p_srvc_uuid = NULL;
-  }
+  p_buf->p_srvc_uuid = (Uuid*)(p_buf + 1);
+  *p_buf->p_srvc_uuid = p_srvc_uuid;
 
   bta_sys_sendmsg(p_buf);
 }

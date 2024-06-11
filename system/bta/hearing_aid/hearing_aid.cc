@@ -724,7 +724,7 @@ class HearingAidImpl : public HearingAid {
       log::info("starting service search request for ASHA: bd_addr={}",
                 address);
       hearingDevice->first_connection = true;
-      BTA_GATTC_ServiceSearchRequest(hearingDevice->conn_id, &HEARING_AID_UUID);
+      BTA_GATTC_ServiceSearchRequest(hearingDevice->conn_id, HEARING_AID_UUID);
     }
   }
 
@@ -800,7 +800,7 @@ class HearingAidImpl : public HearingAid {
           hearingDevice->volume_handle && hearingDevice->read_psm_handle)) {
       log::info("starting service search request for ASHA: bd_addr={}",
                 address);
-      BTA_GATTC_ServiceSearchRequest(hearingDevice->conn_id, &HEARING_AID_UUID);
+      BTA_GATTC_ServiceSearchRequest(hearingDevice->conn_id, HEARING_AID_UUID);
     }
   }
 

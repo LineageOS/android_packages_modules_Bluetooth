@@ -539,6 +539,22 @@ void BTA_GATTC_Close(uint16_t conn_id);
 
 /*******************************************************************************
  *
+ * Function         BTA_GATTC_ServiceSearchAllRequest
+ *
+ * Description      This function is called to request a GATT service discovery
+ *                  of all services on a GATT server. This function report
+ *                  service search result by a callback event, and followed by a
+ *                  service search complete event.
+ *
+ * Parameters       conn_id: connection ID.
+ *
+ * Returns          None
+ *
+ ******************************************************************************/
+void BTA_GATTC_ServiceSearchAllRequest(uint16_t conn_id);
+
+/*******************************************************************************
+ *
  * Function         BTA_GATTC_ServiceSearchRequest
  *
  * Description      This function is called to request a GATT service discovery
@@ -548,13 +564,12 @@ void BTA_GATTC_Close(uint16_t conn_id);
  *
  * Parameters       conn_id: connection ID.
  *                  p_srvc_uuid: a UUID of the service application is interested
- *                               in. If Null, discover for all services.
- *
+ *                               in.
  * Returns          None
  *
  ******************************************************************************/
 void BTA_GATTC_ServiceSearchRequest(uint16_t conn_id,
-                                    const bluetooth::Uuid* p_srvc_uuid);
+                                    bluetooth::Uuid p_srvc_uuid);
 
 /**
  * This function is called to send "Find service by UUID" request. Used only for
