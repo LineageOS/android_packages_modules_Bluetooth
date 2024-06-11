@@ -52,9 +52,11 @@
 #define L2CAP_FCS_LENGTH 2
 
 /* result code for L2CA_DataWrite() */
-#define L2CAP_DW_FAILED false
-#define L2CAP_DW_SUCCESS true
-#define L2CAP_DW_CONGESTED 2
+typedef enum : uint8_t {
+  L2CAP_DW_FAILED = 0,
+  L2CAP_DW_SUCCESS = 1,
+  L2CAP_DW_CONGESTED = 2,
+} tL2CAP_DW_RESULT;
 
 /* Values for priority parameter to L2CA_SetAclPriority */
 typedef enum : uint8_t {
