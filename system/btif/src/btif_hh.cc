@@ -781,7 +781,7 @@ bt_status_t btif_hh_virtual_unplug(const tAclLinkSpec& link_spec) {
           },
           link_spec));
     }
-    return BT_STATUS_FAIL;
+    return BT_STATUS_DEVICE_NOT_FOUND;
   }
 }
 
@@ -1723,7 +1723,7 @@ static bt_status_t virtual_unplug(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
   btif_hh_device_t* p_dev = btif_hh_find_dev_by_link_spec(link_spec);
   if (!p_dev) {
     BTHH_LOG_UNKNOWN_LINK(link_spec);
-    return BT_STATUS_FAIL;
+    return BT_STATUS_DEVICE_NOT_FOUND;
   }
   btif_transfer_context(btif_hh_handle_evt, BTIF_HH_VUP_REQ_EVT,
                         (char*)&link_spec, sizeof(tAclLinkSpec), NULL);
@@ -1754,7 +1754,7 @@ static bt_status_t get_idle_time(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
   btif_hh_device_t* p_dev = btif_hh_find_connected_dev_by_link_spec(link_spec);
   if (p_dev == NULL) {
     BTHH_LOG_UNKNOWN_LINK(link_spec);
-    return BT_STATUS_FAIL;
+    return BT_STATUS_DEVICE_NOT_FOUND;
   }
 
   BTA_HhGetIdle(p_dev->dev_handle);
@@ -1786,7 +1786,7 @@ static bt_status_t set_idle_time(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
   btif_hh_device_t* p_dev = btif_hh_find_connected_dev_by_link_spec(link_spec);
   if (p_dev == NULL) {
     BTHH_LOG_UNKNOWN_LINK(link_spec);
-    return BT_STATUS_FAIL;
+    return BT_STATUS_DEVICE_NOT_FOUND;
   }
 
   BTA_HhSetIdle(p_dev->dev_handle, idle_time);
@@ -1869,7 +1869,7 @@ static bt_status_t get_protocol(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
   btif_hh_device_t* p_dev = btif_hh_find_connected_dev_by_link_spec(link_spec);
   if (!p_dev) {
     BTHH_LOG_UNKNOWN_LINK(link_spec);
-    return BT_STATUS_FAIL;
+    return BT_STATUS_DEVICE_NOT_FOUND;
   }
 
   BTA_HhGetProtoMode(p_dev->dev_handle);
@@ -1904,7 +1904,7 @@ static bt_status_t set_protocol(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
   p_dev = btif_hh_find_connected_dev_by_link_spec(link_spec);
   if (p_dev == NULL) {
     BTHH_LOG_UNKNOWN_LINK(link_spec);
-    return BT_STATUS_FAIL;
+    return BT_STATUS_DEVICE_NOT_FOUND;
   } else if (protocolMode != BTA_HH_PROTO_RPT_MODE &&
              protocolMode != BTA_HH_PROTO_BOOT_MODE) {
     log::warn("device proto_mode = {}", proto_mode);
@@ -1945,7 +1945,7 @@ static bt_status_t get_report(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
   p_dev = btif_hh_find_connected_dev_by_link_spec(link_spec);
   if (p_dev == NULL) {
     BTHH_LOG_UNKNOWN_LINK(link_spec);
-    return BT_STATUS_FAIL;
+    return BT_STATUS_DEVICE_NOT_FOUND;
   } else if (((int)reportType) <= BTA_HH_RPTT_RESRV ||
              ((int)reportType) > BTA_HH_RPTT_FEATURE) {
     log::error("report type={} not supported", reportType);
@@ -1987,7 +1987,7 @@ static bt_status_t get_report_reply(RawAddress* bd_addr,
   btif_hh_device_t* p_dev = btif_hh_find_connected_dev_by_link_spec(link_spec);
   if (p_dev == NULL) {
     BTHH_LOG_UNKNOWN_LINK(link_spec);
-    return BT_STATUS_FAIL;
+    return BT_STATUS_DEVICE_NOT_FOUND;
   }
 
   bta_hh_co_get_rpt_rsp(p_dev->dev_handle, (tBTA_HH_STATUS)status,
@@ -2022,7 +2022,7 @@ static bt_status_t set_report(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
   p_dev = btif_hh_find_connected_dev_by_link_spec(link_spec);
   if (p_dev == NULL) {
     BTHH_LOG_UNKNOWN_LINK(link_spec);
-    return BT_STATUS_FAIL;
+    return BT_STATUS_DEVICE_NOT_FOUND;
   } else if (((int)reportType) <= BTA_HH_RPTT_RESRV ||
              ((int)reportType) > BTA_HH_RPTT_FEATURE) {
     log::error("report type={} not supported", reportType);
@@ -2079,7 +2079,7 @@ static bt_status_t send_data(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
   btif_hh_device_t* p_dev = btif_hh_find_connected_dev_by_link_spec(link_spec);
   if (p_dev == NULL) {
     BTHH_LOG_UNKNOWN_LINK(link_spec);
-    return BT_STATUS_FAIL;
+    return BT_STATUS_DEVICE_NOT_FOUND;
   } else {
     int hex_bytes_filled;
     size_t len = (strlen(data) + 1) / 2;

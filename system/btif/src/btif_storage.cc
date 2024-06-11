@@ -435,7 +435,7 @@ bt_status_t btif_in_fetch_bonded_device(const std::string& bdstr) {
   if ((btif_in_fetch_bonded_ble_device(bdstr, false, NULL) !=
        BT_STATUS_SUCCESS) &&
       (!bt_linkkey_file_found)) {
-    return BT_STATUS_FAIL;
+    return BT_STATUS_DEVICE_NOT_FOUND;
   }
   return BT_STATUS_SUCCESS;
 }
@@ -1297,7 +1297,7 @@ bt_status_t btif_in_fetch_bonded_ble_device(
 
     if (key_found) return BT_STATUS_SUCCESS;
   }
-  return BT_STATUS_FAIL;
+  return BT_STATUS_DEVICE_NOT_FOUND;
 }
 
 void btif_storage_invoke_addr_type_update(const RawAddress& remote_bd_addr,
