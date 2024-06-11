@@ -9,7 +9,7 @@ pub use callback_transaction_manager::{CallbackResponseError, CallbackTransactio
 use async_trait::async_trait;
 use log::warn;
 
-use crate::packets::{AttAttributeDataChild, AttAttributeDataView, AttErrorCode};
+use crate::packets::AttErrorCode;
 
 use super::{
     ffi::AttributeBackingType,
@@ -41,7 +41,7 @@ pub trait GattCallbacks {
         handle: AttHandle,
         attr_type: AttributeBackingType,
         write_type: GattWriteType,
-        value: AttAttributeDataView,
+        value: &[u8],
     );
 
     /// Invoked when a handle value indication transaction completes
@@ -102,7 +102,7 @@ pub trait RawGattDatastore {
         handle: AttHandle,
         offset: u32,
         attr_type: AttributeBackingType,
-    ) -> Result<AttAttributeDataChild, AttErrorCode>;
+    ) -> Result<Vec<u8>, AttErrorCode>;
 
     /// Write data to a given characteristic on the specified connection.
     async fn write(
@@ -111,7 +111,7 @@ pub trait RawGattDatastore {
         handle: AttHandle,
         attr_type: AttributeBackingType,
         write_type: GattWriteRequestType,
-        data: AttAttributeDataView<'_>,
+        data: &[u8],
     ) -> Result<(), AttErrorCode>;
 
     /// Write data to a given characteristic on the specified connection, without waiting
@@ -121,7 +121,7 @@ pub trait RawGattDatastore {
         tcb_idx: TransportIndex,
         handle: AttHandle,
         attr_type: AttributeBackingType,
-        data: AttAttributeDataView<'_>,
+        data: &[u8],
     );
 
     /// Execute or cancel any prepared writes
@@ -142,7 +142,7 @@ pub trait GattDatastore {
         tcb_idx: TransportIndex,
         handle: AttHandle,
         attr_type: AttributeBackingType,
-    ) -> Result<AttAttributeDataChild, AttErrorCode>;
+    ) -> Result<Vec<u8>, AttErrorCode>;
 
     /// Write data to a given characteristic on the specified connection.
     async fn write(
@@ -150,7 +150,7 @@ pub trait GattDatastore {
         tcb_idx: TransportIndex,
         handle: AttHandle,
         attr_type: AttributeBackingType,
-        data: AttAttributeDataView<'_>,
+        data: &[u8],
     ) -> Result<(), AttErrorCode>;
 }
 
@@ -163,7 +163,7 @@ impl<T: GattDatastore + ?Sized> RawGattDatastore for T {
         handle: AttHandle,
         offset: u32,
         attr_type: AttributeBackingType,
-    ) -> Result<AttAttributeDataChild, AttErrorCode> {
+    ) -> Result<Vec<u8>, AttErrorCode> {
         if offset != 0 {
             warn!("got read blob request for non-long attribute {handle:?}");
             return Err(AttErrorCode::ATTRIBUTE_NOT_LONG);
@@ -178,7 +178,7 @@ impl<T: GattDatastore + ?Sized> RawGattDatastore for T {
         handle: AttHandle,
         attr_type: AttributeBackingType,
         write_type: GattWriteRequestType,
-        data: AttAttributeDataView<'_>,
+        data: &[u8],
     ) -> Result<(), AttErrorCode> {
         match write_type {
             GattWriteRequestType::Prepare { .. } => {
@@ -194,7 +194,7 @@ impl<T: GattDatastore + ?Sized> RawGattDatastore for T {
         tcb_idx: TransportIndex,
         handle: AttHandle,
         _: AttributeBackingType,
-        _: AttAttributeDataView<'_>,
+        _: &[u8],
     ) {
         // silently drop, since there's no way to return an error
         warn!("got write command on {tcb_idx:?} to characteristic {handle:?} not supporting write_without_response");
@@ -213,11 +213,7 @@ mod test {
 
     use crate::{
         gatt::mocks::mock_datastore::{MockDatastore, MockDatastoreEvents},
-        packets::OwnedAttAttributeDataView,
-        utils::{
-            packet::{build_att_data, build_view_or_crash},
-            task::block_on_locally,
-        },
+        utils::task::block_on_locally,
     };
 
     use super::*;
@@ -301,10 +297,6 @@ mod test {
         assert_eq!(rx.try_recv().unwrap_err(), TryRecvError::Empty);
     }
 
-    fn make_data() -> OwnedAttAttributeDataView {
-        build_view_or_crash(build_att_data(AttAttributeDataChild::RawData(DATA.into())))
-    }
-
     #[test]
     fn test_write_request_invoke() {
         block_on_locally(async {
@@ -319,7 +311,7 @@ mod test {
                     HANDLE,
                     AttributeBackingType::Characteristic,
                     GattWriteRequestType::Request,
-                    make_data().view(),
+                    &DATA,
                 )
                 .await
             });
@@ -353,7 +345,7 @@ mod test {
                     HANDLE,
                     AttributeBackingType::Characteristic,
                     GattWriteRequestType::Request,
-                    make_data().view(),
+                    &DATA,
                 )
                 .await
             });
@@ -380,7 +372,7 @@ mod test {
             HANDLE,
             AttributeBackingType::Characteristic,
             GattWriteRequestType::Prepare { offset: 1 },
-            make_data().view(),
+            &DATA,
         ));
 
         // assert: got the correct error code
@@ -400,7 +392,7 @@ mod test {
             TCB_IDX,
             HANDLE,
             AttributeBackingType::Characteristic,
-            make_data().view(),
+            &DATA,
         );
 
         // assert: no event sent up

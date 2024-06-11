@@ -15,7 +15,7 @@ use crate::{
             AttPermissions, GattCharacteristicWithHandle, GattDatabase, GattServiceWithHandle,
         },
     },
-    packets::{AttAttributeDataChild, AttAttributeDataView, AttErrorCode},
+    packets::AttErrorCode,
 };
 
 struct GapService;
@@ -39,7 +39,7 @@ impl GattDatastore for GapService {
         _: TransportIndex,
         handle: AttHandle,
         _: AttributeBackingType,
-    ) -> Result<AttAttributeDataChild, AttErrorCode> {
+    ) -> Result<Vec<u8>, AttErrorCode> {
         match handle {
             DEVICE_NAME_HANDLE => {
                 // for non-bonded peers, don't let them read the device name
@@ -47,7 +47,7 @@ impl GattDatastore for GapService {
                 Err(AttErrorCode::INSUFFICIENT_AUTHENTICATION)
             }
             // 0x0000 from AssignedNumbers => "Unknown"
-            DEVICE_APPEARANCE_HANDLE => Ok(AttAttributeDataChild::RawData([0x00, 0x00].into())),
+            DEVICE_APPEARANCE_HANDLE => Ok(vec![0x00, 0x00]),
             _ => unreachable!("unexpected handle read"),
         }
     }
@@ -57,7 +57,7 @@ impl GattDatastore for GapService {
         _: TransportIndex,
         _: AttHandle,
         _: AttributeBackingType,
-        _: AttAttributeDataView<'_>,
+        _: &[u8],
     ) -> Result<(), AttErrorCode> {
         unreachable!("no GAP data should be writable")
     }
@@ -160,6 +160,6 @@ mod test {
         let name = block_on_locally(att_db.read_attribute(DEVICE_APPEARANCE_HANDLE));
 
         // assert: the name is not readable
-        assert_eq!(name, Ok(AttAttributeDataChild::RawData([0x00, 0x00].into())));
+        assert_eq!(name, Ok(vec![0x00, 0x00]));
     }
 }

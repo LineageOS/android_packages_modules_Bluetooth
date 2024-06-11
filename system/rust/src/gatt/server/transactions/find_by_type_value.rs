@@ -8,7 +8,7 @@ use crate::{
     },
     packets::{
         AttChild, AttErrorCode, AttErrorResponseBuilder, AttFindByTypeValueRequestView,
-        AttFindByTypeValueResponseBuilder, AttOpcode, AttributeHandleRangeBuilder, Serializable,
+        AttFindByTypeValueResponseBuilder, AttOpcode, AttributeHandleRangeBuilder,
     },
 };
 
@@ -43,18 +43,16 @@ pub async fn handle_find_by_type_value_request(
             continue;
         }
         if let Ok(value) = db.read_attribute(handle).await {
-            if let Ok(data) = value.to_vec() {
-                if data == request.get_attribute_value().get_raw_payload().collect::<Vec<_>>() {
-                    // match found
-                    if !matches.push(AttributeHandleRangeBuilder {
-                        found_attribute_handle: handle.into(),
-                        group_end_handle: find_group_end(db, attr)
-                            .map(|attr| attr.handle)
-                            .unwrap_or(handle)
-                            .into(),
-                    }) {
-                        break;
-                    }
+            if value == request.get_attribute_value().get_raw_payload().collect::<Vec<_>>() {
+                // match found
+                if !matches.push(AttributeHandleRangeBuilder {
+                    found_attribute_handle: handle.into(),
+                    group_end_handle: find_group_end(db, attr)
+                        .map(|attr| attr.handle)
+                        .unwrap_or(handle)
+                        .into(),
+                }) {
+                    break;
                 }
             }
         } else {
