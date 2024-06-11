@@ -53,12 +53,12 @@ function(pdl_gen)
 
   file(MAKE_DIRECTORY ${pdl_OUTPUT_DIR})
 
-  if(pdl_LANG STREQUAL "rust")
+  if((pdl_LANG STREQUAL "rust") OR (pdl_LANG STREQUAL "rust_legacy"))
     add_custom_command(
         OUTPUT "${pdl_OUTPUT_ABSOLUTE}"
         COMMAND
         ${pdlc_EXECUTABLE}
-                --output-format rust_legacy
+                --output-format "${pdl_LANG}"
                 "${pdl_INPUT_ABSOLUTE}"
                     > "${pdl_OUTPUT_ABSOLUTE}"
         COMMENT "Generating rust module from ${pdl_INPUT}"
@@ -128,7 +128,7 @@ pdl_gen(
   NAME RootCanalGeneratedPackets_rs
   INPUT ${ROOTCANAL_ROOT}/packets/link_layer_packets.pdl
   OUTPUT link_layer_packets.rs
-  LANG rust)
+  LANG rust_legacy)
 
 android_add_library(
   TARGET libscriptedbeaconpayload-protos-lite LICENSE Apache-2.0
