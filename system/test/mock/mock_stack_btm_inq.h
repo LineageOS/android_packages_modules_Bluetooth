@@ -318,15 +318,6 @@ struct btm_clr_inq_result_flt {
 };
 extern struct btm_clr_inq_result_flt btm_clr_inq_result_flt;
 
-// Name: btm_inq_clear_ssp
-// Params: void
-// Return: void
-struct btm_inq_clear_ssp {
-  std::function<void(void)> body{[](void) {}};
-  void operator()(void) { body(); };
-};
-extern struct btm_inq_clear_ssp btm_inq_clear_ssp;
-
 // Name: btm_inq_db_find
 // Params: const RawAddress& p_bda
 // Return: tINQ_DB_ENT*

@@ -103,7 +103,6 @@ bool btm_ble_init_pseudo_addr(tBTM_SEC_DEV_REC* p_dev_rec,
 void bta_dm_remove_device(const RawAddress& bd_addr);
 void bta_dm_remote_key_missing(const RawAddress bd_addr);
 void bta_dm_process_remove_device(const RawAddress& bd_addr);
-void btm_inq_clear_ssp(void);
 
 static tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec);
 static bool btm_sec_start_get_name(tBTM_SEC_DEV_REC* p_dev_rec);
@@ -4753,7 +4752,6 @@ void tBTM_SEC_CB::change_pairing_state(tBTM_PAIRING_STATE new_state) {
 
     btm_restore_mode();
     btm_sec_check_pending_reqs();
-    btm_inq_clear_ssp();
 
     pairing_bda = RawAddress::kAny;
   } else {
