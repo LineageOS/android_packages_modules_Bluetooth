@@ -30,6 +30,7 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.ProfileService;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.LeAudioService;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -99,6 +100,10 @@ public class McpService extends ProfileService {
         // Mark service as started
         setMcpService(this);
 
+        if (Flags.leaudioSynchronizeStart()) {
+            mGmcs.init();
+            return;
+        }
         mHandler.post(
                 () -> {
                     if (isAvailable()) {
