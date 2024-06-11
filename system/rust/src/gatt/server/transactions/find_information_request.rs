@@ -29,7 +29,7 @@ pub fn handle_find_information_request<T: AttDatabase>(
             handle_in_error: AttHandle::from(request.get_starting_handle()).into(),
             error_code: AttErrorCode::INVALID_HANDLE,
         }
-        .into()
+        .into();
     };
 
     if let Some(resp) = handle_find_information_request_short(attrs.clone(), mtu) {

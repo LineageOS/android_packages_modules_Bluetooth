@@ -814,13 +814,14 @@ mod test {
             join!(
                 async {
                     let MockDatastoreEvents::Read(
-                    TCB_IDX,
-                    CHARACTERISTIC_VALUE_HANDLE,
-                    AttributeBackingType::Characteristic,
-                    reply,
-                ) = data_evts.recv().await.unwrap() else {
-                    unreachable!()
-                };
+                        TCB_IDX,
+                        CHARACTERISTIC_VALUE_HANDLE,
+                        AttributeBackingType::Characteristic,
+                        reply,
+                    ) = data_evts.recv().await.unwrap()
+                    else {
+                        unreachable!()
+                    };
                     reply.send(Ok(data.clone())).unwrap();
                 },
                 att_db.read_attribute(CHARACTERISTIC_VALUE_HANDLE)
@@ -951,7 +952,8 @@ mod test {
                 AttributeBackingType::Characteristic,
                 recv_data,
                 _,
-            ) = data_evts.recv().await.unwrap() else {
+            ) = data_evts.recv().await.unwrap()
+            else {
                 unreachable!();
             };
             recv_data
@@ -992,7 +994,9 @@ mod test {
         let res = tokio_test::block_on(async {
             join!(
                 async {
-                    let MockDatastoreEvents::Write(_,_,_,_,reply) = data_evts.recv().await.unwrap() else {
+                    let MockDatastoreEvents::Write(_, _, _, _, reply) =
+                        data_evts.recv().await.unwrap()
+                    else {
                         unreachable!();
                     };
                     reply.send(Err(AttErrorCode::UNLIKELY_ERROR)).unwrap();
@@ -1073,7 +1077,8 @@ mod test {
                 DESCRIPTOR_HANDLE,
                 AttributeBackingType::Descriptor,
                 reply,
-            ) = data_evts.recv().await.unwrap() else {
+            ) = data_evts.recv().await.unwrap()
+            else {
                 unreachable!();
             };
 
@@ -1126,7 +1131,8 @@ mod test {
                 AttributeBackingType::Descriptor,
                 _,
                 _,
-            ) = data_evts.recv().await.unwrap() else {
+            ) = data_evts.recv().await.unwrap()
+            else {
                 unreachable!();
             };
         });
@@ -1252,13 +1258,14 @@ mod test {
             join!(
                 async {
                     let MockDatastoreEvents::Read(
-                    TCB_IDX,
-                    AttHandle(6),
-                    AttributeBackingType::Characteristic,
-                    reply,
-                ) = data_evts_2.recv().await.unwrap() else {
-                    unreachable!()
-                };
+                        TCB_IDX,
+                        AttHandle(6),
+                        AttributeBackingType::Characteristic,
+                        reply,
+                    ) = data_evts_2.recv().await.unwrap()
+                    else {
+                        unreachable!()
+                    };
                     reply.send(Ok(data.clone())).unwrap();
                 },
                 att_db.read_attribute(AttHandle(6))
@@ -1511,7 +1518,13 @@ mod test {
 
         // assert: we got a callback
         let event = data_evts.blocking_recv().unwrap();
-        let MockRawDatastoreEvents::WriteNoResponse(TCB_IDX, CHARACTERISTIC_VALUE_HANDLE, AttributeBackingType::Characteristic, recv_data) = event else {
+        let MockRawDatastoreEvents::WriteNoResponse(
+            TCB_IDX,
+            CHARACTERISTIC_VALUE_HANDLE,
+            AttributeBackingType::Characteristic,
+            recv_data,
+        ) = event
+        else {
             unreachable!("{event:?}");
         };
         assert_eq!(
