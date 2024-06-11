@@ -748,17 +748,6 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
   // with other scanners.
   BTM_StartLeScan();
 
-  if (btm_cb.btm_inq_vars.inq_active & BTM_SSP_INQUIRY_ACTIVE) {
-    log::info("Not starting inquiry as SSP is in progress");
-    // Report the status here because inq_complete will cancel it below
-    BTIF_dm_report_inquiry_status_change(
-        tBTM_INQUIRY_STATE::BTM_INQUIRY_STARTED);
-
-    btm_process_inq_complete(HCI_ERR_MAX_NUM_OF_CONNECTIONS,
-                             BTM_GENERAL_INQUIRY);
-    return BTM_CMD_STARTED;
-  }
-
   btm_clr_inq_result_flt();
 
   btm_init_inq_result_flt();
@@ -1085,9 +1074,7 @@ void btm_inq_db_reset(void) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_inq_clear_ssp(void) {
-  btm_cb.btm_inq_vars.inq_active &= ~BTM_SSP_INQUIRY_ACTIVE;
-}
+void btm_inq_clear_ssp(void) {}
 
 /*******************************************************************************
  *
