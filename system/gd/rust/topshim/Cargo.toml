@@ -25,6 +25,7 @@ bt_common = { path = "../common" }
 topshim_macros = { path = "macros" }
 
 cxx = "1.0"
+grpcio = { version = "0.13.0", default-features = false, features = ["protobufv3-codec", "openssl"] }
 lazy_static = "1.4"
 log = "0.4"
 num-derive = "0.3"
