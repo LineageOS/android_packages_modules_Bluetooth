@@ -119,8 +119,8 @@ typedef void (*notify_callback)(int conn_id,
                                 const btgatt_notify_params_t& p_data);
 
 /** Reports result of a GATT read operation */
-typedef void (*read_characteristic_callback)(int conn_id, int status,
-                                             btgatt_read_params_t* p_data);
+typedef void (*read_characteristic_callback)(
+    int conn_id, int status, const btgatt_read_params_t& p_data);
 
 /** GATT write characteristic operation callback */
 typedef void (*write_characteristic_callback)(int conn_id, int status,
