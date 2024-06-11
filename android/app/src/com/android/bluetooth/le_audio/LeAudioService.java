@@ -226,7 +226,7 @@ public class LeAudioService extends ProfileService {
         mNativeInterface = Objects.requireNonNull(nativeInterface);
     }
 
-    private class LeAudioGroupDescriptor {
+    private static class LeAudioGroupDescriptor {
         LeAudioGroupDescriptor(boolean isInbandRingtonEnabled) {
             mIsConnected = false;
             mActiveState = ACTIVE_STATE_INACTIVE;
@@ -478,12 +478,20 @@ public class LeAudioService extends ProfileService {
 
         // Setup codec config
         mLeAudioCodecConfig = new LeAudioCodecConfig(this);
+        if (!Flags.leaudioSynchronizeStart()) {
+            // Delay the call to init by posting it. This ensures TBS and MCS are fully initialized
+            // before we start accepting connections
+            mHandler.post(this::init);
+            return;
+        }
+        mNativeInterface.init(mLeAudioCodecConfig.getCodecConfigOffloading());
 
-        // Delay the call to init by posting it. This ensures TBS and MCS are fully initialized
-        // before we start accepting connections
-        mHandler.post(this::init);
+        if (leaudioUseAudioModeListener()) {
+            mAudioManager.addOnModeChangedListener(getMainExecutor(), mAudioModeChangeListener);
+        }
     }
 
+    // TODO: b/341385684 -- Delete the init method as it has been inlined in start
     private void init() {
         if (!isAvailable()) {
             Log.e(TAG, " Service disabled before init");
@@ -520,7 +528,9 @@ public class LeAudioService extends ProfileService {
 
         clearBroadcastTimeoutCallback();
 
-        mHandler.removeCallbacks(this::init);
+        if (!Flags.leaudioSynchronizeStart()) {
+            mHandler.removeCallbacks(this::init);
+        }
         removeActiveDevice(false);
 
         if (mTmapGattServer == null) {

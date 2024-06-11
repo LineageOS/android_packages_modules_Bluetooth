@@ -758,11 +758,7 @@ class BluetoothManagerService {
         BluetoothServerProxy.getInstance().setBluetoothPersistedState(mContentResolver, state);
     }
 
-    /**
-     * Returns true if the Bluetooth Adapter's name and address is locally cached
-     *
-     * @return
-     */
+    /** Returns true if the Bluetooth Adapter's name and address is locally cached */
     private boolean isNameAndAddressSet() {
         return mName != null && mAddress != null && mName.length() > 0 && mAddress.length() > 0;
     }

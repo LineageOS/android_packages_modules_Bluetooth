@@ -66,8 +66,6 @@ enum : uint8_t {
   BTM_INQUIRY_NONE = 0,
   BTM_INQUIRY_INACTIVE = 0x0,
   BTM_GENERAL_INQUIRY = 0x01,
-  /* SSP is active, so inquiry is disallowed (work around for FW bug) */
-  BTM_SSP_INQUIRY_ACTIVE = 0x4,
   /* high nibble of inquiry mode for BLE inquiry mode */
   BTM_BLE_GENERAL_INQUIRY = 0x10,
   BTM_BR_INQUIRY_MASK = (BTM_GENERAL_INQUIRY),
@@ -240,7 +238,6 @@ struct tBTM_INQUIRY_VAR_ST {
   uint16_t page_scan_type; /* current page scan type */
 
   RawAddress remname_bda; /* Name of bd addr for active remote name request */
-#define BTM_RMT_NAME_EXT 0x1 /* Initiated through API */
   bool remname_active; /* State of a remote name request by external API */
   tBT_DEVICE_TYPE remname_dev_type; /* Whether it's LE or BREDR name request */
 

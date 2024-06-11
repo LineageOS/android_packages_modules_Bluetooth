@@ -29,8 +29,8 @@ import android.os.Looper;
 import android.os.ParcelUuid;
 import android.os.RemoteException;
 
-import androidx.test.InstrumentationRegistry;
 import androidx.test.filters.MediumTest;
+import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
@@ -89,7 +89,7 @@ public class CsipSetCoordinatorServiceTest {
             System.setProperty("dexmaker.share_classloader", "true");
         }
 
-        mTargetContext = InstrumentationRegistry.getTargetContext();
+        mTargetContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
         if (Looper.myLooper() == null) {
             Looper.prepare();
         }

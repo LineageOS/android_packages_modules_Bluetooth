@@ -1401,7 +1401,7 @@ package android.bluetooth.le {
   public static final class ScanFilter.Builder {
     method @NonNull public android.bluetooth.le.ScanFilter.Builder setDeviceAddress(@NonNull String, int);
     method @NonNull public android.bluetooth.le.ScanFilter.Builder setDeviceAddress(@NonNull String, int, @NonNull byte[]);
-    method @NonNull public android.bluetooth.le.ScanFilter.Builder setTransportBlockFilter(@NonNull android.bluetooth.le.TransportBlockFilter);
+    method @NonNull @RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_SCAN, android.Manifest.permission.BLUETOOTH_PRIVILEGED}) public android.bluetooth.le.ScanFilter.Builder setTransportBlockFilter(@NonNull android.bluetooth.le.TransportBlockFilter);
     field public static final int LEN_IRK_OCTETS = 16; // 0x10
   }
 

@@ -90,7 +90,7 @@ public class ContextMap<C, T> {
         /** Context information */
         public T info;
 
-        /** Death receipient */
+        /** Death recipient */
         private IBinder.DeathRecipient mDeathRecipient;
 
         /** Flag to signal that transport is congested */

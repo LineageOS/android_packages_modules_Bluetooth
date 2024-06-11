@@ -362,7 +362,7 @@ public class MapClientStateMachineTest {
 
         // Send an empty notification event, verify the mMceStateMachine is still connected
         Message notification = Message.obtain(mHandler, MceStateMachine.MSG_NOTIFICATION);
-        mMceStateMachine.getCurrentState().processMessage(msg);
+        mMceStateMachine.getCurrentState().processMessage(notification);
         Assert.assertEquals(BluetoothProfile.STATE_CONNECTED, mMceStateMachine.getState());
     }
 
@@ -1241,7 +1241,7 @@ public class MapClientStateMachineTest {
         mMceStateMachine.sendSdpResult(MceStateMachine.SDP_SUCCESS, record);
     }
 
-    private class MockSmsContentProvider extends MockContentProvider {
+    private static class MockSmsContentProvider extends MockContentProvider {
         Map<Uri, ContentValues> mContentValues = new HashMap<>();
         int mInsertOperationCount = 0;
 

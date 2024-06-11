@@ -97,45 +97,25 @@ public class VolumeControlNativeInterface {
         return disconnectVolumeControlNative(getByteAddress(device));
     }
 
-    /**
-     * Sets the VolumeControl volume
-     *
-     * @param device
-     * @param volume
-     */
+    /** Sets the VolumeControl volume */
     @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
     public void setVolume(BluetoothDevice device, int volume) {
         setVolumeNative(getByteAddress(device), volume);
     }
 
-    /**
-     * Sets the VolumeControl volume for the group
-     *
-     * @param groupId
-     * @param volume
-     */
+    /** Sets the VolumeControl volume for the group */
     @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
     public void setGroupVolume(int groupId, int volume) {
         setGroupVolumeNative(groupId, volume);
     }
 
-    /**
-     * Mute the VolumeControl volume
-     *
-     * @param device
-     * @param unmute
-     */
+    /** Mute the VolumeControl volume */
     @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
     public void mute(BluetoothDevice device) {
         muteNative(getByteAddress(device));
     }
 
-    /**
-     * Mute the VolumeControl volume in the group
-     *
-     * @param groupId
-     * @param unmute
-     */
+    /** Mute the VolumeControl volume in the group */
     @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
     public void muteGroup(int groupId) {
         muteGroupNative(groupId);
@@ -147,12 +127,7 @@ public class VolumeControlNativeInterface {
         unmuteNative(getByteAddress(device));
     }
 
-    /**
-     * Unmute the VolumeControl volume group
-     *
-     * @param groupId
-     * @param unmute
-     */
+    /** Unmute the VolumeControl volume group */
     @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
     public void unmuteGroup(int groupId) {
         unmuteGroupNative(groupId);

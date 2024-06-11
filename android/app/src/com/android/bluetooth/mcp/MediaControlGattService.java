@@ -1206,7 +1206,7 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
      * to test the correct functioning of the McpService class, the final class must be put into a
      * container that can be mocked correctly.
      */
-    public class BluetoothGattServerProxy {
+    public static class BluetoothGattServerProxy {
         private BluetoothGattServer mBluetoothGattServer;
         private BluetoothManager mBluetoothManager;
 

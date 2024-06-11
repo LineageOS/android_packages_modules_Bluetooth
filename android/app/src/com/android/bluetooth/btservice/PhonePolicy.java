@@ -175,10 +175,7 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
 
     PhonePolicy(AdapterService service, ServiceFactory factory) {
         mAdapterService = service;
-        mDatabaseManager =
-                Objects.requireNonNull(
-                        mAdapterService.getDatabase(),
-                        "DatabaseManager cannot be null when PhonePolicy starts");
+        mDatabaseManager = Objects.requireNonNull(service.getDatabase());
         mFactory = factory;
         mHandler = new PhonePolicyHandler(service.getMainLooper());
         mAutoConnectProfilesSupported =
@@ -285,6 +282,23 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
         return isLeAudioOnlyGroup(device);
     }
 
+    // return true if device support Hearing Access Service and it has not been manually disabled
+    private boolean shouldEnableHapByDefault(BluetoothDevice device, ParcelUuid[] uuids) {
+        if (!Flags.enableHapByDefault()) {
+            Log.i(TAG, "shouldDefaultToHap: Flag enableHapByDefault is disabled");
+            return false;
+        }
+
+        HapClientService hap = mFactory.getHapClientService();
+        if (hap == null) {
+            Log.e(TAG, "shouldDefaultToHap: HapClient is null");
+            return false;
+        }
+
+        return Utils.arrayContains(uuids, BluetoothUuid.HAS)
+                && hap.getConnectionPolicy(device) != BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
+    }
+
     // Policy implementation, all functions MUST be private
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)
     private void processInitProfilePriorities(BluetoothDevice device, ParcelUuid[] uuids) {
@@ -306,6 +320,7 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
                 SystemProperties.getBoolean(BYPASS_LE_AUDIO_ALLOWLIST_PROPERTY, false);
 
         boolean isLeAudioOnly = isLeAudioOnlyDevice(device, uuids);
+        boolean shouldEnableHapByDefault = shouldEnableHapByDefault(device, uuids);
         boolean isLeAudioProfileAllowed =
                 (leAudioService != null)
                         && Utils.arrayContains(uuids, BluetoothUuid.LE_AUDIO)
@@ -313,9 +328,9 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
                                 != BluetoothProfile.CONNECTION_POLICY_FORBIDDEN)
                         && (mLeAudioEnabledByDefault || isDualModeAudioEnabled())
                         && (isBypassLeAudioAllowlist
+                                || shouldEnableHapByDefault
                                 || mAdapterService.isLeAudioAllowed(device)
                                 || isLeAudioOnly);
-
         debugLog(
                 "mLeAudioEnabledByDefault: "
                         + mLeAudioEnabledByDefault
@@ -328,7 +343,9 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
                         + ", isLeAudioProfileAllowed: "
                         + isLeAudioProfileAllowed
                         + ", isLeAudioOnly: "
-                        + isLeAudioOnly);
+                        + isLeAudioOnly
+                        + ", shouldEnableHapByDefault: "
+                        + shouldEnableHapByDefault);
 
         // Set profile priorities only for the profiles discovered on the remote device.
         // This avoids needless auto-connect attempts to profiles non-existent on the remote device
@@ -516,7 +533,7 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
                 && (hearingAidService.getConnectionPolicy(device)
                         == BluetoothProfile.CONNECTION_POLICY_UNKNOWN)) {
             if (isLeAudioProfileAllowed) {
-                debugLog("LE Audio preferred over ASHA for device " + device);
+                Log.i(TAG, "LE Audio preferred over ASHA for device " + device);
                 mAdapterService
                         .getDatabase()
                         .setProfileConnectionPolicy(

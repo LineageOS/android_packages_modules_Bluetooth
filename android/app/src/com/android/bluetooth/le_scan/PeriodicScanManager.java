@@ -62,7 +62,7 @@ public class PeriodicScanManager {
         sTempRegistrationId = -1;
     }
 
-    class SyncTransferInfo {
+    static class SyncTransferInfo {
         public String address;
         public SyncDeathRecipient deathRecipient;
         public IPeriodicAdvertisingCallback callback;
@@ -73,7 +73,7 @@ public class PeriodicScanManager {
         }
     }
 
-    class SyncInfo {
+    static class SyncInfo {
         /* When id is negative, the registration is ongoing. When the registration finishes, id
          * becomes equal to sync_handle */
         public Integer id;

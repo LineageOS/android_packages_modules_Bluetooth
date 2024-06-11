@@ -927,7 +927,6 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
         }
         BluetoothMethodProxy.getInstance()
                 .handlerSendEmptyMessage(mSessionHandler, TRANSPORT_ERROR);
-        return;
     }
 
     /* update a trivial field of a share to notify Provider the batch status change */

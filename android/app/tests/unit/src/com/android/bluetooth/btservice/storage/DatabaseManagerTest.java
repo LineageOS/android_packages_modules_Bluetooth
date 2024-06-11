@@ -43,8 +43,8 @@ import androidx.room.Room;
 import androidx.room.testing.MigrationTestHelper;
 import androidx.sqlite.db.SupportSQLiteDatabase;
 import androidx.sqlite.db.framework.FrameworkSQLiteOpenHelperFactory;
-import androidx.test.InstrumentationRegistry;
 import androidx.test.filters.MediumTest;
+import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
@@ -117,11 +117,15 @@ public final class DatabaseManagerTest {
         // Create a memory database for DatabaseManager instead of use a real database.
         mDatabase =
                 Room.inMemoryDatabaseBuilder(
-                                InstrumentationRegistry.getTargetContext(), MetadataDatabase.class)
+                                InstrumentationRegistry.getInstrumentation().getTargetContext(),
+                                MetadataDatabase.class)
                         .build();
 
         when(mAdapterService.getPackageManager())
-                .thenReturn(InstrumentationRegistry.getTargetContext().getPackageManager());
+                .thenReturn(
+                        InstrumentationRegistry.getInstrumentation()
+                                .getTargetContext()
+                                .getPackageManager());
 
         mDatabaseManager = new DatabaseManager(mAdapterService);
 

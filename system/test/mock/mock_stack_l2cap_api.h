@@ -256,15 +256,15 @@ struct L2CA_DisconnectLECocReq {
   bool operator()(uint16_t cid) { return body(cid); };
 };
 extern struct L2CA_DisconnectLECocReq L2CA_DisconnectLECocReq;
-// Name: L2CA_GetRemoteCid
+// Name: L2CA_GetRemoteChannelId
 // Params: uint16_t lcid, uint16_t* rcid
 // Returns: bool
-struct L2CA_GetRemoteCid {
+struct L2CA_GetRemoteChannelId {
   std::function<bool(uint16_t lcid, uint16_t* rcid)> body{
       [](uint16_t /* lcid */, uint16_t* /* rcid */) { return false; }};
   bool operator()(uint16_t lcid, uint16_t* rcid) { return body(lcid, rcid); };
 };
-extern struct L2CA_GetRemoteCid L2CA_GetRemoteCid;
+extern struct L2CA_GetRemoteChannelId L2CA_GetRemoteChannelId;
 // Name: L2CA_SetIdleTimeoutByBdAddr
 // Params: const RawAddress& bd_addr, uint16_t timeout, tBT_TRANSPORT transport
 // Returns: bool

@@ -116,7 +116,6 @@ public class A2dpSinkNativeInterface {
      *
      * <p>Sending null for the active device will make no device active.
      *
-     * @param device
      * @return True if the active device request has been scheduled
      */
     public boolean setActiveDevice(BluetoothDevice device) {
@@ -130,20 +129,12 @@ public class A2dpSinkNativeInterface {
         return setActiveDeviceNative(address);
     }
 
-    /**
-     * Inform A2DP decoder of the current audio focus
-     *
-     * @param focusGranted
-     */
+    /** Inform A2DP decoder of the current audio focus */
     public void informAudioFocusState(int focusGranted) {
         informAudioFocusStateNative(focusGranted);
     }
 
-    /**
-     * Inform A2DP decoder the desired audio gain
-     *
-     * @param gain
-     */
+    /** Inform A2DP decoder the desired audio gain */
     public void informAudioTrackGain(float gain) {
         informAudioTrackGainNative(gain);
     }

@@ -32,8 +32,8 @@ import android.os.HandlerThread;
 import android.os.TestLooperManager;
 import android.util.Log;
 
-import androidx.test.InstrumentationRegistry;
 import androidx.test.filters.SmallTest;
+import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.R;
@@ -95,7 +95,8 @@ public class MediaPlayerWrapperTest {
     public void setUp() {
 
         mTestResources =
-                TestUtils.getTestApplicationResources(InstrumentationRegistry.getTargetContext());
+                TestUtils.getTestApplicationResources(
+                        InstrumentationRegistry.getInstrumentation().getTargetContext());
         mTestBitmap = loadImage(com.android.bluetooth.tests.R.raw.image_200_200);
 
         when(mMockResources.getBoolean(R.bool.avrcp_target_cover_art_uri_images)).thenReturn(true);
@@ -247,7 +248,6 @@ public class MediaPlayerWrapperTest {
     @Test
     public void testNoQueueMediaUpdates() {
         // Create the wrapper object and register the looper with the timeout handler
-        TestLooperManager looperManager = new TestLooperManager(mThread.getLooper());
         MediaPlayerWrapper wrapper =
                 MediaPlayerWrapperFactory.wrap(mMockContext, mMockController, mThread.getLooper());
         wrapper.registerCallback(mTestCbs);
@@ -309,7 +309,6 @@ public class MediaPlayerWrapperTest {
     @Test
     public void testDataOnUpdateNoQueue() {
         // Create the wrapper object and register the looper with the timeout handler
-        TestLooperManager looperManager = new TestLooperManager(mThread.getLooper());
         MediaPlayerWrapper wrapper =
                 MediaPlayerWrapperFactory.wrap(mMockContext, mMockController, mThread.getLooper());
         wrapper.registerCallback(mTestCbs);
@@ -353,7 +352,6 @@ public class MediaPlayerWrapperTest {
     @Test
     public void testNullMetadata() {
         // Create the wrapper object and register the looper with the timeout handler
-        TestLooperManager looperManager = new TestLooperManager(mThread.getLooper());
         MediaPlayerWrapper wrapper =
                 MediaPlayerWrapperFactory.wrap(mMockContext, mMockController, mThread.getLooper());
         wrapper.registerCallback(mTestCbs);
@@ -384,7 +382,6 @@ public class MediaPlayerWrapperTest {
     @Test
     public void testNullPlayback() {
         // Create the wrapper object and register the looper with the timeout handler
-        TestLooperManager looperManager = new TestLooperManager(mThread.getLooper());
         MediaPlayerWrapper wrapper =
                 MediaPlayerWrapperFactory.wrap(mMockContext, mMockController, mThread.getLooper());
         wrapper.registerCallback(mTestCbs);
@@ -416,7 +413,6 @@ public class MediaPlayerWrapperTest {
     @Test
     public void testNullQueue() {
         // Create the wrapper object and register the looper with the timeout handler
-        TestLooperManager looperManager = new TestLooperManager(mThread.getLooper());
         MediaPlayerWrapper wrapper =
                 MediaPlayerWrapperFactory.wrap(mMockContext, mMockController, mThread.getLooper());
         wrapper.registerCallback(mTestCbs);
@@ -443,7 +439,6 @@ public class MediaPlayerWrapperTest {
     @Test
     public void testQueueCached() {
         // Create the wrapper object and register the looper with the timeout handler
-        TestLooperManager looperManager = new TestLooperManager(mThread.getLooper());
         MediaPlayerWrapper wrapper =
                 MediaPlayerWrapperFactory.wrap(mMockContext, mMockController, mThread.getLooper());
         wrapper.registerCallback(mTestCbs);
@@ -497,7 +492,6 @@ public class MediaPlayerWrapperTest {
     @Test
     public void testPlaybackStateUpdateSpam() {
         // Create the wrapper object and register the looper with the timeout handler
-        TestLooperManager looperManager = new TestLooperManager(mThread.getLooper());
         MediaPlayerWrapper wrapper =
                 MediaPlayerWrapperFactory.wrap(mMockContext, mMockController, mThread.getLooper());
         wrapper.registerCallback(mTestCbs);
@@ -553,7 +547,6 @@ public class MediaPlayerWrapperTest {
     @Test
     public void testWrapperCleanup() {
         // Create the wrapper object and register the looper with the timeout handler
-        TestLooperManager looperManager = new TestLooperManager(mThread.getLooper());
         MediaPlayerWrapper wrapper =
                 MediaPlayerWrapperFactory.wrap(mMockContext, mMockController, mThread.getLooper());
         wrapper.registerCallback(mTestCbs);
@@ -573,7 +566,6 @@ public class MediaPlayerWrapperTest {
     @Test
     public void testIgnorePlaystateNone() {
         // Create the wrapper object and register the looper with the timeout handler
-        TestLooperManager looperManager = new TestLooperManager(mThread.getLooper());
         MediaPlayerWrapper wrapper =
                 MediaPlayerWrapperFactory.wrap(mMockContext, mMockController, mThread.getLooper());
         wrapper.registerCallback(mTestCbs);
@@ -603,7 +595,6 @@ public class MediaPlayerWrapperTest {
     @Test
     public void testMetadataSync() {
         // Create the wrapper object and register the looper with the timeout handler
-        TestLooperManager looperManager = new TestLooperManager(mThread.getLooper());
         MediaPlayerWrapper wrapper =
                 MediaPlayerWrapperFactory.wrap(mMockContext, mMockController, mThread.getLooper());
         wrapper.registerCallback(mTestCbs);
@@ -657,7 +648,7 @@ public class MediaPlayerWrapperTest {
 
     /*
      * Test to make sure that an error occurs when the MediaController fails to
-     * update all its media data in a resonable amount of time.
+     * update all its media data in a reasonable amount of time.
      */
     @Test
     public void testMetadataSyncFail() {
@@ -712,9 +703,6 @@ public class MediaPlayerWrapperTest {
         final int numTestLoops = 100;
 
         // Create the wrapper object and register the looper with the timeout handler
-        TestLooperManager looperManager =
-                InstrumentationRegistry.getInstrumentation()
-                        .acquireLooperManager(mThread.getLooper());
         MediaPlayerWrapper wrapper =
                 MediaPlayerWrapperFactory.wrap(mMockContext, mMockController, mThread.getLooper());
         wrapper.registerCallback(mTestCbs);

@@ -110,6 +110,7 @@ class CodecManager {
       const std::vector<struct types::cis>& cises,
       const stream_parameters& stream_params, uint8_t direction);
   virtual void ClearCisConfiguration(uint8_t direction);
+  virtual bool IsUsingCodecExtensibility() const;
   virtual bool UpdateActiveUnicastAudioHalClient(
       LeAudioSourceAudioHalClient* source_unicast_client,
       LeAudioSinkAudioHalClient* sink_unicast_client, bool is_active);

@@ -71,7 +71,7 @@ public class AtPhonebook {
     private static final String MISSED_CALL_WHERE = Calls.TYPE + "=" + Calls.MISSED_TYPE;
 
     @VisibleForTesting
-    class PhonebookResult {
+    static class PhonebookResult {
         public Cursor cursor; // result set of last query
         public int numberColumn;
         public int numberPresentationColumn;

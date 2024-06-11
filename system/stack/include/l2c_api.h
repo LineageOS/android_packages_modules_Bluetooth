@@ -52,9 +52,11 @@
 #define L2CAP_FCS_LENGTH 2
 
 /* result code for L2CA_DataWrite() */
-#define L2CAP_DW_FAILED false
-#define L2CAP_DW_SUCCESS true
-#define L2CAP_DW_CONGESTED 2
+typedef enum : uint8_t {
+  L2CAP_DW_FAILED = 0,
+  L2CAP_DW_SUCCESS = 1,
+  L2CAP_DW_CONGESTED = 2,
+} tL2CAP_DW_RESULT;
 
 /* Values for priority parameter to L2CA_SetAclPriority */
 typedef enum : uint8_t {
@@ -586,11 +588,22 @@ void L2CA_DeregisterLECoc(uint16_t psm);
 
 [[nodiscard]] uint8_t L2CA_LECocDataWrite(uint16_t cid, BT_HDR* p_data);
 
-// Given a local channel identifier, |lcid|, this function returns the bound
-// remote channel identifier, |rcid|. If
-// |lcid| is not known or is invalid, this function returns false and does not
-// modify the value pointed at by |rcid|. |rcid| may be NULL.
-[[nodiscard]] bool L2CA_GetRemoteCid(uint16_t lcid, uint16_t* rcid);
+/*******************************************************************************
+ *
+ *  Function        L2CA_GetRemoteChannelId
+ *
+ *  Description     Given a local channel identifier, |lcid|, this function
+ *                  returns the bound remote channel identifier, |rcid|. If
+ *                  |lcid| is not known or is invalid, this function returns
+ *                  false and does not modify the value pointed at by |rcid|.
+ *
+ *  Parameters:     lcid: Local CID
+ *                  rcid: Pointer to remote CID must NOT be nullptr
+ *
+ *  Return value:   true if rcid lookup was successful
+ *
+ ******************************************************************************/
+[[nodiscard]] bool L2CA_GetRemoteChannelId(uint16_t lcid, uint16_t* rcid);
 
 /*******************************************************************************
  *
@@ -945,20 +958,6 @@ void L2CA_SetMediaStreamChannel(uint16_t local_media_cid, bool status);
 *******************************************************************************/
 [[nodiscard]] bool L2CA_isMediaChannel(uint16_t handle, uint16_t channel_id,
                                        bool is_local_cid);
-
-/*******************************************************************************
- *
- *  Function        L2CA_GetPeerChannelId
- *
- *  Description     Get remote channel ID for Connection Oriented Channel.
- *
- *  Parameters:     lcid: Local CID
- *                  rcid: Pointer to remote CID
- *
- *  Return value:   true if peer is connected
- *
- ******************************************************************************/
-[[nodiscard]] bool L2CA_GetPeerChannelId(uint16_t lcid, uint16_t* rcid);
 
 namespace fmt {
 template <>

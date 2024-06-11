@@ -842,7 +842,7 @@ class MceStateMachine extends StateMachine {
          * <p>Message notifications arrive for both remote message reception and Message-Listing
          * object updates that are triggered by the server side.
          *
-         * @param msg - A Message object containing a EventReport object describing the remote event
+         * @param event - object describing the remote event
          */
         private void processNotification(EventReport event) {
             Log.i(
@@ -1153,9 +1153,6 @@ class MceStateMachine extends StateMachine {
         /**
          * Retrieves the URIs of all the participants of a group conversation, besides the sender of
          * the message.
-         *
-         * @param recipients
-         * @return
          */
         private String[] getRecipientsUri(ArrayList<VCardEntry> recipients) {
             Set<String> uris = new HashSet<>();

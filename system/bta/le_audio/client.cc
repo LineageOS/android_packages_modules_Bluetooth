@@ -3286,10 +3286,7 @@ class LeAudioClientImpl : public LeAudioClient {
         "{},  {}", leAudioDevice->address_,
         bluetooth::common::ToString(leAudioDevice->GetConnectionState()));
 
-    if (com::android::bluetooth::flags::le_audio_fast_bond_params()) {
-      L2CA_LockBleConnParamsForProfileConnection(leAudioDevice->address_,
-                                                 false);
-    }
+    L2CA_LockBleConnParamsForProfileConnection(leAudioDevice->address_, false);
 
     if (leAudioDevice->GetConnectionState() ==
             DeviceConnectState::CONNECTED_BY_USER_GETTING_READY &&
@@ -3892,6 +3889,9 @@ class LeAudioClientImpl : public LeAudioClient {
     }
     dprintf(fd, "  Source monitor mode: %s\n",
             source_monitor_mode_ ? "true" : "false");
+    dprintf(fd, "  Codec extensibility: %s\n",
+            CodecManager::GetInstance()->IsUsingCodecExtensibility() ? "true"
+                                                                     : "false");
     dprintf(fd, "  Start time: ");
     for (auto t : stream_start_history_queue_) {
       dprintf(fd, ", %d ms", static_cast<int>(t));

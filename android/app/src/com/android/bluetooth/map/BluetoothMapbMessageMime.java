@@ -520,12 +520,7 @@ public class BluetoothMapbMessageMime extends BluetoothMapbMessage {
      * US-ASCII text in the headers.
      * */
 
-    /**
-     * Encode the bMessage as a Mime message(MMS/IM)
-     *
-     * @return
-     * @throws UnsupportedEncodingException
-     */
+    /** Encode the bMessage as a Mime message(MMS/IM) */
     public byte[] encodeMime() throws UnsupportedEncodingException {
         ArrayList<byte[]> bodyFragments = new ArrayList<byte[]>();
         StringBuilder sb = new StringBuilder();

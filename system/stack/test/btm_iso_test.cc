@@ -1124,8 +1124,8 @@ TEST_F(IsoManagerTest, EstablishCisInvalidCommandStatus) {
 }
 
 TEST_F(IsoManagerTest, EstablishCisInvalidStatus) {
-  IsoManager::GetInstance()->CreateCig(
-      volatile_test_cig_create_cmpl_evt_.cig_id, kDefaultCigParams);
+  uint8_t cig_id = volatile_test_cig_create_cmpl_evt_.cig_id;
+  IsoManager::GetInstance()->CreateCig(cig_id, kDefaultCigParams);
   uint8_t invalid_status = 0x01;
 
   ON_CALL(hcic_interface_, CreateCis)
@@ -1163,12 +1163,14 @@ TEST_F(IsoManagerTest, EstablishCisInvalidStatus) {
       *cig_callbacks_,
       OnCisEvent(bluetooth::hci::iso_manager::kIsoEventCisEstablishCmpl, _))
       .Times(kDefaultCigParams.cis_cfgs.size())
-      .WillRepeatedly([this, invalid_status](uint8_t /* type */, void* data) {
+      .WillRepeatedly([this, invalid_status, cig_id](uint8_t /* type */,
+                                                     void* data) {
         bluetooth::hci::iso_manager::cis_establish_cmpl_evt* evt =
             static_cast<bluetooth::hci::iso_manager::cis_establish_cmpl_evt*>(
                 data);
 
         ASSERT_EQ(evt->status, invalid_status);
+        ASSERT_EQ(evt->cig_id, cig_id);
         ASSERT_TRUE(
             std::find(volatile_test_cig_create_cmpl_evt_.conn_handles.begin(),
                       volatile_test_cig_create_cmpl_evt_.conn_handles.end(),

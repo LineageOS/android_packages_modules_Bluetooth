@@ -31,7 +31,7 @@ class HandleMap {
     public static final int TYPE_CHARACTERISTIC = 2;
     public static final int TYPE_DESCRIPTOR = 3;
 
-    class Entry {
+    static class Entry {
         public int serverIf = 0;
         public int type = TYPE_UNDEFINED;
         public int handle = 0;

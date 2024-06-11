@@ -85,8 +85,7 @@ public class TransitionalScanHelperTest {
     private TransitionalScanHelper mScanHelper;
     @Mock private TransitionalScanHelper.ScannerMap mScannerMap;
 
-    @Mock
-    private TransitionalScanHelper.ScannerMap.App mApp;
+    @Mock private ContextMap.App mApp;
 
     @Mock private TransitionalScanHelper.PendingIntentInfo mPiInfo;
     @Mock private PeriodicScanManager mPeriodicScanManager;

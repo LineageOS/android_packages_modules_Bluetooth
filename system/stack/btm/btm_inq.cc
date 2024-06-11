@@ -92,10 +92,6 @@
 namespace {
 constexpr char kBtmLogTag[] = "SCAN";
 
-struct {
-  bool inq_by_rssi{false};
-} internal_;
-
 void btm_log_history_scan_mode(uint8_t scan_mode) {
   static uint8_t scan_mode_cached_ = 0xff;
   if (scan_mode_cached_ == scan_mode) return;
@@ -242,7 +238,7 @@ static void btm_init_inq_result_flt(void);
 void btm_clr_inq_result_flt(void);
 static void btm_inq_rmt_name_failed_cancelled(void);
 static tBTM_STATUS btm_initiate_rem_name(const RawAddress& remote_bda,
-                                         uint8_t origin, uint64_t timeout_ms,
+                                         uint64_t timeout_ms,
                                          tBTM_NAME_CMPL_CB* p_cb);
 
 static uint8_t btm_convert_uuid_to_eir_service(uint16_t uuid16);
@@ -258,6 +254,9 @@ void SendRemoteNameRequest(const RawAddress& raw_address) {
 }
 static void btm_process_cancel_complete(tHCI_STATUS status, uint8_t mode);
 static void on_incoming_hci_event(bluetooth::hci::EventView event);
+static bool is_inquery_by_rssi() {
+  return osi_property_get_bool(PROPERTY_INQ_BY_RSSI, false);
+}
 /*******************************************************************************
  *
  * Function         BTM_SetDiscoverability
@@ -749,17 +748,6 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
   // with other scanners.
   BTM_StartLeScan();
 
-  if (btm_cb.btm_inq_vars.inq_active & BTM_SSP_INQUIRY_ACTIVE) {
-    log::info("Not starting inquiry as SSP is in progress");
-    // Report the status here because inq_complete will cancel it below
-    BTIF_dm_report_inquiry_status_change(
-        tBTM_INQUIRY_STATE::BTM_INQUIRY_STARTED);
-
-    btm_process_inq_complete(HCI_ERR_MAX_NUM_OF_CONNECTIONS,
-                             BTM_GENERAL_INQUIRY);
-    return BTM_CMD_STARTED;
-  }
-
   btm_clr_inq_result_flt();
 
   btm_init_inq_result_flt();
@@ -832,8 +820,7 @@ tBTM_STATUS BTM_ReadRemoteDeviceName(const RawAddress& remote_bda,
     return btm_ble_read_remote_name(remote_bda, p_cb);
   }
   /* Use classic transport for BR/EDR and Dual Mode devices */
-  return btm_initiate_rem_name(remote_bda, BTM_RMT_NAME_EXT,
-                               BTM_EXT_RMT_NAME_TIMEOUT_MS, p_cb);
+  return btm_initiate_rem_name(remote_bda, BTM_EXT_RMT_NAME_TIMEOUT_MS, p_cb);
 }
 
 /*******************************************************************************
@@ -1078,10 +1065,6 @@ void btm_inq_db_reset(void) {
   return;
 }
 
-void btm_inq_db_set_inq_by_rssi(void) {
-  internal_.inq_by_rssi = osi_property_get_bool(PROPERTY_INQ_BY_RSSI, false);
-}
-
 /*******************************************************************************
  *
  * Function         btm_inq_clear_ssp
@@ -1091,9 +1074,7 @@ void btm_inq_db_set_inq_by_rssi(void) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_inq_clear_ssp(void) {
-  btm_cb.btm_inq_vars.inq_active &= ~BTM_SSP_INQUIRY_ACTIVE;
-}
+void btm_inq_clear_ssp(void) {}
 
 /*******************************************************************************
  *
@@ -1254,7 +1235,7 @@ tINQ_DB_ENT* btm_inq_db_new(const RawAddress& p_bda, bool is_ble) {
       return (p_ent);
     }
 
-    if (internal_.inq_by_rssi) {
+    if (is_inquery_by_rssi()) {
       if (p_ent->inq_info.results.rssi < i_rssi) {
         p_old = p_ent;
         i_rssi = p_ent->inq_info.results.rssi;
@@ -1871,68 +1852,67 @@ static void btm_process_cancel_complete(tHCI_STATUS status, uint8_t mode) {
  *                  called either by GAP or by the API call
  *                  BTM_ReadRemoteDeviceName.
  *
- * Input Params:    p_cb            - callback function called when
- *                                    BTM_CMD_STARTED is returned.
- *                                    A pointer to tBTM_REMOTE_DEV_NAME is
- *                                    passed to the callback.
+ * Input Params:    remote_bda: Remote address to execute RNR
+ *                  timeout_ms: Internal timeout to await response
+ * *                p_cb:       Callback function called when
+ *                              BTM_CMD_STARTED is returned.
+ *                              A pointer to tBTM_REMOTE_DEV_NAME is
+ *                              passed to the callback.
  *
  * Returns
  *                  BTM_CMD_STARTED is returned if the request was sent to HCI.
+ *                    and the callback will be called.
  *                  BTM_BUSY if already in progress
  *                  BTM_NO_RESOURCES if could not allocate resources to start
  *                                   the command
  *                  BTM_WRONG_MODE if the device is not up.
  *
  ******************************************************************************/
-tBTM_STATUS btm_initiate_rem_name(const RawAddress& remote_bda, uint8_t origin,
+tBTM_STATUS btm_initiate_rem_name(const RawAddress& remote_bda,
                                   uint64_t timeout_ms,
                                   tBTM_NAME_CMPL_CB* p_cb) {
   /*** Make sure the device is ready ***/
   if (!BTM_IsDeviceUp()) return (BTM_WRONG_MODE);
-  if (origin == BTM_RMT_NAME_EXT) {
-    if (btm_cb.btm_inq_vars.remname_active) {
-      return (BTM_BUSY);
-    } else {
-      /* If there is no remote name request running,call the callback function
-       * and start timer */
-      btm_cb.btm_inq_vars.p_remname_cmpl_cb = p_cb;
-      btm_cb.btm_inq_vars.remname_bda = remote_bda;
-      btm_cb.btm_inq_vars.remname_dev_type = BT_DEVICE_TYPE_BREDR;
+  if (btm_cb.btm_inq_vars.remname_active) {
+    return (BTM_BUSY);
+  } else {
+    /* If there is no remote name request running,call the callback function
+     * and start timer */
+    btm_cb.btm_inq_vars.p_remname_cmpl_cb = p_cb;
+    btm_cb.btm_inq_vars.remname_bda = remote_bda;
+    btm_cb.btm_inq_vars.remname_dev_type = BT_DEVICE_TYPE_BREDR;
 
-      alarm_set_on_mloop(btm_cb.btm_inq_vars.remote_name_timer, timeout_ms,
-                         btm_inq_remote_name_timer_timeout, NULL);
+    alarm_set_on_mloop(btm_cb.btm_inq_vars.remote_name_timer, timeout_ms,
+                       btm_inq_remote_name_timer_timeout, NULL);
 
-      /* If the database entry exists for the device, use its clock offset */
-      tINQ_DB_ENT* p_i = btm_inq_db_find(remote_bda);
-      if (p_i &&
-          (p_i->inq_info.results.inq_result_type & BT_DEVICE_TYPE_BREDR)) {
-        tBTM_INQ_INFO* p_cur = &p_i->inq_info;
-        uint16_t clock_offset = p_cur->results.clock_offset | BTM_CLOCK_OFFSET_VALID;
-        int clock_offset_in_cfg = 0;
-        if (0 == (p_cur->results.clock_offset & BTM_CLOCK_OFFSET_VALID)) {
-          if (btif_get_device_clockoffset(remote_bda, &clock_offset_in_cfg)) {
-            clock_offset = clock_offset_in_cfg;
-          }
-        }
-        bluetooth::shim::ACL_RemoteNameRequest(
-            remote_bda, p_cur->results.page_scan_rep_mode,
-            p_cur->results.page_scan_mode, clock_offset);
-      } else {
-        uint16_t clock_offset = 0;
-        int clock_offset_in_cfg = 0;
+    /* If the database entry exists for the device, use its clock offset */
+    tINQ_DB_ENT* p_i = btm_inq_db_find(remote_bda);
+    if (p_i && (p_i->inq_info.results.inq_result_type & BT_DEVICE_TYPE_BREDR)) {
+      tBTM_INQ_INFO* p_cur = &p_i->inq_info;
+      uint16_t clock_offset =
+          p_cur->results.clock_offset | BTM_CLOCK_OFFSET_VALID;
+      int clock_offset_in_cfg = 0;
+      if (0 == (p_cur->results.clock_offset & BTM_CLOCK_OFFSET_VALID)) {
         if (btif_get_device_clockoffset(remote_bda, &clock_offset_in_cfg)) {
           clock_offset = clock_offset_in_cfg;
         }
-        bluetooth::shim::ACL_RemoteNameRequest(
-            remote_bda, HCI_PAGE_SCAN_REP_MODE_R1, HCI_MANDATARY_PAGE_SCAN_MODE,
-            clock_offset);
       }
-
-      btm_cb.btm_inq_vars.remname_active = true;
-      return BTM_CMD_STARTED;
+      bluetooth::shim::ACL_RemoteNameRequest(
+          remote_bda, p_cur->results.page_scan_rep_mode,
+          p_cur->results.page_scan_mode, clock_offset);
+    } else {
+      uint16_t clock_offset = 0;
+      int clock_offset_in_cfg = 0;
+      if (btif_get_device_clockoffset(remote_bda, &clock_offset_in_cfg)) {
+        clock_offset = clock_offset_in_cfg;
+      }
+      bluetooth::shim::ACL_RemoteNameRequest(
+          remote_bda, HCI_PAGE_SCAN_REP_MODE_R1, HCI_MANDATARY_PAGE_SCAN_MODE,
+          clock_offset);
     }
-  } else {
-    return BTM_ILLEGAL_VALUE;
+
+    btm_cb.btm_inq_vars.remname_active = true;
+    return BTM_CMD_STARTED;
   }
 }
 

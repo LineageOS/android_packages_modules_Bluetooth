@@ -86,12 +86,8 @@ public class AvrcpControllerServiceTest {
     @Mock private AvrcpControllerStateMachine mStateMachine2;
     @Mock private AvrcpControllerNativeInterface mNativeInterface;
 
-    @Mock private Resources mMockResources;
-
     private BluetoothDevice mRemoteDevice;
     private BluetoothDevice mRemoteDevice2;
-
-    @Mock private AvrcpControllerStateMachine mAvrcpStateMachine;
 
     @Before
     public void setUp() throws Exception {
@@ -105,8 +101,6 @@ public class AvrcpControllerServiceTest {
         assertThat(mAdapter).isNotNull();
         // Set a mock A2dpSinkService for audio focus calls
         A2dpSinkService.setA2dpSinkService(mA2dpSinkService);
-        when(mMockResources.getBoolean(R.bool.a2dp_sink_automatically_request_audio_focus))
-                .thenReturn(true);
 
         mRemoteDevice = mAdapter.getRemoteDevice(REMOTE_DEVICE_ADDRESS);
         mService.mDeviceStateMap.put(mRemoteDevice, mStateMachine);

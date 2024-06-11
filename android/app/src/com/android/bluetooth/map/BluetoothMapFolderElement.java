@@ -327,8 +327,6 @@ public class BluetoothMapFolderElement implements Comparable<BluetoothMapFolderE
      * will be inherited from parent folder - with regards to message types in the folder.
      *
      * @param xmlDocument - InputStream with the document
-     * @throws XmlPullParserException
-     * @throws IOException
      */
     public void appendSubfolders(InputStream xmlDocument)
             throws XmlPullParserException, IOException {
@@ -361,8 +359,6 @@ public class BluetoothMapFolderElement implements Comparable<BluetoothMapFolderE
      * Parses folder elements, and add to mSubFolders.
      *
      * @param parser the Xml Parser currently pointing to an folder-listing tag.
-     * @throws XmlPullParserException
-     * @throws IOException
      */
     public void readFolders(XmlPullParser parser) throws XmlPullParserException, IOException {
         int type;
