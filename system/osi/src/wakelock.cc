@@ -132,7 +132,7 @@ static bt_status_t wakelock_acquire_native(void) {
   locked_id_len = write(wake_lock_fd, WAKE_LOCK_ID, lock_name_len);
   if (locked_id_len == -1) {
     log::error("wake lock not acquired: {}", strerror(errno));
-    return BT_STATUS_FAIL;
+    return BT_STATUS_WAKELOCK_ERROR;
   } else if (locked_id_len < lock_name_len) {
     // TODO (jamuraa): this is weird. maybe we should release and retry.
     log::warn("wake lock truncated to {} chars", locked_id_len);
