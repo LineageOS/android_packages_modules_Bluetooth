@@ -135,9 +135,7 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Hegaldi moduan, Bluetootha aktibatuta mantentzeaz gogoratzen da gailua. Halakorik nahi ez baduzu, desaktiba ezazu zuk zeuk."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wifia eta Bluetootha aktibatuta mantentzen dira"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Hegaldi moduan, wifia eta Bluetootha aktibatuta mantentzeaz gogoratzen da gailua. Halakorik nahi ez baduzu, desaktiba itzazu zuk zeuk."</string>
-    <!-- no translation found for bluetooth_enabled_auto_on_title (8983664142805050578) -->
-    <skip />
-    <!-- no translation found for bluetooth_enabled_auto_on_message (2790514825041114851) -->
-    <skip />
+    <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Berriro aktibatu da Bluetootha"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="2790514825041114851">"Ezarpenetan alda dezakezu aukera hori"</string>
     <string name="bluetooth_notification_group" msgid="7251886707585872194">"Bluetootharen egoera automatikoki aldatu da"</string>
 </resources>

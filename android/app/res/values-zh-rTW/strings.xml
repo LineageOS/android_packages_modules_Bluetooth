@@ -135,9 +135,7 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"裝置會記得在飛航模式下讓藍牙保持開啟狀態。如果不要保持開啟狀態，請關閉藍牙。"</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi 和藍牙會保持開啟狀態"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"裝置會記得在飛航模式下讓 Wi-Fi 和藍牙保持開啟狀態。如果不要保持開啟狀態，請關閉 Wi-Fi 和藍牙。"</string>
-    <!-- no translation found for bluetooth_enabled_auto_on_title (8983664142805050578) -->
-    <skip />
-    <!-- no translation found for bluetooth_enabled_auto_on_message (2790514825041114851) -->
-    <skip />
+    <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"藍牙已重新開啟"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="2790514825041114851">"你隨時可以前往「設定」進行變更"</string>
     <string name="bluetooth_notification_group" msgid="7251886707585872194">"藍牙自動狀態變更"</string>
 </resources>

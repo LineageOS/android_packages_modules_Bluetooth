@@ -135,9 +135,7 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Peranti anda diingatkan untuk terus menghidupkan Bluetooth dalam mod pesawat. Matikan Bluetooth jika anda tidak mahu Bluetooth sentiasa hidup."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi dan Bluetooth kekal dihidupkan"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Peranti anda diingatkan untuk terus menghidupkan Wi-Fi dan Bluetooth dalam mod pesawat. Matikan Wi-Fi dan Bluetooth jika anda tidak mahu Wi-Fi dan Bluetooth sentiasa hidup."</string>
-    <!-- no translation found for bluetooth_enabled_auto_on_title (8983664142805050578) -->
-    <skip />
-    <!-- no translation found for bluetooth_enabled_auto_on_message (2790514825041114851) -->
-    <skip />
+    <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Bluetooth dihidupkan kembali"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="2790514825041114851">"Anda boleh menukar pilihan ini pada bila-bila masa dalam Tetapan"</string>
     <string name="bluetooth_notification_group" msgid="7251886707585872194">"Perubahan keadaan automatik Bluetooth"</string>
 </resources>

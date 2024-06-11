@@ -135,9 +135,7 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Zařízení si pamatuje, že má v režimu Letadlo ponechat zapnutý Bluetooth. Pokud nechcete, aby Bluetooth zůstal zapnutý, vypněte ho."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi a Bluetooth zůstávají zapnuté"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Zařízení si pamatuje, že má v režimu Letadlo ponechat zapnutou Wi-Fi a Bluetooth. Pokud nechcete, aby Wi-Fi a Bluetooth zůstaly zapnuté, vypněte je."</string>
-    <!-- no translation found for bluetooth_enabled_auto_on_title (8983664142805050578) -->
-    <skip />
-    <!-- no translation found for bluetooth_enabled_auto_on_message (2790514825041114851) -->
-    <skip />
+    <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Bluetooth se znovu zapnul"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="2790514825041114851">"Volbu můžete kdykoli změnit v nastavení"</string>
     <string name="bluetooth_notification_group" msgid="7251886707585872194">"Automatická změna stavu rozhraní Bluetooth"</string>
 </resources>
