@@ -33,10 +33,6 @@
 #include "stack/include/security_client_callbacks.h"
 #include "types/raw_address.h"
 
-#ifdef TARGET_FLOSS
-#include "stack/include/inq_hci_link_interface.h"  // btm_inq_db_set_inq_by_rssi
-#endif                                             // TARGET_FLOSS
-
 using namespace bluetooth;
 
 /* Global BTM control block structure
@@ -58,12 +54,6 @@ tBTM_CB btm_cb;
 void btm_init(void) {
   btm_cb.Init();
   get_security_client_interface().BTM_Sec_Init();
-
-#ifdef TARGET_FLOSS
-  // Need to set inquery by rssi flag for Floss since Floss doesn't do
-  // btm_inq_db_init
-  btm_inq_db_set_inq_by_rssi();
-#endif
 }
 
 /** This function is called to free dynamic memory and system resource allocated by btm_init */
