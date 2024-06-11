@@ -304,16 +304,16 @@ void btgattc_notify_cb(int conn_id, const btgatt_notify_params_t& p_data) {
 }
 
 void btgattc_read_characteristic_cb(int conn_id, int status,
-                                    btgatt_read_params_t* p_data) {
+                                    const btgatt_read_params_t& p_data) {
   std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid() || !mCallbacksObj) return;
 
   ScopedLocalRef<jbyteArray> jb(sCallbackEnv.get(), NULL);
   if (status == 0) {  // Success
-    jb.reset(sCallbackEnv->NewByteArray(p_data->value.len));
-    sCallbackEnv->SetByteArrayRegion(jb.get(), 0, p_data->value.len,
-                                     (jbyte*)p_data->value.value);
+    jb.reset(sCallbackEnv->NewByteArray(p_data.value.len));
+    sCallbackEnv->SetByteArrayRegion(jb.get(), 0, p_data.value.len,
+                                     (jbyte*)p_data.value.value);
   } else {
     uint8_t value = 0;
     jb.reset(sCallbackEnv->NewByteArray(1));
@@ -321,7 +321,7 @@ void btgattc_read_characteristic_cb(int conn_id, int status,
   }
 
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onReadCharacteristic,
-                               conn_id, status, p_data->handle, jb.get());
+                               conn_id, status, p_data.handle, jb.get());
 }
 
 void btgattc_write_characteristic_cb(int conn_id, int status, uint16_t handle,
