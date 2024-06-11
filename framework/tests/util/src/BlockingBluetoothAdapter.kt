@@ -75,6 +75,16 @@ object BlockingBluetoothAdapter {
         if (toggleScanSetting) {
             Log.d(TAG, "Allowing the scan to be perform while Bluetooth is OFF")
             Settings.Global.putInt(context.contentResolver, BLE_SCAN_ALWAYS_AVAILABLE, 1)
+            for (i in 1..5) {
+                if (adapter.isBleScanAlwaysAvailable()) {
+                    break
+                }
+                Log.d(TAG, "Ble scan not yet available… Sleeping 20 ms $i/5")
+                Thread.sleep(20)
+            }
+            if (!adapter.isBleScanAlwaysAvailable()) {
+                throw IllegalStateException("Could not enable BLE scan")
+            }
         }
         Log.d(TAG, "Call to enableBLE")
         if (!withPermissions(BLUETOOTH_CONNECT).use { adapter.enableBLE() }) {
