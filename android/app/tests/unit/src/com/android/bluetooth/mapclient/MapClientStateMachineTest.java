@@ -1241,7 +1241,7 @@ public class MapClientStateMachineTest {
         mMceStateMachine.sendSdpResult(MceStateMachine.SDP_SUCCESS, record);
     }
 
-    private class MockSmsContentProvider extends MockContentProvider {
+    private static class MockSmsContentProvider extends MockContentProvider {
         Map<Uri, ContentValues> mContentValues = new HashMap<>();
         int mInsertOperationCount = 0;
 

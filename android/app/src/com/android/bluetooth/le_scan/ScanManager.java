@@ -910,7 +910,7 @@ public class ScanManager {
     }
 
     /** Parameters for batch scans. */
-    class BatchScanParams {
+    static class BatchScanParams {
         public int scanMode;
         public int fullScanscannerId;
         public int truncatedScanscannerId;
@@ -2096,6 +2096,5 @@ public class ScanManager {
                         toState,
                         Integer.valueOf(profile))
                 .sendToTarget();
-        return;
     }
 }

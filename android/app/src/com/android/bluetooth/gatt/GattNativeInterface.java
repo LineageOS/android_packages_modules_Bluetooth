@@ -519,12 +519,7 @@ public class GattNativeInterface {
         gattClientWriteDescriptorNative(connId, handle, authReq, value);
     }
 
-    /**
-     * Execute a reliable write transaction
-     *
-     * @param connId
-     * @param execute
-     */
+    /** Execute a reliable write transaction */
     public void gattClientExecuteWrite(int connId, boolean execute) {
         gattClientExecuteWriteNative(connId, execute);
     }
@@ -535,12 +530,7 @@ public class GattNativeInterface {
         gattClientRegisterForNotificationsNative(clientIf, address, handle, enable);
     }
 
-    /**
-     * Read the RSSI for a connected remote device
-     *
-     * @param clientIf
-     * @param address
-     */
+    /** Read the RSSI for a connected remote device */
     public void gattClientReadRemoteRssi(int clientIf, String address) {
         gattClientReadRemoteRssiNative(clientIf, address);
     }

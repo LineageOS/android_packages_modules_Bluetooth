@@ -446,16 +446,6 @@ public class AdapterService extends Service {
         mHandler.sendMessage(m);
     }
 
-    /**
-     * Confirm whether the ProfileService is started expectedly.
-     *
-     * @param serviceSampleName the service simple name.
-     * @return true if the service is started expectedly, false otherwise.
-     */
-    public boolean isStartedProfile(int profileId) {
-        return mStartedProfiles.containsKey(profileId);
-    }
-
     class AdapterServiceHandler extends Handler {
         AdapterServiceHandler(Looper looper) {
             super(looper);
@@ -1190,7 +1180,7 @@ public class AdapterService extends Service {
         // Disable the non-supported profiles service
         for (int profileId : nonSupportedProfiles) {
             Config.setProfileEnabled(profileId, false);
-            if (isStartedProfile(profileId)) {
+            if (mStartedProfiles.containsKey(profileId)) {
                 setProfileServiceState(profileId, BluetoothAdapter.STATE_OFF);
             }
         }

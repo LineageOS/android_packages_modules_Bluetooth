@@ -427,7 +427,7 @@ class BmessageParser {
         return vcard;
     }
 
-    private class VcardHandler implements VCardEntryHandler {
+    private static class VcardHandler implements VCardEntryHandler {
         public VCardEntry vcard;
 
         @Override

@@ -91,7 +91,7 @@ public class MetricsLoggerTest {
 
     @Mock private AdapterService mMockAdapterService;
 
-    public class TestableMetricsLogger extends MetricsLogger {
+    private static class TestableMetricsLogger extends MetricsLogger {
         public HashMap<Integer, Long> mTestableCounters = new HashMap<>();
         public HashMap<String, Integer> mTestableDeviceNames = new HashMap<>();
 
