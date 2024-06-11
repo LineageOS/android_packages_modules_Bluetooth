@@ -4,19 +4,19 @@ pdl_gen(
     NAME hci_packets_rs
     INPUT ${ROOTCANAL_ROOT}/packets/hci_packets.pdl
     OUTPUT hci_packets.rs
-    LANG rust)
+    LANG rust_legacy)
 
 pdl_gen(
     NAME lmp_packets_rs
     INPUT ${ROOTCANAL_ROOT}/rust/lmp_packets.pdl
     OUTPUT lmp_packets.rs
-    LANG rust)
+    LANG rust_legacy)
 
 pdl_gen(
     NAME llcp_packets_rs
     INPUT ${ROOTCANAL_ROOT}/rust/llcp_packets.pdl
     OUTPUT llcp_packets.rs
-    LANG rust)
+    LANG rust_legacy)
 
 # This will automatically register all the tests as well.
 corrosion_import_crate(MANIFEST_PATH ${ROOTCANAL_ROOT}/rust/Cargo.toml FLAGS
