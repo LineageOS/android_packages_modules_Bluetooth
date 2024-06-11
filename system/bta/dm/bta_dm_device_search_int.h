@@ -19,9 +19,9 @@
 #include <base/strings/stringprintf.h>
 #include <bluetooth/log.h>
 
-#include <queue>
 #include <string>
 
+#include "bta/include/bta_api.h"
 #include "macros.h"
 #include "stack/btm/neighbor_inquiry.h"
 #include "types/raw_address.h"
