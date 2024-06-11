@@ -66,8 +66,6 @@ enum : uint8_t {
   BTM_INQUIRY_NONE = 0,
   BTM_INQUIRY_INACTIVE = 0x0,
   BTM_GENERAL_INQUIRY = 0x01,
-  /* SSP is active, so inquiry is disallowed (work around for FW bug) */
-  BTM_SSP_INQUIRY_ACTIVE = 0x4,
   /* high nibble of inquiry mode for BLE inquiry mode */
   BTM_BLE_GENERAL_INQUIRY = 0x10,
   BTM_BR_INQUIRY_MASK = (BTM_GENERAL_INQUIRY),
