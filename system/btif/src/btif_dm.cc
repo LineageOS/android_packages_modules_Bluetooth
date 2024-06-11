@@ -1900,8 +1900,7 @@ void btif_on_gatt_results(RawAddress bd_addr, BD_NAME bd_name,
         pairing_cb = {};
       }
 
-      if (com::android::bluetooth::flags::le_audio_fast_bond_params() &&
-          lea_supported) {
+      if (lea_supported) {
         /* LE Audio profile should relax parameters when it connects. If
          * profile is not enabled, relax parameters after timeout. */
         log::debug("Scheduling conn params unlock for {}", bd_addr);
@@ -2442,8 +2441,7 @@ void btif_dm_acl_evt(tBTA_DM_ACL_EVT event, tBTA_DM_ACL* p_data) {
               : bt_conn_direction_t::BT_CONN_DIRECTION_INCOMING,
           p_data->link_up.acl_handle);
 
-      if (com::android::bluetooth::flags::le_audio_fast_bond_params() &&
-          p_data->link_up.transport_link_type == BT_TRANSPORT_LE &&
+      if (p_data->link_up.transport_link_type == BT_TRANSPORT_LE &&
           pairing_cb.bd_addr == bd_addr &&
           is_device_le_audio_capable(bd_addr)) {
         L2CA_LockBleConnParamsForProfileConnection(bd_addr, true);

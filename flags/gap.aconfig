@@ -37,13 +37,6 @@ flag {
 }
 
 flag {
-    name: "le_scan_parameters_fix"
-    namespace: "bluetooth"
-    description: "Fix LE scan parameters downgrade during inquiry"
-    bug: "316885813"
-}
-
-flag {
     name: "le_scan_fix_remote_exception"
     namespace: "bluetooth"
     description: "Fix handling remote exception for LE scanners"
