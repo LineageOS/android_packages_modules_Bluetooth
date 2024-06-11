@@ -286,7 +286,7 @@ struct iso_impl {
 
         evt.status = status;
         evt.cis_conn_hdl = cis_param.cis_conn_handle;
-        evt.cig_id = 0xFF;
+        evt.cig_id = cis->cig_id;
         cis->state_flags &= ~kStateFlagIsConnecting;
         cig_callbacks_->OnCisEvent(kIsoEventCisEstablishCmpl, &evt);
 
