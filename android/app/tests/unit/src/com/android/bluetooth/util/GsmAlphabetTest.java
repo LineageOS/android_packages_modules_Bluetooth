@@ -18,7 +18,7 @@ package com.android.bluetooth.util;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import androidx.test.InstrumentationRegistry;
+import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.internal.telephony.uicc.IccUtils;
 

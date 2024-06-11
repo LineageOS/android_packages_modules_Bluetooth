@@ -186,9 +186,6 @@ public class BluetoothMapConvoListing {
      * Parses folder elements, and add to mSubFolders.
      *
      * @param parser the Xml Parser currently pointing to an folder-listing tag.
-     * @throws XmlPullParserException
-     * @throws IOException
-     * @throws
      */
     private void readConversations(XmlPullParser parser)
             throws XmlPullParserException, IOException, ParseException {

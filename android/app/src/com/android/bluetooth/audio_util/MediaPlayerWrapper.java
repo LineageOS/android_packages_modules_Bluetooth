@@ -246,13 +246,9 @@ public class MediaPlayerWrapper {
         return false;
     }
 
-    void toggleShuffle(boolean on) {
-        return;
-    }
+    void toggleShuffle(boolean on) {}
 
-    void toggleRepeat(boolean on) {
-        return;
-    }
+    void toggleRepeat(boolean on) {}
 
     /** Return whether the queue, metadata, and queueID are all in sync. */
     boolean isMetadataSynced() {

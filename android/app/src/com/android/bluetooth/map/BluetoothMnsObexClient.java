@@ -92,7 +92,7 @@ public class BluetoothMnsObexClient {
         return mHandler;
     }
 
-    class MnsSdpSearchInfo {
+    static class MnsSdpSearchInfo {
         private boolean mIsSearchInProgress;
         public int lastMasId;
         public int lastNotificationStatus;
@@ -225,12 +225,7 @@ public class BluetoothMnsObexClient {
         mRegisteredMasIds.clear();
     }
 
-    /**
-     * We store a list of registered MasIds only to control connect/disconnect
-     *
-     * @param masId
-     * @param notificationStatus
-     */
+    /** We store a list of registered MasIds only to control connect/disconnect */
     public synchronized void handleRegistration(int masId, int notificationStatus) {
         Log.d(TAG, "handleRegistration( " + masId + ", " + notificationStatus + ")");
         boolean sendObserverRegistration = true;

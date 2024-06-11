@@ -249,9 +249,6 @@ public class BluetoothMapConvoContactElement
      * Call this function to create a BluetoothMapConvoContactElement. Will consume the end-tag.
      *
      * @param parser must point into XML_TAG_CONVERSATION tag, hence attributes can be read.
-     * @return
-     * @throws IOException
-     * @throws XmlPullParserException
      */
     public static BluetoothMapConvoContactElement createFromXml(XmlPullParser parser)
             throws ParseException, XmlPullParserException, IOException {

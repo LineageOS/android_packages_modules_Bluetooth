@@ -87,14 +87,7 @@ public class BluetoothMapSmsPdu {
             this.mUserDataMsgOffset = gsmSubmitGetTpUdOffset(); // Assume no user data header
         }
 
-        /**
-         * Create a pdu instance based on the data generated on this device.
-         *
-         * @param data
-         * @param encoding
-         * @param type
-         * @param languageTable
-         */
+        /** Create a pdu instance based on the data generated on this device. */
         SmsPdu(byte[] data, int encoding, int type, int languageTable) {
             this.mData = data;
             this.mEncoding = encoding;
@@ -598,7 +591,6 @@ public class BluetoothMapSmsPdu {
      * @param messageText The text to include.
      * @param address The originator address.
      * @param date The delivery time stamp.
-     * @return
      */
     public static ArrayList<SmsPdu> getDeliverPdus(
             Context context, String messageText, String address, long date) {

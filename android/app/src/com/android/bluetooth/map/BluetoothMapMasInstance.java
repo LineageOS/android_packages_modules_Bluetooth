@@ -115,14 +115,7 @@ public class BluetoothMapMasInstance implements IObexConnectionHandler {
     public static final String TYPE_EMAIL_STR = "EMAIL";
     public static final String TYPE_IM_STR = "IM";
 
-    /**
-     * Create a e-mail MAS instance
-     *
-     * @param callback
-     * @param context
-     * @param mns
-     * @param emailBaseUri - use null to create a SMS/MMS MAS instance
-     */
+    /** Create a e-mail MAS instance */
     public BluetoothMapMasInstance(
             BluetoothMapService mapService,
             Context context,

@@ -183,10 +183,9 @@ public class BluetoothMapUtils {
      * Converts a hex-string to a long - please mind that Java has no unsigned data types, hence any
      * value passed to this function, which has the upper bit set, will return a negative value. The
      * bitwise content of the variable will however be the same. Will ignore any white-space
-     * characters as well as '-' seperators
+     * characters as well as '-' separators
      *
      * @param valueStr a hexstring - NOTE: shall not contain any "0x" prefix.
-     * @return
      * @throws UnsupportedEncodingException if "US-ASCII" charset is not supported,
      *     NullPointerException if a null pointer is passed to the function, NumberFormatException
      *     if the string contains invalid characters.
@@ -359,12 +358,7 @@ public class BluetoothMapUtils {
         return cpHandle;
     }
 
-    /**
-     * Extract the message type from the handle.
-     *
-     * @param mapHandle
-     * @return
-     */
+    /** Extract the message type from the handle. */
     public static TYPE getMsgTypeFromHandle(String mapHandle) {
         long cpHandle = getMsgHandleAsLong(mapHandle);
 
@@ -422,7 +416,6 @@ public class BluetoothMapUtils {
      * @param utf8String String to convert to bytes array h
      * @param maxLength Max length of byte array returned including null termination
      * @return byte array containing valid utf8 characters with max length
-     * @throws UnsupportedEncodingException
      */
     public static byte[] truncateUtf8StringToBytearray(String utf8String, int maxLength)
             throws UnsupportedEncodingException {
@@ -468,7 +461,6 @@ public class BluetoothMapUtils {
      * @param utf8InString String to truncate
      * @param maxBytesLength Max length in bytes of the returned string
      * @return A valid truncated utf-8 string
-     * @throws UnsupportedEncodingException
      */
     public static String truncateUtf8StringToString(String utf8InString, int maxBytesLength)
             throws UnsupportedEncodingException {
@@ -705,6 +697,10 @@ public class BluetoothMapUtils {
         return result.getBytes(); /* return the result as "UTF-8" bytes */
     }
 
+    private static final byte ESCAPE_CHAR = '=';
+    private static final byte TAB = 9;
+    private static final byte SPACE = 32;
+
     /**
      * Encodes an array of bytes into an array of quoted-printable 7-bit characters. Unsafe
      * characters are escaped. Simplified version of encoder from QuetedPrintableCodec.java (Apache
@@ -713,11 +709,6 @@ public class BluetoothMapUtils {
      * @param bytes array of bytes to be encoded
      * @return UTF-8 string containing quoted-printable characters
      */
-    private static final byte ESCAPE_CHAR = '=';
-
-    private static final byte TAB = 9;
-    private static final byte SPACE = 32;
-
     public static final String encodeQuotedPrintable(byte[] bytes) {
         if (bytes == null) {
             return null;

@@ -100,7 +100,6 @@ public class ScanClient {
     /**
      * Update scan settings with the new scan mode.
      *
-     * @param newScanMode
      * @return true if scan settings are updated, false otherwise.
      */
     boolean updateScanMode(int newScanMode) {

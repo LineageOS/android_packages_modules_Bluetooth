@@ -291,11 +291,6 @@ public class BluetoothMapConvoListingElement
     /**
      * Consumes a conversation tag. It is expected that the parser is beyond the start-tag event,
      * with the name "conversation".
-     *
-     * @param parser
-     * @return
-     * @throws XmlPullParserException
-     * @throws IOException
      */
     public static BluetoothMapConvoListingElement createFromXml(XmlPullParser parser)
             throws XmlPullParserException, IOException, ParseException {

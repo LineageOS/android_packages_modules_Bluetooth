@@ -62,7 +62,6 @@ public class LeAudioObjectsFactory {
      * Get a {@link LeAudioTmapGattServer} object
      *
      * @param context local context
-     * @return
      */
     public LeAudioTmapGattServer getTmapGattServer(Context context) {
         return new LeAudioTmapGattServer(

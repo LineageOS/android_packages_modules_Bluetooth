@@ -145,7 +145,7 @@ class PbapClientConnectionHandler extends Handler {
     /**
      * Constructs PCEConnectionHandler object
      *
-     * @param Builder To build BluetoothPbapClientHandler Instance.
+     * @param pceHandlerbuild To build BluetoothPbapClientHandler Instance.
      */
     PbapClientConnectionHandler(Builder pceHandlerbuild) {
         super(pceHandlerbuild.mLooper);
@@ -264,7 +264,6 @@ class PbapClientConnectionHandler extends Handler {
             default:
                 Log.w(TAG, "Received Unexpected Message");
         }
-        return;
     }
 
     @VisibleForTesting
@@ -284,7 +283,7 @@ class PbapClientConnectionHandler extends Handler {
         try {
             /* Use BluetoothSocket to connect */
             if (mPseRec == null) {
-                // BackWardCompatability: Fall back to create RFCOMM through UUID.
+                // BackWardCompatibility: Fall back to create RFCOMM through UUID.
                 Log.v(TAG, "connectSocket: UUID: " + BluetoothUuid.PBAP_PSE.getUuid());
                 mSocket =
                         mDevice.createRfcommSocketToServiceRecord(BluetoothUuid.PBAP_PSE.getUuid());

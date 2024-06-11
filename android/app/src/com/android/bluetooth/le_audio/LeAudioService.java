@@ -226,7 +226,7 @@ public class LeAudioService extends ProfileService {
         mNativeInterface = Objects.requireNonNull(nativeInterface);
     }
 
-    private class LeAudioGroupDescriptor {
+    private static class LeAudioGroupDescriptor {
         LeAudioGroupDescriptor(boolean isInbandRingtonEnabled) {
             mIsConnected = false;
             mActiveState = ACTIVE_STATE_INACTIVE;

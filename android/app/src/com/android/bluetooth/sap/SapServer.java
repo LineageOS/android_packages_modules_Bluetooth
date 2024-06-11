@@ -13,7 +13,6 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.graphics.drawable.Icon;
 import android.os.Handler;
-import android.os.Handler.Callback;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
@@ -44,7 +43,7 @@ import java.util.concurrent.CountDownLatch;
  * thread. (There are helper functions to do this) Communication to the RIL is through an intent,
  * and a BroadcastReceiver.
  */
-public class SapServer extends Thread implements Callback {
+public class SapServer extends Thread implements Handler.Callback {
     private static final String TAG = "SapServer";
     private static final String TAG_HANDLER = "SapServerHandler";
 

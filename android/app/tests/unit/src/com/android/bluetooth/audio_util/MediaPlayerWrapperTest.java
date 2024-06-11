@@ -32,8 +32,8 @@ import android.os.HandlerThread;
 import android.os.TestLooperManager;
 import android.util.Log;
 
-import androidx.test.InstrumentationRegistry;
 import androidx.test.filters.SmallTest;
+import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.R;
@@ -95,7 +95,8 @@ public class MediaPlayerWrapperTest {
     public void setUp() {
 
         mTestResources =
-                TestUtils.getTestApplicationResources(InstrumentationRegistry.getTargetContext());
+                TestUtils.getTestApplicationResources(
+                        InstrumentationRegistry.getInstrumentation().getTargetContext());
         mTestBitmap = loadImage(com.android.bluetooth.tests.R.raw.image_200_200);
 
         when(mMockResources.getBoolean(R.bool.avrcp_target_cover_art_uri_images)).thenReturn(true);
@@ -657,7 +658,7 @@ public class MediaPlayerWrapperTest {
 
     /*
      * Test to make sure that an error occurs when the MediaController fails to
-     * update all its media data in a resonable amount of time.
+     * update all its media data in a reasonable amount of time.
      */
     @Test
     public void testMetadataSyncFail() {

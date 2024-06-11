@@ -92,12 +92,7 @@ public class BluetoothPbapVcardManager {
         sLastFetchedTimeStamp = System.currentTimeMillis();
     }
 
-    /**
-     * Create an owner vcard from the configured profile
-     *
-     * @param vcardType21
-     * @return
-     */
+    /** Create an owner vcard from the configured profile */
     private String getOwnerPhoneNumberVcardFromProfile(
             final boolean vcardType21, final byte[] filter) {
         // Currently only support Generic Vcard 2.1 and 3.0
@@ -156,7 +151,6 @@ public class BluetoothPbapVcardManager {
      * Returns the number of contacts (i.e., vcf) in a phonebook object.
      *
      * @param type specifies which phonebook object, e.g., pb, fav
-     * @return
      */
     private int getContactsSize(final int type) {
         final Uri myUri = DevicePolicyUtils.getEnterprisePhoneUri(mContext);
@@ -808,8 +802,6 @@ public class BluetoothPbapVcardManager {
     /** Filter contact cursor by certain condition. */
     static final class ContactCursorFilter {
         /**
-         * @param contactCursor
-         * @param offset
          * @return a cursor containing contact id of {@code offset} contact.
          */
         static Cursor filterByOffset(Cursor contactCursor, int offset) {
@@ -817,9 +809,6 @@ public class BluetoothPbapVcardManager {
         }
 
         /**
-         * @param contactCursor
-         * @param startPoint
-         * @param endPoint
          * @return a cursor containing contact ids of {@code startPoint}th to {@code endPoint}th
          *     contact. (i.e. [startPoint, endPoint], both points should be greater than 0)
          */

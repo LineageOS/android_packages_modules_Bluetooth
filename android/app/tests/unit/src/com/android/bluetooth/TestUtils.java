@@ -34,7 +34,7 @@ import android.os.test.TestLooper;
 import android.service.media.MediaBrowserService;
 import android.util.Log;
 
-import androidx.test.InstrumentationRegistry;
+import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.uiautomator.UiDevice;
 
 import com.android.bluetooth.avrcpcontroller.BluetoothMediaBrowserService;
@@ -346,16 +346,14 @@ public class TestUtils {
     public static Intent prepareIntentToStartBluetoothBrowserMediaService() {
         final Intent intent =
                 new Intent(
-                        InstrumentationRegistry.getTargetContext(),
+                        InstrumentationRegistry.getInstrumentation().getTargetContext(),
                         BluetoothMediaBrowserService.class);
         intent.setAction(MediaBrowserService.SERVICE_INTERFACE);
         return intent;
     }
 
     public static void setUpUiTest() throws Exception {
-        final UiDevice device =
-                UiDevice.getInstance(
-                        androidx.test.platform.app.InstrumentationRegistry.getInstrumentation());
+        final UiDevice device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
         // Disable animation
         device.executeShellCommand("settings put global window_animation_scale 0.0");
         device.executeShellCommand("settings put global transition_animation_scale 0.0");
@@ -375,9 +373,7 @@ public class TestUtils {
     }
 
     public static void tearDownUiTest() throws Exception {
-        final UiDevice device =
-                UiDevice.getInstance(
-                        androidx.test.platform.app.InstrumentationRegistry.getInstrumentation());
+        final UiDevice device = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation());
         device.executeShellCommand("wm dismiss-keyguard");
 
         // Re-enable animation

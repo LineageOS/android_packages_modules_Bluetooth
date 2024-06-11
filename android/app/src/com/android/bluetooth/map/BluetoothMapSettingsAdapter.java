@@ -300,13 +300,13 @@ public class BluetoothMapSettingsAdapter extends BaseExpandableListAdapter {
         return true;
     }
 
-    private class GroupHolder {
+    private static class GroupHolder {
         public ImageView imageView;
         public CheckBox cb;
         public TextView title;
     }
 
-    private class ChildHolder {
+    private static class ChildHolder {
         public TextView title;
         public CheckBox cb;
     }
