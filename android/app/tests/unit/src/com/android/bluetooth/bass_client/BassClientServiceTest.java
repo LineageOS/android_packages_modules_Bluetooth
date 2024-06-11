@@ -3376,6 +3376,12 @@ public class BassClientServiceTest {
         onScanResult(mSourceDevice, TEST_BROADCAST_ID);
         onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
         BluetoothLeBroadcastMetadata meta = createBroadcastMetadata(TEST_BROADCAST_ID);
+
+        /* Fake external broadcast - no Broadcast Metadata from LE Audio service */
+        doReturn(new ArrayList<BluetoothLeBroadcastMetadata>())
+                .when(mLeAudioService)
+                .getAllBroadcastMetadata();
+
         verifyAddSourceForGroup(meta);
         for (BassClientStateMachine sm : mStateMachines.values()) {
             if (sm.getDevice().equals(mCurrentDevice)) {
