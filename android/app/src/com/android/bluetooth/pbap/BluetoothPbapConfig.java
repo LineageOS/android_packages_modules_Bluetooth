@@ -63,11 +63,7 @@ public class BluetoothPbapConfig {
         return sUseProfileForOwnerVcard;
     }
 
-    /**
-     * If true, include photos in contact information returned to PCE
-     *
-     * @return
-     */
+    /** If true, include photos in contact information returned to PCE */
     public static boolean includePhotosInVcard() {
         return sIncludePhotosInVcard;
     }

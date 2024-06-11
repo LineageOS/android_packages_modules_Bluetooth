@@ -568,7 +568,6 @@ public class MediaPlayerList {
             playerList.add(new ListItem(playerFolder));
         }
         cb.run("", playerList);
-        return;
     }
 
     /**

@@ -299,7 +299,7 @@ class AvrcpPlayer {
         /**
          * Set the entire set of supported features for this Player.
          *
-         * @param features The feature set for this player, defined in AVRCP 6.10.2.1
+         * @param supportedFeatures The feature set for this player, defined in AVRCP 6.10.2.1
          * @return This object, so you can continue building
          */
         public Builder setSupportedFeatures(byte[] supportedFeatures) {

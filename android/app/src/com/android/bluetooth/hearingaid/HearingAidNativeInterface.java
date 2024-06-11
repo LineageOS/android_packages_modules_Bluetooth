@@ -113,11 +113,7 @@ public class HearingAidNativeInterface {
         return addToAcceptlistNative(getByteAddress(device));
     }
 
-    /**
-     * Sets the HearingAid volume
-     *
-     * @param volume
-     */
+    /** Sets the HearingAid volume */
     @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
     public void setVolume(int volume) {
         setVolumeNative(volume);

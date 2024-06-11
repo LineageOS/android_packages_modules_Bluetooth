@@ -24,7 +24,7 @@ import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
 /** A test suite for the BipImageProperties class */
 @RunWith(AndroidJUnit4.class)
@@ -108,11 +108,7 @@ public class BipImagePropertiesTest {
     private static final String IMAGE_PROPERTIES_END = "</image-properties>";
 
     private InputStream toUtf8Stream(String s) {
-        try {
-            return new ByteArrayInputStream(s.getBytes("UTF-8"));
-        } catch (UnsupportedEncodingException e) {
-            return null;
-        }
+        return new ByteArrayInputStream(s.getBytes(StandardCharsets.UTF_8));
     }
 
     /**

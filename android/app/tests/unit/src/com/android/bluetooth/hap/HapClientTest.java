@@ -55,8 +55,8 @@ import android.os.Binder;
 import android.os.ParcelUuid;
 import android.os.RemoteException;
 
-import androidx.test.InstrumentationRegistry;
 import androidx.test.filters.MediumTest;
+import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;

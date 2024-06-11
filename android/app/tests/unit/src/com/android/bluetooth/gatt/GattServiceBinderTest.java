@@ -784,8 +784,6 @@ public class GattServiceBinderTest {
 
     @Test
     public void disconnectAll() throws Exception {
-        IPeriodicAdvertisingCallback callback = mock(IPeriodicAdvertisingCallback.class);
-
         mBinder.disconnectAll(mAttributionSource);
 
         verify(mService).disconnectAll(mAttributionSource);

@@ -99,7 +99,6 @@ public class AudioRoutingManager extends ActiveDeviceManager {
      *
      * @param device The device to be activated.
      * @param profile The profile to be activated
-     * @param receiver to post the results
      */
     public CompletableFuture<Boolean> activateDeviceProfile(BluetoothDevice device, int profile) {
         CompletableFuture<Boolean> future = new CompletableFuture<>();

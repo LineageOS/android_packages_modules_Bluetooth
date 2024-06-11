@@ -356,7 +356,7 @@ public class BatteryStateMachineTest {
     }
 
     // It simulates GATT connection for testing.
-    public class StubBatteryStateMachine extends BatteryStateMachine {
+    private static class StubBatteryStateMachine extends BatteryStateMachine {
         boolean mShouldAllowGatt = true;
 
         StubBatteryStateMachine(BluetoothDevice device, BatteryService service, Looper looper) {

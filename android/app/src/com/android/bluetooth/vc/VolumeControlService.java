@@ -91,7 +91,7 @@ public class VolumeControlService extends ProfileService {
     static class VolumeControlOffsetDescriptor {
         Map<Integer, Descriptor> mVolumeOffsets;
 
-        private class Descriptor {
+        private static class Descriptor {
             Descriptor() {
                 mValue = 0;
                 mLocation = 0;

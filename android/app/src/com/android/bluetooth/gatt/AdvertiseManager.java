@@ -88,7 +88,7 @@ public class AdvertiseManager {
         }
     }
 
-    class AdvertiserInfo {
+    static class AdvertiserInfo {
         /* When id is negative, the registration is ongoing. When the registration finishes, id
          * becomes equal to advertiser_id */
         public Integer id;

@@ -107,7 +107,6 @@ public class MapClientService extends ProfileService {
     /**
      * Connect the given Bluetooth device.
      *
-     * @param device
      * @return true if connection is successful, false otherwise.
      */
     @RequiresPermission(android.Manifest.permission.BLUETOOTH_PRIVILEGED)
