@@ -339,7 +339,7 @@ struct codec_manager_impl {
     }
   }
 
-  static bool IsUsingCodecExtensibility() {
+  bool IsUsingCodecExtensibility() const {
     auto codec_ext_status =
         osi_property_get_bool(
             "bluetooth.core.le_audio.codec_extension_aidl.enabled", false) &&
@@ -1343,6 +1343,13 @@ void CodecManager::ClearCisConfiguration(uint8_t direction) {
   if (pimpl_->IsRunning()) {
     return pimpl_->codec_manager_impl_->ClearCisConfiguration(direction);
   }
+}
+
+bool CodecManager::IsUsingCodecExtensibility() const {
+  if (pimpl_->IsRunning()) {
+    return pimpl_->codec_manager_impl_->IsUsingCodecExtensibility();
+  }
+  return false;
 }
 
 }  // namespace bluetooth::le_audio
