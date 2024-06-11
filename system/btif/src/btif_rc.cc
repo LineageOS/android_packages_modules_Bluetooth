@@ -4637,7 +4637,7 @@ static bt_status_t get_current_metadata_cmd(const RawAddress& bd_addr) {
   btif_rc_device_cb_t* p_dev = btif_rc_get_device_by_bda(bd_addr);
   if (p_dev == NULL) {
     log::error("p_dev NULL");
-    return BT_STATUS_FAIL;
+    return BT_STATUS_DEVICE_NOT_FOUND;
   }
   const uint32_t* attr_list = get_requested_attributes_list(p_dev);
   const uint8_t attr_list_size = get_requested_attributes_list_size(p_dev);
