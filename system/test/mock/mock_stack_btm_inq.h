@@ -290,16 +290,6 @@ struct BTM_WriteEIR {
 };
 extern struct BTM_WriteEIR BTM_WriteEIR;
 
-// Name: SendRemoteNameRequest
-// Params: const RawAddress& raw_address
-// Return: void
-struct SendRemoteNameRequest {
-  std::function<void(const RawAddress& raw_address)> body{
-      [](const RawAddress& /* raw_address */) {}};
-  void operator()(const RawAddress& raw_address) { body(raw_address); };
-};
-extern struct SendRemoteNameRequest SendRemoteNameRequest;
-
 // Name: btm_clear_all_pending_le_entry
 // Params: void
 // Return: void

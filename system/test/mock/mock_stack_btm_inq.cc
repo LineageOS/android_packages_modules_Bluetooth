@@ -55,7 +55,6 @@ struct BTM_SetDiscoverability BTM_SetDiscoverability;
 struct BTM_SetInquiryMode BTM_SetInquiryMode;
 struct BTM_StartInquiry BTM_StartInquiry;
 struct BTM_WriteEIR BTM_WriteEIR;
-struct SendRemoteNameRequest SendRemoteNameRequest;
 struct btm_clear_all_pending_le_entry btm_clear_all_pending_le_entry;
 struct btm_clr_inq_db btm_clr_inq_db;
 struct btm_clr_inq_result_flt btm_clr_inq_result_flt;
@@ -194,10 +193,6 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
 tBTM_STATUS BTM_WriteEIR(BT_HDR* p_buff) {
   inc_func_call_count(__func__);
   return test::mock::stack_btm_inq::BTM_WriteEIR(p_buff);
-}
-void SendRemoteNameRequest(const RawAddress& raw_address) {
-  inc_func_call_count(__func__);
-  test::mock::stack_btm_inq::SendRemoteNameRequest(raw_address);
 }
 void btm_clear_all_pending_le_entry(void) {
   inc_func_call_count(__func__);
