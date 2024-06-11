@@ -140,6 +140,9 @@ public class GattService extends ProfileService {
     public final TransitionalScanHelper mTransitionalScanHelper =
             new TransitionalScanHelper(this, this::isTestModeEnabled);
 
+    /** This is only used when Flags.scanManagerRefactor() is true. */
+    private static GattService sGattService;
+
     /** List of our registered advertisers. */
     static class AdvertiserMap extends ContextMap<IAdvertisingSetCallback, Void> {}
 
@@ -200,6 +203,11 @@ public class GattService extends ProfileService {
     @Override
     public void start() {
         Log.d(TAG, "start()");
+
+        if (Flags.scanManagerRefactor() && sGattService != null) {
+            throw new IllegalStateException("start() called twice");
+        }
+
         Settings.Global.putInt(
                 getContentResolver(), "bluetooth_sanitized_exposure_notification_supported", 1);
 
@@ -220,11 +228,24 @@ public class GattService extends ProfileService {
 
         mActivityManager = getSystemService(ActivityManager.class);
         mPackageManager = mAdapterService.getPackageManager();
+
+        if (Flags.scanManagerRefactor()) {
+            setGattService(this);
+        }
     }
 
     @Override
     public void stop() {
         Log.d(TAG, "stop()");
+        if (Flags.scanManagerRefactor() && sGattService != null) {
+            Log.w(TAG, "stop() called before start()");
+            return;
+        }
+
+        if (Flags.scanManagerRefactor()) {
+            setGattService(null);
+        }
+
         mTransitionalScanHelper.stop();
         mAdvertiserMap.clear();
         mClientMap.clear();
@@ -251,6 +272,24 @@ public class GattService extends ProfileService {
             mDistanceMeasurementManager.cleanup();
         }
         mTransitionalScanHelper.cleanup();
+    }
+
+    /** This is only used when Flags.scanManagerRefactor() is true. */
+    public static synchronized GattService getGattService() {
+        if (sGattService == null) {
+            Log.w(TAG, "getGattService(): service is null");
+            return null;
+        }
+        if (!sGattService.isAvailable()) {
+            Log.w(TAG, "getGattService(): service is not available");
+            return null;
+        }
+        return sGattService;
+    }
+
+    private static synchronized void setGattService(GattService instance) {
+        Log.d(TAG, "setGattService(): set to: " + instance);
+        sGattService = instance;
     }
 
     TransitionalScanHelper getTransitionalScanHelper() {
