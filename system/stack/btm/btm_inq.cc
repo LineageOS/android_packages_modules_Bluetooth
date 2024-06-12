@@ -1876,15 +1876,6 @@ tBTM_STATUS btm_initiate_rem_name(const RawAddress& remote_bda,
   if (btm_cb.btm_inq_vars.remname_active) {
     return (BTM_BUSY);
   } else {
-    /* If there is no remote name request running,call the callback function
-     * and start timer */
-    btm_cb.btm_inq_vars.p_remname_cmpl_cb = p_cb;
-    btm_cb.btm_inq_vars.remname_bda = remote_bda;
-    btm_cb.btm_inq_vars.remname_dev_type = BT_DEVICE_TYPE_BREDR;
-
-    alarm_set_on_mloop(btm_cb.btm_inq_vars.remote_name_timer, timeout_ms,
-                       btm_inq_remote_name_timer_timeout, NULL);
-
     /* If the database entry exists for the device, use its clock offset */
     tINQ_DB_ENT* p_i = btm_inq_db_find(remote_bda);
     if (p_i && (p_i->inq_info.results.inq_result_type & BT_DEVICE_TYPE_BREDR)) {
@@ -1911,7 +1902,14 @@ tBTM_STATUS btm_initiate_rem_name(const RawAddress& remote_bda,
           clock_offset);
     }
 
+    btm_cb.btm_inq_vars.p_remname_cmpl_cb = p_cb;
+    btm_cb.btm_inq_vars.remname_bda = remote_bda;
+    btm_cb.btm_inq_vars.remname_dev_type = BT_DEVICE_TYPE_BREDR;
     btm_cb.btm_inq_vars.remname_active = true;
+
+    alarm_set_on_mloop(btm_cb.btm_inq_vars.remote_name_timer, timeout_ms,
+                       btm_inq_remote_name_timer_timeout, NULL);
+
     return BTM_CMD_STARTED;
   }
 }
