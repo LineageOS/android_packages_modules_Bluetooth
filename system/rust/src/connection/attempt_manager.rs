@@ -92,7 +92,7 @@ impl ConnectionAttempts {
 
         let id = self.new_attempt_id();
         let Entry::Vacant(entry) = self.attempts.entry(attempt) else {
-            return Err(CreateConnectionFailure::ConnectionAlreadyPending)
+            return Err(CreateConnectionFailure::ConnectionAlreadyPending);
         };
         let (tx, rx) = oneshot::channel();
         entry.insert(ConnectionAttemptData { conn_tx: Some(tx), id });
@@ -120,7 +120,7 @@ impl ConnectionAttempts {
 
         let id = self.new_attempt_id();
         let Entry::Vacant(entry) = self.attempts.entry(attempt) else {
-            return Err(CreateConnectionFailure::ConnectionAlreadyPending)
+            return Err(CreateConnectionFailure::ConnectionAlreadyPending);
         };
         entry.insert(ConnectionAttemptData { conn_tx: None, id });
 
