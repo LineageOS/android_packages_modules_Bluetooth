@@ -44,6 +44,7 @@
 #include "osi/include/osi.h"
 #include "time_util.h"
 #include "types/raw_address.h"
+#include "main/shim/metric_id_api.h"
 
 namespace fmt {
 template <>
@@ -945,7 +946,7 @@ void LogLeAudioConnectionSessionReported(
   for (uint64_t i = 0; i < device_address.size(); i++) {
     if (!device_address[i].IsEmpty()) {
       device_metric_id[i] =
-          MetricIdAllocator::GetInstance().AllocateId(device_address[i]);
+          bluetooth::shim::AllocateIdFromMetricIdAllocator(device_address[i]);
     } else {
       device_metric_id[i] = 0;
     }
