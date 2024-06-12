@@ -168,7 +168,6 @@ cc_defaults {
         "libbluetooth_l2cap_pdl",
         "libbluetooth_ras_pdl",
         "libbluetooth_smp_pdl",
-        "libc++fs",
     ],
     static_libs: [
         "libbase",
@@ -498,7 +497,6 @@ cc_test {
         "libbt-platform-protos-lite",
         "libbt_shim_bridge",
         "libbt_shim_ffi",
-        "libc++fs",
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
         "libflagtest",

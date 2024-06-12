@@ -108,7 +108,7 @@ bool WriteToFile(const std::string& path, const std::string& data) {
   const std::string temp_path = path + ".new";
 
   // Extract directory from file path (e.g. /data/misc/bluedroid).
-  // libc++fs is not supported in APEX yet and hence cannot use std::filesystem::path::parent_path
+  // TODO: switch to std::filesystem::path::parent_path
   std::string directory_path;
   {
     // Make a temporary variable as inputs to dirname() will be modified and return value points to input char array
