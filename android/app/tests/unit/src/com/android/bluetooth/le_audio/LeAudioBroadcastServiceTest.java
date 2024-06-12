@@ -135,11 +135,8 @@ public class LeAudioBroadcastServiceTest {
     private boolean mOnBroadcastStartFailedCalled = false;
     private boolean mOnBroadcastStoppedCalled = false;
     private boolean mOnBroadcastStopFailedCalled = false;
-    private boolean mOnPlaybackStartedCalled = false;
-    private boolean mOnPlaybackStoppedCalled = false;
     private boolean mOnBroadcastUpdatedCalled = false;
     private boolean mOnBroadcastUpdateFailedCalled = false;
-    private boolean mOnBroadcastMetadataChangedCalled = false;
     private int mOnBroadcastStartFailedReason = BluetoothStatusCodes.SUCCESS;
 
     private final IBluetoothLeBroadcastCallback mCallbacks =
@@ -166,14 +163,10 @@ public class LeAudioBroadcastServiceTest {
                 }
 
                 @Override
-                public void onPlaybackStarted(int reason, int broadcastId) {
-                    mOnPlaybackStartedCalled = true;
-                }
+                public void onPlaybackStarted(int reason, int broadcastId) {}
 
                 @Override
-                public void onPlaybackStopped(int reason, int broadcastId) {
-                    mOnPlaybackStoppedCalled = true;
-                }
+                public void onPlaybackStopped(int reason, int broadcastId) {}
 
                 @Override
                 public void onBroadcastUpdated(int reason, int broadcastId) {
@@ -187,9 +180,7 @@ public class LeAudioBroadcastServiceTest {
 
                 @Override
                 public void onBroadcastMetadataChanged(
-                        int broadcastId, BluetoothLeBroadcastMetadata metadata) {
-                    mOnBroadcastMetadataChangedCalled = true;
-                }
+                        int broadcastId, BluetoothLeBroadcastMetadata metadata) {}
             };
 
     @Before

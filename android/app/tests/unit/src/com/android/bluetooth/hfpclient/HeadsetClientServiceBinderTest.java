@@ -134,7 +134,6 @@ public class HeadsetClientServiceBinderTest {
 
     @Test
     public void getAudioRouteAllowed_callsServiceMethod() {
-        boolean allowed = true;
         mBinder.getAudioRouteAllowed(mRemoteDevice, null);
 
         verify(mService).getAudioRouteAllowed(mRemoteDevice);

@@ -47,7 +47,6 @@ public class BluetoothMapMessageListingTest {
     private static final boolean TEST_REPORT_READ = true;
     private static final String TEST_VERSION = "test_version";
 
-    private final SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmss");
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss");
 
     private BluetoothMapMessageListingElement mListingElementEarliestWithReadFalse;
