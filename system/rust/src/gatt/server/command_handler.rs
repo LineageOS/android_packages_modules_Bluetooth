@@ -19,8 +19,8 @@ impl<Db: AttDatabase> AttCommandHandler<Db> {
         match packet.get_opcode() {
             AttOpcode::WRITE_COMMAND => {
                 let Ok(packet) = AttWriteCommandView::try_parse(packet) else {
-                  warn!("failed to parse WRITE_COMMAND packet");
-                  return;
+                    warn!("failed to parse WRITE_COMMAND packet");
+                    return;
                 };
                 snapshotted_db
                     .write_no_response_attribute(packet.get_handle().into(), packet.get_value());
