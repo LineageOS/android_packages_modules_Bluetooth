@@ -403,12 +403,10 @@ static bt_status_t btif_gattc_search_service(int conn_id,
   CHECK_BTGATT_INIT();
 
   if (filter_uuid) {
-    Uuid* uuid = new Uuid(*filter_uuid);
     return do_in_jni_thread(
-        Bind(&BTA_GATTC_ServiceSearchRequest, conn_id, base::Owned(uuid)));
+        Bind(&BTA_GATTC_ServiceSearchRequest, conn_id, *filter_uuid));
   } else {
-    return do_in_jni_thread(
-        Bind(&BTA_GATTC_ServiceSearchRequest, conn_id, nullptr));
+    return do_in_jni_thread(Bind(&BTA_GATTC_ServiceSearchAllRequest, conn_id));
   }
 }
 

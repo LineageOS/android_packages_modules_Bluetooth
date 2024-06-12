@@ -970,8 +970,7 @@ class HasClientImpl : public HasClient {
                                          device.currently_active_preset);
       WriteAllNeededCcc(device);
     } else {
-      BTA_GATTC_ServiceSearchRequest(device.conn_id,
-                                     &kUuidHearingAccessService);
+      BTA_GATTC_ServiceSearchRequest(device.conn_id, kUuidHearingAccessService);
     }
   }
 
@@ -1991,7 +1990,7 @@ class HasClientImpl : public HasClient {
       instance->OnEncrypted(*device);
     } else {
       BTA_GATTC_ServiceSearchRequest(device->conn_id,
-                                     &kUuidHearingAccessService);
+                                     kUuidHearingAccessService);
     }
   }
 
@@ -2013,7 +2012,7 @@ class HasClientImpl : public HasClient {
     BtaGattQueue::Clean(device->conn_id);
     device->ClearSvcData();
     btif_storage_remove_leaudio_has(device->addr);
-    BTA_GATTC_ServiceSearchRequest(device->conn_id, &kUuidHearingAccessService);
+    BTA_GATTC_ServiceSearchRequest(device->conn_id, kUuidHearingAccessService);
   }
 
   void OnGattServiceChangeEvent(const RawAddress& address) {
@@ -2039,7 +2038,7 @@ class HasClientImpl : public HasClient {
 
     if (!device->isGattServiceValid())
       BTA_GATTC_ServiceSearchRequest(device->conn_id,
-                                     &kUuidHearingAccessService);
+                                     kUuidHearingAccessService);
   }
 
   static uint16_t FindCccHandle(uint16_t conn_id, uint16_t char_handle) {
