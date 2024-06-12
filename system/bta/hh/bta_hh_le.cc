@@ -1633,7 +1633,6 @@ static void bta_hh_le_srvc_search_cmpl(tBTA_GATTC_SEARCH_CMPL* p_data) {
  ******************************************************************************/
 static void bta_hh_le_input_rpt_notify(tBTA_GATTC_NOTIFY* p_data) {
   tBTA_HH_DEV_CB* p_dev_cb = bta_hh_le_find_dev_cb_by_conn_id(p_data->conn_id);
-  uint8_t app_id;
   uint8_t* p_buf;
   tBTA_HH_LE_RPT* p_rpt;
 
@@ -1649,8 +1648,6 @@ static void bta_hh_le_input_rpt_notify(tBTA_GATTC_NOTIFY* p_data) {
                p_dev_cb->conn_id, p_data->handle);
     return;
   }
-
-  app_id = p_dev_cb->app_id;
 
   const gatt::Service* p_svc =
       BTA_GATTC_GetOwningService(p_dev_cb->conn_id, p_char->value_handle);
@@ -1669,11 +1666,6 @@ static void bta_hh_le_input_rpt_notify(tBTA_GATTC_NOTIFY* p_data) {
     return;
   }
 
-  if (p_char->uuid == Uuid::From16Bit(GATT_UUID_HID_BT_MOUSE_INPUT))
-    app_id = BTA_HH_APP_ID_MI;
-  else if (p_char->uuid == Uuid::From16Bit(GATT_UUID_HID_BT_KB_INPUT))
-    app_id = BTA_HH_APP_ID_KB;
-
   log::verbose("report ID: {}", p_rpt->rpt_id);
 
   /* need to append report ID to the head of data */
@@ -1687,9 +1679,7 @@ static void bta_hh_le_input_rpt_notify(tBTA_GATTC_NOTIFY* p_data) {
     p_buf = p_data->value;
   }
 
-  bta_hh_co_data((uint8_t)p_dev_cb->hid_handle, p_buf, p_data->len,
-                 p_dev_cb->mode, 0, /* no sub class*/
-                 p_dev_cb->dscp_info.ctry_code, p_dev_cb->link_spec, app_id);
+  bta_hh_co_data((uint8_t)p_dev_cb->hid_handle, p_buf, p_data->len);
 
   if (p_buf != p_data->value) osi_free(p_buf);
 }
@@ -2369,8 +2359,6 @@ static bool bta_hh_le_iso_data_callback(const RawAddress& addr,
     return false;
   }
 
-  bta_hh_co_data(p_dev_cb->hid_handle, data, size, p_dev_cb->mode, 0,
-                 p_dev_cb->dscp_info.ctry_code, p_dev_cb->link_spec,
-                 BTA_HH_APP_ID_LE);
+  bta_hh_co_data(p_dev_cb->hid_handle, data, size);
   return true;
 }
