@@ -23,17 +23,12 @@
 
 #include <chrono>
 #include <cstdint>
-#include <cstdio>
-#include <future>
 #include <string>
 
 #include "btif/include/stack_manager_t.h"
-#include "os/log.h"  // android log only
+#include "main/shim/acl_api.h"
 #include "stack/include/acl_api.h"
-#include "stack/include/btm_api.h"
-#include "stack/include/btm_api_types.h"
 #include "stack/include/hci_error_code.h"
-#include "stack/include/l2cap_acl_interface.h"
 #include "test/headless/get_options.h"
 #include "test/headless/headless.h"
 #include "test/headless/interface.h"
@@ -74,7 +69,7 @@ int do_connect([[maybe_unused]] unsigned int num_loops,
 
   LOG_CONSOLE("Creating connection to:%s", bd_addr.ToString().c_str());
   log::info("Creating classic connection to {}", bd_addr.ToString());
-  acl_create_classic_connection(bd_addr, false, false);
+  bluetooth::shim::ACL_CreateClassicConnection(bd_addr);
 
   std::shared_ptr<callback_params_t> acl{nullptr};
   while (context.stop_watch.LapMs() < 10000) {

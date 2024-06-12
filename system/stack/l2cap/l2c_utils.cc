@@ -29,8 +29,8 @@
 #include "hal/snoop_logger.h"
 #include "hci/controller_interface.h"
 #include "internal_include/bt_target.h"
+#include "main/shim/acl_api.h"
 #include "main/shim/entry.h"
-#include "os/log.h"
 #include "osi/include/allocator.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/acl_api.h"
@@ -2144,12 +2144,7 @@ uint8_t l2cu_get_num_hi_priority(void) {
  *
  ******************************************************************************/
 void l2cu_create_conn_after_switch(tL2C_LCB* p_lcb) {
-  const bool there_are_high_priority_channels =
-      (l2cu_get_num_hi_priority() > 0);
-
-  acl_create_classic_connection(p_lcb->remote_bd_addr,
-                                there_are_high_priority_channels,
-                                p_lcb->IsBonding());
+  bluetooth::shim::ACL_CreateClassicConnection(p_lcb->remote_bd_addr);
 
   alarm_set_on_mloop(p_lcb->l2c_lcb_timer, L2CAP_LINK_CONNECT_TIMEOUT_MS,
                      l2c_lcb_timer_timeout, p_lcb);
