@@ -473,18 +473,14 @@ public class HapClientTest {
         testConnectingDevice(order, mDevice2);
         testConnectingDevice(order, mDevice3);
 
-        int flags = 0x04;
-        mNativeInterface.onFeaturesUpdate(getByteAddress(mDevice), flags);
-
-        int flags3 = 0x04;
-        mNativeInterface.onFeaturesUpdate(getByteAddress(mDevice3), flags);
+        mNativeInterface.onFeaturesUpdate(getByteAddress(mDevice), 0x04);
+        mNativeInterface.onFeaturesUpdate(getByteAddress(mDevice3), 0x04);
 
         /* This one has no coordinated operation support but is part of a coordinated set with
          * mDevice, which supports it, thus mDevice will forward the operation to mDevice2.
          * This device should also be rocognised as grouped one.
          */
-        int flags2 = 0;
-        mNativeInterface.onFeaturesUpdate(getByteAddress(mDevice2), flags2);
+        mNativeInterface.onFeaturesUpdate(getByteAddress(mDevice2), 0);
 
         /* Two devices support coordinated operations thus shall report valid group ID */
         Assert.assertEquals(2, mService.getHapGroup(mDevice));

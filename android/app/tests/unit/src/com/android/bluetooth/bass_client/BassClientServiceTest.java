@@ -112,9 +112,7 @@ public class BassClientServiceTest {
 
     private static final int TIMEOUT_MS = 1000;
 
-    private static final int MAX_HEADSET_CONNECTIONS = 5;
     private static final ParcelUuid[] FAKE_SERVICE_UUIDS = {BluetoothUuid.BASS};
-    private static final int ASYNC_CALL_TIMEOUT_MILLIS = 250;
 
     private static final String TEST_MAC_ADDRESS = "00:11:22:33:44:55";
     private static final String TEST_MAC_ADDRESS_2 = "00:11:22:33:44:66";
@@ -140,10 +138,7 @@ public class BassClientServiceTest {
     private static final int TEST_SOURCE_ID = 10;
     private static final int TEST_NUM_SOURCES = 2;
 
-    private static final int TEST_MAX_NUM_DEVICES = 3;
-
     private final HashMap<BluetoothDevice, BassClientStateMachine> mStateMachines = new HashMap<>();
-    private final List<BassClientStateMachine> mStateMachinePool = new ArrayList<>();
     private HashMap<BluetoothDevice, LinkedBlockingQueue<Intent>> mIntentQueue;
 
     private Context mTargetContext;

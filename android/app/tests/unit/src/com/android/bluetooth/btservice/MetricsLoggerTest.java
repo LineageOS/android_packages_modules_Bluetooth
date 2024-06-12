@@ -54,8 +54,6 @@ import java.util.Map;
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class MetricsLoggerTest {
-    private static final String TEST_BLOOMFILTER_NAME = "TestBloomfilter";
-
     private static final HashMap<String, String> SANITIZED_DEVICE_NAME_MAP = new HashMap<>();
 
     static {

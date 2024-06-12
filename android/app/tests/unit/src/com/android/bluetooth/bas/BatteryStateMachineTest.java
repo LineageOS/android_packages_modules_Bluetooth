@@ -64,7 +64,6 @@ public class BatteryStateMachineTest {
     @Rule public final MockitoRule mockito = MockitoJUnit.rule();
 
     private BluetoothAdapter mAdapter;
-    private Context mTargetContext;
     private HandlerThread mHandlerThread;
     private StubBatteryStateMachine mBatteryStateMachine;
     private static final int CONNECTION_TIMEOUT_MS = 1_000;
@@ -77,7 +76,6 @@ public class BatteryStateMachineTest {
 
     @Before
     public void setUp() throws Exception {
-        mTargetContext = InstrumentationRegistry.getTargetContext();
         TestUtils.setAdapterService(mAdapterService);
 
         mAdapter = BluetoothAdapter.getDefaultAdapter();

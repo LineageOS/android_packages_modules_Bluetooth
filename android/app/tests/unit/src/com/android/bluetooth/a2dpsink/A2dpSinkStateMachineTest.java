@@ -58,13 +58,10 @@ public class A2dpSinkStateMachineTest {
     private A2dpSinkStateMachine mStateMachine;
     private BluetoothAdapter mAdapter;
     private BluetoothDevice mDevice;
-    private Context mTargetContext;
     private TestLooper mLooper;
 
     @Before
     public void setUp() throws Exception {
-        mTargetContext = InstrumentationRegistry.getTargetContext();
-
         mLooper = new TestLooper();
 
         mAdapter = BluetoothAdapter.getDefaultAdapter();

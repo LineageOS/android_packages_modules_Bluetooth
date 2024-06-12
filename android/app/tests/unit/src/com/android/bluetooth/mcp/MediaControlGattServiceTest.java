@@ -26,11 +26,9 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
 import android.bluetooth.BluetoothLeBroadcastMetadata;
-import android.content.Context;
 import android.os.Looper;
 import android.platform.test.flag.junit.SetFlagsRule;
 
-import androidx.test.InstrumentationRegistry;
 import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
@@ -64,7 +62,6 @@ import java.util.UUID;
 public class MediaControlGattServiceTest {
     private BluetoothAdapter mAdapter;
     private BluetoothDevice mCurrentDevice;
-    private Context mTargetContext;
 
     private static final UUID UUID_GMCS = UUID.fromString("00001849-0000-1000-8000-00805f9b34fb");
     private static final UUID UUID_CCCD = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
@@ -86,7 +83,6 @@ public class MediaControlGattServiceTest {
 
     @Before
     public void setUp() throws Exception {
-        mTargetContext = InstrumentationRegistry.getTargetContext();
         if (Looper.myLooper() == null) {
             Looper.prepare();
         }
@@ -673,7 +669,7 @@ public class MediaControlGattServiceTest {
     }
 
     private void verifyWriteObjIdsInvalid(
-            BluetoothGattCharacteristic characteristic, int id, byte diffByte) {
+            BluetoothGattCharacteristic characteristic, byte diffByte) {
         byte[] value = new byte[] {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, diffByte};
         mMcpService.mServerCallback.onCharacteristicWriteRequest(
                 mCurrentDevice, 1, characteristic, false, true, 0, value);
@@ -733,14 +729,14 @@ public class MediaControlGattServiceTest {
 
         characteristic =
                 service.getCharacteristic(MediaControlGattService.UUID_CURRENT_TRACK_OBJ_ID);
-        verifyWriteObjIdsInvalid(characteristic, ObjectIds.CURRENT_TRACK_OBJ_ID, diff_byte++);
+        verifyWriteObjIdsInvalid(characteristic, diff_byte++);
 
         characteristic = service.getCharacteristic(MediaControlGattService.UUID_NEXT_TRACK_OBJ_ID);
-        verifyWriteObjIdsInvalid(characteristic, ObjectIds.NEXT_TRACK_OBJ_ID, diff_byte++);
+        verifyWriteObjIdsInvalid(characteristic, diff_byte++);
 
         characteristic =
                 service.getCharacteristic(MediaControlGattService.UUID_CURRENT_GROUP_OBJ_ID);
-        verifyWriteObjIdsInvalid(characteristic, ObjectIds.CURRENT_GROUP_OBJ_ID, diff_byte++);
+        verifyWriteObjIdsInvalid(characteristic, diff_byte++);
 
         characteristic = service.getCharacteristic(MediaControlGattService.UUID_PLAYING_ORDER);
         bb = ByteBuffer.allocate(Byte.BYTES + 1);
@@ -919,13 +915,10 @@ public class MediaControlGattServiceTest {
     }
 
     private void verifyMediaControlPointRequest(
-            BluetoothGattService service,
             int opcode,
             Integer value,
             int expectedGattResult,
             int invocation_count) {
-        BluetoothGattCharacteristic characteristic =
-                service.getCharacteristic(MediaControlGattService.UUID_MEDIA_CONTROL_POINT);
         ByteBuffer bb;
 
         if (expectedGattResult == BluetoothGatt.GATT_INVALID_ATTRIBUTE_LENGTH) {
@@ -987,79 +980,71 @@ public class MediaControlGattServiceTest {
                 .notifyCharacteristicChanged(eq(mCurrentDevice), eq(characteristic), eq(false));
 
         verifyMediaControlPointRequest(
-                service, Request.Opcodes.PLAY, null, expectedGattResult, invocation_count++);
+                Request.Opcodes.PLAY, null, expectedGattResult, invocation_count++);
         verifyMediaControlPointRequest(
-                service, Request.Opcodes.PAUSE, null, expectedGattResult, invocation_count++);
+                Request.Opcodes.PAUSE, null, expectedGattResult, invocation_count++);
         verifyMediaControlPointRequest(
-                service, Request.Opcodes.FAST_REWIND, null, expectedGattResult, invocation_count++);
+                Request.Opcodes.FAST_REWIND, null, expectedGattResult, invocation_count++);
         verifyMediaControlPointRequest(
-                service,
                 Request.Opcodes.FAST_FORWARD,
                 null,
                 expectedGattResult,
                 invocation_count++);
         verifyMediaControlPointRequest(
-                service, Request.Opcodes.STOP, null, expectedGattResult, invocation_count++);
+                Request.Opcodes.STOP, null, expectedGattResult, invocation_count++);
         verifyMediaControlPointRequest(
-                service,
                 Request.Opcodes.MOVE_RELATIVE,
                 100,
                 expectedGattResult,
                 invocation_count++);
         verifyMediaControlPointRequest(
-                service,
                 Request.Opcodes.PREVIOUS_SEGMENT,
                 null,
                 expectedGattResult,
                 invocation_count++);
         verifyMediaControlPointRequest(
-                service,
                 Request.Opcodes.NEXT_SEGMENT,
                 null,
                 expectedGattResult,
                 invocation_count++);
         verifyMediaControlPointRequest(
-                service,
                 Request.Opcodes.FIRST_SEGMENT,
                 null,
                 expectedGattResult,
                 invocation_count++);
         verifyMediaControlPointRequest(
-                service,
                 Request.Opcodes.LAST_SEGMENT,
                 null,
                 expectedGattResult,
                 invocation_count++);
         verifyMediaControlPointRequest(
-                service, Request.Opcodes.GOTO_SEGMENT, 10, expectedGattResult, invocation_count++);
+                Request.Opcodes.GOTO_SEGMENT, 10, expectedGattResult, invocation_count++);
         verifyMediaControlPointRequest(
-                service,
                 Request.Opcodes.PREVIOUS_TRACK,
                 null,
                 expectedGattResult,
                 invocation_count++);
         verifyMediaControlPointRequest(
-                service, Request.Opcodes.NEXT_TRACK, null, expectedGattResult, invocation_count++);
+                Request.Opcodes.NEXT_TRACK, null, expectedGattResult, invocation_count++);
         verifyMediaControlPointRequest(
-                service, Request.Opcodes.FIRST_TRACK, null, expectedGattResult, invocation_count++);
+                Request.Opcodes.FIRST_TRACK, null, expectedGattResult, invocation_count++);
         verifyMediaControlPointRequest(
-                service, Request.Opcodes.LAST_TRACK, null, expectedGattResult, invocation_count++);
+                Request.Opcodes.LAST_TRACK, null, expectedGattResult, invocation_count++);
         verifyMediaControlPointRequest(
-                service, Request.Opcodes.GOTO_TRACK, 7, expectedGattResult, invocation_count++);
+                Request.Opcodes.GOTO_TRACK, 7, expectedGattResult, invocation_count++);
         verifyMediaControlPointRequest(
-                service,
                 Request.Opcodes.PREVIOUS_GROUP,
                 null,
                 expectedGattResult,
                 invocation_count++);
         verifyMediaControlPointRequest(
-                service, Request.Opcodes.NEXT_GROUP, null, expectedGattResult, invocation_count++);
+                Request.Opcodes.NEXT_GROUP, null, expectedGattResult, invocation_count++);
         verifyMediaControlPointRequest(
-                service, Request.Opcodes.FIRST_GROUP, null, expectedGattResult, invocation_count++);
+                Request.Opcodes.FIRST_GROUP, null, expectedGattResult, invocation_count++);
         verifyMediaControlPointRequest(
-                service, Request.Opcodes.LAST_GROUP, null, expectedGattResult, invocation_count++);
+                Request.Opcodes.LAST_GROUP, null, expectedGattResult, invocation_count++);
         verifyMediaControlPointRequest(
-                service, Request.Opcodes.GOTO_GROUP, 10, expectedGattResult, invocation_count++);
+                Request.Opcodes.GOTO_GROUP, 10, expectedGattResult, invocation_count++);
     }
 
     @Test
@@ -1074,19 +1059,16 @@ public class MediaControlGattServiceTest {
 
     @Test
     public void testMediaControlPointRequestInvalid() {
-        Integer opcodes_supported = Request.SupportedOpcodes.NONE;
-
         Assert.assertFalse(mMcpService.isOpcodeSupported(Request.Opcodes.PLAY));
     }
 
     @Test
     public void testMediaControlPointeRequest_OpcodePlayCallLeAudioServiceSetActiveDevice() {
         mSetFlagsRule.enableFlags(Flags.FLAG_LEAUDIO_BROADCAST_FEATURE_SUPPORT);
-        BluetoothGattService service = initAllFeaturesGattService();
+        initAllFeaturesGattService();
         prepareConnectedDevice();
         mMcpService.updateSupportedOpcodesChar(Request.SupportedOpcodes.PLAY, true);
-        verifyMediaControlPointRequest(
-                service, Request.Opcodes.PLAY, null, BluetoothGatt.GATT_SUCCESS, 1);
+        verifyMediaControlPointRequest(Request.Opcodes.PLAY, null, BluetoothGatt.GATT_SUCCESS, 1);
         if (!Flags.leaudioBroadcastFeatureSupport()) {
             verify(mMockLeAudioService).setActiveDevice(any(BluetoothDevice.class));
         } else {
@@ -1509,7 +1491,7 @@ public class MediaControlGattServiceTest {
     @Test
     public void testDumpDoesNotCrash() {
         mMcpService.dump(new StringBuilder());
-        BluetoothGattService service = initAllFeaturesGattService();
+        initAllFeaturesGattService();
         mMcpService.dump(new StringBuilder());
     }
 }

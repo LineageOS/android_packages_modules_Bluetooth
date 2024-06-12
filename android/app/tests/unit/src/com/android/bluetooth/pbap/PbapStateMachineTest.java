@@ -50,7 +50,6 @@ import org.mockito.junit.MockitoRule;
 public class PbapStateMachineTest {
     private static final int TEST_NOTIFICATION_ID = 1000000;
 
-    private Context mTargetContext;
     private BluetoothAdapter mAdapter;
     private HandlerThread mHandlerThread;
     private PbapStateMachine mPbapStateMachine;
@@ -66,7 +65,6 @@ public class PbapStateMachineTest {
 
     @Before
     public void setUp() throws Exception {
-        mTargetContext = InstrumentationRegistry.getTargetContext();
         TestUtils.setAdapterService(mAdapterService);
         mIsAdapterServiceSet = true;
         // This line must be called to make sure relevant objects are initialized properly

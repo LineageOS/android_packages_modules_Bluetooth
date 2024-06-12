@@ -87,7 +87,6 @@ public class HeadsetStateMachineTest {
 
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
-    private Context mTargetContext;
     private BluetoothAdapter mAdapter;
     private HandlerThread mHandlerThread;
     private HeadsetStateMachine mHeadsetStateMachine;
@@ -111,7 +110,6 @@ public class HeadsetStateMachineTest {
 
     @Before
     public void setUp() throws Exception {
-        mTargetContext = InstrumentationRegistry.getTargetContext();
         // Setup mocks and test assets
         TestUtils.setAdapterService(mAdapterService);
         // Stub system interface

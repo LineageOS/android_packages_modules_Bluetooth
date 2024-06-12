@@ -64,8 +64,6 @@ public class MediaControlProfileTest {
 
     private BluetoothAdapter mAdapter;
     private MediaControlProfile mMediaControlProfile;
-    private List<Integer> mPendingStateRequest;
-    private Context mTargetContext;
 
     private String packageName = "TestPackage";
 
@@ -88,7 +86,6 @@ public class MediaControlProfileTest {
     @Captor private ArgumentCaptor<HashMap> stateMapCaptor;
     @Captor private ArgumentCaptor<Long> positionCaptor;
     @Captor private ArgumentCaptor<MediaControlProfile.ListCallback> listCallbackCaptor;
-    @Captor private ArgumentCaptor<MediaControlServiceCallbacks> mcpServiceCallbacksCaptor;
 
     @Before
     public void setUp() throws Exception {
@@ -96,7 +93,6 @@ public class MediaControlProfileTest {
             System.setProperty("dexmaker.share_classloader", "true");
         }
 
-        mTargetContext = InstrumentationRegistry.getTargetContext();
         MediaControlProfile.ListCallback listCallback;
 
         TestUtils.setAdapterService(mAdapterService);
@@ -119,8 +115,6 @@ public class MediaControlProfileTest {
         doReturn(mMockApplicationInfo)
                 .when(mMockPackageManager)
                 .getApplicationInfo(anyString(), anyInt());
-
-        mPendingStateRequest = new ArrayList<>();
 
         MediaControlProfile.setsMediaPlayerListForTesting(mMockMediaPlayerList);
         mMediaControlProfile = new MediaControlProfile(mMockMcpService);
@@ -223,7 +217,6 @@ public class MediaControlProfileTest {
         int state = PlaybackState.STATE_PLAYING;
         long position = 10;
         float playback_speed = 1.5f;
-        long update_time = 77;
 
         Assert.assertEquals(
                 mMcpServiceCallbacks.onGetCurrentTrackPosition(),

@@ -49,7 +49,6 @@ import java.util.ArrayList;
 public class MediaPlayerListTest {
     private MediaPlayerList mMediaPlayerList;
 
-    private @Captor ArgumentCaptor<AudioManager.AudioPlaybackCallback> mAudioCb;
     private @Captor ArgumentCaptor<MediaPlayerWrapper.Callback> mPlayerWrapperCb;
     private @Captor ArgumentCaptor<MediaData> mMediaUpdateData;
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();

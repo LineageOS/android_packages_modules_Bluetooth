@@ -371,7 +371,7 @@ public class BipImagePropertiesTest {
     public void testParseMalformedNoOpen() {
         String xmlString = XML_DOC_DECL + NATIVE_FORMAT + IMAGE_PROPERTIES_END;
         InputStream stream = toUtf8Stream(xmlString);
-        BipImageProperties properties = new BipImageProperties(stream);
+        new BipImageProperties(stream);
     }
 
     /** Test parsing a malformed image-properties that just cuts out */
@@ -379,7 +379,7 @@ public class BipImagePropertiesTest {
     public void testParseSimulateStreamEndedUnexpectedly() {
         String xmlString = XML_DOC_DECL + IMAGE_PROPERTIES + "<native encoding=\"JPE";
         InputStream stream = toUtf8Stream(xmlString);
-        BipImageProperties properties = new BipImageProperties(stream);
+        new BipImageProperties(stream);
     }
 
     /**

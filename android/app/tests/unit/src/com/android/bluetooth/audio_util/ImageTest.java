@@ -97,7 +97,6 @@ public class ImageTest {
                     @Override
                     public AssetFileDescriptor openTypedAssetFile(
                             Uri url, String mimeType, Bundle opts) {
-                        String handle = url.getQueryParameter("handle");
                         if (IMAGE_URI_1.equals(url)) {
                             return mTestResources.openRawResourceFd(
                                     com.android.bluetooth.tests.R.raw.image_200_200);

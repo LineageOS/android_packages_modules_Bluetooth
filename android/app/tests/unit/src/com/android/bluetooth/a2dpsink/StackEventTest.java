@@ -31,14 +31,12 @@ import org.junit.runner.RunWith;
 
 @RunWith(AndroidJUnit4.class)
 public class StackEventTest {
-    private Context mTargetContext = null;
     private BluetoothAdapter mAdapter = null;
     private BluetoothDevice mDevice = null;
     private static final String TEST_ADDRESS = "11:11:11:11:11:11";
 
     @Before
     public void setUp() throws Exception {
-        mTargetContext = InstrumentationRegistry.getTargetContext();
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         assertThat(mAdapter).isNotNull();
         mDevice = mAdapter.getRemoteDevice(TEST_ADDRESS);
@@ -46,7 +44,6 @@ public class StackEventTest {
 
     @After
     public void tearDown() throws Exception {
-        mTargetContext = null;
         mAdapter = null;
         mDevice = null;
     }
