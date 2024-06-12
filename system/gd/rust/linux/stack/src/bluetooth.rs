@@ -34,10 +34,12 @@ use std::convert::TryInto;
 use std::fs::File;
 use std::hash::Hash;
 use std::io::Write;
+use std::os::fd::AsRawFd;
 use std::process;
 use std::sync::{Arc, Condvar, Mutex};
 use std::time::Duration;
 use std::time::Instant;
+use tempfile::NamedTempFile;
 use tokio::sync::mpsc::Sender;
 use tokio::task::JoinHandle;
 use tokio::time;
@@ -262,6 +264,9 @@ pub trait IBluetooth {
     /// Returns whether the remote device is a dual mode audio sink device (supports both classic and
     /// LE Audio sink roles).
     fn is_dual_mode_audio_sink_device(&self, device: BluetoothDevice) -> bool;
+
+    /// Gets diagnostic output.
+    fn get_dumpsys(&self) -> String;
 }
 
 /// Adapter API for Bluetooth qualification and verification.
@@ -2997,6 +3002,16 @@ impl IBluetooth for Bluetooth {
         media.get_group_devices(group_id).iter().any(|addr| {
             is_dual_mode(self.get_remote_uuids(BluetoothDevice::new(*addr, "".to_string())))
         })
+    }
+
+    fn get_dumpsys(&self) -> String {
+        NamedTempFile::new()
+            .and_then(|file| {
+                let fd = file.as_raw_fd();
+                self.intf.lock().unwrap().dump(fd);
+                std::fs::read_to_string(file.path())
+            })
+            .unwrap_or_default()
     }
 }
 
