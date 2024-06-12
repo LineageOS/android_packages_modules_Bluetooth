@@ -60,10 +60,10 @@ fn test_read_characteristic_callback() {
         });
 
         // assert: verify the read callback is received
-        let MockCallbackEvents::OnServerRead(
-            CONN_ID, _, HANDLE_1, BACKING_TYPE, OFFSET,
-        ) = callbacks_rx.recv().await.unwrap() else {
-          unreachable!()
+        let MockCallbackEvents::OnServerRead(CONN_ID, _, HANDLE_1, BACKING_TYPE, OFFSET) =
+            callbacks_rx.recv().await.unwrap()
+        else {
+            unreachable!()
         };
     });
 }
@@ -240,9 +240,15 @@ fn test_write_characteristic_callback() {
 
         // assert: verify the write callback is received
         let MockCallbackEvents::OnServerWrite(
-            CONN_ID, _, HANDLE_1, BACKING_TYPE, GattWriteType::Request(WRITE_REQUEST_TYPE), recv_data
-        ) = callbacks_rx.recv().await.unwrap() else {
-          unreachable!()
+            CONN_ID,
+            _,
+            HANDLE_1,
+            BACKING_TYPE,
+            GattWriteType::Request(WRITE_REQUEST_TYPE),
+            recv_data,
+        ) = callbacks_rx.recv().await.unwrap()
+        else {
+            unreachable!()
         };
         assert_eq!(
             recv_data.view().get_raw_payload().collect::<Vec<_>>(),
@@ -366,9 +372,15 @@ fn test_write_no_response_callback() {
 
         // assert: verify the write callback is received
         let MockCallbackEvents::OnServerWrite(
-            CONN_ID, _, HANDLE_1, BACKING_TYPE, GattWriteType::Command, recv_data
-        ) = callbacks_rx.recv().await.unwrap() else {
-          unreachable!()
+            CONN_ID,
+            _,
+            HANDLE_1,
+            BACKING_TYPE,
+            GattWriteType::Command,
+            recv_data,
+        ) = callbacks_rx.recv().await.unwrap()
+        else {
+            unreachable!()
         };
         assert_eq!(
             recv_data.view().get_raw_payload().collect::<Vec<_>>(),
@@ -392,10 +404,10 @@ fn test_execute_characteristic_callback() {
         });
 
         // assert: verify the execute callback is received
-        let MockCallbackEvents::OnExecute(
-            CONN_ID, _, TransactionDecision::Cancel
-        ) = callbacks_rx.recv().await.unwrap() else {
-          unreachable!()
+        let MockCallbackEvents::OnExecute(CONN_ID, _, TransactionDecision::Cancel) =
+            callbacks_rx.recv().await.unwrap()
+        else {
+            unreachable!()
         };
     });
 }
