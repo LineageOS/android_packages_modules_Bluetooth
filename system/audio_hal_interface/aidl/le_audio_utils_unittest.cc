@@ -663,7 +663,7 @@ PrepareReferenceBroadcastRequirements() {
 
   std::pair<::bluetooth::le_audio::types::LeAudioContextType, uint8_t>
       stack_req = std::make_pair(le_audio::types::LeAudioContextType::MEDIA,
-                                 le_audio::kLeAudioQualityHigh);
+                                 le_audio::QUALITY_HIGH);
   ::aidl::android::hardware::bluetooth::audio::IBluetoothAudioProvider::
       LeAudioBroadcastSubgroupConfigurationRequirement aidl_req = {
           .audioContext.bitmask =
