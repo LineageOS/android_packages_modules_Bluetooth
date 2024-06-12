@@ -728,7 +728,7 @@ tBTM_STATUS btm_ble_start_sec_check(const RawAddress& bd_addr, uint16_t psm,
    */
   if (!p_serv_rec) {
     log::warn("PSM: {} no application registered", psm);
-    (*p_callback)(&bd_addr, BT_TRANSPORT_LE, p_ref_data, BTM_MODE_UNSUPPORTED);
+    (*p_callback)(bd_addr, BT_TRANSPORT_LE, p_ref_data, BTM_MODE_UNSUPPORTED);
     return BTM_ILLEGAL_VALUE;
   }
 
@@ -759,7 +759,7 @@ tBTM_STATUS btm_ble_start_sec_check(const RawAddress& bd_addr, uint16_t psm,
   switch (sec_act) {
     case BTM_SEC_OK:
       log::debug("Security met");
-      p_callback(&bd_addr, BT_TRANSPORT_LE, p_ref_data, BTM_SUCCESS);
+      p_callback(bd_addr, BT_TRANSPORT_LE, p_ref_data, BTM_SUCCESS);
       break;
 
     case BTM_SEC_ENCRYPT:

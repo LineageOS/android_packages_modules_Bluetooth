@@ -237,7 +237,7 @@ tRFC_MCB* rfc_find_lcid_mcb(uint16_t lcid);
 void rfc_save_lcid_mcb(tRFC_MCB* p_rfc_mcb, uint16_t lcid);
 void rfc_check_mcb_active(tRFC_MCB* p_mcb);
 void rfc_port_closed(tPORT* p_port);
-void rfc_sec_check_complete(const RawAddress* bd_addr, tBT_TRANSPORT transport,
+void rfc_sec_check_complete(RawAddress bd_addr, tBT_TRANSPORT transport,
                             void* p_ref_data, tBTM_STATUS res);
 void rfc_inc_credit(tPORT* p_port, uint8_t credit);
 void rfc_dec_credit(tPORT* p_port);
