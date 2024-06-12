@@ -89,7 +89,6 @@ import libcore.util.HexEncoding;
 
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -959,79 +958,6 @@ public class AdapterServiceTest {
         assertThat(mAdapterService.obfuscateAddress(null)).isEmpty();
     }
 
-    /**
-     * Test: Obfuscate Bluetooth address when Bluetooth is disabled Check whether the returned value
-     * meets expectation
-     */
-    @Test
-    @Ignore("b/296127545: This is a native test")
-    public void testObfuscateBluetoothAddress_BluetoothDisabled() {
-        Map<String, Map<String, String>> adapterConfig = TestUtils.readAdapterConfig();
-        assertThat(adapterConfig).isNotNull();
-
-        assertThat(mAdapterService.getState()).isEqualTo(STATE_OFF);
-        byte[] metricsSalt = getMetricsSalt(adapterConfig);
-        assertThat(metricsSalt).isNotNull();
-        BluetoothDevice device = TestUtils.getTestDevice(BluetoothAdapter.getDefaultAdapter(), 0);
-        byte[] obfuscatedAddress = mAdapterService.obfuscateAddress(device);
-        assertThat(obfuscatedAddress).isNotEmpty();
-        assertThat(isByteArrayAllZero(obfuscatedAddress)).isFalse();
-        assertThat(obfuscateInJava(metricsSalt, device)).isEqualTo(obfuscatedAddress);
-    }
-
-    /**
-     * Test: Obfuscate Bluetooth address when Bluetooth is enabled Check whether the returned value
-     * meets expectation
-     */
-    @Test
-    @Ignore("b/296127545: This is a native test")
-    public void testObfuscateBluetoothAddress_BluetoothEnabled() {
-        Map<String, Map<String, String>> adapterConfig = TestUtils.readAdapterConfig();
-        assertThat(adapterConfig).isNotNull();
-
-        assertThat(mAdapterService.getState()).isEqualTo(STATE_OFF);
-        doEnable(false);
-        assertThat(mAdapterService.getState()).isEqualTo(STATE_ON);
-        byte[] metricsSalt = getMetricsSalt(adapterConfig);
-        assertThat(metricsSalt).isNotNull();
-        BluetoothDevice device = TestUtils.getTestDevice(BluetoothAdapter.getDefaultAdapter(), 0);
-        byte[] obfuscatedAddress = mAdapterService.obfuscateAddress(device);
-        assertThat(obfuscatedAddress).isNotEmpty();
-        assertThat(isByteArrayAllZero(obfuscatedAddress)).isFalse();
-        assertThat(obfuscateInJava(metricsSalt, device)).isEqualTo(obfuscatedAddress);
-    }
-
-    /** Test: Check if obfuscated Bluetooth address stays the same after toggling Bluetooth */
-    @Test
-    @Ignore("b/296127545: This is a native test")
-    public void testObfuscateBluetoothAddress_PersistentBetweenToggle() {
-        Map<String, Map<String, String>> adapterConfig = TestUtils.readAdapterConfig();
-        assertThat(adapterConfig).isNotNull();
-
-        assertThat(mAdapterService.getState()).isEqualTo(STATE_OFF);
-        byte[] metricsSalt = getMetricsSalt(adapterConfig);
-        assertThat(metricsSalt).isNotNull();
-        BluetoothDevice device = TestUtils.getTestDevice(BluetoothAdapter.getDefaultAdapter(), 0);
-        byte[] obfuscatedAddress1 = mAdapterService.obfuscateAddress(device);
-        assertThat(obfuscatedAddress1).isNotEmpty();
-        assertThat(isByteArrayAllZero(obfuscatedAddress1)).isFalse();
-        assertThat(obfuscateInJava(metricsSalt, device)).isEqualTo(obfuscatedAddress1);
-        // Enable
-        doEnable(false);
-        assertThat(mAdapterService.getState()).isEqualTo(STATE_ON);
-        byte[] obfuscatedAddress3 = mAdapterService.obfuscateAddress(device);
-        assertThat(obfuscatedAddress3).isNotEmpty();
-        assertThat(isByteArrayAllZero(obfuscatedAddress3)).isFalse();
-        assertThat(obfuscatedAddress3).isEqualTo(obfuscatedAddress1);
-        // Disable
-        doDisable(false);
-        assertThat(mAdapterService.getState()).isEqualTo(STATE_OFF);
-        byte[] obfuscatedAddress4 = mAdapterService.obfuscateAddress(device);
-        assertThat(obfuscatedAddress4).isNotEmpty();
-        assertThat(isByteArrayAllZero(obfuscatedAddress4)).isFalse();
-        assertThat(obfuscatedAddress4).isEqualTo(obfuscatedAddress1);
-    }
-
     @Test
     public void testAddressConsolidation() {
         // Create device properties
@@ -1108,48 +1034,6 @@ public class AdapterServiceTest {
     @Test
     public void testGetMetricId_NullAddress() {
         assertThat(mAdapterService.getMetricId(null)).isEqualTo(0);
-    }
-
-    /**
-     * Test: Get id when Bluetooth is disabled Check whether the returned value meets expectation
-     */
-    @Test
-    @Ignore("b/296127545: This is a native test")
-    public void testGetMetricId_BluetoothDisabled() {
-        assertThat(mAdapterService.getState()).isEqualTo(STATE_OFF);
-        BluetoothDevice device = TestUtils.getTestDevice(BluetoothAdapter.getDefaultAdapter(), 0);
-        assertThat(mAdapterService.getMetricId(device)).isGreaterThan(0);
-    }
-
-    /** Test: Get id when Bluetooth is enabled Check whether the returned value meets expectation */
-    @Test
-    @Ignore("b/296127545: This is a native test")
-    public void testGetMetricId_BluetoothEnabled() {
-        assertThat(mAdapterService.getState()).isEqualTo(STATE_OFF);
-        doEnable(false);
-        assertThat(mAdapterService.getState()).isEqualTo(STATE_ON);
-        BluetoothDevice device = TestUtils.getTestDevice(BluetoothAdapter.getDefaultAdapter(), 0);
-        assertThat(mAdapterService.getMetricId(device)).isGreaterThan(0);
-    }
-
-    /** Test: Check if id gotten stays the same after toggling Bluetooth */
-    @Test
-    @Ignore("b/296127545: This is a native test")
-    public void testGetMetricId_PersistentBetweenToggle() {
-        assertThat(mAdapterService.getState()).isEqualTo(STATE_OFF);
-        BluetoothDevice device = TestUtils.getTestDevice(BluetoothAdapter.getDefaultAdapter(), 0);
-        final int initialMetricId = mAdapterService.getMetricId(device);
-        assertThat(initialMetricId).isGreaterThan(0);
-
-        // Enable
-        doEnable(false);
-        assertThat(mAdapterService.getState()).isEqualTo(STATE_ON);
-        assertThat(mAdapterService.getMetricId(device)).isEqualTo(initialMetricId);
-
-        // Disable
-        doDisable(false);
-        assertThat(mAdapterService.getState()).isEqualTo(STATE_OFF);
-        assertThat(mAdapterService.getMetricId(device)).isEqualTo(initialMetricId);
     }
 
     @Test
