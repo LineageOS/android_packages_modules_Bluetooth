@@ -475,7 +475,7 @@ class VolumeControlTest : public ::testing::Test {
                              tBTM_SEC_CALLBACK* p_callback, void* p_ref_data,
                              tBTM_BLE_SEC_ACT sec_act) -> tBTM_STATUS {
               if (p_callback) {
-                p_callback(&bd_addr, transport, p_ref_data,
+                p_callback(bd_addr, transport, p_ref_data,
                            success ? BTM_SUCCESS : BTM_FAILED_ON_SECURITY);
               }
               GetEncryptionCompleteEvt(bd_addr);
