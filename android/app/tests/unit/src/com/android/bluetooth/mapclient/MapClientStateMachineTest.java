@@ -92,8 +92,6 @@ public class MapClientStateMachineTest {
 
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
-    private static final String FOLDER_SENT = "sent";
-
     private static final int ASYNC_CALL_TIMEOUT_MILLIS = 100;
     private static final int DISCONNECT_TIMEOUT = 3000;
 
@@ -497,8 +495,6 @@ public class MapClientStateMachineTest {
         TestUtils.waitForLooperToFinishScheduledTask(mMceStateMachine.getHandler().getLooper());
         Assert.assertEquals(BluetoothProfile.STATE_CONNECTED, mMceStateMachine.getState());
 
-        RequestPushMessage testRequest =
-                new RequestPushMessage(FOLDER_SENT, mTestIncomingSmsBmessage, null, false, false);
         when(mMockRequestPushMessage.getMsgHandle()).thenReturn(mTestMessageSmsHandle);
         when(mMockRequestPushMessage.getBMsg()).thenReturn(mTestIncomingSmsBmessage);
         Message msgSent =

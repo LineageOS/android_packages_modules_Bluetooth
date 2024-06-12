@@ -305,12 +305,12 @@ public class BipTransformationTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testCreate_badTransformationOnly() {
-        BipTransformation trans = new BipTransformation(-7);
+        new BipTransformation(-7);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testCreate_badTransformation() {
-        BipTransformation trans = new BipTransformation(new int[] {BipTransformation.CROP, -7});
+        new BipTransformation(new int[] {BipTransformation.CROP, -7});
     }
 
     @Test

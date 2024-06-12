@@ -1160,7 +1160,6 @@ public class BluetoothInCallServiceTest {
     @Test
     public void testProcessChldReleaseActiveHold() throws Exception {
         BluetoothCall activeCall = createActiveCall(UUID.randomUUID());
-        BluetoothCall heldCall = createHeldCall(UUID.randomUUID());
 
         boolean didProcess =
                 mBluetoothInCallService.processChld(CHLD_TYPE_RELEASEACTIVE_ACCEPTHELD);

@@ -357,8 +357,6 @@ public class LeAudioBinderTest {
     @Test
     public void isPlaying() {
         int id = 1;
-        BluetoothLeAudioContentMetadata metadata =
-                new BluetoothLeAudioContentMetadata.Builder().build();
         AttributionSource source = new AttributionSource.Builder(0).build();
 
         mBinder.isPlaying(id, source);

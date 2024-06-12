@@ -89,8 +89,6 @@ public class BrowserPlayerWrapperTest {
     private static final String IMAGE_HANDLE_1 = "0000001";
     private static final Uri IMAGE_URI_1 =
             TEST_CONTENT_URI.buildUpon().appendQueryParameter("handle", IMAGE_HANDLE_1).build();
-    private static final String IMAGE_STRING_1 = IMAGE_URI_1.toString();
-
     private Bitmap mTestBitmap = null;
 
     @Before
@@ -108,7 +106,6 @@ public class BrowserPlayerWrapperTest {
                     @Override
                     public AssetFileDescriptor openTypedAssetFile(
                             Uri url, String mimeType, Bundle opts) {
-                        String handle = url.getQueryParameter("handle");
                         if (IMAGE_URI_1.equals(url)) {
                             return mTestResources.openRawResourceFd(
                                     com.android.bluetooth.tests.R.raw.image_200_200);
@@ -356,10 +353,10 @@ public class BrowserPlayerWrapperTest {
         verify(mMockBrowser).subscribe(any(), mSubscriptionCb.capture());
         MediaBrowser.SubscriptionCallback subscriptionCb = mSubscriptionCb.getValue();
 
-        MediaDescription desc = null;
         ArrayList<MediaItem> items = new ArrayList<MediaItem>();
 
-        desc = getMediaDescription("s1", "song1", "artist", "album", null, null, null);
+        MediaDescription desc =
+                getMediaDescription("s1", "song1", "artist", "album", null, null, null);
         items.add(getMediaItem(desc, MediaItem.FLAG_PLAYABLE));
 
         desc = getMediaDescription("s2", "song2", "artist", "album", mTestBitmap, null, null);

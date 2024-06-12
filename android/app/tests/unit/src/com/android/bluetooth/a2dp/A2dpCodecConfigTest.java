@@ -47,7 +47,6 @@ import java.util.Arrays;
 @RunWith(AndroidJUnit4.class)
 public class A2dpCodecConfigTest {
 
-    private Context mTargetContext;
     private BluetoothDevice mTestDevice;
     private A2dpCodecConfig mA2dpCodecConfig;
 
@@ -72,7 +71,6 @@ public class A2dpCodecConfigTest {
     private static final int APTX_PRIORITY_DEFAULT = 5001;
     private static final int APTX_HD_PRIORITY_DEFAULT = 7001;
     private static final int LDAC_PRIORITY_DEFAULT = 9001;
-    private static final int LC3_PRIORITY_DEFAULT = 11001;
     private static final int OPUS_PRIORITY_DEFAULT = 13001;
     private static final int PRIORITY_HIGH = 1000000;
 
@@ -214,8 +212,6 @@ public class A2dpCodecConfigTest {
 
     @Before
     public void setUp() throws Exception {
-        mTargetContext = InstrumentationRegistry.getTargetContext();
-
         when(mMockContext.getResources()).thenReturn(mMockResources);
         when(mMockResources.getInteger(R.integer.a2dp_source_codec_priority_sbc))
                 .thenReturn(SBC_PRIORITY_DEFAULT);

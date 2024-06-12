@@ -40,7 +40,6 @@ import android.bluetooth.BluetoothHeadsetClientCall;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.bluetooth.BluetoothStatusCodes;
-import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
@@ -53,7 +52,6 @@ import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.SetFlagsRule;
 import android.util.Pair;
 
-import androidx.test.InstrumentationRegistry;
 import androidx.test.espresso.intent.matcher.IntentMatchers;
 import androidx.test.filters.FlakyTest;
 import androidx.test.filters.LargeTest;
@@ -96,7 +94,6 @@ public class HeadsetClientStateMachineTest {
     private HandlerThread mHandlerThread;
     private TestHeadsetClientStateMachine mHeadsetClientStateMachine;
     private BluetoothDevice mTestDevice;
-    private Context mTargetContext;
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 
@@ -119,7 +116,6 @@ public class HeadsetClientStateMachineTest {
 
     @Before
     public void setUp() throws Exception {
-        mTargetContext = InstrumentationRegistry.getTargetContext();
         // Setup mocks and test assets
         // Set a valid volume
         when(mAudioManager.getStreamVolume(anyInt())).thenReturn(2);
@@ -759,10 +755,8 @@ public class HeadsetClientStateMachineTest {
         when(mHeadsetClientService.getConnectionPolicy(any(BluetoothDevice.class)))
                 .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
 
-        int expectedBroadcastIndex = 1;
-
-        expectedBroadcastIndex = setUpHfpClientConnection(expectedBroadcastIndex);
-        expectedBroadcastIndex = setUpServiceLevelConnection(expectedBroadcastIndex);
+        setUpHfpClientConnection(1);
+        setUpServiceLevelConnection(2);
 
         Message msg =
                 mHeadsetClientStateMachine.obtainMessage(
@@ -802,10 +796,8 @@ public class HeadsetClientStateMachineTest {
         when(mHeadsetClientService.getConnectionPolicy(any(BluetoothDevice.class)))
                 .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
 
-        int expectedBroadcastIndex = 1;
-
-        expectedBroadcastIndex = setUpHfpClientConnection(expectedBroadcastIndex);
-        expectedBroadcastIndex = setUpServiceLevelConnection(expectedBroadcastIndex);
+        setUpHfpClientConnection(1);
+        setUpServiceLevelConnection(2);
 
         Message msg =
                 mHeadsetClientStateMachine.obtainMessage(
@@ -843,11 +835,8 @@ public class HeadsetClientStateMachineTest {
         when(mHeadsetClientService.getConnectionPolicy(any(BluetoothDevice.class)))
                 .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
         int expectedBroadcastIndex = 1;
-        int expectedBroadcastMultiplePermissionsIndex = 1;
-        expectedBroadcastMultiplePermissionsIndex =
-                setUpHfpClientConnection(expectedBroadcastMultiplePermissionsIndex);
-        expectedBroadcastMultiplePermissionsIndex =
-                setUpServiceLevelConnection(expectedBroadcastMultiplePermissionsIndex);
+        setUpHfpClientConnection(1);
+        setUpServiceLevelConnection(2);
 
         // Simulate a known event arrive
         String vendorEvent = vendorEventCode + vendorEventArgument;
@@ -904,9 +893,8 @@ public class HeadsetClientStateMachineTest {
         // Setup connection state machine to be in connected state
         when(mHeadsetClientService.getConnectionPolicy(any(BluetoothDevice.class)))
                 .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
-        int expectedBroadcastIndex = 1;
-        expectedBroadcastIndex = setUpHfpClientConnection(expectedBroadcastIndex);
-        expectedBroadcastIndex = setUpServiceLevelConnection(expectedBroadcastIndex);
+        setUpHfpClientConnection(1);
+        setUpServiceLevelConnection(2);
 
         // Simulate an unknown event arrive
         String vendorEvent = vendorEventCode + vendorEventArgument;
@@ -916,7 +904,7 @@ public class HeadsetClientStateMachineTest {
         mHeadsetClientStateMachine.sendMessage(StackEvent.STACK_EVENT, event);
 
         // Validate no broadcast intent
-        verify(mHeadsetClientService, atMost(expectedBroadcastIndex - 1))
+        verify(mHeadsetClientService, atMost(2))
                 .sendBroadcast(any(), anyString(), any(Bundle.class));
     }
 
@@ -951,11 +939,8 @@ public class HeadsetClientStateMachineTest {
         doReturn(true).when(mNativeInterface).stopVoiceRecognition(any(BluetoothDevice.class));
 
         int expectedBroadcastIndex = 1;
-        int expectedBroadcastMultiplePermissionsIndex = 1;
-        expectedBroadcastMultiplePermissionsIndex =
-                setUpHfpClientConnection(expectedBroadcastMultiplePermissionsIndex);
-        expectedBroadcastMultiplePermissionsIndex =
-                setUpServiceLevelConnection(expectedBroadcastMultiplePermissionsIndex);
+        setUpHfpClientConnection(1);
+        setUpServiceLevelConnection(2);
 
         // Simulate a voice recognition start
         mHeadsetClientStateMachine.sendMessage(VOICE_RECOGNITION_START);
@@ -1005,9 +990,8 @@ public class HeadsetClientStateMachineTest {
         // Setup connection state machine to be in connected state
         when(mHeadsetClientService.getConnectionPolicy(any(BluetoothDevice.class)))
                 .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
-        int expectedBroadcastIndex = 1;
-        expectedBroadcastIndex = setUpHfpClientConnection(expectedBroadcastIndex);
-        expectedBroadcastIndex = setUpServiceLevelConnection(expectedBroadcastIndex);
+        setUpHfpClientConnection(1);
+        setUpServiceLevelConnection(2);
 
         int indicator_id = 2;
         int indicator_value = 50;
@@ -1036,10 +1020,9 @@ public class HeadsetClientStateMachineTest {
         // Setup connection state machine to be in connected state
         when(mHeadsetClientService.getConnectionPolicy(any(BluetoothDevice.class)))
                 .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
-        int expectedBroadcastIndex = 1;
 
-        expectedBroadcastIndex = setUpHfpClientConnection(expectedBroadcastIndex);
-        expectedBroadcastIndex = setUpServiceLevelConnection(expectedBroadcastIndex);
+        setUpHfpClientConnection(1);
+        setUpServiceLevelConnection(2);
 
         verify(mHeadsetClientService, timeout(STANDARD_WAIT_MILLIS).times(1)).updateBatteryLevel();
     }
@@ -1392,10 +1375,9 @@ public class HeadsetClientStateMachineTest {
         // Setup connection state machine to be in connected state
         when(mHeadsetClientService.getConnectionPolicy(any(BluetoothDevice.class)))
                 .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
-        int expectedBroadcastIndex = 1;
 
-        expectedBroadcastIndex = setUpHfpClientConnection(expectedBroadcastIndex);
-        expectedBroadcastIndex = setUpServiceLevelConnection(expectedBroadcastIndex);
+        setUpHfpClientConnection(1);
+        setUpServiceLevelConnection(2);
 
         BluetoothSinkAudioPolicy dummyAudioPolicy = new BluetoothSinkAudioPolicy.Builder().build();
         mHeadsetClientStateMachine.setAudioPolicy(dummyAudioPolicy);
@@ -1410,10 +1392,8 @@ public class HeadsetClientStateMachineTest {
         when(mHeadsetClientService.getConnectionPolicy(any(BluetoothDevice.class)))
                 .thenReturn(BluetoothProfile.CONNECTION_POLICY_ALLOWED);
 
-        int expectedBroadcastIndex = 1;
-
-        expectedBroadcastIndex = setUpHfpClientConnection(expectedBroadcastIndex);
-        expectedBroadcastIndex = setUpServiceLevelConnection(expectedBroadcastIndex, true);
+        setUpHfpClientConnection(1);
+        setUpServiceLevelConnection(2, true);
 
         BluetoothSinkAudioPolicy dummyAudioPolicy =
                 new BluetoothSinkAudioPolicy.Builder()

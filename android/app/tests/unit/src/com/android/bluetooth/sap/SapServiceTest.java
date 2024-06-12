@@ -46,8 +46,6 @@ import org.mockito.junit.MockitoRule;
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class SapServiceTest {
-    private static final int TIMEOUT_MS = 5_000;
-
     private SapService mService = null;
     private BluetoothAdapter mAdapter = null;
     private Context mTargetContext;

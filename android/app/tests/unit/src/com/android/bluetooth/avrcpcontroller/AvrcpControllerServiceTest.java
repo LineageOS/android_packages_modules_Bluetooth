@@ -65,10 +65,7 @@ import java.util.List;
 @RunWith(AndroidJUnit4.class)
 public class AvrcpControllerServiceTest {
     private static final String REMOTE_DEVICE_ADDRESS = "00:00:00:00:00:00";
-    private static final byte[] REMOTE_DEVICE_ADDRESS_AS_ARRAY = new byte[] {0, 0, 0, 0, 0, 0};
     private static final String REMOTE_DEVICE_ADDRESS_2 = "11:11:11:11:11:11";
-    private static final byte[] REMOTE_DEVICE_ADDRESS_AS_ARRAY_2 =
-            new byte[] {11, 11, 11, 11, 11, 11};
 
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
