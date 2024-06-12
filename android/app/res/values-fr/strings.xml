@@ -135,9 +135,7 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Le Bluetooth de votre appareil restera activé en mode Avion, mais vous pouvez le désactiver."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Le Wi-Fi et le Bluetooth restent activés"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Le Wi‑Fi et le Bluetooth de votre appareil resteront activés en mode Avion, mais vous pouvez les désactivez."</string>
-    <!-- no translation found for bluetooth_enabled_auto_on_title (8983664142805050578) -->
-    <skip />
-    <!-- no translation found for bluetooth_enabled_auto_on_message (2790514825041114851) -->
-    <skip />
+    <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Bluetooth de nouveau activé"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="2790514825041114851">"Modifiable à tout moment dans les paramètres"</string>
     <string name="bluetooth_notification_group" msgid="7251886707585872194">"Changement de statut automatique du Bluetooth"</string>
 </resources>

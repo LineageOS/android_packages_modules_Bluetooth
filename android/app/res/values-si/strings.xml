@@ -135,9 +135,7 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"ඔබේ උපාංගයට අහස්යානා ආකාරයේ බ්ලූටූත් ක්‍රියාත්මකව තබා ගැනීමට මතකයි. ඔබට බ්ලූටූත් ක්‍රියාත්මක වීමට අවශ්‍ය නොවේ නම් එය ක්‍රියාවිරහිත කරන්න."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi සහ බ්ලූටූත් ක්‍රියාත්මකව පවතී"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"ඔබේ උපාංගයට අහස්යානා ආකාරයේ Wi-Fi සහ බ්ලූටූත් ක්‍රියාත්මකව තබා ගැනීමට මතකයි. Wi-Fi සහ බ්ලූටූත් ඒවා ක්‍රියාත්මක වීමට ඔබට අවශ්‍ය නැතිනම් ක්‍රියා විරහිත කරන්න."</string>
-    <!-- no translation found for bluetooth_enabled_auto_on_title (8983664142805050578) -->
-    <skip />
-    <!-- no translation found for bluetooth_enabled_auto_on_message (2790514825041114851) -->
-    <skip />
+    <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"බ්ලූටූත් නැවත ක්‍රියාත්මක විය"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="2790514825041114851">"ඔබට සැකසීම් තුළ මෙය ඕනෑම වේලාවක වෙනස් කළ හැක"</string>
     <string name="bluetooth_notification_group" msgid="7251886707585872194">"බ්ලූටූත් ස්වයංක්‍රීය තත්ත්‍වය වෙනස් කිරීම"</string>
 </resources>

@@ -135,9 +135,7 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Auf deinem Gerät bleibt Bluetooth im Flugmodus eingeschaltet. Schalte Bluetooth aus, wenn du das nicht möchtest."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"WLAN und Bluetooth bleiben eingeschaltet"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Auf deinem Gerät bleiben WLAN und Bluetooth im Flugmodus eingeschaltet. Schalte sie aus, wenn du das nicht möchtest."</string>
-    <!-- no translation found for bluetooth_enabled_auto_on_title (8983664142805050578) -->
-    <skip />
-    <!-- no translation found for bluetooth_enabled_auto_on_message (2790514825041114851) -->
-    <skip />
+    <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Bluetooth wieder aktiviert"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="2790514825041114851">"Du kannst das jederzeit in den Einstellungen ändern"</string>
     <string name="bluetooth_notification_group" msgid="7251886707585872194">"Automatische Änderung des Bluetooth-Status"</string>
 </resources>

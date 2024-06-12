@@ -135,9 +135,7 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"ឧបករណ៍របស់អ្នក​ចាំថាត្រូវបន្តបើកប៊្លូធូស​នៅក្នុង​មុខងារពេលជិះយន្តហោះ។ បិទប៊្លូធូស ប្រសិនបើអ្នក​មិនចង់ឱ្យបន្តបើកទេ។"</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi និងប៊្លូធូស​បន្តបើក"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"ឧបករណ៍របស់អ្នក​ចាំថាត្រូវបន្តបើក Wi-Fi និងប៊្លូធូស​នៅក្នុង​មុខងារពេលជិះយន្តហោះ។ បិទ Wi-Fi និង​ប៊្លូធូស ប្រសិនបើអ្នក​មិនចង់ឱ្យបន្តបើកទេ។"</string>
-    <!-- no translation found for bluetooth_enabled_auto_on_title (8983664142805050578) -->
-    <skip />
-    <!-- no translation found for bluetooth_enabled_auto_on_message (2790514825041114851) -->
-    <skip />
+    <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"បានបើកប៊្លូធូសវិញ"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="2790514825041114851">"អ្នកអាច​ប្ដូរលក្ខណៈនេះបានគ្រប់ពេល​នៅក្នុង​ការកំណត់"</string>
     <string name="bluetooth_notification_group" msgid="7251886707585872194">"ការផ្លាស់ប្ដូរស្ថានភាពស្វ័យប្រវត្តិរបស់ប៊្លូធូស"</string>
 </resources>

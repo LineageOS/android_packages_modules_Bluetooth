@@ -135,9 +135,7 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Din enhed beholder Bluetooth aktiveret i flytilstand. Deaktiver Bluetooth, hvis du ikke vil have, at det forbliver aktiveret."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi og Bluetooth forbliver aktiveret"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Din enhed beholder Wi-Fi og Bluetooth aktiveret i flytilstand. Deaktiver Wi-Fi og Bluetooth, hvis du ikke vil have, at de forbliver aktiveret."</string>
-    <!-- no translation found for bluetooth_enabled_auto_on_title (8983664142805050578) -->
-    <skip />
-    <!-- no translation found for bluetooth_enabled_auto_on_message (2790514825041114851) -->
-    <skip />
+    <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Bluetooth er aktiveret igen"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="2790514825041114851">"Du kan til enhver tid ændre dette i Indstillinger"</string>
     <string name="bluetooth_notification_group" msgid="7251886707585872194">"Automatisk ændring af Bluetooth-tilstand"</string>
 </resources>

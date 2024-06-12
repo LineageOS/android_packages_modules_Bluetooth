@@ -135,9 +135,7 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Az eszköz bekapcsolva tartja a Bluetootht Repülős üzemmódban. Kapcsolja ki a Bluetootht, ha nem szeretné, hogy bekapcsolva maradjon."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"A Wi-Fi és a Bluetooth bekapcsolva marad"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Az eszköz bekapcsolva tartja a Wi‑Fi-t és a Bluetootht Repülős üzemmódban. Ha nem szeretné, hogy bekapcsolva maradjon a Wi-Fi és a Bluetooth, kapcsolja ki őket."</string>
-    <!-- no translation found for bluetooth_enabled_auto_on_title (8983664142805050578) -->
-    <skip />
-    <!-- no translation found for bluetooth_enabled_auto_on_message (2790514825041114851) -->
-    <skip />
+    <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Bluetooth újra bekapcsolva"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="2790514825041114851">"A Beállításokban ezt bármikor módosíthatja"</string>
     <string name="bluetooth_notification_group" msgid="7251886707585872194">"Bluetooth állapotának automatikus módosítása"</string>
 </resources>

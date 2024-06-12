@@ -135,9 +135,7 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Η συσκευή σας θυμάται να διατηρεί ενεργοποιημένο το Bluetooth σε λειτουργία πτήσης. Απενεργοποιήστε το Bluetooth αν δεν θέλετε να παραμένει ενεργοποιημένο."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Το Wi-Fi και το Bluetooth παραμένουν ενεργοποιημένα"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Η συσκευή θυμάται να διατηρεί ενεργοποιημένο το Wi‑Fi και το Bluetooth σε λειτουργία πτήσης. Απενεργοποιήστε το Wi-Fi και το Bluetooth αν δεν θέλετε να παραμένουν ενεργοποιημένα."</string>
-    <!-- no translation found for bluetooth_enabled_auto_on_title (8983664142805050578) -->
-    <skip />
-    <!-- no translation found for bluetooth_enabled_auto_on_message (2790514825041114851) -->
-    <skip />
+    <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Το Bluetooth ενεργοποιήθηκε εκ νέου"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="2790514825041114851">"Μπορείτε να αλλάξετε αυτή την επιλογή ανά πάσα στιγμή στις Ρυθμίσεις"</string>
     <string name="bluetooth_notification_group" msgid="7251886707585872194">"Αυτόματη αλλαγή κατάστασης Bluetooth"</string>
 </resources>

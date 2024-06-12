@@ -135,9 +135,7 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Perangkat akan mengingat untuk tetap mengaktifkan Bluetooth dalam mode pesawat. Nonaktifkan jika Anda tidak ingin Bluetooth terus aktif."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi dan Bluetooth tetap aktif"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Perangkat akan mengingat untuk tetap mengaktifkan Wi-Fi dan Bluetooth dalam mode pesawat. Nonaktifkan jika Anda tidak ingin Wi-Fi dan Bluetooth terus aktif."</string>
-    <!-- no translation found for bluetooth_enabled_auto_on_title (8983664142805050578) -->
-    <skip />
-    <!-- no translation found for bluetooth_enabled_auto_on_message (2790514825041114851) -->
-    <skip />
+    <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Bluetooth diaktifkan kembali"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="2790514825041114851">"Anda dapat mengubahnya kapan saja di Setelan"</string>
     <string name="bluetooth_notification_group" msgid="7251886707585872194">"Status otomatis Bluetooth diubah"</string>
 </resources>

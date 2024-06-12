@@ -135,9 +135,7 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Enheten husker at Bluetooth skal være på i flymodus. Slå av Bluetooth hvis du ikke vil at det skal være på."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wifi og Bluetooth holdes påslått"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Enheten husker at wifi og Bluetooth skal være på i flymodus. Slå av wifi og Bluetooth hvis du ikke vil at de skal være på."</string>
-    <!-- no translation found for bluetooth_enabled_auto_on_title (8983664142805050578) -->
-    <skip />
-    <!-- no translation found for bluetooth_enabled_auto_on_message (2790514825041114851) -->
-    <skip />
+    <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Bluetooth er slått på igjen"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="2790514825041114851">"Du kan endre dette når som helst i innstillingene"</string>
     <string name="bluetooth_notification_group" msgid="7251886707585872194">"Bluetooth endret tilstand automatisk"</string>
 </resources>
