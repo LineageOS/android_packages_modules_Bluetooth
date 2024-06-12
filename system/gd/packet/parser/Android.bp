@@ -45,9 +45,6 @@ cc_binary_host {
         "struct_def.cc",
         "struct_parser_generator.cc",
     ],
-    static_libs: [
-        "libc++fs",
-    ],
     yacc: {
         gen_location_hh: true,
         gen_position_hh: true,
