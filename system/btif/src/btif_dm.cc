@@ -687,23 +687,19 @@ static void btif_update_remote_version_property(RawAddress* p_bd) {
 static void btif_update_remote_properties(const RawAddress& bdaddr,
                                           BD_NAME bd_name, DEV_CLASS dev_class,
                                           tBT_DEVICE_TYPE device_type) {
-  int num_properties = 0;
-  bt_property_t properties[3];
+  std::vector<bt_property_t> properties;
   bt_status_t status = BT_STATUS_UNHANDLED;
   uint32_t cod;
   uint32_t dev_type;
 
-  memset(properties, 0, sizeof(properties));
-
   /* remote name */
   if (strlen((const char*)bd_name)) {
-    BTIF_STORAGE_FILL_PROPERTY(&properties[num_properties], BT_PROPERTY_BDNAME,
-                               strlen((char*)bd_name), bd_name);
-    status = btif_storage_set_remote_device_property(
-        &bdaddr, &properties[num_properties]);
+    properties.push_back(bt_property_t{
+        BT_PROPERTY_BDNAME, static_cast<int>(strlen((char*)bd_name)), bd_name});
+    status =
+        btif_storage_set_remote_device_property(&bdaddr, &properties.back());
     ASSERTC(status == BT_STATUS_SUCCESS, "failed to save remote device name",
             status);
-    num_properties++;
   }
 
   uint32_t old_cod = get_cod(&bdaddr);
@@ -714,17 +710,16 @@ static void btif_update_remote_properties(const RawAddress& bdaddr,
     cod = old_cod;
   }
 
-  if (old_cod != cod)
+  if (old_cod != cod) {
     log::info("{} CoD: 0x{:06x} -> 0x{:06x}", bdaddr, old_cod, cod);
+  }
 
-  BTIF_STORAGE_FILL_PROPERTY(&properties[num_properties],
-                             BT_PROPERTY_CLASS_OF_DEVICE, sizeof(cod), &cod);
+  properties.push_back(
+      bt_property_t{BT_PROPERTY_CLASS_OF_DEVICE, sizeof(cod), &cod});
 
-  status = btif_storage_set_remote_device_property(&bdaddr,
-                                                   &properties[num_properties]);
+  status = btif_storage_set_remote_device_property(&bdaddr, &properties.back());
   ASSERTC(status == BT_STATUS_SUCCESS, "failed to save remote device class",
           status);
-  num_properties++;
 
   /* device type */
   bt_property_t prop_name;
@@ -738,17 +733,14 @@ static void btif_update_remote_properties(const RawAddress& bdaddr,
     dev_type = device_type;
   }
 
-  BTIF_STORAGE_FILL_PROPERTY(&properties[num_properties],
-                             BT_PROPERTY_TYPE_OF_DEVICE, sizeof(dev_type),
-                             &dev_type);
-  status = btif_storage_set_remote_device_property(&bdaddr,
-                                                   &properties[num_properties]);
+  properties.push_back(
+      bt_property_t{BT_PROPERTY_TYPE_OF_DEVICE, sizeof(dev_type), &dev_type});
+  status = btif_storage_set_remote_device_property(&bdaddr, &properties.back());
   ASSERTC(status == BT_STATUS_SUCCESS, "failed to save remote device type",
           status);
-  num_properties++;
 
   GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(
-      status, bdaddr, num_properties, properties);
+      status, bdaddr, properties.size(), properties.data());
 }
 
 /* If device is LE Audio capable, we prefer LE connection first, this speeds
@@ -1448,24 +1440,22 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event,
       }
 
       {
-        bt_property_t properties[10];  // increase when properties are added
+        std::vector<bt_property_t> bt_properties;
         uint32_t dev_type;
         uint32_t num_properties = 0;
         bt_status_t status;
         tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC;
 
-        memset(properties, 0, sizeof(properties));
         /* RawAddress */
-        BTIF_STORAGE_FILL_PROPERTY(&properties[num_properties],
-                                   BT_PROPERTY_BDADDR, sizeof(bdaddr), &bdaddr);
-        num_properties++;
+        bt_properties.push_back(
+            bt_property_t{BT_PROPERTY_BDADDR, sizeof(bdaddr), &bdaddr});
+
         /* BD_NAME */
         /* Don't send BDNAME if it is empty */
         if (bdname.name[0]) {
-          BTIF_STORAGE_FILL_PROPERTY(&properties[num_properties],
-                                     BT_PROPERTY_BDNAME,
-                                     strlen((char*)bdname.name), &bdname);
-          num_properties++;
+          bt_properties.push_back(bt_property_t{
+              BT_PROPERTY_BDNAME, static_cast<int>(strlen((char*)bdname.name)),
+              &bdname});
         }
 
         /* DEV_CLASS */
@@ -1485,13 +1475,11 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event,
             }
           }
 
-          if (old_cod != cod)
+          if (old_cod != cod) {
             log::info("{} CoD: 0x{:06x} -> 0x{:06x}", bdaddr, old_cod, cod);
-
-          BTIF_STORAGE_FILL_PROPERTY(&properties[num_properties],
-                                     BT_PROPERTY_CLASS_OF_DEVICE, sizeof(cod),
-                                     &cod);
-          num_properties++;
+          }
+          bt_properties.push_back(
+              bt_property_t{BT_PROPERTY_CLASS_OF_DEVICE, sizeof(cod), &cod});
         }
 
         log::verbose("clock_offset is 0x{:x}",
@@ -1515,24 +1503,20 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event,
           dev_type = (bt_device_type_t)p_search_data->inq_res.device_type;
         }
 
-        if (p_search_data->inq_res.device_type == BT_DEVICE_TYPE_BLE)
+        if (p_search_data->inq_res.device_type == BT_DEVICE_TYPE_BLE) {
           addr_type = p_search_data->inq_res.ble_addr_type;
-        BTIF_STORAGE_FILL_PROPERTY(&properties[num_properties],
-                                   BT_PROPERTY_TYPE_OF_DEVICE, sizeof(dev_type),
-                                   &dev_type);
-        num_properties++;
+        }
+        bt_properties.push_back(bt_property_t{BT_PROPERTY_TYPE_OF_DEVICE,
+                                              sizeof(dev_type), &dev_type});
         /* RSSI */
-        BTIF_STORAGE_FILL_PROPERTY(&properties[num_properties],
-                                   BT_PROPERTY_REMOTE_RSSI, sizeof(int8_t),
-                                   &(p_search_data->inq_res.rssi));
-        num_properties++;
+        bt_properties.push_back(bt_property_t{BT_PROPERTY_REMOTE_RSSI,
+                                              sizeof(int8_t),
+                                              &(p_search_data->inq_res.rssi)});
 
         /* CSIP supported device */
-        BTIF_STORAGE_FILL_PROPERTY(&properties[num_properties],
-                                   BT_PROPERTY_REMOTE_IS_COORDINATED_SET_MEMBER,
-                                   sizeof(bool),
-                                   &(p_search_data->inq_res.include_rsi));
-        num_properties++;
+        bt_properties.push_back(
+            bt_property_t{BT_PROPERTY_REMOTE_IS_COORDINATED_SET_MEMBER,
+                          sizeof(bool), &(p_search_data->inq_res.include_rsi)});
 
         // The default negative value means ASHA capability not found.
         // A non-negative value represents ASHA capability information is valid.
@@ -1545,16 +1529,13 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event,
         get_asha_service_data(p_search_data->inq_res, asha_capability,
                               asha_truncated_hi_sync_id);
 
-        BTIF_STORAGE_FILL_PROPERTY(&properties[num_properties],
-                                   BT_PROPERTY_REMOTE_ASHA_CAPABILITY,
-                                   sizeof(int16_t), &asha_capability);
-        num_properties++;
+        bt_properties.push_back(
+            bt_property_t{BT_PROPERTY_REMOTE_ASHA_CAPABILITY, sizeof(int16_t),
+                          &asha_capability});
 
-        BTIF_STORAGE_FILL_PROPERTY(&properties[num_properties],
-                                   BT_PROPERTY_REMOTE_ASHA_TRUNCATED_HISYNCID,
-                                   sizeof(uint32_t),
-                                   &asha_truncated_hi_sync_id);
-        num_properties++;
+        bt_properties.push_back(
+            bt_property_t{BT_PROPERTY_REMOTE_ASHA_TRUNCATED_HISYNCID,
+                          sizeof(uint32_t), &asha_truncated_hi_sync_id});
 
         // Floss expects that EIR uuids are immediately reported when the
         // device is found and doesn't wait for the pairing intent.
@@ -1590,25 +1571,22 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event,
                                     uuid_128bit.end());
             }
 
-            BTIF_STORAGE_FILL_PROPERTY(
-                &properties[num_properties], BT_PROPERTY_UUIDS,
-                uuid_iter->second.size() * Uuid::kNumBytes128,
-                (void*)property_value.data());
-            num_properties++;
+            bt_properties.push_back(bt_property_t{
+                BT_PROPERTY_UUIDS,
+                static_cast<int>(uuid_iter->second.size() * Uuid::kNumBytes128),
+                (void*)property_value.data()});
           }
         }
 
         // Floss needs appearance for metrics purposes
         uint16_t appearance = 0;
         if (check_eir_appearance(p_search_data, &appearance)) {
-          BTIF_STORAGE_FILL_PROPERTY(&properties[num_properties],
-                                     BT_PROPERTY_APPEARANCE, sizeof(appearance),
-                                     &appearance);
-          num_properties++;
+          bt_properties.push_back(bt_property_t{
+              BT_PROPERTY_APPEARANCE, sizeof(appearance), &appearance});
         }
 
-        status =
-            btif_storage_add_remote_device(&bdaddr, num_properties, properties);
+        status = btif_storage_add_remote_device(&bdaddr, bt_properties.size(),
+                                                bt_properties.data());
         ASSERTC(status == BT_STATUS_SUCCESS,
                 "failed to save remote device (inquiry)", status);
         status = btif_storage_set_remote_addr_type(&bdaddr, addr_type);
@@ -1625,8 +1603,8 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event,
         }
 
         /* Callback to notify upper layer of device */
-        GetInterfaceToProfiles()->events->invoke_device_found_cb(num_properties,
-                                                                 properties);
+        GetInterfaceToProfiles()->events->invoke_device_found_cb(
+            bt_properties.size(), bt_properties.data());
       }
     } break;
 
@@ -1877,8 +1855,7 @@ static void btif_on_service_discovery_results(
 void btif_on_gatt_results(RawAddress bd_addr, BD_NAME bd_name,
                           std::vector<bluetooth::Uuid>& services,
                           bool transport_le) {
-  int num_properties = 0;
-  bt_property_t prop[2];
+  std::vector<bt_property_t> prop;
   std::vector<uint8_t> property_value;
   std::set<Uuid> uuids;
   RawAddress static_addr_copy = pairing_cb.static_bdaddr;
@@ -2001,27 +1978,25 @@ void btif_on_gatt_results(RawAddress bd_addr, BD_NAME bd_name,
                           uuid_128bit.end());
   }
 
-  prop[0].type = BT_PROPERTY_UUIDS;
-  prop[0].val = (void*)property_value.data();
-  prop[0].len = Uuid::kNumBytes128 * uuids.size();
+  prop.push_back(bt_property_t{
+      BT_PROPERTY_UUIDS, static_cast<int>(Uuid::kNumBytes128 * uuids.size()),
+      (void*)property_value.data()});
 
   /* Also write this to the NVRAM */
   bt_status_t ret = btif_storage_set_remote_device_property(&bd_addr, &prop[0]);
   ASSERTC(ret == BT_STATUS_SUCCESS, "storing remote services failed", ret);
-  num_properties++;
 
   /* Remote name update */
   if (!com::android::bluetooth::flags::
           separate_service_and_device_discovery() &&
       strnlen((const char*)bd_name, BD_NAME_LEN)) {
-    prop[1].type = BT_PROPERTY_BDNAME;
-    prop[1].val = bd_name;
-    prop[1].len = strnlen((char*)bd_name, BD_NAME_LEN);
+    prop.push_back(bt_property_t{
+        BT_PROPERTY_BDNAME,
+        static_cast<int>(strnlen((char*)bd_name, BD_NAME_LEN)), bd_name});
 
     ret = btif_storage_set_remote_device_property(&bd_addr, &prop[1]);
     ASSERTC(ret == BT_STATUS_SUCCESS, "failed to save remote device property",
             ret);
-    num_properties++;
   }
 
   if (!transport_le) {
@@ -2041,7 +2016,7 @@ void btif_on_gatt_results(RawAddress bd_addr, BD_NAME bd_name,
 
   /* Send the event to the BTIF */
   GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(
-      BT_STATUS_SUCCESS, bd_addr, num_properties, prop);
+      BT_STATUS_SUCCESS, bd_addr, prop.size(), prop.data());
 }
 
 static void btif_on_name_read(RawAddress bd_addr, tHCI_ERROR_CODE hci_status,
@@ -2071,19 +2046,20 @@ static void btif_on_name_read(RawAddress bd_addr, tHCI_ERROR_CODE hci_status,
   }
 
   // Needs 3 properties if during_device_search is true
-  bt_property_t properties[3] = {{
-      .type = BT_PROPERTY_BDNAME,
-      .len = (int)strnlen((char*)bd_name, BD_NAME_LEN),
-      .val = (void*)bd_name,
-  }};
+  std::vector<bt_property_t> properties;
+
+  properties.push_back(
+      bt_property_t{BT_PROPERTY_BDNAME,
+                    static_cast<int>(strnlen((char*)bd_name, BD_NAME_LEN)),
+                    (void*)(bd_name)});
 
   const bt_status_t status =
-      btif_storage_set_remote_device_property(&bd_addr, properties);
+      btif_storage_set_remote_device_property(&bd_addr, properties.data());
   log::assert_that(status == BT_STATUS_SUCCESS,
                    "Failed to save remote device property status:{}",
                    bt_status_text(status));
   GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(
-      status, bd_addr, 1, properties);
+      status, bd_addr, properties.size(), properties.data());
   log::info("Callback for read name event addr:{} name:{}", bd_addr,
             PRIVATE_NAME(reinterpret_cast<char const*>(bd_name)));
 
@@ -2093,12 +2069,13 @@ static void btif_on_name_read(RawAddress bd_addr, tHCI_ERROR_CODE hci_status,
 
   uint32_t cod = get_cod(&bd_addr);
   if (cod != 0) {
-    BTIF_STORAGE_FILL_PROPERTY(&properties[1], BT_PROPERTY_BDADDR,
-                               sizeof(bd_addr), &bd_addr);
-    BTIF_STORAGE_FILL_PROPERTY(&properties[2], BT_PROPERTY_CLASS_OF_DEVICE,
-                               sizeof(uint32_t), &cod);
+    properties.push_back(
+        bt_property_t{BT_PROPERTY_BDADDR, sizeof(bd_addr), &bd_addr});
+    properties.push_back(
+        bt_property_t{BT_PROPERTY_CLASS_OF_DEVICE, sizeof(uint32_t), &cod});
     log::debug("report new device to JNI");
-    GetInterfaceToProfiles()->events->invoke_device_found_cb(3, properties);
+    GetInterfaceToProfiles()->events->invoke_device_found_cb(properties.size(),
+                                                             properties.data());
   } else {
     log::info(
         "Skipping device found callback because cod is zero addr:{} name:{}",
