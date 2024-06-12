@@ -118,8 +118,7 @@ Uuid LE_PSM_UUID               = Uuid::FromString("2d410339-82b6-42aa-b34e-e2e01
 
 static void read_rssi_callback(void* p_void);
 static void hearingaid_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data);
-static void encryption_callback(const RawAddress*, tBT_TRANSPORT, void*,
-                                tBTM_STATUS);
+static void encryption_callback(RawAddress, tBT_TRANSPORT, void*, tBTM_STATUS);
 
 inline BT_HDR* malloc_l2cap_buf(uint16_t len) {
   BT_HDR* msg = (BT_HDR*)osi_malloc(BT_HDR_SIZE + L2CAP_MIN_OFFSET +
@@ -725,7 +724,7 @@ class HearingAidImpl : public HearingAid {
       log::info("starting service search request for ASHA: bd_addr={}",
                 address);
       hearingDevice->first_connection = true;
-      BTA_GATTC_ServiceSearchRequest(hearingDevice->conn_id, &HEARING_AID_UUID);
+      BTA_GATTC_ServiceSearchRequest(hearingDevice->conn_id, HEARING_AID_UUID);
     }
   }
 
@@ -801,7 +800,7 @@ class HearingAidImpl : public HearingAid {
           hearingDevice->volume_handle && hearingDevice->read_psm_handle)) {
       log::info("starting service search request for ASHA: bd_addr={}",
                 address);
-      BTA_GATTC_ServiceSearchRequest(hearingDevice->conn_id, &HEARING_AID_UUID);
+      BTA_GATTC_ServiceSearchRequest(hearingDevice->conn_id, HEARING_AID_UUID);
     }
   }
 
@@ -2156,10 +2155,10 @@ static void hearingaid_gattc_callback(tBTA_GATTC_EVT event,
   }
 }
 
-static void encryption_callback(const RawAddress* address, tBT_TRANSPORT, void*,
+static void encryption_callback(RawAddress address, tBT_TRANSPORT, void*,
                                 tBTM_STATUS status) {
   if (instance) {
-    instance->OnEncryptionComplete(*address,
+    instance->OnEncryptionComplete(address,
                                    status == BTM_SUCCESS ? true : false);
   }
 }

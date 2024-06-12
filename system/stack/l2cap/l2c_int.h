@@ -818,7 +818,7 @@ void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, uint16_t local_cid,
                               BT_HDR* p_buf);
 void l2c_link_adjust_allocation(void);
 
-void l2c_link_sec_comp(const RawAddress* p_bda, tBT_TRANSPORT trasnport,
+void l2c_link_sec_comp(RawAddress p_bda, tBT_TRANSPORT transport,
                        void* p_ref_data, tBTM_STATUS status);
 void l2c_link_adjust_chnl_allocation(void);
 

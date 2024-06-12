@@ -261,7 +261,8 @@ mod test {
             block_on_locally(att_db.read_attribute(SERVICE_CHANGE_CCC_DESCRIPTOR_HANDLE)).unwrap();
 
         // assert: we are not registered for either indications/notifications
-        let AttAttributeDataChild::GattClientCharacteristicConfiguration(configuration) = resp else {
+        let AttAttributeDataChild::GattClientCharacteristicConfiguration(configuration) = resp
+        else {
             unreachable!()
         };
         assert_eq!(
@@ -300,7 +301,8 @@ mod test {
             block_on_locally(att_db.read_attribute(SERVICE_CHANGE_CCC_DESCRIPTOR_HANDLE)).unwrap();
 
         // assert: we are registered for indications
-        let AttAttributeDataChild::GattClientCharacteristicConfiguration(configuration) = resp else {
+        let AttAttributeDataChild::GattClientCharacteristicConfiguration(configuration) = resp
+        else {
             unreachable!()
         };
         assert_eq!(
@@ -344,7 +346,8 @@ mod test {
             block_on_locally(att_db.read_attribute(SERVICE_CHANGE_CCC_DESCRIPTOR_HANDLE)).unwrap();
 
         // assert: we are not registered for indications
-        let AttAttributeDataChild::GattClientCharacteristicConfiguration(configuration) = resp else {
+        let AttAttributeDataChild::GattClientCharacteristicConfiguration(configuration) = resp
+        else {
             unreachable!()
         };
         assert_eq!(

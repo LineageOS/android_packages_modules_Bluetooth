@@ -271,9 +271,7 @@ mod test {
             tokio_test::block_on(handle_read_by_type_request(att_view.view(), 31, &db)).unwrap();
 
         // assert: we return ATTRIBUTE_NOT_FOUND
-        let AttChild::AttErrorResponse(response) = response else {
-            unreachable!("{:?}", response)
-        };
+        let AttChild::AttErrorResponse(response) = response else { unreachable!("{:?}", response) };
         assert_eq!(
             response,
             AttErrorResponseBuilder {
@@ -299,9 +297,7 @@ mod test {
             tokio_test::block_on(handle_read_by_type_request(att_view.view(), 31, &db)).unwrap();
 
         // assert: we return an INVALID_HANDLE error
-        let AttChild::AttErrorResponse(response) = response else {
-            unreachable!("{:?}", response)
-        };
+        let AttChild::AttErrorResponse(response) = response else { unreachable!("{:?}", response) };
         assert_eq!(
             response,
             AttErrorResponseBuilder {

@@ -217,8 +217,7 @@ class VolumeControlImpl : public VolumeControl {
                                      OnGattWriteCccStatic);
 
     } else {
-      BTA_GATTC_ServiceSearchRequest(device->connection_id,
-                                     &kVolumeControlUuid);
+      BTA_GATTC_ServiceSearchRequest(device->connection_id, kVolumeControlUuid);
     }
   }
 
@@ -240,7 +239,7 @@ class VolumeControlImpl : public VolumeControl {
     RemovePendingVolumeControlOperations(devices,
                                          bluetooth::groups::kGroupUnknown);
     device->ResetHandles();
-    BTA_GATTC_ServiceSearchRequest(device->connection_id, &kVolumeControlUuid);
+    BTA_GATTC_ServiceSearchRequest(device->connection_id, kVolumeControlUuid);
   }
 
   void OnServiceChangeEvent(const RawAddress& address) {
@@ -263,8 +262,7 @@ class VolumeControlImpl : public VolumeControl {
     }
 
     if (device->known_service_handles_ == false) {
-      BTA_GATTC_ServiceSearchRequest(device->connection_id,
-                                     &kVolumeControlUuid);
+      BTA_GATTC_ServiceSearchRequest(device->connection_id, kVolumeControlUuid);
     }
   }
 

@@ -87,7 +87,11 @@ gatt_interface_t default_gatt_interface = {
         [](uint16_t conn_id, const bluetooth::Uuid* p_srvc_uuid) {
           gatt_history_.Push(base::StringPrintf(
               "%-32s conn_id:%hu", "GATTC_ServiceSearchRequest", conn_id));
-          BTA_GATTC_ServiceSearchRequest(conn_id, p_srvc_uuid);
+          if (p_srvc_uuid) {
+            BTA_GATTC_ServiceSearchRequest(conn_id, *p_srvc_uuid);
+          } else {
+            BTA_GATTC_ServiceSearchAllRequest(conn_id);
+          }
         },
     .BTA_GATTC_Open =
         [](tGATT_IF client_if, const RawAddress& remote_bda,

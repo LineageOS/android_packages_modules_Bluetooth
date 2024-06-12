@@ -424,20 +424,13 @@ fn test_multiple_servers() {
             .view(),
         );
         // service the first read with `data`
-        let MockDatastoreEvents::Read(
-            TCB_IDX,
-            _, _,
-            tx,
-        ) = data_rx_1.recv().await.unwrap() else {
+        let MockDatastoreEvents::Read(TCB_IDX, _, _, tx) = data_rx_1.recv().await.unwrap() else {
             unreachable!()
         };
         tx.send(Ok(data.clone())).unwrap();
         // and then the second read with `another_data`
-        let MockDatastoreEvents::Read(
-            ANOTHER_TCB_IDX,
-            _, _,
-            tx,
-        ) = data_rx_2.recv().await.unwrap() else {
+        let MockDatastoreEvents::Read(ANOTHER_TCB_IDX, _, _, tx) = data_rx_2.recv().await.unwrap()
+        else {
             unreachable!()
         };
         tx.send(Ok(another_data.clone())).unwrap();
@@ -525,7 +518,9 @@ fn test_service_change_indication() {
             })
             .view(),
         );
-        let AttChild::AttFindByTypeValueResponse(resp) = transport_rx.recv().await.unwrap().1._child_ else {
+        let AttChild::AttFindByTypeValueResponse(resp) =
+            transport_rx.recv().await.unwrap().1._child_
+        else {
             unreachable!()
         };
         let (starting_handle, ending_handle) = (
@@ -541,19 +536,27 @@ fn test_service_change_indication() {
             })
             .view(),
         );
-        let AttChild::AttReadByTypeResponse(resp) = transport_rx.recv().await.unwrap().1._child_ else {
+        let AttChild::AttReadByTypeResponse(resp) = transport_rx.recv().await.unwrap().1._child_
+        else {
             unreachable!()
         };
-        let service_change_char_handle = resp.data.into_vec().into_iter().find_map(|characteristic| {
-            let AttAttributeDataChild::GattCharacteristicDeclarationValue(decl) = characteristic.value._child_ else {
-                unreachable!();
-            };
-            if decl.uuid == SERVICE_CHANGE_UUID.into() {
-                Some(decl.handle)
-            } else {
-                None
-            }
-        }).unwrap();
+        let service_change_char_handle = resp
+            .data
+            .into_vec()
+            .into_iter()
+            .find_map(|characteristic| {
+                let AttAttributeDataChild::GattCharacteristicDeclarationValue(decl) =
+                    characteristic.value._child_
+                else {
+                    unreachable!();
+                };
+                if decl.uuid == SERVICE_CHANGE_UUID.into() {
+                    Some(decl.handle)
+                } else {
+                    None
+                }
+            })
+            .unwrap();
         // act: find the CCC descriptor for the service changed characteristic
         gatt.get_bearer(TCB_IDX).unwrap().handle_packet(
             build_att_view_or_crash(AttFindInformationRequestBuilder {
@@ -562,10 +565,13 @@ fn test_service_change_indication() {
             })
             .view(),
         );
-        let AttChild::AttFindInformationResponse(resp) = transport_rx.recv().await.unwrap().1._child_ else {
+        let AttChild::AttFindInformationResponse(resp) =
+            transport_rx.recv().await.unwrap().1._child_
+        else {
             unreachable!()
         };
-        let AttFindInformationResponseChild::AttFindInformationShortResponse(resp) = resp._child_ else {
+        let AttFindInformationResponseChild::AttFindInformationShortResponse(resp) = resp._child_
+        else {
             unreachable!()
         };
         let service_change_descriptor_handle = resp
@@ -608,7 +614,9 @@ fn test_service_change_indication() {
         .unwrap();
 
         // assert: we got an indication
-        let AttChild::AttHandleValueIndication(indication) = transport_rx.recv().await.unwrap().1._child_ else {
+        let AttChild::AttHandleValueIndication(indication) =
+            transport_rx.recv().await.unwrap().1._child_
+        else {
             unreachable!()
         };
         assert_eq!(indication.handle, service_change_char_handle);

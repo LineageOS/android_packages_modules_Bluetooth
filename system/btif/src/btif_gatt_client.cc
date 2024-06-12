@@ -403,12 +403,10 @@ static bt_status_t btif_gattc_search_service(int conn_id,
   CHECK_BTGATT_INIT();
 
   if (filter_uuid) {
-    Uuid* uuid = new Uuid(*filter_uuid);
     return do_in_jni_thread(
-        Bind(&BTA_GATTC_ServiceSearchRequest, conn_id, base::Owned(uuid)));
+        Bind(&BTA_GATTC_ServiceSearchRequest, conn_id, *filter_uuid));
   } else {
-    return do_in_jni_thread(
-        Bind(&BTA_GATTC_ServiceSearchRequest, conn_id, nullptr));
+    return do_in_jni_thread(Bind(&BTA_GATTC_ServiceSearchAllRequest, conn_id));
   }
 }
 
@@ -432,19 +430,17 @@ static bt_status_t btif_gattc_get_gatt_db(int conn_id) {
 
 void read_char_cb(uint16_t conn_id, tGATT_STATUS status, uint16_t handle,
                   uint16_t len, uint8_t* value, void* data) {
-  btgatt_read_params_t* params = new btgatt_read_params_t;
-  params->value_type = 0x00 /* GATTC_READ_VALUE_TYPE_VALUE */;
-  params->status = status;
-  params->handle = handle;
-  params->value.len = len;
+  btgatt_read_params_t params = {
+      .handle = handle,
+      .value.len = len,
+      .value_type = 0x00, /* GATTC_READ_VALUE_TYPE_VALUE */
+      .status = status,
+  };
   log::assert_that(len <= GATT_MAX_ATTR_LEN,
                    "assert failed: len <= GATT_MAX_ATTR_LEN");
-  if (len > 0) memcpy(params->value.value, value, len);
+  if (len > 0) memcpy(params.value.value, value, len);
 
-  // clang-tidy analyzer complains about |params| is leaked.  It doesn't know
-  // that |param| will be freed by the callback function.
-  CLI_CBACK_IN_JNI(read_characteristic_cb, conn_id, status, /* NOLINT */
-                   base::Owned(params));
+  CLI_CBACK_IN_JNI(read_characteristic_cb, conn_id, status, params);
 }
 
 static bt_status_t btif_gattc_read_char(int conn_id, uint16_t handle,
@@ -457,19 +453,17 @@ static bt_status_t btif_gattc_read_char(int conn_id, uint16_t handle,
 void read_using_char_uuid_cb(uint16_t conn_id, tGATT_STATUS status,
                              uint16_t handle, uint16_t len, uint8_t* value,
                              void* data) {
-  btgatt_read_params_t* params = new btgatt_read_params_t;
-  params->value_type = 0x00 /* GATTC_READ_VALUE_TYPE_VALUE */;
-  params->status = status;
-  params->handle = handle;
-  params->value.len = len;
+  btgatt_read_params_t params = {
+      .handle = handle,
+      .value.len = len,
+      .value_type = 0x00, /* GATTC_READ_VALUE_TYPE_VALUE */
+      .status = status,
+  };
   log::assert_that(len <= GATT_MAX_ATTR_LEN,
                    "assert failed: len <= GATT_MAX_ATTR_LEN");
-  if (len > 0) memcpy(params->value.value, value, len);
+  if (len > 0) memcpy(params.value.value, value, len);
 
-  // clang-tidy analyzer complains about |params| is leaked.  It doesn't know
-  // that |param| will be freed by the callback function.
-  CLI_CBACK_IN_JNI(read_characteristic_cb, conn_id, status, /* NOLINT */
-                   base::Owned(params));
+  CLI_CBACK_IN_JNI(read_characteristic_cb, conn_id, status, params);
 }
 
 static bt_status_t btif_gattc_read_using_char_uuid(int conn_id,

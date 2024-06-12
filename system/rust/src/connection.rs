@@ -190,7 +190,7 @@ impl WeakBoxRef<'_, ConnectionManager> {
         Ok(async move {
             let Some((attempt, guard)) = attempt_and_guard else {
                 // if we did not make an attempt, the connection must be ready
-                return Ok(LeConnection { remote_address: address })
+                return Ok(LeConnection { remote_address: address });
             };
             // otherwise, wait until the attempt resolves
             let ret = attempt.await;

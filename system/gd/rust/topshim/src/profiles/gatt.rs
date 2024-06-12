@@ -677,7 +677,7 @@ cb_variant!(
 cb_variant!(
     GattClientCb,
     gc_read_characteristic_cb -> GattClientCallbacks::ReadCharacteristic,
-    i32, i32 -> GattStatus, *mut BtGattReadParams, {
+    i32, i32 -> GattStatus, *const BtGattReadParams, {
         let _2 = unsafe { *_2.clone() };
     }
 );

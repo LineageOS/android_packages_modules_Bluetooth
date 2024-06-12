@@ -28,6 +28,7 @@
 #include "common/init_flags.h"
 #include "hardware/bt_gatt.h"
 #include "hardware/bt_gatt_types.h"
+#include "main/shim/le_scanning_manager.h"
 #include "rust/cxx.h"
 #include "rust/src/gatt/ffi/gatt_shim.h"
 #include "src/gatt/ffi.rs.h"
@@ -197,6 +198,8 @@ static jmethodID method_onDistanceMeasurementResult;
  * Static variables
  */
 static const btgatt_interface_t* sGattIf = NULL;
+/** Pointer to the LE scanner interface methods.*/
+static BleScannerInterface* sScanner = NULL;
 static jobject mCallbacksObj = NULL;
 static jobject mScanCallbacksObj = NULL;
 static jobject mAdvertiseCallbacksObj = NULL;
@@ -304,16 +307,16 @@ void btgattc_notify_cb(int conn_id, const btgatt_notify_params_t& p_data) {
 }
 
 void btgattc_read_characteristic_cb(int conn_id, int status,
-                                    btgatt_read_params_t* p_data) {
+                                    const btgatt_read_params_t& p_data) {
   std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid() || !mCallbacksObj) return;
 
   ScopedLocalRef<jbyteArray> jb(sCallbackEnv.get(), NULL);
   if (status == 0) {  // Success
-    jb.reset(sCallbackEnv->NewByteArray(p_data->value.len));
-    sCallbackEnv->SetByteArrayRegion(jb.get(), 0, p_data->value.len,
-                                     (jbyte*)p_data->value.value);
+    jb.reset(sCallbackEnv->NewByteArray(p_data.value.len));
+    sCallbackEnv->SetByteArrayRegion(jb.get(), 0, p_data.value.len,
+                                     (jbyte*)p_data.value.value);
   } else {
     uint8_t value = 0;
     jb.reset(sCallbackEnv->NewByteArray(1));
@@ -321,7 +324,7 @@ void btgattc_read_characteristic_cb(int conn_id, int status,
   }
 
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onReadCharacteristic,
-                               conn_id, status, p_data->handle, jb.get());
+                               conn_id, status, p_data.handle, jb.get());
 }
 
 void btgattc_write_characteristic_cb(int conn_id, int status, uint16_t handle,
@@ -1278,7 +1281,6 @@ static void initializeNative(JNIEnv* env, jobject object) {
 
   sGattIf->advertiser->RegisterCallbacks(
       JniAdvertisingCallbacks::GetInstance());
-  sGattIf->scanner->RegisterCallbacks(JniScanningCallbacks::GetInstance());
   sGattIf->distance_measurement_manager->RegisterDistanceMeasurementCallbacks(
       JniDistanceMeasurementCallbacks::GetInstance());
 
@@ -1337,24 +1339,24 @@ void btgattc_register_scanner_cb(const Uuid& app_uuid, uint8_t scannerId,
 
 static void registerScannerNative(JNIEnv* /* env */, jobject /* object */,
                                   jlong app_uuid_lsb, jlong app_uuid_msb) {
-  if (!sGattIf) return;
+  if (!sScanner) return;
 
   Uuid uuid = from_java_uuid(app_uuid_msb, app_uuid_lsb);
-  sGattIf->scanner->RegisterScanner(
-      uuid, base::Bind(&btgattc_register_scanner_cb, uuid));
+  sScanner->RegisterScanner(uuid,
+                            base::Bind(&btgattc_register_scanner_cb, uuid));
 }
 
 static void unregisterScannerNative(JNIEnv* /* env */, jobject /* object */,
                                     jint scanner_id) {
-  if (!sGattIf) return;
+  if (!sScanner) return;
 
-  sGattIf->scanner->Unregister(scanner_id);
+  sScanner->Unregister(scanner_id);
 }
 
 static void gattClientScanNative(JNIEnv* /* env */, jobject /* object */,
                                  jboolean start) {
-  if (!sGattIf) return;
-  sGattIf->scanner->Scan(start);
+  if (!sScanner) return;
+  sScanner->Scan(start);
 }
 
 static void gattClientConnectNative(JNIEnv* env, jobject /* object */,
@@ -1548,11 +1550,10 @@ void set_scan_params_cmpl_cb(int client_if, uint8_t status) {
 static void gattSetScanParametersNative(JNIEnv* /* env */, jobject /* object */,
                                         jint client_if, jint scan_interval_unit,
                                         jint scan_window_unit, jint scan_phy) {
-  if (!sGattIf) return;
-  sGattIf->scanner->SetScanParameters(
-      client_if, /* use active scan */ 0x01, scan_interval_unit,
-      scan_window_unit, scan_phy,
-      base::Bind(&set_scan_params_cmpl_cb, client_if));
+  if (!sScanner) return;
+  sScanner->SetScanParameters(client_if, /* use active scan */ 0x01,
+                              scan_interval_unit, scan_window_unit, scan_phy,
+                              base::Bind(&set_scan_params_cmpl_cb, client_if));
 }
 
 void scan_filter_param_cb(uint8_t client_if, uint8_t avbl_space, uint8_t action,
@@ -1568,7 +1569,7 @@ void scan_filter_param_cb(uint8_t client_if, uint8_t avbl_space, uint8_t action,
 static void gattClientScanFilterParamAddNative(JNIEnv* env,
                                                jobject /* object */,
                                                jobject params) {
-  if (!sGattIf) return;
+  if (!sScanner) return;
   const int add_scan_filter_params_action = 0;
   auto filt_params = std::make_unique<btgatt_filt_param_setup_t>();
 
@@ -1611,30 +1612,30 @@ static void gattClientScanFilterParamAddNative(JNIEnv* env,
   methodId = env->GetMethodID(filtparam.get(), "getRSSILowValue", "()I");
   filt_params->rssi_low_thres = env->CallIntMethod(params, methodId);
 
-  sGattIf->scanner->ScanFilterParamSetup(
-      client_if, add_scan_filter_params_action, filt_index,
-      std::move(filt_params), base::Bind(&scan_filter_param_cb, client_if));
+  sScanner->ScanFilterParamSetup(client_if, add_scan_filter_params_action,
+                                 filt_index, std::move(filt_params),
+                                 base::Bind(&scan_filter_param_cb, client_if));
 }
 
 static void gattClientScanFilterParamDeleteNative(JNIEnv* /* env */,
                                                   jobject /* object */,
                                                   jint client_if,
                                                   jint filt_index) {
-  if (!sGattIf) return;
+  if (!sScanner) return;
   const int delete_scan_filter_params_action = 1;
-  sGattIf->scanner->ScanFilterParamSetup(
-      client_if, delete_scan_filter_params_action, filt_index, nullptr,
-      base::Bind(&scan_filter_param_cb, client_if));
+  sScanner->ScanFilterParamSetup(client_if, delete_scan_filter_params_action,
+                                 filt_index, nullptr,
+                                 base::Bind(&scan_filter_param_cb, client_if));
 }
 
 static void gattClientScanFilterParamClearAllNative(JNIEnv* /* env */,
                                                     jobject /* object */,
                                                     jint client_if) {
-  if (!sGattIf) return;
+  if (!sScanner) return;
   const int clear_scan_filter_params_action = 2;
-  sGattIf->scanner->ScanFilterParamSetup(
-      client_if, clear_scan_filter_params_action, 0 /* index, unused */,
-      nullptr, base::Bind(&scan_filter_param_cb, client_if));
+  sScanner->ScanFilterParamSetup(client_if, clear_scan_filter_params_action,
+                                 0 /* index, unused */, nullptr,
+                                 base::Bind(&scan_filter_param_cb, client_if));
 }
 
 static void scan_filter_cfg_cb(uint8_t client_if, uint8_t filt_type,
@@ -1651,7 +1652,7 @@ static void scan_filter_cfg_cb(uint8_t client_if, uint8_t filt_type,
 static void gattClientScanFilterAddNative(JNIEnv* env, jobject /* object */,
                                           jint client_if, jobjectArray filters,
                                           jint filter_index) {
-  if (!sGattIf) return;
+  if (!sScanner) return;
 
   jmethodID uuidGetMsb;
   jmethodID uuidGetLsb;
@@ -1666,8 +1667,8 @@ static void gattClientScanFilterAddNative(JNIEnv* env, jobject /* object */,
 
   int numFilters = env->GetArrayLength(filters);
   if (numFilters == 0) {
-    sGattIf->scanner->ScanFilterAdd(filter_index, std::move(native_filters),
-                                    base::Bind(&scan_filter_cfg_cb, client_if));
+    sScanner->ScanFilterAdd(filter_index, std::move(native_filters),
+                            base::Bind(&scan_filter_cfg_cb, client_if));
     return;
   }
 
@@ -1805,16 +1806,16 @@ static void gattClientScanFilterAddNative(JNIEnv* env, jobject /* object */,
     native_filters.push_back(curr);
   }
 
-  sGattIf->scanner->ScanFilterAdd(filter_index, std::move(native_filters),
-                                  base::Bind(&scan_filter_cfg_cb, client_if));
+  sScanner->ScanFilterAdd(filter_index, std::move(native_filters),
+                          base::Bind(&scan_filter_cfg_cb, client_if));
 }
 
 static void gattClientScanFilterClearNative(JNIEnv* /* env */,
                                             jobject /* object */,
                                             jint client_if, jint filt_index) {
-  if (!sGattIf) return;
-  sGattIf->scanner->ScanFilterClear(filt_index,
-                                    base::Bind(&scan_filter_cfg_cb, client_if));
+  if (!sScanner) return;
+  sScanner->ScanFilterClear(filt_index,
+                            base::Bind(&scan_filter_cfg_cb, client_if));
 }
 
 void scan_enable_cb(uint8_t client_if, uint8_t action, uint8_t status) {
@@ -1829,9 +1830,8 @@ void scan_enable_cb(uint8_t client_if, uint8_t action, uint8_t status) {
 static void gattClientScanFilterEnableNative(JNIEnv* /* env */,
                                              jobject /* object */,
                                              jint client_if, jboolean enable) {
-  if (!sGattIf) return;
-  sGattIf->scanner->ScanFilterEnable(enable,
-                                     base::Bind(&scan_enable_cb, client_if));
+  if (!sScanner) return;
+  sScanner->ScanFilterEnable(enable, base::Bind(&scan_enable_cb, client_if));
 }
 
 static void gattClientConfigureMTUNative(JNIEnv* /* env */,
@@ -1875,8 +1875,8 @@ static void gattClientConfigBatchScanStorageNative(
     JNIEnv* /* env */, jobject /* object */, jint client_if,
     jint max_full_reports_percent, jint max_trunc_reports_percent,
     jint notify_threshold_level_percent) {
-  if (!sGattIf) return;
-  sGattIf->scanner->BatchscanConfigStorage(
+  if (!sScanner) return;
+  sScanner->BatchscanConfigStorage(
       client_if, max_full_reports_percent, max_trunc_reports_percent,
       notify_threshold_level_percent,
       base::Bind(&batchscan_cfg_storage_cb, client_if));
@@ -1897,25 +1897,24 @@ static void gattClientStartBatchScanNative(JNIEnv* /* env */,
                                            jint scan_interval_unit,
                                            jint scan_window_unit,
                                            jint addr_type, jint discard_rule) {
-  if (!sGattIf) return;
-  sGattIf->scanner->BatchscanEnable(
-      scan_mode, scan_interval_unit, scan_window_unit, addr_type, discard_rule,
-      base::Bind(&batchscan_enable_cb, client_if));
+  if (!sScanner) return;
+  sScanner->BatchscanEnable(scan_mode, scan_interval_unit, scan_window_unit,
+                            addr_type, discard_rule,
+                            base::Bind(&batchscan_enable_cb, client_if));
 }
 
 static void gattClientStopBatchScanNative(JNIEnv* /* env */,
                                           jobject /* object */,
                                           jint client_if) {
-  if (!sGattIf) return;
-  sGattIf->scanner->BatchscanDisable(
-      base::Bind(&batchscan_enable_cb, client_if));
+  if (!sScanner) return;
+  sScanner->BatchscanDisable(base::Bind(&batchscan_enable_cb, client_if));
 }
 
 static void gattClientReadScanReportsNative(JNIEnv* /* env */,
                                             jobject /* object */,
                                             jint client_if, jint scan_type) {
-  if (!sGattIf) return;
-  sGattIf->scanner->BatchscanReadReports(client_if, scan_type);
+  if (!sScanner) return;
+  sScanner->BatchscanReadReports(client_if, scan_type);
 }
 
 /**
@@ -2469,6 +2468,9 @@ static void periodicScanCleanupNative(JNIEnv* env, jobject /* object */) {
 }
 
 static void scanInitializeNative(JNIEnv* env, jobject object) {
+  sScanner = bluetooth::shim::get_ble_scanner_instance();
+  sScanner->RegisterCallbacks(JniScanningCallbacks::GetInstance());
+
   std::unique_lock<std::shared_mutex> lock(callbacks_mutex);
   if (mScanCallbacksObj != NULL) {
     log::warn("Cleaning up scan callback object");
@@ -2485,42 +2487,44 @@ static void scanCleanupNative(JNIEnv* env, jobject /* object */) {
     env->DeleteGlobalRef(mScanCallbacksObj);
     mScanCallbacksObj = NULL;
   }
+  if (sScanner != NULL) {
+    sScanner = NULL;
+  }
 }
 
 static void startSyncNative(JNIEnv* env, jobject /* object */, jint sid,
                             jstring address, jint skip, jint timeout,
                             jint reg_id) {
-  if (!sGattIf) return;
-  sGattIf->scanner->StartSync(sid, str2addr(env, address), skip, timeout,
-                              reg_id);
+  if (!sScanner) return;
+  sScanner->StartSync(sid, str2addr(env, address), skip, timeout, reg_id);
 }
 
 static void stopSyncNative(JNIEnv* /* env */, jobject /* object */,
                            jint sync_handle) {
-  if (!sGattIf) return;
-  sGattIf->scanner->StopSync(sync_handle);
+  if (!sScanner) return;
+  sScanner->StopSync(sync_handle);
 }
 
 static void cancelSyncNative(JNIEnv* env, jobject /* object */, jint sid,
                              jstring address) {
-  if (!sGattIf) return;
-  sGattIf->scanner->CancelCreateSync(sid, str2addr(env, address));
+  if (!sScanner) return;
+  sScanner->CancelCreateSync(sid, str2addr(env, address));
 }
 
 static void syncTransferNative(JNIEnv* env, jobject /* object */,
                                jint pa_source, jstring addr, jint service_data,
                                jint sync_handle) {
-  if (!sGattIf) return;
-  sGattIf->scanner->TransferSync(str2addr(env, addr), service_data, sync_handle,
-                                 pa_source);
+  if (!sScanner) return;
+  sScanner->TransferSync(str2addr(env, addr), service_data, sync_handle,
+                         pa_source);
 }
 
 static void transferSetInfoNative(JNIEnv* env, jobject /* object */,
                                   jint pa_source, jstring addr,
                                   jint service_data, jint adv_handle) {
-  if (!sGattIf) return;
-  sGattIf->scanner->TransferSetInfo(str2addr(env, addr), service_data,
-                                    adv_handle, pa_source);
+  if (!sScanner) return;
+  sScanner->TransferSetInfo(str2addr(env, addr), service_data, adv_handle,
+                            pa_source);
 }
 
 static void gattTestNative(JNIEnv* env, jobject /* object */, jint command,

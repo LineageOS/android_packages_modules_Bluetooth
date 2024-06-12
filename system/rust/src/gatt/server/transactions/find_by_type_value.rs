@@ -238,9 +238,7 @@ mod test {
             tokio_test::block_on(handle_find_by_type_value_request(att_view.view(), 128, &db));
 
         // assert
-        let AttChild::AttErrorResponse(response) = response else {
-            unreachable!("{response:?}")
-        };
+        let AttChild::AttErrorResponse(response) = response else { unreachable!("{response:?}") };
         assert_eq!(
             response,
             AttErrorResponseBuilder {
@@ -274,9 +272,7 @@ mod test {
             tokio_test::block_on(handle_find_by_type_value_request(att_view.view(), 128, &db));
 
         // assert: got ATTRIBUTE_NOT_FOUND erro
-        let AttChild::AttErrorResponse(response) = response else {
-            unreachable!("{response:?}")
-        };
+        let AttChild::AttErrorResponse(response) = response else { unreachable!("{response:?}") };
         assert_eq!(
             response,
             AttErrorResponseBuilder {

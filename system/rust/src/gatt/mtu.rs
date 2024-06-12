@@ -75,7 +75,7 @@ impl AttMtu {
 
     fn on_outgoing_request(&self) -> Result<()> {
         let Ok(pending_mtu) = self.stable_mtu.try_lock() else {
-          bail!("Sent ATT_EXCHANGE_MTU_REQ while an existing MTU exchange is taking place");
+            bail!("Sent ATT_EXCHANGE_MTU_REQ while an existing MTU exchange is taking place");
         };
         info!("Sending MTU_REQ, pausing indications/notifications");
         self.pending_exchange.replace(Some(pending_mtu));

@@ -246,7 +246,7 @@ static bt_status_t btpan_disconnect(const RawAddress* bd_addr) {
     BTA_PanClose(conn->handle);
     return BT_STATUS_SUCCESS;
   }
-  return BT_STATUS_FAIL;
+  return BT_STATUS_DEVICE_NOT_FOUND;
 }
 
 static int pan_pth = -1;

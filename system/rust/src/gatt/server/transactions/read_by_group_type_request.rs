@@ -190,9 +190,7 @@ mod test {
                 .unwrap();
 
         // assert: got UNSUPPORTED_GROUP_TYPE
-        let AttChild::AttErrorResponse(response) = response else {
-            unreachable!("{:?}", response)
-        };
+        let AttChild::AttErrorResponse(response) = response else { unreachable!("{:?}", response) };
         assert_eq!(
             response,
             AttErrorResponseBuilder {
@@ -219,9 +217,7 @@ mod test {
                 .unwrap();
 
         // assert: we return an INVALID_HANDLE error
-        let AttChild::AttErrorResponse(response) = response else {
-            unreachable!("{:?}", response)
-        };
+        let AttChild::AttErrorResponse(response) = response else { unreachable!("{:?}", response) };
         assert_eq!(
             response,
             AttErrorResponseBuilder {
@@ -404,9 +400,7 @@ mod test {
                 .unwrap();
 
         // assert: we return ATTRIBUTE_NOT_FOUND
-        let AttChild::AttErrorResponse(response) = response else {
-            unreachable!("{:?}", response)
-        };
+        let AttChild::AttErrorResponse(response) = response else { unreachable!("{:?}", response) };
         assert_eq!(
             response,
             AttErrorResponseBuilder {

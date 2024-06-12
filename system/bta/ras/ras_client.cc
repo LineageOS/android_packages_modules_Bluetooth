@@ -185,7 +185,7 @@ class RasClientImpl : public bluetooth::ras::RasClient {
     }
     tracker->conn_id_ = evt.conn_id;
     log::info("Search service");
-    BTA_GATTC_ServiceSearchRequest(tracker->conn_id_, &kRangingService);
+    BTA_GATTC_ServiceSearchRequest(tracker->conn_id_, kRangingService);
   }
 
   void OnGattServiceSearchComplete(const tBTA_GATTC_SEARCH_CMPL& evt) {

@@ -37,6 +37,7 @@
 #include "test/mock/mock_main_shim_entry.h"
 #include "test/mock/mock_osi_alarm.h"
 #include "test/mock/mock_stack_acl.h"
+#include "test/mock/mock_stack_btm_interface.h"
 
 #define TEST_BT com::android::bluetooth::flags
 
@@ -292,6 +293,13 @@ TEST_F_WITH_FLAGS(BtaAgCmdTest, at_hfp_cback__qcs_ev_codec_disabled,
 TEST_F_WITH_FLAGS(BtaAgCmdTest, at_hfp_cback__qcs_ev_codec_q0_enabled,
                   REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT,
                                                       hfp_codec_aptx_voice))) {
+  reset_mock_btm_client_interface();
+  mock_btm_client_interface.sco.BTM_SetEScoMode =
+      [](enh_esco_params_t* p_parms) -> tBTM_STATUS {
+    inc_func_call_count("BTM_SetEScoMode");
+    return BTM_SUCCESS;
+  };
+
   tBTA_AG_SCB p_scb = {.peer_addr = addr,
                        .sco_idx = BTM_INVALID_SCO_INDEX,
                        .app_id = 0,
@@ -322,6 +330,13 @@ TEST_F_WITH_FLAGS(BtaAgCmdTest,
                   handle_swb_at_event__qcs_ev_codec_q1_fallback_to_q0,
                   REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT,
                                                       hfp_codec_aptx_voice))) {
+  reset_mock_btm_client_interface();
+  mock_btm_client_interface.sco.BTM_SetEScoMode =
+      [](enh_esco_params_t* p_parms) -> tBTM_STATUS {
+    inc_func_call_count("BTM_SetEScoMode");
+    return BTM_SUCCESS;
+  };
+
   tBTA_AG_SCB p_scb = {.peer_addr = addr,
                        .sco_idx = BTM_INVALID_SCO_INDEX,
                        .app_id = 0,
