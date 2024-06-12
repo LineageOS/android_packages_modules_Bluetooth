@@ -64,6 +64,7 @@ public class GattServerConnectWithoutScanTest {
 
     @Test
     @RequiresFlagsEnabled(Flags.FLAG_BLE_GATT_SERVER_USE_ADDRESS_TYPE_IN_CONNECTION)
+    @Ignore("b/343749428: Remove hidden api's dependencies to enable the test.")
     public void serverConnectToRandomAddress_withTransportAuto() throws Exception {
         advertiseWithBumble(OwnAddressType.RANDOM);
 
@@ -90,6 +91,7 @@ public class GattServerConnectWithoutScanTest {
 
     @Test
     @RequiresFlagsEnabled(Flags.FLAG_BLE_GATT_SERVER_USE_ADDRESS_TYPE_IN_CONNECTION)
+    @Ignore("b/343749428: Remove hidden api's dependencies to enable the test.")
     public void serverConnectToRandomAddress_withTransportLE() throws Exception {
         advertiseWithBumble(OwnAddressType.RANDOM);
 
