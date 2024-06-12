@@ -530,22 +530,13 @@ void bta_hh_co_close(btif_hh_device_t* p_dev) {
  * Parameters       dev_handle  - device handle
  *                  *p_rpt      - pointer to the report data
  *                  len         - length of report data
- *                  mode        - Hid host Protocol Mode
- *                  sub_clas    - Device Subclass
- *                  app_id      - application id
  *
  * Returns          void
  ******************************************************************************/
-void bta_hh_co_data(uint8_t dev_handle, uint8_t* p_rpt, uint16_t len,
-                    tBTA_HH_PROTO_MODE mode, uint8_t sub_class,
-                    uint8_t ctry_code, const tAclLinkSpec& /* link_spec */,
-                    uint8_t app_id) {
+void bta_hh_co_data(uint8_t dev_handle, uint8_t* p_rpt, uint16_t len) {
   btif_hh_device_t* p_dev;
 
-  log::verbose(
-      "dev_handle = {}, subclass = 0x{:02X}, mode = {}, ctry_code = {}, app_id "
-      "= {}",
-      dev_handle, sub_class, mode, ctry_code, app_id);
+  log::verbose("dev_handle = {}", dev_handle);
 
   p_dev = btif_hh_find_connected_dev_by_handle(dev_handle);
   if (p_dev == NULL) {

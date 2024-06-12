@@ -45,14 +45,14 @@ typedef struct {
  *                  received
  *                  in interupt channel.
  *
+ * Parameters       dev_handle  - device handle
+ *                  *p_rpt      - pointer to the report data
+ *                  len         - length of report data
  *
  * Returns          void.
  *
  ******************************************************************************/
-void bta_hh_co_data(uint8_t dev_handle, uint8_t* p_rpt, uint16_t len,
-                    tBTA_HH_PROTO_MODE mode, uint8_t sub_class,
-                    uint8_t ctry_code, const tAclLinkSpec& link_spec,
-                    uint8_t app_id);
+void bta_hh_co_data(uint8_t dev_handle, uint8_t* p_rpt, uint16_t len);
 
 /*******************************************************************************
  *
