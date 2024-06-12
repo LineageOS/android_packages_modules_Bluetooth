@@ -139,7 +139,7 @@ struct btm_client_interface_t {
         uint16_t sco_inx, tBTM_ESCO_CBACK* p_esco_cback);
     [[nodiscard]] tBTM_STATUS (*BTM_RemoveSco)(uint16_t sco_inx);
     void (*BTM_WriteVoiceSettings)(uint16_t settings);
-    void (*BTM_EScoConnRsp)(uint16_t sco_inx, uint8_t hci_status,
+    void (*BTM_EScoConnRsp)(uint16_t sco_inx, tHCI_STATUS hci_status,
                             enh_esco_params_t* p_parms);
     [[nodiscard]] uint8_t (*BTM_GetNumScoLinks)();
     [[nodiscard]] tBTM_STATUS (*BTM_SetEScoMode)(enh_esco_params_t* p_parms);
