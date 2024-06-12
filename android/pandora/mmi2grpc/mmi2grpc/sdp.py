@@ -129,7 +129,7 @@ class SDPProxy(ProfileProxy):
         """
 
         uuid_list = uuids.split(", ")
-        service_names = list(map(lambda uuid: UUID_TO_SERVICE_NAME.get(int(uuid, 16), uuid), uuid_list))
+        reported_services = list(map(lambda uuid: UUID_TO_SERVICE_NAME.get(int(uuid, 16), uuid), uuid_list))
         test = unittest.TestCase()
 
         # yapf: disable
@@ -145,9 +145,9 @@ class SDPProxy(ProfileProxy):
             "HandsfreeAudioGateway",
             "GenericAudio",
             "Message Access Server",
-            "TMAS",
             "NAP",
             "PANU",
+            "TMAS",
             "Phonebook Access - PSE",
             "OBEXObjectPush",
             "Android Auto Compatibility",
@@ -158,15 +158,25 @@ class SDPProxy(ProfileProxy):
             "Android Auto Compatibility",
             "TMAS",
         ]
+        # Service that can be in any order. This should never be extended
         movable_services = [
             "Message Access Server",
+            "TMAS", # TODO: b/341385684 Remove from movable
         ]
         # yapf: enable
 
-        optional_not_present = lambda service: service in optional_services and service not in service_names
+        # Remove optional services from expected & movable list
+        optional_not_present = lambda service: service in optional_services and service not in reported_services
+        expected_services = list(filterfalse(optional_not_present, expected_services))
+        movable_services = list(filterfalse(optional_not_present, movable_services))
 
-        expected_services_sorted = sorted(expected_services, key=lambda key: key in movable_services)
-        service_names_sorted = sorted(service_names, key=lambda key: key in movable_services)
+        # 1st: Check that the movable service are present in whatever order:
+        movable_services_names_without_optional = list(filter(lambda x: x in movable_services, reported_services))
+        test.assertCountEqual(movable_services_names_without_optional, movable_services)
 
-        test.assertEqual(service_names_sorted, list(filterfalse(optional_not_present, expected_services_sorted)))
+        # 2nd: Check that all the services except the movable are in the specified order
+        reported_services = list(filterfalse(lambda key: key in movable_services, reported_services))
+        expected_services_without_movable = list(filterfalse(lambda key: key in movable_services, expected_services))
+        test.assertEqual(reported_services, expected_services_without_movable)
+
         return "OK"
