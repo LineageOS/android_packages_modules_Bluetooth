@@ -862,7 +862,7 @@ class CsisClientImpl : public CsisClient {
     if (device->is_gatt_service_valid) {
       NotifyCsisDeviceValidAndStoreIfNeeded(device);
     } else {
-      BTA_GATTC_ServiceSearchRequest(device->conn_id, &kCsisServiceUuid);
+      BTA_GATTC_ServiceSearchRequest(device->conn_id, kCsisServiceUuid);
     }
   }
 
@@ -2135,7 +2135,7 @@ class CsisClientImpl : public CsisClient {
     if (device->is_gatt_service_valid) {
       instance->OnEncrypted(device);
     } else {
-      BTA_GATTC_ServiceSearchRequest(device->conn_id, &kCsisServiceUuid);
+      BTA_GATTC_ServiceSearchRequest(device->conn_id, kCsisServiceUuid);
     }
   }
 
@@ -2151,7 +2151,7 @@ class CsisClientImpl : public CsisClient {
     BtaGattQueue::Clean(device->conn_id);
     DeregisterNotifications(device);
     device->ClearSvcData();
-    BTA_GATTC_ServiceSearchRequest(device->conn_id, &kCsisServiceUuid);
+    BTA_GATTC_ServiceSearchRequest(device->conn_id, kCsisServiceUuid);
   }
 
   void OnGattServiceChangeEvent(const RawAddress& address) {
@@ -2175,7 +2175,7 @@ class CsisClientImpl : public CsisClient {
     log::debug("address={}", address);
 
     if (!device->is_gatt_service_valid)
-      BTA_GATTC_ServiceSearchRequest(device->conn_id, &kCsisServiceUuid);
+      BTA_GATTC_ServiceSearchRequest(device->conn_id, kCsisServiceUuid);
   }
 
   static uint16_t FindCccHandle(uint16_t conn_id, uint16_t char_handle) {

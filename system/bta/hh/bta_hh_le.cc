@@ -958,7 +958,7 @@ static void bta_hh_le_pri_service_discovery(tBTA_HH_DEV_CB* p_cb) {
   /* in parallel */
   /* start primary service discovery for HID service */
   Uuid pri_srvc = Uuid::From16Bit(UUID_SERVCLASS_LE_HID);
-  BTA_GATTC_ServiceSearchRequest(p_cb->conn_id, &pri_srvc);
+  BTA_GATTC_ServiceSearchRequest(p_cb->conn_id, pri_srvc);
   return;
 }
 
