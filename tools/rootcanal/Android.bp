@@ -393,7 +393,6 @@ cc_binary_host {
     ],
     static_libs: [
         "breakpad_client",
-        "libc++fs",
         "libcrypto",
         "libgflags",
         "libprotobuf-cpp-full",
