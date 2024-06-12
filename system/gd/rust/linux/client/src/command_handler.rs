@@ -389,6 +389,14 @@ fn build_commands() -> HashMap<String, CommandOption> {
             function_pointer: _noop,
         },
     );
+    command_options.insert(
+        String::from("dumpsys"),
+        CommandOption {
+            rules: vec![String::from("dumpsys")],
+            description: String::from("Get diagnostic output."),
+            function_pointer: CommandHandler::cmd_dumpsys,
+        },
+    );
     command_options
 }
 
@@ -2338,6 +2346,17 @@ impl CommandHandler {
                 return Err(format!("Invalid argument '{}'", other).into());
             }
         }
+
+        Ok(())
+    }
+
+    fn cmd_dumpsys(&mut self, _args: &Vec<String>) -> CommandResult {
+        if !self.lock_context().adapter_ready {
+            return Err(self.adapter_not_ready());
+        }
+
+        let contents = self.lock_context().adapter_dbus.as_mut().unwrap().get_dumpsys();
+        println!("{}", contents);
 
         Ok(())
     }
