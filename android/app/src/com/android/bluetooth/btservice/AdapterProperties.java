@@ -49,8 +49,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Looper;
 import android.os.ParcelUuid;
 import android.os.SystemProperties;
 import android.os.UserHandle;
@@ -150,9 +148,8 @@ class AdapterProperties {
     private boolean mIsLeIsochronousBroadcasterSupported;
 
     private boolean mReceiverRegistered;
-    private Handler mHandler;
 
-    private BroadcastReceiver mReceiver =
+    private final BroadcastReceiver mReceiver =
             new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
@@ -261,8 +258,6 @@ class AdapterProperties {
                 SystemProperties.getBoolean(A2DP_OFFLOAD_SUPPORTED_PROPERTY, false)
                         && !SystemProperties.getBoolean(A2DP_OFFLOAD_DISABLED_PROPERTY, false);
 
-        mHandler = new Handler(Looper.getMainLooper());
-
         IntentFilter filter = new IntentFilter();
         filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
         filter.addAction(BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED);
@@ -287,12 +282,6 @@ class AdapterProperties {
     public void cleanup() {
         mRemoteDevices = null;
         mProfileConnectionState.clear();
-
-        // Unregister Handler and stop all queued messages.
-        if (mHandler != null) {
-            mHandler.removeCallbacksAndMessages(null);
-            mHandler = null;
-        }
 
         if (mReceiverRegistered) {
             mService.unregisterReceiver(mReceiver);
@@ -614,7 +603,7 @@ class AdapterProperties {
         try {
             bondedDeviceList = mBondedDevices.toArray(bondedDeviceList);
         } catch (ArrayStoreException ee) {
-            errorLog("Error retrieving bonded device array");
+            Log.e(TAG, "Error retrieving bonded device array");
         }
         infoLog("getBondedDevices: length=" + bondedDeviceList.length);
         return bondedDeviceList;
@@ -777,89 +766,51 @@ class AdapterProperties {
 
     @RequiresPermission(android.Manifest.permission.INTERACT_ACROSS_USERS)
     void updateOnProfileConnectionChanged(
-            BluetoothDevice device, int profile, int state, int prevState) {
-        mHandler.post(() -> sendConnectionStateChange(device, profile, state, prevState));
-    }
-
-    @RequiresPermission(android.Manifest.permission.INTERACT_ACROSS_USERS)
-    void sendConnectionStateChange(BluetoothDevice device, int profile, int state, int prevState) {
-        Log.d(
-                TAG,
-                "PROFILE_CONNECTION_STATE_CHANGE: profile="
-                        + BluetoothProfile.getProfileName(profile)
-                        + ", device="
-                        + device
-                        + ", "
-                        + prevState
-                        + " -> "
-                        + state);
-        if (!isNormalStateTransition(prevState, state)) {
-            Log.w(
-                    TAG,
-                    "PROFILE_CONNECTION_STATE_CHANGE: unexpected transition for profile="
-                            + BluetoothProfile.getProfileName(profile)
-                            + ", device="
-                            + device
-                            + ", "
-                            + prevState
-                            + " -> "
-                            + state);
+            BluetoothDevice device, int profile, int newState, int prevState) {
+        String logInfo =
+                ("profile=" + BluetoothProfile.getProfileName(profile))
+                        + (" device=" + device)
+                        + (" state [" + prevState + " -> " + newState + "]");
+        Log.d(TAG, "updateOnProfileConnectionChanged: " + logInfo);
+        if (!isNormalStateTransition(prevState, newState)) {
+            Log.w(TAG, "updateOnProfileConnectionChanged: Unexpected transition. " + logInfo);
         }
         BluetoothStatsLog.write(
                 BluetoothStatsLog.BLUETOOTH_CONNECTION_STATE_CHANGED,
-                state,
+                newState,
                 0 /* deprecated */,
                 profile,
                 mService.obfuscateAddress(device),
                 mService.getMetricId(device),
                 0,
                 SYSTEM_CONNECTION_LATENCY_METRIC);
-        if (!validateProfileConnectionState(state) || !validateProfileConnectionState(prevState)) {
+        if (!validateProfileConnectionState(newState)
+                || !validateProfileConnectionState(prevState)) {
             // Previously, an invalid state was broadcast anyway,
             // with the invalid state converted to -1 in the intent.
             // Better to log an error and not send an intent with
             // invalid contents or set mAdapterConnectionState to -1.
-            errorLog(
-                    "sendConnectionStateChange: invalid state transition "
-                            + prevState
-                            + " -> "
-                            + state);
+            Log.e(TAG, "updateOnProfileConnectionChanged: Invalid transition. " + logInfo);
             return;
         }
 
         synchronized (mObject) {
-            updateProfileConnectionState(profile, state, prevState);
+            updateProfileConnectionState(profile, newState, prevState);
 
-            if (updateCountersAndCheckForConnectionStateChange(state, prevState)) {
-                int newAdapterState = convertToAdapterState(state);
+            if (updateCountersAndCheckForConnectionStateChange(newState, prevState)) {
+                int newAdapterState = convertToAdapterState(newState);
                 int prevAdapterState = convertToAdapterState(prevState);
                 setConnectionState(newAdapterState);
 
-                Intent intent = new Intent(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED);
-                intent.putExtra(BluetoothDevice.EXTRA_DEVICE, device);
-                intent.putExtra(BluetoothAdapter.EXTRA_CONNECTION_STATE, newAdapterState);
-                intent.putExtra(BluetoothAdapter.EXTRA_PREVIOUS_CONNECTION_STATE, prevAdapterState);
-                intent.addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
-                Log.d(
-                        TAG,
-                        "ADAPTER_CONNECTION_STATE_CHANGE: "
-                                + device
-                                + ": "
-                                + prevAdapterState
-                                + " -> "
-                                + newAdapterState);
-                if (!isNormalStateTransition(prevState, state)) {
-                    Log.w(
-                            TAG,
-                            "ADAPTER_CONNECTION_STATE_CHANGE: unexpected transition for profile="
-                                    + BluetoothProfile.getProfileName(profile)
-                                    + ", device="
-                                    + device
-                                    + ", "
-                                    + prevState
-                                    + " -> "
-                                    + state);
-                }
+                Intent intent =
+                        new Intent(BluetoothAdapter.ACTION_CONNECTION_STATE_CHANGED)
+                                .putExtra(BluetoothDevice.EXTRA_DEVICE, device)
+                                .putExtra(BluetoothAdapter.EXTRA_CONNECTION_STATE, newAdapterState)
+                                .putExtra(
+                                        BluetoothAdapter.EXTRA_PREVIOUS_CONNECTION_STATE,
+                                        prevAdapterState)
+                                .addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY_BEFORE_BOOT);
+                Log.d(TAG, "updateOnProfileConnectionChanged: " + logInfo);
                 mService.sendBroadcastAsUser(
                         intent,
                         UserHandle.ALL,
@@ -1097,7 +1048,7 @@ class AdapterProperties {
                         break;
 
                     default:
-                        errorLog("Property change not handled in Java land:" + type);
+                        Log.e(TAG, "Property change not handled in Java land:" + type);
                 }
             }
         }
@@ -1374,9 +1325,5 @@ class AdapterProperties {
 
     private static void debugLog(String msg) {
         Log.d(TAG, msg);
-    }
-
-    private static void errorLog(String msg) {
-        Log.e(TAG, msg);
     }
 }
