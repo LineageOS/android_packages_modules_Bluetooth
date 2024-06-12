@@ -5764,6 +5764,15 @@ public class AdapterService extends Service {
                                 .isLePeriodicAdvertisingSyncTransferRecipientSupported());
     }
 
+    /**
+     * Check if the LE channel sounding feature is supported.
+     *
+     * @return true, if the LE channel sounding is supported
+     */
+    public boolean isLeChannelSoundingSupported() {
+        return mAdapterProperties.isLeChannelSoundingSupported();
+    }
+
     public long getSupportedProfilesBitMask() {
         return Config.getSupportedProfilesBitMask();
     }

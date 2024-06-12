@@ -120,6 +120,7 @@ constexpr bt_local_le_features_t kLocalLeFeatures{
     .le_isochronous_broadcast_supported = true,
     .le_periodic_advertising_sync_transfer_recipient_supported = true,
     .adv_filter_extended_features_mask = 0x3366,
+    .le_channel_sounding_supported = true,
 };
 
 // BT_PROPERTY_RESERVED_0F
@@ -426,6 +427,9 @@ void verify_property(const bt_property_type_t& type, const bt_property_t& proper
       ASSERT_EQ(
           kLocalLeFeatures.adv_filter_extended_features_mask,
           ((bt_local_le_features_t*)property.val)->adv_filter_extended_features_mask);
+      ASSERT_EQ(
+          kLocalLeFeatures.le_channel_sounding_supported,
+          ((bt_local_le_features_t*)property.val)->le_channel_sounding_supported);
       break;
 
     case BT_PROPERTY_RESERVED_0E:
@@ -663,7 +667,8 @@ TEST_F(BtPropertyTest, bt_property_text_test) {
         "le_periodic_advertising_sync_transfer_sender_supported:1 "
         "le_connected_isochronous_stream_central_supported:1 le_isochronous_broadcast_supported:1 "
         "le_periodic_advertising_sync_transfer_recipient_supported:1 "
-        "adv_filter_extended_features_mask:13158",
+        "adv_filter_extended_features_mask:13158"
+        "le_channel_sounding_supported:1 ",
         bt_property_text(prop).c_str());
   }
 
