@@ -318,24 +318,6 @@ struct acl_set_peer_le_features_from_handle {
 };
 extern struct acl_set_peer_le_features_from_handle
     acl_set_peer_le_features_from_handle;
-// Name: acl_create_classic_connection
-// Params: const RawAddress& bd_addr, bool there_are_high_priority_channels,
-// bool is_bonding Returns: constexpr uint16_t kDefaultPacketTypes =
-// HCI_PKT_TYPES_MASK_DM1 | HCI_PKT_TYPES_MASK_DH1 | HCI_PKT_TYPES_MASK_DM3 |
-// HCI_PKT_TYPES_MASK_DH3 | HCI_PKT_TYPES_MASK_DM5 | HCI_PKT_TYPES_MASK_DH5;
-// void
-struct acl_create_classic_connection {
-  std::function<void(const RawAddress& bd_addr,
-                     bool there_are_high_priority_channels, bool is_bonding)>
-      body{[](const RawAddress& /* bd_addr */,
-              bool /* there_are_high_priority_channels */,
-              bool /* is_bonding */) { return 0; }};
-  void operator()(const RawAddress& bd_addr,
-                  bool there_are_high_priority_channels, bool is_bonding) {
-    return body(bd_addr, there_are_high_priority_channels, is_bonding);
-  };
-};
-extern struct acl_create_classic_connection acl_create_classic_connection;
 // Name: acl_get_connection_from_address
 // Params: const RawAddress& bd_addr, tBT_TRANSPORT transport
 // Returns: tACL_CONN*

@@ -100,10 +100,6 @@ class FakeBtStack {
     test::mock::stack_btm_devctl::BTM_IsDeviceUp.body = []() { return true; };
     test::mock::stack_acl::acl_create_le_connection.body =
         [](const RawAddress& bd_addr) { return true; };
-    test::mock::stack_acl::acl_create_classic_connection.body =
-        [](const RawAddress& bd_addr, bool there_are_high_priority_channels,
-           bool is_bonding) { return true; };
-
     test::mock::stack_acl::acl_send_data_packet_br_edr.body =
         [](const RawAddress& bd_addr, BT_HDR* hdr) {
           ConsumeData((const uint8_t*)hdr, hdr->offset + hdr->len);
@@ -137,7 +133,6 @@ class FakeBtStack {
   ~FakeBtStack() {
     test::mock::stack_btm_devctl::BTM_IsDeviceUp = {};
     test::mock::stack_acl::acl_create_le_connection = {};
-    test::mock::stack_acl::acl_create_classic_connection = {};
     test::mock::stack_acl::acl_send_data_packet_br_edr = {};
     test::mock::stack_acl::acl_send_data_packet_ble = {};
     bluetooth::hci::testing::mock_controller_ = nullptr;

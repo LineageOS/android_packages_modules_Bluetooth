@@ -24,9 +24,8 @@
 
 #include "btm_status.h"
 #include "hci_error_code.h"
-#include "include/macros.h"
+#include "main/shim/acl_api.h"
 #include "stack/include/acl_api.h"
-#include "stack/include/l2cap_acl_interface.h"
 #include "test/headless/get_options.h"
 #include "test/headless/headless.h"
 #include "test/headless/messenger.h"
@@ -52,7 +51,7 @@ int do_mode([[maybe_unused]] unsigned int num_loops,
 
   PowerMode power_mode;
 
-  acl_create_classic_connection(bd_addr, false, false);
+  bluetooth::shim::ACL_CreateClassicConnection(bd_addr);
 
   std::shared_ptr<acl_state_changed_params_t> acl{nullptr};
 
