@@ -227,4 +227,5 @@ android_robolectric_test {
     sdk_version: "module_current",
     upstream: true,
     test_suites: ["general-tests"],
+    strict_mode: false,
 }
