@@ -887,6 +887,8 @@ void L2CA_AdjustConnectionIntervals(uint16_t* min_interval,
                                     uint16_t* max_interval,
                                     uint16_t floor_interval);
 
+void L2CA_SetEcosystemBaseInterval(uint32_t base_interval);
+
 /**
  * Check whether an ACL or LE link to the remote device is established
  */
