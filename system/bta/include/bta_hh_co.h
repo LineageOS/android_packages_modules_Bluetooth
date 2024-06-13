@@ -66,7 +66,7 @@ void bta_hh_co_data(uint8_t dev_handle, uint8_t* p_rpt, uint16_t len);
  *
  ******************************************************************************/
 bool bta_hh_co_open(uint8_t dev_handle, uint8_t sub_class, uint16_t attr_mask,
-                    uint8_t app_id);
+                    uint8_t app_id, tAclLinkSpec& link_spec);
 
 /*******************************************************************************
  *
