@@ -122,7 +122,7 @@ static tHID_KB_LIST hid_kb_numlock_on_list[] = {{LOGITECH_KB_MX5500_PRODUCT_ID,
   do {                                                                      \
     if (btif_hh_cb.status == BTIF_HH_DISABLED) {                            \
       log::error("HH status = {}", btif_hh_status_text(btif_hh_cb.status)); \
-      return BT_STATUS_FAIL;                                                \
+      return BT_STATUS_UNEXPECTED_STATE;                                    \
     }                                                                       \
   } while (0)
 

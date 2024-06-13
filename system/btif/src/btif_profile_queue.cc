@@ -191,7 +191,7 @@ bt_status_t btif_queue_connect_next(void) {
 
   if (connect_queue.empty()) return BT_STATUS_FAIL;
   if (!stack_manager_get_interface()->get_stack_is_running())
-    return BT_STATUS_FAIL;
+    return BT_STATUS_UNEXPECTED_STATE;
 
   ConnectNode& head = connect_queue.front();
 
