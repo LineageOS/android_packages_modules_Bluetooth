@@ -2491,7 +2491,7 @@ void btm_ble_stop_inquiry(void) {
   // TODO: remove this call and make btm_process_inq_complete static
   btm_process_inq_complete(
       HCI_SUCCESS,
-      (uint8_t)(btm_cb.btm_inq_vars.inqparms.mode & BTM_BLE_INQUIRY_MASK));
+      (uint8_t)(btm_cb.btm_inq_vars.inqparms.mode & BTM_BLE_GENERAL_INQUIRY));
 }
 
 /*******************************************************************************
