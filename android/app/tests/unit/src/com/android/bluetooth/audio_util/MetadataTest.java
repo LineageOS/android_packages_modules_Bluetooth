@@ -74,7 +74,6 @@ public class MetadataTest {
     private static final String IMAGE_HANDLE_1 = "0000001";
     private static final Uri IMAGE_URI_1 =
             TEST_CONTENT_URI.buildUpon().appendQueryParameter("handle", IMAGE_HANDLE_1).build();
-    private static final String IMAGE_STRING_1 = IMAGE_URI_1.toString();
     private static final Image DEFAULT_IMAGE = null;
 
     private static final String SONG_MEDIA_ID = "abc123";
@@ -88,7 +87,6 @@ public class MetadataTest {
     private Image mSongImage = null; /* to be set to Image(mTestBitmap) once context is set */
 
     private Bitmap mTestBitmap = null;
-    private Bitmap mTestBitmap2 = null;
 
     @Before
     public void setUp() throws Exception {
@@ -97,7 +95,6 @@ public class MetadataTest {
         mTestResources = TestUtils.getTestApplicationResources(mTargetContext);
 
         mTestBitmap = loadImage(com.android.bluetooth.tests.R.raw.image_200_200);
-        mTestBitmap2 = loadImage(com.android.bluetooth.tests.R.raw.image_200_200_blue);
 
         mTestContentResolver = new MockContentResolver(mTargetContext);
         mTestContentResolver.addProvider(
@@ -106,7 +103,6 @@ public class MetadataTest {
                     @Override
                     public AssetFileDescriptor openTypedAssetFile(
                             Uri url, String mimeType, Bundle opts) {
-                        String handle = url.getQueryParameter("handle");
                         if (IMAGE_URI_1.equals(url)) {
                             return mTestResources.openRawResourceFd(
                                     com.android.bluetooth.tests.R.raw.image_200_200);
@@ -127,7 +123,6 @@ public class MetadataTest {
         mSongImage = null;
         mTestContentResolver = null;
         mTestBitmap = null;
-        mTestBitmap2 = null;
         mTestResources = null;
         mTargetContext = null;
         mMockContext = null;

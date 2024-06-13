@@ -28,7 +28,7 @@
 bool l2c_link_hci_disc_comp(uint16_t handle, tHCI_REASON reason);
 
 void l2c_link_role_changed(const RawAddress* bd_addr, uint8_t new_role,
-                           uint8_t hci_status);
+                           tHCI_STATUS hci_status);
 
 bool l2cble_conn_comp(uint16_t handle, uint8_t role, const RawAddress& bda,
                       tBLE_ADDR_TYPE type, uint16_t conn_interval,

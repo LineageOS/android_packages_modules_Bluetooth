@@ -655,8 +655,7 @@ void bta_hh_data_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data) {
   uint8_t* p_rpt = (uint8_t*)(pdata + 1) + pdata->offset;
 
   bta_hh_co_data((uint8_t)p_data->hid_cback.hdr.layer_specific, p_rpt,
-                 pdata->len, p_cb->mode, p_cb->sub_class,
-                 p_cb->dscp_info.ctry_code, p_cb->link_spec, p_cb->app_id);
+                 pdata->len);
 
   osi_free_and_reset((void**)&pdata);
 }

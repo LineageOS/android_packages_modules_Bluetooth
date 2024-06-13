@@ -135,9 +135,7 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Dispozitivul reține să păstreze Bluetooth activat în modul Avion. Dezactivează Bluetooth dacă nu vrei să rămână activat."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi și Bluetooth rămân activate"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Dispozitivul reține să păstreze funcțiile Wi-Fi și Bluetooth activate în modul Avion. Dezactivează Wi-Fi și Bluetooth dacă nu vrei să rămână activate."</string>
-    <!-- no translation found for bluetooth_enabled_auto_on_title (8983664142805050578) -->
-    <skip />
-    <!-- no translation found for bluetooth_enabled_auto_on_message (2790514825041114851) -->
-    <skip />
+    <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"S-a reactivat Bluetooth"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="2790514825041114851">"Poți modifica oricând opțiunea din Setări"</string>
     <string name="bluetooth_notification_group" msgid="7251886707585872194">"Schimbare automată de stare Bluetooth"</string>
 </resources>

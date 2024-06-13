@@ -635,10 +635,10 @@ GetStackUnicastConfigurationFromAidlFormat(
     // Note: Currently there is no equivalent of this in the stack data format
     req.bisNumPerSubgroup = 2;
 
-    if (quality == le_audio::kLeAudioQualityStandard) {
+    if (quality == le_audio::QUALITY_STANDARD) {
       req.quality = ::aidl::android::hardware::bluetooth::audio::
           IBluetoothAudioProvider::BroadcastQuality::STANDARD;
-    } else if (quality == le_audio::kLeAudioQualityHigh) {
+    } else if (quality == le_audio::QUALITY_HIGH) {
       req.quality = ::aidl::android::hardware::bluetooth::audio::
           IBluetoothAudioProvider::BroadcastQuality::HIGH;
     }

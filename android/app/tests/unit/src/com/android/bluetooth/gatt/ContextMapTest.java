@@ -106,7 +106,6 @@ public class ContextMapTest {
     public void advertisingSetAndData() {
         ContextMap contextMap = new ContextMap<>();
 
-        int appUid = Binder.getCallingUid();
         int id = 12345;
         doReturn(appAdvertiseStats)
                 .when(mMapMethodProxy)

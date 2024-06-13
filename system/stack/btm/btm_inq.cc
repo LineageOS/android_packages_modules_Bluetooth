@@ -248,10 +248,6 @@ static const uint8_t* btm_eir_get_uuid_list(const uint8_t* p_eir,
                                             uint8_t* p_num_uuid,
                                             uint8_t* p_uuid_list_type);
 
-void SendRemoteNameRequest(const RawAddress& raw_address) {
-  bluetooth::shim::ACL_RemoteNameRequest(raw_address, HCI_PAGE_SCAN_REP_MODE_R1,
-                                         HCI_MANDATARY_PAGE_SCAN_MODE, 0);
-}
 static void btm_process_cancel_complete(tHCI_STATUS status, uint8_t mode);
 static void on_incoming_hci_event(bluetooth::hci::EventView event);
 static bool is_inquery_by_rssi() {
@@ -1067,17 +1063,6 @@ void btm_inq_db_reset(void) {
 
 /*******************************************************************************
  *
- * Function         btm_inq_clear_ssp
- *
- * Description      This function is called when pairing_state becomes idle
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_inq_clear_ssp(void) {}
-
-/*******************************************************************************
- *
  * Function         btm_clr_inq_db
  *
  * Description      This function is called to clear out a device or all devices
@@ -1876,15 +1861,6 @@ tBTM_STATUS btm_initiate_rem_name(const RawAddress& remote_bda,
   if (btm_cb.btm_inq_vars.remname_active) {
     return (BTM_BUSY);
   } else {
-    /* If there is no remote name request running,call the callback function
-     * and start timer */
-    btm_cb.btm_inq_vars.p_remname_cmpl_cb = p_cb;
-    btm_cb.btm_inq_vars.remname_bda = remote_bda;
-    btm_cb.btm_inq_vars.remname_dev_type = BT_DEVICE_TYPE_BREDR;
-
-    alarm_set_on_mloop(btm_cb.btm_inq_vars.remote_name_timer, timeout_ms,
-                       btm_inq_remote_name_timer_timeout, NULL);
-
     /* If the database entry exists for the device, use its clock offset */
     tINQ_DB_ENT* p_i = btm_inq_db_find(remote_bda);
     if (p_i && (p_i->inq_info.results.inq_result_type & BT_DEVICE_TYPE_BREDR)) {
@@ -1911,7 +1887,14 @@ tBTM_STATUS btm_initiate_rem_name(const RawAddress& remote_bda,
           clock_offset);
     }
 
+    btm_cb.btm_inq_vars.p_remname_cmpl_cb = p_cb;
+    btm_cb.btm_inq_vars.remname_bda = remote_bda;
+    btm_cb.btm_inq_vars.remname_dev_type = BT_DEVICE_TYPE_BREDR;
     btm_cb.btm_inq_vars.remname_active = true;
+
+    alarm_set_on_mloop(btm_cb.btm_inq_vars.remote_name_timer, timeout_ms,
+                       btm_inq_remote_name_timer_timeout, NULL);
+
     return BTM_CMD_STARTED;
   }
 }

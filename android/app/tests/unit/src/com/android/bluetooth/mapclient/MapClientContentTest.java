@@ -77,7 +77,6 @@ public class MapClientContentTest {
     private BluetoothAdapter mAdapter;
     private BluetoothDevice mTestDevice;
 
-    private Handler mHandler;
     private Bmessage mTestMessage1;
     private Bmessage mTestMessage2;
     private Long mTestMessage1Timestamp = 1234L;
@@ -87,8 +86,6 @@ public class MapClientContentTest {
     private static final boolean MESSAGE_NOT_SEEN = false;
 
     private VCardEntry mOriginator;
-
-    private ArgumentCaptor<Uri> mUriArgument = ArgumentCaptor.forClass(Uri.class);
 
     private MapClientContent mMapClientContent;
 

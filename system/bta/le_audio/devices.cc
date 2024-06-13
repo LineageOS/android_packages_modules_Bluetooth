@@ -261,7 +261,31 @@ bool LeAudioDevice::ConfigureAses(
     return false;
   }
 
-  auto const& ase_configs = audio_set_conf->confs.get(direction);
+  auto audio_locations = (direction == types::kLeAudioDirectionSink)
+                             ? snk_audio_locations_
+                             : src_audio_locations_;
+
+  auto const& group_ase_configs = audio_set_conf->confs.get(direction);
+  std::vector<set_configurations::AseConfiguration> ase_configs;
+  std::copy_if(group_ase_configs.cbegin(), group_ase_configs.cend(),
+               std::back_inserter(ase_configs),
+               [&audio_locations](auto const& cfg) {
+                 /* Pass as matching if config has no allocation to match
+                  * (the legacy json config provider). Otherwise, with the codec
+                  * extensibility feature enabled, we receive ASE configurations
+                  * for the whole group and we should filter them by audio
+                  * allocations to match with the locations supported by a
+                  * particular device.
+                  */
+                 auto config = cfg.codec.params.GetAsCoreCodecConfig();
+                 if (!config.audio_channel_allocation.has_value()) return true;
+
+                 // Filter-out not matching audio locations
+                 return (cfg.codec.params.GetAsCoreCodecConfig()
+                             .audio_channel_allocation.value() &
+                         audio_locations.to_ulong()) != 0;
+               });
+
   auto const& pacs =
       (direction == types::kLeAudioDirectionSink) ? snk_pacs_ : src_pacs_;
   for (size_t i = 0; i < ase_configs.size() && ase; ++i) {
@@ -280,16 +304,13 @@ bool LeAudioDevice::ConfigureAses(
    */
   uint8_t active_ases = *number_of_already_active_group_ase;
 
-  auto audio_locations = (direction == types::kLeAudioDirectionSink)
-                             ? snk_audio_locations_
-                             : src_audio_locations_;
-
   // Before we activate the ASEs, make sure we have the right configuration
   // Check for matching PACs only if we know that the LTV format is being used.
   uint8_t max_required_ase_per_dev = ase_configs.size() / num_of_devices +
                                      (ase_configs.size() % num_of_devices);
-  int needed_ase = std::min((int)(max_required_ase_per_dev),
-                            (int)(ase_configs.size() - active_ases));
+  int needed_ase =
+      std::min((int)(max_required_ase_per_dev), (int)(ase_configs.size()));
+
   for (int i = 0; i < needed_ase; ++i) {
     auto const& ase_cfg = ase_configs.at(i);
     if (utils::IsCodecUsingLtvFormat(ase_cfg.codec.id) &&
@@ -299,7 +320,8 @@ bool LeAudioDevice::ConfigureAses(
     }
   }
 
-  auto strategy = utils::GetStrategyForAseConfig(ase_configs, num_of_devices);
+  auto strategy =
+      utils::GetStrategyForAseConfig(group_ase_configs, num_of_devices);
 
   // Make sure we configure a single microphone if Dual Bidir SWB is not
   // supported.

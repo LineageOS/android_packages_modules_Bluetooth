@@ -135,9 +135,7 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Функцията за Bluetooth ще бъде включена, докато устройството ви е в самолетен режим. Ако не искате това, изключете я."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Функциите за Wi-Fi и Bluetooth няма да бъдат изключени"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Функциите за Wi‑Fi и Bluetooth ще бъдат включени, докато устройството ви е в самолетен режим. Ако не искате това, изключете ги."</string>
-    <!-- no translation found for bluetooth_enabled_auto_on_title (8983664142805050578) -->
-    <skip />
-    <!-- no translation found for bluetooth_enabled_auto_on_message (2790514825041114851) -->
-    <skip />
+    <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Функцията за Bluetooth се включи отново"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="2790514825041114851">"Винаги можете да промените това в „Настройки“"</string>
     <string name="bluetooth_notification_group" msgid="7251886707585872194">"Автоматична промяна в състоянието на Bluetooth"</string>
 </resources>

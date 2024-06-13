@@ -90,7 +90,6 @@ public class HearingAidServiceTest {
 
     private HearingAidService mService;
     private HearingAidService.BluetoothHearingAidBinder mServiceBinder;
-    private HashMap<BluetoothDevice, LinkedBlockingQueue<Intent>> mDeviceQueueMap;
 
     @Rule public MockitoRule mockitoRule = MockitoJUnit.rule();
 

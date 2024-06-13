@@ -67,7 +67,6 @@ public class TbsGattTest {
     private Integer mCurrentCcid;
     private String mCurrentUci;
     private List<String> mCurrentUriSchemes;
-    private int mCurrentFeatureFlags;
     private String mCurrentProviderName;
     private int mCurrentTechnology;
 

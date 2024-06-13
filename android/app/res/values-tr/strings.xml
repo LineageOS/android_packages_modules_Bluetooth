@@ -135,9 +135,7 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Cihazınız, uçak modundayken Bluetooth\'u açık tutmayı hatırlar. Açık kalmasını istemiyorsanız Bluetooth\'u kapatın."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Kablosuz bağlantı ve Bluetooth açık kalır"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Cihazınız, uçak modundayken kablosuz bağlantıyı ve Bluetooth\'u açık tutmayı hatırlar. Açık kalmasını istemiyorsanız kablosuz bağlantıyı ve Bluetooth\'u kapatın."</string>
-    <!-- no translation found for bluetooth_enabled_auto_on_title (8983664142805050578) -->
-    <skip />
-    <!-- no translation found for bluetooth_enabled_auto_on_message (2790514825041114851) -->
-    <skip />
+    <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Bluetooth tekrar açıldı"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="2790514825041114851">"Bunu istediğiniz zaman Ayarlar\'da değiştirebilirsiniz"</string>
     <string name="bluetooth_notification_group" msgid="7251886707585872194">"Bluetooth otomatik durum değişikliği"</string>
 </resources>

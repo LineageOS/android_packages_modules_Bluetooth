@@ -45,7 +45,6 @@ public class CompanionManagerTest {
 
     private static final String TEST_DEVICE = "11:22:33:44:55:66";
 
-    private AdapterProperties mAdapterProperties;
     private Context mTargetContext;
     private CompanionManager mCompanionManager;
 

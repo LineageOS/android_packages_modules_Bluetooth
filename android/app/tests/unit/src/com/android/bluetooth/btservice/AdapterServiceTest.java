@@ -174,11 +174,6 @@ public class AdapterServiceTest {
             new BatteryStatsManager(mock(IBatteryStats.class));
 
     private static final int CONTEXT_SWITCH_MS = 100;
-    private static final int PROFILE_SERVICE_TOGGLE_TIME_MS = 200;
-    private static final int GATT_START_TIME_MS = 1000;
-    private static final int ONE_SECOND_MS = 1000;
-    private static final int NATIVE_INIT_MS = 8000;
-    private static final int NATIVE_DISABLE_MS = 8000;
 
     private PackageManager mMockPackageManager;
     private MockContentResolver mMockContentResolver;
@@ -516,7 +511,6 @@ public class AdapterServiceTest {
     void doDisable(boolean onlyGatt) {
         doDisable(
                 mLooper,
-                mMockGattService,
                 mAdapterService,
                 mMockContext,
                 onlyGatt,
@@ -526,7 +520,6 @@ public class AdapterServiceTest {
 
     private static void doDisable(
             TestLooper looper,
-            ProfileService gattService,
             MockAdapterService adapter,
             Context ctx,
             boolean onlyGatt,

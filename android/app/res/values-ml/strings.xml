@@ -135,9 +135,7 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"ഫ്ലൈറ്റ് മോഡിലായിരിക്കുമ്പോൾ Bluetooth ഓണാക്കി വയ്ക്കാൻ നിങ്ങളുടെ ഉപകരണം ഓർമ്മിക്കുന്നു. Bluetooth ഓണാക്കി വയ്ക്കാൻ താൽപ്പര്യമില്ലെങ്കിൽ അത് ഓഫാക്കുക."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"വൈഫൈ, Bluetooth എന്നിവ ഓണായ നിലയിൽ തുടരും"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"ഫ്ലൈറ്റ് മോഡിലായിരിക്കുമ്പോൾ വൈഫൈ, Bluetooth എന്നിവ ഓണാക്കി വയ്ക്കാൻ നിങ്ങളുടെ ഉപകരണം ഓർമ്മിക്കുന്നു. വൈഫൈ, Bluetooth എന്നിവ ഓണാക്കി വയ്‌ക്കാൻ താൽപ്പര്യമില്ലെങ്കിൽ അവ ഓഫാക്കുക."</string>
-    <!-- no translation found for bluetooth_enabled_auto_on_title (8983664142805050578) -->
-    <skip />
-    <!-- no translation found for bluetooth_enabled_auto_on_message (2790514825041114851) -->
-    <skip />
+    <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"Bluetooth വീണ്ടും ഓണാക്കി"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="2790514825041114851">"നിങ്ങൾക്ക് എപ്പോൾ വേണമെങ്കിലും ക്രമീകരണത്തിൽ ഇത് മാറ്റാനാകും"</string>
     <string name="bluetooth_notification_group" msgid="7251886707585872194">"Bluetooth നിലയുടെ സ്വയമേവയുള്ള മാറ്റം"</string>
 </resources>

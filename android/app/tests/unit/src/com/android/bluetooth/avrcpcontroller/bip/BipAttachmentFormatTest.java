@@ -285,9 +285,6 @@ public class BipAttachmentFormatTest {
     public void testParsedAttachmentToString() {
         TimeZone utc = TimeZone.getTimeZone("UTC");
         utc.setRawOffset(0);
-        Date date = makeDate(1, 1, 1990, 12, 34, 56);
-        Date dateUtc = makeDate(1, 1, 1990, 12, 34, 56, utc);
-        BipAttachmentFormat attachment = null;
 
         String expected =
                 "<attachment content-type=\"text/plain\" charset=\"ISO-8859-1\""
@@ -315,7 +312,7 @@ public class BipAttachmentFormatTest {
                 "<attachment content-type=\"text/plain\"" + " name=\"thisisatextfile.txt\" />";
 
         // Create by parsing, all fields
-        attachment =
+        BipAttachmentFormat attachment =
                 new BipAttachmentFormat(
                         "text/plain",
                         "ISO-8859-1",
@@ -366,7 +363,6 @@ public class BipAttachmentFormatTest {
         TimeZone utc = TimeZone.getTimeZone("UTC");
         utc.setRawOffset(0);
         Date date = makeDate(1, 1, 1990, 12, 34, 56, utc);
-        BipAttachmentFormat attachment = null;
 
         String expected =
                 "<attachment content-type=\"text/plain\" charset=\"ISO-8859-1\""
@@ -390,7 +386,7 @@ public class BipAttachmentFormatTest {
 
         // Create with objects, all fields. Now we Use UTC since all Date objects eventually become
         // UTC anyway and this will be timezone agnostic
-        attachment =
+        BipAttachmentFormat attachment =
                 new BipAttachmentFormat(
                         "text/plain", "ISO-8859-1", "thisisatextfile.txt", 2048, date, date);
         Assert.assertEquals(expected, attachment.toString());

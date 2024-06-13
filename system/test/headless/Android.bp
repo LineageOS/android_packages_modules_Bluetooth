@@ -112,7 +112,6 @@ cc_binary {
         "libbte",
         "libbtif",
         "libbtif-core",
-        "libc++fs",
         "libchrome",
         "libevent",
         "libflatbuffers-cpp",

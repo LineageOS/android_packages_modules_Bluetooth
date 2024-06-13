@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "btif/include/stack_manager_t.h"
+#include "common/message_loop_thread.h"
 #include "hal/snoop_logger.h"
 #include "hci/controller_interface_mock.h"
 #include "osi/include/allocator.h"
@@ -66,6 +67,7 @@ bt_status_t do_in_main_thread_delayed(base::Location const&,
   // any test cases
   abort();
 }
+bluetooth::common::MessageLoopThread* get_main_thread() { return nullptr; }
 
 namespace bluetooth {
 namespace os {
@@ -100,10 +102,6 @@ class FakeBtStack {
     test::mock::stack_btm_devctl::BTM_IsDeviceUp.body = []() { return true; };
     test::mock::stack_acl::acl_create_le_connection.body =
         [](const RawAddress& bd_addr) { return true; };
-    test::mock::stack_acl::acl_create_classic_connection.body =
-        [](const RawAddress& bd_addr, bool there_are_high_priority_channels,
-           bool is_bonding) { return true; };
-
     test::mock::stack_acl::acl_send_data_packet_br_edr.body =
         [](const RawAddress& bd_addr, BT_HDR* hdr) {
           ConsumeData((const uint8_t*)hdr, hdr->offset + hdr->len);
@@ -137,7 +135,6 @@ class FakeBtStack {
   ~FakeBtStack() {
     test::mock::stack_btm_devctl::BTM_IsDeviceUp = {};
     test::mock::stack_acl::acl_create_le_connection = {};
-    test::mock::stack_acl::acl_create_classic_connection = {};
     test::mock::stack_acl::acl_send_data_packet_br_edr = {};
     test::mock::stack_acl::acl_send_data_packet_ble = {};
     bluetooth::hci::testing::mock_controller_ = nullptr;

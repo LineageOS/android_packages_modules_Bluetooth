@@ -2422,12 +2422,6 @@ void btm_acl_disconnected(tHCI_STATUS status, uint16_t handle,
                        "stack::acl::btm_acl::btm_acl_disconnected");
 }
 
-void acl_create_classic_connection(const RawAddress& bd_addr,
-                                   bool /* there_are_high_priority_channels */,
-                                   bool /* is_bonding */) {
-  return bluetooth::shim::ACL_CreateClassicConnection(bd_addr);
-}
-
 void btm_connection_request(const RawAddress& bda,
                             const bluetooth::hci::ClassOfDevice& cod) {
   // Copy Cod information

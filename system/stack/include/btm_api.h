@@ -527,7 +527,7 @@ void BTM_RemoveSco(const RawAddress& bda);
  * Returns          void
  *
  ******************************************************************************/
-void BTM_EScoConnRsp(uint16_t sco_inx, uint8_t hci_status,
+void BTM_EScoConnRsp(uint16_t sco_inx, tHCI_STATUS hci_status,
                      enh_esco_params_t* p_parms);
 
 /*******************************************************************************
@@ -728,11 +728,6 @@ void BTM_RemoveEirService(uint32_t* p_eir_uuid, uint16_t uuid16);
                                          uint8_t uuid_size, uint8_t* p_num_uuid,
                                          uint8_t* p_uuid_list,
                                          uint8_t max_num_uuid);
-
-/**
- * Send remote name request, either to legacy HCI, or to GD shim Name module
- */
-void SendRemoteNameRequest(const RawAddress& raw_address);
 
 [[nodiscard]] bool BTM_IsScoActiveByBdaddr(const RawAddress& remote_bda);
 

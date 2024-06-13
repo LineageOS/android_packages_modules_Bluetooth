@@ -135,9 +135,7 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"\'বিমান মোড\'-এ থাকাকালীন আপনার ডিভাইস ব্লুটুথ চালু রাখে। আপনি ব্লুটুথ চালু না রাখতে চাইলে এটি বন্ধ করুন।"</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"ওয়াই-ফাই ও ব্লুটুথ চালু থাকে"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"\'বিমান মোড\'-এ থাকাকালীন আপনার ডিভাইস, ওয়াই-ফাই ও ব্লুটুথ চালু রাখে। আপনি যদি ওয়াই-ফাই এবং ব্লুটুথ চালু রাখতে না চান, সেগুলি বন্ধ করে দিন।"</string>
-    <!-- no translation found for bluetooth_enabled_auto_on_title (8983664142805050578) -->
-    <skip />
-    <!-- no translation found for bluetooth_enabled_auto_on_message (2790514825041114851) -->
-    <skip />
+    <string name="bluetooth_enabled_auto_on_title" msgid="8983664142805050578">"ব্লুটুথ আবার চালু করা হয়েছে"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="2790514825041114851">"সেটিংস থেকে যেকোনও সময় এটি পরিবর্তন করতে পারবেন"</string>
     <string name="bluetooth_notification_group" msgid="7251886707585872194">"ব্লুটুথ অটোমেটিক চালু হওয়ার সেটিং পরিবর্তন করেছে"</string>
 </resources>

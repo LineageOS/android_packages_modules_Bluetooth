@@ -522,6 +522,8 @@ void btif_get_adapter_property(bt_property_type_t type) {
         controller->SupportsBlePeriodicAdvertisingSyncTransferRecipient();
     local_le_features.adv_filter_extended_features_mask =
         cmn_vsc_cb.adv_filter_extended_features_mask;
+    local_le_features.le_channel_sounding_supported =
+        controller->SupportsBleChannelSounding();
 
     memcpy(prop.val, &local_le_features, prop.len);
   } else if (prop.type == BT_PROPERTY_DYNAMIC_AUDIO_BUFFER) {
