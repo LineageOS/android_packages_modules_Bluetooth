@@ -118,6 +118,7 @@ class Controller : public Module, public ControllerInterface {
   virtual bool SupportsBlePeriodicAdvertisingAdi() const override;
   virtual bool SupportsBleConnectionSubrating() const override;
   virtual bool SupportsBleConnectionSubratingHost() const override;
+  virtual bool SupportsBleChannelSounding() const override;
 
   virtual uint16_t GetAclPacketLength() const override;
 
@@ -204,6 +205,7 @@ class Controller : public Module, public ControllerInterface {
 
   static constexpr uint64_t kDefaultEventMask = 0x3dbfffffffffffff;
   static constexpr uint64_t kDefaultLeEventMask = 0x000000074d02fe7f;
+  static constexpr uint64_t kLeCSEventMask = 0x0007f80000000000;
 
   static constexpr uint64_t kLeEventMask53 = 0x00000007ffffffff;
   static constexpr uint64_t kLeEventMask52 = 0x00000003ffffffff;

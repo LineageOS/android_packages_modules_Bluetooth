@@ -146,6 +146,7 @@ class AdapterProperties {
     private boolean mIsLePeriodicAdvertisingSyncTransferRecipientSupported;
     private boolean mIsLeConnectedIsochronousStreamCentralSupported;
     private boolean mIsLeIsochronousBroadcasterSupported;
+    private boolean mIsLeChannelSoundingSupported;
 
     private boolean mReceiverRegistered;
 
@@ -522,6 +523,13 @@ class AdapterProperties {
      */
     boolean isLeIsochronousBroadcasterSupported() {
         return mIsLeIsochronousBroadcasterSupported;
+    }
+
+    /**
+     * @return the mIsLeChannelSoundingSupported
+     */
+    boolean isLeChannelSoundingSupported() {
+        return mIsLeChannelSoundingSupported;
     }
 
     /**
@@ -1080,6 +1088,7 @@ class AdapterProperties {
         mIsLeIsochronousBroadcasterSupported = ((0xFF & ((int) val[26])) != 0);
         mIsLePeriodicAdvertisingSyncTransferRecipientSupported = ((0xFF & ((int) val[27])) != 0);
         mIsOffloadedTransportDiscoveryDataScanSupported = ((0x01 & ((int) val[28])) != 0);
+        mIsLeChannelSoundingSupported = ((0xFF & ((int) val[30])) != 0);
 
         Log.d(
                 TAG,
@@ -1127,7 +1136,9 @@ class AdapterProperties {
                         + " mIsLePeriodicAdvertisingSyncTransferRecipientSupported = "
                         + mIsLePeriodicAdvertisingSyncTransferRecipientSupported
                         + " mIsOffloadedTransportDiscoveryDataScanSupported = "
-                        + mIsOffloadedTransportDiscoveryDataScanSupported);
+                        + mIsOffloadedTransportDiscoveryDataScanSupported
+                        + " mIsLeChannelSoundingSupported = "
+                        + mIsLeChannelSoundingSupported);
         invalidateIsOffloadedFilteringSupportedCache();
     }
 

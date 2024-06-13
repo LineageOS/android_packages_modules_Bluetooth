@@ -232,6 +232,7 @@ typedef struct {
   bool le_isochronous_broadcast_supported;
   bool le_periodic_advertising_sync_transfer_recipient_supported;
   uint16_t adv_filter_extended_features_mask;
+  bool le_channel_sounding_supported;
 } bt_local_le_features_t;
 
 /** Bluetooth Vendor and Product ID info */

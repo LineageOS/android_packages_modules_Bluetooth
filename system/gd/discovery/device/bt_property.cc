@@ -154,7 +154,8 @@ std::string bt_property_text(const bt_property_t& property) {
           " le_connected_isochronous_stream_central_supported:%d "
           "le_isochronous_broadcast_supported:%d"
           " le_periodic_advertising_sync_transfer_recipient_supported:%d "
-          "adv_filter_extended_features_mask:%d",
+          "adv_filter_extended_features_mask:%d"
+          "le_channel_sounding_supported:%d ",
           bt_property_type_text(property.type).c_str(),
           ((bt_local_le_features_t*)property.val)->version_supported,
           ((bt_local_le_features_t*)property.val)->local_privacy_enabled,
@@ -180,7 +181,8 @@ std::string bt_property_text(const bt_property_t& property) {
           ((bt_local_le_features_t*)property.val)->le_isochronous_broadcast_supported,
           ((bt_local_le_features_t*)property.val)
               ->le_periodic_advertising_sync_transfer_recipient_supported,
-          ((bt_local_le_features_t*)property.val)->adv_filter_extended_features_mask);
+          ((bt_local_le_features_t*)property.val)->adv_filter_extended_features_mask,
+          ((bt_local_le_features_t*)property.val)->le_channel_sounding_supported);
 
     case BT_PROPERTY_RESERVED_0E:
       return base::StringPrintf("type:%s", bt_property_type_text(property.type).c_str());
