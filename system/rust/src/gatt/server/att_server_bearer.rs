@@ -238,11 +238,11 @@ mod test {
             },
         },
         packets::{
-            AttAttributeDataChild, AttHandleValueConfirmationBuilder, AttOpcode,
-            AttReadRequestBuilder, AttReadResponseBuilder,
+            AttAttributeDataBuilder, AttAttributeDataChild, AttHandleValueConfirmationBuilder,
+            AttOpcode, AttReadRequestBuilder, AttReadResponseBuilder,
         },
         utils::{
-            packet::{build_att_data, build_att_view_or_crash},
+            packet::build_att_view_or_crash,
             task::{block_on_locally, try_await},
         },
     };
@@ -356,7 +356,7 @@ mod test {
             Ok(())
         };
         let conn = SharedBox::new(AttServerBearer::new(db.get_att_database(TCB_IDX), send_packet));
-        let data = AttAttributeDataChild::RawData([1, 2].into());
+        let data = [1, 2];
 
         // act: send two read requests before replying to either read
         // first request
@@ -380,7 +380,7 @@ mod test {
             else {
                 unreachable!();
             };
-            data_resp.send(Ok(data.clone())).unwrap();
+            data_resp.send(Ok(data.to_vec())).unwrap();
             trace!("reply sent from upper tester");
 
             // assert: that the first reply was made
@@ -389,7 +389,14 @@ mod test {
                 resp,
                 AttBuilder {
                     opcode: AttOpcode::READ_RESPONSE,
-                    _child_: AttReadResponseBuilder { value: build_att_data(data) }.into(),
+                    _child_: AttReadResponseBuilder {
+                        value: AttAttributeDataBuilder {
+                            _child_: AttAttributeDataChild::RawData(
+                                data.to_vec().into_boxed_slice()
+                            )
+                        },
+                    }
+                    .into()
                 }
             );
             // assert no other replies were made

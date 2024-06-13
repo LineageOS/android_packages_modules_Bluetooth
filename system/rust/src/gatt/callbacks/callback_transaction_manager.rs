@@ -9,7 +9,7 @@ use crate::{
         ids::{AttHandle, ConnectionId, ServerId, TransactionId, TransportIndex},
         GattCallbacks,
     },
-    packets::{AttAttributeDataChild, AttAttributeDataView, AttErrorCode},
+    packets::AttErrorCode,
 };
 
 use super::{
@@ -18,14 +18,14 @@ use super::{
 };
 
 struct PendingTransaction {
-    response: oneshot::Sender<Result<AttAttributeDataChild, AttErrorCode>>,
+    response: oneshot::Sender<Result<Vec<u8>, AttErrorCode>>,
 }
 
 #[derive(Debug)]
 struct PendingTransactionWatcher {
     conn_id: ConnectionId,
     trans_id: TransactionId,
-    rx: oneshot::Receiver<Result<AttAttributeDataChild, AttErrorCode>>,
+    rx: oneshot::Receiver<Result<Vec<u8>, AttErrorCode>>,
 }
 
 /// This struct converts the asynchronus read/write operations of GattDatastore
@@ -72,7 +72,7 @@ impl CallbackTransactionManager {
         &self,
         conn_id: ConnectionId,
         trans_id: TransactionId,
-        value: Result<AttAttributeDataChild, AttErrorCode>,
+        value: Result<Vec<u8>, AttErrorCode>,
     ) -> Result<(), CallbackResponseError> {
         let mut pending = self.pending_transactions.borrow_mut();
         if let Some(transaction) = pending.pending_transactions.remove(&(conn_id, trans_id)) {
@@ -111,10 +111,7 @@ impl PendingTransactionsState {
 impl PendingTransactionWatcher {
     /// Wait for the transaction to resolve, or to hit the timeout. If the
     /// timeout is reached, clean up state related to transaction watching.
-    async fn wait(
-        self,
-        manager: &CallbackTransactionManager,
-    ) -> Result<AttAttributeDataChild, AttErrorCode> {
+    async fn wait(self, manager: &CallbackTransactionManager) -> Result<Vec<u8>, AttErrorCode> {
         if let Ok(Ok(result)) = timeout(TIMEOUT, self.rx).await {
             result
         } else {
@@ -142,7 +139,7 @@ impl RawGattDatastore for GattDatastoreImpl {
         handle: AttHandle,
         offset: u32,
         attr_type: AttributeBackingType,
-    ) -> Result<AttAttributeDataChild, AttErrorCode> {
+    ) -> Result<Vec<u8>, AttErrorCode> {
         let conn_id = ConnectionId::new(tcb_idx, self.server_id);
 
         let pending_transaction = self
@@ -169,7 +166,7 @@ impl RawGattDatastore for GattDatastoreImpl {
         handle: AttHandle,
         attr_type: AttributeBackingType,
         write_type: GattWriteRequestType,
-        data: AttAttributeDataView<'_>,
+        data: &[u8],
     ) -> Result<(), AttErrorCode> {
         let conn_id = ConnectionId::new(tcb_idx, self.server_id);
 
@@ -198,7 +195,7 @@ impl RawGattDatastore for GattDatastoreImpl {
         tcb_idx: TransportIndex,
         handle: AttHandle,
         attr_type: AttributeBackingType,
-        data: AttAttributeDataView<'_>,
+        data: &[u8],
     ) {
         let conn_id = ConnectionId::new(tcb_idx, self.server_id);
 

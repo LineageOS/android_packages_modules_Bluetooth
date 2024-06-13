@@ -6,10 +6,7 @@ use crate::{
         ffi::AttributeBackingType,
         ids::{AttHandle, TransportIndex},
     },
-    packets::{
-        AttAttributeDataChild, AttAttributeDataView, AttErrorCode, OwnedAttAttributeDataView,
-        Packet,
-    },
+    packets::AttErrorCode,
 };
 use async_trait::async_trait;
 use log::info;
@@ -39,7 +36,7 @@ pub enum MockRawDatastoreEvents {
         AttHandle,
         AttributeBackingType,
         u32,
-        oneshot::Sender<Result<AttAttributeDataChild, AttErrorCode>>,
+        oneshot::Sender<Result<Vec<u8>, AttErrorCode>>,
     ),
     /// A characteristic was written to on a given handle. The oneshot is used
     /// to return whether the write succeeded.
@@ -48,11 +45,11 @@ pub enum MockRawDatastoreEvents {
         AttHandle,
         AttributeBackingType,
         GattWriteRequestType,
-        OwnedAttAttributeDataView,
+        Vec<u8>,
         oneshot::Sender<Result<(), AttErrorCode>>,
     ),
     /// A characteristic was written to on a given handle, where the response was disregarded.
-    WriteNoResponse(TransportIndex, AttHandle, AttributeBackingType, OwnedAttAttributeDataView),
+    WriteNoResponse(TransportIndex, AttHandle, AttributeBackingType, Vec<u8>),
     /// The prepared writes have been committed / aborted. The oneshot is used
     /// to return whether this operation succeeded.
     Execute(TransportIndex, TransactionDecision, oneshot::Sender<Result<(), AttErrorCode>>),
@@ -66,7 +63,7 @@ impl RawGattDatastore for MockRawDatastore {
         handle: AttHandle,
         offset: u32,
         attr_type: AttributeBackingType,
-    ) -> Result<AttAttributeDataChild, AttErrorCode> {
+    ) -> Result<Vec<u8>, AttErrorCode> {
         let (tx, rx) = oneshot::channel();
         self.0.send(MockRawDatastoreEvents::Read(tcb_idx, handle, attr_type, offset, tx)).unwrap();
         let resp = rx.await.unwrap();
@@ -80,7 +77,7 @@ impl RawGattDatastore for MockRawDatastore {
         handle: AttHandle,
         attr_type: AttributeBackingType,
         write_type: GattWriteRequestType,
-        data: AttAttributeDataView<'_>,
+        data: &[u8],
     ) -> Result<(), AttErrorCode> {
         let (tx, rx) = oneshot::channel();
         self.0
@@ -89,7 +86,7 @@ impl RawGattDatastore for MockRawDatastore {
                 handle,
                 attr_type,
                 write_type,
-                data.to_owned_packet(),
+                data.to_vec(),
                 tx,
             ))
             .unwrap();
@@ -101,14 +98,14 @@ impl RawGattDatastore for MockRawDatastore {
         tcb_idx: TransportIndex,
         handle: AttHandle,
         attr_type: AttributeBackingType,
-        data: AttAttributeDataView<'_>,
+        data: &[u8],
     ) {
         self.0
             .send(MockRawDatastoreEvents::WriteNoResponse(
                 tcb_idx,
                 handle,
                 attr_type,
-                data.to_owned_packet(),
+                data.to_vec(),
             ))
             .unwrap();
     }
