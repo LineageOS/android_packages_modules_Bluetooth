@@ -1735,7 +1735,7 @@ impl BluetoothGatt {
     /// It assumes that scanner.filter has already had the filter data.
     fn resume_scan(&mut self, scanner_id: u8) -> BtStatus {
         if !self.enabled {
-            return BtStatus::Fail;
+            return BtStatus::UnexpectedState;
         }
 
         if self.get_scan_suspend_mode() != SuspendMode::Resuming {
@@ -1756,7 +1756,7 @@ impl BluetoothGatt {
                         "This Scanner {} is supposed to resume from suspended state",
                         scanner_id
                     );
-                    return BtStatus::Fail;
+                    return BtStatus::UnexpectedState;
                 }
             } else {
                 log::warn!("Scanner {} not found", scanner_id);
@@ -1775,7 +1775,7 @@ impl BluetoothGatt {
         // Add and enable the monitor filter only when the MSFT extension is supported.
         if !is_msft_supported {
             log::error!("add_child_monitor: MSFT extension is not supported");
-            return BtStatus::Fail;
+            return BtStatus::Unsupported;
         }
         log::debug!(
             "add_child_monitor: monitoring address, scanner_id={}, filter={:?}",
@@ -2181,7 +2181,7 @@ impl IBluetoothGatt for BluetoothGatt {
         filter: Option<ScanFilter>,
     ) -> BtStatus {
         if !self.enabled {
-            return BtStatus::Fail;
+            return BtStatus::UnexpectedState;
         }
 
         if self.get_scan_suspend_mode() != SuspendMode::Normal {
@@ -2231,7 +2231,7 @@ impl IBluetoothGatt for BluetoothGatt {
 
     fn stop_scan(&mut self, scanner_id: u8) -> BtStatus {
         if !self.enabled {
-            return BtStatus::Fail;
+            return BtStatus::UnexpectedState;
         }
 
         let scan_suspend_mode = self.get_scan_suspend_mode();
