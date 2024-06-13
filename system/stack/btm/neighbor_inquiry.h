@@ -67,7 +67,6 @@ enum : uint8_t {
   BTM_GENERAL_INQUIRY = 0x01,
   /* high nibble of inquiry mode for BLE inquiry mode */
   BTM_BLE_GENERAL_INQUIRY = 0x10,
-  BTM_BR_INQUIRY_MASK = (BTM_GENERAL_INQUIRY),
   /* inquiry activity mask */
   BTM_INQUIRY_ACTIVE_MASK = (BTM_GENERAL_INQUIRY | BTM_BLE_GENERAL_INQUIRY),
 };
