@@ -106,7 +106,7 @@ void bta_hf_client_cback_sco(tBTA_HF_CLIENT_CB* client_cb, uint8_t event) {
 static void bta_hf_client_sco_conn_rsp(tBTA_HF_CLIENT_CB* client_cb,
                                        tBTM_ESCO_CONN_REQ_EVT_DATA* p_data) {
   enh_esco_params_t resp;
-  uint8_t hci_status = HCI_SUCCESS;
+  tHCI_STATUS hci_status = HCI_SUCCESS;
 
   log::verbose("");
 

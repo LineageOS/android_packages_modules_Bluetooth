@@ -237,7 +237,8 @@ struct btm_client_interface_t default_btm_client_interface = {
           return BTM_SUCCESS;
         },
         .BTM_WriteVoiceSettings = [](uint16_t /* settings */) {},
-        .BTM_EScoConnRsp = [](uint16_t /* sco_inx */, uint8_t /* hci_status */,
+        .BTM_EScoConnRsp = [](uint16_t /* sco_inx */,
+                              tHCI_STATUS /* hci_status */,
                               enh_esco_params_t* /* p_parms */) {},
         .BTM_GetNumScoLinks = []() -> uint8_t { return 0; },
         .BTM_SetEScoMode = [](enh_esco_params_t* /* p_parms */) -> tBTM_STATUS {
