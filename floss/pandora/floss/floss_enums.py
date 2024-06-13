@@ -136,6 +136,7 @@ class BtStatus(enum.IntEnum):
     BT_STATUS_TIMEOUT = 15
     DEVICE_NOT_FOUND = 16
     UNEXPECTED_STATE = 17
+    SOCKET_ERROR = 18
 
 
 class SocketType(enum.IntEnum):

@@ -109,7 +109,8 @@ typedef enum {
   BT_STATUS_WAKELOCK_ERROR,
   BT_STATUS_TIMEOUT,
   BT_STATUS_DEVICE_NOT_FOUND,
-  BT_STATUS_UNEXPECTED_STATE
+  BT_STATUS_UNEXPECTED_STATE,
+  BT_STATUS_SOCKET_ERROR
 } bt_status_t;
 
 inline std::string bt_status_text(const bt_status_t& status) {
@@ -150,6 +151,8 @@ inline std::string bt_status_text(const bt_status_t& status) {
       return std::string("device_not_found");
     case BT_STATUS_UNEXPECTED_STATE:
       return std::string("unexpected_state");
+    case BT_STATUS_SOCKET_ERROR:
+      return std::string("socket_error");
     default:
       return std::string("UNKNOWN");
   }

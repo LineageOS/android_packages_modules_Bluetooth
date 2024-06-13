@@ -390,13 +390,13 @@ bt_status_t btsock_rfc_connect(const RawAddress* bd_addr,
           "unable to initiate RFCOMM connection. status:{}, scn:{}, bd_addr:{}",
           bta_jv_status_text(ret), slot->scn, slot->addr);
       cleanup_rfc_slot(slot);
-      return BT_STATUS_FAIL;
+      return BT_STATUS_SOCKET_ERROR;
     }
 
     if (!send_app_scn(slot)) {
       log::error("send_app_scn() failed, closing slot->id:{}", slot->id);
       cleanup_rfc_slot(slot);
-      return BT_STATUS_FAIL;
+      return BT_STATUS_SOCKET_ERROR;
     }
   } else {
     log::info("service_uuid:{}, bd_addr:{}, slot_id:{}",

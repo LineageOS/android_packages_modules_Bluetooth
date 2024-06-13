@@ -85,7 +85,7 @@ bt_status_t btsock_sco_init(thread_t* thread_) {
   log::assert_that(thread_ != NULL, "assert failed: thread_ != NULL");
 
   sco_sockets = list_new((list_free_cb)sco_socket_free_locked);
-  if (!sco_sockets) return BT_STATUS_FAIL;
+  if (!sco_sockets) return BT_STATUS_SOCKET_ERROR;
 
   thread = thread_;
   enh_esco_params_t params = esco_parameters_for_codec(SCO_CODEC_CVSD_D1, true);
@@ -108,7 +108,7 @@ bt_status_t btsock_sco_listen(int* sock_fd, int /* flags */) {
   std::unique_lock<std::mutex> lock(sco_lock);
 
   sco_socket_t* sco_socket = sco_socket_establish_locked(true, NULL, sock_fd);
-  if (!sco_socket) return BT_STATUS_FAIL;
+  if (!sco_socket) return BT_STATUS_SOCKET_ERROR;
 
   if (get_btm_client_interface().sco.BTM_RegForEScoEvts(
           sco_socket->sco_handle, connection_request_cb) != BTM_SUCCESS) {
@@ -128,7 +128,7 @@ bt_status_t btsock_sco_connect(const RawAddress* bd_addr, int* sock_fd,
   sco_socket_t* sco_socket =
       sco_socket_establish_locked(false, bd_addr, sock_fd);
 
-  return (sco_socket != NULL) ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
+  return (sco_socket != NULL) ? BT_STATUS_SUCCESS : BT_STATUS_SOCKET_ERROR;
 }
 
 // Must be called with |lock| held.
