@@ -111,6 +111,7 @@ class ControllerInterface {
   virtual bool SupportsBlePeriodicAdvertisingAdi() const = 0;
   virtual bool SupportsBleConnectionSubrating() const = 0;
   virtual bool SupportsBleConnectionSubratingHost() const = 0;
+  virtual bool SupportsBleChannelSounding() const = 0;
 
   virtual uint16_t GetAclPacketLength() const = 0;
 
