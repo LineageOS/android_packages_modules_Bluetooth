@@ -170,7 +170,7 @@ void BleScannerInterfaceImpl::RegisterScanner(const bluetooth::Uuid& uuid,
 
 /** Unregister a scanner from the stack */
 void BleScannerInterfaceImpl::Unregister(int scanner_id) {
-  log::info("in shim layer, scanner_id:{}", scanner_id);
+  log::info("in shim layer, scannerId={}", scanner_id);
   bluetooth::shim::GetScanning()->Unregister(scanner_id);
 }
 
@@ -211,7 +211,7 @@ void BleScannerInterfaceImpl::ScanFilterParamSetup(
     uint8_t client_if, uint8_t action, uint8_t filter_index,
     std::unique_ptr<btgatt_filt_param_setup_t> filt_param,
     FilterParamSetupCallback cb) {
-  log::info("in shim layer");
+  log::info("in shim layer, clientIf={}", client_if);
 
   auto apcf_action = static_cast<bluetooth::hci::ApcfAction>(action);
   bluetooth::hci::AdvertisingFilterParameter advertising_filter_parameter;
@@ -354,7 +354,7 @@ void BleScannerInterfaceImpl::SetScanParameters(int scanner_id,
                                                 int scan_interval,
                                                 int scan_window, int scan_phy,
                                                 Callback /* cb */) {
-  log::info("in shim layer");
+  log::info("in shim layer, scannerId={}", scanner_id);
   if (BTM_BLE_ISVALID_PARAM(scan_interval, BTM_BLE_SCAN_INT_MIN,
                             BTM_BLE_EXT_SCAN_INT_MAX) &&
       BTM_BLE_ISVALID_PARAM(scan_window, BTM_BLE_SCAN_WIN_MIN,
