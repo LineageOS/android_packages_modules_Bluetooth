@@ -1063,17 +1063,6 @@ void btm_inq_db_reset(void) {
 
 /*******************************************************************************
  *
- * Function         btm_inq_clear_ssp
- *
- * Description      This function is called when pairing_state becomes idle
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_inq_clear_ssp(void) {}
-
-/*******************************************************************************
- *
  * Function         btm_clr_inq_db
  *
  * Description      This function is called to clear out a device or all devices
