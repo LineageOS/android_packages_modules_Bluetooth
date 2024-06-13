@@ -4,9 +4,7 @@ use bitflags::bitflags;
 use crate::{
     core::uuid::Uuid,
     gatt::ids::AttHandle,
-    packets::{
-        AttAttributeDataChild, AttAttributeDataView, AttErrorCode, AttHandleBuilder, AttHandleView,
-    },
+    packets::{AttErrorCode, AttHandleBuilder, AttHandleView},
 };
 
 impl From<AttHandleView<'_>> for AttHandle {
@@ -69,20 +67,13 @@ impl AttPermissions {
 #[async_trait(?Send)]
 pub trait AttDatabase {
     /// Read an attribute by handle
-    async fn read_attribute(
-        &self,
-        handle: AttHandle,
-    ) -> Result<AttAttributeDataChild, AttErrorCode>;
+    async fn read_attribute(&self, handle: AttHandle) -> Result<Vec<u8>, AttErrorCode>;
 
     /// Write to an attribute by handle
-    async fn write_attribute(
-        &self,
-        handle: AttHandle,
-        data: AttAttributeDataView<'_>,
-    ) -> Result<(), AttErrorCode>;
+    async fn write_attribute(&self, handle: AttHandle, data: &[u8]) -> Result<(), AttErrorCode>;
 
     /// Write to an attribute by handle
-    fn write_no_response_attribute(&self, handle: AttHandle, data: AttAttributeDataView<'_>);
+    fn write_no_response_attribute(&self, handle: AttHandle, data: &[u8]);
 
     /// List all the attributes in this database.
     ///
@@ -117,22 +108,15 @@ pub struct SnapshottedAttDatabase<'a> {
 
 #[async_trait(?Send)]
 impl AttDatabase for SnapshottedAttDatabase<'_> {
-    async fn read_attribute(
-        &self,
-        handle: AttHandle,
-    ) -> Result<AttAttributeDataChild, AttErrorCode> {
+    async fn read_attribute(&self, handle: AttHandle) -> Result<Vec<u8>, AttErrorCode> {
         self.backing.read_attribute(handle).await
     }
 
-    async fn write_attribute(
-        &self,
-        handle: AttHandle,
-        data: AttAttributeDataView<'_>,
-    ) -> Result<(), AttErrorCode> {
+    async fn write_attribute(&self, handle: AttHandle, data: &[u8]) -> Result<(), AttErrorCode> {
         self.backing.write_attribute(handle, data).await
     }
 
-    fn write_no_response_attribute(&self, handle: AttHandle, data: AttAttributeDataView<'_>) {
+    fn write_no_response_attribute(&self, handle: AttHandle, data: &[u8]) {
         self.backing.write_no_response_attribute(handle, data);
     }
 

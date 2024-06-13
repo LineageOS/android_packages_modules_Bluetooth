@@ -35,9 +35,9 @@ use bluetooth_core::{
         AttFindInformationResponseChild, AttHandleValueConfirmationBuilder,
         AttHandleValueIndicationBuilder, AttOpcode, AttReadByTypeRequestBuilder,
         AttReadRequestBuilder, AttReadResponseBuilder, AttWriteRequestBuilder,
-        AttWriteResponseBuilder, GattClientCharacteristicConfigurationBuilder,
-        GattServiceChangedBuilder, GattServiceDeclarationValueBuilder, Serializable,
-        UuidAsAttDataBuilder,
+        AttWriteResponseBuilder, GattCharacteristicDeclarationValueView,
+        GattClientCharacteristicConfigurationBuilder, GattServiceChangedBuilder,
+        GattServiceDeclarationValueBuilder, Packet, Serializable, UuidAsAttDataBuilder,
     },
     utils::packet::{build_att_data, build_att_view_or_crash},
 };
@@ -129,7 +129,7 @@ fn test_service_read() {
         // assert
         assert_eq!(tcb_idx, TCB_IDX);
         assert_eq!(
-            resp,
+            resp.to_vec(),
             AttBuilder {
                 opcode: AttOpcode::READ_RESPONSE,
                 _child_: AttReadResponseBuilder {
@@ -139,6 +139,7 @@ fn test_service_read() {
                 }
                 .into()
             }
+            .to_vec()
         );
     })
 }
@@ -204,7 +205,7 @@ fn test_characteristic_read() {
         } else {
             unreachable!()
         };
-        tx.send(Ok(data.clone())).unwrap();
+        tx.send(Ok(DATA.to_vec())).unwrap();
         let (tcb_idx, resp) = transport_rx.recv().await.unwrap();
 
         // assert
@@ -261,10 +262,7 @@ fn test_characteristic_write() {
                 _child_: AttWriteResponseBuilder {}.into()
             }
         );
-        assert_eq!(
-            data.to_vec().unwrap(),
-            written_data.view().get_raw_payload().collect::<Vec<_>>()
-        )
+        assert_eq!(data.to_vec().unwrap(), written_data)
     })
 }
 
@@ -372,10 +370,7 @@ fn test_write_to_descriptor() {
                 _child_: AttWriteResponseBuilder {}.into()
             }
         );
-        assert_eq!(
-            data.to_vec().unwrap(),
-            written_data.view().get_raw_payload().collect::<Vec<_>>()
-        )
+        assert_eq!(data.to_vec().unwrap(), written_data)
     })
 }
 
@@ -384,8 +379,6 @@ fn test_multiple_servers() {
     start_test(async move {
         // arrange
         let (mut gatt, mut transport_rx) = start_gatt_module();
-        let data = AttAttributeDataChild::RawData(DATA.into());
-        let another_data = AttAttributeDataChild::RawData(ANOTHER_DATA.into());
         // open the default server (SERVER_ID on CONN_ID)
         let mut data_rx_1 = create_server_and_open_connection(&mut gatt);
         // open a second server and connect to it (ANOTHER_SERVER_ID on ANOTHER_CONN_ID)
@@ -427,13 +420,13 @@ fn test_multiple_servers() {
         let MockDatastoreEvents::Read(TCB_IDX, _, _, tx) = data_rx_1.recv().await.unwrap() else {
             unreachable!()
         };
-        tx.send(Ok(data.clone())).unwrap();
+        tx.send(Ok(DATA.to_vec())).unwrap();
         // and then the second read with `another_data`
         let MockDatastoreEvents::Read(ANOTHER_TCB_IDX, _, _, tx) = data_rx_2.recv().await.unwrap()
         else {
             unreachable!()
         };
-        tx.send(Ok(another_data.clone())).unwrap();
+        tx.send(Ok(ANOTHER_DATA.to_vec())).unwrap();
 
         // receive both response packets
         let (tcb_idx_1, resp_1) = transport_rx.recv().await.unwrap();
@@ -540,18 +533,18 @@ fn test_service_change_indication() {
         else {
             unreachable!()
         };
-        let service_change_char_handle = resp
+        let service_change_char_handle: AttHandle = resp
             .data
             .into_vec()
             .into_iter()
             .find_map(|characteristic| {
-                let AttAttributeDataChild::GattCharacteristicDeclarationValue(decl) =
-                    characteristic.value._child_
-                else {
-                    unreachable!();
-                };
-                if decl.uuid == SERVICE_CHANGE_UUID.into() {
-                    Some(decl.handle)
+                let value = characteristic.value.to_vec().unwrap();
+                let decl =
+                    GattCharacteristicDeclarationValueView::try_parse_from_buffer(value.as_slice())
+                        .unwrap();
+
+                if SERVICE_CHANGE_UUID == decl.get_uuid().try_into().unwrap() {
+                    Some(decl.get_handle().into())
                 } else {
                     None
                 }
@@ -560,7 +553,7 @@ fn test_service_change_indication() {
         // act: find the CCC descriptor for the service changed characteristic
         gatt.get_bearer(TCB_IDX).unwrap().handle_packet(
             build_att_view_or_crash(AttFindInformationRequestBuilder {
-                starting_handle: service_change_char_handle.clone(),
+                starting_handle: service_change_char_handle.into(),
                 ending_handle: AttHandle::MAX.into(),
             })
             .view(),
@@ -619,7 +612,7 @@ fn test_service_change_indication() {
         else {
             unreachable!()
         };
-        assert_eq!(indication.handle, service_change_char_handle);
+        assert_eq!(indication.handle, service_change_char_handle.into());
         assert_eq!(
             indication.value,
             build_att_data(GattServiceChangedBuilder {
