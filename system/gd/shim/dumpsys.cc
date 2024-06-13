@@ -135,11 +135,7 @@ void Dumpsys::impl::DumpWithArgsAsync(int fd, const char** args) const {
   ParsedDumpsysArgs parsed_dumpsys_args(args);
   const auto registry = dumpsys_module_.GetModuleRegistry();
 
-  int dumper_fd = STDOUT_FILENO;
-  if (com::android::bluetooth::flags::dumpsys_use_passed_in_fd()) {
-    dumper_fd = fd;
-  }
-  ModuleDumper dumper(dumper_fd, *registry, kDumpsysTitle);
+  ModuleDumper dumper(fd, *registry, kDumpsysTitle);
   std::string dumpsys_data;
   std::ostringstream oss;
   dumper.DumpState(&dumpsys_data, oss);
