@@ -428,7 +428,8 @@ int bta_hh_co_write(int fd, uint8_t* rpt, uint16_t len) {
  * Returns       True if platform specific initialization is successful
  ******************************************************************************/
 bool bta_hh_co_open(uint8_t dev_handle, uint8_t sub_class,
-                    tBTA_HH_ATTR_MASK attr_mask, uint8_t app_id) {
+                    tBTA_HH_ATTR_MASK attr_mask, uint8_t app_id,
+                    tAclLinkSpec& link_spec) {
   bool new_device = false;
 
   if (dev_handle == BTA_HH_INVALID_HANDLE) {
@@ -457,8 +458,8 @@ bool bta_hh_co_open(uint8_t dev_handle, uint8_t sub_class,
 
     p_dev->uhid.fd = -1;
     p_dev->uhid.hh_keep_polling = 0;
-    p_dev->uhid.link_spec = p_dev->link_spec;
-    p_dev->uhid.dev_handle = p_dev->dev_handle;
+    p_dev->uhid.link_spec = link_spec;
+    p_dev->uhid.dev_handle = dev_handle;
     p_dev->attr_mask = attr_mask;
     p_dev->sub_class = sub_class;
     p_dev->app_id = app_id;

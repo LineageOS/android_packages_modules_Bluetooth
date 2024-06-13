@@ -49,7 +49,8 @@ void bta_hh_co_get_rpt_rsp(uint8_t /* dev_handle */, uint8_t /* status */,
   inc_func_call_count(__func__);
 }
 bool bta_hh_co_open(uint8_t /* dev_handle */, uint8_t /* sub_class */,
-                    tBTA_HH_ATTR_MASK /* attr_mask */, uint8_t /* app_id */) {
+                    tBTA_HH_ATTR_MASK /* attr_mask */, uint8_t /* app_id */,
+                    tAclLinkSpec& /* link_spec */) {
   inc_func_call_count(__func__);
   return true;
 }
