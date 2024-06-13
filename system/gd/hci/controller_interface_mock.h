@@ -108,6 +108,7 @@ class MockControllerInterface : public ControllerInterface {
   MOCK_METHOD(bool, SupportsBlePeriodicAdvertisingAdi, (), (const));
   MOCK_METHOD(bool, SupportsBleConnectionSubrating, (), (const));
   MOCK_METHOD(bool, SupportsBleConnectionSubratingHost, (), (const));
+  MOCK_METHOD(bool, SupportsBleChannelSounding, (), (const));
   MOCK_METHOD(uint16_t, GetAclPacketLength, (), (const));
   MOCK_METHOD(uint16_t, GetNumAclPacketBuffers, (), (const));
   MOCK_METHOD(uint8_t, GetScoPacketLength, (), (const));

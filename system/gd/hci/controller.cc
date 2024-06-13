@@ -83,7 +83,14 @@ struct Controller::impl {
                                              std::move(features_promise)));
     features_future.wait();
 
-    le_set_event_mask(MaskLeEventMask(local_version_information_.hci_version_, kDefaultLeEventMask));
+    if (com::android::bluetooth::flags::channel_sounding_in_stack() &&
+        module_.SupportsBleChannelSounding()) {
+      le_set_event_mask(MaskLeEventMask(
+          local_version_information_.hci_version_, kDefaultLeEventMask | kLeCSEventMask));
+    } else {
+      le_set_event_mask(
+          MaskLeEventMask(local_version_information_.hci_version_, kDefaultLeEventMask));
+    }
 
     hci_->EnqueueCommand(ReadBufferSizeBuilder::Create(),
                          handler->BindOnceOn(this, &Controller::impl::read_buffer_size_complete_handler));
@@ -190,6 +197,14 @@ struct Controller::impl {
       hci_->EnqueueCommand(
           LeSetHostFeatureBuilder::Create(
               LeHostFeatureBits::CONNECTION_SUBRATING_HOST_SUPPORT, Enable::ENABLED),
+          handler->BindOnceOn(this, &Controller::impl::le_set_host_feature_handler));
+    }
+
+    if (com::android::bluetooth::flags::channel_sounding_in_stack() &&
+        module_.SupportsBleChannelSounding()) {
+      hci_->EnqueueCommand(
+          LeSetHostFeatureBuilder::Create(
+              LeHostFeatureBits::CHANNEL_SOUNDING_HOST_SUPPORT, Enable::ENABLED),
           handler->BindOnceOn(this, &Controller::impl::le_set_host_feature_handler));
     }
 
@@ -1337,6 +1352,7 @@ LOCAL_LE_FEATURE_ACCESSOR(SupportsBlePathLossMonitoring, 35)
 LOCAL_LE_FEATURE_ACCESSOR(SupportsBlePeriodicAdvertisingAdi, 36)
 LOCAL_LE_FEATURE_ACCESSOR(SupportsBleConnectionSubrating, 37)
 LOCAL_LE_FEATURE_ACCESSOR(SupportsBleConnectionSubratingHost, 38)
+LOCAL_LE_FEATURE_ACCESSOR(SupportsBleChannelSounding, 46)
 
 uint64_t Controller::GetLocalFeatures(uint8_t page_number) const {
   if (page_number < impl_->extended_lmp_features_array_.size()) {

@@ -574,16 +574,13 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
     auto complete_view = LeCsReadLocalSupportedCapabilitiesCompleteView::Create(view);
     if (!complete_view.IsValid()) {
       log::warn("Get invalid LeCsReadLocalSupportedCapabilitiesComplete");
-      is_channel_sounding_supported_ = false;
       return;
     } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
       std::string error_code = ErrorCodeText(complete_view.GetStatus());
       log::warn(
           "Received LeCsReadLocalSupportedCapabilitiesComplete with error code {}", error_code);
-      is_channel_sounding_supported_ = false;
       return;
     }
-    is_channel_sounding_supported_ = true;
     cs_subfeature_supported_ = complete_view.GetOptionalSubfeaturesSupported();
   }
 
@@ -1535,7 +1532,6 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
   hal::RangingHal* ranging_hal_;
   hci::HciLayer* hci_layer_;
   hci::AclManager* acl_manager_;
-  bool is_channel_sounding_supported_ = false;
   hci::DistanceMeasurementInterface* distance_measurement_interface_;
   std::unordered_map<Address, RSSITracker> rssi_trackers;
   std::unordered_map<uint16_t, CsTracker> cs_trackers_;
