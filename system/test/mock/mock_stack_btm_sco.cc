@@ -71,7 +71,7 @@ tBTM_SCO_DEBUG_DUMP BTM_GetScoDebugDump(void) {
   inc_func_call_count(__func__);
   return {};
 }
-void BTM_EScoConnRsp(uint16_t /* sco_inx */, uint8_t /* hci_status */,
+void BTM_EScoConnRsp(uint16_t /* sco_inx */, tHCI_STATUS /* hci_status */,
                      enh_esco_params_t* /* p_parms */) {
   inc_func_call_count(__func__);
 }
