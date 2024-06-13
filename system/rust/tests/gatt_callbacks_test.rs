@@ -12,8 +12,7 @@ use bluetooth_core::{
         ids::{AttHandle, ConnectionId, ServerId, TransactionId, TransportIndex},
         mocks::mock_callbacks::{MockCallbackEvents, MockCallbacks},
     },
-    packets::{AttAttributeDataChild, AttErrorCode, Packet},
-    utils::packet::{build_att_data, build_view_or_crash},
+    packets::AttErrorCode,
 };
 use tokio::{sync::mpsc::UnboundedReceiver, task::spawn_local, time::Instant};
 use utils::start_test;
@@ -73,7 +72,7 @@ fn test_read_characteristic_response() {
     start_test(async {
         // arrange
         let (callback_manager, mut callbacks_rx) = initialize_manager_with_connection();
-        let data = Ok(AttAttributeDataChild::RawData([1, 2].into()));
+        let data = [1, 2];
 
         // act: start read operation
         let datastore = callback_manager.get_datastore(SERVER_ID);
@@ -83,10 +82,10 @@ fn test_read_characteristic_response() {
             );
         // provide a response
         let trans_id = pull_trans_id(&mut callbacks_rx).await;
-        callback_manager.send_response(CONN_ID, trans_id, data.clone()).unwrap();
+        callback_manager.send_response(CONN_ID, trans_id, Ok(data.to_vec())).unwrap();
 
         // assert: that the supplied data was correctly read
-        assert_eq!(pending_read.await.unwrap(), data);
+        assert_eq!(pending_read.await.unwrap(), Ok(data.to_vec()));
     });
 }
 
@@ -95,8 +94,8 @@ fn test_sequential_reads() {
     start_test(async {
         // arrange
         let (callback_manager, mut callbacks_rx) = initialize_manager_with_connection();
-        let data1 = Ok(AttAttributeDataChild::RawData([1, 2].into()));
-        let data2 = Ok(AttAttributeDataChild::RawData([3, 4].into()));
+        let data1 = [1, 2];
+        let data2 = [3, 4];
 
         // act: start read operation
         let datastore = callback_manager.get_datastore(SERVER_ID);
@@ -106,7 +105,7 @@ fn test_sequential_reads() {
             );
         // respond to first
         let trans_id = pull_trans_id(&mut callbacks_rx).await;
-        callback_manager.send_response(CONN_ID, trans_id, data1.clone()).unwrap();
+        callback_manager.send_response(CONN_ID, trans_id, Ok(data1.to_vec())).unwrap();
 
         // do a second read operation
         let datastore = callback_manager.get_datastore(SERVER_ID);
@@ -116,11 +115,11 @@ fn test_sequential_reads() {
             );
         // respond to second
         let trans_id = pull_trans_id(&mut callbacks_rx).await;
-        callback_manager.send_response(CONN_ID, trans_id, data2.clone()).unwrap();
+        callback_manager.send_response(CONN_ID, trans_id, Ok(data2.to_vec())).unwrap();
 
         // assert: that both operations got the correct response
-        assert_eq!(pending_read_1.await.unwrap(), data1);
-        assert_eq!(pending_read_2.await.unwrap(), data2);
+        assert_eq!(pending_read_1.await.unwrap(), Ok(data1.to_vec()));
+        assert_eq!(pending_read_2.await.unwrap(), Ok(data2.to_vec()));
     });
 }
 
@@ -129,8 +128,8 @@ fn test_concurrent_reads() {
     start_test(async {
         // arrange
         let (callback_manager, mut callbacks_rx) = initialize_manager_with_connection();
-        let data1 = Ok(AttAttributeDataChild::RawData([1, 2].into()));
-        let data2 = Ok(AttAttributeDataChild::RawData([3, 4].into()));
+        let data1 = [1, 2];
+        let data2 = [3, 4];
 
         // act: start read operation
         let datastore = callback_manager.get_datastore(SERVER_ID);
@@ -148,15 +147,15 @@ fn test_concurrent_reads() {
 
         // respond to first
         let trans_id = pull_trans_id(&mut callbacks_rx).await;
-        callback_manager.send_response(CONN_ID, trans_id, data1.clone()).unwrap();
+        callback_manager.send_response(CONN_ID, trans_id, Ok(data1.to_vec())).unwrap();
 
         // respond to second
         let trans_id = pull_trans_id(&mut callbacks_rx).await;
-        callback_manager.send_response(CONN_ID, trans_id, data2.clone()).unwrap();
+        callback_manager.send_response(CONN_ID, trans_id, Ok(data2.to_vec())).unwrap();
 
         // assert: that both operations got the correct response
-        assert_eq!(pending_read_1.await.unwrap(), data1);
-        assert_eq!(pending_read_2.await.unwrap(), data2);
+        assert_eq!(pending_read_1.await.unwrap(), Ok(data1.to_vec()));
+        assert_eq!(pending_read_2.await.unwrap(), Ok(data2.to_vec()));
     });
 }
 
@@ -186,7 +185,7 @@ fn test_invalid_trans_id() {
     start_test(async {
         // arrange
         let (callback_manager, mut callbacks_rx) = initialize_manager_with_connection();
-        let data = Ok(AttAttributeDataChild::RawData([1, 2].into()));
+        let data = [1, 2];
 
         // act: start a read operation
         let datastore = callback_manager.get_datastore(SERVER_ID);
@@ -194,7 +193,9 @@ fn test_invalid_trans_id() {
         // respond with the correct conn_id but an invalid trans_id
         let trans_id = pull_trans_id(&mut callbacks_rx).await;
         let invalid_trans_id = TransactionId(trans_id.0 + 1);
-        let err = callback_manager.send_response(CONN_ID, invalid_trans_id, data).unwrap_err();
+        let err = callback_manager
+            .send_response(CONN_ID, invalid_trans_id, Ok(data.to_vec()))
+            .unwrap_err();
 
         // assert
         assert_eq!(err, CallbackResponseError::NonExistentTransaction(invalid_trans_id));
@@ -206,7 +207,7 @@ fn test_invalid_conn_id() {
     start_test(async {
         // arrange
         let (callback_manager, mut callbacks_rx) = initialize_manager_with_connection();
-        let data = Ok(AttAttributeDataChild::RawData([1, 2].into()));
+        let data = [1, 2];
 
         // act: start a read operation
         let datastore = callback_manager.get_datastore(SERVER_ID);
@@ -214,7 +215,9 @@ fn test_invalid_conn_id() {
         // respond with the correct trans_id but an invalid conn_id
         let trans_id = pull_trans_id(&mut callbacks_rx).await;
         let invalid_conn_id = ConnectionId(CONN_ID.0 + 1);
-        let err = callback_manager.send_response(invalid_conn_id, trans_id, data).unwrap_err();
+        let err = callback_manager
+            .send_response(invalid_conn_id, trans_id, Ok(data.to_vec()))
+            .unwrap_err();
 
         // assert
         assert_eq!(err, CallbackResponseError::NonExistentTransaction(trans_id));
@@ -228,13 +231,11 @@ fn test_write_characteristic_callback() {
         let (callback_manager, mut callbacks_rx) = initialize_manager_with_connection();
 
         // act: start write operation
-        let data =
-            build_view_or_crash(build_att_data(AttAttributeDataChild::RawData([1, 2].into())));
-        let cloned_data = data.view().to_owned_packet();
+        let data = [1, 2];
         spawn_local(async move {
             callback_manager
                 .get_datastore(SERVER_ID)
-                .write(TCB_IDX, HANDLE_1, BACKING_TYPE, WRITE_REQUEST_TYPE, cloned_data.view())
+                .write(TCB_IDX, HANDLE_1, BACKING_TYPE, WRITE_REQUEST_TYPE, &data)
                 .await
         });
 
@@ -250,10 +251,7 @@ fn test_write_characteristic_callback() {
         else {
             unreachable!()
         };
-        assert_eq!(
-            recv_data.view().get_raw_payload().collect::<Vec<_>>(),
-            data.view().get_raw_payload().collect::<Vec<_>>()
-        );
+        assert_eq!(recv_data, data);
     });
 }
 
@@ -264,12 +262,11 @@ fn test_write_characteristic_response() {
         let (callback_manager, mut callbacks_rx) = initialize_manager_with_connection();
 
         // act: start write operation
-        let data =
-            build_view_or_crash(build_att_data(AttAttributeDataChild::RawData([1, 2].into())));
+        let data = [1, 2];
         let datastore = callback_manager.get_datastore(SERVER_ID);
         let pending_write = spawn_local(async move {
             datastore
-                .write(TCB_IDX, HANDLE_1, BACKING_TYPE, GattWriteRequestType::Request, data.view())
+                .write(TCB_IDX, HANDLE_1, BACKING_TYPE, GattWriteRequestType::Request, &data)
                 .await
         });
         // provide a response with some error code
@@ -361,13 +358,12 @@ fn test_write_no_response_callback() {
         let (callback_manager, mut callbacks_rx) = initialize_manager_with_connection();
 
         // act: start write_no_response operation
-        let data =
-            build_view_or_crash(build_att_data(AttAttributeDataChild::RawData([1, 2].into())));
+        let data = [1, 2];
         callback_manager.get_datastore(SERVER_ID).write_no_response(
             TCB_IDX,
             HANDLE_1,
             BACKING_TYPE,
-            data.view(),
+            &data,
         );
 
         // assert: verify the write callback is received
@@ -382,10 +378,7 @@ fn test_write_no_response_callback() {
         else {
             unreachable!()
         };
-        assert_eq!(
-            recv_data.view().get_raw_payload().collect::<Vec<_>>(),
-            data.view().get_raw_payload().collect::<Vec<_>>()
-        );
+        assert_eq!(recv_data, data);
     });
 }
 

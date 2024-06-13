@@ -1,14 +1,11 @@
 //! Mocked implementation of GattCallbacks for use in test
 
-use crate::{
-    gatt::{
-        callbacks::{GattWriteType, TransactionDecision},
-        ffi::AttributeBackingType,
-        ids::{AttHandle, ConnectionId, TransactionId},
-        server::IndicationError,
-        GattCallbacks,
-    },
-    packets::{AttAttributeDataView, OwnedAttAttributeDataView, Packet},
+use crate::gatt::{
+    callbacks::{GattWriteType, TransactionDecision},
+    ffi::AttributeBackingType,
+    ids::{AttHandle, ConnectionId, TransactionId},
+    server::IndicationError,
+    GattCallbacks,
 };
 use tokio::sync::mpsc::{self, unbounded_channel, UnboundedReceiver};
 
@@ -35,7 +32,7 @@ pub enum MockCallbackEvents {
         AttHandle,
         AttributeBackingType,
         GattWriteType,
-        OwnedAttAttributeDataView,
+        Vec<u8>,
     ),
     /// GattCallbacks#on_indication_sent_confirmation invoked
     OnIndicationSentConfirmation(ConnectionId, Result<(), IndicationError>),
@@ -64,7 +61,7 @@ impl GattCallbacks for MockCallbacks {
         handle: AttHandle,
         attr_type: AttributeBackingType,
         write_type: GattWriteType,
-        value: AttAttributeDataView,
+        value: &[u8],
     ) {
         self.0
             .send(MockCallbackEvents::OnServerWrite(
@@ -73,7 +70,7 @@ impl GattCallbacks for MockCallbacks {
                 handle,
                 attr_type,
                 write_type,
-                value.to_owned_packet(),
+                value.to_vec(),
             ))
             .unwrap();
     }

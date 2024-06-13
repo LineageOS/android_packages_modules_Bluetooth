@@ -25,9 +25,8 @@ use crate::{
         },
     },
     packets::{
-        AttAttributeDataChild, AttAttributeDataView, AttErrorCode,
-        GattClientCharacteristicConfigurationBuilder, GattClientCharacteristicConfigurationView,
-        GattServiceChangedBuilder, Packet,
+        AttErrorCode, GattClientCharacteristicConfigurationBuilder,
+        GattClientCharacteristicConfigurationView, GattServiceChangedBuilder, Packet, Serializable,
     },
 };
 
@@ -61,9 +60,9 @@ impl GattDatastore for GattService {
         tcb_idx: TransportIndex,
         handle: AttHandle,
         _: AttributeBackingType,
-    ) -> Result<AttAttributeDataChild, AttErrorCode> {
+    ) -> Result<Vec<u8>, AttErrorCode> {
         if handle == SERVICE_CHANGE_CCC_DESCRIPTOR_HANDLE {
-            Ok(GattClientCharacteristicConfigurationBuilder {
+            GattClientCharacteristicConfigurationBuilder {
                 notification: 0,
                 indication: self
                     .clients
@@ -73,7 +72,8 @@ impl GattDatastore for GattService {
                     .unwrap_or(false)
                     .into(),
             }
-            .into())
+            .to_vec()
+            .map_err(|_| AttErrorCode::UNLIKELY_ERROR)
         } else {
             unreachable!()
         }
@@ -84,11 +84,11 @@ impl GattDatastore for GattService {
         tcb_idx: TransportIndex,
         handle: AttHandle,
         _: AttributeBackingType,
-        data: AttAttributeDataView<'_>,
+        data: &[u8],
     ) -> Result<(), AttErrorCode> {
         if handle == SERVICE_CHANGE_CCC_DESCRIPTOR_HANDLE {
-            let ccc =
-                GattClientCharacteristicConfigurationView::try_parse(data).map_err(|err| {
+            let ccc = GattClientCharacteristicConfigurationView::try_parse_from_buffer(data)
+                .map_err(|err| {
                     warn!("failed to parse CCC descriptor, got: {err:?}");
                     AttErrorCode::APPLICATION_ERROR
                 })?;
@@ -190,11 +190,8 @@ mod test {
                 },
             },
         },
-        packets::{AttBuilder, AttChild},
-        utils::{
-            packet::{build_att_data, build_view_or_crash},
-            task::{block_on_locally, try_await},
-        },
+        packets::{AttAttributeDataChild, AttBuilder, AttChild},
+        utils::task::{block_on_locally, try_await},
     };
 
     const TCB_IDX: TransportIndex = TransportIndex(1);
@@ -260,14 +257,10 @@ mod test {
         let resp =
             block_on_locally(att_db.read_attribute(SERVICE_CHANGE_CCC_DESCRIPTOR_HANDLE)).unwrap();
 
-        // assert: we are not registered for either indications/notifications
-        let AttAttributeDataChild::GattClientCharacteristicConfiguration(configuration) = resp
-        else {
-            unreachable!()
-        };
         assert_eq!(
-            configuration,
+            Ok(resp),
             GattClientCharacteristicConfigurationBuilder { notification: 0, indication: 0 }
+                .to_vec()
         );
     }
 
@@ -278,11 +271,9 @@ mod test {
         att_db
             .write_attribute(
                 handle,
-                build_view_or_crash(build_att_data(GattClientCharacteristicConfigurationBuilder {
-                    notification: 0,
-                    indication: 1,
-                }))
-                .view(),
+                &GattClientCharacteristicConfigurationBuilder { notification: 0, indication: 1 }
+                    .to_vec()
+                    .unwrap(),
             )
             .await
     }
@@ -301,13 +292,10 @@ mod test {
             block_on_locally(att_db.read_attribute(SERVICE_CHANGE_CCC_DESCRIPTOR_HANDLE)).unwrap();
 
         // assert: we are registered for indications
-        let AttAttributeDataChild::GattClientCharacteristicConfiguration(configuration) = resp
-        else {
-            unreachable!()
-        };
         assert_eq!(
-            configuration,
+            Ok(resp),
             GattClientCharacteristicConfigurationBuilder { notification: 0, indication: 1 }
+                .to_vec()
         );
     }
 
@@ -321,11 +309,9 @@ mod test {
         block_on_locally(
             att_db.write_attribute(
                 SERVICE_CHANGE_CCC_DESCRIPTOR_HANDLE,
-                build_view_or_crash(build_att_data(GattClientCharacteristicConfigurationBuilder {
-                    notification: 0,
-                    indication: 1,
-                }))
-                .view(),
+                &GattClientCharacteristicConfigurationBuilder { notification: 0, indication: 1 }
+                    .to_vec()
+                    .unwrap(),
             ),
         )
         .unwrap();
@@ -333,11 +319,9 @@ mod test {
         block_on_locally(
             att_db.write_attribute(
                 SERVICE_CHANGE_CCC_DESCRIPTOR_HANDLE,
-                build_view_or_crash(build_att_data(GattClientCharacteristicConfigurationBuilder {
-                    notification: 0,
-                    indication: 0,
-                }))
-                .view(),
+                &GattClientCharacteristicConfigurationBuilder { notification: 0, indication: 0 }
+                    .to_vec()
+                    .unwrap(),
             ),
         )
         .unwrap();
@@ -346,13 +330,10 @@ mod test {
             block_on_locally(att_db.read_attribute(SERVICE_CHANGE_CCC_DESCRIPTOR_HANDLE)).unwrap();
 
         // assert: we are not registered for indications
-        let AttAttributeDataChild::GattClientCharacteristicConfiguration(configuration) = resp
-        else {
-            unreachable!()
-        };
         assert_eq!(
-            configuration,
+            Ok(resp),
             GattClientCharacteristicConfigurationBuilder { notification: 0, indication: 0 }
+                .to_vec()
         );
     }
 
