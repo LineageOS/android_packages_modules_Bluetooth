@@ -58,7 +58,6 @@ struct BTM_WriteEIR BTM_WriteEIR;
 struct btm_clear_all_pending_le_entry btm_clear_all_pending_le_entry;
 struct btm_clr_inq_db btm_clr_inq_db;
 struct btm_clr_inq_result_flt btm_clr_inq_result_flt;
-struct btm_inq_clear_ssp btm_inq_clear_ssp;
 struct btm_inq_db_find btm_inq_db_find;
 struct btm_inq_db_new btm_inq_db_new;
 struct btm_inq_db_reset btm_inq_db_reset;
@@ -205,10 +204,6 @@ void btm_clr_inq_db(const RawAddress* p_bda) {
 void btm_clr_inq_result_flt(void) {
   inc_func_call_count(__func__);
   test::mock::stack_btm_inq::btm_clr_inq_result_flt();
-}
-void btm_inq_clear_ssp(void) {
-  inc_func_call_count(__func__);
-  test::mock::stack_btm_inq::btm_inq_clear_ssp();
 }
 tINQ_DB_ENT* btm_inq_db_find(const RawAddress& p_bda) {
   inc_func_call_count(__func__);
