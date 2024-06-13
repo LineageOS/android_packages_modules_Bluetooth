@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "btif/include/stack_manager_t.h"
+#include "common/message_loop_thread.h"
 #include "hal/snoop_logger.h"
 #include "hci/controller_interface_mock.h"
 #include "osi/include/allocator.h"
@@ -66,6 +67,7 @@ bt_status_t do_in_main_thread_delayed(base::Location const&,
   // any test cases
   abort();
 }
+bluetooth::common::MessageLoopThread* get_main_thread() { return nullptr; }
 
 namespace bluetooth {
 namespace os {

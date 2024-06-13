@@ -60,6 +60,7 @@ struct l2cble_send_peer_disc_req l2cble_send_peer_disc_req;
 struct l2cble_sec_comp l2cble_sec_comp;
 struct l2ble_sec_access_req l2ble_sec_access_req;
 struct L2CA_AdjustConnectionIntervals L2CA_AdjustConnectionIntervals;
+struct L2CA_SetEcosystemBaseInterval L2CA_SetEcosystemBaseInterval;
 struct l2cble_use_preferred_conn_params l2cble_use_preferred_conn_params;
 struct L2CA_SubrateRequest L2CA_SubrateRequest;
 struct l2cble_process_subrate_change_evt l2cble_process_subrate_change_evt;
@@ -179,6 +180,10 @@ void L2CA_AdjustConnectionIntervals(uint16_t* min_interval,
   inc_func_call_count(__func__);
   test::mock::stack_l2cap_ble::L2CA_AdjustConnectionIntervals(
       min_interval, max_interval, floor_interval);
+}
+void L2CA_SetEcosystemBaseInterval(uint32_t base_interval) {
+  inc_func_call_count(__func__);
+  test::mock::stack_l2cap_ble::L2CA_SetEcosystemBaseInterval(base_interval);
 }
 void l2cble_use_preferred_conn_params(const RawAddress& bda) {
   inc_func_call_count(__func__);
