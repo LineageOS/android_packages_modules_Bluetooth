@@ -857,7 +857,7 @@ static bool btm_pm_device_in_active_or_sniff_mode(void) {
 bool BTM_PM_DeviceInScanState(void) {
   /* Check for inquiry */
   if ((btm_cb.btm_inq_vars.inq_active &
-       (BTM_GENERAL_INQUIRY_ACTIVE | BTM_BLE_GENERAL_INQUIRY)) != 0) {
+       (BTM_GENERAL_INQUIRY | BTM_BLE_GENERAL_INQUIRY)) != 0) {
     log::verbose("BTM_PM_DeviceInScanState- Inq active");
     return true;
   }
