@@ -123,10 +123,6 @@ class GdSl4aBaseTestClass(BaseTestClass):
                 "/data/misc/bluedroid/bt_config.conf",
                 os.path.join(base_dir, "DUT_%s_bt_config.conf" % self.dut.serial)
             ])
-            self.dut.adb.pull([
-                "/data/misc/bluedroid/bt_config.bak",
-                os.path.join(base_dir, "DUT_%s_bt_config.bak" % self.dut.serial)
-            ])
         except AdbError as error:
             logging.warning("Failed to pull logs from DUT: " + str(error))
 
