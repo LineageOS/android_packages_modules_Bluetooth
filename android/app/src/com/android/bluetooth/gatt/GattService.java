@@ -237,7 +237,7 @@ public class GattService extends ProfileService {
     @Override
     public void stop() {
         Log.d(TAG, "stop()");
-        if (Flags.scanManagerRefactor() && sGattService != null) {
+        if (Flags.scanManagerRefactor() && sGattService == null) {
             Log.w(TAG, "stop() called before start()");
             return;
         }
