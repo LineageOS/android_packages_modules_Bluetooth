@@ -34,11 +34,11 @@ cc_fuzz {
         "libbluetooth_headers",
     ],
     shared_libs: [
+        "libaconfig_storage_read_api_cc",
         "libbase",
         "libdl",
         "liblog",
         "server_configurable_flags",
-        "libaconfig_storage_read_api_cc",
     ],
     generated_headers: [
         "BluetoothGeneratedDumpsysDataSchema_h",

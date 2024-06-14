@@ -91,11 +91,11 @@ cc_library_static {
     ],
     header_libs: ["libbluetooth_headers"],
     static_libs: [
+        "libaconfig_storage_read_api_cc",
         "libbluetooth_log",
         "libbt-platform-protos-lite",
         "libbt_shim_bridge",
         "server_configurable_flags",
-        "libaconfig_storage_read_api_cc",
     ],
 }
 
@@ -126,12 +126,12 @@ cc_test {
         "test/internal/semaphore_test.cc",
     ],
     shared_libs: [
+        "libaconfig_storage_read_api_cc",
         "libbase",
         "libcrypto",
         "libcutils",
         "liblog",
         "server_configurable_flags",
-        "libaconfig_storage_read_api_cc",
     ],
     local_include_dirs: [
         "include_internal",
