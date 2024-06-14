@@ -362,6 +362,15 @@ void BTM_EnableInterlacedInquiryScan() {
   if (!bluetooth::shim::GetController()->SupportsInterlacedInquiryScan() ||
       inq_scan_type != BTM_SCAN_TYPE_INTERLACED ||
       btm_cb.btm_inq_vars.inq_scan_type == BTM_SCAN_TYPE_INTERLACED) {
+    log::warn(
+        "Unable to set interlaced inquiry scan controller_supported:%c "
+        "property_supported:%c already_in_mode:%c",
+        (bluetooth::shim::GetController()->SupportsInterlacedInquiryScan())
+            ? 'T'
+            : 'F',
+        (inq_scan_type != BTM_SCAN_TYPE_INTERLACED) ? 'T' : 'F',
+        (btm_cb.btm_inq_vars.inq_scan_type == BTM_SCAN_TYPE_INTERLACED) ? 'T'
+                                                                        : 'F');
     return;
   }
 
@@ -378,6 +387,15 @@ void BTM_EnableInterlacedPageScan() {
   if (!bluetooth::shim::GetController()->SupportsInterlacedInquiryScan() ||
       page_scan_type != BTM_SCAN_TYPE_INTERLACED ||
       btm_cb.btm_inq_vars.page_scan_type == BTM_SCAN_TYPE_INTERLACED) {
+    log::warn(
+        "Unable to set interlaced page scan controller_supported:%c "
+        "property_supported:%c already_in_mode:%c",
+        (bluetooth::shim::GetController()->SupportsInterlacedInquiryScan())
+            ? 'T'
+            : 'F',
+        (page_scan_type != BTM_SCAN_TYPE_INTERLACED) ? 'T' : 'F',
+        (btm_cb.btm_inq_vars.page_scan_type == BTM_SCAN_TYPE_INTERLACED) ? 'T'
+                                                                         : 'F');
     return;
   }
 
