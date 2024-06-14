@@ -63,8 +63,6 @@ class AidlHciCallbacks : public ::aidl::android::hardware::bluetooth::BnBluetoot
 class AidlHci : public HciBackend {
  public:
   AidlHci(const char* service_name) {
-    common::StopWatch stop_watch(__func__);
-
     ::ndk::SpAIBinder binder(AServiceManager_waitForService(service_name));
     hci_ = aidl::android::hardware::bluetooth::IBluetoothHci::fromBinder(binder);
     log::assert_that(hci_ != nullptr, "Failed to retrieve AIDL interface.");
