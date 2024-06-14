@@ -90,7 +90,6 @@ class HidlHci : public HciBackend {
 
  public:
   HidlHci(Handler* module_handler) {
-    common::StopWatch stop_watch(__func__);
     log::info("Trying to find a HIDL interface");
 
     auto get_service_alarm = new os::Alarm(module_handler);

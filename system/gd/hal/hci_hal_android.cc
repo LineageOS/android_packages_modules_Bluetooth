@@ -19,12 +19,23 @@
 #include <future>
 #include <mutex>
 
+#include "common/stop_watch.h"
+#include "common/strings.h"
 #include "hal/hci_backend.h"
 #include "hal/hci_hal.h"
 #include "hal/link_clocker.h"
 #include "hal/snoop_logger.h"
 
 namespace bluetooth::hal {
+
+template <class VecType>
+std::string GetTimerText(const char* func_name, VecType vec) {
+  return common::StringFormat(
+      "%s: len %zu, 1st 5 bytes '%s'",
+      func_name,
+      vec.size(),
+      common::ToHexString(vec.begin(), std::min(vec.end(), vec.begin() + 5)).c_str());
+}
 
 class HciCallbacksImpl : public HciBackendCallbacks {
   class : public HciHalCallbacks {
@@ -63,10 +74,12 @@ class HciCallbacksImpl : public HciBackendCallbacks {
   }
 
   void initializationComplete() override {
+    common::StopWatch stop_watch(__func__);
     init_promise_.set_value();
   }
 
   void hciEventReceived(const std::vector<uint8_t>& packet) override {
+    common::StopWatch stop_watch(GetTimerText(__func__, packet));
     link_clocker_->OnHciEvent(packet);
     btsnoop_logger_->Capture(
         packet, SnoopLogger::Direction::INCOMING, SnoopLogger::PacketType::EVT);
@@ -77,6 +90,7 @@ class HciCallbacksImpl : public HciBackendCallbacks {
   }
 
   void aclDataReceived(const std::vector<uint8_t>& packet) override {
+    common::StopWatch stop_watch(GetTimerText(__func__, packet));
     btsnoop_logger_->Capture(
         packet, SnoopLogger::Direction::INCOMING, SnoopLogger::PacketType::ACL);
     {
@@ -86,6 +100,7 @@ class HciCallbacksImpl : public HciBackendCallbacks {
   }
 
   void scoDataReceived(const std::vector<uint8_t>& packet) override {
+    common::StopWatch stop_watch(GetTimerText(__func__, packet));
     btsnoop_logger_->Capture(
         packet, SnoopLogger::Direction::INCOMING, SnoopLogger::PacketType::SCO);
     {
@@ -95,6 +110,7 @@ class HciCallbacksImpl : public HciBackendCallbacks {
   }
 
   void isoDataReceived(const std::vector<uint8_t>& packet) override {
+    common::StopWatch stop_watch(GetTimerText(__func__, packet));
     btsnoop_logger_->Capture(
         packet, SnoopLogger::Direction::INCOMING, SnoopLogger::PacketType::ISO);
     {
@@ -152,6 +168,7 @@ class HciHalImpl : public HciHal {
   }
 
   void Start() override {
+    common::StopWatch stop_watch(__func__);
     log::assert_that(
         backend_ == nullptr, "Start can't be called more than once before Stop is called.");
 
