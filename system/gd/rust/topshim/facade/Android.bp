@@ -77,13 +77,13 @@ rust_defaults {
         "libudrv-uipc",
     ],
     shared_libs: [
+        "libaconfig_storage_read_api_cc",
         "libcrypto",
         "libcutils",
         "libgrpc++",
         "libgrpc_wrap",
         "liblog",
         "server_configurable_flags",
-        "libaconfig_storage_read_api_cc",
     ],
     proc_macros: [
         "libpaste",
