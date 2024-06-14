@@ -164,9 +164,6 @@ class Sl4aSl4aBaseTestClass(BaseTestClass):
                 "/data/misc/bluedroid/bt_config.conf",
                 os.path.join(base_dir, "DUT_%s_bt_config.conf" % device.serial)
             ])
-            device.adb.pull(
-                ["/data/misc/bluedroid/bt_config.bak",
-                 os.path.join(base_dir, "DUT_%s_bt_config.bak" % device.serial)])
         except AdbError as error:
             logging.warning("Failed to pull logs from DUT: " + str(error))
 
