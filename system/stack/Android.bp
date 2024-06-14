@@ -295,6 +295,7 @@ cc_library_static {
         "-fvisibility=default",
     ],
     static_libs: [
+        "libaconfig_storage_read_api_cc",
         "libbluetooth_core_rs",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
@@ -305,7 +306,6 @@ cc_library_static {
         "libbt_shim_bridge",
         "libcom.android.sysprop.bluetooth.wrapped",
         "server_configurable_flags",
-        "libaconfig_storage_read_api_cc",
     ],
     shared_libs: [
         "libPlatformProperties",
@@ -421,8 +421,8 @@ cc_fuzz {
         "libbt_shim_ffi",
     ],
     shared_libs: [
-        "server_configurable_flags",
         "libaconfig_storage_read_api_cc",
+        "server_configurable_flags",
     ],
 }
 
@@ -464,8 +464,8 @@ cc_fuzz {
         "gatt/*.cc",
     ],
     shared_libs: [
-        "server_configurable_flags",
         "libaconfig_storage_read_api_cc",
+        "server_configurable_flags",
     ],
     static_libs: [
         "bluetooth_flags_c_lib",
@@ -514,8 +514,8 @@ cc_fuzz {
         "smp/*.cc", // add other sources files  (p256 related) under smp into this test
     ],
     shared_libs: [
-        "server_configurable_flags",
         "libaconfig_storage_read_api_cc",
+        "server_configurable_flags",
     ],
     static_libs: [
         "bluetooth_flags_c_lib",
@@ -612,8 +612,8 @@ cc_fuzz {
         "fuzzers/avrc_fuzzer.cc",
     ],
     shared_libs: [
-        "server_configurable_flags",
         "libaconfig_storage_read_api_cc",
+        "server_configurable_flags",
     ],
     static_libs: [
         "bluetooth_flags_c_lib",
@@ -673,10 +673,10 @@ cc_fuzz {
         "libbt_shim_ffi",
     ],
     shared_libs: [
+        "libaconfig_storage_read_api_cc",
         "libbase",
         "liblog",
         "server_configurable_flags",
-        "libaconfig_storage_read_api_cc",
     ],
     target: {
         android: {
@@ -713,6 +713,7 @@ cc_test {
     shared_libs: [
         "libPlatformProperties",
         "libaaudio",
+        "libaconfig_storage_read_api_cc",
         "libbase",
         "libcrypto",
         "libcutils",
@@ -724,7 +725,6 @@ cc_test {
         "libutils",
         "libz",
         "server_configurable_flags",
-        "libaconfig_storage_read_api_cc",
     ],
     static_libs: [
         "android.hardware.audio.common@5.0",
@@ -927,10 +927,10 @@ cc_test {
         "BluetoothGeneratedDumpsysDataSchema_h",
     ],
     shared_libs: [
+        "libaconfig_storage_read_api_cc",
         "libcrypto",
         "libcutils",
         "server_configurable_flags",
-        "libaconfig_storage_read_api_cc",
     ],
     static_libs: [
         "libbase",
@@ -1069,10 +1069,10 @@ cc_test {
         "test/gatt/gatt_sr_test.cc",
     ],
     shared_libs: [
+        "libaconfig_storage_read_api_cc",
         "libcrypto",
         "libcutils",
         "server_configurable_flags",
-        "libaconfig_storage_read_api_cc",
     ],
     static_libs: [
         "libbase",
@@ -1367,10 +1367,10 @@ cc_test {
         "test/stack_gatt_sr_hash_test.cc",
     ],
     shared_libs: [
+        "libaconfig_storage_read_api_cc",
         "libcrypto",
         "libcutils",
         "server_configurable_flags",
-        "libaconfig_storage_read_api_cc",
     ],
     static_libs: [
         "libbase",
@@ -1656,9 +1656,9 @@ cc_test {
         "libudrv-uipc",
     ],
     shared_libs: [
+        "libaconfig_storage_read_api_cc",
         "libcrypto",
         "server_configurable_flags",
-        "libaconfig_storage_read_api_cc",
     ],
     sanitize: {
         address: true,
@@ -1941,12 +1941,12 @@ cc_test {
         "libstatslog_bt",
     ],
     shared_libs: [
+        "libaconfig_storage_read_api_cc",
         "libbase",
         "libbinder_ndk",
         "libcrypto",
         "libcutils",
         "server_configurable_flags",
-        "libaconfig_storage_read_api_cc",
     ],
     target: {
         android: {
@@ -2033,12 +2033,12 @@ cc_test {
         "libstatslog_bt",
     ],
     shared_libs: [
+        "libaconfig_storage_read_api_cc",
         "libbase",
         "libbinder_ndk",
         "libcrypto",
         "libcutils",
         "server_configurable_flags",
-        "libaconfig_storage_read_api_cc",
     ],
     target: {
         android: {
@@ -2127,11 +2127,11 @@ cc_test {
         "libstatslog_bt",
     ],
     shared_libs: [
+        "libaconfig_storage_read_api_cc",
         "libbase",
         "libbinder_ndk",
         "libcrypto",
         "server_configurable_flags",
-        "libaconfig_storage_read_api_cc",
     ],
     target: {
         android: {
@@ -2199,10 +2199,10 @@ cc_test {
         "liblog",
     ],
     shared_libs: [
+        "libaconfig_storage_read_api_cc",
         "libcrypto",
         "libcutils",
         "server_configurable_flags",
-        "libaconfig_storage_read_api_cc",
     ],
     header_libs: ["libbluetooth_headers"],
 }
