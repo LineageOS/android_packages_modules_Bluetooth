@@ -24,3 +24,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "rnr_validate_page_scan_repetition_mode"
+    namespace: "bluetooth"
+    description: "Validate page scan repetition mode parameter before sending RNR"
+    bug: "344520866"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
