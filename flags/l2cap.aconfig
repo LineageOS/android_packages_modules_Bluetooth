@@ -14,3 +14,13 @@ flag {
     description: "Rewrite logic of p_ccb check in l2c_link_sec_comp"
     bug: "326686472"
 }
+
+flag {
+    name: "l2cap_le_do_not_adjust_min_interval"
+    namespace: "bluetooth"
+    description: "Do not adjust min_interval in connection update request"
+    bug: "346960036"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
