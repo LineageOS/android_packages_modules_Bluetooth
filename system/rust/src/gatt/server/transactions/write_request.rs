@@ -10,7 +10,8 @@ pub async fn handle_write_request<T: AttDatabase>(
     db: &T,
 ) -> AttChild {
     let handle = request.get_handle().into();
-    match db.write_attribute(handle, request.get_value()).await {
+    let value = request.get_value().get_raw_payload().collect::<Vec<_>>();
+    match db.write_attribute(handle, &value).await {
         Ok(()) => AttWriteResponseBuilder {}.into(),
         Err(error_code) => AttErrorResponseBuilder {
             opcode_in_error: AttOpcode::WRITE_REQUEST,
@@ -38,8 +39,8 @@ mod test {
             },
         },
         packets::{
-            AttAttributeDataChild, AttChild, AttErrorCode, AttErrorResponseBuilder,
-            AttWriteRequestBuilder, AttWriteResponseBuilder,
+            AttAttributeDataBuilder, AttAttributeDataChild, AttChild, AttErrorCode,
+            AttErrorResponseBuilder, AttWriteRequestBuilder, AttWriteResponseBuilder,
         },
         utils::packet::{build_att_data, build_view_or_crash},
     };
@@ -55,12 +56,14 @@ mod test {
             },
             vec![],
         )]);
-        let data = AttAttributeDataChild::RawData([1, 2].into());
+        let data = vec![1, 2];
 
         // act: write to the attribute
         let att_view = build_view_or_crash(AttWriteRequestBuilder {
             handle: AttHandle(1).into(),
-            value: build_att_data(data.clone()),
+            value: AttAttributeDataBuilder {
+                _child_: AttAttributeDataChild::RawData(data.clone().into_boxed_slice()),
+            },
         });
         let resp = block_on(handle_write_request(att_view.view(), &db));
 

@@ -4,10 +4,8 @@
 use crate::{
     core::uuid::Uuid,
     gatt::server::att_database::{AttAttribute, StableAttDatabase},
-    packets::{AttAttributeDataChild, AttErrorCode, Serializable},
+    packets::{AttAttributeDataChild, AttErrorCode},
 };
-
-use super::truncate_att_data::truncate_att_data;
 
 /// An attribute and the value
 #[derive(Debug, PartialEq, Eq)]
@@ -39,9 +37,9 @@ pub async fn filter_read_attributes_by_size_type(
 
     for attr @ AttAttribute { handle, .. } in target_attrs {
         match db.read_attribute(handle).await {
-            Ok(value) => {
-                let value = truncate_att_data(value, size_limit);
-                let value_size = value.size_in_bits().unwrap_or(0);
+            Ok(mut value) => {
+                value.truncate(size_limit);
+                let value_size = value.len();
                 if let Some(curr_elem_size) = curr_elem_size {
                     if curr_elem_size != value_size {
                         // no more attributes of the same size
@@ -51,7 +49,10 @@ pub async fn filter_read_attributes_by_size_type(
                     curr_elem_size = Some(value_size)
                 }
 
-                out.push(AttributeWithValue { attr, value });
+                out.push(AttributeWithValue {
+                    attr,
+                    value: AttAttributeDataChild::RawData(value.into_boxed_slice()),
+                });
             }
             Err(err) => {
                 if out.is_empty() {

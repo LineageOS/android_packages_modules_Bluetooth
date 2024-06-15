@@ -154,23 +154,15 @@ struct RemoteNameRequestModule::impl {
   }
 
   void actually_cancel_remote_name_request(Address address) {
-    if (com::android::bluetooth::flags::rnr_cancel_before_event_race()) {
-      if (pending_) {
-        log::info("Cancelling remote name request to {}", address.ToRedactedStringForLogging());
-        hci_layer_->EnqueueCommand(
-            RemoteNameRequestCancelBuilder::Create(address),
-            handler_->BindOnceOn(this, &impl::check_cancel_status, address));
-      } else {
-        log::info(
-            "Ignoring cancel RNR as RNR event already received to {}",
-            address.ToRedactedStringForLogging());
-      }
-    } else {
-      log::assert_that(pending_ == true, "assert failed: pending_ == true");
+    if (pending_) {
       log::info("Cancelling remote name request to {}", address.ToRedactedStringForLogging());
       hci_layer_->EnqueueCommand(
           RemoteNameRequestCancelBuilder::Create(address),
           handler_->BindOnceOn(this, &impl::check_cancel_status, address));
+    } else {
+      log::info(
+          "Ignoring cancel RNR as RNR event already received to {}",
+          address.ToRedactedStringForLogging());
     }
   }
 

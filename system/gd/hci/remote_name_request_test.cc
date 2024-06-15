@@ -659,12 +659,7 @@ TEST_F(RemoteNameRequestModuleTest, FailToSendCommandThenDequeueNext) {
   EXPECT_EQ(rnr_command.GetBdAddr(), address2);
 }
 
-#define MY_PACKAGE com::android::bluetooth::flags
-
-TEST_F_WITH_FLAGS(
-    RemoteNameRequestModuleTest,
-    CancelJustWhenRNREventReturns,
-    REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(MY_PACKAGE, rnr_cancel_before_event_race))) {
+TEST_F(RemoteNameRequestModuleTest, CancelJustWhenRNREventReturns) {
   auto promise = std::promise<std::tuple<ErrorCode, std::array<uint8_t, 248>>>{};
   auto future = promise.get_future();
 

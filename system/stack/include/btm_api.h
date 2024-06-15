@@ -233,8 +233,7 @@ void BTM_WriteVoiceSettings(uint16_t settings);
  *
  * Description      Return a bit mask of the current inquiry state
  *
- * Returns          BTM_INQUIRY_INACTIVE if inactive (0)
- *                  BTM_GENERAL_INQUIRY_ACTIVE if a general inquiry is active
+ * Returns          Bitmask of current inquiry state
  *
  ******************************************************************************/
 [[nodiscard]] uint16_t BTM_IsInquiryActive(void);

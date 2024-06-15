@@ -63,23 +63,17 @@ enum : uint16_t {
  * Note: These modes are associated with the inquiry active values (BTM_*ACTIVE)
  */
 enum : uint8_t {
-  BTM_INQUIRY_NONE = 0,
   BTM_INQUIRY_INACTIVE = 0x0,
   BTM_GENERAL_INQUIRY = 0x01,
   /* high nibble of inquiry mode for BLE inquiry mode */
   BTM_BLE_GENERAL_INQUIRY = 0x10,
   BTM_BR_INQUIRY_MASK = (BTM_GENERAL_INQUIRY),
   BTM_BLE_INQUIRY_MASK = (BTM_BLE_GENERAL_INQUIRY),
-  BTM_BLE_INQUIRY_NONE = BTM_INQUIRY_NONE,
   BTM_GENERAL_INQUIRY_ACTIVE = BTM_GENERAL_INQUIRY,
-  /* a general inquiry is in progress */
-  BTM_LE_GENERAL_INQUIRY_ACTIVE = BTM_BLE_GENERAL_INQUIRY,
   /* BR/EDR inquiry activity mask */
   BTM_BR_INQ_ACTIVE_MASK = (BTM_GENERAL_INQUIRY_ACTIVE),
-  /* LE scan activity mask */
-  BTM_BLE_SCAN_ACTIVE_MASK = 0xF0,
   /* LE inquiry activity mask*/
-  BTM_BLE_INQ_ACTIVE_MASK = (BTM_LE_GENERAL_INQUIRY_ACTIVE),
+  BTM_BLE_INQ_ACTIVE_MASK = (BTM_BLE_GENERAL_INQUIRY),
   /* inquiry activity mask */
   BTM_INQUIRY_ACTIVE_MASK = (BTM_BR_INQ_ACTIVE_MASK | BTM_BLE_INQ_ACTIVE_MASK),
 };

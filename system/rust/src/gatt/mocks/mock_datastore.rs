@@ -6,10 +6,7 @@ use crate::{
         ffi::AttributeBackingType,
         ids::{AttHandle, TransportIndex},
     },
-    packets::{
-        AttAttributeDataChild, AttAttributeDataView, AttErrorCode, OwnedAttAttributeDataView,
-        Packet,
-    },
+    packets::AttErrorCode,
 };
 use async_trait::async_trait;
 use log::info;
@@ -38,7 +35,7 @@ pub enum MockDatastoreEvents {
         TransportIndex,
         AttHandle,
         AttributeBackingType,
-        oneshot::Sender<Result<AttAttributeDataChild, AttErrorCode>>,
+        oneshot::Sender<Result<Vec<u8>, AttErrorCode>>,
     ),
     /// A characteristic was written to on a given handle. The oneshot is used
     /// to return whether the write succeeded.
@@ -46,7 +43,7 @@ pub enum MockDatastoreEvents {
         TransportIndex,
         AttHandle,
         AttributeBackingType,
-        OwnedAttAttributeDataView,
+        Vec<u8>,
         oneshot::Sender<Result<(), AttErrorCode>>,
     ),
 }
@@ -58,7 +55,7 @@ impl GattDatastore for MockDatastore {
         tcb_idx: TransportIndex,
         handle: AttHandle,
         attr_type: AttributeBackingType,
-    ) -> Result<AttAttributeDataChild, AttErrorCode> {
+    ) -> Result<Vec<u8>, AttErrorCode> {
         let (tx, rx) = oneshot::channel();
         self.0.send(MockDatastoreEvents::Read(tcb_idx, handle, attr_type, tx)).unwrap();
         let resp = rx.await.unwrap();
@@ -71,17 +68,11 @@ impl GattDatastore for MockDatastore {
         tcb_idx: TransportIndex,
         handle: AttHandle,
         attr_type: AttributeBackingType,
-        data: AttAttributeDataView<'_>,
+        data: &[u8],
     ) -> Result<(), AttErrorCode> {
         let (tx, rx) = oneshot::channel();
         self.0
-            .send(MockDatastoreEvents::Write(
-                tcb_idx,
-                handle,
-                attr_type,
-                data.to_owned_packet(),
-                tx,
-            ))
+            .send(MockDatastoreEvents::Write(tcb_idx, handle, attr_type, data.to_vec(), tx))
             .unwrap();
         rx.await.unwrap()
     }

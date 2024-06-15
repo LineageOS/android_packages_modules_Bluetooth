@@ -22,8 +22,10 @@ impl<Db: AttDatabase> AttCommandHandler<Db> {
                     warn!("failed to parse WRITE_COMMAND packet");
                     return;
                 };
-                snapshotted_db
-                    .write_no_response_attribute(packet.get_handle().into(), packet.get_value());
+                snapshotted_db.write_no_response_attribute(
+                    packet.get_handle().into(),
+                    &packet.get_value().get_raw_payload().collect::<Vec<_>>(),
+                );
             }
             _ => {
                 warn!("Dropping unsupported opcode {:?}", packet.get_opcode());
@@ -46,13 +48,10 @@ mod test {
             },
         },
         packets::{
-            AttAttributeDataChild, AttErrorCode, AttErrorResponseBuilder, AttOpcode,
-            AttWriteCommandBuilder,
+            AttAttributeDataBuilder, AttAttributeDataChild, AttErrorCode, AttErrorResponseBuilder,
+            AttOpcode, AttWriteCommandBuilder,
         },
-        utils::{
-            packet::{build_att_data, build_att_view_or_crash},
-            task::block_on_locally,
-        },
+        utils::{packet::build_att_view_or_crash, task::block_on_locally},
     };
 
     #[test]
@@ -67,12 +66,14 @@ mod test {
             vec![1, 2, 3],
         )]);
         let handler = AttCommandHandler { db: db.clone() };
-        let data = AttAttributeDataChild::RawData([1, 2].into());
+        let data = [1, 2];
 
         // act: send write command
         let att_view = build_att_view_or_crash(AttWriteCommandBuilder {
             handle: AttHandle(3).into(),
-            value: build_att_data(data.clone()),
+            value: AttAttributeDataBuilder {
+                _child_: AttAttributeDataChild::RawData(data.to_vec().into_boxed_slice()),
+            },
         });
         handler.process_packet(att_view.view());
 

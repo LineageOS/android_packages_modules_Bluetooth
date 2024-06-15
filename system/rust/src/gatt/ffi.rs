@@ -12,10 +12,7 @@ use tokio::task::spawn_local;
 
 use crate::{
     do_in_rust_thread,
-    packets::{
-        AttAttributeDataChild, AttAttributeDataView, AttBuilder, AttErrorCode, Serializable,
-        SerializeError,
-    },
+    packets::{AttAttributeDataChild, AttBuilder, AttErrorCode, Serializable, SerializeError},
 };
 
 use super::{
@@ -213,7 +210,7 @@ impl GattCallbacks for GattCallbacksImpl {
         handle: AttHandle,
         attr_type: AttributeBackingType,
         write_type: GattWriteType,
-        value: AttAttributeDataView,
+        value: &[u8],
     ) {
         trace!(
             "on_server_write ({conn_id:?}, {trans_id:?}, {handle:?}, {attr_type:?}, {write_type:?}"
@@ -229,7 +226,7 @@ impl GattCallbacks for GattCallbacksImpl {
             },
             matches!(write_type, GattWriteType::Request { .. }),
             matches!(write_type, GattWriteType::Request(GattWriteRequestType::Prepare { .. })),
-            &value.get_raw_payload().collect::<Vec<_>>(),
+            value,
         );
     }
 
@@ -419,7 +416,7 @@ fn send_response(_server_id: u8, conn_id: u16, trans_id: u32, status: u8, value:
     // TODO(aryarahul): fixup error codes to allow app-specific values (i.e. don't
     // make it an enum in PDL)
     let value = if status == 0 {
-        Ok(AttAttributeDataChild::RawData(value.to_vec().into_boxed_slice()))
+        Ok(value.to_vec())
     } else {
         Err(AttErrorCode::try_from(status).unwrap_or(AttErrorCode::UNLIKELY_ERROR))
     };

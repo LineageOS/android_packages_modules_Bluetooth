@@ -124,7 +124,7 @@ void l2cble_notify_le_connection(const RawAddress& bda) {
 
 /** This function is called when an HCI Connection Complete event is received.
  */
-bool l2cble_conn_comp(uint16_t handle, uint8_t role, const RawAddress& bda,
+bool l2cble_conn_comp(uint16_t handle, tHCI_ROLE role, const RawAddress& bda,
                       tBLE_ADDR_TYPE /* type */, uint16_t conn_interval,
                       uint16_t conn_latency, uint16_t conn_timeout) {
   // role == HCI_ROLE_CENTRAL => scanner completed connection

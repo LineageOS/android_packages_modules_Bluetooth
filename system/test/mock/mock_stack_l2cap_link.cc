@@ -61,7 +61,7 @@ void l2c_link_init(const uint16_t /* acl_buffer_count_classic */) {
   inc_func_call_count(__func__);
 }
 void l2c_link_role_changed(const RawAddress* /* bd_addr */,
-                           uint8_t /* new_role */,
+                           tHCI_ROLE /* new_role */,
                            tHCI_STATUS /* hci_status */) {
   inc_func_call_count(__func__);
 }
