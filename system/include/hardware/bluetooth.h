@@ -23,6 +23,8 @@
 #include <sys/cdefs.h>
 #include <sys/types.h>
 
+#include <vector>
+
 #include "avrcp/avrcp.h"
 #include "base/functional/callback.h"
 #include "bluetooth/uuid.h"
@@ -129,11 +131,11 @@ inline std::string bt_status_text(const bt_status_t& status) {
     case BT_STATUS_UNHANDLED:
       return std::string("unhandled");
     case BT_STATUS_AUTH_FAILURE:
-      return std::string("failure");
+      return std::string("auth_failure");
     case BT_STATUS_RMT_DEV_DOWN:
       return std::string("remote_device_down");
     case BT_STATUS_AUTH_REJECTED:
-      return std::string("rejected");
+      return std::string("auth_rejected");
     case BT_STATUS_JNI_ENVIRONMENT_ERROR:
       return std::string("jni_env_error");
     case BT_STATUS_JNI_THREAD_ATTACH_ERROR:
@@ -156,7 +158,7 @@ typedef struct { uint8_t pin[16]; } __attribute__((packed)) bt_pin_code_t;
 
 typedef struct {
   uint8_t status;
-  uint8_t ctrl_state;   /* stack reported state */
+  uint32_t ctrl_state;  /* stack reported state */
   uint64_t tx_time;     /* in ms */
   uint64_t rx_time;     /* in ms */
   uint64_t idle_time;   /* in ms */
@@ -401,6 +403,20 @@ typedef enum {
    */
   BT_PROPERTY_REMOTE_ADDR_TYPE,
 
+  /**
+   * Description - Whether remote device supports Secure Connections mode
+   * Access mode - GET and SET.
+   * Data Type - uint8_t.
+   */
+  BT_PROPERTY_REMOTE_SECURE_CONNECTIONS_SUPPORTED,
+
+  /**
+   * Description - Maximum observed session key for remote device
+   * Access mode - GET and SET.
+   * Data Type - uint8_t.
+   */
+  BT_PROPERTY_REMOTE_MAX_SESSION_KEY_SIZE,
+
   BT_PROPERTY_REMOTE_DEVICE_TIMESTAMP = 0xFF,
 } bt_property_type_t;
 
@@ -593,6 +609,8 @@ typedef void (*energy_info_callback)(bt_activity_energy_info* energy_info,
 typedef void (*generate_local_oob_data_callback)(tBT_TRANSPORT transport,
                                                  bt_oob_data_t oob_data);
 
+typedef void (*key_missing_callback)(const RawAddress bd_addr);
+
 /** TODO: Add callbacks for Link Up/Down and other generic
  *  notifications/callbacks */
 
@@ -620,6 +638,7 @@ typedef struct {
   switch_buffer_size_callback switch_buffer_size_cb;
   switch_codec_callback switch_codec_cb;
   le_rand_callback le_rand_cb;
+  key_missing_callback key_missing_cb;
 } bt_callbacks_t;
 
 typedef int (*acquire_wake_lock_callout)(const char* lock_name);
@@ -738,6 +757,8 @@ typedef struct {
 
   /** Cancel Bond */
   int (*cancel_bond)(const RawAddress* bd_addr);
+
+  bool (*pairing_is_busy)();
 
   /**
    * Get the connection status for a given remote device.
@@ -936,6 +957,13 @@ typedef struct {
   bool (*get_swb_supported)();
 
   /**
+   *
+   * Is the specified coding format supported by the adapter
+   *
+   */
+  bool (*is_coding_format_supported)(uint8_t coding_format);
+
+  /**
    * Data passed from BluetoothDevice.metadata_changed
    *
    * @param remote_bd_addr remote address
@@ -974,5 +1002,21 @@ typedef struct {
 } bt_interface_t;
 
 #define BLUETOOTH_INTERFACE_STRING "bluetoothInterface"
+
+#if __has_include(<bluetooth/log.h>)
+#include <bluetooth/log.h>
+
+namespace fmt {
+template <>
+struct formatter<bt_status_t> : enum_formatter<bt_status_t> {};
+template <>
+struct formatter<bt_scan_mode_t> : enum_formatter<bt_scan_mode_t> {};
+template <>
+struct formatter<bt_bond_state_t> : enum_formatter<bt_bond_state_t> {};
+template <>
+struct formatter<bt_property_type_t> : enum_formatter<bt_property_type_t> {};
+}  // namespace fmt
+
+#endif  // __has_include(<bluetooth/log.h>)
 
 #endif /* ANDROID_INCLUDE_BLUETOOTH_H */

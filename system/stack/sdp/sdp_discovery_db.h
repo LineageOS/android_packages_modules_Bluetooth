@@ -16,12 +16,13 @@
  *
  ******************************************************************************/
 
+#pragma once
+
 #include <cstdint>
 
-#include "bt_target.h"  // SDP_MAX_PROTOCOL_PARAMS
+#include "internal_include/bt_target.h"
 #include "types/bluetooth/uuid.h"
-
-#pragma once
+#include "types/raw_address.h"
 
 /* Masks for attr_value field of tSDP_DISC_ATTR */
 #define SDP_DISC_ATTR_LEN_MASK 0x0FFF

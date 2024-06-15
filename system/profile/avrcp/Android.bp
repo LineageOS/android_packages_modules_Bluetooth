@@ -16,7 +16,6 @@ cc_library_static {
     include_dirs: [
         "packages/modules/Bluetooth/system",
         "packages/modules/Bluetooth/system/gd",
-        "packages/modules/Bluetooth/system/internal_include",
         "packages/modules/Bluetooth/system/stack/include",
     ],
     export_include_dirs: ["./"],
@@ -27,6 +26,7 @@ cc_library_static {
     static_libs: [
         "lib-bt-packets",
         "libbluetooth-types",
+        "libbluetooth_log",
         "libbt_shim_bridge",
         "libosi",
     ],
@@ -58,7 +58,6 @@ cc_test {
     include_dirs: [
         "packages/modules/Bluetooth/system",
         "packages/modules/Bluetooth/system/gd",
-        "packages/modules/Bluetooth/system/internal_include",
         "packages/modules/Bluetooth/system/stack/include",
     ],
     srcs: [
@@ -73,6 +72,7 @@ cc_test {
         "libbase",
         "libbluetooth-types",
         "libbluetooth_gd",
+        "libbluetooth_log",
         "libbt_shim_bridge",
         "libbt_shim_ffi",
         "libbtdevice",
@@ -88,7 +88,6 @@ cc_test {
     },
 
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
     ],
     header_libs: ["libbluetooth_headers"],
@@ -106,7 +105,6 @@ cc_fuzz {
     include_dirs: [
         "packages/modules/Bluetooth/system",
         "packages/modules/Bluetooth/system/gd",
-        "packages/modules/Bluetooth/system/internal_include",
         "packages/modules/Bluetooth/system/packet/tests",
         "packages/modules/Bluetooth/system/stack/include",
     ],
@@ -118,6 +116,7 @@ cc_fuzz {
         "libbase",
         "libbluetooth-types",
         "libbluetooth_gd",
+        "libbluetooth_log",
         "libbt_shim_bridge",
         "libbt_shim_ffi",
         "libchrome",

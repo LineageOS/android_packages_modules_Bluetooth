@@ -17,7 +17,7 @@
 #include "distance_measurement_manager.h"
 
 #include "btif/include/btif_common.h"
-#include "gd/hci/distance_measurement_manager.h"
+#include "hci/distance_measurement_manager.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
 
@@ -41,10 +41,10 @@ class DistanceMeasurementInterfaceImpl
     distance_measurement_callbacks_ = callbacks;
   }
 
-  void StartDistanceMeasurement(RawAddress raw_address, uint16_t frequency,
+  void StartDistanceMeasurement(RawAddress raw_address, uint16_t interval,
                                 uint8_t method) {
     bluetooth::shim::GetDistanceMeasurementManager()->StartDistanceMeasurement(
-        bluetooth::ToGdAddress(raw_address), frequency,
+        bluetooth::ToGdAddress(raw_address), interval,
         static_cast<DistanceMeasurementMethod>(method));
   }
 

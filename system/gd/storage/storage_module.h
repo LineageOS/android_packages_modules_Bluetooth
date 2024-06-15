@@ -22,6 +22,7 @@
 #include <memory>
 #include <mutex>
 #include <string>
+#include <vector>
 
 #include "hci/address.h"
 #include "module.h"

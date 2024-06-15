@@ -17,6 +17,7 @@
 #pragma once
 
 #include <base/strings/stringprintf.h>
+#include <bluetooth/log.h>
 
 #include <string>
 
@@ -185,3 +186,10 @@ typedef struct {
 
 extern const uint32_t bta_service_id_to_btm_srv_id_lkup_tbl[];
 extern const uint16_t bta_service_id_to_uuid_lkup_tbl[];
+
+namespace fmt {
+template <>
+struct formatter<tBTA_DM_EVT> : enum_formatter<tBTA_DM_EVT> {};
+template <>
+struct formatter<tBTA_DM_STATE> : enum_formatter<tBTA_DM_STATE> {};
+}  // namespace fmt

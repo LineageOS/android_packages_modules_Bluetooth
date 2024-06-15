@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "gd/rust/topshim/gatt/gatt_ble_advertiser_shim.h"
+#include "rust/topshim/gatt/gatt_ble_advertiser_shim.h"
 
 #include <base/functional/bind.h>
 #include <base/functional/callback.h>

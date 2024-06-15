@@ -57,7 +57,6 @@ filegroup {
         "android/bluetooth/IBluetoothQualityReportReadyCallback.aidl",
         "android/bluetooth/IBluetoothSap.aidl",
         "android/bluetooth/IBluetoothSocketManager.aidl",
-        "android/bluetooth/IBluetoothStateChangeCallback.aidl",
         "android/bluetooth/IBluetoothVolumeControl.aidl",
         "android/bluetooth/IBluetoothVolumeControlCallback.aidl",
         "android/bluetooth/IncomingRfcommSocketInfo.aidl",

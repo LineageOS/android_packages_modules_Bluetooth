@@ -17,17 +17,16 @@
 package com.android.bluetooth.hid;
 
 import static org.mockito.Mockito.verify;
-
+import android.platform.test.flag.junit.SetFlagsRule;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
-
 import androidx.test.filters.SmallTest;
 import androidx.test.runner.AndroidJUnit4;
-
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.x.com.android.modules.utils.SynchronousResultReceiver;
-
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -36,7 +35,7 @@ import org.mockito.MockitoAnnotations;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class HidHostServiceBinderTest {
-
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
     private static final String REMOTE_DEVICE_ADDRESS = "00:00:00:00:00:00";
 
     @Mock
@@ -104,6 +103,24 @@ public class HidHostServiceBinderTest {
         mBinder.getConnectionPolicy(mRemoteDevice, null, SynchronousResultReceiver.get());
 
         verify(mService).getConnectionPolicy(mRemoteDevice);
+    }
+
+    @Test
+    public void setPreferredTransport_callsServiceMethod() {
+        mSetFlagsRule.enableFlags(Flags.FLAG_ALLOW_SWITCHING_HID_AND_HOGP);
+        int preferredTransport = BluetoothDevice.TRANSPORT_AUTO;
+        mBinder.setPreferredTransport(
+                mRemoteDevice, preferredTransport, null, SynchronousResultReceiver.get());
+
+        verify(mService).setPreferredTransport(mRemoteDevice, preferredTransport);
+    }
+
+    @Test
+    public void getPreferredTransport_callsServiceMethod() {
+        mSetFlagsRule.enableFlags(Flags.FLAG_ALLOW_SWITCHING_HID_AND_HOGP);
+        mBinder.getPreferredTransport(mRemoteDevice, null, SynchronousResultReceiver.get());
+
+        verify(mService).getPreferredTransport(mRemoteDevice);
     }
 
     @Test

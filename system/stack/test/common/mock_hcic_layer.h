@@ -19,7 +19,7 @@
 #include <base/functional/callback.h>
 #include <gmock/gmock.h>
 
-#include <array>
+#include <vector>
 
 #include "btm_iso_api_types.h"
 

@@ -18,6 +18,7 @@
 
 #include <cstdint>
 #include <forward_list>
+#include <vector>
 
 #include "packet/iterator.h"
 #include "packet/view.h"

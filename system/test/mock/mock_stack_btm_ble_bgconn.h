@@ -43,23 +43,6 @@ struct btm_update_scanner_filter_policy {
   void operator()(tBTM_BLE_SFP scan_policy) { body(scan_policy); };
 };
 extern struct btm_update_scanner_filter_policy btm_update_scanner_filter_policy;
-// Name: btm_ble_suspend_bg_conn
-// Params: void
-// Returns: bool
-struct btm_ble_suspend_bg_conn {
-  std::function<bool(void)> body{[](void) { return false; }};
-  bool operator()(void) { return body(); };
-};
-extern struct btm_ble_suspend_bg_conn btm_ble_suspend_bg_conn;
-// Name: btm_ble_resume_bg_conn
-// Params: void
-// Returns: bool
-struct btm_ble_resume_bg_conn {
-  std::function<bool(void)> body{[](void) { return false; }};
-  bool operator()(void) { return body(); };
-};
-extern struct btm_ble_resume_bg_conn btm_ble_resume_bg_conn;
-
 // Name: BTM_SetLeConnectionModeToFast
 // Params:
 // Returns: bool

@@ -26,10 +26,10 @@
 #include <cstdint>
 #include <string>
 
+#include "hci/class_of_device.h"
 #include "stack/include/acl_client_callbacks.h"
 #include "stack/include/bt_hdr.h"
 #include "test/common/mock_functions.h"
-#include "types/class_of_device.h"
 #include "types/raw_address.h"
 
 // Mocked compile conditionals, if any
@@ -40,8 +40,6 @@ namespace mock {
 namespace stack_acl {
 
 // Function state capture and return values, if needed
-struct ACL_SupportTransparentSynchronousData
-    ACL_SupportTransparentSynchronousData;
 struct BTM_BLE_IS_RESOLVE_BDA BTM_BLE_IS_RESOLVE_BDA;
 struct BTM_IsAclConnectionUp BTM_IsAclConnectionUp;
 struct BTM_IsAclConnectionUpAndHandleValid BTM_IsAclConnectionUpAndHandleValid;
@@ -118,14 +116,12 @@ struct btm_acl_connected btm_acl_connected;
 struct btm_acl_created btm_acl_created;
 struct btm_acl_device_down btm_acl_device_down;
 struct btm_acl_disconnected btm_acl_disconnected;
-struct btm_acl_iso_disconnected btm_acl_iso_disconnected;
 struct btm_acl_encrypt_change btm_acl_encrypt_change;
 struct btm_acl_notif_conn_collision btm_acl_notif_conn_collision;
 struct btm_acl_process_sca_cmpl_pkt btm_acl_process_sca_cmpl_pkt;
 struct btm_acl_removed btm_acl_removed;
 struct btm_acl_role_changed btm_acl_role_changed;
 struct btm_acl_update_conn_addr btm_acl_update_conn_addr;
-struct btm_acl_update_inquiry_status btm_acl_update_inquiry_status;
 struct btm_ble_refresh_local_resolvable_private_addr
     btm_ble_refresh_local_resolvable_private_addr;
 struct btm_cont_rswitch_from_handle btm_cont_rswitch_from_handle;
@@ -166,10 +162,6 @@ struct BTM_unblock_role_switch_and_sniff_mode_for
 }  // namespace test
 
 // Mocked functions, if any
-bool ACL_SupportTransparentSynchronousData(const RawAddress& bd_addr) {
-  inc_func_call_count(__func__);
-  return test::mock::stack_acl::ACL_SupportTransparentSynchronousData(bd_addr);
-}
 bool BTM_BLE_IS_RESOLVE_BDA(const RawAddress& x) {
   inc_func_call_count(__func__);
   return test::mock::stack_acl::BTM_BLE_IS_RESOLVE_BDA(x);
@@ -499,10 +491,6 @@ void btm_acl_disconnected(tHCI_STATUS status, uint16_t handle,
   inc_func_call_count(__func__);
   test::mock::stack_acl::btm_acl_disconnected(status, handle, reason);
 }
-void btm_acl_iso_disconnected(uint16_t handle, tHCI_REASON reason) {
-  inc_func_call_count(__func__);
-  test::mock::stack_acl::btm_acl_iso_disconnected(handle, reason);
-}
 void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
                             uint8_t encr_enable) {
   inc_func_call_count(__func__);
@@ -528,10 +516,6 @@ void btm_acl_role_changed(tHCI_STATUS hci_status, const RawAddress& bd_addr,
 void btm_acl_update_conn_addr(uint16_t handle, const RawAddress& address) {
   inc_func_call_count(__func__);
   test::mock::stack_acl::btm_acl_update_conn_addr(handle, address);
-}
-void btm_acl_update_inquiry_status(uint8_t status) {
-  inc_func_call_count(__func__);
-  test::mock::stack_acl::btm_acl_update_inquiry_status(status);
 }
 void btm_ble_refresh_local_resolvable_private_addr(
     const RawAddress& pseudo_addr, const RawAddress& local_rpa) {
@@ -644,7 +628,7 @@ void hci_btm_set_link_supervision_timeout(tACL_CONN& link, uint16_t timeout) {
   test::mock::stack_acl::hci_btm_set_link_supervision_timeout(link, timeout);
 }
 void btm_connection_request(const RawAddress& bda,
-                            const bluetooth::types::ClassOfDevice& cod) {
+                            const bluetooth::hci::ClassOfDevice& cod) {
   test::mock::stack_acl::btm_connection_request(bda, cod);
 }
 void on_acl_br_edr_connected(const RawAddress& bda, uint16_t handle,

@@ -32,6 +32,7 @@ regex = "1.5"
 serde_json = "1.0"
 syslog = "6"
 tokio = { version = "1.0", features = ["fs", "macros", "rt-multi-thread", "sync"] }
+libc = "0.2"
 
 [build-dependencies]
 pkg-config = "0.3.19"

@@ -31,20 +31,6 @@
 
 static const char BTIF_CONFIG_MODULE[] = "btif_config_module";
 
-static const std::string BT_CONFIG_KEY_SDP_DI_MANUFACTURER =
-    "SdpDiManufacturer";
-static const std::string BT_CONFIG_KEY_SDP_DI_MODEL = "SdpDiModel";
-static const std::string BT_CONFIG_KEY_SDP_DI_HW_VERSION =
-    "SdpDiHardwareVersion";
-static const std::string BT_CONFIG_KEY_SDP_DI_VENDOR_ID_SRC =
-    "SdpDiVendorIdSource";
-
-static const std::string BT_CONFIG_KEY_REMOTE_VER_MFCT = "Manufacturer";
-static const std::string BT_CONFIG_KEY_REMOTE_VER_VER = "LmpVer";
-static const std::string BT_CONFIG_KEY_REMOTE_VER_SUBVER = "LmpSubVer";
-static const std::string BT_CONFIG_KEY_PBAP_PCE_VERSION = "PbapPceVersion";
-static const std::string BT_CONFIG_KEY_DIS_MODEL_NUM = "ModelName";
-
 bool btif_config_exist(const std::string& section, const std::string& key);
 bool btif_config_get_int(const std::string& section, const std::string& key,
                          int* value);

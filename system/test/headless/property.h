@@ -20,20 +20,63 @@
 #include <cstdint>
 #include <deque>
 #include <memory>
+#include <sstream>
 #include <string>
 
 #include "include/hardware/bluetooth.h"
+#include "macros.h"
 #include "test/headless/log.h"
 #include "types/bluetooth/uuid.h"
+
+inline std::string bt_property_type_text(const ::bt_property_type_t type) {
+  switch (type) {
+    CASE_RETURN_TEXT(BT_PROPERTY_BDNAME);
+    CASE_RETURN_TEXT(BT_PROPERTY_BDADDR);
+    CASE_RETURN_TEXT(BT_PROPERTY_UUIDS);
+    CASE_RETURN_TEXT(BT_PROPERTY_CLASS_OF_DEVICE);
+    CASE_RETURN_TEXT(BT_PROPERTY_TYPE_OF_DEVICE);
+    CASE_RETURN_TEXT(BT_PROPERTY_SERVICE_RECORD);
+    CASE_RETURN_TEXT(BT_PROPERTY_ADAPTER_SCAN_MODE);
+    CASE_RETURN_TEXT(BT_PROPERTY_ADAPTER_BONDED_DEVICES);
+    CASE_RETURN_TEXT(BT_PROPERTY_ADAPTER_DISCOVERABLE_TIMEOUT);
+    CASE_RETURN_TEXT(BT_PROPERTY_REMOTE_FRIENDLY_NAME);
+    CASE_RETURN_TEXT(BT_PROPERTY_REMOTE_RSSI);
+    CASE_RETURN_TEXT(BT_PROPERTY_REMOTE_VERSION_INFO);
+    CASE_RETURN_TEXT(BT_PROPERTY_LOCAL_LE_FEATURES);
+    CASE_RETURN_TEXT(BT_PROPERTY_LOCAL_IO_CAPS);
+    CASE_RETURN_TEXT(BT_PROPERTY_RESERVED_0F);
+    CASE_RETURN_TEXT(BT_PROPERTY_DYNAMIC_AUDIO_BUFFER);
+    CASE_RETURN_TEXT(BT_PROPERTY_REMOTE_IS_COORDINATED_SET_MEMBER);
+    CASE_RETURN_TEXT(BT_PROPERTY_APPEARANCE);
+    CASE_RETURN_TEXT(BT_PROPERTY_VENDOR_PRODUCT_INFO);
+    CASE_RETURN_TEXT(BT_PROPERTY_WL_MEDIA_PLAYERS_LIST);
+    CASE_RETURN_TEXT(BT_PROPERTY_REMOTE_ASHA_CAPABILITY);
+    CASE_RETURN_TEXT(BT_PROPERTY_REMOTE_ASHA_TRUNCATED_HISYNCID);
+    CASE_RETURN_TEXT(BT_PROPERTY_REMOTE_MODEL_NUM);
+    CASE_RETURN_TEXT(BT_PROPERTY_REMOTE_DEVICE_TIMESTAMP);
+    default:
+      return base::StringPrintf("UNKNOWN[%d]", type);
+  }
+}
 
 namespace bluetooth {
 namespace test {
 namespace headless {
 
 struct bt_property_t {
-  int Type() const { return type; }
+  ::bt_property_type_t Type() const { return type; }
 
   virtual std::string ToString() const = 0;
+
+  // TODO verify this prints as expected
+  std::string ToRaw() {
+    std::ostringstream oss;
+    const uint8_t* p = data.get();
+    for (size_t i = 0; i < sizeof(bt_property_t); i++, p++) {
+      oss << "0x" << std::hex << *p << " ";
+    }
+    return oss.str();
+  }
 
  protected:
   bt_property_t(const uint8_t* data, const size_t len) {
@@ -45,7 +88,7 @@ struct bt_property_t {
 
   std::unique_ptr<uint8_t[]> data;
   size_t len;
-  int type;
+  ::bt_property_type_t type;
 };
 
 namespace property {
@@ -53,12 +96,13 @@ namespace property {
 struct void_t : public bt_property_t {
   void_t(const uint8_t* data, const size_t len, int type)
       : bt_property_t(data, len) {
-    this->type = type;
+    this->type = (::bt_property_type_t)type;
   }
 
  public:
   virtual std::string ToString() const override {
-    return base::StringPrintf("void property type:%d", type);
+    return base::StringPrintf("Unimplemented property type:%d name:%s", type,
+                              bt_property_type_text(type).c_str());
   }
 };
 
@@ -97,6 +141,24 @@ struct name_t : public bt_property_t {
 
   virtual std::string ToString() const override {
     return base::StringPrintf("Name:%s", get_name().c_str());
+  }
+};
+
+struct bdaddr_t : public bt_property_t {
+  bdaddr_t(const uint8_t* data, const size_t len) : bt_property_t(data, len) {
+    type = BT_PROPERTY_BDNAME;
+  }
+
+  RawAddress get_addr() const {
+    uint8_t* s = reinterpret_cast<uint8_t*>(data.get());
+    // TODO This may need to be reversed
+    RawAddress bd_addr;
+    ASSERT_LOG(6U == bd_addr.FromOctets(s), "Mac address is not 6 bytes");
+    return bd_addr;
+  }
+
+  virtual std::string ToString() const override {
+    return base::StringPrintf("bd_addr:%s", get_addr().ToString().c_str());
   }
 };
 

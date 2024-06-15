@@ -23,10 +23,26 @@
 // Mock include file to share data between tests and mock
 #include "test/mock/mock_osi_allocator.h"
 
+#include "osi/include/allocator.h"
 #include "test/common/mock_functions.h"
 
 // Mocked internal structures, if any
 
+OsiObject::OsiObject(void* ptr) : ptr_(ptr) {}
+
+OsiObject::OsiObject(const void* ptr) : ptr_(const_cast<void*>(ptr)) {}
+
+OsiObject::~OsiObject() {
+  if (ptr_ != nullptr) {
+    osi_free(ptr_);
+  }
+}
+
+void* OsiObject::Release() {
+  void* ptr = ptr_;
+  ptr_ = nullptr;
+  return ptr;
+}
 namespace test {
 namespace mock {
 namespace osi_allocator {

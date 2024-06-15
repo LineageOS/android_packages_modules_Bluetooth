@@ -22,7 +22,10 @@ static_library("libbt_keystore_cc") {
     ":libbt_common_bridge_code"
   ]
 
-  configs += ["//bt/system/gd:gd_defaults"]
+  configs += [
+    "//bt/system/gd:gd_defaults",
+    "//bt/system/log:log_defaults",
+  ]
 }
 
 config("rust_common_config") {
@@ -38,7 +41,10 @@ cxxbridge_header("libbt_common_bridge_header") {
 cxxbridge_cc("libbt_common_bridge_code") {
   sources = [ "src/bridge.rs" ]
   deps = [ ":libbt_common_bridge_header" ]
-  configs = [ "//bt/system/gd:gd_defaults" ]
+  configs = [
+    "//bt/system/gd:gd_defaults",
+    "//bt/system/log:log_defaults",
+  ]
 }
 
 cxxbridge_libheader("cxxlibheader") {

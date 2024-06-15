@@ -17,10 +17,11 @@
 #pragma once
 
 #include <cstddef>
+#include <deque>
 #include <iterator>
 #include <memory>
 #include <mutex>
-#include <queue>
+#include <vector>
 
 namespace bluetooth {
 namespace common {

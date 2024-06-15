@@ -25,12 +25,12 @@ static_library("device") {
 
   include_dirs = [
     "//bt/system/",
-    "//bt/system/internal_include",
     "//bt/system/stack/include",
   ]
 
   configs += [
     "//bt/system:target_defaults",
+    "//bt/system/log:log_defaults",
   ]
 
   deps = [

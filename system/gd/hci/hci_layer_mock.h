@@ -75,6 +75,7 @@ class MockHciLayer : public HciLayer {
       GetAclConnectionInterface,
       (common::ContextualCallback<void(EventView)> event_handler,
        common::ContextualCallback<void(uint16_t, hci::ErrorCode)> on_disconnect,
+       common::ContextualCallback<void(Address, ClassOfDevice)> on_connection_request,
        common::ContextualCallback<void(hci::ErrorCode, uint16_t, uint8_t, uint16_t, uint16_t)>
            on_read_remote_version_complete),
       (override));

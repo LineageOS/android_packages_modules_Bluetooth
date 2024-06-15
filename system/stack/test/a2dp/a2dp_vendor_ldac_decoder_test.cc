@@ -22,9 +22,9 @@
 
 #include <cstdint>
 
+#include "include/check.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
-#include "stack/include/ldacBT_bco_for_fluoride.h"
 
 namespace {
 

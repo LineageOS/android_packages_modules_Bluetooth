@@ -19,6 +19,7 @@ package com.android.bluetooth.hfp;
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 
 import static org.mockito.Mockito.*;
+import static org.junit.Assume.assumeTrue;
 
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -36,7 +37,9 @@ import android.os.Build;
 import android.os.Bundle;
 import android.os.CancellationSignal;
 import android.os.HandlerThread;
+import android.os.SystemProperties;
 import android.os.UserHandle;
+import android.platform.test.flag.junit.SetFlagsRule;
 import android.provider.CallLog;
 import android.provider.CallLog.Calls;
 import android.telephony.PhoneNumberUtils;
@@ -55,12 +58,14 @@ import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.RemoteDevices;
 import com.android.bluetooth.btservice.SilenceDeviceManager;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
+import com.android.bluetooth.flags.Flags;
 
 import org.hamcrest.core.IsInstanceOf;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -81,6 +86,9 @@ public class HeadsetStateMachineTest {
     private static final int ASYNC_CALL_TIMEOUT_MILLIS = 250;
     private static final String TEST_PHONE_NUMBER = "1234567890";
     private static final int MAX_RETRY_DISCONNECT_AUDIO = 3;
+
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
+
     private Context mTargetContext;
     private BluetoothAdapter mAdapter;
     private HandlerThread mHandlerThread;
@@ -108,8 +116,8 @@ public class HeadsetStateMachineTest {
         MockitoAnnotations.initMocks(this);
         TestUtils.setAdapterService(mAdapterService);
         // Stub system interface
-        when(mSystemInterface.getHeadsetPhoneState()).thenReturn(mPhoneState);
-        when(mSystemInterface.getAudioManager()).thenReturn(mAudioManager);
+        doReturn(mPhoneState).when(mSystemInterface).getHeadsetPhoneState();
+        doReturn(mAudioManager).when(mSystemInterface).getAudioManager();
         // This line must be called to make sure relevant objects are initialized properly
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         // Get a device for testing
@@ -1011,6 +1019,46 @@ public class HeadsetStateMachineTest {
         verify(mSystemInterface, timeout(ASYNC_CALL_TIMEOUT_MILLIS)).hangupCall(mTestDevice);
     }
 
+    /** A test to verify that we correctly send CIND response when a call is in progress */
+    @Test
+    public void testCindEventWhenCallIsInProgress() {
+        mSetFlagsRule.enableFlags(Flags.FLAG_PRETEND_NETWORK_SERVICE);
+        when(mPhoneState.getCindService())
+                .thenReturn(HeadsetHalConstants.NETWORK_STATE_NOT_AVAILABLE);
+        when(mHeadsetService.isVirtualCallStarted()).thenReturn(false);
+        when(mPhoneState.getNumActiveCall()).thenReturn(1);
+
+        setUpAudioOnState();
+
+        mHeadsetStateMachine.sendMessage(
+                HeadsetStateMachine.STACK_EVENT,
+                new HeadsetStackEvent(HeadsetStackEvent.EVENT_TYPE_AT_CIND, mTestDevice));
+        // wait state machine to process the message
+        if (Flags.pretendNetworkService()) {
+            verify(mNativeInterface, timeout(ASYNC_CALL_TIMEOUT_MILLIS))
+                    .cindResponse(
+                            eq(mTestDevice),
+                            eq(HeadsetHalConstants.NETWORK_STATE_AVAILABLE),
+                            anyInt(),
+                            anyInt(),
+                            anyInt(),
+                            anyInt(),
+                            anyInt(),
+                            anyInt());
+        } else {
+            verify(mNativeInterface, timeout(ASYNC_CALL_TIMEOUT_MILLIS))
+                    .cindResponse(
+                            eq(mTestDevice),
+                            eq(HeadsetHalConstants.NETWORK_STATE_NOT_AVAILABLE),
+                            anyInt(),
+                            anyInt(),
+                            anyInt(),
+                            anyInt(),
+                            anyInt(),
+                            anyInt());
+        }
+    }
+
     /**
      * A test to verify that we correctly handles key pressed event from a HSP headset
      */
@@ -1614,6 +1662,8 @@ public class HeadsetStateMachineTest {
     /** Test setting audio parameters according to received SWB event. SWB AptX is enabled. */
     @Test
     public void testSetAudioParameters_SwbAptxEnabled() {
+        mSetFlagsRule.enableFlags(Flags.FLAG_HFP_CODEC_APTX_VOICE);
+        assumeTrue(SystemProperties.getBoolean("bluetooth.hfp.codec_aptx_voice.enabled", false));
         setUpConnectedState();
         mHeadsetStateMachine.sendMessage(
                 HeadsetStateMachine.STACK_EVENT,
@@ -1683,8 +1733,11 @@ public class HeadsetStateMachineTest {
     private void verifyAudioSystemSetParametersInvocation(boolean lc3Enabled, boolean aptxEnabled) {
         verify(mAudioManager, timeout(ASYNC_CALL_TIMEOUT_MILLIS))
                 .setParameters(lc3Enabled ? "bt_lc3_swb=on" : "bt_lc3_swb=off");
-        verify(mAudioManager, timeout(ASYNC_CALL_TIMEOUT_MILLIS))
-                .setParameters(aptxEnabled ? "bt_swb=0" : "bt_swb=65535");
+
+        if (mHeadsetStateMachine.IS_APTX_SUPPORT_ENABLED) {
+            verify(mAudioManager, timeout(ASYNC_CALL_TIMEOUT_MILLIS))
+                    .setParameters(aptxEnabled ? "bt_swb=0" : "bt_swb=65535");
+        }
     }
 
     /**

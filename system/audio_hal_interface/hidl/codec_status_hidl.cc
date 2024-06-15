@@ -18,6 +18,8 @@
 
 #include "codec_status_hidl.h"
 
+#include <vector>
+
 #include "a2dp_aac_constants.h"
 #include "a2dp_sbc_constants.h"
 #include "a2dp_vendor_aptx_constants.h"

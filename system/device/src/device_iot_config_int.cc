@@ -21,7 +21,6 @@
 #include "device_iot_config_int.h"
 
 #include <base/logging.h>
-#include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 #include <time.h>
@@ -31,17 +30,17 @@
 #include <string>
 
 #include "btcore/include/module.h"
-#include "btif/include/btif_api.h"
-#include "btif/include/btif_util.h"
+#include "btif/include/btif_common.h"
 #include "common/init_flags.h"
 #include "device/include/device_iot_config.h"
+#include "include/check.h"
+#include "os/log.h"
 #include "osi/include/alarm.h"
-#include "osi/include/allocator.h"
-#include "osi/include/compat.h"
 #include "osi/include/config.h"
-#include "osi/include/log.h"
+#include "osi/include/future.h"
 #include "osi/include/osi.h"
 #include "osi/include/properties.h"
+#include "types/raw_address.h"
 
 extern enum ConfigSource device_iot_config_source;
 

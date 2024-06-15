@@ -101,7 +101,6 @@
     <string name="status_connection_error" msgid="8253709700568062220">"Връзката не е успешна."</string>
     <string name="status_protocol_error" msgid="3231573735130475654">"Заявката не може да бъде обработена правилно."</string>
     <string name="status_unknown_error" msgid="314676481744304866">"Неизвестна грешка."</string>
-    <string name="btopp_live_folder" msgid="4859989703965326287">"Получено с Bluetooth"</string>
     <string name="opp_notification_group" msgid="150067508422520653">"Споделяне през Bluetooth"</string>
     <string name="download_success" msgid="3438268368708549686">"<xliff:g id="FILE_SIZE">%1$s</xliff:g> – Получаването завърши."</string>
     <string name="upload_success" msgid="143787470859042049">"<xliff:g id="FILE_SIZE">%1$s</xliff:g> – Изпращането завърши."</string>
@@ -136,4 +135,8 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Функцията за Bluetooth ще бъде включена, докато устройството ви е в самолетен режим. Ако не искате това, изключете я."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Функциите за Wi-Fi и Bluetooth няма да бъдат изключени"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Функциите за Wi‑Fi и Bluetooth ще бъдат включени, докато устройството ви е в самолетен режим. Ако не искате това, изключете ги."</string>
+    <string name="bluetooth_enabled_auto_on_title" msgid="1799541656310353393">"Функцията за Bluetooth е активирана автоматично"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="1070556457440100730">"Автоматичното рестартиране може да се превключва от настройките за Bluetooth."</string>
+    <string name="bluetooth_disable_auto_on" msgid="1085026923461565937">"Изключване"</string>
+    <string name="bluetooth_notification_group" msgid="7251886707585872194">"Автоматична промяна в състоянието на Bluetooth"</string>
 </resources>

@@ -31,18 +31,20 @@
 #include <hardware/bt_pan.h>
 #include <string.h>
 
-#include "os/log.h"
 #include "bta_api.h"
 #include "bta_pan_api.h"
 #include "bta_pan_ci.h"
 #include "btif_pan_internal.h"
 #include "btif_sock_thread.h"
 #include "btif_util.h"
+#include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/osi.h"
 #include "pan_api.h"
 #include "stack/include/bt_hdr.h"
 #include "types/raw_address.h"
+
+using namespace bluetooth;
 
 /*******************************************************************************
  *
@@ -55,7 +57,7 @@
  *
  ******************************************************************************/
 uint8_t bta_pan_co_init(uint8_t* q_level) {
-  LOG_VERBOSE("bta_pan_co_init");
+  log::verbose("bta_pan_co_init");
 
   /* set the q_level to 30 buffers */
   *q_level = 30;
@@ -76,10 +78,10 @@ uint8_t bta_pan_co_init(uint8_t* q_level) {
  *
  ******************************************************************************/
 void bta_pan_co_close(uint16_t handle, uint8_t app_id) {
-  LOG_VERBOSE("bta_pan_co_close:app_id:%d, handle:%d", app_id, handle);
+  log::verbose("bta_pan_co_close:app_id:{}, handle:{}", app_id, handle);
   btpan_conn_t* conn = btpan_find_conn_handle(handle);
   if (conn && conn->state == PAN_STATE_OPEN) {
-    LOG_VERBOSE("bta_pan_co_close");
+    log::verbose("bta_pan_co_close");
 
     // let bta close event reset this handle as it needs
     // the handle to find the connection upon CLOSE
@@ -119,15 +121,15 @@ void bta_pan_co_tx_path(uint16_t handle, uint8_t app_id) {
   bool ext;
   bool forward;
 
-  LOG_VERBOSE("%s, handle:%d, app_id:%d", __func__, handle, app_id);
+  log::verbose("handle:{}, app_id:{}", handle, app_id);
 
   btpan_conn_t* conn = btpan_find_conn_handle(handle);
   if (!conn) {
-    LOG_ERROR("%s: cannot find pan connection", __func__);
+    log::error("cannot find pan connection");
     return;
   } else if (conn->state != PAN_STATE_OPEN) {
-    LOG_ERROR("%s: conn is not opened, conn:%p, conn->state:%d", __func__, conn,
-              conn->state);
+    log::error("conn is not opened, conn:{}, conn->state:{}", fmt::ptr(conn),
+               conn->state);
     return;
   }
 
@@ -135,14 +137,12 @@ void bta_pan_co_tx_path(uint16_t handle, uint8_t app_id) {
     /* read next data buffer from pan */
     p_buf = bta_pan_ci_readbuf(handle, src, dst, &protocol, &ext, &forward);
     if (p_buf) {
-      LOG_VERBOSE(
-          "%s, calling btapp_tap_send, "
-          "p_buf->len:%d, offset:%d",
-          __func__, p_buf->len, p_buf->offset);
+      log::verbose("calling btapp_tap_send, p_buf->len:{}, offset:{}",
+                   p_buf->len, p_buf->offset);
       if (is_empty_eth_addr(conn->eth_addr) && is_valid_bt_eth_addr(src)) {
-        VLOG(1) << __func__ << " pan bt peer addr: "
-                << ADDRESS_TO_LOGGABLE_STR(conn->peer)
-                << " update its ethernet addr: " << src;
+        log::verbose("pan bt peer addr: {} update its ethernet addr: {}",
+                     ADDRESS_TO_LOGGABLE_STR(conn->peer),
+                     ADDRESS_TO_LOGGABLE_STR(src));
         conn->eth_addr = src;
       }
       btpan_tap_send(btpan_cb.tap_fd, src, dst, protocol,
@@ -168,7 +168,7 @@ void bta_pan_co_tx_path(uint16_t handle, uint8_t app_id) {
  ******************************************************************************/
 void bta_pan_co_rx_path(UNUSED_ATTR uint16_t handle,
                         UNUSED_ATTR uint8_t app_id) {
-  LOG_VERBOSE("bta_pan_co_rx_path not used");
+  log::verbose("bta_pan_co_rx_path not used");
 }
 
 /*******************************************************************************
@@ -187,7 +187,7 @@ void bta_pan_co_rx_path(UNUSED_ATTR uint16_t handle,
  ******************************************************************************/
 void bta_pan_co_rx_flow(UNUSED_ATTR uint16_t handle, UNUSED_ATTR uint8_t app_id,
                         UNUSED_ATTR bool enable) {
-  LOG_VERBOSE("bta_pan_co_rx_flow, enabled:%d, not used", enable);
+  log::verbose("bta_pan_co_rx_flow, enabled:{}, not used", enable);
   btpan_conn_t* conn = btpan_find_conn_handle(handle);
   if (!conn || conn->state != PAN_STATE_OPEN) return;
   btpan_set_flow_control(enable);
@@ -207,7 +207,7 @@ void bta_pan_co_pfilt_ind(UNUSED_ATTR uint16_t handle,
                           UNUSED_ATTR tBTA_PAN_STATUS result,
                           UNUSED_ATTR uint16_t len,
                           UNUSED_ATTR uint8_t* p_filters) {
-  LOG_VERBOSE("bta_pan_co_pfilt_ind");
+  log::verbose("bta_pan_co_pfilt_ind");
 }
 
 /*******************************************************************************
@@ -224,5 +224,5 @@ void bta_pan_co_mfilt_ind(UNUSED_ATTR uint16_t handle,
                           UNUSED_ATTR tBTA_PAN_STATUS result,
                           UNUSED_ATTR uint16_t len,
                           UNUSED_ATTR uint8_t* p_filters) {
-  LOG_VERBOSE("bta_pan_co_mfilt_ind");
+  log::verbose("bta_pan_co_mfilt_ind");
 }

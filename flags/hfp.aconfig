@@ -1,4 +1,5 @@
 package: "com.android.bluetooth.flags"
+container: "com.android.btservices"
 
 flag {
     name: "auto_connect_on_hfp_when_no_a2dp_device"
@@ -33,4 +34,25 @@ flag {
     namespace: "bluetooth"
     description: "start and stop of the SCO is managed by Audio instead of Bluetooth"
     bug: "315234036"
+}
+
+flag {
+    name: "retry_esco_with_zero_retransmission_effort"
+    namespace: "bluetooth"
+    description: "retry eSCO connection based on retransmission_effort"
+    bug: "316498257"
+}
+
+flag {
+    name: "close_rfcomm_instead_of_reset"
+    namespace: "bluetooth"
+    description: "Closing Rfcomm Connection instead of reset"
+    bug: "316993992"
+}
+
+flag {
+    name: "pretend_network_service"
+    namespace: "bluetooth"
+    description: "during ongoing call, pretend network service in +CIND when network is unavailable"
+    bug: "317307596"
 }

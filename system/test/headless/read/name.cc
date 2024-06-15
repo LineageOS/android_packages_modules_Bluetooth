@@ -16,15 +16,16 @@
 
 #define LOG_TAG "bt_headless_sdp"
 
+#include "test/headless/read/name.h"
+
 #include <future>
 
-#include "base/logging.h"     // LOG() stdout and android log
-#include "osi/include/log.h"  // android log only
+#include "base/logging.h"  // LOG() stdout and android log
+#include "os/log.h"        // android log only
 #include "stack/include/btm_api.h"
 #include "stack/include/btm_api_types.h"
 #include "test/headless/get_options.h"
 #include "test/headless/headless.h"
-#include "test/headless/read/name.h"
 #include "types/raw_address.h"
 
 std::promise<tBTM_REMOTE_DEV_NAME> promise_;

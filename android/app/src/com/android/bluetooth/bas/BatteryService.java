@@ -66,10 +66,7 @@ public class BatteryService extends ProfileService {
     private Handler mHandler;
     private final Map<BluetoothDevice, BatteryStateMachine> mStateMachines = new HashMap<>();
 
-    BatteryService() {}
-
-    @VisibleForTesting
-    BatteryService(Context ctx) {
+    public BatteryService(Context ctx) {
         super(ctx);
     }
 
@@ -83,7 +80,7 @@ public class BatteryService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    public void start() {
         if (DBG) {
             Log.d(TAG, "start()");
         }
@@ -102,18 +99,16 @@ public class BatteryService extends ProfileService {
         mStateMachinesThread.start();
 
         setBatteryService(this);
-
-        return true;
     }
 
     @Override
-    protected boolean stop() {
+    public void stop() {
         if (DBG) {
             Log.d(TAG, "stop()");
         }
         if (sBatteryService == null) {
             Log.w(TAG, "stop() called before start()");
-            return true;
+            return;
         }
 
         setBatteryService(null);
@@ -145,12 +140,10 @@ public class BatteryService extends ProfileService {
         }
 
         mAdapterService = null;
-
-        return true;
     }
 
     @Override
-    protected void cleanup() {
+    public void cleanup() {
         if (DBG) {
             Log.d(TAG, "cleanup()");
         }

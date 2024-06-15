@@ -25,7 +25,7 @@ sudo apt-get install repo git-core gnupg flex bison gperf build-essential \
   libgl1-mesa-dev libxml2-utils xsltproc unzip liblz4-tool libssl-dev \
   libc++-dev libevent-dev \
   flatbuffers-compiler libflatbuffers1 openssl \
-  libflatbuffers-dev libtinyxml2-dev \
+  libflatbuffers-dev libfmt-dev libtinyxml2-dev \
   libglib2.0-dev libevent-dev libnss3-dev libdbus-1-dev \
   libprotobuf-dev ninja-build generate-ninja protobuf-compiler \
   libre2-9 debmake \

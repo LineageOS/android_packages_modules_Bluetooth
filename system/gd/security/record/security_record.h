@@ -20,7 +20,6 @@
 
 #include "hci/address_with_type.h"
 #include "hci/octets.h"
-#include "storage/device.h"
 
 namespace bluetooth {
 namespace security {

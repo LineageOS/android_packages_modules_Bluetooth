@@ -26,4 +26,6 @@ import android.bluetooth.IBluetooth;
 oneway interface IBluetoothManagerCallback {
     void onBluetoothServiceUp(in IBluetooth bluetoothService);
     void onBluetoothServiceDown();
+    void onBluetoothOn();
+    void onBluetoothOff();
 }

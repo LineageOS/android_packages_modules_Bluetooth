@@ -17,6 +17,8 @@
 #ifndef BTIF_BQR_H_
 #define BTIF_BQR_H_
 
+#include <bluetooth/log.h>
+
 #include "btm_api_types.h"
 #include "common/leaky_bonded_queue.h"
 #include "include/hardware/bt_bqr.h"
@@ -456,5 +458,13 @@ void DebugDump(int fd);
 
 }  // namespace bqr
 }  // namespace bluetooth
+
+namespace fmt {
+template <>
+struct formatter<bluetooth::bqr::BqrReportAction>
+    : enum_formatter<bluetooth::bqr::BqrReportAction> {};
+template <>
+struct formatter<bluetooth::bqr::BqrVseSubEvt> : ostream_formatter {};
+}  // namespace fmt
 
 #endif  // BTIF_BQR_H_

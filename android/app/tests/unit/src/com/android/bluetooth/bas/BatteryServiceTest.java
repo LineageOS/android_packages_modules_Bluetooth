@@ -17,7 +17,6 @@
 package com.android.bluetooth.bas;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.when;
 
@@ -73,7 +72,6 @@ public class BatteryServiceTest {
 
         TestUtils.setAdapterService(mAdapterService);
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
-        doReturn(true, false).when(mAdapterService).isStartedProfile(anyString());
 
         mAdapter = BluetoothAdapter.getDefaultAdapter();
 
@@ -96,11 +94,12 @@ public class BatteryServiceTest {
 
     private void startService() throws TimeoutException {
         mService = new BatteryService(mTargetContext);
-        mService.doStart();
+        mService.start();
+        mService.setAvailable(true);
     }
 
     private void stopService() throws TimeoutException {
-        mService.doStop();
+        mService.stop();
         mService = BatteryService.getBatteryService();
         Assert.assertNull(mService);
     }

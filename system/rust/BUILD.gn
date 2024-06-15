@@ -32,12 +32,14 @@ static_library("core_rs") {
     "//bt/system/rust",
     "//bt/system/include",
     "//bt/system/stack/include",
-    "//bt/system/internal_include",
     "//bt/system/gd",
     "//bt/system/types",
   ]
 
-  configs += [ "//bt/system:target_defaults" ]
+  configs += [
+    "//bt/system:target_defaults",
+    "//bt/system/log:log_defaults",
+  ]
 
   deps = [
     ":cxxlibheader",

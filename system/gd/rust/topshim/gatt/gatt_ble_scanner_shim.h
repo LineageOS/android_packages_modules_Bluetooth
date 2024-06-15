@@ -117,7 +117,8 @@ class BleScannerIntf : public ScanningCallbacks {
 
   // Sets the LE scan interval and window in units of N * 0.625 msec. The result
   // of this action is returned via |OnStatusCallback|.
-  void SetScanParameters(uint8_t scanner_id, uint16_t scan_interval, uint16_t scan_window);
+  void SetScanParameters(
+      uint8_t scanner_id, uint8_t scan_type, uint16_t scan_interval, uint16_t scan_window);
 
   // Configure the batchscan storage and get a response via |OnStatusCallback|.
   void BatchscanConfigStorage(

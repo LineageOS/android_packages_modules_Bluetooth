@@ -35,6 +35,8 @@ package com.android.bluetooth.opp;
 import android.app.NotificationManager;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothProtoEnums;
 import android.content.ActivityNotFoundException;
 import android.content.ContentResolver;
 import android.content.ContentValues;
@@ -52,7 +54,9 @@ import android.util.EventLog;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothMethodProxy;
+import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
+import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.io.File;
@@ -68,9 +72,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * This class has some utilities for Opp application;
- */
+/** This class has some utilities for Opp application; */
+// Next tag value for ContentProfileErrorReportUtils.report(): 10
 public class BluetoothOppUtility {
     private static final String TAG = "BluetoothOppUtility";
     private static final boolean D = Constants.DEBUG;
@@ -201,11 +204,21 @@ public class BluetoothOppUtility {
             Long timeStamp, Uri uri) {
         if (fileName == null || mimetype == null) {
             Log.e(TAG, "ERROR: Para fileName ==null, or mimetype == null");
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_UTILITY,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
+                    0);
             return;
         }
 
         if (!isBluetoothShareUri(uri)) {
             Log.e(TAG, "Trying to open a file that wasn't transfered over Bluetooth");
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_UTILITY,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
+                    1);
             return;
         }
 
@@ -226,6 +239,11 @@ public class BluetoothOppUtility {
 
         if (path == null) {
             Log.e(TAG, "file uri not exist");
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_UTILITY,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
+                    2);
             return;
         }
 
@@ -262,6 +280,11 @@ public class BluetoothOppUtility {
                 }
                 context.startActivity(activityIntent);
             } catch (ActivityNotFoundException ex) {
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.OPP,
+                        BluetoothProtoEnums.BLUETOOTH_OPP_UTILITY,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                        3);
                 if (V) {
                     Log.d(TAG, "no activity for handling ACTION_VIEW intent:  " + mimetype, ex);
                 }
@@ -285,6 +308,11 @@ public class BluetoothOppUtility {
                     .contentResolverOpenFileDescriptor(resolver, uri, readOnlyMode);
             return true;
         } catch (IOException e) {
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_UTILITY,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                    4);
             e.printStackTrace();
         }
         return false;
@@ -453,6 +481,11 @@ public class BluetoothOppUtility {
         }
         if (sendFileInfo == BluetoothOppSendFileInfo.SEND_FILE_INFO_ERROR) {
             Log.e(TAG, "putSendFileInfo: bad sendFileInfo, URI: " + uri);
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_UTILITY,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
+                    5);
         }
         sSendFileMap.put(uri, sendFileInfo);
     }
@@ -474,6 +507,11 @@ public class BluetoothOppUtility {
             try {
                 info.mInputStream.close();
             } catch (IOException ignored) {
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.OPP,
+                        BluetoothProtoEnums.BLUETOOTH_OPP_UTILITY,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                        6);
             }
         }
     }
@@ -486,6 +524,11 @@ public class BluetoothOppUtility {
     static boolean isInExternalStorageDir(Uri uri) {
         if (!ContentResolver.SCHEME_FILE.equals(uri.getScheme())) {
             Log.e(TAG, "Not a file URI: " + uri);
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_UTILITY,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
+                    7);
             return false;
         }
 
@@ -494,6 +537,11 @@ public class BluetoothOppUtility {
             try {
                 canonicalPath = new File(uri.getPath()).getCanonicalPath();
             } catch (IOException e) {
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.OPP,
+                        BluetoothProtoEnums.BLUETOOTH_OPP_UTILITY,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                        8);
                 canonicalPath = uri.getPath();
             }
             File file = new File(canonicalPath);
@@ -539,6 +587,11 @@ public class BluetoothOppUtility {
             }
             return false;
         } catch (IOException ex) {
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_UTILITY,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                    9);
             Log.e(TAG, "Error while accessing file", ex);
             return false;
         }

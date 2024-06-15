@@ -19,6 +19,8 @@ package com.android.bluetooth.btservice;
 import android.bluetooth.OobData;
 import android.bluetooth.UidTraffic;
 
+import com.android.bluetooth.flags.Flags;
+
 class JniCallbacks {
 
     private RemoteDevices mRemoteDevices;
@@ -66,6 +68,9 @@ class JniCallbacks {
 
     void bondStateChangeCallback(int status, byte[] address, int newState, int hciReason) {
         mBondStateMachine.bondStateChangeCallback(status, address, newState, hciReason);
+        if (Flags.removeBondWithAddressMap()) {
+            mRemoteDevices.onBondStateChange(address, newState);
+        }
     }
 
     void addressConsolidateCallback(byte[] mainAddress, byte[] secondaryAddress) {
@@ -80,6 +85,10 @@ class JniCallbacks {
             int transportLinkType, int hciReason, int handle) {
         mRemoteDevices.aclStateChangeCallback(status, address, newState,
                 transportLinkType, hciReason, handle);
+    }
+
+    void keyMissingCallback(byte[] address) {
+        mRemoteDevices.keyMissingCallback(address);
     }
 
     void stateChangeCallback(int status) {

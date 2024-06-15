@@ -78,11 +78,11 @@ cc_test {
         "lib-bt-packets",
         "lib-bt-packets-avrcp",
         "lib-bt-packets-base",
+        "libbluetooth_log",
         "libchrome",
         "libgmock",
     ],
     cflags: [
-        "-DBUILDCFG",
         "-Wno-unused-parameter",
     ],
     target: {

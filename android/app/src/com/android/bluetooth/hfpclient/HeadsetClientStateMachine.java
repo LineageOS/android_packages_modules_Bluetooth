@@ -1372,11 +1372,9 @@ public class HeadsetClientStateMachine extends StateMachine {
         @Override
         public synchronized boolean processMessage(Message message) {
             logD("Connected process message: " + message.what);
-            if (DBG) {
-                if (mCurrentDevice == null) {
-                    Log.e(TAG, "ERROR: mCurrentDevice is null in Connected");
-                    return NOT_HANDLED;
-                }
+            if (mCurrentDevice == null) {
+                Log.e(TAG, "ERROR: mCurrentDevice is null in Connected");
+                return NOT_HANDLED;
             }
 
             switch (message.what) {
@@ -1886,11 +1884,9 @@ public class HeadsetClientStateMachine extends StateMachine {
         @Override
         public synchronized boolean processMessage(Message message) {
             logD("AudioOn process message: " + message.what);
-            if (DBG) {
-                if (mCurrentDevice == null) {
-                    Log.e(TAG, "ERROR: mCurrentDevice is null in Connected");
-                    return NOT_HANDLED;
-                }
+            if (mCurrentDevice == null) {
+                Log.e(TAG, "ERROR: mCurrentDevice is null in Connected");
+                return NOT_HANDLED;
             }
 
             switch (message.what) {

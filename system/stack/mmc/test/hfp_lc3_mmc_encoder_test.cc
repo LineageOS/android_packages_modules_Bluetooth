@@ -17,7 +17,6 @@
 #include "mmc/codec_server/hfp_lc3_mmc_encoder.h"
 
 #include <gmock/gmock.h>
-#include <google/protobuf/text_format.h>
 #include <gtest/gtest.h>
 
 #include <cerrno>
@@ -31,19 +30,10 @@
 
 namespace {
 
-using ::google::protobuf::TextFormat;
 using ::testing::Contains;
 using ::testing::Each;
 using ::testing::Ne;
 using ::testing::Test;
-
-constexpr char kLc3EncoderConfig[] = R"(
-  hfp_lc3_encoder_param: {}
-)";
-
-constexpr char kLc3DecoderConfig[] = R"(
-  hfp_lc3_decoder_param: {}
-)";
 
 const int kInputLen = mmc::HFP_LC3_PCM_BYTES;
 const int kOutputLen = mmc::HFP_LC3_PKT_FRAME_LEN;
@@ -82,10 +72,9 @@ class HfpLc3EncoderWithInitTest : public HfpLc3EncoderTest {
     std::fill(kOutputBuf, kOutputBuf + kOutputLen, 1);
 
     HfpLc3EncoderTest::SetUp();
-    mmc::ConfigParam lc3_encoder_config;
-    ASSERT_TRUE(
-        TextFormat::ParseFromString(kLc3EncoderConfig, &lc3_encoder_config));
-    ASSERT_EQ(encoder_->init(lc3_encoder_config), mmc::HFP_LC3_PCM_BYTES);
+    mmc::ConfigParam config;
+    *config.mutable_hfp_lc3_encoder_param() = mmc::Lc3Param();
+    ASSERT_EQ(encoder_->init(config), mmc::HFP_LC3_PCM_BYTES);
   }
   void TearDown() override {
     HfpLc3EncoderTest::TearDown();
@@ -98,25 +87,23 @@ class HfpLc3EncoderWithInitTest : public HfpLc3EncoderTest {
 };
 
 TEST_F(HfpLc3EncoderTest, InitWrongCodec) {
-  mmc::ConfigParam lc3_decoder_config;
-  ASSERT_TRUE(
-      TextFormat::ParseFromString(kLc3DecoderConfig, &lc3_decoder_config));
+  mmc::ConfigParam config;
+  *config.mutable_hfp_lc3_decoder_param() = mmc::Lc3Param();
 
-  int ret = encoder_->init(lc3_decoder_config);
+  int ret = encoder_->init(config);
   EXPECT_EQ(ret, -EINVAL);
   EXPECT_EQ(get_func_call_count("lc3_setup_encoder"), 0);
 }
 
 TEST_F(HfpLc3EncoderTest, InitWrongConfig) {
-  mmc::ConfigParam lc3_encoder_config;
-  ASSERT_TRUE(
-      TextFormat::ParseFromString(kLc3EncoderConfig, &lc3_encoder_config));
+  mmc::ConfigParam config;
+  *config.mutable_hfp_lc3_encoder_param() = mmc::Lc3Param();
 
   // lc3_setup_encoder failed due to wrong parameters (returned nullptr).
   test::mock::embdrv_lc3::lc3_setup_encoder.body =
       [](int dt_us, int sr_hz, int sr_pcm_hz, void* mem) { return nullptr; };
 
-  int ret = encoder_->init(lc3_encoder_config);
+  int ret = encoder_->init(config);
   EXPECT_EQ(ret, -EINVAL);
   EXPECT_EQ(get_func_call_count("lc3_setup_encoder"), 1);
 
@@ -124,9 +111,8 @@ TEST_F(HfpLc3EncoderTest, InitWrongConfig) {
 }
 
 TEST_F(HfpLc3EncoderTest, InitSuccess) {
-  mmc::ConfigParam lc3_encoder_config;
-  ASSERT_TRUE(
-      TextFormat::ParseFromString(kLc3EncoderConfig, &lc3_encoder_config));
+  mmc::ConfigParam config;
+  *config.mutable_hfp_lc3_encoder_param() = mmc::Lc3Param();
 
   // lc3_setup_encoder returns encoder instance pointer.
   struct lc3_encoder lc3_encoder;
@@ -135,7 +121,7 @@ TEST_F(HfpLc3EncoderTest, InitSuccess) {
         return &lc3_encoder;
       };
 
-  int ret = encoder_->init(lc3_encoder_config);
+  int ret = encoder_->init(config);
   EXPECT_EQ(ret, mmc::HFP_LC3_PCM_BYTES);
   EXPECT_EQ(get_func_call_count("lc3_setup_encoder"), 1);
 

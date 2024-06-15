@@ -16,14 +16,15 @@
 
 #define LOG_TAG "bt_headless_sdp"
 
+#include "test/headless/nop/nop.h"
+
 #include <future>
 
-#include "base/logging.h"     // LOG() stdout and android log
-#include "osi/include/log.h"  // android log only
+#include "base/logging.h"  // LOG() stdout and android log
+#include "os/log.h"        // android log only
 #include "stack/include/sdp_api.h"
 #include "test/headless/get_options.h"
 #include "test/headless/headless.h"
-#include "test/headless/nop/nop.h"
 #include "types/raw_address.h"
 
 int bluetooth::test::headless::Nop::Run() {

@@ -119,6 +119,11 @@ class Opp(val context: Context) : OppImplBase(), Closeable {
         uiDevice
             .wait(Until.findObject(By.text(INCOMING_FILE_TITLE)), INCOMING_FILE_WAIT_TIMEOUT)
             .click()
+        uiDevice.wait(
+            Until.hasObject(By.text(INCOMING_FILE_ACCEPT_BTN)),
+            INCOMING_FILE_WAIT_TIMEOUT
+        )
+        uiDevice.waitForIdle()
         uiDevice
             .wait(Until.findObject(By.text(INCOMING_FILE_ACCEPT_BTN)), INCOMING_FILE_WAIT_TIMEOUT)
             .click()

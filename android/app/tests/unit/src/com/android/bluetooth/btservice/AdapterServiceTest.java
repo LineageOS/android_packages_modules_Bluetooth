@@ -36,6 +36,7 @@ import android.app.admin.DevicePolicyManager;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
+import android.bluetooth.BluetoothProfile;
 import android.bluetooth.IBluetoothCallback;
 import android.companion.CompanionDeviceManager;
 import android.content.Context;
@@ -58,6 +59,7 @@ import android.os.UserManager;
 import android.os.test.TestLooper;
 import android.permission.PermissionCheckerManager;
 import android.permission.PermissionManager;
+import android.platform.test.flag.junit.SetFlagsRule;
 import android.provider.Settings;
 import android.sysprop.BluetoothProperties;
 import android.test.mock.MockContentProvider;
@@ -70,37 +72,13 @@ import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.Utils;
-import com.android.bluetooth.a2dp.A2dpService;
-import com.android.bluetooth.a2dpsink.A2dpSinkService;
-import com.android.bluetooth.avrcp.AvrcpTargetService;
-import com.android.bluetooth.avrcpcontroller.AvrcpControllerService;
-import com.android.bluetooth.bas.BatteryService;
-import com.android.bluetooth.bass_client.BassClientService;
 import com.android.bluetooth.btservice.bluetoothkeystore.BluetoothKeystoreNativeInterface;
-import com.android.bluetooth.csip.CsipSetCoordinatorService;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.gatt.AdvertiseManagerNativeInterface;
 import com.android.bluetooth.gatt.DistanceMeasurementNativeInterface;
 import com.android.bluetooth.gatt.GattNativeInterface;
-import com.android.bluetooth.gatt.GattService;
-import com.android.bluetooth.gatt.PeriodicScanNativeInterface;
-import com.android.bluetooth.hap.HapClientService;
-import com.android.bluetooth.hearingaid.HearingAidService;
-import com.android.bluetooth.hfp.HeadsetService;
-import com.android.bluetooth.hfpclient.HeadsetClientService;
-import com.android.bluetooth.hid.HidDeviceService;
-import com.android.bluetooth.hid.HidHostService;
-import com.android.bluetooth.le_audio.LeAudioService;
-import com.android.bluetooth.map.BluetoothMapService;
-import com.android.bluetooth.mapclient.MapClientService;
-import com.android.bluetooth.mcp.McpService;
-import com.android.bluetooth.opp.BluetoothOppService;
-import com.android.bluetooth.pan.PanService;
-import com.android.bluetooth.pbap.BluetoothPbapService;
-import com.android.bluetooth.pbapclient.PbapClientService;
-import com.android.bluetooth.sap.SapService;
+import com.android.bluetooth.le_scan.PeriodicScanNativeInterface;
 import com.android.bluetooth.sdp.SdpManagerNativeInterface;
-import com.android.bluetooth.tbs.TbsService;
-import com.android.bluetooth.vc.VolumeControlService;
 import com.android.internal.app.IBatteryStats;
 
 import libcore.util.HexEncoding;
@@ -108,6 +86,7 @@ import libcore.util.HexEncoding;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
@@ -156,6 +135,8 @@ public class AdapterServiceTest {
     private @Mock PeriodicScanNativeInterface mPeriodicNativeInterface;
     private @Mock JniCallbacks mJniCallbacks;
 
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
+
     // SystemService that are not mocked
     private BluetoothManager mBluetoothManager;
     private CompanionDeviceManager mCompanionDeviceManager;
@@ -183,32 +164,15 @@ public class AdapterServiceTest {
 
     static void configureEnabledProfiles() {
         Log.e(TAG, "configureEnabledProfiles");
-        Config.setProfileEnabled(PanService.class, true);
-        Config.setProfileEnabled(BluetoothPbapService.class, true);
-        Config.setProfileEnabled(GattService.class, true);
 
-        Config.setProfileEnabled(A2dpService.class, false);
-        Config.setProfileEnabled(A2dpSinkService.class, false);
-        Config.setProfileEnabled(AvrcpTargetService.class, false);
-        Config.setProfileEnabled(AvrcpControllerService.class, false);
-        Config.setProfileEnabled(BassClientService.class, false);
-        Config.setProfileEnabled(BatteryService.class, false);
-        Config.setProfileEnabled(CsipSetCoordinatorService.class, false);
-        Config.setProfileEnabled(HapClientService.class, false);
-        Config.setProfileEnabled(HeadsetService.class, false);
-        Config.setProfileEnabled(HeadsetClientService.class, false);
-        Config.setProfileEnabled(HearingAidService.class, false);
-        Config.setProfileEnabled(HidDeviceService.class, false);
-        Config.setProfileEnabled(HidHostService.class, false);
-        Config.setProfileEnabled(LeAudioService.class, false);
-        Config.setProfileEnabled(TbsService.class, false);
-        Config.setProfileEnabled(BluetoothMapService.class, false);
-        Config.setProfileEnabled(MapClientService.class, false);
-        Config.setProfileEnabled(McpService.class, false);
-        Config.setProfileEnabled(BluetoothOppService.class, false);
-        Config.setProfileEnabled(PbapClientService.class, false);
-        Config.setProfileEnabled(SapService.class, false);
-        Config.setProfileEnabled(VolumeControlService.class, false);
+        for (int profileId = 0; profileId <= BluetoothProfile.MAX_PROFILE_ID; profileId++) {
+            boolean enabled =
+                    profileId == BluetoothProfile.PAN
+                            || profileId == BluetoothProfile.PBAP
+                            || profileId == BluetoothProfile.GATT;
+
+            Config.setProfileEnabled(profileId, enabled);
+        }
     }
 
     <T> void mockGetSystemService(String serviceName, Class<T> serviceClass, T mockService) {
@@ -239,9 +203,11 @@ public class AdapterServiceTest {
         PeriodicScanNativeInterface.setInstance(mPeriodicNativeInterface);
 
         // Post the creation of AdapterService since it rely on Looper.myLooper()
-        handler.post(() -> mAdapterService = new AdapterService(mLooper.getLooper()));
+        handler.post(() -> mAdapterService = spy(new AdapterService(mLooper.getLooper())));
         assertThat(mLooper.dispatchAll()).isEqualTo(1);
         assertThat(mAdapterService).isNotNull();
+
+        doNothing().when(mAdapterService).setProfileServiceState(anyInt(), anyInt());
 
         mMockPackageManager = mock(PackageManager.class);
         when(mMockPackageManager.getPermissionInfo(any(), anyInt()))
@@ -445,7 +411,7 @@ public class AdapterServiceTest {
 
         if (!onlyGatt) {
             // Stop PBAP and PAN services
-            verify(ctx, times(4)).startService(any());
+            verify(adapter, times(4)).setProfileServiceState(anyInt(), anyInt());
 
             for (ProfileService service : services) {
                 adapter.onProfileServiceStateChanged(service, STATE_OFF);
@@ -495,7 +461,7 @@ public class AdapterServiceTest {
 
         if (!onlyGatt) {
             // Start Mock PBAP and PAN services
-            verify(ctx, times(2)).startService(any());
+            verify(adapter, times(2)).setProfileServiceState(anyInt(), anyInt());
 
             for (ProfileService service : services) {
                 adapter.addProfile(service);
@@ -614,8 +580,8 @@ public class AdapterServiceTest {
         when(mockContext.getPackageManager()).thenReturn(mMockPackageManager);
 
         // Config is set to PBAP, PAN and GATT by default. Turn off PAN and PBAP.
-        Config.setProfileEnabled(PanService.class, false);
-        Config.setProfileEnabled(BluetoothPbapService.class, false);
+        Config.setProfileEnabled(BluetoothProfile.PAN, false);
+        Config.setProfileEnabled(BluetoothProfile.PBAP, false);
 
         Config.init(mockContext);
         doEnable(true);
@@ -702,7 +668,8 @@ public class AdapterServiceTest {
         mAdapterService.startBrEdr();
         syncHandler(AdapterState.USER_TURN_ON);
         verifyStateChange(STATE_BLE_ON, STATE_TURNING_ON);
-        verify(mMockContext, times(2)).startService(any()); // Register Mock PBAP and PAN services
+        verify(mAdapterService, times(2))
+                .setProfileServiceState(anyInt(), anyInt()); // Register Mock PBAP and PAN services
 
         mAdapterService.addProfile(mMockService);
         syncHandler(MESSAGE_PROFILE_SERVICE_REGISTERED);
@@ -717,7 +684,8 @@ public class AdapterServiceTest {
         syncHandler(AdapterState.BREDR_START_TIMEOUT);
 
         verifyStateChange(STATE_TURNING_ON, STATE_TURNING_OFF);
-        verify(mMockContext, times(4)).startService(any()); // Stop PBAP and PAN services
+        verify(mAdapterService, times(4))
+                .setProfileServiceState(anyInt(), anyInt()); // Stop PBAP and PAN services
 
         mAdapterService.onProfileServiceStateChanged(mMockService, STATE_OFF);
         syncHandler(MESSAGE_PROFILE_SERVICE_STATE_CHANGED);
@@ -739,7 +707,7 @@ public class AdapterServiceTest {
         mAdapterService.disable();
         syncHandler(AdapterState.USER_TURN_OFF);
         verifyStateChange(STATE_ON, STATE_TURNING_OFF);
-        verify(mMockContext, times(4)).startService(any());
+        verify(mAdapterService, times(4)).setProfileServiceState(anyInt(), anyInt());
 
         mAdapterService.onProfileServiceStateChanged(mMockService, STATE_OFF);
         syncHandler(MESSAGE_PROFILE_SERVICE_STATE_CHANGED);
@@ -897,7 +865,9 @@ public class AdapterServiceTest {
         RemoteDevices remoteDevices = mAdapterService.getRemoteDevices();
         remoteDevices.addDeviceProperties(Utils.getBytesFromAddress((TEST_BT_ADDR_1)));
         String identityAddress = mAdapterService.getIdentityAddress(TEST_BT_ADDR_1);
-        assertThat(identityAddress).isEqualTo(TEST_BT_ADDR_1);
+        if (!Flags.identityAddressNullIfUnknown()) {
+            assertThat(identityAddress).isEqualTo(TEST_BT_ADDR_1);
+        }
 
         // Trigger address consolidate callback
         remoteDevices.addressConsolidateCallback(Utils.getBytesFromAddress(TEST_BT_ADDR_1),
@@ -906,6 +876,16 @@ public class AdapterServiceTest {
         // Verify we can get correct identity address
         identityAddress = mAdapterService.getIdentityAddress(TEST_BT_ADDR_1);
         assertThat(identityAddress).isEqualTo(TEST_BT_ADDR_2);
+    }
+
+    @Test
+    public void testIdentityAddressNullIfUnknown() {
+        mSetFlagsRule.enableFlags(Flags.FLAG_IDENTITY_ADDRESS_NULL_IF_UNKNOWN);
+
+        BluetoothDevice device = TestUtils.getTestDevice(BluetoothAdapter.getDefaultAdapter(), 0);
+
+        assertThat(mAdapterService.getByteIdentityAddress(device)).isNull();
+        assertThat(mAdapterService.getIdentityAddress(device.getAddress())).isNull();
     }
 
     public static byte[] getMetricsSalt(HashMap<String, HashMap<String, String>> adapterConfig) {

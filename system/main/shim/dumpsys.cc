@@ -20,6 +20,7 @@
 
 #include <unordered_map>
 
+#include "include/check.h"
 #include "main/shim/entry.h"
 #include "main/shim/shim.h"
 #include "main/shim/stack.h"

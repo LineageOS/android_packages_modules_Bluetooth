@@ -343,6 +343,10 @@ typedef enum {
   // It is required for some devices to provide sound.
   INTEROP_INSERT_CALL_WHEN_SCO_START,
 
+  // Some device need the host to delay authentication process to avoid
+  // collision.
+  INTEROP_DELAY_AUTH,
+
   END_OF_INTEROP_LIST
 } interop_feature_t;
 

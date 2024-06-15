@@ -19,15 +19,17 @@
 #define BTA_HH_API_H
 
 #include <base/strings/stringprintf.h>
+#include <bluetooth/log.h>
 
 #include <cstdint>
 #include <string>
 
-#include "bta/include/bta_api.h"
+#include "internal_include/bt_target.h"
 #include "macros.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/hiddefs.h"
-#include "types/raw_address.h"
+#include "stack/include/l2c_api.h"
+#include "types/ble_address_with_type.h"
 
 /*****************************************************************************
  *  Constants and Type Definitions
@@ -231,7 +233,7 @@ typedef struct {
 
 /* callback event data for BTA_HH_OPEN_EVT */
 typedef struct {
-  RawAddress bda;        /* HID device bd address    */
+  tAclLinkSpec link_spec; /* HID device ACL link specification */
   tBTA_HH_STATUS status; /* operation status         */
   uint8_t handle;        /* device handle            */
   bool le_hid;           /* is LE devices? */
@@ -357,7 +359,7 @@ void BTA_HhDisable(void);
  * Returns          void
  *
  ******************************************************************************/
-void BTA_HhOpen(const RawAddress& dev_bda);
+void BTA_HhOpen(const tAclLinkSpec& link_spec);
 
 /*******************************************************************************
  *
@@ -479,7 +481,7 @@ void BTA_HhGetIdle(uint8_t dev_handle);
  * Returns          void
  *
  ******************************************************************************/
-void BTA_HhSendData(uint8_t dev_handle, const RawAddress& dev_bda,
+void BTA_HhSendData(uint8_t dev_handle, const tAclLinkSpec& link_spec,
                     BT_HDR* p_buf);
 
 /*******************************************************************************
@@ -504,7 +506,7 @@ void BTA_HhGetDscpInfo(uint8_t dev_handle);
  * Returns          void
  *
  ******************************************************************************/
-void BTA_HhAddDev(const RawAddress& bda, tBTA_HH_ATTR_MASK attr_mask,
+void BTA_HhAddDev(const tAclLinkSpec& link_spec, tBTA_HH_ATTR_MASK attr_mask,
                   uint8_t sub_class, uint8_t app_id,
                   tBTA_HH_DEV_DSCP_INFO dscp_info);
 /*******************************************************************************
@@ -518,4 +520,8 @@ void BTA_HhAddDev(const RawAddress& bda, tBTA_HH_ATTR_MASK attr_mask,
  ******************************************************************************/
 void BTA_HhRemoveDev(uint8_t dev_handle);
 
+namespace fmt {
+template <>
+struct formatter<tBTA_HH_STATUS> : enum_formatter<tBTA_HH_STATUS> {};
+}  // namespace fmt
 #endif /* BTA_HH_API_H */

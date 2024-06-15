@@ -14,20 +14,15 @@
  * limitations under the License.
  */
 
-#include <base/logging.h>
-#include <string.h>
-
-#include <queue>
-#include <vector>
+#include <bluetooth/log.h>
 
 #include "ble_scanner.h"
 #include "ble_scanner_hci_interface.h"
-#include "bt_target.h"
-#include "btm_int_types.h"
-#include "device/include/controller.h"
+#include "internal_include/bt_target.h"
 #include "internal_include/stack_config.h"
-#include "osi/include/alarm.h"
 #include "stack/btm/btm_ble_int.h"
+
+using namespace bluetooth;
 
 std::mutex lock1;
 
@@ -39,7 +34,7 @@ BleScanningManager* instance;
 base::WeakPtr<BleScanningManagerImpl> instance_weakptr;
 
 static void status_callback(uint8_t status) {
-  VLOG(1) << __func__ << " Received status_cb with status:" << status;
+  log::verbose("Received status_cb with status:{}", status);
 }
 
 class BleScanningManagerImpl
@@ -154,13 +149,13 @@ void btm_ble_scanner_init() {
   if (BleScannerHciInterface::Get()) {
     BleScanningManager::Initialize(BleScannerHciInterface::Get());
   } else {
-    VLOG(1) << __func__ << " BleScannerHciInterface::Get() returns null";
+    log::verbose("BleScannerHciInterface::Get() returns null");
   }
   if ((BleScannerHciInterface::Get()) && (BleScanningManager::Get())) {
     BleScannerHciInterface::Get()->SetScanEventObserver(
         (BleScanningManagerImpl*)BleScanningManager::Get().get());
   } else {
-    VLOG(1) << __func__ << " BleScannerHciInterface or BleScanningManager is null";
+    log::verbose("BleScannerHciInterface or BleScanningManager is null");
   }
 }
 

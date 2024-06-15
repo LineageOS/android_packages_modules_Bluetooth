@@ -16,7 +16,6 @@
 
 #include <gtest/gtest.h>
 
-#include "os/log.h"
 #include "stack/include/bt_dev_class.h"
 
 class StackIncludeTest : public ::testing::Test {

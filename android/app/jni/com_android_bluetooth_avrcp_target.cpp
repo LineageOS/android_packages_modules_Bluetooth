@@ -233,7 +233,7 @@ static jmethodID method_getPlayerSettings;
 static jmethodID method_setPlayerSettings;
 
 static void initNative(JNIEnv* env, jobject object) {
-  ALOGD("%s", __func__);
+  log::debug("");
   std::unique_lock<std::shared_timed_mutex> interface_lock(interface_mutex);
   std::unique_lock<std::shared_timed_mutex> callbacks_lock(callbacks_mutex);
   mJavaInterface = env->NewGlobalRef(object);
@@ -245,20 +245,20 @@ static void initNative(JNIEnv* env, jobject object) {
 
 static void registerBipServerNative(JNIEnv* /* env */, jobject /* object */,
                                     jint l2cap_psm) {
-  ALOGD("%s: l2cap_psm=%d", __func__, (int)l2cap_psm);
+  log::debug("l2cap_psm={}", (int)l2cap_psm);
   std::unique_lock<std::shared_timed_mutex> interface_lock(interface_mutex);
   if (sServiceInterface == nullptr) {
-    ALOGW("%s: Service not loaded.", __func__);
+    log::warn("Service not loaded.");
     return;
   }
   sServiceInterface->RegisterBipServer((int)l2cap_psm);
 }
 
 static void unregisterBipServerNative(JNIEnv* /* env */, jobject /* object */) {
-  ALOGD("%s", __func__);
+  log::debug("");
   std::unique_lock<std::shared_timed_mutex> interface_lock(interface_mutex);
   if (sServiceInterface == nullptr) {
-    ALOGW("%s: Service not loaded.", __func__);
+    log::warn("Service not loaded.");
     return;
   }
   sServiceInterface->UnregisterBipServer();
@@ -267,10 +267,10 @@ static void unregisterBipServerNative(JNIEnv* /* env */, jobject /* object */) {
 static void sendMediaUpdateNative(JNIEnv* /* env */, jobject /* object */,
                                   jboolean metadata, jboolean state,
                                   jboolean queue) {
-  ALOGD("%s", __func__);
+  log::debug("");
   std::unique_lock<std::shared_timed_mutex> interface_lock(interface_mutex);
   if (mServiceCallbacks == nullptr) {
-    ALOGW("%s: Service not loaded.", __func__);
+    log::warn("Service not loaded.");
     return;
   }
 
@@ -281,10 +281,10 @@ static void sendMediaUpdateNative(JNIEnv* /* env */, jobject /* object */,
 static void sendFolderUpdateNative(JNIEnv* /* env */, jobject /* object */,
                                    jboolean available_players,
                                    jboolean addressed_player, jboolean uids) {
-  ALOGD("%s", __func__);
+  log::debug("");
   std::unique_lock<std::shared_timed_mutex> interface_lock(interface_mutex);
   if (mServiceCallbacks == nullptr) {
-    ALOGW("%s: Service not loaded.", __func__);
+    log::warn("Service not loaded.");
     return;
   }
 
@@ -309,10 +309,10 @@ static void cleanupNative(JNIEnv* env, jobject /* object */) {
 
 jboolean connectDeviceNative(JNIEnv* env, jobject /* object */,
                              jstring address) {
-  ALOGD("%s", __func__);
+  log::debug("");
   std::unique_lock<std::shared_timed_mutex> interface_lock(interface_mutex);
   if (mServiceCallbacks == nullptr) {
-    ALOGW("%s: Service not loaded.", __func__);
+    log::warn("Service not loaded.");
     return JNI_FALSE;
   }
 
@@ -329,10 +329,10 @@ jboolean connectDeviceNative(JNIEnv* env, jobject /* object */,
 
 jboolean disconnectDeviceNative(JNIEnv* env, jobject /* object */,
                                 jstring address) {
-  ALOGD("%s", __func__);
+  log::debug("");
   std::unique_lock<std::shared_timed_mutex> interface_lock(interface_mutex);
   if (mServiceCallbacks == nullptr) {
-    ALOGW("%s: Service not loaded.", __func__);
+    log::warn("Service not loaded.");
     return JNI_FALSE;
   }
 
@@ -348,7 +348,7 @@ jboolean disconnectDeviceNative(JNIEnv* env, jobject /* object */,
 }
 
 static void sendMediaKeyEvent(int key, KeyState state) {
-  ALOGD("%s", __func__);
+  log::debug("");
   std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid() || !mJavaInterface) return;
@@ -519,7 +519,7 @@ static FolderInfo getFolderInfoFromJavaObj(JNIEnv* env, jobject folder) {
 }
 
 static SongInfo getSongInfo() {
-  ALOGD("%s", __func__);
+  log::debug("");
   std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid() || !mJavaInterface) return SongInfo();
@@ -532,7 +532,7 @@ static SongInfo getSongInfo() {
 }
 
 static PlayStatus getCurrentPlayStatus() {
-  ALOGD("%s", __func__);
+  log::debug("");
   std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid() || !mJavaInterface) return PlayStatus();
@@ -542,7 +542,7 @@ static PlayStatus getCurrentPlayStatus() {
       sCallbackEnv->CallObjectMethod(mJavaInterface, method_getPlaybackStatus);
 
   if (playStatus == nullptr) {
-    ALOGE("%s: Got a null play status", __func__);
+    log::error("Got a null play status");
     return status;
   }
 
@@ -564,7 +564,7 @@ static PlayStatus getCurrentPlayStatus() {
 }
 
 static std::string getCurrentMediaId() {
-  ALOGD("%s", __func__);
+  log::debug("");
   std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid() || !mJavaInterface) return "";
@@ -572,7 +572,7 @@ static std::string getCurrentMediaId() {
   jstring media_id = (jstring)sCallbackEnv->CallObjectMethod(
       mJavaInterface, method_getCurrentMediaId);
   if (media_id == nullptr) {
-    ALOGE("%s: Got a null media ID", __func__);
+    log::error("Got a null media ID");
     return "";
   }
 
@@ -584,7 +584,7 @@ static std::string getCurrentMediaId() {
 }
 
 static std::vector<SongInfo> getNowPlayingList() {
-  ALOGD("%s", __func__);
+  log::debug("");
   std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid() || !mJavaInterface) return std::vector<SongInfo>();
@@ -592,7 +592,7 @@ static std::vector<SongInfo> getNowPlayingList() {
   jobject song_list =
       sCallbackEnv->CallObjectMethod(mJavaInterface, method_getNowPlayingList);
   if (song_list == nullptr) {
-    ALOGE("%s: Got a null now playing list", __func__);
+    log::error("Got a null now playing list");
     return std::vector<SongInfo>();
   }
 
@@ -619,7 +619,7 @@ static std::vector<SongInfo> getNowPlayingList() {
 }
 
 static uint16_t getCurrentPlayerId() {
-  ALOGD("%s", __func__);
+  log::debug("");
   std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid() || !mJavaInterface) return 0u;
@@ -631,7 +631,7 @@ static uint16_t getCurrentPlayerId() {
 }
 
 static std::vector<MediaPlayerInfo> getMediaPlayerList() {
-  ALOGD("%s", __func__);
+  log::debug("");
   std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid() || !mJavaInterface)
@@ -641,7 +641,7 @@ static std::vector<MediaPlayerInfo> getMediaPlayerList() {
       mJavaInterface, method_getMediaPlayerList);
 
   if (player_list == nullptr) {
-    ALOGE("%s: Got a null media player list", __func__);
+    log::error("Got a null media player list");
     return std::vector<MediaPlayerInfo>();
   }
 
@@ -697,7 +697,7 @@ static std::vector<MediaPlayerInfo> getMediaPlayerList() {
 }
 
 static void setBrowsedPlayer(uint16_t player_id, SetBrowsedPlayerCb cb) {
-  ALOGD("%s", __func__);
+  log::debug("");
   std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid() || !mJavaInterface) return;
@@ -711,7 +711,7 @@ static void setBrowsedPlayerResponseNative(JNIEnv* env, jobject /* object */,
                                            jint /* player_id */,
                                            jboolean success, jstring root_id,
                                            jint num_items) {
-  ALOGD("%s", __func__);
+  log::debug("");
 
   std::string root;
   if (root_id != nullptr) {
@@ -725,7 +725,7 @@ static void setBrowsedPlayerResponseNative(JNIEnv* env, jobject /* object */,
 
 static void getFolderItemsResponseNative(JNIEnv* env, jobject /* object */,
                                          jstring parent_id, jobject list) {
-  ALOGD("%s", __func__);
+  log::debug("");
 
   std::string id;
   if (parent_id != nullptr) {
@@ -739,8 +739,8 @@ static void getFolderItemsResponseNative(JNIEnv* env, jobject /* object */,
   // that both callbacks can be handled with one lookup if a request comes
   // for a folder that is already trying to be looked at.
   if (get_folder_items_cb_map.find(id) == get_folder_items_cb_map.end()) {
-    ALOGE("Could not find response callback for the request of \"%s\"",
-          id.c_str());
+    log::error("Could not find response callback for the request of \"{}\"",
+               id);
     return;
   }
 
@@ -748,7 +748,7 @@ static void getFolderItemsResponseNative(JNIEnv* env, jobject /* object */,
   get_folder_items_cb_map.erase(id);
 
   if (list == nullptr) {
-    ALOGE("%s: Got a null get folder items response list", __func__);
+    log::error("Got a null get folder items response list");
     callback.Run(std::vector<ListItem>());
     return;
   }
@@ -802,7 +802,7 @@ static void getFolderItemsResponseNative(JNIEnv* env, jobject /* object */,
 
 static void getFolderItems(uint16_t player_id, std::string media_id,
                            GetFolderItemsCb cb) {
-  ALOGD("%s", __func__);
+  log::debug("");
   std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid() || !mJavaInterface) return;
@@ -818,7 +818,7 @@ static void getFolderItems(uint16_t player_id, std::string media_id,
 
 static void playItem(uint16_t player_id, bool now_playing,
                      std::string media_id) {
-  ALOGD("%s", __func__);
+  log::debug("");
   std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid() || !mJavaInterface) return;
@@ -829,7 +829,7 @@ static void playItem(uint16_t player_id, bool now_playing,
 }
 
 static void setActiveDevice(const RawAddress& address) {
-  ALOGD("%s", __func__);
+  log::debug("");
   std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid() || !mJavaInterface) return;
@@ -840,7 +840,7 @@ static void setActiveDevice(const RawAddress& address) {
 }
 
 static void volumeDeviceConnected(const RawAddress& address) {
-  ALOGD("%s", __func__);
+  log::debug("");
   std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid() || !mJavaInterface) return;
@@ -853,7 +853,7 @@ static void volumeDeviceConnected(const RawAddress& address) {
 static void volumeDeviceConnected(
     const RawAddress& address,
     ::bluetooth::avrcp::VolumeInterface::VolumeChangedCb cb) {
-  ALOGD("%s", __func__);
+  log::debug("");
   std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid() || !mJavaInterface) return;
@@ -866,7 +866,7 @@ static void volumeDeviceConnected(
 }
 
 static void volumeDeviceDisconnected(const RawAddress& address) {
-  ALOGD("%s", __func__);
+  log::debug("");
   std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid() || !mJavaInterface) return;
@@ -887,14 +887,14 @@ static void sendVolumeChangedNative(JNIEnv* env, jobject /* object */,
 
   if (!success) return;
 
-  ALOGD("%s", __func__);
+  log::debug("");
   if (volumeCallbackMap.find(bdaddr) != volumeCallbackMap.end()) {
     volumeCallbackMap.find(bdaddr)->second.Run(volume & 0x7F);
   }
 }
 
 static void setVolume(int8_t volume) {
-  ALOGD("%s", __func__);
+  log::debug("");
   std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid() || !mJavaInterface) return;
@@ -906,7 +906,7 @@ static void setBipClientStatusNative(JNIEnv* env, jobject /* object */,
                                      jstring address, jboolean connected) {
   std::unique_lock<std::shared_timed_mutex> interface_lock(interface_mutex);
   if (mServiceCallbacks == nullptr) {
-    ALOGW("%s: Service not loaded.", __func__);
+    log::warn("Service not loaded.");
     return;
   }
 
@@ -923,7 +923,7 @@ static void setBipClientStatusNative(JNIEnv* env, jobject /* object */,
 
 // Called from native to list available player settings
 static void listPlayerSettings(ListPlayerSettingsCb cb) {
-  ALOGD("%s", __func__);
+  log::debug("");
   std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid() || !mJavaInterface) return;
@@ -934,7 +934,7 @@ static void listPlayerSettings(ListPlayerSettingsCb cb) {
 
 static void listPlayerSettingsResponseNative(JNIEnv* env, jobject /* object */,
                                              jbyteArray attributes) {
-  ALOGD("%s", __func__);
+  log::debug("");
 
   std::vector<PlayerAttribute> attributes_vector;
   copyJavaArraytoCppVector(env, attributes, attributes_vector);
@@ -945,7 +945,7 @@ static void listPlayerSettingsResponseNative(JNIEnv* env, jobject /* object */,
 // Called from native to list available values for player setting
 static void listPlayerSettingValues(PlayerAttribute attribute,
                                     ListPlayerSettingValuesCb cb) {
-  ALOGD("%s", __func__);
+  log::debug("");
   std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid() || !mJavaInterface) return;
@@ -959,7 +959,7 @@ static void listPlayerSettingValuesResponseNative(JNIEnv* env,
                                                   jobject /* object */,
                                                   jbyte attribute,
                                                   jbyteArray values) {
-  ALOGD("%s", __func__);
+  log::debug("");
   PlayerAttribute player_attribute = static_cast<PlayerAttribute>(attribute);
   std::vector<uint8_t> values_vector;
   copyJavaArraytoCppVector(env, values, values_vector);
@@ -969,7 +969,7 @@ static void listPlayerSettingValuesResponseNative(JNIEnv* env,
 // Called from native to get current player settings
 static void getPlayerSettings(std::vector<PlayerAttribute> attributes,
                               GetCurrentPlayerSettingValueCb cb) {
-  ALOGD("%s", __func__);
+  log::debug("");
   std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid() || !mJavaInterface) return;
@@ -987,7 +987,7 @@ static void getPlayerSettings(std::vector<PlayerAttribute> attributes,
 static void getPlayerSettingsResponseNative(JNIEnv* env, jobject /* object */,
                                             jbyteArray attributes,
                                             jbyteArray values) {
-  ALOGD("%s", __func__);
+  log::debug("");
   std::vector<PlayerAttribute> attributes_vector;
   std::vector<uint8_t> values_vector;
   copyJavaArraytoCppVector(env, attributes, attributes_vector);
@@ -1000,7 +1000,7 @@ static void getPlayerSettingsResponseNative(JNIEnv* env, jobject /* object */,
 static void setPlayerSettings(std::vector<PlayerAttribute> attributes,
                               std::vector<uint8_t> values,
                               SetPlayerSettingValueCb cb) {
-  ALOGD("%s", __func__);
+  log::debug("");
   std::shared_lock<std::shared_timed_mutex> lock(callbacks_mutex);
   CallbackEnv sCallbackEnv(__func__);
   if (!sCallbackEnv.valid() || !mJavaInterface) return;
@@ -1024,16 +1024,16 @@ static void setPlayerSettings(std::vector<PlayerAttribute> attributes,
 static void setPlayerSettingsResponseNative(JNIEnv* /* env */,
                                             jobject /* object */,
                                             jboolean success) {
-  ALOGD("%s", __func__);
+  log::debug("");
   set_player_setting_value_cb.Run(success);
 }
 
 static void sendPlayerSettingsNative(JNIEnv* env, jobject /* object */,
                                      jbyteArray attributes, jbyteArray values) {
-  ALOGD("%s", __func__);
+  log::debug("");
   std::unique_lock<std::shared_timed_mutex> interface_lock(interface_mutex);
   if (mServiceCallbacks == nullptr) {
-    ALOGW("%s: Service not loaded.", __func__);
+    log::warn("Service not loaded.");
     return;
   }
   std::vector<PlayerAttribute> attributes_vector;

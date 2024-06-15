@@ -20,6 +20,7 @@
 #include <base/functional/bind.h>
 #include <base/location.h>
 #include <base/logging.h>
+#include <bluetooth/log.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_vc.h>
 
@@ -34,6 +35,7 @@ using base::Unretained;
 using bluetooth::vc::ConnectionState;
 using bluetooth::vc::VolumeControlCallbacks;
 using bluetooth::vc::VolumeControlInterface;
+using namespace bluetooth;
 
 namespace {
 std::unique_ptr<VolumeControlInterface> vc_instance;
@@ -119,9 +121,9 @@ class VolumeControlInterfaceImpl : public VolumeControlInterface,
 
   void Connect(const RawAddress& address) override {
     if (!initialized || !VolumeControl::IsVolumeControlRunning()) {
-      VLOG(1) << __func__
-              << " call ignored, due to already started cleanup procedure or "
-                 "service being not read";
+      log::verbose(
+          "call ignored, due to already started cleanup procedure or service "
+          "being not read");
       return;
     }
 
@@ -132,9 +134,9 @@ class VolumeControlInterfaceImpl : public VolumeControlInterface,
 
   void Disconnect(const RawAddress& address) override {
     if (!initialized || !VolumeControl::IsVolumeControlRunning()) {
-      VLOG(1) << __func__
-              << " call ignored, due to already started cleanup procedure or "
-                 "service being not read";
+      log::verbose(
+          "call ignored, due to already started cleanup procedure or service "
+          "being not read");
       return;
     }
     do_in_main_thread(FROM_HERE,
@@ -145,9 +147,9 @@ class VolumeControlInterfaceImpl : public VolumeControlInterface,
   void SetVolume(std::variant<RawAddress, int> addr_or_group_id,
                  uint8_t volume) override {
     if (!initialized || !VolumeControl::IsVolumeControlRunning()) {
-      VLOG(1) << __func__
-              << " call ignored, due to already started cleanup procedure or "
-                 "service being not read";
+      log::verbose(
+          "call ignored, due to already started cleanup procedure or service "
+          "being not read");
       return;
     }
 
@@ -158,9 +160,9 @@ class VolumeControlInterfaceImpl : public VolumeControlInterface,
 
   void Mute(std::variant<RawAddress, int> addr_or_group_id) override {
     if (!initialized || !VolumeControl::IsVolumeControlRunning()) {
-      VLOG(1) << __func__
-              << " call ignored, due to already started cleanup procedure or "
-                 "service being not read";
+      log::verbose(
+          "call ignored, due to already started cleanup procedure or service "
+          "being not read");
       return;
     }
 
@@ -171,9 +173,9 @@ class VolumeControlInterfaceImpl : public VolumeControlInterface,
 
   void Unmute(std::variant<RawAddress, int> addr_or_group_id) override {
     if (!initialized || !VolumeControl::IsVolumeControlRunning()) {
-      VLOG(1) << __func__
-              << " call ignored, due to already started cleanup procedure or "
-                 "service being not read";
+      log::verbose(
+          "call ignored, due to already started cleanup procedure or service "
+          "being not read");
       return;
     }
 
@@ -184,9 +186,9 @@ class VolumeControlInterfaceImpl : public VolumeControlInterface,
 
   void RemoveDevice(const RawAddress& address) override {
     if (!initialized || !VolumeControl::IsVolumeControlRunning()) {
-      VLOG(1) << __func__
-              << " call ignored, due to already started cleanup procedure or "
-                 "service being not read";
+      log::verbose(
+          "call ignored, due to already started cleanup procedure or service "
+          "being not read");
       return;
     }
 
@@ -201,9 +203,9 @@ class VolumeControlInterfaceImpl : public VolumeControlInterface,
   void GetExtAudioOutVolumeOffset(const RawAddress& address,
                                   uint8_t ext_output_id) override {
     if (!initialized || !VolumeControl::IsVolumeControlRunning()) {
-      VLOG(1) << __func__
-              << " call ignored, due to already started cleanup procedure or "
-                 "service being not read";
+      log::verbose(
+          "call ignored, due to already started cleanup procedure or service "
+          "being not read");
       return;
     }
 
@@ -217,9 +219,9 @@ class VolumeControlInterfaceImpl : public VolumeControlInterface,
                                   uint8_t ext_output_id,
                                   int16_t offset_val) override {
     if (!initialized || !VolumeControl::IsVolumeControlRunning()) {
-      VLOG(1) << __func__
-              << " call ignored, due to already started cleanup procedure or "
-                 "service being not read";
+      log::verbose(
+          "call ignored, due to already started cleanup procedure or service "
+          "being not read");
       return;
     }
 
@@ -232,9 +234,9 @@ class VolumeControlInterfaceImpl : public VolumeControlInterface,
   void GetExtAudioOutLocation(const RawAddress& address,
                               uint8_t ext_output_id) override {
     if (!initialized || !VolumeControl::IsVolumeControlRunning()) {
-      VLOG(1) << __func__
-              << " call ignored, due to already started cleanup procedure or "
-                 "service being not read";
+      log::verbose(
+          "call ignored, due to already started cleanup procedure or service "
+          "being not read");
       return;
     }
 
@@ -246,9 +248,9 @@ class VolumeControlInterfaceImpl : public VolumeControlInterface,
   void SetExtAudioOutLocation(const RawAddress& address, uint8_t ext_output_id,
                               uint32_t location) override {
     if (!initialized || !VolumeControl::IsVolumeControlRunning()) {
-      VLOG(1) << __func__
-              << " call ignored, due to already started cleanup procedure or "
-                 "service being not read";
+      log::verbose(
+          "call ignored, due to already started cleanup procedure or service "
+          "being not read");
       return;
     }
 
@@ -260,9 +262,9 @@ class VolumeControlInterfaceImpl : public VolumeControlInterface,
   void GetExtAudioOutDescription(const RawAddress& address,
                                  uint8_t ext_output_id) override {
     if (!initialized || !VolumeControl::IsVolumeControlRunning()) {
-      VLOG(1) << __func__
-              << " call ignored, due to already started cleanup procedure or "
-                 "service being not read";
+      log::verbose(
+          "call ignored, due to already started cleanup procedure or service "
+          "being not read");
       return;
     }
 
@@ -275,9 +277,9 @@ class VolumeControlInterfaceImpl : public VolumeControlInterface,
                                  uint8_t ext_output_id,
                                  std::string descr) override {
     if (!initialized || !VolumeControl::IsVolumeControlRunning()) {
-      VLOG(1) << __func__
-              << " call ignored, due to already started cleanup procedure or "
-                 "service being not read";
+      log::verbose(
+          "call ignored, due to already started cleanup procedure or service "
+          "being not read");
       return;
     }
 
@@ -288,9 +290,9 @@ class VolumeControlInterfaceImpl : public VolumeControlInterface,
 
   void Cleanup(void) override {
     if (!initialized || !VolumeControl::IsVolumeControlRunning()) {
-      VLOG(1) << __func__
-              << " call ignored, due to already started cleanup procedure or "
-                 "service being not read";
+      log::verbose(
+          "call ignored, due to already started cleanup procedure or service "
+          "being not read");
       return;
     }
 

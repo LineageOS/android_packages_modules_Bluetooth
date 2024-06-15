@@ -19,6 +19,7 @@
 #pragma once
 
 #include <base/strings/stringprintf.h>
+#include <bluetooth/log.h>
 
 #include <cstdint>
 
@@ -93,3 +94,8 @@ inline std::string smp_status_text(const tSMP_STATUS& status) {
       return base::StringPrintf("UNKNOWN[%hhu]", status);
   }
 }
+
+namespace fmt {
+template <>
+struct formatter<tSMP_STATUS> : enum_formatter<tSMP_STATUS> {};
+}  // namespace fmt

@@ -25,7 +25,7 @@ class FakeNameDbModule : public neighbor::NameDbModule {
  public:
   FakeNameDbModule() {}
 
-  void ListDependencies(ModuleList* list) const override {}
+  void ListDependencies(ModuleList* /* list */) const override {}
   void Start() override {}
   void Stop() override {}
   std::string ToString() const override {
@@ -37,11 +37,11 @@ class FakeNameDbModule : public neighbor::NameDbModule {
     handler->Call(std::move(callback), address, true);
   }
 
-  bool IsNameCached(hci::Address address) const {
+  bool IsNameCached(hci::Address /* address */) const {
     return true;
   }
 
-  neighbor::RemoteName ReadCachedRemoteName(hci::Address address) const {
+  neighbor::RemoteName ReadCachedRemoteName(hci::Address /* address */) const {
     neighbor::RemoteName name = {'t', 'e', 's', 't'};
     return name;
   }

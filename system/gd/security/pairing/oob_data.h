@@ -17,6 +17,9 @@
  */
 #pragma once
 
+#include <array>
+#include <cstdint>
+
 namespace bluetooth {
 namespace security {
 namespace pairing {

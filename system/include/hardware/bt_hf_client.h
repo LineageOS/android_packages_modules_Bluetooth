@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-#ifndef ANDROID_INCLUDE_BT_HF_CLIENT_H
-#define ANDROID_INCLUDE_BT_HF_CLIENT_H
-#include <raw_address.h>
+#pragma once
 
-__BEGIN_DECLS
+#include <bluetooth/log.h>
+#include <raw_address.h>
 
 typedef enum {
   BTHF_CLIENT_CONNECTION_STATE_DISCONNECTED = 0,
@@ -398,6 +397,8 @@ typedef struct {
   bt_status_t (*send_android_at)(const RawAddress* bd_addr, const char* arg);
 } bthf_client_interface_t;
 
-__END_DECLS
-
-#endif /* ANDROID_INCLUDE_BT_HF_CLIENT_H */
+namespace fmt {
+template <>
+struct formatter<bthf_client_connection_state_t>
+    : enum_formatter<bthf_client_connection_state_t> {};
+}  // namespace fmt

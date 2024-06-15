@@ -15,15 +15,15 @@
  */
 #define LOG_TAG "BluetoothMetrics"
 
-#include "gd/metrics/metrics.h"
+#include "metrics/metrics.h"
 
 #include <metrics/structured_events.h>
 
 #include "common/time_util.h"
-#include "gd/metrics/chromeos/metrics_allowlist.h"
-#include "gd/metrics/chromeos/metrics_event.h"
-#include "gd/metrics/utils.h"
-#include "gd/os/log.h"
+#include "metrics/chromeos/metrics_allowlist.h"
+#include "metrics/chromeos/metrics_event.h"
+#include "metrics/utils.h"
+#include "os/log.h"
 
 namespace bluetooth {
 namespace metrics {
@@ -316,6 +316,25 @@ void LogMetricsChipsetInfoReport() {
         .SetTransport(info->transport)
         .SetChipsetStringHashValue(chipset_string_hval);
   }
+}
+
+void LogMetricsSuspendIdState(uint32_t state) {
+  int64_t suspend_id_state = 0;
+  int64_t boot_time;
+  std::string boot_id;
+
+  if (!GetBootId(&boot_id)) return;
+
+  boot_time = bluetooth::common::time_get_os_boottime_us();
+
+  suspend_id_state = (int64_t)ToSuspendIdState(state);
+  LOG_DEBUG("SuspendIdState: %s, %d, %d", boot_id.c_str(), boot_time, suspend_id_state);
+
+  ::metrics::structured::events::bluetooth::BluetoothSuspendIdStateChanged()
+      .SetBootId(boot_id)
+      .SetSystemTime(boot_time)
+      .SetSuspendIdState(suspend_id_state)
+      .Record();
 }
 
 }  // namespace metrics

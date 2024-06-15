@@ -15,6 +15,7 @@
  *  limitations under the License.
  *
  ******************************************************************************/
+#include <bluetooth/log.h>
 #include <string.h>
 
 #include "avrc_api.h"
@@ -24,6 +25,8 @@
 #include "osi/include/allocator.h"
 #include "osi/include/osi.h"
 #include "stack/include/bt_types.h"
+
+using namespace bluetooth;
 
 /*****************************************************************************
  *  Global data
@@ -55,26 +58,25 @@ static tAVRC_STS avrc_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
   if (p_msg->p_vendor_data == NULL) return AVRC_STS_INTERNAL_ERR;
 
   if (p_msg->vendor_len < 4) {
-    LOG_WARN("%s: message length %d too short: must be at least 4", __func__,
-             p_msg->vendor_len);
+    log::warn("message length {} too short: must be at least 4",
+              p_msg->vendor_len);
     return AVRC_STS_INTERNAL_ERR;
   }
   p = p_msg->p_vendor_data;
   BE_STREAM_TO_UINT8(p_result->pdu, p);
   p++; /* skip the reserved/packe_type byte */
   BE_STREAM_TO_UINT16(len, p);
-  LOG_VERBOSE("%s ctype:0x%x pdu:0x%x, len:%d/0x%x vendor_len=0x%x", __func__,
-              p_msg->hdr.ctype, p_result->pdu, len, len, p_msg->vendor_len);
+  log::verbose("ctype:0x{:x} pdu:0x{:x}, len:{}/0x{:x} vendor_len=0x{:x}",
+               p_msg->hdr.ctype, p_result->pdu, len, len, p_msg->vendor_len);
   if (p_msg->vendor_len < len + 4) {
-    LOG_WARN("%s: message length %d too short: must be at least %d", __func__,
-             p_msg->vendor_len, len + 4);
+    log::warn("message length {} too short: must be at least {}",
+              p_msg->vendor_len, len + 4);
     return AVRC_STS_INTERNAL_ERR;
   }
 
   if (p_msg->hdr.ctype == AVRC_RSP_REJ) {
     if (len < 1) {
-      LOG_WARN("%s: invalid parameter length %d: must be at least 1", __func__,
-               len);
+      log::warn("invalid parameter length {}: must be at least 1", len);
       return AVRC_STS_INTERNAL_ERR;
     }
     p_result->rsp.status = *p;
@@ -101,8 +103,7 @@ static tAVRC_STS avrc_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
         break;
       }
       if (len < 1) {
-        LOG_WARN("%s: invalid parameter length %d: must be at least 1",
-                 __func__, len);
+        log::warn("invalid parameter length {}: must be at least 1", len);
         return AVRC_STS_INTERNAL_ERR;
       }
       BE_STREAM_TO_UINT8(eventid, p);
@@ -112,16 +113,15 @@ static tAVRC_STS avrc_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
            AVRC_RSP_REJ == p_msg->hdr.ctype ||
            AVRC_RSP_NOT_IMPL == p_msg->hdr.ctype)) {
         if (len < 2) {
-          LOG_WARN("%s: invalid parameter length %d: must be at least 2",
-                   __func__, len);
+          log::warn("invalid parameter length {}: must be at least 2", len);
           return AVRC_STS_INTERNAL_ERR;
         }
         p_result->reg_notif.status = p_msg->hdr.ctype;
         p_result->reg_notif.event_id = eventid;
         BE_STREAM_TO_UINT8(p_result->reg_notif.param.volume, p);
       }
-      LOG_VERBOSE("%s PDU reg notif response:event %x, volume %x", __func__,
-                  eventid, p_result->reg_notif.param.volume);
+      log::verbose("PDU reg notif response:event {:x}, volume {:x}", eventid,
+                   p_result->reg_notif.param.volume);
       break;
     default:
       status = AVRC_STS_BAD_CMD;
@@ -201,8 +201,7 @@ tAVRC_STS avrc_parse_notification_rsp(uint8_t* p_stream, uint16_t len,
   return AVRC_STS_NO_ERROR;
 
 length_error:
-  LOG_WARN("%s: invalid parameter length %d: must be at least %d", __func__,
-           len, min_len);
+  log::warn("invalid parameter length {}: must be at least {}", len, min_len);
   return AVRC_STS_INTERNAL_ERR;
 }
 
@@ -212,7 +211,7 @@ static tAVRC_STS avrc_pars_browse_rsp(tAVRC_MSG_BROWSE* p_msg,
   uint8_t pdu;
 
   if (p_msg->browse_len == 0) {
-    LOG_ERROR("%s length %d", __func__, p_msg->browse_len);
+    log::error("length {}", p_msg->browse_len);
     return AVRC_STS_BAD_PARAM;
   }
 
@@ -220,8 +219,8 @@ static tAVRC_STS avrc_pars_browse_rsp(tAVRC_MSG_BROWSE* p_msg,
 
   /* read the pdu */
   if (p_msg->browse_len < 3) {
-    LOG_WARN("%s: message length %d too short: must be at least 3", __func__,
-             p_msg->browse_len);
+    log::warn("message length {} too short: must be at least 3",
+              p_msg->browse_len);
     return AVRC_STS_BAD_PARAM;
   }
   BE_STREAM_TO_UINT8(pdu, p);
@@ -230,11 +229,11 @@ static tAVRC_STS avrc_pars_browse_rsp(tAVRC_MSG_BROWSE* p_msg,
   /* read the entire packet len */
   BE_STREAM_TO_UINT16(pkt_len, p);
 
-  LOG_VERBOSE("%s pdu:%d, pkt_len:%d", __func__, pdu, pkt_len);
+  log::verbose("pdu:{}, pkt_len:{}", pdu, pkt_len);
 
   if (p_msg->browse_len < (pkt_len + 3)) {
-    LOG_WARN("%s: message length %d too short: must be at least %d", __func__,
-             p_msg->browse_len, pkt_len + 3);
+    log::warn("message length {} too short: must be at least {}",
+              p_msg->browse_len, pkt_len + 3);
     return AVRC_STS_INTERNAL_ERR;
   }
 
@@ -249,7 +248,7 @@ static tAVRC_STS avrc_pars_browse_rsp(tAVRC_MSG_BROWSE* p_msg,
       /* read the status */
       BE_STREAM_TO_UINT8(get_item_rsp->status, p);
       if (get_item_rsp->status != AVRC_STS_NO_ERROR) {
-        LOG_WARN("%s returning error %d", __func__, get_item_rsp->status);
+        log::warn("returning error {}", get_item_rsp->status);
         return get_item_rsp->status;
       }
 
@@ -260,9 +259,9 @@ static tAVRC_STS avrc_pars_browse_rsp(tAVRC_MSG_BROWSE* p_msg,
       /* read the number of items */
       BE_STREAM_TO_UINT16(get_item_rsp->item_count, p);
 
-      LOG_VERBOSE("%s pdu %d status %d pkt_len %d uid counter %d item count %d",
-                  __func__, get_item_rsp->pdu, get_item_rsp->status, pkt_len,
-                  get_item_rsp->uid_counter, get_item_rsp->item_count);
+      log::verbose("pdu {} status {} pkt_len {} uid counter {} item count {}",
+                   get_item_rsp->pdu, get_item_rsp->status, pkt_len,
+                   get_item_rsp->uid_counter, get_item_rsp->item_count);
 
       /* get each of the items */
       get_item_rsp->p_item_list = (tAVRC_ITEM*)osi_calloc(
@@ -272,7 +271,7 @@ static tAVRC_STS avrc_pars_browse_rsp(tAVRC_MSG_BROWSE* p_msg,
         min_len += 1;
         if (pkt_len < min_len) goto browse_length_error;
         BE_STREAM_TO_UINT8(curr_item->item_type, p);
-        LOG_VERBOSE("%s item type %d", __func__, curr_item->item_type);
+        log::verbose("item type {}", curr_item->item_type);
         switch (curr_item->item_type) {
           case AVRC_ITEM_PLAYER: {
             /* Handle player */
@@ -297,11 +296,11 @@ static tAVRC_STS avrc_pars_browse_rsp(tAVRC_MSG_BROWSE* p_msg,
             player->name.p_str = (uint8_t*)osi_calloc(
                 (player->name.str_len + 1) * sizeof(uint8_t));
             BE_STREAM_TO_ARRAY(p, player->name.p_str, player->name.str_len);
-            LOG_VERBOSE(
-                "%s type %d id %d mtype %d stype %d ps %d cs %d name len %d",
-                __func__, curr_item->item_type, player->player_id,
-                player->major_type, player->sub_type, player->play_status,
-                player->name.charset_id, player->name.str_len);
+            log::verbose(
+                "type {} id {} mtype {} stype {} ps {} cs {} name len {}",
+                curr_item->item_type, player->player_id, player->major_type,
+                player->sub_type, player->play_status, player->name.charset_id,
+                player->name.str_len);
           } break;
 
           case AVRC_ITEM_FOLDER: {
@@ -325,9 +324,9 @@ static tAVRC_STS avrc_pars_browse_rsp(tAVRC_MSG_BROWSE* p_msg,
             folder->name.p_str = (uint8_t*)osi_calloc(
                 (folder->name.str_len + 1) * sizeof(uint8_t));
             BE_STREAM_TO_ARRAY(p, folder->name.p_str, folder->name.str_len);
-            LOG_VERBOSE("%s type %d playable %d cs %d name len %d", __func__,
-                        folder->type, folder->playable, folder->name.charset_id,
-                        folder->name.str_len);
+            log::verbose("type {} playable {} cs {} name len {}", folder->type,
+                         folder->playable, folder->name.charset_id,
+                         folder->name.str_len);
           } break;
 
           case AVRC_ITEM_MEDIA: {
@@ -351,9 +350,9 @@ static tAVRC_STS avrc_pars_browse_rsp(tAVRC_MSG_BROWSE* p_msg,
             BE_STREAM_TO_ARRAY(p, media->name.p_str, media->name.str_len);
 
             BE_STREAM_TO_UINT8(media->attr_count, p);
-            LOG_VERBOSE("%s media type %d charset id %d len %d attr ct %d",
-                        __func__, media->type, media->name.charset_id,
-                        media->name.str_len, media->attr_count);
+            log::verbose("media type {} charset id {} len {} attr ct {}",
+                         media->type, media->name.charset_id,
+                         media->name.str_len, media->attr_count);
 
             media->p_attr_list = (tAVRC_ATTR_ENTRY*)osi_calloc(
                 media->attr_count * sizeof(tAVRC_ATTR_ENTRY));
@@ -372,19 +371,18 @@ static tAVRC_STS avrc_pars_browse_rsp(tAVRC_MSG_BROWSE* p_msg,
                   attr_entry->name.str_len * sizeof(uint8_t));
               BE_STREAM_TO_ARRAY(p, attr_entry->name.p_str,
                                  attr_entry->name.str_len);
-              LOG_VERBOSE("%s media attr id %d cs %d name len %d", __func__,
-                          attr_entry->attr_id, attr_entry->name.charset_id,
-                          attr_entry->name.str_len);
+              log::verbose("media attr id {} cs {} name len {}",
+                           attr_entry->attr_id, attr_entry->name.charset_id,
+                           attr_entry->name.str_len);
             }
           } break;
 
           default:
-            LOG_ERROR("%s item type not handled %d", __func__,
-                      curr_item->item_type);
+            log::error("item type not handled {}", curr_item->item_type);
             return AVRC_STS_INTERNAL_ERR;
         }
 
-        LOG_VERBOSE("%s pkt_len %d min_len %d", __func__, pkt_len, min_len);
+        log::verbose("pkt_len {} min_len {}", pkt_len, min_len);
 
         /* advance to populate the next item */
         curr_item++;
@@ -403,9 +401,8 @@ static tAVRC_STS avrc_pars_browse_rsp(tAVRC_MSG_BROWSE* p_msg,
       /* Read the number of items in folder */
       BE_STREAM_TO_UINT32(change_path_rsp->num_items, p);
 
-      LOG_VERBOSE("%s pdu %d status %d item count %d", __func__,
-                  change_path_rsp->pdu, change_path_rsp->status,
-                  change_path_rsp->num_items);
+      log::verbose("pdu {} status {} item count {}", change_path_rsp->pdu,
+                   change_path_rsp->status, change_path_rsp->num_items);
       break;
     }
 
@@ -432,9 +429,8 @@ static tAVRC_STS avrc_pars_browse_rsp(tAVRC_MSG_BROWSE* p_msg,
         attr_entry->name.p_str =
             (uint8_t*)osi_malloc(attr_entry->name.str_len * sizeof(uint8_t));
         BE_STREAM_TO_ARRAY(p, attr_entry->name.p_str, attr_entry->name.str_len);
-        LOG_VERBOSE("%s media attr id %d cs %d name len %d", __func__,
-                    attr_entry->attr_id, attr_entry->name.charset_id,
-                    attr_entry->name.str_len);
+        log::verbose("media attr id {} cs {} name len {}", attr_entry->attr_id,
+                     attr_entry->name.charset_id, attr_entry->name.str_len);
       }
 
       break;
@@ -450,18 +446,18 @@ static tAVRC_STS avrc_pars_browse_rsp(tAVRC_MSG_BROWSE* p_msg,
       BE_STREAM_TO_UINT8(set_br_pl_rsp->status, p);
 
       if (set_br_pl_rsp->status != AVRC_STS_NO_ERROR) {
-        LOG_ERROR(
-            "%s Stopping further parsing because player not browsable sts %d",
-            __func__, set_br_pl_rsp->status);
+        log::error(
+            "Stopping further parsing because player not browsable sts {}",
+            set_br_pl_rsp->status);
         break;
       }
       BE_STREAM_TO_UINT16(set_br_pl_rsp->uid_counter, p);
       BE_STREAM_TO_UINT32(set_br_pl_rsp->num_items, p);
       BE_STREAM_TO_UINT16(set_br_pl_rsp->charset_id, p);
       BE_STREAM_TO_UINT8(set_br_pl_rsp->folder_depth, p);
-      LOG_VERBOSE(
-          "%s AVRC_PDU_SET_BROWSED_PLAYER status %d items %d cs %d depth %d",
-          __func__, set_br_pl_rsp->status, set_br_pl_rsp->num_items,
+      log::verbose(
+          "AVRC_PDU_SET_BROWSED_PLAYER status {} items {} cs {} depth {}",
+          set_br_pl_rsp->status, set_br_pl_rsp->num_items,
           set_br_pl_rsp->charset_id, set_br_pl_rsp->folder_depth);
 
       set_br_pl_rsp->p_folders = (tAVRC_NAME*)osi_calloc(
@@ -475,8 +471,8 @@ static tAVRC_STS avrc_pars_browse_rsp(tAVRC_MSG_BROWSE* p_msg,
         BE_STREAM_TO_UINT16(folder_name->str_len, p);
         min_len += folder_name->str_len;
         if (pkt_len < min_len) goto browse_length_error;
-        LOG_VERBOSE("%s AVRC_PDU_SET_BROWSED_PLAYER item: %d len: %d", __func__,
-                    i, folder_name->str_len);
+        log::verbose("AVRC_PDU_SET_BROWSED_PLAYER item: {} len: {}", i,
+                     folder_name->str_len);
         folder_name->p_str =
             (uint8_t*)osi_calloc((folder_name->str_len + 1) * sizeof(uint8_t));
         BE_STREAM_TO_ARRAY(p, folder_name->p_str, folder_name->str_len);
@@ -485,14 +481,14 @@ static tAVRC_STS avrc_pars_browse_rsp(tAVRC_MSG_BROWSE* p_msg,
     }
 
     default:
-      LOG_ERROR("%s pdu %d not handled", __func__, pdu);
+      log::error("pdu {} not handled", pdu);
   }
 
   return status;
 
 browse_length_error:
-  LOG_WARN("%s: invalid parameter length %d: must be at least %d", __func__,
-           pkt_len, min_len);
+  log::warn("invalid parameter length {}: must be at least {}", pkt_len,
+            min_len);
   return AVRC_STS_BAD_CMD;
 }
 
@@ -512,8 +508,8 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
                                            tAVRC_RESPONSE* p_result,
                                            uint8_t* p_buf, uint16_t* buf_len) {
   if (p_msg->vendor_len < 4) {
-    LOG_WARN("%s: message length %d too short: must be at least 4", __func__,
-             p_msg->vendor_len);
+    log::warn("message length {} too short: must be at least 4",
+              p_msg->vendor_len);
     return AVRC_STS_INTERNAL_ERR;
   }
 
@@ -524,11 +520,11 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
   uint16_t len;
   uint32_t min_len = 0;
   BE_STREAM_TO_UINT16(len, p);
-  LOG_VERBOSE("%s ctype:0x%x pdu:0x%x, len:%d  vendor_len=0x%x", __func__,
-              p_msg->hdr.ctype, p_result->pdu, len, p_msg->vendor_len);
+  log::verbose("ctype:0x{:x} pdu:0x{:x}, len:{}  vendor_len=0x{:x}",
+               p_msg->hdr.ctype, p_result->pdu, len, p_msg->vendor_len);
   if (p_msg->vendor_len < len + 4) {
-    LOG_WARN("%s: message length %d too short: must be at least %d", __func__,
-             p_msg->vendor_len, len + 4);
+    log::warn("message length {} too short: must be at least {}",
+              p_msg->vendor_len, len + 4);
     return AVRC_STS_INTERNAL_ERR;
   }
   /* Todo: Issue in handling reject, check */
@@ -557,8 +553,8 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
       if (len < min_len) goto length_error;
       BE_STREAM_TO_UINT8(p_result->get_caps.capability_id, p);
       BE_STREAM_TO_UINT8(p_result->get_caps.count, p);
-      LOG_VERBOSE("%s cap id = %d, cap_count = %d ", __func__,
-                  p_result->get_caps.capability_id, p_result->get_caps.count);
+      log::verbose("cap id = {}, cap_count = {} ",
+                   p_result->get_caps.capability_id, p_result->get_caps.count);
       if (p_result->get_caps.capability_id == AVRC_CAP_COMPANY_ID) {
         if (p_result->get_caps.count > AVRC_CAP_MAX_NUM_COMP_ID) {
           return AVRC_STS_INTERNAL_ERR;
@@ -592,8 +588,7 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
       }
       min_len += 1;
       BE_STREAM_TO_UINT8(p_result->list_app_attr.num_attr, p);
-      LOG_VERBOSE("%s attr count = %d ", __func__,
-                  p_result->list_app_attr.num_attr);
+      log::verbose("attr count = {} ", p_result->list_app_attr.num_attr);
 
       if (p_result->list_app_attr.num_attr > AVRC_MAX_APP_ATTR_SIZE) {
         p_result->list_app_attr.num_attr = AVRC_MAX_APP_ATTR_SIZE;
@@ -617,8 +612,7 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
         p_result->list_app_values.num_val = AVRC_MAX_APP_ATTR_SIZE;
       }
 
-      LOG_VERBOSE("%s value count = %d ", __func__,
-                  p_result->list_app_values.num_val);
+      log::verbose("value count = {} ", p_result->list_app_values.num_val);
       min_len += p_result->list_app_values.num_val;
       if (len < min_len) goto length_error;
       for (int xx = 0; xx < p_result->list_app_values.num_val; xx++) {
@@ -633,8 +627,7 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
       }
       min_len += 1;
       BE_STREAM_TO_UINT8(p_result->get_cur_app_val.num_val, p);
-      LOG_VERBOSE("%s attr count = %d ", __func__,
-                  p_result->get_cur_app_val.num_val);
+      log::verbose("attr count = {} ", p_result->get_cur_app_val.num_val);
 
       if (p_result->get_cur_app_val.num_val > AVRC_MAX_APP_ATTR_SIZE) {
         p_result->get_cur_app_val.num_val = AVRC_MAX_APP_ATTR_SIZE;
@@ -666,8 +659,7 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
       if (num_attrs > AVRC_MAX_APP_ATTR_SIZE) {
         num_attrs = AVRC_MAX_APP_ATTR_SIZE;
       }
-      LOG_VERBOSE("%s attr count = %d ", __func__,
-                  p_result->get_app_attr_txt.num_attr);
+      log::verbose("attr count = {} ", p_result->get_app_attr_txt.num_attr);
       p_result->get_app_attr_txt.num_attr = num_attrs;
 
       p_result->get_app_attr_txt.p_attrs = (tAVRC_APP_SETTING_TEXT*)osi_calloc(
@@ -720,8 +712,7 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
         num_vals = AVRC_MAX_APP_ATTR_SIZE;
       }
       p_result->get_app_val_txt.num_attr = num_vals;
-      LOG_VERBOSE("%s value count = %d ", __func__,
-                  p_result->get_app_val_txt.num_attr);
+      log::verbose("value count = {} ", p_result->get_app_val_txt.num_attr);
 
       p_result->get_app_val_txt.p_attrs = (tAVRC_APP_SETTING_TEXT*)osi_calloc(
           num_vals * sizeof(tAVRC_APP_SETTING_TEXT));
@@ -824,7 +815,7 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
 
     case AVRC_PDU_SET_ADDRESSED_PLAYER:
       if (len != 1) {
-        LOG_ERROR("%s pdu: %d len %d", __func__, p_result->pdu, len);
+        log::error("pdu: {} len {}", p_result->pdu, len);
         return AVRC_STS_BAD_CMD;
       }
       BE_STREAM_TO_UINT8(p_result->rsp.status, p);
@@ -836,8 +827,7 @@ static tAVRC_STS avrc_ctrl_pars_vendor_rsp(tAVRC_MSG_VENDOR* p_msg,
   return AVRC_STS_NO_ERROR;
 
 length_error:
-  LOG_WARN("%s: invalid parameter length %d: must be at least %d", __func__,
-           len, min_len);
+  log::warn("invalid parameter length {}: must be at least {}", len, min_len);
   return AVRC_STS_INTERNAL_ERR;
 }
 
@@ -867,7 +857,7 @@ tAVRC_STS AVRC_Ctrl_ParsResponse(tAVRC_MSG* p_msg, tAVRC_RESPONSE* p_result,
         break;
 
       default:
-        LOG_ERROR("%s unknown opcode:0x%x", __func__, p_msg->hdr.opcode);
+        log::error("unknown opcode:0x{:x}", p_msg->hdr.opcode);
         break;
     }
     p_result->rsp.opcode = p_msg->hdr.opcode;
@@ -908,7 +898,7 @@ tAVRC_STS AVRC_ParsResponse(tAVRC_MSG* p_msg, tAVRC_RESPONSE* p_result,
         break;
 
       default:
-        LOG_ERROR("%s unknown opcode:0x%x", __func__, p_msg->hdr.opcode);
+        log::error("unknown opcode:0x{:x}", p_msg->hdr.opcode);
         break;
     }
     p_result->rsp.opcode = p_msg->hdr.opcode;

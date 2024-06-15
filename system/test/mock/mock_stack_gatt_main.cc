@@ -108,3 +108,7 @@ void gatt_update_app_use_link_flag(tGATT_IF /* gatt_if */,
                                    bool /* check_acl_link */) {
   inc_func_call_count(__func__);
 }
+
+void gatt_tcb_dump(int fd) {
+  inc_func_call_count(__func__);
+}

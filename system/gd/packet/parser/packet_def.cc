@@ -347,7 +347,7 @@ void PacketDef::GenValidator(std::ostream& s) const {
 }
 
 void PacketDef::GenParserToString(std::ostream& s) const {
-  s << "virtual std::string ToString() " << (parent_ != nullptr ? " override" : "") << " {";
+  s << "virtual std::string ToString() const " << (parent_ != nullptr ? " override" : "") << " {";
   s << "std::stringstream ss;";
   s << "ss << std::showbase << std::hex << \"" << name_ << " { \";";
 

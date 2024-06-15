@@ -23,13 +23,15 @@
  *
  ******************************************************************************/
 
-#include <base/logging.h>  // VLOG
+#include <bluetooth/log.h>
 #include <string.h>
 
 #include "avdt_int.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/osi.h"
 #include "types/raw_address.h"
+
+using namespace bluetooth;
 
 /*****************************************************************************
  * state machine constants and types
@@ -367,9 +369,9 @@ void avdt_ccb_event(AvdtpCcb* p_ccb, uint8_t event, tAVDT_CCB_EVT* p_data) {
   int i;
 
 #if (AVDT_DEBUG == TRUE)
-  LOG_VERBOSE("%s: CCB ccb=%d event=%s state=%s p_ccb=%p", __func__,
-              avdt_ccb_to_idx(p_ccb), avdt_ccb_evt_str[event],
-              avdt_ccb_st_str[p_ccb->state], p_ccb);
+  log::verbose("CCB ccb={} event={} state={} p_ccb={}", avdt_ccb_to_idx(p_ccb),
+               avdt_ccb_evt_str[event], avdt_ccb_st_str[p_ccb->state],
+               fmt::ptr(p_ccb));
 #endif
 
   /* look up the state table for the current state */
@@ -383,8 +385,8 @@ void avdt_ccb_event(AvdtpCcb* p_ccb, uint8_t event, tAVDT_CCB_EVT* p_data) {
   /* execute action functions */
   for (i = 0; i < AVDT_CCB_ACTIONS; i++) {
     action = state_table[event][i];
-    LOG_VERBOSE("%s: event=%s state=%s action=%d", __func__,
-                avdt_ccb_evt_str[event], avdt_ccb_st_str[p_ccb->state], action);
+    log::verbose("event={} state={} action={}", avdt_ccb_evt_str[event],
+                 avdt_ccb_st_str[p_ccb->state], action);
     if (action != AVDT_CCB_IGNORE) {
       (*avdtp_cb.p_ccb_act[action])(p_ccb, p_data);
     } else {
@@ -418,7 +420,7 @@ AvdtpCcb* avdt_ccb_by_bd(const RawAddress& bd_addr) {
     /* if no ccb found */
     p_ccb = NULL;
 
-    VLOG(1) << "No ccb for addr " << bd_addr;
+    log::verbose("No ccb for addr {}", ADDRESS_TO_LOGGABLE_STR(bd_addr));
   }
   return p_ccb;
 }
@@ -439,13 +441,13 @@ AvdtpCcb* avdt_ccb_alloc(const RawAddress& bd_addr) {
   for (int i = 0; i < AVDT_NUM_LINKS; i++, p_ccb++) {
     if (!p_ccb->allocated) {
       p_ccb->Allocate(bd_addr);
-      LOG_VERBOSE("%s: allocated (index %d) for peer %s", __func__, i,
-                  ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
+      log::verbose("allocated (index {}) for peer {}", i,
+                   ADDRESS_TO_LOGGABLE_CSTR(bd_addr));
       return p_ccb;
     }
   }
 
-  LOG_WARN("%s: out of AvdtpCcb entries", __func__);
+  log::warn("out of AvdtpCcb entries");
   return nullptr;
 }
 
@@ -453,19 +455,20 @@ AvdtpCcb* avdt_ccb_alloc_by_channel_index(const RawAddress& bd_addr,
                                           uint8_t channel_index) {
   // Allocate the entry for the specified channel index
   if (channel_index >= AVDT_NUM_LINKS) {
-    LOG_ERROR("%s: peer %s invalid channel index %d (max %d)", __func__,
-              ADDRESS_TO_LOGGABLE_CSTR(bd_addr), channel_index, AVDT_NUM_LINKS);
+    log::error("peer {} invalid channel index {} (max {})",
+               ADDRESS_TO_LOGGABLE_CSTR(bd_addr), channel_index,
+               AVDT_NUM_LINKS);
     return nullptr;
   }
   AvdtpCcb* p_ccb = &avdtp_cb.ccb[channel_index];
   if (p_ccb->allocated) {
-    LOG_ERROR("%s: peer %s channel index %d already allocated", __func__,
-              ADDRESS_TO_LOGGABLE_CSTR(bd_addr), channel_index);
+    log::error("peer {} channel index {} already allocated",
+               ADDRESS_TO_LOGGABLE_CSTR(bd_addr), channel_index);
     return nullptr;
   }
   p_ccb->Allocate(bd_addr);
-  LOG_VERBOSE("%s: allocated (index %d) peer=%s p_ccb=%p", __func__,
-              channel_index, ADDRESS_TO_LOGGABLE_CSTR(p_ccb->peer_addr), p_ccb);
+  log::verbose("allocated (index {}) peer={} p_ccb={}", channel_index,
+               ADDRESS_TO_LOGGABLE_CSTR(p_ccb->peer_addr), fmt::ptr(p_ccb));
   return p_ccb;
 }
 
@@ -491,9 +494,9 @@ void AvdtpCcb::Allocate(const RawAddress& peer_address) {
  *
  ******************************************************************************/
 void avdt_ccb_dealloc(AvdtpCcb* p_ccb, UNUSED_ATTR tAVDT_CCB_EVT* p_data) {
-  LOG_VERBOSE("%s: deallocated (index %d) peer=%s p_ccb=%p", __func__,
-              avdt_ccb_to_idx(p_ccb),
-              ADDRESS_TO_LOGGABLE_CSTR(p_ccb->peer_addr), p_ccb);
+  log::verbose("deallocated (index {}) peer={} p_ccb={}",
+               avdt_ccb_to_idx(p_ccb),
+               ADDRESS_TO_LOGGABLE_CSTR(p_ccb->peer_addr), fmt::ptr(p_ccb));
   p_ccb->ResetCcb();
 }
 
@@ -530,7 +533,7 @@ AvdtpCcb* avdt_ccb_by_idx(uint8_t idx) {
     p_ccb = &avdtp_cb.ccb[idx];
   } else {
     p_ccb = NULL;
-    LOG_WARN("No ccb for idx %d", idx);
+    log::warn("No ccb for idx {}", idx);
   }
   return p_ccb;
 }

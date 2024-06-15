@@ -18,6 +18,7 @@
 #include <base/functional/bind.h>
 #include <base/location.h>
 #include <base/logging.h>
+#include <bluetooth/log.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_csis.h>
 
@@ -37,6 +38,7 @@ using bluetooth::csis::CsisClientInterface;
 using bluetooth::csis::CsisGroupLockStatus;
 
 using bluetooth::csis::CsisClient;
+using namespace bluetooth;
 
 namespace {
 std::unique_ptr<CsisClientInterface> csis_client_instance;
@@ -62,9 +64,9 @@ class CsipSetCoordinatorServiceInterfaceImpl : public CsisClientInterface,
 
   void Connect(const RawAddress& addr) override {
     if (!initialized || !CsisClient::IsCsisClientRunning()) {
-      VLOG(1) << __func__
-              << " call ignored, due to already started cleanup procedure or "
-                 "service being not read";
+      log::verbose(
+          "call ignored, due to already started cleanup procedure or service "
+          "being not read");
       return;
     }
 
@@ -74,9 +76,9 @@ class CsipSetCoordinatorServiceInterfaceImpl : public CsisClientInterface,
 
   void Disconnect(const RawAddress& addr) override {
     if (!initialized || !CsisClient::IsCsisClientRunning()) {
-      VLOG(1) << __func__
-              << " call ignored, due to already started cleanup procedure or "
-                 "service being not read";
+      log::verbose(
+          "call ignored, due to already started cleanup procedure or service "
+          "being not read");
       return;
     }
 
@@ -86,9 +88,9 @@ class CsipSetCoordinatorServiceInterfaceImpl : public CsisClientInterface,
 
   void RemoveDevice(const RawAddress& addr) override {
     if (!initialized || !CsisClient::IsCsisClientRunning()) {
-      VLOG(1) << __func__
-              << " call ignored, due to already started cleanup procedure or "
-                 "service being not ready";
+      log::verbose(
+          "call ignored, due to already started cleanup procedure or service "
+          "being not ready");
 
       /* Clear storage */
       do_in_jni_thread(FROM_HERE, Bind(&btif_storage_remove_csis_device, addr));
@@ -103,9 +105,9 @@ class CsipSetCoordinatorServiceInterfaceImpl : public CsisClientInterface,
 
   void LockGroup(int group_id, bool lock) override {
     if (!initialized || !CsisClient::IsCsisClientRunning()) {
-      VLOG(1) << __func__
-              << " call ignored, due to already started cleanup procedure or "
-                 "service being not read";
+      log::verbose(
+          "call ignored, due to already started cleanup procedure or service "
+          "being not read");
       return;
     }
 
@@ -116,9 +118,9 @@ class CsipSetCoordinatorServiceInterfaceImpl : public CsisClientInterface,
 
   void Cleanup(void) override {
     if (!initialized || !CsisClient::IsCsisClientRunning()) {
-      VLOG(1) << __func__
-              << " call ignored, due to already started cleanup procedure or "
-                 "service being not read";
+      log::verbose(
+          "call ignored, due to already started cleanup procedure or service "
+          "being not read");
       return;
     }
 

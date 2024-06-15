@@ -74,7 +74,8 @@ public class A2dpSinkService extends ProfileService {
     private AdapterService mAdapterService;
     private DatabaseManager mDatabaseManager;
 
-    A2dpSinkService() {
+    public A2dpSinkService(Context ctx) {
+        super(ctx);
         mNativeInterface = requireNonNull(A2dpSinkNativeInterface.getInstance());
         mLooper = Looper.getMainLooper();
     }
@@ -91,7 +92,7 @@ public class A2dpSinkService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    public void start() {
         mAdapterService =
                 requireNonNull(
                         AdapterService.getAdapterService(),
@@ -109,11 +110,10 @@ public class A2dpSinkService extends ProfileService {
         }
 
         setA2dpSinkService(this);
-        return true;
     }
 
     @Override
-    protected boolean stop() {
+    public void stop() {
         setA2dpSinkService(null);
         mNativeInterface.cleanup();
         for (A2dpSinkStateMachine stateMachine : mDeviceStateMap.values()) {
@@ -126,7 +126,6 @@ public class A2dpSinkService extends ProfileService {
                 mA2dpSinkStreamHandler = null;
             }
         }
-        return true;
     }
 
     public static synchronized A2dpSinkService getA2dpSinkService() {
@@ -637,6 +636,13 @@ public class A2dpSinkService extends ProfileService {
             return;
         }
         A2dpSinkStateMachine stateMachine = getStateMachineForDevice(device);
+        if (stateMachine == null) {
+            Log.w(
+                    TAG,
+                    "Received audio config changed event for an unconnected device, device="
+                            + device);
+            return;
+        }
         stateMachine.onStackEvent(event);
     }
 

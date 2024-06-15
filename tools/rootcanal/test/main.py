@@ -28,6 +28,10 @@ tests = [
     'LL.CIS.PER.BV_02_C',
     'LL.CON_.CEN.BV_41_C',
     'LL.CON_.CEN.BV_43_C',
+    'LL.CON_.INI.BV_08_C',
+    'LL.CON_.INI.BV_09_C',
+    'LL.CON_.INI.BV_10_C',
+    'LL.CON_.INI.BV_11_C',
     'LL.CON_.PER.BV_40_C',
     'LL.CON_.PER.BV_42_C',
     'LL.DDI.ADV.BV_01_C',
@@ -54,7 +58,9 @@ tests = [
     'LL.DDI.SCN.BV_14_C',
     'LL.DDI.SCN.BV_18_C',
     'LL.DDI.SCN.BV_19_C',
+    'LL.DDI.SCN.BV_20_C',
     'LL.DDI.SCN.BV_79_C',
+    'LL.SEC.ADV.BV_11_C',
     'LMP.LIH.BV_01_C',
     'LMP.LIH.BV_02_C',
     'LMP.LIH.BV_78_C',
@@ -64,6 +70,7 @@ tests = [
     'LMP.LIH.BV_144_C',
     'LMP.LIH.BV_149_C',
     'LL.scan_collision',
+    'LL.scan_timeout',
     'LMP.page_collision',
 ]
 

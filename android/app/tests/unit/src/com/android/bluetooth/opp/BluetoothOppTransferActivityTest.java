@@ -110,7 +110,8 @@ public class BluetoothOppTransferActivityTest {
                 new CursorMockData(BluetoothShare.USER_CONFIRMATION, 11,
                         BluetoothShare.USER_CONFIRMATION_HANDOVER_CONFIRMED)
         ));
-        BluetoothOppTestUtils.enableOppActivities(true, mTargetContext);
+        BluetoothOppTestUtils.enableActivity(
+                BluetoothOppTransferActivity.class, true, mTargetContext);
         TestUtils.setUpUiTest();
     }
 
@@ -119,7 +120,8 @@ public class BluetoothOppTransferActivityTest {
         TestUtils.tearDownUiTest();
 
         BluetoothMethodProxy.setInstanceForTesting(null);
-        BluetoothOppTestUtils.enableOppActivities(false, mTargetContext);
+        BluetoothOppTestUtils.enableActivity(
+                BluetoothOppTransferActivity.class, false, mTargetContext);
     }
 
     @Test

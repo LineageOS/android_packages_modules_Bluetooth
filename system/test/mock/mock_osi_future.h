@@ -26,6 +26,7 @@
 // Original included files, if any
 #include <base/logging.h>
 
+#include "include/check.h"
 #include "osi/include/future.h"
 
 // Mocked compile conditionals, if any
@@ -41,7 +42,7 @@ namespace osi_future {
 struct future_await {
   void* return_value{};
   std::function<void*(future_t* future)> body{
-      [this](future_t* future) { return return_value; }};
+      [this](future_t* /* future */) { return return_value; }};
   void* operator()(future_t* future) { return body(future); };
 };
 extern struct future_await future_await;
@@ -62,7 +63,7 @@ extern struct future_new future_new;
 struct future_new_named {
   future_t* return_value{0};
   std::function<future_t*(const char* name)> body{
-      [this](const char* name) { return return_value; }};
+      [this](const char* /* name */) { return return_value; }};
   future_t* operator()(const char* name) { return body(name); };
 };
 extern struct future_new_named future_new_named;
@@ -72,7 +73,7 @@ extern struct future_new_named future_new_named;
 // Return: future_t*
 struct future_new_immediate {
   future_t* return_value{0};
-  std::function<future_t*(void* value)> body{[this](void* value) {
+  std::function<future_t*(void* value)> body{[this](void* /* value */) {
     CHECK(0);
     return return_value;
   }};
@@ -85,7 +86,7 @@ extern struct future_new_immediate future_new_immediate;
 // Return: void
 struct future_ready {
   std::function<void(future_t* future, void* value)> body{
-      [](future_t* future, void* value) {}};
+      [](future_t* /* future */, void* /* value */) {}};
   void operator()(future_t* future, void* value) { body(future, value); };
 };
 extern struct future_ready future_ready;

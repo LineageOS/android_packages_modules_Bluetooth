@@ -18,11 +18,12 @@
 
 #include "device_groups.h"
 
+#include "bta/include/bta_gatt_api.h"
 #include "bta_csis_api.h"
-#include "btif_storage.h"
+#include "btif/include/btif_profile_storage.h"
 #include "btm_iso_api.h"
 #include "device/include/controller.h"
-#include "dm/bta_dm_gatt_client.h"
+#include "internal_include/bt_trace.h"
 #include "le_audio_set_configuration_provider.h"
 #include "metrics_collector.h"
 
@@ -631,7 +632,7 @@ uint8_t LeAudioDeviceGroup::GetPhyBitmask(uint8_t direction) const {
 
   // local supported PHY's
   uint8_t phy_bitfield = bluetooth::hci::kIsoCigPhy1M;
-  if (controller_get_interface()->supports_ble_2m_phy())
+  if (controller_get_interface()->SupportsBle2mPhy())
     phy_bitfield |= bluetooth::hci::kIsoCigPhy2M;
 
   if (!leAudioDevice) {
@@ -762,13 +763,14 @@ bool LeAudioDeviceGroup::UpdateAudioSetConfigurationCache(
 
   if (update_config) {
     context_to_configuration_cache_map[ctx_type] = std::pair(true, new_conf);
-    LOG_DEBUG("config: %s -> %s", ToHexString(ctx_type).c_str(),
-              (new_conf ? new_conf->name.c_str() : "(none)"));
+    LOG_INFO("config: %s -> %s", ToHexString(ctx_type).c_str(),
+             (new_conf ? new_conf->name.c_str() : "(none)"));
   }
   return update_config;
 }
 
 void LeAudioDeviceGroup::InvalidateCachedConfigurations(void) {
+  LOG_INFO(" Group id: %d", group_id_);
   context_to_configuration_cache_map.clear();
 }
 
@@ -831,9 +833,7 @@ bool LeAudioDeviceGroup::ReloadAudioDirections(void) {
   return true;
 }
 
-bool LeAudioDeviceGroup::IsInTransition(void) const {
-  return target_state_ != current_state_;
-}
+bool LeAudioDeviceGroup::IsInTransition(void) const { return in_transition_; }
 
 bool LeAudioDeviceGroup::IsStreaming(void) const {
   return current_state_ == AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING;
@@ -934,9 +934,6 @@ void LeAudioDeviceGroup::CigConfiguration::GenerateCisIds(
     return;
   }
 
-  const set_configurations::AudioSetConfigurations* confs =
-      AudioSetConfigurationProvider::Get()->GetConfigurations(context_type);
-
   uint8_t cis_count_bidir = 0;
   uint8_t cis_count_unidir_sink = 0;
   uint8_t cis_count_unidir_source = 0;
@@ -950,11 +947,11 @@ void LeAudioDeviceGroup::CigConfiguration::GenerateCisIds(
    * If the last happen it means, group size is 1 */
   int group_size = csis_group_size > 0 ? csis_group_size : 1;
 
-  get_cis_count(*confs, group_size, group_->GetGroupStrategy(group_size),
-                group_->GetAseCount(types::kLeAudioDirectionSink),
-                group_->GetAseCount(types::kLeAudioDirectionSource),
-                cis_count_bidir, cis_count_unidir_sink,
-                cis_count_unidir_source);
+  set_configurations::get_cis_count(
+      context_type, group_size, group_->GetGroupStrategy(group_size),
+      group_->GetAseCount(types::kLeAudioDirectionSink),
+      group_->GetAseCount(types::kLeAudioDirectionSource), cis_count_bidir,
+      cis_count_unidir_sink, cis_count_unidir_source);
 
   uint8_t idx = 0;
   while (cis_count_bidir > 0) {

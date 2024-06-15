@@ -24,6 +24,7 @@ from bumble.gatt_client import CharacteristicProxy, ServiceProxy
 from bumble.pandora import utils
 from pandora_experimental.gatt_grpc_aio import GATTServicer
 from pandora_experimental.gatt_pb2 import (
+    ATTRIBUTE_NOT_FOUND,
     SUCCESS,
     AttStatusCode,
     AttValue,
@@ -37,6 +38,10 @@ from pandora_experimental.gatt_pb2 import (
     GattCharacteristic,
     GattCharacteristicDescriptor,
     GattService,
+    IndicateOnCharacteristicRequest,
+    IndicateOnCharacteristicResponse,
+    NotifyOnCharacteristicRequest,
+    NotifyOnCharacteristicResponse,
     ReadCharacteristicDescriptorRequest,
     ReadCharacteristicDescriptorResponse,
     ReadCharacteristicRequest,
@@ -283,3 +288,25 @@ class GATTService(GATTServicer):
 
         logging.info(f"RegisterService complete")
         return RegisterServiceResponse()
+
+    @utils.rpc
+    async def NotifyOnCharacteristic(self, request: NotifyOnCharacteristicRequest,
+                                     context: grpc.ServicerContext) -> NotifyOnCharacteristicResponse:
+        logging.info(f"NotifyOnCharacteristic")
+
+        attr = self.device.gatt_server.get_attribute(request.handle)
+        if not attr:
+            return NotifyOnCharacteristicResponse(status=ATTRIBUTE_NOT_FOUND)
+        await self.device.notify_subscribers(attr, request.value)
+        return NotifyOnCharacteristicResponse(status=SUCCESS)
+
+    @utils.rpc
+    async def IndicateOnCharacteristic(self, request: IndicateOnCharacteristicRequest,
+                                       context: grpc.ServicerContext) -> IndicateOnCharacteristicResponse:
+        logging.info(f"IndicateOnCharacteristic")
+
+        attr = self.device.gatt_server.get_attribute(request.handle)
+        if not attr:
+            return IndicateOnCharacteristicResponse(status=ATTRIBUTE_NOT_FOUND)
+        await self.device.indicate_subscribers(attr, request.value)
+        return IndicateOnCharacteristicResponse(status=SUCCESS)

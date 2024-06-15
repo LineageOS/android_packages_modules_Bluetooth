@@ -56,20 +56,30 @@ struct L2CA_UpdateBleConnParams {
   };
 };
 extern struct L2CA_UpdateBleConnParams L2CA_UpdateBleConnParams;
-// Name: L2CA_EnableUpdateBleConnParams
+// Name: L2CA_LockBleConnParamsForServiceDiscovery
 // Params: const RawAddress& rem_bda, bool enable
-// Returns: bool
-struct L2CA_EnableUpdateBleConnParams {
-  std::function<bool(const RawAddress& rem_bda, bool enable)> body{
+// Returns: void
+struct L2CA_LockBleConnParamsForServiceDiscovery {
+  std::function<void(const RawAddress& rem_bda, bool enable)> body{
       [](const RawAddress& /* rem_bda */, bool /* enable */) { return false; }};
-  bool operator()(const RawAddress& rem_bda, bool enable) {
+  void operator()(const RawAddress& rem_bda, bool enable) {
     return body(rem_bda, enable);
   };
 };
-extern struct L2CA_EnableUpdateBleConnParams L2CA_EnableUpdateBleConnParams;
-// Name: L2CA_ConsolidateParams
-// Params: const RawAddress& identity, const RawAddress& rpa
-// Returns: bool
+extern struct L2CA_LockBleConnParamsForServiceDiscovery
+    L2CA_LockBleConnParamsForServiceDiscovery;
+// Name: L2CA_LockBleConnParamsForProfileConnection
+// Params: const RawAddress& rem_bda, bool enable
+// Returns: void
+struct L2CA_LockBleConnParamsForProfileConnection {
+  std::function<void(const RawAddress& rem_bda, bool enable)> body{
+      [](const RawAddress& /* rem_bda */, bool /* enable */) { return false; }};
+  void operator()(const RawAddress& rem_bda, bool enable) {
+    return body(rem_bda, enable);
+  };
+};
+extern struct L2CA_LockBleConnParamsForProfileConnection
+    L2CA_LockBleConnParamsForProfileConnection;
 struct L2CA_ConsolidateParams {
   std::function<void(const RawAddress& identity_addr, const RawAddress& rpa)>
       body{[](const RawAddress& /* identity_addr */,

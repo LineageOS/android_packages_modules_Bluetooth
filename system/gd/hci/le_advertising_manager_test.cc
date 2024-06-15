@@ -103,10 +103,10 @@ class TestLeAddressManager : public LeAddressManager {
       common::Callback<void(std::unique_ptr<CommandBuilder>)> enqueue_command,
       os::Handler* handler,
       Address public_address,
-      uint8_t connect_list_size,
+      uint8_t accept_list_size,
       uint8_t resolving_list_size)
       : LeAddressManager(
-            enqueue_command, handler, public_address, connect_list_size, resolving_list_size) {
+            enqueue_command, handler, public_address, accept_list_size, resolving_list_size) {
     address_policy_ = AddressPolicy::USE_STATIC_ADDRESS;
     minimum_rotation_time_ = 0ms;
     maximum_rotation_time_ = 100ms;
@@ -187,7 +187,7 @@ class TestAclManager : public AclManager {
 class LeAdvertisingManagerTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    test_hci_layer_ = new TestHciLayer;  // Ownership is transferred to registry
+    test_hci_layer_ = new HciLayerFake;  // Ownership is transferred to registry
     test_controller_ = new TestController;
     test_acl_manager_ = new TestAclManager;
     test_controller_->AddSupported(param_opcode_);
@@ -210,7 +210,7 @@ class LeAdvertisingManagerTest : public ::testing::Test {
   }
 
   TestModuleRegistry fake_registry_;
-  TestHciLayer* test_hci_layer_ = nullptr;
+  HciLayerFake* test_hci_layer_ = nullptr;
   TestController* test_controller_ = nullptr;
   TestAclManager* test_acl_manager_ = nullptr;
   os::Thread& thread_ = fake_registry_.GetTestThread();
@@ -1801,13 +1801,14 @@ TEST_F(LeExtendedAdvertisingManagerTest, use_rpa) {
   test_acl_manager_->SetAddressPolicy(LeAddressManager::AddressPolicy::USE_RESOLVABLE_ADDRESS);
 
   // act: start advertising set with RPA
+  AdvertisingConfig config{};
+  config.requested_advertiser_address_type = AdvertiserAddressType::RESOLVABLE_RANDOM;
+  config.channel_map = 1;
+
   le_advertising_manager_->ExtendedCreateAdvertiser(
       kAdvertiserClientIdJni,
       0x00,
-      AdvertisingConfig{
-          .requested_advertiser_address_type = AdvertiserAddressType::RESOLVABLE_RANDOM,
-          .channel_map = 1,
-      },
+      config,
       scan_callback,
       set_terminated_callback,
       0,
@@ -1829,13 +1830,14 @@ TEST_F(LeExtendedAdvertisingManagerTest, use_non_resolvable_address) {
   test_acl_manager_->SetAddressPolicy(LeAddressManager::AddressPolicy::USE_RESOLVABLE_ADDRESS);
 
   // start advertising set with NRPA
+  AdvertisingConfig config{};
+  config.requested_advertiser_address_type = AdvertiserAddressType::NONRESOLVABLE_RANDOM;
+  config.channel_map = 1;
+
   le_advertising_manager_->ExtendedCreateAdvertiser(
       kAdvertiserClientIdJni,
       0x00,
-      AdvertisingConfig{
-          .requested_advertiser_address_type = AdvertiserAddressType::NONRESOLVABLE_RANDOM,
-          .channel_map = 1,
-      },
+      config,
       scan_callback,
       set_terminated_callback,
       0,
@@ -1866,13 +1868,89 @@ TEST_F(LeExtendedAdvertisingManagerTest, use_public_address_type_if_public_addre
   test_acl_manager_->SetAddressPolicy(LeAddressManager::AddressPolicy::USE_PUBLIC_ADDRESS);
 
   // act: start advertising set with RPA
+  AdvertisingConfig config{};
+  config.requested_advertiser_address_type = AdvertiserAddressType::RESOLVABLE_RANDOM;
+  config.channel_map = 1;
+
   le_advertising_manager_->ExtendedCreateAdvertiser(
       kAdvertiserClientIdJni,
       0x00,
-      AdvertisingConfig{
-          .requested_advertiser_address_type = AdvertiserAddressType::RESOLVABLE_RANDOM,
-          .channel_map = 1,
-      },
+      config,
+      scan_callback,
+      set_terminated_callback,
+      0,
+      0,
+      client_handler_);
+  auto command = LeAdvertisingCommandView::Create(test_hci_layer_->GetCommand());
+
+  // assert
+  ASSERT_TRUE(command.IsValid());
+  EXPECT_EQ(command.GetOpCode(), OpCode::LE_SET_EXTENDED_ADVERTISING_PARAMETERS);
+
+  auto set_parameters_command =
+      LeSetExtendedAdvertisingParametersView::Create(LeAdvertisingCommandView::Create(command));
+  ASSERT_TRUE(set_parameters_command.IsValid());
+  EXPECT_EQ(set_parameters_command.GetOwnAddressType(), OwnAddressType::PUBLIC_DEVICE_ADDRESS);
+}
+
+TEST_F_WITH_FLAGS(
+    LeExtendedAdvertisingManagerTest,
+    use_nrpa_if_public_address_policy_non_connectable,
+    REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT, nrpa_non_connectable_adv))) {
+  // arrange: use PUBLIC address policy
+  test_acl_manager_->SetAddressPolicy(LeAddressManager::AddressPolicy::USE_PUBLIC_ADDRESS);
+
+  // act: start non-connectable advertising set with RPA
+  AdvertisingConfig config{};
+  config.requested_advertiser_address_type = AdvertiserAddressType::RESOLVABLE_RANDOM;
+  config.channel_map = 1;
+  config.connectable = false;
+
+  le_advertising_manager_->ExtendedCreateAdvertiser(
+      kAdvertiserClientIdJni,
+      0x00,
+      config,
+      scan_callback,
+      set_terminated_callback,
+      0,
+      0,
+      client_handler_);
+  ASSERT_EQ(
+      test_hci_layer_->GetCommand().GetOpCode(), OpCode::LE_SET_EXTENDED_ADVERTISING_PARAMETERS);
+  test_hci_layer_->IncomingEvent(LeSetExtendedAdvertisingParametersCompleteBuilder::Create(
+      uint8_t{1}, ErrorCode::SUCCESS, static_cast<uint8_t>(-23)));
+
+  auto command = LeAdvertisingCommandView::Create(test_hci_layer_->GetCommand());
+  ASSERT_TRUE(command.IsValid());
+  ASSERT_EQ(command.GetOpCode(), OpCode::LE_SET_ADVERTISING_SET_RANDOM_ADDRESS);
+
+  auto set_address_command =
+      LeSetAdvertisingSetRandomAddressView::Create(LeAdvertisingCommandView::Create(command));
+  ASSERT_TRUE(set_address_command.IsValid());
+  EXPECT_EQ(set_address_command.GetOpCode(), OpCode::LE_SET_ADVERTISING_SET_RANDOM_ADDRESS);
+
+  // checking that it is an NRPA (first two bits = 0b00)
+  Address address = set_address_command.GetRandomAddress();
+  EXPECT_EQ(address.data()[5] >> 6, 0b00);
+}
+
+TEST_F_WITH_FLAGS(
+    LeExtendedAdvertisingManagerTest,
+    use_public_if_requested_with_public_address_policy_non_connectable,
+    REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT, nrpa_non_connectable_adv))) {
+  // arrange: use PUBLIC address policy
+  test_acl_manager_->SetAddressPolicy(LeAddressManager::AddressPolicy::USE_PUBLIC_ADDRESS);
+
+  // act: start non-connectable advertising set with PUBLIC
+  AdvertisingConfig config{};
+  config.requested_advertiser_address_type = AdvertiserAddressType::PUBLIC;
+  config.channel_map = 1;
+  config.connectable = false;
+
+  le_advertising_manager_->ExtendedCreateAdvertiser(
+      kAdvertiserClientIdJni,
+      0x00,
+      config,
       scan_callback,
       set_terminated_callback,
       0,

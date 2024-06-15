@@ -32,6 +32,8 @@
 
 package com.android.bluetooth.opp;
 
+import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothProtoEnums;
 import android.content.ContentProvider;
 import android.content.ContentValues;
 import android.content.Context;
@@ -44,14 +46,15 @@ import android.database.sqlite.SQLiteQueryBuilder;
 import android.net.Uri;
 import android.util.Log;
 
+import com.android.bluetooth.BluetoothStatsLog;
+import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- * This provider allows application to interact with Bluetooth OPP manager
- */
-
+/** This provider allows application to interact with Bluetooth OPP manager */
+// Next tag value for ContentProfileErrorReportUtils.report(): 5
 public final class BluetoothOppProvider extends ContentProvider {
 
     private static final String TAG = "BluetoothOppProvider";
@@ -154,6 +157,11 @@ public final class BluetoothOppProvider extends ContentProvider {
                     + BluetoothShare.TIMESTAMP + " INTEGER," + Constants.MEDIA_SCANNED
                     + " INTEGER); ");
         } catch (SQLException ex) {
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_PROVIDER,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                    0);
             Log.e(TAG, "createTable: Failed.");
             throw ex;
         }
@@ -163,6 +171,11 @@ public final class BluetoothOppProvider extends ContentProvider {
         try {
             db.execSQL("DROP TABLE IF EXISTS " + DB_TABLE);
         } catch (SQLException ex) {
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_PROVIDER,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                    1);
             Log.e(TAG, "dropTable: Failed.");
             throw ex;
         }
@@ -251,6 +264,11 @@ public final class BluetoothOppProvider extends ContentProvider {
                 db.insert(DB_TABLE, null, values);
                 Log.d(TAG, "One item migrated: " + values);
             } catch (IllegalArgumentException e) {
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.OPP,
+                        BluetoothProtoEnums.BLUETOOTH_OPP_PROVIDER,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                        2);
                 Log.e(TAG, "Failed to migrate one item: " + e);
                 result = false;
             }
@@ -308,6 +326,11 @@ public final class BluetoothOppProvider extends ContentProvider {
 
         if (rowID == -1) {
             Log.w(TAG, "couldn't insert " + uri + "into btopp database");
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_PROVIDER,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                    3);
             return null;
         }
 
@@ -390,6 +413,11 @@ public final class BluetoothOppProvider extends ContentProvider {
 
         if (ret == null) {
             Log.w(TAG, "query failed in downloads database");
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_PROVIDER,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                    4);
             return null;
         }
 

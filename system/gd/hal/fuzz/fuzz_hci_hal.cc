@@ -58,6 +58,7 @@ void FuzzHciHal::sendHciCommand(HciPacket packet) {
 
   waiting_opcode_ = command.GetOpCode();
   waiting_for_status_ = hci::fuzz::uses_command_status(waiting_opcode_);
+  waiting_for_complete_ = !waiting_for_status_;
 }
 
 void FuzzHciHal::injectHciEvent(std::vector<uint8_t> data) {
@@ -68,11 +69,10 @@ void FuzzHciHal::injectHciEvent(std::vector<uint8_t> data) {
 
   hci::CommandCompleteView complete = hci::CommandCompleteView::Create(event);
   if (complete.IsValid()) {
-    if (waiting_for_status_ || complete.GetCommandOpCode() != waiting_opcode_) {
+    if (!waiting_for_complete_ || complete.GetCommandOpCode() != waiting_opcode_) {
       return;
     }
-  } else if (!waiting_for_status_) {
-    return;
+    waiting_for_complete_ = false;
   }
 
   hci::CommandStatusView status = hci::CommandStatusView::Create(event);
@@ -80,8 +80,7 @@ void FuzzHciHal::injectHciEvent(std::vector<uint8_t> data) {
     if (!waiting_for_status_ || status.GetCommandOpCode() != waiting_opcode_) {
       return;
     }
-  } else if (waiting_for_status_) {
-    return;
+    waiting_for_status_ = false;
   }
 
   callbacks_->hciEventReceived(data);

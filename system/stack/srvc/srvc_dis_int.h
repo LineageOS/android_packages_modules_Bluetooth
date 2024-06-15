@@ -19,8 +19,8 @@
 #ifndef SRVC_DIS_INT_H
 #define SRVC_DIS_INT_H
 
-#include "bt_target.h"
 #include "gatt_api.h"
+#include "internal_include/bt_target.h"
 #include "srvc_api.h"
 #include "srvc_eng_int.h"
 

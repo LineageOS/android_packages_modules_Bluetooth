@@ -414,7 +414,7 @@ void ClientInterfaceFuzzer::process(const uint8_t* data, size_t size) {
     for (auto codec_offloading_preference :
          CodecOffloadingPreferenceGenerator()) {
       UpdateOffloadingCapabilities(codec_offloading_preference);
-      update_codec_offloading_capabilities(codec_offloading_preference);
+      update_codec_offloading_capabilities(codec_offloading_preference, false);
     }
     IsCodecOffloadingEnabled(codecConfig);
   }

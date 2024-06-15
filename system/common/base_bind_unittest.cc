@@ -24,7 +24,7 @@
 #include <memory>
 #include <mutex>
 
-#include "osi/include/log.h"
+#include "os/log.h"
 
 class BaseBindThreadTest : public ::testing::Test {
  public:

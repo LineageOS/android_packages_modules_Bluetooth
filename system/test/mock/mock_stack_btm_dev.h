@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <functional>
+
 #include "stack/btm/btm_dev.h"
 #include "types/raw_address.h"
 

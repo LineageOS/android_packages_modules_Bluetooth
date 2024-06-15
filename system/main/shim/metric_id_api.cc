@@ -15,8 +15,8 @@
  */
 #include "main/shim/metric_id_api.h"
 
-#include "gd/common/metric_id_manager.h"
-#include "gd/hci/address.h"
+#include "common/metric_id_manager.h"
+#include "hci/address.h"
 #include "main/shim/helpers.h"
 #include "types/raw_address.h"
 

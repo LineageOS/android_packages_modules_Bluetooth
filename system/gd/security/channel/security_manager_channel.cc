@@ -18,7 +18,6 @@
 #include "security/channel/security_manager_channel.h"
 
 #include "hci/address.h"
-#include "security/smp_packets.h"
 
 namespace bluetooth {
 namespace security {

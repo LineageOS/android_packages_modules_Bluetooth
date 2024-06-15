@@ -241,7 +241,7 @@ public class BluetoothAirplaneModeListenerTest {
 
         mBluetoothAirplaneModeListener.handleAirplaneModeChange(true);
 
-        verify(mBluetoothManagerService).sendAirplaneModeNotification(eq(APM_WIFI_BT_NOTIFICATION));
+        verify(mBluetoothManagerService).sendToggleNotification(eq(APM_WIFI_BT_NOTIFICATION));
     }
 
     @Test
@@ -287,7 +287,7 @@ public class BluetoothAirplaneModeListenerTest {
 
         mBluetoothAirplaneModeListener.handleAirplaneModeChange(true);
 
-        verify(mBluetoothManagerService).sendAirplaneModeNotification(eq(APM_BT_NOTIFICATION));
+        verify(mBluetoothManagerService).sendToggleNotification(eq(APM_BT_NOTIFICATION));
     }
 
     @Test

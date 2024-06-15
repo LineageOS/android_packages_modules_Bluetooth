@@ -25,6 +25,7 @@ import android.bluetooth.BluetoothProfile;
 import android.bluetooth.IBluetoothLeCallControl;
 import android.bluetooth.IBluetoothLeCallControlCallback;
 import android.content.AttributionSource;
+import android.content.Context;
 import android.os.ParcelUuid;
 import android.os.RemoteException;
 import android.sysprop.BluetoothProperties;
@@ -50,6 +51,10 @@ public class TbsService extends ProfileService {
 
     private final TbsGeneric mTbsGeneric = new TbsGeneric();
 
+    public TbsService(Context ctx) {
+        super(ctx);
+    }
+
     public static boolean isEnabled() {
         return BluetoothProperties.isProfileCcpServerEnabled().orElse(false);
     }
@@ -60,7 +65,7 @@ public class TbsService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    public void start() {
 
         if (DBG) {
             Log.d(TAG, "start()");
@@ -73,18 +78,16 @@ public class TbsService extends ProfileService {
         setTbsService(this);
 
         mTbsGeneric.init(new TbsGatt(this));
-
-        return true;
     }
 
     @Override
-    protected boolean stop() {
+    public void stop() {
         if (DBG) {
             Log.d(TAG, "stop()");
         }
         if (sTbsService == null) {
             Log.w(TAG, "stop() called before start()");
-            return true;
+            return;
         }
 
         // Mark service as stopped
@@ -93,12 +96,10 @@ public class TbsService extends ProfileService {
         if (mTbsGeneric != null) {
             mTbsGeneric.cleanup();
         }
-
-        return true;
     }
 
     @Override
-    protected void cleanup() {
+    public void cleanup() {
         if (DBG) {
             Log.d(TAG, "cleanup()");
         }
@@ -140,6 +141,17 @@ public class TbsService extends ProfileService {
         }
         Log.w(TAG, "onDeviceUnauthorized - authorization notification not implemented yet ");
         setDeviceAuthorized(device, false);
+    }
+
+    /**
+     * Remove authorization information for the device.
+     *
+     * @param device device to remove from the service information
+     * @hide
+     */
+    public void removeDeviceAuthorizationInfo(BluetoothDevice device) {
+        Log.i(TAG, "removeDeviceAuthorizationInfo(): device: " + device);
+        mDeviceAuthorizations.remove(device);
     }
 
     /**

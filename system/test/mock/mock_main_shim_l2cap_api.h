@@ -291,17 +291,30 @@ struct L2CA_LeConnectionUpdate {
   };
 };
 extern struct L2CA_LeConnectionUpdate L2CA_LeConnectionUpdate;
-// Name: L2CA_EnableUpdateBleConnParams
+// Name: L2CA_LockBleConnParamsForServiceDiscovery
 // Params: const RawAddress& rem_bda, bool enable
-// Returns: bool
-struct L2CA_EnableUpdateBleConnParams {
-  std::function<bool(const RawAddress& rem_bda, bool enable)> body{
+// Returns: void
+struct L2CA_LockBleConnParamsForServiceDiscovery {
+  std::function<void(const RawAddress& rem_bda, bool enable)> body{
       [](const RawAddress& rem_bda, bool enable) { return false; }};
-  bool operator()(const RawAddress& rem_bda, bool enable) {
+  void operator()(const RawAddress& rem_bda, bool enable) {
     return body(rem_bda, enable);
   };
 };
-extern struct L2CA_EnableUpdateBleConnParams L2CA_EnableUpdateBleConnParams;
+extern struct L2CA_LockBleConnParamsForServiceDiscovery
+    L2CA_LockBleConnParamsForServiceDiscovery;
+// Name: L2CA_LockBleConnParamsForProfileConnection
+// Params: const RawAddress& rem_bda, bool enable
+// Returns: void
+struct L2CA_LockBleConnParamsForProfileConnection {
+  std::function<void(const RawAddress& rem_bda, bool enable)> body{
+      [](const RawAddress& rem_bda, bool enable) { return false; }};
+  void operator()(const RawAddress& rem_bda, bool enable) {
+    return body(rem_bda, enable);
+  };
+};
+extern struct L2CA_LockBleConnParamsForProfileConnection
+    L2CA_LockBleConnParamsForProfileConnection;
 // Name: L2CA_GetRemoteCid
 // Params: uint16_t lcid, uint16_t* rcid
 // Returns: bool

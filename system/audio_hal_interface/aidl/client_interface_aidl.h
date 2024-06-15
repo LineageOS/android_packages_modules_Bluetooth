@@ -26,7 +26,6 @@
 #include "audio_aidl_interfaces.h"
 #include "audio_ctrl_ack.h"
 #include "bluetooth_audio_port_impl.h"
-#include "common/message_loop_thread.h"
 #include "transport_instance.h"
 
 #define BLUETOOTH_AUDIO_HAL_PROP_DISABLED \
@@ -36,11 +35,16 @@ namespace bluetooth {
 namespace audio {
 namespace aidl {
 
+using ::aidl::android::hardware::bluetooth::audio::A2dpConfiguration;
+using ::aidl::android::hardware::bluetooth::audio::A2dpConfigurationHint;
+using ::aidl::android::hardware::bluetooth::audio::A2dpRemoteCapabilities;
+using ::aidl::android::hardware::bluetooth::audio::A2dpStatus;
 using ::aidl::android::hardware::bluetooth::audio::AudioCapabilities;
 using ::aidl::android::hardware::bluetooth::audio::AudioConfiguration;
 using ::aidl::android::hardware::bluetooth::audio::BluetoothAudioStatus;
 using ::aidl::android::hardware::bluetooth::audio::CodecId;
 using ::aidl::android::hardware::bluetooth::audio::CodecInfo;
+using ::aidl::android::hardware::bluetooth::audio::CodecParameters;
 using ::aidl::android::hardware::bluetooth::audio::CodecSpecificCapabilitiesLtv;
 using ::aidl::android::hardware::bluetooth::audio::
     CodecSpecificConfigurationLtv;
@@ -74,8 +78,22 @@ class BluetoothAudioClientInterface {
   bool IsValid() const { return provider_ != nullptr; }
 
   std::vector<AudioCapabilities> GetAudioCapabilities() const;
+
   static std::vector<AudioCapabilities> GetAudioCapabilities(
       SessionType session_type);
+  static std::optional<IBluetoothAudioProviderFactory::ProviderInfo>
+  GetProviderInfo(SessionType session_type,
+                  std::shared_ptr<IBluetoothAudioProviderFactory>
+                      provider_factory = nullptr);
+
+  std::optional<A2dpStatus> ParseA2dpConfiguration(
+      const CodecId& codec_id, const std::vector<uint8_t>& configuration,
+      CodecParameters* codec_parameters) const;
+
+  std::optional<A2dpConfiguration> GetA2dpConfiguration(
+      std::vector<A2dpRemoteCapabilities> const& remote_capabilities,
+      A2dpConfigurationHint const& hint) const;
+
   void StreamStarted(const BluetoothAudioCtrlAck& ack);
 
   void StreamSuspended(const BluetoothAudioCtrlAck& ack);
@@ -94,9 +112,6 @@ class BluetoothAudioClientInterface {
   bool SetAllowedLatencyModes(std::vector<LatencyMode> latency_modes);
 
   void FlushAudioData();
-
-  std::optional<IBluetoothAudioProviderFactory::ProviderInfo> GetProviderInfo(
-      SessionType session_type);
 
   void SetCodecPriority(CodecId codec_id, int32_t priority);
 
@@ -176,12 +191,9 @@ class BluetoothAudioSinkClientInterface : public BluetoothAudioClientInterface {
  public:
   /***
    * Constructs an BluetoothAudioSinkClientInterface to communicate to
-   * BluetoothAudio HAL. |sink| is the implementation for the transport, and
-   * |message_loop| is the thread where callbacks are invoked.
+   * BluetoothAudio HAL. |sink| is the implementation for the transport.
    ***/
-  BluetoothAudioSinkClientInterface(
-      IBluetoothSinkTransportInstance* sink,
-      bluetooth::common::MessageLoopThread* message_loop);
+  BluetoothAudioSinkClientInterface(IBluetoothSinkTransportInstance* sink);
   virtual ~BluetoothAudioSinkClientInterface();
 
   IBluetoothSinkTransportInstance* GetTransportInstance() const {
@@ -205,12 +217,10 @@ class BluetoothAudioSourceClientInterface
  public:
   /***
    * Constructs an BluetoothAudioSourceClientInterface to communicate to
-   * BluetoothAudio HAL. |source| is the implementation for the transport, and
-   * |message_loop| is the thread where callbacks are invoked.
+   * BluetoothAudio HAL. |source| is the implementation for the transport.
    ***/
   BluetoothAudioSourceClientInterface(
-      IBluetoothSourceTransportInstance* source,
-      bluetooth::common::MessageLoopThread* message_loop);
+      IBluetoothSourceTransportInstance* source);
   virtual ~BluetoothAudioSourceClientInterface();
 
   IBluetoothSourceTransportInstance* GetTransportInstance() const {

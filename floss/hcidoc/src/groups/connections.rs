@@ -350,6 +350,7 @@ impl OddDisconnectionsRule {
         if let Some(_) = self.connection_attempt.remove(&address) {
             if status == ErrorCode::Success {
                 self.active_handles.insert(handle, (packet.ts, address));
+                self.pending_disconnect_due_to_host_power_off.remove(&handle);
             } else {
                 self.reportable.push((
                     packet.ts,
@@ -449,6 +450,7 @@ impl OddDisconnectionsRule {
         if let Some(_) = self.sco_connection_attempt.remove(&address) {
             if status == ErrorCode::Success {
                 self.active_handles.insert(handle, (packet.ts, address));
+                self.pending_disconnect_due_to_host_power_off.remove(&handle);
             } else {
                 self.reportable.push((
                     packet.ts,
@@ -486,6 +488,7 @@ impl OddDisconnectionsRule {
         if let Some(_) = self.le_connection_attempt.remove(&addr_to_remove) {
             if status == ErrorCode::Success {
                 self.active_handles.insert(handle, (packet.ts, address));
+                self.pending_disconnect_due_to_host_power_off.remove(&handle);
             } else {
                 let message = if use_accept_list {
                     format!("LeConnectionComplete error {:?} for accept list", status)
@@ -525,27 +528,30 @@ impl OddDisconnectionsRule {
         let ts = &packet.ts;
         for completed_packet in nocp.get_completed_packets() {
             let handle = completed_packet.connection_handle;
+            let num = completed_packet.host_num_of_completed_packets;
             if !self.nocp_by_handle.contains_key(&handle) {
                 self.nocp_by_handle.insert(handle, NocpData::new());
             }
 
             if let Some(nocp_data) = self.nocp_by_handle.get_mut(&handle) {
-                if let Some(acl_front_ts) = nocp_data.inflight_acl_ts.pop_front() {
-                    let duration_since_acl = ts.signed_duration_since(acl_front_ts);
-                    if duration_since_acl.num_milliseconds() > TIMEOUT_TOLERANCE_TIME_MS {
-                        self.signals.push(Signal {
-                            index: packet.index,
-                            ts: packet.ts,
-                            tag: ConnectionSignal::NocpTimeout.into(),
-                        });
-                        self.reportable.push((
-                            packet.ts,
-                            format!(
-                                "Nocp sent {} ms after ACL on handle({}).",
-                                duration_since_acl.num_milliseconds(),
-                                handle
-                            ),
-                        ));
+                for _i in 0..num {
+                    if let Some(acl_front_ts) = nocp_data.inflight_acl_ts.pop_front() {
+                        let duration_since_acl = ts.signed_duration_since(acl_front_ts);
+                        if duration_since_acl.num_milliseconds() > TIMEOUT_TOLERANCE_TIME_MS {
+                            self.signals.push(Signal {
+                                index: packet.index,
+                                ts: packet.ts,
+                                tag: ConnectionSignal::NocpTimeout.into(),
+                            });
+                            self.reportable.push((
+                                packet.ts,
+                                format!(
+                                    "Nocp sent {} ms after ACL on handle({}).",
+                                    duration_since_acl.num_milliseconds(),
+                                    handle
+                                ),
+                            ));
+                        }
                     }
                 }
             }
@@ -798,6 +804,9 @@ impl Rule for OddDisconnectionsRule {
 
             // We don't do anything with RX packets yet.
             PacketChild::AclRx(_) => (),
+
+            // End packet.inner match
+            _ => (),
         }
     }
 

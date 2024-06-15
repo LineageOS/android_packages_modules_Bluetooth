@@ -20,11 +20,10 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
-#include <map>
 #include <memory>
 
 #include "btif/include/core_callbacks.h"
-#include "btif/include/stack_manager.h"
+#include "btif/include/stack_manager_t.h"
 #include "stack/btm/btm_sco.h"
 #include "stack/include/hfp_lc3_decoder.h"
 #include "stack/include/hfp_lc3_encoder.h"

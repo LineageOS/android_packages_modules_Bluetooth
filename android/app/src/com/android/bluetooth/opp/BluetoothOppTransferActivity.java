@@ -37,6 +37,8 @@ import static android.view.WindowManager.LayoutParams.SYSTEM_FLAG_HIDE_NON_SYSTE
 import android.app.NotificationManager;
 import android.bluetooth.AlertActivity;
 import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothProtoEnums;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.ContentObserver;
@@ -50,20 +52,21 @@ import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
+import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 
 import com.google.common.annotations.VisibleForTesting;
 
 /**
- * Handle all transfer related dialogs: -Ongoing transfer -Receiving one file
- * dialog -Sending one file dialog -sending multiple files dialog -Complete
- * transfer -receive -receive success, will trigger corresponding handler
- * -receive fail dialog -send -send success dialog -send fail dialog -Other
- * dialogs - - DIALOG_RECEIVE_ONGOING will transition to
- * DIALOG_RECEIVE_COMPLETE_SUCCESS or DIALOG_RECEIVE_COMPLETE_FAIL
- * DIALOG_SEND_ONGOING will transition to DIALOG_SEND_COMPLETE_SUCCESS or
- * DIALOG_SEND_COMPLETE_FAIL
+ * Handle all transfer related dialogs: -Ongoing transfer -Receiving one file dialog -Sending one
+ * file dialog -sending multiple files dialog -Complete transfer -receive -receive success, will
+ * trigger corresponding handler -receive fail dialog -send -send success dialog -send fail dialog
+ * -Other dialogs - - DIALOG_RECEIVE_ONGOING will transition to DIALOG_RECEIVE_COMPLETE_SUCCESS or
+ * DIALOG_RECEIVE_COMPLETE_FAIL DIALOG_SEND_ONGOING will transition to DIALOG_SEND_COMPLETE_SUCCESS
+ * or DIALOG_SEND_COMPLETE_FAIL
  */
+// Next tag value for ContentProfileErrorReportUtils.report(): 2
 public class BluetoothOppTransferActivity extends AlertActivity
         implements DialogInterface.OnClickListener {
     private static final String TAG = "BluetoothOppTransferActivity";
@@ -145,6 +148,11 @@ public class BluetoothOppTransferActivity extends AlertActivity
             if (V) {
                 Log.e(TAG, "Error: Can not get data from db");
             }
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_TRANSFER_ACTIVITY,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
+                    0);
             finish();
             return;
         }
@@ -402,6 +410,11 @@ public class BluetoothOppTransferActivity extends AlertActivity
             if (V) {
                 Log.e(TAG, "Error: Can not get data from db");
             }
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_TRANSFER_ACTIVITY,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
+                    1);
             return;
         }
 

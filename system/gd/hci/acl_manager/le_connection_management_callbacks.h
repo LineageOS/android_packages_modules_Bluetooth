@@ -16,9 +16,6 @@
 
 #pragma once
 
-#include <memory>
-
-#include "hci/address_with_type.h"
 #include "hci/hci_packets.h"
 
 namespace bluetooth {

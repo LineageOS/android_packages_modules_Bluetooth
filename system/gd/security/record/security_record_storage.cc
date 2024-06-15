@@ -17,6 +17,8 @@
  */
 #include "security/record/security_record_storage.h"
 
+#include "storage/classic_device.h"
+#include "storage/le_device.h"
 #include "storage/mutation.h"
 
 namespace bluetooth {

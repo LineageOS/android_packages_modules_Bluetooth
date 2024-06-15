@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-#include "gd/rust/topshim/metrics/metrics_shim.h"
+#include "rust/topshim/metrics/metrics_shim.h"
 
-#include "gd/metrics/metrics.h"
+#include "metrics/metrics.h"
 #include "src/metrics.rs.h"
 #include "types/raw_address.h"
 
@@ -63,6 +63,10 @@ void acl_connect_attempt(RawAddress addr, uint32_t acl_state) {
 void acl_connection_state_changed(
     RawAddress addr, uint32_t transport, uint32_t status, uint32_t acl_state, uint32_t direction, uint32_t hci_reason) {
   metrics::LogMetricsAclConnectionStateChanged(&addr, transport, status, acl_state, direction, hci_reason);
+}
+
+void suspend_complete_state(uint32_t state) {
+  metrics::LogMetricsSuspendIdState(state);
 }
 
 }  // namespace rust

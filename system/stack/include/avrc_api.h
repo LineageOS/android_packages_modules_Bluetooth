@@ -28,11 +28,12 @@
 
 #include <cstdint>
 
-#include "bt_target.h"
+#include "internal_include/bt_target.h"
 #include "stack/include/avct_api.h"
 #include "stack/include/avrc_defs.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/sdp_api.h"
+#include "stack/sdp/sdp_discovery_db.h"
 #include "types/raw_address.h"
 
 /*****************************************************************************
@@ -147,15 +148,6 @@
 #ifndef AVRC_DYNAMIC_AVRCP_ENABLE_PROPERTY
 #define AVRC_DYNAMIC_AVRCP_ENABLE_PROPERTY \
   "persist.bluetooth.dynamic_avrcp.enable"
-#endif
-
-/* Avrcp controller version key for bt_config.conf */
-#ifndef AVRCP_CONTROLLER_VERSION_CONFIG_KEY
-#define AVRCP_CONTROLLER_VERSION_CONFIG_KEY "AvrcpControllerVersion"
-#endif
-
-#ifndef AV_REM_CTRL_FEATURES_CONFIG_KEY
-#define AV_REM_CTRL_FEATURES_CONFIG_KEY "AvrcpPeerFeatures"
 #endif
 
 /* Supported categories */

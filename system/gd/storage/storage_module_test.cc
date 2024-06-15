@@ -31,6 +31,7 @@
 #include "os/fake_timer/fake_timerfd.h"
 #include "os/files.h"
 #include "storage/config_cache.h"
+#include "storage/config_keys.h"
 #include "storage/device.h"
 #include "storage/legacy_config_file.h"
 
@@ -187,7 +188,7 @@ static const std::string kReadTestConfig =
     "DiscoveryTimeout = 120\n"
     "\n"
     "[01:02:03:ab:cd:ea]\n"
-    "name = hello world\n"
+    "Name = hello world\n"
     "LinkKey = fedcba0987654321fedcba0987654328\n"
     "\n";
 
@@ -203,7 +204,7 @@ TEST_F(StorageModuleTest, read_existing_config_test) {
   ASSERT_TRUE(storage->HasSectionPublic("Metrics"));
   ASSERT_THAT(storage->GetPersistentSectionsPublic(), ElementsAre("01:02:03:ab:cd:ea"));
   ASSERT_THAT(
-      storage->GetPropertyPublic(StorageModule::kAdapterSection, "Address"),
+      storage->GetPropertyPublic(StorageModule::kAdapterSection, BTIF_STORAGE_KEY_ADDRESS),
       Optional(StrEq("01:02:03:ab:cd:ef")));
 
   // Tear down
@@ -229,22 +230,26 @@ TEST_F(StorageModuleTest, save_config_test) {
   // Test
   // Change a property
   ASSERT_THAT(
-      storage->GetPropertyPublic("01:02:03:ab:cd:ea", "name"), Optional(StrEq("hello world")));
-  storage->SetPropertyPublic("01:02:03:ab:cd:ea", "name", "foo");
-  ASSERT_THAT(storage->GetPropertyPublic("01:02:03:ab:cd:ea", "name"), Optional(StrEq("foo")));
+      storage->GetPropertyPublic("01:02:03:ab:cd:ea", BTIF_STORAGE_KEY_NAME),
+      Optional(StrEq("hello world")));
+  storage->SetPropertyPublic("01:02:03:ab:cd:ea", BTIF_STORAGE_KEY_NAME, "foo");
+  ASSERT_THAT(
+      storage->GetPropertyPublic("01:02:03:ab:cd:ea", BTIF_STORAGE_KEY_NAME),
+      Optional(StrEq("foo")));
   ASSERT_TRUE(WaitForReactorIdle(kTestConfigSaveDelay));
 
   auto config = LegacyConfigFile::FromPath(temp_config_.string()).Read(kTestTempDevicesCapacity);
   ASSERT_TRUE(config);
-  ASSERT_THAT(config->GetProperty("01:02:03:ab:cd:ea", "name"), Optional(StrEq("foo")));
+  ASSERT_THAT(
+      config->GetProperty("01:02:03:ab:cd:ea", BTIF_STORAGE_KEY_NAME), Optional(StrEq("foo")));
 
   // Remove a property
-  storage->RemovePropertyPublic("01:02:03:ab:cd:ea", "name");
+  storage->RemovePropertyPublic("01:02:03:ab:cd:ea", BTIF_STORAGE_KEY_NAME);
   ASSERT_TRUE(WaitForReactorIdle(kTestConfigSaveDelay));
   LOG_INFO("After waiting 2");
   config = LegacyConfigFile::FromPath(temp_config_.string()).Read(kTestTempDevicesCapacity);
   ASSERT_TRUE(config);
-  ASSERT_FALSE(config->HasProperty("01:02:03:ab:cd:ea", "name"));
+  ASSERT_FALSE(config->HasProperty("01:02:03:ab:cd:ea", BTIF_STORAGE_KEY_NAME));
 
   // Remove a section
   storage->RemoveSectionPublic("01:02:03:ab:cd:ea");
@@ -310,7 +315,7 @@ TEST_F(StorageModuleTest, changed_config_causes_a_write) {
   DeleteConfigFiles();
 
   // Change a property
-  storage->SetPropertyPublic("01:02:03:ab:cd:ea", "name", "foo");
+  storage->SetPropertyPublic("01:02:03:ab:cd:ea", BTIF_STORAGE_KEY_NAME, "foo");
 
   ASSERT_TRUE(WaitForReactorIdle(std::chrono::milliseconds(1)));
 

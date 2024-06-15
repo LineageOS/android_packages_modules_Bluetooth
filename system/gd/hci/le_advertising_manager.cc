@@ -110,6 +110,26 @@ AdvertiserAddressType GetAdvertiserAddressTypeFromRequestedTypeAndPolicy(
   }
 }
 
+/**
+ * Determines the address type to use for non-connectable advertisement.
+ * (1) if the host only supports public/static address policy, non-connectable advertisement
+ *     can use both Public and NRPA if requested. Use NRPA if RPA is requested.
+ * (2) in other cases, based on the requested type and the address manager policy.
+ */
+AdvertiserAddressType GetAdvertiserAddressTypeNonConnectable(
+    AdvertiserAddressType requested_address_type, LeAddressManager::AddressPolicy address_policy) {
+  switch (address_policy) {
+    case LeAddressManager::AddressPolicy::USE_PUBLIC_ADDRESS:
+    case LeAddressManager::AddressPolicy::USE_STATIC_ADDRESS:
+      return requested_address_type == AdvertiserAddressType::RESOLVABLE_RANDOM
+                 ? AdvertiserAddressType::NONRESOLVABLE_RANDOM
+                 : requested_address_type;
+    default:
+      return GetAdvertiserAddressTypeFromRequestedTypeAndPolicy(
+          requested_address_type, address_policy);
+  }
+}
+
 struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallback {
   impl(Module* module) : module_(module), le_advertising_interface_(nullptr), num_instances_(0) {}
 
@@ -201,6 +221,12 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
 
   size_t GetNumberOfAdvertisingInstances() const {
     return num_instances_;
+  }
+
+  size_t GetNumberOfAdvertisingInstancesInUse() const {
+    return std::count_if(advertising_sets_.begin(), advertising_sets_.end(), [](const auto& set) {
+      return set.second.in_use;
+    });
   }
 
   int get_advertiser_reg_id(AdvertiserId advertiser_id) {
@@ -440,9 +466,13 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
       address_manager_registered = true;
     }
 
-    advertising_sets_[id].address_type = GetAdvertiserAddressTypeFromRequestedTypeAndPolicy(
-        config.requested_advertiser_address_type, le_address_manager_->GetAddressPolicy());
-
+    if (IS_FLAG_ENABLED(nrpa_non_connectable_adv) && !config.connectable) {
+      advertising_sets_[id].address_type = GetAdvertiserAddressTypeNonConnectable(
+          config.requested_advertiser_address_type, le_address_manager_->GetAddressPolicy());
+    } else {
+      advertising_sets_[id].address_type = GetAdvertiserAddressTypeFromRequestedTypeAndPolicy(
+          config.requested_advertiser_address_type, le_address_manager_->GetAddressPolicy());
+    }
     advertising_sets_[id].current_address = new_advertiser_address(id);
     set_parameters(id, config);
 
@@ -572,8 +602,13 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
     advertising_sets_[id].duration = duration;
     advertising_sets_[id].max_extended_advertising_events = max_ext_adv_events;
     advertising_sets_[id].handler = handler;
-    advertising_sets_[id].address_type = GetAdvertiserAddressTypeFromRequestedTypeAndPolicy(
-        config.requested_advertiser_address_type, le_address_manager_->GetAddressPolicy());
+    if (IS_FLAG_ENABLED(nrpa_non_connectable_adv) && !config.connectable) {
+      advertising_sets_[id].address_type = GetAdvertiserAddressTypeNonConnectable(
+          config.requested_advertiser_address_type, le_address_manager_->GetAddressPolicy());
+    } else {
+      advertising_sets_[id].address_type = GetAdvertiserAddressTypeFromRequestedTypeAndPolicy(
+          config.requested_advertiser_address_type, le_address_manager_->GetAddressPolicy());
+    }
     advertising_sets_[id].current_address = new_advertiser_address(id);
 
     set_parameters(id, config);
@@ -1458,16 +1493,12 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
         case (AdvertisingApiType::LEGACY): {
           le_advertising_interface_->EnqueueCommand(
               hci::LeSetAdvertisingEnableBuilder::Create(Enable::ENABLED),
-              common::init_flags::
-                      trigger_advertising_callbacks_on_first_resume_after_pause_is_enabled()
-                  ? module_handler_->BindOnceOn(
-                        this,
-                        &impl::on_set_advertising_enable_complete<
-                            LeSetAdvertisingEnableCompleteView>,
-                        true,
-                        enabled_sets,
-                        false /* trigger_callbacks */)
-                  : module_handler_->BindOnce(check_complete<LeSetAdvertisingEnableCompleteView>));
+              module_handler_->BindOnceOn(
+                  this,
+                  &impl::on_set_advertising_enable_complete<LeSetAdvertisingEnableCompleteView>,
+                  true,
+                  enabled_sets,
+                  false /* trigger_callbacks */));
         } break;
         case (AdvertisingApiType::ANDROID_HCI): {
           for (size_t i = 0; i < enabled_sets_.size(); i++) {
@@ -1475,15 +1506,12 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
             if (id != kInvalidHandle) {
               le_advertising_interface_->EnqueueCommand(
                   hci::LeMultiAdvtSetEnableBuilder::Create(Enable::ENABLED, id),
-                  common::init_flags::
-                          trigger_advertising_callbacks_on_first_resume_after_pause_is_enabled()
-                      ? module_handler_->BindOnceOn(
-                            this,
-                            &impl::on_set_advertising_enable_complete<LeMultiAdvtCompleteView>,
-                            true,
-                            enabled_sets,
-                            false /* trigger_callbacks */)
-                      : module_handler_->BindOnce(check_complete<LeMultiAdvtCompleteView>));
+                  module_handler_->BindOnceOn(
+                      this,
+                      &impl::on_set_advertising_enable_complete<LeMultiAdvtCompleteView>,
+                      true,
+                      enabled_sets,
+                      false /* trigger_callbacks */));
             }
           }
         } break;
@@ -1491,17 +1519,13 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
           if (enabled_sets.size() != 0) {
             le_advertising_interface_->EnqueueCommand(
                 hci::LeSetExtendedAdvertisingEnableBuilder::Create(Enable::ENABLED, enabled_sets),
-                common::init_flags::
-                        trigger_advertising_callbacks_on_first_resume_after_pause_is_enabled()
-                    ? module_handler_->BindOnceOn(
-                          this,
-                          &impl::on_set_extended_advertising_enable_complete<
-                              LeSetExtendedAdvertisingEnableCompleteView>,
-                          true,
-                          enabled_sets,
-                          false /* trigger_callbacks */)
-                    : module_handler_->BindOnce(
-                          check_complete<LeSetExtendedAdvertisingEnableCompleteView>));
+                module_handler_->BindOnceOn(
+                    this,
+                    &impl::on_set_extended_advertising_enable_complete<
+                        LeSetExtendedAdvertisingEnableCompleteView>,
+                    true,
+                    enabled_sets,
+                    false /* trigger_callbacks */));
           }
         } break;
       }
@@ -1821,6 +1845,10 @@ std::string LeAdvertisingManager::ToString() const {
 
 size_t LeAdvertisingManager::GetNumberOfAdvertisingInstances() const {
   return pimpl_->GetNumberOfAdvertisingInstances();
+}
+
+size_t LeAdvertisingManager::GetNumberOfAdvertisingInstancesInUse() const {
+  return pimpl_->GetNumberOfAdvertisingInstancesInUse();
 }
 
 int LeAdvertisingManager::GetAdvertiserRegId(AdvertiserId advertiser_id) {

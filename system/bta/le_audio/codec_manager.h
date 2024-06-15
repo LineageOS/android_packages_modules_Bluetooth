@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "hardware/bt_le_audio.h"
 #include "le_audio_types.h"
 

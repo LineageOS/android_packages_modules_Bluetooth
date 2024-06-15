@@ -27,12 +27,13 @@
 #include <base/functional/callback_forward.h>
 #include <string.h>
 
-#include "bt_target.h"
 #include "device/include/esco_parameters.h"
 #include "hcidefs.h"
 #include "hcimsgs.h"
+#include "internal_include/bt_target.h"
 #include "main/shim/acl_api.h"
 #include "osi/include/allocator.h"
+#include "stack/include/bt_dev_class.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_lap.h"
 #include "stack/include/bt_octets.h"
@@ -47,10 +48,6 @@
 #define HCIC_INQ_INQ_LAP_OFF 0
 #define HCIC_INQ_DUR_OFF 3
 #define HCIC_INQ_RSP_CNT_OFF 4
-/* Inquiry */
-
-/* Inquiry Cancel */
-#define HCIC_PARAM_SIZE_INQ_CANCEL 0
 
 /* Periodic Inquiry Mode */
 #define HCIC_PARAM_SIZE_PER_INQ_MODE 9
@@ -480,36 +477,6 @@
 
 #define HCIC_PARAM_SIZE_BLE_RC_PARAM_REQ_REPLY 14
 #define HCIC_PARAM_SIZE_BLE_RC_PARAM_REQ_NEG_REPLY 3
-
-static void btsnd_hcic_inquiry(const LAP inq_lap, uint8_t duration,
-                               uint8_t response_cnt) {
-  BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
-  uint8_t* pp = (uint8_t*)(p + 1);
-
-  p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_INQUIRY;
-  p->offset = 0;
-
-  UINT16_TO_STREAM(pp, HCI_INQUIRY);
-  UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_INQUIRY);
-
-  LAP_TO_STREAM(pp, inq_lap);
-  UINT8_TO_STREAM(pp, duration);
-  UINT8_TO_STREAM(pp, response_cnt);
-
-  btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
-}
-
-static void btsnd_hcic_inq_cancel(void) {
-  BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
-  uint8_t* pp = (uint8_t*)(p + 1);
-
-  p->len = HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_INQ_CANCEL;
-  p->offset = 0;
-  UINT16_TO_STREAM(pp, HCI_INQUIRY_CANCEL);
-  UINT8_TO_STREAM(pp, HCIC_PARAM_SIZE_INQ_CANCEL);
-
-  btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
-}
 
 static void btsnd_hcic_disconnect(uint16_t handle, uint8_t reason) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
@@ -977,11 +944,11 @@ void btsnd_hcic_set_event_filter(uint8_t filt_type, uint8_t filt_cond_type,
 
     if (filt_cond_type == HCI_FILTER_COND_DEVICE_CLASS) {
       DEVCLASS_TO_STREAM(pp, filt_cond);
-      filt_cond += DEV_CLASS_LEN;
+      filt_cond += kDevClassLength;
       DEVCLASS_TO_STREAM(pp, filt_cond);
-      filt_cond += DEV_CLASS_LEN;
+      filt_cond += kDevClassLength;
 
-      filt_cond_len -= (2 * DEV_CLASS_LEN);
+      filt_cond_len -= (2 * kDevClassLength);
     } else if (filt_cond_type == HCI_FILTER_COND_BD_ADDR) {
       BDADDR_TO_STREAM(pp, *((RawAddress*)filt_cond));
       filt_cond += BD_ADDR_LEN;
@@ -1689,11 +1656,6 @@ void btsnd_hcic_configure_data_path(hci_data_direction_t data_path_direction,
 
 namespace bluetooth::legacy::hci {
 class InterfaceImpl : public Interface {
-  void StartInquiry(const uint8_t* inq_lap, uint8_t duration,
-                    uint8_t response_cnt) const override {
-    btsnd_hcic_inquiry(inq_lap, duration, response_cnt);
-  }
-  void InquiryCancel() const override { btsnd_hcic_inq_cancel(); }
   void Disconnect(uint16_t handle, uint8_t reason) const override {
     btsnd_hcic_disconnect(handle, reason);
   }

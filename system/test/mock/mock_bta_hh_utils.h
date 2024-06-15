@@ -88,40 +88,42 @@ struct bta_hh_dev_handle_to_cb_idx {
 extern struct bta_hh_dev_handle_to_cb_idx bta_hh_dev_handle_to_cb_idx;
 
 // Name: bta_hh_find_cb
-// Params: const RawAddress& bda
+// Params: const tAclLinkSpec& link_spec
 // Return: uint8_t
 struct bta_hh_find_cb {
   uint8_t return_value{0};
-  std::function<uint8_t(const RawAddress& bda)> body{
-      [this](const RawAddress& bda) { return return_value; }};
-  uint8_t operator()(const RawAddress& bda) { return body(bda); };
+  std::function<uint8_t(const tAclLinkSpec& link_spec)> body{
+      [this](const tAclLinkSpec& link_spec) { return return_value; }};
+  uint8_t operator()(const tAclLinkSpec& link_spec) { return body(link_spec); };
 };
 extern struct bta_hh_find_cb bta_hh_find_cb;
 
 // Name: bta_hh_get_cb
-// Params: const RawAddress& bda
+// Params: const tAclLinkSpec& link_spec
 // Return: tBTA_HH_DEV_CB*
 struct bta_hh_get_cb {
   tBTA_HH_DEV_CB* return_value{0};
-  std::function<tBTA_HH_DEV_CB*(const RawAddress& bda)> body{
-      [this](const RawAddress& bda) { return return_value; }};
-  tBTA_HH_DEV_CB* operator()(const RawAddress& bda) { return body(bda); };
+  std::function<tBTA_HH_DEV_CB*(const tAclLinkSpec& link_spec)> body{
+      [this](const tAclLinkSpec& link_spec) { return return_value; }};
+  tBTA_HH_DEV_CB* operator()(const tAclLinkSpec& link_spec) {
+    return body(link_spec);
+  };
 };
 extern struct bta_hh_get_cb bta_hh_get_cb;
 
 // Name: bta_hh_read_ssr_param
-// Params: const RawAddress& bd_addr, uint16_t* p_max_ssr_lat, uint16_t*
+// Params: const tAclLinkSpec& bd_addr, uint16_t* p_max_ssr_lat, uint16_t*
 // p_min_ssr_tout Return: tBTA_HH_STATUS
 struct bta_hh_read_ssr_param {
   tBTA_HH_STATUS return_value{0};
-  std::function<tBTA_HH_STATUS(const RawAddress& bd_addr,
+  std::function<tBTA_HH_STATUS(const tAclLinkSpec& link_spec,
                                uint16_t* p_max_ssr_lat,
                                uint16_t* p_min_ssr_tout)>
-      body{[this](const RawAddress& bd_addr, uint16_t* p_max_ssr_lat,
+      body{[this](const tAclLinkSpec& link_spec, uint16_t* p_max_ssr_lat,
                   uint16_t* p_min_ssr_tout) { return return_value; }};
-  tBTA_HH_STATUS operator()(const RawAddress& bd_addr, uint16_t* p_max_ssr_lat,
-                            uint16_t* p_min_ssr_tout) {
-    return body(bd_addr, p_max_ssr_lat, p_min_ssr_tout);
+  tBTA_HH_STATUS operator()(const tAclLinkSpec& link_spec,
+                            uint16_t* p_max_ssr_lat, uint16_t* p_min_ssr_tout) {
+    return body(link_spec, p_max_ssr_lat, p_min_ssr_tout);
   };
 };
 extern struct bta_hh_read_ssr_param bta_hh_read_ssr_param;

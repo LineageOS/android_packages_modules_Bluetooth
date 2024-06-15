@@ -89,6 +89,7 @@ struct btm_sec_dev_reset btm_sec_dev_reset;
 struct btm_sec_disconnect btm_sec_disconnect;
 struct btm_sec_disconnected btm_sec_disconnected;
 struct btm_sec_encrypt_change btm_sec_encrypt_change;
+struct btm_sec_encryption_change_evt btm_sec_encryption_change_evt;
 struct btm_sec_is_a_bonded_dev btm_sec_is_a_bonded_dev;
 struct btm_sec_l2cap_access_req btm_sec_l2cap_access_req;
 struct btm_sec_l2cap_access_req_by_requirement
@@ -137,7 +138,7 @@ bool BTM_SecIsSecurityPending::return_value = false;
 bool BTM_SecRegister::return_value = false;
 tBTM_STATUS BTM_SetEncryption::return_value = 0;
 bool BTM_SetSecurityLevel::return_value = false;
-const uint8_t* btm_get_dev_class::return_value = nullptr;
+const DEV_CLASS btm_get_dev_class::return_value = kDevClassEmpty;
 tBTM_STATUS btm_sec_bond_by_transport::return_value = 0;
 tBTM_STATUS btm_sec_disconnect::return_value = 0;
 bool btm_sec_is_a_bonded_dev::return_value = false;
@@ -286,7 +287,7 @@ void btm_create_conn_cancel_complete(uint8_t status, const RawAddress bd_addr) {
   inc_func_call_count(__func__);
   test::mock::stack_btm_sec::btm_create_conn_cancel_complete(status, bd_addr);
 }
-const uint8_t* btm_get_dev_class(const RawAddress& bda) {
+const DEV_CLASS btm_get_dev_class(const RawAddress& bda) {
   inc_func_call_count(__func__);
   return test::mock::stack_btm_sec::btm_get_dev_class(bda);
 }
@@ -376,6 +377,12 @@ void btm_sec_encrypt_change(uint16_t handle, tHCI_STATUS status,
   inc_func_call_count(__func__);
   test::mock::stack_btm_sec::btm_sec_encrypt_change(handle, status,
                                                     encr_enable);
+}
+void btm_sec_encryption_change_evt(uint16_t handle, tHCI_STATUS status,
+                                   uint8_t encr_enable) {
+  inc_func_call_count(__func__);
+  test::mock::stack_btm_sec::btm_sec_encryption_change_evt(handle, status,
+                                                           encr_enable);
 }
 bool btm_sec_is_a_bonded_dev(const RawAddress& bda) {
   inc_func_call_count(__func__);

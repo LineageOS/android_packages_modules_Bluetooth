@@ -16,7 +16,6 @@
 
 package android.bluetooth;
 
-import static com.google.common.io.BaseEncoding.base16;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -68,26 +67,20 @@ import pandora.HostProto.OwnAddressType;
 public class LeScanningTest {
     private static final String TAG = "LeScanningTest";
     private static final int TIMEOUT_SCANNING_MS = 2000;
+    private static final String TEST_UUID_STRING = "00001805-0000-1000-8000-00805f9b34fb";
+    private static final String TEST_ADDRESS_RANDOM_STATIC = "F0:43:A8:23:10:11";
+    private static final String ACTION_DYNAMIC_RECEIVER_SCAN_RESULT =
+            "android.bluetooth.test.ACTION_DYNAMIC_RECEIVER_SCAN_RESULT";
 
     @Rule public final AdoptShellPermissionsRule mPermissionRule = new AdoptShellPermissionsRule();
 
     @Rule public final PandoraDevice mBumble = new PandoraDevice();
-
-    private static final String TEST_ADDRESS_RANDOM_STATIC = "F0:43:A8:23:10:11";
-
-    // IRK must match what's defined in bumble_config.json
-    private static final byte[] TEST_IRK = base16().decode("1F66F4B5F0C742F807DD0DDBF64E9213");
 
     private final Context mContext = ApplicationProvider.getApplicationContext();
     private final BluetoothManager mBluetoothManager =
             mContext.getSystemService(BluetoothManager.class);
     private final BluetoothAdapter mBluetoothAdapter = mBluetoothManager.getAdapter();
     private final BluetoothLeScanner mLeScanner = mBluetoothAdapter.getBluetoothLeScanner();
-
-    private static final String TEST_UUID_STRING = "00001805-0000-1000-8000-00805f9b34fb";
-
-    private static final String ACTION_DYNAMIC_RECEIVER_SCAN_RESULT =
-            "android.bluetooth.test.ACTION_DYNAMIC_RECEIVER_SCAN_RESULT";
 
     @Test
     public void startBleScan_withCallbackTypeAllMatches() {
@@ -117,7 +110,7 @@ public class LeScanningTest {
                         .setDeviceAddress(
                                 TEST_ADDRESS_RANDOM_STATIC,
                                 BluetoothDevice.ADDRESS_TYPE_RANDOM,
-                                TEST_IRK)
+                                Utils.BUMBLE_IRK)
                         .build();
 
         List<ScanResult> results =

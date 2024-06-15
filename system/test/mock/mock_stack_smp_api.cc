@@ -19,7 +19,6 @@
  *   Functions generated:11
  */
 
-#include "stack/btm/btm_dev.h"
 #include "stack/include/smp_api.h"
 #include "test/common/mock_functions.h"
 #include "types/raw_address.h"

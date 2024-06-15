@@ -19,8 +19,9 @@ import enum
 class BtTransport(enum.IntEnum):
     """Bluetooth transport type."""
     AUTO = 0
-    BR_EDR = 1
+    BREDR = 1
     LE = 2
+    DUAL = 3
 
 
 class GattWriteRequestStatus(enum.IntEnum):
@@ -142,12 +143,35 @@ class BondState(enum.IntEnum):
     BONDED = 2
 
 
-class Transport(enum.IntEnum):
-    """Bluetooth transport type."""
-    AUTO = 0
-    BREDR = 1
-    LE = 2
-    DUAL = 3
+class BtPropertyType(enum.IntEnum):
+    """Bluetooth's property type."""
+    BdName = 0x1
+    BdAddr = 0x2
+    Uuids = 0x3
+    ClassOfDevice = 0x4
+    TypeOfDevice = 0x5
+    ServiceRecord = 0x6
+    AdapterScanMode = 0x7
+    AdapterBondedDevices = 0x8
+    AdapterDiscoverableTimeout = 0x9
+    RemoteFriendlyName = 0xA
+    RemoteRssi = 0xB
+    RemoteVersionInfo = 0xC
+    LocalLeFeatures = 0xD
+    LocalIoCaps = 0xE
+    LocalIoCapsBle = 0xF
+    DynamicAudioBuffer = 0x10
+    RemoteIsCoordinatedSetMember = 0x11
+    Appearance = 0x12
+    VendorProductInfo = 0x13
+    # Unimplemented:
+    #  BT_PROPERTY_WL_MEDIA_PLAYERS_LIST,
+    #  BT_PROPERTY_REMOTE_ASHA_CAPABILITY,
+    #  BT_PROPERTY_REMOTE_ASHA_TRUNCATED_HISYNCID,
+    #  BT_PROPERTY_REMOTE_MODEL_NUM,
+    RemoteAddrType = 0x18
+    Unknown = 0xFE
+    RemoteDeviceTimestamp = 0xFF
 
 
 class PairingVariant(enum.IntEnum):
@@ -176,6 +200,14 @@ class OwnAddressType(enum.IntEnum):
     DEFAULT = -1
     PUBLIC = 0
     RANDOM = 1
+
+
+class BtConnectionState(enum.IntEnum):
+    NOT_CONNECTED = 0
+    CONNECTED_ONLY = 1
+    ENCRYPTED_BR_EDR = 3
+    ENCRYPTED_LE = 5
+    ENCRYPTED_BOTH = 7
 
 
 class CompanyIdentifiers(enum.IntEnum):
@@ -212,3 +244,17 @@ class AdvertisingDataType(enum.IntEnum):
     URI = 0x24
     LE_SUPPORTED_FEATURES = 0x27
     MANUFACTURER_SPECIFIC_DATA = 0xFF
+
+
+class BtDiscMode(enum.IntEnum):
+    """Bluetooth discoverable mode."""
+    NON_DISCOVERABLE = 0
+    LIMITED_DISCOVERABLE = 1
+    GENERAL_DISCOVERABLE = 2
+
+
+class BthhReportType(enum.IntEnum):
+    """Bluetooth HID report type."""
+    INPUT_REPORT = 1
+    OUTPUT_REPORT = 2
+    FEATURE_REPORT = 3

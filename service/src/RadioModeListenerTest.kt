@@ -180,7 +180,7 @@ class RadioModeListenerTest {
     }
 
     @Test
-    fun disable_whenDisabled_isDicarded() {
+    fun disable_whenDisabled_isDiscarded() {
         enableSensitive()
         disableMode()
 

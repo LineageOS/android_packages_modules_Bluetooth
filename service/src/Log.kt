@@ -21,16 +21,31 @@ private const val SYSTEM_SERVER_TAG = "BluetoothSystemServer"
 
 public class Log private constructor() {
     companion object {
+
+        // Kotlin could shorten below method by having a Throwable? that is default to null but the
+        // current implementation of util.Log is behaving differently depending if it is called with
+        // 2 or 3 parameters. We do not want to change the behavior in this class, just add a common
+        // TAG to all the Bluetooth System Server logs.
+
         @JvmStatic
         fun v(subtag: String, msg: String) = Log.v(SYSTEM_SERVER_TAG, "${subtag}: ${msg}")
+
         @JvmStatic
         fun d(subtag: String, msg: String) = Log.d(SYSTEM_SERVER_TAG, "${subtag}: ${msg}")
+
         @JvmStatic
         fun i(subtag: String, msg: String) = Log.i(SYSTEM_SERVER_TAG, "${subtag}: ${msg}")
+
         @JvmStatic
         fun w(subtag: String, msg: String) = Log.w(SYSTEM_SERVER_TAG, "${subtag}: ${msg}")
+
+        @JvmStatic
+        fun w(subtag: String, msg: String, tr: Throwable) =
+            Log.w(SYSTEM_SERVER_TAG, "${subtag}: ${msg}", tr)
+
         @JvmStatic
         fun e(subtag: String, msg: String) = Log.e(SYSTEM_SERVER_TAG, "${subtag}: ${msg}")
+
         @JvmStatic
         fun e(subtag: String, msg: String, tr: Throwable) =
             Log.e(SYSTEM_SERVER_TAG, "${subtag}: ${msg}", tr)

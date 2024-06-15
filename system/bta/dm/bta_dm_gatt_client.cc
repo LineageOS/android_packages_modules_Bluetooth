@@ -23,7 +23,7 @@
 #include <vector>
 
 #include "bta/include/bta_gatt_api.h"
-#include "gd/common/strings.h"
+#include "common/strings.h"
 #include "main/shim/dumpsys.h"
 #include "stack/btm/btm_int_types.h"
 #include "types/bluetooth/uuid.h"

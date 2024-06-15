@@ -19,6 +19,7 @@
 #pragma once
 
 #include <base/strings/stringprintf.h>
+#include <bluetooth/log.h>
 
 #include <cstdint>
 
@@ -85,3 +86,8 @@ inline std::string sdp_status_text(const tSDP_STATUS& status) {
   }
 }
 const auto sdp_result_text = sdp_status_text;
+
+namespace fmt {
+template <>
+struct formatter<tSDP_STATUS> : enum_formatter<tSDP_STATUS> {};
+}  // namespace fmt

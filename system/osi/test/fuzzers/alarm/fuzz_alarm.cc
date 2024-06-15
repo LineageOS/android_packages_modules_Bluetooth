@@ -21,7 +21,6 @@
 #include "common/message_loop_thread.h"
 
 using base::Closure;
-using base::TimeDelta;
 using bluetooth::common::MessageLoopThread;
 
 #define MAX_CONCURRENT_ALARMS 25

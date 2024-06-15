@@ -18,6 +18,7 @@ package android.bluetooth;
 
 import static android.bluetooth.BluetoothUtils.getSyncTimeout;
 
+import android.annotation.FlaggedApi;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
@@ -35,6 +36,7 @@ import android.os.ParcelUuid;
 import android.os.RemoteException;
 import android.util.Log;
 
+import com.android.bluetooth.flags.Flags;
 import com.android.modules.utils.SynchronousResultReceiver;
 
 import java.lang.annotation.Retention;
@@ -43,6 +45,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.TimeoutException;
+
 
 /**
  * Public API for the Bluetooth GATT Profile.
@@ -127,6 +130,13 @@ public final class BluetoothGatt implements BluetoothProfile {
 
     /** A remote device connection is congested. */
     public static final int GATT_CONNECTION_CONGESTED = 0x8f;
+
+    /**
+     * GATT connection timed out, likely due to the remote device being out of range or not
+     * advertising as connectable.
+     */
+    @FlaggedApi(Flags.FLAG_ENUMERATE_GATT_ERRORS)
+    public static final int GATT_CONNECTION_TIMEOUT = 0x93;
 
     /** A GATT operation failed, errors other than the above */
     public static final int GATT_FAILURE = 0x101;
@@ -1677,6 +1687,13 @@ public final class BluetoothGatt implements BluetoothProfile {
             }
             throw e.rethrowAsRuntimeException();
         }
+        if (Flags.gattFixDeviceBusy()) {
+            if (requestStatus != BluetoothStatusCodes.SUCCESS) {
+                synchronized (mDeviceBusyLock) {
+                    mDeviceBusy = false;
+                }
+            }
+        }
 
         return requestStatus;
     }
@@ -1827,6 +1844,11 @@ public final class BluetoothGatt implements BluetoothProfile {
                 mDeviceBusy = false;
             }
             throw e.rethrowAsRuntimeException();
+        }
+        if (Flags.gattFixDeviceBusy()) {
+            synchronized (mDeviceBusyLock) {
+                mDeviceBusy = false;
+            }
         }
         return BluetoothStatusCodes.ERROR_UNKNOWN;
     }

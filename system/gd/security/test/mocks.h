@@ -20,7 +20,7 @@
 
 #include <gmock/gmock.h>
 
-#include "hci/address.h"
+#include "hci/address_with_type.h"
 #include "hci/le_security_interface.h"
 #include "security/ui.h"
 

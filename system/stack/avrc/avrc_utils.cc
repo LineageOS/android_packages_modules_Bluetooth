@@ -18,10 +18,14 @@
 
 #define LOG_TAG "avrcp"
 
+#include <bluetooth/log.h>
+
 #include "avrc_api.h"
 #include "avrc_int.h"
 #include "os/log.h"
 #include "stack/include/bt_types.h"
+
+using namespace bluetooth;
 
 /**************************************************************************
  *
@@ -113,8 +117,8 @@ bool avrc_is_valid_player_attrib_value(uint8_t attrib, uint8_t value) {
   if (attrib >= AVRC_PLAYER_SETTING_LOW_MENU_EXT) result = true;
 
   if (!result) {
-    LOG_ERROR(" %s found not matching attrib(x%x)-value(x%x) pair!", __func__,
-              attrib, value);
+    log::error(" found not matching attrib(x{:x})-value(x{:x}) pair!", attrib,
+               value);
   }
   return result;
 }

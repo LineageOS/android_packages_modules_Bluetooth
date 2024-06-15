@@ -14,8 +14,11 @@
  * limitations under the License.
  */
 
+#include <android-base/properties.h>
+#include <android_bluetooth_flags.h>
 #include <base/functional/bind.h>
 #include <base/location.h>
+#include <bluetooth/log.h>
 #include <com_android_bluetooth_flags.h>
 #include <flag_macros.h>
 #include <gmock/gmock.h>
@@ -32,7 +35,6 @@
 #include "bta/include/bta_dm_api.h"
 #include "bta/include/bta_hf_client_api.h"
 #include "bta/include/bta_le_audio_api.h"
-#include "btif/include/stack_manager.h"
 #include "common/message_loop_thread.h"
 #include "os/system_properties.h"
 #include "osi/include/compat.h"
@@ -50,6 +52,8 @@
 
 #define TEST_BT com::android::bluetooth::flags
 
+using namespace bluetooth;
+
 namespace {
 
 bool bta_ag_hdl_event(const BT_HDR_RIGID* p_msg) { return true; };
@@ -64,12 +68,7 @@ const std::string kBtCodecAptxVoiceEnabled =
 
 static bool enable_aptx_voice_property(bool enable) {
   const std::string value = enable ? "true" : "false";
-  bool result =
-      bluetooth::os::SetSystemProperty(kBtCodecAptxVoiceEnabled, value);
-  auto codec_aptx_voice_enabled =
-      bluetooth::os::GetSystemProperty(kBtCodecAptxVoiceEnabled);
-  return result && codec_aptx_voice_enabled &&
-         (codec_aptx_voice_enabled.value() == value);
+  return android::base::SetProperty(kBtCodecAptxVoiceEnabled, value);
 }
 
 class BtaAgTest : public testing::Test {
@@ -79,7 +78,7 @@ class BtaAgTest : public testing::Test {
     fake_osi_ = std::make_unique<test::fake::FakeOsi>();
 
     main_thread_start_up();
-    post_on_bt_main([]() { LOG_INFO("Main thread started up"); });
+    post_on_bt_main([]() { log::info("Main thread started up"); });
 
     bta_sys_register(BTA_ID_AG, &bta_ag_reg);
 
@@ -94,7 +93,7 @@ class BtaAgTest : public testing::Test {
   void TearDown() override {
     test::mock::device_esco_parameters::esco_parameters_for_codec = {};
     bta_sys_deregister(BTA_ID_AG);
-    post_on_bt_main([]() { LOG_INFO("Main thread shutting down"); });
+    post_on_bt_main([]() { log::info("Main thread shutting down"); });
     main_thread_shut_down();
   }
 
@@ -172,8 +171,6 @@ TEST_F_WITH_FLAGS(BtaAgActTest, set_codec_q0_success,
 
   bta_ag_setcodec(p_scb, data);
   ASSERT_EQ(p_scb->sco_codec, BTA_AG_SCO_APTX_SWB_SETTINGS_Q0);
-  ASSERT_TRUE(
-      bluetooth::os::SetSystemProperty(kBtCodecAptxVoiceEnabled, "false"));
 }
 
 TEST_F_WITH_FLAGS(BtaAgActTest, set_codec_q1_fail_unsupported,
@@ -204,6 +201,28 @@ class BtaAgCmdTest : public BtaAgTest {
   void SetUp() override { BtaAgTest::SetUp(); }
   void TearDown() override { BtaAgTest::TearDown(); }
 };
+
+TEST_F_WITH_FLAGS(BtaAgCmdTest, check_flag_disabling_guarding_with_prop,
+                  REQUIRES_FLAGS_DISABLED(ACONFIG_FLAG(TEST_BT,
+                                                       hfp_codec_aptx_voice))) {
+  ASSERT_FALSE(IS_FLAG_ENABLED(hfp_codec_aptx_voice));
+  ASSERT_TRUE(enable_aptx_voice_property(false));
+  ASSERT_FALSE(is_hfp_aptx_voice_enabled());
+
+  ASSERT_TRUE(enable_aptx_voice_property(true));
+  ASSERT_FALSE(is_hfp_aptx_voice_enabled());
+}
+
+TEST_F_WITH_FLAGS(BtaAgCmdTest, check_flag_guarding_with_prop,
+                  REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT,
+                                                      hfp_codec_aptx_voice))) {
+  ASSERT_TRUE(IS_FLAG_ENABLED(hfp_codec_aptx_voice));
+  ASSERT_TRUE(enable_aptx_voice_property(false));
+  ASSERT_FALSE(is_hfp_aptx_voice_enabled());
+
+  ASSERT_TRUE(enable_aptx_voice_property(true));
+  ASSERT_TRUE(is_hfp_aptx_voice_enabled());
+}
 
 TEST_F_WITH_FLAGS(BtaAgCmdTest, at_hfp_cback__qac_ev_codec_disabled,
                   REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT,

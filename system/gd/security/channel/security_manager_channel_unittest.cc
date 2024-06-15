@@ -22,7 +22,6 @@
 #include "hci/address.h"
 #include "hci/hci_packets.h"
 #include "packet/raw_builder.h"
-#include "security/smp_packets.h"
 #include "security/test/fake_hci_layer.h"
 #include "security/test/fake_security_interface.h"
 

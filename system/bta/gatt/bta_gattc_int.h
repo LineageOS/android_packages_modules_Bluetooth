@@ -24,6 +24,8 @@
 #ifndef BTA_GATTC_INT_H
 #define BTA_GATTC_INT_H
 
+#include <bluetooth/log.h>
+
 #include <cstdint>
 #include <deque>
 
@@ -520,5 +522,11 @@ void bta_gattc_cache_write(const RawAddress& server_bda,
                            const gatt::Database& database);
 void bta_gattc_cache_link(const RawAddress& server_bda, const Octet16& hash);
 void bta_gattc_cache_reset(const RawAddress& server_bda);
+
+namespace fmt {
+template <>
+struct formatter<RobustCachingSupport> : enum_formatter<RobustCachingSupport> {
+};
+}  // namespace fmt
 
 #endif /* BTA_GATTC_INT_H */

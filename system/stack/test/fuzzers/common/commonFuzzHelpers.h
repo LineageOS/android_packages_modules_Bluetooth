@@ -20,9 +20,9 @@
 #include <fuzzer/FuzzedDataProvider.h>
 
 #include <cstring>  // For memcpy
+#include <functional>
 #include <vector>
 
-#include "stack/include/sdp_api.h"
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 

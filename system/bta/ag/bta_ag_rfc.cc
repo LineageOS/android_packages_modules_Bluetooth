@@ -25,6 +25,7 @@
 
 #include <base/functional/bind.h>
 #include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include "bta/ag/bta_ag_int.h"
 #include "bta/include/bta_sec_api.h"
@@ -36,6 +37,8 @@
 
 /* Event mask for RfCOMM port callback */
 #define BTA_AG_PORT_EV_MASK PORT_EV_RXCHAR
+
+using namespace bluetooth;
 
 /* each scb has its own rfcomm callbacks */
 void bta_ag_port_cback_1(uint32_t code, uint16_t port_handle);
@@ -77,15 +80,15 @@ static void bta_ag_port_cback(UNUSED_ATTR uint32_t code, uint16_t port_handle,
   if (p_scb != nullptr) {
     /* ignore port events for port handles other than connected handle */
     if (port_handle != p_scb->conn_handle) {
-      LOG_ERROR(
-          "ag_port_cback ignoring handle:%d conn_handle = %d other handle = %d",
+      log::error(
+          "ag_port_cback ignoring handle:{} conn_handle = {} other handle = {}",
           port_handle, p_scb->conn_handle, handle);
       return;
     }
     if (!bta_ag_scb_open(p_scb)) {
-      LOG(ERROR) << __func__ << ": rfcomm data on an unopened control block "
-                 << handle << " peer_addr " << p_scb->peer_addr << " state "
-                 << std::to_string(p_scb->state);
+      log::error(
+          "rfcomm data on an unopened control block {} peer_addr {} state {}",
+          handle, ADDRESS_TO_LOGGABLE_STR(p_scb->peer_addr), p_scb->state);
     }
     do_in_main_thread(
         FROM_HERE, base::BindOnce(&bta_ag_sm_execute_by_handle, handle,
@@ -106,17 +109,17 @@ static void bta_ag_port_cback(UNUSED_ATTR uint32_t code, uint16_t port_handle,
 static void bta_ag_mgmt_cback(uint32_t code, uint16_t port_handle,
                               uint16_t handle) {
   tBTA_AG_SCB* p_scb = bta_ag_scb_by_idx(handle);
-  LOG_VERBOSE("%s: code=%d, port_handle=%d, scb_handle=%d, p_scb=0x%p",
-              __func__, code, port_handle, handle, p_scb);
+  log::verbose("code={}, port_handle={}, scb_handle={}, p_scb=0x{}", code,
+               port_handle, handle, fmt::ptr(p_scb));
   if (p_scb == nullptr) {
-    LOG(WARNING) << __func__ << ": cannot find scb, code=" << code
-                 << ", port_handle=" << port_handle << ", handle=" << handle;
+    log::warn("cannot find scb, code={}, port_handle={}, handle={}", code,
+              port_handle, handle);
     return;
   }
   /* ignore close event for port handles other than connected handle */
   if ((code != PORT_SUCCESS) && (port_handle != p_scb->conn_handle)) {
-    LOG(WARNING) << __func__ << ": ignore open failure for unmatched "
-                 << "port_handle " << port_handle << ", scb_handle=" << handle;
+    log::warn("ignore open failure for unmatched port_handle {}, scb_handle={}",
+              port_handle, handle);
     return;
   }
   uint16_t event;
@@ -137,9 +140,10 @@ static void bta_ag_mgmt_cback(uint32_t code, uint16_t port_handle,
       }
     }
     if (!found_handle) {
-      LOG(ERROR) << __func__ << ": port opened successfully, but port_handle "
-                 << port_handle << " is unknown"
-                 << ", scb_handle=" << handle;
+      log::error(
+          "port opened successfully, but port_handle {} is unknown, "
+          "scb_handle={}",
+          port_handle, handle);
       return;
     }
     event = BTA_AG_RFC_OPEN_EVT;
@@ -262,13 +266,14 @@ void bta_ag_start_servers(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK services) {
         bta_ag_setup_port(p_scb, p_scb->serv_handle[i]);
       } else {
         /* TODO: CR#137125 to handle to error properly */
-        LOG(ERROR) << __func__ << ": RFCOMM_CreateConnectionWithSecurity ERROR "
-                   << status << ", p_scb=" << p_scb
-                   << ", services=" << loghex(services)
-                   << ", mgmt_cback_index=" << management_callback_index;
+        log::error(
+            "RFCOMM_CreateConnectionWithSecurity ERROR {}, p_scb={}, "
+            "services={}, mgmt_cback_index={}",
+            status, fmt::ptr(p_scb), loghex(services),
+            management_callback_index);
       }
-      LOG_VERBOSE("%s: p_scb=0x%p, services=0x%04x, mgmt_cback_index=%d",
-                  __func__, p_scb, services, management_callback_index);
+      log::verbose("p_scb=0x{}, services=0x{:04x}, mgmt_cback_index={}",
+                   fmt::ptr(p_scb), services, management_callback_index);
     }
   }
 }
@@ -332,16 +337,15 @@ void bta_ag_rfc_do_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
       p_scb->peer_addr, &(p_scb->conn_handle),
       bta_ag_mgmt_cback_tbl[management_callback_index],
       BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT);
-  LOG_VERBOSE(
-      "%s: p_scb=0x%p, conn_handle=%d, mgmt_cback_index=%d,"
-      " status=%d",
-      __func__, p_scb, p_scb->conn_handle, management_callback_index, status);
+  log::verbose("p_scb=0x{}, conn_handle={}, mgmt_cback_index={}, status={}",
+               fmt::ptr(p_scb), p_scb->conn_handle, management_callback_index,
+               status);
   if (status == PORT_SUCCESS) {
     bta_ag_setup_port(p_scb, p_scb->conn_handle);
   } else {
     /* RFCOMM create connection failed; send ourselves RFCOMM close event */
-    LOG(ERROR) << __func__ << ": RFCOMM_CreateConnection ERROR " << status
-               << " for " << p_scb->peer_addr;
+    log::error("RFCOMM_CreateConnection ERROR {} for {}", status,
+               ADDRESS_TO_LOGGABLE_STR(p_scb->peer_addr));
     bta_ag_sm_execute(p_scb, BTA_AG_RFC_CLOSE_EVT, data);
   }
 }
@@ -358,7 +362,7 @@ void bta_ag_rfc_do_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
  ******************************************************************************/
 void bta_ag_rfc_do_close(tBTA_AG_SCB* p_scb,
                          UNUSED_ATTR const tBTA_AG_DATA& data) {
-  LOG_INFO("p_scb->conn_handle: 0x%04x", p_scb->conn_handle);
+  log::info("p_scb->conn_handle: 0x{:04x}", p_scb->conn_handle);
   if (p_scb->conn_handle) {
     RFCOMM_RemoveConnection(p_scb->conn_handle);
   } else {

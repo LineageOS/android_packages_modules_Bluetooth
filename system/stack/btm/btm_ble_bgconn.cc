@@ -26,6 +26,8 @@
 
 #include "stack/btm/btm_ble_bgconn.h"
 
+#include <bluetooth/log.h>
+
 #include <cstdint>
 #include <unordered_map>
 
@@ -36,6 +38,8 @@
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_int_types.h"
 #include "types/raw_address.h"
+
+using namespace bluetooth;
 
 extern tBTM_CB btm_cb;
 
@@ -70,57 +74,25 @@ static std::unordered_map<RawAddress, BackgroundConnection, BgConnHash>
  * Description      This function updates the filter policy of scanner
  ******************************************************************************/
 void btm_update_scanner_filter_policy(tBTM_BLE_SFP scan_policy) {
-  tBTM_BLE_INQ_CB* p_inq = &btm_cb.ble_ctr_cb.inq_var;
+  uint32_t scan_interval = !btm_cb.ble_ctr_cb.inq_var.scan_interval
+                               ? BTM_BLE_GAP_DISC_SCAN_INT
+                               : btm_cb.ble_ctr_cb.inq_var.scan_interval;
+  uint32_t scan_window = !btm_cb.ble_ctr_cb.inq_var.scan_window
+                             ? BTM_BLE_GAP_DISC_SCAN_WIN
+                             : btm_cb.ble_ctr_cb.inq_var.scan_window;
 
-  uint32_t scan_interval =
-      !p_inq->scan_interval ? BTM_BLE_GAP_DISC_SCAN_INT : p_inq->scan_interval;
-  uint32_t scan_window =
-      !p_inq->scan_window ? BTM_BLE_GAP_DISC_SCAN_WIN : p_inq->scan_window;
+  log::verbose("");
 
-  LOG_VERBOSE("%s", __func__);
+  btm_cb.ble_ctr_cb.inq_var.sfp = scan_policy;
+  btm_cb.ble_ctr_cb.inq_var.scan_type =
+      btm_cb.ble_ctr_cb.inq_var.scan_type == BTM_BLE_SCAN_MODE_NONE
+          ? BTM_BLE_SCAN_MODE_ACTI
+          : btm_cb.ble_ctr_cb.inq_var.scan_type;
 
-  p_inq->sfp = scan_policy;
-  p_inq->scan_type = p_inq->scan_type == BTM_BLE_SCAN_MODE_NONE
-                         ? BTM_BLE_SCAN_MODE_ACTI
-                         : p_inq->scan_type;
-
-  btm_send_hci_set_scan_params(
-      p_inq->scan_type, (uint16_t)scan_interval, (uint16_t)scan_window,
-      btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type, scan_policy);
-}
-
-/*******************************************************************************
- *
- * Function         btm_ble_suspend_bg_conn
- *
- * Description      This function is to suspend an active background connection
- *                  procedure.
- *
- * Parameters       none.
- *
- * Returns          none.
- *
- ******************************************************************************/
-bool btm_ble_suspend_bg_conn(void) {
-    LOG_DEBUG("Gd acl_manager handles sync of background connections");
-    return true;
-}
-
-/*******************************************************************************
- *
- * Function         btm_ble_resume_bg_conn
- *
- * Description      This function is to resume a background auto connection
- *                  procedure.
- *
- * Parameters       none.
- *
- * Returns          none.
- *
- ******************************************************************************/
-bool btm_ble_resume_bg_conn(void) {
-    LOG_DEBUG("Gd acl_manager handles sync of background connections");
-    return true;
+  btm_send_hci_set_scan_params(btm_cb.ble_ctr_cb.inq_var.scan_type,
+                               (uint16_t)scan_interval, (uint16_t)scan_window,
+                               btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type,
+                               scan_policy);
 }
 
 /** Adds the device into acceptlist. Returns false if acceptlist is full and
@@ -133,8 +105,8 @@ bool BTM_AcceptlistAdd(const RawAddress& address) {
  * connect parameters. Returns false if acceptlist is full and device can't
  * be added, true otherwise. */
 bool BTM_AcceptlistAdd(const RawAddress& address, bool is_direct) {
-  if (!controller_get_interface()->supports_ble()) {
-    LOG_WARN("Controller does not support Le");
+  if (!controller_get_interface()->SupportsBle()) {
+    log::warn("Controller does not support Le");
     return false;
   }
 
@@ -144,8 +116,8 @@ bool BTM_AcceptlistAdd(const RawAddress& address, bool is_direct) {
 
 /** Removes the device from acceptlist */
 void BTM_AcceptlistRemove(const RawAddress& address) {
-  if (!controller_get_interface()->supports_ble()) {
-    LOG_WARN("Controller does not support Le");
+  if (!controller_get_interface()->SupportsBle()) {
+    log::warn("Controller does not support Le");
     return;
   }
 
@@ -156,8 +128,8 @@ void BTM_AcceptlistRemove(const RawAddress& address) {
 
 /** Clear the acceptlist, end any pending acceptlist connections */
 void BTM_AcceptlistClear() {
-  if (!controller_get_interface()->supports_ble()) {
-    LOG_WARN("Controller does not support Le");
+  if (!controller_get_interface()->SupportsBle()) {
+    log::warn("Controller does not support Le");
     return;
   }
   bluetooth::shim::ACL_IgnoreAllLeConnections();

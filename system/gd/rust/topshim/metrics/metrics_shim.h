@@ -42,6 +42,7 @@ void profile_connection_state_changed(RawAddress addr, uint32_t profile, uint32_
 void acl_connect_attempt(RawAddress addr, uint32_t acl_state);
 void acl_connection_state_changed(
     RawAddress addr, uint32_t transport, uint32_t status, uint32_t acl_state, uint32_t direction, uint32_t hci_reason);
+void suspend_complete_state(uint32_t state);
 
 }  // namespace rust
 }  // namespace topshim

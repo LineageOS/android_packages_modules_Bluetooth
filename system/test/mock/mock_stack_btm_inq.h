@@ -35,6 +35,7 @@
 #include "stack/btm/neighbor_inquiry.h"
 #include "stack/include/bt_hdr.h"
 #include "types/bluetooth/uuid.h"
+#include "types/bt_transport.h"
 #include "types/raw_address.h"
 
 // Original usings
@@ -428,16 +429,6 @@ struct btm_inq_stop_on_ssp {
 };
 extern struct btm_inq_stop_on_ssp btm_inq_stop_on_ssp;
 
-// Name: btm_process_cancel_complete
-// Params: tHCI_STATUS status, uint8_t mode
-// Return: void
-struct btm_process_cancel_complete {
-  std::function<void(tHCI_STATUS status, uint8_t mode)> body{
-      [](tHCI_STATUS /* status */, uint8_t /* mode */) {}};
-  void operator()(tHCI_STATUS status, uint8_t mode) { body(status, mode); };
-};
-extern struct btm_process_cancel_complete btm_process_cancel_complete;
-
 // Name: btm_process_inq_complete
 // Params: tHCI_STATUS status, uint8_t mode
 // Return: void
@@ -447,20 +438,6 @@ struct btm_process_inq_complete {
   void operator()(tHCI_STATUS status, uint8_t mode) { body(status, mode); };
 };
 extern struct btm_process_inq_complete btm_process_inq_complete;
-
-// Name: btm_process_inq_results
-// Params: const uint8_t* p, uint8_t hci_evt_len, uint8_t inq_res_mode
-// Return: void
-struct btm_process_inq_results {
-  std::function<void(const uint8_t* p, uint8_t hci_evt_len,
-                     uint8_t inq_res_mode)>
-      body{[](const uint8_t* /* p */, uint8_t /* hci_evt_len */,
-              uint8_t /* inq_res_mode */) {}};
-  void operator()(const uint8_t* p, uint8_t hci_evt_len, uint8_t inq_res_mode) {
-    body(p, hci_evt_len, inq_res_mode);
-  };
-};
-extern struct btm_process_inq_results btm_process_inq_results;
 
 // Name: btm_process_remote_name
 // Params: const RawAddress* bda, const BD_NAME bdn, uint16_t evt_len,

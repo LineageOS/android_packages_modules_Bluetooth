@@ -42,7 +42,7 @@ class LeAddressManager {
       common::Callback<void(std::unique_ptr<CommandBuilder>)> enqueue_command,
       os::Handler* handler,
       Address public_address,
-      uint8_t connect_list_size,
+      uint8_t accept_list_size,
       uint8_t resolving_list_size);
   virtual ~LeAddressManager();
 
@@ -84,13 +84,13 @@ class LeAddressManager {
 
   uint8_t GetFilterAcceptListSize();
   uint8_t GetResolvingListSize();
-  void AddDeviceToFilterAcceptList(FilterAcceptListAddressType connect_list_address_type, Address address);
+  void AddDeviceToFilterAcceptList(FilterAcceptListAddressType accept_list_address_type, Address address);
   void AddDeviceToResolvingList(
       PeerAddressType peer_identity_address_type,
       Address peer_identity_address,
       const std::array<uint8_t, 16>& peer_irk,
       const std::array<uint8_t, 16>& local_irk);
-  void RemoveDeviceFromFilterAcceptList(FilterAcceptListAddressType connect_list_address_type, Address address);
+  void RemoveDeviceFromFilterAcceptList(FilterAcceptListAddressType accept_list_address_type, Address address);
   void RemoveDeviceFromResolvingList(PeerAddressType peer_identity_address_type, Address peer_identity_address);
   void ClearFilterAcceptList();
   void ClearResolvingList();
@@ -117,9 +117,9 @@ class LeAddressManager {
 
   enum CommandType {
     ROTATE_RANDOM_ADDRESS,
-    ADD_DEVICE_TO_CONNECT_LIST,
-    REMOVE_DEVICE_FROM_CONNECT_LIST,
-    CLEAR_CONNECT_LIST,
+    ADD_DEVICE_TO_ACCEPT_LIST,
+    REMOVE_DEVICE_FROM_ACCEPT_LIST,
+    CLEAR_ACCEPT_LIST,
     ADD_DEVICE_TO_RESOLVING_LIST,
     REMOVE_DEVICE_FROM_RESOLVING_LIST,
     CLEAR_RESOLVING_LIST,
@@ -174,7 +174,7 @@ class LeAddressManager {
   Address public_address_;
   std::unique_ptr<os::Alarm> address_rotation_alarm_;
   Octet16 rotation_irk_;
-  uint8_t connect_list_size_;
+  uint8_t accept_list_size_;
   uint8_t resolving_list_size_;
   std::queue<Command> cached_commands_;
   bool supports_ble_privacy_{false};

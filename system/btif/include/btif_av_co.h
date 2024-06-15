@@ -60,8 +60,10 @@ bool bta_av_co_set_codec_audio_config(
 
 // Initializes the control block.
 // |codec_priorities| contains the A2DP Source codec priorities to use.
+// |supported_codecs| returns the list of supported A2DP Source codecs.
 void bta_av_co_init(
-    const std::vector<btav_a2dp_codec_config_t>& codec_priorities);
+    const std::vector<btav_a2dp_codec_config_t>& codec_priorities,
+    std::vector<btav_a2dp_codec_info_t>* supported_codecs);
 
 // Checks whether the codec for |codec_index| is supported.
 // Returns true if the codec is supported, otherwise false.

@@ -79,6 +79,9 @@ public class Metadata {
      */
     public int preferred_duplex_profile;
 
+    /** This is used to indicate whether device's active audio policy */
+    public int active_audio_device_policy;
+
     Metadata(String address) {
         this(address, false, false);
     }
@@ -96,6 +99,7 @@ public class Metadata {
         audioPolicyMetadata = new AudioPolicyEntity();
         preferred_output_only_profile = 0;
         preferred_duplex_profile = 0;
+        active_audio_device_policy = BluetoothDevice.ACTIVE_AUDIO_DEVICE_POLICY_DEFAULT;
     }
 
     static final class Builder {
@@ -349,6 +353,9 @@ public class Metadata {
             case BluetoothDevice.METADATA_GTBS_CCCD:
                 publicMetadata.gtbs_cccd = value;
                 break;
+            case BluetoothDevice.METADATA_EXCLUSIVE_MANAGER:
+                publicMetadata.exclusive_manager = value;
+                break;
         }
     }
 
@@ -445,6 +452,9 @@ public class Metadata {
                 break;
             case BluetoothDevice.METADATA_GTBS_CCCD:
                 value = publicMetadata.gtbs_cccd;
+                break;
+            case BluetoothDevice.METADATA_EXCLUSIVE_MANAGER:
+                value = publicMetadata.exclusive_manager;
                 break;
         }
         return value;

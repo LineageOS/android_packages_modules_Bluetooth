@@ -77,7 +77,7 @@
     <string name="unknown_file_desc" msgid="9185609398960437760">"इस प्रकार की फ़ाइल प्रबंधित करने के लिए कोई ऐप्लिकेशन नहीं है. \n"</string>
     <string name="not_exist_file" msgid="5097565588949092486">"कोई फ़ाइल नहीं"</string>
     <string name="not_exist_file_desc" msgid="250802392160941265">"फ़ाइल मौजूद नहीं है. \n"</string>
-    <string name="enabling_progress_title" msgid="5262637688863903594">"कृपया प्रतीक्षा करें..."</string>
+    <string name="enabling_progress_title" msgid="5262637688863903594">"कृपया इंतज़ार करें..."</string>
     <string name="enabling_progress_content" msgid="685427201206684584">"ब्लूटूथ चालू कर रहा है…"</string>
     <string name="bt_toast_1" msgid="8791691594887576215">"फ़ाइल मिलेगी. सूचना पैनल में प्रगति देखें."</string>
     <string name="bt_toast_2" msgid="2041575937953174042">"फ़ाइल पाई नहीं जा सकती."</string>
@@ -101,7 +101,6 @@
     <string name="status_connection_error" msgid="8253709700568062220">"कनेक्‍शन विफल."</string>
     <string name="status_protocol_error" msgid="3231573735130475654">"अनुरोध को सही तरह से प्रबंधित नहीं किया जा सकता."</string>
     <string name="status_unknown_error" msgid="314676481744304866">"अज्ञात गड़बड़ी‍."</string>
-    <string name="btopp_live_folder" msgid="4859989703965326287">"ब्लूटूथ से मिली फ़ाइलें"</string>
     <string name="opp_notification_group" msgid="150067508422520653">"ब्लूटूथ के ज़रिए शेयर"</string>
     <string name="download_success" msgid="3438268368708549686">"<xliff:g id="FILE_SIZE">%1$s</xliff:g> मिलना पूरा हुआ."</string>
     <string name="upload_success" msgid="143787470859042049">"<xliff:g id="FILE_SIZE">%1$s</xliff:g> भेजना पूरा हुआ."</string>
@@ -136,4 +135,8 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"फ़्लाइट मोड में भी, आपके डिवाइस का ब्लूटूथ चालू रहता है. अगर ब्लूटूथ चालू नहीं रखना है, तो उसे बंद कर दें."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"वाई-फ़ाई और ब्लूटूथ चालू रहते हैं"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"फ़्लाइट मोड में भी, आपके डिवाइस का वाई-फ़ाई और ब्लूटूथ चालू रहता है. अगर वाई-फ़ाई और ब्लूटूथ को चालू नहीं रखना है, तो उन्हें बंद कर दें."</string>
+    <string name="bluetooth_enabled_auto_on_title" msgid="1799541656310353393">"ब्लूटूथ अपने-आप चालू हो गया है"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="1070556457440100730">"ब्लूटूथ की सेटिंग में अपने-आप रीस्टार्ट होने की सुविधा को टॉगल किया जा सकता है."</string>
+    <string name="bluetooth_disable_auto_on" msgid="1085026923461565937">"बंद करें"</string>
+    <string name="bluetooth_notification_group" msgid="7251886707585872194">"ब्लूटूथ अपने-आप चालू होने की सेटिंग को बदल दिया गया है"</string>
 </resources>

@@ -5,7 +5,7 @@
 #include <android/hardware/bluetooth/1.1/IBluetoothHciCallbacks.h>
 #include <stdlib.h>
 
-#include "gd/os/log.h"
+#include "os/log.h"
 
 using ::android::hardware::hidl_vec;
 using ::android::hardware::Return;

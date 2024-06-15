@@ -22,14 +22,19 @@
  *
  ******************************************************************************/
 
+#define LOG_TAG "bt_bta_hh"
+
+#include <bluetooth/log.h>
 #include <string.h>  // memset
 
 #include <cstdint>
 
-#include "bt_target.h"  // Must be first to define build configuration
 #include "bta/hh/bta_hh_int.h"
+#include "os/log.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
+
+using namespace bluetooth;
 
 /*****************************************************************************
  * Global data
@@ -44,6 +49,8 @@ static const char* bta_hh_state_code(tBTA_HH_STATE state_code);
 
 static void bta_hh_better_state_machine(tBTA_HH_DEV_CB* p_cb, uint16_t event,
                                         const tBTA_HH_DATA* p_data) {
+  log::verbose("state:{}, event:{}", bta_hh_state_code(p_cb->state),
+               bta_hh_evt_code(static_cast<tBTA_HH_INT_EVT>(event)));
   switch (p_cb->state) {
     case BTA_HH_IDLE_ST:
       switch (event) {
@@ -195,6 +202,8 @@ void bta_hh_sm_execute(tBTA_HH_DEV_CB* p_cb, uint16_t event,
 
   /* handle exception, no valid control block was found */
   if (!p_cb) {
+    log::verbose("Event:{}, bta_hh_cb.p_cback:{}", bta_hh_evt_code(debug_event),
+                 fmt::ptr(bta_hh_cb.p_cback));
     /* BTA HH enabled already? otherwise ignore the event although it's bad*/
     if (bta_hh_cb.p_cback != NULL) {
       switch (event) {
@@ -202,7 +211,7 @@ void bta_hh_sm_execute(tBTA_HH_DEV_CB* p_cb, uint16_t event,
         case BTA_HH_API_OPEN_EVT:
           cback_event = BTA_HH_OPEN_EVT;
           /* build cback data */
-          cback_data.conn.bda = ((tBTA_HH_API_CONN*)p_data)->bd_addr;
+          cback_data.conn.link_spec = ((tBTA_HH_API_CONN*)p_data)->link_spec;
           cback_data.conn.status = BTA_HH_ERR_DB_FULL;
           cback_data.conn.handle = BTA_HH_INVALID_HANDLE;
           break;
@@ -211,7 +220,7 @@ void bta_hh_sm_execute(tBTA_HH_DEV_CB* p_cb, uint16_t event,
           cback_event = p_data->api_maintdev.sub_event;
 
           if (p_data->api_maintdev.sub_event == BTA_HH_ADD_DEV_EVT) {
-            cback_data.dev_info.bda = p_data->api_maintdev.bda;
+            cback_data.dev_info.link_spec = p_data->api_maintdev.link_spec;
             cback_data.dev_info.status = BTA_HH_ERR_DB_FULL;
             cback_data.dev_info.handle = BTA_HH_INVALID_HANDLE;
           } else {
@@ -255,7 +264,7 @@ void bta_hh_sm_execute(tBTA_HH_DEV_CB* p_cb, uint16_t event,
 
         default:
           /* invalid handle, call bad API event */
-          LOG_ERROR("wrong device handle: [%d]", p_data->hdr.layer_specific);
+          log::error("wrong device handle:{}", p_data->hdr.layer_specific);
           /* Free the callback buffer now */
           if (p_data != NULL)
             osi_free_and_reset((void**)&p_data->hid_cback.p_data);
@@ -267,21 +276,20 @@ void bta_hh_sm_execute(tBTA_HH_DEV_CB* p_cb, uint16_t event,
   /* corresponding CB is found, go to state machine */
   else {
     in_state = p_cb->state;
-    LOG_VERBOSE("bta_hh_sm_execute: State 0x%02x [%s], Event [%s]", in_state,
-                bta_hh_state_code(in_state), bta_hh_evt_code(debug_event));
+    log::verbose("State 0x{:02x} [{}], Event [{}]", in_state,
+                 bta_hh_state_code(in_state), bta_hh_evt_code(debug_event));
 
     if ((p_cb->state == BTA_HH_NULL_ST) || (p_cb->state >= BTA_HH_INVALID_ST)) {
-      LOG_ERROR("bta_hh_sm_execute: Invalid state State = 0x%x, Event = %d",
-                p_cb->state, event);
+      log::error("Invalid state State=0x{:x}, Event={}", p_cb->state, event);
       return;
     }
 
     bta_hh_better_state_machine(p_cb, event, p_data);
 
     if (in_state != p_cb->state) {
-      LOG_DEBUG("HHID State Change: [%s] -> [%s] after Event [%s]",
-                bta_hh_state_code(in_state), bta_hh_state_code(p_cb->state),
-                bta_hh_evt_code(debug_event));
+      log::debug("HHID State Change: [{}] -> [{}] after Event [{}]",
+                 bta_hh_state_code(in_state), bta_hh_state_code(p_cb->state),
+                 bta_hh_evt_code(debug_event));
     }
   }
 }
@@ -303,11 +311,11 @@ bool bta_hh_hdl_event(const BT_HDR_RIGID* p_msg) {
   /* all events processed in state machine need to find corresponding
      CB before proceed */
   if (p_msg->event == BTA_HH_API_OPEN_EVT) {
-    index = bta_hh_find_cb(((tBTA_HH_API_CONN*)p_msg)->bd_addr);
+    index = bta_hh_find_cb(((tBTA_HH_API_CONN*)p_msg)->link_spec);
   } else if (p_msg->event == BTA_HH_API_MAINT_DEV_EVT) {
     /* if add device */
     if (((tBTA_HH_MAINT_DEV*)p_msg)->sub_event == BTA_HH_ADD_DEV_EVT) {
-      index = bta_hh_find_cb(((tBTA_HH_MAINT_DEV*)p_msg)->bda);
+      index = bta_hh_find_cb(((tBTA_HH_MAINT_DEV*)p_msg)->link_spec);
     } else /* else remove device by handle */ {
       index = bta_hh_dev_handle_to_cb_idx((uint8_t)p_msg->layer_specific);
       /* If BT disable is done while the HID device is connected and
@@ -325,15 +333,14 @@ bool bta_hh_hdl_event(const BT_HDR_RIGID* p_msg) {
       }
     }
   } else if (p_msg->event == BTA_HH_INT_OPEN_EVT) {
-    index = bta_hh_find_cb(((tBTA_HH_CBACK_DATA*)p_msg)->addr);
+    index = bta_hh_find_cb(((tBTA_HH_CBACK_DATA*)p_msg)->link_spec);
   } else {
     index = bta_hh_dev_handle_to_cb_idx((uint8_t)p_msg->layer_specific);
   }
 
   if (index != BTA_HH_IDX_INVALID) p_cb = &bta_hh_cb.kdev[index];
 
-  LOG_VERBOSE("bta_hh_hdl_event:: handle = %d dev_cb[%d] ",
-              p_msg->layer_specific, index);
+  log::verbose("handle={} dev_cb[{}]", p_msg->layer_specific, index);
   bta_hh_sm_execute(p_cb, p_msg->event, (tBTA_HH_DATA*)p_msg);
 
   return (true);

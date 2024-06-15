@@ -87,7 +87,6 @@ public class BluetoothOppLauncherActivityTest {
         mIntent = new Intent();
         mIntent.setClass(mTargetContext, BluetoothOppLauncherActivity.class);
 
-        BluetoothOppTestUtils.enableOppActivities(true, mTargetContext);
         TestUtils.setUpUiTest();
 
         BluetoothOppManager.setInstance(mBluetoothOppManager);
@@ -100,7 +99,6 @@ public class BluetoothOppLauncherActivityTest {
         BluetoothMethodProxy.setInstanceForTesting(null);
         BluetoothOppManager.setInstance(null);
         Intents.release();
-        BluetoothOppTestUtils.enableOppActivities(false, mTargetContext);
     }
 
     @Test

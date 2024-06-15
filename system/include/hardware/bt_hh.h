@@ -224,4 +224,20 @@ typedef struct {
 } bthh_interface_t;
 __END_DECLS
 
+#if __has_include(<bluetooth/log.h>)
+#include <bluetooth/log.h>
+
+namespace fmt {
+template <>
+struct formatter<bthh_connection_state_t>
+    : enum_formatter<bthh_connection_state_t> {};
+template <>
+struct formatter<bthh_protocol_mode_t> : enum_formatter<bthh_protocol_mode_t> {
+};
+template <>
+struct formatter<bthh_report_type_t> : enum_formatter<bthh_report_type_t> {};
+}  // namespace fmt
+
+#endif  // __has_include(<bluetooth/log.h>)
+
 #endif /* ANDROID_INCLUDE_BT_HH_H */

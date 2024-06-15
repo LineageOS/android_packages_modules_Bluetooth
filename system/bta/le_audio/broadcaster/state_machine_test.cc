@@ -22,11 +22,11 @@
 
 #include "../le_audio_types.h"
 #include "btm_iso_api.h"
-#include "mock_ble_advertising_manager.h"
 #include "mock_iso_manager.h"
 #include "stack/include/btm_ble_api_types.h"
 #include "state_machine.h"
 #include "test/common/mock_functions.h"
+#include "test/mock/mock_main_shim_le_advertising_manager.h"
 
 using namespace bluetooth::hci::iso_manager;
 

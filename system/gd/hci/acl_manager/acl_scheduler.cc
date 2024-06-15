@@ -17,7 +17,6 @@
 #include "acl_scheduler.h"
 
 #include <optional>
-#include <queue>
 #include <unordered_set>
 #include <variant>
 

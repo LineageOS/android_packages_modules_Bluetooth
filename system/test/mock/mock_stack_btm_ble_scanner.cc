@@ -19,7 +19,6 @@
 #include <base/logging.h>
 #include <base/memory/weak_ptr.h>
 #include <base/strings/string_number_conversions.h>
-#include <base/time/time.h>
 
 #include "ble_scanner.h"
 #include "stack/btm/ble_scanner_hci_interface.h"

@@ -24,12 +24,14 @@ static_library("audio_hal_interface") {
   include_dirs = [
     "//bt/system/bta/include",
     "//bt/system/btif/include",
-    "//bt/system/internal_include",
     "//bt/system/stack/include",
     "//bt/system/gd/rust/shim",
   ]
 
-  configs += [ "//bt/system:target_defaults" ]
+  configs += [
+    "//bt/system:target_defaults",
+    "//bt/system/log:log_defaults",
+  ]
 
   deps = [
     "//bt/system/common",

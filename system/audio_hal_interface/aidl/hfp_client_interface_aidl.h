@@ -17,9 +17,10 @@
 #pragma once
 
 #include <cstdint>
+#include <unordered_map>
 
+#include "bta/ag/bta_ag_int.h"
 #include "client_interface_aidl.h"
-#include "common/message_loop_thread.h"
 
 namespace bluetooth {
 namespace audio {
@@ -29,7 +30,7 @@ namespace hfp {
 using ::aidl::android::hardware::bluetooth::audio::LatencyMode;
 
 typedef enum {
-  HFP_CTRL_CMD_NONE,
+  HFP_CTRL_CMD_NONE = 0,
   HFP_CTRL_CMD_CHECK_READY,
   HFP_CTRL_CMD_START,
   HFP_CTRL_CMD_STOP,
@@ -68,6 +69,9 @@ class HfpTransport {
   void ResetPendingCmd();
 
   void LogBytesProcessed(size_t bytes_read);
+
+  static std::unordered_map<int, ::hfp::sco_config> GetHfpScoConfig(
+      SessionType sessionType);
 
  private:
   tHFP_CTRL_CMD hfp_pending_cmd_;

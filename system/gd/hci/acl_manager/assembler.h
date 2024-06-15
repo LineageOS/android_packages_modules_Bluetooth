@@ -19,6 +19,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <memory>
+#include <vector>
 
 #include "hci/acl_manager/acl_connection.h"
 #include "hci/address_with_type.h"

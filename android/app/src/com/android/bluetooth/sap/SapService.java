@@ -107,12 +107,7 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
             BluetoothUuid.SAP,
     };
 
-    public SapService() {
-        BluetoothSap.invalidateBluetoothGetConnectionStateCache();
-    }
-
-    @VisibleForTesting
-    SapService(Context ctx) {
+    public SapService(Context ctx) {
         super(ctx);
         BluetoothSap.invalidateBluetoothGetConnectionStateCache();
     }
@@ -685,7 +680,7 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
     }
 
     @Override
-    protected boolean start() {
+    public void start() {
         Log.v(TAG, "start()");
         IntentFilter filter = new IntentFilter();
         filter.setPriority(IntentFilter.SYSTEM_HIGH_PRIORITY);
@@ -704,15 +699,14 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
         // start RFCOMM listener
         mSessionStatusHandler.sendMessage(mSessionStatusHandler.obtainMessage(START_LISTENER));
         setSapService(this);
-        return true;
     }
 
     @Override
-    protected boolean stop() {
+    public void stop() {
         Log.v(TAG, "stop()");
         if (!mIsRegistered) {
             Log.i(TAG, "Avoid unregister when receiver it is not registered");
-            return true;
+            return;
         }
         setSapService(null);
         try {
@@ -724,7 +718,6 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
         mAdapterService.unregisterBluetoothStateCallback(this);
         setState(BluetoothSap.STATE_DISCONNECTED, BluetoothSap.RESULT_CANCELED);
         sendShutdownMessage();
-        return true;
     }
 
     @Override

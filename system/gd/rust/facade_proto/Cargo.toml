@@ -21,13 +21,13 @@ build = "build.rs"
 
 [dependencies]
 futures = "0.3"
-grpcio = "0.9"
-protobuf = "2.0"
+grpcio = { version = "0.13.0", default-features = false, features = ["protobufv3-codec", "openssl"] }
+protobuf = "3.2"
 
 [build-dependencies]
-protoc-rust = "2.0"
-protoc-grpcio = "2.0"
-protobuf-codegen = "2.0"
+anyhow = "1"
+grpcio-compiler = "0.13"
+protobuf-codegen = "3.2"
 
 [lib]
 crate-types = ["rlib"]

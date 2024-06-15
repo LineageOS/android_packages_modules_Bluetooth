@@ -197,9 +197,11 @@ btav_a2dp_scmst_info_t bta_av_co_get_scmst_info(
   return test::mock::btif_co_bta_av_co::bta_av_co_get_scmst_info(peer_address);
 }
 void bta_av_co_init(
-    const std::vector<btav_a2dp_codec_config_t>& codec_priorities) {
+    const std::vector<btav_a2dp_codec_config_t>& codec_priorities,
+    std::vector<btav_a2dp_codec_info_t>* supported_codecs) {
   inc_func_call_count(__func__);
-  test::mock::btif_co_bta_av_co::bta_av_co_init(codec_priorities);
+  test::mock::btif_co_bta_av_co::bta_av_co_init(codec_priorities,
+                                                supported_codecs);
 }
 bool bta_av_co_is_supported_codec(btav_a2dp_codec_index_t codec_index) {
   inc_func_call_count(__func__);

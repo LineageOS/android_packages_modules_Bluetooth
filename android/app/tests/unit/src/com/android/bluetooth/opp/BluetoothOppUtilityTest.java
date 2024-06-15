@@ -79,7 +79,6 @@ public class BluetoothOppUtilityTest {
         MockitoAnnotations.initMocks(this);
         mContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
         BluetoothMethodProxy.setInstanceForTesting(mCallProxy);
-        BluetoothOppTestUtils.enableOppActivities(true, mContext);
         TestUtils.setUpUiTest();
     }
 
@@ -87,7 +86,6 @@ public class BluetoothOppUtilityTest {
     public void tearDown() throws Exception {
         TestUtils.tearDownUiTest();
 
-        BluetoothOppTestUtils.enableOppActivities(false, mContext);
         BluetoothMethodProxy.setInstanceForTesting(null);
     }
 

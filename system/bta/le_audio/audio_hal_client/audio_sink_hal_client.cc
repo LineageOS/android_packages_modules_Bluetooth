@@ -22,7 +22,7 @@
 #include "audio_hal_interface/le_audio_software.h"
 #include "bta/le_audio/codec_manager.h"
 #include "common/time_util.h"
-#include "osi/include/log.h"
+#include "os/log.h"
 #include "osi/include/wakelock.h"
 #include "stack/include/main_thread.h"
 
@@ -261,7 +261,11 @@ void SinkImpl::ConfirmStreamingRequest() {
   }
 
   LOG_INFO();
-  halSourceInterface_->ConfirmStreamingRequest();
+  if (IS_FLAG_ENABLED(leaudio_start_stream_race_fix)) {
+    halSourceInterface_->ConfirmStreamingRequestV2();
+  } else {
+    halSourceInterface_->ConfirmStreamingRequest();
+  }
 }
 
 void SinkImpl::SuspendedForReconfiguration() {
@@ -294,7 +298,11 @@ void SinkImpl::CancelStreamingRequest() {
   }
 
   LOG_INFO();
-  halSourceInterface_->CancelStreamingRequest();
+  if (IS_FLAG_ENABLED(leaudio_start_stream_race_fix)) {
+    halSourceInterface_->CancelStreamingRequestV2();
+  } else {
+    halSourceInterface_->CancelStreamingRequest();
+  }
 }
 
 void SinkImpl::UpdateRemoteDelay(uint16_t remote_delay_ms) {

@@ -56,10 +56,10 @@ public class HidHostServiceTest {
         MockitoAnnotations.initMocks(this);
         TestUtils.setAdapterService(mAdapterService);
         when(mAdapterService.getDatabase()).thenReturn(mDatabaseManager);
-        when(mAdapterService.isStartedProfile(anyString())).thenReturn(true);
         HidHostNativeInterface.setInstance(mNativeInterface);
         mService = new HidHostService(mTargetContext);
-        mService.doStart();
+        mService.start();
+        mService.setAvailable(true);
         // Try getting the Bluetooth adapter
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         Assert.assertNotNull(mAdapter);
@@ -70,8 +70,8 @@ public class HidHostServiceTest {
 
     @After
     public void tearDown() throws Exception {
-        when(mAdapterService.isStartedProfile(anyString())).thenReturn(false);
-        mService.doStop();
+        mService.stop();
+        mService.cleanup();
         HidHostNativeInterface.setInstance(null);
         mService = HidHostService.getHidHostService();
         Assert.assertNull(mService);

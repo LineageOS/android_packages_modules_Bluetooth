@@ -37,6 +37,7 @@ import android.content.ContentValues;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
+import android.platform.test.flag.junit.SetFlagsRule;
 
 import androidx.room.Room;
 import androidx.room.testing.MigrationTestHelper;
@@ -48,7 +49,6 @@ import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.flags.FakeFeatureFlagsImpl;
 import com.android.bluetooth.flags.Flags;
 
 import com.google.common.truth.Truth;
@@ -81,7 +81,6 @@ public final class DatabaseManagerTest {
     private BluetoothDevice mTestDevice;
     private BluetoothDevice mTestDevice2;
     private BluetoothDevice mTestDevice3;
-    private FakeFeatureFlagsImpl mFakeFlagsImpl;
 
     private static final String LOCAL_STORAGE = "LocalStorage";
     private static final String TEST_BT_ADDR = "11:22:33:44:55:66";
@@ -94,6 +93,8 @@ public final class DatabaseManagerTest {
     private static final int A2DP_ENALBED_OP_CODEC_TEST = 1;
     private static final int MAX_META_ID = 16;
     private static final byte[] TEST_BYTE_ARRAY = "TEST_VALUE".getBytes();
+
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
     @Rule
     public MigrationTestHelper testHelper = new MigrationTestHelper(
@@ -116,9 +117,7 @@ public final class DatabaseManagerTest {
         when(mAdapterService.getPackageManager()).thenReturn(
                 InstrumentationRegistry.getTargetContext().getPackageManager());
 
-        mFakeFlagsImpl = new FakeFeatureFlagsImpl();
-
-        mDatabaseManager = new DatabaseManager(mAdapterService, mFakeFlagsImpl);
+        mDatabaseManager = new DatabaseManager(mAdapterService);
 
         BluetoothDevice[] bondedDevices = {mTestDevice};
         doReturn(bondedDevices).when(mAdapterService).getBondedDevices();
@@ -408,6 +407,7 @@ public final class DatabaseManagerTest {
         testSetGetCustomMetaCase(false, BluetoothDevice.METADATA_GTBS_CCCD,
                 value, true);
         testSetGetCustomMetaCase(false, badKey, value, false);
+        testSetGetCustomMetaCase(false, BluetoothDevice.METADATA_EXCLUSIVE_MANAGER, value, true);
 
         // Device is in database
         testSetGetCustomMetaCase(true, BluetoothDevice.METADATA_MANUFACTURER_NAME,
@@ -471,6 +471,7 @@ public final class DatabaseManagerTest {
                 value, true);
         testSetGetCustomMetaCase(true, BluetoothDevice.METADATA_GTBS_CCCD,
                 value, true);
+        testSetGetCustomMetaCase(true, BluetoothDevice.METADATA_EXCLUSIVE_MANAGER, value, true);
     }
     @Test
     public void testSetGetAudioPolicyMetaData() {
@@ -489,7 +490,7 @@ public final class DatabaseManagerTest {
 
     @Test
     public void testSetConnectionHeadset() {
-        mFakeFlagsImpl.setFlag(Flags.FLAG_AUTO_CONNECT_ON_MULTIPLE_HFP_WHEN_NO_A2DP_DEVICE, false);
+        mSetFlagsRule.disableFlags(Flags.FLAG_AUTO_CONNECT_ON_MULTIPLE_HFP_WHEN_NO_A2DP_DEVICE);
         // Verify pre-conditions to ensure a fresh test
         Assert.assertEquals(0, mDatabaseManager.mMetadataCache.size());
         Assert.assertNotNull(mTestDevice);
@@ -542,7 +543,7 @@ public final class DatabaseManagerTest {
 
     @Test
     public void testSetConnection() {
-        mFakeFlagsImpl.setFlag(Flags.FLAG_AUTO_CONNECT_ON_MULTIPLE_HFP_WHEN_NO_A2DP_DEVICE, false);
+        mSetFlagsRule.disableFlags(Flags.FLAG_AUTO_CONNECT_ON_MULTIPLE_HFP_WHEN_NO_A2DP_DEVICE);
         // Verify pre-conditions to ensure a fresh test
         Assert.assertEquals(0, mDatabaseManager.mMetadataCache.size());
         Assert.assertNotNull(mTestDevice);
@@ -1424,6 +1425,55 @@ public final class DatabaseManagerTest {
         while (cursor.moveToNext()) {
             // Check the new columns was added with default value
             assertColumnIntData(cursor, "isActiveHfpDevice", 0);
+        }
+    }
+
+    @Test
+    public void testDatabaseMigration_118_119() throws IOException {
+        // Create a database with version 118
+        SupportSQLiteDatabase db = testHelper.createDatabase(DB_NAME, 118);
+        // insert a device to the database
+        ContentValues device = new ContentValues();
+        device.put("address", TEST_BT_ADDR);
+        device.put("migrated", false);
+        assertThat(
+                db.insert("metadata", SQLiteDatabase.CONFLICT_IGNORE, device),
+                CoreMatchers.not(-1));
+
+        // Migrate database from 118 to 119
+        db.close();
+        db =
+                testHelper.runMigrationsAndValidate(
+                        DB_NAME, 119, true, MetadataDatabase.MIGRATION_118_119);
+        Cursor cursor = db.query("SELECT * FROM metadata");
+        assertHasColumn(cursor, "exclusive_manager", true);
+        while (cursor.moveToNext()) {
+            // Check the new column was added with default value
+            assertColumnBlobData(cursor, "exclusive_manager", null);
+        }
+    }
+
+    @Test
+    public void testDatabaseMigration_119_120() throws IOException {
+        // Create a database with version 119
+        SupportSQLiteDatabase db = testHelper.createDatabase(DB_NAME, 119);
+        // insert a device to the database
+        ContentValues device = new ContentValues();
+        device.put("address", TEST_BT_ADDR);
+        device.put("migrated", false);
+        assertThat(
+                db.insert("metadata", SQLiteDatabase.CONFLICT_IGNORE, device),
+                CoreMatchers.not(-1));
+        // Migrate database from 119 to 120
+        db.close();
+        db =
+                testHelper.runMigrationsAndValidate(
+                        DB_NAME, 120, true, MetadataDatabase.MIGRATION_119_120);
+        Cursor cursor = db.query("SELECT * FROM metadata");
+        assertHasColumn(cursor, "active_audio_device_policy", true);
+        while (cursor.moveToNext()) {
+            // Check the new columns was added with default value
+            assertColumnIntData(cursor, "active_audio_device_policy", 0);
         }
     }
 

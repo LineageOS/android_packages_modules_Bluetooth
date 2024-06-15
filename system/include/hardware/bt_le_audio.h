@@ -17,6 +17,8 @@
 
 #pragma once
 
+#include <bluetooth/log.h>
+
 #include <array>
 #include <map>
 #include <optional>
@@ -102,11 +104,18 @@ typedef enum { QUALITY_STANDARD = 0, QUALITY_HIGH } btle_audio_quality_t;
 typedef enum {
   LE_AUDIO_SAMPLE_RATE_INDEX_NONE = 0,
   LE_AUDIO_SAMPLE_RATE_INDEX_8000HZ = 0x01 << 0,
+  LE_AUDIO_SAMPLE_RATE_INDEX_11025HZ = 0x01 << 1,
   LE_AUDIO_SAMPLE_RATE_INDEX_16000HZ = 0x01 << 2,
+  LE_AUDIO_SAMPLE_RATE_INDEX_22050HZ = 0x01 << 3,
   LE_AUDIO_SAMPLE_RATE_INDEX_24000HZ = 0x01 << 4,
   LE_AUDIO_SAMPLE_RATE_INDEX_32000HZ = 0x01 << 5,
   LE_AUDIO_SAMPLE_RATE_INDEX_44100HZ = 0x01 << 6,
-  LE_AUDIO_SAMPLE_RATE_INDEX_48000HZ = 0x01 << 7
+  LE_AUDIO_SAMPLE_RATE_INDEX_48000HZ = 0x01 << 7,
+  LE_AUDIO_SAMPLE_RATE_INDEX_88200HZ = 0x01 << 8,
+  LE_AUDIO_SAMPLE_RATE_INDEX_96000HZ = 0x01 << 9,
+  LE_AUDIO_SAMPLE_RATE_INDEX_176400HZ = 0x01 << 10,
+  LE_AUDIO_SAMPLE_RATE_INDEX_192000HZ = 0x01 << 11,
+  LE_AUDIO_SAMPLE_RATE_INDEX_384000HZ = 0x01 << 12
 } btle_audio_sample_rate_index_t;
 
 typedef enum {
@@ -162,8 +171,14 @@ typedef struct {
       case LE_AUDIO_SAMPLE_RATE_INDEX_8000HZ:
         sample_rate_str = "8000 hz";
         break;
+      case LE_AUDIO_SAMPLE_RATE_INDEX_11025HZ:
+        sample_rate_str = "11025 hz";
+        break;
       case LE_AUDIO_SAMPLE_RATE_INDEX_16000HZ:
         sample_rate_str = "16000 hz";
+        break;
+      case LE_AUDIO_SAMPLE_RATE_INDEX_22050HZ:
+        sample_rate_str = "22050 hz";
         break;
       case LE_AUDIO_SAMPLE_RATE_INDEX_24000HZ:
         sample_rate_str = "24000 hz";
@@ -176,6 +191,21 @@ typedef struct {
         break;
       case LE_AUDIO_SAMPLE_RATE_INDEX_48000HZ:
         sample_rate_str = "48000 hz";
+        break;
+      case LE_AUDIO_SAMPLE_RATE_INDEX_88200HZ:
+        sample_rate_str = "88200 hz";
+        break;
+      case LE_AUDIO_SAMPLE_RATE_INDEX_96000HZ:
+        sample_rate_str = "96000 hz";
+        break;
+      case LE_AUDIO_SAMPLE_RATE_INDEX_176400HZ:
+        sample_rate_str = "176400 hz";
+        break;
+      case LE_AUDIO_SAMPLE_RATE_INDEX_192000HZ:
+        sample_rate_str = "192000 hz";
+        break;
+      case LE_AUDIO_SAMPLE_RATE_INDEX_384000HZ:
+        sample_rate_str = "384000 hz";
         break;
       default:
         sample_rate_str =
@@ -305,6 +335,10 @@ class LeAudioClientCallbacks {
 
   virtual void OnUnicastMonitorModeStatus(uint8_t direction,
                                           UnicastMonitorModeStatus status) = 0;
+
+  /* Callback with group stream status update */
+  virtual void OnGroupStreamStatus(int group_id,
+                                   GroupStreamStatus group_stream_status) = 0;
 };
 
 class LeAudioClientInterface {
@@ -501,3 +535,22 @@ class LeAudioBroadcasterInterface {
 
 } /* namespace le_audio */
 } /* namespace bluetooth */
+
+namespace fmt {
+template <>
+struct formatter<bluetooth::le_audio::btle_audio_codec_index_t>
+    : enum_formatter<bluetooth::le_audio::btle_audio_codec_index_t> {};
+template <>
+struct formatter<bluetooth::le_audio::btle_audio_sample_rate_index_t>
+    : enum_formatter<bluetooth::le_audio::btle_audio_sample_rate_index_t> {};
+template <>
+struct formatter<bluetooth::le_audio::btle_audio_bits_per_sample_index_t>
+    : enum_formatter<bluetooth::le_audio::btle_audio_bits_per_sample_index_t> {
+};
+template <>
+struct formatter<bluetooth::le_audio::btle_audio_channel_count_index_t>
+    : enum_formatter<bluetooth::le_audio::btle_audio_channel_count_index_t> {};
+template <>
+struct formatter<bluetooth::le_audio::btle_audio_frame_duration_index_t>
+    : enum_formatter<bluetooth::le_audio::btle_audio_frame_duration_index_t> {};
+}  // namespace fmt

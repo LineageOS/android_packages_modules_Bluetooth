@@ -25,8 +25,10 @@
 #define BTA_DM_INT_H
 
 #include <base/strings/stringprintf.h>
+#include <bluetooth/log.h>
 
 #include <string>
+#include <vector>
 
 #include "bta/include/bta_api.h"
 #include "bta/include/bta_sec_api.h"
@@ -39,13 +41,6 @@
 /*****************************************************************************
  *  Constants and data types
  ****************************************************************************/
-
-#define BTA_COPY_DEVICE_CLASS(coddst, codsrc)          \
-  {                                                    \
-    ((uint8_t*)(coddst))[0] = ((uint8_t*)(codsrc))[0]; \
-    ((uint8_t*)(coddst))[1] = ((uint8_t*)(codsrc))[1]; \
-    ((uint8_t*)(coddst))[2] = ((uint8_t*)(codsrc))[2]; \
-  }
 
 #define BTA_DM_MSG_LEN 50
 
@@ -363,5 +358,10 @@ void bta_dm_eir_update_cust_uuid(const tBTA_CUSTOM_UUID &curr, bool adding);
 void bta_dm_ble_subrate_request(const RawAddress& bd_addr, uint16_t subrate_min,
                                 uint16_t subrate_max, uint16_t max_latency,
                                 uint16_t cont_num, uint16_t timeout);
+
+namespace fmt {
+template <>
+struct formatter<tBTA_DM_CONN_STATE> : enum_formatter<tBTA_DM_CONN_STATE> {};
+}  // namespace fmt
 
 #endif /* BTA_DM_INT_H */

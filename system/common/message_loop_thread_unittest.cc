@@ -119,8 +119,8 @@ TEST_F(MessageLoopThreadTest, test_do_in_thread_before_start) {
   std::string name = "test_thread";
   MessageLoopThread message_loop_thread(name);
   ASSERT_FALSE(message_loop_thread.DoInThread(
-      FROM_HERE, base::Bind(&MessageLoopThreadTest::ShouldNotHappen,
-                            base::Unretained(this))));
+      FROM_HERE, base::BindOnce(&MessageLoopThreadTest::ShouldNotHappen,
+                                base::Unretained(this))));
 }
 
 TEST_F(MessageLoopThreadTest, test_do_in_thread_after_shutdown) {
@@ -129,8 +129,8 @@ TEST_F(MessageLoopThreadTest, test_do_in_thread_after_shutdown) {
   message_loop_thread.StartUp();
   message_loop_thread.ShutDown();
   ASSERT_FALSE(message_loop_thread.DoInThread(
-      FROM_HERE, base::Bind(&MessageLoopThreadTest::ShouldNotHappen,
-                            base::Unretained(this))));
+      FROM_HERE, base::BindOnce(&MessageLoopThreadTest::ShouldNotHappen,
+                                base::Unretained(this))));
 }
 
 TEST_F(MessageLoopThreadTest, test_name) {

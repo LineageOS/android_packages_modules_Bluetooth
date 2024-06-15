@@ -33,7 +33,6 @@ import android.bluetooth.BluetoothUuid;
 import android.bluetooth.IBluetoothHapClient;
 import android.bluetooth.IBluetoothHapClientCallback;
 import android.content.AttributionSource;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Handler;
 import android.os.HandlerThread;
@@ -51,8 +50,7 @@ import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.csip.CsipSetCoordinatorService;
-import com.android.bluetooth.flags.FeatureFlags;
-import com.android.bluetooth.flags.FeatureFlagsImpl;
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.modules.utils.SynchronousResultReceiver;
 
@@ -90,7 +88,6 @@ public class HapClientService extends ProfileService {
     private final Map<BluetoothDevice, Integer> mDeviceFeaturesMap = new HashMap<>();
     private final Map<BluetoothDevice, List<BluetoothHapPresetInfo>> mPresetsMap =
             new HashMap<>();
-    private final FeatureFlags mFeatureFlags;
 
     @VisibleForTesting
     RemoteCallbackList<IBluetoothHapClientCallback> mCallbacks;
@@ -127,18 +124,13 @@ public class HapClientService extends ProfileService {
         return sHapClient;
     }
 
-    protected HapClientService() {
-        mFeatureFlags = new FeatureFlagsImpl();
-    }
-
-    @VisibleForTesting
-    HapClientService(Context ctx) {
-        super(ctx);
-        mFeatureFlags = new FeatureFlagsImpl();
+    public HapClientService(AdapterService adapterService) {
+        super(adapterService);
+        mAdapterService = Objects.requireNonNull(adapterService);
     }
 
     @Override
-    protected void cleanup() {
+    public void cleanup() {
         if (DBG) {
             Log.d(TAG, "cleanup()");
         }
@@ -150,7 +142,7 @@ public class HapClientService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    public void start() {
         if (DBG) {
             Log.d(TAG, "start()");
         }
@@ -159,12 +151,12 @@ public class HapClientService extends ProfileService {
             throw new IllegalStateException("start() called twice");
         }
 
-        // Get AdapterService, HapClientNativeInterface, DatabaseManager, AudioManager.
+        // Get HapClientNativeInterface, DatabaseManager, AudioManager.
         // None of them can be null.
-        mAdapterService = Objects.requireNonNull(AdapterService.getAdapterService(),
-                "AdapterService cannot be null when HapClientService starts");
-        mDatabaseManager = Objects.requireNonNull(mAdapterService.getDatabase(),
-                "DatabaseManager cannot be null when HapClientService starts");
+        mDatabaseManager =
+                Objects.requireNonNull(
+                        mAdapterService.getDatabase(),
+                        "DatabaseManager cannot be null when HapClientService starts");
         mHapClientNativeInterface = Objects.requireNonNull(
                 HapClientNativeInterface.getInstance(),
                 "HapClientNativeInterface cannot be null when HapClientService starts");
@@ -182,18 +174,16 @@ public class HapClientService extends ProfileService {
 
         // Mark service as started
         setHapClient(this);
-
-        return true;
     }
 
     @Override
-    protected boolean stop() {
+    public void stop() {
         if (DBG) {
             Log.d(TAG, "stop()");
         }
         if (sHapClient == null) {
             Log.w(TAG, "stop() called before start()");
-            return true;
+            return;
         }
 
         // Marks service as stopped
@@ -236,11 +226,6 @@ public class HapClientService extends ProfileService {
         if (mCallbacks != null) {
             mCallbacks.kill();
         }
-
-        // Clear AdapterService
-        mAdapterService = null;
-
-        return true;
     }
 
     /** Process a change in the bonding state for a device */
@@ -452,7 +437,7 @@ public class HapClientService extends ProfileService {
                 removeStateMachine(device);
             }
         }
-        if (!mFeatureFlags.audioRoutingCentralization()) {
+        if (!Flags.audioRoutingCentralization()) {
             ActiveDeviceManager adManager = mAdapterService.getActiveDeviceManager();
             if (adManager != null) {
                 adManager.profileConnectionStateChanged(

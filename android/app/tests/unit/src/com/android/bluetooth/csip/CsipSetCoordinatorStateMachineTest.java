@@ -21,7 +21,6 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
-
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -34,13 +33,10 @@ import android.content.Intent;
 import android.os.HandlerThread;
 import android.os.Looper;
 import android.os.Message;
-import android.test.suitebuilder.annotation.MediumTest;
-
+import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
-
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
-
 import org.hamcrest.core.IsInstanceOf;
 import org.junit.*;
 import org.junit.runner.RunWith;

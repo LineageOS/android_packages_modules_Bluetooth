@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "stack/btm/security_device_record.h"
 #include "types/ble_address_with_type.h"
 #include "types/raw_address.h"

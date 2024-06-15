@@ -18,74 +18,61 @@
 
 #include "test/headless/scan/scan.h"
 
-#include <future>
-
 #include "base/logging.h"  // LOG() stdout and android log
-#include "btif/include/btif_api.h"
-#include "osi/include/log.h"  // android log only
-#include "stack/include/sdp_api.h"
-#include "test/headless/bt_property.h"
+#include "os/log.h"
 #include "test/headless/get_options.h"
 #include "test/headless/headless.h"
 #include "test/headless/interface.h"
 #include "test/headless/log.h"
+#include "test/headless/messenger.h"
+#include "test/headless/property.h"
 #include "test/headless/stopwatch.h"
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
 
-using namespace bluetooth::test::headless;
+using namespace bluetooth::test;
 using namespace std::chrono_literals;
-
-namespace scan {
-std::promise<acl_state_changed_params_t> acl_state_changed_promise;
-std::promise<remote_device_properties_params_t>
-    remote_device_properties_promise;
-
-std::mutex mutex;
-std::condition_variable cv;
-
-std::queue<acl_state_changed_params_t> acl_state_changed_params_queue;
-std::queue<discovery_state_changed_params_t>
-    discovery_state_changed_params_queue;
-;
-
-// Callback from another thread
-void callback_interface(callback_data_t* data) {
-  if (data->Name() == "discovery_state_changed") {
-    LOG(INFO) << "Received discovery_state_changed";
-    auto params = static_cast<discovery_state_changed_params_t*>(data);
-    discovery_state_changed_params_queue.push(*params);
-    LOG_CONSOLE("Received discovery state change callback %s",
-                params->ToString().c_str());
-    cv.notify_all();
-    return;
-  }
-  LOG(ERROR) << "Received unexpected interface callback";
-}
-
-}  // namespace scan
 
 namespace {
 
 int start_scan([[maybe_unused]] unsigned int num_loops) {
   LOG(INFO) << "Started Device Scan";
 
-  Stopwatch stop_watch("Inquiry_timeout");
-  auto check_point = messenger::inquiry::get_check_point();
-
   ASSERT(bluetoothInterface.start_discovery() == BT_STATUS_SUCCESS);
   LOG_CONSOLE("Started inquiry - device discovery");
 
-  while (stop_watch.LapMs() < 10000) {
-    if (messenger::inquiry::await_inquiry_result(1s, check_point, 1)) {
-      auto callback_queue = messenger::inquiry::collect_from(check_point);
-      while (!callback_queue.empty()) {
-        remote_device_properties_params_t params = callback_queue.front();
-        callback_queue.pop_front();
-        LOG_CONSOLE("Received remote inquiry :%s", STR(params));
-        bt_property_t* prop = params.properties;
-        for (int i = 0; i < params.num_properties; ++i, prop++) {
-          process_property(params.bd_addr, prop);
+  headless::messenger::Context context{
+      .stop_watch = Stopwatch("Inquiry_timeout"),
+      .timeout = 1s,
+      .check_point = {},
+      .callbacks = {Callback::RemoteDeviceProperties, Callback::DeviceFound},
+  };
+
+  while (context.stop_watch.LapMs() < 10000) {
+    // If we have received callback results within this timeframe...
+    if (headless::messenger::await_callback(context)) {
+      while (!context.callback_ready_q.empty()) {
+        std::shared_ptr<callback_params_t> p = context.callback_ready_q.front();
+        context.callback_ready_q.pop_front();
+        switch (p->CallbackType()) {
+          case Callback::RemoteDeviceProperties: {
+            remote_device_properties_params_t* q =
+                static_cast<remote_device_properties_params_t*>(p.get());
+            for (const auto& p2 : q->properties()) {
+              LOG_CONSOLE("  %s prop:%s", p->Name().c_str(),
+                          p2->ToString().c_str());
+            }
+          } break;
+          case Callback::DeviceFound: {
+            device_found_params_t* q =
+                static_cast<device_found_params_t*>(p.get());
+            for (const auto& p2 : q->properties()) {
+              LOG_CONSOLE("  %s prop:%s", p->Name().c_str(),
+                          p2->ToString().c_str());
+            }
+          } break;
+          default:
+            LOG_CONSOLE("WARN Received callback for unasked:%s",
+                        p->Name().c_str());
+            break;
         }
       }
     }

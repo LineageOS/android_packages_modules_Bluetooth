@@ -17,6 +17,8 @@
 #include "hci/controller.h"
 
 #include <android-base/strings.h>
+#include <android_bluetooth_flags.h>
+
 #include <future>
 #include <memory>
 #include <string>
@@ -24,9 +26,11 @@
 
 #include "common/init_flags.h"
 #include "dumpsys_data_generated.h"
+#include "hci/controller_interface.h"
 #include "hci/event_checkers.h"
 #include "hci/hci_layer.h"
 #include "hci_controller_generated.h"
+#include "os/log.h"
 #include "os/metrics.h"
 #include "os/system_properties.h"
 #include "sysprops/sysprops_module.h"
@@ -108,7 +112,7 @@ struct Controller::impl {
 
     hci_->EnqueueCommand(
         LeReadFilterAcceptListSizeBuilder::Create(),
-        handler->BindOnceOn(this, &Controller::impl::le_read_connect_list_size_handler));
+        handler->BindOnceOn(this, &Controller::impl::le_read_accept_list_size_handler));
 
     if (is_supported(OpCode::LE_READ_RESOLVING_LIST_SIZE) && module_.SupportsBlePrivacy()) {
       hci_->EnqueueCommand(
@@ -199,9 +203,16 @@ struct Controller::impl {
     // Skip vendor capabilities check if configured.
     if (os::GetSystemPropertyBool(
             kPropertyVendorCapabilitiesEnabled, kDefaultVendorCapabilitiesEnabled)) {
+      // More commands can be enqueued from le_get_vendor_capabilities_handler
+      std::promise<void> vendor_promise;
+      auto vendor_future = vendor_promise.get_future();
       hci_->EnqueueCommand(
           LeGetVendorCapabilitiesBuilder::Create(),
-          handler->BindOnceOn(this, &Controller::impl::le_get_vendor_capabilities_handler));
+          handler->BindOnceOn(
+              this,
+              &Controller::impl::le_get_vendor_capabilities_handler,
+              std::move(vendor_promise)));
+      vendor_future.wait();
     } else {
       vendor_capabilities_.is_supported_ = 0x00;
     }
@@ -487,12 +498,12 @@ struct Controller::impl {
     le_supported_states_ = complete_view.GetLeStates();
   }
 
-  void le_read_connect_list_size_handler(CommandCompleteView view) {
+  void le_read_accept_list_size_handler(CommandCompleteView view) {
     auto complete_view = LeReadFilterAcceptListSizeCompleteView::Create(view);
     ASSERT(complete_view.IsValid());
     ErrorCode status = complete_view.GetStatus();
     ASSERT_LOG(status == ErrorCode::SUCCESS, "Status 0x%02hhx, %s", status, ErrorCodeText(status).c_str());
-    le_connect_list_size_ = complete_view.GetFilterAcceptListSize();
+    le_accept_list_size_ = complete_view.GetFilterAcceptListSize();
   }
 
   void le_read_resolving_list_size_handler(CommandCompleteView view) {
@@ -543,7 +554,8 @@ struct Controller::impl {
     le_periodic_advertiser_list_size_ = complete_view.GetPeriodicAdvertiserListSize();
   }
 
-  void le_get_vendor_capabilities_handler(CommandCompleteView view) {
+  void le_get_vendor_capabilities_handler(
+      std::promise<void> vendor_promise, CommandCompleteView view) {
     auto complete_view = LeGetVendorCapabilitiesCompleteView::Create(view);
 
     vendor_capabilities_.is_supported_ = 0x00;
@@ -562,59 +574,169 @@ struct Controller::impl {
     vendor_capabilities_.le_address_generation_offloading_support_ = 0x00;
     vendor_capabilities_.a2dp_source_offload_capability_mask_ = 0x00;
     vendor_capabilities_.bluetooth_quality_report_support_ = 0x00;
+    vendor_capabilities_.a2dp_offload_v2_support_ = 0x00;
 
-    if (complete_view.IsValid()) {
-      vendor_capabilities_.is_supported_ = 0x01;
-
-      // v0.55
-      BaseVendorCapabilities base_vendor_capabilities = complete_view.GetBaseVendorCapabilities();
-      vendor_capabilities_.max_advt_instances_ = base_vendor_capabilities.max_advt_instances_;
-      vendor_capabilities_.offloaded_resolution_of_private_address_ =
-          base_vendor_capabilities.offloaded_resolution_of_private_address_;
-      vendor_capabilities_.total_scan_results_storage_ = base_vendor_capabilities.total_scan_results_storage_;
-      vendor_capabilities_.max_irk_list_sz_ = base_vendor_capabilities.max_irk_list_sz_;
-      vendor_capabilities_.filtering_support_ = base_vendor_capabilities.filtering_support_;
-      vendor_capabilities_.max_filter_ = base_vendor_capabilities.max_filter_;
-      vendor_capabilities_.activity_energy_info_support_ = base_vendor_capabilities.activity_energy_info_support_;
-      if (complete_view.GetPayload().size() == 0) {
-        vendor_capabilities_.version_supported_ = 55;
-        return;
-      }
-
-      // v0.95
-      auto v95 = LeGetVendorCapabilitiesComplete095View::Create(complete_view);
-      if (!v95.IsValid()) {
-        LOG_ERROR("invalid data for hci requirements v0.95");
-        return;
-      }
-      vendor_capabilities_.version_supported_ = v95.GetVersionSupported();
-      vendor_capabilities_.total_num_of_advt_tracked_ = v95.GetTotalNumOfAdvtTracked();
-      vendor_capabilities_.extended_scan_support_ = v95.GetExtendedScanSupport();
-      vendor_capabilities_.debug_logging_supported_ = v95.GetDebugLoggingSupported();
-      if (vendor_capabilities_.version_supported_ <= 95 || complete_view.GetPayload().size() == 0) {
-        return;
-      }
-
-      // v0.96
-      auto v96 = LeGetVendorCapabilitiesComplete096View::Create(v95);
-      if (!v96.IsValid()) {
-        LOG_ERROR("invalid data for hci requirements v0.96");
-        return;
-      }
-      vendor_capabilities_.le_address_generation_offloading_support_ = v96.GetLeAddressGenerationOffloadingSupport();
-      if (vendor_capabilities_.version_supported_ <= 96 || complete_view.GetPayload().size() == 0) {
-        return;
-      }
-
-      // v0.98
-      auto v98 = LeGetVendorCapabilitiesComplete098View::Create(v96);
-      if (!v98.IsValid()) {
-        LOG_ERROR("invalid data for hci requirements v0.98");
-        return;
-      }
-      vendor_capabilities_.a2dp_source_offload_capability_mask_ = v98.GetA2dpSourceOffloadCapabilityMask();
-      vendor_capabilities_.bluetooth_quality_report_support_ = v98.GetBluetoothQualityReportSupport();
+    if (!complete_view.IsValid()) {
+      vendor_promise.set_value();
+      return;
     }
+    vendor_capabilities_.is_supported_ = 0x01;
+
+    // v0.55
+    BaseVendorCapabilities base_vendor_capabilities = complete_view.GetBaseVendorCapabilities();
+    vendor_capabilities_.max_advt_instances_ = base_vendor_capabilities.max_advt_instances_;
+    vendor_capabilities_.offloaded_resolution_of_private_address_ =
+        base_vendor_capabilities.offloaded_resolution_of_private_address_;
+    vendor_capabilities_.total_scan_results_storage_ =
+        base_vendor_capabilities.total_scan_results_storage_;
+    vendor_capabilities_.max_irk_list_sz_ = base_vendor_capabilities.max_irk_list_sz_;
+    vendor_capabilities_.filtering_support_ = base_vendor_capabilities.filtering_support_;
+    vendor_capabilities_.max_filter_ = base_vendor_capabilities.max_filter_;
+    vendor_capabilities_.activity_energy_info_support_ =
+        base_vendor_capabilities.activity_energy_info_support_;
+
+    if (complete_view.GetPayload().size() == 0) {
+      vendor_capabilities_.version_supported_ = 55;
+      vendor_promise.set_value();
+      return;
+    }
+
+    // v0.95
+    auto v95 = LeGetVendorCapabilitiesComplete095View::Create(complete_view);
+    if (!v95.IsValid()) {
+      LOG_INFO("invalid data for hci requirements v0.95");
+      vendor_promise.set_value();
+      return;
+    }
+    vendor_capabilities_.version_supported_ = v95.GetVersionSupported();
+    vendor_capabilities_.total_num_of_advt_tracked_ = v95.GetTotalNumOfAdvtTracked();
+    vendor_capabilities_.extended_scan_support_ = v95.GetExtendedScanSupport();
+    vendor_capabilities_.debug_logging_supported_ = v95.GetDebugLoggingSupported();
+    if (vendor_capabilities_.version_supported_ <= 95 || complete_view.GetPayload().size() == 0) {
+      vendor_promise.set_value();
+      return;
+    }
+
+    // v0.96
+    auto v96 = LeGetVendorCapabilitiesComplete096View::Create(v95);
+    if (!v96.IsValid()) {
+      LOG_INFO("invalid data for hci requirements v0.96");
+      vendor_promise.set_value();
+      return;
+    }
+    vendor_capabilities_.le_address_generation_offloading_support_ =
+        v96.GetLeAddressGenerationOffloadingSupport();
+    if (vendor_capabilities_.version_supported_ <= 96 || complete_view.GetPayload().size() == 0) {
+      vendor_promise.set_value();
+      return;
+    }
+
+    // v0.98
+    auto v98 = LeGetVendorCapabilitiesComplete098View::Create(v96);
+    if (!v98.IsValid()) {
+      LOG_INFO("invalid data for hci requirements v0.98");
+      vendor_promise.set_value();
+      return;
+    }
+    vendor_capabilities_.a2dp_source_offload_capability_mask_ =
+        v98.GetA2dpSourceOffloadCapabilityMask();
+    vendor_capabilities_.bluetooth_quality_report_support_ = v98.GetBluetoothQualityReportSupport();
+
+    // v1.03
+    auto v103 = LeGetVendorCapabilitiesComplete103View::Create(v98);
+    if (!v103.IsValid()) {
+      LOG_INFO("invalid data for hci requirements v1.03");
+      vendor_promise.set_value();
+      return;
+    }
+    vendor_capabilities_.dynamic_audio_buffer_support_ = v103.GetDynamicAudioBufferSupport();
+
+    if (IS_FLAG_ENABLED(a2dp_offload_codec_extensibility)) {
+      // v1.04
+      auto v104 = LeGetVendorCapabilitiesComplete104View::Create(v103);
+      if (!v104.IsValid()) {
+        LOG_INFO("invalid data for hci requirements v1.04");
+      } else {
+        vendor_capabilities_.a2dp_offload_v2_support_ = v104.GetA2dpOffloadV2Support();
+      }
+
+      if (vendor_capabilities_.dynamic_audio_buffer_support_) {
+        hci_->EnqueueCommand(
+            DabGetAudioBufferTimeCapabilityBuilder::Create(),
+            module_.GetHandler()->BindOnceOn(
+                this,
+                &Controller::impl::le_get_dynamic_audio_buffer_support_handler,
+                std::move(vendor_promise)));
+        return;
+      }
+
+      vendor_promise.set_value();
+    } else {
+      if (vendor_capabilities_.dynamic_audio_buffer_support_ == 0) {
+        vendor_promise.set_value();
+        return;
+      }
+      hci_->EnqueueCommand(
+          DabGetAudioBufferTimeCapabilityBuilder::Create(),
+          module_.GetHandler()->BindOnceOn(
+              this,
+              &Controller::impl::le_get_dynamic_audio_buffer_support_handler,
+              std::move(vendor_promise)));
+    }
+  }
+
+  void le_get_dynamic_audio_buffer_support_handler(
+      std::promise<void> vendor_promise, CommandCompleteView view) {
+    vendor_promise.set_value();
+    auto dab_complete_view = DynamicAudioBufferCompleteView::Create(view);
+    if (!dab_complete_view.IsValid()) {
+      LOG_WARN("Invalid command complete");
+      return;
+    }
+
+    if (dab_complete_view.GetStatus() != ErrorCode::SUCCESS) {
+      LOG_WARN("Unexpected error code %s", ErrorCodeText(dab_complete_view.GetStatus()).c_str());
+      return;
+    }
+
+    auto complete_view = DabGetAudioBufferTimeCapabilityCompleteView::Create(dab_complete_view);
+    if (!complete_view.IsValid()) {
+      LOG_WARN("Invalid get complete");
+      return;
+    }
+    dab_supported_codecs_ = complete_view.GetAudioCodecTypeSupported();
+    dab_codec_capabilities_ = complete_view.GetAudioCodecCapabilities();
+  }
+
+  void set_controller_dab_audio_buffer_time_complete(CommandCompleteView complete) {
+    auto dab_complete = DynamicAudioBufferCompleteView::Create(complete);
+    if (!dab_complete.IsValid()) {
+      LOG_WARN("Invalid command complete");
+      return;
+    }
+
+    if (dab_complete.GetStatus() != ErrorCode::SUCCESS) {
+      LOG_WARN("Unexpected return code %s", ErrorCodeText(dab_complete.GetStatus()).c_str());
+      return;
+    }
+
+    auto dab_set_complete = DabSetAudioBufferTimeCompleteView::Create(dab_complete);
+
+    if (!dab_set_complete.IsValid()) {
+      LOG_WARN("Invalid set complete");
+      return;
+    }
+
+    LOG_INFO(
+        "Configured Media Tx Buffer, time returned = %d",
+        dab_set_complete.GetCurrentBufferTimeMs());
+  }
+
+  void set_controller_dab_audio_buffer_time(uint16_t buffer_time_ms) {
+    hci_->EnqueueCommand(
+        DabSetAudioBufferTimeBuilder::Create(buffer_time_ms),
+        module_.GetHandler()->BindOnceOn(
+            this, &Controller::impl::set_controller_dab_audio_buffer_time_complete));
   }
 
   void set_event_mask(uint64_t event_mask) {
@@ -1045,6 +1167,8 @@ struct Controller::impl {
         return vendor_capabilities_.a2dp_source_offload_capability_mask_ != 0x00;
       case OpCode::CONTROLLER_BQR:
         return vendor_capabilities_.bluetooth_quality_report_support_ == 0x01;
+      case OpCode::DYNAMIC_AUDIO_BUFFER:
+        return vendor_capabilities_.dynamic_audio_buffer_support_ > 0x00;
       // Before MSFT extension is fully supported, return false for the following MSFT_OPCODE_XXXX for now.
       case OpCode::MSFT_OPCODE_INTEL:
         return false;
@@ -1099,7 +1223,7 @@ struct Controller::impl {
   LeBufferSize iso_buffer_size_{};
   uint64_t le_local_supported_features_{};
   uint64_t le_supported_states_{};
-  uint8_t le_connect_list_size_{};
+  uint8_t le_accept_list_size_{};
   uint8_t le_resolving_list_size_{};
   LeMaximumDataLength le_maximum_data_length_{};
   uint16_t le_maximum_advertising_data_length_{};
@@ -1107,6 +1231,8 @@ struct Controller::impl {
   uint8_t le_number_supported_advertising_sets_{};
   uint8_t le_periodic_advertiser_list_size_{};
   VendorCapabilities vendor_capabilities_{};
+  uint32_t dab_supported_codecs_{};
+  std::array<DynamicAudioBufferCodecCapability, 32> dab_codec_capabilities_{};
 };  // namespace hci
 
 Controller::Controller() : impl_(std::make_unique<impl>(*this)) {}
@@ -1350,7 +1476,7 @@ uint64_t Controller::GetLeSupportedStates() const {
 }
 
 uint8_t Controller::GetLeFilterAcceptListSize() const {
-  return impl_->le_connect_list_size_;
+  return impl_->le_accept_list_size_;
 }
 
 uint8_t Controller::GetLeResolvingListSize() const {
@@ -1375,6 +1501,23 @@ uint8_t Controller::GetLeNumberOfSupportedAdverisingSets() const {
 
 Controller::VendorCapabilities Controller::GetVendorCapabilities() const {
   return impl_->vendor_capabilities_;
+}
+
+uint32_t Controller::GetDabSupportedCodecs() const {
+  return impl_->dab_supported_codecs_;
+}
+
+const std::array<DynamicAudioBufferCodecCapability, 32>& Controller::GetDabCodecCapabilities()
+    const {
+  return impl_->dab_codec_capabilities_;
+}
+
+void Controller::SetDabAudioBufferTime(uint16_t buffer_time_ms) {
+  if (impl_->vendor_capabilities_.dynamic_audio_buffer_support_ == 0) {
+    LOG_WARN("Dynamic Audio Buffer not supported");
+    return;
+  }
+  impl_->set_controller_dab_audio_buffer_time(buffer_time_ms);
 }
 
 uint8_t Controller::GetLePeriodicAdvertiserListSize() const {
@@ -1488,7 +1631,7 @@ void Controller::impl::Dump(
   builder.add_iso_buffer_size(&iso_buffer_size_data);
   builder.add_le_buffer_size(&le_buffer_size_data);
 
-  builder.add_le_connect_list_size(le_connect_list_size_);
+  builder.add_le_accept_list_size(le_accept_list_size_);
   builder.add_le_resolving_list_size(le_resolving_list_size_);
 
   builder.add_le_maximum_data_length(&le_maximum_data_length_data);

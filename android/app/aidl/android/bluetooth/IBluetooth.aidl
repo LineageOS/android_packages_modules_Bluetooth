@@ -26,7 +26,6 @@ import android.bluetooth.IBluetoothConnectionCallback;
 import android.bluetooth.IBluetoothMetadataListener;
 import android.bluetooth.IBluetoothOobDataCallback;
 import android.bluetooth.IBluetoothSocketManager;
-import android.bluetooth.IBluetoothStateChangeCallback;
 import android.bluetooth.BluetoothActivityEnergyInfo;
 import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.bluetooth.BluetoothClass;
@@ -176,7 +175,9 @@ interface IBluetooth
     IBluetoothSocketManager getSocketManager();
 
     @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
-    oneway void logL2capcocClientConnection(in BluetoothDevice device, int port, boolean isSecured, int result, long socketCreationTimeMillis, long socketCreationLatencyMillis, long socketConnectionTimeMillis, in SynchronousResultReceiver receiver);
+    oneway void logL2capcocClientConnection(in BluetoothDevice device, int port, boolean isSecured, int result, long socketCreationTimeNanos, long socketCreationLatencyNanos, long socketConnectionTimeNanos, in SynchronousResultReceiver receiver);
+    @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
+    oneway void logRfcommConnectionAttempt(in BluetoothDevice device, boolean isSecured, int resultCode, long socketCreationTimeNanos, boolean isSerialPort, in SynchronousResultReceiver receiver);
 
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
     oneway void factoryReset(in AttributionSource attributionSource, in SynchronousResultReceiver receiver);
@@ -309,4 +310,13 @@ interface IBluetooth
 
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
     oneway void unregAllGattClient(in AttributionSource attributionSource, in SynchronousResultReceiver receiver);
+
+    @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
+    oneway void getProfile(int profile, in SynchronousResultReceiver receiver);
+
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
+    oneway void setActiveAudioDevicePolicy(in BluetoothDevice device, int activeAudioDevicePolicy, in AttributionSource source, in SynchronousResultReceiver receiver);
+
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
+    oneway void getActiveAudioDevicePolicy(in BluetoothDevice device, in AttributionSource source, in SynchronousResultReceiver receiver);
 }

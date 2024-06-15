@@ -179,8 +179,8 @@ void bnepu_send_peer_our_filters(tBNEP_CONN* p_bcb);
 void bnepu_send_peer_our_multi_filters(tBNEP_CONN* p_bcb);
 bool bnepu_does_dest_support_prot(tBNEP_CONN* p_bcb, uint16_t protocol);
 void bnepu_build_bnep_hdr(tBNEP_CONN* p_bcb, BT_HDR* p_buf, uint16_t protocol,
-                          const RawAddress* p_src_addr,
-                          const RawAddress* p_dest_addr, bool ext_bit);
+                          const RawAddress& src_addr,
+                          const RawAddress& dest_addr, bool ext_bit);
 void test_bnepu_build_bnep_hdr(tBNEP_CONN* p_bcb, BT_HDR* p_buf,
                                uint16_t protocol, uint8_t* p_src_addr,
                                uint8_t* p_dest_addr, uint8_t type);
@@ -202,7 +202,7 @@ uint8_t* bnep_process_control_packet(tBNEP_CONN* p_bcb, uint8_t* p,
 void bnep_sec_check_complete(const RawAddress* bd_addr, tBT_TRANSPORT trasnport,
                              void* p_ref_data);
 tBNEP_RESULT bnep_is_packet_allowed(tBNEP_CONN* p_bcb,
-                                    const RawAddress& p_dest_addr,
+                                    const RawAddress& dest_addr,
                                     uint16_t protocol, bool fw_ext_present,
                                     uint8_t* p_data, uint16_t org_len);
 

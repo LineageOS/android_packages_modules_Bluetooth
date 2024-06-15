@@ -227,9 +227,9 @@ class BluetoothAirplaneModeListener extends Handler {
         } else {
             if (mFeatureFlags.airplaneRessourcesInApp()) {
                 if (isWifiEnabledOnApm()) {
-                    mBluetoothManager.sendAirplaneModeNotification(APM_WIFI_BT_NOTIFICATION);
+                    mBluetoothManager.sendToggleNotification(APM_WIFI_BT_NOTIFICATION);
                 } else {
-                    mBluetoothManager.sendAirplaneModeNotification(APM_BT_NOTIFICATION);
+                    mBluetoothManager.sendToggleNotification(APM_BT_NOTIFICATION);
                 }
                 return;
             }
@@ -330,7 +330,7 @@ class BluetoothAirplaneModeListener extends Handler {
             setSettingsSecureInt(APM_USER_TOGGLED_BLUETOOTH, USED);
             if (mFeatureFlags.airplaneRessourcesInApp()) {
                 if (isOn) {
-                    mBluetoothManager.sendAirplaneModeNotification(APM_BT_ENABLED_NOTIFICATION);
+                    mBluetoothManager.sendToggleNotification(APM_BT_ENABLED_NOTIFICATION);
                 }
                 return;
             }

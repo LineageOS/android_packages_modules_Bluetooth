@@ -25,13 +25,14 @@
 #ifndef BTA_AG_API_H
 #define BTA_AG_API_H
 
+#include <bluetooth/log.h>
+
 #include <string>
 #include <vector>
 
-#include "bta/include/bta_ag_api.h"
 #include "bta/include/bta_api.h"
 #include "bta_api.h"
-#include "bta_hfp_api.h"
+#include "internal_include/bt_target.h"
 #include "macros.h"
 #include "types/raw_address.h"
 
@@ -300,6 +301,12 @@ struct offload_config {
   int32_t connection_handle;
   bool is_controller_codec;
   bool is_nrec;
+};
+
+struct sco_config {
+  int inputDataPath;
+  int outputDataPath;
+  bool useControllerCodec;
 };
 
 }  // namespace hfp
@@ -633,5 +640,10 @@ void BTA_AgSetScoOffloadEnabled(bool value);
 void BTA_AgSetScoAllowed(bool value);
 
 void BTA_AgSetActiveDevice(const RawAddress& active_device_addr);
+
+namespace fmt {
+template <>
+struct formatter<tBTA_AG_RES> : enum_formatter<tBTA_AG_RES> {};
+}  // namespace fmt
 
 #endif /* BTA_AG_API_H */

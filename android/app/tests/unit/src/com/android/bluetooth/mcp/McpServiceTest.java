@@ -65,10 +65,10 @@ public class McpServiceTest {
 
         mAdapter = BluetoothAdapter.getDefaultAdapter();
 
-        doReturn(true).when(mAdapterService).isStartedProfile(anyString());
         McpService.setMediaControlProfileForTesting(mMediaControlProfile);
         mMcpService = new McpService(mTargetContext);
-        mMcpService.doStart();
+        mMcpService.start();
+        mMcpService.setAvailable(true);
     }
 
     @After
@@ -77,8 +77,7 @@ public class McpServiceTest {
             return;
         }
 
-        doReturn(false).when(mAdapterService).isStartedProfile(anyString());
-        mMcpService.doStop();
+        mMcpService.stop();
         mMcpService = McpService.getMcpService();
         Assert.assertNull(mMcpService);
         reset(mMediaControlProfile);
@@ -112,21 +111,13 @@ public class McpServiceTest {
 
     @Test
     public void testStopMcpService() {
-        InstrumentationRegistry.getInstrumentation().runOnMainSync(new Runnable() {
-            public void run() {
-                Assert.assertTrue(mMcpService.stop());
-            }
-        });
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(mMcpService::stop);
         Assert.assertNull(McpService.getMcpService());
         Assert.assertNull(McpService.getMediaControlProfile());
 
         McpService.setMediaControlProfileForTesting(mMediaControlProfile);
         // Try to restart the service. Note: must be done on the main thread
-        InstrumentationRegistry.getInstrumentation().runOnMainSync(new Runnable() {
-            public void run() {
-                Assert.assertTrue(mMcpService.start());
-            }
-        });
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(mMcpService::start);
     }
 
     @Test

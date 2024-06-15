@@ -38,7 +38,7 @@
 #include "common/stop_watch.h"
 #include "common/strings.h"
 #include "hal/hci_hal.h"
-#include "hal/nocp_iso_clocker.h"
+#include "hal/link_clocker.h"
 #include "hal/snoop_logger.h"
 #include "os/alarm.h"
 #include "os/log.h"
@@ -83,8 +83,8 @@ std::string GetTimerText(const char* func_name, VecType vec) {
 
 class InternalHciCallbacks : public IBluetoothHciCallbacks_1_1 {
  public:
-  InternalHciCallbacks(SnoopLogger* btsnoop_logger, NocpIsoClocker* nocp_iso_clocker)
-      : btsnoop_logger_(btsnoop_logger), nocp_iso_clocker_(nocp_iso_clocker) {
+  InternalHciCallbacks(SnoopLogger* btsnoop_logger, LinkClocker* link_clocker)
+      : btsnoop_logger_(btsnoop_logger), link_clocker_(link_clocker) {
     init_promise_ = new std::promise<void>();
   }
 
@@ -115,7 +115,7 @@ class InternalHciCallbacks : public IBluetoothHciCallbacks_1_1 {
   Return<void> hciEventReceived(const hidl_vec<uint8_t>& event) override {
     common::StopWatch stop_watch(GetTimerText(__func__, event));
     std::vector<uint8_t> received_hci_packet(event.begin(), event.end());
-    nocp_iso_clocker_->OnHciEvent(received_hci_packet);
+    link_clocker_->OnHciEvent(received_hci_packet);
     btsnoop_logger_->Capture(
         received_hci_packet, SnoopLogger::Direction::INCOMING, SnoopLogger::PacketType::EVT);
     {
@@ -130,6 +130,7 @@ class InternalHciCallbacks : public IBluetoothHciCallbacks_1_1 {
   Return<void> aclDataReceived(const hidl_vec<uint8_t>& data) override {
     common::StopWatch stop_watch(GetTimerText(__func__, data));
     std::vector<uint8_t> received_hci_packet(data.begin(), data.end());
+    link_clocker_->OnAclDataReceived(received_hci_packet);
     btsnoop_logger_->Capture(
         received_hci_packet, SnoopLogger::Direction::INCOMING, SnoopLogger::PacketType::ACL);
     {
@@ -174,7 +175,7 @@ class InternalHciCallbacks : public IBluetoothHciCallbacks_1_1 {
   std::promise<void>* init_promise_ = nullptr;
   HciHalCallbacks* callback_ = nullptr;
   SnoopLogger* btsnoop_logger_ = nullptr;
-  NocpIsoClocker* nocp_iso_clocker_ = nullptr;
+  LinkClocker* link_clocker_ = nullptr;
 };
 
 static constexpr char kBluetoothAidlHalServiceName[] =
@@ -182,8 +183,8 @@ static constexpr char kBluetoothAidlHalServiceName[] =
 
 class AidlHciCallbacks : public ::aidl::android::hardware::bluetooth::BnBluetoothHciCallbacks {
  public:
-  AidlHciCallbacks(SnoopLogger* btsnoop_logger, NocpIsoClocker* nocp_iso_clocker)
-      : btsnoop_logger_(btsnoop_logger), nocp_iso_clocker_(nocp_iso_clocker) {
+  AidlHciCallbacks(SnoopLogger* btsnoop_logger, LinkClocker* link_clocker)
+      : btsnoop_logger_(btsnoop_logger), link_clocker_(link_clocker) {
     init_promise_ = new std::promise<void>();
   }
 
@@ -212,7 +213,7 @@ class AidlHciCallbacks : public ::aidl::android::hardware::bluetooth::BnBluetoot
   ::ndk::ScopedAStatus hciEventReceived(const std::vector<uint8_t>& event) override {
     common::StopWatch stop_watch(GetTimerText(__func__, event));
     std::vector<uint8_t> received_hci_packet(event.begin(), event.end());
-    nocp_iso_clocker_->OnHciEvent(received_hci_packet);
+    link_clocker_->OnHciEvent(received_hci_packet);
     btsnoop_logger_->Capture(
         received_hci_packet, SnoopLogger::Direction::INCOMING, SnoopLogger::PacketType::EVT);
     bool sent = false;
@@ -232,6 +233,7 @@ class AidlHciCallbacks : public ::aidl::android::hardware::bluetooth::BnBluetoot
   ::ndk::ScopedAStatus aclDataReceived(const std::vector<uint8_t>& data) override {
     common::StopWatch stop_watch(GetTimerText(__func__, data));
     std::vector<uint8_t> received_hci_packet(data.begin(), data.end());
+    link_clocker_->OnAclDataReceived(received_hci_packet);
     btsnoop_logger_->Capture(
         received_hci_packet, SnoopLogger::Direction::INCOMING, SnoopLogger::PacketType::ACL);
     bool sent = false;
@@ -291,7 +293,7 @@ class AidlHciCallbacks : public ::aidl::android::hardware::bluetooth::BnBluetoot
   std::promise<void>* init_promise_ = nullptr;
   HciHalCallbacks* callback_ = nullptr;
   SnoopLogger* btsnoop_logger_ = nullptr;
-  NocpIsoClocker* nocp_iso_clocker_ = nullptr;
+  LinkClocker* link_clocker_ = nullptr;
 };
 
 }  // namespace
@@ -362,7 +364,7 @@ class HciHalHidl : public HciHal {
 
  protected:
   void ListDependencies(ModuleList* list) const {
-    list->add<NocpIsoClocker>();
+    list->add<LinkClocker>();
     list->add<SnoopLogger>();
   }
 
@@ -374,7 +376,7 @@ class HciHalHidl : public HciHal {
     ASSERT(bt_hci_1_1_ == nullptr);
     ASSERT(aidl_hci_ == nullptr);
 
-    nocp_iso_clocker_ = GetDependency<NocpIsoClocker>();
+    link_clocker_ = GetDependency<LinkClocker>();
     btsnoop_logger_ = GetDependency<SnoopLogger>();
 
     if (AServiceManager_isDeclared(kBluetoothAidlHalServiceName)) {
@@ -408,7 +410,7 @@ class HciHalHidl : public HciHal {
           death_link == STATUS_OK, "Unable to set the death recipient for the Bluetooth HAL");
 
       aidl_callbacks_ =
-          ::ndk::SharedRefBase::make<AidlHciCallbacks>(btsnoop_logger_, nocp_iso_clocker_);
+          ::ndk::SharedRefBase::make<AidlHciCallbacks>(btsnoop_logger_, link_clocker_);
       aidl_hci_->initialize(aidl_callbacks_);
     }
   }
@@ -448,7 +450,7 @@ class HciHalHidl : public HciHal {
     ASSERT(bt_hci_ != nullptr);
     auto death_link = bt_hci_->linkToDeath(hci_death_recipient_, 0);
     ASSERT_LOG(death_link.isOk(), "Unable to set the death recipient for the Bluetooth HAL");
-    hidl_callbacks_ = new InternalHciCallbacks(btsnoop_logger_, nocp_iso_clocker_);
+    hidl_callbacks_ = new InternalHciCallbacks(btsnoop_logger_, link_clocker_);
 
     if (bt_hci_1_1_ != nullptr) {
       bt_hci_1_1_->initialize_1_1(hidl_callbacks_);
@@ -507,7 +509,7 @@ class HciHalHidl : public HciHal {
   std::shared_ptr<AidlHciCallbacks> aidl_callbacks_;
   ::ndk::ScopedAIBinder_DeathRecipient aidl_death_recipient_;
   SnoopLogger* btsnoop_logger_;
-  NocpIsoClocker* nocp_iso_clocker_;
+  LinkClocker* link_clocker_;
 };
 
 const ModuleFactory HciHal::Factory = ModuleFactory([]() { return new HciHalHidl(); });

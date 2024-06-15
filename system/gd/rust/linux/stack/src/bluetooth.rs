@@ -8,8 +8,9 @@ use bt_topshim::btif::{
     ToggleableProfile, Uuid, Uuid128Bit, INVALID_RSSI,
 };
 use bt_topshim::{
-    metrics,
+    controller, metrics,
     profiles::gatt::GattStatus,
+    profiles::hfp::EscoCodingFormat,
     profiles::hid_host::{
         BthhConnectionState, BthhHidInfo, BthhProtocolMode, BthhReportType, BthhStatus,
         HHCallbacks, HHCallbacksDispatcher, HidHost,
@@ -25,6 +26,7 @@ use bt_utils::uhid::{UHid, BD_ADDR_DEFAULT};
 use btif_macros::{btif_callback, btif_callbacks_dispatcher};
 
 use log::{debug, warn};
+use num_derive::{FromPrimitive, ToPrimitive};
 use num_traits::cast::ToPrimitive;
 use num_traits::pow;
 use std::collections::{HashMap, HashSet};
@@ -66,6 +68,14 @@ const BTM_SUCCESS: i32 = 0;
 
 const PID_DIR: &str = "/var/run/bluetooth";
 
+/// Represents various roles the adapter supports.
+#[derive(Debug, FromPrimitive, ToPrimitive)]
+#[repr(u32)]
+pub enum BtAdapterRole {
+    Central = 0,
+    Peripheral,
+    CentralPeripheral,
+}
 /// Defines the adapter API.
 pub trait IBluetooth {
     /// Adds a callback from a client who wishes to observe adapter events.
@@ -239,6 +249,12 @@ pub trait IBluetooth {
 
     /// Returns whether SWB is supported.
     fn is_swb_supported(&self) -> bool;
+
+    /// Returns a list of all the roles that are supported.
+    fn get_supported_roles(&self) -> Vec<BtAdapterRole>;
+
+    /// Returns whether the coding format is supported.
+    fn is_coding_format_supported(&self, coding_format: EscoCodingFormat) -> bool;
 }
 
 /// Adapter API for Bluetooth qualification and verification.
@@ -521,6 +537,8 @@ pub struct Bluetooth {
     // Internal API members
     discoverable_timeout: Option<JoinHandle<()>>,
     cancelling_devices: HashSet<RawAddress>,
+    active_pairing_address: Option<RawAddress>,
+    le_supported_states: u64,
 
     /// Used to notify signal handler that we have turned off the stack.
     sig_notifier: Arc<SigData>,
@@ -577,6 +595,8 @@ impl Bluetooth {
             // Internal API members
             discoverable_timeout: None,
             cancelling_devices: HashSet::new(),
+            active_pairing_address: None,
+            le_supported_states: 0u64,
             sig_notifier,
             uhid_wakeup_source: UHid::new(),
         }
@@ -1004,6 +1024,9 @@ impl Bluetooth {
                             ));
                         }
                         props.push(BluetoothProperty::RemoteRssi(result.rssi));
+                        props.push(BluetoothProperty::RemoteAddrType(
+                            (result.addr_type as u32).into(),
+                        ));
 
                         props
                     }
@@ -1307,6 +1330,7 @@ impl BtifBluetoothCallbacks for Bluetooth {
 
                 // Also need to manually request some properties
                 self.intf.lock().unwrap().get_adapter_property(BtPropertyType::ClassOfDevice);
+                self.le_supported_states = controller::Controller::new().get_ble_supported_states();
 
                 // Initialize the BLE scanner for discovery.
                 let callback_id = self.bluetooth_gatt.lock().unwrap().register_scanner_callback(
@@ -1490,6 +1514,16 @@ impl BtifBluetoothCallbacks for Bluetooth {
         variant: BtSspVariant,
         passkey: u32,
     ) {
+        // Accept the Just-Works pairing that we initiated, reject otherwise.
+        if variant == BtSspVariant::Consent {
+            let initiated_by_us = Some(remote_addr.clone()) == self.active_pairing_address;
+            self.set_pairing_confirmation(
+                BluetoothDevice::new(remote_addr.to_string(), remote_name.clone()),
+                initiated_by_us,
+            );
+            return;
+        }
+
         // Currently this supports many agent because we accept many callbacks.
         // TODO(b/274706838): We need a way to select the default agent.
         self.callbacks.for_all_callbacks(|callback| {
@@ -1557,6 +1591,12 @@ impl BtifBluetoothCallbacks for Bluetooth {
         // Get the device type before the device is potentially deleted.
         let device_type =
             self.get_remote_type(BluetoothDevice::new(address.clone(), "".to_string()));
+
+        // Clear the pairing lock if this call corresponds to the
+        // active pairing device.
+        if &bond_state != &BtBondState::Bonding && self.active_pairing_address == Some(addr) {
+            self.active_pairing_address = None;
+        }
 
         // Easy case of not bonded -- we remove the device from the bonded list and change the bond
         // state in the found list (in case it was previously bonding).
@@ -2136,6 +2176,15 @@ impl IBluetooth for Bluetooth {
             _ => self.get_remote_type(device.clone()),
         };
 
+        if let Some(active_address) = self.active_pairing_address {
+            warn!(
+                "Bonding requested for {} while already bonding {}, rejecting",
+                DisplayAddress(&address),
+                DisplayAddress(&active_address)
+            );
+            return false;
+        }
+
         // There could be a race between bond complete and bond cancel, which makes
         // |cancelling_devices| in a wrong state. Remove the device just in case.
         if self.cancelling_devices.remove(&address) {
@@ -2148,6 +2197,8 @@ impl IBluetooth for Bluetooth {
 
         // BREDR connection won't work when Inquiry is in progress.
         self.pause_discovery();
+
+        self.active_pairing_address = Some(address.clone());
         let status = self.intf.lock().unwrap().create_bond(&address, transport);
 
         if status != 0 {
@@ -2732,6 +2783,27 @@ impl IBluetooth for Bluetooth {
 
     fn is_swb_supported(&self) -> bool {
         self.intf.lock().unwrap().get_swb_supported()
+    }
+
+    fn get_supported_roles(&self) -> Vec<BtAdapterRole> {
+        let mut roles: Vec<BtAdapterRole> = vec![];
+
+        // See Core 5.3, Vol 4, Part E, 7.8.27 for detailed state information
+        if self.le_supported_states >> 35 & 1 == 1u64 {
+            roles.push(BtAdapterRole::Central);
+        }
+        if self.le_supported_states >> 38 & 1 == 1u64 {
+            roles.push(BtAdapterRole::Peripheral);
+        }
+        if self.le_supported_states >> 28 & 1 == 1u64 {
+            roles.push(BtAdapterRole::CentralPeripheral);
+        }
+
+        roles
+    }
+
+    fn is_coding_format_supported(&self, coding_format: EscoCodingFormat) -> bool {
+        self.intf.lock().unwrap().is_coding_format_supported(coding_format as u8)
     }
 }
 

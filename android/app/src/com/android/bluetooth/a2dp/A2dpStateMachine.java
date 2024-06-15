@@ -105,7 +105,11 @@ final class A2dpStateMachine extends StateMachine {
     A2dpStateMachine(BluetoothDevice device, A2dpService a2dpService,
                      A2dpNativeInterface a2dpNativeInterface, Looper looper) {
         super(TAG, looper);
-        setDbg(DBG);
+
+        // Let the logging framework enforce the log level. TAG is set above in the parent
+        // constructor.
+        setDbg(true);
+
         mDevice = device;
         mA2dpService = a2dpService;
         mA2dpNativeInterface = a2dpNativeInterface;

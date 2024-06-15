@@ -23,8 +23,8 @@
 #include <base/logging.h>
 
 #include "check.h"
+#include "os/log.h"
 #include "osi/include/allocator.h"
-#include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "osi/semaphore.h"
 

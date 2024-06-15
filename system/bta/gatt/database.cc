@@ -19,6 +19,7 @@
 #include "database.h"
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include <algorithm>
 #include <list>
@@ -31,6 +32,7 @@
 #include "types/bluetooth/uuid.h"
 
 using bluetooth::Uuid;
+using namespace bluetooth;
 
 namespace gatt {
 
@@ -169,8 +171,8 @@ Database Database::Deserialize(const std::vector<StoredAttribute>& nv_attr,
 
     if (current_service_it == result.services.end() ||
         !HandleInRange(*current_service_it, attr.handle)) {
-      LOG(ERROR) << "Can't find service for attribute with handle: "
-                 << loghex(attr.handle);
+      log::error("Can't find service for attribute with handle: {}",
+                 loghex(attr.handle));
       *success = false;
       return result;
     }
@@ -179,7 +181,7 @@ Database Database::Deserialize(const std::vector<StoredAttribute>& nv_attr,
       Service* included_service =
           FindService(result.services, attr.value.included_service.handle);
       if (!included_service) {
-        LOG(ERROR) << __func__ << ": Non-existing included service!";
+        log::error("Non-existing included service!");
         *success = false;
         return result;
       }

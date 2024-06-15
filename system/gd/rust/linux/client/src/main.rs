@@ -12,17 +12,17 @@ use tokio::sync::mpsc;
 use tokio::time::{sleep, timeout};
 
 use crate::bt_adv::AdvSet;
-use crate::bt_gatt::GattClientContext;
+use crate::bt_gatt::{GattClientContext, GattServerContext};
 use crate::callbacks::{
-    AdminCallback, AdvertisingSetCallback, BtCallback, BtConnectionCallback, BtManagerCallback,
-    BtSocketManagerCallback, MediaCallback, QACallback, ScannerCallback, SuspendCallback,
-    TelephonyCallback,
+    AdminCallback, AdvertisingSetCallback, BatteryManagerCallback, BtCallback,
+    BtConnectionCallback, BtManagerCallback, BtSocketManagerCallback, MediaCallback, QACallback,
+    ScannerCallback, SuspendCallback, TelephonyCallback,
 };
 use crate::command_handler::{CommandHandler, SocketSchedule};
 use crate::dbus_iface::{
-    BluetoothAdminDBus, BluetoothDBus, BluetoothGattDBus, BluetoothManagerDBus, BluetoothMediaDBus,
-    BluetoothQADBus, BluetoothQALegacyDBus, BluetoothSocketManagerDBus, BluetoothTelephonyDBus,
-    SuspendDBus,
+    BatteryManagerDBus, BluetoothAdminDBus, BluetoothDBus, BluetoothGattDBus, BluetoothManagerDBus,
+    BluetoothMediaDBus, BluetoothQADBus, BluetoothQALegacyDBus, BluetoothSocketManagerDBus,
+    BluetoothTelephonyDBus, SuspendDBus,
 };
 use crate::editor::AsyncEditor;
 use bt_topshim::topstack;
@@ -102,6 +102,9 @@ pub(crate) struct ClientContext {
     /// Proxy for Media interface.
     pub(crate) media_dbus: Option<BluetoothMediaDBus>,
 
+    /// Proxy for battery manager interface.
+    pub(crate) battery_manager_dbus: Option<BatteryManagerDBus>,
+
     /// Channel to send actions to take in the foreground
     fg: mpsc::Sender<ForegroundActions>,
 
@@ -138,6 +141,9 @@ pub(crate) struct ClientContext {
     /// Data of GATT client preference.
     gatt_client_context: GattClientContext,
 
+    /// Data of GATT server preference.
+    gatt_server_context: GattServerContext,
+
     /// The schedule when a socket is connected.
     socket_test_schedule: Option<SocketSchedule>,
 
@@ -146,6 +152,9 @@ pub(crate) struct ClientContext {
 
     /// The set of client commands that need to wait for callbacks.
     client_commands_with_callbacks: Vec<String>,
+
+    /// A set of addresses whose battery changes are being tracked.
+    pub(crate) battery_address_filter: HashSet<String>,
 }
 
 impl ClientContext {
@@ -180,6 +189,7 @@ impl ClientContext {
             socket_manager_dbus: None,
             telephony_dbus: None,
             media_dbus: None,
+            battery_manager_dbus: None,
             fg: tx,
             dbus_connection,
             dbus_crossroads,
@@ -192,9 +202,11 @@ impl ClientContext {
             qa_callback_id: None,
             is_restricted,
             gatt_client_context: GattClientContext::new(),
+            gatt_server_context: GattServerContext::new(),
             socket_test_schedule: None,
             mps_sdp_handle: None,
             client_commands_with_callbacks,
+            battery_address_filter: HashSet::new(),
         }
     }
 
@@ -242,6 +254,8 @@ impl ClientContext {
         self.telephony_dbus = Some(BluetoothTelephonyDBus::new(conn.clone(), idx));
 
         self.media_dbus = Some(BluetoothMediaDBus::new(conn.clone(), idx));
+
+        self.battery_manager_dbus = Some(BatteryManagerDBus::new(conn.clone(), idx));
 
         // Trigger callback registration in the foreground
         let fg = self.fg.clone();
@@ -548,6 +562,8 @@ async fn handle_client_command(
                     "/org/chromium/bluetooth/client/{}/bluetooth_telephony_callback",
                     adapter
                 );
+                let battery_cb_objpath: String =
+                    format!("/org/chromium/bluetooth/client/{}/battery_manager_callback", adapter);
 
                 let dbus_connection = context.lock().unwrap().dbus_connection.clone();
                 let dbus_crossroads = context.lock().unwrap().dbus_crossroads.clone();
@@ -710,6 +726,22 @@ async fn handle_client_command(
                     )))
                     .await
                     .expect("D-Bus error on IBluetoothMedia::RegisterTelephonyCallback");
+
+                context
+                    .lock()
+                    .unwrap()
+                    .battery_manager_dbus
+                    .as_mut()
+                    .unwrap()
+                    .rpc
+                    .register_battery_callback(Box::new(BatteryManagerCallback::new(
+                        battery_cb_objpath,
+                        context.clone(),
+                        dbus_connection.clone(),
+                        dbus_crossroads.clone(),
+                    )))
+                    .await
+                    .expect("D-Bus error on IBatteryManagerDBus::RegisterBatteryCallback");
 
                 context.lock().unwrap().adapter_ready = true;
                 let adapter_address = context.lock().unwrap().update_adapter_address();

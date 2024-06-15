@@ -44,7 +44,7 @@ class SnoopLogger;
 }
 
 namespace hci {
-class Controller;
+class ControllerInterface;
 class HciLayer;
 class AclManager;
 class RemoteNameRequestModule;
@@ -55,22 +55,10 @@ class VendorSpecificEventManager;
 class MsftExtensionManager;
 }
 
-namespace l2cap {
-namespace classic {
-class L2capClassicModule;
-}  // namespace classic
-namespace le {
-class L2capLeModule;
-}  // namespace le
-}  // namespace l2cap
-
 namespace metrics {
 class CounterMetrics;
 }
 
-namespace security {
-class SecurityModule;
-}
 namespace storage {
 class StorageModule;
 }
@@ -82,19 +70,16 @@ class Dumpsys;
  * within the stack. */
 os::Handler* GetGdShimHandler();
 hci::LeAdvertisingManager* GetAdvertising();
-bluetooth::hci::Controller* GetController();
+bluetooth::hci::ControllerInterface* GetController();
 neighbor::DiscoverabilityModule* GetDiscoverability();
 neighbor::ConnectabilityModule* GetConnectability();
 Dumpsys* GetDumpsys();
 neighbor::InquiryModule* GetInquiry();
 hci::HciLayer* GetHciLayer();
-l2cap::classic::L2capClassicModule* GetL2capClassicModule();
-l2cap::le::L2capLeModule* GetL2capLeModule();
 neighbor::PageModule* GetPage();
 hci::RemoteNameRequestModule* GetRemoteNameRequest();
 hci::DistanceMeasurementManager* GetDistanceMeasurementManager();
 hci::LeScanningManager* GetScanning();
-bluetooth::security::SecurityModule* GetSecurityModule();
 hal::SnoopLogger* GetSnoopLogger();
 storage::StorageModule* GetStorage();
 hci::AclManager* GetAclManager();

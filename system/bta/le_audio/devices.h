@@ -33,12 +33,12 @@
 #include "audio_hal_client/audio_hal_client.h"
 #include "bta_groups.h"
 #include "btm_iso_api_types.h"
+#include "common/strings.h"
 #include "gatt_api.h"
-#include "gd/common/strings.h"
 #include "le_audio_log_history.h"
 #include "le_audio_types.h"
+#include "os/log.h"
 #include "osi/include/alarm.h"
-#include "osi/include/log.h"
 #include "osi/include/properties.h"
 #include "raw_address.h"
 
@@ -141,7 +141,9 @@ class LeAudioDevice {
         model_name_(""),
         allowlist_flag_(false),
         link_quality_timer(nullptr),
-        dsa_modes_({DsaMode::DISABLED}) {}
+        dsa_({{DsaMode::DISABLED},
+              types::DataPathState::IDLE,
+              GATT_INVALID_CONN_ID}) {}
   ~LeAudioDevice(void);
 
   void SetConnectionState(DeviceConnectState state);
@@ -250,11 +252,20 @@ class LeAudioDevice {
   void GetDeviceModelName(void);
   void UpdateDeviceAllowlistFlag(void);
   DsaModes GetDsaModes(void);
+  types::DataPathState GetDsaDataPathState(void);
+  void SetDsaDataPathState(types::DataPathState state);
+  uint16_t GetDsaCisHandle(void);
+  void SetDsaCisHandle(uint16_t cis_handle);
 
  private:
   types::BidirectionalPair<types::AudioContexts> avail_contexts_;
   types::BidirectionalPair<types::AudioContexts> supp_contexts_;
-  DsaModes dsa_modes_;
+  struct {
+    DsaModes modes;
+    types::DataPathState state;
+    uint16_t cis_handle;
+  } dsa_;
+
   static constexpr char kLeAudioDeviceAllowListProp[] =
       "persist.bluetooth.leaudio.allow_list";
 

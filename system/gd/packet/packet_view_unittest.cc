@@ -17,10 +17,12 @@
 #include "packet/packet_view.h"
 
 #include <gtest/gtest.h>
+
 #include <forward_list>
 #include <memory>
 
 #include "hci/address.h"
+#include "packet/iterator.h"
 
 using bluetooth::hci::Address;
 using bluetooth::packet::PacketView;
@@ -397,6 +399,15 @@ TYPED_TEST(IteratorTest, subrangeTest) {
   subrange = this->packet->begin().Subrange(this->packet->size() - 1, 2);
   ASSERT_EQ(static_cast<size_t>(1), subrange.NumBytesRemaining());
   ASSERT_EQ(*(subrange), this->packet->size() - 1);
+}
+
+TYPED_TEST(IteratorTest, constructor_from_shared_vector_test) {
+  auto iterator = this->packet->begin();
+  Iterator<kLittleEndian> another(std::make_shared<std::vector<uint8_t>>(count_all));
+  ASSERT_EQ(iterator.NumBytesRemaining(), another.NumBytesRemaining());
+  for (size_t i = 0; i < count_all.size(); i++) {
+    ASSERT_EQ(iterator.template extract<uint8_t>(), another.extract<uint8_t>());
+  }
 }
 
 using SubviewTestParam = std::pair<size_t, size_t>;

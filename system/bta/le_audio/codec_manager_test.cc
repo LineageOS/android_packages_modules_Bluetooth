@@ -19,7 +19,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "gd/common/init_flags.h"
+#include "common/init_flags.h"
 #include "le_audio_set_configuration_provider.h"
 #include "mock_controller.h"
 #include "test/mock/mock_legacy_hci_interface.h"
@@ -49,8 +49,9 @@ static const std::vector<AudioSetConfiguration> offload_capabilities_none(0);
 const std::vector<AudioSetConfiguration>* offload_capabilities =
     &offload_capabilities_none;
 
-const char* test_flags[] = {
+static const char* test_flags[] = {
     "INIT_default_log_level_str=LOG_VERBOSE",
+    nullptr,
 };
 
 namespace bluetooth {

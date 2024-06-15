@@ -16,6 +16,9 @@
 
 #include <base/functional/bind.h>
 #include <base/location.h>
+#include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
+#include <flag_macros.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -24,6 +27,7 @@
 #include "bta/dm/bta_dm_disc.h"
 #include "bta/dm/bta_dm_disc_int.h"
 #include "bta/dm/bta_dm_int.h"
+#include "bta/dm/bta_dm_pm.cc"
 #include "bta/dm/bta_dm_sec_int.h"
 #include "bta/hf_client/bta_hf_client_int.h"
 #include "bta/include/bta_api.h"
@@ -35,10 +39,14 @@
 #include "test/common/mock_functions.h"
 #include "test/mock/mock_osi_alarm.h"
 #include "test/mock/mock_osi_allocator.h"
+#include "test/mock/mock_osi_properties.h"
 #include "test/mock/mock_stack_acl.h"
 #include "test/mock/mock_stack_btm_interface.h"
 
+#define TEST_BT com::android::bluetooth::flags
+
 using namespace std::chrono_literals;
+using namespace bluetooth;
 
 namespace {
 constexpr uint8_t kUnusedTimer = BTA_ID_MAX;
@@ -76,7 +84,7 @@ class BtaDmTest : public BtaBaseTest {
   void SetUp() override {
     BtaBaseTest::SetUp();
     main_thread_start_up();
-    post_on_bt_main([]() { LOG_INFO("Main thread started up"); });
+    post_on_bt_main([]() { log::info("Main thread started up"); });
 
     bta_sys_register(BTA_ID_DM_SEARCH, &bta_dm_search_reg);
     bluetooth::legacy::testing::bta_dm_init_cb();
@@ -90,7 +98,7 @@ class BtaDmTest : public BtaBaseTest {
   void TearDown() override {
     bta_sys_deregister(BTA_ID_DM_SEARCH);
     bluetooth::legacy::testing::bta_dm_deinit_cb();
-    post_on_bt_main([]() { LOG_INFO("Main thread shutting down"); });
+    post_on_bt_main([]() { log::info("Main thread shutting down"); });
     main_thread_shut_down();
     BtaBaseTest::TearDown();
   }
@@ -211,6 +219,8 @@ tBT_TRANSPORT bta_dm_determine_discovery_transport(
 void btm_set_local_io_caps(uint8_t io_caps);
 
 tBTM_STATUS bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data);
+
+void BTA_dm_on_hw_on();
 
 }  // namespace testing
 }  // namespace legacy
@@ -579,3 +589,67 @@ TEST_F(BtaDmTest, bta_dm_disc_start__true) { bta_dm_disc_start(true); }
 TEST_F(BtaDmTest, bta_dm_disc_start__false) { bta_dm_disc_start(false); }
 
 TEST_F(BtaDmTest, bta_dm_disc_stop) { bta_dm_disc_stop(); }
+
+TEST_F(BtaDmCustomAlarmTest, bta_dm_sniff_cback) {
+  // Setup a connected device
+  const tBT_TRANSPORT transport{BT_TRANSPORT_BR_EDR};
+  tBTA_DM_PEER_DEVICE* device =
+      bluetooth::legacy::testing::allocate_device_for(kRawAddress, transport);
+  ASSERT_TRUE(device != nullptr);
+
+  // Trigger a sniff timer
+  bta_dm_pm_start_timer(&bta_dm_cb.pm_timer[0],
+                        bta_pm_action_to_timer_idx(BTA_DM_PM_SNIFF), 10, 1,
+                        BTA_DM_PM_SNIFF);
+  bta_dm_cb.pm_timer[0].peer_bdaddr = kRawAddress;
+  ASSERT_EQ(1, get_func_call_count("alarm_set_on_mloop"));
+
+  // Trigger reset sniff
+  bta_dm_sniff_cback(BTA_ID_JV, 1, kRawAddress);
+  ASSERT_EQ(1, get_func_call_count("alarm_cancel"));
+  ASSERT_EQ(2, get_func_call_count("alarm_set_on_mloop"));
+}
+
+TEST_F_WITH_FLAGS(BtaDmCustomAlarmTest, sniff_offload_feature__enable_flag,
+                  REQUIRES_FLAGS_ENABLED(ACONFIG_FLAG(TEST_BT,
+                                                      enable_sniff_offload))) {
+  bool is_property_enabled = true;
+  test::mock::osi_properties::osi_property_get_bool.body =
+      [&](const char* key, bool default_value) -> int {
+    return is_property_enabled;
+  };
+
+  // Expect not to trigger bta_dm_init_pm due to both flag and prop are enabled
+  // and reset the value of .srvc_id.
+  is_property_enabled = true;
+  bluetooth::legacy::testing::BTA_dm_on_hw_on();
+  ASSERT_EQ(0, bta_dm_cb.pm_timer[0].srvc_id[0]);
+
+  // Expect to trigger bta_dm_init_pm and init the value of .srvc_id to
+  // BTA_ID_MAX.
+  is_property_enabled = false;
+  bluetooth::legacy::testing::BTA_dm_on_hw_on();
+  ASSERT_EQ((uint8_t)BTA_ID_MAX, bta_dm_cb.pm_timer[0].srvc_id[0]);
+}
+
+TEST_F_WITH_FLAGS(BtaDmCustomAlarmTest, sniff_offload_feature__disable_flag,
+                  REQUIRES_FLAGS_DISABLED(ACONFIG_FLAG(TEST_BT,
+                                                       enable_sniff_offload))) {
+  bool is_property_enabled = true;
+  test::mock::osi_properties::osi_property_get_bool.body =
+      [&](const char* key, bool default_value) -> int {
+    return is_property_enabled;
+  };
+
+  // Expect to trigger bta_dm_init_pm and init the value of .srvc_id to
+  // BTA_ID_MAX.
+  is_property_enabled = true;
+  bluetooth::legacy::testing::BTA_dm_on_hw_on();
+  ASSERT_EQ((uint8_t)BTA_ID_MAX, bta_dm_cb.pm_timer[0].srvc_id[0]);
+
+  // Expect to trigger bta_dm_init_pm and init the value of .srvc_id to
+  // BTA_ID_MAX.
+  is_property_enabled = false;
+  bluetooth::legacy::testing::BTA_dm_on_hw_on();
+  ASSERT_EQ((uint8_t)BTA_ID_MAX, bta_dm_cb.pm_timer[0].srvc_id[0]);
+}

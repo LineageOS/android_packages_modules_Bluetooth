@@ -16,6 +16,8 @@
  */
 #pragma once
 
+#include <vector>
+
 #include "base/functional/callback.h"
 #include "bind_helpers.h"
 #include "bta/include/bta_groups.h"
@@ -33,7 +35,7 @@ class CsisClient {
   static void Initialize(bluetooth::csis::CsisClientCallbacks* callbacks,
                          base::Closure initCb);
   static void AddFromStorage(const RawAddress& addr,
-                             const std::vector<uint8_t>& in, bool autoconnect);
+                             const std::vector<uint8_t>& in);
   static bool GetForStorage(const RawAddress& addr, std::vector<uint8_t>& out);
   static void CleanUp();
   static CsisClient* Get();

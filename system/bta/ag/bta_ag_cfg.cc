@@ -41,13 +41,11 @@
 #define BTA_AG_CONN_TIMEOUT 5000
 #endif
 
-#ifndef BTA_AG_SCO_PKT_TYPES
 /* S1 packet type setting from HFP 1.5 spec */
 #define BTA_AG_SCO_PKT_TYPES /* BTM_SCO_LINK_ALL_PKT_MASK */     \
   (BTM_SCO_LINK_ONLY_MASK | ESCO_PKT_TYPES_MASK_EV3 |            \
    ESCO_PKT_TYPES_MASK_NO_3_EV3 | ESCO_PKT_TYPES_MASK_NO_2_EV5 | \
    ESCO_PKT_TYPES_MASK_NO_3_EV5)
-#endif
 
 #ifndef BTA_AG_BIND_INFO
 #define BTA_AG_BIND_INFO "(1)"

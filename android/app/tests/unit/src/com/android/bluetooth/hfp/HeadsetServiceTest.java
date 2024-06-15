@@ -19,7 +19,6 @@ package com.android.bluetooth.hfp;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.anyBoolean;
 import static org.mockito.Mockito.anyInt;
-import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.doReturn;
@@ -125,7 +124,6 @@ public class HeadsetServiceTest {
         doReturn(mActiveDeviceManager).when(mAdapterService).getActiveDeviceManager();
         doReturn(mSilenceDeviceManager).when(mAdapterService).getSilenceDeviceManager();
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
-        doReturn(true, false).when(mAdapterService).isStartedProfile(anyString());
         doReturn(mRemoteDevices).when(mAdapterService).getRemoteDevices();
         doAnswer(invocation -> {
             Set<BluetoothDevice> keys = mStateMachines.keySet();
@@ -160,7 +158,8 @@ public class HeadsetServiceTest {
         doReturn(mNativeInterface).when(mObjectsFactory).getNativeInterface();
         HeadsetNativeInterface.setInstance(mNativeInterface);
         mHeadsetService = new HeadsetService(mTargetContext);
-        mHeadsetService.doStart();
+        mHeadsetService.start();
+        mHeadsetService.setAvailable(true);
         verify(mObjectsFactory).makeSystemInterface(mHeadsetService);
         verify(mObjectsFactory).getNativeInterface();
         mHeadsetService.setForceScoAudio(true);
@@ -168,7 +167,7 @@ public class HeadsetServiceTest {
 
     @After
     public void tearDown() throws Exception {
-        mHeadsetService.doStop();
+        mHeadsetService.stop();
         HeadsetNativeInterface.setInstance(null);
         mHeadsetService = HeadsetService.getHeadsetService();
         Assert.assertNull(mHeadsetService);

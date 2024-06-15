@@ -272,6 +272,19 @@ public class LeAudioNativeInterface {
         sendMessageToService(event);
     }
 
+    @VisibleForTesting
+    void onGroupStreamStatus(int groupId, int groupStreamStatus) {
+        LeAudioStackEvent event =
+                new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_GROUP_STREAM_STATUS_CHANGED);
+        event.valueInt1 = groupId;
+        event.valueInt2 = groupStreamStatus;
+
+        if (DBG) {
+            Log.d(TAG, "onGroupStreamStatus: " + event);
+        }
+        sendMessageToService(event);
+    }
+
     /**
      * Initializes the native interface.
      *
@@ -395,6 +408,17 @@ public class LeAudioNativeInterface {
     }
 
     /**
+     * Confirm streaming request by other profile if there were such request
+     */
+    public void confirmUnicastStreamRequest() {
+        if (DBG) {
+            Log.d(TAG, "confirmUnicastStreamRequest");
+        }
+
+        confirmUnicastStreamRequestNative();
+    }
+
+    /**
      * Sends the audio preferences for the groupId to the native stack.
      *
      * @param groupId is the groupId corresponding to the preferences
@@ -428,6 +452,7 @@ public class LeAudioNativeInterface {
     private native void setInCallNative(boolean inCall);
 
     private native void setUnicastMonitorModeNative(int direction, boolean enable);
+    private native void confirmUnicastStreamRequestNative();
     /*package*/
     private native void sendAudioProfilePreferencesNative(int groupId,
             boolean isOutputPreferenceLeAudio, boolean isDuplexPreferenceLeAudio);

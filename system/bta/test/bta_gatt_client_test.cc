@@ -22,8 +22,7 @@
 #include <string>
 
 #include "bta/dm/bta_dm_gatt_client.h"
-#include "gd/common/circular_buffer.h"
-#include "stack/btm/btm_int_types.h"
+#include "common/circular_buffer.h"
 
 using namespace bluetooth::common;
 

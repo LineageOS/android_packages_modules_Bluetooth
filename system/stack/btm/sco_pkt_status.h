@@ -28,7 +28,7 @@
 #define BTM_PKT_STATUS_WBS_FRAME_US 7500
 
 /* Object to log consecutive packets' status */
-typedef struct {
+struct tBTM_SCO_PKT_STATUS {
   // Bytes to store packets' status.
   uint8_t data[BTM_PKT_STATUS_LEN];
   // Total number of bits in |data|.
@@ -113,4 +113,4 @@ typedef struct {
 
     return s;
   }
-} tBTM_SCO_PKT_STATUS;
+};

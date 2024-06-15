@@ -52,7 +52,7 @@ table ControllerData {
   sco_buffer_size : BufferSizeData (privacy:"Any");
   iso_buffer_size : BufferSizeData (privacy:"Any");
   le_buffer_size : BufferSizeData (privacy:"Any");
-  le_connect_list_size : uint64 (privacy:"Any");
+  le_accept_list_size : uint64 (privacy:"Any");
   le_resolving_list_size : uint64 (privacy:"Any");
   le_maximum_data_length : LeMaximumDataLengthData (privacy:"Any");
   le_maximum_advertising_data_length : ushort (privacy:"Any");

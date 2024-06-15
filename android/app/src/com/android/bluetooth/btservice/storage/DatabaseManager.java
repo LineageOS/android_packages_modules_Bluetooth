@@ -42,7 +42,7 @@ import android.util.Log;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.flags.FeatureFlags;
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -68,7 +68,6 @@ public class DatabaseManager {
     private static final String TAG = "BluetoothDatabase";
 
     private final AdapterService mAdapterService;
-    private final FeatureFlags mFeatureFlags;
     private HandlerThread mHandlerThread = null;
     private Handler mHandler = null;
     private final Object mDatabaseLock = new Object();
@@ -114,9 +113,8 @@ public class DatabaseManager {
             LEGACY_HEARING_AID_PRIORITY_PREFIX = "bluetooth_hearing_aid_priority_";
 
     /** Constructor of the DatabaseManager */
-    public DatabaseManager(AdapterService service, FeatureFlags featureFlags) {
+    public DatabaseManager(AdapterService service) {
         mAdapterService = Objects.requireNonNull(service, "Adapter service cannot be null");
-        mFeatureFlags = Objects.requireNonNull(featureFlags, "Feature Flags cannot be null");
         mMetadataChangedLog = EvictingQueue.create(METADATA_CHANGED_LOG_MAX_SIZE);
     }
 
@@ -648,7 +646,7 @@ public class DatabaseManager {
             if (isA2dpDevice) {
                 resetActiveA2dpDevice();
             }
-            if (isHfpDevice && !mFeatureFlags.autoConnectOnMultipleHfpWhenNoA2dpDevice()) {
+            if (isHfpDevice && !Flags.autoConnectOnMultipleHfpWhenNoA2dpDevice()) {
                 resetActiveHfpDevice();
             }
 
@@ -1012,6 +1010,60 @@ public class DatabaseManager {
         }
 
         return modeToProfileBundle;
+    }
+
+    /**
+     * Set the device active audio policy. See {@link
+     * BluetoothDevice#setActiveAudioDevicePolicy(activeAudioDevicePolicy)} for more details.
+     *
+     * @param device is the remote device for which we are setting the active audio device policy.
+     * @param activeAudioDevicePolicy active audio device policy.
+     * @return whether the policy was set properly
+     */
+    public int setActiveAudioDevicePolicy(BluetoothDevice device, int activeAudioDevicePolicy) {
+        synchronized (mMetadataCache) {
+            String address = device.getAddress();
+
+            if (!mMetadataCache.containsKey(address)) {
+                Log.e(TAG, "device is not bonded");
+                return BluetoothStatusCodes.ERROR_DEVICE_NOT_BONDED;
+            }
+
+            Metadata metadata = mMetadataCache.get(address);
+            Log.i(
+                    TAG,
+                    "Updating active_audio_device_policy setting for "
+                            + "device "
+                            + device
+                            + " to: "
+                            + activeAudioDevicePolicy);
+            metadata.active_audio_device_policy = activeAudioDevicePolicy;
+
+            updateDatabase(metadata);
+        }
+        return BluetoothStatusCodes.SUCCESS;
+    }
+
+    /**
+     * Get the active audio device policy for this device. See {@link
+     * BluetoothDevice#getActiveAudioDevicePolicy()} for more details.
+     *
+     * @param device is the device for which we want to get the policy
+     * @return active audio device policy for this device
+     */
+    public int getActiveAudioDevicePolicy(BluetoothDevice device) {
+        synchronized (mMetadataCache) {
+            String address = device.getAddress();
+
+            if (!mMetadataCache.containsKey(address)) {
+                Log.e(TAG, "device is not bonded");
+                return BluetoothDevice.ACTIVE_AUDIO_DEVICE_POLICY_DEFAULT;
+            }
+
+            Metadata metadata = mMetadataCache.get(address);
+
+            return metadata.active_audio_device_policy;
+        }
     }
 
     /**

@@ -16,7 +16,9 @@
 
 #pragma once
 
-#include "packet.h"
+#include <iomanip>
+#include <vector>
+
 #include "packet_test_helper.h"
 
 // We have our own definition of loghex to avoid dependencies

@@ -63,7 +63,7 @@ internal fun initializeRadioModeListener(
 /**
  * Check if Bluetooth is impacted by the radio and fetch global mode status
  *
- * @return weither Bluetooth should consider this radio or not
+ * @return whether Bluetooth should consider this radio or not
  */
 private fun getRadioModeValue(resolver: ContentResolver, radio: String, modeKey: String): Boolean {
     return if (isSensitive(resolver, radio)) {

@@ -20,6 +20,8 @@
 #ifndef BTIF_A2DP_SINK_H
 #define BTIF_A2DP_SINK_H
 
+#include <bluetooth/log.h>
+
 #include <cstdint>
 #include <future>
 
@@ -140,5 +142,11 @@ void btif_a2dp_sink_set_audio_track_gain(float gain);
 
 // Get audio track handle
 void * btif_a2dp_sink_get_audio_track(void);
+
+namespace fmt {
+template <>
+struct formatter<btif_a2dp_sink_focus_state_t>
+    : enum_formatter<btif_a2dp_sink_focus_state_t> {};
+}  // namespace fmt
 
 #endif /* BTIF_A2DP_SINK_H */

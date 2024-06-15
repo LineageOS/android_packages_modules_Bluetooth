@@ -15,19 +15,28 @@
 
 source_set("BluetoothSecurityChannelSources") {
   sources = [ "channel/security_manager_channel.cc" ]
-  configs += [ "//bt/system/gd:gd_defaults" ]
+  configs += [
+    "//bt/system/gd:gd_defaults",
+    "//bt/system/log:log_defaults",
+  ]
   deps = [ "//bt/system/gd:gd_default_deps" ]
 }
 
 source_set("BluetoothSecurityPairingSources") {
   sources = [ "pairing/classic_pairing_handler.cc" ]
-  configs += [ "//bt/system/gd:gd_defaults" ]
+  configs += [
+    "//bt/system/gd:gd_defaults",
+    "//bt/system/log:log_defaults",
+  ]
   deps = [ "//bt/system/gd:gd_default_deps" ]
 }
 
 source_set("BluetoothSecurityRecordSources") {
   sources = [ "record/security_record_storage.cc" ]
-  configs += [ "//bt/system/gd:gd_defaults" ]
+  configs += [
+    "//bt/system/gd:gd_defaults",
+    "//bt/system/log:log_defaults",
+  ]
   deps = [ "//bt/system/gd:gd_default_deps" ]
 }
 
@@ -53,5 +62,8 @@ source_set("BluetoothSecuritySources") {
     "//bt/system/gd:gd_default_deps",
   ]
 
-  configs += [ "//bt/system/gd:gd_defaults" ]
+  configs += [
+    "//bt/system/gd:gd_defaults",
+    "//bt/system/log:log_defaults",
+  ]
 }

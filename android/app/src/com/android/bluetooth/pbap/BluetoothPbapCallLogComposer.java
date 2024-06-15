@@ -15,6 +15,8 @@
  */
 package com.android.bluetooth.pbap;
 
+import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothProtoEnums;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteException;
@@ -25,7 +27,9 @@ import android.text.TextUtils;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothMethodProxy;
+import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
+import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.vcard.VCardBuilder;
 import com.android.vcard.VCardConfig;
@@ -36,9 +40,8 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
 
-/**
- * VCard composer especially for Call Log used in Bluetooth.
- */
+/** VCard composer especially for Call Log used in Bluetooth. */
+// Next tag value for ContentProfileErrorReportUtils.report(): 3
 public class BluetoothPbapCallLogComposer {
     private static final String TAG = "PbapCallLogComposer";
 
@@ -121,6 +124,11 @@ public class BluetoothPbapCallLogComposer {
             try {
                 mCursor.close();
             } catch (SQLiteException e) {
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.PBAP,
+                        BluetoothProtoEnums.BLUETOOTH_PBAP_CALL_LOG_COMPOSER,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                        0);
                 Log.e(TAG, "SQLiteException on Cursor#close(): " + e.getMessage());
             } finally {
                 mErrorReason = FAILURE_REASON_NO_ENTRY;
@@ -243,12 +251,20 @@ public class BluetoothPbapCallLogComposer {
             }
             default: {
                 Log.w(TAG, "Call log type not correct.");
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.PBAP,
+                        BluetoothProtoEnums.BLUETOOTH_PBAP_CALL_LOG_COMPOSER,
+                        BluetoothStatsLog
+                                .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                        1);
                 return;
             }
         }
 
         final long dateAsLong = mCursor.getLong(DATE_COLUMN_INDEX);
-        builder.appendLine(VCARD_PROPERTY_X_TIMESTAMP, Arrays.asList(callLogTypeStr),
+        builder.appendLine(
+                VCARD_PROPERTY_X_TIMESTAMP,
+                Arrays.asList(callLogTypeStr),
                 toRfc2455Format(dateAsLong));
     }
 
@@ -257,6 +273,12 @@ public class BluetoothPbapCallLogComposer {
             try {
                 mCursor.close();
             } catch (SQLiteException e) {
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.PBAP,
+                        BluetoothProtoEnums.BLUETOOTH_PBAP_CALL_LOG_COMPOSER,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                        2);
+
                 Log.e(TAG, "SQLiteException on Cursor#close(): " + e.getMessage());
             }
             mCursor = null;

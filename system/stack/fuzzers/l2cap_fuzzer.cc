@@ -21,8 +21,9 @@
 #include <string>
 #include <vector>
 
-#include "btif/include/stack_manager.h"
-#include "gd/hal/snoop_logger.h"
+#include "btif/include/stack_manager_t.h"
+#include "hal/snoop_logger.h"
+#include "include/check.h"
 #include "osi/include/allocator.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/include/bt_psm_types.h"
@@ -55,7 +56,7 @@ bt_status_t do_in_main_thread(base::Location const&,
 }
 bt_status_t do_in_main_thread_delayed(base::Location const&,
                                       base::OnceCallback<void()>,
-                                      base::TimeDelta const&) {
+                                      std::chrono::microseconds) {
   // this is not properly mocked, so we use abort to catch if this is used in
   // any test cases
   abort();

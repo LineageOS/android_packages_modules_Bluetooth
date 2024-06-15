@@ -20,12 +20,9 @@
 #include <gtest/gtest.h>
 
 #include <chrono>
-#include <mutex>
 
 #include "common/bidi_queue.h"
-#include "common/callback.h"
 #include "common/testing/log_capture.h"
-#include "hci/acl_manager.h"
 #include "hci/acl_manager/acl_scheduler.h"
 #include "hci/acl_manager/connection_callbacks_mock.h"
 #include "hci/acl_manager/connection_management_callbacks_mock.h"
@@ -34,7 +31,6 @@
 #include "hci/hci_layer_fake.h"
 #include "hci/hci_packets.h"
 #include "os/handler.h"
-#include "os/log.h"
 #include "packet/bit_inserter.h"
 #include "packet/raw_builder.h"
 
@@ -161,7 +157,7 @@ class ClassicImplTest : public ::testing::Test {
     bluetooth::common::InitFlags::SetAllForTesting();
     thread_ = new Thread("thread", Thread::Priority::NORMAL);
     handler_ = new Handler(thread_);
-    hci_layer_ = new TestHciLayer();
+    hci_layer_ = new HciLayerFake();
     controller_ = new testing::MockController();
 
     EXPECT_CALL(*controller_, GetNumAclPacketBuffers);
@@ -246,7 +242,7 @@ class ClassicImplTest : public ::testing::Test {
 
   Thread* thread_;
   Handler* handler_;
-  TestHciLayer* hci_layer_{nullptr};
+  HciLayerFake* hci_layer_{nullptr};
   testing::MockController* controller_;
   acl_manager::RoundRobinScheduler* round_robin_scheduler_{nullptr};
 

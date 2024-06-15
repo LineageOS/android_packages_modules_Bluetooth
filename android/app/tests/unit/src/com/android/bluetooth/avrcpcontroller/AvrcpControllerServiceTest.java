@@ -18,9 +18,7 @@ package com.android.bluetooth.avrcpcontroller;
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.atLeastOnce;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -80,10 +78,9 @@ public class AvrcpControllerServiceTest {
         Context targetContext = InstrumentationRegistry.getTargetContext();
         MockitoAnnotations.initMocks(this);
         TestUtils.setAdapterService(mAdapterService);
-        doReturn(true, false).when(mAdapterService).isStartedProfile(anyString());
         AvrcpControllerNativeInterface.setInstance(mNativeInterface);
         mService = new AvrcpControllerService(targetContext, mNativeInterface);
-        mService.doStart();
+        mService.start();
         // Try getting the Bluetooth adapter
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         assertThat(mAdapter).isNotNull();
@@ -96,7 +93,7 @@ public class AvrcpControllerServiceTest {
 
     @After
     public void tearDown() throws Exception {
-        mService.doStop();
+        mService.stop();
         AvrcpControllerNativeInterface.setInstance(null);
         mService = AvrcpControllerService.getAvrcpControllerService();
         assertThat(mService).isNull();

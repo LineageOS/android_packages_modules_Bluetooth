@@ -39,8 +39,6 @@
     (p_prop)->val = (p_v);                            \
   } while (0)
 
-#define BTIF_STORAGE_PATH_REMOTE_SERVICE "Service"
-
 #define STORAGE_BDADDR_STRING_SZ (18) /* 00:11:22:33:44:55 */
 #define STORAGE_UUID_STRING_SIZE \
   (36 + 1) /* 00001200-0000-1000-8000-00805f9b34fb; */
@@ -393,8 +391,6 @@ void btif_storage_add_groups(const RawAddress& addr);
 void btif_storage_load_bonded_groups(void);
 void btif_storage_remove_groups(const RawAddress& address);
 
-void btif_storage_set_csis_autoconnect(const RawAddress& addr,
-                                       bool autoconnect);
 void btif_storage_update_csis_info(const RawAddress& addr);
 void btif_storage_load_bonded_csis_devices();
 void btif_storage_remove_csis_device(const RawAddress& address);

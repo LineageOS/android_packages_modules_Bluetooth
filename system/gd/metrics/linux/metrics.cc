@@ -15,7 +15,7 @@
  */
 #define LOG_TAG "BluetoothMetrics"
 
-#include "gd/metrics/metrics.h"
+#include "metrics/metrics.h"
 
 namespace bluetooth {
 namespace metrics {
@@ -50,6 +50,8 @@ void LogMetricsAclConnectionStateChanged(
     uint32_t hci_reason) {}
 
 void LogMetricsChipsetInfoReport() {}
+
+void LogMetricsSuspendIdState(uint32_t state){};
 
 }  // namespace metrics
 }  // namespace bluetooth

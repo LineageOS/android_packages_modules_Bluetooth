@@ -44,6 +44,7 @@ import androidx.test.runner.AndroidJUnit4;
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.R;
 import com.android.bluetooth.TestUtils;
+import com.android.bluetooth.flags.Flags;
 
 import com.google.common.base.Objects;
 
@@ -125,7 +126,8 @@ public class BluetoothOppTransferHistoryTest {
                         BluetoothShare.USER_CONFIRMATION_HANDOVER_CONFIRMED)
         ));
 
-        BluetoothOppTestUtils.enableOppActivities(true, mTargetContext);
+        BluetoothOppTestUtils.enableActivity(
+                BluetoothOppTransferHistory.class, true, mTargetContext);
         TestUtils.setUpUiTest();
     }
 
@@ -133,33 +135,21 @@ public class BluetoothOppTransferHistoryTest {
     public void tearDown() throws Exception {
         TestUtils.tearDownUiTest();
         BluetoothMethodProxy.setInstanceForTesting(null);
-        BluetoothOppTestUtils.enableOppActivities(false, mTargetContext);
+        BluetoothOppTestUtils.enableActivity(
+                BluetoothOppTransferHistory.class, false, mTargetContext);
     }
 
     @Test
-    public void onCreate_withDirectionInbound_withExtraShowAllFileIsTrue_displayLiveFolder()
-            throws Exception {
+    public void onCreate_withDirectionInbound_displayInboundHistory() {
         Assume.assumeFalse(
                 mTargetContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WATCH));
 
         BluetoothOppTestUtils.setUpMockCursor(mCursor, mCursorMockDataList);
-        mIntent.putExtra(Constants.EXTRA_SHOW_ALL_FILES, true);
-        mIntent.putExtra("direction", BluetoothShare.DIRECTION_INBOUND);
-        ActivityScenario<BluetoothOppTransferHistory> scenario = ActivityScenario.launch(mIntent);
-        InstrumentationRegistry.getInstrumentation().waitForIdleSync();
-
-        onView(withText(mTargetContext.getText(R.string.btopp_live_folder).toString())).check(
-                matches(isDisplayed()));
-    }
-
-    @Test
-    public void onCreate_withDirectionInbound_withExtraShowAllFileIsFalse_displayInboundHistory() {
-        Assume.assumeFalse(
-                mTargetContext.getPackageManager().hasSystemFeature(PackageManager.FEATURE_WATCH));
-
-        BluetoothOppTestUtils.setUpMockCursor(mCursor, mCursorMockDataList);
-        mIntent.putExtra(Constants.EXTRA_SHOW_ALL_FILES, false);
-        mIntent.putExtra("direction", BluetoothShare.DIRECTION_INBOUND);
+        if (Flags.oppStartActivityDirectlyFromNotification()) {
+            mIntent.setAction(Constants.ACTION_OPEN_INBOUND_TRANSFER);
+        } else {
+            mIntent.putExtra(Constants.EXTRA_DIRECTION, BluetoothShare.DIRECTION_INBOUND);
+        }
 
         ActivityScenario<BluetoothOppTransferHistory> scenario = ActivityScenario.launch(mIntent);
         InstrumentationRegistry.getInstrumentation().waitForIdleSync();
@@ -177,8 +167,11 @@ public class BluetoothOppTransferHistoryTest {
         mCursorMockDataList.set(1,
                 new BluetoothOppTestUtils.CursorMockData(BluetoothShare.DIRECTION, 2,
                         BluetoothShare.DIRECTION_OUTBOUND));
-        mIntent.putExtra(Constants.EXTRA_SHOW_ALL_FILES, true);
-        mIntent.putExtra("direction", BluetoothShare.DIRECTION_OUTBOUND);
+        if (Flags.oppStartActivityDirectlyFromNotification()) {
+            mIntent.setAction(Constants.ACTION_OPEN_OUTBOUND_TRANSFER);
+        } else {
+            mIntent.putExtra(Constants.EXTRA_DIRECTION, BluetoothShare.DIRECTION_OUTBOUND);
+        }
 
         ActivityScenario<BluetoothOppTransferHistory> scenario = ActivityScenario.launch(mIntent);
         InstrumentationRegistry.getInstrumentation().waitForIdleSync();
@@ -192,8 +185,7 @@ public class BluetoothOppTransferHistoryTest {
     @Test
     public void onOptionsItemSelected_clearAllSelected_promptWarning() {
         BluetoothOppTestUtils.setUpMockCursor(mCursor, mCursorMockDataList);
-        mIntent.putExtra(Constants.EXTRA_SHOW_ALL_FILES, false);
-        mIntent.putExtra("direction", BluetoothShare.DIRECTION_INBOUND);
+        mIntent.putExtra(Constants.EXTRA_DIRECTION, BluetoothShare.DIRECTION_INBOUND);
 
         ActivityScenario<BluetoothOppTransferHistory> scenario = ActivityScenario.launch(mIntent);
 

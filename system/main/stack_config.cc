@@ -22,8 +22,9 @@
 
 #include <base/logging.h>
 
+#include "include/check.h"
+#include "os/log.h"
 #include "osi/include/future.h"
-#include "osi/include/log.h"
 
 namespace {
 const char* PTS_AVRCP_TEST = "PTS_AvrcpTest";

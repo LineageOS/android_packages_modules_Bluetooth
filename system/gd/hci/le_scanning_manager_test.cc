@@ -16,6 +16,7 @@
 
 #include "hci/le_scanning_manager.h"
 
+#include <android_bluetooth_flags.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -29,12 +30,12 @@
 #include <queue>
 #include <vector>
 
-#include "hci/hci_layer_fake.h"
 #include "common/bind.h"
 #include "hci/acl_manager.h"
 #include "hci/address.h"
 #include "hci/controller.h"
 #include "hci/hci_layer.h"
+#include "hci/hci_layer_fake.h"
 #include "hci/uuid.h"
 #include "os/thread.h"
 #include "packet/raw_builder.h"
@@ -50,6 +51,13 @@ using packet::PacketView;
 using packet::RawBuilder;
 
 namespace {
+
+// Event type fields.
+// TODO(b/315496838): Use a common enum for event type bits.
+static constexpr uint16_t kConnectable = 0x1;
+static constexpr uint16_t kScannable = 0x2;
+static constexpr uint16_t kScanResponse = 0x8;
+static constexpr uint16_t kLegacy = 0x10;
 
 hci::AdvertisingPacketContentFilterCommand make_filter(const hci::ApcfFilterType& filter_type) {
   hci::AdvertisingPacketContentFilterCommand filter{};
@@ -160,9 +168,9 @@ class TestLeAddressManager : public LeAddressManager {
       common::Callback<void(std::unique_ptr<CommandBuilder>)> enqueue_command,
       os::Handler* handler,
       Address public_address,
-      uint8_t connect_list_size,
+      uint8_t accept_list_size,
       uint8_t resolving_list_size)
-      : LeAddressManager(enqueue_command, handler, public_address, connect_list_size, resolving_list_size) {}
+      : LeAddressManager(enqueue_command, handler, public_address, accept_list_size, resolving_list_size) {}
 
   AddressPolicy Register(LeAddressManagerCallback* callback) override {
     client_ = callback;
@@ -280,7 +288,7 @@ class MockCallbacks : public bluetooth::hci::ScanningCallback {
 class LeScanningManagerTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    test_hci_layer_ = new TestHciLayer;  // Ownership is transferred to registry
+    test_hci_layer_ = new HciLayerFake;  // Ownership is transferred to registry
     test_controller_ = new TestController;
     test_acl_manager_ = new TestAclManager;
     fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
@@ -311,7 +319,7 @@ class LeScanningManagerTest : public ::testing::Test {
   }
 
   TestModuleRegistry fake_registry_;
-  TestHciLayer* test_hci_layer_ = nullptr;
+  HciLayerFake* test_hci_layer_ = nullptr;
   TestController* test_controller_ = nullptr;
   TestAclManager* test_acl_manager_ = nullptr;
   os::Thread& thread_ = fake_registry_.GetTestThread();
@@ -362,14 +370,72 @@ TEST_F(LeScanningManagerTest, start_scan_test) {
   // Enable scan
   le_scanning_manager->Scan(true);
   ASSERT_EQ(OpCode::LE_SET_SCAN_PARAMETERS, test_hci_layer_->GetCommand().GetOpCode());
-  test_hci_layer_->IncomingEvent(LeSetScanParametersCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+  test_hci_layer_->IncomingEvent(
+      LeSetScanParametersCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
   ASSERT_EQ(OpCode::LE_SET_SCAN_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
-  test_hci_layer_->IncomingEvent(LeSetScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+  test_hci_layer_->IncomingEvent(
+      LeSetScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
 
   LeAdvertisingResponse report = make_advertising_report();
   EXPECT_CALL(mock_callbacks_, OnScanResult);
 
   test_hci_layer_->IncomingLeMetaEvent(LeAdvertisingReportBuilder::Create({report}));
+}
+
+TEST_F(LeScanningManagerTest, legacy_adv_scan_ind_report_with_scan_response) {
+  start_le_scanning_manager();
+
+  le_scanning_manager->Scan(true);
+  ASSERT_EQ(OpCode::LE_SET_SCAN_PARAMETERS, test_hci_layer_->GetCommand().GetOpCode());
+  test_hci_layer_->IncomingEvent(
+      LeSetScanParametersCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+  ASSERT_EQ(OpCode::LE_SET_SCAN_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
+  test_hci_layer_->IncomingEvent(
+      LeSetScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+
+  LeAdvertisingResponse report = make_advertising_report();
+  // Scannable & not connectable!
+  report.event_type_ = AdvertisingEventType::ADV_SCAN_IND;
+
+  test_hci_layer_->IncomingLeMetaEvent(LeAdvertisingReportBuilder::Create({report}));
+
+  LeAdvertisingResponse scan_response = make_advertising_report();
+  scan_response.event_type_ = AdvertisingEventType::SCAN_RESPONSE;
+
+  // The 'connectable' bit should NOT be set.
+  uint16_t extended_event_type = kLegacy | kScannable | kScanResponse;
+  if (!IS_FLAG_ENABLED(fix_nonconnectable_scannable_advertisement)) {
+    extended_event_type |= kConnectable;
+  }
+  EXPECT_CALL(mock_callbacks_, OnScanResult(extended_event_type, _, _, _, _, _, _, _, _, _));
+
+  test_hci_layer_->IncomingLeMetaEvent(LeAdvertisingReportBuilder::Create({scan_response}));
+}
+
+TEST_F(LeScanningManagerTest, legacy_adv_ind_report_with_scan_response) {
+  start_le_scanning_manager();
+
+  le_scanning_manager->Scan(true);
+  ASSERT_EQ(OpCode::LE_SET_SCAN_PARAMETERS, test_hci_layer_->GetCommand().GetOpCode());
+  test_hci_layer_->IncomingEvent(
+      LeSetScanParametersCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+  ASSERT_EQ(OpCode::LE_SET_SCAN_ENABLE, test_hci_layer_->GetCommand().GetOpCode());
+  test_hci_layer_->IncomingEvent(
+      LeSetScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
+
+  LeAdvertisingResponse report = make_advertising_report();
+  // Scannable & connectable!
+  report.event_type_ = AdvertisingEventType::ADV_IND;
+
+  test_hci_layer_->IncomingLeMetaEvent(LeAdvertisingReportBuilder::Create({report}));
+
+  LeAdvertisingResponse scan_response = make_advertising_report();
+  scan_response.event_type_ = AdvertisingEventType::SCAN_RESPONSE;
+
+  uint16_t extended_event_type = kLegacy | kScannable | kConnectable | kScanResponse;
+  EXPECT_CALL(mock_callbacks_, OnScanResult(extended_event_type, _, _, _, _, _, _, _, _, _));
+
+  test_hci_layer_->IncomingLeMetaEvent(LeAdvertisingReportBuilder::Create({scan_response}));
 }
 
 TEST_F(LeScanningManagerTest, is_ad_type_filter_supported_false_test) {

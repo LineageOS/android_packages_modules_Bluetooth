@@ -253,6 +253,7 @@ class BroadcasterTest : public Test {
     ContentControlIdKeeper::GetInstance()->Stop();
 
     iso_active_callback = nullptr;
+    delete mock_audio_source_;
     iso_manager_->Stop();
 
     controller::SetMockControllerInterface(nullptr);

@@ -16,6 +16,8 @@
 
 package android.bluetooth
 
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.net.MacAddress
@@ -30,10 +32,12 @@ import io.grpc.okhttp.OkHttpChannelBuilder
 import java.util.concurrent.TimeUnit
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.shareIn
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.runTest
@@ -46,6 +50,7 @@ import pandora.HostGrpc
 import pandora.HostProto.ConnectRequest
 import pandora.HostProto.DisconnectRequest
 
+@Suppress("DEPRECATION")
 @kotlinx.coroutines.ExperimentalCoroutinesApi
 @RunWith(AndroidJUnit4::class)
 class BluetoothMetricsHelperTest {
@@ -68,7 +73,23 @@ class BluetoothMetricsHelperTest {
     private val testDispatcher = UnconfinedTestDispatcher()
     private val testScope = TestScope(testDispatcher)
     private val context = InstrumentationRegistry.getInstrumentation().getContext()
-    private val bluetoothAdapter = context.getSystemService(BluetoothManager::class.java)!!.adapter
+
+    private val bluetoothAdapter: BluetoothAdapter =
+        context.getSystemService(BluetoothManager::class.java)!!.adapter
+    private val adapterState = MutableStateFlow(bluetoothAdapter.state)
+
+    init {
+        context.registerReceiver(
+            object : BroadcastReceiver() {
+                override fun onReceive(context: Context, intent: Intent) {
+                    adapterState.tryEmit(
+                        intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR)
+                    )
+                }
+            },
+            IntentFilter(BluetoothAdapter.ACTION_BLE_STATE_CHANGED)
+        )
+    }
 
     @Before
     fun setUp() {
@@ -92,6 +113,10 @@ class BluetoothMetricsHelperTest {
         mHostBlockingStub = HostGrpc.newBlockingStub(mChannel)
         mHostStub = HostGrpc.newStub(mChannel)
         mHostBlockingStub.withWaitForReady()?.readLocalAddress(Empty.getDefaultInstance())
+
+        // Make sure the Adapter is on.
+        bluetoothAdapter.enable()
+        runBlocking { adapterState.first { it == BluetoothAdapter.STATE_ON } }
     }
 
     @After
@@ -131,5 +156,13 @@ class BluetoothMetricsHelperTest {
         val disconnectRequest =
             DisconnectRequest.newBuilder().setConnection(connectResponse.connection).build()
         mHostBlockingStub.disconnect(disconnectRequest)
+    }
+
+    @Test
+    fun testBluetoothDisableEnable() = runTest {
+        bluetoothAdapter.disable()
+        adapterState.first { it == BluetoothAdapter.STATE_OFF }
+        bluetoothAdapter.enable()
+        adapterState.first { it == BluetoothAdapter.STATE_ON }
     }
 }

@@ -22,9 +22,10 @@ static_library("btif") {
 
     # AVRCP Target Service
     "avrcp/avrcp_service.cc",
-    "co/bta_av_co.cc",
 
     # Callouts
+    "co/bta_av_co.cc",
+    "co/bta_av_co_peer.cc",
     "co/bta_dm_co.cc",
     "co/bta_gatts_co.cc",
     "co/bta_hh_co.cc",
@@ -106,7 +107,6 @@ static_library("btif") {
     "//bt/system/stack/btm",
     "//bt/system/stack/l2cap",
     "//bt/system/stack/include",
-    "//bt/system/internal_include",
     "//bt/system/udrv/include",
     "//bt/system/vnd/include",
     "//bt/system/profile/avrcp",
@@ -121,6 +121,7 @@ static_library("btif") {
 
   configs += [
     "//bt/system:target_defaults",
+    "//bt/system/log:log_defaults",
     "//bt/system:external_tinyxml2",
   ]
 }

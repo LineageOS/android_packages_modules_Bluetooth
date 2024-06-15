@@ -116,7 +116,8 @@ bool A2DP_VendorInitCodecConfigAptxHd(AvdtpSepConfig* p_cfg) { return false; }
 A2dpCodecConfigAptxHd::A2dpCodecConfigAptxHd(
     btav_a2dp_codec_priority_t codec_priority)
     : A2dpCodecConfig(BTAV_A2DP_CODEC_INDEX_SOURCE_APTX_HD,
-                      A2DP_VendorCodecIndexStrAptxHd(), codec_priority) {}
+                      A2DP_CODEC_ID_APTX_HD, A2DP_VendorCodecIndexStrAptxHd(),
+                      codec_priority) {}
 
 A2dpCodecConfigAptxHd::~A2dpCodecConfigAptxHd() {}
 

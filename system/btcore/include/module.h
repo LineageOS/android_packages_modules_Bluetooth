@@ -20,9 +20,7 @@
 
 #include <stdbool.h>
 
-#include "common/message_loop_thread.h"
 #include "osi/include/future.h"
-#include "osi/include/thread.h"
 
 typedef future_t* (*module_lifecycle_fn)(void);
 

@@ -16,19 +16,23 @@
  *
  */
 
-#include "common/bind.h"
+#include <gtest/gtest.h>
+
 #include "hci/hci_layer.h"
 
 namespace bluetooth {
 namespace security {
 
 using common::ContextualOnceCallback;
+using hci::BitInserter;
 using hci::CommandCompleteView;
 using hci::CommandStatusView;
 using hci::EventBuilder;
 using hci::EventCode;
 using hci::EventView;
 using hci::HciLayer;
+using hci::kLittleEndian;
+using hci::PacketView;
 
 namespace {
 
@@ -100,7 +104,7 @@ class FakeHciLayer : public HciLayer {
     registered_events_[event_code].Invoke(event);
   }
 
-  void ListDependencies(ModuleList* list) const override {}
+  void ListDependencies(ModuleList* /* list */) const override {}
   void Start() override {}
   void Stop() override {}
 

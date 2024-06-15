@@ -89,9 +89,7 @@ static_library("bta") {
     "jv/bta_jv_act.cc",
     "jv/bta_jv_api.cc",
     "jv/bta_jv_cfg.cc",
-    "le_audio/audio_hal_client/asrc_tables.cc",
     "le_audio/audio_hal_client/audio_sink_hal_client.cc",
-    "le_audio/audio_hal_client/audio_source_hal_asrc.cc",
     "le_audio/audio_hal_client/audio_source_hal_client.cc",
     "le_audio/broadcaster/broadcaster.cc",
     "le_audio/broadcaster/broadcaster_types.cc",
@@ -140,8 +138,6 @@ static_library("bta") {
     "//bt/system/linux_include",
     "//bt/system/bta",
     "//bt/system/gd",
-    "//bt/system/internal_include",
-    "//bt/system/internal_include",
     "//bt/system/stack/include",
     "//bt/system/stack/btm",
     "//bt/system/udrv/include",
@@ -155,10 +151,12 @@ static_library("bta") {
   ]
 
   configs += [
-    "//bt/system:target_defaults"
+    "//bt/system:target_defaults",
+    "//bt/system/log:log_defaults",
   ]
 
   deps = [
+    "//bt/system/audio:libbt-audio-asrc",
     "//bt/system/bta:LeAudioSetScenariosSchema_bfbs",
     "//bt/system/bta:LeAudioSetConfigsSchema_bfbs",
     "//bt/system/bta:install_audio_set_scenarios_json",
@@ -225,7 +223,6 @@ if (use.test) {
       "include",
       "//bt/system/",
       "//bt/system/bta",
-      "//bt/system/internal_include",
       "//bt/system/stack/btm",
     ]
 

@@ -9,12 +9,15 @@ use crate::bt_gatt::AuthReq;
 use crate::callbacks::{BtGattCallback, BtGattServerCallback};
 use crate::ClientContext;
 use crate::{console_red, console_yellow, print_error, print_info};
-use bt_topshim::btif::{BtConnectionState, BtDiscMode, BtStatus, BtTransport, INVALID_RSSI};
+use bt_topshim::btif::{BtConnectionState, BtDiscMode, BtStatus, BtTransport, Uuid, INVALID_RSSI};
 use bt_topshim::profiles::hid_host::BthhReportType;
 use bt_topshim::profiles::sdp::{BtSdpMpsRecord, BtSdpRecord};
 use bt_topshim::profiles::{gatt::LePhy, ProfileConnectionState};
+use btstack::battery_manager::IBatteryManager;
 use btstack::bluetooth::{BluetoothDevice, IBluetooth};
-use btstack::bluetooth_gatt::{GattWriteType, IBluetoothGatt};
+use btstack::bluetooth_gatt::{
+    BluetoothGattService, GattDbElementType, GattWriteType, IBluetoothGatt,
+};
 use btstack::bluetooth_media::{IBluetoothMedia, IBluetoothTelephony};
 use btstack::bluetooth_qa::IBluetoothQA;
 use btstack::socket_manager::{IBluetoothSocketManager, SocketResult};
@@ -27,6 +30,7 @@ const BAR2_CHAR: &str = "-";
 const MAX_MENU_CHAR_WIDTH: usize = 72;
 const GATT_CLIENT_APP_UUID: &str = "12345678123456781234567812345678";
 const GATT_SERVER_APP_UUID: &str = "12345678123456781234567812345679";
+const HEART_RATE_SERVICE_UUID: &str = "0000180D-0000-1000-8000-00805F9B34FB";
 
 enum CommandError {
     // Command not handled due to invalid arguments.
@@ -139,6 +143,24 @@ fn build_commands() -> HashMap<String, CommandOption> {
         },
     );
     command_options.insert(
+        String::from("battery"),
+        CommandOption {
+            rules: vec![
+                String::from("battery status <address>"),
+                String::from("battery track <address>"),
+                String::from("battery untrack <address>"),
+            ],
+            description: String::from(
+                "
+                status: Current battery status of a given device.\n
+                track: Track a given device to monitor battery updates.\n
+                untrack: Stop tracking a device for battery updates.
+            ",
+            ),
+            function_pointer: CommandHandler::cmd_battery,
+        },
+    );
+    command_options.insert(
         String::from("bond"),
         CommandOption {
             rules: vec![String::from("bond <add|remove|cancel> <address>")],
@@ -202,6 +224,14 @@ fn build_commands() -> HashMap<String, CommandOption> {
                 ),
                 String::from("gatt register-notification <address> <handle> <enable|disable>"),
                 String::from("gatt register-server"),
+                String::from("gatt unregister-server <server_id>"),
+                String::from("gatt server-connect <server_id> <client_address>"),
+                String::from("gatt server-disconnect <server_id> <client_address>"),
+                String::from("gatt server-add-heartrate-service <server_id>"),
+                String::from("gatt server-remove-service <server_id> <service_handle>"),
+                String::from("gatt server-clear-all-services <server_id>"),
+                String::from("gatt server-set-direct-connect <true|false>"),
+                String::from("gatt server-set-connect-transport <Bredr|LE|Auto>"),
             ],
             description: String::from("GATT tools"),
             function_pointer: CommandHandler::cmd_gatt,
@@ -638,6 +668,79 @@ impl CommandHandler {
             _ => return Err(CommandError::InvalidArgs),
         }
 
+        Ok(())
+    }
+
+    fn cmd_battery(&mut self, args: &Vec<String>) -> CommandResult {
+        if !self.lock_context().adapter_ready {
+            return Err(self.adapter_not_ready());
+        }
+
+        let command = get_arg(args, 0)?;
+        let address = get_arg(args, 1)?.to_uppercase();
+
+        match &command[..] {
+            "status" => {
+                match self
+                    .lock_context()
+                    .battery_manager_dbus
+                    .as_ref()
+                    .unwrap()
+                    .get_battery_information(address.clone())
+                {
+                    None => println!(
+                        "Battery status for device {} could not be fetched",
+                        address.clone()
+                    ),
+                    Some(set) => {
+                        if set.batteries.len() == 0 {
+                            println!("Battery set for device {} is empty", set.address.clone());
+                            return Ok(());
+                        }
+
+                        println!(
+                            "Battery data for '{}' from source '{}' and uuid '{}':",
+                            set.address.clone(),
+                            set.source_uuid.clone(),
+                            set.source_info.clone()
+                        );
+                        for battery in set.batteries {
+                            println!("   {}%, variant: '{}'", battery.percentage, battery.variant);
+                        }
+                    }
+                }
+            }
+            "track" => {
+                if self.lock_context().battery_address_filter.contains(&address) {
+                    println!("Already tracking {}", address.clone());
+                    return Ok(());
+                }
+                self.lock_context().battery_address_filter.insert(address.clone());
+
+                println!("Currently tracking:");
+                for addr in self.lock_context().battery_address_filter.iter() {
+                    println!("{}", addr);
+                }
+            }
+            "untrack" => {
+                if !self.lock_context().battery_address_filter.remove(&address) {
+                    println!("Not tracking {}", address.clone());
+                    return Ok(());
+                }
+                println!("Stopped tracking {}", address.clone());
+
+                if self.lock_context().battery_address_filter.len() == 0 {
+                    println!("No longer tracking any addresses for battery status updates");
+                    return Ok(());
+                }
+
+                println!("Currently tracking:");
+                for addr in self.lock_context().battery_address_filter.iter() {
+                    println!("{}", addr);
+                }
+            }
+            _ => return Err(CommandError::InvalidArgs),
+        }
         Ok(())
     }
 
@@ -1222,6 +1325,98 @@ impl CommandHandler {
                     )),
                     false,
                 );
+            }
+            "unregister-server" => {
+                let server_id = String::from(get_arg(args, 1)?)
+                    .parse::<i32>()
+                    .or(Err("Failed parsing server id"))?;
+
+                self.lock_context().gatt_dbus.as_mut().unwrap().unregister_server(server_id);
+            }
+            "server-connect" => {
+                let server_id = String::from(get_arg(args, 1)?)
+                    .parse::<i32>()
+                    .or(Err("Failed to parse server_id"))?;
+                let client_addr = String::from(get_arg(args, 2)?);
+                let is_direct = self.lock_context().gatt_server_context.is_connect_direct;
+                let transport = self.lock_context().gatt_server_context.connect_transport;
+
+                if !self.lock_context().gatt_dbus.as_mut().unwrap().server_connect(
+                    server_id,
+                    client_addr.clone(),
+                    is_direct,
+                    transport,
+                ) {
+                    return Err("Connection was unsuccessful".into());
+                }
+            }
+            "server-disconnect" => {
+                let server_id = String::from(get_arg(args, 1)?)
+                    .parse::<i32>()
+                    .or(Err("Failed to parse server_id"))?;
+                let client_addr = String::from(get_arg(args, 2)?);
+
+                if !self
+                    .lock_context()
+                    .gatt_dbus
+                    .as_mut()
+                    .unwrap()
+                    .server_disconnect(server_id, client_addr.clone())
+                {
+                    return Err("Disconnection was unsuccessful".into());
+                }
+            }
+            "server-add-heartrate-service" => {
+                let uuid = Uuid::from(UuidHelper::from_string(HEART_RATE_SERVICE_UUID).unwrap());
+
+                let server_id = String::from(get_arg(args, 1)?)
+                    .parse::<i32>()
+                    .or(Err("Failed to parse server_id"))?;
+                let service = BluetoothGattService::new(
+                    uuid.into(),
+                    0, // libbluetooth assigns this handle once the service is added
+                    GattDbElementType::PrimaryService.into(),
+                );
+
+                self.lock_context().gatt_dbus.as_mut().unwrap().add_service(server_id, service);
+            }
+            "server-remove-service" => {
+                let server_id = String::from(get_arg(args, 1)?)
+                    .parse::<i32>()
+                    .or(Err("Failed to parse server_id"))?;
+                let service_handle = String::from(get_arg(args, 1)?)
+                    .parse::<i32>()
+                    .or(Err("Failed to parse service handle"))?;
+
+                self.lock_context()
+                    .gatt_dbus
+                    .as_mut()
+                    .unwrap()
+                    .remove_service(server_id, service_handle);
+            }
+            "server-clear-all-services" => {
+                let server_id = String::from(get_arg(args, 1)?)
+                    .parse::<i32>()
+                    .or(Err("Failed to parse server_id"))?;
+                self.lock_context().gatt_dbus.as_mut().unwrap().clear_services(server_id);
+            }
+            "server-set-direct-connect" => {
+                let is_direct = String::from(get_arg(args, 1)?)
+                    .parse::<bool>()
+                    .or(Err("Failed to parse is_direct"))?;
+
+                self.lock_context().gatt_server_context.is_connect_direct = is_direct;
+            }
+            "server-set-connect-transport" => {
+                let transport = match &get_arg(args, 1)?[..] {
+                    "Bredr" => BtTransport::Bredr,
+                    "LE" => BtTransport::Le,
+                    "Auto" => BtTransport::Auto,
+                    _ => {
+                        return Err("Failed to parse transport".into());
+                    }
+                };
+                self.lock_context().gatt_server_context.connect_transport = transport;
             }
             _ => return Err(CommandError::InvalidArgs),
         }

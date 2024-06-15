@@ -16,14 +16,14 @@
 
 #include "main/shim/acl_api.h"
 
+#include <android_bluetooth_sysprop.h>
 #include <base/location.h>
-
 #include <cstdint>
 #include <future>
 #include <optional>
 
-#include "gd/hci/acl_manager.h"
-#include "gd/hci/remote_name_request.h"
+#include "hci/acl_manager.h"
+#include "hci/remote_name_request.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
 #include "main/shim/stack.h"
@@ -79,9 +79,13 @@ void bluetooth::shim::ACL_ConfigureLePrivacy(bool is_le_privacy_enabled) {
           : hci::LeAddressManager::AddressPolicy::USE_PUBLIC_ADDRESS;
   hci::AddressWithType empty_address_with_type(
       hci::Address{}, hci::AddressType::RANDOM_DEVICE_ADDRESS);
-  /* 7 minutes minimum, 15 minutes maximum for random address refreshing */
-  auto minimum_rotation_time = std::chrono::minutes(7);
-  auto maximum_rotation_time = std::chrono::minutes(15);
+
+  /* Default to 7 minutes minimum, 15 minutes maximum for random address refreshing;
+   * device can override. */
+  auto minimum_rotation_time = std::chrono::minutes(
+      GET_SYSPROP(Ble, random_address_rotation_interval_min, 7));
+  auto maximum_rotation_time = std::chrono::minutes(
+      GET_SYSPROP(Ble, random_address_rotation_interval_max, 15));
 
   Stack::GetInstance()
       ->GetStackManager()
@@ -177,7 +181,7 @@ void bluetooth::shim::ACL_LeSubrateRequest(
 
 void bluetooth::shim::ACL_RemoteNameRequest(const RawAddress& addr,
                                             uint8_t page_scan_rep_mode,
-                                            uint8_t page_scan_mode,
+                                            uint8_t /* page_scan_mode */,
                                             uint16_t clock_offset) {
   bluetooth::shim::GetRemoteNameRequest()->StartRemoteNameRequest(
       ToGdAddress(addr),

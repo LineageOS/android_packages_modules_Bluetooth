@@ -16,7 +16,6 @@
 
 #include "hci/acl_manager/acl_fragmenter.h"
 
-#include "os/log.h"
 #include "packet/fragmenting_inserter.h"
 
 namespace bluetooth {

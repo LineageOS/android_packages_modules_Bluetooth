@@ -16,9 +16,14 @@
 
 #include "hci/hci_layer.h"
 
+#ifdef TARGET_FLOSS
+#include <signal.h>
+#endif
+
 #include "common/bind.h"
 #include "common/init_flags.h"
 #include "common/stop_watch.h"
+#include "hci/class_of_device.h"
 #include "hci/hci_metrics_logging.h"
 #include "os/alarm.h"
 #include "os/metrics.h"
@@ -222,6 +227,24 @@ struct HciLayer::impl {
       }
     }
 
+#ifdef TARGET_FLOSS
+    // Although UNKNOWN_CONNECTION might be a controller issue in some command status, we treat it
+    // as a disconnect event to maintain consistent connection state between stack and controller
+    // since there might not be further HCI Disconnect Event after this status event.
+    // Currently only do this on LE_READ_REMOTE_FEATURES because it is the only one we know that
+    // would return UNKNOWN_CONNECTION in some cases.
+    if (op_code == OpCode::LE_READ_REMOTE_FEATURES && is_status && status_view.IsValid() &&
+        status_view.GetStatus() == ErrorCode::UNKNOWN_CONNECTION) {
+      auto& command_view = *command_queue_.front().command_view;
+      auto le_read_features_view = bluetooth::hci::LeReadRemoteFeaturesView::Create(
+          LeConnectionManagementCommandView::Create(AclCommandView::Create(command_view)));
+      if (le_read_features_view.IsValid()) {
+        uint16_t handle = le_read_features_view.GetConnectionHandle();
+        module_.Disconnect(handle, ErrorCode::UNKNOWN_CONNECTION);
+      }
+    }
+#endif
+
     command_queue_.pop_front();
     waiting_command_ = OpCode::NONE;
     if (hci_timeout_alarm_ != nullptr) {
@@ -293,6 +316,11 @@ struct HciLayer::impl {
         "Can not register handler for %02hhx (%s)",
         EventCode::LE_META_EVENT,
         EventCodeText(EventCode::LE_META_EVENT).c_str());
+    // Allow GD Cert tests to register for CONNECTION_REQUEST
+    if (event == EventCode::CONNECTION_REQUEST && module_.on_acl_connection_request_.IsEmpty()) {
+      LOG_INFO("Registering test for CONNECTION_REQUEST, since there's no ACL");
+      event_handlers_.erase(event);
+    }
     ASSERT_LOG(
         event_handlers_.count(event) == 0,
         "Can not register a second handler for %02hhx (%s)",
@@ -400,6 +428,9 @@ struct HciLayer::impl {
       case EventCode::LE_META_EVENT:
         on_le_meta_event(event);
         break;
+      case EventCode::HARDWARE_ERROR:
+        on_hardware_error(event);
+        break;
       default:
         if (event_handlers_.find(event_code) == event_handlers_.end()) {
           LOG_WARN(
@@ -410,6 +441,20 @@ struct HciLayer::impl {
           event_handlers_[event_code].Invoke(event);
         }
     }
+  }
+
+  void on_hardware_error(EventView event) {
+    HardwareErrorView event_view = HardwareErrorView::Create(event);
+    ASSERT(event_view.IsValid());
+#ifdef TARGET_FLOSS
+    LOG_WARN("Hardware Error Event with code 0x%02x", event_view.GetHardwareCode());
+    // Sending SIGINT to process the exception from BT controller.
+    // The Floss daemon will be restarted. HCI reset during restart will clear the
+    // error state of the BT controller.
+    kill(getpid(), SIGINT);
+#else
+    LOG_ALWAYS_FATAL("Hardware Error Event with code 0x%02x", event_view.GetHardwareCode());
+#endif
   }
 
   void on_le_meta_event(EventView event) {
@@ -542,11 +587,45 @@ void HciLayer::on_disconnection_complete(EventView event_view) {
   Disconnect(handle, reason);
 }
 
+void HciLayer::on_connection_request(EventView event_view) {
+  auto view = ConnectionRequestView::Create(event_view);
+  if (!view.IsValid()) {
+    LOG_INFO("Dropping invalid connection request packet");
+    return;
+  }
+
+  Address address = view.GetBdAddr();
+  ClassOfDevice cod = view.GetClassOfDevice();
+  ConnectionRequestLinkType link_type = view.GetLinkType();
+  switch (link_type) {
+    case ConnectionRequestLinkType::ACL:
+      if (on_acl_connection_request_.IsEmpty()) {
+        LOG_WARN("No callback registered for ACL connection requests.");
+      } else {
+        on_acl_connection_request_.Invoke(address, cod);
+      }
+      break;
+    case ConnectionRequestLinkType::SCO:
+    case ConnectionRequestLinkType::ESCO:
+      if (on_sco_connection_request_.IsEmpty()) {
+        LOG_WARN("No callback registered for SCO connection requests.");
+      } else {
+        on_sco_connection_request_.Invoke(address, cod, link_type);
+      }
+      break;
+  }
+}
+
 void HciLayer::Disconnect(uint16_t handle, ErrorCode reason) {
   std::unique_lock<std::mutex> lock(callback_handlers_guard_);
   for (auto callback : disconnect_handlers_) {
     callback.Invoke(handle, reason);
   }
+}
+
+void HciLayer::RegisterForDisconnects(ContextualCallback<void(uint16_t, ErrorCode)> on_disconnect) {
+  std::unique_lock<std::mutex> lock(callback_handlers_guard_);
+  disconnect_handlers_.push_back(on_disconnect);
 }
 
 void HciLayer::on_read_remote_version_complete(EventView event_view) {
@@ -571,13 +650,18 @@ void HciLayer::ReadRemoteVersion(
 AclConnectionInterface* HciLayer::GetAclConnectionInterface(
     ContextualCallback<void(EventView)> event_handler,
     ContextualCallback<void(uint16_t, ErrorCode)> on_disconnect,
-    ContextualCallback<
-        void(hci::ErrorCode hci_status, uint16_t, uint8_t version, uint16_t manufacturer_name, uint16_t sub_version)>
-        on_read_remote_version) {
+    ContextualCallback<void(Address, ClassOfDevice)> on_connection_request,
+    ContextualCallback<void(
+        hci::ErrorCode hci_status,
+        uint16_t,
+        uint8_t version,
+        uint16_t manufacturer_name,
+        uint16_t sub_version)> on_read_remote_version) {
   {
     std::unique_lock<std::mutex> lock(callback_handlers_guard_);
     disconnect_handlers_.push_back(on_disconnect);
     read_remote_version_handlers_.push_back(on_read_remote_version);
+    on_acl_connection_request_ = on_connection_request;
   }
   for (const auto event : AclConnectionEvents) {
     RegisterEventHandler(event, event_handler);
@@ -622,6 +706,13 @@ void HciLayer::PutLeAclConnectionInterface() {
     disconnect_handlers_.clear();
     read_remote_version_handlers_.clear();
   }
+}
+
+void HciLayer::RegisterForScoConnectionRequests(
+    common::ContextualCallback<void(Address, ClassOfDevice, ConnectionRequestLinkType)>
+        on_sco_connection_request) {
+  std::unique_lock<std::mutex> lock(callback_handlers_guard_);
+  on_sco_connection_request_ = on_sco_connection_request;
 }
 
 SecurityInterface* HciLayer::GetSecurityInterface(ContextualCallback<void(EventView)> event_handler) {
@@ -684,6 +775,13 @@ void HciLayer::Start() {
   impl_->sco_queue_.GetDownEnd()->RegisterDequeue(handler, BindOn(impl_, &impl::on_outbound_sco_ready));
   impl_->iso_queue_.GetDownEnd()->RegisterDequeue(
       handler, BindOn(impl_, &impl::on_outbound_iso_ready));
+  StartWithNoHalDependencies(handler);
+  hal->registerIncomingPacketCallback(hal_callbacks_);
+  EnqueueCommand(ResetBuilder::Create(), handler->BindOnce(&fail_if_reset_complete_not_success));
+}
+
+// Initialize event handlers that don't depend on the HAL
+void HciLayer::StartWithNoHalDependencies(Handler* handler) {
   RegisterEventHandler(EventCode::DISCONNECTION_COMPLETE, handler->BindOn(this, &HciLayer::on_disconnection_complete));
   RegisterEventHandler(
       EventCode::READ_REMOTE_VERSION_INFORMATION_COMPLETE,
@@ -691,9 +789,8 @@ void HciLayer::Start() {
   auto drop_packet = handler->BindOn(impl_, &impl::drop);
   RegisterEventHandler(EventCode::PAGE_SCAN_REPETITION_MODE_CHANGE, drop_packet);
   RegisterEventHandler(EventCode::MAX_SLOTS_CHANGE, drop_packet);
-
-  hal->registerIncomingPacketCallback(hal_callbacks_);
-  EnqueueCommand(ResetBuilder::Create(), handler->BindOnce(&fail_if_reset_complete_not_success));
+  RegisterEventHandler(
+      EventCode::CONNECTION_REQUEST, handler->BindOn(this, &HciLayer::on_connection_request));
 }
 
 void HciLayer::Stop() {

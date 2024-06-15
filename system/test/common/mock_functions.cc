@@ -18,7 +18,7 @@
 
 #include <map>
 
-#include "osi/include/log.h"
+#include "os/log.h"
 
 static std::map<std::string, int>& _get_func_call_count_map() {
   static std::map<std::string, int> mock_function_count_map;

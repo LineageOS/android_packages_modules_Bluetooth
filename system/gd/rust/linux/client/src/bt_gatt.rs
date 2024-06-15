@@ -50,3 +50,17 @@ impl GattClientContext {
         self.auth_req
     }
 }
+
+/// User preference of GATT server operations
+pub(crate) struct GattServerContext {
+    /// Is connection going to be directed?
+    pub(crate) is_connect_direct: bool,
+    /// Transport of connection
+    pub(crate) connect_transport: BtTransport,
+}
+
+impl GattServerContext {
+    pub(crate) fn new() -> Self {
+        GattServerContext { is_connect_direct: false, connect_transport: BtTransport::Le }
+    }
+}

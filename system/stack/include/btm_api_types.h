@@ -89,8 +89,6 @@ typedef void(tBTM_VSC_CMPL_CB)(tBTM_VSC_CMPL* p1);
 /***************************
  *  Device Discovery Types
  ***************************/
-/* Definitions of the parameters passed to BTM_StartInquiry.
- */
 constexpr uint8_t BLE_EVT_CONNECTABLE_BIT = 0;
 constexpr uint8_t BLE_EVT_SCANNABLE_BIT = 1;
 constexpr uint8_t BLE_EVT_DIRECTED_BIT = 2;

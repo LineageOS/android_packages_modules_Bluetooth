@@ -26,6 +26,7 @@
 
 #include "hidh_api.h"
 
+#include <bluetooth/log.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -44,6 +45,7 @@
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
+using namespace bluetooth;
 using namespace bluetooth::legacy::stack::sdp;
 using bluetooth::Uuid;
 
@@ -107,7 +109,7 @@ void hidh_get_str_attr(tSDP_DISC_REC* p_rec, uint16_t attr_id, uint16_t max_len,
       }
     } else {
       str[0] = '\0';
-      LOG_ERROR("attr type not str!!");
+      log::error("attr type not str!!");
     }
   } else
     str[0] = '\0';
@@ -496,13 +498,13 @@ tHID_STATUS HID_HostWriteDev(uint8_t dev_handle, uint8_t t_type, uint8_t param,
   tHID_STATUS status = HID_SUCCESS;
 
   if (!hh_cb.reg_flag) {
-    LOG_ERROR("HID_ERR_NOT_REGISTERED");
+    log::error("HID_ERR_NOT_REGISTERED");
     status = HID_ERR_NOT_REGISTERED;
   }
 
   if ((dev_handle >= HID_HOST_MAX_DEVICES) ||
       (!hh_cb.devices[dev_handle].in_use)) {
-    LOG_ERROR("HID_ERR_INVALID_PARAM");
+    log::error("HID_ERR_INVALID_PARAM");
     log_counter_metrics(android::bluetooth::CodePathCounterKeyEnum::
                             HIDH_ERR_INVALID_PARAM_AT_HOST_WRITE_DEV,
                         1);
@@ -510,7 +512,7 @@ tHID_STATUS HID_HostWriteDev(uint8_t dev_handle, uint8_t t_type, uint8_t param,
   }
 
   else if (hh_cb.devices[dev_handle].state != HID_DEV_CONNECTED) {
-    LOG_ERROR("HID_ERR_NO_CONNECTION dev_handle %d", dev_handle);
+    log::error("HID_ERR_NO_CONNECTION dev_handle {}", dev_handle);
     log_counter_metrics(android::bluetooth::CodePathCounterKeyEnum::
                             HIDH_ERR_NO_CONNECTION_AT_HOST_WRITE_DEV,
                         1);

@@ -19,14 +19,24 @@
 #include <algorithm>
 #include <atomic>
 #include <condition_variable>
+#include <fcntl.h>
 #include <mutex>
+#include <sys/select.h>
 #include <thread>
+#include <unistd.h>
 #include <vector>
 
-#include "fcntl.h"
 #include "log.h"
-#include "sys/select.h"
-#include "unistd.h"
+
+#ifndef TEMP_FAILURE_RETRY
+/* Used to retry syscalls that can return EINTR. */
+#define TEMP_FAILURE_RETRY(exp) ({         \
+    __typeof__(exp) _rc;                   \
+    do {                                   \
+        _rc = (exp);                       \
+    } while (_rc == -1 && errno == EINTR); \
+    _rc; })
+#endif  // TEMP_FAILURE_RETRY
 
 namespace rootcanal {
 // Implementation of AsyncManager is divided between two classes, three if
@@ -157,13 +167,23 @@ class AsyncManager::AsyncFdWatcher {
     }
     // set up the communication channel
     int pipe_fds[2];
-    if (pipe2(pipe_fds, O_NONBLOCK)) {
+    if (pipe(pipe_fds)) {
       ERROR(
           "{}: Unable to establish a communication channel to the reading "
           "thread",
           __func__);
       return -1;
     }
+    // configure the fds as non blocking.
+    if (fcntl(pipe_fds[0], F_SETFL, O_NONBLOCK) ||
+        fcntl(pipe_fds[1], F_SETFL, O_NONBLOCK)) {
+      ERROR(
+          "{}: Unable to configure the communication channel to the reading "
+          "thread",
+          __func__);
+      return -1;
+    }
+
     notification_listen_fd_ = pipe_fds[0];
     notification_write_fd_ = pipe_fds[1];
 

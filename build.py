@@ -127,6 +127,7 @@ REQUIRED_APT_PACKAGES = [
     'liblz4-tool',
     'libncurses5',
     'libnss3-dev',
+    'libfmt-dev',
     'libprotobuf-dev',
     'libre2-9',
     'libre2-dev',
@@ -268,6 +269,10 @@ class HostBuild():
         self.custom_env['CXX_ROOT_PATH'] = os.path.join(self.platform_dir, 'bt')
         self.custom_env['CROS_SYSTEM_API_ROOT'] = os.path.join(self.platform_dir, 'system_api')
         self.custom_env['CXX_OUTDIR'] = self._gn_default_output()
+
+        # On ChromeOS, this is /usr/bin/grpc_rust_plugin
+        # In the container, this is /root/.cargo/bin/grpc_rust_plugin
+        self.custom_env['GRPC_RUST_PLUGIN_PATH'] = shutil.which('grpc_rust_plugin')
         self.env.update(self.custom_env)
 
     def print_env(self):

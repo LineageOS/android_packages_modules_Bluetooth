@@ -443,12 +443,12 @@ extern struct btm_create_conn_cancel_complete btm_create_conn_cancel_complete;
 
 // Name: btm_get_dev_class
 // Params: const RawAddress& bda
-// Return: const uint8_t*
+// Return: DEV_CLASS
 struct btm_get_dev_class {
-  static const uint8_t* return_value;
-  std::function<const uint8_t*(const RawAddress& bda)> body{
+  static const DEV_CLASS return_value;
+  std::function<const DEV_CLASS(const RawAddress& bda)> body{
       [](const RawAddress& /* bda */) { return return_value; }};
-  const uint8_t* operator()(const RawAddress& bda) { return body(bda); };
+  const DEV_CLASS operator()(const RawAddress& bda) { return body(bda); };
 };
 extern struct btm_get_dev_class btm_get_dev_class;
 
@@ -668,6 +668,19 @@ struct btm_sec_encrypt_change {
   };
 };
 extern struct btm_sec_encrypt_change btm_sec_encrypt_change;
+
+// Name: btm_sec_encryption_change_evt
+// Params: uint16_t handle, tHCI_STATUS status, uint8_t encr_enable
+// Return: void
+struct btm_sec_encryption_change_evt {
+  std::function<void(uint16_t handle, tHCI_STATUS status, uint8_t encr_enable)>
+      body{[](uint16_t /* handle */, tHCI_STATUS /* status */,
+              uint8_t /* encr_enable */) {}};
+  void operator()(uint16_t handle, tHCI_STATUS status, uint8_t encr_enable) {
+    body(handle, status, encr_enable);
+  };
+};
+extern struct btm_sec_encryption_change_evt btm_sec_encryption_change_evt;
 
 // Name: btm_sec_is_a_bonded_dev
 // Params: const RawAddress& bda

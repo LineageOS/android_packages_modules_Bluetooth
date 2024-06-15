@@ -161,7 +161,7 @@ private fun airplaneModeValueOverride(
         return currentAirplaneMode
     }
     // If "Airplane Enhancement Mode" is on and the user already used the feature …
-    if (isApmEnhancementEnabled(resolver) && hasUserToggledApm(getUser)) {
+    if (isApmEnhancementEnabled(resolver) && hasUserToggledApm(getUser())) {
         // … Staying on only depend on its last action in airplane mode
         if (isBluetoothOnAPM(getUser)) {
             Log.i(TAG, "Bluetooth stay on during airplane mode because of last user action")
@@ -179,9 +179,9 @@ private fun airplaneModeValueOverride(
     // Note: Once the "Airplane Enhancement Mode" has been used, media override no longer apply
     //       This has been done on purpose to avoid complexe scenario like:
     //           1. User wants Bt off according to "Airplane Enhancement Mode"
-    //           2. User swithes airplane while there is media => so Bt stays on
+    //           2. User switches airplane while there is media => so Bt stays on
     //           3. User turns airplane off, stops media and toggles airplane back on
-    //       Should we turn Bt off like asked initialy ? Or keep it `on` like the toggle ?
+    //       Should we turn Bt off like asked initially ? Or keep it `on` like the toggle ?
     if (isMediaConnected) {
         Log.i(TAG, "Bluetooth stay on during airplane mode because media profile are connected")
         ToastNotification.displayIfNeeded(resolver, getUser)
@@ -299,7 +299,7 @@ private class AirplaneMetricSession(
             isBluetoothOnBeforeApmToggle,
             isBluetoothOnAfterApmToggle,
             isBluetoothOn,
-            hasUserToggledApm(getUser),
+            hasUserToggledApm(getUser()),
             userToggledBluetoothDuringApm,
             userToggledBluetoothDuringApmWithinMinute,
             isMediaProfileConnectedBeforeApmToggle,
@@ -344,8 +344,8 @@ private fun isWifiOnApm(resolver: ContentResolver, getUser: () -> Context) =
         Settings.Secure.getInt(getUser().contentResolver, WIFI_APM_STATE, 0) == 1
 
 /** Airplane Enhancement Mode: Return true if this user already toggled (aka used) the feature */
-private fun hasUserToggledApm(getUser: () -> Context) =
-    Settings.Secure.getInt(getUser().contentResolver, APM_USER_TOGGLED_BLUETOOTH, 0) == 1
+fun hasUserToggledApm(userContext: Context) =
+    Settings.Secure.getInt(userContext.contentResolver, APM_USER_TOGGLED_BLUETOOTH, 0) == 1
 
 /** Airplane Enhancement Mode: Return true if the bluetooth should stays on during airplane mode */
 private fun isBluetoothOnAPM(getUser: () -> Context) =

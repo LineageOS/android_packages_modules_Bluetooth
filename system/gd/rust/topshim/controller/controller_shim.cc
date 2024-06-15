@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "gd/rust/topshim/controller/controller_shim.h"
+#include "rust/topshim/controller/controller_shim.h"
 
 #include <memory>
 
@@ -41,6 +41,13 @@ std::unique_ptr<ControllerIntf> GetControllerInterface() {
 RawAddress ControllerIntf::read_local_addr() const {
   if (!controller_) std::abort();
   return *controller_->get_address();
+}
+
+uint64_t ControllerIntf::get_ble_supported_states() const {
+  if (!controller_) std::abort();
+  uint64_t states;
+  memcpy(&states, controller_->get_ble_supported_states(), sizeof(uint64_t));
+  return states;
 }
 
 }  // namespace rust

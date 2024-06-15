@@ -17,7 +17,11 @@
 
 #include "dumpsys/dumpsys.h"
 
+#include <android_bluetooth_flags.h>
+#include <unistd.h>
+
 #include <future>
+#include <sstream>
 #include <string>
 
 #include "dumpsys/filter.h"
@@ -135,9 +139,14 @@ void Dumpsys::impl::DumpWithArgsAsync(int fd, const char** args) {
   ParsedDumpsysArgs parsed_dumpsys_args(args);
   const auto registry = dumpsys_module_.GetModuleRegistry();
 
-  ModuleDumper dumper(*registry, kDumpsysTitle);
+  int dumper_fd = STDOUT_FILENO;
+  if (IS_FLAG_ENABLED(dumpsys_use_passed_in_fd)) {
+    dumper_fd = fd;
+  }
+  ModuleDumper dumper(dumper_fd, *registry, kDumpsysTitle);
   std::string dumpsys_data;
-  dumper.DumpState(&dumpsys_data);
+  std::ostringstream oss;
+  dumper.DumpState(&dumpsys_data, oss);
 
   dprintf(fd, " ----- Filtering as Developer -----\n");
   FilterAsDeveloper(&dumpsys_data);

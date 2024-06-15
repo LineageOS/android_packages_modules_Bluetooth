@@ -19,6 +19,7 @@
 #include "a2dp_vendor_ldac_decoder.h"
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 #include <dlfcn.h>
 #include <ldacBT.h>
 #include <ldacBT_bco_for_fluoride.h>
@@ -29,6 +30,13 @@
 #include "a2dp_vendor_ldac.h"
 #include "os/log.h"
 #include "stack/include/bt_hdr.h"
+
+using namespace bluetooth;
+
+namespace fmt {
+template <>
+struct formatter<LDACBT_SMPL_FMT_T> : enum_formatter<LDACBT_SMPL_FMT_T> {};
+}  // namespace fmt
 
 //
 // Decoder for LDAC Source Codec
@@ -100,8 +108,8 @@ static tA2DP_LDAC_DECODER_CB a2dp_ldac_decoder_cb;
 static void* load_func(const char* func_name) {
   void* func_ptr = dlsym(ldac_bco_lib_handle, func_name);
   if (func_ptr == NULL) {
-    LOG_ERROR("%s: cannot find function '%s' in the decoder library: %s",
-              __func__, func_name, dlerror());
+    log::error("cannot find function '{}' in the decoder library: {}",
+               func_name, dlerror());
     A2DP_VendorUnloadDecoderLdac();
     return NULL;
   }
@@ -119,8 +127,8 @@ bool A2DP_VendorLoadDecoderLdac(void) {
   // Open the decoder library
   ldac_bco_lib_handle = dlopen(LDAC_BCO_LIB_NAME, RTLD_NOW);
   if (ldac_bco_lib_handle == NULL) {
-    LOG_INFO("%s: cannot open LDAC decoder library %s: %s", __func__,
-              LDAC_BCO_LIB_NAME, dlerror());
+    log::info("cannot open LDAC decoder library {}: {}", LDAC_BCO_LIB_NAME,
+              dlerror());
     return false;
   }
 
@@ -192,7 +200,7 @@ void a2dp_vendor_ldac_decoder_cleanup(void) {
 
 bool a2dp_vendor_ldac_decoder_decode_packet(BT_HDR* p_buf) {
   if (p_buf == nullptr) {
-    LOG_ERROR("%s Dropping packet with nullptr", __func__);
+    log::error("Dropping packet with nullptr");
     return false;
   }
   pthread_mutex_lock(&(a2dp_ldac_decoder_cb.mutex));
@@ -202,7 +210,7 @@ bool a2dp_vendor_ldac_decoder_decode_packet(BT_HDR* p_buf) {
   unsigned int bytesValid = p_buf->len;
   if (bytesValid == 0) {
     pthread_mutex_unlock(&(a2dp_ldac_decoder_cb.mutex));
-    LOG_WARN("%s Dropping packet with zero length", __func__);
+    log::warn("Dropping packet with zero length");
     return false;
   }
 
@@ -211,7 +219,7 @@ bool a2dp_vendor_ldac_decoder_decode_packet(BT_HDR* p_buf) {
   frame_number = (int)pBuffer[0];
   bs_bytes = (int)bytesValid;
   bytesValid -= 1;
-  LOG_INFO("%s:INPUT size : %d, frame : %d", __func__, bs_bytes, frame_number);
+  log::info("INPUT size : {}, frame : {}", bs_bytes, frame_number);
 
   if (a2dp_ldac_decoder_cb.has_ldac_handle)
     ldac_BCO_decode_packet_func(a2dp_ldac_decoder_cb.ldac_handle_bco, pBuffer,
@@ -223,7 +231,7 @@ bool a2dp_vendor_ldac_decoder_decode_packet(BT_HDR* p_buf) {
 
 void a2dp_vendor_ldac_decoder_start(void) {
   pthread_mutex_lock(&(a2dp_ldac_decoder_cb.mutex));
-  LOG_INFO("%s", __func__);
+  log::info("");
   if (a2dp_ldac_decoder_cb.has_ldac_handle)
     ldac_BCO_start_func(a2dp_ldac_decoder_cb.ldac_handle_bco);
   pthread_mutex_unlock(&(a2dp_ldac_decoder_cb.mutex));
@@ -231,7 +239,7 @@ void a2dp_vendor_ldac_decoder_start(void) {
 
 void a2dp_vendor_ldac_decoder_suspend(void) {
   pthread_mutex_lock(&(a2dp_ldac_decoder_cb.mutex));
-  LOG_INFO("%s", __func__);
+  log::info("");
   if (a2dp_ldac_decoder_cb.has_ldac_handle)
     ldac_BCO_suspend_func(a2dp_ldac_decoder_cb.ldac_handle_bco);
   pthread_mutex_unlock(&(a2dp_ldac_decoder_cb.mutex));
@@ -243,7 +251,7 @@ void a2dp_vendor_ldac_decoder_configure(const uint8_t* p_codec_info) {
   int32_t channel_mode;
 
   if (p_codec_info == NULL) {
-    LOG_ERROR("%s: p_codec_info is NULL", __func__);
+    log::error("p_codec_info is NULL");
     return;
   }
 
@@ -252,8 +260,8 @@ void a2dp_vendor_ldac_decoder_configure(const uint8_t* p_codec_info) {
   bits_per_sample = A2DP_VendorGetTrackBitsPerSampleLdac(p_codec_info);
   channel_mode = A2DP_VendorGetChannelModeCodeLdac(p_codec_info);
 
-  LOG_INFO("%s , sample_rate=%d, bits_per_sample=%d, channel_mode=%d", __func__,
-           sample_rate, bits_per_sample, channel_mode);
+  log::info(", sample_rate={}, bits_per_sample={}, channel_mode={}",
+            sample_rate, bits_per_sample, channel_mode);
 
   if (a2dp_ldac_decoder_cb.has_ldac_handle)
     ldac_BCO_configure_func(a2dp_ldac_decoder_cb.ldac_handle_bco, sample_rate,

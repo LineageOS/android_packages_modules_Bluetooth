@@ -17,7 +17,7 @@
 #pragma once
 
 #include <cstdint>
-#include <memory>
+
 #include "hci/hci_packets.h"
 
 namespace bluetooth {

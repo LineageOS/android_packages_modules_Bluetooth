@@ -21,7 +21,6 @@
 #include <gtest/gtest.h>
 #include <stdint.h>
 
-#include "device/include/controller.h"
 #include "hci/include/hci_layer.h"
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
@@ -33,11 +32,8 @@
 #define HCI_ISO_PREAMBLE_SIZE 4
 #endif
 
-DECLARE_TEST_MODES(init, set_data_sizes, no_fragmentation, fragmentation,
-                   ble_no_fragmentation, ble_fragmentation,
-                   non_acl_passthrough_fragmentation, no_reassembly, reassembly,
-                   non_acl_passthrough_reassembly, iso_no_reassembly,
-                   iso_reassembly, iso_fragmentation, iso_no_fragmentation);
+DECLARE_TEST_MODES(init, iso_no_reassembly, iso_reassembly, iso_fragmentation,
+                   iso_no_fragmentation);
 
 #define LOCAL_BLE_CONTROLLER_ID 1
 
@@ -284,19 +280,6 @@ static void manufacture_packet_and_then_reassemble(uint16_t event,
   }
 }
 
-static void expect_packet_reassembled(uint16_t event, BT_HDR* packet,
-                                      const char* expected_data) {
-  uint16_t expected_data_length = strlen(expected_data);
-  uint8_t* data = packet->data + packet->offset;
-
-  for (int i = 0; i < expected_data_length; i++) {
-    EXPECT_EQ(expected_data[i], data[i]);
-    data_size_sum++;
-  }
-
-  osi_free(packet);
-}
-
 static void expect_packet_reassembled_iso(uint16_t event, BT_HDR* packet,
                                           const char* expected_data,
                                           uint32_t expected_timestamp,
@@ -359,12 +342,6 @@ DURING(iso_no_fragmentation) {
   return;
 }
 
-DURING(non_acl_passthrough_fragmentation) AT_CALL(0) {
-  expect_packet_fragmented(MSG_STACK_TO_HC_HCI_CMD, 10, packet, sample_data,
-                           send_complete);
-  return;
-}
-
 UNEXPECTED_CALL;
 }
 
@@ -382,30 +359,7 @@ DURING(iso_no_reassembly) AT_CALL(0) {
   return;
 }
 
-DURING(non_acl_passthrough_reassembly) AT_CALL(0) {
-  expect_packet_reassembled(MSG_HC_TO_STACK_HCI_EVT, packet, sample_data);
-  return;
-}
-
 UNEXPECTED_CALL;
-}
-
-STUB_FUNCTION(uint16_t, get_acl_data_size_classic, (void))
-DURING(no_fragmentation, non_acl_passthrough_fragmentation, no_reassembly)
-return 42;
-DURING(fragmentation) return 10;
-DURING(no_reassembly) return 1337;
-
-UNEXPECTED_CALL;
-return 0;
-}
-
-STUB_FUNCTION(uint16_t, get_acl_data_size_ble, (void))
-DURING(ble_no_fragmentation) return 42;
-DURING(ble_fragmentation) return 10;
-
-UNEXPECTED_CALL;
-return 0;
 }
 
 STUB_FUNCTION(uint16_t, get_iso_data_size, (void))
@@ -419,34 +373,25 @@ return 0;
 static void reset_for(TEST_MODES_T next) {
   RESET_CALL_COUNT(fragmented_callback);
   RESET_CALL_COUNT(reassembled_callback);
-  RESET_CALL_COUNT(get_acl_data_size_classic);
-  RESET_CALL_COUNT(get_acl_data_size_ble);
-  RESET_CALL_COUNT(get_iso_data_size);
   CURRENT_TEST_MODE = next;
 }
 
 class PacketFragmenterTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    fragmenter =
-        packet_fragmenter_get_test_interface(&controller, &allocator_malloc);
+    fragmenter = packet_fragmenter_get_interface();
 
     packet_index = 0;
     data_size_sum = 0;
 
     callbacks.fragmented = fragmented_callback;
     callbacks.reassembled = reassembled_callback;
-    controller.get_acl_data_size_classic = get_acl_data_size_classic;
-    controller.get_acl_data_size_ble = get_acl_data_size_ble;
-    controller.get_iso_data_size = get_iso_data_size;
-
     reset_for(init);
     fragmenter->init(&callbacks);
   }
 
   void TearDown() override { fragmenter->cleanup(); }
 
-  controller_t controller;
   packet_fragmenter_callbacks_t callbacks;
 };
 
@@ -457,7 +402,7 @@ TEST_F(PacketFragmenterTest, test_iso_fragment_necessary) {
   BT_HDR* packet = manufacture_packet_for_fragmentation(MSG_STACK_TO_HC_HCI_ISO,
                                                         sample_data);
   packet->event |= LOCAL_BLE_CONTROLLER_ID;
-  fragmenter->fragment_and_dispatch(packet);
+  fragmenter->fragment_and_dispatch(packet, get_iso_data_size());
 
   ASSERT_EQ(strlen(sample_data), data_size_sum);
 }
@@ -469,7 +414,7 @@ TEST_F(PacketFragmenterTest, test_iso_no_fragment_necessary) {
   BT_HDR* packet = manufacture_packet_for_fragmentation(MSG_STACK_TO_HC_HCI_ISO,
                                                         small_sample_data);
   packet->event |= LOCAL_BLE_CONTROLLER_ID;
-  fragmenter->fragment_and_dispatch(packet);
+  fragmenter->fragment_and_dispatch(packet, get_iso_data_size());
 
   ASSERT_EQ(strlen(small_sample_data), data_size_sum);
 }
@@ -480,7 +425,7 @@ TEST_F(PacketFragmenterTest, test_iso_fragment_necessary_no_ts) {
   BT_HDR* packet = manufacture_packet_for_fragmentation(MSG_STACK_TO_HC_HCI_ISO,
                                                         sample_data);
   packet->event |= LOCAL_BLE_CONTROLLER_ID;
-  fragmenter->fragment_and_dispatch(packet);
+  fragmenter->fragment_and_dispatch(packet, get_iso_data_size());
 
   ASSERT_EQ(strlen(sample_data), data_size_sum);
 }
@@ -491,7 +436,7 @@ TEST_F(PacketFragmenterTest, test_iso_no_fragment_necessary_no_ts) {
   BT_HDR* packet = manufacture_packet_for_fragmentation(MSG_STACK_TO_HC_HCI_ISO,
                                                         small_sample_data);
   packet->event |= LOCAL_BLE_CONTROLLER_ID;
-  fragmenter->fragment_and_dispatch(packet);
+  fragmenter->fragment_and_dispatch(packet, get_iso_data_size());
 
   ASSERT_EQ(strlen(small_sample_data), data_size_sum);
 }

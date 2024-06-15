@@ -42,11 +42,11 @@
 #include "check.h"
 #include "device/include/interop_config.h"
 #include "device/include/interop_database.h"
+#include "os/log.h"
 #include "osi/include/allocator.h"
 #include "osi/include/compat.h"
 #include "osi/include/config.h"
 #include "osi/include/list.h"
-#include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "types/raw_address.h"
 
@@ -394,6 +394,7 @@ static const char* interop_feature_string_(const interop_feature_t feature) {
     CASE_RETURN_STR(INTEROP_IGNORE_DISC_BEFORE_SIGNALLING_TIMEOUT);
     CASE_RETURN_STR(INTEROP_SUSPEND_ATT_TRAFFIC_DURING_PAIRING);
     CASE_RETURN_STR(INTEROP_INSERT_CALL_WHEN_SCO_START);
+    CASE_RETURN_STR(INTEROP_DELAY_AUTH);
   }
   return UNKNOWN_INTEROP_FEATURE;
 }

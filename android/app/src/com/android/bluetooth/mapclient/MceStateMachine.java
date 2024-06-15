@@ -66,6 +66,7 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.map.BluetoothMapbMessageMime;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.State;
@@ -139,6 +140,11 @@ class MceStateMachine extends StateMachine {
 
     // URI Scheme for messages with email contact
     private static final String SCHEME_MAILTO = "mailto";
+
+    private static final String FETCH_MESSAGE_TYPE =
+            "persist.bluetooth.pts.mapclient.fetchmessagetype";
+    private static final String SEND_MESSAGE_TYPE =
+            "persist.bluetooth.pts.mapclient.sendmessagetype";
 
     // Connectivity States
     private int mPreviousState = BluetoothProfile.STATE_DISCONNECTED;
@@ -492,7 +498,10 @@ class MceStateMachine extends StateMachine {
     Bmessage.Type getDefaultMessageType() {
         synchronized (mDefaultMessageType) {
             if (Utils.isPtsTestMode()) {
-                return MapUtils.sendMessageType();
+                int messageType = SystemProperties.getInt(SEND_MESSAGE_TYPE, -1);
+                if (messageType > 0 && messageType < Bmessage.Type.values().length) {
+                    return Bmessage.Type.values()[messageType];
+                }
             }
             return mDefaultMessageType;
         }
@@ -717,13 +726,30 @@ class MceStateMachine extends StateMachine {
 
                 case MSG_GET_MESSAGE_LISTING:
                     // Get latest 50 Unread messages in the last week
-                    MessagesFilter filter = new MessagesFilter();
-                    filter.setMessageType(MapUtils.fetchMessageType());
                     Calendar calendar = Calendar.getInstance();
                     calendar.add(Calendar.DATE, -7);
-                    filter.setPeriod(calendar.getTime(), null);
-                    mMasClient.makeRequest(new RequestGetMessagesListing(
-                            (String) message.obj, 0, filter, 0, 50, 0));
+                    byte messageType;
+                    if (Utils.isPtsTestMode()) {
+                        messageType =
+                                (byte)
+                                        SystemProperties.getInt(
+                                                FETCH_MESSAGE_TYPE,
+                                                MessagesFilter.MESSAGE_TYPE_ALL);
+                    } else {
+                        messageType = MessagesFilter.MESSAGE_TYPE_ALL;
+                    }
+
+                    mMasClient.makeRequest(
+                            new RequestGetMessagesListing(
+                                    (String) message.obj,
+                                    0,
+                                    new MessagesFilter.Builder()
+                                            .setPeriod(calendar.getTime(), null)
+                                            .setMessageType(messageType)
+                                            .build(),
+                                    0,
+                                    50,
+                                    0));
                     break;
 
                 case MSG_SET_MESSAGE_STATUS:
@@ -838,7 +864,15 @@ class MceStateMachine extends StateMachine {
                     mMasClient.makeRequest(new RequestGetMessage(event.getHandle(),
                             MasClient.CharsetType.UTF_8, false));
                     break;
+                case DELIVERY_FAILURE:
+                    // fall through
+                case SENDING_FAILURE:
+                    if (!Flags.handleDeliverySendingFailureEvents()) {
+                        break;
+                    }
+                    // fall through
                 case DELIVERY_SUCCESS:
+                    // fall through
                 case SENDING_SUCCESS:
                     notifySentMessageStatus(event.getHandle(), event.getType());
                     break;
@@ -848,6 +882,10 @@ class MceStateMachine extends StateMachine {
                 case MESSAGE_DELETED:
                     mDatabase.deleteMessage(event.getHandle());
                     break;
+                default:
+                    if (DBG) {
+                        Log.d(TAG, "processNotification: ignoring event type=" + event.getType());
+                    }
             }
         }
 

@@ -41,6 +41,22 @@ tBTM_CONTRL_STATE BTM_PM_ReadControllerState(void) {
   inc_func_call_count(__func__);
   return BTM_CONTRL_UNKNOWN;
 }
+uint8_t BTM_PM_ReadSniffLinkCount(void) {
+  inc_func_call_count(__func__);
+  return 0;
+}
+uint8_t BTM_PM_ReadBleLinkCount(void) {
+  inc_func_call_count(__func__);
+  return 0;
+}
+bool BTM_PM_DeviceInScanState(void) {
+  inc_func_call_count(__func__);
+  return false;
+}
+uint32_t BTM_PM_ReadBleScanDutyCycle(void) {
+  inc_func_call_count(__func__);
+  return 0;
+}
 tBTM_STATUS BTM_PmRegister(uint8_t /* mask */, uint8_t* /* p_pm_id */,
                            tBTM_PM_STATUS_CBACK* /* p_cb */) {
   inc_func_call_count(__func__);

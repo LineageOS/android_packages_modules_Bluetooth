@@ -15,6 +15,8 @@
  */
 #include "hci/le_scanning_manager.h"
 
+#include <android_bluetooth_flags.h>
+
 #include <memory>
 #include <unordered_map>
 
@@ -377,8 +379,15 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
           extended_event_type = transform_to_extended_event_type({.legacy = true});
           break;
         case AdvertisingEventType::SCAN_RESPONSE:
-          extended_event_type = transform_to_extended_event_type(
-              {.connectable = true, .scannable = true, .scan_response = true, .legacy = true});
+          if (IS_FLAG_ENABLED(fix_nonconnectable_scannable_advertisement)) {
+            // We don't know if the initial advertising report was connectable or not.
+            // LeScanningReassembler fixes the connectable field.
+            extended_event_type = transform_to_extended_event_type(
+                {.scannable = true, .scan_response = true, .legacy = true});
+          } else {
+            extended_event_type = transform_to_extended_event_type(
+                {.connectable = true, .scannable = true, .scan_response = true, .legacy = true});
+          }
           break;
         default:
           LOG_WARN("Unsupported event type:%d", (uint16_t)report.event_type_);
@@ -452,12 +461,14 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
     // with hardware-filtering features should we ignore waiting for scan response, and make sure
     // scan responses are still reported too.
     scanning_reassembler_.SetIgnoreScanResponses(
+        le_scan_type_ == LeScanType::PASSIVE ||
         filter_policy_ == LeScanningFilterPolicy::FILTER_ACCEPT_LIST_ONLY);
 
-    auto complete_advertising_data = scanning_reassembler_.ProcessAdvertisingReport(
-        event_type, address_type, address, advertising_sid, advertising_data);
+    std::optional<LeScanningReassembler::CompleteAdvertisingData> processed_report =
+        scanning_reassembler_.ProcessAdvertisingReport(
+            event_type, address_type, address, advertising_sid, advertising_data);
 
-    if (complete_advertising_data.has_value()) {
+    if (processed_report.has_value()) {
       switch (address_type) {
         case (uint8_t)AddressType::PUBLIC_DEVICE_ADDRESS:
         case (uint8_t)AddressType::PUBLIC_IDENTITY_ADDRESS:
@@ -469,8 +480,12 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
           break;
       }
 
+      const uint16_t result_event_type = IS_FLAG_ENABLED(fix_nonconnectable_scannable_advertisement)
+                                             ? processed_report->extended_event_type
+                                             : event_type;
+
       scanning_callbacks_->OnScanResult(
-          event_type,
+          result_event_type,
           address_type,
           address,
           primary_phy,
@@ -479,7 +494,7 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
           tx_power,
           get_rssi_after_calibration(rssi),
           periodic_advertising_interval,
-          complete_advertising_data.value());
+          std::move(processed_report->data));
     }
   }
 
@@ -594,7 +609,14 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
       case ScanApiType::EXTENDED:
         le_scanning_interface_->EnqueueCommand(
             LeSetExtendedScanEnableBuilder::Create(
-                Enable::ENABLED, FilterDuplicates::DISABLED /* filter duplicates */, 0, 0),
+                Enable::ENABLED,
+#if TARGET_FLOSS
+                FilterDuplicates::ENABLED /* filter duplicates */,
+#else
+                FilterDuplicates::DISABLED /* filter duplicates */,
+#endif
+                0,
+                0),
             module_handler_->BindOnce(check_complete<LeSetExtendedScanEnableCompleteView>));
         break;
       case ScanApiType::ANDROID_HCI:
@@ -618,7 +640,14 @@ struct LeScanningManager::impl : public LeAddressManagerCallback {
       case ScanApiType::EXTENDED:
         le_scanning_interface_->EnqueueCommand(
             LeSetExtendedScanEnableBuilder::Create(
-                Enable::DISABLED, FilterDuplicates::DISABLED /* filter duplicates */, 0, 0),
+                Enable::DISABLED,
+#if TARGET_FLOSS
+                FilterDuplicates::ENABLED /* filter duplicates */,
+#else
+                FilterDuplicates::DISABLED /* filter duplicates */,
+#endif
+                0,
+                0),
             module_handler_->BindOnce(check_complete<LeSetExtendedScanEnableCompleteView>));
         break;
       case ScanApiType::ANDROID_HCI:

@@ -5,6 +5,7 @@ use bt_utils::socket::{
     BtSocket, HciChannels, MgmtCommand, MgmtCommandResponse, MgmtEvent, HCI_DEV_NONE,
 };
 
+use libc;
 use log::{debug, error, info, warn};
 use nix::sys::signal::{self, Signal};
 use nix::unistd::Pid;
@@ -35,6 +36,10 @@ pub const INDEX_REMOVED_DEBOUNCE_TIME: Duration = Duration::from_millis(150);
 /// file by itself and uses it as the stopped signal. This is a backup mechanism
 /// to avoid dead process + PID not cleaned up from happening.
 pub const PID_RUNNING_CHECK_PERIOD: Duration = Duration::from_secs(60);
+
+const HCI_BIND_MAX_RETRY: i32 = 2;
+
+const HCI_BIND_RETRY_INTERVAL: Duration = Duration::from_millis(10);
 
 #[derive(Debug, PartialEq, Copy, Clone)]
 #[repr(u32)]
@@ -362,19 +367,37 @@ fn configure_hci(hci_tx: mpsc::Sender<Message>) {
         x => debug!("Socket open at fd: {}", x),
     }
 
-    // Bind to control channel (which is used for mgmt commands). We provide
-    // HCI_DEV_NONE because we don't actually need a valid HCI dev for some MGMT commands.
-    match btsock.bind_channel(HciChannels::Control, HCI_DEV_NONE) {
-        -1 => {
-            panic!(
-                "Failed to bind control channel with errno={}",
-                std::io::Error::last_os_error().raw_os_error().unwrap_or(0)
-            );
-        }
-        _ => (),
-    };
-
     tokio::spawn(async move {
+        // Bind to control channel (which is used for mgmt commands). We provide
+        // HCI_DEV_NONE because we don't actually need a valid HCI dev for some MGMT commands.
+        let mut bind_succ = false;
+        for _i in 0..HCI_BIND_MAX_RETRY {
+            match btsock.bind_channel(HciChannels::Control, HCI_DEV_NONE) {
+                -1 => {
+                    match std::io::Error::last_os_error().raw_os_error().unwrap_or(0) {
+                        libc::EINVAL => {
+                            // If MGMT hasn't been initialized EINVAL will be returned.
+                            // Just wait for a short time and try again.
+                            debug!("Got EINVAL in bind. Wait and try again");
+                            tokio::time::sleep(HCI_BIND_RETRY_INTERVAL).await;
+                            continue;
+                        }
+                        others => {
+                            panic!("Failed to bind control channel with errno={}", others);
+                        }
+                    }
+                }
+                _ => {
+                    bind_succ = true;
+                    break;
+                }
+            };
+        }
+
+        if !bind_succ {
+            panic!("bind failed too many times!!");
+        }
+
         debug!("Spawned hci notify task");
 
         // Make this into an AsyncFD and start using it for IO

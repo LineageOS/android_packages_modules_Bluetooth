@@ -10,8 +10,8 @@
 #include "common/init_flags.h"
 #include "osi/include/alarm.h"
 #include "osi/test/alarm_mock.h"
+#include "stack/btm/neighbor_inquiry.h"
 #include "stack/gatt/connection_manager.h"
-#include "stack/test/common/mock_btm_api_layer.h"
 
 using testing::_;
 using testing::DoAll;

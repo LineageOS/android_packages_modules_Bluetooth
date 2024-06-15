@@ -22,7 +22,6 @@
 
 #include <cstdint>
 
-#include "bt_target.h"
 #include "stack/include/sdp_callback.h"
 #include "stack/include/sdp_device_id.h"
 #include "stack/include/sdp_status.h"

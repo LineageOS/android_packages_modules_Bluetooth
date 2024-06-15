@@ -11,11 +11,38 @@ use topshim_macros::{cb_variant, profile_enabled_or};
 use log::warn;
 
 #[derive(Debug, FromPrimitive, ToPrimitive, PartialEq, PartialOrd, Clone)]
+#[repr(u8)]
 pub enum HfpCodecId {
     NONE = 0x00,
     CVSD = 0x01,
     MSBC = 0x02,
     LC3 = 0x03,
+}
+
+#[derive(Debug, FromPrimitive, ToPrimitive, PartialEq, PartialOrd, Clone)]
+#[repr(u8)]
+pub enum EscoCodingFormat {
+    ULAW = 0x00,
+    ALAW = 0x01,
+    CVSD = 0x02,
+    TRANSPARENT = 0x03,
+    LINEAR = 0x04,
+    MSBC = 0x05,
+    LC3 = 0x06,
+    G729A = 0x07,
+    VENDOR = 0xff,
+}
+
+impl From<u8> for EscoCodingFormat {
+    fn from(item: u8) -> Self {
+        EscoCodingFormat::from_u8(item).unwrap()
+    }
+}
+
+impl From<EscoCodingFormat> for u8 {
+    fn from(item: EscoCodingFormat) -> Self {
+        item as u8
+    }
 }
 
 #[derive(Debug, FromPrimitive, ToPrimitive, PartialEq, PartialOrd, Clone)]
@@ -49,24 +76,58 @@ impl From<u32> for BthfAudioState {
     }
 }
 
+// This is used for codec-negotiation related methods that do not
+// concern with the coding format. Do not confuse this with |HfpCodecFormat|.
 bitflags! {
     #[derive(Default)]
-    pub struct HfpCodecCapability: i32 {
-        const NONE = 0b00;
-        const CVSD = 0b01;
-        const MSBC = 0b10;
-        const LC3 = 0b100;
+    pub struct HfpCodecBitId: i32 {
+        const NONE = 0b000;
+        const CVSD = 0b001;
+        const MSBC = 0b010;
+        const LC3 =  0b100;
     }
 }
 
-impl TryInto<i32> for HfpCodecCapability {
+impl TryInto<u8> for HfpCodecBitId {
+    type Error = ();
+    fn try_into(self) -> Result<u8, Self::Error> {
+        Ok(self.bits().try_into().unwrap())
+    }
+}
+
+impl TryInto<i32> for HfpCodecBitId {
     type Error = ();
     fn try_into(self) -> Result<i32, Self::Error> {
         Ok(self.bits())
     }
 }
 
-impl TryFrom<i32> for HfpCodecCapability {
+impl TryFrom<i32> for HfpCodecBitId {
+    type Error = ();
+    fn try_from(val: i32) -> Result<Self, Self::Error> {
+        Self::from_bits(val).ok_or(())
+    }
+}
+
+bitflags! {
+    #[derive(Default)]
+    pub struct HfpCodecFormat: i32 {
+        const NONE =             0b0000;
+        const CVSD =             0b0001;
+        const MSBC_TRANSPARENT = 0b0010;
+        const MSBC =             0b0100;
+        const LC3_TRANSPARENT =  0b1000;
+    }
+}
+
+impl TryInto<i32> for HfpCodecFormat {
+    type Error = ();
+    fn try_into(self) -> Result<i32, Self::Error> {
+        Ok(self.bits())
+    }
+}
+
+impl TryFrom<i32> for HfpCodecFormat {
     type Error = ();
     fn try_from(val: i32) -> Result<Self, Self::Error> {
         Self::from_bits(val).ok_or(())

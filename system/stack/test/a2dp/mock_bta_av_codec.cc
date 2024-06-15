@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 
-#include <map>
-#include <string>
-
 #include "a2dp_codec_api.h"
 
 A2dpCodecConfig* bta_av_get_a2dp_current_codec(void) {

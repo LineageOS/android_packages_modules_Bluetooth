@@ -20,10 +20,12 @@ import android.cts.statsdatom.lib.ConfigUtils
 import android.cts.statsdatom.lib.DeviceUtils
 import android.cts.statsdatom.lib.ReportUtils
 import com.android.os.AtomsProto
+import com.android.os.AtomsProto.BluetoothEnabledStateChanged
 import com.android.os.StatsLog
 import com.android.tradefed.testtype.DeviceJUnit4ClassRunner
 import com.android.tradefed.testtype.junit4.BaseHostJUnit4Test
 import com.google.common.truth.Truth.assertThat
+import java.time.Duration
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -44,25 +46,38 @@ class MetricsTest : BaseHostJUnit4Test() {
     }
 
     @Test
-    fun aclMetricTest() {
-        val data = uploadAtomConfigAndTriggerTest("incomingClassicConnectionTest")
-        assertThat(data.size).isAtLeast(2)
-        val atom1 = data.get(0).getAtom().getBluetoothAclConnectionStateChanged()
-        assertThat(atom1.getState()).isEqualTo(ConnectionStateEnum.CONNECTION_STATE_CONNECTED)
-        assertThat(atom1.getTransport()).isEqualTo(TransportTypeEnum.TRANSPORT_TYPE_BREDR)
-        val atom2 = data.get(1).getAtom().getBluetoothAclConnectionStateChanged()
-        assertThat(atom2.getState()).isEqualTo(ConnectionStateEnum.CONNECTION_STATE_DISCONNECTED)
-        assertThat(atom2.getTransport()).isEqualTo(TransportTypeEnum.TRANSPORT_TYPE_BREDR)
-        assertThat(atom2.getMetricId()).isEqualTo(atom1.getMetricId())
+    fun testBluetoothDisableEnable_shouldProduceEnabledStateChanged() {
+        val data =
+            uploadAtomConfigAndTriggerTest(
+                "testBluetoothDisableEnable",
+                intArrayOf(AtomsProto.Atom.BLUETOOTH_ENABLED_STATE_CHANGED_FIELD_NUMBER)
+            )
+        // First atom might be the setup one.
+        val offset =
+            data[0].atom.bluetoothEnabledStateChanged.let {
+                if (it.state == BluetoothEnabledStateChanged.State.ENABLED) {
+                    1
+                } else {
+                    0
+                }
+            }
+        data[offset].atom.bluetoothEnabledStateChanged.apply {
+            assertThat(state).isEqualTo(BluetoothEnabledStateChanged.State.DISABLED)
+            assertThat(previousState).isEqualTo(BluetoothEnabledStateChanged.State.ENABLED)
+            assertThat(timeSinceLastChangedMillis).isGreaterThan(Duration.ofMillis(1).toMillis())
+        }
+        data[offset + 1].atom.bluetoothEnabledStateChanged.apply {
+            assertThat(state).isEqualTo(BluetoothEnabledStateChanged.State.ENABLED)
+            assertThat(previousState).isEqualTo(BluetoothEnabledStateChanged.State.DISABLED)
+            assertThat(timeSinceLastChangedMillis).isGreaterThan(Duration.ofMillis(1).toMillis())
+        }
     }
 
-    private fun uploadAtomConfigAndTriggerTest(testName: String): List<StatsLog.EventMetricData> {
-        val device = getDevice()
-        ConfigUtils.uploadConfigForPushedAtoms(
-            device,
-            TEST_APP_PKG_NAME,
-            intArrayOf(AtomsProto.Atom.BLUETOOTH_ACL_CONNECTION_STATE_CHANGED_FIELD_NUMBER)
-        )
+    private fun uploadAtomConfigAndTriggerTest(
+        testName: String,
+        atoms: IntArray
+    ): List<StatsLog.EventMetricData> {
+        ConfigUtils.uploadConfigForPushedAtoms(device, TEST_APP_PKG_NAME, atoms)
 
         DeviceUtils.runDeviceTests(device, TEST_APP_PKG_NAME, TEST_APP_CLASS_NAME, testName)
 

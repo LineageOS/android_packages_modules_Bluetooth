@@ -29,7 +29,7 @@
 void BTA_HhEnable(tBTA_HH_CBACK* p_cback, bool enable_hidp, bool enable_hogp) {
   inc_func_call_count(__func__);
 }
-void BTA_HhAddDev(const RawAddress& bda, tBTA_HH_ATTR_MASK attr_mask,
+void BTA_HhAddDev(const tAclLinkSpec& link_spec, tBTA_HH_ATTR_MASK attr_mask,
                   uint8_t sub_class, uint8_t app_id,
                   tBTA_HH_DEV_DSCP_INFO dscp_info) {
   inc_func_call_count(__func__);
@@ -43,12 +43,14 @@ void BTA_HhGetReport(uint8_t dev_handle, tBTA_HH_RPT_TYPE r_type,
                      uint8_t rpt_id, uint16_t buf_size) {
   inc_func_call_count(__func__);
 }
-void BTA_HhOpen(const RawAddress& dev_bda) { inc_func_call_count(__func__); }
+void BTA_HhOpen(const tAclLinkSpec& link_spec) {
+  inc_func_call_count(__func__);
+}
 void BTA_HhRemoveDev(uint8_t dev_handle) { inc_func_call_count(__func__); }
 void BTA_HhSendCtrl(uint8_t dev_handle, tBTA_HH_TRANS_CTRL_TYPE c_type) {
   inc_func_call_count(__func__);
 }
-void BTA_HhSendData(uint8_t dev_handle, const RawAddress& dev_bda,
+void BTA_HhSendData(uint8_t dev_handle, const tAclLinkSpec& link_spec,
                     BT_HDR* p_data) {
   inc_func_call_count(__func__);
 }

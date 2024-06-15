@@ -19,16 +19,20 @@
 #define GATT_API_H
 
 #include <base/strings/stringprintf.h>
+#include <bluetooth/log.h>
 
 #include <cstdint>
 #include <list>
 #include <string>
 
-#include "bt_target.h"
 #include "btm_ble_api.h"
 #include "gattdefs.h"
 #include "hardware/bt_gatt_types.h"
+#include "include/hardware/bt_common_types.h"
+#include "internal_include/bt_target.h"
 #include "macros.h"
+#include "stack/include/btm_ble_api_types.h"
+#include "stack/include/hci_error_code.h"
 #include "types/bluetooth/uuid.h"
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
@@ -59,7 +63,6 @@ typedef enum GattStatus : uint8_t {
   GATT_DATABASE_OUT_OF_SYNC = 0x12,
   GATT_VALUE_NOT_ALLOWED = 0x13,
   GATT_ILLEGAL_PARAMETER = 0x87,
-  GATT_TOO_SHORT = 0x7f,
   GATT_NO_RESOURCES = 0x80,
   GATT_INTERNAL_ERROR = 0x81,
   GATT_WRONG_STATE = 0x82,
@@ -69,7 +72,6 @@ typedef enum GattStatus : uint8_t {
   GATT_CMD_STARTED = 0x86,
   GATT_PENDING = 0x88,
   GATT_AUTH_FAIL = 0x89,
-  GATT_MORE = 0x8a,
   GATT_INVALID_CFG = 0x8b,
   GATT_SERVICE_STARTED = 0x8c,
   GATT_ENCRYPED_MITM = GATT_SUCCESS,
@@ -79,6 +81,7 @@ typedef enum GattStatus : uint8_t {
   GATT_DUP_REG = 0x90,      /* 0x90 */
   GATT_ALREADY_OPEN = 0x91, /* 0x91 */
   GATT_CANCEL = 0x92,       /* 0x92 */
+  GATT_CONNECTION_TIMEOUT = 0x93,
   /* = 0xE0 ~ 0xFC reserved for future use */
 
   /* Client Characteristic Configuration Descriptor Improperly Configured */
@@ -112,7 +115,6 @@ inline std::string gatt_status_text(const tGATT_STATUS& status) {
     CASE_RETURN_TEXT(GATT_DATABASE_OUT_OF_SYNC);
     CASE_RETURN_TEXT(GATT_VALUE_NOT_ALLOWED);
     CASE_RETURN_TEXT(GATT_ILLEGAL_PARAMETER);
-    CASE_RETURN_TEXT(GATT_TOO_SHORT);
     CASE_RETURN_TEXT(GATT_NO_RESOURCES);
     CASE_RETURN_TEXT(GATT_INTERNAL_ERROR);
     CASE_RETURN_TEXT(GATT_WRONG_STATE);
@@ -122,7 +124,6 @@ inline std::string gatt_status_text(const tGATT_STATUS& status) {
     CASE_RETURN_TEXT(GATT_CMD_STARTED);
     CASE_RETURN_TEXT(GATT_PENDING);
     CASE_RETURN_TEXT(GATT_AUTH_FAIL);
-    CASE_RETURN_TEXT(GATT_MORE);
     CASE_RETURN_TEXT(GATT_INVALID_CFG);
     CASE_RETURN_TEXT(GATT_SERVICE_STARTED);
     CASE_RETURN_TEXT(GATT_ENCRYPED_NO_MITM);
@@ -131,6 +132,7 @@ inline std::string gatt_status_text(const tGATT_STATUS& status) {
     CASE_RETURN_TEXT(GATT_DUP_REG);
     CASE_RETURN_TEXT(GATT_ALREADY_OPEN);
     CASE_RETURN_TEXT(GATT_CANCEL);
+    CASE_RETURN_TEXT(GATT_CONNECTION_TIMEOUT);
     CASE_RETURN_TEXT(GATT_CCC_CFG_ERR);
     CASE_RETURN_TEXT(GATT_PRC_IN_PROGRESS);
     CASE_RETURN_TEXT(GATT_OUT_OF_RANGE);
@@ -267,7 +269,7 @@ typedef enum : uint16_t {
   GATT_CONN_TIMEOUT = HCI_ERR_CONNECTION_TOUT,
   /* 0x13 connection terminate by peer user  */
   GATT_CONN_TERMINATE_PEER_USER = HCI_ERR_PEER_USER,
-  /* 0x16 connectionterminated by local host  */
+  /* 0x16 connection terminated by local host  */
   GATT_CONN_TERMINATE_LOCAL_HOST = HCI_ERR_CONN_CAUSE_LOCAL_HOST,
   /* 0x22 connection fail for LMP response tout */
   GATT_CONN_LMP_TIMEOUT = HCI_ERR_LMP_RESPONSE_TIMEOUT,
@@ -485,7 +487,7 @@ typedef uint8_t tGATT_AUTH_REQ;
 typedef struct {
   uint16_t conn_id;
   uint16_t handle; /* attribute handle */
-  uint16_t offset; /* attribute value offset, if no offfset is needed for the
+  uint16_t offset; /* attribute value offset, if no offset is needed for the
                       command, ignore it */
   uint16_t len;    /* length of attribute value */
   tGATT_AUTH_REQ auth_req;          /*  authentication request */
@@ -519,7 +521,7 @@ typedef struct {
 /* write request data */
 typedef struct {
   uint16_t handle; /* attribute handle */
-  uint16_t offset; /* attribute value offset, if no offfset is needed for the
+  uint16_t offset; /* attribute value offset, if no offset is needed for the
                       command, ignore it */
   uint16_t len;    /* length of attribute value */
   uint8_t value[GATT_MAX_ATTR_LEN]; /* the actual attribute value */
@@ -564,7 +566,7 @@ typedef enum : uint8_t {
   GATT_DISC_CHAR, /* discover characteristics of a service with/without type
                      requirement */
   GATT_DISC_CHAR_DSCPT, /* discover characteristic descriptors of a character */
-  GATT_DISC_MAX         /* maximnun discover type */
+  GATT_DISC_MAX         /* maximum discover type */
 } tGATT_DISC_TYPE;
 
 /* GATT read type enumeration
@@ -617,7 +619,7 @@ typedef struct {
 */
 typedef union {
   tGATT_READ_BY_TYPE service;
-  tGATT_READ_BY_TYPE char_type; /* characterisitc type */
+  tGATT_READ_BY_TYPE char_type; /* characteristic type */
   tGATT_READ_MULTI read_multiple;
   tGATT_READ_BY_HANDLE by_handle;
   tGATT_READ_PARTIAL partial;
@@ -652,7 +654,7 @@ typedef enum : uint8_t {
 /* characteristic declaration
 */
 typedef struct {
-  tGATT_CHAR_PROP char_prop; /* characterisitc properties */
+  tGATT_CHAR_PROP char_prop; /* characteristic properties */
   uint16_t val_handle;       /* characteristic value attribute handle */
   bluetooth::Uuid char_uuid; /* characteristic UUID type */
 } tGATT_CHAR_DCLR_VAL;
@@ -797,8 +799,8 @@ typedef union {
   uint8_t num_clients;
 } tGATTS_SRV_CHG_RSP;
 
-/* Attibute server handle ranges NV storage callback functions
-*/
+/* Attribute server handle ranges NV storage callback functions
+ */
 typedef void(tGATTS_NV_SAVE_CBACK)(bool is_saved,
                                    tGATTS_HNDL_RANGE* p_hndl_range);
 typedef bool(tGATTS_NV_SRV_CHG_CBACK)(tGATTS_SRV_CHG_CMD cmd,
@@ -830,7 +832,7 @@ typedef struct {
  *                  NV save callback function.  There can be one and only one
  *                  NV save callback function.
  *
- * Parameter        p_cb_info : callback informaiton
+ * Parameter        p_cb_info : callback information
  *
  * Returns          true if registered OK, else false
  *
@@ -899,7 +901,7 @@ void GATTS_StopService(uint16_t service_handle);
  *                  val_len: Length of the indicated attribute value.
  *                  p_val: Pointer to the indicated attribute value data.
  *
- * Returns          GATT_SUCCESS if sucessfully sent or queued; otherwise error
+ * Returns          GATT_SUCCESS if successfully sent or queued; otherwise error
  *                               code.
  *
  ******************************************************************************/
@@ -918,7 +920,7 @@ tGATT_STATUS GATTS_HandleValueIndication(uint16_t conn_id, uint16_t attr_handle,
  *                  val_len: Length of the indicated attribute value.
  *                  p_val: Pointer to the indicated attribute value data.
  *
- * Returns          GATT_SUCCESS if sucessfully sent; otherwise error code.
+ * Returns          GATT_SUCCESS if successfully sent; otherwise error code.
  *
  ******************************************************************************/
 tGATT_STATUS GATTS_HandleValueNotification(uint16_t conn_id,
@@ -936,7 +938,7 @@ tGATT_STATUS GATTS_HandleValueNotification(uint16_t conn_id,
  *                  status: response status
  *                  p_msg: pointer to message parameters structure.
  *
- * Returns          GATT_SUCCESS if sucessfully sent; otherwise error code.
+ * Returns          GATT_SUCCESS if successfully sent; otherwise error code.
  *
  ******************************************************************************/
 tGATT_STATUS GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id,
@@ -982,7 +984,7 @@ void GATTC_UpdateUserAttMtuIfNeeded(const RawAddress& remote_bda,
  * Function         GATTC_TryMtuRequest
  *
  * Description      This function shall be called before calling
- *                  GATTC_ConfgureMTU in order to check if operation is
+ *                  GATTC_ConfigureMTU in order to check if operation is
  *                  available to do.
  *
  * Parameters        remote_bda : peer device address. (input)
@@ -1102,7 +1104,7 @@ tGATT_STATUS GATTC_SendHandleValueConfirm(uint16_t conn_id, uint16_t handle);
  * Function         GATT_SetIdleTimeout
  *
  * Description      This function (common to both client and server) sets the
- *                  idle timeout for a tansport connection
+ *                  idle timeout for a transport connection
  *
  * Parameter        bd_addr:   target device bd address.
  *                  idle_tout: timeout value in seconds.
@@ -1144,7 +1146,7 @@ tGATT_IF GATT_Register(const bluetooth::Uuid& p_app_uuid128,
  *
  * Description      This function deregistered the application from GATT.
  *
- * Parameters       gatt_if: applicaiton interface.
+ * Parameters       gatt_if: application interface.
  *
  * Returns          None.
  *
@@ -1159,7 +1161,7 @@ void GATT_Deregister(tGATT_IF gatt_if);
  *                  receiving callbacks for registered interface.  Function may
  *                  call back with connection status and queued notifications
  *
- * Parameter        gatt_if: applicaiton interface.
+ * Parameter        gatt_if: application interface.
  *
  * Returns          None
  *
@@ -1170,10 +1172,10 @@ void GATT_StartIf(tGATT_IF gatt_if);
  *
  * Function         GATT_Connect
  *
- * Description      This function initiate a connecttion to a remote device on
+ * Description      This function initiate a connection to a remote device on
  *                  GATT channel.
  *
- * Parameters       gatt_if: applicaiton interface
+ * Parameters       gatt_if: application interface
  *                  bd_addr: peer device address
  *                  addr_type: peer device address type
  *                  connection_type: connection type
@@ -1208,7 +1210,7 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr,
  *                           disconnect, typically used for direct connection
  *                           cancellation.
  *                  bd_addr: peer device address.
- *                  is_direct: is a direct conenection or a background auto
+ *                  is_direct: is a direct connection or a background auto
  *                             connection
  *
  * Returns          true if connection started; else false
@@ -1238,12 +1240,12 @@ tGATT_STATUS GATT_Disconnect(uint16_t conn_id);
  *                  application interface
  *
  * Parameters        conn_id: connection id  (input)
- *                   p_gatt_if: applicaiton interface (output)
+ *                   p_gatt_if: application interface (output)
  *                   bd_addr: peer device address. (output)
  *                   transport : physical transport of the GATT connection
  *                                (BR/EDR or LE)
  *
- * Returns          true the ligical link information is found for conn_id
+ * Returns          true the logical link information is found for conn_id
  *
  ******************************************************************************/
 bool GATT_GetConnectionInfor(uint16_t conn_id, tGATT_IF* p_gatt_if,
@@ -1256,13 +1258,13 @@ bool GATT_GetConnectionInfor(uint16_t conn_id, tGATT_IF* p_gatt_if,
  * Description      Find the conn_id if the logical link for a BD address
  *                  and application interface is connected
  *
- * Parameters        gatt_if: applicaiton interface (input)
+ * Parameters        gatt_if: application interface (input)
  *                   bd_addr: peer device address. (input)
  *                   p_conn_id: connection id  (output)
  *                   transport :  physical transport of the GATT connection
  *                               (BR/EDR or LE)
  *
- * Returns          true the ligical link is connected
+ * Returns          true the logical link is connected
  *
  ******************************************************************************/
 bool GATT_GetConnIdIfConnected(tGATT_IF gatt_if, const RawAddress& bd_addr,
@@ -1297,5 +1299,19 @@ void gatt_reset_bgdev_list(bool after_reset);
 
 // Initialize GATTS list of bonded device service change updates.
 void gatt_load_bonded(void);
+
+namespace fmt {
+template <>
+struct formatter<GattStatus> : enum_formatter<GattStatus> {};
+template <>
+struct formatter<tGATT_DISCONN_REASON> : enum_formatter<tGATT_DISCONN_REASON> {
+};
+template <>
+struct formatter<tGATTC_OPTYPE> : enum_formatter<tGATTC_OPTYPE> {};
+template <>
+struct formatter<tGATT_OP_CODE> : enum_formatter<tGATT_OP_CODE> {};
+template <>
+struct formatter<tGATT_DISC_TYPE> : enum_formatter<tGATT_DISC_TYPE> {};
+}  // namespace fmt
 
 #endif /* GATT_API_H */

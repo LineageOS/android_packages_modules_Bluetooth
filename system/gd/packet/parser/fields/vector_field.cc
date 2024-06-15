@@ -151,7 +151,7 @@ std::string VectorField::GetGetterFunctionName() const {
 }
 
 void VectorField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) const {
-  s << GetDataType() << " " << GetGetterFunctionName() << "() {";
+  s << GetDataType() << " " << GetGetterFunctionName() << "() const {";
   s << "ASSERT(was_validated_);";
   s << "size_t end_index = size();";
   s << "auto to_bound = begin();";

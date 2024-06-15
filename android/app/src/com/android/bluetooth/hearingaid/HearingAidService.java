@@ -46,11 +46,12 @@ import com.android.bluetooth.BluetoothMetricsProto;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.btservice.AudioRoutingManager;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
-import com.android.bluetooth.btservice.ProfileService.IProfileServiceBinder;
 import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.modules.utils.SynchronousResultReceiver;
 
@@ -102,10 +103,7 @@ public class HearingAidService extends ProfileService {
 
     private final ServiceFactory mFactory = new ServiceFactory();
 
-    HearingAidService() {}
-
-    @VisibleForTesting
-    HearingAidService(Context ctx) {
+    public HearingAidService(Context ctx) {
         super(ctx);
     }
 
@@ -119,7 +117,7 @@ public class HearingAidService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    public void start() {
         if (DBG) {
             Log.d(TAG, "start()");
         }
@@ -152,17 +150,16 @@ public class HearingAidService extends ProfileService {
 
         // Initialize native interface
         mHearingAidNativeInterface.init();
-        return true;
     }
 
     @Override
-    protected boolean stop() {
+    public void stop() {
         if (DBG) {
             Log.d(TAG, "stop()");
         }
         if (sHearingAidService == null) {
             Log.w(TAG, "stop() called before start()");
-            return true;
+            return;
         }
         // Cleanup native interface
         mHearingAidNativeInterface.cleanup();
@@ -207,12 +204,10 @@ public class HearingAidService extends ProfileService {
         mAudioManager = null;
         mHearingAidNativeInterface = null;
         mAdapterService = null;
-
-        return true;
     }
 
     @Override
-    protected void cleanup() {
+    public void cleanup() {
         if (DBG) {
             Log.d(TAG, "cleanup()");
         }
@@ -1059,15 +1054,23 @@ public class HearingAidService extends ProfileService {
                 SynchronousResultReceiver receiver) {
             try {
                 HearingAidService service = getService(source);
-                boolean result = false;
                 if (service != null) {
-                    if (device == null) {
-                        result = service.removeActiveDevice(false);
+                    if (Flags.audioRoutingCentralization()) {
+                        ((AudioRoutingManager) service.mAdapterService.getActiveDeviceManager())
+                                .activateDeviceProfile(
+                                        device, BluetoothProfile.HEARING_AID, receiver);
                     } else {
-                        result = service.setActiveDevice(device);
+                        boolean result;
+                        if (device == null) {
+                            result = service.removeActiveDevice(false);
+                        } else {
+                            result = service.setActiveDevice(device);
+                        }
+                        receiver.send(result);
                     }
+                } else {
+                    receiver.send(false);
                 }
-                receiver.send(result);
             } catch (RuntimeException e) {
                 receiver.propagateException(e);
             }

@@ -28,9 +28,9 @@
 #include <string>
 #include <vector>
 
-#include "gd/os/metrics.h"
-#include "types/raw_address.h"
 #include "hci/address.h"
+#include "os/metrics.h"
+#include "types/raw_address.h"
 
 namespace bluetooth {
 

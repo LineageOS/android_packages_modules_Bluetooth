@@ -31,7 +31,7 @@
 
 #include <base/functional/bind.h>
 #include <base/location.h>
-#include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include <cstdint>
 
@@ -39,11 +39,9 @@
 #include "common/metrics.h"
 #include "device/include/controller.h"
 #include "internal_include/bt_target.h"
-#include "internal_include/bt_trace.h"
 #include "main/shim/hci_layer.h"
 #include "os/log.h"
 #include "osi/include/allocator.h"
-#include "stack/btm/neighbor_inquiry.h"
 #include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/ble_acl_interface.h"
 #include "stack/include/ble_hci_link_interface.h"
@@ -65,6 +63,7 @@
 #include "types/hci_role.h"
 #include "types/raw_address.h"
 
+using namespace bluetooth;
 using base::Location;
 using bluetooth::hci::IsoManager;
 
@@ -77,8 +76,6 @@ void acl_disconnect_from_handle(uint16_t handle, tHCI_STATUS reason,
 /******************************************************************************/
 /*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /******************************************************************************/
-static void btu_hcif_inquiry_comp_evt(uint8_t* p);
-
 static void btu_hcif_authentication_comp_evt(uint8_t* p);
 static void btu_hcif_rmt_name_request_comp_evt(const uint8_t* p,
                                                uint16_t evt_len);
@@ -88,7 +85,6 @@ static void btu_hcif_read_rmt_ext_features_comp_evt(uint8_t* p,
 static void btu_hcif_command_complete_evt(BT_HDR* response, void* context);
 static void btu_hcif_command_status_evt(uint8_t status, BT_HDR* command,
                                         void* context);
-static void btu_hcif_hardware_error_evt(uint8_t* p);
 static void btu_hcif_mode_change_evt(uint8_t* p);
 static void btu_hcif_link_key_notification_evt(const uint8_t* p);
 static void btu_hcif_read_clock_off_comp_evt(uint8_t* p);
@@ -113,11 +109,8 @@ static void btu_hcif_read_local_oob_complete(const uint8_t* p,
 static void btu_hcif_io_cap_request_evt(const uint8_t* p);
 static void btu_hcif_io_cap_response_evt(const uint8_t* p);
 
-static void btu_ble_ll_conn_param_upd_evt(uint8_t* p, uint16_t evt_len);
 static void btu_ble_proc_ltk_req(uint8_t* p, uint16_t evt_len);
 static void btu_hcif_encryption_key_refresh_cmpl_evt(uint8_t* p);
-static void btu_ble_data_length_change_evt(uint8_t* p, uint16_t evt_len);
-static void btu_ble_rc_param_req_evt(uint8_t* p, uint8_t len);
 
 /**
  * Log HCI event metrics that are not handled in special functions
@@ -202,8 +195,8 @@ static void btu_hcif_log_event_metrics(uint8_t evt_code,
     case HCI_CONNECTION_REQUEST_EVT:  // EventCode::CONNECTION_REQUEST
     case HCI_DISCONNECTION_COMP_EVT:  // EventCode::DISCONNECTION_COMPLETE
     default:
-      LOG_ERROR(
-          "Unexpectedly received event_code:0x%02x that should not be "
+      log::error(
+          "Unexpectedly received event_code:0x{:02x} that should not be "
           "handled here",
           evt_code);
       break;
@@ -230,26 +223,14 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id,
 
   // validate event size
   if (hci_evt_len < hci_event_parameters_minimum_length[hci_evt_code]) {
-    LOG_WARN("%s: evt:0x%2X, malformed event of size %hhd", __func__,
-             hci_evt_code, hci_evt_len);
+    log::warn("evt:0x{:2X}, malformed event of size {}", hci_evt_code,
+              hci_evt_len);
     return;
   }
 
   btu_hcif_log_event_metrics(hci_evt_code, p);
 
   switch (hci_evt_code) {
-    case HCI_INQUIRY_COMP_EVT:
-      btu_hcif_inquiry_comp_evt(p);
-      break;
-    case HCI_INQUIRY_RESULT_EVT:
-      btm_process_inq_results(p, hci_evt_len, BTM_INQ_RESULT_STANDARD);
-      break;
-    case HCI_INQUIRY_RSSI_RESULT_EVT:
-      btm_process_inq_results(p, hci_evt_len, BTM_INQ_RESULT_WITH_RSSI);
-      break;
-    case HCI_EXTENDED_INQUIRY_RESULT_EVT:
-      btm_process_inq_results(p, hci_evt_len, BTM_INQ_RESULT_EXTENDED);
-      break;
     case HCI_AUTHENTICATION_COMP_EVT:
       btu_hcif_authentication_comp_evt(p);
       break;
@@ -266,19 +247,14 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id,
       btu_hcif_read_rmt_ext_features_comp_evt(p, hci_evt_len);
       break;
     case HCI_COMMAND_COMPLETE_EVT:
-      LOG_ERROR(
-          "%s should not have received a command complete event. "
-          "Someone didn't go through the hci transmit_command function.",
-          __func__);
+      log::error(
+          "should not have received a command complete event. Someone didn't "
+          "go through the hci transmit_command function.");
       break;
     case HCI_COMMAND_STATUS_EVT:
-      LOG_ERROR(
-          "%s should not have received a command status event. "
-          "Someone didn't go through the hci transmit_command function.",
-          __func__);
-      break;
-    case HCI_HARDWARE_ERROR_EVT:
-      btu_hcif_hardware_error_evt(p);
+      log::error(
+          "should not have received a command status event. Someone didn't go "
+          "through the hci transmit_command function.");
       break;
     case HCI_MODE_CHANGE_EVT:
       btu_hcif_mode_change_evt(p);
@@ -334,31 +310,11 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id,
 
       uint8_t ble_evt_len = hci_evt_len - 1;
       switch (ble_sub_code) {
-        case HCI_BLE_ADV_PKT_RPT_EVT: /* result of inquiry */
-          btm_ble_process_adv_pkt(ble_evt_len, p);
-          break;
-        case HCI_BLE_LL_CONN_PARAM_UPD_EVT:
-          btu_ble_ll_conn_param_upd_evt(p, ble_evt_len);
-          break;
         case HCI_BLE_READ_REMOTE_FEAT_CMPL_EVT:
           btm_ble_read_remote_features_complete(p, ble_evt_len);
           break;
         case HCI_BLE_LTK_REQ_EVT: /* received only at peripheral device */
           btu_ble_proc_ltk_req(p, ble_evt_len);
-          break;
-        case HCI_BLE_RC_PARAM_REQ_EVT:
-          btu_ble_rc_param_req_evt(p, ble_evt_len);
-          break;
-        case HCI_BLE_DATA_LENGTH_CHANGE_EVT:
-          btu_ble_data_length_change_evt(p, hci_evt_len);
-          break;
-
-        case HCI_BLE_PHY_UPDATE_COMPLETE_EVT:
-          btm_ble_process_phy_update_pkt(ble_evt_len, p);
-          break;
-
-        case HCI_LE_EXTENDED_ADVERTISING_REPORT_EVT:
-          btm_ble_process_ext_adv_pkt(hci_evt_len, p);
           break;
 
         case HCI_BLE_REQ_PEER_SCA_CPL_EVT:
@@ -375,32 +331,18 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id,
                                                     ble_evt_len);
           break;
 
-        case HCI_LE_PERIODIC_ADV_SYNC_TRANSFERE_RECEIVED_EVT:
-          btm_ble_periodic_adv_sync_tx_rcvd(p, hci_evt_len);
-          break;
-
-        case HCI_LE_BIGINFO_ADVERTISING_REPORT_EVT:
-          btm_ble_biginfo_adv_report_rcvd(p, hci_evt_len);
-          break;
-
-          // Events are now captured by gd/hci/le_acl_connection_interface.h
-        case HCI_BLE_CONN_COMPLETE_EVT:  // SubeventCode::CONNECTION_COMPLETE
-        case HCI_BLE_ENHANCED_CONN_COMPLETE_EVT:  // SubeventCode::ENHANCED_CONNECTION_COMPLETE
-        case HCI_LE_SUBRATE_CHANGE_EVT:  // SubeventCode::LE_SUBRATE_CHANGE
         default:
-          LOG_ERROR(
-              "Unexpectedly received LE sub_event_code:0x%02x that should not "
-              "be handled here",
+          log::error(
+              "Unexpectedly received LE sub_event_code:0x{:02x} that should "
+              "not be handled here",
               ble_sub_code);
           break;
       }
     } break;
 
-    case HCI_VENDOR_SPECIFIC_EVT:
-      btm_vendor_specific_evt(const_cast<const uint8_t*>(p), hci_evt_len);
-      break;
-
       // Events now captured by gd::hci_layer module
+    case HCI_VENDOR_SPECIFIC_EVT:
+    case HCI_HARDWARE_ERROR_EVT:
     case HCI_NUM_COMPL_DATA_PKTS_EVT:  // EventCode::NUMBER_OF_COMPLETED_PACKETS
     case HCI_CONNECTION_COMP_EVT:  // EventCode::CONNECTION_COMPLETE
     case HCI_CONNECTION_REQUEST_EVT:      // EventCode::CONNECTION_REQUEST
@@ -409,8 +351,8 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id,
     case HCI_ROLE_CHANGE_EVT:            // EventCode::ROLE_CHANGE
     case HCI_DISCONNECTION_COMP_EVT:     // EventCode::DISCONNECTION_COMPLETE
     default:
-      LOG_ERROR(
-          "Unexpectedly received event_code:0x%02x that should not be "
+      log::error(
+          "Unexpectedly received event_code:0x{:02x} that should not be "
           "handled here",
           hci_evt_code);
       break;
@@ -736,8 +678,7 @@ static void btu_hcif_command_complete_evt_with_cb_on_task(BT_HDR* event,
   btu_hcif_log_command_complete_metrics(opcode, stream);
 
   cmd_with_cb_data* cb_wrapper = (cmd_with_cb_data*)context;
-  LOG_VERBOSE("command complete for: %s",
-              cb_wrapper->posted_from.ToString().c_str());
+  log::verbose("command complete for: {}", cb_wrapper->posted_from.ToString());
   // 2 for event header: event code (1) + parameter length (1)
   // 3 for command complete header: num_hci_pkt (1) + opcode (2)
   uint16_t param_len = static_cast<uint16_t>(event->len - 5);
@@ -770,8 +711,7 @@ static void btu_hcif_command_status_evt_with_cb_on_task(uint8_t status,
 
   // report command status error
   cmd_with_cb_data* cb_wrapper = (cmd_with_cb_data*)context;
-  LOG_VERBOSE("command status for: %s",
-              cb_wrapper->posted_from.ToString().c_str());
+  log::verbose("command status for: {}", cb_wrapper->posted_from.ToString());
   std::move(cb_wrapper->cb).Run(&status, sizeof(uint16_t));
   cmd_with_cb_data_cleanup(cb_wrapper);
   osi_free(cb_wrapper);
@@ -827,24 +767,6 @@ void btu_hcif_send_cmd_with_cb(const base::Location& posted_from,
 
 /*******************************************************************************
  *
- * Function         btu_hcif_inquiry_comp_evt
- *
- * Description      Process event HCI_INQUIRY_COMP_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btu_hcif_inquiry_comp_evt(uint8_t* p) {
-  uint8_t status;
-
-  STREAM_TO_UINT8(status, p);
-
-  /* Tell inquiry processing that we are done */
-  btm_process_inq_complete(to_hci_status_code(status), BTM_BR_INQUIRY_MASK);
-}
-
-/*******************************************************************************
- *
  * Function         btu_hcif_authentication_comp_evt
  *
  * Description      Process event HCI_AUTHENTICATION_COMP_EVT
@@ -886,43 +808,6 @@ static void btu_hcif_rmt_name_request_comp_evt(const uint8_t* p,
   btm_sec_rmt_name_request_complete(&bd_addr, p, to_hci_status_code(status));
 }
 
-constexpr uint8_t MIN_KEY_SIZE = 7;
-
-static void read_encryption_key_size_complete_after_encryption_change(uint8_t status, uint16_t handle,
-                                                                      uint8_t key_size) {
-  if (status == HCI_ERR_INSUFFCIENT_SECURITY) {
-    /* If remote device stop the encryption before we call "Read Encryption Key
-     * Size", we might receive Insufficient Security, which means that link is
-     * no longer encrypted. */
-    LOG(INFO) << __func__ << ": encryption stopped on link: " << loghex(handle);
-    return;
-  }
-
-  if (status != HCI_SUCCESS) {
-    LOG(INFO) << __func__ << ": disconnecting, status: " << loghex(status);
-    acl_disconnect_from_handle(handle, HCI_ERR_PEER_USER,
-                               "stack::btu::btu_hcif::read_encryption_key_size_"
-                               "complete_after_encryption_change Bad key size");
-    return;
-  }
-
-  if (key_size < MIN_KEY_SIZE) {
-    LOG(ERROR) << __func__ << " encryption key too short, disconnecting. handle: " << loghex(handle)
-               << " key_size: " << +key_size;
-
-    acl_disconnect_from_handle(
-        handle, HCI_ERR_HOST_REJECT_SECURITY,
-        "stack::btu::btu_hcif::read_encryption_key_size_complete_after_"
-        "encryption_change Key Too Short");
-    return;
-  }
-
-  // good key size - succeed
-  btm_acl_encrypt_change(handle, static_cast<tHCI_STATUS>(status),
-                         1 /* enable */);
-  btm_sec_encrypt_change(handle, static_cast<tHCI_STATUS>(status),
-                         1 /* enable */);
-}
 /*******************************************************************************
  *
  * Function         btu_hcif_encryption_change_evt
@@ -941,26 +826,8 @@ static void btu_hcif_encryption_change_evt(uint8_t* p) {
   STREAM_TO_UINT16(handle, p);
   STREAM_TO_UINT8(encr_enable, p);
 
-  if (status != HCI_SUCCESS || encr_enable == 0 ||
-      BTM_IsBleConnection(handle) ||
-      !controller_get_interface()->supports_read_encryption_key_size() ||
-      // Skip encryption key size check when using set_min_encryption_key_size
-      (bluetooth::common::init_flags::set_min_encryption_is_enabled() &&
-       controller_get_interface()->supports_set_min_encryption_key_size())) {
-    if (status == HCI_ERR_CONNECTION_TOUT) {
-      smp_cancel_start_encryption_attempt();
-      return;
-    }
-
-    btm_acl_encrypt_change(handle, static_cast<tHCI_STATUS>(status),
-                           encr_enable);
-    btm_sec_encrypt_change(handle, static_cast<tHCI_STATUS>(status),
-                           encr_enable);
-  } else {
-    btsnd_hcic_read_encryption_key_size(
-        handle,
-        base::Bind(&read_encryption_key_size_complete_after_encryption_change));
-  }
+  btm_sec_encryption_change_evt(handle, static_cast<tHCI_STATUS>(status),
+                                encr_enable);
 }
 
 /*******************************************************************************
@@ -1070,10 +937,6 @@ static void btu_hcif_esco_connection_chg_evt(uint8_t* p) {
 static void btu_hcif_hdl_command_complete(uint16_t opcode, uint8_t* p,
                                           uint16_t evt_len) {
   switch (opcode) {
-    case HCI_INQUIRY_CANCEL:
-      /* Tell inquiry processing that we are done */
-      btm_process_cancel_complete(HCI_SUCCESS, BTM_BR_INQUIRY_MASK);
-      break;
     case HCI_SET_EVENT_FILTER:
       break;
 
@@ -1127,7 +990,7 @@ static void btu_hcif_hdl_command_complete(uint16_t opcode, uint8_t* p,
     case HCI_BLE_CREATE_LL_CONN:
     case HCI_LE_EXTENDED_CREATE_CONNECTION:
       // No command complete event for those commands according to spec
-      LOG(ERROR) << "No command complete expected, but received!";
+      log::error("No command complete expected, but received!");
       break;
 
     case HCI_BLE_TRANSMITTER_TEST:
@@ -1172,8 +1035,9 @@ static void btu_hcif_hdl_command_complete(uint16_t opcode, uint8_t* p,
       break;
 
     default:
-      LOG_ERROR("Command complete for opcode:0x%02x should not be handled here",
-                opcode);
+      log::error(
+          "Command complete for opcode:0x{:02x} should not be handled here",
+          opcode);
       break;
   }
 }
@@ -1221,7 +1085,7 @@ static void btu_hcif_command_complete_evt(BT_HDR* response,
  ******************************************************************************/
 static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status,
                                         const uint8_t* p_cmd) {
-  CHECK_NE(p_cmd, nullptr) << "Null command for opcode 0x" << loghex(opcode);
+  ASSERT_LOG(p_cmd != nullptr, "Null command for opcode 0x%x", opcode);
   p_cmd++;  // Skip parameter total length
 
   const tHCI_STATUS hci_status = to_hci_status_code(status);
@@ -1230,13 +1094,6 @@ static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status,
   uint16_t handle;
 
   switch (opcode) {
-    // Link Control Commands
-    case HCI_INQUIRY:
-      if (status != HCI_SUCCESS) {
-        // Tell inquiry processing that we are done
-        btm_process_inq_complete(hci_status, BTM_BR_INQUIRY_MASK);
-      }
-      break;
     case HCI_SWITCH_ROLE:
       if (status != HCI_SUCCESS) {
         // Tell BTM that the command failed
@@ -1286,13 +1143,6 @@ static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status,
       }
       break;
 
-    // BLE Commands
-    case HCI_BLE_CREATE_LL_CONN:
-    case HCI_LE_EXTENDED_CREATE_CONNECTION:
-      if (status != HCI_SUCCESS) {
-        btm_ble_create_ll_conn_complete(hci_status);
-      }
-      break;
     case HCI_BLE_START_ENC:
       // Race condition: disconnection happened right before we send
       // "LE Encrypt", controller responds with no connection, we should
@@ -1321,16 +1171,16 @@ static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status,
     case HCI_READ_RMT_CLOCK_OFFSET:    // 0x041f
     case HCI_CHANGE_CONN_PACKET_TYPE:  // 0x040f
       if (hci_status != HCI_SUCCESS) {
-        LOG_WARN("Received bad command status for opcode:0x%02x status:%s",
-                 opcode, hci_status_code_text(hci_status).c_str());
+        log::warn("Received bad command status for opcode:0x{:02x} status:{}",
+                  opcode, hci_status_code_text(hci_status));
       }
       break;
 
     default:
-      LOG_ERROR(
-          "Command status for opcode:0x%02x should not be handled here "
-          "status:%s",
-          opcode, hci_status_code_text(hci_status).c_str());
+      log::error(
+          "Command status for opcode:0x{:02x} should not be handled here "
+          "status:{}",
+          opcode, hci_status_code_text(hci_status));
   }
 }
 
@@ -1366,20 +1216,6 @@ static void btu_hcif_command_status_evt(uint8_t status, BT_HDR* command,
   do_in_main_thread(
       FROM_HERE,
       base::BindOnce(btu_hcif_command_status_evt_on_task, status, command));
-}
-
-/*******************************************************************************
- *
- * Function         btu_hcif_hardware_error_evt
- *
- * Description      Process event HCI_HARDWARE_ERROR_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btu_hcif_hardware_error_evt(uint8_t* p) {
-  LOG_ERROR("UNHANDLED Ctlr H/w error event - code:0x%x", *p);
-  BTA_sys_signal_hw_error();
 }
 
 /*******************************************************************************
@@ -1458,6 +1294,9 @@ void btu_hcif_proc_sp_req_evt(tBTM_SP_EVT event, const uint8_t* p) {
     case BTM_SP_KEY_REQ_EVT:
       // No value needed.
       break;
+    default:
+      log::warn("unexpected event:{}", sp_evt_to_text(event));
+      break;
   }
   btm_proc_sp_req_evt(event, bda, value);
 }
@@ -1465,7 +1304,7 @@ void btu_hcif_create_conn_cancel_complete(const uint8_t* p, uint16_t evt_len) {
   uint8_t status;
 
   if (evt_len < 1 + BD_ADDR_LEN) {
-    LOG_ERROR("%s malformatted event packet, too short", __func__);
+    log::error("malformatted event packet, too short");
     return;
   }
 
@@ -1495,7 +1334,7 @@ void btu_hcif_read_local_oob_complete(const uint8_t* p, uint16_t evt_len) {
   return;
 
 err_out:
-  LOG_ERROR("%s: bogus event packet, too short", __func__);
+  log::error("bogus event packet, too short");
 }
 
 /*******************************************************************************
@@ -1607,31 +1446,6 @@ static void btu_hcif_encryption_key_refresh_cmpl_evt(uint8_t* p) {
  * BLE Events
  **********************************************/
 
-static void btu_ble_ll_conn_param_upd_evt(uint8_t* p, uint16_t evt_len) {
-  /* LE connection update has completed successfully as a central. */
-  /* We can enable the update request if the result is a success. */
-  /* extract the HCI handle first */
-  uint8_t status;
-  uint16_t handle;
-  uint16_t interval;
-  uint16_t latency;
-  uint16_t timeout;
-
-  if (evt_len < 9) {
-     LOG_ERROR("Malformated event packet, too short");
-     return;
-  }
-
-  STREAM_TO_UINT8(status, p);
-  STREAM_TO_UINT16(handle, p);
-  STREAM_TO_UINT16(interval, p);
-  STREAM_TO_UINT16(latency, p);
-  STREAM_TO_UINT16(timeout, p);
-
-  acl_ble_update_event_received(static_cast<tHCI_STATUS>(status), handle,
-                                interval, latency, timeout);
-}
-
 static void btu_ble_proc_ltk_req(uint8_t* p, uint16_t evt_len) {
   uint16_t ediv, handle;
   uint8_t* pp;
@@ -1644,7 +1458,7 @@ static void btu_ble_proc_ltk_req(uint8_t* p, uint16_t evt_len) {
   // - 8-byte random number
   // - 2 byte Encrypted_Diversifier
   if (evt_len < 2 + 8 + 2) {
-    LOG_ERROR("Event packet too short");
+    log::error("Event packet too short");
     return;
   }
 
@@ -1655,48 +1469,6 @@ static void btu_ble_proc_ltk_req(uint8_t* p, uint16_t evt_len) {
   /* This is empty until an upper layer cares about returning event */
 }
 
-static void btu_ble_data_length_change_evt(uint8_t* p, uint16_t evt_len) {
-  uint16_t handle;
-  uint16_t tx_data_len;
-  uint16_t rx_data_len;
-
-  if (!controller_get_interface()->supports_ble_packet_extension()) {
-    LOG_WARN("%s, request not supported", __func__);
-    return;
-  }
-
-  // 2 bytes each for handle, tx_data_len, TxTimer, rx_data_len
-  if (evt_len < 8) {
-    LOG_ERROR("Event packet too short");
-    return;
-  }
-
-  STREAM_TO_UINT16(handle, p);
-  STREAM_TO_UINT16(tx_data_len, p);
-  p += 2; /* Skip the TxTimer */
-  STREAM_TO_UINT16(rx_data_len, p);
-
-  l2cble_process_data_length_change_event(handle, tx_data_len, rx_data_len);
-}
-
 /**********************************************
  * End of BLE Events Handler
  **********************************************/
-static void btu_ble_rc_param_req_evt(uint8_t* p, uint8_t len) {
-  uint16_t handle;
-  uint16_t int_min, int_max, latency, timeout;
-
-  if (len < 10) {
-    LOG(ERROR) << __func__ << "bogus event packet, too short";
-    return;
-  }
-
-  STREAM_TO_UINT16(handle, p);
-  STREAM_TO_UINT16(int_min, p);
-  STREAM_TO_UINT16(int_max, p);
-  STREAM_TO_UINT16(latency, p);
-  STREAM_TO_UINT16(timeout, p);
-
-  l2cble_process_rc_param_request_evt(handle, int_min, int_max, latency,
-                                      timeout);
-}

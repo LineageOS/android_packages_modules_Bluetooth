@@ -30,6 +30,7 @@
 #include "os/parameter_provider.h"
 #include "os/system_properties.h"
 #include "storage/config_cache.h"
+#include "storage/config_keys.h"
 #include "storage/legacy_config_file.h"
 #include "storage/mutation.h"
 
@@ -53,12 +54,12 @@ const int kConfigBackupComparePass = 2;
 const std::string kConfigFilePrefix = "bt_config-origin";
 const std::string kConfigFileHash = "hash";
 
-const std::string StorageModule::kInfoSection = "Info";
+const std::string StorageModule::kInfoSection = BTIF_STORAGE_SECTION_INFO;
 const std::string StorageModule::kFileSourceProperty = "FileSource";
 const std::string StorageModule::kTimeCreatedProperty = "TimeCreated";
 const std::string StorageModule::kTimeCreatedFormat = "%Y-%m-%d %H:%M:%S";
 
-const std::string StorageModule::kAdapterSection = "Adapter";
+const std::string StorageModule::kAdapterSection = BTIF_STORAGE_SECTION_ADAPTER;
 
 StorageModule::StorageModule(
     std::string config_file_path,
@@ -127,7 +128,9 @@ void StorageModule::SaveImmediately() {
   // 2. write in-memory config to disk, if failed, backup can still be used
   ASSERT(LegacyConfigFile::FromPath(config_file_path_).Write(pimpl_->cache_));
   // 3. now write back up to disk as well
-  ASSERT(LegacyConfigFile::FromPath(config_backup_path_).Write(pimpl_->cache_));
+  if (!LegacyConfigFile::FromPath(config_backup_path_).Write(pimpl_->cache_)) {
+    LOG_ERROR("Unable to write backup config file");
+  }
   // 4. save checksum if it is running in common criteria mode
   if (bluetooth::os::ParameterProvider::GetBtKeystoreInterface() != nullptr &&
       bluetooth::os::ParameterProvider::IsCommonCriteriaMode()) {

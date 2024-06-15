@@ -19,13 +19,11 @@ cc_defaults {
         "packages/modules/Bluetooth/system/bta/sys",
         "packages/modules/Bluetooth/system/btif/avrcp",
         "packages/modules/Bluetooth/system/btif/co",
-        "packages/modules/Bluetooth/system/btif/include",
         "packages/modules/Bluetooth/system/device/include",
         "packages/modules/Bluetooth/system/embdrv/sbc/decoder/include",
         "packages/modules/Bluetooth/system/embdrv/sbc/encoder/include",
         "packages/modules/Bluetooth/system/gd",
         "packages/modules/Bluetooth/system/include",
-        "packages/modules/Bluetooth/system/internal_include",
         "packages/modules/Bluetooth/system/stack/a2dp",
         "packages/modules/Bluetooth/system/stack/avdt",
         "packages/modules/Bluetooth/system/stack/btm",
@@ -71,6 +69,8 @@ cc_defaults {
         "libbluetooth-types",
         "libbluetooth_core_rs",
         "libbluetooth_core_rs_bridge",
+        "libbluetooth_log",
+        "libbt-audio-asrc",
         "libbt-audio-hal-interface",
         "libbt-bta",
         "libbt-bta-core",
@@ -117,9 +117,13 @@ cc_test {
         "gatt/gatt_unittest.cc",
     ],
     static_libs: [
+        "libbluetooth-gdx",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
+        "libbluetooth_hci_pdl",
+        "libbluetooth_log",
         "libbt-btu-main-thread",
+        "libbt-jni-thread",
         "libbt-platform-protos-lite",
         "libbt_shim_bridge",
         "libchrome",
@@ -127,7 +131,11 @@ cc_test {
         "libprotobuf-cpp-lite",
     ],
     shared_libs: [
+        "libbase",
         "server_configurable_flags",
+    ],
+    generated_headers: [
+        "BluetoothGeneratedDumpsysDataSchema_h",
     ],
     target: {
         android: {

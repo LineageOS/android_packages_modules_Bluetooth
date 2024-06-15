@@ -30,9 +30,9 @@
 #include <cstdint>
 #include <string>
 
-#include "bt_target.h"
+#include "internal_include/bt_target.h"
 #include "macros.h"
-#include "osi/include/log.h"
+#include "os/log.h"
 #include "stack/include/bt_hdr.h"
 #include "types/raw_address.h"
 
@@ -40,8 +40,6 @@
  *  Constants
  ****************************************************************************/
 #define AVDT_VERSION_1_3 0x0103
-
-#define AVDTP_VERSION_CONFIG_KEY "AvdtpVersion"
 
 /* Maximum size in bytes of the codec capabilities information element. */
 #define AVDT_CODEC_SIZE 20

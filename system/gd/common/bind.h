@@ -24,19 +24,13 @@ namespace common {
 using base::Bind;
 using base::BindOnce;
 using base::IgnoreResult;
-#if defined(BASE_VER) && BASE_VER >= 860220
-// TODO(b/189293646): find a way to avoid base::internal.
-using base::internal::MakeUnboundRunType;
-#else
-using base::MakeUnboundRunType;
-#endif
 using base::Owned;
 using base::Passed;
 using base::RetainedRef;
 using base::Unretained;
 
 template <typename T, typename Functor, typename... Args>
-inline base::Callback<MakeUnboundRunType<Functor, T, Args...>> BindOn(T* obj, Functor&& functor, Args&&... args) {
+inline auto BindOn(T* obj, Functor&& functor, Args&&... args) {
   return common::Bind(std::forward<Functor>(functor), common::Unretained(obj), std::forward<Args>(args)...);
 }
 

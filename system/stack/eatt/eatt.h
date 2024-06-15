@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <deque>
 
+#include "os/logging/log_adapter.h"
 #include "stack/gatt/gatt_int.h"
 #include "types/raw_address.h"
 

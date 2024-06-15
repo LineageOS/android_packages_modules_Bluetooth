@@ -22,7 +22,10 @@ source_set("BluetoothOsSources_chromeos") {
     "syslog.cc",
   ]
 
-  configs += [ "//bt/system/gd:gd_defaults" ]
+  configs += [
+    "//bt/system/gd:gd_defaults",
+    "//bt/system/log:log_defaults",
+  ]
   deps = [
     "//bt/system:libbt-platform-protos-lite",
     "//bt/system/gd/rust/shim:init_flags_bridge_header",
@@ -39,7 +42,10 @@ source_set("BluetoothOsSources_linux") {
     "syslog.cc",
   ]
 
-  configs += [ "//bt/system/gd:gd_defaults" ]
+  configs += [
+    "//bt/system/gd:gd_defaults",
+    "//bt/system/log:log_defaults",
+  ]
   deps = [
     "//bt/system:libbt-platform-protos-lite",
     "//bt/system/gd/rust/shim:init_flags_bridge_header",
@@ -59,7 +65,10 @@ source_set("BluetoothOsSources_linux_generic") {
     "linux_generic/wakelock_manager.cc",
   ]
 
-  configs += [ "//bt/system/gd:gd_defaults" ]
+  configs += [
+    "//bt/system/gd:gd_defaults",
+    "//bt/system/log:log_defaults",
+  ]
   deps = [ "//bt/system/gd:gd_default_deps" ]
 
   if (target_os == "chromeos") {

@@ -43,6 +43,12 @@ service GATT {
 
   // Wait for characteristic notification/indication
   rpc WaitCharacteristicNotification(WaitCharacteristicNotificationRequest) returns (WaitCharacteristicNotificationResponse);
+
+  // Notify on characteristic
+  rpc NotifyOnCharacteristic(NotifyOnCharacteristicRequest) returns (NotifyOnCharacteristicResponse);
+
+  // Indicate on characteristic
+  rpc IndicateOnCharacteristic(IndicateOnCharacteristicRequest) returns (IndicateOnCharacteristicResponse);
 }
 
 enum AttStatusCode {
@@ -251,4 +257,22 @@ message RegisterServiceRequest {
 
 message RegisterServiceResponse {
   GattService service = 1;
+}
+
+message NotifyOnCharacteristicRequest {
+  uint32 handle = 1;
+  bytes value = 2;
+}
+
+message NotifyOnCharacteristicResponse {
+  AttStatusCode status = 1;
+}
+
+message IndicateOnCharacteristicRequest {
+  uint32 handle = 1;
+  bytes value = 2;
+}
+
+message IndicateOnCharacteristicResponse {
+  AttStatusCode status = 1;
 }

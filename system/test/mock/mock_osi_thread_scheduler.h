@@ -40,7 +40,7 @@ namespace osi_thread_scheduler {
 struct thread_scheduler_enable_real_time {
   bool return_value{false};
   std::function<bool(pid_t linux_tid)> body{
-      [this](pid_t linux_tid) { return return_value; }};
+      [this](pid_t /* linux_tid */) { return return_value; }};
   bool operator()(pid_t linux_tid) { return body(linux_tid); };
 };
 extern struct thread_scheduler_enable_real_time
@@ -52,7 +52,7 @@ extern struct thread_scheduler_enable_real_time
 struct thread_scheduler_get_priority_range {
   bool return_value{false};
   std::function<bool(int& min, int& max)> body{
-      [this](int& min, int& max) { return return_value; }};
+      [this](int& /* min */, int& /* max */) { return return_value; }};
   bool operator()(int& min, int& max) { return body(min, max); };
 };
 extern struct thread_scheduler_get_priority_range

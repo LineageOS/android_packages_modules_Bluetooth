@@ -24,6 +24,8 @@
 #ifndef SMP_INT_H
 #define SMP_INT_H
 
+#include <bluetooth/log.h>
+
 #include <cstdint>
 
 #include "macros.h"
@@ -31,6 +33,7 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_octets.h"
 #include "stack/include/smp_api_types.h"
+#include "types/hci_role.h"
 #include "types/raw_address.h"
 
 typedef enum : uint16_t {
@@ -58,10 +61,6 @@ typedef enum : uint8_t {
   SMP_MODEL_SEC_CONN_OOB = 8, /* Secure Connections mode, OOB model */
   SMP_MODEL_OUT_OF_RANGE = 9,
 } tSMP_ASSO_MODEL;
-
-#ifndef SMP_MAX_CONN
-#define SMP_MAX_CONN 2
-#endif
 
 #define SMP_WAIT_FOR_RSP_TIMEOUT_MS (30 * 1000)
 #define SMP_DELAYED_AUTH_TIMEOUT_MS 500
@@ -256,7 +255,7 @@ typedef union {
 /* internal status mask */
 #define SMP_PAIR_FLAGS_WE_STARTED_DD (1)
 #define SMP_PAIR_FLAGS_PEER_STARTED_DD (1 << 1)
-#define SMP_PAIR_FLAGS_CMD_CONFIRM (1 << SMP_OPCODE_CONFIRM) /* 1 << 3 */
+#define SMP_PAIR_FLAGS_CMD_CONFIRM_RCVD (1 << SMP_OPCODE_CONFIRM) /* 1 << 3 */
 #define SMP_PAIR_FLAG_ENC_AFTER_PAIR (1 << 4)
 #define SMP_PAIR_FLAG_HAVE_PEER_DHK_CHK \
   (1 << 5) /* used on peripheral to resolve race condition */
@@ -267,13 +266,10 @@ typedef union {
 #define SMP_PAIR_FLAG_HAVE_LOCAL_PUBL_KEY \
   (1 << 8) /* used on peripheral to resolve race condition */
 
+#define SMP_PAIR_FLAGS_CMD_CONFIRM_SENT (1 << 9)
+
 /* check if authentication requirement need MITM protection */
 #define SMP_NO_MITM_REQUIRED(x) (((x)&SMP_AUTH_YN_BIT) == 0)
-
-typedef struct {
-  RawAddress bd_addr;
-  BT_HDR* p_copy;
-} tSMP_REQ_Q_ENTRY;
 
 /* SMP control block */
 class tSMP_CB {
@@ -295,7 +291,7 @@ class tSMP_CB {
   tSMP_BR_STATE br_state; /* if SMP over BR/ERD has priority over SMP */
   uint8_t failure;
   tSMP_STATUS status;
-  uint8_t role;
+  tHCI_ROLE role;
   uint16_t flags;
   tSMP_EVT cb_evt;
   tSMP_SEC_LEVEL sec_level;
@@ -322,11 +318,14 @@ class tSMP_CB {
   tSMP_OOB_FLAG loc_oob_flag;
   tSMP_AUTH_REQ peer_auth_req;
   tSMP_AUTH_REQ loc_auth_req;
-  bool secure_connections_only_mode_required; /* true if locally SM is required
-                                                 to operate */
+
+  bool sc_only_mode_locally_required; /* true if sc_only required required
+                                         locally */
+  bool sc_mode_required_by_peer;      /* true if peer requires sc in pair_req or
+                                         pair_rsp */
+
   /* either in Secure Connections mode or not at all */
   tSMP_ASSO_MODEL selected_association_model;
-  bool le_secure_connections_mode_is_used;
   bool key_derivation_h7_used;
   bool le_sc_kp_notif_is_used;
   tSMP_SC_KEY_TYPE local_keypress_notification;
@@ -500,7 +499,7 @@ void smp_start_nonce_generation(tSMP_CB* p_cb);
 bool smp_calculate_link_key_from_long_term_key(tSMP_CB* p_cb);
 bool smp_calculate_long_term_key_from_link_key(tSMP_CB* p_cb);
 
-void print128(const Octet16& x, const uint8_t* key_name);
+void print128(const Octet16& x, const char* key_name);
 void smp_xor_128(Octet16* a, const Octet16& b);
 
 /* Save the p_cb->sc_oob_data.loc_oob_data for later, since the p_cb gets
@@ -508,4 +507,14 @@ void smp_xor_128(Octet16* a, const Octet16& b);
 void smp_save_local_oob_data(tSMP_CB* p_cb);
 void smp_clear_local_oob_data();
 bool smp_has_local_oob_data();
+
+namespace fmt {
+template <>
+struct formatter<tSMP_EVENT> : enum_formatter<tSMP_EVENT> {};
+template <>
+struct formatter<tSMP_OPCODE> : enum_formatter<tSMP_OPCODE> {};
+template <>
+struct formatter<tSMP_ASSO_MODEL> : enum_formatter<tSMP_ASSO_MODEL> {};
+}  // namespace fmt
+
 #endif /* SMP_INT_H */

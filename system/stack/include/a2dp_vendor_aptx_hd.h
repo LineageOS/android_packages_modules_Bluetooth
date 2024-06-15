@@ -21,13 +21,13 @@
 #ifndef A2DP_VENDOR_APTX_HD_H
 #define A2DP_VENDOR_APTX_HD_H
 
-#include <bt_target.h>
 #include <stddef.h>
 #include <stdint.h>
 
 #include "a2dp_codec_api.h"
 #include "a2dp_vendor_aptx_hd_constants.h"
 #include "avdt_api.h"
+#include "internal_include/bt_target.h"
 #include "stack/include/bt_hdr.h"
 
 class A2dpCodecConfigAptxHd : public A2dpCodecConfig {

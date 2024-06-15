@@ -18,7 +18,6 @@ package com.android.bluetooth.pbapclient;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -81,10 +80,8 @@ public class PbapClientConnectionHandlerTest {
         MockitoAnnotations.initMocks(this);
         TestUtils.setAdapterService(mAdapterService);
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
-        doReturn(true, false).when(mAdapterService)
-                .isStartedProfile(anyString());
         mService = new PbapClientService(mTargetContext);
-        mService.doStart();
+        mService.start();
 
         mAdapter = BluetoothAdapter.getDefaultAdapter();
 
@@ -104,7 +101,7 @@ public class PbapClientConnectionHandlerTest {
 
     @After
     public void tearDown() throws Exception {
-        mService.doStop();
+        mService.stop();
         mService = PbapClientService.getPbapClientService();
         assertThat(mService).isNull();
         TestUtils.clearAdapterService(mAdapterService);

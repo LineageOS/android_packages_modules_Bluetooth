@@ -97,7 +97,6 @@ public class CsipSetCoordinatorServiceTest {
 
         TestUtils.setAdapterService(mAdapterService);
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
-        doReturn(true, false).when(mAdapterService).isStartedProfile(anyString());
 
         mAdapter = BluetoothAdapter.getDefaultAdapter();
 
@@ -164,11 +163,12 @@ public class CsipSetCoordinatorServiceTest {
 
     private void startService() throws TimeoutException {
         mService = new CsipSetCoordinatorService(mTargetContext);
-        mService.doStart();
+        mService.start();
+        mService.setAvailable(true);
     }
 
     private void stopService() throws TimeoutException {
-        mService.doStop();
+        mService.stop();
         mService = CsipSetCoordinatorService.getCsipSetCoordinatorService();
         Assert.assertNull(mService);
     }
@@ -188,21 +188,11 @@ public class CsipSetCoordinatorServiceTest {
     public void testStopService() {
         Assert.assertEquals(mService, CsipSetCoordinatorService.getCsipSetCoordinatorService());
 
-        InstrumentationRegistry.getInstrumentation().runOnMainSync(new Runnable() {
-            public void run() {
-                Assert.assertTrue(mService.stop());
-            }
-        });
-        InstrumentationRegistry.getInstrumentation().runOnMainSync(new Runnable() {
-            public void run() {
-                Assert.assertTrue(mService.start());
-            }
-        });
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(mService::stop);
+        InstrumentationRegistry.getInstrumentation().runOnMainSync(mService::start);
     }
 
-    /**
-     * Test get/set policy for BluetoothDevice
-     */
+    /** Test get/set policy for BluetoothDevice */
     @Test
     public void testGetSetPolicy() {
         when(mDatabaseManager.getProfileConnectionPolicy(
@@ -416,6 +406,8 @@ public class CsipSetCoordinatorServiceTest {
 
         // Send a connect request
         Assert.assertTrue("Connect expected to succeed", mService.connect(mTestDevice));
+
+        TestUtils.waitForIntent(TIMEOUT_MS, mIntentQueue.get(mTestDevice));
     }
 
     /**
@@ -671,6 +663,8 @@ public class CsipSetCoordinatorServiceTest {
                 .getRemoteUuids(any(BluetoothDevice.class));
         // add state machines for testing dump()
         mService.connect(mTestDevice);
+
+        TestUtils.waitForIntent(TIMEOUT_MS, mIntentQueue.get(mTestDevice));
 
         mService.dump(new StringBuilder());
     }

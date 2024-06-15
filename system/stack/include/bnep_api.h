@@ -274,13 +274,12 @@ tBNEP_RESULT BNEP_Disconnect(uint16_t handle);
  * Description      This function sends data in a GKI buffer on BNEP connection
  *
  * Parameters:      handle       - handle of the connection to write
- *                  p_dest_addr  - BD_ADDR/Ethernet addr of the destination
+ *                  dest_addr    - BD_ADDR/Ethernet addr of the destination
  *                  p_buf        - pointer to address of buffer with data
  *                  protocol     - protocol type of the packet
- *                  p_src_addr   - (optional) BD_ADDR/ethernet address of the
- *                                 source (should be NULL if it is the local BD
- *                                         Addr)
- *                  fw_ext_present - forwarded extensions present
+ *                  src_addr     - (optional) BD_ADDR/ethernet address of the
+ *                                 source (should be kEmpty if it is the local
+ *BD Addr) fw_ext_present - forwarded extensions present
  *
  * Returns:         BNEP_WRONG_HANDLE       - if passed handle is not valid
  *                  BNEP_MTU_EXCEDED        - If the data length is greater
@@ -290,9 +289,9 @@ tBNEP_RESULT BNEP_Disconnect(uint16_t handle);
  *                  BNEP_SUCCESS            - If written successfully
  *
  ******************************************************************************/
-tBNEP_RESULT BNEP_WriteBuf(uint16_t handle, const RawAddress& p_dest_addr,
+tBNEP_RESULT BNEP_WriteBuf(uint16_t handle, const RawAddress& dest_addr,
                            BT_HDR* p_buf, uint16_t protocol,
-                           const RawAddress* p_src_addr, bool fw_ext_present);
+                           const RawAddress& src_addr, bool fw_ext_present);
 
 /*******************************************************************************
  *
@@ -301,13 +300,12 @@ tBNEP_RESULT BNEP_WriteBuf(uint16_t handle, const RawAddress& p_dest_addr,
  * Description      This function sends data over a BNEP connection
  *
  * Parameters:      handle       - handle of the connection to write
- *                  p_dest_addr  - BD_ADDR/Ethernet addr of the destination
+ *                  dest_addr    - BD_ADDR/Ethernet addr of the destination
  *                  p_data       - pointer to data start
  *                  protocol     - protocol type of the packet
- *                  p_src_addr   - (optional) BD_ADDR/ethernet address of the
- *                                 source (should be NULL if it is the local BD
- *                                 Addr)
- *                  fw_ext_present - forwarded extensions present
+ *                  src_addr     - (optional) BD_ADDR/ethernet address of the
+ *                                 source (should be kEmpty if it is the local
+ *BD Addr) fw_ext_present - forwarded extensions present
  *
  * Returns:         BNEP_WRONG_HANDLE       - if passed handle is not valid
  *                  BNEP_MTU_EXCEDED        - If the data length is greater than
@@ -318,9 +316,9 @@ tBNEP_RESULT BNEP_WriteBuf(uint16_t handle, const RawAddress& p_dest_addr,
  *                  BNEP_SUCCESS            - If written successfully
  *
  ******************************************************************************/
-tBNEP_RESULT BNEP_Write(uint16_t handle, const RawAddress& p_dest_addr,
+tBNEP_RESULT BNEP_Write(uint16_t handle, const RawAddress& dest_addr,
                         uint8_t* p_data, uint16_t len, uint16_t protocol,
-                        const RawAddress* p_src_addr, bool fw_ext_present);
+                        const RawAddress& src_addr, bool fw_ext_present);
 
 /*******************************************************************************
  *

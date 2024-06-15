@@ -17,6 +17,7 @@
 #pragma once
 
 #include <set>
+#include <vector>
 
 #include "avrcp_browse_packet.h"
 

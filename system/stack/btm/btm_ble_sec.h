@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <bluetooth/log.h>
+
 #include <string>
 
 #include "macros.h"
@@ -33,7 +35,8 @@ typedef enum : uint8_t {
   BTM_BLE_SEC_REQ_ACT_DISCARD = 3,
 } tBTM_BLE_SEC_REQ_ACT;
 
-inline std::string btm_ble_sec_req_act_text(const tBTM_BLE_SEC_REQ_ACT action) {
+inline std::string btm_ble_sec_req_act_text(
+    const tBTM_BLE_SEC_REQ_ACT& action) {
   switch (action) {
     CASE_RETURN_TEXT(BTM_BLE_SEC_REQ_ACT_NONE);
     CASE_RETURN_TEXT(BTM_BLE_SEC_REQ_ACT_ENCRYPT);
@@ -72,3 +75,9 @@ tBTM_STATUS btm_ble_start_sec_check(const RawAddress& bd_addr, uint16_t psm,
                                     bool is_originator,
                                     tBTM_SEC_CALLBACK* p_callback,
                                     void* p_ref_data);
+
+namespace fmt {
+template <>
+struct formatter<tBTM_BLE_SEC_REQ_ACT>
+    : string_formatter<tBTM_BLE_SEC_REQ_ACT, &btm_ble_sec_req_act_text> {};
+}  // namespace fmt

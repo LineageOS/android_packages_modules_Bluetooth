@@ -42,8 +42,9 @@ public class LeAudioStackEvent {
     public static final int EVENT_TYPE_HEALTH_BASED_DEV_RECOMMENDATION = 10;
     public static final int EVENT_TYPE_HEALTH_BASED_GROUP_RECOMMENDATION = 11;
     public static final int EVENT_TYPE_UNICAST_MONITOR_MODE_STATUS = 12;
+    public static final int EVENT_TYPE_GROUP_STREAM_STATUS_CHANGED = 13;
     // -------- DO NOT PUT ANY NEW UNICAST EVENTS BELOW THIS LINE-------------
-    public static final int EVENT_TYPE_UNICAST_MAX = 13;
+    public static final int EVENT_TYPE_UNICAST_MAX = 14;
 
     // Broadcast related events
     public static final int EVENT_TYPE_BROADCAST_CREATED = EVENT_TYPE_UNICAST_MAX + 1;
@@ -89,6 +90,9 @@ public class LeAudioStackEvent {
     // Match up with defines of le_audio_types.h
     static final int DIRECTION_SINK = 1;
     static final int DIRECTION_SOURCE = 2;
+
+    static final int GROUP_STREAM_STATUS_IDLE = 0;
+    static final int GROUP_STREAM_STATUS_STREAMING = 1;
 
     public int type = EVENT_TYPE_NONE;
     public BluetoothDevice device;
@@ -185,6 +189,8 @@ public class LeAudioStackEvent {
                 return "EVENT_TYPE_HEALTH_BASED_GROUP_RECOMMENDATION";
             case EVENT_TYPE_UNICAST_MONITOR_MODE_STATUS:
                 return "EVENT_TYPE_UNICAST_MONITOR_MODE_STATUS";
+            case EVENT_TYPE_GROUP_STREAM_STATUS_CHANGED:
+                return "EVENT_TYPE_GROUP_STREAM_STATUS_CHANGED";
             default:
                 return "EVENT_TYPE_UNKNOWN:" + type;
         }
@@ -209,6 +215,8 @@ public class LeAudioStackEvent {
                 // same as EVENT_TYPE_GROUP_STATUS_CHANGED
             case EVENT_TYPE_AUDIO_GROUP_CURRENT_CODEC_CONFIG_CHANGED:
             case EVENT_TYPE_AUDIO_GROUP_SELECTABLE_CODEC_CONFIG_CHANGED:
+                // same as EVENT_TYPE_GROUP_STATUS_CHANGED
+            case EVENT_TYPE_GROUP_STREAM_STATUS_CHANGED:
                 // same as EVENT_TYPE_GROUP_STATUS_CHANGED
             case EVENT_TYPE_GROUP_STATUS_CHANGED:
                 return "{group_id:" + Integer.toString(value) + "}";
@@ -297,6 +305,15 @@ public class LeAudioStackEvent {
                         return "STATUS_LOCAL_STREAM_STREAMING";
                     case STATUS_LOCAL_STREAM_SUSPENDED:
                         return "STATUS_LOCAL_STREAM_SUSPENDED";
+                    default:
+                        return "UNKNOWN";
+                }
+            case EVENT_TYPE_GROUP_STREAM_STATUS_CHANGED:
+                switch (value) {
+                    case GROUP_STREAM_STATUS_IDLE:
+                        return "GROUP_STREAM_STATUS_IDLE";
+                    case GROUP_STREAM_STATUS_STREAMING:
+                        return "GROUP_STREAM_STATUS_STREAMING";
                     default:
                         return "UNKNOWN";
                 }

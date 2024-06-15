@@ -50,15 +50,6 @@ const STACK_TURN_OFF_TIMEOUT_MS: Duration = Duration::from_millis(4000);
 // Time bt_stack_manager waits for cleanup
 const STACK_CLEANUP_TIMEOUT_MS: Duration = Duration::from_millis(1000);
 
-const VERBOSE_ONLY_LOG_TAGS: &[&str] = &[
-    "bt_bta_av", // AV apis
-    "btm_sco",   // SCO data path logs
-    "l2c_csm",   // L2CAP state machine
-    "l2c_link",  // L2CAP link layer logs
-    "sco_hci",   // SCO over HCI
-    "uipc",      // Userspace IPC implementation
-];
-
 const INIT_LOGGING_MAX_RETRY: u8 = 3;
 
 /// Runs the Bluetooth daemon serving D-Bus IPC.
@@ -111,24 +102,14 @@ fn main() -> Result<(), Box<dyn Error>> {
         None => vec![],
     };
 
-    // Set GD debug flag if debug is enabled.
-    if is_debug {
-        // Limit tags if verbose debug logging isn't enabled.
-        if !is_verbose_debug {
-            init_flags.push(format!(
-                "INIT_logging_debug_disabled_for_tags={}",
-                VERBOSE_ONLY_LOG_TAGS.join(",")
-            ));
-            init_flags.push(String::from("INIT_default_log_level_str=LOG_DEBUG"));
-        } else {
-            init_flags.push(String::from("INIT_default_log_level_str=LOG_VERBOSE"));
-        }
-    }
-
     // Forward --hci to Fluoride.
     init_flags.push(format!("--hci={}", hci_index));
 
-    let logging = Arc::new(Mutex::new(Box::new(BluetoothLogging::new(is_debug, log_output))));
+    let logging = Arc::new(Mutex::new(Box::new(BluetoothLogging::new(
+        is_debug,
+        is_verbose_debug,
+        log_output,
+    ))));
     // TODO(b/307171804): Investigate why connecting to unix syslog might fail.
     // Retry it a few times. Ignore the failure if fails too many times.
     for _ in 0..INIT_LOGGING_MAX_RETRY {
@@ -207,7 +188,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         // The `resource` is a task that should be spawned onto a tokio compatible
         // reactor ASAP. If the resource ever finishes, we lost connection to D-Bus.
-        tokio::spawn(async {
+        let conn_join_handle = tokio::spawn(async {
             let err = resource.await;
             panic!("Lost connection to D-Bus: {}", err);
         });
@@ -218,6 +199,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         // Run the stack main dispatch loop.
         topstack::get_runtime().spawn(Stack::dispatch(
             rx,
+            api_tx.clone(),
             bluetooth.clone(),
             bluetooth_gatt.clone(),
             battery_service.clone(),
@@ -237,8 +219,10 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         tokio::spawn(interface_manager::InterfaceManager::dispatch(
             api_rx,
+            tx.clone(),
             virt_index,
-            conn.clone(),
+            conn,
+            conn_join_handle,
             disconnect_watcher.clone(),
             bluetooth.clone(),
             bluetooth_admin.clone(),
@@ -264,11 +248,7 @@ fn main() -> Result<(), Box<dyn Error>> {
             bluetooth.init(init_flags);
             bluetooth.enable();
 
-            bluetooth_gatt.lock().unwrap().init_profiles(
-                tx.clone(),
-                api_tx.clone(),
-                adapter.clone(),
-            );
+            bluetooth_gatt.lock().unwrap().init_profiles(tx.clone(), api_tx.clone());
             bt_sock_mgr.lock().unwrap().initialize(intf.clone());
 
             // Install SIGTERM handler so that we can properly shutdown
@@ -310,7 +290,7 @@ extern "C" fn handle_sigterm(_signum: i32) {
         let txl = tx.clone();
         tokio::spawn(async move {
             // Send the shutdown message here.
-            let _ = txl.send(Message::Shutdown).await;
+            let _ = txl.send(Message::InterfaceShutdown).await;
         });
 
         let guard = notifier.enabled.lock().unwrap();

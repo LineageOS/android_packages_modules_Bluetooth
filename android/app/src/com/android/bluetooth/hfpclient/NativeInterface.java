@@ -23,7 +23,9 @@ package com.android.bluetooth.hfpclient;
 import android.bluetooth.BluetoothDevice;
 import android.util.Log;
 
+import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -339,7 +341,11 @@ public class NativeInterface {
     }
 
     private byte[] getByteAddress(BluetoothDevice device) {
-        return mAdapterService.getByteIdentityAddress(device);
+        if (Flags.identityAddressNullIfUnknown()) {
+            return Utils.getByteBrEdrAddress(device);
+        } else {
+            return mAdapterService.getByteIdentityAddress(device);
+        }
     }
 
     // Callbacks from the native back into the java framework. All callbacks are routed via the

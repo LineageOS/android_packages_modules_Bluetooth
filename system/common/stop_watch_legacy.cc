@@ -18,13 +18,15 @@
 
 #include "common/stop_watch_legacy.h"
 
+#include <base/logging.h>
+
 #include <iomanip>
 #include <mutex>
 #include <sstream>
 #include <utility>
 
-#include <base/logging.h>
-#include "osi/include/log.h"
+#include "common/init_flags.h"
+#include "os/log.h"
 
 namespace bluetooth {
 namespace common {

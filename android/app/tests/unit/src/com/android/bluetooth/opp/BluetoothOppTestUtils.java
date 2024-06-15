@@ -31,7 +31,6 @@ import android.database.Cursor;
 
 import org.mockito.internal.util.MockUtil;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -115,35 +114,25 @@ public class BluetoothOppTestUtils {
     }
 
     /**
-     * Enable/Disable all activities in Opp for testing
+     * Enable/Disable an activity for testing
      *
+     * @param activityClass the activity class to enable/disable
      * @param enable true to enable, false to disable
      * @param mTargetContext target context
      */
-    public static void enableOppActivities(boolean enable, Context mTargetContext) {
-        int enabledState = enable ? COMPONENT_ENABLED_STATE_ENABLED
-                : COMPONENT_ENABLED_STATE_DEFAULT;
+    public static void enableActivity(Class activityClass, boolean enable, Context mTargetContext) {
+        int enabledState =
+                enable ? COMPONENT_ENABLED_STATE_ENABLED : COMPONENT_ENABLED_STATE_DEFAULT;
 
-        mTargetContext.getPackageManager().setApplicationEnabledSetting(
-                mTargetContext.getPackageName(), enabledState, DONT_KILL_APP);
+        mTargetContext
+                .getPackageManager()
+                .setApplicationEnabledSetting(
+                        mTargetContext.getPackageName(), enabledState, DONT_KILL_APP);
 
-        // All activities to be test
-        Class[] activities = {
-                BluetoothOppTransferActivity.class,
-                BluetoothOppBtEnableActivity.class,
-                BluetoothOppBtEnablingActivity.class,
-                BluetoothOppBtErrorActivity.class,
-                BluetoothOppIncomingFileConfirmActivity.class,
-                BluetoothOppTransferHistory.class,
-                BluetoothOppLauncherActivity.class,
-        };
-
-        Arrays.stream(activities).forEach(activityClass -> {
-            ComponentName activityName = new ComponentName(mTargetContext, activityClass);
-            mTargetContext.getPackageManager().setComponentEnabledSetting(
-                    activityName, enabledState, DONT_KILL_APP);
-        });
-
+        ComponentName activityName = new ComponentName(mTargetContext, activityClass);
+        mTargetContext
+                .getPackageManager()
+                .setComponentEnabledSetting(activityName, enabledState, DONT_KILL_APP);
     }
 }
 

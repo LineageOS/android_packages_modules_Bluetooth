@@ -17,12 +17,13 @@
 
 #include "devices.h"
 
+#include <android_bluetooth_flags.h>
 #include <base/strings/string_number_conversions.h>
 
 #include "acl_api.h"
-#include "android_bluetooth_flags.h"
 #include "bta_gatt_queue.h"
-#include "btif_storage.h"
+#include "btif/include/btif_storage.h"
+#include "internal_include/bt_trace.h"
 
 using bluetooth::hci::kIsoCigPhy1M;
 using bluetooth::hci::kIsoCigPhy2M;
@@ -355,7 +356,7 @@ void LeAudioDevice::RegisterPACs(
     pac_db->clear();
   }
 
-  dsa_modes_ = {DsaMode::DISABLED};
+  dsa_.modes = {DsaMode::DISABLED};
 
   /* TODO wrap this logging part with debug flag */
   for (const struct types::acs_ac_record& pac : *pac_recs) {
@@ -372,8 +373,9 @@ void LeAudioDevice::RegisterPACs(
 
     if (IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
       if (pac.codec_id == types::kLeAudioCodecHeadtracking) {
+        LOG(INFO) << __func__ << ": Headtracking supported";
         /* Todo: Set DSA modes according to the codec configuration */
-        dsa_modes_ = {
+        dsa_.modes = {
             DsaMode::DISABLED,
             DsaMode::ISO_SW,
             DsaMode::ISO_HW,
@@ -1022,7 +1024,22 @@ void LeAudioDevice::UpdateDeviceAllowlistFlag(void) {
     }
   }
 }
-DsaModes LeAudioDevice::GetDsaModes(void) { return dsa_modes_; }
+
+DsaModes LeAudioDevice::GetDsaModes(void) { return dsa_.modes; }
+
+types::DataPathState LeAudioDevice::GetDsaDataPathState(void) {
+  return dsa_.state;
+}
+
+void LeAudioDevice::SetDsaDataPathState(types::DataPathState state) {
+  dsa_.state = state;
+}
+
+uint16_t LeAudioDevice::GetDsaCisHandle(void) { return dsa_.cis_handle; }
+
+void LeAudioDevice::SetDsaCisHandle(uint16_t cis_handle) {
+  dsa_.cis_handle = cis_handle;
+}
 
 /* LeAudioDevices Class methods implementation */
 void LeAudioDevices::Add(const RawAddress& address, DeviceConnectState state,

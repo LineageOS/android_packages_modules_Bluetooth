@@ -30,6 +30,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.AssetFileDescriptor;
 import android.database.Cursor;
+import android.media.session.MediaController;
+import android.media.session.MediaSessionManager;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.CancellationSignal;
@@ -51,6 +53,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -236,6 +239,11 @@ public class BluetoothMethodProxy {
         manager.registerSync(scanResult, skip, timeout, callback, handler);
     }
 
+    /** Proxies {@link PeriodicAdvertisingManager#unregisterSync(PeriodicAdvertisingCallback)}. */
+    public void periodicAdvertisingManagerUnregisterSync(
+            PeriodicAdvertisingManager manager, PeriodicAdvertisingCallback callback) {
+        manager.unregisterSync(callback);
+    }
     /**
      * Proxies {@link PeriodicAdvertisingManager#transferSync}.
      */
@@ -269,5 +277,11 @@ public class BluetoothMethodProxy {
     /** Proxies {@link HandlerThread#getLooper()}. */
     public Looper handlerThreadGetLooper(HandlerThread handlerThread) {
         return handlerThread.getLooper();
+    }
+
+    /** Peoziws {@link MediaSessionManager#getActiveSessions} */
+    public @NonNull List<MediaController> mediaSessionManagerGetActiveSessions(
+            MediaSessionManager manager) {
+        return manager.getActiveSessions(null);
     }
 }

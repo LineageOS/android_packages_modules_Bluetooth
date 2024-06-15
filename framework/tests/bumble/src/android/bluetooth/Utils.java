@@ -23,7 +23,9 @@ import com.google.protobuf.ByteString;
 import java.util.Locale;
 
 public final class Utils {
+    // From bumble_config.json
     public static final String BUMBLE_RANDOM_ADDRESS = "51:F7:A8:75:AC:5E";
+    public static final byte[] BUMBLE_IRK = base16().decode("1F66F4B5F0C742F807DD0DDBF64E9213");
 
     public static String addressStringFromByteString(ByteString bs) {
         StringBuilder refAddrBuilder = new StringBuilder();

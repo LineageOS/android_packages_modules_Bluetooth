@@ -22,6 +22,7 @@ filegroup {
         ":statslog-bluetooth-java-gen",
         "src/**/*.java",
         "src/AdapterState.kt",
+        "src/AutoOnFeature.kt",
         "src/Log.kt",
         "src/RadioModeListener.kt",
         "src/airplane/ModeListener.kt",
@@ -34,9 +35,7 @@ filegroup {
 // pre-jarjar version of service-bluetooth that builds against pre-jarjar version of framework-bluetooth
 java_defaults {
     name: "service-bluetooth-pre-jarjar",
-    srcs: [
-        ":services.bluetooth-sources",
-    ],
+    srcs: [":services.bluetooth-sources"],
 
     errorprone: {
         javacflags: [
@@ -82,6 +81,7 @@ java_defaults {
         "bluetooth-nano-protos",
         "bluetooth-proto-enums-java-gen",
         "bluetooth_flags_java_lib",
+        "modules-utils-build_system",
         "modules-utils-shell-command-handler",
     ],
 
@@ -94,10 +94,6 @@ java_library {
     name: "service-bluetooth",
     defaults: ["service-bluetooth-pre-jarjar"],
     installable: true,
-
-    libs: [
-        "framework-bluetooth.impl",
-    ],
 
     jarjar_rules: ":bluetooth-jarjar-rules",
 
@@ -113,6 +109,9 @@ java_library {
         "com.android.btservices",
     ],
     min_sdk_version: "Tiramisu",
+    lint: {
+        baseline_filename: "lint-baseline.xml",
+    },
 }
 
 java_library {
@@ -146,6 +145,7 @@ java_library {
     libs: ["libprotobuf-java-nano"],
     lint: {
         strict_updatability_linting: true,
+
     },
     sdk_version: "system_current",
     apex_available: [
@@ -162,6 +162,8 @@ android_robolectric_test {
         ":statslog-bluetooth-java-gen",
         "src/AdapterState.kt",
         "src/AdapterStateTest.kt",
+        "src/AutoOnFeature.kt",
+        "src/AutoOnFeatureTest.kt",
         "src/Log.kt",
         "src/LogTest.kt",
         "src/RadioModeListener.kt",
@@ -174,6 +176,7 @@ android_robolectric_test {
 
     static_libs: [
         "androidx.test.core",
+        "kotlin-test",
         "kotlinx_coroutines",
         "kotlinx_coroutines_test",
         "mockito-robolectric-prebuilt",

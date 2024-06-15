@@ -13,7 +13,7 @@ script -q ${COVERAGE_TMP_FOLDER}/atest_log \
   --jacocoagent-path gs://tradefed_test_resources/teams/code_coverage/jacocoagent.jar \
   --coverage --coverage-toolchain JACOCO'
 
-COVERAGE_COLLECTED=$(rg 'Test Logs have saved in ' ${COVERAGE_TMP_FOLDER}/atest_log | sed -e 's/^.* //' -e 's/log.*$/log/')
+COVERAGE_COLLECTED=$(rg 'Test Logs have been saved in ' ${COVERAGE_TMP_FOLDER}/atest_log | sed -e 's/^.* //' -e 's/log.*$/log/')
 
 # Link source into the tmp folder
 ln -s "${ANDROID_BUILD_TOP}"/packages/modules/Bluetooth/service/src ${COVERAGE_TMP_FOLDER}/com/android/server/bluetooth

@@ -26,7 +26,7 @@
 
 #include <cstdint>
 
-#include "bt_target.h"
+#include "internal_include/bt_target.h"
 #include "types/raw_address.h"
 
 /*****************************************************************************

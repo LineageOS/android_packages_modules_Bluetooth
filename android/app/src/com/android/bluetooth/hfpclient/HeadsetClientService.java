@@ -87,10 +87,7 @@ public class HeadsetClientService extends ProfileService {
 
     public static final String HFP_CLIENT_STOP_TAG = "hfp_client_stop_tag";
 
-    HeadsetClientService() {}
-
-    @VisibleForTesting
-    HeadsetClientService(Context ctx) {
+    public HeadsetClientService(Context ctx) {
         super(ctx);
     }
 
@@ -104,14 +101,13 @@ public class HeadsetClientService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    public void start() {
         synchronized (mStartStopLock) {
             if (DBG) {
                 Log.d(TAG, "start()");
             }
             if (getHeadsetClientService() != null) {
-                Log.w(TAG, "start(): start called without stop");
-                return false;
+                throw new IllegalStateException("start() called twice");
             }
 
             mDatabaseManager = Objects.requireNonNull(
@@ -155,17 +151,16 @@ public class HeadsetClientService extends ProfileService {
             mSmThread.start();
 
             setHeadsetClientService(this);
-            return true;
         }
     }
 
     @Override
-    protected boolean stop() {
+    public void stop() {
         synchronized (mStartStopLock) {
             synchronized (HeadsetClientService.class) {
                 if (sHeadsetClientService == null) {
                     Log.w(TAG, "stop() called without start()");
-                    return false;
+                    return;
                 }
 
                 // Stop the HfpClientConnectionService for non-wearables devices.
@@ -196,8 +191,6 @@ public class HeadsetClientService extends ProfileService {
 
             mNativeInterface.cleanup();
             mNativeInterface = null;
-
-            return true;
         }
     }
 

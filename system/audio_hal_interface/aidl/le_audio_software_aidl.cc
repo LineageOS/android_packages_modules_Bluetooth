@@ -25,7 +25,7 @@
 
 #include "codec_status_aidl.h"
 #include "hal_version_manager.h"
-#include "osi/include/log.h"
+#include "os/log.h"
 
 namespace bluetooth {
 namespace audio {
@@ -66,7 +66,8 @@ LeAudioTransport::LeAudioTransport(void (*flush)(void),
       total_bytes_processed_(0),
       data_position_({}),
       pcm_config_(std::move(pcm_config)),
-      start_request_state_(StartRequestState::IDLE){};
+      start_request_state_(StartRequestState::IDLE),
+      dsa_mode_(DsaMode::DISABLED){};
 
 BluetoothAudioCtrlAck LeAudioTransport::StartRequest(bool is_low_latency) {
   // Check if operation is pending already
@@ -107,6 +108,43 @@ BluetoothAudioCtrlAck LeAudioTransport::StartRequest(bool is_low_latency) {
   return BluetoothAudioCtrlAck::FAILURE;
 }
 
+BluetoothAudioCtrlAck LeAudioTransport::StartRequestV2(bool is_low_latency) {
+  // Check if operation is pending already
+  if (GetStartRequestState() == StartRequestState::PENDING_AFTER_RESUME) {
+    LOG_INFO("Start request is already pending. Ignore the request");
+    return BluetoothAudioCtrlAck::PENDING;
+  }
+
+  SetStartRequestState(StartRequestState::PENDING_BEFORE_RESUME);
+  if (stream_cb_.on_resume_(true)) {
+    std::lock_guard<std::mutex> guard(start_request_state_mutex_);
+
+    switch (start_request_state_) {
+      case StartRequestState::CONFIRMED:
+        LOG_INFO("Start completed.");
+        SetStartRequestState(StartRequestState::IDLE);
+        return BluetoothAudioCtrlAck::SUCCESS_FINISHED;
+      case StartRequestState::CANCELED:
+        LOG_INFO("Start request failed.");
+        SetStartRequestState(StartRequestState::IDLE);
+        return BluetoothAudioCtrlAck::FAILURE;
+      case StartRequestState::PENDING_BEFORE_RESUME:
+        LOG_INFO("Start pending.");
+        SetStartRequestState(StartRequestState::PENDING_AFTER_RESUME);
+        return BluetoothAudioCtrlAck::PENDING;
+      default:
+        SetStartRequestState(StartRequestState::IDLE);
+        LOG_ERROR("Unexpected state %d",
+                  static_cast<int>(start_request_state_.load()));
+        return BluetoothAudioCtrlAck::FAILURE;
+    }
+  }
+
+  SetStartRequestState(StartRequestState::IDLE);
+  LOG_INFO("On resume failed.");
+  return BluetoothAudioCtrlAck::FAILURE;
+}
+
 BluetoothAudioCtrlAck LeAudioTransport::SuspendRequest() {
   LOG(INFO) << __func__;
   if (stream_cb_.on_suspend_()) {
@@ -125,6 +163,9 @@ void LeAudioTransport::StopRequest() {
 }
 
 void LeAudioTransport::SetLatencyMode(LatencyMode latency_mode) {
+  LOG_DEBUG("Latency mode: %s",
+            ::aidl::android::hardware::bluetooth::audio::toString(latency_mode)
+                .c_str());
   switch (latency_mode) {
     case LatencyMode::FREE:
       dsa_mode_ = DsaMode::DISABLED;
@@ -244,6 +285,23 @@ LeAudioTransport::LeAudioGetBroadcastConfig() {
   return broadcast_config_;
 }
 
+bool LeAudioTransport::IsRequestCompletedAfterUpdate(
+    const std::function<std::pair<StartRequestState, bool>(StartRequestState)>&
+        lambda) {
+  std::lock_guard<std::mutex> guard(start_request_state_mutex_);
+  auto result = lambda(start_request_state_);
+  auto new_state = std::get<0>(result);
+  if (new_state != start_request_state_) {
+    start_request_state_ = new_state;
+  }
+
+  auto ret = std::get<1>(result);
+  LOG_VERBOSE(" new state: %d, return %s", (int)(start_request_state_.load()),
+              ret ? "true" : "false");
+
+  return ret;
+}
+
 StartRequestState LeAudioTransport::GetStartRequestState(void) {
   return start_request_state_;
 }
@@ -289,6 +347,9 @@ LeAudioSinkTransport::LeAudioSinkTransport(SessionType session_type,
 LeAudioSinkTransport::~LeAudioSinkTransport() { delete transport_; }
 
 BluetoothAudioCtrlAck LeAudioSinkTransport::StartRequest(bool is_low_latency) {
+  if (IS_FLAG_ENABLED(leaudio_start_stream_race_fix)) {
+    return transport_->StartRequestV2(is_low_latency);
+  }
   return transport_->StartRequest(is_low_latency);
 }
 
@@ -352,6 +413,12 @@ LeAudioSinkTransport::LeAudioGetBroadcastConfig() {
   return transport_->LeAudioGetBroadcastConfig();
 }
 
+bool LeAudioSinkTransport::IsRequestCompletedAfterUpdate(
+    const std::function<std::pair<StartRequestState, bool>(StartRequestState)>&
+        lambda) {
+  return transport_->IsRequestCompletedAfterUpdate(lambda);
+}
+
 StartRequestState LeAudioSinkTransport::GetStartRequestState(void) {
   return transport_->GetStartRequestState();
 }
@@ -379,6 +446,9 @@ LeAudioSourceTransport::~LeAudioSourceTransport() { delete transport_; }
 
 BluetoothAudioCtrlAck LeAudioSourceTransport::StartRequest(
     bool is_low_latency) {
+  if (IS_FLAG_ENABLED(leaudio_start_stream_race_fix)) {
+    return transport_->StartRequestV2(is_low_latency);
+  }
   return transport_->StartRequest(is_low_latency);
 }
 
@@ -431,6 +501,12 @@ void LeAudioSourceTransport::LeAudioSetSelectedHalPcmConfig(
     uint32_t data_interval) {
   transport_->LeAudioSetSelectedHalPcmConfig(sample_rate_hz, bit_rate,
                                              channels_count, data_interval);
+}
+
+bool LeAudioSourceTransport::IsRequestCompletedAfterUpdate(
+    const std::function<std::pair<StartRequestState, bool>(StartRequestState)>&
+        lambda) {
+  return transport_->IsRequestCompletedAfterUpdate(lambda);
 }
 
 StartRequestState LeAudioSourceTransport::GetStartRequestState(void) {

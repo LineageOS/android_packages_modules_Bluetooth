@@ -29,7 +29,6 @@
 #include "osi/semaphore.h"
 
 using base::Closure;
-using base::TimeDelta;
 using bluetooth::common::MessageLoopThread;
 
 static semaphore_t* semaphore;

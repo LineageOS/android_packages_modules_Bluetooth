@@ -20,6 +20,7 @@
 #define SMP_API_TYPES_H
 
 #include <base/strings/stringprintf.h>
+#include <bluetooth/log.h>
 
 #include <cstdint>
 #include <string>
@@ -92,8 +93,12 @@ enum { SMP_OOB_NONE, SMP_OOB_PRESENT, SMP_OOB_UNKNOWN };
 typedef uint8_t tSMP_OOB_FLAG;
 
 /* type of OOB data required from application */
-enum { SMP_OOB_INVALID_TYPE, SMP_OOB_PEER, SMP_OOB_LOCAL, SMP_OOB_BOTH };
-typedef uint8_t tSMP_OOB_DATA_TYPE;
+typedef enum : uint8_t {
+  SMP_OOB_INVALID_TYPE,
+  SMP_OOB_PEER,
+  SMP_OOB_LOCAL,
+  SMP_OOB_BOTH,
+} tSMP_OOB_DATA_TYPE;
 
 enum : uint8_t {
   SMP_AUTH_NO_BOND = 0x00,
@@ -224,5 +229,14 @@ typedef tBTM_STATUS(tSMP_CALLBACK)(tSMP_EVT event, const RawAddress& bd_addr,
 /* Security Manager SIRK verification event - Called by the stack when Security
  * Manager requires verification from CSIP.*/
 typedef tBTM_STATUS(tSMP_SIRK_CALLBACK)(const RawAddress& bd_addr);
+
+namespace fmt {
+template <>
+struct formatter<tSMP_OOB_DATA_TYPE> : enum_formatter<tSMP_OOB_DATA_TYPE> {};
+template <>
+struct formatter<tSMP_SEC_LEVEL> : enum_formatter<tSMP_SEC_LEVEL> {};
+template <>
+struct formatter<tSMP_EVT> : enum_formatter<tSMP_EVT> {};
+}  // namespace fmt
 
 #endif  // SMP_API_TYPES_H

@@ -37,8 +37,6 @@ namespace stack_btm_ble_bgconn {
 
 // Function state capture and return values, if needed
 struct btm_update_scanner_filter_policy btm_update_scanner_filter_policy;
-struct btm_ble_suspend_bg_conn btm_ble_suspend_bg_conn;
-struct btm_ble_resume_bg_conn btm_ble_resume_bg_conn;
 struct BTM_SetLeConnectionModeToFast BTM_SetLeConnectionModeToFast;
 struct BTM_SetLeConnectionModeToSlow BTM_SetLeConnectionModeToSlow;
 struct BTM_AcceptlistAdd BTM_AcceptlistAdd;
@@ -54,14 +52,6 @@ void btm_update_scanner_filter_policy(tBTM_BLE_SFP scan_policy) {
   inc_func_call_count(__func__);
   test::mock::stack_btm_ble_bgconn::btm_update_scanner_filter_policy(
       scan_policy);
-}
-bool btm_ble_suspend_bg_conn(void) {
-  inc_func_call_count(__func__);
-  return test::mock::stack_btm_ble_bgconn::btm_ble_suspend_bg_conn();
-}
-bool btm_ble_resume_bg_conn(void) {
-  inc_func_call_count(__func__);
-  return test::mock::stack_btm_ble_bgconn::btm_ble_resume_bg_conn();
 }
 bool BTM_SetLeConnectionModeToFast() {
   inc_func_call_count(__func__);

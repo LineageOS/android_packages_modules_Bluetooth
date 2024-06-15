@@ -51,7 +51,6 @@ source_set("sbc_encoder") {
 
   include_dirs = [
     "encoder/include",
-    "//bt/system/internal_include",
     "//bt/system/stack/include",
   ]
 

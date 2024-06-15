@@ -46,7 +46,7 @@ void StructDef::GenSpecialize(std::ostream& s) const {
 }
 
 void StructDef::GenToString(std::ostream& s) const {
-  s << "std::string ToString() {";
+  s << "std::string ToString() const {";
   s << "std::stringstream ss;";
   s << "ss << std::hex << std::showbase << \"" << name_ << " { \";";
 

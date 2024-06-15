@@ -16,6 +16,8 @@
 
 #include "a2dp_encoding.h"
 
+#include <vector>
+
 #include "aidl/a2dp_encoding_aidl.h"
 #include "hal_version_manager.h"
 #include "hidl/a2dp_encoding_hidl.h"
@@ -25,13 +27,15 @@ namespace audio {
 namespace a2dp {
 
 bool update_codec_offloading_capabilities(
-    const std::vector<btav_a2dp_codec_config_t>& framework_preference) {
+    const std::vector<btav_a2dp_codec_config_t>& framework_preference,
+    bool supports_a2dp_hw_offload_v2) {
   if (HalVersionManager::GetHalTransport() ==
       BluetoothAudioHalTransport::HIDL) {
     return hidl::a2dp::update_codec_offloading_capabilities(
         framework_preference);
   }
-  return aidl::a2dp::update_codec_offloading_capabilities(framework_preference);
+  return aidl::a2dp::update_codec_offloading_capabilities(
+      framework_preference, supports_a2dp_hw_offload_v2);
 }
 
 // Check if new bluetooth_audio is enabled
@@ -155,6 +159,93 @@ bool is_opus_supported() {
   return false;
 }
 
+namespace provider {
+
+// Lookup the codec info in the list of supported offloaded sink codecs.
+std::optional<btav_a2dp_codec_index_t> sink_codec_index(
+    const uint8_t* p_codec_info) {
+  return (HalVersionManager::GetHalTransport() ==
+          BluetoothAudioHalTransport::AIDL)
+             ? aidl::a2dp::provider::sink_codec_index(p_codec_info)
+             : std::nullopt;
+}
+
+// Lookup the codec info in the list of supported offloaded source codecs.
+std::optional<btav_a2dp_codec_index_t> source_codec_index(
+    const uint8_t* p_codec_info) {
+  return (HalVersionManager::GetHalTransport() ==
+          BluetoothAudioHalTransport::AIDL)
+             ? aidl::a2dp::provider::source_codec_index(p_codec_info)
+             : std::nullopt;
+}
+
+// Return the name of the codec which is assigned to the input index.
+// The codec index must be in the ranges
+// BTAV_A2DP_CODEC_INDEX_SINK_EXT_MIN..BTAV_A2DP_CODEC_INDEX_SINK_EXT_MAX or
+// BTAV_A2DP_CODEC_INDEX_SOURCE_EXT_MIN..BTAV_A2DP_CODEC_INDEX_SOURCE_EXT_MAX.
+// Returns nullopt if the codec_index is not assigned or codec extensibility
+// is not supported or enabled.
+std::optional<const char*> codec_index_str(
+    btav_a2dp_codec_index_t codec_index) {
+  return (HalVersionManager::GetHalTransport() ==
+          BluetoothAudioHalTransport::AIDL)
+             ? aidl::a2dp::provider::codec_index_str(codec_index)
+             : std::nullopt;
+}
+
+// Return true if the codec is supported for the session type
+// A2DP_HARDWARE_ENCODING_DATAPATH or A2DP_HARDWARE_DECODING_DATAPATH.
+bool supports_codec(btav_a2dp_codec_index_t codec_index) {
+  return (HalVersionManager::GetHalTransport() ==
+          BluetoothAudioHalTransport::AIDL)
+             ? aidl::a2dp::provider::supports_codec(codec_index)
+             : false;
+}
+
+// Return the A2DP capabilities for the selected codec.
+bool codec_info(btav_a2dp_codec_index_t codec_index, uint64_t* codec_id,
+                uint8_t* codec_info, btav_a2dp_codec_config_t* codec_config) {
+  return (HalVersionManager::GetHalTransport() ==
+          BluetoothAudioHalTransport::AIDL)
+             ? aidl::a2dp::provider::codec_info(codec_index, codec_id,
+                                                codec_info, codec_config)
+             : false;
+}
+
+// Query the codec selection fromt the audio HAL.
+// The HAL is expected to pick the best audio configuration based on the
+// discovered remote SEPs.
+std::optional<a2dp_configuration> get_a2dp_configuration(
+    RawAddress peer_address,
+    std::vector<a2dp_remote_capabilities> const& remote_seps,
+    btav_a2dp_codec_config_t const& user_preferences) {
+  return (HalVersionManager::GetHalTransport() ==
+          BluetoothAudioHalTransport::AIDL)
+             ? aidl::a2dp::provider::get_a2dp_configuration(
+                   peer_address, remote_seps, user_preferences)
+             : std::nullopt;
+}
+
+// Query the codec parameters from the audio HAL.
+// The HAL performs a two part validation:
+//  - check if the configuration is valid
+//  - check if the configuration is supported by the audio provider
+// In case any of these checks fails, the corresponding A2DP
+// status is returned. If the configuration is valid and supported,
+// A2DP_OK is returned.
+tA2DP_STATUS parse_a2dp_configuration(
+    btav_a2dp_codec_index_t codec_index, const uint8_t* codec_info,
+    btav_a2dp_codec_config_t* codec_parameters,
+    std::vector<uint8_t>* vendor_specific_parameters) {
+  return (HalVersionManager::GetHalTransport() ==
+          BluetoothAudioHalTransport::AIDL)
+             ? aidl::a2dp::provider::parse_a2dp_configuration(
+                   codec_index, codec_info, codec_parameters,
+                   vendor_specific_parameters)
+             : A2DP_FAIL;
+}
+
+}  // namespace provider
 }  // namespace a2dp
 }  // namespace audio
 }  // namespace bluetooth

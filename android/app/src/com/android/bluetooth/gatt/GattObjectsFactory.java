@@ -22,6 +22,9 @@ import android.util.Log;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.BluetoothAdapterProxy;
+import com.android.bluetooth.le_scan.PeriodicScanManager;
+import com.android.bluetooth.le_scan.ScanManager;
+import com.android.bluetooth.le_scan.ScanNativeInterface;
 
 /**
  * Factory class for object initialization to help with unit testing
@@ -53,7 +56,7 @@ public class GattObjectsFactory {
      *
      * @param objectsFactory a test instance of the GattObjectsFactory
      */
-    static void setInstanceForTesting(GattObjectsFactory objectsFactory) {
+    public static void setInstanceForTesting(GattObjectsFactory objectsFactory) {
         Utils.enforceInstrumentationTestMode();
         synchronized (INSTANCE_LOCK) {
             Log.d(TAG, "setInstanceForTesting(), set to " + objectsFactory);

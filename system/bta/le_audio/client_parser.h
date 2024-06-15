@@ -22,6 +22,8 @@
 
 #pragma once
 
+#include <vector>
+
 #include "le_audio_types.h"
 
 namespace le_audio {

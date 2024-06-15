@@ -16,6 +16,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include "common/callback.h"
 #include "hci/address_with_type.h"

@@ -19,7 +19,7 @@
 
 #include "le_audio_software_hidl.h"
 
-#include "osi/include/log.h"
+#include "os/log.h"
 
 namespace bluetooth {
 namespace audio {
@@ -112,6 +112,32 @@ LeAudioTransport::LeAudioTransport(void (*flush)(void),
 BluetoothAudioCtrlAck LeAudioTransport::StartRequest() {
   SetStartRequestState(StartRequestState::PENDING_BEFORE_RESUME);
   if (stream_cb_.on_resume_(true)) {
+    if (start_request_state_ == StartRequestState::CONFIRMED) {
+      LOG_INFO("Start completed.");
+      SetStartRequestState(StartRequestState::IDLE);
+      return BluetoothAudioCtrlAck::SUCCESS_FINISHED;
+    }
+
+    if (start_request_state_ == StartRequestState::CANCELED) {
+      LOG_INFO("Start request failed.");
+      SetStartRequestState(StartRequestState::IDLE);
+      return BluetoothAudioCtrlAck::FAILURE;
+    }
+
+    LOG_INFO("Start pending.");
+    SetStartRequestState(StartRequestState::PENDING_AFTER_RESUME);
+    return BluetoothAudioCtrlAck::PENDING;
+  }
+
+  LOG_ERROR("Start request failed.");
+  SetStartRequestState(StartRequestState::IDLE);
+  return BluetoothAudioCtrlAck::FAILURE;
+}
+
+BluetoothAudioCtrlAck LeAudioTransport::StartRequestV2() {
+  SetStartRequestState(StartRequestState::PENDING_BEFORE_RESUME);
+  if (stream_cb_.on_resume_(true)) {
+    std::lock_guard<std::mutex> guard(start_request_state_mutex_);
     if (start_request_state_ == StartRequestState::CONFIRMED) {
       LOG_INFO("Start completed.");
       SetStartRequestState(StartRequestState::IDLE);
@@ -227,6 +253,23 @@ void LeAudioTransport::LeAudioSetSelectedHalPcmConfig(uint32_t sample_rate_hz,
   pcm_config_.dataIntervalUs = data_interval;
 }
 
+bool LeAudioTransport::IsRequestCompletedAfterUpdate(
+    const std::function<std::pair<StartRequestState, bool>(StartRequestState)>&
+        lambda) {
+  std::lock_guard<std::mutex> guard(start_request_state_mutex_);
+  auto result = lambda(start_request_state_);
+  auto new_state = std::get<0>(result);
+  if (new_state != start_request_state_) {
+    start_request_state_ = new_state;
+  }
+
+  auto ret = std::get<1>(result);
+  LOG_VERBOSE("new state: %d, return: %s",
+              static_cast<int>(start_request_state_.load()),
+              ret ? "true" : "false");
+  return ret;
+}
+
 StartRequestState LeAudioTransport::GetStartRequestState(void) {
   return start_request_state_;
 }
@@ -255,6 +298,9 @@ LeAudioSinkTransport::LeAudioSinkTransport(SessionType_2_1 session_type,
 LeAudioSinkTransport::~LeAudioSinkTransport() { delete transport_; }
 
 BluetoothAudioCtrlAck LeAudioSinkTransport::StartRequest() {
+  if (IS_FLAG_ENABLED(leaudio_start_stream_race_fix)) {
+    return transport_->StartRequestV2();
+  }
   return transport_->StartRequest();
 }
 
@@ -299,6 +345,12 @@ void LeAudioSinkTransport::LeAudioSetSelectedHalPcmConfig(
                                              channels_count, data_interval);
 }
 
+bool LeAudioSinkTransport::IsRequestCompletedAfterUpdate(
+    const std::function<std::pair<StartRequestState, bool>(StartRequestState)>&
+        lambda) {
+  return transport_->IsRequestCompletedAfterUpdate(lambda);
+}
+
 StartRequestState LeAudioSinkTransport::GetStartRequestState(void) {
   return transport_->GetStartRequestState();
 }
@@ -327,6 +379,9 @@ LeAudioSourceTransport::LeAudioSourceTransport(SessionType_2_1 session_type,
 LeAudioSourceTransport::~LeAudioSourceTransport() { delete transport_; }
 
 BluetoothAudioCtrlAck LeAudioSourceTransport::StartRequest() {
+  if (IS_FLAG_ENABLED(leaudio_start_stream_race_fix)) {
+    return transport_->StartRequestV2();
+  }
   return transport_->StartRequest();
 }
 
@@ -371,6 +426,11 @@ void LeAudioSourceTransport::LeAudioSetSelectedHalPcmConfig(
                                              channels_count, data_interval);
 }
 
+bool LeAudioSourceTransport::IsRequestCompletedAfterUpdate(
+    const std::function<std::pair<StartRequestState, bool>(StartRequestState)>&
+        lambda) {
+  return transport_->IsRequestCompletedAfterUpdate(lambda);
+}
 StartRequestState LeAudioSourceTransport::GetStartRequestState(void) {
   return transport_->GetStartRequestState();
 }

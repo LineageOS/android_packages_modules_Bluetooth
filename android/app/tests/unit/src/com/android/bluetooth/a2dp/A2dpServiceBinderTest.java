@@ -18,6 +18,8 @@ package com.android.bluetooth.a2dp;
 
 import static android.bluetooth.BluetoothCodecConfig.SOURCE_CODEC_TYPE_INVALID;
 
+import static org.mockito.Mockito.any;
+import static org.mockito.Mockito.anyInt;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.verify;
 
@@ -29,14 +31,18 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BufferConstraints;
 import android.content.AttributionSource;
-
-import androidx.test.InstrumentationRegistry;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
+import android.platform.test.flag.junit.SetFlagsRule;
 
 import com.android.bluetooth.TestUtils;
+import com.android.bluetooth.btservice.AudioRoutingManager;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.x.com.android.modules.utils.SynchronousResultReceiver;
 
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -44,242 +50,225 @@ import org.mockito.MockitoAnnotations;
 import java.util.List;
 
 public class A2dpServiceBinderTest {
-    @Mock private A2dpService mService;
+    private static final AttributionSource sSource = new AttributionSource.Builder(0).build();
+    private static final BluetoothAdapter sAdapter = BluetoothAdapter.getDefaultAdapter();
+    private static final BluetoothDevice sDevice = TestUtils.getTestDevice(sAdapter, 0);
+
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
+
+    @Mock private A2dpService mA2dpService;
+    @Mock private AudioRoutingManager mAudioRoutingManager;
+    @Mock private PackageManager mPackageManager;
 
     private A2dpService.BluetoothA2dpBinder mBinder;
-    private BluetoothAdapter mAdapter;
 
     @Before
     public void setUp() throws Exception {
         MockitoAnnotations.initMocks(this);
+        doReturn(mAudioRoutingManager).when(mA2dpService).getActiveDeviceManager();
+        doReturn(mPackageManager).when(mA2dpService).getPackageManager();
+        ApplicationInfo appInfo = new ApplicationInfo();
+        appInfo.targetSdkVersion = android.os.Build.VERSION_CODES.CUR_DEVELOPMENT;
+        doReturn(appInfo).when(mPackageManager).getApplicationInfo(any(), anyInt());
 
-        mAdapter = BluetoothAdapter.getDefaultAdapter();
-        mBinder = new A2dpService.BluetoothA2dpBinder(mService);
-        doReturn(InstrumentationRegistry.getTargetContext().getPackageManager())
-                .when(mService).getPackageManager();
+        mBinder = new A2dpService.BluetoothA2dpBinder(mA2dpService);
     }
 
     @After
-    public void cleaUp() {
+    public void cleanUp() {
         mBinder.cleanup();
     }
 
     @Test
     public void connect() {
-        BluetoothDevice device = TestUtils.getTestDevice(mAdapter, 0);
-        AttributionSource source = new AttributionSource.Builder(0).build();
         final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
 
-        mBinder.connect(device, source, recv);
-        verify(mService).connect(device);
+        mBinder.connect(sDevice, sSource, recv);
+        verify(mA2dpService).connect(sDevice);
     }
 
     @Test
     public void disconnect() {
-        BluetoothDevice device = TestUtils.getTestDevice(mAdapter, 0);
-        AttributionSource source = new AttributionSource.Builder(0).build();
         final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
 
-        mBinder.disconnect(device, source, recv);
-        verify(mService).disconnect(device);
+        mBinder.disconnect(sDevice, sSource, recv);
+        verify(mA2dpService).disconnect(sDevice);
     }
 
     @Test
     public void getConnectedDevices() {
-        AttributionSource source = new AttributionSource.Builder(0).build();
         final SynchronousResultReceiver<List<BluetoothDevice>> recv =
                 SynchronousResultReceiver.get();
 
-        mBinder.getConnectedDevices(source, recv);
-        verify(mService).getConnectedDevices();
+        mBinder.getConnectedDevices(sSource, recv);
+        verify(mA2dpService).getConnectedDevices();
     }
 
     @Test
     public void getDevicesMatchingConnectionStates() {
         int[] states = new int[] {BluetoothProfile.STATE_CONNECTED };
-        AttributionSource source = new AttributionSource.Builder(0).build();
         final SynchronousResultReceiver<List<BluetoothDevice>> recv =
                 SynchronousResultReceiver.get();
 
-        mBinder.getDevicesMatchingConnectionStates(states, source, recv);
-        verify(mService).getDevicesMatchingConnectionStates(states);
+        mBinder.getDevicesMatchingConnectionStates(states, sSource, recv);
+        verify(mA2dpService).getDevicesMatchingConnectionStates(states);
     }
 
     @Test
     public void getConnectionState() {
-        BluetoothDevice device = TestUtils.getTestDevice(mAdapter, 0);
-        AttributionSource source = new AttributionSource.Builder(0).build();
         final SynchronousResultReceiver<List<BluetoothDevice>> recv =
                 SynchronousResultReceiver.get();
 
-        mBinder.getConnectionState(device, source, recv);
-        verify(mService).getConnectionState(device);
+        mBinder.getConnectionState(sDevice, sSource, recv);
+        verify(mA2dpService).getConnectionState(sDevice);
     }
 
     @Test
     public void setActiveDevice() {
-        BluetoothDevice device = TestUtils.getTestDevice(mAdapter, 0);
-        AttributionSource source = new AttributionSource.Builder(0).build();
-        final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
+        mSetFlagsRule.disableFlags(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION);
 
-        mBinder.setActiveDevice(device, source, recv);
-        verify(mService).setActiveDevice(device);
+        SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
+        mBinder.setActiveDevice(sDevice, sSource, recv);
+        verify(mA2dpService).setActiveDevice(sDevice);
+    }
+
+    @Test
+    public void setActiveDeviceWithAudioRouting() {
+        mSetFlagsRule.enableFlags(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION);
+
+        SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
+        mBinder.setActiveDevice(sDevice, sSource, recv);
+        verify(mAudioRoutingManager).activateDeviceProfile(sDevice, BluetoothProfile.A2DP, recv);
     }
 
     @Test
     public void setActiveDevice_withNull_callsRemoveActiveDevice() {
-        BluetoothDevice device = null;
-        AttributionSource source = new AttributionSource.Builder(0).build();
+        mSetFlagsRule.disableFlags(Flags.FLAG_AUDIO_ROUTING_CENTRALIZATION);
         final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
 
-        mBinder.setActiveDevice(device, source, recv);
-        verify(mService).removeActiveDevice(false);
+        mBinder.setActiveDevice(null, sSource, recv);
+        verify(mA2dpService).removeActiveDevice(false);
     }
 
     @Test
     public void getActiveDevice() {
-        AttributionSource source = new AttributionSource.Builder(0).build();
         final SynchronousResultReceiver<BluetoothDevice> recv = SynchronousResultReceiver.get();
 
-        mBinder.getActiveDevice(source, recv);
-        verify(mService).getActiveDevice();
+        mBinder.getActiveDevice(sSource, recv);
+        verify(mA2dpService).getActiveDevice();
     }
 
     @Test
     public void setConnectionPolicy() {
-        BluetoothDevice device = TestUtils.getTestDevice(mAdapter, 0);
         int connectionPolicy = BluetoothProfile.CONNECTION_POLICY_ALLOWED;
-        AttributionSource source = new AttributionSource.Builder(0).build();
         final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
 
-        mBinder.setConnectionPolicy(device, connectionPolicy, source, recv);
-        verify(mService).setConnectionPolicy(device, connectionPolicy);
+        mBinder.setConnectionPolicy(sDevice, connectionPolicy, sSource, recv);
+        verify(mA2dpService).setConnectionPolicy(sDevice, connectionPolicy);
     }
 
     @Test
     public void getConnectionPolicy() {
-        BluetoothDevice device = TestUtils.getTestDevice(mAdapter, 0);
-        AttributionSource source = new AttributionSource.Builder(0).build();
         final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
 
-        mBinder.getConnectionPolicy(device, source, recv);
-        verify(mService).getConnectionPolicy(device);
+        mBinder.getConnectionPolicy(sDevice, sSource, recv);
+        verify(mA2dpService).getConnectionPolicy(sDevice);
     }
 
     @Test
     public void setAvrcpAbsoluteVolume() {
         int volume = 3;
-        AttributionSource source = new AttributionSource.Builder(0).build();
 
-        mBinder.setAvrcpAbsoluteVolume(volume, source);
-        verify(mService).setAvrcpAbsoluteVolume(volume);
+        mBinder.setAvrcpAbsoluteVolume(volume, sSource);
+        verify(mA2dpService).setAvrcpAbsoluteVolume(volume);
     }
 
     @Test
     public void isA2dpPlaying() {
-        BluetoothDevice device = TestUtils.getTestDevice(mAdapter, 0);
-        AttributionSource source = new AttributionSource.Builder(0).build();
         final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
 
-        mBinder.isA2dpPlaying(device, source, recv);
-        verify(mService).isA2dpPlaying(device);
+        mBinder.isA2dpPlaying(sDevice, sSource, recv);
+        verify(mA2dpService).isA2dpPlaying(sDevice);
     }
 
     @Test
     public void getCodecStatus() {
-        BluetoothDevice device = TestUtils.getTestDevice(mAdapter, 0);
-        AttributionSource source = new AttributionSource.Builder(0).build();
         final SynchronousResultReceiver<BluetoothCodecStatus> recv =
                 SynchronousResultReceiver.get();
 
-        mBinder.getCodecStatus(device, source, recv);
-        verify(mService).getCodecStatus(device);
+        mBinder.getCodecStatus(sDevice, sSource, recv);
+        verify(mA2dpService).getCodecStatus(sDevice);
     }
 
     @Test
     public void setCodecConfigPreference() {
-        BluetoothDevice device = TestUtils.getTestDevice(mAdapter, 0);
         BluetoothCodecConfig config = new BluetoothCodecConfig(SOURCE_CODEC_TYPE_INVALID);
-        AttributionSource source = new AttributionSource.Builder(0).build();
 
-        mBinder.setCodecConfigPreference(device, config, source);
-        verify(mService).setCodecConfigPreference(device, config);
+        mBinder.setCodecConfigPreference(sDevice, config, sSource);
+        verify(mA2dpService).setCodecConfigPreference(sDevice, config);
     }
 
     @Test
     public void enableOptionalCodecs() {
-        BluetoothDevice device = TestUtils.getTestDevice(mAdapter, 0);
-        AttributionSource source = new AttributionSource.Builder(0).build();
 
-        mBinder.enableOptionalCodecs(device, source);
-        verify(mService).enableOptionalCodecs(device);
+        mBinder.enableOptionalCodecs(sDevice, sSource);
+        verify(mA2dpService).enableOptionalCodecs(sDevice);
     }
 
     @Test
     public void disableOptionalCodecs() {
-        BluetoothDevice device = TestUtils.getTestDevice(mAdapter, 0);
-        AttributionSource source = new AttributionSource.Builder(0).build();
 
-        mBinder.disableOptionalCodecs(device, source);
-        verify(mService).disableOptionalCodecs(device);
+        mBinder.disableOptionalCodecs(sDevice, sSource);
+        verify(mA2dpService).disableOptionalCodecs(sDevice);
     }
 
     @Test
     public void isOptionalCodecsSupported() {
-        BluetoothDevice device = TestUtils.getTestDevice(mAdapter, 0);
-        AttributionSource source = new AttributionSource.Builder(0).build();
         final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
 
-        mBinder.isOptionalCodecsSupported(device, source, recv);
-        verify(mService).getSupportsOptionalCodecs(device);
+        mBinder.isOptionalCodecsSupported(sDevice, sSource, recv);
+        verify(mA2dpService).getSupportsOptionalCodecs(sDevice);
     }
 
     @Test
     public void isOptionalCodecsEnabled() {
-        BluetoothDevice device = TestUtils.getTestDevice(mAdapter, 0);
-        AttributionSource source = new AttributionSource.Builder(0).build();
         final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
 
-        mBinder.isOptionalCodecsEnabled(device, source, recv);
-        verify(mService).getOptionalCodecsEnabled(device);
+        mBinder.isOptionalCodecsEnabled(sDevice, sSource, recv);
+        verify(mA2dpService).getOptionalCodecsEnabled(sDevice);
     }
 
     @Test
     public void setOptionalCodecsEnabled() {
-        BluetoothDevice device = TestUtils.getTestDevice(mAdapter, 0);
         int value = BluetoothA2dp.OPTIONAL_CODECS_PREF_UNKNOWN;
-        AttributionSource source = new AttributionSource.Builder(0).build();
 
-        mBinder.setOptionalCodecsEnabled(device, value, source);
-        verify(mService).setOptionalCodecsEnabled(device, value);
+        mBinder.setOptionalCodecsEnabled(sDevice, value, sSource);
+        verify(mA2dpService).setOptionalCodecsEnabled(sDevice, value);
     }
 
     @Test
     public void getDynamicBufferSupport() {
-        AttributionSource source = new AttributionSource.Builder(0).build();
         final SynchronousResultReceiver<Integer> recv = SynchronousResultReceiver.get();
 
-        mBinder.getDynamicBufferSupport(source, recv);
-        verify(mService).getDynamicBufferSupport();
+        mBinder.getDynamicBufferSupport(sSource, recv);
+        verify(mA2dpService).getDynamicBufferSupport();
     }
 
     @Test
     public void getBufferConstraints() {
-        AttributionSource source = new AttributionSource.Builder(0).build();
         final SynchronousResultReceiver<BufferConstraints> recv = SynchronousResultReceiver.get();
 
-        mBinder.getBufferConstraints(source, recv);
-        verify(mService).getBufferConstraints();
+        mBinder.getBufferConstraints(sSource, recv);
+        verify(mA2dpService).getBufferConstraints();
     }
 
     @Test
     public void setBufferLengthMillis() {
         int codec = 0;
         int value = BluetoothA2dp.OPTIONAL_CODECS_PREF_UNKNOWN;
-        AttributionSource source = new AttributionSource.Builder(0).build();
         final SynchronousResultReceiver<Boolean> recv = SynchronousResultReceiver.get();
 
-        mBinder.setBufferLengthMillis(codec, value, source, recv);
-        verify(mService).setBufferLengthMillis(codec, value);
+        mBinder.setBufferLengthMillis(codec, value, sSource, recv);
+        verify(mA2dpService).setBufferLengthMillis(codec, value);
     }
 }

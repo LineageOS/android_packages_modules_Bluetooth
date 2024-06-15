@@ -25,6 +25,7 @@ import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattService;
+import android.bluetooth.BluetoothLeBroadcastMetadata;
 import android.content.Context;
 import android.os.Looper;
 
@@ -34,11 +35,14 @@ import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.TestUtils;
 import com.android.bluetooth.btservice.AdapterService;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.le_audio.LeAudioService;
+import android.platform.test.flag.junit.SetFlagsRule;
 
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
@@ -64,6 +68,8 @@ public class MediaControlGattServiceTest {
     private static final UUID UUID_GMCS = UUID.fromString("00001849-0000-1000-8000-00805f9b34fb");
     private static final UUID UUID_CCCD = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb");
     public static final int TEST_CCID = 1;
+
+    @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
     private MediaControlGattService mMcpService;
 
@@ -355,8 +361,10 @@ public class MediaControlGattServiceTest {
         Assert.assertEquals(characteristic.getProperties(),
                 BluetoothGattCharacteristic.PROPERTY_READ
                         | BluetoothGattCharacteristic.PROPERTY_NOTIFY);
-        Assert.assertEquals(Request.SupportedOpcodes.NONE,
-                characteristic.getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 0)
+        Assert.assertEquals(
+                MediaControlGattService.INITIAL_SUPPORTED_OPCODES,
+                characteristic
+                        .getIntValue(BluetoothGattCharacteristic.FORMAT_UINT32, 0)
                         .intValue());
 
         characteristic = service.getCharacteristic(
@@ -938,12 +946,19 @@ public class MediaControlGattServiceTest {
 
     @Test
     public void testMediaControlPointeRequest_OpcodePlayCallLeAudioServiceSetActiveDevice() {
+        mSetFlagsRule.enableFlags(Flags.FLAG_LEAUDIO_BROADCAST_FEATURE_SUPPORT);
         BluetoothGattService service = initAllFeaturesGattService();
         prepareConnectedDevice();
         mMcpService.updateSupportedOpcodesChar(Request.SupportedOpcodes.PLAY, true);
         verifyMediaControlPointRequest(service, Request.Opcodes.PLAY, null,
                 BluetoothGatt.GATT_SUCCESS, 1);
-        verify(mMockLeAudioService).setActiveDevice(any(BluetoothDevice.class));
+        if (!Flags.leaudioBroadcastFeatureSupport()) {
+            verify(mMockLeAudioService).setActiveDevice(any(BluetoothDevice.class));
+        } else {
+            final List<BluetoothLeBroadcastMetadata> metadataList = mock(List.class);
+            when(mMockLeAudioService.getAllBroadcastMetadata()).thenReturn(metadataList);
+            verify(mMockMcsCallbacks, times(1)).onMediaControlRequest(any(Request.class));
+        }
     }
 
     @Test

@@ -16,6 +16,8 @@
 
 #pragma once
 
+#include <bluetooth/log.h>
+
 #include <iostream>
 #include <vector>
 
@@ -98,7 +100,7 @@ class AvrcpMessageConverter {
         }
       } break;
       default:
-        LOG(ERROR) << "Unknown opcode for AVRCP message";
+        bluetooth::log::error("Unknown opcode for AVRCP message");
         break;
     }
 

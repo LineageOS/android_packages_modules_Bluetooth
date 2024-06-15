@@ -19,18 +19,18 @@
 #pragma once
 
 #include <fuzzer/FuzzedDataProvider.h>
-#include <gd/l2cap/classic/internal/dynamic_channel_service_manager_impl.h>
-#include <gd/l2cap/classic/internal/fixed_channel_service_manager_impl.h>
-#include <gd/l2cap/classic/internal/link_manager.h>
-#include <gd/l2cap/internal/parameter_provider.h>
+
 #include <future>
 #include <memory>
 
-#include "hci/fuzz/fuzz_hci_layer.h"
-#include "l2cap/classic/l2cap_classic_module.h"
-#include "os/handler.h"
-
 #include "fuzz_l2cap_classic_module.h"
+#include "hci/fuzz/fuzz_hci_layer.h"
+#include "l2cap/classic/internal/dynamic_channel_service_manager_impl.h"
+#include "l2cap/classic/internal/fixed_channel_service_manager_impl.h"
+#include "l2cap/classic/internal/link_manager.h"
+#include "l2cap/classic/l2cap_classic_module.h"
+#include "l2cap/internal/parameter_provider.h"
+#include "os/handler.h"
 
 namespace bluetooth {
 

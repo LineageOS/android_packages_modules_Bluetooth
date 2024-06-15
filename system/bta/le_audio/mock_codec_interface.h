@@ -18,6 +18,8 @@
 
 #include <gmock/gmock.h>
 
+#include <vector>
+
 #include "codec_interface.h"
 
 class MockCodecInterface {

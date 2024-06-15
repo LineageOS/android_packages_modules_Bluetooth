@@ -51,7 +51,7 @@ typedef struct {
  ******************************************************************************/
 void bta_hh_co_data(uint8_t dev_handle, uint8_t* p_rpt, uint16_t len,
                     tBTA_HH_PROTO_MODE mode, uint8_t sub_class,
-                    uint8_t ctry_code, const RawAddress& peer_addr,
+                    uint8_t ctry_code, const tAclLinkSpec& link_spec,
                     uint8_t app_id);
 
 /*******************************************************************************
@@ -102,14 +102,14 @@ void bta_hh_co_get_rpt_rsp(uint8_t dev_handle, uint8_t status,
  *                  information in NV if device is bonded and load it back when
  *                  stack reboot.
  *
- * Parameters       remote_bda  - remote device address
+ * Parameters       link_spec   - acl link specification
  *                  p_entry     - report entry pointer
  *                  app_id      - application id
  *
  * Returns          void.
  *
  ******************************************************************************/
-void bta_hh_le_co_rpt_info(const RawAddress& remote_bda,
+void bta_hh_le_co_rpt_info(const tAclLinkSpec& link_spec,
                            tBTA_HH_RPT_CACHE_ENTRY* p_entry, uint8_t app_id);
 
 /*******************************************************************************
@@ -121,14 +121,14 @@ void bta_hh_le_co_rpt_info(const RawAddress& remote_bda,
  *                  is completed, bta_hh_le_ci_cache_load() is called by the
  *                  application.
  *
- * Parameters       remote_bda  - remote device address
+ * Parameters       link_spec  - acl link specification
  *                  p_num_rpt: number of cached report
  *                  app_id      - application id
  *
  * Returns          the acched report array
  *
  ******************************************************************************/
-tBTA_HH_RPT_CACHE_ENTRY* bta_hh_le_co_cache_load(const RawAddress& remote_bda,
+tBTA_HH_RPT_CACHE_ENTRY* bta_hh_le_co_cache_load(const tAclLinkSpec& link_spec,
                                                  uint8_t* p_num_rpt,
                                                  uint8_t app_id);
 
@@ -138,11 +138,12 @@ tBTA_HH_RPT_CACHE_ENTRY* bta_hh_le_co_cache_load(const RawAddress& remote_bda,
  *
  * Description      This callout function is to reset the HOGP device cache.
  *
- * Parameters       remote_bda  - remote device address
+ * Parameters       link_spec  - acl link specification
  *
  * Returns          none
  *
  ******************************************************************************/
-void bta_hh_le_co_reset_rpt_cache(const RawAddress& remote_bda, uint8_t app_id);
+void bta_hh_le_co_reset_rpt_cache(const tAclLinkSpec& link_spec,
+                                  uint8_t app_id);
 
 #endif /* BTA_HH_CO_H */

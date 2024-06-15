@@ -16,13 +16,14 @@
  *
  ******************************************************************************/
 
+#include "security/pairing_handler_le.h"
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
 #include <memory>
 
-#include "os/log.h"
 #include "os/rand.h"
-#include "security/pairing_handler_le.h"
 #include "security/test/mocks.h"
 
 using ::testing::_;

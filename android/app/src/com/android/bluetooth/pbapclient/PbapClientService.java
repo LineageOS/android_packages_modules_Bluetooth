@@ -120,10 +120,7 @@ public class PbapClientService extends ProfileService {
         }
     };
 
-    PbapClientService() {}
-
-    @VisibleForTesting
-    PbapClientService(Context ctx) {
+    public PbapClientService(Context ctx) {
         super(ctx);
     }
 
@@ -137,7 +134,7 @@ public class PbapClientService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    public void start() {
         if (VDBG) {
             Log.v(TAG, "onStart");
         }
@@ -163,11 +160,10 @@ public class PbapClientService extends ProfileService {
         initializeAuthenticationService();
         registerSdpRecord();
         setPbapClientService(this);
-        return true;
     }
 
     @Override
-    protected boolean stop() {
+    public void stop() {
         setPbapClientService(null);
         cleanUpSdpRecord();
         try {
@@ -188,7 +184,6 @@ public class PbapClientService extends ProfileService {
 
         cleanupAuthenicationService();
         setComponentAvailable(AUTHENTICATOR_SERVICE, false);
-        return true;
     }
 
     void cleanupDevice(BluetoothDevice device) {

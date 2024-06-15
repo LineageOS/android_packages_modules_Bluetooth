@@ -34,7 +34,6 @@ source_set("nonstandard_codecs") {
       "//bt/system/bta/include",
       "//bt/system/btif/include",
       "//bt/system/include",
-      "//bt/system/internal_include",
       "//bt/system/stack",
       "//bt/system/stack/include",
       "//bt/system/utils/include",
@@ -47,6 +46,7 @@ source_set("nonstandard_codecs") {
 
     configs += [
       "//bt/system:target_defaults",
+      "//bt/system/log:log_defaults",
     ]
   }
 }
@@ -55,6 +55,7 @@ source_set("stack") {
   sources = [
     "a2dp/a2dp_api.cc",
     "a2dp/a2dp_codec_config.cc",
+    "a2dp/a2dp_ext.cc",
     "a2dp/a2dp_sbc.cc",
     "a2dp/a2dp_sbc_decoder.cc",
     "a2dp/a2dp_sbc_encoder.cc",
@@ -62,7 +63,6 @@ source_set("stack") {
     "acl/acl.cc",
     "acl/ble_acl.cc",
     "acl/btm_acl.cc",
-    "acl/btm_ble_connection_establishment.cc",
     "acl/btm_pm.cc",
     "arbiter/acl_arbiter.cc",
     "avct/avct_api.cc",
@@ -95,7 +95,6 @@ source_set("stack") {
     "btm/btm_ble.cc",
     "btm/btm_ble_addr.cc",
     "btm/btm_ble_adv_filter.cc",
-    "btm/btm_ble_batchscan.cc",
     "btm/btm_ble_bgconn.cc",
     "btm/btm_ble_cont_energy.cc",
     "btm/btm_ble_gap.cc",
@@ -115,6 +114,7 @@ source_set("stack") {
     "btm/btm_sec.cc",
     "btm/btm_sec_cb.cc",
     "btm/btm_security_client_interface.cc",
+    "btm/security_event_parser.cc",
     "btm/hfp_lc3_encoder_linux.cc",
     "btm/hfp_lc3_decoder_linux.cc",
     "btm/hfp_msbc_encoder.cc",
@@ -144,6 +144,7 @@ source_set("stack") {
     "hid/hidh_conn.cc",
     "l2cap/l2c_api.cc",
     "l2cap/l2c_ble.cc",
+    "l2cap/l2c_ble_conn_params.cc",
     "l2cap/l2c_csm.cc",
     "l2cap/l2c_fcr.cc",
     "l2cap/l2c_link.cc",
@@ -207,7 +208,6 @@ source_set("stack") {
     "//bt/system/ctrlr/include",
     "//bt/system/gd",
     "//bt/system/hcis",
-    "//bt/system/internal_include",
     "//bt/system/linux_include",
     "//bt/system/rpc/include",
     "//bt/system/types",
@@ -223,11 +223,11 @@ source_set("stack") {
     "//bt/system/gd/rust/shim:init_flags_bridge_header",
     "//bt/system/stack/mmc",
     "//bt/system/types",
-    "//bt/system/types",
   ]
 
   configs += [
     "//bt/system:target_defaults",
+    "//bt/system/log:log_defaults",
   ]
 }
 
@@ -245,7 +245,6 @@ if (use.test) {
       "btm",
       "include",
       "test/common",
-      "//bt/system/internal_include",
       "//bt/system/packet/tests",
     ]
 
@@ -275,7 +274,6 @@ if (defined(use.android) && use.android) {
       "//bt/system/bta/include",
       "//bt/system/bta/sys",
       "//bt/system/embdrv/sbc/encoder/include",
-      "//bt/system/internal_include",
       "//bt/system/stack/a2dp",
       "//bt/system/stack/btm",
       "//bt/system/stack/include",
@@ -285,6 +283,7 @@ if (defined(use.android) && use.android) {
 
     libs = [
       "dl",
+      "fmt",
       "pthread",
       "resolv",
       "rt",
@@ -325,11 +324,9 @@ if (defined(use.android) && use.android) {
     include_dirs = [
       "//bt/system/",
       "//bt/system/linux_include",
-      "//bt/system/internal_include",
       "//bt/system/bta/include",
       "//bt/system/bta/sys",
       "//bt/system/embdrv/sbc/encoder/include",
-      "//bt/system/internal_include",
       "//bt/system/stack/a2dp",
       "//bt/system/stack/l2cap",
       "//bt/system/stack/btm",
@@ -340,6 +337,7 @@ if (defined(use.android) && use.android) {
 
     libs = [
       "dl",
+      "fmt",
       "pthread",
       "resolv",
       "rt",

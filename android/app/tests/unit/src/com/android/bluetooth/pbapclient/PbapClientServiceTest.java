@@ -19,7 +19,6 @@ import static com.google.common.truth.Truth.assertThat;
 
 import static org.junit.Assert.assertThrows;
 import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.anyString;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.eq;
 import static org.mockito.Mockito.mock;
@@ -78,9 +77,9 @@ public class PbapClientServiceTest {
         TestUtils.setAdapterService(mAdapterService);
         mIsAdapterServiceSet = true;
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
-        doReturn(true, false).when(mAdapterService).isStartedProfile(anyString());
         mService = new PbapClientService(mTargetContext);
-        mService.doStart();
+        mService.start();
+        mService.setAvailable(true);
         mIsPbapClientServiceStarted = true;
         // Try getting the Bluetooth adapter
         mAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -94,7 +93,7 @@ public class PbapClientServiceTest {
             return;
         }
         if (mIsPbapClientServiceStarted) {
-            mService.doStop();
+            mService.stop();
             mService = PbapClientService.getPbapClientService();
             Assert.assertNull(mService);
         }

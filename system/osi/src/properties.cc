@@ -24,7 +24,7 @@
 #include <optional>
 #include <string>
 
-#include "gd/os/system_properties.h"
+#include "os/system_properties.h"
 
 #ifdef __ANDROID__
 #undef PROPERTY_VALUE_MAX

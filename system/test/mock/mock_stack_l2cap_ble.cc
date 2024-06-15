@@ -37,7 +37,10 @@ namespace stack_l2cap_ble {
 
 // Function state capture and return values, if needed
 struct L2CA_UpdateBleConnParams L2CA_UpdateBleConnParams;
-struct L2CA_EnableUpdateBleConnParams L2CA_EnableUpdateBleConnParams;
+struct L2CA_LockBleConnParamsForServiceDiscovery
+    L2CA_LockBleConnParamsForServiceDiscovery;
+struct L2CA_LockBleConnParamsForProfileConnection
+    L2CA_LockBleConnParamsForProfileConnection;
 struct L2CA_ConsolidateParams L2CA_ConsolidateParams;
 struct L2CA_GetBleConnRole L2CA_GetBleConnRole;
 struct l2cble_notify_le_connection l2cble_notify_le_connection;
@@ -75,10 +78,17 @@ bool L2CA_UpdateBleConnParams(const RawAddress& rem_bda, uint16_t min_int,
   return test::mock::stack_l2cap_ble::L2CA_UpdateBleConnParams(
       rem_bda, min_int, max_int, latency, timeout, min_ce_len, max_ce_len);
 }
-bool L2CA_EnableUpdateBleConnParams(const RawAddress& rem_bda, bool enable) {
+void L2CA_LockBleConnParamsForServiceDiscovery(const RawAddress& rem_bda,
+                                               bool enable) {
   inc_func_call_count(__func__);
-  return test::mock::stack_l2cap_ble::L2CA_EnableUpdateBleConnParams(rem_bda,
-                                                                     enable);
+  return test::mock::stack_l2cap_ble::L2CA_LockBleConnParamsForServiceDiscovery(
+      rem_bda, enable);
+}
+void L2CA_LockBleConnParamsForProfileConnection(const RawAddress& rem_bda,
+                                                bool enable) {
+  inc_func_call_count(__func__);
+  return test::mock::stack_l2cap_ble::
+      L2CA_LockBleConnParamsForProfileConnection(rem_bda, enable);
 }
 void L2CA_Consolidate(const RawAddress& identity_addr, const RawAddress& rpa) {
   inc_func_call_count(__func__);

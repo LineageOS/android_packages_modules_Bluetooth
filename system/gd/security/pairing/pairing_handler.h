@@ -18,7 +18,9 @@
 #pragma once
 
 #include <neighbor/name_db.h>
+
 #include <utility>
+#include <vector>
 
 #include "hci/address_with_type.h"
 #include "hci/hci_packets.h"
@@ -26,7 +28,6 @@
 #include "security/channel/security_manager_channel.h"
 #include "security/pairing/oob_data.h"
 #include "security/record/security_record.h"
-#include "security/smp_packets.h"
 #include "security/ui.h"
 
 namespace bluetooth {

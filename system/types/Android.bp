@@ -41,7 +41,6 @@ cc_library_static {
     host_supported: true,
     srcs: [
         "bluetooth/uuid.cc",
-        "class_of_device.cc",
         "raw_address.cc",
     ],
     static_libs: ["libchrome"],
@@ -68,13 +67,13 @@ cc_test {
     ],
     include_dirs: [
         "packages/modules/Bluetooth/system",
+        "packages/modules/Bluetooth/system/include",
     ],
     host_supported: true,
     srcs: [
         "test/ble_address_with_type_unittest.cc",
         "test/bluetooth/uuid_unittest.cc",
         "test/bt_name_test.cc",
-        "test/class_of_device_unittest.cc",
         "test/raw_address_unittest.cc",
     ],
     shared_libs: ["liblog"],

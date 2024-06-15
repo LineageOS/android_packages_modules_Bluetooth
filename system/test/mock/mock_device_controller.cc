@@ -101,116 +101,12 @@ uint8_t* get_local_supported_codecs(uint8_t* number_of_codecs) {
 
 const uint8_t* get_ble_supported_states(void) { return ble_supported_states; }
 
-bool supports_simple_pairing(void) { return simple_pairing_supported; }
-
-bool supports_secure_connections(void) { return secure_connections_supported; }
-
-bool supports_simultaneous_le_bredr(void) {
-  return HCI_SIMUL_LE_BREDR_SUPPORTED(features_classic[0].as_array);
-}
-
-bool supports_reading_remote_extended_features(void) {
-  return HCI_READ_REMOTE_EXT_FEATURES_SUPPORTED(supported_commands);
-}
-
-bool supports_interlaced_inquiry_scan(void) {
-  return HCI_LMP_INTERLACED_INQ_SCAN_SUPPORTED(features_classic[0].as_array);
-}
-
-bool supports_rssi_with_inquiry_results(void) {
-  return HCI_LMP_INQ_RSSI_SUPPORTED(features_classic[0].as_array);
-}
-
-bool supports_extended_inquiry_response(void) {
-  return HCI_EXT_INQ_RSP_SUPPORTED(features_classic[0].as_array);
-}
-
-bool supports_central_peripheral_role_switch(void) {
-  return HCI_SWITCH_SUPPORTED(features_classic[0].as_array);
-}
-
 bool supports_enhanced_setup_synchronous_connection(void) {
   return HCI_ENH_SETUP_SYNCH_CONN_SUPPORTED(supported_commands);
 }
 
 bool supports_enhanced_accept_synchronous_connection(void) {
   return HCI_ENH_ACCEPT_SYNCH_CONN_SUPPORTED(supported_commands);
-}
-
-bool supports_3_slot_packets(void) {
-  return HCI_3_SLOT_PACKETS_SUPPORTED(features_classic[0].as_array);
-}
-
-bool supports_5_slot_packets(void) {
-  return HCI_5_SLOT_PACKETS_SUPPORTED(features_classic[0].as_array);
-}
-
-bool supports_classic_2m_phy(void) {
-  return HCI_EDR_ACL_2MPS_SUPPORTED(features_classic[0].as_array);
-}
-
-bool supports_classic_3m_phy(void) {
-  return HCI_EDR_ACL_3MPS_SUPPORTED(features_classic[0].as_array);
-}
-
-bool supports_3_slot_edr_packets(void) {
-  return HCI_3_SLOT_EDR_ACL_SUPPORTED(features_classic[0].as_array);
-}
-
-bool supports_5_slot_edr_packets(void) {
-  return HCI_5_SLOT_EDR_ACL_SUPPORTED(features_classic[0].as_array);
-}
-
-bool supports_sco(void) {
-  return HCI_SCO_LINK_SUPPORTED(features_classic[0].as_array);
-}
-
-bool supports_hv2_packets(void) {
-  return HCI_HV2_PACKETS_SUPPORTED(features_classic[0].as_array);
-}
-
-bool supports_hv3_packets(void) {
-  return HCI_HV3_PACKETS_SUPPORTED(features_classic[0].as_array);
-}
-
-bool supports_ev3_packets(void) {
-  return HCI_ESCO_EV3_SUPPORTED(features_classic[0].as_array);
-}
-
-bool supports_ev4_packets(void) {
-  return HCI_ESCO_EV4_SUPPORTED(features_classic[0].as_array);
-}
-
-bool supports_ev5_packets(void) {
-  return HCI_ESCO_EV5_SUPPORTED(features_classic[0].as_array);
-}
-
-bool supports_esco_2m_phy(void) {
-  return HCI_EDR_ESCO_2MPS_SUPPORTED(features_classic[0].as_array);
-}
-
-bool supports_esco_3m_phy(void) {
-  return HCI_EDR_ESCO_3MPS_SUPPORTED(features_classic[0].as_array);
-}
-
-bool supports_3_slot_esco_edr_packets(void) {
-  return HCI_3_SLOT_EDR_ESCO_SUPPORTED(features_classic[0].as_array);
-}
-
-bool supports_role_switch(void) {
-  return HCI_SWITCH_SUPPORTED(features_classic[0].as_array);
-}
-
-bool supports_non_flushable_pb(void) {
-  return HCI_NON_FLUSHABLE_PB_SUPPORTED(features_classic[0].as_array);
-}
-
-bool supports_sniff_subrating(void) {
-  return HCI_SNIFF_SUB_RATE_SUPPORTED(features_classic[0].as_array);
-}
-
-bool supports_encryption_pause(void) {
-  return HCI_ATOMIC_ENCRYPT_SUPPORTED(features_classic[0].as_array);
 }
 
 bool supports_configure_data_path(void) {
@@ -264,10 +160,6 @@ bool supports_ble_periodic_advertising(void) {
 
 bool supports_ble_peripheral_initiated_feature_exchange(void) {
   return HCI_LE_PERIPHERAL_INIT_FEAT_EXC_SUPPORTED(features_ble.as_array);
-}
-
-bool supports_ble_connection_parameter_request(void) {
-  return HCI_LE_CONN_PARAM_REQ_SUPPORTED(features_ble.as_array);
 }
 
 bool supports_ble_periodic_advertising_sync_transfer_sender(void) {
@@ -369,15 +261,16 @@ tBTM_STATUS clear_event_filter() { return BTM_SUCCESS; }
 
 tBTM_STATUS clear_event_mask() { return BTM_SUCCESS; }
 
-tBTM_STATUS le_rand(LeRandCallback cb) { return BTM_SUCCESS; }
+tBTM_STATUS le_rand(LeRandCallback /* cb */) { return BTM_SUCCESS; }
 tBTM_STATUS set_event_filter_connection_setup_all_devices() {
   return BTM_SUCCESS;
 }
 tBTM_STATUS set_event_filter_allow_device_connection(
-    std::vector<RawAddress> devices) {
+    std::vector<RawAddress> /* devices */) {
   return BTM_SUCCESS;
 }
-tBTM_STATUS set_default_event_mask_except(uint64_t mask, uint64_t le_mask) {
+tBTM_STATUS set_default_event_mask_except(uint64_t /* mask */,
+                                          uint64_t /* le_mask */) {
   return BTM_SUCCESS;
 }
 tBTM_STATUS set_event_filter_inquiry_result_all_devices() {
@@ -392,38 +285,8 @@ const controller_t interface = {
 
     get_ble_supported_states,
 
-    supports_simple_pairing,
-    supports_secure_connections,
-    supports_simultaneous_le_bredr,
-    supports_reading_remote_extended_features,
-    supports_interlaced_inquiry_scan,
-    supports_rssi_with_inquiry_results,
-    supports_extended_inquiry_response,
-    supports_central_peripheral_role_switch,
     supports_enhanced_setup_synchronous_connection,
     supports_enhanced_accept_synchronous_connection,
-    supports_3_slot_packets,
-    supports_5_slot_packets,
-    supports_classic_2m_phy,
-    supports_classic_3m_phy,
-    supports_3_slot_edr_packets,
-    supports_5_slot_edr_packets,
-    supports_sco,
-    supports_hv2_packets,
-    supports_hv3_packets,
-    supports_ev3_packets,
-    supports_ev4_packets,
-    supports_ev5_packets,
-    supports_esco_2m_phy,
-    supports_esco_3m_phy,
-    supports_3_slot_esco_edr_packets,
-    supports_role_switch,
-    []() { return supports_hold_mode; },
-    []() { return supports_sniff_mode; },
-    []() { return supports_park_mode; },
-    supports_non_flushable_pb,
-    supports_sniff_subrating,
-    supports_encryption_pause,
     supports_configure_data_path,
     supports_set_min_encryption_key_size,
     supports_read_encryption_key_size,
@@ -438,7 +301,6 @@ const controller_t interface = {
     supports_ble_extended_advertising,
     supports_ble_periodic_advertising,
     supports_ble_peripheral_initiated_feature_exchange,
-    supports_ble_connection_parameter_request,
     supports_ble_periodic_advertising_sync_transfer_sender,
     supports_ble_periodic_advertising_sync_transfer_recipient,
     supports_ble_connected_isochronous_stream_central,

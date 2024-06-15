@@ -26,7 +26,6 @@
 
 #include <cstdint>
 
-#include "bt_target.h"  // Must be first to define build configuration
-
 #include "bta/include/bta_jv_api.h"
+#include "internal_include/bt_target.h"
 #include "stack/include/sdp_api.h"

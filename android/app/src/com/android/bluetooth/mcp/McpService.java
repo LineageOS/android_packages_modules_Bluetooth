@@ -57,10 +57,7 @@ public class McpService extends ProfileService {
     private Map<BluetoothDevice, Integer> mDeviceAuthorizations = new HashMap<>();
     private Handler mHandler = new Handler(Looper.getMainLooper());
 
-    McpService() {}
-
-    @VisibleForTesting
-    McpService(Context ctx) {
+    public McpService(Context ctx) {
         super(ctx);
     }
 
@@ -104,7 +101,7 @@ public class McpService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    public void start() {
         if (DBG) {
             Log.d(TAG, "start()");
         }
@@ -133,19 +130,17 @@ public class McpService extends ProfileService {
                 });
             }
         }
-
-        return true;
     }
 
     @Override
-    protected boolean stop() {
+    public void stop() {
         if (DBG) {
             Log.d(TAG, "stop()");
         }
 
         if (sMcpService == null) {
             Log.w(TAG, "stop() called before start()");
-            return true;
+            return;
         }
 
         synchronized (mLock) {
@@ -163,11 +158,10 @@ public class McpService extends ProfileService {
 
         // Mark service as stopped
         setMcpService(null);
-        return true;
     }
 
     @Override
-    protected void cleanup() {
+    public void cleanup() {
         if (DBG) {
             Log.d(TAG, "cleanup()");
         }
@@ -204,6 +198,17 @@ public class McpService extends ProfileService {
         }
         Log.w(TAG, "onDeviceUnauthorized - authorization notification not implemented yet ");
         setDeviceAuthorized(device, false);
+    }
+
+    /**
+     * Remove authorization information for the device.
+     *
+     * @param device device to remove from the service information
+     * @hide
+     */
+    public void removeDeviceAuthorizationInfo(BluetoothDevice device) {
+        Log.i(TAG, "removeDeviceAuthorizationInfo(): device: " + device);
+        mDeviceAuthorizations.remove(device);
     }
 
     public void setDeviceAuthorized(BluetoothDevice device, boolean isAuthorized) {

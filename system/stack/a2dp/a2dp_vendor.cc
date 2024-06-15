@@ -26,6 +26,7 @@
 #include "a2dp_vendor_aptx_hd.h"
 #include "a2dp_vendor_ldac.h"
 #include "a2dp_vendor_opus.h"
+#include "internal_include/bt_trace.h"
 #include "stack/include/bt_hdr.h"
 
 bool A2DP_IsVendorSourceCodecValid(const uint8_t* p_codec_info) {
@@ -720,6 +721,9 @@ const char* A2DP_VendorCodecIndexStr(btav_a2dp_codec_index_t codec_index) {
     // Add a switch statement for each vendor-specific codec
     case BTAV_A2DP_CODEC_INDEX_MAX:
       break;
+    case BTAV_A2DP_CODEC_INDEX_SOURCE_EXT_MIN:
+    case BTAV_A2DP_CODEC_INDEX_SINK_EXT_MIN:
+      break;
   }
 
   return "UNKNOWN CODEC INDEX";
@@ -750,6 +754,9 @@ bool A2DP_VendorInitCodecConfig(btav_a2dp_codec_index_t codec_index,
       return A2DP_VendorInitCodecConfigOpusSink(p_cfg);
     // Add a switch statement for each vendor-specific codec
     case BTAV_A2DP_CODEC_INDEX_MAX:
+      break;
+    case BTAV_A2DP_CODEC_INDEX_SOURCE_EXT_MIN:
+    case BTAV_A2DP_CODEC_INDEX_SINK_EXT_MIN:
       break;
   }
 

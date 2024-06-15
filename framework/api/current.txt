@@ -503,7 +503,7 @@ package android.bluetooth {
     method @FlaggedApi("com.android.bluetooth.flags.a2dp_offload_codec_extensibility") @NonNull public String getCodecName();
     method @FlaggedApi("com.android.bluetooth.flags.a2dp_offload_codec_extensibility") public boolean isMandatoryCodec();
     method @FlaggedApi("com.android.bluetooth.flags.a2dp_offload_codec_extensibility") public void writeToParcel(@NonNull android.os.Parcel, int);
-    field public static final long CODEC_ID_AAC = 1L; // 0x1L
+    field public static final long CODEC_ID_AAC = 2L; // 0x2L
     field public static final long CODEC_ID_APTX = 16797695L; // 0x1004fffL
     field public static final long CODEC_ID_APTX_HD = 604035071L; // 0x2400d7ffL
     field public static final long CODEC_ID_LDAC = -1442763265L; // 0xffffffffaa012dffL
@@ -534,6 +534,7 @@ package android.bluetooth {
     method public int describeContents();
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public boolean fetchUuidsWithSdp();
     method public String getAddress();
+    method @FlaggedApi("com.android.bluetooth.flags.get_address_type_api") public int getAddressType();
     method @Nullable @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public String getAlias();
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public android.bluetooth.BluetoothClass getBluetoothClass();
     method @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public int getBondState();
@@ -554,6 +555,7 @@ package android.bluetooth {
     field @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public static final String ACTION_NAME_CHANGED = "android.bluetooth.device.action.NAME_CHANGED";
     field @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public static final String ACTION_PAIRING_REQUEST = "android.bluetooth.device.action.PAIRING_REQUEST";
     field @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public static final String ACTION_UUID = "android.bluetooth.device.action.UUID";
+    field @FlaggedApi("com.android.bluetooth.flags.get_address_type_api") public static final int ADDRESS_TYPE_ANONYMOUS = 255; // 0xff
     field public static final int ADDRESS_TYPE_PUBLIC = 0; // 0x0
     field public static final int ADDRESS_TYPE_RANDOM = 1; // 0x1
     field public static final int ADDRESS_TYPE_UNKNOWN = 65535; // 0xffff
@@ -625,6 +627,7 @@ package android.bluetooth {
     field public static final int CONNECTION_PRIORITY_HIGH = 1; // 0x1
     field public static final int CONNECTION_PRIORITY_LOW_POWER = 2; // 0x2
     field public static final int GATT_CONNECTION_CONGESTED = 143; // 0x8f
+    field @FlaggedApi("com.android.bluetooth.flags.enumerate_gatt_errors") public static final int GATT_CONNECTION_TIMEOUT = 147; // 0x93
     field public static final int GATT_FAILURE = 257; // 0x101
     field public static final int GATT_INSUFFICIENT_AUTHENTICATION = 5; // 0x5
     field public static final int GATT_INSUFFICIENT_AUTHORIZATION = 8; // 0x8
@@ -974,12 +977,19 @@ package android.bluetooth {
     field public static final int FRAME_DURATION_10000 = 2; // 0x2
     field public static final int FRAME_DURATION_7500 = 1; // 0x1
     field public static final int FRAME_DURATION_NONE = 0; // 0x0
+    field @FlaggedApi("com.android.bluetooth.flags.leaudio_add_sampling_frequencies") public static final int SAMPLE_RATE_11025 = 2; // 0x2
     field public static final int SAMPLE_RATE_16000 = 4; // 0x4
+    field @FlaggedApi("com.android.bluetooth.flags.leaudio_add_sampling_frequencies") public static final int SAMPLE_RATE_176400 = 1024; // 0x400
+    field @FlaggedApi("com.android.bluetooth.flags.leaudio_add_sampling_frequencies") public static final int SAMPLE_RATE_192000 = 2048; // 0x800
+    field @FlaggedApi("com.android.bluetooth.flags.leaudio_add_sampling_frequencies") public static final int SAMPLE_RATE_22050 = 8; // 0x8
     field public static final int SAMPLE_RATE_24000 = 16; // 0x10
     field public static final int SAMPLE_RATE_32000 = 32; // 0x20
+    field @FlaggedApi("com.android.bluetooth.flags.leaudio_add_sampling_frequencies") public static final int SAMPLE_RATE_384000 = 4096; // 0x1000
     field public static final int SAMPLE_RATE_44100 = 64; // 0x40
     field public static final int SAMPLE_RATE_48000 = 128; // 0x80
     field public static final int SAMPLE_RATE_8000 = 1; // 0x1
+    field @FlaggedApi("com.android.bluetooth.flags.leaudio_add_sampling_frequencies") public static final int SAMPLE_RATE_88200 = 256; // 0x100
+    field @FlaggedApi("com.android.bluetooth.flags.leaudio_add_sampling_frequencies") public static final int SAMPLE_RATE_96000 = 512; // 0x200
     field public static final int SAMPLE_RATE_NONE = 0; // 0x0
     field public static final int SOURCE_CODEC_TYPE_INVALID = 1000000; // 0xf4240
     field public static final int SOURCE_CODEC_TYPE_LC3 = 0; // 0x0
@@ -1098,6 +1108,7 @@ package android.bluetooth {
     field public static final int SOCKET_CLOSED = 17; // 0x11
     field public static final int SOCKET_CONNECTION_FAILURE = 18; // 0x12
     field public static final int SOCKET_MANAGER_FAILURE = 16; // 0x10
+    field @FlaggedApi("com.android.bluetooth.flags.unix_file_socket_creation_failure") public static final int UNIX_FILE_SOCKET_CREATION_FAILURE = 21; // 0x15
     field public static final int UNSPECIFIED = 0; // 0x0
   }
 

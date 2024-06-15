@@ -104,7 +104,6 @@ public class HidDeviceTest {
         MockitoAnnotations.initMocks(this);
         TestUtils.setAdapterService(mAdapterService);
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
-        doReturn(true, false).when(mAdapterService).isStartedProfile(anyString());
         setHidDeviceNativeInterfaceInstance(mHidDeviceNativeInterface);
         // This line must be called to make sure relevant objects are initialized properly
         mAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -112,7 +111,8 @@ public class HidDeviceTest {
         mTestDevice = mAdapter.getRemoteDevice("10:11:12:13:14:15");
 
         mHidDeviceService = new HidDeviceService(mTargetContext);
-        mHidDeviceService.doStart();
+        mHidDeviceService.start();
+        mHidDeviceService.setAvailable(true);
 
         // Force unregister app first
         mHidDeviceService.unregisterApp();
@@ -138,7 +138,7 @@ public class HidDeviceTest {
 
     @After
     public void tearDown() throws Exception {
-        mHidDeviceService.doStop();
+        mHidDeviceService.stop();
         mHidDeviceService = HidDeviceService.getHidDeviceService();
         Assert.assertNull(mHidDeviceService);
         mTargetContext.unregisterReceiver(mConnectionStateChangedReceiver);

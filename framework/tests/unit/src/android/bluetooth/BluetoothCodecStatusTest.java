@@ -16,12 +16,10 @@
 
 package android.bluetooth;
 
-import android.test.suitebuilder.annotation.SmallTest;
-
-import junit.framework.TestCase;
-
+import androidx.test.filters.SmallTest;
 import java.util.List;
 import java.util.Objects;
+import junit.framework.TestCase;
 
 /** Unit test cases for {@link BluetoothCodecStatus}. */
 public class BluetoothCodecStatusTest extends TestCase {

@@ -26,6 +26,7 @@
 #define LOG_TAG "pan"
 
 #include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include <cstdint>
 
@@ -38,6 +39,7 @@
 #include "stack/pan/pan_int.h"
 #include "types/raw_address.h"
 
+using namespace bluetooth;
 using namespace bluetooth::legacy::stack::sdp;
 
 static const uint8_t pan_proto_elem_data[] = {
@@ -76,7 +78,7 @@ uint32_t pan_register_with_sdp(uint16_t uuid, const char* p_name,
   sdp_handle = get_legacy_stack_sdp_api()->handle.SDP_CreateRecord();
 
   if (sdp_handle == 0) {
-    LOG_ERROR("PAN_SetRole - could not create SDP record");
+    log::error("PAN_SetRole - could not create SDP record");
     return 0;
   }
 
@@ -279,13 +281,13 @@ void pan_dump_status(void) {
   uint16_t i;
   tPAN_CONN* p_pcb;
 
-  LOG_VERBOSE("PAN role %x, active role %d, num_conns %d", pan_cb.role,
-              pan_cb.active_role, pan_cb.num_conns);
+  log::verbose("PAN role {:x}, active role {}, num_conns {}", pan_cb.role,
+               pan_cb.active_role, pan_cb.num_conns);
 
   for (i = 0, p_pcb = pan_cb.pcb; i < MAX_PAN_CONNS; i++, p_pcb++) {
-    VLOG(1) << +i << " state:" << p_pcb->con_state
-            << ", handle:" << p_pcb->handle << ", src" << p_pcb->src_uuid
-            << ", BD:" << p_pcb->rem_bda;
+    log::verbose("{} state:{}, handle:{}, src{}, BD:{}", i, p_pcb->con_state,
+                 p_pcb->handle, p_pcb->src_uuid,
+                 ADDRESS_TO_LOGGABLE_STR(p_pcb->rem_bda));
   }
 #endif
 }

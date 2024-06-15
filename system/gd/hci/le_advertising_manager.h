@@ -16,6 +16,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include "common/callback.h"
 #include "hci/address_with_type.h"
@@ -112,6 +113,8 @@ class LeAdvertisingManager : public bluetooth::Module {
   LeAdvertisingManager& operator=(const LeAdvertisingManager&) = delete;
 
   size_t GetNumberOfAdvertisingInstances() const;
+
+  size_t GetNumberOfAdvertisingInstancesInUse() const;
 
   int GetAdvertiserRegId(AdvertiserId advertiser_id);
 

@@ -18,6 +18,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 #include "device/include/esco_parameters.h"
 #include "include/check.h"

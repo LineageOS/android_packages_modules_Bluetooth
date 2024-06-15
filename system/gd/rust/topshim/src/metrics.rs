@@ -47,6 +47,7 @@ mod ffi {
             direction: u32,
             hci_reason: u32,
         );
+        fn suspend_complete_state(state: u32);
     }
 }
 
@@ -125,4 +126,8 @@ pub fn acl_connection_state_changed(
         direction as u32,
         hci_reason as u32,
     );
+}
+
+pub fn suspend_complete_state(state: u32) {
+    ffi::suspend_complete_state(state);
 }

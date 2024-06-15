@@ -20,7 +20,6 @@
 
 #include "common/bidi_queue.h"
 #include "common/callback.h"
-#include "hci/acl_manager.h"
 #include "hci/controller.h"
 #include "hci/hci_packets.h"
 #include "os/handler.h"

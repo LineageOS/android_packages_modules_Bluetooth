@@ -13,8 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #include "stack/include/btm_client_interface.h"
+
+#include <bluetooth/log.h>
 
 #include "security_client_callbacks.h"
 #include "stack/btm/btm_ble_int.h"
@@ -41,12 +42,6 @@ struct btm_client_interface_t btm_client_interface = {
     // Acl peer and lifecycle
     .peer =
         {
-            .features =
-                {
-                    .SupportTransparentSynchronousData =
-                        ACL_SupportTransparentSynchronousData,
-                },
-
             .BTM_IsAclConnectionUp = BTM_IsAclConnectionUp,
             .BTM_ReadConnectedTransportAddress =
                 BTM_ReadConnectedTransportAddress,
@@ -85,9 +80,6 @@ struct btm_client_interface_t btm_client_interface = {
             .BTM_BleGetEnergyInfo = BTM_BleGetEnergyInfo,
             .BTM_BleObserve = BTM_BleObserve,
             .BTM_SetBleDataLength = BTM_SetBleDataLength,
-            .BTM_BleConfirmReply = BTM_BleConfirmReply,
-            .BTM_BleLoadLocalKeys = BTM_BleLoadLocalKeys,
-            .BTM_BlePasskeyReply = BTM_BlePasskeyReply,
             .BTM_BleReadControllerFeatures = BTM_BleReadControllerFeatures,
             .BTM_BleSetPhy = BTM_BleSetPhy,
             .BTM_BleSetPrefConnParams = BTM_BleSetPrefConnParams,

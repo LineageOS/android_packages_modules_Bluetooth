@@ -22,8 +22,6 @@
 #include <base/location.h>
 
 #include "hci/include/hci_layer_legacy.h"
-#include "osi/include/future.h"
-#include "osi/include/osi.h"  // INVALID_FD
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_types.h"
 
@@ -45,7 +43,7 @@ typedef struct hci_t {
                            command_status_cb status_cb, void* context);
 
   // Send some data downward through the HCI layer
-  void (*transmit_downward)(uint16_t type, void* data);
+  void (*transmit_downward)(void* data, uint16_t iso_buffer_size);
 } hci_t;
 
 const hci_t* hci_layer_get_interface();

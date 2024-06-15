@@ -18,7 +18,6 @@
 #include "module.h"
 
 #include "common/init_flags.h"
-#include "module_dumper_flatbuffer.h"
 
 using ::bluetooth::os::Handler;
 using ::bluetooth::os::Thread;
@@ -33,10 +32,6 @@ ModuleFactory::ModuleFactory(std::function<Module*()> ctor) : ctor_(ctor) {
 Handler* Module::GetHandler() const {
   ASSERT_LOG(handler_ != nullptr, "Can't get handler when it's not started");
   return handler_;
-}
-
-DumpsysDataFinisher Module::GetDumpsysData(flatbuffers::FlatBufferBuilder* /* builder */) const {
-  return EmptyDumpsysDataFinisher;
 }
 
 const ModuleRegistry* Module::GetModuleRegistry() const {

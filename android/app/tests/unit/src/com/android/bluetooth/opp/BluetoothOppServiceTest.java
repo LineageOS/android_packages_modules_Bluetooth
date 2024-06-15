@@ -79,9 +79,9 @@ public class BluetoothOppServiceTest {
 
         TestUtils.setAdapterService(mAdapterService);
         mIsAdapterServiceSet = true;
-        doReturn(true, false).when(mAdapterService).isStartedProfile(anyString());
         mService = new BluetoothOppService(targetContext);
-        mService.doStart();
+        mService.start();
+        mService.setAvailable(true);
         mIsBluetoothOppServiceStarted = true;
 
         // Try getting the Bluetooth adapter
@@ -113,7 +113,7 @@ public class BluetoothOppServiceTest {
 
         BluetoothMethodProxy.setInstanceForTesting(null);
         if (mIsBluetoothOppServiceStarted) {
-            mService.doStop();
+            mService.stop();
         }
         if (mIsAdapterServiceSet) {
             TestUtils.clearAdapterService(mAdapterService);

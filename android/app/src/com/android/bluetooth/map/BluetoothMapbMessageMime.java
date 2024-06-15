@@ -14,10 +14,15 @@
 */
 package com.android.bluetooth.map;
 
+import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothProtoEnums;
 import android.text.util.Rfc822Token;
 import android.text.util.Rfc822Tokenizer;
 import android.util.Base64;
 import android.util.Log;
+
+import com.android.bluetooth.BluetoothStatsLog;
+import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
@@ -29,6 +34,7 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.UUID;
 
+// Next tag value for ContentProfileErrorReportUtils.report(): 8
 public class BluetoothMapbMessageMime extends BluetoothMapbMessage {
 
     public static class MimePart {
@@ -60,6 +66,12 @@ public class BluetoothMapbMessageMime extends BluetoothMapbMessage {
                         charset = "UTF-8";
                     }
                 } catch (IllegalCharsetNameException e) {
+                    ContentProfileErrorReportUtils.report(
+                            BluetoothProfile.MAP,
+                            BluetoothProtoEnums.BLUETOOTH_MAP_BMESSAGE_MIME,
+                            BluetoothStatsLog
+                                    .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                            0);
                     Log.w(TAG, "Received unknown charset: " + charset + " - using UTF-8.");
                     charset = "UTF-8";
                 }
@@ -67,10 +79,21 @@ public class BluetoothMapbMessageMime extends BluetoothMapbMessage {
             try {
                 result = new String(mData, charset);
             } catch (UnsupportedEncodingException e) {
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.MAP,
+                        BluetoothProtoEnums.BLUETOOTH_MAP_BMESSAGE_MIME,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                        1);
                 /* This cannot happen unless Charset.isSupported() is out of sync with String */
                 try {
                     result = new String(mData, "UTF-8");
                 } catch (UnsupportedEncodingException e2) {
+                    ContentProfileErrorReportUtils.report(
+                            BluetoothProfile.MAP,
+                            BluetoothProtoEnums.BLUETOOTH_MAP_BMESSAGE_MIME,
+                            BluetoothStatsLog
+                                    .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                            2);
                     Log.e(TAG, "getDataAsString: " + e);
                 }
             }
@@ -641,6 +664,11 @@ public class BluetoothMapbMessageMime extends BluetoothMapbMessage {
                 if (D) {
                     Log.w(TAG, "Skipping unknown header: " + headerType + " (" + header + ")");
                 }
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.MAP,
+                        BluetoothProtoEnums.BLUETOOTH_MAP_BMESSAGE_MIME,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                        3);
             }
         }
         return null;
@@ -672,6 +700,12 @@ public class BluetoothMapbMessageMime extends BluetoothMapbMessage {
                     if (D) {
                         Log.w(TAG, "part-Header not formatted correctly: ");
                     }
+                    ContentProfileErrorReportUtils.report(
+                            BluetoothProfile.MAP,
+                            BluetoothProtoEnums.BLUETOOTH_MAP_BMESSAGE_MIME,
+                            BluetoothStatsLog
+                                    .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                            4);
                     continue;
                 }
                 if (D) {
@@ -706,6 +740,12 @@ public class BluetoothMapbMessageMime extends BluetoothMapbMessage {
                         Log.w(TAG, "Skipping unknown part-header: " + headerType + " (" + header
                                 + ")");
                     }
+                    ContentProfileErrorReportUtils.report(
+                            BluetoothProfile.MAP,
+                            BluetoothProtoEnums.BLUETOOTH_MAP_BMESSAGE_MIME,
+                            BluetoothStatsLog
+                                    .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                            5);
                 }
             }
             body = parts[1];
@@ -737,6 +777,11 @@ public class BluetoothMapbMessageMime extends BluetoothMapbMessage {
 
                 return body.getBytes("UTF-8");
             } catch (UnsupportedEncodingException e) {
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.MAP,
+                        BluetoothProtoEnums.BLUETOOTH_MAP_BMESSAGE_MIME,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                        6);
                 // This will never happen, as UTF-8 is mandatory on Android platforms
             }
         }
@@ -747,6 +792,11 @@ public class BluetoothMapbMessageMime extends BluetoothMapbMessage {
         // Check for null String, otherwise NPE will cause BT to crash
         if (message == null) {
             Log.e(TAG, "parseMime called with a NULL message, terminating early");
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.MAP,
+                    BluetoothProtoEnums.BLUETOOTH_MAP_BMESSAGE_MIME,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
+                    7);
             return;
         }
 

@@ -20,6 +20,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <vector>
+
 namespace le_audio {
 namespace types {
 

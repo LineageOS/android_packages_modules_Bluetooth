@@ -25,7 +25,6 @@ import static com.android.server.bluetooth.BluetoothManagerService.MESSAGE_BLUET
 import static com.android.server.bluetooth.BluetoothManagerService.MESSAGE_BLUETOOTH_STATE_CHANGE;
 import static com.android.server.bluetooth.BluetoothManagerService.MESSAGE_DISABLE;
 import static com.android.server.bluetooth.BluetoothManagerService.MESSAGE_ENABLE;
-import static com.android.server.bluetooth.BluetoothManagerService.MESSAGE_REGISTER_STATE_CHANGE_CALLBACK;
 import static com.android.server.bluetooth.BluetoothManagerService.MESSAGE_TIMEOUT_BIND;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -192,7 +191,6 @@ public class BluetoothManagerServiceTest {
         doReturn(mUserManager).when(mContext).getSystemService(UserManager.class);
 
         doReturn(mBinder).when(mManagerCallback).asBinder();
-        doReturn(mBinder).when(mStateChangeCallback).asBinder();
 
         doReturn(mAdapterBinder).when(mBluetoothServerProxy).createAdapterBinder(any());
         doReturn(mAdapterService).when(mAdapterBinder).getAdapterBinder();
@@ -420,15 +418,11 @@ public class BluetoothManagerServiceTest {
                 .when(mBluetoothServerProxy)
                 .getBluetoothPersistedState(any(), anyInt());
 
-        mManagerService.registerStateChangeCallback(mStateChangeCallback);
-        syncHandler(MESSAGE_REGISTER_STATE_CHANGE_CALLBACK);
-
         mManagerService.enable("test_offToOn");
         syncHandler(MESSAGE_ENABLE);
 
         transition_offToOn();
 
-        verify(mStateChangeCallback).onBluetoothStateChange(eq(true));
         assertThat(mManagerService.getState()).isEqualTo(STATE_ON);
     }
 }

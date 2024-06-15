@@ -28,7 +28,7 @@
 #include "flatbuffers/idl.h"
 #include "flatbuffers/util.h"
 #include "le_audio_set_configuration_provider.h"
-#include "osi/include/log.h"
+#include "os/log.h"
 #include "osi/include/osi.h"
 #include "osi/include/properties.h"
 

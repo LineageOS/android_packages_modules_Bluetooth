@@ -23,15 +23,19 @@
  ******************************************************************************/
 #define LOG_TAG "bta_ag_at"
 
+#include "bta/ag/bta_ag_at.h"
+
+#include <bluetooth/log.h>
+
 #include <cstdint>
 
-#include "bt_target.h"  // Must be first to define build configuration:
-
-#include "bta/ag/bta_ag_at.h"
 #include "bta/ag/bta_ag_int.h"
 #include "bta/include/utl.h"
+#include "internal_include/bt_target.h"
+#include "os/log.h"
 #include "osi/include/allocator.h"
-#include "osi/include/log.h"
+
+using namespace bluetooth;
 
 /*****************************************************************************
  *  Constants
@@ -138,7 +142,7 @@ void bta_ag_process_at(tBTA_AG_AT_CB* p_cb, char* p_end) {
         if (int_arg < (int16_t)p_cb->p_at_tbl[idx].min ||
             int_arg > (int16_t)p_cb->p_at_tbl[idx].max) {
           /* arg out of range; error */
-          LOG_WARN("arg out of range");
+          log::warn("arg out of range");
           (*p_cb->p_err_cback)((tBTA_AG_SCB*)p_cb->p_user, false, nullptr);
         } else {
           (*p_cb->p_cmd_cback)((tBTA_AG_SCB*)p_cb->p_user,
@@ -152,13 +156,13 @@ void bta_ag_process_at(tBTA_AG_AT_CB* p_cb, char* p_end) {
       }
     } else {
       /* else error */
-      LOG_WARN("Incoming arg type 0x%x does not match cmd arg type 0x%x",
-               arg_type, p_cb->p_at_tbl[idx].arg_type);
+      log::warn("Incoming arg type 0x{:x} does not match cmd arg type 0x{:x}",
+                arg_type, p_cb->p_at_tbl[idx].arg_type);
       (*p_cb->p_err_cback)((tBTA_AG_SCB*)p_cb->p_user, false, nullptr);
     }
   } else {
     /* else no match call error callback */
-    LOG_WARN("Unmatched command index %d", idx);
+    log::warn("Unmatched command index {}", idx);
     (*p_cb->p_err_cback)((tBTA_AG_SCB*)p_cb->p_user, true, p_cb->p_cmd_buf);
   }
 }

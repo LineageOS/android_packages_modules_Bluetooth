@@ -34,7 +34,10 @@ cc_library {
     shared_libs: [
         "liblog",
     ],
-    static_libs: ["libosi"],
+    static_libs: [
+        "libbluetooth_log",
+        "libosi",
+    ],
 }
 
 // Audio A2DP library unit tests for target and host
@@ -53,6 +56,7 @@ cc_test {
     ],
     static_libs: [
         "audio.hearing_aid.default",
+        "libbluetooth_log",
         "libosi",
     ],
     min_sdk_version: "29",

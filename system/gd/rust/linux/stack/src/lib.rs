@@ -35,10 +35,10 @@ use crate::bluetooth::{
     BluetoothDevice, DelayedActions, IBluetooth,
 };
 use crate::bluetooth_admin::{BluetoothAdmin, IBluetoothAdmin};
+use crate::bluetooth_adv::{dispatch_le_adv_callbacks, AdvertiserActions};
 use crate::bluetooth_gatt::{
-    dispatch_gatt_client_callbacks, dispatch_gatt_server_callbacks, dispatch_le_adv_callbacks,
-    dispatch_le_scanner_callbacks, dispatch_le_scanner_inband_callbacks, BluetoothGatt,
-    GattActions,
+    dispatch_gatt_client_callbacks, dispatch_gatt_server_callbacks, dispatch_le_scanner_callbacks,
+    dispatch_le_scanner_inband_callbacks, BluetoothGatt, GattActions,
 };
 use crate::bluetooth_media::{BluetoothMedia, MediaActions};
 use crate::dis::{DeviceInformation, ServiceCallbacks};
@@ -63,8 +63,11 @@ use bt_topshim::{
 
 /// Message types that are sent to the stack main dispatch loop.
 pub enum Message {
-    // Shuts down the stack.
-    Shutdown,
+    /// Remove the DBus API. Call it before other AdapterShutdown.
+    InterfaceShutdown,
+    /// Disable the adapter by calling btif disable.
+    AdapterShutdown,
+    /// Clean up the adapter by calling btif cleanup.
     Cleanup,
 
     // Adapter is enabled and ready.
@@ -113,6 +116,7 @@ pub enum Message {
 
     // Advertising related
     AdvertiserCallbackDisconnected(u32),
+    AdvertiserActions(AdvertiserActions),
 
     SocketManagerActions(SocketActions),
     SocketManagerCallbackDisconnected(u32),
@@ -164,8 +168,12 @@ pub enum BluetoothAPI {
     Gatt,
 }
 
+/// Message types that are sent to the InterfaceManager's dispatch loop.
 pub enum APIMessage {
+    /// Indicates a subcomponent is ready to receive DBus messages.
     IsReady(BluetoothAPI),
+    /// Indicates bluetooth is shutting down, so we remove all DBus endpoints.
+    ShutDown,
 }
 
 /// Represents suspend mode of a module.
@@ -192,6 +200,7 @@ impl Stack {
     /// Runs the main dispatch loop.
     pub async fn dispatch(
         mut rx: Receiver<Message>,
+        api_tx: Sender<APIMessage>,
         bluetooth: Arc<Mutex<Box<Bluetooth>>>,
         bluetooth_gatt: Arc<Mutex<Box<BluetoothGatt>>>,
         battery_service: Arc<Mutex<Box<BatteryService>>>,
@@ -213,7 +222,14 @@ impl Stack {
             }
 
             match m.unwrap() {
-                Message::Shutdown => {
+                Message::InterfaceShutdown => {
+                    let tx = api_tx.clone();
+                    tokio::spawn(async move {
+                        let _ = tx.send(APIMessage::ShutDown).await;
+                    });
+                }
+
+                Message::AdapterShutdown => {
                     bluetooth.lock().unwrap().disable();
                 }
 
@@ -350,6 +366,10 @@ impl Stack {
 
                 Message::AdvertiserCallbackDisconnected(id) => {
                     bluetooth_gatt.lock().unwrap().remove_adv_callback(id);
+                }
+
+                Message::AdvertiserActions(action) => {
+                    bluetooth_gatt.lock().unwrap().handle_adv_action(action);
                 }
 
                 Message::SocketManagerActions(action) => {

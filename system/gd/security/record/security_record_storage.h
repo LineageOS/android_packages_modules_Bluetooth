@@ -17,14 +17,10 @@
  */
 #pragma once
 
-#include <unordered_map>
+#include <set>
 
-#include "hci/hci_packets.h"
 #include "os/handler.h"
-#include "os/utils.h"
 #include "security/record/security_record.h"
-#include "storage/classic_device.h"
-#include "storage/le_device.h"
 #include "storage/storage_module.h"
 
 namespace bluetooth {

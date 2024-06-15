@@ -24,6 +24,8 @@
 #ifndef BTA_AV_INT_H
 #define BTA_AV_INT_H
 
+#include <bluetooth/log.h>
+
 #include <cstdint>
 #include <string>
 
@@ -666,6 +668,9 @@ typedef struct {
   bool sco_occupied; /* true if SCO is being used or call is in progress */
   uint16_t offload_start_pending_hndl;
   uint16_t offload_started_hndl;
+  /* Set to true if the new offload start vendor command
+   * was used to start the stream on the controller. */
+  bool offload_start_v2;
   tBTA_AV_FEAT sink_features; /* sink features */
   uint8_t reg_role;           /* bit0-src, bit1-sink */
   tBTA_AV_RC_FEAT rc_feature; /* save peer rc feature */
@@ -696,6 +701,9 @@ class tBT_A2DP_OFFLOAD {
 
 #define VS_HCI_A2DP_OFFLOAD_START 0x01
 #define VS_HCI_A2DP_OFFLOAD_STOP 0x02
+#define VS_HCI_A2DP_OFFLOAD_START_V2 0x03
+#define VS_HCI_A2DP_OFFLOAD_STOP_V2 0x04
+
 /*****************************************************************************
  *  Global data
  ****************************************************************************/
@@ -838,5 +846,10 @@ void bta_av_offload_rsp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data);
 void bta_av_vendor_offload_stop(void);
 void bta_av_st_rc_timer(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data);
 void bta_av_api_set_peer_sep(tBTA_AV_DATA* p_data);
+
+namespace fmt {
+template <>
+struct formatter<tBTA_AV_RS_RES> : enum_formatter<tBTA_AV_RS_RES> {};
+}  // namespace fmt
 
 #endif /* BTA_AV_INT_H */

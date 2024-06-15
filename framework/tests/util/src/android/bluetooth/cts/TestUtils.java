@@ -16,6 +16,9 @@
 
 package android.bluetooth.cts;
 
+import static com.android.bluetooth.flags.Flags.leaudioBroadcastFeatureSupport;
+import static com.android.modules.utils.build.SdkLevel.isAtLeastV;
+
 import static com.google.common.truth.Truth.assertThat;
 
 import android.bluetooth.BluetoothAdapter;
@@ -95,10 +98,14 @@ public class TestUtils extends android.bluetooth.test_utils.TestUtils {
                 return BluetoothProperties.isProfileBapUnicastClientEnabled().orElse(false);
             }
             case BluetoothProfile.LE_AUDIO_BROADCAST -> {
-                return BluetoothProperties.isProfileBapBroadcastSourceEnabled().orElse(false);
+                return isAtLeastV()
+                        && leaudioBroadcastFeatureSupport()
+                        && BluetoothProperties.isProfileBapBroadcastSourceEnabled().orElse(false);
             }
             case BluetoothProfile.LE_AUDIO_BROADCAST_ASSISTANT -> {
-                return BluetoothProperties.isProfileBapBroadcastAssistEnabled().orElse(false);
+                return isAtLeastV()
+                        && leaudioBroadcastFeatureSupport()
+                        && BluetoothProperties.isProfileBapBroadcastAssistEnabled().orElse(false);
             }
                 // Hidden profile
                 // case BluetoothProfile.LE_CALL_CONTROL:

@@ -15,7 +15,9 @@
  */
 
 #include "hci/fuzz/fuzz_hci_layer.h"
+
 #include "fuzz/helpers.h"
+#include "hci/class_of_device.h"
 
 namespace bluetooth {
 namespace hci {
@@ -38,6 +40,7 @@ hci::LeSecurityInterface* FuzzHciLayer::GetLeSecurityInterface(
 hci::AclConnectionInterface* FuzzHciLayer::GetAclConnectionInterface(
     ContextualCallback<void(hci::EventView)> /* event_handler */,
     ContextualCallback<void(uint16_t, hci::ErrorCode)> /* on_disconnect */,
+    ContextualCallback<void(Address, ClassOfDevice)> /* on_connection_request */,
     ContextualCallback<void(
         hci::ErrorCode,
         uint16_t,

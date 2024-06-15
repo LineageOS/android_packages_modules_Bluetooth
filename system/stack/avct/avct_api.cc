@@ -24,6 +24,7 @@
 
 #include "avct_api.h"
 
+#include <bluetooth/log.h>
 #include <string.h>
 
 #include "avct_int.h"
@@ -31,10 +32,11 @@
 #include "internal_include/bt_target.h"
 #include "l2c_api.h"
 #include "l2cdefs.h"
-#include "os/log.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
 #include "types/raw_address.h"
+
+using namespace bluetooth;
 
 /* Control block for AVCT */
 tAVCT_CB avct_cb;
@@ -54,7 +56,7 @@ tAVCT_CB avct_cb;
  *
  ******************************************************************************/
 void AVCT_Register() {
-  LOG_VERBOSE("AVCT_Register");
+  log::verbose("AVCT_Register");
 
   /* initialize AVCTP data structures */
   memset(&avct_cb, 0, sizeof(tAVCT_CB));
@@ -87,7 +89,7 @@ void AVCT_Register() {
  *
  ******************************************************************************/
 void AVCT_Deregister(void) {
-  LOG_VERBOSE("AVCT_Deregister");
+  log::verbose("AVCT_Deregister");
 
   /* deregister PSM with L2CAP */
   L2CA_Deregister(AVCT_PSM);
@@ -116,7 +118,7 @@ uint16_t AVCT_CreateConn(uint8_t* p_handle, tAVCT_CC* p_cc,
   tAVCT_CCB* p_ccb;
   tAVCT_LCB* p_lcb;
 
-  LOG_VERBOSE("AVCT_CreateConn: %d, control:%d", p_cc->role, p_cc->control);
+  log::verbose("AVCT_CreateConn: {}, control:{}", p_cc->role, p_cc->control);
 
   /* Allocate ccb; if no ccbs, return failure */
   p_ccb = avct_ccb_alloc(p_cc);
@@ -147,7 +149,7 @@ uint16_t AVCT_CreateConn(uint8_t* p_handle, tAVCT_CC* p_cc,
       if (result == AVCT_SUCCESS) {
         /* bind lcb to ccb */
         p_ccb->p_lcb = p_lcb;
-        LOG_VERBOSE("ch_state: %d", p_lcb->ch_state);
+        log::verbose("ch_state: {}", p_lcb->ch_state);
         tAVCT_LCB_EVT avct_lcb_evt;
         avct_lcb_evt.p_ccb = p_ccb;
         avct_lcb_event(p_lcb, AVCT_LCB_UL_BIND_EVT, &avct_lcb_evt);
@@ -174,7 +176,7 @@ uint16_t AVCT_RemoveConn(uint8_t handle) {
   uint16_t result = AVCT_SUCCESS;
   tAVCT_CCB* p_ccb;
 
-  LOG_VERBOSE("AVCT_RemoveConn");
+  log::verbose("AVCT_RemoveConn");
 
   /* map handle to ccb */
   p_ccb = avct_ccb_by_idx(handle);
@@ -217,7 +219,7 @@ uint16_t AVCT_CreateBrowse(uint8_t handle, uint8_t role) {
   tAVCT_BCB* p_bcb;
   int index;
 
-  LOG_VERBOSE("AVCT_CreateBrowse: %d", role);
+  log::verbose("AVCT_CreateBrowse: {}", role);
 
   /* map handle to ccb */
   p_ccb = avct_ccb_by_idx(handle);
@@ -251,7 +253,7 @@ uint16_t AVCT_CreateBrowse(uint8_t handle, uint8_t role) {
       /* bind bcb to ccb */
       p_ccb->p_bcb = p_bcb;
       p_bcb->peer_addr = p_ccb->p_lcb->peer_addr;
-      LOG_VERBOSE("ch_state: %d", p_bcb->ch_state);
+      log::verbose("ch_state: {}", p_bcb->ch_state);
       tAVCT_LCB_EVT avct_lcb_evt;
       avct_lcb_evt.p_ccb = p_ccb;
       avct_bcb_event(p_bcb, AVCT_LCB_UL_BIND_EVT, &avct_lcb_evt);
@@ -278,7 +280,7 @@ uint16_t AVCT_RemoveBrowse(uint8_t handle) {
   uint16_t result = AVCT_SUCCESS;
   tAVCT_CCB* p_ccb;
 
-  LOG_VERBOSE("AVCT_RemoveBrowse");
+  log::verbose("AVCT_RemoveBrowse");
 
   /* map handle to ccb */
   p_ccb = avct_ccb_by_idx(handle);
@@ -369,14 +371,13 @@ uint16_t AVCT_MsgReq(uint8_t handle, uint8_t label, uint8_t cr, BT_HDR* p_msg) {
   tAVCT_CCB* p_ccb;
   tAVCT_UL_MSG ul_msg;
 
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
 
   /* verify p_msg parameter */
   if (p_msg == NULL) {
     return AVCT_NO_RESOURCES;
   }
-  LOG_VERBOSE("%s len: %d layer_specific: %d", __func__, p_msg->len,
-              p_msg->layer_specific);
+  log::verbose("len: {} layer_specific: {}", p_msg->len, p_msg->layer_specific);
 
   /* map handle to ccb */
   p_ccb = avct_ccb_by_idx(handle);

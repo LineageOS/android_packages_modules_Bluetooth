@@ -21,6 +21,7 @@
 
 #include "a2dp_sbc_encoder.h"
 
+#include <bluetooth/log.h>
 #include <limits.h>
 #include <stdio.h>
 #include <string.h>
@@ -30,7 +31,6 @@
 #include "common/time_util.h"
 #include "embdrv/sbc/encoder/include/sbc_encoder.h"
 #include "internal_include/bt_target.h"
-#include "os/log.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
 
@@ -60,6 +60,8 @@
 /* offset */
 #define A2DP_HDR_SIZE 1
 #define A2DP_SBC_OFFSET (AVDT_MEDIA_OFFSET + A2DP_SBC_MPL_HDR_LEN)
+
+using namespace bluetooth;
 
 typedef struct {
   uint32_t aa_frame_counter;
@@ -169,10 +171,8 @@ static void a2dp_sbc_encoder_update(A2dpCodecConfig* a2dp_codec_config,
   *p_restart_output = false;
   *p_config_updated = false;
   if (!a2dp_codec_config->copyOutOtaCodecConfig(codec_info)) {
-    LOG_ERROR(
-        "%s: Cannot update the codec encoder for %s: "
-        "invalid codec config",
-        __func__, a2dp_codec_config->name().c_str());
+    log::error("Cannot update the codec encoder for {}: invalid codec config",
+               a2dp_codec_config->name().c_str());
     return;
   }
   const uint8_t* p_codec_info = codec_info;
@@ -185,9 +185,9 @@ static void a2dp_sbc_encoder_update(A2dpCodecConfig* a2dp_codec_config,
   p_feeding_params->bits_per_sample =
       a2dp_codec_config->getAudioBitsPerSample();
   p_feeding_params->channel_count = A2DP_GetTrackChannelCountSbc(p_codec_info);
-  LOG_INFO("%s: sample_rate=%u bits_per_sample=%u channel_count=%u", __func__,
-           p_feeding_params->sample_rate, p_feeding_params->bits_per_sample,
-           p_feeding_params->channel_count);
+  log::info("sample_rate={} bits_per_sample={} channel_count={}",
+            p_feeding_params->sample_rate, p_feeding_params->bits_per_sample,
+            p_feeding_params->channel_count);
   a2dp_sbc_feeding_reset();
 
   // The codec parameters
@@ -204,18 +204,18 @@ static void a2dp_sbc_encoder_update(A2dpCodecConfig* a2dp_codec_config,
 
   // Reset invalid parameters
   if (!p_encoder_params->s16NumOfSubBands) {
-    LOG_WARN("%s: SubBands are set to 0, resetting to max (%d)", __func__,
-             SBC_MAX_NUM_OF_SUBBANDS);
+    log::warn("SubBands are set to 0, resetting to max ({})",
+              SBC_MAX_NUM_OF_SUBBANDS);
     p_encoder_params->s16NumOfSubBands = SBC_MAX_NUM_OF_SUBBANDS;
   }
   if (!p_encoder_params->s16NumOfBlocks) {
-    LOG_WARN("%s: Blocks are set to 0, resetting to max (%d)", __func__,
-             SBC_MAX_NUM_OF_BLOCKS);
+    log::warn("Blocks are set to 0, resetting to max ({})",
+              SBC_MAX_NUM_OF_BLOCKS);
     p_encoder_params->s16NumOfBlocks = SBC_MAX_NUM_OF_BLOCKS;
   }
   if (!p_encoder_params->s16NumOfChannels) {
-    LOG_WARN("%s: Channels are set to 0, resetting to max (%d)", __func__,
-             SBC_MAX_NUM_OF_CHANNELS);
+    log::warn("Channels are set to 0, resetting to max ({})",
+              SBC_MAX_NUM_OF_CHANNELS);
     p_encoder_params->s16NumOfChannels = SBC_MAX_NUM_OF_CHANNELS;
   }
 
@@ -234,16 +234,16 @@ static void a2dp_sbc_encoder_update(A2dpCodecConfig* a2dp_codec_config,
   p_encoder_params->u16BitRate = a2dp_sbc_source_rate(peer_params.is_peer_edr);
 
   a2dp_sbc_encoder_cb.TxAaMtuSize = adjust_effective_mtu(peer_params);
-  LOG_INFO("%s: MTU=%d, peer_mtu=%d min_bitpool=%d max_bitpool=%d", __func__,
-           a2dp_sbc_encoder_cb.TxAaMtuSize, peer_params.peer_mtu, min_bitpool,
-           max_bitpool);
-  LOG_INFO(
-      "%s: ChannelMode=%d, NumOfSubBands=%d, NumOfBlocks=%d, "
-      "AllocationMethod=%d, BitRate=%d, SamplingFreq=%d BitPool=%d",
-      __func__, p_encoder_params->s16ChannelMode,
-      p_encoder_params->s16NumOfSubBands, p_encoder_params->s16NumOfBlocks,
-      p_encoder_params->s16AllocationMethod, p_encoder_params->u16BitRate,
-      s16SamplingFreq, p_encoder_params->s16BitPool);
+  log::info("MTU={}, peer_mtu={} min_bitpool={} max_bitpool={}",
+            a2dp_sbc_encoder_cb.TxAaMtuSize, peer_params.peer_mtu, min_bitpool,
+            max_bitpool);
+  log::info(
+      "ChannelMode={}, NumOfSubBands={}, NumOfBlocks={}, AllocationMethod={}, "
+      "BitRate={}, SamplingFreq={} BitPool={}",
+      p_encoder_params->s16ChannelMode, p_encoder_params->s16NumOfSubBands,
+      p_encoder_params->s16NumOfBlocks, p_encoder_params->s16AllocationMethod,
+      p_encoder_params->u16BitRate, s16SamplingFreq,
+      p_encoder_params->s16BitPool);
 
   do {
     if ((p_encoder_params->s16ChannelMode == SBC_JOINT_STEREO) ||
@@ -293,17 +293,17 @@ static void a2dp_sbc_encoder_update(A2dpCodecConfig* a2dp_codec_config,
 
     if (s16BitPool < 0) s16BitPool = 0;
 
-    LOG_VERBOSE("%s: bitpool candidate: %d (%d kbps)", __func__, s16BitPool,
-                p_encoder_params->u16BitRate);
+    log::verbose("bitpool candidate: {} ({} kbps)", s16BitPool,
+                 p_encoder_params->u16BitRate);
 
     if (s16BitPool > max_bitpool) {
-      LOG_VERBOSE("%s: computed bitpool too large (%d)", __func__, s16BitPool);
+      log::verbose("computed bitpool too large ({})", s16BitPool);
       /* Decrease bitrate */
       p_encoder_params->u16BitRate -= A2DP_SBC_BITRATE_STEP;
       /* Record that we have decreased the bitrate */
       protect |= 1;
     } else if (s16BitPool < min_bitpool) {
-      LOG_WARN("%s: computed bitpool too small (%d)", __func__, s16BitPool);
+      log::warn("computed bitpool too small ({})", s16BitPool);
 
       /* Increase bitrate */
       uint16_t previous_u16BitRate = p_encoder_params->u16BitRate;
@@ -317,7 +317,7 @@ static void a2dp_sbc_encoder_update(A2dpCodecConfig* a2dp_codec_config,
     }
     /* In case we have already increased and decreased the bitrate, just stop */
     if (protect == 3) {
-      LOG_ERROR("%s: could not find bitpool in range", __func__);
+      log::error("could not find bitpool in range");
       break;
     }
   } while (true);
@@ -325,8 +325,8 @@ static void a2dp_sbc_encoder_update(A2dpCodecConfig* a2dp_codec_config,
   /* Finally update the bitpool in the encoder structure */
   p_encoder_params->s16BitPool = s16BitPool;
 
-  LOG_INFO("%s: final bit rate %d, final bit pool %d", __func__,
-           p_encoder_params->u16BitRate, p_encoder_params->s16BitPool);
+  log::info("final bit rate {}, final bit pool {}",
+            p_encoder_params->u16BitRate, p_encoder_params->s16BitPool);
 
   /* Reset the SBC encoder */
   SBC_Encoder_Init(&a2dp_sbc_encoder_cb.sbc_encoder_params);
@@ -349,8 +349,8 @@ void a2dp_sbc_feeding_reset(void) {
        A2DP_SBC_ENCODER_INTERVAL_MS) /
       1000;
 
-  LOG_INFO("%s: PCM bytes per tick %u", __func__,
-           a2dp_sbc_encoder_cb.feeding_state.bytes_per_tick);
+  log::info("PCM bytes per tick {}",
+            a2dp_sbc_encoder_cb.feeding_state.bytes_per_tick);
 }
 
 void a2dp_sbc_feeding_flush(void) {
@@ -371,8 +371,8 @@ void a2dp_sbc_send_frames(uint64_t timestamp_us) {
   uint8_t nb_iterations = 0;
 
   a2dp_sbc_get_num_frame_iteration(&nb_iterations, &nb_frame, timestamp_us);
-  LOG_VERBOSE("%s: Sending %d frames per iteration, %d iterations", __func__,
-              nb_frame, nb_iterations);
+  log::verbose("Sending {} frames per iteration, {} iterations", nb_frame,
+               nb_iterations);
   if (nb_frame == 0) return;
 
   for (uint8_t counter = 0; counter < nb_iterations; counter++) {
@@ -396,7 +396,7 @@ static void a2dp_sbc_get_num_frame_iteration(uint8_t* num_of_iterations,
       a2dp_sbc_encoder_cb.sbc_encoder_params.s16NumOfBlocks *
       a2dp_sbc_encoder_cb.feeding_params.channel_count *
       a2dp_sbc_encoder_cb.feeding_params.bits_per_sample / 8;
-  LOG_VERBOSE("%s: pcm_bytes_per_frame %u", __func__, pcm_bytes_per_frame);
+  log::verbose("pcm_bytes_per_frame {}", pcm_bytes_per_frame);
 
   uint32_t us_this_tick = A2DP_SBC_ENCODER_INTERVAL_MS * 1000;
   uint64_t now_us = timestamp_us;
@@ -415,8 +415,8 @@ static void a2dp_sbc_get_num_frame_iteration(uint8_t* num_of_iterations,
   a2dp_sbc_encoder_cb.stats.media_read_total_expected_frames += projected_nof;
 
   if (projected_nof > MAX_PCM_FRAME_NUM_PER_TICK) {
-    LOG_WARN("%s: limiting frames to be sent from %d to %d", __func__,
-             projected_nof, MAX_PCM_FRAME_NUM_PER_TICK);
+    log::warn("limiting frames to be sent from {} to {}", projected_nof,
+              MAX_PCM_FRAME_NUM_PER_TICK);
 
     // Update the stats
     size_t delta = projected_nof - MAX_PCM_FRAME_NUM_PER_TICK;
@@ -425,26 +425,25 @@ static void a2dp_sbc_get_num_frame_iteration(uint8_t* num_of_iterations,
     projected_nof = MAX_PCM_FRAME_NUM_PER_TICK;
   }
 
-  LOG_VERBOSE("%s: frames for available PCM data %u", __func__, projected_nof);
+  log::verbose("frames for available PCM data {}", projected_nof);
 
   if (a2dp_sbc_encoder_cb.peer_params.is_peer_edr) {
     if (!a2dp_sbc_encoder_cb.tx_sbc_frames) {
-      LOG_ERROR("%s: tx_sbc_frames not updated, update from here", __func__);
+      log::error("tx_sbc_frames not updated, update from here");
       a2dp_sbc_encoder_cb.tx_sbc_frames = calculate_max_frames_per_packet();
     }
 
     nof = a2dp_sbc_encoder_cb.tx_sbc_frames;
     if (!nof) {
-      LOG_ERROR("%s: number of frames not updated, set calculated values",
-                __func__);
+      log::error("number of frames not updated, set calculated values");
       nof = projected_nof;
       noi = 1;
     } else {
       if (nof < projected_nof) {
         noi = projected_nof / nof;  // number of iterations would vary
         if (noi > A2DP_SBC_MAX_PCM_ITER_NUM_PER_TICK) {
-          LOG_ERROR("%s: Audio Congestion (iterations:%d > max (%d))", __func__,
-                    noi, A2DP_SBC_MAX_PCM_ITER_NUM_PER_TICK);
+          log::error("Audio Congestion (iterations:{} > max ({}))", noi,
+                     A2DP_SBC_MAX_PCM_ITER_NUM_PER_TICK);
           noi = A2DP_SBC_MAX_PCM_ITER_NUM_PER_TICK;
           a2dp_sbc_encoder_cb.feeding_state.counter =
               noi * nof * (float)pcm_bytes_per_frame;
@@ -452,16 +451,16 @@ static void a2dp_sbc_get_num_frame_iteration(uint8_t* num_of_iterations,
         projected_nof = nof;
       } else {
         noi = 1;  // number of iterations is 1
-        LOG_VERBOSE("%s: reducing frames for available PCM data", __func__);
+        log::verbose("reducing frames for available PCM data");
         nof = projected_nof;
       }
     }
   } else {
     // For BR cases nof will be same as the value retrieved at projected_nof
-    LOG_VERBOSE("%s: headset BR, number of frames %u", __func__, nof);
+    log::verbose("headset BR, number of frames {}", nof);
     if (projected_nof > MAX_PCM_FRAME_NUM_PER_TICK) {
-      LOG_ERROR("%s: Audio Congestion (frames: %d > max (%d))", __func__,
-                projected_nof, MAX_PCM_FRAME_NUM_PER_TICK);
+      log::error("Audio Congestion (frames: {} > max ({}))", projected_nof,
+                 MAX_PCM_FRAME_NUM_PER_TICK);
 
       // Update the stats
       size_t delta = projected_nof - MAX_PCM_FRAME_NUM_PER_TICK;
@@ -475,8 +474,7 @@ static void a2dp_sbc_get_num_frame_iteration(uint8_t* num_of_iterations,
   }
   a2dp_sbc_encoder_cb.feeding_state.counter -=
       noi * nof * (float)pcm_bytes_per_frame;
-  LOG_VERBOSE("%s: effective num of frames %u, iterations %u", __func__, nof,
-              noi);
+  log::verbose("effective num of frames {}, iterations {}", nof, noi);
 
   *num_of_frames = nof;
   *num_of_iterations = noi;
@@ -520,8 +518,8 @@ static void a2dp_sbc_encode_frames(uint8_t nb_frame) {
 
         bytes_read += num_bytes;
       } else {
-        LOG_WARN("%s: underflow %d, %d", __func__, nb_frame,
-                 a2dp_sbc_encoder_cb.feeding_state.aa_feed_residue);
+        log::warn("underflow {}, {}", nb_frame,
+                  a2dp_sbc_encoder_cb.feeding_state.aa_feed_residue);
         a2dp_sbc_encoder_cb.feeding_state.counter +=
             nb_frame * p_encoder_params->s16NumOfSubBands *
             p_encoder_params->s16NumOfBlocks *
@@ -719,16 +717,15 @@ static uint16_t adjust_effective_mtu(
   if (mtu_size > peer_params.peer_mtu) {
     mtu_size = peer_params.peer_mtu;
   }
-  LOG_VERBOSE("%s: original AVDTP MTU size: %d", __func__, mtu_size);
+  log::verbose("original AVDTP MTU size: {}", mtu_size);
   if (peer_params.is_peer_edr && !peer_params.peer_supports_3mbps) {
     // This condition would be satisfied only if the remote device is
     // EDR and supports only 2 Mbps, but the effective AVDTP MTU size
     // exceeds the 2DH5 packet size.
-    LOG_VERBOSE("%s: The remote device is EDR but does not support 3 Mbps",
-                __func__);
+    log::verbose("The remote device is EDR but does not support 3 Mbps");
     if (mtu_size > MAX_2MBPS_AVDTP_MTU) {
-      LOG_WARN("%s: Restricting AVDTP MTU size from %d to %d", __func__,
-               mtu_size, MAX_2MBPS_AVDTP_MTU);
+      log::warn("Restricting AVDTP MTU size from {} to {}", mtu_size,
+                MAX_2MBPS_AVDTP_MTU);
       mtu_size = MAX_2MBPS_AVDTP_MTU;
     }
   }
@@ -745,49 +742,47 @@ static uint8_t calculate_max_frames_per_packet(void) {
   const uint16_t& effective_mtu_size = a2dp_sbc_encoder_cb.TxAaMtuSize;
 
   if (!p_encoder_params->s16NumOfSubBands) {
-    LOG_ERROR("%s: SubBands are set to 0, resetting to %d", __func__,
-              SBC_MAX_NUM_OF_SUBBANDS);
+    log::error("SubBands are set to 0, resetting to {}",
+               SBC_MAX_NUM_OF_SUBBANDS);
     p_encoder_params->s16NumOfSubBands = SBC_MAX_NUM_OF_SUBBANDS;
   }
   if (!p_encoder_params->s16NumOfBlocks) {
-    LOG_ERROR("%s: Blocks are set to 0, resetting to %d", __func__,
-              SBC_MAX_NUM_OF_BLOCKS);
+    log::error("Blocks are set to 0, resetting to {}", SBC_MAX_NUM_OF_BLOCKS);
     p_encoder_params->s16NumOfBlocks = SBC_MAX_NUM_OF_BLOCKS;
   }
   if (!p_encoder_params->s16NumOfChannels) {
-    LOG_ERROR("%s: Channels are set to 0, resetting to %d", __func__,
-              SBC_MAX_NUM_OF_CHANNELS);
+    log::error("Channels are set to 0, resetting to {}",
+               SBC_MAX_NUM_OF_CHANNELS);
     p_encoder_params->s16NumOfChannels = SBC_MAX_NUM_OF_CHANNELS;
   }
 
   frame_len = a2dp_sbc_frame_length();
 
-  LOG_VERBOSE("%s: Effective Tx MTU to be considered: %d", __func__,
-              effective_mtu_size);
+  log::verbose("Effective Tx MTU to be considered: {}", effective_mtu_size);
 
   switch (p_encoder_params->s16SamplingFreq) {
     case SBC_sf44100:
       if (frame_len == 0) {
-        LOG_ERROR("%s: Calculating frame length, resetting it to default %d",
-                  __func__, A2DP_SBC_MAX_HQ_FRAME_SIZE_44_1);
+        log::error("Calculating frame length, resetting it to default {}",
+                   A2DP_SBC_MAX_HQ_FRAME_SIZE_44_1);
         frame_len = A2DP_SBC_MAX_HQ_FRAME_SIZE_44_1;
       }
       result = (effective_mtu_size - A2DP_HDR_SIZE) / frame_len;
-      LOG_VERBOSE("%s: Max number of SBC frames: %d", __func__, result);
+      log::verbose("Max number of SBC frames: {}", result);
       break;
 
     case SBC_sf48000:
       if (frame_len == 0) {
-        LOG_ERROR("%s: Calculating frame length, resetting it to default %d",
-                  __func__, A2DP_SBC_MAX_HQ_FRAME_SIZE_48);
+        log::error("Calculating frame length, resetting it to default {}",
+                   A2DP_SBC_MAX_HQ_FRAME_SIZE_48);
         frame_len = A2DP_SBC_MAX_HQ_FRAME_SIZE_48;
       }
       result = (effective_mtu_size - A2DP_HDR_SIZE) / frame_len;
-      LOG_VERBOSE("%s: Max number of SBC frames: %d", __func__, result);
+      log::verbose("Max number of SBC frames: {}", result);
       break;
 
     default:
-      LOG_ERROR("%s: Max number of SBC frames: %d", __func__, result);
+      log::error("Max number of SBC frames: {}", result);
       break;
   }
   return result;
@@ -799,8 +794,7 @@ static uint16_t a2dp_sbc_source_rate(bool is_peer_edr) {
   /* restrict bitrate if a2dp link is non-edr */
   if (!is_peer_edr) {
     rate = A2DP_SBC_NON_EDR_MAX_RATE;
-    LOG_VERBOSE("%s: non-edr a2dp sink detected, restrict rate to %d", __func__,
-                rate);
+    log::verbose("non-edr a2dp sink detected, restrict rate to {}", rate);
   }
 
   return rate;
@@ -810,13 +804,12 @@ static uint32_t a2dp_sbc_frame_length(void) {
   SBC_ENC_PARAMS* p_encoder_params = &a2dp_sbc_encoder_cb.sbc_encoder_params;
   uint32_t frame_len = 0;
 
-  LOG_VERBOSE(
-      "%s: channel mode: %d, sub-band: %d, number of block: %d, "
-      "bitpool: %d, sampling frequency: %d, num channels: %d",
-      __func__, p_encoder_params->s16ChannelMode,
-      p_encoder_params->s16NumOfSubBands, p_encoder_params->s16NumOfBlocks,
-      p_encoder_params->s16BitPool, p_encoder_params->s16SamplingFreq,
-      p_encoder_params->s16NumOfChannels);
+  log::verbose(
+      "channel mode: {}, sub-band: {}, number of block: {}, bitpool: {}, "
+      "sampling frequency: {}, num channels: {}",
+      p_encoder_params->s16ChannelMode, p_encoder_params->s16NumOfSubBands,
+      p_encoder_params->s16NumOfBlocks, p_encoder_params->s16BitPool,
+      p_encoder_params->s16SamplingFreq, p_encoder_params->s16NumOfChannels);
 
   switch (p_encoder_params->s16ChannelMode) {
     case SBC_MONO:
@@ -854,17 +847,17 @@ static uint32_t a2dp_sbc_frame_length(void) {
                    CHAR_BIT);
       break;
     default:
-      LOG_VERBOSE("%s: Invalid channel number: %d", __func__,
-                  p_encoder_params->s16ChannelMode);
+      log::verbose("Invalid channel number: {}",
+                   p_encoder_params->s16ChannelMode);
       break;
   }
-  LOG_VERBOSE("%s: calculated frame length: %d", __func__, frame_len);
+  log::verbose("calculated frame length: {}", frame_len);
   return frame_len;
 }
 
 uint32_t a2dp_sbc_get_bitrate() {
   SBC_ENC_PARAMS* p_encoder_params = &a2dp_sbc_encoder_cb.sbc_encoder_params;
-  LOG_INFO("%s: bit rate %d ", __func__, p_encoder_params->u16BitRate);
+  log::info("bit rate {} ", p_encoder_params->u16BitRate);
   return p_encoder_params->u16BitRate * 1000;
 }
 

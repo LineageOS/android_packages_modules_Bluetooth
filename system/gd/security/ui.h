@@ -18,6 +18,9 @@
 
 #pragma once
 
+#include <string>
+#include <vector>
+
 #include "hci/address_with_type.h"
 
 namespace bluetooth {

@@ -25,6 +25,7 @@
 #define L2C_INT_H
 
 #include <base/strings/stringprintf.h>
+#include <bluetooth/log.h>
 #include <stdbool.h>
 
 #include <string>
@@ -526,6 +527,9 @@ typedef struct t_l2c_linkcb {
 
   uint8_t conn_update_mask;
 
+  bool conn_update_blocked_by_service_discovery;
+  bool conn_update_blocked_by_profile_connection;
+
   uint16_t min_interval; /* parameters as requested by peripheral */
   uint16_t max_interval;
   uint16_t latency;
@@ -668,6 +672,14 @@ typedef struct {
 
 typedef void(tL2C_FCR_MGMT_EVT_HDLR)(uint8_t, tL2C_CCB*);
 
+/* Necessary info for postponed TX completion callback
+ */
+typedef struct {
+  uint16_t local_cid;
+  uint16_t num_sdu;
+  tL2CA_TX_COMPLETE_CB* cb;
+} tL2C_TX_COMPLETE_CB_INFO;
+
 /* The offset in a buffer that L2CAP will use when building commands.
 */
 #define L2CAP_SEND_CMD_OFFSET 0
@@ -734,6 +746,8 @@ void l2cu_send_peer_info_req(tL2C_LCB* p_lcb, uint16_t info_type);
 void l2cu_set_acl_hci_header(BT_HDR* p_buf, tL2C_CCB* p_ccb);
 void l2cu_check_channel_congestion(tL2C_CCB* p_ccb);
 void l2cu_disconnect_chnl(tL2C_CCB* p_ccb);
+
+void l2cu_tx_complete(tL2C_TX_COMPLETE_CB_INFO* p_cbi);
 
 void l2cu_send_peer_ble_par_req(tL2C_LCB* p_lcb, uint16_t min_int,
                                 uint16_t max_int, uint16_t latency,
@@ -870,5 +884,14 @@ void l2cble_process_subrate_change_evt(uint16_t handle, uint8_t status,
                                        uint16_t subrate_factor,
                                        uint16_t peripheral_latency,
                                        uint16_t cont_num, uint16_t timeout);
+
+namespace fmt {
+template <>
+struct formatter<tL2C_LINK_STATE> : enum_formatter<tL2C_LINK_STATE> {};
+template <>
+struct formatter<tL2CEVT> : enum_formatter<tL2CEVT> {};
+template <>
+struct formatter<tL2C_CHNL_STATE> : enum_formatter<tL2C_CHNL_STATE> {};
+}  // namespace fmt
 
 #endif

@@ -32,6 +32,8 @@
 
 package com.android.bluetooth.opp;
 
+import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothProtoEnums;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -47,8 +49,10 @@ import android.webkit.MimeTypeMap;
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.BluetoothMetricsProto;
 import com.android.bluetooth.BluetoothObexTransport;
+import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.MetricsLogger;
+import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.obex.HeaderSet;
 import com.android.obex.ObexTransport;
 import com.android.obex.Operation;
@@ -64,9 +68,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
 
-/**
- * This class runs as an OBEX server
- */
+/** This class runs as an OBEX server */
+// Next tag value for ContentProfileErrorReportUtils.report(): 15
 public class BluetoothOppObexServerSession extends ServerRequestHandler
         implements BluetoothOppObexSession {
 
@@ -143,6 +146,11 @@ public class BluetoothOppObexServerSession extends ServerRequestHandler
             }
             mSession = new ServerSession(mTransport, this, null);
         } catch (IOException e) {
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_OBEX_SERVER_SESSION,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                    0);
             Log.e(TAG, "Create server session error" + e);
         }
     }
@@ -178,6 +186,11 @@ public class BluetoothOppObexServerSession extends ServerRequestHandler
                 mSession.close();
                 mTransport.close();
             } catch (IOException e) {
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.OPP,
+                        BluetoothProtoEnums.BLUETOOTH_OPP_OBEX_SERVER_SESSION,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                        1);
                 Log.e(TAG, "close mTransport error" + e);
             }
         }
@@ -226,6 +239,11 @@ public class BluetoothOppObexServerSession extends ServerRequestHandler
             length = (Long) request.getHeader(HeaderSet.LENGTH);
             mimeType = (String) request.getHeader(HeaderSet.TYPE);
         } catch (IOException e) {
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_OBEX_SERVER_SESSION,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                    2);
             Log.e(TAG, "onPut: getReceivedHeaders error " + e);
             return ResponseCodes.OBEX_HTTP_BAD_REQUEST;
         }
@@ -234,6 +252,11 @@ public class BluetoothOppObexServerSession extends ServerRequestHandler
             if (D) {
                 Log.w(TAG, "length is 0, reject the transfer");
             }
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_OBEX_SERVER_SESSION,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                    3);
             return ResponseCodes.OBEX_HTTP_LENGTH_REQUIRED;
         }
 
@@ -241,6 +264,11 @@ public class BluetoothOppObexServerSession extends ServerRequestHandler
             if (D) {
                 Log.w(TAG, "name is null or empty, reject the transfer");
             }
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_OBEX_SERVER_SESSION,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                    4);
             return ResponseCodes.OBEX_HTTP_BAD_REQUEST;
         }
 
@@ -251,6 +279,11 @@ public class BluetoothOppObexServerSession extends ServerRequestHandler
             if (D) {
                 Log.w(TAG, "There is no file extension or mime type, reject the transfer");
             }
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_OBEX_SERVER_SESSION,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                    5);
             return ResponseCodes.OBEX_HTTP_BAD_REQUEST;
         } else {
             extension = name.substring(dotIndex + 1).toLowerCase();
@@ -266,6 +299,12 @@ public class BluetoothOppObexServerSession extends ServerRequestHandler
                     if (D) {
                         Log.w(TAG, "Can't get mimetype, reject the transfer");
                     }
+                    ContentProfileErrorReportUtils.report(
+                            BluetoothProfile.OPP,
+                            BluetoothProtoEnums.BLUETOOTH_OPP_OBEX_SERVER_SESSION,
+                            BluetoothStatsLog
+                                    .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                            6);
                     return ResponseCodes.OBEX_HTTP_UNSUPPORTED_TYPE;
                 }
             }
@@ -278,6 +317,11 @@ public class BluetoothOppObexServerSession extends ServerRequestHandler
             if (D) {
                 Log.w(TAG, "mimeType is null or in unacceptable list, reject the transfer");
             }
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_OBEX_SERVER_SESSION,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                    7);
             return ResponseCodes.OBEX_HTTP_UNSUPPORTED_TYPE;
         }
 
@@ -328,6 +372,11 @@ public class BluetoothOppObexServerSession extends ServerRequestHandler
                     }
                 }
             } catch (InterruptedException e) {
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.OPP,
+                        BluetoothProtoEnums.BLUETOOTH_OPP_OBEX_SERVER_SESSION,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                        8);
                 if (V) {
                     Log.v(TAG, "Interrupted in onPut blocking");
                 }
@@ -350,6 +399,11 @@ public class BluetoothOppObexServerSession extends ServerRequestHandler
          */
         if (mInfo.mId != mLocalShareInfoId) {
             Log.e(TAG, "Unexpected error!");
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_OBEX_SERVER_SESSION,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_ERROR,
+                    9);
         }
         mAccepted = mInfo.mConfirm;
 
@@ -450,6 +504,11 @@ public class BluetoothOppObexServerSession extends ServerRequestHandler
         try {
             is = op.openInputStream();
         } catch (IOException e1) {
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_OBEX_SERVER_SESSION,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                    10);
             Log.e(TAG, "Error when openInputStream");
             status = BluetoothShare.STATUS_OBEX_DATA_ERROR;
             error = true;
@@ -473,6 +532,11 @@ public class BluetoothOppObexServerSession extends ServerRequestHandler
                 os = BluetoothMethodProxy.getInstance().contentResolverOpenOutputStream(
                         mContext.getContentResolver(), fileInfo.mInsertUri);
             } catch (FileNotFoundException e) {
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.OPP,
+                        BluetoothProtoEnums.BLUETOOTH_OPP_OBEX_SERVER_SESSION,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                        11);
                 Log.e(TAG, "Error when openOutputStream");
                 error = true;
             }
@@ -526,6 +590,11 @@ public class BluetoothOppObexServerSession extends ServerRequestHandler
                     }
                 }
             } catch (IOException e1) {
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.OPP,
+                        BluetoothProtoEnums.BLUETOOTH_OPP_OBEX_SERVER_SESSION,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                        12);
                 Log.e(TAG, "Error when receiving file: " + e1);
                 /* OBEX Abort packet received from remote device */
                 if ("Abort Received".equals(e1.getMessage())) {
@@ -563,6 +632,11 @@ public class BluetoothOppObexServerSession extends ServerRequestHandler
                 os.flush();
                 os.close();
             } catch (IOException e) {
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.OPP,
+                        BluetoothProtoEnums.BLUETOOTH_OPP_OBEX_SERVER_SESSION,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                        13);
                 Log.e(TAG, "Error when closing stream after send");
             }
         }
@@ -606,6 +680,11 @@ public class BluetoothOppObexServerSession extends ServerRequestHandler
 
             objectCount = (Long) request.getHeader(HeaderSet.COUNT);
         } catch (IOException e) {
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.OPP,
+                    BluetoothProtoEnums.BLUETOOTH_OPP_OBEX_SERVER_SESSION,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                    14);
             Log.e(TAG, e.toString());
             return ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
         }

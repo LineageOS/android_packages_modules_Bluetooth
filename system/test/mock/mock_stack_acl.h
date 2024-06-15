@@ -27,11 +27,11 @@
 
 // Original included files, if any
 #include "device/include/controller.h"
+#include "hci/class_of_device.h"
 #include "stack/acl/acl.h"
 #include "stack/btm/security_device_record.h"
 #include "stack/include/acl_client_callbacks.h"
 #include "stack/include/bt_hdr.h"
-#include "types/class_of_device.h"
 #include "types/raw_address.h"
 
 // Mocked compile conditionals, if any
@@ -39,17 +39,6 @@ namespace test {
 namespace mock {
 namespace stack_acl {
 
-// Shared state between mocked functions and tests
-// Name: ACL_SupportTransparentSynchronousData
-// Params: const RawAddress& bd_addr
-// Returns: bool
-struct ACL_SupportTransparentSynchronousData {
-  std::function<bool(const RawAddress& bd_addr)> body{
-      [](const RawAddress& /* bd_addr */) { return false; }};
-  bool operator()(const RawAddress& bd_addr) { return body(bd_addr); };
-};
-extern struct ACL_SupportTransparentSynchronousData
-    ACL_SupportTransparentSynchronousData;
 // Name: BTM_BLE_IS_RESOLVE_BDA
 // Params: const RawAddress& x
 // Returns: bool
@@ -790,15 +779,15 @@ struct btm_acl_connected {
 };
 extern struct btm_acl_connected btm_acl_connected;
 // Name: btm_connection_request
-// Params: const RawAddress& bda, const bluetooth::types::ClassOfDevice& cod
+// Params: const RawAddress& bda, const bluetooth::hci::ClassOfDevice& cod
 // Returns: void
 struct btm_connection_request {
   std::function<void(const RawAddress& bda,
-                     const bluetooth::types::ClassOfDevice& cod)>
+                     const bluetooth::hci::ClassOfDevice& cod)>
       body{[](const RawAddress& /* bda */,
-              const bluetooth::types::ClassOfDevice& /* cod */) { ; }};
+              const bluetooth::hci::ClassOfDevice& /* cod */) { ; }};
   void operator()(const RawAddress& bda,
-                  const bluetooth::types::ClassOfDevice& cod) {
+                  const bluetooth::hci::ClassOfDevice& cod) {
     body(bda, cod);
   };
 };
@@ -837,17 +826,6 @@ struct btm_acl_disconnected {
   };
 };
 extern struct btm_acl_disconnected btm_acl_disconnected;
-// Name: btm_acl_iso_disconnected
-// Params: uint16_t handle, tHCI_REASON reason
-// Returns: void
-struct btm_acl_iso_disconnected {
-  std::function<void(uint16_t handle, tHCI_REASON reason)> body{
-      [](uint16_t /* handle */, tHCI_REASON /* reason */) { ; }};
-  void operator()(uint16_t handle, tHCI_REASON reason) {
-    body(handle, reason);
-  };
-};
-extern struct btm_acl_iso_disconnected btm_acl_iso_disconnected;
 // Name: btm_acl_encrypt_change
 // Params: uint16_t handle, uint8_t status, uint8_t encr_enable
 // Returns: void
@@ -911,14 +889,6 @@ struct btm_acl_update_conn_addr {
   };
 };
 extern struct btm_acl_update_conn_addr btm_acl_update_conn_addr;
-// Name: btm_acl_update_inquiry_status
-// Params: uint8_t status
-// Returns: void
-struct btm_acl_update_inquiry_status {
-  std::function<void(uint8_t status)> body{[](uint8_t /* status */) { ; }};
-  void operator()(uint8_t status) { body(status); };
-};
-extern struct btm_acl_update_inquiry_status btm_acl_update_inquiry_status;
 // Name: btm_ble_refresh_local_resolvable_private_addr
 // Params:  const RawAddress& pseudo_addr, const RawAddress& local_rpa
 // Returns: void

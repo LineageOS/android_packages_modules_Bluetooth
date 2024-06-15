@@ -25,16 +25,13 @@ mod ffi {
         fn dynamic_avrcp_version_enhancement_is_enabled() -> bool;
         fn gatt_robust_caching_client_is_enabled() -> bool;
         fn gatt_robust_caching_server_is_enabled() -> bool;
-        fn get_default_log_level() -> i32;
         fn get_hci_adapter() -> i32;
-        fn get_log_level_for_tag(tag: &str) -> i32;
         fn get_asha_packet_drop_frequency_threshold() -> i32;
         fn get_asha_phy_update_retry_limit() -> i32;
         fn hfp_dynamic_version_is_enabled() -> bool;
         fn irk_rotation_is_enabled() -> bool;
         fn leaudio_targeted_announcement_reconnection_mode_is_enabled() -> bool;
         fn pbap_pse_dynamic_version_upgrade_is_enabled() -> bool;
-        fn periodic_advertising_adi_is_enabled() -> bool;
         fn private_gatt_is_enabled() -> bool;
         fn redact_log_is_enabled() -> bool;
         fn rust_event_loop_is_enabled() -> bool;
@@ -45,7 +42,6 @@ mod ffi {
         fn bluetooth_quality_report_callback_is_enabled() -> bool;
         fn set_min_encryption_is_enabled() -> bool;
         fn subrating_is_enabled() -> bool;
-        fn trigger_advertising_callbacks_on_first_resume_after_pause_is_enabled() -> bool;
         fn use_unified_connection_manager_is_enabled() -> bool;
         fn sdp_return_classic_services_when_le_discovery_fails_is_enabled() -> bool;
         fn use_rsi_from_cached_inqiry_results_is_enabled() -> bool;

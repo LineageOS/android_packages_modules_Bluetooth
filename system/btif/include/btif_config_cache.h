@@ -16,13 +16,10 @@
 
 #pragma once
 
-#include <map>
-#include <unordered_set>
+#include <vector>
 
 #include "common/lru.h"
 #include "osi/include/config.h"
-#include "osi/include/log.h"
-#include "raw_address.h"
 
 class BtifConfigCache {
  public:

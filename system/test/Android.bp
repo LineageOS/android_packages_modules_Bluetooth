@@ -13,6 +13,11 @@ subdirs = [
 ]
 
 filegroup {
+    name: "TestMockAudioHalInterface",
+    srcs: ["mock/mock_audio_hal_interface*.cc"],
+}
+
+filegroup {
     name: "TestMockAudioA2dp",
     srcs: ["mock/mock_audio_a2dp*.cc"],
 }
@@ -183,9 +188,29 @@ filegroup {
 }
 
 filegroup {
+    name: "TestMockMainShimDumpsys",
+    srcs: [
+        "mock/mock_main_shim_dumpsys.cc",
+    ],
+}
+
+filegroup {
     name: "TestMockMainShim",
     srcs: [
-        "mock/mock_main_shim*.cc",
+        "mock/mock_main_shim.cc",
+        "mock/mock_main_shim_BtifConfigInterface.cc",
+        "mock/mock_main_shim_acl.cc",
+        "mock/mock_main_shim_acl_api.cc",
+        "mock/mock_main_shim_acl_legacy_interface.cc",
+        "mock/mock_main_shim_btm_api.cc",
+        "mock/mock_main_shim_controller.cc",
+        "mock/mock_main_shim_distance_measurement_manager.cc",
+        "mock/mock_main_shim_hci_layer.cc",
+        "mock/mock_main_shim_l2cap_api.cc",
+        "mock/mock_main_shim_le_advertising_manager.cc",
+        "mock/mock_main_shim_le_scanning_manager.cc",
+        "mock/mock_main_shim_metric_id_api.cc",
+        "mock/mock_main_shim_metrics_api.cc",
     ],
 }
 
@@ -330,6 +355,13 @@ filegroup {
         ":TestCommonJniThread",
         ":TestMockBluetoothInterface",
         "mock/mock_btif*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockJni",
+    srcs: [
+        "mock/mock_jni*.cc",
     ],
 }
 
@@ -566,5 +598,45 @@ cc_defaults {
         lib64: {
             suffix: "64",
         },
+    },
+}
+
+cc_test {
+    name: "bluetooth_audio_hal_version_test",
+    local_include_dirs: ["common"],
+    defaults: [
+        "latest_android_hardware_audio_common_ndk_static",
+        "latest_android_hardware_bluetooth_audio_ndk_static",
+        "latest_android_media_audio_common_types_ndk_static",
+        "mts_defaults",
+    ],
+    shared_libs: [
+        "libbase",
+        "libbinder",
+        "libbinder_ndk",
+        "libchrome",
+        "libcutils",
+        "libhidlbase",
+        "liblog",
+        "libutils",
+    ],
+    include_dirs: ["packages/modules/Bluetooth/system"],
+    srcs: ["common/hal_version_manager_test.cc"],
+    static_libs: [
+        "android.hardware.audio.common@5.0",
+        "android.hardware.bluetooth.audio@2.0",
+        "android.hardware.bluetooth.audio@2.1",
+        "android.hardware.common-V2-ndk",
+        "android.hardware.common.fmq-V1-ndk",
+        "libbt-audio-hal-interface",
+    ],
+    test_suites: ["general-tests"],
+    cflags: [
+        "-Wall",
+        "-Werror",
+        "-Wextra",
+    ],
+    sanitize: {
+        address: true,
     },
 }

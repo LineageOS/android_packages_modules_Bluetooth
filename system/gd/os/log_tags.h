@@ -15,14 +15,15 @@
  */
 #pragma once
 
+// TODO(b/305066880) - Deprecate once replaced with fmtlib implementation.
 // These log levels may need to be mapped to system values. These values are
-// used to control the log level via init flags.
+// used to control the log level and should match
+// `bluetooth::log_internal::Level`.
 enum LogLevels {
-  LOG_TAG_FATAL = 0,
-  LOG_TAG_ERROR,
-  LOG_TAG_WARN,
-  LOG_TAG_NOTICE,
-  LOG_TAG_INFO,
-  LOG_TAG_DEBUG,
-  LOG_TAG_VERBOSE
+  LOG_TAG_VERBOSE = 2,
+  LOG_TAG_DEBUG = 3,
+  LOG_TAG_INFO = 4,
+  LOG_TAG_WARN = 5,
+  LOG_TAG_ERROR = 6,
+  LOG_TAG_FATAL = 7,
 };

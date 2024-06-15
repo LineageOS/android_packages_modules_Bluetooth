@@ -6,17 +6,9 @@ package {
 aconfig_declarations {
     name: "bluetooth_aconfig_flags",
     package: "com.android.bluetooth.flags",
+    container: "com.android.btservices",
     srcs: [
-        "a2dp.aconfig",
-        "asha.aconfig",
-        "audio_routing.aconfig",
-        "bta_dm.aconfig",
-        "framework.aconfig",
-        "gap.aconfig",
-        "hap.aconfig",
-        "hfp.aconfig",
-        "leaudio.aconfig",
-        "system_service.aconfig",
+        "**/*.aconfig",
     ],
 }
 
@@ -26,11 +18,16 @@ java_aconfig_library {
     visibility: [
         "//cts/tests/tests/bluetooth:__subpackages__",
         "//packages/modules/Bluetooth/android/app",
+        "//packages/modules/Bluetooth/framework",
+        "//packages/modules/Bluetooth/framework/tests/bumble",
+        "//packages/modules/Bluetooth/framework/tests/util",
         "//packages/modules/Bluetooth/service:__subpackages__",
     ],
     apex_available: [
         "com.android.btservices",
     ],
+    libs: ["framework-configinfrastructure"],
+    sdk_version: "module_current",
     min_sdk_version: "Tiramisu",
 }
 

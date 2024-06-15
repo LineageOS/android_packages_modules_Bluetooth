@@ -17,8 +17,7 @@
 package android.bluetooth;
 
 import android.os.ParcelUuid;
-import android.test.suitebuilder.annotation.SmallTest;
-
+import androidx.test.filters.SmallTest;
 import junit.framework.TestCase;
 
 /** Unit test cases for {@link BluetoothUuid}. */

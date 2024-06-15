@@ -18,7 +18,6 @@ cc_library_static {
     include_dirs: [
         "packages/modules/Bluetooth/system",
         "packages/modules/Bluetooth/system/gd",
-        "packages/modules/Bluetooth/system/internal_include",
         "packages/modules/Bluetooth/system/stack/include",
     ],
     srcs: [
@@ -39,6 +38,7 @@ cc_library_static {
     static_libs: [
         "bluetooth_flags_c_lib",
         "libbluetooth_hci_pdl",
+        "libbluetooth_log",
         "libbt_shim_bridge",
         "libflatbuffers-cpp",
         "server_configurable_flags",
@@ -59,11 +59,13 @@ cc_test {
         "test/interop_test.cc",
     ],
     shared_libs: [
+        "libbase",
         "liblog",
     ],
     static_libs: [
         "libbluetooth-types",
         "libbluetooth_gd",
+        "libbluetooth_log",
         "libbt_shim_bridge",
         "libbt_shim_ffi",
         "libbtcore",
@@ -94,11 +96,13 @@ cc_test {
         "test/device_iot_config_test.cc",
     ],
     shared_libs: [
+        "libbase",
         "libdl",
         "liblog",
     ],
     static_libs: [
         "libbluetooth-types",
+        "libbluetooth_log",
         "libbt-platform-protos-lite",
         "libbt_shim_bridge",
         "libbt_shim_ffi",

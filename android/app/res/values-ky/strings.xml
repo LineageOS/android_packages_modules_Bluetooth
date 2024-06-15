@@ -101,7 +101,6 @@
     <string name="status_connection_error" msgid="8253709700568062220">"Байланышкан жок."</string>
     <string name="status_protocol_error" msgid="3231573735130475654">"Сурамды туура иштетүү мүмкүн эмес."</string>
     <string name="status_unknown_error" msgid="314676481744304866">"Белгисиз ката."</string>
-    <string name="btopp_live_folder" msgid="4859989703965326287">"Bluetooth аркылуу алынгандар"</string>
     <string name="opp_notification_group" msgid="150067508422520653">"Bluetooth аркылуу бөлүшүү"</string>
     <string name="download_success" msgid="3438268368708549686">"Бардыгы кабыл алынды: <xliff:g id="FILE_SIZE">%1$s</xliff:g>."</string>
     <string name="upload_success" msgid="143787470859042049">"Бардыгы жөнөтүлдү: <xliff:g id="FILE_SIZE">%1$s</xliff:g>."</string>
@@ -136,4 +135,8 @@
     <string name="bluetooth_stays_on_message" msgid="3669663452593157737">"Түзмөгүңүз учак режиминде Bluetooth\'га туташкан бойдон калат. Кааласаңыз, Bluetooth\'ду өчүрүп койсоңуз болот."</string>
     <string name="bluetooth_and_wifi_stays_on_title" msgid="5821932798860821244">"Wi-Fi менен Bluetooth күйүк бойдон калат"</string>
     <string name="bluetooth_and_wifi_stays_on_message" msgid="7848565203843882558">"Түзмөгүңүз учак режиминде Wi‑Fi\'га жана Bluetooth\'га туташкан бойдон калат. Кааласаңыз, Wi-Fi менен Bluetooth\'ду өчүрүп койсоңуз болот."</string>
+    <string name="bluetooth_enabled_auto_on_title" msgid="1799541656310353393">"Bluetooth автоматтык түрдө иштетилди"</string>
+    <string name="bluetooth_enabled_auto_on_message" msgid="1070556457440100730">"Автоматтык түрдө өчүрүп күйгүзүүнү Bluetooth жөндөөлөрүнөн өчүрүп/күйгүзүгө болот."</string>
+    <string name="bluetooth_disable_auto_on" msgid="1085026923461565937">"Өчүрүү"</string>
+    <string name="bluetooth_notification_group" msgid="7251886707585872194">"Bluetooth\'тун абалын автоматтык түрдө өзгөртүү"</string>
 </resources>

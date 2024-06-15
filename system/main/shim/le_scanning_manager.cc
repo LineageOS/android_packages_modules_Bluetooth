@@ -37,6 +37,7 @@
 #include "main/shim/shim.h"
 #include "os/log.h"
 #include "stack/btm/btm_int_types.h"
+#include "stack/include/bt_dev_class.h"
 #include "stack/include/btm_log_history.h"
 #include "storage/device.h"
 #include "storage/le_device.h"
@@ -62,48 +63,58 @@ constexpr uint16_t kAllowAllFilter = 0x00;
 constexpr uint16_t kListLogicOr = 0x01;
 
 class DefaultScanningCallback : public ::ScanningCallbacks {
-  void OnScannerRegistered(const bluetooth::Uuid app_uuid, uint8_t scanner_id,
-                           uint8_t status) override {
+  void OnScannerRegistered(const bluetooth::Uuid /* app_uuid */,
+                           uint8_t /* scanner_id */,
+                           uint8_t /* status */) override {
     LogUnused();
   }
-  void OnSetScannerParameterComplete(uint8_t scanner_id,
-                                     uint8_t status) override {
+  void OnSetScannerParameterComplete(uint8_t /* scanner_id */,
+                                     uint8_t /* status */) override {
     LogUnused();
   }
-  void OnScanResult(uint16_t event_type, uint8_t address_type, RawAddress bda,
-                    uint8_t primary_phy, uint8_t secondary_phy,
-                    uint8_t advertising_sid, int8_t tx_power, int8_t rssi,
-                    uint16_t periodic_advertising_interval,
-                    std::vector<uint8_t> advertising_data) override {
+  void OnScanResult(uint16_t /* event_type */, uint8_t /* address_type */,
+                    RawAddress /* bda */, uint8_t /* primary_phy */,
+                    uint8_t /* secondary_phy */, uint8_t /* advertising_sid */,
+                    int8_t /* tx_power */, int8_t /* rssi */,
+                    uint16_t /* periodic_advertising_interval */,
+                    std::vector<uint8_t> /* advertising_data */) override {
     LogUnused();
   }
   void OnTrackAdvFoundLost(
-      AdvertisingTrackInfo advertising_track_info) override {
+      AdvertisingTrackInfo /* advertising_track_info */) override {
     LogUnused();
   }
-  void OnBatchScanReports(int client_if, int status, int report_format,
-                          int num_records, std::vector<uint8_t> data) override {
+  void OnBatchScanReports(int /* client_if */, int /* status */,
+                          int /* report_format */, int /* num_records */,
+                          std::vector<uint8_t> /* data */) override {
     LogUnused();
   }
-  void OnBatchScanThresholdCrossed(int client_if) override { LogUnused(); }
-  void OnPeriodicSyncStarted(int reg_id, uint8_t status, uint16_t sync_handle,
-                             uint8_t advertising_sid, uint8_t address_type,
-                             RawAddress address, uint8_t phy,
-                             uint16_t interval) override {
+  void OnBatchScanThresholdCrossed(int /* client_if */) override {
+    LogUnused();
+  }
+  void OnPeriodicSyncStarted(int /* reg_id */, uint8_t /* status */,
+                             uint16_t /* sync_handle */,
+                             uint8_t /* advertising_sid */,
+                             uint8_t /* address_type */,
+                             RawAddress /* address */, uint8_t /* phy */,
+                             uint16_t /* interval */) override {
     LogUnused();
   };
-  void OnPeriodicSyncReport(uint16_t sync_handle, int8_t tx_power, int8_t rssi,
-                            uint8_t status,
-                            std::vector<uint8_t> data) override {
+  void OnPeriodicSyncReport(uint16_t /* sync_handle */, int8_t /* tx_power */,
+                            int8_t /* rssi */, uint8_t /* status */,
+                            std::vector<uint8_t> /* data */) override {
     LogUnused();
   };
-  void OnPeriodicSyncLost(uint16_t sync_handle) override { LogUnused(); };
-  void OnPeriodicSyncTransferred(int pa_source, uint8_t status,
-                                 RawAddress address) override {
+  void OnPeriodicSyncLost(uint16_t /* sync_handle */) override { LogUnused(); };
+  void OnPeriodicSyncTransferred(int /* pa_source */, uint8_t /* status */,
+                                 RawAddress /* address */) override {
     LogUnused();
   };
 
-  void OnBigInfoReport(uint16_t sync_handle, bool encrypted) override {LogUnused(); };
+  void OnBigInfoReport(uint16_t /* sync_handle */,
+                       bool /* encrypted */) override {
+    LogUnused();
+  };
 
  private:
   static void LogUnused() {
@@ -133,8 +144,8 @@ extern void btif_dm_update_ble_remote_properties(const RawAddress& bd_addr,
 void btm_ble_process_adv_addr(RawAddress& raw_address,
                               tBLE_ADDR_TYPE* address_type);
 
-extern bool btm_ble_get_appearance_as_cod(std::vector<uint8_t> const& data,
-                                          DEV_CLASS dev_class);
+extern DEV_CLASS btm_ble_get_appearance_as_cod(
+    std::vector<uint8_t> const& data);
 
 using bluetooth::shim::BleScannerInterfaceImpl;
 
@@ -255,8 +266,8 @@ void BleScannerInterfaceImpl::ScanFilterAdd(int filter_index,
 }
 
 /** Clear all scan filter conditions for specific filter index*/
-void BleScannerInterfaceImpl::ScanFilterClear(int filter_index,
-                                              FilterConfigCallback cb) {
+void BleScannerInterfaceImpl::ScanFilterClear(int /* filter_index */,
+                                              FilterConfigCallback /* cb */) {
   LOG(INFO) << __func__ << " in shim layer";
   // This function doesn't used in java layer
 }
@@ -339,23 +350,23 @@ void BleScannerInterfaceImpl::OnMsftAdvMonitorEnable(
 
 /** Sets the LE scan interval and window in units of N*0.625 msec */
 void BleScannerInterfaceImpl::SetScanParameters(int scanner_id,
+                                                uint8_t scan_type,
                                                 int scan_interval,
-                                                int scan_window, Callback cb) {
+                                                int scan_window,
+                                                Callback /* cb */) {
   LOG(INFO) << __func__ << " in shim layer";
-  tBTM_BLE_INQ_CB* p_cb = &btm_cb.ble_ctr_cb.inq_var;
   if (BTM_BLE_ISVALID_PARAM(scan_interval, BTM_BLE_SCAN_INT_MIN,
                             BTM_BLE_EXT_SCAN_INT_MAX) &&
       BTM_BLE_ISVALID_PARAM(scan_window, BTM_BLE_SCAN_WIN_MIN,
                             BTM_BLE_EXT_SCAN_WIN_MAX)) {
-    p_cb->scan_type = BTM_BLE_SCAN_MODE_ACTI;
-    p_cb->scan_interval = scan_interval;
-    p_cb->scan_window = scan_window;
+    btm_cb.ble_ctr_cb.inq_var.scan_type = BTM_BLE_SCAN_MODE_ACTI;
+    btm_cb.ble_ctr_cb.inq_var.scan_interval = scan_interval;
+    btm_cb.ble_ctr_cb.inq_var.scan_window = scan_window;
   }
 
-  // use active scan
-  auto scan_type = static_cast<bluetooth::hci::LeScanType>(0x01);
-  bluetooth::shim::GetScanning()->SetScanParameters(scanner_id, scan_type,
-                                                    scan_interval, scan_window);
+  bluetooth::shim::GetScanning()->SetScanParameters(
+      scanner_id, static_cast<bluetooth::hci::LeScanType>(scan_type),
+      scan_interval, scan_window);
 }
 
 /* Configure the batchscan storage */
@@ -372,7 +383,8 @@ void BleScannerInterfaceImpl::BatchscanConfigStorage(
 
 /* Enable batchscan */
 void BleScannerInterfaceImpl::BatchscanEnable(int scan_mode, int scan_interval,
-                                              int scan_window, int addr_type,
+                                              int scan_window,
+                                              int /* addr_type */,
                                               int discard_rule, Callback cb) {
   LOG(INFO) << __func__ << " in shim layer";
   auto batch_scan_mode = static_cast<bluetooth::hci::BatchScanMode>(scan_mode);
@@ -654,14 +666,15 @@ void BleScannerInterfaceImpl::OnBigInfoReport(uint16_t sync_handle, bool encrypt
 }
 
 void BleScannerInterfaceImpl::OnTimeout() {}
-void BleScannerInterfaceImpl::OnFilterEnable(bluetooth::hci::Enable enable,
-                                             uint8_t status) {}
+void BleScannerInterfaceImpl::OnFilterEnable(
+    bluetooth::hci::Enable /* enable */, uint8_t /* status */) {}
 void BleScannerInterfaceImpl::OnFilterParamSetup(
-    uint8_t available_spaces, bluetooth::hci::ApcfAction action,
-    uint8_t status) {}
+    uint8_t /* available_spaces */, bluetooth::hci::ApcfAction /* action */,
+    uint8_t /* status */) {}
 void BleScannerInterfaceImpl::OnFilterConfigCallback(
-    bluetooth::hci::ApcfFilterType filter_type, uint8_t available_spaces,
-    bluetooth::hci::ApcfAction action, uint8_t status) {}
+    bluetooth::hci::ApcfFilterType /* filter_type */,
+    uint8_t /* available_spaces */, bluetooth::hci::ApcfAction /* action */,
+    uint8_t /* status */) {}
 
 bool BleScannerInterfaceImpl::parse_filter_command(
     bluetooth::hci::AdvertisingPacketContentFilterCommand&
@@ -792,13 +805,13 @@ void BleScannerInterfaceImpl::handle_remote_properties(
       memcpy(bdname.name, p_eir_remote_name, remote_name_len);
       if (remote_name_len < BD_NAME_LEN + 1)
         bdname.name[remote_name_len] = '\0';
-      btif_dm_update_ble_remote_properties(bd_addr, bdname.name, NULL,
+      btif_dm_update_ble_remote_properties(bd_addr, bdname.name, kDevClassEmpty,
                                            device_type);
     }
   }
 
-  DEV_CLASS dev_class;
-  if (btm_ble_get_appearance_as_cod(advertising_data, dev_class)) {
+  DEV_CLASS dev_class = btm_ble_get_appearance_as_cod(advertising_data);
+  if (dev_class != kDevClassUnclassified) {
     btif_dm_update_ble_remote_properties(bd_addr, bdname.name, dev_class,
                                          device_type);
   }

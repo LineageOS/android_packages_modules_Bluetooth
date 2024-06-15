@@ -24,6 +24,7 @@
 #define BTIF_AV_H
 
 #include <cstdint>
+#include <vector>
 
 #include "include/hardware/bt_av.h"
 #include "types/raw_address.h"

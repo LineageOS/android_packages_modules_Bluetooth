@@ -23,11 +23,12 @@
  *
  ******************************************************************************/
 
+#include <bluetooth/log.h>
+
 #include <cstdint>
 
-#include "bt_target.h"  // Must be first to define build configuration
-
 #include "bta/include/bta_av_api.h"
+#include "internal_include/bt_target.h"
 #include "stack/include/avrc_api.h"
 
 #ifndef BTA_AV_RC_COMP_ID
@@ -38,6 +39,8 @@
 #define BTA_AV_RC_PASS_RSP_CODE AVRC_RSP_NOT_IMPL
 #endif
 
+using namespace bluetooth;
+
 const uint32_t bta_av_meta_caps_co_ids[] = {AVRC_CO_METADATA, AVRC_CO_BROADCOM};
 
 /* AVRCP supported categories */
@@ -45,7 +48,6 @@ const uint32_t bta_av_meta_caps_co_ids[] = {AVRC_CO_METADATA, AVRC_CO_BROADCOM};
 #define BTA_AVK_RC_SUPF_CT                   \
   (AVRC_SUPF_CT_CAT1 | AVRC_SUPF_CT_BROWSE | \
    AVRC_SUPF_CT_COVER_ART_GET_IMAGE_PROP | AVRC_SUPF_CT_COVER_ART_GET_IMAGE)
-#define BTA_AVK_RC_SUPF_CT_V15 (AVRC_SUPF_CT_CAT1 | AVRC_SUPF_CT_BROWSE)
 
 #define BTA_AVK_RC_SUPF_TG (AVRC_SUPF_TG_CAT2)
 
@@ -141,10 +143,10 @@ extern const tBTA_AV_CFG bta_av_cfg = {
 
 const tBTA_AV_CFG* get_bta_avk_cfg() {
   static const tBTA_AV_CFG bta_avk_cfg = {
-      AVRC_CO_METADATA,       /* AVRCP Company ID */
-      BTA_AVK_RC_SUPF_CT_V15, /* AVRCP controller categories */
-      BTA_AVK_RC_SUPF_TG,     /* AVRCP target categories */
-      6,                      /* AVDTP audio channel max data queue size */
+      AVRC_CO_METADATA,   /* AVRCP Company ID */
+      BTA_AVK_RC_SUPF_CT, /* AVRCP controller categories */
+      BTA_AVK_RC_SUPF_TG, /* AVRCP target categories */
+      6,                  /* AVDTP audio channel max data queue size */
       false, /* true, to accept AVRC 1.3 group nevigation command */
       2,     /* company id count in p_meta_co_ids */
       (uint8_t)(avrcp_absolute_volume_is_enabled()

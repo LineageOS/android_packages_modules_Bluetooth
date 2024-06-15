@@ -14,11 +14,15 @@
 */
 package com.android.bluetooth.map;
 
+import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothProtoEnums;
 import android.util.Log;
 import android.util.Xml;
 
+import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.DeviceWorkArounds;
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 
 import org.xmlpull.v1.XmlSerializer;
 
@@ -29,6 +33,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+// Next tag value for ContentProfileErrorReportUtils.report(): 3
 public class BluetoothMapMessageListing {
     private boolean mHasUnread = false;
     private static final String TAG = "BluetoothMapMessageListing";
@@ -121,10 +126,25 @@ public class BluetoothMapMessageListing {
             xmlMsgElement.endTag(null, "MAP-msg-listing");
             xmlMsgElement.endDocument();
         } catch (IllegalArgumentException e) {
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.MAP,
+                    BluetoothProtoEnums.BLUETOOTH_MAP_MESSAGE_LISTING,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                    0);
             Log.w(TAG, e);
         } catch (IllegalStateException e) {
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.MAP,
+                    BluetoothProtoEnums.BLUETOOTH_MAP_MESSAGE_LISTING,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                    1);
             Log.w(TAG, e);
         } catch (IOException e) {
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.MAP,
+                    BluetoothProtoEnums.BLUETOOTH_MAP_MESSAGE_LISTING,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                    2);
             Log.w(TAG, e);
         }
         /* Fix IOT issue to replace '&amp;' by '&', &lt; by < and '&gt; by '>' in MessageListing */

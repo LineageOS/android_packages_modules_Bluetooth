@@ -18,9 +18,9 @@
 
 #include <memory>
 
-#include "gd/rust/topshim/btav_sink/btav_sink_shim.h"
 #include "include/hardware/bt_av.h"
 #include "rust/cxx.h"
+#include "rust/topshim/btav_sink/btav_sink_shim.h"
 #include "types/raw_address.h"
 
 namespace bluetooth {

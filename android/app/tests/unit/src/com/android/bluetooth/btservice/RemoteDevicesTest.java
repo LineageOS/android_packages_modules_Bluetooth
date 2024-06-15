@@ -742,6 +742,12 @@ public class RemoteDevicesTest {
         Assert.assertFalse(deviceProp.isCoordinatedSetMember());
     }
 
+    @Test
+    public void testIsDeviceNull() {
+        Assert.assertNull(mRemoteDevices.getDeviceProperties(null));
+    }
+
+
     private static void verifyBatteryLevelChangedIntent(BluetoothDevice device, int batteryLevel,
             ArgumentCaptor<Intent> intentArgument) {
         verifyBatteryLevelChangedIntent(device, batteryLevel, intentArgument.getValue());

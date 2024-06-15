@@ -21,6 +21,7 @@
 #include "bta/dm/bta_dm_int.h"
 #include "bta/hh/bta_hh_int.h"
 #include "bta/include/bta_hh_api.h"
+#include "bta/include/bta_le_audio_api.h"
 #include "osi/include/allocator.h"
 #include "test/common/mock_functions.h"
 #include "test/mock/mock_osi_allocator.h"
@@ -77,7 +78,9 @@ TEST_F(BtaHhTest, bta_hh_ctrl_dat_act__BTA_HH_GET_RPT_EVT) {
                       .offset = 0,
                       .layer_specific = 0,
                   },
-              .addr = RawAddress::kEmpty,
+              .link_spec.addrt.bda = RawAddress::kEmpty,
+              .link_spec.addrt.type = BLE_ADDR_PUBLIC,
+              .link_spec.transport = BT_TRANSPORT_AUTO,
               .data = 32,
               .p_data = static_cast<BT_HDR*>(osi_calloc(32 + sizeof(BT_HDR))),
           },

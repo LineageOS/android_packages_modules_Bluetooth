@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "gd/rust/topshim/btif/btif_shim.h"
+#include "rust/topshim/btif/btif_shim.h"
 
 #include <algorithm>
 #include <cstdlib>

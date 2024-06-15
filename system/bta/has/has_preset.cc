@@ -17,7 +17,11 @@
 
 #include "has_preset.h"
 
+#include <bluetooth/log.h>
+
 #include "stack/include/bt_types.h"
+
+using namespace bluetooth;
 
 namespace le_audio {
 namespace has {
@@ -26,7 +30,7 @@ std::optional<HasPreset> HasPreset::FromCharacteristicValue(
     uint16_t& len, const uint8_t* value) {
   if ((len < kCharValueMinSize) ||
       (len > kCharValueMinSize + kPresetNameLengthLimit)) {
-    LOG(ERROR) << __func__ << " Preset record to long: " << len;
+    log::error("Preset record to long: {}", len);
     return std::nullopt;
   }
 
@@ -53,14 +57,13 @@ void HasPreset::ToCharacteristicValue(std::vector<uint8_t>& value) const {
 
 uint8_t* HasPreset::Serialize(uint8_t* p_out, size_t buffer_size) const {
   if (buffer_size < SerializedSize()) {
-    LOG(ERROR) << "Invalid output buffer size!";
+    log::error("Invalid output buffer size!");
     return p_out;
   }
 
   uint8_t name_len = name_.length();
   if (name_len > kPresetNameLengthLimit) {
-    LOG(ERROR) << __func__
-               << " Invalid preset name length. Cannot be serialized!";
+    log::error("Invalid preset name length. Cannot be serialized!");
     return p_out;
   }
 
@@ -79,22 +82,21 @@ const uint8_t* HasPreset::Deserialize(const uint8_t* p_in, size_t len,
   auto* p_curr = p_in;
 
   if (len < nonamed_size) {
-    LOG(ERROR) << "Invalid buffer size " << +len << ". Cannot deserialize.";
+    log::error("Invalid buffer size {}. Cannot deserialize.", len);
     return p_in;
   }
 
   uint8_t serialized_data_len;
   STREAM_TO_UINT8(serialized_data_len, p_curr);
   if (serialized_data_len < 2) {
-    LOG(ERROR) << __func__ << " Invalid data size. Cannot be deserialized!";
+    log::error("Invalid data size. Cannot be deserialized!");
     return p_in;
   }
 
   auto name_len = serialized_data_len - 2;
   if ((name_len > kPresetNameLengthLimit) ||
       ((size_t)nonamed_size + name_len > len)) {
-    LOG(ERROR) << __func__
-               << " Invalid preset name length. Cannot be deserialized!";
+    log::error("Invalid preset name length. Cannot be deserialized!");
     return p_in;
   }
 

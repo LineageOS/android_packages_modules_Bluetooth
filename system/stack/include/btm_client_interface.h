@@ -23,7 +23,6 @@
 #include "stack/btm/power_mode.h"
 #include "stack/include/acl_client_callbacks.h"
 #include "stack/include/bt_hdr.h"
-#include "stack/include/bt_octets.h"
 #include "stack/include/btm_api_types.h"
 #include "stack/include/btm_ble_api_types.h"
 #include "stack/include/btm_status.h"
@@ -51,10 +50,6 @@ struct btm_client_interface_t {
 
   // Acl peer and lifecycle
   struct {
-    struct {
-      bool (*SupportTransparentSynchronousData)(const RawAddress& bd_addr);
-    } features;
-
     bool (*BTM_IsAclConnectionUp)(const RawAddress& bd_addr,
                                   tBT_TRANSPORT transport);
     bool (*BTM_ReadConnectedTransportAddress)(RawAddress* bd_addr,
@@ -104,10 +99,6 @@ struct btm_client_interface_t {
                                   bool low_latency_scan);
     tBTM_STATUS (*BTM_SetBleDataLength)(const RawAddress& bd_addr,
                                         uint16_t tx_pdu_length);
-    void (*BTM_BleConfirmReply)(const RawAddress& bd_addr, uint8_t res);
-    void (*BTM_BleLoadLocalKeys)(uint8_t key_type, tBTM_BLE_LOCAL_KEYS* p_key);
-    void (*BTM_BlePasskeyReply)(const RawAddress& bd_addr, uint8_t res,
-                                uint32_t passkey);
     void (*BTM_BleReadControllerFeatures)(
         tBTM_BLE_CTRL_FEATURES_CBACK* p_vsc_cback);
     void (*BTM_BleSetConnScanParams)(uint32_t scan_interval,
@@ -143,7 +134,7 @@ struct btm_client_interface_t {
     tBTM_STATUS (*BTM_SetLocalDeviceName)(const char* p_name);
     tBTM_STATUS (*BTM_SetDeviceClass)(DEV_CLASS dev_class);
     bool (*BTM_IsDeviceUp)();
-    uint8_t* (*BTM_ReadDeviceClass)();
+    DEV_CLASS (*BTM_ReadDeviceClass)();
   } local;
 
   struct {

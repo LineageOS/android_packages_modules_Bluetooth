@@ -19,13 +19,15 @@
 #include "a2dp_aac_decoder.h"
 
 #include <aacdecoder_lib.h>
-#include <base/logging.h>
+#include <bluetooth/log.h>
 
 #include "os/log.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
 
 #define DECODE_BUF_LEN (8 * 2 * 1024)
+
+using namespace bluetooth;
 
 typedef struct {
   HANDLE_AACDECODER aac_handle;
@@ -70,8 +72,7 @@ bool a2dp_aac_decoder_decode_packet(BT_HDR* p_buf) {
     AAC_DECODER_ERROR err = aacDecoder_Fill(a2dp_aac_decoder_cb.aac_handle,
                                             &pBuffer, &bufferSize, &bytesValid);
     if (err != AAC_DEC_OK) {
-      LOG_ERROR("%s: aacDecoder_Fill failed: 0x%x", __func__,
-                static_cast<unsigned>(err));
+      log::error("aacDecoder_Fill failed: 0x{:x}", static_cast<unsigned>(err));
       return false;
     }
 
@@ -83,15 +84,15 @@ bool a2dp_aac_decoder_decode_packet(BT_HDR* p_buf) {
         break;
       }
       if (err != AAC_DEC_OK) {
-        LOG_ERROR("%s: aacDecoder_DecodeFrame failed: 0x%x", __func__,
-                  static_cast<int>(err));
+        log::error("aacDecoder_DecodeFrame failed: 0x{:x}",
+                   static_cast<int>(err));
         break;
       }
 
       CStreamInfo* info =
           aacDecoder_GetStreamInfo(a2dp_aac_decoder_cb.aac_handle);
       if (!info || info->sampleRate <= 0) {
-        LOG_ERROR("%s: Invalid stream info", __func__);
+        log::error("Invalid stream info");
         break;
       }
 

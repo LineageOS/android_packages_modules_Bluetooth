@@ -21,9 +21,9 @@
 #include <bitset>
 #include <map>
 
-#include "gd/common/strings.h"
+#include "common/strings.h"
 #include "le_audio_types.h"
-#include "osi/include/log.h"
+#include "os/log.h"
 
 namespace {
 

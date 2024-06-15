@@ -19,18 +19,18 @@
 
 #include <cstdint>
 
+#include "hci/class_of_device.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/include/hci_mode.h"
 #include "stack/include/hcidefs.h"
-#include "types/class_of_device.h"
 #include "types/hci_role.h"
 #include "types/raw_address.h"
 
 // This header contains functions for HCIF-Acl Management to invoke
 //
 void btm_connection_request(const RawAddress& bda,
-                            const bluetooth::types::ClassOfDevice& cod);
+                            const bluetooth::hci::ClassOfDevice& cod);
 void btm_acl_connected(const RawAddress& bda, uint16_t handle,
                        tHCI_STATUS status, uint8_t enc_mode);
 void on_acl_br_edr_connected(const RawAddress& bda, uint16_t handle,
@@ -39,9 +39,6 @@ void on_acl_br_edr_failed(const RawAddress& bda, tHCI_STATUS status,
                           bool locally_initiated);
 void btm_acl_disconnected(tHCI_STATUS status, uint16_t handle,
                           tHCI_STATUS reason);
-void btm_acl_iso_disconnected(uint16_t handle, tHCI_STATUS reason);
-void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
-                            uint8_t encr_enable);
 void btm_acl_role_changed(tHCI_STATUS hci_status, const RawAddress& bd_addr,
                           tHCI_ROLE new_role);
 void btm_rejectlist_role_change_device(const RawAddress& bd_addr,

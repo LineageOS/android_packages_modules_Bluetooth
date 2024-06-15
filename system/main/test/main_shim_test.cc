@@ -40,7 +40,7 @@
 #include "hci/acl_manager_mock.h"
 #include "hci/address.h"
 #include "hci/address_with_type.h"
-#include "hci/controller_mock.h"
+#include "hci/controller_interface_mock.h"
 #include "hci/distance_measurement_manager_mock.h"
 #include "hci/le_advertising_manager_mock.h"
 #include "hci/le_scanning_manager_mock.h"
@@ -65,7 +65,6 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_types.h"
 #include "stack/include/hci_error_code.h"
-#include "stack/include/sco_hci_link_interface.h"
 #include "stack/include/sec_hci_link_interface.h"
 #include "stack/l2cap/l2c_int.h"
 #include "test/common/jni_thread.h"
@@ -184,10 +183,6 @@ const shim::legacy::acl_interface_t GetMockAclInterface() {
       .connection.le.on_failed = mock_connection_le_on_failed,
       .connection.le.on_disconnected = mock_connection_le_on_disconnected,
 
-      .connection.sco.on_esco_connect_request = nullptr,
-      .connection.sco.on_sco_connect_request = nullptr,
-      .connection.sco.on_disconnected = nullptr,
-
       .link.classic.on_authentication_complete = nullptr,
       .link.classic.on_central_link_key_complete = nullptr,
       .link.classic.on_change_connection_link_key_complete = nullptr,
@@ -224,7 +219,6 @@ const shim::legacy::acl_interface_t GetMockAclInterface() {
 struct hci_packet_parser_t;
 const hci_packet_parser_t* hci_packet_parser_get_interface() { return nullptr; }
 struct hci_t;
-const hci_t* hci_layer_get_interface() { return nullptr; }
 struct packet_fragmenter_t;
 const packet_fragmenter_t* packet_fragmenter_get_interface() { return nullptr; }
 
@@ -373,7 +367,7 @@ class MainShimTest : public testing::Test {
     handler_ = new os::Handler(thread_);
 
     /* extern */ test::mock_controller_ =
-        new bluetooth::hci::testing::MockController();
+        new bluetooth::hci::testing::MockControllerInterface();
     /* extern */ test::mock_acl_manager_ =
         new bluetooth::hci::testing::MockAclManager();
     /* extern */ test::mock_le_scanning_manager_ =
@@ -412,8 +406,6 @@ class MainShimTest : public testing::Test {
     EXPECT_CALL(*test::mock_acl_manager_, RegisterLeCallbacks(_, _)).Times(1);
     EXPECT_CALL(*test::mock_controller_,
                 RegisterCompletedMonitorAclPacketsCallback(_))
-        .Times(1);
-    EXPECT_CALL(*test::mock_acl_manager_, HACK_SetNonAclDisconnectCallback(_))
         .Times(1);
     EXPECT_CALL(*test::mock_controller_,
                 UnregisterCompletedMonitorAclPacketsCallback)

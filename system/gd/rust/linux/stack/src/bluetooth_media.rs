@@ -14,9 +14,9 @@ use bt_topshim::profiles::avrcp::{
 };
 use bt_topshim::profiles::hfp::interop_insert_call_when_sco_start;
 use bt_topshim::profiles::hfp::{
-    BthfAudioState, BthfConnectionState, CallHoldCommand, CallInfo, CallSource, CallState, Hfp,
-    HfpCallbacks, HfpCallbacksDispatcher, HfpCodecCapability, HfpCodecId, PhoneState,
-    TelephonyDeviceStatus,
+    BthfAudioState, BthfConnectionState, CallHoldCommand, CallInfo, CallSource, CallState,
+    EscoCodingFormat, Hfp, HfpCallbacks, HfpCallbacksDispatcher, HfpCodecBitId, HfpCodecFormat,
+    HfpCodecId, PhoneState, TelephonyDeviceStatus,
 };
 use bt_topshim::profiles::ProfileConnectionState;
 use bt_topshim::{metrics, topstack};
@@ -129,7 +129,7 @@ pub trait IBluetoothMedia {
         &mut self,
         address: String,
         sco_offload: bool,
-        disabled_codecs: HfpCodecCapability,
+        disabled_codecs: HfpCodecBitId,
     ) -> bool;
     fn stop_sco_call(&mut self, address: String);
 
@@ -247,7 +247,7 @@ pub struct BluetoothAudioDevice {
     pub address: String,
     pub name: String,
     pub a2dp_caps: Vec<A2dpCodecConfig>,
-    pub hfp_cap: HfpCodecCapability,
+    pub hfp_cap: HfpCodecFormat,
     pub absolute_volume: bool,
 }
 
@@ -256,7 +256,7 @@ impl BluetoothAudioDevice {
         address: String,
         name: String,
         a2dp_caps: Vec<A2dpCodecConfig>,
-        hfp_cap: HfpCodecCapability,
+        hfp_cap: HfpCodecFormat,
         absolute_volume: bool,
     ) -> BluetoothAudioDevice {
         BluetoothAudioDevice { address, name, a2dp_caps, hfp_cap, absolute_volume }
@@ -304,7 +304,7 @@ pub struct BluetoothMedia {
     hfp_states: HashMap<RawAddress, BthfConnectionState>,
     hfp_audio_state: HashMap<RawAddress, BthfAudioState>,
     a2dp_caps: HashMap<RawAddress, Vec<A2dpCodecConfig>>,
-    hfp_cap: HashMap<RawAddress, HfpCodecCapability>,
+    hfp_cap: HashMap<RawAddress, HfpCodecFormat>,
     fallback_tasks: Arc<Mutex<HashMap<RawAddress, Option<(JoinHandle<()>, Instant)>>>>,
     absolute_volume: bool,
     uinput: UInput,
@@ -711,7 +711,7 @@ impl BluetoothMedia {
                         // The device may not support codec-negotiation,
                         // in which case we shall assume it supports CVSD at this point.
                         if !self.hfp_cap.contains_key(&addr) {
-                            self.hfp_cap.insert(addr, HfpCodecCapability::CVSD);
+                            self.hfp_cap.insert(addr, HfpCodecFormat::CVSD);
                         }
                         self.add_connected_profile(addr, uuid::Profile::Hfp);
 
@@ -719,11 +719,7 @@ impl BluetoothMedia {
                         // This is only used for Bluetooth HFP qualification.
                         if self.mps_qualification_enabled && self.phone_state.num_active > 0 {
                             debug!("[{}]: Connect SCO due to active call.", DisplayAddress(&addr));
-                            self.start_sco_call_impl(
-                                addr.to_string(),
-                                false,
-                                HfpCodecCapability::NONE,
-                            );
+                            self.start_sco_call_impl(addr.to_string(), false, HfpCodecBitId::NONE);
                         }
 
                         self.uhid_create(addr);
@@ -910,32 +906,55 @@ impl BluetoothMedia {
                     .set_battery_info(self.battery_provider_id, battery_set);
             }
             HfpCallbacks::WbsCapsUpdate(wbs_supported, addr) => {
+                let is_transparent_coding_format_supported = match &self.adapter {
+                    Some(adapter) => adapter
+                        .lock()
+                        .unwrap()
+                        .is_coding_format_supported(EscoCodingFormat::TRANSPARENT),
+                    _ => false,
+                };
+
+                let is_msbc_coding_format_supported = match &self.adapter {
+                    Some(adapter) => {
+                        adapter.lock().unwrap().is_coding_format_supported(EscoCodingFormat::MSBC)
+                    }
+                    _ => false,
+                };
+
+                let mut codec_diff = HfpCodecFormat::NONE;
+                if is_transparent_coding_format_supported {
+                    codec_diff |= HfpCodecFormat::MSBC_TRANSPARENT;
+                }
+                if is_msbc_coding_format_supported {
+                    codec_diff |= HfpCodecFormat::MSBC;
+                }
+
                 if let Some(cur_hfp_cap) = self.hfp_cap.get_mut(&addr) {
                     if wbs_supported {
-                        *cur_hfp_cap |= HfpCodecCapability::MSBC;
-                    } else if (*cur_hfp_cap & HfpCodecCapability::MSBC) == HfpCodecCapability::MSBC
-                    {
-                        *cur_hfp_cap ^= HfpCodecCapability::MSBC;
+                        *cur_hfp_cap |= codec_diff;
+                    } else {
+                        *cur_hfp_cap &= !codec_diff;
                     }
                 } else {
                     let new_hfp_cap = match wbs_supported {
-                        true => HfpCodecCapability::CVSD | HfpCodecCapability::MSBC,
-                        false => HfpCodecCapability::CVSD,
+                        true => HfpCodecFormat::CVSD | codec_diff,
+                        false => HfpCodecFormat::CVSD,
                     };
                     self.hfp_cap.insert(addr, new_hfp_cap);
                 }
             }
             HfpCallbacks::SwbCapsUpdate(swb_supported, addr) => {
+                // LC3 can be propagated to this point only if adapter supports transparent mode.
                 if let Some(cur_hfp_cap) = self.hfp_cap.get_mut(&addr) {
                     if swb_supported {
-                        *cur_hfp_cap |= HfpCodecCapability::LC3;
-                    } else if (*cur_hfp_cap & HfpCodecCapability::LC3) == HfpCodecCapability::LC3 {
-                        *cur_hfp_cap ^= HfpCodecCapability::LC3;
+                        *cur_hfp_cap |= HfpCodecFormat::LC3_TRANSPARENT;
+                    } else {
+                        *cur_hfp_cap &= !HfpCodecFormat::LC3_TRANSPARENT;
                     }
                 } else {
                     let new_hfp_cap = match swb_supported {
-                        true => HfpCodecCapability::CVSD | HfpCodecCapability::LC3,
-                        false => HfpCodecCapability::CVSD,
+                        true => HfpCodecFormat::CVSD | HfpCodecFormat::LC3_TRANSPARENT,
+                        false => HfpCodecFormat::CVSD,
                     };
                     self.hfp_cap.insert(addr, new_hfp_cap);
                 }
@@ -994,7 +1013,7 @@ impl BluetoothMedia {
 
                 if self.mps_qualification_enabled {
                     debug!("[{}]: Start SCO call due to ATA", DisplayAddress(&addr));
-                    self.start_sco_call_impl(addr.to_string(), false, HfpCodecCapability::NONE);
+                    self.start_sco_call_impl(addr.to_string(), false, HfpCodecBitId::NONE);
                 }
                 self.uhid_send_input_report(&addr);
             }
@@ -1599,7 +1618,7 @@ impl BluetoothMedia {
                     addr.to_string(),
                     name.clone(),
                     cur_a2dp_caps.unwrap_or(&Vec::new()).to_vec(),
-                    *cur_hfp_cap.unwrap_or(&HfpCodecCapability::NONE),
+                    *cur_hfp_cap.unwrap_or(&HfpCodecFormat::NONE),
                     absolute_volume,
                 );
 
@@ -1799,7 +1818,7 @@ impl BluetoothMedia {
         &mut self,
         address: String,
         sco_offload: bool,
-        disabled_codecs: HfpCodecCapability,
+        disabled_codecs: HfpCodecBitId,
     ) -> bool {
         match (|| -> Result<(), &str> {
             let addr = RawAddress::from_string(address.clone())
@@ -2756,7 +2775,7 @@ impl IBluetoothMedia for BluetoothMedia {
         &mut self,
         address: String,
         sco_offload: bool,
-        disabled_codecs: HfpCodecCapability,
+        disabled_codecs: HfpCodecBitId,
     ) -> bool {
         self.start_sco_call_impl(address, sco_offload, disabled_codecs)
     }
@@ -2791,16 +2810,33 @@ impl IBluetoothMedia for BluetoothMedia {
 
         match self.hfp_audio_state.get(&addr) {
             Some(BthfAudioState::Connected) => match self.hfp_cap.get(&addr) {
-                Some(caps) if (*caps & HfpCodecCapability::LC3) == HfpCodecCapability::LC3 => 4,
-                Some(caps) if (*caps & HfpCodecCapability::MSBC) == HfpCodecCapability::MSBC => 2,
-                Some(caps) if (*caps & HfpCodecCapability::CVSD) == HfpCodecCapability::CVSD => 1,
+                Some(caps)
+                    if (*caps & HfpCodecFormat::LC3_TRANSPARENT)
+                        == HfpCodecFormat::LC3_TRANSPARENT =>
+                {
+                    HfpCodecBitId::LC3
+                }
+                Some(caps) if (*caps & HfpCodecFormat::MSBC) == HfpCodecFormat::MSBC => {
+                    HfpCodecBitId::MSBC
+                }
+                Some(caps)
+                    if (*caps & HfpCodecFormat::MSBC_TRANSPARENT)
+                        == HfpCodecFormat::MSBC_TRANSPARENT =>
+                {
+                    HfpCodecBitId::MSBC
+                }
+                Some(caps) if (*caps & HfpCodecFormat::CVSD) == HfpCodecFormat::CVSD => {
+                    HfpCodecBitId::CVSD
+                }
                 _ => {
                     warn!("hfp_cap not found, fallback to CVSD.");
-                    1
+                    HfpCodecBitId::CVSD
                 }
             },
-            _ => 0,
+            _ => HfpCodecBitId::NONE,
         }
+        .try_into()
+        .unwrap()
     }
 
     fn get_presentation_position(&mut self) -> PresentationPosition {
@@ -3029,7 +3065,7 @@ impl IBluetoothTelephony for BluetoothMedia {
                 }
             }) {
                 info!("Start SCO call due to call answered");
-                self.start_sco_call_impl(addr.to_string(), false, HfpCodecCapability::NONE);
+                self.start_sco_call_impl(addr.to_string(), false, HfpCodecBitId::NONE);
             }
         }
 
@@ -3090,7 +3126,7 @@ impl IBluetoothTelephony for BluetoothMedia {
     }
 
     fn audio_connect(&mut self, address: String) -> bool {
-        self.start_sco_call_impl(address, false, HfpCodecCapability::NONE)
+        self.start_sco_call_impl(address, false, HfpCodecBitId::NONE)
     }
 
     fn audio_disconnect(&mut self, address: String) {

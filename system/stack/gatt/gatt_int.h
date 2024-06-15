@@ -21,6 +21,7 @@
 
 #include <base/functional/bind.h>
 #include <base/strings/stringprintf.h>
+#include <bluetooth/log.h>
 
 #include <deque>
 #include <list>
@@ -518,7 +519,7 @@ tGATT_STATUS attp_send_msg_to_l2cap(tGATT_TCB& tcb, uint16_t cid,
 
 /* utility functions */
 uint16_t gatt_get_local_mtu(void);
-uint8_t* gatt_dbg_op_name(uint8_t op_code);
+char const* gatt_dbg_op_name(uint8_t op_code);
 uint32_t gatt_add_sdp_record(const bluetooth::Uuid& uuid, uint16_t start_hdl,
                              uint16_t end_hdl);
 bool gatt_parse_uuid_from_cmd(bluetooth::Uuid* p_uuid, uint16_t len,
@@ -689,5 +690,10 @@ bluetooth::Uuid* gatts_get_service_uuid(tGATT_SVC_DB* p_db);
 
 /* gatt_sr_hash.cc */
 Octet16 gatts_calculate_database_hash(std::list<tGATT_SRV_LIST_ELEM>* lst_ptr);
+
+namespace fmt {
+template <>
+struct formatter<tGATT_CH_STATE> : enum_formatter<tGATT_CH_STATE> {};
+}  // namespace fmt
 
 #endif

@@ -43,6 +43,7 @@ struct LogMetricLinkLayerConnectionEvent LogMetricLinkLayerConnectionEvent;
 struct LogMetricA2dpAudioUnderrunEvent LogMetricA2dpAudioUnderrunEvent;
 struct LogMetricA2dpAudioOverrunEvent LogMetricA2dpAudioOverrunEvent;
 struct LogMetricA2dpPlaybackEvent LogMetricA2dpPlaybackEvent;
+struct LogMetricA2dpSessionMetricsEvent LogMetricA2dpSessionMetricsEvent;
 struct LogMetricHfpPacketLossStats LogMetricHfpPacketLossStats;
 struct LogMetricMmcTranscodeRttStats LogMetricMmcTranscodeRttStats;
 struct LogMetricReadRssiResult LogMetricReadRssiResult;
@@ -92,6 +93,20 @@ void bluetooth::shim::LogMetricA2dpPlaybackEvent(const RawAddress& raw_address,
   inc_func_call_count(__func__);
   test::mock::main_shim_metrics_api::LogMetricA2dpPlaybackEvent(
       raw_address, playback_state, audio_coding_mode);
+}
+void bluetooth::shim::LogMetricA2dpSessionMetricsEvent(
+    const RawAddress& raw_address, int64_t audio_duration_ms,
+    int media_timer_min_ms, int media_timer_max_ms,
+    int /* media_timer_avg_ms */, int total_scheduling_count,
+    int buffer_overruns_max_count, int buffer_overruns_total,
+    float buffer_underruns_average, int buffer_underruns_count,
+    int64_t codec_index, bool is_a2dp_offload) {
+  inc_func_call_count(__func__);
+  test::mock::main_shim_metrics_api::LogMetricA2dpSessionMetricsEvent(
+      raw_address, audio_duration_ms, media_timer_min_ms, media_timer_max_ms,
+      audio_duration_ms, total_scheduling_count, buffer_overruns_max_count,
+      buffer_overruns_total, buffer_underruns_average, buffer_underruns_count,
+      codec_index, is_a2dp_offload);
 }
 void bluetooth::shim::LogMetricHfpPacketLossStats(const RawAddress& raw_address,
                                                   int num_decoded_frames,
@@ -179,17 +194,18 @@ void bluetooth::shim::LogMetricManufacturerInfo(
       raw_address, address_type, source_type, source_name, manufacturer, model,
       hardware_version, software_version);
 }
-bool bluetooth::shim::CountCounterMetrics(int32_t key, int64_t count) {
+bool bluetooth::shim::CountCounterMetrics(int32_t /* key */,
+                                          int64_t /* count */) {
   inc_func_call_count(__func__);
   return false;
-
 }
 void bluetooth::shim::LogMetricBluetoothLEConnectionMetricEvent(
-    const RawAddress& raw_address,
-    android::bluetooth::le::LeConnectionOriginType origin_type,
-    android::bluetooth::le::LeConnectionType connection_type,
-    android::bluetooth::le::LeConnectionState transaction_state,
-    std::vector<std::pair<bluetooth::os::ArgumentType, int>> argument_list) {
+    const RawAddress& /* raw_address */,
+    android::bluetooth::le::LeConnectionOriginType /* origin_type */,
+    android::bluetooth::le::LeConnectionType /* connection_type */,
+    android::bluetooth::le::LeConnectionState /* transaction_state */,
+    std::vector<
+        std::pair<bluetooth::os::ArgumentType, int>> /* argument_list */) {
   inc_func_call_count(__func__);
   // test::mock::main_shim_metrics_api::LogMetricBluetoothLEConnectionMetricEvent(raw_address, origin_type, connection_type, transaction_state, argument_list);
 }

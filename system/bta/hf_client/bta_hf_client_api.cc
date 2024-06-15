@@ -27,6 +27,7 @@
 #include "bta/include/bta_hf_client_api.h"
 
 #include <android_bluetooth_sysprop.h>
+#include <bluetooth/log.h>
 
 #include <cstdint>
 
@@ -37,6 +38,8 @@
 #include "osi/include/compat.h"
 #include "stack/include/bt_hdr.h"
 #include "types/raw_address.h"
+
+using namespace bluetooth;
 
 /*****************************************************************************
  *  External Function Declarations
@@ -85,12 +88,12 @@ void BTA_HfClientDisable(void) { bta_hf_client_api_disable(); }
  *
  ******************************************************************************/
 bt_status_t BTA_HfClientOpen(const RawAddress& bd_addr, uint16_t* p_handle) {
-  LOG_VERBOSE("%s", __func__);
+  log::verbose("");
   tBTA_HF_CLIENT_API_OPEN* p_buf =
       (tBTA_HF_CLIENT_API_OPEN*)osi_malloc(sizeof(tBTA_HF_CLIENT_API_OPEN));
 
   if (!bta_hf_client_allocate_handle(bd_addr, p_handle)) {
-    LOG_ERROR("%s: could not allocate handle", __func__);
+    log::error("could not allocate handle");
     return BT_STATUS_FAIL;
   }
 

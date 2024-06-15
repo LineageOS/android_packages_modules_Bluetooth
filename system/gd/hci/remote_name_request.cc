@@ -16,14 +16,12 @@
 
 #include "remote_name_request.h"
 
-#include <optional>
-#include <queue>
-#include <unordered_set>
-#include <variant>
+#include <android_bluetooth_flags.h>
 
 #include "hci/acl_manager/acl_scheduler.h"
 #include "hci/event_checkers.h"
 #include "hci/hci_layer.h"
+#include "hci/hci_packets.h"
 
 namespace bluetooth {
 namespace hci {
@@ -144,9 +142,9 @@ struct RemoteNameRequestModule::impl {
 #endif
     ASSERT(status.GetCommandOpCode() == OpCode::REMOTE_NAME_REQUEST);
     LOG_INFO(
-        "Got status %hhu when starting remote name request to to %s",
-        status.GetStatus(),
-        address.ToString().c_str());
+        "Started remote name request peer:%s status:%s",
+        address.ToString().c_str(),
+        ErrorCodeText(status.GetStatus()).c_str());
     on_completion.Invoke(status.GetStatus());
     if (status.GetStatus() != ErrorCode::SUCCESS /* pending */) {
       pending_ = false;
@@ -155,11 +153,26 @@ struct RemoteNameRequestModule::impl {
   }
 
   void actually_cancel_remote_name_request(Address address) {
-    ASSERT(pending_ == true);
-    LOG_INFO("Cancelling remote name request to %s", address.ToRedactedStringForLogging().c_str());
-    hci_layer_->EnqueueCommand(
-        RemoteNameRequestCancelBuilder::Create(address),
-        handler_->BindOnce(check_complete<RemoteNameRequestCancelCompleteView>));
+    if (IS_FLAG_ENABLED(rnr_cancel_before_event_race)) {
+      if (pending_) {
+        LOG_INFO(
+            "Cancelling remote name request to %s", address.ToRedactedStringForLogging().c_str());
+        hci_layer_->EnqueueCommand(
+            RemoteNameRequestCancelBuilder::Create(address),
+            handler_->BindOnce(check_complete<RemoteNameRequestCancelCompleteView>));
+      } else {
+        LOG_INFO(
+            "Ignoring cancel RNR as RNR event already received to %s",
+            address.ToRedactedStringForLogging().c_str());
+      }
+    } else {
+      ASSERT(pending_ == true);
+      LOG_INFO(
+          "Cancelling remote name request to %s", address.ToRedactedStringForLogging().c_str());
+      hci_layer_->EnqueueCommand(
+          RemoteNameRequestCancelBuilder::Create(address),
+          handler_->BindOnce(check_complete<RemoteNameRequestCancelCompleteView>));
+    }
   }
 
   void on_remote_host_supported_features_notification(EventView view) {

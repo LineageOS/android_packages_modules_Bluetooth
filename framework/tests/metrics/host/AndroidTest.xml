@@ -20,8 +20,10 @@
     <target_preparer class="com.android.tradefed.targetprep.RunHostCommandTargetPreparer">
       <option name="python-virtualenv" value="true"/>
       <option name="host-setup-command" value="adb -s $SERIAL reverse tcp:7999 tcp:7999" />
+      <option name="host-setup-command" value="adb -s $SERIAL forward tcp:6211 vsock:2:7300" />
+      <option name="host-teardown-command" value="adb -s $SERIAL forward --remove tcp:6211" />
       <option name="host-background-command"
-        value="$EXTRA_FILE(host_testcases)/bumble_pandora_server/x86_64/bumble_pandora_server"/>
+        value="$EXTRA_FILE(host_testcases)/BluetoothMetricsTests/bumble_pandora_server --rootcanal-port 6211"/>
       <option name="host-teardown-command" value="adb -s $SERIAL reverse --remove tcp:7999" />
     </target_preparer>
     <test class="com.android.compatibility.common.tradefed.testtype.JarHostTest" >

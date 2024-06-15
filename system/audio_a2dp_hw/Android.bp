@@ -38,6 +38,7 @@ cc_library {
     ],
     static_libs: [
         "libbluetooth_gd",
+        "libbluetooth_log",
         "libosi",
     ],
 }
@@ -51,6 +52,9 @@ cc_library_static {
     host_supported: true,
     apex_available: [
         "com.android.btservices",
+    ],
+    static_libs: [
+        "libbluetooth_log",
     ],
     min_sdk_version: "29",
 }
@@ -71,6 +75,7 @@ cc_test {
     ],
     static_libs: [
         "audio.a2dp.default",
+        "libbluetooth_log",
         "libosi",
     ],
     min_sdk_version: "29",

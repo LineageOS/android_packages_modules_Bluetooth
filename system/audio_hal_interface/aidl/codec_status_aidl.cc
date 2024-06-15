@@ -19,6 +19,7 @@
 #include "codec_status_aidl.h"
 
 #include <unordered_set>
+#include <vector>
 
 #include "a2dp_aac_constants.h"
 #include "a2dp_sbc_constants.h"
@@ -580,6 +581,7 @@ bool UpdateOffloadingCapabilities(
                 << ": disabled offloading capability=" << capability.toString();
     }
   }
+
   // TODO: Bluetooth SoC and runtime property
   return true;
 }

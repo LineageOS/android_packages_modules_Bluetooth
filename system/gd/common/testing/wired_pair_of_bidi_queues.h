@@ -19,6 +19,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 #include "common/bidi_queue.h"
 #include "os/handler.h"

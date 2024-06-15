@@ -109,10 +109,7 @@ public class CsipSetCoordinatorService extends ProfileService {
     private final Map<Integer, Pair<UUID, IBluetoothCsipSetCoordinatorLockCallback>> mLocks =
             new ConcurrentHashMap<>();
 
-    CsipSetCoordinatorService() {}
-
-    @VisibleForTesting
-    CsipSetCoordinatorService(Context ctx) {
+    public CsipSetCoordinatorService(Context ctx) {
         super(ctx);
     }
 
@@ -126,7 +123,7 @@ public class CsipSetCoordinatorService extends ProfileService {
     }
 
     @Override
-    protected boolean start() {
+    public void start() {
         if (DBG) {
             Log.d(TAG, "start()");
         }
@@ -166,17 +163,16 @@ public class CsipSetCoordinatorService extends ProfileService {
 
         // Initialize native interface
         mCsipSetCoordinatorNativeInterface.init();
-        return true;
     }
 
     @Override
-    protected boolean stop() {
+    public void stop() {
         if (DBG) {
             Log.d(TAG, "stop()");
         }
         if (sCsipSetCoordinatorService == null) {
             Log.w(TAG, "stop() called before start()");
-            return true;
+            return;
         }
 
         // Cleanup native interface
@@ -223,12 +219,10 @@ public class CsipSetCoordinatorService extends ProfileService {
         // Clear AdapterService, CsipSetCoordinatorNativeInterface
         mCsipSetCoordinatorNativeInterface = null;
         mAdapterService = null;
-
-        return true;
     }
 
     @Override
-    protected void cleanup() {
+    public void cleanup() {
         if (DBG) {
             Log.d(TAG, "cleanup()");
         }

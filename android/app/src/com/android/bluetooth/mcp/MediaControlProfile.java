@@ -114,7 +114,6 @@ public class MediaControlProfile implements MediaControlServiceCallbacks {
 
             if (metadata || state || queue) {
                 mEventLogger.logd(
-                        DBG,
                         TAG,
                         "onMediaUpdated: track_changed="
                                 + metadata
@@ -134,7 +133,6 @@ public class MediaControlProfile implements MediaControlServiceCallbacks {
         @Override
         public void run(boolean availablePlayers, boolean addressedPlayers, boolean uids) {
             mEventLogger.logd(
-                    DBG,
                     TAG,
                     "onFolderUpdated: available_players= "
                             + availablePlayers
@@ -200,7 +198,6 @@ public class MediaControlProfile implements MediaControlServiceCallbacks {
                 }
 
                 mEventLogger.logd(
-                        DBG,
                         TAG,
                         "onCurrentPlayerStateUpdated state= "
                                 + playback_state
@@ -220,7 +217,6 @@ public class MediaControlProfile implements MediaControlServiceCallbacks {
         if (metadataChanged) {
             if (mCurrentData.metadata != null) {
                 mEventLogger.logd(
-                        DBG,
                         TAG,
                         "onCurrentPlayerStateUpdated metadata: title= '"
                                 + mCurrentData.metadata.title
@@ -288,13 +284,13 @@ public class MediaControlProfile implements MediaControlServiceCallbacks {
     @Override
     public void onServiceInstanceRegistered(ServiceStatus status,
             MediaControlGattServiceInterface service) {
-        mEventLogger.logd(DBG, TAG, "onServiceInstanceRegistered: status= " + status);
+        mEventLogger.logd(TAG, "onServiceInstanceRegistered: status= " + status);
         mGMcsService = service;
     }
 
     @Override
     public void onServiceInstanceUnregistered(ServiceStatus status) {
-        mEventLogger.logd(DBG, TAG, "onServiceInstanceUnregistered: status= " + status);
+        mEventLogger.logd(TAG, "onServiceInstanceUnregistered: status= " + status);
         mGMcsService = null;
     }
 
@@ -345,13 +341,13 @@ public class MediaControlProfile implements MediaControlServiceCallbacks {
 
     @Override
     public long onGetCurrentTrackPosition() {
-        mEventLogger.logd(DBG, TAG, "getCurrentTrackPosition");
+        mEventLogger.logd(TAG, "getCurrentTrackPosition");
         return getLatestTrackPosition();
     }
 
     @Override
     public void onTrackPositionSetRequest(long position) {
-        mEventLogger.logd(DBG, TAG, "GMCS onTrackPositionSetRequest");
+        mEventLogger.logd(TAG, "GMCS onTrackPositionSetRequest");
 
         if (mMediaPlayerList.getActivePlayer() == null) return;
         if ((getCurrentPlayerSupportedActions() & PlaybackState.ACTION_SEEK_TO) != 0) {
@@ -369,40 +365,39 @@ public class MediaControlProfile implements MediaControlServiceCallbacks {
 
     @Override
     public void onCurrentTrackMetadataRequest() {
-        mEventLogger.logd(DBG, TAG, "GMCS onCurrentTrackMetadataRequest");
+        mEventLogger.logd(TAG, "GMCS onCurrentTrackMetadataRequest");
         // FIXME: Seems to be not used right now
     }
 
     @Override
     public void onPlayingOrderSetRequest(int order) {
-        mEventLogger.logd(DBG, TAG, "GMCS onPlayingOrderSetRequest");
+        mEventLogger.logd(TAG, "GMCS onPlayingOrderSetRequest");
         // Notice: MediaPlayerWrapper does not support play order control.
         // Ignore the request for now.
     }
 
     @Override
     public void onPlaybackSpeedSetRequest(float speed) {
-        mEventLogger.logd(DBG, TAG, "GMCS onPlaybackSpeedSetRequest");
+        mEventLogger.logd(TAG, "GMCS onPlaybackSpeedSetRequest");
         if (mMediaPlayerList.getActivePlayer() == null) return;
         mMediaPlayerList.getActivePlayer().setPlaybackSpeed(speed);
     }
 
     @Override
     public void onSetObjectIdRequest(int objField, long objectId) {
-        mEventLogger.logd(DBG, TAG, "GMCS onSetObjectIdRequest");
+        mEventLogger.logd(TAG, "GMCS onSetObjectIdRequest");
         // TODO: Implement once we have the Object Transfer Service
     }
 
     @Override
     public void onSearchRequest(SearchRequest request) {
-        mEventLogger.logd(DBG, TAG, "GMCS onSearchRequest");
+        mEventLogger.logd(TAG, "GMCS onSearchRequest");
         // TODO: Implement once we have the Object Transfer Service
     }
 
     @Override
     public void onMediaControlRequest(Request request) {
         mEventLogger.logd(
-                DBG,
                 TAG,
                 "GMCS onMediaControlRequest: opcode= "
                         + Request.Opcodes.toString(request.getOpcode()));
@@ -655,7 +650,6 @@ public class MediaControlProfile implements MediaControlServiceCallbacks {
                                             getCurrentPlayerSupportedActions());
                             handled_request_map.put(settings_field, opcodes);
                             mEventLogger.logd(
-                                    DBG,
                                     TAG,
                                     "updateSupportedOpcodes setting supported opcodes to: "
                                             + opcodes);
@@ -763,7 +757,6 @@ public class MediaControlProfile implements MediaControlServiceCallbacks {
             boolean isGenericMcs = appToken.equals(mContext.getPackageName());
 
             mEventLogger.logd(
-                    DBG,
                     TAG,
                     "Register MediaControlGattService instance ccid= "
                             + ccid
@@ -839,7 +832,7 @@ public class MediaControlProfile implements MediaControlServiceCallbacks {
     private final Map<String, MediaControlGattServiceInterface> mServiceMap;
 
     public void unregisterServiceInstance(String appToken) {
-        mEventLogger.logd(DBG, TAG, "unregisterServiceInstance");
+        mEventLogger.logd(TAG, "unregisterServiceInstance");
 
         synchronized (mServiceMap) {
             MediaControlGattServiceInterface service = mServiceMap.get(appToken);

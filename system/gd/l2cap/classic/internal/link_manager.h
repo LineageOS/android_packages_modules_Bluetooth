@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <unordered_map>
+#include <vector>
 
 #include "hci/acl_manager/classic_acl_connection.h"
 #include "hci/address.h"
@@ -70,9 +71,6 @@ class LinkManager : public hci::acl_manager::ConnectionCallbacks {
   void OnConnectSuccess(std::unique_ptr<hci::acl_manager::ClassicAclConnection> acl_connection) override;
   void OnConnectRequest(hci::Address, hci::ClassOfDevice) override;
   void OnConnectFail(hci::Address device, hci::ErrorCode reason, bool locally_initiated) override;
-
-  void HACK_OnEscoConnectRequest(hci::Address, hci::ClassOfDevice) override;
-  void HACK_OnScoConnectRequest(hci::Address, hci::ClassOfDevice) override;
 
   virtual void OnDisconnect(hci::Address device, hci::ErrorCode status);
   void OnAuthenticationComplete(hci::ErrorCode hci_status, hci::Address device);

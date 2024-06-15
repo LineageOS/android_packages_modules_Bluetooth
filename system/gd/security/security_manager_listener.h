@@ -18,8 +18,6 @@
 
 #pragma once
 
-#include "common/callback.h"
-#include "hci/acl_manager.h"
 #include "security/pairing_failure.h"
 
 namespace bluetooth {

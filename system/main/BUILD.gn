@@ -58,7 +58,6 @@ target(lib_type, "bluetooth") {
     "//bt/system/bta/include",
     "//bt/system/bta/sys",
     "//bt/system/bta/dm",
-    "//bt/system/internal_include",
     "//bt/system/stack/include",
     "//bt/system/stack/l2cap",
     "//bt/system/stack/a2dp",
@@ -84,7 +83,9 @@ target(lib_type, "bluetooth") {
     "//bt/system/embdrv/g722",
     "//bt/system/embdrv/sbc",
     "//bt/system/gd:libbluetooth_gd",
+    "//bt/system/log:libbluetooth_log",
     "//bt/system/hci",
+    "//bt/system/main/shim:BluetoothStackManagerSources",
     "//bt/system/main/shim:LibBluetoothShimSources",
     "//bt/system/osi",
     "//bt/system/packet",
@@ -95,6 +96,7 @@ target(lib_type, "bluetooth") {
 
   configs += [
     "//bt/system:target_defaults",
+    "//bt/system/log:log_defaults",
     "//bt/system:external_tinyxml2",
     "//bt/system:external_flatbuffers",
   ]
@@ -106,6 +108,7 @@ target(lib_type, "bluetooth") {
 
   libs = [
     "dl",
+    "fmt",
     "pthread",
     "resolv",
     "rt",

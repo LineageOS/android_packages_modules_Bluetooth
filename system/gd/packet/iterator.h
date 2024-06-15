@@ -46,6 +46,7 @@ template <bool little_endian>
 class Iterator : public IteratorTraits {
  public:
   Iterator(const std::forward_list<View>& data, size_t offset);
+  Iterator(std::shared_ptr<std::vector<uint8_t>> data);
   Iterator(const Iterator& itr) = default;
   virtual ~Iterator() = default;
 

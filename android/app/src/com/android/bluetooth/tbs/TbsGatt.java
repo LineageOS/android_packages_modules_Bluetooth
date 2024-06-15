@@ -1197,7 +1197,7 @@ public class TbsGatt {
 
         UUID charUuid = (op.mCharacteristic != null ? op.mCharacteristic.getUuid()
                 : (op.mDescriptor != null ? op.mDescriptor.getCharacteristic().getUuid() : null));
-        mEventLogger.logd(DBG, TAG, "onAuthorizedGattOperation device: " + device
+        mEventLogger.logd(TAG, "onAuthorizedGattOperation device: " + device
                         + ", opcode= " + op.mOperation
                         + ", characteristic= "
                         + (charUuid != null ? tbsUuidToString(charUuid) : "UNKNOWN"));
@@ -1362,7 +1362,7 @@ public class TbsGatt {
      */
     public void onDeviceAuthorizationSet(BluetoothDevice device) {
         int auth = getDeviceAuthorization(device);
-        mEventLogger.logd(DBG, TAG, "onDeviceAuthorizationSet: device= " + device
+        mEventLogger.logd(TAG, "onDeviceAuthorizationSet: device= " + device
                 + ", authorization= " + (auth == BluetoothDevice.ACCESS_ALLOWED ? "ALLOWED"
                         : (auth == BluetoothDevice.ACCESS_REJECTED ? "REJECTED" : "UNKNOWN")));
         processPendingGattOperations(device);

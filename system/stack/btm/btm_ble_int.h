@@ -48,8 +48,6 @@ void btm_ble_connected(const RawAddress& bda, uint16_t handle, uint8_t enc_mode,
 void btm_update_scanner_filter_policy(tBTM_BLE_SFP scan_policy);
 
 /* background connection function */
-bool btm_ble_suspend_bg_conn(void);
-bool btm_ble_resume_bg_conn(void);
 void btm_ble_update_mode_operation(uint8_t link_role, const RawAddress* bda,
                                    tHCI_STATUS status);
 /* BLE address management */

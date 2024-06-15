@@ -16,6 +16,8 @@
 
 #include "capabilities_packet.h"
 
+#include "internal_include/bt_trace.h"
+
 namespace bluetooth {
 namespace avrcp {
 

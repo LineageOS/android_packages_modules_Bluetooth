@@ -21,7 +21,7 @@
  *  Interface to AVRCP optional commands
  *
  ******************************************************************************/
-#include <base/logging.h>
+#include <bluetooth/log.h>
 #include <string.h>
 
 #include "avrc_api.h"
@@ -29,6 +29,8 @@
 #include "internal_include/bt_target.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
+
+using namespace bluetooth;
 
 /******************************************************************************
  *
@@ -40,7 +42,7 @@
  *                      p_msg: Pointer to VENDOR DEPENDENT message structure.
  *
  *                  Output Parameters:
-*                      None.
+ *                      None.
  *
  * Returns          pointer to a valid GKI buffer if successful.
  *                  NULL if p_msg is NULL.

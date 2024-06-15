@@ -195,6 +195,10 @@ enum class MetricTransportType {
   TRANSPORT_TYPE_SDIO = 3,
 };
 
+// ENUM definition for suspend id state that in sync with ChromeOS structured metrics
+// BluetoothSuspendIdStateChanged/SuspendIdState.
+enum class SuspendIdState : int64_t { NoRecord = 0, Recorded = 1 };
+
 // A struct holds the parsed profile connection event.
 struct ProfileConnectionEvent {
   int64_t type;
@@ -204,6 +208,9 @@ struct ProfileConnectionEvent {
 
 // Convert topshim::btif::BtState to AdapterState.
 AdapterState ToAdapterState(uint32_t state);
+
+// Convert to SuspendIdState.
+SuspendIdState ToSuspendIdState(uint32_t state);
 
 // Convert topshim::btif::BtDeviceType to ConnectionType
 ConnectionType ToPairingDeviceType(std::string addr, uint32_t device_type);

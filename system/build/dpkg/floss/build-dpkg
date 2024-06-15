@@ -48,7 +48,7 @@ export PATH="${PATH}:${BIN_DIR}"
 
 # Check dependencies
 # libchrome requires modp_b64
-APT_REQUIRED="modp-b64 libchrome flatbuffers-compiler flex g++-multilib gcc-multilib generate-ninja gnupg gperf libc++-dev libdbus-1-dev libevent-dev libevent-dev libflatbuffers-dev libflatbuffers1 libgl1-mesa-dev libglib2.0-dev liblz4-tool libncurses5 libnss3-dev libprotobuf-dev libre2-9 libssl-dev libtinyxml2-dev libx11-dev libxml2-utils ninja-build openssl protobuf-compiler unzip x11proto-core-dev xsltproc zip zlib1g-dev"
+APT_REQUIRED="modp-b64 libchrome flatbuffers-compiler flex g++-multilib gcc-multilib generate-ninja gnupg gperf libc++-dev libdbus-1-dev libevent-dev libevent-dev libflatbuffers-dev libflatbuffers1 libfmt-dev libgl1-mesa-dev libglib2.0-dev liblz4-tool libncurses5 libnss3-dev libprotobuf-dev libre2-9 libssl-dev libtinyxml2-dev libx11-dev libxml2-utils ninja-build openssl protobuf-compiler unzip x11proto-core-dev xsltproc zip zlib1g-dev"
 
 # SPEED UP TEST, REMOVE ME
 APT_REQUIRED="modp-b64 libchrome flatbuffers-compiler"

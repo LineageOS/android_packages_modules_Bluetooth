@@ -20,6 +20,7 @@
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
+#include <vector>
 
 #include "common/circular_buffer.h"
 #include "hal/hci_hal.h"

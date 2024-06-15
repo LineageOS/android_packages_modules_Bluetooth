@@ -466,6 +466,10 @@ impl Uuid {
             uuid[8], uuid[9],
             uuid[10], uuid[11], uuid[12], uuid[13], uuid[14], uuid[15])
     }
+
+    pub fn empty() -> Uuid {
+        unsafe { bindings::bluetooth::Uuid_kEmpty }
+    }
 }
 
 impl Display for Uuid {
@@ -953,6 +957,7 @@ pub enum BaseCallbacks {
     // switch_codec_cb
     GenerateLocalOobData(u8, OobData),
     LeRandCallback(u64),
+    // key_missing_cb
 }
 
 pub struct BaseCallbacksDispatcher {
@@ -1143,6 +1148,7 @@ impl BluetoothInterface {
             switch_buffer_size_cb: None,
             switch_codec_cb: None,
             le_rand_cb: Some(le_rand_cb),
+            key_missing_cb: None,
         });
 
         let cb_ptr = LTCheckedPtrMut::from(&mut callbacks);
@@ -1319,6 +1325,10 @@ impl BluetoothInterface {
 
     pub fn get_swb_supported(&self) -> bool {
         ccall!(self, get_swb_supported)
+    }
+
+    pub fn is_coding_format_supported(&self, coding_format: u8) -> bool {
+        ccall!(self, is_coding_format_supported, coding_format)
     }
 
     pub fn le_rand(&self) -> i32 {

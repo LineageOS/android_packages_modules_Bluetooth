@@ -95,7 +95,6 @@ public class A2dpSinkServiceTest {
         doReturn(true).when(mDatabaseManager).setProfileConnectionPolicy(any(), anyInt(), anyInt());
 
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
-        doReturn(true, false).when(mAdapterService).isStartedProfile(anyString());
         doReturn(bondedDevices).when(mAdapterService).getBondedDevices();
         doReturn(1).when(mAdapterService).getMaxConnectedAudioDevices();
 
@@ -104,7 +103,7 @@ public class A2dpSinkServiceTest {
         doReturn(true).when(mNativeInterface).setActiveDevice(any());
 
         mService = new A2dpSinkService(mTargetContext, mNativeInterface, mLooper.getLooper());
-        mService.doStart();
+        mService.start();
         assertThat(mLooper.nextMessage()).isNull();
     }
 
@@ -112,7 +111,7 @@ public class A2dpSinkServiceTest {
     public void tearDown() throws Exception {
         assertThat(mLooper.nextMessage()).isNull();
 
-        mService.doStop();
+        mService.stop();
         assertThat(A2dpSinkService.getA2dpSinkService()).isNull();
         TestUtils.clearAdapterService(mAdapterService);
     }
@@ -294,6 +293,26 @@ public class A2dpSinkServiceTest {
                 TEST_CHANNEL_COUNT, AudioFormat.ENCODING_PCM_16BIT);
         BluetoothAudioConfig config = mService.getAudioConfig(mDevice1);
         assertThat(config).isEqualTo(expected);
+    }
+
+    /** Make sure we ignore audio configuration changes for disconnected/unknown devices */
+    @Test
+    public void testOnAudioConfigChanged_withNullDevice_eventDropped() {
+        StackEvent audioConfigChanged =
+                StackEvent.audioConfigChanged(null, TEST_SAMPLE_RATE, TEST_CHANNEL_COUNT);
+        mService.messageFromNative(audioConfigChanged);
+        assertThat(mService.getAudioConfig(null)).isNull();
+    }
+
+    /** Make sure we ignore audio configuration changes for disconnected/unknown devices */
+    @Test
+    public void testOnAudioConfigChanged_withUnknownDevice_eventDropped() {
+        assertThat(mService.getConnectionState(mDevice1))
+                .isEqualTo(BluetoothProfile.STATE_DISCONNECTED);
+        StackEvent audioConfigChanged =
+                StackEvent.audioConfigChanged(mDevice1, TEST_SAMPLE_RATE, TEST_CHANNEL_COUNT);
+        mService.messageFromNative(audioConfigChanged);
+        assertThat(mService.getAudioConfig(mDevice1)).isNull();
     }
 
     /**

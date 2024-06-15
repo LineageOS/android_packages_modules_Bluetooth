@@ -26,10 +26,12 @@
 #include "btm_iso_api.h"
 #include "client_parser.h"
 #include "codec_manager.h"
+#include "common/strings.h"
 #include "devices.h"
-#include "gd/common/strings.h"
 #include "hci/hci_packets.h"
 #include "hcimsgs.h"
+#include "include/check.h"
+#include "internal_include/bt_trace.h"
 #include "le_audio_health_status.h"
 #include "le_audio_log_history.h"
 #include "le_audio_types.h"
@@ -170,6 +172,11 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
                ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
       return false;
     }
+
+    /* Invalidate configuration to make sure it is chosen properly when new
+     * member connects
+     */
+    group->InvalidateCachedConfigurations();
 
     if (!group->Configure(group->GetConfigurationContextType(),
                           group->GetMetadataContexts(), ccids)) {
@@ -400,6 +407,12 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
 
     ParseAseStatusHeader(arh, len, value);
 
+    if (ase->id == 0x00) {
+      /* Initial state of Ase - update id */
+      LOG_INFO(", discovered ase id: %d", arh.id);
+      ase->id = arh.id;
+    }
+
     auto state = static_cast<AseState>(arh.state);
 
     LOG_INFO(" %s , ASE id: %d, state changed %s -> %s ",
@@ -596,6 +609,17 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
       return;
     }
 
+    if (IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
+      if (group->dsa_.active &&
+          (group->dsa_.mode == DsaMode::ISO_SW ||
+           group->dsa_.mode == DsaMode::ISO_HW) &&
+          leAudioDevice->GetDsaDataPathState() == DataPathState::CONFIGURING) {
+        LOG_INFO("Datapath configured for headtracking");
+        leAudioDevice->SetDsaDataPathState(DataPathState::CONFIGURED);
+        return;
+      }
+    }
+
     /* Update state for the given cis.*/
     auto ase = leAudioDevice->GetFirstActiveAseByCisAndDataPathState(
         CisState::CONNECTED, DataPathState::CONFIGURING);
@@ -672,6 +696,13 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
       if (ases_pair.source->cis_state == CisState::CONNECTED) {
         ases_pair.source->cis_state = CisState::DISCONNECTING;
         do_disconnect = true;
+      }
+    } else if (IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
+      if (group->dsa_.active &&
+          leAudioDevice->GetDsaDataPathState() == DataPathState::REMOVING) {
+        LOG_INFO("DSA data path removed");
+        leAudioDevice->SetDsaDataPathState(DataPathState::IDLE);
+        leAudioDevice->SetDsaCisHandle(GATT_INVALID_CONN_ID);
       }
     }
 
@@ -834,6 +865,78 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
     }
   }
 
+  void applyDsaDataPath(LeAudioDeviceGroup* group, LeAudioDevice* leAudioDevice,
+                        uint16_t conn_hdl) {
+    if (!IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
+      return;
+    }
+
+    if (!group->dsa_.active) {
+      LOG_INFO("DSA mode not used");
+      return;
+    }
+
+    DsaModes dsa_modes = leAudioDevice->GetDsaModes();
+    if (dsa_modes.empty()) {
+      LOG_WARN("DSA mode not supported by this LE Audio device: %s",
+               ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+      group->dsa_.active = false;
+      return;
+    }
+
+    if (std::find(dsa_modes.begin(), dsa_modes.end(), DsaMode::ISO_SW) ==
+            dsa_modes.end() &&
+        std::find(dsa_modes.begin(), dsa_modes.end(), DsaMode::ISO_HW) ==
+            dsa_modes.end()) {
+      LOG_WARN("DSA mode not supported by this LE Audio device: %s",
+               ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_));
+      group->dsa_.active = false;
+      return;
+    }
+
+    uint8_t data_path_id = bluetooth::hci::iso_manager::kIsoDataPathHci;
+    LOG_INFO("DSA mode used: %d", static_cast<int>(group->dsa_.mode));
+    switch (group->dsa_.mode) {
+      case DsaMode::ISO_HW:
+        data_path_id = bluetooth::hci::iso_manager::kIsoDataPathPlatformDefault;
+        break;
+      case DsaMode::ISO_SW:
+        data_path_id = bluetooth::hci::iso_manager::kIsoDataPathHci;
+        break;
+      default:
+        LOG_WARN("Unexpected DsaMode: %d", static_cast<int>(group->dsa_.mode));
+        group->dsa_.active = false;
+        return;
+    }
+
+    leAudioDevice->SetDsaDataPathState(DataPathState::CONFIGURING);
+    leAudioDevice->SetDsaCisHandle(conn_hdl);
+
+    LOG_VERBOSE(
+        "DSA mode supported on this LE Audio device: %s, apply data path: %d",
+        ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_), data_path_id);
+
+    LeAudioLogHistory::Get()->AddLogHistory(
+        kLogStateMachineTag, group->group_id_, RawAddress::kEmpty,
+        kLogSetDataPathOp + "cis_h:" + loghex(conn_hdl),
+        "direction: " +
+            loghex(bluetooth::hci::iso_manager::kIsoDataPathDirectionOut));
+
+    bluetooth::hci::iso_manager::iso_data_path_params param = {
+        .data_path_dir = bluetooth::hci::iso_manager::kIsoDataPathDirectionOut,
+        .data_path_id = data_path_id,
+        .codec_id_format =
+            le_audio::types::kLeAudioCodecHeadtracking.coding_format,
+        .codec_id_company =
+            le_audio::types::kLeAudioCodecHeadtracking.vendor_company_id,
+        .codec_id_vendor =
+            le_audio::types::kLeAudioCodecHeadtracking.vendor_codec_id,
+        .controller_delay = 0x00000000,
+        .codec_conf = std::vector<uint8_t>(),
+    };
+    IsoManager::GetInstance()->SetupIsoDataPath(conn_hdl, std::move(param));
+  }
+
   void ProcessHciNotifCisEstablished(
       LeAudioDeviceGroup* group, LeAudioDevice* leAudioDevice,
       const bluetooth::hci::iso_manager::cis_establish_cmpl_evt* event)
@@ -910,6 +1013,8 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
     if (ases_pair.source &&
         (ases_pair.source->data_path_state == DataPathState::IDLE)) {
       PrepareDataPath(group->group_id_, ases_pair.source);
+    } else {
+      applyDsaDataPath(group, leAudioDevice, event->cis_conn_hdl);
     }
 
     if (osi_property_get_bool("persist.bluetooth.iso_link_quality_report",
@@ -983,6 +1088,14 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
         ases_pair.source->data_path_state == DataPathState::CONFIGURED) {
       value |= bluetooth::hci::iso_manager::kRemoveIsoDataPathDirectionOutput;
       ases_pair.source->data_path_state = DataPathState::REMOVING;
+    } else {
+      if (IS_FLAG_ENABLED(leaudio_dynamic_spatial_audio)) {
+        if (leAudioDevice->GetDsaDataPathState() == DataPathState::CONFIGURED) {
+          value |=
+              bluetooth::hci::iso_manager::kRemoveIsoDataPathDirectionOutput;
+          leAudioDevice->SetDsaDataPathState(DataPathState::REMOVING);
+        }
+      }
     }
 
     if (value == 0) {
@@ -1307,13 +1420,14 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
       return;
     }
 
-    LOG_INFO("DSA mode selected: %d", (int)group->dsa_mode_);
+    LOG_INFO("DSA mode selected: %d", (int)group->dsa_.mode);
+    group->dsa_.active = false;
 
     /* Unidirectional streaming */
-    if (param.sdu_itv_stom != 0) {
+    if (param.sdu_itv_stom == 0) {
       LOG_INFO("Media streaming, apply DSA parameters");
 
-      switch (group->dsa_mode_) {
+      switch (group->dsa_.mode) {
         case DsaMode::ISO_HW:
         case DsaMode::ISO_SW: {
           auto& cis_cfgs = param.cis_cfgs;
@@ -1322,11 +1436,14 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
           for (auto dsa_modes : group->GetAllowedDsaModesList()) {
             if (!dsa_modes.empty() && it != cis_cfgs.end()) {
               if (std::find(dsa_modes.begin(), dsa_modes.end(),
-                            group->dsa_mode_) != dsa_modes.end()) {
+                            group->dsa_.mode) != dsa_modes.end()) {
                 LOG_INFO("Device found with support for selected DsaMode");
 
+                group->dsa_.active = true;
+
+                /* Todo: Replace literal values */
                 param.sdu_itv_stom = 20000;
-                param.max_trans_lat_stom = 10;
+                param.max_trans_lat_stom = 20;
                 it->max_sdu_size_stom = 15;
                 it->rtn_stom = 2;
 
@@ -1642,13 +1759,6 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
     switch (ase->state) {
       case AseState::BTA_LE_AUDIO_ASE_STATE_IDLE:
       case AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED:
-      case AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED:
-        if (ase->id == 0x00) {
-          /* Initial state of Ase - update id */
-          LOG(INFO) << __func__
-                    << ", discovered ase id: " << static_cast<int>(arh.id);
-          ase->id = arh.id;
-        }
         break;
       case AseState::BTA_LE_AUDIO_ASE_STATE_RELEASING: {
         SetAseState(leAudioDevice, ase, AseState::BTA_LE_AUDIO_ASE_STATE_IDLE);
@@ -1702,10 +1812,25 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
 
         break;
       }
-      default:
-        LOG(ERROR) << __func__ << ", invalid state transition, from: "
-                   << static_cast<int>(ase->state) << ", to: "
-                   << static_cast<int>(AseState::BTA_LE_AUDIO_ASE_STATE_IDLE);
+      case AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED:
+      case AseState::BTA_LE_AUDIO_ASE_STATE_DISABLING:
+        LOG_ERROR(
+            "Ignore invalid attempt of state transition from  %s to %s, %s, "
+            "ase_id: %d",
+            ToString(ase->state).c_str(),
+            ToString(AseState::BTA_LE_AUDIO_ASE_STATE_IDLE).c_str(),
+            ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_), ase->id);
+        group->PrintDebugState();
+        break;
+      case AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING:
+      case AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING:
+        LOG_ERROR(
+            "Invalid state transition from %s to %s, %s, ase_id: "
+            "%d. Stopping the stream.",
+            ToString(ase->state).c_str(),
+            ToString(AseState::BTA_LE_AUDIO_ASE_STATE_IDLE).c_str(),
+            ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_), ase->id);
+        group->PrintDebugState();
         StopStream(group);
         break;
     }
@@ -1805,13 +1930,6 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
     /* ase contain current ASE state. New state is in "arh" */
     switch (ase->state) {
       case AseState::BTA_LE_AUDIO_ASE_STATE_IDLE: {
-        if (ase->id == 0x00) {
-          /* Initial state of Ase - update id */
-          LOG(INFO) << __func__
-                    << ", discovered ase id: " << static_cast<int>(arh.id);
-          ase->id = arh.id;
-        }
-
         struct le_audio::client_parser::ascs::ase_codec_configured_state_params
             rsp;
 
@@ -1869,6 +1987,10 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
           /* This is autonomus change of the remote device */
           LOG_DEBUG("Autonomus change for device %s, ase id %d. Just store it.",
                     ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_), ase->id);
+
+          /* Since at least one ASE is in configured state, we should admit
+           * group is configured state */
+          group->SetState(AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED);
           return;
         }
 
@@ -2042,14 +2164,25 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
           return;
         }
 
-        LOG_ERROR(", Autonomouse change, from: %s to %s",
-                  ToString(group->GetState()).c_str(),
-                  ToString(group->GetTargetState()).c_str());
+        LOG_INFO("Autonomous change, from: %s to %s",
+                 ToString(group->GetState()).c_str(),
+                 ToString(group->GetTargetState()).c_str());
 
         break;
       }
       case AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED:
-        /* TODO: Config Codec */
+        SetAseState(leAudioDevice, ase,
+                    AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED);
+        group->PrintDebugState();
+        break;
+      case AseState::BTA_LE_AUDIO_ASE_STATE_DISABLING:
+        LOG_ERROR(
+            "Ignore invalid attempt of state transition from %s to %s, %s, "
+            "ase_id: %d",
+            ToString(ase->state).c_str(),
+            ToString(AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED).c_str(),
+            ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_), ase->id);
+        group->PrintDebugState();
         break;
       case AseState::BTA_LE_AUDIO_ASE_STATE_RELEASING:
         SetAseState(leAudioDevice, ase,
@@ -2107,11 +2240,15 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
         state_machine_callbacks_->StatusReportCb(
             group->group_id_, GroupStreamStatus::CONFIGURED_AUTONOMOUS);
         break;
-      default:
-        LOG(ERROR) << __func__ << ", invalid state transition, from: "
-                   << static_cast<int>(ase->state) << ", to: "
-                   << static_cast<int>(
-                          AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED);
+      case AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING:
+      case AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING:
+        LOG_ERROR(
+            "Invalid state transition from %s to %s, %s, ase_id: %d. Stopping "
+            "the stream",
+            ToString(ase->state).c_str(),
+            ToString(AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED).c_str(),
+            ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_), ase->id);
+        group->PrintDebugState();
         StopStream(group);
         break;
     }
@@ -2154,9 +2291,6 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
 
         break;
       }
-      case AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED:
-        /* TODO: Config Codec error/Config Qos/Config QoS error/Enable error */
-        break;
       case AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING:
         if (ase->direction == le_audio::types::kLeAudioDirectionSource) {
           /* Source ASE cannot go from Streaming to QoS Configured state */
@@ -2212,11 +2346,33 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
         }
         break;
       }
-      default:
-        LOG(ERROR) << __func__ << ", invalid state transition, from: "
-                   << static_cast<int>(ase->state) << ", to: "
-                   << static_cast<int>(
-                          AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED);
+
+      case AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED:
+        LOG_INFO(
+            "Unexpected state transition from %s to %s, %s, ase_id: %d",
+            ToString(ase->state).c_str(),
+            ToString(AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED).c_str(),
+            ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_), ase->id);
+        group->PrintDebugState();
+        break;
+      case AseState::BTA_LE_AUDIO_ASE_STATE_IDLE:
+      case AseState::BTA_LE_AUDIO_ASE_STATE_RELEASING:
+        // Do nothing here, just print an error message
+        LOG_ERROR(
+            "Ignore invalid attempt of state transition from %s to %s, %s, "
+            "ase_id: %d",
+            ToString(ase->state).c_str(),
+            ToString(AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED).c_str(),
+            ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_), ase->id);
+        group->PrintDebugState();
+        break;
+      case AseState::BTA_LE_AUDIO_ASE_STATE_ENABLING:
+        LOG_ERROR(
+            "Invalid state transition from %s to %s, %s, ase_id: "
+            "%d. Stopping the stream.",
+            ToString(ase->state).c_str(),
+            ToString(AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED).c_str(),
+            ADDRESS_TO_LOGGABLE_CSTR(leAudioDevice->address_), ase->id);
         StopStream(group);
         break;
     }
@@ -2853,12 +3009,8 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
     }
 
     switch (ase->state) {
+      case AseState::BTA_LE_AUDIO_ASE_STATE_DISABLING:
       case AseState::BTA_LE_AUDIO_ASE_STATE_CODEC_CONFIGURED:
-      case AseState::BTA_LE_AUDIO_ASE_STATE_DISABLING: {
-        SetAseState(leAudioDevice, ase,
-                    AseState::BTA_LE_AUDIO_ASE_STATE_RELEASING);
-        break;
-      }
       case AseState::BTA_LE_AUDIO_ASE_STATE_QOS_CONFIGURED:
         SetAseState(leAudioDevice, ase,
                     AseState::BTA_LE_AUDIO_ASE_STATE_RELEASING);
@@ -2866,8 +3018,10 @@ class LeAudioGroupStateMachineImpl : public LeAudioGroupStateMachine {
         if (group->HaveAllActiveDevicesAsesTheSameState(
                 AseState::BTA_LE_AUDIO_ASE_STATE_RELEASING)) {
           group->SetState(AseState::BTA_LE_AUDIO_ASE_STATE_RELEASING);
+        }
 
-          /* At this point all of the active ASEs within group are released. */
+        if (group->cig.GetState() == CigState::CREATED &&
+            group->HaveAllCisesDisconnected()) {
           RemoveCigForGroup(group);
         }
 

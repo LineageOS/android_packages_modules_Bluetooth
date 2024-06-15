@@ -25,13 +25,15 @@
 
 #define LOG_TAG "avctp"
 
+#include <bluetooth/log.h>
 #include <string.h>
 
 #include "avct_api.h"
 #include "avct_int.h"
 #include "internal_include/bt_target.h"
-#include "os/log.h"
 #include "types/raw_address.h"
+
+using namespace bluetooth;
 
 /*******************************************************************************
  *
@@ -51,7 +53,7 @@ tAVCT_CCB* avct_ccb_alloc(tAVCT_CC* p_cc) {
     if (!p_ccb->allocated) {
       p_ccb->allocated = AVCT_ALOC_LCB;
       memcpy(&p_ccb->cc, p_cc, sizeof(tAVCT_CC));
-      LOG_VERBOSE("avct_ccb_alloc %d", i);
+      log::verbose("avct_ccb_alloc {}", i);
       break;
     }
   }
@@ -59,7 +61,7 @@ tAVCT_CCB* avct_ccb_alloc(tAVCT_CC* p_cc) {
   if (i == AVCT_NUM_CONN) {
     /* out of ccbs */
     p_ccb = NULL;
-    LOG_WARN("Out of ccbs");
+    log::warn("Out of ccbs");
   }
   return p_ccb;
 }
@@ -79,7 +81,7 @@ void avct_ccb_dealloc(tAVCT_CCB* p_ccb, uint8_t event, uint16_t result,
                       const RawAddress* bd_addr) {
   tAVCT_CTRL_CBACK* p_cback = p_ccb->cc.p_ctrl_cback;
 
-  LOG_VERBOSE("avct_ccb_dealloc %d", avct_ccb_to_idx(p_ccb));
+  log::verbose("avct_ccb_dealloc {}", avct_ccb_to_idx(p_ccb));
 
   if (p_ccb->p_bcb == NULL) {
     memset(p_ccb, 0, sizeof(tAVCT_CCB));
@@ -131,11 +133,11 @@ tAVCT_CCB* avct_ccb_by_idx(uint8_t idx) {
     /* verify ccb is allocated */
     if (!p_ccb->allocated) {
       p_ccb = NULL;
-      LOG_WARN("ccb %d not allocated", idx);
+      log::warn("ccb {} not allocated", idx);
     }
   } else {
     p_ccb = NULL;
-    LOG_WARN("No ccb for idx %d", idx);
+    log::warn("No ccb for idx {}", idx);
   }
   return p_ccb;
 }

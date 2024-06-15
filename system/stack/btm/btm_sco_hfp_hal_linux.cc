@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <bluetooth/log.h>
 #include <poll.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -21,12 +22,15 @@
 #include <vector>
 
 #include "btm_sco_hfp_hal.h"
-#include "gd/common/init_flags.h"
-#include "osi/include/log.h"
+#include "common/init_flags.h"
+#include "hci/controller_interface.h"
+#include "main/shim/entry.h"
+#include "os/log.h"
 #include "osi/include/properties.h"
 #include "stack/include/hcimsgs.h"
 #include "stack/include/sdpdefs.h"
 
+using namespace bluetooth;
 using bluetooth::legacy::hci::GetInterface;
 
 namespace hfp_hal_interface {
@@ -77,42 +81,56 @@ struct mgmt_ev_cmd_complete {
 
 struct mgmt_cp_get_codec_capabilities {
   uint16_t hci_dev;
-  uint32_t num_codecs;
-  uint8_t codecs[];
 } __attribute__((packed));
 
 struct mgmt_rp_get_codec_capabilities {
   uint16_t hci_dev;
-  uint8_t offload_capable;
-  uint32_t num_codecs;
-  struct mgmt_bt_codec codecs[];
+  uint8_t transparent_wbs_supported;
+  uint8_t hci_data_path_id;
+  uint32_t wbs_pkt_len;
 } __attribute__((packed));
 
 #define MGMT_POLL_TIMEOUT_MS 2000
 
 void cache_codec_capabilities(struct mgmt_rp_get_codec_capabilities* rp) {
-  uint8_t* ptr = reinterpret_cast<uint8_t*>(rp->codecs);
-  // Copy into cached codec information
-  offload_supported = rp->offload_capable;
-  for (int i = 0; i < rp->num_codecs; i++) {
-    struct mgmt_bt_codec* mc = reinterpret_cast<struct mgmt_bt_codec*>(ptr);
-    cached_codec_info c = {
-        .inner =
-            {
-                .codec = static_cast<codec>(1 << (mc->codec - 1)),
-                .data_path = mc->data_path,
-                .data = mc->data_length == 0
-                            ? std::vector<uint8_t>{}
-                            : std::vector<uint8_t>(mc->data,
-                                                   mc->data + mc->data_length),
-            },
-        .pkt_size = mc->packet_size,
-    };
-    ptr += sizeof(*mc);
+  const uint8_t kCodecCvsd = 0x2;
+  const uint8_t kCodecTransparent = 0x3;
+  const uint8_t kCodecMsbc = 0x5;
 
-    LOG_INFO("Caching HFP codec %u, data path %u, data len %d, pkt_size %u",
-             (uint64_t)c.inner.codec, c.inner.data_path, c.inner.data.size(),
-             c.pkt_size);
+  auto codecs =
+      bluetooth::shim::GetController()->GetLocalSupportedBrEdrCodecIds();
+
+  for (uint8_t codec_id : codecs) {
+    // TODO(b/323087725): Query the codec capabilities and fill in c.inner.data.
+    // The capabilities are not used currently so it's safe to keep this for a
+    // while.
+    cached_codec_info c{};
+    switch (codec_id) {
+      case kCodecCvsd:
+        c.inner.codec = codec::CVSD;
+        break;
+      case kCodecTransparent:
+        if (!rp->transparent_wbs_supported) {
+          // Transparent wideband speech not supported, skip it.
+          continue;
+        }
+        c.inner.codec = codec::MSBC_TRANSPARENT;
+        c.pkt_size = rp->wbs_pkt_len;
+        break;
+      case kCodecMsbc:
+        offload_supported = true;
+        c.inner.codec = codec::MSBC;
+        c.inner.data_path = rp->hci_data_path_id;
+        c.pkt_size = rp->wbs_pkt_len;
+        break;
+      default:
+        log::debug("Unsupported codec ID: {}", codec_id);
+        continue;
+    }
+
+    log::info("Caching HFP codec {}, data path {}, data len {}, pkt_size {}",
+              (uint64_t)c.inner.codec, c.inner.data_path, c.inner.data.size(),
+              c.pkt_size);
 
     cached_codecs.push_back(c);
   }
@@ -131,7 +149,7 @@ constexpr uint16_t HCI_DEV_NONE = 0xffff;
 int btsocket_open_mgmt(uint16_t hci) {
   int fd = socket(PF_BLUETOOTH, SOCK_RAW | SOCK_NONBLOCK, BTPROTO_HCI);
   if (fd < 0) {
-    LOG_DEBUG("Failed to open BT socket.");
+    log::debug("Failed to open BT socket.");
     return -errno;
   }
 
@@ -143,7 +161,7 @@ int btsocket_open_mgmt(uint16_t hci) {
 
   int ret = bind(fd, (struct sockaddr*)&addr, sizeof(addr));
   if (ret < 0) {
-    LOG_DEBUG("Failed to bind BT socket.");
+    log::debug("Failed to bind BT socket.");
     close(fd);
     return -errno;
   }
@@ -152,19 +170,14 @@ int btsocket_open_mgmt(uint16_t hci) {
 }
 
 int mgmt_get_codec_capabilities(int fd, uint16_t hci) {
-  // Write read codec capabilities
   struct mgmt_pkt ev;
   ev.opcode = MGMT_OP_GET_SCO_CODEC_CAPABILITIES;
   ev.index = HCI_DEV_NONE;
-  ev.len = sizeof(struct mgmt_cp_get_codec_capabilities) + 3;
+  ev.len = sizeof(struct mgmt_cp_get_codec_capabilities);
 
   struct mgmt_cp_get_codec_capabilities* cp =
       reinterpret_cast<struct mgmt_cp_get_codec_capabilities*>(ev.data);
   cp->hci_dev = hci;
-  cp->num_codecs = 3;
-  cp->codecs[0] = MGMT_SCO_CODEC_CVSD;
-  cp->codecs[1] = MGMT_SCO_CODEC_MSBC_TRANSPARENT;
-  cp->codecs[2] = MGMT_SCO_CODEC_MSBC;
 
   int ret;
 
@@ -177,8 +190,8 @@ int mgmt_get_codec_capabilities(int fd, uint16_t hci) {
     if (ret > 0) {
       RETRY_ON_INTR(ret = write(fd, &ev, MGMT_PKT_HDR_SIZE + ev.len));
       if (ret < 0) {
-        LOG_DEBUG("Failed to call MGMT_OP_GET_SCO_CODEC_CAPABILITIES: %d",
-                  -errno);
+        log::debug("Failed to call MGMT_OP_GET_SCO_CODEC_CAPABILITIES: {}",
+                   -errno);
         return -errno;
       };
       break;
@@ -186,7 +199,7 @@ int mgmt_get_codec_capabilities(int fd, uint16_t hci) {
   } while (ret > 0);
 
   if (ret <= 0) {
-    LOG_DEBUG("Failed waiting for mgmt socket to be writable.");
+    log::debug("Failed waiting for mgmt socket to be writable.");
     return -1;
   }
 
@@ -201,7 +214,7 @@ int mgmt_get_codec_capabilities(int fd, uint16_t hci) {
       if (fds[0].revents & POLLIN) {
         RETRY_ON_INTR(ret = read(fd, &ev, sizeof(ev)));
         if (ret < 0) {
-          LOG_DEBUG("Failed to read mgmt socket: %d", -errno);
+          log::debug("Failed to read mgmt socket: {}", -errno);
           return -errno;
         }
 
@@ -221,7 +234,7 @@ int mgmt_get_codec_capabilities(int fd, uint16_t hci) {
         }
       }
     } else if (ret == 0) {
-      LOG_DEBUG("Timeout while waiting for codec capabilities response.");
+      log::debug("Timeout while waiting for codec capabilities response.");
       ret = -1;
     }
   } while (ret > 0);
@@ -265,8 +278,8 @@ int mgmt_notify_sco_connection_change(int fd, int hci, RawAddress device,
     if (ret > 0) {
       RETRY_ON_INTR(ret = write(fd, &ev, MGMT_PKT_HDR_SIZE + ev.len));
       if (ret < 0) {
-        LOG_ERROR("Failed to call MGMT_OP_NOTIFY_SCO_CONNECTION_CHANGE: %d",
-                  -errno);
+        log::error("Failed to call MGMT_OP_NOTIFY_SCO_CONNECTION_CHANGE: {}",
+                   -errno);
         return -errno;
       };
       break;
@@ -274,7 +287,7 @@ int mgmt_notify_sco_connection_change(int fd, int hci, RawAddress device,
   } while (ret > 0);
 
   if (ret <= 0) {
-    LOG_DEBUG("Failed waiting for mgmt socket to be writable.");
+    log::debug("Failed waiting for mgmt socket to be writable.");
     return -1;
   }
 
@@ -286,39 +299,51 @@ void init() {
   int hci = bluetooth::common::InitFlags::GetAdapterIndex();
   int fd = btsocket_open_mgmt(hci);
   if (fd < 0) {
-    LOG_ERROR("Failed to open mgmt channel, error= %d.", fd);
+    log::error("Failed to open mgmt channel, error= {}.", fd);
     return;
   }
 
   int ret = mgmt_get_codec_capabilities(fd, hci);
   if (ret) {
-    LOG_ERROR("Failed to get codec capabilities with error = %d.", ret);
+    log::error("Failed to get codec capabilities with error = {}.", ret);
   } else {
-    LOG_INFO("Successfully queried SCO codec capabilities.");
+    log::info("Successfully queried SCO codec capabilities.");
   }
 
   close(fd);
 }
 
-// Check if wideband speech is supported on local device
-bool get_wbs_supported() {
+// Check if the specified coding format is supported by the adapter.
+bool is_coding_format_supported(esco_coding_format_t coding_format) {
+  if (coding_format != ESCO_CODING_FORMAT_TRANSPNT &&
+      coding_format != ESCO_CODING_FORMAT_MSBC) {
+    log::warn("Unsupported coding format to query: {}", coding_format);
+    return false;
+  }
+
   for (cached_codec_info c : cached_codecs) {
-    if (c.inner.codec == MSBC || c.inner.codec == MSBC_TRANSPARENT) {
+    if (c.inner.codec == MSBC_TRANSPARENT &&
+        coding_format == ESCO_CODING_FORMAT_TRANSPNT) {
+      return true;
+    }
+    if (c.inner.codec == MSBC && coding_format == ESCO_CODING_FORMAT_MSBC) {
       return true;
     }
   }
+
   return false;
+}
+
+// Check if wideband speech is supported on local device
+bool get_wbs_supported() {
+  return is_coding_format_supported(ESCO_CODING_FORMAT_TRANSPNT) ||
+         is_coding_format_supported(ESCO_CODING_FORMAT_MSBC);
 }
 
 // Check if super-wideband speech is supported on local device
 bool get_swb_supported() {
-  for (cached_codec_info c : cached_codecs) {
-    // SWB runs on the same path as MSBC non-offload.
-    if (c.inner.codec == MSBC_TRANSPARENT) {
-      return true;
-    }
-  }
-  return false;
+  // We only support SWB via transparent mode.
+  return is_coding_format_supported(ESCO_CODING_FORMAT_TRANSPNT);
 }
 
 // Checks the supported codecs
@@ -343,8 +368,7 @@ bool get_offload_enabled() { return offload_supported && offload_enabled; }
 // Set offload enable/disable
 bool enable_offload(bool enable) {
   if (!offload_supported && enable) {
-    LOG_ERROR("%s: Cannot enable SCO-offload since it is not supported.",
-              __func__);
+    log::error("Cannot enable SCO-offload since it is not supported.");
     return false;
   }
   offload_enabled = enable;
@@ -371,7 +395,7 @@ void set_codec_datapath(int codec_uuid) {
   uint8_t codec_id;
 
   if (codec_uuid == UUID_CODEC_LC3 && get_offload_enabled()) {
-    LOG_ERROR("Offload path for LC3 is not implemented.");
+    log::error("Offload path for LC3 is not implemented.");
     return;
   }
 
@@ -386,21 +410,22 @@ void set_codec_datapath(int codec_uuid) {
       codec_id = get_offload_enabled() ? codec::LC3 : codec::MSBC_TRANSPARENT;
       break;
     default:
-      LOG_WARN("Unsupported codec (%d). Won't set datapath.", codec_uuid);
+      log::warn("Unsupported codec ({}). Won't set datapath.", codec_uuid);
       return;
   }
 
   found = get_single_codec(codec_id, &codec);
   if (!found) {
-    LOG_ERROR("Failed to find codec config for codec (%d). Won't set datapath.",
-              codec_uuid);
+    log::error(
+        "Failed to find codec config for codec ({}). Won't set datapath.",
+        codec_uuid);
     return;
   }
 
-  LOG_INFO("Configuring datapath for codec (%d)", codec_uuid);
+  log::info("Configuring datapath for codec ({})", codec_uuid);
   if (codec->codec == codec::MSBC && !get_offload_enabled()) {
-    LOG_ERROR(
-        "Tried to configure offload data path for format (%d) with offload "
+    log::error(
+        "Tried to configure offload data path for format ({}) with offload "
         "disabled. Won't set datapath.",
         codec_uuid);
     return;
@@ -441,12 +466,12 @@ void notify_sco_connection_change(RawAddress device, bool is_connected,
   int hci = bluetooth::common::InitFlags::GetAdapterIndex();
   int fd = btsocket_open_mgmt(hci);
   if (fd < 0) {
-    LOG_ERROR("Failed to open mgmt channel, error= %d.", fd);
+    log::error("Failed to open mgmt channel, error= {}.", fd);
     return;
   }
 
   if (codec == codec::LC3) {
-    LOG_ERROR("Offload path for LC3 is not implemented.");
+    log::error("Offload path for LC3 is not implemented.");
     return;
   }
 
@@ -466,14 +491,14 @@ void notify_sco_connection_change(RawAddress device, bool is_connected,
   int ret = mgmt_notify_sco_connection_change(fd, hci, device, is_connected,
                                               converted_codec);
   if (ret) {
-    LOG_ERROR(
-        "Failed to notify HAL of connection change: hci %d, device %s, "
-        "connected %d, codec %d",
+    log::error(
+        "Failed to notify HAL of connection change: hci {}, device {}, "
+        "connected {}, codec {}",
         hci, ADDRESS_TO_LOGGABLE_CSTR(device), is_connected, codec);
   } else {
-    LOG_INFO(
-        "Notified HAL of connection change: hci %d, device %s, connected %d, "
-        "codec %d",
+    log::info(
+        "Notified HAL of connection change: hci {}, device {}, connected {}, "
+        "codec {}",
         hci, ADDRESS_TO_LOGGABLE_CSTR(device), is_connected, codec);
   }
 

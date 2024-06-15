@@ -25,6 +25,8 @@
 #ifndef BTA_HH_INT_H
 #define BTA_HH_INT_H
 
+#include <bluetooth/log.h>
+
 #include <cstdint>
 
 #include "bta/include/bta_api.h"
@@ -82,21 +84,21 @@ typedef struct {
 
 typedef struct {
   BT_HDR_RIGID hdr;
-  RawAddress bd_addr;
+  tAclLinkSpec link_spec;
   tBTA_HH_PROTO_MODE mode;
 } tBTA_HH_API_CONN;
 
 /* internal event data from BTE HID callback */
 typedef struct {
   BT_HDR_RIGID hdr;
-  RawAddress addr;
+  tAclLinkSpec link_spec;
   uint32_t data;
   BT_HDR* p_data;
 } tBTA_HH_CBACK_DATA;
 
 typedef struct {
   BT_HDR_RIGID hdr;
-  RawAddress bda;
+  tAclLinkSpec link_spec;
   uint16_t attr_mask;
   uint16_t sub_event;
   uint8_t sub_class;
@@ -181,7 +183,7 @@ typedef struct {
 /* device control block */
 typedef struct {
   tBTA_HH_DEV_DSCP_INFO dscp_info; /* report descriptor and DI information */
-  RawAddress addr;                 /* BD-Addr of the HID device */
+  tAclLinkSpec link_spec; /* ACL link specification of the HID device */
   uint16_t attr_mask;              /* attribute mask */
   uint16_t w4_evt;                 /* W4_handshake event name */
   uint8_t index;                   /* index number referenced to handle index */
@@ -266,8 +268,8 @@ void bta_hh_open_cmpl_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data);
 void bta_hh_open_failure(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data);
 
 /* utility functions */
-uint8_t bta_hh_find_cb(const RawAddress& bda);
-tBTA_HH_DEV_CB* bta_hh_get_cb(const RawAddress& bda);
+uint8_t bta_hh_find_cb(const tAclLinkSpec& link_spec);
+tBTA_HH_DEV_CB* bta_hh_get_cb(const tAclLinkSpec& link_spec);
 bool bta_hh_tod_spt(tBTA_HH_DEV_CB* p_cb, uint8_t sub_class);
 void bta_hh_clean_up_kdev(tBTA_HH_DEV_CB* p_cb);
 
@@ -289,14 +291,14 @@ void bta_hh_api_enable(tBTA_HH_CBACK* p_cback, bool enable_hid,
 void bta_hh_api_disable(void);
 void bta_hh_disc_cmpl(void);
 
-tBTA_HH_STATUS bta_hh_read_ssr_param(const RawAddress& bd_addr,
+tBTA_HH_STATUS bta_hh_read_ssr_param(const tAclLinkSpec& link_spec,
                                      uint16_t* p_max_ssr_lat,
                                      uint16_t* p_min_ssr_tout);
 
 /* functions for LE HID */
 void bta_hh_le_enable(void);
 void bta_hh_le_deregister(void);
-void bta_hh_le_open_conn(tBTA_HH_DEV_CB* p_cb, const RawAddress& remote_bda);
+void bta_hh_le_open_conn(tBTA_HH_DEV_CB* p_cb, const tAclLinkSpec& link_spec);
 void bta_hh_le_api_disc_act(tBTA_HH_DEV_CB* p_cb);
 void bta_hh_le_get_dscp_act(tBTA_HH_DEV_CB* p_cb);
 void bta_hh_le_write_dev_act(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_data);
@@ -316,5 +318,11 @@ void bta_hh_le_notify_enc_cmpl(tBTA_HH_DEV_CB* p_cb,
 #if (BTA_HH_DEBUG == TRUE)
 void bta_hh_trace_dev_db(void);
 #endif
+
+namespace fmt {
+template <>
+struct formatter<tBTA_HH_SERVICE_STATE>
+    : enum_formatter<tBTA_HH_SERVICE_STATE> {};
+}  // namespace fmt
 
 #endif

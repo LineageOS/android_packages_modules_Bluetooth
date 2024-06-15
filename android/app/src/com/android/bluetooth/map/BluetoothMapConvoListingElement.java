@@ -14,10 +14,14 @@
 */
 package com.android.bluetooth.map;
 
+import android.bluetooth.BluetoothProfile;
+import android.bluetooth.BluetoothProtoEnums;
 import android.util.Log;
 
+import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.SignedLongLong;
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.bluetooth.map.BluetoothMapUtils.TYPE;
 
 import org.xmlpull.v1.XmlPullParser;
@@ -32,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+// Next tag value for ContentProfileErrorReportUtils.report(): 2
 public class BluetoothMapConvoListingElement
         implements Comparable<BluetoothMapConvoListingElement> {
 
@@ -93,6 +98,11 @@ public class BluetoothMapConvoListingElement
         try {
             this.mVersionCounter = Long.parseLong(vcount);
         } catch (NumberFormatException e) {
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.MAP,
+                    BluetoothProtoEnums.BLUETOOTH_MAP_CONVO_LISTING_ELEMENT,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                    0);
             Log.w(TAG, "unable to parse XML versionCounter:" + vcount);
             mVersionCounter = -1;
         }
@@ -228,6 +238,11 @@ public class BluetoothMapConvoListingElement
             try {
                 return BluetoothMapUtils.truncateUtf8StringToString(mSummary, 256);
             } catch (UnsupportedEncodingException e) {
+                ContentProfileErrorReportUtils.report(
+                        BluetoothProfile.MAP,
+                        BluetoothProtoEnums.BLUETOOTH_MAP_CONVO_LISTING_ELEMENT,
+                        BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
+                        1);
                 // This cannot happen on an Android platform - UTF-8 is mandatory
                 Log.e(TAG, "Missing UTF-8 support on platform", e);
             }

@@ -20,6 +20,7 @@
 
 #include "hci/hci_packets.h"
 #include "storage/config_cache.h"
+#include "storage/config_keys.h"
 #include "storage/device.h"
 
 namespace bluetooth {
@@ -83,13 +84,16 @@ class LeDevice {
 
  public:
   // Get LE address type of the key address
-  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(AddressType, hci::AddressType, "AddrType");
+  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(
+      AddressType, hci::AddressType, BTIF_STORAGE_KEY_ADDR_TYPE);
   // IRK + Identity Address Type + Identity Address
-  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(PeerId, std::string, "LE_KEY_PID");
+  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(PeerId, std::string, BTIF_STORAGE_KEY_LE_KEY_PID);
   // LTK + RAND + EDIV + Security Level + Key Length
-  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(PeerEncryptionKeys, std::string, "LE_KEY_PENC");
+  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(
+      PeerEncryptionKeys, std::string, BTIF_STORAGE_KEY_LE_KEY_PENC);
   // counter + CSRK (connection signature resolving key) + security level
-  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(PeerSignatureResolvingKeys, std::string, "LE_KEY_PCSRK");
+  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(
+      PeerSignatureResolvingKeys, std::string, BTIF_STORAGE_KEY_LE_KEY_PCSRK);
 
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(LegacyPseudoAddress, hci::Address, "LeLegacyPseudoAddr");
 };

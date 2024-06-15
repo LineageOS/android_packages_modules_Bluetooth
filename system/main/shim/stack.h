@@ -19,13 +19,13 @@
 #include <functional>
 #include <mutex>
 
-#include "gd/module.h"
-#include "gd/os/handler.h"
-#include "gd/os/thread.h"
-#include "gd/stack_manager.h"
 #include "main/shim/acl.h"
 #include "main/shim/btm.h"
 #include "main/shim/link_policy_interface.h"
+#include "module.h"
+#include "os/handler.h"
+#include "os/thread.h"
+#include "stack_manager.h"
 
 // The shim layer implementation on the Gd stack side.
 namespace bluetooth {
@@ -60,6 +60,22 @@ class Stack {
 
   void LockForDumpsys(std::function<void()> dumpsys_callback);
 
+  // Start the list of modules with the given stack manager thread
+  void StartModuleStack(const ModuleList* modules, const os::Thread* thread);
+
+  // Run the callable object on the module instance
+  template <typename T>
+  bool CallOnModule(std::function<void(T* mod)> run) {
+    std::lock_guard<std::recursive_mutex> lock(Stack::GetInstance()->mutex_);
+    if (Stack::GetInstance()->is_running_) {
+      run(Stack::GetInstance()->GetStackManager()->GetInstance<T>());
+      return true;
+    }
+    return false;
+  }
+
+  size_t NumModules() const { return num_modules_; }
+
  private:
   mutable std::recursive_mutex mutex_;
   StackManager stack_manager_;
@@ -68,7 +84,7 @@ class Stack {
   os::Handler* stack_handler_ = nullptr;
   legacy::Acl* acl_ = nullptr;
   Btm* btm_ = nullptr;
-
+  size_t num_modules_{0};
   void Start(ModuleList* modules);
 };
 

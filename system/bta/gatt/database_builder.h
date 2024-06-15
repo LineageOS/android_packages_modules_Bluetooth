@@ -20,6 +20,7 @@
 
 #include <set>
 #include <utility>
+#include <vector>
 
 #include "bta/gatt/database.h"
 #include "types/bluetooth/uuid.h"
