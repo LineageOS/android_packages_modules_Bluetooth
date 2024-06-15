@@ -1449,7 +1449,8 @@ class CsisClientImpl : public CsisClient {
     // Check if last inquiry already found devices with RSI matching this group
     for (tBTM_INQ_INFO* inq_ent =
              get_btm_client_interface().db.BTM_InqDbFirst();
-         inq_ent != nullptr; inq_ent = BTM_InqDbNext(inq_ent)) {
+         inq_ent != nullptr;
+         inq_ent = get_btm_client_interface().db.BTM_InqDbNext(inq_ent)) {
       RawAddress rsi = inq_ent->results.ble_ad_rsi;
       if (!csis_group->IsRsiMatching(rsi)) continue;
 
