@@ -1406,7 +1406,8 @@ void L2CA_AdjustConnectionIntervals(uint16_t* min_interval,
                  phone_min_interval);
   }
 
-  if (*min_interval < phone_min_interval) {
+  if (!com::android::bluetooth::flags::l2cap_le_do_not_adjust_min_interval() &&
+      *min_interval < phone_min_interval) {
     log::verbose("requested min_interval={} too small. Set to {}",
                  *min_interval, phone_min_interval);
     *min_interval = phone_min_interval;
