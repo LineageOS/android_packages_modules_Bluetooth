@@ -36,12 +36,12 @@ cc_library_static {
     header_libs: ["libbluetooth_headers"],
     static_libs: [
         "bluetooth_flags_c_lib",
+        "libaconfig_storage_read_api_cc",
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
         "libbt_shim_bridge",
         "libflatbuffers-cpp",
         "server_configurable_flags",
-        "libaconfig_storage_read_api_cc",
     ],
 }
 
@@ -96,10 +96,10 @@ cc_test {
         "test/device_iot_config_test.cc",
     ],
     shared_libs: [
+        "libaconfig_storage_read_api_cc",
         "libbase",
         "libdl",
         "liblog",
-        "libaconfig_storage_read_api_cc",
     ],
     static_libs: [
         "bluetooth_flags_c_lib",

@@ -134,9 +134,11 @@ class StorageModule : public bluetooth::Module {
   void Clear();
 
   // Create the storage module where:
-  // - config_file_path is the path to the config file on disk, a .bak file will be created with the original
-  // - config_save_delay is the duration after which to dump config to disk after SaveDelayed() is called
-  // - temp_devices_capacity is the number of temporary, typically unpaired devices to hold in a memory based LRU
+  // - config_file_path is the path to the config file on disk
+  // - config_save_delay is the duration after which to dump config to disk after SaveDelayed() is
+  // called
+  // - temp_devices_capacity is the number of temporary, typically unpaired devices to hold in a
+  // memory based LRU
   // - is_restricted_mode and is_single_user_mode are flags from upper layer
   StorageModule(
       std::string config_file_path,

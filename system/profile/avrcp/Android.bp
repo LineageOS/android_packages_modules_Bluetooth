@@ -65,8 +65,8 @@ cc_test {
         "tests/avrcp_device_test.cc",
     ],
     shared_libs: [
-        "server_configurable_flags",
         "libaconfig_storage_read_api_cc",
+        "server_configurable_flags",
     ],
     static_libs: [
         "avrcp-target-service",

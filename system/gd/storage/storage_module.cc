@@ -47,17 +47,15 @@ static const std::string kFactoryResetProperty = "persist.bluetooth.factoryreset
 static const size_t kDefaultTempDeviceCapacity = 10000;
 // Save config whenever there is a change, but delay it by this value so that burst config change won't overwhelm disk
 static const std::chrono::milliseconds kDefaultConfigSaveDelay = std::chrono::milliseconds(3000);
-// Writing a config to disk takes a minimum 10 ms on a decent x86_64 machine, and 20 ms if including backup file
+// Writing a config to disk takes a minimum 10 ms on a decent x86_64 machine
 // The config saving delay must be bigger than this value to avoid overwhelming the disk
 static const std::chrono::milliseconds kMinConfigSaveDelay = std::chrono::milliseconds(20);
 
 const int kConfigFileComparePass = 1;
-const int kConfigBackupComparePass = 2;
 const std::string kConfigFilePrefix = "bt_config-origin";
 const std::string kConfigFileHash = "hash";
 
 const std::string StorageModule::kInfoSection = BTIF_STORAGE_SECTION_INFO;
-const std::string StorageModule::kFileSourceProperty = "FileSource";
 const std::string StorageModule::kTimeCreatedProperty = "TimeCreated";
 const std::string StorageModule::kTimeCreatedFormat = "%Y-%m-%d %H:%M:%S";
 
@@ -74,8 +72,6 @@ StorageModule::StorageModule(
       temp_devices_capacity_(temp_devices_capacity),
       is_restricted_mode_(is_restricted_mode),
       is_single_user_mode_(is_single_user_mode) {
-  // e.g. "/data/misc/bluedroid/bt_config.conf" to "/data/misc/bluedroid/bt_config.bak"
-  config_backup_path_ = config_file_path_.substr(0, config_file_path_.find_last_of('.')) + ".bak";
   log::assert_that(
       config_save_delay > kMinConfigSaveDelay,
       "Config save delay of {} ms is not enough, must be at least {} ms to avoid overwhelming the "
@@ -124,19 +120,6 @@ void StorageModule::SaveImmediately() {
     pimpl_->config_save_alarm_.Cancel();
     pimpl_->has_pending_config_save_ = false;
   }
-  // 1. rename old config to backup name
-  if (os::FileExists(config_file_path_)) {
-#ifndef TARGET_FLOSS
-    log::assert_that(
-        os::RenameFile(config_file_path_, config_backup_path_),
-        "assert failed: os::RenameFile(config_file_path_, config_backup_path_)");
-#else
-    if (!os::RenameFile(config_file_path_, config_backup_path_)) {
-      log::error("Unable to rename old config to back up name");
-    }
-#endif
-  }
-  // 2. write in-memory config to disk, if failed, backup can still be used
 #ifndef TARGET_FLOSS
   log::assert_that(
       LegacyConfigFile::FromPath(config_file_path_).Write(pimpl_->cache_),
@@ -146,11 +129,7 @@ void StorageModule::SaveImmediately() {
     log::error("Unable to write config file to disk");
   }
 #endif
-  // 3. now write back up to disk as well
-  if (!LegacyConfigFile::FromPath(config_backup_path_).Write(pimpl_->cache_)) {
-    log::error("Unable to write backup config file");
-  }
-  // 4. save checksum if it is running in common criteria mode
+  // save checksum if it is running in common criteria mode
   if (bluetooth::os::ParameterProvider::GetBtKeystoreInterface() != nullptr &&
       bluetooth::os::ParameterProvider::IsCommonCriteriaMode()) {
     bluetooth::os::ParameterProvider::GetBtKeystoreInterface()->set_encrypt_key_or_remove_key(
@@ -169,61 +148,44 @@ void StorageModule::ListDependencies(ModuleList* list) const {
 
 void StorageModule::Start() {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
-  std::string file_source;
   if (os::GetSystemProperty(kFactoryResetProperty) == "true") {
     log::info("{} is true, delete config files", kFactoryResetProperty);
     LegacyConfigFile::FromPath(config_file_path_).Delete();
-    LegacyConfigFile::FromPath(config_backup_path_).Delete();
     os::SetSystemProperty(kFactoryResetProperty, "false");
   }
   if (!is_config_checksum_pass(kConfigFileComparePass)) {
     LegacyConfigFile::FromPath(config_file_path_).Delete();
   }
-  if (!is_config_checksum_pass(kConfigBackupComparePass)) {
-    LegacyConfigFile::FromPath(config_backup_path_).Delete();
-  }
-  bool save_needed = false;
   auto config = LegacyConfigFile::FromPath(config_file_path_).Read(temp_devices_capacity_);
+  bool save_needed = false;
   if (!config || !config->HasSection(kAdapterSection)) {
-    log::warn(
-        "cannot load config at {}, using backup at {}.", config_file_path_, config_backup_path_);
-    config = LegacyConfigFile::FromPath(config_backup_path_).Read(temp_devices_capacity_);
-    file_source = "Backup";
-    // Make sure to update the file, since it wasn't read from the config_file_path_
-    save_needed = true;
-  }
-  if (!config || !config->HasSection(kAdapterSection)) {
-    log::warn("cannot load backup config at {}; creating new empty ones", config_backup_path_);
+    log::warn("Failed to load config at {}; creating new empty ones", config_file_path_);
     config.emplace(temp_devices_capacity_, Device::kLinkKeyProperties);
-    file_source = "Empty";
-  }
-  if (!file_source.empty()) {
-    config->SetProperty(kInfoSection, kFileSourceProperty, std::move(file_source));
-  }
-  // Cleanup temporary pairings if we have left guest mode
-  if (!is_restricted_mode_) {
-    config->RemoveSectionWithProperty("Restricted");
-  }
-  // Read or set config file creation timestamp
-  auto time_str = config->GetProperty(kInfoSection, kTimeCreatedProperty);
-  if (!time_str) {
+
+    // Set config file creation timestamp
     std::stringstream ss;
     auto now = std::chrono::system_clock::now();
     auto now_time_t = std::chrono::system_clock::to_time_t(now);
     ss << std::put_time(std::localtime(&now_time_t), kTimeCreatedFormat.c_str());
     config->SetProperty(kInfoSection, kTimeCreatedProperty, ss.str());
+    save_needed = true;
   }
-  config->FixDeviceTypeInconsistencies();
-  // TODO (b/158035889) Migrate metrics module to GD
   pimpl_ = std::make_unique<impl>(GetHandler(), std::move(config.value()), temp_devices_capacity_);
-  if (save_needed) {
-    // Set a timer and write the new config file to disk.
-    SaveDelayed();
-  }
   pimpl_->cache_.SetPersistentConfigChangedCallback(
       [this] { this->CallOn(this, &StorageModule::SaveDelayed); });
+
+  // Cleanup temporary pairings if we have left guest mode
+  if (!is_restricted_mode_) {
+    config->RemoveSectionWithProperty("Restricted");
+  }
+
+  config->FixDeviceTypeInconsistencies();
   if (bluetooth::os::ParameterProvider::GetBtKeystoreInterface() != nullptr) {
     bluetooth::os::ParameterProvider::GetBtKeystoreInterface()->ConvertEncryptOrDecryptKeyIfNeeded();
+  }
+
+  if (save_needed) {
+    SaveDelayed();
   }
 }
 

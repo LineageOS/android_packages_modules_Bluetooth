@@ -165,6 +165,9 @@ cc_library_shared {
     ],
     min_sdk_version: "Tiramisu",
     ldflags: ["-Wl,--allow-multiple-definition"],
+
+    // TODO(b/346919576) Workaround LTO build breakage.
+    lto_O0: true,
 }
 
 cc_library {

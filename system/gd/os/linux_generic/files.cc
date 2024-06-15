@@ -129,7 +129,7 @@ bool WriteToFile(const std::string& path, const std::string& data) {
 
   FILE* fp = std::fopen(temp_path.c_str(), "wt");
   if (!fp) {
-    log::error("unable to write to file '{}', error: {}", temp_path, strerror(errno));
+    log::error("unable to open file '{}', error: {}", temp_path, strerror(errno));
     HandleError(temp_path, &dir_fd, &fp);
     return false;
   }
@@ -142,7 +142,7 @@ bool WriteToFile(const std::string& path, const std::string& data) {
 
   // Flush the stream buffer to the temp file.
   if (std::fflush(fp) != 0) {
-    log::error("unable to write flush buffer to file '{}', error: {}", temp_path, strerror(errno));
+    log::error("unable to flush buffer to file '{}', error: {}", temp_path, strerror(errno));
     HandleError(temp_path, &dir_fd, &fp);
     return false;
   }

@@ -89,16 +89,16 @@ final class DataMigration {
 
     static int run(Context ctx) {
         if (migrationStatus(ctx) == MIGRATION_STATUS_COMPLETED) {
-            Log.d(TAG, "Legacy migration skiped: already completed");
+            Log.d(TAG, "Legacy migration skipped: already completed");
             return MIGRATION_STATUS_COMPLETED;
         }
         if (!isMigrationApkInstalled(ctx)) {
-            Log.d(TAG, "Legacy migration skiped: no migration app installed");
+            Log.d(TAG, "Legacy migration skipped: no migration app installed");
             markMigrationStatus(ctx, MIGRATION_STATUS_MISSING_APK);
             return MIGRATION_STATUS_MISSING_APK;
         }
         if (!incrementeMigrationAttempt(ctx)) {
-            Log.d(TAG, "Legacy migration skiped: still failing after too many attempt");
+            Log.d(TAG, "Legacy migration skipped: still failing after too many attempt");
             markMigrationStatus(ctx, MIGRATION_STATUS_MAX_ATTEMPT);
             return MIGRATION_STATUS_MAX_ATTEMPT;
         }

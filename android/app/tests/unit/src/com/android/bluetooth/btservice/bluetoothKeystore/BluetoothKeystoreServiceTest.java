@@ -52,13 +52,10 @@ public final class BluetoothKeystoreServiceTest {
 
     // Please also check bt_stack string configuration if you want to change the content.
     private static final String CONFIG_FILE_PREFIX = "bt_config-origin";
-    private static final String CONFIG_BACKUP_PREFIX = "bt_config-backup";
     private static final String CONFIG_FILE_HASH = "hash";
     private static final String CONFIG_FILE_PATH = "/data/misc/bluedroid/bt_config.conf";
     private static final String CONFIG_FILE_ENCRYPTION_PATH =
             "/data/misc/bluedroid/bt_config.conf.encrypted";
-    private static final String CONFIG_BACKUP_ENCRYPTION_PATH =
-            "/data/misc/bluedroid/bt_config.bak.encrypted";
     private static final String CONFIG_CHECKSUM_ENCRYPTION_PATH =
             "/data/misc/bluedroid/bt_config.checksum.encrypted";
 
@@ -271,11 +268,9 @@ public final class BluetoothKeystoreServiceTest {
         // check encryption file clean up.
         Assert.assertFalse(Files.exists(Paths.get(CONFIG_CHECKSUM_ENCRYPTION_PATH)));
         Assert.assertFalse(Files.exists(Paths.get(CONFIG_FILE_ENCRYPTION_PATH)));
-        Assert.assertFalse(Files.exists(Paths.get(CONFIG_BACKUP_ENCRYPTION_PATH)));
 
         // remove hash data avoid interfering result.
         mBluetoothKeystoreService.getNameDecryptKey().remove(CONFIG_FILE_PREFIX);
-        mBluetoothKeystoreService.getNameDecryptKey().remove(CONFIG_BACKUP_PREFIX);
 
         Assert.assertTrue(
                 doCompareMap(mNameDecryptKeyResult, mBluetoothKeystoreService.getNameDecryptKey()));

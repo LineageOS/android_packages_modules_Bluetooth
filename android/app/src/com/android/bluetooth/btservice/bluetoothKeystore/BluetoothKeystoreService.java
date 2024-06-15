@@ -72,7 +72,6 @@ public class BluetoothKeystoreService {
     private static final int TRY_MAX = 3;
 
     private static final String CONFIG_FILE_PREFIX = "bt_config-origin";
-    private static final String CONFIG_BACKUP_PREFIX = "bt_config-backup";
 
     private static final String CONFIG_FILE_HASH = "hash";
 
@@ -80,17 +79,13 @@ public class BluetoothKeystoreService {
             "/data/misc/bluedroid/bt_config.checksum.encrypted";
     private static final String CONFIG_FILE_ENCRYPTION_PATH =
             "/data/misc/bluedroid/bt_config.conf.encrypted";
-    private static final String CONFIG_BACKUP_ENCRYPTION_PATH =
-            "/data/misc/bluedroid/bt_config.bak.encrypted";
 
     private static final String CONFIG_FILE_PATH = "/data/misc/bluedroid/bt_config.conf";
-    private static final String CONFIG_BACKUP_PATH = "/data/misc/bluedroid/bt_config.bak";
 
     private static final int BUFFER_SIZE = 400 * 10;
 
     private static final int CONFIG_COMPARE_INIT = 0b00;
     private static final int CONFIG_FILE_COMPARE_PASS = 0b01;
-    private static final int CONFIG_BACKUP_COMPARE_PASS = 0b10;
     private int mCompareResult;
 
     private final BluetoothKeystoreNativeInterface mBluetoothKeystoreNativeInterface;
@@ -225,21 +220,13 @@ public class BluetoothKeystoreService {
                     debugLog("bt_config.conf checksum pass.");
                     mCompareResult = mCompareResult | CONFIG_FILE_COMPARE_PASS;
                 }
-                if (compareFileHash(CONFIG_BACKUP_PATH)) {
-                    debugLog("bt_config.bak checksum pass.");
-                    mCompareResult = mCompareResult | CONFIG_BACKUP_COMPARE_PASS;
-                }
                 // Step4: choose which encryption file loads.
                 if (doesComparePass(CONFIG_FILE_COMPARE_PASS)) {
                     loadEncryptionFile(CONFIG_FILE_ENCRYPTION_PATH, true);
-                } else if (doesComparePass(CONFIG_BACKUP_COMPARE_PASS)) {
-                    Files.deleteIfExists(Paths.get(CONFIG_FILE_ENCRYPTION_PATH));
-                    mNameEncryptKey.remove(CONFIG_FILE_PREFIX);
-                    loadEncryptionFile(CONFIG_BACKUP_ENCRYPTION_PATH, true);
                 } else {
                     // if the Common Criteria mode is disable, don't show the log.
                     if (mIsCommonCriteriaMode) {
-                        debugLog("Config file conf and bak checksum check fail.");
+                        debugLog("Config file conf checksum check fail.");
                     }
                     cleanupAll();
                     return;
@@ -301,8 +288,6 @@ public class BluetoothKeystoreService {
             } else if (decryptedString.equals(CONFIG_FILE_HASH)) {
                 readHashFile(CONFIG_FILE_PATH, CONFIG_FILE_PREFIX);
                 mPendingEncryptKey.put(CONFIG_FILE_PREFIX);
-                readHashFile(CONFIG_BACKUP_PATH, CONFIG_BACKUP_PREFIX);
-                mPendingEncryptKey.put(CONFIG_BACKUP_PREFIX);
                 saveEncryptedKey();
             }
             return;
@@ -328,7 +313,6 @@ public class BluetoothKeystoreService {
     private void cleanupFile() throws IOException {
         Files.deleteIfExists(Paths.get(CONFIG_CHECKSUM_ENCRYPTION_PATH));
         Files.deleteIfExists(Paths.get(CONFIG_FILE_ENCRYPTION_PATH));
-        Files.deleteIfExists(Paths.get(CONFIG_BACKUP_ENCRYPTION_PATH));
     }
 
     /** Clean up memory. */
@@ -381,7 +365,7 @@ public class BluetoothKeystoreService {
         List<String> configEncryptedLines = new ArrayList<>();
         List<String> keyEncryptedLines = new ArrayList<>();
         for (String key : mNameEncryptKey.keySet()) {
-            if (key.equals(CONFIG_FILE_PREFIX) || key.equals(CONFIG_BACKUP_PREFIX)) {
+            if (key.equals(CONFIG_FILE_PREFIX)) {
                 configEncryptedLines.add(getEncryptedKeyData(key));
             } else {
                 keyEncryptedLines.add(getEncryptedKeyData(key));
@@ -395,7 +379,6 @@ public class BluetoothKeystoreService {
             }
             if (!keyEncryptedLines.isEmpty()) {
                 Files.write(Paths.get(CONFIG_FILE_ENCRYPTION_PATH), keyEncryptedLines);
-                Files.write(Paths.get(CONFIG_BACKUP_ENCRYPTION_PATH), keyEncryptedLines);
             }
         } catch (IOException e) {
             throw new RuntimeException("write encryption file fail");
@@ -441,8 +424,6 @@ public class BluetoothKeystoreService {
         String prefixString = null;
         if (CONFIG_FILE_PATH.equals(hashFilePathString)) {
             prefixString = CONFIG_FILE_PREFIX;
-        } else if (CONFIG_BACKUP_PATH.equals(hashFilePathString)) {
-            prefixString = CONFIG_BACKUP_PREFIX;
         }
         if (prefixString == null) {
             errorLog("compareFileHash: Unexpected hash file path: " + hashFilePathString);
