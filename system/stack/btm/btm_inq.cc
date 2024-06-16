@@ -527,7 +527,7 @@ uint16_t BTM_IsInquiryActive(void) {
 static void BTM_CancelLeScan() {
   if (!bluetooth::shim::is_classic_discovery_only_enabled()) {
     log::assert_that(BTM_IsDeviceUp(), "assert failed: BTM_IsDeviceUp()");
-    if ((btm_cb.btm_inq_vars.inqparms.mode & BTM_BLE_INQUIRY_MASK) != 0)
+    if ((btm_cb.btm_inq_vars.inqparms.mode & BTM_BLE_GENERAL_INQUIRY) != 0)
       btm_ble_stop_inquiry();
   } else {
     log::info(
@@ -585,14 +585,14 @@ void BTM_CancelInquiry(void) {
         NULL;                                 /* Do not notify caller anymore */
     btm_cb.btm_inq_vars.p_inq_cmpl_cb = NULL; /* Do not notify caller anymore */
 
-    if ((btm_cb.btm_inq_vars.inqparms.mode & BTM_BR_INQUIRY_MASK) != 0) {
+    if ((btm_cb.btm_inq_vars.inqparms.mode & BTM_GENERAL_INQUIRY) != 0) {
       bluetooth::shim::GetHciLayer()->EnqueueCommand(
           bluetooth::hci::InquiryCancelBuilder::Create(),
           get_main_thread()->BindOnce(
               [](bluetooth::hci::CommandCompleteView complete_view) {
                 bluetooth::hci::check_complete<
                     bluetooth::hci::InquiryCancelCompleteView>(complete_view);
-                btm_process_cancel_complete(HCI_SUCCESS, BTM_BR_INQUIRY_MASK);
+                btm_process_cancel_complete(HCI_SUCCESS, BTM_GENERAL_INQUIRY);
               }));
     }
     BTM_CancelLeScan();
@@ -607,7 +607,7 @@ static void btm_classic_inquiry_timeout(void* /* data */) {
   // will be marked as completed. Therefore, we only need to mark
   // the BLE inquiry as completed here to stop processing BLE results
   // as inquiry results.
-  btm_process_inq_complete(HCI_SUCCESS, BTM_BLE_INQUIRY_MASK);
+  btm_process_inq_complete(HCI_SUCCESS, BTM_BLE_GENERAL_INQUIRY);
 }
 
 /*******************************************************************************
@@ -630,7 +630,7 @@ static tBTM_STATUS BTM_StartLeScan() {
       return BTM_CMD_STARTED;
     } else {
       log::warn("Trying to do LE scan on a non-LE adapter");
-      btm_cb.btm_inq_vars.inqparms.mode &= ~BTM_BLE_INQUIRY_MASK;
+      btm_cb.btm_inq_vars.inqparms.mode &= ~BTM_BLE_GENERAL_INQUIRY;
     }
   } else {
     log::info(
@@ -1891,9 +1891,19 @@ tBTM_STATUS btm_initiate_rem_name(const RawAddress& remote_bda,
           clock_offset = clock_offset_in_cfg;
         }
       }
-      bluetooth::shim::ACL_RemoteNameRequest(
-          remote_bda, p_cur->results.page_scan_rep_mode,
-          p_cur->results.page_scan_mode, clock_offset);
+      uint8_t page_scan_rep_mode = p_cur->results.page_scan_rep_mode;
+      if (com::android::bluetooth::flags::
+              rnr_validate_page_scan_repetition_mode() &&
+          page_scan_rep_mode >= HCI_PAGE_SCAN_REP_MODE_RESERVED_START) {
+        log::info(
+            "Invalid page scan repetition mode {} from remote_bda:{}, "
+            "fallback to R1",
+            page_scan_rep_mode, remote_bda);
+        page_scan_rep_mode = HCI_PAGE_SCAN_REP_MODE_R1;
+      }
+      bluetooth::shim::ACL_RemoteNameRequest(remote_bda, page_scan_rep_mode,
+                                             p_cur->results.page_scan_mode,
+                                             clock_offset);
     } else {
       uint16_t clock_offset = 0;
       int clock_offset_in_cfg = 0;
@@ -2422,7 +2432,7 @@ static void on_inquiry_complete(bluetooth::hci::EventView event) {
   log::assert_that(complete.IsValid(), "assert failed: complete.IsValid()");
   auto status = to_hci_status_code(static_cast<uint8_t>(complete.GetStatus()));
 
-  btm_process_inq_complete(status, BTM_BR_INQUIRY_MASK);
+  btm_process_inq_complete(status, BTM_GENERAL_INQUIRY);
 }
 /*******************************************************************************
  *
