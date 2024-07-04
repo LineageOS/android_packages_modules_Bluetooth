@@ -1426,12 +1426,12 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr,
 
   bool ret = false;
   if (is_direct) {
-    log::debug("Starting direct connect gatt_if={} address={}", gatt_if,
-               bd_addr);
+    log::debug("Starting direct connect gatt_if={} address={} transport={}", gatt_if, bd_addr,
+               transport);
     bool tcb_exist = !!gatt_find_tcb_by_addr(bd_addr, transport);
 
-    if (!com::android::bluetooth::flags::gatt_reconnect_on_bt_on_fix() ||
-        tcb_exist) {
+    if (!com::android::bluetooth::flags::gatt_reconnect_on_bt_on_fix() || tcb_exist ||
+        transport == BT_TRANSPORT_BR_EDR) {
       /* Consider to remove gatt_act_connect at all */
       ret = gatt_act_connect(p_reg, bd_addr, addr_type, transport,
                              initiating_phys);
