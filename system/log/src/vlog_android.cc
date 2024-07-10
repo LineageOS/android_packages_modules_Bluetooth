@@ -29,8 +29,7 @@ static constexpr size_t kBufferSize = 1024;
 void vlog(Level level, char const* tag, source_location location,
           fmt::string_view fmt, fmt::format_args vargs) {
   // Check if log is enabled.
-  if (!__android_log_is_loggable(level, tag, ANDROID_LOG_INFO) &&
-      !__android_log_is_loggable(level, "bluetooth", ANDROID_LOG_INFO)) {
+  if (!__android_log_is_loggable(level, "bluetooth", ANDROID_LOG_INFO)) {
     return;
   }
 
