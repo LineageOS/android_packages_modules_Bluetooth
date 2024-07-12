@@ -18,9 +18,9 @@
     xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="app_name" msgid="2326164424236203271">"Bluetooth"</string>
     <string name="permlab_bluetoothShareManager" msgid="5297865456717871041">"Accéder au gestionnaire de téléchargement."</string>
-    <string name="permdesc_bluetoothShareManager" msgid="1588034776955941477">"Permet à l\'application d\'accéder au gestionnaire BluetoothShare et de l\'utiliser pour le transfert de fichiers."</string>
+    <string name="permdesc_bluetoothShareManager" msgid="1588034776955941477">"Permet à l\'appli d\'accéder au gestionnaire BluetoothShare et de l\'utiliser pour le transfert de fichiers."</string>
     <string name="permlab_bluetoothAcceptlist" msgid="5785922051395856524">"Ajouter l\'accès d\'un appareil Bluetooth à la liste verte."</string>
-    <string name="permdesc_bluetoothAcceptlist" msgid="259308920158011885">"Permet à l\'application d\'ajouter temporairement un appareil Bluetooth à la liste verte afin que celui-ci puisse envoyer des fichiers à cet appareil sans que la confirmation de l\'utilisateur soit nécessaire."</string>
+    <string name="permdesc_bluetoothAcceptlist" msgid="259308920158011885">"Permet à l\'appli d\'ajouter temporairement un appareil Bluetooth à la liste verte afin que celui-ci puisse envoyer des fichiers à cet appareil sans que la confirmation de l\'utilisateur soit nécessaire."</string>
     <string name="bt_share_picker_label" msgid="7464438494743777696">"Bluetooth"</string>
     <string name="unknown_device" msgid="2317679521750821654">"Périphérique inconnu"</string>
     <string name="unknownNumber" msgid="1245183329830158661">"Inconnu"</string>
@@ -74,7 +74,7 @@
     <string name="upload_fail_cancel" msgid="1632528037932779727">"Fermer"</string>
     <string name="bt_error_btn_ok" msgid="2802751202009957372">"OK"</string>
     <string name="unknown_file" msgid="3719981572107052685">"Fichier inconnu"</string>
-    <string name="unknown_file_desc" msgid="9185609398960437760">"Aucune application ne permet de gérer ce type de fichier. \n"</string>
+    <string name="unknown_file_desc" msgid="9185609398960437760">"Aucune appli ne permet de gérer ce type de fichier. \n"</string>
     <string name="not_exist_file" msgid="5097565588949092486">"Aucun fichier"</string>
     <string name="not_exist_file_desc" msgid="250802392160941265">"Le fichier n\'existe pas. \n"</string>
     <string name="enabling_progress_title" msgid="5262637688863903594">"Veuillez patienter…"</string>
@@ -121,7 +121,7 @@
     <string name="bluetooth_map_settings_cancel" msgid="3374494364625947793">"Annuler"</string>
     <string name="bluetooth_map_settings_intro" msgid="4748160773998753325">"Sélectionnez les comptes que vous souhaitez partager par Bluetooth. Vous devez toujours accepter l\'accès à ces comptes lors de la connexion."</string>
     <string name="bluetooth_map_settings_count" msgid="183013143617807702">"Espaces libres :"</string>
-    <string name="bluetooth_map_settings_app_icon" msgid="3501432663809664982">"Icône de l\'application"</string>
+    <string name="bluetooth_map_settings_app_icon" msgid="3501432663809664982">"Icône de l\'appli"</string>
     <string name="bluetooth_map_settings_title" msgid="4226030082708590023">"Paramètres de partage des messages par Bluetooth"</string>
     <string name="bluetooth_map_settings_no_account_slots_left" msgid="755024228476065757">"Impossible de sélectionner le compte : aucun espace libre."</string>
     <string name="bluetooth_connected" msgid="5687474377090799447">"Audio Bluetooth connecté"</string>
