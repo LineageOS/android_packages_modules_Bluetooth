@@ -311,6 +311,24 @@ btif_hh_device_t* btif_hh_find_connected_dev_by_handle(uint8_t handle) {
 
 /*******************************************************************************
  *
+ * Function         btif_hh_find_added_dev
+ *
+ * Description      Return the added device pointer of the specified address
+ *
+ * Returns          Added device entry
+ ******************************************************************************/
+btif_hh_added_device_t* btif_hh_find_added_dev(const RawAddress& addr) {
+  for (int i = 0; i < BTIF_HH_MAX_ADDED_DEV; i++) {
+    btif_hh_added_device_t* added_dev = &btif_hh_cb.added_devices[i];
+    if (added_dev->bd_addr == addr) {
+      return added_dev;
+    }
+  }
+  return nullptr;
+}
+
+/*******************************************************************************
+ *
  * Function         btif_hh_find_dev_by_bda
  *
  * Description      Return the device pointer of the specified RawAddress.
@@ -398,8 +416,37 @@ static void hh_connect_complete(uint8_t handle, RawAddress& bda,
   HAL_CBACK(bt_hh_callbacks, connection_state_cb, &bda, state);
 }
 
+static bool hh_connection_allowed(const RawAddress& bda) {
+  /* Accept connection only if reconnection is allowed for the known device, or
+   * outgoing connection was requested */
+  btif_hh_added_device_t* added_dev = btif_hh_find_added_dev(bda);
+  if (added_dev != nullptr && added_dev->reconnect_allowed) {
+    LOG_VERBOSE("Connection allowed %s", ADDRESS_TO_LOGGABLE_CSTR(bda));
+    return true;
+  } else if (btif_hh_cb.pending_conn_address == bda) {
+    LOG_VERBOSE("Device connection was pending for: %s, status: %s",
+                ADDRESS_TO_LOGGABLE_CSTR(bda),
+                btif_hh_status_text(btif_hh_cb.status).c_str());
+    return true;
+  }
+
+  return false;
+}
+
 static void hh_open_handler(tBTA_HH_CONN& conn) {
   LOG_DEBUG("status = %d, handle = %d", conn.status, conn.handle);
+
+  if (!hh_connection_allowed(conn.bda)) {
+    LOG_WARN("Reject unexpected incoming HID Connection, device: %s",
+             ADDRESS_TO_LOGGABLE_CSTR(conn.bda));
+    btif_hh_device_t* p_dev = btif_hh_find_connected_dev_by_handle(conn.handle);
+    if (p_dev != nullptr) {
+      p_dev->dev_status = BTHH_CONN_STATE_DISCONNECTED;
+    }
+
+    hh_connect_complete(conn.handle, conn.bda, BTIF_HH_DEV_DISCONNECTED);
+    return;
+  }
 
   HAL_CBACK(bt_hh_callbacks, connection_state_cb, (RawAddress*)&conn.bda,
             BTHH_CONN_STATE_CONNECTING);
@@ -454,7 +501,8 @@ static void hh_open_handler(tBTA_HH_CONN& conn) {
  *
  * Returns          true if add successfully, otherwise false.
  ******************************************************************************/
-bool btif_hh_add_added_dev(const RawAddress& bda, tBTA_HH_ATTR_MASK attr_mask) {
+bool btif_hh_add_added_dev(const RawAddress& bda, tBTA_HH_ATTR_MASK attr_mask,
+                           bool reconnect_allowed) {
   int i;
   for (i = 0; i < BTIF_HH_MAX_ADDED_DEV; i++) {
     if (btif_hh_cb.added_devices[i].bd_addr == bda) {
@@ -464,10 +512,12 @@ bool btif_hh_add_added_dev(const RawAddress& bda, tBTA_HH_ATTR_MASK attr_mask) {
   }
   for (i = 0; i < BTIF_HH_MAX_ADDED_DEV; i++) {
     if (btif_hh_cb.added_devices[i].bd_addr.IsEmpty()) {
-      LOG(WARNING) << " Added device " << ADDRESS_TO_LOGGABLE_STR(bda);
+      LOG(WARNING) << " Added device " << ADDRESS_TO_LOGGABLE_STR(bda)
+                   << " reconnection allowed: " << reconnect_allowed;
       btif_hh_cb.added_devices[i].bd_addr = bda;
       btif_hh_cb.added_devices[i].dev_handle = BTA_HH_INVALID_HANDLE;
       btif_hh_cb.added_devices[i].attr_mask = attr_mask;
+      btif_hh_cb.added_devices[i].reconnect_allowed = reconnect_allowed;
       return true;
     }
   }
@@ -1025,7 +1075,7 @@ static void btif_hh_upstreams_evt(uint16_t event, char* p_param) {
                                 p_data->dscp_info.version,
                                 p_data->dscp_info.ctry_code, len,
                                 p_data->dscp_info.descriptor.dsc_list);
-        if (btif_hh_add_added_dev(p_dev->bd_addr, p_dev->attr_mask)) {
+        if (btif_hh_add_added_dev(p_dev->bd_addr, p_dev->attr_mask, true)) {
           tBTA_HH_DEV_DSCP_INFO dscp_info;
           bt_status_t ret;
           btif_hh_copy_hid_info(&dscp_info, &p_data->dscp_info);
@@ -1041,6 +1091,8 @@ static void btif_hh_upstreams_evt(uint16_t event, char* p_param) {
               p_data->dscp_info.ctry_code, p_data->dscp_info.ssr_max_latency,
               p_data->dscp_info.ssr_min_tout, len,
               p_data->dscp_info.descriptor.dsc_list);
+
+          btif_storage_set_hid_connection_policy(p_dev->bd_addr, true);
 
           ASSERTC(ret == BT_STATUS_SUCCESS, "storing hid info failed", ret);
           BTIF_TRACE_WARNING("BTA_HH_GET_DSCP_EVT: Called add device");
@@ -1341,12 +1393,20 @@ static bt_status_t connect(RawAddress* bd_addr) {
     return BT_STATUS_NOT_READY;
   }
 
+  /* If the device was already added, ensure that reconnections are allowed */
+  btif_hh_added_device_t* added_dev = btif_hh_find_added_dev(*bd_addr);
+  if (added_dev != nullptr && !added_dev->reconnect_allowed) {
+    added_dev->reconnect_allowed = true;
+    btif_storage_set_hid_connection_policy(*bd_addr, true);
+  }
+
   p_dev = btif_hh_find_connected_dev_by_bda(*bd_addr);
   if (p_dev) {
     if (p_dev->dev_status == BTHH_CONN_STATE_CONNECTED ||
         p_dev->dev_status == BTHH_CONN_STATE_CONNECTING) {
       BTIF_TRACE_ERROR("%s: Error, device %s already connected.", __func__,
                        ADDRESS_TO_LOGGABLE_CSTR(*bd_addr));
+
       return BT_STATUS_DONE;
     } else if (p_dev->dev_status == BTHH_CONN_STATE_DISCONNECTING) {
       BTIF_TRACE_ERROR("%s: Error, device %s is busy with (dis)connecting.",
@@ -1368,7 +1428,7 @@ static bt_status_t connect(RawAddress* bd_addr) {
  * Returns         bt_status_t
  *
  ******************************************************************************/
-static bt_status_t disconnect(RawAddress* bd_addr) {
+static bt_status_t disconnect(RawAddress* bd_addr, bool reconnect_allowed) {
   CHECK_BTHH_INIT();
   BTIF_TRACE_EVENT("BTHH: %s", __func__);
   btif_hh_device_t* p_dev;
@@ -1378,6 +1438,16 @@ static bt_status_t disconnect(RawAddress* bd_addr) {
     BTIF_TRACE_WARNING("%s: Error, HH status = %d", __func__,
                        btif_hh_cb.status);
     return BT_STATUS_UNHANDLED;
+  }
+
+  if (!reconnect_allowed) {
+    LOG_INFO("Incoming reconnections disabled for device %s",
+             ADDRESS_TO_LOGGABLE_CSTR(*bd_addr));
+    btif_hh_added_device_t* added_dev = btif_hh_find_added_dev(*bd_addr);
+    if (added_dev != nullptr && added_dev->reconnect_allowed) {
+      added_dev->reconnect_allowed = false;
+      btif_storage_set_hid_connection_policy(added_dev->bd_addr, false);
+    }
   }
 
   p_dev = btif_hh_find_connected_dev_by_bda(*bd_addr);
@@ -1524,9 +1594,10 @@ static bt_status_t set_info(RawAddress* bd_addr, bthh_hid_info_t hid_info) {
       (uint8_t*)osi_malloc(dscp_info.descriptor.dl_len);
   memcpy(dscp_info.descriptor.dsc_list, &(hid_info.dsc_list), hid_info.dl_len);
 
-  if (btif_hh_add_added_dev(*bd_addr, hid_info.attr_mask)) {
+  if (btif_hh_add_added_dev(*bd_addr, hid_info.attr_mask, true)) {
     BTA_HhAddDev(*bd_addr, hid_info.attr_mask, hid_info.sub_class,
                  hid_info.app_id, dscp_info);
+    btif_storage_set_hid_connection_policy(*bd_addr, true);
   }
 
   osi_free_and_reset((void**)&dscp_info.descriptor.dsc_list);
