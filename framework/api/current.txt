@@ -829,6 +829,11 @@ package android.bluetooth {
     field public static final int AT_CMD_TYPE_READ = 0; // 0x0
     field public static final int AT_CMD_TYPE_SET = 2; // 0x2
     field public static final int AT_CMD_TYPE_TEST = 1; // 0x1
+    field @FlaggedApi("com.android.bluetooth.flags.hfp_connection_failures_api") public static final int DISCONNECTED_REASON_INSUFFICIENT_RESOURCES = 3; // 0x3
+    field @FlaggedApi("com.android.bluetooth.flags.hfp_connection_failures_api") public static final int DISCONNECTED_REASON_RFCOMM_CONNECTION_FAILED = 2; // 0x2
+    field @FlaggedApi("com.android.bluetooth.flags.hfp_connection_failures_api") public static final int DISCONNECTED_REASON_SDP_DISCOVERY_FAILED = 1; // 0x1
+    field @FlaggedApi("com.android.bluetooth.flags.hfp_connection_failures_api") public static final int DISCONNECTED_REASON_UNKNOWN = 0; // 0x0
+    field @FlaggedApi("com.android.bluetooth.flags.hfp_connection_failures_api") public static final String EXTRA_DISCONNECTED_REASON = "android.bluetooth.extra.DISCONNECTED_REASON";
     field public static final String EXTRA_VENDOR_SPECIFIC_HEADSET_EVENT_ARGS = "android.bluetooth.headset.extra.VENDOR_SPECIFIC_HEADSET_EVENT_ARGS";
     field public static final String EXTRA_VENDOR_SPECIFIC_HEADSET_EVENT_CMD = "android.bluetooth.headset.extra.VENDOR_SPECIFIC_HEADSET_EVENT_CMD";
     field public static final String EXTRA_VENDOR_SPECIFIC_HEADSET_EVENT_CMD_TYPE = "android.bluetooth.headset.extra.VENDOR_SPECIFIC_HEADSET_EVENT_CMD_TYPE";
