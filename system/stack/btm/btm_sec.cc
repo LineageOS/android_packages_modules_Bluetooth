@@ -219,6 +219,109 @@ static bool btm_dev_16_digit_authenticated(tBTM_SEC_DEV_REC* p_dev_rec) {
 
 /*******************************************************************************
  *
+ * Function         btm_sec_is_device_sc_downgrade
+ *
+ * Description      Check for a stored device record matching the candidate
+ *                  device, and return true if the stored device has reported
+ *                  that it supports Secure Connections mode and the candidate
+ *                  device reports that it does not.  Otherwise, return false.
+ *
+ * Returns          bool
+ *
+ ******************************************************************************/
+static bool btm_sec_is_device_sc_downgrade(uint16_t hci_handle,
+                                           bool secure_connections_supported) {
+  if (secure_connections_supported) return false;
+
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(hci_handle);
+  if (p_dev_rec == nullptr) return false;
+
+  uint8_t property_val = 0;
+  bt_property_t property = {
+      .type = BT_PROPERTY_REMOTE_SECURE_CONNECTIONS_SUPPORTED,
+      .len = sizeof(uint8_t),
+      .val = &property_val};
+
+  bt_status_t cached =
+      btif_storage_get_remote_device_property(&p_dev_rec->bd_addr, &property);
+
+  if (cached == BT_STATUS_FAIL) return false;
+
+  return (bool)property_val;
+}
+
+/*******************************************************************************
+ *
+ * Function         btm_sec_store_device_sc_support
+ *
+ * Description      Save Secure Connections support for this device to file
+ *
+ ******************************************************************************/
+
+static void btm_sec_store_device_sc_support(uint16_t hci_handle,
+                                            bool secure_connections_supported) {
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(hci_handle);
+  if (p_dev_rec == nullptr) return;
+
+  uint8_t property_val = (uint8_t)secure_connections_supported;
+  bt_property_t property = {
+      .type = BT_PROPERTY_REMOTE_SECURE_CONNECTIONS_SUPPORTED,
+      .len = sizeof(uint8_t),
+      .val = &property_val};
+
+  btif_storage_set_remote_device_property(&p_dev_rec->bd_addr, &property);
+}
+
+/*******************************************************************************
+ *
+ * Function         btm_sec_is_session_key_size_downgrade
+ *
+ * Description      Check if there is a stored device record matching this
+ *                  handle, and return true if the stored record has a lower
+ *                  session key size than the candidate device.
+ *
+ * Returns          bool
+ *
+ ******************************************************************************/
+bool btm_sec_is_session_key_size_downgrade(uint16_t hci_handle,
+                                           uint8_t key_size) {
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(hci_handle);
+  if (p_dev_rec == nullptr) return false;
+
+  uint8_t property_val = 0;
+  bt_property_t property = {.type = BT_PROPERTY_REMOTE_MAX_SESSION_KEY_SIZE,
+                            .len = sizeof(uint8_t),
+                            .val = &property_val};
+
+  bt_status_t cached =
+      btif_storage_get_remote_device_property(&p_dev_rec->bd_addr, &property);
+
+  if (cached == BT_STATUS_FAIL) return false;
+
+  return property_val > key_size;
+}
+
+/*******************************************************************************
+ *
+ * Function         btm_sec_update_session_key_size
+ *
+ * Description      Store the max session key size to disk, if possible.
+ *
+ ******************************************************************************/
+void btm_sec_update_session_key_size(uint16_t hci_handle, uint8_t key_size) {
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(hci_handle);
+  if (p_dev_rec == nullptr) return;
+
+  uint8_t property_val = key_size;
+  bt_property_t property = {.type = BT_PROPERTY_REMOTE_MAX_SESSION_KEY_SIZE,
+                            .len = sizeof(uint8_t),
+                            .val = &property_val};
+
+  btif_storage_set_remote_device_property(&p_dev_rec->bd_addr, &property);
+}
+
+/*******************************************************************************
+ *
  * Function         access_secure_service_from_temp_bond
  *
  * Description      a utility function to test whether an access to
@@ -4009,6 +4112,13 @@ void btm_sec_link_key_notification(const RawAddress& p_bda,
     }
   }
 
+  if (p_dev_rec->is_bond_type_persistent() &&
+      (p_dev_rec->is_device_type_br_edr() ||
+       p_dev_rec->is_device_type_dual_mode())) {
+    btm_sec_store_device_sc_support(p_dev_rec->get_br_edr_hci_handle(),
+                                    p_dev_rec->SupportsSecureConnections());
+  }
+
   /* If name is not known at this point delay calling callback until the name is
    */
   /* resolved. Unless it is a HID Device and we really need to send all link
@@ -5094,6 +5204,16 @@ void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported,
                                bool br_edr_supported, bool le_supported) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(hci_handle);
   if (p_dev_rec == nullptr) return;
+
+  // Drop the connection here if the remote attempts to downgrade from Secure
+  // Connections mode.
+  if (btm_sec_is_device_sc_downgrade(hci_handle, sc_supported)) {
+    acl_set_disconnect_reason(HCI_ERR_HOST_REJECT_SECURITY);
+    btm_sec_send_hci_disconnect(
+        p_dev_rec, HCI_ERR_AUTH_FAILURE, hci_handle,
+        "attempted to downgrade from Secure Connections mode");
+    return;
+  }
 
   p_dev_rec->remote_feature_received = true;
   p_dev_rec->remote_supports_hci_role_switch = hci_role_switch_supported;
