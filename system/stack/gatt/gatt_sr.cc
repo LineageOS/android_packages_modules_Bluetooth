@@ -760,6 +760,11 @@ void gatts_process_primary_service_req(tGATT_TCB& tcb, uint16_t cid,
 
   uint16_t payload_size = gatt_tcb_get_payload_size(tcb, cid);
 
+  // This can happen if the channel is already closed.
+  if (payload_size == 0) {
+    return;
+  }
+
   uint16_t msg_len =
       (uint16_t)(sizeof(BT_HDR) + payload_size + L2CAP_MIN_OFFSET);
   BT_HDR* p_msg = (BT_HDR*)osi_calloc(msg_len);
@@ -795,6 +800,12 @@ static void gatts_process_find_info(tGATT_TCB& tcb, uint16_t cid,
   }
 
   uint16_t payload_size = gatt_tcb_get_payload_size(tcb, cid);
+
+  // This can happen if the channel is already closed.
+  if (payload_size == 0) {
+    return;
+  }
+
   uint16_t buf_len =
       (uint16_t)(sizeof(BT_HDR) + payload_size + L2CAP_MIN_OFFSET);
 
@@ -935,6 +946,11 @@ static void gatts_process_read_by_type_req(tGATT_TCB& tcb, uint16_t cid,
   }
 
   uint16_t payload_size = gatt_tcb_get_payload_size(tcb, cid);
+
+  // This can happen if the channel is already closed.
+  if (payload_size == 0) {
+    return;
+  }
 
   size_t msg_len = sizeof(BT_HDR) + payload_size + L2CAP_MIN_OFFSET;
   BT_HDR* p_msg = (BT_HDR*)osi_calloc(msg_len);
@@ -1082,6 +1098,11 @@ static void gatts_process_read_req(tGATT_TCB& tcb, uint16_t cid,
                                    uint16_t handle, uint16_t len,
                                    uint8_t* p_data) {
   uint16_t payload_size = gatt_tcb_get_payload_size(tcb, cid);
+
+  // This can happen if the channel is already closed.
+  if (payload_size == 0) {
+    return;
+  }
 
   size_t buf_len = sizeof(BT_HDR) + payload_size + L2CAP_MIN_OFFSET;
   uint16_t offset = 0;
