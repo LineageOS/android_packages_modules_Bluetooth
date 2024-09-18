@@ -31,11 +31,8 @@ import android.content.Context
 import android.content.IntentFilter
 import android.util.Log
 import com.google.protobuf.Empty
-import io.grpc.Status
 import io.grpc.stub.StreamObserver
 import java.io.Closeable
-import java.io.PrintWriter
-import java.io.StringWriter
 import java.util.concurrent.Executors
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -133,6 +130,17 @@ class Hap(val context: Context) : HAPImplBase(), Closeable {
         scope.cancel()
     }
 
+    companion object {
+        private fun toProtoPresetRecord(presetInfo: BluetoothHapPresetInfo): PresetRecord {
+            return PresetRecord.newBuilder()
+                .setIndex(presetInfo.getIndex())
+                .setName(presetInfo.getName())
+                .setIsWritable(presetInfo.isWritable())
+                .setIsAvailable(presetInfo.isAvailable())
+                .build()
+        }
+    }
+
     override fun getFeatures(
         request: GetFeaturesRequest,
         responseObserver: StreamObserver<GetFeaturesResponse>,
@@ -146,54 +154,41 @@ class Hap(val context: Context) : HAPImplBase(), Closeable {
         }
     }
 
-    override fun getPresetRecord(
-        request: GetPresetRecordRequest,
-        responseObserver: StreamObserver<GetPresetRecordResponse>,
+    override fun getPreset(
+        request: GetPresetRequest,
+        responseObserver: StreamObserver<GetPresetResponse>,
     ) {
-        grpcUnary<GetPresetRecordResponse>(scope, responseObserver) {
+        grpcUnary<GetPresetResponse>(scope, responseObserver) {
             val device = request.connection.toBluetoothDevice(bluetoothAdapter)
-            Log.i(TAG, "getPresetRecord($device, ${request.index})")
+            Log.i(TAG, "getPreset($device, ${request.index})")
 
             val presetInfo: BluetoothHapPresetInfo? =
                 bluetoothHapClient.getPresetInfo(device, request.index)
 
-            if (presetInfo != null) {
-                GetPresetRecordResponse.newBuilder()
-                    .setPresetRecord(
-                        PresetRecord.newBuilder()
-                            .setIndex(presetInfo.getIndex())
-                            .setName(presetInfo.getName())
-                            .setIsWritable(presetInfo.isWritable())
-                            .setIsAvailable(presetInfo.isAvailable())
-                    )
-                    .build()
+            if (presetInfo == null) {
+                GetPresetResponse.getDefaultInstance()
             } else {
-                GetPresetRecordResponse.getDefaultInstance()
+                GetPresetResponse.newBuilder()
+                    .setPresetRecord(toProtoPresetRecord(presetInfo))
+                    .build()
             }
         }
     }
 
-    override fun getAllPresetRecords(
-        request: GetAllPresetRecordsRequest,
-        responseObserver: StreamObserver<GetAllPresetRecordsResponse>,
+    override fun getAllPresets(
+        request: GetAllPresetsRequest,
+        responseObserver: StreamObserver<GetAllPresetsResponse>,
     ) {
-        grpcUnary<GetAllPresetRecordsResponse>(scope, responseObserver) {
+        grpcUnary<GetAllPresetsResponse>(scope, responseObserver) {
             val device = request.connection.toBluetoothDevice(bluetoothAdapter)
-            Log.i(TAG, "getAllPresetRecords(${device})")
+            Log.i(TAG, "getAllPresets(${device})")
 
-            GetAllPresetRecordsResponse.newBuilder()
+            GetAllPresetsResponse.newBuilder()
                 .addAllPresetRecordList(
                     bluetoothHapClient
                         .getAllPresetInfo(device)
                         .stream()
-                        .map { it: BluetoothHapPresetInfo ->
-                            PresetRecord.newBuilder()
-                                .setIndex(it.getIndex())
-                                .setName(it.getName())
-                                .setIsWritable(it.isWritable())
-                                .setIsAvailable(it.isAvailable())
-                                .build()
-                        }
+                        .map(Hap::toProtoPresetRecord)
                         .toList()
                 )
                 .build()
@@ -228,28 +223,22 @@ class Hap(val context: Context) : HAPImplBase(), Closeable {
         }
     }
 
-    override fun getActivePresetRecord(
-        request: GetActivePresetRecordRequest,
-        responseObserver: StreamObserver<GetActivePresetRecordResponse>,
+    override fun getActivePreset(
+        request: GetActivePresetRequest,
+        responseObserver: StreamObserver<GetActivePresetResponse>,
     ) {
-        grpcUnary<GetActivePresetRecordResponse>(scope, responseObserver) {
+        grpcUnary<GetActivePresetResponse>(scope, responseObserver) {
             val device = request.connection.toBluetoothDevice(bluetoothAdapter)
-            Log.i(TAG, "GetActivePresetRecord($device)")
+            Log.i(TAG, "GetActivePreset($device)")
 
             val presetInfo: BluetoothHapPresetInfo? = bluetoothHapClient.getActivePresetInfo(device)
 
-            if (presetInfo != null) {
-                GetActivePresetRecordResponse.newBuilder()
-                    .setPresetRecord(
-                        PresetRecord.newBuilder()
-                            .setIndex(presetInfo.getIndex())
-                            .setName(presetInfo.getName())
-                            .setIsWritable(presetInfo.isWritable())
-                            .setIsAvailable(presetInfo.isAvailable())
-                    )
-                    .build()
+            if (presetInfo == null) {
+                GetActivePresetResponse.getDefaultInstance()
             } else {
-                GetActivePresetRecordResponse.getDefaultInstance()
+                GetActivePresetResponse.newBuilder()
+                    .setPresetRecord(toProtoPresetRecord(presetInfo))
+                    .build()
             }
         }
     }
@@ -288,22 +277,15 @@ class Hap(val context: Context) : HAPImplBase(), Closeable {
     ) {
         grpcUnary<WaitPresetChangedResponse>(scope, responseObserver) {
             val presetChangedReceived = mPresetChanged.first()!!
-            val presetRecordList = arrayListOf<PresetRecord>()
-
-            for (presetRecord in presetChangedReceived.presetInfoList) {
-                presetRecordList.add(
-                    PresetRecord.newBuilder()
-                        .setIndex(presetRecord.getIndex())
-                        .setName(presetRecord.getName())
-                        .setIsWritable(presetRecord.isWritable())
-                        .setIsAvailable(presetRecord.isAvailable())
-                        .build()
-                )
-            }
 
             WaitPresetChangedResponse.newBuilder()
                 .setConnection(presetChangedReceived.connection)
-                .addAllPresetRecordList(presetRecordList)
+                .addAllPresetRecordList(
+                    presetChangedReceived.presetInfoList
+                        .stream()
+                        .map(Hap::toProtoPresetRecord)
+                        .toList()
+                )
                 .setReason(presetChangedReceived.reason)
                 .build()
         }
