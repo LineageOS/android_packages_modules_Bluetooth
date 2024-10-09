@@ -2718,7 +2718,7 @@ impl IBluetooth for Bluetooth {
                     if UuidHelper::is_profile_supported(&p) {
                         match p {
                             Profile::Hid | Profile::Hogp => {
-                                self.hh.as_ref().unwrap().disconnect(&mut addr.unwrap());
+                                self.hh.as_ref().unwrap().disconnect(&mut addr.unwrap(), true);
                             }
 
                             Profile::A2dpSink
@@ -2889,7 +2889,7 @@ impl BtifHHCallbacks for Bluetooth {
                 "[{}]: Rejecting a unbonded device's attempt to connect to HID/HOG profiles",
                 DisplayAddress(&address)
             );
-            self.hh.as_ref().unwrap().disconnect(&mut address);
+            self.hh.as_ref().unwrap().disconnect(&mut address, true);
         }
     }
 
