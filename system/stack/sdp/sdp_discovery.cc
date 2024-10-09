@@ -596,6 +596,15 @@ static void process_service_search_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
     uint8_t* p;
     uint16_t bytes_left = SDP_DATA_BUF_SIZE;
 
+    /* If we don't have a valid discovery database, we can't do anything. */
+    if (p_ccb->p_db == NULL) {
+      SDP_TRACE_WARNING(
+          "Attempted continuation or first time request with invalid discovery "
+          "database");
+      sdp_disconnect(p_ccb, tSDP_STATUS::SDP_INVALID_CONT_STATE);
+      return;
+    }
+
     p_msg->offset = L2CAP_MIN_OFFSET;
     p = p_start = (uint8_t*)(p_msg + 1) + L2CAP_MIN_OFFSET;
 
