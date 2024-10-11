@@ -114,6 +114,8 @@ using bluetooth::groups::DeviceGroups;
 #define BTIF_STORAGE_LEAUDIO_SOURCE_SUPPORTED_CONTEXT_TYPE \
   "SourceSupportedContextType"
 
+#define BTIF_STORAGE_KEY_HID_RECONNECT_ALLOWED "HidReConnectAllowed"
+
 /* This is a local property to add a device found */
 #define BT_PROPERTY_REMOTE_DEVICE_TIMESTAMP 0xFF
 
@@ -1515,6 +1517,49 @@ bool btif_storage_get_remote_device_type(const RawAddress& remote_bd_addr,
 
 /*******************************************************************************
  *
+ * Function         btif_storage_set_hid_connection_policy
+ *
+ * Description      Stores connection policy info in nvram
+ *
+ * Returns          BT_STATUS_SUCCESS
+ *
+ ******************************************************************************/
+bt_status_t btif_storage_set_hid_connection_policy(const RawAddress& addr,
+                                                   bool reconnect_allowed) {
+  std::string bdstr = addr.ToString();
+
+  if (btif_config_set_int(bdstr, BTIF_STORAGE_KEY_HID_RECONNECT_ALLOWED,
+                          reconnect_allowed)) {
+    return BT_STATUS_SUCCESS;
+  } else {
+    return BT_STATUS_FAIL;
+  }
+}
+
+/*******************************************************************************
+ *
+ * Function         btif_storage_get_hid_connection_policy
+ *
+ * Description      get connection policy info from nvram
+ *
+ * Returns          BT_STATUS_SUCCESS
+ *
+ ******************************************************************************/
+bt_status_t btif_storage_get_hid_connection_policy(const RawAddress& addr,
+                                                   bool* reconnect_allowed) {
+  std::string bdstr = addr.ToString();
+
+  // For backward compatibility, assume that the reconnection is allowed in the
+  // absence of the key
+  int value = 1;
+  btif_config_get_int(bdstr, BTIF_STORAGE_KEY_HID_RECONNECT_ALLOWED, &value);
+  *reconnect_allowed = (value != 0);
+
+  return BT_STATUS_SUCCESS;
+}
+
+/*******************************************************************************
+ *
  * Function         btif_storage_add_hid_device_info
  *
  * Description      BTIF storage API - Adds the hid information of bonded hid
@@ -1608,8 +1653,11 @@ bt_status_t btif_storage_load_bonded_hid_info(void) {
                           (uint8_t*)dscp_info.descriptor.dsc_list, &len);
     }
 
+    bool reconnect_allowed = false;
+    btif_storage_get_hid_connection_policy(bd_addr, &reconnect_allowed);
+
     // add extracted information to BTA HH
-    if (btif_hh_add_added_dev(bd_addr, attr_mask)) {
+    if (btif_hh_add_added_dev(bd_addr, attr_mask, reconnect_allowed)) {
       BTA_HhAddDev(bd_addr, attr_mask, sub_class, app_id, dscp_info);
     }
   }
@@ -1641,6 +1689,7 @@ bt_status_t btif_storage_remove_hid_info(const RawAddress& remote_bd_addr) {
   btif_config_remove(bdstr, "HidSSRMaxLatency");
   btif_config_remove(bdstr, "HidSSRMinTimeout");
   btif_config_remove(bdstr, "HidDescriptor");
+  btif_config_remove(bdstr, BTIF_STORAGE_KEY_HID_RECONNECT_ALLOWED);
   btif_config_save();
   return BT_STATUS_SUCCESS;
 }
