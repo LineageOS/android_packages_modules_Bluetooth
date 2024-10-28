@@ -1,0 +1,31 @@
+[package]
+name = "lhdcv5"
+version = "0.1.0"
+rust-version = "1.82"
+edition = "2021"
+
+[dependencies]
+env_logger = "0.10.2"
+libc = "0.2"
+log = "0.4.27"
+thiserror = "2.0.11"
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["fmt"] }
+zerocopy = { version = "0.8.14", features = ["derive"] }
+
+[lib]
+crate-type = ["rlib", "cdylib"]
+
+[[bin]]
+name = "simulator"
+
+[profile.dev]
+overflow-checks = false
+opt-level = 0
+
+[profile.release]
+overflow-checks = false
+opt-level = 0
+
+[build]
+rustflags = ["-C", "target-feature=-fma"]

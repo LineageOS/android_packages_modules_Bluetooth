@@ -263,6 +263,9 @@ protected:
         case BTAV_A2DP_CODEC_INDEX_SOURCE_OPUS:
           supported = true;
           break;
+        case BTAV_A2DP_CODEC_INDEX_SOURCE_LHDCV5:
+          supported = true;
+          break;
         case BTAV_A2DP_CODEC_INDEX_SINK_SBC:
         case BTAV_A2DP_CODEC_INDEX_SINK_AAC:
         case BTAV_A2DP_CODEC_INDEX_SINK_OPUS:

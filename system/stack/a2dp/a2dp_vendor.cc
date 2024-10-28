@@ -34,6 +34,8 @@
 #include "a2dp_vendor_aptx_hd_constants.h"
 #include "a2dp_vendor_ldac.h"
 #include "a2dp_vendor_ldac_constants.h"
+#include "a2dp_vendor_lhdcv5.h"
+#include "a2dp_vendor_lhdcv5_constants.h"
 #include "a2dp_vendor_opus.h"
 #include "a2dp_vendor_opus_constants.h"
 #include "avdt_api.h"
@@ -64,6 +66,11 @@ bool A2DP_IsVendorSourceCodecValid(const uint8_t* p_codec_info) {
   // Check for Opus
   if (vendor_id == A2DP_OPUS_VENDOR_ID && codec_id == A2DP_OPUS_CODEC_ID) {
     return A2DP_IsCodecValidOpus(p_codec_info);
+  }
+
+  // Check for LHDCv5
+  if (vendor_id == A2DP_LHDC_VENDOR_ID && codec_id == A2DP_LHDCV5_CODEC_ID) {
+    return A2DP_IsCodecValidLhdcV5(p_codec_info);
   }
 
   // Add checks based on <vendor_id, codec_id>
@@ -117,6 +124,11 @@ bool A2DP_IsVendorPeerSinkCodecValid(const uint8_t* p_codec_info) {
     return A2DP_IsCodecValidOpus(p_codec_info);
   }
 
+  // Check for LHDCv5
+  if (vendor_id == A2DP_LHDC_VENDOR_ID && codec_id == A2DP_LHDCV5_CODEC_ID) {
+    return A2DP_IsCodecValidLhdcV5(p_codec_info);
+  }
+
   // Add checks based on <vendor_id, codec_id>
 
   return false;
@@ -159,6 +171,11 @@ bool A2DP_VendorUsesRtpHeader(bool content_protection_enabled, const uint8_t* p_
   // Check for Opus
   if (vendor_id == A2DP_OPUS_VENDOR_ID && codec_id == A2DP_OPUS_CODEC_ID) {
     return A2DP_VendorUsesRtpHeaderOpus(content_protection_enabled, p_codec_info);
+  }
+
+  // Check for LHDCv5
+  if (vendor_id == A2DP_LHDC_VENDOR_ID && codec_id == A2DP_LHDCV5_CODEC_ID) {
+    return A2DP_VendorUsesRtpHeaderLhdcV5(content_protection_enabled, p_codec_info);
   }
 
   // Add checks based on <content_protection_enabled, vendor_id, codec_id>
@@ -230,6 +247,11 @@ bool A2DP_VendorCodecTypeEquals(const uint8_t* p_codec_info_a, const uint8_t* p_
   // Check for Opus
   if (vendor_id_a == A2DP_OPUS_VENDOR_ID && codec_id_a == A2DP_OPUS_CODEC_ID) {
     return A2DP_VendorCodecTypeEqualsOpus(p_codec_info_a, p_codec_info_b);
+  }
+
+  // Check for LHDCv5
+  if (vendor_id_a == A2DP_LHDC_VENDOR_ID && codec_id_a == A2DP_LHDCV5_CODEC_ID) {
+    return A2DP_VendorCodecTypeEqualsLhdcV5(p_codec_info_a, p_codec_info_b);
   }
 
   // OPTIONAL: Add extra vendor-specific checks based on the
@@ -307,6 +329,11 @@ bool A2DP_VendorBuildCodecHeader(const uint8_t* p_codec_info, BT_HDR* p_buf,
     return A2DP_VendorBuildCodecHeaderOpus(p_codec_info, p_buf, frames_per_packet);
   }
 
+  // Check for LHDCv5
+  if (vendor_id == A2DP_LHDC_VENDOR_ID && codec_id == A2DP_LHDCV5_CODEC_ID) {
+    return A2DP_VendorBuildCodecHeaderLhdcV5(p_codec_info, p_buf, frames_per_packet);
+  }
+
   // Add checks based on <vendor_id, codec_id>
 
   return false;
@@ -334,6 +361,11 @@ const tA2DP_ENCODER_INTERFACE* A2DP_VendorGetEncoderInterface(const uint8_t* p_c
   // Check for Opus
   if (vendor_id == A2DP_OPUS_VENDOR_ID && codec_id == A2DP_OPUS_CODEC_ID) {
     return A2DP_VendorGetEncoderInterfaceOpus(p_codec_info);
+  }
+
+  // Check for LHDCv5
+  if (vendor_id == A2DP_LHDC_VENDOR_ID && codec_id == A2DP_LHDCV5_CODEC_ID) {
+    return A2DP_VendorGetEncoderInterfaceLhdcV5(p_codec_info);
   }
 
   // Add checks based on <vendor_id, codec_id>
@@ -380,6 +412,11 @@ bool A2DP_VendorAdjustCodec(uint8_t* p_codec_info) {
     return A2DP_VendorAdjustCodecOpus(p_codec_info);
   }
 
+  // Check for LHDCv5
+  if (vendor_id == A2DP_LHDC_VENDOR_ID && codec_id == A2DP_LHDCV5_CODEC_ID) {
+    return A2DP_VendorAdjustCodecLhdcV5(p_codec_info);
+  }
+
   // Add checks based on <vendor_id, codec_id>
 
   return false;
@@ -407,6 +444,11 @@ btav_a2dp_codec_index_t A2DP_VendorSourceCodecIndex(const uint8_t* p_codec_info)
   // Check for Opus
   if (vendor_id == A2DP_OPUS_VENDOR_ID && codec_id == A2DP_OPUS_CODEC_ID) {
     return A2DP_VendorSourceCodecIndexOpus(p_codec_info);
+  }
+
+  // Check for LHDCv5
+  if (vendor_id == A2DP_LHDC_VENDOR_ID && codec_id == A2DP_LHDCV5_CODEC_ID) {
+    return A2DP_VendorSourceCodecIndexLhdcV5(p_codec_info);
   }
 
   // Add checks based on <vendor_id, codec_id>
@@ -449,6 +491,8 @@ const char* A2DP_VendorCodecIndexStr(btav_a2dp_codec_index_t codec_index) {
       return A2DP_VendorCodecIndexStrOpus();
     case BTAV_A2DP_CODEC_INDEX_SINK_OPUS:
       return A2DP_VendorCodecIndexStrOpusSink();
+    case BTAV_A2DP_CODEC_INDEX_SOURCE_LHDCV5:
+      return A2DP_VendorCodecIndexStrLhdcV5();
     // Add a switch statement for each vendor-specific codec
     case BTAV_A2DP_CODEC_INDEX_MAX:
       break;
@@ -480,6 +524,8 @@ bool A2DP_VendorInitCodecConfig(btav_a2dp_codec_index_t codec_index, AvdtpSepCon
       return A2DP_VendorInitCodecConfigOpus(p_cfg);
     case BTAV_A2DP_CODEC_INDEX_SINK_OPUS:
       return A2DP_VendorInitCodecConfigOpusSink(p_cfg);
+    case BTAV_A2DP_CODEC_INDEX_SOURCE_LHDCV5:
+      return A2DP_VendorInitCodecConfigLhdcV5(p_cfg);
     // Add a switch statement for each vendor-specific codec
     case BTAV_A2DP_CODEC_INDEX_MAX:
       break;
@@ -513,6 +559,11 @@ std::string A2DP_VendorCodecInfoString(const uint8_t* p_codec_info) {
   // Check for Opus
   if (vendor_id == A2DP_OPUS_VENDOR_ID && codec_id == A2DP_OPUS_CODEC_ID) {
     return A2DP_VendorCodecInfoStringOpus(p_codec_info);
+  }
+
+  // Check for LHDCv5
+  if (vendor_id == A2DP_LHDC_VENDOR_ID && codec_id == A2DP_LHDCV5_CODEC_ID) {
+    return A2DP_VendorCodecInfoStringLhdcV5(p_codec_info);
   }
 
   // Add checks based on <vendor_id, codec_id>

@@ -1437,7 +1437,8 @@ static bool bta_av_co_should_select_hardware_codec(
   // Prioritize LDAC, AptX HD and AptX over AAC and SBC offload codecs
   if (software_codec_index == BTAV_A2DP_CODEC_INDEX_SOURCE_LDAC ||
       software_codec_index == BTAV_A2DP_CODEC_INDEX_SOURCE_APTX_HD ||
-      software_codec_index == BTAV_A2DP_CODEC_INDEX_SOURCE_APTX) {
+      software_codec_index == BTAV_A2DP_CODEC_INDEX_SOURCE_APTX ||
+      software_codec_index == BTAV_A2DP_CODEC_INDEX_SOURCE_LHDCV5) {
     log::verbose("select software codec: {}", A2DP_CodecIndexStr(software_codec_index));
     return false;
   }
