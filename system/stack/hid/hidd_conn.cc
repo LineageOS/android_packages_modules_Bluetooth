@@ -88,10 +88,12 @@ static void hidd_check_config_done() {
 
     // send outstanding data on intr
     if (hd_cb.pending_data) {
+      uint16_t len = hd_cb.pending_data->len;
+
       if (stack::l2cap::get_interface().L2CA_DataWrite(p_hcon->intr_cid, hd_cb.pending_data) !=
           tL2CAP_DW_RESULT::SUCCESS) {
         log::warn("Unable to write L2CAP data cid:{} len:{}", p_hcon->intr_cid,
-                  hd_cb.pending_data->len);
+                  len);
       }
       hd_cb.pending_data = NULL;
     }
