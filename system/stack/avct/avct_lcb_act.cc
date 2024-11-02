@@ -725,10 +725,13 @@ void avct_lcb_msg_ind(tAVCT_LCB* p_lcb, tAVCT_LCB_EVT* p_data) {
     p = (uint8_t*)(p_buf + 1) + p_buf->offset;
     AVCT_BUILD_HDR(p, label, AVCT_PKT_TYPE_SINGLE, AVCT_REJ);
     UINT16_TO_BE_STREAM(p, pid);
+
+    uint16_t len = p_buf->len;
+
     if (stack::l2cap::get_interface().L2CA_DataWrite(p_lcb->ch_lcid, p_buf) !=
         tL2CAP_DW_RESULT::SUCCESS) {
       log::warn("Unable to write L2CAP data peer:{} cid:{} len:{}", p_lcb->peer_addr,
-                p_lcb->ch_lcid, p_buf->len);
+                p_lcb->ch_lcid, len);
     }
   }
 }

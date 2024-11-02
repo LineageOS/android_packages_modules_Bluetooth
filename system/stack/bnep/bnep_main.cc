@@ -295,10 +295,12 @@ static void bnep_congestion_ind(uint16_t l2cap_cid, bool is_congested) {
         break;
       }
 
+      uint16_t len = p_buf->len;
+
       if (stack::l2cap::get_interface().L2CA_DataWrite(l2cap_cid, p_buf) !=
           tL2CAP_DW_RESULT::SUCCESS) {
         log::warn("Unable to write L2CAP data peer:{} cid:{} len:{}", p_bcb->rem_bda, l2cap_cid,
-                  p_buf->len);
+                  len);
       }
     }
   }
