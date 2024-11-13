@@ -19,16 +19,6 @@ flag {
 }
 
 flag {
-  name: "btsec_check_valid_discovery_database"
-  namespace: "bluetooth"
-  description: "Check for a valid discovery database before using it, and don't set up a discovery database for a new HF client if one has already been defined for it"
-  bug: "356201480"
-  metadata {
-    purpose: PURPOSE_BUGFIX
-  }
-}
-
-flag {
   name: "le_enc_on_reconnect"
   namespace: "bluetooth"
   description: "Encrypt LE link on reconnection with bonded devices"
