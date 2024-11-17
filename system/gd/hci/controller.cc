@@ -32,7 +32,9 @@ namespace bluetooth {
 namespace hci {
 
 static const char kPropertyDisabledCommands[] =
-    "bluetooth.hci.disabled_commands";
+    "bluetooth.hci.disabled_commands";    
+static const char kPropertyVendorCapabilitiesMax[] =
+    "bluetooth.hci.max_vendor_cap";
 
 using os::Handler;
 
@@ -450,7 +452,13 @@ struct Controller::impl {
     vendor_capabilities_.bluetooth_quality_report_support_ = 0x00;
 
     if (complete_view.IsValid()) {
-      vendor_capabilities_.is_supported_ = 0x01;
+      vendor_capabilities_.is_supported_ = 0x01;      
+      int vendor_cap_max = 0xffff;
+      std::string vendor_cap_max_prop = os::GetSystemProperty(kPropertyVendorCapabilitiesMax).value_or("");
+      if (vendor_cap_max_prop != "") {
+          vendor_cap_max = std::stoi(vendor_cap_max_prop);
+      }      
+      if (vendor_cap_max < 55) return;
 
       // v0.55
       BaseVendorCapabilities base_vendor_capabilities = complete_view.GetBaseVendorCapabilities();
@@ -465,7 +473,8 @@ struct Controller::impl {
       if (complete_view.GetPayload().size() == 0) {
         vendor_capabilities_.version_supported_ = 55;
         return;
-      }
+      }      
+      if (vendor_cap_max < 95) return;
 
       // v0.95
       auto v95 = LeGetVendorCapabilitiesComplete095View::Create(complete_view);
@@ -479,7 +488,8 @@ struct Controller::impl {
       vendor_capabilities_.debug_logging_supported_ = v95.GetDebugLoggingSupported();
       if (vendor_capabilities_.version_supported_ <= 95 || complete_view.GetPayload().size() == 0) {
         return;
-      }
+      }      
+      if (vendor_cap_max < 96) return;
 
       // v0.96
       auto v96 = LeGetVendorCapabilitiesComplete096View::Create(v95);
@@ -490,7 +500,8 @@ struct Controller::impl {
       vendor_capabilities_.le_address_generation_offloading_support_ = v96.GetLeAddressGenerationOffloadingSupport();
       if (vendor_capabilities_.version_supported_ <= 96 || complete_view.GetPayload().size() == 0) {
         return;
-      }
+      }      
+      if (vendor_cap_max < 98) return;
 
       // v0.98
       auto v98 = LeGetVendorCapabilitiesComplete098View::Create(v96);
