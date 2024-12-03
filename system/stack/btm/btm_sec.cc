@@ -3273,8 +3273,10 @@ void btm_sec_encrypt_change(uint16_t handle, tHCI_STATUS status, uint8_t encr_en
         /* BR/EDR is encrypted with LK that can be used to derive LE LTK */
         p_dev_rec->sec_rec.new_encryption_key_is_p256 = false;
 
-        log::verbose("start SM over BR/EDR");
-        SMP_BR_PairWith(p_dev_rec->bd_addr);
+        if (!interop_match_addr(INTEROP_DISABLE_OUTGOING_BR_SMP, &p_dev_rec->bd_addr)) {
+          log::verbose("start SM over BR/EDR");
+          SMP_BR_PairWith(p_dev_rec->bd_addr);
+        }
       }
     }
   }
