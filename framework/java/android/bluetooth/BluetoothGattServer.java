@@ -450,39 +450,26 @@ public final class BluetoothGattServer implements BluetoothProfile {
                 }
 
                 /**
-                 * Callback invoked when the given connection's subrate parameters are changed
+                 * Callback invoked when the given connection's subrating is changed
                  *
                  * @hide
                  */
                 @Override
                 @RequiresNoPermission // Callback to app
-                public void onSubrateChange(
-                        BluetoothDevice device,
-                        int subrateFactor,
-                        int latency,
-                        int contNum,
-                        int timeout,
-                        int status) {
+                public void onSubrateChange(BluetoothDevice device, int subrateMode, int status) {
                     Log.d(
                             TAG,
                             "onSubrateChange() - "
                                     + "device="
                                     + device
-                                    + ", subrateFactor="
-                                    + subrateFactor
-                                    + ", latency="
-                                    + latency
-                                    + ", contNum="
-                                    + contNum
-                                    + ", timeout="
-                                    + timeout
+                                    + ", subrateMode="
+                                    + subrateMode
                                     + ", status="
                                     + status);
 
                     Attributable.setAttributionSource(device, mAttributionSource);
                     try {
-                        mCallback.onSubrateChange(
-                                device, subrateFactor, latency, contNum, timeout, status);
+                        mCallback.onSubrateChange(device, subrateMode, status);
                     } catch (Exception ex) {
                         Log.w(TAG, "Unhandled exception: " + ex);
                     }

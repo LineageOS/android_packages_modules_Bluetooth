@@ -84,6 +84,7 @@ public class CompanionManager {
     static final String PROPERTY_DCK_MIN_INTERVAL = "bluetooth.gatt.dck_priority_min.interval";
     static final String PROPERTY_DCK_MAX_INTERVAL = "bluetooth.gatt.dck_priority_max.interval";
     static final String PROPERTY_DCK_LATENCY = "bluetooth.gatt.dck_priority.latency";
+
     static final String PROPERTY_SUFFIX_PRIMARY = ".primary";
     static final String PROPERTY_SUFFIX_SECONDARY = ".secondary";
 
