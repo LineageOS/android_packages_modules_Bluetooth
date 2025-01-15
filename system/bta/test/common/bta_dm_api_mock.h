@@ -31,6 +31,7 @@ public:
   virtual void BTA_DmBleCsisObserve(bool observe, tBTA_DM_SEARCH_CBACK* p_results_cb) = 0;
   virtual void BTA_DmSirkSecCbRegister(tBTA_DM_SEC_CBACK* p_cback) = 0;
   virtual void BTA_DmSirkConfirmDeviceReply(const RawAddress& bd_addr, bool accept) = 0;
+  virtual void BTA_DmBleAuthCmplCbRegister(tBTA_DM_SEC_CBACK* p_cback) = 0;
   virtual ~BtaDmInterface() = default;
 };
 
@@ -40,6 +41,7 @@ public:
   MOCK_METHOD((void), BTA_DmBleCsisObserve, (bool observe, tBTA_DM_SEARCH_CBACK* p_results_cb));
   MOCK_METHOD((void), BTA_DmSirkSecCbRegister, (tBTA_DM_SEC_CBACK * p_cback));
   MOCK_METHOD((void), BTA_DmSirkConfirmDeviceReply, (const RawAddress& bd_addr, bool accept));
+  MOCK_METHOD((void), BTA_DmBleAuthCmplCbRegister, (tBTA_DM_SEC_CBACK * p_cback));
 };
 
 /**
