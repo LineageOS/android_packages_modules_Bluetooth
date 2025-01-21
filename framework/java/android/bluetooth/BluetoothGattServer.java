@@ -20,6 +20,7 @@ import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
+import android.annotation.FlaggedApi;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
@@ -31,6 +32,8 @@ import android.os.IBinder;
 import android.os.ParcelUuid;
 import android.os.RemoteException;
 import android.util.Log;
+
+import com.android.bluetooth.flags.Flags;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -456,6 +459,7 @@ public final class BluetoothGattServer implements BluetoothProfile {
                  */
                 @Override
                 @RequiresNoPermission // Callback to app
+                @FlaggedApi(Flags.FLAG_LE_SUBRATE_API)
                 public void onSubrateChange(BluetoothDevice device, int subrateMode, int status) {
                     Log.d(
                             TAG,

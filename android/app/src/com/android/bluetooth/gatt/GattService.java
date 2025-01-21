@@ -644,7 +644,7 @@ public class GattService extends ProfileService {
 
     void onClientSubrateChangeFromNative(
             int connId, int subrateFactor, int latency, int contNum, int timeout, int status) {
-        Log.d(TAG, "onClientSubrateChange() V2 - connId=" + connId + ", status=" + status);
+        Log.d(TAG, "onClientSubrateChange() - connId=" + connId + ", status=" + status);
 
         int subrateMode;
 
@@ -1871,7 +1871,7 @@ public class GattService extends ProfileService {
 
     void onServerSubrateChangeFromNative(
             int connId, int subrateFactor, int latency, int contNum, int timeout, int status) {
-        Log.d(TAG, "onServerSubrateChange() V2 - connId=" + connId + ", status=" + status);
+        Log.d(TAG, "onServerSubrateChange() - connId=" + connId + ", status=" + status);
 
         int subrateMode;
 

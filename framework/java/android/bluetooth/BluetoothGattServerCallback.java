@@ -16,7 +16,10 @@
 
 package android.bluetooth;
 
+import android.annotation.FlaggedApi;
 import android.annotation.NonNull;
+
+import com.android.bluetooth.flags.Flags;
 
 /** This abstract class is used to implement {@link BluetoothGattServer} callbacks. */
 public abstract class BluetoothGattServerCallback {
@@ -200,8 +203,8 @@ public abstract class BluetoothGattServerCallback {
      * @param subrateMode for this LE connection.
      * @param status {@link BluetoothGatt#GATT_SUCCESS} if the connection subrating has been updated
      *     successfully
-     * @hide
      */
+    @FlaggedApi(Flags.FLAG_LE_SUBRATE_API)
     public void onSubrateChange(
             @NonNull BluetoothDevice device,
             @BluetoothGatt.OnSubrateChangeModeValues int subrateMode,
