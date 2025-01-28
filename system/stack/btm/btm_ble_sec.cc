@@ -1147,6 +1147,10 @@ tBTM_STATUS btm_ble_set_encryption(const RawAddress& bd_addr, tBTM_BLE_SEC_ACT s
 
   switch (sec_act) {
     case BTM_BLE_SEC_ENCRYPT:
+      if (p_rec->sec_rec.is_le_device_encrypted()) {
+        return tBTM_STATUS::BTM_SUCCESS;
+      }
+
       if (link_role == HCI_ROLE_CENTRAL) {
         /* start link layer encryption using the security info stored */
         cmd = btm_ble_start_encrypt(bd_addr, false, NULL);
@@ -1584,6 +1588,34 @@ void btm_ble_connection_established(const RawAddress& bda) {
   }
 }
 
+static bool btm_ble_complete_evt_ignore(const tBTM_SEC_DEV_REC* p_dev_rec,
+                                        const tBTM_LE_EVT_DATA* p_data) {
+  if (!com::android::bluetooth::flags::bonded_device_smp_failure_handling()) {
+    return false;
+  }
+  // Encryption request in peripheral role results in SMP Security request. SMP may generate a
+  // SMP_COMPLT_EVT failure event cases like below:
+  // 1) Some central devices don't handle cross-over between encryption and SMP security request
+  // 2) Link may get disconnected after the SMP security request was sent.
+  if (p_data->complt.reason != SMP_SUCCESS && !p_dev_rec->role_central &&
+      btm_sec_cb.pairing_bda != p_dev_rec->bd_addr &&
+      btm_sec_cb.pairing_bda != p_dev_rec->ble.pseudo_addr &&
+      p_dev_rec->sec_rec.is_le_link_key_known() &&
+      p_dev_rec->sec_rec.ble_keys.key_type != BTM_LE_KEY_NONE) {
+    if (p_dev_rec->sec_rec.is_le_device_encrypted()) {
+      log::warn("Bonded device {} is already encrypted, ignoring SMP failure", p_dev_rec->bd_addr);
+      return true;
+    } else if (p_data->complt.reason == SMP_CONN_TOUT) {
+      log::warn("Bonded device {} disconnected while waiting for encryption, ignoring SMP failure",
+                p_dev_rec->bd_addr);
+      l2cu_start_post_bond_timer(p_dev_rec->ble_hci_handle);
+      return true;
+    }
+  }
+
+  return false;
+}
+
 static void btm_ble_user_confirmation_req(const RawAddress& bd_addr, tBTM_SEC_DEV_REC* p_dev_rec,
                                           tBTM_LE_EVT event, tBTM_LE_EVT_DATA* p_data) {
   p_dev_rec->sec_rec.sec_flags |= BTM_SEC_LE_AUTHENTICATED;
@@ -1613,6 +1645,11 @@ static void btm_ble_consent_req(const RawAddress& bd_addr, tBTM_LE_EVT_DATA* p_d
 
 static void btm_ble_complete_evt(const RawAddress& bd_addr, tBTM_SEC_DEV_REC* p_dev_rec,
                                  tBTM_LE_EVT_DATA* p_data) {
+
+  if (btm_ble_complete_evt_ignore(p_dev_rec, p_data)) {
+    return;
+  }
+
   BTM_BLE_SEC_CALLBACK(BTM_LE_COMPLT_EVT, bd_addr, p_data);
 
   log::verbose("before update sec_level=0x{:x} sec_flags=0x{:x}", p_data->complt.sec_level,
