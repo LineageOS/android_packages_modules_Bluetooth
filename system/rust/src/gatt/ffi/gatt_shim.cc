@@ -62,11 +62,11 @@ void GattServerCallbacks::OnServerRead(uint16_t conn_id, uint32_t trans_id, uint
 
   switch (attr_type) {
     case AttributeBackingType::CHARACTERISTIC:
-      do_in_jni_thread(base::BindOnce(callbacks.request_read_characteristic_cb, conn_id, trans_id,
+      do_in_jni_thread(base::BindOnce(callbacks_.request_read_characteristic_cb, conn_id, trans_id,
                                       addr.value(), attr_handle, offset, is_long));
       break;
     case AttributeBackingType::DESCRIPTOR:
-      do_in_jni_thread(base::BindOnce(callbacks.request_read_descriptor_cb, conn_id, trans_id,
+      do_in_jni_thread(base::BindOnce(callbacks_.request_read_descriptor_cb, conn_id, trans_id,
                                       addr.value(), attr_handle, offset, is_long));
       break;
     default:
@@ -95,13 +95,13 @@ void GattServerCallbacks::OnServerWrite(uint16_t conn_id, uint32_t trans_id, uin
   switch (attr_type) {
     case AttributeBackingType::CHARACTERISTIC:
       do_in_jni_thread(base::BindOnce(
-              request_write_with_vec, callbacks.request_write_characteristic_cb, conn_id, trans_id,
+              request_write_with_vec, callbacks_.request_write_characteristic_cb, conn_id, trans_id,
               addr.value(), attr_handle, offset, need_response, is_prepare, std::move(buf)));
       break;
     case AttributeBackingType::DESCRIPTOR:
-      do_in_jni_thread(base::BindOnce(request_write_with_vec, callbacks.request_write_descriptor_cb,
-                                      conn_id, trans_id, addr.value(), attr_handle, offset,
-                                      need_response, is_prepare, std::move(buf)));
+      do_in_jni_thread(base::BindOnce(
+              request_write_with_vec, callbacks_.request_write_descriptor_cb, conn_id, trans_id,
+              addr.value(), attr_handle, offset, need_response, is_prepare, std::move(buf)));
       break;
     default:
       log::fatal("Unexpected backing type {}", attr_type);
@@ -109,7 +109,7 @@ void GattServerCallbacks::OnServerWrite(uint16_t conn_id, uint32_t trans_id, uin
 }
 
 void GattServerCallbacks::OnIndicationSentConfirmation(uint16_t conn_id, int status) const {
-  do_in_jni_thread(base::BindOnce(callbacks.indication_sent_cb, conn_id, status));
+  do_in_jni_thread(base::BindOnce(callbacks_.indication_sent_cb, conn_id, status));
 }
 
 void GattServerCallbacks::OnExecute(uint16_t conn_id, uint32_t trans_id, bool execute) const {
@@ -119,7 +119,7 @@ void GattServerCallbacks::OnExecute(uint16_t conn_id, uint32_t trans_id, bool ex
     return;
   }
 
-  do_in_jni_thread(base::BindOnce(callbacks.request_exec_write_cb, conn_id, trans_id, addr.value(),
+  do_in_jni_thread(base::BindOnce(callbacks_.request_exec_write_cb, conn_id, trans_id, addr.value(),
                                   execute));
 }
 

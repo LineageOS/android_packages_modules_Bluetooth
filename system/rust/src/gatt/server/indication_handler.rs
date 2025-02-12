@@ -18,6 +18,7 @@ pub enum IndicationError {
     DataExceedsMtu {
         /// The actual max payload size permitted
         /// (ATT_MTU - 3, since 3 bytes are needed for the header)
+        #[allow(dead_code)]
         mtu: usize,
     },
     /// The indicated attribute handle does not exist
@@ -25,6 +26,7 @@ pub enum IndicationError {
     /// The indicated attribute does not support indications
     IndicationsNotSupported,
     /// Failed to send the outgoing indication packet
+    #[allow(dead_code)]
     SendError(SendError),
     /// Did not receive a confirmation in the given time (30s)
     ConfirmationTimeout,

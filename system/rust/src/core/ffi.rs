@@ -12,84 +12,21 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// TODO(b/290018030): Remove this and add proper safety comments.
-#![allow(clippy::undocumented_unsafe_blocks)]
-
-use crate::core::{set_disabled_in_test, start, stop};
-
 use cxx::{type_id, ExternType};
 pub use inner::*;
 
-// SAFETY: `GattServerCallbacks` can be passed between threads.
-unsafe impl Send for GattServerCallbacks {}
-
-// SAFETY: `future_t` can be passed between threads.
-unsafe impl Send for Future {}
-
+/// SAFETY: Our Uuid matches the C++ Uuid.
 unsafe impl ExternType for Uuid {
     type Id = type_id!("bluetooth::Uuid");
     type Kind = cxx::kind::Trivial;
 }
 
-unsafe impl ExternType for AddressWithType {
-    type Id = type_id!("bluetooth::core::AddressWithType");
-    type Kind = cxx::kind::Trivial;
-}
-
-#[allow(dead_code, missing_docs, unsafe_op_in_unsafe_fn)]
+#[allow(dead_code)]
 #[cxx::bridge]
 mod inner {
-    #[derive(Debug)]
-    pub enum AddressTypeForFFI {
-        Public,
-        Random,
-    }
-
-    unsafe extern "C++" {
-        include!("osi/include/future.h");
-        include!("src/core/ffi/module.h");
-
-        #[cxx_name = "future_t"]
-        type Future;
-
-        #[namespace = "bluetooth::rust_shim"]
-        #[cxx_name = "FutureReady"]
-        fn future_ready(future: Pin<&mut Future>);
-    }
-
-    #[namespace = "bluetooth::core"]
-    extern "C++" {
-        include!("src/core/ffi/types.h");
-        type AddressWithType = crate::core::address::AddressWithType;
-    }
-
     #[namespace = "bluetooth"]
     extern "C++" {
         include!("types/bluetooth/uuid.h");
         type Uuid = crate::core::uuid::Uuid;
-    }
-
-    #[namespace = "bluetooth::gatt"]
-    unsafe extern "C++" {
-        include!("src/gatt/ffi/gatt_shim.h");
-        type GattServerCallbacks = crate::gatt::GattServerCallbacks;
-    }
-
-    #[namespace = "bluetooth::shim::arbiter"]
-    unsafe extern "C++" {
-        type AclArbiter = crate::gatt::arbiter::ffi::AclArbiter;
-    }
-
-    #[namespace = "bluetooth::rust_shim"]
-    extern "Rust" {
-        fn start(
-            gatt_server_callbacks: UniquePtr<GattServerCallbacks>,
-            acl_arbiter: &'static AclArbiter,
-            on_started: Pin<&'static mut Future>,
-        );
-
-        fn stop();
-
-        fn set_disabled_in_test();
     }
 }

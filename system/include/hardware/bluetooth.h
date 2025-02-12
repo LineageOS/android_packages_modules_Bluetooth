@@ -722,12 +722,6 @@ typedef struct {
   /** Closes the interface. */
   void (*cleanup)(void);
 
-  /** Start Rust Module */
-  void (*start_rust_module)(void);
-
-  /** Stop Rust Module */
-  void (*stop_rust_module)(void);
-
   /** Get all Bluetooth Adapter properties at init */
   int (*get_adapter_properties)(void);
 
