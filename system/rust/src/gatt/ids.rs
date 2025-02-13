@@ -45,11 +45,12 @@ pub struct AdvertiserId(pub u8);
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub struct AttHandle(pub u16);
 
+#[allow(dead_code)]
 impl AttHandle {
     /// The (only) reserved AttHandle
-    pub const _RESERVED: Self = AttHandle(0);
+    pub const RESERVED: Self = AttHandle(0);
     /// The smallest valid AttHandle
-    pub const _MIN: Self = AttHandle(1);
+    pub const MIN: Self = AttHandle(1);
     /// The largest valid AttHandle
-    pub const _MAX: Self = AttHandle(0xFFFF);
+    pub const MAX: Self = AttHandle(0xFFFF);
 }
