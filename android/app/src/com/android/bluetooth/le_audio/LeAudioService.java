@@ -1610,6 +1610,7 @@ public class LeAudioService extends ConnectableProfile {
     public List<BluetoothLeBroadcastMetadata> getAllBroadcastMetadata() {
         return mBroadcastDescriptors.values().stream()
                 .map(s -> s.mMetadata)
+                .filter(m -> m != null)
                 .collect(Collectors.toList());
     }
 

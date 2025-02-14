@@ -660,6 +660,9 @@ public class LeAudioBroadcastServiceTest {
 
         TestUtils.waitForLooperToFinishScheduledTask(Looper.getMainLooper());
 
+        // Before metadata is updated, getAllBroadcastMetadata should not return null element
+        assertThat(mService.getAllBroadcastMetadata()).doesNotContain(null);
+
         // Inject metadata stack event and verify if getter API works as expected
         LeAudioStackEvent state_event =
                 new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_BROADCAST_METADATA_CHANGED);
