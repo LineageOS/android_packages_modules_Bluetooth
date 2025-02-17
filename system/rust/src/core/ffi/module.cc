@@ -20,6 +20,7 @@
 #include <hardware/bt_gatt.h>
 
 #include "btcore/include/module.h"
+#include "stack/arbiter/acl_arbiter.h"
 
 #ifndef TARGET_FLOSS
 #include "src/core/ffi.rs.h"
@@ -65,7 +66,8 @@ future_t* Start() {
     return fut;
   }
   bluetooth::rust_shim::start(
-          std::make_unique<bluetooth::gatt::GattServerCallbacks>(*callbacks->server), *fut);
+          std::make_unique<bluetooth::gatt::GattServerCallbacks>(*callbacks->server),
+          bluetooth::shim::arbiter::GetArbiter(), *fut);
 
   return fut;
 }
