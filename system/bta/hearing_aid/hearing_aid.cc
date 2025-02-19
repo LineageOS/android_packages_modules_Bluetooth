@@ -460,13 +460,14 @@ public:
 
   void Connect(const RawAddress& address) {
     log::info("bd_addr={}", address);
-    hearingDevices.Add(HearingDevice(address, true));
+    hearingDevices.Add(HearingDevice(address));
+
     BTA_GATTC_Open(gatt_if, address, BTM_BLE_DIRECT_CONNECTION, false);
   }
 
   void AddToAcceptlist(const RawAddress& address) {
     log::info("bd_addr={}", address);
-    hearingDevices.Add(HearingDevice(address, true));
+    hearingDevices.Add(HearingDevice(address));
     BTA_GATTC_Open(gatt_if, address, BTM_BLE_BKG_CONNECT_ALLOW_LIST, false);
   }
 
@@ -698,24 +699,14 @@ public:
     if (!success) {
       log::error("encryption failed: bd_addr={}", address);
       BTA_GATTC_Close(hearingDevice->conn_id);
-      if (hearingDevice->first_connection) {
-        callbacks->OnConnectionState(ConnectionState::DISCONNECTED, address);
-      }
+      callbacks->OnConnectionState(ConnectionState::DISCONNECTED, address);
       return;
     }
 
     log::info("encryption successful: bd_addr={}", address);
 
-    if (hearingDevice->audio_control_point_handle && hearingDevice->audio_status_handle &&
-        hearingDevice->audio_status_ccc_handle && hearingDevice->volume_handle &&
-        hearingDevice->read_psm_handle) {
-      // Use cached data, jump to read PSM
-      ReadPSM(hearingDevice);
-    } else {
-      log::info("starting service search request for ASHA: bd_addr={}", address);
-      hearingDevice->first_connection = true;
-      BTA_GATTC_ServiceSearchRequest(hearingDevice->conn_id, HEARING_AID_UUID);
-    }
+    log::info("starting service search request for ASHA: bd_addr={}", address);
+    BTA_GATTC_ServiceSearchRequest(hearingDevice->conn_id, HEARING_AID_UUID);
   }
 
   // Just take care phy update successful case to avoid loop executing.
@@ -761,7 +752,7 @@ public:
 
     log::info("bd_addr={}", address);
 
-    hearingDevice->first_connection = true;
+    hearingDevice->stale_storage = true;
     hearingDevice->service_changed_rcvd = true;
     BtaGattQueue::Clean(hearingDevice->conn_id);
 
@@ -796,19 +787,10 @@ public:
       return;
     }
 
-    // Known device, nothing to do.
-    if (!hearingDevice->first_connection) {
-      log::info("service discovery result ignored: bd_addr={}", hearingDevice->address);
-      return;
-    }
-
     if (status != GATT_SUCCESS) {
       /* close connection and report service discovery complete with error */
       log::error("service discovery failed: bd_addr={} status={}", hearingDevice->address, status);
-
-      if (hearingDevice->first_connection) {
-        callbacks->OnConnectionState(ConnectionState::DISCONNECTED, hearingDevice->address);
-      }
+      callbacks->OnConnectionState(ConnectionState::DISCONNECTED, hearingDevice->address);
       return;
     }
 
@@ -934,6 +916,8 @@ public:
                 hearingDevice->address, len);
       return;
     }
+
+    hearingDevice->stale_storage = true;
 
     uint8_t capabilities;
     STREAM_TO_UINT8(capabilities, p);
@@ -1112,10 +1096,10 @@ public:
 
     log::info("bd_addr={}", address);
 
-    if (hearingDevice->first_connection) {
+    if (hearingDevice->stale_storage) {
       btif_storage_add_hearing_aid(*hearingDevice);
 
-      hearingDevice->first_connection = false;
+      hearingDevice->stale_storage = false;
     }
 
     /* Register and enable the Audio Status Notification */
