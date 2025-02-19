@@ -225,6 +225,21 @@ packet AttReadBlobResponse : Att(opcode = READ_BLOB_RESPONSE) {
   value: 8[],
 }
 
+packet AttReadMultipleVariableRequest : Att(opcode = READ_MULTIPLE_VARIABLE_REQUEST) {
+  attribute_handles: AttHandle[],
+}
+
+struct LengthValue {
+  // NOTE: `value` can be truncated and be less than `length` bytes. In that case, `length`
+  // indicates how big `value` would be if it didn't need to be truncated to fit.
+  length : 16,
+  value : 8[],
+}
+
+packet AttReadMultipleVariableResponse : Att(opcode = READ_MULTIPLE_VARIABLE_RESPONSE) {
+  length_values: LengthValue[],
+}
+
 packet AttWriteRequest : Att(opcode = WRITE_REQUEST) {
   handle : AttHandle,
   value : 8[],

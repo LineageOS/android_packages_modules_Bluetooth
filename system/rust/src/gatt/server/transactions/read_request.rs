@@ -57,6 +57,56 @@ pub async fn handle_read_blob_request<T: AttDatabase>(
     }
 }
 
+pub async fn handle_read_multiple_variable_request<T: AttDatabase>(
+    request: att::AttReadMultipleVariableRequest,
+    mtu: usize,
+    db: &T,
+) -> Result<att::Att, EncodeError> {
+    if request.attribute_handles.len() < 2 {
+        return att::AttErrorResponse {
+            opcode_in_error: att::AttOpcode::ReadMultipleVariableRequest,
+            handle_in_error: att::AttHandle { handle: 0 },
+            error_code: att::AttErrorCode::InvalidPdu,
+        }
+        .try_into();
+    }
+    let mut response = att::AttReadMultipleVariableResponse {
+        length_values: Vec::with_capacity(request.attribute_handles.len()),
+    };
+    let mut space = mtu - 1; // -1 for op code.
+    for handle in request.attribute_handles {
+        match db.read_attribute(handle.clone().into()).await {
+            Ok(data) => {
+                if space >= 2 {
+                    let amount = std::cmp::min(data.len(), space - 2);
+                    let Ok(length) = data.len().try_into() else {
+                        // The returned data is longer than 65535 bytes.
+                        return att::AttErrorResponse {
+                            opcode_in_error: att::AttOpcode::ReadMultipleVariableRequest,
+                            handle_in_error: handle,
+                            error_code: att::AttErrorCode::UnlikelyError,
+                        }
+                        .try_into();
+                    };
+                    response
+                        .length_values
+                        .push(att::LengthValue { length, value: data[..amount].into() });
+                    space -= 2 + amount;
+                }
+            }
+            Err(error_code) => {
+                return att::AttErrorResponse {
+                    opcode_in_error: att::AttOpcode::ReadMultipleVariableRequest,
+                    handle_in_error: handle,
+                    error_code,
+                }
+                .try_into()
+            }
+        }
+    }
+    response.try_into()
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
