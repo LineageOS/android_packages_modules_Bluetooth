@@ -1,5 +1,6 @@
 use log::warn;
 
+use crate::gatt::opcode_types::AttCommand;
 use crate::packets::att;
 
 use super::att_database::AttDatabase;
@@ -14,11 +15,11 @@ impl<Db: AttDatabase> AttCommandHandler<Db> {
         Self { db }
     }
 
-    pub fn process_packet(&self, packet: att::Att) {
+    pub fn process_packet(&self, packet: AttCommand) {
         let snapshotted_db = self.db.snapshot();
         match packet.opcode {
             att::AttOpcode::WriteCommand => {
-                let Ok(packet) = att::AttWriteCommand::try_from(packet) else {
+                let Ok(packet) = att::AttWriteCommand::try_from(&*packet) else {
                     warn!("failed to parse WRITE_COMMAND packet");
                     return;
                 };
@@ -35,6 +36,7 @@ impl<Db: AttDatabase> AttCommandHandler<Db> {
 mod test {
     use crate::core::uuid::Uuid;
     use crate::gatt::ids::AttHandle;
+    use crate::gatt::opcode_types::AttCommand;
     use crate::gatt::server::att_database::{AttAttribute, AttDatabase};
     use crate::gatt::server::command_handler::AttCommandHandler;
     use crate::gatt::server::gatt_database::AttPermissions;
@@ -57,9 +59,11 @@ mod test {
         let data = [1, 2];
 
         // act: send write command
-        let att_view = att::AttWriteCommand { handle: AttHandle(3).into(), value: data.to_vec() }
-            .try_into()
-            .unwrap();
+        let att_view = AttCommand::new(att::AttWriteCommand {
+            handle: AttHandle(3).into(),
+            value: data.to_vec(),
+        })
+        .unwrap();
         handler.process_packet(att_view);
 
         // assert: the db has been updated
@@ -73,12 +77,11 @@ mod test {
         let handler = AttCommandHandler { db };
 
         // act: send a packet that should not be handled here
-        let att_view = att::AttErrorResponse {
-            opcode_in_error: att::AttOpcode::ExchangeMtuRequest,
-            handle_in_error: AttHandle(1).into(),
-            error_code: att::AttErrorCode::UnlikelyError,
-        }
-        .try_into()
+        let att_view = AttCommand::new(att::AttSignedWriteCommand {
+            handle: AttHandle(3).into(),
+            value: vec![1, 2, 3],
+            signature: [0; 12],
+        })
         .unwrap();
         handler.process_packet(att_view);
 
