@@ -18,7 +18,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex, MutexGuard};
 
-use crate::core::shared_box::{SharedBox, WeakBox, WeakBoxRef};
+use crate::core::shared_box::{SharedBox, WeakBox};
 use crate::gatt::server::gatt_database::GattDatabase;
 
 use self::super::ids::ServerId;
@@ -87,7 +87,7 @@ impl GattModule {
             database.get_att_database(tcb_idx),
             move |packet| transport.send_packet(tcb_idx, packet),
         ));
-        database.on_bearer_ready(tcb_idx, bearer.as_ref());
+        database.on_bearer_ready(tcb_idx, &bearer);
         self.connections.insert(tcb_idx, GattConnection { bearer, database: database.downgrade() });
         Ok(())
     }
@@ -160,8 +160,8 @@ impl GattModule {
     pub fn get_bearer(
         &self,
         tcb_idx: TransportIndex,
-    ) -> Option<WeakBoxRef<AttServerBearer<AttDatabaseImpl>>> {
-        self.connections.get(&tcb_idx).map(|x| x.bearer.as_ref())
+    ) -> Option<&SharedBox<AttServerBearer<AttDatabaseImpl>>> {
+        self.connections.get(&tcb_idx).map(|x| &x.bearer)
     }
 
     /// Get the IsolationManager to manage associations between servers + advertisers
