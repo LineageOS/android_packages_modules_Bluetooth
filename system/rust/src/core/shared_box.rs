@@ -21,6 +21,11 @@ impl<T> SharedBox<T> {
         Self(t.into())
     }
 
+    /// Same as Rc::new_cyclic.
+    pub fn new_cyclic(data_fn: impl FnOnce(WeakBox<T>) -> T) -> Self {
+        Self(Rc::new_cyclic(|weak| data_fn(WeakBox(Weak::clone(weak)))))
+    }
+
     /// Produce a weak reference to the contents
     pub fn downgrade(&self) -> WeakBox<T> {
         WeakBox(Rc::downgrade(&self.0))

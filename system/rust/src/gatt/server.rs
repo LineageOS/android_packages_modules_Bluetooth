@@ -1,6 +1,7 @@
 //! This module is a simple GATT server that shares the ATT channel with the
 //! existing C++ GATT client.
 
+pub mod att_client;
 mod att_database;
 pub mod att_server_bearer;
 pub mod gatt_database;
@@ -18,12 +19,13 @@ use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex, MutexGuard};
 
-use crate::core::shared_box::{SharedBox, WeakBox};
+use crate::core::shared_box::SharedBox;
+use crate::gatt::server::att_client::AttClient;
 use crate::gatt::server::gatt_database::GattDatabase;
 
 use self::super::ids::ServerId;
 use self::att_server_bearer::AttServerBearer;
-use self::gatt_database::{AttDatabaseImpl, GattServiceWithHandle};
+use self::gatt_database::GattServiceWithHandle;
 use self::isolation_manager::IsolationManager;
 use self::services::register_builtin_services;
 
@@ -35,9 +37,11 @@ use log::info;
 
 pub use indication_handler::IndicationError;
 
+type AttClients = HashMap<TransportIndex, SharedBox<AttClient>>;
+
 #[allow(missing_docs)]
 pub struct GattModule {
-    connections: HashMap<TransportIndex, GattConnection>,
+    clients: AttClients,
     databases: HashMap<ServerId, SharedBox<GattDatabase>>,
     transport: Rc<dyn AttTransport>,
     // NOTE: this is logically owned by the GattModule. We share it behind a Mutex just so we
@@ -46,23 +50,13 @@ pub struct GattModule {
     isolation_manager: Arc<Mutex<IsolationManager>>,
 }
 
-struct GattConnection {
-    bearer: SharedBox<AttServerBearer<AttDatabaseImpl>>,
-    database: WeakBox<GattDatabase>,
-}
-
 impl GattModule {
     /// Constructor.
     pub fn new(
         transport: Rc<dyn AttTransport>,
         isolation_manager: Arc<Mutex<IsolationManager>>,
     ) -> Self {
-        Self {
-            connections: HashMap::new(),
-            databases: HashMap::new(),
-            transport,
-            isolation_manager,
-        }
+        Self { clients: AttClients::new(), databases: HashMap::new(), transport, isolation_manager }
     }
 
     /// Handle LE link connect
@@ -83,12 +77,14 @@ impl GattModule {
         };
 
         let transport = self.transport.clone();
-        let bearer = SharedBox::new(AttServerBearer::new(
-            database.get_att_database(tcb_idx),
-            move |packet| transport.send_packet(tcb_idx, packet),
-        ));
-        database.on_bearer_ready(tcb_idx, &bearer);
-        self.connections.insert(tcb_idx, GattConnection { bearer, database: database.downgrade() });
+        self.clients.insert(
+            tcb_idx,
+            AttClient::new_client_and_bearer(
+                tcb_idx,
+                move |packet| transport.send_packet(tcb_idx, packet),
+                database,
+            ),
+        );
         Ok(())
     }
 
@@ -96,12 +92,9 @@ impl GattModule {
     pub fn on_le_disconnect(&mut self, tcb_idx: TransportIndex) -> Result<()> {
         info!("disconnected conn_id {tcb_idx:?}");
         self.isolation_manager.lock().unwrap().on_le_disconnect(tcb_idx);
-        let connection = self.connections.remove(&tcb_idx);
-        let Some(connection) = connection else {
+        if self.clients.remove(&tcb_idx).is_none() {
             bail!("got disconnection from {tcb_idx:?} but bearer does not exist");
         };
-        drop(connection.bearer);
-        connection.database.with(|db| db.map(|db| db.on_bearer_dropped(tcb_idx)));
         Ok(())
     }
 
@@ -157,11 +150,8 @@ impl GattModule {
     }
 
     /// Get an ATT bearer for a particular connection
-    pub fn get_bearer(
-        &self,
-        tcb_idx: TransportIndex,
-    ) -> Option<&SharedBox<AttServerBearer<AttDatabaseImpl>>> {
-        self.connections.get(&tcb_idx).map(|x| &x.bearer)
+    pub fn get_bearer(&self, tcb_idx: TransportIndex) -> Option<&SharedBox<AttServerBearer>> {
+        self.clients.get(&tcb_idx).map(|c| c.bearer())
     }
 
     /// Get the IsolationManager to manage associations between servers + advertisers
