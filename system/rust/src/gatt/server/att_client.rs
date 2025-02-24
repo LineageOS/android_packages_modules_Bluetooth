@@ -1,5 +1,5 @@
 use crate::core::shared_box::{SharedBox, WeakBox};
-use crate::gatt::callbacks::GattWriteRequestType;
+use crate::gatt::callbacks::{GattWriteRequestType, RawGattDatastore, TransactionDecision};
 use crate::gatt::ffi::AttributeBackingType;
 use crate::gatt::ids::{AttHandle, TransportIndex};
 use crate::gatt::server::att_database::AttAttribute;
@@ -10,8 +10,10 @@ use crate::gatt::server::gatt_database::{
 use crate::packets::att::{self, AttErrorCode};
 use log::{error, warn};
 use pdl_runtime::EncodeError;
+use std::cell::RefCell;
 #[cfg(test)]
 use std::future::Future;
+use std::rc::Rc;
 
 /// AttClient represents a connection from a *remote* device to a *local* server i.e. it is for
 /// *inbound* connections but it holds the required state for our server. All connections with the
@@ -28,6 +30,10 @@ pub struct AttClient {
     // The underlying database for this client. This is weak because databases can be destroyed
     // independently of clients.
     gatt_db: WeakBox<GattDatabase>,
+
+    // Prepared writes all have to be for the same datastore because we are unable to atomically
+    // execute writes across different datastores.
+    datastore_for_prepared_writes: RefCell<Option<Rc<dyn RawGattDatastore>>>,
 }
 
 impl AttClient {
@@ -40,6 +46,7 @@ impl AttClient {
             tcb_idx,
             bearer: SharedBox::new(AttServerBearer::new(weak, send_packet)),
             gatt_db: db.downgrade(),
+            datastore_for_prepared_writes: RefCell::default(),
         });
         db.on_client_connect(&this);
         this
@@ -264,5 +271,91 @@ impl WeakAttClient {
                 client.write_no_response_attribute(handle, data);
             }
         });
+    }
+
+    /// Queues a write for later execution.  As per the Bluetooth Core Specification v6.0, Vol 3,
+    /// Part F, 3.4.6.1, the offset and data length are not validated until execution time.
+    pub async fn prepare_write_attribute(
+        &self,
+        handle: AttHandle,
+        offset: u32,
+        data: &[u8],
+    ) -> Result<(), AttErrorCode> {
+        let (tcb_idx, backing_type, datastore) = self.with_attribute(handle, |client, attr| {
+            if !attr.attribute.permissions.writable_with_response() {
+                return Err(AttErrorCode::WriteNotPermitted);
+            }
+
+            let (backing_type, datastore) = match &attr.value {
+                AttAttributeBackingValue::Static(val) => {
+                    error!(
+                        "A static attribute {val:?} is marked as writable - ignoring it and \
+                            rejecting the write..."
+                    );
+                    return Err(AttErrorCode::WriteNotPermitted);
+                }
+                AttAttributeBackingValue::DynamicCharacteristic(datastore) => {
+                    (AttributeBackingType::Characteristic, Rc::clone(datastore))
+                }
+                AttAttributeBackingValue::DynamicDescriptor(datastore) => {
+                    (AttributeBackingType::Descriptor, Rc::clone(datastore))
+                }
+            };
+
+            // We only support writing attributes within the same data-store as already queued
+            // writes (since there is no way for us to atomically update attributes across different
+            // stores). We check for equality using pointer comparisons: in practice there is a
+            // single, separate, datastore for each service.
+            match &mut *client.datastore_for_prepared_writes.borrow_mut() {
+                Some(existing_datastore) => {
+                    if !Rc::ptr_eq(existing_datastore, &datastore) {
+                        return Err(AttErrorCode::RequestNotSupported);
+                    }
+                }
+                v @ None => {
+                    // NOTE: If the prepare fails below, we won't unset the datastore which means
+                    // that if there is a subsequent attempt to write to a different datastore, it
+                    // will fail with `RequestNotSupported` even though there might not be actually
+                    // any write queued. Supporting this unlikely edge case is tricky (e.g. consider
+                    // how to make it work if writes are queued concurrently over different bearers)
+                    // and deemed not worth the effort.
+                    *v = Some(Rc::clone(&datastore));
+                }
+            }
+
+            Ok((client.tcb_idx, backing_type, datastore))
+        })?;
+
+        datastore
+            .write(tcb_idx, handle, backing_type, GattWriteRequestType::Prepare { offset }, data)
+            .await?;
+
+        Ok(())
+    }
+
+    /// Executes the queue of prepared writes.
+    pub async fn execute(
+        &self,
+        decision: TransactionDecision,
+    ) -> Result<(), (AttHandle, AttErrorCode)> {
+        match self.with(|client| {
+            if let Some(client) = client {
+                Ok(client
+                    .datastore_for_prepared_writes
+                    .borrow_mut()
+                    .take()
+                    .map(|datastore| (client.tcb_idx, datastore)))
+            } else {
+                // The client has gone away.
+                Err((AttHandle(0), AttErrorCode::UnlikelyError))
+            }
+        })? {
+            Some((tcb_idx, datastore)) => {
+                // NOTE: the handle in error isn't currently plumbed through, so we have to just
+                // use zero for now.
+                datastore.execute(tcb_idx, decision).await.map_err(|c| (AttHandle(0), c))
+            }
+            None => Ok(()),
+        }
     }
 }

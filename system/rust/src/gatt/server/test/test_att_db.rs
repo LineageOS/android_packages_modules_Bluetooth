@@ -9,14 +9,22 @@ use crate::packets::att::AttErrorCode;
 
 use async_trait::async_trait;
 use std::cell::RefCell;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use std::rc::Rc;
 
-struct TestDatastore {
+pub struct TestDatastore {
     values: BTreeMap<AttHandle, RefCell<Vec<u8>>>,
+    queued_writes: RefCell<HashMap<TransportIndex, Vec<(AttHandle, u32, Vec<u8>)>>>,
 }
 
 impl TestDatastore {
+    pub fn new(values: impl IntoIterator<Item = (AttHandle, Vec<u8>)>) -> Rc<Self> {
+        Rc::new(Self {
+            values: values.into_iter().map(|(handle, data)| (handle, RefCell::new(data))).collect(),
+            queued_writes: RefCell::default(),
+        })
+    }
+
     fn write_impl(&self, handle: AttHandle, data: &[u8]) -> Result<(), AttErrorCode> {
         match self.values.get(&handle) {
             Some(value) => {
@@ -47,15 +55,27 @@ impl RawGattDatastore for TestDatastore {
 
     async fn write(
         &self,
-        _tcb_idx: TransportIndex,
+        tcb_idx: TransportIndex,
         handle: AttHandle,
         attr_type: AttributeBackingType,
         write_type: GattWriteRequestType,
         data: &[u8],
     ) -> Result<(), AttErrorCode> {
         assert_eq!(attr_type, AttributeBackingType::Characteristic);
-        assert_eq!(write_type, GattWriteRequestType::Request);
-        self.write_impl(handle, data)
+        match write_type {
+            GattWriteRequestType::Request => self.write_impl(handle, data),
+            GattWriteRequestType::Prepare { offset } => {
+                if !self.values.contains_key(&handle) {
+                    return Err(AttErrorCode::InvalidHandle);
+                }
+                self.queued_writes.borrow_mut().entry(tcb_idx).or_default().push((
+                    handle,
+                    offset,
+                    data.to_vec(),
+                ));
+                Ok(())
+            }
+        }
     }
 
     fn write_no_response(
@@ -69,8 +89,32 @@ impl RawGattDatastore for TestDatastore {
         let _ = self.write_impl(handle, data);
     }
 
-    async fn execute(&self, _: TransportIndex, _: TransactionDecision) -> Result<(), AttErrorCode> {
-        unreachable!();
+    async fn execute(
+        &self,
+        tcb_idx: TransportIndex,
+        decision: TransactionDecision,
+    ) -> Result<(), AttErrorCode> {
+        if let Some(writes) = self.queued_writes.borrow_mut().remove(&tcb_idx) {
+            if decision == TransactionDecision::Cancel {
+                return Ok(());
+            }
+            for (handle, offset, data) in &writes {
+                let value = self.values[handle].borrow();
+                let offset = *offset as usize;
+                if offset > value.len() {
+                    return Err(AttErrorCode::InvalidOffset);
+                }
+                if offset + data.len() > value.len() {
+                    return Err(AttErrorCode::InvalidAttributeValueLength);
+                }
+            }
+            for (handle, offset, data) in writes {
+                let offset = offset as usize;
+                self.values[&handle].borrow_mut()[offset..offset + data.len()]
+                    .copy_from_slice(&data);
+            }
+        }
+        Ok(())
     }
 }
 
@@ -78,12 +122,9 @@ impl RawGattDatastore for TestDatastore {
 pub fn new_test_database(
     mut characteristics: Vec<(AttAttribute, Vec<u8>)>,
 ) -> SharedBox<GattDatabase> {
-    let datastore = Rc::new(TestDatastore {
-        values: characteristics
-            .iter_mut()
-            .map(|(a, data)| (a.handle, RefCell::new(std::mem::take(data))))
-            .collect(),
-    });
+    let datastore = TestDatastore::new(
+        characteristics.iter_mut().map(|(a, data)| (a.handle, std::mem::take(data))),
+    );
     SharedBox::new(GattDatabase::with_characteristics(
         characteristics.into_iter().map(|(a, _)| a),
         datastore,

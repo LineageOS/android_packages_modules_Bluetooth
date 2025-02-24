@@ -65,6 +65,7 @@ enum AttErrorCode : 8 {
   INVALID_OFFSET = 0x07,
   ATTRIBUTE_NOT_FOUND = 0x0A,
   ATTRIBUTE_NOT_LONG = 0x0B,
+  INVALID_ATTRIBUTE_VALUE_LENGTH = 0x0D,
   UNLIKELY_ERROR = 0x0E,
   UNSUPPORTED_GROUP_TYPE = 0x10,
   APPLICATION_ERROR = 0x80,
@@ -250,6 +251,25 @@ packet AttWriteRequest : Att(opcode = WRITE_REQUEST) {
 }
 
 packet AttWriteResponse : Att(opcode = WRITE_RESPONSE) {}
+
+packet AttPrepareWriteRequest : Att(opcode = PREPARE_WRITE_REQUEST) {
+  handle : AttHandle,
+  offset : 16,
+  value : 8[],
+}
+
+packet AttPrepareWriteResponse : Att(opcode = PREPARE_WRITE_RESPONSE) {
+  handle : AttHandle,
+  offset : 16,
+  value : 8[],
+}
+
+packet AttExecuteWriteRequest : Att(opcode = EXECUTE_WRITE_REQUEST) {
+  commit : 1, // true = commit, false = cancel
+  _reserved_ : 7,
+}
+
+packet AttExecuteWriteResponse : Att(opcode = EXECUTE_WRITE_RESPONSE) {}
 
 packet AttErrorResponse : Att(opcode = ERROR_RESPONSE) {
   opcode_in_error: AttOpcode,
