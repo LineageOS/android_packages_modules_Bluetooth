@@ -21,7 +21,10 @@
 
 namespace hfp_hal_interface {
 
-void init() {}
+void init() {
+  bluetooth::log::info("HFP SW path enabled {}",
+                       osi_property_get_bool("bluetooth.hfp.software_datapath.enabled", false));
+}
 
 // This is not used in Android.
 bool is_coding_format_supported(esco_coding_format_t /* coding_format */) { return true; }
@@ -29,18 +32,24 @@ bool is_coding_format_supported(esco_coding_format_t /* coding_format */) { retu
 // Android statically compiles WBS support.
 bool get_wbs_supported() { return true; }
 
-bool get_swb_supported() { return osi_property_get_bool("bluetooth.hfp.swb.supported", false); }
+// Software path implies support of SWB.
+bool get_swb_supported() {
+  return osi_property_get_bool("bluetooth.hfp.software_datapath.enabled", false) ||
+         osi_property_get_bool("bluetooth.hfp.swb.supported", false);
+}
 
 // Check if hardware offload is enabled
-bool get_offload_enabled() { return true; }
+bool get_offload_enabled() {
+  return !osi_property_get_bool("bluetooth.hfp.software_datapath.enabled", false);
+}
 
 // This is not used in Android.
 bool enable_offload(bool /* enable */) { return true; }
 
-// On Android, this is a no-op because the settings default to offloaded case.
+// On Android, this is a no-op because the settings default to work and offload mode won't change.
 void set_codec_datapath(tBTA_AG_UUID_CODEC /* codec_uuid */) {}
 
-// No packet size limits on Android since it will be offloaded.
+// HCI HAL guarantees packet size to be always 60 on Android.
 size_t get_packet_size(int /* codec */) { return kDefaultPacketSize; }
 
 void notify_sco_connection_change(RawAddress /* device */, bool /* is_connected */,
