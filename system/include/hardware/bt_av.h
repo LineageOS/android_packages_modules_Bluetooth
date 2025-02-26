@@ -138,6 +138,21 @@ typedef enum {
 } btav_a2dp_codec_channel_mode_t;
 
 typedef enum {
+  BTAV_A2DP_CODEC_AUDIO_CONTEXT_UNSPECIFIED = 0x0,
+  BTAV_A2DP_CODEC_AUDIO_CONTEXT_CONVERSATIONAL = 0x1 << 1,
+  BTAV_A2DP_CODEC_AUDIO_CONTEXT_MEDIA = 0x1 << 2,
+  BTAV_A2DP_CODEC_AUDIO_CONTEXT_GAME = 0x1 << 3,
+  BTAV_A2DP_CODEC_AUDIO_CONTEXT_INSTRUCTIONAL = 0x1 << 4,
+  BTAV_A2DP_CODEC_AUDIO_CONTEXT_VOICE_ASSISTANTS = 0x1 << 5,
+  BTAV_A2DP_CODEC_AUDIO_CONTEXT_LIVE_AUDIO = 0x1 << 6,
+  BTAV_A2DP_CODEC_AUDIO_CONTEXT_SOUND_EFFECTS = 0x1 << 7,
+  BTAV_A2DP_CODEC_AUDIO_CONTEXT_NOTIFICATIONS = 0x1 << 8,
+  BTAV_A2DP_CODEC_AUDIO_CONTEXT_RINGTONE_ALERTS = 0x1 << 9,
+  BTAV_A2DP_CODEC_AUDIO_CONTEXT_ALERTS = 0x1 << 10,
+  BTAV_A2DP_CODEC_AUDIO_CONTEXT_EMERGENCY_ALARM = 0x1 << 11,
+} btav_a2dp_codec_audio_context_t;
+
+typedef enum {
   BTAV_A2DP_SCMST_DISABLED = 0x00,
   BTAV_A2DP_SCMST_ENABLED = 0x01
 } btav_a2dp_scmst_enable_status_t;
@@ -162,6 +177,7 @@ struct btav_a2dp_codec_config_t {
   int64_t codec_specific_2;  // Codec-specific value 2
   int64_t codec_specific_3;  // Codec-specific value 3
   int64_t codec_specific_4;  // Codec-specific value 4
+  btav_a2dp_codec_audio_context_t audio_context;
 
   bool operator==(const btav_a2dp_codec_config_t& codec_config) const {
     return codec_type == codec_config.codec_type && codec_priority == codec_config.codec_priority &&
