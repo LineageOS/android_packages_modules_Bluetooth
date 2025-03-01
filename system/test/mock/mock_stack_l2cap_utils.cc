@@ -22,22 +22,18 @@
 #include <cstdint>
 
 #include "stack/include/bt_hdr.h"
+#include "stack/include/l2cap_controller_interface.h"
+#include "stack/include/l2cap_hci_link_interface.h"
+#include "stack/include/l2cap_security_interface.h"
 #include "stack/l2cap/l2c_int.h"
 #include "test/common/mock_functions.h"
 #include "types/raw_address.h"
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 bool l2c_is_cmd_rejected(uint8_t /* cmd_code */, uint8_t /* signal_id */, tL2C_LCB* /* p_lcb */) {
   inc_func_call_count(__func__);
   return false;
 }
 bool l2cu_create_conn_le(tL2C_LCB* /* p_lcb */) {
-  inc_func_call_count(__func__);
-  return false;
-}
-bool l2cu_create_conn_le(tL2C_LCB* /* p_lcb */, uint8_t /* initiating_phys */) {
   inc_func_call_count(__func__);
   return false;
 }
@@ -201,7 +197,7 @@ void l2cu_send_peer_config_rsp(tL2C_CCB* /* p_ccb */, tL2CAP_CFG_INFO* /* p_cfg 
   inc_func_call_count(__func__);
 }
 void l2cu_send_peer_connect_req(tL2C_CCB* /* p_ccb */) { inc_func_call_count(__func__); }
-void l2cu_send_peer_connect_rsp(tL2C_CCB* /* p_ccb */, uint16_t /* result */,
+void l2cu_send_peer_connect_rsp(tL2C_CCB* /* p_ccb */, tL2CAP_CONN /* result */,
                                 uint16_t /* status */) {
   inc_func_call_count(__func__);
 }
@@ -230,7 +226,7 @@ void l2cu_send_peer_info_rsp(tL2C_LCB* /* p_lcb */, uint8_t /* remote_id */,
 void l2cu_set_acl_hci_header(BT_HDR* /* p_buf */, tL2C_CCB* /* p_ccb */) {
   inc_func_call_count(__func__);
 }
-void l2cu_set_lcb_handle(struct t_l2c_linkcb& /* p_lcb */, uint16_t /* handle */) {
+void l2cu_set_lcb_handle(tL2C_LCB& /* p_lcb */, uint16_t /* handle */) {
   inc_func_call_count(__func__);
 }
 void l2cu_set_non_flushable_pbf(bool /* is_supported */) { inc_func_call_count(__func__); }

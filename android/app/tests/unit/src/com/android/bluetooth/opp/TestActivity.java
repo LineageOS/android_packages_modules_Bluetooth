@@ -369,8 +369,8 @@ public class TestActivity extends Activity {
 
 /** This class listens on OPUSH channel for incoming connection */
 class TestTcpListener {
-
-    private static final String TAG = "BtOppRfcommListener";
+    private static final String TAG =
+            Constants.TAG_PREFIX_BLUETOOTH_OPP + TestTcpListener.class.getSimpleName();
 
     private static final boolean D = Log.isLoggable(TAG, Log.DEBUG);
 
@@ -494,7 +494,7 @@ class TestTcpListener {
 }
 
 class TestTcpServer extends ServerRequestHandler implements Runnable {
-    private static final String TAG = "ServerRequestHandler";
+    private static final String TAG = ServerRequestHandler.class.getSimpleName();
 
     private static final boolean V = Log.isLoggable(TAG, Log.VERBOSE);
 
@@ -608,14 +608,13 @@ class TestTcpServer extends ServerRequestHandler implements Runnable {
     }
 }
 
+/* implements SessionNotifier */
 class TestTcpSessionNotifier {
-    /* implements SessionNotifier */
+    private static final String TAG = TestTcpSessionNotifier.class.getSimpleName();
 
     ServerSocket mServer = null;
 
     Socket mConn = null;
-
-    private static final String TAG = "TestTcpSessionNotifier";
 
     TestTcpSessionNotifier(int port) throws IOException {
         mServer = new ServerSocket(port);

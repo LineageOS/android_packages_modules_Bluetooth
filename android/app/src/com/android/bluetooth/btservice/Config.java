@@ -53,7 +53,8 @@ import com.android.internal.annotations.VisibleForTesting;
 import java.util.Arrays;
 
 public class Config {
-    private static final String TAG = "AdapterServiceConfig";
+    private static final String TAG =
+            AdapterService.class.getSimpleName() + Config.class.getSimpleName();
 
     private static final String LE_AUDIO_DYNAMIC_SWITCH_PROPERTY =
             "ro.bluetooth.leaudio_switcher.supported";

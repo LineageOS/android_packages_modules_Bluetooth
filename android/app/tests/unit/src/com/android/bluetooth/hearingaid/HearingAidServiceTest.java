@@ -129,7 +129,7 @@ public class HearingAidServiceTest {
 
     @After
     public void tearDown() {
-        mService.stop();
+        mService.cleanup();
         assertThat(HearingAidService.getHearingAidService()).isNull();
     }
 

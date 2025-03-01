@@ -43,7 +43,7 @@ import java.util.stream.Collectors;
 
 /** List of our registered scanners. */
 public class ScannerMap {
-    private static final String TAG = "ScannerMap";
+    private static final String TAG = ScannerMap.class.getSimpleName();
 
     /** Internal map to keep track of logging information by app name */
     private final HashMap<Integer, AppScanStats> mAppScanStatsMap = new HashMap<>();

@@ -170,7 +170,7 @@ public:
               log::info("Initialize, client_id {}", client_id);
               instance->gatt_if_ = client_id;
             }),
-            true);
+            /*eatt_support=*/false);
   }
 
   void RegisterCallbacks(bluetooth::ras::RasClientCallbacks* callbacks) { callbacks_ = callbacks; }

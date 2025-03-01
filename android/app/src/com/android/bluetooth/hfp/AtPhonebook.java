@@ -18,10 +18,11 @@ package com.android.bluetooth.hfp;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 
+import static java.util.Objects.requireNonNull;
+
 import android.app.Activity;
 import android.bluetooth.BluetoothDevice;
 import android.content.ContentResolver;
-import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
@@ -45,7 +46,8 @@ import java.util.HashMap;
 
 /** Helper for managing phonebook presentation over AT commands */
 public class AtPhonebook {
-    private static final String TAG = "BluetoothAtPhonebook";
+    private static final String TAG =
+            Utils.TAG_PREFIX_BLUETOOTH + AtPhonebook.class.getSimpleName();
 
     /**
      * The projection to use when querying the call log database in response to AT+CPBR for the MC,
@@ -80,9 +82,10 @@ public class AtPhonebook {
         public int nameColumn;
     }
 
-    private Context mContext;
-    private ContentResolver mContentResolver;
-    private HeadsetNativeInterface mNativeInterface;
+    private final AdapterService mAdapterService;
+    private final ContentResolver mContentResolver;
+    private final HeadsetNativeInterface mNativeInterface;
+
     @VisibleForTesting String mCurrentPhonebook;
     @VisibleForTesting String mCharacterSet = "UTF-8";
 
@@ -100,13 +103,15 @@ public class AtPhonebook {
     static final int TYPE_SET = 1;
     static final int TYPE_TEST = 2;
 
-    public AtPhonebook(Context context, HeadsetNativeInterface nativeInterface) {
-        mContext = context;
+    public AtPhonebook(AdapterService adapterService, HeadsetNativeInterface nativeInterface) {
+        mAdapterService = requireNonNull(adapterService);
+        mContentResolver = requireNonNull(mAdapterService.getContentResolver());
+        mNativeInterface = requireNonNull(nativeInterface);
+
         mPairingPackage =
                 SystemProperties.get(
-                        Utils.PAIRING_UI_PROPERTY, context.getString(R.string.pairing_ui_package));
-        mContentResolver = context.getContentResolver();
-        mNativeInterface = nativeInterface;
+                        Utils.PAIRING_UI_PROPERTY,
+                        mAdapterService.getString(R.string.pairing_ui_package));
         mPhonebooks.put("DC", new PhonebookResult()); // dialled calls
         mPhonebooks.put("RC", new PhonebookResult()); // received calls
         mPhonebooks.put("MC", new PhonebookResult()); // missed calls
@@ -458,7 +463,7 @@ public class AtPhonebook {
             Bundle queryArgs = new Bundle();
             queryArgs.putString(ContentResolver.QUERY_ARG_SQL_SELECTION, where);
             queryArgs.putInt(ContentResolver.QUERY_ARG_LIMIT, MAX_PHONEBOOK_SIZE);
-            final Uri phoneContentUri = DevicePolicyUtils.getEnterprisePhoneUri(mContext);
+            final Uri phoneContentUri = DevicePolicyUtils.getEnterprisePhoneUri(mAdapterService);
             pbr.cursor =
                     BluetoothMethodProxy.getInstance()
                             .contentResolverQuery(
@@ -501,7 +506,7 @@ public class AtPhonebook {
         return roundUpToPowerOfTwo(maxSize);
     }
 
-    private int roundUpToPowerOfTwo(int x) {
+    private static int roundUpToPowerOfTwo(int x) {
         x |= x >> 1;
         x |= x >> 2;
         x |= x >> 4;
@@ -620,7 +625,7 @@ public class AtPhonebook {
                 number = "";
                 // TODO: there are 3 types of numbers should have resource
                 // strings for: unknown, private, and payphone
-                name = mContext.getString(R.string.unknownNumber);
+                name = mAdapterService.getString(R.string.unknownNumber);
             }
 
             // TODO(): Handle IRA commands. It's basically
@@ -628,7 +633,7 @@ public class AtPhonebook {
             if (!name.isEmpty() && mCharacterSet.equals("GSM")) {
                 byte[] nameByte = GsmAlphabet.stringToGsm8BitPacked(name);
                 if (nameByte == null) {
-                    name = mContext.getString(R.string.unknownNumber);
+                    name = mAdapterService.getString(R.string.unknownNumber);
                 } else {
                     name = new String(nameByte);
                 }
@@ -658,7 +663,7 @@ public class AtPhonebook {
         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, remoteDevice);
         // Leave EXTRA_PACKAGE_NAME and EXTRA_CLASS_NAME field empty.
         // BluetoothHandsfree's broadcast receiver is anonymous, cannot be targeted.
-        mContext.sendOrderedBroadcast(
+        mAdapterService.sendOrderedBroadcast(
                 intent,
                 BLUETOOTH_CONNECT,
                 Utils.getTempBroadcastOptions().toBundle(),
@@ -679,8 +684,7 @@ public class AtPhonebook {
      */
     @VisibleForTesting
     int checkAccessPermission(BluetoothDevice remoteDevice) {
-        int permission =
-                AdapterService.getAdapterService().getPhonebookAccessPermission(remoteDevice);
+        int permission = mAdapterService.getPhonebookAccessPermission(remoteDevice);
 
         if (permission == BluetoothDevice.ACCESS_UNKNOWN) {
             Log.d(TAG, "checkAccessPermission: ACCESS_UNKNOWN, requesting permissions");

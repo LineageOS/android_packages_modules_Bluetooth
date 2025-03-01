@@ -29,7 +29,7 @@ import java.util.Set;
  * <p>Deals with service lifecycle and returns consistent error values
  */
 public class HeadsetClientServiceInterface {
-    private static final String TAG = "HeadsetClientServiceInterface";
+    private static final String TAG = HeadsetClientServiceInterface.class.getSimpleName();
 
     /* Action policy for other calls when accepting call */
     public static final int CALL_ACCEPT_NONE = 0;
@@ -38,7 +38,7 @@ public class HeadsetClientServiceInterface {
 
     public HeadsetClientServiceInterface() {}
 
-    private boolean isServiceAvailable(HeadsetClientService service) {
+    private static boolean isServiceAvailable(HeadsetClientService service) {
         if (service == null) {
             Log.w(TAG, "HeadsetClientService is not available");
             return false;

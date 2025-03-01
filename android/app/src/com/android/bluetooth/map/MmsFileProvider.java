@@ -26,6 +26,7 @@ import android.provider.Telephony.Mms;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothStatsLog;
+import com.android.bluetooth.Utils;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 
 import com.google.android.mms.MmsException;
@@ -43,7 +44,9 @@ import java.io.IOException;
  */
 // Next tag value for ContentProfileErrorReportUtils.report(): 5
 public class MmsFileProvider extends ContentProvider {
-    static final String TAG = "BluetoothMmsFileProvider";
+    private static final String TAG =
+            Utils.TAG_PREFIX_BLUETOOTH + MmsFileProvider.class.getSimpleName();
+
     private PipeWriter mPipeWriter = new PipeWriter();
 
     /*package*/

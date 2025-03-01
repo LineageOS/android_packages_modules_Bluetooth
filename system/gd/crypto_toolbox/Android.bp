@@ -8,13 +8,6 @@ package {
     default_applicable_licenses: ["system_bt_license"],
 }
 
-filegroup {
-    name: "BluetoothCryptoToolboxTestSources",
-    srcs: [
-        "crypto_toolbox_test.cc",
-    ],
-}
-
 cc_library {
     name: "libbluetooth_crypto_toolbox",
     defaults: ["fluoride_defaults"],

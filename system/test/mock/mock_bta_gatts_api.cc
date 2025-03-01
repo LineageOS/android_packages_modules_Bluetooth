@@ -32,9 +32,6 @@
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 void BTA_GATTS_Disable(void) { inc_func_call_count(__func__); }
 void BTA_GATTS_AppDeregister(tGATT_IF /* server_if */) { inc_func_call_count(__func__); }
 void BTA_GATTS_AppRegister(const bluetooth::Uuid& /* app_uuid */, tBTA_GATTS_CBACK* /* p_cback */,
@@ -65,9 +62,4 @@ void BTA_GATTS_SendRsp(uint16_t /* conn_id */, uint32_t /* trans_id */, tGATT_ST
   inc_func_call_count(__func__);
 }
 void BTA_GATTS_StopService(uint16_t /* service_id */) { inc_func_call_count(__func__); }
-void bta_gatts_add_service_impl(tGATT_IF /* server_if */,
-                                std::vector<btgatt_db_element_t> /* service */,
-                                BTA_GATTS_AddServiceCb /* cb */) {
-  inc_func_call_count(__func__);
-}
 void BTA_GATTS_InitBonded(void) { inc_func_call_count(__func__); }

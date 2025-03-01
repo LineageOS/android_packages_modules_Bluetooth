@@ -65,13 +65,12 @@ object ActiveLogs {
     }
 
     @JvmStatic
-    @JvmOverloads
-    fun add(
-        reason: Int,
-        enable: Boolean,
-        packageName: String = "BluetoothSystemServer",
-        isBle: Boolean = false
-    ) {
+    fun add(reason: Int, enable: Boolean) {
+        add(reason, enable, "BluetoothSystemServer", false)
+    }
+
+    @JvmStatic
+    fun add(reason: Int, enable: Boolean, packageName: String, isBle: Boolean) {
         val last = activeLogs.lastOrNull()
         if (activeLogs.size == MAX_ENTRIES_STORED) {
             activeLogs.removeFirst()
@@ -100,7 +99,7 @@ object ActiveLogs {
             reason,
             packageName,
             lastState,
-            timeSinceLastChanged
+            timeSinceLastChanged,
         )
     }
 }

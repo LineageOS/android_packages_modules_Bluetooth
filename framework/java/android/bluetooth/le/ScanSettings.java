@@ -357,7 +357,7 @@ public final class ScanSettings implements Parcelable {
         }
 
         // Returns true if the callbackType is valid.
-        private boolean isValidCallbackType(int callbackType) {
+        private static boolean isValidCallbackType(int callbackType) {
             if (callbackType == CALLBACK_TYPE_ALL_MATCHES
                     || callbackType == CALLBACK_TYPE_ALL_MATCHES_AUTO_BATCH
                     || callbackType == CALLBACK_TYPE_FIRST_MATCH

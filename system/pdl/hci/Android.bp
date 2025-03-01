@@ -49,18 +49,3 @@ cc_library_static {
     apex_available: ["com.android.bt"],
     min_sdk_version: "33",
 }
-
-// Generate the python parser+serializer backend
-genrule {
-    name: "gd_hci_packets_python3_gen",
-    defaults: ["pdl_python_generator_defaults"],
-    cmd: "$(location :pdlc) $(in) |" +
-        " $(location :pdl_python_generator)" +
-        " --output $(out) --custom-type-location blueberry.utils.bluetooth",
-    srcs: [
-        "hci_packets.pdl",
-    ],
-    out: [
-        "hci_packets.py",
-    ],
-}

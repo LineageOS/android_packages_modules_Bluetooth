@@ -24,14 +24,13 @@
 #include "device/include/esco_parameters.h"
 #include "hci/class_of_device.h"
 #include "stack/btm/btm_sco.h"
+#include "stack/btm/internal/btm_api.h"
 #include "stack/include/btm_api_types.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/hci_error_code.h"
+#include "stack/include/sco_hci_link_interface.h"
 #include "test/common/mock_functions.h"
 #include "types/raw_address.h"
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 const RawAddress* BTM_ReadScoBdAddr(uint16_t /* sco_inx */) {
   inc_func_call_count(__func__);

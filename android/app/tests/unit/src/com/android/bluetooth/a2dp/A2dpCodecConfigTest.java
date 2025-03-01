@@ -767,7 +767,8 @@ public class A2dpCodecConfigTest {
         }
     }
 
-    private BluetoothCodecConfig getDefaultCodecConfigByType(int codecType, int codecPriority) {
+    private static BluetoothCodecConfig getDefaultCodecConfigByType(
+            int codecType, int codecPriority) {
         for (BluetoothCodecConfig codecConfig : sDefaultCodecConfigs) {
             if (codecConfig.getCodecType() != codecType) {
                 continue;
@@ -794,7 +795,7 @@ public class A2dpCodecConfigTest {
         return null;
     }
 
-    private BluetoothCodecConfig getCodecCapabilitiesByType(int codecType) {
+    private static BluetoothCodecConfig getCodecCapabilitiesByType(int codecType) {
         for (BluetoothCodecConfig codecCapabilities : sCodecCapabilities) {
             if (codecCapabilities.getCodecType() != codecType) {
                 continue;

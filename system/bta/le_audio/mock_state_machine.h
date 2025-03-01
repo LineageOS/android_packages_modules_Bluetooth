@@ -50,9 +50,9 @@ public:
                bluetooth::le_audio::LeAudioDevice* leAudioDevice,
                bluetooth::le_audio::LeAudioDeviceGroup* group),
               (override));
-
   MOCK_METHOD((void), ProcessGattCtpNotification,
-              (bluetooth::le_audio::LeAudioDeviceGroup * group, uint8_t* value, uint16_t len),
+              (bluetooth::le_audio::LeAudioDeviceGroup * group,
+               bluetooth::le_audio::LeAudioDevice* leAudioDevice, uint8_t* value, uint16_t len),
               (override));
   MOCK_METHOD((void), ProcessHciNotifOnCigCreate,
               (bluetooth::le_audio::LeAudioDeviceGroup * group, uint8_t status, uint8_t cig_id,

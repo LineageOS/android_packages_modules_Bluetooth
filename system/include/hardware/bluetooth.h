@@ -49,7 +49,6 @@
 #define BT_PROFILE_MAP_CLIENT_ID "map_client"
 #define BT_PROFILE_SDP_CLIENT_ID "sdp"
 #define BT_PROFILE_GATT_ID "gatt"
-#define BT_PROFILE_AV_RC_ID "avrcp"
 #define BT_PROFILE_AV_RC_CTRL_ID "avrcp_ctrl"
 #define BT_PROFILE_HEARING_AID_ID "hearing_aid"
 #define BT_PROFILE_HAP_CLIENT_ID "has_client"

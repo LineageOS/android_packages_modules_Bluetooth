@@ -28,6 +28,7 @@
 #define BTA_SDP_INT_H
 
 #include "bta/include/bta_sdp_api.h"
+#include "stack/include/sdp_status.h"
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
@@ -52,5 +53,10 @@ void bta_sdp_enable(tBTA_SDP_DM_CBACK* p_cback);
 void bta_sdp_search(const RawAddress bd_addr, const bluetooth::Uuid uuid);
 void bta_sdp_create_record(void* user_data);
 void bta_sdp_remove_record(void* user_data);
+
+namespace bluetooth::testing {
+void bta_create_dip_sdp_record(bluetooth_sdp_record* record, tSDP_DISC_REC* p_rec);
+void bta_sdp_search_cback(Uuid uuid, const RawAddress& bd_addr, tSDP_RESULT result);
+}  // namespace bluetooth::testing
 
 #endif /* BTA_SDP_INT_H */

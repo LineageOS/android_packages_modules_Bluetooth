@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
+#include "common/os_utils.h"
+
 #ifdef __ANDROID__
 #include <private/android_filesystem_config.h>
 #include <unistd.h>
 #endif
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 bool is_bluetooth_uid() {
 #ifdef __ANDROID__

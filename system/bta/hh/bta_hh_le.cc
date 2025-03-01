@@ -280,7 +280,7 @@ void bta_hh_le_open_conn(tBTA_HH_DEV_CB* p_cb, bool direct) {
   bta_hh_cb.le_cb_index[BTA_HH_GET_LE_CB_IDX(p_cb->hid_handle)] = p_cb->index;  // Update index map
   if (!direct) {
     // don't reconnect unbonded device
-    if (!BTM_IsLinkKeyKnown(p_cb->link_spec.addrt.bda, BT_TRANSPORT_LE)) {
+    if (!BTM_IsBonded(p_cb->link_spec.addrt.bda, BT_TRANSPORT_LE)) {
       return;
     }
     log::debug("Add {} to background connection list", p_cb->link_spec);
@@ -1108,7 +1108,7 @@ void bta_hh_start_security(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* /* p_buf */
     log::debug("addr:{} already encrypted", p_cb->link_spec.addrt.bda);
     p_cb->status = BTA_HH_OK;
     bta_hh_sm_execute(p_cb, BTA_HH_ENC_CMPL_EVT, NULL);
-  } else if (BTM_IsLinkKeyKnown(p_cb->link_spec.addrt.bda, BT_TRANSPORT_LE)) {
+  } else if (BTM_IsBonded(p_cb->link_spec.addrt.bda, BT_TRANSPORT_LE)) {
     /* if bonded and link not encrypted */
     log::debug("addr:{} bonded, not encrypted", p_cb->link_spec.addrt.bda);
     p_cb->status = BTA_HH_ERR_AUTH_FAILED;

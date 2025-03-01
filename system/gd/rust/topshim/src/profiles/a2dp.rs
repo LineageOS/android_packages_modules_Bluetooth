@@ -5,8 +5,9 @@ use bitflags::bitflags;
 use num_derive::{FromPrimitive, ToPrimitive};
 use num_traits::cast::FromPrimitive;
 use std::convert::{TryFrom, TryInto};
+use std::fmt::{Debug, Formatter};
 use std::sync::{Arc, Mutex};
-use topshim_macros::{cb_variant, profile_enabled_or, profile_enabled_or_default};
+use topshim_macros::{cb_variant, log_args, profile_enabled_or, profile_enabled_or_default};
 
 use log::warn;
 
@@ -323,6 +324,12 @@ pub struct A2dpCallbacksDispatcher {
     pub dispatch: Box<dyn Fn(A2dpCallbacks) + Send>,
 }
 
+impl Debug for A2dpCallbacksDispatcher {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(f, "A2dpCallbacksDispatcher {{}}")
+    }
+}
+
 type A2dpCb = Arc<Mutex<A2dpCallbacksDispatcher>>;
 
 cb_variant!(A2dpCb, connection_state_callback -> A2dpCallbacks::ConnectionState,
@@ -369,6 +376,7 @@ impl ToggleableProfile for A2dp {
 }
 
 impl A2dp {
+    #[log_args]
     pub fn new(intf: &BluetoothInterface) -> A2dp {
         let a2dpif: cxx::UniquePtr<ffi::A2dpIntf>;
         unsafe {
@@ -378,10 +386,12 @@ impl A2dp {
         A2dp { internal: a2dpif, _is_init: false, _is_enabled: false }
     }
 
+    #[log_args]
     pub fn is_initialized(&self) -> bool {
         self._is_init
     }
 
+    #[log_args]
     pub fn initialize(&mut self, callbacks: A2dpCallbacksDispatcher) -> bool {
         if get_dispatchers().lock().unwrap().set::<A2dpCb>(Arc::new(Mutex::new(callbacks))) {
             panic!("Tried to set dispatcher for A2dp callbacks while it already exists");
@@ -395,41 +405,49 @@ impl A2dp {
         true
     }
 
+    #[log_args]
     #[profile_enabled_or(BtStatus::NotReady)]
     pub fn connect(&mut self, addr: RawAddress) -> BtStatus {
         BtStatus::from(self.internal.connect(addr))
     }
 
+    #[log_args]
     #[profile_enabled_or]
     pub fn set_active_device(&mut self, addr: RawAddress) {
         self.internal.set_active_device(addr);
     }
 
+    #[log_args]
     #[profile_enabled_or(BtStatus::NotReady)]
     pub fn disconnect(&mut self, addr: RawAddress) -> BtStatus {
         BtStatus::from(self.internal.disconnect(addr))
     }
 
+    #[log_args]
     #[profile_enabled_or]
     pub fn config_codec(&self, addr: RawAddress, config: Vec<A2dpCodecConfig>) {
         self.internal.config_codec(addr, config);
     }
 
+    #[log_args]
     #[profile_enabled_or(false)]
     pub fn start_audio_request(&self) -> bool {
         self.internal.start_audio_request()
     }
 
+    #[log_args]
     #[profile_enabled_or]
     pub fn stop_audio_request(&self) {
         self.internal.stop_audio_request();
     }
 
+    #[log_args]
     #[profile_enabled_or]
     pub fn suspend_audio_request(&self) {
         self.internal.suspend_audio_request();
     }
 
+    #[log_args]
     #[profile_enabled_or_default]
     pub fn get_presentation_position(&self) -> PresentationPosition {
         self.internal.get_presentation_position()
@@ -445,6 +463,12 @@ pub enum A2dpSinkCallbacks {
 
 pub struct A2dpSinkCallbacksDispatcher {
     pub dispatch: Box<dyn Fn(A2dpSinkCallbacks) + Send>,
+}
+
+impl Debug for A2dpSinkCallbacksDispatcher {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(f, "A2dpSinkCallbacksDispatcher {{}}")
+    }
 }
 
 type A2dpSinkCb = Arc<Mutex<A2dpSinkCallbacksDispatcher>>;
@@ -487,6 +511,7 @@ impl ToggleableProfile for A2dpSink {
 }
 
 impl A2dpSink {
+    #[log_args]
     pub fn new(intf: &BluetoothInterface) -> A2dpSink {
         let a2dp_sink: cxx::UniquePtr<ffi::A2dpSinkIntf>;
         unsafe {
@@ -496,10 +521,12 @@ impl A2dpSink {
         A2dpSink { internal: a2dp_sink, _is_init: false, _is_enabled: false }
     }
 
+    #[log_args]
     pub fn is_initialized(&self) -> bool {
         self._is_init
     }
 
+    #[log_args]
     pub fn initialize(&mut self, callbacks: A2dpSinkCallbacksDispatcher) -> bool {
         if get_dispatchers().lock().unwrap().set::<A2dpSinkCb>(Arc::new(Mutex::new(callbacks))) {
             panic!("Tried to set dispatcher for A2dp Sink Callbacks while it already exists");
@@ -508,21 +535,25 @@ impl A2dpSink {
         true
     }
 
+    #[log_args]
     #[profile_enabled_or]
     pub fn connect(&mut self, bt_addr: RawAddress) {
         self.internal.connect(bt_addr);
     }
 
+    #[log_args]
     #[profile_enabled_or]
     pub fn disconnect(&mut self, bt_addr: RawAddress) {
         self.internal.disconnect(bt_addr);
     }
 
+    #[log_args]
     #[profile_enabled_or]
     pub fn set_active_device(&mut self, bt_addr: RawAddress) {
         self.internal.set_active_device(bt_addr);
     }
 
+    #[log_args]
     #[profile_enabled_or]
     pub fn cleanup(&mut self) {}
 }

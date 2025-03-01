@@ -22,6 +22,8 @@ import android.annotation.SuppressLint;
 
 import androidx.test.runner.AndroidJUnit4;
 
+import com.google.common.testing.EqualsTester;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -33,7 +35,8 @@ import java.util.TimeZone;
 @RunWith(AndroidJUnit4.class)
 public class BipAttachmentFormatTest {
 
-    private Date makeDate(int month, int day, int year, int hours, int min, int sec, TimeZone tz) {
+    private static Date makeDate(
+            int month, int day, int year, int hours, int min, int sec, TimeZone tz) {
         Calendar.Builder builder = new Calendar.Builder();
 
         /* Note that Calendar months are zero-based in Java framework */
@@ -43,12 +46,12 @@ public class BipAttachmentFormatTest {
         return builder.build().getTime();
     }
 
-    private Date makeDate(int month, int day, int year, int hours, int min, int sec) {
+    private static Date makeDate(int month, int day, int year, int hours, int min, int sec) {
         return makeDate(month, day, year, hours, min, sec, null);
     }
 
     @SuppressLint("UndefinedEquals")
-    private void testParse(
+    private static void testParse(
             String contentType,
             String charset,
             String name,
@@ -83,7 +86,7 @@ public class BipAttachmentFormatTest {
     }
 
     @SuppressLint("UndefinedEquals")
-    private void testCreate(
+    private static void testCreate(
             String contentType,
             String charset,
             String name,
@@ -421,30 +424,17 @@ public class BipAttachmentFormatTest {
     }
 
     @Test
-    public void testEquals_withSameInstance() {
-        BipAttachmentFormat attachment =
-                new BipAttachmentFormat("text/plain", null, "thisisatextfile.txt", -1, null, null);
-
-        assertThat(attachment).isEqualTo(attachment);
-    }
-
-    @Test
-    @SuppressLint("TruthIncompatibleType") // That the point of this test
-    public void testEquals_withDifferentClass() {
-        BipAttachmentFormat attachment =
-                new BipAttachmentFormat("text/plain", null, "thisisatextfile.txt", -1, null, null);
-        String notAttachment = "notAttachment";
-
-        assertThat(attachment).isNotEqualTo(notAttachment);
-    }
-
-    @Test
-    public void testEquals_withSameInfo() {
+    public void testEquals() {
         BipAttachmentFormat attachment =
                 new BipAttachmentFormat("text/plain", null, "thisisatextfile.txt", -1, null, null);
         BipAttachmentFormat attachmentEqual =
                 new BipAttachmentFormat("text/plain", null, "thisisatextfile.txt", -1, null, null);
 
-        assertThat(attachment).isEqualTo(attachmentEqual);
+        String notAttachment = "notAttachment";
+
+        new EqualsTester()
+                .addEqualityGroup(attachment, attachment, attachmentEqual)
+                .addEqualityGroup(notAttachment)
+                .testEquals();
     }
 }

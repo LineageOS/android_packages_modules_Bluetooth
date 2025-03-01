@@ -70,22 +70,20 @@ void MessageLoopThread::StartUp() {
   start_up_future.wait();
 }
 
-bool MessageLoopThread::DoInThread(const base::Location& from_here, base::OnceClosure task) {
-  return DoInThreadDelayed(from_here, std::move(task), std::chrono::microseconds(0));
+bool MessageLoopThread::DoInThread(base::OnceClosure task) {
+  return DoInThreadDelayed(std::move(task), std::chrono::microseconds(0));
 }
 
-bool MessageLoopThread::DoInThreadDelayed(const base::Location& from_here, base::OnceClosure task,
-                                          std::chrono::microseconds delay) {
+bool MessageLoopThread::DoInThreadDelayed(base::OnceClosure task, std::chrono::microseconds delay) {
   std::lock_guard<std::recursive_mutex> api_lock(api_mutex_);
 
   if (message_loop_ == nullptr) {
-    log::error("message loop is null for thread {}, from {}", *this, from_here.ToString());
+    log::error("message loop is null for thread {}", *this);
     return false;
   }
-  if (!message_loop_->task_runner()->PostDelayedTask(from_here, std::move(task),
+  if (!message_loop_->task_runner()->PostDelayedTask(FROM_HERE, std::move(task),
                                                      timeDeltaFromMicroseconds(delay))) {
-    log::error("failed to post task to message loop for thread {}, from {}", *this,
-               from_here.ToString());
+    log::error("failed to post task to message loop for thread {}", *this);
     return false;
   }
   return true;
@@ -199,9 +197,7 @@ void MessageLoopThread::Run(std::promise<void> start_up_promise) {
   }
 }
 
-void MessageLoopThread::Post(base::OnceClosure closure) {
-  DoInThread(FROM_HERE, std::move(closure));
-}
+void MessageLoopThread::Post(base::OnceClosure closure) { DoInThread(std::move(closure)); }
 
 PostableContext* MessageLoopThread::Postable() { return this; }
 

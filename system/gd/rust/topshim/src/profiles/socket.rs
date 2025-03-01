@@ -5,6 +5,8 @@ use std::ffi::CString;
 use std::fs::File;
 use std::os::unix::io::FromRawFd;
 
+use topshim_macros::log_args;
+
 use crate::bindings::root as bindings;
 use crate::btif::{BluetoothInterface, BtStatus, RawAddress, SupportedProfiles, Uuid};
 use crate::ccall;
@@ -138,6 +140,7 @@ pub fn try_from_fd(fd: i32) -> Result<File, FdError> {
 }
 
 impl BtSocket {
+    #[log_args]
     pub fn new(intf: &BluetoothInterface) -> Self {
         let r = intf.get_profile_interface(SupportedProfiles::Socket);
         if r.is_null() {
@@ -146,6 +149,7 @@ impl BtSocket {
         BtSocket { internal: RawBtSockWrapper { raw: r as *const bindings::btsock_interface_t } }
     }
 
+    #[log_args]
     pub fn listen(
         &self,
         sock_type: SocketType,
@@ -191,6 +195,7 @@ impl BtSocket {
         (status, try_from_fd(sockfd))
     }
 
+    #[log_args]
     pub fn connect(
         &self,
         addr: RawAddress,
@@ -232,10 +237,12 @@ impl BtSocket {
         (status, try_from_fd(sockfd))
     }
 
+    #[log_args]
     pub fn request_max_tx_data_length(&self, addr: RawAddress) {
         ccall!(self, request_max_tx_data_length, &addr);
     }
 
+    #[log_args]
     pub fn send_msc(&self, dlci: u8, addr: RawAddress) -> BtStatus {
         // PORT_DTRDSR_ON | PORT_CTSRTS_ON | PORT_DCD_ON
         const DEFAULT_MODEM_SIGNAL: u8 = 0x01 | 0x02 | 0x08;
@@ -262,6 +269,7 @@ impl BtSocket {
         .into()
     }
 
+    #[log_args]
     pub fn disconnect_all(&self, addr: RawAddress) -> BtStatus {
         ccall!(self, disconnect_all, &addr).into()
     }

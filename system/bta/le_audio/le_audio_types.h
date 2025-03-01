@@ -617,6 +617,10 @@ struct LeAudioCoreCodecConfig {
 
   /** Returns the audio channel allocation bitmask */
   inline uint32_t GetAudioChannelAllocation() const { return audio_channel_allocation.value_or(0); }
+  /** Returns the number of codec frame blocks */
+  inline uint8_t GetCodecFrameBlocksPerSdu() const {
+    return codec_frames_blocks_per_sdu.value_or(0);
+  }
 };
 
 struct LeAudioCoreCodecCapabilities {
@@ -665,8 +669,8 @@ struct LeAudioCoreCodecCapabilities {
 };
 
 struct LeAudioMetadata {
-  std::optional<uint16_t> preferred_audio_context;
-  std::optional<uint16_t> streaming_audio_context;
+  std::optional<AudioContexts> preferred_audio_context;
+  std::optional<AudioContexts> streaming_audio_context;
   std::optional<std::string> program_info;
   std::optional<std::string> language;  // ISO 639-3 (3 lowercase letter codes)
   std::optional<std::vector<uint8_t>> ccid_list;
@@ -833,17 +837,21 @@ private:
     LeAudioMetadata metadata;
 
     auto vec_opt = ltvs.Find(types::kLeAudioMetadataTypePreferredAudioContext);
-    if (vec_opt &&
-        (vec_opt->size() == sizeof(decltype(metadata.preferred_audio_context)::value_type))) {
+    if (vec_opt && (vec_opt->size() == sizeof(uint16_t))) {
       auto ptr = vec_opt->data();
-      STREAM_TO_UINT16(metadata.preferred_audio_context, ptr);
+      uint16_t raw_ctx;
+      STREAM_TO_UINT16(raw_ctx, ptr);
+      AudioContexts ctx(raw_ctx);
+      metadata.preferred_audio_context = ctx;
     }
 
     vec_opt = ltvs.Find(types::kLeAudioMetadataTypeStreamingAudioContext);
-    if (vec_opt &&
-        (vec_opt->size() == sizeof(decltype(metadata.streaming_audio_context)::value_type))) {
+    if (vec_opt && (vec_opt->size() == sizeof(uint16_t))) {
       auto ptr = vec_opt->data();
-      STREAM_TO_UINT16(metadata.streaming_audio_context, ptr);
+      uint16_t raw_ctx;
+      STREAM_TO_UINT16(raw_ctx, ptr);
+      AudioContexts ctx(raw_ctx);
+      metadata.streaming_audio_context = ctx;
     }
 
     vec_opt = ltvs.Find(types::kLeAudioMetadataTypeProgramInfo);
@@ -1098,6 +1106,12 @@ struct hdl_pair {
   uint16_t ccc_hdl = 0;
 };
 
+template <typename T>
+struct hdl_pair_wrapper {
+  hdl_pair handles;
+  T value;
+};
+
 struct AseQosConfiguration {
   uint32_t presentation_delay = 0;
   uint32_t sdu_interval = 0;
@@ -1142,6 +1156,10 @@ struct CodecConfigSetting {
   inline uint32_t GetAudioChannelAllocation() const {
     return params.GetAsCoreCodecConfig().GetAudioChannelAllocation();
   }
+  inline uint8_t GetCodecFrameBlocksPerSdu() const {
+    return params.GetAsCoreCodecConfig().GetCodecFrameBlocksPerSdu();
+  }
+
   /* Audio channels number for a device */
   uint8_t GetChannelCountPerIsoStream() const { return channel_count_per_iso_stream; }
 
@@ -1285,12 +1303,6 @@ const types::LeAudioCodecId LeAudioCodecIdLc3 = {
 
 static constexpr uint32_t kChannelAllocationStereo =
         codec_spec_conf::kLeAudioLocationFrontLeft | codec_spec_conf::kLeAudioLocationFrontRight;
-
-/* Declarations */
-void get_cis_count(types::LeAudioContextType context_type, uint8_t expected_direction,
-                   int expected_device_cnt, types::LeAudioConfigurationStrategy strategy,
-                   int group_ase_snk_cnt, int group_ase_src_count, uint8_t& cis_count_bidir,
-                   uint8_t& cis_count_unidir_sink, uint8_t& cis_count_unidir_source);
 }  // namespace types
 
 struct stream_map_info {

@@ -16,6 +16,8 @@
 
 package android.bluetooth;
 
+import static java.util.Objects.requireNonNull;
+
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.SystemApi;
@@ -326,7 +328,7 @@ public final class BluetoothLeBroadcastSettings implements Parcelable {
         @NonNull
         public Builder addSubgroupSettings(
                 @NonNull BluetoothLeBroadcastSubgroupSettings subgroupSettings) {
-            Objects.requireNonNull(subgroupSettings, "subgroupSettings cannot be null");
+            requireNonNull(subgroupSettings);
             mSubgroupSettings.add(subgroupSettings);
             return this;
         }

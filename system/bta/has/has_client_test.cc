@@ -39,16 +39,14 @@
 #include "hardware/bt_gatt_types.h"
 #include "has_types.h"
 #include "mock_csis_client.h"
+#include "osi/include/properties.h"
+#include "stack/gatt/gatt_int.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_status.h"
 #include "test/common/mock_functions.h"
 #include "types/bt_transport.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 bool gatt_profile_get_eatt_support(const RawAddress& /*addr*/) { return true; }
-void osi_property_set_bool(const char* key, bool value);
 
 namespace bluetooth {
 namespace has {
@@ -635,7 +633,7 @@ protected:
 
     encryption_result = true;
 
-    ON_CALL(btm_interface, IsLinkKeyKnown(_, _)).WillByDefault(DoAll(Return(true)));
+    ON_CALL(btm_interface, IsDeviceBonded(_, _)).WillByDefault(DoAll(Return(true)));
 
     ON_CALL(btm_interface, SetEncryption(_, _, _, _, _))
             .WillByDefault(Invoke([this](const RawAddress& bd_addr, tBT_TRANSPORT /*transport*/,
@@ -863,7 +861,7 @@ protected:
     ON_CALL(btm_interface, BTM_IsEncrypted(address, _))
             .WillByDefault(DoAll(Return(encryption_result)));
 
-    ON_CALL(btm_interface, IsLinkKeyKnown(address, _)).WillByDefault(DoAll(Return(true)));
+    ON_CALL(btm_interface, IsDeviceBonded(address, _)).WillByDefault(DoAll(Return(true)));
   }
 
   void InjectNotifyReadPresetResponse(uint16_t conn_id, RawAddress const& address, uint16_t handle,
@@ -1129,11 +1127,11 @@ protected:
 
 class HasClientTest : public HasClientTestBase {
   void SetUp(void) override {
+    com::android::bluetooth::flags::provider_->reset_flags();
     HasClientTestBase::SetUp();
     TestAppRegister();
   }
   void TearDown(void) override {
-    com::android::bluetooth::flags::provider_->reset_flags();
     TestAppUnregister();
     HasClientTestBase::TearDown();
   }
@@ -1191,7 +1189,7 @@ TEST_F(HasClientTest, test_connect_after_remove) {
   EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::DISCONNECTED, test_address));
 
   // Device has no Link Key
-  ON_CALL(btm_interface, IsLinkKeyKnown(test_address, _)).WillByDefault(DoAll(Return(true)));
+  ON_CALL(btm_interface, IsDeviceBonded(test_address, _)).WillByDefault(DoAll(Return(true)));
   HasClient::Get()->Connect(test_address);
   Mock::VerifyAndClearExpectations(&callbacks);
 }

@@ -57,17 +57,6 @@ struct future_new {
 };
 extern struct future_new future_new;
 
-// Name: future_new_named
-// Params: const char* name
-// Return: future_t*
-struct future_new_named {
-  future_t* return_value{0};
-  std::function<future_t*(const char* name)> body{
-          [this](const char* /* name */) { return return_value; }};
-  future_t* operator()(const char* name) { return body(name); }
-};
-extern struct future_new_named future_new_named;
-
 // Name: future_new_immediate
 // Params: void* value
 // Return: future_t*

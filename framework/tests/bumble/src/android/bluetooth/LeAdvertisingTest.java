@@ -48,7 +48,7 @@ import java.util.concurrent.TimeUnit;
 /** Test cases for {@link AdvertiseManager}. */
 @RunWith(AndroidJUnit4.class)
 public class LeAdvertisingTest {
-    private static final String TAG = "LeAdvertisingTest";
+    private static final String TAG = LeAdvertisingTest.class.getSimpleName();
 
     private static final int TIMEOUT_ADVERTISING_MS = 1000;
 

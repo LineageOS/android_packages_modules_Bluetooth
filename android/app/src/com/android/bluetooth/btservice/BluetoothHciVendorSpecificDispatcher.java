@@ -32,7 +32,7 @@ import java.util.Set;
 import java.util.UUID;
 
 class BluetoothHciVendorSpecificDispatcher {
-    private static final String TAG = "BluetoothHciVendorSpecificDispatcher";
+    private static final String TAG = BluetoothHciVendorSpecificDispatcher.class.getSimpleName();
 
     private final class Registration implements IBinder.DeathRecipient {
         final IBluetoothHciVendorSpecificCallback mCallback;

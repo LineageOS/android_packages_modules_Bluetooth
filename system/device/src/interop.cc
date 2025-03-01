@@ -47,9 +47,6 @@
 #include "osi/include/osi.h"
 #include "types/raw_address.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 using namespace bluetooth;
 
 #ifdef __ANDROID__
@@ -792,7 +789,7 @@ static char* trim(char* str) {
   return str;
 }
 
-bool token_to_ul(char* token, uint16_t* ul) {
+static bool token_to_ul(char* token, uint16_t* ul) {
   char* e;
   bool ret_value = false;
 

@@ -28,7 +28,7 @@
         <option name="run-command" value="cmd bluetooth_manager wait-for-state:STATE_ON" />
     </target_preparer>
     <target_preparer class="com.android.tradefed.targetprep.PythonVirtualenvPreparer">
-        <option name="dep-module" value="grpcio==1.51.1" />
+        <option name="dep-module" value="grpcio==1.70.0" />
         <option name="dep-module" value="cryptography==35" />
         <option name="dep-module" value="numpy" />
         <option name="dep-module" value="pyusb" />

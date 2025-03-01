@@ -16,33 +16,25 @@ package {
     default_applicable_licenses: ["Android-Apache-2.0"],
 }
 
-rust_library {
+rust_ffi {
     name: "libbluetooth_offload_hal",
-    vendor_available: true,
     crate_name: "bluetooth_offload_hal",
     crate_root: "lib.rs",
     edition: "2021",
+    vendor_available: true,
     rustlibs: [
         "android.hardware.bluetooth-V1-rust",
         "libbinder_rs",
         "libbluetooth_offload_hci",
+        "libbluetooth_offload_leaudio_hci",
         "liblog_rust",
         "liblogger",
     ],
-    visibility: [
-        "//hardware/interfaces/bluetooth:__subpackages__",
-        "//packages/modules/Bluetooth/offload:__subpackages__",
-    ],
-}
-
-cc_library_headers {
-    name: "libbluetooth_offload_hal_headers",
-    vendor_available: true,
-    host_supported: true,
     export_include_dirs: [
         "include",
     ],
     visibility: [
         "//hardware/interfaces/bluetooth:__subpackages__",
+        "//vendor:__subpackages__",
     ],
 }

@@ -222,6 +222,8 @@ void btif_dm_start_discovery(void);
 void btif_dm_cancel_discovery(void);
 
 bool btif_dm_pairing_is_busy();
+bool btif_dm_is_pairing(const RawAddress& bdaddr);
+
 /*******************************************************************************
  *
  * Function         btif_dm_create_bond
@@ -303,17 +305,6 @@ uint16_t btif_dm_get_connection_state_sync(const RawAddress& bd_addr);
  ******************************************************************************/
 void btif_dm_pin_reply(const RawAddress bd_addr, uint8_t accept, uint8_t pin_len,
                        bt_pin_code_t pin_code);
-
-/*******************************************************************************
- *
- * Function         btif_dm_passkey_reply
- *
- * Description      BT SSP passkey reply
- *
- * Returns          bt_status_t
- *
- ******************************************************************************/
-bt_status_t btif_dm_passkey_reply(const RawAddress* bd_addr, uint8_t accept, uint32_t passkey);
 
 /*******************************************************************************
  *

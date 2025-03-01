@@ -28,6 +28,7 @@ import com.android.bluetooth.btservice.BluetoothAdapterProxy;
 /** Factory class for object initialization to help with unit testing */
 public class ScanObjectsFactory {
     private static final String TAG = ScanObjectsFactory.class.getSimpleName();
+
     private static ScanObjectsFactory sInstance;
     private static final Object INSTANCE_LOCK = new Object();
 
@@ -82,7 +83,7 @@ public class ScanObjectsFactory {
                 adapterService, scanController, bluetoothAdapterProxy, looper, getSystemClock());
     }
 
-    public PeriodicScanManager createPeriodicScanManager(AdapterService adapterService) {
-        return new PeriodicScanManager(adapterService);
+    public PeriodicScanManager createPeriodicScanManager() {
+        return new PeriodicScanManager();
     }
 }

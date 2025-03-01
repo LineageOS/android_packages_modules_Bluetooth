@@ -22,9 +22,6 @@
 #include "avrcp_test_packets.h"
 #include "packet_test_helper.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 namespace bluetooth {
 namespace avrcp {
 

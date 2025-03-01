@@ -79,13 +79,12 @@ extern struct BTA_DmAddBleKey BTA_DmAddBleKey;
 // Params: const RawAddress& bd_addr, DEV_CLASS dev_class, const LinkKey&
 // link_key, uint8_t key_type, uint8_t pin_length Return: void
 struct BTA_DmAddDevice {
-  std::function<void(const RawAddress& bd_addr, DEV_CLASS dev_class, const LinkKey& link_key,
-                     uint8_t key_type, uint8_t pin_length)>
-          body{[](const RawAddress& /* bd_addr */, DEV_CLASS /* dev_class */,
-                  const LinkKey& /* link_key */, uint8_t /* key_type */,
-                  uint8_t /* pin_length */) {}};
-  void operator()(const RawAddress& bd_addr, DEV_CLASS dev_class, const LinkKey& link_key,
-                  uint8_t key_type, uint8_t pin_length) {
+  std::function<void(RawAddress bd_addr, DEV_CLASS dev_class, LinkKey link_key, uint8_t key_type,
+                     uint8_t pin_length)>
+          body{[](RawAddress /* bd_addr */, DEV_CLASS /* dev_class */, LinkKey /* link_key */,
+                  uint8_t /* key_type */, uint8_t /* pin_length */) {}};
+  void operator()(RawAddress bd_addr, DEV_CLASS dev_class, LinkKey link_key, uint8_t key_type,
+                  uint8_t pin_length) {
     body(bd_addr, dev_class, link_key, key_type, pin_length);
   }
 };
@@ -315,13 +314,13 @@ extern struct BTA_DmDisconnectAllAcls BTA_DmDisconnectAllAcls;
 // Params: const RawAddress& bd_addr, tBTA_DM_SEARCH_CBACK* p_cback,
 // tBT_TRANSPORT transport Return: void
 struct BTA_DmDiscover {
-  std::function<void(const RawAddress& bd_addr, tBTA_DM_SEARCH_CBACK* p_cback,
+  std::function<void(const RawAddress& bd_addr, service_discovery_callbacks cbacks,
                      tBT_TRANSPORT transport)>
-          body{[](const RawAddress& /* bd_addr */, tBTA_DM_SEARCH_CBACK* /* p_cback */,
+          body{[](const RawAddress& /* bd_addr */, service_discovery_callbacks /* cbacks */,
                   tBT_TRANSPORT /* transport */) {}};
-  void operator()(const RawAddress& bd_addr, tBTA_DM_SEARCH_CBACK* p_cback,
+  void operator()(const RawAddress& bd_addr, service_discovery_callbacks cbacks,
                   tBT_TRANSPORT transport) {
-    body(bd_addr, p_cback, transport);
+    body(bd_addr, cbacks, transport);
   }
 };
 extern struct BTA_DmDiscover BTA_DmDiscover;

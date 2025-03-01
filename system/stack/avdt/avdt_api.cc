@@ -87,6 +87,15 @@ void avdt_scb_transport_channel_timer_timeout(void* data) {
   avdt_scb_event(p_scb, avdt_event, NULL);
 }
 
+void avdt_init_delay_report_timer_timeout(void* data) {
+  log::verbose("Schedule AVDT Open");
+  tAVDT_EVT_HDR single;
+  AvdtpScb* p_scb = (AvdtpScb*)data;
+  single.seid = p_scb->peer_seid;
+  tAVDT_SCB_EVT avdt_scb_evt;
+  avdt_scb_evt.msg.single = single;
+  avdt_scb_event(p_scb, AVDT_SCB_API_OPEN_REQ_EVT, &avdt_scb_evt);
+}
 /*******************************************************************************
  *
  * Function         AVDT_Register

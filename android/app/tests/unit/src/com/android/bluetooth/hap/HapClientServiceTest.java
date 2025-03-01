@@ -179,7 +179,7 @@ public class HapClientServiceTest {
             mService.mCallbacks.unregister(mFrameworkCallback);
         }
 
-        mService.stop();
+        mService.cleanup();
         assertThat(HapClientService.getHapClientService()).isNull();
     }
 
@@ -710,7 +710,7 @@ public class HapClientServiceTest {
     }
 
     /** Helper function to get byte array for a device address */
-    private byte[] getByteAddress(BluetoothDevice device) {
+    private static byte[] getByteAddress(BluetoothDevice device) {
         if (device == null) {
             return Utils.getBytesFromAddress("00:00:00:00:00:00");
         }

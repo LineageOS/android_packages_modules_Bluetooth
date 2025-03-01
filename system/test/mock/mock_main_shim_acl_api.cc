@@ -35,15 +35,6 @@ void bluetooth::shim::ACL_CreateClassicConnection(const RawAddress& /* raw_addre
 void bluetooth::shim::ACL_CancelClassicConnection(const RawAddress& /* raw_address */) {
   inc_func_call_count(__func__);
 }
-bool bluetooth::shim::ACL_AcceptLeConnectionFrom(const tBLE_BD_ADDR& /* legacy_address_with_type */,
-                                                 bool /* is_direct */) {
-  inc_func_call_count(__func__);
-  return true;
-}
-void bluetooth::shim::ACL_IgnoreLeConnectionFrom(
-        const tBLE_BD_ADDR& /* legacy_address_with_type */) {
-  inc_func_call_count(__func__);
-}
 void bluetooth::shim::ACL_ConfigureLePrivacy(bool /* is_le_privacy_enabled */) {
   inc_func_call_count(__func__);
 }
@@ -55,7 +46,6 @@ void bluetooth::shim::ACL_Disconnect(uint16_t /* handle */, bool /* is_classic *
                                      tHCI_STATUS /* reason */, std::string /* comment */) {
   inc_func_call_count(__func__);
 }
-void bluetooth::shim::ACL_IgnoreAllLeConnections() { inc_func_call_count(__func__); }
 void bluetooth::shim::ACL_ReadConnectionAddress(uint16_t /* handle */, RawAddress& /* conn_addr */,
                                                 tBLE_ADDR_TYPE* /* p_addr_type */,
                                                 bool /* ota_address */) {

@@ -36,7 +36,7 @@ public class HfpClientCallTest {
 
     private final BluetoothDevice mDevice = getTestDevice(32);
 
-    private void assertCall(
+    private static void assertCall(
             BluetoothDevice device,
             int id,
             int state,

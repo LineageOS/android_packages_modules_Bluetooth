@@ -22,8 +22,6 @@ source_set("BluetoothHciSources") {
     "acl_manager/classic_acl_connection.cc",
     "acl_manager/le_acl_connection.cc",
     "acl_manager/round_robin_scheduler.cc",
-    "address.cc",
-    "class_of_device.cc",
     "controller.cc",
     "distance_measurement_manager.cc",
     "hci_layer.cc",

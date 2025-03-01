@@ -81,7 +81,7 @@ import java.util.regex.Pattern;
  */
 // Next tag value for ContentProfileErrorReportUtils.report(): 11
 public class BluetoothOppLauncherActivity extends Activity {
-    private static final String TAG = "BluetoothOppLauncherActivity";
+    private static final String TAG = BluetoothOppLauncherActivity.class.getSimpleName();
 
     // Regex that matches characters that have special meaning in HTML. '<', '>', '&' and
     // multiple continuous spaces.

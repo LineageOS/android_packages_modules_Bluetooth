@@ -24,9 +24,6 @@
 #include "test/common/mock_functions.h"
 #include "udrv/include/uipc.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 std::unique_ptr<tUIPC_STATE> mock_uipc_init_ret;
 uint32_t mock_uipc_read_ret;
 bool mock_uipc_send_ret;
@@ -40,10 +37,6 @@ bool UIPC_Send(tUIPC_STATE& /* uipc */, tUIPC_CH_ID /* ch_id */, uint16_t /* msg
                const uint8_t* /* p_buf */, uint16_t /* msglen */) {
   inc_func_call_count(__func__);
   return mock_uipc_send_ret;
-}
-int uipc_start_main_server_thread(tUIPC_STATE& /* uipc */) {
-  inc_func_call_count(__func__);
-  return 0;
 }
 std::unique_ptr<tUIPC_STATE> UIPC_Init() {
   inc_func_call_count(__func__);
@@ -64,8 +57,3 @@ bool UIPC_Ioctl(tUIPC_STATE& /* uipc */, tUIPC_CH_ID /* ch_id */, uint32_t /* re
   return false;
 }
 void UIPC_Close(tUIPC_STATE& /* uipc */, tUIPC_CH_ID /* ch_id */) { inc_func_call_count(__func__); }
-void uipc_close_locked(tUIPC_STATE& /* uipc */, tUIPC_CH_ID /* ch_id */) {
-  inc_func_call_count(__func__);
-}
-void uipc_main_cleanup(tUIPC_STATE& /* uipc */) { inc_func_call_count(__func__); }
-void uipc_stop_main_server_thread(tUIPC_STATE& /* uipc */) { inc_func_call_count(__func__); }

@@ -35,8 +35,8 @@ import java.io.IOException;
  * <p>Will reject the OBEX connection, start a timer, and at timeout close the socket.
  */
 public class ObexRejectServer extends ServerRequestHandler implements Handler.Callback {
+    private static final String TAG = ObexRejectServer.class.getSimpleName();
 
-    private static final String TAG = "ObexRejectServer";
     private final int mResult;
     private final HandlerThread mHandlerThread;
     private final Handler mMessageHandler;

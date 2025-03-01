@@ -20,6 +20,7 @@ import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothHearingAid
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
+import android.bluetooth.BluetoothProfile.STATE_CONNECTED
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -79,7 +80,7 @@ class Asha(val context: Context) : AshaImplBase(), Closeable {
 
     override fun waitPeripheral(
         request: WaitPeripheralRequest,
-        responseObserver: StreamObserver<WaitPeripheralResponse>
+        responseObserver: StreamObserver<WaitPeripheralResponse>,
     ) {
         grpcUnary<WaitPeripheralResponse>(scope, responseObserver) {
             Log.i(TAG, "waitPeripheral")
@@ -87,9 +88,7 @@ class Asha(val context: Context) : AshaImplBase(), Closeable {
             val device = request.connection.toBluetoothDevice(bluetoothAdapter)
             Log.d(TAG, "connection address ${device.getAddress()}")
 
-            if (
-                bluetoothHearingAid.getConnectionState(device) != BluetoothProfile.STATE_CONNECTED
-            ) {
+            if (bluetoothHearingAid.getConnectionState(device) != STATE_CONNECTED) {
                 Log.d(TAG, "wait for bluetoothHearingAid profile connection")
                 flow
                     .filter {
@@ -97,7 +96,7 @@ class Asha(val context: Context) : AshaImplBase(), Closeable {
                     }
                     .filter { it.getBluetoothDeviceExtra() == device }
                     .map { it.getIntExtra(BluetoothProfile.EXTRA_STATE, BluetoothAdapter.ERROR) }
-                    .filter { it == BluetoothProfile.STATE_CONNECTED }
+                    .filter { it == STATE_CONNECTED }
                     .first()
             }
 
@@ -113,9 +112,7 @@ class Asha(val context: Context) : AshaImplBase(), Closeable {
             val device = request.connection.toBluetoothDevice(bluetoothAdapter)
             Log.d(TAG, "connection address ${device.getAddress()}")
 
-            if (
-                bluetoothHearingAid.getConnectionState(device) != BluetoothProfile.STATE_CONNECTED
-            ) {
+            if (bluetoothHearingAid.getConnectionState(device) != STATE_CONNECTED) {
                 throw RuntimeException("Hearing aid device is not connected, cannot start")
             }
 
@@ -141,7 +138,7 @@ class Asha(val context: Context) : AshaImplBase(), Closeable {
                                 ) {
                                     Log.d(
                                         TAG,
-                                        "TYPE_HEARING_AID added with address: ${addedDevice.address}"
+                                        "TYPE_HEARING_AID added with address: ${addedDevice.address}",
                                     )
                                     trySendBlocking(null)
                                 }
@@ -151,7 +148,7 @@ class Asha(val context: Context) : AshaImplBase(), Closeable {
 
                 audioManager.registerAudioDeviceCallback(
                     audioDeviceCallback,
-                    Handler(Looper.getMainLooper())
+                    Handler(Looper.getMainLooper()),
                 )
                 awaitClose { audioManager.unregisterAudioDeviceCallback(audioDeviceCallback) }
             }
@@ -182,7 +179,7 @@ class Asha(val context: Context) : AshaImplBase(), Closeable {
                                 for (outputDevice in outputDevices) {
                                     Log.d(
                                         TAG,
-                                        "available output device in listener:${outputDevice.type}"
+                                        "available output device in listener:${outputDevice.type}",
                                     )
                                     if (outputDevice.type == AudioDeviceInfo.TYPE_HEARING_AID) {
                                         val result = router.setPreferredDevice(outputDevice)
@@ -196,7 +193,7 @@ class Asha(val context: Context) : AshaImplBase(), Closeable {
 
                 audioTrack!!.addOnRoutingChangedListener(
                     audioRoutingListener,
-                    Handler(Looper.getMainLooper())
+                    Handler(Looper.getMainLooper()),
                 )
                 awaitClose { audioTrack!!.removeOnRoutingChangedListener(audioRoutingListener) }
             }
@@ -206,7 +203,7 @@ class Asha(val context: Context) : AshaImplBase(), Closeable {
             audioManager.setStreamVolume(
                 AudioManager.STREAM_MUSIC,
                 minVolume,
-                AudioManager.FLAG_SHOW_UI
+                AudioManager.FLAG_SHOW_UI,
             )
 
             StartResponse.getDefaultInstance()
@@ -244,7 +241,7 @@ class Asha(val context: Context) : AshaImplBase(), Closeable {
                 audioManager.setStreamVolume(
                     AudioManager.STREAM_MUSIC,
                     maxVolume,
-                    AudioManager.FLAG_SHOW_UI
+                    AudioManager.FLAG_SHOW_UI,
                 )
             }
         }
@@ -261,10 +258,12 @@ class Asha(val context: Context) : AshaImplBase(), Closeable {
                     )
                 }
             }
+
             override fun onError(t: Throwable?) {
                 Log.e(TAG, t.toString())
                 responseObserver.onError(t)
             }
+
             override fun onCompleted() {
                 Log.i(TAG, "onCompleted")
                 responseObserver.onNext(PlaybackAudioResponse.getDefaultInstance())

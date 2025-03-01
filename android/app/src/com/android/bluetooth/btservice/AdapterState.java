@@ -22,6 +22,7 @@ import android.os.Message;
 import android.os.SystemProperties;
 import android.util.Log;
 
+import com.android.bluetooth.flags.Flags;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
 
@@ -90,7 +91,7 @@ final class AdapterState extends StateMachine {
         start();
     }
 
-    private String messageString(int message) {
+    private static String messageString(int message) {
         switch (message) {
             case BLE_TURN_ON:
                 return "BLE_TURN_ON";
@@ -342,6 +343,13 @@ final class AdapterState extends StateMachine {
         @Override
         public void exit() {
             removeMessages(BREDR_STOP_TIMEOUT);
+            if (Flags.disconnectAclsByBredrDisabled()) {
+              if (mAdapterService != null) {
+                Log.i(TAG, "Disconnecting all ACLs with BREDR Stopped");
+                mAdapterService.disconnectAllAcls();
+              }
+            }
+
             super.exit();
         }
 

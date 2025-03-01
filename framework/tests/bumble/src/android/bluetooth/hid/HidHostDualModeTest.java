@@ -18,6 +18,8 @@ package android.bluetooth.hid;
 
 import static android.bluetooth.BluetoothDevice.TRANSPORT_BREDR;
 import static android.bluetooth.BluetoothDevice.TRANSPORT_LE;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
@@ -97,6 +99,7 @@ import java.util.Arrays;
 @VirtualOnly
 public class HidHostDualModeTest {
     private static final String TAG = HidHostDualModeTest.class.getSimpleName();
+
     private static final String BUMBLE_DEVICE_NAME = "Bumble";
     private static final Duration INTENT_TIMEOUT = Duration.ofSeconds(10);
     private static final int KEYBD_RPT_ID = 1;
@@ -309,17 +312,12 @@ public class HidHostDualModeTest {
                 hasExtra(BluetoothDevice.EXTRA_DEVICE, mDevice),
                 hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_BONDED));
 
-        if (a2dpService.getConnectionPolicy(mDevice)
-                == BluetoothProfile.CONNECTION_POLICY_ALLOWED) {
-            assertThat(
-                            a2dpService.setConnectionPolicy(
-                                    mDevice, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN))
+        if (a2dpService.getConnectionPolicy(mDevice) == CONNECTION_POLICY_ALLOWED) {
+            assertThat(a2dpService.setConnectionPolicy(mDevice, CONNECTION_POLICY_FORBIDDEN))
                     .isTrue();
         }
-        if (hfpService.getConnectionPolicy(mDevice) == BluetoothProfile.CONNECTION_POLICY_ALLOWED) {
-            assertThat(
-                            hfpService.setConnectionPolicy(
-                                    mDevice, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN))
+        if (hfpService.getConnectionPolicy(mDevice) == CONNECTION_POLICY_ALLOWED) {
+            assertThat(hfpService.setConnectionPolicy(mDevice, CONNECTION_POLICY_FORBIDDEN))
                     .isTrue();
         }
 

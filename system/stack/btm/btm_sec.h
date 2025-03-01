@@ -57,7 +57,7 @@ bool BTM_SecRegister(const tBTM_APPL_INFO* p_cb_info);
 
 bool BTM_IsEncrypted(const RawAddress& bd_addr, tBT_TRANSPORT transport);
 bool BTM_IsLinkKeyAuthed(const RawAddress& bd_addr, tBT_TRANSPORT transport);
-bool BTM_IsLinkKeyKnown(const RawAddress& bd_addr, tBT_TRANSPORT transport);
+bool BTM_IsBonded(const RawAddress& bd_addr, tBT_TRANSPORT transport = BT_TRANSPORT_AUTO);
 bool BTM_IsAuthenticated(const RawAddress& bd_addr, tBT_TRANSPORT transport);
 bool BTM_CanReadDiscoverableCharacteristics(const RawAddress& bd_addr);
 void BTM_update_version_info(const RawAddress& bd_addr,

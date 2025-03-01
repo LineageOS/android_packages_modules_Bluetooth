@@ -15,13 +15,15 @@
  */
 package com.android.bluetooth.mapclient;
 
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
+import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
+
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothProfile;
 import android.net.Uri;
 
 import androidx.test.filters.MediumTest;
@@ -72,7 +74,7 @@ public class MapClientServiceBinderTest {
 
     @Test
     public void getDevicesMatchingConnectionStates_callsServiceMethod() {
-        int[] states = new int[] {BluetoothProfile.STATE_CONNECTED};
+        int[] states = new int[] {STATE_CONNECTED};
         mBinder.getDevicesMatchingConnectionStates(states, null);
 
         verify(mService).getDevicesMatchingConnectionStates(states);
@@ -87,7 +89,7 @@ public class MapClientServiceBinderTest {
 
     @Test
     public void setConnectionPolicy_callsServiceMethod() {
-        int connectionPolicy = BluetoothProfile.CONNECTION_POLICY_ALLOWED;
+        int connectionPolicy = CONNECTION_POLICY_ALLOWED;
         mBinder.setConnectionPolicy(mDevice, connectionPolicy, null);
 
         verify(mService).setConnectionPolicy(mDevice, connectionPolicy);

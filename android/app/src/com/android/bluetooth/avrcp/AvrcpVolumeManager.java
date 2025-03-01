@@ -54,7 +54,7 @@ import java.util.concurrent.CompletableFuture;
  * device connection.
  */
 class AvrcpVolumeManager extends AudioDeviceCallback {
-    public static final String TAG = AvrcpVolumeManager.class.getSimpleName();
+    private static final String TAG = AvrcpVolumeManager.class.getSimpleName();
 
     // All volumes are stored at system volume values, not AVRCP values
     private static final String VOLUME_MAP = "bluetooth_volume_map";

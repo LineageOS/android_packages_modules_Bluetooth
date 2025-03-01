@@ -18,6 +18,7 @@
 package com.android.bluetooth.tbs;
 
 import static android.bluetooth.BluetoothDevice.METADATA_GTBS_CCCD;
+import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static java.util.Objects.requireNonNull;
 
@@ -28,7 +29,6 @@ import android.bluetooth.BluetoothGattCharacteristic;
 import android.bluetooth.BluetoothGattDescriptor;
 import android.bluetooth.BluetoothGattServerCallback;
 import android.bluetooth.BluetoothGattService;
-import android.bluetooth.BluetoothProfile;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
@@ -211,14 +211,15 @@ public class TbsGatt {
                 Operation operation,
                 int requestId,
                 BluetoothGattCharacteristic characteristic,
-                BluetoothGattDescriptor descriptor) {
+                BluetoothGattDescriptor descriptor,
+                int offset) {
             mOperation = operation;
             mRequestId = requestId;
             mCharacteristic = characteristic;
             mDescriptor = descriptor;
             mPreparedWrite = false;
             mResponseNeeded = false;
-            mOffset = 0;
+            mOffset = offset;
             mValue = null;
         }
 
@@ -1177,7 +1178,14 @@ public class TbsGatt {
             case READ_DESCRIPTOR:
                 byte[] value = getCccBytes(device, op.mDescriptor.getCharacteristic().getUuid());
                 if (value.length < op.mOffset) {
+                    Log.e(
+                            TAG,
+                            ("Wrong offset read for: "
+                                            + op.mDescriptor.getCharacteristic().getUuid())
+                                    + (": offset " + op.mOffset)
+                                    + (", total len: " + value.length));
                     status = BluetoothGatt.GATT_INVALID_OFFSET;
+                    value = new byte[] {};
                 } else {
                     value = Arrays.copyOfRange(value, op.mOffset, value.length);
                     status = BluetoothGatt.GATT_SUCCESS;
@@ -1276,6 +1284,12 @@ public class TbsGatt {
 
                 if (value.length < op.mOffset) {
                     status = BluetoothGatt.GATT_INVALID_OFFSET;
+                    Log.e(
+                            TAG,
+                            ("Wrong offset read for: " + op.mCharacteristic.getUuid())
+                                    + (": offset " + op.mOffset)
+                                    + (", total len: " + value.length));
+                    value = new byte[] {};
                 } else {
                     value = Arrays.copyOfRange(value, op.mOffset, value.length);
                     status = BluetoothGatt.GATT_SUCCESS;
@@ -1321,6 +1335,7 @@ public class TbsGatt {
                 value = cccd.getValue(device);
                 if (value.length < op.mOffset) {
                     status = BluetoothGatt.GATT_INVALID_OFFSET;
+                    value = new byte[] {};
                 } else {
                     value = Arrays.copyOfRange(value, op.mOffset, value.length);
                     status = BluetoothGatt.GATT_SUCCESS;
@@ -1476,7 +1491,7 @@ public class TbsGatt {
                         BluetoothDevice device, int status, int newState) {
                     super.onConnectionStateChange(device, status, newState);
                     Log.d(TAG, "BluetoothGattServerCallback: onConnectionStateChange");
-                    if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                    if (newState == STATE_DISCONNECTED) {
                         clearUnauthorizedGattOperationss(device);
                     }
                 }
@@ -1521,7 +1536,8 @@ public class TbsGatt {
                                     GattOpContext.Operation.READ_CHARACTERISTIC,
                                     requestId,
                                     characteristic,
-                                    null);
+                                    null,
+                                    offset);
                     switch (getDeviceAuthorization(device)) {
                         case BluetoothDevice.ACCESS_REJECTED:
                             onRejectedAuthorizationGattOperation(device, op);
@@ -1615,7 +1631,8 @@ public class TbsGatt {
                                     GattOpContext.Operation.READ_DESCRIPTOR,
                                     requestId,
                                     null,
-                                    descriptor);
+                                    descriptor,
+                                    offset);
                     switch (getDeviceAuthorization(device)) {
                         case BluetoothDevice.ACCESS_REJECTED:
                             onRejectedAuthorizationGattOperation(device, op);

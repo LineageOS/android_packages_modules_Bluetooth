@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include "main_handler.h"
+
 #include <base/functional/bind.h>
 #include <base/functional/callback_forward.h>
 #include <base/location.h>
@@ -28,9 +30,6 @@
 #include "common/postable_context.h"
 #include "include/hardware/bluetooth.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 using bluetooth::common::MessageLoopThread;
 using BtMainClosure = std::function<void()>;
 
@@ -42,13 +41,13 @@ void do_post_on_bt_main(BtMainClosure closure) { closure(); }
 }  // namespace
 
 bt_status_t do_in_main_thread(base::OnceClosure task) {
-  bluetooth::log::assert_that(main_thread.DoInThread(FROM_HERE, std::move(task)),
+  bluetooth::log::assert_that(main_thread.DoInThread(std::move(task)),
                               "Unable to run on main thread");
   return BT_STATUS_SUCCESS;
 }
 
 bt_status_t do_in_main_thread_delayed(base::OnceClosure task, std::chrono::microseconds delay) {
-  bluetooth::log::assert_that(!main_thread.DoInThreadDelayed(FROM_HERE, std::move(task), delay),
+  bluetooth::log::assert_that(!main_thread.DoInThreadDelayed(std::move(task), delay),
                               "Unable to run on main thread delayed");
   return BT_STATUS_SUCCESS;
 }

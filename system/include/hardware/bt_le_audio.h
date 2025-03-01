@@ -20,6 +20,7 @@
 #include <bluetooth/log.h>
 
 #include <array>
+#include <bitset>
 #include <map>
 #include <optional>
 #include <ostream>
@@ -77,6 +78,42 @@ enum class GroupStreamStatus {
   CONFIGURED_BY_USER,
   DESTROYED,
 };
+
+inline std::ostream& operator<<(std::ostream& os, const GroupStreamStatus& state) {
+  switch (state) {
+    case GroupStreamStatus::IDLE:
+      os << "IDLE";
+      break;
+    case GroupStreamStatus::STREAMING:
+      os << "STREAMING";
+      break;
+    case GroupStreamStatus::RELEASING:
+      os << "RELEASING";
+      break;
+    case GroupStreamStatus::RELEASING_AUTONOMOUS:
+      os << "RELEASING_AUTONOMOUS";
+      break;
+    case GroupStreamStatus::SUSPENDING:
+      os << "SUSPENDING";
+      break;
+    case GroupStreamStatus::SUSPENDED:
+      os << "SUSPENDED";
+      break;
+    case GroupStreamStatus::CONFIGURED_AUTONOMOUS:
+      os << "CONFIGURED_AUTONOMOUS";
+      break;
+    case GroupStreamStatus::CONFIGURED_BY_USER:
+      os << "CONFIGURED_BY_USER";
+      break;
+    case GroupStreamStatus::DESTROYED:
+      os << "DESTROYED";
+      break;
+    default:
+      os << "UNKNOWN";
+      break;
+  }
+  return os;
+}
 
 enum class GroupNodeStatus {
   ADDED = 1,
@@ -139,6 +176,7 @@ typedef struct btle_audio_codec_config {
   btle_audio_bits_per_sample_index_t bits_per_sample = LE_AUDIO_BITS_PER_SAMPLE_INDEX_NONE;
   btle_audio_channel_count_index_t channel_count = LE_AUDIO_CHANNEL_COUNT_INDEX_NONE;
   btle_audio_frame_duration_index_t frame_duration = LE_AUDIO_FRAME_DURATION_INDEX_NONE;
+  uint8_t codec_frame_blocks_per_sdu = 0;
   uint16_t octets_per_frame = 0;
   int32_t codec_priority = 0;
 
@@ -318,11 +356,13 @@ public:
   virtual void OnGroupNodeStatus(const RawAddress& bd_addr, int group_id,
                                  GroupNodeStatus node_status) = 0;
   /* Callback for newly recognized or reconfigured existing le audio group */
-  virtual void OnAudioConf(uint8_t direction, int group_id, uint32_t snk_audio_location,
-                           uint32_t src_audio_location, uint16_t avail_cont) = 0;
+  virtual void OnAudioConf(uint8_t direction, int group_id,
+                           std::optional<std::bitset<32>> snk_audio_location,
+                           std::optional<std::bitset<32>> src_audio_location,
+                           uint16_t avail_cont) = 0;
   /* Callback for sink audio location recognized */
   virtual void OnSinkAudioLocationAvailable(const RawAddress& address,
-                                            uint32_t snk_audio_locations) = 0;
+                                            std::optional<std::bitset<32>> snk_audio_location) = 0;
   /* Callback with local codec capabilities */
   virtual void OnAudioLocalCodecCapabilities(
           std::vector<btle_audio_codec_config_t> local_input_capa_codec_conf,

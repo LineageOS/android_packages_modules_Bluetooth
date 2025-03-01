@@ -65,7 +65,12 @@ typedef struct {
   tHCI_STATUS hci_status;
 } tBTA_DM_SVC_RES;
 
-using tBTA_DM_MSG = std::variant<tBTA_DM_API_DISCOVER, tBTA_DM_SVC_RES>;
+/* data type for BTA_DM_API_DISCOVER_EVT */
+typedef struct {
+  uint16_t conn_id;
+} tBTA_DM_TOUT;
+
+using tBTA_DM_MSG = std::variant<tBTA_DM_API_DISCOVER, tBTA_DM_SVC_RES, tBTA_DM_TOUT>;
 
 typedef enum { BTA_DM_DISCOVER_IDLE, BTA_DM_DISCOVER_ACTIVE } tBTA_DM_SERVICE_DISCOVERY_STATE;
 

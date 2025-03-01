@@ -1,6 +1,7 @@
 use num_derive::{FromPrimitive, ToPrimitive};
 use num_traits::cast::{FromPrimitive, ToPrimitive};
 use std::convert::TryFrom;
+use std::fmt::{Debug, Formatter, Result};
 use std::os::raw::c_char;
 use std::sync::{Arc, Mutex};
 use std::vec::Vec;
@@ -12,7 +13,7 @@ use crate::btif::{
 use crate::ccall;
 use crate::topstack::get_dispatchers;
 use crate::utils::{LTCheckedPtr, LTCheckedPtrMut};
-use topshim_macros::cb_variant;
+use topshim_macros::{cb_variant, log_args};
 
 #[derive(Clone, Debug, FromPrimitive, ToPrimitive, PartialEq, PartialOrd)]
 #[repr(u32)]
@@ -419,6 +420,12 @@ pub struct SdpCallbacksDispatcher {
     pub dispatch: Box<dyn Fn(SdpCallbacks) + Send>,
 }
 
+impl Debug for SdpCallbacksDispatcher {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "SdpCallbacksDispatcher {{}}")
+    }
+}
+
 type SdpCb = Arc<Mutex<SdpCallbacksDispatcher>>;
 
 cb_variant!(SdpCb, sdp_search_cb -> SdpCallbacks::SdpSearch,
@@ -443,6 +450,7 @@ pub struct Sdp {
 }
 
 impl Sdp {
+    #[log_args]
     pub fn new(intf: &BluetoothInterface) -> Sdp {
         let r = intf.get_profile_interface(SupportedProfiles::Sdp);
         Sdp {
@@ -452,10 +460,12 @@ impl Sdp {
         }
     }
 
+    #[log_args]
     pub fn is_initialized(&self) -> bool {
         self.is_init
     }
 
+    #[log_args]
     pub fn initialize(&mut self, callbacks: SdpCallbacksDispatcher) -> bool {
         if get_dispatchers().lock().unwrap().set::<SdpCb>(Arc::new(Mutex::new(callbacks))) {
             panic!("Tried to set dispatcher for SdpCallbacks but it already existed");
@@ -475,11 +485,13 @@ impl Sdp {
         return self.is_init;
     }
 
+    #[log_args]
     pub fn sdp_search(&self, address: &mut RawAddress, uuid: &Uuid) -> BtStatus {
         let addr_ptr = LTCheckedPtrMut::from_ref(address);
         BtStatus::from(ccall!(self, sdp_search, addr_ptr.into(), uuid))
     }
 
+    #[log_args]
     pub fn create_sdp_record(&self, record: &mut BtSdpRecord, handle: &mut i32) -> BtStatus {
         let mut converted = record.get_unsafe_record();
         let record_ptr = LTCheckedPtrMut::from_ref(&mut converted);
@@ -487,6 +499,7 @@ impl Sdp {
         BtStatus::from(ccall!(self, create_sdp_record, record_ptr.into(), handle_ptr.into()))
     }
 
+    #[log_args]
     pub fn remove_sdp_record(&self, handle: i32) -> BtStatus {
         BtStatus::from(ccall!(self, remove_sdp_record, handle))
     }

@@ -20,6 +20,9 @@ import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.Manifest.permission.RECEIVE_SMS;
 import static android.Manifest.permission.SEND_SMS;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
+import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import android.annotation.NonNull;
 import android.annotation.Nullable;
@@ -53,8 +56,8 @@ import java.util.List;
  */
 @SystemApi
 public final class BluetoothMapClient implements BluetoothProfile, AutoCloseable {
+    private static final String TAG = BluetoothMapClient.class.getSimpleName();
 
-    private static final String TAG = "BluetoothMapClient";
     private static final boolean DBG = Log.isLoggable(TAG, Log.DEBUG);
     private static final boolean VDBG = Log.isLoggable(TAG, Log.VERBOSE);
 
@@ -395,7 +398,7 @@ public final class BluetoothMapClient implements BluetoothProfile, AutoCloseable
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return BluetoothProfile.STATE_DISCONNECTED;
+        return STATE_DISCONNECTED;
     }
 
     /**
@@ -439,8 +442,8 @@ public final class BluetoothMapClient implements BluetoothProfile, AutoCloseable
             if (DBG) Log.d(TAG, Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()
                 && isValidDevice(device)
-                && (connectionPolicy == BluetoothProfile.CONNECTION_POLICY_FORBIDDEN
-                        || connectionPolicy == BluetoothProfile.CONNECTION_POLICY_ALLOWED)) {
+                && (connectionPolicy == CONNECTION_POLICY_FORBIDDEN
+                        || connectionPolicy == CONNECTION_POLICY_ALLOWED)) {
             try {
                 return service.setConnectionPolicy(device, connectionPolicy, mAttributionSource);
             } catch (RemoteException e) {
@@ -493,7 +496,7 @@ public final class BluetoothMapClient implements BluetoothProfile, AutoCloseable
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
+        return CONNECTION_POLICY_FORBIDDEN;
     }
 
     /**

@@ -56,10 +56,13 @@ struct MsftExtensionManager::impl {
      * Query the kernel/drivers to derive the MSFT opcode so that
      * we can issue MSFT vendor specific commands.
      */
-    if (!supports_msft_extensions()) {
+    uint16_t opcode = hal_->getMsftOpcode();
+    if (opcode == 0) {
       log::info("MSFT extension is not supported.");
       return;
     }
+    msft_.opcode = opcode;
+    log::info("MSFT opcode 0x{:04x}", msft_.opcode.value());
 
     /*
      * The vendor prefix is required to distinguish among the vendor events
@@ -121,20 +124,7 @@ struct MsftExtensionManager::impl {
     }
   }
 
-  bool supports_msft_extensions() {
-    if (msft_.opcode.has_value()) {
-      return true;
-    }
-
-    uint16_t opcode = hal_->getMsftOpcode();
-    if (opcode == 0) {
-      return false;
-    }
-
-    msft_.opcode = opcode;
-    log::info("MSFT opcode 0x{:04x}", msft_.opcode.value());
-    return true;
-  }
+  bool supports_msft_extensions() { return msft_.opcode.has_value(); }
 
   void msft_adv_monitor_add(const MsftAdvMonitor& monitor, MsftAdvMonitorAddCallback cb) {
     if (!supports_msft_extensions()) {
@@ -225,7 +215,11 @@ struct MsftExtensionManager::impl {
     log::assert_that(view.IsValid(), "assert failed: view.IsValid()");
     auto status_view = MsftReadSupportedFeaturesCommandCompleteView::Create(
             MsftCommandCompleteView::Create(view));
-    log::assert_that(status_view.IsValid(), "assert failed: status_view.IsValid()");
+    if (!status_view.IsValid()) {
+      log::error("MSFT Read supported features failed");
+      msft_.opcode = std::nullopt;
+      return;
+    }
 
     if (status_view.GetStatus() != ErrorCode::SUCCESS) {
       log::warn("MSFT Command complete status {}", ErrorCodeText(status_view.GetStatus()));

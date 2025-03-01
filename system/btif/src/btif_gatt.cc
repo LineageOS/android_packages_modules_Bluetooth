@@ -39,9 +39,6 @@
 #include "main/shim/distance_measurement_manager.h"
 #include "main/shim/le_advertising_manager.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 const btgatt_callbacks_t* bt_gatt_callbacks = NULL;
 
 /*******************************************************************************

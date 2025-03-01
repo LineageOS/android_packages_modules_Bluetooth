@@ -27,9 +27,6 @@
 
 #include "test/common/mock_functions.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 // Original usings
 using HfpInterface = bluetooth::audio::hfp::HfpClientInterface;
 using namespace bluetooth;
@@ -64,7 +61,6 @@ struct bta_ag_set_sco_allowed bta_ag_set_sco_allowed;
 struct bta_ag_set_sco_offload_enabled bta_ag_set_sco_offload_enabled;
 struct bta_ag_stream_suspended bta_ag_stream_suspended;
 struct bta_clear_active_device bta_clear_active_device;
-struct updateCodecParametersFromProviderInfo updateCodecParametersFromProviderInfo;
 
 }  // namespace bta_ag_sco
 }  // namespace mock
@@ -180,11 +176,6 @@ void bta_ag_stream_suspended() {
 void bta_clear_active_device() {
   inc_func_call_count(__func__);
   test::mock::bta_ag_sco::bta_clear_active_device();
-}
-void updateCodecParametersFromProviderInfo(tBTA_AG_UUID_CODEC esco_codec,
-                                           enh_esco_params_t& params) {
-  inc_func_call_count(__func__);
-  test::mock::bta_ag_sco::updateCodecParametersFromProviderInfo(esco_codec, params);
 }
 // Mocked functions complete
 // END mockcify generation

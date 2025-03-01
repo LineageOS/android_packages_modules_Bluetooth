@@ -117,7 +117,7 @@ class CustomizedMetadataEntity {
         return builder.toString();
     }
 
-    private String metadataToString(byte[] metadata) {
+    private static String metadataToString(byte[] metadata) {
         if (metadata == null) {
             return null;
         }

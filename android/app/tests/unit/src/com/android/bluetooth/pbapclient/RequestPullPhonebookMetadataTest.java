@@ -168,7 +168,7 @@ public class RequestPullPhonebookMetadataTest {
             return sendResponse(op, replyHeaders, null);
         }
 
-        public byte[] shortToByteArray(short s) {
+        public static byte[] shortToByteArray(short s) {
             ByteBuffer ret = ByteBuffer.allocate(2);
             ret.putShort(s);
             return ret.array();

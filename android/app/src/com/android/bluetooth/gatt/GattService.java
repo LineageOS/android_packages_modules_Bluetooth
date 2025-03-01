@@ -19,6 +19,8 @@ package com.android.bluetooth.gatt;
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE;
+import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
+import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static com.android.bluetooth.Utils.callerIsSystemOrActiveOrManagedUser;
 import static com.android.bluetooth.Utils.checkCallerTargetSdk;
@@ -87,7 +89,8 @@ import java.util.stream.Stream;
 
 /** Provides Bluetooth Gatt profile, as a service in the Bluetooth application. */
 public class GattService extends ProfileService {
-    private static final String TAG = GattServiceConfig.TAG_PREFIX + "GattService";
+    private static final String TAG =
+            GattServiceConfig.TAG_PREFIX + GattService.class.getSimpleName();
 
     private static final UUID HID_SERVICE_UUID =
             UUID.fromString("00001812-0000-1000-8000-00805F9B34FB");
@@ -131,7 +134,7 @@ public class GattService extends ProfileService {
 
     @Nullable public final ScanController mScanController;
 
-    /** This is only used when Flags.scanManagerRefactor() is true. */
+    /** This is only used when Flags.onlyStartScanDuringBleOn() is true. */
     private static GattService sGattService;
 
     /** List of our registered clients. */
@@ -182,7 +185,7 @@ public class GattService extends ProfileService {
 
         mAdvertiseManager = new AdvertiseManager(mAdapterService, mHandlerThread.getLooper());
 
-        if (!Flags.scanManagerRefactor()) {
+        if (!Flags.onlyStartScanDuringBleOn()) {
             mScanController = new ScanController(adapterService);
         } else {
             mScanController = null;
@@ -190,7 +193,7 @@ public class GattService extends ProfileService {
         mDistanceMeasurementManager =
                 GattObjectsFactory.getInstance().createDistanceMeasurementManager(mAdapterService);
 
-        if (Flags.scanManagerRefactor()) {
+        if (Flags.onlyStartScanDuringBleOn()) {
             setGattService(this);
         }
     }
@@ -208,13 +211,14 @@ public class GattService extends ProfileService {
     }
 
     @Override
-    public void stop() {
-        Log.d(TAG, "stop()");
-        if (Flags.scanManagerRefactor() && sGattService == null) {
-            Log.w(TAG, "stop() called before start()");
+    public void cleanup() {
+        Log.i(TAG, "Cleanup Gatt Service");
+
+        if (Flags.onlyStartScanDuringBleOn() && sGattService == null) {
+            Log.w(TAG, "cleanup() called before initialization");
             return;
         }
-        if (Flags.scanManagerRefactor()) {
+        if (Flags.onlyStartScanDuringBleOn()) {
             setGattService(null);
         }
         if (mScanController != null) {
@@ -225,18 +229,14 @@ public class GattService extends ProfileService {
         mServerMap.clear();
         mHandleMap.clear();
         mReliableQueue.clear();
-    }
 
-    @Override
-    public void cleanup() {
-        Log.d(TAG, "cleanup()");
         mNativeInterface.cleanup();
         mAdvertiseManager.cleanup();
         mDistanceMeasurementManager.cleanup();
         mHandlerThread.quit();
     }
 
-    /** This is only used when Flags.scanManagerRefactor() is true. */
+    /** This is only used when Flags.onlyStartScanDuringBleOn() is true. */
     public static synchronized GattService getGattService() {
         if (sGattService == null) {
             Log.w(TAG, "getGattService(): service is null");
@@ -916,9 +916,9 @@ public class GattService extends ProfileService {
                         + connId
                         + ", address="
                         + BluetoothUtils.toAnonymizedAddress(address));
-
+        BluetoothDevice device = getDevice(address);
         mClientMap.removeConnection(clientIf, connId);
-        mAdapterService.notifyGattClientDisconnect(clientIf, getDevice(address));
+        mAdapterService.notifyGattClientDisconnect(clientIf, device);
         ContextMap<IBluetoothGattCallback>.App app = mClientMap.getById(clientIf);
 
         mRestrictedHandles.remove(connId);
@@ -946,10 +946,19 @@ public class GattService extends ProfileService {
         }
 
         if (app != null) {
-            app.callback.onClientConnectionState(status, clientIf, false, address);
+            int disconnectStatus = status;
+            if (status == 0x16 /* HCI_ERR_CONN_CAUSE_LOCAL_HOST */
+                    && mAdapterService.getDatabase().getKeyMissingCount(device) > 0) {
+                // Native stack disconnects the link on detecting the bond loss. Native GATT would
+                // return HCI_ERR_CONN_CAUSE_LOCAL_HOST in such case, but the apps should see
+                // HCI_ERR_AUTH_FAILURE.
+                Log.d(TAG, "onDisconnected() - disconnected due to bond loss for device=" + device);
+                disconnectStatus = 0x05 /* HCI_ERR_AUTH_FAILURE */;
+            }
+            app.callback.onClientConnectionState(disconnectStatus, clientIf, false, address);
             MetricsLogger.getInstance()
                     .logBluetoothEvent(
-                            getDevice(address),
+                            device,
                             BluetoothStatsLog
                                     .BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__EVENT_TYPE__GATT_DISCONNECT_JAVA,
                             BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__STATE__SUCCESS,
@@ -1474,7 +1483,7 @@ public class GattService extends ProfileService {
         BluetoothDevice[] bondedDevices = mAdapterService.getBondedDevices();
         for (BluetoothDevice device : bondedDevices) {
             if (getDeviceType(device) != AbstractionLayer.BT_DEVICE_TYPE_BREDR) {
-                deviceStates.put(device, BluetoothProfile.STATE_DISCONNECTED);
+                deviceStates.put(device, STATE_DISCONNECTED);
             }
         }
 
@@ -1487,7 +1496,7 @@ public class GattService extends ProfileService {
         for (String address : connectedDevices) {
             BluetoothDevice device = BluetoothAdapter.getDefaultAdapter().getRemoteDevice(address);
             if (device != null) {
-                deviceStates.put(device, BluetoothProfile.STATE_CONNECTED);
+                deviceStates.put(device, STATE_CONNECTED);
             }
         }
 
@@ -2984,11 +2993,11 @@ public class GattService extends ProfileService {
      * Private functions
      *************************************************************************/
 
-    private boolean isHidSrvcUuid(final UUID uuid) {
+    private static boolean isHidSrvcUuid(final UUID uuid) {
         return HID_SERVICE_UUID.equals(uuid);
     }
 
-    private boolean isHidCharUuid(final UUID uuid) {
+    private static boolean isHidCharUuid(final UUID uuid) {
         for (UUID hidUuid : HID_UUIDS) {
             if (hidUuid.equals(uuid)) {
                 return true;
@@ -2997,15 +3006,15 @@ public class GattService extends ProfileService {
         return false;
     }
 
-    private boolean isAndroidTvRemoteSrvcUuid(final UUID uuid) {
+    private static boolean isAndroidTvRemoteSrvcUuid(final UUID uuid) {
         return ANDROID_TV_REMOTE_SERVICE_UUID.equals(uuid);
     }
 
-    private boolean isFidoSrvcUuid(final UUID uuid) {
+    private static boolean isFidoSrvcUuid(final UUID uuid) {
         return FIDO_SERVICE_UUID.equals(uuid);
     }
 
-    private boolean isLeAudioSrvcUuid(final UUID uuid) {
+    private static boolean isLeAudioSrvcUuid(final UUID uuid) {
         for (UUID leAudioUuid : LE_AUDIO_SERVICE_UUIDS) {
             if (leAudioUuid.equals(uuid)) {
                 return true;
@@ -3014,11 +3023,11 @@ public class GattService extends ProfileService {
         return false;
     }
 
-    private boolean isAndroidHeadtrackerSrvcUuid(final UUID uuid) {
+    private static boolean isAndroidHeadtrackerSrvcUuid(final UUID uuid) {
         return HidHostService.ANDROID_HEADTRACKER_UUID.getUuid().equals(uuid);
     }
 
-    private boolean isRestrictedSrvcUuid(final UUID uuid) {
+    private static boolean isRestrictedSrvcUuid(final UUID uuid) {
         return isFidoSrvcUuid(uuid)
                 || isAndroidTvRemoteSrvcUuid(uuid)
                 || isLeAudioSrvcUuid(uuid)

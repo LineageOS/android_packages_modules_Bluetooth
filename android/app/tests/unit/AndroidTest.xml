@@ -15,10 +15,11 @@
 -->
 <configuration description="Runs Bluetooth Test Cases.">
     <option name="test-suite-tag" value="apct" />
-    <option name="test-suite-tag" value="apct-instrumentation" />
     <target_preparer class="com.android.tradefed.targetprep.suite.SuiteApkInstaller">
         <option name="cleanup-apks" value="true" />
-        <option name="test-file-name" value="BluetoothInstrumentationTests.apk" />
+        <option name="test-file-name" value="BluetoothJavaUnitTests.apk" />
+        <option name="install-arg" value="-r" />
+        <option name="install-arg" value="-g" />
     </target_preparer>
     <target_preparer class="com.android.tradefed.targetprep.RootTargetPreparer">
         <option name="force-root" value="true" />
@@ -27,21 +28,33 @@
         <option name="throw-if-cmd-fail" value="true" />
         <option name="run-command" value="input keyevent KEYCODE_WAKEUP" />
         <option name="run-command" value="wm dismiss-keyguard" />
-        <option name="run-command" value="settings put global ble_scan_always_enabled 0" />
-        <option name="run-command" value="cmd bluetooth_manager disable" />
-        <option name="run-command" value="cmd bluetooth_manager wait-for-state:STATE_OFF" />
-        <option name="run-command" value="settings put global satellite_mode_radios bluetooth" />
-        <option name="run-command" value="settings put global satellite_mode_enabled 1" />
-        <option name="teardown-command" value="settings delete global satellite_mode_radios" />
-        <option name="teardown-command" value="settings put global satellite_mode_enabled 0" />
-        <option name="teardown-command" value="cmd bluetooth_manager enable" />
-        <option name="teardown-command" value="cmd bluetooth_manager wait-for-state:STATE_ON" />
-        <option name="teardown-command" value="settings put global ble_scan_always_enabled 1" />
+
+        <!-- Disable caches to prevent failure when calling invalidate cache in test. Replace by IpcDataCache.setTestMode when available as module API -->
+        <option name="run-command" value="setprop cache_key.bluetooth.bluetooth_adapter_get_state 1" />
+        <option name="teardown-command" value="setprop cache_key.bluetooth.bluetooth_adapter_get_state 0" />
+
+        <option name="run-command" value="setprop cache_key.bluetooth.bluetooth_device_get_bond_state 1" />
+        <option name="teardown-command" value="setprop cache_key.bluetooth.bluetooth_device_get_bond_state 0" />
+
+        <option name="run-command" value="setprop cache_key.bluetooth.bluetooth_map_get_connection_state 1" />
+        <option name="teardown-command" value="setprop cache_key.bluetooth.bluetooth_map_get_connection_state 0" />
+
+        <option name="run-command" value="setprop cache_key.bluetooth.bluetooth_sap_get_connection_state 1" />
+        <option name="teardown-command" value="setprop cache_key.bluetooth.bluetooth_sap_get_connection_state 0" />
+
+        <option name="run-command" value="setprop cache_key.bluetooth.bluetooth_adapter_get_connection_state 1" />
+        <option name="teardown-command" value="setprop cache_key.bluetooth.bluetooth_adapter_get_connection_state 0" />
+
+        <option name="run-command" value="setprop cache_key.bluetooth.bluetooth_adapter_get_profile_connection_state 1" />
+        <option name="teardown-command" value="setprop cache_key.bluetooth.bluetooth_adapter_get_profile_connection_state 0" />
+
+        <option name="run-command" value="setprop cache_key.bluetooth.bluetooth_adapter_is_offloaded_filtering_supported 1" />
+        <option name="teardown-command" value="setprop cache_key.bluetooth.bluetooth_adapter_is_offloaded_filtering_supported 0" />
     </target_preparer>
     <target_preparer class="com.android.tradefed.targetprep.FolderSaver">
         <option name="device-path" value="/data/vendor/ssrdump" />
     </target_preparer>
-    <option name="test-tag" value="BluetoothInstrumentationTests" />
+    <option name="test-tag" value="BluetoothJavaUnitTests" />
     <test class="com.android.tradefed.testtype.AndroidJUnitTest" >
         <option name="package" value="com.android.bluetooth.tests" />
         <!-- include and exclude filters go into /data/local/tmp/ajur/ by default
@@ -49,6 +62,8 @@
              So instead we use the app cache folder for filter -->
         <option name="test-filter-dir" value="/data/data/com.android.bluetooth/cache" />
         <option name="hidden-api-checks" value="false"/>
+        <!-- Ignores tests introduced by guava-android-testlib -->
+        <option name="exclude-annotation" value="org.junit.Ignore"/>
     </test>
 
     <!-- Only run if the Bluetooth Mainline module is installed. -->
@@ -56,5 +71,6 @@
             class="com.android.tradefed.testtype.suite.module.MainlineTestModuleController">
         <option name="enable" value="true" />
         <option name="mainline-module-package-name" value="com.android.bt" />
+        <option name="mainline-module-package-name" value="com.google.android.bt" />
     </object>
 </configuration>

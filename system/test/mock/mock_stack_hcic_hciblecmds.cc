@@ -28,9 +28,6 @@
 
 // Mocked internal structures, if any
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 namespace test {
 namespace mock {
 namespace stack_hcic_hciblecmds {
@@ -69,7 +66,6 @@ struct btsnd_hcic_ble_set_periodic_advertising_receive_enable
         btsnd_hcic_ble_set_periodic_advertising_receive_enable;
 struct btsnd_hcic_ble_set_periodic_advertising_sync_transfer_params
         btsnd_hcic_ble_set_periodic_advertising_sync_transfer_params;
-struct btsnd_hcic_ble_set_privacy_mode btsnd_hcic_ble_set_privacy_mode;
 struct btsnd_hcic_ble_set_rand_priv_addr_timeout btsnd_hcic_ble_set_rand_priv_addr_timeout;
 struct btsnd_hcic_ble_set_scan_enable btsnd_hcic_ble_set_scan_enable;
 struct btsnd_hcic_ble_set_scan_params btsnd_hcic_ble_set_scan_params;
@@ -226,12 +222,6 @@ void btsnd_hcic_ble_set_periodic_advertising_sync_transfer_params(
   inc_func_call_count(__func__);
   test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_set_periodic_advertising_sync_transfer_params(
           conn_handle, mode, skip, sync_timeout, cte_type, std::move(cb));
-}
-void btsnd_hcic_ble_set_privacy_mode(uint8_t addr_type_peer, const RawAddress& bda_peer,
-                                     uint8_t privacy_type) {
-  inc_func_call_count(__func__);
-  test::mock::stack_hcic_hciblecmds::btsnd_hcic_ble_set_privacy_mode(addr_type_peer, bda_peer,
-                                                                     privacy_type);
 }
 void btsnd_hcic_ble_set_rand_priv_addr_timeout(uint16_t rpa_timeout) {
   inc_func_call_count(__func__);

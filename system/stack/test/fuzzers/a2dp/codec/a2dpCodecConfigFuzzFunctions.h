@@ -137,17 +137,6 @@ std::vector<std::function<void(FuzzedDataProvider*)>> a2dp_codec_config_operatio
           codec_config->getCodecConfig();
         },
 
-        // getCodecCapability
-        [](FuzzedDataProvider* fdp) -> void {
-          std::shared_ptr<A2dpCodecConfig> codec_config(
-                  getArbitraryVectorElement(fdp, a2dp_codec_config_vect, false));
-          if (codec_config == nullptr) {
-            return;
-          }
-
-          codec_config->getCodecCapability();
-        },
-
         // getCodecLocalCapability
         [](FuzzedDataProvider* fdp) -> void {
           std::shared_ptr<A2dpCodecConfig> codec_config(

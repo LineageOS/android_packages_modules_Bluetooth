@@ -63,7 +63,7 @@ import com.android.internal.annotations.VisibleForTesting;
 /** This class is designed to ask user to confirm if accept incoming file; */
 // Next tag value for ContentProfileErrorReportUtils.report(): 1
 public class BluetoothOppIncomingFileConfirmActivity extends AlertActivity {
-    private static final String TAG = "BluetoothIncomingFileConfirmActivity";
+    private static final String TAG = BluetoothOppIncomingFileConfirmActivity.class.getSimpleName();
 
     @VisibleForTesting static final int DISMISS_TIMEOUT_DIALOG = 0;
 

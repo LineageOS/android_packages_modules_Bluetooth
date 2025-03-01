@@ -193,21 +193,6 @@ struct list_new {
 };
 extern struct list_new list_new;
 
-// Name: list_new_internal
-// Params: list_free_cb callback, const allocator_t* zeroed_allocator
-// Return: list_t*
-struct list_new_internal {
-  list_t* return_value{0};
-  std::function<list_t*(list_free_cb callback, const allocator_t* zeroed_allocator)> body{
-          [this](list_free_cb /* callback */, const allocator_t* /* zeroed_allocator */) {
-            return return_value;
-          }};
-  list_t* operator()(list_free_cb callback, const allocator_t* zeroed_allocator) {
-    return body(callback, zeroed_allocator);
-  }
-};
-extern struct list_new_internal list_new_internal;
-
 // Name: list_next
 // Params: const list_node_t* node
 // Return: list_node_t*

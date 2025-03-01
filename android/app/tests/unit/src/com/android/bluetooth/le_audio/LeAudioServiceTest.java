@@ -19,6 +19,8 @@ package com.android.bluetooth.le_audio;
 
 import static android.bluetooth.BluetoothDevice.BOND_BONDED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
 import static android.bluetooth.BluetoothProfile.EXTRA_PREVIOUS_STATE;
 import static android.bluetooth.BluetoothProfile.EXTRA_STATE;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
@@ -273,12 +275,10 @@ public class LeAudioServiceTest {
             return;
         }
 
-
         mBondedDevices.clear();
-        mService.stop();
+        mService.cleanup();
         assertThat(LeAudioService.getLeAudioService()).isNull();
     }
-
 
     /** Test getting LeAudio Service: getLeAudioService() */
     @Test
@@ -292,7 +292,7 @@ public class LeAudioServiceTest {
         // Make sure the device is known to the service and is not forbidden to connect
         mService.createDeviceDescriptor(mSingleDevice, true);
         when(mDatabaseManager.getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(BluetoothProfile.CONNECTION_POLICY_UNKNOWN);
+                .thenReturn(CONNECTION_POLICY_UNKNOWN);
 
         // Verify the device is enabled in the service when policy is not FORBIDDEN during BT Enable
         mService.handleBluetoothEnabled();
@@ -302,7 +302,7 @@ public class LeAudioServiceTest {
         when(mDatabaseManager.setProfileConnectionPolicy(
                         eq(mSingleDevice), eq(BluetoothProfile.LE_AUDIO), anyInt()))
                 .thenReturn(true);
-        mService.setConnectionPolicy(mSingleDevice, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
+        mService.setConnectionPolicy(mSingleDevice, CONNECTION_POLICY_FORBIDDEN);
         verify(mNativeInterface).setEnableState(eq(mSingleDevice), eq(false));
     }
 
@@ -311,22 +311,21 @@ public class LeAudioServiceTest {
     public void testStopLeAudioService() {
         // Prepare: connect
         connectDevice(mLeftDevice);
-        mService.stop();
+        mService.cleanup();
     }
 
-    /** Test get/set priority for BluetoothDevice */
     @Test
     public void testGetSetPriority() {
         when(mDatabaseManager.getProfileConnectionPolicy(mLeftDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(BluetoothProfile.CONNECTION_POLICY_UNKNOWN);
+                .thenReturn(CONNECTION_POLICY_UNKNOWN);
         assertWithMessage("Initial device priority")
-                .that(BluetoothProfile.CONNECTION_POLICY_UNKNOWN)
+                .that(CONNECTION_POLICY_UNKNOWN)
                 .isEqualTo(mService.getConnectionPolicy(mLeftDevice));
 
         when(mDatabaseManager.getProfileConnectionPolicy(mLeftDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
+                .thenReturn(CONNECTION_POLICY_FORBIDDEN);
         assertWithMessage("Setting device priority to PRIORITY_OFF")
-                .that(BluetoothProfile.CONNECTION_POLICY_FORBIDDEN)
+                .that(CONNECTION_POLICY_FORBIDDEN)
                 .isEqualTo(mService.getConnectionPolicy(mLeftDevice));
 
         when(mDatabaseManager.getProfileConnectionPolicy(mLeftDevice, BluetoothProfile.LE_AUDIO))
@@ -358,41 +357,25 @@ public class LeAudioServiceTest {
         int badPriorityValue = 1024;
         int badBondState = 42;
         testOkToConnectCase(
-                mSingleDevice,
-                BluetoothDevice.BOND_NONE,
-                BluetoothProfile.CONNECTION_POLICY_UNKNOWN,
-                false);
+                mSingleDevice, BluetoothDevice.BOND_NONE, CONNECTION_POLICY_UNKNOWN, false);
         testOkToConnectCase(
-                mSingleDevice,
-                BluetoothDevice.BOND_NONE,
-                BluetoothProfile.CONNECTION_POLICY_FORBIDDEN,
-                false);
+                mSingleDevice, BluetoothDevice.BOND_NONE, CONNECTION_POLICY_FORBIDDEN, false);
         testOkToConnectCase(
                 mSingleDevice, BluetoothDevice.BOND_NONE, CONNECTION_POLICY_ALLOWED, false);
         testOkToConnectCase(mSingleDevice, BluetoothDevice.BOND_NONE, badPriorityValue, false);
         testOkToConnectCase(
-                mSingleDevice,
-                BluetoothDevice.BOND_BONDING,
-                BluetoothProfile.CONNECTION_POLICY_UNKNOWN,
-                false);
+                mSingleDevice, BluetoothDevice.BOND_BONDING, CONNECTION_POLICY_UNKNOWN, false);
         testOkToConnectCase(
-                mSingleDevice,
-                BluetoothDevice.BOND_BONDING,
-                BluetoothProfile.CONNECTION_POLICY_FORBIDDEN,
-                false);
+                mSingleDevice, BluetoothDevice.BOND_BONDING, CONNECTION_POLICY_FORBIDDEN, false);
         testOkToConnectCase(
                 mSingleDevice, BluetoothDevice.BOND_BONDING, CONNECTION_POLICY_ALLOWED, false);
         testOkToConnectCase(mSingleDevice, BluetoothDevice.BOND_BONDING, badPriorityValue, false);
-        testOkToConnectCase(
-                mSingleDevice, BOND_BONDED, BluetoothProfile.CONNECTION_POLICY_UNKNOWN, true);
-        testOkToConnectCase(
-                mSingleDevice, BOND_BONDED, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN, false);
+        testOkToConnectCase(mSingleDevice, BOND_BONDED, CONNECTION_POLICY_UNKNOWN, true);
+        testOkToConnectCase(mSingleDevice, BOND_BONDED, CONNECTION_POLICY_FORBIDDEN, false);
         testOkToConnectCase(mSingleDevice, BOND_BONDED, CONNECTION_POLICY_ALLOWED, true);
         testOkToConnectCase(mSingleDevice, BOND_BONDED, badPriorityValue, false);
-        testOkToConnectCase(
-                mSingleDevice, badBondState, BluetoothProfile.CONNECTION_POLICY_UNKNOWN, false);
-        testOkToConnectCase(
-                mSingleDevice, badBondState, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN, false);
+        testOkToConnectCase(mSingleDevice, badBondState, CONNECTION_POLICY_UNKNOWN, false);
+        testOkToConnectCase(mSingleDevice, badBondState, CONNECTION_POLICY_FORBIDDEN, false);
         testOkToConnectCase(mSingleDevice, badBondState, CONNECTION_POLICY_ALLOWED, false);
         testOkToConnectCase(mSingleDevice, badBondState, badPriorityValue, false);
     }
@@ -404,9 +387,9 @@ public class LeAudioServiceTest {
         when(mDatabaseManager.getProfileConnectionPolicy(mLeftDevice, BluetoothProfile.LE_AUDIO))
                 .thenReturn(CONNECTION_POLICY_ALLOWED);
         when(mDatabaseManager.getProfileConnectionPolicy(mRightDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
+                .thenReturn(CONNECTION_POLICY_FORBIDDEN);
         when(mDatabaseManager.getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
+                .thenReturn(CONNECTION_POLICY_FORBIDDEN);
 
         // Return No UUID
         doReturn(new ParcelUuid[] {})
@@ -422,7 +405,7 @@ public class LeAudioServiceTest {
     public void testOutgoingConnectPriorityOff() {
         // Set the device priority to PRIORITY_OFF so connect() should fail
         when(mDatabaseManager.getProfileConnectionPolicy(mLeftDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
+                .thenReturn(CONNECTION_POLICY_FORBIDDEN);
 
         // Send a connect request
         assertWithMessage("Connect expected to fail").that(mService.connect(mLeftDevice)).isFalse();
@@ -435,9 +418,9 @@ public class LeAudioServiceTest {
         when(mDatabaseManager.getProfileConnectionPolicy(mLeftDevice, BluetoothProfile.LE_AUDIO))
                 .thenReturn(CONNECTION_POLICY_ALLOWED);
         when(mDatabaseManager.getProfileConnectionPolicy(mRightDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
+                .thenReturn(CONNECTION_POLICY_FORBIDDEN);
         when(mDatabaseManager.getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
+                .thenReturn(CONNECTION_POLICY_FORBIDDEN);
 
         // Send a connect request
         assertWithMessage("Connect failed").that(mService.connect(mLeftDevice)).isTrue();
@@ -512,7 +495,7 @@ public class LeAudioServiceTest {
         when(mDatabaseManager.getProfileConnectionPolicy(mRightDevice, BluetoothProfile.LE_AUDIO))
                 .thenReturn(CONNECTION_POLICY_ALLOWED);
         when(mDatabaseManager.getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
+                .thenReturn(CONNECTION_POLICY_FORBIDDEN);
 
         // Send a connect request
         assertWithMessage("Connect failed").that(mService.connect(mLeftDevice)).isTrue();
@@ -598,9 +581,9 @@ public class LeAudioServiceTest {
         when(mDatabaseManager.getProfileConnectionPolicy(mLeftDevice, BluetoothProfile.LE_AUDIO))
                 .thenReturn(CONNECTION_POLICY_ALLOWED);
         when(mDatabaseManager.getProfileConnectionPolicy(mRightDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
+                .thenReturn(CONNECTION_POLICY_FORBIDDEN);
         when(mDatabaseManager.getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
+                .thenReturn(CONNECTION_POLICY_FORBIDDEN);
 
         // Create device descriptor with connect request
         assertWithMessage("Connect failed").that(mService.connect(mLeftDevice)).isTrue();
@@ -653,9 +636,9 @@ public class LeAudioServiceTest {
         when(mDatabaseManager.getProfileConnectionPolicy(mLeftDevice, BluetoothProfile.LE_AUDIO))
                 .thenReturn(CONNECTION_POLICY_ALLOWED);
         when(mDatabaseManager.getProfileConnectionPolicy(mRightDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
+                .thenReturn(CONNECTION_POLICY_FORBIDDEN);
         when(mDatabaseManager.getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
+                .thenReturn(CONNECTION_POLICY_FORBIDDEN);
 
         // Create device descriptor with connect request
         assertWithMessage("Connect failed").that(mService.connect(mLeftDevice)).isTrue();
@@ -708,9 +691,9 @@ public class LeAudioServiceTest {
         when(mDatabaseManager.getProfileConnectionPolicy(mLeftDevice, BluetoothProfile.LE_AUDIO))
                 .thenReturn(CONNECTION_POLICY_ALLOWED);
         when(mDatabaseManager.getProfileConnectionPolicy(mRightDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
+                .thenReturn(CONNECTION_POLICY_FORBIDDEN);
         when(mDatabaseManager.getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
+                .thenReturn(CONNECTION_POLICY_FORBIDDEN);
 
         // Create device descriptor with connect request
         assertWithMessage("Connect failed").that(mService.connect(mLeftDevice)).isTrue();
@@ -830,7 +813,7 @@ public class LeAudioServiceTest {
         when(mHapClientService.setConnectionPolicy(any(), anyInt())).thenReturn(true);
         when(mBassClientService.setConnectionPolicy(any(), anyInt())).thenReturn(true);
         when(mDatabaseManager.getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(BluetoothProfile.CONNECTION_POLICY_UNKNOWN);
+                .thenReturn(CONNECTION_POLICY_UNKNOWN);
 
         assertThat(mService.setConnectionPolicy(mSingleDevice, CONNECTION_POLICY_ALLOWED)).isTrue();
 
@@ -860,22 +843,18 @@ public class LeAudioServiceTest {
         assertThat(mService.getConnectionState(mSingleDevice)).isEqualTo(STATE_CONNECTED);
 
         // Set connection policy to forbidden
-        assertThat(
-                        mService.setConnectionPolicy(
-                                mSingleDevice, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN))
+        assertThat(mService.setConnectionPolicy(mSingleDevice, CONNECTION_POLICY_FORBIDDEN))
                 .isTrue();
 
         // Verify connection policy for CSIP and VCP are also set
         verify(mVolumeControlService)
-                .setConnectionPolicy(mSingleDevice, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
+                .setConnectionPolicy(mSingleDevice, CONNECTION_POLICY_FORBIDDEN);
         verify(mCsipSetCoordinatorService)
-                .setConnectionPolicy(mSingleDevice, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
-        verify(mHapClientService)
-                .setConnectionPolicy(mSingleDevice, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
+                .setConnectionPolicy(mSingleDevice, CONNECTION_POLICY_FORBIDDEN);
+        verify(mHapClientService).setConnectionPolicy(mSingleDevice, CONNECTION_POLICY_FORBIDDEN);
         if (BluetoothProperties.isProfileBapBroadcastAssistEnabled().orElse(false)) {
             verify(mBassClientService)
-                    .setConnectionPolicy(
-                            mSingleDevice, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
+                    .setConnectionPolicy(mSingleDevice, CONNECTION_POLICY_FORBIDDEN);
         }
         // Verify the connection state broadcast, and that we are in Connecting state
         verifyConnectionStateIntent(mSingleDevice, STATE_DISCONNECTING, STATE_CONNECTED);
@@ -902,7 +881,7 @@ public class LeAudioServiceTest {
         List<BluetoothDevice> prevConnectedDevices = mService.getConnectedDevices();
 
         when(mDatabaseManager.getProfileConnectionPolicy(device, BluetoothProfile.LE_AUDIO))
-                .thenReturn(BluetoothProfile.CONNECTION_POLICY_UNKNOWN);
+                .thenReturn(CONNECTION_POLICY_UNKNOWN);
         // Send a connect request
         assertWithMessage("Connect failed").that(mService.connect(device)).isTrue();
 
@@ -1246,9 +1225,11 @@ public class LeAudioServiceTest {
         assertThat(connInfo.isSuppressNoisyIntent()).isTrue();
 
         // AudioManager removes audio device
+        // We just ignore it as AudioManager is going to restart and re-add devices
         injectAudioDeviceRemoved(
-                mSingleDevice, AudioDeviceInfo.TYPE_BLE_HEADSET, true, false, true);
-        verify(mNativeInterface, times(1)).groupSetActive(-1);
+                mSingleDevice, AudioDeviceInfo.TYPE_BLE_HEADSET, true, false, false);
+
+        verify(mNativeInterface, never()).groupSetActive(-1);
     }
 
     /** Test setting active device group without Ringtone context */
@@ -1289,7 +1270,7 @@ public class LeAudioServiceTest {
         verify(mTbsService, times(0)).clearInbandRingtoneSupport(mSingleDevice);
     }
 
-    private BluetoothLeBroadcastSettings buildBroadcastSettingsFromMetadata(
+    private static BluetoothLeBroadcastSettings buildBroadcastSettingsFromMetadata(
             BluetoothLeAudioContentMetadata contentMetadata,
             @Nullable byte[] broadcastCode,
             int numOfGroups) {
@@ -1633,14 +1614,10 @@ public class LeAudioServiceTest {
 
         verify(mDatabaseManager)
                 .setProfileConnectionPolicy(
-                        mLeftDevice,
-                        BluetoothProfile.LE_AUDIO,
-                        BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
+                        mLeftDevice, BluetoothProfile.LE_AUDIO, CONNECTION_POLICY_FORBIDDEN);
         verify(mDatabaseManager)
                 .setProfileConnectionPolicy(
-                        mRightDevice,
-                        BluetoothProfile.LE_AUDIO,
-                        BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
+                        mRightDevice, BluetoothProfile.LE_AUDIO, CONNECTION_POLICY_FORBIDDEN);
     }
 
     private void sendEventAndVerifyIntentForGroupStatusChanged(int groupId, int groupStatus) {
@@ -2233,9 +2210,6 @@ public class LeAudioServiceTest {
     /** Test volume setting for broadcast sink devices */
     @Test
     public void testSetVolumeForBroadcastSinks() {
-        mSetFlagsRule.enableFlags(Flags.FLAG_LEAUDIO_BROADCAST_VOLUME_CONTROL_WITH_SET_VOLUME);
-        mSetFlagsRule.enableFlags(Flags.FLAG_LEAUDIO_BROADCAST_VOLUME_CONTROL_PRIMARY_GROUP_ONLY);
-
         int groupId = 1;
         int groupId2 = 2;
         int volume = 100;
@@ -2442,7 +2416,7 @@ public class LeAudioServiceTest {
                 .when(mDatabaseManager)
                 .setProfileConnectionPolicy(any(BluetoothDevice.class), anyInt(), anyInt());
         when(mDatabaseManager.getProfileConnectionPolicy(mSingleDevice, BluetoothProfile.LE_AUDIO))
-                .thenReturn(BluetoothProfile.CONNECTION_POLICY_UNKNOWN);
+                .thenReturn(CONNECTION_POLICY_UNKNOWN);
 
         // Ensures GATT server services are not authorized when the device does not have a group
         assertThat(mService.setConnectionPolicy(mSingleDevice, CONNECTION_POLICY_ALLOWED)).isTrue();
@@ -2455,9 +2429,7 @@ public class LeAudioServiceTest {
         verify(mTbsService).setDeviceAuthorized(mSingleDevice, true);
 
         // Ensure that disconnecting unauthorizes GATT server services
-        assertThat(
-                        mService.setConnectionPolicy(
-                                mSingleDevice, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN))
+        assertThat(mService.setConnectionPolicy(mSingleDevice, CONNECTION_POLICY_FORBIDDEN))
                 .isTrue();
         verify(mMcpService).setDeviceAuthorized(mSingleDevice, false);
         verify(mTbsService).setDeviceAuthorized(mSingleDevice, false);
@@ -3064,8 +3036,6 @@ public class LeAudioServiceTest {
     /** Test setting allowed contexts for active group */
     @Test
     public void testSetAllowedContextsForActiveGroup() {
-        mSetFlagsRule.enableFlags(Flags.FLAG_LEAUDIO_GETTING_ACTIVE_STATE_SUPPORT);
-        mSetFlagsRule.enableFlags(Flags.FLAG_LEAUDIO_ALLOWED_CONTEXT_MASK);
         int groupId = 1;
         /* AUDIO_DIRECTION_OUTPUT_BIT = 0x01 */
         int direction = 1;

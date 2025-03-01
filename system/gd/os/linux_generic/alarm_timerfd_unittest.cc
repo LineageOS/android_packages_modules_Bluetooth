@@ -23,22 +23,6 @@
 #include "gtest/gtest.h"
 #include "os/alarm.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
-namespace bluetooth::common {
-
-struct IsSpace {
-  bool operator()(std::string::value_type v) { return isspace(static_cast<int>(v)); }
-};
-
-std::string StringTrim(std::string str) {
-  str.erase(str.begin(), std::find_if_not(str.begin(), str.end(), IsSpace{}));
-  str.erase(std::find_if_not(str.rbegin(), str.rend(), IsSpace{}).base(), str.end());
-  return str;
-}
-}  // namespace bluetooth::common
-
 namespace bluetooth::os {
 
 using common::BindOnce;

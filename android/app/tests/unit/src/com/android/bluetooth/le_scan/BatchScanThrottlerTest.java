@@ -164,7 +164,8 @@ public class BatchScanThrottlerTest {
                 .isEqualTo(backoffIntervals[backoffIntervals.length - 1]);
     }
 
-    private long adjustExpectedInterval(long interval, boolean isFiltered, boolean isScreenOn) {
+    private static long adjustExpectedInterval(
+            long interval, boolean isFiltered, boolean isScreenOn) {
         if (isFiltered) {
             return interval;
         }
@@ -175,13 +176,13 @@ public class BatchScanThrottlerTest {
         return Math.max(interval, threshold);
     }
 
-    private long[] getBackoffIntervals(long baseInterval) {
+    private static long[] getBackoffIntervals(long baseInterval) {
         return LongStream.range(0, BatchScanThrottler.BACKOFF_MULTIPLIERS.length)
                 .map(x -> BatchScanThrottler.BACKOFF_MULTIPLIERS[(int) x] * baseInterval)
                 .toArray();
     }
 
-    private ScanClient createBatchScanClient(long reportDelayMillis, boolean isFiltered) {
+    private static ScanClient createBatchScanClient(long reportDelayMillis, boolean isFiltered) {
         ScanSettings scanSettings =
                 new ScanSettings.Builder()
                         .setScanMode(SCAN_MODE_BALANCED)
@@ -191,7 +192,7 @@ public class BatchScanThrottlerTest {
         return new ScanClient(1, scanSettings, createScanFilterList(isFiltered), 1);
     }
 
-    private List<ScanFilter> createScanFilterList(boolean isFiltered) {
+    private static List<ScanFilter> createScanFilterList(boolean isFiltered) {
         List<ScanFilter> scanFilterList = null;
         if (isFiltered) {
             scanFilterList = List.of(new ScanFilter.Builder().setDeviceName("TestName").build());

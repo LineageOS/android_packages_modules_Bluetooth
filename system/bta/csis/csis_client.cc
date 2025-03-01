@@ -271,7 +271,7 @@ public:
 
     auto device = FindDeviceByAddress(address);
     if (device == nullptr) {
-      if (!BTM_IsLinkKeyKnown(address, BT_TRANSPORT_LE)) {
+      if (!BTM_IsBonded(address, BT_TRANSPORT_LE)) {
         log::error("Connecting  {} when not bonded", address);
         callbacks_->OnConnectionState(address, ConnectionState::DISCONNECTED);
         return;

@@ -49,15 +49,6 @@ struct BTA_SdpCreateRecordByUser {
 };
 extern struct BTA_SdpCreateRecordByUser BTA_SdpCreateRecordByUser;
 
-// Name: BTA_SdpDumpsys
-// Params: int fd
-// Return: void
-struct BTA_SdpDumpsys {
-  std::function<void(int fd)> body{[](int /* fd */) {}};
-  void operator()(int fd) { body(fd); }
-};
-extern struct BTA_SdpDumpsys BTA_SdpDumpsys;
-
 // Name: BTA_SdpEnable
 // Params: tBTA_SDP_DM_CBACK* p_cback
 // Return: tBTA_SDP_STATUS

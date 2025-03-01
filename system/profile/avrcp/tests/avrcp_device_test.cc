@@ -24,14 +24,12 @@
 
 #include "avrcp_packet.h"
 #include "avrcp_test_helper.h"
+#include "btif/include/btif_av.h"
 #include "device.h"
 #include "internal_include/stack_config.h"
 #include "tests/avrcp/avrcp_test_packets.h"
 #include "tests/packet_test_helper.h"
 #include "types/raw_address.h"
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 bool btif_av_src_sink_coexist_enabled(void) { return true; }
 
@@ -52,7 +50,7 @@ using ::testing::NiceMock;
 using ::testing::Return;
 using ::testing::SaveArg;
 
-bool get_pts_avrcp_test(void) { return false; }
+static bool get_pts_avrcp_test(void) { return false; }
 
 const stack_config_t interface = {get_pts_avrcp_test,
                                   nullptr,

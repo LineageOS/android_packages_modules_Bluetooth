@@ -52,7 +52,7 @@ public class BluetoothMapContractTest {
                         + "/"
                         + ACCOUNT_ID;
 
-        Uri result = BluetoothMapContract.buildAccountUriwithId(TEST_AUTHORITY, ACCOUNT_ID);
+        Uri result = BluetoothMapContract.buildAccountUriWithId(TEST_AUTHORITY, ACCOUNT_ID);
         assertThat(result.toString()).isEqualTo(expectedUriString);
     }
 

@@ -56,7 +56,7 @@ import java.util.List;
 /** This provider allows application to interact with Bluetooth OPP manager */
 // Next tag value for ContentProfileErrorReportUtils.report(): 5
 public final class BluetoothOppProvider extends ContentProvider {
-    private static final String TAG = "BluetoothOppProvider";
+    private static final String TAG = BluetoothOppProvider.class.getSimpleName();
 
     /** Database filename */
     private static final String DB_NAME = "btopp.db";

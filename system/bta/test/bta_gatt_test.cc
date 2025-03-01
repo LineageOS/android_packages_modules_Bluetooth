@@ -28,9 +28,6 @@
 #include "stack/gatt/gatt_int.h"
 #include "test/common/mock_functions.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 namespace param {
 struct {
   uint16_t conn_id;
@@ -41,8 +38,9 @@ struct {
   void* data;
 } bta_gatt_read_complete_callback;
 }  // namespace param
-void bta_gatt_read_complete_callback(uint16_t conn_id, tGATT_STATUS status, uint16_t handle,
-                                     uint16_t len, uint8_t* value, void* data) {
+
+static void bta_gatt_read_complete_callback(uint16_t conn_id, tGATT_STATUS status, uint16_t handle,
+                                            uint16_t len, uint8_t* value, void* data) {
   param::bta_gatt_read_complete_callback.conn_id = conn_id;
   param::bta_gatt_read_complete_callback.status = status;
   param::bta_gatt_read_complete_callback.handle = handle;
@@ -62,8 +60,8 @@ struct {
 } bta_gatt_write_complete_callback;
 }  // namespace param
 
-void bta_gatt_write_complete_callback(uint16_t conn_id, tGATT_STATUS status, uint16_t handle,
-                                      uint16_t len, const uint8_t* value, void* data) {
+static void bta_gatt_write_complete_callback(uint16_t conn_id, tGATT_STATUS status, uint16_t handle,
+                                             uint16_t len, const uint8_t* value, void* data) {
   param::bta_gatt_write_complete_callback.conn_id = conn_id;
   param::bta_gatt_write_complete_callback.status = status;
   param::bta_gatt_write_complete_callback.handle = handle;
@@ -80,7 +78,8 @@ struct {
 } bta_gatt_configure_mtu_complete_callback;
 }  // namespace param
 
-void bta_gatt_configure_mtu_complete_callback(uint16_t conn_id, tGATT_STATUS status, void* data) {
+static void bta_gatt_configure_mtu_complete_callback(uint16_t conn_id, tGATT_STATUS status,
+                                                     void* data) {
   param::bta_gatt_configure_mtu_complete_callback.conn_id = conn_id;
   param::bta_gatt_configure_mtu_complete_callback.status = status;
   param::bta_gatt_configure_mtu_complete_callback.data = data;
@@ -93,7 +92,7 @@ struct {
 } bta_gattc_event_complete_callback;
 }  // namespace param
 
-void bta_gattc_event_complete_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
+static void bta_gattc_event_complete_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
   param::bta_gattc_event_complete_callback.event = event;
   param::bta_gattc_event_complete_callback.p_data = p_data;
 }

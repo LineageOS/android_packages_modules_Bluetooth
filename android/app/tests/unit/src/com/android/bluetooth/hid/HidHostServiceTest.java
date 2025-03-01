@@ -78,7 +78,6 @@ public class HidHostServiceTest {
 
     @After
     public void tearDown() throws Exception {
-        mService.stop();
         mService.cleanup();
         HidHostNativeInterface.setInstance(null);
         mService = HidHostService.getHidHostService();

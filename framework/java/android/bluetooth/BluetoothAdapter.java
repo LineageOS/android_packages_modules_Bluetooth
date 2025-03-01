@@ -24,6 +24,9 @@ import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.Manifest.permission.BLUETOOTH_SCAN;
 import static android.Manifest.permission.LOCAL_MAC_ADDRESS;
 import static android.Manifest.permission.MODIFY_PHONE_STATE;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
 import static android.bluetooth.BluetoothProfile.getProfileName;
 import static android.bluetooth.BluetoothStatusCodes.FEATURE_NOT_SUPPORTED;
 import static android.bluetooth.BluetoothUtils.executeFromBinder;
@@ -138,7 +141,8 @@ import java.util.function.Consumer;
  * @see BluetoothServerSocket
  */
 public final class BluetoothAdapter {
-    private static final String TAG = "BluetoothAdapter";
+    private static final String TAG = BluetoothAdapter.class.getSimpleName();
+
     private static final String DESCRIPTOR = "android.bluetooth.BluetoothAdapter";
     private static final boolean DBG = true;
     private static final boolean VDBG = false;
@@ -1124,7 +1128,7 @@ public final class BluetoothAdapter {
 
         mServiceLock.writeLock().lock();
         try {
-            mService = registerBlueoothManagerCallback(mManagerCallback);
+            mService = registerBluetoothManagerCallback(mManagerCallback);
         } finally {
             mServiceLock.writeLock().unlock();
         }
@@ -1921,7 +1925,7 @@ public final class BluetoothAdapter {
     }
 
     /**
-     * Set the local Bluetooth adapter connectablility and discoverability.
+     * Set the local Bluetooth adapter connectability and discoverability.
      *
      * <p>If the scan mode is set to {@link #SCAN_MODE_CONNECTABLE_DISCOVERABLE}, it will change to
      * {@link #SCAN_MODE_CONNECTABLE} after the discoverable timeout. The discoverable timeout can
@@ -2748,8 +2752,8 @@ public final class BluetoothAdapter {
     public void requestControllerActivityEnergyInfo(
             @NonNull @CallbackExecutor Executor executor,
             @NonNull OnBluetoothActivityEnergyInfoCallback callback) {
-        requireNonNull(executor, "executor cannot be null");
-        requireNonNull(callback, "callback cannot be null");
+        requireNonNull(executor);
+        requireNonNull(callback);
         OnBluetoothActivityEnergyInfoProxy proxy =
                 new OnBluetoothActivityEnergyInfoProxy(executor, callback);
         mServiceLock.readLock().lock();
@@ -3336,7 +3340,7 @@ public final class BluetoothAdapter {
 
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
-    private BluetoothServerSocket createNewRfcommSocketAndRecord(
+    private static BluetoothServerSocket createNewRfcommSocketAndRecord(
             String name, UUID uuid, boolean auth, boolean encrypt) throws IOException {
         BluetoothServerSocket socket;
         socket =
@@ -3790,7 +3794,7 @@ public final class BluetoothAdapter {
                 @SuppressLint("AndroidFrameworkRequiresPermission") // Internal callback
                 @RequiresNoPermission
                 public void onBluetoothServiceUp(@NonNull IBinder bluetoothService) {
-                    requireNonNull(bluetoothService, "bluetoothService cannot be null");
+                    requireNonNull(bluetoothService);
                     mServiceLock.writeLock().lock();
                     try {
                         mService = IBluetooth.Stub.asInterface(bluetoothService);
@@ -4005,7 +4009,7 @@ public final class BluetoothAdapter {
      * <p>For example, this secret can be transferred to a remote device out of band (meaning any
      * other way besides using bluetooth). Once the remote device finds this device using the
      * information given in the data, such as the PUBLIC ADDRESS, the remote device could then
-     * connect to this device using this secret when the pairing sequenece asks for the secret. This
+     * connect to this device using this secret when the pairing sequence asks for the secret. This
      * device will respond by automatically accepting the pairing due to the secret being so
      * trustworthy.
      *
@@ -4047,7 +4051,7 @@ public final class BluetoothAdapter {
         }
     }
 
-    private Set<BluetoothDevice> toDeviceSet(List<BluetoothDevice> devices) {
+    private static Set<BluetoothDevice> toDeviceSet(List<BluetoothDevice> devices) {
         Set<BluetoothDevice> deviceSet = new HashSet<BluetoothDevice>(devices);
         return Collections.unmodifiableSet(deviceSet);
     }
@@ -4144,7 +4148,7 @@ public final class BluetoothAdapter {
     }
 
     /** Registers a IBluetoothManagerCallback and returns the cached service proxy object. */
-    IBluetooth registerBlueoothManagerCallback(IBluetoothManagerCallback cb) {
+    IBluetooth registerBluetoothManagerCallback(IBluetoothManagerCallback cb) {
         requireNonNull(cb);
         if (Flags.getProfileUseLock()) {
             sServiceLock.writeLock().lock();
@@ -4794,7 +4798,7 @@ public final class BluetoothAdapter {
      * Unregister a {@link #OnMetadataChangedListener} from a registered {@link BluetoothDevice}.
      * Unregistration can be done when Bluetooth is either ON or OFF. {@link
      * #addOnMetadataChangedListener(OnMetadataChangedListener, BluetoothDevice, Executor)} must be
-     * called before unregisteration.
+     * called before unregistration.
      *
      * @param device {@link BluetoothDevice} that will be unregistered. It should not be null or
      *     {@link NullPointerException} will be triggered.
@@ -5045,7 +5049,7 @@ public final class BluetoothAdapter {
 
     /**
      * Sets the preferred profiles for each audio mode for system routed audio. The audio framework
-     * and Telecomm will read this preference when routing system managed audio. Not supplying an
+     * and Telecom will read this preference when routing system managed audio. Not supplying an
      * audio mode in the Bundle will reset that audio mode to the default profile preference for
      * that mode (e.g. an empty Bundle resets all audio modes to their default profiles).
      *
@@ -5164,7 +5168,7 @@ public final class BluetoothAdapter {
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public @NonNull Bundle getPreferredAudioProfiles(@NonNull BluetoothDevice device) {
         if (DBG) Log.d(TAG, "getPreferredAudioProfiles(" + device + ")");
-        requireNonNull(device, "device cannot be null");
+        requireNonNull(device);
         if (!BluetoothAdapter.checkBluetoothAddress(device.getAddress())) {
             throw new IllegalArgumentException("device cannot have an invalid address");
         }
@@ -5218,7 +5222,7 @@ public final class BluetoothAdapter {
     @NotifyActiveDeviceChangeAppliedReturnValues
     public int notifyActiveDeviceChangeApplied(@NonNull BluetoothDevice device) {
         if (DBG) Log.d(TAG, "notifyActiveDeviceChangeApplied(" + device + ")");
-        requireNonNull(device, "device cannot be null");
+        requireNonNull(device);
         if (!BluetoothAdapter.checkBluetoothAddress(device.getAddress())) {
             throw new IllegalArgumentException("device cannot have an invalid address");
         }
@@ -5559,16 +5563,16 @@ public final class BluetoothAdapter {
     public static @ConnectionPolicy int priorityToConnectionPolicy(int priority) {
         switch (priority) {
             case BluetoothProfile.PRIORITY_AUTO_CONNECT:
-                return BluetoothProfile.CONNECTION_POLICY_ALLOWED;
+                return CONNECTION_POLICY_ALLOWED;
             case BluetoothProfile.PRIORITY_ON:
-                return BluetoothProfile.CONNECTION_POLICY_ALLOWED;
+                return CONNECTION_POLICY_ALLOWED;
             case BluetoothProfile.PRIORITY_OFF:
-                return BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
+                return CONNECTION_POLICY_FORBIDDEN;
             case BluetoothProfile.PRIORITY_UNDEFINED:
-                return BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
+                return CONNECTION_POLICY_UNKNOWN;
             default:
                 Log.e(TAG, "setPriority: Invalid priority: " + priority);
-                return BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
+                return CONNECTION_POLICY_UNKNOWN;
         }
     }
 
@@ -5581,11 +5585,11 @@ public final class BluetoothAdapter {
      */
     public static int connectionPolicyToPriority(@ConnectionPolicy int connectionPolicy) {
         switch (connectionPolicy) {
-            case BluetoothProfile.CONNECTION_POLICY_ALLOWED:
+            case CONNECTION_POLICY_ALLOWED:
                 return BluetoothProfile.PRIORITY_ON;
-            case BluetoothProfile.CONNECTION_POLICY_FORBIDDEN:
+            case CONNECTION_POLICY_FORBIDDEN:
                 return BluetoothProfile.PRIORITY_OFF;
-            case BluetoothProfile.CONNECTION_POLICY_UNKNOWN:
+            case CONNECTION_POLICY_UNKNOWN:
                 return BluetoothProfile.PRIORITY_UNDEFINED;
         }
         return BluetoothProfile.PRIORITY_UNDEFINED;
@@ -5806,7 +5810,8 @@ public final class BluetoothAdapter {
         }
 
         @RequiresPermission(BLUETOOTH_PRIVILEGED)
-        void unregisterFromService(IBluetooth service, IBluetoothHciVendorSpecificCallback stub) {
+        static void unregisterFromService(
+                IBluetooth service, IBluetoothHciVendorSpecificCallback stub) {
             if (service == null) {
                 return;
             }

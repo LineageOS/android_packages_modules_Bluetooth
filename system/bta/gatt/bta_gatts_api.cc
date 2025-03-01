@@ -39,9 +39,6 @@
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 using namespace bluetooth;
 
 /*****************************************************************************
@@ -123,8 +120,8 @@ void BTA_GATTS_AppDeregister(tGATT_IF server_if) {
   bta_sys_sendmsg(p_buf);
 }
 
-void bta_gatts_add_service_impl(tGATT_IF server_if, std::vector<btgatt_db_element_t> service,
-                                BTA_GATTS_AddServiceCb cb) {
+static void bta_gatts_add_service_impl(tGATT_IF server_if, std::vector<btgatt_db_element_t> service,
+                                       BTA_GATTS_AddServiceCb cb) {
   uint8_t rcb_idx = bta_gatts_find_app_rcb_idx_by_app_if(&bta_gatts_cb, server_if);
 
   log::info("rcb_idx={}", rcb_idx);

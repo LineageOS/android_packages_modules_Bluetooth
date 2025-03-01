@@ -276,6 +276,8 @@ class HAPProxy(ProfileProxy):
         Discover All Characteristics command.
         """
 
+        # Clear GATT cache to make sure discovery takes place.
+        self.gatt.ClearCache(connection=self.connection)
         return "OK"
 
     @match_description

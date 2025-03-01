@@ -58,7 +58,7 @@ import java.util.concurrent.Executor;
  */
 @SystemApi
 public final class DistanceMeasurementSession {
-    private static final String TAG = "DistanceMeasurementSession";
+    private static final String TAG = DistanceMeasurementSession.class.getSimpleName();
 
     private final IDistanceMeasurement mDistanceMeasurement;
     private final ParcelUuid mUuid;

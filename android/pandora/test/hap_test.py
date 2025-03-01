@@ -26,7 +26,6 @@ from pandora._utils import AioStream
 from pandora.security_pb2 import LE_LEVEL3
 from pandora.host_pb2 import RANDOM, AdvertiseResponse, Connection, DataTypes, ScanningResponse
 from mobly import base_test, signals
-from truth.truth import AssertThat  # type: ignore
 from typing import List, Tuple
 
 COMPLETE_LOCAL_NAME: str = "Bumble"
@@ -130,9 +129,8 @@ class HapTest(base_test.BaseTestClass):
             self.dut.aio.host.ConnectLE(own_address_type=RANDOM, **ref.address_asdict()),
             anext(aiter(advertisement)),
         )
-        AssertThat(dut_ref_res.result_variant()).IsEqualTo('connection')  # type: ignore
+        assert dut_ref_res.result_variant() == 'connection'  # type: ignore
         dut_ref, ref_dut = dut_ref_res.connection, ref_dut_res.connection
-        AssertThat(dut_ref).IsNotNone()  # type: ignore
         assert dut_ref
         advertisement.cancel()
         return dut_ref, ref_dut
@@ -149,8 +147,8 @@ class HapTest(base_test.BaseTestClass):
             self.ref_left.aio.security.WaitSecurity(connection=ref_connection_to_dut, le=LE_LEVEL3),
         )
 
-        AssertThat(secure.result_variant()).IsEqualTo('success')  # type: ignore
-        AssertThat(wait_security.result_variant()).IsEqualTo('success')  # type: ignore
+        assert secure.result_variant() == 'success'  # type: ignore
+        assert wait_security.result_variant() == 'success'  # type: ignore
 
         await self.hap_grpc.WaitPeripheral(connection=dut_connection_to_ref)  # type: ignore
         advertisement.cancel()
@@ -160,8 +158,7 @@ class HapTest(base_test.BaseTestClass):
     async def assertIdenticalPreset(self, dut_connection_to_ref: Connection) -> None:
         remote_preset = toBumblePresetList(
             (await self.hap_grpc.GetAllPresetRecords(connection=dut_connection_to_ref)).preset_record_list)
-        AssertThat(remote_preset).ContainsExactlyElementsIn(  # type: ignore
-            get_server_preset_sorted(self.has)).InOrder()  # type: ignore
+        assert remote_preset == get_server_preset_sorted(self.has)
 
     async def verify_no_crash(self, dut_connection_to_ref: Connection) -> None:
         ''' Periodically check that there is no android crash '''
@@ -176,7 +173,7 @@ class HapTest(base_test.BaseTestClass):
 
         features = hap.HearingAidFeatures_from_bytes(
             (await self.hap_grpc.GetFeatures(connection=dut_connection_to_ref)).features)
-        AssertThat(features).IsEqualTo(self.has.server_features)  # type: ignore
+        assert features == self.has.server_features  # type: ignore
 
     @asynchronous
     async def test_get_preset(self) -> None:
@@ -220,12 +217,10 @@ class HapTest(base_test.BaseTestClass):
     async def test__set_non_existing_preset_as_active__verify_no_crash_and_no_update(self) -> None:
         await self.logcat.Log("test__set_non_existing_preset_as_active__verify_no_crash_and_no_update")
         non_existing_preset_index = 79
-        AssertThat(non_existing_preset_index).IsNotIn(self.has.preset_records.keys())  # type: ignore
+        assert non_existing_preset_index not in self.has.preset_records.keys()  # type: ignore
         dut_connection_to_ref = await self.setupHapConnection()
-        AssertThat(
-            toBumblePreset(  # type: ignore
-                (await self.hap_grpc.GetActivePresetRecord(connection=dut_connection_to_ref
-                                                          )).preset_record)).IsEqualTo(foo_preset)
+        assert foo_preset == toBumblePreset(  # type: ignore
+            (await self.hap_grpc.GetActivePresetRecord(connection=dut_connection_to_ref)).preset_record)
 
         await self.logcat.Log("Notify active update to non existing index")
         # bypass the set_active_preset checks by sending an invalid index on purpose
@@ -233,16 +228,14 @@ class HapTest(base_test.BaseTestClass):
         await self.has.notify_active_preset()
 
         await self.verify_no_crash(dut_connection_to_ref)
-        AssertThat(
-            toBumblePreset(  # type: ignore
-                (await self.hap_grpc.GetActivePresetRecord(connection=dut_connection_to_ref
-                                                          )).preset_record)).IsEqualTo(foo_preset)
+        assert foo_preset == toBumblePreset(
+            (await self.hap_grpc.GetActivePresetRecord(connection=dut_connection_to_ref)).preset_record)
 
     @asynchronous
     async def test__set_non_existing_preset_as_available__verify_no_crash_and_no_update(self) -> None:
         await self.logcat.Log("test__set_non_existing_preset_as_available__verify_no_crash_and_no_update")
         non_existing_preset_index = 79
-        AssertThat(non_existing_preset_index).IsNotIn(self.has.preset_records.keys())  # type: ignore
+        assert non_existing_preset_index not in self.has.preset_records.keys()
         dut_connection_to_ref = await self.setupHapConnection()
 
         await self.logcat.Log("Notify available preset to non existing index")

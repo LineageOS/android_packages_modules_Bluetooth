@@ -40,6 +40,7 @@ import android.os.ParcelUuid;
 import androidx.test.filters.MediumTest;
 
 import com.android.bluetooth.TestLooper;
+import com.android.bluetooth.TestUtils.MockitoRule;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 
@@ -79,10 +80,7 @@ public class BatteryServiceTest {
 
     @After
     public void tearDown() {
-        // To prevent double stop
-        if (BatteryService.getBatteryService() != null) {
-            mService.stop();
-        }
+        mService.cleanup();
         assertThat(BatteryService.getBatteryService()).isNull();
     }
 

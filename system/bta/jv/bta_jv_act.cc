@@ -31,6 +31,7 @@
 #include <unordered_set>
 
 #include "bta/include/bta_jv_co.h"
+#include "bta/include/bta_rfcomm_metrics.h"
 #include "bta/include/bta_rfcomm_scn.h"
 #include "bta/jv/bta_jv_int.h"
 #include "bta/sys/bta_sys.h"
@@ -51,9 +52,6 @@
 #include "stack/include/sdp_api.h"
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 using namespace bluetooth::legacy::stack::sdp;
 using namespace bluetooth;
@@ -104,7 +102,7 @@ tBTA_JV_CFG* p_bta_jv_cfg = &bta_jv_cfg;
  * Returns
  *
  ******************************************************************************/
-uint8_t bta_jv_alloc_sec_id(void) {
+static uint8_t bta_jv_alloc_sec_id(void) {
   uint8_t ret = 0;
   int i;
   for (i = 0; i < BTA_JV_NUM_SERVICE_ID; i++) {
@@ -217,7 +215,7 @@ static tBTA_JV_L2CAP_REASON bta_jv_from_gap_l2cap_err(const tL2CAP_CONN& l2cap_r
  * Returns
  *
  ******************************************************************************/
-tBTA_JV_RFC_CB* bta_jv_alloc_rfc_cb(uint16_t port_handle, tBTA_JV_PCB** pp_pcb) {
+static tBTA_JV_RFC_CB* bta_jv_alloc_rfc_cb(uint16_t port_handle, tBTA_JV_PCB** pp_pcb) {
   tBTA_JV_RFC_CB* p_cb = NULL;
   tBTA_JV_PCB* p_pcb;
   int i, j;
@@ -259,7 +257,7 @@ tBTA_JV_RFC_CB* bta_jv_alloc_rfc_cb(uint16_t port_handle, tBTA_JV_PCB** pp_pcb) 
  * Returns
  *
  ******************************************************************************/
-tBTA_JV_PCB* bta_jv_rfc_port_to_pcb(uint16_t port_handle) {
+static tBTA_JV_PCB* bta_jv_rfc_port_to_pcb(uint16_t port_handle) {
   tBTA_JV_PCB* p_pcb = NULL;
 
   if ((port_handle > 0) && (port_handle <= MAX_RFC_PORTS) &&
@@ -280,7 +278,7 @@ tBTA_JV_PCB* bta_jv_rfc_port_to_pcb(uint16_t port_handle) {
  * Returns
  *
  ******************************************************************************/
-tBTA_JV_RFC_CB* bta_jv_rfc_port_to_cb(uint16_t port_handle) {
+static tBTA_JV_RFC_CB* bta_jv_rfc_port_to_cb(uint16_t port_handle) {
   tBTA_JV_RFC_CB* p_cb = NULL;
   uint32_t handle;
 
@@ -396,7 +394,7 @@ static tBTA_JV_STATUS bta_jv_free_rfc_cb(tBTA_JV_RFC_CB* p_cb, tBTA_JV_PCB* p_pc
  * Returns
  *
  ******************************************************************************/
-tBTA_JV_STATUS bta_jv_free_l2c_cb(tBTA_JV_L2C_CB* p_cb) {
+static tBTA_JV_STATUS bta_jv_free_l2c_cb(tBTA_JV_L2C_CB* p_cb) {
   tBTA_JV_STATUS status = tBTA_JV_STATUS::SUCCESS;
 
   if (BTA_JV_ST_NONE != p_cb->state) {
@@ -586,7 +584,7 @@ static tBTA_JV_PM_CB* bta_jv_alloc_set_pm_profile_cb(uint32_t jv_handle, tBTA_JV
  * Returns      true, if allowed
  *
  ******************************************************************************/
-bool bta_jv_check_psm(uint16_t psm) {
+static bool bta_jv_check_psm(uint16_t psm) {
   bool ret = false;
 
   if (L2C_IS_VALID_PSM(psm)) {
@@ -1515,6 +1513,7 @@ void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, uint8_t remote_scn, const RawAddre
                            RfcommCfgInfo cfg, uint32_t app_uid, uint64_t sdp_duration_ms) {
   uint16_t handle = 0;
   uint32_t event_mask = BTA_JV_RFC_EV_MASK;
+  int port_status;
   PortSettings port_settings;
 
   tBTA_JV bta_jv = {
@@ -1534,10 +1533,14 @@ void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, uint8_t remote_scn, const RawAddre
                                                            sec_mask, BT_PSM_RFCOMM,
                                                            BTM_SEC_PROTO_RFCOMM, 0);
 
-  if (RFCOMM_CreateConnectionWithSecurity(
-              UUID_SERVCLASS_SERIAL_PORT, remote_scn, false, BTA_JV_DEF_RFC_MTU, peer_bd_addr,
-              &handle, bta_jv_port_mgmt_cl_cback, sec_mask, cfg) != PORT_SUCCESS) {
+  port_status = RFCOMM_CreateConnectionWithSecurity(UUID_SERVCLASS_SERIAL_PORT, remote_scn, false,
+                                                    BTA_JV_DEF_RFC_MTU, peer_bd_addr, &handle,
+                                                    bta_jv_port_mgmt_cl_cback, sec_mask, cfg);
+  if (port_status != PORT_SUCCESS) {
     log::error("RFCOMM_CreateConnection failed");
+    bta_collect_rfc_metrics_after_port_fail(
+            static_cast<tPORT_RESULT>(port_status), sdp_duration_ms > 0, tBTA_JV_STATUS::SUCCESS,
+            peer_bd_addr, static_cast<int>(app_uid), sec_mask, false, sdp_duration_ms);
     bta_jv.rfc_cl_init.status = tBTA_JV_STATUS::FAILURE;
   } else {
     tBTA_JV_PCB* p_pcb;
@@ -1765,6 +1768,7 @@ static void bta_jv_port_event_sr_cback(uint32_t code, uint16_t port_handle) {
 static tBTA_JV_PCB* bta_jv_add_rfc_port(tBTA_JV_RFC_CB* p_cb, tBTA_JV_PCB* p_pcb_open) {
   uint8_t used = 0, i, listen = 0;
   uint32_t si = 0;
+  int port_status;
   PortSettings port_settings;
   uint32_t event_mask = BTA_JV_RFC_EV_MASK;
   tBTA_JV_PCB* p_pcb = NULL;
@@ -1802,10 +1806,10 @@ static tBTA_JV_PCB* bta_jv_add_rfc_port(tBTA_JV_RFC_CB* p_cb, tBTA_JV_PCB* p_pcb
         log::error("RFCOMM_CreateConnection failed: invalid port_handle");
       }
 
-      if (RFCOMM_CreateConnectionWithSecurity(p_cb->sec_id, p_cb->scn, true, BTA_JV_DEF_RFC_MTU,
-                                              RawAddress::kAny, &(p_cb->rfc_hdl[si]),
-                                              bta_jv_port_mgmt_sr_cback, sec_mask,
-                                              RfcommCfgInfo{}) == PORT_SUCCESS) {
+      port_status = RFCOMM_CreateConnectionWithSecurity(
+              p_cb->sec_id, p_cb->scn, true, BTA_JV_DEF_RFC_MTU, RawAddress::kAny,
+              &(p_cb->rfc_hdl[si]), bta_jv_port_mgmt_sr_cback, sec_mask, RfcommCfgInfo{});
+      if (port_status == PORT_SUCCESS) {
         p_cb->curr_sess++;
         p_pcb = &bta_jv_cb.port_cb[p_cb->rfc_hdl[si] - 1];
         p_pcb->state = BTA_JV_ST_SR_LISTEN;
@@ -1837,6 +1841,10 @@ static tBTA_JV_PCB* bta_jv_add_rfc_port(tBTA_JV_RFC_CB* p_cb, tBTA_JV_PCB* p_pcb
         log::verbose("p_pcb->handle=0x{:x}, curr_sess={}", p_pcb->handle, p_cb->curr_sess);
       } else {
         log::error("RFCOMM_CreateConnection failed");
+        bta_collect_rfc_metrics_after_port_fail(static_cast<tPORT_RESULT>(port_status), false,
+                                                tBTA_JV_STATUS::SUCCESS, RawAddress::kAny, 0,
+                                                sec_mask, true, 0);
+
         return NULL;
       }
     } else {
@@ -1854,6 +1862,7 @@ void bta_jv_rfcomm_start_server(tBTA_SEC sec_mask, uint8_t local_scn, uint8_t ma
                                 RfcommCfgInfo cfg, uint32_t app_uid) {
   uint16_t handle = 0;
   uint32_t event_mask = BTA_JV_RFC_EV_MASK;
+  int port_status;
   PortSettings port_settings;
   tBTA_JV_RFC_CB* p_cb = NULL;
   tBTA_JV_PCB* p_pcb;
@@ -1863,10 +1872,14 @@ void bta_jv_rfcomm_start_server(tBTA_SEC sec_mask, uint8_t local_scn, uint8_t ma
   evt_data.status = tBTA_JV_STATUS::FAILURE;
 
   do {
-    if (RFCOMM_CreateConnectionWithSecurity(0, local_scn, true, BTA_JV_DEF_RFC_MTU,
-                                            RawAddress::kAny, &handle, bta_jv_port_mgmt_sr_cback,
-                                            sec_mask, cfg) != PORT_SUCCESS) {
+    port_status = RFCOMM_CreateConnectionWithSecurity(0, local_scn, true, BTA_JV_DEF_RFC_MTU,
+                                                      RawAddress::kAny, &handle,
+                                                      bta_jv_port_mgmt_sr_cback, sec_mask, cfg);
+    if (port_status != PORT_SUCCESS) {
       log::error("RFCOMM_CreateConnection failed");
+      bta_collect_rfc_metrics_after_port_fail(static_cast<tPORT_RESULT>(port_status), false,
+                                              tBTA_JV_STATUS::SUCCESS, RawAddress::kAny,
+                                              static_cast<int>(app_uid), sec_mask, true, 0);
       break;
     }
 

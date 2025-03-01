@@ -34,9 +34,8 @@ using hci_cmd_cb = base::OnceCallback<void(uint8_t* /* return_parameters */,
 void btu_hcif_send_cmd(uint8_t /* controller_id */, const BT_HDR* /* p_buf */) {
   inc_func_call_count(__func__);
 }
-void btu_hcif_send_cmd_with_cb(const base::Location& /* posted_from */, uint16_t /* opcode */,
-                               uint8_t* /* params */, uint8_t /* params_len */,
-                               hci_cmd_cb /* cb */) {
+void btu_hcif_send_cmd_with_cb(uint16_t /* opcode */, uint8_t* /* params */,
+                               uint8_t /* params_len */, hci_cmd_cb /* cb */) {
   inc_func_call_count(__func__);
 }
 void btu_hci_msg_process(BT_HDR* /* p_msg */) { inc_func_call_count(__func__); }

@@ -18,6 +18,8 @@ package android.bluetooth;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
+import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
+import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothUtils.logRemoteException;
 
 import android.annotation.IntDef;
@@ -57,7 +59,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
  * discovered using the Bluetooth device discovery or BLE scan process.
  */
 public final class BluetoothGatt implements BluetoothProfile {
-    private static final String TAG = "BluetoothGatt";
+    private static final String TAG = BluetoothGatt.class.getSimpleName();
+
     private static final boolean DBG = true;
     private static final boolean VDBG = false;
 
@@ -267,7 +270,7 @@ public final class BluetoothGatt implements BluetoothProfile {
                                             callback.onConnectionStateChange(
                                                     BluetoothGatt.this,
                                                     GATT_FAILURE,
-                                                    BluetoothProfile.STATE_DISCONNECTED);
+                                                    STATE_DISCONNECTED);
                                         }
                                     }
                                 });
@@ -384,10 +387,7 @@ public final class BluetoothGatt implements BluetoothProfile {
                     if (!address.equals(mDevice.getAddress())) {
                         return;
                     }
-                    int profileState =
-                            connected
-                                    ? BluetoothProfile.STATE_CONNECTED
-                                    : BluetoothProfile.STATE_DISCONNECTED;
+                    int profileState = connected ? STATE_CONNECTED : STATE_DISCONNECTED;
 
                     if (Flags.unregisterGattClientDisconnected() && !connected && !mAutoConnect) {
                         unregisterApp();

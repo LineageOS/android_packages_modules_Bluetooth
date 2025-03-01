@@ -143,15 +143,6 @@ struct BTM_StartInquiry {
 };
 extern struct BTM_StartInquiry BTM_StartInquiry;
 
-// Name: btm_clr_inq_db
-// Params: const RawAddress* p_bda
-// Return: void
-struct btm_clr_inq_db {
-  std::function<void(const RawAddress* p_bda)> body{[](const RawAddress* /* p_bda */) {}};
-  void operator()(const RawAddress* p_bda) { body(p_bda); }
-};
-extern struct btm_clr_inq_db btm_clr_inq_db;
-
 // Name: btm_clr_inq_result_flt
 // Params: void
 // Return: void

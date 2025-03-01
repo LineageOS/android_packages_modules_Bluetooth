@@ -221,11 +221,10 @@ struct tBTM_SEC_REC {
   LinkKey link_key;      /* Device link key */
   uint8_t link_key_type; /* Type of key used in pairing */
   uint8_t enc_key_size;  /* current link encryption key size */
+  tBTM_BOND_TYPE bond_type; /* Whether the BR/EDR pairing was persistent or temporary */
 
   // LE Link Key Info
   tBTM_SEC_BLE_KEYS ble_keys;
-
-  tBTM_BOND_TYPE bond_type; /* bond type */
 
 public:
   bool is_device_authenticated() const { return sec_flags & BTM_SEC_AUTHENTICATED; }

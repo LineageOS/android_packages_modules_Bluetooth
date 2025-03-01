@@ -16,6 +16,8 @@
 
 package com.android.bluetooth.avrcpcontroller;
 
+import static java.util.Objects.requireNonNull;
+
 import android.util.Log;
 
 import java.util.Date;
@@ -30,7 +32,9 @@ import java.util.Objects;
  * content-type="audio/basic" name="ABCD1234.wav" size="102400"/>
  */
 public class BipAttachmentFormat {
-    private static final String TAG = "avrcpcontroller.BipAttachmentFormat";
+    private static final String TAG =
+            AvrcpControllerUtils.TAG_PREFIX_AVRCP_CONTROLLER
+                    + BipAttachmentFormat.class.getSimpleName();
 
     /**
      * MIME content type of the image attachment, i.e. "text/plain"
@@ -101,8 +105,8 @@ public class BipAttachmentFormat {
             int size,
             Date created,
             Date modified) {
-        mContentType = Objects.requireNonNull(contentType, "Content-Type cannot be null");
-        mName = Objects.requireNonNull(name, "Name cannot be null");
+        mContentType = requireNonNull(contentType);
+        mName = requireNonNull(name);
         mCharset = charset;
         mSize = size;
         mCreated = created != null ? new BipDateTime(created) : null;

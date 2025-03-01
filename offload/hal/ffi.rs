@@ -12,7 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-use core::{ffi::c_void, slice};
+use core::ffi::c_void;
+use core::slice;
 use std::sync::{Mutex, RwLock};
 
 /// Callbacks from C to Rust
@@ -45,6 +46,7 @@ pub struct CInterface {
     send_acl: unsafe extern "C" fn(handle: *mut c_void, data: *const u8, len: usize),
     send_sco: unsafe extern "C" fn(handle: *mut c_void, data: *const u8, len: usize),
     send_iso: unsafe extern "C" fn(handle: *mut c_void, data: *const u8, len: usize),
+    client_died: unsafe extern "C" fn(handle: *mut c_void),
 }
 
 //SAFETY: CInterface is safe to send between threads because we require the C code
@@ -142,6 +144,17 @@ impl<T: Callbacks> Ffi<T> {
         //         function pointer and an initialized `handle`.
         unsafe {
             (intf.close)(intf.handle);
+        }
+        self.remove_client();
+    }
+
+    pub(crate) fn client_died(&self) {
+        let intf = self.intf.lock().unwrap();
+
+        // SAFETY: The C Code has initialized the `CInterface` with a valid
+        //         function pointer and an initialized `handle`.
+        unsafe {
+            (intf.client_died)(intf.handle);
         }
         self.remove_client();
     }

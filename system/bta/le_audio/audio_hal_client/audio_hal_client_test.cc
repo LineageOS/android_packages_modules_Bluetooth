@@ -30,9 +30,7 @@
 #include "common/message_loop_thread.h"
 #include "hardware/bluetooth.h"
 #include "osi/include/wakelock.h"
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
+#include "stack/include/main_thread.h"
 
 using ::testing::_;
 using ::testing::Assign;
@@ -57,15 +55,12 @@ using namespace bluetooth;
 bluetooth::common::MessageLoopThread message_loop_thread("test message loop");
 bluetooth::common::MessageLoopThread* get_main_thread() { return &message_loop_thread; }
 bt_status_t do_in_main_thread(base::OnceClosure task) {
-  if (!message_loop_thread.DoInThread(FROM_HERE, std::move(task))) {
+  if (!message_loop_thread.DoInThread(std::move(task))) {
     log::error("failed to post task to task runner!");
     return BT_STATUS_FAIL;
   }
   return BT_STATUS_SUCCESS;
 }
-
-static base::MessageLoop* message_loop_;
-base::MessageLoop* get_main_message_loop() { return message_loop_; }
 
 static void init_message_loop_thread() {
   message_loop_thread.StartUp();
@@ -76,17 +71,9 @@ static void init_message_loop_thread() {
   if (!message_loop_thread.EnableRealTimeScheduling()) {
     log::error("Unable to set real time scheduling");
   }
-
-  message_loop_ = message_loop_thread.message_loop();
-  if (message_loop_ == nullptr) {
-    FAIL() << "unable to get message loop.";
-  }
 }
 
-static void cleanup_message_loop_thread() {
-  message_loop_ = nullptr;
-  message_loop_thread.ShutDown();
-}
+static void cleanup_message_loop_thread() { message_loop_thread.ShutDown(); }
 
 using bluetooth::audio::le_audio::LeAudioClientInterface;
 
@@ -243,6 +230,8 @@ public:
 class LeAudioClientAudioTest : public ::testing::Test {
 protected:
   void SetUp(void) override {
+    com::android::bluetooth::flags::provider_->reset_flags();
+
     init_message_loop_thread();
     bluetooth::audio::le_audio::interface_mock = &mock_client_interface_;
     bluetooth::audio::le_audio::sink_mock = &mock_hal_interface_audio_sink_;
@@ -292,8 +281,6 @@ protected:
   }
 
   void TearDown(void) override {
-    com::android::bluetooth::flags::provider_->reset_flags();
-
     /* We have to call Cleanup to tidy up some static variables.
      * If on the HAL end Source is running it means we are running the Sink
      * on our end, and vice versa.

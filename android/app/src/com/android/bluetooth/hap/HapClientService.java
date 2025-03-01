@@ -19,8 +19,12 @@ package com.android.bluetooth.hap;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
+import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
@@ -158,10 +162,11 @@ public class HapClientService extends ProfileService {
     }
 
     @Override
-    public void stop() {
-        Log.d(TAG, "stop()");
+    public void cleanup() {
+        Log.i(TAG, "Cleanup HapClient Service");
+
         if (sHapClient == null) {
-            Log.w(TAG, "stop() called before start()");
+            Log.w(TAG, "cleanup() called before initialization");
             return;
         }
 
@@ -224,7 +229,7 @@ public class HapClientService extends ProfileService {
             if (sm == null) {
                 return;
             }
-            if (sm.getConnectionState() != BluetoothProfile.STATE_DISCONNECTED) {
+            if (sm.getConnectionState() != STATE_DISCONNECTED) {
                 Log.i(TAG, "Disconnecting device because it was unbonded.");
                 disconnect(device);
                 return;
@@ -263,7 +268,7 @@ public class HapClientService extends ProfileService {
                 if (!Utils.arrayContains(featureUuids, BluetoothUuid.HAS)) {
                     continue;
                 }
-                int connectionState = BluetoothProfile.STATE_DISCONNECTED;
+                int connectionState = STATE_DISCONNECTED;
                 HapClientStateMachine sm = mStateMachines.get(device);
                 if (sm != null) {
                     connectionState = sm.getConnectionState();
@@ -307,7 +312,7 @@ public class HapClientService extends ProfileService {
         synchronized (mStateMachines) {
             HapClientStateMachine sm = mStateMachines.get(device);
             if (sm == null) {
-                return BluetoothProfile.STATE_DISCONNECTED;
+                return STATE_DISCONNECTED;
             }
             return sm.getConnectionState();
         }
@@ -331,9 +336,9 @@ public class HapClientService extends ProfileService {
         Log.d(TAG, "Saved connectionPolicy " + device + " = " + connectionPolicy);
         mDatabaseManager.setProfileConnectionPolicy(
                 device, BluetoothProfile.HAP_CLIENT, connectionPolicy);
-        if (connectionPolicy == BluetoothProfile.CONNECTION_POLICY_ALLOWED) {
+        if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {
             connect(device);
-        } else if (connectionPolicy == BluetoothProfile.CONNECTION_POLICY_FORBIDDEN) {
+        } else if (connectionPolicy == CONNECTION_POLICY_FORBIDDEN) {
             disconnect(device);
         }
         return true;
@@ -368,8 +373,8 @@ public class HapClientService extends ProfileService {
         if (bondState != BluetoothDevice.BOND_BONDED) {
             Log.w(TAG, "okToConnect: return false, bondState=" + bondState);
             return false;
-        } else if (connectionPolicy != BluetoothProfile.CONNECTION_POLICY_UNKNOWN
-                && connectionPolicy != BluetoothProfile.CONNECTION_POLICY_ALLOWED) {
+        } else if (connectionPolicy != CONNECTION_POLICY_UNKNOWN
+                && connectionPolicy != CONNECTION_POLICY_ALLOWED) {
             // Otherwise, reject the connection if connectionPolicy is not valid.
             Log.w(TAG, "okToConnect: return false, connectionPolicy=" + connectionPolicy);
             return false;
@@ -391,7 +396,7 @@ public class HapClientService extends ProfileService {
         }
 
         // Check if the device is disconnected - if unbond, remove the state machine
-        if (toState == BluetoothProfile.STATE_DISCONNECTED) {
+        if (toState == STATE_DISCONNECTED) {
             int bondState = mAdapterService.getBondState(device);
             if (bondState == BluetoothDevice.BOND_NONE) {
                 Log.d(TAG, device + " is unbond. Remove state machine");
@@ -417,7 +422,7 @@ public class HapClientService extends ProfileService {
             return false;
         }
 
-        if (getConnectionPolicy(device) == BluetoothProfile.CONNECTION_POLICY_FORBIDDEN) {
+        if (getConnectionPolicy(device) == CONNECTION_POLICY_FORBIDDEN) {
             return false;
         }
         final ParcelUuid[] featureUuids = mAdapterService.getRemoteUuids(device);
@@ -619,7 +624,7 @@ public class HapClientService extends ProfileService {
         return 0x00;
     }
 
-    private int stackEventPresetInfoReasonToProfileStatus(int statusCode) {
+    private static int stackEventPresetInfoReasonToProfileStatus(int statusCode) {
         return switch (statusCode) {
             case HapClientStackEvent.PRESET_INFO_REASON_ALL_PRESET_INFO ->
                     BluetoothStatusCodes.REASON_LOCAL_STACK_REQUEST;
@@ -647,7 +652,7 @@ public class HapClientService extends ProfileService {
                                 stackEventPresetInfoReasonToProfileStatus(infoReason)));
     }
 
-    private int stackEventStatusToProfileStatus(int statusCode) {
+    private static int stackEventStatusToProfileStatus(int statusCode) {
         return switch (statusCode) {
             case HapClientStackEvent.STATUS_SET_NAME_NOT_ALLOWED ->
                     BluetoothStatusCodes.ERROR_REMOTE_OPERATION_REJECTED;

@@ -30,7 +30,7 @@ import android.util.Log;
  */
 @Deprecated
 public abstract class BluetoothHealthCallback {
-    private static final String TAG = "BluetoothHealthCallback";
+    private static final String TAG = BluetoothHealthCallback.class.getSimpleName();
 
     /**
      * Callback to inform change in registration state of the health application.

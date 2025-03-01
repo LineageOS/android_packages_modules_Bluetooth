@@ -118,7 +118,9 @@ public:
           LeAudioSourceAudioHalClient* source_broadcast_client, bool is_active);
   virtual void UpdateActiveAudioConfig(
           const types::BidirectionalPair<stream_parameters>& stream_params,
-          std::function<void(const stream_config& config, uint8_t direction)> update_receiver);
+          std::function<void(const stream_config& config, uint8_t direction)> update_receiver,
+          uint8_t directions_to_update = (bluetooth::le_audio::types::kLeAudioDirectionSink |
+                                          bluetooth::le_audio::types::kLeAudioDirectionSource));
   virtual std::unique_ptr<::bluetooth::le_audio::types::AudioSetConfiguration> GetCodecConfig(
           const UnicastConfigurationRequirements& requirements,
           UnicastConfigurationProvider provider);

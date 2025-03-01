@@ -31,7 +31,7 @@ import com.android.obex.PasswordAuthentication;
  */
 // Next tag value for ContentProfileErrorReportUtils.report(): 1
 public class BluetoothPbapAuthenticator implements Authenticator {
-    private static final String TAG = "PbapAuthenticator";
+    private static final String TAG = BluetoothPbapAuthenticator.class.getSimpleName();
 
     @VisibleForTesting boolean mChallenged;
     @VisibleForTesting boolean mAuthCancelled;

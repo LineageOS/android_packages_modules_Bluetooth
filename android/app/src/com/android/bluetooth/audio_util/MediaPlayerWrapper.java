@@ -41,7 +41,8 @@ import java.util.Objects;
  * with that.
  */
 public class MediaPlayerWrapper {
-    private static final String TAG = "AudioMediaPlayerWrapper";
+    private static final String TAG = MediaPlayerWrapper.class.getSimpleName();
+
     static boolean sTesting = false;
     private static final int PLAYBACK_STATE_CHANGE_EVENT_LOGGER_SIZE = 5;
     private static final String PLAYBACK_STATE_CHANGE_LOGGER_EVENT_TITLE =

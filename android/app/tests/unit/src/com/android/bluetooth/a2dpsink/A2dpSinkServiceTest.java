@@ -92,7 +92,7 @@ public class A2dpSinkServiceTest {
 
     @After
     public void tearDown() throws Exception {
-        mService.stop();
+        mService.cleanup();
         assertThat(A2dpSinkService.getA2dpSinkService()).isNull();
     }
 

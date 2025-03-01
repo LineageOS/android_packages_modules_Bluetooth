@@ -1062,7 +1062,7 @@ pub enum BaseCallbacks {
     // switch_codec_cb
     GenerateLocalOobData(u8, Box<OobData>), // Box OobData as its size is much bigger than others
     LeRandCallback(u64),
-    // key_missing_cb
+    KeyMissing(RawAddress),
     // encryption_change_cb
 }
 
@@ -1124,6 +1124,8 @@ u32 -> BtStatus, *mut RawAddress, bindings::bt_acl_state_t -> BtAclState, i32 ->
 cb_variant!(BaseCb, generate_local_oob_data_cb -> BaseCallbacks::GenerateLocalOobData, u8, OobData -> Box::<OobData>);
 
 cb_variant!(BaseCb, le_rand_cb -> BaseCallbacks::LeRandCallback, u64);
+
+cb_variant!(BaseCb, key_missing_cb -> BaseCallbacks::KeyMissing, RawAddress);
 
 struct RawInterfaceWrapper {
     pub raw: *const bindings::bt_interface_t,
@@ -1245,7 +1247,7 @@ impl BluetoothInterface {
             switch_buffer_size_cb: None,
             switch_codec_cb: None,
             le_rand_cb: Some(le_rand_cb),
-            key_missing_cb: None,
+            key_missing_cb: Some(key_missing_cb),
             encryption_change_cb: None,
         });
 
@@ -1475,6 +1477,12 @@ impl BluetoothInterface {
 
     pub fn dump(&self, fd: RawFd) {
         ccall!(self, dump, fd, std::ptr::null_mut())
+    }
+}
+
+impl Debug for BluetoothInterface {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "BluetoothInterface {{ is_init: {:?} }}", self.is_init)
     }
 }
 

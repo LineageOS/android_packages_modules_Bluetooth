@@ -15,6 +15,15 @@
 
 import("//bt/system/gd/packet/parser/packetgen.gni")
 
+source_set("BluetoothHciPacketSources") {
+  sources = [
+    "hci/address.cc",
+    "hci/class_of_device.cc",
+  ]
+
+  include_dirs = [ "//bt/system/gd" ]
+}
+
 packetgen_headers("BluetoothGeneratedPackets_h") {
   sources = [
     "hci/hci_packets.pdl",

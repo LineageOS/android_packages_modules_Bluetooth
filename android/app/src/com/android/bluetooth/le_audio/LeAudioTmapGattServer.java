@@ -36,7 +36,7 @@ import java.util.UUID;
 /** A GATT server for Telephony and Media Audio Profile (TMAP) */
 @VisibleForTesting
 public class LeAudioTmapGattServer {
-    private static final String TAG = "LeAudioTmapGattServer";
+    private static final String TAG = LeAudioTmapGattServer.class.getSimpleName();
 
     /* Telephony and Media Audio Profile Role Characteristic UUID */
     @VisibleForTesting

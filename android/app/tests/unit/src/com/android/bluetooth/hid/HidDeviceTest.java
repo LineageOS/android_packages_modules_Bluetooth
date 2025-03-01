@@ -134,7 +134,7 @@ public class HidDeviceTest {
 
     @After
     public void tearDown() {
-        mService.stop();
+        mService.cleanup();
         assertThat(HidDeviceService.getHidDeviceService()).isNull();
     }
 

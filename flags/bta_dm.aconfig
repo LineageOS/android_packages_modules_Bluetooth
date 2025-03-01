@@ -27,3 +27,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "bta_dm_disc_close_proper_conn_id"
+    namespace: "bluetooth"
+    description: "Make sure proper connection is closed when timeout happens"
+    bug: "399687217"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

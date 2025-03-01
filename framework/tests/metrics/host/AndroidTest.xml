@@ -12,7 +12,7 @@
       <option name="force-root" value="true"/>
     </target_preparer>
     <target_preparer class="com.android.tradefed.targetprep.PythonVirtualenvPreparer">
-        <option name="dep-module" value="grpcio==1.51.1" />
+        <option name="dep-module" value="grpcio==1.70.0" />
         <option name="dep-module" value="cryptography==35" />
         <option name="dep-module" value="click>=7.1.2" />
     </target_preparer>

@@ -31,9 +31,6 @@
 #include <cstdint>
 #include <thread>
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 using namespace bluetooth;
 
 typedef struct {
@@ -57,9 +54,9 @@ struct AudioEngine {
   void* trackHandle = nullptr;
 } s_AudioEngine;
 
-void ErrorCallback(AAudioStream* stream, void* userdata, aaudio_result_t error);
+static void ErrorCallback(AAudioStream* stream, void* userdata, aaudio_result_t error);
 
-void BtifAvrcpAudioErrorHandle() {
+static void BtifAvrcpAudioErrorHandle() {
   AAudioStreamBuilder* builder;
   AAudioStream* stream;
 
@@ -85,7 +82,7 @@ void BtifAvrcpAudioErrorHandle() {
   s_AudioEngine.thread = nullptr;
 }
 
-void ErrorCallback(AAudioStream* /* stream */, void* /* userdata */, aaudio_result_t error) {
+static void ErrorCallback(AAudioStream* /* stream */, void* /* userdata */, aaudio_result_t error) {
   if (error == AAUDIO_ERROR_DISCONNECTED) {
     if (s_AudioEngine.thread == nullptr) {
       s_AudioEngine.thread = new std::thread(BtifAvrcpAudioErrorHandle);

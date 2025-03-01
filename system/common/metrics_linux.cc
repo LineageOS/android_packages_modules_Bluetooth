@@ -21,9 +21,6 @@
 #include "common/metrics.h"
 #include "types/raw_address.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 namespace bluetooth {
 
 namespace common {
@@ -134,10 +131,11 @@ void LogLinkLayerConnectionEvent(const RawAddress* /* address */, uint32_t /* co
                                  uint16_t /* cmd_status */, uint16_t /* reason_code */) {}
 
 void LogManufacturerInfo(const RawAddress& /* address */,
+                         android::bluetooth::AddressTypeEnum /* address_type */,
                          android::bluetooth::DeviceInfoSrcEnum /* source_type */,
                          const std::string& /* source_name */,
-                         /* const */ std::string& /* manufacturer */,
-                         const std::string& /* model */, const std::string& /* hardware_version */,
+                         const std::string& /* manufacturer */, const std::string& /* model */,
+                         const std::string& /* hardware_version */,
                          const std::string& /* software_version */) {}
 
 void LogSdpAttribute(const RawAddress& /* address */, uint16_t /* protocol_uuid */,

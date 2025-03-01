@@ -20,6 +20,10 @@ import static android.bluetooth.BluetoothDevice.BATTERY_LEVEL_UNKNOWN;
 import static android.bluetooth.BluetoothDevice.PHY_LE_1M_MASK;
 import static android.bluetooth.BluetoothDevice.PHY_LE_2M_MASK;
 import static android.bluetooth.BluetoothDevice.TRANSPORT_LE;
+import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
+import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
+import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
+import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 import static android.bluetooth.BluetoothProfile.getConnectionStateName;
 
 import static java.util.Objects.requireNonNull;
@@ -71,7 +75,7 @@ public class BatteryStateMachine extends StateMachine {
     private Connecting mConnecting;
     private Connected mConnected;
     private Disconnecting mDisconnecting;
-    private int mLastConnectionState = BluetoothProfile.STATE_DISCONNECTED;
+    private int mLastConnectionState = STATE_DISCONNECTED;
 
     private final BatteryService mService;
 
@@ -119,7 +123,7 @@ public class BatteryStateMachine extends StateMachine {
     }
 
     synchronized boolean isConnected() {
-        return mLastConnectionState == BluetoothProfile.STATE_CONNECTED;
+        return mLastConnectionState == STATE_CONNECTED;
     }
 
     private static String messageWhatToString(int what) {
@@ -224,7 +228,8 @@ public class BatteryStateMachine extends StateMachine {
 
     @VisibleForTesting
     class Disconnected extends State {
-        private static final String TAG = "BASM_Disconnected";
+        private static final String TAG =
+                BatteryStateMachine.TAG + "." + Disconnected.class.getSimpleName();
 
         @Override
         public void enter() {
@@ -235,11 +240,11 @@ public class BatteryStateMachine extends StateMachine {
                 mBluetoothGatt = null;
             }
 
-            if (mLastConnectionState != BluetoothProfile.STATE_DISCONNECTED) {
+            if (mLastConnectionState != STATE_DISCONNECTED) {
                 // Don't broadcast during startup
-                dispatchConnectionStateChanged(BluetoothProfile.STATE_DISCONNECTED);
+                dispatchConnectionStateChanged(STATE_DISCONNECTED);
             }
-            mLastConnectionState = BluetoothProfile.STATE_DISCONNECTED;
+            mLastConnectionState = STATE_DISCONNECTED;
         }
 
         @Override
@@ -279,13 +284,14 @@ public class BatteryStateMachine extends StateMachine {
 
     @VisibleForTesting
     class Connecting extends State {
-        private static final String TAG = "BASM_Connecting";
+        private static final String TAG =
+                BatteryStateMachine.TAG + "." + Connecting.class.getSimpleName();
 
         @Override
         public void enter() {
             log(TAG, "Enter (" + mDevice + "): " + messageWhatToString(getCurrentMessage().what));
-            dispatchConnectionStateChanged(BluetoothProfile.STATE_CONNECTING);
-            mLastConnectionState = BluetoothProfile.STATE_CONNECTING;
+            dispatchConnectionStateChanged(STATE_CONNECTING);
+            mLastConnectionState = STATE_CONNECTING;
         }
 
         @Override
@@ -316,11 +322,11 @@ public class BatteryStateMachine extends StateMachine {
         // in Connecting state
         private void processConnectionEvent(int state) {
             switch (state) {
-                case BluetoothProfile.STATE_DISCONNECTED -> {
+                case STATE_DISCONNECTED -> {
                     Log.w(TAG, "Device disconnected: " + mDevice);
                     transitionTo(mDisconnected);
                 }
-                case BluetoothProfile.STATE_CONNECTED -> transitionTo(mConnected);
+                case STATE_CONNECTED -> transitionTo(mConnected);
                 default -> Log.e(TAG, "Incorrect state: " + state);
             }
         }
@@ -328,14 +334,15 @@ public class BatteryStateMachine extends StateMachine {
 
     @VisibleForTesting
     class Disconnecting extends State {
-        private static final String TAG = "BASM_Disconnecting";
+        private static final String TAG =
+                BatteryStateMachine.TAG + "." + Disconnecting.class.getSimpleName();
 
         @Override
         public void enter() {
             log(TAG, "Enter (" + mDevice + "): " + messageWhatToString(getCurrentMessage().what));
             sendMessageDelayed(MESSAGE_CONNECT_TIMEOUT, CONNECT_TIMEOUT.toMillis());
-            dispatchConnectionStateChanged(BluetoothProfile.STATE_DISCONNECTING);
-            mLastConnectionState = BluetoothProfile.STATE_DISCONNECTING;
+            dispatchConnectionStateChanged(STATE_DISCONNECTING);
+            mLastConnectionState = STATE_DISCONNECTING;
         }
 
         @Override
@@ -367,11 +374,11 @@ public class BatteryStateMachine extends StateMachine {
         // in Disconnecting state
         private void processConnectionEvent(int state) {
             switch (state) {
-                case BluetoothProfile.STATE_DISCONNECTED -> {
+                case STATE_DISCONNECTED -> {
                     Log.i(TAG, "Disconnected: " + mDevice);
                     transitionTo(mDisconnected);
                 }
-                case BluetoothProfile.STATE_CONNECTED -> {
+                case STATE_CONNECTED -> {
                     // TODO: Check if connect while disconnecting is okay. It is related to
                     // MESSAGE_CONNECT_TIMEOUT as well.
 
@@ -388,13 +395,14 @@ public class BatteryStateMachine extends StateMachine {
 
     @VisibleForTesting
     class Connected extends State {
-        private static final String TAG = "BASM_Connected";
+        private static final String TAG =
+                BatteryStateMachine.TAG + "." + Connected.class.getSimpleName();
 
         @Override
         public void enter() {
             log(TAG, "Enter (" + mDevice + "): " + messageWhatToString(getCurrentMessage().what));
-            dispatchConnectionStateChanged(BluetoothProfile.STATE_CONNECTED);
-            mLastConnectionState = BluetoothProfile.STATE_CONNECTED;
+            dispatchConnectionStateChanged(STATE_CONNECTED);
+            mLastConnectionState = STATE_CONNECTED;
 
             discoverServicesGatt();
         }
@@ -430,7 +438,7 @@ public class BatteryStateMachine extends StateMachine {
         // in Connected state
         private void processConnectionEvent(int state) {
             switch (state) {
-                case BluetoothProfile.STATE_DISCONNECTED -> {
+                case STATE_DISCONNECTED -> {
                     Log.i(TAG, "Disconnected from " + mDevice);
                     transitionTo(mDisconnected);
                 }

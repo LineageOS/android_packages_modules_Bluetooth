@@ -18,6 +18,8 @@
 
 #define LOG_TAG "bt_btif_sock_sco"
 
+#include "btif_sock_sco.h"
+
 #include <bluetooth/log.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -53,9 +55,6 @@
 //   connect_completed_cb()    - connection successfully established
 //   socket_read_ready_cb()    - local host closed SCO socket
 //   disconnect_completed_cb() - connection terminated
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 using namespace bluetooth;
 
@@ -175,7 +174,7 @@ static sco_socket_t* sco_socket_establish_locked(bool is_listening, const RawAdd
   socket_register(socket, thread_get_reactor(thread), sco_socket, socket_read_ready_cb, NULL);
   return sco_socket;
 
-error:;
+error:
   if (pair[0] != INVALID_FD) {
     close(pair[0]);
   }
@@ -282,7 +281,7 @@ static void connection_request_cb(tBTM_ESCO_EVT event, tBTM_ESCO_EVT_DATA* data)
 
   return;
 
-error:;
+error:
   if (client_fd != INVALID_FD) {
     close(client_fd);
   }

@@ -371,19 +371,6 @@ struct btsnd_hcic_ble_set_periodic_advertising_sync_transfer_params {
 extern struct btsnd_hcic_ble_set_periodic_advertising_sync_transfer_params
         btsnd_hcic_ble_set_periodic_advertising_sync_transfer_params;
 
-// Name: btsnd_hcic_ble_set_privacy_mode
-// Params: uint8_t addr_type_peer, const RawAddress& bda_peer, uint8_t
-// privacy_type Return: void
-struct btsnd_hcic_ble_set_privacy_mode {
-  std::function<void(uint8_t addr_type_peer, const RawAddress& bda_peer, uint8_t privacy_type)>
-          body{[](uint8_t /* addr_type_peer */, const RawAddress& /* bda_peer */,
-                  uint8_t /* privacy_type */) {}};
-  void operator()(uint8_t addr_type_peer, const RawAddress& bda_peer, uint8_t privacy_type) {
-    body(addr_type_peer, bda_peer, privacy_type);
-  }
-};
-extern struct btsnd_hcic_ble_set_privacy_mode btsnd_hcic_ble_set_privacy_mode;
-
 // Name: btsnd_hcic_ble_set_rand_priv_addr_timeout
 // Params: uint16_t rpa_timeout
 // Return: void

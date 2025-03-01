@@ -21,6 +21,8 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothHeadset
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
+import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED
+import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -92,7 +94,7 @@ class Hfp(val context: Context) : HFPImplBase(), Closeable {
         grpcUnary<Empty>(scope, responseObserver) {
             val device = request.connection.toBluetoothDevice(bluetoothAdapter)
 
-            bluetoothHfp.setConnectionPolicy(device, BluetoothProfile.CONNECTION_POLICY_ALLOWED)
+            bluetoothHfp.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED)
 
             Empty.getDefaultInstance()
         }
@@ -102,7 +104,7 @@ class Hfp(val context: Context) : HFPImplBase(), Closeable {
         grpcUnary<Empty>(scope, responseObserver) {
             val device = request.connection.toBluetoothDevice(bluetoothAdapter)
 
-            bluetoothHfp.setConnectionPolicy(device, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN)
+            bluetoothHfp.setConnectionPolicy(device, CONNECTION_POLICY_FORBIDDEN)
 
             Empty.getDefaultInstance()
         }
@@ -136,7 +138,7 @@ class Hfp(val context: Context) : HFPImplBase(), Closeable {
         grpcUnary(scope, responseObserver) {
             when (request.audioPath!!) {
                 AudioPath.AUDIO_PATH_UNKNOWN,
-                AudioPath.UNRECOGNIZED, -> {}
+                AudioPath.UNRECOGNIZED -> {}
                 AudioPath.AUDIO_PATH_HANDSFREE -> {
                     check(bluetoothHfp.getActiveDevice() != null)
                     inCallService.setAudioRoute(CallAudioState.ROUTE_BLUETOOTH)
@@ -195,7 +197,7 @@ class Hfp(val context: Context) : HFPImplBase(), Closeable {
 
     override fun makeCall(
         request: MakeCallRequest,
-        responseObserver: StreamObserver<MakeCallResponse>
+        responseObserver: StreamObserver<MakeCallResponse>,
     ) {
         grpcUnary(scope, responseObserver) {
             telecomManager.placeCall(Uri.fromParts("tel", request.number, null), Bundle())
@@ -205,7 +207,7 @@ class Hfp(val context: Context) : HFPImplBase(), Closeable {
 
     override fun setVoiceRecognition(
         request: SetVoiceRecognitionRequest,
-        responseObserver: StreamObserver<SetVoiceRecognitionResponse>
+        responseObserver: StreamObserver<SetVoiceRecognitionResponse>,
     ) {
         grpcUnary(scope, responseObserver) {
             if (request.enabled) {
@@ -223,7 +225,7 @@ class Hfp(val context: Context) : HFPImplBase(), Closeable {
 
     override fun clearCallHistory(
         request: ClearCallHistoryRequest,
-        responseObserver: StreamObserver<ClearCallHistoryResponse>
+        responseObserver: StreamObserver<ClearCallHistoryResponse>,
     ) {
         grpcUnary(scope, responseObserver) {
             context.contentResolver.delete(CallLog.Calls.CONTENT_URI, null, null)

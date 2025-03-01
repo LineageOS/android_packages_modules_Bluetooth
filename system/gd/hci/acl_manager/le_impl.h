@@ -871,16 +871,37 @@ public:
 
     uint16_t conn_interval_min;
     uint16_t conn_interval_max;
+    bool prefer_relaxed_connection_interval = false;
+    if (com::android::bluetooth::flags::channel_sounding_in_stack()) {
+      for (const auto& address_with_type : direct_connections_) {
+        bluetooth::hci::Address address = address_with_type.GetAddress();
+        if (relaxed_connection_interval_devices_set_.count(address) > 0) {
+          log::info(
+                  "Found device {} in direct connection list that prefers using the relaxed "
+                  "connection interval",
+                  address);
+          prefer_relaxed_connection_interval = true;
+          break;
+        }
+      }
+    }
 
     if (com::android::bluetooth::flags::initial_conn_params_p1()) {
-      size_t num_classic_acl_connections = classic_impl_->get_connection_count();
-      size_t num_acl_connections = connections.size();
+      if (prefer_relaxed_connection_interval) {
+        conn_interval_min = LeConnectionParameters::GetMinConnIntervalRelaxed();
+        conn_interval_max = LeConnectionParameters::GetMaxConnIntervalRelaxed();
+        log::debug("conn_interval_min={}, conn_interval_max={}", conn_interval_min,
+                   conn_interval_max);
+      } else {
+        size_t num_classic_acl_connections = classic_impl_->get_connection_count();
+        size_t num_acl_connections = connections.size();
 
-      log::debug("ACL connection count: Classic={}, LE={}", num_classic_acl_connections,
-                 num_acl_connections);
+        log::debug("ACL connection count: Classic={}, LE={}", num_classic_acl_connections,
+                   num_acl_connections);
 
-      choose_connection_mode(num_classic_acl_connections + num_acl_connections, &conn_interval_min,
-                             &conn_interval_max);
+        choose_connection_mode(num_classic_acl_connections + num_acl_connections,
+                               &conn_interval_min, &conn_interval_max);
+      }
     } else {
       conn_interval_min = os::GetSystemPropertyUint32(kPropertyMinConnInterval, kConnIntervalMin);
       conn_interval_max = os::GetSystemPropertyUint32(kPropertyMaxConnInterval, kConnIntervalMax);
@@ -1110,6 +1131,9 @@ public:
     } else {
       remove_device_from_accept_list(address_with_type);
     }
+    // Temporary mapping the error code to PAGE_TIMEOUT
+    log_le_connection_completion(address_with_type.GetAddress(), ErrorCode::PAGE_TIMEOUT,
+                                 true /* is locally initiated */);
     le_client_handler_->Post(common::BindOnce(
             &LeConnectionCallbacks::OnLeConnectFail, common::Unretained(le_client_callbacks_),
             address_with_type, ErrorCode::CONNECTION_ACCEPT_TIMEOUT));
@@ -1298,6 +1322,10 @@ public:
 
   void set_system_suspend_state(bool suspended) { system_suspend_ = suspended; }
 
+  void add_device_to_relaxed_connection_interval_list(const Address address) {
+    relaxed_connection_interval_devices_set_.insert(address);
+  }
+
   HciLayer* hci_layer_ = nullptr;
   Controller* controller_ = nullptr;
   os::Handler* handler_ = nullptr;
@@ -1324,6 +1352,8 @@ public:
   bool system_suspend_ = false;
   ConnectabilityState connectability_state_{ConnectabilityState::DISARMED};
   std::map<AddressWithType, os::Alarm> create_connection_timeout_alarms_{};
+  // Set of devices that should use the relaxed connection intervals.
+  std::unordered_set<Address> relaxed_connection_interval_devices_set_;
 };
 
 }  // namespace acl_manager

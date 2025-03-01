@@ -33,12 +33,7 @@
 #include "test/common/mock_functions.h"
 #include "types/raw_address.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 using namespace bluetooth;
-
-void DumpsysL2cap(int /* fd */) { inc_func_call_count(__func__); }
 
 void DumpsysAcl(int /* fd */) { inc_func_call_count(__func__); }
 
@@ -71,15 +66,6 @@ void shim::Acl::CreateClassicConnection(const hci::Address& /* address */) {
 }
 
 void shim::Acl::CancelClassicConnection(const hci::Address& /* address */) {
-  inc_func_call_count(__func__);
-}
-
-void shim::Acl::AcceptLeConnectionFrom(const hci::AddressWithType& /* address_with_type */,
-                                       bool /* is_direct */, std::promise<bool> /* promise */) {
-  inc_func_call_count(__func__);
-}
-
-void shim::Acl::IgnoreLeConnectionFrom(const hci::AddressWithType& /* address_with_type */) {
   inc_func_call_count(__func__);
 }
 

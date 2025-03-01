@@ -84,12 +84,10 @@ public:
 
   tBTM_SEC_SERV_REC* find_first_serv_rec(bool is_originator, uint16_t psm);
 
-  bool IsDeviceBonded(const RawAddress bd_addr);
+  bool IsDeviceBonded(const RawAddress bd_addr, tBT_TRANSPORT transport = BT_TRANSPORT_AUTO);
   bool IsDeviceEncrypted(const RawAddress bd_addr, tBT_TRANSPORT transport);
   bool IsDeviceAuthenticated(const RawAddress bd_addr, tBT_TRANSPORT transport);
   bool IsLinkKeyAuthenticated(const RawAddress bd_addr, tBT_TRANSPORT transport);
-
-  bool IsLinkKeyKnown(const RawAddress bd_addr, tBT_TRANSPORT transport);
 
   tBTM_SEC_REC* getSecRec(const RawAddress bd_addr);
 

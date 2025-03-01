@@ -1472,7 +1472,7 @@ void btsnd_hcic_read_encryption_key_size(uint16_t handle, ReadEncKeySizeCb cb) {
   uint8_t* p = param;
   UINT16_TO_STREAM(p, handle);
 
-  btu_hcif_send_cmd_with_cb(FROM_HERE, HCI_READ_ENCR_KEY_SIZE, param, len,
+  btu_hcif_send_cmd_with_cb(HCI_READ_ENCR_KEY_SIZE, param, len,
                             base::Bind(&read_encryption_key_size_complete, base::Passed(&cb)));
 }
 
@@ -1566,7 +1566,7 @@ void btsnd_hcic_vendor_spec_cmd(uint16_t opcode, uint8_t len, uint8_t* p_data,
                                 tBTM_VSC_CMPL_CB* p_cmd_cplt_cback) {
   uint16_t v_opcode = HCI_GRP_VENDOR_SPECIFIC | opcode;
 
-  btu_hcif_send_cmd_with_cb(FROM_HERE, v_opcode, p_data, len,
+  btu_hcif_send_cmd_with_cb(v_opcode, p_data, len,
                             base::BindOnce(&btsnd_hcic_vendor_spec_complete,
                                            base::Unretained(p_cmd_cplt_cback), v_opcode));
 }

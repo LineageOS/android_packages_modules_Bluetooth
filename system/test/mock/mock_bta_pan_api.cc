@@ -25,9 +25,6 @@
 #include "test/common/mock_functions.h"
 #include "types/raw_address.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 void BTA_PanClose(uint16_t /* handle */) { inc_func_call_count(__func__); }
 void BTA_PanDisable(void) { inc_func_call_count(__func__); }
 void BTA_PanEnable(tBTA_PAN_CBACK /* p_cback */) { inc_func_call_count(__func__); }

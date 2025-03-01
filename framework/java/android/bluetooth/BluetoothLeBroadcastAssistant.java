@@ -19,6 +19,11 @@ package android.bluetooth;
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.Manifest.permission.BLUETOOTH_SCAN;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
+import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
+
+import static java.util.Objects.requireNonNull;
 
 import android.annotation.CallbackExecutor;
 import android.annotation.FlaggedApi;
@@ -50,7 +55,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.Executor;
 
 /**
@@ -80,7 +84,8 @@ import java.util.concurrent.Executor;
  */
 @SystemApi
 public final class BluetoothLeBroadcastAssistant implements BluetoothProfile, AutoCloseable {
-    private static final String TAG = "BluetoothLeBroadcastAssistant";
+    private static final String TAG = BluetoothLeBroadcastAssistant.class.getSimpleName();
+
     private static final boolean DBG = true;
     private final Map<Callback, Executor> mCallbackExecutorMap = new HashMap<>();
 
@@ -578,9 +583,9 @@ public final class BluetoothLeBroadcastAssistant implements BluetoothProfile, Au
     @Override
     public @BluetoothProfile.BtProfileState int getConnectionState(@NonNull BluetoothDevice sink) {
         log("getConnectionState(" + sink + ")");
-        Objects.requireNonNull(sink, "sink cannot be null");
+        requireNonNull(sink);
         final IBluetoothLeBroadcastAssistant service = getService();
-        final int defaultValue = BluetoothProfile.STATE_DISCONNECTED;
+        final int defaultValue = STATE_DISCONNECTED;
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
@@ -606,7 +611,7 @@ public final class BluetoothLeBroadcastAssistant implements BluetoothProfile, Au
     @NonNull
     public List<BluetoothDevice> getDevicesMatchingConnectionStates(@NonNull int[] states) {
         log("getDevicesMatchingConnectionStates()");
-        Objects.requireNonNull(states, "states cannot be null");
+        requireNonNull(states);
         final IBluetoothLeBroadcastAssistant service = getService();
         final List<BluetoothDevice> defaultValue = new ArrayList<BluetoothDevice>();
         if (service == null) {
@@ -667,7 +672,7 @@ public final class BluetoothLeBroadcastAssistant implements BluetoothProfile, Au
     public boolean setConnectionPolicy(
             @NonNull BluetoothDevice device, @ConnectionPolicy int connectionPolicy) {
         log("setConnectionPolicy()");
-        Objects.requireNonNull(device, "device cannot be null");
+        requireNonNull(device);
         final IBluetoothLeBroadcastAssistant service = getService();
         final boolean defaultValue = false;
         if (service == null) {
@@ -675,8 +680,8 @@ public final class BluetoothLeBroadcastAssistant implements BluetoothProfile, Au
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (mBluetoothAdapter.isEnabled()
                 && isValidDevice(device)
-                && (connectionPolicy == BluetoothProfile.CONNECTION_POLICY_FORBIDDEN
-                        || connectionPolicy == BluetoothProfile.CONNECTION_POLICY_ALLOWED)) {
+                && (connectionPolicy == CONNECTION_POLICY_FORBIDDEN
+                        || connectionPolicy == CONNECTION_POLICY_ALLOWED)) {
             try {
                 return service.setConnectionPolicy(device, connectionPolicy, mAttributionSource);
             } catch (RemoteException e) {
@@ -702,9 +707,9 @@ public final class BluetoothLeBroadcastAssistant implements BluetoothProfile, Au
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public @ConnectionPolicy int getConnectionPolicy(@NonNull BluetoothDevice device) {
         log("getConnectionPolicy()");
-        Objects.requireNonNull(device, "device cannot be null");
+        requireNonNull(device);
         final IBluetoothLeBroadcastAssistant service = getService();
-        final int defaultValue = BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
+        final int defaultValue = CONNECTION_POLICY_FORBIDDEN;
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
             if (DBG) log(Log.getStackTraceString(new Throwable()));
@@ -737,8 +742,8 @@ public final class BluetoothLeBroadcastAssistant implements BluetoothProfile, Au
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public void registerCallback(
             @NonNull @CallbackExecutor Executor executor, @NonNull Callback callback) {
-        Objects.requireNonNull(executor, "executor cannot be null");
-        Objects.requireNonNull(callback, "callback cannot be null");
+        requireNonNull(executor);
+        requireNonNull(callback);
         log("registerCallback");
 
         synchronized (mCallbackExecutorMap) {
@@ -786,7 +791,7 @@ public final class BluetoothLeBroadcastAssistant implements BluetoothProfile, Au
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public void unregisterCallback(@NonNull Callback callback) {
-        Objects.requireNonNull(callback, "callback cannot be null");
+        requireNonNull(callback);
         log("unregisterCallback");
 
         synchronized (mCallbackExecutorMap) {
@@ -844,7 +849,7 @@ public final class BluetoothLeBroadcastAssistant implements BluetoothProfile, Au
     @RequiresPermission(allOf = {BLUETOOTH_SCAN, BLUETOOTH_PRIVILEGED})
     public void startSearchingForSources(@NonNull List<ScanFilter> filters) {
         log("searchForBroadcastSources");
-        Objects.requireNonNull(filters, "filters can be empty, but not null");
+        requireNonNull(filters);
         if (mCallback == null) {
             throw new IllegalStateException("No callback was ever registered");
         }
@@ -997,8 +1002,8 @@ public final class BluetoothLeBroadcastAssistant implements BluetoothProfile, Au
             @NonNull BluetoothLeBroadcastMetadata sourceMetadata,
             boolean isGroupOp) {
         log("addBroadcastSource: " + sourceMetadata + " on " + sink);
-        Objects.requireNonNull(sink, "sink cannot be null");
-        Objects.requireNonNull(sourceMetadata, "sourceMetadata cannot be null");
+        requireNonNull(sink);
+        requireNonNull(sourceMetadata);
         if (mCallback == null) {
             throw new IllegalStateException("No callback was ever registered");
         }
@@ -1073,8 +1078,8 @@ public final class BluetoothLeBroadcastAssistant implements BluetoothProfile, Au
             int sourceId,
             @NonNull BluetoothLeBroadcastMetadata updatedMetadata) {
         log("updateBroadcastSource: " + updatedMetadata + " on " + sink);
-        Objects.requireNonNull(sink, "sink cannot be null");
-        Objects.requireNonNull(updatedMetadata, "updatedMetadata cannot be null");
+        requireNonNull(sink);
+        requireNonNull(updatedMetadata);
         if (mCallback == null) {
             throw new IllegalStateException("No callback was ever registered");
         }
@@ -1125,7 +1130,7 @@ public final class BluetoothLeBroadcastAssistant implements BluetoothProfile, Au
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public void removeSource(@NonNull BluetoothDevice sink, int sourceId) {
         log("removeBroadcastSource: " + sourceId + " from " + sink);
-        Objects.requireNonNull(sink, "sink cannot be null");
+        requireNonNull(sink);
         if (mCallback == null) {
             throw new IllegalStateException("No callback was ever registered");
         }
@@ -1164,7 +1169,7 @@ public final class BluetoothLeBroadcastAssistant implements BluetoothProfile, Au
     @NonNull
     public List<BluetoothLeBroadcastReceiveState> getAllSources(@NonNull BluetoothDevice sink) {
         log("getAllSources()");
-        Objects.requireNonNull(sink, "sink cannot be null");
+        requireNonNull(sink);
         final IBluetoothLeBroadcastAssistant service = getService();
         final List<BluetoothLeBroadcastReceiveState> defaultValue =
                 new ArrayList<BluetoothLeBroadcastReceiveState>();
@@ -1193,7 +1198,7 @@ public final class BluetoothLeBroadcastAssistant implements BluetoothProfile, Au
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public int getMaximumSourceCapacity(@NonNull BluetoothDevice sink) {
-        Objects.requireNonNull(sink, "sink cannot be null");
+        requireNonNull(sink);
         final IBluetoothLeBroadcastAssistant service = getService();
         final int defaultValue = 0;
         if (service == null) {
@@ -1236,7 +1241,7 @@ public final class BluetoothLeBroadcastAssistant implements BluetoothProfile, Au
     public @Nullable BluetoothLeBroadcastMetadata getSourceMetadata(
             @NonNull BluetoothDevice sink, @IntRange(from = 0x00, to = 0xFF) int sourceId) {
         log("getSourceMetadata()");
-        Objects.requireNonNull(sink, "sink cannot be null");
+        requireNonNull(sink);
         if (sourceId < 0x00 || sourceId > 0xFF) {
             throw new IllegalArgumentException(
                     "sourceId " + sourceId + " does not fall between 0x00 and 0xFF");

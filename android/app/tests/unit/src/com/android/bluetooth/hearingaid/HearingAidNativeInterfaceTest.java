@@ -16,6 +16,8 @@
 
 package com.android.bluetooth.hearingaid;
 
+import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
+
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
@@ -27,7 +29,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothProfile;
 
 import com.android.bluetooth.Utils;
 
@@ -73,19 +74,19 @@ public class HearingAidNativeInterfaceTest {
     public void onConnectionStateChanged() {
         BluetoothDevice device = getTestDevice(0);
         mNativeInterface.onConnectionStateChanged(
-                BluetoothProfile.STATE_CONNECTED, mNativeInterface.getByteAddress(device));
+                STATE_CONNECTED, mNativeInterface.getByteAddress(device));
 
         ArgumentCaptor<HearingAidStackEvent> event =
                 ArgumentCaptor.forClass(HearingAidStackEvent.class);
         verify(mService).messageFromNative(event.capture());
         assertThat(event.getValue().type)
                 .isEqualTo(HearingAidStackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
-        assertThat(event.getValue().valueInt1).isEqualTo(BluetoothProfile.STATE_CONNECTED);
+        assertThat(event.getValue().valueInt1).isEqualTo(STATE_CONNECTED);
 
         Mockito.clearInvocations(mService);
         HearingAidService.setHearingAidService(null);
         mNativeInterface.onConnectionStateChanged(
-                BluetoothProfile.STATE_CONNECTED, mNativeInterface.getByteAddress(device));
+                STATE_CONNECTED, mNativeInterface.getByteAddress(device));
         verify(mService, never()).messageFromNative(any());
     }
 

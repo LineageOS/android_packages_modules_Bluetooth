@@ -16,9 +16,6 @@
 
 static_library("btif") {
   sources = [
-    # TODO(abps) - Do we need this?
-    "//bt/system/audio_hearing_aid_hw/src/audio_hearing_aid_hw_utils.cc",
-
     # AVRCP Target Service
     "avrcp/avrcp_service.cc",
 
@@ -94,7 +91,6 @@ static_library("btif") {
     "//bt/system/",
     "//bt/system/bta/dm",
     "//bt/system/linux_include",
-    "//bt/system/audio_hearing_aid_hw/include",
     "//bt/system/bta/aics/include",
     "//bt/system/bta/include",
     "//bt/system/bta/sys",

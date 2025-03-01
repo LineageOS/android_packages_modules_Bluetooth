@@ -30,6 +30,7 @@ import com.android.internal.annotations.VisibleForTesting;
  */
 public class BluetoothAdapterProxy {
     private static final String TAG = BluetoothAdapterProxy.class.getSimpleName();
+
     private static BluetoothAdapterProxy sInstance;
     private static final Object INSTANCE_LOCK = new Object();
 

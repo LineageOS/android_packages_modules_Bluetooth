@@ -80,7 +80,6 @@ import java.io.OutputStream;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothPbapObexServerTest {
-
     private static final String TAG = BluetoothPbapObexServerTest.class.getSimpleName();
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();

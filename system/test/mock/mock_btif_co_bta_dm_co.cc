@@ -24,14 +24,6 @@
 #include "bta/sys/bta_sys.h"
 #include "internal_include/bte_appl.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 tBTE_APPL_CFG bte_appl_cfg = {BTA_LE_AUTH_REQ_SC_MITM_BOND,  // Authentication requirements
                               BTM_IO_CAP_UNKNOWN, BTM_BLE_INITIATOR_KEY_SIZE,
                               BTM_BLE_RESPONDER_KEY_SIZE, BTM_BLE_MAX_KEY_SIZE};
-
-bool bta_dm_co_get_compress_memory(tBTA_SYS_ID /* id */, uint8_t** /* memory_p */,
-                                   uint32_t* /* memory_size */) {
-  return true;
-}

@@ -16,6 +16,9 @@
 
 package com.android.bluetooth.avrcpcontroller;
 
+import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
+import static android.bluetooth.BluetoothProfile.getConnectionStateName;
+
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
@@ -24,7 +27,6 @@ import static com.google.common.truth.Truth.assertThat;
 import static org.junit.Assert.assertThrows;
 
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothProfile;
 import android.content.Intent;
 
 import androidx.test.filters.SmallTest;
@@ -95,28 +97,9 @@ public class AvrcpBipClientTest {
 
     @Test
     public void setConnectionState() {
-        mClient.setConnectionState(BluetoothProfile.STATE_CONNECTING);
+        mClient.setConnectionState(STATE_CONNECTING);
 
-        assertThat(mClient.getState()).isEqualTo(BluetoothProfile.STATE_CONNECTING);
-    }
-
-    @Test
-    public void getConnectionState() {
-        mClient.setConnectionState(BluetoothProfile.STATE_DISCONNECTED);
-        assertThat(mClient.getStateName()).isEqualTo("Disconnected");
-
-        mClient.setConnectionState(BluetoothProfile.STATE_CONNECTING);
-        assertThat(mClient.getStateName()).isEqualTo("Connecting");
-
-        mClient.setConnectionState(BluetoothProfile.STATE_CONNECTED);
-        assertThat(mClient.getStateName()).isEqualTo("Connected");
-
-        mClient.setConnectionState(BluetoothProfile.STATE_DISCONNECTING);
-        assertThat(mClient.getStateName()).isEqualTo("Disconnecting");
-
-        int invalidState = 4;
-        mClient.setConnectionState(invalidState);
-        assertThat(mClient.getStateName()).isEqualTo("Unknown");
+        assertThat(mClient.getState()).isEqualTo(STATE_CONNECTING);
     }
 
     @Test
@@ -125,7 +108,7 @@ public class AvrcpBipClientTest {
                 "<AvrcpBipClient"
                         + (" device=" + mDevice)
                         + (" psm=" + TEST_PSM)
-                        + (" state=" + mClient.getStateName())
+                        + (" state=" + getConnectionStateName(mClient.getState()))
                         + ">";
         assertThat(mClient.toString()).isEqualTo(expected);
     }

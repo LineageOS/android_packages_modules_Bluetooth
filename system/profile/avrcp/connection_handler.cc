@@ -38,9 +38,6 @@
 #include "stack/include/sdp_status.h"
 #include "types/raw_address.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 extern bool btif_av_peer_is_connected_sink(const RawAddress& peer_address);
 extern bool btif_av_peer_is_connected_source(const RawAddress& peer_address);
 extern bool btif_av_both_enable(void);
@@ -63,7 +60,7 @@ ConnectionHandler* ConnectionHandler::Get() {
   return instance_;
 }
 
-bool IsAbsoluteVolumeEnabled(const RawAddress* bdaddr) {
+static bool IsAbsoluteVolumeEnabled(const RawAddress* bdaddr) {
   char volume_disabled[PROPERTY_VALUE_MAX] = {0};
   osi_property_get("persist.bluetooth.disableabsvol", volume_disabled, "false");
   if (strncmp(volume_disabled, "true", 4) == 0) {

@@ -67,9 +67,6 @@
 #include "types/ble_address_with_type.h"
 #include "types/raw_address.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 extern tBTM_CB btm_cb;
 
 using namespace bluetooth;
@@ -1033,15 +1030,6 @@ struct shim::Acl::impl {
                                                    conn_timeout, min_ce_len, max_ce_len);
   }
 
-  void accept_le_connection_from(const hci::AddressWithType& address_with_type, bool is_direct,
-                                 std::promise<bool> promise) {
-    promise.set_value(true);
-    GetAclManager()->CreateLeConnection(address_with_type, is_direct);
-    log::debug("Allow Le connection from remote:{}", address_with_type);
-    BTM_LogHistory(kBtmLogTag, ToLegacyAddressWithType(address_with_type), "Allow connection from",
-                   "Le");
-  }
-
   void get_connection_local_address(uint16_t handle, bool ota_address,
                                     std::promise<bluetooth::hci::AddressWithType> promise) {
     log::debug("get_connection_local_address handle:{} ota_address:{}", handle, ota_address);
@@ -1097,13 +1085,6 @@ struct shim::Acl::impl {
     log::warn("address not found!");
     promise.set_value({});
     return;
-  }
-
-  void ignore_le_connection_from(const hci::AddressWithType& address_with_type) {
-    GetAclManager()->CancelLeConnect(address_with_type);
-    log::debug("Ignore Le connection from remote:{}", address_with_type);
-    BTM_LogHistory(kBtmLogTag, ToLegacyAddressWithType(address_with_type), "Ignore connection from",
-                   "Le");
   }
 
   void clear_acceptlist() { GetAclManager()->ClearFilterAcceptList(); }
@@ -1358,18 +1339,6 @@ void shim::Acl::CancelClassicConnection(const hci::Address& address) {
   GetAclManager()->CancelConnect(address);
   log::debug("Connection cancelled for classic to remote:{}", address);
   BTM_LogHistory(kBtmLogTag, ToRawAddress(address), "Cancelled connection", "classic");
-}
-
-void shim::Acl::AcceptLeConnectionFrom(const hci::AddressWithType& address_with_type,
-                                       bool is_direct, std::promise<bool> promise) {
-  log::debug("AcceptLeConnectionFrom {}", address_with_type.GetAddress());
-  handler_->CallOn(pimpl_.get(), &Acl::impl::accept_le_connection_from, address_with_type,
-                   is_direct, std::move(promise));
-}
-
-void shim::Acl::IgnoreLeConnectionFrom(const hci::AddressWithType& address_with_type) {
-  log::debug("IgnoreLeConnectionFrom {}", address_with_type.GetAddress());
-  handler_->CallOn(pimpl_.get(), &Acl::impl::ignore_le_connection_from, address_with_type);
 }
 
 void shim::Acl::OnClassicLinkDisconnected(HciHandle handle, hci::ErrorCode reason) {

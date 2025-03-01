@@ -23,7 +23,7 @@ import android.util.Log;
  * both Email Apps (group Parent item) and Accounts (Group child Item).
  */
 public class BluetoothMapAccountItem implements Comparable<BluetoothMapAccountItem> {
-    private static final String TAG = "BluetoothMapAccountItem";
+    private static final String TAG = BluetoothMapAccountItem.class.getSimpleName();
 
     protected boolean mIsChecked;
     private final String mName;

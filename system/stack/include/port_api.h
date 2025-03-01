@@ -24,6 +24,8 @@
 #ifndef PORT_API_H
 #define PORT_API_H
 
+#include <hardware/bt_sock.h>
+
 #include <cstdint>
 
 #include "include/macros.h"
@@ -188,6 +190,7 @@ struct RfcommCfgInfo {
   uint16_t init_credit;
   bool rx_mtu_present;
   uint16_t rx_mtu;
+  btsock_data_path_t data_path{BTSOCK_DATA_PATH_NO_OFFLOAD};
 };
 
 namespace std {
@@ -331,19 +334,6 @@ typedef void(tPORT_MGMT_CALLBACK)(const tPORT_RESULT code, uint16_t port_handle)
  *
  ******************************************************************************/
 [[nodiscard]] int PORT_CheckConnection(uint16_t handle, RawAddress* bd_addr, uint16_t* p_lcid);
-
-/*******************************************************************************
- *
- * Function         PORT_IsOpening
- *
- * Description      This function returns true if there is any RFCOMM connection
- *                  opening in process.
- *
- * Parameters:      true if any connection opening is found
- *                  bd_addr    - bd_addr of the peer
- *
- ******************************************************************************/
-[[nodiscard]] bool PORT_IsOpening(RawAddress* bd_addr);
 
 /*******************************************************************************
  *

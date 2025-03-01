@@ -1021,7 +1021,7 @@ public class TbsGeneric {
                 }
             };
 
-    private String callControlRequestOpcodeStr(int opcode) {
+    private static String callControlRequestOpcodeStr(int opcode) {
         switch (opcode) {
             case TbsGatt.CALL_CONTROL_POINT_OPCODE_ACCEPT:
                 return "ACCEPT";

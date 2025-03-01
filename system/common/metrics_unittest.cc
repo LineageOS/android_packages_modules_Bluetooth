@@ -32,9 +32,6 @@
 
 #define BTM_COD_MAJOR_AUDIO_TEST 0x04
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 namespace testing {
 
 using bluetooth::common::A2dpSessionMetrics;
@@ -63,14 +60,15 @@ const size_t kMaxEventGenerationLimit = 5000;
 
 static void sleep_ms(int64_t t) { std::this_thread::sleep_for(std::chrono::milliseconds(t)); }
 
-DeviceInfo* MakeDeviceInfo(int32_t device_class, DeviceInfo_DeviceType device_type) {
+static DeviceInfo* MakeDeviceInfo(int32_t device_class, DeviceInfo_DeviceType device_type) {
   DeviceInfo* info = new DeviceInfo();
   info->set_device_class(device_class);
   info->set_device_type(device_type);
   return info;
 }
 
-PairEvent* MakePairEvent(int32_t disconnect_reason, int64_t timestamp_ms, DeviceInfo* device_info) {
+static PairEvent* MakePairEvent(int32_t disconnect_reason, int64_t timestamp_ms,
+                                DeviceInfo* device_info) {
   PairEvent* event = new PairEvent();
   event->set_disconnect_reason(disconnect_reason);
   event->set_event_time_millis(timestamp_ms);
@@ -80,8 +78,8 @@ PairEvent* MakePairEvent(int32_t disconnect_reason, int64_t timestamp_ms, Device
   return event;
 }
 
-WakeEvent* MakeWakeEvent(WakeEvent_WakeEventType event_type, const std::string& requestor,
-                         const std::string& name, int64_t timestamp_ms) {
+static WakeEvent* MakeWakeEvent(WakeEvent_WakeEventType event_type, const std::string& requestor,
+                                const std::string& name, int64_t timestamp_ms) {
   WakeEvent* event = new WakeEvent();
   event->set_wake_event_type(event_type);
   event->set_requestor(requestor);
@@ -90,9 +88,9 @@ WakeEvent* MakeWakeEvent(WakeEvent_WakeEventType event_type, const std::string& 
   return event;
 }
 
-ScanEvent* MakeScanEvent(ScanEvent_ScanEventType event_type, const std::string& initiator,
-                         ScanEvent_ScanTechnologyType tech_type, int32_t num_results,
-                         int64_t timestamp_ms) {
+static ScanEvent* MakeScanEvent(ScanEvent_ScanEventType event_type, const std::string& initiator,
+                                ScanEvent_ScanTechnologyType tech_type, int32_t num_results,
+                                int64_t timestamp_ms) {
   ScanEvent* event = new ScanEvent();
   event->set_scan_event_type(event_type);
   event->set_initiator(initiator);
@@ -102,7 +100,8 @@ ScanEvent* MakeScanEvent(ScanEvent_ScanEventType event_type, const std::string& 
   return event;
 }
 
-A2DPSession* MakeA2DPSession(const A2dpSessionMetrics& metrics, A2dpSourceCodec source_codec) {
+static A2DPSession* MakeA2DPSession(const A2dpSessionMetrics& metrics,
+                                    A2dpSourceCodec source_codec) {
   A2DPSession* session = new A2DPSession();
   session->set_media_timer_min_millis(metrics.media_timer_min_ms);
   session->set_media_timer_max_millis(metrics.media_timer_max_ms);
@@ -117,11 +116,10 @@ A2DPSession* MakeA2DPSession(const A2dpSessionMetrics& metrics, A2dpSourceCodec 
   return session;
 }
 
-BluetoothSession* MakeBluetoothSession(int64_t session_duration_sec,
-                                       BluetoothSession_ConnectionTechnologyType conn_type,
-                                       BluetoothSession_DisconnectReasonType disconnect_reason,
-                                       DeviceInfo* device_info, RFCommSession* rfcomm_session,
-                                       A2DPSession* a2dp_session) {
+static BluetoothSession* MakeBluetoothSession(
+        int64_t session_duration_sec, BluetoothSession_ConnectionTechnologyType conn_type,
+        BluetoothSession_DisconnectReasonType disconnect_reason, DeviceInfo* device_info,
+        RFCommSession* rfcomm_session, A2DPSession* a2dp_session) {
   BluetoothSession* session = new BluetoothSession();
   if (a2dp_session) {
     session->set_allocated_a2dp_session(a2dp_session);
@@ -138,31 +136,7 @@ BluetoothSession* MakeBluetoothSession(int64_t session_duration_sec,
   return session;
 }
 
-BluetoothLog* MakeBluetoothLog(std::vector<BluetoothSession*> bt_sessions,
-                               std::vector<PairEvent*> pair_events,
-                               std::vector<WakeEvent*> wake_events,
-                               std::vector<ScanEvent*> scan_events) {
-  BluetoothLog* bt_log = new BluetoothLog();
-  for (BluetoothSession* session : bt_sessions) {
-    bt_log->mutable_session()->AddAllocated(session);
-  }
-  bt_sessions.clear();
-  for (PairEvent* event : pair_events) {
-    bt_log->mutable_pair_event()->AddAllocated(event);
-  }
-  pair_events.clear();
-  for (WakeEvent* event : wake_events) {
-    bt_log->mutable_wake_event()->AddAllocated(event);
-  }
-  wake_events.clear();
-  for (ScanEvent* event : scan_events) {
-    bt_log->mutable_scan_event()->AddAllocated(event);
-  }
-  scan_events.clear();
-  return bt_log;
-}
-
-void GenerateWakeEvents(size_t start, size_t end, std::vector<WakeEvent*>* wake_events) {
+static void GenerateWakeEvents(size_t start, size_t end, std::vector<WakeEvent*>* wake_events) {
   for (size_t i = start; i < end; ++i) {
     wake_events->push_back(
             MakeWakeEvent(i % 2 == 0 ? WakeEvent_WakeEventType::WakeEvent_WakeEventType_ACQUIRED

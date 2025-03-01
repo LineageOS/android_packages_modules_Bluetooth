@@ -387,10 +387,10 @@ public class ScanNativeInterface {
     @Nullable
     AdvtFilterOnFoundOnLostInfo createOnTrackAdvFoundLostObject(
             int clientIf,
-            int advPktLen,
-            byte[] advPkt,
-            int scanRspLen,
-            byte[] scanRsp,
+            int advPacketLen,
+            byte[] advPacket,
+            int scanResponseLen,
+            byte[] scanResponse,
             int filtIndex,
             int advState,
             int advInfoPresent,
@@ -405,10 +405,10 @@ public class ScanNativeInterface {
         }
         return mScanController.createOnTrackAdvFoundLostObject(
                 clientIf,
-                advPktLen,
-                advPkt,
-                scanRspLen,
-                scanRsp,
+                advPacketLen,
+                advPacket,
+                scanResponseLen,
+                scanResponse,
                 filtIndex,
                 advState,
                 advInfoPresent,

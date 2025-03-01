@@ -52,8 +52,7 @@ import java.util.Calendar;
 
 // Next tag value for ContentProfileErrorReportUtils.report(): 74
 public class BluetoothMapObexServer extends ServerRequestHandler {
-
-    private static final String TAG = "BluetoothMapObexServer";
+    private static final String TAG = BluetoothMapObexServer.class.getSimpleName();
 
     private static final int UUID_LENGTH = 16;
 
@@ -222,7 +221,7 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
     }
 
     /** Add base (Inbox/Outbox/Sent/Deleted) */
-    private void addBaseFolders(BluetoothMapFolderElement root) {
+    private static void addBaseFolders(BluetoothMapFolderElement root) {
         root.addFolder(BluetoothMapContract.FOLDER_NAME_INBOX); // root/telecom/msg/inbox
         root.addFolder(BluetoothMapContract.FOLDER_NAME_OUTBOX);
         root.addFolder(BluetoothMapContract.FOLDER_NAME_SENT);
@@ -230,7 +229,7 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
     }
 
     /** Add SMS / MMS Base folders */
-    private void addSmsMmsFolders(BluetoothMapFolderElement root) {
+    private static void addSmsMmsFolders(BluetoothMapFolderElement root) {
         root.addSmsMmsFolder(BluetoothMapContract.FOLDER_NAME_INBOX); // root/telecom/msg/inbox
         root.addSmsMmsFolder(BluetoothMapContract.FOLDER_NAME_OUTBOX);
         root.addSmsMmsFolder(BluetoothMapContract.FOLDER_NAME_SENT);
@@ -238,7 +237,7 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
         root.addSmsMmsFolder(BluetoothMapContract.FOLDER_NAME_DRAFT);
     }
 
-    private void addImFolders(BluetoothMapFolderElement root) throws RemoteException {
+    private static void addImFolders(BluetoothMapFolderElement root) throws RemoteException {
         // Select all parent folders
         root.addImFolder(
                 BluetoothMapContract.FOLDER_NAME_INBOX,
@@ -332,69 +331,46 @@ public class BluetoothMapObexServer extends ServerRequestHandler {
         // always assume version 1.0 to start with
         mMessageVersion = BluetoothMapUtils.MAP_V10_STR;
         notifyUpdateWakeLock();
-        Long threadedMailKey = null;
-        try {
-            byte[] uuid = (byte[]) request.getHeader(HeaderSet.TARGET);
-            threadedMailKey = (Long) request.getHeader(THREADED_MAIL_HEADER_ID);
-            if (uuid == null) {
-                return ResponseCodes.OBEX_HTTP_NOT_ACCEPTABLE;
-            }
-            Log.d(TAG, "onConnect(): uuid=" + Arrays.toString(uuid));
+        byte[] uuid = (byte[]) request.getHeader(HeaderSet.TARGET);
+        Long threadedMailKey = (Long) request.getHeader(THREADED_MAIL_HEADER_ID);
+        if (uuid == null) {
+            return ResponseCodes.OBEX_HTTP_NOT_ACCEPTABLE;
+        }
+        Log.d(TAG, "onConnect(): uuid=" + Arrays.toString(uuid));
 
-            if (uuid.length != UUID_LENGTH) {
-                Log.w(TAG, "Wrong UUID length");
+        if (uuid.length != UUID_LENGTH) {
+            Log.w(TAG, "Wrong UUID length");
+            ContentProfileErrorReportUtils.report(
+                    BluetoothProfile.MAP,
+                    BluetoothProtoEnums.BLUETOOTH_MAP_OBEX_SERVER,
+                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
+                    0);
+            return ResponseCodes.OBEX_HTTP_NOT_ACCEPTABLE;
+        }
+        for (int i = 0; i < UUID_LENGTH; i++) {
+            if (uuid[i] != MAP_TARGET[i]) {
+                Log.w(TAG, "Wrong UUID");
                 ContentProfileErrorReportUtils.report(
                         BluetoothProfile.MAP,
                         BluetoothProtoEnums.BLUETOOTH_MAP_OBEX_SERVER,
                         BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
-                        0);
+                        1);
                 return ResponseCodes.OBEX_HTTP_NOT_ACCEPTABLE;
             }
-            for (int i = 0; i < UUID_LENGTH; i++) {
-                if (uuid[i] != MAP_TARGET[i]) {
-                    Log.w(TAG, "Wrong UUID");
-                    ContentProfileErrorReportUtils.report(
-                            BluetoothProfile.MAP,
-                            BluetoothProtoEnums.BLUETOOTH_MAP_OBEX_SERVER,
-                            BluetoothStatsLog
-                                    .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
-                            1);
-                    return ResponseCodes.OBEX_HTTP_NOT_ACCEPTABLE;
-                }
-            }
-            reply.setHeader(HeaderSet.WHO, uuid);
-        } catch (IOException e) {
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.MAP,
-                    BluetoothProtoEnums.BLUETOOTH_MAP_OBEX_SERVER,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                    2);
-            Log.e(TAG, "Exception during onConnect:", e);
-            return ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
         }
+        reply.setHeader(HeaderSet.WHO, uuid);
 
-        try {
-            byte[] remote = (byte[]) request.getHeader(HeaderSet.WHO);
-            if (remote != null) {
-                Log.d(TAG, "onConnect(): remote=" + Arrays.toString(remote));
-                reply.setHeader(HeaderSet.TARGET, remote);
-            }
-            if (threadedMailKey != null && threadedMailKey.longValue() == THREAD_MAIL_KEY) {
-                /* If the client provides the correct key we enable threaded e-mail support
-                 * and reply to the client that we support the requested feature.
-                 * This is currently an Android only feature. */
-                mThreadIdSupport = true;
-                reply.setHeader(THREADED_MAIL_HEADER_ID, THREAD_MAIL_KEY);
-            }
-        } catch (IOException e) {
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.MAP,
-                    BluetoothProtoEnums.BLUETOOTH_MAP_OBEX_SERVER,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                    3);
-            Log.e(TAG, "Exception during onConnect:", e);
-            mThreadIdSupport = false;
-            return ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
+        byte[] remote = (byte[]) request.getHeader(HeaderSet.WHO);
+        if (remote != null) {
+            Log.d(TAG, "onConnect(): remote=" + Arrays.toString(remote));
+            reply.setHeader(HeaderSet.TARGET, remote);
+        }
+        if (threadedMailKey != null && threadedMailKey.longValue() == THREAD_MAIL_KEY) {
+            /* If the client provides the correct key we enable threaded e-mail support
+             * and reply to the client that we support the requested feature.
+             * This is currently an Android only feature. */
+            mThreadIdSupport = true;
+            reply.setHeader(THREADED_MAIL_HEADER_ID, THREAD_MAIL_KEY);
         }
 
         if ((mRemoteFeatureMask & BluetoothMapUtils.MAP_FEATURE_MESSAGE_LISTING_FORMAT_V11_BIT)

@@ -57,7 +57,7 @@ import java.util.List;
  */
 @Deprecated
 public final class BluetoothHealth implements BluetoothProfile {
-    private static final String TAG = "BluetoothHealth";
+    private static final String TAG = BluetoothHealth.class.getSimpleName();
 
     /**
      * Health Profile Source Role - the health device.

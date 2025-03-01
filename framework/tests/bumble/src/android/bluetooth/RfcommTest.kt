@@ -17,6 +17,7 @@ package android.bluetooth
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN
 import android.bluetooth.test_utils.EnableBluetoothRule
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -25,6 +26,7 @@ import android.content.IntentFilter
 import android.platform.test.annotations.RequiresFlagsEnabled
 import android.platform.test.flag.junit.CheckFlagsRule
 import android.platform.test.flag.junit.DeviceFlagsValueProvider
+import android.provider.Settings
 import android.util.Log
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -48,6 +50,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.withTimeout
 import org.junit.After
+import org.junit.Assert.assertThrows
 import org.junit.Before
 import org.junit.Ignore
 import org.junit.Rule
@@ -105,8 +108,13 @@ class RfcommTest {
     private val mLocalAddress: ByteString =
         ByteString.copyFrom("DA:4C:10:DE:17:00".hexToByteArray(bdAddrFormat))
 
+    private val BLE_SCAN_ALWAYS_AVAILABLE = "ble_scan_always_enabled"
+
     init {
-        val intentFilter = IntentFilter(BluetoothDevice.ACTION_PAIRING_REQUEST)
+        val intentFilter = IntentFilter().apply {
+            addAction(BluetoothDevice.ACTION_PAIRING_REQUEST)
+            addAction(BluetoothAdapter.ACTION_BLE_STATE_CHANGED)
+        }
         mFlow = intentFlow(mContext, intentFilter, mScope).shareIn(mScope, SharingStarted.Eagerly)
     }
 
@@ -123,21 +131,12 @@ class RfcommTest {
         mHost = Host(mContext)
 
         val bluetoothA2dp = getProfileProxy(mContext, BluetoothProfile.A2DP) as BluetoothA2dp
-        bluetoothA2dp.setConnectionPolicy(
-            mRemoteDevice,
-            BluetoothProfile.CONNECTION_POLICY_FORBIDDEN,
-        )
+        bluetoothA2dp.setConnectionPolicy(mRemoteDevice, CONNECTION_POLICY_FORBIDDEN)
         val bluetoothHfp = getProfileProxy(mContext, BluetoothProfile.HEADSET) as BluetoothHeadset
-        bluetoothHfp.setConnectionPolicy(
-            mRemoteDevice,
-            BluetoothProfile.CONNECTION_POLICY_FORBIDDEN,
-        )
+        bluetoothHfp.setConnectionPolicy(mRemoteDevice, CONNECTION_POLICY_FORBIDDEN)
         val bluetoothHidHost =
             getProfileProxy(mContext, BluetoothProfile.HID_HOST) as BluetoothHidHost
-        bluetoothHidHost.setConnectionPolicy(
-            mRemoteDevice,
-            BluetoothProfile.CONNECTION_POLICY_FORBIDDEN,
-        )
+        bluetoothHidHost.setConnectionPolicy(mRemoteDevice, CONNECTION_POLICY_FORBIDDEN)
         if (mRemoteDevice.isConnected) {
             mHost.disconnectAndVerify(mRemoteDevice)
         }
@@ -150,6 +149,10 @@ class RfcommTest {
     */
     @After
     fun tearDown() {
+        if (Settings.Global.getInt(mContext.contentResolver, BLE_SCAN_ALWAYS_AVAILABLE, 0) == 1) {
+            // Recover BLE Scan always available setting
+            Settings.Global.putInt(mContext.contentResolver, BLE_SCAN_ALWAYS_AVAILABLE, 0)
+        }
         if (mAdapter.bondedDevices.contains(mRemoteDevice)) {
             mHost.removeBondAndVerify(mRemoteDevice)
         }
@@ -615,6 +618,71 @@ class RfcommTest {
         }
     }
 
+    /*
+     Test Steps:
+       1. Create an Rfcomm insecure socket
+       2. Verify that Rfcomm socket is connected
+       3. Disable Bluetooth to BLE_ON mode
+       4. Verify remote devices disconnected based on successful data transmission
+    */
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_DISCONNECT_ACLS_BY_BREDR_DISABLED)
+    fun clientRfcommDeviceDisconnectedOnBleOnMode() {
+        // Enable BLE_ON mode if disable Bluetooth
+        Settings.Global.putInt(mContext.contentResolver, BLE_SCAN_ALWAYS_AVAILABLE, 1)
+        // Must wait for BLE_SCAN_ALWAYS_AVAILABLE to be enabled and then enable BLE_ON mode
+        for (i in 1..10) {
+            if (mAdapter.isBleScanAlwaysAvailable()) {
+                // Enable BLE_ON mode
+                mAdapter.enableBLE()
+                break
+            }
+            Log.d(TAG, "Ble scan not yet available... Sleeping 50 ms $i/10")
+            Thread.sleep(50)
+        }
+
+        updateSecurityConfig()
+
+        startServer { serverId ->
+            val (insecureSocket, connection) = createConnectAcceptSocketUsingSettings(serverId)
+
+            // Verify that Rfcomm Socket is connected
+            Truth.assertThat(insecureSocket.isConnected).isTrue()
+
+            // disable Bluetooth to BLE_ON mode
+            mAdapter.disable()
+            waittingBluetoothLeStates(BluetoothAdapter.STATE_BLE_ON)
+
+            // 1. In Bluetooth disabled state, under BLE_ON mode, it's impossible to determine the device's connection status.
+            // 2. Determine whether the Rfcomm Socket or ACL link has been disconnected based on successful data transmission.
+            val data: ByteArray =
+                "Test data for clientRfcommDeviceDisconnectedOnBleOnMode".toByteArray()
+            val socketOs = insecureSocket.outputStream
+
+            // Verify that Rfcomm Socket is disconnected
+            assertThrows(IOException::class.java) { socketOs.write(data) }
+
+            // Validate that the test run while Bluetooth stayed in BLE_ON all along
+            Truth.assertThat(mAdapter.leState).isEqualTo(BluetoothAdapter.STATE_BLE_ON)
+        }
+    }
+
+    // helper to wait for Bluetooth BLE state change
+    private fun waittingBluetoothLeStates(state: Int) {
+        runBlocking(mScope.coroutineContext) {
+            withTimeout(STATE_CHANGE_TIMEOUT.toMillis()) {
+                // wait for Bluetooth states
+                launch {
+                    Log.i(TAG, "Waiting for waittingBluetoothLeStates: " + state)
+                    mFlow
+                        .filter { it.action == BluetoothAdapter.ACTION_BLE_STATE_CHANGED }
+                        .filter { it.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1) == state }
+                        .first()
+                }
+            }
+        }
+    }
+
     // helper to update the security config for remote bumble device
     private fun updateSecurityConfig(
         isEncrypted: Boolean = false,
@@ -828,6 +896,7 @@ class RfcommTest {
         private val TAG = RfcommTest::class.java.getSimpleName()
         private val GRPC_TIMEOUT = Duration.ofSeconds(10)
         private val CONNECT_TIMEOUT = Duration.ofSeconds(7)
+        private val STATE_CHANGE_TIMEOUT = Duration.ofSeconds(5)
         private const val TEST_UUID = "2ac5d8f1-f58d-48ac-a16b-cdeba0892d65"
         private const val SERIAL_PORT_UUID = "00001101-0000-1000-8000-00805F9B34FB"
         private const val TEST_SERVER_NAME = "RFCOMM Server"

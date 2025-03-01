@@ -124,5 +124,15 @@ void LogMetricBluetoothLEConnection(os::LEConnectionSessionOptions /* session_op
 void LogMetricBluetoothEvent(const Address& /* address */,
                              android::bluetooth::EventType /* event type */,
                              android::bluetooth::State /* state */) {}
+
+void LogMetricRfcommConnectionAtClose(
+        const Address& /* raw_address */, android::bluetooth::rfcomm::PortResult /* close_reason */,
+        android::bluetooth::rfcomm::SocketConnectionSecurity /* security */,
+        android::bluetooth::rfcomm::RfcommPortEvent /* last_event */,
+        android::bluetooth::rfcomm::RfcommPortState /* previous_state */,
+        int32_t /* open_duration_ms */, int32_t /* uid */,
+        android::bluetooth::BtaStatus /* sdp_status */, bool /* is_server */,
+        bool /* sdp_initiated */, int32_t /* sdp_duration_ms */) {}
+
 }  // namespace os
 }  // namespace bluetooth

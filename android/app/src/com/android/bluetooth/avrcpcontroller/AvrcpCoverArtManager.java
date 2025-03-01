@@ -16,8 +16,10 @@
 
 package com.android.bluetooth.avrcpcontroller;
 
+import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
+import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
+
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothProfile;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.SystemProperties;
@@ -215,11 +217,11 @@ public class AvrcpCoverArtManager {
      * Get the client connection state for a particular device's BIP Client
      *
      * @param device The Bluetooth device you want connection status for
-     * @return Connection status, based on BluetoothProfile.STATE_* constants
+     * @return Connection status, based on STATE_* constants
      */
     public int getState(BluetoothDevice device) {
         AvrcpBipClient client = getClient(device);
-        if (client == null) return BluetoothProfile.STATE_DISCONNECTED;
+        if (client == null) return STATE_DISCONNECTED;
         return client.getState();
     }
 
@@ -403,14 +405,14 @@ public class AvrcpCoverArtManager {
         @Override
         public void onConnectionStateChanged(int oldState, int newState) {
             debug(mDevice + ": " + oldState + " -> " + newState);
-            if (newState == BluetoothProfile.STATE_CONNECTED) {
+            if (newState == STATE_CONNECTED) {
                 // Ensure the handle map is cleared since old ones are invalid on a new connection
                 clearHandleUuids(mDevice);
 
                 // Once we're connected fetch the current metadata again in case the target has an
                 // image handle they can now give us. Only do this if we don't already have one.
                 mService.getCurrentMetadataIfNoCoverArt(mDevice);
-            } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+            } else if (newState == STATE_DISCONNECTED) {
                 AvrcpBipClient client = getClient(mDevice);
                 boolean shouldReconnect = (client != null);
                 disconnect(mDevice);
@@ -501,17 +503,17 @@ public class AvrcpCoverArtManager {
     }
 
     /** Print to debug if debug is enabled for this class */
-    private void debug(String msg) {
+    private static void debug(String msg) {
         Log.d(TAG, msg);
     }
 
     /** Print to warn */
-    private void warn(String msg) {
+    private static void warn(String msg) {
         Log.w(TAG, msg);
     }
 
     /** Print to error */
-    private void error(String msg) {
+    private static void error(String msg) {
         Log.e(TAG, msg);
     }
 }

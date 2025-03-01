@@ -75,7 +75,8 @@ import java.util.Set;
 
 @RunWith(AndroidJUnit4.class)
 public class ServiceDiscoveryTest {
-    private static final String TAG = "ServiceDiscoveryTest";
+    private static final String TAG = ServiceDiscoveryTest.class.getSimpleName();
+
     private static final Duration BOND_INTENT_TIMEOUT = Duration.ofSeconds(10);
 
     private static final ParcelUuid BATTERY_UUID =

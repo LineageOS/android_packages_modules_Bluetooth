@@ -16,13 +16,15 @@
 
 package com.android.bluetooth.a2dpsink;
 
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
+import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
+
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothProfile;
 import android.content.AttributionSource;
 
 import org.junit.After;
@@ -75,7 +77,7 @@ public class A2dpSinkServiceBinderTest {
 
     @Test
     public void getDevicesMatchingConnectionStates() {
-        int[] states = new int[] {BluetoothProfile.STATE_CONNECTED};
+        int[] states = new int[] {STATE_CONNECTED};
         AttributionSource source = new AttributionSource.Builder(0).build();
 
         mBinder.getDevicesMatchingConnectionStates(states, source);
@@ -94,7 +96,7 @@ public class A2dpSinkServiceBinderTest {
     @Test
     public void setConnectionPolicy() {
         BluetoothDevice device = getTestDevice(0);
-        int connectionPolicy = BluetoothProfile.CONNECTION_POLICY_ALLOWED;
+        int connectionPolicy = CONNECTION_POLICY_ALLOWED;
         AttributionSource source = new AttributionSource.Builder(0).build();
 
         mBinder.setConnectionPolicy(device, connectionPolicy, source);

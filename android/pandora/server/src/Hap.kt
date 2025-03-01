@@ -26,6 +26,7 @@ import android.bluetooth.BluetoothLeAudio
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
 import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED
+import android.bluetooth.BluetoothProfile.STATE_CONNECTED
 import android.content.Context
 import android.content.IntentFilter
 import android.media.AudioManager
@@ -381,14 +382,14 @@ class Hap(val context: Context) : HAPImplBase(), Closeable {
         grpcUnary<Empty>(scope, responseObserver) {
             val device = request.connection.toBluetoothDevice(bluetoothAdapter)
             Log.i(TAG, "waitPeripheral(${device}")
-            if (bluetoothHapClient.getConnectionState(device) != BluetoothProfile.STATE_CONNECTED) {
+            if (bluetoothHapClient.getConnectionState(device) != STATE_CONNECTED) {
                 Log.d(TAG, "Manual call to setConnectionPolicy")
                 bluetoothHapClient.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED)
                 Log.d(TAG, "now waiting for bluetoothHapClient profile connection")
                 flow
                     .filter { it.getBluetoothDeviceExtra() == device }
                     .map { it.getIntExtra(BluetoothProfile.EXTRA_STATE, BluetoothAdapter.ERROR) }
-                    .filter { it == BluetoothProfile.STATE_CONNECTED }
+                    .filter { it == STATE_CONNECTED }
                     .first()
             }
 

@@ -60,6 +60,7 @@ future_t* Start() {
     bluetooth::log::error(
             "GATT profile not started, so we cannot start the Rust loop - this "
             "happens only in tests.");
+    bluetooth::rust_shim::set_disabled_in_test();
     bluetooth::rust_shim::FutureReady(*fut);
     return fut;
   }

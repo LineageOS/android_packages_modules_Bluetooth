@@ -22,14 +22,11 @@
 
 #include <thread>
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 namespace testing {
 
 using bluetooth::common::MetricIdManager;
 
-bluetooth::hci::Address kthAddress(uint32_t k) {
+static bluetooth::hci::Address kthAddress(uint32_t k) {
   uint8_t array[6] = {0, 0, 0, 0, 0, 0};
   for (int i = 5; i >= 2; i--) {
     array[i] = k % 256;
@@ -39,7 +36,7 @@ bluetooth::hci::Address kthAddress(uint32_t k) {
   return addr;
 }
 
-std::unordered_map<bluetooth::hci::Address, int> generateAddresses(const uint32_t num) {
+static std::unordered_map<bluetooth::hci::Address, int> generateAddresses(const uint32_t num) {
   // generate first num of mac address -> id pairs
   // input may is always valid 256^6 = 2^48 > 2^32
   std::unordered_map<bluetooth::hci::Address, int> device_map;

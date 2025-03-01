@@ -1,5 +1,7 @@
 extern crate proc_macro;
 
+use proc_macro::TokenStream;
+
 use quote::quote;
 
 use std::fs::File;
@@ -9,9 +11,7 @@ use std::path::Path;
 use syn::parse::Parser;
 use syn::punctuated::Punctuated;
 use syn::token::Comma;
-use syn::{Expr, FnArg, ItemTrait, Meta, Pat, TraitItem};
-
-use crate::proc_macro::TokenStream;
+use syn::{parse_macro_input, Expr, FnArg, ItemTrait, Meta, Pat, TraitItem};
 
 const OUTPUT_DEBUG: bool = false;
 
@@ -164,4 +164,63 @@ pub fn btif_callbacks_dispatcher(attr: TokenStream, item: TokenStream) -> TokenS
     debug_output_to_file(&gen, format!("out-{}.rs", fn_ident.to_string()));
 
     gen.into()
+}
+
+#[proc_macro_attribute]
+/// Implement a function to log the arguments of callbacks.
+///
+/// Example usage:
+/// ```ignore
+///     #[btif_callback(ExampleCallback)]
+///     fn example_callback(&self, arg: i32);
+///     ...
+///     #[log_cb_args]
+///     fn example_callback(&self, arg: i32) {
+///         // The following is generated and added by the macro:
+///         let log_string = format!("arg: {:?}", arg);
+///         log::debug!(
+///             "topshim in: {}: {}",
+///             example_function,
+///             log_string.as_str()
+///         );
+///
+///         // The rest of the function stays as is:
+///         ...
+///     }
+/// ```
+pub fn log_cb_args(_attr: TokenStream, item: TokenStream) -> TokenStream {
+    let mut input = parse_macro_input!(item as syn::ItemFn);
+
+    let fn_name = input.sig.ident.to_string();
+    let mut args = quote! {};
+    let mut args_format_vec: Vec<String> = vec![];
+    for arg_values in &input.sig.inputs {
+        if let FnArg::Typed(ref typed) = arg_values {
+            if let Pat::Ident(pat_ident) = &*typed.pat {
+                let ident = pat_ident.ident.clone();
+
+                // Append arg value
+                args = quote! {
+                    #args format!("{:?}", &#ident),
+                };
+
+                // Expand format string for this arg
+                args_format_vec.push("{:?}".to_string());
+            }
+        }
+    }
+    let args_format = args_format_vec.join(", ");
+
+    let log_stmt = quote::quote! {
+        {
+            let log_string = format!(#args_format, #args);
+            log::debug!("topshim in: {}: {}", #fn_name, log_string.as_str());
+        }
+    };
+    input.block.stmts.insert(0, syn::parse(log_stmt.into()).unwrap());
+
+    let output = quote::quote! {
+        #input
+    };
+    output.into()
 }

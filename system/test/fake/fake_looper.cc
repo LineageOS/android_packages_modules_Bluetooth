@@ -27,10 +27,7 @@
 #include "osi/include/allocator.h"
 #include "test/fake/fake_thread.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
-pid_t get_thread_id() {
+static pid_t get_thread_id() {
 #if defined(OS_MACOSX)
   return pthread_mach_thread_np(pthread_self());
 #elif defined(OS_LINUX)

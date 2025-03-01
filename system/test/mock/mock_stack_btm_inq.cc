@@ -24,15 +24,15 @@
 
 #include <cstdint>
 
+#include "stack/btm/internal/btm_api.h"
+#include "stack/include/btm_inq.h"
 #include "stack/include/btm_status.h"
+#include "stack/include/inq_hci_link_interface.h"
 #include "test/common/mock_functions.h"
 
 // Original usings
 
 // Mocked internal structures, if any
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 namespace test {
 namespace mock {
@@ -48,7 +48,6 @@ struct BTM_SetConnectability BTM_SetConnectability;
 struct BTM_SetDiscoverability BTM_SetDiscoverability;
 struct BTM_SetInquiryMode BTM_SetInquiryMode;
 struct BTM_StartInquiry BTM_StartInquiry;
-struct btm_clr_inq_db btm_clr_inq_db;
 struct btm_clr_inq_result_flt btm_clr_inq_result_flt;
 struct btm_inq_db_find btm_inq_db_find;
 struct btm_inq_db_new btm_inq_db_new;
@@ -115,10 +114,6 @@ tBTM_STATUS BTM_SetInquiryMode(uint8_t mode) {
 tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb, tBTM_CMPL_CB* p_cmpl_cb) {
   inc_func_call_count(__func__);
   return test::mock::stack_btm_inq::BTM_StartInquiry(p_results_cb, p_cmpl_cb);
-}
-void btm_clr_inq_db(const RawAddress* p_bda) {
-  inc_func_call_count(__func__);
-  test::mock::stack_btm_inq::btm_clr_inq_db(p_bda);
 }
 void btm_clr_inq_result_flt(void) {
   inc_func_call_count(__func__);

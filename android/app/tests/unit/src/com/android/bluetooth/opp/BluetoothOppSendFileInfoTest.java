@@ -36,9 +36,11 @@ import android.net.Uri;
 import android.provider.OpenableColumns;
 
 import androidx.test.platform.app.InstrumentationRegistry;
-import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
+
+import com.google.testing.junit.testparameterinjector.TestParameter;
+import com.google.testing.junit.testparameterinjector.TestParameterInjector;
 
 import org.junit.After;
 import org.junit.Before;
@@ -50,7 +52,7 @@ import org.mockito.Mock;
 import java.io.FileInputStream;
 import java.io.IOException;
 
-@RunWith(AndroidJUnit4.class)
+@RunWith(TestParameterInjector.class)
 public class BluetoothOppSendFileInfoTest {
     Context mContext;
     MatrixCursor mCursor;
@@ -122,10 +124,11 @@ public class BluetoothOppSendFileInfoTest {
     }
 
     @Test
-    public void generateFileInfo_withContentUriForOtherUser_returnsSendFileInfoError()
-            throws Exception {
+    public void generateFileInfo_withContentUriForOtherUser_returnsSendFileInfoError(
+            @TestParameter boolean encodedAt) throws Exception {
         String type = "image/jpeg";
-        Uri uri = buildContentUriWithEncodedAuthority((myUserId() + 1) + "@media");
+        String authoritySuffix = encodedAt ? "%40media" : "@media";
+        Uri uri = buildContentUriWithEncodedAuthority((myUserId() + 1) + authoritySuffix);
 
         long fileLength = 1000;
         String fileName = "pic.jpg";
@@ -185,10 +188,11 @@ public class BluetoothOppSendFileInfoTest {
     }
 
     @Test
-    public void generateFileInfo_withContentUriForSameUser_returnsInfoWithCorrectLength()
-            throws Exception {
+    public void generateFileInfo_withContentUriForSameUser_returnsInfoWithCorrectLength(
+            @TestParameter boolean encodedAt) throws Exception {
         String type = "image/jpeg";
-        Uri uri = buildContentUriWithEncodedAuthority(myUserId() + "@media");
+        String authoritySuffix = encodedAt ? "%40media" : "@media";
+        Uri uri = buildContentUriWithEncodedAuthority(myUserId() + authoritySuffix);
 
         long fileLength = 1000;
         String fileName = "pic.jpg";

@@ -16,6 +16,8 @@
 
 package android.bluetooth;
 
+import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
+
 import static com.google.common.truth.Truth.assertThat;
 
 import static org.mockito.Mockito.any;
@@ -43,7 +45,8 @@ import pandora.HostProto.OwnAddressType;
 /** Test cases for {@link BluetoothGattServer}. */
 @RunWith(AndroidJUnit4.class)
 public class GattServerConnectWithoutScanTest {
-    private static final String TAG = "GattServerConnectWithoutScanTest";
+    private static final String TAG = GattServerConnectWithoutScanTest.class.getSimpleName();
+
     private static final int TIMEOUT_GATT_CONNECTION_MS = 2_000;
 
     @Rule(order = 1)
@@ -77,7 +80,7 @@ public class GattServerConnectWithoutScanTest {
 
             gattServer.connect(device, false);
             verify(mockGattServerCallback, timeout(TIMEOUT_GATT_CONNECTION_MS))
-                    .onConnectionStateChange(any(), anyInt(), eq(BluetoothProfile.STATE_CONNECTED));
+                    .onConnectionStateChange(any(), anyInt(), eq(STATE_CONNECTED));
         } finally {
             gattServer.close();
         }
@@ -103,7 +106,7 @@ public class GattServerConnectWithoutScanTest {
 
             gattServer.connect(device, false);
             verify(mockGattServerCallback, timeout(TIMEOUT_GATT_CONNECTION_MS))
-                    .onConnectionStateChange(any(), anyInt(), eq(BluetoothProfile.STATE_CONNECTED));
+                    .onConnectionStateChange(any(), anyInt(), eq(STATE_CONNECTED));
         } finally {
             gattServer.close();
         }
@@ -125,7 +128,7 @@ public class GattServerConnectWithoutScanTest {
         try {
             gattServer.connect(mBumble.getRemoteDevice(), false);
             verify(mockGattServerCallback, timeout(TIMEOUT_GATT_CONNECTION_MS))
-                    .onConnectionStateChange(any(), anyInt(), eq(BluetoothProfile.STATE_CONNECTED));
+                    .onConnectionStateChange(any(), anyInt(), eq(STATE_CONNECTED));
         } finally {
             gattServer.close();
         }
@@ -147,7 +150,7 @@ public class GattServerConnectWithoutScanTest {
         try {
             gattServer.connect(mBumble.getRemoteDevice(), false);
             verify(mockGattServerCallback, timeout(TIMEOUT_GATT_CONNECTION_MS))
-                    .onConnectionStateChange(any(), anyInt(), eq(BluetoothProfile.STATE_CONNECTED));
+                    .onConnectionStateChange(any(), anyInt(), eq(STATE_CONNECTED));
         } finally {
             gattServer.close();
         }

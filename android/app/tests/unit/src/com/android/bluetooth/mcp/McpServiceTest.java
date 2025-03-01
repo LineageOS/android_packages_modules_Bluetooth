@@ -56,7 +56,7 @@ public class McpServiceTest {
 
     @After
     public void tearDown() {
-        mMcpService.stop();
+        mMcpService.cleanup();
         assertThat(McpService.getMcpService()).isNull();
     }
 

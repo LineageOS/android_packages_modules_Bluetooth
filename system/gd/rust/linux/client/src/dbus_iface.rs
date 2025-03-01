@@ -627,6 +627,9 @@ impl IBluetoothCallback for IBluetoothCallbackDBus {
     #[dbus_method("OnDeviceCleared", DBusLog::Disable)]
     fn on_device_cleared(&mut self, remote_device: BluetoothDevice) {}
 
+    #[dbus_method("OnDeviceKeyMissing", DBusLog::Disable)]
+    fn on_device_key_missing(&mut self, remote_device: BluetoothDevice) {}
+
     #[dbus_method("OnDiscoveringChanged", DBusLog::Disable)]
     fn on_discovering_changed(&mut self, discovering: bool) {}
 
@@ -2986,8 +2989,8 @@ impl IBluetoothMediaCallback for IBluetoothMediaCallbackDBus {
         &mut self,
         direction: u8,
         group_id: i32,
-        snk_audio_location: u32,
-        src_audio_location: u32,
+        snk_audio_location: i64,
+        src_audio_location: i64,
         avail_cont: u16,
     ) {
     }

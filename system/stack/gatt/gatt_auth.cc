@@ -299,7 +299,7 @@ static tGATT_SEC_ACTION gatt_determine_sec_act(tGATT_CLCB* p_clcb) {
     return GATT_SEC_ENC_PENDING;
   }
 
-  is_link_key_known = BTM_IsLinkKeyKnown(p_tcb->peer_bda, p_clcb->p_tcb->transport);
+  is_link_key_known = BTM_IsBonded(p_tcb->peer_bda, p_clcb->p_tcb->transport);
   is_link_encrypted = BTM_IsEncrypted(p_tcb->peer_bda, p_clcb->p_tcb->transport);
   is_key_mitm = BTM_IsLinkKeyAuthed(p_tcb->peer_bda, p_clcb->p_tcb->transport);
 
@@ -363,7 +363,7 @@ tGATT_STATUS gatt_get_link_encrypt_status(tGATT_TCB& tcb) {
   tGATT_STATUS encrypt_status = GATT_NOT_ENCRYPTED;
 
   bool encrypted = BTM_IsEncrypted(tcb.peer_bda, tcb.transport);
-  bool link_key_known = BTM_IsLinkKeyKnown(tcb.peer_bda, tcb.transport);
+  bool link_key_known = BTM_IsBonded(tcb.peer_bda, tcb.transport);
   bool link_key_authed = BTM_IsLinkKeyAuthed(tcb.peer_bda, tcb.transport);
 
   if (encrypted && link_key_known) {

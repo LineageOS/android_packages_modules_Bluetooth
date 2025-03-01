@@ -38,9 +38,9 @@ namespace device_esco_parameters {
 // Return: enh_esco_params_t
 struct esco_parameters_for_codec {
   enh_esco_params_t return_value{};
-  std::function<enh_esco_params_t(esco_codec_t codec)> body{
-          [this](esco_codec_t /* codec */) { return return_value; }};
-  enh_esco_params_t operator()(esco_codec_t codec) { return body(codec); }
+  std::function<enh_esco_params_t(esco_codec_t codec, bool offload)> body{
+          [this](esco_codec_t /* codec */, bool /* offload */) { return return_value; }};
+  enh_esco_params_t operator()(esco_codec_t codec, bool offload) { return body(codec, offload); }
 };
 extern struct esco_parameters_for_codec esco_parameters_for_codec;
 

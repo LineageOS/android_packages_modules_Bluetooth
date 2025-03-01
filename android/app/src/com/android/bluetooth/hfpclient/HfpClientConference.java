@@ -22,7 +22,7 @@ import android.telecom.PhoneAccountHandle;
 import android.util.Log;
 
 public class HfpClientConference extends Conference {
-    private static final String TAG = "HfpClientConference";
+    private static final String TAG = HfpClientConference.class.getSimpleName();
 
     private final BluetoothDevice mDevice;
     private final HeadsetClientServiceInterface mServiceInterface;

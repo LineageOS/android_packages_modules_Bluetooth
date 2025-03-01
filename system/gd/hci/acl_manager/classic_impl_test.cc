@@ -33,9 +33,6 @@
 #include "packet/bit_inserter.h"
 #include "packet/raw_builder.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 using namespace bluetooth;
 using namespace std::chrono_literals;
 
@@ -142,14 +139,6 @@ public:
     }
   }
 };
-
-PacketView<kLittleEndian> GetPacketView(std::unique_ptr<packet::BasePacketBuilder> packet) {
-  auto bytes = std::make_shared<std::vector<uint8_t>>();
-  BitInserter i(*bytes);
-  bytes->reserve(packet->size());
-  packet->Serialize(i);
-  return packet::PacketView<packet::kLittleEndian>(bytes);
-}
 
 class ClassicImplTest : public ::testing::Test {
 protected:

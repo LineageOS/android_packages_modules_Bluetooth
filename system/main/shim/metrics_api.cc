@@ -23,6 +23,8 @@
 #include "os/metrics.h"
 #include "types/raw_address.h"
 
+using android::bluetooth::EventType;
+using android::bluetooth::State;
 using bluetooth::hci::Address;
 
 namespace bluetooth {
@@ -182,12 +184,67 @@ void LogMetricLeConnectionLifecycle(hci::Address address, bool is_connect, bool 
   }
 }
 
+void LogMetricLeConnectionCompletion(hci::Address address, hci::ErrorCode reason,
+                                     bool is_locally_initiated) {
+  bluetooth::metrics::LogLeAclCompletionEvent(address, reason, is_locally_initiated);
+}
+
+void LogMetricRfcommConnectionAtClose(const RawAddress& raw_address,
+                                      android::bluetooth::rfcomm::PortResult close_reason,
+                                      android::bluetooth::rfcomm::SocketConnectionSecurity security,
+                                      android::bluetooth::rfcomm::RfcommPortEvent last_event,
+                                      android::bluetooth::rfcomm::RfcommPortState previous_state,
+                                      int32_t open_duration_ms, int32_t uid,
+                                      android::bluetooth::BtaStatus sdp_status, bool is_server,
+                                      bool sdp_initiated, int32_t sdp_duration_ms) {
+  Address address = bluetooth::ToGdAddress(raw_address);
+  bluetooth::os::LogMetricRfcommConnectionAtClose(address, close_reason, security, last_event,
+                                                  previous_state, open_duration_ms, uid, sdp_status,
+                                                  is_server, sdp_initiated, sdp_duration_ms);
+}
+
+void LogMetricLeConnectionRejected(hci::Address address) {
+  bluetooth::os::LogMetricBluetoothEvent(address,
+                                         android::bluetooth::EventType::LE_CONNECTION_REJECTED,
+                                         android::bluetooth::State::ATTEMPT_IN_PROGRESS);
+}
+
 bool CountCounterMetrics(int32_t key, int64_t count) {
   auto counter_metrics = GetCounterMetrics();
   if (counter_metrics == nullptr) {
     return false;
   }
   return counter_metrics->Count(key, count);
+}
+
+void LogMetricHfpAgVersion(hci::Address address, uint16_t version) {
+  bluetooth::os::LogMetricBluetoothEvent(address, EventType::HFP_AG_VERSION,
+                                         bluetooth::metrics::MapHfpVersionToState(version));
+}
+
+void LogMetricHfpHfVersion(hci::Address address, uint16_t version) {
+  bluetooth::os::LogMetricBluetoothEvent(address, EventType::HFP_HF_VERSION,
+                                         bluetooth::metrics::MapHfpVersionToState(version));
+}
+
+void LogMetricHfpRfcommChannelFail(hci::Address address) {
+  bluetooth::os::LogMetricBluetoothEvent(address, EventType::HFP_SESSION,
+                                         State::HFP_RFCOMM_CHANNEL_FAIL);
+}
+
+void LogMetricHfpRfcommCollisionFail(hci::Address address) {
+  bluetooth::os::LogMetricBluetoothEvent(address, EventType::HFP_SESSION,
+                                         State::HFP_RFCOMM_COLLISION_FAIL);
+}
+
+void LogMetricHfpRfcommAgOpenFail(hci::Address address) {
+  bluetooth::os::LogMetricBluetoothEvent(address, EventType::HFP_SESSION,
+                                         State::HFP_RFCOMM_AG_OPEN_FAIL);
+}
+
+void LogMetricHfpSlcFail(hci::Address address) {
+  bluetooth::os::LogMetricBluetoothEvent(address, EventType::HFP_SESSION,
+                                         State::HFP_SLC_FAIL_CONNECTION);
 }
 
 }  // namespace shim

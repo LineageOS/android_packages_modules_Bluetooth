@@ -15,7 +15,7 @@
 // TODO(b/290018030): Remove this and add proper safety comments.
 #![allow(clippy::undocumented_unsafe_blocks)]
 
-use crate::core::{start, stop};
+use crate::core::{set_disabled_in_test, start, stop};
 
 use cxx::{type_id, ExternType};
 pub use inner::*;
@@ -83,5 +83,7 @@ mod inner {
         );
 
         fn stop();
+
+        fn set_disabled_in_test();
     }
 }

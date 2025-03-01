@@ -60,7 +60,7 @@ public class FilterInfoTest {
                             BluetoothMapContract.MessageColumns.FLAG_HIGH_PRIORITY,
                             BluetoothMapContract.MessageColumns.FLAG_PROTECTED,
                             BluetoothMapContract.MessageColumns.RECEPTION_STATE,
-                            BluetoothMapContract.MessageColumns.DEVILERY_STATE,
+                            BluetoothMapContract.MessageColumns.DELIVERY_STATE,
                             BluetoothMapContract.MessageColumns.THREAD_ID
                         });
 

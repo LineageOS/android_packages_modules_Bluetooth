@@ -23,6 +23,8 @@ import android.bluetooth.BluetoothCodecStatus
 import android.bluetooth.BluetoothCodecType
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
+import android.bluetooth.BluetoothProfile.STATE_CONNECTED
+import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -98,13 +100,10 @@ class A2dp(val context: Context) : A2DPImplBase(), Closeable {
                         .map {
                             it.getIntExtra(BluetoothProfile.EXTRA_STATE, BluetoothAdapter.ERROR)
                         }
-                        .filter {
-                            it == BluetoothProfile.STATE_CONNECTED ||
-                                it == BluetoothProfile.STATE_DISCONNECTED
-                        }
+                        .filter { it == STATE_CONNECTED || it == STATE_DISCONNECTED }
                         .first()
 
-                if (state == BluetoothProfile.STATE_DISCONNECTED) {
+                if (state == STATE_DISCONNECTED) {
                     throw RuntimeException("openSource failed, A2DP has been disconnected")
                 }
             }
@@ -131,13 +130,10 @@ class A2dp(val context: Context) : A2DPImplBase(), Closeable {
                         .map {
                             it.getIntExtra(BluetoothProfile.EXTRA_STATE, BluetoothAdapter.ERROR)
                         }
-                        .filter {
-                            it == BluetoothProfile.STATE_CONNECTED ||
-                                it == BluetoothProfile.STATE_DISCONNECTED
-                        }
+                        .filter { it == STATE_CONNECTED || it == STATE_DISCONNECTED }
                         .first()
 
-                if (state == BluetoothProfile.STATE_DISCONNECTED) {
+                if (state == STATE_DISCONNECTED) {
                     throw RuntimeException("waitSource failed, A2DP has been disconnected")
                 }
             }

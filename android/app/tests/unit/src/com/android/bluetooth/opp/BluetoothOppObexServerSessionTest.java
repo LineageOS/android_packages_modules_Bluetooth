@@ -28,6 +28,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doCallRealMethod;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -68,7 +69,6 @@ public class BluetoothOppObexServerSessionTest {
     @Mock BluetoothMethodProxy mMethodProxy;
     @Mock BluetoothObexTransport mTransport;
     @Mock BluetoothOppService mBluetoothOppService;
-    @Mock NotificationManager mNotificationManager;
     @Mock Operation mOperation;
     @Mock Context mContext;
 
@@ -295,6 +295,7 @@ public class BluetoothOppObexServerSessionTest {
         mServerSession.unblock();
         mServerSession.mAccepted = BluetoothShare.USER_CONFIRMATION_CONFIRMED;
         Handler handler = mock(Handler.class);
+        doCallRealMethod().when(handler).obtainMessage(anyInt());
         doAnswer(
                         arg -> {
                             mServerSession.unblock();
@@ -303,7 +304,7 @@ public class BluetoothOppObexServerSessionTest {
                             return true;
                         })
                 .when(handler)
-                .sendMessageAtTime(
+                .sendMessageDelayed(
                         argThat(arg -> arg.what == BluetoothOppObexSession.MSG_CONNECT_TIMEOUT),
                         anyLong());
         mServerSession.start(handler, 0);

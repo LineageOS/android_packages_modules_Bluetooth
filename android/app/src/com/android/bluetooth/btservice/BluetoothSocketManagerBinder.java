@@ -32,7 +32,7 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.flags.Flags;
 
 class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
-    private static final String TAG = "BtSocketManagerBinder";
+    private static final String TAG = BluetoothSocketManagerBinder.class.getSimpleName();
 
     private static final int INVALID_FD = -1;
 

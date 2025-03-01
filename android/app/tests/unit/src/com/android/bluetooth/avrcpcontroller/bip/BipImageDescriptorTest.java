@@ -18,9 +18,9 @@ package com.android.bluetooth.avrcpcontroller;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import android.annotation.SuppressLint;
-
 import androidx.test.runner.AndroidJUnit4;
+
+import com.google.common.testing.EqualsTester;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -240,33 +240,15 @@ public class BipImageDescriptorTest {
     }
 
     @Test
-    public void testEquals_sameInstance() {
-        BipImageDescriptor.Builder builder = new BipImageDescriptor.Builder();
+    public void testEquals() {
+        BipImageDescriptor descriptor = new BipImageDescriptor.Builder().build();
+        BipImageDescriptor descriptorEqual = new BipImageDescriptor.Builder().build();
 
-        BipImageDescriptor descriptor = builder.build();
-
-        assertThat(descriptor).isEqualTo(descriptor);
-    }
-
-    @Test
-    @SuppressLint("TruthIncompatibleType") // That the point of this test
-    public void testEquals_differentClass() {
-        BipImageDescriptor.Builder builder = new BipImageDescriptor.Builder();
-
-        BipImageDescriptor descriptor = builder.build();
         String notDescriptor = "notDescriptor";
 
-        assertThat(descriptor).isNotEqualTo(notDescriptor);
-    }
-
-    @Test
-    public void testEquals_sameInfo() {
-        BipImageDescriptor.Builder builder = new BipImageDescriptor.Builder();
-        BipImageDescriptor.Builder builderEqual = new BipImageDescriptor.Builder();
-
-        BipImageDescriptor descriptor = builder.build();
-        BipImageDescriptor descriptorEqual = builderEqual.build();
-
-        assertThat(descriptor).isEqualTo(descriptorEqual);
+        new EqualsTester()
+                .addEqualityGroup(descriptor, descriptor, descriptorEqual)
+                .addEqualityGroup(notDescriptor)
+                .testEquals();
     }
 }

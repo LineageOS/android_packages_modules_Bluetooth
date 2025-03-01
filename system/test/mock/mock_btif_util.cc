@@ -24,14 +24,12 @@
 
 #include <cstdint>
 
+#include "btif/include/btif_util.h"
 #include "test/common/mock_functions.h"
 
 // Original usings
 
 // Mocked internal structures, if any
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 namespace test {
 namespace mock {
@@ -67,20 +65,20 @@ namespace btif_util {
 
 int ascii_2_hex::return_value = 0;
 uint32_t devclass2uint::return_value = 0;
-const char* dump_adapter_scan_mode::return_value = nullptr;
-const char* dump_av_audio_state::return_value = nullptr;
-const char* dump_av_conn_state::return_value = nullptr;
-const char* dump_bt_status::return_value = nullptr;
-const char* dump_dm_event::return_value = nullptr;
-const char* dump_dm_search_event::return_value = nullptr;
-const char* dump_hd_event::return_value = nullptr;
-const char* dump_hf_client_event::return_value = nullptr;
-const char* dump_hf_event::return_value = nullptr;
-const char* dump_property_type::return_value = nullptr;
-const char* dump_rc_event::return_value = nullptr;
-const char* dump_rc_notification_event_id::return_value = nullptr;
-const char* dump_rc_pdu::return_value = nullptr;
-const char* dump_thread_evt::return_value = nullptr;
+std::string dump_adapter_scan_mode::return_value = "";
+std::string dump_av_audio_state::return_value = "";
+std::string dump_av_conn_state::return_value = "";
+std::string dump_bt_status::return_value = "";
+std::string dump_dm_event::return_value = "";
+std::string dump_dm_search_event::return_value = "";
+std::string dump_hd_event::return_value = "";
+std::string dump_hf_client_event::return_value = "";
+std::string dump_hf_event::return_value = "";
+std::string dump_property_type::return_value = "";
+std::string dump_rc_event::return_value = "";
+std::string dump_rc_notification_event_id::return_value = "";
+std::string dump_rc_pdu::return_value = "";
+std::string dump_thread_evt::return_value = "";
 
 }  // namespace btif_util
 }  // namespace mock
@@ -95,59 +93,59 @@ uint32_t devclass2uint(const DEV_CLASS dev_class) {
   inc_func_call_count(__func__);
   return test::mock::btif_util::devclass2uint(dev_class);
 }
-const char* dump_adapter_scan_mode(bt_scan_mode_t mode) {
+std::string dump_adapter_scan_mode(bt_scan_mode_t mode) {
   inc_func_call_count(__func__);
   return test::mock::btif_util::dump_adapter_scan_mode(mode);
 }
-const char* dump_av_audio_state(uint16_t event) {
+std::string dump_av_audio_state(uint16_t event) {
   inc_func_call_count(__func__);
   return test::mock::btif_util::dump_av_audio_state(event);
 }
-const char* dump_av_conn_state(uint16_t event) {
+std::string dump_av_conn_state(uint16_t event) {
   inc_func_call_count(__func__);
   return test::mock::btif_util::dump_av_conn_state(event);
 }
-const char* dump_bt_status(bt_status_t status) {
+std::string dump_bt_status(bt_status_t status) {
   inc_func_call_count(__func__);
   return test::mock::btif_util::dump_bt_status(status);
 }
-const char* dump_dm_event(uint16_t event) {
+std::string dump_dm_event(uint16_t event) {
   inc_func_call_count(__func__);
   return test::mock::btif_util::dump_dm_event(event);
 }
-const char* dump_dm_search_event(uint16_t event) {
+std::string dump_dm_search_event(uint16_t event) {
   inc_func_call_count(__func__);
   return test::mock::btif_util::dump_dm_search_event(event);
 }
-const char* dump_hd_event(uint16_t event) {
+std::string dump_hd_event(uint16_t event) {
   inc_func_call_count(__func__);
   return test::mock::btif_util::dump_hd_event(event);
 }
-const char* dump_hf_client_event(uint16_t event) {
+std::string dump_hf_client_event(uint16_t event) {
   inc_func_call_count(__func__);
   return test::mock::btif_util::dump_hf_client_event(event);
 }
-const char* dump_hf_event(uint16_t event) {
+std::string dump_hf_event(uint16_t event) {
   inc_func_call_count(__func__);
   return test::mock::btif_util::dump_hf_event(event);
 }
-const char* dump_property_type(bt_property_type_t type) {
+std::string dump_property_type(bt_property_type_t type) {
   inc_func_call_count(__func__);
   return test::mock::btif_util::dump_property_type(type);
 }
-const char* dump_rc_event(uint8_t event) {
+std::string dump_rc_event(uint8_t event) {
   inc_func_call_count(__func__);
   return test::mock::btif_util::dump_rc_event(event);
 }
-const char* dump_rc_notification_event_id(uint8_t event_id) {
+std::string dump_rc_notification_event_id(uint8_t event_id) {
   inc_func_call_count(__func__);
   return test::mock::btif_util::dump_rc_notification_event_id(event_id);
 }
-const char* dump_rc_pdu(uint8_t pdu) {
+std::string dump_rc_pdu(uint8_t pdu) {
   inc_func_call_count(__func__);
   return test::mock::btif_util::dump_rc_pdu(pdu);
 }
-const char* dump_thread_evt(bt_cb_thread_evt evt) {
+std::string dump_thread_evt(bt_cb_thread_evt evt) {
   inc_func_call_count(__func__);
   return test::mock::btif_util::dump_thread_evt(evt);
 }

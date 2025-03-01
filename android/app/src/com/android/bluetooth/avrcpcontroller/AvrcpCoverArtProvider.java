@@ -74,7 +74,7 @@ public class AvrcpCoverArtProvider extends ContentProvider {
         return uri;
     }
 
-    private Bitmap getImage(BluetoothDevice device, String imageUuid) {
+    private static Bitmap getImage(BluetoothDevice device, String imageUuid) {
         AvrcpControllerService service = AvrcpControllerService.getAvrcpControllerService();
         if (service == null) {
             debug("Failed to get service, cover art not available");
@@ -89,7 +89,7 @@ public class AvrcpCoverArtProvider extends ContentProvider {
         return manager.getImage(device, imageUuid);
     }
 
-    private ParcelFileDescriptor getImageDescriptor(BluetoothDevice device, String imageUuid)
+    private static ParcelFileDescriptor getImageDescriptor(BluetoothDevice device, String imageUuid)
             throws FileNotFoundException, IOException {
         debug("getImageDescriptor(" + device + ", " + imageUuid + ")");
         Bitmap image = getImage(device, imageUuid);

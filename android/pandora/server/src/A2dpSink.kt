@@ -20,6 +20,9 @@ import android.bluetooth.BluetoothA2dpSink
 import android.bluetooth.BluetoothAdapter
 import android.bluetooth.BluetoothManager
 import android.bluetooth.BluetoothProfile
+import android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN
+import android.bluetooth.BluetoothProfile.STATE_CONNECTED
+import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -67,13 +70,13 @@ class A2dpSink(val context: Context) : A2DPImplBase(), Closeable {
 
     override fun waitSink(
         request: WaitSinkRequest,
-        responseObserver: StreamObserver<WaitSinkResponse>
+        responseObserver: StreamObserver<WaitSinkResponse>,
     ) {
         grpcUnary<WaitSinkResponse>(scope, responseObserver) {
             val device = request.connection.toBluetoothDevice(bluetoothAdapter)
             Log.i(TAG, "waitSink: device=$device")
 
-            if (bluetoothA2dpSink.getConnectionState(device) != BluetoothProfile.STATE_CONNECTED) {
+            if (bluetoothA2dpSink.getConnectionState(device) != STATE_CONNECTED) {
                 val state =
                     flow
                         .filter {
@@ -83,13 +86,10 @@ class A2dpSink(val context: Context) : A2DPImplBase(), Closeable {
                         .map {
                             it.getIntExtra(BluetoothProfile.EXTRA_STATE, BluetoothAdapter.ERROR)
                         }
-                        .filter {
-                            it == BluetoothProfile.STATE_CONNECTED ||
-                                it == BluetoothProfile.STATE_DISCONNECTED
-                        }
+                        .filter { it == STATE_CONNECTED || it == STATE_DISCONNECTED }
                         .first()
 
-                if (state == BluetoothProfile.STATE_DISCONNECTED) {
+                if (state == STATE_DISCONNECTED) {
                     throw RuntimeException("waitStream failed, A2DP has been disconnected")
                 }
             }
@@ -104,7 +104,7 @@ class A2dpSink(val context: Context) : A2DPImplBase(), Closeable {
         grpcUnary<CloseResponse>(scope, responseObserver) {
             val device = bluetoothAdapter.getRemoteDevice(request.sink.cookie.toString("UTF-8"))
             Log.i(TAG, "close: device=$device")
-            if (bluetoothA2dpSink.getConnectionState(device) != BluetoothProfile.STATE_CONNECTED) {
+            if (bluetoothA2dpSink.getConnectionState(device) != STATE_CONNECTED) {
                 throw RuntimeException("Device is not connected, cannot close")
             }
 
@@ -114,13 +114,8 @@ class A2dpSink(val context: Context) : A2DPImplBase(), Closeable {
                     .filter { it.getBluetoothDeviceExtra() == device }
                     .map { it.getIntExtra(BluetoothProfile.EXTRA_STATE, BluetoothAdapter.ERROR) }
 
-            bluetoothA2dpSink.setConnectionPolicy(
-                device,
-                BluetoothProfile.CONNECTION_POLICY_FORBIDDEN
-            )
-            a2dpConnectionStateChangedFlow
-                .filter { it == BluetoothProfile.STATE_DISCONNECTED }
-                .first()
+            bluetoothA2dpSink.setConnectionPolicy(device, CONNECTION_POLICY_FORBIDDEN)
+            a2dpConnectionStateChangedFlow.filter { it == STATE_DISCONNECTED }.first()
 
             CloseResponse.getDefaultInstance()
         }

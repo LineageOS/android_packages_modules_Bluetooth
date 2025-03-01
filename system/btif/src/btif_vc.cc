@@ -33,11 +33,9 @@
 #include "bta/include/bta_vc_api.h"
 #include "btif/include/btif_common.h"
 #include "btif/include/btif_profile_storage.h"
+#include "btif_le_audio.h"
 #include "stack/include/main_thread.h"
 #include "types/raw_address.h"
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 using base::Bind;
 using base::Unretained;
@@ -48,8 +46,8 @@ using bluetooth::vc::VolumeControlCallbacks;
 using bluetooth::vc::VolumeControlInterface;
 
 namespace {
-std::unique_ptr<VolumeControlInterface> vc_instance;
-std::atomic_bool initialized = false;
+static std::unique_ptr<VolumeControlInterface> vc_instance;
+static std::atomic_bool initialized = false;
 
 class VolumeControlInterfaceImpl : public VolumeControlInterface, public VolumeControlCallbacks {
   ~VolumeControlInterfaceImpl() override = default;

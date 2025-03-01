@@ -52,6 +52,7 @@ int32_t osi_property_get_int32(const char* key, int32_t default_value);
 // returns the value of |key| coerced into a bool. If the property is not set,
 // then the |default_value| is used.
 bool osi_property_get_bool(const char* key, bool default_value);
+void osi_property_set_bool(const char* key, bool value);
 
 // Helper function that returns the value of |key| coerced into a vector of
 // uint32_t. If the property is not set, then the |default_value| is used.

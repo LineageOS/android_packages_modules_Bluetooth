@@ -18,6 +18,8 @@ package android.bluetooth.le;
 
 import static android.Manifest.permission.BLUETOOTH_SCAN;
 
+import static java.util.Objects.requireNonNull;
+
 import android.annotation.Nullable;
 import android.annotation.RequiresPermission;
 import android.annotation.SuppressLint;
@@ -35,7 +37,6 @@ import android.os.RemoteException;
 import android.util.Log;
 
 import java.util.IdentityHashMap;
-import java.util.Objects;
 
 /**
  * This class provides methods to perform periodic advertising related operations. An application
@@ -47,8 +48,7 @@ import java.util.Objects;
  * @hide
  */
 public final class PeriodicAdvertisingManager {
-
-    private static final String TAG = "PeriodicAdvertisingManager";
+    private static final String TAG = PeriodicAdvertisingManager.class.getSimpleName();
 
     private static final int SKIP_MIN = 0;
     private static final int SKIP_MAX = 499;
@@ -68,7 +68,7 @@ public final class PeriodicAdvertisingManager {
      * @hide
      */
     public PeriodicAdvertisingManager(BluetoothAdapter bluetoothAdapter) {
-        mBluetoothAdapter = Objects.requireNonNull(bluetoothAdapter);
+        mBluetoothAdapter = requireNonNull(bluetoothAdapter);
         mAttributionSource = mBluetoothAdapter.getAttributionSource();
         mCallbackWrappers = new IdentityHashMap<>();
     }

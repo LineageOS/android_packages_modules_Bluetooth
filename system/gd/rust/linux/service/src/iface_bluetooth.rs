@@ -119,6 +119,10 @@ impl IBluetoothCallback for BluetoothCallbackDBus {
     fn on_device_cleared(&mut self, remote_device: BluetoothDevice) {
         dbus_generated!()
     }
+    #[dbus_method("OnDeviceKeyMissing")]
+    fn on_device_key_missing(&mut self, remote_device: BluetoothDevice) {
+        dbus_generated!()
+    }
     #[dbus_method("OnDiscoveringChanged")]
     fn on_discovering_changed(&mut self, discovering: bool) {
         dbus_generated!()

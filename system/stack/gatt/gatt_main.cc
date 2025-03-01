@@ -277,14 +277,7 @@ bool gatt_disconnect(tGATT_TCB* p_tcb) {
   /* att_lcid == L2CAP_ATT_CID */
 
   if (ch_state != GATT_CH_OPEN) {
-    if (!connection_manager::direct_connect_remove(CONN_MGR_ID_L2CAP, p_tcb->peer_bda)) {
-      bluetooth::shim::ACL_IgnoreLeConnectionFrom(BTM_Sec_GetAddressWithType(p_tcb->peer_bda));
-      log::info(
-              "GATT connection manager has no record but removed filter "
-              "acceptlist gatt_if:{} peer:{}",
-              static_cast<uint8_t>(CONN_MGR_ID_L2CAP), p_tcb->peer_bda);
-    }
-
+    connection_manager::remove_unconditional(p_tcb->peer_bda);
     gatt_cleanup_upon_disc(p_tcb->peer_bda, GATT_CONN_TERMINATE_LOCAL_HOST, p_tcb->transport);
     return true;
   }
@@ -504,6 +497,7 @@ static void gatt_le_connect_cback(uint16_t /* chan */, const RawAddress& bd_addr
     if (p_tcb != nullptr) {
       bluetooth::shim::arbiter::GetArbiter().OnLeDisconnect(p_tcb->tcb_idx);
     }
+    connection_manager::on_connection_complete(bd_addr);
     gatt_cleanup_upon_disc(bd_addr, static_cast<tGATT_DISCONN_REASON>(reason), transport);
     return;
   }

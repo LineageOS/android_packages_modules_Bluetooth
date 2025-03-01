@@ -16,9 +16,9 @@
 
 package com.android.bluetooth.hfp;
 
-import android.bluetooth.BluetoothDevice;
+import static java.util.Objects.requireNonNull;
 
-import java.util.Objects;
+import android.bluetooth.BluetoothDevice;
 
 /** Callback events from native layer */
 public class HeadsetStackEvent extends HeadsetMessageObject {
@@ -129,7 +129,7 @@ public class HeadsetStackEvent extends HeadsetMessageObject {
         this.valueInt2 = valueInt2;
         this.valueString = valueString;
         this.valueObject = valueObject;
-        this.device = Objects.requireNonNull(device);
+        this.device = requireNonNull(device);
     }
 
     /**

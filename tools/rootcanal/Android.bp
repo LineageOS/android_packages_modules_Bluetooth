@@ -91,11 +91,9 @@ cc_library_static {
         "model/controller/vendor_commands/le_apcf.cc",
         "model/devices/baseband_sniffer.cc",
         "model/devices/beacon.cc",
-        "model/devices/beacon_swarm.cc",
         "model/devices/device.cc",
         "model/devices/hci_device.cc",
         "model/devices/link_layer_socket_device.cc",
-        "model/devices/scripted_beacon.cc",
         "model/devices/sniffer.cc",
         "model/hci/h4_data_channel_packetizer.cc",
         "model/hci/h4_parser.cc",
@@ -133,9 +131,7 @@ cc_library_static {
     shared_libs: [
         "libbase",
         "libcrypto",
-    ],
-    static_libs: [
-        "libscriptedbeaconpayload-protos-lite",
+        "libprotobuf-cpp-full",
     ],
 }
 
@@ -229,17 +225,6 @@ genrule {
     out: [
         "hci_packets.py",
     ],
-}
-
-cc_library_static {
-    name: "libscriptedbeaconpayload-protos-lite",
-    host_supported: true,
-    proprietary: true,
-    proto: {
-        export_proto_headers: true,
-        type: "lite",
-    },
-    srcs: ["model/devices/scripted_beacon_ble_payload.proto"],
 }
 
 cc_test_host {
@@ -398,7 +383,6 @@ cc_binary_host {
         "libcrypto",
         "libgflags",
         "libprotobuf-cpp-full",
-        "libscriptedbeaconpayload-protos-lite",
     ],
     target: {
         // TODO(b/181290178) remove it when sanitize option is supported by linux_bionic as well

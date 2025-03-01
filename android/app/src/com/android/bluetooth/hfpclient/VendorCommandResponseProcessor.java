@@ -35,7 +35,6 @@ import java.util.Map;
 import java.util.Objects;
 
 class VendorCommandResponseProcessor {
-
     private static final String TAG = VendorCommandResponseProcessor.class.getSimpleName();
 
     private final HeadsetClientService mService;
@@ -114,7 +113,7 @@ class VendorCommandResponseProcessor {
         return true;
     }
 
-    private String getVendorIdFromAtCommand(String atString) {
+    private static String getVendorIdFromAtCommand(String atString) {
         // Get event code
         int indexOfEqual = atString.indexOf('=');
         int indexOfColon = atString.indexOf(':');

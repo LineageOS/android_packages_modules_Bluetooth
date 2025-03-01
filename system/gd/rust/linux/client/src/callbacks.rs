@@ -194,6 +194,14 @@ impl IBluetoothCallback for BtCallback {
         self.context.lock().unwrap().bonded_devices.remove(&remote_device.address.to_string());
     }
 
+    fn on_device_key_missing(&mut self, remote_device: BluetoothDevice) {
+        print_info!(
+            "Device missing keys: [{}: {:?}]",
+            remote_device.address.to_string(),
+            remote_device.name
+        );
+    }
+
     fn on_discovering_changed(&mut self, discovering: bool) {
         self.context.lock().unwrap().discovering_state = discovering;
 
@@ -1465,8 +1473,8 @@ impl IBluetoothMediaCallback for MediaCallback {
         &mut self,
         _direction: u8,
         _group_id: i32,
-        _snk_audio_location: u32,
-        _src_audio_location: u32,
+        _snk_audio_location: i64,
+        _src_audio_location: i64,
         _avail_cont: u16,
     ) {
     }

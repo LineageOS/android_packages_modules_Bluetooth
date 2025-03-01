@@ -27,9 +27,6 @@
 #include "test/common/mock_functions.h"
 #include "types/raw_address.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 int bta_hh_co_write(int /* fd */, uint8_t* /* rpt */, uint16_t /* len */) {
   inc_func_call_count(__func__);
   return 0;

@@ -33,30 +33,6 @@ cc_defaults {
 }
 
 cc_library_static {
-    name: "libbthalutils",
-    defaults: ["fluoride_defaults"],
-    srcs: [
-        "src/hal_util.cc",
-    ],
-    local_include_dirs: ["include"],
-    include_dirs: [
-        "packages/modules/Bluetooth/system",
-        "packages/modules/Bluetooth/system/gd",
-    ],
-    header_libs: ["libbluetooth_headers"],
-    host_supported: true,
-    apex_available: ["com.android.bt"],
-    target: {
-        host_linux: {
-            cflags: ["-D_GNU_SOURCE"],
-        },
-    },
-    static_libs: [
-        "libbluetooth_log",
-    ],
-}
-
-cc_library_static {
     name: "libbtcore",
     visibility: [
         "//packages/apps/Test/connectivity/sl4n",

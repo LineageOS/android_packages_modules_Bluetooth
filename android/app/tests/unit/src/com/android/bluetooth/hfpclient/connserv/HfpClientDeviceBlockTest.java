@@ -125,7 +125,6 @@ public class HfpClientDeviceBlockTest {
     }
 
     @Test
-    @Ignore("b/191783947")
     public void testHandleMultiPartyCall_scoStateIsSetOnConference() {
         HfpClientCall call =
                 new HfpClientCall(
@@ -143,7 +142,6 @@ public class HfpClientDeviceBlockTest {
 
         ArgumentCaptor<HfpClientConference> conferenceCaptor =
                 ArgumentCaptor.forClass(HfpClientConference.class);
-        // TODO(b/191783947): addConference is final and cannot be mocked
         verify(mConnServ).addConference(conferenceCaptor.capture());
 
         HfpClientConference conference = conferenceCaptor.getValue();

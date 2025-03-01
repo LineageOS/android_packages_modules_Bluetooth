@@ -1,0 +1,85 @@
+package {
+    default_applicable_licenses: ["Android-Apache-2.0"],
+}
+
+java_defaults {
+    name: "BluetoothInstrumentationTestsDefaults",
+    defaults: [
+        "bluetooth_errorprone_rules",
+    ],
+
+    sdk_version: "module_current",
+    min_sdk_version: "Tiramisu",
+    target_sdk_version: "current",
+    libs: [
+        "android.test.base.stubs",
+        "android.test.mock.stubs",
+        "android.test.runner.stubs",
+        "framework-annotations-lib",
+        "framework-configinfrastructure.stubs.module_lib",
+        "framework-connectivity.stubs.module_lib",
+        "framework-location.stubs.module_lib",
+        "framework-mediaprovider.stubs.module_lib",
+        "framework-tethering.stubs.module_lib",
+        "javax.obex.stubs",
+        "libprotobuf-java-micro",
+    ],
+
+    static_libs: [
+        "PlatformProperties",
+        "TestParameterInjector",
+        "android.media.audio-aconfig-exported-java",
+        "androidx.media_media",
+        "androidx.room_room-migration",
+        "androidx.room_room-runtime",
+        "androidx.room_room-testing",
+        "androidx.test.espresso.intents",
+        "androidx.test.ext.truth",
+        "androidx.test.rules",
+        "androidx.test.uiautomator_uiautomator",
+        "bluetooth_flags_java_lib",
+        "com.android.sysprop.bluetooth",
+        "flag-junit",
+        "framework-bluetooth-pre-jarjar",
+        "gson",
+        "mmslib",
+        "mockito-target",
+        "modules-utils-handlerexecutor",
+        "platform-parametric-runner-lib",
+        "platform-test-annotations",
+        "truth",
+    ],
+
+    jarjar_rules: ":bluetooth-jarjar-rules",
+
+    // Include all test java files.
+    srcs: [
+        "**/*.java",
+        ":bluetooth_test_looper",
+    ],
+    jacoco: {
+        include_filter: ["android.bluetooth.*"],
+        exclude_filter: [],
+    },
+
+    test_suites: [
+        "automotive-general-tests",
+        "general-tests",
+        "mts-bluetooth",
+        "mts-bt",
+    ],
+
+    instrumentation_for: "Bluetooth",
+}
+
+android_test {
+    name: "BluetoothInstrumentationTests",
+    defaults: ["BluetoothInstrumentationTestsDefaults"],
+}
+
+android_test {
+    name: "GoogleBluetoothInstrumentationTests",
+    defaults: ["BluetoothInstrumentationTestsDefaults"],
+    test_config: "GoogleAndroidTest.xml",
+    instrumentation_target_package: "com.google.android.bluetooth",
+}

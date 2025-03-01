@@ -47,3 +47,7 @@ const stack_manager_t* stack_manager_get_interface();
 future_t* stack_manager_get_hack_future();
 
 bluetooth::core::CoreInterface* GetInterfaceToProfiles();
+
+namespace bluetooth::legacy::testing {
+void set_interface_to_profiles(bluetooth::core::CoreInterface* interfaceToProfiles);
+}  // namespace bluetooth::legacy::testing

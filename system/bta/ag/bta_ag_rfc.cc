@@ -29,6 +29,7 @@
 #include <cstdint>
 
 #include "bta/ag/bta_ag_int.h"
+#include "bta/include/bta_rfcomm_metrics.h"
 #include "bta/include/bta_sec_api.h"
 #include "bta_api.h"
 #include "stack/include/main_thread.h"
@@ -257,6 +258,9 @@ void bta_ag_start_servers(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK services) {
         bta_ag_setup_port(p_scb, p_scb->serv_handle[i]);
       } else {
         /* TODO: CR#137125 to handle to error properly */
+        bta_collect_rfc_metrics_after_port_fail(static_cast<tPORT_RESULT>(status), false,
+                                                tBTA_JV_STATUS::SUCCESS, p_scb->peer_addr, 0,
+                                                BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT, true, 0);
         log::error(
                 "RFCOMM_CreateConnectionWithSecurity ERROR {}, p_scb={}, "
                 "services=0x{:x}, mgmt_cback_index={}",
@@ -336,6 +340,10 @@ void bta_ag_rfc_do_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
     bta_ag_setup_port(p_scb, p_scb->conn_handle);
   } else {
     /* RFCOMM create connection failed; send ourselves RFCOMM close event */
+    bta_collect_rfc_metrics_after_port_fail(
+            static_cast<tPORT_RESULT>(status), p_scb->sdp_metrics.sdp_initiated,
+            p_scb->sdp_metrics.status, p_scb->peer_addr, 0, BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT,
+            true, p_scb->sdp_metrics.sdp_start_ms - p_scb->sdp_metrics.sdp_end_ms);
     log::error("RFCOMM_CreateConnection ERROR {} for {}", status, p_scb->peer_addr);
     bta_ag_sm_execute(p_scb, BTA_AG_RFC_CLOSE_EVT, data);
   }

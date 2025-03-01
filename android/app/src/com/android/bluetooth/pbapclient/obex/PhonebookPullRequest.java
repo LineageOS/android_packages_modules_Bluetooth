@@ -30,7 +30,7 @@ import com.android.vcard.VCardEntry;
 import java.util.ArrayList;
 
 public class PhonebookPullRequest extends PullRequest {
-    private static final String TAG = "PhonebookPullRequest";
+    private static final String TAG = PhonebookPullRequest.class.getSimpleName();
 
     @VisibleForTesting static final int MAX_OPS = 250;
 

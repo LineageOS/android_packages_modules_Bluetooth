@@ -234,6 +234,19 @@ struct log_le_connection_lifecycle {
 };
 extern struct log_le_device_in_accept_list log_le_device_in_accept_list;
 
+// Name: log_le_connection_completion
+struct log_le_connection_completion {
+  std::function<void(bluetooth::hci::Address address, bluetooth::hci::ErrorCode reason,
+                     bool is_locally_initiated)>
+          body{[](bluetooth::hci::Address /* address */, bluetooth::hci::ErrorCode /* reason */,
+                  bool /* is locally initiated */) {}};
+  void operator()(bluetooth::hci::Address address, bluetooth::hci::ErrorCode reason,
+                  bool is_locally_initiated) {
+    body(address, reason, is_locally_initiated);
+  }
+};
+extern struct log_le_connection_completion log_le_connection_completion;
+
 }  // namespace stack_metrics_logging
 }  // namespace mock
 }  // namespace test

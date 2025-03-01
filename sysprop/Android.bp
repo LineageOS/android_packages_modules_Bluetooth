@@ -13,6 +13,7 @@ sysprop_library {
         "device_id.sysprop",
         "gap.sysprop",
         "hardware.sysprop",
+        "hci.sysprop",
         "hfp.sysprop",
     ],
     property_owner: "Platform",

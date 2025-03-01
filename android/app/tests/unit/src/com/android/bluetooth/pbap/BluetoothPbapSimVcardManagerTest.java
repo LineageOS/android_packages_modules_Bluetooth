@@ -59,7 +59,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothPbapSimVcardManagerTest {
-
     private static final String TAG = BluetoothPbapSimVcardManagerTest.class.getSimpleName();
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();

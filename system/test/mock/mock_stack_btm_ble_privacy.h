@@ -71,23 +71,6 @@ struct btm_ble_read_resolving_list_entry_complete {
   void operator()(const uint8_t* p, uint16_t evt_len) { body(p, evt_len); }
 };
 extern struct btm_ble_read_resolving_list_entry_complete btm_ble_read_resolving_list_entry_complete;
-// Name: btm_ble_remove_resolving_list_entry
-// Params: tBTM_SEC_DEV_REC* p_dev_rec
-// Returns: tBTM_STATUS
-struct btm_ble_remove_resolving_list_entry {
-  std::function<tBTM_STATUS(tBTM_SEC_DEV_REC* p_dev_rec)> body{
-          [](tBTM_SEC_DEV_REC* /* p_dev_rec */) { return tBTM_STATUS::BTM_SUCCESS; }};
-  tBTM_STATUS operator()(tBTM_SEC_DEV_REC* p_dev_rec) { return body(p_dev_rec); }
-};
-extern struct btm_ble_remove_resolving_list_entry btm_ble_remove_resolving_list_entry;
-// Name: btm_ble_clear_resolving_list
-// Params: void
-// Returns: void
-struct btm_ble_clear_resolving_list {
-  std::function<void(void)> body{[](void) {}};
-  void operator()(void) { body(); }
-};
-extern struct btm_ble_clear_resolving_list btm_ble_clear_resolving_list;
 // Name: btm_ble_read_resolving_list_entry
 // Params: tBTM_SEC_DEV_REC* p_dev_rec
 // Returns: bool

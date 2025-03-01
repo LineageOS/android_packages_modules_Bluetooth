@@ -72,7 +72,8 @@ import java.util.stream.Stream;
 
 @RunWith(TestParameterInjector.class)
 public class LeScanningTest {
-    private static final String TAG = "LeScanningTest";
+    private static final String TAG = LeScanningTest.class.getSimpleName();
+
     private static final int TIMEOUT_SCANNING_MS = 3000;
     private static final String TEST_UUID_STRING = "00001805-0000-1000-8000-00805f9b34fb";
     private static final String TEST_ADDRESS_RANDOM_STATIC = "F0:43:A8:23:10:11";
@@ -406,8 +407,9 @@ public class LeScanningTest {
     @Test
     @VirtualOnly
     @RequiresFlagsEnabled(Flags.FLAG_PHY_TO_NATIVE)
-    public void startBleScan_codedPhy(@TestParameter({"1", "3", "255"}) int phy) {
-        advertiseWithBumbleWithServiceDataAndPhy(true);
+    public void startBleScan_codedPhy(
+            @TestParameter({"1", "3", "255"}) int phy, @TestParameter boolean advertiseCoded) {
+        advertiseWithBumbleWithServiceDataAndPhy(advertiseCoded);
 
         ScanFilter scanFilter =
                 new ScanFilter.Builder()
@@ -421,7 +423,12 @@ public class LeScanningTest {
                         /* isLegacy= */ false,
                         phy);
 
-        if (phy == BluetoothDevice.PHY_LE_1M) {
+        if (advertiseCoded && phy == BluetoothDevice.PHY_LE_1M) {
+            assertThat(results).isNull();
+            return;
+        }
+
+        if (!advertiseCoded && phy == BluetoothDevice.PHY_LE_CODED) {
             assertThat(results).isNull();
             return;
         }

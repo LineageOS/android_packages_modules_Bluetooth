@@ -34,9 +34,6 @@
 #include "os/thread.h"
 #include "packet/raw_builder.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 using namespace std::chrono_literals;
 
 namespace {
@@ -71,14 +68,6 @@ using os::fake_timer::fake_timerfd_advance;
 using packet::kLittleEndian;
 using packet::PacketView;
 using packet::RawBuilder;
-
-std::vector<uint8_t> GetPacketBytes(std::unique_ptr<packet::BasePacketBuilder> packet) {
-  std::vector<uint8_t> bytes;
-  BitInserter i(bytes);
-  bytes.reserve(packet->size());
-  packet->Serialize(i);
-  return bytes;
-}
 
 static std::chrono::milliseconds getHciTimeoutMs() {
   static auto sHciTimeoutMs = std::chrono::milliseconds(bluetooth::os::GetSystemPropertyUint32Base(

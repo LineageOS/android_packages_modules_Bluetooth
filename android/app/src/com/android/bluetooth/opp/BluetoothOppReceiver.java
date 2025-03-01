@@ -60,7 +60,7 @@ import com.android.bluetooth.flags.Flags;
  */
 // Next tag value for ContentProfileErrorReportUtils.report(): 2
 public class BluetoothOppReceiver extends BroadcastReceiver {
-    private static final String TAG = "BluetoothOppReceiver";
+    private static final String TAG = BluetoothOppReceiver.class.getSimpleName();
 
     @Override
     public void onReceive(Context context, Intent intent) {
@@ -285,7 +285,7 @@ public class BluetoothOppReceiver extends BroadcastReceiver {
         }
     }
 
-    private void cancelNotification(Context context, int id) {
+    private static void cancelNotification(Context context, int id) {
         NotificationManager notMgr = context.getSystemService(NotificationManager.class);
         if (notMgr == null) {
             return;

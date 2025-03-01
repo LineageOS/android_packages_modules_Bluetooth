@@ -27,7 +27,7 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class BipEncodingTest {
 
-    private void testParse(
+    private static void testParse(
             String input,
             int encodingType,
             String encodingStr,
@@ -40,7 +40,7 @@ public class BipEncodingTest {
         assertThat(encoding.isAndroidSupported()).isEqualTo(isAndroidSupported);
     }
 
-    private void testParseMany(
+    private static void testParseMany(
             String[] inputs,
             int encodingType,
             String encodingStr,

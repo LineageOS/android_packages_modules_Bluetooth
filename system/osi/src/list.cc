@@ -4,9 +4,6 @@
 
 #include "osi/include/allocator.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 using namespace bluetooth;
 
 struct list_node_t {
@@ -27,7 +24,7 @@ static list_node_t* list_free_node_(list_t* list, list_node_t* node);
 // Hidden constructor, only to be used by the hash map for the allocation
 // tracker.
 // Behaves the same as |list_new|, except you get to specify the allocator.
-list_t* list_new_internal(list_free_cb callback, const allocator_t* zeroed_allocator) {
+static list_t* list_new_internal(list_free_cb callback, const allocator_t* zeroed_allocator) {
   list_t* list = (list_t*)zeroed_allocator->alloc(sizeof(list_t));
   if (!list) {
     return NULL;

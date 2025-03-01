@@ -34,7 +34,7 @@ import java.util.TreeSet;
 
 /** This class keeps Content Control Ids for LE Audio profiles. */
 public class ContentControlIdKeeper {
-    private static final String TAG = "ContentControlIdKeeper";
+    private static final String TAG = ContentControlIdKeeper.class.getSimpleName();
 
     public static final int CCID_INVALID = 0;
     public static final int CCID_MIN = 0x01;

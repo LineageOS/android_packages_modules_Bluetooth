@@ -54,8 +54,6 @@ public class ScanFilterQueueTest {
         byte[] irk = new byte[] {0x02};
         queue.addDeviceAddress(address, type, irk);
 
-        queue.addServiceChanged();
-
         UUID uuid = UUID.randomUUID();
         queue.addUuid(uuid);
 
@@ -87,7 +85,7 @@ public class ScanFilterQueueTest {
         queue.addAdvertisingDataType(adType, adData, adDataMask);
 
         ScanFilterQueue.Entry[] entries = queue.toArray();
-        int entriesLength = 10;
+        int entriesLength = 9;
         assertThat(entries.length).isEqualTo(entriesLength);
 
         for (ScanFilterQueue.Entry entry : entries) {
@@ -240,7 +238,8 @@ public class ScanFilterQueueTest {
         testServiceDataFilter(filter, true);
     }
 
-    private void testServiceDataFilter(ScanFilter filter, boolean partialServiceDataMatchResult) {
+    private static void testServiceDataFilter(
+            ScanFilter filter, boolean partialServiceDataMatchResult) {
         ScanFilterQueue queue = new ScanFilterQueue();
         queue.addScanFilter(filter);
         ScanFilterQueue.Entry entry = queue.pop();
@@ -288,7 +287,7 @@ public class ScanFilterQueueTest {
                 .isEqualTo(partialServiceDataMatchResult);
     }
 
-    private boolean serviceDataMatches(byte[] filterData, byte[] resultData, byte[] mask) {
+    private static boolean serviceDataMatches(byte[] filterData, byte[] resultData, byte[] mask) {
         if (filterData.length > resultData.length || filterData.length != mask.length) {
             return false;
         }

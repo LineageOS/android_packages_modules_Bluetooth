@@ -25,14 +25,12 @@
 #include <cstdint>
 
 #include "device/include/interop.h"
+#include "device/include/interop_config.h"
 #include "test/common/mock_functions.h"
 
 // Original usings
 
 // Mocked internal structures, if any
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 namespace test {
 namespace mock {
@@ -70,7 +68,6 @@ struct interop_match_addr_or_name interop_match_addr_or_name;
 struct interop_match_manufacturer interop_match_manufacturer;
 struct interop_match_name interop_match_name;
 struct interop_match_vendor_product_ids interop_match_vendor_product_ids;
-struct token_to_ul token_to_ul;
 
 }  // namespace device_interop
 }  // namespace mock
@@ -103,7 +100,6 @@ bool interop_match_addr_or_name::return_value = false;
 bool interop_match_manufacturer::return_value = false;
 bool interop_match_name::return_value = false;
 bool interop_match_vendor_product_ids::return_value = false;
-bool token_to_ul::return_value = false;
 
 }  // namespace device_interop
 }  // namespace mock
@@ -256,10 +252,6 @@ bool interop_match_vendor_product_ids(const interop_feature_t feature, uint16_t 
   inc_func_call_count(__func__);
   return test::mock::device_interop::interop_match_vendor_product_ids(feature, vendor_id,
                                                                       product_id);
-}
-bool token_to_ul(char* token, uint16_t* ul) {
-  inc_func_call_count(__func__);
-  return test::mock::device_interop::token_to_ul(token, ul);
 }
 // Mocked functions complete
 // END mockcify generation

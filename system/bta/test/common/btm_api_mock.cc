@@ -22,12 +22,12 @@
 #include <optional>
 
 #include "bt_octets.h"
+#include "stack/btm/btm_dev.h"
+#include "stack/btm/btm_sec.h"
+#include "stack/include/acl_api.h"
 #include "stack/include/btm_ble_sec_api.h"
 #include "test/mock/mock_stack_btm_interface.h"
 #include "types/raw_address.h"
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 using namespace bluetooth;
 
@@ -61,9 +61,9 @@ void bluetooth::manager::SetMockBtmInterface(MockBtmInterface* mock_btm_interfac
   };
 }
 
-bool BTM_IsLinkKeyKnown(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
+bool BTM_IsBonded(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
   log::assert_that(btm_interface != nullptr, "Mock btm interface not set!");
-  return btm_interface->IsLinkKeyKnown(bd_addr, transport);
+  return btm_interface->IsDeviceBonded(bd_addr, transport);
 }
 
 bool BTM_IsEncrypted(const RawAddress& bd_addr, tBT_TRANSPORT transport) {

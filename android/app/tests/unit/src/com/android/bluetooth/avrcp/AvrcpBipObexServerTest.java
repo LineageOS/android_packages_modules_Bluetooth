@@ -161,7 +161,8 @@ public class AvrcpBipObexServerTest {
      * <p>Our server will use: - getReceivedHeader - sendHeaders - getMaxPacketSize -
      * openOutputStream
      */
-    private Operation makeOperation(HeaderSet requestHeaders, OutputStream os) throws Exception {
+    private static Operation makeOperation(HeaderSet requestHeaders, OutputStream os)
+            throws Exception {
         Operation op = mock(Operation.class);
         when(op.getReceivedHeader()).thenReturn(requestHeaders);
         when(op.getMaxPacketSize()).thenReturn(256);
@@ -169,7 +170,7 @@ public class AvrcpBipObexServerTest {
         return op;
     }
 
-    private byte[] makeDescriptor(int encoding, int width, int height) {
+    private static byte[] makeDescriptor(int encoding, int width, int height) {
         return new BipImageDescriptor.Builder()
                 .setEncoding(encoding)
                 .setFixedDimensions(width, height)

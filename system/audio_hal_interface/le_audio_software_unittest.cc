@@ -635,6 +635,56 @@ TEST_F(LeAudioSoftwareUnicastTestAidl, AcquireAndRelease) {
   ASSERT_NE(nullptr, source_);
 }
 
+TEST_F(LeAudioSoftwareUnicastTestAidl, TrackListUpdate) {
+  ASSERT_NE(nullptr, sink_);
+  ASSERT_NE(nullptr, source_);
+
+  // Recording tracks updates twice - with a valid track and with an empty track list
+  auto& sink_transport =
+          ::bluetooth::audio::aidl::le_audio::LeAudioSinkTransport::interface_unicast_;
+  ASSERT_NE(sink_transport, nullptr);
+  record_track_metadata_v7 recording_tracks[] = {
+          {
+                  .base =
+                          {
+                                  .source = AUDIO_SOURCE_MIC,
+                                  .gain = 1.0f,
+                                  .dest_device = AUDIO_DEVICE_IN_DEFAULT,
+                          },
+                  .channel_mask =
+                          audio_channel_mask_t(AUDIO_CHANNEL_IN_LEFT | AUDIO_CHANNEL_IN_RIGHT),
+                  .tags = {'t', 'a', 'g'},
+          },
+  };
+  EXPECT_CALL(sink_stream_callbacks_, OnSinkMetadataUpdate(testing::_)).Times(2);
+  sink_transport->GetTransportInstance()->SinkMetadataChanged(
+          sink_metadata_v7_t({.track_count = 1, .tracks = recording_tracks}));
+  sink_transport->GetTransportInstance()->SinkMetadataChanged(
+          sink_metadata_v7_t({.track_count = 0, .tracks = nullptr}));
+
+  // Playback tracks updates twice - with a valid track and with an empty track list
+  auto& source_transport = ::bluetooth::audio::aidl::le_audio::LeAudioSourceTransport::interface;
+  ASSERT_NE(source_transport, nullptr);
+  playback_track_metadata_v7 playback_tracks[] = {
+          {
+                  .base =
+                          {
+                                  .usage = AUDIO_USAGE_MEDIA,
+                                  .content_type = AUDIO_CONTENT_TYPE_MOVIE,
+                                  .gain = 1.0f,
+                          },
+                  .channel_mask =
+                          audio_channel_mask_t(AUDIO_CHANNEL_IN_LEFT | AUDIO_CHANNEL_IN_RIGHT),
+                  .tags = {'t', 'a', 'g'},
+          },
+  };
+  EXPECT_CALL(source_stream_callbacks_, OnSourceMetadataUpdate(testing::_, testing::_)).Times(2);
+  source_transport->GetTransportInstance()->SourceMetadataChanged(
+          source_metadata_v7_t({.track_count = 1, .tracks = playback_tracks}));
+  source_transport->GetTransportInstance()->SourceMetadataChanged(
+          source_metadata_v7_t({.track_count = 0, .tracks = nullptr}));
+}
+
 class LeAudioSoftwareUnicastTestHidl : public LeAudioSoftwareUnicastTest {
 protected:
   virtual void SetUp() override {

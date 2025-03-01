@@ -17,6 +17,10 @@ package com.android.bluetooth.map;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
+import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
+import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static java.util.Objects.requireNonNull;
 
@@ -70,7 +74,7 @@ import java.util.List;
 
 // Next tag value for ContentProfileErrorReportUtils.report(): 25
 public class BluetoothMapService extends ProfileService {
-    private static final String TAG = "BluetoothMapService";
+    private static final String TAG = BluetoothMapService.class.getSimpleName();
 
     /**
      * To enable MAP DEBUG/VERBOSE logging - run below cmd in adb shell, and restart
@@ -648,9 +652,9 @@ public class BluetoothMapService extends ProfileService {
             if (getState() == BluetoothMap.STATE_CONNECTED
                     && getRemoteDevice() != null
                     && getRemoteDevice().equals(device)) {
-                return BluetoothProfile.STATE_CONNECTED;
+                return STATE_CONNECTED;
             } else {
-                return BluetoothProfile.STATE_DISCONNECTED;
+                return STATE_DISCONNECTED;
             }
         }
     }
@@ -678,7 +682,7 @@ public class BluetoothMapService extends ProfileService {
                 device, BluetoothProfile.MAP, connectionPolicy)) {
             return false;
         }
-        if (connectionPolicy == BluetoothProfile.CONNECTION_POLICY_FORBIDDEN) {
+        if (connectionPolicy == CONNECTION_POLICY_FORBIDDEN) {
             disconnect(device);
         }
         return true;
@@ -870,8 +874,9 @@ public class BluetoothMapService extends ProfileService {
     }
 
     @Override
-    public void stop() {
-        Log.d(TAG, "stop()");
+    public void cleanup() {
+        Log.i(TAG, "Cleanup BluetoothMap Service");
+
         setBluetoothMapService(null);
         unregisterReceiver(mMapReceiver);
         mAppObserver.shutdown();
@@ -1275,7 +1280,7 @@ public class BluetoothMapService extends ProfileService {
                     return false;
                 }
 
-                return service.getConnectionState(device) == BluetoothProfile.STATE_CONNECTED;
+                return service.getConnectionState(device) == STATE_CONNECTED;
             } catch (RuntimeException e) {
                 ContentProfileErrorReportUtils.report(
                         BluetoothProfile.MAP,
@@ -1355,7 +1360,7 @@ public class BluetoothMapService extends ProfileService {
             try {
                 BluetoothMapService service = getService(source);
                 if (service == null) {
-                    return BluetoothProfile.STATE_DISCONNECTED;
+                    return STATE_DISCONNECTED;
                 }
 
                 return service.getConnectionState(device);
@@ -1394,7 +1399,7 @@ public class BluetoothMapService extends ProfileService {
             try {
                 BluetoothMapService service = getService(source);
                 if (service == null) {
-                    return BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
+                    return CONNECTION_POLICY_UNKNOWN;
                 }
 
                 return service.getConnectionPolicy(device);

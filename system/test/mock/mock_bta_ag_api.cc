@@ -27,11 +27,9 @@
 #include <vector>
 
 #include "bta/include/bta_ag_api.h"
+#include "bta/include/bta_ag_swb_aptx.h"
 #include "test/common/mock_functions.h"
 #include "types/raw_address.h"
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 tBTA_STATUS BTA_AgEnable(tBTA_AG_CBACK* /* p_cback */) {
   inc_func_call_count(__func__);

@@ -31,7 +31,8 @@ import com.android.internal.annotations.VisibleForTesting;
 
 /** HearingAid Native Interface to/from JNI. */
 public class HearingAidNativeInterface {
-    private static final String TAG = "HearingAidNativeInterface";
+    private static final String TAG = HearingAidNativeInterface.class.getSimpleName();
+
     private BluetoothAdapter mAdapter;
 
     @GuardedBy("INSTANCE_LOCK")

@@ -1889,11 +1889,7 @@ bool BtifAvStateMachine::StateIdle::ProcessEvent(uint32_t event, void* p_data) {
                                        peer_.IsSource() ? A2dpType::kSink : A2dpType::kSource);
           peer_.StateMachine().TransitionTo(BtifAvStateMachine::kStateIdle);
         } else {
-          if (peer_.IsSink()) {
-            // If queued PLAY command, send it now
-            btif_rc_check_handle_pending_play(p_bta_data->open.bd_addr,
-                                              (p_bta_data->open.status == BTA_AV_SUCCESS));
-          } else if (peer_.IsSource() && (p_bta_data->open.status == BTA_AV_SUCCESS)) {
+          if (peer_.IsSource() && (p_bta_data->open.status == BTA_AV_SUCCESS)) {
             // Bring up AVRCP connection as well
             BTA_AvOpenRc(peer_.BtaHandle());
           }
@@ -2109,11 +2105,7 @@ bool BtifAvStateMachine::StateOpening::ProcessEvent(uint32_t event, void* p_data
 
       // Change state to Open/Idle based on the status
       peer_.StateMachine().TransitionTo(av_state);
-      if (peer_.IsSink()) {
-        // If queued PLAY command, send it now
-        btif_rc_check_handle_pending_play(p_bta_data->open.bd_addr,
-                                          (p_bta_data->open.status == BTA_AV_SUCCESS));
-      } else if (peer_.IsSource() && (p_bta_data->open.status == BTA_AV_SUCCESS)) {
+      if (peer_.IsSource() && (p_bta_data->open.status == BTA_AV_SUCCESS)) {
         // Bring up AVRCP connection as well
         if (btif_av_src_sink_coexist_enabled() &&
             btif_av_sink.AllowedToConnect(peer_.PeerAddress())) {

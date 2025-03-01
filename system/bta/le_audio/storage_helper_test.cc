@@ -18,13 +18,11 @@
 
 #include <gtest/gtest.h>
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 using bluetooth::le_audio::LeAudioDevice;
 
 namespace bluetooth::le_audio {
-RawAddress GetTestAddress(uint8_t index) {
+
+static RawAddress GetTestAddress(uint8_t index) {
   EXPECT_LT(index, UINT8_MAX);
   RawAddress result = {{0xC0, 0xDE, 0xC0, 0xDE, 0x00, index}};
   return result;

@@ -34,12 +34,9 @@
 #include "stack/include/btm_status.h"
 #include "types/raw_address.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 using namespace bluetooth;
 
-time_t get_current_time() { return time(0); }
+static time_t get_current_time() { return time(0); }
 
 namespace {
 

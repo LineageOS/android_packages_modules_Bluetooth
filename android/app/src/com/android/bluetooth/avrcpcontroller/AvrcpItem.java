@@ -299,7 +299,7 @@ public class AvrcpItem {
 
     /** Builder for an AvrcpItem */
     public static class Builder {
-        private static final String TAG = "AvrcpItem.Builder";
+        private static final String TAG = AvrcpItem.TAG + "." + Builder.class.getSimpleName();
 
         // Attribute ID Values from AVRCP Specification
         private static final int MEDIA_ATTRIBUTE_TITLE = 0x01;

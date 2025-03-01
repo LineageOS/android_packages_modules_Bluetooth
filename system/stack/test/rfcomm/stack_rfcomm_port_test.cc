@@ -33,29 +33,6 @@ protected:
 private:
 };
 
-TEST_F(StackRfcommPortTest, PORT_IsOpening__basic) {
-  RawAddress bd_addr(kRawAddress);
-
-  rfc_cb.port.rfc_mcb[0].state = RFC_MX_STATE_IDLE;
-  ASSERT_FALSE(PORT_IsOpening(&bd_addr));
-  rfc_cb.port.rfc_mcb[0].state = RFC_MX_STATE_WAIT_CONN_CNF;
-  ASSERT_TRUE(PORT_IsOpening(&bd_addr));
-  rfc_cb.port.rfc_mcb[0].state = RFC_MX_STATE_CONFIGURE;
-  ASSERT_TRUE(PORT_IsOpening(&bd_addr));
-  rfc_cb.port.rfc_mcb[0].state = RFC_MX_STATE_SABME_WAIT_UA;
-  ASSERT_TRUE(PORT_IsOpening(&bd_addr));
-  rfc_cb.port.rfc_mcb[0].state = RFC_MX_STATE_WAIT_SABME;
-  ASSERT_TRUE(PORT_IsOpening(&bd_addr));
-  rfc_cb.port.rfc_mcb[0].state = RFC_MX_STATE_CONNECTED;
-  rfc_cb.port.port[0].rfc.p_mcb = &rfc_cb.port.rfc_mcb[0];
-  rfc_cb.port.port[0].rfc.sm_cb.state = RFC_STATE_OPENED;
-  ASSERT_FALSE(PORT_IsOpening(&bd_addr));
-  rfc_cb.port.port[0].rfc.sm_cb.state = RFC_STATE_TERM_WAIT_SEC_CHECK;
-  ASSERT_TRUE(PORT_IsOpening(&bd_addr));
-  rfc_cb.port.rfc_mcb[0].state = RFC_MX_STATE_DISC_WAIT_UA;
-  ASSERT_FALSE(PORT_IsOpening(&bd_addr));
-}
-
 TEST_F(StackRfcommPortTest, PORT_IsCollisionDetected__basic) {
   RawAddress test_bd_addr(kRawAddress);
   RawAddress different_bd_addr(kRawAddress2);

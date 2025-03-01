@@ -15,6 +15,9 @@
  */
 package com.android.bluetooth.avrcpcontroller;
 
+import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
+import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
+
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
@@ -31,7 +34,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothProfile;
 import android.content.Context;
 import android.content.Intent;
 import android.media.AudioManager;
@@ -108,7 +110,7 @@ public class AvrcpControllerServiceTest {
 
     @After
     public void tearDown() throws Exception {
-        mService.stop();
+        mService.cleanup();
         A2dpSinkService.setA2dpSinkService(null);
         mService = AvrcpControllerService.getAvrcpControllerService();
         assertThat(mService).isNull();
@@ -121,14 +123,14 @@ public class AvrcpControllerServiceTest {
 
     @Test
     public void disconnect_whenDisconnected_returnsFalse() {
-        when(mStateMachine.getState()).thenReturn(BluetoothProfile.STATE_DISCONNECTED);
+        when(mStateMachine.getState()).thenReturn(STATE_DISCONNECTED);
 
         assertThat(mService.disconnect(mDevice)).isFalse();
     }
 
     @Test
     public void disconnect_whenDisconnected_returnsTrue() {
-        when(mStateMachine.getState()).thenReturn(BluetoothProfile.STATE_CONNECTED);
+        when(mStateMachine.getState()).thenReturn(STATE_CONNECTED);
 
         assertThat(mService.disconnect(mDevice)).isTrue();
         verify(mStateMachine).disconnect();
@@ -146,7 +148,7 @@ public class AvrcpControllerServiceTest {
     @Test
     public void getConnectedDevices() {
         when(mAdapterService.getBondedDevices()).thenReturn(new BluetoothDevice[] {mDevice});
-        when(mStateMachine.getState()).thenReturn(BluetoothProfile.STATE_CONNECTED);
+        when(mStateMachine.getState()).thenReturn(STATE_CONNECTED);
 
         assertThat(mService.getConnectedDevices()).contains(mDevice);
     }

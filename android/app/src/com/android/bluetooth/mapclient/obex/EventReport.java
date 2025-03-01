@@ -39,7 +39,8 @@ import java.util.Map;
  * <p>This object will be received in {@link Client#EVENT_EVENT_REPORT} callback message.
  */
 public class EventReport {
-    private static final String TAG = "EventReport";
+    private static final String TAG = EventReport.class.getSimpleName();
+
     private final Type mType;
     private final String mDateTime;
     private final String mHandle;
@@ -127,7 +128,7 @@ public class EventReport {
         return ev;
     }
 
-    private Type parseType(String type) throws IllegalArgumentException {
+    private static Type parseType(String type) throws IllegalArgumentException {
         for (Type t : Type.values()) {
             if (t.toString().equals(type)) {
                 return t;
@@ -137,7 +138,7 @@ public class EventReport {
         throw new IllegalArgumentException("Invalid value for type: " + type);
     }
 
-    private Bmessage.Type parseMsgType(String msgType) throws IllegalArgumentException {
+    private static Bmessage.Type parseMsgType(String msgType) throws IllegalArgumentException {
         for (Bmessage.Type t : Bmessage.Type.values()) {
             if (t.name().equals(msgType)) {
                 return t;

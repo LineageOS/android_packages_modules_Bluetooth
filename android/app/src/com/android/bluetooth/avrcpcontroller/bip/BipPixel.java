@@ -46,7 +46,8 @@ import java.util.regex.Pattern;
  * <p>H=(W*H2)/W2
  */
 public class BipPixel {
-    private static final String TAG = "avrcpcontroller.BipPixel";
+    private static final String TAG =
+            AvrcpControllerUtils.TAG_PREFIX_AVRCP_CONTROLLER + BipPixel.class.getSimpleName();
 
     // The BIP specification declares this as the max size to be transferred. You can optionally
     // use this value to indicate there is no upper bound on pixel size.

@@ -243,7 +243,7 @@ class RequestGetMessagesListingForOwnNumber extends Request {
                         + (" maxCount=" + maxCount));
     }
 
-    private byte messageTypeBasedOnFolder(String folderName) {
+    private static byte messageTypeBasedOnFolder(String folderName) {
         byte messageType =
                 (byte)
                         (MessagesFilter.MESSAGE_TYPE_SMS_GSM

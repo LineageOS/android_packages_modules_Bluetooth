@@ -99,7 +99,7 @@ bool btif_av_both_enable(void) { return true; }
 
 static bluetooth::common::MessageLoopThread jni_thread("bt_jni_thread");
 bt_status_t do_in_jni_thread(base::OnceClosure task) {
-  if (!jni_thread.DoInThread(FROM_HERE, std::move(task))) {
+  if (!jni_thread.DoInThread(std::move(task))) {
     log::error("Post task to task runner failed!");
     return BT_STATUS_JNI_THREAD_ATTACH_ERROR;
   }
@@ -118,19 +118,6 @@ protected:
   void SetUp() override { reset_mock_function_count_map(); }
   void TearDown() override {}
 };
-
-TEST_F(BtifRcTest, get_element_attr_rsp) {
-  btif_rc_cb.rc_multi_cb[0].rc_addr = kDeviceAddress;
-  btif_rc_cb.rc_multi_cb[0].rc_connected = true;
-  btif_rc_cb.rc_multi_cb[0].rc_pdu_info[IDX_GET_ELEMENT_ATTR_RSP].is_rsp_pending = true;
-  btif_rc_cb.rc_multi_cb[0].rc_state = BTRC_CONNECTION_STATE_CONNECTED;
-
-  btrc_element_attr_val_t p_attrs[BTRC_MAX_ELEM_ATTR_SIZE];
-  uint8_t num_attr = BTRC_MAX_ELEM_ATTR_SIZE + 1;
-
-  ASSERT_EQ(get_element_attr_rsp(kDeviceAddress, num_attr, p_attrs), BT_STATUS_SUCCESS);
-  ASSERT_EQ(1, get_func_call_count("AVRC_BldResponse"));
-}
 
 TEST_F(BtifRcTest, btif_rc_get_addr_by_handle) {
   RawAddress bd_addr;
@@ -426,7 +413,6 @@ TEST_F(BtifTrackChangeCBTest, handle_get_metadata_attr_response) {
   btif_rc_cb.rc_multi_cb[0].rc_cover_art_psm = 0;
   btif_rc_cb.rc_multi_cb[0].rc_state = BTRC_CONNECTION_STATE_CONNECTED;
   btif_rc_cb.rc_multi_cb[0].rc_addr = kDeviceAddress;
-  btif_rc_cb.rc_multi_cb[0].rc_pending_play = 0;
   btif_rc_cb.rc_multi_cb[0].rc_volume = 0;
   btif_rc_cb.rc_multi_cb[0].rc_vol_label = 0;
   btif_rc_cb.rc_multi_cb[0].rc_supported_event_list = nullptr;

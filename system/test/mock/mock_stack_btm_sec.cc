@@ -25,6 +25,8 @@
 #include <cstdint>
 #include <string>
 
+#include "stack/btm/btm_sec.h"
+#include "stack/include/btm_ble_sec_api.h"
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/btm_status.h"
 #include "test/common/mock_functions.h"
@@ -33,9 +35,6 @@
 // Original usings
 
 // Mocked internal structures, if any
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 namespace test {
 namespace mock {
@@ -47,7 +46,7 @@ struct BTM_ConfirmReqReply BTM_ConfirmReqReply;
 struct BTM_IsAuthenticated BTM_IsAuthenticated;
 struct BTM_IsEncrypted BTM_IsEncrypted;
 struct BTM_IsLinkKeyAuthed BTM_IsLinkKeyAuthed;
-struct BTM_IsLinkKeyKnown BTM_IsLinkKeyKnown;
+struct BTM_IsBonded BTM_IsBonded;
 struct BTM_PINCodeReply BTM_PINCodeReply;
 struct BTM_PasskeyReqReply BTM_PasskeyReqReply;
 struct BTM_PeerSupportsSecureConnections BTM_PeerSupportsSecureConnections;
@@ -74,7 +73,6 @@ struct btm_rem_oob_req btm_rem_oob_req;
 struct btm_sec_abort_access_req btm_sec_abort_access_req;
 struct btm_sec_auth_complete btm_sec_auth_complete;
 struct btm_sec_bond_by_transport btm_sec_bond_by_transport;
-struct btm_sec_check_pending_reqs btm_sec_check_pending_reqs;
 struct btm_sec_clear_ble_keys btm_sec_clear_ble_keys;
 struct btm_sec_conn_req btm_sec_conn_req;
 struct btm_sec_connected btm_sec_connected;
@@ -113,7 +111,7 @@ bool BTM_CanReadDiscoverableCharacteristics::return_value = false;
 bool BTM_IsAuthenticated::return_value = false;
 bool BTM_IsEncrypted::return_value = false;
 bool BTM_IsLinkKeyAuthed::return_value = false;
-bool BTM_IsLinkKeyKnown::return_value = false;
+bool BTM_IsBonded::return_value = false;
 bool BTM_PeerSupportsSecureConnections::return_value = false;
 tBTM_STATUS BTM_SecBond::return_value = tBTM_STATUS::BTM_SUCCESS;
 tBTM_STATUS BTM_SecBondCancel::return_value = tBTM_STATUS::BTM_SUCCESS;
@@ -124,7 +122,7 @@ bool BTM_SecIsLeSecurityPending::return_value = false;
 bool BTM_SecRegister::return_value = false;
 tBTM_STATUS BTM_SetEncryption::return_value = tBTM_STATUS::BTM_SUCCESS;
 bool BTM_SetSecurityLevel::return_value = false;
-const DEV_CLASS btm_get_dev_class::return_value = kDevClassEmpty;
+DEV_CLASS btm_get_dev_class::return_value = kDevClassEmpty;
 tBTM_STATUS btm_sec_bond_by_transport::return_value = tBTM_STATUS::BTM_SUCCESS;
 tBTM_STATUS btm_sec_disconnect::return_value = tBTM_STATUS::BTM_SUCCESS;
 bool btm_sec_is_a_bonded_dev::return_value = false;
@@ -157,9 +155,9 @@ bool BTM_IsLinkKeyAuthed(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
   inc_func_call_count(__func__);
   return test::mock::stack_btm_sec::BTM_IsLinkKeyAuthed(bd_addr, transport);
 }
-bool BTM_IsLinkKeyKnown(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
+bool BTM_IsBonded(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
   inc_func_call_count(__func__);
-  return test::mock::stack_btm_sec::BTM_IsLinkKeyKnown(bd_addr, transport);
+  return test::mock::stack_btm_sec::BTM_IsBonded(bd_addr, transport);
 }
 void BTM_PINCodeReply(const RawAddress& bd_addr, tBTM_STATUS res, uint8_t pin_len, uint8_t* p_pin) {
   inc_func_call_count(__func__);
@@ -238,7 +236,7 @@ void btm_create_conn_cancel_complete(uint8_t status, const RawAddress bd_addr) {
   inc_func_call_count(__func__);
   test::mock::stack_btm_sec::btm_create_conn_cancel_complete(status, bd_addr);
 }
-const DEV_CLASS btm_get_dev_class(const RawAddress& bda) {
+DEV_CLASS btm_get_dev_class(const RawAddress& bda) {
   inc_func_call_count(__func__);
   return test::mock::stack_btm_sec::btm_get_dev_class(bda);
 }
@@ -274,10 +272,6 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr, tBLE_ADDR_TYPE 
                                       tBT_TRANSPORT transport) {
   inc_func_call_count(__func__);
   return test::mock::stack_btm_sec::btm_sec_bond_by_transport(bd_addr, addr_type, transport);
-}
-void btm_sec_check_pending_reqs(void) {
-  inc_func_call_count(__func__);
-  test::mock::stack_btm_sec::btm_sec_check_pending_reqs();
 }
 void btm_sec_clear_ble_keys(tBTM_SEC_DEV_REC* p_dev_rec) {
   inc_func_call_count(__func__);

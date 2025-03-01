@@ -269,16 +269,14 @@ public:
   // bluetooth::hci::AdvertisingCallback
   void OnAdvertisingDataSet(uint8_t advertiser_id,
                             AdvertisingCallback::AdvertisingStatus status) override {
-    if (com::android::bluetooth::flags::leaudio_broadcast_update_metadata_callback()) {
-      int reg_id = bluetooth::shim::GetAdvertising()->GetAdvertiserRegId(advertiser_id);
-      uint8_t client_id = is_native_advertiser(reg_id);
-      if (client_id != kAdvertiserClientIdJni) {
-        // Invoke callback for native client
-        do_in_main_thread(base::Bind(&::AdvertisingCallbacks::OnAdvertisingDataSet,
-                                     base::Unretained(native_adv_callbacks_map_[client_id]),
-                                     advertiser_id, status));
-        return;
-      }
+    int reg_id = bluetooth::shim::GetAdvertising()->GetAdvertiserRegId(advertiser_id);
+    uint8_t client_id = is_native_advertiser(reg_id);
+    if (client_id != kAdvertiserClientIdJni) {
+      // Invoke callback for native client
+      do_in_main_thread(base::Bind(&::AdvertisingCallbacks::OnAdvertisingDataSet,
+                                   base::Unretained(native_adv_callbacks_map_[client_id]),
+                                   advertiser_id, status));
+      return;
     }
     do_in_jni_thread(base::BindOnce(&::AdvertisingCallbacks::OnAdvertisingDataSet,
                                     base::Unretained(advertising_callbacks_), advertiser_id,
@@ -312,16 +310,14 @@ public:
   // bluetooth::hci::AdvertisingCallback
   void OnPeriodicAdvertisingDataSet(uint8_t advertiser_id,
                                     AdvertisingCallback::AdvertisingStatus status) override {
-    if (com::android::bluetooth::flags::leaudio_broadcast_update_metadata_callback()) {
-      int reg_id = bluetooth::shim::GetAdvertising()->GetAdvertiserRegId(advertiser_id);
-      uint8_t client_id = is_native_advertiser(reg_id);
-      if (client_id != kAdvertiserClientIdJni) {
-        // Invoke callback for native client
-        do_in_main_thread(base::Bind(&::AdvertisingCallbacks::OnPeriodicAdvertisingDataSet,
-                                     base::Unretained(native_adv_callbacks_map_[client_id]),
-                                     advertiser_id, status));
-        return;
-      }
+    int reg_id = bluetooth::shim::GetAdvertising()->GetAdvertiserRegId(advertiser_id);
+    uint8_t client_id = is_native_advertiser(reg_id);
+    if (client_id != kAdvertiserClientIdJni) {
+      // Invoke callback for native client
+      do_in_main_thread(base::Bind(&::AdvertisingCallbacks::OnPeriodicAdvertisingDataSet,
+                                   base::Unretained(native_adv_callbacks_map_[client_id]),
+                                   advertiser_id, status));
+      return;
     }
     do_in_jni_thread(base::BindOnce(&::AdvertisingCallbacks::OnPeriodicAdvertisingDataSet,
                                     base::Unretained(advertising_callbacks_), advertiser_id,

@@ -16,7 +16,7 @@
 
 package com.android.bluetooth.btservice.storage;
 
-import android.bluetooth.BluetoothProfile;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
 
 import androidx.room.Entity;
 
@@ -44,25 +44,25 @@ class ProfilePrioritiesEntity {
     public int battery_connection_policy;
 
     ProfilePrioritiesEntity() {
-        a2dp_connection_policy = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-        a2dp_sink_connection_policy = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-        hfp_connection_policy = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-        hfp_client_connection_policy = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-        hid_host_connection_policy = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-        pan_connection_policy = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-        pbap_connection_policy = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-        pbap_client_connection_policy = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-        map_connection_policy = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-        sap_connection_policy = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-        hearing_aid_connection_policy = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-        hap_client_connection_policy = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-        map_client_connection_policy = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-        le_audio_connection_policy = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-        volume_control_connection_policy = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-        csip_set_coordinator_connection_policy = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-        le_call_control_connection_policy = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-        bass_client_connection_policy = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
-        battery_connection_policy = BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
+        a2dp_connection_policy = CONNECTION_POLICY_UNKNOWN;
+        a2dp_sink_connection_policy = CONNECTION_POLICY_UNKNOWN;
+        hfp_connection_policy = CONNECTION_POLICY_UNKNOWN;
+        hfp_client_connection_policy = CONNECTION_POLICY_UNKNOWN;
+        hid_host_connection_policy = CONNECTION_POLICY_UNKNOWN;
+        pan_connection_policy = CONNECTION_POLICY_UNKNOWN;
+        pbap_connection_policy = CONNECTION_POLICY_UNKNOWN;
+        pbap_client_connection_policy = CONNECTION_POLICY_UNKNOWN;
+        map_connection_policy = CONNECTION_POLICY_UNKNOWN;
+        sap_connection_policy = CONNECTION_POLICY_UNKNOWN;
+        hearing_aid_connection_policy = CONNECTION_POLICY_UNKNOWN;
+        hap_client_connection_policy = CONNECTION_POLICY_UNKNOWN;
+        map_client_connection_policy = CONNECTION_POLICY_UNKNOWN;
+        le_audio_connection_policy = CONNECTION_POLICY_UNKNOWN;
+        volume_control_connection_policy = CONNECTION_POLICY_UNKNOWN;
+        csip_set_coordinator_connection_policy = CONNECTION_POLICY_UNKNOWN;
+        le_call_control_connection_policy = CONNECTION_POLICY_UNKNOWN;
+        bass_client_connection_policy = CONNECTION_POLICY_UNKNOWN;
+        battery_connection_policy = CONNECTION_POLICY_UNKNOWN;
     }
 
     public String toString() {

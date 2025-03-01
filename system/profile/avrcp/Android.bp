@@ -98,6 +98,9 @@ cc_fuzz {
     defaults: [
         "fluoride_defaults",
     ],
+    cflags: [
+        "-Wno-missing-prototypes",
+    ],
     srcs: [
         "tests/avrcp_device_fuzz/avrcp_device_fuzz.cc",
     ],

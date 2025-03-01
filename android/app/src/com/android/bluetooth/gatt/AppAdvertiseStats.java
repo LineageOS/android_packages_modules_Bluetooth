@@ -224,7 +224,7 @@ class AppAdvertiseStats {
         MetricsLogger.getInstance().cacheCount(BluetoothProtoEnums.LE_ADV_ERROR_ON_START_COUNT, 1);
     }
 
-    private int convertStatusCode(int status) {
+    private static int convertStatusCode(int status) {
         switch (status) {
             case AdvertisingSetCallback.ADVERTISE_SUCCESS:
                 return BluetoothStatsLog.LE_ADV_ERROR_REPORTED__STATUS_CODE__ADV_STATUS_SUCCESS;
@@ -444,7 +444,7 @@ class AppAdvertiseStats {
         }
     }
 
-    private int convertAdvInterval(int interval) {
+    private static int convertAdvInterval(int interval) {
         switch (interval) {
             case AdvertisingSetParameters.INTERVAL_HIGH:
                 return BluetoothStatsLog.LE_ADV_STATE_CHANGED__ADV_INTERVAL__INTERVAL_HIGH;
@@ -457,7 +457,7 @@ class AppAdvertiseStats {
         }
     }
 
-    private int convertTxPowerLevel(int level) {
+    private static int convertTxPowerLevel(int level) {
         switch (level) {
             case AdvertisingSetParameters.TX_POWER_ULTRA_LOW:
                 return BluetoothStatsLog.LE_ADV_STATE_CHANGED__ADV_TX_POWER__TX_POWER_ULTRA_LOW;

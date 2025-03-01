@@ -17,6 +17,9 @@
 package com.android.bluetooth.avrcpcontroller;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
+import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
+import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
+import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static java.util.Objects.requireNonNull;
 
@@ -24,7 +27,6 @@ import android.annotation.RequiresPermission;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothAvrcpPlayerSettings;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothProfile;
 import android.bluetooth.IBluetoothAvrcpController;
 import android.content.AttributionSource;
 import android.content.Intent;
@@ -52,7 +54,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 /** Provides Bluetooth AVRCP Controller profile, as a service in the Bluetooth application. */
 public class AvrcpControllerService extends ProfileService {
-    static final String TAG = AvrcpControllerService.class.getSimpleName();
+    private static final String TAG = AvrcpControllerService.class.getSimpleName();
 
     static final int MAXIMUM_CONNECTED_DEVICES = 5;
 
@@ -171,7 +173,9 @@ public class AvrcpControllerService extends ProfileService {
     }
 
     @Override
-    public synchronized void stop() {
+    public synchronized void cleanup() {
+        Log.i(TAG, "Cleanup AVRCP Controller Service");
+
         setActiveDevice(null);
         Intent stopIntent = new Intent(this, BluetoothMediaBrowserService.class);
         stopService(stopIntent);
@@ -420,7 +424,7 @@ public class AvrcpControllerService extends ProfileService {
         public int getConnectionState(BluetoothDevice device, AttributionSource source) {
             AvrcpControllerService service = getService(source);
             if (service == null) {
-                return BluetoothProfile.STATE_DISCONNECTED;
+                return STATE_DISCONNECTED;
             }
             return service.getConnectionState(device);
         }
@@ -703,8 +707,7 @@ public class AvrcpControllerService extends ProfileService {
             return false;
         }
         int connectionState = stateMachine.getState();
-        if (connectionState != BluetoothProfile.STATE_CONNECTED
-                && connectionState != BluetoothProfile.STATE_CONNECTING) {
+        if (connectionState != STATE_CONNECTED && connectionState != STATE_CONNECTING) {
             return false;
         }
         stateMachine.disconnect();
@@ -788,9 +791,7 @@ public class AvrcpControllerService extends ProfileService {
 
     synchronized int getConnectionState(BluetoothDevice device) {
         AvrcpControllerStateMachine stateMachine = mDeviceStateMap.get(device);
-        return (stateMachine == null)
-                ? BluetoothProfile.STATE_DISCONNECTED
-                : stateMachine.getState();
+        return (stateMachine == null) ? STATE_DISCONNECTED : stateMachine.getState();
     }
 
     @Override

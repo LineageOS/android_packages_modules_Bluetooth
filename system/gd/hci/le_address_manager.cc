@@ -28,9 +28,6 @@
 
 // TODO(b/378143579) For peer address not in resolving list
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 namespace bluetooth {
 namespace hci {
 
@@ -53,7 +50,7 @@ std::string LeAddressManager::ClientStateText(const ClientState cs) {
   RETURN_UNKNOWN_TYPE_STRING(ClientState, cs);
 }
 
-std::string AddressPolicyText(const LeAddressManager::AddressPolicy policy) {
+static std::string AddressPolicyText(const LeAddressManager::AddressPolicy policy) {
   switch (policy) {
     CASE_RETURN_STRING(LeAddressManager::AddressPolicy::POLICY_NOT_SET);
     CASE_RETURN_STRING(LeAddressManager::AddressPolicy::USE_PUBLIC_ADDRESS);

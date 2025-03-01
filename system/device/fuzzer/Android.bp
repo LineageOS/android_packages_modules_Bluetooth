@@ -26,6 +26,9 @@ package {
 cc_fuzz {
     name: "btdevice_esco_fuzzer",
     defaults: ["fluoride_defaults"],
+    cflags: [
+        "-Wno-missing-prototypes",
+    ],
     srcs: [
         ":TestMockMainShimEntry",
         "btdevice_esco_fuzzer.cpp",

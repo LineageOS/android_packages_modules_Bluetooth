@@ -22,19 +22,17 @@
 #include <base/location.h>
 #include <gtest/gtest.h>
 
+#include "btif/include/btif_common.h"
 #include "btif/include/stack_manager_t.h"
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 typedef void(tBTIF_CBACK)(uint16_t event, char* p_param);
 typedef void(tBTIF_COPY_CBACK)(uint16_t event, char* p_dest, const char* p_src);
 
 // NOTE: Local re-implementation of functions to avoid thread context switching
 static bool sStackRunning;
-bool get_stack_is_running(void) { return sStackRunning; }
+static bool get_stack_is_running(void) { return sStackRunning; }
 static stack_manager_t sStackManager = {
         nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, get_stack_is_running};
 const stack_manager_t* stack_manager_get_interface() { return &sStackManager; }

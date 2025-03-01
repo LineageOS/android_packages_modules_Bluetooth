@@ -79,60 +79,10 @@ flag {
 }
 
 flag {
-    name: "leaudio_getting_active_state_support"
-    namespace: "bluetooth"
-    description: "Introduce getting active state for LE Audio to avoid unnecessary broadcast handover when changing active group"
-    bug: "331387253"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "le_audio_support_unidirectional_voice_assistant"
     namespace: "bluetooth"
     description: "Allow to create unidirectional stream for VOICEASSISTANT"
     bug: "332510824"
-}
-
-flag {
-    name: "leaudio_start_request_state_mutex_check"
-    namespace: "bluetooth"
-    description: "Check mutex before getting start request state"
-    bug: "332847150"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "leaudio_broadcast_assistant_peripheral_entrustment"
-    namespace: "bluetooth"
-    description: "Give peripheral devices more responsibility for source handling"
-    bug: "333050419"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "leaudio_broadcast_destroy_after_timeout"
-    namespace: "bluetooth"
-    description: "Destroy broadcast if it fails to start in time"
-    bug: "332500141"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "leaudio_broadcast_volume_control_with_set_volume"
-    namespace: "bluetooth"
-    description: "Set broadcast sink volume with setVolume API"
-    bug: "333761969"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
 }
 
 flag {
@@ -146,60 +96,10 @@ flag {
 }
 
 flag {
-    name: "leaudio_broadcast_extract_periodic_scanner_from_state_machine"
-    namespace: "bluetooth"
-    description: "Extract periodic scanner from state machine to make it independent from remote devices"
-    bug: "333691526"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "leaudio_allowed_context_mask"
-    namespace: "bluetooth"
-    description: "Set allowed context mask to filter stream requests in native"
-    bug: "336468573"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "leaudio_no_context_validate_streaming_request"
-    namespace: "bluetooth"
-    description: "Request streaming would be send without available cotext validation"
-    bug: "336466406"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "leaudio_use_audio_mode_listener"
-    namespace: "bluetooth"
-    description: "Use Audio Mode listener instead of Telecom in call callback"
-    bug: "339612732"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "leaudio_big_depends_on_audio_state"
     namespace: "bluetooth"
     description: "BIG creation/termination depends on audio resume/pause"
     bug: "347204335"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "leaudio_broadcast_update_metadata_callback"
-    namespace: "bluetooth"
-    description: "Notify upper layer with callback when medadata is updated"
-    bug: "347710374"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -230,16 +130,6 @@ flag {
     namespace: "bluetooth"
     description: "Fix reconfiguration time between call and media"
     bug: "352686917"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "leaudio_broadcast_volume_control_primary_group_only"
-    namespace: "bluetooth"
-    description: "Only control broadcast primary group volume"
-    bug: "354201794"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

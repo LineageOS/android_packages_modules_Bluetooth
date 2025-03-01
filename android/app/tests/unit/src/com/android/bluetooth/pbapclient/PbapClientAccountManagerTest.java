@@ -402,7 +402,7 @@ public class PbapClientAccountManagerTest {
         mBroadcastReceiver.onReceive(mMockContext, intent);
     }
 
-    private Account getAccountForDevice(BluetoothDevice device) {
+    private static Account getAccountForDevice(BluetoothDevice device) {
         return new Account(device.getAddress(), "com.android.bluetooth.pbabclient.account");
     }
 

@@ -66,15 +66,9 @@ class MnsObexServer extends ServerRequestHandler {
     public int onConnect(final HeaderSet request, HeaderSet reply) {
         Log.v(TAG, "onConnect");
 
-        try {
-            byte[] uuid = (byte[]) request.getHeader(HeaderSet.TARGET);
-            if (!Arrays.equals(uuid, MNS_TARGET)) {
-                return ResponseCodes.OBEX_HTTP_NOT_ACCEPTABLE;
-            }
-        } catch (IOException e) {
-            // this should never happen since getHeader won't throw exception it
-            // declares to throw
-            return ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
+        byte[] uuid = (byte[]) request.getHeader(HeaderSet.TARGET);
+        if (!Arrays.equals(uuid, MNS_TARGET)) {
+            return ResponseCodes.OBEX_HTTP_NOT_ACCEPTABLE;
         }
 
         reply.setHeader(HeaderSet.WHO, MNS_TARGET);

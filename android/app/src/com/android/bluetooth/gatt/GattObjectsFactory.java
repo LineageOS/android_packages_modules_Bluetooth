@@ -24,6 +24,7 @@ import com.android.bluetooth.btservice.AdapterService;
 /** Factory class for object initialization to help with unit testing */
 public class GattObjectsFactory {
     private static final String TAG = GattObjectsFactory.class.getSimpleName();
+
     private static GattObjectsFactory sInstance;
     private static final Object INSTANCE_LOCK = new Object();
 

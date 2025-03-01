@@ -33,8 +33,7 @@ import java.util.Date;
 /** This class encapsulates the appParams needed for MAP. */
 // Next tag value for ContentProfileErrorReportUtils.report(): 41
 public class BluetoothMapAppParams {
-
-    private static final String TAG = "BluetoothMapAppParams";
+    private static final String TAG = BluetoothMapAppParams.class.getSimpleName();
 
     private static final int MAX_LIST_COUNT = 0x01;
     private static final int START_OFFSET = 0x02;

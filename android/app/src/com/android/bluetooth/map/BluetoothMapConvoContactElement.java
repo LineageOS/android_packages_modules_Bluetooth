@@ -31,6 +31,7 @@ import java.util.Objects;
 // Next tag value for ContentProfileErrorReportUtils.report(): 1
 public class BluetoothMapConvoContactElement
         implements Comparable<BluetoothMapConvoContactElement> {
+    private static final String TAG = BluetoothMapConvoContactElement.class.getSimpleName();
 
     public static final long CONTACT_ID_TYPE_SMS_MMS = 1;
     public static final long CONTACT_ID_TYPE_EMAIL = 2;
@@ -46,7 +47,6 @@ public class BluetoothMapConvoContactElement
     private static final String XML_ATT_DISPLAY_NAME = "display_name";
     private static final String XML_ATT_UCI = "x_bt_uci";
     protected static final String XML_TAG_CONVOCONTACT = "convocontact";
-    private static final String TAG = "BluetoothMapConvoContactElement";
 
     private String mUci = null;
     private String mName = null;

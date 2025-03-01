@@ -524,7 +524,7 @@ class MapClientContent {
         return Telephony.Threads.getOrCreateThreadId(mContext, messageContacts);
     }
 
-    private void getRecipientsFromMessage(Bmessage message, Set<String> messageContacts) {
+    private static void getRecipientsFromMessage(Bmessage message, Set<String> messageContacts) {
         List<VCardEntry> recipients = message.getRecipients();
         for (VCardEntry recipient : recipients) {
             List<VCardEntry.PhoneData> phoneData = recipient.getPhoneList();
@@ -535,7 +535,7 @@ class MapClientContent {
         }
     }
 
-    private String getOriginatorNumber(Bmessage message) {
+    private static String getOriginatorNumber(Bmessage message) {
         VCardEntry originator = message.getOriginator();
         if (originator == null) {
             return null;
@@ -549,7 +549,7 @@ class MapClientContent {
         return PhoneNumberUtils.extractNetworkPortion(phoneData.get(0).getNumber());
     }
 
-    private String getFirstRecipientNumber(Bmessage message) {
+    private static String getFirstRecipientNumber(Bmessage message) {
         List<VCardEntry> recipients = message.getRecipients();
         if (recipients == null || recipients.isEmpty()) {
             return null;
@@ -794,7 +794,7 @@ class MapClientContent {
         return messages;
     }
 
-    private Type getMessageTypeFromUri(Uri uri) {
+    private static Type getMessageTypeFromUri(Uri uri) {
         if (Sms.CONTENT_URI.equals(uri)
                 || Sms.Inbox.CONTENT_URI.equals(uri)
                 || Sms.Sent.CONTENT_URI.equals(uri)) {

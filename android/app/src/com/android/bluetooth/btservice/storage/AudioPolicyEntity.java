@@ -50,7 +50,7 @@ class AudioPolicyEntity {
         return builder.toString();
     }
 
-    private String metadataToString(int metadata) {
+    private static String metadataToString(int metadata) {
         return String.valueOf(metadata);
     }
 }

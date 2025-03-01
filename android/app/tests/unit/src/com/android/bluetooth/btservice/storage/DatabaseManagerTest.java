@@ -16,6 +16,10 @@
 
 package com.android.bluetooth.btservice.storage;
 
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
+
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
@@ -143,7 +147,7 @@ public final class DatabaseManagerTest {
 
         for (int id = 0; id < BluetoothProfile.MAX_PROFILE_ID; id++) {
             assertThat(mDatabaseManager.getProfileConnectionPolicy(mDevice, id))
-                    .isEqualTo(BluetoothProfile.CONNECTION_POLICY_UNKNOWN);
+                    .isEqualTo(CONNECTION_POLICY_UNKNOWN);
         }
 
         assertThat(mDatabaseManager.getA2dpSupportsOptionalCodecs(mDevice))
@@ -168,41 +172,23 @@ public final class DatabaseManagerTest {
 
         // Cases of device not in database
         testSetGetProfileConnectionPolicyCase(
-                false,
-                BluetoothProfile.CONNECTION_POLICY_UNKNOWN,
-                BluetoothProfile.CONNECTION_POLICY_UNKNOWN,
-                true);
+                false, CONNECTION_POLICY_UNKNOWN, CONNECTION_POLICY_UNKNOWN, true);
         testSetGetProfileConnectionPolicyCase(
-                false,
-                BluetoothProfile.CONNECTION_POLICY_FORBIDDEN,
-                BluetoothProfile.CONNECTION_POLICY_FORBIDDEN,
-                true);
+                false, CONNECTION_POLICY_FORBIDDEN, CONNECTION_POLICY_FORBIDDEN, true);
         testSetGetProfileConnectionPolicyCase(
-                false,
-                BluetoothProfile.CONNECTION_POLICY_ALLOWED,
-                BluetoothProfile.CONNECTION_POLICY_ALLOWED,
-                true);
+                false, CONNECTION_POLICY_ALLOWED, CONNECTION_POLICY_ALLOWED, true);
         testSetGetProfileConnectionPolicyCase(
-                false, badConnectionPolicy, BluetoothProfile.CONNECTION_POLICY_UNKNOWN, false);
+                false, badConnectionPolicy, CONNECTION_POLICY_UNKNOWN, false);
 
         // Cases of device already in database
         testSetGetProfileConnectionPolicyCase(
-                true,
-                BluetoothProfile.CONNECTION_POLICY_UNKNOWN,
-                BluetoothProfile.CONNECTION_POLICY_UNKNOWN,
-                true);
+                true, CONNECTION_POLICY_UNKNOWN, CONNECTION_POLICY_UNKNOWN, true);
         testSetGetProfileConnectionPolicyCase(
-                true,
-                BluetoothProfile.CONNECTION_POLICY_FORBIDDEN,
-                BluetoothProfile.CONNECTION_POLICY_FORBIDDEN,
-                true);
+                true, CONNECTION_POLICY_FORBIDDEN, CONNECTION_POLICY_FORBIDDEN, true);
         testSetGetProfileConnectionPolicyCase(
-                true,
-                BluetoothProfile.CONNECTION_POLICY_ALLOWED,
-                BluetoothProfile.CONNECTION_POLICY_ALLOWED,
-                true);
+                true, CONNECTION_POLICY_ALLOWED, CONNECTION_POLICY_ALLOWED, true);
         testSetGetProfileConnectionPolicyCase(
-                true, badConnectionPolicy, BluetoothProfile.CONNECTION_POLICY_UNKNOWN, false);
+                true, badConnectionPolicy, CONNECTION_POLICY_UNKNOWN, false);
     }
 
     @Test
@@ -1431,6 +1417,28 @@ public final class DatabaseManagerTest {
         }
     }
 
+    @Test
+    public void testDatabaseMigration_121_122() throws IOException {
+        // Create a database with version 121
+        SupportSQLiteDatabase db = testHelper.createDatabase(DB_NAME, 121);
+
+        // insert a device to the database
+        ContentValues device = contentValuesDevice_121();
+        assertThat(db.insert("metadata", SQLiteDatabase.CONFLICT_IGNORE, device)).isNotEqualTo(-1);
+
+        // Migrate database from 121 to 122
+        db.close();
+        db =
+                testHelper.runMigrationsAndValidate(
+                        DB_NAME, 122, true, MetadataDatabase.MIGRATION_121_122);
+        Cursor cursor = db.query("SELECT * FROM metadata");
+        assertHasColumn(cursor, "key_missing_count", true);
+        while (cursor.moveToNext()) {
+            // Check the new columns was added with default value
+            assertColumnIntData(cursor, "key_missing_count", 0);
+        }
+    }
+
     private ContentValues createContentValuesDeviceCommon() {
         ContentValues device = new ContentValues();
         device.put("address", mDevice.getAddress());
@@ -1615,6 +1623,12 @@ public final class DatabaseManagerTest {
         return device;
     }
 
+    private ContentValues contentValuesDevice_121() {
+        ContentValues device = contentValuesDevice_120();
+        device.put("is_preferred_microphone_for_calls", 1);
+        return device;
+    }
+
     /** Helper function to check whether the database has the expected column */
     void assertHasColumn(Cursor cursor, String columnName, boolean hasColumn) {
         if (hasColumn) {
@@ -1685,8 +1699,8 @@ public final class DatabaseManagerTest {
 
         // Check number of metadata in the database
         if (!stored) {
-            if (connectionPolicy != BluetoothProfile.CONNECTION_POLICY_FORBIDDEN
-                    && connectionPolicy != BluetoothProfile.CONNECTION_POLICY_ALLOWED) {
+            if (connectionPolicy != CONNECTION_POLICY_FORBIDDEN
+                    && connectionPolicy != CONNECTION_POLICY_ALLOWED) {
                 // Database won't be updated
                 assertThat(list).isEmpty();
                 return;

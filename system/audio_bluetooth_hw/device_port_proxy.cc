@@ -101,11 +101,11 @@ std::vector<std::string> CovertAudioTagFromV7(char* tags_v7) {
   std::vector<std::string> tags;
   char tags_copy[AUDIO_ATTRIBUTES_TAGS_MAX_SIZE];
   strlcpy(tags_copy, tags_v7, AUDIO_ATTRIBUTES_TAGS_MAX_SIZE);
-  char* tag = strtok(tags_copy, ";");
-
+  char* tmpstr;
+  char* tag = strtok_r(tags_copy, ";", &tmpstr);
   while (tag != NULL) {
     tags.push_back(tag);
-    tag = strtok(NULL, ";");
+    tag = strtok_r(NULL, ";", &tmpstr);
   }
 
   return tags;
@@ -119,7 +119,8 @@ constexpr unsigned int kMaxWaitingTimeMs = 4500;
 BluetoothAudioPortAidl::BluetoothAudioPortAidl()
     : cookie_(::aidl::android::hardware::bluetooth::audio::kObserversCookieUndefined),
       state_(BluetoothStreamState::DISABLED),
-      session_type_(SessionType::UNKNOWN) {}
+      session_type_(SessionType::UNKNOWN),
+      latency_mode_callback_(NULL) {}
 
 BluetoothAudioPortAidlOut::~BluetoothAudioPortAidlOut() {
   if (in_use()) {
@@ -165,10 +166,25 @@ bool BluetoothAudioPortAidl::SetUp(audio_devices_t devices) {
     }
     port->SessionChangedHandler();
   };
+
+  auto low_latency_allowed_cb = [port = this](uint16_t cookie, bool allowed) {
+    if (!port->in_use()) {
+      LOG(ERROR) << "low_latency_allowed_cb: BluetoothAudioPortAidl is not in use";
+      return;
+    }
+    if (port->cookie_ != cookie) {
+      LOG(ERROR) << "low_latency_allowed_cb: proxy of device port (cookie="
+                 << StringPrintf("%#hx", cookie) << ") is corrupted";
+      return;
+    }
+    port->LowLatencyAllowedHander(allowed);
+  };
+
   // TODO: Add audio_config_changed_cb
   PortStatusCallbacks cbacks = {
           .control_result_cb_ = control_result_cb,
           .session_changed_cb_ = session_changed_cb,
+          .low_latency_mode_allowed_cb_ = low_latency_allowed_cb,
   };
   cookie_ = BluetoothAudioSessionControl::RegisterControlResultCback(session_type_, cbacks);
   LOG(INFO) << __func__ << ": session_type=" << toString(session_type_)
@@ -313,6 +329,22 @@ void BluetoothAudioPortAidl::SessionChangedHandler() {
   internal_cv_.notify_all();
 }
 
+void BluetoothAudioPortAidl::LowLatencyAllowedHander(bool allowed) {
+  if (!in_use()) {
+    LOG(ERROR) << __func__ << ": BluetoothAudioPortAidl is not in use";
+    return;
+  }
+  LOG(INFO) << __func__ << ": allowed=" << allowed;
+  std::unique_lock<std::mutex> port_lock(cv_mutex_);
+  if (latency_mode_callback_) {
+    audio_latency_mode_t modes[2];
+    size_t num_modes = 2;
+    GetRecommendedLatencyModes(modes, &num_modes);
+    latency_mode_callback_(modes, num_modes, latency_mode_callback_cookie_);
+  }
+  port_lock.unlock();
+}
+
 bool BluetoothAudioPortAidl::in_use() const {
   return cookie_ != ::aidl::android::hardware::bluetooth::audio::kObserversCookieUndefined;
 }
@@ -425,7 +457,7 @@ bool BluetoothAudioPortAidl::CondwaitState(BluetoothStreamState state) {
   return retval;  // false if any failure like timeout
 }
 
-bool BluetoothAudioPortAidl::Start() {
+bool BluetoothAudioPortAidl::Start(bool low_latency) {
   if (!in_use()) {
     LOG(ERROR) << __func__ << ": BluetoothAudioPortAidl is not in use";
     return false;
@@ -437,7 +469,7 @@ bool BluetoothAudioPortAidl::Start() {
   bool retval = false;
   if (state_ == BluetoothStreamState::STANDBY) {
     state_ = BluetoothStreamState::STARTING;
-    if (BluetoothAudioSessionControl::StartStream(session_type_)) {
+    if (BluetoothAudioSessionControl::StartStream(session_type_, low_latency)) {
       retval = CondwaitState(BluetoothStreamState::STARTING);
     } else {
       LOG(ERROR) << __func__ << ": session_type=" << toString(session_type_)
@@ -504,6 +536,96 @@ void BluetoothAudioPortAidl::Stop() {
             << ", cookie=" << StringPrintf("%#hx", cookie_) << ", state=" << state_ << " done";
 }
 
+using ::aidl::android::hardware::bluetooth::audio::LatencyMode;
+
+static LatencyMode hidl_latency_mode_to_aidl(audio_latency_mode_t mode) {
+  LatencyMode a2dp_latency_mode = LatencyMode::UNKNOWN;
+  switch (mode) {
+    case AUDIO_LATENCY_MODE_FREE:
+      a2dp_latency_mode = LatencyMode::FREE;
+      break;
+    case AUDIO_LATENCY_MODE_LOW:
+      a2dp_latency_mode = LatencyMode::LOW_LATENCY;
+      break;
+    default:
+      a2dp_latency_mode = LatencyMode::UNKNOWN;
+      break;
+  }
+  return a2dp_latency_mode;
+}
+
+bool BluetoothAudioPortAidl::SetLatencyMode(audio_latency_mode_t mode) {
+  if (!in_use()) {
+    return false;
+  }
+
+  LOG(INFO) << __func__ << ": session_type=" << toString(session_type_) << ", mode=" << mode;
+
+  BluetoothAudioSessionControl::SetLatencyMode(session_type_, hidl_latency_mode_to_aidl(mode));
+
+  return true;
+}
+
+int BluetoothAudioPortAidl::GetRecommendedLatencyModes(audio_latency_mode_t* modes,
+                                                       size_t* num_modes) {
+  if (!in_use()) {
+    return -ENOSYS;
+  }
+
+  LOG(INFO) << __func__ << ": session_type=" << toString(session_type_);
+
+  std::vector<LatencyMode> a2dp_modes =
+          BluetoothAudioSessionControl::GetSupportedLatencyModes(session_type_);
+
+  size_t num_buffer = *num_modes;
+  if (num_buffer < a2dp_modes.size()) {
+    LOG(WARNING) << __func__ << ": audio buffer size " << num_buffer << " <  " << a2dp_modes.size()
+                 << "  A2DP latency modes";
+  } else {
+    num_buffer = a2dp_modes.size();
+    LOG(DEBUG) << __func__ << ": get " << num_buffer << " A2DP latency modes";
+  }
+  *num_modes = 0;
+  for (int i = 0; i < num_buffer; i++) {
+    switch (a2dp_modes[i]) {
+      case LatencyMode::FREE:
+        *(modes + *num_modes) = AUDIO_LATENCY_MODE_FREE;
+        ++(*num_modes);
+        break;
+      case LatencyMode::LOW_LATENCY:
+        *(modes + *num_modes) = AUDIO_LATENCY_MODE_LOW;
+        ++(*num_modes);
+        break;
+      case LatencyMode::UNKNOWN:
+      default:
+        LOG(WARNING) << __func__ << ": ignore the " << i << "-th mode "
+                     << toString(a2dp_modes[i]).c_str() << "%s unknown";
+    }
+  }
+  if (*num_modes != num_buffer) {
+    LOG(WARNING) << __func__ << ": correct num_modes " << num_buffer << " to " << *num_modes;
+  }
+  return 0;
+}
+
+int BluetoothAudioPortAidl::SetLatencyModeCallback(stream_latency_mode_callback_t callback,
+                                                   void* cookie) {
+  if (!in_use()) {
+    return -ENOSYS;
+  }
+
+  if (callback != NULL && cookie == NULL) {
+    return -EINVAL;
+  }
+
+  std::unique_lock<std::mutex> port_lock(cv_mutex_);
+  latency_mode_callback_ = callback;
+  latency_mode_callback_cookie_ = cookie;
+  port_lock.unlock();
+
+  return 0;
+}
+
 size_t BluetoothAudioPortAidlOut::WriteData(const void* buffer, size_t bytes) const {
   if (!in_use()) {
     return 0;
@@ -566,17 +688,17 @@ void BluetoothAudioPortAidl::UpdateSourceMetadata(const source_metadata_v7* sour
              << ", cookie=" << StringPrintf("%#hx", cookie_) << ", state=" << state_ << ", "
              << source_metadata->track_count << " track(s)";
   ssize_t track_count = source_metadata->track_count;
-  if (track_count == 0) {
-    return;
-  }
   SourceMetadata hal_source_metadata;
-  hal_source_metadata.tracks.resize(track_count);
-  for (int i = 0; i < track_count; i++) {
-    hal_source_metadata.tracks[i].usage =
-            static_cast<AudioUsage>(source_metadata->tracks[i].base.usage);
-    hal_source_metadata.tracks[i].contentType =
-            static_cast<AudioContentType>(source_metadata->tracks[i].base.content_type);
-    hal_source_metadata.tracks[i].tags = CovertAudioTagFromV7(source_metadata->tracks[i].tags);
+
+  if (track_count != 0) {
+    hal_source_metadata.tracks.resize(track_count);
+    for (int i = 0; i < track_count; i++) {
+      hal_source_metadata.tracks[i].usage =
+              static_cast<AudioUsage>(source_metadata->tracks[i].base.usage);
+      hal_source_metadata.tracks[i].contentType =
+              static_cast<AudioContentType>(source_metadata->tracks[i].base.content_type);
+      hal_source_metadata.tracks[i].tags = CovertAudioTagFromV7(source_metadata->tracks[i].tags);
+    }
   }
 
   BluetoothAudioSessionControl::UpdateSourceMetadata(session_type_, hal_source_metadata);
@@ -591,16 +713,16 @@ void BluetoothAudioPortAidl::UpdateSinkMetadata(const sink_metadata_v7* sink_met
              << ", cookie=" << StringPrintf("%#hx", cookie_) << ", state=" << state_ << ", "
              << sink_metadata->track_count << " track(s)";
   ssize_t track_count = sink_metadata->track_count;
-  if (track_count == 0) {
-    return;
-  }
   SinkMetadata hal_sink_metadata;
-  hal_sink_metadata.tracks.resize(track_count);
-  for (int i = 0; i < track_count; i++) {
-    hal_sink_metadata.tracks[i].source =
-            static_cast<AudioSource>(sink_metadata->tracks[i].base.source);
-    hal_sink_metadata.tracks[i].gain = sink_metadata->tracks[i].base.gain;
-    hal_sink_metadata.tracks[i].tags = CovertAudioTagFromV7(sink_metadata->tracks[i].tags);
+
+  if (track_count != 0) {
+    hal_sink_metadata.tracks.resize(track_count);
+    for (int i = 0; i < track_count; i++) {
+      hal_sink_metadata.tracks[i].source =
+              static_cast<AudioSource>(sink_metadata->tracks[i].base.source);
+      hal_sink_metadata.tracks[i].gain = sink_metadata->tracks[i].base.gain;
+      hal_sink_metadata.tracks[i].tags = CovertAudioTagFromV7(sink_metadata->tracks[i].tags);
+    }
   }
 
   BluetoothAudioSessionControl::UpdateSinkMetadata(session_type_, hal_sink_metadata);

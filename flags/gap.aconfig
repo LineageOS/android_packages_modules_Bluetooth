@@ -9,9 +9,9 @@ flag {
 }
 
 flag {
-    name: "scan_manager_refactor"
+    name: "only_start_scan_during_ble_on"
     namespace: "bluetooth"
-    description: "Refactor scan manager as described in go/scan-manager-refactor"
+    description: "Instead of starting scan and gatt in ble_on, only start scan"
     bug: "313335632"
 }
 
@@ -280,6 +280,36 @@ flag {
     namespace: "bluetooth"
     description: "Optimized batch scan for less wakeups"
     bug: "392132489"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "prevent_concurrent_conn_param_updates"
+    namespace: "bluetooth"
+    description: "Makes only one connection parameter update can be processed at a time per device."
+    bug: "397316770"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "distance_measurement_thread"
+    namespace: "bluetooth"
+    description: "Makes distance measurement operations run on one thread."
+    bug: "397809459"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "scan_controller_thread"
+    namespace: "bluetooth"
+    description: "Makes scan controller operations run on one thread."
+    bug: "397863857"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

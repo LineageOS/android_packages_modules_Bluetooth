@@ -33,11 +33,9 @@
 #include "csis_types.h"
 #include "gatt/database_builder.h"
 #include "hardware/bt_gatt_types.h"
+#include "stack/gatt/gatt_int.h"
 #include "stack/include/bt_uuid16.h"
 #include "test/common/mock_functions.h"
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 bool gatt_cl_read_sirk_req(const RawAddress& /*peer_bda*/,
                            base::OnceCallback<void(tGATT_STATUS status, const RawAddress&,
@@ -75,6 +73,7 @@ using testing::SetArgPointee;
 using testing::WithArg;
 
 // Disables most likely false-positives from base::SplitString()
+extern "C" const char* __asan_default_options();
 extern "C" const char* __asan_default_options() { return "detect_container_overflow=0"; }
 
 RawAddress GetTestAddress(int index) {
@@ -370,7 +369,7 @@ protected:
     SetMockCsisLockCallback(&csis_lock_cb);
     callbacks.reset(new MockCsisCallbacks());
 
-    ON_CALL(btm_interface, IsLinkKeyKnown(_, _)).WillByDefault(DoAll(Return(true)));
+    ON_CALL(btm_interface, IsDeviceBonded(_, _)).WillByDefault(DoAll(Return(true)));
 
     ON_CALL(btm_interface, BTM_IsEncrypted(_, _)).WillByDefault(DoAll(Return(true)));
 
@@ -725,7 +724,7 @@ TEST_F(CsisClientTest, test_connect_after_remove) {
   CsisClient::Get()->RemoveDevice(test_address);
 
   EXPECT_CALL(*callbacks, OnConnectionState(test_address, ConnectionState::DISCONNECTED));
-  ON_CALL(btm_interface, IsLinkKeyKnown(_, _)).WillByDefault(Return(false));
+  ON_CALL(btm_interface, IsDeviceBonded(_, _)).WillByDefault(Return(false));
   CsisClient::Get()->Connect(test_address);
   Mock::VerifyAndClearExpectations(callbacks.get());
 

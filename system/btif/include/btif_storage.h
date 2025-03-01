@@ -296,8 +296,11 @@ void btif_storage_leaudio_update_ase_bin(const RawAddress& addr);
 void btif_storage_leaudio_update_handles_bin(const RawAddress& addr);
 
 /** Store Le Audio device audio locations */
-void btif_storage_set_leaudio_audio_location(const RawAddress& addr, uint32_t sink_location,
-                                             uint32_t source_location);
+void btif_storage_set_leaudio_sink_audio_location(const RawAddress& addr, uint32_t sink_location);
+
+/** Store Le Audio device audio locations */
+void btif_storage_set_leaudio_source_audio_location(const RawAddress& addr,
+                                                    uint32_t source_location);
 
 /** Store Le Audio device context types */
 void btif_storage_set_leaudio_supported_context_types(const RawAddress& addr,

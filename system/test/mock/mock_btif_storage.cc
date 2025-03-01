@@ -25,10 +25,9 @@
 
 #include <cstdint>
 
+#include "btif/include/btif_api.h"
+#include "btif/include/btif_storage.h"
 #include "test/common/mock_functions.h"
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 // Original usings
 using bluetooth::Uuid;
@@ -41,7 +40,6 @@ namespace btif_storage {
 
 // Function state capture and return values, if needed
 struct btif_debug_linkkey_type_dump btif_debug_linkkey_type_dump;
-struct btif_has_ble_keys btif_has_ble_keys;
 struct btif_in_fetch_bonded_ble_device btif_in_fetch_bonded_ble_device;
 struct btif_in_fetch_bonded_device btif_in_fetch_bonded_device;
 struct btif_split_uuids_string btif_split_uuids_string;
@@ -49,7 +47,6 @@ struct btif_storage_add_ble_bonding_key btif_storage_add_ble_bonding_key;
 struct btif_storage_add_ble_local_key btif_storage_add_ble_local_key;
 struct btif_storage_add_bonded_device btif_storage_add_bonded_device;
 struct btif_storage_add_remote_device btif_storage_add_remote_device;
-struct btif_storage_get_adapter_prop btif_storage_get_adapter_prop;
 struct btif_storage_get_adapter_property btif_storage_get_adapter_property;
 struct btif_storage_get_ble_bonding_key btif_storage_get_ble_bonding_key;
 struct btif_storage_get_ble_local_key btif_storage_get_ble_local_key;
@@ -57,11 +54,9 @@ struct btif_storage_get_gatt_cl_db_hash btif_storage_get_gatt_cl_db_hash;
 struct btif_storage_get_gatt_cl_supp_feat btif_storage_get_gatt_cl_supp_feat;
 struct btif_storage_get_remote_addr_type btif_storage_get_remote_addr_type;
 struct btif_storage_get_remote_device_property btif_storage_get_remote_device_property;
-struct btif_storage_get_remote_prop btif_storage_get_remote_prop;
 struct btif_storage_get_sr_supp_feat btif_storage_get_sr_supp_feat;
 struct btif_storage_get_stored_remote_name btif_storage_get_stored_remote_name;
 struct btif_storage_get_cod btif_storage_get_cod;
-struct btif_storage_invoke_addr_type_update btif_storage_invoke_addr_type_update;
 struct btif_storage_is_restricted_device btif_storage_is_restricted_device;
 struct btif_storage_load_bonded_devices btif_storage_load_bonded_devices;
 struct btif_storage_load_le_devices btif_storage_load_le_devices;
@@ -86,7 +81,6 @@ namespace test {
 namespace mock {
 namespace btif_storage {
 
-bool btif_has_ble_keys::return_value = false;
 bt_status_t btif_in_fetch_bonded_ble_device::return_value = BT_STATUS_SUCCESS;
 bt_status_t btif_in_fetch_bonded_device::return_value = BT_STATUS_SUCCESS;
 size_t btif_split_uuids_string::return_value = 0;
@@ -94,7 +88,6 @@ bt_status_t btif_storage_add_ble_bonding_key::return_value = BT_STATUS_SUCCESS;
 bt_status_t btif_storage_add_ble_local_key::return_value = BT_STATUS_SUCCESS;
 bt_status_t btif_storage_add_bonded_device::return_value = BT_STATUS_SUCCESS;
 bt_status_t btif_storage_add_remote_device::return_value = BT_STATUS_SUCCESS;
-bt_status_t btif_storage_get_adapter_prop::return_value = BT_STATUS_SUCCESS;
 bt_status_t btif_storage_get_adapter_property::return_value = BT_STATUS_SUCCESS;
 bt_status_t btif_storage_get_ble_bonding_key::return_value = BT_STATUS_SUCCESS;
 bt_status_t btif_storage_get_ble_local_key::return_value = BT_STATUS_SUCCESS;
@@ -102,7 +95,6 @@ Octet16 btif_storage_get_gatt_cl_db_hash::return_value = {};
 uint8_t btif_storage_get_gatt_cl_supp_feat::return_value = 0;
 bt_status_t btif_storage_get_remote_addr_type::return_value = BT_STATUS_SUCCESS;
 bt_status_t btif_storage_get_remote_device_property::return_value = BT_STATUS_SUCCESS;
-bt_status_t btif_storage_get_remote_prop::return_value = BT_STATUS_SUCCESS;
 uint8_t btif_storage_get_sr_supp_feat::return_value = 0;
 bool btif_storage_get_stored_remote_name::return_value = false;
 bool btif_storage_get_cod::return_value = false;
@@ -123,10 +115,6 @@ std::vector<bluetooth::Uuid> btif_storage_get_services::return_value =
 void btif_debug_linkkey_type_dump(int fd) {
   inc_func_call_count(__func__);
   test::mock::btif_storage::btif_debug_linkkey_type_dump(fd);
-}
-bool btif_has_ble_keys(const std::string& bdstr) {
-  inc_func_call_count(__func__);
-  return test::mock::btif_storage::btif_has_ble_keys(bdstr);
 }
 bt_status_t btif_in_fetch_bonded_ble_device(const std::string& remote_bd_addr, int add,
                                             btif_bonded_devices_t* p_bonded_devices) {
@@ -164,11 +152,6 @@ bt_status_t btif_storage_add_remote_device(const RawAddress* remote_bd_addr,
   return test::mock::btif_storage::btif_storage_add_remote_device(remote_bd_addr, num_properties,
                                                                   properties);
 }
-bt_status_t btif_storage_get_adapter_prop(bt_property_type_t type, void* buf, int size,
-                                          bt_property_t* property) {
-  inc_func_call_count(__func__);
-  return test::mock::btif_storage::btif_storage_get_adapter_prop(type, buf, size, property);
-}
 bt_status_t btif_storage_get_adapter_property(bt_property_t* property) {
   inc_func_call_count(__func__);
   return test::mock::btif_storage::btif_storage_get_adapter_property(property);
@@ -202,12 +185,6 @@ bt_status_t btif_storage_get_remote_device_property(const RawAddress* remote_bd_
   return test::mock::btif_storage::btif_storage_get_remote_device_property(remote_bd_addr,
                                                                            property);
 }
-bt_status_t btif_storage_get_remote_prop(RawAddress* remote_addr, bt_property_type_t type,
-                                         void* buf, int size, bt_property_t* property) {
-  inc_func_call_count(__func__);
-  return test::mock::btif_storage::btif_storage_get_remote_prop(remote_addr, type, buf, size,
-                                                                property);
-}
 uint8_t btif_storage_get_sr_supp_feat(const RawAddress& bd_addr) {
   inc_func_call_count(__func__);
   return test::mock::btif_storage::btif_storage_get_sr_supp_feat(bd_addr);
@@ -219,11 +196,6 @@ bool btif_storage_get_stored_remote_name(const RawAddress& bd_addr, char* name) 
 bool btif_storage_get_cod(const RawAddress& bd_addr, uint32_t* cod) {
   inc_func_call_count(__func__);
   return test::mock::btif_storage::btif_storage_get_cod(bd_addr, cod);
-}
-void btif_storage_invoke_addr_type_update(const RawAddress& remote_bd_addr,
-                                          const tBLE_ADDR_TYPE& addr_type) {
-  inc_func_call_count(__func__);
-  test::mock::btif_storage::btif_storage_invoke_addr_type_update(remote_bd_addr, addr_type);
 }
 bool btif_storage_is_restricted_device(const RawAddress* remote_bd_addr) {
   inc_func_call_count(__func__);

@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.io.InputStream;
 
 abstract class PbapClientRequest {
-    static final String TAG = PbapClientRequest.class.getSimpleName();
+    private static final String TAG = PbapClientRequest.class.getSimpleName();
 
     // Request Types
     public static final int TYPE_PULL_PHONEBOOK_METADATA = 0;

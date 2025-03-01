@@ -24,9 +24,6 @@
 #include <cstdint>
 #include <functional>
 
-// Original included files, if any
-#include <cutils/properties.h>
-
 // Mocked compile conditionals, if any
 
 namespace test {

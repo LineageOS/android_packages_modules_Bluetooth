@@ -53,7 +53,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 // Next tag value for ContentProfileErrorReportUtils.report(): 4
 class BluetoothPbapUtils {
-    private static final String TAG = "BluetoothPbapUtils";
+    private static final String TAG = BluetoothPbapUtils.class.getSimpleName();
 
     // Filter constants from Bluetooth PBAP specification
     private static final int FILTER_PHOTO = 3;

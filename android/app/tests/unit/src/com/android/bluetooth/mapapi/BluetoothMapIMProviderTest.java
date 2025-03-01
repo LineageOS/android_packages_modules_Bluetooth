@@ -58,8 +58,7 @@ import java.util.Set;
 
 @RunWith(AndroidJUnit4.class)
 public class BluetoothMapIMProviderTest {
-
-    private static final String TAG = "MapIMProviderTest";
+    private static final String TAG = BluetoothMapIMProviderTest.class.getSimpleName();
 
     private static final String AUTHORITY = "com.test";
     private static final String ACCOUNT_ID = "12345";
@@ -573,7 +572,7 @@ public class BluetoothMapIMProviderTest {
 
         Mockito.clearInvocations(resolver);
         String accountId = "32608910";
-        expectedUri = BluetoothMapContract.buildAccountUriwithId(AUTHORITY, accountId);
+        expectedUri = BluetoothMapContract.buildAccountUriWithId(AUTHORITY, accountId);
         mProvider.onAccountChanged(accountId);
         verify(resolver).notifyChange(expectedUri, null);
     }

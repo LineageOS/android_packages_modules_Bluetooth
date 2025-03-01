@@ -28,6 +28,7 @@
 #include <cstdint>
 
 #include "bta/dm/bta_dm_disc_int.h"
+#include "bta/dm/bta_dm_int.h"
 #include "bta/dm/bta_dm_sec_int.h"
 #include "types/raw_address.h"
 
@@ -372,11 +373,11 @@ extern struct bta_dm_enable bta_dm_enable;
 // Params: const RawAddress* bd_addr, tBT_TRANSPORT transport, void* p_ref_data,
 // tBTM_STATUS result Return: void
 struct bta_dm_encrypt_cback {
-  std::function<void(const RawAddress* bd_addr, tBT_TRANSPORT transport, void* p_ref_data,
+  std::function<void(RawAddress bd_addr, tBT_TRANSPORT transport, void* p_ref_data,
                      tBTM_STATUS result)>
-          body{[](const RawAddress* /* bd_addr */, tBT_TRANSPORT /* transport */,
-                  void* /* p_ref_data */, tBTM_STATUS /* result */) {}};
-  void operator()(const RawAddress* bd_addr, tBT_TRANSPORT transport, void* p_ref_data,
+          body{[](RawAddress /* bd_addr */, tBT_TRANSPORT /* transport */, void* /* p_ref_data */,
+                  tBTM_STATUS /* result */) {}};
+  void operator()(RawAddress bd_addr, tBT_TRANSPORT transport, void* p_ref_data,
                   tBTM_STATUS result) {
     body(bd_addr, transport, p_ref_data, result);
   }
@@ -439,21 +440,6 @@ struct bta_dm_on_encryption_change {
   void operator()(bt_encryption_change_evt encryption_change) { body(encryption_change); }
 };
 extern struct bta_dm_on_encryption_change bta_dm_on_encryption_change;
-
-// Name: bta_dm_rm_cback
-// Params: tBTA_SYS_CONN_STATUS status, uint8_t id, uint8_t app_id, const
-// RawAddress& peer_addr Return: void
-struct bta_dm_rm_cback {
-  std::function<void(tBTA_SYS_CONN_STATUS status, uint8_t id, uint8_t app_id,
-                     const RawAddress& peer_addr)>
-          body{[](tBTA_SYS_CONN_STATUS /* status */, uint8_t /* id */, uint8_t /* app_id */,
-                  const RawAddress& /* peer_addr */) {}};
-  void operator()(tBTA_SYS_CONN_STATUS status, uint8_t id, uint8_t app_id,
-                  const RawAddress& peer_addr) {
-    body(status, id, app_id, peer_addr);
-  }
-};
-extern struct bta_dm_rm_cback bta_dm_rm_cback;
 
 // Name: bta_dm_search_cancel_cmpl
 // Params:

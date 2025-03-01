@@ -39,7 +39,7 @@ public class BluetoothGattDescriptor implements Parcelable {
     /** Value used to enable indication for a client configuration descriptor */
     public static final byte[] ENABLE_INDICATION_VALUE = {0x02, 0x00};
 
-    /** Value used to disable notifications or indicatinos */
+    /** Value used to disable notifications or indications */
     public static final byte[] DISABLE_NOTIFICATION_VALUE = {0x00, 0x00};
 
     /** Descriptor read permission */
@@ -197,7 +197,7 @@ public class BluetoothGattDescriptor implements Parcelable {
      * Returns the instance ID for this descriptor.
      *
      * <p>If a remote device offers multiple descriptors with the same UUID, the instance ID is used
-     * to distuinguish between descriptors.
+     * to distinguish between descriptors.
      *
      * @return Instance ID of this descriptor
      * @hide

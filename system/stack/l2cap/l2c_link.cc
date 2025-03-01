@@ -284,113 +284,109 @@ static void l2c_link_iot_store_disc_reason(RawAddress& bda, uint8_t reason) {
  *
  ******************************************************************************/
 bool l2c_link_hci_disc_comp(uint16_t handle, tHCI_REASON reason) {
-  tL2C_CCB* p_ccb;
-  bool status = true;
-  bool lcb_is_free = true;
-
-  /* If we don't have one, maybe an SCO link. Send to MM */
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_handle(handle);
-  if (!p_lcb) {
-    status = false;
-  } else {
-    l2c_link_iot_store_disc_reason(p_lcb->remote_bd_addr, reason);
+  if (p_lcb == nullptr) {
+    log::error("No LCB found for handle:0x{:04x}", handle);
 
-    p_lcb->SetDisconnectReason(reason);
-
-    /* Just in case app decides to try again in the callback context */
-    p_lcb->link_state = LST_DISCONNECTING;
-
-    /* Check for BLE and handle that differently */
-    if (p_lcb->transport == BT_TRANSPORT_LE) {
-      btm_ble_decrement_link_topology_mask(p_lcb->LinkRole());
+    p_lcb = l2cu_find_lcb_by_state(LST_CONNECT_HOLDING);
+    if (p_lcb != nullptr) {
+      log::info("Resuming pending ACL request {}", p_lcb->remote_bd_addr);
+      l2cu_create_conn_br_edr(p_lcb);
     }
-    /* Link is disconnected. For all channels, send the event through */
-    /* their FSMs. The CCBs should remove themselves from the LCB     */
-    for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb;) {
-      tL2C_CCB* pn = p_ccb->p_next_ccb;
+    return false;
+  }
 
-      /* Keep connect pending control block (if exists)
-       * Possible Race condition when a reconnect occurs
-       * on the channel during a disconnect of link. This
-       * ccb will be automatically retried after link disconnect
-       * arrives
-       */
-      if (p_ccb != p_lcb->p_pending_ccb) {
-        l2c_csm_execute(p_ccb, L2CEVT_LP_DISCONNECT_IND, &reason);
-      }
-      p_ccb = pn;
+  bool lcb_is_free = true;
+  l2c_link_iot_store_disc_reason(p_lcb->remote_bd_addr, reason);
+  p_lcb->SetDisconnectReason(reason);
+
+  /* Just in case app decides to try again in the callback context */
+  p_lcb->link_state = LST_DISCONNECTING;
+
+  /* Check for BLE and handle that differently */
+  if (p_lcb->transport == BT_TRANSPORT_LE) {
+    btm_ble_decrement_link_topology_mask(p_lcb->LinkRole());
+  }
+
+  /* Link is disconnected. For all channels, send the event through their FSMs. The CCBs should
+   * remove themselves from the LCB */
+  for (tL2C_CCB* p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb;) {
+    tL2C_CCB* pn = p_ccb->p_next_ccb;
+
+    /* Keep connect pending control block (if exists).
+     * Possible race condition when a reconnect occurs on the channel during a disconnect of link.
+     * This ccb will be automatically retried after link disconnect arrives */
+    if (p_ccb != p_lcb->p_pending_ccb) {
+      l2c_csm_execute(p_ccb, L2CEVT_LP_DISCONNECT_IND, &reason);
     }
+    p_ccb = pn;
+  }
 
-    if (p_lcb->transport == BT_TRANSPORT_BR_EDR) {
-      /* Tell SCO management to drop any SCOs on this ACL */
-      btm_sco_acl_removed(&p_lcb->remote_bd_addr);
+  if (p_lcb->transport == BT_TRANSPORT_BR_EDR) {
+    /* Tell SCO management to drop any SCOs on this ACL */
+    btm_sco_acl_removed(&p_lcb->remote_bd_addr);
+  }
+
+  /* If waiting for disconnect and reconnect is pending start the reconnect now race condition where
+   * layer above issued connect request on link that was disconnecting */
+  if (p_lcb->ccb_queue.p_first_ccb != nullptr || p_lcb->p_pending_ccb) {
+    log::debug("l2c_link_hci_disc_comp: Restarting pending ACL request");
+    /* Release any held buffers */
+    while (!list_is_empty(p_lcb->link_xmit_data_q)) {
+      BT_HDR* p_buf = static_cast<BT_HDR*>(list_front(p_lcb->link_xmit_data_q));
+      list_remove(p_lcb->link_xmit_data_q, p_buf);
+      osi_free(p_buf);
     }
-
-    /* If waiting for disconnect and reconnect is pending start the reconnect
-       now
-       race condition where layer above issued connect request on link that was
-       disconnecting
+    /* for LE link, always drop and re-open to ensure to get LE remote feature
      */
-    if (p_lcb->ccb_queue.p_first_ccb != NULL || p_lcb->p_pending_ccb) {
-      log::debug("l2c_link_hci_disc_comp: Restarting pending ACL request");
-      /* Release any held buffers */
-      while (!list_is_empty(p_lcb->link_xmit_data_q)) {
-        BT_HDR* p_buf = static_cast<BT_HDR*>(list_front(p_lcb->link_xmit_data_q));
-        list_remove(p_lcb->link_xmit_data_q, p_buf);
-        osi_free(p_buf);
-      }
-      /* for LE link, always drop and re-open to ensure to get LE remote feature
-       */
-      if (p_lcb->transport == BT_TRANSPORT_LE) {
-        btm_acl_removed(handle);
-        if (com::android::bluetooth::flags::invalidate_hci_handle_on_acl_removal()) {
-            p_lcb->InvalidateHandle();
-        }
-      } else {
-        /* If we are going to re-use the LCB without dropping it, release all
-        fixed channels
-        here */
-        int xx;
-        for (xx = 0; xx < L2CAP_NUM_FIXED_CHNLS; xx++) {
-          if (p_lcb->p_fixed_ccbs[xx] && p_lcb->p_fixed_ccbs[xx] != p_lcb->p_pending_ccb) {
-            l2cu_release_ccb(p_lcb->p_fixed_ccbs[xx]);
-
-            p_lcb->p_fixed_ccbs[xx] = NULL;
-            (*l2cb.fixed_reg[xx].pL2CA_FixedConn_Cb)(xx + L2CAP_FIRST_FIXED_CHNL,
-                                                     p_lcb->remote_bd_addr, false,
-                                                     p_lcb->DisconnectReason(), p_lcb->transport);
-          }
-        }
-        /* Cleanup connection state to avoid race conditions because
-         * l2cu_release_lcb won't be invoked to cleanup */
-        btm_acl_removed(p_lcb->Handle());
+    if (p_lcb->transport == BT_TRANSPORT_LE) {
+      btm_acl_removed(handle);
+      if (com::android::bluetooth::flags::invalidate_hci_handle_on_acl_removal()) {
         p_lcb->InvalidateHandle();
       }
-      if (p_lcb->transport == BT_TRANSPORT_LE) {
-        if (l2cu_create_conn_le(p_lcb)) {
-          lcb_is_free = false; /* still using this lcb */
+    } else {
+      /* If we are going to re-use the LCB without dropping it, release all
+      fixed channels
+      here */
+      int xx;
+      for (xx = 0; xx < L2CAP_NUM_FIXED_CHNLS; xx++) {
+        if (p_lcb->p_fixed_ccbs[xx] && p_lcb->p_fixed_ccbs[xx] != p_lcb->p_pending_ccb) {
+          l2cu_release_ccb(p_lcb->p_fixed_ccbs[xx]);
+          p_lcb->p_fixed_ccbs[xx] = nullptr;
+          (*l2cb.fixed_reg[xx].pL2CA_FixedConn_Cb)(xx + L2CAP_FIRST_FIXED_CHNL,
+                                                   p_lcb->remote_bd_addr, false,
+                                                   p_lcb->DisconnectReason(), p_lcb->transport);
         }
-      } else {
-        l2cu_create_conn_br_edr(p_lcb);
+      }
+      /* Cleanup connection state to avoid race conditions because
+       * l2cu_release_lcb won't be invoked to cleanup */
+      btm_acl_removed(p_lcb->Handle());
+      p_lcb->InvalidateHandle();
+    }
+    if (p_lcb->transport == BT_TRANSPORT_LE) {
+      if (l2cu_create_conn_le(p_lcb)) {
         lcb_is_free = false; /* still using this lcb */
       }
+    } else {
+      l2cu_create_conn_br_edr(p_lcb);
+      lcb_is_free = false; /* still using this lcb */
     }
+  }
+  p_lcb->p_pending_ccb = nullptr;
 
-    p_lcb->p_pending_ccb = NULL;
+  /* Release the LCB */
+  if (lcb_is_free) {
+    l2cu_release_lcb(p_lcb);
 
-    /* Release the LCB */
-    if (lcb_is_free) {
-      l2cu_release_lcb(p_lcb);
+    /* Now that we have a free acl connection, see if any lcbs are pending */
+    p_lcb = l2cu_find_lcb_by_state(LST_CONNECT_HOLDING);
+    if (p_lcb != nullptr) {
+      log::info("Resuming pending ACL request {}", p_lcb->remote_bd_addr);
+      l2cu_create_conn_br_edr(p_lcb);
     }
   }
 
-  /* Now that we have a free acl connection, see if any lcbs are pending */
-  if (lcb_is_free && ((p_lcb = l2cu_find_lcb_by_state(LST_CONNECT_HOLDING)) != NULL)) {
-    /* we found one-- create a connection */
-    l2cu_create_conn_br_edr(p_lcb);
-  }
-
-  return status;
+  return true;
 }
 
 /*******************************************************************************

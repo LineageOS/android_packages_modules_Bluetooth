@@ -350,4 +350,7 @@ interface IBluetooth
 
     @JavaPassthrough(annotation="@android.annotation.RequiresNoPermission")
     IBinder getDistanceMeasurement();
+
+    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
+    int getKeyMissingCount(in BluetoothDevice device, in AttributionSource source);
 }

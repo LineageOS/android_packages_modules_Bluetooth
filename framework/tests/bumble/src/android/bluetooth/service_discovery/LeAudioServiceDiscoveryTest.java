@@ -77,6 +77,7 @@ import java.util.concurrent.TimeUnit;
 @RunWith(AndroidJUnit4.class)
 public class LeAudioServiceDiscoveryTest {
     private static final String TAG = LeAudioServiceDiscoveryTest.class.getSimpleName();
+
     private static final String BUMBLE_DEVICE_NAME = "Bumble";
     private static final Duration BOND_INTENT_TIMEOUT = Duration.ofSeconds(10);
     private static final int DISCOVERY_TIMEOUT = 2000; // 2 seconds

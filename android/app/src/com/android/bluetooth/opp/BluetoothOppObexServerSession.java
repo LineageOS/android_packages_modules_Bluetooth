@@ -73,7 +73,7 @@ import java.util.Arrays;
 // Next tag value for ContentProfileErrorReportUtils.report(): 15
 public class BluetoothOppObexServerSession extends ServerRequestHandler
         implements BluetoothOppObexSession {
-    private static final String TAG = "BtOppObexServer";
+    private static final String TAG = BluetoothOppObexServerSession.class.getSimpleName();
 
     private final Context mContext;
     private final ObexTransport mTransport;
@@ -620,24 +620,13 @@ public class BluetoothOppObexServerSession extends ServerRequestHandler
 
         Log.d(TAG, "onConnect");
         Constants.logHeader(request);
-        Long objectCount = null;
-        try {
-            byte[] uuid = (byte[]) request.getHeader(HeaderSet.TARGET);
-            Log.v(TAG, "onConnect(): uuid =" + Arrays.toString(uuid));
-            if (uuid != null) {
-                return ResponseCodes.OBEX_HTTP_NOT_ACCEPTABLE;
-            }
-
-            objectCount = (Long) request.getHeader(HeaderSet.COUNT);
-        } catch (IOException e) {
-            ContentProfileErrorReportUtils.report(
-                    BluetoothProfile.OPP,
-                    BluetoothProtoEnums.BLUETOOTH_OPP_OBEX_SERVER_SESSION,
-                    BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
-                    14);
-            Log.e(TAG, e.toString());
-            return ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
+        byte[] uuid = (byte[]) request.getHeader(HeaderSet.TARGET);
+        Log.v(TAG, "onConnect(): uuid =" + Arrays.toString(uuid));
+        if (uuid != null) {
+            return ResponseCodes.OBEX_HTTP_NOT_ACCEPTABLE;
         }
+
+        Long objectCount = (Long) request.getHeader(HeaderSet.COUNT);
         String destination;
         if (mTransport instanceof BluetoothObexTransport) {
             destination = ((BluetoothObexTransport) mTransport).getRemoteAddress();

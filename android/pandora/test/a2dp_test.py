@@ -19,6 +19,7 @@ import dataclasses
 import itertools
 import logging
 import numpy as np
+import time
 
 from a2dp.packets.avdtp import *
 from a2dp.signaling_channel import Any, SignalingChannel
@@ -63,8 +64,10 @@ from bumble.l2cap import (
 from bumble.pairing import PairingDelegate
 from mobly import base_test, test_runner
 from mobly.asserts import assert_equal  # type: ignore
+from mobly.asserts import assert_greater_equal  # type: ignore
 from mobly.asserts import assert_in  # type: ignore
 from mobly.asserts import assert_is_not_none  # type: ignore
+from mobly.asserts import assert_less_equal  # type: ignore
 from mobly.asserts import fail  # type: ignore
 from pandora.a2dp_grpc_aio import A2DP
 from pandora.a2dp_pb2 import STEREO, Configuration, PlaybackAudioRequest, Source
@@ -77,6 +80,7 @@ logger = logging.getLogger(__name__)
 AVDTP_HANDLE_SUSPEND_CFM_BAD_STATE = 'com.android.bluetooth.flags.avdt_handle_suspend_cfm_bad_state'
 AVDTP_HANDLE_SIGNALING_ON_PEER_FAILURE = 'com.android.bluetooth.flags.avdt_handle_signaling_on_peer_failure'
 A2DP_SM_IGNORE_CONNECT_EVENTS_IN_CONNECTING_STATE = 'com.android.bluetooth.flags.a2dp_sm_ignore_connect_events_in_connecting_state'
+AVDT_WAIT_FOR_INITIAL_DELAY_REPORT_AS_INITIATOR = 'com.android.bluetooth.flags.avdt_wait_for_initial_delay_report_as_initiator'
 
 
 async def initiate_pairing(device, address) -> Connection:
@@ -878,6 +882,135 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         assert result.source
 
         logger.info("<< 6. DUT A2DP source configured and connected >>")
+
+    @avatar.asynchronous
+    @enableFlag(AVDT_WAIT_FOR_INITIAL_DELAY_REPORT_AS_INITIATOR)
+    async def test_avdt_wait_before_sending_open_command__no_delay_report_sent(self) -> None:
+        """Test if AOSP DUT will wait for 2 seconds before sending AVDT Open command.
+        DUT should wait for that time to allow RD1 sink device to send AVDT Delay Report command
+        before it receives Open command. If the RD1 will send AVDT Delay Report the Open command
+        will be sent immediately after. In this test the AVDT Delay Report is not sent.
+
+        1. Pair and connect RD1
+        2. Setup the acceptor expectations on signalling channel
+        3. Wait for the RD1 device to send the set configuration response and start timer
+        4. Receive open command and assert that it was received after 2s from the timer start
+        5. Start streaming - to confirm channel established properly
+        6. Stop streaming - to confirm channel established properly
+        """
+
+        # Connect and pair RD1.
+        dut_ref1, ref1_dut = await asyncio.gather(
+            initiate_pairing(self.dut, self.ref1.address),
+            accept_pairing(self.ref1, self.dut.address),
+        )
+
+        connection = pandora_snippet.get_raw_connection(device=self.ref1, connection=ref1_dut)
+        channel = SignalingChannel.accept(connection)
+
+        async def accept_open(channel: SignalingChannel):
+            seid_information = [SeidInformation(acp_seid=0x01, tsep=Tsep.SINK, media_type=AVDTP_AUDIO_MEDIA_TYPE)]
+            acceptor_service_capabilities = [
+                MediaTransportCapability(),
+                MediaCodecCapability(service_category=ServiceCategory.MEDIA_CODEC,
+                                     media_codec_specific_information_elements=[255, 255, 2, 53]),
+                DelayReportingCapability()
+            ]
+
+            await channel.accept_discover(seid_information)
+            await channel.accept_get_all_capabilities(acceptor_service_capabilities)
+            await channel.accept_set_configuration(
+                expected_configuration=[MediaTransportCapability(), channel.any,
+                                        DelayReportingCapability()])
+
+            start_time = time.perf_counter()
+
+            cmd = await channel.expect_signal(OpenCommand(transaction_label=channel.any, acp_seid=channel.any))
+
+            elapsed_time = time.perf_counter() - start_time
+            assert_greater_equal(elapsed_time, 2.0)
+
+            channel.send_signal(OpenResponse(transaction_label=cmd.transaction_label))
+
+        # Connect AVDTP to RD1.
+        _, dut_ref1_source = await asyncio.gather(accept_open(channel), open_source(self.dut, dut_ref1))
+
+        # Start streaming to RD1.
+        await asyncio.gather(self.dut.a2dp.Start(source=dut_ref1_source), channel.accept_start())
+
+        audio = AudioSignal(self.dut.a2dp, dut_ref1_source, 0.8, 44100)
+
+        # Verify that at least one audio frame is received on the transport channel.
+        await asyncio.wait_for(channel.expect_media(), 5.0)
+
+        # Stop streaming to RD1.
+        await asyncio.gather(self.dut.a2dp.Suspend(source=dut_ref1_source), channel.accept_suspend())
+
+    @avatar.asynchronous
+    @enableFlag(AVDT_WAIT_FOR_INITIAL_DELAY_REPORT_AS_INITIATOR)
+    async def test_avdt_wait_before_sending_open_command__delay_report_sent(self) -> None:
+        """Test if AOSP DUT will wait for 2 seconds before sending AVDT Open command.
+        DUT should wait for that time to allow REF sink device to send AVDT Delay Report command
+        before it receives Open command. If the REF will send AVDT Delay Report the Open command
+        will be sent immediately after. In this test the AVDT Delay Report is sent.
+
+        1. Pair and connect RD1
+        2. Setup the acceptor expectations on signalling channel
+        3. Wait for the RD1 device to send the set configuration response and start timer
+        4. Wait for the RD1 device to send AVDT Delay Report and expect response
+        5. Receive open command on RD1 and assert that it was received before 2s from the timer start
+        6. Start streaming - to confirm channel established properly
+        7. Stop streaming - to confirm channel established properly
+        """
+
+        # Connect and pair RD1.
+        dut_ref1, ref1_dut = await asyncio.gather(
+            initiate_pairing(self.dut, self.ref1.address),
+            accept_pairing(self.ref1, self.dut.address),
+        )
+
+        connection = pandora_snippet.get_raw_connection(device=self.ref1, connection=ref1_dut)
+        channel = SignalingChannel.accept(connection)
+
+        async def accept_open(channel: SignalingChannel):
+            seid_information = [SeidInformation(acp_seid=0x01, tsep=Tsep.SINK, media_type=AVDTP_AUDIO_MEDIA_TYPE)]
+            acceptor_service_capabilities = [
+                MediaTransportCapability(),
+                MediaCodecCapability(service_category=ServiceCategory.MEDIA_CODEC,
+                                     media_codec_specific_information_elements=[255, 255, 2, 53]),
+                DelayReportingCapability()
+            ]
+
+            await channel.accept_discover(seid_information)
+            await channel.accept_get_all_capabilities(acceptor_service_capabilities)
+            await channel.accept_set_configuration(
+                expected_configuration=[MediaTransportCapability(), channel.any,
+                                        DelayReportingCapability()])
+
+            start_time = time.perf_counter()
+
+            await channel.initiate_delay_report()
+
+            cmd = await channel.expect_signal(OpenCommand(transaction_label=channel.any, acp_seid=channel.any))
+
+            elapsed_time = time.perf_counter() - start_time
+            assert_less_equal(elapsed_time, 2.0)
+
+            channel.send_signal(OpenResponse(transaction_label=cmd.transaction_label))
+
+        # Connect AVDTP to RD1.
+        _, dut_ref1_source = await asyncio.gather(accept_open(channel), open_source(self.dut, dut_ref1))
+
+        # Start streaming to RD1.
+        await asyncio.gather(self.dut.a2dp.Start(source=dut_ref1_source), channel.accept_start())
+
+        audio = AudioSignal(self.dut.a2dp, dut_ref1_source, 0.8, 44100)
+
+        # Verify that at least one audio frame is received on the transport channel.
+        await asyncio.wait_for(channel.expect_media(), 5.0)
+
+        # Stop streaming to RD1.
+        await asyncio.gather(self.dut.a2dp.Suspend(source=dut_ref1_source), channel.accept_suspend())
 
 
 if __name__ == '__main__':

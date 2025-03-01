@@ -47,6 +47,7 @@ import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.FrameworkMethod;
 import org.junit.runners.model.Statement;
+import org.mockito.Mockito;
 import org.mockito.junit.MockitoJUnit;
 
 import java.time.Duration;
@@ -55,9 +56,9 @@ import java.util.stream.IntStream;
 
 /** A set of methods useful in Bluetooth instrumentation tests */
 public class TestUtils {
-    private static String sSystemScreenOffTimeout = "10000";
+    private static final String TAG = Utils.TAG_PREFIX_BLUETOOTH + TestUtils.class.getSimpleName();
 
-    private static final String TAG = "BluetoothTestUtils";
+    private static String sSystemScreenOffTimeout = "10000";
 
     /**
      * Set the return value of {@link AdapterService#getAdapterService()} to a test specified value
@@ -96,6 +97,7 @@ public class TestUtils {
     /** Helper function to mock getSystemService calls */
     public static <T> void mockGetSystemService(
             Context ctx, String serviceName, Class<T> serviceClass, T mockService) {
+        doReturn(mockService).when(ctx).getSystemService(eq(serviceClass));
         doReturn(mockService).when(ctx).getSystemService(eq(serviceName));
         doReturn(serviceName).when(ctx).getSystemServiceName(eq(serviceClass));
     }
@@ -327,7 +329,7 @@ public class TestUtils {
         }
     }
 
-    /** Wrapper around MockitoJUnit.rule() to be extended in follow-up. */
+    /** Wrapper around MockitoJUnit.rule() to clear the inline mock at the end of the test. */
     public static class MockitoRule implements MethodRule {
         private final org.mockito.junit.MockitoRule mMockitoRule = MockitoJUnit.rule();
 
@@ -338,6 +340,10 @@ public class TestUtils {
                 @Override
                 public void evaluate() throws Throwable {
                     nestedStatement.evaluate();
+
+                    // Prevent OutOfMemory errors due to mock maker leaks.
+                    // See https://github.com/mockito/mockito/issues/1614, b/259280359, b/396177821
+                    Mockito.framework().clearInlineMocks();
                 }
             };
         }

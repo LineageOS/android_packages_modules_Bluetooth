@@ -54,7 +54,7 @@ import com.android.internal.annotations.VisibleForTesting;
 
 /** This class is designed to show BT enabling progress. */
 public class BluetoothOppBtEnablingActivity extends AlertActivity {
-    private static final String TAG = "BluetoothOppEnablingActivity";
+    private static final String TAG = BluetoothOppBtEnablingActivity.class.getSimpleName();
 
     private static final int BT_ENABLING_TIMEOUT = 0;
 

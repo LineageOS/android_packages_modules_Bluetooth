@@ -35,6 +35,7 @@
 #include "stack/btm/btm_sec.h"
 #include "stack/btm/security_device_record.h"
 #include "stack/include/bt_hdr.h"
+#include "stack/include/btm_log_history.h"
 #include "stack/include/main_thread.h"
 #include "stack/include/rnr_interface.h"
 #include "stack/rnr/remote_name_request.h"
@@ -45,6 +46,10 @@
   "bluetooth.core.gap.le.privacy.own_address_type.enabled"
 #endif
 
+namespace {
+constexpr char kBtmLogTag[] = "ACL";
+}
+
 void bluetooth::shim::ACL_CreateClassicConnection(const RawAddress& raw_address) {
   auto address = ToGdAddress(raw_address);
   Stack::GetInstance()->GetAcl()->CreateClassicConnection(address);
@@ -53,20 +58,6 @@ void bluetooth::shim::ACL_CreateClassicConnection(const RawAddress& raw_address)
 void bluetooth::shim::ACL_CancelClassicConnection(const RawAddress& raw_address) {
   auto address = ToGdAddress(raw_address);
   Stack::GetInstance()->GetAcl()->CancelClassicConnection(address);
-}
-
-bool bluetooth::shim::ACL_AcceptLeConnectionFrom(const tBLE_BD_ADDR& legacy_address_with_type,
-                                                 bool is_direct) {
-  std::promise<bool> promise;
-  auto future = promise.get_future();
-  Stack::GetInstance()->GetAcl()->AcceptLeConnectionFrom(
-          ToAddressWithTypeFromLegacy(legacy_address_with_type), is_direct, std::move(promise));
-  return future.get();
-}
-
-void bluetooth::shim::ACL_IgnoreLeConnectionFrom(const tBLE_BD_ADDR& legacy_address_with_type) {
-  Stack::GetInstance()->GetAcl()->IgnoreLeConnectionFrom(
-          ToAddressWithTypeFromLegacy(legacy_address_with_type));
 }
 
 void bluetooth::shim::ACL_WriteData(uint16_t handle, BT_HDR* p_buf) {
@@ -123,10 +114,6 @@ void bluetooth::shim::ACL_Disconnect(uint16_t handle, bool is_classic, tHCI_STAT
 }
 
 void bluetooth::shim::ACL_Shutdown() { Stack::GetInstance()->GetAcl()->Shutdown(); }
-
-void bluetooth::shim::ACL_IgnoreAllLeConnections() {
-  return Stack::GetInstance()->GetAcl()->ClearFilterAcceptList();
-}
 
 void bluetooth::shim::ACL_ReadConnectionAddress(uint16_t handle, RawAddress& conn_addr,
                                                 tBLE_ADDR_TYPE* p_addr_type, bool ota_address) {

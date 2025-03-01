@@ -27,15 +27,13 @@
 #include "stack/btm/btm_ble_int.h"
 #include "stack/btm/btm_ble_int_types.h"
 #include "stack/include/bt_dev_class.h"
+#include "stack/include/btm_ble_api.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/include/rnr_interface.h"
 #include "test/common/mock_functions.h"
 #include "types/ble_address_with_type.h"
 #include "types/raw_address.h"
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 using StartSyncCb = base::Callback<void(
         uint8_t /*status*/, uint16_t /*sync_handle*/, uint8_t /*advertising_sid*/,
@@ -104,10 +102,6 @@ void BTM_BleGetDynamicAudioBuffer(
 void BTM_BleGetVendorCapabilities(tBTM_BLE_VSC_CB* /* p_cmn_vsc_cb */) {
   inc_func_call_count(__func__);
 }
-void BTM_BleSetScanParams(uint32_t /* scan_interval */, uint32_t /* scan_window */,
-                          tBLE_SCAN_MODE /* scan_mode */, base::Callback<void(uint8_t)> /* cb */) {
-  inc_func_call_count(__func__);
-}
 void btm_ble_decrement_link_topology_mask(uint8_t /* link_role */) {
   inc_func_call_count(__func__);
 }
@@ -150,7 +144,8 @@ void btm_ble_write_adv_enable_complete(uint8_t* /* p */, uint16_t /* evt_len */)
 }
 void btm_send_hci_set_scan_params(uint8_t /* scan_type */, uint16_t /* scan_int_1m */,
                                   uint16_t /* scan_win_1m */, uint16_t /* scan_int_coded */,
-                                  uint16_t /* scan_win_coded */, tBLE_ADDR_TYPE /* addr_type_own */,
+                                  uint16_t /* scan_win_coded */, uint8_t /* scan_phy */,
+                                  tBLE_ADDR_TYPE /* addr_type_own */,
                                   uint8_t /* scan_filter_policy */) {
   inc_func_call_count(__func__);
 }

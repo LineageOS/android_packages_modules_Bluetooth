@@ -42,20 +42,17 @@ import java.io.InputStream;
 /** A test suite for the AvrcpCoverArtStorage class. */
 @RunWith(AndroidJUnit4.class)
 public final class AvrcpCoverArtStorageTest {
-    private Context mTargetContext;
-    private Resources mTestResources;
+    private final Context mTargetContext =
+            InstrumentationRegistry.getInstrumentation().getTargetContext();
+    private final Resources mTestResources = TestUtils.getTestApplicationResources(mTargetContext);
     private final BluetoothDevice mDevice1 = getTestDevice(56);
     private final BluetoothDevice mDevice2 = getTestDevice(57);
     private Bitmap mImage1;
     private Bitmap mImage2;
-    private final String mHandle1 = "1";
-    private final String mHandle2 = "2";
     private AvrcpCoverArtStorage mAvrcpCoverArtStorage;
 
     @Before
     public void setUp() {
-        mTargetContext = InstrumentationRegistry.getInstrumentation().getTargetContext();
-        mTestResources = TestUtils.getTestApplicationResources(mTargetContext);
         InputStream is =
                 mTestResources.openRawResource(com.android.bluetooth.tests.R.raw.image_200_200);
         mImage1 = BitmapFactory.decodeStream(is);
@@ -75,8 +72,6 @@ public final class AvrcpCoverArtStorageTest {
         }
         mImage1 = null;
         mImage2 = null;
-        mTestResources = null;
-        mTargetContext = null;
     }
 
     private void assertImageSame(Bitmap expected, BluetoothDevice device, String handle) {
@@ -86,259 +81,251 @@ public final class AvrcpCoverArtStorageTest {
 
     @Test
     public void addNewImage_imageExists() {
-        Uri expectedUri = AvrcpCoverArtProvider.getImageUri(mDevice1, mHandle1);
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle1)).isFalse();
+        Uri expectedUri = AvrcpCoverArtProvider.getImageUri(mDevice1, "1");
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "1")).isFalse();
 
-        Uri uri = mAvrcpCoverArtStorage.addImage(mDevice1, mHandle1, mImage1);
+        Uri uri = mAvrcpCoverArtStorage.addImage(mDevice1, "1", mImage1);
 
         assertThat(uri).isEqualTo(expectedUri);
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle1)).isTrue();
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "1")).isTrue();
     }
 
     @Test
     public void addExistingImage_imageUpdated() {
-        Uri expectedUri = AvrcpCoverArtProvider.getImageUri(mDevice1, mHandle1);
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle1)).isFalse();
+        Uri expectedUri = AvrcpCoverArtProvider.getImageUri(mDevice1, "1");
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "1")).isFalse();
 
-        Uri uri = mAvrcpCoverArtStorage.addImage(mDevice1, mHandle1, mImage1);
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle1)).isTrue();
+        Uri uri = mAvrcpCoverArtStorage.addImage(mDevice1, "1", mImage1);
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "1")).isTrue();
         assertThat(uri).isEqualTo(expectedUri);
-        assertImageSame(mImage1, mDevice1, mHandle1);
+        assertImageSame(mImage1, mDevice1, "1");
 
-        uri = mAvrcpCoverArtStorage.addImage(mDevice1, mHandle1, mImage2);
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle1)).isTrue();
+        uri = mAvrcpCoverArtStorage.addImage(mDevice1, "1", mImage2);
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "1")).isTrue();
         assertThat(uri).isEqualTo(expectedUri);
-        assertImageSame(mImage2, mDevice1, mHandle1);
+        assertImageSame(mImage2, mDevice1, "1");
     }
 
     @Test
     public void addTwoImageSameDevice_bothExist() {
-        Uri expectedUri1 = AvrcpCoverArtProvider.getImageUri(mDevice1, mHandle1);
-        Uri expectedUri2 = AvrcpCoverArtProvider.getImageUri(mDevice1, mHandle2);
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle1)).isFalse();
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle2)).isFalse();
+        Uri expectedUri1 = AvrcpCoverArtProvider.getImageUri(mDevice1, "1");
+        Uri expectedUri2 = AvrcpCoverArtProvider.getImageUri(mDevice1, "2");
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "1")).isFalse();
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "2")).isFalse();
 
-        Uri uri1 = mAvrcpCoverArtStorage.addImage(mDevice1, mHandle1, mImage1);
-        Uri uri2 = mAvrcpCoverArtStorage.addImage(mDevice1, mHandle2, mImage2);
+        Uri uri1 = mAvrcpCoverArtStorage.addImage(mDevice1, "1", mImage1);
+        Uri uri2 = mAvrcpCoverArtStorage.addImage(mDevice1, "2", mImage2);
 
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle1)).isTrue();
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "1")).isTrue();
         assertThat(uri1).isEqualTo(expectedUri1);
 
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle2)).isTrue();
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "2")).isTrue();
         assertThat(uri2).isEqualTo(expectedUri2);
     }
 
     @Test
     public void addTwoImageDifferentDevices_bothExist() {
-        Uri expectedUri1 = AvrcpCoverArtProvider.getImageUri(mDevice1, mHandle1);
-        Uri expectedUri2 = AvrcpCoverArtProvider.getImageUri(mDevice2, mHandle1);
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle1)).isFalse();
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice2, mHandle1)).isFalse();
+        Uri expectedUri1 = AvrcpCoverArtProvider.getImageUri(mDevice1, "1");
+        Uri expectedUri2 = AvrcpCoverArtProvider.getImageUri(mDevice2, "1");
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "1")).isFalse();
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice2, "1")).isFalse();
 
-        Uri uri1 = mAvrcpCoverArtStorage.addImage(mDevice1, mHandle1, mImage1);
-        Uri uri2 = mAvrcpCoverArtStorage.addImage(mDevice2, mHandle1, mImage1);
+        Uri uri1 = mAvrcpCoverArtStorage.addImage(mDevice1, "1", mImage1);
+        Uri uri2 = mAvrcpCoverArtStorage.addImage(mDevice2, "1", mImage1);
 
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle1)).isTrue();
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "1")).isTrue();
         assertThat(uri1).isEqualTo(expectedUri1);
 
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle1)).isTrue();
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "1")).isTrue();
         assertThat(uri2).isEqualTo(expectedUri2);
     }
 
     @Test
     public void addNullImage_imageNotAdded() {
-        Uri uri = mAvrcpCoverArtStorage.addImage(mDevice1, mHandle1, null);
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle1)).isFalse();
+        Uri uri = mAvrcpCoverArtStorage.addImage(mDevice1, "1", null);
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "1")).isFalse();
         assertThat(uri).isNull();
     }
 
     @Test
     public void addImageNullDevice_imageNotAdded() {
-        Uri uri = mAvrcpCoverArtStorage.addImage(null, mHandle1, mImage1);
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle1)).isFalse();
+        Uri uri = mAvrcpCoverArtStorage.addImage(null, "1", mImage1);
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "1")).isFalse();
         assertThat(uri).isNull();
     }
 
     @Test
     public void addImageNullHandle_imageNotAdded() {
         Uri uri = mAvrcpCoverArtStorage.addImage(mDevice1, null, mImage1);
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle1)).isFalse();
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "1")).isFalse();
         assertThat(uri).isNull();
     }
 
     @Test
     public void addImageEmptyHandle_imageNotAdded() {
         Uri uri = mAvrcpCoverArtStorage.addImage(mDevice1, "", mImage1);
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle1)).isFalse();
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "1")).isFalse();
         assertThat(uri).isNull();
     }
 
     @Test
     public void getImage_canGetImageFromStorage() {
-        mAvrcpCoverArtStorage.addImage(mDevice1, mHandle1, mImage1);
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle1)).isTrue();
-        assertImageSame(mImage1, mDevice1, mHandle1);
+        mAvrcpCoverArtStorage.addImage(mDevice1, "1", mImage1);
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "1")).isTrue();
+        assertImageSame(mImage1, mDevice1, "1");
     }
 
     @Test
     public void getImageSameHandleDifferentDevices_canGetImagesFromStorage() {
-        mAvrcpCoverArtStorage.addImage(mDevice1, mHandle1, mImage1);
-        mAvrcpCoverArtStorage.addImage(mDevice2, mHandle1, mImage2);
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle1)).isTrue();
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice2, mHandle1)).isTrue();
-        assertImageSame(mImage1, mDevice1, mHandle1);
-        assertImageSame(mImage2, mDevice2, mHandle1);
+        mAvrcpCoverArtStorage.addImage(mDevice1, "1", mImage1);
+        mAvrcpCoverArtStorage.addImage(mDevice2, "1", mImage2);
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "1")).isTrue();
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice2, "1")).isTrue();
+        assertImageSame(mImage1, mDevice1, "1");
+        assertImageSame(mImage2, mDevice2, "1");
     }
 
     @Test
     public void getImageThatDoesntExist_returnsNull() {
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle1)).isFalse();
-        Bitmap image = mAvrcpCoverArtStorage.getImage(mDevice1, mHandle1);
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "1")).isFalse();
+        Bitmap image = mAvrcpCoverArtStorage.getImage(mDevice1, "1");
         assertThat(image).isNull();
     }
 
     @Test
     public void getImageNullDevice_returnsNull() {
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle1)).isFalse();
-        Bitmap image = mAvrcpCoverArtStorage.getImage(null, mHandle1);
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "1")).isFalse();
+        Bitmap image = mAvrcpCoverArtStorage.getImage(null, "1");
         assertThat(image).isNull();
     }
 
     @Test
     public void getImageNullHandle_returnsNull() {
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle1)).isFalse();
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "1")).isFalse();
         Bitmap image = mAvrcpCoverArtStorage.getImage(mDevice1, null);
         assertThat(image).isNull();
     }
 
     @Test
     public void getImageEmptyHandle_returnsNull() {
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle1)).isFalse();
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "1")).isFalse();
         Bitmap image = mAvrcpCoverArtStorage.getImage(mDevice1, "");
         assertThat(image).isNull();
     }
 
     @Test
     public void removeExistingImage_imageDoesntExist() {
-        mAvrcpCoverArtStorage.addImage(mDevice1, mHandle1, mImage1);
-        mAvrcpCoverArtStorage.addImage(mDevice1, mHandle2, mImage1);
-        mAvrcpCoverArtStorage.addImage(mDevice2, mHandle1, mImage1);
-        mAvrcpCoverArtStorage.removeImage(mDevice1, mHandle1);
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle1)).isFalse();
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle2)).isTrue();
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice2, mHandle1)).isTrue();
+        mAvrcpCoverArtStorage.addImage(mDevice1, "1", mImage1);
+        mAvrcpCoverArtStorage.addImage(mDevice1, "2", mImage1);
+        mAvrcpCoverArtStorage.addImage(mDevice2, "1", mImage1);
+        mAvrcpCoverArtStorage.removeImage(mDevice1, "1");
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "1")).isFalse();
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "2")).isTrue();
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice2, "1")).isTrue();
     }
 
     @Test
     public void removeNonExistentImage_nothingHappens() {
-        mAvrcpCoverArtStorage.addImage(mDevice1, mHandle1, mImage1);
-        mAvrcpCoverArtStorage.removeImage(mDevice1, mHandle2);
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle1)).isTrue();
+        mAvrcpCoverArtStorage.addImage(mDevice1, "1", mImage1);
+        mAvrcpCoverArtStorage.removeImage(mDevice1, "2");
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "1")).isTrue();
     }
 
     @Test
     public void removeImageNullDevice_nothingHappens() {
-        mAvrcpCoverArtStorage.addImage(mDevice1, mHandle1, mImage1);
-        mAvrcpCoverArtStorage.removeImage(null, mHandle1);
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle1)).isTrue();
+        mAvrcpCoverArtStorage.addImage(mDevice1, "1", mImage1);
+        mAvrcpCoverArtStorage.removeImage(null, "1");
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "1")).isTrue();
     }
 
     @Test
     public void removeImageNullHandle_nothingHappens() {
-        mAvrcpCoverArtStorage.addImage(mDevice1, mHandle1, mImage1);
+        mAvrcpCoverArtStorage.addImage(mDevice1, "1", mImage1);
         mAvrcpCoverArtStorage.removeImage(mDevice1, null);
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle1)).isTrue();
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "1")).isTrue();
     }
 
     @Test
     public void removeImageEmptyHandle_nothingHappens() {
-        mAvrcpCoverArtStorage.addImage(mDevice1, mHandle1, mImage1);
+        mAvrcpCoverArtStorage.addImage(mDevice1, "1", mImage1);
         mAvrcpCoverArtStorage.removeImage(mDevice1, "");
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle1)).isTrue();
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "1")).isTrue();
     }
 
     @Test
     public void removeImageNullInputs_nothingHappens() {
-        mAvrcpCoverArtStorage.addImage(mDevice1, mHandle1, mImage1);
+        mAvrcpCoverArtStorage.addImage(mDevice1, "1", mImage1);
         mAvrcpCoverArtStorage.removeImage(null, null);
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle1)).isTrue();
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "1")).isTrue();
     }
 
     @Test
     public void removeAllImagesForDevice_onlyOneDeviceImagesGone() {
-        mAvrcpCoverArtStorage.addImage(mDevice1, mHandle1, mImage1);
-        mAvrcpCoverArtStorage.addImage(mDevice1, mHandle2, mImage1);
-        mAvrcpCoverArtStorage.addImage(mDevice2, mHandle1, mImage1);
+        mAvrcpCoverArtStorage.addImage(mDevice1, "1", mImage1);
+        mAvrcpCoverArtStorage.addImage(mDevice1, "2", mImage1);
+        mAvrcpCoverArtStorage.addImage(mDevice2, "1", mImage1);
 
         mAvrcpCoverArtStorage.removeImagesForDevice(mDevice1);
 
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle1)).isFalse();
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle2)).isFalse();
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice2, mHandle1)).isTrue();
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "1")).isFalse();
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "2")).isFalse();
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice2, "1")).isTrue();
     }
 
     @Test
     public void removeAllImagesForDeviceDne_nothingHappens() {
-        mAvrcpCoverArtStorage.addImage(mDevice1, mHandle1, mImage1);
-        mAvrcpCoverArtStorage.addImage(mDevice1, mHandle2, mImage1);
+        mAvrcpCoverArtStorage.addImage(mDevice1, "1", mImage1);
+        mAvrcpCoverArtStorage.addImage(mDevice1, "2", mImage1);
 
         mAvrcpCoverArtStorage.removeImagesForDevice(mDevice2);
 
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle1)).isTrue();
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle2)).isTrue();
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "1")).isTrue();
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "2")).isTrue();
     }
 
     @Test
     public void removeAllImagesForNullDevice_nothingHappens() {
-        mAvrcpCoverArtStorage.addImage(mDevice1, mHandle1, mImage1);
-        mAvrcpCoverArtStorage.addImage(mDevice1, mHandle2, mImage1);
+        mAvrcpCoverArtStorage.addImage(mDevice1, "1", mImage1);
+        mAvrcpCoverArtStorage.addImage(mDevice1, "2", mImage1);
 
         mAvrcpCoverArtStorage.removeImagesForDevice(null);
 
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle1)).isTrue();
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle2)).isTrue();
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "1")).isTrue();
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "2")).isTrue();
     }
 
     @Test
     public void clearStorageOneDevice_allImagesRemoved() {
-        mAvrcpCoverArtStorage.addImage(mDevice1, mHandle1, mImage1);
-        mAvrcpCoverArtStorage.addImage(mDevice1, mHandle2, mImage1);
+        mAvrcpCoverArtStorage.addImage(mDevice1, "1", mImage1);
+        mAvrcpCoverArtStorage.addImage(mDevice1, "2", mImage1);
 
         mAvrcpCoverArtStorage.clear();
 
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle1)).isFalse();
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle2)).isFalse();
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "1")).isFalse();
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "2")).isFalse();
     }
 
     @Test
     public void clearStorageManyDevices_allImagesRemoved() {
-        mAvrcpCoverArtStorage.addImage(mDevice1, mHandle1, mImage1);
-        mAvrcpCoverArtStorage.addImage(mDevice1, mHandle2, mImage1);
-        mAvrcpCoverArtStorage.addImage(mDevice2, mHandle1, mImage1);
-        mAvrcpCoverArtStorage.addImage(mDevice2, mHandle2, mImage1);
+        mAvrcpCoverArtStorage.addImage(mDevice1, "1", mImage1);
+        mAvrcpCoverArtStorage.addImage(mDevice1, "2", mImage1);
+        mAvrcpCoverArtStorage.addImage(mDevice2, "1", mImage1);
+        mAvrcpCoverArtStorage.addImage(mDevice2, "2", mImage1);
 
         mAvrcpCoverArtStorage.clear();
 
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle1)).isFalse();
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, mHandle2)).isFalse();
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice2, mHandle1)).isFalse();
-        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice2, mHandle2)).isFalse();
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "1")).isFalse();
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice1, "2")).isFalse();
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice2, "1")).isFalse();
+        assertThat(mAvrcpCoverArtStorage.doesImageExist(mDevice2, "2")).isFalse();
     }
 
     @Test
     public void toString_returnsDeviceInfo() {
         String expectedString =
-                "CoverArtStorage:\n"
-                        + "  "
-                        + mDevice1
-                        + " ("
-                        + 1
-                        + "):"
-                        + "\n    "
-                        + mHandle1
-                        + "\n";
+                "CoverArtStorage:\n" + "  " + mDevice1 + " (" + 1 + "):" + "\n    " + "1" + "\n";
 
-        mAvrcpCoverArtStorage.addImage(mDevice1, mHandle1, mImage1);
+        mAvrcpCoverArtStorage.addImage(mDevice1, "1", mImage1);
 
         assertThat(mAvrcpCoverArtStorage.toString()).isEqualTo(expectedString);
     }

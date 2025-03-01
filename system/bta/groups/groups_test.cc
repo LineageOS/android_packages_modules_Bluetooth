@@ -24,9 +24,6 @@
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 namespace bluetooth {
 namespace groups {
 
@@ -44,7 +41,7 @@ using bluetooth::groups::DeviceGroupsCallbacks;
 
 DeviceGroupsCallbacks* dev_callbacks;
 
-RawAddress GetTestAddress(int index) {
+static RawAddress GetTestAddress(int index) {
   EXPECT_LT(index, UINT8_MAX);
   RawAddress result = {{0xC0, 0xDE, 0xC0, 0xDE, 0x00, static_cast<uint8_t>(index)}};
   return result;

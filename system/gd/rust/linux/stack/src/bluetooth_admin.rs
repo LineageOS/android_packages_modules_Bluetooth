@@ -390,6 +390,7 @@ impl IBluetoothCallback for BluetoothDeviceCallbacks {
     fn on_address_changed(&mut self, _addr: RawAddress) {}
     fn on_name_changed(&mut self, _name: String) {}
     fn on_discoverable_changed(&mut self, _discoverable: bool) {}
+    fn on_device_key_missing(&mut self, remote_device: BluetoothDevice) {}
     fn on_discovering_changed(&mut self, _discovering: bool) {}
     fn on_ssp_request(
         &mut self,

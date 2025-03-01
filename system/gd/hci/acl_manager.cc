@@ -373,6 +373,10 @@ void AclManager::SetSystemSuspendState(bool suspended) {
   CallOn(pimpl_->le_impl_, &le_impl::set_system_suspend_state, suspended);
 }
 
+void AclManager::AddDeviceToRelaxedConnectionIntervalList(const Address address) {
+  CallOn(pimpl_->le_impl_, &le_impl::add_device_to_relaxed_connection_interval_list, address);
+}
+
 LeAddressManager* AclManager::GetLeAddressManager() {
   return pimpl_->le_impl_->le_address_manager_;
 }

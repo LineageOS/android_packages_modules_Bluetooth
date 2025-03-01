@@ -30,9 +30,6 @@
 #include "osi/include/fixed_queue.h"
 #include "osi/include/thread.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 using ::benchmark::State;
 using bluetooth::common::MessageLoopThread;
 
@@ -41,7 +38,7 @@ using bluetooth::common::MessageLoopThread;
 static std::atomic<int> g_counter = 0;
 static std::unique_ptr<std::promise<void>> g_counter_promise = nullptr;
 
-void pthread_callback_batch(void* context) {
+static void pthread_callback_batch(void* context) {
   auto queue = static_cast<fixed_queue_t*>(context);
   bluetooth::log::assert_that(queue != nullptr, "assert failed: queue != nullptr");
   fixed_queue_dequeue(queue);
@@ -51,15 +48,15 @@ void pthread_callback_batch(void* context) {
   }
 }
 
-void callback_sequential(void* /* context */) { g_counter_promise->set_value(); }
+static void callback_sequential(void* /* context */) { g_counter_promise->set_value(); }
 
-void callback_sequential_queue(fixed_queue_t* queue, void* /* context */) {
+static void callback_sequential_queue(fixed_queue_t* queue, void* /* context */) {
   bluetooth::log::assert_that(queue != nullptr, "assert failed: queue != nullptr");
   fixed_queue_dequeue(queue);
   g_counter_promise->set_value();
 }
 
-void callback_batch(fixed_queue_t* queue, void* /* data */) {
+static void callback_batch(fixed_queue_t* queue, void* /* data */) {
   bluetooth::log::assert_that(queue != nullptr, "assert failed: queue != nullptr");
   fixed_queue_dequeue(queue);
   g_counter++;
@@ -329,8 +326,7 @@ protected:
     std::future<void> set_up_future = set_up_promise_->get_future();
     message_loop_thread_ = new MessageLoopThread("BM_MessageLooopThread thread");
     message_loop_thread_->StartUp();
-    message_loop_thread_->DoInThread(FROM_HERE,
-                                     base::BindOnce(&std::promise<void>::set_value,
+    message_loop_thread_->DoInThread(base::BindOnce(&std::promise<void>::set_value,
                                                     base::Unretained(set_up_promise_.get())));
     set_up_future.wait();
   }
@@ -352,8 +348,7 @@ BENCHMARK_F(BM_MessageLooopThread, batch_enque_dequeue)(State& state) {
     std::future<void> counter_future = g_counter_promise->get_future();
     for (int i = 0; i < NUM_MESSAGES_TO_SEND; i++) {
       fixed_queue_enqueue(bt_msg_queue_, (void*)&g_counter);
-      message_loop_thread_->DoInThread(FROM_HERE,
-                                       base::BindOnce(&callback_batch, bt_msg_queue_, nullptr));
+      message_loop_thread_->DoInThread(base::BindOnce(&callback_batch, bt_msg_queue_, nullptr));
     }
     counter_future.wait();
   }
@@ -364,7 +359,7 @@ BENCHMARK_F(BM_MessageLooopThread, sequential_execution)(State& state) {
     for (int i = 0; i < NUM_MESSAGES_TO_SEND; i++) {
       g_counter_promise = std::make_unique<std::promise<void>>();
       std::future<void> counter_future = g_counter_promise->get_future();
-      message_loop_thread_->DoInThread(FROM_HERE, base::BindOnce(&callback_sequential, nullptr));
+      message_loop_thread_->DoInThread(base::BindOnce(&callback_sequential, nullptr));
       counter_future.wait();
     }
   }

@@ -247,14 +247,6 @@ AudioContexts GetAudioContextsFromSinkMetadata(
     all_track_contexts.set(track_context);
   }
 
-  if (all_track_contexts.none()) {
-    all_track_contexts = AudioContexts(static_cast<std::underlying_type<LeAudioContextType>::type>(
-            LeAudioContextType::UNSPECIFIED));
-    log::debug(
-            "Unable to find supported audio source context for the remote audio "
-            "sink device. This may result in voice back channel malfunction.");
-  }
-
   log::info("Allowed contexts from sink metadata: {} (0x{:08x})",
             bluetooth::common::ToString(all_track_contexts), all_track_contexts.value());
   return all_track_contexts;
@@ -608,6 +600,8 @@ const struct types::acs_ac_record* GetConfigurationSupportedPac(
   /* Doesn't match required configuration with any PAC */
   if (pacs.size() == 0) {
     log::error("No PAC records");
+  } else {
+    log::error("No matching PAC record");
   }
   return nullptr;
 }

@@ -184,7 +184,7 @@ public class PbapClientServiceTest {
 
     @After
     public void tearDown() {
-        mService.stop();
+        mService.cleanup();
         assertThat(PbapClientService.getPbapClientService()).isNull();
     }
 

@@ -68,6 +68,8 @@ class SignalingChannel(EventEmitter):
     avdtp_server: Optional[l2cap.ClassicChannelServer] = None
     role: RoleType = None
     any: Any = Any()
+    acp_seid: int = 0
+    int_seid: int = 0
 
     def __init__(self, connection: Connection):
         super().__init__()
@@ -214,12 +216,14 @@ class SignalingChannel(EventEmitter):
             av.GetAllCapabilitiesResponse(transaction_label=cmd.transaction_label,
                                           service_capabilities=service_capabilities))
 
-    async def accept_set_configuration(self):
+    async def accept_set_configuration(self, expected_configuration: List[ServiceCapability]):
         cmd = await self.expect_signal(
             av.SetConfigurationCommand(transaction_label=self.any,
                                        acp_seid=self.any,
                                        int_seid=self.any,
-                                       service_capabilities=[MediaTransportCapability(), self.any]))
+                                       service_capabilities=expected_configuration))
+        self.acp_seid = cmd.acp_seid
+        self.int_seid = cmd.int_seid
         self.send_signal(SetConfigurationResponse(transaction_label=cmd.transaction_label))
 
     async def accept_open(self, timeout: float = 3.0):
@@ -252,9 +256,28 @@ class SignalingChannel(EventEmitter):
 
         self.on('connection', on_avdtp_connection)
 
+        expected_configuration: List[ServiceCapability] = []
+        for capability in service_capabilities:
+            if isinstance(capability, av.MediaTransportCapability) or isinstance(capability,
+                                                                                 av.DelayReportingCapability):
+                expected_configuration.append(capability)
+            else:
+                expected_configuration.append(self.any)
+
         await self.accept_discover(seid_information)
         await self.accept_get_all_capabilities(service_capabilities)
-        await self.accept_set_configuration()
+        await self.accept_set_configuration(expected_configuration)
         await self.accept_open()
 
         await asyncio.wait_for(avdtp_future, timeout=timeout)
+
+    async def initiate_delay_report(self, delay_ms: int = 100, timeout: float = 3.0):
+        delay_one_tenth = delay_ms * 10
+        delay_msb = (delay_one_tenth >> 8) & 0xff
+        delay_lsb = delay_one_tenth & 0xff
+        self.send_signal(
+            av.DelayReportCommand(transaction_label=0x01,
+                                  acp_seid=self.acp_seid,
+                                  delay_msb=delay_msb,
+                                  delay_lsb=delay_lsb))
+        await self.expect_signal(av.DelayReportResponse(transaction_label=self.any), timeout=timeout)

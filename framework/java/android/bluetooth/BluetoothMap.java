@@ -18,6 +18,9 @@ package android.bluetooth;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
+import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import android.annotation.NonNull;
 import android.annotation.RequiresNoPermission;
@@ -48,8 +51,8 @@ import java.util.List;
  */
 @SystemApi
 public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
+    private static final String TAG = BluetoothMap.class.getSimpleName();
 
-    private static final String TAG = "BluetoothMap";
     private static final boolean DBG = true;
     private static final boolean VDBG = false;
 
@@ -426,7 +429,7 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return BluetoothProfile.STATE_DISCONNECTED;
+        return STATE_DISCONNECTED;
     }
 
     /**
@@ -478,8 +481,8 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
             if (DBG) log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()
                 && isValidDevice(device)
-                && (connectionPolicy == BluetoothProfile.CONNECTION_POLICY_FORBIDDEN
-                        || connectionPolicy == BluetoothProfile.CONNECTION_POLICY_ALLOWED)) {
+                && (connectionPolicy == CONNECTION_POLICY_FORBIDDEN
+                        || connectionPolicy == CONNECTION_POLICY_ALLOWED)) {
             try {
                 return service.setConnectionPolicy(device, connectionPolicy, mAttributionSource);
             } catch (RemoteException e) {
@@ -540,7 +543,7 @@ public final class BluetoothMap implements BluetoothProfile, AutoCloseable {
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-        return BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
+        return CONNECTION_POLICY_FORBIDDEN;
     }
 
     private static void log(String msg) {

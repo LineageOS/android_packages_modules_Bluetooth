@@ -74,7 +74,7 @@ public:
    * Note: Both Start() and Suspend() will return true when there are no errors.
    * Called by Audio framework / HAL to start the stream
    ***/
-  virtual bool Start() { return false; }
+  virtual bool Start(bool /*low_latency*/ = false) { return false; }
 
   /***
    * Called by Audio framework / HAL to suspend the stream
@@ -111,6 +111,17 @@ public:
 
   virtual size_t WriteData(const void* /*buffer*/, size_t /*bytes*/) const { return 0; }
   virtual size_t ReadData(void* /*buffer*/, size_t /*bytes*/) const { return 0; }
+
+  virtual bool SetLatencyMode(audio_latency_mode_t /*mode*/) { return false; }
+
+  virtual int GetRecommendedLatencyModes(audio_latency_mode_t* /*modes*/, size_t* /*num_modes*/) {
+    return -ENOSYS;
+  }
+
+  virtual int SetLatencyModeCallback(stream_latency_mode_callback_t /*callback*/,
+                                     void* /*cookie*/) {
+    return -ENOSYS;
+  }
 };
 
 namespace aidl {
@@ -129,7 +140,7 @@ public:
 
   void ForcePcmStereoToMono(bool force) override { is_stereo_to_mono_ = force; }
 
-  bool Start() override;
+  bool Start(bool low_latency = false) override;
   bool Suspend() override;
   void Stop() override;
 
@@ -164,6 +175,12 @@ public:
 
   bool GetPreferredDataIntervalUs(size_t* interval_us) const override;
 
+  bool SetLatencyMode(audio_latency_mode_t mode) override;
+
+  int GetRecommendedLatencyModes(audio_latency_mode_t* modes, size_t* num_modes) override;
+
+  int SetLatencyModeCallback(stream_latency_mode_callback_t callback, void* cookie) override;
+
 protected:
   uint16_t cookie_;
   BluetoothStreamState state_;
@@ -175,6 +192,8 @@ protected:
 private:
   mutable std::mutex cv_mutex_;
   std::condition_variable internal_cv_;
+  stream_latency_mode_callback_t latency_mode_callback_;
+  void* latency_mode_callback_cookie_;
 
   // Check and initialize session type for |devices| If failed, this
   // BluetoothAudioPortAidl is not initialized and must be deleted.
@@ -184,6 +203,7 @@ private:
 
   void ControlResultHandler(const BluetoothAudioStatus& status);
   void SessionChangedHandler();
+  void LowLatencyAllowedHander(bool allowed);
 };
 
 class BluetoothAudioPortAidlOut : public BluetoothAudioPortAidl {

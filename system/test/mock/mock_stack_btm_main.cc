@@ -21,12 +21,11 @@
 
 #include <string>
 
+#include "stack/include/btm_client_interface.h"
+#include "stack/include/btm_log_history.h"
 #include "test/common/mock_functions.h"
 #include "types/ble_address_with_type.h"
 #include "types/raw_address.h"
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 void BTM_LogHistory(const std::string& /* tag */, const RawAddress& /* bd_addr */,
                     const std::string& /* msg */) {

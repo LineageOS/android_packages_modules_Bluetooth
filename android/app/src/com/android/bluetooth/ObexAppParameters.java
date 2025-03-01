@@ -18,7 +18,6 @@ package com.android.bluetooth;
 
 import com.android.obex.HeaderSet;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
@@ -58,14 +57,7 @@ public final class ObexAppParameters {
     }
 
     public static ObexAppParameters fromHeaderSet(HeaderSet headerset) {
-        try {
-            byte[] raw = (byte[]) headerset.getHeader(HeaderSet.APPLICATION_PARAMETER);
-            return new ObexAppParameters(raw);
-        } catch (IOException e) {
-            // won't happen
-        }
-
-        return null;
+        return new ObexAppParameters((byte[]) headerset.getHeader(HeaderSet.APPLICATION_PARAMETER));
     }
 
     public byte[] getHeader() {

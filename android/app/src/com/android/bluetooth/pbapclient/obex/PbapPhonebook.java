@@ -145,7 +145,7 @@ public class PbapPhonebook {
      *     any other {@link VCardException} or succeeds (i.e., no {@link VCardException}).
      * @throws IOException if there's an issue reading the {@link InputStream}.
      */
-    private boolean parsedWithVcardVersionException(VCardParser parser, InputStream in)
+    private static boolean parsedWithVcardVersionException(VCardParser parser, InputStream in)
             throws IOException {
         try {
             parser.parse(in);
@@ -170,7 +170,7 @@ public class PbapPhonebook {
     /**
      * Get the offset associated with this PbapPhonebook object
      *
-     * <p>The offset respresents the start index of the remote contacts pull
+     * <p>The offset represents the start index of the remote contacts pull
      *
      * @return an int representing the offset index where this pull started from
      */

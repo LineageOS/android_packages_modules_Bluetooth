@@ -16,12 +16,13 @@
 
 package com.android.bluetooth.hap;
 
+import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
+
 import static com.android.bluetooth.TestUtils.MockitoRule;
 
 import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothHapPresetInfo;
-import android.bluetooth.BluetoothProfile;
 
 import com.android.bluetooth.btservice.AdapterService;
 
@@ -51,7 +52,7 @@ public class HapClientNativeCallbackTest {
 
     @Test
     public void onConnectionStateChanged() {
-        int state = BluetoothProfile.STATE_CONNECTED;
+        int state = STATE_CONNECTED;
         mNativeCallback.onConnectionStateChanged(state, null);
 
         verify(mHapClientService).messageFromNative(mEvent.capture());

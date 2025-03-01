@@ -264,7 +264,7 @@ void SourceImpl::StartAudioTicks() {
           worker_thread_, source_codec_config_.num_channels, source_codec_config_.sample_rate,
           source_codec_config_.bits_per_sample, source_codec_config_.data_interval_us);
   audio_timer_.SchedulePeriodic(
-          worker_thread_->GetWeakPtr(), FROM_HERE,
+          worker_thread_->GetWeakPtr(),
           base::BindRepeating(&SourceImpl::SendAudioData, weak_factory_.GetWeakPtr()),
           std::chrono::microseconds(source_codec_config_.data_interval_us));
 }
@@ -280,7 +280,7 @@ bool SourceImpl::OnSuspendReq() {
   if (CodecManager::GetInstance()->GetCodecLocation() == types::CodecLocation::HOST) {
     if (com::android::bluetooth::flags::run_ble_audio_ticks_in_worker_thread()) {
       worker_thread_->DoInThread(
-              FROM_HERE, base::BindOnce(&SourceImpl::StopAudioTicks, weak_factory_.GetWeakPtr()));
+              base::BindOnce(&SourceImpl::StopAudioTicks, weak_factory_.GetWeakPtr()));
     } else {
       StopAudioTicks();
     }
@@ -310,8 +310,11 @@ bool SourceImpl::OnMetadataUpdateReq(const source_metadata_v7_t& source_metadata
     return false;
   }
 
-  std::vector<struct playback_track_metadata_v7> metadata(
-          source_metadata.tracks, source_metadata.tracks + source_metadata.track_count);
+  std::vector<struct playback_track_metadata_v7> metadata;
+  if (source_metadata.tracks != nullptr) {
+    metadata = std::vector<struct playback_track_metadata_v7>(
+            source_metadata.tracks, source_metadata.tracks + source_metadata.track_count);
+  }
 
   bt_status_t status = do_in_main_thread(base::BindOnce(
           &LeAudioSourceAudioHalClient::Callbacks::OnAudioMetadataUpdate,
@@ -379,7 +382,7 @@ void SourceImpl::Stop() {
   if (CodecManager::GetInstance()->GetCodecLocation() == types::CodecLocation::HOST) {
     if (com::android::bluetooth::flags::run_ble_audio_ticks_in_worker_thread()) {
       worker_thread_->DoInThread(
-              FROM_HERE, base::BindOnce(&SourceImpl::StopAudioTicks, weak_factory_.GetWeakPtr()));
+              base::BindOnce(&SourceImpl::StopAudioTicks, weak_factory_.GetWeakPtr()));
     } else {
       StopAudioTicks();
     }
@@ -404,7 +407,7 @@ void SourceImpl::ConfirmStreamingRequest() {
 
   if (com::android::bluetooth::flags::run_ble_audio_ticks_in_worker_thread()) {
     worker_thread_->DoInThread(
-            FROM_HERE, base::BindOnce(&SourceImpl::StartAudioTicks, weak_factory_.GetWeakPtr()));
+            base::BindOnce(&SourceImpl::StartAudioTicks, weak_factory_.GetWeakPtr()));
   } else {
     StartAudioTicks();
   }

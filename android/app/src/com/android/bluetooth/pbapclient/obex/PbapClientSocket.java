@@ -19,6 +19,8 @@ package com.android.bluetooth.pbapclient;
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 
+import static java.util.Objects.requireNonNull;
+
 import android.annotation.RequiresPermission;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
@@ -28,7 +30,6 @@ import com.android.internal.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Objects;
 
 /**
  * A testable object that wraps BluetoothSocket objects
@@ -55,8 +56,8 @@ public class PbapClientSocket {
 
     @VisibleForTesting
     static void inject(InputStream input, OutputStream output) {
-        sInjectedInput = Objects.requireNonNull(input);
-        sInjectedOutput = Objects.requireNonNull(output);
+        sInjectedInput = requireNonNull(input);
+        sInjectedOutput = requireNonNull(output);
     }
 
     /** A static utility to create an L2CAP based socket for a given device */

@@ -20,11 +20,10 @@
  */
 
 #include "stack/include/bt_hdr.h"
+#include "stack/include/l2cap_acl_interface.h"
+#include "stack/include/l2cap_module.h"
 #include "stack/l2cap/l2c_int.h"
 #include "test/common/mock_functions.h"
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 tL2CAP_DW_RESULT l2c_data_write(uint16_t /* cid */, BT_HDR* /* p_data */, uint16_t /* flags */) {
   inc_func_call_count(__func__);

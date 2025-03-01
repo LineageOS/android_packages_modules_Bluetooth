@@ -47,6 +47,13 @@ filegroup {
     ],
 }
 
+filegroup {
+    name: "TestMockCodecManager",
+    srcs: [
+        "le_audio/mock_codec_manager.cc",
+    ],
+}
+
 // BTA static library for target
 cc_library_static {
     name: "libbt-bta",
@@ -194,6 +201,7 @@ cc_library_static {
         "gatt/database_builder.cc",
         "jv/bta_jv_act.cc",
         "jv/bta_jv_api.cc",
+        "rfcomm/bta_rfcomm_metrics.cc",
         "rfcomm/bta_rfcomm_scn.cc",
         "sdp/bta_sdp.cc",
         "sdp/bta_sdp_act.cc",
@@ -459,6 +467,7 @@ cc_test {
     srcs: [
         ":TestCommonMockFunctions",
         ":TestFakeOsi",
+        ":TestMockBtaRfcMetrics",
         ":TestMockBtaSys",
         ":TestMockBtif",
         ":TestMockStackBtm",
@@ -1462,6 +1471,7 @@ cc_test {
         ":TestFakeOsi",
         ":TestMockBtaGatt",
         ":TestMockBtaLeAudio",
+        ":TestMockBtaRfcMetrics",
         ":TestMockBtaScn",
         ":TestMockBtaSdp",
         ":TestMockBtaSys",

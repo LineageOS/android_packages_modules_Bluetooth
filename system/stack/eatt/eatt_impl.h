@@ -308,7 +308,7 @@ struct eatt_impl {
       std::vector<uint16_t> empty;
       tL2CAP_LE_RESULT_CODE result =
               tL2CAP_LE_RESULT_CODE::L2CAP_LE_RESULT_INSUFFICIENT_AUTHENTICATION;
-      if (BTM_IsLinkKeyKnown(bda, BT_TRANSPORT_LE)) {
+      if (BTM_IsBonded(bda, BT_TRANSPORT_LE)) {
         result = tL2CAP_LE_RESULT_CODE::L2CAP_LE_RESULT_INSUFFICIENT_ENCRYP;
       }
       log::error("ACL to device {} is unencrypted.", bda);

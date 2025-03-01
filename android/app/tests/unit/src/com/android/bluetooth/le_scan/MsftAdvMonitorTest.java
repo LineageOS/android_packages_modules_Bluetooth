@@ -28,6 +28,7 @@ import org.junit.runners.JUnit4;
 @RunWith(JUnit4.class)
 public final class MsftAdvMonitorTest {
     private static final String TAG = MsftAdvMonitorTest.class.getSimpleName();
+
     // Hardcoded values taken from CrOS defaults
     private static final byte RSSI_THRESHOLD_HIGH = (byte) 0xBF; // 191
     private static final byte RSSI_THRESHOLD_LOW = (byte) 0xB0; // 176
@@ -43,7 +44,7 @@ public final class MsftAdvMonitorTest {
     private static final byte[] FAST_PAIR_SERVICE_DATA =
             new byte[] {(byte) 0xfc, (byte) 0x12, (byte) 0x8e};
 
-    private void assertMonitorConstants(MsftAdvMonitor monitor) {
+    private static void assertMonitorConstants(MsftAdvMonitor monitor) {
         MsftAdvMonitor.Monitor mMonitor = monitor.getMonitor();
         assertThat(mMonitor.rssi_threshold_high).isEqualTo(RSSI_THRESHOLD_HIGH);
         assertThat(mMonitor.rssi_threshold_low).isEqualTo(RSSI_THRESHOLD_LOW);

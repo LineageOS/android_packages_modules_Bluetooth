@@ -23,10 +23,6 @@
 #include "test/common/mock_functions.h"
 #include "types/raw_address.h"
 
-bool PORT_IsOpening(RawAddress* /* bd_addr */) {
-  inc_func_call_count(__func__);
-  return false;
-}
 const char* PORT_GetResultString(const uint8_t /* result_code */) {
   inc_func_call_count(__func__);
   return nullptr;

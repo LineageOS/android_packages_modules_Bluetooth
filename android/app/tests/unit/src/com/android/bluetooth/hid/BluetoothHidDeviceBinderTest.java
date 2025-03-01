@@ -16,6 +16,9 @@
 
 package com.android.bluetooth.hid;
 
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
+import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
+
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
 
@@ -27,7 +30,6 @@ import static org.mockito.Mockito.when;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHidDeviceAppQosSettings;
 import android.bluetooth.BluetoothHidDeviceAppSdpSettings;
-import android.bluetooth.BluetoothProfile;
 import android.bluetooth.IBluetoothHidDeviceCallback;
 import android.content.AttributionSource;
 
@@ -138,7 +140,7 @@ public class BluetoothHidDeviceBinderTest {
 
     @Test
     public void setConnectionPolicy() {
-        int connectionPolicy = BluetoothProfile.CONNECTION_POLICY_ALLOWED;
+        int connectionPolicy = CONNECTION_POLICY_ALLOWED;
         mBinder.setConnectionPolicy(mDevice, connectionPolicy, mAttributionSource);
         verify(mService).setConnectionPolicy(mDevice, connectionPolicy);
     }
@@ -164,7 +166,7 @@ public class BluetoothHidDeviceBinderTest {
 
     @Test
     public void getDevicesMatchingConnectionStates() {
-        int[] states = new int[] {BluetoothProfile.STATE_CONNECTED};
+        int[] states = new int[] {STATE_CONNECTED};
         mBinder.getDevicesMatchingConnectionStates(states, mAttributionSource);
         verify(mService).getDevicesMatchingConnectionStates(states);
     }

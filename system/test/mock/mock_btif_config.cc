@@ -27,14 +27,12 @@
 #include <cstdint>
 #include <string>
 
+#include "btif/include/btif_config.h"
 #include "test/common/mock_functions.h"
 #include "types/raw_address.h"
 
 // Mocked compile conditionals, if any
 // Mocked internal structures, if any
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 namespace test {
 namespace mock {

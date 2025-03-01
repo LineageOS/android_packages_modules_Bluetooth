@@ -21,10 +21,12 @@
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/hci/enums.pb.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/le/enums.pb.h>
+#include <frameworks/proto_logging/stats/enums/bluetooth/rfcomm/enums.pb.h>
 
 #include <vector>
 
 #include "hci/address.h"
+#include "types/raw_address.h"
 
 namespace bluetooth {
 
@@ -346,6 +348,31 @@ void LogMetricBluetoothLEConnection(os::LEConnectionSessionOptions session_optio
  */
 void LogMetricBluetoothEvent(const hci::Address& address, android::bluetooth::EventType event_type,
                              android::bluetooth::State state);
+
+/**
+ * Logs an RFCOMM connection when an RFCOMM port closes
+ *
+ * @param address address of the peer device
+ * @param close_reason reason that the port was closed
+ * @param security security level of the connection
+ * @param last_event event processed prior to "CLOSED"
+ * @param previous_state state prior to "CLOSED"
+ * @param open_duration_ms that the socket was opened, 0 if connection failed
+ * @param uid UID of the app that called connect
+ * @param sdp_status status code for sdp
+ * @param is_server true if device is server
+ * @param sdp_initiated true if sdp started for thie connection
+ * @param sdp_duration_ms duration of sdp, 0 if it didn't happen
+ */
+void LogMetricRfcommConnectionAtClose(const hci::Address& address,
+                                      android::bluetooth::rfcomm::PortResult close_reason,
+                                      android::bluetooth::rfcomm::SocketConnectionSecurity security,
+                                      android::bluetooth::rfcomm::RfcommPortEvent last_event,
+                                      android::bluetooth::rfcomm::RfcommPortState previous_state,
+                                      int32_t open_duration_ms, int32_t uid,
+                                      android::bluetooth::BtaStatus sdp_status, bool is_server,
+                                      bool sdp_initiated, int32_t sdp_duration_ms);
+
 }  // namespace os
    //
 }  // namespace bluetooth

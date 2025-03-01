@@ -24,7 +24,7 @@ import android.util.SparseIntArray;
  * TS 23.038 6.2.1 and UTF-16
  */
 public class GsmAlphabet {
-    private static final String TAG = "GSM";
+    private static final String TAG = GsmAlphabet.class.getSimpleName();
 
     /**
      * This escapes extended characters, and when present indicates that the following character

@@ -34,7 +34,7 @@ import java.io.InputStream;
  * determine image equality in an application/folder/item agnostic way.
  */
 public class Image {
-    private static final String TAG = "Image";
+    private static final String TAG = Image.class.getSimpleName();
 
     public static int SOURCE_NONE = 0;
     public static int SOURCE_URI = 1;

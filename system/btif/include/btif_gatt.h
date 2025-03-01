@@ -24,8 +24,7 @@
  *
  *****************************************************************************/
 
-#ifndef BTIF_GATT_H
-#define BTIF_GATT_H
+#pragma once
 
 #include "include/hardware/bt_gatt.h"
 
@@ -33,4 +32,4 @@ extern const btgatt_client_interface_t btgattClientInterface;
 extern const btgatt_server_interface_t btgattServerInterface;
 
 BleScannerInterface* get_ble_scanner_instance();
-#endif
+const btgatt_interface_t* btif_gatt_get_interface();

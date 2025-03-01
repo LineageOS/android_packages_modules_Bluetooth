@@ -320,7 +320,7 @@ public class HfpClientDeviceBlock {
         }
     }
 
-    private Bundle getScoStateFromDevice(BluetoothDevice device) {
+    private static Bundle getScoStateFromDevice(BluetoothDevice device) {
         Bundle bundle = new Bundle();
 
         HeadsetClientService headsetClientService = HeadsetClientService.getHeadsetClientService();

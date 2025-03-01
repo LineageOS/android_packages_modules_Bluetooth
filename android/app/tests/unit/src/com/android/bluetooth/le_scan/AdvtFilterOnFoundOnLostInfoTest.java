@@ -16,66 +16,69 @@
 
 package com.android.bluetooth.le_scan;
 
-import static com.google.common.truth.Truth.assertThat;
-
 import androidx.test.filters.SmallTest;
 import androidx.test.runner.AndroidJUnit4;
 
+import com.google.common.truth.Expect;
+import com.google.protobuf.ByteString;
+
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-/** Test cases for {@link AdvtFilterOnFoundOnLostInfoTest}. */
+/** Test cases for {@link AdvtFilterOnFoundOnLostInfo}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class AdvtFilterOnFoundOnLostInfoTest {
 
+    @Rule public Expect expect = Expect.create();
+
     @Test
     public void advtFilterOnFoundOnLostInfoParams() {
         int clientIf = 0;
-        int advPktLen = 1;
-        byte[] advPkt = new byte[] {0x02};
-        int scanRspLen = 3;
-        byte[] scanRsp = new byte[] {0x04};
+        int advPacketLen = 1;
+        ByteString advPacket = ByteString.copyFrom(new byte[] {0x02});
+        int scanResponseLen = 3;
+        ByteString scanResponse = ByteString.copyFrom(new byte[] {0x04});
         int filtIndex = 5;
         int advState = 6;
         int advInfoPresent = 7;
         String address = "00:11:22:33:FF:EE";
-        int addrType = 8;
+        int addressType = 8;
         int txPower = 9;
         int rssiValue = 10;
         int timeStamp = 11;
+        byte[] resultByteArray = new byte[] {2, 4};
 
         AdvtFilterOnFoundOnLostInfo advtFilterOnFoundOnLostInfo =
                 new AdvtFilterOnFoundOnLostInfo(
                         clientIf,
-                        advPktLen,
-                        advPkt,
-                        scanRspLen,
-                        scanRsp,
+                        advPacketLen,
+                        advPacket,
+                        scanResponseLen,
+                        scanResponse,
                         filtIndex,
                         advState,
                         advInfoPresent,
                         address,
-                        addrType,
+                        addressType,
                         txPower,
                         rssiValue,
                         timeStamp);
 
-        assertThat(advtFilterOnFoundOnLostInfo.getClientIf()).isEqualTo(clientIf);
-        assertThat(advtFilterOnFoundOnLostInfo.getFiltIndex()).isEqualTo(filtIndex);
-        assertThat(advtFilterOnFoundOnLostInfo.getAdvState()).isEqualTo(advState);
-        assertThat(advtFilterOnFoundOnLostInfo.getTxPower()).isEqualTo(txPower);
-        assertThat(advtFilterOnFoundOnLostInfo.getTimeStamp()).isEqualTo(timeStamp);
-        assertThat(advtFilterOnFoundOnLostInfo.getRSSIValue()).isEqualTo(rssiValue);
-        assertThat(advtFilterOnFoundOnLostInfo.getAdvInfoPresent()).isEqualTo(advInfoPresent);
-        assertThat(advtFilterOnFoundOnLostInfo.getAddress()).isEqualTo(address);
-        assertThat(advtFilterOnFoundOnLostInfo.getAddressType()).isEqualTo(addrType);
-        assertThat(advtFilterOnFoundOnLostInfo.getAdvPacketData()).isEqualTo(advPkt);
-        assertThat(advtFilterOnFoundOnLostInfo.getAdvPacketLen()).isEqualTo(advPktLen);
-        assertThat(advtFilterOnFoundOnLostInfo.getScanRspData()).isEqualTo(scanRsp);
-        assertThat(advtFilterOnFoundOnLostInfo.getScanRspLen()).isEqualTo(scanRspLen);
-
-        byte[] resultByteArray = new byte[] {2, 4};
-        assertThat(advtFilterOnFoundOnLostInfo.getResult()).isEqualTo(resultByteArray);
+        expect.that(advtFilterOnFoundOnLostInfo.clientIf()).isEqualTo(clientIf);
+        expect.that(advtFilterOnFoundOnLostInfo.advPacketLen()).isEqualTo(advPacketLen);
+        expect.that(advtFilterOnFoundOnLostInfo.advPacket()).isEqualTo(advPacket);
+        expect.that(advtFilterOnFoundOnLostInfo.scanResponseLen()).isEqualTo(scanResponseLen);
+        expect.that(advtFilterOnFoundOnLostInfo.scanResponse()).isEqualTo(scanResponse);
+        expect.that(advtFilterOnFoundOnLostInfo.filtIndex()).isEqualTo(filtIndex);
+        expect.that(advtFilterOnFoundOnLostInfo.advState()).isEqualTo(advState);
+        expect.that(advtFilterOnFoundOnLostInfo.advInfoPresent()).isEqualTo(advInfoPresent);
+        expect.that(advtFilterOnFoundOnLostInfo.address()).isEqualTo(address);
+        expect.that(advtFilterOnFoundOnLostInfo.addressType()).isEqualTo(addressType);
+        expect.that(advtFilterOnFoundOnLostInfo.txPower()).isEqualTo(txPower);
+        expect.that(advtFilterOnFoundOnLostInfo.rssiValue()).isEqualTo(rssiValue);
+        expect.that(advtFilterOnFoundOnLostInfo.timeStamp()).isEqualTo(timeStamp);
+        expect.that(advtFilterOnFoundOnLostInfo.getResult()).isEqualTo(resultByteArray);
     }
 }

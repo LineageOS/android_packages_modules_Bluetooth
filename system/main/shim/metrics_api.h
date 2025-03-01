@@ -281,7 +281,78 @@ void LogMetricLeDeviceInAcceptList(hci::Address address, bool is_connect);
  */
 void LogMetricLeConnectionLifecycle(hci::Address address, bool is_connect, bool is_direct);
 
+/**
+ * Logs LE Connection Events
+ * @param address Address of the device
+ * @param reason the reason/status of the connection event
+ * @param is_locally_initiated the direction in which the connection request was
+ * sent
+ */
+void LogMetricLeConnectionCompletion(hci::Address address, hci::ErrorCode reason,
+                                     bool is_locally_initiated);
+/**
+ * Logs an RFCOMM connection when an RFCOMM port closes
+ *
+ * @param address address of peer device
+ * @param close_reason reason that the port was closed
+ * @param security security level of the connection
+ * @param second_previous_state two states prior to "CLOSED"
+ * @param previous_state state prior to "CLOSED"
+ * @param duration_ms that the socket was opened, 0 if connection failed
+ * @param uid UID of the app that called connect
+ */
+void LogMetricRfcommConnectionAtClose(const RawAddress& address,
+                                      android::bluetooth::rfcomm::PortResult close_reason,
+                                      android::bluetooth::rfcomm::SocketConnectionSecurity security,
+                                      android::bluetooth::rfcomm::RfcommPortEvent last_event,
+                                      android::bluetooth::rfcomm::RfcommPortState previous_state,
+                                      int32_t open_duration_ms, int32_t uid,
+                                      android::bluetooth::BtaStatus sdp_status, bool is_server,
+                                      bool sdp_initiated, int32_t sdp_duration_ms);
+/*Log LE Connection Rejected Event
+ * @param address Address of the device
+ */
+void LogMetricLeConnectionRejected(hci::Address address);
+
 bool CountCounterMetrics(int32_t key, int64_t count);
+
+/**
+ * Logs the AG version in a HFP session
+ * @param address of a device
+ * @param version AG HFP version
+ */
+void LogMetricHfpAgVersion(hci::Address address, uint16_t version);
+
+/**
+ * Logs the HF version in a HFP session
+ * @param address of a device
+ * @param version HF HFP Version
+ */
+void LogMetricHfpHfVersion(hci::Address address, uint16_t version);
+
+/**
+ * Logs a RFCOMM channel failure in a HFP session
+ * @param address of a device
+ */
+void LogMetricHfpRfcommChannelFail(hci::Address address);
+
+/**
+ * Logs a RFCOMM collision failure in a HFP session
+ * @param address of a device
+ */
+void LogMetricHfpRfcommCollisionFail(hci::Address address);
+
+/**
+ * Logs a RFCOMM AG open failure in a HFP session
+ * @param address of a device
+ */
+void LogMetricHfpRfcommAgOpenFail(hci::Address address);
+
+/**
+ * Logs a SLC failure in a HFP Session
+ * @param address of a device
+ */
+void LogMetricHfpSlcFail(hci::Address address);
 
 }  // namespace shim
 }  // namespace bluetooth

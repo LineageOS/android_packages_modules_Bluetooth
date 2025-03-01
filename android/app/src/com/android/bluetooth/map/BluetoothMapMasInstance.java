@@ -44,7 +44,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 // Next tag value for ContentProfileErrorReportUtils.report(): 4
 public class BluetoothMapMasInstance implements IObexConnectionHandler {
-    private static final String TAG = "BluetoothMapMasInstance";
+    private static final String TAG = BluetoothMapMasInstance.class.getSimpleName();
 
     private static int sInstanceCounter = 0;
 

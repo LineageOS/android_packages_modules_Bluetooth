@@ -15,12 +15,6 @@ flag {
     bug: "315234036"
 }
 
-flag {
-    name: "retry_esco_with_zero_retransmission_effort"
-    namespace: "bluetooth"
-    description: "retry eSCO connection based on retransmission_effort"
-    bug: "316498257"
-}
 
 flag {
     name: "hfp_software_datapath"
@@ -124,6 +118,26 @@ flag {
     namespace: "bluetooth"
     description: "Active call hangup when conference call is in holding state "
     bug: "388159341"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "check_peer_hf_indicator"
+    namespace: "bluetooth"
+    description: "Flag to check the peer HF indicator before setting feature mask"
+    bug: "383933502"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "enable_battery_level_update_only_through_hf_indicator"
+    namespace: "bluetooth"
+    description: "Flag to ignore vendor specific battery level update when HF indicator support is enabled."
+    bug: "385870861"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
