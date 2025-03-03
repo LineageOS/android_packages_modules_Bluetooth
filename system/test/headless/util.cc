@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
+#include "test/headless/util.h"
+
 #include <string>
 
 #include "include/hardware/bluetooth.h"
 #include "osi/include/properties.h"
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 bool is_android_running() {
 #ifdef __ANDROID__

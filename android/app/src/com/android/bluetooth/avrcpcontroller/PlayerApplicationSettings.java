@@ -29,7 +29,7 @@ import java.util.ArrayList;
  * Contains information Player Application Setting extended from BluetootAvrcpPlayerSettings
  */
 class PlayerApplicationSettings {
-    private static final String TAG = "PlayerApplicationSettings";
+    private static final String TAG = PlayerApplicationSettings.class.getSimpleName();
 
     /*
      * Values for SetPlayerApplicationSettings from AVRCP Spec V1.6 Appendix F.

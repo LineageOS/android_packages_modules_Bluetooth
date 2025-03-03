@@ -30,6 +30,7 @@
 #include <cstdint>
 
 #include "bta/hf_client/bta_hf_client_int.h"
+#include "bta/include/bta_rfcomm_metrics.h"
 #include "bta/include/bta_sec_api.h"
 #include "bta_sys.h"
 #include "osi/include/allocator.h"
@@ -195,6 +196,9 @@ void bta_hf_client_start_server() {
   if (port_status == PORT_SUCCESS) {
     bta_hf_client_setup_port(bta_hf_client_cb_arr.serv_handle);
   } else {
+    bta_collect_rfc_metrics_after_port_fail(static_cast<tPORT_RESULT>(port_status), false,
+                                            tBTA_JV_STATUS::SUCCESS, RawAddress::kAny, 0,
+                                            BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT, true, 0);
     log::verbose("RFCOMM_CreateConnection returned error:{}", port_status);
   }
 }
@@ -240,14 +244,20 @@ void bta_hf_client_rfc_do_open(tBTA_HF_CLIENT_DATA* p_data) {
     return;
   }
 
-  if (RFCOMM_CreateConnectionWithSecurity(
-              UUID_SERVCLASS_HF_HANDSFREE, client_cb->peer_scn, false, BTA_HF_CLIENT_MTU,
-              client_cb->peer_addr, &(client_cb->conn_handle), bta_hf_client_mgmt_cback,
-              BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT, RfcommCfgInfo{}) == PORT_SUCCESS) {
+  int status = RFCOMM_CreateConnectionWithSecurity(
+          UUID_SERVCLASS_HF_HANDSFREE, client_cb->peer_scn, false, BTA_HF_CLIENT_MTU,
+          client_cb->peer_addr, &(client_cb->conn_handle), bta_hf_client_mgmt_cback,
+          BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT, RfcommCfgInfo{});
+  if (status == PORT_SUCCESS) {
     bta_hf_client_setup_port(client_cb->conn_handle);
     log::verbose("bta_hf_client_rfc_do_open : conn_handle = {}", client_cb->conn_handle);
   } else {
     /* RFCOMM create connection failed; send ourselves RFCOMM close event */
+    bta_collect_rfc_metrics_after_port_fail(
+            static_cast<tPORT_RESULT>(status), client_cb->sdp_metrics.sdp_initiated,
+            client_cb->sdp_metrics.status, client_cb->peer_addr, 0,
+            BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT, true,
+            client_cb->sdp_metrics.sdp_start_ms - client_cb->sdp_metrics.sdp_end_ms);
     bta_hf_client_sm_execute(BTA_HF_CLIENT_RFC_CLOSE_EVT, p_data);
   }
 }

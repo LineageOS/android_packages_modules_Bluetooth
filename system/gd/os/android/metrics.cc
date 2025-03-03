@@ -30,6 +30,7 @@
 #include "common/strings.h"
 #include "hardware/bt_av.h"
 #include "hci/hci_packets.h"
+#include "main/shim/helpers.h"
 
 namespace std {
 template <>
@@ -51,6 +52,20 @@ template <>
 struct formatter<android::bluetooth::EventType> : enum_formatter<android::bluetooth::EventType> {};
 template <>
 struct formatter<android::bluetooth::State> : enum_formatter<android::bluetooth::State> {};
+template <>
+struct formatter<android::bluetooth::rfcomm::PortResult>
+    : enum_formatter<android::bluetooth::rfcomm::PortResult> {};
+template <>
+struct formatter<android::bluetooth::rfcomm::RfcommPortState>
+    : enum_formatter<android::bluetooth::rfcomm::RfcommPortState> {};
+template <>
+struct formatter<android::bluetooth::rfcomm::RfcommPortEvent>
+    : enum_formatter<android::bluetooth::rfcomm::RfcommPortEvent> {};
+template <>
+struct formatter<android::bluetooth::rfcomm::SocketConnectionSecurity>
+    : enum_formatter<android::bluetooth::rfcomm::SocketConnectionSecurity> {};
+template <>
+struct formatter<android::bluetooth::BtaStatus> : enum_formatter<android::bluetooth::BtaStatus> {};
 }  // namespace std
 
 namespace bluetooth {
@@ -475,6 +490,29 @@ void LogMetricBluetoothEvent(const Address& address, android::bluetooth::EventTy
   if (ret < 0) {
     log::warn("Failed BluetoothEvent Upload - Address {}, Event_type {}, State {}", address,
               event_type, state);
+  }
+}
+
+void LogMetricRfcommConnectionAtClose(const Address& address,
+                                      android::bluetooth::rfcomm::PortResult close_reason,
+                                      android::bluetooth::rfcomm::SocketConnectionSecurity security,
+                                      android::bluetooth::rfcomm::RfcommPortEvent last_event,
+                                      android::bluetooth::rfcomm::RfcommPortState previous_state,
+                                      int32_t open_duration_ms, int32_t uid,
+                                      android::bluetooth::BtaStatus sdp_status, bool is_server,
+                                      bool sdp_initiated, int32_t sdp_duration_ms) {
+  int metric_id = 0;
+  if (address.IsEmpty()) {
+    log::warn("Failed to upload - Address is empty");
+    return;
+  }
+  metric_id = MetricIdManager::GetInstance().AllocateId(address);
+  int ret = stats_write(BLUETOOTH_RFCOMM_CONNECTION_REPORTED_AT_CLOSE, close_reason, security,
+                        last_event, previous_state, open_duration_ms, uid, metric_id, sdp_status,
+                        is_server, sdp_initiated, sdp_duration_ms);
+  if (ret < 0) {
+    log::warn("Failed to log RFCOMM Connection metric for uid {}, close reason {}", uid,
+              close_reason);
   }
 }
 

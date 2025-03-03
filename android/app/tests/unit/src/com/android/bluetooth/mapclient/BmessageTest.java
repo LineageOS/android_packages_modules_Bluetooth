@@ -30,6 +30,7 @@ import org.junit.runner.RunWith;
 @RunWith(AndroidJUnit4.class)
 public class BmessageTest {
     private static final String TAG = BmessageTest.class.getSimpleName();
+
     private static final String SIMPLE_MMS_MESSAGE =
             "BEGIN:BMSG\r\nVERSION:1.0\r\nSTATUS:READ\r\nTYPE:MMS\r\nFOLDER:null\r\nBEGIN:BENV\r\n"
                     + "BEGIN:VCARD\r\nVERSION:2.1\r\nN:null;;;;\r\nTEL:555-5555\r\nEND:VCARD\r\n"

@@ -36,8 +36,7 @@ import java.util.regex.Pattern;
 
 // Next tag value for ContentProfileErrorReportUtils.report(): 10
 public abstract class BluetoothMapbMessage {
-
-    protected static final String TAG = BluetoothMapbMessage.class.getSimpleName();
+    static final String TAG = BluetoothMapbMessage.class.getSimpleName();
 
     private static final Pattern UNESCAPE_COLON = Pattern.compile("[^\\\\]:");
     protected static final Pattern COLON = Pattern.compile(":");

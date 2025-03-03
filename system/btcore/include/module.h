@@ -55,3 +55,6 @@ void module_shut_down(const module_t* module);
 // Clean up the provided module. |module| may not be NULL.
 // If not initialized, does nothing.
 void module_clean_up(const module_t* module);
+
+// Returns true if the module is started.
+bool is_module_started(const module_t* module);

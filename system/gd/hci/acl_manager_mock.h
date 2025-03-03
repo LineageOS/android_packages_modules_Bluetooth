@@ -75,6 +75,7 @@ public:
   MOCK_METHOD(void, CreateLeConnection, (AddressWithType address_with_type, bool is_direct),
               (override));
   MOCK_METHOD(void, CancelConnect, (Address address), (override));
+  MOCK_METHOD(void, CancelLeConnect, (AddressWithType address_with_type), (override));
   MOCK_METHOD(void, SetPrivacyPolicyForInitiatorAddress,
               (LeAddressManager::AddressPolicy address_policy, AddressWithType fixed_address,
                std::chrono::milliseconds minimum_rotation_time,

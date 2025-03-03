@@ -163,7 +163,6 @@ public:
     if (bluetooth_audio_clientif_ != nullptr && message_loop_ != nullptr) {
       // restart the session on the correct thread
       message_loop_->DoInThread(
-              FROM_HERE,
               base::BindOnce(&BluetoothAudioClientInterface::RenewAudioProviderAndSession,
                              base::Unretained(bluetooth_audio_clientif_)));
     } else {

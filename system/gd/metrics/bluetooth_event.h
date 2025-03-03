@@ -50,5 +50,7 @@ void LogLePairingFail(const RawAddress& raw_address, uint8_t failure_reason, boo
 
 android::bluetooth::State MapErrorCodeToState(hci::ErrorCode reason);
 
+android::bluetooth::State MapHfpVersionToState(uint16_t version);
+
 }  // namespace metrics
 }  // namespace bluetooth

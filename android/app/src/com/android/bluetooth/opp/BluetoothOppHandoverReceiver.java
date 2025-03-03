@@ -30,7 +30,7 @@ import com.android.bluetooth.flags.Flags;
 import java.util.ArrayList;
 
 public class BluetoothOppHandoverReceiver extends BroadcastReceiver {
-    public static final String TAG = "BluetoothOppHandoverReceiver";
+    private static final String TAG = BluetoothOppHandoverReceiver.class.getSimpleName();
 
     @Override
     public void onReceive(Context context, Intent intent) {

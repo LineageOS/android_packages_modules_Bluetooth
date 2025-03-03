@@ -26,9 +26,21 @@
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
-/*******************************************************************************
- *  Functions
- ******************************************************************************/
+struct HearingDevice;
+
+void btif_storage_add_hearing_aid(const HearingDevice& dev_info);
+
+void btif_storage_add_leaudio_has_device(const RawAddress& address,
+                                         std::vector<uint8_t> presets_bin, uint8_t features,
+                                         uint8_t active_preset);
+bool btif_storage_get_leaudio_has_presets(const RawAddress& address,
+                                          std::vector<uint8_t>& presets_bin,
+                                          uint8_t& active_preset);
+void btif_storage_set_leaudio_has_presets(const RawAddress& address,
+                                          std::vector<uint8_t> presets_bin);
+void btif_storage_set_leaudio_has_active_preset(const RawAddress& address, uint8_t active_preset);
+bool btif_storage_get_leaudio_has_features(const RawAddress& address, uint8_t& features);
+void btif_storage_set_leaudio_has_features(const RawAddress& address, uint8_t features);
 
 /*******************************************************************************
  *
@@ -112,8 +124,11 @@ void btif_storage_leaudio_update_ase_bin(const RawAddress& addr);
 void btif_storage_leaudio_update_handles_bin(const RawAddress& addr);
 
 /** Store Le Audio device audio locations */
-void btif_storage_set_leaudio_audio_location(const RawAddress& addr, uint32_t sink_location,
-                                             uint32_t source_location);
+void btif_storage_set_leaudio_sink_audio_location(const RawAddress& addr, uint32_t sink_location);
+
+/** Store Le Audio device audio locations */
+void btif_storage_set_leaudio_source_audio_location(const RawAddress& addr,
+                                                    uint32_t source_location);
 
 /** Store Le Audio device context types */
 void btif_storage_set_leaudio_supported_context_types(const RawAddress& addr,

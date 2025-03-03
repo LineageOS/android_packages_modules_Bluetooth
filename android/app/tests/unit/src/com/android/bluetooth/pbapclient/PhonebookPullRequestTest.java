@@ -71,14 +71,14 @@ public class PhonebookPullRequestTest {
         assertThat(mRequest.complete).isTrue();
     }
 
-    private VCardProperty createProperty(String name, String value) {
+    private static VCardProperty createProperty(String name, String value) {
         VCardProperty property = new VCardProperty();
         property.setName(name);
         property.setValues(value);
         return property;
     }
 
-    private VCardEntry createEntry(int propertyCount) {
+    private static VCardEntry createEntry(int propertyCount) {
         VCardEntry entry = new VCardEntry();
         for (int i = 0; i < propertyCount; i++) {
             entry.addProperty(createProperty(VCardConstants.PROPERTY_TEL, Integer.toString(i)));

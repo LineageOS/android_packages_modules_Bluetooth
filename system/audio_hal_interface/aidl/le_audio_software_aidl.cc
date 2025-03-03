@@ -189,11 +189,6 @@ bool LeAudioTransport::GetPresentationPosition(uint64_t* remote_delay_report_ns,
 void LeAudioTransport::SourceMetadataChanged(const source_metadata_v7_t& source_metadata) {
   auto track_count = source_metadata.track_count;
 
-  if (track_count == 0) {
-    log::warn(", invalid number of metadata changed tracks");
-    return;
-  }
-
   if (cached_source_metadata_.tracks != nullptr) {
     free(cached_source_metadata_.tracks);
     cached_source_metadata_.tracks = nullptr;
@@ -201,9 +196,11 @@ void LeAudioTransport::SourceMetadataChanged(const source_metadata_v7_t& source_
 
   log::info(", caching source metadata");
 
-  playback_track_metadata_v7* tracks;
-  tracks = (playback_track_metadata_v7*)malloc(sizeof(*tracks) * track_count);
-  memcpy(tracks, source_metadata.tracks, sizeof(*tracks) * track_count);
+  playback_track_metadata_v7* tracks = nullptr;
+  if (track_count != 0) {
+    tracks = (playback_track_metadata_v7*)malloc(sizeof(*tracks) * track_count);
+    memcpy(tracks, source_metadata.tracks, sizeof(*tracks) * track_count);
+  }
 
   cached_source_metadata_.track_count = track_count;
   cached_source_metadata_.tracks = tracks;
@@ -213,11 +210,6 @@ void LeAudioTransport::SourceMetadataChanged(const source_metadata_v7_t& source_
 
 void LeAudioTransport::SinkMetadataChanged(const sink_metadata_v7_t& sink_metadata) {
   auto track_count = sink_metadata.track_count;
-
-  if (track_count == 0) {
-    log::warn(", invalid number of metadata changed tracks");
-    return;
-  }
 
   if (stream_cb_.on_sink_metadata_update_) {
     stream_cb_.on_sink_metadata_update_(sink_metadata);
@@ -293,9 +285,7 @@ bool LeAudioTransport::IsRequestCompletedAfterUpdate(
 }
 
 StartRequestState LeAudioTransport::GetStartRequestState(void) {
-  if (com::android::bluetooth::flags::leaudio_start_request_state_mutex_check()) {
-    std::lock_guard<std::mutex> guard(start_request_state_mutex_);
-  }
+  std::lock_guard<std::mutex> guard(start_request_state_mutex_);
   return start_request_state_;
 }
 void LeAudioTransport::ClearStartRequestState(void) {
@@ -549,6 +539,8 @@ bool hal_ucast_capability_to_stack_format(const UnicastCapability& hal_capabilit
   auto sample_rate_hz = hal_lc3_capability.samplingFrequencyHz[0];
   auto frame_duration_us = hal_lc3_capability.frameDurationUs[0];
   auto octets_per_frame = hal_lc3_capability.octetsPerFrame[0];
+  auto codec_frame_blocks_per_sdu =
+          hal_lc3_capability.blocksPerSdu.size() ? hal_lc3_capability.blocksPerSdu[0] : 1;
   auto channel_count = hal_capability.channelCountPerDevice;
 
   if (sampling_freq_map.find(sample_rate_hz) == sampling_freq_map.end() ||
@@ -578,6 +570,9 @@ bool hal_ucast_capability_to_stack_format(const UnicastCapability& hal_capabilit
   stack_capability.params.Add(
           ::bluetooth::le_audio::codec_spec_conf::kLeAudioLtvTypeOctetsPerCodecFrame,
           octets_per_frame_map[octets_per_frame]);
+  stack_capability.params.Add(
+          ::bluetooth::le_audio::codec_spec_conf::kLeAudioLtvTypeCodecFrameBlocksPerSdu,
+          uint8_t(codec_frame_blocks_per_sdu));
   return true;
 }
 
@@ -709,20 +704,31 @@ AudioConfiguration stream_config_to_hal_audio_config(
     return AudioConfiguration(ucast_config);
   }
 
-  // In the legacy configuration we use the first ASE configuration as the source of truth.
-  if (offload_config.stream_map.at(0).codec_config.id ==
-      ::bluetooth::le_audio::types::LeAudioCodecIdLc3) {
-    Lc3Configuration lc3_config{
-            .pcmBitDepth = static_cast<int8_t>(offload_config.bits_per_sample),
-            .samplingFrequencyHz = static_cast<int32_t>(offload_config.sampling_frequency_hz),
-            .frameDurationUs = static_cast<int32_t>(offload_config.frame_duration_us),
-            .octetsPerFrame = static_cast<int32_t>(offload_config.octets_per_codec_frame),
-            .blocksPerSdu = static_cast<int8_t>(offload_config.codec_frames_blocks_per_sdu),
-    };
-    ucast_config.leAudioCodecConfig = LeAudioCodecConfiguration(lc3_config);
-  }
-
+  bool lc3_codec_config_found = false;
   for (auto& info : offload_config.stream_map) {
+    if (!lc3_codec_config_found &&
+        info.codec_config.id == ::bluetooth::le_audio::types::LeAudioCodecIdLc3) {
+      /* For now we have single configuration per directions, so this is enought to use
+       * configuration from the streaming cis. Find configuration and copy it.
+       */
+      log::verbose(
+              "Found LC3 config: bits_per_sample: {}, sampling_frequency_hz: {}, "
+              "frame_duration_us: {}, octets_per_codec_frame: {}, codec_frames_blocks_per_sdu: {}",
+              offload_config.bits_per_sample, offload_config.sampling_frequency_hz,
+              offload_config.frame_duration_us, offload_config.octets_per_codec_frame,
+              offload_config.codec_frames_blocks_per_sdu);
+
+      Lc3Configuration lc3_config{
+              .pcmBitDepth = static_cast<int8_t>(offload_config.bits_per_sample),
+              .samplingFrequencyHz = static_cast<int32_t>(offload_config.sampling_frequency_hz),
+              .frameDurationUs = static_cast<int32_t>(offload_config.frame_duration_us),
+              .octetsPerFrame = static_cast<int32_t>(offload_config.octets_per_codec_frame),
+              .blocksPerSdu = static_cast<int8_t>(offload_config.codec_frames_blocks_per_sdu),
+      };
+      ucast_config.leAudioCodecConfig = LeAudioCodecConfiguration(lc3_config);
+      lc3_codec_config_found = true;
+    }
+
     LeAudioConfiguration::StreamMap::BluetoothDeviceAddress aidl_device_address;
     // The address should be set only if stream is active
     if (info.is_stream_active) {
@@ -745,6 +751,11 @@ AudioConfiguration stream_config_to_hal_audio_config(
     });
   }
 
+  if (!lc3_codec_config_found) {
+    auto id = offload_config.stream_map.at(0).codec_config.id;
+    log::info("Non LC3 Codec config is used. Format: {}, Vendor: {}, Company: {}", id.coding_format,
+              id.vendor_codec_id, id.vendor_company_id);
+  }
   return AudioConfiguration(ucast_config);
 }
 

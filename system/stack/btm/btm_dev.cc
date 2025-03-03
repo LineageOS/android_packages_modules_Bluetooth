@@ -35,8 +35,8 @@
 #include "btm_int_types.h"
 #include "btm_sec_api.h"
 #include "btm_sec_cb.h"
+#include "connection_manager/connection_manager.h"
 #include "internal_include/bt_target.h"
-#include "main/shim/acl_api.h"
 #include "main/shim/dumpsys.h"
 #include "osi/include/allocator.h"
 #include "stack/btm/btm_sec.h"
@@ -84,7 +84,7 @@ void BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class, LinkKey li
                       uint8_t key_type, uint8_t pin_length) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
 
-  if (!p_dev_rec) {
+  if (p_dev_rec == nullptr) {
     p_dev_rec = btm_sec_allocate_dev_rec();
 
     if (p_dev_rec == nullptr) {
@@ -118,14 +118,6 @@ void BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class, LinkKey li
 
     /* "Bump" timestamp for existing record */
     p_dev_rec->timestamp = btm_sec_cb.dev_rec_count++;
-
-    /* TODO(eisenbach):
-     * Small refactor, but leaving original logic for now.
-     * On the surface, this does not make any sense at all. Why change the
-     * bond state for an existing device here? This logic should be verified
-     * as part of a larger refactor.
-     */
-    p_dev_rec->sec_rec.bond_type = BOND_TYPE_UNKNOWN;
   }
 
   if (dev_class != kDevClassEmpty) {
@@ -184,7 +176,7 @@ bool BTM_SecDeleteDevice(const RawAddress& bd_addr) {
   RawAddress bda = p_dev_rec->bd_addr;
 
   log::info("Remove device {} from filter accept list before delete record", bd_addr);
-  bluetooth::shim::ACL_IgnoreLeConnectionFrom(BTM_Sec_GetAddressWithType(bda));
+  connection_manager::remove_unconditional(bd_addr);
 
   const auto device_type = p_dev_rec->device_type;
   const auto bond_type = p_dev_rec->sec_rec.bond_type;

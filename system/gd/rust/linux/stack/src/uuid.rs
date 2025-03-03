@@ -40,6 +40,9 @@ pub const MEDIA_CONTROL: &str = "00001848-0000-1000-8000-00805F9B34FB";
 pub const COORDINATED_SET: &str = "00001846-0000-1000-8000-00805F9B34FB";
 pub const BASE_UUID: &str = "00000000-0000-1000-8000-00805F9B34FB";
 
+// List of descriptor uuids
+pub const CCCD_UUID: &str = "00002902-0000-1000-8000-00805f9b34fb";
+
 /// List of profiles that with known uuids.
 /// Append new profiles to the end of the enum. Do not insert it in the middle.
 #[derive(Clone, Debug, Hash, PartialEq, PartialOrd, Eq, Ord, FromPrimitive, ToPrimitive, Copy)]

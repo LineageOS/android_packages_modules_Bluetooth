@@ -28,6 +28,7 @@ import android.util.Log;
 import androidx.annotation.VisibleForTesting;
 
 import com.android.bluetooth.R;
+import com.android.bluetooth.Utils;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -42,7 +43,8 @@ import java.util.Set;
  * individual GATT connection parameters.
  */
 public class CompanionManager {
-    private static final String TAG = "BluetoothCompanionManager";
+    private static final String TAG =
+            Utils.TAG_PREFIX_BLUETOOTH + CompanionManager.class.getSimpleName();
 
     private BluetoothDevice mCompanionDevice;
     private int mCompanionType;

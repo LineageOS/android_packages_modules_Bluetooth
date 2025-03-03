@@ -17,6 +17,8 @@
 package android.bluetooth;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
+import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
+import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static com.android.modules.utils.build.SdkLevel.isAtLeastU;
 
@@ -100,11 +102,11 @@ public final class BluetoothManager {
         List<BluetoothDevice> connectedDevices = getConnectedDevices(profile);
         for (BluetoothDevice connectedDevice : connectedDevices) {
             if (device.equals(connectedDevice)) {
-                return BluetoothProfile.STATE_CONNECTED;
+                return STATE_CONNECTED;
             }
         }
 
-        return BluetoothProfile.STATE_DISCONNECTED;
+        return STATE_DISCONNECTED;
     }
 
     /**
@@ -123,8 +125,7 @@ public final class BluetoothManager {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public List<BluetoothDevice> getConnectedDevices(int profile) {
-        return getDevicesMatchingConnectionStates(
-                profile, new int[] {BluetoothProfile.STATE_CONNECTED});
+        return getDevicesMatchingConnectionStates(profile, new int[] {STATE_CONNECTED});
     }
 
     /**

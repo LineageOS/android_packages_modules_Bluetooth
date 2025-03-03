@@ -20,9 +20,10 @@
 
 #include <bluetooth/log.h>
 
-#include "audio_hearing_aid_hw/include/audio_hearing_aid_hw.h"
 #include "client_interface_hidl.h"
 #include "osi/include/properties.h"
+
+#define AUDIO_STREAM_OUTPUT_BUFFER_SZ (28 * 512)
 
 namespace std {
 template <>

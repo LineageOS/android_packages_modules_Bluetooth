@@ -20,6 +20,8 @@ import android.support.v4.media.session.PlaybackStateCompat;
 
 /** A package global set of utilities for the AVRCP Controller implementation to leverage */
 public final class AvrcpControllerUtils {
+    public static final String TAG_PREFIX_AVRCP = "Avrcp";
+    public static final String TAG_PREFIX_AVRCP_CONTROLLER = TAG_PREFIX_AVRCP + "Controller.";
 
     /** Convert an AVRCP Passthrough command id to a human readable version of the key */
     public static String passThruIdToString(int id) {

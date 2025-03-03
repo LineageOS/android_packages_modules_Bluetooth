@@ -383,7 +383,7 @@ public class BluetoothServiceBinderTest {
     // *********************************************************************************************
     // Utility method used in tests
 
-    private void verifyAndClearMock(Object o) {
+    private static void verifyAndClearMock(Object o) {
         assertThat(mockingDetails(o).isMock() || mockingDetails(o).isSpy()).isTrue();
         verifyNoMoreInteractions(o);
         clearInvocations(o);

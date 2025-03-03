@@ -35,9 +35,6 @@
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 using namespace bluetooth;
 
 /*****************************************************************************
@@ -332,7 +329,7 @@ void bta_hh_sm_execute(tBTA_HH_DEV_CB* p_cb, tBTA_HH_INT_EVT event, const tBTA_H
  * Returns          void
  *
  ******************************************************************************/
-void bta_hh_hdl_failure(tBTA_HH_INT_EVT event, const tBTA_HH_DATA* p_data) {
+static void bta_hh_hdl_failure(tBTA_HH_INT_EVT event, const tBTA_HH_DATA* p_data) {
   if (bta_hh_cb.p_cback == nullptr) {
     log::error("No callback handler");
     return;

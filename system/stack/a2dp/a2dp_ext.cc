@@ -46,18 +46,20 @@ A2dpCodecConfigExt::A2dpCodecConfigExt(btav_a2dp_codec_index_t codec_index, bool
       is_source_(is_source) {
   // Load the local capabilities from the provider info.
   auto result = ::bluetooth::audio::a2dp::provider::codec_info(
-          codec_index, nullptr, ota_codec_config_, &codec_capability_);
+          codec_index, nullptr, ota_codec_config_, &codec_local_capability_);
   log::assert_that(result, "provider::codec_info unexpectdly failed");
-  codec_selectable_capability_ = codec_capability_;
 }
 
 tA2DP_STATUS A2dpCodecConfigExt::setCodecConfig(const uint8_t* p_peer_codec_info,
                                                 bool /* is_capability */,
-                                                uint8_t* /* p_result_codec_config */) {
+                                                uint8_t* p_result_codec_config) {
+  if (p_peer_codec_info == nullptr || p_result_codec_config == nullptr) {
+    return A2DP_FAIL;
+  }
+
   // Call get_a2dp_config to recompute best capabilities.
-  // This method need to update codec_capability_, codec_config_,
-  // and ota_codec_config_ using the local codec_user_config_, and input
-  // peer_codec_info.
+  // This method need to update codec_config_, and ota_codec_config_
+  // using the local codec_user_config_, and input peer_codec_info.
   using namespace bluetooth::audio::a2dp;
   provider::a2dp_remote_capabilities capabilities = {
           .seid = 0,  // the SEID does not matter here.
@@ -72,10 +74,15 @@ tA2DP_STATUS A2dpCodecConfigExt::setCodecConfig(const uint8_t* p_peer_codec_info
     return AVDTP_UNSUPPORTED_CONFIGURATION;
   }
 
-  memcpy(ota_codec_config_, result->codec_config, sizeof(ota_codec_config_));
+  // Use the local capabilities for the selectable capabilities:
+  // the provider AIDL HAL does not provide an interface to parse the
+  // peer capabilities and the selectable capabilities cannot be
+  // computed.
+  codec_selectable_capability_ = codec_local_capability_;
   codec_config_ = result->codec_parameters;
-  codec_capability_ = result->codec_parameters;
   vendor_specific_parameters_ = result->vendor_specific_parameters;
+  memcpy(ota_codec_config_, result->codec_config, sizeof(ota_codec_config_));
+  memcpy(p_result_codec_config, result->codec_config, sizeof(ota_codec_config_));
   return A2DP_SUCCESS;
 }
 
@@ -85,6 +92,19 @@ bool A2dpCodecConfigExt::setPeerCodecCapabilities(const uint8_t* /* p_peer_codec
   // ignored as providing a superset of the selectable
   // capabilities is safe.
   return true;
+}
+
+void A2dpCodecConfigExt::setCodecConfig(btav_a2dp_codec_config_t codec_parameters,
+                                        uint8_t const codec_config[AVDT_CODEC_SIZE],
+                                        std::vector<uint8_t> const& vendor_specific_parameters) {
+  // Use the local capabilities for the selectable capabilities:
+  // the provider AIDL HAL does not provide an interface to parse the
+  // peer capabilities and the selectable capabilities cannot be
+  // computed.
+  codec_selectable_capability_ = codec_local_capability_;
+  codec_config_ = codec_parameters;
+  memcpy(ota_codec_config_, codec_config, sizeof(ota_codec_config_));
+  vendor_specific_parameters_ = vendor_specific_parameters;
 }
 
 tA2DP_ENCODER_INTERFACE const a2dp_encoder_interface_ext = {

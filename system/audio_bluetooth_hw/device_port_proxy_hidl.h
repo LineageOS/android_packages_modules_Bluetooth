@@ -45,7 +45,7 @@ public:
 
   void ForcePcmStereoToMono(bool force) override { is_stereo_to_mono_ = force; }
 
-  bool Start() override;
+  bool Start(bool low_latency = false) override;
 
   bool Suspend() override;
 

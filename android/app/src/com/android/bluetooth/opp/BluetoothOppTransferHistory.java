@@ -71,7 +71,7 @@ import com.android.bluetooth.flags.Flags;
 // Next tag value for ContentProfileErrorReportUtils.report(): 2
 public class BluetoothOppTransferHistory extends Activity
         implements View.OnCreateContextMenuListener, OnItemClickListener {
-    private static final String TAG = "BluetoothOppTransferHistory";
+    private static final String TAG = BluetoothOppTransferHistory.class.getSimpleName();
 
     private ListView mListView;
 

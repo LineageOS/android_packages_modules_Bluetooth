@@ -15,6 +15,8 @@
  */
 package com.android.bluetooth.hfpclient;
 
+import static java.util.Objects.requireNonNull;
+
 import android.bluetooth.BluetoothDevice;
 import android.net.Uri;
 import android.os.Bundle;
@@ -55,7 +57,7 @@ public class HfpClientConnection extends Connection {
         mDevice = device;
         mConnServ = connServ;
         mServiceInterface = serviceInterface;
-        mCurrentCall = Objects.requireNonNull(call);
+        mCurrentCall = requireNonNull(call);
 
         handleCallChanged();
         finishInitializing();

@@ -62,7 +62,7 @@ import java.util.HashMap;
  * ongoing transfer, incoming transfer need confirm and complete (successful or failed) transfer.
  */
 class BluetoothOppNotification {
-    private static final String TAG = "BluetoothOppNotification";
+    private static final String TAG = BluetoothOppNotification.class.getSimpleName();
 
     static final String STATUS = "(" + BluetoothShare.STATUS + " == '192'" + ")";
 
@@ -615,7 +615,8 @@ class BluetoothOppNotification {
             }
         }
 
-        if (inboundNum > 0 && outboundNum > 0) {
+        // When removing flag oppRemoveEmptyGroupNotification, remove the summary ID too.
+        if (!Flags.oppRemoveEmptyGroupNotification() && inboundNum > 0 && outboundNum > 0) {
             Notification.Builder b =
                     new Notification.Builder(mContext, OPP_NOTIFICATION_CHANNEL)
                             .setGroup(NOTIFICATION_GROUP_KEY_TRANSFER_COMPLETE)
@@ -631,11 +632,6 @@ class BluetoothOppNotification {
                             .setLocalOnly(true);
 
             mNotificationMgr.notify(NOTIFICATION_ID_COMPLETE_SUMMARY, b.build());
-        } else if (Flags.oppRemoveEmptyGroupNotification() && inboundNum == 0 && outboundNum == 0) {
-            if (mNotificationMgr != null) {
-                mNotificationMgr.cancel(NOTIFICATION_ID_COMPLETE_SUMMARY);
-                Log.v(TAG, "empty group summary notification was removed.");
-            }
         }
     }
 

@@ -13,11 +13,14 @@
 // limitations under the License.
 
 use crate::ffi::{CInterface, CStatus, Callbacks, DataCallbacks, Ffi};
-use android_hardware_bluetooth::aidl::android::hardware::bluetooth::{
-    IBluetoothHci::IBluetoothHci, IBluetoothHciCallbacks::IBluetoothHciCallbacks, Status::Status,
+use android_hardware_bluetooth::aidl::android::hardware::bluetooth::IBluetoothHci::{
+    BnBluetoothHci, BpBluetoothHci, IBluetoothHci,
 };
+use android_hardware_bluetooth::aidl::android::hardware::bluetooth::IBluetoothHciCallbacks::IBluetoothHciCallbacks;
+use android_hardware_bluetooth::aidl::android::hardware::bluetooth::Status::Status;
 use binder::{DeathRecipient, ExceptionCode, IBinder, Interface, Result as BinderResult, Strong};
 use bluetooth_offload_hci::{Module, ModuleBuilder};
+use bluetooth_offload_leaudio_hci::LeAudioModuleBuilder;
 use std::sync::{Arc, RwLock};
 
 /// Service Implementation of AIDL interface `hardware/interface/bluetoot/aidl`,
@@ -78,9 +81,7 @@ impl IBluetoothHci for HciHalProxy {
                 DeathRecipient::new(move || {
                     log::info!("Bluetooth stack has died");
                     let mut state = state.write().unwrap();
-                    if !matches!(*state, State::Closed) {
-                        ffi.close();
-                    }
+                    ffi.client_died();
                     *state = State::Closed;
                 })
             };
@@ -237,4 +238,17 @@ impl From<CStatus> for Status {
             CStatus::Unknown => Status::UNKNOWN,
         }
     }
+}
+
+#[no_mangle]
+pub extern "C" fn __add_bluetooth_hci_service(cintf: CInterface) {
+    binder::add_service(
+        &format!("{}/default", BpBluetoothHci::get_descriptor()),
+        BnBluetoothHci::new_binder(
+            HciHalProxy::new(vec![Box::new(LeAudioModuleBuilder {})], cintf),
+            binder::BinderFeatures::default(),
+        )
+        .as_binder(),
+    )
+    .expect("Failed to register service");
 }

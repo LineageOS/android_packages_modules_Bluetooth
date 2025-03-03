@@ -460,28 +460,24 @@ tBTA_HF_CLIENT_CB* bta_hf_client_find_cb_by_handle(uint16_t handle) {
  *
  * Function         bta_hf_client_find_cb_by_bda
  *
- * Description      Finds the control block by handle provided
+ * Description      Finds the control block structure indexed by peer address
  *
- *                  bda: address of the device to find the handle for.
+ *                  peer_addr: address of the device to find the handle for.
  *                  Since there can only be one HF connection for a device
  *                  we should always find a unique block
  *
- * Returns          Control block corresponding to the address and NULL if
+ * Returns          Control block corresponding to the address or NULL if
  *                  none exists
  *
  ******************************************************************************/
 tBTA_HF_CLIENT_CB* bta_hf_client_find_cb_by_bda(const RawAddress& peer_addr) {
   for (int i = 0; i < HF_CLIENT_MAX_DEVICES; i++) {
-    // Check if the associated index is allocated and that BD ADDR matches
     tBTA_HF_CLIENT_CB* client_cb = &bta_hf_client_cb_arr.cb[i];
     if (client_cb->is_allocated && peer_addr == client_cb->peer_addr) {
       return client_cb;
-    } else {
-      log::warn("bdaddr mismatch for handle {} alloc {}", i, client_cb->is_allocated);
     }
   }
-  log::error("block not found");
-  return NULL;
+  return nullptr;
 }
 
 /*******************************************************************************

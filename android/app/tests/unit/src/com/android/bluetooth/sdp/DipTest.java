@@ -82,7 +82,7 @@ public class DipTest {
         SdpManagerNativeInterface.setInstance(null);
     }
 
-    private void verifyDipSdpRecordIntent(
+    private static void verifyDipSdpRecordIntent(
             ArgumentCaptor<Intent> intentArgument,
             int status,
             BluetoothDevice device,

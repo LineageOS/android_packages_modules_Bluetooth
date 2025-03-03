@@ -31,7 +31,6 @@ import static android.bluetooth.IBluetoothCsipSetCoordinator.CSIS_GROUP_ID_INVAL
 import static android.bluetooth.IBluetoothLeAudio.LE_AUDIO_GROUP_ID_INVALID;
 import static android.bluetooth.IBluetoothVolumeControl.VOLUME_CONTROL_UNKNOWN_VOLUME;
 
-import static com.android.bluetooth.flags.Flags.leaudioBroadcastVolumeControlPrimaryGroupOnly;
 import static com.android.bluetooth.flags.Flags.vcpDeviceVolumeApiImprovements;
 
 import static java.util.Objects.requireNonNull;
@@ -171,8 +170,8 @@ public class VolumeControlService extends ProfileService {
     }
 
     @Override
-    public void stop() {
-        Log.d(TAG, "stop()");
+    public void cleanup() {
+        Log.i(TAG, "Cleanup VolumeControl Service");
 
         // Mark service as stopped
         setVolumeControlService(null);
@@ -935,13 +934,6 @@ public class VolumeControlService extends ProfileService {
         if (leAudioService != null) {
             int currentlyActiveGroupId = leAudioService.getActiveGroupId();
             if (currentlyActiveGroupId == GROUP_ID_INVALID || groupId != currentlyActiveGroupId) {
-                if (!leaudioBroadcastVolumeControlPrimaryGroupOnly()) {
-                    Log.i(
-                            TAG,
-                            "Skip updating to audio system if not updating volume for current"
-                                    + " active group");
-                    return;
-                }
                 BassClientService bassClientService = mFactory.getBassClientService();
                 if (bassClientService == null
                         || bassClientService.getSyncedBroadcastSinks().stream()
@@ -1925,7 +1917,7 @@ public class VolumeControlService extends ProfileService {
             service.unmuteGroup(groupId);
         }
 
-        private void postAndWait(Handler handler, Runnable runnable) {
+        private static void postAndWait(Handler handler, Runnable runnable) {
             FutureTask<Void> task = new FutureTask(Executors.callable(runnable));
 
             handler.post(task);
@@ -1980,7 +1972,7 @@ public class VolumeControlService extends ProfileService {
             postAndWait(service.mHandler, () -> service.notifyNewRegisteredCallback(callback));
         }
 
-        private void validateBluetoothDevice(BluetoothDevice device) {
+        private static void validateBluetoothDevice(BluetoothDevice device) {
             requireNonNull(device);
             String address = device.getAddress();
             if (!BluetoothAdapter.checkBluetoothAddress(address)) {

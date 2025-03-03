@@ -366,6 +366,8 @@ extern tBTA_GATTC_CB bta_gattc_cb;
 /*****************************************************************************
  *  Function prototypes
  ****************************************************************************/
+void bta_gatt_client_dump(int fd);
+
 bool bta_gattc_hdl_event(const BT_HDR_RIGID* p_msg);
 bool bta_gattc_sm_execute(tBTA_GATTC_CLCB* p_clcb, uint16_t event, const tBTA_GATTC_DATA* p_data);
 
@@ -480,6 +482,7 @@ enum class RobustCachingSupport { UNSUPPORTED, SUPPORTED, UNKNOWN, W4_REMOTE_VER
 RobustCachingSupport GetRobustCachingSupport(const tBTA_GATTC_CLCB* p_clcb,
                                              const gatt::Database& db);
 
+void bta_gattc_continue_discovery_if_needed(const RawAddress& bd_addr, uint16_t acl_handle);
 void bta_gattc_reset_discover_st(tBTA_GATTC_SERV* p_srcb, tGATT_STATUS status);
 
 tBTA_GATTC_CONN* bta_gattc_conn_alloc(const RawAddress& remote_bda);

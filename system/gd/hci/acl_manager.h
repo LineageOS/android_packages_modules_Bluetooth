@@ -136,6 +136,7 @@ public:
   virtual void OnClassicSuspendInitiatedDisconnect(uint16_t handle, ErrorCode reason);
   virtual void OnLeSuspendInitiatedDisconnect(uint16_t handle, ErrorCode reason);
   virtual void SetSystemSuspendState(bool suspended);
+  virtual void AddDeviceToRelaxedConnectionIntervalList(const Address address);
 
   static const ModuleFactory Factory;
 

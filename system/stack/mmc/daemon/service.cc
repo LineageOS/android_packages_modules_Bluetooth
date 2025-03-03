@@ -286,9 +286,9 @@ bool Service::StartWorkerThread(int fd, struct sockaddr_un addr,
     log::warn("Failed to enable real time scheduling");
   }
 
-  if (!thread_pool_.back().first->DoInThread(
-              FROM_HERE, base::BindOnce(&StartSocketListener, fd, std::move(addr),
-                                        std::move(task_ended), std::move(codec_server)))) {
+  if (!thread_pool_.back().first->DoInThread(base::BindOnce(&StartSocketListener, fd,
+                                                            std::move(addr), std::move(task_ended),
+                                                            std::move(codec_server)))) {
     log::error("Failed to run task");
     return false;
   }

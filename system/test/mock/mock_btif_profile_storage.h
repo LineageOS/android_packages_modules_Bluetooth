@@ -401,18 +401,25 @@ struct btif_storage_set_hidd {
 };
 extern struct btif_storage_set_hidd btif_storage_set_hidd;
 
-// Name: btif_storage_set_leaudio_audio_location
-// Params: const RawAddress& addr, uint32_t sink_location, uint32_t
-// source_location Return: void
-struct btif_storage_set_leaudio_audio_location {
-  std::function<void(const RawAddress& addr, uint32_t sink_location, uint32_t source_location)>
-          body{[](const RawAddress& /* addr */, uint32_t /* sink_location */,
-                  uint32_t /* source_location */) {}};
-  void operator()(const RawAddress& addr, uint32_t sink_location, uint32_t source_location) {
-    body(addr, sink_location, source_location);
-  }
+// Name: btif_storage_set_leaudio_sink_audio_location
+// Params: const RawAddress& addr, uint32_t sink_location, Return: void
+struct btif_storage_set_leaudio_sink_audio_location {
+  std::function<void(const RawAddress& addr, uint32_t sink_location)> body{
+          [](const RawAddress& /* addr */, uint32_t /* sink_location */) {}};
+  void operator()(const RawAddress& addr, uint32_t sink_location) { body(addr, sink_location); }
 };
-extern struct btif_storage_set_leaudio_audio_location btif_storage_set_leaudio_audio_location;
+extern struct btif_storage_set_leaudio_sink_audio_location
+        btif_storage_set_leaudio_sink_audio_location;
+
+// Name: btif_storage_set_leaudio_source_audio_location
+// Params: const RawAddress& addr, uint32_t source_location, Return: void
+struct btif_storage_set_leaudio_source_audio_location {
+  std::function<void(const RawAddress& addr, uint32_t source_location)> body{
+          [](const RawAddress& /* addr */, uint32_t /* source_location */) {}};
+  void operator()(const RawAddress& addr, uint32_t source_location) { body(addr, source_location); }
+};
+extern struct btif_storage_set_leaudio_sink_audio_location
+        btif_storage_set_leaudio_sink_audio_location;
 
 // Name: btif_storage_set_leaudio_autoconnect
 // Params: const RawAddress& addr, bool autoconnect

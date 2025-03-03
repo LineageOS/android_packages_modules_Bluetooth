@@ -18,11 +18,6 @@ filegroup {
 }
 
 filegroup {
-    name: "TestMockAudioA2dp",
-    srcs: ["mock/mock_audio_a2dp*.cc"],
-}
-
-filegroup {
     name: "TestMockBtaAg",
     srcs: [
         "mock/mock_bta_ag_*.cc",
@@ -142,6 +137,13 @@ filegroup {
 }
 
 filegroup {
+    name: "TestMockBtaRfcMetrics",
+    srcs: [
+        "mock/mock_bta_rfc_metrics.cc",
+    ],
+}
+
+filegroup {
     name: "TestMockBtaScn",
     srcs: [
         "mock/mock_bta_scn.cc",
@@ -189,6 +191,7 @@ filegroup {
         ":TestMockBtaLeAudioHalVerifier",
         ":TestMockBtaPan",
         ":TestMockBtaRas",
+        ":TestMockBtaRfcMetrics",
         ":TestMockBtaSdp",
         ":TestMockBtaSys",
         ":TestMockBtaVc",
@@ -262,13 +265,6 @@ filegroup {
 }
 
 filegroup {
-    name: "TestMockStackBnep",
-    srcs: [
-        "mock/mock_stack_bnep_*.cc",
-    ],
-}
-
-filegroup {
     name: "TestMockStackL2cap",
     srcs: [
         "mock/mock_stack_l2cap_*.cc",
@@ -286,6 +282,13 @@ filegroup {
     name: "TestMockStackRfcomm",
     srcs: [
         "mock/mock_stack_rfcomm*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStackRfcommMetrics",
+    srcs: [
+        "mock/mock_stack_rfcomm_metrics.cc",
     ],
 }
 
@@ -339,23 +342,9 @@ filegroup {
 }
 
 filegroup {
-    name: "TestMockLegacyHciCommands",
-    srcs: [
-        "mock/mock_hcic_*.cc",
-    ],
-}
-
-filegroup {
     name: "TestMockMainShimEntry",
     srcs: [
         "mock/mock_main_shim_entry.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockMainShimStack",
-    srcs: [
-        "mock/mock_main_shim_stack.cc",
     ],
 }
 
@@ -482,13 +471,6 @@ filegroup {
 }
 
 filegroup {
-    name: "TestMockStackEatt",
-    srcs: [
-        "mock/mock_stack_eatt*.cc",
-    ],
-}
-
-filegroup {
     name: "TestMockStackGatt",
     srcs: [
         "mock/mock_stack_gatt*.cc",
@@ -496,23 +478,9 @@ filegroup {
 }
 
 filegroup {
-    name: "TestMockRustFfi",
-    srcs: [
-        "mock/mock_rust_ffi_connection*.cc",
-    ],
-}
-
-filegroup {
     name: "TestMockStackBtu",
     srcs: [
         "mock/mock_stack_btu*.cc",
-    ],
-}
-
-filegroup {
-    name: "TestMockMainBte",
-    srcs: [
-        "mock/mock_main_bte*.cc",
     ],
 }
 

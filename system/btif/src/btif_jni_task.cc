@@ -105,7 +105,7 @@ bt_status_t btif_transfer_context(tBTIF_CBACK* p_cback, uint16_t event, char* p_
  * the JNI message loop.
  **/
 bt_status_t do_in_jni_thread(base::OnceClosure task) {
-  if (!jni_thread.DoInThread(FROM_HERE, std::move(task))) {
+  if (!jni_thread.DoInThread(std::move(task))) {
     log::error("Post task to task runner failed!");
     return BT_STATUS_JNI_THREAD_ATTACH_ERROR;
   }

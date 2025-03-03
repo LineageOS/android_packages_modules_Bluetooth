@@ -43,9 +43,6 @@
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 using bluetooth::Uuid;
 extern bt_interface_t bluetoothInterface;
 
@@ -1025,7 +1022,7 @@ static bt_os_callouts_t sBluetoothOsCallouts = {
         release_wake_lock_callout,
 };
 
-int hal_util_load_bt_library(const bt_interface_t** interface) {
+static int hal_util_load_bt_library(const bt_interface_t** interface) {
   *interface = &bluetoothInterface;
   return 0;
 }
@@ -2279,7 +2276,7 @@ static jboolean restoreFilterAcceptListNative(JNIEnv* /* env */, jobject /* obj 
   return (ret == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
 }
 
-int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env) {
+static int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env) {
   const JNINativeMethod methods[] = {
           {"initNative", "(ZZIZ)Z", reinterpret_cast<void*>(initNative)},
           {"cleanupNative", "()V", reinterpret_cast<void*>(cleanupNative)},

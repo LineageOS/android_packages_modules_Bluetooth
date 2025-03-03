@@ -47,7 +47,7 @@ import android.net.Uri;
  *             android:permission="android.permission.BLUETOOTH_MAP"&gt;
  *   ...
  *      &lt;intent-filter&gt;
- *          &lt;action android:name="android.content.action.BLEUETOOT_MAP_PROVIDER" /&gt;
+ *          &lt;action android:name="android.content.action.BLUETOOTH_MAP_PROVIDER" /&gt;
  *       &lt;/intent-filter&gt;
  *   ...
  *   &lt;/provider&gt;
@@ -165,7 +165,7 @@ public final class BluetoothMapContract {
      * Build URI representing the given Account data-set with specific Id in a Bluetooth provider.
      * When queried, the direct URI for the account with the given accountID is returned.
      */
-    public static Uri buildAccountUriwithId(String authority, String accountId) {
+    public static Uri buildAccountUriWithId(String authority, String accountId) {
         return new Uri.Builder()
                 .scheme(ContentResolver.SCHEME_CONTENT)
                 .authority(authority)
@@ -505,7 +505,7 @@ public final class BluetoothMapContract {
         String _ID = "_id";
 
         /**
-         * The date the message was received as a unix timestamp (miliseconds since 00:00:00 UTC
+         * The date the message was received as a unix timestamp (milliseconds since 00:00:00 UTC
          * 1/1-1970).
          *
          * <p>Type: INTEGER (long) read-only
@@ -553,7 +553,7 @@ public final class BluetoothMapContract {
          *
          * <p>Type: TEXT see DELIVERY_STATE_* constants below read-only
          */
-        String DEVILERY_STATE = "delivery_state";
+        String DELIVERY_STATE = "delivery_state";
 
         /**
          * To be able to filter messages with attachments, we need this flag.
@@ -779,7 +779,7 @@ public final class BluetoothMapContract {
         String THREAD_NAME = "thread_name";
 
         /**
-         * The time stamp of the last activity in the conversation as a unix timestamp (miliseconds
+         * The time stamp of the last activity in the conversation as a unix timestamp (milliseconds
          * since 00:00:00 UTC 1/1-1970)
          *
          * <p>Type: INTEGER (long) read-only
@@ -798,7 +798,7 @@ public final class BluetoothMapContract {
          *
          * <p>Type: INTEGER (long) read-only
          */
-        // TODO: IS THIS NECESSARY - skal den ligge i databasen?
+        // TODO: IS THIS NECESSARY - should it be in the database?
         // CB: If we need it, it must be in the database, or initialized with a random value at
         //     BT-ON
         // UPDATE: TODO: Change to the last_activity time stamp (as a long value). This will
@@ -883,13 +883,13 @@ public final class BluetoothMapContract {
 
     /**
      * Time in ms since epoch. For conversations this will be for last activity as a unix timestamp
-     * (miliseconds since 00:00:00 UTC 1/1-1970)
+     * (milliseconds since 00:00:00 UTC 1/1-1970)
      */
     public static final String FILTER_PERIOD_BEGIN = "t_begin";
 
     /**
      * Time in ms since epoch. For conversations this will be for last activity as a unix timestamp
-     * (miliseconds since 00:00:00 UTC 1/1-1970)
+     * (milliseconds since 00:00:00 UTC 1/1-1970)
      */
     public static final String FILTER_PERIOD_END = "t_end";
 
@@ -898,8 +898,8 @@ public final class BluetoothMapContract {
 
     public interface ChatState {
         int UNKNOWN = 0;
-        int INACITVE = 1;
-        int ACITVE = 2;
+        int INACTIVE = 1;
+        int ACTIVE = 2;
         int COMPOSING = 3;
         int PAUSED = 4;
         int GONE = 5;
@@ -931,7 +931,7 @@ public final class BluetoothMapContract {
         /**
          * The chat state of contact in conversation, see {@link ChatState}
          *
-         * <p>Type: INTERGER read-only
+         * <p>Type: INTEGER read-only
          */
         String CHAT_STATE = "chat_state";
 
@@ -979,14 +979,14 @@ public final class BluetoothMapContract {
         /**
          * The presence state of contact, see {@link PresenceState}
          *
-         * <p>Type: INTERGER read-only
+         * <p>Type: INTEGER read-only
          */
         String PRESENCE_STATE = "presence_state";
 
         /**
          * The priority of contact presence
          *
-         * <p>Type: INTERGER read-only
+         * <p>Type: INTEGER read-only
          */
         // TODO: IS THIS NEEDED - not in latest specification
         String PRIORITY = "priority";
@@ -1027,7 +1027,7 @@ public final class BluetoothMapContract {
                 MessageColumns.BCC_LIST,
                 MessageColumns.REPLY_TO_LIST,
                 MessageColumns.RECEPTION_STATE,
-                MessageColumns.DEVILERY_STATE,
+                MessageColumns.DELIVERY_STATE,
                 MessageColumns.THREAD_ID
             };
 
@@ -1047,7 +1047,7 @@ public final class BluetoothMapContract {
                 MessageColumns.FROM_LIST,
                 MessageColumns.TO_LIST,
                 MessageColumns.RECEPTION_STATE,
-                MessageColumns.DEVILERY_STATE,
+                MessageColumns.DELIVERY_STATE,
                 MessageColumns.THREAD_ID,
                 MessageColumns.THREAD_NAME
             };

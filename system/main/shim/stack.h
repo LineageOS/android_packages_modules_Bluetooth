@@ -26,6 +26,10 @@
 // The shim layer implementation on the Gd stack side.
 namespace bluetooth {
 
+namespace hal {
+class SnoopLogger;
+}
+
 namespace storage {
 class StorageModule;
 }
@@ -68,6 +72,7 @@ public:
   virtual Acl* GetAcl() const;
   virtual metrics::CounterMetrics* GetCounterMetrics() const;
   virtual storage::StorageModule* GetStorage() const;
+  virtual hal::SnoopLogger* GetSnoopLogger() const;
 
   os::Handler* GetHandler();
 

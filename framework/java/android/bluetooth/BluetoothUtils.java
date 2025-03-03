@@ -36,12 +36,12 @@ import java.util.function.Supplier;
 
 /** @hide */
 public final class BluetoothUtils {
-    private static final String TAG = "BluetoothUtils";
+    private static final String TAG = BluetoothUtils.class.getSimpleName();
 
     /** This utility class cannot be instantiated */
     private BluetoothUtils() {}
 
-    /** Match with UserHandl.NULL but accessible inside bluetooth package */
+    /** Match with UserHandle.NULL but accessible inside bluetooth package */
     public static final UserHandle USER_HANDLE_NULL = UserHandle.of(-10000);
 
     /** Class for Length-Value-Entry array parsing */
@@ -65,8 +65,8 @@ public final class BluetoothUtils {
         }
     }
 
-    // Helper method to extract bytes from byte array.
-    private static byte[] extractBytes(byte[] rawBytes, int start, int length) {
+    /** Helper method to extract bytes from byte array. */
+    public static byte[] extractBytes(byte[] rawBytes, int start, int length) {
         int remainingLength = rawBytes.length - start;
         if (remainingLength < length) {
             Log.w(

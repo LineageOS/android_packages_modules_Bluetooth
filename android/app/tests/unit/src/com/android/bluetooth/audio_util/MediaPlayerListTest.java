@@ -16,6 +16,9 @@
 
 package com.android.bluetooth.audio_util;
 
+import static android.Manifest.permission.MEDIA_CONTENT_CONTROL;
+import static android.Manifest.permission.MODIFY_PHONE_STATE;
+
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.mockGetSystemService;
 
@@ -60,15 +63,14 @@ public class MediaPlayerListTest {
     private @Mock MediaController mMockController;
     private @Mock MediaPlayerWrapper mMockPlayerWrapper;
 
-    private final String mFlagDexmarker = System.getProperty("dexmaker.share_classloader", "false");
     private MediaPlayerWrapper.Callback mActivePlayerCallback;
     private MediaSessionManager mMediaSessionManager;
 
     @Before
     public void setUp() throws Exception {
-        if (!mFlagDexmarker.equals("true")) {
-            System.setProperty("dexmaker.share_classloader", "true");
-        }
+        InstrumentationRegistry.getInstrumentation()
+                .getUiAutomation()
+                .adoptShellPermissionIdentity(MEDIA_CONTENT_CONTROL, MODIFY_PHONE_STATE);
 
         if (Looper.myLooper() == null) {
             Looper.prepare();
@@ -124,12 +126,12 @@ public class MediaPlayerListTest {
         MediaControllerFactory.inject(null);
         MediaPlayerWrapperFactory.inject(null);
         mMediaPlayerList.cleanup();
-        if (!mFlagDexmarker.equals("true")) {
-            System.setProperty("dexmaker.share_classloader", mFlagDexmarker);
-        }
+        InstrumentationRegistry.getInstrumentation()
+                .getUiAutomation()
+                .dropShellPermissionIdentity();
     }
 
-    private MediaData prepareMediaData(int playbackState) {
+    private static MediaData prepareMediaData(int playbackState) {
         PlaybackState.Builder builder = new PlaybackState.Builder();
         builder.setState(playbackState, 0, 1);
         ArrayList<Metadata> list = new ArrayList<Metadata>();

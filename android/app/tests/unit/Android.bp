@@ -2,8 +2,8 @@ package {
     default_applicable_licenses: ["Android-Apache-2.0"],
 }
 
-java_defaults {
-    name: "BluetoothInstrumentationTestsDefaults",
+android_test {
+    name: "BluetoothJavaUnitTests",
     defaults: [
         "bluetooth_errorprone_rules",
     ],
@@ -26,6 +26,7 @@ java_defaults {
     ],
 
     static_libs: [
+        "BluetoothLib",
         "PlatformProperties",
         "TestParameterInjector",
         "android.media.audio-aconfig-exported-java",
@@ -42,12 +43,19 @@ java_defaults {
         "flag-junit",
         "framework-bluetooth-pre-jarjar",
         "gson",
+        "guava-android-testlib",
         "mmslib",
-        "mockito-target",
+        "mockito-target-extended",
         "modules-utils-handlerexecutor",
         "platform-parametric-runner-lib",
         "platform-test-annotations",
         "truth",
+    ],
+
+    // these are needed for Extended Mockito
+    jni_libs: [
+        "libdexmakerjvmtiagent",
+        "libstaticjvmtiagent",
     ],
 
     jarjar_rules: ":bluetooth-jarjar-rules",
@@ -66,18 +74,11 @@ java_defaults {
         "mts-bluetooth",
         "mts-bt",
     ],
-
-    instrumentation_for: "Bluetooth",
 }
 
-android_test {
-    name: "BluetoothInstrumentationTests",
-    defaults: ["BluetoothInstrumentationTestsDefaults"],
-}
-
-android_test {
-    name: "GoogleBluetoothInstrumentationTests",
-    defaults: ["BluetoothInstrumentationTestsDefaults"],
-    test_config: "GoogleAndroidTest.xml",
-    instrumentation_target_package: "com.google.android.bluetooth",
+// TODO delete this filegroup to replace by a shadow looper
+filegroup {
+    name: "bluetooth_test_looper",
+    srcs: ["src/com/android/bluetooth/TestLooper.java"],
+    visibility: ["//packages/modules/Bluetooth/android/app/tests:__subpackages__"],
 }

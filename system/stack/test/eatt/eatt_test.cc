@@ -336,7 +336,7 @@ TEST_F(EattTest, IncomingEattConnectionByKnownDeviceEncryptionOff) {
   ON_CALL(btm_api_interface_, IsEncrypted)
           .WillByDefault(
                   [](const RawAddress& /*addr*/, tBT_TRANSPORT /*transport*/) { return false; });
-  ON_CALL(btm_api_interface_, IsLinkKeyKnown)
+  ON_CALL(btm_api_interface_, IsDeviceBonded)
           .WillByDefault(
                   [](const RawAddress& /*addr*/, tBT_TRANSPORT /*transport*/) { return true; });
   ON_CALL(gatt_interface_, ClientReadSupportedFeatures)
@@ -370,7 +370,7 @@ TEST_F(EattTest, IncomingEattConnectionByUnknownDeviceEncryptionOff) {
   ON_CALL(btm_api_interface_, IsEncrypted)
           .WillByDefault(
                   [](const RawAddress& /*addr*/, tBT_TRANSPORT /*transport*/) { return false; });
-  ON_CALL(btm_api_interface_, IsLinkKeyKnown)
+  ON_CALL(btm_api_interface_, IsDeviceBonded)
           .WillByDefault(
                   [](const RawAddress& /*addr*/, tBT_TRANSPORT /*transport*/) { return false; });
   EXPECT_CALL(mock_stack_l2cap_interface_,

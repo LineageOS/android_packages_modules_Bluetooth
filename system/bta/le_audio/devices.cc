@@ -59,9 +59,6 @@
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 using bluetooth::hci::kIsoCigPhy1M;
 using bluetooth::hci::kIsoCigPhy2M;
 using bluetooth::le_audio::DeviceConnectState;
@@ -205,9 +202,18 @@ static uint32_t GetFirstRight(const AudioLocations& audio_locations) {
   return 0;
 }
 
-uint32_t PickAudioLocation(types::LeAudioConfigurationStrategy strategy,
-                           const AudioLocations& device_locations,
-                           AudioLocations& group_locations) {
+static uint32_t PickAudioLocation(
+        types::LeAudioConfigurationStrategy strategy, uint8_t direction,
+        const types::BidirectionalPair<
+                std::optional<types::hdl_pair_wrapper<types::AudioLocations>>>&
+                device_audio_locations,
+        AudioLocations& group_locations) {
+  if (!device_audio_locations.get(direction)) {
+    log::error("No valid location is available for direction {}", +direction);
+    return 0;
+  }
+  auto const device_locations = device_audio_locations.get(direction)->value;
+
   log::debug("strategy: {}, locations: 0x{:x}, input group locations: 0x{:x}", (int)strategy,
              device_locations.to_ulong(), group_locations.to_ulong());
 
@@ -218,7 +224,9 @@ uint32_t PickAudioLocation(types::LeAudioConfigurationStrategy strategy,
   uint32_t left_device_loc = GetFirstLeft(device_locations);
   uint32_t right_device_loc = GetFirstRight(device_locations);
 
-  if (left_device_loc == 0 && right_device_loc == 0) {
+  /* Sink locations should be either Left or Right - TMAP 1.0 Sec. 3.5.1.2.1 */
+  if (direction == le_audio::types::kLeAudioDirectionSink && left_device_loc == 0 &&
+      right_device_loc == 0) {
     log::warn("Can't find device able to render left  and right audio channel");
   }
 
@@ -247,15 +255,23 @@ uint32_t PickAudioLocation(types::LeAudioConfigurationStrategy strategy,
       return 0;
   }
 
-  log::error(
-          "Can't find device for left/right channel. Strategy: {}, "
-          "device_locations: {:x}, output group_locations: {:x}.",
-          strategy, device_locations.to_ulong(), group_locations.to_ulong());
-
   /* Return either any left or any right audio location. It might result with
    * multiple devices within the group having the same location.
    */
-  return left_device_loc ? left_device_loc : right_device_loc;
+  auto location = left_device_loc ? left_device_loc : right_device_loc;
+
+  if (direction == le_audio::types::kLeAudioDirectionSink) {
+    log::error(
+            "Can't find device for left/right channel. Strategy: {}, device_locations: {:x}, "
+            "output group_locations: {:x}, chosen location: {}.",
+            strategy, device_locations.to_ulong(), group_locations.to_ulong(), location);
+  } else {
+    log::debug(
+            "No left or right audio location available. Strategy: {}, device_locations: {:x}, "
+            "output group_locations: {:x}, chosen location: {}.",
+            strategy, device_locations.to_ulong(), group_locations.to_ulong(), location);
+  }
+  return location;
 }
 
 bool LeAudioDevice::IsAudioSetConfigurationSupported(
@@ -290,6 +306,11 @@ bool LeAudioDevice::ConfigureAses(const types::AudioSetConfiguration* audio_set_
                                   AudioLocations& group_audio_locations_memo,
                                   const AudioContexts& metadata_context_types,
                                   const std::vector<uint8_t>& ccid_lists, bool reuse_cis_id) {
+  if (num_of_devices == 0) {
+    log::error("No devices available for configuration.");
+    return false;
+  }
+
   auto direction_str = (direction == types::kLeAudioDirectionSink ? "Sink" : "Source");
   /* First try to use the already configured ASE */
   auto ase = GetFirstActiveAseByDirection(direction);
@@ -305,9 +326,12 @@ bool LeAudioDevice::ConfigureAses(const types::AudioSetConfiguration* audio_set_
     return false;
   }
 
-  auto audio_locations =
-          (direction == types::kLeAudioDirectionSink) ? snk_audio_locations_ : src_audio_locations_;
+  if (!audio_locations_.get(direction)) {
+    log::error("{}, unable to find a {} audio allocation", address_, direction_str);
+    return false;
+  }
 
+  auto const& audio_locations = audio_locations_.get(direction)->value;
   auto const& group_ase_configs = audio_set_conf->confs.get(direction);
   std::vector<types::AseConfiguration> ase_configs;
   std::copy_if(group_ase_configs.cbegin(), group_ase_configs.cend(),
@@ -409,7 +433,7 @@ bool LeAudioDevice::ConfigureAses(const types::AudioSetConfiguration* audio_set_
       /* Let's choose audio channel allocation if not set */
       ase->codec_config.params.Add(
               codec_spec_conf::kLeAudioLtvTypeAudioChannelAllocation,
-              PickAudioLocation(strategy, audio_locations, group_audio_locations_memo));
+              PickAudioLocation(strategy, direction, audio_locations_, group_audio_locations_memo));
 
       /* Get default value if no requirement for specific frame blocks per sdu
        */
@@ -1046,8 +1070,12 @@ static std::string locationToString(uint32_t location) {
 void LeAudioDevice::Dump(std::stringstream& stream) {
   uint16_t acl_handle =
           get_btm_client_interface().peer.BTM_GetHCIConnHandle(address_, BT_TRANSPORT_LE);
-  std::string snk_location = locationToString(snk_audio_locations_.to_ulong());
-  std::string src_location = locationToString(src_audio_locations_.to_ulong());
+  std::string snk_location = audio_locations_.sink
+                                     ? locationToString(audio_locations_.sink->value.to_ulong())
+                                     : "None";
+  std::string src_location = audio_locations_.source
+                                     ? locationToString(audio_locations_.source->value.to_ulong())
+                                     : "None";
 
   stream << "      ● Device address: " << address_.ToRedactedStringForLogging() << ", "
          << connection_state_
@@ -1184,7 +1212,9 @@ types::LeAudioLtvMap LeAudioDevice::GetMetadata(AudioContexts context_type,
                                                 const std::vector<uint8_t>& ccid_list) {
   types::LeAudioLtvMap metadata;
   metadata.Add(types::kLeAudioMetadataTypeStreamingAudioContext, context_type.value());
-  metadata.Add(types::kLeAudioMetadataTypeCcidList, ccid_list);
+  if (ccid_list.size()) {
+    metadata.Add(types::kLeAudioMetadataTypeCcidList, ccid_list);
+  }
   return metadata;
 }
 

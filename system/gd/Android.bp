@@ -37,67 +37,47 @@ cc_defaults {
     header_libs: ["jni_headers"],
 }
 
-soong_config_module_type {
-    name: "mgmt_cc_defaults",
-    module_type: "cc_defaults",
-    config_namespace: "mgmt",
-    variables: ["vertical"],
-    properties: ["srcs"],
-}
-
-soong_config_string_variable {
-    name: "vertical",
-    values: [
-        "android_default",
-        "android_desktop",
-    ],
-}
-
-mgmt_cc_defaults {
-    name: "mgmt_defaults",
-    soong_config_variables: {
-        vertical: {
-            android_desktop: {
-                srcs: [":BluetoothOsSources_mgmt_linux"],
-            },
-            android_default: {
-                srcs: [":BluetoothOsSources_mgmt"],
-            },
-            conditions_default: {
-                srcs: [":BluetoothOsSources_mgmt"],
-            },
-        },
-    },
-}
-
 cc_defaults {
     name: "libbluetooth_gd_defaults",
     defaults: [
         "gd_defaults",
-        "mgmt_defaults",
     ],
     host_supported: true,
     target: {
         linux: {
             srcs: [
-                ":BluetoothOsSources_linux_generic",
+                "os/linux_generic/alarm.cc",
+                "os/linux_generic/files.cc",
+                "os/linux_generic/reactive_semaphore.cc",
+                "os/linux_generic/reactor.cc",
+                "os/linux_generic/repeating_alarm.cc",
+                "os/linux_generic/thread.cc",
+                "os/linux_generic/wakelock_manager.cc",
             ],
         },
         host: {
             srcs: [
-                ":BluetoothHalSources_hci_host",
-                ":BluetoothHalSources_ranging_host",
-                ":BluetoothHalSources_socket_host",
-                ":BluetoothOsSources_host",
-                ":BluetoothSyspropsSources",
+                "hal/hci_hal_host_rootcanal.cc",
+                "hal/ranging_hal_host.cc",
+                "hal/socket_hal_host.cc",
+                "os/host/metrics.cc",
+                "os/host/parameter_provider.cc",
+                "os/host/system_properties.cc",
+                "os/host/wakelock_native.cc",
+                "sysprops/sysprops_module.cc",
             ],
         },
         android: {
             srcs: [
-                ":BluetoothHalSources_hci_android_hidl",
-                ":BluetoothHalSources_ranging_android",
-                ":BluetoothHalSources_socket_android",
-                ":BluetoothOsSources_android",
+                "hal/hci_backend_aidl.cc",
+                "hal/hci_backend_hidl.cc",
+                "hal/hci_hal_android.cc",
+                "hal/ranging_hal_android.cc",
+                "hal/socket_hal_android.cc",
+                "os/android/metrics.cc",
+                "os/android/parameter_provider.cc",
+                "os/android/system_properties.cc",
+                "os/android/wakelock_native.cc",
             ],
             shared_libs: [
                 "android.hardware.bluetooth@1.0",
@@ -113,6 +93,7 @@ cc_defaults {
             ],
             static_libs: [
                 "libexpresslog",
+                "libperfetto_client_experimental",
                 "libstatslog_express",
                 "libtextclassifier_hash_static",
             ],
@@ -125,15 +106,52 @@ cc_defaults {
         },
     },
     srcs: [
-        ":BluetoothCommonSources",
-        ":BluetoothHalSources",
-        ":BluetoothHciSources",
-        ":BluetoothLppOffloadSources",
-        ":BluetoothMetricsSources",
-        ":BluetoothOsSources",
         ":BluetoothPacketSources",
-        ":BluetoothStorageSources",
+        "common/audit_log.cc",
+        "common/metric_id_manager.cc",
+        "common/stop_watch.cc",
+        "common/strings.cc",
+        "hal/link_clocker.cc",
+        "hal/snoop_logger.cc",
+        "hal/snoop_logger_socket.cc",
+        "hal/snoop_logger_socket_thread.cc",
+        "hal/snoop_logger_tracing.cc",
+        "hal/syscall_wrapper_impl.cc",
+        "hci/acl_manager.cc",
+        "hci/acl_manager/acl_connection.cc",
+        "hci/acl_manager/acl_fragmenter.cc",
+        "hci/acl_manager/acl_scheduler.cc",
+        "hci/acl_manager/classic_acl_connection.cc",
+        "hci/acl_manager/le_acl_connection.cc",
+        "hci/acl_manager/round_robin_scheduler.cc",
+        "hci/controller.cc",
+        "hci/distance_measurement_manager.cc",
+        "hci/hci_layer.cc",
+        "hci/hci_metrics_logging.cc",
+        "hci/le_address_manager.cc",
+        "hci/le_advertising_manager.cc",
+        "hci/le_scanning_manager.cc",
+        "hci/le_scanning_reassembler.cc",
+        "hci/link_key.cc",
+        "hci/msft.cc",
+        "hci/remote_name_request.cc",
+        "hci/uuid.cc",
+        "lpp/lpp_offload_manager.cc",
+        "metrics/bluetooth_event.cc",
+        "metrics/counter_metrics.cc",
+        "metrics/utils.cc",
         "module.cc",
+        "os/handler.cc",
+        "os/system_properties_common.cc",
+        "storage/classic_device.cc",
+        "storage/config_cache.cc",
+        "storage/config_cache_helper.cc",
+        "storage/device.cc",
+        "storage/le_device.cc",
+        "storage/legacy_config_file.cc",
+        "storage/mutation.cc",
+        "storage/mutation_entry.cc",
+        "storage/storage_module.cc",
     ],
     shared_libs: [
         "libcrypto",
@@ -193,7 +211,7 @@ cc_library_static {
         "packages/modules/Bluetooth/system",
     ],
     srcs: [
-        ":BluetoothOsSources_fake_timer",
+        "os/fake_timer/fake_timerfd.cc",
     ],
     cflags: [
         "-DFUZZ_TARGET",
@@ -217,7 +235,7 @@ cc_library_static {
         "packages/modules/Bluetooth/system",
     ],
     srcs: [
-        ":BluetoothOsSources_fake_timer",
+        "os/fake_timer/fake_timerfd.cc",
     ],
     cflags: [
         "-DUSE_FAKE_TIMERS",
@@ -246,17 +264,24 @@ cc_test {
     target: {
         host: {
             srcs: [
-                ":BluetoothOsSystemProperties_host",
+                "os/host/system_properties.cc",
             ],
         },
         android: {
             srcs: [
-                ":BluetoothOsSystemProperties_android",
+                "os/android/system_properties.cc",
             ],
         },
     },
     srcs: [
-        ":BluetoothOsTestSources_timerfd",
+        "os/handler.cc",
+        "os/linux_generic/alarm.cc",
+        "os/linux_generic/alarm_timerfd_unittest.cc",
+        "os/linux_generic/files.cc",
+        "os/linux_generic/reactive_semaphore.cc",
+        "os/linux_generic/reactor.cc",
+        "os/linux_generic/repeating_alarm.cc",
+        "os/linux_generic/thread.cc",
     ],
     static_libs: [
         "bluetooth_flags_c_lib_for_test",
@@ -293,26 +318,32 @@ cc_test {
     target: {
         linux: {
             srcs: [
-                ":BluetoothOsTestSources_linux_generic",
+                "os/linux_generic/alarm_unittest.cc",
+                "os/linux_generic/files_test.cc",
+                "os/linux_generic/queue_unittest.cc",
+                "os/linux_generic/reactor_unittest.cc",
+                "os/linux_generic/repeating_alarm_unittest.cc",
+                "os/linux_generic/thread_unittest.cc",
+                "os/linux_generic/wakelock_manager_unittest.cc",
             ],
         },
         host: {
             srcs: [
-                ":BluetoothHalTestSources_hci_host",
-                ":BluetoothOsTestSources_host",
-                ":BluetoothSyspropsUnitTestSources",
+                "hal/hci_hal_host_test.cc",
+                "sysprops/sysprops_module_test.cc",
             ],
         },
         android: {
             srcs: [
-                ":BluetoothOsTestSources_android",
                 "hal/hci_hal_android_test.cc",
+                "os/android/wakelock_native_test.cc",
             ],
             static_libs: [
                 "android.hardware.bluetooth@1.0",
                 "android.hardware.bluetooth@1.1",
                 "android.system.suspend-V1-ndk",
                 "android.system.suspend.control-V1-ndk",
+                "libperfetto_client_experimental",
                 "libstatslog_bt",
             ],
             shared_libs: [
@@ -325,18 +356,63 @@ cc_test {
         },
     },
     srcs: [
-        ":BluetoothCommonTestSources",
-        ":BluetoothCryptoToolboxTestSources",
-        ":BluetoothHalTestSources",
-        ":BluetoothHciUnitTestSources",
-        ":BluetoothMetricsTestSources",
-        ":BluetoothOsTestSources",
         ":BluetoothPacketTestSources",
-        ":BluetoothStorageUnitTestSources",
         ":TestCommonMockFunctions",
         ":TestMockMainShimEntry",
         ":TestMockStackMetrics",
+        "common/bidi_queue_unittest.cc",
+        "common/blocking_queue_unittest.cc",
+        "common/byte_array_test.cc",
+        "common/circular_buffer_test.cc",
+        "common/list_map_test.cc",
+        "common/lru_cache_test.cc",
+        "common/metric_id_manager_unittest.cc",
+        "common/multi_priority_queue_test.cc",
+        "common/numbers_test.cc",
+        "common/strings_test.cc",
+        "common/sync_map_count_test.cc",
+        "crypto_toolbox/crypto_toolbox_test.cc",
+        "hal/hci_hal_fake.cc",
+        "hal/snoop_logger_socket_test.cc",
+        "hal/snoop_logger_socket_thread_test.cc",
+        "hal/snoop_logger_test.cc",
+        "hci/acl_builder_test.cc",
+        "hci/acl_manager/acl_scheduler_test.cc",
+        "hci/acl_manager/classic_acl_connection_test.cc",
+        "hci/acl_manager/classic_impl_test.cc",
+        "hci/acl_manager/le_acl_connection_test.cc",
+        "hci/acl_manager/le_impl_test.cc",
+        "hci/acl_manager/round_robin_scheduler_test.cc",
+        "hci/acl_manager_test.cc",
+        "hci/acl_manager_unittest.cc",
+        "hci/address_unittest.cc",
+        "hci/address_with_type_test.cc",
+        "hci/class_of_device_unittest.cc",
+        "hci/controller_test.cc",
+        "hci/controller_unittest.cc",
+        "hci/hci_layer_fake.cc",
+        "hci/hci_layer_test.cc",
+        "hci/hci_layer_unittest.cc",
+        "hci/hci_packets_test.cc",
+        "hci/le_address_manager_test.cc",
+        "hci/le_advertising_manager_test.cc",
+        "hci/le_periodic_sync_manager_test.cc",
+        "hci/le_scanning_manager_test.cc",
+        "hci/le_scanning_reassembler_test.cc",
+        "hci/remote_name_request_test.cc",
+        "hci/uuid_unittest.cc",
+        "metrics/counter_metrics_unittest.cc",
         "module_unittest.cc",
+        "os/handler_unittest.cc",
+        "os/system_properties_common_test.cc",
+        "storage/classic_device_test.cc",
+        "storage/config_cache_helper_test.cc",
+        "storage/config_cache_test.cc",
+        "storage/device_test.cc",
+        "storage/le_device_test.cc",
+        "storage/legacy_config_file_test.cc",
+        "storage/mutation_test.cc",
+        "storage/storage_module_test.cc",
     ],
     static_libs: [
         "bluetooth_flags_c_lib_for_test",
@@ -422,9 +498,11 @@ cc_defaults {
     name: "gd_fuzz_defaults",
     defaults: ["gd_defaults"],
     srcs: [
-        ":BluetoothFuzzHelperSources",
-        ":BluetoothHciFuzzHelperSources",
         ":TestMockMainShimEntry",
+        "fuzz/helpers.cc",
+        "hci/fuzz/fuzz_hci_layer.cc",
+        "hci/fuzz/hci_layer_fuzz_client.cc",
+        "hci/fuzz/status_vs_complete_commands.cc",
     ],
     include_dirs: [
         "packages/modules/Bluetooth/system",
@@ -457,6 +535,7 @@ cc_defaults {
     cflags: [
         "-DFUZZ_TARGET",
         "-DUSE_FAKE_TIMERS",
+        "-Wno-missing-prototypes",
     ],
     target: {
         android: {
@@ -470,6 +549,9 @@ cc_defaults {
                 "libstatslog_bt",
                 "libutils",
             ],
+            static_libs: [
+                "libperfetto_client_experimental",
+            ],
         },
     },
 }
@@ -478,8 +560,8 @@ cc_fuzz {
     name: "bluetooth_gd_fuzz_test",
     defaults: ["gd_fuzz_defaults"],
     srcs: [
-        ":BluetoothHciFuzzTestSources",
         "fuzz_test.cc",
+        "hci/hci_packets_fuzz_test.cc",
     ],
     fuzz_config: {
         cc: ["android-bluetooth-security@google.com"],
@@ -491,7 +573,7 @@ cc_fuzz {
     name: "bluetooth_gd_hci_layer_fuzz_test",
     defaults: ["gd_fuzz_defaults"],
     srcs: [
-        ":BluetoothHalFuzzSources",
+        "hal/fuzz/fuzz_hci_hal.cc",
         "hci/fuzz/hci_layer_fuzz_test.cc",
     ],
 }
@@ -524,8 +606,10 @@ cc_benchmark {
     ],
     host_supported: true,
     srcs: [
-        ":BluetoothOsBenchmarkSources",
         "benchmark.cc",
+        "os/alarm_benchmark.cc",
+        "os/queue_benchmark.cc",
+        "os/thread_benchmark.cc",
     ],
     static_libs: [
         "bluetooth_flags_c_lib",

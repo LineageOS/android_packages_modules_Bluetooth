@@ -50,7 +50,9 @@ import java.util.function.Predicate;
  * @param <C> the callback type for this map
  */
 public class ContextMap<C> {
-    private static final String TAG = GattServiceConfig.TAG_PREFIX + "ContextMap";
+    private static final String TAG =
+            GattServiceConfig.TAG_PREFIX + ContextMap.class.getSimpleName();
+
     private static final DateTimeFormatter sDateFormat =
             DateTimeFormatter.ofPattern("MM-dd HH:mm:ss").withZone(ZoneId.systemDefault());
     private static final int MAX_LAST_RECORDS = 5;

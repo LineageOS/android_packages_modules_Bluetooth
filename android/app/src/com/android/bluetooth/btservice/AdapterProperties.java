@@ -19,6 +19,10 @@ package com.android.bluetooth.btservice;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_SCAN;
+import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
+import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
+import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
+import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 
 import android.annotation.NonNull;
 import android.app.BroadcastOptions;
@@ -597,7 +601,7 @@ class AdapterProperties {
             if (p != null) {
                 return p.first;
             }
-            return BluetoothProfile.STATE_DISCONNECTED;
+            return STATE_DISCONNECTED;
         }
     }
 
@@ -667,24 +671,22 @@ class AdapterProperties {
         }
     }
 
-
-
-    private boolean validateProfileConnectionState(int state) {
-        return (state == BluetoothProfile.STATE_DISCONNECTED
-                || state == BluetoothProfile.STATE_CONNECTING
-                || state == BluetoothProfile.STATE_CONNECTED
-                || state == BluetoothProfile.STATE_DISCONNECTING);
+    private static boolean validateProfileConnectionState(int state) {
+        return (state == STATE_DISCONNECTED
+                || state == STATE_CONNECTING
+                || state == STATE_CONNECTED
+                || state == STATE_DISCONNECTING);
     }
 
     private static int convertToAdapterState(int state) {
         switch (state) {
-            case BluetoothProfile.STATE_DISCONNECTED:
+            case STATE_DISCONNECTED:
                 return BluetoothAdapter.STATE_DISCONNECTED;
-            case BluetoothProfile.STATE_DISCONNECTING:
+            case STATE_DISCONNECTING:
                 return BluetoothAdapter.STATE_DISCONNECTING;
-            case BluetoothProfile.STATE_CONNECTED:
+            case STATE_CONNECTED:
                 return BluetoothAdapter.STATE_CONNECTED;
-            case BluetoothProfile.STATE_CONNECTING:
+            case STATE_CONNECTING:
                 return BluetoothAdapter.STATE_CONNECTING;
         }
         Log.e(TAG, "convertToAdapterState, unknow state " + state);
@@ -693,14 +695,13 @@ class AdapterProperties {
 
     private static boolean isNormalStateTransition(int prevState, int nextState) {
         switch (prevState) {
-            case BluetoothProfile.STATE_DISCONNECTED:
-                return nextState == BluetoothProfile.STATE_CONNECTING;
-            case BluetoothProfile.STATE_CONNECTED:
-                return nextState == BluetoothProfile.STATE_DISCONNECTING;
-            case BluetoothProfile.STATE_DISCONNECTING:
-            case BluetoothProfile.STATE_CONNECTING:
-                return (nextState == BluetoothProfile.STATE_DISCONNECTED)
-                        || (nextState == BluetoothProfile.STATE_CONNECTED);
+            case STATE_DISCONNECTED:
+                return nextState == STATE_CONNECTING;
+            case STATE_CONNECTED:
+                return nextState == STATE_DISCONNECTING;
+            case STATE_DISCONNECTING:
+            case STATE_CONNECTING:
+                return (nextState == STATE_DISCONNECTED) || (nextState == STATE_CONNECTED);
             default:
                 return false;
         }
@@ -708,7 +709,7 @@ class AdapterProperties {
 
     private boolean updateCountersAndCheckForConnectionStateChange(int state, int prevState) {
         switch (prevState) {
-            case BluetoothProfile.STATE_CONNECTING:
+            case STATE_CONNECTING:
                 if (mProfilesConnecting > 0) {
                     mProfilesConnecting--;
                 } else {
@@ -718,7 +719,7 @@ class AdapterProperties {
                 }
                 break;
 
-            case BluetoothProfile.STATE_CONNECTED:
+            case STATE_CONNECTED:
                 if (mProfilesConnected > 0) {
                     mProfilesConnected--;
                 } else {
@@ -728,7 +729,7 @@ class AdapterProperties {
                 }
                 break;
 
-            case BluetoothProfile.STATE_DISCONNECTING:
+            case STATE_DISCONNECTING:
                 if (mProfilesDisconnecting > 0) {
                     mProfilesDisconnecting--;
                 } else {
@@ -740,19 +741,19 @@ class AdapterProperties {
         }
 
         switch (state) {
-            case BluetoothProfile.STATE_CONNECTING:
+            case STATE_CONNECTING:
                 mProfilesConnecting++;
                 return (mProfilesConnected == 0 && mProfilesConnecting == 1);
 
-            case BluetoothProfile.STATE_CONNECTED:
+            case STATE_CONNECTED:
                 mProfilesConnected++;
                 return (mProfilesConnected == 1);
 
-            case BluetoothProfile.STATE_DISCONNECTING:
+            case STATE_DISCONNECTING:
                 mProfilesDisconnecting++;
                 return (mProfilesConnected == 0 && mProfilesDisconnecting == 1);
 
-            case BluetoothProfile.STATE_DISCONNECTED:
+            case STATE_DISCONNECTED:
                 return (mProfilesConnected == 0 && mProfilesConnecting == 0);
 
             default:
@@ -787,17 +788,15 @@ class AdapterProperties {
 
             if (newState == currHashState) {
                 numDev++;
-            } else if (newState == BluetoothProfile.STATE_CONNECTED
-                    || (newState == BluetoothProfile.STATE_CONNECTING
-                            && currHashState != BluetoothProfile.STATE_CONNECTED)) {
+            } else if (newState == STATE_CONNECTED
+                    || (newState == STATE_CONNECTING && currHashState != STATE_CONNECTED)) {
                 numDev = 1;
             } else if (numDev == 1 && oldState == currHashState) {
                 update = true;
             } else if (numDev > 1 && oldState == currHashState) {
                 numDev--;
 
-                if (currHashState == BluetoothProfile.STATE_CONNECTED
-                        || currHashState == BluetoothProfile.STATE_CONNECTING) {
+                if (currHashState == STATE_CONNECTED || currHashState == STATE_CONNECTING) {
                     newHashState = currHashState;
                 }
             } else {
@@ -1159,7 +1158,7 @@ class AdapterProperties {
         writer.println(sb.toString());
     }
 
-    private String dumpDeviceType(int deviceType) {
+    private static String dumpDeviceType(int deviceType) {
         switch (deviceType) {
             case BluetoothDevice.DEVICE_TYPE_UNKNOWN:
                 return " ???? ";
@@ -1174,7 +1173,7 @@ class AdapterProperties {
         }
     }
 
-    private String dumpConnectionState(int state) {
+    private static String dumpConnectionState(int state) {
         switch (state) {
             case BluetoothAdapter.STATE_DISCONNECTED:
                 return "STATE_DISCONNECTED";

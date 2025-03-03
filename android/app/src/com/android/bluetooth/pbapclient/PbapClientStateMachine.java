@@ -18,6 +18,10 @@ package com.android.bluetooth.pbapclient;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
+import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
+import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
+import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
+import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 
 import android.accounts.Account;
 import android.bluetooth.BluetoothDevice;
@@ -222,7 +226,7 @@ class PbapClientStateMachine extends StateMachine {
                 }
             };
 
-    private int mCurrentState = BluetoothProfile.STATE_DISCONNECTED;
+    private int mCurrentState = STATE_DISCONNECTED;
     private State mDisconnected;
     private State mConnecting;
     private State mConnected;
@@ -359,9 +363,9 @@ class PbapClientStateMachine extends StateMachine {
         @Override
         public void enter() {
             debug("Disconnected: Enter, from=" + eventToString(getCurrentMessage().what));
-            if (mCurrentState != BluetoothProfile.STATE_DISCONNECTED) {
+            if (mCurrentState != STATE_DISCONNECTED) {
                 // Only broadcast a state change that came from something other than disconnected
-                onConnectionStateChanged(BluetoothProfile.STATE_DISCONNECTED);
+                onConnectionStateChanged(STATE_DISCONNECTED);
 
                 // Quit processing on this handler. This makes this object one time use. The
                 // connection state changed callback event will trigger the service to clean up
@@ -391,7 +395,7 @@ class PbapClientStateMachine extends StateMachine {
         @Override
         public void enter() {
             debug("Connecting: Enter from=" + eventToString(getCurrentMessage().what));
-            onConnectionStateChanged(BluetoothProfile.STATE_CONNECTING);
+            onConnectionStateChanged(STATE_CONNECTING);
 
             // We can't connect over OBEX until we known where/how to connect. We need the SDP
             // record details to do this. Thus, being connected means we received a valid SDP record
@@ -504,11 +508,11 @@ class PbapClientStateMachine extends StateMachine {
         @Override
         public void enter() {
             debug("Connected: Enter, from=" + eventToString(getCurrentMessage().what));
-            if (mCurrentState != BluetoothProfile.STATE_CONNECTING) {
+            if (mCurrentState != STATE_CONNECTING) {
                 return;
             }
 
-            onConnectionStateChanged(BluetoothProfile.STATE_CONNECTED);
+            onConnectionStateChanged(STATE_CONNECTED);
 
             mHasDownloaded = false;
 
@@ -796,10 +800,10 @@ class PbapClientStateMachine extends StateMachine {
         @Override
         public void enter() {
             debug("Disconnecting: Enter, from=" + eventToString(getCurrentMessage().what));
-            onConnectionStateChanged(BluetoothProfile.STATE_DISCONNECTING);
+            onConnectionStateChanged(STATE_DISCONNECTING);
 
             // Disconnect
-            if (mObexClient.getConnectionState() != BluetoothProfile.STATE_DISCONNECTED) {
+            if (mObexClient.getConnectionState() != STATE_DISCONNECTED) {
                 mObexClient.disconnect();
                 sendMessageDelayed(MSG_DISCONNECT_TIMEOUT, DISCONNECT_TIMEOUT_MS);
             } else {
@@ -854,12 +858,12 @@ class PbapClientStateMachine extends StateMachine {
     protected void onQuitting() {
         Log.d(TAG, "State machine is force quitting");
         switch (mCurrentState) {
-            case BluetoothProfile.STATE_CONNECTED:
-                onConnectionStateChanged(BluetoothProfile.STATE_DISCONNECTING);
+            case STATE_CONNECTED:
+                onConnectionStateChanged(STATE_DISCONNECTING);
                 // intentional fallthrough-- we want to broadcast both state changes
-            case BluetoothProfile.STATE_CONNECTING:
-            case BluetoothProfile.STATE_DISCONNECTING:
-                onConnectionStateChanged(BluetoothProfile.STATE_DISCONNECTED);
+            case STATE_CONNECTING:
+            case STATE_DISCONNECTING:
+                onConnectionStateChanged(STATE_DISCONNECTED);
                 cleanup();
                 break;
             default:
@@ -904,7 +908,7 @@ class PbapClientStateMachine extends StateMachine {
 
     private void onConnectionStateChanged(int state) {
         int prevState = mCurrentState;
-        if (prevState != state && state == BluetoothProfile.STATE_CONNECTED) {
+        if (prevState != state && state == STATE_CONNECTED) {
             MetricsLogger.logProfileConnectionEvent(BluetoothMetricsProto.ProfileId.PBAP_CLIENT);
         }
 
@@ -939,9 +943,9 @@ class PbapClientStateMachine extends StateMachine {
         @Override
         public void onConnectionStateChanged(int oldState, int newState) {
             info("Obex client connection state changed: " + oldState + " -> " + newState);
-            if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+            if (newState == STATE_DISCONNECTED) {
                 obtainMessage(MSG_OBEX_CLIENT_DISCONNECTED).sendToTarget();
-            } else if (newState == BluetoothProfile.STATE_CONNECTED) {
+            } else if (newState == STATE_CONNECTED) {
                 obtainMessage(MSG_OBEX_CLIENT_CONNECTED).sendToTarget();
             }
         }

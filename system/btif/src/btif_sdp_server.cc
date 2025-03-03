@@ -40,6 +40,7 @@
 #include "bta/include/bta_sdp_api.h"
 #include "bta/sys/bta_sys.h"
 #include "btif_common.h"
+#include "btif_sdp.h"
 #include "btif_sock_sdp.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_types.h"
@@ -47,9 +48,6 @@
 #include "stack/include/sdp_api.h"
 #include "types/bluetooth/uuid.h"
 #include "utl.h"
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 using namespace bluetooth::legacy::stack::sdp;
 using namespace bluetooth;
@@ -90,7 +88,6 @@ static int add_pbaps_sdp(const bluetooth_sdp_pse_record* rec);
 static int add_opps_sdp(const bluetooth_sdp_ops_record* rec);
 static int add_saps_sdp(const bluetooth_sdp_sap_record* rec);
 static int add_mps_sdp(const bluetooth_sdp_mps_record* rec);
-bt_status_t remove_sdp_record(int record_id);
 static int free_sdp_slot(int id);
 
 /******************************************************************************

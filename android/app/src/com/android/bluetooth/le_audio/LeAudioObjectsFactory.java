@@ -25,6 +25,7 @@ import com.android.internal.annotations.VisibleForTesting;
 /** Factory class for object initialization to help with unit testing */
 public class LeAudioObjectsFactory {
     private static final String TAG = LeAudioObjectsFactory.class.getSimpleName();
+
     private static LeAudioObjectsFactory sInstance;
     private static final Object INSTANCE_LOCK = new Object();
 

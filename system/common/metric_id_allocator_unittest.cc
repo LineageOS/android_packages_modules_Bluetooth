@@ -25,14 +25,11 @@
 
 #include "types/raw_address.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 namespace testing {
 
 using bluetooth::common::MetricIdAllocator;
 
-RawAddress kthAddress(uint32_t k) {
+static RawAddress kthAddress(uint32_t k) {
   uint8_t array[6] = {0, 0, 0, 0, 0, 0};
   for (int i = 5; i >= 2; i--) {
     array[i] = k % 256;
@@ -42,7 +39,7 @@ RawAddress kthAddress(uint32_t k) {
   return addr;
 }
 
-std::unordered_map<RawAddress, int> generateAddresses(const uint32_t num) {
+static std::unordered_map<RawAddress, int> generateAddresses(const uint32_t num) {
   // generate first num of mac address -> id pairs
   // input may is always valid 256^6 = 2^48 > 2^32
   std::unordered_map<RawAddress, int> device_map;

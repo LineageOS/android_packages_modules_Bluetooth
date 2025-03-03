@@ -16,6 +16,8 @@
 
 package com.android.bluetooth.gatt;
 
+import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
+
 import static com.android.bluetooth.TestUtils.MockitoRule;
 
 import static org.mockito.Mockito.mock;
@@ -24,7 +26,6 @@ import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothGattService;
-import android.bluetooth.BluetoothProfile;
 import android.bluetooth.IBluetoothGattCallback;
 import android.bluetooth.IBluetoothGattServerCallback;
 import android.content.AttributionSource;
@@ -64,7 +65,7 @@ public class GattServiceBinderTest {
 
     @Test
     public void getDevicesMatchingConnectionStates() {
-        int[] states = new int[] {BluetoothProfile.STATE_CONNECTED};
+        int[] states = new int[] {STATE_CONNECTED};
 
         mBinder.getDevicesMatchingConnectionStates(states, mAttributionSource);
 

@@ -42,7 +42,7 @@ public:
   void Write(const void* data, size_t length) override;
   bool ThreadIsRunning() const;
 
-  SnoopLoggerSocket* GetSocket();
+  SnoopLoggerSocket* GetSocket() const;
 
 private:
   void Run(std::promise<bool> thread_started);

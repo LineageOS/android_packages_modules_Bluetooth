@@ -16,6 +16,8 @@
 
 package com.android.bluetooth.pbapclient;
 
+import static java.util.Objects.requireNonNull;
+
 import android.bluetooth.BluetoothSocket;
 
 import com.android.bluetooth.Utils;
@@ -26,7 +28,6 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Objects;
 
 /** Generic Obex Transport class, to be used in OBEX based Bluetooth Profiles. */
 public class PbapClientObexTransport implements ObexTransport {
@@ -39,7 +40,7 @@ public class PbapClientObexTransport implements ObexTransport {
     private int mMaxReceivePacketSize = PACKET_SIZE_UNSPECIFIED;
 
     public PbapClientObexTransport(PbapClientSocket socket) {
-        mSocket = Objects.requireNonNull(socket);
+        mSocket = requireNonNull(socket);
     }
 
     @Override

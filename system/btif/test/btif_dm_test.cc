@@ -24,6 +24,7 @@
 
 #include "bta/include/bta_api_data_types.h"
 #include "btif/include/mock_core_callbacks.h"
+#include "btif/include/stack_manager_t.h"
 #include "main/shim/entry.h"
 #include "main/shim/shim.h"
 #include "main/shim/stack.h"
@@ -41,10 +42,6 @@ namespace {
 const RawAddress kRawAddress = {{0x11, 0x22, 0x33, 0x44, 0x55, 0x66}};
 constexpr char kBdName[] = {'k', 'B', 'd', 'N', 'a', 'm', 'e', '\0'};
 }  // namespace
-
-namespace bluetooth::legacy::testing {
-void set_interface_to_profiles(bluetooth::core::CoreInterface* interfaceToProfiles);
-}  // namespace bluetooth::legacy::testing
 
 namespace {
 constexpr tBTM_BLE_TX_TIME_MS tx_time = 0x12345678;

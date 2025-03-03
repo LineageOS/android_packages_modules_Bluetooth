@@ -19,6 +19,8 @@ package android.bluetooth.le;
 import static android.Manifest.permission.BLUETOOTH_SCAN;
 import static android.Manifest.permission.UPDATE_DEVICE_STATS;
 
+import static java.util.Objects.requireNonNull;
+
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.RequiresNoPermission;
@@ -44,7 +46,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 /**
  * This class provides methods to perform scan related operations for Bluetooth LE devices. An
@@ -57,8 +58,8 @@ import java.util.Objects;
  * @see ScanFilter
  */
 public final class BluetoothLeScanner {
+    private static final String TAG = BluetoothLeScanner.class.getSimpleName();
 
-    private static final String TAG = "BluetoothLeScanner";
     private static final boolean DBG = true;
     private static final boolean VDBG = false;
 
@@ -96,7 +97,7 @@ public final class BluetoothLeScanner {
      * @hide
      */
     public BluetoothLeScanner(BluetoothAdapter bluetoothAdapter) {
-        mBluetoothAdapter = Objects.requireNonNull(bluetoothAdapter);
+        mBluetoothAdapter = requireNonNull(bluetoothAdapter);
         mAttributionSource = mBluetoothAdapter.getAttributionSource();
         mHandler = new Handler(Looper.getMainLooper());
         mLeScanClients = new HashMap<ScanCallback, BleScanCallbackWrapper>();
@@ -635,7 +636,7 @@ public final class BluetoothLeScanner {
         return false;
     }
 
-    private boolean isSettingsAndFilterComboAllowed(
+    private static boolean isSettingsAndFilterComboAllowed(
             ScanSettings settings, List<ScanFilter> filterList) {
         final int callbackType = settings.getCallbackType();
         // If onlost/onfound is requested, a non-empty filter is expected

@@ -36,6 +36,8 @@ import static android.permission.PermissionManager.PERMISSION_HARD_DENIED;
 
 import static com.android.modules.utils.build.SdkLevel.isAtLeastV;
 
+import static java.util.Objects.requireNonNull;
+
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.PermissionMethod;
@@ -96,7 +98,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 public final class Utils {
-    private static final String TAG = "BluetoothUtils";
+    public static final String TAG_PREFIX_BLUETOOTH = "Bluetooth";
+    private static final String TAG = TAG_PREFIX_BLUETOOTH + Utils.class.getSimpleName();
+
     private static final int MICROS_PER_UNIT = 625;
     private static final String PTS_TEST_MODE_PROPERTY = "persist.bluetooth.pts";
 
@@ -580,7 +584,7 @@ public final class Utils {
         // attributionSource.enforceCallingUid();
         AttributionSource currentAttribution =
                 new AttributionSource.Builder(context.getAttributionSource())
-                        .setNext(Objects.requireNonNull(attributionSource))
+                        .setNext(requireNonNull(attributionSource))
                         .build();
         PermissionManager pm = context.getSystemService(PermissionManager.class);
         if (pm == null) {
@@ -861,7 +865,7 @@ public final class Utils {
         }
         AttributionSource currentAttribution =
                 new AttributionSource.Builder(context.getAttributionSource())
-                        .setNext(Objects.requireNonNull(attributionSource))
+                        .setNext(requireNonNull(attributionSource))
                         .build();
         // STOPSHIP(b/188391719): enable this security enforcement
         // attributionSource.enforceCallingUid();
@@ -894,7 +898,7 @@ public final class Utils {
 
         final AttributionSource currentAttribution =
                 new AttributionSource.Builder(context.getAttributionSource())
-                        .setNext(Objects.requireNonNull(attributionSource))
+                        .setNext(requireNonNull(attributionSource))
                         .build();
         // STOPSHIP(b/188391719): enable this security enforcement
         // attributionSource.enforceCallingUid();
@@ -933,7 +937,7 @@ public final class Utils {
 
         AttributionSource currentAttribution =
                 new AttributionSource.Builder(context.getAttributionSource())
-                        .setNext(Objects.requireNonNull(attributionSource))
+                        .setNext(requireNonNull(attributionSource))
                         .build();
         // STOPSHIP(b/188391719): enable this security enforcement
         // attributionSource.enforceCallingUid();
@@ -1030,7 +1034,7 @@ public final class Utils {
         if (!sIsInstrumentationTestModeCacheSet) {
             try {
                 sInstrumentationTestModeCache =
-                        Class.forName("com.android.bluetooth.FileSystemWriteTest") != null;
+                        Class.forName("com.android.bluetooth.TestUtils") != null;
             } catch (ClassNotFoundException exception) {
                 sInstrumentationTestModeCache = false;
             }

@@ -20,7 +20,8 @@ import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
 public class BluetoothHciVendorSpecificNativeInterface {
-    private static final String TAG = "BluetoothHciVendorSpecificNativeInterface";
+    private static final String TAG =
+            BluetoothHciVendorSpecificNativeInterface.class.getSimpleName();
 
     @GuardedBy("INSTANCE_LOCK")
     private static BluetoothHciVendorSpecificNativeInterface sInstance;

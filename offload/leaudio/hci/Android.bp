@@ -37,6 +37,7 @@ rust_library {
     visibility: [
         "//hardware/interfaces/bluetooth:__subpackages__",
         "//packages/modules/Bluetooth/offload:__subpackages__",
+        "//vendor:__subpackages__",
     ],
 }
 

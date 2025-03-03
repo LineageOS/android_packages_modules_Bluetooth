@@ -46,21 +46,6 @@ using bluetooth::Uuid;
 using namespace bluetooth;
 
 /*****************************************************************************
- *  Functions implemented in sdp_server.c
- *****************************************************************************/
-bt_status_t sdp_server_init();
-void sdp_server_cleanup();
-bt_status_t create_sdp_record(bluetooth_sdp_record* records, int* record_handles);
-bt_status_t remove_sdp_record(int record_handle);
-void on_create_record_event(int handle);
-void on_remove_record_event(int handle);
-
-// Utility functions:
-int get_sdp_records_size(bluetooth_sdp_record* in_record, int count);
-void copy_sdp_records(bluetooth_sdp_record* in_records, bluetooth_sdp_record* out_records,
-                      int count);
-
-/*****************************************************************************
  *  Static variables
  *****************************************************************************/
 

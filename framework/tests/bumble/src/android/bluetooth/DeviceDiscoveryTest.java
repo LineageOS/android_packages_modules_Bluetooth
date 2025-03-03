@@ -43,7 +43,7 @@ import java.util.ArrayList;
 /** Test cases for {@link DeviceDiscoveryManager}. */
 @RunWith(AndroidJUnit4.class)
 public class DeviceDiscoveryTest {
-    private static final String TAG = "DeviceDiscoveryTest";
+    private static final String TAG = DeviceDiscoveryTest.class.getSimpleName();
 
     private final Context mContext = ApplicationProvider.getApplicationContext();
     private final BluetoothManager mManager = mContext.getSystemService(BluetoothManager.class);

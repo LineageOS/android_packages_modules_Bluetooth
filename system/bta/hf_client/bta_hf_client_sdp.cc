@@ -33,6 +33,7 @@
 
 #include "bta/hf_client/bta_hf_client_int.h"
 #include "bta/include/bta_hf_client_api.h"
+#include "bta/include/bta_rfcomm_metrics.h"
 #include "bta/include/bta_rfcomm_scn.h"
 #include "bta/sys/bta_sys.h"
 #include "bta_hfp_api.h"
@@ -386,6 +387,8 @@ void bta_hf_client_do_disc(tBTA_HF_CLIENT_CB* client_cb) {
 
   if (!db_inited) {
     log::warn("Unable to start SDP service search request peer:{}", client_cb->peer_addr);
+    bta_collect_rfc_metrics_after_sdp_fail(tBTA_JV_STATUS::FAILURE, client_cb->peer_addr, 0,
+                                           BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT, false, 0);
     /*free discover db */
     osi_free_and_reset((void**)&client_cb->p_disc_db);
     /* sent failed event */

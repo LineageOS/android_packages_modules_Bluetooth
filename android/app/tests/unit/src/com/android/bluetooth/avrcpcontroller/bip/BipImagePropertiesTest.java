@@ -108,7 +108,7 @@ public class BipImagePropertiesTest {
 
     private static final String IMAGE_PROPERTIES_END = "</image-properties>";
 
-    private InputStream toUtf8Stream(String s) {
+    private static InputStream toUtf8Stream(String s) {
         return new ByteArrayInputStream(s.getBytes(StandardCharsets.UTF_8));
     }
 

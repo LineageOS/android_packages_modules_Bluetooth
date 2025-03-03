@@ -54,13 +54,11 @@ public:
    * blocks until the previous task is cancelled.
    *
    * @param thread thread to run the task
-   * @param from_here location where this task is originated
    * @param task task created through base::Bind()
    * @param period period for the task to be executed
    * @return true iff task is scheduled successfully
    */
-  bool SchedulePeriodic(const base::WeakPtr<MessageLoopThread>& thread,
-                        const base::Location& from_here, base::RepeatingClosure task,
+  bool SchedulePeriodic(const base::WeakPtr<MessageLoopThread>& thread, base::RepeatingClosure task,
                         std::chrono::microseconds period);
 
   /**

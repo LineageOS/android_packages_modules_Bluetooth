@@ -88,17 +88,11 @@ public class AvrcpBipObexServer extends ServerRequestHandler {
     @Override
     public int onConnect(final HeaderSet request, HeaderSet reply) {
         debug("onConnect");
-        try {
-            byte[] uuid = (byte[]) request.getHeader(HeaderSet.TARGET);
-            debug("onConnect - uuid=" + Arrays.toString(uuid));
-            if (!Arrays.equals(uuid, BLUETOOTH_UUID_AVRCP_COVER_ART)) {
-                warn("onConnect - uuid didn't match. Not Acceptable");
-                return ResponseCodes.OBEX_HTTP_NOT_ACCEPTABLE;
-            }
-            // ...
-        } catch (IOException e) {
-            warn("onConnect - Something bad happened");
-            return ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
+        byte[] uuid = (byte[]) request.getHeader(HeaderSet.TARGET);
+        debug("onConnect - uuid=" + Arrays.toString(uuid));
+        if (!Arrays.equals(uuid, BLUETOOTH_UUID_AVRCP_COVER_ART)) {
+            warn("onConnect - uuid didn't match. Not Acceptable");
+            return ResponseCodes.OBEX_HTTP_NOT_ACCEPTABLE;
         }
 
         reply.setHeader(HeaderSet.WHO, BLUETOOTH_UUID_AVRCP_COVER_ART);
@@ -178,7 +172,7 @@ public class AvrcpBipObexServer extends ServerRequestHandler {
      *
      * @return True if the image handle is valid, false otherwise.
      */
-    private boolean isImageHandleValid(String handle) {
+    private static boolean isImageHandleValid(String handle) {
         if (handle == null || handle.length() != 7) return false;
         for (int i = 0; i < 7; i++) {
             char c = handle.charAt(i);
@@ -305,7 +299,7 @@ public class AvrcpBipObexServer extends ServerRequestHandler {
     }
 
     /** Send a response to the given operation using the given headers and bytes. */
-    private int sendResponse(Operation op, HeaderSet replyHeaders, byte[] bytes) {
+    private static int sendResponse(Operation op, HeaderSet replyHeaders, byte[] bytes) {
         if (op != null && bytes != null && replyHeaders != null) {
             OutputStream outStream = null;
             int maxChunkSize = 0;
@@ -344,11 +338,11 @@ public class AvrcpBipObexServer extends ServerRequestHandler {
         return ResponseCodes.OBEX_HTTP_NOT_FOUND;
     }
 
-    private void warn(String msg) {
+    private static void warn(String msg) {
         Log.w(TAG, msg);
     }
 
-    private void debug(String msg) {
+    private static void debug(String msg) {
         Log.d(TAG, msg);
     }
 }

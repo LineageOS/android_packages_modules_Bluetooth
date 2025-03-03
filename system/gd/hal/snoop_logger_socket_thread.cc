@@ -72,7 +72,7 @@ void SnoopLoggerSocketThread::Write(const void* data, size_t length) {
 
 bool SnoopLoggerSocketThread::ThreadIsRunning() const { return listen_thread_running_; }
 
-SnoopLoggerSocket* SnoopLoggerSocketThread::GetSocket() { return socket_.get(); }
+SnoopLoggerSocket* SnoopLoggerSocketThread::GetSocket() const { return socket_.get(); }
 
 void SnoopLoggerSocketThread::Run(std::promise<bool> thread_started) {
   log::debug("");

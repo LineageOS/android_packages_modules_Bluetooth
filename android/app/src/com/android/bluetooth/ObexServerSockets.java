@@ -46,7 +46,7 @@ import java.io.IOException;
  * In both cases the {@link ObexServerSockets} object have terminated, and a new must be created.
  */
 public class ObexServerSockets {
-    private static final String TAG = "ObexServerSockets";
+    private static final String TAG = ObexServerSockets.class.getSimpleName();
 
     private final IObexConnectionHandler mConHandler;
     /* The wrapped sockets */

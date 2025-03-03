@@ -103,14 +103,6 @@ public:
   // Returns a copy of the current codec configuration.
   btav_a2dp_codec_config_t getCodecConfig();
 
-  // Gets the current codec capability.
-  // The capability is computed by intersecting the local codec's capability
-  // and the peer's codec capability. However, if there is an explicit user
-  // configuration for some of the parameters, the result codec configuration
-  // and capability is restricted to the user's configuration choice.
-  // Returns a copy of the current codec capability.
-  btav_a2dp_codec_config_t getCodecCapability();
-
   // Gets the codec local capability.
   // Returns a copy of the codec local capability.
   btav_a2dp_codec_config_t getCodecLocalCapability();
@@ -249,7 +241,6 @@ protected:
   btav_a2dp_codec_priority_t default_codec_priority_;
 
   btav_a2dp_codec_config_t codec_config_;
-  btav_a2dp_codec_config_t codec_capability_;
   btav_a2dp_codec_config_t codec_local_capability_;
   btav_a2dp_codec_config_t codec_selectable_capability_;
 

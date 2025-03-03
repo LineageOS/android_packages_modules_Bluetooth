@@ -235,7 +235,7 @@ public class BluetoothPbapVcardManagerNestedClassesTest {
         assertThat(getContactsIdFromCursor(resultCursor, 2)).isEqualTo(1004);
     }
 
-    private long getContactsIdFromCursor(Cursor cursor, int position) {
+    private static long getContactsIdFromCursor(Cursor cursor, int position) {
         int index = cursor.getColumnIndex(ContactsContract.Data.CONTACT_ID);
         cursor.moveToPosition(position);
         return cursor.getLong(index);

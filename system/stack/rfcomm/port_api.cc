@@ -474,17 +474,6 @@ int PORT_CheckConnection(uint16_t handle, RawAddress* bd_addr, uint16_t* p_lcid)
   return PORT_SUCCESS;
 }
 
-/*******************************************************************************
- *
- * Function         PORT_IsOpening
- *
- * Description      This function returns true if there is any RFCOMM connection
- *                  opening in process.
- *
- * Parameters:      true if any connection opening is found
- *                  bd_addr    - bd_addr of the peer
- *
- ******************************************************************************/
 static const tPORT* get_port_from_mcb(const tRFC_MCB* multiplexer_cb) {
   tPORT* p_port = nullptr;
 
@@ -494,32 +483,6 @@ static const tPORT* get_port_from_mcb(const tRFC_MCB* multiplexer_cb) {
     }
   }
   return nullptr;
-}
-
-bool PORT_IsOpening(RawAddress* bd_addr) {
-  /* Check for any rfc_mcb which is in the middle of opening. */
-  for (auto& multiplexer_cb : rfc_cb.port.rfc_mcb) {
-    if ((multiplexer_cb.state > RFC_MX_STATE_IDLE) &&
-        (multiplexer_cb.state < RFC_MX_STATE_CONNECTED)) {
-      *bd_addr = multiplexer_cb.bd_addr;
-      log::info("Found a rfc_mcb in the middle of opening a port, returning true");
-      return true;
-    }
-
-    if (multiplexer_cb.state == RFC_MX_STATE_CONNECTED) {
-      const tPORT* p_port = get_port_from_mcb(&multiplexer_cb);
-      log::info("RFC_MX_STATE_CONNECTED, found_port={}, tRFC_PORT_STATE={}",
-                (p_port != nullptr) ? "T" : "F", (p_port != nullptr) ? p_port->rfc.sm_cb.state : 0);
-      if ((p_port == nullptr) || (p_port->rfc.sm_cb.state < RFC_STATE_OPENED)) {
-        /* Port is not established yet. */
-        *bd_addr = multiplexer_cb.bd_addr;
-        log::info("In RFC_MX_STATE_CONNECTED but port is not established yet, returning true");
-        return true;
-      }
-    }
-  }
-  log::info("false");
-  return false;
 }
 
 /*******************************************************************************

@@ -49,6 +49,7 @@ import java.util.concurrent.TimeUnit;
 
 public final class PandoraDevice extends ExternalResource {
     private static final String TAG = PandoraDevice.class.getSimpleName();
+
     private final String mNetworkAddress;
     private String mPublicBluetoothAddress;
     private final int mPort;

@@ -16,6 +16,9 @@
 
 package com.android.bluetooth.channelsoundingtestapp;
 
+import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
+import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
+
 import android.annotation.SuppressLint;
 import android.app.Application;
 import android.bluetooth.BluetoothAdapter;
@@ -25,7 +28,6 @@ import android.bluetooth.BluetoothGattCallback;
 import android.bluetooth.BluetoothGattServer;
 import android.bluetooth.BluetoothGattServerCallback;
 import android.bluetooth.BluetoothManager;
-import android.bluetooth.BluetoothProfile;
 import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertisingSet;
 import android.bluetooth.le.AdvertisingSetCallback;
@@ -156,10 +158,10 @@ public class BleConnectionViewModel extends AndroidViewModel {
                     public void onConnectionStateChange(
                             BluetoothDevice device, int status, int newState) {
                         super.onConnectionStateChange(device, status, newState);
-                        if (newState == BluetoothProfile.STATE_CONNECTED) {
+                        if (newState == STATE_CONNECTED) {
                             printLog("Device connected: " + device.getName());
                             mTargetDevice.postValue(device);
-                        } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                        } else if (newState == STATE_DISCONNECTED) {
                             printLog("Device disconnected: " + device.getName());
                             mTargetDevice.postValue(null);
                         }
@@ -218,13 +220,13 @@ public class BleConnectionViewModel extends AndroidViewModel {
                 @Override
                 public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
                     printLog("onConnectionStateChange status:" + status + ", newState:" + newState);
-                    if (newState == BluetoothProfile.STATE_CONNECTED) {
+                    if (newState == STATE_CONNECTED) {
                         printLog(gatt.getDevice().getName() + " is connected");
                         gatt.requestMtu(GATT_MTU_SIZE);
                         mBluetoothGatt = gatt;
                         mGattState.postValue(mExpectedGattState);
                         mTargetDevice.postValue(gatt.getDevice());
-                    } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                    } else if (newState == STATE_DISCONNECTED) {
                         printLog("disconnected from " + gatt.getDevice().getName());
                         mExpectedGattState = GattState.DISCONNECTED;
                         mGattState.postValue(mExpectedGattState);

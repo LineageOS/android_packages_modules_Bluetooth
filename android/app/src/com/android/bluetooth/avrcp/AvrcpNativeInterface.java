@@ -16,6 +16,8 @@
 
 package com.android.bluetooth.avrcp;
 
+import static java.util.Objects.requireNonNull;
+
 import android.bluetooth.BluetoothDevice;
 import android.util.Log;
 
@@ -31,7 +33,6 @@ import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.List;
-import java.util.Objects;
 
 /**
  * Native Interface to communicate with the JNI layer. This class should never be passed null data.
@@ -48,10 +49,7 @@ public class AvrcpNativeInterface {
     private AdapterService mAdapterService;
 
     private AvrcpNativeInterface() {
-        mAdapterService =
-                Objects.requireNonNull(
-                        AdapterService.getAdapterService(),
-                        "AdapterService cannot be null when AvrcpNativeInterface init");
+        mAdapterService = requireNonNull(AdapterService.getAdapterService());
     }
 
     static AvrcpNativeInterface getInstance() {

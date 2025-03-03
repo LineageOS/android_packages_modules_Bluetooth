@@ -28,12 +28,11 @@
 
 #include "stack/btm/btm_dev.h"
 #include "stack/include/bt_octets.h"
+#include "stack/include/btm_ble_addr.h"
 #include "stack/include/btm_client_interface.h"
+#include "stack/include/btm_sec_api.h"
 #include "test/common/mock_functions.h"
 #include "types/raw_address.h"
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 namespace test {
 namespace mock {
@@ -96,8 +95,6 @@ void btm_consolidate_dev(tBTM_SEC_DEV_REC* /* p_target_rec */) { inc_func_call_c
 void btm_dev_consolidate_existing_connections(const RawAddress& /* bd_addr */) {
   inc_func_call_count(__func__);
 }
-void BTM_SecDump(const std::string& /* label */) { inc_func_call_count(__func__); }
-void BTM_SecDumpDev(const RawAddress& /* bd_addr */) { inc_func_call_count(__func__); }
 std::vector<tBTM_SEC_DEV_REC*> btm_get_sec_dev_rec() {
   inc_func_call_count(__func__);
   return {};
@@ -111,9 +108,9 @@ bool maybe_resolve_address(RawAddress* bda, tBLE_ADDR_TYPE* bda_type) {
   inc_func_call_count(__func__);
   return test::mock::stack_btm_dev::maybe_resolve_address(bda, bda_type);
 }
-const tBLE_BD_ADDR BTM_Sec_GetAddressWithType(const RawAddress& /* bd_addr */) {
+const tBLE_BD_ADDR BTM_Sec_GetAddressWithType(const RawAddress& bd_addr) {
   inc_func_call_count(__func__);
-  return {};
+  return tBLE_BD_ADDR{.type = BLE_ADDR_PUBLIC, .bda = bd_addr};
 }
 
 void DumpsysRecord(int /* fd */) { inc_func_call_count(__func__); }

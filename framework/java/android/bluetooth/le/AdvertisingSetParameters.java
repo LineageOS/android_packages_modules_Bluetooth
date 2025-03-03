@@ -16,6 +16,8 @@
 
 package android.bluetooth.le;
 
+import static java.util.Objects.requireNonNull;
+
 import android.annotation.FlaggedApi;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
@@ -31,7 +33,6 @@ import com.android.bluetooth.flags.Flags;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.util.Objects;
 
 /**
  * The {@link AdvertisingSetParameters} provide a way to adjust advertising preferences for each
@@ -115,7 +116,7 @@ public final class AdvertisingSetParameters implements Parcelable {
     @SystemApi public static final int ADDRESS_TYPE_PUBLIC = 0;
 
     /**
-     * Generate and adverise own resolvable private address.
+     * Generate and advertise own resolvable private address.
      *
      * @hide
      */
@@ -605,7 +606,7 @@ public final class AdvertisingSetParameters implements Parcelable {
         @FlaggedApi(Flags.FLAG_DIRECTED_ADVERTISING_API)
         @SystemApi
         public @NonNull Builder setPeerAddress(@NonNull String peerAddress) {
-            Objects.requireNonNull(peerAddress, "peerAddress is null");
+            requireNonNull(peerAddress);
             if (!BluetoothAdapter.checkBluetoothAddress(peerAddress)) {
                 throw new IllegalArgumentException(
                         peerAddress + " is not a valid Bluetooth address");

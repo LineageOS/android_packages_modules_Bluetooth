@@ -123,7 +123,6 @@ A2dpCodecConfig::A2dpCodecConfig(btav_a2dp_codec_index_t codec_index, a2dp::Code
   setCodecPriority(codec_priority);
 
   init_btav_a2dp_codec_config(&codec_config_, codec_index_, codecPriority());
-  init_btav_a2dp_codec_config(&codec_capability_, codec_index_, codecPriority());
   init_btav_a2dp_codec_config(&codec_local_capability_, codec_index_, codecPriority());
   init_btav_a2dp_codec_config(&codec_selectable_capability_, codec_index_, codecPriority());
   init_btav_a2dp_codec_config(&codec_user_config_, codec_index_, BTAV_A2DP_CODEC_PRIORITY_DEFAULT);
@@ -319,13 +318,6 @@ btav_a2dp_codec_config_t A2dpCodecConfig::getCodecConfig() {
 
   // TODO: We should check whether the codec config is valid
   return codec_config_;
-}
-
-btav_a2dp_codec_config_t A2dpCodecConfig::getCodecCapability() {
-  std::lock_guard<std::recursive_mutex> lock(codec_mutex_);
-
-  // TODO: We should check whether the codec capability is valid
-  return codec_capability_;
 }
 
 btav_a2dp_codec_config_t A2dpCodecConfig::getCodecLocalCapability() {

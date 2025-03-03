@@ -48,7 +48,7 @@ import java.util.Map;
  * controlling state machine.
  */
 class PbapClientConnectionHandler extends Handler {
-    private static final String TAG = "PbapClientConnHandler";
+    private static final String TAG = PbapClientConnectionHandler.class.getSimpleName();
 
     // Tradeoff: larger BATCH_SIZE leads to faster download rates, while smaller
     // BATCH_SIZE is less prone to IO Exceptions if there is a download in

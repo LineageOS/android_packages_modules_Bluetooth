@@ -22,7 +22,8 @@ import android.bluetooth.BluetoothGattCallback
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothGattDescriptor
 import android.bluetooth.BluetoothGattService
-import android.bluetooth.BluetoothProfile
+import android.bluetooth.BluetoothProfile.STATE_CONNECTED
+import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
 import android.bluetooth.BluetoothStatusCodes
 import android.content.Context
 import android.util.Log
@@ -39,7 +40,7 @@ class GattInstance(val mDevice: BluetoothDevice, val mTransport: Int, val mConte
     public val mGatt: BluetoothGatt
 
     private var mServiceDiscovered = MutableStateFlow(false)
-    private var mConnectionState = MutableStateFlow(BluetoothProfile.STATE_DISCONNECTED)
+    private var mConnectionState = MutableStateFlow(STATE_DISCONNECTED)
     private var mValuesRead = MutableStateFlow(0)
     private var mValueWrote = MutableStateFlow(false)
     private var mOnCharacteristicChanged = MutableStateFlow(false)
@@ -55,26 +56,31 @@ class GattInstance(val mDevice: BluetoothDevice, val mTransport: Int, val mConte
         var uuid: UUID?,
         var handle: Int,
         var value: ByteString?,
-        var status: AttStatusCode
+        var status: AttStatusCode,
     ) {}
+
     private var mGattInstanceValuesRead = arrayListOf<GattInstanceValueRead>()
 
     class GattInstanceValueWrote(var uuid: UUID?, var handle: Int, var status: AttStatusCode) {}
+
     private var mGattInstanceValueWrote =
         GattInstanceValueWrote(null, 0, AttStatusCode.UNKNOWN_ERROR)
 
     companion object GattManager {
         val gattInstances: MutableMap<String, GattInstance> = mutableMapOf<String, GattInstance>()
+
         fun get(address: String): GattInstance {
             val instance = gattInstances.get(address)
             requireNotNull(instance) { "Unable to find GATT instance for $address" }
             return instance
         }
+
         fun get(address: ByteString): GattInstance {
             val instance = gattInstances.get(address.toByteArray().decodeToString())
             requireNotNull(instance) { "Unable to find GATT instance for $address" }
             return instance
         }
+
         fun clearAllInstances() {
             gattInstances.clear()
         }
@@ -85,11 +91,11 @@ class GattInstance(val mDevice: BluetoothDevice, val mTransport: Int, val mConte
             override fun onConnectionStateChange(
                 bluetoothGatt: BluetoothGatt,
                 status: Int,
-                newState: Int
+                newState: Int,
             ) {
                 Log.i(TAG, "$mDevice connection state changed to $newState")
                 mConnectionState.value = newState
-                if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+                if (newState == STATE_DISCONNECTED) {
                     gattInstances.remove(mDevice.address)
                 }
             }
@@ -105,7 +111,7 @@ class GattInstance(val mDevice: BluetoothDevice, val mTransport: Int, val mConte
                 bluetoothGatt: BluetoothGatt,
                 characteristic: BluetoothGattCharacteristic,
                 value: ByteArray,
-                status: Int
+                status: Int,
             ) {
                 Log.i(TAG, "onCharacteristicRead, status: $status")
                 for (gattInstanceValueRead: GattInstanceValueRead in mGattInstanceValuesRead) {
@@ -124,7 +130,7 @@ class GattInstance(val mDevice: BluetoothDevice, val mTransport: Int, val mConte
                 bluetoothGatt: BluetoothGatt,
                 descriptor: BluetoothGattDescriptor,
                 status: Int,
-                value: ByteArray
+                value: ByteArray,
             ) {
                 Log.i(TAG, "onDescriptorRead, status: $status")
                 for (gattInstanceValueRead: GattInstanceValueRead in mGattInstanceValuesRead) {
@@ -142,7 +148,7 @@ class GattInstance(val mDevice: BluetoothDevice, val mTransport: Int, val mConte
             override fun onCharacteristicWrite(
                 bluetoothGatt: BluetoothGatt,
                 characteristic: BluetoothGattCharacteristic,
-                status: Int
+                status: Int,
             ) {
                 Log.i(TAG, "onCharacteristicWrite, status: $status")
                 mGattInstanceValueWrote.status = AttStatusCode.forNumber(status)
@@ -152,7 +158,7 @@ class GattInstance(val mDevice: BluetoothDevice, val mTransport: Int, val mConte
             override fun onDescriptorWrite(
                 bluetoothGatt: BluetoothGatt,
                 descriptor: BluetoothGattDescriptor,
-                status: Int
+                status: Int,
             ) {
                 Log.i(TAG, "onDescriptorWrite, status: $status")
                 mGattInstanceValueWrote.status = AttStatusCode.forNumber(status)
@@ -162,12 +168,12 @@ class GattInstance(val mDevice: BluetoothDevice, val mTransport: Int, val mConte
             override fun onCharacteristicChanged(
                 bluetoothGatt: BluetoothGatt,
                 characteristic: BluetoothGattCharacteristic,
-                value: ByteArray
+                value: ByteArray,
             ) {
                 Log.i(
                     TAG,
                     "onCharacteristicChanged, characteristic: " +
-                        characteristic.getUuid().toString().uppercase()
+                        characteristic.getUuid().toString().uppercase(),
                 )
                 mCharacteristicChangedMap[characteristic] = true
                 mOnCharacteristicChanged.value = true
@@ -189,11 +195,11 @@ class GattInstance(val mDevice: BluetoothDevice, val mTransport: Int, val mConte
     }
 
     public fun isConnected(): Boolean {
-        return mConnectionState.value == BluetoothProfile.STATE_CONNECTED
+        return mConnectionState.value == STATE_CONNECTED
     }
 
     public fun isDisconnected(): Boolean {
-        return mConnectionState.value == BluetoothProfile.STATE_DISCONNECTED
+        return mConnectionState.value == STATE_DISCONNECTED
     }
 
     public fun isBonded(): Boolean {
@@ -259,7 +265,7 @@ class GattInstance(val mDevice: BluetoothDevice, val mTransport: Int, val mConte
                     characteristic.getUuid(),
                     characteristic.getInstanceId(),
                     ByteString.EMPTY,
-                    AttStatusCode.UNKNOWN_ERROR
+                    AttStatusCode.UNKNOWN_ERROR,
                 )
             )
         if (mGatt.readCharacteristic(characteristic)) {
@@ -272,7 +278,7 @@ class GattInstance(val mDevice: BluetoothDevice, val mTransport: Int, val mConte
     public suspend fun readCharacteristicUuidBlocking(
         uuid: UUID,
         startHandle: Int,
-        endHandle: Int
+        endHandle: Int,
     ): ArrayList<GattInstanceValueRead> {
         mGattInstanceValuesRead = arrayListOf()
         // Init mGattInstanceValuesRead with characteristics values.
@@ -288,14 +294,14 @@ class GattInstance(val mDevice: BluetoothDevice, val mTransport: Int, val mConte
                             uuid,
                             characteristic.getInstanceId(),
                             ByteString.EMPTY,
-                            AttStatusCode.UNKNOWN_ERROR
+                            AttStatusCode.UNKNOWN_ERROR,
                         )
                     )
                     check(
                         mGatt.readUsingCharacteristicUuid(
                             uuid,
                             characteristic.getInstanceId(),
-                            characteristic.getInstanceId()
+                            characteristic.getInstanceId(),
                         )
                     )
                     waitForValuesRead()
@@ -314,7 +320,7 @@ class GattInstance(val mDevice: BluetoothDevice, val mTransport: Int, val mConte
                     uuid,
                     startHandle,
                     ByteString.EMPTY,
-                    AttStatusCode.UNKNOWN_ERROR
+                    AttStatusCode.UNKNOWN_ERROR,
                 )
             )
             mGatt.readUsingCharacteristicUuid(uuid, startHandle, endHandle)
@@ -332,7 +338,7 @@ class GattInstance(val mDevice: BluetoothDevice, val mTransport: Int, val mConte
                     descriptor.getUuid(),
                     descriptor.getInstanceId(),
                     ByteString.EMPTY,
-                    AttStatusCode.UNKNOWN_ERROR
+                    AttStatusCode.UNKNOWN_ERROR,
                 )
             )
         if (mGatt.readDescriptor(descriptor)) {
@@ -344,18 +350,18 @@ class GattInstance(val mDevice: BluetoothDevice, val mTransport: Int, val mConte
 
     public suspend fun writeCharacteristicBlocking(
         characteristic: BluetoothGattCharacteristic,
-        value: ByteArray
+        value: ByteArray,
     ): GattInstanceValueWrote {
         GattInstanceValueWrote(
             characteristic.getUuid(),
             characteristic.getInstanceId(),
-            AttStatusCode.UNKNOWN_ERROR
+            AttStatusCode.UNKNOWN_ERROR,
         )
         if (
             mGatt.writeCharacteristic(
                 characteristic,
                 value,
-                BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+                BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT,
             ) == BluetoothStatusCodes.SUCCESS
         ) {
             waitForWriteEnd()
@@ -365,12 +371,12 @@ class GattInstance(val mDevice: BluetoothDevice, val mTransport: Int, val mConte
 
     public suspend fun writeDescriptorBlocking(
         descriptor: BluetoothGattDescriptor,
-        value: ByteArray
+        value: ByteArray,
     ): GattInstanceValueWrote {
         GattInstanceValueWrote(
             descriptor.getUuid(),
             descriptor.getInstanceId(),
-            AttStatusCode.UNKNOWN_ERROR
+            AttStatusCode.UNKNOWN_ERROR,
         )
         if (mGatt.writeDescriptor(descriptor, value) == BluetoothStatusCodes.SUCCESS) {
             waitForWriteEnd()

@@ -42,22 +42,6 @@ namespace test {
 namespace mock {
 namespace main_shim_acl_api {
 
-// Shared state between mocked functions and tests
-// Name: ACL_AcceptLeConnectionFrom
-// Params: const tBLE_BD_ADDR& legacy_address_with_type, bool is_direct
-// Return: bool
-struct ACL_AcceptLeConnectionFrom {
-  static bool return_value;
-  std::function<bool(const tBLE_BD_ADDR& legacy_address_with_type, bool is_direct)> body{
-          [](const tBLE_BD_ADDR& legacy_address_with_type, bool is_direct) {
-            return return_value;
-          }};
-  bool operator()(const tBLE_BD_ADDR& legacy_address_with_type, bool is_direct) {
-    return body(legacy_address_with_type, is_direct);
-  }
-};
-extern struct ACL_AcceptLeConnectionFrom ACL_AcceptLeConnectionFrom;
-
 // Name: ACL_AddToAddressResolution
 // Params: const tBLE_BD_ADDR& legacy_address_with_type, const Octet16&
 // peer_irk, const Octet16& local_irk Return: void
@@ -159,25 +143,6 @@ struct ACL_Disconnect {
   }
 };
 extern struct ACL_Disconnect ACL_Disconnect;
-
-// Name: ACL_IgnoreAllLeConnections
-// Params:
-// Return: void
-struct ACL_IgnoreAllLeConnections {
-  std::function<void()> body{[]() {}};
-  void operator()() { body(); }
-};
-extern struct ACL_IgnoreAllLeConnections ACL_IgnoreAllLeConnections;
-
-// Name: ACL_IgnoreLeConnectionFrom
-// Params: const tBLE_BD_ADDR& legacy_address_with_type
-// Return: void
-struct ACL_IgnoreLeConnectionFrom {
-  std::function<void(const tBLE_BD_ADDR& legacy_address_with_type)> body{
-          [](const tBLE_BD_ADDR& legacy_address_with_type) {}};
-  void operator()(const tBLE_BD_ADDR& legacy_address_with_type) { body(legacy_address_with_type); }
-};
-extern struct ACL_IgnoreLeConnectionFrom ACL_IgnoreLeConnectionFrom;
 
 // Name: ACL_ReadConnectionAddress
 // Params: uint16_t handle, RawAddress& conn_addr, tBLE_ADDR_TYPE*, bool

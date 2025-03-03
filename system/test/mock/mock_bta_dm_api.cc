@@ -25,15 +25,14 @@
 
 #include <cstdint>
 
+#include "bta/include/bta_api.h"
+#include "bta/include/bta_sec_api.h"
 #include "hci/le_rand_callback.h"
 #include "test/common/mock_functions.h"
 
 // Original usings
 
 // Mocked internal structures, if any
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 namespace test {
 namespace mock {
@@ -113,8 +112,8 @@ void BTA_DmAddBleKey(const RawAddress& bd_addr, tBTA_LE_KEY_VALUE* p_le_key,
   inc_func_call_count(__func__);
   test::mock::bta_dm_api::BTA_DmAddBleKey(bd_addr, p_le_key, key_type);
 }
-void BTA_DmAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class, const LinkKey& link_key,
-                     uint8_t key_type, uint8_t pin_length) {
+void BTA_DmAddDevice(RawAddress bd_addr, DEV_CLASS dev_class, LinkKey link_key, uint8_t key_type,
+                     uint8_t pin_length) {
   inc_func_call_count(__func__);
   test::mock::bta_dm_api::BTA_DmAddDevice(bd_addr, dev_class, link_key, key_type, pin_length);
 }
@@ -205,10 +204,10 @@ void BTA_DmDisconnectAllAcls() {
   inc_func_call_count(__func__);
   test::mock::bta_dm_api::BTA_DmDisconnectAllAcls();
 }
-void BTA_DmDiscover(const RawAddress& bd_addr, tBTA_DM_SEARCH_CBACK* p_cback,
+void BTA_DmDiscover(const RawAddress& bd_addr, service_discovery_callbacks cbacks,
                     tBT_TRANSPORT transport) {
   inc_func_call_count(__func__);
-  test::mock::bta_dm_api::BTA_DmDiscover(bd_addr, p_cback, transport);
+  test::mock::bta_dm_api::BTA_DmDiscover(bd_addr, cbacks, transport);
 }
 bool BTA_DmGetConnectionState(const RawAddress& bd_addr) {
   inc_func_call_count(__func__);

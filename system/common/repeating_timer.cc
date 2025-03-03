@@ -37,7 +37,7 @@ RepeatingTimer::~RepeatingTimer() {
 
 // This runs on user thread
 bool RepeatingTimer::SchedulePeriodic(const base::WeakPtr<MessageLoopThread>& thread,
-                                      const base::Location& from_here, base::RepeatingClosure task,
+                                      base::RepeatingClosure task,
                                       std::chrono::microseconds period) {
   if (period < kMinimumPeriod) {
     log::error("period must be at least {}", kMinimumPeriod.count());
@@ -58,10 +58,9 @@ bool RepeatingTimer::SchedulePeriodic(const base::WeakPtr<MessageLoopThread>& th
   message_loop_thread_ = thread;
   period_ = period;
   uint64_t time_until_next_us = time_next_task_us - clock_tick_us_();
-  if (!thread->DoInThreadDelayed(from_here, task_wrapper_.callback(),
+  if (!thread->DoInThreadDelayed(task_wrapper_.callback(),
                                  std::chrono::microseconds(time_until_next_us))) {
-    log::error("failed to post task to message loop for thread {}, from {}", *thread,
-               from_here.ToString());
+    log::error("failed to post task to message loop for thread {}", *thread);
     expected_time_next_task_us_ = 0;
     task_wrapper_.Cancel();
     message_loop_thread_ = nullptr;
@@ -97,9 +96,8 @@ void RepeatingTimer::CancelHelper(std::promise<void> promise) {
     CancelClosure(std::move(promise));
     return;
   }
-  scheduled_thread->DoInThread(
-          FROM_HERE, base::BindOnce(&RepeatingTimer::CancelClosure, base::Unretained(this),
-                                    std::move(promise)));
+  scheduled_thread->DoInThread(base::BindOnce(&RepeatingTimer::CancelClosure,
+                                              base::Unretained(this), std::move(promise)));
 }
 
 // This runs on message loop thread
@@ -140,7 +138,7 @@ void RepeatingTimer::RunTask() {
     // multiple of period
     remaining_time_us = (remaining_time_us % period_us + period_us) % period_us;
   }
-  message_loop_thread_->DoInThreadDelayed(FROM_HERE, task_wrapper_.callback(),
+  message_loop_thread_->DoInThreadDelayed(task_wrapper_.callback(),
                                           std::chrono::microseconds(remaining_time_us));
 
   uint64_t time_before_task_us = clock_tick_us_();

@@ -34,7 +34,8 @@ import com.android.internal.annotations.VisibleForTesting;
 
 /** HID Device Native Interface to/from JNI. */
 public class HidDeviceNativeInterface {
-    private static final String TAG = "HidDeviceNativeInterface";
+    private static final String TAG = HidDeviceNativeInterface.class.getSimpleName();
+
     private final AdapterService mAdapterService;
 
     HidDeviceNativeInterface(AdapterService adapterService) {

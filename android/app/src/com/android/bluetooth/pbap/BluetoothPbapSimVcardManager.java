@@ -50,7 +50,7 @@ import java.util.List;
 /** VCard composer especially for Call Log used in Bluetooth. */
 // Next tag value for ContentProfileErrorReportUtils.report(): 6
 public class BluetoothPbapSimVcardManager implements AutoCloseable {
-    private static final String TAG = "PbapSIMvCardComposer";
+    private static final String TAG = BluetoothPbapSimVcardManager.class.getSimpleName();
 
     @VisibleForTesting
     public static final String FAILURE_REASON_FAILED_TO_GET_DATABASE_INFO =

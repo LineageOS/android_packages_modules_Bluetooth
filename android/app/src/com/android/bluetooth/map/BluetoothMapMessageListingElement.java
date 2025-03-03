@@ -25,8 +25,7 @@ import java.util.Date;
 
 public class BluetoothMapMessageListingElement
         implements Comparable<BluetoothMapMessageListingElement> {
-
-    private static final String TAG = "BluetoothMapMessageListingElement";
+    private static final String TAG = BluetoothMapMessageListingElement.class.getSimpleName();
 
     private long mCpHandle = 0; /* The content provider handle - without type information */
     private String mSubject = null;

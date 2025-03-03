@@ -39,16 +39,6 @@ flag {
 }
 
 flag {
-    name: "avdt_prioritize_mandatory_codec"
-    namespace: "bluetooth"
-    description: "Reject remote peer HD codec configuration if mandatory codec is preferred in the stack"
-    bug: "350427803"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "a2dp_broadcast_connection_state_when_turned_off"
     namespace: "bluetooth"
     description: "Broadcast CONNECTION_STATE_CHANGED when A2dpService is turned off while a device is connected"

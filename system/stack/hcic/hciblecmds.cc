@@ -238,7 +238,7 @@ void btsnd_hcic_ble_read_remote_feat(uint16_t handle) {
 
 void btsnd_hcic_ble_rand(base::Callback<void(BT_OCTET8)> cb) {
   btu_hcif_send_cmd_with_cb(
-          FROM_HERE, HCI_BLE_RAND, nullptr, 0,
+          HCI_BLE_RAND, nullptr, 0,
           base::Bind(
                   [](base::Callback<void(BT_OCTET8)> cb, uint8_t* param, uint16_t /* param_len */) {
                     bluetooth::log::assert_that(param[0] == 0,
@@ -466,7 +466,7 @@ void btsnd_hcic_set_cig_params(uint8_t cig_id, uint32_t sdu_itv_mtos, uint32_t s
     UINT8_TO_STREAM(pp, cis_cfg[i].rtn_stom);
   }
 
-  btu_hcif_send_cmd_with_cb(FROM_HERE, HCI_LE_SET_CIG_PARAMS, param, params_len, std::move(cb));
+  btu_hcif_send_cmd_with_cb(HCI_LE_SET_CIG_PARAMS, param, params_len, std::move(cb));
 }
 
 void btsnd_hcic_create_cis(uint8_t num_cis, const EXT_CIS_CREATE_CFG* cis_cfg,
@@ -482,7 +482,7 @@ void btsnd_hcic_create_cis(uint8_t num_cis, const EXT_CIS_CREATE_CFG* cis_cfg,
     UINT16_TO_STREAM(pp, cis_cfg[i].acl_conn_handle);
   }
 
-  btu_hcif_send_cmd_with_cb(FROM_HERE, HCI_LE_CREATE_CIS, param, params_len, std::move(cb));
+  btu_hcif_send_cmd_with_cb(HCI_LE_CREATE_CIS, param, params_len, std::move(cb));
 }
 
 void btsnd_hcic_remove_cig(uint8_t cig_id, base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
@@ -492,7 +492,7 @@ void btsnd_hcic_remove_cig(uint8_t cig_id, base::OnceCallback<void(uint8_t*, uin
 
   UINT8_TO_STREAM(pp, cig_id);
 
-  btu_hcif_send_cmd_with_cb(FROM_HERE, HCI_LE_REMOVE_CIG, param, params_len, std::move(cb));
+  btu_hcif_send_cmd_with_cb(HCI_LE_REMOVE_CIG, param, params_len, std::move(cb));
 }
 
 void btsnd_hcic_req_peer_sca(uint16_t conn_handle) {
@@ -578,8 +578,7 @@ void btsnd_hcic_setup_iso_data_path(uint16_t iso_handle, uint8_t data_path_dir,
   UINT8_TO_STREAM(pp, codec_conf.size());
   ARRAY_TO_STREAM(pp, codec_conf.data(), static_cast<int>(codec_conf.size()));
 
-  btu_hcif_send_cmd_with_cb(FROM_HERE, HCI_LE_SETUP_ISO_DATA_PATH, param, params_len,
-                            std::move(cb));
+  btu_hcif_send_cmd_with_cb(HCI_LE_SETUP_ISO_DATA_PATH, param, params_len, std::move(cb));
 }
 
 void btsnd_hcic_remove_iso_data_path(uint16_t iso_handle, uint8_t data_path_dir,
@@ -591,8 +590,7 @@ void btsnd_hcic_remove_iso_data_path(uint16_t iso_handle, uint8_t data_path_dir,
   UINT16_TO_STREAM(pp, iso_handle);
   UINT8_TO_STREAM(pp, data_path_dir);
 
-  btu_hcif_send_cmd_with_cb(FROM_HERE, HCI_LE_REMOVE_ISO_DATA_PATH, param, params_len,
-                            std::move(cb));
+  btu_hcif_send_cmd_with_cb(HCI_LE_REMOVE_ISO_DATA_PATH, param, params_len, std::move(cb));
 }
 
 void btsnd_hcic_read_iso_link_quality(uint16_t iso_handle,
@@ -603,8 +601,7 @@ void btsnd_hcic_read_iso_link_quality(uint16_t iso_handle,
 
   UINT16_TO_STREAM(pp, iso_handle);
 
-  btu_hcif_send_cmd_with_cb(FROM_HERE, HCI_LE_READ_ISO_LINK_QUALITY, param, params_len,
-                            std::move(cb));
+  btu_hcif_send_cmd_with_cb(HCI_LE_READ_ISO_LINK_QUALITY, param, params_len, std::move(cb));
 }
 
 void btsnd_hcic_ble_periodic_advertising_create_sync(uint8_t options, uint8_t adv_sid,
@@ -632,7 +629,7 @@ void btsnd_hcic_ble_periodic_advertising_create_sync(uint8_t options, uint8_t ad
 
 void btsnd_hcic_ble_periodic_advertising_create_sync_cancel(
         base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
-  btu_hcif_send_cmd_with_cb(FROM_HERE, HCI_BLE_PERIODIC_ADVERTISING_CREATE_SYNC_CANCEL, nullptr,
+  btu_hcif_send_cmd_with_cb(HCI_BLE_PERIODIC_ADVERTISING_CREATE_SYNC_CANCEL, nullptr,
                             HCIC_PARAM_SIZE_PERIODIC_ADVERTISING_CREATE_SYNC_CANCEL, std::move(cb));
 }
 
@@ -643,7 +640,7 @@ void btsnd_hcic_ble_periodic_advertising_terminate_sync(
 
   UINT16_TO_STREAM(pp, sync_handle);
 
-  btu_hcif_send_cmd_with_cb(FROM_HERE, HCI_BLE_PERIODIC_ADVERTISING_TERMINATE_SYNC, param,
+  btu_hcif_send_cmd_with_cb(HCI_BLE_PERIODIC_ADVERTISING_TERMINATE_SYNC, param,
                             HCIC_PARAM_SIZE_PERIODIC_ADVERTISING_TERMINATE_SYNC, std::move(cb));
 }
 
@@ -657,7 +654,7 @@ void btsnd_hci_ble_add_device_to_periodic_advertiser_list(
   BDADDR_TO_STREAM(pp, adv_addr);
   UINT8_TO_STREAM(pp, adv_sid);
 
-  btu_hcif_send_cmd_with_cb(FROM_HERE, HCI_BLE_ADD_DEVICE_TO_PERIODIC_ADVERTISER_LIST, param,
+  btu_hcif_send_cmd_with_cb(HCI_BLE_ADD_DEVICE_TO_PERIODIC_ADVERTISER_LIST, param,
                             HCIC_PARAM_SIZE_ADD_DEVICE_TO_PERIODIC_ADVERTISER_LIST, std::move(cb));
 }
 
@@ -671,13 +668,13 @@ void btsnd_hci_ble_remove_device_from_periodic_advertiser_list(
   BDADDR_TO_STREAM(pp, adv_addr);
   UINT8_TO_STREAM(pp, adv_sid);
 
-  btu_hcif_send_cmd_with_cb(FROM_HERE, HCI_BLE_REMOVE_DEVICE_FROM_PERIODIC_ADVERTISER_LIST, param,
+  btu_hcif_send_cmd_with_cb(HCI_BLE_REMOVE_DEVICE_FROM_PERIODIC_ADVERTISER_LIST, param,
                             HCIC_PARAM_SIZE_REMOVE_DEVICE_FROM_PERIODIC_ADVERTISER_LIST,
                             std::move(cb));
 }
 
 void btsnd_hci_ble_clear_periodic_advertiser_list(base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
-  btu_hcif_send_cmd_with_cb(FROM_HERE, HCI_BLE_CLEAR_PERIODIC_ADVERTISER_LIST, nullptr,
+  btu_hcif_send_cmd_with_cb(HCI_BLE_CLEAR_PERIODIC_ADVERTISER_LIST, nullptr,
                             HCIC_PARAM_SIZE_CLEAR_PERIODIC_ADVERTISER_LIST, std::move(cb));
 }
 
@@ -689,7 +686,7 @@ void btsnd_hcic_ble_set_periodic_advertising_receive_enable(
   UINT16_TO_STREAM(pp, sync_handle);
   UINT8_TO_STREAM(pp, (enable ? 0x01 : 0x00));
 
-  btu_hcif_send_cmd_with_cb(FROM_HERE, HCI_LE_SET_PERIODIC_ADVERTISING_RECEIVE_ENABLE, param,
+  btu_hcif_send_cmd_with_cb(HCI_LE_SET_PERIODIC_ADVERTISING_RECEIVE_ENABLE, param,
                             HCIC_PARAM_SIZE_SET_PERIODIC_ADVERTISING_RECEIVE_ENABLE, std::move(cb));
 }
 
@@ -703,7 +700,7 @@ void btsnd_hcic_ble_periodic_advertising_sync_transfer(
   UINT16_TO_STREAM(pp, service_data);
   UINT16_TO_STREAM(pp, sync_handle);
 
-  btu_hcif_send_cmd_with_cb(FROM_HERE, HCI_LE_PERIODIC_ADVERTISING_SYNC_TRANSFER, param,
+  btu_hcif_send_cmd_with_cb(HCI_LE_PERIODIC_ADVERTISING_SYNC_TRANSFER, param,
                             HCIC_PARAM_SIZE_PERIODIC_ADVERTISING_SYNC_TRANSFER, std::move(cb));
 }
 
@@ -717,7 +714,7 @@ void btsnd_hcic_ble_periodic_advertising_set_info_transfer(
   UINT16_TO_STREAM(pp, service_data);
   UINT8_TO_STREAM(pp, adv_handle);
 
-  btu_hcif_send_cmd_with_cb(FROM_HERE, HCI_LE_PERIODIC_ADVERTISING_SET_INFO_TRANSFER, param,
+  btu_hcif_send_cmd_with_cb(HCI_LE_PERIODIC_ADVERTISING_SET_INFO_TRANSFER, param,
                             HCIC_PARAM_SIZE_PERIODIC_ADVERTISING_SET_INFO_TRANSFER, std::move(cb));
 }
 
@@ -733,7 +730,7 @@ void btsnd_hcic_ble_set_periodic_advertising_sync_transfer_params(
   UINT16_TO_STREAM(pp, sync_timeout);
   UINT8_TO_STREAM(pp, cte_type);
 
-  btu_hcif_send_cmd_with_cb(FROM_HERE, HCI_LE_SET_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAM, param,
+  btu_hcif_send_cmd_with_cb(HCI_LE_SET_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAM, param,
                             HCIC_PARAM_SIZE_SET_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAMS,
                             std::move(cb));
 }
@@ -750,7 +747,7 @@ void btsnd_hcic_ble_set_default_periodic_advertising_sync_transfer_params(
   UINT16_TO_STREAM(pp, sync_timeout);
   UINT8_TO_STREAM(pp, cte_type);
 
-  btu_hcif_send_cmd_with_cb(
-          FROM_HERE, HCI_LE_SET_DEFAULT_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAM, param,
-          HCIC_PARAM_SIZE_SET_DEFAULT_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAMS, std::move(cb));
+  btu_hcif_send_cmd_with_cb(HCI_LE_SET_DEFAULT_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAM, param,
+                            HCIC_PARAM_SIZE_SET_DEFAULT_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAMS,
+                            std::move(cb));
 }

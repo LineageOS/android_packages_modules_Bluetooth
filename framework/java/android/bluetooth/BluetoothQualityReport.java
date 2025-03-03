@@ -17,6 +17,8 @@
 
 package android.bluetooth;
 
+import static java.util.Objects.requireNonNull;
+
 import android.annotation.DurationMillisLong;
 import android.annotation.FlaggedApi;
 import android.annotation.IntDef;
@@ -33,7 +35,6 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.util.Objects;
 
 /**
  * This class provides the System APIs to access the data of BQR event reported from firmware side.
@@ -613,7 +614,7 @@ public final class BluetoothQualityReport implements Parcelable {
          */
         @SystemApi
         public Builder(@NonNull byte[] rawData) {
-            this.rawData = Objects.requireNonNull(rawData);
+            this.rawData = requireNonNull(rawData);
         }
 
         /**
@@ -740,7 +741,9 @@ public final class BluetoothQualityReport implements Parcelable {
      */
     @SystemApi
     public static final class BqrCommon implements Parcelable {
-        private static final String TAG = BluetoothQualityReport.TAG + ".BqrCommon";
+        private static final String TAG =
+                BluetoothQualityReport.TAG + "." + BqrCommon.class.getSimpleName();
+
         static final int BQR_COMMON_LEN = 85;
 
         private @QualityReportId int mQualityReportId;
@@ -1410,7 +1413,8 @@ public final class BluetoothQualityReport implements Parcelable {
      */
     @SystemApi
     public static final class BqrVsLsto implements Parcelable {
-        private static final String TAG = BluetoothQualityReport.TAG + ".BqrVsLsto";
+        private static final String TAG =
+                BluetoothQualityReport.TAG + "." + BqrVsLsto.class.getSimpleName();
 
         private int mConnState;
         private long mBasebandStats;
@@ -1626,7 +1630,8 @@ public final class BluetoothQualityReport implements Parcelable {
      */
     @SystemApi
     public static final class BqrVsA2dpChoppy implements Parcelable {
-        private static final String TAG = BluetoothQualityReport.TAG + ".BqrVsA2dpChoppy";
+        private static final String TAG =
+                BluetoothQualityReport.TAG + "." + BqrVsA2dpChoppy.class.getSimpleName();
 
         private long mArrivalTime;
         private long mScheduleTime;
@@ -1826,7 +1831,8 @@ public final class BluetoothQualityReport implements Parcelable {
      */
     @SystemApi
     public static final class BqrVsScoChoppy implements Parcelable {
-        private static final String TAG = BluetoothQualityReport.TAG + ".BqrVsScoChoppy";
+        private static final String TAG =
+                BluetoothQualityReport.TAG + "." + BqrVsScoChoppy.class.getSimpleName();
 
         private int mGlitchCount;
         private int mIntervalEsco;
@@ -2218,7 +2224,8 @@ public final class BluetoothQualityReport implements Parcelable {
      */
     @SystemApi
     public static final class BqrConnectFail implements Parcelable {
-        private static final String TAG = BluetoothQualityReport.TAG + ".BqrConnectFail";
+        private static final String TAG =
+                BluetoothQualityReport.TAG + "." + BqrConnectFail.class.getSimpleName();
 
         /**
          * Connect Fail reason: No error.
@@ -2381,7 +2388,8 @@ public final class BluetoothQualityReport implements Parcelable {
     @FlaggedApi(Flags.FLAG_SUPPORT_BLUETOOTH_QUALITY_REPORT_V6)
     @SystemApi
     public static final class BqrEnergyMonitor implements Parcelable {
-        private static final String TAG = BluetoothQualityReport.TAG + ".BqrEnergyMonitor";
+        private static final String TAG =
+                BluetoothQualityReport.TAG + "." + BqrEnergyMonitor.class.getSimpleName();
 
         private int mAvgCurrentConsume;
         private long mIdleTotalTime;
@@ -2850,7 +2858,8 @@ public final class BluetoothQualityReport implements Parcelable {
     @FlaggedApi(Flags.FLAG_SUPPORT_BLUETOOTH_QUALITY_REPORT_V6)
     @SystemApi
     public static final class BqrRfStats implements Parcelable {
-        private static final String TAG = BluetoothQualityReport.TAG + ".BqrRfStats";
+        private static final String TAG =
+                BluetoothQualityReport.TAG + "." + BqrRfStats.class.getSimpleName();
 
         private int mExtensionInfo;
         private long mReportTimePeriod;

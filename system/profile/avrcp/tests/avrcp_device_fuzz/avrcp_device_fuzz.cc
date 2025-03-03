@@ -21,9 +21,6 @@
 #include "packet_test_helper.h"
 #include "pass_through_packet.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 bool btif_av_src_sink_coexist_enabled(void) { return true; }
 
 namespace bluetooth {

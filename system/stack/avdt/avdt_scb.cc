@@ -866,6 +866,7 @@ void AvdtpScb::Allocate(AvdtpCcb* p_avdtp_ccb, const AvdtpStreamConfig& avdtp_st
   p_ccb = p_avdtp_ccb;
   stream_config = avdtp_stream_config;
   transport_channel_timer = alarm_new("avdtp_scb.transport_channel_timer");
+  init_delay_report_timer = alarm_new("avdtp_scb.init_delay_report_timer");
   allocated = true;
 }
 

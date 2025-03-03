@@ -25,6 +25,7 @@ import android.os.IBinder;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothMetricsProto;
+import com.android.bluetooth.Utils;
 
 /** Base class for a background service that runs a Bluetooth profile */
 public abstract class ProfileService extends ContextWrapper {
@@ -55,17 +56,14 @@ public abstract class ProfileService extends ContextWrapper {
     }
 
     /**
-     * Called in ProfileService constructor to init binder interface for this profile service
+     * Called in ProfileService constructor to init binder interface for this profile service.
      *
-     * @return initialized binder interface for this profile service
+     * @return initialized binder interface for this profile service.
      */
     protected abstract IProfileServiceBinder initBinder();
 
-    /** Stop service */
-    public abstract void stop();
-
-    /** Called when this object is completely discarded */
-    public void cleanup() {}
+    /** Called when this object is no longer needed and is being discarded. */
+    public abstract void cleanup();
 
     /**
      * @param testModeEnabled if the profile should enter or exit a testing mode
@@ -117,7 +115,12 @@ public abstract class ProfileService extends ContextWrapper {
      * @param enable True to enable the component, False to disable it
      */
     protected void setComponentAvailable(ComponentName component, boolean enable) {
-        Log.d(mName, "setComponentAvailable(component=" + component + ", enable=" + enable + ")");
+        // Test should not set components available for the device
+        if (Utils.isInstrumentationTestMode()) {
+            Log.w(mName, "Skip call to setComponentAvailable(" + component + ", " + enable + ")");
+            return;
+        }
+        Log.d(mName, "setComponentAvailable(" + component + ", " + enable + ")");
         if (component == null) {
             return;
         }

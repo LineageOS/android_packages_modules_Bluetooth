@@ -572,7 +572,7 @@ public:
       return;
     }
 
-    if (BTM_IsLinkKeyKnown(address, BT_TRANSPORT_LE)) {
+    if (BTM_IsBonded(address, BT_TRANSPORT_LE)) {
       /* if bonded and link not encrypted */
       BTM_SetEncryption(address, BT_TRANSPORT_LE, encryption_callback, nullptr,
                         BTM_BLE_SEC_ENCRYPT);

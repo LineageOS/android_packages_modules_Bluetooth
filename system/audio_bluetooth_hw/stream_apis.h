@@ -47,6 +47,8 @@ enum class BluetoothStreamState : uint8_t {
 
 std::ostream& operator<<(std::ostream& os, const BluetoothStreamState& state);
 
+struct BluetoothAudioDevice;
+
 struct BluetoothStreamOut {
   // Must be the first member so it can be cast from audio_stream
   // or audio_stream_out pointer
@@ -66,6 +68,8 @@ struct BluetoothStreamOut {
   uint64_t frames_rendered_;
   // total frames written after opened, never reset
   uint64_t frames_presented_;
+  bool is_low_latency_ = false;
+  BluetoothAudioDevice* bt_dev_;
   mutable std::mutex mutex_;
 };
 
@@ -77,6 +81,7 @@ struct BluetoothAudioDevice {
   std::mutex mutex_;
   std::list<BluetoothStreamOut*> opened_stream_outs_ = std::list<BluetoothStreamOut*>(0);
   uint32_t next_unique_id = 1;
+  bool support_low_latency_ = false;
 };
 
 struct BluetoothStreamIn {

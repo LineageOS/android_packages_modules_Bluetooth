@@ -54,9 +54,6 @@
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 using base::Bind;
 using bluetooth::Uuid;
 using bluetooth::csis::CsisClient;
@@ -109,6 +106,7 @@ static void btif_storage_hid_device_info(std::string bdstr, uint16_t attr_mask, 
     btif_config_set_bin(bdstr, BTIF_STORAGE_KEY_HID_DESCRIPTOR, dsc_list, dl_len);
   }
 }
+
 static void btif_storage_hogp_device_info(std::string bdstr, uint16_t attr_mask, uint8_t sub_class,
                                           uint8_t app_id, uint16_t vendor_id, uint16_t product_id,
                                           uint16_t version, uint8_t ctry_code, uint16_t dl_len,
@@ -124,6 +122,7 @@ static void btif_storage_hogp_device_info(std::string bdstr, uint16_t attr_mask,
     btif_config_set_bin(bdstr, BTIF_STORAGE_KEY_HOGP_DESCRIPTOR, dsc_list, dl_len);
   }
 }
+
 /*******************************************************************************
  *
  * Function         btif_storage_add_hid_device_info
@@ -684,17 +683,27 @@ void btif_storage_leaudio_update_ase_bin(const RawAddress& addr) {
 }
 
 /** Store Le Audio device audio locations */
-void btif_storage_set_leaudio_audio_location(const RawAddress& addr, uint32_t sink_location,
-                                             uint32_t source_location) {
+void btif_storage_set_leaudio_sink_audio_location(const RawAddress& addr, uint32_t sink_location) {
   do_in_jni_thread(Bind(
-          [](const RawAddress& addr, int sink_location, int source_location) {
+          [](const RawAddress& addr, int sink_location) {
             std::string bdstr = addr.ToString();
-            log::debug("saving le audio device: {}", addr);
+            log::debug("saving le audio device: {} sink locations", addr);
             btif_config_set_int(bdstr, BTIF_STORAGE_KEY_LEAUDIO_SINK_AUDIOLOCATION, sink_location);
+          },
+          addr, sink_location));
+}
+
+/** Store Le Audio device audio locations */
+void btif_storage_set_leaudio_source_audio_location(const RawAddress& addr,
+                                                    uint32_t source_location) {
+  do_in_jni_thread(Bind(
+          [](const RawAddress& addr, int source_location) {
+            std::string bdstr = addr.ToString();
+            log::debug("saving le audio device: {} source locations", addr);
             btif_config_set_int(bdstr, BTIF_STORAGE_KEY_LEAUDIO_SOURCE_AUDIOLOCATION,
                                 source_location);
           },
-          addr, sink_location, source_location));
+          addr, source_location));
 }
 
 /** Store Le Audio device context types */
@@ -730,12 +739,12 @@ void btif_storage_load_bonded_leaudio() {
       autoconnect = !!value;
     }
 
-    int sink_audio_location = 0;
+    std::optional<int> sink_audio_location = std::nullopt;
     if (btif_config_get_int(name, BTIF_STORAGE_KEY_LEAUDIO_SINK_AUDIOLOCATION, &value)) {
       sink_audio_location = value;
     }
 
-    int source_audio_location = 0;
+    std::optional<int> source_audio_location = std::nullopt;
     if (btif_config_get_int(name, BTIF_STORAGE_KEY_LEAUDIO_SOURCE_AUDIOLOCATION, &value)) {
       source_audio_location = value;
     }

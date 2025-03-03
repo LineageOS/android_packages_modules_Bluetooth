@@ -27,151 +27,103 @@ import android.os.IInterface;
 import android.os.RemoteException;
 import android.util.Log;
 
-import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.gatt.GattServiceConfig;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /** Manages Bluetooth LE Periodic scans */
 @VisibleForTesting(visibility = VisibleForTesting.Visibility.PACKAGE)
 public class PeriodicScanManager {
-    private static final String TAG = GattServiceConfig.TAG_PREFIX + "SyncManager";
+    private static final String TAG =
+            GattServiceConfig.TAG_PREFIX + PeriodicScanManager.class.getSimpleName();
 
-    private final BluetoothAdapter mAdapter;
-    private final PeriodicScanNativeInterface mNativeInterface;
+    static int sTempRegistrationId = -1;
+
     private final Map<IBinder, SyncInfo> mSyncs = new ConcurrentHashMap<>();
     private final Map<IBinder, SyncTransferInfo> mSyncTransfers =
             Collections.synchronizedMap(new HashMap<>());
-    static int sTempRegistrationId = -1;
+    private final BluetoothAdapter mAdapter;
+    private final PeriodicScanNativeInterface mNativeInterface;
 
     /** Constructor of {@link PeriodicScanManager}. */
-    public PeriodicScanManager(AdapterService adapterService) {
-        Log.d(TAG, "periodic scan manager created");
+    PeriodicScanManager() {
+        Log.d(TAG, "Periodic Scan Manager created");
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         mNativeInterface = PeriodicScanNativeInterface.getInstance();
         mNativeInterface.init(this);
     }
 
-    public void cleanup() {
+    void cleanup() {
         Log.d(TAG, "cleanup()");
         mNativeInterface.cleanup();
         mSyncs.clear();
         sTempRegistrationId = -1;
     }
 
-    static class SyncTransferInfo {
-        public String address;
-        public SyncDeathRecipient deathRecipient;
-        public IPeriodicAdvertisingCallback callback;
+    private record SyncTransferInfo(String address, IPeriodicAdvertisingCallback callback) {}
 
-        SyncTransferInfo(String address, IPeriodicAdvertisingCallback callback) {
-            this.address = address;
-            this.callback = callback;
-        }
-    }
+    private record SyncInfo(
+            /* When id is negative, the registration is ongoing. When the registration finishes, id
+             * becomes equal to sync_handle */
+            Integer id,
+            Integer advSid,
+            String address,
+            Integer skip,
+            Integer timeout,
+            SyncDeathRecipient deathRecipient,
+            IPeriodicAdvertisingCallback callback) {}
 
-    static class SyncInfo {
-        /* When id is negative, the registration is ongoing. When the registration finishes, id
-         * becomes equal to sync_handle */
-        public Integer id;
-        public Integer advSid;
-        public String address;
-        public Integer skip;
-        public Integer timeout;
-        public SyncDeathRecipient deathRecipient;
-        public IPeriodicAdvertisingCallback callback;
-
-        SyncInfo(
-                Integer id,
-                Integer advSid,
-                String address,
-                Integer skip,
-                Integer timeout,
-                SyncDeathRecipient deathRecipient,
-                IPeriodicAdvertisingCallback callback) {
-            this.id = id;
-            this.advSid = advSid;
-            this.address = address;
-            this.skip = skip;
-            this.timeout = timeout;
-            this.deathRecipient = deathRecipient;
-            this.callback = callback;
-        }
-    }
-
-    Map.Entry<IBinder, SyncTransferInfo> findSyncTransfer(String address) {
-        Map.Entry<IBinder, SyncTransferInfo> entry = null;
-        for (Map.Entry<IBinder, SyncTransferInfo> e : mSyncTransfers.entrySet()) {
-            if (e.getValue().address.equals(address)) {
-                entry = e;
-                break;
-            }
-        }
-        return entry;
-    }
-
-    IBinder toBinder(IPeriodicAdvertisingCallback e) {
-        return ((IInterface) e).asBinder();
-    }
-
-    class SyncDeathRecipient implements IBinder.DeathRecipient {
-        public IPeriodicAdvertisingCallback callback;
+    private final class SyncDeathRecipient implements IBinder.DeathRecipient {
+        private final IPeriodicAdvertisingCallback mCallback;
 
         SyncDeathRecipient(IPeriodicAdvertisingCallback callback) {
-            this.callback = callback;
+            mCallback = callback;
         }
 
         @Override
         public void binderDied() {
             Log.d(TAG, "Binder is dead - unregistering advertising set");
-            stopSync(callback);
+            stopSync(mCallback);
         }
     }
 
-    Map.Entry<IBinder, SyncInfo> findSync(int syncHandle) {
-        Map.Entry<IBinder, SyncInfo> entry = null;
-        for (Map.Entry<IBinder, SyncInfo> e : mSyncs.entrySet()) {
-            if (e.getValue().id == syncHandle) {
-                entry = e;
-                break;
-            }
-        }
-        return entry;
+    private static IBinder toBinder(IPeriodicAdvertisingCallback e) {
+        return ((IInterface) e).asBinder();
     }
 
-    Map.Entry<IBinder, SyncInfo> findMatchingSync(int advSid, String address) {
-        Map.Entry<IBinder, SyncInfo> entry = null;
-        for (Map.Entry<IBinder, SyncInfo> e : mSyncs.entrySet()) {
-            if (e.getValue().advSid == advSid && e.getValue().address.equals(address)) {
-                return entry = e;
-            }
-        }
-        return entry;
+    private Map.Entry<IBinder, SyncTransferInfo> findSyncTransfer(String address) {
+        return mSyncTransfers.entrySet().stream()
+                .filter(e -> e.getValue().address.equals(address))
+                .findFirst()
+                .orElse(null);
     }
 
-    Map<IBinder, SyncInfo> findAllSync(int syncHandle) {
-        Map<IBinder, SyncInfo> syncMap = new HashMap<IBinder, SyncInfo>();
-        for (Map.Entry<IBinder, SyncInfo> e : mSyncs.entrySet()) {
-            if (e.getValue().id != syncHandle) {
-                continue;
-            }
-            syncMap.put(
-                    e.getKey(),
-                    new SyncInfo(
-                            e.getValue().id,
-                            e.getValue().advSid,
-                            e.getValue().address,
-                            e.getValue().skip,
-                            e.getValue().timeout,
-                            e.getValue().deathRecipient,
-                            e.getValue().callback));
-        }
-        return syncMap;
+    private Map.Entry<IBinder, SyncInfo> findSync(int syncHandle) {
+        return mSyncs.entrySet().stream()
+                .filter(e -> e.getValue().id == syncHandle)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private Map.Entry<IBinder, SyncInfo> findMatchingSync(int advSid, String address) {
+        return mSyncs.entrySet().stream()
+                .filter(e -> e.getValue().advSid == advSid && e.getValue().address.equals(address))
+                .findFirst()
+                .orElse(null);
+    }
+
+    private List<IPeriodicAdvertisingCallback> getAllCallbacks(int syncHandle) {
+        return mSyncs.values().stream()
+                .filter(v -> v.id == syncHandle)
+                .map(v -> v.callback)
+                .collect(Collectors.toList());
     }
 
     void onSyncStarted(
@@ -184,8 +136,8 @@ public class PeriodicScanManager {
             int interval,
             int status)
             throws Exception {
-        Map<IBinder, SyncInfo> syncMap = findAllSync(regId);
-        if (syncMap.size() == 0) {
+        List<IPeriodicAdvertisingCallback> callbacks = getAllCallbacks(regId);
+        if (callbacks.isEmpty()) {
             Log.d(TAG, "onSyncStarted() - no callback found for regId " + regId);
             mNativeInterface.stopSync(syncHandle);
             return;
@@ -235,13 +187,12 @@ public class PeriodicScanManager {
 
     void onSyncReport(int syncHandle, int txPower, int rssi, int dataStatus, byte[] data)
             throws Exception {
-        Map<IBinder, SyncInfo> syncMap = findAllSync(syncHandle);
-        if (syncMap.isEmpty()) {
+        List<IPeriodicAdvertisingCallback> callbacks = getAllCallbacks(syncHandle);
+        if (callbacks.isEmpty()) {
             Log.i(TAG, "onSyncReport() - no callback found for syncHandle " + syncHandle);
             return;
         }
-        for (Map.Entry<IBinder, SyncInfo> e : syncMap.entrySet()) {
-            IPeriodicAdvertisingCallback callback = e.getValue().callback;
+        for (IPeriodicAdvertisingCallback callback : callbacks) {
             PeriodicAdvertisingReport report =
                     new PeriodicAdvertisingReport(
                             syncHandle, txPower, rssi, dataStatus, ScanRecord.parseFromBytes(data));
@@ -250,13 +201,12 @@ public class PeriodicScanManager {
     }
 
     void onSyncLost(int syncHandle) throws Exception {
-        Map<IBinder, SyncInfo> syncMap = findAllSync(syncHandle);
-        if (syncMap.isEmpty()) {
+        List<IPeriodicAdvertisingCallback> callbacks = getAllCallbacks(syncHandle);
+        if (callbacks.isEmpty()) {
             Log.i(TAG, "onSyncLost() - no callback found for syncHandle " + syncHandle);
             return;
         }
-        for (Map.Entry<IBinder, SyncInfo> e : syncMap.entrySet()) {
-            IPeriodicAdvertisingCallback callback = e.getValue().callback;
+        for (IPeriodicAdvertisingCallback callback : callbacks) {
             IBinder binder = toBinder(callback);
             synchronized (mSyncs) {
                 mSyncs.remove(binder);
@@ -266,13 +216,12 @@ public class PeriodicScanManager {
     }
 
     void onBigInfoReport(int syncHandle, boolean encrypted) throws Exception {
-        Map<IBinder, SyncInfo> syncMap = findAllSync(syncHandle);
-        if (syncMap.isEmpty()) {
+        List<IPeriodicAdvertisingCallback> callbacks = getAllCallbacks(syncHandle);
+        if (callbacks.isEmpty()) {
             Log.i(TAG, "onBigInfoReport() - no callback found for syncHandle " + syncHandle);
             return;
         }
-        for (Map.Entry<IBinder, SyncInfo> e : syncMap.entrySet()) {
-            IPeriodicAdvertisingCallback callback = e.getValue().callback;
+        for (IPeriodicAdvertisingCallback callback : callbacks) {
             callback.onBigInfoAdvertisingReport(syncHandle, encrypted);
         }
     }

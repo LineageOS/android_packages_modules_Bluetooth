@@ -94,3 +94,8 @@ void log_le_device_in_accept_list(bluetooth::hci::Address address, bool is_add) 
 void log_le_connection_lifecycle(bluetooth::hci::Address address, bool is_connect, bool is_direct) {
   bluetooth::shim::LogMetricLeConnectionLifecycle(address, is_connect, is_direct);
 }
+
+void log_le_connection_completion(bluetooth::hci::Address address, bluetooth::hci::ErrorCode reason,
+                                  bool is_locally_initiated) {
+  bluetooth::shim::LogMetricLeConnectionCompletion(address, reason, is_locally_initiated);
+}

@@ -19,11 +19,9 @@
  */
 
 #include "btif/include/core_callbacks.h"
+#include "btif/include/stack_manager_t.h"
 #include "osi/include/future.h"
 #include "test/common/core_interface.h"
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 static future_t* hack_future;
 

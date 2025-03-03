@@ -24,10 +24,9 @@
 
 #include <cstdint>
 
+#include "bta/include/bta_jv_co.h"
+#include "btif/include/btif_sock_rfc.h"
 #include "test/common/mock_functions.h"
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 // Original usings
 using bluetooth::Uuid;
@@ -91,11 +90,14 @@ void btsock_rfc_cleanup(void) {
   inc_func_call_count(__func__);
   test::mock::btif_sock_rfc::btsock_rfc_cleanup();
 }
-bt_status_t btsock_rfc_connect(const RawAddress* bd_addr, const Uuid* service_uuid, int channel,
-                               int* sock_fd, int flags, int app_uid) {
+bt_status_t btsock_rfc_connect(const RawAddress* bd_addr, const bluetooth::Uuid* uuid, int channel,
+                               int* sock_fd, int flags, int app_uid, btsock_data_path_t data_path,
+                               const char* socket_name, uint64_t hub_id, uint64_t endpoint_id,
+                               int max_rx_packet_size) {
   inc_func_call_count(__func__);
-  return test::mock::btif_sock_rfc::btsock_rfc_connect(bd_addr, service_uuid, channel, sock_fd,
-                                                       flags, app_uid);
+  return test::mock::btif_sock_rfc::btsock_rfc_connect(bd_addr, uuid, channel, sock_fd, flags,
+                                                       app_uid, data_path, socket_name, hub_id,
+                                                       endpoint_id, max_rx_packet_size);
 }
 bt_status_t btsock_rfc_control_req(uint8_t dlci, const RawAddress& bd_addr, uint8_t modem_signal,
                                    uint8_t break_signal, uint8_t discard_buffers,
@@ -113,10 +115,13 @@ bt_status_t btsock_rfc_init(int poll_thread_handle, uid_set_t* set) {
   return test::mock::btif_sock_rfc::btsock_rfc_init(poll_thread_handle, set);
 }
 bt_status_t btsock_rfc_listen(const char* service_name, const Uuid* service_uuid, int channel,
-                              int* sock_fd, int flags, int app_uid) {
+                              int* sock_fd, int flags, int app_uid, btsock_data_path_t data_path,
+                              const char* socket_name, uint64_t hub_id, uint64_t endpoint_id,
+                              int max_rx_packet_size) {
   inc_func_call_count(__func__);
   return test::mock::btif_sock_rfc::btsock_rfc_listen(service_name, service_uuid, channel, sock_fd,
-                                                      flags, app_uid);
+                                                      flags, app_uid, data_path, socket_name,
+                                                      hub_id, endpoint_id, max_rx_packet_size);
 }
 void btsock_rfc_signaled(int fd, int flags, uint32_t id) {
   inc_func_call_count(__func__);

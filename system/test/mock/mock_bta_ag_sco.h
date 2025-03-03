@@ -293,18 +293,6 @@ struct bta_clear_active_device {
 };
 extern struct bta_clear_active_device bta_clear_active_device;
 
-// Name: updateCodecParametersFromProviderInfo
-// Params: tBTA_AG_UUID_CODEC esco_codec, enh_esco_params_t& params
-// Return: void
-struct updateCodecParametersFromProviderInfo {
-  std::function<void(tBTA_AG_UUID_CODEC esco_codec, enh_esco_params_t& params)> body{
-          [](tBTA_AG_UUID_CODEC /* esco_codec */, enh_esco_params_t& /* params */) {}};
-  void operator()(tBTA_AG_UUID_CODEC esco_codec, enh_esco_params_t& params) {
-    body(esco_codec, params);
-  }
-};
-extern struct updateCodecParametersFromProviderInfo updateCodecParametersFromProviderInfo;
-
 }  // namespace bta_ag_sco
 }  // namespace mock
 }  // namespace test

@@ -24,6 +24,7 @@ import android.os.Message;
 import android.util.Log;
 
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.avrcpcontroller.AvrcpControllerUtils;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
@@ -41,7 +42,9 @@ import java.util.Set;
  * BrowsedPlayerWrappers by hand.
  */
 public class BrowsablePlayerConnector extends Handler {
-    private static final String TAG = "AvrcpBrowsablePlayerConnector";
+    private static final String TAG =
+            AvrcpControllerUtils.TAG_PREFIX_AVRCP + BrowsablePlayerConnector.class.getSimpleName();
+
     private static final long CONNECT_TIMEOUT_MS = 10000; // Time in ms to wait for a connection
 
     private static final int MSG_GET_FOLDER_ITEMS_CB = 0;

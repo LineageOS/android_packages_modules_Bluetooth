@@ -25,7 +25,7 @@ import android.bluetooth.BluetoothDevice.BOND_NONE
 import android.bluetooth.BluetoothDevice.TRANSPORT_BREDR
 import android.bluetooth.BluetoothDevice.TRANSPORT_LE
 import android.bluetooth.BluetoothManager
-import android.bluetooth.BluetoothProfile
+import android.bluetooth.BluetoothProfile.STATE_CONNECTED
 import android.bluetooth.BluetoothUuid
 import android.bluetooth.le.AdvertiseCallback
 import android.bluetooth.le.AdvertiseData
@@ -400,7 +400,7 @@ class Host(
                         } catch (e: Exception) {
                             Log.w(TAG, "Gatt instance doesn't exist. Android might be peripheral")
                             val instance = GattInstance(bluetoothDevice, TRANSPORT_LE, context)
-                            instance.waitForState(BluetoothProfile.STATE_CONNECTED)
+                            instance.waitForState(STATE_CONNECTED)
                             instance
                         }
                     if (gattInstance.isDisconnected()) {
@@ -452,8 +452,7 @@ class Host(
             val bluetoothDevice =
                 bluetoothAdapter.getRemoteLeDevice(address.decodeAsMacAddressToString(), type)
             initiatedConnection.add(bluetoothDevice)
-            GattInstance(bluetoothDevice, TRANSPORT_LE, context)
-                .waitForState(BluetoothProfile.STATE_CONNECTED)
+            GattInstance(bluetoothDevice, TRANSPORT_LE, context).waitForState(STATE_CONNECTED)
             ConnectLEResponse.newBuilder()
                 .setConnection(bluetoothDevice.toConnection(TRANSPORT_LE))
                 .build()

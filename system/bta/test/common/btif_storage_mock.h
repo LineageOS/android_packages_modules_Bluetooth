@@ -31,8 +31,8 @@ public:
   virtual void LeAudioUpdateGmap(RawAddress const& addr) = 0;
   virtual void LeAudioUpdateAses(RawAddress const& addr) = 0;
   virtual void LeAudioUpdateHandles(RawAddress const& addr) = 0;
-  virtual void SetLeAudioLocations(RawAddress const& addr, uint32_t sink_location,
-                                   uint32_t source_location) = 0;
+  virtual void SetLeAudioSinkLocations(RawAddress const& addr, uint32_t sink_location) = 0;
+  virtual void SetLeAudioSourceLocations(RawAddress const& addr, uint32_t source_location) = 0;
   virtual void SetLeAudioContexts(RawAddress const& addr, uint16_t sink_context,
                                   uint16_t source_context) = 0;
   virtual void ClearLeAudioServiceData(RawAddress const& addr) = 0;
@@ -61,8 +61,9 @@ public:
   MOCK_METHOD((void), LeAudioUpdateGmap, (RawAddress const& addr), (override));
   MOCK_METHOD((void), LeAudioUpdateAses, (RawAddress const& addr), (override));
   MOCK_METHOD((void), LeAudioUpdateHandles, (RawAddress const& addr), (override));
-  MOCK_METHOD((void), SetLeAudioLocations,
-              (RawAddress const& addr, uint32_t sink_location, uint32_t source_location),
+  MOCK_METHOD((void), SetLeAudioSinkLocations, (RawAddress const& addr, uint32_t sink_location),
+              (override));
+  MOCK_METHOD((void), SetLeAudioSourceLocations, (RawAddress const& addr, uint32_t source_location),
               (override));
   MOCK_METHOD((void), SetLeAudioContexts,
               (RawAddress const& addr, uint16_t sink_context, uint16_t source_context), (override));

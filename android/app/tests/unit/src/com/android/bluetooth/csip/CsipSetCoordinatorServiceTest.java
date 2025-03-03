@@ -135,7 +135,7 @@ public class CsipSetCoordinatorServiceTest {
 
     @After
     public void tearDown() throws Exception {
-        mService.stop();
+        mService.cleanup();
         assertThat(CsipSetCoordinatorService.getCsipSetCoordinatorService()).isNull();
     }
 
@@ -443,7 +443,7 @@ public class CsipSetCoordinatorServiceTest {
     }
 
     /** Helper function to get byte array for a device address */
-    private byte[] getByteAddress(BluetoothDevice device) {
+    private static byte[] getByteAddress(BluetoothDevice device) {
         return Utils.getBytesFromAddress(device.getAddress());
     }
 

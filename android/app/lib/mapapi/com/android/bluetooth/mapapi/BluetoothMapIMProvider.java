@@ -37,8 +37,8 @@ import java.util.Set;
  * access to Instant messages from a Bluetooth device through the Message Access Profile.
  */
 public abstract class BluetoothMapIMProvider extends ContentProvider {
+    private static final String TAG = BluetoothMapIMProvider.class.getSimpleName();
 
-    private static final String TAG = "BluetoothMapIMProvider";
     private static final boolean D = true;
 
     private static final int MATCH_ACCOUNT = 1;
@@ -103,7 +103,7 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
         if (accountId == null) {
             newUri = BluetoothMapContract.buildAccountUri(mAuthority);
         } else {
-            newUri = BluetoothMapContract.buildAccountUriwithId(mAuthority, accountId);
+            newUri = BluetoothMapContract.buildAccountUriWithId(mAuthority, accountId);
         }
 
         if (D) {
@@ -447,7 +447,7 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
     /**
      * Query for conversations with contact information. The expected result is a cursor pointing to
      * one row for each contact in a conversation. E.g.: ThreadId | ThreadName | ... | ContactName |
-     * ContactPrecence | ... | 1 | "Bowling" | ... | Hans | 1 | ... | 1 | "Bowling" | ... | Peter |
+     * ContactPresence | ... | 1 | "Bowling" | ... | Hans | 1 | ... | 1 | "Bowling" | ... | Peter |
      * 2 | ... | 2 | "" | ... | Peter | 2 | ... | 3 | "" | ... | Hans | 1 | ... |
      *
      * @param accountId the ID of the account
@@ -734,7 +734,7 @@ public abstract class BluetoothMapIMProvider extends ContentProvider {
     public static String getAccountId(Uri uri) {
         final List<String> segments = uri.getPathSegments();
         if (segments.size() < 1) {
-            throw new IllegalArgumentException("No AccountId pressent in URI: " + uri);
+            throw new IllegalArgumentException("No AccountId present in URI: " + uri);
         }
         return segments.get(0);
     }

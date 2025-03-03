@@ -1,8 +1,9 @@
 use crate::btif::{BluetoothInterface, RawAddress, ToggleableProfile, Uuid};
 use crate::topstack::get_dispatchers;
 
+use std::fmt::{Debug, Formatter};
 use std::sync::{Arc, Mutex};
-use topshim_macros::{cb_variant, profile_enabled_or};
+use topshim_macros::{cb_variant, log_args, profile_enabled_or};
 
 use log::warn;
 
@@ -84,6 +85,12 @@ pub struct CsisClientCallbacksDispatcher {
     pub dispatch: Box<dyn Fn(CsisClientCallbacks) + Send>,
 }
 
+impl Debug for CsisClientCallbacksDispatcher {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result<(), std::fmt::Error> {
+        write!(f, "CsisClientCallbacksDispatcher {{}}")
+    }
+}
+
 type CsisClientCb = Arc<Mutex<CsisClientCallbacksDispatcher>>;
 
 cb_variant!(CsisClientCb,
@@ -142,6 +149,7 @@ impl ToggleableProfile for CsisClient {
 }
 
 impl CsisClient {
+    #[log_args]
     pub fn new(intf: &BluetoothInterface) -> CsisClient {
         // SAFETY: `intf.as_raw_ptr()` is a valid pointer to a `BluetoothInterface`
         let csis_if: cxx::UniquePtr<ffi::CsisClientIntf> =
@@ -150,11 +158,13 @@ impl CsisClient {
         CsisClient { internal: csis_if, is_init: false, is_enabled: false }
     }
 
+    #[log_args]
     pub fn is_initialized(&self) -> bool {
         self.is_init
     }
 
     // `internal.init` is invoked during `ToggleableProfile::enable`
+    #[log_args]
     pub fn initialize(&mut self, callbacks: CsisClientCallbacksDispatcher) -> bool {
         if self.is_init {
             warn!("CsisClient has already been initialized");
@@ -170,26 +180,31 @@ impl CsisClient {
         true
     }
 
+    #[log_args]
     #[profile_enabled_or]
     pub fn cleanup(&mut self) {
         self.internal.pin_mut().cleanup();
     }
 
+    #[log_args]
     #[profile_enabled_or]
     pub fn connect(&mut self, addr: RawAddress) {
         self.internal.pin_mut().connect(addr);
     }
 
+    #[log_args]
     #[profile_enabled_or]
     pub fn disconnect(&mut self, addr: RawAddress) {
         self.internal.pin_mut().disconnect(addr);
     }
 
+    #[log_args]
     #[profile_enabled_or]
     pub fn lock_group(&mut self, group_id: i32, lock: bool) {
         self.internal.pin_mut().lock_group(group_id, lock);
     }
 
+    #[log_args]
     #[profile_enabled_or]
     pub fn remove_device(&mut self, addr: RawAddress) {
         self.internal.pin_mut().remove_device(addr);

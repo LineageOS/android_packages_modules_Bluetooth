@@ -24,6 +24,9 @@
 constexpr size_t kDevClassLength = 3;
 typedef std::array<uint8_t, kDevClassLength> DEV_CLASS; /* Device class */
 
+/* major class mask */
+#define PHONE_COD_MAJOR_CLASS_MASK 0x1F00
+
 /***************************
  * major device class field
  * Note: All values are deduced by basing BIT_X to BIT_8, values as per

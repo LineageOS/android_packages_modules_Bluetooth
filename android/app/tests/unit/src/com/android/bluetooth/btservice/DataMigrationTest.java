@@ -64,7 +64,7 @@ import java.util.List;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class DataMigrationTest {
-    private static final String TAG = "DataMigrationTest";
+    private static final String TAG = DataMigrationTest.class.getSimpleName();
 
     private static final String AUTHORITY = "bluetooth_legacy.provider";
 

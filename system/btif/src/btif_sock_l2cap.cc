@@ -15,6 +15,8 @@
  * limitations under the License.
  */
 
+#include "btif_sock_l2cap.h"
+
 #include <bluetooth/log.h>
 #include <com_android_bluetooth_flags.h>
 #include <sys/ioctl.h>
@@ -43,9 +45,6 @@
 #include "stack/include/bt_hdr.h"
 #include "stack/include/l2cdefs.h"
 #include "types/raw_address.h"
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 using namespace bluetooth;
 
@@ -102,7 +101,7 @@ static void on_srv_l2cap_psm_connect_offload_l(tBTA_JV_L2CAP_OPEN* p_open, l2cap
 
 static std::mutex state_lock;
 
-l2cap_socket* socks = NULL;
+static l2cap_socket* socks = NULL;
 static uint32_t last_sock_id = 0;
 static uid_set_t* uid_set = NULL;
 static int pth = -1;
@@ -1087,8 +1086,8 @@ inline uint8_t* get_l2cap_sdu_start_ptr(BT_HDR* msg) {
 }
 
 // state_lock taken by caller
-bool btsock_l2cap_read_signaled_on_connected_socket(int fd, int flags, uint32_t user_id,
-                                                    l2cap_socket* sock) {
+static bool btsock_l2cap_read_signaled_on_connected_socket(int fd, int flags, uint32_t user_id,
+                                                           l2cap_socket* sock) {
   if (!sock->connected) {
     return false;
   }
@@ -1129,8 +1128,9 @@ bool btsock_l2cap_read_signaled_on_connected_socket(int fd, int flags, uint32_t 
 }
 
 // state_lock taken by caller
-bool btsock_l2cap_read_signaled_on_listen_socket(int fd, int /* flags */, uint32_t /* user_id */,
-                                                 l2cap_socket* sock) {
+static bool btsock_l2cap_read_signaled_on_listen_socket(int fd, int /* flags */,
+                                                        uint32_t /* user_id */,
+                                                        l2cap_socket* sock) {
   int size = 0;
   bool ioctl_success = ioctl(sock->our_fd, FIONREAD, &size) == 0;
   if (ioctl_success && size) {
@@ -1149,7 +1149,7 @@ bool btsock_l2cap_read_signaled_on_listen_socket(int fd, int /* flags */, uint32
   return true;
 }
 
-void btsock_l2cap_signaled_flagged(int fd, int flags, uint32_t user_id) {
+static void btsock_l2cap_signaled_flagged(int fd, int flags, uint32_t user_id) {
   char drop_it = false;
 
   /* We use MSG_DONTWAIT when sending data to JAVA, hence it can be accepted to

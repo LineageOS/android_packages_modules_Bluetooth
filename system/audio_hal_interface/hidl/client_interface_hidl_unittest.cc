@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "codec_status_hidl.h"
+#include "hal_version_manager.h"
 
 namespace {
 
@@ -208,7 +209,12 @@ protected:
 
   static constexpr int kClientIfReturnSuccess = 0;
 
-  void SetUp() override {}
+  void SetUp() override {
+    bluetooth::audio::HalVersionManager version_manager;
+    if (version_manager.GetHalTransport() != bluetooth::audio::BluetoothAudioHalTransport::HIDL) {
+      GTEST_SKIP() << "The HIDL audio service is not declared";
+    }
+  }
 
   void TearDown() override {
     if (clientif_sink_ != nullptr) {

@@ -80,9 +80,10 @@ public:
 
   static bool RegisterIsoDataConsumer(LeAudioIsoDataCallback callback);
 
-  static void AddFromStorage(const RawAddress& addr, bool autoconnect, int sink_audio_location,
-                             int source_audio_location, int sink_supported_context_types,
-                             int source_supported_context_types,
+  static void AddFromStorage(const RawAddress& addr, bool autoconnect,
+                             std::optional<int> sink_audio_location,
+                             std::optional<int> source_audio_location,
+                             int sink_supported_context_types, int source_supported_context_types,
                              const std::vector<uint8_t>& handles,
                              const std::vector<uint8_t>& sink_pacs,
                              const std::vector<uint8_t>& source_pacs,

@@ -151,7 +151,6 @@ cc_test {
         "packages/modules/Bluetooth/system/stack/include",
     ],
     srcs: [
-        ":BluetoothOsSources_host",
         ":TestCommonMainHandler",
         ":TestCommonMockFunctions",
         ":TestFakeOsi",
@@ -159,7 +158,6 @@ cc_test {
         ":TestMockBtif",
         ":TestMockBtu",
         ":TestMockJni",
-        ":TestMockLegacyHciCommands",
         ":TestMockLegacyHciInterface",
         ":TestMockMainShimEntry",
         ":TestMockStack",
@@ -195,11 +193,13 @@ cc_test {
         "libbtdevice",
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
+        "libcutils",
         "libevent",
         "libflatbuffers-cpp",
         "libgmock",
         "liblog",
         "libosi",
+        "libstatslog_bt",
     ],
     aidl: {
         libs: ["bluetooth_constants"],
@@ -212,6 +212,18 @@ cc_test {
         "libcrypto",
         "server_configurable_flags",
     ],
+    target: {
+        android: {
+            static_libs: [
+                "android.system.suspend-V1-ndk",
+                "android.system.suspend.control-V1-ndk",
+                "libperfetto_client_experimental",
+            ],
+            shared_libs: [
+                "libstatssocket",
+            ],
+        },
+    },
     sanitize: {
         address: true,
         all_undefined: true,

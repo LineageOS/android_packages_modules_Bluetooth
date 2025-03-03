@@ -37,7 +37,7 @@ bluetooth::common::MessageLoopThread* get_main_thread() { return &main_thread; }
 bluetooth::common::PostableContext* get_main() { return main_thread.Postable(); }
 
 bt_status_t do_in_main_thread(base::OnceClosure task) {
-  if (!main_thread.DoInThread(FROM_HERE, std::move(task))) {
+  if (!main_thread.DoInThread(std::move(task))) {
     log::error("failed to post task to task runner!");
     return BT_STATUS_JNI_THREAD_ATTACH_ERROR;
   }
@@ -45,7 +45,7 @@ bt_status_t do_in_main_thread(base::OnceClosure task) {
 }
 
 bt_status_t do_in_main_thread_delayed(base::OnceClosure task, std::chrono::microseconds delay) {
-  if (!main_thread.DoInThreadDelayed(FROM_HERE, std::move(task), delay)) {
+  if (!main_thread.DoInThreadDelayed(std::move(task), delay)) {
     log::error("failed to post task to task runner!");
     return BT_STATUS_JNI_THREAD_ATTACH_ERROR;
   }

@@ -25,7 +25,7 @@ import android.util.Log;
  * interop.cc to do matching or entry adding/removing.
  */
 public class InteropUtil {
-    private static final String TAG = "InteropUtil";
+    private static final String TAG = InteropUtil.class.getSimpleName();
 
     /**
      * Add interop feature from device/include/interop.h to below InteropFeature if this feature

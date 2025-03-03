@@ -23,13 +23,11 @@
 
 #include "avrcp_internal.h"
 #include "avrcp_test_helper.h"
+#include "btif/include/btif_av.h"
 #include "connection_handler.h"
 #include "sdpdefs.h"
 #include "stack/include/sdp_status.h"
 #include "types/raw_address.h"
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 using ::testing::_;
 using ::testing::DoAll;

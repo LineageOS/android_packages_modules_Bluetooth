@@ -32,9 +32,6 @@
 #include "os/thread.h"
 #include "packet/raw_builder.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 using namespace bluetooth;
 using namespace std::chrono_literals;
 
@@ -580,7 +577,7 @@ TEST_F(Controller104Test, feature_spec_version_104_test) {
 std::promise<void> credits1_set;
 std::promise<void> credits2_set;
 
-void CheckReceivedCredits(uint16_t handle, uint16_t credits) {
+static void CheckReceivedCredits(uint16_t handle, uint16_t credits) {
   switch (handle) {
     case (kHandle1):
       ASSERT_EQ(kCredits1, credits);
@@ -624,7 +621,7 @@ TEST_F(ControllerTest, aclCreditCallbackListenerUnregistered) {
 
 std::promise<uint64_t> le_rand_set;
 
-void le_rand_callback(uint64_t random) { le_rand_set.set_value(random); }
+static void le_rand_callback(uint64_t random) { le_rand_set.set_value(random); }
 
 TEST_F(ControllerTest, leRandTest) {
   le_rand_set = std::promise<uint64_t>();

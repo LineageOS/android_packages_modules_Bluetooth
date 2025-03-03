@@ -68,7 +68,7 @@ import java.util.List;
  */
 // Next tag value for ContentProfileErrorReportUtils.report(): 2
 public class BluetoothOppManager {
-    private static final String TAG = "BluetoothOppManager";
+    private static final String TAG = BluetoothOppManager.class.getSimpleName();
 
     @VisibleForTesting static BluetoothOppManager sInstance;
 

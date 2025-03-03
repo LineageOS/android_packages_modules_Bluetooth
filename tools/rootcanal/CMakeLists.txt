@@ -131,25 +131,6 @@ pdl_gen(
   LANG rust_legacy)
 
 android_add_library(
-  TARGET libscriptedbeaconpayload-protos-lite LICENSE Apache-2.0
-  SOURCE_DIR ${ROOTCANAL_ROOT} SRC ${libscriptedbeaconpayload_protos_lite_src})
-
-protobuf_generate_with_plugin(
-  TARGET libscriptedbeaconpayload-protos-lite
-  PROTOS ${ROOTCANAL_ROOT}/model/devices/scripted_beacon_ble_payload.proto
-  APPEND_PATH
-  PROTOPATH -I${AOSP_ROOT}/external/protobuf/src
-            -I${ROOTCANAL_ROOT}/model/devices
-  PROTOC_OUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/model/devices)
-
-target_include_directories(
-  libscriptedbeaconpayload-protos-lite
-  PUBLIC ${CMAKE_CURRENT_BINARY_DIR} ${AOSP_ROOT}/external/protobuf/src)
-
-target_link_libraries(libscriptedbeaconpayload-protos-lite
-                      PRIVATE protobuf::libprotobuf)
-
-android_add_library(
   TARGET librootcanal_config LICENSE Apache-2.0
   SOURCE_DIR ${ROOTCANAL_ROOT} SRC ${librootcanal_config_src})
 
@@ -205,11 +186,9 @@ android_add_library(
       model/controller/sco_connection.cc
       model/controller/vendor_commands/le_apcf.cc
       model/devices/beacon.cc
-      model/devices/beacon_swarm.cc
       model/devices/device.cc
       model/devices/hci_device.cc
       model/devices/link_layer_socket_device.cc
-      model/devices/scripted_beacon.cc
       model/devices/sniffer.cc
       model/hci/h4_data_channel_packetizer.cc
       model/hci/h4_parser.cc
@@ -231,8 +210,7 @@ android_add_library(
        android-emu-base-headers
        android-emu-base-logging
        crypto
-       librootcanal_config
-       libscriptedbeaconpayload-protos-lite)
+       librootcanal_config)
 
 target_link_libraries(
   libbt-rootcanal

@@ -16,10 +16,10 @@
 
 package com.android.bluetooth.pbapclient;
 
+import static java.util.Objects.requireNonNull;
+
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.SdpPseRecord;
-
-import java.util.Objects;
 
 /**
  * This object represents an SDP Record for the PBAP profile. It extends the framework class by
@@ -54,8 +54,8 @@ public class PbapSdpRecord {
     private final SdpPseRecord mSdpRecord;
 
     PbapSdpRecord(BluetoothDevice device, SdpPseRecord record) {
-        mDevice = Objects.requireNonNull(device);
-        mSdpRecord = Objects.requireNonNull(record);
+        mDevice = requireNonNull(device);
+        mSdpRecord = requireNonNull(record);
     }
 
     /** Get the device associated with this SDP record */

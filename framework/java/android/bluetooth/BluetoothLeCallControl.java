@@ -56,7 +56,7 @@ import java.util.concurrent.Executor;
  * @hide
  */
 public final class BluetoothLeCallControl implements BluetoothProfile {
-    private static final String TAG = "BluetoothLeCallControl";
+    private static final String TAG = BluetoothLeCallControl.class.getSimpleName();
 
     /** @hide */
     @IntDef(
@@ -200,8 +200,8 @@ public final class BluetoothLeCallControl implements BluetoothProfile {
      * @hide
      */
     public abstract static class Callback {
-
-        private static final String TAG = "BluetoothLeCallControl.Callback";
+        private static final String TAG =
+                BluetoothLeCallControl.TAG + "." + Callback.class.getSimpleName();
 
         /**
          * Called when a remote client requested to accept the call.

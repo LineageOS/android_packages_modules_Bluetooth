@@ -18,8 +18,13 @@ package com.android.bluetooth.a2dp;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
+import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
+import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 
 import static com.android.bluetooth.Utils.checkCallerTargetSdk;
 
@@ -168,10 +173,11 @@ public class A2dpService extends ProfileService {
     }
 
     @Override
-    public void stop() {
-        Log.i(TAG, "stop()");
+    public void cleanup() {
+        Log.i(TAG, "Cleanup A2dp Service");
+
         if (sA2dpService == null) {
-            Log.w(TAG, "stop() called before start()");
+            Log.w(TAG, "cleanup() called before initialization");
             return;
         }
 
@@ -218,7 +224,7 @@ public class A2dpService extends ProfileService {
     public boolean connect(BluetoothDevice device) {
         Log.d(TAG, "connect(): " + device);
 
-        if (getConnectionPolicy(device) == BluetoothProfile.CONNECTION_POLICY_FORBIDDEN) {
+        if (getConnectionPolicy(device) == CONNECTION_POLICY_FORBIDDEN) {
             Log.e(TAG, "Cannot connect to " + device + " : CONNECTION_POLICY_FORBIDDEN");
             return false;
         }
@@ -234,9 +240,7 @@ public class A2dpService extends ProfileService {
                     List<BluetoothDevice> sinks =
                             getDevicesMatchingConnectionStates(
                                     new int[] {
-                                        BluetoothProfile.STATE_CONNECTED,
-                                        BluetoothProfile.STATE_CONNECTING,
-                                        BluetoothProfile.STATE_DISCONNECTING
+                                        STATE_CONNECTED, STATE_CONNECTING, STATE_DISCONNECTING
                                     });
                     for (BluetoothDevice sink : sinks) {
                         if (sink.equals(device)) {
@@ -305,8 +309,8 @@ public class A2dpService extends ProfileService {
         synchronized (mStateMachines) {
             for (A2dpStateMachine sm : mStateMachines.values()) {
                 switch (sm.getConnectionState()) {
-                    case BluetoothProfile.STATE_CONNECTING:
-                    case BluetoothProfile.STATE_CONNECTED:
+                    case STATE_CONNECTING:
+                    case STATE_CONNECTED:
                         if (Objects.equals(device, sm.getDevice())) {
                             return true; // Already connected or accounted for
                         }
@@ -355,8 +359,8 @@ public class A2dpService extends ProfileService {
                 return false;
             }
         }
-        if (connectionPolicy != BluetoothProfile.CONNECTION_POLICY_UNKNOWN
-                && connectionPolicy != BluetoothProfile.CONNECTION_POLICY_ALLOWED) {
+        if (connectionPolicy != CONNECTION_POLICY_UNKNOWN
+                && connectionPolicy != CONNECTION_POLICY_ALLOWED) {
             if (!isOutgoingRequest) {
                 HeadsetService headsetService = HeadsetService.getHeadsetService();
                 if (headsetService != null && headsetService.okToAcceptConnection(device, true)) {
@@ -390,7 +394,7 @@ public class A2dpService extends ProfileService {
                         mAdapterService.getRemoteUuids(device), BluetoothUuid.A2DP_SINK)) {
                     continue;
                 }
-                int connectionState = BluetoothProfile.STATE_DISCONNECTED;
+                int connectionState = STATE_DISCONNECTED;
                 A2dpStateMachine sm = mStateMachines.get(device);
                 if (sm != null) {
                     connectionState = sm.getConnectionState();
@@ -426,7 +430,7 @@ public class A2dpService extends ProfileService {
         synchronized (mStateMachines) {
             A2dpStateMachine sm = mStateMachines.get(device);
             if (sm == null) {
-                return BluetoothProfile.STATE_DISCONNECTED;
+                return STATE_DISCONNECTED;
             }
             return sm.getConnectionState();
         }
@@ -531,7 +535,7 @@ public class A2dpService extends ProfileService {
                                     + "no state machine");
                     return false;
                 }
-                if (sm.getConnectionState() != BluetoothProfile.STATE_CONNECTED) {
+                if (sm.getConnectionState() != STATE_CONNECTED) {
                     Log.e(
                             TAG,
                             "setActiveDevice("
@@ -628,9 +632,9 @@ public class A2dpService extends ProfileService {
                 device, BluetoothProfile.A2DP, connectionPolicy)) {
             return false;
         }
-        if (connectionPolicy == BluetoothProfile.CONNECTION_POLICY_ALLOWED) {
+        if (connectionPolicy == CONNECTION_POLICY_ALLOWED) {
             connect(device);
-        } else if (connectionPolicy == BluetoothProfile.CONNECTION_POLICY_FORBIDDEN) {
+        } else if (connectionPolicy == CONNECTION_POLICY_FORBIDDEN) {
             disconnect(device);
         }
         return true;
@@ -1165,9 +1169,14 @@ public class A2dpService extends ProfileService {
         if (bondState != BluetoothDevice.BOND_NONE) {
             return;
         }
+        if (mFactory.getAvrcpTargetService() != null) {
+            Log.d(TAG, "bondStateChanged: going for removeStoredVolumeForDevice");
+            mFactory.getAvrcpTargetService().removeStoredVolumeForDevice(device);
+        }
         synchronized (mStateMachines) {
             A2dpStateMachine sm = mStateMachines.get(device);
             if (sm == null) {
+                Log.d(TAG, "bondStateChanged: SM is null, return ");
                 return;
             }
 
@@ -1175,12 +1184,10 @@ public class A2dpService extends ProfileService {
             // If pseudo address is not same as the identity address, all further events from the
             // native stack would get ignored. So the state machine must be removed right away.
             if (!Flags.a2dpCleanupOnRemoveDevice()
-                    && sm.getConnectionState() != BluetoothProfile.STATE_DISCONNECTED) {
+                    && sm.getConnectionState() != STATE_DISCONNECTED) {
+                Log.d(TAG, "bondStateChanged: not in STATE_DISCONNECTED, return ");
                 return;
             }
-        }
-        if (mFactory.getAvrcpTargetService() != null) {
-            mFactory.getAvrcpTargetService().removeStoredVolumeForDevice(device);
         }
         removeStateMachine(device);
     }
@@ -1299,17 +1306,17 @@ public class A2dpService extends ProfileService {
         if ((device == null) || (fromState == toState)) {
             return;
         }
-        if (toState == BluetoothProfile.STATE_CONNECTED) {
+        if (toState == STATE_CONNECTED) {
             MetricsLogger.logProfileConnectionEvent(BluetoothMetricsProto.ProfileId.A2DP);
         }
         // Set the active device if only one connected device is supported and it was connected
-        if (toState == BluetoothProfile.STATE_CONNECTED && (mMaxConnectedAudioDevices == 1)) {
+        if (toState == STATE_CONNECTED && (mMaxConnectedAudioDevices == 1)) {
             setActiveDevice(device);
         }
         // When disconnected, ActiveDeviceManager will call setActiveDevice(null)
 
         // Check if the device is disconnected - if unbond, remove the state machine
-        if (toState == BluetoothProfile.STATE_DISCONNECTED) {
+        if (toState == STATE_DISCONNECTED) {
             if (mAdapterService.getBondState(device) == BluetoothDevice.BOND_NONE) {
                 if (mFactory.getAvrcpTargetService() != null) {
                     mFactory.getAvrcpTargetService().removeStoredVolumeForDevice(device);
@@ -1433,7 +1440,7 @@ public class A2dpService extends ProfileService {
         public int getConnectionState(BluetoothDevice device, AttributionSource source) {
             A2dpService service = getServiceAndEnforceConnect(source);
             if (service == null) {
-                return BluetoothProfile.STATE_DISCONNECTED;
+                return STATE_DISCONNECTED;
             }
 
             return service.getConnectionState(device);
@@ -1480,7 +1487,7 @@ public class A2dpService extends ProfileService {
         public int getConnectionPolicy(BluetoothDevice device, AttributionSource source) {
             A2dpService service = getServiceAndEnforceConnect(source);
             if (service == null) {
-                return BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
+                return CONNECTION_POLICY_UNKNOWN;
             }
 
             service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);

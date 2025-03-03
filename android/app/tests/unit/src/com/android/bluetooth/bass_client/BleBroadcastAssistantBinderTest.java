@@ -16,6 +16,8 @@
 
 package com.android.bluetooth.bass_client;
 
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
@@ -30,7 +32,6 @@ import static org.mockito.Mockito.verify;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
-import android.bluetooth.BluetoothProfile;
 import android.bluetooth.IBluetoothLeBroadcastAssistantCallback;
 import android.bluetooth.le.ScanFilter;
 import android.content.AttributionSource;
@@ -109,16 +110,13 @@ public class BleBroadcastAssistantBinderTest {
 
     @Test
     public void setConnectionPolicy() {
-        mBinder.setConnectionPolicy(
-                mDevice, BluetoothProfile.CONNECTION_POLICY_ALLOWED, mAttributionSource);
-        verify(mService).setConnectionPolicy(mDevice, BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+        mBinder.setConnectionPolicy(mDevice, CONNECTION_POLICY_ALLOWED, mAttributionSource);
+        verify(mService).setConnectionPolicy(mDevice, CONNECTION_POLICY_ALLOWED);
 
         mBinder.cleanup();
         assertThat(
                         mBinder.setConnectionPolicy(
-                                mDevice,
-                                BluetoothProfile.CONNECTION_POLICY_ALLOWED,
-                                mAttributionSource))
+                                mDevice, CONNECTION_POLICY_ALLOWED, mAttributionSource))
                 .isFalse();
     }
 
@@ -129,7 +127,7 @@ public class BleBroadcastAssistantBinderTest {
 
         mBinder.cleanup();
         assertThat(mBinder.getConnectionPolicy(mDevice, mAttributionSource))
-                .isEqualTo(BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
+                .isEqualTo(CONNECTION_POLICY_FORBIDDEN);
     }
 
     @Test

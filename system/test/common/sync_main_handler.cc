@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
+#include "test/common/sync_main_handler.h"
+
 #include <chrono>
 #include <future>
 
 #include "stack/include/main_thread.h"
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 constexpr int sync_timeout_in_ms = 3000;
 

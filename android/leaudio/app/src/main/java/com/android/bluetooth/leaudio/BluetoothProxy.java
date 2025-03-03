@@ -17,6 +17,11 @@
 
 package com.android.bluetooth.leaudio;
 
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
+import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
+import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
+
 import android.app.Application;
 import android.bluetooth.*;
 import android.content.BroadcastReceiver;
@@ -551,10 +556,9 @@ public class BluetoothProxy {
 
                                     final int toState =
                                             intent.getIntExtra(BluetoothProfile.EXTRA_STATE, -1);
-                                    if (toState == BluetoothProfile.STATE_CONNECTED
-                                            || toState == BluetoothProfile.STATE_DISCONNECTED)
+                                    if (toState == STATE_CONNECTED || toState == STATE_DISCONNECTED)
                                         svc_data.isConnectedMutable.postValue(
-                                                toState == BluetoothProfile.STATE_CONNECTED);
+                                                toState == STATE_CONNECTED);
                                 }
                             }
                         }
@@ -1065,7 +1069,7 @@ public class BluetoothProxy {
                     if (mBluetoothLeBroadcastAssistant != null) {
                         boolean is_connected =
                                 mBluetoothLeBroadcastAssistant.getConnectionState(dev)
-                                        == BluetoothProfile.STATE_CONNECTED;
+                                        == STATE_CONNECTED;
                         state_wrapper.bassData.isConnectedMutable.setValue(is_connected);
                     }
                 }
@@ -1226,10 +1230,10 @@ public class BluetoothProxy {
         if (mBluetoothLeBroadcastAssistant != null) {
             if (connect) {
                 mBluetoothLeBroadcastAssistant.setConnectionPolicy(
-                        device, BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+                        device, CONNECTION_POLICY_ALLOWED);
             } else {
                 mBluetoothLeBroadcastAssistant.setConnectionPolicy(
-                        device, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
+                        device, CONNECTION_POLICY_FORBIDDEN);
             }
         }
     }
@@ -1342,11 +1346,9 @@ public class BluetoothProxy {
     public void connectHap(BluetoothDevice device, boolean connect) {
         if (bluetoothHapClient != null) {
             if (connect) {
-                bluetoothHapClient.setConnectionPolicy(
-                        device, BluetoothProfile.CONNECTION_POLICY_ALLOWED);
+                bluetoothHapClient.setConnectionPolicy(device, CONNECTION_POLICY_ALLOWED);
             } else {
-                bluetoothHapClient.setConnectionPolicy(
-                        device, BluetoothProfile.CONNECTION_POLICY_FORBIDDEN);
+                bluetoothHapClient.setConnectionPolicy(device, CONNECTION_POLICY_FORBIDDEN);
             }
         }
     }
@@ -1376,11 +1378,11 @@ public class BluetoothProxy {
                                     }
 
                                     switch (newState) {
-                                        case BluetoothProfile.STATE_DISCONNECTED:
+                                        case STATE_DISCONNECTED:
                                             device_wrapper.isGattBrConnectedMutable.postValue(
                                                     false);
                                             break;
-                                        case BluetoothProfile.STATE_CONNECTED:
+                                        case STATE_CONNECTED:
                                             device_wrapper.isGattBrConnectedMutable.postValue(true);
                                             break;
                                         default:

@@ -296,8 +296,8 @@ pub trait IBluetoothMediaCallback: RPCProxy {
         &mut self,
         direction: u8,
         group_id: i32,
-        snk_audio_location: u32,
-        src_audio_location: u32,
+        snk_audio_location: i64,
+        src_audio_location: i64,
         avail_cont: u16,
     );
 
@@ -420,8 +420,8 @@ struct UHid {
 struct LEAAudioConf {
     pub direction: u8,
     pub group_id: i32,
-    pub snk_audio_location: u32,
-    pub src_audio_location: u32,
+    pub snk_audio_location: i64,
+    pub src_audio_location: i64,
     pub avail_cont: u16,
 }
 

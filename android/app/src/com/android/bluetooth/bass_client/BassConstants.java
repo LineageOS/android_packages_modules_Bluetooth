@@ -69,8 +69,6 @@ public class BassConstants {
     // 30 secs time out for all gatt writes
     public static final int GATT_TXN_TIMEOUT_MS = 30000;
     public static final int SOURCE_OPERATION_TIMEOUT_MS = 3000;
-    // 3 min time out for keeping PSYNC active
-    public static final int PSYNC_ACTIVE_TIMEOUT_MS = 3 * 60000;
     // 2 secs time out achieving psync
     public static final int PSYNC_TIMEOUT = 200;
     public static final int PIN_CODE_CMD_LEN = 18;

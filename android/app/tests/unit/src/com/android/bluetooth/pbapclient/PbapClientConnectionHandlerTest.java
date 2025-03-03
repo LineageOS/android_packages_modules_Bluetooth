@@ -29,7 +29,6 @@ import static org.mockito.Mockito.when;
 
 import android.bluetooth.BluetoothDevice;
 import android.content.ContentResolver;
-import android.content.res.Resources;
 import android.os.HandlerThread;
 import android.os.Looper;
 
@@ -48,14 +47,13 @@ import org.mockito.Mock;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class PbapClientConnectionHandlerTest {
+    private static final String TAG = PbapClientConnectionHandlerTest.class.getSimpleName();
+
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private PbapClientService mService;
-    @Mock private Resources mMockResources;
     @Mock private ContentResolver mMockContentResolver;
     @Mock private PbapClientStateMachineOld mStateMachine;
-
-    private static final String TAG = "ConnHandlerTest";
 
     // Normal supported features for our client
     private static final int SUPPORTED_FEATURES =
@@ -79,8 +77,7 @@ public class PbapClientConnectionHandlerTest {
 
         doReturn(mService).when(mStateMachine).getContext();
         doReturn(mMockContentResolver).when(mService).getContentResolver();
-        doReturn(mMockResources).when(mService).getResources();
-        doReturn("com.android.bluetooth.pbapclient").when(mMockResources).getString(anyInt());
+        doReturn("com.android.bluetooth.pbapclient").when(mService).getString(anyInt());
 
         mHandler =
                 new PbapClientConnectionHandler.Builder()

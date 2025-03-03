@@ -194,13 +194,15 @@ GetAidlMetadataFromStackFormat(const ::bluetooth::le_audio::types::LeAudioLtvMap
     out_ltvs.push_back(
             ::aidl::android::hardware::bluetooth::audio::MetadataLtv::PreferredAudioContexts{
                     .values = ::aidl::android::hardware::bluetooth::audio::AudioContext{
-                            .bitmask = stackMetadata.preferred_audio_context.value()}});
+                            .bitmask = static_cast<uint16_t>(
+                                    stackMetadata.preferred_audio_context.value().value())}});
   }
   if (stackMetadata.streaming_audio_context) {
     out_ltvs.push_back(
             ::aidl::android::hardware::bluetooth::audio::MetadataLtv::StreamingAudioContexts{
                     .values = ::aidl::android::hardware::bluetooth::audio::AudioContext{
-                            .bitmask = stackMetadata.streaming_audio_context.value()}});
+                            .bitmask = static_cast<uint16_t>(
+                                    stackMetadata.streaming_audio_context.value().value())}});
   }
   if (stackMetadata.vendor_specific) {
     if (stackMetadata.vendor_specific->size() >= 2) {

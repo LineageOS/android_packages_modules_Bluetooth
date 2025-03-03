@@ -115,7 +115,6 @@ TEST_F(MessageLoopThreadTest, test_do_in_thread_before_start) {
   std::string name = "test_thread";
   MessageLoopThread message_loop_thread(name);
   ASSERT_FALSE(message_loop_thread.DoInThread(
-          FROM_HERE,
           base::BindOnce(&MessageLoopThreadTest::ShouldNotHappen, base::Unretained(this))));
 }
 
@@ -125,7 +124,6 @@ TEST_F(MessageLoopThreadTest, test_do_in_thread_after_shutdown) {
   message_loop_thread.StartUp();
   message_loop_thread.ShutDown();
   ASSERT_FALSE(message_loop_thread.DoInThread(
-          FROM_HERE,
           base::BindOnce(&MessageLoopThreadTest::ShouldNotHappen, base::Unretained(this))));
 }
 
@@ -136,9 +134,8 @@ TEST_F(MessageLoopThreadTest, test_name) {
   ASSERT_GE(message_loop_thread.GetThreadId(), 0);
   std::promise<std::string> name_promise;
   std::future<std::string> name_future = name_promise.get_future();
-  message_loop_thread.DoInThread(
-          FROM_HERE, base::BindOnce(&MessageLoopThreadTest::GetName, base::Unretained(this),
-                                    std::move(name_promise)));
+  message_loop_thread.DoInThread(base::BindOnce(&MessageLoopThreadTest::GetName,
+                                                base::Unretained(this), std::move(name_promise)));
   std::string my_name = name_future.get();
   ASSERT_EQ(name, my_name);
   ASSERT_EQ(name, message_loop_thread.GetName());
@@ -152,9 +149,9 @@ TEST_F(MessageLoopThreadTest, test_thread_id) {
   ASSERT_GE(thread_id, 0);
   std::promise<base::PlatformThreadId> thread_id_promise;
   std::future<base::PlatformThreadId> thread_id_future = thread_id_promise.get_future();
-  message_loop_thread.DoInThread(
-          FROM_HERE, base::BindOnce(&MessageLoopThreadTest::GetThreadId, base::Unretained(this),
-                                    std::move(thread_id_promise)));
+  message_loop_thread.DoInThread(base::BindOnce(&MessageLoopThreadTest::GetThreadId,
+                                                base::Unretained(this),
+                                                std::move(thread_id_promise)));
   base::PlatformThreadId my_thread_id = thread_id_future.get();
   ASSERT_EQ(thread_id, my_thread_id);
 }
@@ -189,19 +186,17 @@ TEST_F(MessageLoopThreadTest, test_set_realtime_priority_success) {
   std::future<void> execution_future = execution_promise.get_future();
   int scheduling_policy = -1;
   int scheduling_priority = -1;
-  message_loop_thread.DoInThread(
-          FROM_HERE, base::BindOnce(&MessageLoopThreadTest::GetSchedulingPolicyAndPriority,
-                                    base::Unretained(this), &scheduling_policy,
-                                    &scheduling_priority, std::move(execution_promise)));
+  message_loop_thread.DoInThread(base::BindOnce(
+          &MessageLoopThreadTest::GetSchedulingPolicyAndPriority, base::Unretained(this),
+          &scheduling_policy, &scheduling_priority, std::move(execution_promise)));
   execution_future.wait();
   ASSERT_EQ(scheduling_policy, SCHED_FIFO);
   // Internal implementation verified here
   ASSERT_EQ(scheduling_priority, 1);
   std::promise<pid_t> tid_promise;
   std::future<pid_t> tid_future = tid_promise.get_future();
-  message_loop_thread.DoInThread(
-          FROM_HERE, base::BindOnce(&MessageLoopThreadTest::GetLinuxTid, base::Unretained(this),
-                                    std::move(tid_promise)));
+  message_loop_thread.DoInThread(base::BindOnce(&MessageLoopThreadTest::GetLinuxTid,
+                                                base::Unretained(this), std::move(tid_promise)));
   pid_t linux_tid = tid_future.get();
   ASSERT_GT(linux_tid, 0);
   ASSERT_EQ(sched_getscheduler(linux_tid), SCHED_FIFO);
@@ -260,9 +255,9 @@ TEST_F(MessageLoopThreadTest, shut_down_while_in_callback) {
   std::promise<std::string> name_promise;
   std::future<std::string> name_future = name_promise.get_future();
   uint32_t delay_ms = 5;
-  message_loop_thread.DoInThread(
-          FROM_HERE, base::BindOnce(&MessageLoopThreadTest::SleepAndGetName, base::Unretained(this),
-                                    std::move(name_promise), delay_ms));
+  message_loop_thread.DoInThread(base::BindOnce(&MessageLoopThreadTest::SleepAndGetName,
+                                                base::Unretained(this), std::move(name_promise),
+                                                delay_ms));
   message_loop_thread.ShutDown();
   std::string my_name = name_future.get();
   ASSERT_EQ(name, my_name);
@@ -273,9 +268,8 @@ TEST_F(MessageLoopThreadTest, shut_down_while_in_callback_check_lock) {
   std::string name = "test_thread";
   MessageLoopThread message_loop_thread(name);
   message_loop_thread.StartUp();
-  message_loop_thread.DoInThread(
-          FROM_HERE, base::BindOnce([](MessageLoopThread* thread) { thread->IsRunning(); },
-                                    &message_loop_thread));
+  message_loop_thread.DoInThread(base::BindOnce(
+          [](MessageLoopThread* thread) { thread->IsRunning(); }, &message_loop_thread));
   message_loop_thread.ShutDown();
 }
 

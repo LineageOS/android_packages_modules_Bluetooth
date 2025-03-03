@@ -16,10 +16,7 @@
 
 package com.android.bluetooth.hfp;
 
-import static android.Manifest.permission.BLUETOOTH_CONNECT;
-import static android.Manifest.permission.MODIFY_PHONE_STATE;
 
-import android.annotation.RequiresPermission;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHeadset;
 import android.bluetooth.BluetoothSinkAudioPolicy;
@@ -68,7 +65,7 @@ class HeadsetSystemInterface {
         mTelecomManager = mHeadsetService.getSystemService(TelecomManager.class);
     }
 
-    private BluetoothInCallService getBluetoothInCallServiceInstance() {
+    private static BluetoothInCallService getBluetoothInCallServiceInstance() {
         return BluetoothInCallService.getInstance();
     }
 
@@ -113,7 +110,6 @@ class HeadsetSystemInterface {
      * @param device the Bluetooth device used for answering this call
      */
     @VisibleForTesting
-    @RequiresPermission(MODIFY_PHONE_STATE)
     public void answerCall(BluetoothDevice device) {
         Log.d(TAG, "answerCall");
         if (device == null) {
@@ -121,18 +117,17 @@ class HeadsetSystemInterface {
             return;
         }
         BluetoothInCallService bluetoothInCallService = getBluetoothInCallServiceInstance();
-        if (bluetoothInCallService != null) {
-            BluetoothSinkAudioPolicy callAudioPolicy =
-                    mHeadsetService.getHfpCallAudioPolicy(device);
-            if (callAudioPolicy == null
-                    || callAudioPolicy.getCallEstablishPolicy()
-                            != BluetoothSinkAudioPolicy.POLICY_NOT_ALLOWED) {
-                mHeadsetService.setActiveDevice(device);
-            }
-            bluetoothInCallService.answerCall();
-        } else {
+        if (bluetoothInCallService == null) {
             Log.e(TAG, "Handsfree phone proxy null for answering call");
+            return;
         }
+        BluetoothSinkAudioPolicy callAudioPolicy = mHeadsetService.getHfpCallAudioPolicy(device);
+        if (callAudioPolicy == null
+                || callAudioPolicy.getCallEstablishPolicy()
+                        != BluetoothSinkAudioPolicy.POLICY_NOT_ALLOWED) {
+            mHeadsetService.setActiveDevice(device);
+        }
+        bluetoothInCallService.answerCall();
     }
 
     /**
@@ -141,7 +136,6 @@ class HeadsetSystemInterface {
      * @param device the Bluetooth device used for hanging up this call
      */
     @VisibleForTesting
-    @RequiresPermission(MODIFY_PHONE_STATE)
     public void hangupCall(BluetoothDevice device) {
         if (device == null) {
             Log.w(TAG, "hangupCall device is null");
@@ -167,9 +161,7 @@ class HeadsetSystemInterface {
      * @param dtmf dtmf code
      * @param device the Bluetooth device that sent this code
      */
-    @VisibleForTesting
-    @RequiresPermission(MODIFY_PHONE_STATE)
-    public boolean sendDtmf(int dtmf, BluetoothDevice device) {
+    boolean sendDtmf(int dtmf, BluetoothDevice device) {
         if (device == null) {
             Log.w(TAG, "sendDtmf device is null");
             return false;
@@ -189,11 +181,10 @@ class HeadsetSystemInterface {
      * @param chld index of the call to hold
      */
     @VisibleForTesting
-    @RequiresPermission(MODIFY_PHONE_STATE)
-    public boolean processChld(int chld) {
+    public boolean processChld(HeadsetService headsetService, int chld) {
         BluetoothInCallService bluetoothInCallService = getBluetoothInCallServiceInstance();
         if (bluetoothInCallService != null) {
-            return bluetoothInCallService.processChld(chld);
+            return bluetoothInCallService.processChld(headsetService, chld);
         } else {
             Log.e(TAG, "Handsfree phone proxy null for sending DTMF");
         }
@@ -218,7 +209,6 @@ class HeadsetSystemInterface {
      * @return null on error, empty string if not available
      */
     @VisibleForTesting
-    @RequiresPermission(MODIFY_PHONE_STATE)
     public String getNetworkOperator() {
         BluetoothInCallService bluetoothInCallService = getBluetoothInCallServiceInstance();
         if (bluetoothInCallService == null) {
@@ -270,7 +260,6 @@ class HeadsetSystemInterface {
      * @return null if unavailable
      */
     @VisibleForTesting
-    @RequiresPermission(MODIFY_PHONE_STATE)
     public String getSubscriberNumber() {
         BluetoothInCallService bluetoothInCallService = getBluetoothInCallServiceInstance();
         if (bluetoothInCallService == null) {
@@ -282,18 +271,17 @@ class HeadsetSystemInterface {
     }
 
     /**
-     * Ask the Telecomm service to list current list of calls through CLCC response {@link
+     * Ask the Telecom service to list current list of calls through CLCC response {@link
      * BluetoothHeadset#clccResponse(int, int, int, int, boolean, String, int)}
      */
     @VisibleForTesting
-    @RequiresPermission(allOf = {BLUETOOTH_CONNECT, MODIFY_PHONE_STATE})
-    public boolean listCurrentCalls() {
+    public boolean listCurrentCalls(HeadsetService headsetService) {
         BluetoothInCallService bluetoothInCallService = getBluetoothInCallServiceInstance();
         if (bluetoothInCallService == null) {
             Log.e(TAG, "listCurrentCalls() failed: mBluetoothInCallService is null");
             return false;
         }
-        return bluetoothInCallService.listCurrentCalls();
+        return bluetoothInCallService.listCurrentCalls(headsetService);
     }
 
     /**
@@ -301,11 +289,10 @@ class HeadsetSystemInterface {
      * through {@link BluetoothHeadset#phoneStateChanged(int, int, int, String, int)}
      */
     @VisibleForTesting
-    @RequiresPermission(allOf = {BLUETOOTH_CONNECT, MODIFY_PHONE_STATE})
-    public void queryPhoneState() {
+    public void queryPhoneState(HeadsetService headsetService) {
         BluetoothInCallService bluetoothInCallService = getBluetoothInCallServiceInstance();
         if (bluetoothInCallService != null) {
-            bluetoothInCallService.queryPhoneState();
+            bluetoothInCallService.queryPhoneState(headsetService);
         } else {
             Log.e(TAG, "Handsfree phone proxy null for query phone state");
         }
@@ -316,8 +303,7 @@ class HeadsetSystemInterface {
      *
      * @return True iff we are in a phone call
      */
-    @VisibleForTesting
-    public boolean isInCall() {
+    boolean isInCall() {
         return ((mHeadsetPhoneState.getNumActiveCall() > 0)
                 || (mHeadsetPhoneState.getNumHeldCall() > 0)
                 || ((mHeadsetPhoneState.getCallState() != HeadsetHalConstants.CALL_STATE_IDLE)

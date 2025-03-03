@@ -1,0 +1,10 @@
+module: "android.sysprop.bluetooth.Hci"
+owner: Platform
+
+prop {
+    api_name: "msft_vendor_opcode"
+    type: Integer
+    scope: Internal
+    access: Readonly
+    prop_name: "bluetooth.hci.msft_vendor_opcode"
+}

@@ -27,9 +27,6 @@
 
 // Mocked internal structures, if any
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 namespace test {
 namespace mock {
 namespace osi_list {
@@ -49,7 +46,6 @@ struct list_insert_after list_insert_after;
 struct list_is_empty list_is_empty;
 struct list_length list_length;
 struct list_new list_new;
-struct list_new_internal list_new_internal;
 struct list_next list_next;
 struct list_node list_node;
 struct list_prepend list_prepend;
@@ -115,10 +111,6 @@ size_t list_length(const list_t* list) {
 list_t* list_new(list_free_cb callback) {
   inc_func_call_count(__func__);
   return test::mock::osi_list::list_new(callback);
-}
-list_t* list_new_internal(list_free_cb callback, const allocator_t* zeroed_allocator) {
-  inc_func_call_count(__func__);
-  return test::mock::osi_list::list_new_internal(callback, zeroed_allocator);
 }
 list_node_t* list_next(const list_node_t* node) {
   inc_func_call_count(__func__);

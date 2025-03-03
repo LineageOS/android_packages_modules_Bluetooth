@@ -28,10 +28,8 @@
 #include "bta_le_audio_api.h"
 #include "bta_le_audio_broadcaster_api.h"
 #include "btif_common.h"
+#include "btif_le_audio.h"
 #include "stack/include/main_thread.h"
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 using base::Bind;
 using base::Unretained;

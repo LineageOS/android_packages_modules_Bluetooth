@@ -23,4 +23,5 @@
 #include <device_id.sysprop.h>
 #include <gap.sysprop.h>
 #include <hardware.sysprop.h>
+#include <hci.sysprop.h>
 #include <hfp.sysprop.h>

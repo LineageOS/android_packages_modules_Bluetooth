@@ -138,7 +138,7 @@ public class PeriodicAdvertisementResultTest {
     }
 
     /** Helper to generate test data for public broadcast. */
-    private PublicBroadcastData generatePublicBroadcastData() {
+    private static PublicBroadcastData generatePublicBroadcastData() {
         PublicBroadcastData.PublicBroadcastInfo info =
                 new PublicBroadcastData.PublicBroadcastInfo();
         info.isEncrypted = true;

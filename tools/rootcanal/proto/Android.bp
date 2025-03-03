@@ -14,6 +14,7 @@ cc_library_static {
     proto: {
         export_proto_headers: true,
         canonical_path_from_root: false,
+        type: "full",
         include_dirs: [
             "packages/modules/Bluetooth/tools/rootcanal/proto",
         ],

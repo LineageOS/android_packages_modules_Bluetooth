@@ -845,6 +845,74 @@ public class TbsGattTest {
     }
 
     @Test
+    public void testCharacteristic_longReadAuthorized() {
+        prepareDefaultService();
+
+        /* Twenty three octects long friendly name */
+        String title = "01234567890123456789012";
+        BluetoothGattCharacteristic characteristic =
+                getCharacteristic(TbsGatt.UUID_CALL_FRIENDLY_NAME);
+        characteristic.setValue(title);
+
+        doReturn(BluetoothDevice.ACCESS_ALLOWED)
+                .when(mService)
+                .getDeviceAuthorization(any(BluetoothDevice.class));
+
+        int offset = 0;
+        mTbsGatt.mGattServerCallback.onCharacteristicReadRequest(
+                mFirstDevice, 1, offset, characteristic);
+
+        verify(mGattServer)
+                .sendResponse(
+                        eq(mFirstDevice),
+                        eq(1),
+                        eq(BluetoothGatt.GATT_SUCCESS),
+                        eq(offset),
+                        eq(title.getBytes()));
+
+        offset = characteristic.getValue().length;
+        mTbsGatt.mGattServerCallback.onCharacteristicReadRequest(
+                mFirstDevice, 2, offset, characteristic);
+
+        byte[] empty = new byte[] {};
+        verify(mGattServer)
+                .sendResponse(
+                        eq(mFirstDevice),
+                        eq(2),
+                        eq(BluetoothGatt.GATT_SUCCESS),
+                        eq(offset),
+                        eq(empty));
+    }
+
+    @Test
+    public void testCharacteristic_longReadOutsideLenAuthorized() {
+        prepareDefaultService();
+
+        /* Twenty three octects long friendly name */
+        String title = "01234567890123456789012";
+        BluetoothGattCharacteristic characteristic =
+                getCharacteristic(TbsGatt.UUID_CALL_FRIENDLY_NAME);
+        characteristic.setValue(title);
+
+        doReturn(BluetoothDevice.ACCESS_ALLOWED)
+                .when(mService)
+                .getDeviceAuthorization(any(BluetoothDevice.class));
+
+        int offset = characteristic.getValue().length + 1;
+        mTbsGatt.mGattServerCallback.onCharacteristicReadRequest(
+                mFirstDevice, 2, offset, characteristic);
+
+        byte[] empty = new byte[] {};
+        verify(mGattServer)
+                .sendResponse(
+                        eq(mFirstDevice),
+                        eq(2),
+                        eq(BluetoothGatt.GATT_INVALID_OFFSET),
+                        eq(offset),
+                        eq(empty));
+    }
+
+    @Test
     public void testClientCharacteristicConfiguration() {
         prepareDefaultService();
 

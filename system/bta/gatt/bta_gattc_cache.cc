@@ -48,9 +48,6 @@
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 using namespace bluetooth::legacy::stack::sdp;
 using namespace bluetooth;
 
@@ -63,8 +60,6 @@ using gatt::IncludedService;
 using gatt::Service;
 
 static tGATT_STATUS bta_gattc_sdp_service_disc(tCONN_ID conn_id, tBTA_GATTC_SERV* p_server_cb);
-const Descriptor* bta_gattc_get_descriptor_srcb(tBTA_GATTC_SERV* p_srcb, uint16_t handle);
-const Characteristic* bta_gattc_get_characteristic_srcb(tBTA_GATTC_SERV* p_srcb, uint16_t handle);
 static void bta_gattc_explore_srvc_finished(tCONN_ID conn_id, tBTA_GATTC_SERV* p_srvc_cb);
 
 static void bta_gattc_read_db_hash_cmpl(tBTA_GATTC_CLCB* p_clcb, const tBTA_GATTC_OP_CMPL* p_data,
@@ -117,8 +112,8 @@ void bta_gattc_init_cache(tBTA_GATTC_SERV* p_srvc_cb) {
   p_srvc_cb->pending_discovery.Clear();
 }
 
-const Service* bta_gattc_find_matching_service(const std::list<Service>& services,
-                                               uint16_t handle) {
+static const Service* bta_gattc_find_matching_service(const std::list<Service>& services,
+                                                      uint16_t handle) {
   for (const Service& service : services) {
     if (handle >= service.handle && handle <= service.end_handle) {
       return &service;
@@ -316,7 +311,7 @@ static void bta_gattc_explore_srvc_finished(tCONN_ID conn_id, tBTA_GATTC_SERV* p
 }
 
 /** Start discovery for characteristic descriptor */
-void bta_gattc_start_disc_char_dscp(tCONN_ID conn_id, tBTA_GATTC_SERV* p_srvc_cb) {
+static void bta_gattc_start_disc_char_dscp(tCONN_ID conn_id, tBTA_GATTC_SERV* p_srvc_cb) {
   log::verbose("starting discover characteristics descriptor");
 
   std::pair<uint16_t, uint16_t> range = p_srvc_cb->pending_discovery.NextDescriptorRangeToExplore();
@@ -336,8 +331,8 @@ descriptor_discovery_done:
 }
 
 /* Process the discovery result from sdp */
-void bta_gattc_sdp_callback(tBTA_GATTC_CB_DATA* cb_data, const RawAddress& /* bd_addr */,
-                            tSDP_STATUS sdp_status) {
+static void bta_gattc_sdp_callback(tBTA_GATTC_CB_DATA* cb_data, const RawAddress& /* bd_addr */,
+                                   tSDP_STATUS sdp_status) {
   tBTA_GATTC_SERV* p_srvc_cb = bta_gattc_find_scb_by_cid(cb_data->sdp_conn_id);
 
   if (p_srvc_cb == nullptr) {
@@ -591,7 +586,7 @@ void bta_gattc_search_service(tBTA_GATTC_CLCB* p_clcb, Uuid* p_uuid) {
   }
 }
 
-const std::list<Service>* bta_gattc_get_services_srcb(tBTA_GATTC_SERV* p_srcb) {
+static const std::list<Service>* bta_gattc_get_services_srcb(tBTA_GATTC_SERV* p_srcb) {
   if (!p_srcb || p_srcb->gatt_database.IsEmpty()) {
     return NULL;
   }
@@ -655,7 +650,7 @@ const Characteristic* bta_gattc_get_characteristic(tCONN_ID conn_id, uint16_t ha
   return bta_gattc_get_characteristic_srcb(p_srcb, handle);
 }
 
-const Descriptor* bta_gattc_get_descriptor_srcb(tBTA_GATTC_SERV* p_srcb, uint16_t handle) {
+static const Descriptor* bta_gattc_get_descriptor_srcb(tBTA_GATTC_SERV* p_srcb, uint16_t handle) {
   const Service* service = bta_gattc_get_service_for_handle_srcb(p_srcb, handle);
 
   if (!service) {
@@ -684,8 +679,8 @@ const Descriptor* bta_gattc_get_descriptor(tCONN_ID conn_id, uint16_t handle) {
   return bta_gattc_get_descriptor_srcb(p_srcb, handle);
 }
 
-const Characteristic* bta_gattc_get_owning_characteristic_srcb(tBTA_GATTC_SERV* p_srcb,
-                                                               uint16_t handle) {
+static const Characteristic* bta_gattc_get_owning_characteristic_srcb(tBTA_GATTC_SERV* p_srcb,
+                                                                      uint16_t handle) {
   const Service* service = bta_gattc_get_service_for_handle_srcb(p_srcb, handle);
 
   if (!service) {
@@ -882,9 +877,9 @@ static void bta_gattc_read_ext_prop_desc_cmpl(tBTA_GATTC_CLCB* p_clcb,
  * Returns          None.
  *
  ******************************************************************************/
-void bta_gattc_fill_gatt_db_el(btgatt_db_element_t* p_attr, bt_gatt_db_attribute_type_t type,
-                               uint16_t att_handle, uint16_t s_handle, uint16_t e_handle,
-                               uint16_t id, const Uuid& uuid, uint8_t prop) {
+static void bta_gattc_fill_gatt_db_el(btgatt_db_element_t* p_attr, bt_gatt_db_attribute_type_t type,
+                                      uint16_t att_handle, uint16_t s_handle, uint16_t e_handle,
+                                      uint16_t id, const Uuid& uuid, uint8_t prop) {
   p_attr->type = type;
   p_attr->attribute_handle = att_handle;
   p_attr->start_handle = s_handle;

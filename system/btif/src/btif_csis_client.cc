@@ -26,13 +26,11 @@
 #include "bind_helpers.h"
 #include "bta_csis_api.h"
 #include "btif_common.h"
+#include "btif_le_audio.h"
 #include "btif_profile_storage.h"
 #include "stack/include/main_thread.h"
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 using base::Bind;
 using base::Unretained;

@@ -178,7 +178,7 @@ public class HeadsetClientServiceTest {
 
         verify(mAdapterService).startService(any(Intent.class));
 
-        service.stop();
+        service.cleanup();
     }
 
     @Test
@@ -192,7 +192,7 @@ public class HeadsetClientServiceTest {
 
         verify(mAdapterService, never()).startService(any(Intent.class));
 
-        service.stop();
+        service.cleanup();
     }
 
     /**
@@ -261,7 +261,7 @@ public class HeadsetClientServiceTest {
 
     private void stopServiceIfStarted() throws Exception {
         if (mIsHeadsetClientServiceStarted) {
-            mService.stop();
+            mService.cleanup();
             assertThat(HeadsetClientService.getHeadsetClientService()).isNull();
         }
     }

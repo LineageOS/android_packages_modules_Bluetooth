@@ -16,6 +16,8 @@
 
 package com.android.bluetooth.pbapclient;
 
+import static java.util.Objects.requireNonNull;
+
 import android.accounts.Account;
 import android.accounts.AccountManager;
 import android.bluetooth.BluetoothDevice;
@@ -38,7 +40,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -98,7 +99,7 @@ class PbapClientAccountManager {
 
     @VisibleForTesting
     PbapClientAccountManager(Context context, HandlerThread handlerThread, Callback callback) {
-        mContext = Objects.requireNonNull(context);
+        mContext = requireNonNull(context);
         mAccountManager = mContext.getSystemService(AccountManager.class);
         mUserManager = mContext.getSystemService(UserManager.class);
         mAccountType = mContext.getResources().getString(R.string.pbap_client_account_type);

@@ -38,6 +38,7 @@
 
 #include <cstdint>
 
+#include "bta/gatt/bta_gattc_int.h"
 #include "bta/include/bta_dm_acl.h"
 #include "bta/sys/bta_sys.h"
 #include "common/metrics.h"
@@ -736,8 +737,6 @@ void BTM_default_unblock_role_switch() {
   internal_.btm_set_default_link_policy(btm_cb.acl_cb_.DefaultLinkPolicy() |
                                         HCI_ENABLE_CENTRAL_PERIPHERAL_SWITCH);
 }
-
-extern void bta_gattc_continue_discovery_if_needed(const RawAddress& bd_addr, uint16_t acl_handle);
 
 static void maybe_chain_more_commands_after_read_remote_version_complete(uint8_t /* status */,
                                                                          uint16_t handle) {

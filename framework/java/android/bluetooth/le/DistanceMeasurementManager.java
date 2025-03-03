@@ -19,6 +19,8 @@ package android.bluetooth.le;
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 
+import static java.util.Objects.requireNonNull;
+
 import android.annotation.FlaggedApi;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
@@ -42,7 +44,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
@@ -61,7 +62,7 @@ import java.util.stream.Collectors;
  */
 @SystemApi
 public final class DistanceMeasurementManager {
-    private static final String TAG = "DistanceMeasurementManager";
+    private static final String TAG = DistanceMeasurementManager.class.getSimpleName();
 
     private final ConcurrentHashMap<BluetoothDevice, DistanceMeasurementSession> mSessionMap =
             new ConcurrentHashMap<>();
@@ -75,7 +76,7 @@ public final class DistanceMeasurementManager {
      * @hide
      */
     public DistanceMeasurementManager(BluetoothAdapter bluetoothAdapter) {
-        mBluetoothAdapter = Objects.requireNonNull(bluetoothAdapter);
+        mBluetoothAdapter = requireNonNull(bluetoothAdapter);
         mAttributionSource = mBluetoothAdapter.getAttributionSource();
         mUuid = new ParcelUuid(UUID.randomUUID());
     }
@@ -133,9 +134,9 @@ public final class DistanceMeasurementManager {
             @NonNull DistanceMeasurementParams params,
             @NonNull Executor executor,
             @NonNull DistanceMeasurementSession.Callback callback) {
-        Objects.requireNonNull(params, "params is null");
-        Objects.requireNonNull(executor, "executor is null");
-        Objects.requireNonNull(callback, "callback is null");
+        requireNonNull(params);
+        requireNonNull(executor);
+        requireNonNull(callback);
         try {
             IDistanceMeasurement distanceMeasurement = mBluetoothAdapter.getDistanceMeasurement();
             if (distanceMeasurement == null) {
@@ -188,7 +189,7 @@ public final class DistanceMeasurementManager {
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     @CsSecurityLevel
     public int getChannelSoundingMaxSupportedSecurityLevel(@NonNull BluetoothDevice remoteDevice) {
-        Objects.requireNonNull(remoteDevice, "remote device is null");
+        requireNonNull(remoteDevice);
         final int defaultValue = ChannelSoundingParams.CS_SECURITY_LEVEL_UNKNOWN;
         try {
             IDistanceMeasurement distanceMeasurement = mBluetoothAdapter.getDistanceMeasurement();

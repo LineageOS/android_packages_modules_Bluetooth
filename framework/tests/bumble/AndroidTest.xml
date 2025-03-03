@@ -24,7 +24,7 @@
 
     <target_preparer class="com.android.tradefed.targetprep.PythonVirtualenvPreparer">
         <!-- TODO(b/267785204): Import python dependencies -->
-        <option name="dep-module" value="grpcio==1.51.1" />
+        <option name="dep-module" value="grpcio==1.70.0" />
         <option name="dep-module" value="cryptography==35" />
     </target_preparer>
 
@@ -36,7 +36,7 @@
 
       <option name="host-setup-command" value="adb -s $SERIAL reverse tcp:7999 tcp:7999" />
       <option name="host-background-command"
-        value="$EXTRA_FILE(host_testcases)/BumbleBluetoothTests/bumble_pandora_server --rootcanal-port 6211 --config $EXTRA_FILE(host_testcases)/BumbleBluetoothTests/bumble_config.json"/>
+        value="$EXTRA_FILE(host_testcases:testsdir)/BumbleBluetoothTests/bumble_pandora_server --rootcanal-port 6211 --config $EXTRA_FILE(host_testcases:testsdir)/BumbleBluetoothTests/bumble_config.json"/>
       <option name="host-teardown-command" value="adb -s $SERIAL reverse --remove tcp:7999" />
     </target_preparer>
 

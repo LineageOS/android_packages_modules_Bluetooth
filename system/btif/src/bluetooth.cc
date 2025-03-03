@@ -40,6 +40,7 @@
 #include <utility>
 #include <vector>
 
+#include "bta/gatt/bta_gattc_int.h"
 #include "bta/hh/bta_hh_int.h"
 #include "bta/include/bta_api.h"
 #include "bta/include/bta_ar_api.h"
@@ -52,6 +53,7 @@
 #include "bta/include/bta_le_audio_broadcaster_api.h"
 #include "bta/include/bta_vc_api.h"
 #include "btif/avrcp/avrcp_service.h"
+#include "btif/include/bluetooth.h"
 #include "btif/include/btif_a2dp.h"
 #include "btif/include/btif_a2dp_source.h"
 #include "btif/include/btif_api.h"
@@ -61,16 +63,19 @@
 #include "btif/include/btif_config.h"
 #include "btif/include/btif_debug_conn.h"
 #include "btif/include/btif_dm.h"
+#include "btif/include/btif_gatt.h"
 #include "btif/include/btif_hd.h"
 #include "btif/include/btif_hearing_aid.h"
 #include "btif/include/btif_hf.h"
 #include "btif/include/btif_hf_client.h"
 #include "btif/include/btif_hh.h"
 #include "btif/include/btif_keystore.h"
+#include "btif/include/btif_le_audio.h"
 #include "btif/include/btif_metrics_logging.h"
 #include "btif/include/btif_pan.h"
 #include "btif/include/btif_profile_storage.h"
 #include "btif/include/btif_rc.h"
+#include "btif/include/btif_sdp.h"
 #include "btif/include/btif_sock.h"
 #include "btif/include/btif_sock_logging.h"
 #include "btif/include/btif_storage.h"
@@ -129,9 +134,6 @@
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 using bluetooth::csis::CsisClientInterface;
 using bluetooth::has::HasClientInterface;
 using bluetooth::le_audio::LeAudioBroadcasterInterface;
@@ -162,42 +164,11 @@ tBT_TRANSPORT to_bt_transport(int val) {
  ******************************************************************************/
 
 static bt_callbacks_t* bt_hal_cbacks = NULL;
-bool restricted_mode = false;
-bool common_criteria_mode = false;
-const int CONFIG_COMPARE_ALL_PASS = 0b11;
-int common_criteria_config_compare_result = CONFIG_COMPARE_ALL_PASS;
-bool is_local_device_atv = false;
-
-/*******************************************************************************
- *  Externs
- ******************************************************************************/
-
-/* list all extended interfaces here */
-
-/*rfc l2cap*/
-extern const btsock_interface_t* btif_sock_get_interface();
-/* gatt */
-extern const btgatt_interface_t* btif_gatt_get_interface();
-/* avrc target */
-extern const btrc_interface_t* btif_rc_get_interface();
-/* avrc controller */
-extern const btrc_ctrl_interface_t* btif_rc_ctrl_get_interface();
-/*SDP search client*/
-extern const btsdp_interface_t* btif_sdp_get_interface();
-/* Hearing Access client */
-extern HasClientInterface* btif_has_client_get_interface();
-/* LeAudio testi client */
-extern LeAudioClientInterface* btif_le_audio_get_interface();
-/* LeAudio Broadcaster */
-extern LeAudioBroadcasterInterface* btif_le_audio_broadcaster_get_interface();
-/* Coordinated Set Service Client */
-extern CsisClientInterface* btif_csis_client_get_interface();
-/* Volume Control client */
-extern VolumeControlInterface* btif_volume_control_get_interface();
-
-bt_status_t btif_av_sink_execute_service(bool b_enable);
-
-extern void bta_gatt_client_dump(int fd);
+static bool restricted_mode = false;
+static bool common_criteria_mode = false;
+static constexpr int CONFIG_COMPARE_ALL_PASS = 0b11;
+static int common_criteria_config_compare_result = CONFIG_COMPARE_ALL_PASS;
+static bool is_local_device_atv = false;
 
 /*******************************************************************************
  *  Callbacks from bluetooth::core (see go/invisalign-bt)
@@ -435,7 +406,7 @@ static void set_adapter_index(int adapter) { global_hci_adapter = adapter; }
 int GetAdapterIndex() { return global_hci_adapter; }
 #else
 int GetAdapterIndex() { return 0; }  // Unsupported outside of FLOSS
-#endif
+#endif  // TARGET_FLOSS
 
 static int init(bt_callbacks_t* callbacks, bool start_restricted, bool is_common_criteria_mode,
                 int config_compare_result, bool is_atv) {
@@ -583,7 +554,7 @@ static int set_adapter_property(const bt_property_t* property) {
   return BT_STATUS_SUCCESS;
 }
 
-int get_remote_device_properties(RawAddress* remote_addr) {
+static int get_remote_device_properties(RawAddress* remote_addr) {
   if (!btif_is_enabled()) {
     return BT_STATUS_NOT_READY;
   }
@@ -592,7 +563,7 @@ int get_remote_device_properties(RawAddress* remote_addr) {
   return BT_STATUS_SUCCESS;
 }
 
-int get_remote_device_property(RawAddress* remote_addr, bt_property_type_t type) {
+static int get_remote_device_property(RawAddress* remote_addr, bt_property_type_t type) {
   if (!btif_is_enabled()) {
     return BT_STATUS_NOT_READY;
   }
@@ -601,7 +572,7 @@ int get_remote_device_property(RawAddress* remote_addr, bt_property_type_t type)
   return BT_STATUS_SUCCESS;
 }
 
-int set_remote_device_property(RawAddress* remote_addr, const bt_property_t* property) {
+static int set_remote_device_property(RawAddress* remote_addr, const bt_property_t* property) {
   if (!btif_is_enabled()) {
     return BT_STATUS_NOT_READY;
   }
@@ -615,7 +586,7 @@ int set_remote_device_property(RawAddress* remote_addr, const bt_property_t* pro
   return BT_STATUS_SUCCESS;
 }
 
-int get_remote_services(RawAddress* remote_addr, int transport) {
+static int get_remote_services(RawAddress* remote_addr, int transport) {
   if (!interface_ready()) {
     return BT_STATUS_NOT_READY;
   }
@@ -986,10 +957,6 @@ static const void* get_profile_interface(const char* profile_id) {
     return btif_gatt_get_interface();
   }
 
-  if (is_profile(profile_id, BT_PROFILE_AV_RC_ID)) {
-    return btif_rc_get_interface();
-  }
-
   if (is_profile(profile_id, BT_PROFILE_AV_RC_CTRL_ID)) {
     return btif_rc_ctrl_get_interface();
   }
@@ -1029,7 +996,7 @@ static const void* get_profile_interface(const char* profile_id) {
   return NULL;
 }
 
-int dut_mode_configure(uint8_t enable) {
+static int dut_mode_configure(uint8_t enable) {
   if (!interface_ready()) {
     return BT_STATUS_NOT_READY;
   }
@@ -1041,7 +1008,7 @@ int dut_mode_configure(uint8_t enable) {
   return BT_STATUS_SUCCESS;
 }
 
-int dut_mode_send(uint16_t opcode, uint8_t* buf, uint8_t len) {
+static int dut_mode_send(uint16_t opcode, uint8_t* buf, uint8_t len) {
   if (!interface_ready()) {
     return BT_STATUS_NOT_READY;
   }
@@ -1061,7 +1028,7 @@ int dut_mode_send(uint16_t opcode, uint8_t* buf, uint8_t len) {
   return BT_STATUS_SUCCESS;
 }
 
-int le_test_mode(uint16_t opcode, uint8_t* buf, uint8_t len) {
+static int le_test_mode(uint16_t opcode, uint8_t* buf, uint8_t len) {
   if (!interface_ready()) {
     return BT_STATUS_NOT_READY;
   }
@@ -1316,7 +1283,7 @@ EXPORT_SYMBOL bt_interface_t bluetoothInterface = {
 
 // callback reporting helpers
 
-bt_property_t* property_deep_copy_array(int num_properties, bt_property_t* properties) {
+static bt_property_t* property_deep_copy_array(int num_properties, bt_property_t* properties) {
   bt_property_t* copy = nullptr;
   if (num_properties > 0) {
     size_t content_len = 0;
@@ -1575,5 +1542,4 @@ void invoke_encryption_change_cb(bt_encryption_change_evt encryption_change) {
 
 namespace bluetooth::testing {
 void set_hal_cbacks(bt_callbacks_t* callbacks) { ::set_hal_cbacks(callbacks); }
-
 }  // namespace bluetooth::testing

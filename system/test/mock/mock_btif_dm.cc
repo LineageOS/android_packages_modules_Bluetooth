@@ -23,6 +23,7 @@
 
 #include "bta/include/bta_api.h"
 #include "bta/include/bta_sec_api.h"
+#include "btif/include/btif_api.h"
 #include "include/hardware/bluetooth.h"
 #include "internal_include/bte_appl.h"
 #include "stack/include/acl_api_types.h"
@@ -31,16 +32,13 @@
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 struct uid_set_t;
 
 bool btif_dm_pairing_is_busy() {
   inc_func_call_count(__func__);
   return false;
 }
-bool check_cod_hid(const RawAddress& /* remote_bdaddr */) {
+bool btif_check_cod_hid(const RawAddress& /* remote_bdaddr */) {
   inc_func_call_count(__func__);
   return false;
 }
@@ -71,19 +69,16 @@ void btif_ble_transmitter_test(uint8_t /* tx_freq */, uint8_t /* test_data_len *
   inc_func_call_count(__func__);
 }
 void btif_debug_bond_event_dump(int /* fd */) { inc_func_call_count(__func__); }
-void btif_dm_ble_sec_req_evt(tBTA_DM_BLE_SEC_REQ* /* p_ble_req */, bool /* is_consent */) {
-  inc_func_call_count(__func__);
-}
 void btif_dm_cancel_bond(const RawAddress /* bd_addr */) { inc_func_call_count(__func__); }
 void btif_dm_cancel_discovery(void) { inc_func_call_count(__func__); }
 void btif_dm_cleanup(void) { inc_func_call_count(__func__); }
-void btif_dm_create_bond(const RawAddress /* bd_addr */, int /* transport */) {
+void btif_dm_create_bond(const RawAddress /* bd_addr */, tBT_TRANSPORT /* transport */) {
   inc_func_call_count(__func__);
 }
 void btif_dm_create_bond_le(const RawAddress /* bd_addr */, tBLE_ADDR_TYPE /* addr_type */) {
   inc_func_call_count(__func__);
 }
-void btif_dm_create_bond_out_of_band(const RawAddress /* bd_addr */, int /* transport */,
+void btif_dm_create_bond_out_of_band(const RawAddress /* bd_addr */, tBT_TRANSPORT /* transport */,
                                      const bt_oob_data_t /* p192_data */,
                                      const bt_oob_data_t /* p256_data */) {
   inc_func_call_count(__func__);
@@ -95,7 +90,7 @@ void btif_dm_get_ble_local_keys(tBTA_DM_BLE_LOCAL_KEY_MASK* /* p_key_mask */, Oc
                                 tBTA_BLE_LOCAL_ID_KEYS* /* p_id_keys */) {
   inc_func_call_count(__func__);
 }
-void btif_dm_get_remote_services(RawAddress /* remote_addr */, const int /* transport */) {
+void btif_dm_get_remote_services(RawAddress /* remote_addr */, tBT_TRANSPORT /* transport */) {
   inc_func_call_count(__func__);
 }
 void btif_dm_hh_open_failed(RawAddress* /* bdaddr */) { inc_func_call_count(__func__); }
@@ -118,7 +113,6 @@ void btif_dm_proc_io_rsp(const RawAddress& /* bd_addr */, tBTM_IO_CAP /* io_cap 
   inc_func_call_count(__func__);
 }
 void btif_dm_read_energy_info() { inc_func_call_count(__func__); }
-void btif_dm_remove_ble_bonding_keys(void) { inc_func_call_count(__func__); }
 void btif_dm_remove_bond(const RawAddress /* bd_addr */) { inc_func_call_count(__func__); }
 void btif_dm_set_oob_for_io_req(tBTM_OOB_DATA* /* p_has_oob_data */) {
   inc_func_call_count(__func__);

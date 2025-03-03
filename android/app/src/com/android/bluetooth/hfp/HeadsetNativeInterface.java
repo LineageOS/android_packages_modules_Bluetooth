@@ -16,6 +16,8 @@
 
 package com.android.bluetooth.hfp;
 
+import static java.util.Objects.requireNonNull;
+
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.util.Log;
@@ -26,15 +28,13 @@ import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
-import java.util.Objects;
-
 /**
  * Defines native calls that are used by state machine/service to either send or receive messages
  * to/from the native stack. This file is registered for the native methods in corresponding CPP
  * file.
  */
 public class HeadsetNativeInterface {
-    private static final String TAG = "HeadsetNativeInterface";
+    private static final String TAG = HeadsetNativeInterface.class.getSimpleName();
 
     private final BluetoothAdapter mAdapter = BluetoothAdapter.getDefaultAdapter();
 
@@ -46,10 +46,7 @@ public class HeadsetNativeInterface {
     private AdapterService mAdapterService;
 
     private HeadsetNativeInterface() {
-        mAdapterService =
-                Objects.requireNonNull(
-                        AdapterService.getAdapterService(),
-                        "AdapterService cannot be null when HeadsetNativeInterface init");
+        mAdapterService = requireNonNull(AdapterService.getAdapterService());
     }
 
     /**
@@ -74,12 +71,12 @@ public class HeadsetNativeInterface {
         }
     }
 
-    private void sendMessageToService(HeadsetStackEvent event) {
+    private static void sendMessageToService(HeadsetStackEvent event) {
         HeadsetService service = HeadsetService.getHeadsetService();
         if (service != null) {
             service.messageFromNative(event);
         } else {
-            // Service must call cleanup() when quiting and native stack shouldn't send any event
+            // Service must call cleanup() when quitting and native stack shouldn't send any event
             // after cleanup() -> cleanupNative() is called.
             Log.w(TAG, "Stack sent event while service is not available: " + event);
         }
@@ -560,8 +557,7 @@ public class HeadsetNativeInterface {
      * @param device current active SCO device
      * @return True on success, False on failure
      */
-    @VisibleForTesting
-    public boolean enableSwb(int swbCodec, boolean enable, BluetoothDevice device) {
+    boolean enableSwb(int swbCodec, boolean enable, BluetoothDevice device) {
         return enableSwbNative(swbCodec, enable, getByteAddress(device));
     }
 

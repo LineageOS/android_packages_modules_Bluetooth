@@ -30,7 +30,8 @@ import java.util.UUID;
 
 /** CSIP Set Coordinator role native interface */
 public class CsipSetCoordinatorNativeInterface {
-    private static final String TAG = "CsipSetCoordinatorNativeInterface";
+    private static final String TAG = CsipSetCoordinatorNativeInterface.class.getSimpleName();
+
     private final BluetoothAdapter mAdapter = BluetoothAdapter.getDefaultAdapter();
 
     CsipSetCoordinatorNativeInterface() {
@@ -57,14 +58,14 @@ public class CsipSetCoordinatorNativeInterface {
         return mAdapter.getRemoteDevice(address);
     }
 
-    private byte[] getByteAddress(BluetoothDevice device) {
+    private static byte[] getByteAddress(BluetoothDevice device) {
         if (device == null) {
             return Utils.getBytesFromAddress("00:00:00:00:00:00");
         }
         return Utils.getBytesFromAddress(device.getAddress());
     }
 
-    private void sendMessageToService(CsipSetCoordinatorStackEvent event) {
+    private static void sendMessageToService(CsipSetCoordinatorStackEvent event) {
         CsipSetCoordinatorService service =
                 CsipSetCoordinatorService.getCsipSetCoordinatorService();
         if (service != null) {

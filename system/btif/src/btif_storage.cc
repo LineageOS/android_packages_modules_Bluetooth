@@ -45,6 +45,7 @@
 #include <unordered_set>
 #include <vector>
 
+#include "bta/include/bta_gatts_co.h"
 #include "btif/include/btif_api.h"
 #include "btif/include/btif_config.h"
 #include "btif/include/btif_dm.h"
@@ -67,9 +68,6 @@
 
 // Default user ID to use when real user ID is not available
 #define BTIF_STORAGE_RESTRICTED_USER_ID_DEFAULT 1
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 using base::Bind;
 using bluetooth::Uuid;
@@ -98,12 +96,6 @@ static const BtifStorageKey BTIF_STORAGE_LOCAL_LE_KEYS[] = {
         {BTIF_DM_LE_LOCAL_KEY_DHK, BTIF_STORAGE_KEY_LE_LOCAL_KEY_DHK, sizeof(Octet16)},
         {BTIF_DM_LE_LOCAL_KEY_ER, BTIF_STORAGE_KEY_LE_LOCAL_KEY_ER, sizeof(Octet16)},
 };
-
-/*******************************************************************************
- *  External functions
- ******************************************************************************/
-
-void btif_gatts_add_bonded_dev_from_nv(const RawAddress& bda);
 
 /*******************************************************************************
  *  Internal Functions
@@ -584,8 +576,8 @@ size_t btif_split_uuids_string(const char* str, bluetooth::Uuid* p_uuid, size_t 
 }
 
 /** Helper function for fetching a bt_property of the adapter. */
-bt_status_t btif_storage_get_adapter_prop(bt_property_type_t type, void* buf, int size,
-                                          bt_property_t* property) {
+static bt_status_t btif_storage_get_adapter_prop(bt_property_type_t type, void* buf, int size,
+                                                 bt_property_t* property) {
   property->type = type;
   property->val = buf;
   property->len = size;
@@ -715,8 +707,8 @@ bt_status_t btif_storage_set_adapter_property(bt_property_t* property) {
 }
 
 /** Helper function for fetching a bt_property of a remote device. */
-bt_status_t btif_storage_get_remote_prop(RawAddress* remote_addr, bt_property_type_t type,
-                                         void* buf, int size, bt_property_t* property) {
+static bt_status_t btif_storage_get_remote_prop(RawAddress* remote_addr, bt_property_type_t type,
+                                                void* buf, int size, bt_property_t* property) {
   property->type = type;
   property->val = buf;
   property->len = size;
@@ -1258,8 +1250,9 @@ bt_status_t btif_in_fetch_bonded_ble_device(const std::string& remote_bd_addr, i
   return BT_STATUS_DEVICE_NOT_FOUND;
 }
 
-void btif_storage_invoke_addr_type_update(const RawAddress& remote_bd_addr,
-                                          const tBLE_ADDR_TYPE& addr_type) {
+#if TARGET_FLOSS
+static void btif_storage_invoke_addr_type_update(const RawAddress& remote_bd_addr,
+                                                 const tBLE_ADDR_TYPE& addr_type) {
   bt_property_t prop;
   prop.type = BT_PROPERTY_REMOTE_ADDR_TYPE;
   prop.val = const_cast<tBLE_ADDR_TYPE*>(reinterpret_cast<const tBLE_ADDR_TYPE*>(&addr_type));
@@ -1267,6 +1260,7 @@ void btif_storage_invoke_addr_type_update(const RawAddress& remote_bd_addr,
   GetInterfaceToProfiles()->events->invoke_remote_device_properties_cb(BT_STATUS_SUCCESS,
                                                                        remote_bd_addr, 1, &prop);
 }
+#endif  // TARGET_FLOSS
 
 bt_status_t btif_storage_set_remote_addr_type(const RawAddress* remote_bd_addr,
                                               tBLE_ADDR_TYPE addr_type) {
@@ -1281,7 +1275,7 @@ bt_status_t btif_storage_set_remote_addr_type(const RawAddress* remote_bd_addr,
   return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
 
-bool btif_has_ble_keys(const std::string& bdstr) {
+static bool btif_has_ble_keys(const std::string& bdstr) {
   return btif_config_exist(bdstr, BTIF_STORAGE_KEY_LE_KEY_PENC);
 }
 

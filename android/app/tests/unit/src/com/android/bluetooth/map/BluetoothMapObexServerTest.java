@@ -290,7 +290,7 @@ public class BluetoothMapObexServerTest {
         assertThat(mParams.getFilterMessageType()).isEqualTo(expectedMask);
     }
 
-    private void setUpBluetoothMapAppParams(BluetoothMapAppParams params) {
+    private static void setUpBluetoothMapAppParams(BluetoothMapAppParams params) {
         params.setPresenceAvailability(1);
         params.setPresenceStatus("test_presence_status");
         params.setLastActivity(0);

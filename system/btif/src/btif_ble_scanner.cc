@@ -18,10 +18,8 @@
 
 #include <hardware/ble_scanner.h>
 
+#include "btif_gatt.h"
 #include "main/shim/le_scanning_manager.h"
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 BleScannerInterface* get_ble_scanner_instance() {
   return bluetooth::shim::get_ble_scanner_instance();

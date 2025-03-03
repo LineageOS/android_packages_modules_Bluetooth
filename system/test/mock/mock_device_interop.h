@@ -460,17 +460,6 @@ struct interop_match_vendor_product_ids {
 };
 extern struct interop_match_vendor_product_ids interop_match_vendor_product_ids;
 
-// Name: token_to_ul
-// Params: char* token, uint16_t* ul
-// Return: bool
-struct token_to_ul {
-  static bool return_value;
-  std::function<bool(char* token, uint16_t* ul)> body{
-          [](char* /* token */, uint16_t* /* ul */) { return return_value; }};
-  bool operator()(char* token, uint16_t* ul) { return body(token, ul); }
-};
-extern struct token_to_ul token_to_ul;
-
 }  // namespace device_interop
 }  // namespace mock
 }  // namespace test

@@ -38,9 +38,6 @@
 #include "stack/include/gatt_api.h"
 #include "types/raw_address.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 using namespace bluetooth;
 
 static void bta_gatts_nv_save_cback(bool is_saved, tGATTS_HNDL_RANGE* p_hndl_range);
@@ -114,7 +111,7 @@ static bool bta_gatts_nv_srv_chg_cback(tGATTS_SRV_CHG_CMD /*cmd*/, tGATTS_SRV_CH
  * Returns          none.
  *
  ******************************************************************************/
-void bta_gatts_enable(tBTA_GATTS_CB* p_cb) {
+static void bta_gatts_enable(tBTA_GATTS_CB* p_cb) {
   if (p_cb->enabled) {
     log::verbose("GATTS already enabled.");
   } else {

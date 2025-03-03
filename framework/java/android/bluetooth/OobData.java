@@ -53,8 +53,7 @@ import java.lang.annotation.RetentionPolicy;
  */
 @SystemApi
 public final class OobData implements Parcelable {
-
-    private static final String TAG = "OobData";
+    private static final String TAG = OobData.class.getSimpleName();
 
     /** The {@link OobData#mClassicLength} may be. (AD 3.1.1) (CSS 1.6.2) @hide */
     @SystemApi public static final int OOB_LENGTH_OCTETS = 2;
@@ -303,7 +302,7 @@ public final class OobData implements Parcelable {
          *     A 1.8 for a detailed description.
          * @return {@link OobData#Builder}
          * @throws IllegalArgumentException if the leTemporaryKey is an invalid format.
-         * @throws NullinterException if leTemporaryKey is null.
+         * @throws NullPointerException if leTemporaryKey is null.
          * @hide
          */
         @NonNull
@@ -863,8 +862,7 @@ public final class OobData implements Parcelable {
      * @hide
      */
     @Override
-    @NonNull
-    public String toString() {
+    public @NonNull String toString() {
         return "OobData: \n\t"
                 // Both
                 + "Device Address With Type: "
@@ -901,13 +899,11 @@ public final class OobData implements Parcelable {
                 + "\n\t";
     }
 
-    @NonNull
-    private String toHexString(int b) {
+    private static @NonNull String toHexString(int b) {
         return toHexString(new byte[] {(byte) b});
     }
 
-    @NonNull
-    private String toHexString(byte[] array) {
+    private static @NonNull String toHexString(byte[] array) {
         if (array == null) return "null";
         StringBuilder builder = new StringBuilder(array.length * 2);
         for (byte b : array) {

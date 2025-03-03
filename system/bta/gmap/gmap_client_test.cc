@@ -24,14 +24,13 @@
 
 #include "bta/le_audio/le_audio_types.h"
 #include "fake_osi.h"
+#include "osi/include/properties.h"
 #include "test/mock/mock_osi_properties.h"
 
 using bluetooth::le_audio::GmapClient;
 using ::testing::_;
 
 static constexpr char kGmapEnabledSysProp[] = "bluetooth.profile.gmap.enabled";
-
-void osi_property_set_bool(const char* key, bool value);
 
 class GmapClientTest : public ::testing::Test {
 public:

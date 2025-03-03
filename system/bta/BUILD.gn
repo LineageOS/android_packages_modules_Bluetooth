@@ -121,6 +121,7 @@ static_library("bta") {
     "ras/ras_client.cc",
     "ras/ras_server.cc",
     "ras/ras_utils.cc",
+    "rfcomm/bta_rfcomm_metrics.cc",
     "rfcomm/bta_rfcomm_scn.cc",
     "sdp/bta_sdp.cc",
     "sdp/bta_sdp_act.cc",

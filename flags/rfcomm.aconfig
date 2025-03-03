@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "rfcomm_prevent_unnecessary_collisions"
-    namespace: "bluetooth"
-    description: "Restrict collision handling to exclude unrelated connections"
-    bug: "349892756"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "rfcomm_always_disc_initiator_in_disc_wait_ua"
     namespace: "bluetooth"
     description: "Always be the DISC initiator in the DISC_WAIT_UA state to avoid unnecessary hang"
@@ -36,6 +26,26 @@ flag {
     namespace: "bluetooth"
     description: "Make sure the ongoing SDP is cleaned up when the socket is closed"
     bug: "370916753"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "indicate_rfcomm_connection_complete_after_msc"
+    namespace: "bluetooth"
+    description: "Indicate RFCOMM connection complete after sending Modem Status Command"
+    bug: "393594567"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "rfcomm_fix_mux_collision_handling"
+    namespace: "bluetooth"
+    description: "Properly handle incoming connections while connecting"
+    bug: "399420482"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

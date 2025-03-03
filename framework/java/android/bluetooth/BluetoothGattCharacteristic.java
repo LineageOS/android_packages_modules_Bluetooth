@@ -349,7 +349,7 @@ public class BluetoothGattCharacteristic implements Parcelable {
      * Returns the instance ID for this characteristic.
      *
      * <p>If a remote device offers multiple characteristics with the same UUID, the instance ID is
-     * used to distuinguish between characteristics.
+     * used to distinguish between characteristics.
      *
      * @return Instance ID of this characteristic
      */
@@ -681,29 +681,29 @@ public class BluetoothGattCharacteristic implements Parcelable {
     }
 
     /** Returns the size of a give value type. */
-    private int getTypeLen(int formatType) {
+    private static int getTypeLen(int formatType) {
         return formatType & 0xF;
     }
 
     /** Convert a signed byte to an unsigned int. */
-    private int unsignedByteToInt(byte b) {
+    private static int unsignedByteToInt(byte b) {
         return b & 0xFF;
     }
 
     /** Convert signed bytes to a 16-bit unsigned int. */
-    private int unsignedBytesToInt(byte b0, byte b1) {
+    private static int unsignedBytesToInt(byte b0, byte b1) {
         return (unsignedByteToInt(b0) + (unsignedByteToInt(b1) << 8));
     }
 
     /** Convert signed bytes to a 32-bit unsigned int. */
-    private int unsignedBytesToInt(byte b0, byte b1, byte b2, byte b3) {
+    private static int unsignedBytesToInt(byte b0, byte b1, byte b2, byte b3) {
         return (unsignedByteToInt(b0) + (unsignedByteToInt(b1) << 8))
                 + (unsignedByteToInt(b2) << 16)
                 + (unsignedByteToInt(b3) << 24);
     }
 
     /** Convert signed bytes to a 16-bit short float value. */
-    private float bytesToFloat(byte b0, byte b1) {
+    private static float bytesToFloat(byte b0, byte b1) {
         int mantissa =
                 unsignedToSigned(unsignedByteToInt(b0) + ((unsignedByteToInt(b1) & 0x0F) << 8), 12);
         int exponent = unsignedToSigned(unsignedByteToInt(b1) >> 4, 4);
@@ -711,7 +711,7 @@ public class BluetoothGattCharacteristic implements Parcelable {
     }
 
     /** Convert signed bytes to a 32-bit short float value. */
-    private float bytesToFloat(byte b0, byte b1, byte b2, byte b3) {
+    private static float bytesToFloat(byte b0, byte b1, byte b2, byte b3) {
         int mantissa =
                 unsignedToSigned(
                         unsignedByteToInt(b0)
@@ -722,7 +722,7 @@ public class BluetoothGattCharacteristic implements Parcelable {
     }
 
     /** Convert an unsigned integer value to a two's-complement encoded signed value. */
-    private int unsignedToSigned(int unsigned, int size) {
+    private static int unsignedToSigned(int unsigned, int size) {
         if ((unsigned & (1 << (size - 1))) != 0) {
             unsigned = -1 * ((1 << (size - 1)) - (unsigned & ((1 << (size - 1)) - 1)));
         }
@@ -730,7 +730,7 @@ public class BluetoothGattCharacteristic implements Parcelable {
     }
 
     /** Convert an integer into the signed bits of a given length. */
-    private int intToSignedBits(int i, int size) {
+    private static int intToSignedBits(int i, int size) {
         if (i < 0) {
             i = (1 << (size - 1)) + (i & ((1 << (size - 1)) - 1));
         }

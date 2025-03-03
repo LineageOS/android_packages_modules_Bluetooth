@@ -1,8 +1,9 @@
 use crate::btif::{BluetoothInterface, BtStatus, RawAddress, SupportedProfiles, ToggleableProfile};
 use crate::topstack::get_dispatchers;
 
+use std::fmt::{Debug, Formatter, Result};
 use std::sync::{Arc, Mutex};
-use topshim_macros::{cb_variant, profile_enabled_or};
+use topshim_macros::{cb_variant, log_args, profile_enabled_or};
 
 use crate::bindings::root as bindings;
 use crate::ccall;
@@ -83,6 +84,12 @@ pub struct AvrcpCallbacksDispatcher {
     pub dispatch: Box<dyn Fn(AvrcpCallbacks) + Send>,
 }
 
+impl Debug for AvrcpCallbacksDispatcher {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "AvrcpCallbacksDispatcher {{}}")
+    }
+}
+
 type AvrcpCb = Arc<Mutex<AvrcpCallbacksDispatcher>>;
 
 cb_variant!(
@@ -150,10 +157,12 @@ impl Avrcp {
         Avrcp { internal: avrcpif, _is_init: false, _is_enabled: false }
     }
 
+    #[log_args]
     pub fn is_initialized(&self) -> bool {
         self._is_init
     }
 
+    #[log_args]
     pub fn initialize(&mut self, callbacks: AvrcpCallbacksDispatcher) -> bool {
         if get_dispatchers().lock().unwrap().set::<AvrcpCb>(Arc::new(Mutex::new(callbacks))) {
             panic!("Tried to set dispatcher for Avrcp callbacks while it already exists");
@@ -162,6 +171,7 @@ impl Avrcp {
         true
     }
 
+    #[log_args]
     #[profile_enabled_or(BtStatus::NotReady)]
     pub fn connect(&mut self, addr: RawAddress) -> BtStatus {
         BtStatus::from(self.internal.pin_mut().connect(addr.into()))
@@ -253,9 +263,16 @@ pub struct AvrcpCtrlCallbacksDispatcher {
     pub dispatch: Box<dyn Fn(AvrcpCtrlCallbacks) + Send>,
 }
 
+impl Debug for AvrcpCtrlCallbacksDispatcher {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "AvrcpCtrlCallbacksDispatcher {{}}")
+    }
+}
+
 type AvrcpCtCb = Arc<Mutex<AvrcpCtrlCallbacksDispatcher>>;
 
 impl AvrcpCtrl {
+    #[log_args]
     pub fn new(intf: &BluetoothInterface) -> AvrcpCtrl {
         let r = intf.get_profile_interface(SupportedProfiles::AvrcpCtrl);
         AvrcpCtrl {
@@ -264,6 +281,7 @@ impl AvrcpCtrl {
         }
     }
 
+    #[log_args]
     pub fn initialize(&mut self, callbacks: AvrcpCtrlCallbacksDispatcher) -> bool {
         // Register dispatcher
         if get_dispatchers().lock().unwrap().set::<AvrcpCtCb>(Arc::new(Mutex::new(callbacks))) {
@@ -303,6 +321,7 @@ impl AvrcpCtrl {
         true
     }
 
+    #[log_args]
     pub fn send_pass_through_cmd(
         &mut self,
         addr: RawAddress,

@@ -31,9 +31,6 @@
 #include "osi/include/fixed_queue.h"
 #include "osi/include/thread.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 using bluetooth::common::MessageLoopThread;
 using namespace bluetooth;
 
@@ -42,7 +39,7 @@ using namespace bluetooth;
 static int g_counter = 0;
 static std::unique_ptr<std::promise<void>> g_counter_promise = nullptr;
 
-void callback_batch(fixed_queue_t* queue, void* /* data */) {
+static void callback_batch(fixed_queue_t* queue, void* /* data */) {
   if (queue != nullptr) {
     fixed_queue_dequeue(queue);
   }
@@ -264,8 +261,8 @@ protected:
     std::future<void> set_up_future = set_up_promise_->get_future();
     worker_thread_ = new MessageLoopThread("WorkerThreadPerformanceTest thread");
     worker_thread_->StartUp();
-    worker_thread_->DoInThread(FROM_HERE, base::BindOnce(&std::promise<void>::set_value,
-                                                         base::Unretained(set_up_promise_.get())));
+    worker_thread_->DoInThread(base::BindOnce(&std::promise<void>::set_value,
+                                              base::Unretained(set_up_promise_.get())));
     set_up_future.wait();
   }
 
@@ -288,7 +285,7 @@ TEST_F(WorkerThreadPerformanceTest, worker_thread_speed_test) {
 
   for (int i = 0; i < NUM_MESSAGES_TO_SEND; i++) {
     fixed_queue_enqueue(bt_msg_queue_, (void*)&g_counter);
-    worker_thread_->DoInThread(FROM_HERE, base::BindOnce(&callback_batch, bt_msg_queue_, nullptr));
+    worker_thread_->DoInThread(base::BindOnce(&callback_batch, bt_msg_queue_, nullptr));
   }
   counter_future.wait();
 

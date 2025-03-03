@@ -63,6 +63,7 @@ import java.util.Set;
 // should be avoided
 public class BluetoothMethodProxy {
     private static final String TAG = BluetoothMethodProxy.class.getSimpleName();
+
     private static final Object INSTANCE_LOCK = new Object();
     private static BluetoothMethodProxy sInstance;
 

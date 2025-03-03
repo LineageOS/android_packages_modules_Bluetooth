@@ -33,10 +33,10 @@ pub fn is_floss_enabled() -> bool {
             let content = std::str::from_utf8(&v);
             match content {
                 Ok(version) => version.contains("floss"),
-                Err(_) => false,
+                Err(_) => true,
             }
         }
-        Err(_) => false,
+        Err(_) => true,
     }
 }
 

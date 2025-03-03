@@ -16,6 +16,8 @@
 
 package com.android.bluetooth.avrcpcontroller;
 
+import static java.util.Objects.requireNonNull;
+
 import android.annotation.SuppressLint;
 import android.util.Log;
 
@@ -36,7 +38,8 @@ import java.util.Objects;
  * pixel="80*60-640*480"/>
  */
 public class BipImageFormat {
-    private static final String TAG = "avrcpcontroller.BipImageFormat";
+    private static final String TAG =
+            AvrcpControllerUtils.TAG_PREFIX_AVRCP_CONTROLLER + BipImageFormat.class.getSimpleName();
 
     public static final int FORMAT_NATIVE = 0;
     public static final int FORMAT_VARIANT = 1;
@@ -109,8 +112,8 @@ public class BipImageFormat {
             int maxSize,
             BipTransformation transformation) {
         mFormatType = type;
-        mEncoding = Objects.requireNonNull(encoding, "Encoding cannot be null");
-        mPixel = Objects.requireNonNull(pixel, "Pixel cannot be null");
+        mEncoding = requireNonNull(encoding);
+        mPixel = requireNonNull(pixel);
         mTransformation = transformation;
         mSize = size;
         mMaxSize = maxSize;

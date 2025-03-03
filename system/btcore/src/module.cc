@@ -160,3 +160,9 @@ static void set_module_state(const module_t* module, module_state_t state) {
   std::lock_guard<std::mutex> lock(metadata_mutex);
   metadata[module] = state;
 }
+
+bool is_module_started(const module_t* module) {
+  std::lock_guard<std::mutex> lock(metadata_mutex);
+  auto map_ptr = metadata.find(module);
+  return map_ptr != metadata.end() && map_ptr->second == MODULE_STATE_STARTED;
+}

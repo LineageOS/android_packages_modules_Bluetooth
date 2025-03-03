@@ -22,6 +22,7 @@
 #include <string>
 
 #include "a2dp_codec_api.h"
+#include "a2dp_ext.h"
 #include "bta/av/bta_av_int.h"
 #include "stack/include/bt_hdr.h"
 #include "test/common/mock_functions.h"
@@ -200,11 +201,6 @@ btav_a2dp_codec_config_t A2dpCodecConfig::getCodecAudioConfig() {
   btav_a2dp_codec_config_t config;
   return config;
 }
-btav_a2dp_codec_config_t A2dpCodecConfig::getCodecCapability() {
-  inc_func_call_count(__func__);
-  btav_a2dp_codec_config_t config;
-  return config;
-}
 btav_a2dp_codec_config_t A2dpCodecConfig::getCodecConfig() {
   inc_func_call_count(__func__);
   btav_a2dp_codec_config_t config;
@@ -319,3 +315,9 @@ void A2dpCodecConfig::setCodecPriority(btav_a2dp_codec_priority_t /* codec_prior
 }
 void A2dpCodecConfig::setDefaultCodecPriority() { inc_func_call_count(__func__); }
 void A2dpCodecs::debug_codec_dump(int /* fd */) { inc_func_call_count(__func__); }
+void A2dpCodecConfigExt::setCodecConfig(
+        btav_a2dp_codec_config_t /*codec_parameters*/,
+        uint8_t const /*codec_config*/[AVDT_CODEC_SIZE],
+        std::vector<uint8_t> const& /*vendor_specific_parameters*/) {
+  inc_func_call_count(__func__);
+}

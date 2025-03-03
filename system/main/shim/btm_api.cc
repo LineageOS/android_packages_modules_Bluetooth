@@ -20,6 +20,7 @@
 
 #include <base/functional/callback.h>
 
+#include "hci/acl_manager.h"
 #include "hci/controller.h"
 #include "hci/controller_interface.h"
 #include "hci/le_advertising_manager.h"
@@ -76,15 +77,9 @@ tBTM_STATUS bluetooth::shim::BTM_AllowWakeByHid(
 
   // Allow BLE HID
   for (auto hid_address : le_hid_devices) {
-    std::promise<bool> accept_promise;
-    auto accept_future = accept_promise.get_future();
-
     tBLE_BD_ADDR bdadr = BTM_Sec_GetAddressWithType(hid_address.first);
-    Stack::GetInstance()->GetAcl()->AcceptLeConnectionFrom(ToAddressWithType(bdadr.bda, bdadr.type),
-                                                           /*is_direct=*/false,
-                                                           std::move(accept_promise));
-
-    accept_future.wait();
+    bluetooth::shim::GetAclManager()->CreateLeConnection(ToAddressWithTypeFromLegacy(bdadr),
+                                                         /*is_direct=*/false);
   }
 
   return tBTM_STATUS::BTM_SUCCESS;
@@ -98,15 +93,9 @@ tBTM_STATUS bluetooth::shim::BTM_RestoreFilterAcceptList(
   // Next, Allow BLE connection from all devices that need to be restored.
   // This will also re-arm the LE connection.
   for (auto address_pair : le_devices) {
-    std::promise<bool> accept_promise;
-    auto accept_future = accept_promise.get_future();
-
     tBLE_BD_ADDR bdadr = BTM_Sec_GetAddressWithType(address_pair.first);
-    Stack::GetInstance()->GetAcl()->AcceptLeConnectionFrom(ToAddressWithType(bdadr.bda, bdadr.type),
-                                                           /*is_direct=*/false,
-                                                           std::move(accept_promise));
-
-    accept_future.wait();
+    bluetooth::shim::GetAclManager()->CreateLeConnection(ToAddressWithTypeFromLegacy(bdadr),
+                                                         /*is_direct=*/false);
   }
 
   return tBTM_STATUS::BTM_SUCCESS;

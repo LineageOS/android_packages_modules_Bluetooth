@@ -33,7 +33,8 @@ import java.util.HashMap;
 
 /** Helper class that keeps track of advertiser stats. */
 class AdvertiserMap {
-    private static final String TAG = GattServiceConfig.TAG_PREFIX + "AdvertiserMap";
+    private static final String TAG =
+            GattServiceConfig.TAG_PREFIX + AdvertiserMap.class.getSimpleName();
 
     /** Internal map to keep track of logging information by advertise id */
     @GuardedBy("this")

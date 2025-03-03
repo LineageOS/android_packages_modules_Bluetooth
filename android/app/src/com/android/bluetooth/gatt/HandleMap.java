@@ -24,7 +24,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 class HandleMap {
-    private static final String TAG = GattServiceConfig.TAG_PREFIX + "HandleMap";
+    private static final String TAG =
+            GattServiceConfig.TAG_PREFIX + HandleMap.class.getSimpleName();
 
     public static final int TYPE_UNDEFINED = 0;
     public static final int TYPE_SERVICE = 1;

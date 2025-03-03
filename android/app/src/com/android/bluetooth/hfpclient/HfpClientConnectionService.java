@@ -15,6 +15,9 @@
  */
 package com.android.bluetooth.hfpclient;
 
+import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
+import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
+
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothManager;
@@ -59,7 +62,7 @@ public class HfpClientConnectionService extends ConnectionService {
     private static final Object INSTANCE_LOCK = new Object();
     private static HfpClientConnectionService sHfpClientConnectionService;
 
-    private void setInstance(HfpClientConnectionService instance) {
+    private static void setInstance(HfpClientConnectionService instance) {
         synchronized (INSTANCE_LOCK) {
             sHfpClientConnectionService = instance;
         }
@@ -120,14 +123,14 @@ public class HfpClientConnectionService extends ConnectionService {
 
     private void onConnectionStateChangedInternal(
             BluetoothDevice device, int newState, int oldState) {
-        if (newState == BluetoothProfile.STATE_CONNECTED) {
+        if (newState == STATE_CONNECTED) {
             Log.d(TAG, "Established connection with " + device);
 
             HfpClientDeviceBlock block = createBlockForDevice(device);
             if (block == null) {
                 Log.w(TAG, "Block already exists for device= " + device + ", ignoring.");
             }
-        } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
+        } else if (newState == STATE_DISCONNECTED) {
             Log.d(TAG, "Disconnecting from " + device);
 
             // Disconnect any inflight calls from the connection service.

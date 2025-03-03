@@ -65,8 +65,6 @@ public class RequestPushMessage extends Request {
             }
         } catch (NumberFormatException e) {
             mResponseCode = ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
-        } catch (IOException e) {
-            mResponseCode = ResponseCodes.OBEX_HTTP_INTERNAL_ERROR;
         }
     }
 

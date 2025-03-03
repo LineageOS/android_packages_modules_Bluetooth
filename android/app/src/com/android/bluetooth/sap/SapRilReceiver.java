@@ -31,7 +31,7 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /** SapRiilReceiver is the AIDL implementation of ISapRilReceiver */
 public class SapRilReceiver implements ISapRilReceiver {
-    private static final String TAG = "SapRilReceiver";
+    private static final String TAG = SapRilReceiver.class.getSimpleName();
 
     // todo: add support for slot2 and slot3
     private static final String HAL_INSTANCE_NAME = ISap.DESCRIPTOR + "/slot1";

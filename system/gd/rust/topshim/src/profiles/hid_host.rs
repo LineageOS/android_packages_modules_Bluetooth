@@ -10,8 +10,9 @@ use crate::utils::LTCheckedPtrMut;
 
 use num_derive::{FromPrimitive, ToPrimitive};
 use num_traits::cast::{FromPrimitive, ToPrimitive};
+use std::fmt::{Debug, Formatter, Result};
 use std::sync::{Arc, Mutex};
-use topshim_macros::{cb_variant, profile_enabled_or};
+use topshim_macros::{cb_variant, log_args, profile_enabled_or};
 
 use log::warn;
 
@@ -120,6 +121,12 @@ pub struct HHCallbacksDispatcher {
     pub dispatch: Box<dyn Fn(HHCallbacks) + Send>,
 }
 
+impl Debug for HHCallbacksDispatcher {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "HHCallbacksDispatcher {{}}")
+    }
+}
+
 type HHCb = Arc<Mutex<HHCallbacksDispatcher>>;
 
 cb_variant!(HHCb, connection_state_cb -> HHCallbacks::ConnectionState,
@@ -194,6 +201,7 @@ impl ToggleableProfile for HidHost {
 }
 
 impl HidHost {
+    #[log_args]
     pub fn new(intf: &BluetoothInterface) -> HidHost {
         let r = intf.get_profile_interface(SupportedProfiles::HidHost);
         HidHost {
@@ -207,10 +215,12 @@ impl HidHost {
         }
     }
 
+    #[log_args]
     pub fn is_initialized(&self) -> bool {
         self.is_init
     }
 
+    #[log_args]
     pub fn initialize(&mut self, callbacks: HHCallbacksDispatcher) -> bool {
         // Register dispatcher
         if get_dispatchers().lock().unwrap().set::<HHCb>(Arc::new(Mutex::new(callbacks))) {
@@ -233,6 +243,7 @@ impl HidHost {
         true
     }
 
+    #[log_args]
     #[profile_enabled_or(BtStatus::NotReady)]
     pub fn connect(
         &self,
@@ -250,6 +261,7 @@ impl HidHost {
         ))
     }
 
+    #[log_args]
     #[profile_enabled_or(BtStatus::NotReady)]
     pub fn disconnect(
         &self,
@@ -269,6 +281,7 @@ impl HidHost {
         ))
     }
 
+    #[log_args]
     #[profile_enabled_or(BtStatus::NotReady)]
     pub fn virtual_unplug(
         &self,
@@ -286,6 +299,7 @@ impl HidHost {
         ))
     }
 
+    #[log_args]
     #[profile_enabled_or(BtStatus::NotReady)]
     pub fn set_info(
         &self,
@@ -305,6 +319,7 @@ impl HidHost {
         ))
     }
 
+    #[log_args]
     #[profile_enabled_or(BtStatus::NotReady)]
     pub fn get_protocol(
         &self,
@@ -324,6 +339,7 @@ impl HidHost {
         ))
     }
 
+    #[log_args]
     #[profile_enabled_or(BtStatus::NotReady)]
     pub fn set_protocol(
         &self,
@@ -343,6 +359,7 @@ impl HidHost {
         ))
     }
 
+    #[log_args]
     #[profile_enabled_or(BtStatus::NotReady)]
     pub fn get_idle_time(
         &self,
@@ -360,6 +377,7 @@ impl HidHost {
         ))
     }
 
+    #[log_args]
     #[profile_enabled_or(BtStatus::NotReady)]
     pub fn set_idle_time(
         &self,
@@ -379,6 +397,7 @@ impl HidHost {
         ))
     }
 
+    #[log_args]
     #[profile_enabled_or(BtStatus::NotReady)]
     pub fn get_report(
         &self,
@@ -402,6 +421,7 @@ impl HidHost {
         ))
     }
 
+    #[log_args]
     #[profile_enabled_or(BtStatus::NotReady)]
     pub fn set_report(
         &self,
@@ -424,6 +444,7 @@ impl HidHost {
         ))
     }
 
+    #[log_args]
     #[profile_enabled_or(BtStatus::NotReady)]
     pub fn send_data(
         &mut self,
@@ -445,6 +466,7 @@ impl HidHost {
     }
 
     /// return true if we need to restart hh
+    #[log_args]
     pub fn configure_enabled_profiles(&mut self) -> bool {
         let needs_restart = self.is_profile_updated;
         if self.is_profile_updated {
@@ -459,6 +481,7 @@ impl HidHost {
         needs_restart
     }
 
+    #[log_args]
     pub fn activate_hogp(&mut self, active: bool) {
         if self.is_hogp_activated != active {
             self.is_hogp_activated = active;
@@ -466,12 +489,15 @@ impl HidHost {
         }
     }
 
+    #[log_args]
     pub fn activate_hidp(&mut self, active: bool) {
         if self.is_hidp_activated != active {
             self.is_hidp_activated = active;
             self.is_profile_updated = true;
         }
     }
+
+    #[log_args]
     #[profile_enabled_or]
     pub fn cleanup(&mut self) {
         ccall!(self, cleanup)

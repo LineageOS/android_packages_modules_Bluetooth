@@ -19,9 +19,6 @@
 
 #include "stack/include/security_client_callbacks.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 namespace {
 
 // Initialize the working btm client interface to the default
@@ -42,6 +39,6 @@ const SecurityClientInterface& get_security_client_interface() {
   return *mock_security_client_interface;
 }
 
-void set_security_client_interface(SecurityClientInterface* interface) {
-  mock_security_client_interface = interface;
+void set_security_client_interface(SecurityClientInterface& interface) {
+  mock_security_client_interface = &interface;
 }

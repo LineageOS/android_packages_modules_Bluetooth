@@ -180,7 +180,7 @@ public class VolumeControlServiceTest {
     @After
     public void tearDown() {
         assertThat(mLooper.nextMessage()).isNull();
-        mService.stop();
+        mService.cleanup();
         mLooper.dispatchAll();
         assertThat(VolumeControlService.getVolumeControlService()).isNull();
     }
@@ -694,7 +694,6 @@ public class VolumeControlServiceTest {
 
     /** Test if phone will set volume which is read from the buds */
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_VOLUME_CONTROL_PRIMARY_GROUP_ONLY)
     public void connectedDeviceWithUserPersistFlagSet() {
         int groupId = 1;
         int volumeDevice = 56;
@@ -1440,7 +1439,6 @@ public class VolumeControlServiceTest {
 
     /** Test Volume Control changed for broadcast primary group. */
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_VOLUME_CONTROL_PRIMARY_GROUP_ONLY)
     public void volumeControlChangedForBroadcastPrimaryGroup() {
         int groupId = 1;
         int groupVolume = 30;

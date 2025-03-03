@@ -15,6 +15,8 @@
  */
 package com.android.bluetooth.btservice;
 
+import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
+
 import static com.android.bluetooth.BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__EVENT_TYPE__BOND;
 import static com.android.bluetooth.BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__EVENT_TYPE__PROFILE_CONNECTION;
 import static com.android.bluetooth.BluetoothStatsLog.BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__EVENT_TYPE__PROFILE_CONNECTION_A2DP;
@@ -95,7 +97,9 @@ import java.util.List;
 
 /** Class of Bluetooth Metrics */
 public class MetricsLogger {
-    private static final String TAG = "BluetoothMetricsLogger";
+    private static final String TAG =
+            Utils.TAG_PREFIX_BLUETOOTH + MetricsLogger.class.getSimpleName();
+
     private static final String BLOOMFILTER_PATH = "/data/misc/bluetooth";
     private static final String BLOOMFILTER_FILE = "/devices_for_metrics_v3";
     private static final String MEDICAL_DEVICE_BLOOMFILTER_FILE = "/medical_devices_for_metrics_v1";
@@ -342,7 +346,7 @@ public class MetricsLogger {
         BluetoothDevice device = connIntent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
         int state = connIntent.getIntExtra(BluetoothProfile.EXTRA_STATE, -1);
         int metricId = mAdapterService.getMetricId(device);
-        if (state == BluetoothProfile.STATE_CONNECTING) {
+        if (state == STATE_CONNECTING) {
             String deviceName = mRemoteDevices.getName(device);
             BluetoothStatsLog.write(
                     BluetoothStatsLog.BLUETOOTH_DEVICE_NAME_REPORTED, metricId, deviceName);
@@ -470,7 +474,7 @@ public class MetricsLogger {
         mAlarmManager.cancel(mOnAlarmListener);
     }
 
-    private void writeFieldIfNotNull(
+    private static void writeFieldIfNotNull(
             ProtoOutputStream proto,
             long fieldType,
             long fieldCount,
@@ -592,7 +596,7 @@ public class MetricsLogger {
         }
     }
 
-    private int getOui(BluetoothDevice device) {
+    private static int getOui(BluetoothDevice device) {
         return Integer.parseInt(device.getAddress().replace(":", "").substring(0, 6), 16);
     }
 
@@ -805,7 +809,7 @@ public class MetricsLogger {
         return digest.digest(name.getBytes(StandardCharsets.UTF_8));
     }
 
-    private int getProfileEnumFromProfileId(int profile) {
+    private static int getProfileEnumFromProfileId(int profile) {
         return switch (profile) {
             case BluetoothProfile.A2DP ->
                     BLUETOOTH_CROSS_LAYER_EVENT_REPORTED__EVENT_TYPE__PROFILE_CONNECTION_A2DP;

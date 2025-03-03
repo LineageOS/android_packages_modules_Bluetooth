@@ -431,10 +431,15 @@ void l2cble_use_preferred_conn_params(const RawAddress& bda) {
       p_lcb->conn_update_mask &= ~L2C_BLE_AGGRESSIVE_INITIAL_PARAM;
     }
 
-    acl_ble_connection_parameters_request(p_lcb->Handle(), p_dev_rec->conn_params.min_conn_int,
-                                          p_dev_rec->conn_params.max_conn_int,
-                                          p_dev_rec->conn_params.peripheral_latency,
-                                          p_dev_rec->conn_params.supervision_tout, 0, 0);
+    if (com::android::bluetooth::flags::prevent_concurrent_conn_param_updates()) {
+      p_lcb->conn_update_mask |= L2C_BLE_NEW_CONN_PARAM;
+      l2cble_start_conn_update(p_lcb);
+    } else {
+      acl_ble_connection_parameters_request(p_lcb->Handle(), p_dev_rec->conn_params.min_conn_int,
+                                            p_dev_rec->conn_params.max_conn_int,
+                                            p_dev_rec->conn_params.peripheral_latency,
+                                            p_dev_rec->conn_params.supervision_tout, 0, 0);
+    }
   }
 }
 

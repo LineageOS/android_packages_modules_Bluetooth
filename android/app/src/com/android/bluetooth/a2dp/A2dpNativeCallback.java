@@ -31,7 +31,7 @@ import com.android.internal.annotations.VisibleForTesting;
 import java.util.Arrays;
 
 class A2dpNativeCallback {
-    static final String TAG = A2dpNativeCallback.class.getSimpleName();
+    private static final String TAG = A2dpNativeCallback.class.getSimpleName();
 
     private final AdapterService mAdapterService;
     private final A2dpService mA2dpService;

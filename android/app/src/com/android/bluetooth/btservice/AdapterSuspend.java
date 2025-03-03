@@ -31,11 +31,13 @@ import android.util.Log;
 
 import androidx.annotation.RequiresApi;
 
+import com.android.bluetooth.Utils;
 import com.android.internal.annotations.VisibleForTesting;
 
 @RequiresApi(Build.VERSION_CODES.VANILLA_ICE_CREAM)
 public class AdapterSuspend {
-    private static final String TAG = "BtAdapterSuspend";
+    private static final String TAG =
+            Utils.TAG_PREFIX_BLUETOOTH + AdapterSuspend.class.getSimpleName();
 
     // Event mask bits corresponding to specific HCI events
     // as defined in Bluetooth core v5.4, Vol 4, Part E, 7.3.1.

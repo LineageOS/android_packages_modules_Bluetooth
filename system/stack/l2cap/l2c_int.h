@@ -758,6 +758,7 @@ bool l2cu_initialize_fixed_ccb(tL2C_LCB* p_lcb, uint16_t fixed_cid);
 void l2cu_no_dynamic_ccbs(tL2C_LCB* p_lcb);
 void l2cu_process_fixed_chnl_resp(tL2C_LCB* p_lcb);
 bool l2cu_is_ccb_active(tL2C_CCB* p_ccb);
+void l2cu_set_lcb_handle(tL2C_LCB& p_lcb, uint16_t handle);
 tL2CAP_CONN le_result_to_l2c_conn(tL2CAP_LE_RESULT_CODE result);
 
 /* Functions provided for Broadcom Aware

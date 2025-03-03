@@ -130,11 +130,11 @@ public class Message {
         mProtected = yesnoToBoolean(attrs.get("protected"));
     }
 
-    private boolean yesnoToBoolean(String yesno) {
+    private static boolean yesnoToBoolean(String yesno) {
         return "yes".equals(yesno);
     }
 
-    private Type strToType(String s) {
+    private static Type strToType(String s) {
         if ("EMAIL".equals(s)) {
             return Type.EMAIL;
         } else if ("SMS_GSM".equals(s)) {
@@ -148,7 +148,7 @@ public class Message {
         return Type.UNKNOWN;
     }
 
-    private ReceptionStatus strToReceptionStatus(String s) {
+    private static ReceptionStatus strToReceptionStatus(String s) {
         if ("complete".equals(s)) {
             return ReceptionStatus.COMPLETE;
         } else if ("fractioned".equals(s)) {

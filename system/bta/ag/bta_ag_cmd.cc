@@ -19,6 +19,7 @@
 #define LOG_TAG "bta_ag_cmd"
 
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 #include <string.h>
 
 #include <cctype>
@@ -46,11 +47,14 @@
 #include "bta/include/bta_hfp_api.h"
 #include "device/include/interop.h"
 #include "internal_include/bt_target.h"
+#include "main/shim/helpers.h"
+#include "main/shim/metrics_api.h"
 #include "osi/include/compat.h"
 #include "stack/btm/btm_sco_hfp_hal.h"
 #include "stack/include/port_api.h"
 
 using namespace bluetooth;
+using namespace bluetooth::shim;
 
 /*****************************************************************************
  *  Constants
@@ -1135,9 +1139,14 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type, cha
       p_scb->peer_features = (uint16_t)int_arg;
 
       if (p_scb->peer_version < HFP_VERSION_1_7) {
-        p_scb->masked_features &= HFP_1_6_FEAT_MASK;
+        if (!(com::android::bluetooth::flags::check_peer_hf_indicator() &&
+              p_scb->peer_version == HFP_HSP_VERSION_UNKNOWN &&
+              (p_scb->peer_features & BTA_AG_PEER_FEAT_HF_IND))) {
+          p_scb->masked_features &= HFP_1_6_FEAT_MASK;
+        }
       }
 
+      LogMetricHfpAgVersion(ToGdAddress(p_scb->peer_addr), p_scb->peer_version);
       log::verbose("BRSF HF: 0x{:x}, phone: 0x{:x}", p_scb->peer_features, p_scb->masked_features);
 
       /* send BRSF, send OK */

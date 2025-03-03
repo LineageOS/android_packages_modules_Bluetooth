@@ -31,9 +31,6 @@
 
 // Mocked internal structures, if any
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 namespace bluetooth::shim {
 namespace testing {
 const hci_t* test_interface = nullptr;
@@ -48,8 +45,6 @@ namespace mock {
 namespace main_shim_hci_layer {
 
 // Function state capture and return values, if needed
-struct OnTransmitPacketCommandComplete OnTransmitPacketCommandComplete;
-struct OnTransmitPacketStatus OnTransmitPacketStatus;
 struct hci_on_reset_complete hci_on_reset_complete;
 struct hci_on_shutting_down hci_on_shutting_down;
 
@@ -63,23 +58,6 @@ namespace mock {
 namespace main_shim_hci_layer {}  // namespace main_shim_hci_layer
 }  // namespace mock
 }  // namespace test
-
-// Mocked functions, if any
-namespace cpp {
-void OnTransmitPacketCommandComplete(command_complete_cb complete_callback, void* context,
-                                     bluetooth::hci::CommandCompleteView view) {
-  inc_func_call_count(__func__);
-  test::mock::main_shim_hci_layer::OnTransmitPacketCommandComplete(complete_callback, context,
-                                                                   view);
-}
-void OnTransmitPacketStatus(command_status_cb status_callback, void* context,
-                            std::unique_ptr<OsiObject> command,
-                            bluetooth::hci::CommandStatusView view) {
-  inc_func_call_count(__func__);
-  test::mock::main_shim_hci_layer::OnTransmitPacketStatus(status_callback, context,
-                                                          std::move(command), view);
-}
-}  // namespace cpp
 
 void bluetooth::shim::hci_on_reset_complete() {
   inc_func_call_count(__func__);

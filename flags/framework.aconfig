@@ -99,3 +99,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "fix_unhandled_bqr_subevent"
+    namespace: "bluetooth"
+    description: "Fix Unhandled BQR subevent on bqr report"
+    bug: "397854116"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

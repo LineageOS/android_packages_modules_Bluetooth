@@ -19,10 +19,8 @@
 #include <cstdint>
 #include <string>
 
+#include "device/include/device_iot_config.h"
 #include "test/common/mock_functions.h"
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 namespace test {
 namespace mock {

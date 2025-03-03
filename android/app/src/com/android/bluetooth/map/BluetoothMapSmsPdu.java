@@ -43,8 +43,8 @@ import java.util.Random;
 
 // Next tag value for ContentProfileErrorReportUtils.report(): 10
 public class BluetoothMapSmsPdu {
+    private static final String TAG = BluetoothMapSmsPdu.class.getSimpleName();
 
-    private static final String TAG = "BluetoothMapSmsPdu";
     private static final int INVALID_VALUE = -1;
     public static final int SMS_TYPE_GSM = 1;
     public static final int SMS_TYPE_CDMA = 2;
@@ -381,7 +381,7 @@ public class BluetoothMapSmsPdu {
         }
 
         @SuppressWarnings("JavaUtilDate") // TODO: b/365629730 -- prefer Instant or LocalDate
-        private void gsmWriteDate(ByteArrayOutputStream header, long time) {
+        private static void gsmWriteDate(ByteArrayOutputStream header, long time) {
             SimpleDateFormat format = new SimpleDateFormat("yyMMddHHmmss");
             Date date = new Date(time);
             String timeStr = format.format(date); // Format to YYMMDDTHHMMSS UTC time

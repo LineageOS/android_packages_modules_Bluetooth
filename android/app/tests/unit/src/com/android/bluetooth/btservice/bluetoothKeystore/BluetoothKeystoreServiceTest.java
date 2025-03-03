@@ -44,7 +44,8 @@ import java.util.Map;
 
 @RunWith(JUnit4.class)
 public final class BluetoothKeystoreServiceTest {
-    private static final String TAG = "BluetoothKeystoreServiceTest";
+    private static final String TAG = BluetoothKeystoreServiceTest.class.getSimpleName();
+
     private BluetoothKeystoreService mBluetoothKeystoreService;
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
@@ -126,11 +127,11 @@ public final class BluetoothKeystoreServiceTest {
         mBluetoothKeystoreService = null;
     }
 
-    private boolean isPrimaryUser() {
+    private static boolean isPrimaryUser() {
         return Binder.getCallingUid() == Process.BLUETOOTH_UID;
     }
 
-    private void overwriteConfigFile(List<String> data) {
+    private static void overwriteConfigFile(List<String> data) {
         try {
             Files.write(Paths.get(CONFIG_FILE_PATH), data);
         } catch (IOException e) {

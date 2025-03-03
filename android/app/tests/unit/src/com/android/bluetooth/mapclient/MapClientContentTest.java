@@ -68,8 +68,8 @@ import java.util.Map;
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class MapClientContentTest {
+    private static final String TAG = MapClientContentTest.class.getSimpleName();
 
-    private static final String TAG = "MapClientContentTest";
     private static final int READ = 1;
 
     private final BluetoothDevice mDevice = getTestDevice(68);

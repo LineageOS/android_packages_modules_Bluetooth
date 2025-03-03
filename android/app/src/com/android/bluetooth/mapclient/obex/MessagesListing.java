@@ -30,7 +30,7 @@ import java.util.List;
 import java.util.Map;
 
 class MessagesListing {
-    private static final String TAG = "MessagesListing";
+    private static final String TAG = MessagesListing.class.getSimpleName();
 
     private final List<Message> mMessages = new ArrayList<>();
 

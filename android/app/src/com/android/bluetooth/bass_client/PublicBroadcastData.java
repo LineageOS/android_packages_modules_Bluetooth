@@ -23,7 +23,9 @@ import java.util.Arrays;
 
 /** Helper class to parse the Public Broadcast Announcement data */
 class PublicBroadcastData {
-    private static final String TAG = "Bassclient.PublicBroadcastData";
+    private static final String TAG =
+            BassClientService.TAG + "." + PublicBroadcastData.class.getSimpleName();
+
     private static final int FEATURES_ENCRYPTION_BIT = 0x01 << 0;
     private static final int FEATURES_STANDARD_QUALITY_BIT = 0x01 << 1;
     private static final int FEATURES_HIGH_QUALITY_BIT = 0x01 << 2;

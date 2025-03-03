@@ -133,6 +133,9 @@ typedef struct {
   bool service_dereg_active;
 
   std::list<tAclLinkSpec> new_connection_requests;
+
+  tBTA_HH_CONN pending_incoming_connection;  // Unexpected incoming connection request
+  alarm_t* incoming_connection_timer;        // Timer to handle unexpected incoming connection
 } btif_hh_cb_t;
 
 /*******************************************************************************

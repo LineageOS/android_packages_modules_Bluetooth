@@ -7,8 +7,9 @@ use crate::utils::{LTCheckedPtr, LTCheckedPtrMut};
 
 use num_derive::{FromPrimitive, ToPrimitive};
 use num_traits::cast::FromPrimitive;
+use std::fmt::{Debug, Formatter, Result};
 use std::sync::{Arc, Mutex};
-use topshim_macros::{cb_variant, profile_enabled_or};
+use topshim_macros::{cb_variant, log_args, profile_enabled_or};
 
 use log::warn;
 
@@ -59,6 +60,12 @@ pub enum BthfClientCallbacks {
 
 pub struct BthfClientCallbacksDispatcher {
     pub dispatch: Box<dyn Fn(BthfClientCallbacks) + Send>,
+}
+
+impl Debug for BthfClientCallbacksDispatcher {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
+        write!(f, "BthfClientCallbacksDispatcher {{}}")
+    }
 }
 
 type BthfClientCb = Arc<Mutex<BthfClientCallbacksDispatcher>>;
@@ -118,6 +125,7 @@ impl ToggleableProfile for HfClient {
 }
 
 impl HfClient {
+    #[log_args]
     pub fn new(intf: &BluetoothInterface) -> HfClient {
         let r = intf.get_profile_interface(SupportedProfiles::HfClient);
         HfClient {
@@ -128,10 +136,12 @@ impl HfClient {
         }
     }
 
+    #[log_args]
     pub fn is_initialized(&self) -> bool {
         self.is_init
     }
 
+    #[log_args]
     pub fn initialize(&mut self, callbacks: BthfClientCallbacksDispatcher) -> bool {
         // Register dispatcher
         if get_dispatchers().lock().unwrap().set::<BthfClientCb>(Arc::new(Mutex::new(callbacks))) {
@@ -169,30 +179,35 @@ impl HfClient {
         true
     }
 
+    #[log_args]
     #[profile_enabled_or(BtStatus::NotReady)]
     pub fn connect(&self, addr: RawAddress) -> BtStatus {
         let addr_ptr = LTCheckedPtr::from_ref(&addr);
         BtStatus::from(ccall!(self, connect, addr_ptr.into()))
     }
 
+    #[log_args]
     #[profile_enabled_or(BtStatus::NotReady)]
     pub fn disconnect(&self, addr: RawAddress) -> BtStatus {
         let addr_ptr = LTCheckedPtr::from_ref(&addr);
         BtStatus::from(ccall!(self, disconnect, addr_ptr.into()))
     }
 
+    #[log_args]
     #[profile_enabled_or(BtStatus::NotReady)]
     pub fn connect_audio(&mut self, addr: RawAddress) -> BtStatus {
         let addr_ptr = LTCheckedPtr::from_ref(&addr);
         BtStatus::from(ccall!(self, connect_audio, addr_ptr.into()))
     }
 
+    #[log_args]
     #[profile_enabled_or(BtStatus::NotReady)]
     pub fn disconnect_audio(&mut self, addr: RawAddress) -> BtStatus {
         let addr_ptr = LTCheckedPtr::from_ref(&addr);
         BtStatus::from(ccall!(self, disconnect_audio, addr_ptr.into()))
     }
 
+    #[log_args]
     #[profile_enabled_or]
     pub fn cleanup(&mut self) {
         ccall!(self, cleanup)

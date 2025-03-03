@@ -64,7 +64,6 @@
 #include "types/raw_address.h"
 
 using namespace bluetooth;
-using base::Location;
 using bluetooth::hci::IsoManager;
 
 /******************************************************************************/
@@ -574,18 +573,13 @@ using hci_cmd_cb = base::OnceCallback<void(uint8_t* /* return_parameters */,
 
 struct cmd_with_cb_data {
   hci_cmd_cb cb;
-  base::Location posted_from;
 };
 
 static void cmd_with_cb_data_init(cmd_with_cb_data* cb_wrapper) {
   new (&cb_wrapper->cb) hci_cmd_cb;
-  new (&cb_wrapper->posted_from) Location;
 }
 
-static void cmd_with_cb_data_cleanup(cmd_with_cb_data* cb_wrapper) {
-  cb_wrapper->cb.~hci_cmd_cb();
-  cb_wrapper->posted_from.~Location();
-}
+static void cmd_with_cb_data_cleanup(cmd_with_cb_data* cb_wrapper) { cb_wrapper->cb.~hci_cmd_cb(); }
 
 /**
  * Log command complete events that is not handled individually in this file
@@ -646,7 +640,6 @@ static void btu_hcif_command_complete_evt_with_cb_on_task(BT_HDR* event, void* c
   btu_hcif_log_command_complete_metrics(opcode, stream);
 
   cmd_with_cb_data* cb_wrapper = (cmd_with_cb_data*)context;
-  log::verbose("command complete for: {}", cb_wrapper->posted_from.ToString());
   // 2 for event header: event code (1) + parameter length (1)
   // 3 for command complete header: num_hci_pkt (1) + opcode (2)
   uint16_t param_len = static_cast<uint16_t>(event->len - 5);
@@ -676,7 +669,6 @@ static void btu_hcif_command_status_evt_with_cb_on_task(uint8_t status, BT_HDR* 
 
   // report command status error
   cmd_with_cb_data* cb_wrapper = (cmd_with_cb_data*)context;
-  log::verbose("command status for: {}", cb_wrapper->posted_from.ToString());
   std::move(cb_wrapper->cb).Run(&status, sizeof(uint16_t));
   cmd_with_cb_data_cleanup(cb_wrapper);
   osi_free(cb_wrapper);
@@ -698,8 +690,8 @@ static void btu_hcif_command_status_evt_with_cb(uint8_t status, BT_HDR* command,
 /* This function is called to send commands to the Host Controller. |cb| is
  * called when command status event is called with error code, or when the
  * command complete event is received. */
-void btu_hcif_send_cmd_with_cb(const base::Location& posted_from, uint16_t opcode, uint8_t* params,
-                               uint8_t params_len, hci_cmd_cb cb) {
+void btu_hcif_send_cmd_with_cb(uint16_t opcode, uint8_t* params, uint8_t params_len,
+                               hci_cmd_cb cb) {
   BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
   uint8_t* pp = (uint8_t*)(p + 1);
 
@@ -718,7 +710,6 @@ void btu_hcif_send_cmd_with_cb(const base::Location& posted_from, uint16_t opcod
 
   cmd_with_cb_data_init(cb_wrapper);
   cb_wrapper->cb = std::move(cb);
-  cb_wrapper->posted_from = posted_from;
 
   bluetooth::shim::hci_layer_get_interface()->transmit_command(
           p, btu_hcif_command_complete_evt_with_cb, btu_hcif_command_status_evt_with_cb,

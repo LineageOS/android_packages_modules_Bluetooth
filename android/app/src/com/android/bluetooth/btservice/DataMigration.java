@@ -32,9 +32,9 @@ import com.android.internal.annotations.VisibleForTesting;
 import java.util.List;
 
 final class DataMigration {
-    private DataMigration() {}
+    private static final String TAG = DataMigration.class.getSimpleName();
 
-    private static final String TAG = "DataMigration";
+    private DataMigration() {}
 
     @VisibleForTesting static final String AUTHORITY = "bluetooth_legacy.provider";
 
@@ -46,13 +46,13 @@ final class DataMigration {
 
     // AvrcpVolumeManager.VOLUME_MAP
     private static final String VOLUME_MAP_PREFERENCE_FILE = "bluetooth_volume_map";
-    // com.android.blueotooth.opp.Constants.BLUETOOTHOPP_CHANNEL_PREFERENCE
+    // com.android.bluetooth.opp.Constants.BLUETOOTHOPP_CHANNEL_PREFERENCE
     private static final String BLUETOOTHOPP_CHANNEL_PREFERENCE = "btopp_channels";
 
-    // com.android.blueotooth.opp.Constants.BLUETOOTHOPP_NAME_PREFERENCE
+    // com.android.bluetooth.opp.Constants.BLUETOOTHOPP_NAME_PREFERENCE
     private static final String BLUETOOTHOPP_NAME_PREFERENCE = "btopp_names";
 
-    // com.android.blueotooth.opp.OPP_PREFERENCE_FILE
+    // com.android.bluetooth.opp.OPP_PREFERENCE_FILE
     private static final String OPP_PREFERENCE_FILE = "OPPMGR";
 
     @VisibleForTesting

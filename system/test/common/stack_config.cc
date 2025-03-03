@@ -22,36 +22,36 @@
 #include <cstdarg>
 #include <cstring>
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
+#include "hci/include/packet_fragmenter.h"
+#include "internal_include/stack_config.h"
 
-const std::string kSmpOptions("mock smp options");
-const std::string kBroadcastAudioConfigOptions("mock broadcast audio config options");
-bool get_pts_avrcp_test(void) { return false; }
-bool get_pts_secure_only_mode(void) { return false; }
-bool get_pts_conn_updates_disabled(void) { return false; }
-bool get_pts_crosskey_sdp_disable(void) { return false; }
-const std::string* get_pts_smp_options(void) { return &kSmpOptions; }
-int get_pts_smp_failure_case(void) { return 123; }
-bool get_pts_force_eatt_for_notifications(void) { return false; }
-bool get_pts_connect_eatt_unconditionally(void) { return false; }
-bool get_pts_connect_eatt_before_encryption(void) { return false; }
-bool get_pts_unencrypt_broadcast(void) { return false; }
-bool get_pts_eatt_peripheral_collision_support(void) { return false; }
-bool get_pts_use_eatt_for_all_services(void) { return false; }
-bool get_pts_force_le_audio_multiple_contexts_metadata(void) { return false; }
-bool get_pts_l2cap_ecoc_upper_tester(void) { return false; }
-int get_pts_l2cap_ecoc_min_key_size(void) { return -1; }
-int get_pts_l2cap_ecoc_initial_chan_cnt(void) { return -1; }
-bool get_pts_l2cap_ecoc_connect_remaining(void) { return false; }
-int get_pts_l2cap_ecoc_send_num_of_sdu(void) { return -1; }
-bool get_pts_l2cap_ecoc_reconfigure(void) { return false; }
-const std::string* get_pts_broadcast_audio_config_options(void) {
+static const std::string kSmpOptions("mock smp options");
+static const std::string kBroadcastAudioConfigOptions("mock broadcast audio config options");
+static bool get_pts_avrcp_test(void) { return false; }
+static bool get_pts_secure_only_mode(void) { return false; }
+static bool get_pts_conn_updates_disabled(void) { return false; }
+static bool get_pts_crosskey_sdp_disable(void) { return false; }
+static const std::string* get_pts_smp_options(void) { return &kSmpOptions; }
+static int get_pts_smp_failure_case(void) { return 123; }
+static bool get_pts_force_eatt_for_notifications(void) { return false; }
+static bool get_pts_connect_eatt_unconditionally(void) { return false; }
+static bool get_pts_connect_eatt_before_encryption(void) { return false; }
+static bool get_pts_unencrypt_broadcast(void) { return false; }
+static bool get_pts_eatt_peripheral_collision_support(void) { return false; }
+static bool get_pts_use_eatt_for_all_services(void) { return false; }
+static bool get_pts_force_le_audio_multiple_contexts_metadata(void) { return false; }
+static bool get_pts_l2cap_ecoc_upper_tester(void) { return false; }
+static int get_pts_l2cap_ecoc_min_key_size(void) { return -1; }
+static int get_pts_l2cap_ecoc_initial_chan_cnt(void) { return -1; }
+static bool get_pts_l2cap_ecoc_connect_remaining(void) { return false; }
+static int get_pts_l2cap_ecoc_send_num_of_sdu(void) { return -1; }
+static bool get_pts_l2cap_ecoc_reconfigure(void) { return false; }
+static const std::string* get_pts_broadcast_audio_config_options(void) {
   return &kBroadcastAudioConfigOptions;
 }
-bool get_pts_le_audio_disable_ases_before_stopping(void) { return false; }
+static bool get_pts_le_audio_disable_ases_before_stopping(void) { return false; }
 struct config_t;
-config_t* get_all(void) { return nullptr; }
+static config_t* get_all(void) { return nullptr; }
 struct packet_fragmenter_t;
 const packet_fragmenter_t* packet_fragmenter_get_interface() { return nullptr; }
 

@@ -68,7 +68,7 @@ import com.google.common.annotations.VisibleForTesting;
 // Next tag value for ContentProfileErrorReportUtils.report(): 2
 public class BluetoothOppTransferActivity extends AlertActivity
         implements DialogInterface.OnClickListener {
-    private static final String TAG = "BluetoothOppTransferActivity";
+    private static final String TAG = BluetoothOppTransferActivity.class.getSimpleName();
 
     private Uri mUri;
 

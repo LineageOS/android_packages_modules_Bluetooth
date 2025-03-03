@@ -39,7 +39,9 @@ import java.util.Objects;
  * pixel=“1280*960” size=“500000” transformation="stretch"/> </image-descriptor>
  */
 public class BipTransformation {
-    private static final String TAG = "avrcpcontroller.BipTransformation";
+    private static final String TAG =
+            AvrcpControllerUtils.TAG_PREFIX_AVRCP_CONTROLLER
+                    + BipTransformation.class.getSimpleName();
 
     public static final int UNKNOWN = -1;
     public static final int STRETCH = 0;
@@ -120,7 +122,7 @@ public class BipTransformation {
      *     BipTransformation.* constants, but doesn't *have* to be
      * @return True if the transformation constant is valid, False otherwise
      */
-    private boolean isValid(int transformation) {
+    private static boolean isValid(int transformation) {
         return transformation >= STRETCH && transformation <= CROP;
     }
 

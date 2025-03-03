@@ -742,7 +742,7 @@ public class BluetoothMapbMessageMime extends BluetoothMapbMessage {
         newPart.mData = decodeBody(body, mMyEncoding, mCharset);
     }
 
-    private byte[] decodeBody(String body, String encoding, String charset) {
+    private static byte[] decodeBody(String body, String encoding, String charset) {
         if (encoding != null && Ascii.toUpperCase(encoding).contains("BASE64")) {
             return Base64.decode(body, Base64.DEFAULT);
         } else if (encoding != null && Ascii.toUpperCase(encoding).contains("QUOTED-PRINTABLE")) {

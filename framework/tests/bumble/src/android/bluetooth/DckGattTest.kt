@@ -16,6 +16,8 @@
 
 package android.bluetooth
 
+import android.bluetooth.BluetoothProfile.STATE_CONNECTED
+import android.bluetooth.BluetoothProfile.STATE_DISCONNECTED
 import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
@@ -98,14 +100,14 @@ public class DckGattTest() {
             val device =
                 bluetoothAdapter.getRemoteLeDevice(
                     Utils.BUMBLE_RANDOM_ADDRESS,
-                    BluetoothDevice.ADDRESS_TYPE_RANDOM
+                    BluetoothDevice.ADDRESS_TYPE_RANDOM,
                 )
             val gatt = device.connectGatt(context, false, gattCallbackMock)
             verify(gattCallbackMock, timeout(TIMEOUT))
                 .onConnectionStateChange(
                     eq(gatt),
                     eq(BluetoothGatt.GATT_SUCCESS),
-                    eq(BluetoothProfile.STATE_CONNECTED)
+                    eq(STATE_CONNECTED),
                 )
             advertiseContext.cancel(null)
 
@@ -182,7 +184,7 @@ public class DckGattTest() {
                 // Advertising data.
                 Utils.BUMBLE_RANDOM_ADDRESS,
                 BluetoothDevice
-                    .ADDRESS_TYPE_RANDOM // Specify address type as RANDOM because the device
+                    .ADDRESS_TYPE_RANDOM, // Specify address type as RANDOM because the device
                 // advertises with this address type.
             )
 
@@ -193,11 +195,7 @@ public class DckGattTest() {
         // 5. Connect to the Bumble device and expect a successful connection callback.
         var bumbleGatt = bumbleDevice.connectGatt(context, false, gattCallback)
         verify(gattCallback, timeout(TIMEOUT))
-            .onConnectionStateChange(
-                any(),
-                eq(BluetoothGatt.GATT_SUCCESS),
-                eq(BluetoothProfile.STATE_CONNECTED)
-            )
+            .onConnectionStateChange(any(), eq(BluetoothGatt.GATT_SUCCESS), eq(STATE_CONNECTED))
 
         // 6. Discover GATT services offered by Bumble and expect successful service discovery.
         bumbleGatt.discoverServices()
@@ -210,11 +208,7 @@ public class DckGattTest() {
         // 8. Disconnect from the Bumble device and expect a successful disconnection callback.
         bumbleGatt.disconnect()
         verify(gattCallback, timeout(TIMEOUT))
-            .onConnectionStateChange(
-                any(),
-                eq(BluetoothGatt.GATT_SUCCESS),
-                eq(BluetoothProfile.STATE_DISCONNECTED)
-            )
+            .onConnectionStateChange(any(), eq(BluetoothGatt.GATT_SUCCESS), eq(STATE_DISCONNECTED))
     }
 
     /*
@@ -241,7 +235,7 @@ public class DckGattTest() {
                 .setDeviceAddress(
                     TEST_ADDRESS_RANDOM_STATIC,
                     BluetoothDevice.ADDRESS_TYPE_RANDOM,
-                    Utils.BUMBLE_IRK
+                    Utils.BUMBLE_IRK,
                 )
                 .build()
         leScanner.startScan(listOf(scanFilter), scanSettings, scanCallbackMock)
@@ -259,11 +253,7 @@ public class DckGattTest() {
         val device = scanResult.device
         val gatt = device.connectGatt(context, false, gattCallbackMock)
         verify(gattCallbackMock, timeout(TIMEOUT))
-            .onConnectionStateChange(
-                eq(gatt),
-                eq(BluetoothGatt.GATT_SUCCESS),
-                eq(BluetoothProfile.STATE_CONNECTED)
-            )
+            .onConnectionStateChange(eq(gatt), eq(BluetoothGatt.GATT_SUCCESS), eq(STATE_CONNECTED))
 
         // Stop scan on DUT after GATT connect
         leScanner.stopScan(scanCallbackMock)
@@ -305,11 +295,7 @@ public class DckGattTest() {
         val device = scanResult.device
         val gatt = device.connectGatt(context, false, gattCallbackMock)
         verify(gattCallbackMock, timeout(TIMEOUT))
-            .onConnectionStateChange(
-                eq(gatt),
-                eq(BluetoothGatt.GATT_SUCCESS),
-                eq(BluetoothProfile.STATE_CONNECTED)
-            )
+            .onConnectionStateChange(eq(gatt), eq(BluetoothGatt.GATT_SUCCESS), eq(STATE_CONNECTED))
     }
 
     private fun advertiseWithBumble(withUuid: Boolean = false): GrpcContext.CancellableContext {

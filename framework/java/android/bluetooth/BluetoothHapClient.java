@@ -19,6 +19,9 @@ package android.bluetooth;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
+import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothUtils.callServiceIfEnabled;
 
 import static java.util.Objects.requireNonNull;
@@ -576,8 +579,8 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
         requireNonNull(device);
         boolean defaultValue = false;
         if (!isValidDevice(device)
-                || (connectionPolicy != BluetoothProfile.CONNECTION_POLICY_FORBIDDEN
-                        && connectionPolicy != BluetoothProfile.CONNECTION_POLICY_ALLOWED)) {
+                || (connectionPolicy != CONNECTION_POLICY_FORBIDDEN
+                        && connectionPolicy != CONNECTION_POLICY_ALLOWED)) {
             return defaultValue;
         }
         return callServiceIfEnabled(
@@ -599,7 +602,7 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public @ConnectionPolicy int getConnectionPolicy(@Nullable BluetoothDevice device) {
-        int defaultValue = BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
+        int defaultValue = CONNECTION_POLICY_FORBIDDEN;
         if (!isValidDevice(device)) {
             return defaultValue;
         }
@@ -661,7 +664,7 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
     @Override
     @BluetoothProfile.BtProfileState
     public int getConnectionState(@NonNull BluetoothDevice device) {
-        int defaultValue = BluetoothProfile.STATE_DISCONNECTED;
+        int defaultValue = STATE_DISCONNECTED;
         if (!isValidDevice(device)) {
             return defaultValue;
         }
@@ -1085,7 +1088,7 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
                 s -> s.setPresetNameForGroup(groupId, presetIndex, name, mAttributionSource));
     }
 
-    private boolean isValidDevice(BluetoothDevice device) {
+    private static boolean isValidDevice(BluetoothDevice device) {
         if (device == null) return false;
 
         if (BluetoothAdapter.checkBluetoothAddress(device.getAddress())) return true;

@@ -101,7 +101,7 @@ public class HapClientStackEvent {
         return result.toString();
     }
 
-    private String eventTypeValueListToString(int type, List value) {
+    private static String eventTypeValueListToString(int type, List value) {
         switch (type) {
             case EVENT_TYPE_ON_PRESET_INFO:
                 return "{presets count: " + (value == null ? 0 : value.size()) + "}";
@@ -110,7 +110,7 @@ public class HapClientStackEvent {
         }
     }
 
-    private String eventTypeValueInt1ToString(int type, int value) {
+    private static String eventTypeValueInt1ToString(int type, int value) {
         switch (type) {
             case EVENT_TYPE_CONNECTION_STATE_CHANGED:
                 return "{state: " + getConnectionStateName(value) + "}";
@@ -132,7 +132,7 @@ public class HapClientStackEvent {
         }
     }
 
-    private String infoReasonToString(int value) {
+    private static String infoReasonToString(int value) {
         switch (value) {
             case PRESET_INFO_REASON_ALL_PRESET_INFO:
                 return "PRESET_INFO_REASON_ALL_PRESET_INFO";
@@ -149,7 +149,7 @@ public class HapClientStackEvent {
         }
     }
 
-    private String eventTypeValueInt2ToString(int type, int value) {
+    private static String eventTypeValueInt2ToString(int type, int value) {
         switch (type) {
             case EVENT_TYPE_ON_PRESET_NAME_SET_ERROR:
                 return "{presetIndex: " + value + "}";
@@ -166,7 +166,7 @@ public class HapClientStackEvent {
         }
     }
 
-    private String eventTypeValueInt3ToString(int type, int value) {
+    private static String eventTypeValueInt3ToString(int type, int value) {
         switch (type) {
             case EVENT_TYPE_ON_PRESET_INFO:
             case EVENT_TYPE_ON_PRESET_INFO_ERROR:
@@ -177,7 +177,7 @@ public class HapClientStackEvent {
         }
     }
 
-    private String statusCodeValueToString(int value) {
+    private static String statusCodeValueToString(int value) {
         switch (value) {
             case STATUS_NO_ERROR:
                 return "STATUS_NO_ERROR";
@@ -200,7 +200,7 @@ public class HapClientStackEvent {
         }
     }
 
-    private String featuresToString(int value) {
+    private static String featuresToString(int value) {
         StringBuilder features_sb = new StringBuilder();
         if (BigInteger.valueOf(value).testBit(FEATURE_BIT_NUM_TYPE_MONAURAL)) {
             features_sb.append("TYPE_MONAURAL");

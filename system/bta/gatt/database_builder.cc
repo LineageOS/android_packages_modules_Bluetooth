@@ -33,9 +33,6 @@
 #include "stack/include/gattdefs.h"
 #include "types/bluetooth/uuid.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 using bluetooth::Uuid;
 using namespace bluetooth;
 
@@ -198,7 +195,7 @@ std::pair<uint16_t, uint16_t> DatabaseBuilder::NextDescriptorRangeToExplore() {
   return {HANDLE_MAX, HANDLE_MAX};
 }
 
-Descriptor* FindDescriptorByHandle(std::list<Service>& services, uint16_t handle) {
+static Descriptor* FindDescriptorByHandle(std::list<Service>& services, uint16_t handle) {
   Service* service = FindService(services, handle);
   if (!service) {
     return nullptr;

@@ -19,12 +19,6 @@ package android.bluetooth.pairing;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasAction;
 import static androidx.test.espresso.intent.matcher.IntentMatchers.hasExtra;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.timeout;
-
-import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothAdapter.OobDataCallback;
 import android.bluetooth.BluetoothDevice;
@@ -36,10 +30,8 @@ import android.bluetooth.Utils;
 import android.bluetooth.cts.EnableBluetoothRule;
 import android.bluetooth.pairing.utils.IntentReceiver;
 import android.bluetooth.pairing.utils.TestUtil;
-import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
 import android.util.Log;
 
 import androidx.test.ext.junit.runners.AndroidJUnit4;
@@ -52,18 +44,11 @@ import com.google.protobuf.ByteString;
 
 import io.grpc.Deadline;
 
-import org.hamcrest.Matcher;
-import org.hamcrest.core.AllOf;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InOrder;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
-import org.mockito.hamcrest.MockitoHamcrest;
-import org.mockito.stubbing.Answer;
 
 import pandora.HostProto.AdvertiseRequest;
 import pandora.HostProto.ConnectLERequest;
@@ -78,13 +63,13 @@ import pandora.SecurityProto.SecureRequest;
 import pandora.SecurityProto.SecureResponse;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.concurrent.TimeUnit;
 
 @RunWith(AndroidJUnit4.class)
 public class OobPairingTest {
     private static final String TAG = OobPairingTest.class.getSimpleName();
+
     private static final Duration INTENT_TIMEOUT = Duration.ofSeconds(10);
     private static final String CF_NAME = "Cuttlefish";
 

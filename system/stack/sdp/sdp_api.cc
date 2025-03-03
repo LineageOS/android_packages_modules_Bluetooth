@@ -1113,8 +1113,6 @@ bluetooth::legacy::stack::sdp::get_legacy_stack_sdp_api() {
   return &api_;
 }
 
-extern void BTA_SdpDumpsys(int fd);
-
 #define DUMPSYS_TAG "shim::legacy::sdp"
 
 namespace {

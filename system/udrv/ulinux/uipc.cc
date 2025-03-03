@@ -47,9 +47,6 @@
 #include "osi/include/osi.h"
 #include "osi/include/socket_utils/sockets.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 using namespace bluetooth;
 
 /*****************************************************************************
@@ -223,7 +220,7 @@ static int uipc_main_init(tUIPC_STATE& uipc) {
   return 0;
 }
 
-void uipc_main_cleanup(tUIPC_STATE& uipc) {
+static void uipc_main_cleanup(tUIPC_STATE& uipc) {
   int i;
 
   log::debug("uipc_main_cleanup");
@@ -433,7 +430,7 @@ static int uipc_close_ch_locked(tUIPC_STATE& uipc, tUIPC_CH_ID ch_id) {
   return 0;
 }
 
-void uipc_close_locked(tUIPC_STATE& uipc, tUIPC_CH_ID ch_id) {
+static void uipc_close_locked(tUIPC_STATE& uipc, tUIPC_CH_ID ch_id) {
   if (uipc.ch[ch_id].srvfd == UIPC_DISCONNECTED) {
     log::debug("CHANNEL {} ALREADY CLOSED", ch_id);
     return;
@@ -499,7 +496,7 @@ static void* uipc_read_task(void* arg) {
   return nullptr;
 }
 
-int uipc_start_main_server_thread(tUIPC_STATE& uipc) {
+static int uipc_start_main_server_thread(tUIPC_STATE& uipc) {
   uipc.running = 1;
 
   if (pthread_create(&uipc.tid, (const pthread_attr_t*)NULL, uipc_read_task, &uipc) != 0) {
@@ -511,7 +508,7 @@ int uipc_start_main_server_thread(tUIPC_STATE& uipc) {
 }
 
 /* blocking call */
-void uipc_stop_main_server_thread(tUIPC_STATE& uipc) {
+static void uipc_stop_main_server_thread(tUIPC_STATE& uipc) {
   /* request shutdown of read thread */
   {
     std::lock_guard<std::recursive_mutex> lock(uipc.mutex);

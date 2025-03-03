@@ -16,6 +16,12 @@
 
 package com.android.bluetooth.btservice.storage;
 
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
+import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
+
+import static java.util.Objects.requireNonNull;
+
 import android.bluetooth.BluetoothA2dp;
 import android.bluetooth.BluetoothA2dp.OptionalCodecsPreferenceStatus;
 import android.bluetooth.BluetoothA2dp.OptionalCodecsSupportStatus;
@@ -55,7 +61,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -64,7 +69,8 @@ import java.util.stream.Collectors;
  * The active device manager is responsible to handle a Room database for Bluetooth persistent data.
  */
 public class DatabaseManager {
-    private static final String TAG = "BluetoothDatabase";
+    private static final String TAG =
+            Utils.TAG_PREFIX_BLUETOOTH + DatabaseManager.class.getSimpleName();
 
     private final AdapterService mAdapterService;
     private HandlerThread mHandlerThread = null;
@@ -106,7 +112,7 @@ public class DatabaseManager {
 
     /** Constructor of the DatabaseManager */
     public DatabaseManager(AdapterService service) {
-        mAdapterService = Objects.requireNonNull(service, "Adapter service cannot be null");
+        mAdapterService = requireNonNull(service);
         mMetadataChangedLog = EvictingQueue.create(METADATA_CHANGED_LOG_MAX_SIZE);
     }
 
@@ -361,9 +367,8 @@ public class DatabaseManager {
      *     BluetoothProfile#VOLUME_CONTROL}, {@link BluetoothProfile#CSIP_SET_COORDINATOR}, {@link
      *     BluetoothProfile#LE_AUDIO_BROADCAST_ASSISTANT},
      * @param newConnectionPolicy the connectionPolicy to set; one of {@link
-     *     BluetoothProfile.CONNECTION_POLICY_UNKNOWN}, {@link
-     *     BluetoothProfile.CONNECTION_POLICY_FORBIDDEN}, {@link
-     *     BluetoothProfile.CONNECTION_POLICY_ALLOWED}
+     *     CONNECTION_POLICY_UNKNOWN}, {@link CONNECTION_POLICY_FORBIDDEN}, {@link
+     *     CONNECTION_POLICY_ALLOWED}
      */
     public boolean setProfileConnectionPolicy(
             BluetoothDevice device, int profile, int newConnectionPolicy) {
@@ -372,9 +377,9 @@ public class DatabaseManager {
             return false;
         }
 
-        if (newConnectionPolicy != BluetoothProfile.CONNECTION_POLICY_UNKNOWN
-                && newConnectionPolicy != BluetoothProfile.CONNECTION_POLICY_FORBIDDEN
-                && newConnectionPolicy != BluetoothProfile.CONNECTION_POLICY_ALLOWED) {
+        if (newConnectionPolicy != CONNECTION_POLICY_UNKNOWN
+                && newConnectionPolicy != CONNECTION_POLICY_FORBIDDEN
+                && newConnectionPolicy != CONNECTION_POLICY_ALLOWED) {
             Log.e(
                     TAG,
                     "setProfileConnectionPolicy: invalid connection policy " + newConnectionPolicy);
@@ -385,7 +390,7 @@ public class DatabaseManager {
 
         synchronized (mMetadataCache) {
             if (!mMetadataCache.containsKey(address)) {
-                if (newConnectionPolicy == BluetoothProfile.CONNECTION_POLICY_UNKNOWN) {
+                if (newConnectionPolicy == CONNECTION_POLICY_UNKNOWN) {
                     return true;
                 }
                 createMetadata(address, false);
@@ -432,14 +437,13 @@ public class DatabaseManager {
      *     BluetoothProfile#VOLUME_CONTROL}, {@link BluetoothProfile#CSIP_SET_COORDINATOR}, {@link
      *     BluetoothProfile#LE_AUDIO_BROADCAST_ASSISTANT},
      * @return the profile connection policy of the device; one of {@link
-     *     BluetoothProfile.CONNECTION_POLICY_UNKNOWN}, {@link
-     *     BluetoothProfile.CONNECTION_POLICY_FORBIDDEN}, {@link
-     *     BluetoothProfile.CONNECTION_POLICY_ALLOWED}
+     *     CONNECTION_POLICY_UNKNOWN}, {@link CONNECTION_POLICY_FORBIDDEN}, {@link
+     *     CONNECTION_POLICY_ALLOWED}
      */
     public int getProfileConnectionPolicy(BluetoothDevice device, int profile) {
         if (device == null) {
             Log.e(TAG, "getProfileConnectionPolicy: device is null");
-            return BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
+            return CONNECTION_POLICY_UNKNOWN;
         }
 
         String address = device.getAddress();
@@ -447,7 +451,7 @@ public class DatabaseManager {
         synchronized (mMetadataCache) {
             if (!mMetadataCache.containsKey(address)) {
                 Log.d(TAG, "getProfileConnectionPolicy: device=" + device + " is not in cache");
-                return BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
+                return CONNECTION_POLICY_UNKNOWN;
             }
 
             Metadata data = mMetadataCache.get(address);
@@ -924,8 +928,8 @@ public class DatabaseManager {
      */
     public int setPreferredAudioProfiles(
             List<BluetoothDevice> groupDevices, Bundle modeToProfileBundle) {
-        Objects.requireNonNull(groupDevices, "groupDevices must not be null");
-        Objects.requireNonNull(modeToProfileBundle, "modeToProfileBundle must not be null");
+        requireNonNull(groupDevices);
+        requireNonNull(modeToProfileBundle);
         if (groupDevices.isEmpty()) {
             throw new IllegalArgumentException("groupDevices cannot be empty");
         }
@@ -1317,62 +1321,62 @@ public class DatabaseManager {
                     Settings.Global.getInt(
                             contentResolver,
                             getLegacyA2dpSinkPriorityKey(device.getAddress()),
-                            BluetoothProfile.CONNECTION_POLICY_UNKNOWN);
+                            CONNECTION_POLICY_UNKNOWN);
             int a2dpSinkConnectionPolicy =
                     Settings.Global.getInt(
                             contentResolver,
                             getLegacyA2dpSrcPriorityKey(device.getAddress()),
-                            BluetoothProfile.CONNECTION_POLICY_UNKNOWN);
+                            CONNECTION_POLICY_UNKNOWN);
             int hearingaidConnectionPolicy =
                     Settings.Global.getInt(
                             contentResolver,
                             getLegacyHearingAidPriorityKey(device.getAddress()),
-                            BluetoothProfile.CONNECTION_POLICY_UNKNOWN);
+                            CONNECTION_POLICY_UNKNOWN);
             int headsetConnectionPolicy =
                     Settings.Global.getInt(
                             contentResolver,
                             getLegacyHeadsetPriorityKey(device.getAddress()),
-                            BluetoothProfile.CONNECTION_POLICY_UNKNOWN);
+                            CONNECTION_POLICY_UNKNOWN);
             int headsetClientConnectionPolicy =
                     Settings.Global.getInt(
                             contentResolver,
                             getLegacyHeadsetPriorityKey(device.getAddress()),
-                            BluetoothProfile.CONNECTION_POLICY_UNKNOWN);
+                            CONNECTION_POLICY_UNKNOWN);
             int hidHostConnectionPolicy =
                     Settings.Global.getInt(
                             contentResolver,
                             getLegacyHidHostPriorityKey(device.getAddress()),
-                            BluetoothProfile.CONNECTION_POLICY_UNKNOWN);
+                            CONNECTION_POLICY_UNKNOWN);
             int mapConnectionPolicy =
                     Settings.Global.getInt(
                             contentResolver,
                             getLegacyMapPriorityKey(device.getAddress()),
-                            BluetoothProfile.CONNECTION_POLICY_UNKNOWN);
+                            CONNECTION_POLICY_UNKNOWN);
             int mapClientConnectionPolicy =
                     Settings.Global.getInt(
                             contentResolver,
                             getLegacyMapClientPriorityKey(device.getAddress()),
-                            BluetoothProfile.CONNECTION_POLICY_UNKNOWN);
+                            CONNECTION_POLICY_UNKNOWN);
             int panConnectionPolicy =
                     Settings.Global.getInt(
                             contentResolver,
                             getLegacyPanPriorityKey(device.getAddress()),
-                            BluetoothProfile.CONNECTION_POLICY_UNKNOWN);
+                            CONNECTION_POLICY_UNKNOWN);
             int pbapConnectionPolicy =
                     Settings.Global.getInt(
                             contentResolver,
                             getLegacyPbapClientPriorityKey(device.getAddress()),
-                            BluetoothProfile.CONNECTION_POLICY_UNKNOWN);
+                            CONNECTION_POLICY_UNKNOWN);
             int pbapClientConnectionPolicy =
                     Settings.Global.getInt(
                             contentResolver,
                             getLegacyPbapClientPriorityKey(device.getAddress()),
-                            BluetoothProfile.CONNECTION_POLICY_UNKNOWN);
+                            CONNECTION_POLICY_UNKNOWN);
             int sapConnectionPolicy =
                     Settings.Global.getInt(
                             contentResolver,
                             getLegacySapPriorityKey(device.getAddress()),
-                            BluetoothProfile.CONNECTION_POLICY_UNKNOWN);
+                            CONNECTION_POLICY_UNKNOWN);
             int a2dpSupportsOptionalCodec =
                     Settings.Global.getInt(
                             contentResolver,
@@ -1401,8 +1405,7 @@ public class DatabaseManager {
             data.setProfileConnectionPolicy(BluetoothProfile.SAP, sapConnectionPolicy);
             data.setProfileConnectionPolicy(
                     BluetoothProfile.HEARING_AID, hearingaidConnectionPolicy);
-            data.setProfileConnectionPolicy(
-                    BluetoothProfile.LE_AUDIO, BluetoothProfile.CONNECTION_POLICY_UNKNOWN);
+            data.setProfileConnectionPolicy(BluetoothProfile.LE_AUDIO, CONNECTION_POLICY_UNKNOWN);
             data.a2dpSupportsOptionalCodecs = a2dpSupportsOptionalCodec;
             data.a2dpOptionalCodecsEnabled = a2dpOptionalCodecEnabled;
             mMetadataCache.put(address, data);
@@ -1584,6 +1587,56 @@ public class DatabaseManager {
                 continue;
             }
             writer.println("    " + entry.getValue());
+        }
+    }
+
+    /**
+     * Update Key missing count.
+     *
+     * <p> It is used to update the key missing count when a bond loss is detected (increment the
+     * count) or a successful bond is detected (reset the count)
+     *
+     * @param isKeyMissingDetected true if the bond loss is detected, false if the bond is
+     *     successfully established.
+     */
+    public void updateKeyMissingCount(BluetoothDevice device, boolean isKeyMissingDetected) {
+        synchronized (mMetadataCache) {
+            String address = device.getAddress();
+
+            if (!mMetadataCache.containsKey(address)) {
+                Log.e(TAG, "device is not bonded");
+                return;
+            }
+
+            Metadata metadata = mMetadataCache.get(address);
+            if (isKeyMissingDetected) {
+                metadata.key_missing_count++;
+                Log.i(TAG, "Bond loss detected, count: " + metadata.key_missing_count);
+            } else {
+                metadata.key_missing_count = 0;
+                Log.i(TAG, "Successful bond detected, reset key missing count");
+            }
+            updateDatabase(metadata);
+        }
+    }
+
+    /**
+     * Get the key missing count.
+     *
+     * @param device the BluetoothDevice to get the key missing count for.
+     * @return the key missing count, or -1 if the device is not bonded.
+     */
+    public int getKeyMissingCount(BluetoothDevice device) {
+        synchronized (mMetadataCache) {
+            String address = device.getAddress();
+
+            if (!mMetadataCache.containsKey(address)) {
+                Log.e(TAG, "device is not bonded");
+                return -1;
+            }
+
+            Metadata metadata = mMetadataCache.get(address);
+            return metadata.key_missing_count;
         }
     }
 }

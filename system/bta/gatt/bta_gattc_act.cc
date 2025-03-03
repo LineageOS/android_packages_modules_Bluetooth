@@ -45,9 +45,6 @@
 #include "types/bluetooth/uuid.h"
 #include "types/raw_address.h"
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 using bluetooth::Uuid;
 using namespace bluetooth;
 
@@ -109,8 +106,6 @@ static const char* bta_gattc_op_code_name[] = {
 /*****************************************************************************
  *  Action Functions
  ****************************************************************************/
-
-void bta_gattc_reset_discover_st(tBTA_GATTC_SERV* p_srcb, tGATT_STATUS status);
 
 /** Enables GATTC module */
 static void bta_gattc_enable() {

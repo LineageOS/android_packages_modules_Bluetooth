@@ -60,7 +60,7 @@ fun testGattConnect() {
         .onConnectionStateChange(
             any(),
             eq(BluetoothGatt.GATT_SUCCESS),
-            eq(BluetoothProfile.STATE_CONNECTED)
+            eq(STATE_CONNECTED)
         )
 
     // 5. Disconnect from the Bumble device and expect a successful disconnection callback.
@@ -69,7 +69,7 @@ fun testGattConnect() {
         .onConnectionStateChange(
             any(),
             eq(BluetoothGatt.GATT_SUCCESS),
-            eq(BluetoothProfile.STATE_DISCONNECTED)
+            eq(STATE_DISCONNECTED)
         )
 }
 ```

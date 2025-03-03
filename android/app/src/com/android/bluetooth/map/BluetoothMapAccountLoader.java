@@ -43,7 +43,7 @@ import java.util.Objects;
 
 // Next tag value for ContentProfileErrorReportUtils.report(): 1
 public class BluetoothMapAccountLoader {
-    private static final String TAG = "BluetoothMapAccountLoader";
+    private static final String TAG = BluetoothMapAccountLoader.class.getSimpleName();
 
     private Context mContext = null;
     private PackageManager mPackageManager = null;

@@ -354,7 +354,7 @@ bool BluetoothAudioPortHidl::CondwaitState(BluetoothStreamState state) {
   return retval;  // false if any failure like timeout
 }
 
-bool BluetoothAudioPortHidl::Start() {
+bool BluetoothAudioPortHidl::Start(bool /*low_latency*/) {
   if (!in_use()) {
     LOG(ERROR) << __func__ << ": BluetoothAudioPort is not in use";
     return false;

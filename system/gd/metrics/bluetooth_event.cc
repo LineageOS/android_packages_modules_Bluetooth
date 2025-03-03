@@ -17,11 +17,9 @@
 
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 
+#include "bta/include/bta_hfp_api.h"
 #include "main/shim/helpers.h"
 #include "os/metrics.h"
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 namespace bluetooth {
 namespace metrics {
@@ -31,53 +29,59 @@ using android::bluetooth::State;
 using hci::ErrorCode;
 
 State MapErrorCodeToState(ErrorCode reason) {
-  // TODO - map the error codes to the state enum variants.
   switch (reason) {
     case ErrorCode::SUCCESS:
       return State::SUCCESS;
-    // Timeout related errors
-    case ErrorCode::PAGE_TIMEOUT:
-      return State::PAGE_TIMEOUT;
-    case ErrorCode::CONNECTION_TIMEOUT:
-      return State::CONNECTION_TIMEOUT;
-    case ErrorCode::CONNECTION_ACCEPT_TIMEOUT:
-      return State::CONNECTION_ACCEPT_TIMEOUT;
-    case ErrorCode::TRANSACTION_RESPONSE_TIMEOUT:
-      return State::TRANSACTION_RESPONSE_TIMEOUT;
-    case ErrorCode::AUTHENTICATION_FAILURE:
-      return State::AUTH_FAILURE;
-    case ErrorCode::REMOTE_USER_TERMINATED_CONNECTION:
-    case ErrorCode::REMOTE_DEVICE_TERMINATED_CONNECTION_LOW_RESOURCES:
-    case ErrorCode::REMOTE_DEVICE_TERMINATED_CONNECTION_POWER_OFF:
-      return State::REMOTE_USER_TERMINATED_CONNECTION;
-    case ErrorCode::CONNECTION_ALREADY_EXISTS:
-      return State::ALREADY_CONNECTED;
-    case ErrorCode::REPEATED_ATTEMPTS:
-      return State::REPEATED_ATTEMPTS;
-    case ErrorCode::PIN_OR_KEY_MISSING:
-      return State::KEY_MISSING;
-    case ErrorCode::PAIRING_NOT_ALLOWED:
-      return State::PAIRING_NOT_ALLOWED;
-    case ErrorCode::CONNECTION_REJECTED_LIMITED_RESOURCES:
-      return State::RESOURCES_EXCEEDED;
+    case ErrorCode::UNKNOWN_HCI_COMMAND:
+      return State::UNKNOWN_HCI_COMMAND;
+    case ErrorCode::UNKNOWN_CONNECTION:
+      return State::NO_CONNECTION;
     case ErrorCode::HARDWARE_FAILURE:
       return State::HARDWARE_FAILURE;
+    case ErrorCode::PAGE_TIMEOUT:
+      return State::PAGE_TIMEOUT;
+    case ErrorCode::AUTHENTICATION_FAILURE:
+      return State::AUTH_FAILURE;
+    case ErrorCode::PIN_OR_KEY_MISSING:
+      return State::KEY_MISSING;
     case ErrorCode::MEMORY_CAPACITY_EXCEEDED:
       return State::MEMORY_CAPACITY_EXCEEDED;
+    case ErrorCode::CONNECTION_TIMEOUT:
+      return State::CONNECTION_TIMEOUT;
     case ErrorCode::CONNECTION_LIMIT_EXCEEDED:
       return State::CONNECTION_LIMIT_EXCEEDED;
     case ErrorCode::SYNCHRONOUS_CONNECTION_LIMIT_EXCEEDED:
       return State::SYNCHRONOUS_CONNECTION_LIMIT_EXCEEDED;
+    case ErrorCode::CONNECTION_ALREADY_EXISTS:
+      return State::ALREADY_CONNECTED;
+    case ErrorCode::COMMAND_DISALLOWED:
+      return State::COMMAND_DISALLOWED;
+    case ErrorCode::CONNECTION_REJECTED_LIMITED_RESOURCES:
+      return State::RESOURCES_EXCEEDED;
     case ErrorCode::CONNECTION_REJECTED_SECURITY_REASONS:
       return State::CONNECTION_REJECTED_SECURITY_REASONS;
     case ErrorCode::CONNECTION_REJECTED_UNACCEPTABLE_BD_ADDR:
       return State::CONNECTION_REJECTED_UNACCEPTABLE_BD_ADDR;
+    case ErrorCode::CONNECTION_ACCEPT_TIMEOUT:
+      return State::CONNECTION_ACCEPT_TIMEOUT;
     case ErrorCode::UNSUPPORTED_FEATURE_OR_PARAMETER_VALUE:
       return State::UNSUPPORTED_FEATURE_OR_PARAMETER_VALUE;
     case ErrorCode::INVALID_HCI_COMMAND_PARAMETERS:
       return State::INVALID_HCI_COMMAND_PARAMETERS;
+    case ErrorCode::REMOTE_USER_TERMINATED_CONNECTION:
+      return State::REMOTE_USER_TERMINATED_CONNECTION;
+    case ErrorCode::REMOTE_DEVICE_TERMINATED_CONNECTION_LOW_RESOURCES:
+      return State::REMOTE_DEVICE_TERMINATED_CONNECTION_LOW_RESOURCES;
+    case ErrorCode::REMOTE_DEVICE_TERMINATED_CONNECTION_POWER_OFF:
+      return State::REMOTE_DEVICE_TERMINATED_CONNECTION_POWER_OFF;
     case ErrorCode::CONNECTION_TERMINATED_BY_LOCAL_HOST:
       return State::CONNECTION_TERMINATED_BY_LOCAL_HOST;
+    case ErrorCode::REPEATED_ATTEMPTS:
+      return State::REPEATED_ATTEMPTS;
+    case ErrorCode::PAIRING_NOT_ALLOWED:
+      return State::PAIRING_NOT_ALLOWED;
+    case ErrorCode::UNKNOWN_LMP_PDU:
+      return State::UNKNOWN_LMP_PDU;
     case ErrorCode::UNSUPPORTED_REMOTE_OR_LMP_FEATURE:
       return State::UNSUPPORTED_REMOTE_OR_LMP_FEATURE;
     case ErrorCode::SCO_OFFSET_REJECTED:
@@ -94,6 +98,8 @@ State MapErrorCodeToState(ErrorCode reason) {
       return State::UNSUPPORTED_LMP_OR_LL_PARAMETER;
     case ErrorCode::ROLE_CHANGE_NOT_ALLOWED:
       return State::ROLE_CHANGE_NOT_ALLOWED;
+    case ErrorCode::TRANSACTION_RESPONSE_TIMEOUT:
+      return State::TRANSACTION_RESPONSE_TIMEOUT;
     case ErrorCode::LINK_LAYER_COLLISION:
       return State::LINK_LAYER_COLLISION;
     case ErrorCode::LMP_PDU_NOT_ALLOWED:
@@ -161,38 +167,98 @@ State MapErrorCodeToState(ErrorCode reason) {
   }
 }
 
-State MapHCIStatusToState(tHCI_STATUS status) {
-  // TODO - map the error codes to the state enum variants.
+static State MapHCIStatusToState(tHCI_STATUS status) {
   switch (status) {
     case tHCI_STATUS::HCI_SUCCESS:
       return State::SUCCESS;
-    // Timeout related errors
+    case tHCI_STATUS::HCI_ERR_ILLEGAL_COMMAND:
+      return State::ILLEGAL_COMMAND;
+    case tHCI_STATUS::HCI_ERR_NO_CONNECTION:
+      return State::NO_CONNECTION;
+    case tHCI_STATUS::HCI_ERR_HW_FAILURE:
+      return State::HW_FAILURE;
     case tHCI_STATUS::HCI_ERR_PAGE_TIMEOUT:
       return State::PAGE_TIMEOUT;
-    case tHCI_STATUS::HCI_ERR_CONNECTION_TOUT:
-      return State::CONNECTION_TIMEOUT;
-    case tHCI_STATUS::HCI_ERR_HOST_TIMEOUT:
-      return State::CONNECTION_ACCEPT_TIMEOUT;
-    case tHCI_STATUS::HCI_ERR_LMP_RESPONSE_TIMEOUT:
-      return State::TRANSACTION_RESPONSE_TIMEOUT;
     case tHCI_STATUS::HCI_ERR_AUTH_FAILURE:
       return State::AUTH_FAILURE;
-    case tHCI_STATUS::HCI_ERR_CONNECTION_EXISTS:
-      return State::ALREADY_CONNECTED;
-    case tHCI_STATUS::HCI_ERR_REPEATED_ATTEMPTS:
-      return State::REPEATED_ATTEMPTS;
     case tHCI_STATUS::HCI_ERR_KEY_MISSING:
       return State::KEY_MISSING;
+    case tHCI_STATUS::HCI_ERR_MEMORY_FULL:
+      return State::MEMORY_FULL;
+    case tHCI_STATUS::HCI_ERR_CONNECTION_TOUT:
+      return State::CONNECTION_TIMEOUT;
+    case tHCI_STATUS::HCI_ERR_MAX_NUM_OF_CONNECTIONS:
+      return State::MAX_NUMBER_OF_CONNECTIONS;
+    case tHCI_STATUS::HCI_ERR_MAX_NUM_OF_SCOS:
+      return State::MAX_NUM_OF_SCOS;
+    case tHCI_STATUS::HCI_ERR_CONNECTION_EXISTS:
+      return State::ALREADY_CONNECTED;
+    case tHCI_STATUS::HCI_ERR_COMMAND_DISALLOWED:
+      return State::COMMAND_DISALLOWED;
+    case tHCI_STATUS::HCI_ERR_HOST_REJECT_RESOURCES:
+      return State::HOST_REJECT_RESOURCES;
+    case tHCI_STATUS::HCI_ERR_HOST_REJECT_SECURITY:
+      return State::HOST_REJECT_SECURITY;
+    case tHCI_STATUS::HCI_ERR_HOST_REJECT_DEVICE:
+      return State::HOST_REJECT_DEVICE;
+    case tHCI_STATUS::HCI_ERR_HOST_TIMEOUT:
+      return State::CONNECTION_ACCEPT_TIMEOUT;
+    case tHCI_STATUS::HCI_ERR_ILLEGAL_PARAMETER_FMT:
+      return State::ILLEGAL_PARAMETER_FMT;
+    case tHCI_STATUS::HCI_ERR_PEER_USER:
+      return State::PEER_USER;
+    case tHCI_STATUS::HCI_ERR_REMOTE_LOW_RESOURCE:
+      return State::REMOTE_LOW_RESOURCE;
+    case tHCI_STATUS::HCI_ERR_REMOTE_POWER_OFF:
+      return State::REMOTE_POWER_OFF;
+    case tHCI_STATUS::HCI_ERR_CONN_CAUSE_LOCAL_HOST:
+      return State::CONN_CAUSE_LOCAL_HOST;
+    case tHCI_STATUS::HCI_ERR_REPEATED_ATTEMPTS:
+      return State::REPEATED_ATTEMPTS;
     case tHCI_STATUS::HCI_ERR_PAIRING_NOT_ALLOWED:
       return State::PAIRING_NOT_ALLOWED;
-    case tHCI_STATUS::HCI_ERR_HOST_REJECT_RESOURCES:
-      return State::RESOURCES_EXCEEDED;
+    case tHCI_STATUS::HCI_ERR_UNSUPPORTED_REM_FEATURE:
+      return State::UNSUPPORTED_REM_FEATURE;
+    case tHCI_STATUS::HCI_ERR_UNSPECIFIED:
+      return State::UNSPECIFIED;
+    case tHCI_STATUS::HCI_ERR_LMP_RESPONSE_TIMEOUT:
+      return State::TRANSACTION_RESPONSE_TIMEOUT;
+    case tHCI_STATUS::HCI_ERR_LMP_ERR_TRANS_COLLISION:
+      return State::LMP_ERR_TRANS_COLLISION;
+    case tHCI_STATUS::HCI_ERR_ENCRY_MODE_NOT_ACCEPTABLE:
+      return State::ENCRYPTION_MODE_NOT_ACCEPTABLE;
+    case tHCI_STATUS::HCI_ERR_UNIT_KEY_USED:
+      return State::UNIT_KEY_USED;
+    case tHCI_STATUS::HCI_ERR_PAIRING_WITH_UNIT_KEY_NOT_SUPPORTED:
+      return State::PAIRING_WITH_UNIT_KEY_NOT_SUPPORTED;
+    case tHCI_STATUS::HCI_ERR_DIFF_TRANSACTION_COLLISION:
+      return State::DIFF_TRANSACTION_COLLISION;
+    case tHCI_STATUS::HCI_ERR_INSUFFCIENT_SECURITY:
+      return State::INSUFFICIENT_SECURITY;
+    case tHCI_STATUS::HCI_ERR_ROLE_SWITCH_PENDING:
+      return State::ROLE_SWITCH_PENDING;
+    case tHCI_STATUS::HCI_ERR_ROLE_SWITCH_FAILED:
+      return State::ROLE_SWITCH_FAILED;
+    case tHCI_STATUS::HCI_ERR_HOST_BUSY_PAIRING:
+      return State::HOST_BUSY_PAIRING;
+    case tHCI_STATUS::HCI_ERR_UNACCEPT_CONN_INTERVAL:
+      return State::UNACCEPT_CONN_INTERVAL;
+    case tHCI_STATUS::HCI_ERR_ADVERTISING_TIMEOUT:
+      return State::ADVERTISING_TIMEOUT;
+    case tHCI_STATUS::HCI_ERR_CONN_FAILED_ESTABLISHMENT:
+      return State::CONNECTION_FAILED_ESTABLISHMENT;
+    case tHCI_STATUS::HCI_ERR_LIMIT_REACHED:
+      return State::LIMIT_REACHED;
+    case tHCI_STATUS::HCI_ERR_CANCELLED_BY_LOCAL_HOST:
+      return State::CANCELLED_BY_LOCAL_HOST;
+    case tHCI_STATUS::HCI_ERR_UNDEFINED:
+      return State::UNDEFINED;
     default:
       return State::STATE_UNKNOWN;
   }
 }
 
-State MapSmpStatusCodeToState(tSMP_STATUS status) {
+static State MapSmpStatusCodeToState(tSMP_STATUS status) {
   switch (status) {
     case tSMP_STATUS::SMP_SUCCESS:
       return State::SUCCESS;
@@ -246,6 +312,29 @@ State MapSmpStatusCodeToState(tSMP_STATUS status) {
       return State::USER_CANCELLATION;
     default:
       return State::STATE_UNKNOWN;
+  }
+}
+
+State MapHfpVersionToState(uint16_t version) {
+  switch (version) {
+    case HSP_VERSION_1_0:
+      return State::VERSION_1_0;
+    case HFP_VERSION_1_1:
+      return State::VERSION_1_1;
+    case HSP_VERSION_1_2:
+      return State::VERSION_1_2;
+    case HFP_VERSION_1_5:
+      return State::VERSION_1_5;
+    case HFP_VERSION_1_6:
+      return State::VERSION_1_6;
+    case HFP_VERSION_1_7:
+      return State::VERSION_1_7;
+    case HFP_VERSION_1_8:
+      return State::VERSION_1_8;
+    case HFP_VERSION_1_9:
+      return State::VERSION_1_9;
+    default:
+      return State::VERSION_UNKNOWN;
   }
 }
 

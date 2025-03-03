@@ -16,6 +16,8 @@
 
 package android.bluetooth.le;
 
+import static java.util.Objects.requireNonNull;
+
 import android.annotation.IntDef;
 import android.annotation.IntRange;
 import android.annotation.NonNull;
@@ -28,7 +30,6 @@ import android.os.Parcelable;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
-import java.util.Objects;
 
 /**
  * The {@link DistanceMeasurementParams} provide a way to adjust distance measurement preferences.
@@ -84,7 +85,7 @@ public final class DistanceMeasurementParams implements Parcelable {
             int frequency,
             int methodId,
             ChannelSoundingParams channelSoundingParams) {
-        mDevice = Objects.requireNonNull(device);
+        mDevice = requireNonNull(device);
         mDuration = duration;
         mFrequency = frequency;
         mMethodId = methodId;
@@ -234,7 +235,7 @@ public final class DistanceMeasurementParams implements Parcelable {
          * @param device the remote device for the distance measurement
          */
         public Builder(@NonNull BluetoothDevice device) {
-            mDevice = Objects.requireNonNull(device);
+            mDevice = requireNonNull(device);
         }
 
         /**

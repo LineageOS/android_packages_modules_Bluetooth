@@ -402,9 +402,8 @@ public:
               procedure_data.remote_subevent_data_, hci::CsRole::INITIATOR);
       channel_sounding_procedure_data.reflectorSubeventResultData =
               get_subevent_result_data(procedure_data.local_subevent_data_, hci::CsRole::REFLECTOR);
-
-      session_it->second->GetSession()->writeProcedureData(channel_sounding_procedure_data);
     }
+    session_it->second->GetSession()->writeProcedureData(channel_sounding_procedure_data);
   }
 
   static std::vector<SubeventResultData> get_subevent_result_data(

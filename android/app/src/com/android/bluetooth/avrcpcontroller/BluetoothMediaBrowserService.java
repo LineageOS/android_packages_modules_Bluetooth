@@ -262,7 +262,7 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
         mSession.setPlaybackState(errorState);
     }
 
-    private Bundle getDefaultStyle() {
+    private static Bundle getDefaultStyle() {
         Bundle style = new Bundle();
         style.putBoolean(CONTENT_STYLE_SUPPORTED, true);
         style.putInt(CONTENT_STYLE_BROWSABLE_HINT, CONTENT_STYLE_GRID_ITEM_HINT_VALUE);

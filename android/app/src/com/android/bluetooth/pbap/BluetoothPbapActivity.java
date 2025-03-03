@@ -52,7 +52,7 @@ import com.android.internal.annotations.VisibleForTesting;
 // Next tag value for ContentProfileErrorReportUtils.report(): 1
 public class BluetoothPbapActivity extends AlertActivity
         implements Preference.OnPreferenceChangeListener, TextWatcher {
-    private static final String TAG = "BluetoothPbapActivity";
+    private static final String TAG = BluetoothPbapActivity.class.getSimpleName();
 
     private static final int BLUETOOTH_OBEX_AUTHKEY_MAX_LENGTH = 16;
 

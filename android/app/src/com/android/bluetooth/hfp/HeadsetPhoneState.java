@@ -16,8 +16,11 @@
 
 package com.android.bluetooth.hfp;
 
+import static java.util.Objects.requireNonNull;
+
 import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothDevice;
+import android.content.Context;
 import android.os.Handler;
 import android.telephony.PhoneStateListener;
 import android.telephony.ServiceState;
@@ -32,7 +35,6 @@ import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Objects;
 import java.util.concurrent.Executor;
 
 /**
@@ -42,7 +44,7 @@ import java.util.concurrent.Executor;
  * Call them from the HeadsetPhoneStateMachine message handler only.
  */
 public class HeadsetPhoneState {
-    private static final String TAG = "HeadsetPhoneState";
+    private static final String TAG = HeadsetPhoneState.class.getSimpleName();
 
     private final HeadsetService mHeadsetService;
     private final TelephonyManager mTelephonyManager;
@@ -68,31 +70,27 @@ public class HeadsetPhoneState {
 
     private final HashMap<BluetoothDevice, Integer> mDeviceEventMap = new HashMap<>();
     private PhoneStateListener mPhoneStateListener;
-    private final OnSubscriptionsChangedListener mOnSubscriptionsChangedListener;
-    private SignalStrengthUpdateRequest mSignalStrengthUpdateRequest;
+    private final OnSubscriptionsChangedListener mOnSubscriptionsChangedListener =
+            new HeadsetPhoneStateOnSubscriptionChangedListener();
+    private final SignalStrengthUpdateRequest mSignalStrengthUpdateRequest =
+            new SignalStrengthUpdateRequest.Builder()
+                    .setSignalThresholdInfos(Collections.EMPTY_LIST)
+                    .setSystemThresholdReportingRequestedWhileIdle(true)
+                    .build();
     private final Object mPhoneStateListenerLock = new Object();
 
     HeadsetPhoneState(HeadsetService headsetService) {
-        synchronized (mPhoneStateListenerLock) {
-            Objects.requireNonNull(headsetService, "headsetService is null");
-            mHeadsetService = headsetService;
-            mTelephonyManager = mHeadsetService.getSystemService(TelephonyManager.class);
-            Objects.requireNonNull(mTelephonyManager, "TELEPHONY_SERVICE is null");
-            // Register for SubscriptionInfo list changes which is guaranteed to invoke
-            // onSubscriptionInfoChanged and which in turns calls loadInBackground.
-            mSubscriptionManager = SubscriptionManager.from(mHeadsetService);
-            Objects.requireNonNull(mSubscriptionManager, "TELEPHONY_SUBSCRIPTION_SERVICE is null");
-            // Initialize subscription on the handler thread
-            mHandler = new Handler(headsetService.getStateMachinesThreadLooper());
-            mOnSubscriptionsChangedListener = new HeadsetPhoneStateOnSubscriptionChangedListener();
-            mSubscriptionManager.addOnSubscriptionsChangedListener(
-                    command -> mHandler.post(command), mOnSubscriptionsChangedListener);
-            mSignalStrengthUpdateRequest =
-                    new SignalStrengthUpdateRequest.Builder()
-                            .setSignalThresholdInfos(Collections.EMPTY_LIST)
-                            .setSystemThresholdReportingRequestedWhileIdle(true)
-                            .build();
-        }
+        mHeadsetService = requireNonNull(headsetService);
+        Context ctx = headsetService;
+        mTelephonyManager = requireNonNull(ctx.getSystemService(TelephonyManager.class));
+        // Register for SubscriptionInfo list changes which is guaranteed to invoke
+        // onSubscriptionInfoChanged and which in turns calls loadInBackground.
+        mSubscriptionManager = requireNonNull(ctx.getSystemService(SubscriptionManager.class));
+
+        // Initialize subscription on the handler thread
+        mHandler = new Handler(headsetService.getStateMachinesThreadLooper());
+        mSubscriptionManager.addOnSubscriptionsChangedListener(
+                mHandler::post, mOnSubscriptionsChangedListener);
     }
 
     /** Cleanup this instance. Instance can no longer be used after calling this method. */
@@ -173,7 +171,7 @@ public class HeadsetPhoneState {
                 return;
             }
             Log.i(TAG, "startListenForPhoneState(), subId=" + subId + ", enabled_events=" + events);
-            mPhoneStateListener = new HeadsetPhoneStateListener(command -> mHandler.post(command));
+            mPhoneStateListener = new HeadsetPhoneStateListener(mHandler::post);
             mTelephonyManager.listen(mPhoneStateListener, events);
             if ((events & PhoneStateListener.LISTEN_SIGNAL_STRENGTHS) != 0) {
                 mTelephonyManager.setSignalStrengthUpdateRequest(mSignalStrengthUpdateRequest);
@@ -283,10 +281,6 @@ public class HeadsetPhoneState {
     @SuppressLint("AndroidFrameworkRequiresPermission")
     private class HeadsetPhoneStateOnSubscriptionChangedListener
             extends OnSubscriptionsChangedListener {
-        HeadsetPhoneStateOnSubscriptionChangedListener() {
-            super();
-        }
-
         @Override
         public void onSubscriptionsChanged() {
             synchronized (mDeviceEventMap) {

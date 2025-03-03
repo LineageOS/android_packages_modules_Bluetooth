@@ -924,7 +924,7 @@ static void verifyMetadata(
                       ->get<::aidl::android::hardware::bluetooth::audio::MetadataLtv::
                                     preferredAudioContexts>()
                       .values.bitmask,
-              stack_meta.preferred_audio_context.value());
+              stack_meta.preferred_audio_context.value().value());
     matched_preferredAudioContexts = true;
 
   } else if (aidl_meta->getTag() ==
@@ -933,7 +933,7 @@ static void verifyMetadata(
                       ->get<::aidl::android::hardware::bluetooth::audio::MetadataLtv::
                                     streamingAudioContexts>()
                       .values.bitmask,
-              stack_meta.streaming_audio_context.value());
+              stack_meta.streaming_audio_context.value().value());
     matched_streamingAudioContexts = true;
 
   } else if (aidl_meta->getTag() ==

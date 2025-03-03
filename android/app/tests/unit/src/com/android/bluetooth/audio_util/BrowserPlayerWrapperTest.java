@@ -143,7 +143,7 @@ public class BrowserPlayerWrapperTest {
         return BitmapFactory.decodeStream(imageInputStream);
     }
 
-    private MediaDescription getMediaDescription(
+    private static MediaDescription getMediaDescription(
             String id,
             String title,
             String artist,
@@ -169,7 +169,7 @@ public class BrowserPlayerWrapperTest {
         return builder.build();
     }
 
-    private MediaItem getMediaItem(MediaDescription description, int flags) {
+    private static MediaItem getMediaItem(MediaDescription description, int flags) {
         return new MediaItem(description, flags);
     }
 

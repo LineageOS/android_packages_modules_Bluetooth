@@ -28,16 +28,12 @@
 
 // Mocked internal structures, if any
 
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
-
 namespace test {
 namespace mock {
 namespace bta_sdp_api {
 
 // Function state capture and return values, if needed
 struct BTA_SdpCreateRecordByUser BTA_SdpCreateRecordByUser;
-struct BTA_SdpDumpsys BTA_SdpDumpsys;
 struct BTA_SdpEnable BTA_SdpEnable;
 struct BTA_SdpRemoveRecordByUser BTA_SdpRemoveRecordByUser;
 struct BTA_SdpSearch BTA_SdpSearch;
@@ -64,10 +60,6 @@ tBTA_SDP_STATUS BTA_SdpSearch::return_value = BTA_SDP_SUCCESS;
 tBTA_SDP_STATUS BTA_SdpCreateRecordByUser(void* user_data) {
   inc_func_call_count(__func__);
   return test::mock::bta_sdp_api::BTA_SdpCreateRecordByUser(user_data);
-}
-void BTA_SdpDumpsys(int fd) {
-  inc_func_call_count(__func__);
-  test::mock::bta_sdp_api::BTA_SdpDumpsys(fd);
 }
 tBTA_SDP_STATUS BTA_SdpEnable(tBTA_SDP_DM_CBACK* p_cback) {
   inc_func_call_count(__func__);

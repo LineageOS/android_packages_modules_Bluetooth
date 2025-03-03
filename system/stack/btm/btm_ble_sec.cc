@@ -2109,11 +2109,6 @@ std::optional<Octet16> BTM_BleGetPeerIRK(const RawAddress address) {
   return p_dev_rec->sec_rec.ble_keys.irk;
 }
 
-bool BTM_BleIsLinkKeyKnown(const RawAddress address) {
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(address);
-  return p_dev_rec != nullptr && p_dev_rec->sec_rec.is_le_link_key_known();
-}
-
 std::optional<tBLE_BD_ADDR> BTM_BleGetIdentityAddress(const RawAddress address) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(address);
   if (p_dev_rec == nullptr) {

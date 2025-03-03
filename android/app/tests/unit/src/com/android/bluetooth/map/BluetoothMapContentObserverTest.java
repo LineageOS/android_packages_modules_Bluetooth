@@ -259,7 +259,7 @@ public class BluetoothMapContentObserverTest {
         mObserver.sendEvent(event);
         verify(mClient, never()).sendEvent(any(), anyInt());
 
-        event.eventType = BluetoothMapContentObserver.EVENT_TYPE_DELEVERY_SUCCESS;
+        event.eventType = BluetoothMapContentObserver.EVENT_TYPE_DELIVERY_SUCCESS;
         mObserver.sendEvent(event);
         verify(mClient, never()).sendEvent(any(), anyInt());
 
@@ -2413,15 +2413,16 @@ public class BluetoothMapContentObserverTest {
         verify(mProviderClient, never()).query(any(), any(), any(), any(), any(), any());
     }
 
-    private BluetoothMapContentObserver.Msg createSimpleMsg() {
+    private static BluetoothMapContentObserver.Msg createSimpleMsg() {
         return new BluetoothMapContentObserver.Msg(1, 1L, 1);
     }
 
-    private BluetoothMapContentObserver.Msg createMsgWithTypeAndThreadId(int type, int threadId) {
+    private static BluetoothMapContentObserver.Msg createMsgWithTypeAndThreadId(
+            int type, int threadId) {
         return new BluetoothMapContentObserver.Msg(1, type, threadId, 1);
     }
 
-    private void setFolderStructureWithTelecomAndMsg(
+    private static void setFolderStructureWithTelecomAndMsg(
             BluetoothMapFolderElement folderElement, String folderName, long folderId) {
         folderElement.addFolder("telecom");
         folderElement.getSubFolder("telecom").addFolder("msg");

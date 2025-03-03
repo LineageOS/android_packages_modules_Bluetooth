@@ -18,6 +18,12 @@ package com.android.bluetooth.pbapclient;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
+import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
+import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
+import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
+import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
+
+import static java.util.Objects.requireNonNull;
 
 import android.annotation.RequiresPermission;
 import android.bluetooth.BluetoothDevice;
@@ -36,7 +42,6 @@ import com.android.obex.HeaderSet;
 import com.android.obex.ResponseCodes;
 
 import java.io.IOException;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -84,7 +89,7 @@ class PbapClientObexClient {
 
     private final BluetoothDevice mDevice;
     private final int mLocalSupportedFeatures;
-    private int mState = BluetoothProfile.STATE_DISCONNECTED;
+    private int mState = STATE_DISCONNECTED;
     private AtomicInteger mPsm = new AtomicInteger(L2CAP_INVALID_PSM);
     private AtomicInteger mChannelId = new AtomicInteger(RFCOMM_INVALID_CHANNEL_ID);
 
@@ -184,8 +189,8 @@ class PbapClientObexClient {
     @VisibleForTesting
     PbapClientObexClient(
             BluetoothDevice device, int supportedFeatures, Callback callback, Looper looper) {
-        mDevice = Objects.requireNonNull(device, "The device provided cannot be null");
-        mCallback = Objects.requireNonNull(callback, "The callback object provided cannot be null");
+        mDevice = requireNonNull(device);
+        mCallback = requireNonNull(callback);
         mAuth = new PbapClientObexAuthenticator();
         mLocalSupportedFeatures = supportedFeatures;
 
@@ -233,7 +238,7 @@ class PbapClientObexClient {
      * @return True if connected, False otherwise
      */
     public boolean isConnected() {
-        return getConnectionState() == BluetoothProfile.STATE_CONNECTED;
+        return getConnectionState() == STATE_CONNECTED;
     }
 
     /**
@@ -354,7 +359,7 @@ class PbapClientObexClient {
         if (mThread != null) {
             mThread.quit();
         }
-        setConnectionState(BluetoothProfile.STATE_DISCONNECTED);
+        setConnectionState(STATE_DISCONNECTED);
     }
 
     /** Handles this PBAP Client OBEX Client's requests */
@@ -369,7 +374,7 @@ class PbapClientObexClient {
             debug("Handling Message, type=" + messageToString(msg.what));
             switch (msg.what) {
                 case MSG_CONNECT:
-                    if (getConnectionState() != BluetoothProfile.STATE_DISCONNECTED) {
+                    if (getConnectionState() != STATE_DISCONNECTED) {
                         warn("Cannot connect, device not disconnected");
                         return;
                     }
@@ -401,13 +406,13 @@ class PbapClientObexClient {
                         return;
                     }
 
-                    setConnectionState(BluetoothProfile.STATE_CONNECTING);
+                    setConnectionState(STATE_CONNECTING);
 
                     mSocket = connectSocket(transport, psmOrChannel);
                     if (mSocket == null) {
                         mPsm.set(L2CAP_INVALID_PSM);
                         mChannelId.set(RFCOMM_INVALID_CHANNEL_ID);
-                        setConnectionState(BluetoothProfile.STATE_DISCONNECTED);
+                        setConnectionState(STATE_DISCONNECTED);
                         return;
                     }
 
@@ -417,22 +422,22 @@ class PbapClientObexClient {
                         mSocket = null;
                         mPsm.set(L2CAP_INVALID_PSM);
                         mChannelId.set(RFCOMM_INVALID_CHANNEL_ID);
-                        setConnectionState(BluetoothProfile.STATE_DISCONNECTED);
+                        setConnectionState(STATE_DISCONNECTED);
                         return;
                     }
 
-                    setConnectionState(BluetoothProfile.STATE_CONNECTED);
+                    setConnectionState(STATE_CONNECTED);
                     break;
 
                 case MSG_DISCONNECT:
                     removeCallbacksAndMessages(null);
 
-                    if (getConnectionState() != BluetoothProfile.STATE_CONNECTED) {
+                    if (getConnectionState() != STATE_CONNECTED) {
                         warn("Cannot disconnect, device not connected");
                         return;
                     }
 
-                    setConnectionState(BluetoothProfile.STATE_DISCONNECTING);
+                    setConnectionState(STATE_DISCONNECTING);
 
                     // To disconnect, first bring down the OBEX session, then bring down the
                     // underlying transport/socket. If there are any errors while bringing down the
@@ -448,7 +453,7 @@ class PbapClientObexClient {
                     mPsm.set(L2CAP_INVALID_PSM);
                     mChannelId.set(RFCOMM_INVALID_CHANNEL_ID);
 
-                    setConnectionState(BluetoothProfile.STATE_DISCONNECTED);
+                    setConnectionState(STATE_DISCONNECTED);
                     break;
 
                 case MSG_REQUEST:

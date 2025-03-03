@@ -552,11 +552,11 @@ public class PbapClientContactsStorageTest {
         assertThat(mStorage.isStorageReady()).isTrue();
     }
 
-    private Account getAccountForDevice(BluetoothDevice device) {
+    private static Account getAccountForDevice(BluetoothDevice device) {
         return new Account(device.getAddress(), ACCOUNT_TYPE);
     }
 
-    private List<VCardEntry> getMockContacts(int numContacts) {
+    private static List<VCardEntry> getMockContacts(int numContacts) {
         List<VCardEntry> contacts = new ArrayList<VCardEntry>();
         for (int i = 0; i < numContacts; i++) {
             VCardEntry card = new VCardEntry(VCardConfig.VCARD_TYPE_V21_GENERIC);
@@ -570,7 +570,7 @@ public class PbapClientContactsStorageTest {
         return contacts;
     }
 
-    private List<VCardEntry> getMockCallHistory(int type, int numEntries) {
+    private static List<VCardEntry> getMockCallHistory(int type, int numEntries) {
         String typeIndicator = "";
         if (type == CallLog.Calls.INCOMING_TYPE) {
             typeIndicator = "RECEIVED";

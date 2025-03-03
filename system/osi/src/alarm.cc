@@ -137,7 +137,6 @@ static void remove_pending_alarm(alarm_t* alarm);
 static void schedule_next_instance(alarm_t* alarm);
 static void reschedule_root_alarm(void);
 static void alarm_queue_ready(fixed_queue_t* queue, void* context);
-static void timer_callback(void* data);
 static void callback_dispatch(void* context);
 static bool timer_create_internal(const clockid_t clock_id, timer_t* timer);
 static void update_scheduling_stats(alarm_stats_t* stats, uint64_t now_ms, uint64_t deadline_ms);
@@ -613,7 +612,7 @@ static void alarm_queue_ready(fixed_queue_t* queue, void* /* context */) {
 }
 
 // Callback function for wake alarms and our posix timer
-static void timer_callback(void* /* ptr */) { semaphore_post(alarm_expired); }
+static void timer_callback(union sigval /* sigev_value */) { semaphore_post(alarm_expired); }
 
 // Function running on |dispatcher_thread| that performs the following:
 //   (1) Receives a signal using |alarm_exired| that the alarm has expired
@@ -655,7 +654,7 @@ static void callback_dispatch(void* /* context */) {
       }
 
       alarm->closure.i.Reset(Bind(alarm_ready_mloop, alarm));
-      get_main_thread()->DoInThread(FROM_HERE, alarm->closure.i.callback());
+      get_main_thread()->DoInThread(alarm->closure.i.callback());
     } else {
       fixed_queue_enqueue(alarm->queue, alarm);
     }
@@ -678,7 +677,7 @@ static bool timer_create_internal(const clockid_t clock_id, timer_t* timer) {
 
   memset(&sigevent, 0, sizeof(sigevent));
   sigevent.sigev_notify = SIGEV_THREAD;
-  sigevent.sigev_notify_function = (void (*)(union sigval))timer_callback;
+  sigevent.sigev_notify_function = timer_callback;
   sigevent.sigev_notify_attributes = &thread_attr;
   if (timer_create(clock_id, &sigevent, timer) == -1) {
     log::error("unable to create timer with clock {}: {}", clock_id, strerror(errno));

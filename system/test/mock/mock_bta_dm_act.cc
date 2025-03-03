@@ -26,13 +26,15 @@
 
 #include <cstdint>
 
+#include "bta/dm/bta_dm_act.h"
+#include "bta/dm/bta_dm_device_search.h"
+#include "bta/dm/bta_dm_sec_int.h"
+#include "bta/include/bta_dm_acl.h"
+#include "bta/include/bta_dm_api.h"
 #include "test/common/mock_functions.h"
 #include "types/raw_address.h"
 
 // Mocked internal structures, if any
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 namespace test {
 namespace mock {
@@ -74,7 +76,6 @@ struct bta_dm_process_remove_device bta_dm_process_remove_device;
 struct bta_dm_remove_device bta_dm_remove_device;
 struct bta_dm_remote_key_missing bta_dm_remote_key_missing;
 struct bta_dm_on_encryption_change bta_dm_on_encryption_change;
-struct bta_dm_rm_cback bta_dm_rm_cback;
 struct bta_dm_set_dev_name bta_dm_set_dev_name;
 struct bta_dm_set_encryption bta_dm_set_encryption;
 
@@ -206,7 +207,7 @@ void bta_dm_enable(tBTA_DM_SEC_CBACK* p_sec_cback) {
   inc_func_call_count(__func__);
   test::mock::bta_dm_act::bta_dm_enable(p_sec_cback);
 }
-void bta_dm_encrypt_cback(const RawAddress* bd_addr, tBT_TRANSPORT transport, void* p_ref_data,
+void bta_dm_encrypt_cback(RawAddress bd_addr, tBT_TRANSPORT transport, void* p_ref_data,
                           tBTM_STATUS result) {
   inc_func_call_count(__func__);
   test::mock::bta_dm_act::bta_dm_encrypt_cback(bd_addr, transport, p_ref_data, result);
@@ -234,11 +235,6 @@ void bta_dm_remote_key_missing(const RawAddress bd_addr) {
 void bta_dm_on_encryption_change(bt_encryption_change_evt encryption_change) {
   inc_func_call_count(__func__);
   test::mock::bta_dm_act::bta_dm_on_encryption_change(encryption_change);
-}
-void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id, uint8_t app_id,
-                     const RawAddress& peer_addr) {
-  inc_func_call_count(__func__);
-  test::mock::bta_dm_act::bta_dm_rm_cback(status, id, app_id, peer_addr);
 }
 void bta_dm_set_dev_name(const std::vector<uint8_t>& name) {
   inc_func_call_count(__func__);

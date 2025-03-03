@@ -20,10 +20,8 @@
  */
 
 #include "bta/include/bta_av_api.h"
+#include "bta/include/bta_av_ci.h"
 #include "test/common/mock_functions.h"
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 void bta_av_ci_setconfig(tBTA_AV_HNDL /* bta_av_handle */, uint8_t /* err_code */,
                          uint8_t /* category */, bool /* recfg_needed */,

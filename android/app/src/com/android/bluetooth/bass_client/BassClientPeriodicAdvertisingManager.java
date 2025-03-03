@@ -22,7 +22,7 @@ import android.util.Log;
 
 /** Bass Client Periodic Advertising object handler */
 public class BassClientPeriodicAdvertisingManager {
-    private static final String TAG = "BassClientPeriodicAdvertisingManager";
+    private static final String TAG = BassClientPeriodicAdvertisingManager.class.getSimpleName();
 
     private static PeriodicAdvertisingManager sPeriodicAdvertisingManager;
 

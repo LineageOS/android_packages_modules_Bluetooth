@@ -35,7 +35,7 @@ class BtmInterface {
 public:
   virtual bool GetSecurityFlagsByTransport(const RawAddress& bd_addr, uint8_t* p_sec_flags,
                                            tBT_TRANSPORT transport) = 0;
-  virtual bool IsLinkKeyKnown(const RawAddress& bd_addr, tBT_TRANSPORT transport) = 0;
+  virtual bool IsDeviceBonded(const RawAddress& bd_addr, tBT_TRANSPORT transport) = 0;
   virtual bool BTM_IsEncrypted(const RawAddress& bd_addr, tBT_TRANSPORT transport) = 0;
   virtual tBTM_STATUS SetEncryption(const RawAddress& bd_addr, tBT_TRANSPORT transport,
                                     tBTM_SEC_CALLBACK* p_callback, void* p_ref_data,
@@ -54,7 +54,7 @@ public:
   virtual std::optional<Octet16> BTM_BleGetPeerLTK(const RawAddress address) = 0;
   virtual std::optional<Octet16> BTM_BleGetPeerIRK(const RawAddress address) = 0;
 
-  virtual bool BTM_BleIsLinkKeyKnown(const RawAddress address) = 0;
+  virtual bool BTM_IsBonded(const RawAddress& bd_addr, tBT_TRANSPORT transport) = 0;
   virtual std::optional<tBLE_BD_ADDR> BTM_BleGetIdentityAddress(const RawAddress address) = 0;
   virtual bool BTM_IsAclConnectionUp(const RawAddress& remote_bda, tBT_TRANSPORT transport) = 0;
 
@@ -66,7 +66,7 @@ public:
   MOCK_METHOD((bool), GetSecurityFlagsByTransport,
               (const RawAddress& bd_addr, uint8_t* p_sec_flags, tBT_TRANSPORT transport),
               (override));
-  MOCK_METHOD((bool), IsLinkKeyKnown, (const RawAddress& bd_addr, tBT_TRANSPORT transport),
+  MOCK_METHOD((bool), IsDeviceBonded, (const RawAddress& bd_addr, tBT_TRANSPORT transport),
               (override));
   MOCK_METHOD((bool), BTM_IsEncrypted, (const RawAddress& bd_addr, tBT_TRANSPORT transport),
               (override));
@@ -93,7 +93,8 @@ public:
   MOCK_METHOD((std::optional<Octet16>), BTM_BleGetPeerLTK, (const RawAddress address), (override));
   MOCK_METHOD((std::optional<Octet16>), BTM_BleGetPeerIRK, (const RawAddress address), (override));
 
-  MOCK_METHOD((bool), BTM_BleIsLinkKeyKnown, (const RawAddress address), (override));
+  MOCK_METHOD((bool), BTM_IsBonded, (const RawAddress& bd_addr, tBT_TRANSPORT transport),
+              (override));
   MOCK_METHOD((std::optional<tBLE_BD_ADDR>), BTM_BleGetIdentityAddress, (const RawAddress address),
               (override));
   MOCK_METHOD((bool), BTM_IsAclConnectionUp,

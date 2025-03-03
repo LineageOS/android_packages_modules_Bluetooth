@@ -109,7 +109,7 @@ public class A2dpSinkStreamHandlerTest {
 
     @After
     public void tearDown() throws Exception {
-        mService.stop();
+        mService.cleanup();
     }
 
     @Test

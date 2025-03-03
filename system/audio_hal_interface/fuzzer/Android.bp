@@ -121,6 +121,13 @@ cc_defaults {
         users: "multi_user",
         fuzzed_code_usage: "shipped",
     },
+    target: {
+        android: {
+            static_libs: [
+                "libperfetto_client_experimental",
+            ],
+        },
+    },
 }
 
 cc_fuzz {

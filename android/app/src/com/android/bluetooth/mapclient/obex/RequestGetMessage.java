@@ -36,8 +36,7 @@ import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 
 class RequestGetMessage extends Request {
-
-    private static final String TAG = "RequestGetMessage";
+    private static final String TAG = RequestGetMessage.class.getSimpleName();
 
     private static final String TYPE = "x-bt/message";
 
@@ -100,12 +99,7 @@ class RequestGetMessage extends Request {
     }
 
     public String getHandle() {
-        try {
-            return (String) mHeaderSet.getHeader(HeaderSet.NAME);
-        } catch (IOException e) {
-            Log.e(TAG, "Unexpected exception while reading handle!", e);
-            return null;
-        }
+        return (String) mHeaderSet.getHeader(HeaderSet.NAME);
     }
 
     @Override

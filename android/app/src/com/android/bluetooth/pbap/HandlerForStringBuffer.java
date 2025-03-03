@@ -30,7 +30,7 @@ import java.io.OutputStream;
 /** Handler to emit vCards to PCE. */
 // Next tag value for ContentProfileErrorReportUtils.report(): 2
 public class HandlerForStringBuffer {
-    private static final String TAG = "HandlerForStringBuffer";
+    private static final String TAG = HandlerForStringBuffer.class.getSimpleName();
 
     private final Operation mOperation;
     private final String mOwnerVCard;

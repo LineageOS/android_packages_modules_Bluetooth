@@ -407,8 +407,8 @@ bool BTM_IsLinkKeyAuthed(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
   return btm_sec_cb.IsLinkKeyAuthenticated(bd_addr, transport);
 }
 
-bool BTM_IsLinkKeyKnown(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
-  return btm_sec_cb.IsLinkKeyKnown(bd_addr, transport);
+bool BTM_IsBonded(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
+  return btm_sec_cb.IsDeviceBonded(bd_addr, transport);
 }
 
 bool BTM_IsAuthenticated(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
@@ -797,8 +797,15 @@ tBTM_STATUS BTM_SecBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
                         tBT_TRANSPORT transport, tBT_DEVICE_TYPE /* device_type */) {
   if (transport == BT_TRANSPORT_AUTO) {
     if (addr_type == BLE_ADDR_PUBLIC) {
-      transport = get_btm_client_interface().ble.BTM_UseLeLink(bd_addr) ? BT_TRANSPORT_LE
-                                                                        : BT_TRANSPORT_BR_EDR;
+      bool is_discovered_over_le_only = false;
+      tBTM_INQ_INFO* p_inq_info = BTM_InqDbRead(bd_addr);
+      if (p_inq_info != nullptr && com::android::bluetooth::flags::auto_transport_pairing()) {
+        uint8_t inq_result_type = 0;
+        inq_result_type = p_inq_info->results.inq_result_type;
+        is_discovered_over_le_only = (inq_result_type == BT_DEVICE_TYPE_BLE);
+      }
+      transport = (get_btm_client_interface().ble.BTM_UseLeLink(bd_addr) ||
+                   is_discovered_over_le_only) ? BT_TRANSPORT_LE: BT_TRANSPORT_BR_EDR;
     } else {
       log::info("Forcing transport LE (was auto) because of the address type");
       transport = BT_TRANSPORT_LE;
@@ -811,6 +818,9 @@ tBTM_STATUS BTM_SecBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
   if ((transport == BT_TRANSPORT_LE && (dev_type & BT_DEVICE_TYPE_BLE) == 0) ||
       (transport == BT_TRANSPORT_BR_EDR && (dev_type & BT_DEVICE_TYPE_BREDR) == 0)) {
     log::warn("Requested transport and supported transport don't match");
+    bluetooth::os::LogMetricBluetoothEvent(ToGdAddress(bd_addr),
+                                           android::bluetooth::EventType::TRANSPORT_MATCH,
+                                           android::bluetooth::State::FAIL);
   }
 
   bluetooth::os::LogMetricBluetoothEvent(
@@ -1984,7 +1994,7 @@ void btm_create_conn_cancel_complete(uint8_t status, const RawAddress bd_addr) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_sec_check_pending_reqs(void) {
+static void btm_sec_check_pending_reqs(void) {
   if (btm_sec_cb.pairing_state == BTM_PAIR_STATE_IDLE) {
     /* First, resubmit L2CAP requests */
     if (btm_sec_cb.sec_req_pending) {

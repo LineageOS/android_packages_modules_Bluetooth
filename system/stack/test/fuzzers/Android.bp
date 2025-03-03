@@ -8,7 +8,7 @@ package {
 }
 
 cc_defaults {
-    name: "libbt-stack_fuzz_defaults",
+    name: "bluetooth_fuzz_stack_defaults",
     defaults: [
         "fluoride_defaults",
         "latest_android_hardware_audio_common_ndk_static",
@@ -20,9 +20,11 @@ cc_defaults {
         "-Wno-missing-prototypes",
     ],
     include_dirs: [
-        "packages/modules/Bluetooth/system/",
-        "packages/modules/Bluetooth/system/gd/",
-        "packages/modules/Bluetooth/system/include/",
+        "packages/modules/Bluetooth/system",
+        "packages/modules/Bluetooth/system/bta/include",
+        "packages/modules/Bluetooth/system/bta/sys",
+        "packages/modules/Bluetooth/system/gd",
+        "packages/modules/Bluetooth/system/include",
         "packages/modules/Bluetooth/system/stack/include",
         "packages/modules/Bluetooth/system/stack/test",
     ],
@@ -59,6 +61,7 @@ cc_defaults {
         "libbte",
         "libbtif",
         "libbtif-core",
+        "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
         "libexpresslog",
         "libflags_rust_cpp_bridge",
@@ -89,4 +92,47 @@ cc_defaults {
         "libutils",
         "server_configurable_flags",
     ],
+    target: {
+        android: {
+            static_libs: [
+                "libperfetto_client_experimental",
+            ],
+        },
+    },
+}
+
+cc_fuzz {
+    name: "bluetooth_fuzz_stack_a2dp",
+    defaults: ["bluetooth_fuzz_stack_defaults"],
+    srcs: ["a2dp/fuzz_a2dp.cc"],
+}
+
+cc_fuzz {
+    name: "bluetooth_fuzz_stack_a2dp_codec",
+    defaults: ["bluetooth_fuzz_stack_defaults"],
+    srcs: ["a2dp/codec/fuzz_a2dp_codec.cc"],
+}
+
+cc_fuzz {
+    name: "bluetooth_fuzz_stack_a2dp_codec_info",
+    defaults: ["bluetooth_fuzz_stack_defaults"],
+    srcs: ["a2dp/codec/fuzz_a2dp_codec_info.cc"],
+}
+
+cc_fuzz {
+    name: "bluetooth_fuzz_stack_a2dp_codec_config",
+    defaults: ["bluetooth_fuzz_stack_defaults"],
+    srcs: ["a2dp/codec/fuzz_a2dp_codec_config.cc"],
+}
+
+cc_fuzz {
+    name: "bluetooth_fuzz_stack_avrc",
+    defaults: ["bluetooth_fuzz_stack_defaults"],
+    srcs: ["avrc/fuzz_avrc.cc"],
+}
+
+cc_fuzz {
+    name: "bluetooth_fuzz_stack_sdp",
+    defaults: ["bluetooth_fuzz_stack_defaults"],
+    srcs: ["sdp/fuzz_sdp.cc"],
 }

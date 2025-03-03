@@ -110,22 +110,11 @@ void bta_hf_client_start_open(tBTA_HF_CLIENT_DATA* p_data) {
   }
 
   /* Check if RFCOMM has any incoming connection to avoid collision. */
-  if (com::android::bluetooth::flags::rfcomm_prevent_unnecessary_collisions()) {
-    if (PORT_IsCollisionDetected(client_cb->peer_addr)) {
-      /* Let the incoming connection go through.                          */
-      /* Issue collision for now.                                         */
-      /* We will decide what to do when we find incoming connection later.*/
-      bta_hf_client_collision_cback(BTA_SYS_CONN_OPEN, BTA_ID_HS, 0, client_cb->peer_addr);
-    }
-  } else {
-    RawAddress pending_bd_addr = RawAddress::kEmpty;
-    if (PORT_IsOpening(&pending_bd_addr)) {
-      /* Let the incoming connection go through.                          */
-      /* Issue collision for now.                                         */
-      /* We will decide what to do when we find incoming connection later.*/
-      bta_hf_client_collision_cback(BTA_SYS_CONN_OPEN, BTA_ID_HS, 0, client_cb->peer_addr);
-      return;
-    }
+  if (PORT_IsCollisionDetected(client_cb->peer_addr)) {
+    /* Let the incoming connection go through.                          */
+    /* Issue collision for now.                                         */
+    /* We will decide what to do when we find incoming connection later.*/
+    bta_hf_client_collision_cback(BTA_SYS_CONN_OPEN, BTA_ID_HS, 0, client_cb->peer_addr);
   }
 
   /* set role */

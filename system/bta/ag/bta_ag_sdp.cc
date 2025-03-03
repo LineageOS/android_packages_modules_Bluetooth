@@ -32,6 +32,7 @@
 
 #include "bta/ag/bta_ag_int.h"
 #include "bta/include/bta_hfp_api.h"
+#include "bta/include/bta_rfcomm_metrics.h"
 #include "bta/include/bta_rfcomm_scn.h"
 #include "bta_ag_api.h"
 #include "bta_api.h"
@@ -42,6 +43,8 @@
 #include "device/include/interop.h"
 #include "device/include/interop_config.h"
 #include "internal_include/bt_target.h"
+#include "main/shim/helpers.h"
+#include "main/shim/metrics_api.h"
 #include "osi/include/allocator.h"
 #include "sdp_callback.h"
 #include "sdp_status.h"
@@ -58,6 +61,7 @@
 
 using namespace bluetooth::legacy::stack::sdp;
 using namespace bluetooth;
+using namespace bluetooth::shim;
 using bluetooth::Uuid;
 
 /* Number of protocol elements in protocol element list. */
@@ -387,6 +391,8 @@ bool bta_ag_sdp_find_attr(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK service) {
       peer_version = p_scb->peer_version;
     }
 
+    LogMetricHfpHfVersion(ToGdAddress(p_scb->peer_addr), p_scb->peer_version);
+
     if (service & BTA_HFP_SERVICE_MASK) {
       /* Update cached peer version if the new one is different */
       if (peer_version != p_scb->peer_version) {
@@ -540,6 +546,8 @@ void bta_ag_do_disc(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK service) {
       return;
     } else {
       log::error("failed to start SDP discovery for {}", p_scb->peer_addr);
+      bta_collect_rfc_metrics_after_sdp_fail(tBTA_JV_STATUS::FAILURE, p_scb->peer_addr, 0,
+                                             BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT, false, 0);
     }
   } else {
     log::error("failed to init SDP discovery database for {}", p_scb->peer_addr);

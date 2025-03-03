@@ -43,7 +43,7 @@ import java.util.Calendar;
 /** VCard composer especially for Call Log used in Bluetooth. */
 // Next tag value for ContentProfileErrorReportUtils.report(): 3
 public class BluetoothPbapCallLogComposer implements AutoCloseable {
-    private static final String TAG = "PbapCallLogComposer";
+    private static final String TAG = BluetoothPbapCallLogComposer.class.getSimpleName();
 
     @VisibleForTesting
     static final String FAILURE_REASON_FAILED_TO_GET_DATABASE_INFO =
@@ -89,12 +89,11 @@ public class BluetoothPbapCallLogComposer implements AutoCloseable {
     private static final String VCARD_PROPERTY_CALLTYPE_OUTGOING = "DIALED";
     private static final String VCARD_PROPERTY_CALLTYPE_MISSED = "MISSED";
 
+
     private final Context mContext;
     private Cursor mCursor;
 
     private String mErrorReason = NO_ERROR;
-
-    private final String RFC_2455_FORMAT = "yyyyMMdd'T'HHmmss";
 
     public BluetoothPbapCallLogComposer(final Context context) {
         mContext = context;
@@ -220,10 +219,11 @@ public class BluetoothPbapCallLogComposer implements AutoCloseable {
     }
 
     /** Format according to RFC 2445 DATETIME type. The format is: ("%Y%m%dT%H%M%S"). */
-    private String toRfc2455Format(final long millSecs) {
+    private static String toRfc2455Format(final long millSecs) {
+        String rfc2455Format = "yyyyMMdd'T'HHmmss";
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(millSecs);
-        SimpleDateFormat df = new SimpleDateFormat(RFC_2455_FORMAT);
+        SimpleDateFormat df = new SimpleDateFormat(rfc2455Format);
         return df.format(cal.getTime());
     }
 
@@ -233,7 +233,7 @@ public class BluetoothPbapCallLogComposer implements AutoCloseable {
      */
     private void tryAppendCallHistoryTimeStampField(final VCardBuilder builder) {
         // Extension for call history as defined in
-        // in the Specification for Ic Mobile Communcation - ver 1.1,
+        // in the Specification for Ic Mobile Communication - ver 1.1,
         // Oct 2000. This is used to send the details of the call
         // history - missed, incoming, outgoing along with date and time
         // to the requesting device (For example, transferring phone book

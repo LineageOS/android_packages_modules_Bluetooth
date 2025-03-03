@@ -71,8 +71,8 @@ import java.io.IOException;
  */
 @SuppressLint("AndroidFrameworkBluetoothPermission")
 public final class BluetoothServerSocket implements Closeable {
+    private static final String TAG = BluetoothServerSocket.class.getSimpleName();
 
-    private static final String TAG = "BluetoothServerSocket";
     private static final boolean DBG = Log.isLoggable(TAG, Log.DEBUG);
 
     @UnsupportedAppUsage(

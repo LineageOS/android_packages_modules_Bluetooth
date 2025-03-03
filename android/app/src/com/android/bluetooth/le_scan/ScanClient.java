@@ -25,45 +25,45 @@ import java.util.List;
 import java.util.Objects;
 
 /** Helper class identifying a client that has requested LE scan results. */
-public class ScanClient {
-    public int scannerId;
-    public ScanSettings settings;
-    public int scanModeApp;
-    public boolean started = false;
-    public boolean isInternalClient = false;
-    public int appUid;
-    public List<ScanFilter> filters;
-    // App associated with the scan client died.
-    public boolean appDied;
-    public boolean hasLocationPermission;
-    public UserHandle userHandle;
-    public boolean isQApp;
-    public boolean eligibleForSanitizedExposureNotification;
-    public boolean hasNetworkSettingsPermission;
-    public boolean hasNetworkSetupWizardPermission;
-    public boolean hasScanWithoutLocationPermission;
-    public boolean hasDisavowedLocation;
-    public List<String> associatedDevices;
-
-    public AppScanStats stats = null;
-
+class ScanClient {
     private static final ScanSettings DEFAULT_SCAN_SETTINGS =
             new ScanSettings.Builder().setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY).build();
 
-    public ScanClient(int scannerId) {
+    final int mScannerId;
+    final int mAppUid;
+    final List<ScanFilter> mFilters;
+
+    ScanSettings mSettings;
+    int mScanModeApp;
+    boolean mStarted = false;
+    boolean mIsInternalClient = false;
+    // App associated with the scan client died.
+    boolean mAppDied;
+    boolean mHasLocationPermission;
+    UserHandle mUserHandle;
+    boolean mIsQApp;
+    boolean mEligibleForSanitizedExposureNotification;
+    boolean mHasNetworkSettingsPermission;
+    boolean mHasNetworkSetupWizardPermission;
+    boolean mHasScanWithoutLocationPermission;
+    boolean mHasDisavowedLocation;
+    List<String> mAssociatedDevices;
+    AppScanStats mStats = null;
+
+    ScanClient(int scannerId) {
         this(scannerId, DEFAULT_SCAN_SETTINGS, null);
     }
 
-    public ScanClient(int scannerId, ScanSettings settings, List<ScanFilter> filters) {
+    ScanClient(int scannerId, ScanSettings settings, List<ScanFilter> filters) {
         this(scannerId, settings, filters, Binder.getCallingUid());
     }
 
-    public ScanClient(int scannerId, ScanSettings settings, List<ScanFilter> filters, int appUid) {
-        this.scannerId = scannerId;
-        this.settings = settings;
-        this.scanModeApp = settings.getScanMode();
-        this.filters = filters;
-        this.appUid = appUid;
+    ScanClient(int scannerId, ScanSettings settings, List<ScanFilter> filters, int appUid) {
+        mScannerId = scannerId;
+        mSettings = settings;
+        mScanModeApp = settings.getScanMode();
+        mFilters = filters;
+        mAppUid = appUid;
     }
 
     @Override
@@ -74,27 +74,27 @@ public class ScanClient {
         if (!(obj instanceof ScanClient other)) {
             return false;
         }
-        return scannerId == other.scannerId;
+        return mScannerId == other.mScannerId;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(scannerId);
+        return Objects.hash(mScannerId);
     }
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(" [ScanClient")
-                .append(" scanModeApp ")
-                .append(scanModeApp)
+        StringBuilder sb = new StringBuilder(" [ScanClient");
+        sb.append(" scanModeApp ")
+                .append(mScanModeApp)
                 .append(" scanModeUsed ")
-                .append(settings.getScanMode());
-        if (stats != null && stats.mAppName != null) {
-            sb.append(" [appScanStats ").append(stats.mAppName).append("]");
+                .append(mSettings.getScanMode());
+
+        if (mStats != null && mStats.mAppName != null) {
+            sb.append(" [appScanStats ").append(mStats.mAppName).append("]");
         }
-        sb.append("]");
-        return sb.toString();
+
+        return sb.append("]").toString();
     }
 
     /**
@@ -103,20 +103,20 @@ public class ScanClient {
      * @return true if scan settings are updated, false otherwise.
      */
     boolean updateScanMode(int newScanMode) {
-        if (settings.getScanMode() == newScanMode) {
+        if (mSettings.getScanMode() == newScanMode) {
             return false;
         }
 
-        ScanSettings.Builder builder = new ScanSettings.Builder();
-        settings =
-                builder.setScanMode(newScanMode)
-                        .setCallbackType(settings.getCallbackType())
-                        .setScanResultType(settings.getScanResultType())
-                        .setReportDelay(settings.getReportDelayMillis())
-                        .setNumOfMatches(settings.getNumOfMatches())
-                        .setMatchMode(settings.getMatchMode())
-                        .setLegacy(settings.getLegacy())
-                        .setPhy(settings.getPhy())
+        mSettings =
+                new ScanSettings.Builder()
+                        .setScanMode(newScanMode)
+                        .setCallbackType(mSettings.getCallbackType())
+                        .setScanResultType(mSettings.getScanResultType())
+                        .setReportDelay(mSettings.getReportDelayMillis())
+                        .setNumOfMatches(mSettings.getNumOfMatches())
+                        .setMatchMode(mSettings.getMatchMode())
+                        .setLegacy(mSettings.getLegacy())
+                        .setPhy(mSettings.getPhy())
                         .build();
         return true;
     }

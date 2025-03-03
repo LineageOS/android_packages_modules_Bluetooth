@@ -54,39 +54,6 @@ namespace test {
 namespace mock {
 namespace main_shim_hci_layer {
 
-// Shared state between mocked functions and tests
-// Name: OnTransmitPacketCommandComplete
-// Params: command_complete_cb complete_callback, void* context,
-// bluetooth::hci::CommandCompleteView view Return: void
-struct OnTransmitPacketCommandComplete {
-  std::function<void(command_complete_cb complete_callback, void* context,
-                     bluetooth::hci::CommandCompleteView view)>
-          body{[](command_complete_cb /* complete_callback */, void* /* context */,
-                  bluetooth::hci::CommandCompleteView /* view */) {}};
-  void operator()(command_complete_cb complete_callback, void* context,
-                  bluetooth::hci::CommandCompleteView view) {
-    body(complete_callback, context, view);
-  }
-};
-extern struct OnTransmitPacketCommandComplete OnTransmitPacketCommandComplete;
-
-// Name: OnTransmitPacketStatus
-// Params: command_status_cb status_callback, void* context,
-// std::unique_ptr<OsiObject> command, bluetooth::hci::CommandStatusView view
-// Return: void
-struct OnTransmitPacketStatus {
-  std::function<void(command_status_cb status_callback, void* context,
-                     std::unique_ptr<OsiObject> command, bluetooth::hci::CommandStatusView view)>
-          body{[](command_status_cb /* status_callback */, void* /* context */,
-                  std::unique_ptr<OsiObject> /* command */,
-                  bluetooth::hci::CommandStatusView /* view */) {}};
-  void operator()(command_status_cb status_callback, void* context,
-                  std::unique_ptr<OsiObject> command, bluetooth::hci::CommandStatusView view) {
-    body(status_callback, context, std::move(command), view);
-  }
-};
-extern struct OnTransmitPacketStatus OnTransmitPacketStatus;
-
 // Name: hci_layer_get_interface
 // Params:
 // Return: const hci_t*

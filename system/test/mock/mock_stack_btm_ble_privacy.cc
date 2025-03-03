@@ -25,13 +25,12 @@
 
 // Original included files, if any
 
+#include "stack/include/ble_hci_link_interface.h"
+#include "stack/include/btm_ble_privacy.h"
 #include "test/common/mock_functions.h"
 
 // Mocked compile conditionals, if any
 // Mocked internal structures, if any
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 namespace test {
 namespace mock {
@@ -42,8 +41,6 @@ struct btm_ble_clear_resolving_list_complete btm_ble_clear_resolving_list_comple
 struct btm_ble_add_resolving_list_entry_complete btm_ble_add_resolving_list_entry_complete;
 struct btm_ble_remove_resolving_list_entry_complete btm_ble_remove_resolving_list_entry_complete;
 struct btm_ble_read_resolving_list_entry_complete btm_ble_read_resolving_list_entry_complete;
-struct btm_ble_remove_resolving_list_entry btm_ble_remove_resolving_list_entry;
-struct btm_ble_clear_resolving_list btm_ble_clear_resolving_list;
 struct btm_ble_read_resolving_list_entry btm_ble_read_resolving_list_entry;
 struct btm_ble_resolving_list_load_dev btm_ble_resolving_list_load_dev;
 struct btm_ble_resolving_list_remove_dev btm_ble_resolving_list_remove_dev;
@@ -69,14 +66,6 @@ void btm_ble_remove_resolving_list_entry_complete(uint8_t* p, uint16_t evt_len) 
 void btm_ble_read_resolving_list_entry_complete(const uint8_t* p, uint16_t evt_len) {
   inc_func_call_count(__func__);
   test::mock::stack_btm_ble_privacy::btm_ble_read_resolving_list_entry_complete(p, evt_len);
-}
-tBTM_STATUS btm_ble_remove_resolving_list_entry(tBTM_SEC_DEV_REC* p_dev_rec) {
-  inc_func_call_count(__func__);
-  return test::mock::stack_btm_ble_privacy::btm_ble_remove_resolving_list_entry(p_dev_rec);
-}
-void btm_ble_clear_resolving_list(void) {
-  inc_func_call_count(__func__);
-  test::mock::stack_btm_ble_privacy::btm_ble_clear_resolving_list();
 }
 bool btm_ble_read_resolving_list_entry(tBTM_SEC_DEV_REC* p_dev_rec) {
   inc_func_call_count(__func__);

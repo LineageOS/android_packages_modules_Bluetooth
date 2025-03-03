@@ -148,7 +148,7 @@ class BmessageBuilder {
         mBmsg.append(VCARD_END).append(CRLF);
     }
 
-    private String buildVcardN(VCardEntry vcard) {
+    private static String buildVcardN(VCardEntry vcard) {
         NameData nd = vcard.getNameData();
         StringBuilder sb = new StringBuilder();
 

@@ -17,13 +17,11 @@
 #include <cstdint>
 #include <future>
 
+#include "btif/include/btif_common.h"
 #include "btif/include/stack_manager_t.h"
 #include "hardware/bluetooth.h"
 #include "stack/include/bt_octets.h"
 #include "types/raw_address.h"
-
-// TODO(b/369381361) Enfore -Wmissing-prototypes
-#pragma GCC diagnostic ignored "-Wmissing-prototypes"
 
 void invoke_adapter_state_changed_cb(bt_state_t /* state */) {}
 void invoke_adapter_properties_cb(bt_status_t /* status */, int /* num_properties */,
