@@ -2449,11 +2449,11 @@ public:
     } else if (hdl == leAudioDevice->tmap_role_hdl_) {
       bluetooth::le_audio::client_parser::tmap::ParseTmapRole(leAudioDevice->tmap_role_, len,
                                                               value);
-    } else if (leAudioDevice->gmap_client_ != nullptr && GmapClient::IsGmapClientEnabled() &&
+    } else if (leAudioDevice->gmap_client_ != nullptr &&
                hdl == leAudioDevice->gmap_client_->getRoleHandle()) {
       leAudioDevice->gmap_client_->parseAndSaveGmapRole(len, value);
       btif_storage_leaudio_update_gmap_bin(leAudioDevice->address_);
-    } else if (leAudioDevice->gmap_client_ != nullptr && GmapClient::IsGmapClientEnabled() &&
+    } else if (leAudioDevice->gmap_client_ != nullptr &&
                hdl == leAudioDevice->gmap_client_->getUGTFeatureHandle()) {
       leAudioDevice->gmap_client_->parseAndSaveUGTFeature(len, value);
       btif_storage_leaudio_update_gmap_bin(leAudioDevice->address_);
@@ -3472,8 +3472,9 @@ public:
       }
     }
 
-    if (gmap_svc && GmapClient::IsGmapClientEnabled()) {
+    if (gmap_svc) {
       leAudioDevice->gmap_client_ = std::make_unique<GmapClient>(leAudioDevice->address_);
+      log::info("Found Gmap service, device: {}", leAudioDevice->address_);
       for (const gatt::Characteristic& charac : gmap_svc->characteristics) {
         if (charac.uuid == bluetooth::le_audio::uuid::kRoleCharacteristicUuid) {
           uint16_t handle = charac.value_handle;
@@ -3490,6 +3491,9 @@ public:
                     leAudioDevice->gmap_client_->getUGTFeatureHandle(), leAudioDevice->address_);
         }
       }
+
+      // Store at least the handles
+      btif_storage_leaudio_update_gmap_bin(leAudioDevice->address_);
     }
 
     leAudioDevice->known_service_handles_ = true;
