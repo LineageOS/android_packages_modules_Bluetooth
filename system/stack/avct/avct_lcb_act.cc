@@ -185,7 +185,8 @@ void avct_lcb_chnl_open(tAVCT_LCB* p_lcb, UNUSED_ATTR tAVCT_LCB_EVT* p_data) {
 
   p_lcb->ch_state = AVCT_CH_CONN;
   p_lcb->ch_lcid =
-      L2CA_ConnectReq2(AVCT_PSM, p_lcb->peer_addr, BTA_SEC_AUTHENTICATE);
+      L2CA_ConnectReq2(AVCT_PSM, p_lcb->peer_addr,
+                       BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT);
   if (p_lcb->ch_lcid == 0) {
     /* if connect req failed, send ourselves close event */
     tAVCT_LCB_EVT avct_lcb_evt;
