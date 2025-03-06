@@ -737,10 +737,10 @@ const tA2DP_ENCODER_INTERFACE* BtaAvCo::GetSourceEncoderInterface(const RawAddre
   BtaAvCoPeer* p_peer = peer_cache_->FindPeer(peer_address);
   if (p_peer != nullptr) {
     return A2DP_GetEncoderInterface(p_peer->getCodecConfig());
-    } else {
-      log::error("Unable to find the peer address {}", peer_address);
-    }
-    return nullptr;
+  } else {
+    log::error("Unable to find the peer address {}", peer_address);
+  }
+  return nullptr;
 }
 
 bool BtaAvCo::SetCodecUserConfig(const RawAddress& peer_address,
