@@ -30,12 +30,10 @@ cc_defaults {
         "packages/modules/Bluetooth/system/stack/l2cap",
         "packages/modules/Bluetooth/system/udrv/include",
         "system/libfmq/include",
-        "system/libhwbinder/include",
     ],
     srcs: [
         ":BtaDmSources",
         ":TestCommonMockFunctions",
-        ":TestMockHci",
         ":TestMockUdrv",
         "adapter/bluetooth_test.cc",
     ],
