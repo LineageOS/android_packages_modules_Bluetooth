@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "bta_av_use_peer_codec"
-    namespace: "bluetooth"
-    description: "Deprecate bta av codec state"
-    bug: "339264791"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "a2dp_ignore_started_when_responder"
     namespace: "bluetooth"
     description: "Ignore the event BTA_AV_START_EVT when source and responder"
