@@ -18,6 +18,7 @@
 
 #include "btif/include/btif_sock_logging.h"
 
+#include <bluetooth/metrics/os_metrics.h>
 #include <frameworks/proto_logging/stats/enums/bluetooth/enums.pb.h>
 #include <time.h>
 
@@ -25,7 +26,6 @@
 
 #include "btif/include/btif_sock.h"
 #include "common/time_util.h"
-#include "os/metrics.h"
 #include "types/raw_address.h"
 
 #define SOCK_LOGGER_SIZE_MAX 16

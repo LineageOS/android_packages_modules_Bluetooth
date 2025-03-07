@@ -28,9 +28,10 @@
 // Original included files, if any
 // #include <frameworks/proto_logging/stats/enums/bluetooth/le/enums.pb.h>
 
+#include <bluetooth/metrics/os_metrics.h>
+
 #include "hci/address.h"
 #include "hci/hci_packets.h"
-#include "os/metrics.h"
 #include "types/raw_address.h"
 
 // Mocked compile conditionals, if any
@@ -342,6 +343,52 @@ struct LogMetricRfcommConnectionAtClose {
   }
 };
 extern struct LogMetricRfcommConnectionAtClose LogMetricRfcommConnectionAtClose;
+
+struct LogMetricLeAudioBroadcastSessionReported {
+  std::function<void(int64_t duration_nanos)> body{[](int64_t /*duration_nanos*/) {}};
+  void operator()(int64_t duration_nanos) { body(duration_nanos); }
+};
+extern struct LogMetricLeAudioBroadcastSessionReported LogMetricLeAudioBroadcastSessionReported;
+
+struct LogMetricLeAudioConnectionSessionReported {
+  std::function<void(int32_t group_size, int32_t group_metric_id, int64_t connection_duration_nanos,
+                     const std::vector<int64_t>& device_connecting_offset_nanos,
+                     const std::vector<int64_t>& device_connected_offset_nanos,
+                     const std::vector<int64_t>& device_connection_duration_nanos,
+                     const std::vector<int32_t>& device_connection_status,
+                     const std::vector<int32_t>& device_disconnection_status,
+                     const std::vector<RawAddress>& device_address,
+                     const std::vector<int64_t>& streaming_offset_nanos,
+                     const std::vector<int64_t>& streaming_duration_nanos,
+                     const std::vector<int32_t>& streaming_context_type)>
+          body{[](int32_t /*group_size*/, int32_t /*group_metric_id*/,
+                  int64_t /*connection_duration_nanos*/,
+                  const std::vector<int64_t>& /*device_connecting_offset_nanos*/,
+                  const std::vector<int64_t>& /*device_connected_offset_nanos*/,
+                  const std::vector<int64_t>& /*device_connection_duration_nanos*/,
+                  const std::vector<int32_t>& /*device_connection_status*/,
+                  const std::vector<int32_t>& /*device_disconnection_status*/,
+                  const std::vector<RawAddress>& /*device_address*/,
+                  const std::vector<int64_t>& /*streaming_offset_nanos*/,
+                  const std::vector<int64_t>& /*streaming_duration_nanos*/,
+                  const std::vector<int32_t>& /*streaming_context_type*/) {}};
+  void operator()(int32_t group_size, int32_t group_metric_id, int64_t connection_duration_nanos,
+                  const std::vector<int64_t>& device_connecting_offset_nanos,
+                  const std::vector<int64_t>& device_connected_offset_nanos,
+                  const std::vector<int64_t>& device_connection_duration_nanos,
+                  const std::vector<int32_t>& device_connection_status,
+                  const std::vector<int32_t>& device_disconnection_status,
+                  const std::vector<RawAddress>& device_address,
+                  const std::vector<int64_t>& streaming_offset_nanos,
+                  const std::vector<int64_t>& streaming_duration_nanos,
+                  const std::vector<int32_t>& streaming_context_type) {
+    body(group_size, group_metric_id, connection_duration_nanos, device_connecting_offset_nanos,
+         device_connected_offset_nanos, device_connection_duration_nanos, device_connection_status,
+         device_disconnection_status, device_address, streaming_offset_nanos,
+         streaming_duration_nanos, streaming_context_type);
+  }
+};
+extern struct LogMetricLeAudioConnectionSessionReported LogMetricLeAudioConnectionSessionReported;
 
 }  // namespace main_shim_metrics_api
 }  // namespace mock

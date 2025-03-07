@@ -1,5 +1,5 @@
 #
-#  Copyright 2023 The Android Open Source Project
+#  Copyright 2024 Google, Inc.
 #
 #  Licensed under the Apache License, Version 2.0 (the "License");
 #  you may not use this file except in compliance with the License.
@@ -14,11 +14,29 @@
 #  limitations under the License.
 #
 
-source_set("libmmc_metrics") {
+config("metrics_config") {
+  include_dirs = [ "//bt/system/metrics/include" ]
+}
+
+static_library("metrics") {
+  cflags = [ "-fvisibility=default" ]
+  sources = [
+    "src/bluetooth_event.cc",
+    "src/metric_id_api.cc",
+    "src/metric_id_manager.cc",
+  ]
+  public_deps = [
+    "//external/proto_logging/stats/enums/bluetooth:libbt-platform-protos-lite",
+  ]
+  public_configs = [ ":metrics_config" ]
   configs += [
-    "//bt/system/stack/mmc:target_defaults",
+    "//bt/system:target_defaults",
     "//bt/system/log:log_defaults",
   ]
-  sources = [ "mmc_rtt_logger.cc" ]
-  deps = [ "//bt/system/metrics" ]
+
+  if (target_os == "chromeos") {
+    sources += [ "src/chromeos/metrics.cc" ]
+  } else {
+    sources += [ "src/linux/metrics.cc" ]
+  }
 }

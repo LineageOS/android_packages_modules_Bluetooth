@@ -17,6 +17,7 @@
 #include "btif/include/btif_bqr.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/os_metrics.h>
 #include <com_android_bluetooth_flags.h>
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -36,7 +37,6 @@
 #include "hci/hci_packets.h"
 #include "internal_include/bt_trace.h"
 #include "main/shim/entry.h"
-#include "os/metrics.h"
 #include "osi/include/properties.h"
 #include "packet/raw_builder.h"
 #include "stack/btm/btm_dev.h"

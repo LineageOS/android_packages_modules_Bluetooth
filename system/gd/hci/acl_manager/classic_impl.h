@@ -17,6 +17,8 @@
 #pragma once
 
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/bluetooth_event.h>
+#include <bluetooth/metrics/os_metrics.h>
 
 #include <memory>
 
@@ -31,8 +33,6 @@
 #include "hci/event_checkers.h"
 #include "hci/hci_layer.h"
 #include "hci/remote_name_request.h"
-#include "metrics/bluetooth_event.h"
-#include "os/metrics.h"
 
 namespace bluetooth {
 namespace hci {

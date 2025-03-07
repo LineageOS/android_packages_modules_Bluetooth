@@ -17,33 +17,6 @@ btifCommonIncludes = [
     "packages/modules/Bluetooth/system/stack/include",
 ]
 
-cc_library {
-    name: "libstatslog_bt",
-    defaults: ["bluetooth_cflags"],
-    host_supported: true,
-    generated_sources: ["statslog_bt.cpp"],
-    generated_headers: ["statslog_bt.h"],
-    export_generated_headers: ["statslog_bt.h"],
-    apex_available: ["com.android.bt"],
-    min_sdk_version: "30",
-    shared_libs: [
-        "libstatssocket",
-    ],
-    export_shared_lib_headers: [
-        "libstatssocket",
-    ],
-    target: {
-        host: {
-            static_libs: [
-                "libbase",
-            ],
-        },
-        darwin: {
-            enabled: false,
-        },
-    },
-}
-
 cc_library_static {
     name: "libbt-jni-thread",
     defaults: ["fluoride_defaults"],
@@ -64,22 +37,6 @@ cc_library_static {
     ],
     apex_available: ["com.android.bt"],
     min_sdk_version: "Tiramisu",
-}
-
-genrule {
-    name: "statslog_bt.h",
-    tools: ["stats-log-api-gen"],
-    cmd: "$(location stats-log-api-gen) --header $(genDir)/statslog_bt.h --module bluetooth" +
-        " --namespace bluetooth",
-    out: ["statslog_bt.h"],
-}
-
-genrule {
-    name: "statslog_bt.cpp",
-    tools: ["stats-log-api-gen"],
-    cmd: "$(location stats-log-api-gen) --cpp $(genDir)/statslog_bt.cpp --module bluetooth" +
-        " --namespace bluetooth --importHeader statslog_bt.h",
-    out: ["statslog_bt.cpp"],
 }
 
 cc_library_static {
@@ -173,13 +130,12 @@ cc_library_static {
         "libbluetooth_crypto_toolbox",
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
+        "libbluetooth_metrics",
         "libbt-audio-hal-interface",
         "libbt-jni-thread",
-        "libbt-platform-protos-lite",
         "libbt-stack",
         "libcom.android.sysprop.bluetooth.wrapped",
         "libflatbuffers-cpp",
-        "libstatslog_bt",
     ],
     aidl: {
         libs: ["bluetooth_constants"],
@@ -242,6 +198,7 @@ cc_test {
         "libbluetooth_crypto_toolbox",
         "libbluetooth_gd",
         "libbluetooth_log",
+        "libbluetooth_metrics_mock",
         "libbt-audio-asrc",
         "libbt-audio-hal-interface",
         "libbt-bta",
@@ -268,7 +225,6 @@ cc_test {
         "liblc3",
         "libopus",
         "libprotobuf-cpp-lite",
-        "libstatslog_bt",
         "libudrv-uipc",
     ],
     target: {
@@ -286,10 +242,7 @@ cc_test {
                 "android.hardware.common.fmq-V1-ndk",
                 "android.system.suspend-V1-ndk",
                 "android.system.suspend.control-V1-ndk",
-                "libexpresslog",
                 "libperfetto_client_experimental",
-                "libstatslog_express",
-                "libtextclassifier_hash_static",
             ],
         },
         host: {
@@ -397,7 +350,6 @@ cc_test {
         "libbluetooth_gd",
         "libbluetooth_log",
         "libbt-common",
-        "libbt-platform-protos-lite",
         "libchrome",
         "libevent",
     ],
@@ -439,7 +391,6 @@ cc_test {
         "libbluetooth_core_rs_bridge",
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
-        "libbt-platform-protos-lite",
         "libchrome",
         "libcom.android.sysprop.bluetooth.wrapped",
         "libgmock",
@@ -528,10 +479,10 @@ cc_test {
         "libbluetooth_gd",
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
+        "libbluetooth_metrics_mock",
         "libbt-audio-hal-interface",
         "libbt-common",
         "libbt-jni-thread",
-        "libbt-platform-protos-lite",
         "libbt-sbc-decoder",
         "libbt-sbc-encoder",
         "libbtdevice",
@@ -542,7 +493,6 @@ cc_test {
         "libgmock",
         "libosi",
         "libprotobuf-cpp-lite",
-        "libstatslog_bt",
     ],
     target: {
         android: {
@@ -651,11 +601,11 @@ cc_test {
         "libbluetooth_gd",
         "libbluetooth_hci_pdl",
         "libbluetooth_log",
+        "libbluetooth_metrics_mock",
         "libbt-audio-hal-interface",
         "libbt-btu-main-thread",
         "libbt-common",
         "libbt-jni-thread",
-        "libbt-platform-protos-lite",
         "libbt-sbc-decoder",
         "libbt-sbc-encoder",
         "libbtdevice",
@@ -666,7 +616,6 @@ cc_test {
         "libflatbuffers-cpp",
         "libgmock",
         "libprotobuf-cpp-lite",
-        "libstatslog_bt",
     ],
     target: {
         android: {

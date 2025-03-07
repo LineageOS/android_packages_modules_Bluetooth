@@ -31,6 +31,7 @@ source_set("BluetoothStackManagerSources") {
   deps = [
     "//bt/floss/rust/topshim:libbluetooth_topshim",
     "//bt/system/gd/packet:BluetoothPacketSources",
+    "//bt/system/metrics",
     "//bt/system/osi",
     "//bt/system/pdl:BluetoothGeneratedPackets_h",
     "//bt/system/pdl:BluetoothHciPacketSources",
@@ -55,7 +56,6 @@ source_set("LibBluetoothShimSources") {
     "hci_layer.cc",
     "le_advertising_manager.cc",
     "le_scanning_manager.cc",
-    "metric_id_api.cc",
     "shim.cc",
     "utils.cc",
   ]
@@ -72,6 +72,7 @@ source_set("LibBluetoothShimSources") {
     "//bt/floss/rust/topshim:libbluetooth_topshim",
     "//bt/sysprop:libcom.android.sysprop.bluetooth",
     "//bt/system/gd/packet:BluetoothPacketSources",
+    "//bt/system/metrics",
     "//bt/system/osi",
     "//bt/system/pdl:BluetoothGeneratedPackets_h",
     "//bt/system/pdl:BluetoothHciPacketSources",

@@ -15,7 +15,7 @@
  *  limitations under the License.
  *
  ******************************************************************************/
-#include "common/metric_id_manager.h"
+#include "metric_id_manager.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>

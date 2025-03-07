@@ -17,7 +17,7 @@
  ******************************************************************************/
 #define LOG_TAG "BluetoothMetricIdManager"
 
-#include "common/metric_id_manager.h"
+#include "metric_id_manager.h"
 
 #include <bluetooth/log.h>
 

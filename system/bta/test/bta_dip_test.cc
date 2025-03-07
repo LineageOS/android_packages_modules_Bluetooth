@@ -16,11 +16,11 @@
  *
  ******************************************************************************/
 
+#include <bluetooth/metrics/os_metrics.h>
 #include <gtest/gtest.h>
 
 #include "bta/sdp/bta_sdp_int.h"
 #include "btif/include/btif_sock_sdp.h"
-#include "os/metrics.h"
 #include "stack/include/sdpdefs.h"
 #include "test/mock/mock_stack_sdp_api.h"
 #include "types/bluetooth/uuid.h"

@@ -18,19 +18,18 @@
 
 #define LOG_TAG "BluetoothMetrics"
 
-#include "os/metrics.h"
-
 #include <Counter.h>
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/os_metrics.h>
 #include <statslog_bt.h>
 
-#include "a2dp_constants.h"
+#include "../metric_id_manager.h"
 #include "common/audit_log.h"
-#include "common/metric_id_manager.h"
 #include "common/strings.h"
 #include "hardware/bt_av.h"
 #include "hci/hci_packets.h"
 #include "main/shim/helpers.h"
+#include "stack/include/a2dp_constants.h"
 
 namespace std {
 template <>

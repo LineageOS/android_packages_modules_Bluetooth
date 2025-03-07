@@ -21,6 +21,7 @@
 #include "btif_sock_rfc.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/os_metrics.h>
 #include <com_android_bluetooth_flags.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
@@ -44,7 +45,6 @@
 #include "include/hardware/bt_sock.h"
 #include "lpp/lpp_offload_interface.h"
 #include "main/shim/entry.h"
-#include "os/metrics.h"
 #include "osi/include/allocator.h"
 #include "osi/include/compat.h"
 #include "osi/include/list.h"

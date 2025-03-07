@@ -17,11 +17,11 @@
 #include "hci/acl_manager/le_acl_connection.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/os_metrics.h>
 #include <com_android_bluetooth_flags.h>
 
 #include "hci/acl_manager/le_connection_management_callbacks.h"
 #include "hci/event_checkers.h"
-#include "os/metrics.h"
 
 using bluetooth::hci::Address;
 

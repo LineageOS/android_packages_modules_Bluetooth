@@ -128,7 +128,6 @@ cc_fuzz {
         "libcutils",
         "libevent",
         "liblog",
-        "libstatslog_bt",
         "libutils",
     ],
     header_libs: ["libbluetooth_headers"],

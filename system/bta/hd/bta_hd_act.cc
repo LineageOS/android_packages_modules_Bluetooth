@@ -35,10 +35,10 @@
 #if defined(BTA_HD_INCLUDED) && (BTA_HD_INCLUDED == TRUE)
 
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/os_metrics.h>
 
 #include "bta/hd/bta_hd_int.h"
 #include "include/hardware/bt_hd.h"
-#include "os/metrics.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
 #include "stack/include/bt_uuid16.h"

@@ -21,13 +21,14 @@
  *  mockcify.pl ver 0.2
  */
 // Mock include file to share data between tests and mock
-#include "test/mock/mock_main_shim_metrics_api.h"
+#include "mock_main_shim_metrics_api.h"
 
 #include <cstdint>
 #include <string>
 
 // Original included files, if any
-#include "os/metrics.h"
+#include <bluetooth/metrics/os_metrics.h>
+
 #include "test/common/mock_functions.h"
 #include "types/raw_address.h"
 
@@ -57,6 +58,8 @@ struct LogMetricSdpAttribute LogMetricSdpAttribute;
 struct LogMetricSocketConnectionState LogMetricSocketConnectionState;
 struct LogMetricManufacturerInfo LogMetricManufacturerInfo;
 struct LogMetricRfcommConnectionAtClose LogMetricRfcommConnectionAtClose;
+struct LogMetricLeAudioBroadcastSessionReported LogMetricLeAudioBroadcastSessionReported;
+struct LogMetricLeAudioConnectionSessionReported LogMetricLeAudioConnectionSessionReported;
 
 }  // namespace main_shim_metrics_api
 }  // namespace mock
@@ -186,9 +189,8 @@ void bluetooth::os::CountCounterMetrics(android::bluetooth::CodePathCounterKeyEn
                                         int64_t /* count */) {
   inc_func_call_count(__func__);
 }
-
 void bluetooth::os::LogMetricRfcommConnectionAtClose(
-        const Address& raw_address, android::bluetooth::rfcomm::PortResult close_reason,
+        const Address& address, android::bluetooth::rfcomm::PortResult close_reason,
         android::bluetooth::rfcomm::SocketConnectionSecurity security,
         android::bluetooth::rfcomm::RfcommPortEvent last_event,
         android::bluetooth::rfcomm::RfcommPortState previous_state, int32_t open_duration_ms,
@@ -196,7 +198,71 @@ void bluetooth::os::LogMetricRfcommConnectionAtClose(
         int32_t sdp_duration_ms) {
   inc_func_call_count(__func__);
   test::mock::main_shim_metrics_api::LogMetricRfcommConnectionAtClose(
-          raw_address, close_reason, security, last_event, previous_state, open_duration_ms, uid,
+          address, close_reason, security, last_event, previous_state, open_duration_ms, uid,
           sdp_status, is_server, sdp_initiated, sdp_duration_ms);
+}
+void bluetooth::os::LogMetricBluetoothEvent(const Address& address,
+                                            android::bluetooth::EventType event_type,
+                                            android::bluetooth::State state) {
+  inc_func_call_count(__func__);
+}
+void bluetooth::os::LogMetricLeAudioBroadcastSessionReported(int64_t duration_nanos) {
+  inc_func_call_count(__func__);
+  test::mock::main_shim_metrics_api::LogMetricLeAudioBroadcastSessionReported(duration_nanos);
+}
+void bluetooth::os::LogMetricBluetoothDisconnectionReasonReported(uint32_t reason,
+                                                                  const Address& address,
+                                                                  uint32_t connection_handle) {
+  inc_func_call_count(__func__);
+}
+void bluetooth::os::LogMetricRemoteVersionInfo(uint16_t handle, uint8_t status, uint8_t version,
+                                               uint16_t manufacturer_name, uint16_t subversion) {
+  inc_func_call_count(__func__);
+}
+void bluetooth::os::LogMetricBluetoothRemoteSupportedFeatures(const Address& address, uint32_t page,
+                                                              uint64_t features,
+                                                              uint32_t connection_handle) {
+  inc_func_call_count(__func__);
+}
+void bluetooth::os::LogMetricBluetoothHalCrashReason(const Address& address, uint32_t error_code,
+                                                     uint32_t vendor_error_code) {
+  inc_func_call_count(__func__);
+}
+void bluetooth::os::LogMetricHciTimeoutEvent(uint32_t hci_cmd) { inc_func_call_count(__func__); }
+void bluetooth::os::LogMetricBluetoothLocalVersions(uint32_t lmp_manufacturer_name,
+                                                    uint8_t lmp_version, uint32_t lmp_subversion,
+                                                    uint8_t hci_version, uint32_t hci_revision) {
+  inc_func_call_count(__func__);
+}
+void bluetooth::os::LogMetricBluetoothLocalSupportedFeatures(uint32_t page_num, uint64_t features) {
+  inc_func_call_count(__func__);
+}
+void bluetooth::os::LogMetricBluetoothQualityReport(
+        uint8_t quality_report_id, uint8_t packet_types, uint16_t connection_handle,
+        uint8_t connection_role, int8_t tx_power_level, int8_t rssi, uint8_t snr,
+        uint8_t unused_afh_channel_count, uint8_t afh_select_unideal_channel_count, uint16_t lsto,
+        uint32_t connection_piconet_clock, uint32_t retransmission_count, uint32_t no_rx_count,
+        uint32_t nak_count, uint32_t last_tx_ack_timestamp, uint32_t flow_off_count,
+        uint32_t last_flow_on_timestamp, uint32_t buffer_overflow_bytes,
+        uint32_t buffer_underflow_bytes) {
+  inc_func_call_count(__func__);
+}
+void bluetooth::os::LogMetricLeAudioConnectionSessionReported(
+        int32_t group_size, int32_t group_metric_id, int64_t connection_duration_nanos,
+        const std::vector<int64_t>& device_connecting_offset_nanos,
+        const std::vector<int64_t>& device_connected_offset_nanos,
+        const std::vector<int64_t>& device_connection_duration_nanos,
+        const std::vector<int32_t>& device_connection_status,
+        const std::vector<int32_t>& device_disconnection_status,
+        const std::vector<RawAddress>& device_address,
+        const std::vector<int64_t>& streaming_offset_nanos,
+        const std::vector<int64_t>& streaming_duration_nanos,
+        const std::vector<int32_t>& streaming_context_type) {
+  inc_func_call_count(__func__);
+  test::mock::main_shim_metrics_api::LogMetricLeAudioConnectionSessionReported(
+          group_size, group_metric_id, connection_duration_nanos, device_connecting_offset_nanos,
+          device_connected_offset_nanos, device_connection_duration_nanos, device_connection_status,
+          device_disconnection_status, device_address, streaming_offset_nanos,
+          streaming_duration_nanos, streaming_context_type);
 }
 // END mockcify generation

@@ -17,6 +17,7 @@
 #include "security_event_parser.h"
 
 #include <bluetooth/log.h>
+#include <bluetooth/metrics/os_metrics.h>
 
 #include <optional>
 #include <string>
@@ -24,7 +25,6 @@
 #include "btm_sec.h"
 #include "hci/hci_packets.h"
 #include "main/shim/helpers.h"
-#include "os/metrics.h"
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/hci_error_code.h"
 #include "stack/include/sec_hci_link_interface.h"
