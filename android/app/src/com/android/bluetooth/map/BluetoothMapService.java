@@ -128,10 +128,10 @@ public class BluetoothMapService extends ProfileService {
     private BluetoothMnsObexClient mBluetoothMnsObexClient = null;
 
     // mMasInstances: A list of the active MasInstances using the MasId for the key
-    private SparseArray<BluetoothMapMasInstance> mMasInstances =
+    private final SparseArray<BluetoothMapMasInstance> mMasInstances =
             new SparseArray<BluetoothMapMasInstance>(1);
     // mMasInstanceMap: A list of the active MasInstances using the account for the key
-    private HashMap<BluetoothMapAccountItem, BluetoothMapMasInstance> mMasInstanceMap =
+    private final HashMap<BluetoothMapAccountItem, BluetoothMapMasInstance> mMasInstanceMap =
             new HashMap<BluetoothMapAccountItem, BluetoothMapMasInstance>(1);
 
     // The remote connected device - protect access
@@ -508,7 +508,7 @@ public class BluetoothMapService extends ProfileService {
                                     BluetoothStatsLog
                                             .BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__EXCEPTION,
                                     4);
-                            Log.e(TAG, "ContentObserverRegistarion Failed: " + e);
+                            Log.e(TAG, "ContentObserverRegistration Failed: " + e);
                         }
                     }
                     break;
@@ -1065,7 +1065,6 @@ public class BluetoothMapService extends ProfileService {
                 Log.d(TAG, "USER_CONFIRM_TIMEOUT ACTION Received.");
                 sendConnectTimeoutMessage();
             } else if (action.equals(BluetoothDevice.ACTION_CONNECTION_ACCESS_REPLY)) {
-
                 int requestType =
                         intent.getIntExtra(
                                 BluetoothDevice.EXTRA_ACCESS_REQUEST_TYPE,
@@ -1079,6 +1078,10 @@ public class BluetoothMapService extends ProfileService {
                                 + mIsWaitingAuthorization);
                 if ((!mIsWaitingAuthorization)
                         || (requestType != BluetoothDevice.REQUEST_TYPE_MESSAGE_ACCESS)) {
+                    return;
+                }
+                BluetoothDevice remoteDevice = mRemoteDevice;
+                if (remoteDevice == null) {
                     return;
                 }
 
@@ -1097,13 +1100,13 @@ public class BluetoothMapService extends ProfileService {
                     mPermission = BluetoothDevice.ACCESS_ALLOWED;
                     if (intent.getBooleanExtra(BluetoothDevice.EXTRA_ALWAYS_ALLOWED, false)) {
                         boolean result =
-                                mRemoteDevice.setMessageAccessPermission(
+                                remoteDevice.setMessageAccessPermission(
                                         BluetoothDevice.ACCESS_ALLOWED);
                         Log.d(TAG, "setMessageAccessPermission(ACCESS_ALLOWED) result=" + result);
                     }
 
                     mAdapterService.sdpSearch(
-                            mRemoteDevice, BluetoothMnsObexClient.BLUETOOTH_UUID_OBEX_MNS);
+                            remoteDevice, BluetoothMnsObexClient.BLUETOOTH_UUID_OBEX_MNS);
                     mSdpSearchInitiated = true;
                 } else {
                     // Auth. declined by user, serverSession should not be running, but
@@ -1111,7 +1114,7 @@ public class BluetoothMapService extends ProfileService {
                     mPermission = BluetoothDevice.ACCESS_REJECTED;
                     if (intent.getBooleanExtra(BluetoothDevice.EXTRA_ALWAYS_ALLOWED, false)) {
                         boolean result =
-                                mRemoteDevice.setMessageAccessPermission(
+                                remoteDevice.setMessageAccessPermission(
                                         BluetoothDevice.ACCESS_REJECTED);
                         Log.d(TAG, "setMessageAccessPermission(ACCESS_REJECTED) result=" + result);
                     }

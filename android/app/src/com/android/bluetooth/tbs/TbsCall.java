@@ -27,9 +27,9 @@ public class TbsCall {
     public static final int INDEX_MAX = 0xFF;
 
     private int mState;
-    private String mUri;
-    private int mFlags;
-    private String mFriendlyName;
+    private final String mUri;
+    private final int mFlags;
+    private final String mFriendlyName;
 
     /**
      * Converts state value to human readable state string

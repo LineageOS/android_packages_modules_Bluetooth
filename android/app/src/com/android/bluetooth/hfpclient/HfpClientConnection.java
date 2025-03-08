@@ -63,7 +63,7 @@ public class HfpClientConnection extends Connection {
         finishInitializing();
     }
 
-    // Constructor to be used when a call is intiated on the HF. The call handle is obtained by
+    // Constructor to be used when a call is initiated on the HF. The call handle is obtained by
     // using the dial() command.
     public HfpClientConnection(
             BluetoothDevice device,

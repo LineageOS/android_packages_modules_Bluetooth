@@ -91,6 +91,7 @@ public class PanService extends ProfileService {
     private final TetheringManager mTetheringManager;
     private final UserManager mUserManager;
     private final int mMaxPanDevices;
+    private final PanServiceHandler mHandler;
 
     private String mPanIfName;
     @VisibleForTesting boolean mIsTethering = false;
@@ -117,11 +118,11 @@ public class PanService extends ProfileService {
             };
 
     public PanService(AdapterService adapterService) {
-        this(adapterService, null);
+        this(adapterService, null, Looper.getMainLooper());
     }
 
     @VisibleForTesting
-    PanService(AdapterService adapterService, PanNativeInterface nativeInterface) {
+    PanService(AdapterService adapterService, PanNativeInterface nativeInterface, Looper looper) {
         super(requireNonNull(adapterService));
         mAdapterService = adapterService;
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
@@ -129,6 +130,7 @@ public class PanService extends ProfileService {
                 requireNonNullElseGet(nativeInterface, () -> new PanNativeInterface(this));
         mUserManager = requireNonNull(getSystemService(UserManager.class));
         mTetheringManager = requireNonNull(getSystemService(TetheringManager.class));
+        mHandler = new PanServiceHandler(looper);
 
         int maxPanDevice;
         try {
@@ -178,7 +180,12 @@ public class PanService extends ProfileService {
     public void cleanup() {
         Log.i(TAG, "Cleanup Pan Service");
 
-        mTetheringManager.unregisterTetheringEventCallback(mTetheringCallback);
+        try {
+            mTetheringManager.unregisterTetheringEventCallback(mTetheringCallback);
+            // IllegalStateException could be thrown from the manager.
+        } catch (IllegalStateException e) {
+            Log.e(TAG, "cleanup(): failed to unregister tethering event callback");
+        }
         mNativeInterface.cleanup();
         mHandler.removeCallbacksAndMessages(null);
 
@@ -202,81 +209,74 @@ public class PanService extends ProfileService {
         mHandler.removeCallbacksAndMessages(null);
     }
 
-    private final Handler mHandler =
-            new Handler(Looper.getMainLooper()) {
-                @Override
-                public void handleMessage(Message msg) {
-                    switch (msg.what) {
-                        case MESSAGE_CONNECT:
-                            BluetoothDevice connectDevice = (BluetoothDevice) msg.obj;
-                            if (!mNativeInterface.connect(
-                                    Flags.identityAddressNullIfNotKnown()
-                                            ? Utils.getByteBrEdrAddress(
-                                                    mAdapterService, connectDevice)
-                                            : mAdapterService.getByteIdentityAddress(
-                                                    connectDevice))) {
-                                handlePanDeviceStateChange(
-                                        connectDevice,
-                                        null,
-                                        STATE_CONNECTING,
-                                        BluetoothPan.LOCAL_PANU_ROLE,
-                                        BluetoothPan.REMOTE_NAP_ROLE);
-                                handlePanDeviceStateChange(
-                                        connectDevice,
-                                        null,
-                                        STATE_DISCONNECTED,
-                                        BluetoothPan.LOCAL_PANU_ROLE,
-                                        BluetoothPan.REMOTE_NAP_ROLE);
-                            }
-                            break;
-                        case MESSAGE_DISCONNECT:
-                            BluetoothDevice disconnectDevice = (BluetoothDevice) msg.obj;
-                            if (!mNativeInterface.disconnect(
-                                    Flags.identityAddressNullIfNotKnown()
-                                            ? Utils.getByteBrEdrAddress(
-                                                    mAdapterService, disconnectDevice)
-                                            : mAdapterService.getByteIdentityAddress(
-                                                    disconnectDevice))) {
-                                handlePanDeviceStateChange(
-                                        disconnectDevice,
-                                        mPanIfName,
-                                        STATE_DISCONNECTING,
-                                        BluetoothPan.LOCAL_PANU_ROLE,
-                                        BluetoothPan.REMOTE_NAP_ROLE);
-                                handlePanDeviceStateChange(
-                                        disconnectDevice,
-                                        mPanIfName,
-                                        STATE_DISCONNECTED,
-                                        BluetoothPan.LOCAL_PANU_ROLE,
-                                        BluetoothPan.REMOTE_NAP_ROLE);
-                            }
-                            break;
-                        case MESSAGE_CONNECT_STATE_CHANGED:
-                            ConnectState cs = (ConnectState) msg.obj;
-                            final BluetoothDevice device =
-                                    mAdapterService.getDeviceFromByte(cs.addr);
-                            // TBD get iface from the msg
-                            Log.d(
-                                    TAG,
-                                    "MESSAGE_CONNECT_STATE_CHANGED: "
-                                            + device
-                                            + " state: "
-                                            + cs.state);
-                            // It could be null if the connection up is coming when the
-                            // Bluetooth is turning off.
-                            if (device == null) {
-                                break;
-                            }
-                            handlePanDeviceStateChange(
-                                    device,
-                                    mPanIfName /* iface */,
-                                    cs.state,
-                                    cs.local_role,
-                                    cs.remote_role);
-                            break;
+    private class PanServiceHandler extends Handler {
+        PanServiceHandler(Looper looper) {
+            super(looper);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            switch (msg.what) {
+                case MESSAGE_CONNECT:
+                    BluetoothDevice connectDevice = (BluetoothDevice) msg.obj;
+                    if (!mNativeInterface.connect(
+                            Flags.identityAddressNullIfNotKnown()
+                                    ? Utils.getByteBrEdrAddress(mAdapterService, connectDevice)
+                                    : mAdapterService.getByteIdentityAddress(connectDevice))) {
+                        handlePanDeviceStateChange(
+                                connectDevice,
+                                null,
+                                STATE_CONNECTING,
+                                BluetoothPan.LOCAL_PANU_ROLE,
+                                BluetoothPan.REMOTE_NAP_ROLE);
+                        handlePanDeviceStateChange(
+                                connectDevice,
+                                null,
+                                STATE_DISCONNECTED,
+                                BluetoothPan.LOCAL_PANU_ROLE,
+                                BluetoothPan.REMOTE_NAP_ROLE);
                     }
-                }
-            };
+                    break;
+                case MESSAGE_DISCONNECT:
+                    BluetoothDevice disconnectDevice = (BluetoothDevice) msg.obj;
+                    if (!mNativeInterface.disconnect(
+                            Flags.identityAddressNullIfNotKnown()
+                                    ? Utils.getByteBrEdrAddress(mAdapterService, disconnectDevice)
+                                    : mAdapterService.getByteIdentityAddress(disconnectDevice))) {
+                        handlePanDeviceStateChange(
+                                disconnectDevice,
+                                mPanIfName,
+                                STATE_DISCONNECTING,
+                                BluetoothPan.LOCAL_PANU_ROLE,
+                                BluetoothPan.REMOTE_NAP_ROLE);
+                        handlePanDeviceStateChange(
+                                disconnectDevice,
+                                mPanIfName,
+                                STATE_DISCONNECTED,
+                                BluetoothPan.LOCAL_PANU_ROLE,
+                                BluetoothPan.REMOTE_NAP_ROLE);
+                    }
+                    break;
+                case MESSAGE_CONNECT_STATE_CHANGED:
+                    ConnectState cs = (ConnectState) msg.obj;
+                    final BluetoothDevice device = mAdapterService.getDeviceFromByte(cs.addr);
+                    // TBD get iface from the msg
+                    Log.d(TAG, "MESSAGE_CONNECT_STATE_CHANGED: " + device + " state: " + cs.state);
+                    // It could be null if the connection up is coming when the
+                    // Bluetooth is turning off.
+                    if (device == null) {
+                        break;
+                    }
+                    handlePanDeviceStateChange(
+                            device,
+                            mPanIfName /* iface */,
+                            cs.state,
+                            cs.local_role,
+                            cs.remote_role);
+                    break;
+            }
+        }
+    }
 
     /** Handlers for incoming service calls */
     @VisibleForTesting

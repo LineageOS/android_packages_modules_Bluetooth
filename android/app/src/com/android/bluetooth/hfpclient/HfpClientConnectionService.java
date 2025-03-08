@@ -51,7 +51,8 @@ public class HfpClientConnectionService extends ConnectionService {
 
     private TelecomManager mTelecomManager;
 
-    private HeadsetClientServiceInterface mServiceInterface = new HeadsetClientServiceInterface();
+    private final HeadsetClientServiceInterface mServiceInterface =
+            new HeadsetClientServiceInterface();
 
     private final Map<BluetoothDevice, HfpClientDeviceBlock> mDeviceBlocks = new HashMap<>();
 
@@ -385,7 +386,7 @@ public class HfpClientConnectionService extends ConnectionService {
                         .setSupportedUriSchemes(Arrays.asList(PhoneAccount.SCHEME_TEL))
                         .setCapabilities(capabilities)
                         .build();
-        Log.d(TAG, "phoneaccount: " + account);
+        Log.d(TAG, "PhoneAccount: " + account);
         return account;
     }
 

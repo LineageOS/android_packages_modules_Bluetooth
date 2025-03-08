@@ -38,7 +38,7 @@ public final class MsftAdvMonitorMergedPatternListTest {
             new ParcelUuid(UUID.fromString("12345678-90AB-CDEF-1234-567890ABCDEF"));
 
     @Test
-    public void testAddandRemove() {
+    public void testAddAndRemove() {
         MsftAdvMonitorMergedPatternList patternList = new MsftAdvMonitorMergedPatternList();
         int filterIndex = 0;
         int addedFilterIndex = filterIndex;

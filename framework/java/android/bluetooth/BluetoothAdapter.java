@@ -506,8 +506,8 @@ public final class BluetoothAdapter {
     @SystemApi public static final int BT_SNOOP_LOG_MODE_FILTERED = 1;
 
     /**
-     * Used as parameter for {@link #setSnoopLogMode}, indicates that the Bluetooth HCI snoop
-     * logging should be enabled.
+     * Used as parameter for {@link #setBluetoothHciSnoopLoggingMode}, indicates that the Bluetooth
+     * HCI snoop logging should be enabled.
      *
      * <p>See {@link #BT_SNOOP_LOG_MODE_FILTERED} to enable logging with filtered information.
      *
@@ -4714,21 +4714,20 @@ public final class BluetoothAdapter {
     }
 
     /**
-     * Register a {@link #OnMetadataChangedListener} to receive update about metadata changes for
+     * Register a {@link OnMetadataChangedListener} to receive update about metadata changes for
      * this {@link BluetoothDevice}. Registration must be done when Bluetooth is ON and will last
-     * until {@link #removeOnMetadataChangedListener(BluetoothDevice)} is called, even when
-     * Bluetooth restarted in the middle. All input parameters should not be null or {@link
-     * NullPointerException} will be triggered. The same {@link BluetoothDevice} and {@link
-     * #OnMetadataChangedListener} pair can only be registered once, double registration would cause
-     * {@link IllegalArgumentException}.
+     * until {@link #removeOnMetadataChangedListener} is called, even when Bluetooth restarted in
+     * the middle. All input parameters should not be null or {@link NullPointerException} will be
+     * triggered. The same {@link BluetoothDevice} and {@link OnMetadataChangedListener} pair can
+     * only be registered once, double registration would cause {@link IllegalArgumentException}.
      *
      * @param device {@link BluetoothDevice} that will be registered
      * @param executor the executor for listener callback
-     * @param listener {@link #OnMetadataChangedListener} that will receive asynchronous callbacks
+     * @param listener {@link OnMetadataChangedListener} that will receive asynchronous callbacks
      * @return true on success, false on error
      * @throws NullPointerException If one of {@code listener}, {@code device} or {@code executor}
      *     is null.
-     * @throws IllegalArgumentException The same {@link #OnMetadataChangedListener} and {@link
+     * @throws IllegalArgumentException The same {@link OnMetadataChangedListener} and {@link
      *     BluetoothDevice} are registered twice.
      * @hide
      */
@@ -4795,10 +4794,9 @@ public final class BluetoothAdapter {
     }
 
     /**
-     * Unregister a {@link #OnMetadataChangedListener} from a registered {@link BluetoothDevice}.
+     * Unregister a {@link OnMetadataChangedListener} from a registered {@link BluetoothDevice}.
      * Unregistration can be done when Bluetooth is either ON or OFF. {@link
-     * #addOnMetadataChangedListener(OnMetadataChangedListener, BluetoothDevice, Executor)} must be
-     * called before unregistration.
+     * #addOnMetadataChangedListener} must be called before unregistration.
      *
      * @param device {@link BluetoothDevice} that will be unregistered. It should not be null or
      *     {@link NullPointerException} will be triggered.
@@ -5539,7 +5537,7 @@ public final class BluetoothAdapter {
          * the report supports five event types: Quality monitor event, Approaching LSTO event, A2DP
          * choppy event, SCO choppy event and Connect fail event. To know which kind of event is
          * wrapped in this {@link BluetoothQualityReport} object, you need to call {@link
-         * #getQualityReportId}.
+         * BluetoothQualityReport#getQualityReportId}.
          *
          * @param device is the BluetoothDevice which connection quality is being reported
          * @param bluetoothQualityReport a Parcel that contains info about Bluetooth Quality

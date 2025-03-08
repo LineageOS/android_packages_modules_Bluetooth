@@ -7,18 +7,15 @@ use bt_topshim::btif::{
     BtStatus, BtThreadEvent, BtTransport, BtVendorProductInfo, DisplayAddress, DisplayUuid,
     RawAddress, ToggleableProfile, Uuid, INVALID_RSSI,
 };
-use bt_topshim::{
-    controller, metrics,
-    profiles::gatt::GattStatus,
-    profiles::hfp::EscoCodingFormat,
-    profiles::hid_host::{
-        BthhConnectionState, BthhHidInfo, BthhProtocolMode, BthhReportType, BthhStatus,
-        HHCallbacks, HHCallbacksDispatcher, HidHost,
-    },
-    profiles::sdp::{BtSdpRecord, Sdp, SdpCallbacks, SdpCallbacksDispatcher},
-    profiles::ProfileConnectionState,
-    sysprop, topstack,
+use bt_topshim::profiles::gatt::GattStatus;
+use bt_topshim::profiles::hfp::EscoCodingFormat;
+use bt_topshim::profiles::hid_host::{
+    BthhConnectionState, BthhHidInfo, BthhProtocolMode, BthhReportType, BthhStatus, HHCallbacks,
+    HHCallbacksDispatcher, HidHost,
 };
+use bt_topshim::profiles::sdp::{BtSdpRecord, Sdp, SdpCallbacks, SdpCallbacksDispatcher};
+use bt_topshim::profiles::ProfileConnectionState;
+use bt_topshim::{controller, metrics, sysprop, topstack};
 
 use bt_utils::array_utils;
 use bt_utils::cod::{is_cod_hid_combo, is_cod_hid_keyboard};
@@ -37,8 +34,7 @@ use std::io::Write;
 use std::os::fd::AsRawFd;
 use std::process;
 use std::sync::{Arc, Condvar, Mutex};
-use std::time::Duration;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 use tokio::sync::mpsc::Sender;
 use tokio::task::JoinHandle;
 use tokio::time;
@@ -1064,12 +1060,6 @@ impl Bluetooth {
                 callback.on_device_cleared(d.clone());
             });
         }
-    }
-
-    /// Makes an LE_RAND call to the Bluetooth interface.
-    #[log_cb_args]
-    pub fn le_rand(&mut self) -> bool {
-        self.intf.lock().unwrap().le_rand() == BTM_SUCCESS
     }
 
     fn send_metrics_remote_device_info(device: &BluetoothDeviceContext) {

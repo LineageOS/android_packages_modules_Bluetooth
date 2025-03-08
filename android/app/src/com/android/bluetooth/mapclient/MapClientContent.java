@@ -16,6 +16,9 @@
 
 package com.android.bluetooth.mapclient;
 
+import static android.telephony.PhoneNumberUtils.areSamePhoneNumber;
+import static android.telephony.PhoneNumberUtils.extractNetworkPortion;
+
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothMapClient;
 import android.content.ContentResolver;
@@ -30,7 +33,6 @@ import android.provider.Telephony.Mms;
 import android.provider.Telephony.MmsSms;
 import android.provider.Telephony.Sms;
 import android.provider.Telephony.Threads;
-import android.telephony.PhoneNumberUtils;
 import android.telephony.SubscriptionInfo;
 import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
@@ -80,17 +82,20 @@ class MapClientContent {
         SENT
     }
 
-    final BluetoothDevice mDevice;
+    private final HashMap<String, Uri> mHandleToUriMap = new HashMap<>();
+    private final HashMap<Uri, MessageStatus> mUriToHandleMap = new HashMap<>();
+
+    final ContentObserver mContentObserver;
     private final Context mContext;
+    private final BluetoothDevice mDevice;
     private final Callbacks mCallbacks;
     private final ContentResolver mResolver;
-    ContentObserver mContentObserver;
+    private final SubscriptionManager mSubscriptionManager;
+    private final TelephonyManager mTelephonyManager;
+
     String mPhoneNumber = null;
+
     private int mSubscriptionId = SubscriptionManager.INVALID_SUBSCRIPTION_ID;
-    private SubscriptionManager mSubscriptionManager;
-    private TelephonyManager mTelephonyManager;
-    private HashMap<String, Uri> mHandleToUriMap = new HashMap<>();
-    private HashMap<Uri, MessageStatus> mUriToHandleMap = new HashMap<>();
 
     /** Callbacks API to notify about statusChanges as observed from the content provider */
     interface Callbacks {
@@ -114,7 +119,6 @@ class MapClientContent {
         mDevice = device;
         mCallbacks = callbacks;
         mResolver = mContext.getContentResolver();
-
         mSubscriptionManager = mContext.getSystemService(SubscriptionManager.class);
         mTelephonyManager = mContext.getSystemService(TelephonyManager.class);
         mSubscriptionManager.addSubscriptionInfoRecord(
@@ -244,7 +248,7 @@ class MapClientContent {
     private void storeSms(Bmessage message, String handle, Long timestamp, boolean seen) {
         debug("storeSms");
         verbose(message.toString());
-        String recipients;
+        final String recipients;
         if (INBOX_PATH.equals(message.getFolder())) {
             recipients = getOriginatorNumber(message);
         } else {
@@ -498,9 +502,8 @@ class MapClientContent {
 
     /** getThreadId utilize the originator and recipients to obtain the thread id */
     private long getThreadId(Bmessage message) {
-
         Set<String> messageContacts = new ArraySet<>();
-        String originator = PhoneNumberUtils.extractNetworkPortion(getOriginatorNumber(message));
+        String originator = extractNetworkPortion(getOriginatorNumber(message));
         if (originator != null) {
             messageContacts.add(originator);
         }
@@ -512,12 +515,9 @@ class MapClientContent {
             if (mPhoneNumber == null) {
                 warn("getThreadId called, mPhoneNumber never found.");
             }
+            final String networkCountryIso = mTelephonyManager.getNetworkCountryIso();
             messageContacts.removeIf(
-                    number ->
-                            (PhoneNumberUtils.areSamePhoneNumber(
-                                    number,
-                                    mPhoneNumber,
-                                    mTelephonyManager.getNetworkCountryIso())));
+                    number -> areSamePhoneNumber(number, mPhoneNumber, networkCountryIso));
         }
 
         verbose("Contacts = " + messageContacts.toString());
@@ -525,14 +525,11 @@ class MapClientContent {
     }
 
     private static void getRecipientsFromMessage(Bmessage message, Set<String> messageContacts) {
-        List<VCardEntry> recipients = message.getRecipients();
-        for (VCardEntry recipient : recipients) {
-            List<VCardEntry.PhoneData> phoneData = recipient.getPhoneList();
-            if (phoneData != null && !phoneData.isEmpty()) {
-                messageContacts.add(
-                        PhoneNumberUtils.extractNetworkPortion(phoneData.get(0).getNumber()));
-            }
-        }
+        message.getRecipients().stream()
+                .map(recipient -> recipient.getPhoneList())
+                .filter(phoneData -> phoneData != null && !phoneData.isEmpty())
+                .map(phoneData -> extractNetworkPortion(phoneData.get(0).getNumber()))
+                .forEach(messageContacts::add);
     }
 
     private static String getOriginatorNumber(Bmessage message) {
@@ -546,7 +543,7 @@ class MapClientContent {
             return null;
         }
 
-        return PhoneNumberUtils.extractNetworkPortion(phoneData.get(0).getNumber());
+        return extractNetworkPortion(phoneData.get(0).getNumber());
     }
 
     private static String getFirstRecipientNumber(Bmessage message) {
@@ -669,8 +666,8 @@ class MapClientContent {
     }
 
     private List<MessageDumpElement> getRecentMessagesFromFolder(Folder folder) {
-        Uri smsUri = null;
-        Uri mmsUri = null;
+        final Uri smsUri;
+        final Uri mmsUri;
         if (folder == Folder.INBOX) {
             smsUri = Sms.Inbox.CONTENT_URI;
             mmsUri = Mms.Inbox.CONTENT_URI;
@@ -682,7 +679,7 @@ class MapClientContent {
             return null;
         }
 
-        ArrayList<MessageDumpElement> messages = new ArrayList<MessageDumpElement>();
+        List<MessageDumpElement> messages = new ArrayList<>();
         for (Uri uri : new Uri[] {smsUri, mmsUri}) {
             messages.addAll(getMessagesFromUri(uri));
         }
@@ -702,7 +699,7 @@ class MapClientContent {
 
     private List<MessageDumpElement> getMessagesFromUri(Uri uri) {
         debug("getMessagesFromUri: uri=" + uri);
-        ArrayList<MessageDumpElement> messages = new ArrayList<MessageDumpElement>();
+        List<MessageDumpElement> messages = new ArrayList<>();
 
         if (mSubscriptionId == SubscriptionManager.INVALID_SUBSCRIPTION_ID) {
             warn("getMessagesFromUri: Failed, no subscription ID");
@@ -886,20 +883,9 @@ class MapClientContent {
                                 .toLocalDateTime());
     }
 
-    private static class MessageDumpElement implements Comparable<MessageDumpElement> {
-        private String mMessageHandle;
-        private long mTimestamp;
-        private Type mType;
-        private long mThreadId;
-        private Uri mUri;
-
-        MessageDumpElement(String handle, Uri uri, long timestamp, long threadId, Type type) {
-            mMessageHandle = handle;
-            mTimestamp = timestamp;
-            mUri = uri;
-            mThreadId = threadId;
-            mType = type;
-        }
+    private record MessageDumpElement(
+            String handle, Uri uri, long timestamp, long threadId, Type type)
+            implements Comparable<MessageDumpElement> {
 
         public static String getFormattedColumnNames() {
             return String.format(
@@ -910,15 +896,15 @@ class MapClientContent {
         public String toString() {
             return String.format(
                     "%-19s %8d %-16s %-4s %s",
-                    toDatetimeString(mTimestamp), mThreadId, mMessageHandle, mType, mUri);
+                    toDatetimeString(timestamp), threadId, handle, type, uri);
         }
 
         @Override
         public int compareTo(MessageDumpElement e) {
             // we want reverse chronological.
-            if (this.mTimestamp < e.mTimestamp) {
+            if (this.timestamp < e.timestamp) {
                 return 1;
-            } else if (this.mTimestamp > e.mTimestamp) {
+            } else if (this.timestamp > e.timestamp) {
                 return -1;
             } else {
                 return 0;

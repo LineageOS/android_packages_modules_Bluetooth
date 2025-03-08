@@ -361,7 +361,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
 
     private static final int STOP_LISTENER = 200;
 
-    private Handler mHandler =
+    private final Handler mHandler =
             new Handler() {
                 @Override
                 public void handleMessage(Message msg) {
@@ -503,7 +503,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
         acceptNewConnections();
         SdpManagerNativeInterface nativeInterface = SdpManagerNativeInterface.getInstance();
         if (!nativeInterface.isAvailable()) {
-            Log.e(TAG, "ERROR:serversocket: SdpManagerNativeInterface is not available");
+            Log.e(TAG, "ERROR:serverSocket: SdpManagerNativeInterface is not available");
             ContentProfileErrorReportUtils.report(
                     BluetoothProfile.OPP,
                     BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
@@ -512,7 +512,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
             return;
         }
         if (mServerSocket == null) {
-            Log.e(TAG, "ERROR:serversocket: mServerSocket is null");
+            Log.e(TAG, "ERROR:serverSocket: mServerSocket is null");
             ContentProfileErrorReportUtils.report(
                     BluetoothProfile.OPP,
                     BluetoothProtoEnums.BLUETOOTH_OPP_SERVICE,
@@ -1215,7 +1215,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
     static void trimDatabase(ContentResolver contentResolver) {
         // Try-catch is important because trimDatabase can run even when the OPP_PROVIDER is
         // disabled (by OPP service, shell command, etc.).
-        // At the sametime, it's ok to retry trimDatabase later when the service restart
+        // At the same time, it's ok to retry trimDatabase later when the service restart
         try {
             // remove the invisible/unconfirmed inbound shares
             int delNum =
@@ -1269,14 +1269,10 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
     }
 
     private static class MediaScannerNotifier implements MediaScannerConnectionClient {
-
-        private MediaScannerConnection mConnection;
-
-        private BluetoothOppShareInfo mInfo;
-
-        private Context mContext;
-
-        private Handler mCallback;
+        private final MediaScannerConnection mConnection;
+        private final BluetoothOppShareInfo mInfo;
+        private final Context mContext;
+        private final Handler mCallback;
 
         MediaScannerNotifier(Context context, BluetoothOppShareInfo info, Handler handler) {
             mContext = context;
@@ -1332,7 +1328,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
         if (mOppSdpHandle >= 0 && nativeInterface.isAvailable()) {
             Log.d(TAG, "Removing SDP record mOppSdpHandle :" + mOppSdpHandle);
             boolean status = nativeInterface.removeSdpRecord(mOppSdpHandle);
-            Log.d(TAG, "RemoveSDPrecord returns " + status);
+            Log.d(TAG, "RemoveSDPRecord returns " + status);
             mOppSdpHandle = -1;
         }
         if (mServerSocket != null) {

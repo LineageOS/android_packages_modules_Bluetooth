@@ -439,6 +439,7 @@ class AvdtpScb {
 public:
   AvdtpScb()
       : transport_channel_timer(nullptr),
+        init_delay_report_timer(nullptr),
         p_pkt(nullptr),
         p_ccb(nullptr),
         media_seq(0),

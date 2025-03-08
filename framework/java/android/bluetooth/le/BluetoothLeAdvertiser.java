@@ -44,6 +44,7 @@ import android.util.Log;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -66,16 +67,16 @@ public final class BluetoothLeAdvertiser {
     private static final int FLAGS_FIELD_BYTES = 3;
     private static final int MANUFACTURER_SPECIFIC_DATA_LENGTH = 2;
 
-    private final BluetoothAdapter mBluetoothAdapter;
-    private final AttributionSource mAttributionSource;
-
-    private final Handler mHandler;
     private final Map<AdvertiseCallback, AdvertisingSetCallback> mLegacyAdvertisers =
             new HashMap<>();
     private final Map<AdvertisingSetCallback, IAdvertisingSetCallback> mCallbackWrappers =
             Collections.synchronizedMap(new HashMap<>());
     private final Map<Integer, AdvertisingSet> mAdvertisingSets =
             Collections.synchronizedMap(new HashMap<>());
+
+    private final BluetoothAdapter mBluetoothAdapter;
+    private final AttributionSource mAttributionSource;
+    private final Handler mHandler;
 
     /**
      * Use BluetoothAdapter.getLeAdvertiser() instead.
@@ -611,7 +612,6 @@ public final class BluetoothLeAdvertiser {
         }
 
         IBluetoothAdvertise advertise = mBluetoothAdapter.getBluetoothAdvertise();
-
         if (advertise == null) {
             Log.e(TAG, "Bluetooth Advertise is null");
             postStartSetFailure(
@@ -696,71 +696,17 @@ public final class BluetoothLeAdvertiser {
         if (data == null) return 0;
         // Flags field is omitted if the advertising is not connectable.
         int size = (isFlagsIncluded) ? FLAGS_FIELD_BYTES : 0;
-        if (data.getServiceUuids() != null) {
-            int num16BitUuids = 0;
-            int num32BitUuids = 0;
-            int num128BitUuids = 0;
-            for (ParcelUuid uuid : data.getServiceUuids()) {
-                if (BluetoothUuid.is16BitUuid(uuid)) {
-                    ++num16BitUuids;
-                } else if (BluetoothUuid.is32BitUuid(uuid)) {
-                    ++num32BitUuids;
-                } else {
-                    ++num128BitUuids;
-                }
-            }
-            // 16 bit service uuids are grouped into one field when doing advertising.
-            if (num16BitUuids != 0) {
-                size += OVERHEAD_BYTES_PER_FIELD + num16BitUuids * BluetoothUuid.UUID_BYTES_16_BIT;
-            }
-            // 32 bit service uuids are grouped into one field when doing advertising.
-            if (num32BitUuids != 0) {
-                size += OVERHEAD_BYTES_PER_FIELD + num32BitUuids * BluetoothUuid.UUID_BYTES_32_BIT;
-            }
-            // 128 bit service uuids are grouped into one field when doing advertising.
-            if (num128BitUuids != 0) {
-                size +=
-                        OVERHEAD_BYTES_PER_FIELD
-                                + num128BitUuids * BluetoothUuid.UUID_BYTES_128_BIT;
-            }
-        }
-        if (data.getServiceSolicitationUuids() != null) {
-            int num16BitUuids = 0;
-            int num32BitUuids = 0;
-            int num128BitUuids = 0;
-            for (ParcelUuid uuid : data.getServiceSolicitationUuids()) {
-                if (BluetoothUuid.is16BitUuid(uuid)) {
-                    ++num16BitUuids;
-                } else if (BluetoothUuid.is32BitUuid(uuid)) {
-                    ++num32BitUuids;
-                } else {
-                    ++num128BitUuids;
-                }
-            }
-            // 16 bit service uuids are grouped into one field when doing advertising.
-            if (num16BitUuids != 0) {
-                size += OVERHEAD_BYTES_PER_FIELD + num16BitUuids * BluetoothUuid.UUID_BYTES_16_BIT;
-            }
-            // 32 bit service uuids are grouped into one field when doing advertising.
-            if (num32BitUuids != 0) {
-                size += OVERHEAD_BYTES_PER_FIELD + num32BitUuids * BluetoothUuid.UUID_BYTES_32_BIT;
-            }
-            // 128 bit service uuids are grouped into one field when doing advertising.
-            if (num128BitUuids != 0) {
-                size +=
-                        OVERHEAD_BYTES_PER_FIELD
-                                + num128BitUuids * BluetoothUuid.UUID_BYTES_128_BIT;
-            }
-        }
+        size += calculateUuidsSize(data.getServiceUuids());
+        size += calculateUuidsSize(data.getServiceSolicitationUuids());
+
         for (TransportDiscoveryData transportDiscoveryData : data.getTransportDiscoveryData()) {
             size += OVERHEAD_BYTES_PER_FIELD + transportDiscoveryData.totalBytes();
         }
-        for (ParcelUuid uuid : data.getServiceData().keySet()) {
-            int uuidLen = BluetoothUuid.uuidToBytes(uuid).length;
-            size +=
-                    OVERHEAD_BYTES_PER_FIELD
-                            + uuidLen
-                            + byteLength(data.getServiceData().get(uuid));
+        for (Map.Entry<ParcelUuid, byte[]> entry : data.getServiceData().entrySet()) {
+            final ParcelUuid uuid = entry.getKey();
+            final byte[] serviceData = entry.getValue();
+            final int uuidLen = BluetoothUuid.uuidToBytes(uuid).length;
+            size += OVERHEAD_BYTES_PER_FIELD + uuidLen + byteLength(serviceData);
         }
         for (int i = 0; i < data.getManufacturerSpecificData().size(); ++i) {
             size +=
@@ -776,6 +722,36 @@ public final class BluetoothLeAdvertiser {
             if (length >= 0) {
                 size += OVERHEAD_BYTES_PER_FIELD + length;
             }
+        }
+        return size;
+    }
+
+    private static int calculateUuidsSize(List<ParcelUuid> uuids) {
+        if (uuids == null) return 0;
+        int num16BitUuids = 0;
+        int num32BitUuids = 0;
+        int num128BitUuids = 0;
+        for (ParcelUuid uuid : uuids) {
+            if (BluetoothUuid.is16BitUuid(uuid)) {
+                ++num16BitUuids;
+            } else if (BluetoothUuid.is32BitUuid(uuid)) {
+                ++num32BitUuids;
+            } else {
+                ++num128BitUuids;
+            }
+        }
+        int size = 0;
+        // 16 bit service uuids are grouped into one field when doing advertising.
+        if (num16BitUuids != 0) {
+            size += OVERHEAD_BYTES_PER_FIELD + num16BitUuids * BluetoothUuid.UUID_BYTES_16_BIT;
+        }
+        // 32 bit service uuids are grouped into one field when doing advertising.
+        if (num32BitUuids != 0) {
+            size += OVERHEAD_BYTES_PER_FIELD + num32BitUuids * BluetoothUuid.UUID_BYTES_32_BIT;
+        }
+        // 128 bit service uuids are grouped into one field when doing advertising.
+        if (num128BitUuids != 0) {
+            size += OVERHEAD_BYTES_PER_FIELD + num128BitUuids * BluetoothUuid.UUID_BYTES_128_BIT;
         }
         return size;
     }
@@ -898,36 +874,17 @@ public final class BluetoothLeAdvertiser {
     @SuppressLint("AndroidFrameworkBluetoothPermission")
     private static void postStartSetFailure(
             Handler handler, final AdvertisingSetCallback callback, final int error) {
-        handler.post(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        callback.onAdvertisingSetStarted(null, 0, error);
-                    }
-                });
+        handler.post(() -> callback.onAdvertisingSetStarted(null, 0, error));
     }
 
     @SuppressLint("AndroidFrameworkBluetoothPermission")
     private void postStartFailure(final AdvertiseCallback callback, final int error) {
-        mHandler.post(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        callback.onStartFailure(error);
-                    }
-                });
+        mHandler.post(() -> callback.onStartFailure(error));
     }
 
     @SuppressLint("AndroidFrameworkBluetoothPermission")
     private void postStartSuccess(
             final AdvertiseCallback callback, final AdvertiseSettings settings) {
-        mHandler.post(
-                new Runnable() {
-
-                    @Override
-                    public void run() {
-                        callback.onStartSuccess(settings);
-                    }
-                });
+        mHandler.post(() -> callback.onStartSuccess(settings));
     }
 }

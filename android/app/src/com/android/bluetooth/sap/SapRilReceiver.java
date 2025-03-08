@@ -29,7 +29,7 @@ import com.android.modules.utils.build.SdkLevel;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-/** SapRiilReceiver is the AIDL implementation of ISapRilReceiver */
+/** SapRilReceiver is the AIDL implementation of ISapRilReceiver */
 public class SapRilReceiver implements ISapRilReceiver {
     private static final String TAG = SapRilReceiver.class.getSimpleName();
 
@@ -105,7 +105,7 @@ public class SapRilReceiver implements ISapRilReceiver {
     /**
      * Set callback that has response and unsolicited indication functions
      *
-     * @param sapCallback Object containing response and unosolicited indication callbacks
+     * @param sapCallback Object containing response and unsolicited indication callbacks
      */
     @Override
     public void setCallback(android.hardware.radio.sap.ISapCallback sapCallback)

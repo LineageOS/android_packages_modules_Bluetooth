@@ -38,7 +38,7 @@ final class AvrcpVersion {
     public int minor;
 
     public static AvrcpVersion getCurrentSystemPropertiesValue() {
-        // Make sure this default version agrees with AVRC_GetProfileVersion
+        // Make sure this default version agrees with AVRCP_GetProfileVersion
 
         String defaultVersion =
                 Flags.avrcp16Default() ? AVRCP_VERSION_1_6_STRING : AVRCP_VERSION_1_5_STRING;
@@ -58,7 +58,7 @@ final class AvrcpVersion {
         }
     }
 
-    public boolean isAtleastVersion(AvrcpVersion version) {
+    public boolean isAtLeastVersion(AvrcpVersion version) {
         if (version == null) return true;
         if (major < version.major) return false;
         if (major > version.major) return true;

@@ -101,7 +101,26 @@ fn cig() {
             framing: 0,
             max_transport_latency_c_to_p: 0,
             max_transport_latency_p_to_c: 0,
-            cis: vec![],
+            cis: vec![
+                hci::LeCisInCigParameters {
+                    cis_id: 0,
+                    max_sdu_c_to_p: 120,
+                    max_sdu_p_to_c: 120,
+                    phy_c_to_p: 0,
+                    phy_p_to_c: 0,
+                    rtn_c_to_p: 0,
+                    rtn_p_to_c: 0,
+                },
+                hci::LeCisInCigParameters {
+                    cis_id: 1,
+                    max_sdu_c_to_p: 150,
+                    max_sdu_p_to_c: 150,
+                    phy_c_to_p: 0,
+                    phy_p_to_c: 0,
+                    rtn_c_to_p: 0,
+                    rtn_p_to_c: 0,
+                },
+            ],
         }
         .to_bytes(),
     );
@@ -491,7 +510,26 @@ fn merge() {
             framing: 0,
             max_transport_latency_c_to_p: 0,
             max_transport_latency_p_to_c: 0,
-            cis: vec![],
+            cis: vec![
+                hci::LeCisInCigParameters {
+                    cis_id: 0,
+                    max_sdu_c_to_p: 120,
+                    max_sdu_p_to_c: 120,
+                    phy_c_to_p: 0,
+                    phy_p_to_c: 0,
+                    rtn_c_to_p: 0,
+                    rtn_p_to_c: 0,
+                },
+                hci::LeCisInCigParameters {
+                    cis_id: 1,
+                    max_sdu_c_to_p: 150,
+                    max_sdu_p_to_c: 150,
+                    phy_c_to_p: 0,
+                    phy_p_to_c: 0,
+                    rtn_c_to_p: 0,
+                    rtn_p_to_c: 0,
+                },
+            ],
         }
         .to_bytes(),
     );

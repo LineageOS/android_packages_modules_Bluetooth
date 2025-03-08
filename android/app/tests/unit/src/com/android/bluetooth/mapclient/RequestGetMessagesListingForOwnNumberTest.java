@@ -64,7 +64,8 @@ public class RequestGetMessagesListingForOwnNumberTest {
     private BluetoothMapMessageListingElement mSMSWithoutOwnNumber;
 
     private static class FakeMessageFoldersForListing {
-        private Map<String, List<BluetoothMapMessageListingElement>> mFolders = new HashMap<>();
+        private final Map<String, List<BluetoothMapMessageListingElement>> mFolders =
+                new HashMap<>();
 
         /**
          * @param folder - the folder you want to create messages for.

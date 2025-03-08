@@ -24,14 +24,13 @@ import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.bluetooth.map.BluetoothMapUtils.TYPE;
 import com.android.internal.annotations.VisibleForTesting;
 
-import com.google.common.base.Ascii;
-
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.regex.Pattern;
 
 // Next tag value for ContentProfileErrorReportUtils.report(): 10
@@ -64,14 +63,14 @@ public abstract class BluetoothMapbMessage {
 
     public static class VCard {
         /* VCARD attributes */
-        private String mVersion;
+        private final String mVersion;
         private String mName = null;
         private String mFormattedName = null;
         private String[] mPhoneNumbers = {};
         private String[] mEmailAddresses = {};
         private int mEnvLevel = 0;
         private String[] mBtUcis = {};
-        private String[] mBtUids = {};
+        private final String[] mBtUids = {};
 
         /**
          * Construct a version 3.0 vCard
@@ -429,7 +428,8 @@ public abstract class BluetoothMapbMessage {
             String line = getLine();
             if (line == null || subString == null) {
                 throw new IllegalArgumentException("Line or substring is null");
-            } else if (!Ascii.toUpperCase(line).contains(Ascii.toUpperCase(subString))) {
+            } else if (!line.toUpperCase(Locale.ROOT)
+                    .contains(subString.toUpperCase(Locale.ROOT))) {
                 throw new IllegalArgumentException(
                         "Expected \"" + subString + "\" in: \"" + line + "\"");
             }
@@ -442,11 +442,11 @@ public abstract class BluetoothMapbMessage {
          */
         public void expect(String subString, String subString2) throws IllegalArgumentException {
             String line = getLine();
-            if (!Ascii.toUpperCase(line).contains(Ascii.toUpperCase(subString))) {
+            if (!line.toUpperCase(Locale.ROOT).contains(subString.toUpperCase(Locale.ROOT))) {
                 throw new IllegalArgumentException(
                         "Expected \"" + subString + "\" in: \"" + line + "\"");
             }
-            if (!Ascii.toUpperCase(line).contains(Ascii.toUpperCase(subString2))) {
+            if (!line.toUpperCase(Locale.ROOT).contains(subString2.toUpperCase(Locale.ROOT))) {
                 throw new IllegalArgumentException(
                         "Expected \"" + subString + "\" in: \"" + line + "\"");
             }

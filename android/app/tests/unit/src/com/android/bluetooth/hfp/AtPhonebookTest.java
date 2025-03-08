@@ -303,7 +303,7 @@ public class AtPhonebookTest {
     }
 
     @Test
-    public void processCpbrCommand_withReceivcedCallsAndCharsetGsm() {
+    public void processCpbrCommand_withReceivedCallsAndCharsetGsm() {
         Cursor mockCursorOne = mock(Cursor.class);
         when(mockCursorOne.getCount()).thenReturn(1);
         when(mockCursorOne.getColumnIndexOrThrow(CallLog.Calls.NUMBER)).thenReturn(1);

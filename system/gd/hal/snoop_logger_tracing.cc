@@ -32,8 +32,8 @@ namespace bluetooth {
 namespace hal {
 namespace {
 
-// The Perfetto trace flush interval in microseconds.
-constexpr uint64_t TRACE_FLUSH_INTERVAL_MICROS = 100000;
+// The Perfetto trace flush interval in nanoseconds.
+constexpr uint64_t TRACE_FLUSH_INTERVAL_NANOS = 100 * 1000 * 1000;
 
 static bool SkipTracePoint(const HciPacket& packet, SnoopLogger::PacketType type) {
   if (type == SnoopLogger::PacketType::EVT) {
@@ -139,8 +139,7 @@ BluetoothTracePacketType SnoopLoggerTracing::HciToTracePacketType(
   return trace_packet_type;
 }
 
-void SnoopLoggerTracing::TracePacket(uint64_t timestamp_us, const HciPacket& packet,
-                                     SnoopLogger::Direction direction,
+void SnoopLoggerTracing::TracePacket(const HciPacket& packet, SnoopLogger::Direction direction,
                                      SnoopLogger::PacketType type) {
   if (SkipTracePoint(packet, type)) {
     return;
@@ -149,40 +148,44 @@ void SnoopLoggerTracing::TracePacket(uint64_t timestamp_us, const HciPacket& pac
   SnoopLoggerTracing::Trace([&](SnoopLoggerTracing::TraceContext ctx) {
     perfetto::LockedHandle<SnoopLoggerTracing> handle = ctx.GetDataSourceLocked();
     if (handle.valid()) {
-      handle->Record(ctx, timestamp_us, packet, direction, type);
+      handle->Record(ctx, packet, direction, type);
     }
   });
 }
 
-void SnoopLoggerTracing::Record(TraceContext& ctx, uint64_t timestamp_us, const HciPacket& packet,
+void SnoopLoggerTracing::Record(TraceContext& ctx, const HciPacket& packet,
                                 SnoopLogger::Direction direction, SnoopLogger::PacketType type) {
-  BundleKey key(packet, direction, type);
-
-  BundleDetails& bundle = bttrace_bundles_[key];
-  bundle.count++;
-  bundle.total_length += packet.size();
-  bundle.start_ts = std::min(bundle.start_ts, timestamp_us);
-  bundle.end_ts = std::max(bundle.end_ts, timestamp_us);
-
-  if (last_flush_us_ + TRACE_FLUSH_INTERVAL_MICROS < timestamp_us) {
+  // Write pending events before saving the new one to the bundle. Not doing this
+  // includes the new event after a potentially long gap, leading to a bundle with
+  // a very long duration.
+  uint64_t timestamp_ns = perfetto::base::GetBootTimeNs().count();
+  if (last_flush_ns_ + TRACE_FLUSH_INTERVAL_NANOS < timestamp_ns) {
     for (const auto& [key, details] : bttrace_bundles_) {
       Write(ctx, key, details);
     }
 
     bttrace_bundles_.clear();
-    last_flush_us_ = timestamp_us;
+    last_flush_ns_ = timestamp_ns;
   }
+
+  BundleKey key(packet, direction, type);
+
+  BundleDetails& bundle = bttrace_bundles_[key];
+  bundle.count++;
+  bundle.total_length += packet.size();
+  bundle.start_ts = std::min(bundle.start_ts, timestamp_ns);
+  bundle.end_ts = std::max(bundle.end_ts, timestamp_ns);
 }
 
 void SnoopLoggerTracing::Write(TraceContext& ctx, const BundleKey& key,
                                const BundleDetails& details) {
   auto trace_pkt = ctx.NewTracePacket();
-  trace_pkt->set_timestamp(perfetto::base::GetBootTimeNs().count());
+  trace_pkt->set_timestamp(details.start_ts);
   auto* bt_event = trace_pkt->set_bluetooth_trace_event();
   bt_event->set_packet_type(HciToTracePacketType(key.packet_type, key.direction));
   bt_event->set_count(details.count);
   bt_event->set_length(details.total_length);
-  bt_event->set_duration((details.end_ts - details.start_ts) / 1000);
+  bt_event->set_duration(details.end_ts - details.start_ts);
   if (key.op_code.has_value()) {
     bt_event->set_op_code(*key.op_code);
   }

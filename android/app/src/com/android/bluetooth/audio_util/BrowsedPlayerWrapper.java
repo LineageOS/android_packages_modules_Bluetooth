@@ -63,7 +63,7 @@ class BrowsedPlayerWrapper {
     public static final int STATUS_LOOKUP_ERROR = 2;
     public static final int STATUS_PLAYBACK_TIMEOUT_ERROR = 3;
 
-    private MediaBrowser mWrappedBrowser;
+    private final MediaBrowser mWrappedBrowser;
 
     // TODO (apanicke): Store the context in the factories so that we don't need to save this.
     // As long as the service is alive those factories will have a valid context.

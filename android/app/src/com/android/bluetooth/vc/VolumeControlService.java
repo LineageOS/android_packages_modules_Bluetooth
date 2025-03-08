@@ -1186,7 +1186,7 @@ public class VolumeControlService extends ProfileService {
         }
 
         /* Stack delivers us number of audio outputs.
-         * Offset ids a countinous from 1 to number_of_ext_outputs*/
+         * Offset ids a continuous from 1 to number_of_ext_outputs*/
         for (int i = 1; i <= numberOfExternalOutputs; i++) {
             offsets.add(i);
             /* Native stack is doing required reads under the hood */
@@ -1206,9 +1206,9 @@ public class VolumeControlService extends ProfileService {
     }
 
     void handleDeviceAvailable(
-            BluetoothDevice device, int numberOfExternalOutputs, int numberOfExternaInputs) {
+            BluetoothDevice device, int numberOfExternalOutputs, int numberOfExternalInputs) {
         handleExternalOutputs(device, numberOfExternalOutputs);
-        handleExternalInputs(device, numberOfExternaInputs);
+        handleExternalInputs(device, numberOfExternalInputs);
     }
 
     void handleDeviceExtAudioOffsetChanged(BluetoothDevice device, int id, int value) {

@@ -88,8 +88,8 @@ public class MetricsLoggerTest {
     @Mock private RemoteDevices mRemoteDevices;
 
     private static class TestableMetricsLogger extends MetricsLogger {
-        public HashMap<Integer, Long> mTestableCounters = new HashMap<>();
-        public HashMap<String, Integer> mTestableDeviceNames = new HashMap<>();
+        public final HashMap<Integer, Long> mTestableCounters = new HashMap<>();
+        public final HashMap<String, Integer> mTestableDeviceNames = new HashMap<>();
 
         @Override
         public boolean count(int key, long count) {

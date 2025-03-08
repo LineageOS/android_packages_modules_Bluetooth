@@ -671,7 +671,7 @@ public final class BluetoothSocket implements Closeable {
                                     mDevice, mType, mUuid, mPort, getSecurityFlags());
                 } else {
                     mPfd =
-                            socketManager.connectSocketwithOffload(
+                            socketManager.connectSocketWithOffload(
                                     mDevice,
                                     mType,
                                     mUuid,

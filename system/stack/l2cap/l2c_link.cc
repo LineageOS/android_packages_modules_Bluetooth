@@ -750,56 +750,6 @@ void l2c_pin_code_request(const RawAddress& bd_addr) {
 
 /*******************************************************************************
  *
- * Function         l2c_link_check_power_mode
- *
- * Description      This function is called to check power mode.
- *
- * Returns          true if link is going to be active from park
- *                  false if nothing to send or not in park mode
- *
- ******************************************************************************/
-static bool l2c_link_check_power_mode(tL2C_LCB* p_lcb) {
-  if (com::android::bluetooth::flags::transmit_smp_packets_before_release()) {
-    // TODO: Remove this function when flag transmit_smp_packets_before_release is released
-    return false;
-  }
-
-  bool need_to_active = false;
-
-  // Return false as LM modes are applicable for BREDR transport
-  if (p_lcb->is_transport_ble()) {
-    return false;
-  }
-  /*
-   * We only switch park to active only if we have unsent packets
-   */
-  if (list_is_empty(p_lcb->link_xmit_data_q)) {
-    for (tL2C_CCB* p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb; p_ccb = p_ccb->p_next_ccb) {
-      if (!fixed_queue_is_empty(p_ccb->xmit_hold_q)) {
-        need_to_active = true;
-        break;
-      }
-    }
-  } else {
-    need_to_active = true;
-  }
-
-  /* if we have packets to send */
-  if (need_to_active) {
-    /* check power mode */
-    tBTM_PM_MODE mode;
-    if (BTM_ReadPowerMode(p_lcb->remote_bd_addr, &mode)) {
-      if (mode == BTM_PM_STS_PENDING) {
-        log::debug("LCB(0x{:x}) is in PM pending state", p_lcb->Handle());
-        return true;
-      }
-    }
-  }
-  return false;
-}
-
-/*******************************************************************************
- *
  * Function         l2c_link_check_send_pkts
  *
  * Description      This function is called to check if it can send packets
@@ -873,8 +823,7 @@ void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, uint16_t local_cid, BT_HDR* p_buf
         continue;
       }
 
-      if ((!p_lcb->in_use) || (p_lcb->link_state != LST_CONNECTED) ||
-          (p_lcb->link_xmit_quota != 0) || (l2c_link_check_power_mode(p_lcb))) {
+      if (!p_lcb->in_use || p_lcb->link_state != LST_CONNECTED || p_lcb->link_xmit_quota != 0) {
         log::debug("Skipping lcb {} due to quota", xx);
         continue;
       }
@@ -915,7 +864,7 @@ void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, uint16_t local_cid, BT_HDR* p_buf
   } else /* if this is not round-robin service */
   {
     /* link_state or power mode not ready, can't send anything else */
-    if ((p_lcb->link_state != LST_CONNECTED) || (l2c_link_check_power_mode(p_lcb))) {
+    if (p_lcb->link_state != LST_CONNECTED) {
       log::warn("Can't send, link state: {} not LST_CONNECTED or power mode BTM_PM_STS_PENDING",
                 p_lcb->link_state);
       return;
@@ -1028,8 +977,7 @@ static void l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf,
     l2cu_tx_complete(p_cbi);
   }
 
-  if (!com::android::bluetooth::flags::transmit_smp_packets_before_release() ||
-      p_lcb->suspended.empty()) {
+  if (p_lcb->suspended.empty()) {
     return;
   }
 

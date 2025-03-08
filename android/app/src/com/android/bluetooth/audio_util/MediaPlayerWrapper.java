@@ -50,7 +50,7 @@ public class MediaPlayerWrapper {
 
     final Context mContext;
     private MediaController mMediaController;
-    private String mPackageName;
+    private final String mPackageName;
     private Looper mLooper;
     private final BluetoothEventLogger mPlaybackStateChangeEventLogger;
 
@@ -396,7 +396,7 @@ public class MediaPlayerWrapper {
 
             Log.e(TAG, "Timeout while waiting for metadata to sync for " + mPackageName);
             Log.e(TAG, "  └ Current Metadata: " + Util.toMetadata(mContext, getMetadata()));
-            Log.e(TAG, "  └ Current Playstate: " + getPlaybackState());
+            Log.e(TAG, "  └ Current PlaybackState: " + getPlaybackState());
             List<Metadata> current_queue = Util.toMetadataList(mContext, getQueue());
             for (int i = 0; i < current_queue.size(); i++) {
                 Log.e(TAG, "  └ QueueItem(" + i + "): " + current_queue.get(i));
@@ -574,7 +574,7 @@ public class MediaPlayerWrapper {
     }
 
     /**
-     * Checks wheter the core information of two PlaybackStates match. This function allows a
+     * Checks whether the core information of two PlaybackStates match. This function allows a
      * certain amount of deviation between the position fields of the PlaybackStates. This is to
      * prevent matches from failing when updates happen in quick succession.
      *

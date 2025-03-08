@@ -67,7 +67,7 @@ protected:
     test_hci_layer_ = new HciLayerFake;
     fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
 
-    fake_registry_.Start<RemoteNameRequestModule>(&thread_);
+    fake_registry_.Start<RemoteNameRequestModule>(&thread_, fake_registry_.GetTestHandler());
     ASSERT_TRUE(fake_registry_.IsStarted<RemoteNameRequestModule>());
 
     client_handler_ = fake_registry_.GetTestModuleHandler(&RemoteNameRequestModule::Factory);

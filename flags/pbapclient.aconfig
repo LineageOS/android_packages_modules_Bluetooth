@@ -24,3 +24,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "pbap_limit_call_log"
+    namespace: "bluetooth"
+    description: "Limit the number of call log correctly"
+    bug: "401127740"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

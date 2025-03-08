@@ -57,8 +57,8 @@ struct BundleDetails {
 class SnoopLoggerTracing : public perfetto::DataSource<SnoopLoggerTracing> {
 public:
   static void InitializePerfetto();
-  static void TracePacket(uint64_t timestamp_us, const HciPacket& packet,
-                          SnoopLogger::Direction direction, SnoopLogger::PacketType type);
+  static void TracePacket(const HciPacket& packet, SnoopLogger::Direction direction,
+                          SnoopLogger::PacketType type);
 
   void OnSetup(const SetupArgs&) override;
   void OnStart(const StartArgs&) override;
@@ -70,13 +70,13 @@ private:
           SnoopLogger::PacketType hci_packet_type, SnoopLogger::Direction direction);
 
   // Records the packet into the internal buffers.
-  void Record(TraceContext& ctx, uint64_t timestamp_us, const HciPacket& packet,
-              SnoopLogger::Direction direction, SnoopLogger::PacketType type);
+  void Record(TraceContext& ctx, const HciPacket& packet, SnoopLogger::Direction direction,
+              SnoopLogger::PacketType type);
 
   // Writes all pending data from the internal buffer as a new trace packet.
   void Write(TraceContext& ctx, const BundleKey& key, const BundleDetails& details);
 
-  uint64_t last_flush_us_ = 0;
+  uint64_t last_flush_ns_ = 0;
   std::unordered_map<BundleKey, BundleDetails, BundleHash> bttrace_bundles_;
 };
 }  // namespace hal

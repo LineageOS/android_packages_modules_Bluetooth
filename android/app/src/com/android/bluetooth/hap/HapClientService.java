@@ -25,6 +25,7 @@ import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
+import static android.bluetooth.BluetoothUtils.RemoteExceptionIgnoringConsumer;
 
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
@@ -535,7 +536,7 @@ public class HapClientService extends ProfileService {
     }
 
     private void broadcastToClient(
-            Utils.RemoteExceptionIgnoringConsumer<IBluetoothHapClientCallback> consumer) {
+            RemoteExceptionIgnoringConsumer<IBluetoothHapClientCallback> consumer) {
         synchronized (mCallbacks) {
             int n = mCallbacks.beginBroadcast();
             for (int i = 0; i < n; i++) {

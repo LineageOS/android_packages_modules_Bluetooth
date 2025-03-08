@@ -219,7 +219,7 @@ public class BluetoothMapAppParamsTest {
                 .isEqualTo(
                         BluetoothMapUtils.getLongAsString(
                                 SignedLongLong.fromString(TEST_FILTER_CONVO_ID)
-                                        .getLeastSignificantBits()));
+                                        .leastSignificantBits()));
         assertThat(appParams.getFilterMsgHandle())
                 .isEqualTo(BluetoothMapUtils.getLongFromString(TEST_FILTER_MSG_HANDLE));
         assertThat(appParams.getFilterMsgHandleString())

@@ -85,7 +85,7 @@ public final class BluetoothServerSocket implements Closeable {
 
     // BluetoothSocket.getConnectionType() will hide L2CAP_LE.
     // Therefore a new variable need to be maintained here.
-    private int mType;
+    private final int mType;
 
     /**
      * Construct a socket for incoming connections.

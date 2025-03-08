@@ -518,7 +518,7 @@ public final class BluetoothLeBroadcastMetadata implements Parcelable {
         private @AudioConfigQuality int mAudioConfigQuality = AUDIO_CONFIG_QUALITY_NONE;
         private int mRssi = RSSI_UNKNOWN;
         private BluetoothLeAudioContentMetadata mPublicBroadcastMetadata = null;
-        private List<BluetoothLeBroadcastSubgroup> mSubgroups = new ArrayList<>();
+        private final List<BluetoothLeBroadcastSubgroup> mSubgroups = new ArrayList<>();
 
         /**
          * Create an empty builder.

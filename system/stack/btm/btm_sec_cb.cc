@@ -20,6 +20,7 @@
 #include "stack/btm/btm_sec_cb.h"
 
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
 
@@ -181,7 +182,11 @@ bool tBTM_SEC_CB::IsDeviceBonded(const RawAddress bd_addr, tBT_TRANSPORT transpo
 
   // Check BR/EDR bond status if requested transport is BT_TRANSPORT_BR_EDR or BT_TRANSPORT_AUTO
   if (transport != BT_TRANSPORT_LE) {
-    bonded = sec_rec->is_link_key_known();
+    if (com::android::bluetooth::flags::temporary_pairing_tracking()) {
+      bonded = sec_rec->is_bond_type_persistent() && sec_rec->is_link_key_known();
+    } else {
+      bonded = sec_rec->is_link_key_known();
+    }
   }
 
   // Check LE bond status if requested transport is BT_TRANSPORT_LE or BT_TRANSPORT_AUTO

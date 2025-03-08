@@ -16,34 +16,49 @@
 
 package com.android.bluetooth.gatt;
 
-import static com.google.common.truth.Truth.assertThat;
 
 import androidx.test.filters.SmallTest;
 import androidx.test.runner.AndroidJUnit4;
 
+import com.google.common.truth.Expect;
+import com.google.protobuf.ByteString;
+
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import java.util.Arrays;
 
 /** Test cases for {@link CallbackInfo}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class CallbackInfoTest {
 
+    @Rule public Expect expect = Expect.create();
+
     @Test
-    public void callbackInfoBuilder() {
+    public void callbackInfo_default() {
         String address = "TestAddress";
         int status = 0;
         int handle = 1;
-        byte[] value = "Test Value Byte Array".getBytes();
+        ByteString value = ByteString.copyFrom("Test Value Byte Array".getBytes());
 
-        CallbackInfo callbackInfo =
-                new CallbackInfo.Builder(address, status).setHandle(handle).setValue(value).build();
+        CallbackInfo callbackInfo = new CallbackInfo(address, status, handle, value);
 
-        assertThat(callbackInfo.address).isEqualTo(address);
-        assertThat(callbackInfo.status).isEqualTo(status);
-        assertThat(callbackInfo.handle).isEqualTo(handle);
-        assertThat(Arrays.equals(callbackInfo.value, value)).isTrue();
+        expect.that(callbackInfo.address()).isEqualTo(address);
+        expect.that(callbackInfo.status()).isEqualTo(status);
+        expect.that(callbackInfo.handle()).isEqualTo(handle);
+        expect.that(callbackInfo.value()).isEqualTo(value);
+    }
+
+    @Test
+    public void callbackInfo_nullValue() {
+        String address = "TestAddress";
+        int status = 0;
+
+        CallbackInfo callbackInfo = new CallbackInfo(address, status);
+
+        expect.that(callbackInfo.address()).isEqualTo(address);
+        expect.that(callbackInfo.status()).isEqualTo(status);
+        expect.that(callbackInfo.value()).isNull();
+        expect.that(callbackInfo.valueByteArray()).isNull();
     }
 }

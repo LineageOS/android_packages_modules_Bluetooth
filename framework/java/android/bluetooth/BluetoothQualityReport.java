@@ -146,14 +146,14 @@ public final class BluetoothQualityReport implements Parcelable {
             })
     public @interface QualityReportId {}
 
-    private String mAddr;
-    private int mLmpVer;
-    private int mLmpSubVer;
-    private int mManufacturerId;
-    private String mName;
-    private BluetoothClass mBluetoothClass;
+    private final String mAddr;
+    private final int mLmpVer;
+    private final int mLmpSubVer;
+    private final int mManufacturerId;
+    private final String mName;
+    private final BluetoothClass mBluetoothClass;
 
-    private BqrCommon mBqrCommon;
+    private final BqrCommon mBqrCommon;
     private BqrVsLsto mBqrVsLsto;
     private BqrVsA2dpChoppy mBqrVsA2dpChoppy;
     private BqrVsScoChoppy mBqrVsScoChoppy;
@@ -192,7 +192,7 @@ public final class BluetoothQualityReport implements Parcelable {
         TYPE_3DH3,
         TYPE_3DH5;
 
-        private static PacketType[] sAllValues = values();
+        private static final PacketType[] sAllValues = values();
 
         static PacketType fromOrdinal(int n) {
             if (n < sAllValues.length) {
@@ -224,7 +224,7 @@ public final class BluetoothQualityReport implements Parcelable {
         CONN_SEMI_CONN(0x12);
 
         private final int mValue;
-        private static ConnState[] sAllStates = values();
+        private static final ConnState[] sAllStates = values();
 
         ConnState(int val) {
             mValue = val;
@@ -248,7 +248,7 @@ public final class BluetoothQualityReport implements Parcelable {
         LOW,
         INVALID;
 
-        private static LinkQuality[] sAllValues = values();
+        private static final LinkQuality[] sAllValues = values();
 
         static LinkQuality fromOrdinal(int n) {
             if (n < sAllValues.length - 1) {
@@ -265,7 +265,7 @@ public final class BluetoothQualityReport implements Parcelable {
         transparent_msbc,
         INVALID;
 
-        private static AirMode[] sAllValues = values();
+        private static final AirMode[] sAllValues = values();
 
         static AirMode fromOrdinal(int n) {
             if (n < sAllValues.length - 1) {
@@ -603,7 +603,7 @@ public final class BluetoothQualityReport implements Parcelable {
         private int manufacturerId;
         private String remoteName = "";
         private BluetoothClass bluetoothClass = new BluetoothClass(0);
-        private byte[] rawData;
+        private final byte[] rawData;
 
         /**
          * Creates a new instance of {@link Builder}.
@@ -746,7 +746,7 @@ public final class BluetoothQualityReport implements Parcelable {
 
         static final int BQR_COMMON_LEN = 85;
 
-        private @QualityReportId int mQualityReportId;
+        private final @QualityReportId int mQualityReportId;
         private int mPacketType;
         private int mConnectionHandle;
         private int mConnectionRole;
@@ -1416,14 +1416,14 @@ public final class BluetoothQualityReport implements Parcelable {
         private static final String TAG =
                 BluetoothQualityReport.TAG + "." + BqrVsLsto.class.getSimpleName();
 
-        private int mConnState;
-        private long mBasebandStats;
-        private long mSlotsUsed;
-        private int mCxmDenials;
-        private int mTxSkipped;
-        private int mRfLoss;
-        private long mNativeClock;
-        private long mLastTxAckTimestamp;
+        private final int mConnState;
+        private final long mBasebandStats;
+        private final long mSlotsUsed;
+        private final int mCxmDenials;
+        private final int mTxSkipped;
+        private final int mRfLoss;
+        private final long mNativeClock;
+        private final long mLastTxAckTimestamp;
 
         private BqrVsLsto(byte[] rawData, int offset) {
             if (rawData == null || rawData.length <= offset) {
@@ -1633,13 +1633,13 @@ public final class BluetoothQualityReport implements Parcelable {
         private static final String TAG =
                 BluetoothQualityReport.TAG + "." + BqrVsA2dpChoppy.class.getSimpleName();
 
-        private long mArrivalTime;
-        private long mScheduleTime;
-        private int mGlitchCount;
-        private int mTxCxmDenials;
-        private int mRxCxmDenials;
-        private int mAclTxQueueLength;
-        private int mLinkQuality;
+        private final long mArrivalTime;
+        private final long mScheduleTime;
+        private final int mGlitchCount;
+        private final int mTxCxmDenials;
+        private final int mRxCxmDenials;
+        private final int mAclTxQueueLength;
+        private final int mLinkQuality;
 
         private BqrVsA2dpChoppy(byte[] rawData, int offset) {
             if (rawData == null || rawData.length <= offset) {
@@ -1834,24 +1834,24 @@ public final class BluetoothQualityReport implements Parcelable {
         private static final String TAG =
                 BluetoothQualityReport.TAG + "." + BqrVsScoChoppy.class.getSimpleName();
 
-        private int mGlitchCount;
-        private int mIntervalEsco;
-        private int mWindowEsco;
-        private int mAirFormat;
-        private int mInstanceCount;
-        private int mTxCxmDenials;
-        private int mRxCxmDenials;
-        private int mTxAbortCount;
-        private int mLateDispatch;
-        private int mMicIntrMiss;
-        private int mLpaIntrMiss;
-        private int mSprIntrMiss;
-        private int mPlcFillCount;
-        private int mPlcDiscardCount;
-        private int mMissedInstanceCount;
-        private int mTxRetransmitSlotCount;
-        private int mRxRetransmitSlotCount;
-        private int mGoodRxFrameCount;
+        private final int mGlitchCount;
+        private final int mIntervalEsco;
+        private final int mWindowEsco;
+        private final int mAirFormat;
+        private final int mInstanceCount;
+        private final int mTxCxmDenials;
+        private final int mRxCxmDenials;
+        private final int mTxAbortCount;
+        private final int mLateDispatch;
+        private final int mMicIntrMiss;
+        private final int mLpaIntrMiss;
+        private final int mSprIntrMiss;
+        private final int mPlcFillCount;
+        private final int mPlcDiscardCount;
+        private final int mMissedInstanceCount;
+        private final int mTxRetransmitSlotCount;
+        private final int mRxRetransmitSlotCount;
+        private final int mGoodRxFrameCount;
 
         private BqrVsScoChoppy(byte[] rawData, int offset) {
             if (rawData == null || rawData.length <= offset) {
@@ -2275,7 +2275,7 @@ public final class BluetoothQualityReport implements Parcelable {
                 })
         public @interface ConnectFailId {}
 
-        private int mFailReason;
+        private final int mFailReason;
 
         private BqrConnectFail(byte[] rawData, int offset) {
             if (rawData == null || rawData.length <= offset) {
@@ -2391,28 +2391,28 @@ public final class BluetoothQualityReport implements Parcelable {
         private static final String TAG =
                 BluetoothQualityReport.TAG + "." + BqrEnergyMonitor.class.getSimpleName();
 
-        private int mAvgCurrentConsume;
-        private long mIdleTotalTime;
-        private long mIdleStateEnterCount;
-        private long mActiveTotalTime;
-        private long mActiveStateEnterCount;
-        private long mBredrTxTotalTime;
-        private long mBredrTxStateEnterCount;
-        private int mBredrTxAvgPowerLevel;
-        private long mBredrRxTotalTime;
-        private long mBredrRxStateEnterCount;
-        private long mLeTxTotalTime;
-        private long mLeTxStateEnterCount;
-        private int mLeTxAvgPowerLevel;
-        private long mLeRxTotalTime;
-        private long mLeRxStateEnterCount;
-        private long mReportTotalTime;
-        private long mRxActiveOneChainTime;
-        private long mRxActiveTwoChainTime;
-        private long mTxiPaActiveOneChainTime;
-        private long mTxiPaActiveTwoChainTime;
-        private long mTxePaActiveOneChainTime;
-        private long mTxePaActiveTwoChainTime;
+        private final int mAvgCurrentConsume;
+        private final long mIdleTotalTime;
+        private final long mIdleStateEnterCount;
+        private final long mActiveTotalTime;
+        private final long mActiveStateEnterCount;
+        private final long mBredrTxTotalTime;
+        private final long mBredrTxStateEnterCount;
+        private final int mBredrTxAvgPowerLevel;
+        private final long mBredrRxTotalTime;
+        private final long mBredrRxStateEnterCount;
+        private final long mLeTxTotalTime;
+        private final long mLeTxStateEnterCount;
+        private final int mLeTxAvgPowerLevel;
+        private final long mLeRxTotalTime;
+        private final long mLeRxStateEnterCount;
+        private final long mReportTotalTime;
+        private final long mRxActiveOneChainTime;
+        private final long mRxActiveTwoChainTime;
+        private final long mTxiPaActiveOneChainTime;
+        private final long mTxiPaActiveTwoChainTime;
+        private final long mTxePaActiveOneChainTime;
+        private final long mTxePaActiveTwoChainTime;
 
         private BqrEnergyMonitor(byte[] rawData, int offset) {
             if (rawData == null || rawData.length <= offset) {
@@ -2861,27 +2861,27 @@ public final class BluetoothQualityReport implements Parcelable {
         private static final String TAG =
                 BluetoothQualityReport.TAG + "." + BqrRfStats.class.getSimpleName();
 
-        private int mExtensionInfo;
-        private long mReportTimePeriod;
-        private long mTxPoweriPaBf;
-        private long mTxPowerePaBf;
-        private long mTxPoweriPaDiv;
-        private long mTxPowerePaDiv;
-        private long mRssiChainOver50;
-        private long mRssiChain50To55;
-        private long mRssiChain55To60;
-        private long mRssiChain60To65;
-        private long mRssiChain65To70;
-        private long mRssiChain70To75;
-        private long mRssiChain75To80;
-        private long mRssiChain80To85;
-        private long mRssiChain85To90;
-        private long mRssiChainUnder90;
-        private long mRssiDeltaUnder2;
-        private long mRssiDelta2To5;
-        private long mRssiDelta5To8;
-        private long mRssiDelta8To11;
-        private long mRssiDeltaOver11;
+        private final int mExtensionInfo;
+        private final long mReportTimePeriod;
+        private final long mTxPoweriPaBf;
+        private final long mTxPowerePaBf;
+        private final long mTxPoweriPaDiv;
+        private final long mTxPowerePaDiv;
+        private final long mRssiChainOver50;
+        private final long mRssiChain50To55;
+        private final long mRssiChain55To60;
+        private final long mRssiChain60To65;
+        private final long mRssiChain65To70;
+        private final long mRssiChain70To75;
+        private final long mRssiChain75To80;
+        private final long mRssiChain80To85;
+        private final long mRssiChain85To90;
+        private final long mRssiChainUnder90;
+        private final long mRssiDeltaUnder2;
+        private final long mRssiDelta2To5;
+        private final long mRssiDelta5To8;
+        private final long mRssiDelta8To11;
+        private final long mRssiDeltaOver11;
 
         private BqrRfStats(byte[] rawData, int offset) {
             if (rawData == null || rawData.length <= offset) {

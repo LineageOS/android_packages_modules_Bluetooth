@@ -79,12 +79,12 @@ public class MasClient {
                     | MAP_FEATURE_EXTENDED_EVENT_REPORT_1_1;
 
     private final StateMachine mCallback;
-    private Handler mHandler;
+    private final Handler mHandler;
     private BluetoothSocket mSocket;
     private BluetoothObexTransport mTransport;
-    private BluetoothDevice mRemoteDevice;
+    private final BluetoothDevice mRemoteDevice;
     private ClientSession mSession;
-    private HandlerThread mThread;
+    private final HandlerThread mThread;
     private boolean mConnected = false;
     SdpMasRecord mSdpMasRecord;
 
@@ -117,7 +117,7 @@ public class MasClient {
             } else {
                 Log.d(
                         TAG,
-                        "Connecting to OBEX on RFCOM channel "
+                        "Connecting to OBEX on RFCOMM channel "
                                 + mSdpMasRecord.getRfcommCannelNumber());
                 mSocket = mRemoteDevice.createRfcommSocket(mSdpMasRecord.getRfcommCannelNumber());
             }
@@ -219,7 +219,7 @@ public class MasClient {
     }
 
     private static class MasClientHandler extends Handler {
-        WeakReference<MasClient> mInst;
+        final WeakReference<MasClient> mInst;
 
         MasClientHandler(Looper looper, MasClient inst) {
             super(looper);

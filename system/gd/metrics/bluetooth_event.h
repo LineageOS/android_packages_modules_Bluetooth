@@ -52,5 +52,7 @@ android::bluetooth::State MapErrorCodeToState(hci::ErrorCode reason);
 
 android::bluetooth::State MapHfpVersionToState(uint16_t version);
 
+android::bluetooth::State MapScoCodecToState(uint16_t codec);
+
 }  // namespace metrics
 }  // namespace bluetooth

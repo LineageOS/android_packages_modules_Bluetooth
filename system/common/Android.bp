@@ -54,6 +54,7 @@ cc_library_static {
     header_libs: ["libbluetooth_headers"],
     static_libs: [
         "libbluetooth_crypto_toolbox",
+        "libbluetooth_hci_pdl",
         "libbluetooth_log",
         "libbt-platform-protos-lite",
     ],
@@ -101,7 +102,7 @@ cc_test {
     static_libs: [
         "libbluetooth-types",
         "libbluetooth_crypto_toolbox",
-        "libbluetooth_log",
+        "libbluetooth_hci_pdl",
         "libbluetooth_log",
         "libbt-common",
         "libbt-platform-protos-lite",

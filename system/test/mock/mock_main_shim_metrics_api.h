@@ -474,6 +474,36 @@ struct LogMetricHfpSlcFail {
 };
 extern struct LogMetricHfpSlcFail LogMetricHfpSlcFail;
 
+// Name: LogMetricScoCodec
+// Params: bluetooth::hci::Address, uint16_t codec
+// Returns: void
+struct LogMetricScoCodec {
+  std::function<void(bluetooth::hci::Address address, uint16_t codec)> body{
+          [](bluetooth::hci::Address /* address */, uint16_t /* codec */) {}};
+  void operator()(bluetooth::hci::Address address, uint16_t codec) { body(address, codec); }
+};
+extern struct LogMetricScoCodec LogMetricScoCodec;
+
+// Name: LogMetricScoLinkCreated
+// Params: bluetooth::hci::Address
+// Returns: void
+struct LogMetricScoLinkCreated {
+  std::function<void(bluetooth::hci::Address address)> body{
+          [](bluetooth::hci::Address /* address */) {}};
+  void operator()(bluetooth::hci::Address address) { body(address); }
+};
+extern struct LogMetricScoLinkCreated LogMetricScoLinkCreated;
+
+// Name: LogMetricScoLinkRemoved
+// Params: bluetooth::hci::Address
+// Returns: void
+struct LogMetricScoLinkRemoved {
+  std::function<void(bluetooth::hci::Address address)> body{
+          [](bluetooth::hci::Address /* address */) {}};
+  void operator()(bluetooth::hci::Address address) { body(address); }
+};
+extern struct LogMetricScoLinkRemoved LogMetricScoLinkRemoved;
+
 }  // namespace main_shim_metrics_api
 }  // namespace mock
 }  // namespace test

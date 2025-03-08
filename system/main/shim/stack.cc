@@ -259,7 +259,7 @@ void Stack::handle_start_up(ModuleList* modules, std::promise<void> promise) {
   pimpl_->counter_metrics_->Start();
   pimpl_->storage_->Start();
   pimpl_->snoop_logger_->Start();
-  registry_.Start(modules, stack_thread_);
+  registry_.Start(modules, stack_thread_, stack_handler_);
   promise.set_value();
 }
 

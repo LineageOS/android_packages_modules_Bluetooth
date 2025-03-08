@@ -241,42 +241,6 @@ static tBTM_SEC_DEV_REC* btm_sec_find_dev_by_sec_state(tSECURITY_STATE state) {
 
 /*******************************************************************************
  *
- * Function         btm_sec_is_device_sc_downgrade
- *
- * Description      Check for a stored device record matching the candidate
- *                  device, and return true if the stored device has reported
- *                  that it supports Secure Connections mode and the candidate
- *                  device reports that it does not.  Otherwise, return false.
- *
- * Returns          bool
- *
- ******************************************************************************/
-static bool btm_sec_is_device_sc_downgrade(uint16_t hci_handle, bool secure_connections_supported) {
-  if (secure_connections_supported) {
-    return false;
-  }
-
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(hci_handle);
-  if (p_dev_rec == nullptr) {
-    return false;
-  }
-
-  uint8_t property_val = 0;
-  bt_property_t property = {.type = BT_PROPERTY_REMOTE_SECURE_CONNECTIONS_SUPPORTED,
-                            .len = sizeof(uint8_t),
-                            .val = &property_val};
-
-  bt_status_t cached = btif_storage_get_remote_device_property(&p_dev_rec->bd_addr, &property);
-
-  if (cached == BT_STATUS_FAIL) {
-    return false;
-  }
-
-  return (bool)property_val;
-}
-
-/*******************************************************************************
- *
  * Function         btm_sec_store_device_sc_support
  *
  * Description      Save Secure Connections support for this device to file
@@ -667,6 +631,7 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr, tBLE_ADDR_TYPE 
 
   /* Finished if connection is active and already paired */
   if (((p_dev_rec->hci_handle != HCI_INVALID_HANDLE) && transport == BT_TRANSPORT_BR_EDR &&
+       (btm_get_bond_type_dev(bd_addr) == BOND_TYPE_PERSISTENT) &&
        (p_dev_rec->sec_rec.sec_flags & BTM_SEC_AUTHENTICATED)) ||
       ((p_dev_rec->ble_hci_handle != HCI_INVALID_HANDLE) && transport == BT_TRANSPORT_LE &&
        (p_dev_rec->sec_rec.sec_flags & BTM_SEC_LE_AUTHENTICATED))) {
@@ -2305,9 +2270,6 @@ void btm_sec_rmt_name_request_complete(const RawAddress* p_bd_addr, const uint8_
       if (btm_status != tBTM_STATUS::BTM_CMD_STARTED) {
         log::warn("failed ({}) to restart remote name request for pairing, must be already queued",
                   btm_status_text(btm_status));
-        if (!com::android::bluetooth::flags::pairing_name_discovery_addresss_mismatch()) {
-          NotifyBondingChange(*p_dev_rec, HCI_ERR_MEMORY_FULL);
-        }
       }
       return;
     }
@@ -3884,13 +3846,10 @@ void btm_sec_disconnected(uint16_t handle, tHCI_REASON reason, std::string comme
   const tBT_TRANSPORT transport =
           (handle == p_dev_rec->hci_handle) ? BT_TRANSPORT_BR_EDR : BT_TRANSPORT_LE;
 
-  bool pairing_transport_matches = true;
-  if (com::android::bluetooth::flags::cancel_pairing_only_on_disconnected_transport()) {
-    tBT_TRANSPORT pairing_transport = (btm_sec_cb.pairing_flags & BTM_PAIR_FLAGS_LE_ACTIVE) == 0
-                                              ? BT_TRANSPORT_BR_EDR
-                                              : BT_TRANSPORT_LE;
-    pairing_transport_matches = (transport == pairing_transport);
-  }
+  tBT_TRANSPORT pairing_transport = (btm_sec_cb.pairing_flags & BTM_PAIR_FLAGS_LE_ACTIVE) == 0
+                                            ? BT_TRANSPORT_BR_EDR
+                                            : BT_TRANSPORT_LE;
+  bool pairing_transport_matches = (transport == pairing_transport);
 
   /* clear unused flags */
   p_dev_rec->sm4 &= BTM_SM4_TRUE;
@@ -3994,29 +3953,31 @@ void btm_sec_disconnected(uint16_t handle, tHCI_REASON reason, std::string comme
     return;
   }
 
-  if (com::android::bluetooth::flags::cancel_pairing_only_on_disconnected_transport()) {
-    if (btm_sec_cb.pairing_state != BTM_PAIR_STATE_IDLE &&
-        btm_sec_cb.pairing_bda == p_dev_rec->bd_addr && !pairing_transport_matches) {
-      log::debug("Disconnection on the other transport while pairing");
-      return;
-    }
+  if (btm_sec_cb.pairing_state != BTM_PAIR_STATE_IDLE &&
+      btm_sec_cb.pairing_bda == p_dev_rec->bd_addr && !pairing_transport_matches) {
+    log::debug("Disconnection on the other transport while pairing");
+    return;
+  }
 
-    if (p_dev_rec->sec_rec.le_link == tSECURITY_STATE::ENCRYPTING && transport != BT_TRANSPORT_LE) {
-      log::debug("Disconnection on the other transport while encrypting LE");
-      return;
-    }
+  if (p_dev_rec->sec_rec.le_link == tSECURITY_STATE::ENCRYPTING && transport != BT_TRANSPORT_LE) {
+    log::debug("Disconnection on the other transport while encrypting LE");
+    return;
+  }
 
-    if ((p_dev_rec->sec_rec.classic_link == tSECURITY_STATE::AUTHENTICATING ||
-         p_dev_rec->sec_rec.classic_link == tSECURITY_STATE::ENCRYPTING) &&
-        transport != BT_TRANSPORT_BR_EDR) {
-      log::debug("Disconnection on the other transport while encrypting BR/EDR");
-      return;
-    }
+  if ((p_dev_rec->sec_rec.classic_link == tSECURITY_STATE::AUTHENTICATING ||
+       p_dev_rec->sec_rec.classic_link == tSECURITY_STATE::ENCRYPTING) &&
+      transport != BT_TRANSPORT_BR_EDR) {
+    log::debug("Disconnection on the other transport while encrypting BR/EDR");
+    return;
   }
 
   p_dev_rec->sec_rec.classic_link = tSECURITY_STATE::IDLE;
   p_dev_rec->sec_rec.le_link = tSECURITY_STATE::IDLE;
   p_dev_rec->sec_rec.security_required = BTM_SEC_NONE;
+  if (com::android::bluetooth::flags::reset_security_flags_on_pairing_failure() &&
+      !btm_sec_is_a_bonded_dev(p_dev_rec->bd_addr)) {
+    p_dev_rec->sec_rec.sec_flags = 0;
+  }
 
   if (p_dev_rec->sec_rec.p_callback != nullptr) {
     tBTM_SEC_CALLBACK* p_callback = p_dev_rec->sec_rec.p_callback;
@@ -5177,15 +5138,6 @@ void btm_sec_set_peer_sec_caps(uint16_t hci_handle, bool ssp_supported, bool sc_
                                bool le_supported) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(hci_handle);
   if (p_dev_rec == nullptr) {
-    return;
-  }
-
-  // Drop the connection here if the remote attempts to downgrade from Secure
-  // Connections mode.
-  if (btm_sec_is_device_sc_downgrade(hci_handle, sc_supported)) {
-    acl_set_disconnect_reason(HCI_ERR_HOST_REJECT_SECURITY);
-    btm_sec_send_hci_disconnect(p_dev_rec, HCI_ERR_AUTH_FAILURE, hci_handle,
-                                "attempted to downgrade from Secure Connections mode");
     return;
   }
 

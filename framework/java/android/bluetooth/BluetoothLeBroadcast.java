@@ -61,7 +61,7 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
     private static final boolean DBG = true;
     private static final boolean VDBG = false;
 
-    private CloseGuard mCloseGuard;
+    private final CloseGuard mCloseGuard;
 
     private final BluetoothAdapter mAdapter;
     private final AttributionSource mAttributionSource;
@@ -459,7 +459,7 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
      * Callback#onBroadcastStartFailed(int)} will be invoked with reason code.
      *
      * <p>In particular, when the number of Broadcast Sources reaches {@link
-     * #getMaximumNumberOfBroadcast()}, this method will fail with {@link
+     * #getMaximumNumberOfBroadcasts()}, this method will fail with {@link
      * BluetoothStatusCodes#ERROR_LOCAL_NOT_ENOUGH_RESOURCES}
      *
      * <p>After broadcast is started, {@link Callback#onBroadcastMetadataChanged(int,

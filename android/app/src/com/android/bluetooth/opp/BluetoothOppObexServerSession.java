@@ -53,6 +53,7 @@ import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
+import com.android.internal.annotations.VisibleForTesting;
 import com.android.obex.HeaderSet;
 import com.android.obex.ObexTransport;
 import com.android.obex.Operation;
@@ -60,14 +61,12 @@ import com.android.obex.ResponseCodes;
 import com.android.obex.ServerRequestHandler;
 import com.android.obex.ServerSession;
 
-import com.google.common.annotations.VisibleForTesting;
-import com.google.common.base.Ascii;
-
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Arrays;
+import java.util.Locale;
 
 /** This class runs as an OBEX server */
 // Next tag value for ContentProfileErrorReportUtils.report(): 15
@@ -185,8 +184,8 @@ public class BluetoothOppObexServerSession extends ServerRequestHandler
         } else {
             destination = "FF:FF:FF:00:00:00";
         }
-        boolean isAcceptlisted =
-                BluetoothOppManager.getInstance(mContext).isAcceptlisted(destination);
+        boolean isAcceptListed =
+                BluetoothOppManager.getInstance(mContext).isAcceptListed(destination);
 
         HeaderSet request;
         String name, mimeType;
@@ -239,7 +238,7 @@ public class BluetoothOppObexServerSession extends ServerRequestHandler
                     5);
             return ResponseCodes.OBEX_HTTP_BAD_REQUEST;
         } else {
-            extension = Ascii.toLowerCase(name.substring(dotIndex + 1));
+            extension = name.substring(dotIndex + 1).toLowerCase(Locale.ROOT);
             MimeTypeMap map = MimeTypeMap.getSingleton();
             type = map.getMimeTypeFromExtension(extension);
             Log.v(TAG, "Mimetype guessed from extension " + extension + " is " + type);
@@ -257,12 +256,12 @@ public class BluetoothOppObexServerSession extends ServerRequestHandler
                     return ResponseCodes.OBEX_HTTP_UNSUPPORTED_TYPE;
                 }
             }
-            mimeType = Ascii.toLowerCase(mimeType);
+            mimeType = mimeType.toLowerCase(Locale.ROOT);
         }
 
         // Reject anything outside the "acceptlist" plus unspecified MIME Types.
         if (mimeType == null
-                || (!isAcceptlisted
+                || (!isAcceptListed
                         && !Constants.mimeTypeMatches(
                                 mimeType, Constants.ACCEPTABLE_SHARE_INBOUND_TYPES))) {
             Log.w(TAG, "mimeType is null or in unacceptable list, reject the transfer");
@@ -291,7 +290,7 @@ public class BluetoothOppObexServerSession extends ServerRequestHandler
                     BluetoothShare.USER_CONFIRMATION_AUTO_CONFIRMED);
         }
 
-        if (isAcceptlisted) {
+        if (isAcceptListed) {
             values.put(
                     BluetoothShare.USER_CONFIRMATION,
                     BluetoothShare.USER_CONFIRMATION_HANDOVER_CONFIRMED);
@@ -633,7 +632,7 @@ public class BluetoothOppObexServerSession extends ServerRequestHandler
         } else {
             destination = "FF:FF:FF:00:00:00";
         }
-        boolean isHandover = BluetoothOppManager.getInstance(mContext).isAcceptlisted(destination);
+        boolean isHandover = BluetoothOppManager.getInstance(mContext).isAcceptListed(destination);
         if (isHandover) {
             // Notify the handover requester file transfer has started
             Intent intent = new Intent(Constants.ACTION_HANDOVER_STARTED);

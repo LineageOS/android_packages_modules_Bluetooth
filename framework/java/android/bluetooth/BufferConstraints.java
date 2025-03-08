@@ -38,8 +38,8 @@ public final class BufferConstraints implements Parcelable {
 
     public static final int BUFFER_CODEC_MAX_NUM = 32;
 
-    private Map<Integer, BufferConstraint> mBufferConstraints;
-    private List<BufferConstraint> mBufferConstraintList;
+    private final Map<Integer, BufferConstraint> mBufferConstraints;
+    private final List<BufferConstraint> mBufferConstraintList;
 
     public BufferConstraints(@NonNull List<BufferConstraint> bufferConstraintList) {
 

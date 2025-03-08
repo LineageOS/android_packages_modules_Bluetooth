@@ -87,19 +87,19 @@ public class PbapStateMachine extends StateMachine {
     /** Used to limit PBAP OBEX maximum packet size in order to reduce transaction time. */
     private static final int PBAP_OBEX_MAXIMUM_PACKET_SIZE = 8192;
 
-    private BluetoothPbapService mService;
+    private final BluetoothPbapService mService;
 
     private final WaitingForAuth mWaitingForAuth = new WaitingForAuth();
     private final Finished mFinished = new Finished();
     private final Connected mConnected = new Connected();
     private PbapStateBase mPrevState;
-    private BluetoothDevice mRemoteDevice;
-    private Handler mServiceHandler;
+    private final BluetoothDevice mRemoteDevice;
+    private final Handler mServiceHandler;
     private BluetoothSocket mConnSocket;
     private BluetoothPbapObexServer mPbapServer;
     private BluetoothPbapAuthenticator mObexAuth;
     private ServerSession mServerSession;
-    private int mNotificationId;
+    private final int mNotificationId;
 
     private PbapStateMachine(
             @NonNull BluetoothPbapService service,

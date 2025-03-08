@@ -354,5 +354,24 @@ void LogMetricHfpRfcommAgOpenFail(hci::Address address);
  */
 void LogMetricHfpSlcFail(hci::Address address);
 
+/**
+ * Logs when a SCO link is created in HFP
+ * @param address
+ */
+void LogMetricScoLinkCreated(hci::Address address);
+
+/**
+ * Logs when a SCO link is removed in HFP
+ * @param address
+ */
+void LogMetricScoLinkRemoved(hci::Address address);
+
+/**
+ * Logs what codec the SCO is using
+ * @param address
+ * @param codec
+ */
+void LogMetricScoCodec(hci::Address address, uint16_t codec);
+
 }  // namespace shim
 }  // namespace bluetooth

@@ -43,10 +43,10 @@ public class BluetoothMapAppObserver {
     private static final String TAG = BluetoothMapAppObserver.class.getSimpleName();
 
     /*  */
-    private Map<BluetoothMapAccountItem, List<BluetoothMapAccountItem>> mFullList;
-    private Map<String, ContentObserver> mObserverMap = new LinkedHashMap<>();
-    private ContentResolver mResolver;
-    private Context mContext;
+    private final Map<BluetoothMapAccountItem, List<BluetoothMapAccountItem>> mFullList;
+    private final Map<String, ContentObserver> mObserverMap = new LinkedHashMap<>();
+    private final ContentResolver mResolver;
+    private final Context mContext;
     private BroadcastReceiver mReceiver;
     private PackageManager mPackageManager = null;
     BluetoothMapAccountLoader mLoader;
@@ -180,7 +180,7 @@ public class BluetoothMapAppObserver {
                                         + Thread.currentThread().getId()
                                         + " Uri: "
                                         + uri
-                                        + " selfchange: "
+                                        + " selfChange: "
                                         + selfChange);
                         if (uri != null) {
                             handleAccountChanges(uri.getHost());

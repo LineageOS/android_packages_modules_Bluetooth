@@ -126,7 +126,7 @@ public class BluetoothOppPreference {
         String brEdrAddress = getBrEdrAddress(remoteDevice);
         Log.v(
                 TAG,
-                "Setname for " + BluetoothUtils.toAnonymizedAddress(brEdrAddress) + " to " + name);
+                "setName for " + BluetoothUtils.toAnonymizedAddress(brEdrAddress) + " to " + name);
         if (name != null && !name.equals(getName(remoteDevice))) {
             Editor ed = mNamePreference.edit();
             ed.putString(brEdrAddress, name);
@@ -138,7 +138,7 @@ public class BluetoothOppPreference {
     public void setChannel(BluetoothDevice remoteDevice, int uuid, int channel) {
         Log.v(
                 TAG,
-                "Setchannel for "
+                "setChannel for "
                         + BluetoothUtils.toAnonymizedAddress(getBrEdrAddress(remoteDevice))
                         + "_"
                         + Integer.toHexString(uuid)

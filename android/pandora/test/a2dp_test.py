@@ -337,7 +337,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         await asyncio.wait_for(channel.expect_media(), 5.0)
 
         # Stop streaming to RD1.
-        await asyncio.gather(self.dut.a2dp.Suspend(source=dut_ref1_source), channel.accept_suspend())
+        await asyncio.gather(self.dut.a2dp.Suspend(source=dut_ref1_source), channel.accept_suspend(timeout=8.0))
 
     @avatar.asynchronous
     async def test_avdtp_autoconnect_when_only_avctp_connected(self) -> None:
@@ -533,7 +533,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         # Stop streaming to RD1.
         _, cmd = await asyncio.gather(
             self.dut.a2dp.Suspend(source=dut_ref1_source),
-            channel.expect_signal(SuspendCommand(transaction_label=self.any, acp_seid=self.any)))
+            channel.expect_signal(SuspendCommand(transaction_label=self.any, acp_seid=self.any), timeout=8.0))
 
         # Simulate AVDTP_BAD_STATE response.
         channel.send_signal(SuspendReject(transaction_label=cmd.transaction_label,

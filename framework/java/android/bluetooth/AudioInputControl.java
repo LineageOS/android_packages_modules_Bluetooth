@@ -333,7 +333,7 @@ public class AudioInputControl {
         /** see {@link #setDescription(String)} */
         default void onDescriptionChanged(@NonNull String description) {}
 
-        /** see {@link #getStatus()} */
+        /** see {@link #getAudioInputStatus()} */
         default void onAudioInputStatusChanged(@AudioInputStatus int status) {}
 
         /** see {@link #setGainSetting(int)} */
@@ -564,8 +564,8 @@ public class AudioInputControl {
     /**
      * Sets the gain setting as defined in AICS 1.0 - 3.5.2.1.
      *
-     * <p>The operation will fail if the current gain mode is {@link #AUTOMATIC} or {@link
-     * #AUTOMATIC_ONLY}.
+     * <p>The operation will fail if the current gain mode is {@link #GAIN_MODE_AUTOMATIC} or {@link
+     * #GAIN_MODE_AUTOMATIC_ONLY}.
      *
      * <p>Register an {@link AudioInputControl.AudioInputCallback} to be notified via
      *
@@ -585,8 +585,8 @@ public class AudioInputControl {
      *     #getGainSettingUnit()} to knows how much decibel this represents.
      * @return true if the operation is successfully initiated, false otherwise. The callback {@link
      *     AudioInputCallback#onSetGainSettingFailed()} will not be call if false is returned
-     * @throws IllegalStateException if the gain mode is {@link #AUTOMATIC} or {@link
-     *     #AUTOMATIC_ONLY}
+     * @throws IllegalStateException if the gain mode is {@link #GAIN_MODE_AUTOMATIC} or {@link
+     *     #GAIN_MODE_AUTOMATIC_ONLY}
      * @throws IllegalArgumentException if the gain setting is not in range
      */
     @RequiresBluetoothConnectPermission
@@ -614,14 +614,14 @@ public class AudioInputControl {
         return callService(
                 mService,
                 s -> s.getAudioInputGainMode(mAttributionSource, mDevice, mInstanceId),
-                (int) bluetooth.constants.aics.GainMode.AUTOMATIC_ONLY);
+                GAIN_MODE_AUTOMATIC_ONLY);
     }
 
     /**
      * Sets the gain mode as defined in AICS 1.0 - 3.5.2.4/5.
      *
-     * <p>The operation will fail if the current gain mode is {@link #MANUAL_ONLY} or {@link
-     * #AUTOMATIC_ONLY}.
+     * <p>The operation will fail if the current gain mode is {@link #GAIN_MODE_MANUAL_ONLY} or
+     * {@link #GAIN_MODE_AUTOMATIC_ONLY}.
      *
      * <p>Register an {@link AudioInputControl.AudioInputCallback} to be notified via
      *
@@ -634,8 +634,8 @@ public class AudioInputControl {
      * @param gainMode The desired gain mode
      * @return true if the operation is successfully initiated, false otherwise. The callback {@link
      *     AudioInputCallback#onSetGainModeFailed()} will not be call if false is returned
-     * @throws IllegalStateException if the gain mode is {@link #MANUAL_ONLY} or {@link
-     *     #AUTOMATIC_ONLY}
+     * @throws IllegalStateException if the gain mode is {@link #GAIN_MODE_MANUAL_ONLY} or {@link
+     *     #GAIN_MODE_AUTOMATIC_ONLY}
      * @throws IllegalArgumentException if the gain mode value is invalid.
      */
     @RequiresBluetoothConnectPermission

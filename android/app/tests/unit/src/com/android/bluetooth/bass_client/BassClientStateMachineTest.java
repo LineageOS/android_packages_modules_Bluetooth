@@ -30,6 +30,7 @@ import static androidx.test.espresso.intent.matcher.IntentMatchers.hasFlag;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.TestUtils.getTestDevice;
+import static com.android.bluetooth.Utils.joinUninterruptibly;
 import static com.android.bluetooth.bass_client.BassClientStateMachine.ADD_BCAST_SOURCE;
 import static com.android.bluetooth.bass_client.BassClientStateMachine.CANCEL_PENDING_SOURCE_OPERATION;
 import static com.android.bluetooth.bass_client.BassClientStateMachine.CONNECT;
@@ -108,7 +109,6 @@ import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.flags.Flags;
 
 import com.google.common.primitives.Bytes;
-import com.google.common.util.concurrent.Uninterruptibles;
 
 import org.hamcrest.Matcher;
 import org.hamcrest.core.AllOf;
@@ -218,7 +218,7 @@ public class BassClientStateMachineTest {
         MetricsLogger.setInstanceForTesting(null);
         mBassClientStateMachine.doQuit();
         mHandlerThread.quit();
-        Uninterruptibles.joinUninterruptibly(mHandlerThread);
+        joinUninterruptibly(mHandlerThread);
         TestUtils.clearAdapterService(mAdapterService);
     }
 
@@ -532,7 +532,6 @@ public class BassClientStateMachineTest {
         assertThat(mBassClientStateMachine.isEmpty(new byte[] {1})).isFalse();
         assertThat(mBassClientStateMachine.isPendingRemove(invalidSourceId)).isFalse();
     }
-
 
     @Test
     public void gattCallbackOnConnectionStateChange_changedToConnected()
@@ -1717,9 +1716,29 @@ public class BassClientStateMachineTest {
         mBassClientStateMachine.sendMessage(UPDATE_BCAST_SOURCE, sourceId, paSync, metadata);
         TestUtils.waitForLooperToFinishScheduledTask(mHandlerThread.getLooper());
 
-        BaseData data = Mockito.mock(BaseData.class);
+        byte[] serviceData =
+                new byte[] {
+                    // LEVEL 1
+                    (byte) 0x01,
+                    (byte) 0x02,
+                    (byte) 0x03, // mPresentationDelay
+                    (byte) 0x01, // mNumSubGroups
+                    // LEVEL 2
+                    (byte) 0x01, // numBIS
+                    (byte) 0xFF, // VENDOR_CODEC
+                    (byte) 0x0A,
+                    (byte) 0xAB,
+                    (byte) 0xBC,
+                    (byte) 0xCD,
+                    (byte) 0x00, // mCodecConfigLength
+                    (byte) 0x00, // mMetaDataLength
+                    // LEVEL 3
+                    (byte) 0x04, // mIndex
+                    (byte) 0x00, // mCodecConfigLength
+                };
+
+        BaseData data = BaseData.parseBaseData(serviceData);
         when(mBassClientService.getBase(anyInt())).thenReturn(data);
-        when(data.getNumberOfSubgroupsofBIG()).thenReturn((byte) 1);
         Mockito.clearInvocations(callbacks);
 
         mBassClientStateMachine.sendMessage(UPDATE_BCAST_SOURCE, sourceId, paSync, metadata);

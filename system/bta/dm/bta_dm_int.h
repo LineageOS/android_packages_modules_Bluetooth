@@ -46,21 +46,6 @@
 
 #define BTA_DM_NUM_PEER_DEVICE 7
 
-// TODO: Remove when flag wait_for_disconnect_before_unbond is shipped
-enum class tBTA_DM_CONN_STATE : uint8_t {
-  BTA_DM_CONNECTED = 0,
-  BTA_DM_UNPAIRING = 1,
-};
-
-// TODO: Remove when flag wait_for_disconnect_before_unbond is shipped
-inline std::string bta_conn_state_text(tBTA_DM_CONN_STATE state) {
-  switch (state) {
-    CASE_RETURN_STRING(tBTA_DM_CONN_STATE::BTA_DM_CONNECTED);
-    CASE_RETURN_STRING(tBTA_DM_CONN_STATE::BTA_DM_UNPAIRING);
-  }
-  RETURN_UNKNOWN_TYPE_STRING(tBTA_DM_CONN_STATE, state);
-}
-
 typedef enum : uint8_t {
   BTA_DM_DI_NONE = 0x00,      /* nothing special */
   BTA_DM_DI_SET_SNIFF = 0x01, /* set this bit if call BTM_SetPowerMode(sniff) */
@@ -107,10 +92,6 @@ bool bta_dm_removal_pending(const RawAddress& bd_addr);
 
 struct tBTA_DM_PEER_DEVICE {
   RawAddress peer_bdaddr;
-
-  // TODO: Remove when flag wait_for_disconnect_before_unbond is shipped
-  tBTA_DM_CONN_STATE conn_state{tBTA_DM_CONN_STATE::BTA_DM_CONNECTED};
-
   tBTA_PREF_ROLES pref_role;
   bool in_use;
 
@@ -149,11 +130,7 @@ public:
 
   bool is_connected() const {
     // Devices getting removed should be treated as disconnected
-    if (com::android::bluetooth::flags::wait_for_disconnect_before_unbond() &&
-        bta_dm_removal_pending(peer_bdaddr)) {
-      return false;
-    }
-    return (conn_state == tBTA_DM_CONN_STATE::BTA_DM_CONNECTED);
+    return !bta_dm_removal_pending(peer_bdaddr);
   }
 
   tBTA_DM_ENCRYPT_CBACK* p_encrypt_cback;
@@ -365,11 +342,6 @@ void bta_dm_ble_subrate_request(const RawAddress& bd_addr, uint16_t subrate_min,
                                 uint16_t subrate_max, uint16_t max_latency, uint16_t cont_num,
                                 uint16_t timeout);
 tBTM_CONTRL_STATE bta_dm_pm_obtain_controller_state(void);
-
-namespace std {
-template <>
-struct formatter<tBTA_DM_CONN_STATE> : enum_formatter<tBTA_DM_CONN_STATE> {};
-}  // namespace std
 
 namespace bluetooth::legacy::testing {
 

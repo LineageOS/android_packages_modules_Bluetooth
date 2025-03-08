@@ -16,7 +16,7 @@
 
 package com.android.bluetooth.vc;
 
-import static com.android.bluetooth.Utils.RemoteExceptionIgnoringConsumer;
+import static android.bluetooth.BluetoothUtils.RemoteExceptionIgnoringConsumer;
 
 import static java.util.Objects.requireNonNull;
 
@@ -45,7 +45,7 @@ class VolumeControlInputDescriptor {
         mNativeInterface = requireNonNull(nativeInterface);
         mDevice = requireNonNull(device);
         mVolumeInputs = new Descriptor[numberOfExternalInputs];
-        // Stack delivers us number of AICSs instances. ids are countinous from [0;n[
+        // Stack delivers us number of AICSs instances. ids are continuous from [0;n[
         for (int i = 0; i < numberOfExternalInputs; i++) {
             mVolumeInputs[i] = new Descriptor();
         }

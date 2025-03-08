@@ -233,21 +233,6 @@ std::optional<Octet16> BTM_BleGetPeerIRK(const RawAddress address);
 
 /*******************************************************************************
  *
- * Function         BTM_BleIsLinkKeyKnown
- *
- * Description      This function is used to check whether the link key
- *                  of a peer (LE) device is known or not
- *
- * Parameters:      address: address of the peer device
- *
- * Returns          true if the link key is known
- *                  false otherwise
- *
- ******************************************************************************/
-bool BTM_BleIsLinkKeyKnown(const RawAddress address);
-
-/*******************************************************************************
- *
  * Function         BTM_BleGetIdentityAddress
  *
  * Description      This function is called to get the identity address

@@ -26,7 +26,7 @@ import com.android.internal.annotations.VisibleForTesting;
 import java.util.ArrayList;
 
 /*
- * Contains information Player Application Setting extended from BluetootAvrcpPlayerSettings
+ * Contains information Player Application Setting extended from BluetoothAvrcpPlayerSettings
  */
 class PlayerApplicationSettings {
     private static final String TAG = PlayerApplicationSettings.class.getSimpleName();
@@ -144,7 +144,7 @@ class PlayerApplicationSettings {
     }
 
     // Convert an AVRCP Setting/Value pair into the native equivalent value;
-    static byte mapAvrcpPlayerSettingstoBTattribVal(int mSetting, int mSettingVal) {
+    static byte mapAvrcpPlayerSettingsToBTattribVal(int mSetting, int mSettingVal) {
         if (mSetting == REPEAT_STATUS) {
             switch (mSettingVal) {
                 case PlaybackStateCompat.REPEAT_MODE_NONE:

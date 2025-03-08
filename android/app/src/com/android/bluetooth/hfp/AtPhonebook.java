@@ -64,7 +64,7 @@ public class AtPhonebook {
             new String[] {Phone._ID, Phone.DISPLAY_NAME, Phone.NUMBER, Phone.TYPE};
 
     /**
-     * Android supports as many phonebook entries as the flash can hold, but BT periphals don't.
+     * Android supports as many phonebook entries as the flash can hold, but BT peripherals don't.
      * Limit the number we'll report.
      */
     private static final int MAX_PHONEBOOK_SIZE = 16384;

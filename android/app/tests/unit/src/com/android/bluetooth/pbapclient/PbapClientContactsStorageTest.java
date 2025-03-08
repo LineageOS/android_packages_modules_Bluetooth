@@ -86,7 +86,7 @@ public class PbapClientContactsStorageTest {
             ArgumentCaptor.forClass(ArrayList.class);
     @Mock private File mMockDirectory;
     @Mock private PbapClientAccountManager mMockAccountManager;
-    private List<Account> mMockedAccounts = new ArrayList<>();
+    private final List<Account> mMockedAccounts = new ArrayList<>();
     @Mock private PbapClientContactsStorage.Callback mMockStorageCallback;
     private PbapClientContactsStorage.PbapClientAccountManagerCallback mAccountManagerCallback;
 

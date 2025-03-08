@@ -105,8 +105,7 @@ void BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class, LinkKey li
     /* update conn params, use default value for background connection params */
     memset(&p_dev_rec->conn_params, 0xff, sizeof(tBTM_LE_CONN_PRAMS));
 
-    if (com::android::bluetooth::flags::name_discovery_for_le_pairing() &&
-        btif_storage_get_stored_remote_name(bd_addr,
+    if (btif_storage_get_stored_remote_name(bd_addr,
                                             reinterpret_cast<char*>(&p_dev_rec->sec_bd_name))) {
       p_dev_rec->sec_rec.sec_flags |= BTM_SEC_NAME_KNOWN;
     }
@@ -122,10 +121,6 @@ void BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class, LinkKey li
 
   if (dev_class != kDevClassEmpty) {
     p_dev_rec->dev_class = dev_class;
-  }
-
-  if (!com::android::bluetooth::flags::name_discovery_for_le_pairing()) {
-    bd_name_clear(p_dev_rec->sec_bd_name);
   }
 
   p_dev_rec->sec_rec.sec_flags |= BTM_SEC_LINK_KEY_KNOWN;

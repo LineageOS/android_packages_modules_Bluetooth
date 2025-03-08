@@ -106,16 +106,6 @@ flag {
 }
 
 flag {
-    name: "headtracker_sdu_size"
-    namespace: "bluetooth"
-    description: "Use updated headtracker SDU size"
-    bug: "350090733"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "le_ase_read_multiple_variable"
     namespace: "bluetooth"
     description: "Use GATT read multiple variable length characteristic values"
@@ -340,6 +330,16 @@ flag {
     namespace: "bluetooth"
     description: "Prevent addSource/resumeSource iterruption by start/stop searching"
     bug: "391773917"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "do_not_hardcode_tmap_role_mask"
+    namespace: "bluetooth"
+    description: "When initializing TMAP role mask in LeAudioService, make it a function of enabled services"
+    bug: "399410612"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

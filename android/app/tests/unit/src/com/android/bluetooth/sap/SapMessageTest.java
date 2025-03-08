@@ -17,7 +17,7 @@
 package com.android.bluetooth.sap;
 
 import static com.android.bluetooth.sap.SapMessage.CON_STATUS_OK;
-import static com.android.bluetooth.sap.SapMessage.DISC_GRACEFULL;
+import static com.android.bluetooth.sap.SapMessage.DISC_GRACEFUL;
 import static com.android.bluetooth.sap.SapMessage.ID_CONNECT_REQ;
 import static com.android.bluetooth.sap.SapMessage.ID_DISCONNECT_REQ;
 import static com.android.bluetooth.sap.SapMessage.ID_POWER_SIM_OFF_REQ;
@@ -72,7 +72,7 @@ public class SapMessageTest {
         int maxMsgSize = 512;
         int connectionStatus = CON_STATUS_OK;
         int resultCode = RESULT_OK;
-        int disconnectionType = DISC_GRACEFULL;
+        int disconnectionType = DISC_GRACEFUL;
         int cardReaderStatus = STATUS_CARD_INSERTED;
         int statusChange = 1;
         int transportProtocol = TRANS_PROTO_T0;
@@ -143,7 +143,7 @@ public class SapMessageTest {
         int maxMsgSize = 512;
         int connectionStatus = CON_STATUS_OK;
         int resultCode = RESULT_OK;
-        int disconnectionType = DISC_GRACEFULL;
+        int disconnectionType = DISC_GRACEFUL;
         int cardReaderStatus = STATUS_CARD_INSERTED;
         int statusChange = 1;
         int transportProtocol = TRANS_PROTO_T0;

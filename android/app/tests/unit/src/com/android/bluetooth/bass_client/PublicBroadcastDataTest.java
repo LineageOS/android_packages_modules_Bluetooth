@@ -53,13 +53,13 @@ public class PublicBroadcastDataTest {
 
         byte[] serviceDataInvalid =
                 new byte[] {
-                    (byte) 0x02, // features, non-encrypted, standard quality prsent
+                    (byte) 0x02, // features, non-encrypted, standard quality preset
                 };
         assertThat(PublicBroadcastData.parsePublicBroadcastData(serviceDataInvalid)).isNull();
 
         byte[] serviceDataInvalid2 =
                 new byte[] {
-                    (byte) 0x02, // features, non-encrypted, standard quality prsent
+                    (byte) 0x02, // features, non-encrypted, standard quality preset
                     (byte) 0x03, // metaDataLength
                     (byte) 0x06,
                     (byte) 0x07, // invalid metaData
@@ -82,7 +82,7 @@ public class PublicBroadcastDataTest {
 
         byte[] serviceDataNoMetaData =
                 new byte[] {
-                    (byte) 0x02, // features, non-encrypted, standard quality prsent
+                    (byte) 0x02, // features, non-encrypted, standard quality preset
                     (byte) 0x00, // metaDataLength
                 };
         PublicBroadcastData dataNoMetaData =
@@ -100,13 +100,13 @@ public class PublicBroadcastDataTest {
         int metaDataLength = 142;
         byte[] serviceDataInvalid =
                 new byte[] {
-                    (byte) 0x02, // features, non-encrypted, standard quality prsent
+                    (byte) 0x02, // features, non-encrypted, standard quality preset
                 };
         assertThat(PublicBroadcastData.parsePublicBroadcastData(serviceDataInvalid)).isNull();
 
         byte[] serviceDataInvalid2 =
                 new byte[] {
-                    (byte) 0x02, // features, non-encrypted, standard quality prsent
+                    (byte) 0x02, // features, non-encrypted, standard quality preset
                     (byte) 0x03, // metaDataLength
                     (byte) 0x06,
                     (byte) 0x07, // invalid metaData
@@ -138,7 +138,7 @@ public class PublicBroadcastDataTest {
 
         byte[] serviceDataNoMetaData =
                 new byte[] {
-                    (byte) 0x02, // features, non-encrypted, standard quality prsent
+                    (byte) 0x02, // features, non-encrypted, standard quality preset
                     (byte) 0x00, // metaDataLength
                 };
         PublicBroadcastData dataNoMetaData =

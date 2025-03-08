@@ -53,6 +53,10 @@ impl Arbiter {
         Self { state_cvar, thread: Some(thread), max_buf_len }
     }
 
+    pub fn max_buf_len(&self) -> usize {
+        self.max_buf_len
+    }
+
     pub fn add_connection(&self, handle: u16) {
         let (state, _) = &*self.state_cvar;
         if state.lock().unwrap().in_transit.insert(handle, 0).is_some() {

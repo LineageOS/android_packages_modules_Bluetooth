@@ -16,6 +16,8 @@
 
 package com.android.bluetooth.gatt;
 
+import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE;
+
 import static com.android.bluetooth.TestUtils.MockitoRule;
 
 import static com.google.common.truth.Truth.assertThat;
@@ -311,6 +313,8 @@ public class AppAdvertiseStatsTest {
 
         AppAdvertiseStats appAdvertiseStats =
                 new AppAdvertiseStats(appUid, id, name, mAttributionSource);
+        // Set app importance as Foreground Service for the stats
+        appAdvertiseStats.setAppImportance(IMPORTANCE_FOREGROUND_SERVICE);
 
         AdvertisingSetParameters parameters =
                 new AdvertisingSetParameters.Builder().setConnectable(true).build();
@@ -351,7 +355,8 @@ public class AppAdvertiseStatsTest {
                         false,
                         true,
                         instanceCount,
-                        0);
+                        0,
+                        IMPORTANCE_FOREGROUND_SERVICE);
         Mockito.clearInvocations(mMetricsLogger);
 
         // Wait for adv test duration
@@ -384,7 +389,8 @@ public class AppAdvertiseStatsTest {
                         eq(false),
                         eq(true),
                         eq(instanceCount),
-                        mAdvDurationCaptor.capture());
+                        mAdvDurationCaptor.capture(),
+                        eq(IMPORTANCE_FOREGROUND_SERVICE));
         long capturedAppScanDuration = mAdvDurationCaptor.getValue();
         Log.d(TAG, "capturedDuration: " + capturedAppScanDuration);
         assertThat(capturedAppScanDuration).isAtLeast(advTestDuration);

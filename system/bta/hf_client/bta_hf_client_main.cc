@@ -18,6 +18,7 @@
  ******************************************************************************/
 
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 #include <stdio.h>
 
 #include <cstdint>
@@ -281,6 +282,14 @@ void bta_hf_client_cb_init(tBTA_HF_CLIENT_CB* client_cb, uint16_t handle) {
   // release unique pointers
   client_cb->enabled_hf_indicators.clear();
   client_cb->peer_hf_indicators.clear();
+
+  if (client_cb->p_disc_db &&
+      com::android::bluetooth::flags::btsec_check_valid_discovery_database()) {
+    if (!get_legacy_stack_sdp_api()->service.SDP_CancelServiceSearch(client_cb->p_disc_db)) {
+      log::warn("Unable to cancel SDP service discovery peer:{}", client_cb->peer_addr);
+    }
+    osi_free_and_reset((void**)&client_cb->p_disc_db);
+  }
 
   // Memset the rest of the block
   // memset(client_cb, 0, sizeof(tBTA_HF_CLIENT_CB));

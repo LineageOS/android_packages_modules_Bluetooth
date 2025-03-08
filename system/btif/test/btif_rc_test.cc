@@ -234,6 +234,51 @@ TEST_F(BtifRcWithCallbacksTest, handle_rc_ctrl_features) {
                           BTRC_FEAT_COVER_ARTWORK));
 }
 
+TEST_F(BtifRcTest, handle_track_change_notification_response) {
+  btif_rc_cb.rc_multi_cb[0].rc_connected = true;
+  btif_rc_cb.rc_multi_cb[0].br_connected = true;
+  btif_rc_cb.rc_multi_cb[0].rc_handle = kRcHandle;
+  btif_rc_cb.rc_multi_cb[0].rc_features = {};
+  btif_rc_cb.rc_multi_cb[0].rc_cover_art_psm = 0;
+  btif_rc_cb.rc_multi_cb[0].rc_state = BTRC_CONNECTION_STATE_CONNECTED;
+  btif_rc_cb.rc_multi_cb[0].rc_addr = kDeviceAddress;
+  btif_rc_cb.rc_multi_cb[0].rc_volume = 0;
+  btif_rc_cb.rc_multi_cb[0].rc_vol_label = 0;
+  btif_rc_cb.rc_multi_cb[0].rc_supported_event_list = nullptr;
+  btif_rc_cb.rc_multi_cb[0].rc_app_settings = {};
+  btif_rc_cb.rc_multi_cb[0].rc_play_status_timer = nullptr;
+  btif_rc_cb.rc_multi_cb[0].rc_features_processed = false;
+  btif_rc_cb.rc_multi_cb[0].rc_playing_uid = 0;
+  btif_rc_cb.rc_multi_cb[0].rc_procedure_complete = false;
+  btif_rc_cb.rc_multi_cb[0].peer_ct_features = {};
+  btif_rc_cb.rc_multi_cb[0].peer_tg_features = {};
+  btif_rc_cb.rc_multi_cb[0].launch_cmd_pending = 0;
+  ASSERT_TRUE(btif_rc_get_device_by_handle(kRcHandle));
+  tBTA_AV_META_MSG meta_msg = {
+          .rc_handle = kRcHandle,
+          .len = 0,
+          .label = 0,
+          .code = AVRC_RSP_CHANGED,
+          .company_id = 0,
+          .p_data = {},
+          .p_msg = nullptr,
+  };
+  tAVRC_NOTIF_RSP_PARAM param = {
+          .track = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01},
+  };
+  tAVRC_REG_NOTIF_RSP track_change = {
+          .pdu = 0,
+          .status = AVRC_STS_NO_ERROR,
+          .opcode = 0,
+          .event_id = AVRC_EVT_TRACK_CHANGE,
+          .param = param,
+  };
+  uint64_t now_playing_uid = 0x01;
+
+  handle_notification_response(&meta_msg, &track_change);
+  ASSERT_EQ(btif_rc_cb.rc_multi_cb[0].rc_playing_uid, now_playing_uid);
+}
+
 class BtifRcBrowseConnectionTest : public BtifRcTest {
 protected:
   void SetUp() override {

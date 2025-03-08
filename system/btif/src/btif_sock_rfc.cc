@@ -655,8 +655,7 @@ static void on_srv_rfc_listen_started(tBTA_JV_RFCOMM_START* p_start, uint32_t id
                               slot->app_uid, slot->scn, 0, 0, slot->service_name);
 }
 
-static uint32_t on_srv_rfc_connect_offload(tBTA_JV_RFCOMM_SRV_OPEN* p_open, uint32_t id,
-                                           rfc_slot_t* srv_rs) {
+static uint32_t on_srv_rfc_connect_offload(tBTA_JV_RFCOMM_SRV_OPEN* p_open, rfc_slot_t* srv_rs) {
   rfc_slot_t* accept_rs;
   accept_rs = create_srv_accept_rfc_slot(srv_rs, &p_open->rem_bda, p_open->handle,
                                          p_open->new_listen_handle);
@@ -667,7 +666,7 @@ static uint32_t on_srv_rfc_connect_offload(tBTA_JV_RFCOMM_SRV_OPEN* p_open, uint
   log::info(
           "connected to RFCOMM socket connections for device: {}, scn: {}, "
           "app_uid: {}, id: {}, socket_id: {}",
-          accept_rs->addr, accept_rs->scn, accept_rs->app_uid, id, accept_rs->socket_id);
+          accept_rs->addr, accept_rs->scn, accept_rs->app_uid, accept_rs->id, accept_rs->socket_id);
   btif_sock_connection_logger(accept_rs->addr, accept_rs->id, BTSOCK_RFCOMM,
                               SOCKET_CONNECTION_STATE_CONNECTED,
                               accept_rs->f.server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION,
@@ -713,7 +712,7 @@ static uint32_t on_srv_rfc_connect(tBTA_JV_RFCOMM_SRV_OPEN* p_open, uint32_t id)
 
   if (com::android::bluetooth::flags::socket_settings_api() &&
       srv_rs->data_path == BTSOCK_DATA_PATH_HARDWARE_OFFLOAD) {
-    return on_srv_rfc_connect_offload(p_open, id, srv_rs);
+    return on_srv_rfc_connect_offload(p_open, srv_rs);
   }
 
   accept_rs = create_srv_accept_rfc_slot(srv_rs, &p_open->rem_bda, p_open->handle,
@@ -725,7 +724,7 @@ static uint32_t on_srv_rfc_connect(tBTA_JV_RFCOMM_SRV_OPEN* p_open, uint32_t id)
   log::info(
           "connected to RFCOMM socket connections for device: {}, scn: {}, "
           "app_uid: {}, slot_id: {}, socket_id: {}",
-          accept_rs->addr, accept_rs->scn, accept_rs->app_uid, id, accept_rs->socket_id);
+          accept_rs->addr, accept_rs->scn, accept_rs->app_uid, accept_rs->id, accept_rs->socket_id);
   btif_sock_connection_logger(accept_rs->addr, accept_rs->id, BTSOCK_RFCOMM,
                               SOCKET_CONNECTION_STATE_CONNECTED,
                               accept_rs->f.server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION,
@@ -744,7 +743,7 @@ static uint32_t on_srv_rfc_connect(tBTA_JV_RFCOMM_SRV_OPEN* p_open, uint32_t id)
   return srv_rs->id;
 }
 
-static void on_cli_rfc_connect_offload(tBTA_JV_RFCOMM_OPEN* p_open, uint32_t id, rfc_slot_t* slot) {
+static void on_cli_rfc_connect_offload(tBTA_JV_RFCOMM_OPEN* p_open, rfc_slot_t* slot) {
   slot->rfc_port_handle = BTA_JvRfcommGetPortHdl(p_open->handle);
   slot->addr = p_open->rem_bda;
   slot->socket_id = btif_rfc_sock_generate_socket_id();
@@ -752,7 +751,7 @@ static void on_cli_rfc_connect_offload(tBTA_JV_RFCOMM_OPEN* p_open, uint32_t id,
   log::info(
           "connected to RFCOMM socket connections for device: {}, scn: {}, "
           "app_uid: {}, id: {}, socket_id: {}",
-          slot->addr, slot->scn, slot->app_uid, id, slot->socket_id);
+          slot->addr, slot->scn, slot->app_uid, slot->id, slot->socket_id);
   btif_sock_connection_logger(
           slot->addr, slot->id, BTSOCK_RFCOMM, SOCKET_CONNECTION_STATE_CONNECTED,
           slot->f.server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION, slot->app_uid, slot->scn, 0,
@@ -797,7 +796,7 @@ static void on_cli_rfc_connect(tBTA_JV_RFCOMM_OPEN* p_open, uint32_t id) {
 
   if (com::android::bluetooth::flags::socket_settings_api() &&
       slot->data_path == BTSOCK_DATA_PATH_HARDWARE_OFFLOAD) {
-    on_cli_rfc_connect_offload(p_open, id, slot);
+    on_cli_rfc_connect_offload(p_open, slot);
     return;
   }
 
@@ -808,7 +807,7 @@ static void on_cli_rfc_connect(tBTA_JV_RFCOMM_OPEN* p_open, uint32_t id) {
   log::info(
           "connected to RFCOMM socket connections for device: {}, scn: {}, "
           "app_uid: {}, id: {}, socket_id: {}",
-          slot->addr, slot->scn, slot->app_uid, id, slot->socket_id);
+          slot->addr, slot->scn, slot->app_uid, slot->id, slot->socket_id);
   btif_sock_connection_logger(
           slot->addr, slot->id, BTSOCK_RFCOMM, SOCKET_CONNECTION_STATE_CONNECTED,
           slot->f.server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION, slot->app_uid, slot->scn, 0,

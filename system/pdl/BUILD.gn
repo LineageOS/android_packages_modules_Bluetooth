@@ -21,7 +21,10 @@ source_set("BluetoothHciPacketSources") {
     "hci/class_of_device.cc",
   ]
 
-  include_dirs = [ "//bt/system/gd" ]
+  include_dirs = [
+    "hci/include",
+    "//bt/system/gd",
+  ]
 }
 
 packetgen_headers("BluetoothGeneratedPackets_h") {

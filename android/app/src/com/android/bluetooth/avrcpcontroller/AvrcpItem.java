@@ -311,7 +311,7 @@ public class AvrcpItem {
         private static final int MEDIA_ATTRIBUTE_PLAYING_TIME = 0x07;
         private static final int MEDIA_ATTRIBUTE_COVER_ART_HANDLE = 0x08;
 
-        private AvrcpItem mAvrcpItem = new AvrcpItem();
+        private final AvrcpItem mAvrcpItem = new AvrcpItem();
 
         /**
          * Initialize all relevant AvrcpItem internals from the AVRCP specification defined set of

@@ -362,7 +362,7 @@ public class PbapClientService extends ProfileService {
     /**
      * Ensure that after HFP disconnects, we remove call logs. This addresses the situation when
      * PBAP was never connected while calls were made. Ideally {@link PbapClientConnectionHandler}
-     * has code to remove calllogs when PBAP disconnects.
+     * has code to remove call logs when PBAP disconnects.
      */
     public void handleHeadsetClientConnectionStateChanged(
             BluetoothDevice device, int oldState, int newState) {
@@ -475,14 +475,14 @@ public class PbapClientService extends ProfileService {
             if (Flags.pbapClientStorageRefactor()) {
                 PbapClientStateMachine stateMachine = getDeviceStateMachine(device);
                 if (stateMachine == null) {
-                    Log.e(TAG, "No Statemachine found for the device=" + device.toString());
+                    Log.e(TAG, "No StateMachine found for the device=" + device.toString());
                     return;
                 }
                 stateMachine.onSdpResultReceived(status, new PbapSdpRecord(device, pseRecord));
             } else {
                 PbapClientStateMachineOld smOld = mPbapClientStateMachineOldMap.get(device);
                 if (smOld == null) {
-                    Log.e(TAG, "No Statemachine found for the device=" + device.toString());
+                    Log.e(TAG, "No StateMachine found for the device=" + device.toString());
                     return;
                 }
                 smOld.onSdpResultReceived(status, new PbapSdpRecord(device, pseRecord));
@@ -598,7 +598,7 @@ public class PbapClientService extends ProfileService {
      * Get the list of PBAP Server devices this PBAP Client device know about, who are in a given
      * state.
      *
-     * @param states The array of BluutoothProfile states you want to match on
+     * @param states The array of BluetoothProfile states you want to match on
      * @return The list of connected PBAP Server devices
      */
     public List<BluetoothDevice> getDevicesMatchingConnectionStates(int[] states) {

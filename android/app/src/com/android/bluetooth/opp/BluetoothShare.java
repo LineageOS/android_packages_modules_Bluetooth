@@ -259,7 +259,7 @@ public final class BluetoothShare implements BaseColumns {
 
     /**
      * This transfer has successfully completed. Warning: there might be other status values that
-     * indicate success in the future. Use isSucccess() to capture the entire category.
+     * indicate success in the future. Use isSuccess() to capture the entire category.
      */
     public static final int STATUS_SUCCESS = 200;
 

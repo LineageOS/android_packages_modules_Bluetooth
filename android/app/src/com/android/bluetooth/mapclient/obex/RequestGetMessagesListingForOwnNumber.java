@@ -111,9 +111,9 @@ class RequestGetMessagesListingForOwnNumber extends Request {
         }
     }
 
-    private MessagesSlidingWindow mMessageListingWindow;
+    private final MessagesSlidingWindow mMessageListingWindow;
 
-    private ObexAppParameters mOap;
+    private final ObexAppParameters mOap;
 
     private int mFolderCounter;
     private boolean mSearchCompleted;

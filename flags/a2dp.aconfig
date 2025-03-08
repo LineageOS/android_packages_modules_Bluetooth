@@ -135,3 +135,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "a2dp_version_1_4"
+    namespace: "bluetooth"
+    description: "Update the supported A2DP version to v1.4"
+    bug: "400784026"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

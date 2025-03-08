@@ -41,6 +41,4 @@ oneway interface IBluetoothLeCallControl {
     void callStateChanged(in int ccid, in ParcelUuid callId, in int state, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
     void currentCallsList(in int ccid, in List<BluetoothLeCall> calls, in AttributionSource attributionSource);
-    @JavaPassthrough(annotation="@android.annotation.RequiresPermission(allOf={android.Manifest.permission.BLUETOOTH_CONNECT,android.Manifest.permission.BLUETOOTH_PRIVILEGED})")
-    void networkStateChanged(in int ccid, in String provider, in int technology, in AttributionSource attributionSource);
 }

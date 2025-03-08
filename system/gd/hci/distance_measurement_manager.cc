@@ -1097,10 +1097,6 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
     if (!live_tracker->local_start) {
       // reset the responder state, as no other event to set the state.
       live_tracker->state = CsTrackerState::WAIT_FOR_CONFIG_COMPLETE;
-    } else {
-      live_tracker->setup_complete = true;
-      log::info("connection_handle: {}, address: {}, config_id: {}", connection_handle,
-                live_tracker->address, config_id);
     }
 
     live_tracker->used_config_id = config_id;
@@ -1175,6 +1171,8 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
     }
 
     if (it->second.measurement_ongoing) {
+      log::debug("cs set up succeed");
+      it->second.setup_complete = true;
       send_le_cs_procedure_enable(connection_handle, Enable::ENABLED);
     }
   }

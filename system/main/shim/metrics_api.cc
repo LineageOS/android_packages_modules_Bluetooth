@@ -247,5 +247,18 @@ void LogMetricHfpSlcFail(hci::Address address) {
                                          State::HFP_SLC_FAIL_CONNECTION);
 }
 
+void LogMetricScoLinkCreated(hci::Address address) {
+  bluetooth::os::LogMetricBluetoothEvent(address, EventType::SCO_SESSION, State::SCO_LINK_CREATED);
+}
+
+void LogMetricScoLinkRemoved(hci::Address address) {
+  bluetooth::os::LogMetricBluetoothEvent(address, EventType::SCO_SESSION, State::SCO_LINK_REMOVED);
+}
+
+void LogMetricScoCodec(hci::Address address, uint16_t codec) {
+  bluetooth::os::LogMetricBluetoothEvent(address, EventType::SCO_CODEC,
+                                         bluetooth::metrics::MapScoCodecToState(codec));
+}
+
 }  // namespace shim
 }  // namespace bluetooth

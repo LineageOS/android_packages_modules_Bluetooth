@@ -30,7 +30,7 @@ import java.io.OutputStream;
  */
 @SuppressLint("AndroidFrameworkBluetoothPermission")
 /*package*/ final class BluetoothOutputStream extends OutputStream {
-    private BluetoothSocket mSocket;
+    private final BluetoothSocket mSocket;
 
     /*package*/ BluetoothOutputStream(BluetoothSocket s) {
         mSocket = s;

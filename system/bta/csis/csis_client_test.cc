@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "bind_helpers.h"
+#include "bt_transport.h"
 #include "bta_csis_api.h"
 #include "bta_dm_api_mock.h"
 #include "bta_gatt_api_mock.h"
@@ -1090,6 +1091,7 @@ TEST_F(CsisClientTest, test_not_open_duplicate_active_scan_while_bonding_set_mem
   result.inq_res.eir_len = 8;
   result.inq_res.bd_addr = test_address2;
 
+  ON_CALL(btm_interface, IsDeviceBonded(test_address2, BT_TRANSPORT_LE)).WillByDefault(Return(false));
   // CSIS client should process set member event to JNI
   EXPECT_CALL(*callbacks, OnSetMemberAvailable(test_address2, 1));
 

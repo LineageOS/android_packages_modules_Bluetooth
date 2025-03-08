@@ -27,6 +27,7 @@
 #include "a2dp_api.h"
 
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 #include <string.h>
 
 #include <cstdint>
@@ -220,7 +221,8 @@ bool A2DP_AddRecord(uint16_t service_uuid, char* p_service_name, char* p_provide
 
   /* add profile descriptor list   */
   result &= get_legacy_stack_sdp_api()->handle.SDP_AddProfileDescriptorList(
-          sdp_handle, UUID_SERVCLASS_ADV_AUDIO_DISTRIBUTION, A2DP_VERSION);
+          sdp_handle, UUID_SERVCLASS_ADV_AUDIO_DISTRIBUTION,
+          com::android::bluetooth::flags::a2dp_version_1_4() ? A2DP_VERSION_V1_4 : A2DP_VERSION_V1_3);
 
   /* add supported feature */
   if (features != 0) {

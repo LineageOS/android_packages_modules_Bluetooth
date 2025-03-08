@@ -37,11 +37,11 @@ import java.util.List;
 @SystemApi(client = SystemApi.Client.PRIVILEGED_APPS)
 public final class BluetoothActivityEnergyInfo implements Parcelable {
     private final long mTimestamp;
-    private int mBluetoothStackState;
-    private long mControllerTxTimeMs;
-    private long mControllerRxTimeMs;
-    private long mControllerIdleTimeMs;
-    private long mControllerEnergyUsed;
+    private final int mBluetoothStackState;
+    private final long mControllerTxTimeMs;
+    private final long mControllerRxTimeMs;
+    private final long mControllerIdleTimeMs;
+    private final long mControllerEnergyUsed;
     private List<UidTraffic> mUidTraffic;
 
     /** @hide */
@@ -139,12 +139,9 @@ public final class BluetoothActivityEnergyInfo implements Parcelable {
     }
 
     /**
-     * Get the Bluetooth stack state associated with the energy info.
-     *
-     * @return one of {@link #BluetoothStackState} states
+     * @return the Bluetooth stack state associated with the energy info.
      */
-    @BluetoothStackState
-    public int getBluetoothStackState() {
+    public @BluetoothStackState int getBluetoothStackState() {
         return mBluetoothStackState;
     }
 

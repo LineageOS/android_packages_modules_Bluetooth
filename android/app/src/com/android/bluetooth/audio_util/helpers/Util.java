@@ -35,9 +35,16 @@ class Util {
     private static final String VFS_COVER_ART_ENABLED_PROPERTY =
             "bluetooth.profile.avrcp.target.vfs_coverart.enabled";
 
+    private static final String MULTIPLE_PLAYERS_SUPPORT_ENABLED_PROPERTY =
+            "bluetooth.profile.avrcp.target.multiple_players.enabled";
+
     @VisibleForTesting
     static Boolean sUriImagesSupport =
             SystemProperties.getBoolean(VFS_COVER_ART_ENABLED_PROPERTY, false);
+
+    @VisibleForTesting
+    static Boolean sMultiPlayersSupport =
+            SystemProperties.getBoolean(MULTIPLE_PLAYERS_SUPPORT_ENABLED_PROPERTY, false);
 
     // TODO (apanicke): Remove this prefix later, for now it makes debugging easier.
     public static final String NOW_PLAYING_PREFIX = "NowPlayingId";
@@ -63,6 +70,17 @@ class Util {
      */
     public static boolean areUriImagesSupported() {
         return sUriImagesSupport.booleanValue();
+    }
+
+    /**
+     * Get whether or not Bluetooth is configured to advertise multiple media players.
+     *
+     * <p>This is disabled by default as some car head units will stop working if multiple media
+     * players are present. Addressed Player and Browsing commands should always display only one
+     * media player to the remote device by default.
+     */
+    public static boolean areMultiplePlayersSupported() {
+        return sMultiPlayersSupport.booleanValue();
     }
 
     /** Translate a MediaItem to audio_util's Metadata */

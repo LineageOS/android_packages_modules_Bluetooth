@@ -152,9 +152,6 @@ public class BluetoothLeUtils {
     /**
      * Compares two UUIDs with a UUID mask.
      *
-     * @param data first {@link #UUID} to compare.
-     * @param uuid second {@link #UUID} to compare.
-     * @param mask mask {@link #UUID}.
      * @return true if both UUIDs are equals when masked, false otherwise.
      */
     static boolean maskedEquals(UUID data, UUID uuid, UUID mask) {

@@ -2740,9 +2740,6 @@ pub(crate) trait BtifGattClientCallbacks {
     #[btif_callback(Disconnect)]
     fn disconnect_cb(&mut self, conn_id: i32, status: GattStatus, client_id: i32, addr: RawAddress);
 
-    #[btif_callback(SearchComplete)]
-    fn search_complete_cb(&mut self, conn_id: i32, status: GattStatus);
-
     #[btif_callback(RegisterForNotification)]
     fn register_for_notification_cb(
         &mut self,
@@ -2890,12 +2887,6 @@ impl BtifGattClientCallbacks for BluetoothGatt {
         tokio::spawn(async move {
             let _ = tx.send(Message::ProfileDisconnected(addr)).await;
         });
-    }
-
-    #[log_cb_args]
-    fn search_complete_cb(&mut self, conn_id: i32, _status: GattStatus) {
-        // Gatt DB is ready!
-        self.gatt.lock().unwrap().client.get_gatt_db(conn_id);
     }
 
     #[log_cb_args]

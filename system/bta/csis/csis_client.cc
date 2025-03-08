@@ -1339,7 +1339,7 @@ private:
     /* Make sure device is not already bonded which could
      * be a case for dual mode devices where
      */
-    if (BTM_BleIsLinkKeyKnown(result->bd_addr)) {
+    if (BTM_IsBonded(result->bd_addr, BT_TRANSPORT_LE)) {
       log::verbose("Device {} already bonded. Identity address: {}", result->bd_addr,
                    *BTM_BleGetIdentityAddress(result->bd_addr));
       return;
@@ -1480,7 +1480,7 @@ private:
     /* Make sure device is not already bonded which could
      * be a case for dual mode devices where
      */
-    if (BTM_BleIsLinkKeyKnown(result->bd_addr)) {
+    if (BTM_IsBonded(result->bd_addr, BT_TRANSPORT_LE)) {
       log::verbose("Device {} already bonded. Identity address: {}", result->bd_addr,
                    *BTM_BleGetIdentityAddress(result->bd_addr));
       return;

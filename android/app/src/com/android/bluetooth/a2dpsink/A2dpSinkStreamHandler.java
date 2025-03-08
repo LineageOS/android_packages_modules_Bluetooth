@@ -93,7 +93,7 @@ public class A2dpSinkStreamHandler extends Handler {
     private MediaPlayer mMediaPlayer = null;
 
     // Focus changes when we are currently holding focus.
-    private OnAudioFocusChangeListener mAudioFocusListener =
+    private final OnAudioFocusChangeListener mAudioFocusListener =
             new OnAudioFocusChangeListener() {
                 @Override
                 public void onAudioFocusChange(int focusChange) {

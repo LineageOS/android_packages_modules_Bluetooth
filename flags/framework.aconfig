@@ -109,3 +109,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "same_handler_for_all_modules"
+    namespace: "bluetooth"
+    description: "Update all modules to use the same handler"
+    bug: "398195386"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

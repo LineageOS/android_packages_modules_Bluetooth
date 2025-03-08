@@ -865,6 +865,7 @@ struct shim::Acl::impl {
       disconnect_handles.push_back(connection.first);
     }
 
+#ifndef TARGET_FLOSS
     // Since this is a suspend disconnect, we immediately also call
     // |OnClassicSuspendInitiatedDisconnect| without waiting for it to happen.
     // We want the stack to clean up ahead of the link layer (since we will mask
@@ -877,7 +878,7 @@ struct shim::Acl::impl {
                 found->first, hci::ErrorCode::CONNECTION_TERMINATED_BY_LOCAL_HOST);
       }
     }
-
+#endif
     promise.set_value();
   }
 
@@ -898,6 +899,7 @@ struct shim::Acl::impl {
       disconnect_handles.push_back(connection.first);
     }
 
+#ifndef TARGET_FLOSS
     // Since this is a suspend disconnect, we immediately also call
     // |OnLeSuspendInitiatedDisconnect| without waiting for it to happen. We
     // want the stack to clean up ahead of the link layer (since we will mask
@@ -910,6 +912,7 @@ struct shim::Acl::impl {
                 found->first, hci::ErrorCode::CONNECTION_TERMINATED_BY_LOCAL_HOST);
       }
     }
+#endif
     promise.set_value();
   }
 

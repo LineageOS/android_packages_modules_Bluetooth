@@ -200,7 +200,7 @@ class MceStateMachine extends StateMachine {
         private final String mHandle;
         private final Long mTimestamp;
         private boolean mRead;
-        private boolean mSeen;
+        private final boolean mSeen;
 
         MessageMetadata(String handle, Long timestamp, boolean read, boolean seen) {
             mHandle = handle;

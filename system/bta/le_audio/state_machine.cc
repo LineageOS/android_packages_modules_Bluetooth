@@ -1161,16 +1161,19 @@ public:
     auto ases_pair = leAudioDevice->GetAsesByCisConnHdl(cis_conn_hdl);
     uint8_t value = 0;
 
-    if (ases_pair.sink && ases_pair.sink->data_path_state == DataPathState::CONFIGURED) {
+    if (ases_pair.sink && (ases_pair.sink->data_path_state == DataPathState::CONFIGURED ||
+                           ases_pair.sink->data_path_state == DataPathState::CONFIGURING)) {
       value |= bluetooth::hci::iso_manager::kRemoveIsoDataPathDirectionInput;
       ases_pair.sink->data_path_state = DataPathState::REMOVING;
     }
 
-    if (ases_pair.source && ases_pair.source->data_path_state == DataPathState::CONFIGURED) {
+    if (ases_pair.source && (ases_pair.source->data_path_state == DataPathState::CONFIGURED ||
+                             ases_pair.source->data_path_state == DataPathState::CONFIGURING)) {
       value |= bluetooth::hci::iso_manager::kRemoveIsoDataPathDirectionOutput;
       ases_pair.source->data_path_state = DataPathState::REMOVING;
     } else {
-      if (leAudioDevice->GetDsaDataPathState() == DataPathState::CONFIGURED) {
+      if (leAudioDevice->GetDsaDataPathState() == DataPathState::CONFIGURED ||
+          leAudioDevice->GetDsaDataPathState() == DataPathState::CONFIGURING) {
         value |= bluetooth::hci::iso_manager::kRemoveIsoDataPathDirectionOutput;
         leAudioDevice->SetDsaDataPathState(DataPathState::REMOVING);
       }
@@ -1542,9 +1545,7 @@ private:
                 it->max_sdu_size_stom = bluetooth::le_audio::types::kLeAudioHeadtrackerMaxSduSize;
 
                 // Early draft of DSA 2.0 spec mentioned allocating 15 bytes for headtracker data
-                if (!com::android::bluetooth::flags::headtracker_sdu_size()) {
-                  it->max_sdu_size_stom = 15;
-                } else if (!group->DsaReducedSduSizeSupported()) {
+                if (!group->DsaReducedSduSizeSupported()) {
                   log::verbose("Device does not support reduced headtracker SDU");
                   it->max_sdu_size_stom = 15;
                 }
@@ -2204,7 +2205,8 @@ private:
           return;
         }
 
-        if (group->GetState() == AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
+        if (group->GetState() == AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING &&
+            group->GetTargetState() == AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
           /* We are here because of the reconnection of the single device. */
           /* Make sure that device is ready to be configured as we could also
            * get here triggered by the remote device. If device is not connected

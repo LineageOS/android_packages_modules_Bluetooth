@@ -1967,7 +1967,7 @@ public class HeadsetClientStateMachine extends StateMachine {
             debug("Disconnecting: Process message: " + message.what);
 
             switch (message.what) {
-                    // Defering messages as state machine objects are meant to be reused and after
+                    // Deferring messages as state machine objects are meant to be reused and after
                     // disconnect is complete we want honor other message requests
                 case CONNECT:
                 case CONNECT_AUDIO:

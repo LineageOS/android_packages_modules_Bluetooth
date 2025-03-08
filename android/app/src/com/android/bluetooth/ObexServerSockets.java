@@ -29,7 +29,7 @@ import java.io.IOException;
 /**
  * Wraps multiple BluetoothServerSocket objects to make it possible to accept connections on both a
  * RFCOMM and L2CAP channel in parallel.<br>
- * Create an instance using {@link #create()}, which will block until the sockets have been created
+ * Create an instance using {@link #create}, which will block until the sockets have been created
  * and channel numbers have been assigned.<br>
  * Use {@link #getRfcommChannel()} and {@link #getL2capPsm()} to get the channel numbers to put into
  * the SDP record.<br>
@@ -106,7 +106,7 @@ public class ObexServerSockets {
      *
      * @param validator a reference to the {@link IObexConnectionHandler} object to call to validate
      *     an incoming connection.
-     * @param isSecure boolean flag to determine whether socket would be secured or inseucure.
+     * @param isSecure boolean flag to determine whether socket would be secured or insecure.
      * @return a reference to a {@link ObexServerSockets} object instance.
      *     <p>TODO: Make public when it becomes possible to determine that the listen-call failed
      *     due to channel-in-use.
@@ -338,7 +338,7 @@ public class ObexServerSockets {
                             Log.i(TAG, "RemoteDevice is invalid - creating ObexRejectServer.");
                             BluetoothObexTransport obexTrans =
                                     new BluetoothObexTransport(connSocket);
-                            // Create and detach a selfdestructing ServerSession to respond to any
+                            // Create and detach a self destructing ServerSession to respond to any
                             // incoming OBEX signals.
                             new ServerSession(
                                     obexTrans,
@@ -384,7 +384,7 @@ public class ObexServerSockets {
             // If called from another thread, interrupt the thread
             if (!Thread.currentThread().equals(this)) {
                 // TODO: Will this interrupt the thread if it is blocked in synchronized?
-                // Else: change to use InterruptableLock
+                // Else: change to use InterruptibleLock
                 Log.d(TAG, "shutdown called from another thread - interrupt().");
                 interrupt();
             }

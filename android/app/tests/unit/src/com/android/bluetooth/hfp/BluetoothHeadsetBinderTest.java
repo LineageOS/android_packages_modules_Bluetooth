@@ -38,7 +38,7 @@ public class BluetoothHeadsetBinderTest {
     @Mock private HeadsetService mService;
 
     private final AttributionSource mAttributionSource = new AttributionSource.Builder(1).build();
-    private BluetoothDevice mDevice = getTestDevice(39);
+    private final BluetoothDevice mDevice = getTestDevice(39);
 
     private HeadsetService.BluetoothHeadsetBinder mBinder;
 

@@ -390,9 +390,5 @@ void btm_simple_pair_complete(const RawAddress bd_addr, uint8_t status) {
   inc_func_call_count(__func__);
   test::mock::stack_btm_sec::btm_simple_pair_complete(bd_addr, status);
 }
-bool BTM_BleIsLinkKeyKnown(const RawAddress /* address */) {
-  inc_func_call_count(__func__);
-  return false;
-}
 // Mocked functions complete
 // END mockcify generation

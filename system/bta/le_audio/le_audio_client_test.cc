@@ -1361,65 +1361,8 @@ protected:
                 ases_pair.source->active = false;
                 ases_pair.source->cis_state = types::CisState::ASSIGNED;
               }
-              /* Invalidate stream configuration if needed */
-              auto* stream_conf = &group->stream_conf;
-              if (!stream_conf->stream_params.sink.stream_config.stream_map.empty() ||
-                  !stream_conf->stream_params.source.stream_config.stream_map.empty()) {
-                stream_conf->stream_params.sink.stream_config.stream_map.erase(
-                        std::remove_if(
-                                stream_conf->stream_params.sink.stream_config.stream_map.begin(),
-                                stream_conf->stream_params.sink.stream_config.stream_map.end(),
-                                [leAudioDevice, &stream_conf](auto& info) {
-                                  auto ases =
-                                          leAudioDevice->GetAsesByCisConnHdl(info.stream_handle);
 
-                                  log::info(
-                                          ", sink ase to delete. Cis handle: {}, ase pointer: "
-                                          "{}",
-                                          (int)(info.stream_handle), std::format_ptr(+ases.sink));
-                                  if (ases.sink) {
-                                    stream_conf->stream_params.sink.num_of_devices--;
-                                    stream_conf->stream_params.sink.num_of_channels -=
-                                            ases.sink->codec_config.channel_count_per_iso_stream;
-
-                                    log::info(
-                                            "Sink Number Of Devices: {}, Sink Number Of "
-                                            "Channels: {}",
-                                            stream_conf->stream_params.sink.num_of_devices,
-                                            stream_conf->stream_params.sink.num_of_channels);
-                                  }
-                                  return ases.sink;
-                                }),
-                        stream_conf->stream_params.sink.stream_config.stream_map.end());
-
-                stream_conf->stream_params.source.stream_config.stream_map.erase(
-                        std::remove_if(
-                                stream_conf->stream_params.source.stream_config.stream_map.begin(),
-                                stream_conf->stream_params.source.stream_config.stream_map.end(),
-                                [leAudioDevice, &stream_conf](auto& info) {
-                                  auto ases =
-                                          leAudioDevice->GetAsesByCisConnHdl(info.stream_handle);
-
-                                  log::info(", source to delete. Cis handle: {}, ase pointer: {}",
-                                            (int)(info.stream_handle),
-                                            std::format_ptr(ases.source));
-                                  if (ases.source) {
-                                    stream_conf->stream_params.source.num_of_devices--;
-                                    stream_conf->stream_params.source.num_of_channels -=
-                                            ases.source->codec_config.channel_count_per_iso_stream;
-
-                                    log::info(
-                                            ", Source Number Of Devices: {}, Source Number Of "
-                                            "Channels: {}",
-                                            stream_conf->stream_params.source.num_of_devices,
-                                            stream_conf->stream_params.source.num_of_channels);
-                                  }
-                                  return ases.source;
-                                }),
-                        stream_conf->stream_params.source.stream_config.stream_map.end());
-              }
-
-              group->cig.UnassignCis(leAudioDevice, event->cis_conn_hdl);
+              group->RemoveCisFromStreamIfNeeded(leAudioDevice, event->cis_conn_hdl);
 
               // When the device detaches from the stream we send again the state machine state to
               // stimulate the stream map update

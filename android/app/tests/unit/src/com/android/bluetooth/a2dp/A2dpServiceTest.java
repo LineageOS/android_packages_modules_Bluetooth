@@ -104,7 +104,7 @@ public class A2dpServiceTest {
 
     private TestLooper mLooper;
     private A2dpService mA2dpService;
-    private CompanionDeviceManager mCompanionDeviceManager =
+    private final CompanionDeviceManager mCompanionDeviceManager =
             InstrumentationRegistry.getInstrumentation()
                     .getContext()
                     .getSystemService(CompanionDeviceManager.class);
@@ -750,7 +750,7 @@ public class A2dpServiceTest {
         verify(mMockNativeInterface).setSilenceDevice(mDevice, true);
         assertThat(mA2dpService.getActiveDevice()).isNull();
 
-        // Test whether active device been resumeed after disable silence mode.
+        // Test whether active device been resumed after disable silence mode.
         assertThat(mA2dpService.setSilenceMode(mDevice, false)).isTrue();
         verify(mMockNativeInterface).setSilenceDevice(mDevice, false);
         assertThat(mA2dpService.getActiveDevice()).isEqualTo(mDevice);

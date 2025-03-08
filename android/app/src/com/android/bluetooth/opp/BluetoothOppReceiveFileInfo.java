@@ -126,7 +126,7 @@ public class BluetoothOppReceiveFileInfo {
             return new BluetoothOppReceiveFileInfo(BluetoothShare.STATUS_ERROR_NO_SDCARD);
         }
 
-        String filename = choosefilename(hint);
+        String filename = chooseFilename(hint);
         if (filename == null) {
             // should not happen. It must be pre-rejected
             return new BluetoothOppReceiveFileInfo(BluetoothShare.STATUS_FILE_ERROR);
@@ -157,21 +157,21 @@ public class BluetoothOppReceiveFileInfo {
             Log.i(Constants.TAG, " File Name Length :" + filename.length());
             Log.i(Constants.TAG, " File Name Length in Bytes:" + filename.getBytes().length);
 
-            byte[] oldfilename = filename.getBytes(StandardCharsets.UTF_8);
-            byte[] newfilename = new byte[OPP_LENGTH_OF_FILE_NAME];
-            System.arraycopy(oldfilename, 0, newfilename, 0, OPP_LENGTH_OF_FILE_NAME);
-            filename = new String(newfilename, StandardCharsets.UTF_8);
+            byte[] oldFilename = filename.getBytes(StandardCharsets.UTF_8);
+            byte[] newFilename = new byte[OPP_LENGTH_OF_FILE_NAME];
+            System.arraycopy(oldFilename, 0, newFilename, 0, OPP_LENGTH_OF_FILE_NAME);
+            filename = new String(newFilename, StandardCharsets.UTF_8);
             Log.d(Constants.TAG, "File name is too long. Name is truncated as: " + filename);
         }
 
         DateFormat dateFormat = new SimpleDateFormat("_hhmmss");
         String currentTime = dateFormat.format(Calendar.getInstance().getTime());
-        String fullfilename = filename + currentTime + extension;
+        String fullFilename = filename + currentTime + extension;
 
-        Log.v(Constants.TAG, "Generated received filename " + fullfilename);
+        Log.v(Constants.TAG, "Generated received filename " + fullFilename);
 
         ContentValues mediaContentValues = new ContentValues();
-        mediaContentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, fullfilename);
+        mediaContentValues.put(MediaStore.MediaColumns.DISPLAY_NAME, fullFilename);
         mediaContentValues.put(MediaStore.MediaColumns.MIME_TYPE, mimeType);
         mediaContentValues.put(
                 MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_DOWNLOADS);
@@ -183,7 +183,7 @@ public class BluetoothOppReceiveFileInfo {
                                 mediaContentValues);
 
         if (insertUri == null) {
-            Log.e(Constants.TAG, "Error when creating file " + fullfilename);
+            Log.e(Constants.TAG, "Error when creating file " + fullFilename);
             ContentProfileErrorReportUtils.report(
                     BluetoothProfile.OPP,
                     BluetoothProtoEnums.BLUETOOTH_OPP_RECEIVE_FILE_INFO,
@@ -194,10 +194,10 @@ public class BluetoothOppReceiveFileInfo {
 
         Log.d(Constants.TAG, "file crated, insertUri:" + insertUri.toString());
 
-        return new BluetoothOppReceiveFileInfo(fullfilename, length, insertUri, 0);
+        return new BluetoothOppReceiveFileInfo(fullFilename, length, insertUri, 0);
     }
 
-    private static String choosefilename(String hint) {
+    private static String chooseFilename(String hint) {
         String filename = null;
 
         // First, try to use the hint from the application, if there's one

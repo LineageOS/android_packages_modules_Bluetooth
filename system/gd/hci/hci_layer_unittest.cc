@@ -87,7 +87,8 @@ protected:
   void SetUp() override {
     hal_ = new hal::TestHciHal();
     fake_registry_.InjectTestModule(&hal::HciHal::Factory, hal_);
-    fake_registry_.Start<HciLayer>(&fake_registry_.GetTestThread());
+    fake_registry_.Start<HciLayer>(&fake_registry_.GetTestThread(),
+                                   fake_registry_.GetTestHandler());
     hci_ = static_cast<HciLayer*>(fake_registry_.GetModuleUnderTest(&HciLayer::Factory));
     hci_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
     ASSERT_TRUE(fake_registry_.IsStarted<HciLayer>());

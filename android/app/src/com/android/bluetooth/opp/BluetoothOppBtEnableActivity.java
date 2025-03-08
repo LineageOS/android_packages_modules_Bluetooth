@@ -80,7 +80,7 @@ public class BluetoothOppBtEnableActivity extends AlertActivity {
     }
 
     private void onEnableBluetooth() {
-        mOppManager.enableBluetooth(); // this is an asyn call
+        mOppManager.enableBluetooth(); // this is an async call
         mOppManager.mSendingFlag = true;
 
         Toast.makeText(this, getString(R.string.enabling_progress_content), Toast.LENGTH_SHORT)

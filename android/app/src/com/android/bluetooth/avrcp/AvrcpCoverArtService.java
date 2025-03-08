@@ -60,7 +60,7 @@ public class AvrcpCoverArtService {
     private final Object mServerLock = new Object();
 
     // Native interface
-    private AvrcpNativeInterface mNativeInterface;
+    private final AvrcpNativeInterface mNativeInterface;
 
     // The native interface must be a parameter here in order to be able to mock AvrcpTargetService
     public AvrcpCoverArtService(AvrcpNativeInterface nativeInterface) {
@@ -88,7 +88,7 @@ public class AvrcpCoverArtService {
     /**
      * Stop the AVRCP Cover Art Service.
      *
-     * <p>Tear down existing connections, remove ourselved from the SDP record.
+     * <p>Tear down existing connections, remove ourselves from the SDP record.
      */
     public boolean stop() {
         debug("Stopping service");

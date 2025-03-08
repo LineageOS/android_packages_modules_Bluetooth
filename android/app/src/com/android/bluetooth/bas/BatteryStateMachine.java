@@ -71,10 +71,10 @@ public class BatteryStateMachine extends StateMachine {
 
     @VisibleForTesting static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(30);
 
-    private Disconnected mDisconnected;
-    private Connecting mConnecting;
-    private Connected mConnected;
-    private Disconnecting mDisconnecting;
+    private final Disconnected mDisconnected;
+    private final Connecting mConnecting;
+    private final Connected mConnected;
+    private final Disconnecting mDisconnecting;
     private int mLastConnectionState = STATE_DISCONNECTED;
 
     private final BatteryService mService;

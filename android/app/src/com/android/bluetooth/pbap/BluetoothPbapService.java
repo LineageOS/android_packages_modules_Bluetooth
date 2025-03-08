@@ -24,6 +24,8 @@ import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
+import static com.android.bluetooth.Utils.joinUninterruptibly;
+
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.RequiresPermission;
@@ -67,11 +69,10 @@ import com.android.bluetooth.btservice.InteropUtil;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
+import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.sdp.SdpManagerNativeInterface;
 import com.android.bluetooth.util.DevicePolicyUtils;
 import com.android.internal.annotations.VisibleForTesting;
-
-import com.google.common.util.concurrent.Uninterruptibles;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -123,6 +124,7 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
     static final int ROLLOVER_COUNTERS = 7;
     private static final int GET_LOCAL_TELEPHONY_DETAILS = 8;
     private static final int HANDLE_VERSION_UPDATE_NOTIFICATION = 9;
+    private static final int HANDLE_ACCEPT_FAILED = 10;
 
     static final int USER_CONFIRM_TIMEOUT_VALUE = 30000;
     private static final int RELEASE_WAKE_LOCK_DELAY_MS = 10000;
@@ -256,7 +258,6 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
             }
         }
     }
-
 
     private void parseIntent(final Intent intent) {
         String action = intent.getAction();
@@ -611,6 +612,9 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
 
                     handleNotificationTask(remoteDev);
                     break;
+                case HANDLE_ACCEPT_FAILED:
+                    handleAcceptFailed();
+                    break;
                 default:
                     break;
             }
@@ -740,7 +744,7 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
         setBluetoothPbapService(null);
         mSessionStatusHandler.sendEmptyMessage(SHUTDOWN);
         mHandlerThread.quitSafely();
-        Uninterruptibles.joinUninterruptibly(mHandlerThread);
+        joinUninterruptibly(mHandlerThread);
         mContactsLoaded = false;
         unregisterReceiver(mPbapReceiver);
         mAdapterService.getContentResolver().unregisterContentObserver(mContactChangeObserver);
@@ -957,6 +961,14 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
                 BluetoothStatsLog.BLUETOOTH_CONTENT_PROFILE_ERROR_REPORTED__TYPE__LOG_WARN,
                 11);
 
+        if (Flags.pbapCleanupUseHandler()) {
+            mSessionStatusHandler.sendEmptyMessage(HANDLE_ACCEPT_FAILED);
+        } else {
+            handleAcceptFailed();
+        }
+    }
+
+    private void handleAcceptFailed() {
         if (mWakeLock != null) {
             mWakeLock.release();
             mWakeLock = null;
@@ -975,32 +987,26 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
 
     private void loadAllContacts() {
         if (mThreadLoadContacts == null) {
-            Runnable r =
-                    new Runnable() {
-                        @Override
-                        public void run() {
-                            BluetoothPbapUtils.loadAllContacts(
-                                    BluetoothPbapService.this, mSessionStatusHandler);
-                            mThreadLoadContacts = null;
-                        }
-                    };
-            mThreadLoadContacts = new Thread(r);
+            mThreadLoadContacts =
+                    new Thread(
+                            () -> {
+                                BluetoothPbapUtils.loadAllContacts(
+                                        BluetoothPbapService.this, mSessionStatusHandler);
+                                mThreadLoadContacts = null;
+                            });
             mThreadLoadContacts.start();
         }
     }
 
     private void updateSecondaryVersion() {
         if (mThreadUpdateSecVersionCounter == null) {
-            Runnable r =
-                    new Runnable() {
-                        @Override
-                        public void run() {
-                            BluetoothPbapUtils.updateSecondaryVersionCounter(
-                                    BluetoothPbapService.this, mSessionStatusHandler);
-                            mThreadUpdateSecVersionCounter = null;
-                        }
-                    };
-            mThreadUpdateSecVersionCounter = new Thread(r);
+            mThreadUpdateSecVersionCounter =
+                    new Thread(
+                            () -> {
+                                BluetoothPbapUtils.updateSecondaryVersionCounter(
+                                        BluetoothPbapService.this, mSessionStatusHandler);
+                                mThreadUpdateSecVersionCounter = null;
+                            });
             mThreadUpdateSecVersionCounter.start();
         }
     }

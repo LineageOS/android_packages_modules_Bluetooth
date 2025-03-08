@@ -119,7 +119,7 @@ public class MnsService {
             if (stateMachine == null) {
                 Log.e(
                         TAG,
-                        "Error: NO statemachine for device: "
+                        "Error: NO StateMachine for device: "
                                 + device
                                 + " (name: "
                                 + Utils.getName(device));
@@ -127,7 +127,7 @@ public class MnsService {
             } else if (stateMachine.getState() != STATE_CONNECTED) {
                 Log.e(
                         TAG,
-                        "Error: statemachine for device: "
+                        "Error: StateMachine for device: "
                                 + device
                                 + " (name: "
                                 + Utils.getName(device)

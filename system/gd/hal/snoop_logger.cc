@@ -1196,7 +1196,7 @@ void SnoopLogger::Capture(const HciPacket& immutable_packet, Direction direction
                                   .count();
 #ifdef __ANDROID__
   if (com::android::bluetooth::flags::snoop_logger_tracing()) {
-    LogTracePoint(timestamp_us, packet, direction, type);
+    LogTracePoint(packet, direction, type);
   }
 #endif  // __ANDROID__
 
@@ -1436,8 +1436,7 @@ bool SnoopLogger::IsQualcommDebugLogEnabled() {
 }
 
 #ifdef __ANDROID__
-void SnoopLogger::LogTracePoint(uint64_t timestamp_us, const HciPacket& packet, Direction direction,
-                                PacketType type) {
+void SnoopLogger::LogTracePoint(const HciPacket& packet, Direction direction, PacketType type) {
   switch (type) {
     case PacketType::EVT: {
       uint8_t evt_code = packet[0];
@@ -1484,7 +1483,7 @@ void SnoopLogger::LogTracePoint(uint64_t timestamp_us, const HciPacket& packet, 
     } break;
   }
 
-  SnoopLoggerTracing::TracePacket(timestamp_us, packet, direction, type);
+  SnoopLoggerTracing::TracePacket(packet, direction, type);
 }
 #endif  // __ANDROID__
 

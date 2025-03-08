@@ -615,7 +615,6 @@ public class PairingTest {
      * <p>Expectation: Bumble is not bonded
      */
     @Test
-    @RequiresFlagsEnabled({Flags.FLAG_WAIT_FOR_DISCONNECT_BEFORE_UNBOND})
     public void testRemoveBondLe_WhenConnected() {
         IntentReceiver intentReceiver = new IntentReceiver.Builder(sTargetContext,
                 BluetoothDevice.ACTION_ACL_DISCONNECTED,
@@ -661,7 +660,6 @@ public class PairingTest {
      * <p>Expectation: Bumble is not bonded
      */
     @Test
-    @RequiresFlagsEnabled({Flags.FLAG_WAIT_FOR_DISCONNECT_BEFORE_UNBOND})
     public void testRemoveBondBredr_WhenConnected() {
         IntentReceiver intentReceiver = new IntentReceiver.Builder(sTargetContext,
                 BluetoothDevice.ACTION_ACL_DISCONNECTED,

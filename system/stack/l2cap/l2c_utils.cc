@@ -1641,9 +1641,6 @@ void l2cu_release_ccb(tL2C_CCB* p_ccb) {
 }
 
 void l2cu_fixed_channel_restore(tL2C_LCB* p_lcb, uint16_t fixed_cid) {
-  if (!com::android::bluetooth::flags::transmit_smp_packets_before_release()) {
-    return;
-  }
   auto it = p_lcb->suspended.begin();
   while (it != p_lcb->suspended.end()) {
     if (*it == fixed_cid) {
@@ -1655,9 +1652,6 @@ void l2cu_fixed_channel_restore(tL2C_LCB* p_lcb, uint16_t fixed_cid) {
 }
 
 bool l2cu_fixed_channel_suspended(tL2C_LCB* p_lcb, uint16_t fixed_cid) {
-  if (!com::android::bluetooth::flags::transmit_smp_packets_before_release()) {
-    return false;
-  }
   return std::find(p_lcb->suspended.begin(), p_lcb->suspended.end(), fixed_cid) !=
          p_lcb->suspended.end();
 }

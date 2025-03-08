@@ -37,12 +37,7 @@ parcelable StreamConfiguration {
     int maxSduSize;
 
     /**
-     * Number of PDU's transmitted by ISO-Intervals
-     */
-    int burstNumber;
-
-    /**
-     * How many consecutive Isochronous Intervals can be used to transmit a PDU
+     * How many consecutive Isochronous Intervals can be used to transmit an SDU
      */
     int flushTimeout;
 }

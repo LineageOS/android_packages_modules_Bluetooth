@@ -64,6 +64,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 // Describes the phone policy
 //
@@ -96,12 +97,24 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
     private final AdapterService mAdapterService;
     private final ServiceFactory mFactory;
     private final Handler mHandler;
-    private final HashSet<BluetoothDevice> mHeadsetRetrySet = new HashSet<>();
-    private final HashSet<BluetoothDevice> mA2dpRetrySet = new HashSet<>();
-    private final HashSet<BluetoothDevice> mConnectOtherProfilesDeviceSet = new HashSet<>();
+    private final Set<BluetoothDevice> mHeadsetRetrySet = new HashSet<>();
+    private final Set<BluetoothDevice> mA2dpRetrySet = new HashSet<>();
+    private final Set<BluetoothDevice> mConnectOtherProfilesDeviceSet = new HashSet<>();
 
     @VisibleForTesting boolean mAutoConnectProfilesSupported;
     @VisibleForTesting boolean mLeAudioEnabledByDefault;
+
+    PhonePolicy(AdapterService service, Looper looper, ServiceFactory factory) {
+        mAdapterService = service;
+        mDatabaseManager = requireNonNull(service.getDatabase());
+        mFactory = factory;
+        mHandler = new Handler(looper);
+        mAutoConnectProfilesSupported =
+                SystemProperties.getBoolean(AUTO_CONNECT_PROFILES_PROPERTY, false);
+        mLeAudioEnabledByDefault =
+                SystemProperties.getBoolean(LE_AUDIO_CONNECTION_BY_DEFAULT_PROPERTY, true);
+        mAdapterService.registerBluetoothStateCallback(mHandler::post, this);
+    }
 
     @Override
     public void onBluetoothStateChange(int prevState, int newState) {
@@ -142,18 +155,6 @@ public class PhonePolicy implements AdapterService.BluetoothStateCallback {
     public void cleanup() {
         mAdapterService.unregisterBluetoothStateCallback(this);
         resetStates();
-    }
-
-    PhonePolicy(AdapterService service, Looper looper, ServiceFactory factory) {
-        mAdapterService = service;
-        mDatabaseManager = requireNonNull(service.getDatabase());
-        mFactory = factory;
-        mHandler = new Handler(looper);
-        mAutoConnectProfilesSupported =
-                SystemProperties.getBoolean(AUTO_CONNECT_PROFILES_PROPERTY, false);
-        mLeAudioEnabledByDefault =
-                SystemProperties.getBoolean(LE_AUDIO_CONNECTION_BY_DEFAULT_PROPERTY, true);
-        mAdapterService.registerBluetoothStateCallback(mHandler::post, this);
     }
 
     boolean isLeAudioOnlyGroup(BluetoothDevice device) {

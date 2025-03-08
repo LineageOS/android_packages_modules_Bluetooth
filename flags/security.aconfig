@@ -114,3 +114,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "btsec_check_controller_sc_support"
+    namespace: "bluetooth"
+    description: "Check for controller as well as host Secure Connections support when dropping connections"
+    bug: "400802709"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

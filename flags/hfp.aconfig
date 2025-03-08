@@ -44,16 +44,6 @@ flag {
 }
 
 flag {
-    name: "reset_ag_state_on_collision"
-    namespace: "bluetooth"
-    description: "Reset AG instance state as well when outgoing connection attempt is discarded on collision detection"
-    bug: "341376713"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "maintain_call_index_after_conference"
     namespace: "bluetooth"
     description: "Avoid change of clcc call index after call disconnects from conference"

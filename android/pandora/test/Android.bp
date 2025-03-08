@@ -22,11 +22,7 @@ python_test_host {
     srcs: [
         "**/*.py",
     ],
-    version: {
-        py3: {
-            embedded_launcher: false,
-        },
-    },
+    embedded_launcher: false,
     libs: [
         "bumble_services_experimental-python",
         "libavatar",
@@ -56,11 +52,7 @@ python_test_host {
         "**/*.py",
     ],
     test_config: "AndroidPhyTest.xml",
-    version: {
-        py3: {
-            embedded_launcher: false,
-        },
-    },
+    embedded_launcher: false,
     libs: [
         "bumble_services_experimental-python",
         "libavatar",

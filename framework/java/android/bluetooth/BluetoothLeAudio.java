@@ -74,7 +74,7 @@ public final class BluetoothLeAudio implements BluetoothProfile, AutoCloseable {
     private static final boolean DBG = Log.isLoggable(TAG, Log.DEBUG);
     private static final boolean VDBG = false;
 
-    private CloseGuard mCloseGuard;
+    private final CloseGuard mCloseGuard;
 
     /**
      * This class provides a callback that is invoked when audio codec config changes on the remote

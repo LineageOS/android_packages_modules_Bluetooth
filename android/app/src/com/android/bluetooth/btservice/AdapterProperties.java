@@ -89,7 +89,8 @@ class AdapterProperties {
     private volatile int mDiscoverableTimeout;
     private volatile ParcelUuid[] mUuids;
 
-    private CopyOnWriteArrayList<BluetoothDevice> mBondedDevices = new CopyOnWriteArrayList<>();
+    private final CopyOnWriteArrayList<BluetoothDevice> mBondedDevices =
+            new CopyOnWriteArrayList<>();
 
     private int mProfilesConnecting, mProfilesConnected, mProfilesDisconnecting;
     private final HashMap<Integer, Pair<Integer, Integer>> mProfileConnectionState =
@@ -689,7 +690,7 @@ class AdapterProperties {
             case STATE_CONNECTING:
                 return BluetoothAdapter.STATE_CONNECTING;
         }
-        Log.e(TAG, "convertToAdapterState, unknow state " + state);
+        Log.e(TAG, "convertToAdapterState, unknown state " + state);
         return -1;
     }
 

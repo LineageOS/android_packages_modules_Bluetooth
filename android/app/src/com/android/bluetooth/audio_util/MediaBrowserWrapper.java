@@ -190,8 +190,20 @@ class MediaBrowserWrapper {
                                     + " and "
                                     + mediaId
                                     + ": adding callback and subscribing.");
-                    mSubscribedIds.put(mediaId, new ArrayList<>(Arrays.asList(callback)));
-                    mWrappedBrowser.subscribe(mediaId, new BrowserSubscriptionCallback(mediaId));
+                    // Empty mediaId can cause an exception, retrieve root instead.
+                    if (mediaId.isEmpty()) {
+                        getRootId(
+                                (rootId) -> {
+                                    mSubscribedIds.put(
+                                            rootId, new ArrayList<>(Arrays.asList(callback)));
+                                    mWrappedBrowser.subscribe(
+                                            rootId, new BrowserSubscriptionCallback(mediaId));
+                                });
+                    } else {
+                        mSubscribedIds.put(mediaId, new ArrayList<>(Arrays.asList(callback)));
+                        mWrappedBrowser.subscribe(
+                                mediaId, new BrowserSubscriptionCallback(mediaId));
+                    }
                 });
     }
 

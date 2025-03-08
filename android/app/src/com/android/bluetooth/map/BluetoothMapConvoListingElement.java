@@ -207,7 +207,7 @@ public class BluetoothMapConvoListingElement
     }
 
     public long getCpConvoId() {
-        return mId.getLeastSignificantBits();
+        return mId.leastSignificantBits();
     }
 
     public void setSummary(String summary) {

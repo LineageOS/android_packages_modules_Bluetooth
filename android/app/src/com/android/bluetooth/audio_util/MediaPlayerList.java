@@ -81,8 +81,8 @@ public class MediaPlayerList {
     // string.
     private static final String BROWSE_ID_PATTERN = "\\d\\d.*";
 
-    private Context mContext;
-    private Looper mLooper; // Thread all media player callbacks and timeouts happen on
+    private final Context mContext;
+    private final Looper mLooper; // Thread all media player callbacks and timeouts happen on
     private MediaSessionManager mMediaSessionManager;
     private MediaData mCurrMediaData = null;
     private final AudioManager mAudioManager;
@@ -93,13 +93,13 @@ public class MediaPlayerList {
             new BluetoothEventLogger(
                     AUDIO_PLAYBACK_STATE_LOGGER_SIZE, AUDIO_PLAYBACK_STATE_LOGGER_TITLE);
 
-    private Map<Integer, MediaPlayerWrapper> mMediaPlayers =
+    private final Map<Integer, MediaPlayerWrapper> mMediaPlayers =
             Collections.synchronizedMap(new HashMap<Integer, MediaPlayerWrapper>());
-    private Map<String, Integer> mMediaPlayerIds =
+    private final Map<String, Integer> mMediaPlayerIds =
             Collections.synchronizedMap(new HashMap<String, Integer>());
-    private Map<Integer, BrowsedPlayerWrapper> mBrowsablePlayers =
+    private final Map<Integer, BrowsedPlayerWrapper> mBrowsablePlayers =
             Collections.synchronizedMap(new HashMap<Integer, BrowsedPlayerWrapper>());
-    private Map<Integer, MediaBrowserWrapper> mMediaBrowserWrappers =
+    private final Map<Integer, MediaBrowserWrapper> mMediaBrowserWrappers =
             Collections.synchronizedMap(new HashMap<Integer, MediaBrowserWrapper>());
     private int mActivePlayerId = NO_ACTIVE_PLAYER;
     private int mBrowsingPlayerId = NO_ACTIVE_PLAYER;
@@ -329,9 +329,9 @@ public class MediaPlayerList {
 
     /** returns the current player ID. */
     public int getCurrentPlayerId() {
-        if (Flags.setAddressedPlayer()) {
+        if (Flags.setAddressedPlayer() && Util.areMultiplePlayersSupported()) {
             return mAddressedPlayerId;
-        } else if (Flags.browsingRefactor()) {
+        } else if (Flags.browsingRefactor() && Util.areMultiplePlayersSupported()) {
             return mBrowsingPlayerId;
         } else {
             return BLUETOOTH_PLAYER_ID;
@@ -347,12 +347,12 @@ public class MediaPlayerList {
         return id;
     }
 
-    /** Returns the {@link #MediaPlayerWrapper} with ID matching {@link #mActivePlayerId}. */
+    /** Returns the {@link MediaPlayerWrapper} with ID matching {@link #mActivePlayerId}. */
     public MediaPlayerWrapper getActivePlayer() {
         return mMediaPlayers.get(mActivePlayerId);
     }
 
-    /** Returns the {@link #MediaPlayerWrapper} with ID matching {@link #mAddressedPlayerId}. */
+    /** Returns the {@link MediaPlayerWrapper} with ID matching {@link #mAddressedPlayerId}. */
     public MediaPlayerWrapper getAddressedPlayer() {
         return mMediaPlayers.get(mAddressedPlayerId);
     }
@@ -375,6 +375,14 @@ public class MediaPlayerList {
     /** Sets the {@link #mBrowsingPlayerId} and returns the number of items in current path */
     public void setBrowsedPlayer(int playerId, String currentPath, SetBrowsedPlayerCallback cb) {
         if (Flags.browsingRefactor()) {
+            if (!Util.areMultiplePlayersSupported()) {
+                cb.run(
+                        playerId,
+                        playerId == BLUETOOTH_PLAYER_ID,
+                        currentPath,
+                        mMediaBrowserWrappers.size());
+                return;
+            }
             if (!haveMediaBrowser(playerId)) {
                 cb.run(playerId, false, "", 0);
                 return;
@@ -422,7 +430,7 @@ public class MediaPlayerList {
 
     /** Sets which player the AV/C commands should be addressed to. */
     public int setAddressedPlayer(int playerId) {
-        if (!Flags.setAddressedPlayer()) {
+        if (!Flags.setAddressedPlayer() || !Util.areMultiplePlayersSupported()) {
             return BLUETOOTH_PLAYER_ID;
         }
         if (mMediaPlayerIds.containsValue(playerId)) {
@@ -439,6 +447,14 @@ public class MediaPlayerList {
     public List<PlayerInfo> getMediaPlayerList() {
         List<PlayerInfo> ret = new ArrayList<PlayerInfo>();
         if (Flags.browsingRefactor()) {
+            if (!Util.areMultiplePlayersSupported()) {
+                PlayerInfo info = new PlayerInfo();
+                info.id = BLUETOOTH_PLAYER_ID;
+                info.name = BLUETOOTH_PLAYER_NAME;
+                info.browsable = mMediaBrowserWrappers.size() > 0;
+                ret.add(info);
+                return ret;
+            }
             // Add actual browsable players
             for (MediaBrowserWrapper browser : mMediaBrowserWrappers.values()) {
                 Log.i(
@@ -450,7 +466,7 @@ public class MediaPlayerList {
                 info.browsable = true;
                 ret.add(info);
             }
-            Log.i(TAG, "getMediaPlayerList: number of mediaplayers: " + mMediaPlayers.size());
+            Log.i(TAG, "getMediaPlayerList: number of mediaPlayers: " + mMediaPlayers.size());
             // Also list non-browsable players, they can be selected if controller supports it.
             for (MediaPlayerWrapper mediaPlayer : mMediaPlayers.values()) {
                 // Skip player if already added as browsable
@@ -473,7 +489,7 @@ public class MediaPlayerList {
             info.name = BLUETOOTH_PLAYER_NAME;
             info.browsable = true;
             if (mBrowsablePlayers.size() == 0) {
-                // Set Bluetooth Player as non-browable if there is not browsable player exist.
+                // Set Bluetooth Player as non-browsable if there is not browsable player exist.
                 info.browsable = false;
             }
             ret.add(info);
@@ -603,7 +619,7 @@ public class MediaPlayerList {
         long queueItemId = Long.parseLong(m.group(1));
 
         MediaPlayerWrapper player;
-        if (Flags.setAddressedPlayer()) {
+        if (Flags.setAddressedPlayer() && Util.areMultiplePlayersSupported()) {
             player = getAddressedPlayer();
         } else {
             player = getActivePlayer();
@@ -622,6 +638,10 @@ public class MediaPlayerList {
         Log.d(TAG, "playFolderItem: mediaId=" + mediaId);
 
         if (Flags.browsingRefactor()) {
+            if (!Util.areMultiplePlayersSupported()) {
+                mBrowsingPlayerId = Integer.parseInt(mediaId.substring(0, 2));
+                mediaId = mediaId.substring(2);
+            }
             if (!haveMediaBrowser(mBrowsingPlayerId)) {
                 Log.e(
                         TAG,
@@ -732,11 +752,34 @@ public class MediaPlayerList {
         }
 
         if (Flags.browsingRefactor()) {
-            if (mMediaBrowserWrappers.containsKey(playerId)) {
-                MediaBrowserWrapper wrapper = mMediaBrowserWrappers.get(playerId);
+            int playerIndex = playerId;
+            String itemId = mediaId;
+            if (!Util.areMultiplePlayersSupported()) {
+                playerIndex = Integer.parseInt(mediaId.substring(0, 2));
+                itemId = mediaId.substring(2);
+            }
+
+            if (mMediaBrowserWrappers.containsKey(playerIndex)) {
+                MediaBrowserWrapper wrapper = mMediaBrowserWrappers.get(playerIndex);
+                // Player ID needs to be added back to path if we use the Bluetooth player wrapper.
+                final String playerPrefix = Utils.formatSimple("%02d", playerIndex);
+                // If we use the Bluetooth player wrapper, the mediaId will be empty and the root id
+                // items will be fetched instead.
                 wrapper.getFolderItems(
-                        mediaId,
+                        itemId,
                         (id, results) -> {
+                            // If we use the Bluetooth player wrapper, we need to add back the
+                            // playerId to the item path.
+                            if (!Util.areMultiplePlayersSupported()) {
+                                for (ListItem item : results) {
+                                    if (item.isFolder) {
+                                        item.folder.mediaId =
+                                                playerPrefix.concat(item.folder.mediaId);
+                                    } else {
+                                        item.song.mediaId = playerPrefix.concat(item.song.mediaId);
+                                    }
+                                }
+                            }
                             cb.run(mediaId, results);
                         });
             } else {
@@ -966,7 +1009,7 @@ public class MediaPlayerList {
      * Sets {@code playerId} as the new active player and sends the new player's {@link Mediadata}
      * to the AVRCP service.
      *
-     * <p>Also informs the {@link #PlayerSettingsManager} about the change of active player.
+     * <p>Also informs the {@link PlayerSettingsManager} about the change of active player.
      */
     void setActivePlayer(int playerId) {
         if (!haveMediaPlayer(playerId)) {
@@ -992,7 +1035,9 @@ public class MediaPlayerList {
 
         if (Utils.isPtsTestMode()) {
             sendFolderUpdate(true, true, false);
-        } else if (Flags.setAddressedPlayer() && Flags.browsingRefactor()) {
+        } else if (Flags.setAddressedPlayer()
+                && Flags.browsingRefactor()
+                && Util.areMultiplePlayersSupported()) {
             // If the browsing refactor flag is not active, addressed player should always be 0.
             // If the new active player has been set by Addressed player key event
             // We don't send an addressed player update.
@@ -1068,7 +1113,8 @@ public class MediaPlayerList {
      * <p>Note: This does not set the current active player, only adds the new {@link
      * MediaController} to the {@link #mMediaPlayerIds} and {@link mMediaPlayers} maps.
      *
-     * <p>See {@link #onMediaKeyEventSessionChanged}.
+     * <p>See {@link
+     * MediaSessionManager.OnMediaKeyEventSessionChangedListener#onMediaKeyEventSessionChanged}.
      */
     @VisibleForTesting
     final MediaSessionManager.OnActiveSessionsChangedListener mActiveSessionsChangedListener =
@@ -1158,7 +1204,9 @@ public class MediaPlayerList {
                                 Log.i(TAG, "package removed from browsable list: " + packageName);
                                 mMediaBrowserWrappers.get(playerId).disconnect();
                                 mMediaBrowserWrappers.remove(playerId);
-                                sendFolderUpdate(true, false, false);
+                                if (Util.areMultiplePlayersSupported()) {
+                                    sendFolderUpdate(true, false, false);
+                                }
                             }
                         }
                     } else if (action.equals(Intent.ACTION_PACKAGE_ADDED)
@@ -1187,7 +1235,9 @@ public class MediaPlayerList {
                             int mediaId = getFreeMediaPlayerId();
                             mMediaPlayerIds.put(packageName, mediaId);
                             mMediaBrowserWrappers.put(mediaId, wrapper);
-                            sendFolderUpdate(true, false, false);
+                            if (Util.areMultiplePlayersSupported()) {
+                                sendFolderUpdate(true, false, false);
+                            }
                         }
                     }
                 }
@@ -1235,14 +1285,14 @@ public class MediaPlayerList {
 
     /** For testing purposes only, sets the {@link #mAudioPlaybackIsActive} flag. */
     @VisibleForTesting
-    void injectAudioPlaybacActive(boolean isActive) {
+    void injectAudioPlaybackActive(boolean isActive) {
         mAudioPlaybackIsActive = isActive;
         updateMediaForAudioPlayback();
     }
 
     /**
      * Saves the reference to {@link MediaPlayerSettingsEventListener} to be called when the active
-     * player changed, so that {@link #PlayerSettingsManager} always has the right player.
+     * player changed, so that {@link PlayerSettingsManager} always has the right player.
      */
     void setPlayerSettingsCallback(MediaPlayerSettingsEventListener listener) {
         mPlayerSettingsListener = listener;
@@ -1291,10 +1341,12 @@ public class MediaPlayerList {
     /**
      * Callback from {@link MediaPlayerWrapper}.
      *
-     * <p>{@link #mediaUpdatedCallback} listens for {@link #MediaData} changes on the active player.
+     * <p>{@link MediaPlayerWrapper.Callback#mediaUpdatedCallback} listens for {@link MediaData}
+     * changes on the active player.
      *
-     * <p>{@link #sessionUpdatedCallback} is called when the active session is destroyed so we need
-     * to remove the media player from the {@link #mMediaPlayerIds} and {@link mMediaPlayers} maps.
+     * <p>{@link MediaPlayerWrapper.Callback#sessionUpdatedCallback} is called when the active
+     * session is destroyed so we need to remove the media player from the {@link #mMediaPlayerIds}
+     * and {@link mMediaPlayers} maps.
      */
     private final MediaPlayerWrapper.Callback mMediaPlayerCallback =
             new MediaPlayerWrapper.Callback() {
@@ -1339,7 +1391,7 @@ public class MediaPlayerList {
      * MediaSession.FLAG_EXCLUSIVE_GLOBAL_PRIORITY}, the session change shall be ignored as this
      * flag is used only by Telecom to handle wired headsets key events.
      *
-     * <p>It can happen that {@code token} is null, in such case wecan still check if we have a
+     * <p>It can happen that {@code token} is null, in such case we can still check if we have a
      * {@link MediaController} corresponding to {@code packageName} and set it as active.
      */
     @VisibleForTesting

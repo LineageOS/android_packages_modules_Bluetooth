@@ -27,13 +27,17 @@ import java.util.Locale;
 import java.util.MissingResourceException;
 
 /** Helper class to parse the Broadcast Announcement BASE data */
-class BaseData {
+record BaseData(
+        BaseInformation levelOne,
+        List<BaseInformation> levelTwo,
+        List<BaseInformation> levelThree,
+        int numberOfBISIndices) {
     private static final String TAG = BassClientService.TAG + "." + BaseData.class.getSimpleName();
 
     private static final int METADATA_LEVEL1 = 1;
     private static final int METADATA_LEVEL2 = 2;
     private static final int METADATA_LEVEL3 = 3;
-    private static final int METADATA_PRESENTATIONDELAY_LENGTH = 3;
+    private static final int METADATA_PRESENTATION_DELAY_LENGTH = 3;
     private static final int METADATA_CODEC_LENGTH = 5;
     private static final int CODEC_CONFIGURATION_SAMPLE_RATE_TYPE = 0x01;
     private static final int CODEC_CONFIGURATION_FRAME_DURATION_TYPE = 0x02;
@@ -51,81 +55,62 @@ class BaseData {
     private static final int CODEC_AUDIO_FRAME_DURATION_7P5MS = 0x00;
     private static final int CODEC_AUDIO_FRAME_DURATION_10MS = 0x01;
 
-    private final BaseInformation mLevelOne;
-    private final List<BaseInformation> mLevelTwo;
-    private final List<BaseInformation> mLevelThree;
-
-    private int mNumBISIndices = 0;
-
-    public static class BaseInformation {
-        public byte[] presentationDelay = new byte[3];
-        public byte[] codecId = new byte[5];
-        public int codecConfigLength;
-        public byte[] codecConfigInfo;
-        public int metaDataLength;
-        public byte[] metaData;
-        public byte numSubGroups;
-        public byte index;
-        public int subGroupId;
-        public int level;
+    static class BaseInformation {
+        final byte[] mPresentationDelay = new byte[3];
+        final byte[] mCodecId = new byte[5];
+        int mCodecConfigLength;
+        byte[] mCodecConfigInfo;
+        int mMetaDataLength;
+        byte[] mMetaData;
+        byte mNumSubGroups;
+        byte mIndex;
+        int mSubGroupId;
+        int mLevel;
 
         BaseInformation() {
-            presentationDelay = new byte[3];
-            codecId = new byte[5];
-            codecConfigLength = 0;
-            codecConfigInfo = new byte[0];
-            metaDataLength = 0;
-            metaData = new byte[0];
-            numSubGroups = 0;
-            index = (byte) 0xFF;
-            level = 0;
+            mCodecConfigLength = 0;
+            mCodecConfigInfo = new byte[0];
+            mMetaDataLength = 0;
+            mMetaData = new byte[0];
+            mNumSubGroups = 0;
+            mIndex = (byte) 0xFF;
+            mLevel = 0;
             log("BaseInformation is Initialized");
         }
 
         void print() {
             log("**BEGIN: Base Information**");
-            log("**Level: " + level + "***");
-            if (level == 1) {
-                log("presentationDelay: " + Arrays.toString(presentationDelay));
+            log("**Level: " + mLevel + "***");
+            if (mLevel == 1) {
+                log("mPresentationDelay: " + Arrays.toString(mPresentationDelay));
             }
-            if (level == 2) {
-                log("codecId: " + Arrays.toString(codecId));
+            if (mLevel == 2) {
+                log("mCodecId: " + Arrays.toString(mCodecId));
             }
-            if (level == 2 || level == 3) {
-                log("codecConfigLength: " + codecConfigLength);
-                log("subGroupId: " + subGroupId);
+            if (mLevel == 2 || mLevel == 3) {
+                log("mCodecConfigLength: " + mCodecConfigLength);
+                log("mSubGroupId: " + mSubGroupId);
             }
-            if (codecConfigLength != 0) {
-                log("codecConfigInfo: " + Arrays.toString(codecConfigInfo));
+            if (mCodecConfigLength != 0) {
+                log("mCodecConfigInfo: " + Arrays.toString(mCodecConfigInfo));
             }
-            if (level == 2) {
-                log("metaDataLength: " + metaDataLength);
-                if (metaDataLength != 0) {
-                    log("metaData: " + Arrays.toString(metaData));
+            if (mLevel == 2) {
+                log("mMetaDataLength: " + mMetaDataLength);
+                if (mMetaDataLength != 0) {
+                    log("metaData: " + Arrays.toString(mMetaData));
                 }
-                if (level == 1 || level == 2) {
-                    log("numSubGroups: " + numSubGroups);
+                if (mLevel == 1 || mLevel == 2) {
+                    log("mNumSubGroups: " + mNumSubGroups);
                 }
             }
             log("**END: Base Information****");
         }
     }
 
-    BaseData(
-            BaseInformation levelOne,
-            List<BaseInformation> levelTwo,
-            List<BaseInformation> levelThree,
-            int numOfBISIndices) {
-        mLevelOne = levelOne;
-        mLevelTwo = levelTwo;
-        mLevelThree = levelThree;
-        mNumBISIndices = numOfBISIndices;
-    }
-
     static BaseData parseBaseData(byte[] serviceData) {
         if (serviceData == null) {
             Log.e(TAG, "Invalid service data for BaseData construction");
-            throw new IllegalArgumentException("Basedata: serviceData is null");
+            throw new IllegalArgumentException("BaseData: serviceData is null");
         }
         BaseInformation levelOne = new BaseInformation();
         List<BaseInformation> levelTwo = new ArrayList<>();
@@ -134,14 +119,14 @@ class BaseData {
         log("BASE input" + Arrays.toString(serviceData));
 
         // Parse Level 1 base
-        levelOne.level = METADATA_LEVEL1;
+        levelOne.mLevel = METADATA_LEVEL1;
         int offset = 0;
-        System.arraycopy(serviceData, offset, levelOne.presentationDelay, 0, 3);
-        offset += METADATA_PRESENTATIONDELAY_LENGTH;
-        levelOne.numSubGroups = serviceData[offset++];
+        System.arraycopy(serviceData, offset, levelOne.mPresentationDelay, 0, 3);
+        offset += METADATA_PRESENTATION_DELAY_LENGTH;
+        levelOne.mNumSubGroups = serviceData[offset++];
         levelOne.print();
-        log("levelOne subgroups" + levelOne.numSubGroups);
-        for (int i = 0; i < (int) levelOne.numSubGroups; i++) {
+        log("levelOne subgroups" + levelOne.mNumSubGroups);
+        for (int i = 0; i < (int) levelOne.mNumSubGroups; i++) {
             if (offset >= serviceData.length) {
                 Log.e(TAG, "Error: parsing Level 2");
                 return null;
@@ -153,11 +138,11 @@ class BaseData {
                 return null;
             }
             BaseInformation node2 = pair1.first;
-            numOfBISIndices += node2.numSubGroups;
+            numOfBISIndices += node2.mNumSubGroups;
             levelTwo.add(node2);
             node2.print();
             offset = pair1.second;
-            for (int k = 0; k < node2.numSubGroups; k++) {
+            for (int k = 0; k < node2.mNumSubGroups; k++) {
                 if (offset >= serviceData.length) {
                     Log.e(TAG, "Error: parsing Level 3");
                     return null;
@@ -174,7 +159,7 @@ class BaseData {
                 offset = pair2.second;
             }
         }
-        consolidateBaseofLevelTwo(levelTwo, levelThree);
+        consolidateBaseOfLevelTwo(levelTwo, levelThree);
         return new BaseData(levelOne, levelTwo, levelThree, numOfBISIndices);
     }
 
@@ -182,19 +167,19 @@ class BaseData {
             byte[] serviceData, int groupIndex, int offset) {
         log("Parsing Level 2");
         BaseInformation node = new BaseInformation();
-        node.level = METADATA_LEVEL2;
-        node.subGroupId = groupIndex;
+        node.mLevel = METADATA_LEVEL2;
+        node.mSubGroupId = groupIndex;
         int bufferLengthLeft = (serviceData.length - offset);
 
-        // Min. length expected is: codecID (5) + numBis (1) + codecSpecCfgLen (1) + metadataLen (1)
+        // Min. length expected is: mCodecID(5) + numBis(1) + codecSpecCfgLen(1) + metadataLen(1)
         final int minNodeBufferLen = METADATA_CODEC_LENGTH + 3;
         if (bufferLengthLeft < minNodeBufferLen) {
             Log.e(TAG, "Error: Invalid Lvl2 buffer length.");
             return null;
         }
 
-        node.numSubGroups = serviceData[offset++]; // NumBis
-        System.arraycopy(serviceData, offset, node.codecId, 0, METADATA_CODEC_LENGTH);
+        node.mNumSubGroups = serviceData[offset++]; // NumBis
+        System.arraycopy(serviceData, offset, node.mCodecId, 0, METADATA_CODEC_LENGTH);
         offset += METADATA_CODEC_LENGTH;
 
         // Declared codec specific data length
@@ -207,10 +192,11 @@ class BaseData {
         }
 
         if (declaredLength != 0) {
-            node.codecConfigLength = declaredLength;
-            node.codecConfigInfo = new byte[node.codecConfigLength];
-            System.arraycopy(serviceData, offset, node.codecConfigInfo, 0, node.codecConfigLength);
-            offset += node.codecConfigLength;
+            node.mCodecConfigLength = declaredLength;
+            node.mCodecConfigInfo = new byte[node.mCodecConfigLength];
+            System.arraycopy(
+                    serviceData, offset, node.mCodecConfigInfo, 0, node.mCodecConfigLength);
+            offset += node.mCodecConfigLength;
         }
 
         // Verify the buffer size left
@@ -229,10 +215,10 @@ class BaseData {
         }
 
         if (declaredLength != 0) {
-            node.metaDataLength = declaredLength;
-            node.metaData = new byte[node.metaDataLength];
-            System.arraycopy(serviceData, offset, node.metaData, 0, node.metaDataLength);
-            offset += node.metaDataLength;
+            node.mMetaDataLength = declaredLength;
+            node.mMetaData = new byte[node.mMetaDataLength];
+            System.arraycopy(serviceData, offset, node.mMetaData, 0, node.mMetaDataLength);
+            offset += node.mMetaDataLength;
         }
         return new Pair<BaseInformation, Integer>(node, offset);
     }
@@ -240,7 +226,7 @@ class BaseData {
     private static Pair<BaseInformation, Integer> parseLevelThree(byte[] serviceData, int offset) {
         log("Parsing Level 3");
         BaseInformation node = new BaseInformation();
-        node.level = METADATA_LEVEL3;
+        node.mLevel = METADATA_LEVEL3;
         int bufferLengthLeft = (serviceData.length - offset);
 
         // Min. length expected is: bisIdx (1) + codecSpecCfgLen (1)
@@ -249,7 +235,7 @@ class BaseData {
             Log.e(TAG, "Error: Invalid Lvl2 buffer length.");
             return null;
         }
-        node.index = serviceData[offset++];
+        node.mIndex = serviceData[offset++];
 
         // Verify the buffer size left
         int declaredLength = serviceData[offset++] & 0xff;
@@ -261,68 +247,53 @@ class BaseData {
         }
 
         if (declaredLength != 0) {
-            node.codecConfigLength = declaredLength;
-            node.codecConfigInfo = new byte[node.codecConfigLength];
-            System.arraycopy(serviceData, offset, node.codecConfigInfo, 0, node.codecConfigLength);
-            offset += node.codecConfigLength;
+            node.mCodecConfigLength = declaredLength;
+            node.mCodecConfigInfo = new byte[node.mCodecConfigLength];
+            System.arraycopy(
+                    serviceData, offset, node.mCodecConfigInfo, 0, node.mCodecConfigLength);
+            offset += node.mCodecConfigLength;
         }
         return new Pair<BaseInformation, Integer>(node, offset);
     }
 
-    static void consolidateBaseofLevelTwo(
+    static void consolidateBaseOfLevelTwo(
             List<BaseInformation> levelTwo, List<BaseInformation> levelThree) {
         int startIdx = 0;
         int children = 0;
         for (int i = 0; i < levelTwo.size(); i++) {
             startIdx = startIdx + children;
-            children = children + levelTwo.get(i).numSubGroups;
-            consolidateBaseofLevelThree(
-                    levelTwo, levelThree, i, startIdx, levelTwo.get(i).numSubGroups);
+            children = children + levelTwo.get(i).mNumSubGroups;
+            consolidateBaseOfLevelThree(
+                    levelTwo, levelThree, i, startIdx, levelTwo.get(i).mNumSubGroups);
         }
     }
 
-    static void consolidateBaseofLevelThree(
+    static void consolidateBaseOfLevelThree(
             List<BaseInformation> levelTwo,
             List<BaseInformation> levelThree,
             int parentSubgroup,
             int startIdx,
             int numNodes) {
         for (int i = startIdx; i < startIdx + numNodes || i < levelThree.size(); i++) {
-            levelThree.get(i).subGroupId = levelTwo.get(parentSubgroup).subGroupId;
+            levelThree.get(i).mSubGroupId = levelTwo.get(parentSubgroup).mSubGroupId;
         }
     }
 
-    public int getNumberOfIndices() {
-        return mNumBISIndices;
-    }
-
-    public BaseInformation getLevelOne() {
-        return mLevelOne;
-    }
-
-    public List<BaseInformation> getLevelTwo() {
-        return mLevelTwo;
-    }
-
-    public List<BaseInformation> getLevelThree() {
-        return mLevelThree;
-    }
-
-    public byte getNumberOfSubgroupsofBIG() {
+    public byte getNumberOfSubGroupsOfBIG() {
         byte ret = 0;
-        if (mLevelOne != null) {
-            ret = mLevelOne.numSubGroups;
+        if (levelOne != null) {
+            ret = levelOne.mNumSubGroups;
         }
         return ret;
     }
 
     public List<BaseInformation> getBISIndexInfos() {
-        return mLevelThree;
+        return levelThree;
     }
 
     byte[] getMetadata(int subGroup) {
-        if (mLevelTwo != null) {
-            return mLevelTwo.get(subGroup).metaData;
+        if (levelTwo != null) {
+            return levelTwo.get(subGroup).mMetaData;
         }
         return null;
     }
@@ -411,15 +382,11 @@ class BaseData {
     }
 
     void print() {
-        mLevelOne.print();
+        levelOne.print();
         log("----- Level TWO BASE ----");
-        for (int i = 0; i < mLevelTwo.size(); i++) {
-            mLevelTwo.get(i).print();
-        }
+        levelTwo.stream().forEach(BaseInformation::print);
         log("----- Level THREE BASE ----");
-        for (int i = 0; i < mLevelThree.size(); i++) {
-            mLevelThree.get(i).print();
-        }
+        levelThree.stream().forEach(BaseInformation::print);
     }
 
     static void log(String msg) {

@@ -18,7 +18,7 @@ package com.android.bluetooth.sap;
 
 import static com.android.bluetooth.TestUtils.MockitoRule;
 import static com.android.bluetooth.sap.SapMessage.CON_STATUS_OK;
-import static com.android.bluetooth.sap.SapMessage.DISC_GRACEFULL;
+import static com.android.bluetooth.sap.SapMessage.DISC_GRACEFUL;
 import static com.android.bluetooth.sap.SapMessage.ID_CONNECT_RESP;
 import static com.android.bluetooth.sap.SapMessage.ID_DISCONNECT_RESP;
 import static com.android.bluetooth.sap.SapMessage.ID_POWER_SIM_OFF_REQ;
@@ -198,7 +198,7 @@ public class SapRilReceiverTest {
     @Test
     public void callback_disconnectIndication() throws Exception {
         int token = 1;
-        int disconnectType = DISC_GRACEFULL;
+        int disconnectType = DISC_GRACEFUL;
         mReceiver.mSapCallback.disconnectIndication(token, disconnectType);
 
         verify(mCallback, timeout(TIMEOUT_MS))

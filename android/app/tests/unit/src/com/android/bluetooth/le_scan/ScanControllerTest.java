@@ -89,7 +89,6 @@ public class ScanControllerTest {
 
     @Mock private ScannerMap mScannerMap;
     @Mock private ScannerMap.ScannerApp mApp;
-    @Mock private ScanController.PendingIntentInfo mPiInfo;
     @Mock private PeriodicScanManager mPeriodicScanManager;
     @Mock private ScanManager mScanManager;
     @Mock private Resources mResources;
@@ -161,8 +160,10 @@ public class ScanControllerTest {
     public void continuePiStartScan() {
         int scannerId = 1;
 
-        mPiInfo.settings = new ScanSettings.Builder().build();
-        mApp.mInfo = mPiInfo;
+        ScanController.PendingIntentInfo pii =
+                new ScanController.PendingIntentInfo(
+                        null, new ScanSettings.Builder().build(), null, null, 0);
+        mApp.mInfo = pii;
 
         AppScanStats appScanStats = mock(AppScanStats.class);
         doReturn(appScanStats).when(mScannerMap).getAppScanStatsById(scannerId);
@@ -170,7 +171,7 @@ public class ScanControllerTest {
         mScanController.continuePiStartScan(scannerId, mApp);
 
         verify(appScanStats)
-                .recordScanStart(mPiInfo.settings, mPiInfo.filters, false, false, scannerId, null);
+                .recordScanStart(pii.settings(), pii.filters(), false, false, scannerId, null);
         verify(mScanManager).startScan(any());
     }
 
@@ -178,9 +179,10 @@ public class ScanControllerTest {
     public void continuePiStartScanCheckUid() {
         int scannerId = 1;
 
-        mPiInfo.settings = new ScanSettings.Builder().build();
-        mPiInfo.callingUid = 123;
-        mApp.mInfo = mPiInfo;
+        ScanController.PendingIntentInfo pii =
+                new ScanController.PendingIntentInfo(
+                        null, new ScanSettings.Builder().build(), null, null, 123);
+        mApp.mInfo = pii;
 
         AppScanStats appScanStats = mock(AppScanStats.class);
         doReturn(appScanStats).when(mScannerMap).getAppScanStatsById(scannerId);
@@ -188,14 +190,14 @@ public class ScanControllerTest {
         mScanController.continuePiStartScan(scannerId, mApp);
 
         verify(appScanStats)
-                .recordScanStart(mPiInfo.settings, mPiInfo.filters, false, false, scannerId, null);
+                .recordScanStart(pii.settings(), pii.filters(), false, false, scannerId, null);
         verify(mScanManager)
                 .startScan(
                         argThat(
                                 new ArgumentMatcher<ScanClient>() {
                                     @Override
                                     public boolean matches(ScanClient client) {
-                                        return mPiInfo.callingUid == client.mAppUid;
+                                        return pii.callingUid() == client.mAppUid;
                                     }
                                 }));
     }
@@ -450,7 +452,6 @@ public class ScanControllerTest {
         IScannerCallback callback = mock(IScannerCallback.class);
 
         app.mCallback = callback;
-        app.mInfo = mock(ScanController.PendingIntentInfo.class);
 
         doReturn(app).when(mScannerMap).getById(scannerId);
         doReturn(scanClientSet).when(mScanManager).getRegularScanQueue();

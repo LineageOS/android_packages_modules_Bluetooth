@@ -12,26 +12,6 @@ flag {
 }
 
 flag {
-    name: "cancel_pairing_only_on_disconnected_transport"
-    namespace: "bluetooth"
-    description: "Cancel pairing due to unexpected disconnection only if the transport matches"
-    bug: "338152239"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "pairing_name_discovery_addresss_mismatch"
-    namespace: "bluetooth"
-    description: "Do not abort pairing if name discovery for a another device fails"
-    bug: "349144497"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "guest_mode_bond"
     namespace: "bluetooth"
     description: "Do not remove guest mode bonded devices on BT restart in guest mode"
@@ -46,36 +26,6 @@ flag {
     namespace: "bluetooth"
     description: "Avoid sending duplicate pairing response when device is in peripheral role & OOB pairing mode chosen"
     bug: "351948689"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "wait_for_disconnect_before_unbond"
-    namespace: "bluetooth"
-    description: "Disconnect all links before removing the bond"
-    bug: "345299969"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "name_discovery_for_le_pairing"
-    namespace: "bluetooth"
-    description: "Perform LE name discovery for pairing if device name is not known"
-    bug: "355095011"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "transmit_smp_packets_before_release"
-    namespace: "bluetooth"
-    description: "Ensure that SMP packets are transmitted before SMP channel is released"
-    bug: "357106628"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -276,6 +226,36 @@ flag {
     namespace: "bluetooth"
     description: "Fix transport selection for auto transport pairing"
     bug: "398329326"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "reset_security_flags_on_pairing_failure"
+    namespace: "bluetooth"
+    description: "Reset security flags on pairing failure"
+    bug: "400586238"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "smp_connection_status_handling_when_no_acl"
+    namespace: "bluetooth"
+    description: "Fix SMP connection status sent from L2CAP when LE ACL is not connected"
+    bug: "401073843"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "non_zero_local_irk"
+    namespace: "bluetooth"
+    description: "Ensure that the local IRK is not zero before sending it to the controller"
+    bug: "401126556"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

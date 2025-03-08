@@ -32,54 +32,42 @@ import org.junit.runner.RunWith;
 public class BluetoothOppShareInfoTest {
     private BluetoothOppShareInfo mBluetoothOppShareInfo;
 
-    private Uri uri = Uri.parse("file://Idontknow//Justmadeitup");
-    private String hintString = "this is a object that take 4 bytes";
-    private String filename = "random.jpg";
-    private String mimetype = "image/jpeg";
-    private int direction = BluetoothShare.DIRECTION_INBOUND;
-    private String destination = "01:23:45:67:89:AB";
-    private int visibility = BluetoothShare.VISIBILITY_VISIBLE;
-    private int confirm = BluetoothShare.USER_CONFIRMATION_CONFIRMED;
-    private int status = BluetoothShare.STATUS_PENDING;
-    private int totalBytes = 1023;
-    private int currentBytes = 42;
-    private int timestamp = 123456789;
-    private boolean mediaScanned = false;
-
     @Before
     public void setUp() throws Exception {
         mBluetoothOppShareInfo =
                 new BluetoothOppShareInfo(
                         0,
-                        uri,
-                        hintString,
-                        filename,
-                        mimetype,
-                        direction,
-                        destination,
-                        visibility,
-                        confirm,
-                        status,
-                        totalBytes,
-                        currentBytes,
-                        timestamp,
-                        mediaScanned);
+                        Uri.parse("file://Idontknow//Justmadeitup"),
+                        "this is a object that take 4 bytes",
+                        "random.jpg",
+                        "image/jpeg",
+                        BluetoothShare.DIRECTION_INBOUND,
+                        "01:23:45:67:89:AB",
+                        BluetoothShare.VISIBILITY_VISIBLE,
+                        BluetoothShare.USER_CONFIRMATION_CONFIRMED,
+                        BluetoothShare.STATUS_PENDING,
+                        1023,
+                        42,
+                        123456789,
+                        false);
     }
 
     @Test
     public void testConstructor() {
-        assertThat(mBluetoothOppShareInfo.mUri).isEqualTo(uri);
-        assertThat(mBluetoothOppShareInfo.mFilename).isEqualTo(filename);
-        assertThat(mBluetoothOppShareInfo.mMimetype).isEqualTo(mimetype);
-        assertThat(mBluetoothOppShareInfo.mDirection).isEqualTo(direction);
-        assertThat(mBluetoothOppShareInfo.mDestination).isEqualTo(destination);
-        assertThat(mBluetoothOppShareInfo.mVisibility).isEqualTo(visibility);
-        assertThat(mBluetoothOppShareInfo.mConfirm).isEqualTo(confirm);
-        assertThat(mBluetoothOppShareInfo.mStatus).isEqualTo(status);
-        assertThat(mBluetoothOppShareInfo.mTotalBytes).isEqualTo(totalBytes);
-        assertThat(mBluetoothOppShareInfo.mCurrentBytes).isEqualTo(currentBytes);
-        assertThat(mBluetoothOppShareInfo.mTimestamp).isEqualTo(timestamp);
-        assertThat(mBluetoothOppShareInfo.mMediaScanned).isEqualTo(mediaScanned);
+        assertThat(mBluetoothOppShareInfo.mUri)
+                .isEqualTo(Uri.parse("file://Idontknow//Justmadeitup"));
+        assertThat(mBluetoothOppShareInfo.mFilename).isEqualTo("random.jpg");
+        assertThat(mBluetoothOppShareInfo.mMimetype).isEqualTo("image/jpeg");
+        assertThat(mBluetoothOppShareInfo.mDirection).isEqualTo(BluetoothShare.DIRECTION_INBOUND);
+        assertThat(mBluetoothOppShareInfo.mDestination).isEqualTo("01:23:45:67:89:AB");
+        assertThat(mBluetoothOppShareInfo.mVisibility).isEqualTo(BluetoothShare.VISIBILITY_VISIBLE);
+        assertThat(mBluetoothOppShareInfo.mConfirm)
+                .isEqualTo(BluetoothShare.USER_CONFIRMATION_CONFIRMED);
+        assertThat(mBluetoothOppShareInfo.mStatus).isEqualTo(BluetoothShare.STATUS_PENDING);
+        assertThat(mBluetoothOppShareInfo.mTotalBytes).isEqualTo(1023);
+        assertThat(mBluetoothOppShareInfo.mCurrentBytes).isEqualTo(42);
+        assertThat(mBluetoothOppShareInfo.mTimestamp).isEqualTo(123456789);
+        assertThat(mBluetoothOppShareInfo.mMediaScanned).isEqualTo(false);
     }
 
     @Test

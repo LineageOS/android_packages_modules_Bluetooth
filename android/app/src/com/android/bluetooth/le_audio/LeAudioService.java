@@ -303,7 +303,7 @@ public class LeAudioService extends ProfileService {
     }
 
     private class LeAudioGroupDescriptor {
-        LeAudioGroupDescriptor(int groupId, boolean isInbandRingtonEnabled) {
+        LeAudioGroupDescriptor(int groupId, boolean isInbandRingtoneEnabled) {
             mGroupId = groupId;
             mIsConnected = false;
             mActiveState = ACTIVE_STATE_INACTIVE;
@@ -314,7 +314,7 @@ public class LeAudioService extends ProfileService {
             mCodecStatus = null;
             mLostLeadDeviceWhileStreaming = null;
             mCurrentLeadDevice = null;
-            mInbandRingtoneEnabled = isInbandRingtonEnabled;
+            mInbandRingtoneEnabled = isInbandRingtoneEnabled;
             mAvailableContexts = Flags.leaudioUnicastNoAvailableContexts() ? null : 0;
             mInputSelectableConfig = new ArrayList<>();
             mOutputSelectableConfig = new ArrayList<>();
@@ -322,7 +322,7 @@ public class LeAudioService extends ProfileService {
             mAutoActiveModeEnabled = true;
         }
 
-        Integer mGroupId;
+        final Integer mGroupId;
         Boolean mIsConnected;
         Boolean mHasFallbackDeviceWhenGettingInactive;
         Integer mDirection;
@@ -426,13 +426,13 @@ public class LeAudioService extends ProfileService {
     }
 
     private static class LeAudioDeviceDescriptor {
-        LeAudioDeviceDescriptor(boolean isInbandRingtonEnabled) {
+        LeAudioDeviceDescriptor(boolean isInbandRingtoneEnabled) {
             mAclConnected = false;
             mStateMachine = null;
             mGroupId = LE_AUDIO_GROUP_ID_INVALID;
             mSinkAudioLocation = BluetoothLeAudio.AUDIO_LOCATION_INVALID;
             mDirection = AUDIO_DIRECTION_NONE;
-            mDevInbandRingtoneEnabled = isInbandRingtonEnabled;
+            mDevInbandRingtoneEnabled = isInbandRingtoneEnabled;
         }
 
         public boolean mAclConnected;
@@ -456,8 +456,8 @@ public class LeAudioService extends ProfileService {
     }
 
     private static class LeAudioBroadcastSessionStats {
-        private int[] mAudioQuality;
-        private long mSessionRequestTime;
+        private final int[] mAudioQuality;
+        private final long mSessionRequestTime;
         private long mSessionCreatedTime;
         private long mSessionStreamingTime;
         private int mSessionGroupSize;
@@ -579,7 +579,7 @@ public class LeAudioService extends ProfileService {
     private final Map<Integer, LeAudioBroadcastSessionStats> mBroadcastSessionStats =
             new LinkedHashMap<>();
 
-    private Handler mHandler = new Handler(Looper.getMainLooper());
+    private final Handler mHandler = new Handler(Looper.getMainLooper());
     private final AudioManagerAudioDeviceCallback mAudioManagerAudioDeviceCallback =
             new AudioManagerAudioDeviceCallback();
     private final AudioModeChangeListener mAudioModeChangeListener = new AudioModeChangeListener();
@@ -647,7 +647,7 @@ public class LeAudioService extends ProfileService {
         }
     }
 
-    private AudioManager.AudioRecordingCallback mAudioRecordingCallback =
+    private final AudioManager.AudioRecordingCallback mAudioRecordingCallback =
             new AudioManager.AudioRecordingCallback() {
                 /* Audio Framework uses this callback to notify listeners of recording configuration
                  * changes. When a recording scenario starts or its configuration changes, this
@@ -1276,7 +1276,7 @@ public class LeAudioService extends ProfileService {
         }
 
         if (leaudioBigDependsOnAudioState()) {
-            /* Start timeout to recover from stucked/error create Broadcast operation */
+            /* Start timeout to recover from stuck/error create Broadcast operation */
             if (mCreateBroadcastTimeoutEvent != null) {
                 Log.w(TAG, "CreateBroadcastTimeoutEvent already scheduled");
             } else {
@@ -1351,7 +1351,7 @@ public class LeAudioService extends ProfileService {
          * LeAudioService#createBroadcast
          */
         if (!leaudioBigDependsOnAudioState()) {
-            /* Start timeout to recover from stucked/error start Broadcast operation */
+            /* Start timeout to recover from stuck/error start Broadcast operation */
             mCreateBroadcastTimeoutEvent = new CreateBroadcastTimeoutEvent(broadcastId);
             mHandler.postDelayed(mCreateBroadcastTimeoutEvent, CREATE_BROADCAST_TIMEOUT_MS);
         }
@@ -2225,7 +2225,7 @@ public class LeAudioService extends ProfileService {
         if (device.equals(mActiveAudioInDevice) || device.equals(mActiveAudioOutDevice)) {
             mEventLogger.loge(
                     TAG,
-                    "[From AudioManager]: Audio manager autonomusly disactivated LeAudio device."
+                    "[From AudioManager]: Audio manager autonomously deactivated LeAudio device."
                             + " Probably restarting and device shall be re-added "
                             + mExposedActiveDevice);
 
@@ -2242,7 +2242,7 @@ public class LeAudioService extends ProfileService {
                                 : mActiveAudioOutDevice)));
     }
 
-    /* Notifications of audio device connection/disconn events. */
+    /* Notifications of audio device connection/disconnection events. */
     private class AudioManagerAudioDeviceCallback extends AudioDeviceCallback {
         @Override
         public void onAudioDevicesAdded(AudioDeviceInfo[] addedDevices) {
@@ -3024,7 +3024,7 @@ public class LeAudioService extends ProfileService {
          * activating Unicast group.
          *
          * When stream is suspended there should be a reverse handover. Active Unicast group should
-         * become inactive and broadcast should be resumed grom paused state.
+         * become inactive and broadcast should be resumed from paused state.
          */
         if (status == LeAudioStackEvent.STATUS_LOCAL_STREAM_REQUESTED) {
             Optional<Integer> broadcastId = getFirstNotStoppedBroadcastId();
@@ -3397,7 +3397,7 @@ public class LeAudioService extends ProfileService {
                 != next.getOutputCodecConfig().getSampleRate()) {
             Log.d(
                     TAG,
-                    "Different output samplerate: "
+                    "Different output sampleRate: "
                             + (previous.getOutputCodecConfig().getSampleRate()
                                     + " != "
                                     + next.getOutputCodecConfig().getSampleRate()));
@@ -3448,7 +3448,7 @@ public class LeAudioService extends ProfileService {
                 != next.getInputCodecConfig().getSampleRate()) {
             Log.d(
                     TAG,
-                    "Different input samplerate: "
+                    "Different input sampleRate: "
                             + (previous.getInputCodecConfig().getSampleRate()
                                     + " != "
                                     + next.getInputCodecConfig().getSampleRate()));
@@ -3481,7 +3481,7 @@ public class LeAudioService extends ProfileService {
                      * streaming group, while there are still other devices streaming,
                      * LeAudioService will not notify audio framework or other users about
                      * Le Audio lead device disconnection. Instead we try to reconnect under
-                     * the hood and keep using lead device as a audio device indetifier in
+                     * the hood and keep using lead device as a audio device identifier in
                      * the audio framework in order to not stop the stream.
                      */
                     int groupId = deviceDescriptor.mGroupId;
@@ -3968,7 +3968,7 @@ public class LeAudioService extends ProfileService {
 
                     /* Stop here if Broadcast was not in Streaming state before */
                     if (previousState != LeAudioStackEvent.BROADCAST_STATE_STREAMING) {
-                        // Stop Big Monitoring in case that was some actions on extarnal broadcast
+                        // Stop Big Monitoring in case that was some actions on external broadcast
                         if (bassClientService != null) {
                             bassClientService.stopBigMonitoring();
                         }
@@ -4395,7 +4395,7 @@ public class LeAudioService extends ProfileService {
      * Get device audio location.
      *
      * @param device LE Audio capable device
-     * @return the sink audioi location that this device currently exposed
+     * @return the sink audio location that this device currently exposed
      */
     public int getAudioLocation(BluetoothDevice device) {
         if (device == null) {
@@ -4725,7 +4725,7 @@ public class LeAudioService extends ProfileService {
      * Check if group is available for streaming. If there is no available context types then group
      * is not available for streaming.
      *
-     * @param groupId groupid
+     * @param groupId groupId
      * @return true if available, false otherwise
      */
     public boolean isGroupAvailableForStream(int groupId) {
@@ -5058,7 +5058,7 @@ public class LeAudioService extends ProfileService {
     }
 
     private void handleGroupNodeRemoved(BluetoothDevice device, int groupId) {
-        Log.d(TAG, "Removing device " + device + " grom group " + groupId);
+        Log.d(TAG, "Removing device " + device + " from group " + groupId);
 
         boolean isGroupEmpty = true;
         mGroupReadLock.lock();

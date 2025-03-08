@@ -88,7 +88,9 @@ class ScanClient {
         sb.append(" scanModeApp ")
                 .append(mScanModeApp)
                 .append(" scanModeUsed ")
-                .append(mSettings.getScanMode());
+                .append(mSettings.getScanMode())
+                .append(" scannerId ")
+                .append(mScannerId);
 
         if (mStats != null && mStats.mAppName != null) {
             sb.append(" [appScanStats ").append(mStats.mAppName).append("]");

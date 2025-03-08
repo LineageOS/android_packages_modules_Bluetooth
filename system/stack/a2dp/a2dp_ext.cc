@@ -86,11 +86,13 @@ tA2DP_STATUS A2dpCodecConfigExt::setCodecConfig(const uint8_t* p_peer_codec_info
   return A2DP_SUCCESS;
 }
 
-bool A2dpCodecConfigExt::setPeerCodecCapabilities(const uint8_t* /* p_peer_codec_capabilities */) {
-  // setPeerCodecCapabilities updates the selectable
-  // capabilities in the codec config. It can be safely
-  // ignored as providing a superset of the selectable
-  // capabilities is safe.
+bool A2dpCodecConfigExt::setPeerCodecCapabilities(const uint8_t* p_peer_codec_capabilities) {
+  // Use the local capabilities for the selectable capabilities:
+  // the provider AIDL HAL does not provide an interface to parse the
+  // peer capabilities and the selectable capabilities cannot be
+  // computed.
+  codec_selectable_capability_ = codec_local_capability_;
+  memcpy(ota_codec_peer_capability_, p_peer_codec_capabilities, sizeof(ota_codec_peer_capability_));
   return true;
 }
 

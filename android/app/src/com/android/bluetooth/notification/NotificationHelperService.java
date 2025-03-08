@@ -173,7 +173,7 @@ public class NotificationHelperService extends Service {
             //  * … 1 week since the first display (aka recurring only once)
             //  * … 6 months since the last display (aka recurring forever)
             //
-            // Comparison is +/- 1 hour, allowing for both battery optimisation and consistency
+            // Comparison is +/- 1 hour, allowing for both battery optimization and consistency
 
             if (date != null) {
                 savedDate = LocalDateTime.parse(date);

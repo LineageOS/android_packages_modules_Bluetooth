@@ -87,7 +87,6 @@ public final class BluetoothLeScanner {
 
     private final BluetoothAdapter mBluetoothAdapter;
     private final AttributionSource mAttributionSource;
-
     private final Handler mHandler;
     private final Map<ScanCallback, BleScanCallbackWrapper> mLeScanClients;
 
@@ -380,14 +379,14 @@ public final class BluetoothLeScanner {
 
     /** Bluetooth GATT interface callbacks */
     @SuppressLint("AndroidFrameworkRequiresPermission")
-    private class BleScanCallbackWrapper extends IScannerCallback.Stub {
+    private final class BleScanCallbackWrapper extends IScannerCallback.Stub {
         private static final int REGISTRATION_CALLBACK_TIMEOUT_MILLIS = 2000;
 
         private final ScanCallback mScanCallback;
         private final List<ScanFilter> mFilters;
         private final WorkSource mWorkSource;
-        private ScanSettings mSettings;
-        private IBluetoothScan mBluetoothScan;
+        private final ScanSettings mSettings;
+        private final IBluetoothScan mBluetoothScan;
 
         // mLeHandle 0: not registered
         // -2: registration failed because app is scanning to frequently
@@ -395,7 +394,7 @@ public final class BluetoothLeScanner {
         // > 0: registered and scan started
         private int mScannerId;
 
-        public BleScanCallbackWrapper(
+        BleScanCallbackWrapper(
                 IBluetoothScan bluetoothScan,
                 List<ScanFilter> filters,
                 ScanSettings settings,
@@ -410,7 +409,7 @@ public final class BluetoothLeScanner {
         }
 
         @SuppressWarnings("WaitNotInLoop") // TODO(b/314811467)
-        public void startRegistration() {
+        void startRegistration() {
             synchronized (this) {
                 // Scan stopped.
                 if (mScannerId == -1 || mScannerId == -2) return;
@@ -442,7 +441,7 @@ public final class BluetoothLeScanner {
         }
 
         @RequiresPermission(BLUETOOTH_SCAN)
-        public void stopLeScan() {
+        void stopLeScan() {
             synchronized (this) {
                 if (mScannerId <= 0) {
                     Log.e(TAG, "Error state, mLeHandle: " + mScannerId);
@@ -533,31 +532,20 @@ public final class BluetoothLeScanner {
                 }
                 ;
             }
-            Handler handler = new Handler(Looper.getMainLooper());
-            handler.post(
-                    new Runnable() {
-                        @Override
-                        public void run() {
-                            if (Log.isLoggable(TAG, Log.DEBUG)) {
-                                Log.d(TAG, "onScanResult() - handler run");
-                            }
-                            mScanCallback.onScanResult(
-                                    ScanSettings.CALLBACK_TYPE_ALL_MATCHES, scanResult);
+            mHandler.post(
+                    () -> {
+                        if (Log.isLoggable(TAG, Log.DEBUG)) {
+                            Log.d(TAG, "onScanResult() - handler run");
                         }
+                        mScanCallback.onScanResult(
+                                ScanSettings.CALLBACK_TYPE_ALL_MATCHES, scanResult);
                     });
         }
 
         @Override
         public void onBatchScanResults(final List<ScanResult> results) {
             Attributable.setAttributionSource(results, mAttributionSource);
-            Handler handler = new Handler(Looper.getMainLooper());
-            handler.post(
-                    new Runnable() {
-                        @Override
-                        public void run() {
-                            mScanCallback.onBatchScanResults(results);
-                        }
-                    });
+            mHandler.post(() -> mScanCallback.onBatchScanResults(results));
         }
 
         @Override
@@ -573,20 +561,11 @@ public final class BluetoothLeScanner {
                     return;
                 }
             }
-            Handler handler = new Handler(Looper.getMainLooper());
-            handler.post(
-                    new Runnable() {
-                        @Override
-                        public void run() {
-                            if (onFound) {
-                                mScanCallback.onScanResult(
-                                        ScanSettings.CALLBACK_TYPE_FIRST_MATCH, scanResult);
-                            } else {
-                                mScanCallback.onScanResult(
-                                        ScanSettings.CALLBACK_TYPE_MATCH_LOST, scanResult);
-                            }
-                        }
-                    });
+            int callbackType =
+                    onFound
+                            ? ScanSettings.CALLBACK_TYPE_FIRST_MATCH
+                            : ScanSettings.CALLBACK_TYPE_MATCH_LOST;
+            mHandler.post(() -> mScanCallback.onScanResult(callbackType, scanResult));
         }
 
         @Override
@@ -614,13 +593,7 @@ public final class BluetoothLeScanner {
 
     @SuppressLint("AndroidFrameworkBluetoothPermission")
     private void postCallbackError(final ScanCallback callback, final int errorCode) {
-        mHandler.post(
-                new Runnable() {
-                    @Override
-                    public void run() {
-                        callback.onScanFailed(errorCode);
-                    }
-                });
+        mHandler.post(() -> callback.onScanFailed(errorCode));
     }
 
     private boolean isSettingsConfigAllowedForScan(ScanSettings settings) {
