@@ -17,22 +17,13 @@ package com.android.bluetooth;
 
 import com.android.bluetooth.map.BluetoothMapUtils;
 
-import java.util.Objects;
-
 /**
  * Class to represent a 128bit value using two long member variables. Has functionality to convert
  * to/from hex-strings. Mind that since signed variables are used to store the value internally is
  * used, the MSB/LSB long values can be negative.
  */
-public class SignedLongLong implements Comparable<SignedLongLong> {
-
-    private long mMostSigBits;
-    private long mLeastSigBits;
-
-    public SignedLongLong(long leastSigBits, long mostSigBits) {
-        this.mMostSigBits = mostSigBits;
-        this.mLeastSigBits = leastSigBits;
-    }
+public record SignedLongLong(long leastSignificantBits, long mostSignificantBits)
+        implements Comparable<SignedLongLong> {
 
     /**
      * Create a SignedLongLong from a Hex-String without "0x" prefix
@@ -68,16 +59,16 @@ public class SignedLongLong implements Comparable<SignedLongLong> {
 
     @Override
     public int compareTo(SignedLongLong another) {
-        if (mMostSigBits == another.mMostSigBits) {
-            if (mLeastSigBits == another.mLeastSigBits) {
+        if (mostSignificantBits == another.mostSignificantBits) {
+            if (leastSignificantBits == another.leastSignificantBits) {
                 return 0;
             }
-            if (mLeastSigBits < another.mLeastSigBits) {
+            if (leastSignificantBits < another.leastSignificantBits) {
                 return -1;
             }
             return 1;
         }
-        if (mMostSigBits < another.mMostSigBits) {
+        if (mostSignificantBits < another.mostSignificantBits) {
             return -1;
         }
         return 1;
@@ -92,40 +83,6 @@ public class SignedLongLong implements Comparable<SignedLongLong> {
      * @return a hex-string representation of the object values
      */
     public String toHexString() {
-        return BluetoothMapUtils.getLongLongAsString(mLeastSigBits, mMostSigBits);
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (!(obj instanceof SignedLongLong)) {
-            return false;
-        }
-        SignedLongLong other = (SignedLongLong) obj;
-        if (mLeastSigBits != other.mLeastSigBits) {
-            return false;
-        }
-        if (mMostSigBits != other.mMostSigBits) {
-            return false;
-        }
-        return true;
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(mLeastSigBits, mMostSigBits);
-    }
-
-    public long getMostSignificantBits() {
-        return mMostSigBits;
-    }
-
-    public long getLeastSignificantBits() {
-        return mLeastSigBits;
+        return BluetoothMapUtils.getLongLongAsString(leastSignificantBits, mostSignificantBits);
     }
 }

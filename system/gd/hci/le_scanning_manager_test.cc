@@ -288,7 +288,7 @@ protected:
   }
 
   void start_le_scanning_manager() {
-    fake_registry_.Start<LeScanningManager>(&thread_);
+    fake_registry_.Start<LeScanningManager>(&thread_, fake_registry_.GetTestHandler());
     le_scanning_manager = static_cast<LeScanningManager*>(
             fake_registry_.GetModuleUnderTest(&LeScanningManager::Factory));
     le_scanning_manager->RegisterScanningCallback(&mock_callbacks_);

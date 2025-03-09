@@ -21,6 +21,7 @@ import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
+import static android.bluetooth.BluetoothUtils.isValidDevice;
 
 import static java.util.Objects.requireNonNull;
 
@@ -64,7 +65,7 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
     private static final boolean DBG = true;
     private static final boolean VDBG = false;
 
-    private CloseGuard mCloseGuard;
+    private final CloseGuard mCloseGuard;
 
     /**
      * Intent used to broadcast the change in connection state of the profile.
@@ -538,9 +539,5 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
 
     private boolean isEnabled() {
         return mAdapter.isEnabled();
-    }
-
-    private static boolean isValidDevice(BluetoothDevice device) {
-        return device != null && BluetoothAdapter.checkBluetoothAddress(device.getAddress());
     }
 }

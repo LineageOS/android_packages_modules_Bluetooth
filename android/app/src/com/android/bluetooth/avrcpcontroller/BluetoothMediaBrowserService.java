@@ -65,7 +65,7 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
     private MediaSessionCompat mSession;
 
     // Browsing related structures.
-    private List<MediaSessionCompat.QueueItem> mMediaQueue = new ArrayList<>();
+    private final List<MediaSessionCompat.QueueItem> mMediaQueue = new ArrayList<>();
 
     // Media Framework Content Style constants
     private static final String CONTENT_STYLE_SUPPORTED =
@@ -186,7 +186,7 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
      * the media ID is invalid. 5. ERROR_NO_AVRCP_SERVICE - Contents could not be retrieved as
      * AvrcpControllerService is not connected.
      */
-    public static class BrowseResult {
+    record BrowseResult(List<MediaItem> results, byte status) {
         // Possible statuses for onLoadChildren
         public static final byte SUCCESS = 0x00;
         public static final byte DOWNLOAD_PENDING = 0x01;
@@ -194,19 +194,8 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
         public static final byte ERROR_MEDIA_ID_INVALID = 0x03;
         public static final byte ERROR_NO_AVRCP_SERVICE = 0x04;
 
-        private List<MediaItem> mResults;
-        private final byte mStatus;
-
-        List<MediaItem> getResults() {
-            return mResults;
-        }
-
-        byte getStatus() {
-            return mStatus;
-        }
-
         String getStatusString() {
-            switch (mStatus) {
+            switch (status) {
                 case DOWNLOAD_PENDING:
                     return "DOWNLOAD_PENDING";
                 case SUCCESS:
@@ -220,11 +209,6 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
                 default:
                     return "UNDEFINED_ERROR_CASE";
             }
-        }
-
-        BrowseResult(List<MediaItem> results, byte status) {
-            mResults = results;
-            mStatus = status;
         }
     }
 
@@ -275,8 +259,8 @@ public class BluetoothMediaBrowserService extends MediaBrowserServiceCompat {
             final String parentMediaId, final Result<List<MediaItem>> result) {
         Log.d(TAG, "Request for contents, id= " + parentMediaId);
         BrowseResult contents = getContents(parentMediaId);
-        byte status = contents.getStatus();
-        List<MediaItem> results = contents.getResults();
+        byte status = contents.status();
+        List<MediaItem> results = contents.results();
         if (status == BrowseResult.DOWNLOAD_PENDING && results == null) {
             Log.i(TAG, "Download pending - no results, id= " + parentMediaId);
             result.detach();

@@ -172,16 +172,16 @@ public class MapClientService extends ProfileService {
             }
         }
 
-        // statemachine already exists in the map.
+        // StateMachine already exists in the map.
         int state = getConnectionState(device);
         if (state == STATE_CONNECTED || state == STATE_CONNECTING) {
             Log.w(TAG, "Received connect request while already connecting/connected.");
             return true;
         }
 
-        // Statemachine exists but not in connecting or connected state! it should
+        // StateMachine exists but not in connecting or connected state! it should
         // have been removed form the map. lets get rid of it and add a new one.
-        Log.d(TAG, "Statemachine exists for a device in unexpected state: " + state);
+        Log.d(TAG, "StateMachine exists for a device in unexpected state: " + state);
         mMapInstanceMap.remove(device);
         mapStateMachine.doQuit();
 
@@ -191,7 +191,7 @@ public class MapClientService extends ProfileService {
     }
 
     private synchronized void addDeviceToMapAndConnect(BluetoothDevice device) {
-        // When creating a new statemachine, its state is set to CONNECTING - which will trigger
+        // When creating a new StateMachine, its state is set to CONNECTING - which will trigger
         // connect.
         MceStateMachine mapStateMachine;
         if (mStateMachinesLooper != null) {
@@ -581,7 +581,7 @@ public class MapClientService extends ProfileService {
     private void handleAclDisconnected(BluetoothDevice device, int transport) {
         MceStateMachine stateMachine = mMapInstanceMap.get(device);
         if (stateMachine == null) {
-            Log.e(TAG, "No Statemachine found for the device=" + device);
+            Log.e(TAG, "No StateMachine found for the device=" + device);
             return;
         }
 
@@ -608,7 +608,7 @@ public class MapClientService extends ProfileService {
         MceStateMachine stateMachine = mMapInstanceMap.get(device);
         Log.d(TAG, "Received SDP Record, device=" + device + ", uuid=" + uuid);
         if (stateMachine == null) {
-            Log.e(TAG, "No Statemachine found for the device=" + device);
+            Log.e(TAG, "No StateMachine found for the device=" + device);
             return;
         }
         if (uuid.equals(BluetoothUuid.MAS)) {

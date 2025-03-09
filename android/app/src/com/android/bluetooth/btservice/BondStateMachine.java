@@ -85,10 +85,10 @@ final class BondStateMachine extends StateMachine {
     private AdapterService mAdapterService;
     private AdapterProperties mAdapterProperties;
     private RemoteDevices mRemoteDevices;
-    private BluetoothAdapter mAdapter;
+    private final BluetoothAdapter mAdapter;
 
-    private PendingCommandState mPendingCommandState = new PendingCommandState();
-    private StableState mStableState = new StableState();
+    private final PendingCommandState mPendingCommandState = new PendingCommandState();
+    private final StableState mStableState = new StableState();
 
     public static final String OOBDATAP192 = "oobdatap192";
     public static final String OOBDATAP256 = "oobdatap256";

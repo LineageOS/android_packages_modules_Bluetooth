@@ -53,11 +53,11 @@ class AvrcpPlayer {
     public static final int FEATURE_BROWSING = 59;
     public static final int FEATURE_NOW_PLAYING = 65;
 
-    private BluetoothDevice mDevice;
+    private final BluetoothDevice mDevice;
     private int mPlayStatus = PlaybackStateCompat.STATE_NONE;
     private long mPlayTime = PlaybackStateCompat.PLAYBACK_POSITION_UNKNOWN;
     private float mPlaySpeed = 1;
-    private int mId;
+    private final int mId;
     private String mName = "";
     private byte[] mPlayerFeatures = new byte[16];
     private long mAvailableActions = PlaybackStateCompat.ACTION_PREPARE;
@@ -269,7 +269,7 @@ class AvrcpPlayer {
         /**
          * Set the device that this Player came from
          *
-         * @param device The BleutoothDevice representing the remote device
+         * @param device The BluetoothDevice representing the remote device
          * @return This object, so you can continue building
          */
         public Builder setDevice(BluetoothDevice device) {

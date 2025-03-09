@@ -30,7 +30,6 @@ cc_library_headers {
 cc_library_headers {
     name: "libbluetooth_headers",
     visibility: [
-        "//packages/apps/Test/connectivity/sl4n",
         "//packages/modules/Bluetooth:__subpackages__",
     ],
     header_libs: [

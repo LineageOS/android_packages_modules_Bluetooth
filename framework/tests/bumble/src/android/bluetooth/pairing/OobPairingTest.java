@@ -275,7 +275,7 @@ public class OobPairingTest {
      * </ol>
      */
     @Test
-    public void createBondByRemoteDevicWithLocalOob() throws Exception {
+    public void createBondByRemoteDeviceWithLocalOob() throws Exception {
         IntentReceiver intentReceiver =
                 new IntentReceiver.Builder(mContext, BluetoothDevice.ACTION_BOND_STATE_CHANGED)
                         .setIntentListener(intentListener)

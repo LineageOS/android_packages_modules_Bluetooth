@@ -24,8 +24,6 @@ import android.util.Log;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 
-import com.google.common.base.Ascii;
-
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.IllegalCharsetNameException;
@@ -68,7 +66,7 @@ public class BluetoothMapbMessageMime extends BluetoothMapbMessage {
             if (charset == null) {
                 charset = "UTF-8";
             } else {
-                charset = Ascii.toUpperCase(charset);
+                charset = charset.toUpperCase(Locale.ROOT);
                 try {
                     if (!Charset.isSupported(charset)) {
                         charset = "UTF-8";
@@ -121,8 +119,8 @@ public class BluetoothMapbMessageMime extends BluetoothMapbMessage {
                 the below use of UTF-8 is not allowed, Base64 should be used for text. */
 
                 if (mContentType != null
-                        && (Ascii.toUpperCase(mContentType).contains("TEXT")
-                                || Ascii.toUpperCase(mContentType).contains("SMIL"))) {
+                        && (mContentType.toUpperCase(Locale.ROOT).contains("TEXT")
+                                || mContentType.toUpperCase(Locale.ROOT).contains("SMIL"))) {
                     String text = new String(mData, StandardCharsets.UTF_8);
                     if (text.getBytes().length == text.getBytes(StandardCharsets.UTF_8).length) {
                         /* Add the header split empty line */
@@ -145,13 +143,14 @@ public class BluetoothMapbMessageMime extends BluetoothMapbMessage {
         }
 
         public void encodePlainText(StringBuilder sb) {
-            if (mContentType != null && Ascii.toUpperCase(mContentType).contains("TEXT")) {
+            if (mContentType != null && mContentType.toUpperCase(Locale.ROOT).contains("TEXT")) {
                 String text = new String(mData, StandardCharsets.UTF_8);
                 if (text.getBytes().length != text.getBytes(StandardCharsets.UTF_8).length) {
                     text = BluetoothMapUtils.encodeQuotedPrintable(mData);
                 }
                 sb.append(text).append("\r\n");
-            } else if (mContentType != null && Ascii.toUpperCase(mContentType).contains("/SMIL")) {
+            } else if (mContentType != null
+                    && mContentType.toUpperCase(Locale.ROOT).contains("/SMIL")) {
                 /* Skip the smil.xml, as no-one knows what it is. */
             } else {
                 /* Not a text part, just print the filename or part name if they exist. */
@@ -176,7 +175,7 @@ public class BluetoothMapbMessageMime extends BluetoothMapbMessage {
     private ArrayList<MimePart> mParts = null;
     private String mContentType = null;
     private String mBoundary = null;
-    private boolean mTextonly = false;
+    private boolean mTextOnly = false;
     private boolean mIncludeAttachments;
     private String mMyEncoding = null;
 
@@ -202,7 +201,7 @@ public class BluetoothMapbMessageMime extends BluetoothMapbMessage {
         }
         if (mParts != null) {
             for (MimePart part : mParts) {
-                if (Ascii.toUpperCase(part.mContentType).contains("TEXT")) {
+                if (part.mContentType.toUpperCase(Locale.ROOT).contains("TEXT")) {
                     sb.append(new String(part.mData));
                 }
             }
@@ -349,11 +348,11 @@ public class BluetoothMapbMessageMime extends BluetoothMapbMessage {
     }
 
     public void setTextOnly(boolean textOnly) {
-        this.mTextonly = textOnly;
+        this.mTextOnly = textOnly;
     }
 
     public boolean getTextOnly() {
-        return mTextonly;
+        return mTextOnly;
     }
 
     public void setIncludeAttachments(boolean includeAttachments) {
@@ -369,7 +368,7 @@ public class BluetoothMapbMessageMime extends BluetoothMapbMessage {
             mCharset = null;
             for (MimePart part : mParts) {
                 if (part.mContentType != null
-                        && Ascii.toUpperCase(part.mContentType).contains("TEXT")) {
+                        && part.mContentType.toUpperCase(Locale.ROOT).contains("TEXT")) {
                     mCharset = "UTF-8";
                     Log.v(TAG, "Charset set to UTF-8");
                     break;
@@ -591,7 +590,7 @@ public class BluetoothMapbMessageMime extends BluetoothMapbMessage {
                 return remaining.toString();
             }
 
-            String headerType = Ascii.toUpperCase(headerParts[0]);
+            String headerType = headerParts[0].toUpperCase(Locale.ROOT);
             String headerValue = headerParts[1].trim();
 
             // Address headers
@@ -690,14 +689,14 @@ public class BluetoothMapbMessageMime extends BluetoothMapbMessage {
                     continue;
                 }
                 Log.d(TAG, "parseMimePart: header=" + header);
-                String headerType = Ascii.toUpperCase(headerParts[0]);
+                String headerType = headerParts[0].toUpperCase(Locale.ROOT);
                 String headerValue = headerParts[1].trim();
                 if (headerType.contains("CONTENT-TYPE")) {
                     String[] contentTypeParts = SEMI_COLON.split(headerValue);
                     newPart.mContentType = contentTypeParts[0];
                     // Extract the boundary if it exists
                     for (int j = 1, n = contentTypeParts.length; j < n; j++) {
-                        String value = Ascii.toLowerCase(contentTypeParts[j]);
+                        String value = contentTypeParts[j].toLowerCase(Locale.ROOT);
                         if (value.contains("charset")) {
                             newPart.mCharsetName = CHARSET_PATTERN.split(value, 2)[1].trim();
                         }
@@ -743,9 +742,10 @@ public class BluetoothMapbMessageMime extends BluetoothMapbMessage {
     }
 
     private static byte[] decodeBody(String body, String encoding, String charset) {
-        if (encoding != null && Ascii.toUpperCase(encoding).contains("BASE64")) {
+        if (encoding != null && encoding.toUpperCase(Locale.ROOT).contains("BASE64")) {
             return Base64.decode(body, Base64.DEFAULT);
-        } else if (encoding != null && Ascii.toUpperCase(encoding).contains("QUOTED-PRINTABLE")) {
+        } else if (encoding != null
+                && encoding.toUpperCase(Locale.ROOT).contains("QUOTED-PRINTABLE")) {
             return BluetoothMapUtils.quotedPrintableToUtf8(body, charset);
         } else {
             // TODO: handle other encoding types? - here we simply store the string data as bytes

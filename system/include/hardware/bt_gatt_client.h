@@ -99,12 +99,6 @@ typedef void (*connect_callback)(int conn_id, int status, int client_if, const R
 /** Callback invoked in response to close */
 typedef void (*disconnect_callback)(int conn_id, int status, int client_if, const RawAddress& bda);
 
-/**
- * Invoked in response to search_service when the GATT service search
- * has been completed.
- */
-typedef void (*search_complete_callback)(int conn_id, int status);
-
 /** Callback invoked in response to (de)register_for_notification */
 typedef void (*register_for_notification_callback)(int conn_id, int registered, int status,
                                                    uint16_t handle);
@@ -179,7 +173,6 @@ typedef struct {
   register_client_callback register_client_cb;
   connect_callback open_cb;
   disconnect_callback close_cb;
-  search_complete_callback search_complete_cb;
   register_for_notification_callback register_for_notification_cb;
   notify_callback notify_cb;
   read_characteristic_callback read_characteristic_cb;
@@ -284,9 +277,6 @@ typedef struct {
 
   /** Test mode interface */
   bt_status_t (*test_command)(int command, const btgatt_test_params_t& params);
-
-  /** Get gatt db content */
-  bt_status_t (*get_gatt_db)(int conn_id);
 
   /** Request a BLE subrate request procedure */
   bt_status_t (*subrate_request)(const RawAddress& bd_addr, int subrate_min, int subrate_max,

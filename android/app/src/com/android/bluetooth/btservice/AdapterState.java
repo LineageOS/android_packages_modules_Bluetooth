@@ -67,13 +67,13 @@ final class AdapterState extends StateMachine {
             4000 * SystemProperties.getInt("ro.hw_timeout_multiplier", 1);
 
     private AdapterService mAdapterService;
-    private TurningOnState mTurningOnState = new TurningOnState();
-    private TurningBleOnState mTurningBleOnState = new TurningBleOnState();
-    private TurningOffState mTurningOffState = new TurningOffState();
-    private TurningBleOffState mTurningBleOffState = new TurningBleOffState();
-    private OnState mOnState = new OnState();
-    private OffState mOffState = new OffState();
-    private BleOnState mBleOnState = new BleOnState();
+    private final TurningOnState mTurningOnState = new TurningOnState();
+    private final TurningBleOnState mTurningBleOnState = new TurningBleOnState();
+    private final TurningOffState mTurningOffState = new TurningOffState();
+    private final TurningBleOffState mTurningBleOffState = new TurningBleOffState();
+    private final OnState mOnState = new OnState();
+    private final OffState mOffState = new OffState();
+    private final BleOnState mBleOnState = new BleOnState();
 
     private int mPrevState = BluetoothAdapter.STATE_OFF;
 

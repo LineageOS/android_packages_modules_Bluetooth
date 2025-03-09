@@ -65,7 +65,6 @@ import com.android.internal.annotations.VisibleForTesting;
 import com.android.obex.ResponseCodes;
 
 import com.google.android.mms.pdu.PduHeaders;
-import com.google.common.base.Ascii;
 
 import org.xmlpull.v1.XmlSerializer;
 
@@ -83,6 +82,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -129,12 +129,12 @@ public class BluetoothMapContentObserver {
     //       cases.
     private static final long PROVIDER_ANR_TIMEOUT = 20 * DateUtils.SECOND_IN_MILLIS;
 
-    private Context mContext;
-    private ContentResolver mResolver;
+    private final Context mContext;
+    private final ContentResolver mResolver;
     @VisibleForTesting ContentProviderClient mProviderClient = null;
-    private BluetoothMnsObexClient mMnsClient;
+    private final BluetoothMnsObexClient mMnsClient;
     private BluetoothMapMasInstance mMasInstance = null;
-    private int mMasId;
+    private final int mMasId;
     private boolean mEnableSmsMms = false;
     @VisibleForTesting boolean mObserverRegistered = false;
     @VisibleForTesting BluetoothMapAccountItem mAccount;
@@ -168,7 +168,7 @@ public class BluetoothMapContentObserver {
     // Text only MMS converted to SMS if sms parts less than or equal to defined count
     private static final int CONVERT_MMS_TO_SMS_PART_COUNT = 10;
 
-    private TYPE mSmsType;
+    private final TYPE mSmsType;
 
     private static final String ACTION_MESSAGE_DELIVERY =
             "com.android.bluetooth.BluetoothMapContentObserver.action.MESSAGE_DELIVERY";
@@ -183,8 +183,8 @@ public class BluetoothMapContentObserver {
     public static final String EXTRA_MESSAGE_SENT_TRANSPARENT = "transparent";
     public static final String EXTRA_MESSAGE_SENT_TIMESTAMP = "timestamp";
 
-    private SmsBroadcastReceiver mSmsBroadcastReceiver = new SmsBroadcastReceiver();
-    private CeBroadcastReceiver mCeBroadcastReceiver = new CeBroadcastReceiver();
+    private final SmsBroadcastReceiver mSmsBroadcastReceiver = new SmsBroadcastReceiver();
+    private final CeBroadcastReceiver mCeBroadcastReceiver = new CeBroadcastReceiver();
 
     private boolean mStorageUnlocked = false;
     private boolean mInitialized = false;
@@ -3004,7 +3004,7 @@ public class BluetoothMapContentObserver {
         ;
     }
 
-    private Map<Long, PushMsgInfo> mPushMsgList =
+    private final Map<Long, PushMsgInfo> mPushMsgList =
             Collections.synchronizedMap(new HashMap<Long, PushMsgInfo>());
 
     /**
@@ -3534,7 +3534,7 @@ public class BluetoothMapContentObserver {
                     count++;
                     values.clear();
                     if (part.mContentType != null
-                            && Ascii.toUpperCase(part.mContentType).contains("TEXT")) {
+                            && part.mContentType.toUpperCase(Locale.ROOT).contains("TEXT")) {
                         values.put(Mms.Part.CONTENT_TYPE, "text/plain");
                         values.put(Mms.Part.CHARSET, 106);
                         if (part.mPartName != null) {
@@ -3574,7 +3574,7 @@ public class BluetoothMapContentObserver {
                         Log.v(TAG, "Added TEXT part");
 
                     } else if (part.mContentType != null
-                            && Ascii.toUpperCase(part.mContentType).contains("SMIL")) {
+                            && part.mContentType.toUpperCase(Locale.ROOT).contains("SMIL")) {
                         values.put(Mms.Part.SEQ, -1);
                         values.put(Mms.Part.CONTENT_TYPE, "application/smil");
                         if (part.mContentId != null) {
@@ -4225,7 +4225,7 @@ public class BluetoothMapContentObserver {
         }
     }
 
-    private PhoneStateListener mPhoneListener =
+    private final PhoneStateListener mPhoneListener =
             new PhoneStateListener() {
                 @Override
                 public void onServiceStateChanged(ServiceState serviceState) {

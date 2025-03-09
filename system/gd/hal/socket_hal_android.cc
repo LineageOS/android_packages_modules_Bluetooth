@@ -61,7 +61,8 @@ public:
   ::ndk::ScopedAStatus openedComplete(int64_t socket_id,
                                       ::aidl::android::hardware::bluetooth::socket::Status status,
                                       const std::string& reason) override {
-    log::info("socket_id: {} status: {} reason: {}", socket_id, static_cast<int>(status), reason);
+    log::info("socket_id: {} status: {} reason: {}", static_cast<uint64_t>(socket_id),
+              static_cast<int>(status), reason);
     socket_hal_cb_->SocketOpenedComplete(
             socket_id, status == ::aidl::android::hardware::bluetooth::socket::Status::SUCCESS
                                ? hal::SocketStatus::SUCCESS
@@ -70,7 +71,7 @@ public:
   }
 
   ::ndk::ScopedAStatus close(int64_t socket_id, const std::string& reason) override {
-    log::info("socket_id: {} reason: {}", socket_id, reason);
+    log::info("socket_id: {} reason: {}", static_cast<uint64_t>(socket_id), reason);
     socket_hal_cb_->SocketClose(socket_id);
     return ::ndk::ScopedAStatus::ok();
   }

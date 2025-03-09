@@ -146,7 +146,7 @@ public class PbapClientAccountManagerTest {
                 IllegalArgumentException.class, () -> mAccountManager.getAccountForDevice(null));
     }
 
-    // Start/Initialization Proceedures
+    // Start/Initialization Procedures
 
     @Test
     public void testStartAccountManager_userUnlockedAccountVisibleNoAccounts_accountsInitialized() {

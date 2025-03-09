@@ -375,14 +375,6 @@ public final class BluetoothDevice implements Parcelable, Attributable {
     public static final String EXTRA_NAME = "android.bluetooth.device.extra.NAME";
 
     /**
-     * Used as a Parcelable {@link BluetoothQualityReport} extra field in {@link
-     * #ACTION_REMOTE_ISSUE_OCCURRED} intent. It contains the {@link BluetoothQualityReport}.
-     *
-     * @hide
-     */
-    public static final String EXTRA_BQR = "android.bluetooth.qti.extra.EXTRA_BQR";
-
-    /**
      * Used as an optional short extra field in {@link #ACTION_FOUND} intents. Contains the RSSI
      * value of the remote device as reported by the Bluetooth hardware.
      */
@@ -3359,7 +3351,7 @@ public final class BluetoothDevice implements Parcelable, Attributable {
         int psm = settings.getL2capPsm();
         if (settings.getSocketType() == BluetoothSocket.TYPE_RFCOMM) {
             if (settings.getRfcommUuid() == null) {
-                throw new IllegalArgumentException("null uuid: " + settings.getRfcommUuid());
+                throw new IllegalArgumentException("null uuid");
             }
             uuid = new ParcelUuid(settings.getRfcommUuid());
         } else if (settings.getSocketType() == BluetoothSocket.TYPE_LE) {

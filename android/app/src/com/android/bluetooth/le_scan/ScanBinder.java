@@ -41,21 +41,21 @@ class ScanBinder extends IBluetoothScan.Stub {
 
     @Override
     public void registerScanner(
-            IScannerCallback callback, WorkSource workSource, AttributionSource attributionSource) {
+            IScannerCallback callback, WorkSource workSource, AttributionSource source) {
         ScanController scanController = getScanController();
         if (scanController == null) {
             return;
         }
-        scanController.registerScanner(callback, workSource, attributionSource);
+        scanController.registerScanner(callback, workSource, source);
     }
 
     @Override
-    public void unregisterScanner(int scannerId, AttributionSource attributionSource) {
+    public void unregisterScanner(int scannerId, AttributionSource source) {
         ScanController scanController = getScanController();
         if (scanController == null) {
             return;
         }
-        scanController.unregisterScanner(scannerId, attributionSource);
+        scanController.unregisterScanner(scannerId, source);
     }
 
     @Override
@@ -63,12 +63,12 @@ class ScanBinder extends IBluetoothScan.Stub {
             int scannerId,
             ScanSettings settings,
             List<ScanFilter> filters,
-            AttributionSource attributionSource) {
+            AttributionSource source) {
         ScanController scanController = getScanController();
         if (scanController == null) {
             return;
         }
-        scanController.startScan(scannerId, settings, filters, attributionSource);
+        scanController.startScan(scannerId, settings, filters, source);
     }
 
     @Override
@@ -76,39 +76,39 @@ class ScanBinder extends IBluetoothScan.Stub {
             PendingIntent intent,
             ScanSettings settings,
             List<ScanFilter> filters,
-            AttributionSource attributionSource) {
+            AttributionSource source) {
         ScanController scanController = getScanController();
         if (scanController == null) {
             return;
         }
-        scanController.registerPiAndStartScan(intent, settings, filters, attributionSource);
+        scanController.registerPiAndStartScan(intent, settings, filters, source);
     }
 
     @Override
-    public void stopScan(int scannerId, AttributionSource attributionSource) {
+    public void stopScan(int scannerId, AttributionSource source) {
         ScanController scanController = getScanController();
         if (scanController == null) {
             return;
         }
-        scanController.stopScan(scannerId, attributionSource);
+        scanController.stopScan(scannerId, source);
     }
 
     @Override
-    public void stopScanForIntent(PendingIntent intent, AttributionSource attributionSource) {
+    public void stopScanForIntent(PendingIntent intent, AttributionSource source) {
         ScanController scanController = getScanController();
         if (scanController == null) {
             return;
         }
-        scanController.stopScan(intent, attributionSource);
+        scanController.stopScan(intent, source);
     }
 
     @Override
-    public void flushPendingBatchResults(int scannerId, AttributionSource attributionSource) {
+    public void flushPendingBatchResults(int scannerId, AttributionSource source) {
         ScanController scanController = getScanController();
         if (scanController == null) {
             return;
         }
-        scanController.flushPendingBatchResults(scannerId, attributionSource);
+        scanController.flushPendingBatchResults(scannerId, source);
     }
 
     @Override
@@ -117,35 +117,31 @@ class ScanBinder extends IBluetoothScan.Stub {
             int skip,
             int timeout,
             IPeriodicAdvertisingCallback callback,
-            AttributionSource attributionSource) {
+            AttributionSource source) {
         ScanController scanController = getScanController();
         if (scanController == null) {
             return;
         }
-        scanController.registerSync(scanResult, skip, timeout, callback, attributionSource);
+        scanController.registerSync(scanResult, skip, timeout, callback, source);
     }
 
     @Override
-    public void unregisterSync(
-            IPeriodicAdvertisingCallback callback, AttributionSource attributionSource) {
+    public void unregisterSync(IPeriodicAdvertisingCallback callback, AttributionSource source) {
         ScanController scanController = getScanController();
         if (scanController == null) {
             return;
         }
-        scanController.unregisterSync(callback, attributionSource);
+        scanController.unregisterSync(callback, source);
     }
 
     @Override
     public void transferSync(
-            BluetoothDevice bda,
-            int serviceData,
-            int syncHandle,
-            AttributionSource attributionSource) {
+            BluetoothDevice bda, int serviceData, int syncHandle, AttributionSource source) {
         ScanController scanController = getScanController();
         if (scanController == null) {
             return;
         }
-        scanController.transferSync(bda, serviceData, syncHandle, attributionSource);
+        scanController.transferSync(bda, serviceData, syncHandle, source);
     }
 
     @Override
@@ -154,21 +150,21 @@ class ScanBinder extends IBluetoothScan.Stub {
             int serviceData,
             int advHandle,
             IPeriodicAdvertisingCallback callback,
-            AttributionSource attributionSource) {
+            AttributionSource source) {
         ScanController scanController = getScanController();
         if (scanController == null) {
             return;
         }
-        scanController.transferSetInfo(bda, serviceData, advHandle, callback, attributionSource);
+        scanController.transferSetInfo(bda, serviceData, advHandle, callback, source);
     }
 
     @Override
-    public int numHwTrackFiltersAvailable(AttributionSource attributionSource) {
+    public int numHwTrackFiltersAvailable(AttributionSource source) {
         ScanController scanController = getScanController();
         if (scanController == null) {
             return 0;
         }
-        return scanController.numHwTrackFiltersAvailable(attributionSource);
+        return scanController.numHwTrackFiltersAvailable(source);
     }
 
     void clearScanController() {

@@ -598,10 +598,12 @@ void LeAddressManager::CheckAddressRotationHappenedInExpectedTimeInterval(
         const std::chrono::time_point<std::chrono::system_clock>& interval_max,
         const std::chrono::time_point<std::chrono::system_clock>& event_time,
         const std::string& client_name) {
-  // Give some tolerance to upper limit since alarms may ring a little bit late.
+  // Give some tolerance since alarms may ring a little bit early or late.
+  auto lower_limit_tolerance = std::chrono::seconds(2);
   auto upper_limit_tolerance = std::chrono::seconds(5);
 
-  if (event_time < interval_min || event_time > interval_max + upper_limit_tolerance) {
+  if (event_time < interval_min - lower_limit_tolerance ||
+      event_time > interval_max + upper_limit_tolerance) {
     log::warn("RPA rotation happened outside expected time interval. client={}", client_name);
 
     auto tt_interval_min = std::chrono::system_clock::to_time_t(interval_min);

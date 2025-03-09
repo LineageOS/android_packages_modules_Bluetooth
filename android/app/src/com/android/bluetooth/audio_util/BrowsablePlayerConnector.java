@@ -52,10 +52,10 @@ public class BrowsablePlayerConnector extends Handler {
     private static final int MSG_TIMEOUT = 2;
 
     private static BrowsablePlayerConnector sInjectConnector;
-    private PlayerListCallback mCallback;
+    private final PlayerListCallback mCallback;
 
-    private List<BrowsedPlayerWrapper> mResults = new ArrayList<BrowsedPlayerWrapper>();
-    private Set<BrowsedPlayerWrapper> mPendingPlayers = new HashSet<BrowsedPlayerWrapper>();
+    private final List<BrowsedPlayerWrapper> mResults = new ArrayList<BrowsedPlayerWrapper>();
+    private final Set<BrowsedPlayerWrapper> mPendingPlayers = new HashSet<BrowsedPlayerWrapper>();
 
     interface PlayerListCallback {
         void run(List<BrowsedPlayerWrapper> result);

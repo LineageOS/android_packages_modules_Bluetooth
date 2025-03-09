@@ -21,39 +21,13 @@ import static java.util.Map.entry;
 
 import java.util.Map;
 
-/** Media control request, from client to Media Player */
-public final class Request {
-    private final int mOpcode;
-    private final Integer mIntArg;
-
-    /**
-     * Media control request constructor
-     *
-     * @param opcode Control request opcode
-     * @param arg Control request argument
-     */
-    public Request(int opcode, int arg) {
-        this.mOpcode = opcode;
-        this.mIntArg = arg;
-    }
-
-    /**
-     * Media control results opcode getter
-     *
-     * @return Control request opcode
-     */
-    public int getOpcode() {
-        return mOpcode;
-    }
-
-    /**
-     * Media control results argument getter
-     *
-     * @return Control request argument
-     */
-    public int getIntArg() {
-        return mIntArg;
-    }
+/**
+ * Media control request, from client to Media Player
+ *
+ * @param opcode Control request opcode
+ * @param arg Control request argument
+ */
+record Request(int opcode, int arg) {
 
     /** Media control request results definition */
     public enum Results {

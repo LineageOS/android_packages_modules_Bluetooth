@@ -16,12 +16,14 @@
 
 package com.android.bluetooth.gatt;
 
+import android.app.ActivityManager;
 import android.bluetooth.le.AdvertiseCallback;
 import android.bluetooth.le.AdvertiseData;
 import android.bluetooth.le.AdvertisingSetParameters;
 import android.bluetooth.le.IAdvertisingSetCallback;
 import android.bluetooth.le.PeriodicAdvertisingParameters;
 import android.content.AttributionSource;
+import android.content.pm.PackageManager;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
@@ -52,6 +54,7 @@ public class AdvertiseManager {
     private final AdvertiseManagerNativeInterface mNativeInterface;
     private final AdvertiseBinder mAdvertiseBinder;
     private final AdvertiserMap mAdvertiserMap;
+    private final ActivityManager mActivityManager;
 
     private final Map<IBinder, AdvertiserInfo> mAdvertisers = new HashMap<>();
 
@@ -77,6 +80,7 @@ public class AdvertiseManager {
         mService = service;
         mNativeInterface = nativeInterface;
         mAdvertiserMap = advertiserMap;
+        mActivityManager = mService.getSystemService(ActivityManager.class);
 
         mNativeInterface.init(this);
         mHandler = new Handler(advertiseLooper);
@@ -131,7 +135,7 @@ public class AdvertiseManager {
 
     class AdvertisingSetDeathRecipient implements IBinder.DeathRecipient {
         public IAdvertisingSetCallback callback;
-        private String mPackageName;
+        private final String mPackageName;
 
         AdvertisingSetDeathRecipient(IAdvertisingSetCallback callback, String packageName) {
             this.callback = callback;
@@ -234,6 +238,26 @@ public class AdvertiseManager {
         }
     }
 
+    private void fetchAppForegroundState(int id) {
+        PackageManager packageManager = mService.getPackageManager();
+        if (mActivityManager == null || packageManager == null) {
+            return;
+        }
+        int appUid = Binder.getCallingUid();
+        String[] packages = packageManager.getPackagesForUid(appUid);
+        if (packages == null || packages.length == 0) {
+            return;
+        }
+        int importance = ActivityManager.RunningAppProcessInfo.IMPORTANCE_CACHED;
+        for (String packageName : packages) {
+            importance = Math.min(importance, mActivityManager.getPackageImportance(packageName));
+        }
+        AppAdvertiseStats stats = mAdvertiserMap.getAppAdvertiseStatsById(id);
+        if (stats != null) {
+            stats.setAppImportance(importance);
+        }
+    }
+
     void startAdvertisingSet(
             AdvertisingSetParameters parameters,
             AdvertiseData advertiseData,
@@ -294,6 +318,7 @@ public class AdvertiseManager {
             Log.d(TAG, "startAdvertisingSet() - reg_id=" + cbId + ", callback: " + binder);
 
             mAdvertiserMap.addAppAdvertiseStats(cbId, mService, attrSource);
+            fetchAppForegroundState(cbId);
             mAdvertiserMap.recordAdvertiseStart(
                     cbId,
                     parameters,
@@ -392,6 +417,7 @@ public class AdvertiseManager {
             Log.w(TAG, "enableAdvertisingSet() - bad advertiserId " + advertiserId);
             return;
         }
+        fetchAppForegroundState(advertiserId);
         mNativeInterface.enableAdvertisingSet(advertiserId, enable, duration, maxExtAdvEvents);
 
         mAdvertiserMap.enableAdvertisingSet(advertiserId, enable, duration, maxExtAdvEvents);

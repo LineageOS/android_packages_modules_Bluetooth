@@ -22,6 +22,7 @@ import static android.Manifest.permission.BLUETOOTH_SCAN;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
+import static android.bluetooth.BluetoothUtils.isValidDevice;
 
 import android.annotation.IntDef;
 import android.annotation.NonNull;
@@ -761,12 +762,5 @@ public final class BluetoothHearingAid implements BluetoothProfile {
             Log.e(TAG, methodName + ": device param is null");
             throw new IllegalArgumentException("Device cannot be null");
         }
-    }
-
-    private static boolean isValidDevice(BluetoothDevice device) {
-        if (device == null) return false;
-
-        if (BluetoothAdapter.checkBluetoothAddress(device.getAddress())) return true;
-        return false;
     }
 }

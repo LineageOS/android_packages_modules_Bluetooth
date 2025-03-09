@@ -76,7 +76,6 @@ public class SilenceDeviceManagerTest {
         mHandlerThread.start();
         mLooper = mHandlerThread.getLooper();
         mSilenceDeviceManager = new SilenceDeviceManager(mAdapterService, mServiceFactory, mLooper);
-        mSilenceDeviceManager.start();
     }
 
     @After

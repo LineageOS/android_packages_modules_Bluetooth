@@ -82,7 +82,7 @@ public class AvrcpCoverArtStorage {
     public Uri addImage(BluetoothDevice device, String imageUuid, Bitmap image) {
         debug("Storing image '" + imageUuid + "' from device " + device);
         if (device == null || imageUuid == null || "".equals(imageUuid) || image == null) {
-            debug("Cannot store image. Improper aruguments");
+            debug("Cannot store image. Improper arguments");
             return null;
         }
 

@@ -36,7 +36,7 @@ import java.io.InputStream;
 /** A test suite for the BipImage class */
 @RunWith(AndroidJUnit4.class)
 public class BipImageTest {
-    private static String sImageHandle = "123456789";
+    private static final String sImageHandle = "123456789";
     private Resources mTestResources;
 
     @Before

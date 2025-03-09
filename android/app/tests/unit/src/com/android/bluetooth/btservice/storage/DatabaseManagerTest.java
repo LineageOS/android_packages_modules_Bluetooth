@@ -80,11 +80,11 @@ public final class DatabaseManagerTest {
 
     @Mock private AdapterService mAdapterService;
 
-    private BluetoothDevice mDevice = getTestDevice(54);
-    private BluetoothDevice mDevice2 = getTestDevice(55);
-    private BluetoothDevice mDevice3 = getTestDevice(56);
-    private BluetoothDevice mDevice4 = getTestDevice(57);
-    private BluetoothDevice mDevice5 = getTestDevice(58);
+    private final BluetoothDevice mDevice = getTestDevice(54);
+    private final BluetoothDevice mDevice2 = getTestDevice(55);
+    private final BluetoothDevice mDevice3 = getTestDevice(56);
+    private final BluetoothDevice mDevice4 = getTestDevice(57);
+    private final BluetoothDevice mDevice5 = getTestDevice(58);
 
     private MetadataDatabase mDatabase;
     private DatabaseManager mDatabaseManager;

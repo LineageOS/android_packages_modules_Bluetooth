@@ -119,7 +119,7 @@ protected:
     ASSERT_NE(client_handler_, nullptr);
     bluetooth::hci::testing::mock_storage_ = new storage::StorageModule(new os::Handler(&thread_));
     bluetooth::hci::testing::mock_storage_->Start();
-    fake_registry_.Start<AclManager>(&thread_);
+    fake_registry_.Start<AclManager>(&thread_, handler_);
     acl_manager_ =
             static_cast<AclManager*>(fake_registry_.GetModuleUnderTest(&AclManager::Factory));
     Address::FromString("A1:A2:A3:A4:A5:A6", remote);
@@ -173,6 +173,7 @@ protected:
   HciLayerFake* test_hci_layer_ = nullptr;
   TestController* test_controller_ = nullptr;
   os::Thread& thread_ = fake_registry_.GetTestThread();
+  os::Handler* handler_ = fake_registry_.GetTestHandler();
   AclManager* acl_manager_ = nullptr;
   os::Handler* client_handler_ = nullptr;
   Address remote;
@@ -1146,7 +1147,7 @@ protected:
     ASSERT_NE(client_handler_, nullptr);
     bluetooth::hci::testing::mock_storage_ = new storage::StorageModule(new os::Handler(&thread_));
     bluetooth::hci::testing::mock_storage_->Start();
-    fake_registry_.Start<AclManager>(&thread_);
+    fake_registry_.Start<AclManager>(&thread_, handler_);
     acl_manager_ =
             static_cast<AclManager*>(fake_registry_.GetModuleUnderTest(&AclManager::Factory));
     Address::FromString("A1:A2:A3:A4:A5:A6", remote);

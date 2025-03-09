@@ -18,9 +18,8 @@ package com.android.bluetooth.avrcpcontroller;
 
 import android.util.SparseArray;
 
-import com.google.common.base.Ascii;
-
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -86,7 +85,7 @@ public class BipEncoding {
         if (encoding == null) {
             throw new ParseException("Encoding input invalid");
         }
-        encoding = Ascii.toUpperCase(encoding.trim());
+        encoding = encoding.trim().toUpperCase(Locale.ROOT);
         mType = determineEncoding(encoding);
 
         String proprietaryEncodingId = null;
@@ -120,7 +119,7 @@ public class BipEncoding {
                 throw new IllegalArgumentException(
                         "Received invalid user defined encoding id '" + proprietaryId + "'");
             }
-            proprietaryEncodingId = Ascii.toUpperCase(proprietaryId);
+            proprietaryEncodingId = proprietaryId.toUpperCase(Locale.ROOT);
         }
         mProprietaryEncodingId = proprietaryEncodingId;
     }

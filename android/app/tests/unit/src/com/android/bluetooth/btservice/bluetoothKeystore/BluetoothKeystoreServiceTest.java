@@ -94,7 +94,7 @@ public final class BluetoothKeystoreServiceTest {
 
     private List<String> mConfigData = new ArrayList<>();
 
-    private Map<String, String> mNameDecryptKeyResult = new HashMap<>();
+    private final Map<String, String> mNameDecryptKeyResult = new HashMap<>();
 
     @Before
     public void setUp() {
@@ -242,7 +242,7 @@ public final class BluetoothKeystoreServiceTest {
     @Test
     public void testParserFileAfterDisableCommonCriteriaMode() {
         // preconfiguration.
-        // need to creat encrypted file.
+        // need to create encrypted file.
         testParserFile();
         // created encrypted file
         assertThat(setEncryptKeyOrRemoveKey(CONFIG_FILE_PREFIX, CONFIG_FILE_HASH)).isTrue();

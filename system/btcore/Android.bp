@@ -8,8 +8,11 @@ package {
     default_applicable_licenses: ["system_bt_license"],
 }
 
-cc_defaults {
-    name: "libbtcore_defaults",
+cc_library_static {
+    name: "libbtcore",
+    visibility: [
+        "//packages/modules/Bluetooth:__subpackages__",
+    ],
     defaults: ["fluoride_defaults"],
     local_include_dirs: ["include"],
     include_dirs: [
@@ -23,26 +26,17 @@ cc_defaults {
         "src/property.cc",
     ],
     header_libs: ["libbluetooth_headers"],
-    host_supported: true,
-    apex_available: ["com.android.bt"],
+    static_libs: [
+        "libbluetooth_log",
+    ],
     target: {
         host_linux: {
             cflags: ["-D_GNU_SOURCE"],
         },
     },
-}
-
-cc_library_static {
-    name: "libbtcore",
-    visibility: [
-        "//packages/apps/Test/connectivity/sl4n",
-        "//packages/modules/Bluetooth:__subpackages__",
-    ],
-    defaults: ["libbtcore_defaults"],
+    host_supported: true,
+    apex_available: ["com.android.bt"],
     min_sdk_version: "Tiramisu",
-    static_libs: [
-        "libbluetooth_log",
-    ],
 }
 
 cc_library_headers {

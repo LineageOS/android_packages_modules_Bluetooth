@@ -195,7 +195,7 @@ public class BluetoothMapConvoContactElement
 
     /* Encode the MapConvoContactElement into the StringBuilder reference.
      * Here we have taken the choice not to report empty attributes, to reduce the
-     * amount of data to be transfered over BT. */
+     * amount of data to be transferred over BT. */
     public void encode(XmlSerializer xmlConvoElement)
             throws IllegalArgumentException, IllegalStateException, IOException {
         // construct the XML tag for a single contact in the convolisting element.

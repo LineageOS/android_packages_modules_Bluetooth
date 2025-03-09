@@ -47,8 +47,8 @@ public class CallLogPullRequest extends PullRequest {
     private static final String TIMESTAMP_FORMAT = "yyyyMMdd'T'HHmmss";
 
     private final Account mAccount;
-    private Context mContext;
-    private Map<String, Integer> mCallCounter;
+    private final Context mContext;
+    private final Map<String, Integer> mCallCounter;
 
     public CallLogPullRequest(
             Context context, String path, Map<String, Integer> map, Account account) {

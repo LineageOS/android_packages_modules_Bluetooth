@@ -18,37 +18,35 @@ package com.android.bluetooth;
 
 import android.util.Log;
 
-import com.google.common.collect.EvictingQueue;
+import java.util.ArrayDeque;
+import java.util.Queue;
 
 /** This class is to store logs for given size. */
 public class BluetoothEventLogger {
     private final String mTitle;
-    private final EvictingQueue<Event> mEvents;
-
-    // Event class contain timestamp and log context.
-    private static class Event {
-        private final String mTimeStamp;
-        private final String mMsg;
-
-        Event(String msg) {
-            mTimeStamp = Utils.getLocalTimeString();
-            mMsg = msg;
-        }
-
-        public String toString() {
-            return mTimeStamp + " " + mMsg;
-        }
-    }
+    private final Queue<String> mEvents;
+    private final int mSize;
 
     public BluetoothEventLogger(int size, String title) {
-        mEvents = EvictingQueue.create(size);
+        if (size <= 0) {
+            throw new IllegalArgumentException("Size must be > 0");
+        }
+        mSize = size;
+        mEvents = new ArrayDeque<>(size);
         mTitle = title;
     }
 
     /** Add the event record */
     public synchronized void add(String msg) {
-        Event event = new Event(msg);
-        mEvents.add(event);
+        if (mEvents.size() == mSize) {
+            mEvents.remove();
+        }
+        mEvents.add(Utils.getLocalTimeString() + " " + msg);
+    }
+
+    /** Add the event record */
+    public synchronized void clear() {
+        mEvents.clear();
     }
 
     /** Add the event record and log message */
@@ -78,8 +76,8 @@ public class BluetoothEventLogger {
     /** Dump all the events */
     public synchronized void dump(StringBuilder sb) {
         sb.append(mTitle).append(":\n");
-        for (Event event : mEvents) {
-            sb.append("  ").append(event.toString()).append("\n");
+        for (String msg : mEvents) {
+            sb.append("  ").append(msg).append("\n");
         }
     }
 }

@@ -42,7 +42,7 @@ public class PbapPhonebookTest {
     // *********************************************************************************************
 
     @Test
-    public void testCreatePhonebook_forFavorites_emptyFavoritesPhonebookeCreated()
+    public void testCreatePhonebook_forFavorites_emptyFavoritesPhonebookCreated()
             throws IOException {
         PbapPhonebook phonebook = new PbapPhonebook(PbapPhonebook.FAVORITES_PATH);
         assertThat(phonebook.getPhonebook()).isEqualTo(PbapPhonebook.FAVORITES_PATH);
@@ -52,7 +52,7 @@ public class PbapPhonebookTest {
     }
 
     @Test
-    public void testCreatePhonebook_forLocalPhonebook_emptyLocalPhonebookeCreated()
+    public void testCreatePhonebook_forLocalPhonebook_emptyLocalPhonebookCreated()
             throws IOException {
         PbapPhonebook phonebook = new PbapPhonebook(PbapPhonebook.LOCAL_PHONEBOOK_PATH);
         assertThat(phonebook.getPhonebook()).isEqualTo(PbapPhonebook.LOCAL_PHONEBOOK_PATH);
@@ -112,7 +112,7 @@ public class PbapPhonebookTest {
     }
 
     @Test
-    public void testCreatePhonebook_forSimMissedCallHistory_emptyMiSimssedCallHistoryCreated()
+    public void testCreatePhonebook_forSimMissedCallHistory_emptySimMissedCallHistoryCreated()
             throws IOException {
         PbapPhonebook phonebook = new PbapPhonebook(PbapPhonebook.SIM_MCH_PATH);
         assertThat(phonebook.getPhonebook()).isEqualTo(PbapPhonebook.SIM_MCH_PATH);

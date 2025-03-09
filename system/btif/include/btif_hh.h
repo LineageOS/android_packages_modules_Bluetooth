@@ -85,8 +85,6 @@ typedef struct {
                          // internal events
   uint8_t dev_handle;
   tAclLinkSpec link_spec;
-  uint8_t hh_keep_polling;  // Deprecated with the aflags hid_report_queuing.
-                            // TODO: remove after launching the aflag.
   bool ready_for_data;
   fixed_queue_t* get_rpt_id_queue;
 #if ENABLE_UHID_SET_REPORT
@@ -109,8 +107,6 @@ typedef struct {
   pthread_t hh_poll_thread_id;
   alarm_t* vup_timer;
   bool local_vup;  // Indicated locally initiated VUP
-  btif_hh_uhid_t uhid;  // Deprecated with the aflags hid_report_queuing.
-                        // TODO: remove after launching the aflag.
 } btif_hh_device_t;
 
 /* Control block to maintain properties of devices */

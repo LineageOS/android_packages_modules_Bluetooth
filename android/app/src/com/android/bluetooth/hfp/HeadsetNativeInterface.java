@@ -43,7 +43,7 @@ public class HeadsetNativeInterface {
 
     private static final Object INSTANCE_LOCK = new Object();
 
-    private AdapterService mAdapterService;
+    private final AdapterService mAdapterService;
 
     private HeadsetNativeInterface() {
         mAdapterService = requireNonNull(AdapterService.getAdapterService());
@@ -500,7 +500,7 @@ public class HeadsetNativeInterface {
      * values from BtHfCallState 3. number & type: valid only for incoming & waiting call
      *
      * @param device target device for this update
-     * @param callState callstate structure
+     * @param callState callState structure
      * @return True on success, False on failure
      */
     @VisibleForTesting

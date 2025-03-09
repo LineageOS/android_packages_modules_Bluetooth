@@ -207,7 +207,7 @@ public class BluetoothOppUtility {
         }
 
         if (!isBluetoothShareUri(uri)) {
-            Log.e(TAG, "Trying to open a file that wasn't transfered over Bluetooth");
+            Log.e(TAG, "Trying to open a file that wasn't transferred over Bluetooth");
             ContentProfileErrorReportUtils.report(
                     BluetoothProfile.OPP,
                     BluetoothProtoEnums.BLUETOOTH_OPP_UTILITY,

@@ -576,7 +576,6 @@ pub enum GattClientCallbacks {
     RegisterClient(GattStatus, i32, Uuid),
     Connect(i32, GattStatus, i32, RawAddress),
     Disconnect(i32, GattStatus, i32, RawAddress),
-    SearchComplete(i32, GattStatus),
     RegisterForNotification(i32, i32, GattStatus, u16),
     Notify(i32, BtGattNotifyParams),
     ReadCharacteristic(i32, GattStatus, BtGattReadParams),
@@ -661,12 +660,6 @@ cb_variant!(
     i32, i32 -> GattStatus, i32, *const RawAddress, {
         let _3 = unsafe { *_3 };
     }
-);
-
-cb_variant!(
-    GattClientCb,
-    gc_search_complete_cb -> GattClientCallbacks::SearchComplete,
-    i32, i32 -> GattStatus, {}
 );
 
 cb_variant!(
@@ -1419,11 +1412,6 @@ impl GattClient {
     pub fn test_command(&self, command: i32, params: &BtGattTestParams) -> BtStatus {
         BtStatus::from(ccall!(self, test_command, command, params))
     }
-
-    #[log_args]
-    pub fn get_gatt_db(&self, conn_id: i32) -> BtStatus {
-        BtStatus::from(ccall!(self, get_gatt_db, conn_id))
-    }
 }
 
 pub struct GattServer {
@@ -1973,7 +1961,6 @@ impl Gatt {
             register_client_cb: Some(gc_register_client_cb),
             open_cb: Some(gc_open_cb),
             close_cb: Some(gc_close_cb),
-            search_complete_cb: Some(gc_search_complete_cb),
             register_for_notification_cb: Some(gc_register_for_notification_cb),
             notify_cb: Some(gc_notify_cb),
             read_characteristic_cb: Some(gc_read_characteristic_cb),

@@ -150,8 +150,18 @@ static void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
     }
 
     case BTA_GATTC_SEARCH_CMPL_EVT: {
-      HAL_CBACK(callbacks, client->search_complete_cb,
-                static_cast<int>(p_data->search_cmpl.conn_id), p_data->search_cmpl.status);
+      int conn_id = p_data->search_cmpl.conn_id;
+      tGATT_STATUS status = p_data->search_cmpl.status;
+
+      log::debug("BTA_GATTC_SEARCH_CMPL_EVT GATT db ready conn_id={}, status={}", conn_id, status);
+
+      btgatt_db_element_t* db = NULL;
+      int count = 0;
+      BTA_GATTC_GetGattDb(static_cast<tCONN_ID>(conn_id), 0x0000, 0xFFFF, &db, &count);
+
+      auto callbacks = bt_gatt_callbacks;
+      HAL_CBACK(callbacks, client->get_gatt_db_cb, conn_id, db, count);
+      osi_free(db);
       break;
     }
 
@@ -415,21 +425,6 @@ static bt_status_t btif_gattc_search_service(int conn_id, const Uuid* filter_uui
 
 static void btif_gattc_discover_service_by_uuid(int conn_id, const Uuid& uuid) {
   do_in_jni_thread(Bind(&BTA_GATTC_DiscoverServiceByUuid, static_cast<tCONN_ID>(conn_id), uuid));
-}
-
-void btif_gattc_get_gatt_db_impl(int conn_id) {
-  btgatt_db_element_t* db = NULL;
-  int count = 0;
-  BTA_GATTC_GetGattDb(static_cast<tCONN_ID>(conn_id), 0x0000, 0xFFFF, &db, &count);
-
-  auto callbacks = bt_gatt_callbacks;
-  HAL_CBACK(callbacks, client->get_gatt_db_cb, conn_id, db, count);
-  osi_free(db);
-}
-
-static bt_status_t btif_gattc_get_gatt_db(int conn_id) {
-  CHECK_BTGATT_INIT();
-  return do_in_jni_thread(Bind(&btif_gattc_get_gatt_db_impl, conn_id));
 }
 
 void read_char_cb(uint16_t conn_id, tGATT_STATUS status, uint16_t handle, uint16_t len,
@@ -886,6 +881,5 @@ const btgatt_client_interface_t btgattClientInterface = {
         btif_gattc_set_preferred_phy,
         btif_gattc_read_phy,
         btif_gattc_test_command,
-        btif_gattc_get_gatt_db,
         btif_gattc_subrate_request,
 };

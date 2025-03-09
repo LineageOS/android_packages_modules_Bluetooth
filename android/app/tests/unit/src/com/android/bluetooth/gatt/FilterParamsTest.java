@@ -16,11 +16,12 @@
 
 package com.android.bluetooth.gatt;
 
-import static com.google.common.truth.Truth.assertThat;
-
 import androidx.test.filters.SmallTest;
 import androidx.test.runner.AndroidJUnit4;
 
+import com.google.common.truth.Expect;
+
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -28,50 +29,49 @@ import org.junit.runner.RunWith;
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class FilterParamsTest {
+    @Rule public final Expect expect = Expect.create();
 
     @Test
     public void filterParamsProperties() {
-        int clientIf = 0;
-        int filtIndex = 1;
-        int featSeln = 2;
+        int clientInterface = 0;
+        int filterIndex = 1;
+        int featureSelection = 2;
         int listLogicType = 3;
-        int filtLogicType = 4;
+        int filterLogicType = 4;
         int rssiHighValue = 5;
         int rssiLowValue = 6;
-        int delyMode = 7;
-        int foundTimeOut = 8;
-        int lostTimeOut = 9;
-        int foundTimeOutCnt = 10;
-        int numOfTrackEntries = 11;
+        int delayMode = 7;
+        int foundTimeout = 8;
+        int lostTimeout = 9;
+        int foundTimeoutCount = 10;
+        int numberOfTrackEntries = 11;
 
         FilterParams filterParams =
                 new FilterParams(
-                        clientIf,
-                        filtIndex,
-                        featSeln,
+                        clientInterface,
+                        filterIndex,
+                        featureSelection,
                         listLogicType,
-                        filtLogicType,
+                        filterLogicType,
                         rssiHighValue,
                         rssiLowValue,
-                        delyMode,
-                        foundTimeOut,
-                        lostTimeOut,
-                        foundTimeOutCnt,
-                        numOfTrackEntries);
+                        delayMode,
+                        foundTimeout,
+                        lostTimeout,
+                        foundTimeoutCount,
+                        numberOfTrackEntries);
 
-        assertThat(filterParams).isNotNull();
-
-        assertThat(filterParams.getClientIf()).isEqualTo(clientIf);
-        assertThat(filterParams.getFiltIndex()).isEqualTo(filtIndex);
-        assertThat(filterParams.getFeatSeln()).isEqualTo(featSeln);
-        assertThat(filterParams.getListLogicType()).isEqualTo(listLogicType);
-        assertThat(filterParams.getFiltLogicType()).isEqualTo(filtLogicType);
-        assertThat(filterParams.getRSSIHighValue()).isEqualTo(rssiHighValue);
-        assertThat(filterParams.getRSSILowValue()).isEqualTo(rssiLowValue);
-        assertThat(filterParams.getDelyMode()).isEqualTo(delyMode);
-        assertThat(filterParams.getFoundTimeout()).isEqualTo(foundTimeOut);
-        assertThat(filterParams.getLostTimeout()).isEqualTo(lostTimeOut);
-        assertThat(filterParams.getFoundTimeOutCnt()).isEqualTo(foundTimeOutCnt);
-        assertThat(filterParams.getNumOfTrackEntries()).isEqualTo(numOfTrackEntries);
+        expect.that(filterParams.clientInterface()).isEqualTo(clientInterface);
+        expect.that(filterParams.filterIndex()).isEqualTo(filterIndex);
+        expect.that(filterParams.featureSelection()).isEqualTo(featureSelection);
+        expect.that(filterParams.listLogicType()).isEqualTo(listLogicType);
+        expect.that(filterParams.filterLogicType()).isEqualTo(filterLogicType);
+        expect.that(filterParams.rssiHighValue()).isEqualTo(rssiHighValue);
+        expect.that(filterParams.rssiLowValue()).isEqualTo(rssiLowValue);
+        expect.that(filterParams.delayMode()).isEqualTo(delayMode);
+        expect.that(filterParams.foundTimeout()).isEqualTo(foundTimeout);
+        expect.that(filterParams.lostTimeout()).isEqualTo(lostTimeout);
+        expect.that(filterParams.foundTimeoutCount()).isEqualTo(foundTimeoutCount);
+        expect.that(filterParams.numberOfTrackEntries()).isEqualTo(numberOfTrackEntries);
     }
 }

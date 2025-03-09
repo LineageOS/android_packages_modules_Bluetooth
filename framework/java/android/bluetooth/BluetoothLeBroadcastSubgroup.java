@@ -210,7 +210,7 @@ public final class BluetoothLeBroadcastSubgroup implements Parcelable {
         private long mCodecId = UNKNOWN_VALUE_PLACEHOLDER;
         private BluetoothLeAudioCodecConfigMetadata mCodecSpecificConfig = null;
         private BluetoothLeAudioContentMetadata mContentMetadata = null;
-        private List<BluetoothLeBroadcastChannel> mChannels = new ArrayList<>();
+        private final List<BluetoothLeBroadcastChannel> mChannels = new ArrayList<>();
 
         /**
          * Create an empty constructor.

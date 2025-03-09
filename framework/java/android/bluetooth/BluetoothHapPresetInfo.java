@@ -30,10 +30,10 @@ import android.text.TextUtils;
  */
 @SystemApi
 public final class BluetoothHapPresetInfo implements Parcelable {
-    private int mPresetIndex;
-    private String mPresetName = "";
-    private boolean mIsWritable;
-    private boolean mIsAvailable;
+    private final int mPresetIndex;
+    private final String mPresetName;
+    private final boolean mIsWritable;
+    private final boolean mIsAvailable;
 
     /**
      * HapPresetInfo constructor

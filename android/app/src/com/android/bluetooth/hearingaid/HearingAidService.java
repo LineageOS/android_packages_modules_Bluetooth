@@ -532,7 +532,7 @@ public class HearingAidService extends ProfileService {
         }
         Log.d(TAG, "setActiveDevice: " + device);
         synchronized (mStateMachines) {
-            /* No action needed since this is the same device as previousely activated */
+            /* No action needed since this is the same device as previously activated */
             if (device.equals(mActiveDevice)) {
                 Log.d(TAG, "setActiveDevice: The device is already active. Ignoring.");
                 return true;

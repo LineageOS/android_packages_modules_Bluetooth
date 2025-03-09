@@ -125,7 +125,7 @@ import java.util.UUID;
         return true;
     }
 
-    /** Attempts to retrieve an extra from an intent first as hex value, then as an ineger. */
+    /** Attempts to retrieve an extra from an intent first as hex value, then as an integer. */
     private static int getHandleExtra(Intent intent, String extra, int defaultValue) {
         Bundle extras = intent.getExtras();
         Object uuid = extras != null ? extras.get(extra) : null;

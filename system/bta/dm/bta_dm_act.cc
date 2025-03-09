@@ -482,106 +482,8 @@ void bta_dm_process_remove_device(const RawAddress& bd_addr) {
   }
 }
 
-// TODO: Remove when flag wait_for_disconnect_before_unbond is shipped
-static void bta_dm_remove_device_(const RawAddress& bd_addr) {
-  /* If ACL exists for the device in the remove_bond message*/
-  bool is_bd_addr_connected =
-          get_btm_client_interface().peer.BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE) ||
-          get_btm_client_interface().peer.BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_BR_EDR);
-
-  tBT_TRANSPORT other_transport = BT_TRANSPORT_AUTO;
-  if (is_bd_addr_connected) {
-    log::verbose("ACL Up count: {}", bta_dm_cb.device_list.count);
-
-    /* Take the link down first, and mark the device for removal when
-     * disconnected */
-    for (int i = 0; i < bta_dm_cb.device_list.count; i++) {
-      auto& peer_device = bta_dm_cb.device_list.peer_device[i];
-      if (peer_device.peer_bdaddr == bd_addr) {
-        peer_device.conn_state = tBTA_DM_CONN_STATE::BTA_DM_UNPAIRING;
-
-        /* Make sure device is not in acceptlist before we disconnect */
-        if (!GATT_CancelConnect(0, bd_addr, false)) {
-          log::warn("Unable to cancel GATT connect peer:{} is_direct:{}", bd_addr, false);
-        }
-
-        btm_remove_acl(bd_addr, peer_device.transport);
-        log::verbose("transport: {}", peer_device.transport);
-
-        /* save the other transport to check if device is connected on
-         * other_transport */
-        if (peer_device.transport == BT_TRANSPORT_LE) {
-          other_transport = BT_TRANSPORT_BR_EDR;
-        } else {
-          other_transport = BT_TRANSPORT_LE;
-        }
-
-        break;
-      }
-    }
-  }
-
-  RawAddress other_address = bd_addr;
-  RawAddress other_address2 = bd_addr;
-
-  // If it is DUMO device and device is paired as different address, unpair that
-  // device
-  bool other_address_connected =
-          (other_transport) ? get_btm_client_interface().peer.BTM_ReadConnectedTransportAddress(
-                                      &other_address, other_transport)
-                            : (get_btm_client_interface().peer.BTM_ReadConnectedTransportAddress(
-                                       &other_address, BT_TRANSPORT_BR_EDR) ||
-                               get_btm_client_interface().peer.BTM_ReadConnectedTransportAddress(
-                                       &other_address2, BT_TRANSPORT_LE));
-  if (other_address == bd_addr) {
-    other_address = other_address2;
-  }
-
-  if (other_address_connected) {
-    // Get real transport
-    if (other_transport == BT_TRANSPORT_AUTO) {
-      bool connected_with_br_edr = get_btm_client_interface().peer.BTM_IsAclConnectionUp(
-              other_address, BT_TRANSPORT_BR_EDR);
-      other_transport = connected_with_br_edr ? BT_TRANSPORT_BR_EDR : BT_TRANSPORT_LE;
-    }
-    log::info("other_address {} with transport {} connected", other_address, other_transport);
-    /* Take the link down first, and mark the device for removal when
-     * disconnected */
-    for (int i = 0; i < bta_dm_cb.device_list.count; i++) {
-      auto& peer_device = bta_dm_cb.device_list.peer_device[i];
-      if (peer_device.peer_bdaddr == other_address && peer_device.transport == other_transport) {
-        peer_device.conn_state = tBTA_DM_CONN_STATE::BTA_DM_UNPAIRING;
-        log::info("Remove ACL of address {}", other_address);
-
-        /* Make sure device is not in acceptlist before we disconnect */
-        if (!GATT_CancelConnect(0, bd_addr, false)) {
-          log::warn("Unable to cancel GATT connect peer:{} is_direct:{}", bd_addr, false);
-        }
-
-        btm_remove_acl(other_address, peer_device.transport);
-        break;
-      }
-    }
-  }
-
-  /* Delete the device mentioned in the msg */
-  if (!is_bd_addr_connected) {
-    bta_dm_process_remove_device(bd_addr);
-  }
-
-  /* Delete the other paired device too */
-  if (!other_address_connected && !other_address.IsEmpty()) {
-    bta_dm_process_remove_device(other_address);
-  }
-}
-
 /** Removes device, disconnects ACL link if required */
 void bta_dm_remove_device(const RawAddress& target) {
-  if (!com::android::bluetooth::flags::wait_for_disconnect_before_unbond()) {
-    bta_dm_remove_device_(target);
-    return;
-  }
-
   if (bta_dm_removal_pending(target)) {
     log::warn("{} already getting removed", target);
     return;
@@ -794,20 +696,18 @@ static tBTA_DM_PEER_DEVICE* allocate_device_for(const RawAddress& bd_addr,
 }
 
 static void bta_dm_acl_up(const RawAddress& bd_addr, tBT_TRANSPORT transport, uint16_t acl_handle) {
-  if (com::android::bluetooth::flags::wait_for_disconnect_before_unbond()) {
-    // Disconnect if the device is being removed
-    for (auto& it : bta_dm_cb.pending_removals) {
-      if (bd_addr == it.identity_addr || bd_addr == it.pseudo_addr) {
-        log::warn("ACL connected while removing the device {} transport: {}", bd_addr, transport);
-        if (transport == BT_TRANSPORT_BR_EDR) {
-          it.bredr_connected = true;
-        } else {
-          it.le_connected = true;
-        }
-
-        btm_remove_acl(bd_addr, transport);
-        return;
+  // Disconnect if the device is being removed
+  for (auto& it : bta_dm_cb.pending_removals) {
+    if (bd_addr == it.identity_addr || bd_addr == it.pseudo_addr) {
+      log::warn("ACL connected while removing the device {} transport: {}", bd_addr, transport);
+      if (transport == BT_TRANSPORT_BR_EDR) {
+        it.bredr_connected = true;
+      } else {
+        it.le_connected = true;
       }
+
+      btm_remove_acl(bd_addr, transport);
+      return;
     }
   }
 
@@ -864,92 +764,9 @@ void BTA_dm_acl_up_failed(const RawAddress bd_addr, tBT_TRANSPORT transport, tHC
   do_in_main_thread(base::BindOnce(bta_dm_acl_up_failed, bd_addr, transport, status));
 }
 
-// TODO: Remove when flag wait_for_disconnect_before_unbond is shipped
-static void bta_dm_acl_down_(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
-  bool issue_unpair_cb = false;
-  bool remove_device = false;
-
-  for (uint8_t i = 0; i < bta_dm_cb.device_list.count; i++) {
-    auto device = &bta_dm_cb.device_list.peer_device[i];
-    if (device->peer_bdaddr != bd_addr || device->transport != transport) {
-      continue;
-    }
-
-    if (device->conn_state == tBTA_DM_CONN_STATE::BTA_DM_UNPAIRING) {
-      issue_unpair_cb =
-              get_btm_client_interface().security.BTM_SecDeleteDevice(device->peer_bdaddr);
-
-      /* remove all cached GATT information */
-      get_gatt_interface().BTA_GATTC_Refresh(bd_addr);
-
-      log::verbose("Unpairing: issue unpair CB = {}", issue_unpair_cb);
-    }
-
-    remove_device = device->remove_dev_pending;
-
-    // Iterate to the one before the last when shrinking the list,
-    // otherwise we memcpy garbage data into the record.
-    // Then clear out the last item in the list since we are shrinking.
-    for (; i < bta_dm_cb.device_list.count - 1; i++) {
-      memcpy(&bta_dm_cb.device_list.peer_device[i], &bta_dm_cb.device_list.peer_device[i + 1],
-             sizeof(bta_dm_cb.device_list.peer_device[i]));
-    }
-    if (bta_dm_cb.device_list.count > 0) {
-      int clear_index = bta_dm_cb.device_list.count - 1;
-      memset(&bta_dm_cb.device_list.peer_device[clear_index], 0,
-             sizeof(bta_dm_cb.device_list.peer_device[clear_index]));
-    }
-    break;
-  }
-  if (bta_dm_cb.device_list.count) {
-    bta_dm_cb.device_list.count--;
-  }
-  if ((transport == BT_TRANSPORT_LE) && (bta_dm_cb.device_list.le_count)) {
-    bta_dm_cb.device_list.le_count--;
-  }
-
-  if (bta_dm_cb.disabling) {
-    if (!BTM_GetNumAclLinks()) {
-      /*
-       * Start a timer to make sure that the profiles
-       * get the disconnect event.
-       */
-      alarm_set_on_mloop(bta_dm_cb.disable_timer, BTA_DM_DISABLE_CONN_DOWN_TIMER_MS,
-                         bta_dm_disable_conn_down_timer_cback, NULL);
-    }
-  }
-  if (remove_device) {
-    log::info("remove_dev_pending actually removing {}", bd_addr);
-    bta_dm_process_remove_device_no_callback(bd_addr);
-  }
-
-  if (bta_dm_acl_cb.p_acl_cback) {
-    tBTA_DM_ACL conn{};
-    conn.link_down.bd_addr = bd_addr;
-    conn.link_down.transport_link_type = transport;
-
-    bta_dm_acl_cb.p_acl_cback(BTA_DM_LINK_DOWN_EVT, &conn);
-  }
-
-  // TODO: reorganize and factor out the following logic
-  if (issue_unpair_cb && bta_dm_sec_cb.p_sec_cback) {
-    tBTA_DM_SEC conn{};
-    conn.dev_unpair.bd_addr = bd_addr;
-    conn.dev_unpair.transport_link_type = transport;
-
-    bta_dm_sec_cb.p_sec_cback(BTA_DM_DEV_UNPAIRED_EVT, &conn);
-  }
-
-  bta_dm_adjust_roles(true);
-}
 
 static void bta_dm_acl_down(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
   log::info("Device {} disconnected over transport {}", bd_addr, bt_transport_text(transport));
-  if (!com::android::bluetooth::flags::wait_for_disconnect_before_unbond()) {
-    bta_dm_acl_down_(bd_addr, transport);
-    return;
-  }
-
   for (uint8_t i = 0; i < bta_dm_cb.device_list.count; i++) {
     auto device = &bta_dm_cb.device_list.peer_device[i];
     if (device->peer_bdaddr == bd_addr && device->transport == transport) {

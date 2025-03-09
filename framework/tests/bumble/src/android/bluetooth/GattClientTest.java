@@ -510,6 +510,51 @@ public class GattClientTest {
         assertThat(resp.getStatus()).isEqualTo(AttStatusCode.SUCCESS);
     }
 
+    @Test
+    public void multipleGattClientsSeparateInteractions() throws Exception {
+        advertiseWithBumble();
+
+        BluetoothDevice device =
+                mAdapter.getRemoteLeDevice(
+                        Utils.BUMBLE_RANDOM_ADDRESS, BluetoothDevice.ADDRESS_TYPE_RANDOM);
+
+        BluetoothGattCallback gattCallbackA = mock(BluetoothGattCallback.class);
+        BluetoothGattCallback gattCallbackB = mock(BluetoothGattCallback.class);
+        InOrder inOrder = inOrder(gattCallbackA, gattCallbackB);
+
+        BluetoothGatt gattA = device.connectGatt(mContext, false, gattCallbackA);
+        inOrder.verify(gattCallbackA, timeout(1000))
+                .onConnectionStateChange(any(), anyInt(), eq(BluetoothProfile.STATE_CONNECTED));
+
+        BluetoothGatt gattB = device.connectGatt(mContext, false, gattCallbackB);
+        inOrder.verify(gattCallbackB, timeout(1000))
+                .onConnectionStateChange(any(), anyInt(), eq(BluetoothProfile.STATE_CONNECTED));
+
+        gattA.disconnect();
+        inOrder.verify(gattCallbackA, timeout(1000))
+                .onConnectionStateChange(any(), anyInt(), eq(BluetoothProfile.STATE_DISCONNECTED));
+
+        gattA.connect();
+        inOrder.verify(gattCallbackA, timeout(1000))
+                .onConnectionStateChange(any(), anyInt(), eq(BluetoothProfile.STATE_CONNECTED));
+
+        gattB.disconnect();
+        inOrder.verify(gattCallbackB, timeout(1000))
+                .onConnectionStateChange(any(), anyInt(), eq(BluetoothProfile.STATE_DISCONNECTED));
+
+        gattB.close();
+
+        gattA.disconnect();
+        inOrder.verify(gattCallbackA, timeout(1000))
+                .onConnectionStateChange(any(), anyInt(), eq(BluetoothProfile.STATE_DISCONNECTED));
+
+        gattA.connect();
+        inOrder.verify(gattCallbackA, timeout(1000))
+                .onConnectionStateChange(any(), anyInt(), eq(BluetoothProfile.STATE_CONNECTED));
+
+        gattA.close();
+    }
+
     private void advertiseWithBumble() {
         AdvertiseRequest request =
                 AdvertiseRequest.newBuilder()

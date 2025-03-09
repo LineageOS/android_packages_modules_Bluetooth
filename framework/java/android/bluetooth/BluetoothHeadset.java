@@ -22,6 +22,7 @@ import static android.Manifest.permission.MODIFY_PHONE_STATE;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
+import static android.bluetooth.BluetoothUtils.isValidDevice;
 
 import static java.util.Objects.requireNonNull;
 
@@ -1279,10 +1280,6 @@ public final class BluetoothHeadset implements BluetoothProfile {
 
     private boolean isDisabled() {
         return mAdapter.getState() == BluetoothAdapter.STATE_OFF;
-    }
-
-    private static boolean isValidDevice(BluetoothDevice device) {
-        return device != null && BluetoothAdapter.checkBluetoothAddress(device.getAddress());
     }
 
     private static void log(String msg) {

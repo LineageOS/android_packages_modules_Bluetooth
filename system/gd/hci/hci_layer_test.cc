@@ -210,7 +210,8 @@ public:
     hal = new hal::TestHciHal();
 
     fake_registry_.InjectTestModule(&hal::HciHal::Factory, hal);
-    fake_registry_.Start<DependsOnHci>(&fake_registry_.GetTestThread());
+    fake_registry_.Start<DependsOnHci>(&fake_registry_.GetTestThread(),
+                                       fake_registry_.GetTestHandler());
     hci = static_cast<HciLayer*>(fake_registry_.GetModuleUnderTest(&HciLayer::Factory));
     upper = static_cast<DependsOnHci*>(fake_registry_.GetModuleUnderTest(&DependsOnHci::Factory));
     ASSERT_TRUE(fake_registry_.IsStarted<HciLayer>());

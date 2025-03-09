@@ -41,7 +41,7 @@ import java.util.UUID;
 public class BluetoothGattServerProxy {
 
     private final Context mContext;
-    private BluetoothManager mBluetoothManager;
+    private final BluetoothManager mBluetoothManager;
     private BluetoothGattServer mBluetoothGattServer;
 
     public BluetoothGattServerProxy(Context context) {

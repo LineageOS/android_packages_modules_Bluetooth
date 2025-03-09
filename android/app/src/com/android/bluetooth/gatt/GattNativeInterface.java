@@ -124,10 +124,6 @@ public class GattNativeInterface {
                 .onServerSubrateChange(connId, subrateFactor, latency, contNum, timeout, status);
     }
 
-    void onSearchCompleted(int connId, int status) throws RemoteException {
-        getGattService().onSearchCompleted(connId, status);
-    }
-
     GattDbElement getSampleGattDbElement() {
         return getGattService().getSampleGattDbElement();
     }
@@ -311,8 +307,6 @@ public class GattNativeInterface {
     private native void gattClientDiscoverServiceByUuidNative(
             int connId, long serviceUuidLsb, long serviceUuidMsb);
 
-    private native void gattClientGetGattDbNative(int connId);
-
     private native void gattClientReadCharacteristicNative(int connId, int handle, int authReq);
 
     private native void gattClientReadUsingCharacteristicUuidNative(
@@ -493,11 +487,6 @@ public class GattNativeInterface {
     public void gattClientDiscoverServiceByUuid(
             int connId, long serviceUuidLsb, long serviceUuidMsb) {
         gattClientDiscoverServiceByUuidNative(connId, serviceUuidLsb, serviceUuidMsb);
-    }
-
-    /** Get GATT DB of the remote device */
-    public void gattClientGetGattDb(int connId) {
-        gattClientGetGattDbNative(connId);
     }
 
     /** Read a characteristic by the given handle */

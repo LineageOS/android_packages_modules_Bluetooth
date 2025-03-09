@@ -689,13 +689,13 @@ public class BluetoothPbapObexServerTest {
     }
 
     @Test
-    public void setCallversionCounters() {
+    public void setCallVersionCounters() {
         ApplicationParameter param = new ApplicationParameter();
         AppParamValue value = new AppParamValue();
         value.callHistoryVersionCounter =
                 new byte[] {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16};
 
-        BluetoothPbapObexServer.setCallversionCounters(param, value);
+        BluetoothPbapObexServer.setCallVersionCounters(param, value);
 
         byte[] expectedResult =
                 new byte[] {

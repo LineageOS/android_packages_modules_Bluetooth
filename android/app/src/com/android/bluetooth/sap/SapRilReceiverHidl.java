@@ -28,7 +28,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 
-/** SapRiilReceiverHidl is the HIDL implementation of ISapRilReceiver */
+/** SapRilReceiverHidl is the HIDL implementation of ISapRilReceiver */
 @SuppressWarnings("NonApiType") // We cannot change hidl anymore
 public class SapRilReceiverHidl implements ISapRilReceiver {
     private static final String TAG = SapRilReceiverHidl.class.getSimpleName();
@@ -114,7 +114,7 @@ public class SapRilReceiverHidl implements ISapRilReceiver {
     /**
      * Set callback that has response and unsolicited indication functions
      *
-     * @param sapCallback Object containing response and unosolicited indication callbacks
+     * @param sapCallback Object containing response and unsolicited indication callbacks
      */
     @Override
     public void setCallback(android.hardware.radio.sap.ISapCallback sapCallback)

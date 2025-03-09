@@ -363,7 +363,7 @@ class PbapClientAccountManager {
      * ready. The AccountManager framework doesn't have a good way for us to know _exactly_ when
      * this is, so the best we can do is try to interact with our account type and see if it works.
      *
-     * <p>We use a fake device address and our accoun ttype here to see if our account is visible
+     * <p>We use a fake device address and our account type here to see if our account is visible
      * yet.
      *
      * <p>This function is used in conjunction with the handler and a polling scheme to see

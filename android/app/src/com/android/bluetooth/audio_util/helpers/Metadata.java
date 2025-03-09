@@ -151,10 +151,10 @@ public class Metadata implements Cloneable {
 
     /** A Builder object to populate a Metadata from various different Media Framework objects */
     public static class Builder {
-        private Metadata mMetadata = new Metadata();
+        private final Metadata mMetadata = new Metadata();
         private Context mContext = null;
 
-        /** Set the Media ID fot the Metadata Object */
+        /** Set the Media ID for the Metadata Object */
         public Builder setMediaId(String id) {
             mMetadata.mediaId = id;
             return this;

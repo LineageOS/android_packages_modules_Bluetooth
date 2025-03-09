@@ -29,7 +29,6 @@ filegroup {
 cc_library_static {
     name: "libosi",
     visibility: [
-        "//packages/apps/Test/connectivity/sl4n",
         "//packages/modules/Bluetooth:__subpackages__",
     ],
     export_include_dirs: [
@@ -86,6 +85,7 @@ cc_library_static {
     static_libs: [
         "bluetooth_flags_c_lib",
         "libaconfig_storage_read_api_cc",
+        "libbluetooth_hci_pdl",
         "libbluetooth_log",
         "libbt-platform-protos-lite",
         "libcom.android.sysprop.bluetooth.wrapped",

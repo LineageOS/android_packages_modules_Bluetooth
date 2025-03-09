@@ -66,18 +66,26 @@ bool ModuleRegistry::IsStarted(const ModuleFactory* module) const {
   return started_modules_.find(module) != started_modules_.end();
 }
 
-void ModuleRegistry::Start(ModuleList* modules, Thread* thread) {
+void ModuleRegistry::Start(ModuleList* modules, Thread* thread, Handler* handler) {
   for (auto it = modules->list_.begin(); it != modules->list_.end(); it++) {
-    Start(*it, thread);
+    Start(*it, thread, handler);
   }
 }
 
-void ModuleRegistry::set_registry_and_handler(Module* instance, Thread* thread) const {
+void ModuleRegistry::set_registry_and_handler(Module* instance, Thread* thread,
+                                              Handler* handler) const {
   instance->registry_ = this;
-  instance->handler_ = new Handler(thread);
+
+  if (com::android::bluetooth::flags::same_handler_for_all_modules()) {
+    // Use same handler for all modules initialization.
+    // TODO: remove the dependency on the `thread` when the flag is removed.
+    instance->handler_ = handler;
+  } else {
+    instance->handler_ = new Handler(thread);
+  }
 }
 
-Module* ModuleRegistry::Start(const ModuleFactory* module, Thread* thread) {
+Module* ModuleRegistry::Start(const ModuleFactory* module, Thread* thread, Handler* handler) {
   {
     std::unique_lock<std::mutex> lock(started_modules_guard_, std::defer_lock);
     if (com::android::bluetooth::flags::fix_started_module_race()) {
@@ -91,11 +99,11 @@ Module* ModuleRegistry::Start(const ModuleFactory* module, Thread* thread) {
 
   log::info("Constructing next module");
   Module* instance = module->ctor_();
-  set_registry_and_handler(instance, thread);
+  set_registry_and_handler(instance, thread, handler);
 
   log::info("Starting dependencies of {}", instance->ToString());
   instance->ListDependencies(&instance->dependencies_);
-  Start(&instance->dependencies_, thread);
+  Start(&instance->dependencies_, thread, handler);
 
   log::info("Finished starting dependencies and calling Start() of {}", instance->ToString());
 

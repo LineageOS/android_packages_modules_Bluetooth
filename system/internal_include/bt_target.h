@@ -643,7 +643,7 @@
 #endif
 
 #ifndef HID_HOST_MAX_DEVICES
-#define HID_HOST_MAX_DEVICES 7
+#define HID_HOST_MAX_DEVICES 10
 #endif
 
 #ifndef HID_HOST_MTU

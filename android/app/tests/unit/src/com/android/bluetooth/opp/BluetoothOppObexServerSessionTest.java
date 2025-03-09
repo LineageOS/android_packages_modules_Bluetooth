@@ -337,7 +337,7 @@ public class BluetoothOppObexServerSessionTest {
         request.setHeader(HeaderSet.TARGET, null);
         BluetoothOppManager bluetoothOppManager = mock(BluetoothOppManager.class);
         BluetoothOppManager.setInstance(bluetoothOppManager);
-        doReturn(true).when(bluetoothOppManager).isAcceptlisted(any());
+        doReturn(true).when(bluetoothOppManager).isAcceptListed(any());
 
         assertThat(mServerSession.onConnect(request, reply)).isEqualTo(ResponseCodes.OBEX_HTTP_OK);
         BluetoothOppManager.setInstance(null);

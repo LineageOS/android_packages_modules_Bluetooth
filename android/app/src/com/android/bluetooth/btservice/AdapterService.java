@@ -36,6 +36,7 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.getProfileName;
+import static android.bluetooth.BluetoothUtils.RemoteExceptionIgnoringConsumer;
 import static android.bluetooth.IBluetoothLeAudio.LE_AUDIO_GROUP_ID_INVALID;
 import static android.text.format.DateUtils.MINUTE_IN_MILLIS;
 import static android.text.format.DateUtils.SECOND_IN_MILLIS;
@@ -128,6 +129,7 @@ import android.util.Log;
 import android.util.Pair;
 import android.util.SparseArray;
 
+import com.android.bluetooth.BluetoothEventLogger;
 import com.android.bluetooth.BluetoothMetricsProto;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
@@ -176,8 +178,6 @@ import com.android.modules.utils.BytesMatcher;
 
 import libcore.util.SneakyThrow;
 
-import com.google.common.base.Ascii;
-import com.google.common.collect.EvictingQueue;
 import com.google.protobuf.InvalidProtocolBufferException;
 
 import java.io.FileDescriptor;
@@ -200,6 +200,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -209,7 +210,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.regex.Pattern;
@@ -285,7 +285,8 @@ public class AdapterService extends Service {
     private final RemoteCallbackList<IBluetoothConnectionCallback> mBluetoothConnectionCallbacks =
             new RemoteCallbackList<>();
 
-    private final EvictingQueue<String> mScanModeChanges = EvictingQueue.create(10);
+    private final BluetoothEventLogger mScanModeChanges =
+            new BluetoothEventLogger(10, "Scan Mode Changes");
 
     private final DeviceConfigListener mDeviceConfigListener = new DeviceConfigListener();
 
@@ -300,7 +301,7 @@ public class AdapterService extends Service {
     private long mRxTimeTotalMs;
     private long mIdleTimeTotalMs;
     private long mEnergyUsedTotalVoltAmpSecMicro;
-    private HashSet<String> mLeAudioAllowDevices = new HashSet<>();
+    private final HashSet<String> mLeAudioAllowDevices = new HashSet<>();
 
     /* List of pairs of gatt clients which controls AutoActiveMode on the device.*/
     @VisibleForTesting
@@ -320,7 +321,7 @@ public class AdapterService extends Service {
     private boolean mNativeAvailable;
     private boolean mCleaningUp;
     private boolean mQuietmode = false;
-    private Map<String, CallerInfo> mBondAttemptCallerInfo = new HashMap<>();
+    private final Map<String, CallerInfo> mBondAttemptCallerInfo = new HashMap<>();
 
     private BatteryStatsManager mBatteryStatsManager;
     private PowerManager mPowerManager;
@@ -521,10 +522,10 @@ public class AdapterService extends Service {
                         Log.e(
                                 TAG,
                                 "Preferred audio profiles change audio framework timeout for "
-                                        + ("device " + request.mDeviceRequested));
+                                        + ("device " + request.device));
                         sendPreferredAudioProfilesCallbackToApps(
-                                request.mDeviceRequested,
-                                request.mRequestedPreferences,
+                                request.device,
+                                request.preferences,
                                 BluetoothStatusCodes.ERROR_TIMEOUT);
                     }
                     break;
@@ -615,29 +616,13 @@ public class AdapterService extends Service {
      * Stores information about requests made to the audio framework arising from calls to {@link
      * BluetoothAdapter#setPreferredAudioProfiles(BluetoothDevice, Bundle)}.
      */
-    private static class PendingAudioProfilePreferenceRequest {
-        // The newly requested preferences
-        final Bundle mRequestedPreferences;
-        // Reference counter for how many calls are pending completion in the audio framework
-        int mRemainingRequestsToAudioFramework;
-        // The device with which the request was made. Used for sending the callback.
-        final BluetoothDevice mDeviceRequested;
-
-        /**
-         * Constructs an entity to store information about pending preferred audio profile changes.
-         *
-         * @param preferences newly requested preferences
-         * @param numRequestsToAudioFramework how many active device changed requests are sent to
-         *     the audio framework
-         * @param device the device with which the request was made
-         */
-        PendingAudioProfilePreferenceRequest(
-                Bundle preferences, int numRequestsToAudioFramework, BluetoothDevice device) {
-            mRequestedPreferences = preferences;
-            mRemainingRequestsToAudioFramework = numRequestsToAudioFramework;
-            mDeviceRequested = device;
-        }
-    }
+    private record PendingAudioProfilePreferenceRequest(
+            // The newly requested preferences
+            Bundle preferences,
+            // Reference counter for how many calls are pending completion in the audio framework
+            int numberOfRemainingRequestsToAudioFramework,
+            // The device with which the request was made. Used for sending the callback.
+            BluetoothDevice device) {}
 
     final @NonNull <T> T getNonNullSystemService(@NonNull Class<T> clazz) {
         return requireNonNull(getSystemService(clazz));
@@ -647,7 +632,7 @@ public class AdapterService extends Service {
     public void onCreate() {
         super.onCreate();
         Log.d(TAG, "onCreate()");
-        // OnCreate must perform the minimum of infaillible and mandatory initialization
+        // OnCreate must perform the minimum of infallible and mandatory initialization
         mRemoteDevices = new RemoteDevices(this, mLooper);
         mAdapterProperties = new AdapterProperties(this, mRemoteDevices, mLooper);
         mAdapterStateMachine = new AdapterState(this, mLooper);
@@ -742,8 +727,6 @@ public class AdapterService extends Service {
 
         mActiveDeviceManager = new ActiveDeviceManager(this, new ServiceFactory());
         mActiveDeviceManager.start();
-
-        mSilenceDeviceManager.start();
 
         mBtCompanionManager = new CompanionManager(this, new ServiceFactory());
 
@@ -2023,7 +2006,7 @@ public class AdapterService extends Service {
             return BluetoothStatusCodes.RFCOMM_LISTENER_OPERATION_FAILED_NO_MATCHING_SERVICE_RECORD;
         }
 
-        if (source.getUid() != listenerData.mAttributionSource.getUid()) {
+        if (source.getUid() != listenerData.source.getUid()) {
             return BluetoothStatusCodes.RFCOMM_LISTENER_OPERATION_FAILED_DIFFERENT_APP;
         }
 
@@ -2047,12 +2030,12 @@ public class AdapterService extends Service {
             return socketInfo;
         }
 
-        if (source.getUid() != listenerData.mAttributionSource.getUid()) {
+        if (source.getUid() != listenerData.source.getUid()) {
             socketInfo.status = BluetoothStatusCodes.RFCOMM_LISTENER_OPERATION_FAILED_DIFFERENT_APP;
             return socketInfo;
         }
 
-        BluetoothSocket socket = listenerData.mPendingSockets.poll();
+        BluetoothSocket socket = listenerData.pendingSockets.poll();
 
         if (socket == null) {
             socketInfo.status = BluetoothStatusCodes.RFCOMM_LISTENER_NO_SOCKET_AVAILABLE;
@@ -2074,20 +2057,20 @@ public class AdapterService extends Service {
         while (true) {
             BluetoothSocket socket;
             try {
-                socket = listenerData.mServerSocket.accept();
+                socket = listenerData.serverSocket.accept();
             } catch (IOException e) {
                 if (mBluetoothServerSockets.containsKey(uuid)) {
                     // The uuid still being in the map indicates that the accept failure is
                     // unexpected. Try and restart the listener.
-                    Log.e(TAG, "Failed to accept socket on " + listenerData.mServerSocket, e);
+                    Log.e(TAG, "Failed to accept socket on " + listenerData.serverSocket, e);
                     restartRfcommListener(listenerData, uuid);
                 }
                 return;
             }
 
-            listenerData.mPendingSockets.add(socket);
+            listenerData.pendingSockets.add(socket);
             try {
-                listenerData.mPendingIntent.send();
+                listenerData.pendingIntent.send();
             } catch (PendingIntent.CanceledException e) {
                 Log.e(TAG, "PendingIntent for RFCOMM socket notifications cancelled.", e);
                 // The pending intent was cancelled, close the server as there is no longer any way
@@ -2109,10 +2092,7 @@ public class AdapterService extends Service {
         listenerData.closeServerAndPendingSockets(mHandler);
         try {
             startRfcommListenerInternal(
-                    listenerData.mName,
-                    uuid,
-                    listenerData.mPendingIntent,
-                    listenerData.mAttributionSource);
+                    listenerData.name, uuid, listenerData.pendingIntent, listenerData.source);
         } catch (IOException e) {
             Log.e(TAG, "Failed to recreate rfcomm server socket", e);
 
@@ -2122,7 +2102,7 @@ public class AdapterService extends Service {
 
     private static void pendingSocketTimeoutRunnable(
             RfcommListenerData listenerData, BluetoothSocket socket) {
-        boolean socketFound = listenerData.mPendingSockets.remove(socket);
+        boolean socketFound = listenerData.pendingSockets.remove(socket);
         if (socketFound) {
             try {
                 socket.close();
@@ -2141,7 +2121,8 @@ public class AdapterService extends Service {
                 mAdapter.listenUsingRfcommWithServiceRecord(name, uuid);
 
         RfcommListenerData listenerData =
-                new RfcommListenerData(bluetoothServerSocket, name, intent, source);
+                new RfcommListenerData(
+                        bluetoothServerSocket, name, intent, source, new ConcurrentLinkedQueue<>());
 
         mBluetoothServerSockets.put(uuid, listenerData);
 
@@ -2157,40 +2138,27 @@ public class AdapterService extends Service {
         }
     }
 
-    private static class RfcommListenerData {
-        final BluetoothServerSocket mServerSocket;
-        // Service record name
-        final String mName;
-        // The Intent which contains the Service info to which the incoming socket connections are
-        // handed off to.
-        final PendingIntent mPendingIntent;
-        // AttributionSource for the requester of the RFCOMM listener
-        final AttributionSource mAttributionSource;
-        // Contains the connected sockets which are pending transfer to the app which requested the
-        // listener.
-        final ConcurrentLinkedQueue<BluetoothSocket> mPendingSockets =
-                new ConcurrentLinkedQueue<>();
-
-        RfcommListenerData(
-                BluetoothServerSocket serverSocket,
-                String name,
-                PendingIntent pendingIntent,
-                AttributionSource source) {
-            mServerSocket = serverSocket;
-            mName = name;
-            mPendingIntent = pendingIntent;
-            mAttributionSource = source;
-        }
+    private record RfcommListenerData(
+            BluetoothServerSocket serverSocket,
+            // Service record name
+            String name,
+            // Contains the Service info to which the incoming socket connections are handed off to
+            PendingIntent pendingIntent,
+            // AttributionSource for the requester of the RFCOMM listener
+            AttributionSource source,
+            // Contains the connected sockets which are pending transfer to the app which requested
+            // the listener.
+            ConcurrentLinkedQueue<BluetoothSocket> pendingSockets) {
 
         int closeServerAndPendingSockets(Handler handler) {
             int result = BluetoothStatusCodes.SUCCESS;
             try {
-                mServerSocket.close();
+                serverSocket.close();
             } catch (IOException e) {
                 Log.e(TAG, "Failed to call close on rfcomm server socket", e);
                 result = BluetoothStatusCodes.RFCOMM_LISTENER_FAILED_TO_CLOSE_SERVER_SOCKET;
             }
-            mPendingSockets.forEach(
+            pendingSockets.forEach(
                     pendingSocket -> {
                         handler.removeCallbacksAndMessages(pendingSocket);
                         try {
@@ -2199,8 +2167,7 @@ public class AdapterService extends Service {
                             Log.e(TAG, "Failed to close socket", e);
                         }
                     });
-            mPendingSockets.clear();
-
+            pendingSockets.clear();
             return result;
         }
     }
@@ -4760,36 +4727,36 @@ public class AdapterService extends Service {
                     mCsipGroupsPendingAudioProfileChanges.get(groupId);
 
             // If this is the final audio framework request, send callback to apps
-            if (pendingRequest.mRemainingRequestsToAudioFramework == 1) {
+            if (pendingRequest.numberOfRemainingRequestsToAudioFramework == 1) {
                 Log.i(
                         TAG,
                         "notifyActiveDeviceChangeApplied: Complete for device "
-                                + pendingRequest.mDeviceRequested);
+                                + pendingRequest.device);
                 sendPreferredAudioProfilesCallbackToApps(
-                        pendingRequest.mDeviceRequested,
-                        pendingRequest.mRequestedPreferences,
+                        pendingRequest.device,
+                        pendingRequest.preferences,
                         BluetoothStatusCodes.SUCCESS);
                 // Removes the timeout from the handler
                 mHandler.removeMessages(
                         MESSAGE_PREFERRED_AUDIO_PROFILES_AUDIO_FRAMEWORK_TIMEOUT, groupId);
-            } else if (pendingRequest.mRemainingRequestsToAudioFramework > 1) {
+            } else if (pendingRequest.numberOfRemainingRequestsToAudioFramework > 1) {
                 PendingAudioProfilePreferenceRequest updatedPendingRequest =
                         new PendingAudioProfilePreferenceRequest(
-                                pendingRequest.mRequestedPreferences,
-                                pendingRequest.mRemainingRequestsToAudioFramework - 1,
-                                pendingRequest.mDeviceRequested);
+                                pendingRequest.preferences,
+                                pendingRequest.numberOfRemainingRequestsToAudioFramework - 1,
+                                pendingRequest.device);
                 Log.i(
                         TAG,
                         "notifyActiveDeviceChangeApplied: Updating device "
-                                + updatedPendingRequest.mDeviceRequested
+                                + updatedPendingRequest.device
                                 + " with new remaining requests count="
-                                + updatedPendingRequest.mRemainingRequestsToAudioFramework);
+                                + updatedPendingRequest.numberOfRemainingRequestsToAudioFramework);
                 mCsipGroupsPendingAudioProfileChanges.put(groupId, updatedPendingRequest);
             } else {
                 Log.i(
                         TAG,
                         "notifyActiveDeviceChangeApplied: "
-                                + pendingRequest.mDeviceRequested
+                                + pendingRequest.device
                                 + " has no remaining requests to audio framework, but is still"
                                 + " present in mCsipGroupsPendingAudioProfileChanges");
             }
@@ -4957,7 +4924,8 @@ public class AdapterService extends Service {
 
     public String getIdentityAddress(String address) {
         BluetoothDevice device =
-                BluetoothAdapter.getDefaultAdapter().getRemoteDevice(Ascii.toUpperCase(address));
+                BluetoothAdapter.getDefaultAdapter()
+                        .getRemoteDevice(address.toUpperCase(Locale.ROOT));
         DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
         if (deviceProp != null && deviceProp.getIdentityAddress() != null) {
             return deviceProp.getIdentityAddress();
@@ -4981,7 +4949,8 @@ public class AdapterService extends Service {
     @NonNull
     public BluetoothAddress getIdentityAddressWithType(@NonNull String address) {
         BluetoothDevice device =
-                BluetoothAdapter.getDefaultAdapter().getRemoteDevice(Ascii.toUpperCase(address));
+                BluetoothAdapter.getDefaultAdapter()
+                        .getRemoteDevice(address.toUpperCase(Locale.ROOT));
         DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
 
         String identityAddress = null;
@@ -5003,10 +4972,7 @@ public class AdapterService extends Service {
         return new BluetoothAddress(identityAddress, identityAddressType);
     }
 
-    private static class CallerInfo {
-        public String callerPackageName;
-        public UserHandle user;
-    }
+    private record CallerInfo(String callerPackageName, UserHandle user) {}
 
     boolean createBond(
             BluetoothDevice device,
@@ -5029,9 +4995,7 @@ public class AdapterService extends Service {
             return false;
         }
 
-        CallerInfo createBondCaller = new CallerInfo();
-        createBondCaller.callerPackageName = callingPackage;
-        createBondCaller.user = Binder.getCallingUserHandle();
+        CallerInfo createBondCaller = new CallerInfo(callingPackage, Binder.getCallingUserHandle());
         mBondAttemptCallerInfo.put(device.getAddress(), createBondCaller);
 
         mRemoteDevices.setBondingInitiatedLocally(Utils.getByteAddress(device));
@@ -5328,7 +5292,7 @@ public class AdapterService extends Service {
         if (isAutoActiveModeDisabled && ((getConnectionState(device) & leConnectedState) != 0)) {
             for (BluetoothDevice dev : mLeAudioService.getGroupDevices(groupId)) {
                 /* Need to disconnect all the devices from the group as those might be connected
-                 * as well especially those which migh keep the connection
+                 * as well especially those which might keep the connection
                  */
                 if ((getConnectionState(dev) & leConnectedState) != 0) {
                     mNativeInterface.disconnectAcl(dev, BluetoothDevice.TRANSPORT_LE);
@@ -5341,7 +5305,7 @@ public class AdapterService extends Service {
      * Notify AdapterService about failed GATT connection attempt.
      *
      * @param clientIf ClientIf which was doing GATT connection attempt
-     * @param device Remote device to which connection attpemt failed
+     * @param device Remote device to which connection attempt failed
      */
     public void notifyGattClientConnectFailed(int clientIf, BluetoothDevice device) {
         if (mLeAudioService != null) {
@@ -5412,7 +5376,7 @@ public class AdapterService extends Service {
     }
 
     /**
-     * Checks whether the device was recently associated with the comapnion app that called {@link
+     * Checks whether the device was recently associated with the companion app that called {@link
      * BluetoothDevice#createBond}. This allows these devices to skip the pairing dialog if their
      * pairing variant is {@link BluetoothDevice#PAIRING_VARIANT_CONSENT}.
      *
@@ -5655,7 +5619,7 @@ public class AdapterService extends Service {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED;
         }
 
-        // Checks if any profiles are enablde or disabled and if so, only connect enabled profiles
+        // Checks if any profiles are enabled or disabled and if so, only connect enabled profiles
         if (!isAllProfilesUnknown(device)) {
             return connectEnabledProfiles(device);
         }
@@ -5930,7 +5894,8 @@ public class AdapterService extends Service {
         return mRemoteDevices.getUuids(device);
     }
 
-    void aclStateChangeBroadcastCallback(Consumer<IBluetoothConnectionCallback> cb) {
+    void aclStateChangeBroadcastCallback(
+            RemoteExceptionIgnoringConsumer<IBluetoothConnectionCallback> cb) {
         int n = mBluetoothConnectionCallbacks.beginBroadcast();
         Log.d(TAG, "aclStateChangeBroadcastCallback() - Broadcasting to " + n + " receivers.");
         for (int i = 0; i < n; i++) {
@@ -5979,7 +5944,7 @@ public class AdapterService extends Service {
             case /*HCI_ERR_ENCRY_MODE_NOT_ACCEPTABLE*/ 0x25:
             case /*HCI_ERR_UNIT_KEY_USED*/ 0x26:
             case /*HCI_ERR_PAIRING_WITH_UNIT_KEY_NOT_SUPPORTED*/ 0x29:
-            case /*HCI_ERR_INSUFFCIENT_SECURITY*/ 0x2F:
+            case /*HCI_ERR_INSUFFICIENT_SECURITY*/ 0x2F:
             case /*HCI_ERR_HOST_BUSY_PAIRING*/ 0x38:
                 return BluetoothStatusCodes.ERROR_DISCONNECT_REASON_SECURITY;
             case /*HCI_ERR_MEMORY_FULL*/ 0x07:
@@ -6238,7 +6203,7 @@ public class AdapterService extends Service {
     }
 
     private boolean setScanMode(int mode, String from) {
-        mScanModeChanges.add(Utils.getLocalTimeString() + " (" + from + ") " + dumpScanMode(mode));
+        mScanModeChanges.add(from + ": " + scanModeName(mode));
         if (!mNativeInterface.setScanMode(convertScanModeToHal(mode))) {
             return false;
         }
@@ -6652,7 +6617,6 @@ public class AdapterService extends Service {
     }
 
     /** Update metadata change to registered listeners */
-    @VisibleForTesting
     public void onMetadataChanged(BluetoothDevice device, int key, byte[] value) {
         mHandler.post(() -> onMetadataChangedInternal(device, key, value));
     }
@@ -6702,17 +6666,13 @@ public class AdapterService extends Service {
         return mRemoteDevices;
     }
 
-    private static String dumpScanMode(int scanMode) {
-        switch (scanMode) {
-            case SCAN_MODE_NONE:
-                return "SCAN_MODE_NONE";
-            case SCAN_MODE_CONNECTABLE:
-                return "SCAN_MODE_CONNECTABLE";
-            case SCAN_MODE_CONNECTABLE_DISCOVERABLE:
-                return "SCAN_MODE_CONNECTABLE_DISCOVERABLE";
-            default:
-                return "Unknown Scan Mode " + scanMode;
-        }
+    private static String scanModeName(int scanMode) {
+        return switch (scanMode) {
+            case SCAN_MODE_NONE -> "SCAN_MODE_NONE";
+            case SCAN_MODE_CONNECTABLE -> "SCAN_MODE_CONNECTABLE";
+            case SCAN_MODE_CONNECTABLE_DISCOVERABLE -> "SCAN_MODE_CONNECTABLE_DISCOVERABLE";
+            default -> "Unknown Scan Mode " + scanMode;
+        };
     }
 
     @Override
@@ -6744,11 +6704,10 @@ public class AdapterService extends Service {
         writer.println();
         mAdapterProperties.dump(fd, writer, args);
 
-        writer.println("ScanMode: " + dumpScanMode(getScanMode()));
-        writer.println("Scan Mode Changes:");
-        for (String log : mScanModeChanges) {
-            writer.println("    " + log);
-        }
+        writer.println("ScanMode: " + scanModeName(getScanMode()));
+        StringBuilder sb = new StringBuilder();
+        mScanModeChanges.dump(sb);
+        writer.println(sb.toString());
         writer.println();
         writer.println("sSnoopLogSettingAtEnable = " + sSnoopLogSettingAtEnable);
         writer.println("sDefaultSnoopLogSettingAtEnable = " + sDefaultSnoopLogSettingAtEnable);
@@ -6768,7 +6727,11 @@ public class AdapterService extends Service {
 
         mAdapterStateMachine.dump(fd, writer, args);
 
-        StringBuilder sb = new StringBuilder();
+        sb = new StringBuilder();
+
+        mSilenceDeviceManager.dump(sb);
+        mDatabaseManager.dump(sb);
+
         for (ProfileService profile : mRegisteredProfiles) {
             profile.dump(sb);
         }
@@ -6779,11 +6742,8 @@ public class AdapterService extends Service {
                 scanController.dump(sb);
             }
         }
-        mSilenceDeviceManager.dump(fd, writer, args);
-        mDatabaseManager.dump(writer);
 
         writer.write(sb.toString());
-        writer.flush();
 
         final int currentState = mAdapterProperties.getState();
         if (currentState == BluetoothAdapter.STATE_OFF
@@ -6795,7 +6755,9 @@ public class AdapterService extends Service {
                     "Impossible to dump native stack. state="
                             + BluetoothAdapter.nameForState(currentState));
             writer.println();
+            writer.flush();
         } else {
+            writer.flush();
             mNativeInterface.dump(fd, args);
         }
     }

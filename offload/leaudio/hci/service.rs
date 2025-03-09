@@ -15,10 +15,10 @@
 use android_hardware_bluetooth_offload_leaudio::{aidl, binder};
 
 use crate::arbiter::Arbiter;
-use aidl::android::hardware::bluetooth::offload::leaudio::{
-    IHciProxy::{BnHciProxy, BpHciProxy, IHciProxy},
-    IHciProxyCallbacks::IHciProxyCallbacks,
+use aidl::android::hardware::bluetooth::offload::leaudio::IHciProxy::{
+    BnHciProxy, BpHciProxy, IHciProxy,
 };
+use aidl::android::hardware::bluetooth::offload::leaudio::IHciProxyCallbacks::IHciProxyCallbacks;
 use binder::{BinderFeatures, ExceptionCode, Interface, Result as BinderResult, Strong};
 use bluetooth_offload_hci::IsoData;
 use std::collections::HashMap;
@@ -104,6 +104,10 @@ impl IHciProxy for HciProxy {
 
         let state = self.state.lock().unwrap();
         if let Some(arbiter) = state.arbiter.upgrade() {
+            assert!(
+                data.len() <= arbiter.max_buf_len(),
+                "SDU Fragmentation over HCI is not supported"
+            );
             arbiter.push_audio(&IsoData::new(handle, seqnum, data));
         } else {
             log::warn!("Trashing packet received in bad state");

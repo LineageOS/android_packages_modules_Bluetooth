@@ -16,6 +16,8 @@
 
 package com.android.bluetooth.le_scan;
 
+import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_CACHED;
+import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
@@ -73,11 +75,17 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.Collectors;
 
 /** Class that handles Bluetooth LE scan related operations. */
 public class ScanManager {
     private static final String TAG =
             GattServiceConfig.TAG_PREFIX + ScanManager.class.getSimpleName();
+
+    public static final int SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW_MS = 512;
+    public static final int SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL_MS = 10240;
+    public static final int SCAN_MODE_SCREEN_OFF_BALANCED_WINDOW_MS = 183;
+    public static final int SCAN_MODE_SCREEN_OFF_BALANCED_INTERVAL_MS = 730;
 
     /** Scan params corresponding to regular scan setting */
     @VisibleForTesting static final int SCAN_MODE_LOW_POWER_WINDOW_MS = 140;
@@ -87,10 +95,6 @@ public class ScanManager {
     @VisibleForTesting static final int SCAN_MODE_BALANCED_INTERVAL_MS = 730;
     @VisibleForTesting static final int SCAN_MODE_LOW_LATENCY_WINDOW_MS = 100;
     @VisibleForTesting static final int SCAN_MODE_LOW_LATENCY_INTERVAL_MS = 100;
-    public static final int SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW_MS = 512;
-    public static final int SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL_MS = 10240;
-    public static final int SCAN_MODE_SCREEN_OFF_BALANCED_WINDOW_MS = 183;
-    public static final int SCAN_MODE_SCREEN_OFF_BALANCED_INTERVAL_MS = 730;
 
     // Result type defined in bt stack. Need to be accessed by ScanController.
     static final int SCAN_RESULT_TYPE_TRUNCATED = 1;
@@ -113,59 +117,53 @@ public class ScanManager {
     private static final String ACTION_REFRESH_BATCHED_SCAN =
             "com.android.bluetooth.gatt.REFRESH_BATCHED_SCAN";
 
+    private static final int FOREGROUND_IMPORTANCE_CUTOFF = IMPORTANCE_FOREGROUND_SERVICE;
+    private static final boolean DEFAULT_UID_IS_FOREGROUND = true;
+    private static final int SCAN_MODE_APP_IN_BACKGROUND = ScanSettings.SCAN_MODE_LOW_POWER;
+    private static final int SCAN_MODE_FORCE_DOWNGRADED = ScanSettings.SCAN_MODE_LOW_POWER;
+    private static final int SCAN_MODE_MAX_IN_CONCURRENCY = ScanSettings.SCAN_MODE_BALANCED;
+
     // Timeout for each controller operation.
     private static final int OPERATION_TIME_OUT_MILLIS = 500;
     private static final int MAX_IS_UID_FOREGROUND_MAP_SIZE = 500;
+
+    @VisibleForTesting final ScanNative mScanNative;
+    @VisibleForTesting final ClientHandler mHandler;
+
+    private final Object mCurUsedTrackableAdvertisementsLock = new Object();
+    private final Set<ScanClient> mRegularScanClients =
+            Collections.newSetFromMap(new ConcurrentHashMap<ScanClient, Boolean>());
+    private final Set<ScanClient> mBatchClients =
+            Collections.newSetFromMap(new ConcurrentHashMap<ScanClient, Boolean>());
+    private final Set<ScanClient> mSuspendedScanClients =
+            Collections.newSetFromMap(new ConcurrentHashMap<ScanClient, Boolean>());
+    private final SparseIntArray mPriorityMap = new SparseIntArray();
+    private final SparseBooleanArray mIsUidForegroundMap = new SparseBooleanArray();
+    private final AdapterService mAdapterService;
+    private final ScanController mScanController;
+    private final TimeProvider mTimeProvider;
+    private final BluetoothAdapterProxy mBluetoothAdapterProxy;
+    private final DisplayManager mDisplayManager;
+    private final ActivityManager mActivityManager;
+    private final LocationManager mLocationManager;
+    private final BatchScanThrottler mBatchScanThrottler;
+
+    @VisibleForTesting boolean mIsConnecting;
+    @VisibleForTesting int mProfilesConnecting;
 
     private int mLastConfiguredScanSetting1m = Integer.MIN_VALUE;
     private int mLastConfiguredScanSettingCoded = Integer.MIN_VALUE;
     // Scan parameters for batch scan.
     private BatchScanParams mBatchScanParams;
 
-    private final Object mCurUsedTrackableAdvertisementsLock = new Object();
-
     @GuardedBy("mCurUsedTrackableAdvertisementsLock")
     private int mCurUsedTrackableAdvertisements = 0;
 
-    private final ScanController mScanController;
-    private final AdapterService mAdapterService;
-    private final TimeProvider mTimeProvider;
-    @VisibleForTesting ScanNative mScanNative;
-    private BluetoothAdapterProxy mBluetoothAdapterProxy;
-    @VisibleForTesting final ClientHandler mHandler;
-
-    private Set<ScanClient> mRegularScanClients;
-    private Set<ScanClient> mBatchClients;
-    private Set<ScanClient> mSuspendedScanClients;
-    private SparseIntArray mPriorityMap = new SparseIntArray();
-
-    private DisplayManager mDisplayManager;
-
-    private ActivityManager mActivityManager;
-    private LocationManager mLocationManager;
-    private static final int FOREGROUND_IMPORTANCE_CUTOFF =
-            ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE;
-    private static final boolean DEFAULT_UID_IS_FOREGROUND = true;
-    private static final int SCAN_MODE_APP_IN_BACKGROUND = ScanSettings.SCAN_MODE_LOW_POWER;
-    private static final int SCAN_MODE_FORCE_DOWNGRADED = ScanSettings.SCAN_MODE_LOW_POWER;
-    private static final int SCAN_MODE_MAX_IN_CONCURRENCY = ScanSettings.SCAN_MODE_BALANCED;
-    private final SparseBooleanArray mIsUidForegroundMap = new SparseBooleanArray();
     private boolean mScreenOn = false;
-    @VisibleForTesting boolean mIsConnecting;
-    @VisibleForTesting int mProfilesConnecting;
     private int mProfilesConnected, mProfilesDisconnecting;
-    private final BatchScanThrottler mBatchScanThrottler;
 
     @VisibleForTesting
-    static class UidImportance {
-        public int uid;
-        public int importance;
-
-        UidImportance(int uid, int importance) {
-            this.uid = uid;
-            this.importance = importance;
-        }
-    }
+    record UidImportance(int uid, int importance) {}
 
     ScanManager(
             AdapterService adapterService,
@@ -173,11 +171,6 @@ public class ScanManager {
             BluetoothAdapterProxy bluetoothAdapterProxy,
             Looper looper,
             TimeProvider timeProvider) {
-        mRegularScanClients =
-                Collections.newSetFromMap(new ConcurrentHashMap<ScanClient, Boolean>());
-        mBatchClients = Collections.newSetFromMap(new ConcurrentHashMap<ScanClient, Boolean>());
-        mSuspendedScanClients =
-                Collections.newSetFromMap(new ConcurrentHashMap<ScanClient, Boolean>());
         mScanController = scanController;
         mAdapterService = adapterService;
         mTimeProvider = timeProvider;
@@ -187,7 +180,6 @@ public class ScanManager {
         mLocationManager = mAdapterService.getSystemService(LocationManager.class);
         mBluetoothAdapterProxy = bluetoothAdapterProxy;
         mIsConnecting = false;
-
         mPriorityMap.put(ScanSettings.SCAN_MODE_OPPORTUNISTIC, 0);
         mPriorityMap.put(ScanSettings.SCAN_MODE_SCREEN_OFF, 1);
         mPriorityMap.put(ScanSettings.SCAN_MODE_LOW_POWER, 2);
@@ -196,7 +188,6 @@ public class ScanManager {
         mPriorityMap.put(ScanSettings.SCAN_MODE_BALANCED, 4);
         mPriorityMap.put(ScanSettings.SCAN_MODE_AMBIENT_DISCOVERY, 4);
         mPriorityMap.put(ScanSettings.SCAN_MODE_LOW_LATENCY, 5);
-
         mHandler = new ClientHandler(looper);
         if (mDisplayManager != null) {
             mDisplayManager.registerDisplayListener(mDisplayListener, null);
@@ -270,13 +261,9 @@ public class ScanManager {
     Set<ScanClient> getFullBatchScanQueue() {
         // TODO: split full batch scan clients and truncated batch clients so we don't need to
         // construct this every time.
-        Set<ScanClient> fullBatchClients = new HashSet<ScanClient>();
-        for (ScanClient client : mBatchClients) {
-            if (client.mSettings.getScanResultType() == ScanSettings.SCAN_RESULT_TYPE_FULL) {
-                fullBatchClients.add(client);
-            }
-        }
-        return fullBatchClients;
+        return mBatchClients.stream()
+                .filter(c -> c.mSettings.getScanResultType() == ScanSettings.SCAN_RESULT_TYPE_FULL)
+                .collect(Collectors.toSet());
     }
 
     void startScan(ScanClient client) {
@@ -329,6 +316,26 @@ public class ScanManager {
         }
     }
 
+    void fetchAppForegroundState(ScanClient client) {
+        PackageManager packageManager = mAdapterService.getPackageManager();
+        if (mActivityManager == null || packageManager == null) {
+            return;
+        }
+        String[] packages = packageManager.getPackagesForUid(client.mAppUid);
+        if (packages == null || packages.length == 0) {
+            return;
+        }
+        int importance = IMPORTANCE_CACHED;
+        for (String packageName : packages) {
+            importance = Math.min(importance, mActivityManager.getPackageImportance(packageName));
+        }
+        boolean isForeground = importance <= IMPORTANCE_FOREGROUND_SERVICE;
+        mIsUidForegroundMap.put(client.mAppUid, isForeground);
+        if (client.mStats != null) {
+            client.mStats.setAppImportance(importance);
+        }
+    }
+
     // Handler class that handles BLE scan operations.
     @VisibleForTesting
     class ClientHandler extends Handler {
@@ -365,7 +372,7 @@ public class ScanManager {
                     handleScreenOn();
                     break;
                 case MSG_REVERT_SCAN_MODE_UPGRADE:
-                    revertScanModeUpgrade((ScanClient) msg.obj);
+                    handleRevertScanModeUpgrade((ScanClient) msg.obj);
                     break;
                 case MSG_IMPORTANCE_CHANGE:
                     handleImportanceChange((UidImportance) msg.obj);
@@ -382,7 +389,7 @@ public class ScanManager {
             }
         }
 
-        void handleStartScan(ScanClient client) {
+        private void handleStartScan(ScanClient client) {
             Log.d(TAG, "handling starting scan");
             fetchAppForegroundState(client);
 
@@ -392,7 +399,7 @@ public class ScanManager {
             }
 
             if (mRegularScanClients.contains(client) || mBatchClients.contains(client)) {
-                Log.e(TAG, "Scan already started");
+                Log.e(TAG, "Scan already started for scanner id: " + client.mScannerId);
                 return;
             }
 
@@ -488,7 +495,7 @@ public class ScanManager {
             return atLeastOneValidFilter;
         }
 
-        void handleStopScan(ScanClient client) {
+        private void handleStopScan(ScanClient client) {
             if (client == null) {
                 return;
             }
@@ -517,7 +524,7 @@ public class ScanManager {
             }
         }
 
-        void handleFlushBatchResults(ScanClient client) {
+        private void handleFlushBatchResults(ScanClient client) {
             Log.d(TAG, "handleFlushBatchResults() " + client);
             if (!mBatchClients.contains(client)) {
                 Log.d(TAG, "There is no batch scan client to flush " + client);
@@ -547,7 +554,7 @@ public class ScanManager {
                     && settings.getReportDelayMillis() == 0;
         }
 
-        void handleScreenOff() {
+        private void handleScreenOff() {
             AppScanStats.setScreenState(false, mTimeProvider);
             if (!mScreenOn) {
                 return;
@@ -560,7 +567,7 @@ public class ScanManager {
             updateRegularScanToBatchScanClients();
         }
 
-        void handleConnectingState() {
+        private void handleConnectingState() {
             if (mAdapterService.getScanDowngradeDurationMillis() == 0) {
                 return;
             }
@@ -581,7 +588,7 @@ public class ScanManager {
             sendMessageDelayed(msg, mAdapterService.getScanDowngradeDurationMillis());
         }
 
-        void handleClearConnectingState() {
+        private void handleClearConnectingState() {
             if (!mIsConnecting) {
                 Log.e(TAG, "handleClearConnectingState() - not connecting state");
                 return;
@@ -601,7 +608,7 @@ public class ScanManager {
             mIsConnecting = false;
         }
 
-        void handleSuspendScans() {
+        private void handleSuspendScans() {
             for (ScanClient client : mRegularScanClients) {
                 if ((requiresScreenOn(client) && !mScreenOn)
                         || (requiresLocationOn(client) && !mLocationManager.isLocationEnabled())) {
@@ -731,26 +738,6 @@ public class ScanManager {
             return mIsUidForegroundMap.get(client.mAppUid, DEFAULT_UID_IS_FOREGROUND);
         }
 
-        private void fetchAppForegroundState(ScanClient client) {
-            PackageManager packageManager = mAdapterService.getPackageManager();
-            if (mActivityManager == null || packageManager == null) {
-                return;
-            }
-            String[] packages = packageManager.getPackagesForUid(client.mAppUid);
-            if (packages == null || packages.length == 0) {
-                return;
-            }
-            int importance = ActivityManager.RunningAppProcessInfo.IMPORTANCE_CACHED;
-            for (String packageName : packages) {
-                importance =
-                        Math.min(importance, mActivityManager.getPackageImportance(packageName));
-            }
-            boolean isForeground =
-                    importance
-                            <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE;
-            mIsUidForegroundMap.put(client.mAppUid, isForeground);
-        }
-
         private boolean updateScanModeBeforeStart(ScanClient client) {
             if (upgradeScanModeBeforeStart(client)) {
                 return true;
@@ -809,7 +796,7 @@ public class ScanManager {
             }
         }
 
-        void revertScanModeUpgrade(ScanClient client) {
+        private void handleRevertScanModeUpgrade(ScanClient client) {
             if (mPriorityMap.get(client.mSettings.getScanMode())
                     <= mPriorityMap.get(client.mScanModeApp)) {
                 return;
@@ -821,6 +808,58 @@ public class ScanManager {
                                 + getScanModeString(client.mScanModeApp)
                                 + " for "
                                 + client);
+                mScanNative.configureRegularScanParams();
+            }
+        }
+
+        private void handleImportanceChange(UidImportance imp) {
+            if (imp == null) {
+                return;
+            }
+            int uid = imp.uid;
+            int importance = imp.importance;
+            boolean updatedScanParams = false;
+            boolean isForeground = importance <= IMPORTANCE_FOREGROUND_SERVICE;
+
+            if (mIsUidForegroundMap.size() < MAX_IS_UID_FOREGROUND_MAP_SIZE) {
+                mIsUidForegroundMap.put(uid, isForeground);
+            }
+
+            for (ScanClient client : mRegularScanClients) {
+                if (client.mAppUid != uid || mScanNative.isOpportunisticScanClient(client)) {
+                    continue;
+                }
+                if (client.mStats != null) {
+                    client.mStats.setAppImportance(importance);
+                }
+                if (isForeground) {
+                    int scanMode = client.mScanModeApp;
+                    int maxScanMode =
+                            mScanNative.isForceDowngradedScanClient(client)
+                                    ? SCAN_MODE_FORCE_DOWNGRADED
+                                    : scanMode;
+                    if (client.updateScanMode(getMinScanMode(scanMode, maxScanMode))) {
+                        updatedScanParams = true;
+                    }
+                } else {
+                    int scanMode = client.mSettings.getScanMode();
+                    int maxScanMode =
+                            mScreenOn
+                                    ? SCAN_MODE_APP_IN_BACKGROUND
+                                    : ScanSettings.SCAN_MODE_SCREEN_OFF;
+                    if (client.updateScanMode(getMinScanMode(scanMode, maxScanMode))) {
+                        updatedScanParams = true;
+                    }
+                }
+                Log.d(
+                        TAG,
+                        ("uid " + uid)
+                                + (" isForeground " + isForeground)
+                                + (" scanMode "
+                                        + getScanModeString(client.mSettings.getScanMode())));
+            }
+
+            if (updatedScanParams) {
                 mScanNative.configureRegularScanParams();
             }
         }
@@ -878,7 +917,7 @@ public class ScanManager {
             }
         }
 
-        void handleScreenOn() {
+        private void handleScreenOn() {
             AppScanStats.setScreenState(true, mTimeProvider);
             if (mScreenOn) {
                 return;
@@ -891,7 +930,7 @@ public class ScanManager {
             updateRegularScanClientsScreenOn();
         }
 
-        void handleResumeScans() {
+        private void handleResumeScans() {
             Iterator<ScanClient> iterator = mSuspendedScanClients.iterator();
             while (iterator.hasNext()) {
                 ScanClient client = iterator.next();
@@ -2195,7 +2234,7 @@ public class ScanManager {
                 }
             };
 
-    private ActivityManager.OnUidImportanceListener mUidImportanceListener =
+    private final ActivityManager.OnUidImportanceListener mUidImportanceListener =
             new ActivityManager.OnUidImportanceListener() {
                 @Override
                 public void onUidImportance(final int uid, final int importance) {
@@ -2208,7 +2247,7 @@ public class ScanManager {
                 }
             };
 
-    private BroadcastReceiver mLocationReceiver =
+    private final BroadcastReceiver mLocationReceiver =
             new BroadcastReceiver() {
                 @Override
                 public void onReceive(Context context, Intent intent) {
@@ -2274,53 +2313,6 @@ public class ScanManager {
                         + (", mProfilesConnected " + mProfilesConnected)
                         + (", mProfilesDisconnecting " + mProfilesDisconnecting));
         return (mProfilesConnecting > 0);
-    }
-
-    private void handleImportanceChange(UidImportance imp) {
-        if (imp == null) {
-            return;
-        }
-        int uid = imp.uid;
-        int importance = imp.importance;
-        boolean updatedScanParams = false;
-        boolean isForeground =
-                importance <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE;
-
-        if (mIsUidForegroundMap.size() < MAX_IS_UID_FOREGROUND_MAP_SIZE) {
-            mIsUidForegroundMap.put(uid, isForeground);
-        }
-
-        for (ScanClient client : mRegularScanClients) {
-            if (client.mAppUid != uid || mScanNative.isOpportunisticScanClient(client)) {
-                continue;
-            }
-            if (isForeground) {
-                int scanMode = client.mScanModeApp;
-                int maxScanMode =
-                        mScanNative.isForceDowngradedScanClient(client)
-                                ? SCAN_MODE_FORCE_DOWNGRADED
-                                : scanMode;
-                if (client.updateScanMode(getMinScanMode(scanMode, maxScanMode))) {
-                    updatedScanParams = true;
-                }
-            } else {
-                int scanMode = client.mSettings.getScanMode();
-                int maxScanMode =
-                        mScreenOn ? SCAN_MODE_APP_IN_BACKGROUND : ScanSettings.SCAN_MODE_SCREEN_OFF;
-                if (client.updateScanMode(getMinScanMode(scanMode, maxScanMode))) {
-                    updatedScanParams = true;
-                }
-            }
-            Log.d(
-                    TAG,
-                    ("uid " + uid)
-                            + (" isForeground " + isForeground)
-                            + (" scanMode " + getScanModeString(client.mSettings.getScanMode())));
-        }
-
-        if (updatedScanParams) {
-            mScanNative.configureRegularScanParams();
-        }
     }
 
     private int getMinScanMode(int oldScanMode, int newScanMode) {

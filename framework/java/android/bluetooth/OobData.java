@@ -231,7 +231,7 @@ public final class OobData implements Parcelable {
          *
          * <p>Used for visual on discovering device to represent icon/string/etc...
          */
-        private byte[] mLeAppearance = null;
+        private final byte[] mLeAppearance = null;
 
         /**
          * Contains which discoverable mode to use, BR/EDR support and capability.

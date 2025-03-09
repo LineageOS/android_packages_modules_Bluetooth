@@ -390,7 +390,7 @@ public class AvrcpBipClient {
 
     /** Handles this AVRCP BIP Image Pull Client's requests */
     private static class AvrcpBipClientHandler extends Handler {
-        WeakReference<AvrcpBipClient> mInst;
+        final WeakReference<AvrcpBipClient> mInst;
 
         AvrcpBipClientHandler(Looper looper, AvrcpBipClient inst) {
             super(looper);

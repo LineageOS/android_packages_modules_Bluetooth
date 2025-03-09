@@ -450,7 +450,7 @@ impl CommandOpCode for LeSetupIsoDataPath {
     const OPCODE: OpCode = OpCode::from(0x08, 0x06e);
 }
 
-#[derive(Debug, Read, Write, CommandToBytes)]
+#[derive(Clone, Debug, Read, Write, CommandToBytes)]
 pub struct LeSetupIsoDataPath {
     pub connection_handle: u16,
     pub data_path_direction: LeDataPathDirection,
@@ -460,20 +460,20 @@ pub struct LeSetupIsoDataPath {
     pub codec_configuration: Vec<u8>,
 }
 
-#[derive(Debug, PartialEq, Read, Write)]
+#[derive(Clone, Debug, PartialEq, Read, Write)]
 pub enum LeDataPathDirection {
     Input = 0x00,
     Output = 0x01,
 }
 
-#[derive(Debug, Read, Write)]
+#[derive(Clone, Debug, Read, Write)]
 pub struct LeCodecId {
     pub coding_format: CodingFormat,
     pub company_id: u16,
     pub vendor_id: u16,
 }
 
-#[derive(Debug, PartialEq, Read, Write)]
+#[derive(Clone, Debug, PartialEq, Read, Write)]
 pub enum CodingFormat {
     ULawLog = 0x00,
     ALawLog = 0x01,

@@ -90,8 +90,8 @@ class PbapClientObexClient {
     private final BluetoothDevice mDevice;
     private final int mLocalSupportedFeatures;
     private int mState = STATE_DISCONNECTED;
-    private AtomicInteger mPsm = new AtomicInteger(L2CAP_INVALID_PSM);
-    private AtomicInteger mChannelId = new AtomicInteger(RFCOMM_INVALID_CHANNEL_ID);
+    private final AtomicInteger mPsm = new AtomicInteger(L2CAP_INVALID_PSM);
+    private final AtomicInteger mChannelId = new AtomicInteger(RFCOMM_INVALID_CHANNEL_ID);
 
     private final Handler mHandler;
     private final HandlerThread mThread;

@@ -69,7 +69,7 @@ import java.util.function.Consumer;
 public final class BluetoothVolumeControl implements BluetoothProfile, AutoCloseable {
     private static final String TAG = BluetoothVolumeControl.class.getSimpleName();
 
-    private CloseGuard mCloseGuard;
+    private final CloseGuard mCloseGuard;
 
     @GuardedBy("mCallbackExecutorMap")
     private final Map<Callback, Executor> mCallbackExecutorMap = new HashMap<>();
@@ -246,7 +246,7 @@ public final class BluetoothVolumeControl implements BluetoothProfile, AutoClose
     public static final String ACTION_CONNECTION_STATE_CHANGED =
             "android.bluetooth.volume-control.profile.action.CONNECTION_STATE_CHANGED";
 
-    private BluetoothAdapter mAdapter;
+    private final BluetoothAdapter mAdapter;
     private final AttributionSource mAttributionSource;
 
     private IBluetoothVolumeControl mService;

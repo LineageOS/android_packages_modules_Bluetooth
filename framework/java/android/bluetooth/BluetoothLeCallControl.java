@@ -21,7 +21,6 @@ import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.bluetooth.BluetoothUtils.executeFromBinder;
 
-import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.RequiresNoPermission;
@@ -35,8 +34,6 @@ import android.os.ParcelUuid;
 import android.os.RemoteException;
 import android.util.Log;
 
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -57,140 +54,6 @@ import java.util.concurrent.Executor;
  */
 public final class BluetoothLeCallControl implements BluetoothProfile {
     private static final String TAG = BluetoothLeCallControl.class.getSimpleName();
-
-    /** @hide */
-    @IntDef(
-            prefix = "RESULT_",
-            value = {
-                RESULT_SUCCESS,
-                RESULT_ERROR_UNKNOWN_CALL_ID,
-                RESULT_ERROR_INVALID_URI,
-                RESULT_ERROR_APPLICATION
-            })
-    @Retention(RetentionPolicy.SOURCE)
-    public @interface Result {}
-
-    /**
-     * Opcode write was successful.
-     *
-     * @hide
-     */
-    public static final int RESULT_SUCCESS = 0;
-
-    /**
-     * Unknown call Id has been used in the operation.
-     *
-     * @hide
-     */
-    public static final int RESULT_ERROR_UNKNOWN_CALL_ID = 1;
-
-    /**
-     * The URI provided in {@link Callback#onPlaceCallRequest} is invalid.
-     *
-     * @hide
-     */
-    public static final int RESULT_ERROR_INVALID_URI = 2;
-
-    /**
-     * Application internal error.
-     *
-     * @hide
-     */
-    public static final int RESULT_ERROR_APPLICATION = 3;
-
-    /** @hide */
-    @IntDef(
-            prefix = "TERMINATION_REASON_",
-            value = {
-                TERMINATION_REASON_INVALID_URI,
-                TERMINATION_REASON_FAIL,
-                TERMINATION_REASON_REMOTE_HANGUP,
-                TERMINATION_REASON_SERVER_HANGUP,
-                TERMINATION_REASON_LINE_BUSY,
-                TERMINATION_REASON_NETWORK_CONGESTION,
-                TERMINATION_REASON_CLIENT_HANGUP,
-                TERMINATION_REASON_NO_SERVICE,
-                TERMINATION_REASON_NO_ANSWER
-            })
-    @Retention(RetentionPolicy.SOURCE)
-    public @interface TerminationReason {}
-
-    /**
-     * Remote Caller ID value used to place a call was formed improperly.
-     *
-     * @hide
-     */
-    public static final int TERMINATION_REASON_INVALID_URI = 0x00;
-
-    /**
-     * Call fail.
-     *
-     * @hide
-     */
-    public static final int TERMINATION_REASON_FAIL = 0x01;
-
-    /**
-     * Remote party ended call.
-     *
-     * @hide
-     */
-    public static final int TERMINATION_REASON_REMOTE_HANGUP = 0x02;
-
-    /**
-     * Call ended from the server.
-     *
-     * @hide
-     */
-    public static final int TERMINATION_REASON_SERVER_HANGUP = 0x03;
-
-    /**
-     * Line busy.
-     *
-     * @hide
-     */
-    public static final int TERMINATION_REASON_LINE_BUSY = 0x04;
-
-    /**
-     * Network congestion.
-     *
-     * @hide
-     */
-    public static final int TERMINATION_REASON_NETWORK_CONGESTION = 0x05;
-
-    /**
-     * Client terminated.
-     *
-     * @hide
-     */
-    public static final int TERMINATION_REASON_CLIENT_HANGUP = 0x06;
-
-    /**
-     * No service.
-     *
-     * @hide
-     */
-    public static final int TERMINATION_REASON_NO_SERVICE = 0x07;
-
-    /**
-     * No answer.
-     *
-     * @hide
-     */
-    public static final int TERMINATION_REASON_NO_ANSWER = 0x08;
-
-    /**
-     * Flag indicating support for hold/unhold call feature.
-     *
-     * @hide
-     */
-    public static final int CAPABILITY_HOLD_CALL = 0x00000001;
-
-    /**
-     * Flag indicating support for joining calls feature.
-     *
-     * @hide
-     */
-    public static final int CAPABILITY_JOIN_CALLS = 0x00000002;
 
     /**
      * The template class is used to call callback functions on events from the TBS server. Callback
@@ -343,7 +206,7 @@ public final class BluetoothLeCallControl implements BluetoothProfile {
     }
     ;
 
-    private BluetoothAdapter mAdapter;
+    private final BluetoothAdapter mAdapter;
     private final AttributionSource mAttributionSource;
     private int mCcid = 0;
     private String mToken;
@@ -589,7 +452,7 @@ public final class BluetoothLeCallControl implements BluetoothProfile {
      */
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
-    public void onCallRemoved(@NonNull UUID callId, @TerminationReason int reason) {
+    public void onCallRemoved(@NonNull UUID callId, int reason) {
         Log.d(TAG, "callRemoved: callId=" + callId);
         if (mCcid == 0) {
             return;
@@ -664,39 +527,6 @@ public final class BluetoothLeCallControl implements BluetoothProfile {
     }
 
     /**
-     * Provide the network current status
-     *
-     * <p>This function must be invoked on change of network state.
-     * <!-- The Technology is an integer value. The possible values are defined at
-     * https://www.bluetooth.com/specifications/assigned-numbers (login required).
-     * -->
-     *
-     * @param provider Network provider name
-     * @param technology Network technology
-     * @hide
-     */
-    @RequiresBluetoothConnectPermission
-    @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
-    public void networkStateChanged(@NonNull String provider, int technology) {
-        Log.d(TAG, "networkStateChanged: provider=" + provider + ", technology=" + technology);
-        if (mCcid == 0) {
-            return;
-        }
-
-        final IBluetoothLeCallControl service = getService();
-        if (service == null) {
-            Log.w(TAG, "Proxy not attached to service");
-            return;
-        }
-
-        try {
-            service.networkStateChanged(mCcid, provider, technology, mAttributionSource);
-        } catch (RemoteException e) {
-            Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
-        }
-    }
-
-    /**
      * Send a response to a call control request to a remote device.
      *
      * <p>This function must be invoked in when a request is received by one of these callback
@@ -716,7 +546,7 @@ public final class BluetoothLeCallControl implements BluetoothProfile {
      */
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
-    public void requestResult(int requestId, @Result int result) {
+    public void requestResult(int requestId, int result) {
         Log.d(TAG, "requestResult: requestId=" + requestId + " result=" + result);
         if (mCcid == 0) {
             return;

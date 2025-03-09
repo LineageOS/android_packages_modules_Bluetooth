@@ -131,7 +131,7 @@ public class GattServiceTest {
         doReturn(mNativeInterface).when(mGattObjectsFactory).getNativeInterface();
         doReturn(mDistanceMeasurementManager)
                 .when(mGattObjectsFactory)
-                .createDistanceMeasurementManager(any());
+                .createDistanceMeasurementManager(any(), any());
         doReturn(mScanManager)
                 .when(mScanObjectsFactory)
                 .createScanManager(any(), any(), any(), any());

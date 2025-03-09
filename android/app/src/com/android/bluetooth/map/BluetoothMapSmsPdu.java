@@ -68,13 +68,13 @@ public class BluetoothMapSmsPdu {
      */
     public static class SmsPdu {
         private byte[] mData;
-        private byte[] mScAddress = {0};
+        private final byte[] mScAddress = {0};
         // At the moment we do not use the scAddress, hence set the length to 0.
         private int mUserDataMsgOffset = 0;
         private int mEncoding;
         private int mLanguageTable;
         private int mLanguageShiftTable;
-        private int mType;
+        private final int mType;
 
         /* Members used for pdu decoding */
         private int mUserDataSeptetPadding = INVALID_VALUE;
@@ -647,7 +647,7 @@ public class BluetoothMapSmsPdu {
         // We could verify that the address-length is no longer than 11 bytes
         if (addressLength >= data.length) {
             throw new IllegalArgumentException(
-                    "Length of address exeeds the length of the PDU data.");
+                    "Length of address exceeds the length of the PDU data.");
         }
         int pduLength = data.length - (1 + addressLength);
         byte[] newData = new byte[pduLength];
@@ -847,14 +847,14 @@ public class BluetoothMapSmsPdu {
     }
 
     private static class SmsConstants {
-        /** User data text encoding code unit size */
+        // User data text encoding code unit size
         public static final int ENCODING_UNKNOWN = 0;
 
         public static final int ENCODING_7BIT = 1;
         public static final int ENCODING_8BIT = 2;
         public static final int ENCODING_16BIT = 3;
 
-        /** This value is not defined in global standard. Only in Korea, this is used. */
+        // This value is not defined in global standard. Only in Korea, this is used.
         public static final int ENCODING_KSC5601 = 4;
     }
 }

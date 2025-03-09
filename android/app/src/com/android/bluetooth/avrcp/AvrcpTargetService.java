@@ -145,7 +145,7 @@ public class AvrcpTargetService extends ProfileService {
             mMediaPlayerList.init(new ListCallback());
         }
 
-        if (!mAvrcpVersion.isAtleastVersion(AvrcpVersion.AVRCP_VERSION_1_6)) {
+        if (!mAvrcpVersion.isAtLeastVersion(AvrcpVersion.AVRCP_VERSION_1_6)) {
             Log.e(TAG, "Please use AVRCP version 1.6 to enable cover art");
             mAvrcpCoverArtService = null;
         } else {

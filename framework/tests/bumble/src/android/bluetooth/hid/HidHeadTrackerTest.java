@@ -277,7 +277,7 @@ public class HidHeadTrackerTest {
      * <ol>
      *   <li>Bumble has Android Headtracker Service
      *   <li>Bumble does not support HID and HOGP
-     *   <li>Bummble is connectable over LE
+     *   <li>Bumble is connectable over LE
      * </ol>
      *
      * <p>Steps:
@@ -317,7 +317,7 @@ public class HidHeadTrackerTest {
         verifyConnectionState(mBumbleDevice, equalTo(TRANSPORT_LE), equalTo(STATE_CONNECTING));
         verifyConnectionState(mBumbleDevice, equalTo(TRANSPORT_LE), equalTo(STATE_CONNECTED));
 
-        // Disable a2dp and HFP connetcion policy
+        // Disable a2dp and HFP connection policy
 
         if (mA2dpService.getConnectionPolicy(mBumbleDevice) == CONNECTION_POLICY_ALLOWED) {
             assertThat(mA2dpService.setConnectionPolicy(mBumbleDevice, CONNECTION_POLICY_FORBIDDEN))
@@ -364,7 +364,7 @@ public class HidHeadTrackerTest {
      * <ol>
      *   <li>Bumble has Android Headtracker Service
      *   <li>Bumble supports only HID but not HOGP
-     *   <li>Bummble is connectable over LE
+     *   <li>Bumble is connectable over LE
      * </ol>
      *
      * <p>Steps:

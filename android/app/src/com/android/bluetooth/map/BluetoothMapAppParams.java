@@ -60,7 +60,7 @@ public class BluetoothMapAppParams {
     private static final int STATUS_INDICATOR = 0x17;
     private static final int STATUS_VALUE = 0x18;
     private static final int MSE_TIME = 0x19;
-    private static final int DATABASE_INDETIFIER = 0x1A;
+    private static final int DATABASE_IDENTIFIER = 0x1A;
     private static final int CONVO_LIST_VER_COUNTER = 0x1B;
     private static final int PRESENCE_AVAILABLE = 0x1C;
     private static final int PRESENCE_TEXT = 0x1D;
@@ -97,7 +97,7 @@ public class BluetoothMapAppParams {
     private static final int FRACTION_DELIVER_LEN = 0x01; // , 0x0000, 0x0001),
     private static final int STATUS_INDICATOR_LEN = 0x01; // , 0x0000, 0x0001),
     private static final int STATUS_VALUE_LEN = 0x01; // , 0x0000, 0x0001),
-    private static final int DATABASE_INDETIFIER_LEN = 0x10;
+    private static final int DATABASE_IDENTIFIER_LEN = 0x10;
     private static final int CONVO_LIST_VER_COUNTER_LEN = 0x10;
     private static final int PRESENCE_AVAILABLE_LEN = 0X01;
     private static final int CHAT_STATE_LEN = 0x01;
@@ -188,14 +188,14 @@ public class BluetoothMapAppParams {
 
     /**
      * Creates an application parameter object based on a application parameter OBEX header. The
-     * content of the {@link appParam} byte array will be parsed, and its content will be stored in
+     * content of the {@code appParams} byte array will be parsed, and its content will be stored in
      * the member variables. {@link INVALID_VALUE_PARAMETER} can be used to determine if a value is
-     * set or not, where strings will be empty, if {@link appParam} did not contain the parameter.
+     * set or not, where strings will be empty, if {@code appParams} did not contain the parameter.
      *
      * @param appParams the byte array containing the application parameters OBEX header
      * @throws IllegalArgumentException when a parameter does not respect the valid ranges specified
      *     in the MAP spec.
-     * @throws ParseException if a parameter string if formated incorrectly.
+     * @throws ParseException if a parameter string if formatted incorrectly.
      */
     public BluetoothMapAppParams(final byte[] appParams)
             throws IllegalArgumentException, ParseException {
@@ -208,7 +208,7 @@ public class BluetoothMapAppParams {
      * @param appParams the byte array containing the application parameters OBEX header
      * @throws IllegalArgumentException when a parameter does not respect the valid ranges specified
      *     in the MAP spec.
-     * @throws ParseException if a parameter string if formated incorrectly.
+     * @throws ParseException if a parameter string if formatted incorrectly.
      */
     private void parseParams(final byte[] appParams)
             throws ParseException, IllegalArgumentException {
@@ -669,14 +669,14 @@ public class BluetoothMapAppParams {
                 case MSE_TIME:
                     setMseTime(new String(appParams, i, tagLength));
                     break;
-                case DATABASE_INDETIFIER:
-                    if ((tagLength != DATABASE_INDETIFIER_LEN)) {
+                case DATABASE_IDENTIFIER:
+                    if ((tagLength != DATABASE_IDENTIFIER_LEN)) {
                         Log.w(
                                 TAG,
                                 "DATABASE_IDENTIFIER: Wrong length received: "
                                         + tagLength
                                         + " expected: "
-                                        + DATABASE_INDETIFIER_LEN);
+                                        + DATABASE_IDENTIFIER_LEN);
                         ContentProfileErrorReportUtils.report(
                                 BluetoothProfile.MAP,
                                 BluetoothProtoEnums.BLUETOOTH_MAP_APP_PARAMS,
@@ -1105,8 +1105,8 @@ public class BluetoothMapAppParams {
         }
         // Note: New for IM
         if (getDatabaseIdentifier() != null) {
-            appParamBuf.put((byte) DATABASE_INDETIFIER);
-            appParamBuf.put((byte) DATABASE_INDETIFIER_LEN);
+            appParamBuf.put((byte) DATABASE_IDENTIFIER);
+            appParamBuf.put((byte) DATABASE_IDENTIFIER_LEN);
             appParamBuf.put(getDatabaseIdentifier());
         }
         if (getConvoListingVerCounter() != null) {
@@ -1137,8 +1137,8 @@ public class BluetoothMapAppParams {
         if (getFilterConvoId() != null) {
             appParamBuf.put((byte) FILTER_CONVO_ID);
             appParamBuf.put((byte) FILTER_CONVO_ID_LEN);
-            appParamBuf.putLong(getFilterConvoId().getMostSignificantBits());
-            appParamBuf.putLong(getFilterConvoId().getLeastSignificantBits());
+            appParamBuf.putLong(getFilterConvoId().mostSignificantBits());
+            appParamBuf.putLong(getFilterConvoId().leastSignificantBits());
         }
         if (getConvoListingSize() != INVALID_VALUE_PARAMETER) {
             appParamBuf.put((byte) CONVO_LISTING_SIZE);
@@ -1158,8 +1158,8 @@ public class BluetoothMapAppParams {
         if (getChatStateConvoId() != null) {
             appParamBuf.put((byte) CHAT_STATE_CONVO_ID);
             appParamBuf.put((byte) CHAT_STATE_CONVO_ID_LEN);
-            appParamBuf.putLong(getChatStateConvoId().getMostSignificantBits());
-            appParamBuf.putLong(getChatStateConvoId().getLeastSignificantBits());
+            appParamBuf.putLong(getChatStateConvoId().mostSignificantBits());
+            appParamBuf.putLong(getChatStateConvoId().leastSignificantBits());
         }
         if (getFolderVerCounter() != null) {
             appParamBuf.put((byte) FOLDER_VER_COUNTER);
@@ -1403,8 +1403,8 @@ public class BluetoothMapAppParams {
     public byte[] getChatStateConvoIdByteArray() {
         if (mChatStateConvoId != null) {
             ByteBuffer ret = ByteBuffer.allocate(16);
-            ret.putLong(mChatStateConvoId.getMostSignificantBits());
-            ret.putLong(mChatStateConvoId.getLeastSignificantBits());
+            ret.putLong(mChatStateConvoId.mostSignificantBits());
+            ret.putLong(mChatStateConvoId.leastSignificantBits());
             return ret.array();
         } else {
             return null;
@@ -1472,7 +1472,7 @@ public class BluetoothMapAppParams {
     public String getFilterConvoIdString() {
         String str = null;
         if (mFilterConvoId != null) {
-            str = BluetoothMapUtils.getLongAsString(mFilterConvoId.getLeastSignificantBits());
+            str = BluetoothMapUtils.getLongAsString(mFilterConvoId.leastSignificantBits());
         }
         return str;
     }

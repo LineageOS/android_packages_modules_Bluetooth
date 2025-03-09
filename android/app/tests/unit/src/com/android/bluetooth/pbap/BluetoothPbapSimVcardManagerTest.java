@@ -423,7 +423,7 @@ public class BluetoothPbapSimVcardManagerTest {
     }
 
     @Test
-    public void testComposeAndSendSIMPhonebookVcards_whenEndPointIsLessThanStartpoint() {
+    public void testComposeAndSendSIMPhonebookVcards_whenEndPointIsLessThanStartPoint() {
         Operation operation = mock(Operation.class);
         final int startPoint = 1;
         final int endPoint = 0; // Should be equal or greater than startPoint

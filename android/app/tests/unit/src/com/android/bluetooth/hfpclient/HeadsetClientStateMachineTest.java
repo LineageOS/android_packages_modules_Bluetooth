@@ -242,7 +242,7 @@ public class HeadsetClientStateMachineTest {
     public void testProcessAndroidSlcCommand() {
         initToConnectedState();
 
-        // True on correct AT command and BluetothDevice
+        // True on correct AT command and BluetoothDevice
         assertThat(processAndroidSlcCommand("+ANDROID: (SINKAUDIOPOLICY)")).isTrue();
         assertThat(processAndroidSlcCommand("+ANDROID: ()")).isTrue();
         assertThat(processAndroidSlcCommand("+ANDROID: (,,,)")).isTrue();

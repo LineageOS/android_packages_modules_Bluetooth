@@ -181,7 +181,8 @@ protected:
     test_controller_->num_advertisers_ = num_instances_;
     test_controller_->vendor_capabilities_.max_advt_instances_ = num_instances_;
     test_controller_->SetBleExtendedAdvertisingSupport(support_ble_extended_advertising_);
-    le_advertising_manager_ = fake_registry_.Start<LeAdvertisingManager>(&thread_);
+    le_advertising_manager_ =
+            fake_registry_.Start<LeAdvertisingManager>(&thread_, fake_registry_.GetTestHandler());
     le_advertising_manager_->RegisterAdvertisingCallback(&mock_advertising_callback_);
   }
 

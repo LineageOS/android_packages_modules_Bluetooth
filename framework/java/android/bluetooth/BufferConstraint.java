@@ -30,9 +30,9 @@ import android.os.Parcelable;
 public final class BufferConstraint implements Parcelable {
     private static final String TAG = BufferConstraint.class.getSimpleName();
 
-    private int mDefaultMillis;
-    private int mMaxMillis;
-    private int mMinMillis;
+    private final int mDefaultMillis;
+    private final int mMaxMillis;
+    private final int mMinMillis;
 
     public BufferConstraint(int defaultMillis, int maxMillis, int minMillis) {
         mDefaultMillis = defaultMillis;

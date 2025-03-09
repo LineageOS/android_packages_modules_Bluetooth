@@ -53,8 +53,6 @@ android_app_certificate {
 apex {
     name: "com.android.bt",
     defaults: ["b-launched-apex-module"],
-    // TODO b/356727632: remove min_sdk_version as this is set from b-launched-apex-module
-    min_sdk_version: "35",
     manifest: "manifest.json",
     bootclasspath_fragments: ["com.android.bt-bootclasspath-fragment"],
     systemserverclasspath_fragments: ["com.android.bt-systemserverclasspath-fragment"],

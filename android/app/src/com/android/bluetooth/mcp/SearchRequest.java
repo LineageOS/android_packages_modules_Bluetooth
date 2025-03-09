@@ -17,41 +17,8 @@
 
 package com.android.bluetooth.mcp;
 
-import android.annotation.NonNull;
-
 /** Media search request, from client to Media Player */
-public final class SearchRequest {
-    private final int mType;
-    private final String mStringArg;
-
-    /**
-     * Media search request constructor
-     *
-     * @param type Search request type
-     * @param arg Search request argument
-     */
-    public SearchRequest(int type, String arg) {
-        this.mType = type;
-        this.mStringArg = arg;
-    }
-
-    /**
-     * Media search request type getter
-     *
-     * @return Search request type
-     */
-    public int getType() {
-        return mType;
-    }
-
-    /**
-     * Media search request string argument getter
-     *
-     * @return search request argument
-     */
-    public @NonNull String getStringArg() {
-        return mStringArg;
-    }
+record SearchRequest(int type, String arg) {
 
     /** Media search request results definition */
     public enum Results {

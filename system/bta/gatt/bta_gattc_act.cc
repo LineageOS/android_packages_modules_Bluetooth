@@ -1580,6 +1580,25 @@ static bool bta_gattc_process_srvc_chg_ind(tCONN_ID conn_id, tBTA_GATTC_RCB* p_c
         }
       }
     }
+    // Use a busy CLCB to start discovery if no CLCB is available, this will be queued.
+    if (com::android::bluetooth::flags::start_discover_service_changed() && p_clcb == NULL) {
+      if (com::android::bluetooth::flags::gatt_client_dynamic_allocation()) {
+        for (auto& p_clcb_i : bta_gattc_cb.clcb_set) {
+          if (p_clcb_i->in_use && p_clcb_i->p_srcb == p_srcb) {
+            p_clcb = p_clcb_i.get();
+            break;
+          }
+        }
+      } else {
+        for (size_t i = 0; i < BTA_GATTC_CLCB_MAX; i++) {
+          if (bta_gattc_cb.clcb[i].in_use && bta_gattc_cb.clcb[i].p_srcb == p_srcb) {
+            p_clcb = &bta_gattc_cb.clcb[i];
+            break;
+          }
+        }
+      }
+    }
+
     /* send confirmation here if this is an indication, it should always be */
     if (GATTC_SendHandleValueConfirm(conn_id, p_notify->cid) != GATT_SUCCESS) {
       log::warn("Unable to send GATT client handle value confirmation conn_id:{} cid:{}", conn_id,
@@ -1591,6 +1610,8 @@ static bool bta_gattc_process_srvc_chg_ind(tCONN_ID conn_id, tBTA_GATTC_RCB* p_c
       /* request read db hash first */
       p_srcb->srvc_hdl_db_hash = true;
       bta_gattc_sm_execute(p_clcb, BTA_GATTC_INT_DISCOVER_EVT, NULL);
+    } else {
+      log::warn("No clcb is available to handle service change indication");
     }
   }
 

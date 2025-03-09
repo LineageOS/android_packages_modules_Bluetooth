@@ -76,9 +76,7 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
     private static final String TAG = BluetoothOppTransfer.class.getSimpleName();
 
     @VisibleForTesting static final int TRANSPORT_ERROR = 10;
-
     @VisibleForTesting static final int TRANSPORT_CONNECTED = 11;
-
     @VisibleForTesting static final int SOCKET_ERROR_RETRY = 13;
 
     private static final String SOCKET_LINK_KEY_ERROR = "Invalid exchange";
@@ -86,23 +84,15 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
     private static final Object INSTANCE_LOCK = new Object();
 
     private final Context mContext;
-
-    private BluetoothAdapter mAdapter;
-
-    @VisibleForTesting BluetoothDevice mDevice;
-
+    private final BluetoothAdapter mAdapter;
     private final BluetoothOppBatch mBatch;
 
+    @VisibleForTesting BluetoothDevice mDevice;
     private BluetoothOppObexSession mSession;
-
     @VisibleForTesting BluetoothOppShareInfo mCurrentShare;
-
     private ObexTransport mTransport;
-
     private HandlerThread mHandlerThread;
-
     @VisibleForTesting EventHandler mSessionHandler;
-
     private long mTimestamp;
 
     @VisibleForTesting
@@ -550,7 +540,7 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
             mBatch.mStatus = Constants.BATCH_STATUS_FAILED;
             return;
         }
-        registerConnectionreceiver();
+        registerConnectionReceiver();
         if (mHandlerThread == null) {
             Log.v(TAG, "Create handler thread for batch " + mBatch.mId);
             mHandlerThread =
@@ -655,7 +645,7 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
         processCurrentShare();
     }
 
-    private void registerConnectionreceiver() {
+    private void registerConnectionReceiver() {
         /*
          * OBEX channel need to be monitored for unexpected ACL disconnection
          * such as Remote Battery removal

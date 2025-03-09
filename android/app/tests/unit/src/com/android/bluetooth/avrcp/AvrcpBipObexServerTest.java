@@ -198,7 +198,7 @@ public class AvrcpBipObexServerTest {
 
     /** Make sure onDisconnect notifies the callbacks in the proper way */
     @Test
-    public void testDisonnect() {
+    public void testDisconnect() {
         mAvrcpBipObexServer.onDisconnect(mRequest, mReply);
         verify(mCallback).onDisconnected();
     }
@@ -284,7 +284,7 @@ public class AvrcpBipObexServerTest {
     }
 
     /**
-     * Make sure a getImageProperties request with a valid handle returns a valie properties object
+     * Make sure a getImageProperties request with a valid handle returns a valid properties object
      */
     @Test
     public void testGetImagePropertiesWithValidHandle() throws Exception {

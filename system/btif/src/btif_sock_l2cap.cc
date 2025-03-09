@@ -587,8 +587,8 @@ static void on_srv_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open, l2cap_socket*
   log::info(
           "Connected to L2CAP connection for device: {}, channel: {}, app_uid: {}, "
           "id: {}, is_le: {}, socket_id: {}, rx_mtu: {}",
-          sock->addr, sock->channel, sock->app_uid, sock->id, sock->is_le_coc, accept_rs->socket_id,
-          accept_rs->rx_mtu);
+          accept_rs->addr, accept_rs->channel, accept_rs->app_uid, accept_rs->id,
+          accept_rs->is_le_coc, accept_rs->socket_id, accept_rs->rx_mtu);
   btif_sock_connection_logger(accept_rs->addr, accept_rs->id,
                               accept_rs->is_le_coc ? BTSOCK_L2CAP_LE : BTSOCK_L2CAP,
                               SOCKET_CONNECTION_STATE_CONNECTED,
@@ -1468,8 +1468,8 @@ static void on_srv_l2cap_psm_connect_offload_l(tBTA_JV_L2CAP_OPEN* p_open, l2cap
   log::info(
           "Connected to L2CAP connection for device: {}, channel: {}, app_uid: {}, "
           "id: {}, is_le: {}, socket_id: {}, rx_mtu: {}",
-          sock->addr, sock->channel, sock->app_uid, sock->id, sock->is_le_coc, accept_rs->socket_id,
-          accept_rs->rx_mtu);
+          accept_rs->addr, accept_rs->channel, accept_rs->app_uid, accept_rs->id,
+          accept_rs->is_le_coc, accept_rs->socket_id, accept_rs->rx_mtu);
   btif_sock_connection_logger(accept_rs->addr, accept_rs->id,
                               accept_rs->is_le_coc ? BTSOCK_L2CAP_LE : BTSOCK_L2CAP,
                               SOCKET_CONNECTION_STATE_CONNECTED,

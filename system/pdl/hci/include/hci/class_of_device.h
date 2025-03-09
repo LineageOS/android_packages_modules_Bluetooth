@@ -43,7 +43,7 @@ public:
   inline const uint8_t* data() const override { return cod.data(); }
 
   // storage::Serializable methods
-  std::string ToString() const;
+  std::string ToString() const override;
   static std::optional<ClassOfDevice> FromString(const std::string& str);
   std::string ToLegacyConfigString() const override;
   static std::optional<ClassOfDevice> FromLegacyConfigString(const std::string& str);

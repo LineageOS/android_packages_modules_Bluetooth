@@ -155,7 +155,7 @@ protected:
     fake_registry_.InjectTestModule(&Controller::Factory, test_controller_);
     client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
     ASSERT_NE(client_handler_, nullptr);
-    fake_registry_.Start<AclManager>(&thread_);
+    fake_registry_.Start<AclManager>(&thread_, fake_registry_.GetTestHandler());
   }
 
   void TearDown() override {
@@ -440,7 +440,7 @@ protected:
     fake_registry_.InjectTestModule(&Controller::Factory, test_controller_);
     client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
     ASSERT_NE(client_handler_, nullptr);
-    fake_registry_.Start<AclManager>(&thread_);
+    fake_registry_.Start<AclManager>(&thread_, fake_registry_.GetTestHandler());
     acl_manager_ =
             static_cast<AclManager*>(fake_registry_.GetModuleUnderTest(&AclManager::Factory));
     hci::Address address;

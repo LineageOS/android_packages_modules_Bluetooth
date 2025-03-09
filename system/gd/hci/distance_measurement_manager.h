@@ -17,9 +17,9 @@
 
 #include <bluetooth/log.h>
 
-#include "address.h"
 #include "bta/include/bta_ras_api.h"
 #include "hal/ranging_hal.h"
+#include "hci/address.h"
 #include "hci/hci_packets.h"
 #include "module.h"
 

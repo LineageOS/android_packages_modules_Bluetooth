@@ -124,19 +124,19 @@ public final class BluetoothLeCall implements Parcelable {
     public static final int FLAG_WITHHELD_BY_NETWORK = 0x00000004;
 
     /** Unique UUID that identifies this call */
-    private UUID mUuid;
+    private final UUID mUuid;
 
     /** Remote Caller URI */
-    private String mUri;
+    private final String mUri;
 
     /** Caller friendly name */
-    private String mFriendlyName;
+    private final String mFriendlyName;
 
     /** Call state */
-    private @State int mState;
+    private final @State int mState;
 
     /** Call flags */
-    private int mCallFlags;
+    private final int mCallFlags;
 
     /** @hide */
     public BluetoothLeCall(@NonNull BluetoothLeCall that) {

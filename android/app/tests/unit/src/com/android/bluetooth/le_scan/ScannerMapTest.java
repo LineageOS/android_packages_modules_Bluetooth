@@ -85,15 +85,14 @@ public class ScannerMapTest {
     @Test
     public void getByMethodsWithPii() {
         ScannerMap scannerMap = new ScannerMap();
-        ScanController.PendingIntentInfo info = new ScanController.PendingIntentInfo();
-        info.callingUid = UID;
-        info.callingPackage = APP_NAME;
-        info.intent =
+        PendingIntent intent =
                 PendingIntent.getBroadcast(
                         InstrumentationRegistry.getInstrumentation().getTargetContext(),
                         0,
                         new Intent(),
                         PendingIntent.FLAG_IMMUTABLE);
+        ScanController.PendingIntentInfo info =
+                new ScanController.PendingIntentInfo(intent, null, null, APP_NAME, UID);
         UUID uuid = UUID.randomUUID();
         ScannerMap.ScannerApp app =
                 scannerMap.add(
@@ -109,7 +108,7 @@ public class ScannerMapTest {
         ScannerMap.ScannerApp scannerMapByName = scannerMap.getByName(APP_NAME).get(0);
         assertThat(scannerMapByName.mName).isEqualTo(APP_NAME);
 
-        ScannerMap.ScannerApp scannerMapByPii = scannerMap.getByPendingIntentInfo(info);
+        ScannerMap.ScannerApp scannerMapByPii = scannerMap.getByPendingIntentInfo(intent);
         assertThat(scannerMapByPii.mName).isEqualTo(APP_NAME);
 
         assertThat(scannerMap.getAppScanStatsById(SCANNER_ID)).isNotNull();

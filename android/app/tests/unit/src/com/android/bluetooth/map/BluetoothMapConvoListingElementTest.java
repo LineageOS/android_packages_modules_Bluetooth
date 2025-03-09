@@ -109,8 +109,7 @@ public class BluetoothMapConvoListingElementTest {
         assertThat(mListingElement.getRead()).isEqualTo("READ");
         assertThat(mListingElement.getReadBool()).isEqualTo(TEST_READ);
         assertThat(mListingElement.getConvoId()).isEqualTo(signedLongLong.toHexString());
-        assertThat(mListingElement.getCpConvoId())
-                .isEqualTo(signedLongLong.getLeastSignificantBits());
+        assertThat(mListingElement.getCpConvoId()).isEqualTo(signedLongLong.leastSignificantBits());
         assertThat(mListingElement.getFullSummary()).isEqualTo(TEST_SUMMARY);
         assertThat(mListingElement.getSmsMmsContacts()).isEqualTo(TEST_SMS_MMS_CONTACTS);
     }

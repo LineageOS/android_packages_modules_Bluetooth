@@ -205,7 +205,7 @@ public class BluetoothOppObexClientSessionTest {
         thread.mCs = new ClientSession(mTransport);
         thread.addShare(shareInfo);
 
-        // thread.mCs.put() will throw because the obexconnection is not connected
+        // thread.mCs.put() will throw because the obex connection is not connected
         assertThat(thread.sendFile(sendFileInfo)).isEqualTo(BluetoothShare.STATUS_OBEX_DATA_ERROR);
     }
 

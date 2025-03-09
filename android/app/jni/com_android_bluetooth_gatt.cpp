@@ -141,7 +141,6 @@ static jmethodID method_onDisconnected;
 static jmethodID method_onReadCharacteristic;
 static jmethodID method_onWriteCharacteristic;
 static jmethodID method_onExecuteCompleted;
-static jmethodID method_onSearchCompleted;
 static jmethodID method_onReadDescriptor;
 static jmethodID method_onWriteDescriptor;
 static jmethodID method_onNotify;
@@ -277,16 +276,6 @@ static void btgattc_close_cb(int conn_id, int status, int clientIf, const RawAdd
   ScopedLocalRef<jstring> address(sCallbackEnv.get(), bdaddr2newjstr(sCallbackEnv.get(), &bda));
   sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onDisconnected, clientIf, conn_id, status,
                                address.get());
-}
-
-static void btgattc_search_complete_cb(int conn_id, int status) {
-  std::shared_lock<std::shared_mutex> lock(callbacks_mutex);
-  CallbackEnv sCallbackEnv(__func__);
-  if (!sCallbackEnv.valid() || !mCallbacksObj) {
-    return;
-  }
-
-  sCallbackEnv->CallVoidMethod(mCallbacksObj, method_onSearchCompleted, conn_id, status);
 }
 
 static void btgattc_register_for_notification_cb(int conn_id, int registered, int status,
@@ -562,7 +551,6 @@ static const btgatt_client_callbacks_t sGattClientCallbacks = {
         btgattc_register_app_cb,
         btgattc_open_cb,
         btgattc_close_cb,
-        btgattc_search_complete_cb,
         btgattc_register_for_notification_cb,
         btgattc_notify_cb,
         btgattc_read_characteristic_cb,
@@ -1415,14 +1403,6 @@ static void gattClientDiscoverServiceByUuidNative(JNIEnv* /* env */, jobject /* 
   sGattIf->client->btif_gattc_discover_service_by_uuid(conn_id, uuid);
 }
 
-static void gattClientGetGattDbNative(JNIEnv* /* env */, jobject /* object */, jint conn_id) {
-  if (!sGattIf) {
-    return;
-  }
-
-  sGattIf->client->get_gatt_db(conn_id);
-}
-
 static void gattClientReadCharacteristicNative(JNIEnv* /* env */, jobject /* object */,
                                                jint conn_id, jint handle, jint authReq) {
   if (!sGattIf) {
@@ -1565,40 +1545,40 @@ static void gattClientScanFilterParamAddNative(JNIEnv* env, jobject /* object */
   jmethodID methodId = 0;
   ScopedLocalRef<jclass> filtparam(env, env->GetObjectClass(params));
 
-  methodId = env->GetMethodID(filtparam.get(), "getClientIf", "()I");
+  methodId = env->GetMethodID(filtparam.get(), "clientInterface", "()I");
   uint8_t client_if = env->CallIntMethod(params, methodId);
 
-  methodId = env->GetMethodID(filtparam.get(), "getFiltIndex", "()I");
+  methodId = env->GetMethodID(filtparam.get(), "filterIndex", "()I");
   uint8_t filt_index = env->CallIntMethod(params, methodId);
 
-  methodId = env->GetMethodID(filtparam.get(), "getFeatSeln", "()I");
+  methodId = env->GetMethodID(filtparam.get(), "featureSelection", "()I");
   filt_params->feat_seln = env->CallIntMethod(params, methodId);
 
-  methodId = env->GetMethodID(filtparam.get(), "getListLogicType", "()I");
+  methodId = env->GetMethodID(filtparam.get(), "listLogicType", "()I");
   filt_params->list_logic_type = env->CallIntMethod(params, methodId);
 
-  methodId = env->GetMethodID(filtparam.get(), "getFiltLogicType", "()I");
+  methodId = env->GetMethodID(filtparam.get(), "filterLogicType", "()I");
   filt_params->filt_logic_type = env->CallIntMethod(params, methodId);
 
-  methodId = env->GetMethodID(filtparam.get(), "getDelyMode", "()I");
+  methodId = env->GetMethodID(filtparam.get(), "delayMode", "()I");
   filt_params->dely_mode = env->CallIntMethod(params, methodId);
 
-  methodId = env->GetMethodID(filtparam.get(), "getFoundTimeout", "()I");
+  methodId = env->GetMethodID(filtparam.get(), "foundTimeout", "()I");
   filt_params->found_timeout = env->CallIntMethod(params, methodId);
 
-  methodId = env->GetMethodID(filtparam.get(), "getLostTimeout", "()I");
+  methodId = env->GetMethodID(filtparam.get(), "lostTimeout", "()I");
   filt_params->lost_timeout = env->CallIntMethod(params, methodId);
 
-  methodId = env->GetMethodID(filtparam.get(), "getFoundTimeOutCnt", "()I");
+  methodId = env->GetMethodID(filtparam.get(), "foundTimeoutCount", "()I");
   filt_params->found_timeout_cnt = env->CallIntMethod(params, methodId);
 
-  methodId = env->GetMethodID(filtparam.get(), "getNumOfTrackEntries", "()I");
+  methodId = env->GetMethodID(filtparam.get(), "numberOfTrackEntries", "()I");
   filt_params->num_of_tracking_entries = env->CallIntMethod(params, methodId);
 
-  methodId = env->GetMethodID(filtparam.get(), "getRSSIHighValue", "()I");
+  methodId = env->GetMethodID(filtparam.get(), "rssiHighValue", "()I");
   filt_params->rssi_high_thres = env->CallIntMethod(params, methodId);
 
-  methodId = env->GetMethodID(filtparam.get(), "getRSSILowValue", "()I");
+  methodId = env->GetMethodID(filtparam.get(), "rssiLowValue", "()I");
   filt_params->rssi_low_thres = env->CallIntMethod(params, methodId);
 
   sScanner->ScanFilterParamSetup(client_if, add_scan_filter_params_action, filt_index,
@@ -2958,7 +2938,6 @@ static int register_com_android_bluetooth_gatt_(JNIEnv* env) {
           {"gattClientSearchServiceNative", "(IZJJ)V", (void*)gattClientSearchServiceNative},
           {"gattClientDiscoverServiceByUuidNative", "(IJJ)V",
            (void*)gattClientDiscoverServiceByUuidNative},
-          {"gattClientGetGattDbNative", "(I)V", (void*)gattClientGetGattDbNative},
           {"gattClientReadCharacteristicNative", "(III)V",
            (void*)gattClientReadCharacteristicNative},
           {"gattClientReadUsingCharacteristicUuidNative", "(IJJIII)V",
@@ -3008,7 +2987,6 @@ static int register_com_android_bluetooth_gatt_(JNIEnv* env) {
           {"onReadCharacteristic", "(III[B)V", &method_onReadCharacteristic},
           {"onWriteCharacteristic", "(III[B)V", &method_onWriteCharacteristic},
           {"onExecuteCompleted", "(II)V", &method_onExecuteCompleted},
-          {"onSearchCompleted", "(II)V", &method_onSearchCompleted},
           {"onReadDescriptor", "(III[B)V", &method_onReadDescriptor},
           {"onWriteDescriptor", "(III[B)V", &method_onWriteDescriptor},
           {"onNotify", "(ILjava/lang/String;IZ[B)V", &method_onNotify},

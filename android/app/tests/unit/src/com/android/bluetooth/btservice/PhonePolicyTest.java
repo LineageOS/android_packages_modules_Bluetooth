@@ -119,8 +119,6 @@ public class PhonePolicyTest {
         doReturn(BluetoothAdapter.STATE_ON).when(mAdapterService).getState();
         doReturn(MAX_CONNECTED_AUDIO_DEVICES).when(mAdapterService).getMaxConnectedAudioDevices();
         doReturn(mDatabaseManager).when(mAdapterService).getDatabase();
-        doReturn(mLooper.getLooper()).when(mAdapterService).getMainLooper();
-
         // Setup the mocked factory to return mocked services
         doReturn(mHeadsetService).when(mServiceFactory).getHeadsetService();
         doReturn(mA2dpService).when(mServiceFactory).getA2dpService();
@@ -963,7 +961,7 @@ public class PhonePolicyTest {
 
     @Test
     @EnableFlags(Flags.FLAG_AUTO_CONNECT_ON_MULTIPLE_HFP_WHEN_NO_A2DP_DEVICE)
-    public void autoConnect_whenMultiHfpAndDeconnection_startConnection() {
+    public void autoConnect_whenMultiHfpAndDisconnection_startConnection() {
         // Return desired values from the mocked object(s)
         doReturn(false).when(mAdapterService).isQuietModeEnabled();
 
@@ -980,11 +978,11 @@ public class PhonePolicyTest {
         db.start(mDatabase);
         TestUtils.waitForLooperToFinishScheduledTask(db.getHandlerLooper());
 
-        BluetoothDevice deviceToDeconnect = getTestDevice(0);
-        db.setConnection(deviceToDeconnect, BluetoothProfile.HEADSET);
+        BluetoothDevice deviceToDisconnect = getTestDevice(0);
+        db.setConnection(deviceToDisconnect, BluetoothProfile.HEADSET);
         doReturn(CONNECTION_POLICY_ALLOWED)
                 .when(mHeadsetService)
-                .getConnectionPolicy(eq(deviceToDeconnect));
+                .getConnectionPolicy(eq(deviceToDisconnect));
 
         List<BluetoothDevice> devices =
                 List.of(getTestDevice(1), getTestDevice(2), getTestDevice(3));
@@ -996,7 +994,7 @@ public class PhonePolicyTest {
                     .getConnectionPolicy(eq(device));
         }
 
-        db.setDisconnection(deviceToDeconnect, BluetoothProfile.HEADSET);
+        db.setDisconnection(deviceToDisconnect, BluetoothProfile.HEADSET);
 
         // wait for all MSG_UPDATE_DATABASE
         TestUtils.waitForLooperToFinishScheduledTask(db.getHandlerLooper());
@@ -1008,7 +1006,7 @@ public class PhonePolicyTest {
             verify(mHeadsetService).connect(eq(device));
         }
         // Except for the device that was manually disconnected
-        verify(mHeadsetService, never()).connect(eq(deviceToDeconnect));
+        verify(mHeadsetService, never()).connect(eq(deviceToDisconnect));
     }
 
     /**

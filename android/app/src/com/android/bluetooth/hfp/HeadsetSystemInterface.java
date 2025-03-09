@@ -46,7 +46,7 @@ class HeadsetSystemInterface {
     private final HeadsetService mHeadsetService;
     private final AudioManager mAudioManager;
     private final HeadsetPhoneState mHeadsetPhoneState;
-    private PowerManager.WakeLock mVoiceRecognitionWakeLock;
+    private final PowerManager.WakeLock mVoiceRecognitionWakeLock;
     private final TelephonyManager mTelephonyManager;
     private final TelecomManager mTelecomManager;
 

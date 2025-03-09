@@ -2420,15 +2420,13 @@ static bool bta_hh_le_iso_data_callback(const RawAddress& addr, uint16_t /*cis_c
 
   uint8_t* report = data;
   uint8_t len = size;
-  if (com::android::bluetooth::flags::headtracker_sdu_size()) {
-    if (size == ANDROID_HEADTRACKER_DATA_SIZE) {
-      report = (uint8_t*)osi_malloc(size + 1);
-      report[0] = ANDROID_HEADTRACKER_REPORT_ID;
-      mempcpy(&report[1], data, size);
-      len = size + 1;
-    } else if (size != ANDROID_HEADTRACKER_DATA_SIZE + 1) {
-      log::warn("Unexpected headtracker data size {} from {}", size, addr);
-    }
+  if (size == ANDROID_HEADTRACKER_DATA_SIZE) {
+    report = (uint8_t*)osi_malloc(size + 1);
+    report[0] = ANDROID_HEADTRACKER_REPORT_ID;
+    mempcpy(&report[1], data, size);
+    len = size + 1;
+  } else if (size != ANDROID_HEADTRACKER_DATA_SIZE + 1) {
+    log::warn("Unexpected headtracker data size {} from {}", size, addr);
   }
 
   bta_hh_co_data(p_dev_cb->hid_handle, report, len);

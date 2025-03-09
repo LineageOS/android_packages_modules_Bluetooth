@@ -1,15 +1,23 @@
 //! Suspend/Resume API.
 
-use crate::bluetooth::{AdapterActions, Bluetooth, BluetoothDevice, BtifBluetoothCallbacks};
+use crate::bluetooth::{
+    AdapterActions, Bluetooth, BluetoothDevice, BtifBluetoothCallbacks, IBluetooth,
+    IBluetoothConnectionCallback,
+};
 use crate::bluetooth_media::BluetoothMedia;
 use crate::callbacks::Callbacks;
 use crate::{BluetoothGatt, Message, RPCProxy};
-use bt_topshim::btif::BluetoothInterface;
+use bt_topshim::btif::{BluetoothInterface, BtStatus, RawAddress};
 use bt_topshim::metrics;
 use log::warn;
 use num_derive::{FromPrimitive, ToPrimitive};
-use std::sync::{Arc, Mutex};
+use std::collections::HashSet;
+use std::iter::FromIterator;
+use std::sync::{Arc, Mutex, MutexGuard};
 use tokio::sync::mpsc::Sender;
+use tokio::task::JoinHandle;
+use tokio::time;
+use tokio::time::Duration;
 
 use bt_utils::socket::{BtSocket, HciChannels, MgmtCommand, HCI_DEV_NONE};
 
@@ -54,19 +62,13 @@ pub trait ISuspendCallback: RPCProxy {
     fn on_resumed(&mut self, suspend_id: i32);
 }
 
-/// Events that are disabled when we go into suspend. This prevents spurious wakes from
-/// events we know can happen but are not useful.
-/// Bit 4 = Disconnect Complete.
-/// Bit 19 = Mode Change.
-const MASKED_EVENTS_FOR_SUSPEND: u64 = (1u64 << 4) | (1u64 << 19);
-
 /// When we resume, we will want to reconnect audio devices that were previously connected.
 /// However, we will need to delay a few seconds to avoid co-ex issues with Wi-Fi reconnection.
 const RECONNECT_AUDIO_ON_RESUME_DELAY_MS: u64 = 3000;
 
-/// TODO(b/286268874) Remove after the synchronization issue is resolved.
-/// Delay sending suspend ready signal by some time.
-const LE_RAND_CB_SUSPEND_READY_DELAY_MS: u64 = 100;
+/// Delay sending suspend ready signal by some time because HCI commands are async and we could
+/// still receive some commands/events after all LibBluetooth functions have returned.
+const SUSPEND_READY_DELAY_MS: u64 = 100;
 
 fn notify_suspend_state(hci_index: u16, suspended: bool) {
     log::debug!("Notify kernel suspend status: {} for hci{}", suspended, hci_index);
@@ -99,6 +101,15 @@ fn notify_suspend_state(hci_index: u16, suspended: bool) {
     }
 }
 
+pub enum SuspendActions {
+    CallbackRegistered(u32),
+    CallbackDisconnected(u32),
+    SuspendReady(i32),
+    ResumeReady(i32),
+    AudioReconnectOnResumeComplete,
+    DeviceDisconnected(RawAddress),
+}
+
 #[derive(Debug, FromPrimitive, ToPrimitive)]
 #[repr(u32)]
 pub enum SuspendType {
@@ -108,20 +119,31 @@ pub enum SuspendType {
 }
 
 struct SuspendState {
-    le_rand_expected: bool,
     suspend_expected: bool,
-    resume_expected: bool,
     suspend_id: Option<i32>,
+    wake_allowed: bool,
+
+    disconnect_expected: HashSet<RawAddress>,
+    disconnect_timeout_timer: Option<JoinHandle<()>>,
+
+    delay_timer: Option<JoinHandle<()>>,
 }
 
 impl SuspendState {
-    pub fn new() -> SuspendState {
+    fn new() -> SuspendState {
         Self {
-            le_rand_expected: false,
             suspend_expected: false,
-            resume_expected: false,
             suspend_id: None,
+            wake_allowed: false,
+            disconnect_expected: HashSet::default(),
+            disconnect_timeout_timer: None,
+            delay_timer: None,
         }
+    }
+
+    // The tasks should remove their timer when they are done, so if all are None then we're ready.
+    fn ready_to_suspend(&self) -> bool {
+        self.delay_timer.is_none() && self.disconnect_timeout_timer.is_none()
     }
 }
 
@@ -139,9 +161,8 @@ pub struct Suspend {
     audio_reconnect_list: Vec<BluetoothDevice>,
 
     /// Active reconnection attempt after resume.
-    audio_reconnect_joinhandle: Option<tokio::task::JoinHandle<()>>,
+    audio_reconnect_joinhandle: Option<JoinHandle<()>>,
 
-    suspend_timeout_joinhandle: Option<tokio::task::JoinHandle<()>>,
     suspend_state: Arc<Mutex<SuspendState>>,
 }
 
@@ -153,32 +174,68 @@ impl Suspend {
         media: Arc<Mutex<Box<BluetoothMedia>>>,
         tx: Sender<Message>,
     ) -> Suspend {
+        bt.lock()
+            .unwrap()
+            .register_connection_callback(Box::new(BluetoothConnectionCallbacks::new(tx.clone())));
         Self {
             bt,
             intf,
             gatt,
             media,
             tx: tx.clone(),
-            callbacks: Callbacks::new(tx.clone(), Message::SuspendCallbackDisconnected),
+            callbacks: Callbacks::new(tx.clone(), |id| {
+                Message::SuspendActions(SuspendActions::CallbackDisconnected(id))
+            }),
             audio_reconnect_list: Vec::new(),
             audio_reconnect_joinhandle: None,
-            suspend_timeout_joinhandle: None,
             suspend_state: Arc::new(Mutex::new(SuspendState::new())),
         }
     }
 
-    pub(crate) fn callback_registered(&mut self, id: u32) {
+    pub(crate) fn handle_action(&mut self, action: SuspendActions) {
+        match action {
+            SuspendActions::CallbackRegistered(id) => {
+                self.callback_registered(id);
+            }
+            SuspendActions::CallbackDisconnected(id) => {
+                self.remove_callback(id);
+            }
+            SuspendActions::SuspendReady(suspend_id) => {
+                self.suspend_ready(suspend_id);
+            }
+            SuspendActions::ResumeReady(suspend_id) => {
+                self.resume_ready(suspend_id);
+            }
+            SuspendActions::AudioReconnectOnResumeComplete => {
+                self.audio_reconnect_complete();
+            }
+            SuspendActions::DeviceDisconnected(addr) => {
+                self.device_disconnected(addr);
+            }
+        }
+    }
+
+    fn callback_registered(&mut self, id: u32) {
         match self.callbacks.get_by_id_mut(id) {
             Some(callback) => callback.on_callback_registered(id),
             None => warn!("Suspend callback {} does not exist", id),
         }
     }
 
-    pub(crate) fn remove_callback(&mut self, id: u32) -> bool {
+    fn remove_callback(&mut self, id: u32) -> bool {
         self.callbacks.remove_callback(id)
     }
 
-    pub(crate) fn suspend_ready(&mut self, suspend_id: i32) {
+    fn suspend_ready(&mut self, suspend_id: i32) {
+        let mut suspend_state = self.suspend_state.lock().unwrap();
+        if !suspend_state.ready_to_suspend() {
+            return;
+        }
+        if !suspend_state.suspend_expected {
+            // We might already send out a ready.
+            return;
+        }
+        suspend_state.suspend_expected = false;
         let hci_index = self.bt.lock().unwrap().get_hci_index();
         notify_suspend_state(hci_index, true);
         self.callbacks.for_all_callbacks(|callback| {
@@ -186,7 +243,7 @@ impl Suspend {
         });
     }
 
-    pub(crate) fn resume_ready(&mut self, suspend_id: i32) {
+    fn resume_ready(&mut self, suspend_id: i32) {
         self.callbacks.for_all_callbacks(|callback| {
             callback.on_resumed(suspend_id);
         });
@@ -194,12 +251,62 @@ impl Suspend {
 
     /// On resume, we attempt to reconnect to any audio devices connected during suspend.
     /// This marks this attempt as completed and we should clear the pending reconnects here.
-    pub(crate) fn audio_reconnect_complete(&mut self) {
+    fn audio_reconnect_complete(&mut self) {
         self.audio_reconnect_list.clear();
         self.audio_reconnect_joinhandle = None;
     }
 
-    pub(crate) fn get_connected_audio_devices(&self) -> Vec<BluetoothDevice> {
+    fn device_disconnected(&mut self, addr: RawAddress) {
+        let mut suspend_state = self.suspend_state.lock().unwrap();
+        if !suspend_state.disconnect_expected.remove(&addr) {
+            // Not interested device, or we are not suspending.
+            return;
+        }
+        if !suspend_state.disconnect_expected.is_empty() {
+            return;
+        }
+        if let Some(h) = suspend_state.disconnect_timeout_timer.take() {
+            h.abort();
+        }
+        Self::all_acls_disconnected(
+            self.tx.clone(),
+            &mut suspend_state,
+            self.suspend_state.clone(),
+            self.intf.clone(),
+        );
+    }
+
+    /// Continues the suspend process after all ACLs are disconnected.
+    ///
+    /// Two SuspendState are passed as arguments here because we want the mutex to be held during
+    /// the whole device disconnect process. Thus, the caller of this function should provide a
+    /// MutexGuard, while an Arc is also needed for this function to compose an async task.
+    ///
+    /// After ReentrantLock (https://github.com/rust-lang/rust/issues/121440) is supported, we
+    /// shall replace them with a single Arc<ReentrantLock<SuspendState>>.
+    fn all_acls_disconnected(
+        tx: Sender<Message>,
+        suspend_state: &mut MutexGuard<SuspendState>,
+        suspend_state_cloned: Arc<Mutex<SuspendState>>,
+        intf: Arc<Mutex<BluetoothInterface>>,
+    ) {
+        let suspend_id = suspend_state
+            .suspend_id
+            .expect("life cycle of suspend_id must be longer than disconnect_timeout_timer");
+        let wake_allowed = suspend_state.wake_allowed;
+        suspend_state.disconnect_timeout_timer = Some(tokio::spawn(async move {
+            if wake_allowed {
+                intf.lock().unwrap().allow_wake_by_hid();
+                // Allow wake is async. Wait for a little while.
+                time::sleep(Duration::from_millis(SUSPEND_READY_DELAY_MS)).await;
+            }
+            suspend_state_cloned.lock().unwrap().disconnect_timeout_timer = None;
+            let _result =
+                tx.send(Message::SuspendActions(SuspendActions::SuspendReady(suspend_id))).await;
+        }));
+    }
+
+    fn get_connected_audio_devices(&self) -> Vec<BluetoothDevice> {
         let bonded_connected = self.bt.lock().unwrap().get_bonded_and_connected_devices();
         self.media.lock().unwrap().filter_to_connected_audio_devices_from(&bonded_connected)
     }
@@ -211,7 +318,8 @@ impl ISuspend for Suspend {
 
         let tx = self.tx.clone();
         tokio::spawn(async move {
-            let _result = tx.send(Message::SuspendCallbackRegistered(id)).await;
+            let _result =
+                tx.send(Message::SuspendActions(SuspendActions::CallbackRegistered(id))).await;
         });
 
         true
@@ -222,10 +330,13 @@ impl ISuspend for Suspend {
     }
 
     fn suspend(&mut self, suspend_type: SuspendType, suspend_id: i32) {
+        let mut suspend_state = self.suspend_state.lock().unwrap();
         // Set suspend state as true, prevent an early resume.
-        self.suspend_state.lock().unwrap().suspend_expected = true;
-        // Set suspend event mask
-        self.intf.lock().unwrap().set_default_event_mask_except(MASKED_EVENTS_FOR_SUSPEND, 0u64);
+        suspend_state.suspend_expected = true;
+        suspend_state.suspend_id = Some(suspend_id);
+        // Treat Other the same as AllowWakeFromHid
+        suspend_state.wake_allowed =
+            matches!(suspend_type, SuspendType::AllowWakeFromHid | SuspendType::Other);
 
         self.bt.lock().unwrap().scan_mode_enter_suspend();
         self.intf.lock().unwrap().clear_event_filter();
@@ -248,63 +359,86 @@ impl ISuspend for Suspend {
             self.audio_reconnect_joinhandle = None;
         }
 
-        self.intf.lock().unwrap().disconnect_all_acls();
+        // Now we have some async tasks to do and need to wait for some events.
+        // For each task we need to schedule a timeout timer to ensure we suspend eventually.
+        // When a task is done, it should remove the timer and send a SuspendReady event.
+        // |ready_to_suspend| shall check that all tasks have done (removed their timer).
 
-        // Handle wakeful cases (Connected/Other)
-        // Treat Other the same as Connected
-        match suspend_type {
-            SuspendType::AllowWakeFromHid | SuspendType::Other => {
-                self.intf.lock().unwrap().allow_wake_by_hid();
-            }
-            _ => {}
+        // This doesn't do anything but simply wait for a short delay to ensure the above functions
+        // have finished (LibBluetooth may leave some async tasks).
+        if let Some(h) = suspend_state.delay_timer.take() {
+            log::warn!("Suspend: Found a leftover timer for delay task");
+            h.abort();
         }
-        self.suspend_state.lock().unwrap().le_rand_expected = true;
-        self.suspend_state.lock().unwrap().suspend_id = Some(suspend_id);
-
-        if let Some(join_handle) = &self.suspend_timeout_joinhandle {
-            join_handle.abort();
-            self.suspend_timeout_joinhandle = None;
-        }
-
         let tx = self.tx.clone();
-        let suspend_state = self.suspend_state.clone();
-        self.suspend_timeout_joinhandle = Some(tokio::spawn(async move {
-            tokio::time::sleep(tokio::time::Duration::from_millis(2000)).await;
-            log::error!("Suspend did not complete in 2 seconds, continuing anyway.");
-            suspend_state.lock().unwrap().le_rand_expected = false;
-            suspend_state.lock().unwrap().suspend_expected = false;
-            tokio::spawn(async move {
-                let _result = tx.send(Message::SuspendReady(suspend_id)).await;
-            });
+        let suspend_state_cloned = self.suspend_state.clone();
+        suspend_state.delay_timer = Some(tokio::spawn(async move {
+            time::sleep(Duration::from_millis(SUSPEND_READY_DELAY_MS)).await;
+            suspend_state_cloned.lock().unwrap().delay_timer = None;
+            let _result =
+                tx.send(Message::SuspendActions(SuspendActions::SuspendReady(suspend_id))).await;
         }));
 
-        // Call LE Rand at the end of suspend. The callback of LE Rand will reset the
-        // suspend state, cancel the suspend timeout and send suspend ready signal.
-        self.bt.lock().unwrap().le_rand();
+        // Disconnect all ACLs and wait until all devices have disconnected.
+        if let Some(h) = suspend_state.disconnect_timeout_timer.take() {
+            log::warn!("Suspend: Found a leftover timer for disconnect");
+            h.abort();
+        }
+        suspend_state.disconnect_expected = HashSet::from_iter(
+            self.bt.lock().unwrap().get_connected_devices().iter().map(|d| d.address),
+        );
+        let tx = self.tx.clone();
+        let suspend_state_cloned = self.suspend_state.clone();
+        let intf_cloned = self.intf.clone();
+        if suspend_state.disconnect_expected.is_empty() {
+            // No need to set a timeout timer as no disconnection is expected.
+            Self::all_acls_disconnected(tx, &mut suspend_state, suspend_state_cloned, intf_cloned);
+        } else {
+            self.intf.lock().unwrap().disconnect_all_acls();
+            suspend_state.disconnect_timeout_timer = Some(tokio::spawn(async move {
+                time::sleep(Duration::from_millis(2000)).await;
+                log::error!("Suspend disconnect did not complete in 2s, continuing anyway.");
+                let mut suspend_state = suspend_state_cloned.lock().unwrap();
+                // Cleanup disconnect_expected so |device_disconnected| won't be triggered.
+                suspend_state.disconnect_expected = HashSet::default();
+                // Continue the suspend. There might be some disconnection events later and if the
+                // device is not in the lid-closed state, the device might be awaken. This shall be
+                // a really rare case and it's hard to handle as setting a event mask could break
+                // the state machine in LibBluetooth.
+                // We could consider increase the timeout in the future if this happens too often.
+                Self::all_acls_disconnected(
+                    tx,
+                    &mut suspend_state,
+                    suspend_state_cloned.clone(),
+                    intf_cloned,
+                );
+            }));
+        }
     }
 
     fn resume(&mut self) -> bool {
+        let mut suspend_state = self.suspend_state.lock().unwrap();
         // Suspend is not ready (e.g. aborted early), delay cleanup after SuspendReady.
-        if self.suspend_state.lock().unwrap().suspend_expected {
+        if suspend_state.suspend_expected {
             log::error!("Suspend is expected but not ready, abort resume.");
             return false;
         }
 
         // Suspend ID state 0: NoRecord, 1: Recorded
-        let suspend_id_state = match self.suspend_state.lock().unwrap().suspend_id {
+        let suspend_id = match suspend_state.suspend_id {
             None => {
                 log::error!("No suspend id saved at resume.");
-                0
+                metrics::suspend_complete_state(0);
+                // If no suspend id is saved here, it means floss did not receive the
+                // SuspendImminent signal and as a result, the suspend flow was not run.
+                // Skip the resume flow and return after logging the metrics.
+                return true;
             }
-            Some(_) => 1,
+            Some(id) => {
+                metrics::suspend_complete_state(1);
+                id
+            }
         };
-        metrics::suspend_complete_state(suspend_id_state);
-        // If no suspend id is saved here, it means floss did not receive the SuspendImminent
-        // signal and as a result, the suspend flow was not run.
-        // Skip the resume flow and return after logging the metrics.
-        if suspend_id_state == 0 {
-            return true;
-        }
 
         let hci_index = self.bt.lock().unwrap().get_hci_index();
         notify_suspend_state(hci_index, false);
@@ -329,10 +463,7 @@ impl ISuspend for Suspend {
 
             self.audio_reconnect_joinhandle = Some(tokio::spawn(async move {
                 // Wait a few seconds to avoid co-ex issues with wi-fi.
-                tokio::time::sleep(tokio::time::Duration::from_millis(
-                    RECONNECT_AUDIO_ON_RESUME_DELAY_MS,
-                ))
-                .await;
+                time::sleep(Duration::from_millis(RECONNECT_AUDIO_ON_RESUME_DELAY_MS)).await;
 
                 // Queue up connections.
                 for device in reconnect_list {
@@ -343,8 +474,10 @@ impl ISuspend for Suspend {
                 }
 
                 // Mark that we're done.
-                let _unused: Option<()> =
-                    txl.send(Message::AudioReconnectOnResumeComplete).await.ok();
+                let _unused: Option<()> = txl
+                    .send(Message::SuspendActions(SuspendActions::AudioReconnectOnResumeComplete))
+                    .await
+                    .ok();
             }));
         }
 
@@ -352,73 +485,43 @@ impl ISuspend for Suspend {
         self.gatt.lock().unwrap().advertising_exit_suspend();
         self.gatt.lock().unwrap().scan_exit_suspend();
 
-        self.suspend_state.lock().unwrap().le_rand_expected = true;
-        self.suspend_state.lock().unwrap().resume_expected = true;
-
         let tx = self.tx.clone();
-        let suspend_state = self.suspend_state.clone();
-        let suspend_id = self.suspend_state.lock().unwrap().suspend_id.unwrap();
-        self.suspend_timeout_joinhandle = Some(tokio::spawn(async move {
-            tokio::time::sleep(tokio::time::Duration::from_millis(2000)).await;
-            log::error!("Resume did not complete in 2 seconds, continuing anyway.");
-
-            suspend_state.lock().unwrap().le_rand_expected = false;
-            suspend_state.lock().unwrap().resume_expected = false;
-            tokio::spawn(async move {
-                let _result = tx.send(Message::ResumeReady(suspend_id)).await;
-            });
-        }));
-
-        // Call LE Rand at the end of resume. The callback of LE Rand will reset the
-        // resume state and send resume ready signal.
-        self.bt.lock().unwrap().le_rand();
+        tokio::spawn(async move {
+            let _result =
+                tx.send(Message::SuspendActions(SuspendActions::ResumeReady(suspend_id))).await;
+        });
 
         true
     }
 }
 
-impl BtifBluetoothCallbacks for Suspend {
-    fn le_rand_cb(&mut self, _random: u64) {
-        // TODO(b/232547719): Suspend readiness may not depend only on LeRand, make a generic state
-        // machine to support waiting for other conditions.
-        if !self.suspend_state.lock().unwrap().le_rand_expected {
-            log::warn!("Unexpected LE Rand callback, ignoring.");
-            return;
-        }
-        self.suspend_state.lock().unwrap().le_rand_expected = false;
+struct BluetoothConnectionCallbacks {
+    tx: Sender<Message>,
+}
 
-        if let Some(join_handle) = &self.suspend_timeout_joinhandle {
-            join_handle.abort();
-            self.suspend_timeout_joinhandle = None;
-        }
+impl BluetoothConnectionCallbacks {
+    fn new(tx: Sender<Message>) -> Self {
+        Self { tx }
+    }
+}
 
-        let suspend_id = self.suspend_state.lock().unwrap().suspend_id.unwrap();
+impl IBluetoothConnectionCallback for BluetoothConnectionCallbacks {
+    fn on_device_connected(&mut self, _device: BluetoothDevice) {}
 
-        if self.suspend_state.lock().unwrap().suspend_expected {
-            let suspend_state = self.suspend_state.clone();
-            let tx = self.tx.clone();
-            tokio::spawn(async move {
-                // TODO(b/286268874) Add a short delay because HCI commands are not
-                // synchronized. LE Rand is the last command, so wait for other
-                // commands to finish. Remove after synchronization is fixed.
-                tokio::time::sleep(tokio::time::Duration::from_millis(
-                    LE_RAND_CB_SUSPEND_READY_DELAY_MS,
-                ))
+    fn on_device_disconnected(&mut self, device: BluetoothDevice) {
+        let tx = self.tx.clone();
+        tokio::spawn(async move {
+            let _result = tx
+                .send(Message::SuspendActions(SuspendActions::DeviceDisconnected(device.address)))
                 .await;
-                // TODO(b/286268874) Reset suspend state after the delay. Prevent
-                // resume until the suspend ready signal is sent.
-                suspend_state.lock().unwrap().suspend_expected = false;
-                let _result = tx.send(Message::SuspendReady(suspend_id)).await;
-            });
-        }
+        });
+    }
 
-        self.suspend_state.lock().unwrap().suspend_id = Some(suspend_id);
-        if self.suspend_state.lock().unwrap().resume_expected {
-            self.suspend_state.lock().unwrap().resume_expected = false;
-            let tx = self.tx.clone();
-            tokio::spawn(async move {
-                let _result = tx.send(Message::ResumeReady(suspend_id)).await;
-            });
-        }
+    fn on_device_connection_failed(&mut self, _device: BluetoothDevice, _status: BtStatus) {}
+}
+
+impl RPCProxy for BluetoothConnectionCallbacks {
+    fn get_object_id(&self) -> String {
+        "Bluetooth Connection Callback".to_string()
     }
 }

@@ -23,6 +23,7 @@ import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothUtils.callServiceIfEnabled;
+import static android.bluetooth.BluetoothUtils.isValidDevice;
 
 import static java.util.Objects.requireNonNull;
 
@@ -62,7 +63,7 @@ import java.util.function.Consumer;
 public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable {
     private static final String TAG = BluetoothHapClient.class.getSimpleName();
 
-    private CloseGuard mCloseGuard;
+    private final CloseGuard mCloseGuard;
 
     /**
      * This class provides callbacks mechanism for the BluetoothHapClient profile.
@@ -1086,12 +1087,5 @@ public final class BluetoothHapClient implements BluetoothProfile, AutoCloseable
                 mAdapter,
                 this::getService,
                 s -> s.setPresetNameForGroup(groupId, presetIndex, name, mAttributionSource));
-    }
-
-    private static boolean isValidDevice(BluetoothDevice device) {
-        if (device == null) return false;
-
-        if (BluetoothAdapter.checkBluetoothAddress(device.getAddress())) return true;
-        return false;
     }
 }

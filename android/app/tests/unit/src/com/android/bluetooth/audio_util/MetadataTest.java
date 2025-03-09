@@ -532,7 +532,7 @@ public class MetadataTest {
     }
 
     /**
-     * Make sure you can create a Metadata object from a MediaDesciption with a bundle of extras
+     * Make sure you can create a Metadata object from a MediaDescription with a bundle of extras
      * that provide more detailed information about the item.
      */
     @Test
@@ -977,7 +977,7 @@ public class MetadataTest {
      * cover art.
      */
     @Test
-    public void testBuildMetadataFromQueueItemWithIconUriandUrisDisabled() {
+    public void testBuildMetadataFromQueueItemWithIconUriAndUrisDisabled() {
         Util.sUriImagesSupport = false;
         MediaDescription description = getMediaDescription(null, IMAGE_URI_1, null);
         QueueItem queueItem = getQueueItem(description);

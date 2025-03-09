@@ -54,14 +54,14 @@ public class CsipSetCoordinatorStateMachine extends StateMachine {
     // NOTE: the value is not "final" - it is modified in the unit tests
     @VisibleForTesting static int sConnectTimeoutMs = 30000; // 30s
 
-    private Disconnected mDisconnected;
-    private Connecting mConnecting;
-    private Disconnecting mDisconnecting;
-    private Connected mConnected;
+    private final Disconnected mDisconnected;
+    private final Connecting mConnecting;
+    private final Disconnecting mDisconnecting;
+    private final Connected mConnected;
     private int mLastConnectionState = -1;
 
-    private CsipSetCoordinatorService mService;
-    private CsipSetCoordinatorNativeInterface mNativeInterface;
+    private final CsipSetCoordinatorService mService;
+    private final CsipSetCoordinatorNativeInterface mNativeInterface;
 
     private final BluetoothDevice mDevice;
 

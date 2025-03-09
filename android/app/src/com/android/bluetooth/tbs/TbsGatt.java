@@ -223,14 +223,14 @@ public class TbsGatt {
             mValue = null;
         }
 
-        public Operation mOperation;
-        public int mRequestId;
-        public BluetoothGattCharacteristic mCharacteristic;
-        public BluetoothGattDescriptor mDescriptor;
-        public boolean mPreparedWrite;
-        public boolean mResponseNeeded;
-        public int mOffset;
-        public byte[] mValue;
+        public final Operation mOperation;
+        public final int mRequestId;
+        public final BluetoothGattCharacteristic mCharacteristic;
+        public final BluetoothGattDescriptor mDescriptor;
+        public final boolean mPreparedWrite;
+        public final boolean mResponseNeeded;
+        public final int mOffset;
+        public final byte[] mValue;
     }
 
     TbsGatt(AdapterService adapterService, TbsService tbsService) {
@@ -516,7 +516,7 @@ public class TbsGatt {
     /** Wrapper class for BluetoothGattCharacteristic */
     private class GattCharacteristic extends BluetoothGattCharacteristic {
 
-        protected BluetoothGattCharacteristicNotifier mNotifier;
+        protected final BluetoothGattCharacteristicNotifier mNotifier;
 
         public GattCharacteristic(UUID uuid, int properties, int permissions) {
             super(uuid, properties, permissions);
@@ -948,7 +948,7 @@ public class TbsGatt {
                         + requestedOpcode
                         + " callIndex="
                         + callIndex
-                        + " requesuResult="
+                        + " requestResult="
                         + requestResult);
         mCallControlPointCharacteristic.setResult(
                 device, requestedOpcode, callIndex, requestResult);
@@ -1452,8 +1452,8 @@ public class TbsGatt {
         }
     }
 
-    private void clearUnauthorizedGattOperationss(BluetoothDevice device) {
-        Log.d(TAG, "clearUnauthorizedGattOperationss device: " + device);
+    private void clearUnauthorizedGattOperations(BluetoothDevice device) {
+        Log.d(TAG, "clearUnauthorizedGattOperations device: " + device);
 
         synchronized (mPendingGattOperationsLock) {
             mPendingGattOperations.remove(device);
@@ -1474,7 +1474,7 @@ public class TbsGatt {
                         onRejectedAuthorizationGattOperation(device, op);
                     }
                 }
-                clearUnauthorizedGattOperationss(device);
+                clearUnauthorizedGattOperations(device);
             }
         }
     }
@@ -1492,7 +1492,7 @@ public class TbsGatt {
                     super.onConnectionStateChange(device, status, newState);
                     Log.d(TAG, "BluetoothGattServerCallback: onConnectionStateChange");
                     if (newState == STATE_DISCONNECTED) {
-                        clearUnauthorizedGattOperationss(device);
+                        clearUnauthorizedGattOperations(device);
                     }
                 }
 

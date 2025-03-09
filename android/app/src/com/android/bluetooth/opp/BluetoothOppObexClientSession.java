@@ -53,13 +53,12 @@ import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
 import com.android.internal.annotations.GuardedBy;
+import com.android.internal.annotations.VisibleForTesting;
 import com.android.obex.ClientOperation;
 import com.android.obex.ClientSession;
 import com.android.obex.HeaderSet;
 import com.android.obex.ObexTransport;
 import com.android.obex.ResponseCodes;
-
-import com.google.common.annotations.VisibleForTesting;
 
 import java.io.BufferedInputStream;
 import java.io.IOException;
@@ -714,7 +713,7 @@ public class BluetoothOppObexClientSession implements BluetoothOppObexSession {
             return;
         }
         if (address.startsWith("00:04:48")) {
-            // Poloroid Pogo
+            // Polaroid Pogo
             // Rejects filenames with more than one '.'. Rename to '_'.
             // for example: 'a.b.jpg' -> 'a_b.jpg'
             //              'abc.jpg' NOT CHANGED
@@ -740,7 +739,7 @@ public class BluetoothOppObexClientSession implements BluetoothOppObexSession {
                                 + filename
                                 + "\" as \""
                                 + newFilename
-                                + "\" to workaround Poloroid filename quirk");
+                                + "\" to workaround Polaroid filename quirk");
             }
         }
     }

@@ -75,7 +75,7 @@ public class SmsMmsContacts {
      * Get a contacts phone number based on the canonical addresses id of the contact. (The ID
      * listed in the Threads table.)
      *
-     * @param resolver the ContantResolver to be used.
+     * @param resolver the ContentResolver to be used.
      * @param id the id of the contact, as listed in the Threads table
      * @return the phone number of the contact - or null if id does not exist.
      */
@@ -128,7 +128,7 @@ public class SmsMmsContacts {
      * Refreshes the cache, by clearing all cached values and fill the cache with the result of a
      * new query.
      *
-     * @param resolver the ContantResolver to be used.
+     * @param resolver the ContentResolver to be used.
      */
     @VisibleForTesting
     void fillPhoneCache(ContentResolver resolver) {

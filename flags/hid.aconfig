@@ -10,43 +10,6 @@ flag {
 }
 
 flag {
-    name: "suppress_hid_rejection_broadcast"
-    namespace: "bluetooth"
-    description: "Don't generate state change event when an incoming HID connection is rejected"
-    bug: "339018102"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "hid_report_queuing"
-    namespace: "bluetooth"
-    description: "Queue incoming HID reports if UHID is not ready"
-    bug: "345498287"
-}
-
-flag {
-    name: "initiate_multiple_hid_connections"
-    namespace: "bluetooth"
-    description: "Allow HID host to initiate multiple HID connections at a time"
-    bug: "356141637"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "close_hid_only_if_connected"
-    namespace: "bluetooth"
-    description: "Do not close BTA HID host if it is already closed"
-    bug: "358241286"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "close_hid_if_uhid_ready_too_slow"
     namespace: "bluetooth"
     description: "Close HID if UHID takes too long to be ready"

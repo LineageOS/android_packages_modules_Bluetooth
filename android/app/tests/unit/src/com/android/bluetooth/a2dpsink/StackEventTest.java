@@ -70,7 +70,7 @@ public class StackEventTest {
     }
 
     @Test
-    public void testCreateAudioStateStartedvent() {
+    public void testCreateAudioStateStartedEvent() {
         testAudioStateChangedBase(StackEvent.AUDIO_STATE_STARTED);
     }
 

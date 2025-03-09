@@ -1191,7 +1191,7 @@ public class MediaControlGattServiceTest {
     public void testCharacteristic_longReadAuthorized() {
         BluetoothGattService service = initAllFeaturesGattService();
 
-        /* Twenty three octects long title */
+        /* Twenty three octets long title */
         String title = "01234567890123456789012";
         BluetoothGattCharacteristic characteristic =
                 service.getCharacteristic(MediaControlGattService.UUID_TRACK_TITLE);
@@ -1232,7 +1232,7 @@ public class MediaControlGattServiceTest {
     public void testCharacteristic_longReadOutsideLenAuthorized() {
         BluetoothGattService service = initAllFeaturesGattService();
 
-        /* Twenty three octects long title */
+        /* Twenty three octets long title */
         String title = "01234567890123456789012";
         BluetoothGattCharacteristic characteristic =
                 service.getCharacteristic(MediaControlGattService.UUID_TRACK_TITLE);

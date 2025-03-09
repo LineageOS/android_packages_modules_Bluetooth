@@ -688,7 +688,7 @@ class AvrcpControllerStateMachine extends StateMachine {
                     mAddressedPlayer = mAvailablePlayerList.get(mAddressedPlayerId);
 
                     // Fetch metadata including the now playing list. The specification claims that
-                    // the player feature bit only incidates if the player *natively* supports a now
+                    // the player feature bit only indicates if the player *natively* supports a now
                     // playing list. However, now playing is mandatory if browsing is supported,
                     // even if the player doesn't support it. A list of one item can be returned
                     // instead.
@@ -815,7 +815,7 @@ class AvrcpControllerStateMachine extends StateMachine {
                     (byte) 1,
                     new byte[] {PlayerApplicationSettings.REPEAT_STATUS},
                     new byte[] {
-                        PlayerApplicationSettings.mapAvrcpPlayerSettingstoBTattribVal(
+                        PlayerApplicationSettings.mapAvrcpPlayerSettingsToBTattribVal(
                                 PlayerApplicationSettings.REPEAT_STATUS, repeatMode)
                     });
         }
@@ -826,7 +826,7 @@ class AvrcpControllerStateMachine extends StateMachine {
                     (byte) 1,
                     new byte[] {PlayerApplicationSettings.SHUFFLE_STATUS},
                     new byte[] {
-                        PlayerApplicationSettings.mapAvrcpPlayerSettingstoBTattribVal(
+                        PlayerApplicationSettings.mapAvrcpPlayerSettingsToBTattribVal(
                                 PlayerApplicationSettings.SHUFFLE_STATUS, shuffleMode)
                     });
         }

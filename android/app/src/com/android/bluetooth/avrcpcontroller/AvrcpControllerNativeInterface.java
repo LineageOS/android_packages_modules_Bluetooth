@@ -232,7 +232,7 @@ public class AvrcpControllerNativeInterface {
                         + (" uid=" + uid)
                         + (" type=" + type)
                         + (" name=" + name)
-                        + (" attrids=" + Arrays.toString(attrIds))
+                        + (" attrIds=" + Arrays.toString(attrIds))
                         + (" attrVals=" + Arrays.toString(attrVals)));
 
         return new AvrcpItem.Builder()

@@ -54,8 +54,7 @@ import android.widget.Toast;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
-
-import com.google.common.annotations.VisibleForTesting;
+import com.android.internal.annotations.VisibleForTesting;
 
 /**
  * Handle all transfer related dialogs: -Ongoing transfer -Receiving one file dialog -Sending one

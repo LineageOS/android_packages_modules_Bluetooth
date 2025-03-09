@@ -948,7 +948,7 @@ public class HeadsetClientService extends ProfileService {
     }
 
     public boolean acceptCall(BluetoothDevice device, int flag) {
-        /* Phonecalls from a single device are supported, hang up any calls on the other phone */
+        /* Phone calls from a single device are supported, hang up any calls on the other phone */
         synchronized (mStateMachineMap) {
             for (Map.Entry<BluetoothDevice, HeadsetClientStateMachine> entry :
                     mStateMachineMap.entrySet()) {

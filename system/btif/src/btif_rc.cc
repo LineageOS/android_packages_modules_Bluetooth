@@ -1523,8 +1523,11 @@ static void handle_notification_response(tBTA_AV_META_MSG* pmeta_msg, tAVRC_REG_
       case AVRC_EVT_TRACK_CHANGE:
         if (rc_is_track_id_valid(p_rsp->param.track) != true) {
           break;
+        } else {
+          uint8_t* p_data = p_rsp->param.track;
+          BE_STREAM_TO_UINT64(p_dev->rc_playing_uid, p_data);
+          get_metadata_attribute_cmd(attr_list_size, attr_list, p_dev);
         }
-        get_metadata_attribute_cmd(attr_list_size, attr_list, p_dev);
         break;
 
       case AVRC_EVT_APP_SETTING_CHANGE: {

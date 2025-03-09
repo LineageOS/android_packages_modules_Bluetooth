@@ -209,7 +209,7 @@ public class AvrcpControllerServiceTest {
         when(mStateMachine.findNode(parentMediaId)).thenReturn(null);
         BrowseResult result = mService.getContents(parentMediaId);
 
-        assertThat(result.getStatus()).isEqualTo(BrowseResult.ERROR_MEDIA_ID_INVALID);
+        assertThat(result.status()).isEqualTo(BrowseResult.ERROR_MEDIA_ID_INVALID);
     }
 
     /**
@@ -222,7 +222,7 @@ public class AvrcpControllerServiceTest {
         String parentMediaId = BrowseTree.ROOT;
         BrowseResult result = mService.getContents(parentMediaId);
 
-        assertThat(result.getStatus()).isEqualTo(BrowseResult.NO_DEVICE_CONNECTED);
+        assertThat(result.status()).isEqualTo(BrowseResult.NO_DEVICE_CONNECTED);
     }
 
     /**
@@ -235,7 +235,7 @@ public class AvrcpControllerServiceTest {
         mService.getBrowseTree().onConnected(mDevice);
         BrowseResult result = mService.getContents(parentMediaId);
 
-        assertThat(result.getStatus()).isEqualTo(BrowseResult.SUCCESS);
+        assertThat(result.status()).isEqualTo(BrowseResult.SUCCESS);
     }
 
     /**
@@ -258,7 +258,7 @@ public class AvrcpControllerServiceTest {
         BrowseResult result = mService.getContents(parentMediaId);
 
         verify(mStateMachine).requestContents(eq(node));
-        assertThat(result.getStatus()).isEqualTo(BrowseResult.DOWNLOAD_PENDING);
+        assertThat(result.status()).isEqualTo(BrowseResult.DOWNLOAD_PENDING);
     }
 
     /**
@@ -275,7 +275,7 @@ public class AvrcpControllerServiceTest {
 
         BrowseResult result = mService.getContents(parentMediaId);
 
-        assertThat(result.getStatus()).isEqualTo(BrowseResult.SUCCESS);
+        assertThat(result.status()).isEqualTo(BrowseResult.SUCCESS);
     }
 
     @Test

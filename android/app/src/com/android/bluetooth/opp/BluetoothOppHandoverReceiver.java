@@ -60,22 +60,18 @@ public class BluetoothOppHandoverReceiver extends BroadcastReceiver {
             if (mimeType != null && uris != null && !uris.isEmpty()) {
                 final Context finalContext = context;
                 final ArrayList<Uri> finalUris = uris;
-                Thread t =
-                        new Thread(
-                                new Runnable() {
-                                    @Override
-                                    public void run() {
-                                        BluetoothOppManager.getInstance(finalContext)
-                                                .saveSendingFileInfo(
-                                                        mimeType,
-                                                        finalUris,
-                                                        true /* isHandover */,
-                                                        true /* fromExternal */);
-                                        BluetoothOppManager.getInstance(finalContext)
-                                                .startTransfer(device);
-                                    }
-                                });
-                t.start();
+                new Thread(
+                                () -> {
+                                    BluetoothOppManager.getInstance(finalContext)
+                                            .saveSendingFileInfo(
+                                                    mimeType,
+                                                    finalUris,
+                                                    true /* isHandover */,
+                                                    true /* fromExternal */);
+                                    BluetoothOppManager.getInstance(finalContext)
+                                            .startTransfer(device);
+                                })
+                        .start();
             } else {
                 Log.d(TAG, "No mimeType or stream attached to handover request");
                 return;

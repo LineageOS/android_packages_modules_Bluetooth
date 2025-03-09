@@ -147,7 +147,7 @@ public class MediaPlayerListTest {
         doReturn(prepareMediaData(PlaybackState.STATE_PAUSED))
                 .when(mMockPlayerWrapper)
                 .getCurrentMediaData();
-        mMediaPlayerList.injectAudioPlaybacActive(true);
+        mMediaPlayerList.injectAudioPlaybackActive(true);
         verify(mMediaUpdateCallback).run(mMediaUpdateData.capture());
         MediaData data = mMediaUpdateData.getValue();
         assertThat(data.state.getState()).isEqualTo(PlaybackState.STATE_PLAYING);
@@ -155,7 +155,7 @@ public class MediaPlayerListTest {
         // verify update media data with current media player media data
         MediaData currentMediaData = prepareMediaData(PlaybackState.STATE_PAUSED);
         doReturn(currentMediaData).when(mMockPlayerWrapper).getCurrentMediaData();
-        mMediaPlayerList.injectAudioPlaybacActive(false);
+        mMediaPlayerList.injectAudioPlaybackActive(false);
         verify(mMediaUpdateCallback, times(2)).run(mMediaUpdateData.capture());
         data = mMediaUpdateData.getValue();
         assertThat(data.metadata).isEqualTo(currentMediaData.metadata);
@@ -180,8 +180,8 @@ public class MediaPlayerListTest {
         doReturn(prepareMediaData(PlaybackState.STATE_PLAYING))
                 .when(mMockPlayerWrapper)
                 .getCurrentMediaData();
-        mMediaPlayerList.injectAudioPlaybacActive(true);
-        mMediaPlayerList.injectAudioPlaybacActive(false);
+        mMediaPlayerList.injectAudioPlaybackActive(true);
+        mMediaPlayerList.injectAudioPlaybackActive(false);
         verify(mMediaUpdateCallback, never()).run(any());
     }
 
@@ -190,7 +190,7 @@ public class MediaPlayerListTest {
         doReturn(prepareMediaData(PlaybackState.STATE_PLAYING))
                 .when(mMockPlayerWrapper)
                 .getCurrentMediaData();
-        mMediaPlayerList.injectAudioPlaybacActive(true);
+        mMediaPlayerList.injectAudioPlaybackActive(true);
         verify(mMediaUpdateCallback, never()).run(any());
 
         // Verify not update active player media data when audio playback is active

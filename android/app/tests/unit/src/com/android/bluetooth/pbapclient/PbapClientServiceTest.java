@@ -236,7 +236,7 @@ public class PbapClientServiceTest {
 
     @Test
     @EnableFlags(Flags.FLAG_PBAP_CLIENT_STORAGE_REFACTOR)
-    public void onConnectionStateChanged_ConnectedToDisonnecting_eventIgnored() {
+    public void onConnectionStateChanged_ConnectedToDisconnecting_eventIgnored() {
         doReturn(STATE_DISCONNECTING).when(mMockDeviceStateMachine).getConnectionState();
         mDeviceCallback.onConnectionStateChanged(STATE_CONNECTED, STATE_DISCONNECTING);
         assertThat(mDeviceMap.containsKey(mDevice)).isTrue();
@@ -254,7 +254,7 @@ public class PbapClientServiceTest {
 
     @Test
     @DisableFlags(Flags.FLAG_PBAP_CLIENT_STORAGE_REFACTOR)
-    public void onAccountsChanged_fromNulltoEmpty_tryDownloadIfConnectedCalled() {
+    public void onAccountsChanged_fromNullToEmpty_tryDownloadIfConnectedCalled() {
         PbapClientStateMachineOld sm = mock(PbapClientStateMachineOld.class);
         mService.mPbapClientStateMachineOldMap.put(mDevice, sm);
 

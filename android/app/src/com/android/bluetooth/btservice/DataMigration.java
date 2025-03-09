@@ -97,7 +97,7 @@ final class DataMigration {
             markMigrationStatus(ctx, MIGRATION_STATUS_MISSING_APK);
             return MIGRATION_STATUS_MISSING_APK;
         }
-        if (!incrementeMigrationAttempt(ctx)) {
+        if (!incrementMigrationAttempt(ctx)) {
             Log.d(TAG, "Legacy migration skipped: still failing after too many attempt");
             markMigrationStatus(ctx, MIGRATION_STATUS_MAX_ATTEMPT);
             return MIGRATION_STATUS_MAX_ATTEMPT;
@@ -238,7 +238,7 @@ final class DataMigration {
     }
 
     @VisibleForTesting
-    static boolean incrementeMigrationAttempt(Context ctx) {
+    static boolean incrementMigrationAttempt(Context ctx) {
         SharedPreferences pref = ctx.getSharedPreferences(BLUETOOTH_CONFIG, Context.MODE_PRIVATE);
         int currentAttempt = Math.min(pref.getInt(MIGRATION_ATTEMPT_PROPERTY, 0), MAX_ATTEMPT);
         pref.edit().putInt(MIGRATION_ATTEMPT_PROPERTY, currentAttempt + 1).apply();

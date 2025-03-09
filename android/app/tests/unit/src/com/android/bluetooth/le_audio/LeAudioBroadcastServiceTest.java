@@ -1408,7 +1408,7 @@ public class LeAudioBroadcastServiceTest {
     }
 
     @Test
-    public void testCacheAndResmueSuspendingSources() {
+    public void testCacheAndResumeSuspendingSources() {
         mSetFlagsRule.enableFlags(Flags.FLAG_LEAUDIO_BIG_DEPENDS_ON_AUDIO_STATE);
         int groupId = 1;
         int broadcastId = 243;

@@ -48,6 +48,7 @@ import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 import androidx.test.runner.AndroidJUnit4;
 
+import com.android.bluetooth.TestLooper;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.pan.PanService.BluetoothPanDevice;
@@ -77,6 +78,7 @@ public class PanServiceTest {
             InstrumentationRegistry.getInstrumentation().getTargetContext();
 
     private PanService mService;
+    private TestLooper mTestLooper;
 
     @Before
     public void setUp() {
@@ -86,7 +88,8 @@ public class PanServiceTest {
                 mAdapterService, Context.USER_SERVICE, UserManager.class, mMockUserManager);
         mockGetSystemService(mAdapterService, Context.TETHERING_SERVICE, TetheringManager.class);
 
-        mService = new PanService(mAdapterService, mNativeInterface);
+        mTestLooper = new TestLooper();
+        mService = new PanService(mAdapterService, mNativeInterface, mTestLooper.getLooper());
         mService.setAvailable(true);
     }
 
@@ -125,12 +128,14 @@ public class PanServiceTest {
                 new BluetoothPanDevice(STATE_DISCONNECTED, PAN_ROLE_NONE, PAN_ROLE_NONE));
 
         assertThat(mService.connect(mRemoteDevice)).isTrue();
+        mTestLooper.dispatchAll();
         verify(mNativeInterface, timeout(TIMEOUT_MS)).connect(any());
     }
 
     @Test
     public void disconnect_returnsTrue() {
         assertThat(mService.disconnect(mRemoteDevice)).isTrue();
+        mTestLooper.dispatchAll();
         verify(mNativeInterface, timeout(TIMEOUT_MS)).disconnect(any());
     }
 
@@ -189,6 +194,7 @@ public class PanServiceTest {
                         mRemoteDevice, BluetoothProfile.PAN, CONNECTION_POLICY_ALLOWED))
                 .thenReturn(true);
         assertThat(mService.setConnectionPolicy(mRemoteDevice, CONNECTION_POLICY_ALLOWED)).isTrue();
+        mTestLooper.dispatchAll();
         verify(mNativeInterface, timeout(TIMEOUT_MS)).connect(any());
 
         when(mDatabaseManager.setProfileConnectionPolicy(
@@ -196,6 +202,7 @@ public class PanServiceTest {
                 .thenReturn(true);
         assertThat(mService.setConnectionPolicy(mRemoteDevice, CONNECTION_POLICY_FORBIDDEN))
                 .isTrue();
+        mTestLooper.dispatchAll();
         verify(mNativeInterface, timeout(TIMEOUT_MS)).disconnect(any());
     }
 

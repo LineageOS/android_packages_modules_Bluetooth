@@ -16,8 +16,10 @@ use bluetooth_offload_hci as hci;
 
 use crate::arbiter::Arbiter;
 use crate::service::{Service, StreamConfiguration};
-use hci::{Command, Event, EventToBytes, IsoData, ReturnParameters, Status};
-use hci::{Module, ModuleBuilder};
+use hci::{
+    Command, CommandToBytes, Event, EventToBytes, IsoData, Module, ModuleBuilder, ReturnParameters,
+    Status,
+};
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 
@@ -40,14 +42,21 @@ struct State {
 }
 
 struct BigParameters {
-    bis_handles: Vec<u16>,
     sdu_interval: u32,
+    max_sdu_size: u16,
+    bis_handles: Vec<u16>,
 }
 
 struct CigParameters {
-    cis_handles: Vec<u16>,
     sdu_interval_c_to_p: u32,
     sdu_interval_p_to_c: u32,
+    cis: Vec<CisParameters>,
+}
+
+struct CisParameters {
+    handle: u16,
+    max_sdu_size_c_to_p: u16,
+    max_sdu_size_p_to_c: u16,
 }
 
 #[derive(Debug, Clone)]
@@ -74,26 +83,21 @@ enum IsoType {
 struct IsoInDirection {
     sdu_interval_us: u32,
     max_sdu_size: u16,
-    burst_number: u8,
     flush_timeout: u8,
 }
 
 impl Stream {
     fn new_cis(cig: &CigParameters, e: &hci::LeCisEstablished) -> Self {
+        let cis = cig.cis.iter().find(|&s| s.handle == e.connection_handle).unwrap();
         let iso_interval_us = (e.iso_interval as u32) * 1250;
 
-        assert_eq!(iso_interval_us % cig.sdu_interval_c_to_p, 0, "Framing mode not supported");
-        assert_eq!(iso_interval_us % cig.sdu_interval_p_to_c, 0, "Framing mode not supported");
-
-        assert_eq!(
-            iso_interval_us / cig.sdu_interval_c_to_p,
-            e.bn_c_to_p.into(),
-            "SDU fragmentation not supported"
+        assert!(
+            cig.sdu_interval_c_to_p == 0 || (iso_interval_us % cig.sdu_interval_c_to_p) == 0,
+            "Framing mode not supported"
         );
-        assert_eq!(
-            iso_interval_us / cig.sdu_interval_p_to_c,
-            e.bn_p_to_c.into(),
-            "SDU fragmentation not supported"
+        assert!(
+            cig.sdu_interval_p_to_c == 0 || (iso_interval_us % cig.sdu_interval_p_to_c) == 0,
+            "Framing mode not supported"
         );
 
         Self {
@@ -102,14 +106,12 @@ impl Stream {
             iso_type: IsoType::Cis {
                 c_to_p: IsoInDirection {
                     sdu_interval_us: cig.sdu_interval_c_to_p,
-                    max_sdu_size: e.max_pdu_c_to_p,
-                    burst_number: e.bn_c_to_p,
+                    max_sdu_size: cis.max_sdu_size_c_to_p,
                     flush_timeout: e.ft_c_to_p,
                 },
                 _p_to_c: IsoInDirection {
                     sdu_interval_us: cig.sdu_interval_p_to_c,
-                    max_sdu_size: e.max_pdu_p_to_c,
-                    burst_number: e.bn_p_to_c,
+                    max_sdu_size: cis.max_sdu_size_p_to_c,
                     flush_timeout: e.ft_p_to_c,
                 },
             },
@@ -118,13 +120,7 @@ impl Stream {
 
     fn new_bis(big: &BigParameters, e: &hci::LeCreateBigComplete) -> Self {
         let iso_interval_us = (e.iso_interval as u32) * 1250;
-
         assert_eq!(iso_interval_us % big.sdu_interval, 0, "Framing mode not supported");
-        assert_eq!(
-            iso_interval_us / big.sdu_interval,
-            e.bn.into(),
-            "SDU fragmentation not supported"
-        );
 
         Self {
             state: StreamState::Disabled,
@@ -132,8 +128,7 @@ impl Stream {
             iso_type: IsoType::Bis {
                 c_to_p: IsoInDirection {
                     sdu_interval_us: big.sdu_interval,
-                    max_sdu_size: e.max_pdu,
-                    burst_number: e.bn,
+                    max_sdu_size: big.max_sdu_size,
                     flush_timeout: e.irc,
                 },
             },
@@ -173,9 +168,17 @@ impl Module for LeAudioModule {
                 state.cig.insert(
                     c.cig_id,
                     CigParameters {
-                        cis_handles: vec![],
                         sdu_interval_c_to_p: c.sdu_interval_c_to_p,
                         sdu_interval_p_to_c: c.sdu_interval_p_to_c,
+                        cis: c
+                            .cis
+                            .iter()
+                            .map(|c| CisParameters {
+                                handle: 0,
+                                max_sdu_size_c_to_p: c.max_sdu_c_to_p,
+                                max_sdu_size_p_to_c: c.max_sdu_p_to_c,
+                            })
+                            .collect(),
                     },
                 );
             }
@@ -184,7 +187,11 @@ impl Module for LeAudioModule {
                 let mut state = self.state.lock().unwrap();
                 state.big.insert(
                     c.big_handle,
-                    BigParameters { bis_handles: vec![], sdu_interval: c.sdu_interval },
+                    BigParameters {
+                        sdu_interval: c.sdu_interval,
+                        max_sdu_size: c.max_sdu,
+                        bis_handles: vec![],
+                    },
                 );
             }
 
@@ -193,6 +200,13 @@ impl Module for LeAudioModule {
                 let mut state = self.state.lock().unwrap();
                 let stream = state.stream.get_mut(&c.connection_handle).unwrap();
                 stream.state = StreamState::Enabling;
+
+                // Phase 1 limitation: The controller does not implement HCI Link Feedback event,
+                // and not implement the `DATA_PATH_ID_SOTWARE` to enable it.
+                // Fix the data_path_id to 0 (HCI) waiting for controller implementation.
+                self.next()
+                    .out_cmd(&hci::LeSetupIsoDataPath { data_path_id: 0, ..c.clone() }.to_bytes());
+                return;
             }
 
             _ => (),
@@ -222,7 +236,11 @@ impl Module for LeAudioModule {
                 ReturnParameters::LeSetCigParameters(ref ret) if ret.status == Status::Success => {
                     let mut state = self.state.lock().unwrap();
                     let cig = state.cig.get_mut(&ret.cig_id).unwrap();
-                    cig.cis_handles = ret.connection_handles.clone();
+
+                    assert!(cig.cis.len() == ret.connection_handles.len());
+                    for (cis, &handle) in cig.cis.iter_mut().zip(ret.connection_handles.iter()) {
+                        cis.handle = handle;
+                    }
                 }
 
                 ReturnParameters::LeRemoveCig(ref ret) if ret.status == Status::Success => {
@@ -255,7 +273,6 @@ impl Module for LeAudioModule {
                             isoIntervalUs: stream.iso_interval_us as i32,
                             sduIntervalUs: c_to_p.sdu_interval_us as i32,
                             maxSduSize: c_to_p.max_sdu_size as i32,
-                            burstNumber: c_to_p.burst_number as i32,
                             flushTimeout: c_to_p.flush_timeout as i32,
                         },
                     );
@@ -277,7 +294,7 @@ impl Module for LeAudioModule {
                 let mut state = self.state.lock().unwrap();
                 let mut cig_values = state.cig.values();
                 let Some(cig) =
-                    cig_values.find(|&g| g.cis_handles.iter().any(|&h| h == e.connection_handle))
+                    cig_values.find(|&g| g.cis.iter().any(|s| s.handle == e.connection_handle))
                 else {
                     panic!("CIG not set-up for CIS 0x{:03x}", e.connection_handle);
                 };

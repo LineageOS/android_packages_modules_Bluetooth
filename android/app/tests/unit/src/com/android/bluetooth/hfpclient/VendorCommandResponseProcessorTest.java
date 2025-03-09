@@ -48,7 +48,7 @@ public class VendorCommandResponseProcessorTest {
     @Mock private AdapterService mAdapterService;
     @Mock private HeadsetClientService mHeadsetClientService;
 
-    private static int TEST_VENDOR_ID = BluetoothAssignedNumbers.APPLE;
+    private static final int TEST_VENDOR_ID = BluetoothAssignedNumbers.APPLE;
 
     private final BluetoothDevice mDevice = getTestDevice(65);
 

@@ -314,7 +314,7 @@ public class BluetoothMapContentTest {
         expected.append(" AND ")
                 .append(Threads._ID)
                 .append(" = ")
-                .append(SignedLongLong.fromString(convoId).getLeastSignificantBits());
+                .append(SignedLongLong.fromString(convoId).leastSignificantBits());
         assertThat(selection.toString()).isEqualTo(expected.toString());
     }
 

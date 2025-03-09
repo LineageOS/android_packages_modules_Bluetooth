@@ -25,9 +25,8 @@ import android.util.Log;
 
 import androidx.annotation.VisibleForTesting;
 
+import com.android.bluetooth.BluetoothEventLogger;
 import com.android.internal.annotations.GuardedBy;
-
-import com.google.common.collect.EvictingQueue;
 
 import java.util.HashMap;
 
@@ -40,11 +39,8 @@ class AdvertiserMap {
     @GuardedBy("this")
     private final HashMap<Integer, AppAdvertiseStats> mAppAdvertiseStats = new HashMap<>();
 
-    private static final int ADVERTISE_STATE_MAX_SIZE = 5;
-
-    @GuardedBy("this")
-    private final EvictingQueue<AppAdvertiseStats> mLastAdvertises =
-            EvictingQueue.create(ADVERTISE_STATE_MAX_SIZE);
+    private final BluetoothEventLogger mLastAdvertises =
+            new BluetoothEventLogger(5, "Last Advertising");
 
     /** Add an entry to the stats map if it doesn't already exist. */
     void addAppAdvertiseStats(int id, Context context, AttributionSource attrSource) {
@@ -77,7 +73,7 @@ class AdvertiserMap {
         return mAppAdvertiseStats.get(id);
     }
 
-    /** update the advertiser ID by the regiseter ID */
+    /** update the advertiser ID by the register ID */
     synchronized void setAdvertiserIdByRegId(int regId, int advertiserId) {
         AppAdvertiseStats stats = mAppAdvertiseStats.get(regId);
         if (stats == null) {
@@ -122,7 +118,10 @@ class AdvertiserMap {
         }
         stats.recordAdvertiseStop(mAppAdvertiseStats.size());
         mAppAdvertiseStats.remove(id);
-        mLastAdvertises.add(stats);
+
+        StringBuilder sb = new StringBuilder();
+        AppAdvertiseStats.dumpToString(sb, stats);
+        mLastAdvertises.add(sb.toString());
     }
 
     synchronized void enableAdvertisingSet(
@@ -191,13 +190,7 @@ class AdvertiserMap {
 
     /** Logs advertiser debug information. */
     synchronized void dump(StringBuilder sb) {
-        if (!mLastAdvertises.isEmpty()) {
-            sb.append("\n  last ").append(mLastAdvertises.size()).append(" advertising:");
-            for (AppAdvertiseStats stats : mLastAdvertises) {
-                AppAdvertiseStats.dumpToString(sb, stats);
-            }
-            sb.append("\n");
-        }
+        mLastAdvertises.dump(sb);
 
         if (!mAppAdvertiseStats.isEmpty()) {
             sb.append("  Total number of ongoing advertising                   : ")

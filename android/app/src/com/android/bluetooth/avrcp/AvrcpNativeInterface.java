@@ -46,7 +46,7 @@ public class AvrcpNativeInterface {
     private static final Object INSTANCE_LOCK = new Object();
 
     private AvrcpTargetService mAvrcpService;
-    private AdapterService mAdapterService;
+    private final AdapterService mAdapterService;
 
     private AvrcpNativeInterface() {
         mAdapterService = requireNonNull(AdapterService.getAdapterService());

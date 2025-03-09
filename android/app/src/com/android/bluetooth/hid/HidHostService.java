@@ -54,13 +54,12 @@ import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
 
-import com.google.common.primitives.Ints;
-
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /** Provides Bluetooth Hid Host profile, as a service in the Bluetooth application. */
 public class HidHostService extends ProfileService {
@@ -988,7 +987,7 @@ public class HidHostService extends ProfileService {
     List<BluetoothDevice> getDevicesMatchingConnectionStates(int[] states) {
         Log.d(TAG, "getDevicesMatchingConnectionStates()");
         return mInputDevices.entrySet().stream()
-                .filter(entry -> Ints.asList(states).contains(entry.getValue().getState()))
+                .filter(e -> IntStream.of(states).anyMatch(x -> x == e.getValue().getState()))
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
     }

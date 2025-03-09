@@ -291,7 +291,7 @@ protected:
     vendor_capabilities_.reset();
     fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
     client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
-    fake_registry_.Start<Controller>(&thread_);
+    fake_registry_.Start<Controller>(&thread_, fake_registry_.GetTestHandler());
     controller_ = static_cast<Controller*>(fake_registry_.GetModuleUnderTest(&Controller::Factory));
   }
 

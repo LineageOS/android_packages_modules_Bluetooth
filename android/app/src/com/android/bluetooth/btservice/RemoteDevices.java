@@ -21,6 +21,7 @@ import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.Manifest.permission.BLUETOOTH_SCAN;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
+import static android.bluetooth.BluetoothUtils.RemoteExceptionIgnoringConsumer;
 
 import static com.android.modules.utils.build.SdkLevel.isAtLeastV;
 
@@ -77,9 +78,9 @@ public class RemoteDevices {
     // Maximum number of device properties to remember
     private static final int MAX_DEVICE_QUEUE_SIZE = 200;
 
-    private BluetoothAdapter mAdapter;
+    private final BluetoothAdapter mAdapter;
     private AdapterService mAdapterService;
-    private ArrayList<BluetoothDevice> mSdpTracker;
+    private final ArrayList<BluetoothDevice> mSdpTracker;
     private final Object mObject = new Object();
 
     private static final int UUID_INTENT_DELAY = 6000;
@@ -1000,7 +1001,7 @@ public class RemoteDevices {
      * Converts HFP's Battery Charge indicator values of {@code 0 -- 5} to an integer percentage.
      */
     @VisibleForTesting
-    static int batteryChargeIndicatorToPercentge(int indicator) {
+    static int batteryChargeIndicatorToPercentage(int indicator) {
         int percent;
         switch (indicator) {
             case 5:
@@ -1086,7 +1087,7 @@ public class RemoteDevices {
                                 MetricsLogger.getInstance().getWordBreakdownList(newName);
                         if (SdkLevel.isAtLeastU()) {
                             MetricsLogger.getInstance()
-                                    .uploadRestrictedBluetothDeviceName(wordBreakdownList);
+                                    .uploadRestrictedBluetoothDeviceName(wordBreakdownList);
                         }
                         intent = new Intent(BluetoothDevice.ACTION_NAME_CHANGED);
                         intent.putExtra(BluetoothDevice.EXTRA_DEVICE, bdDevice);
@@ -1263,12 +1264,12 @@ public class RemoteDevices {
                     }
                 }
 
-                intent.setPackage(pkg.getPackageName());
+                intent.setPackage(pkg.packageName());
 
-                if (pkg.getPermission() != null) {
+                if (pkg.permission() != null) {
                     mAdapterService.sendBroadcastMultiplePermissions(
                             intent,
-                            new String[] {BLUETOOTH_SCAN, pkg.getPermission()},
+                            new String[] {BLUETOOTH_SCAN, pkg.permission()},
                             Utils.getTempBroadcastOptions());
                 } else {
                     mAdapterService.sendBroadcastMultiplePermissions(
@@ -1472,8 +1473,7 @@ public class RemoteDevices {
         mAdapterService.sendBroadcast(
                 intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastOptions().toBundle());
 
-        Utils.RemoteExceptionIgnoringConsumer<IBluetoothConnectionCallback>
-                connectionChangeConsumer;
+        RemoteExceptionIgnoringConsumer<IBluetoothConnectionCallback> connectionChangeConsumer;
         if (connectionState == BluetoothAdapter.STATE_CONNECTED) {
             connectionChangeConsumer = cb -> cb.onDeviceConnected(device);
         } else {
@@ -1989,7 +1989,7 @@ public class RemoteDevices {
             return;
         }
         updateBatteryLevel(
-                device, batteryChargeIndicatorToPercentge(batteryLevel), /* isBas= */ false);
+                device, batteryChargeIndicatorToPercentage(batteryLevel), /* isBas= */ false);
     }
 
     private static void errorLog(String msg) {

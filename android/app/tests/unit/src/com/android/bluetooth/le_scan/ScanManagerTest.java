@@ -16,6 +16,7 @@
 
 package com.android.bluetooth.le_scan;
 
+import static android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND_SERVICE;
 import static android.bluetooth.BluetoothDevice.PHY_LE_1M;
 import static android.bluetooth.BluetoothDevice.PHY_LE_1M_MASK;
 import static android.bluetooth.BluetoothDevice.PHY_LE_CODED;
@@ -1269,6 +1270,8 @@ public class ScanManagerTest {
                                     mAdapterService,
                                     mScanController,
                                     mTimeProvider));
+            // Set app importance as Foreground Service for the stats
+            appScanStats.setAppImportance(IMPORTANCE_FOREGROUND_SERVICE);
             // Create scan client for the app, which also records scan start
             ScanClient client = createScanClient(isFiltered, scanMode, UID, appScanStats);
             // Verify that the app scan start is logged
@@ -1288,7 +1291,8 @@ public class ScanManagerTest {
                             0,
                             0,
                             true,
-                            false);
+                            false,
+                            IMPORTANCE_FOREGROUND_SERVICE);
 
             advanceTime(scanTestDuration);
             // Record scan stop
@@ -1312,7 +1316,8 @@ public class ScanManagerTest {
                             eq(scanTestDuration),
                             eq(0),
                             eq(true),
-                            eq(false));
+                            eq(false),
+                            eq(IMPORTANCE_FOREGROUND_SERVICE));
         }
     }
 
@@ -1340,6 +1345,8 @@ public class ScanManagerTest {
                                 mAdapterService,
                                 mScanController,
                                 mTimeProvider));
+        // Set app importance as Foreground Service for the stats
+        appScanStats1.setAppImportance(IMPORTANCE_FOREGROUND_SERVICE);
         // Create scan client for the first app
         ScanClient client1 =
                 createScanClient(isFiltered, SCAN_MODE_LOW_POWER, UID_1, appScanStats1);
@@ -1362,6 +1369,8 @@ public class ScanManagerTest {
                                 mAdapterService,
                                 mScanController,
                                 mTimeProvider));
+        // Set app importance as Foreground Service for the stats
+        appScanStats2.setAppImportance(IMPORTANCE_FOREGROUND_SERVICE);
         // Create scan client for the second app
         ScanClient client2 = createScanClient(isFiltered, SCAN_MODE_BALANCED, UID_2, appScanStats2);
         // Start scan with higher duty cycle for the second app
@@ -1380,7 +1389,8 @@ public class ScanManagerTest {
                         eq((long) ScanManager.SCAN_MODE_LOW_POWER_INTERVAL_MS),
                         eq((long) ScanManager.SCAN_MODE_LOW_POWER_WINDOW_MS),
                         eq(true),
-                        eq(scanTestDuration));
+                        eq(scanTestDuration),
+                        eq(IMPORTANCE_FOREGROUND_SERVICE));
         advanceTime(scanTestDuration);
 
         // Create workSource for the third app
@@ -1398,6 +1408,8 @@ public class ScanManagerTest {
                                 mAdapterService,
                                 mScanController,
                                 mTimeProvider));
+        // Set app importance as Foreground Service for the stats
+        appScanStats3.setAppImportance(IMPORTANCE_FOREGROUND_SERVICE);
         // Create scan client for the third app
         ScanClient client3 =
                 createScanClient(isFiltered, SCAN_MODE_LOW_LATENCY, UID_3, appScanStats3);
@@ -1417,7 +1429,8 @@ public class ScanManagerTest {
                         eq((long) ScanManager.SCAN_MODE_BALANCED_INTERVAL_MS),
                         eq((long) ScanManager.SCAN_MODE_BALANCED_WINDOW_MS),
                         eq(true),
-                        eq(scanTestDuration));
+                        eq(scanTestDuration),
+                        eq(IMPORTANCE_FOREGROUND_SERVICE));
         advanceTime(scanTestDuration);
 
         // Create workSource for the fourth app
@@ -1435,6 +1448,8 @@ public class ScanManagerTest {
                                 mAdapterService,
                                 mScanController,
                                 mTimeProvider));
+        // Set app importance as Foreground Service for the stats
+        appScanStats4.setAppImportance(IMPORTANCE_FOREGROUND_SERVICE);
         // Create scan client for the fourth app
         ScanClient client4 =
                 createScanClient(isFiltered, SCAN_MODE_AMBIENT_DISCOVERY, UID_4, appScanStats4);
@@ -1451,7 +1466,8 @@ public class ScanManagerTest {
                         anyLong(),
                         anyLong(),
                         anyBoolean(),
-                        anyLong());
+                        anyLong(),
+                        anyInt());
         advanceTime(scanTestDuration);
 
         // Set as background app
@@ -1475,7 +1491,8 @@ public class ScanManagerTest {
                         eq((long) ScanManager.SCAN_MODE_LOW_LATENCY_INTERVAL_MS),
                         eq((long) ScanManager.SCAN_MODE_LOW_LATENCY_WINDOW_MS),
                         eq(true),
-                        eq(scanTestDuration * 2));
+                        eq(scanTestDuration * 2),
+                        eq(IMPORTANCE_FOREGROUND_SERVICE));
         advanceTime(scanTestDuration);
 
         // Get the most aggressive scan client when screen is off
@@ -1503,7 +1520,8 @@ public class ScanManagerTest {
                         eq((long) SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL_MS),
                         eq((long) SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW_MS),
                         eq(false),
-                        eq(scanTestDuration));
+                        eq(scanTestDuration),
+                        eq(IMPORTANCE_FOREGROUND_SERVICE + 1));
         advanceTime(scanTestDuration);
 
         // Stop scan for the fourth app
@@ -1519,7 +1537,8 @@ public class ScanManagerTest {
                         anyLong(),
                         anyLong(),
                         anyBoolean(),
-                        anyLong());
+                        anyLong(),
+                        anyInt());
         advanceTime(scanTestDuration);
 
         // Stop scan for the third app
@@ -1538,7 +1557,8 @@ public class ScanManagerTest {
                         eq((long) ScanManager.SCAN_MODE_LOW_LATENCY_INTERVAL_MS),
                         eq((long) ScanManager.SCAN_MODE_LOW_LATENCY_WINDOW_MS),
                         eq(true),
-                        eq(scanTestDuration * 2));
+                        eq(scanTestDuration * 2),
+                        eq(IMPORTANCE_FOREGROUND_SERVICE));
         advanceTime(scanTestDuration);
 
         // Stop scan for the second app
@@ -1557,7 +1577,8 @@ public class ScanManagerTest {
                         eq((long) ScanManager.SCAN_MODE_BALANCED_INTERVAL_MS),
                         eq((long) ScanManager.SCAN_MODE_BALANCED_WINDOW_MS),
                         eq(true),
-                        eq(scanTestDuration));
+                        eq(scanTestDuration),
+                        eq(IMPORTANCE_FOREGROUND_SERVICE));
         advanceTime(scanTestDuration);
 
         // Stop scan for the first app
@@ -1576,7 +1597,8 @@ public class ScanManagerTest {
                         eq((long) ScanManager.SCAN_MODE_LOW_POWER_INTERVAL_MS),
                         eq((long) ScanManager.SCAN_MODE_LOW_POWER_WINDOW_MS),
                         eq(true),
-                        eq(scanTestDuration));
+                        eq(scanTestDuration),
+                        eq(IMPORTANCE_FOREGROUND_SERVICE));
     }
 
     @Test

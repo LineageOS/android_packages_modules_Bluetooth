@@ -1545,9 +1545,7 @@ private:
                 it->max_sdu_size_stom = bluetooth::le_audio::types::kLeAudioHeadtrackerMaxSduSize;
 
                 // Early draft of DSA 2.0 spec mentioned allocating 15 bytes for headtracker data
-                if (!com::android::bluetooth::flags::headtracker_sdu_size()) {
-                  it->max_sdu_size_stom = 15;
-                } else if (!group->DsaReducedSduSizeSupported()) {
+                if (!group->DsaReducedSduSizeSupported()) {
                   log::verbose("Device does not support reduced headtracker SDU");
                   it->max_sdu_size_stom = 15;
                 }

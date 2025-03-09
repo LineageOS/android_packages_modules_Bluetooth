@@ -327,8 +327,7 @@ protected:
   std::unique_ptr<SnoopLoggerSocketThread> snoop_logger_socket_thread_;
 
 #ifdef __ANDROID__
-  void LogTracePoint(uint64_t timestamp_us, const HciPacket& packet, Direction direction,
-                     PacketType type);
+  void LogTracePoint(const HciPacket& packet, Direction direction, PacketType type);
 #endif  // __ANDROID__
 
 private:

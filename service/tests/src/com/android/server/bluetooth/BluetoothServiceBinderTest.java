@@ -96,7 +96,7 @@ public class BluetoothServiceBinderTest {
     @Mock private AppOpsManager mAppOpsManager;
     @Mock private DevicePolicyManager mDevicePolicyManager;
 
-    private Context mContext =
+    private final Context mContext =
             spy(
                     new ContextWrapper(
                             InstrumentationRegistry.getInstrumentation().getTargetContext()));
