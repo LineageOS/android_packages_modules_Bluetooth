@@ -1132,7 +1132,8 @@ static void gatt_process_mtu_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb, uint16_t le
     log::info("MTU Exchange resulted in: {}", tcb.payload_size);
 
     if (get_btm_client_interface().ble.BTM_SetBleDataLength(
-                tcb.peer_bda, tcb.max_user_mtu + L2CAP_PKT_OVERHEAD) != tBTM_STATUS::BTM_SUCCESS) {
+                tcb.peer_bda, tcb.max_user_mtu + L2CAP_PKT_OVERHEAD,
+                /*is_privileged_client*/ false) != tBTM_STATUS::BTM_SUCCESS) {
       log::warn("Unable to set BLE data length peer:{} mtu:{}", tcb.peer_bda,
                 tcb.max_user_mtu + L2CAP_PKT_OVERHEAD);
     }

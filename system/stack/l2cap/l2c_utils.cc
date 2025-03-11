@@ -103,6 +103,7 @@ tL2C_LCB* l2cu_allocate_lcb(const RawAddress& p_bd_addr, bool is_bonding, tBT_TR
         l2cb.num_used_lcbs++;
         l2c_link_adjust_allocation();
       }
+      p_lcb->set_is_datalen_set_by_privileged_client(false);
       p_lcb->link_xmit_data_q = list_new(NULL);
       return p_lcb;
     }

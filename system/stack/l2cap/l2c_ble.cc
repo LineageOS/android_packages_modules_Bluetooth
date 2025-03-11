@@ -1153,7 +1153,8 @@ void l2cble_update_data_length(tL2C_LCB* p_lcb) {
 
   /* update TX data length if changed */
   if (p_lcb->tx_data_len != tx_mtu) {
-    if (get_btm_client_interface().ble.BTM_SetBleDataLength(p_lcb->remote_bd_addr, tx_mtu) !=
+    if (get_btm_client_interface().ble.BTM_SetBleDataLength(p_lcb->remote_bd_addr, tx_mtu,
+                                                            /*is_privileged_client*/ false) !=
         tBTM_STATUS::BTM_SUCCESS) {
       log::warn("Unable to set BLE data length peer:{} mtu:{}", p_lcb->remote_bd_addr, tx_mtu);
     }

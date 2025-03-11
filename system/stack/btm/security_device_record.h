@@ -343,9 +343,9 @@ public:
   uint16_t hci_handle;     /* Handle to BR/EDR ACL connection when exists */
   uint16_t ble_hci_handle; /* use in DUMO connection */
 
-  uint16_t suggested_tx_octets; /* Recently suggested tx octets for data length extension */
-  uint16_t clock_offset;        /* Latest known clock offset */
-
+  uint16_t suggested_tx_octets; /* Recently suggested tx octets for data length
+                                   extension */
+  uint16_t clock_offset;        /* Latest known clock offset          */
   // whether the peer device can read GAP characteristics only visible in
   // "discoverable" mode
   bool can_read_discoverable{true};
