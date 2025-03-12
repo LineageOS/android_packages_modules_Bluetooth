@@ -16,7 +16,6 @@ import asyncio
 import avatar
 import bumble
 import dataclasses
-import itertools
 import logging
 import numpy as np
 import time
@@ -50,7 +49,6 @@ from bumble.avdtp import (
     MediaCodecCapabilities,
     Protocol,
     Stream,
-    Suspend_Reject,
 )
 from bumble.l2cap import (
     L2CAP_SIGNALING_CID,
@@ -74,7 +72,7 @@ from pandora.a2dp_grpc_aio import A2DP
 from pandora.a2dp_pb2 import STEREO, Configuration, PlaybackAudioRequest, Source
 from pandora.host_pb2 import Connection
 from pandora.security_pb2 import LEVEL2
-from typing import Optional, Tuple
+from typing import AsyncIterator, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -82,6 +80,13 @@ AVDTP_HANDLE_SUSPEND_CFM_BAD_STATE = 'com.android.bluetooth.flags.avdt_handle_su
 AVDTP_HANDLE_SIGNALING_ON_PEER_FAILURE = 'com.android.bluetooth.flags.avdt_handle_signaling_on_peer_failure'
 A2DP_SM_IGNORE_CONNECT_EVENTS_IN_CONNECTING_STATE = 'com.android.bluetooth.flags.a2dp_sm_ignore_connect_events_in_connecting_state'
 AVDT_WAIT_FOR_INITIAL_DELAY_REPORT_AS_INITIATOR = 'com.android.bluetooth.flags.avdt_wait_for_initial_delay_report_as_initiator'
+
+AUDIO_SIGNAL_AMPLITUDE = 0.8
+AUDIO_SIGNAL_FREQUENCY = 440
+AUDIO_SIGNAL_PAN_VALUE = 0.5  # 0.0 (left) to 1.0 (right)
+AUDIO_SIGNAL_SAMPLING_RATE = 44100
+AUDIO_SIGNAL_SINE_DURATION = 0.1
+MAX_INT16 = 2**15 - 1
 
 
 async def initiate_pairing(device, address) -> Connection:
@@ -162,48 +167,32 @@ def aac_codec_capabilities() -> MediaCodecCapabilities:
     )
 
 
-class AudioSignal:
-    """Audio signal generator and verifier."""
+async def generate_sine(source: Source,
+                        duration_s: float = 4.0) -> AsyncIterator[PlaybackAudioRequest]:
+    num_samples = int(AUDIO_SIGNAL_SAMPLING_RATE * duration_s)
 
-    SINE_FREQUENCY = 440
-    SINE_DURATION = 0.1
+    time_vector = np.arange(num_samples) / AUDIO_SIGNAL_SAMPLING_RATE
 
-    def __init__(self, a2dp: A2DP, source: Source, amplitude, fs):
-        """Init AudioSignal class.
+    sine_wave = AUDIO_SIGNAL_AMPLITUDE * np.sin(2 * np.pi * AUDIO_SIGNAL_FREQUENCY * time_vector)
 
-        Args:
-            a2dp: A2DP profile interface.
-            source: Source connection object to send the data to.
-            amplitude: amplitude of the signal to generate.
-            fs: sampling rate of the signal to generate.
-        """
-        self.a2dp = a2dp
-        self.source = source
-        self.amplitude = amplitude
-        self.fs = fs
-        self.task = None
+    audio_data = (sine_wave * MAX_INT16).astype(np.int16)
 
-    def start(self):
-        """Generates the audio signal and send it to the transport."""
-        self.task = asyncio.create_task(self._run())
+    right_amplitude = np.sqrt(AUDIO_SIGNAL_PAN_VALUE)
+    left_amplitude = np.sqrt(1 - AUDIO_SIGNAL_PAN_VALUE)
 
-    async def _run(self):
-        sine = self._generate_sine(self.SINE_FREQUENCY, self.SINE_DURATION)
+    left_channel = (sine_wave * left_amplitude * MAX_INT16).astype(np.int16)
+    right_channel = (sine_wave * right_amplitude * MAX_INT16).astype(np.int16)
 
-        # Interleaved audio.
-        stereo = np.zeros(sine.size * 2, dtype=sine.dtype)
-        stereo[0::2] = sine
+    audio_data = np.vstack((left_channel, right_channel)).T.reshape(-1, 2)
 
-        # Send 4 second of audio.
-        audio = itertools.repeat(stereo.tobytes(), int(4 / self.SINE_DURATION))
+    samples_per_frame = int(AUDIO_SIGNAL_SAMPLING_RATE * AUDIO_SIGNAL_SINE_DURATION)
 
-        for frame in audio:
-            await self.a2dp.PlaybackAudio(PlaybackAudioRequest(data=frame, source=self.source))
-
-    def _generate_sine(self, f, duration):
-        sine = self.amplitude * np.sin(2 * np.pi * np.arange(self.fs * duration) * (f / self.fs))
-        s16le = (sine * 32767).astype('<i2')
-        return s16le
+    for i in range(0, int(num_samples / samples_per_frame)):
+        frame_samples = samples_per_frame
+        if i + samples_per_frame > num_samples:
+            frame_samples = num_samples - i
+        frame_data = audio_data[i:i + frame_samples]
+        yield PlaybackAudioRequest(source=source, data=frame_data.tobytes())
 
 
 class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
@@ -276,6 +265,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         4. Stop streaming
         5. Check AVDTP status on RD1
         """
+
         # Connect and pair RD1.
         dut_ref1, ref1_dut = await asyncio.gather(
             initiate_pairing(self.dut, self.ref1.address),
@@ -290,7 +280,9 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
 
         # Start streaming to RD1.
         await self.dut.a2dp.Start(source=dut_ref1_source)
-        audio = AudioSignal(self.dut.a2dp, dut_ref1_source, 0.8, 44100)
+
+        generated_audio = generate_sine(source=dut_ref1_source, duration_s=4.0)
+        await self.dut.a2dp.PlaybackAudio(generated_audio)
         assert_equal(self.ref1.a2dp_sink.stream.state, AVDTP_STREAMING_STATE)
 
         # Stop streaming to RD1.
@@ -334,10 +326,11 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         # Start streaming to RD1.
         await asyncio.gather(self.dut.a2dp.Start(source=dut_ref1_source), channel.accept_start())
 
-        audio = AudioSignal(self.dut.a2dp, dut_ref1_source, 0.8, 44100)
-
-        # Verify that at least one audio frame is received on the transport channel.
-        await asyncio.wait_for(channel.expect_media(), 5.0)
+        # Verify that audio is received on the transport channel.
+        generated_audio = generate_sine(source=dut_ref1_source, duration_s=4.0)
+        await asyncio.gather(
+            self.dut.a2dp.PlaybackAudio(generated_audio),
+            channel.receive_audio_data(test_log_path=self.log_path, duration_s=2.0))
 
         # Stop streaming to RD1.
         await asyncio.gather(self.dut.a2dp.Suspend(source=dut_ref1_source),
@@ -537,7 +530,8 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         # Start streaming to RD1.
         await asyncio.gather(self.dut.a2dp.Start(source=dut_ref1_source), channel.accept_start())
 
-        audio = AudioSignal(self.dut.a2dp, dut_ref1_source, 0.8, 44100)
+        generated_audio = generate_sine(source=dut_ref1_source, duration_s=4.0)
+        await self.dut.a2dp.PlaybackAudio(generated_audio)
 
         # Verify that at least one audio frame is received on the transport channel.
         await asyncio.wait_for(channel.expect_media(), 5.0)
@@ -967,7 +961,8 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         # Start streaming to RD1.
         await asyncio.gather(self.dut.a2dp.Start(source=dut_ref1_source), channel.accept_start())
 
-        audio = AudioSignal(self.dut.a2dp, dut_ref1_source, 0.8, 44100)
+        generated_audio = generate_sine(source=dut_ref1_source, duration_s=4.0)
+        await self.dut.a2dp.PlaybackAudio(generated_audio)
 
         # Verify that at least one audio frame is received on the transport channel.
         await asyncio.wait_for(channel.expect_media(), 5.0)
@@ -1039,7 +1034,8 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
         # Start streaming to RD1.
         await asyncio.gather(self.dut.a2dp.Start(source=dut_ref1_source), channel.accept_start())
 
-        audio = AudioSignal(self.dut.a2dp, dut_ref1_source, 0.8, 44100)
+        generated_audio = generate_sine(source=dut_ref1_source, duration_s=4.0)
+        await self.dut.a2dp.PlaybackAudio(generated_audio)
 
         # Verify that at least one audio frame is received on the transport channel.
         await asyncio.wait_for(channel.expect_media(), 5.0)
@@ -1141,8 +1137,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
             await asyncio.wait_for(
                 self.ref1.aio.host.WaitConnection(address=self.dut.address, timeout=15), 10.0)
         logger.info(
-            "No new connection for 10 seconds on DUT. accept_signalling_timer properly canceled."
-        )
+            "No new connection for 10 seconds on DUT. accept_signalling_timer properly canceled.")
 
 
 if __name__ == '__main__':
