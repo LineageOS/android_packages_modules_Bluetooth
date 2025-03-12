@@ -1507,13 +1507,13 @@ public class VolumeControlService extends ProfileService {
                     }
                 }
             }
-            if (sm == null) {
-                Log.w(TAG, "Cannot forward stack event: no state machine: " + stackEvent);
-                handleStackEvent(stackEvent);
+            if (sm != null) {
+                sm.sendMessage(VolumeControlStateMachine.MESSAGE_STACK_EVENT, stackEvent);
                 return;
             }
-            sm.sendMessage(VolumeControlStateMachine.MESSAGE_STACK_EVENT, stackEvent);
         }
+        Log.w(TAG, "Cannot forward stack event: no state machine: " + stackEvent);
+        handleStackEvent(stackEvent);
     }
 
     private VolumeControlStateMachine getOrCreateStateMachine(BluetoothDevice device) {
