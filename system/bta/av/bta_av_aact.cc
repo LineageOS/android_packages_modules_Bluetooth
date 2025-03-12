@@ -1794,7 +1794,7 @@ void bta_av_setconfig_rej(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   tBTA_AV bta_av_data = {
       .reject =
           {
-              .bd_addr = p_data->str_msg.bd_addr,
+              .bd_addr = p_scb->PeerAddress(),
               .hndl = p_scb->hndl,
           },
   };
