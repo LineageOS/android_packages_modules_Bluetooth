@@ -8284,6 +8284,7 @@
     },
     {
       "name": "VND_QoS_Config_R3_L12",
+      "target_latency": "LOW",
       "retransmission_number": 3,
       "max_transport_latency": 12
     },
