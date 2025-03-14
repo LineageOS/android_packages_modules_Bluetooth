@@ -66,11 +66,11 @@
 #include "common/lru_cache.h"
 #include "common/strings.h"
 #include "device/include/interop.h"
+#include "hci/acl_manager.h"
 #include "hci/controller_interface.h"
 #include "hci/le_rand_callback.h"
 #include "internal_include/bt_target.h"
 #include "internal_include/stack_config.h"
-#include "main/shim/acl_api.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
 #include "main/shim/le_advertising_manager.h"
@@ -2013,7 +2013,6 @@ static void btif_add_local_irk_to_resolving_list() {
    * un-direct (broadcast) advertising RPA */
   if (bluetooth::shim::GetController()->IsRpaGenerationSupported()) {
     log::info("Support RPA offload, set all-zero set in resolving list");
-    tBLE_BD_ADDR all_zero_address_with_type = {0};
     const Octet16 all_zero_peer_irk = {0};
 
     if (com::android::bluetooth::flags::non_zero_local_irk() &&
@@ -2022,8 +2021,9 @@ static void btif_add_local_irk_to_resolving_list() {
       return;
     }
     log::info("");
-    bluetooth::shim::ACL_AddToAddressResolution(all_zero_address_with_type, all_zero_peer_irk,
-                                                ble_local_key_cb.id_keys.irk);
+    bluetooth::shim::GetAclManager()->AddDeviceToResolvingList(
+            {bluetooth::hci::Address::kEmpty, bluetooth::hci::AddressType::PUBLIC_DEVICE_ADDRESS},
+            all_zero_peer_irk, ble_local_key_cb.id_keys.irk);
   }
 }
 

@@ -30,9 +30,11 @@
 #include "btm_dev.h"
 #include "btm_sec_cb.h"
 #include "btm_sec_int_types.h"
+#include "hci/acl_manager.h"
 #include "hci/controller_interface.h"
 #include "main/shim/acl_api.h"
 #include "main/shim/entry.h"
+#include "main/shim/helpers.h"
 #include "osi/include/allocator.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/include/ble_hci_link_interface.h"
@@ -445,7 +447,9 @@ static tBTM_STATUS btm_ble_remove_resolving_list_entry(tBTM_SEC_DEV_REC* p_dev_r
   }
 
   if (bluetooth::shim::GetController()->SupportsBlePrivacy()) {
-    bluetooth::shim::ACL_RemoveFromAddressResolution(p_dev_rec->ble.identity_address_with_type);
+    auto& addr = p_dev_rec->ble.identity_address_with_type;
+    bluetooth::shim::GetAclManager()->RemoveDeviceFromResolvingList(
+            ToAddressWithType(addr.bda, addr.type));
   } else {
     uint8_t param[20] = {0};
     uint8_t* p = param;
@@ -473,7 +477,7 @@ static tBTM_STATUS btm_ble_remove_resolving_list_entry(tBTM_SEC_DEV_REC* p_dev_r
  ******************************************************************************/
 static void btm_ble_clear_resolving_list(void) {
   if (bluetooth::shim::GetController()->SupportsBlePrivacy()) {
-    bluetooth::shim::ACL_ClearAddressResolution();
+    bluetooth::shim::GetAclManager()->ClearResolvingList();
   } else {
     uint8_t param[20] = {0};
     uint8_t* p = param;
@@ -549,12 +553,24 @@ static bool is_peer_identity_key_valid(const tBTM_SEC_DEV_REC& dev_rec) {
 
 static Octet16 get_local_irk() { return btm_sec_cb.devcb.id_keys.irk; }
 
+static bool count_resolving_list_entries(void* data, void* context) {
+  uint16_t* count = (uint16_t*)context;
+
+  tBTM_SEC_DEV_REC* p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(data);
+  if (p_dev_rec->ble.in_controller_list & BTM_RESOLVING_LIST_BIT) {
+    *count = *count + 1;
+  }
+  return true;
+}
+
 void btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC& dev_rec) {
   if (btm_cb.ble_ctr_cb.privacy_mode < BTM_PRIVACY_1_2) {
     log::debug("Privacy 1.2 is not enabled");
     return;
   }
-  if (bluetooth::shim::GetController()->GetLeResolvingListSize() == 0) {
+
+  uint8_t resolving_list_size = bluetooth::shim::GetController()->GetLeResolvingListSize();
+  if (resolving_list_size == 0) {
     log::info("Controller does not support RPA offloading or privacy 1.2");
     return;
   }
@@ -591,8 +607,18 @@ void btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC& dev_rec) {
     return;
   }
 
-  bluetooth::shim::ACL_AddToAddressResolution(dev_rec.ble.identity_address_with_type, peer_irk,
-                                              local_irk);
+  uint16_t count = 1; /* we use 1 entry for local controller */
+  list_foreach(btm_sec_cb.sec_dev_rec, count_resolving_list_entries, &count);
+
+  if (count + 1 > resolving_list_size) {
+    log::warn("Le Address Resolution list is full! size:{}", count);
+    return;
+  }
+
+  bluetooth::shim::GetAclManager()->AddDeviceToResolvingList(
+          ToAddressWithType(dev_rec.ble.identity_address_with_type.bda,
+                            dev_rec.ble.identity_address_with_type.type),
+          peer_irk, local_irk);
 
   log::debug("Added to Address Resolving list device:{}", dev_rec.ble.identity_address_with_type);
 
