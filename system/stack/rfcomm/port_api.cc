@@ -875,9 +875,7 @@ static int port_write(tPORT* p_port, BT_HDR* p_buf) {
     return PORT_CMD_PENDING;
   } else {
     log::verbose("Data is being sent");
-
-    RFCOMM_DataReq(p_port->rfc.p_mcb, p_port->dlci, p_buf);
-    return PORT_SUCCESS;
+    return RFCOMM_DataReq(p_port->rfc.p_mcb, p_port->dlci, p_buf);
   }
 }
 
