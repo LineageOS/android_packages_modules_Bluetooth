@@ -585,9 +585,9 @@ class HostBuild():
         """Run cargo bloat on workspace.
         """
         crate_paths = [
-            os.path.join(self.platform_dir, 'bt', 'system', 'gd', 'rust', 'linux', 'mgmt'),
-            os.path.join(self.platform_dir, 'bt', 'system', 'gd', 'rust', 'linux', 'service'),
-            os.path.join(self.platform_dir, 'bt', 'system', 'gd', 'rust', 'linux', 'client')
+            os.path.join(self.platform_dir, 'bt', 'floss', 'rust', 'linux', 'mgmt'),
+            os.path.join(self.platform_dir, 'bt', 'floss', 'rust', 'linux', 'service'),
+            os.path.join(self.platform_dir, 'bt', 'floss', 'rust', 'linux', 'client')
         ]
         for crate in crate_paths:
             self.run_command('bloat', ['cargo', 'bloat', '--release', '--crates', '--wide'],
