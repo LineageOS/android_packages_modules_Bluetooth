@@ -17,49 +17,51 @@ package {
 }
 
 rust_defaults {
-    name: "bluetooth_offload_leaudio_hci_defaults",
+    name: "bluetooth_offload_leaudio_audio_defaults",
     crate_root: "lib.rs",
-    crate_name: "bluetooth_offload_leaudio_hci",
+    crate_name: "bluetooth_offload_leaudio_audio",
     edition: "2021",
+    features: [
+        "lc3",
+        // "opus",
+    ],
     rustlibs: [
         "android.hardware.bluetooth.offload.leaudio-rust",
         "libbinder_rs",
-        "libbluetooth_offload_hci",
         "liblog_rust",
         "liblogger",
     ],
+    static_libs: [
+        "libclang_rt.ubsan_minimal",
+        "liblc3",
+    ],
 }
 
-rust_library {
-    name: "libbluetooth_offload_leaudio_hci",
-    defaults: ["bluetooth_offload_leaudio_hci_defaults"],
+rust_ffi {
+    name: "libbluetooth_offload_leaudio_audio",
+    defaults: ["bluetooth_offload_leaudio_audio_defaults"],
     vendor_available: true,
     visibility: [
         "//hardware/interfaces/bluetooth:__subpackages__",
         "//packages/modules/Bluetooth/offload:__subpackages__",
-        "//vendor:__subpackages__",
     ],
 }
 
 rust_test {
-    name: "libbluetooth_offload_leaudio_hci_test",
-    target: {
-        android: {
-            test_config_template: ":BluetoothRustTestConfigTemplate",
-            test_suites: [
-                "general-tests",
-                "mts-bt",
-            ],
-        },
-    },
-    compile_multilib: "both",
-    multilib: {
-        lib32: {
-            suffix: "32",
-        },
-        lib64: {
-            suffix: "64",
-        },
-    },
-    defaults: ["bluetooth_offload_leaudio_hci_defaults"],
+    name: "libbluetooth_offload_leaudio_audio_test",
+    team: "trendy_team_bluetooth",
+    defaults: ["bluetooth_offload_leaudio_audio_defaults"],
+}
+
+cc_library_headers {
+    name: "libbluetooth_offload_leaudio_headers",
+    vendor_available: true,
+    host_supported: true,
+    export_include_dirs: [
+        "include",
+    ],
+    visibility: [
+        "//hardware/interfaces/bluetooth:__subpackages__",
+        "//packages/modules/Bluetooth/offload:__subpackages__",
+    ],
 }
