@@ -312,7 +312,8 @@ void LogMetricBluetoothDisconnectionReasonReported(uint32_t reason, const hci::A
 void LogMetricBluetoothRemoteSupportedFeatures(const hci::Address& address, uint32_t page,
                                                uint64_t features, uint32_t connection_handle);
 
-void LogMetricBluetoothCodePathCounterMetrics(int32_t key, int64_t count);
+void LogMetricBluetoothCodePathCounterMetrics(android::bluetooth::CodePathCounterKeyEnum key,
+                                              int64_t count);
 
 using android::bluetooth::le::LeAclConnectionState;
 using android::bluetooth::le::LeConnectionOriginType;

@@ -19,7 +19,6 @@
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
 #include "metrics/bluetooth_event.h"
-#include "metrics/counter_metrics.h"
 #include "os/metrics.h"
 #include "types/raw_address.h"
 
@@ -213,12 +212,8 @@ void LogMetricLeConnectionRejected(hci::Address address) {
                                          android::bluetooth::State::ATTEMPT_IN_PROGRESS);
 }
 
-bool CountCounterMetrics(int32_t key, int64_t count) {
-  auto counter_metrics = GetCounterMetrics();
-  if (counter_metrics == nullptr) {
-    return false;
-  }
-  return counter_metrics->Count(key, count);
+void CountCounterMetrics(android::bluetooth::CodePathCounterKeyEnum key, int64_t count) {
+  bluetooth::os::LogMetricBluetoothCodePathCounterMetrics(key, count);
 }
 
 void LogMetricHfpAgVersion(hci::Address address, uint16_t version) {

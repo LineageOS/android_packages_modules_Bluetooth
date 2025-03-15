@@ -202,9 +202,9 @@ void bluetooth::shim::LogMetricManufacturerInfo(
           raw_address, address_type, source_type, source_name, manufacturer, model,
           hardware_version, software_version);
 }
-bool bluetooth::shim::CountCounterMetrics(int32_t /* key */, int64_t /* count */) {
+void bluetooth::shim::CountCounterMetrics(android::bluetooth::CodePathCounterKeyEnum /* key */,
+                                          int64_t /* count */) {
   inc_func_call_count(__func__);
-  return false;
 }
 void bluetooth::shim::LogMetricLeConnectionStatus(bluetooth::hci::Address address, bool is_connect,
                                                   bluetooth::hci::ErrorCode reason) {

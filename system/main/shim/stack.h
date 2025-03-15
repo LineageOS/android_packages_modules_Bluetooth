@@ -34,10 +34,6 @@ namespace storage {
 class StorageModule;
 }
 
-namespace metrics {
-class CounterMetrics;
-}
-
 namespace shim {
 
 class Acl;
@@ -70,7 +66,6 @@ public:
   }
 
   virtual Acl* GetAcl() const;
-  virtual metrics::CounterMetrics* GetCounterMetrics() const;
   virtual storage::StorageModule* GetStorage() const;
   virtual hal::SnoopLogger* GetSnoopLogger() const;
 

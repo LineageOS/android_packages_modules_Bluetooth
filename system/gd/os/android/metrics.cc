@@ -69,6 +69,9 @@ struct formatter<android::bluetooth::BtaStatus> : enum_formatter<android::blueto
 template <>
 struct formatter<android::bluetooth::SocketErrorEnum>
     : enum_formatter<android::bluetooth::SocketErrorEnum> {};
+template <>
+struct formatter<android::bluetooth::CodePathCounterKeyEnum>
+    : enum_formatter<android::bluetooth::CodePathCounterKeyEnum> {};
 }  // namespace std
 
 namespace bluetooth {
@@ -453,7 +456,8 @@ void LogMetricBluetoothRemoteSupportedFeatures(const Address& address, uint32_t 
   }
 }
 
-void LogMetricBluetoothCodePathCounterMetrics(int32_t key, int64_t count) {
+void LogMetricBluetoothCodePathCounterMetrics(android::bluetooth::CodePathCounterKeyEnum key,
+                                              int64_t count) {
   int ret = stats_write(BLUETOOTH_CODE_PATH_COUNTER, key, count);
   if (ret < 0) {
     log::warn("Failed counter metrics for {}, count {}, error {}", key, count, ret);
