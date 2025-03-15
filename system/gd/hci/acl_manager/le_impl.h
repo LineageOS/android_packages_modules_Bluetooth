@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 The Android Open Source Project
+ * Copyright (C) 2020 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,11 +39,11 @@
 #include "hci/hci_packets.h"
 #include "hci/le_address_manager.h"
 #include "macros.h"
+#include "main/shim/metrics_api.h"
 #include "os/alarm.h"
 #include "os/handler.h"
 #include "os/system_properties.h"
 #include "stack/include/btm_ble_api_types.h"
-#include "stack/include/stack_metrics_logging.h"
 
 namespace bluetooth {
 namespace hci {
@@ -426,7 +426,7 @@ public:
       return;
     }
 
-    log_le_connection_status(address, true /* is_connect */, status);
+    bluetooth::shim::LogMetricLeConnectionStatus(address, true /* is_connect */, status);
 
     const bool in_filter_accept_list = is_device_in_accept_list(remote_address);
 
@@ -586,7 +586,8 @@ public:
       arm_on_resume_ = true;
       add_device_to_accept_list(remote_address);
     }
-    log_le_connection_status(remote_address.GetAddress(), false /* is_connect */, reason);
+    bluetooth::shim::LogMetricLeConnectionStatus(remote_address.GetAddress(),
+                                                 false /* is_connect */, reason);
   }
 
   void on_le_connection_update_complete(LeMetaEventView view) {
@@ -724,7 +725,8 @@ public:
   }
 
   void add_device_to_accept_list(AddressWithType address_with_type) {
-    log_le_device_in_accept_list(address_with_type.GetAddress(), true /* is_add */);
+    bluetooth::shim::LogMetricLeDeviceInAcceptList(address_with_type.GetAddress(),
+                                                   true /* is_add */);
     if (connections.alreadyConnected(address_with_type)) {
       log::info("Device already connected, return");
       return;
@@ -747,7 +749,8 @@ public:
   }
 
   void remove_device_from_accept_list(AddressWithType address_with_type) {
-    log_le_device_in_accept_list(address_with_type.GetAddress(), false /* is_add */);
+    bluetooth::shim::LogMetricLeDeviceInAcceptList(address_with_type.GetAddress(),
+                                                   false /* is_add */);
     if (accept_list.find(address_with_type) == accept_list.end()) {
       log::warn("Device not in acceptlist and cannot be removed: {}", address_with_type);
       return;
@@ -1132,8 +1135,9 @@ public:
       remove_device_from_accept_list(address_with_type);
     }
     // Temporary mapping the error code to PAGE_TIMEOUT
-    log_le_connection_completion(address_with_type.GetAddress(), ErrorCode::PAGE_TIMEOUT,
-                                 true /* is locally initiated */);
+    bluetooth::shim::LogMetricLeConnectionCompletion(address_with_type.GetAddress(),
+                                                     ErrorCode::PAGE_TIMEOUT,
+                                                     true /* is locally initiated */);
     le_client_handler_->Post(common::BindOnce(
             &LeConnectionCallbacks::OnLeConnectFail, common::Unretained(le_client_callbacks_),
             address_with_type, ErrorCode::CONNECTION_ACCEPT_TIMEOUT));
@@ -1247,12 +1251,6 @@ public:
 
   void remove_device_from_background_connection_list(AddressWithType address_with_type) {
     background_connections_.erase(address_with_type);
-  }
-
-  void is_on_background_connection_list(AddressWithType address_with_type,
-                                        std::promise<bool> promise) {
-    promise.set_value(background_connections_.find(address_with_type) !=
-                      background_connections_.end());
   }
 
   void OnPause() override {  // bluetooth::hci::LeAddressManagerCallback

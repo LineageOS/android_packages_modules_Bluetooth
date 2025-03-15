@@ -832,6 +832,11 @@ provider::get_a2dp_configuration(
       break;
   }
 
+  auto codec = provider_info->GetCodec(user_preferences.codec_type);
+  if (codec.has_value()) {
+    hint.codecId = codec.value()->id;
+  }
+
   log::info("remote capabilities:");
   for (auto const& sep : a2dp_remote_capabilities) {
     log::info("- {}", sep.toString());

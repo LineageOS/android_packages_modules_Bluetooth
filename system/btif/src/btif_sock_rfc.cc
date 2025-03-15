@@ -33,7 +33,6 @@
 #include "bta/include/bta_jv_co.h"
 #include "bta/include/bta_rfcomm_metrics.h"
 #include "bta/include/bta_rfcomm_scn.h"
-#include "btif/include/btif_metrics_logging.h"
 #include "btif/include/btif_sock.h"
 #include "btif/include/btif_sock_l2cap.h"
 #include "btif/include/btif_sock_logging.h"
@@ -45,6 +44,7 @@
 #include "include/hardware/bt_sock.h"
 #include "lpp/lpp_offload_interface.h"
 #include "main/shim/entry.h"
+#include "main/shim/metrics_api.h"
 #include "osi/include/allocator.h"
 #include "osi/include/compat.h"
 #include "osi/include/list.h"
@@ -106,6 +106,7 @@ typedef struct {
   uint64_t hub_id;               // ID of the hub to which the end point belongs
   uint64_t endpoint_id;          // ID of the hub end point
   bool is_accepting;             // is app accepting on server socket?
+  uint64_t connection_start_time_ms;  // Timestamp when the connection state started
 } rfc_slot_t;
 
 static rfc_slot_t rfc_slots[MAX_RFC_CHANNEL];
@@ -115,7 +116,7 @@ static std::recursive_mutex slot_lock;
 static uid_set_t* uid_set = NULL;
 
 static rfc_slot_t* find_free_slot(void);
-static void cleanup_rfc_slot(rfc_slot_t* rs);
+static void cleanup_rfc_slot(rfc_slot_t* rs, btsock_error_code_t error_code);
 static void jv_dm_cback(tBTA_JV_EVT event, tBTA_JV* p_data, uint32_t id);
 static uint32_t rfcomm_cback(tBTA_JV_EVT event, tBTA_JV* p_data, uint32_t rfcomm_slot_id);
 static bool send_app_scn(rfc_slot_t* rs);
@@ -152,7 +153,7 @@ void btsock_rfc_cleanup(void) {
   std::unique_lock<std::recursive_mutex> lock(slot_lock);
   for (size_t i = 0; i < ARRAY_SIZE(rfc_slots); ++i) {
     if (rfc_slots[i].id) {
-      cleanup_rfc_slot(&rfc_slots[i]);
+      cleanup_rfc_slot(&rfc_slots[i], BTSOCK_ERROR_NONE);
     }
     list_free(rfc_slots[i].incoming_queue);
     rfc_slots[i].incoming_queue = NULL;
@@ -251,6 +252,7 @@ static rfc_slot_t* alloc_rfc_slot(const RawAddress* addr, const char* name, cons
   slot->hub_id = 0;
   slot->endpoint_id = 0;
   slot->is_accepting = false;
+  slot->connection_start_time_ms = 0;
 
   slot->is_service_uuid_valid = !uuid.IsEmpty();
   slot->service_uuid = uuid;
@@ -466,13 +468,13 @@ bt_status_t btsock_rfc_connect(const RawAddress* bd_addr, const Uuid* service_uu
     if (ret != tBTA_JV_STATUS::SUCCESS) {
       log::error("unable to initiate RFCOMM connection. status:{}, scn:{}, bd_addr:{}",
                  bta_jv_status_text(ret), slot->scn, slot->addr);
-      cleanup_rfc_slot(slot);
+      cleanup_rfc_slot(slot, BTSOCK_ERROR_CONNECTION_FAILURE);
       return BT_STATUS_SOCKET_ERROR;
     }
 
     if (!send_app_scn(slot)) {
       log::error("send_app_scn() failed, closing slot_id:{}", slot->id);
-      cleanup_rfc_slot(slot);
+      cleanup_rfc_slot(slot, BTSOCK_ERROR_SEND_SCN_FAILURE);
       return BT_STATUS_SOCKET_ERROR;
     }
   } else {
@@ -535,7 +537,7 @@ static void free_rfc_slot_scn(rfc_slot_t* slot) {
   slot->scn = 0;
 }
 
-static void cleanup_rfc_slot(rfc_slot_t* slot) {
+static void cleanup_rfc_slot(rfc_slot_t* slot, btsock_error_code_t error_code) {
   if (slot->fd != INVALID_FD) {
     shutdown(slot->fd, SHUT_RDWR);
     close(slot->fd);
@@ -547,7 +549,8 @@ static void cleanup_rfc_slot(rfc_slot_t* slot) {
             slot->addr, slot->id, BTSOCK_RFCOMM, SOCKET_CONNECTION_STATE_DISCONNECTED,
             slot->f.server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION, slot->app_uid, slot->scn,
             slot->tx_bytes, slot->rx_bytes,
-            slot->role ? slot->service_name : slot->service_uuid.ToString().c_str());
+            slot->role ? slot->service_name : slot->service_uuid.ToString().c_str(),
+            slot->connection_start_time_ms, error_code, slot->data_path);
 
     slot->fd = INVALID_FD;
 
@@ -625,7 +628,7 @@ static void on_cl_rfc_init(tBTA_JV_RFCOMM_CL_INIT* p_init, uint32_t id) {
   } else if (p_init->status != tBTA_JV_STATUS::SUCCESS) {
     log::warn("INIT unsuccessful, status {}. Cleaning up slot_id {}",
               bta_jv_status_text(p_init->status), slot->id);
-    cleanup_rfc_slot(slot);
+    cleanup_rfc_slot(slot, BTSOCK_ERROR_CLIENT_INIT_FAILURE);
   } else {
     slot->rfc_handle = p_init->handle;
   }
@@ -640,7 +643,7 @@ static void on_srv_rfc_listen_started(tBTA_JV_RFCOMM_START* p_start, uint32_t id
   } else if (p_start->status != tBTA_JV_STATUS::SUCCESS) {
     log::warn("START unsuccessful, status {}. Cleaning up slot_id {}",
               bta_jv_status_text(p_start->status), slot->id);
-    cleanup_rfc_slot(slot);
+    cleanup_rfc_slot(slot, BTSOCK_ERROR_SERVER_START_FAILURE);
     return;
   }
 
@@ -649,10 +652,10 @@ static void on_srv_rfc_listen_started(tBTA_JV_RFCOMM_START* p_start, uint32_t id
           "listening for RFCOMM socket connections for device: {}, scn: {}, "
           "app_uid: {}, id: {}",
           slot->addr, slot->scn, slot->app_uid, id);
-  btif_sock_connection_logger(slot->addr, slot->id, BTSOCK_RFCOMM,
-                              SOCKET_CONNECTION_STATE_LISTENING,
-                              slot->f.server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION,
-                              slot->app_uid, slot->scn, 0, 0, slot->service_name);
+  btif_sock_connection_logger(
+          slot->addr, slot->id, BTSOCK_RFCOMM, SOCKET_CONNECTION_STATE_LISTENING,
+          slot->f.server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION, slot->app_uid, slot->scn, 0,
+          0, slot->service_name, 0, BTSOCK_ERROR_NONE, slot->data_path);
 }
 
 static uint32_t on_srv_rfc_connect_offload(tBTA_JV_RFCOMM_SRV_OPEN* p_open, rfc_slot_t* srv_rs) {
@@ -670,7 +673,9 @@ static uint32_t on_srv_rfc_connect_offload(tBTA_JV_RFCOMM_SRV_OPEN* p_open, rfc_
   btif_sock_connection_logger(accept_rs->addr, accept_rs->id, BTSOCK_RFCOMM,
                               SOCKET_CONNECTION_STATE_CONNECTED,
                               accept_rs->f.server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION,
-                              accept_rs->app_uid, accept_rs->scn, 0, 0, accept_rs->service_name);
+                              accept_rs->app_uid, accept_rs->scn, 0, 0, accept_rs->service_name, 0,
+                              BTSOCK_ERROR_NONE, accept_rs->data_path);
+  accept_rs->connection_start_time_ms = common::time_gettimeofday_us() / 1000;
 
   bluetooth::hal::SocketContext socket_context = {
           .socket_id = accept_rs->socket_id,
@@ -685,10 +690,10 @@ static uint32_t on_srv_rfc_connect_offload(tBTA_JV_RFCOMM_SRV_OPEN* p_open, rfc_
   };
   if (!srv_rs->is_accepting) {
     log::warn("Server socket is not accepting. Disconnect the incoming connection.");
-    cleanup_rfc_slot(accept_rs);
+    cleanup_rfc_slot(accept_rs, BTSOCK_ERROR_OFFLOAD_SERVER_NOT_ACCEPTING);
   } else if (!bluetooth::shim::GetLppOffloadManager()->SocketOpened(socket_context)) {
     log::warn("RFCOMM socket opened failed. Disconnect the incoming connection.");
-    cleanup_rfc_slot(accept_rs);
+    cleanup_rfc_slot(accept_rs, BTSOCK_ERROR_OFFLOAD_HAL_OPEN_FAILURE);
   } else {
     log::info("RFCOMM socket opened successful. Will send connect signal in async callback.");
   }
@@ -728,7 +733,9 @@ static uint32_t on_srv_rfc_connect(tBTA_JV_RFCOMM_SRV_OPEN* p_open, uint32_t id)
   btif_sock_connection_logger(accept_rs->addr, accept_rs->id, BTSOCK_RFCOMM,
                               SOCKET_CONNECTION_STATE_CONNECTED,
                               accept_rs->f.server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION,
-                              accept_rs->app_uid, accept_rs->scn, 0, 0, accept_rs->service_name);
+                              accept_rs->app_uid, accept_rs->scn, 0, 0, accept_rs->service_name, 0,
+                              BTSOCK_ERROR_NONE, accept_rs->data_path);
+  accept_rs->connection_start_time_ms = common::time_gettimeofday_us() / 1000;
 
   // Start monitoring the socket.
   btsock_thread_add_fd(pth, srv_rs->fd, BTSOCK_RFCOMM, SOCK_THREAD_FD_EXCEPTION, srv_rs->id);
@@ -755,7 +762,8 @@ static void on_cli_rfc_connect_offload(tBTA_JV_RFCOMM_OPEN* p_open, rfc_slot_t* 
   btif_sock_connection_logger(
           slot->addr, slot->id, BTSOCK_RFCOMM, SOCKET_CONNECTION_STATE_CONNECTED,
           slot->f.server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION, slot->app_uid, slot->scn, 0,
-          0, slot->service_uuid.ToString().c_str());
+          0, slot->service_uuid.ToString().c_str(), 0, BTSOCK_ERROR_NONE, slot->data_path);
+  slot->connection_start_time_ms = common::time_gettimeofday_us() / 1000;
 
   bluetooth::hal::SocketContext socket_context = {
           .socket_id = slot->socket_id,
@@ -770,7 +778,7 @@ static void on_cli_rfc_connect_offload(tBTA_JV_RFCOMM_OPEN* p_open, rfc_slot_t* 
   };
   if (!bluetooth::shim::GetLppOffloadManager()->SocketOpened(socket_context)) {
     log::warn("RFCOMM socket opened failed. Disconnect the incoming connection.");
-    cleanup_rfc_slot(slot);
+    cleanup_rfc_slot(slot, BTSOCK_ERROR_OFFLOAD_HAL_OPEN_FAILURE);
   } else {
     log::info(
             "RFCOMM socket opened successful. Will send connect signal in "
@@ -790,7 +798,7 @@ static void on_cli_rfc_connect(tBTA_JV_RFCOMM_OPEN* p_open, uint32_t id) {
   if (p_open->status != tBTA_JV_STATUS::SUCCESS) {
     log::warn("CONNECT unsuccessful, status {}. Cleaning up slot_id {}",
               bta_jv_status_text(p_open->status), slot->id);
-    cleanup_rfc_slot(slot);
+    cleanup_rfc_slot(slot, BTSOCK_ERROR_CONNECTION_FAILURE);
     return;
   }
 
@@ -811,7 +819,8 @@ static void on_cli_rfc_connect(tBTA_JV_RFCOMM_OPEN* p_open, uint32_t id) {
   btif_sock_connection_logger(
           slot->addr, slot->id, BTSOCK_RFCOMM, SOCKET_CONNECTION_STATE_CONNECTED,
           slot->f.server ? SOCKET_ROLE_LISTEN : SOCKET_ROLE_CONNECTION, slot->app_uid, slot->scn, 0,
-          0, slot->service_uuid.ToString().c_str());
+          0, slot->service_uuid.ToString().c_str(), 0, BTSOCK_ERROR_NONE, slot->data_path);
+  slot->connection_start_time_ms = common::time_gettimeofday_us() / 1000;
 
   if (send_app_connect_signal(slot->fd, &slot->addr, slot->scn, 0, -1, slot->socket_id)) {
     slot->f.connected = true;
@@ -847,7 +856,7 @@ void on_btsocket_rfc_opened_complete(uint64_t socket_id, bool success) {
   }
   if (!success) {
     log::error("RFCOMM opened complete failed with socket_id: {}", socket_id);
-    cleanup_rfc_slot(slot);
+    cleanup_rfc_slot(slot, BTSOCK_ERROR_OPEN_FAILURE);
     return;
   }
   // If the socket was accepted from listen socket, use listen_fd.
@@ -877,7 +886,7 @@ void on_btsocket_rfc_close(uint64_t socket_id) {
     return;
   }
   log::info("RFCOMM close request for socket_id: {}", socket_id);
-  cleanup_rfc_slot(slot);
+  cleanup_rfc_slot(slot, BTSOCK_ERROR_NONE);
 }
 
 // TODO(b/380189525): Replace the randomized socket ID with static counter when we don't have
@@ -900,12 +909,13 @@ static void on_rfc_close(tBTA_JV_RFCOMM_CLOSE* /* p_close */, uint32_t id) {
     log::warn("RFCOMM slot with id {} not found.", id);
     return;
   }
-  log_socket_connection_state(slot->addr, slot->id, BTSOCK_RFCOMM,
-                              android::bluetooth::SOCKET_CONNECTION_STATE_DISCONNECTING, 0, 0,
-                              slot->app_uid, slot->scn,
-                              slot->f.server ? android::bluetooth::SOCKET_ROLE_LISTEN
-                                             : android::bluetooth::SOCKET_ROLE_CONNECTION);
-  cleanup_rfc_slot(slot);
+  bluetooth::shim::LogMetricSocketConnectionState(
+          slot->addr, slot->id, BTSOCK_RFCOMM,
+          android::bluetooth::SOCKET_CONNECTION_STATE_DISCONNECTING, 0, 0, slot->app_uid, slot->scn,
+          slot->f.server ? android::bluetooth::SOCKET_ROLE_LISTEN
+                         : android::bluetooth::SOCKET_ROLE_CONNECTION,
+          0, android::bluetooth::SOCKET_ERROR_NONE, slot->data_path);
+  cleanup_rfc_slot(slot, BTSOCK_ERROR_NONE);
 }
 
 static void on_rfc_write_done(tBTA_JV_RFCOMM_WRITE* p, uint32_t id) {
@@ -1010,7 +1020,7 @@ static void jv_dm_cback(tBTA_JV_EVT event, tBTA_JV* p_data, uint32_t id) {
       if (p_data->scn == 0) {
         log::error("Unable to allocate scn: all resources exhausted. slot found: {}",
                    std::format_ptr(rs));
-        cleanup_rfc_slot(rs);
+        cleanup_rfc_slot(rs, BTSOCK_ERROR_SCN_ALLOCATION_FAILURE);
         break;
       }
 
@@ -1018,7 +1028,7 @@ static void jv_dm_cback(tBTA_JV_EVT event, tBTA_JV* p_data, uint32_t id) {
       // Send channel ID to java layer
       if (!send_app_scn(rs)) {
         log::warn("send_app_scn() failed, closing rs->id:{}", rs->id);
-        cleanup_rfc_slot(rs);
+        cleanup_rfc_slot(rs, BTSOCK_ERROR_SEND_SCN_FAILURE);
         break;
       }
 
@@ -1071,7 +1081,7 @@ static void jv_dm_cback(tBTA_JV_EVT event, tBTA_JV* p_data, uint32_t id) {
 
       if (!create_server_sdp_record(slot)) {
         log::error("cannot start server, slot found: {}", std::format_ptr(slot));
-        cleanup_rfc_slot(slot);
+        cleanup_rfc_slot(slot, BTSOCK_ERROR_ADD_SDP_FAILURE);
         break;
       }
 
@@ -1137,7 +1147,7 @@ static void handle_discovery_comp(tBTA_JV_STATUS status, int scn, uint32_t id) {
             id, bta_jv_status_text(status), scn);
     bta_collect_rfc_metrics_after_sdp_fail(status, slot->addr, slot->app_uid, slot->security,
                                            static_cast<bool>(slot->f.server), sdp_duration_ms);
-    cleanup_rfc_slot(slot);
+    cleanup_rfc_slot(slot, BTSOCK_ERROR_SDP_DISCOVERY_FAILURE);
     return;
   }
 
@@ -1159,7 +1169,7 @@ static void handle_discovery_comp(tBTA_JV_STATUS status, int scn, uint32_t id) {
   if (BTA_JvRfcommConnect(slot->security, scn, slot->addr, rfcomm_cback, slot->id, cfg,
                           slot->app_uid, sdp_duration_ms) != tBTA_JV_STATUS::SUCCESS) {
     log::warn("BTA_JvRfcommConnect() returned BTA_JV_FAILURE for RFCOMM slot_id:{}", id);
-    cleanup_rfc_slot(slot);
+    cleanup_rfc_slot(slot, BTSOCK_ERROR_CONNECTION_FAILURE);
     return;
   }
   // Establish connection if successfully found channel number to connect.
@@ -1168,7 +1178,7 @@ static void handle_discovery_comp(tBTA_JV_STATUS status, int scn, uint32_t id) {
 
   if (!send_app_scn(slot)) {
     log::warn("send_app_scn() failed, closing slot_id {}", slot->id);
-    cleanup_rfc_slot(slot);
+    cleanup_rfc_slot(slot, BTSOCK_ERROR_SEND_SCN_FAILURE);
     return;
   }
 }
@@ -1276,6 +1286,7 @@ static bool btsock_rfc_read_signaled_on_listen_socket(int fd, int /* flags */, u
 
 static void btsock_rfc_signaled_flagged(int fd, int flags, uint32_t id) {
   bool need_close = false;
+  btsock_error_code_t error_code = BTSOCK_ERROR_NONE;
   std::unique_lock<std::recursive_mutex> lock(slot_lock);
   rfc_slot_t* slot = find_rfc_slot_by_id(id);
   if (!slot) {
@@ -1289,11 +1300,13 @@ static void btsock_rfc_signaled_flagged(int fd, int flags, uint32_t id) {
       // app sending data on connection socket
       if (!btsock_rfc_read_signaled_on_connected_socket(fd, flags, id, slot)) {
         need_close = true;
+        error_code = BTSOCK_ERROR_READ_SIGNALED_FAILURE;
       }
     } else {
       // app sending signal on listen socket
       if (!btsock_rfc_read_signaled_on_listen_socket(fd, flags, id, slot)) {
         need_close = true;
+        error_code = BTSOCK_ERROR_READ_SIGNALED_FAILURE;
       }
     }
   }
@@ -1306,6 +1319,7 @@ static void btsock_rfc_signaled_flagged(int fd, int flags, uint32_t id) {
               "slot_id: {}, channel: {}",
               slot->id, slot->scn);
       need_close = true;
+      error_code = BTSOCK_ERROR_WRITE_SIGNALED_FAILURE;
     }
   }
 
@@ -1317,7 +1331,7 @@ static void btsock_rfc_signaled_flagged(int fd, int flags, uint32_t id) {
           slot->f.doing_sdp_request) {
         BTA_JvCancelDiscovery(slot->id);
       }
-      cleanup_rfc_slot(slot);
+      cleanup_rfc_slot(slot, error_code);
     }
   }
 }
@@ -1328,6 +1342,7 @@ void btsock_rfc_signaled(int fd, int flags, uint32_t id) {
     return;
   }
   bool need_close = false;
+  btsock_error_code_t error_code = BTSOCK_ERROR_NONE;
   std::unique_lock<std::recursive_mutex> lock(slot_lock);
   rfc_slot_t* slot = find_rfc_slot_by_id(id);
   if (!slot) {
@@ -1346,6 +1361,7 @@ void btsock_rfc_signaled(int fd, int flags, uint32_t id) {
     } else {
       log::error("socket signaled for read while disconnected, slot_id: {}, channel: {}", slot->id,
                  slot->scn);
+      error_code = BTSOCK_ERROR_READ_SIGNALED_FAILURE;
       need_close = true;
     }
   }
@@ -1357,6 +1373,7 @@ void btsock_rfc_signaled(int fd, int flags, uint32_t id) {
               "socket signaled for write while disconnected (or write failure), "
               "slot_id: {}, channel: {}",
               slot->id, slot->scn);
+      error_code = BTSOCK_ERROR_WRITE_SIGNALED_FAILURE;
       need_close = true;
     }
   }
@@ -1369,7 +1386,7 @@ void btsock_rfc_signaled(int fd, int flags, uint32_t id) {
           slot->f.doing_sdp_request) {
         BTA_JvCancelDiscovery(slot->id);
       }
-      cleanup_rfc_slot(slot);
+      cleanup_rfc_slot(slot, error_code);
     }
   }
 }
@@ -1403,7 +1420,7 @@ int bta_co_rfc_data_incoming(uint32_t id, BT_HDR* p_buf) {
 
       case SENT_FAILED:
         osi_free(p_buf);
-        cleanup_rfc_slot(slot);
+        cleanup_rfc_slot(slot, BTSOCK_ERROR_SEND_TO_APP_FAILURE);
         break;
     }
   } else {
@@ -1428,7 +1445,7 @@ int bta_co_rfc_data_outgoing_size(uint32_t id, int* size) {
   if (ioctl(slot->fd, FIONREAD, size) != 0) {
     log::error("unable to determine bytes remaining to be read on fd {}: {}", slot->fd,
                strerror(errno));
-    cleanup_rfc_slot(slot);
+    cleanup_rfc_slot(slot, BTSOCK_ERROR_RECEIVE_DATA_FAILURE);
     return false;
   }
 
@@ -1448,7 +1465,7 @@ int bta_co_rfc_data_outgoing(uint32_t id, uint8_t* buf, uint16_t size) {
 
   if (received != size) {
     log::error("error receiving RFCOMM data from app: {}", strerror(errno));
-    cleanup_rfc_slot(slot);
+    cleanup_rfc_slot(slot, BTSOCK_ERROR_RECEIVE_DATA_FAILURE);
     return false;
   }
 
@@ -1465,7 +1482,7 @@ bt_status_t btsock_rfc_disconnect(const RawAddress* bd_addr) {
   std::unique_lock<std::recursive_mutex> lock(slot_lock);
   for (size_t i = 0; i < ARRAY_SIZE(rfc_slots); ++i) {
     if (rfc_slots[i].id && rfc_slots[i].addr == *bd_addr) {
-      cleanup_rfc_slot(&rfc_slots[i]);
+      cleanup_rfc_slot(&rfc_slots[i], BTSOCK_ERROR_NONE);
     }
   }
 

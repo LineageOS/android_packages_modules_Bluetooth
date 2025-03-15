@@ -26,7 +26,6 @@ import android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_SATELLITE_MOD
 import android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_START_ERROR
 import android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_SYSTEM_BOOT
 import android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_USER_SWITCH
-import android.util.proto.ProtoOutputStream
 import com.android.server.bluetooth.ActiveLogs
 import com.android.server.bluetooth.Log
 import com.google.common.truth.Truth.assertThat
@@ -136,15 +135,5 @@ class ActiveLogTest {
                     ".*SATELLITE MODE\n" +
                     ".*UNKNOWN\\[\\d+\\]\n"
             )
-    }
-
-    @Test
-    fun protoDump() {
-        ActiveLogs.add(ENABLE_DISABLE_REASON_APPLICATION_REQUEST, false)
-
-        val proto = ProtoOutputStream()
-        ActiveLogs.dumpProto(proto)
-
-        assertThat(proto.getRawSize()).isEqualTo(48)
     }
 }

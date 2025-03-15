@@ -31,7 +31,6 @@ cc_defaults {
     ],
     static_libs: [
         "libbase",
-        "libbluetooth-protos",
         "libbluetooth-types",
         "libbluetooth_crypto_toolbox",
         "libbluetooth_log",

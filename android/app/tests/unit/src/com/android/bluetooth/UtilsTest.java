@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 The Android Open Source Project
+ * Copyright (C) 2022 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,7 +47,7 @@ import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
-/** Test for Utils.java */
+/** Test cases for {@link Utils}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class UtilsTest {
@@ -63,13 +63,6 @@ public class UtilsTest {
                 };
         long s = Utils.byteArrayToLong(valueBuf);
         assertThat(s).isEqualTo(0x0807060504030201L);
-    }
-
-    @Test
-    public void byteArrayToString() {
-        byte[] valueBuf = new byte[] {0x01, 0x02};
-        String str = Utils.byteArrayToString(valueBuf);
-        assertThat(str).isEqualTo("01 02");
     }
 
     @Test

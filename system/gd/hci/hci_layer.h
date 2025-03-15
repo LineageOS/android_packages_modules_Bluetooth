@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Android Open Source Project
+ * Copyright (C) 2019 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -148,6 +148,8 @@ protected:
   void StartWithNoHalDependencies(os::Handler* handler);
 
   void Stop() override;
+
+  void LifeCycleStop();
 
   virtual void Disconnect(uint16_t handle, ErrorCode reason);
   virtual void ReadRemoteVersion(hci::ErrorCode hci_status, uint16_t handle, uint8_t version,

@@ -26,6 +26,7 @@ android_test {
     ],
 
     static_libs: [
+        "androidx.test.espresso.intents",
         "androidx.test.rules",
         "flag-junit",
         "frameworks-base-testutils",

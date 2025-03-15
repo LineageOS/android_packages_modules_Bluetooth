@@ -30,14 +30,12 @@ import android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_START_ERROR
 import android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_SYSTEM_BOOT
 import android.bluetooth.BluetoothProtoEnums.ENABLE_DISABLE_REASON_USER_SWITCH
 import android.os.Binder
-import android.util.proto.ProtoOutputStream
 import androidx.annotation.VisibleForTesting
 import com.android.bluetooth.BluetoothStatsLog
 import com.android.bluetooth.BluetoothStatsLog.BLUETOOTH_ENABLED_STATE_CHANGED
 import com.android.bluetooth.BluetoothStatsLog.BLUETOOTH_ENABLED_STATE_CHANGED__STATE__DISABLED
 import com.android.bluetooth.BluetoothStatsLog.BLUETOOTH_ENABLED_STATE_CHANGED__STATE__ENABLED
 import com.android.bluetooth.BluetoothStatsLog.BLUETOOTH_ENABLED_STATE_CHANGED__STATE__UNKNOWN
-import com.android.server.BluetoothManagerServiceDumpProto as BtProto
 import java.io.PrintWriter
 
 private const val TAG = "ActiveLogs"
@@ -55,13 +53,6 @@ object ActiveLogs {
             writer.println("Enable log:")
             activeLogs.forEach { writer.println("  $it") }
         }
-    }
-
-    @JvmStatic
-    fun dumpProto(proto: ProtoOutputStream) {
-        val token = proto.start(BtProto.ACTIVE_LOGS)
-        activeLogs.forEach { it.dump(proto) }
-        proto.end(token)
     }
 
     @JvmStatic
@@ -124,13 +115,6 @@ internal class ActiveLog(
             (if (isBle) "Ble" else "") +
             "]. \tReason is " +
             getEnableDisableReasonString(reason)
-
-    fun dump(proto: ProtoOutputStream) {
-        proto.write(BtProto.ActiveLog.TIMESTAMP_MS, timestamp)
-        proto.write(BtProto.ActiveLog.ENABLE, enable)
-        proto.write(BtProto.ActiveLog.PACKAGE_NAME, packageName)
-        proto.write(BtProto.ActiveLog.REASON, reason)
-    }
 }
 
 private fun getEnableDisableReasonString(reason: Int): String {

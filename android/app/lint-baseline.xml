@@ -2,17 +2,6 @@
 <issues format="6" by="lint 8.4.0-alpha08" type="baseline" client="" dependencies="true" name="" variant="all" version="8.4.0-alpha08">
 
     <issue
-        id="UnknownIssueId"
-        message="Unknown issue id &quot;GetterSetterNullability&quot;"
-        errorLine1="  &lt;issue id=&apos;GetterSetterNullability&apos; severity=&apos;error&apos; />"
-        errorLine2="  ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
-        <location
-            file="./out/lint.xml"
-            line="125"
-            column="3"/>
-    </issue>
-
-    <issue
         id="ScrollViewSize"
         message="This LinearLayout should use `android:layout_height=&quot;wrap_content&quot;`"
         errorLine1="    android:layout_height=&quot;match_parent&quot;"
@@ -51,7 +40,7 @@
         errorLine1="&lt;manifest xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
         errorLine2=" ~~~~~~~~">
         <location
-            file="./out/soong/.intermediates/packages/modules/Bluetooth/android/app/Bluetooth/android_common_apex35/manifest_merger/AndroidManifest.xml"
+            file="./out/soong/.intermediates/packages/modules/Bluetooth/android/app/Bluetooth/android_common_apex36/manifest_merger/AndroidManifest.xml"
             line="2"
             column="2"/>
     </issue>
@@ -62,7 +51,7 @@
         errorLine1="&lt;manifest xmlns:android=&quot;http://schemas.android.com/apk/res/android&quot;"
         errorLine2=" ~~~~~~~~">
         <location
-            file="./out/soong/.intermediates/packages/modules/Bluetooth/android/app/Bluetooth/android_common_apex35/manifest_merger/AndroidManifest.xml"
+            file="./out/soong/.intermediates/packages/modules/Bluetooth/android/app/Bluetooth/android_common_apex36/manifest_merger/AndroidManifest.xml"
             line="2"
             column="2"/>
     </issue>
@@ -73,7 +62,7 @@
         errorLine1="        &lt;provider"
         errorLine2="         ~~~~~~~~">
         <location
-            file="./out/soong/.intermediates/packages/modules/Bluetooth/android/app/Bluetooth/android_common_apex35/manifest_merger/AndroidManifest.xml"
+            file="./out/soong/.intermediates/packages/modules/Bluetooth/android/app/Bluetooth/android_common_apex36/manifest_merger/AndroidManifest.xml"
             line="144"
             column="10"/>
     </issue>
@@ -84,7 +73,7 @@
         errorLine1="        &lt;receiver"
         errorLine2="         ~~~~~~~~">
         <location
-            file="./out/soong/.intermediates/packages/modules/Bluetooth/android/app/Bluetooth/android_common_apex35/manifest_merger/AndroidManifest.xml"
+            file="./out/soong/.intermediates/packages/modules/Bluetooth/android/app/Bluetooth/android_common_apex36/manifest_merger/AndroidManifest.xml"
             line="209"
             column="10"/>
     </issue>
@@ -95,7 +84,7 @@
         errorLine1="        &lt;service"
         errorLine2="         ~~~~~~~">
         <location
-            file="./out/soong/.intermediates/packages/modules/Bluetooth/android/app/Bluetooth/android_common_apex35/manifest_merger/AndroidManifest.xml"
+            file="./out/soong/.intermediates/packages/modules/Bluetooth/android/app/Bluetooth/android_common_apex36/manifest_merger/AndroidManifest.xml"
             line="129"
             column="10"/>
     </issue>
@@ -106,7 +95,7 @@
         errorLine1="        &lt;service"
         errorLine2="         ~~~~~~~">
         <location
-            file="./out/soong/.intermediates/packages/modules/Bluetooth/android/app/Bluetooth/android_common_apex35/manifest_merger/AndroidManifest.xml"
+            file="./out/soong/.intermediates/packages/modules/Bluetooth/android/app/Bluetooth/android_common_apex36/manifest_merger/AndroidManifest.xml"
             line="348"
             column="10"/>
     </issue>
@@ -117,7 +106,7 @@
         errorLine1="                android:permission=&quot;android.permission.ACCESS_BLUETOOTH_SHARE&quot; />"
         errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="./out/soong/.intermediates/packages/modules/Bluetooth/android/app/Bluetooth/android_common_apex35/manifest_merger/AndroidManifest.xml"
+            file="./out/soong/.intermediates/packages/modules/Bluetooth/android/app/Bluetooth/android_common_apex36/manifest_merger/AndroidManifest.xml"
             line="206"
             column="17"/>
     </issue>
@@ -128,7 +117,7 @@
         errorLine1="    &lt;uses-permission android:name=&quot;android.permission.QUERY_ALL_PACKAGES&quot; />"
         errorLine2="                     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
         <location
-            file="./out/soong/.intermediates/packages/modules/Bluetooth/android/app/Bluetooth/android_common_apex35/manifest_merger/AndroidManifest.xml"
+            file="./out/soong/.intermediates/packages/modules/Bluetooth/android/app/Bluetooth/android_common_apex36/manifest_merger/AndroidManifest.xml"
             line="61"
             column="22"/>
     </issue>
@@ -1119,17 +1108,6 @@
         errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/android/app/res/values-es/strings.xml"
-            line="77"
-            column="72"/>
-    </issue>
-
-    <issue
-        id="TypographyEllipsis"
-        message="Replace &quot;...&quot; with ellipsis character (…, &amp;#8230;) ?"
-        errorLine1="    &lt;string name=&quot;enabling_progress_title&quot; msgid=&quot;5262637688863903594&quot;>&quot;Palun oodake ...&quot;&lt;/string>"
-        errorLine2="                                                                       ~~~~~~~~~~~~~~~~~~">
-        <location
-            file="packages/modules/Bluetooth/android/app/res/values-et/strings.xml"
             line="77"
             column="72"/>
     </issue>

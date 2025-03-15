@@ -30,17 +30,16 @@ class BtaSdpTest : public BtaWithHwOnTest {
 protected:
   void SetUp() override {
     BtaWithHwOnTest::SetUp();
-    ON_CALL(controller_, LeRand).WillByDefault([](bluetooth::hci::LeRandCallback cb) {
-      cb(0x1234);
-    });
-    bluetooth::hci::testing::mock_controller_ = &controller_;
+    bluetooth::hci::testing::mock_controller_ =
+            std::make_unique<bluetooth::hci::testing::MockControllerInterface>();
+    ON_CALL(*bluetooth::hci::testing::mock_controller_, LeRand)
+            .WillByDefault([](bluetooth::hci::LeRandCallback cb) { cb(0x1234); });
   }
 
   void TearDown() override {
     BtaWithHwOnTest::TearDown();
-    bluetooth::hci::testing::mock_controller_ = nullptr;
+    bluetooth::hci::testing::mock_controller_.reset();
   }
-  bluetooth::hci::testing::MockControllerInterface controller_;
 };
 
 class BtaSdpRegisteredTest : public BtaSdpTest {

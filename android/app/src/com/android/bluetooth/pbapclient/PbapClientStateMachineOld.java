@@ -63,7 +63,6 @@ import android.os.Process;
 import android.os.UserManager;
 import android.util.Log;
 
-import com.android.bluetooth.BluetoothMetricsProto;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.MetricsLogger;
@@ -402,9 +401,6 @@ class PbapClientStateMachineOld extends StateMachine {
         if (device == null) {
             Log.w(TAG, "onConnectionStateChanged with invalid device");
             return;
-        }
-        if (prevState != state && state == STATE_CONNECTED) {
-            MetricsLogger.logProfileConnectionEvent(BluetoothMetricsProto.ProfileId.PBAP_CLIENT);
         }
         Log.d(TAG, "Connection state " + device + ": " + prevState + "->" + state);
         AdapterService adapterService = AdapterService.getAdapterService();

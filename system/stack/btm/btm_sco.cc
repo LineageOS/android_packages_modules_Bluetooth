@@ -44,6 +44,7 @@
 #include "internal_include/bt_target.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
+#include "main/shim/metrics_api.h"
 #include "osi/include/properties.h"
 #include "osi/include/stack_power_telemetry.h"
 #include "stack/btm/btm_int_types.h"
@@ -60,7 +61,6 @@
 #include "stack/include/main_thread.h"
 #include "stack/include/sco_hci_link_interface.h"
 #include "stack/include/sdpdefs.h"
-#include "stack/include/stack_metrics_logging.h"
 #include "types/raw_address.h"
 
 extern tBTM_CB btm_cb;
@@ -1298,7 +1298,8 @@ static void btm_sco_on_disconnected(uint16_t hci_handle, tHCI_REASON reason) {
       if (fill_plc_stats(&num_decoded_frames, &packet_loss_ratio)) {
         const int16_t codec_id = sco_codec_type_to_id(codec_type);
         const std::string codec = sco_codec_type_text(codec_type);
-        log_hfp_audio_packet_loss_stats(bd_addr, num_decoded_frames, packet_loss_ratio, codec_id);
+        bluetooth::shim::LogMetricHfpPacketLossStats(bd_addr, num_decoded_frames, packet_loss_ratio,
+                                                     codec_id);
         log::debug(
                 "Stopped SCO codec:{}, num_decoded_frames:{}, "
                 "packet_loss_ratio:{:f}",

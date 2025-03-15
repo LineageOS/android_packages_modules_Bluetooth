@@ -260,3 +260,23 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "le_peripheral_enc_failure"
+    namespace: "bluetooth"
+    description: "Don't remove bond on LE encryption failure in peripheral role with bonded device, instead just disconnect the link"
+    bug: "403313352"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "immediate_encryption_after_pairing"
+    namespace: "bluetooth"
+    description: "Encrypt BR/EDR link immediately after pairing"
+    bug: "402510244"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

@@ -736,8 +736,8 @@ public class BluetoothMapUtils {
     static String getDateTimeString(long timestamp) {
         SimpleDateFormat format =
                 (mPeerSupportUtcTimeStamp)
-                        ? new SimpleDateFormat("yyyyMMdd'T'HHmmssZ")
-                        : new SimpleDateFormat("yyyyMMdd'T'HHmmss");
+                        ? new SimpleDateFormat("yyyyMMdd'T'HHmmssZ", Locale.ROOT)
+                        : new SimpleDateFormat("yyyyMMdd'T'HHmmss", Locale.ROOT);
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(timestamp);
         Log.v(

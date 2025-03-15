@@ -30,13 +30,6 @@ flag {
 }
 
 flag {
-    name: "ble_scan_adv_metrics_redesign"
-    namespace: "bluetooth"
-    description: "Reimplement BLE scan and advertisement metrics logging."
-    bug: "328303508"
-}
-
-flag {
     name: "msft_addr_tracking_quirk"
     namespace: "bluetooth"
     description: "Scanning with MSFT paddress tracking for Realtek BT controllers"

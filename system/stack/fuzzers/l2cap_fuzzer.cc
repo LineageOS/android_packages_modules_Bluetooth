@@ -121,26 +121,30 @@ public:
 
     GetInterfaceToProfiles()->profileSpecific_HACK->GetHearingAidDeviceCount = []() { return 1; };
 
-    ON_CALL(controller_, GetLeSuggestedDefaultDataLength).WillByDefault(Return(512));
+    bluetooth::hci::testing::mock_controller_ =
+            std::make_unique<bluetooth::hci::testing::MockControllerInterface>();
+    ON_CALL(*bluetooth::hci::testing::mock_controller_, GetLeSuggestedDefaultDataLength)
+            .WillByDefault(Return(512));
     bluetooth::hci::LeBufferSize iso_size;
     iso_size.le_data_packet_length_ = 512;
     iso_size.total_num_le_packets_ = 6;
-    ON_CALL(controller_, GetControllerIsoBufferSize).WillByDefault(Return(iso_size));
+    ON_CALL(*bluetooth::hci::testing::mock_controller_, GetControllerIsoBufferSize)
+            .WillByDefault(Return(iso_size));
     bluetooth::hci::LeBufferSize le_size;
     le_size.le_data_packet_length_ = 512;
     le_size.total_num_le_packets_ = 6;
-    ON_CALL(controller_, GetLeBufferSize).WillByDefault(Return(le_size));
-    ON_CALL(controller_, SupportsBle).WillByDefault(Return(true));
-    ON_CALL(controller_, GetAclPacketLength).WillByDefault(Return(512));
-    bluetooth::hci::testing::mock_controller_ = &controller_;
+    ON_CALL(*bluetooth::hci::testing::mock_controller_, GetLeBufferSize)
+            .WillByDefault(Return(le_size));
+    ON_CALL(*bluetooth::hci::testing::mock_controller_, SupportsBle).WillByDefault(Return(true));
+    ON_CALL(*bluetooth::hci::testing::mock_controller_, GetAclPacketLength)
+            .WillByDefault(Return(512));
   }
 
   ~FakeBtStack() {
     test::mock::stack_acl::acl_send_data_packet_br_edr = {};
     test::mock::stack_acl::acl_send_data_packet_ble = {};
-    bluetooth::hci::testing::mock_controller_ = nullptr;
+    bluetooth::hci::testing::mock_controller_.reset();
   }
-  bluetooth::hci::testing::MockControllerInterface controller_;
 };
 
 class Fakes {

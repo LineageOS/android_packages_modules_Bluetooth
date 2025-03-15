@@ -49,23 +49,23 @@ constexpr uint16_t kAclBufferSizeBle = 45;
 class StackL2capTest : public ::testing::Test {
 protected:
   void SetUp() override {
-    bluetooth::hci::testing::mock_controller_ = &controller_interface_;
-    ON_CALL(controller_interface_, GetNumAclPacketBuffers)
+    bluetooth::hci::testing::mock_controller_ =
+            std::make_unique<bluetooth::hci::testing::MockControllerInterface>();
+    ON_CALL(*bluetooth::hci::testing::mock_controller_, GetNumAclPacketBuffers)
             .WillByDefault(Return(kAclBufferCountClassic));
     bluetooth::hci::LeBufferSize le_sizes;
     le_sizes.total_num_le_packets_ = kAclBufferCountBle;
     le_sizes.le_data_packet_length_ = kAclBufferSizeBle;
-    ON_CALL(controller_interface_, GetLeBufferSize).WillByDefault(Return(le_sizes));
-    ON_CALL(controller_interface_, SupportsBle).WillByDefault(Return(true));
+    ON_CALL(*bluetooth::hci::testing::mock_controller_, GetLeBufferSize)
+            .WillByDefault(Return(le_sizes));
+    ON_CALL(*bluetooth::hci::testing::mock_controller_, SupportsBle).WillByDefault(Return(true));
     l2c_init();
   }
 
   void TearDown() override {
     l2c_free();
-    bluetooth::hci::testing::mock_controller_ = nullptr;
+    bluetooth::hci::testing::mock_controller_.reset();
   }
-
-  bluetooth::hci::testing::MockControllerInterface controller_interface_;
 };
 
 TEST_F(StackL2capTest, l2cble_process_data_length_change_event) {

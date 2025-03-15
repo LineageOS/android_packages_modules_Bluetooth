@@ -48,7 +48,6 @@
 #include "btif/include/btif_common.h"
 #include "btif/include/btif_dm.h"
 #include "btif/include/btif_hd.h"
-#include "btif/include/btif_metrics_logging.h"
 #include "btif/include/btif_profile_storage.h"
 #include "btif/include/btif_storage.h"
 #include "btif/include/btif_util.h"
@@ -56,6 +55,7 @@
 #include "include/hardware/bt_hh.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/dumpsys.h"
+#include "main/shim/metrics_api.h"
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"
 #include "stack/include/bt_hdr.h"
@@ -468,7 +468,7 @@ static void btif_hh_incoming_connection_timeout(void* data) {
                handle);
   }
   log::warn("Reject unexpected incoming HID Connection, device: {}", conn.link_spec);
-  log_counter_metrics_btif(
+  bluetooth::shim::CountCounterMetrics(
           android::bluetooth::CodePathCounterKeyEnum::HIDH_COUNT_INCOMING_CONNECTION_REJECTED, 1);
 
   btif_hh_device_t* p_dev = btif_hh_find_dev_by_link_spec(conn.link_spec);
@@ -529,7 +529,7 @@ static bool hh_add_device(const tAclLinkSpec& link_spec, tBTA_HH_ATTR_MASK attr_
   }
 
   log::error("Out of space to add device");
-  log_counter_metrics_btif(
+  bluetooth::shim::CountCounterMetrics(
           android::bluetooth::CodePathCounterKeyEnum::HIDH_COUNT_MAX_ADDED_DEVICE_LIMIT_REACHED, 1);
   return false;
 }
@@ -633,7 +633,7 @@ static void hh_open_handler(tBTA_HH_CONN& conn) {
 
     log::warn("Reject Incoming HID Connection, device: {}, state: {}", conn.link_spec,
               bthh_connection_state_text(dev_status));
-    log_counter_metrics_btif(
+    bluetooth::shim::CountCounterMetrics(
             android::bluetooth::CodePathCounterKeyEnum::HIDH_COUNT_INCOMING_CONNECTION_REJECTED, 1);
 
     if (p_dev != nullptr) {
@@ -910,9 +910,10 @@ static void hh_vc_unplug_handler(tBTA_HH_CBDATA& dev_status) {
   BTHH_STATE_UPDATE(p_dev->link_spec, p_dev->dev_status);
 
   if (!p_dev->local_vup) {
-    log_counter_metrics_btif(android::bluetooth::CodePathCounterKeyEnum::
-                                     HIDH_COUNT_VIRTUAL_UNPLUG_REQUESTED_BY_REMOTE_DEVICE,
-                             1);
+    bluetooth::shim::CountCounterMetrics(
+            android::bluetooth::CodePathCounterKeyEnum::
+                    HIDH_COUNT_VIRTUAL_UNPLUG_REQUESTED_BY_REMOTE_DEVICE,
+            1);
   }
 
   // Remove the HID device
@@ -1193,9 +1194,10 @@ bt_status_t btif_hh_connect(const tAclLinkSpec& link_spec) {
   if (!p_dev && btif_hh_cb.device_num >= BTIF_HH_MAX_HID) {
     // No space for more HID device now.
     log::warn("Error, exceeded the maximum supported HID device number {}", BTIF_HH_MAX_HID);
-    log_counter_metrics_btif(android::bluetooth::CodePathCounterKeyEnum::
-                                     HIDH_COUNT_CONNECT_REQ_WHEN_MAX_DEVICE_LIMIT_REACHED,
-                             1);
+    bluetooth::shim::CountCounterMetrics(
+            android::bluetooth::CodePathCounterKeyEnum::
+                    HIDH_COUNT_CONNECT_REQ_WHEN_MAX_DEVICE_LIMIT_REACHED,
+            1);
     return BT_STATUS_NOMEM;
   }
 
@@ -2030,7 +2032,7 @@ static bt_status_t get_report(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
     return BT_STATUS_DEVICE_NOT_FOUND;
   } else if (((int)reportType) <= BTA_HH_RPTT_RESRV || ((int)reportType) > BTA_HH_RPTT_FEATURE) {
     log::error("report type={} not supported", reportType);
-    log_counter_metrics_btif(
+    bluetooth::shim::CountCounterMetrics(
             android::bluetooth::CodePathCounterKeyEnum::HIDH_COUNT_WRONG_REPORT_TYPE, 1);
     return BT_STATUS_UNSUPPORTED;
   } else {
@@ -2102,7 +2104,7 @@ static bt_status_t set_report(RawAddress* bd_addr, tBLE_ADDR_TYPE addr_type,
     return BT_STATUS_DEVICE_NOT_FOUND;
   } else if (((int)reportType) <= BTA_HH_RPTT_RESRV || ((int)reportType) > BTA_HH_RPTT_FEATURE) {
     log::error("report type={} not supported", reportType);
-    log_counter_metrics_btif(
+    bluetooth::shim::CountCounterMetrics(
             android::bluetooth::CodePathCounterKeyEnum::HIDH_COUNT_WRONG_REPORT_TYPE, 1);
     return BT_STATUS_UNSUPPORTED;
   } else {

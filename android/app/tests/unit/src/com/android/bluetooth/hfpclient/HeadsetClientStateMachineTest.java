@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 The Android Open Source Project
+ * Copyright (C) 2016 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -126,7 +126,7 @@ public class HeadsetClientStateMachineTest {
                 .getInteger(eq(R.integer.hfp_clcc_poll_interval_during_call));
 
         doReturn(mRemoteDevices).when(mAdapterService).getRemoteDevices();
-        doReturn(true).when(mNativeInterface).sendAndroidAt(anyObject(), anyString());
+        doReturn(true).when(mNativeInterface).sendAndroidAt(any(), anyString());
 
         doReturn(true).when(mNativeInterface).disconnect(any(BluetoothDevice.class));
 
@@ -374,7 +374,7 @@ public class HeadsetClientStateMachineTest {
         doReturn(true).when(mPackageManager).hasSystemFeature(FEATURE_WATCH);
 
         // Skip over the Android AT commands to test this code path
-        doReturn(false).when(mNativeInterface).sendAndroidAt(anyObject(), anyString());
+        doReturn(false).when(mNativeInterface).sendAndroidAt(any(), anyString());
 
         // Send an incoming connection event
         StackEvent event = new StackEvent(StackEvent.EVENT_TYPE_CONNECTION_STATE_CHANGED);
@@ -1025,7 +1025,7 @@ public class HeadsetClientStateMachineTest {
         mHeadsetClientStateMachine.mQueuedActions.clear();
 
         // Test if fail to sendAndroidAt
-        doReturn(false).when(mNativeInterface).sendAndroidAt(anyObject(), anyString());
+        doReturn(false).when(mNativeInterface).sendAndroidAt(any(), anyString());
         mHeadsetClientStateMachine.setAudioPolicy(dummyAudioPolicy);
         assertThat(mHeadsetClientStateMachine.mQueuedActions).isEmpty();
     }

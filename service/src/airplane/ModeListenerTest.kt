@@ -26,7 +26,6 @@ import android.platform.test.flag.junit.FlagsParameterization
 import android.platform.test.flag.junit.SetFlagsRule
 import android.provider.Settings
 import androidx.test.core.app.ApplicationProvider
-import com.android.bluetooth.flags.Flags
 import com.android.server.bluetooth.BluetoothAdapterState
 import com.android.server.bluetooth.Log
 import com.android.server.bluetooth.airplane.APM_BT_ENABLED_NOTIFICATION
@@ -63,14 +62,13 @@ class ModeListenerTest(flags: FlagsParameterization) {
     companion object {
         @JvmStatic
         @Parameters(name = "{0}")
-        fun getParams() =
-            FlagsParameterization.allCombinationsOf(Flags.FLAG_GET_STATE_FROM_SYSTEM_SERVER)
+        fun getParams() = FlagsParameterization.allCombinationsOf()
 
         internal fun setupAirplaneModeToOn(
             resolver: ContentResolver,
             looper: Looper,
             user: () -> Context,
-            enableEnhancedMode: Boolean
+            enableEnhancedMode: Boolean,
         ) {
             enableSensitive(resolver, looper, Settings.Global.AIRPLANE_MODE_RADIOS)
             enableMode(resolver, looper, Settings.Global.AIRPLANE_MODE_ON)

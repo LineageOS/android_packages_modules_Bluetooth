@@ -25,6 +25,7 @@ import avatar.cases.security_test
 import gatt_test
 import hap_test
 import hfpclient_test
+import rfcomm_test
 import sdp_test
 
 from pairing import _test_class_list as _pairing_test_class_list
@@ -81,6 +82,7 @@ _TEST_CLASSES_LIST = [
     hap_test.HapTest,
     asha_test.AshaTest,
     hfpclient_test.HfpClientTest,
+    rfcomm_test.RfcommTest,
 ] + _pairing_test_class_list
 
 

@@ -38,6 +38,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 public class CallLogPullRequest extends PullRequest {
@@ -106,7 +107,7 @@ public class CallLogPullRequest extends PullRequest {
                     }
                 }
                 List<Pair<String, String>> irmc = vcard.getUnknownXData();
-                SimpleDateFormat parser = new SimpleDateFormat(TIMESTAMP_FORMAT);
+                SimpleDateFormat parser = new SimpleDateFormat(TIMESTAMP_FORMAT, Locale.ROOT);
                 if (irmc != null) {
                     for (Pair<String, String> pair : irmc) {
                         if (pair.first.startsWith(TIMESTAMP_PROPERTY)) {

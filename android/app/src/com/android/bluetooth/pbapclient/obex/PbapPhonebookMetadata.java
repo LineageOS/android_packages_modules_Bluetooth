@@ -16,7 +16,16 @@
 
 package com.android.bluetooth.pbapclient;
 
-public class PbapPhonebookMetadata {
+record PbapPhonebookMetadata(
+        String phonebook,
+        // 2 byte number
+        int size,
+        // 16 byte number as string
+        String databaseIdentifier,
+        // 16 byte number as string
+        String primaryVersionCounter,
+        // 16 byte number as string
+        String secondaryVersionCounter) {
     private static final String TAG = PbapPhonebookMetadata.class.getSimpleName();
 
     public static final int INVALID_SIZE = -1;
@@ -24,54 +33,15 @@ public class PbapPhonebookMetadata {
     public static final String DEFAULT_DATABASE_IDENTIFIER = "0";
     public static final String INVALID_VERSION_COUNTER = null;
 
-    private final String mPhonebook;
-    private int mSize = INVALID_SIZE; // 2 byte number
-    private String mDatabaseIdentifier = INVALID_DATABASE_IDENTIFIER; // 16 byte number as string
-    private String mPrimaryVersionCounter = INVALID_VERSION_COUNTER; // 16 byte number as string
-    private String mSecondaryVersionCounter = INVALID_VERSION_COUNTER; // 16 byte number as string
-
-    PbapPhonebookMetadata(
-            String phonebook,
-            int size,
-            String databaseIdentifier,
-            String primaryVersionCounter,
-            String secondaryVersionCounter) {
-        mPhonebook = phonebook;
-        mSize = size;
-        mDatabaseIdentifier = databaseIdentifier;
-        mPrimaryVersionCounter = primaryVersionCounter;
-        mSecondaryVersionCounter = secondaryVersionCounter;
-    }
-
-    public String getPhonebook() {
-        return mPhonebook;
-    }
-
-    public int getSize() {
-        return mSize;
-    }
-
-    public String getDatabaseIdentifier() {
-        return mDatabaseIdentifier;
-    }
-
-    public String getPrimaryVersionCounter() {
-        return mPrimaryVersionCounter;
-    }
-
-    public String getSecondaryVersionCounter() {
-        return mSecondaryVersionCounter;
-    }
-
     @Override
     public String toString() {
         return "<"
                 + TAG
-                + (" phonebook=" + mPhonebook)
-                + (" size=" + mSize)
-                + (" databaseIdentifier=" + mDatabaseIdentifier)
-                + (" primaryVersionCounter=" + mPrimaryVersionCounter)
-                + (" secondaryVersionCounter=" + mSecondaryVersionCounter)
+                + (" phonebook=" + phonebook)
+                + (" size=" + size)
+                + (" databaseIdentifier=" + databaseIdentifier)
+                + (" primaryVersionCounter=" + primaryVersionCounter)
+                + (" secondaryVersionCounter=" + secondaryVersionCounter)
                 + ">";
     }
 }

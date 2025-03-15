@@ -1229,7 +1229,9 @@ int PORT_GetChannelInfo(uint16_t handle, uint16_t* local_mtu, uint16_t* remote_m
     return PORT_NOT_OPENED;
   }
 
-  if (p_port->line_status) {
+  if (p_port->rfc.p_mcb == nullptr || p_port->line_status) {
+    log::warn("PORT_LINE_ERR - p_port->rfc.p_mcb == nullptr:{} p_port->line_status:{}",
+              (p_port->rfc.p_mcb == nullptr) ? "T" : "F", p_port->line_status);
     return PORT_LINE_ERR;
   }
 

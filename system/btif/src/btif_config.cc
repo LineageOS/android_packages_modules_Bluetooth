@@ -32,10 +32,10 @@
 #include <unordered_map>
 
 #include "btif_keystore.h"
-#include "btif_metrics_logging.h"
 #include "common/address_obfuscator.h"
-#include "common/metric_id_allocator.h"
 #include "main/shim/config.h"
+#include "main/shim/metric_id_api.h"
+#include "main/shim/metrics_api.h"
 #include "main/shim/shim.h"
 #include "storage/config_keys.h"
 #include "types/raw_address.h"
@@ -50,7 +50,6 @@
 
 using bluetooth::bluetooth_keystore::BluetoothKeystoreInterface;
 using bluetooth::common::AddressObfuscator;
-using bluetooth::common::MetricIdAllocator;
 using namespace bluetooth;
 
 // Key attestation
@@ -113,7 +112,7 @@ static void init_metric_id_allocator() {
       // there is one metric id under this mac_address
       int id = 0;
       btif_config_get_int(addr_str, BTIF_STORAGE_KEY_METRICS_ID_KEY, &id);
-      if (is_valid_id_from_metric_id_allocator(id)) {
+      if (bluetooth::shim::IsValidIdFromMetricIdAllocator(id)) {
         paired_device_map[mac_address] = id;
         is_valid_id_found = true;
       }
@@ -124,22 +123,21 @@ static void init_metric_id_allocator() {
   }
 
   // Initialize MetricIdAllocator
-  MetricIdAllocator::Callback save_device_callback = [](const RawAddress& address, const int id) {
+  auto save_device_callback = [](const RawAddress& address, const int id) {
     return btif_config_set_int(address.ToString(), BTIF_STORAGE_KEY_METRICS_ID_KEY, id);
   };
-  MetricIdAllocator::Callback forget_device_callback = [](const RawAddress& address,
-                                                          const int /* id */) {
+  auto forget_device_callback = [](const RawAddress& address, const int /* id */) {
     return btif_config_remove(address.ToString(), BTIF_STORAGE_KEY_METRICS_ID_KEY);
   };
-  if (!init_metric_id_allocator(paired_device_map, std::move(save_device_callback),
-                                std::move(forget_device_callback))) {
+  if (!bluetooth::shim::InitMetricIdAllocator(paired_device_map, std::move(save_device_callback),
+                                              std::move(forget_device_callback))) {
     log::fatal("Failed to initialize MetricIdAllocator");
   }
 
   // Add device_without_id
   for (auto& address : addresses_without_id) {
-    allocate_metric_id_from_metric_id_allocator(address);
-    save_metric_id_from_metric_id_allocator(address);
+    bluetooth::shim::AllocateIdFromMetricIdAllocator(address);
+    bluetooth::shim::SaveDeviceOnMetricIdAllocator(address);
   }
 }
 
@@ -163,7 +161,7 @@ static future_t* clean_up(void) {
                    "assert failed: bluetooth::shim::is_gd_stack_started_up()");
   // GD storage module cleanup by itself
   std::unique_lock<std::recursive_mutex> lock(config_lock);
-  close_metric_id_allocator();
+  bluetooth::shim::CloseMetricIdAllocator();
   return future_new_immediate(FUTURE_SUCCESS);
 }
 

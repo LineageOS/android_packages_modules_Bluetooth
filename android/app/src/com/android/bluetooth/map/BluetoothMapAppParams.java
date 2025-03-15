@@ -29,6 +29,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.Locale;
 
 /** This class encapsulates the appParams needed for MAP. */
 // Next tag value for ContentProfileErrorReportUtils.report(): 41
@@ -1225,7 +1226,7 @@ public class BluetoothMapAppParams {
 
     @SuppressWarnings("JavaUtilDate") // TODO: b/365629730 -- prefer Instant or LocalDate
     public String getFilterPeriodBeginString() {
-        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmss");
+        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmss", Locale.ROOT);
         Date date = new Date(mFilterPeriodBegin);
         return format.format(date); // Format to YYYYMMDDTHHMMSS local time
     }
@@ -1236,7 +1237,7 @@ public class BluetoothMapAppParams {
 
     @SuppressWarnings("JavaUtilDate") // TODO: b/365629730 -- prefer Instant or LocalDate
     public void setFilterPeriodBegin(String filterPeriodBegin) throws ParseException {
-        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmss");
+        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmss", Locale.ROOT);
         Date date = format.parse(filterPeriodBegin);
         this.mFilterPeriodBegin = date.getTime();
     }
@@ -1247,7 +1248,7 @@ public class BluetoothMapAppParams {
 
     @SuppressWarnings("JavaUtilDate") // TODO: b/365629730 -- prefer Instant or LocalDate
     public String getFilterLastActivityBeginString() {
-        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmss");
+        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmss", Locale.ROOT);
         Date date = new Date(mFilterPeriodBegin);
         return format.format(date); // Format to YYYYMMDDTHHMMSS local time
     }
@@ -1258,7 +1259,7 @@ public class BluetoothMapAppParams {
 
     @SuppressWarnings("JavaUtilDate") // TODO: b/365629730 -- prefer Instant or LocalDate
     public void setFilterLastActivityBegin(String filterPeriodBegin) throws ParseException {
-        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmss");
+        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmss", Locale.ROOT);
         Date date = format.parse(filterPeriodBegin);
         this.mFilterPeriodBegin = date.getTime();
     }
@@ -1273,7 +1274,7 @@ public class BluetoothMapAppParams {
 
     @SuppressWarnings("JavaUtilDate") // TODO: b/365629730 -- prefer Instant or LocalDate
     public String getFilterLastActivityEndString() {
-        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmss");
+        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmss", Locale.ROOT);
         Date date = new Date(mFilterPeriodEnd);
         return format.format(date); // Format to YYYYMMDDTHHMMSS local time
     }
@@ -1284,14 +1285,14 @@ public class BluetoothMapAppParams {
 
     @SuppressWarnings("JavaUtilDate") // TODO: b/365629730 -- prefer Instant or LocalDate
     public void setFilterPeriodEnd(String filterPeriodEnd) throws ParseException {
-        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmss");
+        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmss", Locale.ROOT);
         Date date = format.parse(filterPeriodEnd);
         this.mFilterPeriodEnd = date.getTime();
     }
 
     @SuppressWarnings("JavaUtilDate") // TODO: b/365629730 -- prefer Instant or LocalDate
     public String getFilterPeriodEndString() {
-        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmss");
+        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmss", Locale.ROOT);
         Date date = new Date(mFilterPeriodEnd);
         return format.format(date); // Format to YYYYMMDDTHHMMSS local time
     }
@@ -1302,7 +1303,7 @@ public class BluetoothMapAppParams {
 
     @SuppressWarnings("JavaUtilDate") // TODO: b/365629730 -- prefer Instant or LocalDate
     public void setFilterLastActivityEnd(String filterPeriodEnd) throws ParseException {
-        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmss");
+        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmss", Locale.ROOT);
         Date date = format.parse(filterPeriodEnd);
         this.mFilterPeriodEnd = date.getTime();
     }
@@ -1507,7 +1508,7 @@ public class BluetoothMapAppParams {
 
     @SuppressWarnings("JavaUtilDate") // TODO: b/365629730 -- prefer Instant or LocalDate
     public String getLastActivityString() {
-        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmssZ");
+        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmssZ", Locale.ROOT);
         Date date = new Date(mLastActivity);
         return format.format(date); // Format to YYYYMMDDTHHMMSS local time
     }
@@ -1518,7 +1519,7 @@ public class BluetoothMapAppParams {
 
     @SuppressWarnings("JavaUtilDate") // TODO: b/365629730 -- prefer Instant or LocalDate
     public void setLastActivity(String lastActivity) throws ParseException {
-        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmssZ");
+        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmssZ", Locale.ROOT);
         Date date = format.parse(lastActivity);
         this.mLastActivity = date.getTime();
     }
@@ -1755,7 +1756,7 @@ public class BluetoothMapAppParams {
 
     @SuppressWarnings("JavaUtilDate") // TODO: b/365629730 -- prefer Instant or LocalDate
     public String getMseTimeString() {
-        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmssZ");
+        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmssZ", Locale.ROOT);
         Date date = new Date(getMseTime());
         return format.format(date); // Format to YYYYMMDDTHHMMSS±hhmm UTC time ± offset
     }
@@ -1766,7 +1767,7 @@ public class BluetoothMapAppParams {
 
     @SuppressWarnings("JavaUtilDate") // TODO: b/365629730 -- prefer Instant or LocalDate
     public void setMseTime(String mseTime) throws ParseException {
-        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmssZ");
+        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmssZ", Locale.ROOT);
         Date date = format.parse(mseTime);
         this.mMseTime = date.getTime();
     }

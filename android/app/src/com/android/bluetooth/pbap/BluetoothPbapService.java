@@ -756,11 +756,8 @@ public class BluetoothPbapService extends ProfileService implements IObexConnect
     }
 
     /**
-     * Get the current instance of {@link BluetoothPbapService}
-     *
      * @return current instance of {@link BluetoothPbapService}
      */
-    @VisibleForTesting
     public static synchronized BluetoothPbapService getBluetoothPbapService() {
         if (sBluetoothPbapService == null) {
             Log.w(TAG, "getBluetoothPbapService(): service is null");

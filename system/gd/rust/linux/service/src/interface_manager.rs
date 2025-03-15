@@ -1,27 +1,29 @@
-use dbus::{channel::MatchingReceiver, message::MatchRule, nonblock::SyncConnection};
+use dbus::channel::MatchingReceiver;
+use dbus::message::MatchRule;
+use dbus::nonblock::SyncConnection;
 use dbus_crossroads::Crossroads;
 use dbus_projection::DisconnectWatcher;
 
 use std::sync::{Arc, Mutex};
 use tokio::sync::mpsc::{channel, Receiver, Sender};
 
-use btstack::{
-    battery_manager::BatteryManager, battery_provider_manager::BatteryProviderManager,
-    bluetooth::Bluetooth, bluetooth_admin::BluetoothAdmin, bluetooth_gatt::BluetoothGatt,
-    bluetooth_logging::BluetoothLogging, bluetooth_media::BluetoothMedia,
-    bluetooth_qa::BluetoothQA, socket_manager::BluetoothSocketManager, suspend::Suspend,
-    APIMessage, BluetoothAPI, Message,
-};
+use btstack::battery_manager::BatteryManager;
+use btstack::battery_provider_manager::BatteryProviderManager;
+use btstack::bluetooth::{Bluetooth, SigData};
+use btstack::bluetooth_admin::BluetoothAdmin;
+use btstack::bluetooth_gatt::BluetoothGatt;
+use btstack::bluetooth_logging::BluetoothLogging;
+use btstack::bluetooth_media::BluetoothMedia;
+use btstack::bluetooth_qa::BluetoothQA;
+use btstack::socket_manager::BluetoothSocketManager;
+use btstack::suspend::Suspend;
+use btstack::{APIMessage, BluetoothAPI};
 
-use crate::iface_battery_manager;
-use crate::iface_battery_provider_manager;
-use crate::iface_bluetooth;
-use crate::iface_bluetooth_admin;
-use crate::iface_bluetooth_gatt;
-use crate::iface_bluetooth_media;
-use crate::iface_bluetooth_qa;
-use crate::iface_bluetooth_telephony;
-use crate::iface_logging;
+use crate::{
+    iface_battery_manager, iface_battery_provider_manager, iface_bluetooth, iface_bluetooth_admin,
+    iface_bluetooth_gatt, iface_bluetooth_media, iface_bluetooth_qa, iface_bluetooth_telephony,
+    iface_logging,
+};
 
 pub(crate) struct InterfaceManager {}
 
@@ -50,11 +52,11 @@ impl InterfaceManager {
     #[allow(clippy::too_many_arguments)]
     pub async fn dispatch(
         mut rx: Receiver<APIMessage>,
-        tx: Sender<Message>,
         virt_index: i32,
         conn: Arc<SyncConnection>,
         conn_join_handle: tokio::task::JoinHandle<()>,
         disconnect_watcher: Arc<Mutex<DisconnectWatcher>>,
+        sig_notifier: Arc<SigData>,
         bluetooth: Arc<Mutex<Box<Bluetooth>>>,
         bluetooth_admin: Arc<Mutex<Box<BluetoothAdmin>>>,
         bluetooth_gatt: Arc<Mutex<Box<BluetoothGatt>>>,
@@ -92,6 +94,9 @@ impl InterfaceManager {
                 true
             }),
         );
+
+        *sig_notifier.api_enabled.lock().unwrap() = true;
+        sig_notifier.api_notify.notify_all();
 
         // Register D-Bus method handlers of IBluetooth.
         let adapter_iface = iface_bluetooth::export_bluetooth_dbus_intf(
@@ -246,11 +251,8 @@ impl InterfaceManager {
                     // To shut down the connection, call _handle.abort() and drop the connection.
                     conn_join_handle.abort();
                     drop(conn);
-
-                    let tx = tx.clone();
-                    tokio::spawn(async move {
-                        let _ = tx.send(Message::AdapterShutdown).await;
-                    });
+                    *sig_notifier.api_enabled.lock().unwrap() = false;
+                    sig_notifier.api_notify.notify_all();
                     break;
                 }
             }

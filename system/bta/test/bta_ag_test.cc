@@ -65,7 +65,8 @@ protected:
   void SetUp() override {
     reset_mock_function_count_map();
     fake_osi_ = std::make_unique<test::fake::FakeOsi>();
-    bluetooth::hci::testing::mock_controller_ = &controller_;
+    bluetooth::hci::testing::mock_controller_ =
+            std::make_unique<bluetooth::hci::testing::MockControllerInterface>();
 
     main_thread_start_up();
     post_on_bt_main([]() { log::info("Main thread started up"); });
@@ -85,7 +86,7 @@ protected:
     bta_sys_deregister(BTA_ID_AG);
     post_on_bt_main([]() { log::info("Main thread shutting down"); });
     main_thread_shut_down();
-    bluetooth::hci::testing::mock_controller_ = nullptr;
+    bluetooth::hci::testing::mock_controller_.reset();
   }
 
   std::unique_ptr<test::fake::FakeOsi> fake_osi_;
@@ -93,7 +94,6 @@ protected:
   uint32_t tmp_num = 0xFFFF;
   RawAddress addr;
   esco_codec_t codec;
-  bluetooth::hci::testing::MockControllerInterface controller_;
 };
 
 class BtaAgSwbTest : public BtaAgTest {

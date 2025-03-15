@@ -503,6 +503,9 @@ pub struct SigData {
 
     pub thread_attached: Mutex<bool>,
     pub thread_notify: Condvar,
+
+    pub api_enabled: Mutex<bool>,
+    pub api_notify: Condvar,
 }
 
 /// The interface for adapter callbacks registered through `IBluetooth::register_callback`.
@@ -816,6 +819,21 @@ impl Bluetooth {
 
     pub(crate) fn connection_callback_disconnected(&mut self, id: u32) {
         self.connection_callbacks.remove_callback(id);
+    }
+
+    pub fn shutdown_adapter(&mut self, abort: bool) -> bool {
+        self.disabling = true;
+
+        if !abort {
+            if !self.set_discoverable(BtDiscMode::NonDiscoverable, 0) {
+                warn!("set_discoverable failed on disabling");
+            }
+            if !self.set_connectable_internal(false) {
+                warn!("set_connectable_internal failed on disabling");
+            }
+        }
+
+        self.intf.lock().unwrap().disable() == 0
     }
 
     fn get_remote_device_property(
@@ -2240,14 +2258,7 @@ impl IBluetooth for Bluetooth {
     }
 
     fn disable(&mut self) -> bool {
-        self.disabling = true;
-        if !self.set_discoverable(BtDiscMode::NonDiscoverable, 0) {
-            warn!("set_discoverable failed on disabling");
-        }
-        if !self.set_connectable_internal(false) {
-            warn!("set_connectable_internal failed on disabling");
-        }
-        self.intf.lock().unwrap().disable() == 0
+        self.shutdown_adapter(false)
     }
 
     fn cleanup(&mut self) {

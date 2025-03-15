@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Android Open Source Project
+ * Copyright (C) 2018 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,11 +48,9 @@ import android.os.UserHandle;
 import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
-import com.android.bluetooth.BluetoothMetricsProto;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
@@ -830,13 +828,6 @@ public class HearingAidService extends ProfileService {
         }
         if (toState == STATE_CONNECTED) {
             long myHiSyncId = getHiSyncId(device);
-            if (myHiSyncId == BluetoothHearingAid.HI_SYNC_ID_INVALID
-                    || getConnectedPeerDevices(myHiSyncId).size() == 1) {
-                // Log hearing aid connection event if we are the first device in a set
-                // Or when the hiSyncId has not been found
-                MetricsLogger.logProfileConnectionEvent(
-                        BluetoothMetricsProto.ProfileId.HEARING_AID);
-            }
             if (!mHiSyncIdConnectedMap.getOrDefault(myHiSyncId, false)) {
                 mHiSyncIdConnectedMap.put(myHiSyncId, true);
             }
@@ -1061,7 +1052,8 @@ public class HearingAidService extends ProfileService {
 
             if (!Utils.checkServiceAvailable(service, TAG)
                     || !Utils.checkCallerIsSystemOrActiveOrManagedUser(service, TAG)
-                    || !Utils.checkScanPermissionForDataDelivery(service, source, TAG)) {
+                    || !Utils.checkScanPermissionForDataDelivery(
+                            service, source, TAG, "getAdvertisementServiceData")) {
                 return null;
             }
 

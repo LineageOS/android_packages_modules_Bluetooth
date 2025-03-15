@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 The Android Open Source Project
+ * Copyright (C) 2023 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -137,14 +137,12 @@ public class ScanControllerTest {
         testLooper.startAutoDispatch();
 
         mScanController = new ScanController(mAdapterService);
-        // mScanController.start(testLooper.getLooper());
-
         mScanController.setScannerMap(mScannerMap);
     }
 
     @After
     public void tearDown() throws Exception {
-        mScanController.stop();
+        mScanController.cleanup();
 
         GattObjectsFactory.setInstanceForTesting(null);
         ScanObjectsFactory.setInstanceForTesting(null);

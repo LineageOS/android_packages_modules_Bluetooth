@@ -48,7 +48,6 @@ import android.os.SystemClock;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothMethodProxy;
-import com.android.bluetooth.BluetoothMetricsProto;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
@@ -75,8 +74,6 @@ public class BluetoothOppObexClientSession implements BluetoothOppObexSession {
 
     private ClientThread mThread;
     private volatile boolean mInterrupted;
-
-    private int mNumFilesAttemptedToSend;
 
     public BluetoothOppObexClientSession(Context context, ObexTransport transport) {
         mContext = requireNonNull(context);
@@ -175,7 +172,6 @@ public class BluetoothOppObexClientSession implements BluetoothOppObexSession {
                 connect(mNumShares);
             }
 
-            mNumFilesAttemptedToSend = 0;
             while (!mInterrupted) {
                 if (!mWaitingForShare) {
                     doSend();
@@ -200,10 +196,6 @@ public class BluetoothOppObexClientSession implements BluetoothOppObexSession {
                 mWakeLock.release();
             }
 
-            if (mNumFilesAttemptedToSend > 0) {
-                // Log outgoing OPP transfer if more than one file is accepted by remote
-                MetricsLogger.logProfileConnectionEvent(BluetoothMetricsProto.ProfileId.OPP);
-            }
             Message msg = Message.obtain(mCallbackHandler);
             msg.what = BluetoothOppObexSession.MSG_SESSION_COMPLETE;
             msg.obj = mInfo;
@@ -503,7 +495,6 @@ public class BluetoothOppObexClientSession implements BluetoothOppObexSession {
                             updateValues.put(BluetoothShare.CURRENT_BYTES, position);
                             mContext.getContentResolver()
                                     .update(contentUri, updateValues, null, null);
-                            mNumFilesAttemptedToSend++;
                         } else {
                             Log.i(TAG, "Remote reject, Response code is " + responseCode);
                         }

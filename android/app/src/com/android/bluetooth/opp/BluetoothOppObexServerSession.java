@@ -47,7 +47,6 @@ import android.util.Log;
 import android.webkit.MimeTypeMap;
 
 import com.android.bluetooth.BluetoothMethodProxy;
-import com.android.bluetooth.BluetoothMetricsProto;
 import com.android.bluetooth.BluetoothObexTransport;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
@@ -82,7 +81,6 @@ public class BluetoothOppObexServerSession extends ServerRequestHandler
     private long mTimestamp;
     private boolean mInterrupted;
     private int mLocalShareInfoId; // info id when we insert the record
-    private int mNumFilesAttemptedToReceive;
     @VisibleForTesting boolean mTimeoutMsgSent;
     @VisibleForTesting public ServerSession mSession;
     @VisibleForTesting BluetoothOppReceiveFileInfo mFileInfo;
@@ -362,7 +360,6 @@ public class BluetoothOppObexServerSession extends ServerRequestHandler
                 || mAccepted == BluetoothShare.USER_CONFIRMATION_AUTO_CONFIRMED
                 || mAccepted == BluetoothShare.USER_CONFIRMATION_HANDOVER_CONFIRMED) {
             /* Confirm or auto-confirm */
-            mNumFilesAttemptedToReceive++;
 
             if (mFileInfo.mFileName == null) {
                 status = mFileInfo.mStatus;
@@ -649,17 +646,12 @@ public class BluetoothOppObexServerSession extends ServerRequestHandler
                     Utils.getTempBroadcastOptions().toBundle());
         }
         mTimestamp = System.currentTimeMillis();
-        mNumFilesAttemptedToReceive = 0;
         return ResponseCodes.OBEX_HTTP_OK;
     }
 
     @Override
     public void onDisconnect(HeaderSet req, HeaderSet resp) {
         Log.d(TAG, "onDisconnect");
-        if (mNumFilesAttemptedToReceive > 0) {
-            // Log incoming OPP transfer if more than one file is accepted by user
-            MetricsLogger.logProfileConnectionEvent(BluetoothMetricsProto.ProfileId.OPP);
-        }
         resp.responseCode = ResponseCodes.OBEX_HTTP_OK;
     }
 

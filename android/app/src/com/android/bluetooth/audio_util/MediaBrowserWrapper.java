@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -197,7 +197,7 @@ class MediaBrowserWrapper {
                                     mSubscribedIds.put(
                                             rootId, new ArrayList<>(Arrays.asList(callback)));
                                     mWrappedBrowser.subscribe(
-                                            rootId, new BrowserSubscriptionCallback(mediaId));
+                                            rootId, new BrowserSubscriptionCallback(rootId));
                                 });
                     } else {
                         mSubscribedIds.put(mediaId, new ArrayList<>(Arrays.asList(callback)));

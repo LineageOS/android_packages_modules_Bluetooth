@@ -9,22 +9,21 @@ use std::time::Duration;
 use tokio::runtime::Builder;
 use tokio::sync::mpsc::Sender;
 
-use bt_topshim::{btif::get_btinterface, topstack};
-use btstack::{
-    battery_manager::BatteryManager,
-    battery_provider_manager::BatteryProviderManager,
-    battery_service::BatteryService,
-    bluetooth::{Bluetooth, IBluetooth, SigData},
-    bluetooth_admin::BluetoothAdmin,
-    bluetooth_gatt::BluetoothGatt,
-    bluetooth_logging::BluetoothLogging,
-    bluetooth_media::BluetoothMedia,
-    bluetooth_qa::BluetoothQA,
-    dis::DeviceInformation,
-    socket_manager::BluetoothSocketManager,
-    suspend::Suspend,
-    Message, Stack,
-};
+use bt_topshim::btif::get_btinterface;
+use bt_topshim::topstack;
+use btstack::battery_manager::BatteryManager;
+use btstack::battery_provider_manager::BatteryProviderManager;
+use btstack::battery_service::BatteryService;
+use btstack::bluetooth::{Bluetooth, IBluetooth, SigData};
+use btstack::bluetooth_admin::BluetoothAdmin;
+use btstack::bluetooth_gatt::BluetoothGatt;
+use btstack::bluetooth_logging::BluetoothLogging;
+use btstack::bluetooth_media::BluetoothMedia;
+use btstack::bluetooth_qa::BluetoothQA;
+use btstack::dis::DeviceInformation;
+use btstack::socket_manager::BluetoothSocketManager;
+use btstack::suspend::Suspend;
+use btstack::{Message, Stack};
 
 mod dbus_arg;
 mod iface_battery_manager;
@@ -40,6 +39,8 @@ mod interface_manager;
 
 const DBUS_SERVICE_NAME: &str = "org.chromium.bluetooth";
 const ADMIN_SETTINGS_FILE_PATH: &str = "/var/lib/bluetooth/admin_policy.json";
+// Time to wait for API unregistration in DBus
+const API_DISABLE_TIMEOUT_MS: Duration = Duration::from_millis(100);
 // The maximum ACL disconnect timeout is 3.5s defined by BTA_DM_DISABLE_TIMER_MS
 // and BTA_DM_DISABLE_TIMER_RETRIAL_MS
 const STACK_TURN_OFF_TIMEOUT_MS: Duration = Duration::from_millis(4000);
@@ -115,6 +116,8 @@ fn main() -> Result<(), Box<dyn Error>> {
         enabled_notify: Condvar::new(),
         thread_attached: Mutex::new(false),
         thread_notify: Condvar::new(),
+        api_enabled: Mutex::new(false),
+        api_notify: Condvar::new(),
     });
 
     // This needs to be built before any |topstack::get_runtime()| call!
@@ -148,8 +151,14 @@ fn main() -> Result<(), Box<dyn Error>> {
             signal::SaFlags::empty(),
             signal::SigSet::empty(),
         );
+        let sig_action_usr1 = signal::SigAction::new(
+            signal::SigHandler::Handler(handle_sigusr1),
+            signal::SaFlags::empty(),
+            signal::SigSet::empty(),
+        );
         unsafe {
             signal::sigaction(signal::SIGTERM, &sig_action_term).unwrap();
+            signal::sigaction(signal::SIGUSR1, &sig_action_usr1).unwrap();
         }
 
         // Construct btstack profiles.
@@ -241,11 +250,11 @@ fn main() -> Result<(), Box<dyn Error>> {
 
         tokio::spawn(interface_manager::InterfaceManager::dispatch(
             api_rx,
-            tx.clone(),
             virt_index,
             conn,
             conn_join_handle,
             disconnect_watcher.clone(),
+            sig_notifier.clone(),
             bluetooth.clone(),
             bluetooth_admin.clone(),
             bluetooth_gatt.clone(),
@@ -267,37 +276,63 @@ fn main() -> Result<(), Box<dyn Error>> {
 /// Data needed for signal handling.
 static SIG_DATA: Mutex<Option<(Sender<Message>, Arc<SigData>)>> = Mutex::new(None);
 
-extern "C" fn handle_sigterm(_signum: i32) {
-    let guard = SIG_DATA.lock().unwrap();
-    if let Some((tx, notifier)) = guard.as_ref() {
-        log::debug!("Handling SIGTERM by disabling the adapter!");
-        let txl = tx.clone();
-        topstack::get_runtime().spawn(async move {
-            // Send the shutdown message here.
-            let _ = txl.send(Message::InterfaceShutdown).await;
-        });
+/// Try to cleanup the whole stack. Returns whether to clean up.
+extern "C" fn try_cleanup_stack(abort: bool) -> bool {
+    let lock = SIG_DATA.try_lock();
+
+    // If SIG_DATA is locked, it is likely the cleanup procedure is ongoing. No
+    // need to do anything here.
+    if lock.is_err() {
+        return false;
+    }
+
+    if let Some((tx, notifier)) = lock.unwrap().as_ref() {
+        log::info!("Cleanup stack: disabling the adapter!");
+
+        // Remove the API first to prevent clients calling while shutting down.
+        let guard = notifier.api_enabled.lock().unwrap();
+        if *guard {
+            let txl = tx.clone();
+            topstack::get_runtime().spawn(async move {
+                // Remove the API first to prevent clients calling while shutting down.
+                let _ = txl.send(Message::InterfaceShutdown).await;
+            });
+            log::info!(
+                "Cleanup stack: Waiting for API shutdown to complete for {:?}",
+                API_DISABLE_TIMEOUT_MS
+            );
+            let _ = notifier.api_notify.wait_timeout(guard, API_DISABLE_TIMEOUT_MS);
+        }
 
         let guard = notifier.enabled.lock().unwrap();
         if *guard {
-            log::debug!("Waiting for stack to turn off for {:?}", STACK_TURN_OFF_TIMEOUT_MS);
+            let txl = tx.clone();
+            topstack::get_runtime().spawn(async move {
+                let _ = txl.send(Message::AdapterShutdown(abort)).await;
+            });
+            log::info!(
+                "Cleanup stack: Waiting for stack to turn off for {:?}",
+                STACK_TURN_OFF_TIMEOUT_MS
+            );
             let _ = notifier.enabled_notify.wait_timeout(guard, STACK_TURN_OFF_TIMEOUT_MS);
         }
 
-        log::debug!("SIGTERM cleaning up the stack.");
-        let txl = tx.clone();
-        topstack::get_runtime().spawn(async move {
-            // Clean up the profiles first as some of them might require main thread to clean up.
-            let _ = txl.send(Message::CleanupProfiles).await;
-            // Currently there is no good way to know when the profile is cleaned.
-            // Simply add a small delay here.
-            tokio::time::sleep(STACK_CLEANUP_PROFILES_TIMEOUT_MS).await;
-            // Send the cleanup message to clean up the main thread.
-            let _ = txl.send(Message::Cleanup).await;
-        });
-
         let guard = notifier.thread_attached.lock().unwrap();
         if *guard {
-            log::debug!("Waiting for stack to clean up for {:?}", STACK_CLEANUP_TIMEOUT_MS);
+            let txl = tx.clone();
+            topstack::get_runtime().spawn(async move {
+                // Clean up the profiles first as some of them might require main thread to clean up.
+                let _ = txl.send(Message::CleanupProfiles).await;
+                // Currently there is no good way to know when the profile is cleaned.
+                // Simply add a small delay here.
+                tokio::time::sleep(STACK_CLEANUP_PROFILES_TIMEOUT_MS).await;
+                // Send the cleanup message to clean up the main thread.
+                let _ = txl.send(Message::Cleanup).await;
+            });
+            log::info!(
+                "Cleanup stack: Waiting for libbluetooth stack to clean up for {:?}",
+                STACK_CLEANUP_TIMEOUT_MS
+            );
             let _ = notifier.thread_notify.wait_timeout(guard, STACK_CLEANUP_TIMEOUT_MS);
         }
 
@@ -305,7 +340,26 @@ extern "C" fn handle_sigterm(_signum: i32) {
         // finishing btif cleanup.
         std::thread::sleep(EXTRA_WAIT_BEFORE_KILL_MS);
     }
+    return true;
+}
 
-    log::debug!("Sigterm completed");
+extern "C" fn handle_sigterm(_signum: i32) {
+    log::info!("SIGTERM received");
+    if !try_cleanup_stack(false) {
+        log::info!("Skipped to handle SIGTERM");
+        return;
+    }
+    log::info!("SIGTERM completed");
+    std::process::exit(0);
+}
+
+/// Used to indicate controller needs reset
+extern "C" fn handle_sigusr1(_signum: i32) {
+    log::info!("SIGUSR1 received");
+    if !try_cleanup_stack(true) {
+        log::info!("Skipped to handle SIGUSR1");
+        return;
+    }
+    log::info!("SIGUSR1 completed");
     std::process::exit(0);
 }

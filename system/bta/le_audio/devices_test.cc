@@ -514,7 +514,9 @@ protected:
     desired_group_size_ = -1;
 
     bluetooth::manager::SetMockBtmInterface(&btm_interface_);
-    bluetooth::hci::testing::mock_controller_ = &controller_interface_;
+
+    bluetooth::hci::testing::mock_controller_ =
+            std::make_unique<NiceMock<bluetooth::hci::testing::MockControllerInterface>>();
 
     auto codec_location = ::bluetooth::le_audio::types::CodecLocation::HOST;
     bluetooth::le_audio::AudioSetConfigurationProvider::Initialize(codec_location);
@@ -740,6 +742,8 @@ protected:
     if (codec_manager_) {
       codec_manager_->Stop();
     }
+
+    bluetooth::hci::testing::mock_controller_.reset();
   }
 
   LeAudioDevice* AddTestDevice(int snk_ase_num, int src_ase_num, int snk_ase_num_cached = 0,
@@ -1417,7 +1421,6 @@ protected:
   LeAudioDeviceGroup* group_ = nullptr;
   bluetooth::manager::MockBtmInterface btm_interface_;
   MockCsisClient mock_csis_client_module_;
-  NiceMock<bluetooth::hci::testing::MockControllerInterface> controller_interface_;
 
   bluetooth::le_audio::CodecManager* codec_manager_;
   MockCodecManager* mock_codec_manager_;

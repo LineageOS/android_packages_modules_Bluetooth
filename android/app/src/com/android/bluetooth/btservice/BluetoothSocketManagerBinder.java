@@ -286,7 +286,7 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
                 || !Utils.callerIsSystemOrActiveOrManagedUser(
                         service, TAG, "getL2capLocalChannelId")
                 || !Utils.checkConnectPermissionForDataDelivery(
-                        service, source, "BluetoothSocketManagerBinder getL2capLocalChannelId")) {
+                        service, source, TAG, "getL2capLocalChannelId")) {
             return INVALID_CID;
         }
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
@@ -300,7 +300,7 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
                 || !Utils.callerIsSystemOrActiveOrManagedUser(
                         service, TAG, "getL2capRemoteChannelId")
                 || !Utils.checkConnectPermissionForDataDelivery(
-                        service, source, "BluetoothSocketManagerBinder getL2capRemoteChannelId")) {
+                        service, source, TAG, "getL2capRemoteChannelId")) {
             return INVALID_CID;
         }
         service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);

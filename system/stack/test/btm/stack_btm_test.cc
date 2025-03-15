@@ -63,13 +63,13 @@ public:
 protected:
   void SetUp() override {
     BtmWithMocksTest::SetUp();
-    bluetooth::hci::testing::mock_controller_ = &controller_;
+    bluetooth::hci::testing::mock_controller_ =
+            std::make_unique<bluetooth::hci::testing::MockControllerInterface>();
   }
   void TearDown() override {
-    bluetooth::hci::testing::mock_controller_ = nullptr;
+    bluetooth::hci::testing::mock_controller_.reset();
     BtmWithMocksTest::TearDown();
   }
-  bluetooth::hci::testing::MockControllerInterface controller_;
 };
 
 class StackBtmWithQueuesTest : public StackBtmTest {
@@ -82,11 +82,12 @@ protected:
     down_thread_ =
             new bluetooth::os::Thread("down_thread", bluetooth::os::Thread::Priority::NORMAL);
     down_handler_ = new bluetooth::os::Handler(down_thread_);
-    bluetooth::hci::testing::mock_hci_layer_ = &mock_hci_;
+    bluetooth::hci::testing::mock_hci_layer_ =
+            std::make_unique<bluetooth::hci::testing::MockHciLayer>();
     bluetooth::hci::testing::mock_gd_shim_handler_ = up_handler_;
     bluetooth::legacy::hci::testing::SetMock(legacy_hci_mock_);
-    EXPECT_CALL(mock_hci_, RegisterForScoConnectionRequests(_));
-    EXPECT_CALL(mock_hci_, RegisterForDisconnects(_));
+    EXPECT_CALL(*bluetooth::hci::testing::mock_hci_layer_, RegisterForScoConnectionRequests(_));
+    EXPECT_CALL(*bluetooth::hci::testing::mock_hci_layer_, RegisterForDisconnects(_));
   }
   void TearDown() override {
     up_handler_->Clear();
@@ -95,10 +96,10 @@ protected:
     down_handler_->Clear();
     delete down_handler_;
     delete down_thread_;
+    bluetooth::hci::testing::mock_hci_layer_.release();
     StackBtmTest::TearDown();
   }
   bluetooth::common::BidiQueue<bluetooth::hci::ScoView, bluetooth::hci::ScoBuilder> sco_queue_{10};
-  bluetooth::hci::testing::MockHciLayer mock_hci_;
   bluetooth::legacy::hci::testing::MockInterface legacy_hci_mock_;
   bluetooth::os::Thread* up_thread_;
   bluetooth::os::Handler* up_handler_;
@@ -111,7 +112,8 @@ public:
 protected:
   void SetUp() override {
     StackBtmWithQueuesTest::SetUp();
-    EXPECT_CALL(mock_hci_, GetScoQueueEnd()).WillOnce(Return(sco_queue_.GetUpEnd()));
+    EXPECT_CALL(*bluetooth::hci::testing::mock_hci_layer_, GetScoQueueEnd())
+            .WillOnce(Return(sco_queue_.GetUpEnd()));
     btm_cb.Init();
     btm_sec_cb.Init(BTM_SEC_MODE_SC);
   }
@@ -123,7 +125,8 @@ protected:
 };
 
 TEST_F(StackBtmWithQueuesTest, GlobalLifecycle) {
-  EXPECT_CALL(mock_hci_, GetScoQueueEnd()).WillOnce(Return(sco_queue_.GetUpEnd()));
+  EXPECT_CALL(*bluetooth::hci::testing::mock_hci_layer_, GetScoQueueEnd())
+          .WillOnce(Return(sco_queue_.GetUpEnd()));
   get_btm_client_interface().lifecycle.btm_init();
   get_btm_client_interface().lifecycle.btm_free();
 }
@@ -134,20 +137,23 @@ TEST_F(StackBtmTest, DynamicLifecycle) {
 }
 
 TEST_F(StackBtmWithQueuesTest, InitFree) {
-  EXPECT_CALL(mock_hci_, GetScoQueueEnd()).WillOnce(Return(sco_queue_.GetUpEnd()));
+  EXPECT_CALL(*bluetooth::hci::testing::mock_hci_layer_, GetScoQueueEnd())
+          .WillOnce(Return(sco_queue_.GetUpEnd()));
   btm_cb.Init();
   btm_cb.Free();
 }
 
 TEST_F(StackBtmWithQueuesTest, tSCO_CB) {
-  EXPECT_CALL(mock_hci_, GetScoQueueEnd()).WillOnce(Return(sco_queue_.GetUpEnd()));
+  EXPECT_CALL(*bluetooth::hci::testing::mock_hci_layer_, GetScoQueueEnd())
+          .WillOnce(Return(sco_queue_.GetUpEnd()));
   tSCO_CB* p_sco = &btm_cb.sco_cb;
   p_sco->Init();
   p_sco->Free();
 }
 
 TEST_F(StackBtmWithQueuesTest, InformClientOnConnectionSuccess) {
-  EXPECT_CALL(mock_hci_, GetScoQueueEnd()).WillOnce(Return(sco_queue_.GetUpEnd()));
+  EXPECT_CALL(*bluetooth::hci::testing::mock_hci_layer_, GetScoQueueEnd())
+          .WillOnce(Return(sco_queue_.GetUpEnd()));
   get_btm_client_interface().lifecycle.btm_init();
 
   RawAddress bda({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
@@ -159,7 +165,8 @@ TEST_F(StackBtmWithQueuesTest, InformClientOnConnectionSuccess) {
 }
 
 TEST_F(StackBtmWithQueuesTest, NoInformClientOnConnectionFail) {
-  EXPECT_CALL(mock_hci_, GetScoQueueEnd()).WillOnce(Return(sco_queue_.GetUpEnd()));
+  EXPECT_CALL(*bluetooth::hci::testing::mock_hci_layer_, GetScoQueueEnd())
+          .WillOnce(Return(sco_queue_.GetUpEnd()));
   get_btm_client_interface().lifecycle.btm_init();
 
   RawAddress bda({0x11, 0x22, 0x33, 0x44, 0x55, 0x66});
@@ -171,7 +178,8 @@ TEST_F(StackBtmWithQueuesTest, NoInformClientOnConnectionFail) {
 }
 
 TEST_F(StackBtmWithQueuesTest, default_packet_type) {
-  EXPECT_CALL(mock_hci_, GetScoQueueEnd()).WillOnce(Return(sco_queue_.GetUpEnd()));
+  EXPECT_CALL(*bluetooth::hci::testing::mock_hci_layer_, GetScoQueueEnd())
+          .WillOnce(Return(sco_queue_.GetUpEnd()));
   get_btm_client_interface().lifecycle.btm_init();
 
   btm_cb.acl_cb_.SetDefaultPacketTypeMask(0x4321);
@@ -181,7 +189,8 @@ TEST_F(StackBtmWithQueuesTest, default_packet_type) {
 }
 
 TEST_F(StackBtmWithQueuesTest, change_packet_type) {
-  EXPECT_CALL(mock_hci_, GetScoQueueEnd()).WillOnce(Return(sco_queue_.GetUpEnd()));
+  EXPECT_CALL(*bluetooth::hci::testing::mock_hci_layer_, GetScoQueueEnd())
+          .WillOnce(Return(sco_queue_.GetUpEnd()));
   get_btm_client_interface().lifecycle.btm_init();
 
   uint16_t handle = 0x123;

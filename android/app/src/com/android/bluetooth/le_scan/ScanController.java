@@ -22,6 +22,7 @@ import static android.Manifest.permission.UPDATE_DEVICE_STATS;
 import static android.bluetooth.BluetoothUtils.extractBytes;
 
 import static com.android.bluetooth.Utils.checkCallerTargetSdk;
+import static com.android.bluetooth.Utils.checkScanPermissionForDataDelivery;
 import static com.android.bluetooth.flags.Flags.leaudioBassScanWithInternalScanController;
 
 import static java.util.Objects.requireNonNull;
@@ -60,7 +61,6 @@ import android.provider.DeviceConfig;
 import android.text.format.DateUtils;
 import android.util.Log;
 
-import com.android.bluetooth.BluetoothMetricsProto;
 import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
@@ -73,11 +73,9 @@ import libcore.util.HexEncoding;
 
 import com.google.protobuf.ByteString;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -96,7 +94,6 @@ public class ScanController {
 
     // Batch scan related constants.
     private static final int TRUNCATED_RESULT_SIZE = 11;
-    private static final int NUM_SCAN_EVENTS_KEPT = 20;
 
     // onFoundLost related constants
     @VisibleForTesting static final int ADVT_STATE_ONFOUND = 0;
@@ -114,26 +111,6 @@ public class ScanController {
                 "0201061AFF4C000215426C7565436861726D426561636F6E730EFE1355C509168020691E0EFE13551109426C7565436861726D5F31363936383500000000",
             };
 
-    record PendingIntentInfo(
-            PendingIntent intent,
-            ScanSettings settings,
-            List<ScanFilter> filters,
-            String callingPackage,
-            int callingUid) {
-        @Override
-        public boolean equals(Object other) {
-            if (!(other instanceof PendingIntentInfo)) {
-                return false;
-            }
-            return intent.equals(((PendingIntentInfo) other).intent);
-        }
-
-        @Override
-        public int hashCode() {
-            return intent == null ? 0 : intent.hashCode();
-        }
-    }
-
     private final PendingIntent.CancelListener mScanIntentCancelListener =
             new PendingIntent.CancelListener() {
                 public void onCanceled(PendingIntent intent) {
@@ -142,34 +119,24 @@ public class ScanController {
                 }
             };
 
+    private final Map<Integer, Integer> mFilterIndexToMsftAdvMonitorMap = new HashMap<>();
+    private final Object mTestModeLock = new Object();
+
     private final BluetoothAdapter mAdapter;
     private final AdapterService mAdapterService;
-
-    private final Map<Integer, Integer> mFilterIndexToMsftAdvMonitorMap = new HashMap<>();
     private final String mExposureNotificationPackage;
-
-    private final AppOpsManager mAppOps;
-    private final CompanionDeviceManager mCompanionManager;
-    private final PeriodicScanManager mPeriodicScanManager;
-    private final ScanManager mScanManager;
-
+    private final Predicate<ScanResult> mLocationDenylistPredicate;
+    private final Looper mMainLooper;
     private final ScanBinder mBinder;
     private final HandlerThread mScanThread;
-
-    /** Internal list of scan events to use with the proto */
-    private final Deque<BluetoothMetricsProto.ScanEvent> mScanEvents =
-            new ArrayDeque<>(NUM_SCAN_EVENTS_KEPT);
-
-    private final Predicate<ScanResult> mLocationDenylistPredicate;
-
-    private ScannerMap mScannerMap = new ScannerMap();
-
-    private boolean mIsAvailable;
+    private final AppOpsManager mAppOps;
+    private final CompanionDeviceManager mCompanionManager;
+    private final ScanManager mScanManager;
+    private final PeriodicScanManager mPeriodicScanManager;
 
     private volatile boolean mTestModeEnabled = false;
-    private final Looper mMainLooper;
+    private ScannerMap mScannerMap = new ScannerMap();
     private Handler mTestModeHandler;
-    private final Object mTestModeLock = new Object();
 
     public ScanController(AdapterService adapterService) {
         mAdapter = BluetoothAdapter.getDefaultAdapter();
@@ -196,7 +163,6 @@ public class ScanController {
                 };
         mMainLooper = adapterService.getMainLooper();
         mBinder = new ScanBinder(this);
-        mIsAvailable = true;
         mScanThread = new HandlerThread("BluetoothScanManager");
         mScanThread.start();
         mAppOps = mAdapterService.getSystemService(AppOpsManager.class);
@@ -211,18 +177,13 @@ public class ScanController {
         mPeriodicScanManager = ScanObjectsFactory.getInstance().createPeriodicScanManager();
     }
 
-    public void stop() {
-        Log.d(TAG, "stop()");
-        mIsAvailable = false;
-        mBinder.clearScanController();
+    public void cleanup() {
+        Log.i(TAG, "Cleanup ScanController");
+        mBinder.cleanup();
         mScanThread.quitSafely();
         mScannerMap.clear();
         mScanManager.cleanup();
         mPeriodicScanManager.cleanup();
-    }
-
-    boolean isAvailable() {
-        return mIsAvailable;
     }
 
     ScannerMap getScannerMap() {
@@ -279,6 +240,26 @@ public class ScanController {
             mTestModeHandler.removeMessages(0);
             mTestModeHandler.sendEmptyMessageDelayed(
                     0, enableTestMode ? DateUtils.SECOND_IN_MILLIS : 0);
+        }
+    }
+
+    record PendingIntentInfo(
+            PendingIntent intent,
+            ScanSettings settings,
+            List<ScanFilter> filters,
+            String callingPackage,
+            int callingUid) {
+        @Override
+        public boolean equals(Object other) {
+            if (!(other instanceof PendingIntentInfo)) {
+                return false;
+            }
+            return intent.equals(((PendingIntentInfo) other).intent);
+        }
+
+        @Override
+        public int hashCode() {
+            return intent == null ? 0 : intent.hashCode();
         }
     }
 
@@ -430,8 +411,8 @@ public class ScanController {
                 continue;
             }
 
-            ScanSettings settings = client.mSettings;
-            byte[] scanRecordData;
+            final ScanSettings settings = client.mSettings;
+            final byte[] scanRecordData;
             // This is for compatibility with applications that assume fixed size scan data.
             if (settings.getLegacy()) {
                 if ((eventType & ET_LEGACY_MASK) == 0) {
@@ -494,7 +475,7 @@ public class ScanController {
             int callbackType = settings.getCallbackType();
             if (!(callbackType == ScanSettings.CALLBACK_TYPE_ALL_MATCHES
                     || callbackType == ScanSettings.CALLBACK_TYPE_ALL_MATCHES_AUTO_BATCH)) {
-                Log.v(TAG, "Skipping client: CALLBACK_TYPE_ALL_MATCHES");
+                Log.v(TAG, "Skipping client: Not CALLBACK_TYPE_ALL_MATCHES");
                 continue;
             }
 
@@ -504,7 +485,6 @@ public class ScanController {
                     app.mCallback.onScanResult(result);
                 } else {
                     Log.v(TAG, "Callback is null, sending scan results by pendingIntent");
-                    // Send the PendingIntent
                     List<ScanResult> results = new ArrayList<>(Arrays.asList(result));
                     sendResultsByPendingIntent(
                             app.mInfo, results, ScanSettings.CALLBACK_TYPE_ALL_MATCHES);
@@ -1097,14 +1077,13 @@ public class ScanController {
     }
 
     /**************************************************************************
-     * GATT Service functions - Shared CLIENT/SERVER
+     * Scan functions - Shared CLIENT/SERVER
      *************************************************************************/
 
     @RequiresPermission(BLUETOOTH_SCAN)
     void registerScanner(
             IScannerCallback callback, WorkSource workSource, AttributionSource source) {
-        if (!Utils.checkScanPermissionForDataDelivery(
-                mAdapterService, source, "ScanHelper registerScanner")) {
+        if (!checkScanPermissionForDataDelivery(mAdapterService, source, TAG, "registerScanner")) {
             return;
         }
 
@@ -1137,8 +1116,8 @@ public class ScanController {
 
     @RequiresPermission(BLUETOOTH_SCAN)
     void unregisterScanner(int scannerId, AttributionSource source) {
-        if (!Utils.checkScanPermissionForDataDelivery(
-                mAdapterService, source, "ScanHelper unregisterScanner")) {
+        if (!checkScanPermissionForDataDelivery(
+                mAdapterService, source, TAG, "unregisterScanner")) {
             return;
         }
 
@@ -1183,10 +1162,8 @@ public class ScanController {
             ScanSettings settings,
             List<ScanFilter> filters,
             AttributionSource source) {
-        Log.d(TAG, "start scan with filters");
-
-        if (!Utils.checkScanPermissionForDataDelivery(
-                mAdapterService, source, "Starting GATT scan.")) {
+        Log.d(TAG, "Start scan with filters");
+        if (!checkScanPermissionForDataDelivery(mAdapterService, source, TAG, "startScan")) {
             return;
         }
 
@@ -1277,12 +1254,12 @@ public class ScanController {
             ScanSettings settings,
             List<ScanFilter> filters,
             AttributionSource source) {
-        Log.d(TAG, "start scan with filters, for PendingIntent");
-
-        if (!Utils.checkScanPermissionForDataDelivery(
-                mAdapterService, source, "Starting GATT scan.")) {
+        Log.d(TAG, "Start scan with filters, for PendingIntent");
+        if (!checkScanPermissionForDataDelivery(
+                mAdapterService, source, TAG, "registerPiAndStartScan")) {
             return;
         }
+
         enforcePrivilegedPermissionIfNeeded(settings);
         settings = enforceReportDelayFloor(settings);
         enforcePrivilegedPermissionIfNeeded(filters);
@@ -1383,8 +1360,8 @@ public class ScanController {
 
     @RequiresPermission(BLUETOOTH_SCAN)
     void flushPendingBatchResults(int scannerId, AttributionSource source) {
-        if (!Utils.checkScanPermissionForDataDelivery(
-                mAdapterService, source, "ScanHelper flushPendingBatchResults")) {
+        if (!checkScanPermissionForDataDelivery(
+                mAdapterService, source, TAG, "flushPendingBatchResults")) {
             return;
         }
         flushPendingBatchResultsInternal(scannerId);
@@ -1397,8 +1374,7 @@ public class ScanController {
 
     @RequiresPermission(BLUETOOTH_SCAN)
     void stopScan(int scannerId, AttributionSource source) {
-        if (!Utils.checkScanPermissionForDataDelivery(
-                mAdapterService, source, "ScanHelper stopScan")) {
+        if (!checkScanPermissionForDataDelivery(mAdapterService, source, TAG, "stopScan")) {
             return;
         }
         stopScanInternal(scannerId);
@@ -1420,8 +1396,7 @@ public class ScanController {
 
     @RequiresPermission(BLUETOOTH_SCAN)
     void stopScan(PendingIntent intent, AttributionSource source) {
-        if (!Utils.checkScanPermissionForDataDelivery(
-                mAdapterService, source, "ScanHelper stopScan")) {
+        if (!checkScanPermissionForDataDelivery(mAdapterService, source, TAG, "stopScan")) {
             return;
         }
         stopScanInternal(intent);
@@ -1450,8 +1425,7 @@ public class ScanController {
             int timeout,
             IPeriodicAdvertisingCallback callback,
             AttributionSource source) {
-        if (!Utils.checkScanPermissionForDataDelivery(
-                mAdapterService, source, "ScanHelper registerSync")) {
+        if (!checkScanPermissionForDataDelivery(mAdapterService, source, TAG, "registerSync")) {
             return;
         }
         mPeriodicScanManager.startSync(scanResult, skip, timeout, callback);
@@ -1459,8 +1433,7 @@ public class ScanController {
 
     @RequiresPermission(BLUETOOTH_SCAN)
     void unregisterSync(IPeriodicAdvertisingCallback callback, AttributionSource source) {
-        if (!Utils.checkScanPermissionForDataDelivery(
-                mAdapterService, source, "ScanHelper unregisterSync")) {
+        if (!checkScanPermissionForDataDelivery(mAdapterService, source, TAG, "unregisterSync")) {
             return;
         }
         mPeriodicScanManager.stopSync(callback);
@@ -1469,8 +1442,7 @@ public class ScanController {
     @RequiresPermission(BLUETOOTH_SCAN)
     void transferSync(
             BluetoothDevice bda, int serviceData, int syncHandle, AttributionSource source) {
-        if (!Utils.checkScanPermissionForDataDelivery(
-                mAdapterService, source, "ScanHelper transferSync")) {
+        if (!checkScanPermissionForDataDelivery(mAdapterService, source, TAG, "transferSync")) {
             return;
         }
         mPeriodicScanManager.transferSync(bda, serviceData, syncHandle);
@@ -1483,8 +1455,7 @@ public class ScanController {
             int advHandle,
             IPeriodicAdvertisingCallback callback,
             AttributionSource source) {
-        if (!Utils.checkScanPermissionForDataDelivery(
-                mAdapterService, source, "ScanHelper transferSetInfo")) {
+        if (!checkScanPermissionForDataDelivery(mAdapterService, source, TAG, "transferSetInfo")) {
             return;
         }
         mPeriodicScanManager.transferSetInfo(bda, serviceData, advHandle, callback);
@@ -1492,8 +1463,8 @@ public class ScanController {
 
     @RequiresPermission(BLUETOOTH_SCAN)
     int numHwTrackFiltersAvailable(AttributionSource source) {
-        if (!Utils.checkScanPermissionForDataDelivery(
-                mAdapterService, source, "ScanHelper numHwTrackFiltersAvailable")) {
+        if (!checkScanPermissionForDataDelivery(
+                mAdapterService, source, TAG, "numHwTrackFiltersAvailable")) {
             return 0;
         }
         return (mAdapterService.getTotalNumOfTrackableAdvertisements()
@@ -1665,15 +1636,6 @@ public class ScanController {
         }
     }
 
-    void addScanEvent(BluetoothMetricsProto.ScanEvent event) {
-        synchronized (mScanEvents) {
-            if (mScanEvents.size() == NUM_SCAN_EVENTS_KEPT) {
-                mScanEvents.remove();
-            }
-            mScanEvents.add(event);
-        }
-    }
-
     public void dumpRegisterId(StringBuilder sb) {
         sb.append("  Scanner:\n");
         mScannerMap.dumpApps(sb, ProfileService::println);
@@ -1682,11 +1644,5 @@ public class ScanController {
     public void dump(StringBuilder sb) {
         sb.append("GATT Scanner Map\n");
         mScannerMap.dump(sb);
-    }
-
-    public void dumpProto(BluetoothMetricsProto.BluetoothLog.Builder builder) {
-        synchronized (mScanEvents) {
-            builder.addAllScanEvent(mScanEvents);
-        }
     }
 }

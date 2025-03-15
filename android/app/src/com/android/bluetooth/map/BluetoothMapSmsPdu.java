@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Random;
 
 // Next tag value for ContentProfileErrorReportUtils.report(): 10
@@ -382,7 +383,7 @@ public class BluetoothMapSmsPdu {
 
         @SuppressWarnings("JavaUtilDate") // TODO: b/365629730 -- prefer Instant or LocalDate
         private static void gsmWriteDate(ByteArrayOutputStream header, long time) {
-            SimpleDateFormat format = new SimpleDateFormat("yyMMddHHmmss");
+            SimpleDateFormat format = new SimpleDateFormat("yyMMddHHmmss", Locale.ROOT);
             Date date = new Date(time);
             String timeStr = format.format(date); // Format to YYMMDDTHHMMSS UTC time
             Log.v(TAG, "Generated time string: " + timeStr);
@@ -400,11 +401,11 @@ public class BluetoothMapSmsPdu {
                             / (15 * 60 * 1000); /* offset in quarters of an hour */
             String offsetString;
             if (offset < 0) {
-                offsetString = String.format("%1$02d", -(offset));
+                offsetString = String.format(Locale.ROOT, "%1$02d", -(offset));
                 char[] offsetChars = offsetString.toCharArray();
                 header.write((offsetChars[1] - 0x30) << 4 | 0x40 | (offsetChars[0] - 0x30));
             } else {
-                offsetString = String.format("%1$02d", offset);
+                offsetString = String.format(Locale.ROOT, "%1$02d", offset);
                 char[] offsetChars = offsetString.toCharArray();
                 header.write((offsetChars[1] - 0x30) << 4 | (offsetChars[0] - 0x30));
             }

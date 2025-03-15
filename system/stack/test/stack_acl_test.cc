@@ -48,12 +48,12 @@ class StackAclTest : public testing::Test {
 protected:
   void SetUp() override {
     reset_mock_function_count_map();
-    bluetooth::hci::testing::mock_controller_ = &controller_;
+    bluetooth::hci::testing::mock_controller_ =
+            std::make_unique<bluetooth::hci::testing::MockControllerInterface>();
   }
-  void TearDown() override { bluetooth::hci::testing::mock_controller_ = nullptr; }
+  void TearDown() override { bluetooth::hci::testing::mock_controller_.reset(); }
 
   tBTM_SEC_DEV_REC device_record_;
-  bluetooth::hci::testing::MockControllerInterface controller_;
 };
 
 TEST_F(StackAclTest, nop) {}

@@ -60,7 +60,8 @@ protected:
     ASSERT_NE(get_btm_client_interface().lifecycle.btm_init, nullptr);
     ASSERT_NE(get_btm_client_interface().lifecycle.btm_free, nullptr);
 
-    bluetooth::hci::testing::mock_controller_ = &mock_controller_;
+    bluetooth::hci::testing::mock_controller_ =
+            std::make_unique<bluetooth::hci::testing::MockControllerInterface>();
     bluetooth::testing::stack::rnr::set_interface(&mock_stack_rnr_interface_);
 
     test::mock::stack_gatt_api::GATT_Register.body =
@@ -85,12 +86,11 @@ protected:
     mock_btm_client_interface.eir.BTM_WriteEIR = {};
 
     bluetooth::testing::stack::rnr::reset_interface();
-    bluetooth::hci::testing::mock_controller_ = nullptr;
+    bluetooth::hci::testing::mock_controller_.reset();
 
     BtaWithFakesTest::TearDown();
   }
 
-  bluetooth::hci::testing::MockControllerInterface mock_controller_;
   bluetooth::testing::stack::rnr::Mock mock_stack_rnr_interface_;
 };
 

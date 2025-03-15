@@ -1,5 +1,5 @@
 /*
- * Copyright 2024 The Android Open Source Project
+ * Copyright (C) 2024 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,11 +52,9 @@ import android.sysprop.BluetoothProperties;
 import android.text.TextUtils;
 import android.util.Log;
 
-import com.android.bluetooth.BluetoothMetricsProto;
 import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.sdp.SdpManagerNativeInterface;
 import com.android.internal.annotations.VisibleForTesting;
@@ -539,9 +537,6 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
     private synchronized void setState(int state, int result) {
         if (state != mState) {
             Log.d(TAG, "Sap state " + mState + " -> " + state + ", result = " + result);
-            if (state == STATE_CONNECTED) {
-                MetricsLogger.logProfileConnectionEvent(BluetoothMetricsProto.ProfileId.SAP);
-            }
             int prevState = mState;
             mState = state;
             mAdapterService.updateProfileConnectionAdapterProperties(
@@ -710,11 +705,8 @@ public class SapService extends ProfileService implements AdapterService.Bluetoo
     }
 
     /**
-     * Get the current instance of {@link SapService}
-     *
      * @return current instance of {@link SapService}
      */
-    @VisibleForTesting
     public static synchronized SapService getSapService() {
         if (sSapService == null) {
             Log.w(TAG, "getSapService(): service is null");

@@ -39,43 +39,35 @@ import java.util.concurrent.ConcurrentHashMap;
  * <p>When given an image handle and device, this manager will negotiate the downloaded image
  * properties, download the image, and place it into a Content Provider for others to retrieve from
  */
-public class AvrcpCoverArtManager {
+class AvrcpCoverArtManager {
     private static final String TAG = AvrcpCoverArtManager.class.getSimpleName();
 
     // Image Download Schemes for cover art
-    public static final String AVRCP_CONTROLLER_COVER_ART_SCHEME =
+    private static final String AVRCP_CONTROLLER_COVER_ART_SCHEME =
             "persist.bluetooth.avrcpcontroller.BIP_DOWNLOAD_SCHEME";
-    public static final String SCHEME_NATIVE = "native";
-    public static final String SCHEME_THUMBNAIL = "thumbnail";
+    private static final String SCHEME_NATIVE = "native";
+    private static final String SCHEME_THUMBNAIL = "thumbnail";
 
-    private final AvrcpControllerService mService;
-    protected final Map<BluetoothDevice, AvrcpBipClient> mClients = new ConcurrentHashMap<>(1);
+    private final Map<BluetoothDevice, AvrcpBipClient> mClients = new ConcurrentHashMap<>(1);
     private final Map<BluetoothDevice, AvrcpBipSession> mBipSessions = new ConcurrentHashMap<>(1);
+    private final AvrcpControllerService mService;
     private final AvrcpCoverArtStorage mCoverArtStorage;
     private final Callback mCallback;
     private final String mDownloadScheme;
+
+    AvrcpCoverArtManager(AvrcpControllerService service, Callback callback) {
+        mService = service;
+        mCoverArtStorage = new AvrcpCoverArtStorage(mService);
+        mCallback = callback;
+        mDownloadScheme = SystemProperties.get(AVRCP_CONTROLLER_COVER_ART_SCHEME, SCHEME_THUMBNAIL);
+        mCoverArtStorage.clear();
+    }
 
     /**
      * An object representing an image download event. Contains the information necessary to
      * retrieve the image from storage.
      */
-    public static class DownloadEvent {
-        final String mImageUuid;
-        final Uri mUri;
-
-        public DownloadEvent(String uuid, Uri uri) {
-            mImageUuid = uuid;
-            mUri = uri;
-        }
-
-        public String getUuid() {
-            return mImageUuid;
-        }
-
-        public Uri getUri() {
-            return mUri;
-        }
-    }
+    record DownloadEvent(String uuid, Uri uri) {}
 
     interface Callback {
         /**
@@ -97,7 +89,7 @@ public class AvrcpCoverArtManager {
         private final Map<String, String> mUuids = new ConcurrentHashMap<>(1); // handle -> UUID
         private final Map<String, String> mHandles = new ConcurrentHashMap<>(1); // UUID -> handle
 
-        public String getHandleUuid(String handle) {
+        private String getHandleUuid(String handle) {
             if (!isValidImageHandle(handle)) return null;
             String newUuid = UUID.randomUUID().toString();
             String existingUuid = mUuids.putIfAbsent(handle, newUuid);
@@ -106,16 +98,16 @@ public class AvrcpCoverArtManager {
             return newUuid;
         }
 
-        public String getUuidHandle(String uuid) {
+        private String getUuidHandle(String uuid) {
             return mHandles.get(uuid);
         }
 
-        public void clearHandleUuids() {
+        private void clearHandleUuids() {
             mUuids.clear();
             mHandles.clear();
         }
 
-        public Set<String> getSessionHandles() {
+        private Set<String> getSessionHandles() {
             return mUuids.keySet();
         }
     }
@@ -128,7 +120,7 @@ public class AvrcpCoverArtManager {
      *
      * @return True if the input string is a valid image handle
      */
-    public static boolean isValidImageHandle(String handle) {
+    static boolean isValidImageHandle(String handle) {
         if (handle == null || handle.length() != 7) return false;
         for (int i = 0; i < handle.length(); i++) {
             char c = handle.charAt(i);
@@ -139,14 +131,6 @@ public class AvrcpCoverArtManager {
         return true;
     }
 
-    public AvrcpCoverArtManager(AvrcpControllerService service, Callback callback) {
-        mService = service;
-        mCoverArtStorage = new AvrcpCoverArtStorage(mService);
-        mCallback = callback;
-        mDownloadScheme = SystemProperties.get(AVRCP_CONTROLLER_COVER_ART_SCHEME, SCHEME_THUMBNAIL);
-        mCoverArtStorage.clear();
-    }
-
     /**
      * Create a client and connect to a remote device's BIP Image Pull Server
      *
@@ -154,7 +138,7 @@ public class AvrcpCoverArtManager {
      * @param psm The Protocol Service Multiplexer that the remote device is hosting the server on
      * @return True if the connection is successfully queued, False otherwise.
      */
-    public synchronized boolean connect(BluetoothDevice device, int psm) {
+    synchronized boolean connect(BluetoothDevice device, int psm) {
         debug("Connect " + device + ", psm: " + psm);
         if (mClients.containsKey(device)) return false;
         AvrcpBipClient client = new AvrcpBipClient(device, psm, new BipClientCallback(device));
@@ -170,7 +154,7 @@ public class AvrcpCoverArtManager {
      * @param device The remote Bluetooth device you wish to refresh
      * @return True if the refresh is successfully queued, False otherwise.
      */
-    public synchronized boolean refreshSession(BluetoothDevice device) {
+    synchronized boolean refreshSession(BluetoothDevice device) {
         debug("Refresh OBEX session for " + device);
         AvrcpBipClient client = getClient(device);
         if (client == null) {
@@ -187,7 +171,7 @@ public class AvrcpCoverArtManager {
      * @param device The remote Bluetooth device you wish to disconnect from
      * @return True if the disconnection is successfully queued, False otherwise.
      */
-    public synchronized boolean disconnect(BluetoothDevice device) {
+    synchronized boolean disconnect(BluetoothDevice device) {
         debug("Disconnect " + device);
         AvrcpBipClient client = getClient(device);
         if (client == null) {
@@ -206,7 +190,7 @@ public class AvrcpCoverArtManager {
      *
      * <p>Please call when you've committed to shutting down the service.
      */
-    public synchronized void cleanup() {
+    synchronized void cleanup() {
         debug("Clean up and shutdown");
         for (BluetoothDevice device : mClients.keySet()) {
             disconnect(device);
@@ -219,7 +203,7 @@ public class AvrcpCoverArtManager {
      * @param device The Bluetooth device you want connection status for
      * @return Connection status, based on STATE_* constants
      */
-    public int getState(BluetoothDevice device) {
+    int getState(BluetoothDevice device) {
         AvrcpBipClient client = getClient(device);
         if (client == null) return STATE_DISCONNECTED;
         return client.getState();
@@ -241,7 +225,7 @@ public class AvrcpCoverArtManager {
      * @return A string UUID by which the handle can be identified during the life of the BIP
      *     connection.
      */
-    public String getUuidForHandle(BluetoothDevice device, String handle) {
+    String getUuidForHandle(BluetoothDevice device, String handle) {
         AvrcpBipSession session = getSession(device);
         if (session == null || !isValidImageHandle(handle)) return null;
         return session.getHandleUuid(handle);
@@ -256,13 +240,13 @@ public class AvrcpCoverArtManager {
      * @param uuid The UUID you want the associated handle for
      * @return The image handle associated with this UUID if it exists, null otherwise.
      */
-    public String getHandleForUuid(BluetoothDevice device, String uuid) {
+    String getHandleForUuid(BluetoothDevice device, String uuid) {
         AvrcpBipSession session = getSession(device);
         if (session == null || uuid == null) return null;
         return session.getUuidHandle(uuid);
     }
 
-    private void clearHandleUuids(BluetoothDevice device) {
+    void clearHandleUuids(BluetoothDevice device) {
         AvrcpBipSession session = getSession(device);
         if (session == null) return;
         session.clearHandleUuids();
@@ -275,7 +259,7 @@ public class AvrcpCoverArtManager {
      * @param imageUuid The UUID associated with the image you want
      * @return A Uri the image can be found at, null if it does not exist
      */
-    public Uri getImageUri(BluetoothDevice device, String imageUuid) {
+    Uri getImageUri(BluetoothDevice device, String imageUuid) {
         if (mCoverArtStorage.doesImageExist(device, imageUuid)) {
             return AvrcpCoverArtProvider.getImageUri(device, imageUuid);
         }
@@ -296,7 +280,7 @@ public class AvrcpCoverArtManager {
      *     translated into an image handle.
      * @return A Uri that will be assign to the image once the download is complete
      */
-    public Uri downloadImage(BluetoothDevice device, String imageUuid) {
+    Uri downloadImage(BluetoothDevice device, String imageUuid) {
         debug("Download Image - device: " + device + ", Handle: " + imageUuid);
         AvrcpBipClient client = getClient(device);
         if (client == null) {
@@ -331,7 +315,7 @@ public class AvrcpCoverArtManager {
      * @param device The remote Bluetooth device associated with the image
      * @param imageUuid The UUID associated with the image you wish to retrieve
      */
-    public Bitmap getImage(BluetoothDevice device, String imageUuid) {
+    Bitmap getImage(BluetoothDevice device, String imageUuid) {
         return mCoverArtStorage.getImage(device, imageUuid);
     }
 
@@ -341,7 +325,7 @@ public class AvrcpCoverArtManager {
      * @param device The remote Bluetooth device associated with the image
      * @param imageUuid The UUID associated with the image you wish to remove
      */
-    public void removeImage(BluetoothDevice device, String imageUuid) {
+    void removeImage(BluetoothDevice device, String imageUuid) {
         mCoverArtStorage.removeImage(device, imageUuid);
     }
 
@@ -396,7 +380,7 @@ public class AvrcpCoverArtManager {
 
     /** Callback for facilitating image download */
     class BipClientCallback implements AvrcpBipClient.Callback {
-        final BluetoothDevice mDevice;
+        private final BluetoothDevice mDevice;
 
         BipClientCallback(BluetoothDevice device) {
             mDevice = device;

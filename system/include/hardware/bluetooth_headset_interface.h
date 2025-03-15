@@ -97,9 +97,10 @@ public:
   /**
    * Start voice recognition
    * @param bd_addr remote device address
+   * @param sendResult whether a BVRA response should be sent
    * @return BT_STATUS_SUCCESS on success
    */
-  virtual bt_status_t StartVoiceRecognition(RawAddress* bd_addr) = 0;
+  virtual bt_status_t StartVoiceRecognition(RawAddress* bd_addr, bool sendResult) = 0;
 
   /**
    * Stop voice recognition

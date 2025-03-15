@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 The Android Open Source Project
+ * Copyright (C) 2022 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -450,9 +450,8 @@ class BassClientStateMachine extends StateMachine {
         if (state == BluetoothLeBroadcastReceiveState.PA_SYNC_STATE_SYNCINFO_REQUEST) {
             log("Initiate PAST procedure");
             int sourceId = recvState.getSourceId();
-            BluetoothLeBroadcastMetadata currentMetadata = getCurrentBroadcastMetadata(sourceId);
-            if (mService.isLocalBroadcast(currentMetadata)) {
-                int advHandle = currentMetadata.getSourceAdvertisingSid();
+            if (mService.isLocalBroadcast(recvState)) {
+                int advHandle = recvState.getSourceAdvertisingSid();
                 serviceData = 0x000000FF & sourceId;
                 serviceData = serviceData << 8;
                 // Address we set in the Source Address can differ from the address in the air
@@ -812,8 +811,8 @@ class BassClientStateMachine extends StateMachine {
             }
             if (leaudioBroadcastResyncHelper()) {
                 // Notify service BASS state ready for operations
-                mService.getCallbacks().notifyBassStateReady(mDevice);
                 mBassStateReady = true;
+                mService.getCallbacks().notifyBassStateReady(mDevice);
             }
         } else {
             log("Updated receiver state: " + recvState);
@@ -1189,8 +1188,8 @@ class BassClientStateMachine extends StateMachine {
                     mNumOfReadyBroadcastReceiverStates++;
                     if (mNumOfReadyBroadcastReceiverStates == mNumOfBroadcastReceiverStates) {
                         // Notify service BASS state ready for operations
-                        mService.getCallbacks().notifyBassStateReady(mDevice);
                         mBassStateReady = true;
+                        mService.getCallbacks().notifyBassStateReady(mDevice);
                     }
                 } else {
                     processBroadcastReceiverStateObsolete(

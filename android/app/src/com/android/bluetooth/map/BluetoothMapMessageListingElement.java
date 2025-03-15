@@ -22,6 +22,7 @@ import org.xmlpull.v1.XmlSerializer;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 public class BluetoothMapMessageListingElement
         implements Comparable<BluetoothMapMessageListingElement> {
@@ -78,7 +79,7 @@ public class BluetoothMapMessageListingElement
     public String getDateTimeString() {
         /* TODO: if the feature bit mask of the client supports it, add the time-zone
          *       (as for MSETime) */
-        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmss");
+        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmss", Locale.ROOT);
         Date date = new Date(mDateTime);
         return format.format(date); // Format to YYYYMMDDTHHMMSS local time
     }

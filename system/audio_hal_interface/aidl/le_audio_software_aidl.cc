@@ -30,6 +30,7 @@
 #include "common/strings.h"
 #include "hal_version_manager.h"
 #include "le_audio_utils.h"
+#include "osi/include/properties.h"
 
 namespace bluetooth {
 namespace audio {
@@ -694,6 +695,14 @@ bluetooth::audio::le_audio::OffloadCapabilities get_offload_capabilities() {
   return {offload_capabilities, broadcast_offload_capabilities};
 }
 
+static bool IsUsingCodecExtensibility() {
+  auto codec_ext_status =
+          osi_property_get_bool("bluetooth.core.le_audio.codec_extension_aidl.enabled", false);
+
+  log::debug("Using codec extensibility AIDL: {}", codec_ext_status);
+  return codec_ext_status;
+}
+
 AudioConfiguration stream_config_to_hal_audio_config(
         const ::bluetooth::le_audio::stream_config& offload_config) {
   LeAudioConfiguration ucast_config = {
@@ -726,6 +735,7 @@ AudioConfiguration stream_config_to_hal_audio_config(
               .blocksPerSdu = static_cast<int8_t>(offload_config.codec_frames_blocks_per_sdu),
       };
       ucast_config.leAudioCodecConfig = LeAudioCodecConfiguration(lc3_config);
+      ucast_config.codecType = CodecType::LC3;
       lc3_codec_config_found = true;
     }
 
@@ -741,14 +751,20 @@ AudioConfiguration stream_config_to_hal_audio_config(
                                 BLE_ADDRESS_RANDOM;
     }
 
-    ucast_config.streamMap.push_back({
+    LeAudioConfiguration::StreamMap map_entry = {
             .streamHandle = info.stream_handle,
             .audioChannelAllocation = static_cast<int32_t>(info.audio_channel_allocation),
             .isStreamActive = info.is_stream_active,
-            .aseConfiguration = GetAidlLeAudioAseConfigurationFromStackFormat(
-                    info.codec_config, info.target_latency, info.target_phy, info.metadata),
-            .bluetoothDeviceAddress = aidl_device_address,
-    });
+    };
+
+    // Add the additional codec extensibility data fields
+    if (IsUsingCodecExtensibility()) {
+      map_entry.aseConfiguration = GetAidlLeAudioAseConfigurationFromStackFormat(
+              info.codec_config, info.target_latency, info.target_phy, info.metadata);
+      map_entry.bluetoothDeviceAddress = aidl_device_address;
+    }
+
+    ucast_config.streamMap.push_back(map_entry);
   }
 
   if (!lc3_codec_config_found) {

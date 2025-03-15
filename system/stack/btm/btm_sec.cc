@@ -47,6 +47,7 @@
 #include "main/shim/acl_api.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
+#include "main/shim/metrics_api.h"
 #include "metrics/bluetooth_event.h"
 #include "osi/include/allocator.h"
 #include "osi/include/properties.h"
@@ -75,7 +76,6 @@
 #include "stack/include/main_thread.h"
 #include "stack/include/rnr_interface.h"
 #include "stack/include/smp_api.h"
-#include "stack/include/stack_metrics_logging.h"
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
 
@@ -1923,7 +1923,7 @@ static void btm_sec_bond_cancel_complete(void) {
 void btm_create_conn_cancel_complete(uint8_t status, const RawAddress bd_addr) {
   log::verbose("btm_create_conn_cancel_complete(): in State: {}  status:{}",
                tBTM_SEC_CB::btm_pair_state_descr(btm_sec_cb.pairing_state), status);
-  log_link_layer_connection_event(
+  bluetooth::shim::LogMetricLinkLayerConnectionEvent(
           &bd_addr, bluetooth::common::kUnknownConnectionHandle,
           android::bluetooth::DIRECTION_OUTGOING, android::bluetooth::LINK_TYPE_ACL,
           android::bluetooth::hci::CMD_CREATE_CONNECTION_CANCEL,

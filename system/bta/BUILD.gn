@@ -143,7 +143,6 @@ static_library("bta") {
     "sys",
     "//bt/system/",
     "//bt/system/include",
-    "//bt/system/linux_include",
     "//bt/system/bta",
     "//bt/system/bta/aics/include",
     "//bt/system/gd",

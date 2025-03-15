@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 The Android Open Source Project
+ * Copyright (C) 2022 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,16 +40,12 @@ public class AdvertiseHelperTest {
     @Test
     public void advertiseDataToBytes() throws Exception {
         byte[] emptyBytes = AdvertiseHelper.advertiseDataToBytes(null, "");
-
         assertThat(emptyBytes.length).isEqualTo(0);
 
         int manufacturerId = 1;
         byte[] manufacturerData = new byte[] {0x30, 0x31, 0x32, 0x34};
-
         byte[] serviceData = new byte[] {0x10, 0x12, 0x14};
-
         byte[] transportDiscoveryData = new byte[] {0x40, 0x44, 0x48};
-
         AdvertiseData advertiseData =
                 new AdvertiseData.Builder()
                         .setIncludeDeviceName(true)
@@ -62,18 +58,16 @@ public class AdvertiseHelperTest {
                                 new TransportDiscoveryData(transportDiscoveryData))
                         .build();
         String deviceName = "TestDeviceName";
-
         int expectedAdvDataBytesLength = 86;
+
         byte[] advDataBytes = AdvertiseHelper.advertiseDataToBytes(advertiseData, deviceName);
-
-        String deviceNameLong = "TestDeviceNameLongTestDeviceName";
-
         assertThat(advDataBytes.length).isEqualTo(expectedAdvDataBytesLength);
 
+        String deviceNameLong = "TestDeviceNameLongTestDeviceName";
         int expectedAdvDataBytesLongNameLength = 98;
+
         byte[] advDataBytesLongName =
                 AdvertiseHelper.advertiseDataToBytes(advertiseData, deviceNameLong);
-
         assertThat(advDataBytesLongName.length).isEqualTo(expectedAdvDataBytesLongNameLength);
     }
 

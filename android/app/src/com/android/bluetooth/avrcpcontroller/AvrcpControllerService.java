@@ -125,13 +125,13 @@ public class AvrcpControllerService extends ProfileService {
                     "Image downloaded [device: "
                             + device
                             + ", uuid: "
-                            + event.getUuid()
+                            + event.uuid()
                             + ", uri: "
-                            + event.getUri());
+                            + event.uri());
             AvrcpControllerStateMachine stateMachine = getStateMachine(device);
             if (stateMachine == null) {
                 Log.e(TAG, "No state machine found for device " + device);
-                mCoverArtManager.removeImage(device, event.getUuid());
+                mCoverArtManager.removeImage(device, event.uuid());
                 return;
             }
             stateMachine.sendMessage(

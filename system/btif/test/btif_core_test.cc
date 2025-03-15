@@ -207,7 +207,8 @@ class BtifCoreTest : public ::testing::Test {
 protected:
   void SetUp() override {
     callback_map_.clear();
-    bluetooth::hci::testing::mock_controller_ = &controller_;
+    bluetooth::hci::testing::mock_controller_ =
+            std::make_unique<bluetooth::hci::testing::MockControllerInterface>();
     bluetooth::testing::set_hal_cbacks(&callbacks);
     auto promise = std::promise<void>();
     auto future = promise.get_future();
@@ -223,17 +224,17 @@ protected:
     callback_map_["callback_thread_event"] = [&promise]() { promise.set_value(); };
     CleanCoreInterface();
     ASSERT_EQ(std::future_status::ready, future.wait_for(timeout_time));
-    bluetooth::hci::testing::mock_controller_ = nullptr;
+    bluetooth::hci::testing::mock_controller_.reset();
     callback_map_.erase("callback_thread_event");
   }
-  bluetooth::hci::testing::MockControllerInterface controller_;
 };
 
 class BtifCoreWithControllerTest : public BtifCoreTest {
 protected:
   void SetUp() override {
     BtifCoreTest::SetUp();
-    ON_CALL(controller_, SupportsSniffSubrating).WillByDefault(Return(true));
+    ON_CALL(*bluetooth::hci::testing::mock_controller_, SupportsSniffSubrating)
+            .WillByDefault(Return(true));
   }
 
   void TearDown() override { BtifCoreTest::TearDown(); }
@@ -761,12 +762,13 @@ class BtifCoreWithVendorSupportTest : public BtifCoreWithControllerTest {
 protected:
   void SetUp() override {
     BtifCoreWithControllerTest::SetUp();
-    bluetooth::hci::testing::mock_hci_layer_ = &hci_;
+    bluetooth::hci::testing::mock_hci_layer_ =
+            std::make_unique<bluetooth::hci::testing::MockHciLayer>();
     test::mock::osi_properties::osi_property_get.body = get_properties;
 
     std::promise<void> configuration_promise;
     auto configuration_done = configuration_promise.get_future();
-    EXPECT_CALL(hci_,
+    EXPECT_CALL(*bluetooth::hci::testing::mock_hci_layer_,
                 EnqueueCommand(_, Matcher<ContextualOnceCallback<void(CommandCompleteView)>>(_)))
             .WillOnce(
                     // Replace with real PDL for 0xfc17
@@ -784,7 +786,7 @@ protected:
                       configuration_promise.set_value();
                     })
             .RetiresOnSaturation();
-    EXPECT_CALL(hci_,
+    EXPECT_CALL(*bluetooth::hci::testing::mock_hci_layer_,
                 EnqueueCommand(_, Matcher<ContextualOnceCallback<void(CommandCompleteView)>>(_)))
             .WillOnce([](std::unique_ptr<CommandBuilder> cmd,
                          ContextualOnceCallback<void(CommandCompleteView)> callback) {
@@ -798,7 +800,8 @@ protected:
               callback(response);
             })
             .RetiresOnSaturation();
-    EXPECT_CALL(hci_, RegisterVendorSpecificEventHandler(VseSubeventCode::BQR_EVENT, _))
+    EXPECT_CALL(*bluetooth::hci::testing::mock_hci_layer_,
+                RegisterVendorSpecificEventHandler(VseSubeventCode::BQR_EVENT, _))
             .WillOnce(SaveArg<1>(&this->vse_callback_));
     do_in_main_thread(BindOnce([]() { bluetooth::bqr::EnableBtQualityReport(get_main()); }));
     ASSERT_EQ(std::future_status::ready, configuration_done.wait_for(std::chrono::seconds(1)));
@@ -808,18 +811,18 @@ protected:
     std::promise<void> disable_promise;
     auto disable_future = disable_promise.get_future();
     auto set_promise = [&disable_promise]() { disable_promise.set_value(); };
-    EXPECT_CALL(hci_, UnregisterVendorSpecificEventHandler(VseSubeventCode::BQR_EVENT));
-    EXPECT_CALL(hci_,
+    EXPECT_CALL(*bluetooth::hci::testing::mock_hci_layer_,
+                UnregisterVendorSpecificEventHandler(VseSubeventCode::BQR_EVENT));
+    EXPECT_CALL(*bluetooth::hci::testing::mock_hci_layer_,
                 EnqueueCommand(_, Matcher<ContextualOnceCallback<void(CommandCompleteView)>>(_)))
             .WillOnce(Invoke(set_promise))
             .RetiresOnSaturation();
     do_in_main_thread(BindOnce([]() { bluetooth::bqr::DisableBtQualityReport(); }));
     ASSERT_EQ(std::future_status::ready, disable_future.wait_for(std::chrono::seconds(1)));
 
-    bluetooth::hci::testing::mock_hci_layer_ = nullptr;
+    bluetooth::hci::testing::mock_hci_layer_.reset();
     BtifCoreWithControllerTest::TearDown();
   }
-  bluetooth::hci::testing::MockHciLayer hci_;
   ContextualCallback<void(VendorSpecificEventView)> vse_callback_;
 };
 

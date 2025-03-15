@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Android Open Source Project
+ * Copyright (C) 2019 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,6 +51,10 @@ public:
   // Send an ISO data packet from the controller to the host
   // @param data the ISO HCI packet to be passed to the host stack
   virtual void isoDataReceived(HciPacket data) = 0;
+
+  // This function is invoked when the controller encounters an error requiring
+  // the Bluetooth stack to initiate a reset.
+  virtual void controllerNeedsReset() {}
 };
 
 // Mirrors hardware/interfaces/bluetooth/1.0/IBluetoothHci.hal in Android
@@ -101,9 +105,6 @@ public:
   // Get the MSFT opcode (as specified in Microsoft-defined Bluetooth HCI
   // extensions)
   virtual uint16_t getMsftOpcode() { return 0; }
-
-  // Mark the controller as broken to prevent further read / write operation.
-  virtual void markControllerBroken() { return; }
 };
 // LINT.ThenChange(fuzz/fuzz_hci_hal.h)
 

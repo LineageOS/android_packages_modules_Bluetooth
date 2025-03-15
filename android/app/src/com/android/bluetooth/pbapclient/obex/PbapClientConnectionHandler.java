@@ -354,14 +354,14 @@ class PbapClientConnectionHandler extends Handler {
                             PbapApplicationParameters.PROPERTIES_ALL,
                             /* format, unused */ (byte) 0,
                             PbapApplicationParameters.RETURN_SIZE_ONLY,
-                            /* list start offeset, start from beginning */ 0);
+                            /* list startOffset, start from beginning */ 0);
 
             // Download contacts in batches of size DEFAULT_BATCH_SIZE
             RequestPullPhonebookMetadata requestPbSize =
                     new RequestPullPhonebookMetadata(path, params);
             requestPbSize.execute(mObexSession);
 
-            int numberOfContactsRemaining = requestPbSize.getMetadata().getSize();
+            int numberOfContactsRemaining = requestPbSize.getMetadata().size();
             int startOffset = 0;
             if (PbapPhonebook.LOCAL_PHONEBOOK_PATH.equals(path)) {
                 // PBAP v1.2.3, Sec 3.1.5. The first contact in pb is owner card 0.vcf, which we

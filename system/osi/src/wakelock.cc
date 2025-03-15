@@ -33,10 +33,8 @@
 #include <mutex>
 #include <string>
 
-#include "common/metrics.h"
 #include "osi/include/osi.h"
 
-using bluetooth::common::BluetoothMetricsLogger;
 using namespace bluetooth;
 
 static bt_os_callouts_t* wakelock_os_callouts = NULL;
@@ -279,9 +277,6 @@ static void update_wakelock_acquired_stats(bt_status_t acquired_status) {
   wakelock_stats.is_acquired = true;
   wakelock_stats.acquired_count++;
   wakelock_stats.last_acquired_timestamp_ms = just_now_ms;
-
-  BluetoothMetricsLogger::GetInstance()->LogWakeEvent(bluetooth::common::WAKE_EVENT_ACQUIRED, "",
-                                                      "", just_now_ms);
 }
 
 //
@@ -320,9 +315,6 @@ static void update_wakelock_released_stats(bt_status_t released_status) {
   }
   wakelock_stats.last_acquired_interval_ms = delta_ms;
   wakelock_stats.total_acquired_interval_ms += delta_ms;
-
-  BluetoothMetricsLogger::GetInstance()->LogWakeEvent(bluetooth::common::WAKE_EVENT_RELEASED, "",
-                                                      "", just_now_ms);
 }
 
 void wakelock_debug_dump(int fd) {

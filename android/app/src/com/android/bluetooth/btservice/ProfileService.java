@@ -24,7 +24,6 @@ import android.content.pm.PackageManager;
 import android.os.IBinder;
 import android.util.Log;
 
-import com.android.bluetooth.BluetoothMetricsProto;
 import com.android.bluetooth.Utils;
 
 /** Base class for a background service that runs a Bluetooth profile */
@@ -144,17 +143,6 @@ public abstract class ProfileService extends ContextWrapper {
         sb.append("\nProfile: ");
         sb.append(mName);
         sb.append("\n");
-    }
-
-    /**
-     * Support dumping scan events from GattService
-     *
-     * @param builder metrics proto builder
-     */
-    // Suppressed since this is called from framework
-    @SuppressLint("AndroidFrameworkRequiresPermission")
-    public void dumpProto(BluetoothMetricsProto.BluetoothLog.Builder builder) {
-        // Do nothing
     }
 
     /**

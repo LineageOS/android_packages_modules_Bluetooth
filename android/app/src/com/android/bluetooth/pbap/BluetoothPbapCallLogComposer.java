@@ -39,6 +39,7 @@ import com.android.vcard.VCardUtils;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
+import java.util.Locale;
 
 /** VCard composer especially for Call Log used in Bluetooth. */
 // Next tag value for ContentProfileErrorReportUtils.report(): 3
@@ -223,7 +224,7 @@ public class BluetoothPbapCallLogComposer implements AutoCloseable {
         String rfc2455Format = "yyyyMMdd'T'HHmmss";
         Calendar cal = Calendar.getInstance();
         cal.setTimeInMillis(millSecs);
-        SimpleDateFormat df = new SimpleDateFormat(rfc2455Format);
+        SimpleDateFormat df = new SimpleDateFormat(rfc2455Format, Locale.ROOT);
         return df.format(cal.getTime());
     }
 

@@ -43,14 +43,14 @@ protected:
               this->codec = codec;
               return enh_esco_params_t{};
             };
-    bluetooth::hci::testing::mock_controller_ = &controller_;
+    bluetooth::hci::testing::mock_controller_ =
+            std::make_unique<bluetooth::hci::testing::MockControllerInterface>();
   }
   void TearDown() override {
     test::mock::device_esco_parameters::esco_parameters_for_codec = {};
-    bluetooth::hci::testing::mock_controller_ = nullptr;
+    bluetooth::hci::testing::mock_controller_.reset();
   }
   esco_codec_t codec;
-  bluetooth::hci::testing::MockControllerInterface controller_;
 };
 
 TEST_P(BtaAgScoParameterSelectionTest, create_sco_cvsd) {
