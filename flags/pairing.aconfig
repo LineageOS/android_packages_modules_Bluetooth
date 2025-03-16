@@ -12,16 +12,6 @@ flag {
 }
 
 flag {
-    name: "guest_mode_bond"
-    namespace: "bluetooth"
-    description: "Do not remove guest mode bonded devices on BT restart in guest mode"
-    bug: "349882273"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "remove_dup_pairing_response_in_oob_pairing"
     namespace: "bluetooth"
     description: "Avoid sending duplicate pairing response when device is in peripheral role & OOB pairing mode chosen"

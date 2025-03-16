@@ -1973,9 +1973,7 @@ void BTIF_dm_report_inquiry_status_change(tBTM_INQUIRY_STATE status) {
 }
 
 void BTIF_dm_enable() {
-  if (com::android::bluetooth::flags::guest_mode_bond()) {
-    btif_storage_prune_devices();
-  }
+  btif_storage_prune_devices();
 
   BD_NAME bdname;
   bt_property_t prop{
