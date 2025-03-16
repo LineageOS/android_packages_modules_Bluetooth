@@ -16,6 +16,24 @@
       "message": "Send to AOSP? Is there an issue related to this?",
       "revId": "04c79e1e8af5c72be265b287433305da196483eb",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "999c3c38_66bd9925",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 24830
+      },
+      "writtenOn": "2025-03-16T00:36:06Z",
+      "side": 1,
+      "message": "no, its an issue introduced BY los with webgeek\u0027s commit that introduces the function that needs the fix. thought los might want the cts-v fix for whatever reason, if not ill abandon",
+      "parentUuid": "e5e54c27_2045a661",
+      "revId": "04c79e1e8af5c72be265b287433305da196483eb",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
