@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 The Android Open Source Project
+ * Copyright (C) 2017 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -113,6 +113,7 @@ import java.util.Map;
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
+/** Test cases for {@link AdapterService}. */
 @MediumTest
 @RunWith(ParameterizedAndroidJunit4.class)
 public class AdapterServiceTest {
@@ -1020,8 +1021,6 @@ public class AdapterServiceTest {
 
         mAdapterService.dump(fd, writer, new String[] {});
         mAdapterService.dump(fd, writer, new String[] {"set-test-mode", "enabled"});
-        doReturn(new byte[0]).when(mNativeInterface).dumpMetrics();
-        mAdapterService.dump(fd, writer, new String[] {"--proto-bin"});
         mAdapterService.dump(fd, writer, new String[] {"random", "arguments"});
         assertThat(mLooper.nextMessage()).isNull();
     }

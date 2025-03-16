@@ -16,7 +16,6 @@ CLASSPATH+=":$ROOT/out/soong/.intermediates/packages/modules/Bluetooth/service/c
 CLASSPATH+=":$ROOT/out/soong/.intermediates/packages/modules/Bluetooth/framework/framework-bluetooth.impl/android_common/turbine-jarjar/framework-bluetooth.impl.jar"
 CLASSPATH+=":$ROOT/out/soong/.intermediates/prebuilts/sdk/current/androidx/m2repository/androidx/annotation/annotation-jvm/1.8.0-alpha01/androidx.annotation_annotation/android_common_apex33/turbine-combined/androidx.annotation_annotation.jar"
 
-CLASSPATH+=":$ROOT/out/soong/.intermediates/packages/modules/Bluetooth/service/bluetooth-manager-service-proto-java-gen/android_common_apex33/turbine-combined/bluetooth-manager-service-proto-java-gen.jar"
 CLASSPATH+=":$ROOT/out/soong/.intermediates/packages/modules/Bluetooth/service/bluetooth-nano-protos/android_common_apex33/turbine-combined/bluetooth-nano-protos.jar"
 CLASSPATH+=":$ROOT/out/soong/.intermediates/packages/modules/Bluetooth/android/app/bluetooth-proto-enums-java-gen/android_common_apex33/turbine-combined/bluetooth-proto-enums-java-gen.jar"
 CLASSPATH+=":$ROOT/out/soong/.intermediates/packages/modules/Bluetooth/flags/bluetooth_flags_java_lib/android_common_apex33/turbine-combined/bluetooth_flags_java_lib.jar"

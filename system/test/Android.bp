@@ -450,13 +450,6 @@ filegroup {
 }
 
 filegroup {
-    name: "TestMockStackMetrics",
-    srcs: [
-        "mock/mock_stack_metrics*.cc",
-    ],
-}
-
-filegroup {
     name: "TestMockStackGap",
     srcs: [
         "mock/mock_stack_gap*.cc",

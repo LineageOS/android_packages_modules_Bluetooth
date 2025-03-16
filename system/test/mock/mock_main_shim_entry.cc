@@ -38,9 +38,9 @@ namespace bluetooth {
 namespace hci {
 namespace testing {
 
-MockAclManager* mock_acl_manager_{nullptr};
-MockControllerInterface* mock_controller_{nullptr};
-HciInterface* mock_hci_layer_{nullptr};
+std::unique_ptr<MockAclManager> mock_acl_manager_;
+std::unique_ptr<MockControllerInterface> mock_controller_;
+std::unique_ptr<MockHciLayer> mock_hci_layer_;
 os::Handler* mock_gd_shim_handler_{nullptr};
 MockLeAdvertisingManager* mock_le_advertising_manager_{nullptr};
 MockLeScanningManager* mock_le_scanning_manager_{nullptr};
@@ -58,9 +58,9 @@ class Dumpsys;
 
 namespace shim {
 
-hci::AclManager* GetAclManager() { return hci::testing::mock_acl_manager_; }
-hci::ControllerInterface* GetController() { return hci::testing::mock_controller_; }
-hci::HciInterface* GetHciLayer() { return hci::testing::mock_hci_layer_; }
+hci::AclManager* GetAclManager() { return hci::testing::mock_acl_manager_.get(); }
+hci::ControllerInterface* GetController() { return hci::testing::mock_controller_.get(); }
+hci::HciInterface* GetHciLayer() { return hci::testing::mock_hci_layer_.get(); }
 hci::LeAdvertisingManager* GetAdvertising() { return hci::testing::mock_le_advertising_manager_; }
 hci::LeScanningManager* GetScanning() { return hci::testing::mock_le_scanning_manager_; }
 hci::DistanceMeasurementManager* GetDistanceMeasurementManager() {

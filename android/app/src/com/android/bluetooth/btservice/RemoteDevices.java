@@ -27,6 +27,7 @@ import static com.android.modules.utils.build.SdkLevel.isAtLeastV;
 
 import static java.util.Objects.requireNonNullElseGet;
 
+import android.annotation.NonNull;
 import android.annotation.RequiresPermission;
 import android.annotation.SuppressLint;
 import android.app.Activity;
@@ -43,8 +44,11 @@ import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothSinkAudioPolicy;
 import android.bluetooth.BluetoothUtils;
 import android.bluetooth.IBluetoothConnectionCallback;
+import android.content.AttributionSource;
 import android.content.Intent;
+import android.content.pm.Attribution;
 import android.net.MacAddress;
+import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -64,9 +68,13 @@ import com.android.modules.utils.build.SdkLevel;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 
@@ -329,6 +337,7 @@ public class RemoteDevices {
     }
 
     class DeviceProperties {
+        private static final int MAX_PACKAGE_NAMES = 4;
         private String mName;
         private byte[] mAddress;
         private String mIdentityAddress;
@@ -353,6 +362,16 @@ public class RemoteDevices {
         @VisibleForTesting ParcelUuid[] mUuidsLe;
         @VisibleForTesting boolean mHfpBatteryIndicator = false;
         private BluetoothSinkAudioPolicy mAudioPolicy;
+
+        // LRU cache of package names associated to this device
+        private final Set<String> mPackages =
+                Collections.newSetFromMap(
+                        new LinkedHashMap<String, Boolean>() {
+                            // This is called on every add. Returning true removes the eldest entry.
+                            protected boolean removeEldestEntry(Map.Entry<String, Boolean> eldest) {
+                                return size() >= MAX_PACKAGE_NAMES;
+                            }
+                        });
 
         DeviceProperties() {
             mBondState = BluetoothDevice.BOND_NONE;
@@ -858,6 +877,22 @@ public class RemoteDevices {
                 return mModelName;
             }
         }
+
+        @NonNull
+        public String[] getPackages() {
+            synchronized (mObject) {
+                return mPackages.toArray(new String[0]);
+            }
+        }
+
+        public void addPackage(String packageName) {
+            synchronized (mObject) {
+                // Removing the package ensures that the LRU cache order is updated. Adding it back
+                // will make it the newest.
+                mPackages.remove(packageName);
+                mPackages.add(packageName);
+            }
+        }
     }
 
     private void sendUuidIntent(BluetoothDevice device, DeviceProperties prop, boolean success) {
@@ -910,15 +945,6 @@ public class RemoteDevices {
         properties.setBondingInitiatedLocally(true);
     }
 
-    /**
-     * Update battery level in device properties
-     *
-     * @param device The remote device to be updated
-     * @param batteryLevel Battery level Indicator between 0-100, {@link
-     *     BluetoothDevice#BATTERY_LEVEL_UNKNOWN} is error
-     * @param isBas true if the battery level is from the battery service
-     */
-    @VisibleForTesting
     void updateBatteryLevel(BluetoothDevice device, int batteryLevel, boolean isBas) {
         if (device == null || batteryLevel < 0 || batteryLevel > 100) {
             warnLog(
@@ -952,12 +978,6 @@ public class RemoteDevices {
         Log.d(TAG, "Updated device " + device + " battery level to " + newBatteryLevel + "%");
     }
 
-    /**
-     * Reset battery level property to {@link BluetoothDevice#BATTERY_LEVEL_UNKNOWN} for a device
-     *
-     * @param device device whose battery level property needs to be reset
-     */
-    @VisibleForTesting
     void resetBatteryLevel(BluetoothDevice device, boolean isBas) {
         if (device == null) {
             warnLog("Device is null");
@@ -1477,10 +1497,25 @@ public class RemoteDevices {
         if (connectionState == BluetoothAdapter.STATE_CONNECTED) {
             connectionChangeConsumer = cb -> cb.onDeviceConnected(device);
         } else {
+            final int disconnectReason;
+            if (hciReason == 0x16 /* HCI_ERR_CONN_CAUSE_LOCAL_HOST */
+                    && mAdapterService.getDatabase().getKeyMissingCount(device) > 0) {
+                // Native stack disconnects the link on detecting the bond loss. Native GATT would
+                // return HCI_ERR_CONN_CAUSE_LOCAL_HOST in such case, but the apps should see
+                // HCI_ERR_AUTH_FAILURE.
+                Log.d(
+                        TAG,
+                        "aclStateChangeCallback() - disconnected due to bond loss for device="
+                                + device);
+                disconnectReason = 0x05; /* HCI_ERR_AUTH_FAILURE */
+            } else {
+                disconnectReason = hciReason;
+            }
             connectionChangeConsumer =
                     cb ->
                             cb.onDeviceDisconnected(
-                                    device, AdapterService.hciToAndroidDisconnectReason(hciReason));
+                                    device,
+                                    AdapterService.hciToAndroidDisconnectReason(disconnectReason));
         }
 
         mAdapterService.aclStateChangeBroadcastCallback(connectionChangeConsumer);
@@ -1573,6 +1608,28 @@ public class RemoteDevices {
 
             // Bond loss detected, add to the count.
             mAdapterService.getDatabase().updateKeyMissingCount(bluetoothDevice, true);
+
+            // Some apps are not able to handle the key missing broadcast, so we need to remove
+            // the bond to prevent them from misbehaving.
+            // TODO (b/402854328): Remove when the misbehaving apps are updated
+            if (bondLossIopFixNeeded(bluetoothDevice)) {
+                DeviceProperties deviceProperties = getDeviceProperties(bluetoothDevice);
+                if (deviceProperties == null) {
+                    return;
+                }
+                String[] packages = deviceProperties.getPackages();
+                if (packages.length == 0) {
+                    return;
+                }
+
+                Log.w(
+                        TAG,
+                        "Removing "
+                                + bluetoothDevice
+                                + " on behalf of: "
+                                + Arrays.toString(packages));
+                bluetoothDevice.removeBond();
+            }
 
             if (Flags.keyMissingPublic()) {
                 mAdapterService.sendOrderedBroadcast(
@@ -1990,6 +2047,55 @@ public class RemoteDevices {
         }
         updateBatteryLevel(
                 device, batteryChargeIndicatorToPercentage(batteryLevel), /* isBas= */ false);
+    }
+
+    private static final String[] BOND_LOSS_IOP_PACKAGES = {
+        "com.sjm.crmd.patientApp_Android", "com.abbott.crm.ngq.patient",
+    };
+
+    private static final Set<String> BOND_LOSS_IOP_DEVICE_NAMES = Set.of("CM", "DM");
+
+    // TODO (b/402854328): Remove when the misbehaving apps are updated
+    public boolean bondLossIopFixNeeded(BluetoothDevice device) {
+        DeviceProperties deviceProperties = getDeviceProperties(device);
+        if (deviceProperties == null) {
+            return false;
+        }
+
+        String deviceName = deviceProperties.getName();
+        if (deviceName == null) {
+            return false;
+        }
+
+        String[] packages = deviceProperties.getPackages();
+        if (packages.length == 0) {
+            return false;
+        }
+
+        if (!BOND_LOSS_IOP_DEVICE_NAMES.contains(deviceName)) {
+            return false;
+        }
+
+        for (String iopFixPackage : BOND_LOSS_IOP_PACKAGES) {
+            for (String packageName : packages) {
+                if (packageName.contains(iopFixPackage)
+                        && !Utils.checkCallerTargetSdk(
+                                mAdapterService, packageName, Build.VERSION_CODES.BAKLAVA)) {
+                    Log.w(
+                            TAG,
+                            "bondLossIopFixNeeded(): "
+                                    + " IOP fix needed for "
+                                    + device
+                                    + " name: "
+                                    + deviceName
+                                    + " package: "
+                                    + packageName);
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private static void errorLog(String msg) {

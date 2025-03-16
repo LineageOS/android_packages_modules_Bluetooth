@@ -2,33 +2,13 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "enforce_resolve_system_service_behavior"
+    name: "enable_ble_while_disabling_airplane"
     namespace: "bluetooth"
-    description: "Loudly crash when it is not possible to find a service to start bluetooth"
+    description: "Fix a race between enabling and handling airplane event"
+    bug: "402563502"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
-    bug: "366273182"
-}
-
-flag {
-    name: "get_state_from_system_server"
-    namespace: "bluetooth"
-    description: "Get Bluetooth state from system server instead of from Bluetooth app"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-    bug: "362569584"
-}
-
-flag {
-    name: "get_name_and_address_as_callback"
-    namespace: "bluetooth"
-    description: "Getting the name and address is a non-oneway call. Instead inform the system server with callback"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-    bug: "368114370"
 }
 
 flag {
@@ -42,18 +22,18 @@ flag {
 }
 
 flag {
-    name: "remove_one_time_get_name_and_address"
-    namespace: "bluetooth"
-    description: "We don't need to start bluetooth the first time to get name & address. We can wait for a proper start"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-    bug: "368120237"
-}
-
-flag {
     name: "system_server_messenger"
     namespace: "bluetooth"
     description: "Replace binder call to the system server with a Messenger to enforce thread safety"
     bug: "321804999"
+}
+
+flag {
+    name: "system_server_remove_extra_thread_jump"
+    namespace: "bluetooth"
+    description: "Methods are unnecessarily re-posting on the system server thread"
+    bug: "402209603"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
 }

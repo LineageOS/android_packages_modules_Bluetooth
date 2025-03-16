@@ -4949,7 +4949,8 @@ struct CsOptionalNadmRandomCapability {
 
 struct CsOptionalCsSyncPhysSupported {
   le_2m_phy : 1,
-  _reserved_ : 7,
+  le_2m_2bt_phy : 1,
+  _reserved_ : 6,
 }
 
 struct CsOptionalSubfeaturesSupported {
@@ -5151,6 +5152,7 @@ enum CsConfigRttType : 8 {
 enum CsSyncPhy : 8 {
   LE_1M_PHY = 0x01,
   LE_2M_PHY = 0x02,
+  LE_2M_2BT_PHY = 0x03,
 }
 
 enum CsChannelSelectionType : 8 {

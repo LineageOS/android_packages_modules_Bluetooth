@@ -34,7 +34,6 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
-import com.android.bluetooth.BluetoothMetricsProto;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.MetricsLogger;
@@ -144,9 +143,9 @@ class PbapClientStateMachine extends StateMachine {
         }
 
         public int getTotalNumberOfContacts() {
-            return (mMetadata == null || mMetadata.getSize() == PbapPhonebookMetadata.INVALID_SIZE)
+            return (mMetadata == null || mMetadata.size() == PbapPhonebookMetadata.INVALID_SIZE)
                     ? 0
-                    : mMetadata.getSize();
+                    : mMetadata.size();
         }
 
         public int getNumberOfContactsDownloaded() {
@@ -163,24 +162,24 @@ class PbapClientStateMachine extends StateMachine {
                         + "/ UNKNOWN] (db:UNKNOWN, pc:UNKNOWN, sc:UNKNOWN)";
             }
 
-            String databaseIdentifier = mMetadata.getDatabaseIdentifier();
+            String databaseIdentifier = mMetadata.databaseIdentifier();
             if (databaseIdentifier == PbapPhonebookMetadata.INVALID_DATABASE_IDENTIFIER) {
                 databaseIdentifier = "UNKNOWN";
             }
 
-            String primaryVersionCounter = mMetadata.getPrimaryVersionCounter();
+            String primaryVersionCounter = mMetadata.primaryVersionCounter();
             if (primaryVersionCounter == PbapPhonebookMetadata.INVALID_VERSION_COUNTER) {
                 primaryVersionCounter = "UNKNOWN";
             }
 
-            String secondaryVersionCounter = mMetadata.getSecondaryVersionCounter();
+            String secondaryVersionCounter = mMetadata.secondaryVersionCounter();
             if (secondaryVersionCounter == PbapPhonebookMetadata.INVALID_VERSION_COUNTER) {
                 secondaryVersionCounter = "UNKNOWN";
             }
 
             String totalContactsExpected = "UNKNOWN";
-            if (mMetadata.getSize() != PbapPhonebookMetadata.INVALID_SIZE) {
-                totalContactsExpected = Integer.toString(mMetadata.getSize());
+            if (mMetadata.size() != PbapPhonebookMetadata.INVALID_SIZE) {
+                totalContactsExpected = Integer.toString(mMetadata.size());
             }
 
             return mName
@@ -605,7 +604,7 @@ class PbapClientStateMachine extends StateMachine {
 
                 case MSG_PHONEBOOK_METADATA_RECEIVED:
                     PbapPhonebookMetadata metadata = (PbapPhonebookMetadata) message.obj;
-                    phonebook = metadata.getPhonebook();
+                    phonebook = metadata.phonebook();
                     if (currentPhonebook != null && currentPhonebook.equals(phonebook)) {
                         info("Downloading: received metadata=" + metadata);
 
@@ -613,7 +612,7 @@ class PbapClientStateMachine extends StateMachine {
                         mPhonebooks.get(phonebook).setMetadata(metadata);
 
                         // If phonebook has contacts, begin downloading them
-                        if (metadata.getSize() > 0) {
+                        if (metadata.size() > 0) {
                             downloadPhonebook(currentPhonebook, 0, CONTACT_DOWNLOAD_BATCH_SIZE);
                         } else {
                             warn(
@@ -908,9 +907,6 @@ class PbapClientStateMachine extends StateMachine {
 
     private void onConnectionStateChanged(int state) {
         int prevState = mCurrentState;
-        if (prevState != state && state == STATE_CONNECTED) {
-            MetricsLogger.logProfileConnectionEvent(BluetoothMetricsProto.ProfileId.PBAP_CLIENT);
-        }
 
         Intent intent = new Intent(BluetoothPbapClient.ACTION_CONNECTION_STATE_CHANGED);
         intent.putExtra(BluetoothProfile.EXTRA_PREVIOUS_STATE, prevState);

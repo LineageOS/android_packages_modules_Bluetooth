@@ -20,7 +20,7 @@
 #include <cmath>
 #include <string>
 
-#include "stack/include/stack_metrics_logging.h"
+#include "main/shim/metrics_api.h"
 
 namespace mmc {
 
@@ -43,7 +43,8 @@ void MmcRttLogger::UploadTranscodeRttStatics() {
   if (num_requests_ == 0) {
     return;
   }
-  log_mmc_transcode_rtt_stats(maximum_rtt_, rtt_sum_ / num_requests_, num_requests_, codec_type_);
+  bluetooth::shim::LogMetricMmcTranscodeRttStats(maximum_rtt_, rtt_sum_ / num_requests_,
+                                                 num_requests_, codec_type_);
   num_requests_ = 0;
   rtt_sum_ = 0;
   maximum_rtt_ = 0;

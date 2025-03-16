@@ -92,3 +92,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "fix_lecoc_socket_available"
+    namespace: "bluetooth"
+    description: "Fix Bluetooth Socket available API for LECOC socket"
+    bug: "402536099"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

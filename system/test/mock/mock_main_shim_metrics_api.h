@@ -274,17 +274,23 @@ struct LogMetricSocketConnectionState {
   std::function<void(const RawAddress& raw_address, int port, int type,
                      android::bluetooth::SocketConnectionstateEnum connection_state,
                      int64_t tx_bytes, int64_t rx_bytes, int uid, int server_port,
-                     android::bluetooth::SocketRoleEnum socket_role)>
+                     android::bluetooth::SocketRoleEnum socket_role,
+                     uint64_t connection_duration_ms,
+                     android::bluetooth::SocketErrorEnum error_code, bool is_hardware_offload)>
           body{[](const RawAddress& /* raw_address */, int /* port */, int /* type */,
                   android::bluetooth::SocketConnectionstateEnum /* connection_state */,
                   int64_t /* tx_bytes */, int64_t /* rx_bytes */, int /* uid */,
-                  int /* server_port */, android::bluetooth::SocketRoleEnum /* socket_role */) {}};
+                  int /* server_port */, android::bluetooth::SocketRoleEnum /* socket_role */,
+                  uint64_t /* connection_duration_ms */,
+                  android::bluetooth::SocketErrorEnum /* error_code */,
+                  bool /* is_hardware_offload */) {}};
   void operator()(const RawAddress& raw_address, int port, int type,
                   android::bluetooth::SocketConnectionstateEnum connection_state, int64_t tx_bytes,
                   int64_t rx_bytes, int uid, int server_port,
-                  android::bluetooth::SocketRoleEnum socket_role) {
+                  android::bluetooth::SocketRoleEnum socket_role, uint64_t connection_duration_ms,
+                  android::bluetooth::SocketErrorEnum error_code, bool is_hardware_offload) {
     body(raw_address, port, type, connection_state, tx_bytes, rx_bytes, uid, server_port,
-         socket_role);
+         socket_role, connection_duration_ms, error_code, is_hardware_offload);
   }
 };
 extern struct LogMetricSocketConnectionState LogMetricSocketConnectionState;

@@ -34,7 +34,6 @@ import android.os.Looper;
 import android.os.Message;
 import android.util.Log;
 
-import com.android.bluetooth.BluetoothMetricsProto;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
@@ -315,9 +314,6 @@ class A2dpSinkStateMachine extends StateMachine {
     protected void onConnectionStateChanged(int currentState) {
         if (mMostRecentState == currentState) {
             return;
-        }
-        if (currentState == STATE_CONNECTED) {
-            MetricsLogger.logProfileConnectionEvent(BluetoothMetricsProto.ProfileId.A2DP_SINK);
         }
         Log.d(TAG, "[" + mDevice + "] Connection state: " + mMostRecentState + "->" + currentState);
         Intent intent = new Intent(BluetoothA2dpSink.ACTION_CONNECTION_STATE_CHANGED);

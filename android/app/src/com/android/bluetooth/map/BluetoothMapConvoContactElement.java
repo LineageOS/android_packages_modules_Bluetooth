@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 import java.util.Objects;
 
 // Next tag value for ContentProfileErrorReportUtils.report(): 1
@@ -63,8 +64,8 @@ public class BluetoothMapConvoContactElement
         BluetoothMapConvoContactElement newElement = new BluetoothMapConvoContactElement();
         newElement.mUci = address;
         // TODO: For now we use the ID as BT-UID
-        newElement.mBtUid = new SignedLongLong(contact.getId(), 0);
-        newElement.mDisplayName = contact.getName();
+        newElement.mBtUid = new SignedLongLong(contact.id(), 0);
+        newElement.mDisplayName = contact.name();
         return newElement;
     }
 
@@ -158,7 +159,7 @@ public class BluetoothMapConvoContactElement
 
     @SuppressWarnings("JavaUtilDate") // TODO: b/365629730 -- prefer Instant or LocalDate
     public String getLastActivityString() {
-        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmss");
+        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmss", Locale.ROOT);
         Date date = new Date(mLastActivity);
         return format.format(date); // Format to YYYYMMDDTHHMMSS local time
     }
@@ -169,7 +170,7 @@ public class BluetoothMapConvoContactElement
 
     @SuppressWarnings("JavaUtilDate") // TODO: b/365629730 -- prefer Instant or LocalDate
     public void setLastActivity(String lastActivity) throws ParseException {
-        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmss");
+        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmss", Locale.ROOT);
         Date date = format.parse(lastActivity);
         this.mLastActivity = date.getTime();
     }

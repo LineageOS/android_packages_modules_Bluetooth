@@ -20,25 +20,3 @@ java_library_static {
     min_sdk_version: "30",
     sdk_version: "current",
 }
-
-filegroup {
-    name: "bluetooth-metrics-proto",
-    srcs: [
-        "bluetooth/metrics/bluetooth.proto",
-    ],
-}
-
-cc_library_static {
-    name: "libbluetooth-protos",
-    host_supported: true,
-    proto: {
-        export_proto_headers: true,
-        type: "lite",
-        include_dirs: ["external/protobuf/src"],
-    },
-    srcs: [
-        "bluetooth/metrics/bluetooth.proto",
-    ],
-    apex_available: ["com.android.bt"],
-    min_sdk_version: "30",
-}

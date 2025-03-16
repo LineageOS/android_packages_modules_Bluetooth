@@ -358,15 +358,19 @@ typedef enum {
   // Peer can request proper latency based on its power state later.
   INTEROP_HID_PREF_CONN_ZERO_LATENCY,
 
-  // Some HOGP devices have the report map longer than the maximum GATT attribute value length (512
-  // bytes).
+  // Some HOGP devices have the report map longer than the maximum GATT
+  // attribute value length (512 bytes).
   INTEROP_HOGP_LONG_REPORT,
 
-  // Some HOGP devices requires MTU exchange be part of the initial setup to function.
+  // Some HOGP devices requires MTU exchange be part of the initial setup to
+  // function.
   INTEROP_HOGP_FORCE_MTU_EXCHANGE,
 
   // Some devices claim to support HFP in EIR but does not actually support it.
   INTEROP_DISABLE_HF_PROFILE,
+
+  // Some devices don't respond to LE appearance read request.
+  INTEROP_DISABLE_READ_LE_APPEARANCE,
 
   END_OF_INTEROP_LIST
 } interop_feature_t;

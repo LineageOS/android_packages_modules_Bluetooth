@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Android Open Source Project
+ * Copyright (C) 2018 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,10 +70,7 @@ import android.util.proto.ProtoOutputStream;
 
 import androidx.annotation.RequiresApi;
 
-import com.android.bluetooth.BluetoothMetricsProto.BluetoothLog;
 import com.android.bluetooth.BluetoothMetricsProto.BluetoothRemoteDeviceInformation;
-import com.android.bluetooth.BluetoothMetricsProto.ProfileConnectionStats;
-import com.android.bluetooth.BluetoothMetricsProto.ProfileId;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.BtRestrictedStatsLog;
 import com.android.bluetooth.Utils;
@@ -111,8 +108,6 @@ public class MetricsLogger {
     // 6 hours timeout for counter metrics
     private static final long BLUETOOTH_COUNTER_METRICS_ACTION_DURATION_MILLIS = 6L * 3600L * 1000L;
     private static final int MAX_WORDS_ALLOWED_IN_DEVICE_NAME = 7;
-
-    private static final HashMap<ProfileId, Integer> sProfileConnectionCounts = new HashMap<>();
 
     HashMap<Integer, Long> mCounters = new HashMap<>();
     private static volatile MetricsLogger sInstance = null;
@@ -389,37 +384,6 @@ public class MetricsLogger {
         return true;
     }
 
-    /**
-     * Log profile connection event by incrementing an internal counter for that profile. This log
-     * persists over adapter enable/disable and only get cleared when metrics are dumped or when
-     * Bluetooth process is killed.
-     *
-     * @param profileId Bluetooth profile that is connected at this event
-     */
-    public static void logProfileConnectionEvent(ProfileId profileId) {
-        synchronized (sProfileConnectionCounts) {
-            sProfileConnectionCounts.merge(profileId, 1, Integer::sum);
-        }
-    }
-
-    /**
-     * Dump collected metrics into proto using a builder. Clean up internal data after the dump.
-     *
-     * @param metricsBuilder proto builder for {@link BluetoothLog}
-     */
-    public static void dumpProto(BluetoothLog.Builder metricsBuilder) {
-        synchronized (sProfileConnectionCounts) {
-            sProfileConnectionCounts.forEach(
-                    (key, value) ->
-                            metricsBuilder.addProfileConnectionStats(
-                                    ProfileConnectionStats.newBuilder()
-                                            .setProfileId(key)
-                                            .setNumTimesConnected(value)
-                                            .build()));
-            sProfileConnectionCounts.clear();
-        }
-    }
-
     protected void scheduleDrains() {
         Log.i(TAG, "setCounterMetricsAlarm()");
         if (mAlarmManager == null) {
@@ -682,7 +646,8 @@ public class MetricsLogger {
             int numOngoingScan,
             boolean isScreenOn,
             boolean isAppDead,
-            int appImportance) {
+            int appImportance,
+            String attributionTag) {
         BluetoothStatsLog.write(
                 BluetoothStatsLog.LE_APP_SCAN_STATE_CHANGED,
                 uids,
@@ -698,7 +663,8 @@ public class MetricsLogger {
                 numOngoingScan,
                 isScreenOn,
                 isAppDead,
-                convertAppImportance(appImportance));
+                convertAppImportance(appImportance),
+                attributionTag);
     }
 
     /** Logs the radio scan stats with app attribution when the radio scan stopped. */
@@ -711,7 +677,8 @@ public class MetricsLogger {
             long scanWindowMillis,
             boolean isScreenOn,
             long scanDurationMillis,
-            int appImportance) {
+            int appImportance,
+            String attributionTag) {
         BluetoothStatsLog.write(
                 BluetoothStatsLog.LE_RADIO_SCAN_STOPPED,
                 uids,
@@ -722,7 +689,8 @@ public class MetricsLogger {
                 scanWindowMillis,
                 isScreenOn,
                 scanDurationMillis,
-                convertAppImportance(appImportance));
+                convertAppImportance(appImportance),
+                attributionTag);
     }
 
     /** Logs the advertise stats with app attribution when the advertise state changed. */
@@ -738,7 +706,8 @@ public class MetricsLogger {
             boolean isExtendedAdv,
             int instanceCount,
             long advDurationMs,
-            int appImportance) {
+            int appImportance,
+            String attributionTag) {
         BluetoothStatsLog.write(
                 BluetoothStatsLog.LE_ADV_STATE_CHANGED,
                 uids,
@@ -752,7 +721,8 @@ public class MetricsLogger {
                 isExtendedAdv,
                 instanceCount,
                 advDurationMs,
-                convertAppImportance(appImportance));
+                convertAppImportance(appImportance),
+                attributionTag);
     }
 
     protected String getAllowlistedDeviceNameHash(

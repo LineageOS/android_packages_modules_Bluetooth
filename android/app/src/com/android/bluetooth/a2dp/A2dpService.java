@@ -59,7 +59,6 @@ import android.os.Looper;
 import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
-import com.android.bluetooth.BluetoothMetricsProto;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.ActiveDeviceManager;
@@ -1305,9 +1304,6 @@ public class A2dpService extends ProfileService {
 
         if ((device == null) || (fromState == toState)) {
             return;
-        }
-        if (toState == STATE_CONNECTED) {
-            MetricsLogger.logProfileConnectionEvent(BluetoothMetricsProto.ProfileId.A2DP);
         }
         // Set the active device if only one connected device is supported and it was connected
         if (toState == STATE_CONNECTED && (mMaxConnectedAudioDevices == 1)) {

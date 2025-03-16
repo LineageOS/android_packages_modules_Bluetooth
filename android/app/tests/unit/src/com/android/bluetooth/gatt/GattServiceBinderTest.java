@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 The Android Open Source Project
+ * Copyright (C) 2022 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,13 +53,12 @@ public class GattServiceBinderTest {
     @Mock private GattService mService;
 
     private AttributionSource mAttributionSource;
-
-    private GattService.BluetoothGattBinder mBinder;
+    private GattServiceBinder mBinder;
 
     @Before
     public void setUp() throws Exception {
         when(mService.isAvailable()).thenReturn(true);
-        mBinder = new GattService.BluetoothGattBinder(mService);
+        mBinder = new GattServiceBinder(mService);
         mAttributionSource = new AttributionSource.Builder(1).build();
     }
 
@@ -68,7 +67,6 @@ public class GattServiceBinderTest {
         int[] states = new int[] {STATE_CONNECTED};
 
         mBinder.getDevicesMatchingConnectionStates(states, mAttributionSource);
-
         verify(mService).getDevicesMatchingConnectionStates(states, mAttributionSource);
     }
 
@@ -79,7 +77,6 @@ public class GattServiceBinderTest {
         boolean eattSupport = true;
 
         mBinder.registerClient(new ParcelUuid(uuid), callback, eattSupport, mAttributionSource);
-
         verify(mService).registerClient(uuid, callback, eattSupport, mAttributionSource);
     }
 
@@ -88,7 +85,6 @@ public class GattServiceBinderTest {
         int clientIf = 3;
 
         mBinder.unregisterClient(clientIf, mAttributionSource);
-
         verify(mService)
                 .unregisterClient(
                         clientIf,
@@ -115,7 +111,6 @@ public class GattServiceBinderTest {
                 opportunistic,
                 phy,
                 mAttributionSource);
-
         verify(mService)
                 .clientConnect(
                         clientIf,
@@ -134,7 +129,6 @@ public class GattServiceBinderTest {
         String address = REMOTE_DEVICE_ADDRESS;
 
         mBinder.clientDisconnect(clientIf, address, mAttributionSource);
-
         verify(mService).clientDisconnect(clientIf, address, mAttributionSource);
     }
 
@@ -148,7 +142,6 @@ public class GattServiceBinderTest {
 
         mBinder.clientSetPreferredPhy(
                 clientIf, address, txPhy, rxPhy, phyOptions, mAttributionSource);
-
         verify(mService)
                 .clientSetPreferredPhy(
                         clientIf, address, txPhy, rxPhy, phyOptions, mAttributionSource);
@@ -160,7 +153,6 @@ public class GattServiceBinderTest {
         String address = REMOTE_DEVICE_ADDRESS;
 
         mBinder.clientReadPhy(clientIf, address, mAttributionSource);
-
         verify(mService).clientReadPhy(clientIf, address, mAttributionSource);
     }
 
@@ -170,7 +162,6 @@ public class GattServiceBinderTest {
         String address = REMOTE_DEVICE_ADDRESS;
 
         mBinder.refreshDevice(clientIf, address, mAttributionSource);
-
         verify(mService).refreshDevice(clientIf, address, mAttributionSource);
     }
 
@@ -180,7 +171,6 @@ public class GattServiceBinderTest {
         String address = REMOTE_DEVICE_ADDRESS;
 
         mBinder.discoverServices(clientIf, address, mAttributionSource);
-
         verify(mService).discoverServices(clientIf, address, mAttributionSource);
     }
 
@@ -191,7 +181,6 @@ public class GattServiceBinderTest {
         UUID uuid = UUID.randomUUID();
 
         mBinder.discoverServiceByUuid(clientIf, address, new ParcelUuid(uuid), mAttributionSource);
-
         verify(mService).discoverServiceByUuid(clientIf, address, uuid, mAttributionSource);
     }
 
@@ -203,7 +192,6 @@ public class GattServiceBinderTest {
         int authReq = 3;
 
         mBinder.readCharacteristic(clientIf, address, handle, authReq, mAttributionSource);
-
         verify(mService).readCharacteristic(clientIf, address, handle, authReq, mAttributionSource);
     }
 
@@ -224,7 +212,6 @@ public class GattServiceBinderTest {
                 endHandle,
                 authReq,
                 mAttributionSource);
-
         verify(mService)
                 .readUsingCharacteristicUuid(
                         clientIf,
@@ -247,7 +234,6 @@ public class GattServiceBinderTest {
 
         mBinder.writeCharacteristic(
                 clientIf, address, handle, writeType, authReq, value, mAttributionSource);
-
         verify(mService)
                 .writeCharacteristic(
                         clientIf, address, handle, writeType, authReq, value, mAttributionSource);
@@ -261,7 +247,6 @@ public class GattServiceBinderTest {
         int authReq = 3;
 
         mBinder.readDescriptor(clientIf, address, handle, authReq, mAttributionSource);
-
         verify(mService).readDescriptor(clientIf, address, handle, authReq, mAttributionSource);
     }
 
@@ -274,7 +259,6 @@ public class GattServiceBinderTest {
         byte[] value = new byte[] {4, 5};
 
         mBinder.writeDescriptor(clientIf, address, handle, authReq, value, mAttributionSource);
-
         verify(mService)
                 .writeDescriptor(clientIf, address, handle, authReq, value, mAttributionSource);
     }
@@ -285,7 +269,6 @@ public class GattServiceBinderTest {
         String address = REMOTE_DEVICE_ADDRESS;
 
         mBinder.beginReliableWrite(clientIf, address, mAttributionSource);
-
         verify(mService).beginReliableWrite(clientIf, address, mAttributionSource);
     }
 
@@ -296,7 +279,6 @@ public class GattServiceBinderTest {
         boolean execute = true;
 
         mBinder.endReliableWrite(clientIf, address, execute, mAttributionSource);
-
         verify(mService).endReliableWrite(clientIf, address, execute, mAttributionSource);
     }
 
@@ -308,7 +290,6 @@ public class GattServiceBinderTest {
         boolean enable = true;
 
         mBinder.registerForNotification(clientIf, address, handle, enable, mAttributionSource);
-
         verify(mService)
                 .registerForNotification(clientIf, address, handle, enable, mAttributionSource);
     }
@@ -319,7 +300,6 @@ public class GattServiceBinderTest {
         String address = REMOTE_DEVICE_ADDRESS;
 
         mBinder.readRemoteRssi(clientIf, address, mAttributionSource);
-
         verify(mService).readRemoteRssi(clientIf, address, mAttributionSource);
     }
 
@@ -330,7 +310,6 @@ public class GattServiceBinderTest {
         int mtu = 2;
 
         mBinder.configureMTU(clientIf, address, mtu, mAttributionSource);
-
         verify(mService).configureMTU(clientIf, address, mtu, mAttributionSource);
     }
 
@@ -342,7 +321,6 @@ public class GattServiceBinderTest {
 
         mBinder.connectionParameterUpdate(
                 clientIf, address, connectionPriority, mAttributionSource);
-
         verify(mService)
                 .connectionParameterUpdate(
                         clientIf, address, connectionPriority, mAttributionSource);
@@ -369,7 +347,6 @@ public class GattServiceBinderTest {
                 minConnectionEventLen,
                 maxConnectionEventLen,
                 mAttributionSource);
-
         verify(mService)
                 .leConnectionUpdate(
                         clientIf,
@@ -390,7 +367,6 @@ public class GattServiceBinderTest {
         boolean eattSupport = true;
 
         mBinder.registerServer(new ParcelUuid(uuid), callback, eattSupport, mAttributionSource);
-
         verify(mService).registerServer(uuid, callback, eattSupport, mAttributionSource);
     }
 
@@ -399,7 +375,6 @@ public class GattServiceBinderTest {
         int serverIf = 3;
 
         mBinder.unregisterServer(serverIf, mAttributionSource);
-
         verify(mService).unregisterServer(serverIf, mAttributionSource);
     }
 
@@ -413,7 +388,6 @@ public class GattServiceBinderTest {
 
         mBinder.serverConnect(
                 serverIf, address, addressType, isDirect, transport, mAttributionSource);
-
         verify(mService)
                 .serverConnect(
                         serverIf, address, addressType, isDirect, transport, mAttributionSource);
@@ -425,7 +399,6 @@ public class GattServiceBinderTest {
         String address = REMOTE_DEVICE_ADDRESS;
 
         mBinder.serverDisconnect(serverIf, address, mAttributionSource);
-
         verify(mService).serverDisconnect(serverIf, address, mAttributionSource);
     }
 
@@ -439,7 +412,6 @@ public class GattServiceBinderTest {
 
         mBinder.serverSetPreferredPhy(
                 serverIf, address, txPhy, rxPhy, phyOptions, mAttributionSource);
-
         verify(mService)
                 .serverSetPreferredPhy(
                         serverIf, address, txPhy, rxPhy, phyOptions, mAttributionSource);
@@ -451,7 +423,6 @@ public class GattServiceBinderTest {
         String address = REMOTE_DEVICE_ADDRESS;
 
         mBinder.serverReadPhy(serverIf, address, mAttributionSource);
-
         verify(mService).serverReadPhy(serverIf, address, mAttributionSource);
     }
 
@@ -461,7 +432,6 @@ public class GattServiceBinderTest {
         BluetoothGattService svc = mock(BluetoothGattService.class);
 
         mBinder.addService(serverIf, svc, mAttributionSource);
-
         verify(mService).addService(serverIf, svc, mAttributionSource);
     }
 
@@ -471,7 +441,6 @@ public class GattServiceBinderTest {
         int handle = 2;
 
         mBinder.removeService(serverIf, handle, mAttributionSource);
-
         verify(mService).removeService(serverIf, handle, mAttributionSource);
     }
 
@@ -480,7 +449,6 @@ public class GattServiceBinderTest {
         int serverIf = 1;
 
         mBinder.clearServices(serverIf, mAttributionSource);
-
         verify(mService).clearServices(serverIf, mAttributionSource);
     }
 
@@ -495,7 +463,6 @@ public class GattServiceBinderTest {
 
         mBinder.sendResponse(
                 serverIf, address, requestId, status, offset, value, mAttributionSource);
-
         verify(mService)
                 .sendResponse(
                         serverIf, address, requestId, status, offset, value, mAttributionSource);
@@ -510,7 +477,6 @@ public class GattServiceBinderTest {
         byte[] value = new byte[] {5, 6};
 
         mBinder.sendNotification(serverIf, address, handle, confirm, value, mAttributionSource);
-
         verify(mService)
                 .sendNotification(serverIf, address, handle, confirm, value, mAttributionSource);
     }
@@ -518,12 +484,11 @@ public class GattServiceBinderTest {
     @Test
     public void disconnectAll() throws Exception {
         mBinder.disconnectAll(mAttributionSource);
-
         verify(mService).disconnectAll(mAttributionSource);
     }
 
     @Test
-    public void cleanUp_doesNotCrash() {
+    public void cleanup_doesNotCrash() {
         mBinder.cleanup();
     }
 }

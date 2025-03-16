@@ -48,7 +48,6 @@ import com.android.bluetooth.pbapclient.PbapClientService;
 import com.android.bluetooth.sap.SapService;
 import com.android.bluetooth.tbs.TbsService;
 import com.android.bluetooth.vc.VolumeControlService;
-import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.Arrays;
 
@@ -126,9 +125,11 @@ public class Config {
                         LeAudioService.isBroadcastEnabled(), BluetoothProfile.LE_AUDIO_BROADCAST),
             };
 
-    /** A test function to allow for dynamic enabled */
-    @VisibleForTesting
-    public static void setProfileEnabled(int profileId, boolean enabled) {
+    /**
+     * A test function to allow for dynamic enabled TODO: b/402559309 Remove non test usages
+     * (LeAudio)
+     */
+    static void setProfileEnabled(int profileId, boolean enabled) {
         for (ProfileConfig profile : PROFILE_SERVICES_AND_FLAGS) {
             if (profileId == profile.mProfileId) {
                 profile.mSupported = enabled;

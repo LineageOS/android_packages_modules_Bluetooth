@@ -261,7 +261,9 @@ protected:
     bluetooth::manager::SetMockBtmInterface(&btm_interface);
     gatt::SetMockBtaGattInterface(&gatt_interface);
     gatt::SetMockBtaGattQueue(&gatt_queue);
-    bluetooth::hci::testing::mock_controller_ = &controller_;
+
+    bluetooth::hci::testing::mock_controller_ =
+            std::make_unique<bluetooth::hci::testing::MockControllerInterface>();
 
     overwrite_cis_status_idx_ = 0;
     use_cis_retry_cnt_ = false;
@@ -649,7 +651,7 @@ protected:
     cached_remote_qos_configuration_for_ase_.clear();
     LeAudioGroupStateMachine::Cleanup();
     ::bluetooth::le_audio::AudioSetConfigurationProvider::Cleanup();
-    bluetooth::hci::testing::mock_controller_ = nullptr;
+    bluetooth::hci::testing::mock_controller_.release();
   }
 
   std::shared_ptr<LeAudioDevice> PrepareConnectedDevice(uint8_t id,
@@ -1714,7 +1716,6 @@ protected:
   std::vector<RawAddress> addresses_;
   std::map<uint8_t, std::unique_ptr<LeAudioDeviceGroup>> le_audio_device_groups_;
   bool group_create_command_disallowed_ = false;
-  bluetooth::hci::testing::MockControllerInterface controller_;
 };
 
 class StateMachineTest : public StateMachineTestBase {

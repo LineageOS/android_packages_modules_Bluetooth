@@ -149,7 +149,6 @@ source_set("stack") {
     "l2cap/l2c_main.cc",
     "l2cap/l2c_utils.cc",
     "l2cap/l2cap_api.cc",
-    "metrics/stack_metrics_logging.cc",
     "pan/pan_api.cc",
     "pan/pan_main.cc",
     "pan/pan_utils.cc",
@@ -210,7 +209,6 @@ source_set("stack") {
     "//bt/system/ctrlr/include",
     "//bt/system/gd",
     "//bt/system/hcis",
-    "//bt/system/linux_include",
     "//bt/system/rpc/include",
     "//bt/system/udrv/include",
     "//bt/system/vnd/ble",
@@ -367,7 +365,6 @@ if (defined(use.android) && use.android) {
 
     include_dirs = [
       "//bt/system/",
-      "//bt/system/linux_include",
       "//bt/system/bta/include",
       "//bt/system/bta/sys",
       "//bt/system/embdrv/sbc/encoder/include",

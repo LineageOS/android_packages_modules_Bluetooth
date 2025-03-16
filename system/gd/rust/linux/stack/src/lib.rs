@@ -66,7 +66,9 @@ pub enum Message {
     /// Remove the DBus API. Call it before other AdapterShutdown.
     InterfaceShutdown,
     /// Disable the adapter by calling btif disable.
-    AdapterShutdown,
+    /// Param: bool to indicate abort(true) or graceful shutdown(false).
+    /// Use abort when we believe adapter is already in a bad state.
+    AdapterShutdown(bool),
     /// Clean up the adapter by calling btif cleanup.
     Cleanup,
     /// Clean up the media by calling profile cleanup.
@@ -287,9 +289,9 @@ impl Stack {
                     });
                 }
 
-                Message::AdapterShutdown => {
+                Message::AdapterShutdown(abort) => {
                     bluetooth_gatt.lock().unwrap().enable(false);
-                    bluetooth.lock().unwrap().disable();
+                    bluetooth.lock().unwrap().shutdown_adapter(abort);
                 }
 
                 Message::Cleanup => {

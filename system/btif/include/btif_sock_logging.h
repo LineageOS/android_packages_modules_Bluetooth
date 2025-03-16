@@ -16,9 +16,11 @@
 
 #pragma once
 
+#include "hardware/bt_sock.h"
 #include "types/raw_address.h"
 
 void btif_sock_connection_logger(const RawAddress& address, int port, int type, int state, int role,
                                  int uid, int server_port, int64_t tx_bytes, int64_t rx_bytes,
-                                 const char* server_name);
+                                 const char* server_name, uint64_t connection_start_time_ms,
+                                 btsock_error_code_t error_code, btsock_data_path_t data_path);
 void btif_sock_dump(int fd);

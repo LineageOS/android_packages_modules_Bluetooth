@@ -44,8 +44,6 @@ import android.permission.PermissionManager;
 
 import androidx.annotation.RequiresApi;
 
-import com.android.bluetooth.flags.Flags;
-
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
 
@@ -170,15 +168,6 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
 
     @Override
     public int getState() {
-        if (Flags.getStateFromSystemServer()) {
-            return mBluetoothManagerService.getState();
-        }
-        if (!isCallerSystem(getCallingAppId())
-                && !mPermissionUtils.checkIfCallerIsForegroundUser(mUserManager)) {
-            Log.w(TAG, "getState(): UNAUTHORIZED. Report OFF for non-active and non system user");
-            return BluetoothAdapter.STATE_OFF;
-        }
-
         return mBluetoothManagerService.getState();
     }
 

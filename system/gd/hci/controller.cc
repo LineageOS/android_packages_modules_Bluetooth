@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Android Open Source Project
+ * Copyright (C) 2019 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,9 +61,7 @@ struct Controller::impl {
                                handler->BindOn(this, &Controller::impl::NumberOfCompletedPackets));
 
     set_event_mask(kDefaultEventMask);
-    if (com::android::bluetooth::flags::encryption_change_v2()) {
-      set_event_mask_page_2(kDefaultEventMaskPage2);
-    }
+    set_event_mask_page_2(kDefaultEventMaskPage2);
 
     write_le_host_support(Enable::ENABLED, Enable::DISABLED);
     hci_->EnqueueCommand(

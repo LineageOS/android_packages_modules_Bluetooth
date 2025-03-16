@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 The Android Open Source Project
+ * Copyright (C) 2022 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import static java.util.Objects.requireNonNull;
 import android.annotation.FlaggedApi;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
+import android.annotation.RequiresNoPermission;
 import android.annotation.RequiresPermission;
 import android.annotation.SuppressLint;
 import android.annotation.SystemApi;
@@ -269,6 +270,16 @@ public final class DistanceMeasurementManager {
             Log.e(TAG, "Failed to get supported security Level - ", e);
         }
         return Collections.emptySet();
+    }
+
+    /**
+     * Clear session map. Should be called when bluetooth is down.
+     *
+     * @hide
+     */
+    @RequiresNoPermission
+    public void cleanup() {
+        mSessionMap.clear();
     }
 
     @SuppressLint("AndroidFrameworkBluetoothPermission")

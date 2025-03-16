@@ -135,10 +135,14 @@ void LogMetricSdpAttribute(const RawAddress& raw_address, uint16_t protocol_uuid
 void LogMetricSocketConnectionState(const RawAddress& raw_address, int port, int type,
                                     android::bluetooth::SocketConnectionstateEnum connection_state,
                                     int64_t tx_bytes, int64_t rx_bytes, int uid, int server_port,
-                                    android::bluetooth::SocketRoleEnum socket_role) {
+                                    android::bluetooth::SocketRoleEnum socket_role,
+                                    uint64_t connection_duration_ms,
+                                    android::bluetooth::SocketErrorEnum error_code,
+                                    bool is_hardware_offload) {
   Address address = bluetooth::ToGdAddress(raw_address);
-  bluetooth::os::LogMetricSocketConnectionState(address, port, type, connection_state, tx_bytes,
-                                                rx_bytes, uid, server_port, socket_role);
+  bluetooth::os::LogMetricSocketConnectionState(
+          address, port, type, connection_state, tx_bytes, rx_bytes, uid, server_port, socket_role,
+          connection_duration_ms, error_code, is_hardware_offload);
 }
 
 void LogMetricManufacturerInfo(const RawAddress& raw_address,

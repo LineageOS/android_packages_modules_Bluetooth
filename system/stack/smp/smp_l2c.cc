@@ -263,13 +263,6 @@ static void smp_br_connect_callback(uint16_t /* channel */, const RawAddress& bd
   log::info("BDA:{} pairing_bda:{}, connected:{}", bd_addr, p_cb->pairing_bda, connected);
 
   if (bd_addr != p_cb->pairing_bda) {
-    if (!com::android::bluetooth::flags::smp_state_machine_stuck_after_disconnection_fix()) {
-      log::info(
-              "If your pairing failed, get a build with "
-              "smp_state_machine_stuck_after_disconnection_fix and try again :)");
-      return;
-    }
-
     tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
     /* When pairing was initiated to RPA, and connection was on LE transport first using RPA, then
      * we must check record pseudo address, it might be same device */

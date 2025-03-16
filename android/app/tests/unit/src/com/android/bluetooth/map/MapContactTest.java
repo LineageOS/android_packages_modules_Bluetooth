@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 The Android Open Source Project
+ * Copyright (C) 2022 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,22 +35,22 @@ public class MapContactTest {
 
     @Test
     public void constructor() {
-        MapContact contact = MapContact.create(TEST_NON_ZERO_ID, TEST_NAME);
+        MapContact contact = new MapContact(TEST_NON_ZERO_ID, TEST_NAME);
 
-        assertThat(contact.getId()).isEqualTo(TEST_NON_ZERO_ID);
-        assertThat(contact.getName()).isEqualTo(TEST_NAME);
+        assertThat(contact.id()).isEqualTo(TEST_NON_ZERO_ID);
+        assertThat(contact.name()).isEqualTo(TEST_NAME);
     }
 
     @Test
     public void getXBtUidString_withZeroId() {
-        MapContact contact = MapContact.create(TEST_ZERO_ID, TEST_NAME);
+        MapContact contact = new MapContact(TEST_ZERO_ID, TEST_NAME);
 
         assertThat(contact.getXBtUidString()).isNull();
     }
 
     @Test
     public void getXBtUidString_withNonZeroId() {
-        MapContact contact = MapContact.create(TEST_NON_ZERO_ID, TEST_NAME);
+        MapContact contact = new MapContact(TEST_NON_ZERO_ID, TEST_NAME);
 
         assertThat(contact.getXBtUidString())
                 .isEqualTo(BluetoothMapUtils.getLongLongAsString(TEST_NON_ZERO_ID, 0));
@@ -58,21 +58,21 @@ public class MapContactTest {
 
     @Test
     public void getXBtUid_withZeroId() {
-        MapContact contact = MapContact.create(TEST_ZERO_ID, TEST_NAME);
+        MapContact contact = new MapContact(TEST_ZERO_ID, TEST_NAME);
 
         assertThat(contact.getXBtUid()).isNull();
     }
 
     @Test
     public void getXBtUid_withNonZeroId() {
-        MapContact contact = MapContact.create(TEST_NON_ZERO_ID, TEST_NAME);
+        MapContact contact = new MapContact(TEST_NON_ZERO_ID, TEST_NAME);
 
         assertThat(contact.getXBtUid()).isEqualTo(new SignedLongLong(TEST_NON_ZERO_ID, 0));
     }
 
     @Test
     public void toString_returnsName() {
-        MapContact contact = MapContact.create(TEST_NON_ZERO_ID, TEST_NAME);
+        MapContact contact = new MapContact(TEST_NON_ZERO_ID, TEST_NAME);
 
         assertThat(contact.toString()).isEqualTo(TEST_NAME);
     }

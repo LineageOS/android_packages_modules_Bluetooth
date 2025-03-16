@@ -186,7 +186,7 @@ public class SmsMmsContacts {
         MapContact contact = mNames.get(phone);
 
         if (contact != null) {
-            if (contact.getId() < 0) {
+            if (contact.id() < 0) {
                 return null;
             }
             if (contactNameFilter == null) {
@@ -196,7 +196,7 @@ public class SmsMmsContacts {
             String searchString = contactNameFilter.replace("*", ".*");
             searchString = ".*" + searchString + ".*";
             Pattern p = Pattern.compile(Pattern.quote(searchString), Pattern.CASE_INSENSITIVE);
-            if (p.matcher(contact.getName()).find()) {
+            if (p.matcher(contact.name()).find()) {
                 return contact;
             }
             return null;
@@ -222,10 +222,10 @@ public class SmsMmsContacts {
                 c.moveToFirst();
                 long id = c.getLong(COL_CONTACT_ID);
                 String name = c.getString(COL_CONTACT_NAME);
-                contact = MapContact.create(id, name);
+                contact = new MapContact(id, name);
                 mNames.put(phone, contact);
             } else {
-                contact = MapContact.create(-1, null);
+                contact = new MapContact(-1, null);
                 mNames.put(phone, contact);
                 contact = null;
             }

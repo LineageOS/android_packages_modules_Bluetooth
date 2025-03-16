@@ -62,7 +62,6 @@ import android.sysprop.BluetoothProperties;
 import android.telecom.PhoneAccount;
 import android.util.Log;
 
-import com.android.bluetooth.BluetoothMetricsProto;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.a2dp.A2dpService;
@@ -2215,7 +2214,6 @@ public class HeadsetService extends ProfileService {
             BluetoothDevice device, int fromState, int toState) {
         if (fromState != STATE_CONNECTED && toState == STATE_CONNECTED) {
             updateInbandRinging(device, true);
-            MetricsLogger.logProfileConnectionEvent(BluetoothMetricsProto.ProfileId.HEADSET);
         }
         if (fromState != STATE_DISCONNECTED && toState == STATE_DISCONNECTED) {
             updateInbandRinging(device, false);

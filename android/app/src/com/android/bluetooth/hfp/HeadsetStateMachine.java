@@ -1044,7 +1044,8 @@ class HeadsetStateMachine extends StateMachine {
                                             + " is not currentDevice");
                             break;
                         }
-                        if (!mNativeInterface.startVoiceRecognition(mDevice)) {
+                        if (!mNativeInterface.startVoiceRecognition(
+                                mDevice, /* sendResult */ true)) {
                             stateLogW("Failed to start voice recognition");
                             break;
                         }
@@ -1122,6 +1123,9 @@ class HeadsetStateMachine extends StateMachine {
                                         ? HeadsetHalConstants.AT_RESPONSE_OK
                                         : HeadsetHalConstants.AT_RESPONSE_ERROR,
                                 0);
+                        if (Utils.isScoManagedByAudioEnabled()) {
+                            mNativeInterface.startVoiceRecognition(mDevice, /* sendResult */ false);
+                        }
                         break;
                     }
                 case DIALING_OUT_RESULT:

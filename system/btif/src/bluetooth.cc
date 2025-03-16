@@ -71,7 +71,6 @@
 #include "btif/include/btif_hh.h"
 #include "btif/include/btif_keystore.h"
 #include "btif/include/btif_le_audio.h"
-#include "btif/include/btif_metrics_logging.h"
 #include "btif/include/btif_pan.h"
 #include "btif/include/btif_profile_storage.h"
 #include "btif/include/btif_rc.h"
@@ -82,7 +81,6 @@
 #include "btif/include/core_callbacks.h"
 #include "btif/include/stack_manager_t.h"
 #include "common/address_obfuscator.h"
-#include "common/metrics.h"
 #include "common/os_utils.h"
 #include "device/include/device_iot_config.h"
 #include "device/include/esco_parameters.h"
@@ -100,6 +98,7 @@
 #include "hardware/bt_vc.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/dumpsys.h"
+#include "main/shim/metric_id_api.h"
 #include "os/parameter_provider.h"
 #include "osi/include/alarm.h"
 #include "osi/include/allocator.h"
@@ -896,10 +895,6 @@ static void dump(int fd, const char** /*arguments*/) {
   log::debug("Finished bluetooth dumpsys");
 }
 
-static void dumpMetrics(std::string* output) {
-  bluetooth::common::BluetoothMetricsLogger::GetInstance()->WriteString(output);
-}
-
 static int get_remote_pbap_pce_version(const RawAddress* bd_addr) {
   // Read and restore the PCE version from local storage
   uint16_t pce_version = 0;
@@ -1104,7 +1099,7 @@ static std::string obfuscate_address(const RawAddress& address) {
 }
 
 static int get_metric_id(const RawAddress& address) {
-  return allocate_metric_id_from_metric_id_allocator(address);
+  return bluetooth::shim::AllocateIdFromMetricIdAllocator(address);
 }
 
 static int set_dynamic_audio_buffer_size(int codec, int size) {
@@ -1246,7 +1241,6 @@ EXPORT_SYMBOL bt_interface_t bluetoothInterface = {
         .set_os_callouts = set_os_callouts,
         .read_energy_info = read_energy_info,
         .dump = dump,
-        .dumpMetrics = dumpMetrics,
         .config_clear = config_clear,
         .interop_database_clear = interop_database_clear,
         .interop_database_add = interop_database_add,

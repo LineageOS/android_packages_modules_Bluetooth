@@ -51,11 +51,9 @@
 #include "bta/include/utl.h"
 #include "bta_ag_swb_aptx.h"
 #include "btif/include/btif_common.h"
-#include "btif/include/btif_metrics_logging.h"
 #include "btif/include/btif_profile_queue.h"
 #include "btif/include/btif_util.h"
 #include "btm_api_types.h"
-#include "common/metrics.h"
 #include "device/include/device_iot_conf_defs.h"
 #include "device/include/device_iot_config.h"
 #include "hardware/bluetooth.h"
@@ -391,7 +389,7 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
                     p_data->open.status, btif_hf_cb[idx].connected_bda, p_data->open.bd_addr);
             bt_hf_callbacks->ConnectionStateCallback(BTHF_CONNECTION_STATE_DISCONNECTED,
                                                      &(p_data->open.bd_addr));
-            log_counter_metrics_btif(
+            bluetooth::shim::CountCounterMetrics(
                     android::bluetooth::CodePathCounterKeyEnum::HFP_COLLISON_AT_AG_OPEN, 1);
           }
           break;
@@ -413,7 +411,7 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
                   btif_hf_cb[idx].connected_bda, p_data->open.bd_addr);
           bt_hf_callbacks->ConnectionStateCallback(BTHF_CONNECTION_STATE_DISCONNECTED,
                                                    &(btif_hf_cb[idx].connected_bda));
-          log_counter_metrics_btif(
+          bluetooth::shim::CountCounterMetrics(
                   android::bluetooth::CodePathCounterKeyEnum::HFP_COLLISON_AT_CONNECTING, 1);
           reset_control_block(&btif_hf_cb[idx]);
           btif_queue_advance();
@@ -434,8 +432,6 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
         btif_hf_cb[idx].state = BTHF_CONNECTION_STATE_CONNECTED;
         btif_hf_cb[idx].peer_feat = 0;
         clear_phone_state_multihf(&btif_hf_cb[idx]);
-        bluetooth::common::BluetoothMetricsLogger::GetInstance()->LogHeadsetProfileRfcConnection(
-                p_data->open.service_id);
         bt_hf_callbacks->ConnectionStateCallback(btif_hf_cb[idx].state,
                                                  &btif_hf_cb[idx].connected_bda);
       } else {
@@ -475,7 +471,7 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
           bt_hf_callbacks->ConnectionStateCallback(btif_hf_cb[idx].state, &connected_bda);
         }
 
-        log_counter_metrics_btif(
+        bluetooth::shim::CountCounterMetrics(
                 android::bluetooth::CodePathCounterKeyEnum::HFP_SELF_INITIATED_AG_FAILED, 1);
         btif_queue_advance();
         if (btm_sec_is_a_bonded_dev(connected_bda)) {
@@ -499,8 +495,8 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
       bt_hf_callbacks->ConnectionStateCallback(btif_hf_cb[idx].state, &connected_bda);
       if (failed_to_setup_slc) {
         log::error("failed to setup SLC for {}", connected_bda);
-        log_counter_metrics_btif(android::bluetooth::CodePathCounterKeyEnum::HFP_SLC_SETUP_FAILED,
-                                 1);
+        bluetooth::shim::CountCounterMetrics(
+                android::bluetooth::CodePathCounterKeyEnum::HFP_SLC_SETUP_FAILED, 1);
         btif_queue_advance();
         LogMetricHfpSlcFail(ToGdAddress(p_data->open.bd_addr));
         DEVICE_IOT_CONFIG_ADDR_INT_ADD_ONE(btif_hf_cb[idx].connected_bda,
@@ -884,7 +880,7 @@ public:
   bt_status_t DisconnectAudio(RawAddress* bd_addr) override;
   bt_status_t isNoiseReductionSupported(RawAddress* bd_addr) override;
   bt_status_t isVoiceRecognitionSupported(RawAddress* bd_addr) override;
-  bt_status_t StartVoiceRecognition(RawAddress* bd_addr) override;
+  bt_status_t StartVoiceRecognition(RawAddress* bd_addr, bool sendResult) override;
   bt_status_t StopVoiceRecognition(RawAddress* bd_addr) override;
   bt_status_t VolumeControl(bthf_volume_type_t type, int volume, RawAddress* bd_addr) override;
   bt_status_t DeviceStatusNotification(bthf_network_state_t ntk_state, bthf_service_type_t svc_type,
@@ -1027,7 +1023,7 @@ bt_status_t HeadsetInterface::isVoiceRecognitionSupported(RawAddress* bd_addr) {
   return BT_STATUS_SUCCESS;
 }
 
-bt_status_t HeadsetInterface::StartVoiceRecognition(RawAddress* bd_addr) {
+bt_status_t HeadsetInterface::StartVoiceRecognition(RawAddress* bd_addr, bool sendResult) {
   CHECK_BTHF_INIT();
   int idx = btif_hf_idx_by_bdaddr(bd_addr);
   if ((idx < 0) || (idx >= BTA_AG_MAX_NUM_CLIENTS)) {
@@ -1043,9 +1039,11 @@ bt_status_t HeadsetInterface::StartVoiceRecognition(RawAddress* bd_addr) {
     return BT_STATUS_UNSUPPORTED;
   }
   btif_hf_cb[idx].is_during_voice_recognition = true;
-  tBTA_AG_RES_DATA ag_res = {};
-  ag_res.state = true;
-  BTA_AgResult(btif_hf_cb[idx].handle, BTA_AG_BVRA_RES, ag_res);
+  if (sendResult) {
+    tBTA_AG_RES_DATA ag_res = {};
+    ag_res.state = true;
+    BTA_AgResult(btif_hf_cb[idx].handle, BTA_AG_BVRA_RES, ag_res);
+  }
   return BT_STATUS_SUCCESS;
 }
 

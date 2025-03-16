@@ -2353,7 +2353,11 @@ static AdvertiseParameters parseParams(JNIEnv* env, jobject i) {
   p.secondary_advertising_phy = secondaryPhy;
   p.scan_request_notification_enable = false;
   p.own_address_type = ownAddressType;
-  p.peer_address = str2addr(env, peerAddress);
+  if (peerAddress == nullptr) {
+    p.peer_address = RawAddress::kEmpty;
+  } else {
+    p.peer_address = str2addr(env, peerAddress);
+  }
   p.peer_address_type = peerAddressType;
   p.discoverable = isDiscoverable;
   return p;

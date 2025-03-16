@@ -80,7 +80,7 @@ final class A2dpStateMachine extends StateMachine {
 
     static final int MESSAGE_CONNECT = 1;
     static final int MESSAGE_DISCONNECT = 2;
-    @VisibleForTesting static final int MESSAGE_STACK_EVENT = 101;
+    static final int MESSAGE_STACK_EVENT = 101;
     private static final int MESSAGE_CONNECT_TIMEOUT = 201;
 
     @VisibleForTesting static final Duration CONNECT_TIMEOUT = Duration.ofSeconds(30);
@@ -132,9 +132,7 @@ final class A2dpStateMachine extends StateMachine {
 
     public void doQuit() {
         log("doQuit for device " + mDevice);
-        if (Flags.a2dpBroadcastConnectionStateWhenTurnedOff()
-                && mConnectionState != STATE_DISCONNECTED
-                && mLastConnectionState != -1) {
+        if (mConnectionState != STATE_DISCONNECTED && mLastConnectionState != -1) {
             // Broadcast CONNECTION_STATE_CHANGED when A2dpService is turned off while
             // the device is connected
             broadcastConnectionState(STATE_DISCONNECTED, mConnectionState);

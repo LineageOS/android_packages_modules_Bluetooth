@@ -1227,7 +1227,6 @@ public class ScanManagerTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_BLE_SCAN_ADV_METRICS_REDESIGN)
     public void testMetricsAppScanScreenOn() {
         // Set filtered scan flag
         final boolean isFiltered = true;
@@ -1292,7 +1291,8 @@ public class ScanManagerTest {
                             0,
                             true,
                             false,
-                            IMPORTANCE_FOREGROUND_SERVICE);
+                            IMPORTANCE_FOREGROUND_SERVICE,
+                            "");
 
             advanceTime(scanTestDuration);
             // Record scan stop
@@ -1317,12 +1317,12 @@ public class ScanManagerTest {
                             eq(0),
                             eq(true),
                             eq(false),
-                            eq(IMPORTANCE_FOREGROUND_SERVICE));
+                            eq(IMPORTANCE_FOREGROUND_SERVICE),
+                            eq(""));
         }
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_BLE_SCAN_ADV_METRICS_REDESIGN)
     public void testMetricsRadioScanScreenOnOffMultiScan() {
         // Set filtered scan flag
         final boolean isFiltered = true;
@@ -1390,7 +1390,8 @@ public class ScanManagerTest {
                         eq((long) ScanManager.SCAN_MODE_LOW_POWER_WINDOW_MS),
                         eq(true),
                         eq(scanTestDuration),
-                        eq(IMPORTANCE_FOREGROUND_SERVICE));
+                        eq(IMPORTANCE_FOREGROUND_SERVICE),
+                        eq(""));
         advanceTime(scanTestDuration);
 
         // Create workSource for the third app
@@ -1430,7 +1431,8 @@ public class ScanManagerTest {
                         eq((long) ScanManager.SCAN_MODE_BALANCED_WINDOW_MS),
                         eq(true),
                         eq(scanTestDuration),
-                        eq(IMPORTANCE_FOREGROUND_SERVICE));
+                        eq(IMPORTANCE_FOREGROUND_SERVICE),
+                        eq(""));
         advanceTime(scanTestDuration);
 
         // Create workSource for the fourth app
@@ -1467,7 +1469,8 @@ public class ScanManagerTest {
                         anyLong(),
                         anyBoolean(),
                         anyLong(),
-                        anyInt());
+                        anyInt(),
+                        eq(""));
         advanceTime(scanTestDuration);
 
         // Set as background app
@@ -1492,7 +1495,8 @@ public class ScanManagerTest {
                         eq((long) ScanManager.SCAN_MODE_LOW_LATENCY_WINDOW_MS),
                         eq(true),
                         eq(scanTestDuration * 2),
-                        eq(IMPORTANCE_FOREGROUND_SERVICE));
+                        eq(IMPORTANCE_FOREGROUND_SERVICE),
+                        eq(""));
         advanceTime(scanTestDuration);
 
         // Get the most aggressive scan client when screen is off
@@ -1521,7 +1525,8 @@ public class ScanManagerTest {
                         eq((long) SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW_MS),
                         eq(false),
                         eq(scanTestDuration),
-                        eq(IMPORTANCE_FOREGROUND_SERVICE + 1));
+                        eq(IMPORTANCE_FOREGROUND_SERVICE + 1),
+                        eq(""));
         advanceTime(scanTestDuration);
 
         // Stop scan for the fourth app
@@ -1538,7 +1543,8 @@ public class ScanManagerTest {
                         anyLong(),
                         anyBoolean(),
                         anyLong(),
-                        anyInt());
+                        anyInt(),
+                        eq(""));
         advanceTime(scanTestDuration);
 
         // Stop scan for the third app
@@ -1558,7 +1564,8 @@ public class ScanManagerTest {
                         eq((long) ScanManager.SCAN_MODE_LOW_LATENCY_WINDOW_MS),
                         eq(true),
                         eq(scanTestDuration * 2),
-                        eq(IMPORTANCE_FOREGROUND_SERVICE));
+                        eq(IMPORTANCE_FOREGROUND_SERVICE),
+                        eq(""));
         advanceTime(scanTestDuration);
 
         // Stop scan for the second app
@@ -1578,7 +1585,8 @@ public class ScanManagerTest {
                         eq((long) ScanManager.SCAN_MODE_BALANCED_WINDOW_MS),
                         eq(true),
                         eq(scanTestDuration),
-                        eq(IMPORTANCE_FOREGROUND_SERVICE));
+                        eq(IMPORTANCE_FOREGROUND_SERVICE),
+                        eq(""));
         advanceTime(scanTestDuration);
 
         // Stop scan for the first app
@@ -1598,7 +1606,8 @@ public class ScanManagerTest {
                         eq((long) ScanManager.SCAN_MODE_LOW_POWER_WINDOW_MS),
                         eq(true),
                         eq(scanTestDuration),
-                        eq(IMPORTANCE_FOREGROUND_SERVICE));
+                        eq(IMPORTANCE_FOREGROUND_SERVICE),
+                        eq(""));
     }
 
     @Test

@@ -63,6 +63,8 @@ using testing::Test;
 using namespace bluetooth::le_audio;
 using namespace bluetooth;
 
+using bluetooth::hci::testing::mock_controller_;
+
 using bluetooth::le_audio::DsaMode;
 using bluetooth::le_audio::LeAudioCodecConfiguration;
 using bluetooth::le_audio::LeAudioSourceAudioHalClient;
@@ -287,8 +289,8 @@ protected:
     init_message_loop_thread();
 
     reset_mock_function_count_map();
-    bluetooth::hci::testing::mock_controller_ = &mock_controller_;
-    ON_CALL(mock_controller_, SupportsBleIsochronousBroadcaster).WillByDefault(Return(true));
+    mock_controller_ = std::make_unique<bluetooth::hci::testing::MockControllerInterface>();
+    ON_CALL(*mock_controller_, SupportsBleIsochronousBroadcaster).WillByDefault(Return(true));
 
     iso_manager_ = bluetooth::hci::IsoManager::GetInstance();
     ASSERT_NE(iso_manager_, nullptr);
@@ -366,7 +368,7 @@ protected:
 
     ContentControlIdKeeper::GetInstance()->Stop();
 
-    bluetooth::hci::testing::mock_controller_ = nullptr;
+    bluetooth::hci::testing::mock_controller_.release();
     delete mock_audio_source_;
     iso_active_callback = nullptr;
     delete mock_audio_source_;
@@ -436,7 +438,6 @@ protected:
 
 protected:
   MockLeAudioBroadcasterCallbacks mock_broadcaster_callbacks_;
-  bluetooth::hci::testing::MockControllerInterface mock_controller_;
   bluetooth::hci::IsoManager* iso_manager_;
   MockIsoManager* mock_iso_manager_;
   bluetooth::hci::iso_manager::BigCallbacks* big_callbacks_ = nullptr;

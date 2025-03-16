@@ -46,7 +46,6 @@ import android.util.Log;
 
 import androidx.annotation.VisibleForTesting;
 
-import com.android.bluetooth.BluetoothMetricsProto;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.MetricsLogger;
@@ -1294,10 +1293,6 @@ public class HidHostService extends ProfileService {
                             + (" newState=" + newState)
                             + (" transport=" + transport));
             return;
-        }
-
-        if (newState == STATE_CONNECTED) {
-            MetricsLogger.logProfileConnectionEvent(BluetoothMetricsProto.ProfileId.HID_HOST);
         }
 
         mInputDevices.put(device, inputDevice);

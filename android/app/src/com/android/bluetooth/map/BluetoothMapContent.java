@@ -3469,7 +3469,7 @@ public class BluetoothMapContent {
                                 + addr
                                 + ", contact name: "
                                 + (contact != null
-                                        ? contact.getName() + ", X-BT-UID: " + contact.getXBtUid()
+                                        ? contact.name() + ", X-BT-UID: " + contact.getXBtUid()
                                         : "null"));
                 if (contact == null) {
                     continue;

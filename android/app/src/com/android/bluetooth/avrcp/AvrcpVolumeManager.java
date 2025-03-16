@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Android Open Source Project
+ * Copyright (C) 2018 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import com.android.bluetooth.btservice.AdapterService;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -458,8 +459,12 @@ class AvrcpVolumeManager extends AudioDeviceCallback {
             if (value instanceof Integer) {
                 sb.append(
                         String.format(
+                                Locale.ROOT,
                                 "    %-17s : %-14s : %3d : %s\n",
-                                d.getAddress(), deviceName, (Integer) value, absoluteVolume));
+                                d.getAddress(),
+                                deviceName,
+                                (Integer) value,
+                                absoluteVolume));
             }
         }
 

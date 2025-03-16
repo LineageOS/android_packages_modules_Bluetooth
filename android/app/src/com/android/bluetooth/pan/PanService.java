@@ -51,10 +51,8 @@ import android.os.UserManager;
 import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
-import com.android.bluetooth.BluetoothMetricsProto;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
@@ -698,9 +696,7 @@ public class PanService extends ProfileService {
                 mPanDevices.remove(device);
             }
         }
-        if (state == STATE_CONNECTED) {
-            MetricsLogger.logProfileConnectionEvent(BluetoothMetricsProto.ProfileId.PAN);
-        }
+
         mAdapterService.updateProfileConnectionAdapterProperties(
                 device, BluetoothProfile.PAN, state, prevState);
 

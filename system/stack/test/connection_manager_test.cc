@@ -70,9 +70,10 @@ namespace connection_manager {
 class BleConnectionManager : public testing::Test {
   void SetUp() override {
     localConnTimeoutMock = std::make_unique<MockConnTimeout>();
-    /* extern */ test::mock_acl_manager_ = new bluetooth::hci::testing::MockAclManager();
+    /* extern */ test::mock_acl_manager_ =
+            std::make_unique<bluetooth::hci::testing::MockAclManager>();
     /* extern */ test::mock_controller_ =
-            new testing::NiceMock<bluetooth::hci::testing::MockControllerInterface>();
+            std::make_unique<testing::NiceMock<bluetooth::hci::testing::MockControllerInterface>>();
     ON_CALL(*test::mock_controller_, GetLeFilterAcceptListSize()).WillByDefault(Return(16));
 
     auto alarm_mock = AlarmMock::Get();
@@ -92,8 +93,8 @@ class BleConnectionManager : public testing::Test {
   void TearDown() override {
     connection_manager::reset(true);
     AlarmMock::Reset();
-    delete test::mock_controller_;
-    delete test::mock_acl_manager_;
+    test::mock_controller_.reset();
+    test::mock_acl_manager_.reset();
     localConnTimeoutMock.reset();
   }
 };
@@ -106,7 +107,7 @@ TEST_F(BleConnectionManager, test_background_connection_add_remove) {
 
   EXPECT_TRUE(background_connect_add(CLIENT1, address1));
 
-  Mock::VerifyAndClearExpectations(test::mock_acl_manager_);
+  Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
 
   std::set<tAPP_ID> apps = get_apps_connecting_to(address1);
   EXPECT_EQ(apps.size(), 1UL);
@@ -119,7 +120,7 @@ TEST_F(BleConnectionManager, test_background_connection_add_remove) {
 
   EXPECT_EQ(get_apps_connecting_to(address1).size(), 0UL);
 
-  Mock::VerifyAndClearExpectations(test::mock_acl_manager_);
+  Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
 }
 
 /** Verify that multiple clients adding same device multiple times, result in
@@ -136,7 +137,7 @@ TEST_F(BleConnectionManager, test_background_connection_multiple_clients) {
 
   EXPECT_EQ(get_apps_connecting_to(address1).size(), 3UL);
 
-  Mock::VerifyAndClearExpectations(test::mock_acl_manager_);
+  Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
 
   EXPECT_CALL(*test::mock_acl_manager_, CreateLeConnection(_, _)).Times(0);
 
@@ -153,7 +154,7 @@ TEST_F(BleConnectionManager, test_background_connection_multiple_clients) {
 
   EXPECT_EQ(get_apps_connecting_to(address1).size(), 0UL);
 
-  Mock::VerifyAndClearExpectations(test::mock_acl_manager_);
+  Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
 }
 
 /** Verify adding/removing device to direct connection. */
@@ -173,7 +174,7 @@ TEST_F(BleConnectionManager, test_direct_connection_client) {
   // Client that don't do direct connection should fail attempt to stop it
   EXPECT_FALSE(direct_connect_remove(CLIENT2, address1));
 
-  Mock::VerifyAndClearExpectations(test::mock_acl_manager_);
+  Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
 
   EXPECT_CALL(*test::mock_acl_manager_, CancelLeConnect(_)).Times(1);
   EXPECT_CALL(*AlarmMock::Get(), AlarmFree(_)).Times(1);
@@ -183,7 +184,7 @@ TEST_F(BleConnectionManager, test_direct_connection_client) {
   // acceptlist is in use, i.e. next connection attempt
   EXPECT_TRUE(direct_connect_remove(CLIENT1, address1));
 
-  Mock::VerifyAndClearExpectations(test::mock_acl_manager_);
+  Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
 }
 
 /** Verify direct connection timeout does remove device from acceptlist, and
@@ -201,7 +202,7 @@ TEST_F(BleConnectionManager, test_direct_connect_timeout) {
   // Start direct connect attempt...
   EXPECT_TRUE(direct_connect_add(CLIENT1, address1));
 
-  Mock::VerifyAndClearExpectations(test::mock_acl_manager_);
+  Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
 
   EXPECT_CALL(*test::mock_acl_manager_, CancelLeConnect(_)).Times(1);
   EXPECT_CALL(*localConnTimeoutMock, OnConnectionTimedOut(CLIENT1, address1)).Times(1);
@@ -210,7 +211,7 @@ TEST_F(BleConnectionManager, test_direct_connect_timeout) {
   // simulate timeout seconds passed, alarm executing
   alarm_callback(alarm_data);
 
-  Mock::VerifyAndClearExpectations(test::mock_acl_manager_);
+  Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
 }
 
 /** Verify that we properly handle successfull direct connection */
@@ -222,7 +223,7 @@ TEST_F(BleConnectionManager, test_direct_connection_success) {
   // Start direct connect attempt...
   EXPECT_TRUE(direct_connect_add(CLIENT1, address1));
 
-  Mock::VerifyAndClearExpectations(test::mock_acl_manager_);
+  Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
 
   EXPECT_CALL(*test::mock_acl_manager_, CancelLeConnect(address1_hci)).Times(1);
   EXPECT_CALL(*AlarmMock::Get(), AlarmFree(_)).Times(1);
@@ -230,7 +231,7 @@ TEST_F(BleConnectionManager, test_direct_connection_success) {
   // successfully.
   on_connection_complete(address1);
 
-  Mock::VerifyAndClearExpectations(test::mock_acl_manager_);
+  Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
 }
 
 /** Verify that we properly handle application unregistration */
@@ -244,23 +245,23 @@ TEST_F(BleConnectionManager, test_app_unregister) {
 
   EXPECT_CALL(*test::mock_acl_manager_, CreateLeConnection(address1_hci, true)).Times(1);
   EXPECT_TRUE(direct_connect_add(CLIENT1, address1));
-  Mock::VerifyAndClearExpectations(test::mock_acl_manager_);
+  Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
 
   EXPECT_CALL(*test::mock_acl_manager_, CreateLeConnection(address2_hci, false)).Times(1);
   EXPECT_TRUE(background_connect_add(CLIENT1, address2));
-  Mock::VerifyAndClearExpectations(test::mock_acl_manager_);
+  Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
 
   EXPECT_CALL(*test::mock_acl_manager_, CreateLeConnection(address2_hci, true)).Times(1);
   EXPECT_TRUE(direct_connect_add(CLIENT2, address2));
-  Mock::VerifyAndClearExpectations(test::mock_acl_manager_);
+  Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
 
   EXPECT_CALL(*test::mock_acl_manager_, CancelLeConnect(address1_hci)).Times(1);
   on_app_deregistered(CLIENT1);
-  Mock::VerifyAndClearExpectations(test::mock_acl_manager_);
+  Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
 
   EXPECT_CALL(*test::mock_acl_manager_, CancelLeConnect(address2_hci)).Times(1);
   on_app_deregistered(CLIENT2);
-  Mock::VerifyAndClearExpectations(test::mock_acl_manager_);
+  Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
 }
 
 /** Verify adding device to both direct connection and background connection. */
@@ -273,7 +274,7 @@ TEST_F(BleConnectionManager, test_direct_and_background_connect) {
   EXPECT_TRUE(direct_connect_add(CLIENT1, address1));
   EXPECT_TRUE(background_connect_add(CLIENT1, address1));
 
-  Mock::VerifyAndClearExpectations(test::mock_acl_manager_);
+  Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
 
   EXPECT_CALL(*AlarmMock::Get(), AlarmFree(_)).Times(1);
   // not removing from acceptlist yet, as the background connection is still
@@ -284,7 +285,7 @@ TEST_F(BleConnectionManager, test_direct_and_background_connect) {
   EXPECT_CALL(*test::mock_acl_manager_, CancelLeConnect(_)).Times(1);
   EXPECT_TRUE(background_connect_remove(CLIENT1, address1));
 
-  Mock::VerifyAndClearExpectations(test::mock_acl_manager_);
+  Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
 }
 
 TEST_F(BleConnectionManager, test_target_announement_connect) {
@@ -302,7 +303,7 @@ TEST_F(BleConnectionManager, test_add_targeted_announement_when_allow_list_used)
   EXPECT_TRUE(background_connect_add(CLIENT1, address1));
   EXPECT_TRUE(background_connect_targeted_announcement_add(CLIENT2, address1));
 
-  Mock::VerifyAndClearExpectations(test::mock_acl_manager_);
+  Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
 }
 
 TEST_F(BleConnectionManager, test_add_background_connect_when_targeted_announcement_are_enabled) {
@@ -315,7 +316,7 @@ TEST_F(BleConnectionManager, test_add_background_connect_when_targeted_announcem
   EXPECT_TRUE(background_connect_targeted_announcement_add(CLIENT2, address1));
 
   EXPECT_TRUE(background_connect_add(CLIENT1, address1));
-  Mock::VerifyAndClearExpectations(test::mock_acl_manager_);
+  Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
 }
 
 TEST_F(BleConnectionManager, test_re_add_background_connect_to_allow_list) {
@@ -325,7 +326,7 @@ TEST_F(BleConnectionManager, test_re_add_background_connect_to_allow_list) {
   EXPECT_TRUE(background_connect_targeted_announcement_add(CLIENT2, address1));
 
   EXPECT_TRUE(background_connect_add(CLIENT1, address1));
-  Mock::VerifyAndClearExpectations(test::mock_acl_manager_);
+  Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
 
   /* Now remove app using targeted announcement and expect device
    * to be added to white list
@@ -335,11 +336,11 @@ TEST_F(BleConnectionManager, test_re_add_background_connect_to_allow_list) {
   EXPECT_CALL(*test::mock_acl_manager_, CreateLeConnection(address1_hci, false)).Times(1);
 
   EXPECT_TRUE(background_connect_remove(CLIENT2, address1));
-  Mock::VerifyAndClearExpectations(test::mock_acl_manager_);
+  Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
 
   EXPECT_CALL(*test::mock_acl_manager_, CancelLeConnect(_)).Times(1);
   EXPECT_TRUE(background_connect_remove(CLIENT1, address1));
-  Mock::VerifyAndClearExpectations(test::mock_acl_manager_);
+  Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
 }
 
 TEST_F(BleConnectionManager, test_re_add_to_allow_list_after_timeout_with_multiple_clients) {
@@ -352,7 +353,7 @@ TEST_F(BleConnectionManager, test_re_add_to_allow_list_after_timeout_with_multip
 
   EXPECT_TRUE(background_connect_add(CLIENT1, address1));
 
-  Mock::VerifyAndClearExpectations(test::mock_acl_manager_);
+  Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
 
   EXPECT_CALL(*AlarmMock::Get(), AlarmSetOnMloop(_, _, _, _))
           .Times(1)
@@ -360,7 +361,7 @@ TEST_F(BleConnectionManager, test_re_add_to_allow_list_after_timeout_with_multip
   // Start direct connect attempt...
   EXPECT_TRUE(direct_connect_add(CLIENT2, address1));
 
-  Mock::VerifyAndClearExpectations(test::mock_acl_manager_);
+  Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
 
   // simulate timeout seconds passed, alarm executing
   EXPECT_CALL(*localConnTimeoutMock, OnConnectionTimedOut(CLIENT2, address1)).Times(1);
@@ -369,7 +370,7 @@ TEST_F(BleConnectionManager, test_re_add_to_allow_list_after_timeout_with_multip
   EXPECT_CALL(*AlarmMock::Get(), AlarmFree(_)).Times(1);
   alarm_callback(alarm_data);
 
-  Mock::VerifyAndClearExpectations(test::mock_acl_manager_);
+  Mock::VerifyAndClearExpectations(test::mock_acl_manager_.get());
 }
 
 }  // namespace connection_manager

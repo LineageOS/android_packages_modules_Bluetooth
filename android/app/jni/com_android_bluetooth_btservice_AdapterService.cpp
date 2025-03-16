@@ -1727,21 +1727,6 @@ static void dumpNative(JNIEnv* env, jobject /* obj */, jobject fdObj, jobjectArr
   delete[] argObjs;
 }
 
-static jbyteArray dumpMetricsNative(JNIEnv* env, jobject /* obj */) {
-  log::info("");
-  if (!sBluetoothInterface) {
-    return env->NewByteArray(0);
-  }
-
-  std::string output;
-  sBluetoothInterface->dumpMetrics(&output);
-  jsize output_size = output.size() * sizeof(char);
-  jbyteArray output_bytes = env->NewByteArray(output_size);
-  env->SetByteArrayRegion(output_bytes, 0, output_size,
-                          reinterpret_cast<const jbyte*>(output.data()));
-  return output_bytes;
-}
-
 static jboolean factoryResetNative(JNIEnv* /* env */, jobject /* obj */) {
   log::verbose("");
   if (!sBluetoothInterface) {
@@ -2307,7 +2292,6 @@ static int register_com_android_bluetooth_btservice_AdapterService(JNIEnv* env) 
           {"readEnergyInfoNative", "()I", reinterpret_cast<void*>(readEnergyInfoNative)},
           {"dumpNative", "(Ljava/io/FileDescriptor;[Ljava/lang/String;)V",
            reinterpret_cast<void*>(dumpNative)},
-          {"dumpMetricsNative", "()[B", reinterpret_cast<void*>(dumpMetricsNative)},
           {"factoryResetNative", "()Z", reinterpret_cast<void*>(factoryResetNative)},
           {"obfuscateAddressNative", "([B)[B", reinterpret_cast<void*>(obfuscateAddressNative)},
           {"setBufferLengthMillisNative", "(II)Z",

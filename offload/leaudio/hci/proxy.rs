@@ -195,10 +195,16 @@ impl Module for LeAudioModule {
                 );
             }
 
-            Ok(Command::LeSetupIsoDataPath(ref c)) if c.data_path_id == DATA_PATH_ID_SOFTWARE => {
+            Ok(Command::LeSetupIsoDataPath(ref c)) if c.data_path_id == DATA_PATH_ID_SOFTWARE => 'command: {
                 assert_eq!(c.data_path_direction, hci::LeDataPathDirection::Input);
                 let mut state = self.state.lock().unwrap();
-                let stream = state.stream.get_mut(&c.connection_handle).unwrap();
+                let Some(stream) = state.stream.get_mut(&c.connection_handle) else {
+                    log::warn!(
+                        "Setup ISO Data Path on non existing BIS/CIS handle: 0x{:03x}",
+                        c.connection_handle
+                    );
+                    break 'command;
+                };
                 stream.state = StreamState::Enabling;
 
                 // Phase 1 limitation: The controller does not implement HCI Link Feedback event,
@@ -207,6 +213,16 @@ impl Module for LeAudioModule {
                 self.next()
                     .out_cmd(&hci::LeSetupIsoDataPath { data_path_id: 0, ..c.clone() }.to_bytes());
                 return;
+            }
+
+            Ok(Command::LeRemoveIsoDataPath(ref c)) => {
+                let mut state = self.state.lock().unwrap();
+                if state.stream.get_mut(&c.connection_handle).is_none() {
+                    log::warn!(
+                        "Remove ISO Data Path on non existing BIS/CIS handle: 0x{:03x}",
+                        c.connection_handle
+                    );
+                }
             }
 
             _ => (),
@@ -250,7 +266,9 @@ impl Module for LeAudioModule {
 
                 ReturnParameters::LeSetupIsoDataPath(ref ret) => 'event: {
                     let mut state = self.state.lock().unwrap();
-                    let stream = state.stream.get_mut(&ret.connection_handle).unwrap();
+                    let Some(stream) = state.stream.get_mut(&ret.connection_handle) else {
+                        break 'event;
+                    };
                     stream.state =
                         if stream.state == StreamState::Enabling && ret.status == Status::Success {
                             StreamState::Enabled
@@ -278,9 +296,11 @@ impl Module for LeAudioModule {
                     );
                 }
 
-                ReturnParameters::LeRemoveIsoDataPath(ref ret) if ret.status == Status::Success => {
+                ReturnParameters::LeRemoveIsoDataPath(ref ret) if ret.status == Status::Success => 'event: {
                     let mut state = self.state.lock().unwrap();
-                    let stream = state.stream.get_mut(&ret.connection_handle).unwrap();
+                    let Some(stream) = state.stream.get_mut(&ret.connection_handle) else {
+                        break 'event;
+                    };
                     if stream.state == StreamState::Enabled {
                         Service::stop_stream(ret.connection_handle);
                     }

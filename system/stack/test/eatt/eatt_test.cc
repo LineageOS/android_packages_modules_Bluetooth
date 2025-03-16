@@ -219,11 +219,13 @@ protected:
 
     le_buffer_size_.le_data_packet_length_ = 128;
     le_buffer_size_.total_num_le_packets_ = 24;
-    EXPECT_CALL(controller_, GetLeBufferSize).WillRepeatedly(Return(le_buffer_size_));
+    bluetooth::hci::testing::mock_controller_ =
+            std::make_unique<bluetooth::hci::testing::MockControllerInterface>();
+    EXPECT_CALL(*bluetooth::hci::testing::mock_controller_, GetLeBufferSize)
+            .WillRepeatedly(Return(le_buffer_size_));
     bluetooth::l2cap::SetMockInterface(&l2cap_interface_);
     bluetooth::manager::SetMockBtmApiInterface(&btm_api_interface_);
     bluetooth::gatt::SetMockGattInterface(&gatt_interface_);
-    bluetooth::hci::testing::mock_controller_ = &controller_;
 
     // Clear the static memory for each test case
     memset(&test_tcb, 0, sizeof(test_tcb));
@@ -258,7 +260,7 @@ protected:
     bluetooth::l2cap::SetMockInterface(nullptr);
     bluetooth::testing::stack::l2cap::reset_interface();
     bluetooth::manager::SetMockBtmApiInterface(nullptr);
-    bluetooth::hci::testing::mock_controller_ = nullptr;
+    bluetooth::hci::testing::mock_controller_.reset();
 
     Test::TearDown();
   }
@@ -269,7 +271,6 @@ protected:
   bluetooth::l2cap::MockL2capInterface l2cap_interface_;
   bluetooth::testing::stack::l2cap::Mock mock_stack_l2cap_interface_;
   bluetooth::gatt::MockGattInterface gatt_interface_;
-  bluetooth::hci::testing::MockControllerInterface controller_;
   bluetooth::hci::LeBufferSize le_buffer_size_;
 
   tL2CAP_APPL_INFO l2cap_app_info_;

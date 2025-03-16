@@ -34,6 +34,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 // Next tag value for ContentProfileErrorReportUtils.report(): 2
@@ -146,7 +147,7 @@ public class BluetoothMapConvoListingElement
 
     @SuppressWarnings("JavaUtilDate") // TODO: b/365629730 -- prefer Instant or LocalDate
     public String getLastActivityString() {
-        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmss");
+        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmss", Locale.ROOT);
         Date date = new Date(mLastActivity);
         return format.format(date); // Format to YYYYMMDDTHHMMSS local time
     }
@@ -159,7 +160,7 @@ public class BluetoothMapConvoListingElement
     @SuppressWarnings("JavaUtilDate") // TODO: b/365629730 -- prefer Instant or LocalDate
     public void setLastActivity(String lastActivity) throws ParseException {
         // TODO: Encode with time-zone if MCE requests it
-        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmss");
+        SimpleDateFormat format = new SimpleDateFormat("yyyyMMdd'T'HHmmss", Locale.ROOT);
         Date date = format.parse(lastActivity);
         this.mLastActivity = date.getTime();
     }

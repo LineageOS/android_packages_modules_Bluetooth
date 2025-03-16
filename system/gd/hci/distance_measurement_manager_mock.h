@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 The Android Open Source Project
+ * Copyright (C) 2022 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,12 +31,22 @@ struct DistanceMeasurementManager::impl : public bluetooth::hci::LeAddressManage
 namespace testing {
 
 class MockDistanceMeasurementCallbacks : public DistanceMeasurementCallbacks {
+public:
   MOCK_METHOD(void, OnDistanceMeasurementStarted, (Address, DistanceMeasurementMethod));
   MOCK_METHOD(void, OnDistanceMeasurementStopped,
               (Address, DistanceMeasurementErrorCode, DistanceMeasurementMethod));
   MOCK_METHOD(void, OnDistanceMeasurementResult,
               (Address, uint32_t, uint32_t, int, int, int, int, uint64_t, int8_t, double,
                DistanceMeasurementDetectedAttackLevel, double, DistanceMeasurementMethod));
+  MOCK_METHOD(void, OnRasFragmentReady,
+              (Address address, uint16_t procedure_counter, bool is_last,
+               std::vector<uint8_t> raw_data));
+  MOCK_METHOD(void, OnVendorSpecificCharacteristics,
+              (std::vector<hal::VendorSpecificCharacteristic> vendor_specific_characteristics));
+  MOCK_METHOD(void, OnVendorSpecificReply,
+              (Address address, std::vector<bluetooth::hal::VendorSpecificCharacteristic>
+                                        vendor_specific_characteristics));
+  MOCK_METHOD(void, OnHandleVendorSpecificReplyComplete, (Address address, bool success));
 };
 
 class MockDistanceMeasurementManager : public DistanceMeasurementManager {

@@ -1443,7 +1443,7 @@ tL2CAP_LE_RESULT_CODE l2ble_sec_access_req(const RawAddress& bd_addr, uint16_t p
  * constraints. For example, when there is at least one Hearing Aid device
  * bonded, the minimum interval is raised. On return, min_interval and
  * max_interval are updated. */
-void L2CA_AdjustConnectionIntervals(uint16_t* min_interval, uint16_t* max_interval,
+void L2CA_AdjustConnectionIntervals(uint16_t* /* min_interval */, uint16_t* max_interval,
                                     uint16_t floor_interval) {
   // Allow for customization by systemprops for mainline
   uint16_t phone_min_interval = floor_interval;
@@ -1460,13 +1460,6 @@ void L2CA_AdjustConnectionIntervals(uint16_t* min_interval, uint16_t* max_interv
     // minimum interval.
     phone_min_interval = BTM_BLE_CONN_INT_MIN_HEARINGAID;
     log::verbose("Have Hearing Aids. Min. interval is set to {}", phone_min_interval);
-  }
-
-  if (!com::android::bluetooth::flags::l2cap_le_do_not_adjust_min_interval() &&
-      *min_interval < phone_min_interval) {
-    log::verbose("requested min_interval={} too small. Set to {}", *min_interval,
-                 phone_min_interval);
-    *min_interval = phone_min_interval;
   }
 
   // While this could result in connection parameters that fall

@@ -69,7 +69,8 @@ protected:
     down_thread_ =
             new bluetooth::os::Thread("down_thread", bluetooth::os::Thread::Priority::NORMAL);
     down_handler_ = new bluetooth::os::Handler(down_thread_);
-    bluetooth::hci::testing::mock_hci_layer_ = &mock_hci_;
+    bluetooth::hci::testing::mock_hci_layer_ =
+            std::make_unique<bluetooth::hci::testing::MockHciLayer>();
     bluetooth::hci::testing::mock_gd_shim_handler_ = up_handler_;
   }
   void TearDown() override {
@@ -79,10 +80,10 @@ protected:
     down_handler_->Clear();
     delete down_handler_;
     delete down_thread_;
+    bluetooth::hci::testing::mock_hci_layer_.reset();
     StackBtmSecTest::TearDown();
   }
   bluetooth::common::BidiQueue<bluetooth::hci::ScoView, bluetooth::hci::ScoBuilder> sco_queue_{10};
-  bluetooth::hci::testing::MockHciLayer mock_hci_;
   bluetooth::os::Thread* up_thread_;
   bluetooth::os::Handler* up_handler_;
   bluetooth::os::Thread* down_thread_;

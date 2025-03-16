@@ -1,5 +1,5 @@
 /*
- * Copyright 2018 The Android Open Source Project
+ * Copyright (C) 2018 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +25,7 @@ import android.bluetooth.BluetoothDevice;
 import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
-import com.android.bluetooth.BluetoothMetricsProto.BluetoothLog;
 import com.android.bluetooth.BluetoothMetricsProto.BluetoothRemoteDeviceInformation;
-import com.android.bluetooth.BluetoothMetricsProto.ProfileConnectionStats;
-import com.android.bluetooth.BluetoothMetricsProto.ProfileId;
 
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnels;
@@ -44,7 +41,6 @@ import org.mockito.Mock;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 /** Unit tests for {@link MetricsLogger} */
@@ -111,66 +107,13 @@ public class MetricsLoggerTest {
 
     @Before
     public void setUp() {
-        MetricsLogger.dumpProto(BluetoothLog.newBuilder());
         mTestableMetricsLogger = new TestableMetricsLogger();
         mTestableMetricsLogger.init(mAdapterService, mRemoteDevices);
     }
 
     @After
     public void tearDown() {
-        // Dump metrics to clean up internal states
-        MetricsLogger.dumpProto(BluetoothLog.newBuilder());
         mTestableMetricsLogger.close();
-    }
-
-    /** Simple test to verify that profile connection event can be logged, dumped, and cleaned */
-    @Test
-    public void testLogProfileConnectionEvent() {
-        MetricsLogger.logProfileConnectionEvent(ProfileId.AVRCP);
-        BluetoothLog.Builder metricsBuilder = BluetoothLog.newBuilder();
-        MetricsLogger.dumpProto(metricsBuilder);
-        BluetoothLog metricsProto = metricsBuilder.build();
-        assertThat(metricsProto.getProfileConnectionStatsCount()).isEqualTo(1);
-        ProfileConnectionStats profileUsageStatsAvrcp = metricsProto.getProfileConnectionStats(0);
-        assertThat(profileUsageStatsAvrcp.getProfileId()).isEqualTo(ProfileId.AVRCP);
-        assertThat(profileUsageStatsAvrcp.getNumTimesConnected()).isEqualTo(1);
-        // Verify that MetricsLogger's internal state is cleared after a dump
-        BluetoothLog.Builder metricsBuilderAfterDump = BluetoothLog.newBuilder();
-        MetricsLogger.dumpProto(metricsBuilderAfterDump);
-        BluetoothLog metricsProtoAfterDump = metricsBuilderAfterDump.build();
-        assertThat(metricsProtoAfterDump.getProfileConnectionStatsCount()).isEqualTo(0);
-    }
-
-    /** Test whether multiple profile's connection events can be logged interleaving */
-    @Test
-    public void testLogProfileConnectionEventMultipleProfile() {
-        MetricsLogger.logProfileConnectionEvent(ProfileId.AVRCP);
-        MetricsLogger.logProfileConnectionEvent(ProfileId.HEADSET);
-        MetricsLogger.logProfileConnectionEvent(ProfileId.AVRCP);
-        BluetoothLog.Builder metricsBuilder = BluetoothLog.newBuilder();
-        MetricsLogger.dumpProto(metricsBuilder);
-        BluetoothLog metricsProto = metricsBuilder.build();
-        assertThat(metricsProto.getProfileConnectionStatsCount()).isEqualTo(2);
-        Map<ProfileId, ProfileConnectionStats> profileConnectionCountMap =
-                getProfileUsageStatsMap(metricsProto.getProfileConnectionStatsList());
-        assertThat(profileConnectionCountMap).containsKey(ProfileId.AVRCP);
-        assertThat(profileConnectionCountMap.get(ProfileId.AVRCP).getNumTimesConnected())
-                .isEqualTo(2);
-        assertThat(profileConnectionCountMap).containsKey(ProfileId.HEADSET);
-        assertThat(profileConnectionCountMap.get(ProfileId.HEADSET).getNumTimesConnected())
-                .isEqualTo(1);
-        // Verify that MetricsLogger's internal state is cleared after a dump
-        BluetoothLog.Builder metricsBuilderAfterDump = BluetoothLog.newBuilder();
-        MetricsLogger.dumpProto(metricsBuilderAfterDump);
-        BluetoothLog metricsProtoAfterDump = metricsBuilderAfterDump.build();
-        assertThat(metricsProtoAfterDump.getProfileConnectionStatsCount()).isEqualTo(0);
-    }
-
-    private static Map<ProfileId, ProfileConnectionStats> getProfileUsageStatsMap(
-            List<ProfileConnectionStats> profileUsageStats) {
-        HashMap<ProfileId, ProfileConnectionStats> profileUsageStatsMap = new HashMap<>();
-        profileUsageStats.forEach(item -> profileUsageStatsMap.put(item.getProfileId(), item));
-        return profileUsageStatsMap;
     }
 
     /** Test add counters and send them to statsd */

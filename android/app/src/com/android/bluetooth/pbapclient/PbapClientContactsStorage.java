@@ -42,6 +42,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * This class owns the interface to the contacts and call history storage mechanism, namely the
@@ -505,7 +506,7 @@ class PbapClientContactsStorage {
         }
 
         List<Pair<String, String>> irmc = call.getUnknownXData();
-        SimpleDateFormat parser = new SimpleDateFormat(TIMESTAMP_FORMAT);
+        SimpleDateFormat parser = new SimpleDateFormat(TIMESTAMP_FORMAT, Locale.ROOT);
         if (irmc != null) {
             for (Pair<String, String> pair : irmc) {
                 if (pair.first.startsWith(CALL_LOG_TIMESTAMP_PROPERTY)) {

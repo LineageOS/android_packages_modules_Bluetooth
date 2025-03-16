@@ -49,8 +49,10 @@ std::deque<power_mode_callback> power_mode_callback_queue;
 class StackBtmPowerMode : public testing::Test {
 protected:
   void SetUp() override {
-    ON_CALL(controller_, SupportsSniffMode).WillByDefault(Return(true));
-    bluetooth::hci::testing::mock_controller_ = &controller_;
+    bluetooth::hci::testing::mock_controller_ =
+            std::make_unique<bluetooth::hci::testing::MockControllerInterface>();
+    ON_CALL(*bluetooth::hci::testing::mock_controller_, SupportsSniffMode)
+            .WillByDefault(Return(true));
     power_mode_callback_queue.clear();
     reset_mock_function_count_map();
     ASSERT_EQ(tBTM_STATUS::BTM_SUCCESS,
@@ -71,10 +73,9 @@ protected:
               BTM_PmRegister(BTM_PM_DEREG, &pm_id_,
                              [](const RawAddress& /* p_bda */, tBTM_PM_STATUS /* status */,
                                 uint16_t /* value */, tHCI_STATUS /* hci_status */) {}));
-    bluetooth::hci::testing::mock_controller_ = nullptr;
+    bluetooth::hci::testing::mock_controller_.reset();
   }
 
-  bluetooth::hci::testing::MockControllerInterface controller_;
   uint8_t pm_id_{0};
 };
 

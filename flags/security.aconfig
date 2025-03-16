@@ -2,13 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "key_missing_classic_device"
-    namespace: "bluetooth"
-    description: "Key missing broadcast for Classic devices"
-    bug: "333634398"
-}
-
-flag {
     name: "key_missing_ble_peripheral"
     namespace: "bluetooth"
     description: "Key missing broadcast for LE devices in peripheral role"
@@ -60,16 +53,6 @@ flag {
   namespace: "bluetooth"
   description: "Check that the launching application for OPP has read access to the given content URI, on Android V+"
   bug: "375466974"
-  metadata {
-    purpose: PURPOSE_BUGFIX
-  }
-}
-
-flag {
-  name: "sec_disconnect_on_le_key_missing"
-  namespace: "bluetooth"
-  description: "Disconnect LE link when keys are missing during encryption"
-  bug: "376680866"
   metadata {
     purpose: PURPOSE_BUGFIX
   }

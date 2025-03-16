@@ -39,40 +39,10 @@ flag {
 }
 
 flag {
-    name: "a2dp_broadcast_connection_state_when_turned_off"
-    namespace: "bluetooth"
-    description: "Broadcast CONNECTION_STATE_CHANGED when A2dpService is turned off while a device is connected"
-    bug: "360034472"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "fix_avdt_rconfig_not_setting_l2cap"
     namespace: "bluetooth"
     description: "Set L2CAP flushable and high priority after A2DP reconfigure"
     bug: "361717220"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "a2dp_source_threading_fix"
-    namespace: "bluetooth"
-    description: "Schedule A2DP source setup operations to bt_main_thread to prevent races"
-    bug: "374166531"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "a2dp_clear_pending_start_on_session_restart"
-    namespace: "bluetooth"
-    description: "Clear the kPendingStart flag when the audio session is restarted for codec reconfiguration"
-    bug: "378524655"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

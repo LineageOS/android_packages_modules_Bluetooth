@@ -51,6 +51,7 @@ import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.Locale;
 
 /**
  * This class stores information about a single receiving file. It will only be used for inbounds
@@ -164,7 +165,7 @@ public class BluetoothOppReceiveFileInfo {
             Log.d(Constants.TAG, "File name is too long. Name is truncated as: " + filename);
         }
 
-        DateFormat dateFormat = new SimpleDateFormat("_hhmmss");
+        DateFormat dateFormat = new SimpleDateFormat("_hhmmss", Locale.ROOT);
         String currentTime = dateFormat.format(Calendar.getInstance().getTime());
         String fullFilename = filename + currentTime + extension;
 

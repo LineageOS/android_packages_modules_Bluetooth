@@ -30,7 +30,6 @@ static_library("common") {
   include_dirs = [
     "//bt/system/",
     "//bt/system/stack/include",
-    "//bt/system/linux_include",
   ]
 
   deps = [

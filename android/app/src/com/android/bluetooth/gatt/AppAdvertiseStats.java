@@ -35,7 +35,6 @@ import androidx.annotation.VisibleForTesting;
 
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.btservice.MetricsLogger;
-import com.android.bluetooth.flags.Flags;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -219,14 +218,13 @@ class AppAdvertiseStats {
     }
 
     void recordAdvertiseErrorCount(int status) {
-        if (Flags.bleScanAdvMetricsRedesign()) {
-            BluetoothStatsLog.write(
-                    BluetoothStatsLog.LE_ADV_ERROR_REPORTED,
-                    new int[] {mAppUid},
-                    new String[] {mAppName},
-                    BluetoothStatsLog.LE_ADV_ERROR_REPORTED__LE_ADV_OP_CODE__ERROR_CODE_ON_START,
-                    convertStatusCode(status));
-        }
+        BluetoothStatsLog.write(
+                BluetoothStatsLog.LE_ADV_ERROR_REPORTED,
+                new int[] {mAppUid},
+                new String[] {mAppName},
+                BluetoothStatsLog.LE_ADV_ERROR_REPORTED__LE_ADV_OP_CODE__ERROR_CODE_ON_START,
+                convertStatusCode(status),
+                getAttributionTag());
         MetricsLogger.getInstance().cacheCount(BluetoothProtoEnums.LE_ADV_ERROR_ON_START_COUNT, 1);
     }
 
@@ -355,6 +353,10 @@ class AppAdvertiseStats {
         mAppImportance = importance;
     }
 
+    private String getAttributionTag() {
+        return mAttributionTag != null ? mAttributionTag : "";
+    }
+
     private static void recordAdvertiseDurationCount(
             Duration duration, boolean isConnectable, boolean inPeriodic) {
         if (duration.compareTo(Duration.ofMinutes(1)) < 0) {
@@ -416,22 +418,21 @@ class AppAdvertiseStats {
     }
 
     private void recordAdvertiseEnableCount(boolean enable, int instanceCount, long durationMs) {
-        if (Flags.bleScanAdvMetricsRedesign()) {
-            MetricsLogger.getInstance()
-                    .logAdvStateChanged(
-                            new int[] {mAppUid},
-                            new String[] {mAppName},
-                            enable /* enabled */,
-                            convertAdvInterval(mInterval),
-                            convertTxPowerLevel(mTxPowerLevel),
-                            mConnectable,
-                            mPeriodicAdvertisingEnabled,
-                            mScanResponseData != null && mScannable /* hasScanResponse */,
-                            !mLegacy /* isExtendedAdv */,
-                            instanceCount,
-                            durationMs,
-                            mAppImportance);
-        }
+        MetricsLogger.getInstance()
+                .logAdvStateChanged(
+                        new int[] {mAppUid},
+                        new String[] {mAppName},
+                        enable /* enabled */,
+                        convertAdvInterval(mInterval),
+                        convertTxPowerLevel(mTxPowerLevel),
+                        mConnectable,
+                        mPeriodicAdvertisingEnabled,
+                        mScanResponseData != null && mScannable /* hasScanResponse */,
+                        !mLegacy /* isExtendedAdv */,
+                        instanceCount,
+                        durationMs,
+                        mAppImportance,
+                        getAttributionTag());
         if (enable) {
             MetricsLogger.getInstance().cacheCount(BluetoothProtoEnums.LE_ADV_COUNT_ENABLE, 1);
             if (mConnectable) {

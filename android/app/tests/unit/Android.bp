@@ -35,6 +35,7 @@ android_test {
         "androidx.room_room-runtime",
         "androidx.room_room-testing",
         "androidx.test.espresso.intents",
+        "androidx.test.ext.junit",
         "androidx.test.ext.truth",
         "androidx.test.rules",
         "androidx.test.uiautomator_uiautomator",
@@ -45,6 +46,7 @@ android_test {
         "gson",
         "guava-android-testlib",
         "mmslib",
+        "mockito-kotlin2",
         "mockito-target-extended",
         "modules-utils-handlerexecutor",
         "platform-parametric-runner-lib",
@@ -61,8 +63,11 @@ android_test {
     jarjar_rules: ":bluetooth-jarjar-rules",
     asset_dirs: ["src/com/android/bluetooth/btservice/storage/schemas"],
 
-    // Include all test java files.
-    srcs: ["src/**/*.java"],
+    // Include all test java and kotlin files.
+    srcs: [
+        "src/**/*.java",
+        "src/**/*.kt",
+    ],
     jacoco: {
         include_filter: ["android.bluetooth.*"],
         exclude_filter: [],

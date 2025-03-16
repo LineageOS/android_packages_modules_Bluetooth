@@ -28,16 +28,6 @@ flag {
 }
 
 flag {
-    name: "get_profile_use_lock"
-    namespace: "bluetooth"
-    description: "Instead of bloating the main thread, use the binder thread with a synchronization lock"
-    bug: "370815283"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "support_remote_device_metadata"
     is_exported: true
     namespace: "bluetooth"

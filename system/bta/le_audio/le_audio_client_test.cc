@@ -1477,11 +1477,13 @@ protected:
 
     init_message_loop_thread();
     reset_mock_function_count_map();
-    ON_CALL(controller_, SupportsBleConnectedIsochronousStreamCentral).WillByDefault(Return(true));
-    ON_CALL(controller_, SupportsBleConnectedIsochronousStreamPeripheral)
+    hci::testing::mock_controller_ =
+            std::make_unique<NiceMock<bluetooth::hci::testing::MockControllerInterface>>();
+    ON_CALL(*hci::testing::mock_controller_, SupportsBleConnectedIsochronousStreamCentral)
             .WillByDefault(Return(true));
-    ON_CALL(controller_, SupportsBle2mPhy).WillByDefault(Return(true));
-    bluetooth::hci::testing::mock_controller_ = &controller_;
+    ON_CALL(*hci::testing::mock_controller_, SupportsBleConnectedIsochronousStreamPeripheral)
+            .WillByDefault(Return(true));
+    ON_CALL(*hci::testing::mock_controller_, SupportsBle2mPhy).WillByDefault(Return(true));
     bluetooth::manager::SetMockBtmInterface(&mock_btm_interface_);
     gatt::SetMockBtaGattInterface(&mock_gatt_interface_);
     gatt::SetMockBtaGattQueue(&mock_gatt_queue_);
@@ -1595,7 +1597,7 @@ protected:
     }
 
     iso_manager_->Stop();
-    bluetooth::hci::testing::mock_controller_ = nullptr;
+    hci::testing::mock_controller_.reset();
   }
 
 protected:
@@ -2761,7 +2763,6 @@ protected:
 
   /* Audio track metadata */
   char* test_tags_ptr_ = nullptr;
-  NiceMock<bluetooth::hci::testing::MockControllerInterface> controller_;
 };
 
 class UnicastTest : public UnicastTestNoInit {

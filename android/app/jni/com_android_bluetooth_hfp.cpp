@@ -651,7 +651,8 @@ static jboolean isVoiceRecognitionSupportedNative(JNIEnv* env, jobject /* object
   return (status == BT_STATUS_SUCCESS) ? JNI_TRUE : JNI_FALSE;
 }
 
-static jboolean startVoiceRecognitionNative(JNIEnv* env, jobject /* object */, jbyteArray address) {
+static jboolean startVoiceRecognitionNative(JNIEnv* env, jobject /* object */, jbyteArray address,
+                                            jboolean sendResult) {
   std::shared_lock<std::shared_timed_mutex> lock(interface_mutex);
   if (!sBluetoothHfpInterface) {
     log::warn("sBluetoothHfpInterface is null");
@@ -663,7 +664,7 @@ static jboolean startVoiceRecognitionNative(JNIEnv* env, jobject /* object */, j
     jniThrowIOException(env, EINVAL);
     return JNI_FALSE;
   }
-  bt_status_t status = sBluetoothHfpInterface->StartVoiceRecognition((RawAddress*)addr);
+  bt_status_t status = sBluetoothHfpInterface->StartVoiceRecognition((RawAddress*)addr, sendResult);
   if (status != BT_STATUS_SUCCESS) {
     log::error("Failed to start voice recognition, status: {}", bt_status_text(status));
   }
@@ -986,7 +987,7 @@ int register_com_android_bluetooth_hfp(JNIEnv* env) {
           {"disconnectAudioNative", "([B)Z", (void*)disconnectAudioNative},
           {"isNoiseReductionSupportedNative", "([B)Z", (void*)isNoiseReductionSupportedNative},
           {"isVoiceRecognitionSupportedNative", "([B)Z", (void*)isVoiceRecognitionSupportedNative},
-          {"startVoiceRecognitionNative", "([B)Z", (void*)startVoiceRecognitionNative},
+          {"startVoiceRecognitionNative", "([BZ)Z", (void*)startVoiceRecognitionNative},
           {"stopVoiceRecognitionNative", "([B)Z", (void*)stopVoiceRecognitionNative},
           {"setVolumeNative", "(II[B)Z", (void*)setVolumeNative},
           {"notifyDeviceStatusNative", "(IIII[B)Z", (void*)notifyDeviceStatusNative},

@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "adapter_properties_looper"
-    namespace: "bluetooth"
-    description: "Manage AdapterProperties threading to not conflict with main looper and handle callback from native properly"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-    bug: "372777933"
-}
-
-flag {
     name: "adapter_suspend_mgmt"
     namespace: "bluetooth"
     description: "Configure the BT adapter in a suspend state to avoid unexpected wake-up"

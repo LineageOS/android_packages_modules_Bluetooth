@@ -58,7 +58,6 @@ import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.BluetoothAdapterProxy;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.gatt.FilterParams;
-import com.android.bluetooth.gatt.GattServiceConfig;
 import com.android.bluetooth.util.SystemProperties;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
@@ -79,8 +78,7 @@ import java.util.stream.Collectors;
 
 /** Class that handles Bluetooth LE scan related operations. */
 public class ScanManager {
-    private static final String TAG =
-            GattServiceConfig.TAG_PREFIX + ScanManager.class.getSimpleName();
+    private static final String TAG = ScanManager.class.getSimpleName();
 
     public static final int SCAN_MODE_SCREEN_OFF_LOW_POWER_WINDOW_MS = 512;
     public static final int SCAN_MODE_SCREEN_OFF_LOW_POWER_INTERVAL_MS = 10240;
@@ -1294,18 +1292,6 @@ public class ScanManager {
                     && client.mSettings.getScanMode() != ScanSettings.SCAN_MODE_OPPORTUNISTIC) {
                 Log.d(TAG, "start gattClientScanNative from startRegularScan()");
                 mNativeInterface.gattClientScan(true);
-                if (!Flags.bleScanAdvMetricsRedesign()) {
-                    if (client.mStats != null
-                            && !AppScanStats.recordScanRadioStart(
-                                    client.mSettings.getScanMode(),
-                                    client.mScannerId,
-                                    client.mStats,
-                                    getScanWindowMillis(client.mSettings),
-                                    getScanIntervalMillis(client.mSettings),
-                                    mTimeProvider)) {
-                        Log.w(TAG, "Scan radio already started");
-                    }
-                }
             }
         }
 
@@ -1629,7 +1615,7 @@ public class ScanManager {
         }
 
         void flushBatchResults(int scannerId) {
-            Log.d(TAG, "flushPendingBatchResults - scannerId = " + scannerId);
+            Log.d(TAG, "flushBatchResults - scannerId = " + scannerId);
             if (mBatchScanParams.mFullScanScannerId != -1) {
                 resetCountDownLatch();
                 mNativeInterface.gattClientReadScanReports(
