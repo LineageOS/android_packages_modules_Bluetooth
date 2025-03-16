@@ -34,6 +34,23 @@
       "parentUuid": "e5e54c27_2045a661",
       "revId": "04c79e1e8af5c72be265b287433305da196483eb",
       "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
+    },
+    {
+      "unresolved": false,
+      "key": {
+        "uuid": "d9e872cf_5fb9771b",
+        "filename": "/PATCHSET_LEVEL",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 24830
+      },
+      "writtenOn": "2025-03-16T00:37:17Z",
+      "side": 1,
+      "message": "additionally, bluetooth will outright crash if an le secured pair prompt with a null name is attempting to be shown, since getName() will return null and cause a null deref",
+      "revId": "04c79e1e8af5c72be265b287433305da196483eb",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71"
     }
   ]
 }
