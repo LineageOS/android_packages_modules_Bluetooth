@@ -354,38 +354,15 @@ static bool smp_send_msg_to_L2CAP(const RawAddress& rem_bda, BT_HDR* p_toL2CAP) 
   smp_log_metrics(rem_bda, true /* outgoing */, p_toL2CAP->data + p_toL2CAP->offset, p_toL2CAP->len,
                   smp_cb.smp_over_br /* is_over_br */);
 
-  if (com::android::bluetooth::flags::l2cap_tx_complete_cb_info()) {
-    /* Unacked needs to be incremented before calling SendFixedChnlData */
-    smp_cb.total_tx_unacked++;
-    l2cap_ret = stack::l2cap::get_interface().L2CA_SendFixedChnlData(fixed_cid, rem_bda, p_toL2CAP);
-    if (l2cap_ret == tL2CAP_DW_RESULT::FAILED) {
-      smp_cb.total_tx_unacked--;
-      log::error("SMP failed to pass msg to L2CAP");
-      return false;
-    }
-    log::verbose("l2cap_tx_complete_cb_info is enabled");
-    return true;
-  }
-
+  /* Unacked needs to be incremented before calling SendFixedChnlData */
+  smp_cb.total_tx_unacked++;
   l2cap_ret = stack::l2cap::get_interface().L2CA_SendFixedChnlData(fixed_cid, rem_bda, p_toL2CAP);
   if (l2cap_ret == tL2CAP_DW_RESULT::FAILED) {
+    smp_cb.total_tx_unacked--;
     log::error("SMP failed to pass msg to L2CAP");
     return false;
-  } else {
-    tSMP_CB* p_cb = &smp_cb;
-
-    log::verbose("l2cap_tx_complete_cb_info is disabled");
-    if (p_cb->wait_for_authorization_complete) {
-      tSMP_INT_DATA smp_int_data;
-      smp_int_data.status = SMP_SUCCESS;
-      if (fixed_cid == L2CAP_SMP_CID) {
-        smp_sm_event(p_cb, SMP_AUTH_CMPL_EVT, &smp_int_data);
-      } else {
-        smp_br_state_machine_event(p_cb, SMP_BR_AUTH_CMPL_EVT, &smp_int_data);
-      }
-    }
-    return true;
   }
+  return true;
 }
 
 /*******************************************************************************
