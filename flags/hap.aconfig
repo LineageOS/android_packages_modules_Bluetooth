@@ -17,16 +17,6 @@ flag {
 }
 
 flag {
-    name: "hap_connect_only_requested_device"
-    namespace: "bluetooth"
-    description: "On profile connection, connect only requested device, not whole group it belongs to"
-    bug: "370405555"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "settings_can_control_hap_preset"
     is_exported: true
     namespace: "bluetooth"
