@@ -19,6 +19,7 @@
  * send or receive messages from the native stack. This file is registered
  * for the native methods in the corresponding JNI C++ file.
  */
+
 package com.android.bluetooth.a2dp;
 
 import static java.util.Objects.requireNonNull;
