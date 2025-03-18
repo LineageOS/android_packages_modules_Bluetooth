@@ -120,16 +120,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_sort_scans_to_sync_by_fails"
-    namespace: "bluetooth"
-    description: "Sort scan results for source sync by fails counter"
-    bug: "370639684"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "metadata_api_microphone_for_call_enabled"
     is_exported: true
     namespace: "bluetooth"

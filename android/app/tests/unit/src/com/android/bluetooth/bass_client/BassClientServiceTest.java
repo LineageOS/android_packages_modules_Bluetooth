@@ -3662,7 +3662,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_SORT_SCANS_TO_SYNC_BY_FAILS)
     public void testSelectSource_orderOfSyncRegisteringByRssiAndFailsCounter() {
         final BluetoothDevice device1 =
                 mBluetoothAdapter.getRemoteLeDevice(
