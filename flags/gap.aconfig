@@ -40,16 +40,6 @@ flag {
 }
 
 flag {
-    name: "sec_dont_clear_keys_on_encryption_err"
-    namespace: "bluetooth"
-    description: "Do not clear security record on encryption error"
-    bug: "342521414"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "android_os_identifier"
     namespace: "bluetooth"
     description: "Add a custom service to provide Android OS identifier"
