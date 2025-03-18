@@ -100,16 +100,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_broadcast_resync_helper"
-    namespace: "bluetooth"
-    description: "Helps sinks to resync to external broadcast when BIS or PA unsynced"
-    bug: "363168099"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "metadata_api_microphone_for_call_enabled"
     is_exported: true
     namespace: "bluetooth"

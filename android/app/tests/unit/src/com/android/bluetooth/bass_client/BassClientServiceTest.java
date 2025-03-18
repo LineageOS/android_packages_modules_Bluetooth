@@ -759,68 +759,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @DisableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
-    public void testNotRemovingCachedBroadcastOnLostWithoutScanning_noResyncFlag()
-            throws RemoteException {
-        prepareConnectedDeviceGroup();
-        startSearchingForSources();
-
-        // Scan and sync 1
-        onScanResult(mSourceDevice, TEST_BROADCAST_ID);
-        mInOrderMethodProxy
-                .verify(mMethodProxy)
-                .periodicAdvertisingManagerRegisterSync(
-                        any(), any(), anyInt(), anyInt(), any(), any());
-        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
-
-        // Sync lost during scanning removes cached broadcast
-        onSyncLost();
-
-        // Add source to not cached broadcast cause addFailed notification
-        BluetoothLeBroadcastMetadata meta = createBroadcastMetadata(TEST_BROADCAST_ID);
-        mBassClientService.addSource(mCurrentDevice, meta, /* isGroupOp */ true);
-        handleHandoverSupport();
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
-        verify(mCallback)
-                .onSourceAddFailed(
-                        eq(mCurrentDevice),
-                        eq(meta),
-                        eq(BluetoothStatusCodes.ERROR_BAD_PARAMETERS));
-
-        // Add broadcast to cache
-        onScanResult(mSourceDevice, TEST_BROADCAST_ID);
-        mInOrderMethodProxy
-                .verify(mMethodProxy)
-                .periodicAdvertisingManagerRegisterSync(
-                        any(), any(), anyInt(), anyInt(), any(), any());
-        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
-
-        // Stop searching
-        mBassClientService.stopSearchingForSources();
-
-        // Add sync handle by add source
-        mBassClientService.addSource(mCurrentDevice, meta, /* isGroupOp */ true);
-        handleHandoverSupport();
-        mInOrderMethodProxy
-                .verify(mMethodProxy)
-                .periodicAdvertisingManagerRegisterSync(
-                        any(), any(), anyInt(), anyInt(), any(), any());
-        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
-
-        // Sync lost without active scanning should not remove broadcast cache
-        onSyncLost();
-
-        // Add source to unsynced broadcast, causes synchronization first
-        mBassClientService.addSource(mCurrentDevice, meta, /* isGroupOp */ true);
-        handleHandoverSupport();
-        mInOrderMethodProxy
-                .verify(mMethodProxy)
-                .periodicAdvertisingManagerRegisterSync(
-                        any(), any(), anyInt(), anyInt(), any(), any());
-    }
-
-    @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void testNotRemovingCachedBroadcastOnLostWithoutScanning() throws RemoteException {
         prepareConnectedDeviceGroup();
         startSearchingForSources();
@@ -1138,101 +1076,6 @@ public class BassClientServiceTest {
         Handler handler = mBassClientService.mTimeoutHandler.getOrCreateHandler(broadcastId);
         Message newMsg = handler.obtainMessage(message);
         handler.dispatchMessage(newMsg);
-    }
-
-    @Test
-    @DisableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
-    public void testStopSearchingForSources_timeoutForActiveSync() {
-        prepareConnectedDeviceGroup();
-        startSearchingForSources();
-
-        // Scan and sync 1
-        onScanResult(mSourceDevice, TEST_BROADCAST_ID);
-        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
-
-        // Stop searching
-        mBassClientService.stopSearchingForSources();
-        mInOrderMethodProxy
-                .verify(mMethodProxy)
-                .periodicAdvertisingManagerUnregisterSync(any(), any());
-
-        // Add source to unsynced broadcast, causes synchronization first
-        BluetoothLeBroadcastMetadata meta = createBroadcastMetadata(TEST_BROADCAST_ID);
-        mBassClientService.addSource(mCurrentDevice, meta, /* isGroupOp */ true);
-        handleHandoverSupport();
-
-        // Source synced which cause start timeout event
-        assertThat(mBassClientService.mHandler.hasMessages(BassClientService.MESSAGE_SYNC_TIMEOUT))
-                .isFalse();
-        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
-
-        assertThat(mBassClientService.getActiveSyncedSources()).hasSize(1);
-        assertThat(mBassClientService.getDeviceForSyncHandle(TEST_SYNC_HANDLE))
-                .isEqualTo(mSourceDevice);
-        assertThat(mBassClientService.getBroadcastIdForSyncHandle(TEST_SYNC_HANDLE))
-                .isEqualTo(TEST_BROADCAST_ID);
-
-        assertThat(mBassClientService.mHandler.hasMessages(BassClientService.MESSAGE_SYNC_TIMEOUT))
-                .isTrue();
-        mBassClientService.mHandler.removeMessages(BassClientService.MESSAGE_SYNC_TIMEOUT);
-        Message newMsg =
-                mBassClientService.mHandler.obtainMessage(BassClientService.MESSAGE_SYNC_TIMEOUT);
-        newMsg.arg1 = TEST_BROADCAST_ID;
-        mBassClientService.mHandler.dispatchMessage(newMsg);
-
-        // Check if unsyced
-        mInOrderMethodProxy
-                .verify(mMethodProxy)
-                .periodicAdvertisingManagerUnregisterSync(any(), any());
-    }
-
-    @Test
-    @DisableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
-    public void testStopSearchingForSources_clearTimeoutForActiveSync() {
-        prepareConnectedDeviceGroup();
-        startSearchingForSources();
-
-        // Scan and sync 1
-        onScanResult(mSourceDevice, TEST_BROADCAST_ID);
-        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
-
-        // Stop searching
-        mBassClientService.stopSearchingForSources();
-        mInOrderMethodProxy
-                .verify(mMethodProxy)
-                .periodicAdvertisingManagerUnregisterSync(any(), any());
-
-        // Add source to unsynced broadcast, causes synchronization first
-        BluetoothLeBroadcastMetadata meta = createBroadcastMetadata(TEST_BROADCAST_ID);
-        mBassClientService.addSource(mCurrentDevice, meta, /* isGroupOp */ true);
-        handleHandoverSupport();
-
-        // Source synced which cause start timeout event
-        assertThat(mBassClientService.mHandler.hasMessages(BassClientService.MESSAGE_SYNC_TIMEOUT))
-                .isFalse();
-        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
-        assertThat(mBassClientService.mHandler.hasMessages(BassClientService.MESSAGE_SYNC_TIMEOUT))
-                .isTrue();
-
-        assertThat(mBassClientService.getActiveSyncedSources()).hasSize(1);
-        assertThat(mBassClientService.getDeviceForSyncHandle(TEST_SYNC_HANDLE))
-                .isEqualTo(mSourceDevice);
-        assertThat(mBassClientService.getBroadcastIdForSyncHandle(TEST_SYNC_HANDLE))
-                .isEqualTo(TEST_BROADCAST_ID);
-
-        // Start searching again should clear timeout
-        startSearchingForSources();
-        assertThat(mBassClientService.mHandler.hasMessages(BassClientService.MESSAGE_SYNC_TIMEOUT))
-                .isFalse();
-
-        mInOrderMethodProxy
-                .verify(mMethodProxy, never())
-                .periodicAdvertisingManagerUnregisterSync(any(), any());
-        expect.that(mBassClientService.getActiveSyncedSources().size()).isEqualTo(1);
-        expect.that(mBassClientService.getDeviceForSyncHandle(TEST_SYNC_HANDLE))
-                .isEqualTo(mSourceDevice);
-        expect.that(mBassClientService.getBroadcastIdForSyncHandle(TEST_SYNC_HANDLE))
-                .isEqualTo(TEST_BROADCAST_ID);
     }
 
     private static byte[] getScanRecord(int broadcastId) {
@@ -2980,7 +2823,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void testSelectSource_removeAfterMaxLimit_notSyncedToAnySink() {
         final BluetoothDevice device1 =
                 mBluetoothAdapter.getRemoteLeDevice(
@@ -3072,7 +2914,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void testSelectSource_removeAfterMaxLimit_firstIfAllSyncedToSinks() {
         final BluetoothDevice device1 =
                 mBluetoothAdapter.getRemoteLeDevice(
@@ -3828,9 +3669,7 @@ public class BassClientServiceTest {
                                         .get(BassConstants.BAAS_UUID)))
                 .isEqualTo(broadcastId2);
         onSyncLost();
-        if (Flags.leaudioBroadcastResyncHelper()) {
-            checkAndDispatchTimeout(broadcastId1, BassClientService.MESSAGE_SYNC_LOST_TIMEOUT);
-        }
+        checkAndDispatchTimeout(broadcastId1, BassClientService.MESSAGE_SYNC_LOST_TIMEOUT);
 
         // Added to queue again, high rssi
         generateScanResult(scanResult1);
@@ -4123,13 +3962,6 @@ public class BassClientServiceTest {
                 2 /* STATUS_LOCAL_STREAM_SUSPENDED */);
 
         verifyAllGroupMembersGettingUpdateOrAddSource(meta);
-
-        // Update receiver state with lost BIS sync
-        injectRemoteSourceStateChanged(meta, /* isPaSynced */ true, /* isBisSynced */ false);
-        if (!Flags.leaudioBroadcastResyncHelper()
-                && !Flags.leaudioMonitorUnicastSourceWhenManagedByBroadcastDelegator()) {
-            verify(mLeAudioService).activeBroadcastAssistantNotification(eq(false));
-        }
     }
 
     @Test
@@ -5190,44 +5022,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @DisableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
-    public void onSyncLost_notifySourceLostAndCancelSync_noResyncFlag() throws RemoteException {
-        prepareConnectedDeviceGroup();
-        startSearchingForSources();
-        onScanResult(mSourceDevice, TEST_BROADCAST_ID);
-        mInOrderMethodProxy
-                .verify(mMethodProxy)
-                .periodicAdvertisingManagerRegisterSync(
-                        any(), any(), anyInt(), anyInt(), any(), any());
-        onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
-        assertThat(mBassClientService.getActiveSyncedSources()).hasSize(1);
-        assertThat(mBassClientService.getActiveSyncedSources()).containsExactly(TEST_SYNC_HANDLE);
-        assertThat(mBassClientService.getDeviceForSyncHandle(TEST_SYNC_HANDLE))
-                .isEqualTo(mSourceDevice);
-        assertThat(mBassClientService.getBroadcastIdForSyncHandle(TEST_SYNC_HANDLE))
-                .isEqualTo(TEST_BROADCAST_ID);
-
-        onSyncLost();
-
-        TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
-        verify(mCallback).onSourceLost(eq(TEST_BROADCAST_ID));
-
-        // Cleaned all
-        assertThat(mBassClientService.getActiveSyncedSources()).isEmpty();
-        assertThat(mBassClientService.getDeviceForSyncHandle(TEST_SYNC_HANDLE)).isNull();
-        assertThat(mBassClientService.getBroadcastIdForSyncHandle(TEST_SYNC_HANDLE))
-                .isEqualTo(BassConstants.INVALID_BROADCAST_ID);
-
-        // Could try to sync again
-        onScanResult(mSourceDevice, TEST_BROADCAST_ID);
-        mInOrderMethodProxy
-                .verify(mMethodProxy)
-                .periodicAdvertisingManagerRegisterSync(
-                        any(), any(), anyInt(), anyInt(), any(), any());
-    }
-
-    @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void onSyncLost_notifySourceLostAndCancelSync() throws RemoteException {
         prepareConnectedDeviceGroup();
         startSearchingForSources();
@@ -5265,7 +5059,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void monitorBroadcastAfterSyncMaxLimit() throws RemoteException {
         final BluetoothDevice device1 =
                 mBluetoothAdapter.getRemoteLeDevice(
@@ -5491,7 +5284,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void sinkUnintentional_resync_withoutScanning() {
         sinkUnintentionalWithoutScanning();
 
@@ -5500,7 +5292,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void sinkUnintentional_resync_duringScanning() {
         sinkUnintentionalDuringScanning();
 
@@ -5509,7 +5300,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void sinkUnintentional_resyncByRemote_withoutScanning() {
         sinkUnintentionalWithoutScanning();
 
@@ -5517,7 +5307,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void sinkUnintentional_resyncByRemote_duringScanning() {
         sinkUnintentionalDuringScanning();
 
@@ -5525,7 +5314,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void sinkUnintentional_addNewSource() {
         sinkUnintentionalDuringScanning();
 
@@ -5558,7 +5346,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void sinkUnintentional_addSameSource() {
         sinkUnintentionalDuringScanning();
 
@@ -5569,7 +5356,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void sinkUnintentional_removeSource_withoutScanning() {
         sinkUnintentionalWithoutScanning();
 
@@ -5581,7 +5367,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void sinkUnintentional_removeSource_duringScanning() {
         sinkUnintentionalDuringScanning();
 
@@ -5593,7 +5378,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void sinkUnintentional_stopReceivers_withoutScanning() {
         sinkUnintentionalWithoutScanning();
 
@@ -5606,7 +5390,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void sinkUnintentional_stopReceivers_duringScanning() {
         sinkUnintentionalDuringScanning();
 
@@ -5619,7 +5402,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void sinkUnintentional_suspendReceivers_withoutScanning() {
         sinkUnintentionalWithoutScanning();
 
@@ -5632,7 +5414,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void sinkUnintentional_suspendReceivers_duringScanning() {
         sinkUnintentionalDuringScanning();
 
@@ -5645,7 +5426,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void sinkUnintentional_suspendAllReceivers_withoutScanning() {
         sinkUnintentionalWithoutScanning();
 
@@ -5658,7 +5438,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void sinkUnintentional_suspendAllReceivers_duringScanning() {
         sinkUnintentionalDuringScanning();
 
@@ -5671,7 +5450,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void sinkUnintentional_publicStopBigMonitoring_withoutScanning() {
         sinkUnintentionalWithoutScanning();
 
@@ -5681,7 +5459,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void sinkUnintentional_publicStopBigMonitoring_duringScanning() {
         sinkUnintentionalDuringScanning();
 
@@ -5691,7 +5468,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void sinkUnintentional_unsync_withoutScanning() {
         sinkUnintentionalWithoutScanning();
 
@@ -5730,7 +5506,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void sinkUnintentional_unsync_duringScanning() {
         sinkUnintentionalDuringScanning();
 
@@ -5769,7 +5544,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void sinkUnintentional_disconnect_withoutScanning() {
         sinkUnintentionalWithoutScanning();
 
@@ -5790,7 +5564,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void sinkUnintentional_disconnect_duringScanning() {
         sinkUnintentionalDuringScanning();
 
@@ -5811,7 +5584,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void sinkUnintentional_syncLost_withoutScanning_outOfRange() {
         sinkUnintentionalWithoutScanning();
 
@@ -5840,7 +5612,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void sinkUnintentional_syncLost_duringScanning_outOfRange() {
         sinkUnintentionalDuringScanning();
 
@@ -5871,7 +5642,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void sinkUnintentional_bigMonitorTimeout_withoutScanning() {
         sinkUnintentionalWithoutScanning();
 
@@ -5884,7 +5654,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void sinkUnintentional_bigMonitorTimeout_duringScanning() {
         sinkUnintentionalDuringScanning();
 
@@ -5897,10 +5666,7 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags({
-        Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER,
-        Flags.FLAG_LEAUDIO_MONITOR_UNICAST_SOURCE_WHEN_MANAGED_BY_BROADCAST_DELEGATOR
-    })
+    @EnableFlags(Flags.FLAG_LEAUDIO_MONITOR_UNICAST_SOURCE_WHEN_MANAGED_BY_BROADCAST_DELEGATOR)
     public void sinkUnintentional_handleUnicastSourceStreamStatusChange_withoutScanning() {
         sinkUnintentionalWithoutScanning();
 
@@ -5918,10 +5684,7 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags({
-        Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER,
-        Flags.FLAG_LEAUDIO_MONITOR_UNICAST_SOURCE_WHEN_MANAGED_BY_BROADCAST_DELEGATOR
-    })
+    @EnableFlags(Flags.FLAG_LEAUDIO_MONITOR_UNICAST_SOURCE_WHEN_MANAGED_BY_BROADCAST_DELEGATOR)
     public void sinkUnintentional_handleUnicastSourceStreamStatusChange_duringScanning() {
         sinkUnintentionalDuringScanning();
 
@@ -5938,7 +5701,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void sinkUnintentional_handleUnicastSourceStreamStatusChangeNoContext_withoutScanning() {
         sinkUnintentionalWithoutScanning();
 
@@ -5957,7 +5719,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void sinkUnintentional_handleUnicastSourceStreamStatusChangeNoContext_duringScanning() {
         sinkUnintentionalDuringScanning();
 
@@ -5975,7 +5736,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     @DisableFlags(Flags.FLAG_LEAUDIO_BROADCAST_PREVENT_RESUME_INTERRUPTION)
     public void sinkUnintentional_autoSyncToBroadcast_onStopSearching() {
         sinkUnintentionalDuringScanning();
@@ -5992,10 +5752,7 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags({
-        Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER,
-        Flags.FLAG_LEAUDIO_BROADCAST_PREVENT_RESUME_INTERRUPTION
-    })
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_PREVENT_RESUME_INTERRUPTION)
     public void sinkUnintentional_remainEstablishedSync_onStopSearching() {
         sinkUnintentionalDuringScanning();
 
@@ -6065,10 +5822,7 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags({
-        Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER,
-        Flags.FLAG_LEAUDIO_BROADCAST_PREVENT_RESUME_INTERRUPTION
-    })
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_PREVENT_RESUME_INTERRUPTION)
     public void waitingForPast_remainPendingSync_onStopSearching() {
         prepareSynchronizedPair();
 
@@ -6132,10 +5886,7 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags({
-        Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER,
-        Flags.FLAG_LEAUDIO_BROADCAST_PREVENT_RESUME_INTERRUPTION
-    })
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_PREVENT_RESUME_INTERRUPTION)
     public void pendingSourceToAdd_remainPendingSync_onStopSearching() {
         prepareConnectedDeviceGroup();
         startSearchingForSources();
@@ -6207,10 +5958,7 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags({
-        Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER,
-        Flags.FLAG_LEAUDIO_BROADCAST_PREVENT_RESUME_INTERRUPTION
-    })
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_PREVENT_RESUME_INTERRUPTION)
     public void alreadySynced_remainSyncAndCache_onStartSearching() {
         prepareConnectedDeviceGroup();
         startSearchingForSources();
@@ -6299,10 +6047,7 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags({
-        Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER,
-        Flags.FLAG_LEAUDIO_BROADCAST_PREVENT_RESUME_INTERRUPTION
-    })
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_PREVENT_RESUME_INTERRUPTION)
     public void alreadySyncedWithSinks_syncAndRemainCache_onStartSearching() {
         prepareSynchronizedPair();
 
@@ -6377,10 +6122,7 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags({
-        Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER,
-        Flags.FLAG_LEAUDIO_BROADCAST_PREVENT_RESUME_INTERRUPTION
-    })
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_PREVENT_RESUME_INTERRUPTION)
     public void waitingForPast_remainPendingSyncAndCache_onStartSearching() {
         prepareSynchronizedPair();
 
@@ -6461,10 +6203,7 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags({
-        Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER,
-        Flags.FLAG_LEAUDIO_BROADCAST_PREVENT_RESUME_INTERRUPTION
-    })
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_PREVENT_RESUME_INTERRUPTION)
     public void pendingSourcesToAdd_remainPendingSyncAndCache_onStartSearching() {
         prepareConnectedDeviceGroup();
         startSearchingForSources();
@@ -6555,10 +6294,7 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags({
-        Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER,
-        Flags.FLAG_LEAUDIO_BROADCAST_PREVENT_RESUME_INTERRUPTION
-    })
+    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_PREVENT_RESUME_INTERRUPTION)
     public void hostIntentional_SyncAndRemainCache_onStartSearching() {
         prepareSynchronizedPair();
 
@@ -6647,7 +6383,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void hostIntentional_addSameSource() {
         prepareSynchronizedPair();
 
@@ -6664,7 +6399,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void hostIntentional_removeSource_withoutScanning() {
         prepareSynchronizedPairAndStopSearching();
 
@@ -6675,7 +6409,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void hostIntentional_removeSource_duringScanning() {
         prepareSynchronizedPair();
 
@@ -6686,7 +6419,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void hostIntentional_stopReceivers_withoutScanning() {
         prepareSynchronizedPairAndStopSearching();
 
@@ -6697,7 +6429,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void hostIntentional_stopReceivers_duringScanning() {
         prepareSynchronizedPair();
 
@@ -6708,7 +6439,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void hostIntentional_suspendReceivers_withoutScanning() {
         prepareSynchronizedPairAndStopSearching();
 
@@ -6719,7 +6449,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void hostIntentional_suspendReceivers_duringScanning() {
         prepareSynchronizedPair();
 
@@ -6730,7 +6459,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void hostIntentional_suspendAllReceivers_withoutScanning() {
         prepareSynchronizedPairAndStopSearching();
 
@@ -6741,7 +6469,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void hostIntentional_suspendAllReceivers_duringScanning() {
         prepareSynchronizedPair();
 
@@ -6752,7 +6479,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void hostIntentional_handleUnicastSourceStreamStatusChange_withoutScanning() {
         prepareSynchronizedPairAndStopSearching();
 
@@ -6769,7 +6495,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void hostIntentional_handleUnicastSourceStreamStatusChange_duringScanning() {
         prepareSynchronizedPair();
 
@@ -6785,10 +6510,7 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags({
-        Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER,
-        Flags.FLAG_LEAUDIO_MONITOR_UNICAST_SOURCE_WHEN_MANAGED_BY_BROADCAST_DELEGATOR
-    })
+    @EnableFlags(Flags.FLAG_LEAUDIO_MONITOR_UNICAST_SOURCE_WHEN_MANAGED_BY_BROADCAST_DELEGATOR)
     public void hostIntentional_handleUnicastSourceStreamStatusChange_beforeResumeCompleted() {
         prepareSynchronizedPairAndStopSearching();
 
@@ -6821,7 +6543,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void hostIntentional_handleUnicastSourceStreamStatusChangeNoContext_withoutScanning() {
         prepareSynchronizedPairAndStopSearching();
 
@@ -6839,7 +6560,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void hostIntentional_handleUnicastSourceStreamStatusChangeNoContext_duringScanning() {
         prepareSynchronizedPair();
 
@@ -6856,7 +6576,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void outOfRange_syncEstablishedFailed_stopMonitoringAfterTimeout() {
         prepareSynchronizedPairAndStopSearching();
 
@@ -6891,7 +6610,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void outOfRange_syncEstablishedFailed_clearTimeout() {
         prepareSynchronizedPairAndStopSearching();
 
@@ -6923,7 +6641,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void outOfRange_syncEstablishedFailed_restartSearching() {
         prepareSynchronizedPairAndStopSearching();
 
@@ -6989,7 +6706,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void outOfRange_syncEstablishedFailed_allowSyncAnotherBroadcaster() {
         prepareSynchronizedPairAndStopSearching();
 
@@ -7036,7 +6752,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void autoSyncToBroadcast_AlreadySyncedToSink_onStartSearching() {
         prepareSynchronizedPairAndStopSearching();
 
@@ -7053,7 +6768,6 @@ public class BassClientServiceTest {
      * source
      */
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void sinkBassStateReady_addSourceIfPeerDeviceSynced() throws RemoteException {
         // Imitate broadcast being active
         doReturn(true).when(mLeAudioService).isPlaying(TEST_BROADCAST_ID);
@@ -7097,7 +6811,6 @@ public class BassClientServiceTest {
 
     /** Test add pending source when BASS state get ready */
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void sinkBassStateReady_addPendingSource() throws RemoteException {
         prepareConnectedDeviceGroup();
         BluetoothLeBroadcastMetadata meta = createBroadcastMetadata(TEST_BROADCAST_ID);
@@ -7167,7 +6880,6 @@ public class BassClientServiceTest {
 
     /** Test add pending source when BASS state get ready */
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void sinkBassStateReady_addPendingSourceGroup_oneByOneReady() throws RemoteException {
         prepareConnectedDeviceGroup();
         BluetoothLeBroadcastMetadata meta = createBroadcastMetadata(TEST_BROADCAST_ID);
@@ -7325,7 +7037,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void initiatePaSyncTransfer() {
         prepareSynchronizedPairAndStopSearching();
 
@@ -7344,7 +7055,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void InitiatePaSyncTransfer_concurrentWithResume() {
         prepareSynchronizedPairAndStopSearching();
 
@@ -7373,7 +7083,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void resumeSourceSynchronization_omitWhenPaSyncedOrRequested() {
         prepareSynchronizedPair();
 
@@ -7403,7 +7112,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void removeSource_duringSuspend() {
         prepareSynchronizedPair();
 
@@ -7419,7 +7127,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void stopReceivers_duringSuspend() {
         prepareSynchronizedPair();
 
@@ -7435,7 +7142,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void multipleSinkMetadata_clearWhenSourceAddFailed() throws RemoteException {
         prepareConnectedDeviceGroup();
         startSearchingForSources();
@@ -7481,7 +7187,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void multipleSinkMetadata_clearWhenSwitch() {
         prepareConnectedDeviceGroup();
         startSearchingForSources();
@@ -7515,7 +7220,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void multipleSinkMetadata_clearWhenSwitch_duringSuspend() {
         prepareConnectedDeviceGroup();
         startSearchingForSources();
@@ -7557,7 +7261,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void multipleSinkMetadata_clearWhenRemove() {
         prepareConnectedDeviceGroup();
         startSearchingForSources();
@@ -7617,7 +7320,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void multipleSinkMetadata_clearWhenAllDisconnected() {
         prepareConnectedDeviceGroup();
         startSearchingForSources();
@@ -7681,7 +7383,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void multipleSinkMetadata_clearWhenAllDisconnected_duringSuspend() {
         prepareConnectedDeviceGroup();
         startSearchingForSources();
@@ -7761,7 +7462,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void multipleSinkMetadata_clearWhenRemove_oneDisconnectedFirst() {
         prepareConnectedDeviceGroup();
         startSearchingForSources();
@@ -7804,7 +7504,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void multipleSinkMetadata_clearWhenRemove_oneDisconnectedFirst_duringSuspend() {
         prepareConnectedDeviceGroup();
         startSearchingForSources();
@@ -7855,7 +7554,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void clearPendingSourceToAdd_oneByOne_whenDisconnected() {
         prepareConnectedDeviceGroup();
         startSearchingForSources();
@@ -7901,7 +7599,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void clearPendingSourceToAdd_group_whenDisconnected() {
         prepareConnectedDeviceGroup();
         startSearchingForSources();
@@ -7946,7 +7643,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void doNotAllowDuplicatesInAddSelectSource() {
         prepareSynchronizedPairAndStopSearching();
 
@@ -7970,7 +7666,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void sinkDisconnectionDuringResuming() {
         prepareSynchronizedPairAndStopSearching();
 

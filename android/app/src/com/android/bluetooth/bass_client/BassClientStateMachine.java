@@ -23,7 +23,6 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastReceiveStateProcessingRefactor;
-import static com.android.bluetooth.flags.Flags.leaudioBroadcastResyncHelper;
 
 import android.annotation.Nullable;
 import android.annotation.SuppressLint;
@@ -807,11 +806,9 @@ class BassClientStateMachine extends StateMachine {
                 checkAndUpdateBroadcastCode(recvState);
                 processPASyncState(recvState);
             }
-            if (leaudioBroadcastResyncHelper()) {
-                // Notify service BASS state ready for operations
-                mBassStateReady = true;
-                mService.getCallbacks().notifyBassStateReady(mDevice);
-            }
+            // Notify service BASS state ready for operations
+            mBassStateReady = true;
+            mService.getCallbacks().notifyBassStateReady(mDevice);
         } else {
             log("Updated receiver state: " + recvState);
             mBluetoothLeBroadcastReceiveStates.replace(characteristic.getInstanceId(), recvState);
