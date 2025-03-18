@@ -305,7 +305,7 @@ public class RemoteDevices {
     DeviceProperties addDeviceProperties(byte[] address) {
         synchronized (mDevices) {
             String key = Utils.getAddressStringFromByte(address);
-            if (Flags.fixAddDeviceProperties() && mDevices.containsKey(key)) {
+            if (mDevices.containsKey(key)) {
                 debugLog("Properties for device " + key + " are already added");
                 return mDevices.get(key);
             }
