@@ -99,6 +99,32 @@ std::string ScalarField::GetGetterFunctionName() const {
 void ScalarField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) const {
   s << GetDataType() << " " << GetGetterFunctionName() << "() const {";
   s << "ASSERT(was_validated_);";
+
+  if (!start_offset.empty() && start_offset.bits() % 8 == 0 && !start_offset.has_dynamic()) {
+    if (util::RoundSizeUp(GetSize().bits()) == GetSize().bits()) {
+      std::string extract_type = util::GetTypeForSize(GetSize().bits());
+      bool do_static_cast = (extract_type != GetDataType());
+
+      s << "return ";
+      if (do_static_cast) {
+        s << "static_cast<" << GetDataType() << ">(";
+      }
+      s << "(begin() + " << (start_offset.bits() / 8) << ").extract<" << extract_type << ">()";
+      if (do_static_cast) {
+        s << ")";
+      }
+      s << ";}";
+      return;
+    } else if (util::RoundSizeUp(GetSize().bits()) == 16 && GetSize().bits() == 12) {
+      /* special handling for connection handle mask, there are over 220 instances of it */
+      std::string extract_type = util::GetTypeForSize(GetSize().bits());
+      s << "return (begin() + " << (start_offset.bits() / 8) << ").extract<" << extract_type
+        << ">() & 0xfff;";
+      s << "}";
+      return;
+    }
+  }
+
   s << "auto to_bound = begin();";
   int num_leading_bits = GenBounds(s, start_offset, end_offset, GetSize());
   s << GetDataType() << " " << GetName() << "_value{};";
