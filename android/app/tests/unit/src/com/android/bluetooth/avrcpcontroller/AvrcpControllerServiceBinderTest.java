@@ -75,16 +75,6 @@ public class AvrcpControllerServiceBinderTest {
     }
 
     @Test
-    public void sendGroupNavigationCmd_notImplemented_doesNothing() {
-        mBinder.sendGroupNavigationCmd(mDevice, 1, 2, mAttributionSource);
-    }
-
-    @Test
-    public void getPlayerSettings_notImplemented_doesNothing() {
-        mBinder.getPlayerSettings(mDevice, mAttributionSource);
-    }
-
-    @Test
     public void cleanUp_doesNotCrash() {
         mBinder.cleanup();
     }
