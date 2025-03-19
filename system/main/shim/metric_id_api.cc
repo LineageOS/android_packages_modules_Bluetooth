@@ -31,7 +31,7 @@ bool InitMetricIdAllocator(const std::unordered_map<RawAddress, int>& paired_dev
                            CallbackLegacy save_id_callback, CallbackLegacy forget_device_callback) {
   std::unordered_map<Address, int> paired_device_map_gd;
   for (const auto& device : paired_device_map) {
-    Address address = bluetooth::ToGdAddress(device.first);
+    Address address = device.first;
     paired_device_map_gd[address] = device.second;
   }
 
@@ -50,18 +50,15 @@ bool CloseMetricIdAllocator() { return MetricIdManager::GetInstance().Close(); }
 
 bool IsEmptyMetricIdAllocator() { return MetricIdManager::GetInstance().IsEmpty(); }
 
-int AllocateIdFromMetricIdAllocator(const RawAddress& raw_address) {
-  Address address = bluetooth::ToGdAddress(raw_address);
+int AllocateIdFromMetricIdAllocator(const RawAddress& address) {
   return MetricIdManager::GetInstance().AllocateId(address);
 }
 
-bool SaveDeviceOnMetricIdAllocator(const RawAddress& raw_address) {
-  Address address = bluetooth::ToGdAddress(raw_address);
+bool SaveDeviceOnMetricIdAllocator(const RawAddress& address) {
   return MetricIdManager::GetInstance().SaveDevice(address);
 }
 
-void ForgetDeviceFromMetricIdAllocator(const RawAddress& raw_address) {
-  Address address = bluetooth::ToGdAddress(raw_address);
+void ForgetDeviceFromMetricIdAllocator(const RawAddress& address) {
   return MetricIdManager::GetInstance().ForgetDevice(address);
 }
 

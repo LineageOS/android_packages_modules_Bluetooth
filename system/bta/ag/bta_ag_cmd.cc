@@ -1146,7 +1146,7 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type, cha
         }
       }
 
-      LogMetricHfpAgVersion(ToGdAddress(p_scb->peer_addr), p_scb->peer_version);
+      LogMetricHfpAgVersion(p_scb->peer_addr, p_scb->peer_version);
       log::verbose("BRSF HF: 0x{:x}, phone: 0x{:x}", p_scb->peer_features, p_scb->masked_features);
 
       /* send BRSF, send OK */

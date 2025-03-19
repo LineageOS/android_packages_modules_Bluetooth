@@ -391,7 +391,7 @@ bool bta_ag_sdp_find_attr(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK service) {
       peer_version = p_scb->peer_version;
     }
 
-    LogMetricHfpHfVersion(ToGdAddress(p_scb->peer_addr), p_scb->peer_version);
+    LogMetricHfpHfVersion(p_scb->peer_addr, p_scb->peer_version);
 
     if (service & BTA_HFP_SERVICE_MASK) {
       /* Update cached peer version if the new one is different */

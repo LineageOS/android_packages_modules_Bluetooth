@@ -542,8 +542,7 @@ void LogMetricLeAudioConnectionSessionReported(
   std::vector<int32_t> device_metric_id(device_address.size());
   for (uint64_t i = 0; i < device_address.size(); i++) {
     if (!device_address[i].IsEmpty()) {
-      device_metric_id[i] =
-              MetricIdManager::GetInstance().AllocateId(ToGdAddress(device_address[i]));
+      device_metric_id[i] = MetricIdManager::GetInstance().AllocateId(device_address[i]);
     } else {
       device_metric_id[i] = 0;
     }
