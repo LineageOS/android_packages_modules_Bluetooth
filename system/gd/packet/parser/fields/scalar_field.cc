@@ -50,7 +50,11 @@ int ScalarField::GenBounds(std::ostream& s, Size start_offset, Size end_offset, 
   if (!start_offset.empty()) {
     // Default to start if available.
     num_leading_bits = start_offset.bits() % 8;
-    s << "auto " << GetName() << "_it = to_bound + (" << start_offset << ") / 8;";
+    if (!start_offset.has_dynamic()) {
+      s << "auto " << GetName() << "_it = to_bound + " << (start_offset.bits() / 8) << ";";
+    } else {
+      s << "auto " << GetName() << "_it = to_bound + (" << start_offset << ") / 8;";
+    }
   } else if (!end_offset.empty()) {
     num_leading_bits = GetShiftBits(end_offset.bits() + size.bits());
     Size byte_offset = Size(num_leading_bits + size.bits()) + end_offset;

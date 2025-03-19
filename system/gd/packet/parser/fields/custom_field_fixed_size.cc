@@ -34,7 +34,11 @@ int CustomFieldFixedSize::GenBounds(std::ostream& s, Size start_offset, Size end
                                     Size size) const {
   if (!start_offset.empty()) {
     // Default to start if available.
-    s << "auto " << GetName() << "_it = to_bound + (" << start_offset << ") / 8;";
+    if (!start_offset.has_dynamic()) {
+      s << "auto " << GetName() << "_it = to_bound + " << (start_offset.bits() / 8) << ";";
+    } else {
+      s << "auto " << GetName() << "_it = to_bound + (" << start_offset << ") / 8;";
+    }
   } else if (!end_offset.empty()) {
     Size byte_offset = size + end_offset;
     s << "auto " << GetName() << "_it = to_bound (+ to_bound.NumBytesRemaining() - (" << byte_offset
