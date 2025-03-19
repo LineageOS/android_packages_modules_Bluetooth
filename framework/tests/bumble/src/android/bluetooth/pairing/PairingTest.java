@@ -78,6 +78,7 @@ import pandora.SecurityProto.SecureResponse;
 
 import java.time.Duration;
 import java.util.Set;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
@@ -778,62 +779,32 @@ public class PairingTest {
      * <p>Expectation: Bumble is not bonded
      */
     @Test
-    public void testRemoveBondBredr_WhenDisconnected() {
-        IntentReceiver intentReceiver = new IntentReceiver.Builder(sTargetContext,
-                BluetoothDevice.ACTION_ACL_DISCONNECTED,
-                BluetoothDevice.ACTION_BOND_STATE_CHANGED,
-                BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED)
-                .build();
-
+    public void testRemoveBondBredr_WhenDisconnected() throws Exception {
         // Disable all profiles other than A2DP as profile connections take too long
         assertThat(mHfpService.setConnectionPolicy(mBumbleDevice, CONNECTION_POLICY_FORBIDDEN))
                 .isTrue();
         assertThat(mHidService.setConnectionPolicy(mBumbleDevice, CONNECTION_POLICY_FORBIDDEN))
                 .isTrue();
 
-        testStep_BondBredr(intentReceiver);
+        testStep_BondBredr(null);
         assertThat(sAdapter.getBondedDevices()).contains(mBumbleDevice);
 
         // Wait for profiles to get connected
-        intentReceiver.verifyReceivedOrdered(
-                hasAction(BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED),
-                hasExtra(BluetoothA2dp.EXTRA_STATE, BluetoothA2dp.STATE_CONNECTING),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice));
-        intentReceiver.verifyReceivedOrdered(
-                hasAction(BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED),
-                hasExtra(BluetoothA2dp.EXTRA_STATE, BluetoothA2dp.STATE_CONNECTED),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice));
-
         // Todo: b/382118305 - due to settings app interference, profile connection initiate twice
         // after bonding. Introduced 1 second delay after first profile connection success
         final CompletableFuture<Integer> future = new CompletableFuture<>();
         future.completeOnTimeout(null, TEST_DELAY_MS, TimeUnit.MILLISECONDS).join();
-        // Disconnect all profiles
-        assertThat(mBumbleDevice.disconnect()).isEqualTo(BluetoothStatusCodes.SUCCESS);
-        intentReceiver.verifyReceivedOrdered(
-                hasAction(BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED),
-                hasExtra(BluetoothA2dp.EXTRA_STATE, BluetoothA2dp.STATE_DISCONNECTING),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice));
-        intentReceiver.verifyReceivedOrdered(
-                hasAction(BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED),
-                hasExtra(BluetoothA2dp.EXTRA_STATE, BluetoothA2dp.STATE_DISCONNECTED),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice));
 
-        // Wait for the ACL to get disconnected
-        intentReceiver.verifyReceivedOrdered(
-                hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
-                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice));
+        // Check if A2DP is connected
+        List<BluetoothDevice> activeDevices = sAdapter.getActiveDevices(BluetoothProfile.A2DP);
+        assertThat(activeDevices).contains(mBumbleDevice);
 
-        // Remove bond
-        assertThat(mBumbleDevice.removeBond()).isTrue();
-        intentReceiver.verifyReceivedOrdered(
-                hasAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED),
-                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice),
-                hasExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothDevice.BOND_NONE));
+        // Disconnect A2DP
+        testStep_A2DPDisconnect(null);
+
+        // Remove bond and verify that it is removed
+        mUtil.removeBond(null, mBumbleDevice);
         assertThat(sAdapter.getBondedDevices()).doesNotContain(mBumbleDevice);
-
-        intentReceiver.close();
     }
 
     /** Helper/testStep functions goes here */
@@ -1089,6 +1060,42 @@ public class PairingTest {
                 hasExtra(BluetoothDevice.EXTRA_DEVICE, device),
                 hasExtra(BluetoothDevice.EXTRA_BOND_STATE,
                     BluetoothDevice.BOND_BONDED));
+
+        intentReceiver.close();
+    }
+
+    /*
+     * Test A2DP disconnect after bonding.
+     * TODO: Should we make this a generic function for all profiles?
+     */
+    private void testStep_A2DPDisconnect(IntentReceiver parentIntentReceiver) throws Exception {
+        IntentReceiver intentReceiver =
+                IntentReceiver.update(
+                        parentIntentReceiver,
+                        new IntentReceiver.Builder(
+                                sTargetContext,
+                                BluetoothDevice.ACTION_ACL_DISCONNECTED,
+                                BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED));
+
+        // Wait for profiles to get connected, as this could be called just after bonding.
+        Thread.sleep(2000);
+
+        // Disconnect all profiles (A2DP for now)
+        assertThat(mBumbleDevice.disconnect()).isEqualTo(BluetoothStatusCodes.SUCCESS);
+        intentReceiver.verifyReceivedOrdered(
+                hasAction(BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED),
+                hasExtra(BluetoothA2dp.EXTRA_STATE, BluetoothA2dp.STATE_DISCONNECTING),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice));
+        intentReceiver.verifyReceivedOrdered(
+                hasAction(BluetoothA2dp.ACTION_CONNECTION_STATE_CHANGED),
+                hasExtra(BluetoothA2dp.EXTRA_STATE, BluetoothA2dp.STATE_DISCONNECTED),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice));
+
+        // Wait for the ACL to get disconnected
+        intentReceiver.verifyReceivedOrdered(
+                hasAction(BluetoothDevice.ACTION_ACL_DISCONNECTED),
+                hasExtra(BluetoothDevice.EXTRA_TRANSPORT, BluetoothDevice.TRANSPORT_BREDR),
+                hasExtra(BluetoothDevice.EXTRA_DEVICE, mBumbleDevice));
 
         intentReceiver.close();
     }
