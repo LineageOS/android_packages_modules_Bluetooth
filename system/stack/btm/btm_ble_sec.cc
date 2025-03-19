@@ -1210,17 +1210,19 @@ void btm_ble_ltk_request(uint16_t handle, BT_OCTET8 rand, uint16_t ediv) {
   tBTM_SEC_CB* p_cb = &btm_sec_cb;
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(handle);
 
-  log::verbose("handle:0x{:x}", handle);
-
   p_cb->ediv = ediv;
-
   memcpy(p_cb->enc_rand, rand, BT_OCTET8_LEN);
 
-  if (p_dev_rec != NULL) {
-    if (!smp_proc_ltk_request(p_dev_rec->bd_addr)) {
-      btm_ble_ltk_request_reply(p_dev_rec->bd_addr, false, Octet16{0});
-    }
+  if (p_dev_rec == NULL) {
+    log::warn("No device found for handle 0x{:x}", handle);
+    return;
+  } else if(smp_proc_ltk_request(p_dev_rec->bd_addr)) {
+    log::warn("Failed to process LTK request for device {}, handle {}", p_dev_rec->bd_addr, handle);
+    return;
   }
+
+  log::verbose("handle 0x{:x}", handle);
+  btm_ble_ltk_request_reply(p_dev_rec->bd_addr, false, Octet16{0});
 }
 
 /** This function is called to start LE encryption.
