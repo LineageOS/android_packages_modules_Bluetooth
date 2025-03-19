@@ -1906,7 +1906,7 @@ public class ScanManagerTest {
                         .setNumOfMatches(ScanSettings.MATCH_NUM_MAX_ADVERTISEMENT)
                         .build();
 
-        assertThat(mScanManager.mScanNative.getNumOfTrackingAdvertisements(scanSettings))
+        assertThat(mScanManager.getNumOfTrackingAdvertisements(scanSettings))
                 .isEqualTo(DEFAULT_TOTAL_NUM_OF_TRACKABLE_ADVERTISEMENTS / 2);
     }
 
@@ -1919,7 +1919,7 @@ public class ScanManagerTest {
                         .setNumOfMatches(ScanSettings.MATCH_NUM_MAX_ADVERTISEMENT)
                         .build();
 
-        assertThat(mScanManager.mScanNative.getNumOfTrackingAdvertisements(scanSettings))
+        assertThat(mScanManager.getNumOfTrackingAdvertisements(scanSettings))
                 .isEqualTo(DEFAULT_TOTAL_NUM_OF_TRACKABLE_ADVERTISEMENTS / 4);
     }
 
