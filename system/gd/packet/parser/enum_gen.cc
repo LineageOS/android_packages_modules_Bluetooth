@@ -23,12 +23,9 @@
 EnumGen::EnumGen(EnumDef e) : e_(std::move(e)) {}
 
 void EnumGen::GenDefinition(std::ostream& stream) {
-  stream << "enum class ";
-  stream << e_.name_;
-  stream << " : " << util::GetTypeForSize(e_.size_);
-  stream << " {";
+  stream << "enum class " << e_.name_ << " : " << util::GetTypeForSize(e_.size_) << " {";
   for (const auto& pair : e_.constants_) {
-    stream << pair.second << " = 0x" << std::hex << pair.first << std::dec << ",";
+    stream << std::format("{} = {:#x},", pair.second, pair.first);
   }
   stream << "};\n";
 }
@@ -44,18 +41,13 @@ void EnumGen::GenDefinitionPybind11(std::ostream& stream) {
 void EnumGen::GenLogging(std::ostream& stream) {
   // Print out the switch statement that converts all the constants to strings.
   stream << "inline std::string " << e_.name_ << "Text(const " << e_.name_ << "& param) {";
-  stream << "std::stringstream builder;";
   stream << "switch (param) {";
   for (const auto& pair : e_.constants_) {
-    stream << "case " << e_.name_ << "::" << pair.second << ":";
-    stream << "  builder << \"" << pair.second << "\"; break;";
+    stream << std::format("case {}::{}: return \"{}({:#0{}x})\";", e_.name_, pair.second,
+                          pair.second, pair.first, 2 + (e_.size_ > 4 ? e_.size_ / 4 : 0));
   }
-  stream << "default:";
-  stream << "  builder << \"Unknown " << e_.name_ << "\";";
+  stream << "default: return std::format(\"Unknown " << e_.name_ << "({:#0"
+         << 2 + (e_.size_ > 4 ? e_.size_ / 4 : 0) << "x})\", static_cast<uint64_t>(param));";
   stream << "}";
-  stream << "builder << \"(\" << std::hex << \"0x\" << std::setfill('0')";
-  stream << "<< std::setw(" << (e_.size_ > 0 ? e_.size_ : 0) << "/4)";
-  stream << "<< static_cast<uint64_t>(param) << \")\";";
-  stream << "return builder.str();";
   stream << "}\n\n";
 }
