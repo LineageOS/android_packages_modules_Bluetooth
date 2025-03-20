@@ -3956,10 +3956,10 @@ public class LeAudioService extends ProfileService {
                     /* Stop here if Broadcast was not in Streaming state before */
                     if (previousState != LeAudioStackEvent.BROADCAST_STATE_STREAMING) {
                         if (!leaudioBroadcastRemoveSinkMetadataOnSwitchToLocal()) {
-                            // Stop Big Monitoring in case that was some actions on external
+                            // Stop Broadcast Monitoring in case that was some actions on external
                             // broadcast
                             if (bassClientService != null) {
-                                bassClientService.stopBigMonitoring();
+                                bassClientService.stopBroadcastMonitoring();
                             }
                         }
                         return;
