@@ -451,8 +451,7 @@ void LogMetricBluetoothRemoteSupportedFeatures(const Address& address, uint32_t 
   }
 }
 
-void LogMetricBluetoothCodePathCounterMetrics(android::bluetooth::CodePathCounterKeyEnum key,
-                                              int64_t count) {
+void CountCounterMetrics(android::bluetooth::CodePathCounterKeyEnum key, int64_t count) {
   int ret = stats_write(BLUETOOTH_CODE_PATH_COUNTER, key, count);
   if (ret < 0) {
     log::warn("Failed counter metrics for {}, count {}, error {}", key, count, ret);
