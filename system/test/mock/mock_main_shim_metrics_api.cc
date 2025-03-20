@@ -50,26 +50,11 @@ struct LogMetricReadRssiResult LogMetricReadRssiResult;
 struct LogMetricReadFailedContactCounterResult LogMetricReadFailedContactCounterResult;
 struct LogMetricReadTxPowerLevelResult LogMetricReadTxPowerLevelResult;
 struct LogMetricSmpPairingEvent LogMetricSmpPairingEvent;
-struct LogMetricLePairingFail LogMetricLePairingFail;
 struct LogMetricClassicPairingEvent LogMetricClassicPairingEvent;
 struct LogMetricSdpAttribute LogMetricSdpAttribute;
 struct LogMetricSocketConnectionState LogMetricSocketConnectionState;
 struct LogMetricManufacturerInfo LogMetricManufacturerInfo;
-struct LogMetricLeConnectionStatus LogMetricLeConnectionStatus;
-struct LogMetricLeDeviceInAcceptList LogMetricLeDeviceInAcceptList;
-struct LogMetricLeConnectionLifecycle LogMetricLeConnectionLifecycle;
-struct LogMetricLeConnectionCompletion LogMetricLeConnectionCompletion;
 struct LogMetricRfcommConnectionAtClose LogMetricRfcommConnectionAtClose;
-struct LogMetricLeConnectionRejected LogMetricLeConnectionRejected;
-struct LogMetricHfpAgVersion LogMetricHfpAgVersion;
-struct LogMetricHfpHfVersion LogMetricHfpHfVersion;
-struct LogMetricHfpRfcommChannelFail LogMetricHfpRfcommChannelFail;
-struct LogMetricHfpRfcommCollisionFail LogMetricHfpRfcommCollisionFail;
-struct LogMetricHfpRfcommAgOpenFail LogMetricHfpRfcommAgOpenFail;
-struct LogMetricHfpSlcFail LogMetricHfpSlcFail;
-struct LogMetricScoCodec LogMetricScoCodec;
-struct LogMetricScoLinkCreated LogMetricScoLinkCreated;
-struct LogMetricScoLinkRemoved LogMetricScoLinkRemoved;
 
 }  // namespace main_shim_metrics_api
 }  // namespace mock
@@ -160,12 +145,6 @@ void bluetooth::shim::LogMetricSmpPairingEvent(const RawAddress& raw_address, ui
   test::mock::main_shim_metrics_api::LogMetricSmpPairingEvent(raw_address, smp_cmd, direction,
                                                               smp_fail_reason);
 }
-void bluetooth::shim::LogMetricLePairingFail(const RawAddress& raw_address, uint8_t failure_reason,
-                                             bool is_outgoing) {
-  inc_func_call_count(__func__);
-  test::mock::main_shim_metrics_api::LogMetricLePairingFail(raw_address, failure_reason,
-                                                            is_outgoing);
-}
 void bluetooth::shim::LogMetricClassicPairingEvent(const RawAddress& raw_address, uint16_t handle,
                                                    uint32_t hci_cmd, uint16_t hci_event,
                                                    uint16_t cmd_status, uint16_t reason_code,
@@ -206,27 +185,6 @@ void bluetooth::shim::CountCounterMetrics(android::bluetooth::CodePathCounterKey
                                           int64_t /* count */) {
   inc_func_call_count(__func__);
 }
-void bluetooth::shim::LogMetricLeConnectionStatus(bluetooth::hci::Address address, bool is_connect,
-                                                  bluetooth::hci::ErrorCode reason) {
-  inc_func_call_count(__func__);
-  test::mock::main_shim_metrics_api::LogMetricLeConnectionStatus(address, is_connect, reason);
-}
-void bluetooth::shim::LogMetricLeDeviceInAcceptList(bluetooth::hci::Address address, bool is_add) {
-  inc_func_call_count(__func__);
-  test::mock::main_shim_metrics_api::LogMetricLeDeviceInAcceptList(address, is_add);
-}
-void bluetooth::shim::LogMetricLeConnectionLifecycle(bluetooth::hci::Address address,
-                                                     bool is_connect, bool is_direct) {
-  inc_func_call_count(__func__);
-  test::mock::main_shim_metrics_api::LogMetricLeConnectionLifecycle(address, is_connect, is_direct);
-}
-void bluetooth::shim::LogMetricLeConnectionCompletion(bluetooth::hci::Address address,
-                                                      bluetooth::hci::ErrorCode reason,
-                                                      bool is_locally_initiated) {
-  inc_func_call_count(__func__);
-  test::mock::main_shim_metrics_api::LogMetricLeConnectionCompletion(address, reason,
-                                                                     is_locally_initiated);
-}
 void bluetooth::shim::LogMetricRfcommConnectionAtClose(
         const RawAddress& raw_address, android::bluetooth::rfcomm::PortResult close_reason,
         android::bluetooth::rfcomm::SocketConnectionSecurity security,
@@ -239,55 +197,4 @@ void bluetooth::shim::LogMetricRfcommConnectionAtClose(
           raw_address, close_reason, security, last_event, previous_state, open_duration_ms, uid,
           sdp_status, is_server, sdp_initiated, sdp_duration_ms);
 }
-
-void bluetooth::shim::LogMetricLeConnectionRejected(bluetooth::hci::Address address) {
-  inc_func_call_count(__func__);
-  test::mock::main_shim_metrics_api::LogMetricLeConnectionRejected(address);
-}
-
-void bluetooth::shim::LogMetricHfpAgVersion(bluetooth::hci::Address address, uint16_t version) {
-  inc_func_call_count(__func__);
-  test::mock::main_shim_metrics_api::LogMetricHfpAgVersion(address, version);
-}
-
-void bluetooth::shim::LogMetricHfpHfVersion(bluetooth::hci::Address address, uint16_t version) {
-  inc_func_call_count(__func__);
-  test::mock::main_shim_metrics_api::LogMetricHfpHfVersion(address, version);
-}
-
-void bluetooth::shim::LogMetricHfpRfcommChannelFail(bluetooth::hci::Address address) {
-  inc_func_call_count(__func__);
-  test::mock::main_shim_metrics_api::LogMetricHfpRfcommChannelFail(address);
-}
-
-void bluetooth::shim::LogMetricHfpRfcommCollisionFail(bluetooth::hci::Address address) {
-  inc_func_call_count(__func__);
-  test::mock::main_shim_metrics_api::LogMetricHfpRfcommCollisionFail(address);
-}
-
-void bluetooth::shim::LogMetricHfpRfcommAgOpenFail(bluetooth::hci::Address address) {
-  inc_func_call_count(__func__);
-  test::mock::main_shim_metrics_api::LogMetricHfpRfcommAgOpenFail(address);
-}
-
-void bluetooth::shim::LogMetricHfpSlcFail(bluetooth::hci::Address address) {
-  inc_func_call_count(__func__);
-  test::mock::main_shim_metrics_api::LogMetricHfpSlcFail(address);
-}
-
-void bluetooth::shim::LogMetricScoCodec(bluetooth::hci::Address address, uint16_t codec) {
-  inc_func_call_count(__func__);
-  test::mock::main_shim_metrics_api::LogMetricScoCodec(address, codec);
-}
-
-void bluetooth::shim::LogMetricScoLinkCreated(bluetooth::hci::Address address) {
-  inc_func_call_count(__func__);
-  test::mock::main_shim_metrics_api::LogMetricScoLinkCreated(address);
-}
-
-void bluetooth::shim::LogMetricScoLinkRemoved(bluetooth::hci::Address address) {
-  inc_func_call_count(__func__);
-  test::mock::main_shim_metrics_api::LogMetricScoLinkRemoved(address);
-}
-
 // END mockcify generation

@@ -256,47 +256,6 @@ void LogMetricManufacturerInfo(const RawAddress& address,
                                const std::string& software_version);
 
 /**
- * Logs the Pairing Failed Command
- * @param raw_address Address of the device
- * @param failure_reason The reason for the pairing failure (smp status)
- * @param is_outgoing the direction in which the command was sent
- */
-void LogMetricLePairingFail(const RawAddress& raw_address, uint8_t failure_reason,
-                            bool is_outgoing);
-
-/**
- * Logs GATT connect/disconnect status
- * @param address Address of the device
- * @param is_connect indicates connection or disconnection
- * @param reason the reason/status for the connection event
- */
-void LogMetricLeConnectionStatus(hci::Address address, bool is_connect, hci::ErrorCode reason);
-
-/**
- * Logs LE filter accept list events
- * @param address Address of the device
- * @param is_add indicates addition or removal of the device in the accept list
- */
-void LogMetricLeDeviceInAcceptList(hci::Address address, bool is_connect);
-
-/**
- * Logs GATT lifecycle events
- * @param address Address of the device
- * @param is_connect indicates connection or disconnection
- * @param is_direct indicates direct or background connection, ignored for disconnection
- */
-void LogMetricLeConnectionLifecycle(hci::Address address, bool is_connect, bool is_direct);
-
-/**
- * Logs LE Connection Events
- * @param address Address of the device
- * @param reason the reason/status of the connection event
- * @param is_locally_initiated the direction in which the connection request was
- * sent
- */
-void LogMetricLeConnectionCompletion(hci::Address address, hci::ErrorCode reason,
-                                     bool is_locally_initiated);
-/**
  * Logs an RFCOMM connection when an RFCOMM port closes
  *
  * @param address address of peer device
@@ -315,69 +274,8 @@ void LogMetricRfcommConnectionAtClose(const RawAddress& address,
                                       int32_t open_duration_ms, int32_t uid,
                                       android::bluetooth::BtaStatus sdp_status, bool is_server,
                                       bool sdp_initiated, int32_t sdp_duration_ms);
-/*Log LE Connection Rejected Event
- * @param address Address of the device
- */
-void LogMetricLeConnectionRejected(hci::Address address);
 
 void CountCounterMetrics(android::bluetooth::CodePathCounterKeyEnum key, int64_t count);
-
-/**
- * Logs the AG version in a HFP session
- * @param address of a device
- * @param version AG HFP version
- */
-void LogMetricHfpAgVersion(hci::Address address, uint16_t version);
-
-/**
- * Logs the HF version in a HFP session
- * @param address of a device
- * @param version HF HFP Version
- */
-void LogMetricHfpHfVersion(hci::Address address, uint16_t version);
-
-/**
- * Logs a RFCOMM channel failure in a HFP session
- * @param address of a device
- */
-void LogMetricHfpRfcommChannelFail(hci::Address address);
-
-/**
- * Logs a RFCOMM collision failure in a HFP session
- * @param address of a device
- */
-void LogMetricHfpRfcommCollisionFail(hci::Address address);
-
-/**
- * Logs a RFCOMM AG open failure in a HFP session
- * @param address of a device
- */
-void LogMetricHfpRfcommAgOpenFail(hci::Address address);
-
-/**
- * Logs a SLC failure in a HFP Session
- * @param address of a device
- */
-void LogMetricHfpSlcFail(hci::Address address);
-
-/**
- * Logs when a SCO link is created in HFP
- * @param address
- */
-void LogMetricScoLinkCreated(hci::Address address);
-
-/**
- * Logs when a SCO link is removed in HFP
- * @param address
- */
-void LogMetricScoLinkRemoved(hci::Address address);
-
-/**
- * Logs what codec the SCO is using
- * @param address
- * @param codec
- */
-void LogMetricScoCodec(hci::Address address, uint16_t codec);
 
 }  // namespace shim
 }  // namespace bluetooth
