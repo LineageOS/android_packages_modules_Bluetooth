@@ -289,12 +289,12 @@
 
     <issue
         id="IncorrectRequiresPermissionPropagation"
-        message="Method `BluetoothLeScanner.startScanFromSource` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_PRIVILEGED, android.permission.BLUETOOTH_SCAN]} but is only annotated with {allOf=[android.permission.BLUETOOTH_SCAN, android.permission.UPDATE_DEVICE_STATS]}."
+        message="Method `BluetoothLeScanner.startScanFromSource` has a broader @RequiresPermission annotation than necessary. It is annotated with {allOf=[android.permission.BLUETOOTH_PRIVILEGED, android.permission.BLUETOOTH_SCAN, android.permission.UPDATE_DEVICE_STATS]} but only calls APIs requiring {allOf=[android.permission.BLUETOOTH_PRIVILEGED, android.permission.BLUETOOTH_SCAN]}."
         errorLine1="    public void startScanFromSource("
         errorLine2="                ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/le/BluetoothLeScanner.java"
-            line="231"
+            line="296"
             column="17"/>
     </issue>
 
@@ -305,18 +305,18 @@
         errorLine2="                ~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/le/BluetoothLeScanner.java"
-            line="389"
+            line="454"
             column="17"/>
     </issue>
 
     <issue
         id="IncorrectRequiresPermissionPropagation"
-        message="Method `BleScanCallbackWrapper.startRegistration` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_SCAN, android.permission.UPDATE_DEVICE_STATS]} but is only annotated with [none]."
+        message="Method `BleScanCallbackWrapper.startRegistration` is missing a @RequiresPermission annotation or it&apos;s too narrow. It calls APIs that require {allOf=[android.permission.BLUETOOTH_SCAN, android.permission.UPDATE_DEVICE_STATS]} but is only annotated with {allOf=[android.permission.BLUETOOTH_SCAN]}."
         errorLine1="        void startRegistration() {"
         errorLine2="             ~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/le/BluetoothLeScanner.java"
-            line="438"
+            line="509"
             column="14"/>
     </issue>
 
@@ -327,7 +327,7 @@
         errorLine2="                    ~~~~~~~~~~~~~~~~~~~">
         <location
             file="packages/modules/Bluetooth/framework/java/android/bluetooth/le/BluetoothLeScanner.java"
-            line="503"
+            line="576"
             column="21"/>
     </issue>
 
