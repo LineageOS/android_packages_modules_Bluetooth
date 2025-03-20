@@ -41,6 +41,7 @@
 #include "stack/btm/btm_sec.h"
 #include "stack/btm/btm_sec_cb.h"
 #include "stack/btm/btm_sec_int_types.h"
+#include "stack/l2cap/l2c_api.h"
 #include "stack/btm/security_device_record.h"
 #include "stack/eatt/eatt.h"
 #include "stack/include/acl_api.h"
@@ -1731,6 +1732,12 @@ static void btm_ble_complete_evt(const RawAddress& bd_addr, tBTM_SEC_DEV_REC* p_
 
   if (res != tBTM_STATUS::BTM_SUCCESS && p_data->complt.reason != SMP_CONN_TOUT) {
     log::verbose("Pairing failed - prepare to remove ACL");
+
+    if (p_data->complt.reason == SMP_RSP_TIMEOUT) {
+      stack::l2cap::get_interface().L2CA_SetIdleTimeoutByBdAddr(p_dev_rec->bd_addr, 0,
+                                                                 BT_TRANSPORT_LE);
+    }
+
     l2cu_start_post_bond_timer(p_dev_rec->ble_hci_handle);
   }
 
