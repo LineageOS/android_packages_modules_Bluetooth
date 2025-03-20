@@ -2762,7 +2762,7 @@ static int register_com_android_bluetooth_gatt_scan(JNIEnv* env) {
           {"gattClientStopBatchScanNative", "(I)V", (void*)gattClientStopBatchScanNative},
           {"gattClientReadScanReportsNative", "(II)V", (void*)gattClientReadScanReportsNative},
           // Scan filter JNI functions.
-          {"gattClientScanFilterParamAddNative", "(Lcom/android/bluetooth/gatt/FilterParams;)V",
+          {"gattClientScanFilterParamAddNative", "(Lcom/android/bluetooth/le_scan/FilterParams;)V",
            (void*)gattClientScanFilterParamAddNative},
           {"gattClientScanFilterParamDeleteNative", "(II)V",
            (void*)gattClientScanFilterParamDeleteNative},
