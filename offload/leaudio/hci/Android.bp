@@ -35,6 +35,7 @@ rust_library {
     defaults: ["bluetooth_offload_leaudio_hci_defaults"],
     vendor_available: true,
     visibility: [
+        "//device/google/cuttlefish/guest/hals/bluetooth",
         "//hardware/interfaces/bluetooth:__subpackages__",
         "//packages/modules/Bluetooth/offload:__subpackages__",
         "//vendor:__subpackages__",
