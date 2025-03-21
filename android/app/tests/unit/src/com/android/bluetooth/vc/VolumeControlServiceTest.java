@@ -763,6 +763,64 @@ public class VolumeControlServiceTest {
         }
     }
 
+    @Test
+    @EnableFlags(Flags.FLAG_VCP_DEVICE_VOLUME_API_IMPROVEMENTS)
+    public void testClearingSetVolumeFromAF() {
+        int groupId = 1;
+        int groupId2 = 2;
+        int volumeDevice = 56;
+        int streamVolume = 30;
+        int streamMaxVolume = 100;
+        int persistFlag = VolumeControlService.VOLUME_FLAGS_PERSISTED_USER_SET_VOLUME_MASK;
+        int resetFlag = 0;
+        boolean initialMuteState = false;
+        boolean initialAutonomousFlag = true;
+
+        // Set group for device
+        when(mCsipService.getGroupId(mDevice, BluetoothUuid.CAP)).thenReturn(groupId);
+        when(mCsipService.getGroupDevicesOrdered(groupId)).thenReturn(Arrays.asList(mDevice));
+
+        // Connect device
+        generateDeviceAvailableMessageFromNative(mDevice, 1);
+        generateConnectionMessageFromNative(mDevice, STATE_CONNECTED, STATE_DISCONNECTED);
+        when(mBassClientService.getSyncedBroadcastSinks()).thenReturn(new ArrayList<>());
+
+        // Device volume updated with persisted flag, mIgnoreSetVolumeFromAF is set
+        generateVolumeStateChanged(
+                mDevice,
+                LE_AUDIO_GROUP_ID_INVALID,
+                volumeDevice,
+                persistFlag,
+                initialMuteState,
+                initialAutonomousFlag);
+
+        // AF not set volume before device disconnected
+        generateConnectionMessageFromNative(mDevice, STATE_DISCONNECTED, STATE_CONNECTED);
+
+        // Set group for second device
+        when(mCsipService.getGroupId(mDeviceTwo, BluetoothUuid.CAP)).thenReturn(groupId2);
+        when(mCsipService.getGroupDevicesOrdered(groupId2)).thenReturn(Arrays.asList(mDeviceTwo));
+
+        // Connected second device
+        generateDeviceAvailableMessageFromNative(mDeviceTwo, 1);
+        generateConnectionMessageFromNative(mDeviceTwo, STATE_CONNECTED, STATE_DISCONNECTED);
+
+        // Device volume updated with reset flag and no cache, mIgnoreSetVolumeFromAF is cleared
+        generateVolumeStateChanged(
+                mDeviceTwo,
+                LE_AUDIO_GROUP_ID_INVALID,
+                volumeDevice,
+                resetFlag,
+                initialMuteState,
+                initialAutonomousFlag);
+
+        // AF always call setVolume via LeAudioService at first connected remote from group
+        int expectedAfVol =
+                (int) Math.round((double) streamVolume * BT_LE_AUDIO_MAX_VOL / streamMaxVolume);
+        mService.setGroupVolume(groupId2, expectedAfVol);
+        verify(mNativeInterface).setGroupVolume(eq(groupId2), eq(expectedAfVol));
+    }
+
     private void testConnectedDeviceWithResetFlag(
             int resetVolumeDeviceOne, int resetVolumeDeviceTwo) {
         int groupId = 1;
