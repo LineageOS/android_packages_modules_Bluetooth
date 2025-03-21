@@ -16,35 +16,12 @@
 
 #include "btm_sco_hfp_hal.h"
 
-#include <vector>
-
 #include "device/include/esco_parameters.h"
 #include "osi/include/properties.h"
 
 namespace hfp_hal_interface {
-namespace {
-bool offload_supported = true;
-bool offload_enabled = true;
-std::vector<bt_codec> cached_codecs;
-}  // namespace
 
-// Android implementation only has consts. Initialize CVSD and MSBC to PCM
-// offloaded defaults.
-void init() {
-  bt_codec cvsd = {
-          .codec = codec::CVSD,
-          .data_path = ESCO_DATA_PATH_PCM,
-  };
-
-  bt_codec msbc = {
-          .codec = codec::MSBC,
-          .data_path = ESCO_DATA_PATH_PCM,
-  };
-
-  cached_codecs.clear();
-  cached_codecs.emplace_back(cvsd);
-  cached_codecs.emplace_back(msbc);
-}
+void init() {}
 
 // This is not used in Android.
 bool is_coding_format_supported(esco_coding_format_t /* coding_format */) { return true; }
@@ -54,33 +31,11 @@ bool get_wbs_supported() { return true; }
 
 bool get_swb_supported() { return osi_property_get_bool("bluetooth.hfp.swb.supported", false); }
 
-// Checks the supported codecs
-bt_codecs get_codec_capabilities(uint64_t codecs) {
-  bt_codecs codec_list = {.offload_capable = offload_supported};
-
-  for (auto c : cached_codecs) {
-    if (c.codec & codecs) {
-      codec_list.codecs.push_back(c);
-    }
-  }
-
-  return codec_list;
-}
-
-// Check if hardware offload is supported
-bool get_offload_supported() { return offload_supported; }
-
 // Check if hardware offload is enabled
-bool get_offload_enabled() { return offload_supported && offload_enabled; }
+bool get_offload_enabled() { return true; }
 
-// Set offload enable/disable
-bool enable_offload(bool enable) {
-  if (!offload_supported) {
-    return false;
-  }
-  offload_enabled = enable;
-  return true;
-}
+// This is not used in Android.
+bool enable_offload(bool /* enable */) { return true; }
 
 // On Android, this is a no-op because the settings default to offloaded case.
 void set_codec_datapath(tBTA_AG_UUID_CODEC /* codec_uuid */) {}
