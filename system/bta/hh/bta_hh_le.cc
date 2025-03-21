@@ -1102,7 +1102,7 @@ static void bta_hh_clear_service_cache(tBTA_HH_DEV_CB* p_cb) {
  * Parameters:
  *
  ******************************************************************************/
-void bta_hh_start_security(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* /* p_buf */) {
+static void bta_hh_start_security_(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* /* p_buf */) {
   log::verbose("addr:{}", p_cb->link_spec.addrt.bda);
 
   /* if link has been encrypted */
@@ -1123,6 +1123,33 @@ void bta_hh_start_security(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* /* p_buf */
   } else {
     /* unbonded device, report security error here */
     log::debug("addr:{} not bonded", p_cb->link_spec.addrt.bda);
+    p_cb->status = BTA_HH_ERR_AUTH_FAILED;
+    bta_hh_clear_service_cache(p_cb);
+    BTM_SetEncryption(p_cb->link_spec.addrt.bda, BT_TRANSPORT_LE, bta_hh_le_encrypt_cback, NULL,
+                      BTM_BLE_SEC_ENCRYPT_NO_MITM);
+  }
+}
+
+void bta_hh_start_security(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_buf) {
+  if (!com::android::bluetooth::flags::hogp_encryption_collision()) {
+    bta_hh_start_security_(p_cb, p_buf);
+    return;
+  }
+
+  if (BTM_IsEncrypted(p_cb->link_spec.addrt.bda, BT_TRANSPORT_LE)) {
+    log::debug("{} is already encrypted", p_cb->link_spec);
+    p_cb->status = BTA_HH_OK;
+    bta_hh_sm_execute(p_cb, BTA_HH_ENC_CMPL_EVT, NULL);
+  } else if (BTM_SecIsLeSecurityPending(p_cb->link_spec.addrt.bda)) {
+    log::warn("Some security procedure already pending for {}", p_cb->link_spec);
+    p_cb->security_pending = true; // Wait for encryption to complete
+  } else if (BTM_IsBonded(p_cb->link_spec.addrt.bda, BT_TRANSPORT_LE)) {
+    log::info("{} is bonded, but not encrypted", p_cb->link_spec);
+    p_cb->status = BTA_HH_ERR_AUTH_FAILED;
+    BTM_SetEncryption(p_cb->link_spec.addrt.bda, BT_TRANSPORT_LE, bta_hh_le_encrypt_cback, NULL,
+                      BTM_BLE_SEC_ENCRYPT);
+  } else {
+    log::error("{} is not bonded", p_cb->link_spec);
     p_cb->status = BTA_HH_ERR_AUTH_FAILED;
     bta_hh_clear_service_cache(p_cb);
     BTM_SetEncryption(p_cb->link_spec.addrt.bda, BT_TRANSPORT_LE, bta_hh_le_encrypt_cback, NULL,
