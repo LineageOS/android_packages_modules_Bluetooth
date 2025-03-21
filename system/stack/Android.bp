@@ -31,10 +31,7 @@ cc_library_static {
 
 cc_library_static {
     name: "libbt-stack",
-    defaults: [
-        "fluoride_defaults",
-        "hfp_hal_defaults",
-    ],
+    defaults: ["fluoride_defaults"],
     local_include_dirs: [
         "ais",
         "avct",
@@ -144,6 +141,7 @@ cc_library_static {
         "btm/btm_main.cc",
         "btm/btm_sco.cc",
         "btm/btm_sco_hci.cc",
+        "btm/btm_sco_hfp_hal.cc",
         "btm/btm_sec.cc",
         "btm/btm_sec_cb.cc",
         "btm/btm_sec_utils.cc",
@@ -254,39 +252,6 @@ filegroup {
         "sdp/sdp_server.cc",
         "sdp/sdp_utils.cc",
     ],
-}
-
-soong_config_module_type {
-    name: "hfp_hal_cc_defaults",
-    module_type: "cc_defaults",
-    config_namespace: "hfp_hal",
-    variables: ["vertical"],
-    properties: ["srcs"],
-}
-
-soong_config_string_variable {
-    name: "vertical",
-    values: [
-        "android_default",
-        "android_desktop",
-    ],
-}
-
-hfp_hal_cc_defaults {
-    name: "hfp_hal_defaults",
-    soong_config_variables: {
-        vertical: {
-            android_desktop: {
-                srcs: ["btm/btm_sco_hfp_hal_linux.cc"],
-            },
-            android_default: {
-                srcs: ["btm/btm_sco_hfp_hal.cc"],
-            },
-            conditions_default: {
-                srcs: ["btm/btm_sco_hfp_hal.cc"],
-            },
-        },
-    },
 }
 
 cc_defaults {
