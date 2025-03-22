@@ -516,10 +516,13 @@ uint16_t L2CA_ConnectLECocReq(uint16_t psm, const RawAddress& p_bd_addr, tL2CAP_
   if (p_lcb == NULL) {
     /* No link. Get an LCB and start link establishment */
     p_lcb = l2cu_allocate_lcb(p_bd_addr, false, BT_TRANSPORT_LE);
-    if ((p_lcb == NULL)
-        /* currently use BR/EDR for ERTM mode l2cap connection */
-        || (!l2cu_create_conn_le(p_lcb))) {
+    if (p_lcb == NULL) {
+      log::error("allocate_lcb failed");
+      return 0;
+    }
+    if (!l2cu_create_conn_le(p_lcb)) {
       log::warn("conn not started for PSM: 0x{:04x}  p_lcb: 0x{}", psm, std::format_ptr(p_lcb));
+      l2cu_release_lcb(p_lcb);
       return 0;
     }
   }
