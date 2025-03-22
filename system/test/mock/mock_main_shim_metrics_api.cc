@@ -61,7 +61,7 @@ struct LogMetricRfcommConnectionAtClose LogMetricRfcommConnectionAtClose;
 }  // namespace test
 
 // Mocked functions, if any
-void bluetooth::shim::LogMetricLinkLayerConnectionEvent(const RawAddress* raw_address,
+void bluetooth::shim::LogMetricLinkLayerConnectionEvent(const RawAddress& raw_address,
                                                         uint32_t connection_handle,
                                                         android::bluetooth::DirectionEnum direction,
                                                         uint16_t link_type, uint32_t hci_cmd,

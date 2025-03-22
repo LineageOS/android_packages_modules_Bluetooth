@@ -40,7 +40,7 @@ static const uint32_t kUnknownConnectionHandle = 0xFFFF;
  * Log link layer connection event
  *
  * @param address Stack wide consistent Bluetooth address of this event,
- *                nullptr if unknown
+ *                kEmpty if unknown
  * @param connection_handle connection handle of this event,
  *                          {@link kUnknownConnectionHandle} if unknown
  * @param direction direction of this connection
@@ -51,7 +51,7 @@ static const uint32_t kUnknownConnectionHandle = 0xFFFF;
  * @param cmd_status Command status associated with this event, if any
  * @param reason_code Reason code associated with this event, if any
  */
-void LogMetricLinkLayerConnectionEvent(const hci::Address* address, uint32_t connection_handle,
+void LogMetricLinkLayerConnectionEvent(const hci::Address& address, uint32_t connection_handle,
                                        android::bluetooth::DirectionEnum direction,
                                        uint16_t link_type, uint32_t hci_cmd, uint16_t hci_event,
                                        uint16_t hci_ble_event, uint16_t cmd_status,

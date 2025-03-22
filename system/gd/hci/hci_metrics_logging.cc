@@ -249,7 +249,7 @@ void log_link_layer_connection_command(std::unique_ptr<CommandView>& command_vie
       return;
   }
   os::LogMetricLinkLayerConnectionEvent(
-          &address, connection_handle, direction, link_type, static_cast<uint32_t>(op_code),
+          address, connection_handle, direction, link_type, static_cast<uint32_t>(op_code),
           static_cast<uint16_t>(event_code), kUnknownBleEvt, status, static_cast<uint16_t>(reason));
 }
 
@@ -449,7 +449,7 @@ void log_link_layer_connection_command_status(std::unique_ptr<CommandView>& comm
       return;
   }
   os::LogMetricLinkLayerConnectionEvent(
-          &address, connection_handle, direction, link_type, static_cast<uint32_t>(op_code),
+          address, connection_handle, direction, link_type, static_cast<uint32_t>(op_code),
           static_cast<uint16_t>(event_code), kUnknownBleEvt, static_cast<uint16_t>(status),
           static_cast<uint16_t>(reason));
 }
@@ -535,7 +535,7 @@ void log_link_layer_connection_command_complete(EventView event_view,
       return;
   }
   os::LogMetricLinkLayerConnectionEvent(
-          &address, connection_handle, direction, link_type, static_cast<uint32_t>(op_code),
+          address, connection_handle, direction, link_type, static_cast<uint32_t>(op_code),
           static_cast<uint16_t>(event_code), kUnknownBleEvt, static_cast<uint16_t>(status),
           static_cast<uint16_t>(reason));
 }
@@ -611,7 +611,7 @@ void log_link_layer_connection_other_hci_event(EventView packet,
       return;
   }
   os::LogMetricLinkLayerConnectionEvent(
-          &address, connection_handle, direction, link_type, static_cast<uint32_t>(cmd),
+          address, connection_handle, direction, link_type, static_cast<uint32_t>(cmd),
           static_cast<uint16_t>(event_code), android::bluetooth::hci::BLE_EVT_UNKNOWN,
           static_cast<uint16_t>(status), static_cast<uint16_t>(reason));
 }
@@ -655,7 +655,7 @@ void log_link_layer_connection_event_le_meta(LeMetaEventView le_meta_event_view)
   }
 
   os::LogMetricLinkLayerConnectionEvent(
-          &address, connection_handle, direction, link_type, static_cast<uint32_t>(cmd),
+          address, connection_handle, direction, link_type, static_cast<uint32_t>(cmd),
           static_cast<uint16_t>(event_code), static_cast<uint16_t>(leEvt),
           static_cast<uint16_t>(status), static_cast<uint16_t>(reason));
 

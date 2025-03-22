@@ -87,27 +87,22 @@ using bluetooth::hci::EventCode;
  */
 static const BytesField byteField(nullptr, 0);
 
-void LogMetricLinkLayerConnectionEvent(const Address* address, uint32_t connection_handle,
+void LogMetricLinkLayerConnectionEvent(const Address& address, uint32_t connection_handle,
                                        android::bluetooth::DirectionEnum direction,
                                        uint16_t link_type, uint32_t hci_cmd, uint16_t hci_event,
                                        uint16_t hci_ble_event, uint16_t cmd_status,
                                        uint16_t reason_code) {
-  int metric_id = 0;
-  if (address != nullptr) {
-    metric_id = MetricIdManager::GetInstance().AllocateId(*address);
-  }
+  int metric_id = address.IsEmpty() ? 0 : MetricIdManager::GetInstance().AllocateId(address);
   int ret = stats_write(BLUETOOTH_LINK_LAYER_CONNECTION_EVENT, byteField, connection_handle,
                         direction, link_type, hci_cmd, hci_event, hci_ble_event, cmd_status,
                         reason_code, metric_id);
   if (ret < 0) {
     log::warn(
             "Failed to log status {} , reason {}, from cmd {}, event {},  ble_event {}, for {}, "
-            "handle "
-            "{}, type {}, error {}",
+            "handle {}, type {}, error {}",
             common::ToHexString(cmd_status), common::ToHexString(reason_code),
             common::ToHexString(hci_cmd), common::ToHexString(hci_event),
-            common::ToHexString(hci_ble_event),
-            address ? address->ToRedactedStringForLogging() : "(NULL)", connection_handle,
+            common::ToHexString(hci_ble_event), address, connection_handle,
             common::ToHexString(link_type), ret);
   }
 }
@@ -493,11 +488,7 @@ void LogMetricBluetoothEvent(const Address& address, android::bluetooth::EventTy
     return;
   }
   int metric_id = MetricIdManager::GetInstance().AllocateId(address);
-  int ret = stats_write(BLUETOOTH_CROSS_LAYER_EVENT_REPORTED,
-                        event_type,
-                        state,
-                        0,
-                        metric_id,
+  int ret = stats_write(BLUETOOTH_CROSS_LAYER_EVENT_REPORTED, event_type, state, 0, metric_id,
                         BytesField(nullptr, 0));
   if (ret < 0) {
     log::warn("Failed BluetoothEvent Upload - Address {}, Event_type {}, State {}", address,
