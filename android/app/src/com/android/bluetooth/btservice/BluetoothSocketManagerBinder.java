@@ -29,7 +29,6 @@ import android.os.ParcelUuid;
 import android.util.Log;
 
 import com.android.bluetooth.Utils;
-import com.android.bluetooth.flags.Flags;
 
 class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
     private static final String TAG = BluetoothSocketManagerBinder.class.getSimpleName();
@@ -58,10 +57,7 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
             return null;
         }
 
-        String brEdrAddress =
-                Flags.identityAddressNullIfNotKnown()
-                        ? Utils.getBrEdrAddress(device)
-                        : mService.getIdentityAddress(device.getAddress());
+        String brEdrAddress = Utils.getBrEdrAddress(device);
 
         Log.i(
                 TAG,
@@ -118,10 +114,7 @@ class BluetoothSocketManagerBinder extends IBluetoothSocketManager.Stub {
             mService.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
             enforceSocketOffloadSupport(type);
         }
-        String brEdrAddress =
-                Flags.identityAddressNullIfNotKnown()
-                        ? Utils.getBrEdrAddress(device)
-                        : mService.getIdentityAddress(device.getAddress());
+        String brEdrAddress = Utils.getBrEdrAddress(device);
 
         Log.i(
                 TAG,

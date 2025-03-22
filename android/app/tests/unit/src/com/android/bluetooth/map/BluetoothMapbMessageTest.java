@@ -31,6 +31,7 @@ import org.junit.runner.RunWith;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
+/** Test cases for {@link BluetoothMapbMessage}. */
 @RunWith(AndroidJUnit4.class)
 public class BluetoothMapbMessageTest {
     private static final String TEST_VERSION_STRING = "1.0";

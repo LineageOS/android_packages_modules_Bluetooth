@@ -28,6 +28,7 @@ import com.android.bluetooth.mapapi.BluetoothMapContract;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+/** Test cases for {@link ConvoContactInfo}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class ConvoContactInfoTest {

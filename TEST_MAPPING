@@ -133,9 +133,6 @@
       "name": "net_test_bta_security"
     },
     {
-      "name": "net_test_btcore"
-    },
-    {
       "name": "net_test_btif"
     },
     {
@@ -363,9 +360,6 @@
     },
     {
       "name": "net_test_bta_security"
-    },
-    {
-      "name": "net_test_btcore"
     },
     {
       "name": "net_test_btif"

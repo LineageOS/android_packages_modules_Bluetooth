@@ -61,9 +61,7 @@ struct Controller::impl {
                                handler->BindOn(this, &Controller::impl::NumberOfCompletedPackets));
 
     set_event_mask(kDefaultEventMask);
-    if (com::android::bluetooth::flags::encryption_change_v2()) {
-      set_event_mask_page_2(kDefaultEventMaskPage2);
-    }
+    set_event_mask_page_2(kDefaultEventMaskPage2);
 
     write_le_host_support(Enable::ENABLED, Enable::DISABLED);
     hci_->EnqueueCommand(

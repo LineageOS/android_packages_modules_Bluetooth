@@ -25,7 +25,7 @@ import com.google.common.testing.EqualsTester;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-/** A test suite for the BipImageDescriptor class */
+/** Test cases for {@link BipImageDescriptor}. */
 @RunWith(AndroidJUnit4.class)
 public class BipImageDescriptorTest {
 

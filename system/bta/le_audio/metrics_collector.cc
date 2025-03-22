@@ -25,9 +25,9 @@
 #include <unordered_map>
 #include <vector>
 
-#include "common/metrics.h"
 #include "hardware/bt_le_audio.h"
 #include "le_audio_types.h"
+#include "os/metrics.h"
 #include "types/raw_address.h"
 
 namespace bluetooth::le_audio {
@@ -199,7 +199,7 @@ public:
       device_address[i] = device_metric->address_;
     }
 
-    bluetooth::common::LogLeAudioConnectionSessionReported(
+    bluetooth::os::LogMetricLeAudioConnectionSessionReported(
             group_size_, group_id_, connection_duration_nanos, device_connecting_offset_nanos,
             device_connected_offset_nanos, device_connection_duration_nanos,
             device_connection_statuses, device_disconnection_statuses, device_address,
@@ -278,7 +278,7 @@ void MetricsCollector::OnBroadcastStateChanged(bool started) {
     broadcast_beginning_timepoint_ = std::chrono::high_resolution_clock::now();
   } else {
     auto broadcast_ending_timepoint_ = std::chrono::high_resolution_clock::now();
-    bluetooth::common::LogLeAudioBroadcastSessionReported(
+    bluetooth::os::LogMetricLeAudioBroadcastSessionReported(
             get_timedelta_nanos(broadcast_beginning_timepoint_, broadcast_ending_timepoint_));
     broadcast_beginning_timepoint_ = kInvalidTimePoint;
   }

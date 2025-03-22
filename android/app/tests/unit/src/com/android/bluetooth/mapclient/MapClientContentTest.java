@@ -65,6 +65,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
+/** Test cases for {@link MapClientContent}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class MapClientContentTest {

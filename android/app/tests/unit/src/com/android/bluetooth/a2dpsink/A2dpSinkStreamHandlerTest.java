@@ -49,6 +49,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 
+/** Test cases for {@link A2dpSinkStreamHandler}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class A2dpSinkStreamHandlerTest {

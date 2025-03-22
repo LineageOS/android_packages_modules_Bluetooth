@@ -40,6 +40,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+/** Test cases for {@link BluetoothOppPreference}. */
 @RunWith(AndroidJUnit4.class)
 public class BluetoothOppPreferenceTest {
     Context mContext;

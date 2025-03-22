@@ -26,6 +26,7 @@ import org.junit.runners.JUnit4;
 
 import java.util.Arrays;
 
+/** Test cases for {@link Config}. */
 @RunWith(JUnit4.class)
 public final class ConfigTest {
     @Test

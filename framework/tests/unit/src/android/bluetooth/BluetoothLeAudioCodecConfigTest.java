@@ -24,7 +24,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-/** Unit test cases for {@link BluetoothLeAudioCodecConfig}. */
+/** Test cases for {@link BluetoothLeAudioCodecConfig}. */
 @RunWith(AndroidJUnit4.class)
 public class BluetoothLeAudioCodecConfigTest {
 

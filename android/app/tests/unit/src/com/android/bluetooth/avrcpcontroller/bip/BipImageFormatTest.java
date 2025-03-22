@@ -25,7 +25,7 @@ import com.google.common.testing.EqualsTester;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-/** A test suite for the BipImageFormat class */
+/** Test cases for {@link BipImageFormat}. */
 @RunWith(AndroidJUnit4.class)
 public class BipImageFormatTest {
     @Test

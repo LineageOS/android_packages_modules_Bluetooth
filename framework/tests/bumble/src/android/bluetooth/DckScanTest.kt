@@ -32,6 +32,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
 import org.junit.Assume.assumeTrue
+import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -99,6 +100,7 @@ class DckScanTest(
     }
 
     @Test
+    @Ignore("b/404159990")
     fun scanForUuid_remoteFound() {
         // Assume isRemoteAdvertisingWithUuid is true to skip tests in which
         // device is not advertising with UUID

@@ -26,6 +26,7 @@ import com.google.common.testing.EqualsTester;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+/** Test cases for {@link Msg}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class MsgTest {

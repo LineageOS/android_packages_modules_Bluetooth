@@ -54,6 +54,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+/** Test cases for {@link MediaPlayerWrapper}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class MediaPlayerWrapperTest {

@@ -69,6 +69,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 // Long class name cause problem with Junit4. It will raise java.lang.NoClassDefFoundError
+/** Test cases for {@link BluetoothOppIncomingFileConfirmActivity}. */
 @RunWith(AndroidJUnit4.class)
 public class IncomingFileConfirmActivityTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();

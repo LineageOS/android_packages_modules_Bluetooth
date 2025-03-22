@@ -1347,6 +1347,74 @@ cc_test {
 }
 
 cc_test {
+    name: "bluetooth_hearing_aid_test",
+    test_suites: ["general-tests"],
+    defaults: [
+        "fluoride_bta_defaults",
+        "mts_defaults",
+    ],
+    host_supported: true,
+    include_dirs: [
+        "packages/modules/Bluetooth/system",
+        "packages/modules/Bluetooth/system/bta/include",
+        "packages/modules/Bluetooth/system/bta/test/common",
+        "packages/modules/Bluetooth/system/stack/include",
+    ],
+    srcs: [
+        ":TestCommonMockFunctions",
+        ":TestMockBtaHearingAidAudioSource",
+        ":TestMockDevice",
+        ":TestMockMainShim",
+        ":TestMockMainShimEntry",
+        ":TestMockStackBtmInterface",
+        ":TestMockStackBtmIso",
+        ":TestMockStackGapConnInterface",
+        ":TestMockStackL2cap",
+        ":TestStubOsi",
+        "gatt/database.cc",
+        "gatt/database_builder.cc",
+        "hearing_aid/hearing_aid.cc",
+        "hearing_aid/hearing_aid_test.cc",
+        "test/common/bta_gatt_api_mock.cc",
+        "test/common/bta_gatt_queue_mock.cc",
+        "test/common/btif_storage_mock.cc",
+        "test/common/btm_api_mock.cc",
+    ],
+    shared_libs: [
+        "libbase",
+        "libcrypto",
+        "liblog",
+    ],
+    static_libs: [
+        "bluetooth_flags_c_lib_for_test",
+        "libaconfig_storage_read_api_cc",
+        "libbluetooth-types",
+        "libbluetooth_crypto_toolbox",
+        "libbluetooth_gd",
+        "libbluetooth_log",
+        "libbt-audio-asrc",
+        "libbt-btu-main-thread",
+        "libbt-common",
+        "libbt-platform-protos-lite",
+        "libchrome",
+        "libevent",
+        "libg722codec",
+        "libgmock",
+        "server_configurable_flags",
+    ],
+    sanitize: {
+        cfi: true,
+        scs: true,
+        address: true,
+        all_undefined: true,
+        integer_overflow: true,
+        diag: {
+            undefined: true,
+        },
+    },
+}
+
+cc_test {
     name: "bluetooth_hh_test",
     test_suites: ["general-tests"],
     defaults: [

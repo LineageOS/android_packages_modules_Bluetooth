@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/** Test cases for {@link BluetoothCall}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothCallTest {

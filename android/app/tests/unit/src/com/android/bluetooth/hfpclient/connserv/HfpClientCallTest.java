@@ -28,6 +28,7 @@ import androidx.test.runner.AndroidJUnit4;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+/** Test cases for {@link HfpClientCall}. */
 @RunWith(AndroidJUnit4.class)
 public class HfpClientCallTest {
     private static final int TEST_ID = 0;

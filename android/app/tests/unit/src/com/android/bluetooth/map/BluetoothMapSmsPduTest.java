@@ -48,6 +48,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.List;
 
+/** Test cases for {@link BluetoothMapSmsPdu}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothMapSmsPduTest {

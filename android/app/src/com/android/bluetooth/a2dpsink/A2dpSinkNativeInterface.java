@@ -23,7 +23,6 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -78,14 +77,6 @@ public class A2dpSinkNativeInterface {
         return mAdapterService.getDeviceFromByte(address);
     }
 
-    private byte[] getByteAddress(BluetoothDevice device) {
-        if (Flags.identityAddressNullIfNotKnown()) {
-            return Utils.getByteBrEdrAddress(device);
-        } else {
-            return mAdapterService.getByteIdentityAddress(device);
-        }
-    }
-
     /**
      * Initiates an A2DP connection to a remote device.
      *
@@ -93,7 +84,7 @@ public class A2dpSinkNativeInterface {
      * @return true on success, otherwise false.
      */
     public boolean connectA2dpSink(BluetoothDevice device) {
-        return connectA2dpNative(getByteAddress(device));
+        return connectA2dpNative(Utils.getByteBrEdrAddress(device));
     }
 
     /**
@@ -103,7 +94,7 @@ public class A2dpSinkNativeInterface {
      * @return true on success, otherwise false.
      */
     public boolean disconnectA2dpSink(BluetoothDevice device) {
-        return disconnectA2dpNative(getByteAddress(device));
+        return disconnectA2dpNative(Utils.getByteBrEdrAddress(device));
     }
 
     /**
@@ -120,7 +111,7 @@ public class A2dpSinkNativeInterface {
         // Translate to byte address for JNI. Use an all 0 MAC for no active device
         byte[] address = null;
         if (device != null) {
-            address = getByteAddress(device);
+            address = Utils.getByteBrEdrAddress(device);
         } else {
             address = Utils.getBytesFromAddress("00:00:00:00:00:00");
         }

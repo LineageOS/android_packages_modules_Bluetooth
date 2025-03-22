@@ -56,6 +56,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
+/** Test cases for {@link BluetoothMapIMProvider}. */
 @RunWith(AndroidJUnit4.class)
 public class BluetoothMapIMProviderTest {
     private static final String TAG = BluetoothMapIMProviderTest.class.getSimpleName();

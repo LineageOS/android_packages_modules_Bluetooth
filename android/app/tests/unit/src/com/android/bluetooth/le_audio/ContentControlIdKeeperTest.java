@@ -41,6 +41,7 @@ import org.mockito.Mock;
 import java.util.Map;
 import java.util.UUID;
 
+/** Test cases for {@link ContentControlIdKeeper}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class ContentControlIdKeeperTest {

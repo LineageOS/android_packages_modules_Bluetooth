@@ -16,11 +16,8 @@
 
 package com.android.bluetooth.mapclient;
 
-import static android.Manifest.permission.BLUETOOTH_CONNECT;
-import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
-import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
@@ -28,16 +25,12 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
 
-import android.Manifest;
-import android.annotation.RequiresPermission;
 import android.app.PendingIntent;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothUuid;
-import android.bluetooth.IBluetoothMapClient;
 import android.bluetooth.SdpMasRecord;
-import android.content.AttributionSource;
 import android.net.Uri;
 import android.os.Handler;
 import android.os.Looper;
@@ -46,7 +39,6 @@ import android.os.Parcelable;
 import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
-import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
@@ -54,7 +46,6 @@ import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -307,7 +298,7 @@ public class MapClientService extends ProfileService {
 
     @Override
     public IProfileServiceBinder initBinder() {
-        return new Binder(this);
+        return new MapClientServiceBinder(this);
     }
 
     @Override
@@ -405,172 +396,6 @@ public class MapClientService extends ProfileService {
         super.dump(sb);
         for (MceStateMachine stateMachine : mMapInstanceMap.values()) {
             stateMachine.dump(sb);
-        }
-    }
-
-    // Binder object: Must be static class or memory leak may occur
-
-    /**
-     * This class implements the IClient interface - or actually it validates the preconditions for
-     * calling the actual functionality in the MapClientService, and calls it.
-     */
-    @VisibleForTesting
-    static class Binder extends IBluetoothMapClient.Stub implements IProfileServiceBinder {
-        private MapClientService mService;
-
-        Binder(MapClientService service) {
-            mService = service;
-        }
-
-        @Override
-        public void cleanup() {
-            mService = null;
-        }
-
-        @RequiresPermission(BLUETOOTH_CONNECT)
-        private MapClientService getService(AttributionSource source) {
-            // Cache mService because it can change while getService is called
-            MapClientService service = mService;
-
-            if (Utils.isInstrumentationTestMode()) {
-                return service;
-            }
-
-            if (!Utils.checkServiceAvailable(service, TAG)
-                    || !(getCallingUserHandle().isSystem()
-                            || Utils.checkCallerIsSystemOrActiveOrManagedUser(service, TAG))
-                    || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
-                return null;
-            }
-            return service;
-        }
-
-        @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
-        private MapClientService getServiceAndEnforcePrivileged(AttributionSource source) {
-            // Cache mService because it can change while getService is called
-            MapClientService service = mService;
-
-            if (Utils.isInstrumentationTestMode()) {
-                return service;
-            }
-
-            if (!Utils.checkServiceAvailable(service, TAG)
-                    || !(getCallingUserHandle().isSystem()
-                            || Utils.checkCallerIsSystemOrActiveOrManagedUser(service, TAG))
-                    || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
-                return null;
-            }
-
-            service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-
-            return service;
-        }
-
-        @Override
-        public boolean connect(BluetoothDevice device, AttributionSource source) {
-            Log.v(TAG, "connect()");
-
-            MapClientService service = getServiceAndEnforcePrivileged(source);
-            if (service == null) {
-                return false;
-            }
-
-            return service.connect(device);
-        }
-
-        @Override
-        public boolean disconnect(BluetoothDevice device, AttributionSource source) {
-            Log.v(TAG, "disconnect()");
-
-            MapClientService service = getServiceAndEnforcePrivileged(source);
-            if (service == null) {
-                return false;
-            }
-
-            return service.disconnect(device);
-        }
-
-        @Override
-        public List<BluetoothDevice> getConnectedDevices(AttributionSource source) {
-            Log.v(TAG, "getConnectedDevices()");
-
-            MapClientService service = getServiceAndEnforcePrivileged(source);
-            if (service == null) {
-                return Collections.emptyList();
-            }
-
-            return service.getConnectedDevices();
-        }
-
-        @Override
-        public List<BluetoothDevice> getDevicesMatchingConnectionStates(
-                int[] states, AttributionSource source) {
-            Log.v(TAG, "getDevicesMatchingConnectionStates()");
-
-            MapClientService service = getServiceAndEnforcePrivileged(source);
-            if (service == null) {
-                return Collections.emptyList();
-            }
-            return service.getDevicesMatchingConnectionStates(states);
-        }
-
-        @Override
-        public int getConnectionState(BluetoothDevice device, AttributionSource source) {
-            Log.v(TAG, "getConnectionState()");
-
-            MapClientService service = getServiceAndEnforcePrivileged(source);
-            if (service == null) {
-                return STATE_DISCONNECTED;
-            }
-
-            return service.getConnectionState(device);
-        }
-
-        @Override
-        public boolean setConnectionPolicy(
-                BluetoothDevice device, int connectionPolicy, AttributionSource source) {
-            Log.v(TAG, "setConnectionPolicy()");
-
-            MapClientService service = getServiceAndEnforcePrivileged(source);
-            if (service == null) {
-                return false;
-            }
-
-            return service.setConnectionPolicy(device, connectionPolicy);
-        }
-
-        @Override
-        public int getConnectionPolicy(BluetoothDevice device, AttributionSource source) {
-            Log.v(TAG, "getConnectionPolicy()");
-
-            MapClientService service = getServiceAndEnforcePrivileged(source);
-            if (service == null) {
-                return CONNECTION_POLICY_UNKNOWN;
-            }
-
-            return service.getConnectionPolicy(device);
-        }
-
-        @Override
-        public boolean sendMessage(
-                BluetoothDevice device,
-                Uri[] contacts,
-                String message,
-                PendingIntent sentIntent,
-                PendingIntent deliveredIntent,
-                AttributionSource source) {
-            Log.v(TAG, "sendMessage()");
-
-            MapClientService service = getService(source);
-            if (service == null) {
-                return false;
-            }
-
-            Log.d(TAG, "Checking Permission of sendMessage");
-            mService.enforceCallingOrSelfPermission(
-                    Manifest.permission.SEND_SMS, "Need SEND_SMS permission");
-
-            return service.sendMessage(device, contacts, message, sentIntent, deliveredIntent);
         }
     }
 

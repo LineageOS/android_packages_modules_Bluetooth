@@ -80,6 +80,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/** Test cases for {@link PhonePolicy}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class PhonePolicyTest {

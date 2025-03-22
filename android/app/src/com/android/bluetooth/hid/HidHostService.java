@@ -17,7 +17,6 @@
 package com.android.bluetooth.hid;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
-import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_ALLOWED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_UNKNOWN;
@@ -27,14 +26,11 @@ import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 
 import static java.util.Objects.requireNonNull;
 
-import android.annotation.RequiresPermission;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothHidHost;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
 import android.bluetooth.BluetoothUuid;
-import android.bluetooth.IBluetoothHidHost;
-import android.content.AttributionSource;
 import android.content.Intent;
 import android.os.Bundle;
 import android.os.Handler;
@@ -145,7 +141,7 @@ public class HidHostService extends ProfileService {
 
     @Override
     public IProfileServiceBinder initBinder() {
-        return new BluetoothHidHostBinder(this);
+        return new HidHostServiceBinder(this);
     }
 
     @Override
@@ -166,14 +162,6 @@ public class HidHostService extends ProfileService {
         setHidHostService(null);
     }
 
-    private byte[] getIdentityAddress(BluetoothDevice device) {
-        if (Flags.identityAddressNullIfNotKnown()) {
-            return Utils.getByteBrEdrAddress(mAdapterService, device);
-        } else {
-            return mAdapterService.getByteIdentityAddress(device);
-        }
-    }
-
     private byte[] getByteAddress(BluetoothDevice device, int transport) {
         final ParcelUuid[] uuids = mAdapterService.getRemoteUuids(device);
 
@@ -181,14 +169,14 @@ public class HidHostService extends ProfileService {
             // Use pseudo address when HOGP is to be used
             return Utils.getByteAddress(device);
         } else if (transport == BluetoothDevice.TRANSPORT_BREDR) {
-            // Use identity address if HID is to be used
-            return getIdentityAddress(device);
+            // Use BR/EDR address if HID is to be used
+            return Utils.getByteBrEdrAddress(mAdapterService, device);
         } else { // BluetoothDevice.TRANSPORT_AUTO
             boolean hidSupported = Utils.arrayContains(uuids, BluetoothUuid.HID);
             // Prefer HID over HOGP
             if (hidSupported) {
-                // Use identity address if HID is available
-                return getIdentityAddress(device);
+                // Use BR/EDR address if HID is available
+                return Utils.getByteBrEdrAddress(mAdapterService, device);
             } else {
                 // Otherwise use pseudo address
                 return Utils.getByteAddress(device);
@@ -713,207 +701,6 @@ public class HidHostService extends ProfileService {
         return true;
     }
 
-    @VisibleForTesting
-    static class BluetoothHidHostBinder extends IBluetoothHidHost.Stub
-            implements IProfileServiceBinder {
-        private HidHostService mService;
-
-        BluetoothHidHostBinder(HidHostService svc) {
-            mService = svc;
-        }
-
-        @Override
-        public void cleanup() {
-            mService = null;
-        }
-
-        @RequiresPermission(BLUETOOTH_CONNECT)
-        private HidHostService getService(AttributionSource source) {
-            // Cache mService because it can change while getService is called
-            HidHostService service = mService;
-
-            if (Utils.isInstrumentationTestMode()) {
-                return service;
-            }
-
-            if (!Utils.checkServiceAvailable(service, TAG)
-                    || !Utils.checkCallerIsSystemOrActiveOrManagedUser(service, TAG)
-                    || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
-                return null;
-            }
-
-            return service;
-        }
-
-        @Override
-        public boolean connect(BluetoothDevice device, AttributionSource source) {
-            HidHostService service = getService(source);
-            if (service == null) {
-                return false;
-            }
-            service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-            return service.connect(device);
-        }
-
-        @Override
-        public boolean disconnect(BluetoothDevice device, AttributionSource source) {
-            HidHostService service = getService(source);
-            if (service == null) {
-                return false;
-            }
-            service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-            return service.disconnect(device);
-        }
-
-        @Override
-        public int getConnectionState(BluetoothDevice device, AttributionSource source) {
-            HidHostService service = getService(source);
-            if (service == null) {
-                return STATE_DISCONNECTED;
-            }
-            return service.getConnectionState(device);
-        }
-
-        @Override
-        public List<BluetoothDevice> getConnectedDevices(AttributionSource source) {
-            return getDevicesMatchingConnectionStates(new int[] {STATE_CONNECTED}, source);
-        }
-
-        @Override
-        public List<BluetoothDevice> getDevicesMatchingConnectionStates(
-                int[] states, AttributionSource source) {
-            HidHostService service = getService(source);
-            if (service == null) {
-                return Collections.emptyList();
-            }
-            return service.getDevicesMatchingConnectionStates(states);
-        }
-
-        @Override
-        public boolean setConnectionPolicy(
-                BluetoothDevice device, int connectionPolicy, AttributionSource source) {
-            HidHostService service = getService(source);
-            if (service == null) {
-                return false;
-            }
-            service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-            return service.setConnectionPolicy(device, connectionPolicy);
-        }
-
-        @Override
-        public int getConnectionPolicy(BluetoothDevice device, AttributionSource source) {
-            HidHostService service = getService(source);
-            if (service == null) {
-                return CONNECTION_POLICY_UNKNOWN;
-            }
-            service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-            return service.getConnectionPolicy(device);
-        }
-
-        @Override
-        public boolean setPreferredTransport(
-                BluetoothDevice device, int transport, AttributionSource source) {
-            HidHostService service = getService(source);
-            if (service == null) {
-                return false;
-            }
-            service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-            return service.setPreferredTransport(device, transport);
-        }
-
-        @Override
-        public int getPreferredTransport(BluetoothDevice device, AttributionSource source) {
-            HidHostService service = getService(source);
-            if (service == null) {
-                return BluetoothDevice.TRANSPORT_AUTO;
-            }
-            service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-            return service.getPreferredTransport(device);
-        }
-
-        /* The following APIs regarding test app for compliance */
-        @Override
-        public boolean getProtocolMode(BluetoothDevice device, AttributionSource source) {
-            HidHostService service = getService(source);
-            if (service == null) {
-                return false;
-            }
-            return service.getProtocolMode(device);
-        }
-
-        @Override
-        public boolean virtualUnplug(BluetoothDevice device, AttributionSource source) {
-            HidHostService service = getService(source);
-            if (service == null) {
-                return false;
-            }
-            return service.virtualUnplug(device);
-        }
-
-        @Override
-        public boolean setProtocolMode(
-                BluetoothDevice device, int protocolMode, AttributionSource source) {
-            HidHostService service = getService(source);
-            if (service == null) {
-                return false;
-            }
-            return service.setProtocolMode(device, protocolMode);
-        }
-
-        @Override
-        public boolean getReport(
-                BluetoothDevice device,
-                byte reportType,
-                byte reportId,
-                int bufferSize,
-                AttributionSource source) {
-            HidHostService service = getService(source);
-            if (service == null) {
-                return false;
-            }
-            return service.getReport(device, reportType, reportId, bufferSize);
-        }
-
-        @Override
-        public boolean setReport(
-                BluetoothDevice device, byte reportType, String report, AttributionSource source) {
-            HidHostService service = getService(source);
-            if (service == null) {
-                return false;
-            }
-            return service.setReport(device, reportType, report);
-        }
-
-        @Override
-        public boolean sendData(BluetoothDevice device, String report, AttributionSource source) {
-            HidHostService service = getService(source);
-            if (service == null) {
-                return false;
-            }
-            return service.sendData(device, report);
-        }
-
-        @Override
-        public boolean setIdleTime(
-                BluetoothDevice device, byte idleTime, AttributionSource source) {
-            HidHostService service = getService(source);
-            if (service == null) {
-                return false;
-            }
-            return service.setIdleTime(device, idleTime);
-        }
-
-        @Override
-        public boolean getIdleTime(BluetoothDevice device, AttributionSource source) {
-            HidHostService service = getService(source);
-            if (service == null) {
-                return false;
-            }
-            return service.getIdleTime(device);
-        }
-    }
-    ;
-
     // APIs
 
     /**
@@ -982,7 +769,6 @@ public class HidHostService extends ProfileService {
         return STATE_DISCONNECTED;
     }
 
-    @VisibleForTesting
     List<BluetoothDevice> getDevicesMatchingConnectionStates(int[] states) {
         Log.d(TAG, "getDevicesMatchingConnectionStates()");
         return mInputDevices.entrySet().stream()
@@ -1073,7 +859,6 @@ public class HidHostService extends ProfileService {
     /**
      * @see BluetoothHidHost#getPreferredTransport
      */
-    @VisibleForTesting
     int getPreferredTransport(BluetoothDevice device) {
         Log.d(TAG, "getPreferredTransport: device=" + device);
 
@@ -1082,7 +867,6 @@ public class HidHostService extends ProfileService {
     }
 
     /* The following APIs regarding test app for compliance */
-    @VisibleForTesting
     boolean getProtocolMode(BluetoothDevice device) {
         Log.d(TAG, "getProtocolMode: device=" + device);
         int state = this.getConnectionState(device);
@@ -1094,7 +878,6 @@ public class HidHostService extends ProfileService {
         return true;
     }
 
-    @VisibleForTesting
     boolean virtualUnplug(BluetoothDevice device) {
         Log.d(TAG, "virtualUnplug: device=" + device);
         int state = this.getConnectionState(device);
@@ -1106,7 +889,6 @@ public class HidHostService extends ProfileService {
         return true;
     }
 
-    @VisibleForTesting
     boolean setProtocolMode(BluetoothDevice device, int protocolMode) {
         Log.d(TAG, "setProtocolMode: device=" + device);
         int state = this.getConnectionState(device);
@@ -1120,7 +902,6 @@ public class HidHostService extends ProfileService {
         return true;
     }
 
-    @VisibleForTesting
     boolean getReport(BluetoothDevice device, byte reportType, byte reportId, int bufferSize) {
         Log.d(TAG, "getReport: device=" + device);
         int state = this.getConnectionState(device);
@@ -1138,7 +919,6 @@ public class HidHostService extends ProfileService {
         return true;
     }
 
-    @VisibleForTesting
     boolean setReport(BluetoothDevice device, byte reportType, String report) {
         Log.d(TAG, "setReport: device=" + device);
         int state = this.getConnectionState(device);
@@ -1155,7 +935,6 @@ public class HidHostService extends ProfileService {
         return true;
     }
 
-    @VisibleForTesting
     boolean sendData(BluetoothDevice device, String report) {
         Log.d(TAG, "sendData: device=" + device);
         int state = this.getConnectionState(device);
@@ -1393,8 +1172,9 @@ public class HidHostService extends ProfileService {
             // Allow this connection only if the device is bonded. Any attempt to connect
             // while bonding would potentially lead to an unauthorized connection.
             if (bondState != BluetoothDevice.BOND_BONDED) {
-                Log.w(TAG, "okToConnect: return false, device=" + device + " bondState="
-                    + bondState);
+                Log.w(
+                        TAG,
+                        "okToConnect: return false, device=" + device + " bondState=" + bondState);
                 return false;
             }
         }

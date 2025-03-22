@@ -22,6 +22,7 @@
 #include <sstream>
 #include <string>
 
+#include "com_android_bluetooth_flags.h"
 #include "gtest/gtest.h"
 #include "os/handler.h"
 #include "os/thread.h"
@@ -41,9 +42,12 @@ protected:
 
   void TearDown() override {
     handler_->Clear();
+    if (com::android::bluetooth::flags::same_handler_for_all_modules()) {
+      handler_->WaitUntilStopped(kHandlerStopTimeout);
+    }
     delete registry_;
-    delete thread_;
     delete handler_;
+    delete thread_;
   }
 
   ModuleRegistry* registry_;

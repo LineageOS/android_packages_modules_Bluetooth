@@ -749,9 +749,7 @@ static void hh_get_rpt_handler(tBTA_HH_HSDATA& hs_data) {
     HAL_CBACK(bt_hh_callbacks, handshake_cb, (RawAddress*)&(p_dev->link_spec.addrt.bda),
               p_dev->link_spec.addrt.type, p_dev->link_spec.transport,
               (bthh_status_t)hs_data.status);
-    if (com::android::bluetooth::flags::forward_get_set_report_failure_to_uhid()) {
-      bta_hh_co_get_rpt_rsp(p_dev->dev_handle, (tBTA_HH_STATUS)hs_data.status, NULL, 0);
-    }
+    bta_hh_co_get_rpt_rsp(p_dev->dev_handle, (tBTA_HH_STATUS)hs_data.status, NULL, 0);
   }
 }
 

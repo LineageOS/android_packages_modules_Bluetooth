@@ -84,6 +84,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/** Test cases for {@link PbapClientService}. */
 @MediumTest
 @RunWith(ParameterizedAndroidJunit4.class)
 public class PbapClientServiceTest {

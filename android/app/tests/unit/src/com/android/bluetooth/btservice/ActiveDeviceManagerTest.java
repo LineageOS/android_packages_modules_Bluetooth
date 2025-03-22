@@ -84,6 +84,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+/** Test cases for {@link ActiveDeviceManager}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class ActiveDeviceManagerTest {

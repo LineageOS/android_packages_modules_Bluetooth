@@ -43,6 +43,7 @@ import org.mockito.Mock;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
+/** Test cases for {@link BluetoothPbapVcardManagerNestedClasses}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothPbapVcardManagerNestedClassesTest {

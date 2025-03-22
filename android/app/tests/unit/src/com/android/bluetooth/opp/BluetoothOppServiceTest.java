@@ -52,6 +52,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 
+/** Test cases for {@link BluetoothOppService}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothOppServiceTest {

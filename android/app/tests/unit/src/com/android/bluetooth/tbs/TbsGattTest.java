@@ -56,6 +56,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import java.util.UUID;
 
+/** Test cases for {@link TbsGatt}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class TbsGattTest {

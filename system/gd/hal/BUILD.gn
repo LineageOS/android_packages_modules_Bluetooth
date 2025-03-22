@@ -42,7 +42,10 @@ source_set("BluetoothHalSources_hci_host") {
   }
 
   configs += [ "//bt/system/gd:gd_defaults" ]
-  deps = [ "//bt/system/gd:gd_default_deps" ]
+  deps = [
+    "//bt/flags:bluetooth_flags_c_lib",
+    "//bt/system/gd:gd_default_deps",
+  ]
 }
 
 source_set("BluetoothHalSources_ranging_host") {

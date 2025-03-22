@@ -35,6 +35,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 
+/** Test cases for {@link LeAudioBroadcasterNativeInterface}. */
 @RunWith(AndroidJUnit4.class)
 public class LeAudioBroadcasterNativeInterfaceTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();

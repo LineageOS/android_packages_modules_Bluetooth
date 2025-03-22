@@ -10,16 +10,6 @@ flag {
 }
 
 flag {
-    name: "identity_address_null_if_not_known"
-    namespace: "bluetooth"
-    description: "Return null for identity address if identity address is not known"
-    bug: "317120534"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "support_bluetooth_quality_report_v6"
     is_exported: true
     namespace: "bluetooth"

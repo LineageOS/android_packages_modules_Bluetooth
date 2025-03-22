@@ -32,6 +32,7 @@ import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
+/** Test cases for {@link PbapPhonebook}. */
 @RunWith(AndroidJUnit4.class)
 public class PbapPhonebookTest {
 

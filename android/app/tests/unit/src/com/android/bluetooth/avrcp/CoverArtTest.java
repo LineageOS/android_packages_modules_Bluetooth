@@ -42,6 +42,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.Arrays;
 
+/** Test cases for {@link CoverArt}. */
 @RunWith(AndroidJUnit4.class)
 public class CoverArtTest {
     private Resources mTestResources;

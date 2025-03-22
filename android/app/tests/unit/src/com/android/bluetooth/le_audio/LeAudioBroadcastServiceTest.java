@@ -113,6 +113,7 @@ import org.mockito.hamcrest.MockitoHamcrest;
 import java.util.ArrayList;
 import java.util.List;
 
+/** Test cases for {@link LeAudioBroadcastService}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class LeAudioBroadcastServiceTest {

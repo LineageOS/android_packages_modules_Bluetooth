@@ -64,6 +64,7 @@ import org.mockito.Mock;
 import java.util.ArrayList;
 import java.util.List;
 
+/** Test cases for {@link MapClientService}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class MapClientServiceTest {

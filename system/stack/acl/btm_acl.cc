@@ -41,7 +41,6 @@
 #include "bta/gatt/bta_gattc_int.h"
 #include "bta/include/bta_dm_acl.h"
 #include "bta/sys/bta_sys.h"
-#include "common/metrics.h"
 #include "device/include/device_iot_config.h"
 #include "device/include/interop.h"
 #include "hci/controller_interface.h"
@@ -51,6 +50,7 @@
 #include "main/shim/dumpsys.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
+#include "os/metrics.h"
 #include "os/parameter_provider.h"
 #include "osi/include/allocator.h"
 #include "osi/include/properties.h"
@@ -785,10 +785,10 @@ static void btm_process_remote_version_complete(uint8_t status, uint16_t handle,
     p_acl_cb->remote_version_info.valid = true;
     BTM_update_version_info(p_acl_cb->RemoteAddress(), p_acl_cb->remote_version_info);
 
-    bluetooth::common::LogRemoteVersionInfo(handle, status, lmp_version, manufacturer,
-                                            lmp_subversion);
+    bluetooth::os::LogMetricRemoteVersionInfo(handle, status, lmp_version, manufacturer,
+                                              lmp_subversion);
   } else {
-    bluetooth::common::LogRemoteVersionInfo(handle, status, 0, 0, 0);
+    bluetooth::os::LogMetricRemoteVersionInfo(handle, status, 0, 0, 0);
   }
 }
 

@@ -617,6 +617,35 @@ public class BluetoothManagerServiceTest {
         assertThat(mLooper.nextMessage()).isNull(); // Must not create a MESSAGE_ENABLE
     }
 
+    @Test
+    @EnableFlags({
+        Flags.FLAG_SYSTEM_SERVER_REMOVE_EXTRA_THREAD_JUMP,
+        Flags.FLAG_ENABLE_BLE_WHILE_DISABLING_AIRPLANE
+    })
+    public void enableBle_whenDisableAirplaneIsDelayed_startBluetooth() throws Exception {
+        mManagerService.enable("enableBle_whenDisableAirplaneIsDelayed_startBluetooth");
+        IBluetoothCallback btCallback = transition_offToOn();
+        mManagerService.onAirplaneModeChanged(true);
+        assertThat(mManagerService.getState()).isEqualTo(STATE_TURNING_OFF);
+
+        // Generate an event that will be delayed due to the TURNING_OFF state
+        mManagerService.onAirplaneModeChanged(false);
+
+        transition_onToBleOn(btCallback);
+        mInOrder.verify(mAdapterBinder).bleOnToOff(any());
+        assertThat(mManagerService.getState()).isEqualTo(STATE_BLE_TURNING_OFF);
+
+        // As soon as we left BLE_ON, generate a call from 3p app that request to turn on Bluetooth
+        mManagerService.enableBle("enableBle_whenDisableAirplaneIsDelayed_startBluetooth", mBinder);
+
+        // When all the profile are started, adapterService consider it is ON
+        btCallback.onBluetoothStateChange(STATE_BLE_TURNING_OFF, STATE_OFF);
+        syncHandler(MESSAGE_BLUETOOTH_STATE_CHANGE);
+
+        transition_offToOn();
+        assertThat(mManagerService.getState()).isEqualTo(STATE_ON);
+    }
+
     @SafeVarargs
     private void verifyIntentSent(Matcher<Intent>... matchers) {
         mInOrder.verify(mContext)

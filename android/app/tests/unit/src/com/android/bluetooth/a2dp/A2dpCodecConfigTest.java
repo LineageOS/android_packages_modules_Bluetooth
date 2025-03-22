@@ -44,6 +44,7 @@ import org.mockito.Mock;
 
 import java.util.Arrays;
 
+/** Test cases for {@link A2dpCodecConfig}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class A2dpCodecConfigTest {

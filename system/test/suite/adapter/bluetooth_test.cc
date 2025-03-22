@@ -19,10 +19,11 @@
 #include "adapter/bluetooth_test.h"
 
 #include <binder/ProcessState.h>
+#include <bluetooth/log.h>
 
 #include <mutex>
 
-#include "btcore/include/property.h"
+#include "osi/include/allocator.h"
 #include "types/raw_address.h"
 
 extern bt_interface_t bluetoothInterface;
@@ -34,6 +35,31 @@ void semaphore_try_wait(btsemaphore& s) { s.try_wait(); }
 namespace bttest {
 
 static BluetoothTest* instance = nullptr;
+
+static void property_free_array(bt_property_t* properties, size_t count) {
+  if (properties == NULL) {
+    return;
+  }
+
+  for (size_t i = 0; i < count; ++i) {
+    osi_free(properties[i].val);
+  }
+
+  osi_free(properties);
+}
+
+static bt_property_t* property_copy_array(const bt_property_t* properties, size_t count) {
+  bluetooth::log::assert_that(properties != NULL, "assert failed: properties != NULL");
+  bt_property_t* clone = static_cast<bt_property_t*>(osi_calloc(sizeof(bt_property_t) * count));
+
+  memcpy(&clone[0], &properties[0], sizeof(bt_property_t) * count);
+  for (size_t i = 0; i < count; ++i) {
+    clone[i].val = osi_calloc(clone[i].len);
+    memcpy(clone[i].val, properties[i].val, clone[i].len);
+  }
+
+  return clone;
+}
 
 void AdapterStateChangedCallback(bt_state_t new_state) {
   instance->state_ = new_state;

@@ -2689,12 +2689,8 @@ public class AdapterService extends Service {
             return Utils.getBytesFromAddress(deviceProp.getIdentityAddress());
         }
 
-        if (Flags.identityAddressNullIfNotKnown()) {
-            // Return null if identity address unknown
-            return null;
-        } else {
-            return Utils.getByteAddress(device);
-        }
+        // Return null if identity address unknown
+        return null;
     }
 
     public BluetoothDevice getDeviceFromByte(byte[] address) {
@@ -2712,14 +2708,9 @@ public class AdapterService extends Service {
         DeviceProperties deviceProp = mRemoteDevices.getDeviceProperties(device);
         if (deviceProp != null && deviceProp.getIdentityAddress() != null) {
             return deviceProp.getIdentityAddress();
-        } else {
-            if (Flags.identityAddressNullIfNotKnown()) {
-                // Return null if identity address unknown
-                return null;
-            } else {
-                return address;
-            }
         }
+        // Return null if identity address unknown
+        return null;
     }
 
     /**
@@ -2745,11 +2736,7 @@ public class AdapterService extends Service {
             }
             identityAddressType = deviceProp.getIdentityAddressType();
         } else {
-            if (Flags.identityAddressNullIfNotKnown()) {
-                identityAddress = null;
-            } else {
-                identityAddress = address;
-            }
+            identityAddress = null;
         }
 
         return new BluetoothAddress(identityAddress, identityAddressType);
@@ -3119,16 +3106,13 @@ public class AdapterService extends Service {
 
     public int getConnectionState(BluetoothDevice device) {
         final String address = device.getAddress();
-        if (Flags.apiGetConnectionStateUsingIdentityAddress()) {
-            int connectionState = mNativeInterface.getConnectionState(getBytesFromAddress(address));
-            final String identityAddress = getIdentityAddress(address);
-            if (identityAddress != null) {
-                connectionState |=
-                        mNativeInterface.getConnectionState(getBytesFromAddress(identityAddress));
-            }
-            return connectionState;
+        int connectionState = mNativeInterface.getConnectionState(getBytesFromAddress(address));
+        final String identityAddress = getIdentityAddress(address);
+        if (identityAddress != null) {
+            connectionState |=
+                    mNativeInterface.getConnectionState(getBytesFromAddress(identityAddress));
         }
-        return mNativeInterface.getConnectionState(getBytesFromAddress(address));
+        return connectionState;
     }
 
     int getConnectionHandle(BluetoothDevice device, int transport) {

@@ -61,6 +61,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+/** Test cases for {@link DataMigration}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class DataMigrationTest {

@@ -1063,15 +1063,12 @@ public:
         add_device_to_accept_list(address_with_type);
       }
 
-      if (com::android::bluetooth::flags::
-                  improve_create_connection_for_already_connecting_device()) {
-        bool in_accept_list_due_to_direct_connect =
-                direct_connections_.find(address_with_type) != direct_connections_.end();
+      bool in_accept_list_due_to_direct_connect =
+              direct_connections_.find(address_with_type) != direct_connections_.end();
 
-        if (already_in_accept_list && (in_accept_list_due_to_direct_connect || !is_direct)) {
-          log::info("Device {} already in accept list. Stop here.", address_with_type);
-          return;
-        }
+      if (already_in_accept_list && (in_accept_list_due_to_direct_connect || !is_direct)) {
+        log::info("Device {} already in accept list. Stop here.", address_with_type);
+        return;
       }
 
       if (is_direct) {
@@ -1147,25 +1144,6 @@ public:
     direct_connect_remove(address_with_type);
     // the connection will be canceled by LeAddressManager.OnPause()
     remove_device_from_accept_list(address_with_type);
-  }
-
-  void set_le_suggested_default_data_parameters(uint16_t length, uint16_t time) {
-    auto packet = LeWriteSuggestedDefaultDataLengthBuilder::Create(length, time);
-    le_acl_connection_interface_->EnqueueCommand(
-            std::move(packet), handler_->BindOnce([](CommandCompleteView /* complete */) {}));
-  }
-
-  void LeSetDefaultSubrate(uint16_t subrate_min, uint16_t subrate_max, uint16_t max_latency,
-                           uint16_t cont_num, uint16_t sup_tout) {
-    le_acl_connection_interface_->EnqueueCommand(
-            LeSetDefaultSubrateBuilder::Create(subrate_min, subrate_max, max_latency, cont_num,
-                                               sup_tout),
-            handler_->BindOnce([](CommandCompleteView complete) {
-              auto complete_view = LeSetDefaultSubrateCompleteView::Create(complete);
-              log::assert_that(complete_view.IsValid(), "assert failed: complete_view.IsValid()");
-              ErrorCode status = complete_view.GetStatus();
-              log::assert_that(status == ErrorCode::SUCCESS, "Status = {}", ErrorCodeText(status));
-            }));
   }
 
   void clear_resolving_list() { le_address_manager_->ClearResolvingList(); }

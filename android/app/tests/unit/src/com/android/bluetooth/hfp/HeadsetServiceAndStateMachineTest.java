@@ -89,6 +89,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+/** Test cases for {@link HeadsetServiceAndStateMachine}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class HeadsetServiceAndStateMachineTest {
@@ -490,7 +491,6 @@ public class HeadsetServiceAndStateMachineTest {
     /** Test the value of isInbandRingingEnabled will be changed with the change of active device */
     @Test
     public void testIsInbandRingingEnabled_SwitchActiveDevice() {
-        mSetFlagsRule.enableFlags(Flags.FLAG_UPDATE_ACTIVE_DEVICE_IN_BAND_RINGTONE);
         BluetoothDevice device = getTestDevice(0);
         connectTestDevice(device);
 
@@ -936,14 +936,8 @@ public class HeadsetServiceAndStateMachineTest {
         BluetoothDevice deviceB = getTestDevice(1);
         connectTestDevice(deviceB);
         InOrder inOrder = inOrder(mNativeInterface);
-        if (!Flags.updateActiveDeviceInBandRingtone()) {
-            inOrder.verify(mNativeInterface).sendBsir(eq(deviceA), eq(true));
-            inOrder.verify(mNativeInterface).sendBsir(eq(deviceB), eq(false));
-            inOrder.verify(mNativeInterface).sendBsir(eq(deviceA), eq(false));
-        } else {
-            inOrder.verify(mNativeInterface).sendBsir(eq(deviceA), eq(false));
-            inOrder.verify(mNativeInterface).sendBsir(eq(deviceB), eq(false));
-        }
+        inOrder.verify(mNativeInterface).sendBsir(eq(deviceA), eq(false));
+        inOrder.verify(mNativeInterface).sendBsir(eq(deviceB), eq(false));
         // Set active device to device B
         assertThat(mHeadsetService.setActiveDevice(deviceB)).isTrue();
         mTestLooper.dispatchAll();
@@ -1003,14 +997,8 @@ public class HeadsetServiceAndStateMachineTest {
         connectTestDevice(deviceA);
         BluetoothDevice deviceB = getTestDevice(1);
         connectTestDevice(deviceB);
-        if (!Flags.updateActiveDeviceInBandRingtone()) {
-            inOrder.verify(mNativeInterface).sendBsir(eq(deviceA), eq(true));
-            inOrder.verify(mNativeInterface).sendBsir(eq(deviceB), eq(false));
-            inOrder.verify(mNativeInterface).sendBsir(eq(deviceA), eq(false));
-        } else {
-            inOrder.verify(mNativeInterface).sendBsir(eq(deviceA), eq(false));
-            inOrder.verify(mNativeInterface).sendBsir(eq(deviceB), eq(false));
-        }
+        inOrder.verify(mNativeInterface).sendBsir(eq(deviceA), eq(false));
+        inOrder.verify(mNativeInterface).sendBsir(eq(deviceB), eq(false));
         // Set active device to device B
         assertThat(mHeadsetService.setActiveDevice(deviceB)).isTrue();
         mTestLooper.dispatchAll();
@@ -1070,14 +1058,8 @@ public class HeadsetServiceAndStateMachineTest {
         BluetoothDevice deviceB = getTestDevice(1);
         connectTestDevice(deviceB);
         InOrder inOrder = inOrder(mNativeInterface);
-        if (!Flags.updateActiveDeviceInBandRingtone()) {
-            inOrder.verify(mNativeInterface).sendBsir(eq(deviceA), eq(true));
-            inOrder.verify(mNativeInterface).sendBsir(eq(deviceB), eq(false));
-            inOrder.verify(mNativeInterface).sendBsir(eq(deviceA), eq(false));
-        } else {
-            inOrder.verify(mNativeInterface).sendBsir(eq(deviceA), eq(false));
-            inOrder.verify(mNativeInterface).sendBsir(eq(deviceB), eq(false));
-        }
+        inOrder.verify(mNativeInterface).sendBsir(eq(deviceA), eq(false));
+        inOrder.verify(mNativeInterface).sendBsir(eq(deviceB), eq(false));
         // Set active device to device B
         assertThat(mHeadsetService.setActiveDevice(deviceB)).isTrue();
         mTestLooper.dispatchAll();
@@ -1122,14 +1104,8 @@ public class HeadsetServiceAndStateMachineTest {
         BluetoothDevice deviceB = getTestDevice(1);
         connectTestDevice(deviceB);
         InOrder inOrder = inOrder(mNativeInterface);
-        if (!Flags.updateActiveDeviceInBandRingtone()) {
-            inOrder.verify(mNativeInterface).sendBsir(eq(deviceA), eq(true));
-            inOrder.verify(mNativeInterface).sendBsir(eq(deviceB), eq(false));
-            inOrder.verify(mNativeInterface).sendBsir(eq(deviceA), eq(false));
-        } else {
-            inOrder.verify(mNativeInterface).sendBsir(eq(deviceA), eq(false));
-            inOrder.verify(mNativeInterface).sendBsir(eq(deviceB), eq(false));
-        }
+        inOrder.verify(mNativeInterface).sendBsir(eq(deviceA), eq(false));
+        inOrder.verify(mNativeInterface).sendBsir(eq(deviceB), eq(false));
         // Set active device to device B
         assertThat(mHeadsetService.setActiveDevice(deviceB)).isTrue();
         mTestLooper.dispatchAll();

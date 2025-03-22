@@ -38,6 +38,7 @@ import org.mockito.Mock;
 
 import java.io.FileNotFoundException;
 
+/** Test cases for {@link AvrcpCoverArtProvider}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class AvrcpCoverArtProviderTest {

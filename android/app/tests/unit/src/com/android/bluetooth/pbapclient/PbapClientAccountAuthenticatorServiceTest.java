@@ -36,6 +36,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+/** Test cases for {@link PbapClientAccountAuthenticatorService}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class PbapClientAccountAuthenticatorServiceTest {

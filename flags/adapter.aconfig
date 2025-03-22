@@ -9,6 +9,16 @@ flag {
 }
 
 flag {
+    name: "call_bluetooth_ready_before_profiles_start"
+    namespace: "bluetooth"
+    description: "Initiates the adapter properties before starting profiles"
+    bug: "405437771"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "empty_names_are_invalid"
     namespace: "bluetooth"
     description: "Make sure the names used in the stack are valid"

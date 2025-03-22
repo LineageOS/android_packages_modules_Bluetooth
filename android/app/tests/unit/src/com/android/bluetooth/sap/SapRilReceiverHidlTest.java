@@ -70,6 +70,7 @@ import org.mockito.Spy;
 import java.util.ArrayList;
 import java.util.Arrays;
 
+/** Test cases for {@link SapRilReceiverHidl}. */
 @LargeTest
 @RunWith(AndroidJUnit4.class)
 public class SapRilReceiverHidlTest {

@@ -2,13 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "encryption_change_v2"
-    namespace: "bluetooth"
-    description: "Enable encryption change V2 event"
-    bug: "366018699"
-}
-
-flag {
     name: "dont_send_hci_disconnect_repeatedly"
     namespace: "bluetooth"
     description: "Prevent BT from sending repeated HCI disconnect command"

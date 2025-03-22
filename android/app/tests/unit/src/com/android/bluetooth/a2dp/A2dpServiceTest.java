@@ -82,6 +82,7 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 
+/** Test cases for {@link A2dpService}. */
 @MediumTest
 @RunWith(ParameterizedAndroidJunit4.class)
 public class A2dpServiceTest {

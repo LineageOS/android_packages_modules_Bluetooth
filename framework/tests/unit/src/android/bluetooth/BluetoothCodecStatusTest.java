@@ -26,7 +26,7 @@ import org.junit.runner.RunWith;
 
 import java.util.List;
 
-/** Unit test cases for {@link BluetoothCodecStatus}. */
+/** Test cases for {@link BluetoothCodecStatus}. */
 @RunWith(AndroidJUnit4.class)
 public class BluetoothCodecStatusTest {
 

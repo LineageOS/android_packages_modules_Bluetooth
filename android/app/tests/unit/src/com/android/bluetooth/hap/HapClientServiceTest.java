@@ -92,6 +92,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+/** Test cases for {@link HapClientService}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class HapClientServiceTest {

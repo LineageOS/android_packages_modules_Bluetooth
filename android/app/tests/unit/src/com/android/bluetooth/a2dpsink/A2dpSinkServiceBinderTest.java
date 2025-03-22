@@ -27,21 +27,29 @@ import static org.mockito.Mockito.verify;
 import android.bluetooth.BluetoothDevice;
 import android.content.AttributionSource;
 
+import androidx.test.filters.SmallTest;
+import androidx.test.runner.AndroidJUnit4;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
 
+/** Test cases for {@link A2dpSinkServiceBinder}. */
+@SmallTest
+@RunWith(AndroidJUnit4.class)
 public class A2dpSinkServiceBinderTest {
+
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private A2dpSinkService mService;
-    private A2dpSinkService.A2dpSinkServiceBinder mBinder;
+    private A2dpSinkServiceBinder mBinder;
 
     @Before
     public void setUp() throws Exception {
-        mBinder = new A2dpSinkService.A2dpSinkServiceBinder(mService);
+        mBinder = new A2dpSinkServiceBinder(mService);
     }
 
     @After

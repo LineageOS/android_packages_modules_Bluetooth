@@ -35,13 +35,13 @@ import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 
+/** Test cases for {@link HfpClientDeviceBlock}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class HfpClientDeviceBlockTest {

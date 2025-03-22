@@ -77,6 +77,7 @@ import org.mockito.Spy;
 import java.io.IOException;
 import java.io.OutputStream;
 
+/** Test cases for {@link BluetoothPbapObexServer}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothPbapObexServerTest {

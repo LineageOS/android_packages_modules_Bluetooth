@@ -67,6 +67,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/** Test cases for {@link PbapClientObexClient}. */
 @RunWith(AndroidJUnit4.class)
 public class PbapClientObexClientTest {
     private static final int TEST_L2CAP_PSM = 4098;

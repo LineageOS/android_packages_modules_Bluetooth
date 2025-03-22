@@ -115,3 +115,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "avdtp_prevent_double_suspend"
+    namespace: "bluetooth"
+    description: "Add state to prevent sending multiple AVDTP Suspend command in a row"
+    bug: "402241316"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

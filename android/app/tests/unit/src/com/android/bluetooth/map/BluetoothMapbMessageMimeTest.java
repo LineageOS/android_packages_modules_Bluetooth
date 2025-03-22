@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.Locale;
 
+/** Test cases for {@link BluetoothMapbMessageMime}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothMapbMessageMimeTest {

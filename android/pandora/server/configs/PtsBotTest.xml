@@ -35,6 +35,7 @@
     <target_preparer class="com.android.tradefed.targetprep.PythonVirtualenvPreparer">
         <option name="dep-module" value="grpcio" />
         <option name="dep-module" value="protobuf==3.20.1" />
+        <option name="dep-module" value="numpy" />
 
         <!-- Re-enable when A2DP audio streaming tests are active, disabling to speed up atest runtime
         (installation takes roughly 30s each time, never cached) -->

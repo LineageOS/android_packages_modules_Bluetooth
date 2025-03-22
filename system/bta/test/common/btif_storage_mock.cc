@@ -19,6 +19,7 @@
 
 #include <bluetooth/log.h>
 
+#include "bta_hearing_aid_api.h"
 #include "btif/include/btif_profile_storage.h"
 #include "btif/include/btif_storage.h"
 
@@ -133,4 +134,18 @@ bt_status_t btif_storage_get_remote_device_property(const RawAddress* address,
                                                     bt_property_t* property) {
   log::assert_that(btif_storage_interface != nullptr, "Mock storage module not set!");
   return btif_storage_interface->GetRemoteDeviceProperty(address, property);
+}
+
+/** Get the hearing aid device properties. */
+bool btif_storage_get_hearing_aid_prop(const RawAddress& address, uint8_t* capabilities,
+                                       uint64_t* hi_sync_id, uint16_t* render_delay,
+                                       uint16_t* preparation_delay, uint16_t* codecs) {
+  log::assert_that(btif_storage_interface != nullptr, "Mock storage module not set!");
+  return btif_storage_interface->GetHearingAidProp(address, capabilities, hi_sync_id, render_delay,
+                                                   preparation_delay, codecs);
+}
+
+void btif_storage_add_hearing_aid(const HearingDevice& dev_info) {
+  log::assert_that(btif_storage_interface != nullptr, "Mock storage module not set!");
+  return btif_storage_interface->AddHearingAid(&dev_info);
 }

@@ -50,7 +50,10 @@ source_set("BluetoothMetricsSources") {
     "//bt/system/gd:gd_defaults",
     "//bt/system/log:log_defaults",
   ]
-  deps = [ "//bt/system/gd:gd_default_deps" ]
+  deps = [
+    "//bt/flags:bluetooth_flags_c_lib",
+    "//bt/system/gd:gd_default_deps",
+  ]
 
   if (target_os == "chromeos") {
     deps += [ ":BluetoothMetricsSources_chromeos" ]

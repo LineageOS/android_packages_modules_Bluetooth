@@ -69,6 +69,7 @@ import org.mockito.hamcrest.MockitoHamcrest;
 
 import java.util.Arrays;
 
+/** Test cases for {@link A2dpStateMachine}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class A2dpStateMachineTest {

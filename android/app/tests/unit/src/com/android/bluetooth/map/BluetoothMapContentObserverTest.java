@@ -74,6 +74,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+/** Test cases for {@link BluetoothMapContentObserver}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothMapContentObserverTest {

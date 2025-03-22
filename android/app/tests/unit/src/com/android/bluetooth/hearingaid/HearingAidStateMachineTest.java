@@ -57,6 +57,7 @@ import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.hamcrest.MockitoHamcrest;
 
+/** Test cases for {@link HearingAidStateMachine}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class HearingAidStateMachineTest {

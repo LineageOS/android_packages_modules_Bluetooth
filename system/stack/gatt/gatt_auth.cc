@@ -23,7 +23,6 @@
  ******************************************************************************/
 
 #include <bluetooth/log.h>
-#include <com_android_bluetooth_flags.h>
 #include <string.h>
 
 #include "gatt_api.h"
@@ -216,17 +215,9 @@ void gatt_notify_enc_cmpl(const RawAddress& bd_addr) {
     return;
   }
 
-  if (com::android::bluetooth::flags::gatt_client_dynamic_allocation()) {
-    for (auto& [i, p_rcb] : gatt_cb.cl_rcb_map) {
-      if (p_rcb->app_cb.p_enc_cmpl_cb) {
-        (*p_rcb->app_cb.p_enc_cmpl_cb)(p_rcb->gatt_if, bd_addr);
-      }
-    }
-  } else {
-    for (uint8_t i = 0; i < GATT_MAX_APPS; i++) {
-      if (gatt_cb.cl_rcb[i].in_use && gatt_cb.cl_rcb[i].app_cb.p_enc_cmpl_cb) {
-        (*gatt_cb.cl_rcb[i].app_cb.p_enc_cmpl_cb)(gatt_cb.cl_rcb[i].gatt_if, bd_addr);
-      }
+  for (auto& [i, p_rcb] : gatt_cb.cl_rcb_map) {
+    if (p_rcb->app_cb.p_enc_cmpl_cb) {
+      (*p_rcb->app_cb.p_enc_cmpl_cb)(p_rcb->gatt_if, bd_addr);
     }
   }
 

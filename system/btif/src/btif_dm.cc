@@ -1486,7 +1486,7 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event, tBTA_DM_SEARCH*
             auto triple = eir_uuids_cache.try_emplace(bdaddr, std::set<Uuid>{});
             uuid_iter = std::get<0>(triple);
           }
-          log::info("EIR UUIDs for {}:", bdaddr);
+          log::info("EIR UUIDs for {}", bdaddr);
           for (int i = 0; i < num_uuids; ++i) {
             Uuid uuid = Uuid::From16Bit(p_uuid16[i]);
             log::info("{}", uuid.ToString());
@@ -1609,7 +1609,7 @@ static void btif_on_service_discovery_results(RawAddress bd_addr,
   if (results_for_bonding_device) {
     // success for SDP
     bluetooth::metrics::LogSDPComplete(bd_addr, tBTA_STATUS::BTA_SUCCESS);
-    log::info("SDP finished for {}:", bd_addr);
+    log::info("SDP finished for {}", bd_addr);
     pairing_cb.sdp_over_classic = btif_dm_pairing_cb_t::ServiceDiscoveryState::FINISHED;
   }
 
@@ -1620,7 +1620,7 @@ static void btif_on_service_discovery_results(RawAddress bd_addr,
   bt_property_t& le_prop = uuid_props[1];
 
   if ((result == BTA_SUCCESS) && !uuids_param.empty()) {
-    log::info("New UUIDs for {}:", bd_addr);
+    log::info("New UUIDs for {}", bd_addr);
     for (const auto& uuid : uuids_param) {
       if (btif_should_ignore_uuid(uuid)) {
         continue;
@@ -1758,7 +1758,7 @@ static void btif_on_gatt_results(RawAddress bd_addr, std::vector<bluetooth::Uuid
   bool lea_supported = is_le_audio_capable_during_service_discovery(bd_addr);
 
   if (is_transport_le) {
-    log::info("New GATT over LE UUIDs for {}:", bd_addr);
+    log::info("New GATT over LE UUIDs for {}", bd_addr);
     BTM_LogHistory(kBtmLogTag, bd_addr, "Discovered GATT services using LE transport");
     if (btif_is_gatt_service_discovery_post_pairing(bd_addr)) {
       pairing_cb.gatt_over_le = btif_dm_pairing_cb_t::ServiceDiscoveryState::FINISHED;
@@ -1786,7 +1786,7 @@ static void btif_on_gatt_results(RawAddress bd_addr, std::vector<bluetooth::Uuid
       }
     }
   } else {
-    log::debug("New GATT over SDP UUIDs for {}:", bd_addr);
+    log::debug("New GATT over SDP UUIDs for {}", bd_addr);
     BTM_LogHistory(kBtmLogTag, bd_addr, "Discovered GATT services using SDP transport");
   }
 

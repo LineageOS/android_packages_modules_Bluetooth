@@ -61,6 +61,7 @@ import org.mockito.Mock;
 
 import java.util.List;
 
+/** Test cases for {@link PbapClientAccountManager}. */
 @RunWith(AndroidJUnit4.class)
 public class PbapClientAccountManagerTest {
     private static final String ACCOUNT_TYPE = "com.android.bluetooth.pbapclient.account";

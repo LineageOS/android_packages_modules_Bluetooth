@@ -49,6 +49,7 @@ import org.mockito.Mock;
 
 import java.io.InputStream;
 
+/** Test cases for {@link Image}. */
 @RunWith(AndroidJUnit4.class)
 public class ImageTest {
     private Context mTargetContext;

@@ -84,6 +84,7 @@ import org.mockito.hamcrest.MockitoHamcrest;
 import java.util.List;
 import java.util.Set;
 
+/** Test cases for {@link HeadsetClientStateMachine}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class HeadsetClientStateMachineTest {

@@ -128,10 +128,18 @@ void ModuleRegistry::StopAll() {
     auto module = Get(*it);
     last_instance_ = "stopping " + module->ToString();
 
-    // Clear the handler before stopping the module to allow it to shut down gracefully.
-    log::info("Stopping Handler of Module {}", module->ToString());
-    module->handler_->Clear();
-    module->handler_->WaitUntilStopped(kModuleStopTimeout);
+    /*
+     * b/393449774 since we have now shifted to a single handler for all modules, we don't need
+     * to clear the handler here, it will be done in the respective teardown.
+     * Since we have a single handler, we need to make sure that the handler instance is deleted
+     * only once, otherwise we will see a crash as a handler can only be cleared once.
+     */
+    if (!com::android::bluetooth::flags::same_handler_for_all_modules()) {
+      // Clear the handler before stopping the module to allow it to shut down gracefully.
+      log::info("Stopping Handler of Module {}", module->ToString());
+      module->handler_->Clear();
+      module->handler_->WaitUntilStopped(kModuleStopTimeout);
+    }
     log::info("Stopping Module {}", module->ToString());
     module->Stop();
   }
@@ -144,7 +152,9 @@ void ModuleRegistry::StopAll() {
     auto instance = started_modules_.find(*it);
     log::assert_that(instance != started_modules_.end(),
                      "assert failed: instance != started_modules_.end()");
-    delete instance->second->handler_;
+    if (!com::android::bluetooth::flags::same_handler_for_all_modules()) {
+      delete instance->second->handler_;
+    }
     delete instance->second;
     started_modules_.erase(instance);
   }
@@ -165,4 +175,15 @@ os::Handler* ModuleRegistry::GetModuleHandler(const ModuleFactory* module) const
   return nullptr;
 }
 
+// Override the StopAll method to use the test thread and handler.
+// This function will take care of releasing the handler instances.
+void TestModuleRegistry::StopAll() {
+  os::Handler* handler = GetTestHandler();
+  handler->Clear();
+  if (com::android::bluetooth::flags::same_handler_for_all_modules()) {
+    handler->WaitUntilStopped(kHandlerStopTimeout);
+  }
+  ModuleRegistry::StopAll();  // call the base class StopAll
+  delete handler;
+}
 }  // namespace bluetooth

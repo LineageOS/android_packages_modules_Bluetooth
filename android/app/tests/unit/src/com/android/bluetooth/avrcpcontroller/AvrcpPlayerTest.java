@@ -31,6 +31,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mock;
 
+/** Test cases for {@link AvrcpPlayer}. */
 public class AvrcpPlayerTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 

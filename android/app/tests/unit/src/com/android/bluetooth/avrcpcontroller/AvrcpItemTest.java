@@ -33,7 +33,7 @@ import com.google.common.testing.EqualsTester;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-/** A test suite for the AvrcpItem class. */
+/** Test cases for {@link AvrcpItem}. */
 @RunWith(AndroidJUnit4.class)
 public final class AvrcpItemTest {
 

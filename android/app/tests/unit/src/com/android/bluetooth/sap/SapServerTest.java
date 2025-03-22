@@ -83,6 +83,7 @@ import org.mockito.Spy;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+/** Test cases for {@link SapServer}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class SapServerTest {

@@ -173,7 +173,7 @@ public class PbapClientService extends ProfileService {
 
     @Override
     public IProfileServiceBinder initBinder() {
-        return new PbapClientBinder(this);
+        return new PbapClientServiceBinder(this);
     }
 
     @Override

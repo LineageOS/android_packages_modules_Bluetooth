@@ -56,6 +56,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Spy;
 
+/** Test cases for {@link AtPhonebook}. */
 @RunWith(AndroidJUnit4.class)
 public class AtPhonebookTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();

@@ -81,7 +81,7 @@ inline std::string device_info_text(tBTA_DM_DEV_INFO info) {
 #define BTA_DM_PM_EXECUTE 3
 typedef uint8_t tBTA_DM_PM_REQ;
 
-struct tBTA_DM_REMOVE_PENDNIG {
+struct tBTA_DM_REMOVE_PENDING {
   RawAddress pseudo_addr;
   RawAddress identity_addr;
   bool le_connected;
@@ -215,7 +215,7 @@ typedef struct {
 #endif
   alarm_t* switch_delay_timer;
 
-  std::list<tBTA_DM_REMOVE_PENDNIG> pending_removals;
+  std::list<tBTA_DM_REMOVE_PENDING> pending_removals;
 } tBTA_DM_CB;
 
 /* DI control block */

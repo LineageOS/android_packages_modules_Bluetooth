@@ -28,7 +28,8 @@ from pandora.security_grpc import Security
 from pandora.security_pb2 import LE_LEVEL3, PairingEventAnswer
 from pandora_experimental.gatt_grpc import GATT
 from pandora_experimental.hap_grpc import HAP
-from pandora_experimental.hap_pb2 import HaPlaybackAudioRequest
+from pandora_experimental.le_audio_pb2 import LeAudioPlaybackAudioRequest
+from pandora_experimental.le_audio_grpc import LeAudio
 
 BASE_UUID = uuid.UUID("00000000-0000-1000-8000-00805F9B34FB")
 SINK_ASE_UUID = 0x2BC4
@@ -60,9 +61,9 @@ class HAPProxy(ProfileProxy):
         self.connection = None
 
         def convert_frame(data):
-            return HaPlaybackAudioRequest(data=data, source=self.source)
+            return LeAudioPlaybackAudioRequest(data=data)
 
-        self.audio = AudioSignal(lambda frames: self.hap.HaPlaybackAudio(map(convert_frame, frames)),
+        self.audio = AudioSignal(lambda frames: self.le_audio.LeAudioPlaybackAudio(map(convert_frame, frames)),
                                  AUDIO_SIGNAL_AMPLITUDE, AUDIO_SIGNAL_SAMPLING_RATE)
 
     def test_started(self, test: str, **kwargs):

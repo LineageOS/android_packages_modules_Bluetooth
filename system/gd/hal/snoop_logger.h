@@ -17,6 +17,7 @@
 #pragma once
 
 #include <bluetooth/log.h>
+#include <com_android_bluetooth_flags.h>
 
 #include <fstream>
 #include <string>
@@ -145,7 +146,7 @@ public:
   static const ModuleFactory Factory;
 
   static const std::string kBtSnoopMaxPacketsPerFileProperty;
-  static const std::string kIsDebuggableProperty;
+  static const std::string kRoBuildType;
   static const std::string kBtSnoopLogModeProperty;
   static const std::string kBtSnoopLogPersists;
   static const std::string kBtSnoopDefaultLogModeProperty;
@@ -195,6 +196,13 @@ public:
   };
 
   SnoopLogger(os::Handler* handler);
+  ~SnoopLogger() {
+    if (!com::android::bluetooth::flags::same_handler_for_all_modules()) {
+      GetHandler()->Clear();
+      GetHandler()->WaitUntilStopped(std::chrono::milliseconds(2000));
+      delete GetHandler();
+    }
+  }
 
   // Returns the maximum number of packets per file
   // Changes to this value is only effective after restarting Bluetooth

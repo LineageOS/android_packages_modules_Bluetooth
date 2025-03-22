@@ -16,11 +16,9 @@
 
 static_library("btcore") {
   sources = [
-    "src/device_class.cc",
     "src/hal_util.cc",
     "src/module.cc",
     "src/osi_module.cc",
-    "src/property.cc",
   ]
 
   include_dirs = [
@@ -32,36 +30,4 @@ static_library("btcore") {
     "//bt/system:target_defaults",
     "//bt/system/log:log_defaults",
   ]
-}
-
-if (use.test) {
-  executable("net_test_btcore") {
-    sources = [
-      "test/device_class_test.cc",
-      "test/property_test.cc",
-    ]
-
-    include_dirs = [
-      "include",
-      "//bt/system",
-    ]
-
-    deps = [
-      "//bt/system/btcore",
-      "//bt/system/osi",
-      "//bt/system/types",
-    ]
-
-    configs += [
-      "//bt/system:external_gtest_main",
-      "//bt/system:target_defaults",
-      "//bt/system/log:log_defaults",
-    ]
-
-    libs = [
-      "pthread",
-      "rt",
-      "dl",
-    ]
-  }
 }

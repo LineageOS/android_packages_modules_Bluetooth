@@ -52,7 +52,6 @@ import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
-import com.android.bluetooth.flags.Flags;
 
 /**
  * Receives and handles: system broadcasts; Intents from other applications; Intents from
@@ -81,9 +80,7 @@ public class BluetoothOppReceiver extends BroadcastReceiver {
                     TAG,
                     "Received BT device selected intent, bt device: "
                             + BluetoothUtils.toAnonymizedAddress(
-                                    Flags.identityAddressNullIfNotKnown()
-                                            ? Utils.getBrEdrAddress(remoteDevice)
-                                            : remoteDevice.getIdentityAddress()));
+                                    Utils.getBrEdrAddress(remoteDevice)));
 
             // Insert transfer session record to database
             mOppManager.startTransfer(remoteDevice);

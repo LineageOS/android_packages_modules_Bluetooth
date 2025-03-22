@@ -49,6 +49,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Spy;
 
+/** Test cases for {@link BluetoothPbapCallLogComposer}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothPbapCallLogComposerTest {

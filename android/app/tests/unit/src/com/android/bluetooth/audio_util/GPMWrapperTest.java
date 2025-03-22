@@ -37,6 +37,7 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.List;
 
+/** Test cases for {@link GPMWrapper}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class GPMWrapperTest {

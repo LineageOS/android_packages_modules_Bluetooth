@@ -39,6 +39,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Spy;
 
+/** Test cases for {@link SmsMmsContacts}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class SmsMmsContactsTest {

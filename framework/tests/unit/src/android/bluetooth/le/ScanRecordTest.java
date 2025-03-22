@@ -34,7 +34,7 @@ import java.util.List;
 import java.util.function.Predicate;
 
 /**
- * Unit test cases for {@link ScanRecord}.
+ * Test cases for {@link ScanRecord}.
  *
  * <p>To run this test, use adb shell am instrument -e class 'android.bluetooth.ScanRecordTest' -w
  * 'com.android.bluetooth.tests/android.bluetooth.BluetoothTestRunner'

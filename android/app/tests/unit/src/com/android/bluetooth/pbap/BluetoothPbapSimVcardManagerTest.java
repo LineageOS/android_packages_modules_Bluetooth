@@ -56,6 +56,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/** Test cases for {@link BluetoothPbapSimVcardManager}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothPbapSimVcardManagerTest {

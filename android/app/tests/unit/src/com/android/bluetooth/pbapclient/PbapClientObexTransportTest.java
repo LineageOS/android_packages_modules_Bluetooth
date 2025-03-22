@@ -42,6 +42,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+/** Test cases for {@link PbapClientObexTransport}. */
 @RunWith(AndroidJUnit4.class)
 public class PbapClientObexTransportTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
@@ -183,7 +184,6 @@ public class PbapClientObexTransportTest {
     public void testGetRemoteAddress_transportRfcomm_returnsDeviceIdentityAddress() {
         doReturn(BluetoothSocket.TYPE_RFCOMM).when(mMockSocket).getConnectionType();
         PbapClientObexTransport transport = new PbapClientObexTransport(mMockSocket);
-        // See "Flags.identityAddressNullIfNotKnown():"
         // Identity address won't be "known" by the stack for a test device, so it'll return null.
         // assertThat(transport.getRemoteAddress()).isNull();
         assertThat(transport.getRemoteAddress()).isEqualTo(mTestDevice.getAddress());

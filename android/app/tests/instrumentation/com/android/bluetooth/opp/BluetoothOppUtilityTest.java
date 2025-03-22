@@ -35,6 +35,7 @@ import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.Spy;
 
+/** Test cases for {@link BluetoothOppUtility}. */
 public class BluetoothOppUtilityTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 

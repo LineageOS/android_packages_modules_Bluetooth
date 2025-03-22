@@ -787,11 +787,8 @@ public:
 
   bool UpdateCisMonoConfiguration(const std::vector<struct types::cis>& cises,
                                   const stream_parameters& stream_params, uint8_t direction) {
-    if (!LeAudioHalVerifier::SupportsStreamActiveApi() ||
-        !com::android::bluetooth::flags::leaudio_mono_location_errata()) {
-      log::error(
-              "SupportsStreamActiveApi() not supported or leaudio_mono_location_errata flag is not "
-              "enabled. Mono stream cannot be enabled");
+    if (!LeAudioHalVerifier::SupportsStreamActiveApi()) {
+      log::error("SupportsStreamActiveApi() not supported. Mono stream cannot be enabled");
       return false;
     }
 

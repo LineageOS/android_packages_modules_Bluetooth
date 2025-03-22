@@ -33,6 +33,7 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 
+/** Test cases for {@link HfpNativeInterface}. */
 public class HfpNativeInterfaceTest {
     private static final byte[] TEST_DEVICE_ADDRESS =
             new byte[] {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};

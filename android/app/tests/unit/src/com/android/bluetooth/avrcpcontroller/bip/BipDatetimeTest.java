@@ -32,7 +32,7 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
 
-/** A test suite for the BipDateTime class */
+/** Test cases for {@link BipDatetime}. */
 @RunWith(AndroidJUnit4.class)
 public class BipDatetimeTest {
 

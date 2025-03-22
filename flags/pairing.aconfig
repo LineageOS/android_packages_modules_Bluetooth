@@ -102,16 +102,6 @@ flag {
 }
 
 flag {
-    name: "smp_state_machine_stuck_after_disconnection_fix"
-    namespace: "bluetooth"
-    description: "Fix state machine stuck after pairing device disconnection"
-    bug: "376306092"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "prevent_service_connections_on_remove_bond"
     namespace: "bluetooth"
     description: "Disable service connections on remove bond"
@@ -276,6 +266,16 @@ flag {
     namespace: "bluetooth"
     description: "Encrypt BR/EDR link immediately after pairing"
     bug: "402510244"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "unrelated_device_smp_cancellation"
+    namespace: "bluetooth"
+    description: "Don't cancel SMP pairing if encryption fails for unrelated device"
+    bug: "404658828"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

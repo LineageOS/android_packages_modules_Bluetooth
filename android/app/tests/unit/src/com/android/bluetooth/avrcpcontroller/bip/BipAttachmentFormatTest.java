@@ -31,7 +31,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;
 
-/** A test suite for the BipAttachmentFormat class */
+/** Test cases for {@link BipAttachmentFormat}. */
 @RunWith(AndroidJUnit4.class)
 public class BipAttachmentFormatTest {
 

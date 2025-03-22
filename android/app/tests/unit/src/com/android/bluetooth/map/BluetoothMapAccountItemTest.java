@@ -26,6 +26,7 @@ import androidx.test.runner.AndroidJUnit4;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+/** Test cases for {@link BluetoothMapAccountItem}. */
 @RunWith(AndroidJUnit4.class)
 public class BluetoothMapAccountItemTest {
     private static final String TEST_NAME = "test_name";

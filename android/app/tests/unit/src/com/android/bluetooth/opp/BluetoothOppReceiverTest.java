@@ -61,6 +61,7 @@ import org.mockito.Mock;
 import java.util.ArrayList;
 import java.util.List;
 
+/** Test cases for {@link BluetoothOppReceiver}. */
 @RunWith(AndroidJUnit4.class)
 public class BluetoothOppReceiverTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();

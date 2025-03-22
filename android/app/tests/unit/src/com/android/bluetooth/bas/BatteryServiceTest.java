@@ -54,6 +54,7 @@ import org.mockito.Mock;
 
 import java.util.List;
 
+/** Test cases for {@link BatteryService}. */
 @MediumTest
 @RunWith(JUnit4.class)
 public class BatteryServiceTest {

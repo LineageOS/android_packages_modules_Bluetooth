@@ -35,6 +35,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 
+/** Test cases for {@link HapClientNativeCallback}. */
 public class HapClientNativeCallbackTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
     @Rule public Expect expect = Expect.create();

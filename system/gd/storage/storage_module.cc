@@ -90,6 +90,13 @@ StorageModule::StorageModule(os::Handler* handler, std::string config_file_path,
 
 StorageModule::~StorageModule() {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
+
+  if (!com::android::bluetooth::flags::same_handler_for_all_modules()) {
+    GetHandler()->Clear();
+    GetHandler()->WaitUntilStopped(std::chrono::milliseconds(2000));
+    delete GetHandler();
+  }
+
   pimpl_.reset();
 }
 

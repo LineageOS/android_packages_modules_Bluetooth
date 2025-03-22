@@ -38,6 +38,7 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothProtoEnums;
 import android.content.ActivityNotFoundException;
+import android.content.ComponentName;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Context;
@@ -50,6 +51,7 @@ import android.net.Uri;
 import android.os.Environment;
 import android.os.ParcelFileDescriptor;
 import android.os.SystemProperties;
+import android.provider.Settings;
 import android.util.EventLog;
 import android.util.Log;
 
@@ -76,6 +78,9 @@ import java.util.concurrent.ConcurrentHashMap;
 // Next tag value for ContentProfileErrorReportUtils.report(): 10
 public class BluetoothOppUtility {
     private static final String TAG = BluetoothOppUtility.class.getSimpleName();
+
+    // TODO(b/398120192): use API instead of a hardcode string.
+    private static final String NEARBY_SHARING_COMPONENT = "nearby_sharing_component";
 
     /** Whether the device has the "nosdcard" characteristic, or null if not-yet-known. */
     private static Boolean sNoSdCard = null;
@@ -571,5 +576,31 @@ public class BluetoothOppUtility {
     protected static void cancelNotification(Context ctx) {
         NotificationManager nm = ctx.getSystemService(NotificationManager.class);
         nm.cancel(BluetoothOppNotification.NOTIFICATION_ID_PROGRESS);
+    }
+
+    /** Grants uri read permission to nearby sharing component. */
+    static void grantPermissionToNearbyComponent(Context context, List<Uri> uris) {
+        String packageName = getNearbyComponentPackageName(context);
+        if (packageName == null) {
+            return;
+        }
+        for (Uri uri : uris) {
+            BluetoothMethodProxy.getInstance()
+                    .grantUriPermission(
+                            context, packageName, uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
+        }
+    }
+
+    private static String getNearbyComponentPackageName(Context context) {
+        String componentString =
+                Settings.Secure.getString(context.getContentResolver(), NEARBY_SHARING_COMPONENT);
+        if (componentString == null) {
+            return null;
+        }
+        ComponentName componentName = ComponentName.unflattenFromString(componentString);
+        if (componentName == null) {
+            return null;
+        }
+        return componentName.getPackageName();
     }
 }

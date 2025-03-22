@@ -57,6 +57,7 @@ import org.mockito.hamcrest.MockitoHamcrest;
 
 import java.util.ArrayList;
 
+/** Test cases for {@link RemoteDevices}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class RemoteDevicesTest {

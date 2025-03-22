@@ -46,6 +46,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 
 import java.util.Set;
 
+/** Test cases for {@link HfpClientConnection}. */
 @MediumTest
 @RunWith(MockitoJUnitRunner.class)
 public class HfpClientConnectionTest {

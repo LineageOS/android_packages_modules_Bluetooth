@@ -50,6 +50,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 import org.mockito.Mock;
 
+/** Test cases for {@link BatteryStateMachine}. */
 @SmallTest
 @RunWith(JUnit4.class)
 public class BatteryStateMachineTest {

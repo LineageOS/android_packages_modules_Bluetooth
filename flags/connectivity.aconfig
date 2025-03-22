@@ -2,30 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "api_get_connection_state_using_identity_address"
-    namespace: "bluetooth"
-    description: "Use identity address to check current connection state"
-    bug: "319471537"
-}
-
-flag {
-    name: "use_le_shim_connection_map_guard"
-    namespace: "bluetooth"
-    description: "Guard the le shim connection map with a mutex"
-    bug: "302054609"
-}
-
-flag {
-    name: "improve_create_connection_for_already_connecting_device"
-    namespace: "bluetooth"
-    description: "Make sure to not stop controller with create connection cancel when not needed"
-    bug: "356593752"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "allow_gatt_connect_from_the_apps_without_making_leaudio_device_active"
     namespace: "bluetooth"
     description: "Allows for GATT connection without making LeAudio device active after connection"

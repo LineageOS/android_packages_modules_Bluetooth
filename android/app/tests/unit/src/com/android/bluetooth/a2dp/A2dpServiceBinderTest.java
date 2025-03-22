@@ -36,15 +36,20 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.platform.test.flag.junit.SetFlagsRule;
 
+import androidx.test.filters.SmallTest;
+import androidx.test.runner.AndroidJUnit4;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
 
+/** Test cases for {@link A2dpServiceBinder}. */
+@SmallTest
+@RunWith(AndroidJUnit4.class)
 public class A2dpServiceBinderTest {
-    private static final AttributionSource sSource = new AttributionSource.Builder(0).build();
-    private static final BluetoothDevice sDevice = getTestDevice(0);
 
     @Rule public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
 
@@ -53,7 +58,10 @@ public class A2dpServiceBinderTest {
     @Mock private A2dpService mA2dpService;
     @Mock private PackageManager mPackageManager;
 
-    private A2dpService.BluetoothA2dpBinder mBinder;
+    private final AttributionSource sSource = new AttributionSource.Builder(0).build();
+    private final BluetoothDevice sDevice = getTestDevice(0);
+
+    private A2dpServiceBinder mBinder;
 
     @Before
     public void setUp() throws Exception {
@@ -62,7 +70,7 @@ public class A2dpServiceBinderTest {
         appInfo.targetSdkVersion = android.os.Build.VERSION_CODES.CUR_DEVELOPMENT;
         doReturn(appInfo).when(mPackageManager).getApplicationInfo(any(), anyInt());
 
-        mBinder = new A2dpService.BluetoothA2dpBinder(mA2dpService);
+        mBinder = new A2dpServiceBinder(mA2dpService);
     }
 
     @After

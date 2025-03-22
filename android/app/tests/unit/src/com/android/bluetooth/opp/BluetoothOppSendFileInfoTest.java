@@ -52,6 +52,7 @@ import org.mockito.Mock;
 import java.io.FileInputStream;
 import java.io.IOException;
 
+/** Test cases for {@link BluetoothOppSendFileInfo}. */
 @RunWith(TestParameterInjector.class)
 public class BluetoothOppSendFileInfoTest {
     Context mContext;

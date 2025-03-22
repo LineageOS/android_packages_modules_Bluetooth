@@ -121,7 +121,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
 
             // Since ContentObserver is created with Handler, onChange() can be called
             // even after the observer is unregistered.
-            if (Flags.oppIgnoreContentObserverAfterServiceStop() && mObserver != this) {
+            if (mObserver != this) {
                 Log.d(TAG, "onChange() called after stop() is called.");
                 return;
             }
@@ -1346,9 +1346,7 @@ public class BluetoothOppService extends ProfileService implements IObexConnecti
                         + socket
                         + " \n :device :"
                         + BluetoothUtils.toAnonymizedAddress(
-                                Flags.identityAddressNullIfNotKnown()
-                                        ? Utils.getBrEdrAddress(device, mAdapterService)
-                                        : mAdapterService.getIdentityAddress(device.getAddress())));
+                                Utils.getBrEdrAddress(device, mAdapterService)));
         if (!mAcceptNewConnections) {
             Log.d(TAG, " onConnect BluetoothSocket :" + socket + " rejected");
             return false;

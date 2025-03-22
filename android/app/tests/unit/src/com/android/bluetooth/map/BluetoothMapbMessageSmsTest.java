@@ -38,6 +38,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.util.List;
 
+/** Test cases for {@link BluetoothMapbMessageSms}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothMapbMessageSmsTest {

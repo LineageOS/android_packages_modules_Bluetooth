@@ -58,6 +58,7 @@ import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.flags.Flags;
+import com.android.bluetooth.util.SystemProperties;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.State;
 import com.android.internal.util.StateMachine;
@@ -186,6 +187,9 @@ class HeadsetStateMachine extends StateMachine {
                 BluetoothHeadset.VENDOR_SPECIFIC_HEADSET_EVENT_CGSN,
                 BluetoothAssignedNumbers.GOOGLE);
     }
+
+    @VisibleForTesting
+    static final String HFP_VOLUME_CONTROL_ENABLED = "bluetooth.hfp_volume_control.enabled";
 
     private HeadsetStateMachine(
             BluetoothDevice device,
@@ -2026,7 +2030,10 @@ class HeadsetStateMachine extends StateMachine {
         }
         if (volumeType == HeadsetHalConstants.VOLUME_TYPE_SPK) {
             mSpeakerVolume = volume;
-            int flag = (mCurrentState == mAudioOn) ? AudioManager.FLAG_SHOW_UI : 0;
+            boolean showVolume =
+                    !Flags.hfpVolumeControlProperty()
+                            || SystemProperties.getBoolean(HFP_VOLUME_CONTROL_ENABLED, true);
+            int flag = showVolume && (mCurrentState == mAudioOn) ? AudioManager.FLAG_SHOW_UI : 0;
             int volStream =
                     deprecateStreamBtSco()
                             ? AudioManager.STREAM_VOICE_CALL

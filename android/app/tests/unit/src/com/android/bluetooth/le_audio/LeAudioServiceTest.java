@@ -123,6 +123,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/** Test cases for {@link LeAudioService}. */
 @MediumTest
 @RunWith(ParameterizedAndroidJunit4.class)
 public class LeAudioServiceTest {
@@ -210,8 +211,6 @@ public class LeAudioServiceTest {
     public static List<FlagsParameterization> getParams() {
         return FlagsParameterization.progressionOf(
                 Flags.FLAG_LEAUDIO_BROADCAST_PRIMARY_GROUP_SELECTION,
-                Flags.FLAG_LEAUDIO_CODEC_CONFIG_CALLBACK_ORDER_FIX,
-                Flags.FLAG_LEAUDIO_UNICAST_NO_AVAILABLE_CONTEXTS,
                 Flags.FLAG_LEAUDIO_BROADCAST_API_MANAGE_PRIMARY_GROUP,
                 Flags.FLAG_DO_NOT_HARDCODE_TMAP_ROLE_MASK);
     }
@@ -1842,7 +1841,6 @@ public class LeAudioServiceTest {
 
     /** Test native interface group status message handling */
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_CODEC_CONFIG_CALLBACK_ORDER_FIX)
     public void testMessageFromNativeGroupCodecConfigChangedNonActiveDevice() {
         onGroupCodecConfChangedCallbackCalled = false;
 
@@ -1928,7 +1926,6 @@ public class LeAudioServiceTest {
 
     /** Test native interface group status message handling */
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_CODEC_CONFIG_CALLBACK_ORDER_FIX)
     public void testMessageFromNativeGroupCodecConfigChangedActiveDevice_DifferentConfiguration() {
         onGroupCodecConfChangedCallbackCalled = false;
 
@@ -2838,7 +2835,6 @@ public class LeAudioServiceTest {
      * </pre>
      */
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_UNICAST_NO_AVAILABLE_CONTEXTS)
     public void testActivateGroupWhenAvailableContextAreBack_Scenario1() {
         int groupId = 1;
         /* AUDIO_DIRECTION_OUTPUT_BIT = 0x01 */
@@ -2922,7 +2918,6 @@ public class LeAudioServiceTest {
      * </pre>
      */
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_UNICAST_NO_AVAILABLE_CONTEXTS)
     public void testActivateDeviceWhenAvailableContextAreBack_Scenario2() {
         int groupId = 1;
         /* AUDIO_DIRECTION_OUTPUT_BIT = 0x01 */
@@ -3020,7 +3015,6 @@ public class LeAudioServiceTest {
      *  4. The available contexts are updated with non-zero value. Group becomes active.
      */
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_UNICAST_NO_AVAILABLE_CONTEXTS)
     public void testActivateDeviceWhenAvailableContextAreBack_Scenario3() {
         int groupId = 1;
         /* AUDIO_DIRECTION_OUTPUT_BIT = 0x01 */

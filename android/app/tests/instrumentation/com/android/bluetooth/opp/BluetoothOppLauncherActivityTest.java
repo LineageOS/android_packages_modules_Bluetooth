@@ -46,6 +46,7 @@ import android.net.Uri;
 import android.platform.test.annotations.RequiresFlagsDisabled;
 import android.platform.test.annotations.RequiresFlagsEnabled;
 import android.platform.test.flag.junit.CheckFlagsRule;
+import android.provider.Settings;
 import android.sysprop.BluetoothProperties;
 
 import androidx.lifecycle.Lifecycle;
@@ -73,6 +74,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+/** Test cases for {@link BluetoothOppLauncherActivity}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothOppLauncherActivityTest {
@@ -380,6 +382,30 @@ public class BluetoothOppLauncherActivityTest {
         assertThat(argument.getValue().getComponent().getClassName())
                 .isEqualTo(BluetoothOppReceiver.class.getName());
         assertThat(argument.getValue().getData()).isEqualTo(Uri.EMPTY);
+    }
+
+    @Test
+    @RequiresFlagsEnabled(Flags.FLAG_SEND_OPP_DEVICE_PICKER_EXTRA_INTENT)
+    public void onCreate_withActionSend_grantUriPermissionToNearbyComponent() {
+        doReturn(true).when(mMethodProxy).bluetoothAdapterIsEnabled(any());
+        doReturn(PackageManager.PERMISSION_GRANTED)
+                .when(mMethodProxy)
+                .componentCallerCheckContentUriPermission(any(), any(), anyInt());
+        String uriString = "content://test.provider/1";
+        Settings.Secure.putString(
+                mTargetContext.getContentResolver(),
+                "nearby_sharing_component",
+                "com.example/.BComponent");
+
+        ActivityScenario<BluetoothOppLauncherActivity> unused =
+                ActivityScenario.launch(createSendIntent(uriString));
+
+        verify(mMethodProxy)
+                .grantUriPermission(
+                        any(),
+                        eq("com.example"),
+                        eq(Uri.parse(uriString)),
+                        eq(Intent.FLAG_GRANT_READ_URI_PERMISSION));
     }
 
     @Ignore("b/263724420")

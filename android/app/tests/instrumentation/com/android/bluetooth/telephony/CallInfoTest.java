@@ -52,6 +52,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.UUID;
 
+/** Test cases for {@link CallInfo}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class CallInfoTest {

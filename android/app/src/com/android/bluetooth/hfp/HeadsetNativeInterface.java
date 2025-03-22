@@ -24,7 +24,6 @@ import android.util.Log;
 
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.GuardedBy;
 
 /**
@@ -84,16 +83,12 @@ public class HeadsetNativeInterface {
         return mAdapterService.getDeviceFromByte(address);
     }
 
-    private byte[] getByteAddress(BluetoothDevice device) {
+    private static byte[] getByteAddress(BluetoothDevice device) {
         if (device == null) {
             // Set bt_stack's active device to default if java layer set active device to null
             return Utils.getBytesFromAddress("00:00:00:00:00:00");
         }
-        if (Flags.identityAddressNullIfNotKnown()) {
-            return Utils.getByteBrEdrAddress(device);
-        } else {
-            return mAdapterService.getByteIdentityAddress(device);
-        }
+        return Utils.getByteBrEdrAddress(device);
     }
 
     void onConnectionStateChanged(int state, byte[] address) {

@@ -25,6 +25,7 @@ import static com.android.bluetooth.TestUtils.getTestDevice;
 import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothDevice;
+import android.content.AttributionSource;
 
 import androidx.test.filters.SmallTest;
 import androidx.test.runner.AndroidJUnit4;
@@ -35,6 +36,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 
+/** Test cases for {@link HeadsetClientServiceBinder}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class HeadsetClientServiceBinderTest {
@@ -42,32 +44,33 @@ public class HeadsetClientServiceBinderTest {
 
     @Mock private HeadsetClientService mService;
 
+    private final AttributionSource mAttributionSource = new AttributionSource.Builder(1).build();
     private final BluetoothDevice mDevice = getTestDevice(54);
 
-    HeadsetClientService.BluetoothHeadsetClientBinder mBinder;
+    private HeadsetClientServiceBinder mBinder;
 
     @Before
     public void setUp() throws Exception {
-        mBinder = new HeadsetClientService.BluetoothHeadsetClientBinder(mService);
+        mBinder = new HeadsetClientServiceBinder(mService);
     }
 
     @Test
     public void connect_callsServiceMethod() {
-        mBinder.connect(mDevice, null);
+        mBinder.connect(mDevice, mAttributionSource);
 
         verify(mService).connect(mDevice);
     }
 
     @Test
     public void disconnect_callsServiceMethod() {
-        mBinder.disconnect(mDevice, null);
+        mBinder.disconnect(mDevice, mAttributionSource);
 
         verify(mService).disconnect(mDevice);
     }
 
     @Test
     public void getConnectedDevices_callsServiceMethod() {
-        mBinder.getConnectedDevices(null);
+        mBinder.getConnectedDevices(mAttributionSource);
 
         verify(mService).getConnectedDevices();
     }
@@ -75,14 +78,14 @@ public class HeadsetClientServiceBinderTest {
     @Test
     public void getDevicesMatchingConnectionStates_callsServiceMethod() {
         int[] states = new int[] {STATE_CONNECTED};
-        mBinder.getDevicesMatchingConnectionStates(states, null);
+        mBinder.getDevicesMatchingConnectionStates(states, mAttributionSource);
 
         verify(mService).getDevicesMatchingConnectionStates(states);
     }
 
     @Test
     public void getConnectionState_callsServiceMethod() {
-        mBinder.getConnectionState(mDevice, null);
+        mBinder.getConnectionState(mDevice, mAttributionSource);
 
         verify(mService).getConnectionState(mDevice);
     }
@@ -90,35 +93,35 @@ public class HeadsetClientServiceBinderTest {
     @Test
     public void setConnectionPolicy_callsServiceMethod() {
         int connectionPolicy = CONNECTION_POLICY_ALLOWED;
-        mBinder.setConnectionPolicy(mDevice, connectionPolicy, null);
+        mBinder.setConnectionPolicy(mDevice, connectionPolicy, mAttributionSource);
 
         verify(mService).setConnectionPolicy(mDevice, connectionPolicy);
     }
 
     @Test
     public void getConnectionPolicy_callsServiceMethod() {
-        mBinder.getConnectionPolicy(mDevice, null);
+        mBinder.getConnectionPolicy(mDevice, mAttributionSource);
 
         verify(mService).getConnectionPolicy(mDevice);
     }
 
     @Test
     public void startVoiceRecognition_callsServiceMethod() {
-        mBinder.startVoiceRecognition(mDevice, null);
+        mBinder.startVoiceRecognition(mDevice, mAttributionSource);
 
         verify(mService).startVoiceRecognition(mDevice);
     }
 
     @Test
     public void stopVoiceRecognition_callsServiceMethod() {
-        mBinder.stopVoiceRecognition(mDevice, null);
+        mBinder.stopVoiceRecognition(mDevice, mAttributionSource);
 
         verify(mService).stopVoiceRecognition(mDevice);
     }
 
     @Test
     public void getAudioState_callsServiceMethod() {
-        mBinder.getAudioState(mDevice, null);
+        mBinder.getAudioState(mDevice, mAttributionSource);
 
         verify(mService).getAudioState(mDevice);
     }
@@ -126,28 +129,28 @@ public class HeadsetClientServiceBinderTest {
     @Test
     public void setAudioRouteAllowed_callsServiceMethod() {
         boolean allowed = true;
-        mBinder.setAudioRouteAllowed(mDevice, allowed, null);
+        mBinder.setAudioRouteAllowed(mDevice, allowed, mAttributionSource);
 
         verify(mService).setAudioRouteAllowed(mDevice, allowed);
     }
 
     @Test
     public void getAudioRouteAllowed_callsServiceMethod() {
-        mBinder.getAudioRouteAllowed(mDevice, null);
+        mBinder.getAudioRouteAllowed(mDevice, mAttributionSource);
 
         verify(mService).getAudioRouteAllowed(mDevice);
     }
 
     @Test
     public void connectAudio_callsServiceMethod() {
-        mBinder.connectAudio(mDevice, null);
+        mBinder.connectAudio(mDevice, mAttributionSource);
 
         verify(mService).connectAudio(mDevice);
     }
 
     @Test
     public void disconnectAudio_callsServiceMethod() {
-        mBinder.disconnectAudio(mDevice, null);
+        mBinder.disconnectAudio(mDevice, mAttributionSource);
 
         verify(mService).disconnectAudio(mDevice);
     }
@@ -155,35 +158,35 @@ public class HeadsetClientServiceBinderTest {
     @Test
     public void acceptCall_callsServiceMethod() {
         int flag = 2;
-        mBinder.acceptCall(mDevice, flag, null);
+        mBinder.acceptCall(mDevice, flag, mAttributionSource);
 
         verify(mService).acceptCall(mDevice, flag);
     }
 
     @Test
     public void rejectCall_callsServiceMethod() {
-        mBinder.rejectCall(mDevice, null);
+        mBinder.rejectCall(mDevice, mAttributionSource);
 
         verify(mService).rejectCall(mDevice);
     }
 
     @Test
     public void holdCall_callsServiceMethod() {
-        mBinder.holdCall(mDevice, null);
+        mBinder.holdCall(mDevice, mAttributionSource);
 
         verify(mService).holdCall(mDevice);
     }
 
     @Test
     public void terminateCall_callsServiceMethod() {
-        mBinder.terminateCall(mDevice, null, null);
+        mBinder.terminateCall(mDevice, null, mAttributionSource);
 
         verify(mService).terminateCall(mDevice, null);
     }
 
     @Test
     public void explicitCallTransfer_callsServiceMethod() {
-        mBinder.explicitCallTransfer(mDevice, null);
+        mBinder.explicitCallTransfer(mDevice, mAttributionSource);
 
         verify(mService).explicitCallTransfer(mDevice);
     }
@@ -191,7 +194,7 @@ public class HeadsetClientServiceBinderTest {
     @Test
     public void enterPrivateMode_callsServiceMethod() {
         int index = 1;
-        mBinder.enterPrivateMode(mDevice, index, null);
+        mBinder.enterPrivateMode(mDevice, index, mAttributionSource);
 
         verify(mService).enterPrivateMode(mDevice, index);
     }
@@ -199,7 +202,7 @@ public class HeadsetClientServiceBinderTest {
     @Test
     public void dial_callsServiceMethod() {
         String number = "12532523";
-        mBinder.dial(mDevice, number, null);
+        mBinder.dial(mDevice, number, mAttributionSource);
 
         verify(mService).dial(mDevice, number);
     }
@@ -207,21 +210,21 @@ public class HeadsetClientServiceBinderTest {
     @Test
     public void sendDTMF_callsServiceMethod() {
         byte code = 21;
-        mBinder.sendDTMF(mDevice, code, null);
+        mBinder.sendDTMF(mDevice, code, mAttributionSource);
 
         verify(mService).sendDTMF(mDevice, code);
     }
 
     @Test
     public void getLastVoiceTagNumber_callsServiceMethod() {
-        mBinder.getLastVoiceTagNumber(mDevice, null);
+        mBinder.getLastVoiceTagNumber(mDevice, mAttributionSource);
 
         verify(mService).getLastVoiceTagNumber(mDevice);
     }
 
     @Test
     public void getCurrentAgEvents_callsServiceMethod() {
-        mBinder.getCurrentAgEvents(mDevice, null);
+        mBinder.getCurrentAgEvents(mDevice, mAttributionSource);
 
         verify(mService).getCurrentAgEvents(mDevice);
     }
@@ -231,14 +234,14 @@ public class HeadsetClientServiceBinderTest {
         int vendorId = 5;
         String cmd = "test_command";
 
-        mBinder.sendVendorAtCommand(mDevice, vendorId, cmd, null);
+        mBinder.sendVendorAtCommand(mDevice, vendorId, cmd, mAttributionSource);
 
         verify(mService).sendVendorAtCommand(mDevice, vendorId, cmd);
     }
 
     @Test
     public void getCurrentAgFeatures_callsServiceMethod() {
-        mBinder.getCurrentAgFeatures(mDevice, null);
+        mBinder.getCurrentAgFeatures(mDevice, mAttributionSource);
 
         verify(mService).getCurrentAgFeaturesBundle(mDevice);
     }

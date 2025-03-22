@@ -326,6 +326,10 @@ static bool is_handle_equal(void* data, void* context) {
  *
  ******************************************************************************/
 tBTM_SEC_DEV_REC* btm_find_dev_by_handle(uint16_t handle) {
+  if (handle == HCI_INVALID_HANDLE) {
+    return nullptr;
+  }
+
   if (btm_sec_cb.sec_dev_rec == nullptr) {
     return nullptr;
   }
@@ -335,7 +339,7 @@ tBTM_SEC_DEV_REC* btm_find_dev_by_handle(uint16_t handle) {
     return static_cast<tBTM_SEC_DEV_REC*>(list_node(n));
   }
 
-  return NULL;
+  return nullptr;
 }
 
 static bool is_not_same_identity_or_pseudo_address(void* data, void* context) {

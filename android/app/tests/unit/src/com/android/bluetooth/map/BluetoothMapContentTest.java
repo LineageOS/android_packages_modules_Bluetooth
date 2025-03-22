@@ -68,6 +68,7 @@ import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.HashMap;
 
+/** Test cases for {@link BluetoothMapContent}. */
 @RunWith(AndroidJUnit4.class)
 public class BluetoothMapContentTest {
     private static final String TEST_TEXT = "text";

@@ -101,6 +101,7 @@ import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+/** Test cases for {@link MapClientStateMachine}. */
 @MediumTest
 @RunWith(ParameterizedAndroidJunit4.class)
 public class MapClientStateMachineTest {

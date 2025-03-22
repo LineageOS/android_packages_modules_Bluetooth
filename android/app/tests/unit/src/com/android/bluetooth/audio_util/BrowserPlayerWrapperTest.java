@@ -57,6 +57,7 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+/** Test cases for {@link BrowserPlayerWrapper}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class BrowserPlayerWrapperTest {

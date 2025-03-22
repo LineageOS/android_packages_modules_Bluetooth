@@ -63,7 +63,7 @@ import org.mockito.Spy;
 import java.util.ArrayList;
 import java.util.List;
 
-/** This class will also test BluetoothOppTransferAdapter */
+/** Test cases for {@link BluetoothOppTransferHistory} and {@link BluetoothOppTransferAdapter}. */
 @RunWith(AndroidJUnit4.class)
 public class BluetoothOppTransferHistoryTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();

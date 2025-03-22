@@ -871,21 +871,6 @@ public:
   virtual void L2CA_SetEcosystemBaseInterval(uint32_t base_interval) = 0;
 
   /*******************************************************************************
-   *
-   *  Function        L2CA_SetDefaultSubrate
-   *
-   *  Description     BLE Set Default Subrate.
-   *
-   *  Parameters:     Subrate parameters
-   *
-   *  Return value:   void
-   *
-   ******************************************************************************/
-  virtual void L2CA_SetDefaultSubrate(uint16_t subrate_min, uint16_t subrate_max,
-                                      uint16_t max_latency, uint16_t cont_num,
-                                      uint16_t timeout) = 0;
-
-  /*******************************************************************************
    **
    ** Function         L2CA_SetMediaStreamChannel
    **

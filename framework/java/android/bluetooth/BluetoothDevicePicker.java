@@ -18,12 +18,15 @@ package android.bluetooth;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
 
+import android.annotation.FlaggedApi;
 import android.annotation.RequiresPermission;
 import android.annotation.SdkConstant;
 import android.annotation.SdkConstant.SdkConstantType;
 import android.annotation.SuppressLint;
 import android.annotation.SystemApi;
 import android.bluetooth.annotations.RequiresBluetoothConnectPermission;
+
+import com.android.bluetooth.flags.Flags;
 
 /**
  * A helper to show a system "Device Picker" activity to the user.
@@ -62,6 +65,14 @@ public interface BluetoothDevicePicker {
      */
     @SuppressLint("ActionValue")
     String EXTRA_LAUNCH_CLASS = "android.bluetooth.devicepicker.extra.DEVICE_PICKER_LAUNCH_CLASS";
+
+    /**
+     * Extra for the original ACTION_SEND or ACTION_SEND_MULTIPLE intent that triggered the BT
+     * sharing.
+     */
+    @FlaggedApi(Flags.FLAG_OPP_DEVICE_PICKER_EXTRA_INTENT_APIS)
+    String EXTRA_DEVICE_PICKER_ORIGINAL_SEND_INTENT =
+            "android.bluetooth.extra.DEVICE_PICKER_ORIGINAL_SEND_INTENT";
 
     /**
      * Broadcast when one BT device is selected from BT device picker screen. Selected {@link

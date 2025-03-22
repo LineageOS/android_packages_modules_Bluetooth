@@ -165,12 +165,8 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddress(
                 min_seconds.count(), max_seconds.count());
         enqueue_command_.Run(std::move(packet));
       } else {
-        if (com::android::bluetooth::flags::non_wake_alarm_for_rpa_rotation()) {
-          address_rotation_wake_alarm_ = std::make_unique<os::Alarm>(handler_, true);
-          address_rotation_non_wake_alarm_ = std::make_unique<os::Alarm>(handler_, false);
-        } else {
-          address_rotation_wake_alarm_ = std::make_unique<os::Alarm>(handler_);
-        }
+        address_rotation_wake_alarm_ = std::make_unique<os::Alarm>(handler_, true);
+        address_rotation_non_wake_alarm_ = std::make_unique<os::Alarm>(handler_, false);
       }
       set_random_address();
       break;
@@ -229,12 +225,8 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddressForTest(
                 min_seconds.count(), max_seconds.count());
         enqueue_command_.Run(std::move(packet));
       } else {
-        if (com::android::bluetooth::flags::non_wake_alarm_for_rpa_rotation()) {
-          address_rotation_wake_alarm_ = std::make_unique<os::Alarm>(handler_, true);
-          address_rotation_non_wake_alarm_ = std::make_unique<os::Alarm>(handler_, false);
-        } else {
-          address_rotation_wake_alarm_ = std::make_unique<os::Alarm>(handler_);
-        }
+        address_rotation_wake_alarm_ = std::make_unique<os::Alarm>(handler_, true);
+        address_rotation_non_wake_alarm_ = std::make_unique<os::Alarm>(handler_, false);
         set_random_address();
       }
       break;
@@ -422,31 +414,25 @@ void LeAddressManager::prepare_to_rotate() {
 }
 
 void LeAddressManager::schedule_rotate_random_address() {
-  if (com::android::bluetooth::flags::non_wake_alarm_for_rpa_rotation()) {
-    std::string client_name = "LeAddressManager";
-    auto privateAddressIntervalRange = GetNextPrivateAddressIntervalRange(client_name);
-    address_rotation_wake_alarm_->Schedule(
-            common::BindOnce(
-                    []() { log::info("deadline wakeup in schedule_rotate_random_address"); }),
-            privateAddressIntervalRange.max);
-    address_rotation_non_wake_alarm_->Schedule(
-            common::BindOnce(&LeAddressManager::prepare_to_rotate, common::Unretained(this)),
-            privateAddressIntervalRange.min);
+  std::string client_name = "LeAddressManager";
+  auto privateAddressIntervalRange = GetNextPrivateAddressIntervalRange(client_name);
+  address_rotation_wake_alarm_->Schedule(
+          common::BindOnce(
+                  []() { log::info("deadline wakeup in schedule_rotate_random_address"); }),
+          privateAddressIntervalRange.max);
+  address_rotation_non_wake_alarm_->Schedule(
+          common::BindOnce(&LeAddressManager::prepare_to_rotate, common::Unretained(this)),
+          privateAddressIntervalRange.min);
 
-    auto now = std::chrono::system_clock::now();
-    if (address_rotation_interval_min.has_value()) {
-      CheckAddressRotationHappenedInExpectedTimeInterval(
-              *address_rotation_interval_min, *address_rotation_interval_max, now, client_name);
-    }
-
-    // Update the expected range here.
-    address_rotation_interval_min.emplace(now + privateAddressIntervalRange.min);
-    address_rotation_interval_max.emplace(now + privateAddressIntervalRange.max);
-  } else {
-    address_rotation_wake_alarm_->Schedule(
-            common::BindOnce(&LeAddressManager::prepare_to_rotate, common::Unretained(this)),
-            GetNextPrivateAddressIntervalMs());
+  auto now = std::chrono::system_clock::now();
+  if (address_rotation_interval_min.has_value()) {
+    CheckAddressRotationHappenedInExpectedTimeInterval(
+            *address_rotation_interval_min, *address_rotation_interval_max, now, client_name);
   }
+
+  // Update the expected range here.
+  address_rotation_interval_min.emplace(now + privateAddressIntervalRange.min);
+  address_rotation_interval_max.emplace(now + privateAddressIntervalRange.max);
 }
 
 void LeAddressManager::set_random_address() {

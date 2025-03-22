@@ -27,7 +27,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 
-/** A test suite for the BipImageProperties class */
+/** Test cases for {@link BipImageProperties}. */
 @RunWith(AndroidJUnit4.class)
 public class BipImagePropertiesTest {
     private static final String IMAGE_HANDLE = "123456789";
