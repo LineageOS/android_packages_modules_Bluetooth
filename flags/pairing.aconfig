@@ -280,3 +280,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "separate_encryption_queue"
+    namespace: "bluetooth"
+    description: "Create separate pending encryption queue"
+    bug: "405594028"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
