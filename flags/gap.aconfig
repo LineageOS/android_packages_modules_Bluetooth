@@ -272,10 +272,10 @@ flag {
 }
 
 flag {
-    name: "fix_private_gatt_advertising_not_working"
+    name: "fix_private_gatt_advertisement"
     namespace: "bluetooth"
     description: "Fix that private GATT advertising is handled as a normal GATT"
-    bug: "405315235"
+    bug: "406124107"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
