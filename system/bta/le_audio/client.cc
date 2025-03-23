@@ -4587,7 +4587,8 @@ public:
             /* Stream is not started. Try to do it.*/
             if (OnAudioResume(group, bluetooth::le_audio::types::kLeAudioDirectionSource)) {
               audio_sender_state_ = AudioState::READY_TO_START;
-              if (IsReconfigurationTimeoutRunning(active_group_id_)) {
+              if (!com::android::bluetooth::flags::leaudio_fix_stop_reconfiguration_timeout() &&
+                  IsReconfigurationTimeoutRunning(active_group_id_)) {
                 StopReconfigurationTimeout(active_group_id_,
                                            bluetooth::le_audio::types::kLeAudioDirectionSource);
               }
@@ -4676,6 +4677,11 @@ public:
               CancelStreamingRequest();
             }
             break;
+        }
+        if (com::android::bluetooth::flags::leaudio_fix_stop_reconfiguration_timeout() &&
+            IsReconfigurationTimeoutRunning(active_group_id_)) {
+          StopReconfigurationTimeout(active_group_id_,
+                                     bluetooth::le_audio::types::kLeAudioDirectionSource);
         }
         break;
       case AudioState::READY_TO_START:
@@ -4861,7 +4867,8 @@ public:
           case AudioState::IDLE:
             if (OnAudioResume(group, bluetooth::le_audio::types::kLeAudioDirectionSink)) {
               audio_receiver_state_ = AudioState::READY_TO_START;
-              if (IsReconfigurationTimeoutRunning(active_group_id_)) {
+              if (!com::android::bluetooth::flags::leaudio_fix_stop_reconfiguration_timeout() &&
+                  IsReconfigurationTimeoutRunning(active_group_id_)) {
                 StopReconfigurationTimeout(active_group_id_,
                                            bluetooth::le_audio::types::kLeAudioDirectionSink);
               }
@@ -4951,6 +4958,11 @@ public:
               CancelStreamingRequest();
             }
             break;
+        }
+        if (com::android::bluetooth::flags::leaudio_fix_stop_reconfiguration_timeout() &&
+            IsReconfigurationTimeoutRunning(active_group_id_)) {
+          StopReconfigurationTimeout(active_group_id_,
+                                     bluetooth::le_audio::types::kLeAudioDirectionSink);
         }
         break;
       case AudioState::READY_TO_START:

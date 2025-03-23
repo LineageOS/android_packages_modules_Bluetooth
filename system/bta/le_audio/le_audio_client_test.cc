@@ -1482,6 +1482,7 @@ protected:
   void SetUp() override {
     __android_log_set_minimum_priority(ANDROID_LOG_VERBOSE);
     com::android::bluetooth::flags::provider_->reset_flags();
+    com::android::bluetooth::flags::provider_->leaudio_fix_stop_reconfiguration_timeout(true);
 
     init_message_loop_thread();
     reset_mock_function_count_map();
@@ -10900,8 +10901,9 @@ TEST_F(UnicastTest, SwitchBetweenSoundEffectAndMicrophoneScenario) {
   uint8_t cis_count_in = 1;
   TestAudioDataTransfer(group_id, cis_count_out, cis_count_in, 1920, 60);
 
+  /* We expect Reconfiguration timer to be started and canceled. */
   ASSERT_EQ(1, get_func_call_count("alarm_set_on_mloop"));
-  ASSERT_EQ(0, get_func_call_count("alarm_cancel"));
+  ASSERT_EQ(1, get_func_call_count("alarm_cancel"));
 }
 
 /* When a certain context is unavailable and not supported we should stream
