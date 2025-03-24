@@ -577,8 +577,7 @@ public class BassClientServiceTest {
         // Stop searching
         mBassClientService.stopSearchingForSources();
         if (Flags.leaudioBassScanWithInternalScanController()) {
-            verify(mScanController).stopScanInternal(anyInt());
-
+            verify(mScanController).stopScan(anyInt());
         } else {
             verify(mBluetoothLeScannerWrapper).stopScan(mCallbackCaptor.getValue());
         }
@@ -617,7 +616,7 @@ public class BassClientServiceTest {
         // Stop
         mBassClientService.cleanup();
         if (Flags.leaudioBassScanWithInternalScanController()) {
-            verify(mScanController).stopScanInternal(anyInt());
+            verify(mScanController).stopScan(anyInt());
         } else {
             verify(mBluetoothLeScannerWrapper).stopScan(mCallbackCaptor.getValue());
         }

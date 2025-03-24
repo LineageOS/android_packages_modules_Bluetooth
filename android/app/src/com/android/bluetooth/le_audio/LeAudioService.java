@@ -2131,9 +2131,8 @@ public class LeAudioService extends ProfileService {
                 Log.d(TAG, "Scanner is not running (mScannerId=" + mScannerId + ")");
                 return;
             }
-            mAdapterService.getBluetoothScanController().stopScanInternal(mScannerId);
-
-            mAdapterService.getBluetoothScanController().unregisterScannerInternal(mScannerId);
+            mAdapterService.getBluetoothScanController().stopScan(mScannerId);
+            mAdapterService.getBluetoothScanController().unregisterScanner(mScannerId);
             mScannerId = SCANNER_NOT_INITIALIZED;
         }
 
