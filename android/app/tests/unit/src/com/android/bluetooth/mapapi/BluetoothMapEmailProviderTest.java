@@ -47,6 +47,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+/** Test cases for {@link BluetoothMapEmailProvider}. */
 @RunWith(AndroidJUnit4.class)
 public class BluetoothMapEmailProviderTest {
 

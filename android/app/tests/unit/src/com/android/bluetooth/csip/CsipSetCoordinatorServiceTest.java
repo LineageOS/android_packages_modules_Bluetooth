@@ -82,6 +82,7 @@ import org.mockito.hamcrest.MockitoHamcrest;
 import java.util.List;
 import java.util.UUID;
 
+/** Test cases for {@link CsipSetCoordinatorService}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class CsipSetCoordinatorServiceTest {
@@ -130,7 +131,6 @@ public class CsipSetCoordinatorServiceTest {
                 new CsipSetCoordinatorService(
                         mAdapterService, mLooper.getLooper(), mNativeInterface, mServiceFactory);
         mService.setAvailable(true);
-
     }
 
     @After

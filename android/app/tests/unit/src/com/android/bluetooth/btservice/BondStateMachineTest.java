@@ -49,6 +49,7 @@ import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 
+/** Test cases for {@link BondStateMachine}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class BondStateMachineTest {

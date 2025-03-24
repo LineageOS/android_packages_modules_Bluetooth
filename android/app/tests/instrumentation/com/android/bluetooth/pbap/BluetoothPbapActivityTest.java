@@ -55,6 +55,7 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/** Test cases for {@link BluetoothPbapActivity}. */
 @LargeTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothPbapActivityTest {

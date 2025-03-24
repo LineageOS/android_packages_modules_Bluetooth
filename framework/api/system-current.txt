@@ -369,6 +369,7 @@ package android.bluetooth {
   public interface BluetoothDevicePicker {
     field @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public static final String ACTION_DEVICE_SELECTED = "android.bluetooth.devicepicker.action.DEVICE_SELECTED";
     field @RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT) public static final String ACTION_LAUNCH = "android.bluetooth.devicepicker.action.LAUNCH";
+    field @FlaggedApi("com.android.bluetooth.flags.opp_device_picker_extra_intent_apis") public static final String EXTRA_DEVICE_PICKER_ORIGINAL_SEND_INTENT = "android.bluetooth.extra.DEVICE_PICKER_ORIGINAL_SEND_INTENT";
     field public static final String EXTRA_FILTER_TYPE = "android.bluetooth.devicepicker.extra.FILTER_TYPE";
     field public static final String EXTRA_LAUNCH_CLASS = "android.bluetooth.devicepicker.extra.DEVICE_PICKER_LAUNCH_CLASS";
     field public static final String EXTRA_LAUNCH_PACKAGE = "android.bluetooth.devicepicker.extra.LAUNCH_PACKAGE";

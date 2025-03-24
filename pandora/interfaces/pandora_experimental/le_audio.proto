@@ -10,8 +10,33 @@ package pandora;
 // Service to trigger LE Audio procedures.
 service LeAudio {
   rpc Open(OpenRequest) returns (google.protobuf.Empty);
+  // Playback audio
+  rpc LeAudioPlaybackAudio(stream LeAudioPlaybackAudioRequest) returns (LeAudioPlaybackAudioResponse);
+  // Start an opened stream.
+  rpc LeAudioStart(LeAudioStartRequest) returns (google.protobuf.Empty);
+  // Stop an opened stream.
+  rpc LeAudioStop(LeAudioStopRequest) returns (google.protobuf.Empty);
 }
 
 message OpenRequest {
+  Connection connection = 1;
+}
+
+// Request for the `LeAudioStart` method.
+message LeAudioStartRequest {
+  Connection connection = 1;
+}
+
+// Request of the `PlaybackAudio` method.
+message LeAudioPlaybackAudioRequest {
+  // Audio data to playback.
+  bytes data = 1;
+}
+
+// Response of the `LeAudioPlaybackAudio` method.
+message LeAudioPlaybackAudioResponse {}
+
+// Request of the `LeAudioStop` method.
+message LeAudioStopRequest {
   Connection connection = 1;
 }

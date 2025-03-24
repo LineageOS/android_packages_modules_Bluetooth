@@ -51,7 +51,6 @@ import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.BluetoothObexTransport;
-import com.android.bluetooth.flags.Flags;
 import com.android.obex.ObexTransport;
 
 import org.junit.After;
@@ -63,6 +62,7 @@ import org.mockito.Mock;
 
 import java.util.Objects;
 
+/** Test cases for {@link BluetoothOppTransfer}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothOppTransferTest {
@@ -390,7 +390,6 @@ public class BluetoothOppTransferTest {
 
     @Test
     public void oppConnectionReceiver_onReceiveWithActionSdpRecord_withoutSdpRecord() {
-        mSetFlagRule.enableFlags(Flags.FLAG_IDENTITY_ADDRESS_NULL_IF_NOT_KNOWN);
         BluetoothDevice device =
                 InstrumentationRegistry.getInstrumentation()
                         .getTargetContext()

@@ -28,8 +28,6 @@ service HAP {
   rpc SetNextPreset(SetNextPresetRequest) returns (google.protobuf.Empty);
   // Set next preset
   rpc SetPreviousPreset(SetPreviousPresetRequest) returns (google.protobuf.Empty);
-  // Playback audio
-  rpc HaPlaybackAudio(stream HaPlaybackAudioRequest) returns (google.protobuf.Empty);
   // Set preset name
   rpc WritePresetName(WritePresetNameRequest) returns (google.protobuf.Empty);
   // Get preset record
@@ -48,16 +46,6 @@ message GetFeaturesRequest{
 
 message GetFeaturesResponse{
     int32 features = 1;
-}
-
-// Request of the `PlaybackAudio` method.
-message HaPlaybackAudioRequest {
-    // Low Energy connection.
-    Connection connection = 1;
-    // Audio data to playback.
-    // `data` should be interleaved stereo frames with 16-bit signed little-endian
-    // linear PCM samples at 44100Hz sample rate
-    bytes data = 2;
 }
 
 // Request of the `SetActivePreset` method.

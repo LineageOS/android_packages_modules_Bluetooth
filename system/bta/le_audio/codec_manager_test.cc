@@ -369,8 +369,6 @@ public:
     // Disable codec extensibility by default
     osi_property_set_bool(kPropLeAudioCodecExtensibility, false);
 
-    com::android::bluetooth::flags::provider_->leaudio_mono_location_errata(false);
-
     CodecManagerTestBase::SetUp();
   }
 };
@@ -542,7 +540,6 @@ TEST_F(CodecManagerTestAdsp, testStreamConfigurationAdspDownMix) {
 }
 
 TEST_F(CodecManagerTestAdsp, testStreamConfigurationMono) {
-  com::android::bluetooth::flags::provider_->leaudio_mono_location_errata(true);
   const std::vector<bluetooth::le_audio::btle_audio_codec_config_t> offloading_preference(0);
   codec_manager->Start(offloading_preference);
 
@@ -1343,7 +1340,6 @@ TEST_F(CodecManagerTestHost, test_dont_call_hal_for_config) {
 }
 
 TEST_F(CodecManagerTestAdsp, testStreamConfigurationVendor) {
-  com::android::bluetooth::flags::provider_->leaudio_mono_location_errata(true);
   osi_property_set_bool(kPropLeAudioCodecExtensibility, true);
 
   const std::vector<bluetooth::le_audio::btle_audio_codec_config_t> offloading_preference(0);

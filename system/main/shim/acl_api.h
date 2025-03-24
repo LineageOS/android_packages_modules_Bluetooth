@@ -49,8 +49,6 @@ void ACL_AddToAddressResolution(const tBLE_BD_ADDR& legacy_address_with_type,
 void ACL_RemoveFromAddressResolution(const tBLE_BD_ADDR& legacy_address_with_type);
 void ACL_ClearAddressResolution();
 void ACL_ClearFilterAcceptList();
-void ACL_LeSetDefaultSubrate(uint16_t subrate_min, uint16_t subrate_max, uint16_t max_latency,
-                             uint16_t cont_num, uint16_t sup_tout);
 void ACL_SendConnectionParameterUpdateRequest(uint16_t handle, uint16_t conn_int_min,
                                               uint16_t conn_int_max, uint16_t conn_latency,
                                               uint16_t conn_timeout, uint16_t min_ce_len,

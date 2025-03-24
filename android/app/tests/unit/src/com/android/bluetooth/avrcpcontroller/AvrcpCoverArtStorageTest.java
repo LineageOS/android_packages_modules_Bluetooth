@@ -39,7 +39,7 @@ import org.junit.runner.RunWith;
 
 import java.io.InputStream;
 
-/** A test suite for the AvrcpCoverArtStorage class. */
+/** Test cases for {@link AvrcpCoverArtStorage}. */
 @RunWith(AndroidJUnit4.class)
 public final class AvrcpCoverArtStorageTest {
     private final Context mTargetContext =

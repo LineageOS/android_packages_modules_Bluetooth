@@ -50,6 +50,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Spy;
 
+/** Test cases for {@link BluetoothMapObexServer}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothMapObexServerTest {

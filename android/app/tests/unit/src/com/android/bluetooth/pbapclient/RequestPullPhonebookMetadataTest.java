@@ -37,6 +37,7 @@ import org.junit.runner.RunWith;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 
+/** Test cases for {@link RequestPullPhonebookMetadata}. */
 @RunWith(AndroidJUnit4.class)
 public class RequestPullPhonebookMetadataTest {
     private static final String PHONEBOOK_NAME = "phonebook";

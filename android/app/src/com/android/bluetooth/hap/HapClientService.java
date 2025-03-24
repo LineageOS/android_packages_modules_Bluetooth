@@ -159,7 +159,7 @@ public class HapClientService extends ProfileService {
 
     @Override
     protected IProfileServiceBinder initBinder() {
-        return new HapClientBinder(this);
+        return new HapClientServiceBinder(this);
     }
 
     @Override

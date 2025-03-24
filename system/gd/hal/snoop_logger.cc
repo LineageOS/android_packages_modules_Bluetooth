@@ -55,7 +55,7 @@ static std::string GetBtSnoopMode() {
   // Default mode is FILTERED on userdebug/eng build, DISABLED on user build.
   // In userdebug/eng build, it can also be overwritten by modifying the global setting
   std::string btsnoop_mode = SnoopLogger::kBtSnoopLogModeDisabled;
-  if (os::GetSystemPropertyBool(SnoopLogger::kIsDebuggableProperty, false)) {
+  if (os::GetSystemProperty(SnoopLogger::kRoBuildType) != "user") {
     btsnoop_mode = os::GetSystemProperty(SnoopLogger::kBtSnoopDefaultLogModeProperty)
                            .value_or(SnoopLogger::kBtSnoopLogModeFiltered);
   }
@@ -471,7 +471,7 @@ size_t get_btsnooz_packet_length_to_write(const HciPacket& packet, SnoopLogger::
 
 // system properties
 const std::string SnoopLogger::kBtSnoopMaxPacketsPerFileProperty = "persist.bluetooth.btsnoopsize";
-const std::string SnoopLogger::kIsDebuggableProperty = "ro.debuggable";
+const std::string SnoopLogger::kRoBuildType = "ro.build.type";
 const std::string SnoopLogger::kBtSnoopLogModeProperty = "persist.bluetooth.btsnooplogmode";
 const std::string SnoopLogger::kBtSnoopDefaultLogModeProperty =
         "persist.bluetooth.btsnoopdefaultmode";
@@ -1333,7 +1333,7 @@ void SnoopLogger::Start() {
       EnableFilters();
     }
 
-    if (os::GetSystemPropertyBool(kIsDebuggableProperty, false)) {
+    if (os::GetSystemProperty(kRoBuildType) != "user") {
       // Cf b/375056207: The implementation must pass a security review
       // in order to enable the snoop logger socket in user builds.
       auto snoop_logger_socket = std::make_unique<SnoopLoggerSocket>(&syscall_if);
@@ -1404,9 +1404,9 @@ size_t SnoopLogger::GetMaxPacketsPerFile() {
 size_t SnoopLogger::GetMaxPacketsPerBuffer() {
   // We want to use at most 256 KB memory for btsnooz log for release builds
   // and 512 KB memory for userdebug/eng builds
-  auto is_debuggable = os::GetSystemPropertyBool(kIsDebuggableProperty, false);
+  auto is_debug_build = (os::GetSystemProperty(kRoBuildType) != "user");
 
-  size_t btsnooz_max_memory_usage_bytes = (is_debuggable ? 1024 : 256) * 1024;
+  size_t btsnooz_max_memory_usage_bytes = (is_debug_build ? 1024 : 256) * 1024;
   // Calculate max number of packets based on max memory usage and max packet size
   return btsnooz_max_memory_usage_bytes / kDefaultBtSnoozMaxBytesPerPacket;
 }
@@ -1419,8 +1419,8 @@ void SnoopLogger::RegisterSocket(SnoopLoggerSocketInterface* socket) {
 }
 
 bool SnoopLogger::IsBtSnoopLogPersisted() {
-  auto is_debuggable = os::GetSystemPropertyBool(kIsDebuggableProperty, false);
-  return is_debuggable && os::GetSystemPropertyBool(kBtSnoopLogPersists, false);
+  auto is_debug_build = (os::GetSystemProperty(kRoBuildType) != "user");
+  return is_debug_build && os::GetSystemPropertyBool(kBtSnoopLogPersists, false);
 }
 
 bool SnoopLogger::IsQualcommDebugLogEnabled() {

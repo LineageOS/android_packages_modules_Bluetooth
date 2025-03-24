@@ -33,6 +33,7 @@ import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+/** Test cases for {@link EventReport}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class EventReportTest {

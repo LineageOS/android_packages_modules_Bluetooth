@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
+/** Test cases for {@link AudioPolicyEntity}. */
 @RunWith(JUnit4.class)
 public final class AudioPolicyEntityTest {
     @Test

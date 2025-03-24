@@ -84,7 +84,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Set;
 
-/** Tests for {@link HeadsetService} */
+/** Test cases for {@link HeadsetService}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class HeadsetServiceTest {
@@ -1247,7 +1247,6 @@ public class HeadsetServiceTest {
     }
 
     @Test
-    @EnableFlags({Flags.FLAG_UPDATE_ACTIVE_DEVICE_IN_BAND_RINGTONE})
     public void testIncomingCallDeviceConnect_InbandRingStatus() {
         when(mDatabaseManager.getProfileConnectionPolicy(
                         any(BluetoothDevice.class), eq(BluetoothProfile.HEADSET)))
@@ -1269,7 +1268,6 @@ public class HeadsetServiceTest {
     }
 
     @Test
-    @EnableFlags({Flags.FLAG_UPDATE_ACTIVE_DEVICE_IN_BAND_RINGTONE})
     public void testIncomingCallWithDeviceAudioConnected() {
         ArrayList<BluetoothDevice> connectedDevices = new ArrayList<>();
         when(mDatabaseManager.getProfileConnectionPolicy(

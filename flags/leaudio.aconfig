@@ -44,30 +44,10 @@ flag {
 }
 
 flag {
-    name: "leaudio_codec_config_callback_order_fix"
-    namespace: "bluetooth"
-    description: "Fix for the order on the callback"
-    bug: "326442537"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "leaudio_allow_leaudio_only_devices"
     namespace: "bluetooth"
     description: "Enable Le Audio for LeAudio only devices"
     bug: "328471369"
-}
-
-flag {
-    name: "leaudio_mono_location_errata"
-    namespace: "bluetooth"
-    description: "Add mono location as per Bluetooth Assigned Numbers"
-    bug: "331139722"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
 }
 
 flag {
@@ -76,13 +56,6 @@ flag {
     namespace: "bluetooth"
     description: "Add mono location as per Bluetooth Assigned Numbers to API"
     bug: "372840605"
-}
-
-flag {
-    name: "le_audio_support_unidirectional_voice_assistant"
-    namespace: "bluetooth"
-    description: "Allow to create unidirectional stream for VOICEASSISTANT"
-    bug: "332510824"
 }
 
 flag {
@@ -116,16 +89,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_speed_up_reconfiguration_between_call"
-    namespace: "bluetooth"
-    description: "Fix reconfiguration time between call and media"
-    bug: "352686917"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "leaudio_set_codec_config_preference"
     namespace: "bluetooth"
     description: "New apis to set codec config preference"
@@ -151,26 +114,6 @@ flag {
     namespace: "bluetooth"
     description: "Helps sinks to resync to external broadcast when BIS or PA unsynced"
     bug: "363168099"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "leaudio_unicast_no_available_contexts"
-    namespace: "bluetooth"
-    description: "Fix handling initial zero available contexts"
-    bug: "367325041"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "leaudio_improve_switch_during_phone_call"
-    namespace: "bluetooth"
-    description: "Fix audio slip to speaker while switching bt audio device during phonecall"
-    bug: "369322905"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -340,6 +283,16 @@ flag {
     namespace: "bluetooth"
     description: "When initializing TMAP role mask in LeAudioService, make it a function of enabled services"
     bug: "399410612"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "leaudio_use_aggressive_params"
+    namespace: "bluetooth"
+    description: "use aggressive parameters for LE Audio device"
+    bug: "400607635"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

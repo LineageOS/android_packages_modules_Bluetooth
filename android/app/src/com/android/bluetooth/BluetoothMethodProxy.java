@@ -306,4 +306,9 @@ public class BluetoothMethodProxy {
             ComponentCaller caller, Uri uri, int modeFlags) {
         return caller.checkContentUriPermission(uri, modeFlags);
     }
+
+    /** Proxies {@link Context#grantUriPermission(String, Uri, int)}. } */
+    public void grantUriPermission(Context context, String packageName, Uri uri, int modeFlags) {
+        context.grantUriPermission(packageName, uri, modeFlags);
+    }
 }

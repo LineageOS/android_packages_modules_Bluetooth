@@ -39,7 +39,7 @@ import org.mockito.Mock
 import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 
-/** Test cases for [ScanBinder] */
+/** Test cases for [ScanBinder]. */
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class ScanBinderTest {

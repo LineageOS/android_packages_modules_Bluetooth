@@ -26,6 +26,7 @@ import org.junit.runner.RunWith;
 
 import java.lang.reflect.Field;
 
+/** Test cases for {@link StackEvent}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class StackEventTest {

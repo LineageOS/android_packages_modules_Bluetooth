@@ -17,19 +17,13 @@
 
 package com.android.bluetooth.tbs;
 
-import static android.Manifest.permission.BLUETOOTH_CONNECT;
-import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 
 import static java.util.Objects.requireNonNull;
 
-import android.annotation.RequiresPermission;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothLeCall;
-import android.bluetooth.IBluetoothLeCallControl;
 import android.bluetooth.IBluetoothLeCallControlCallback;
-import android.content.AttributionSource;
-import android.os.ParcelUuid;
 import android.os.RemoteException;
 import android.sysprop.BluetoothProperties;
 import android.util.Log;
@@ -38,7 +32,6 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.le_audio.LeAudioService;
-import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.HashMap;
 import java.util.List;
@@ -68,7 +61,7 @@ public class TbsService extends ProfileService {
 
     @Override
     protected IProfileServiceBinder initBinder() {
-        return new TbsServerBinder(this);
+        return new TbsServiceBinder(this);
     }
 
     @Override
@@ -206,105 +199,6 @@ public class TbsService extends ProfileService {
         mTbsGeneric.clearInbandRingtoneSupport(device);
     }
 
-    /** Binder object: must be a static class or memory leak may occur */
-    @VisibleForTesting
-    static class TbsServerBinder extends IBluetoothLeCallControl.Stub
-            implements IProfileServiceBinder {
-        private TbsService mService;
-
-        TbsServerBinder(TbsService service) {
-            mService = service;
-        }
-
-        @Override
-        public void cleanup() {
-            mService = null;
-        }
-
-        @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
-        private TbsService getService(AttributionSource source) {
-            // Cache mService because it can change while getService is called
-            TbsService service = mService;
-
-            if (!Utils.checkServiceAvailable(service, TAG)
-                    || !Utils.checkCallerIsSystemOrActiveOrManagedUser(service, TAG)
-                    || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
-                return null;
-            }
-
-            service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-            return service;
-        }
-
-        @Override
-        public void registerBearer(
-                String token,
-                IBluetoothLeCallControlCallback callback,
-                String uci,
-                List<String> uriSchemes,
-                int capabilities,
-                String providerName,
-                int technology,
-                AttributionSource source) {
-            TbsService service = getService(source);
-            if (service != null) {
-                service.registerBearer(
-                        token, callback, uci, uriSchemes, capabilities, providerName, technology);
-            }
-        }
-
-        @Override
-        public void unregisterBearer(String token, AttributionSource source) {
-            TbsService service = getService(source);
-            if (service != null) {
-                service.unregisterBearer(token);
-            }
-        }
-
-        @Override
-        public void requestResult(int ccid, int requestId, int result, AttributionSource source) {
-            TbsService service = getService(source);
-            if (service != null) {
-                service.requestResult(ccid, requestId, result);
-            }
-        }
-
-        @Override
-        public void callAdded(int ccid, BluetoothLeCall call, AttributionSource source) {
-            TbsService service = getService(source);
-            if (service != null) {
-                service.callAdded(ccid, call);
-            }
-        }
-
-        @Override
-        public void callRemoved(int ccid, ParcelUuid callId, int reason, AttributionSource source) {
-            TbsService service = getService(source);
-            if (service != null) {
-                service.callRemoved(ccid, callId.getUuid(), reason);
-            }
-        }
-
-        @Override
-        public void callStateChanged(
-                int ccid, ParcelUuid callId, int state, AttributionSource source) {
-            TbsService service = getService(source);
-            if (service != null) {
-                service.callStateChanged(ccid, callId.getUuid(), state);
-            }
-        }
-
-        @Override
-        public void currentCallsList(
-                int ccid, List<BluetoothLeCall> calls, AttributionSource source) {
-            TbsService service = getService(source);
-            if (service != null) {
-                service.currentCallsList(ccid, calls);
-            }
-        }
-    }
-
-    @VisibleForTesting
     void registerBearer(
             String token,
             IBluetoothLeCallControlCallback callback,
@@ -335,42 +229,36 @@ public class TbsService extends ProfileService {
         Log.d(TAG, "registerBearer: token=" + token + " success=" + success);
     }
 
-    @VisibleForTesting
     void unregisterBearer(String token) {
         Log.d(TAG, "unregisterBearer: token=" + token);
 
         mTbsGeneric.removeBearer(token);
     }
 
-    @VisibleForTesting
     public void requestResult(int ccid, int requestId, int result) {
         Log.d(TAG, "requestResult: ccid=" + ccid + " requestId=" + requestId + " result=" + result);
 
         mTbsGeneric.requestResult(ccid, requestId, result);
     }
 
-    @VisibleForTesting
     void callAdded(int ccid, BluetoothLeCall call) {
         Log.d(TAG, "callAdded: ccid=" + ccid + " call=" + call);
 
         mTbsGeneric.callAdded(ccid, call);
     }
 
-    @VisibleForTesting
     void callRemoved(int ccid, UUID callId, int reason) {
         Log.d(TAG, "callRemoved: ccid=" + ccid + " callId=" + callId + " reason=" + reason);
 
         mTbsGeneric.callRemoved(ccid, callId, reason);
     }
 
-    @VisibleForTesting
     void callStateChanged(int ccid, UUID callId, int state) {
         Log.d(TAG, "callStateChanged: ccid=" + ccid + " callId=" + callId + " state=" + state);
 
         mTbsGeneric.callStateChanged(ccid, callId, state);
     }
 
-    @VisibleForTesting
     void currentCallsList(int ccid, List<BluetoothLeCall> calls) {
         Log.d(TAG, "currentCallsList: ccid=" + ccid + " calls=" + calls);
 

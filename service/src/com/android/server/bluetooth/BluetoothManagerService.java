@@ -1391,15 +1391,31 @@ class BluetoothManagerService {
                     }
                     // If we tried to enable BT while BT was in the process of shutting down,
                     // wait for the BT process to fully tear down and then force a restart
-                    // here.  This is a bit of a hack (b/29363429).
+                    // here. This is a bit of a hack (b/29363429).
                     if (prevState == STATE_BLE_TURNING_OFF && newState == STATE_OFF) {
-                        if (mEnable) {
-                            Log.d(TAG, "Entering STATE_OFF but mEnabled is true; restarting.");
-                            if (!Flags.systemServerRemoveExtraThreadJump()) {
-                                waitForState(STATE_OFF);
+                        if (Flags.enableBleWhileDisablingAirplane()) {
+                            if (mHandler.hasMessages(0, ON_AIRPLANE_MODE_CHANGED_TOKEN)) {
+                                mHandler.removeCallbacksAndMessages(ON_AIRPLANE_MODE_CHANGED_TOKEN);
+                                Log.d(TAG, "Handling delayed airplane mode event");
+                                handleAirplaneModeChanged(AirplaneModeListener.isOnOverrode());
                             }
-                            mHandler.sendEmptyMessageDelayed(
-                                    MESSAGE_RESTART_BLUETOOTH_SERVICE, getServiceRestartMs());
+                            if (mEnable && !isBinding()) {
+                                Log.d(TAG, "Entering STATE_OFF but mEnabled is true; restarting.");
+                                if (!Flags.systemServerRemoveExtraThreadJump()) {
+                                    waitForState(STATE_OFF);
+                                }
+                                mHandler.sendEmptyMessageDelayed(
+                                        MESSAGE_RESTART_BLUETOOTH_SERVICE, getServiceRestartMs());
+                            }
+                        } else {
+                            if (mEnable) {
+                                Log.d(TAG, "Entering STATE_OFF but mEnabled is true; restarting.");
+                                if (!Flags.systemServerRemoveExtraThreadJump()) {
+                                    waitForState(STATE_OFF);
+                                }
+                                mHandler.sendEmptyMessageDelayed(
+                                        MESSAGE_RESTART_BLUETOOTH_SERVICE, getServiceRestartMs());
+                            }
                         }
                     }
                     if (newState == STATE_ON || newState == STATE_BLE_ON) {

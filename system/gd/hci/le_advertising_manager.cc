@@ -374,39 +374,29 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
         log::info("Reenable advertising");
         if (was_rotating_address) {
           log::info("Scheduling address rotation for advertiser_id={}", advertiser_id);
-          if (com::android::bluetooth::flags::non_wake_alarm_for_rpa_rotation()) {
-            advertising_sets_[advertiser_id].address_rotation_wake_alarm_ =
-                    std::make_unique<os::Alarm>(module_handler_, true);
-            advertising_sets_[advertiser_id].address_rotation_non_wake_alarm_ =
-                    std::make_unique<os::Alarm>(module_handler_, false);
+          advertising_sets_[advertiser_id].address_rotation_wake_alarm_ =
+                  std::make_unique<os::Alarm>(module_handler_, true);
+          advertising_sets_[advertiser_id].address_rotation_non_wake_alarm_ =
+                  std::make_unique<os::Alarm>(module_handler_, false);
 
-            std::string client_name = "advertising_set_" + std::to_string(advertiser_id);
-            auto privateAddressIntervalRange =
-                    le_address_manager_->GetNextPrivateAddressIntervalRange(client_name);
+          std::string client_name = "advertising_set_" + std::to_string(advertiser_id);
+          auto privateAddressIntervalRange =
+                  le_address_manager_->GetNextPrivateAddressIntervalRange(client_name);
 
-            advertising_sets_[advertiser_id].address_rotation_wake_alarm_->Schedule(
-                    common::BindOnce(
-                            []() { log::info("deadline wakeup in handle_set_terminated"); }),
-                    privateAddressIntervalRange.max);
-            advertising_sets_[advertiser_id].address_rotation_non_wake_alarm_->Schedule(
-                    common::BindOnce(&impl::set_advertising_set_random_address_on_timer,
-                                     common::Unretained(this), advertiser_id),
-                    privateAddressIntervalRange.min);
+          advertising_sets_[advertiser_id].address_rotation_wake_alarm_->Schedule(
+                  common::BindOnce([]() { log::info("deadline wakeup in handle_set_terminated"); }),
+                  privateAddressIntervalRange.max);
+          advertising_sets_[advertiser_id].address_rotation_non_wake_alarm_->Schedule(
+                  common::BindOnce(&impl::set_advertising_set_random_address_on_timer,
+                                   common::Unretained(this), advertiser_id),
+                  privateAddressIntervalRange.min);
 
-            // Update the expected range here.
-            auto now = std::chrono::system_clock::now();
-            advertising_sets_[advertiser_id].address_rotation_interval_min.emplace(
-                    now + privateAddressIntervalRange.min);
-            advertising_sets_[advertiser_id].address_rotation_interval_max.emplace(
-                    now + privateAddressIntervalRange.max);
-          } else {
-            advertising_sets_[advertiser_id].address_rotation_wake_alarm_ =
-                    std::make_unique<os::Alarm>(module_handler_);
-            advertising_sets_[advertiser_id].address_rotation_wake_alarm_->Schedule(
-                    common::BindOnce(&impl::set_advertising_set_random_address_on_timer,
-                                     common::Unretained(this), advertiser_id),
-                    le_address_manager_->GetNextPrivateAddressIntervalMs());
-          }
+          // Update the expected range here.
+          auto now = std::chrono::system_clock::now();
+          advertising_sets_[advertiser_id].address_rotation_interval_min.emplace(
+                  now + privateAddressIntervalRange.min);
+          advertising_sets_[advertiser_id].address_rotation_interval_max.emplace(
+                  now + privateAddressIntervalRange.max);
         }
         enable_advertiser(advertiser_id, true, 0, 0);
       }
@@ -673,40 +663,31 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
           !leaudio_requested_nrpa && (!controller_->IsRpaGenerationSupported())) {
         // start timer for random address
         log::info("Scheduling address rotation for advertiser_id={}", id);
-        if (com::android::bluetooth::flags::non_wake_alarm_for_rpa_rotation()) {
-          advertising_sets_[id].address_rotation_wake_alarm_ =
-                  std::make_unique<os::Alarm>(module_handler_, true);
-          advertising_sets_[id].address_rotation_non_wake_alarm_ =
-                  std::make_unique<os::Alarm>(module_handler_, false);
+        advertising_sets_[id].address_rotation_wake_alarm_ =
+                std::make_unique<os::Alarm>(module_handler_, true);
+        advertising_sets_[id].address_rotation_non_wake_alarm_ =
+                std::make_unique<os::Alarm>(module_handler_, false);
 
-          std::string client_name = "advertising_set_" + std::to_string(id);
-          auto privateAddressIntervalRange =
-                  le_address_manager_->GetNextPrivateAddressIntervalRange(client_name);
+        std::string client_name = "advertising_set_" + std::to_string(id);
+        auto privateAddressIntervalRange =
+                le_address_manager_->GetNextPrivateAddressIntervalRange(client_name);
 
-          advertising_sets_[id].address_rotation_wake_alarm_->Schedule(
-                  common::BindOnce([]() {
-                    log::info("deadline wakeup in create_extended_advertiser_with_id");
-                  }),
-                  privateAddressIntervalRange.max);
-          advertising_sets_[id].address_rotation_non_wake_alarm_->Schedule(
-                  common::BindOnce(&impl::set_advertising_set_random_address_on_timer,
-                                  common::Unretained(this), id),
-                  privateAddressIntervalRange.min);
+        advertising_sets_[id].address_rotation_wake_alarm_->Schedule(
+                common::BindOnce([]() {
+                  log::info("deadline wakeup in create_extended_advertiser_with_id");
+                }),
+                privateAddressIntervalRange.max);
+        advertising_sets_[id].address_rotation_non_wake_alarm_->Schedule(
+                common::BindOnce(&impl::set_advertising_set_random_address_on_timer,
+                                 common::Unretained(this), id),
+                privateAddressIntervalRange.min);
 
-          // Update the expected range here.
-          auto now = std::chrono::system_clock::now();
-          advertising_sets_[id].address_rotation_interval_min.emplace(
-                  now + privateAddressIntervalRange.min);
-          advertising_sets_[id].address_rotation_interval_max.emplace(
-                  now + privateAddressIntervalRange.max);
-        } else {
-          advertising_sets_[id].address_rotation_wake_alarm_ =
-                  std::make_unique<os::Alarm>(module_handler_);
-          advertising_sets_[id].address_rotation_wake_alarm_->Schedule(
-                  common::BindOnce(&impl::set_advertising_set_random_address_on_timer,
-                                  common::Unretained(this), id),
-                  le_address_manager_->GetNextPrivateAddressIntervalMs());
-        }
+        // Update the expected range here.
+        auto now = std::chrono::system_clock::now();
+        advertising_sets_[id].address_rotation_interval_min.emplace(
+                now + privateAddressIntervalRange.min);
+        advertising_sets_[id].address_rotation_interval_max.emplace(
+                now + privateAddressIntervalRange.max);
       }
     }
     if (config.advertising_type == AdvertisingType::ADV_IND ||
@@ -859,39 +840,31 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
     }
 
     log::info("Scheduling address rotation for advertiser_id={}", advertiser_id);
-    if (com::android::bluetooth::flags::non_wake_alarm_for_rpa_rotation()) {
-      std::string client_name = "advertising_set_" + std::to_string(advertiser_id);
-      auto privateAddressIntervalRange =
-              le_address_manager_->GetNextPrivateAddressIntervalRange(client_name);
-      advertising_sets_[advertiser_id].address_rotation_wake_alarm_->Schedule(
-              common::BindOnce([]() {
-                log::info("deadline wakeup in set_advertising_set_random_address_on_timer");
-              }),
-              privateAddressIntervalRange.max);
-      advertising_sets_[advertiser_id].address_rotation_non_wake_alarm_->Schedule(
-              common::BindOnce(&impl::set_advertising_set_random_address_on_timer,
-                               common::Unretained(this), advertiser_id),
-              privateAddressIntervalRange.min);
+    std::string client_name = "advertising_set_" + std::to_string(advertiser_id);
+    auto privateAddressIntervalRange =
+            le_address_manager_->GetNextPrivateAddressIntervalRange(client_name);
+    advertising_sets_[advertiser_id].address_rotation_wake_alarm_->Schedule(
+            common::BindOnce([]() {
+              log::info("deadline wakeup in set_advertising_set_random_address_on_timer");
+            }),
+            privateAddressIntervalRange.max);
+    advertising_sets_[advertiser_id].address_rotation_non_wake_alarm_->Schedule(
+            common::BindOnce(&impl::set_advertising_set_random_address_on_timer,
+                             common::Unretained(this), advertiser_id),
+            privateAddressIntervalRange.min);
 
-      auto now = std::chrono::system_clock::now();
-      if (advertising_sets_[advertiser_id].address_rotation_interval_min.has_value()) {
-        le_address_manager_->CheckAddressRotationHappenedInExpectedTimeInterval(
-                *(advertising_sets_[advertiser_id].address_rotation_interval_min),
-                *(advertising_sets_[advertiser_id].address_rotation_interval_max), now,
-                client_name);
-      }
-
-      // Update the expected range here.
-      advertising_sets_[advertiser_id].address_rotation_interval_min.emplace(
-              now + privateAddressIntervalRange.min);
-      advertising_sets_[advertiser_id].address_rotation_interval_max.emplace(
-              now + privateAddressIntervalRange.max);
-    } else {
-      advertising_sets_[advertiser_id].address_rotation_wake_alarm_->Schedule(
-              common::BindOnce(&impl::set_advertising_set_random_address_on_timer,
-                               common::Unretained(this), advertiser_id),
-              le_address_manager_->GetNextPrivateAddressIntervalMs());
+    auto now = std::chrono::system_clock::now();
+    if (advertising_sets_[advertiser_id].address_rotation_interval_min.has_value()) {
+      le_address_manager_->CheckAddressRotationHappenedInExpectedTimeInterval(
+              *(advertising_sets_[advertiser_id].address_rotation_interval_min),
+              *(advertising_sets_[advertiser_id].address_rotation_interval_max), now, client_name);
     }
+
+    // Update the expected range here.
+    advertising_sets_[advertiser_id].address_rotation_interval_min.emplace(
+            now + privateAddressIntervalRange.min);
+    advertising_sets_[advertiser_id].address_rotation_interval_max.emplace(
+            now + privateAddressIntervalRange.max);
   }
 
   void register_advertiser(

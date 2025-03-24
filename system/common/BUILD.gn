@@ -19,8 +19,6 @@ static_library("common") {
     "address_obfuscator.cc",
     "le_conn_params.cc",
     "message_loop_thread.cc",
-    "metric_id_allocator.cc",
-    "metrics_linux.cc",
     "os_utils.cc",
     "repeating_timer.cc",
     "stop_watch_legacy.cc",

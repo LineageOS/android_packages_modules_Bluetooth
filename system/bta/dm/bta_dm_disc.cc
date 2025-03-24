@@ -152,8 +152,7 @@ gatt_interface_t& get_gatt_interface() { return *gatt_interface; }
 
 void bta_dm_disc_gatt_cancel_open(const RawAddress& bd_addr) {
   get_gatt_interface().BTA_GATTC_CancelOpen(0, bd_addr, false);
-  if (com::android::bluetooth::flags::cancel_open_discovery_client() &&
-      bta_dm_discovery_cb.client_if != BTA_GATTS_INVALID_IF) {
+  if (bta_dm_discovery_cb.client_if != BTA_GATTS_INVALID_IF) {
     get_gatt_interface().BTA_GATTC_CancelOpen(bta_dm_discovery_cb.client_if, bd_addr, true);
   }
 }
@@ -559,11 +558,7 @@ static void bta_dm_gatt_disc_complete(tCONN_ID conn_id, tGATT_STATUS status) {
   } else {
     log::info("Discovery complete for invalid conn ID. Will pick up next job");
 
-    if (com::android::bluetooth::flags::cancel_open_discovery_client()) {
-      bta_dm_close_gatt_conn(bta_dm_discovery_cb.conn_id);
-    } else {
-      bta_dm_discovery_cb.conn_id = GATT_INVALID_CONN_ID;
-    }
+    bta_dm_close_gatt_conn(bta_dm_discovery_cb.conn_id);
     if (bta_dm_discovery_cb.transports & BT_TRANSPORT_BR_EDR) {
       log::info("classic discovery still pending {}", bta_dm_discovery_cb.peer_bdaddr);
       return;

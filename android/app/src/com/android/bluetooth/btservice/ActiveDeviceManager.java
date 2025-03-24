@@ -417,7 +417,7 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                 final LeAudioService leAudioService = mFactory.getLeAudioService();
                 setA2dpActiveDevice(null, true);
                 setHfpActiveDevice(null);
-                if (Flags.admVerifyActiveFallbackDevice() && leAudioService != null) {
+                if (leAudioService != null) {
                     setLeAudioActiveDevice(
                             null, !leAudioService.getActiveDevices().contains(device));
                 } else {
@@ -575,9 +575,6 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
             boolean hasFallbackDevice = false;
             if (Objects.equals(mLeAudioActiveDevice, device)) {
                 hasFallbackDevice = setFallbackDeviceActiveLocked(device);
-                if (!hasFallbackDevice && !Flags.admFixDisconnectOfSetMember()) {
-                    leAudioService.removeActiveDevice(false);
-                }
             }
             leAudioService.deviceDisconnected(device, hasFallbackDevice);
         }
@@ -1102,12 +1099,6 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
 
     @GuardedBy("mLock")
     private boolean areSameGroupMembers(BluetoothDevice firstDevice, BluetoothDevice secondDevice) {
-
-        if (!Flags.admFixDisconnectOfSetMember()) {
-            /* This function shall return false without the fix flag. */
-            return false;
-        }
-
         if (firstDevice == null || secondDevice == null) {
             return false;
         }
@@ -1162,13 +1153,11 @@ public class ActiveDeviceManager implements AdapterService.BluetoothStateCallbac
                  * recently removed device, it means it just switched profile it is using and is
                  * not new one.
                  */
-                boolean hasFallbackDevice = true;
-                if (Flags.admVerifyActiveFallbackDevice()) {
-                    hasFallbackDevice =
-                            !(recentlyRemovedDevice != null
-                                    && device.equals(recentlyRemovedDevice)
-                                    && connectedHearingAidDevices.size() == 1);
-                }
+                boolean hasFallbackDevice =
+                        !(recentlyRemovedDevice != null
+                                && device.equals(recentlyRemovedDevice)
+                                && connectedHearingAidDevices.size() == 1);
+
                 if (mHearingAidConnectedDevices.contains(device)) {
                     Log.d(TAG, "Found a hearing aid fallback device: " + device);
                     setHearingAidActiveDevice(device);

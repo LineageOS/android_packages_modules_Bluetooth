@@ -16,8 +16,11 @@
  *
  ******************************************************************************/
 
+#include <bluetooth/log.h>
+
 #include "adapter/bluetooth_test.h"
-#include "btcore/include/property.h"
+#include "osi/include/allocator.h"
+#include "osi/include/compat.h"
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
 
@@ -56,6 +59,52 @@ TEST_F(BluetoothTest, AdapterRepeatedEnableDisable) {
     semaphore_wait(adapter_state_changed_callback_sem_);
     EXPECT_EQ(GetState(), BT_STATE_OFF) << "Adapter did not turn off.";
   }
+}
+
+static bt_property_t* property_new_name(const char* name) {
+  bluetooth::log::assert_that(name != NULL, "assert failed: name != NULL");
+  bt_property_t* property = static_cast<bt_property_t*>(osi_calloc(sizeof(bt_property_t)));
+
+  property->val = osi_calloc(sizeof(bt_bdname_t) + 1);
+  osi_strlcpy((char*)property->val, name, sizeof(bt_bdname_t));
+
+  property->type = BT_PROPERTY_BDNAME;
+  property->len = sizeof(bt_bdname_t);
+
+  return property;
+}
+
+static void property_free(bt_property_t* property) {
+  if (property == NULL) {
+    return;
+  }
+
+  osi_free(property->val);
+  osi_free(property);
+}
+
+static const bt_bdname_t* property_as_name(const bt_property_t* property) {
+  bluetooth::log::assert_that(property->type == BT_PROPERTY_BDNAME,
+                              "assert failed: property_is_name(property)");
+  return (const bt_bdname_t*)property->val;
+}
+
+static bool property_equals(const bt_property_t* p1, const bt_property_t* p2) {
+  if (!p1 || !p2 || p1->type != p2->type) {
+    return false;
+  }
+
+  if (p1->type == BT_PROPERTY_BDNAME && p1->len != p2->len) {
+    const bt_property_t *shorter = p1, *longer = p2;
+    if (p1->len > p2->len) {
+      shorter = p2;
+      longer = p1;
+    }
+    return strlen((const char*)longer->val) == (size_t)shorter->len &&
+           !memcmp(longer->val, shorter->val, shorter->len);
+  }
+
+  return p1->len == p2->len && !memcmp(p1->val, p2->val, p1->len);
 }
 
 TEST_F(BluetoothTest, AdapterSetGetName) {

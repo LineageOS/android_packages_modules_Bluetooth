@@ -17,7 +17,6 @@
 #include "hci/acl_manager/round_robin_scheduler.h"
 
 #include <bluetooth/log.h>
-#include <com_android_bluetooth_flags.h>
 
 #include <memory>
 #include <utility>
@@ -65,10 +64,8 @@ void RoundRobinScheduler::Unregister(uint16_t handle) {
   log::assert_that(acl_queue_handlers_.count(handle) == 1,
                    "assert failed: acl_queue_handlers_.count(handle) == 1");
 
-  if (com::android::bluetooth::flags::drop_acl_fragment_on_disconnect()) {
-    // Drop the pending fragments and recalculate number_of_sent_packets_
-    drop_packet_fragments(handle);
-  }
+  // Drop the pending fragments and recalculate number_of_sent_packets_
+  drop_packet_fragments(handle);
 
   auto& acl_queue_handler = acl_queue_handlers_.find(handle)->second;
   log::info("unregistering acl_queue handle={}, sent_packets={}", handle,
@@ -94,8 +91,7 @@ void RoundRobinScheduler::Unregister(uint16_t handle) {
   starting_point_ = acl_queue_handlers_.begin();
 
   // Restart sending packets if we got acl credits
-  if (com::android::bluetooth::flags::drop_acl_fragment_on_disconnect() &&
-      credits_reclaimed_from_zero) {
+  if (credits_reclaimed_from_zero) {
     start_round_robin();
   }
 }

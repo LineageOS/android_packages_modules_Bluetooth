@@ -26,6 +26,7 @@ import org.junit.runner.RunWith;
 
 import java.util.HashMap;
 
+/** Test cases for {@link Message}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class MessageTest {

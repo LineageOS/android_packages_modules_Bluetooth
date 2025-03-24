@@ -56,6 +56,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/** Test cases for {@link BluetoothOppTransferActivity}. */
 @RunWith(AndroidJUnit4.class)
 public class BluetoothOppTransferActivityTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();

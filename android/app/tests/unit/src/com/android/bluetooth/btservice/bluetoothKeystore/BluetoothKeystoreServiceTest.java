@@ -42,6 +42,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/** Test cases for {@link BluetoothKeystoreService}. */
 @RunWith(JUnit4.class)
 public final class BluetoothKeystoreServiceTest {
     private static final String TAG = BluetoothKeystoreServiceTest.class.getSimpleName();

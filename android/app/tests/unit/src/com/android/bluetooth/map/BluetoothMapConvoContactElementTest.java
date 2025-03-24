@@ -34,6 +34,7 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
 
+/** Test cases for {@link BluetoothMapConvoContactElement}. */
 @RunWith(AndroidJUnit4.class)
 public class BluetoothMapConvoContactElementTest {
     private static final String TEST_UCI = "test_bt_uci";

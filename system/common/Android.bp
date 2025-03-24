@@ -32,17 +32,6 @@ cc_library_static {
         canonical_path_from_root: false,
         export_proto_headers: true,
     },
-    target: {
-        android: {
-            srcs: [
-                "metrics.cc",
-            ],
-            static_libs: ["libstatslog_bt"],
-        },
-        host: {
-            srcs: ["metrics_linux.cc"],
-        },
-    },
     shared_libs: [
         "libcrypto",
         "libcutils",

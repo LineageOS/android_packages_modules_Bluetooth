@@ -27,6 +27,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+/** Test cases for {@link BluetoothOppShareInfo}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothOppShareInfoTest {

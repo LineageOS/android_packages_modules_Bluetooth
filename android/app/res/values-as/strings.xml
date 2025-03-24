@@ -35,7 +35,7 @@
     <string name="incoming_file_confirm_content" msgid="6573502088511901157">"অন্তৰ্গামী ফাইল গ্ৰহণ কৰিবনে?"</string>
     <string name="incoming_file_confirm_cancel" msgid="9205906062663982692">"প্ৰত্যাখ্যান কৰক"</string>
     <string name="incoming_file_confirm_ok" msgid="5046926299036238623">"গ্ৰহণ কৰক"</string>
-    <string name="incoming_file_confirm_timeout_ok" msgid="8612187577686515660">"ঠিক"</string>
+    <string name="incoming_file_confirm_timeout_ok" msgid="8612187577686515660">"ঠিক আছে"</string>
     <string name="incoming_file_confirm_timeout_content" msgid="3221412098281076974">"\"<xliff:g id="SENDER">%1$s</xliff:g>\"ৰ পৰা লাভ কৰা ফাইলটো গ্ৰহণ কৰোঁতে সময় ওকলিছে"</string>
     <string name="incoming_file_confirm_Notification_title" msgid="5381395500920804895">"অন্তৰ্গামী ফাইল"</string>
     <string name="incoming_file_confirm_Notification_content" msgid="2669135531488877921">"<xliff:g id="SENDER">%1$s</xliff:g> এটা ফাইল পঠিয়াবলৈ সাজু: <xliff:g id="FILE">%2$s</xliff:g>"</string>
@@ -58,18 +58,18 @@
     <string name="download_fail_line1" msgid="3149552664349685007">"ফাইল লাভ কৰা নহ\'ল"</string>
     <string name="download_fail_line2" msgid="4289018531070750414">"ফাইল: <xliff:g id="FILE">%1$s</xliff:g>"</string>
     <string name="download_fail_line3" msgid="2214989413171231684">"কাৰণ: <xliff:g id="REASON">%1$s</xliff:g>"</string>
-    <string name="download_fail_ok" msgid="3272322648250767032">"ঠিক"</string>
+    <string name="download_fail_ok" msgid="3272322648250767032">"ঠিক আছে"</string>
     <string name="download_succ_line5" msgid="1720346308221503270">"ফাইল লাভ কৰা হ’ল"</string>
     <string name="download_succ_ok" msgid="7488662808922799824">"খোলক"</string>
     <string name="upload_line1" msgid="1912803923255989287">"প্ৰতি: \"<xliff:g id="RECIPIENT">%1$s</xliff:g>\""</string>
     <string name="upload_line3" msgid="5964902647036741603">"ফাইলৰ প্ৰকাৰ: <xliff:g id="TYPE">%1$s</xliff:g> (<xliff:g id="SIZE">%2$s</xliff:g>)"</string>
     <string name="upload_line5" msgid="3477751464103201364">"ফাইল প্ৰেৰণ কৰি থকা হৈছে…"</string>
     <string name="upload_succ_line5" msgid="165979135931118211">"ফাইল প্ৰেৰণ কৰা হ’ল"</string>
-    <string name="upload_succ_ok" msgid="6797291708604959167">"ঠিক"</string>
+    <string name="upload_succ_ok" msgid="6797291708604959167">"ঠিক আছে"</string>
     <string name="upload_fail_line1" msgid="7044307783071776426">"\"<xliff:g id="RECIPIENT">%1$s</xliff:g>\"লৈ ফাইলটো পঠিয়াব পৰা নগ\'ল।"</string>
     <string name="upload_fail_line1_2" msgid="6102642590057711459">"ফাইল: <xliff:g id="FILE">%1$s</xliff:g>"</string>
     <string name="upload_fail_cancel" msgid="1632528037932779727">"বন্ধ কৰক"</string>
-    <string name="bt_error_btn_ok" msgid="2802751202009957372">"ঠিক"</string>
+    <string name="bt_error_btn_ok" msgid="2802751202009957372">"ঠিক আছে"</string>
     <string name="unknown_file" msgid="3719981572107052685">"অজ্ঞাত ফাইল"</string>
     <string name="unknown_file_desc" msgid="9185609398960437760">"এইধৰণৰ ফাইল পৰিচালনা কৰিবলৈ কোনো এপ্ নাই। \n"</string>
     <string name="not_exist_file" msgid="5097565588949092486">"কোনো ফাইল নাই"</string>

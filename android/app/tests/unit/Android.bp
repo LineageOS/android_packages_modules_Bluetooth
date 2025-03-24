@@ -69,7 +69,7 @@ android_test {
         "src/**/*.kt",
     ],
     jacoco: {
-        include_filter: ["android.bluetooth.*"],
+        include_filter: ["com.android.bluetooth.*"],
         exclude_filter: [],
     },
 

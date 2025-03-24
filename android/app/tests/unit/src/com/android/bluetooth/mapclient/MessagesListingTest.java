@@ -26,6 +26,7 @@ import org.junit.runner.RunWith;
 
 import java.io.ByteArrayInputStream;
 
+/** Test cases for {@link MessagesListing}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class MessagesListingTest {

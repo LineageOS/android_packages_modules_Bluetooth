@@ -28,7 +28,6 @@ import com.android.bluetooth.audio_util.PlayStatus;
 import com.android.bluetooth.audio_util.PlayerInfo;
 import com.android.bluetooth.audio_util.PlayerSettingsManager.PlayerSettingsValues;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -93,10 +92,7 @@ public class AvrcpNativeInterface {
     }
 
     void setBipClientStatus(BluetoothDevice device, boolean connected) {
-        String identityAddress =
-                Flags.identityAddressNullIfNotKnown()
-                        ? Utils.getBrEdrAddress(device)
-                        : mAdapterService.getIdentityAddress(device.getAddress());
+        String identityAddress = Utils.getBrEdrAddress(device);
         setBipClientStatusNative(identityAddress, connected);
     }
 
@@ -237,10 +233,7 @@ public class AvrcpNativeInterface {
     }
 
     boolean disconnectDevice(BluetoothDevice device) {
-        String identityAddress =
-                Flags.identityAddressNullIfNotKnown()
-                        ? Utils.getBrEdrAddress(device)
-                        : mAdapterService.getIdentityAddress(device.getAddress());
+        String identityAddress = Utils.getBrEdrAddress(device);
         d("disconnectDevice: identityAddress=" + identityAddress);
         return disconnectDeviceNative(identityAddress);
     }
@@ -278,10 +271,7 @@ public class AvrcpNativeInterface {
 
     void sendVolumeChanged(BluetoothDevice device, int volume) {
         d("sendVolumeChanged: volume=" + volume);
-        String identityAddress =
-                Flags.identityAddressNullIfNotKnown()
-                        ? Utils.getBrEdrAddress(device)
-                        : mAdapterService.getIdentityAddress(device.getAddress());
+        String identityAddress = Utils.getBrEdrAddress(device);
         sendVolumeChangedNative(identityAddress, volume);
     }
 

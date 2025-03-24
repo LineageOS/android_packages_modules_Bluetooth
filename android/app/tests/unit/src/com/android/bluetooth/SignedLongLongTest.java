@@ -25,7 +25,7 @@ import androidx.test.runner.AndroidJUnit4;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-/** Test for SignedLongLong.java */
+/** Test cases for {@link SignedLongLong}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class SignedLongLongTest {

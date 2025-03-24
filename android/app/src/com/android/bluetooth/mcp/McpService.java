@@ -17,12 +17,9 @@
 
 package com.android.bluetooth.mcp;
 
-import static android.Manifest.permission.BLUETOOTH_PRIVILEGED;
 import static android.bluetooth.BluetoothProfile.CONNECTION_POLICY_FORBIDDEN;
 
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.IBluetoothMcpServiceManager;
-import android.content.AttributionSource;
 import android.content.Context;
 import android.os.ParcelUuid;
 import android.sysprop.BluetoothProperties;
@@ -88,7 +85,7 @@ public class McpService extends ProfileService {
 
     @Override
     protected IProfileServiceBinder initBinder() {
-        return new BluetoothMcpServiceBinder(this);
+        return new McpServiceBinder(this);
     }
 
     @Override
@@ -197,42 +194,5 @@ public class McpService extends ProfileService {
     void setNotificationSubscription(
             int ccid, BluetoothDevice device, ParcelUuid charUuid, boolean doNotify) {
         mGmcs.setNotificationSubscription(ccid, device, charUuid, doNotify);
-    }
-
-    /** Binder object: must be a static class or memory leak may occur */
-    static class BluetoothMcpServiceBinder extends IBluetoothMcpServiceManager.Stub
-            implements IProfileServiceBinder {
-        private McpService mService;
-
-        BluetoothMcpServiceBinder(McpService svc) {
-            mService = svc;
-        }
-
-        private McpService getService() {
-            if (mService != null && mService.isAvailable()) {
-                return mService;
-            }
-            Log.e(TAG, "getService() - Service requested, but not available!");
-            return null;
-        }
-
-        @Override
-        public void setDeviceAuthorized(
-                BluetoothDevice device, boolean isAuthorized, AttributionSource source) {
-            McpService service = getService();
-            if (service == null) {
-                return;
-            }
-            service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-            service.setDeviceAuthorized(device, isAuthorized);
-        }
-
-        @Override
-        public void cleanup() {
-            if (mService != null) {
-                mService.cleanup();
-            }
-            mService = null;
-        }
     }
 }

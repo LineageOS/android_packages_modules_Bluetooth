@@ -20,12 +20,24 @@ import static com.android.bluetooth.TestUtils.getTestDevice;
 
 import static com.google.common.truth.Truth.assertThat;
 
-import android.bluetooth.BluetoothDevice;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
 
+import android.bluetooth.BluetoothDevice;
+import android.content.ContentResolver;
+import android.provider.Settings;
+
+import androidx.test.core.app.ApplicationProvider;
 import androidx.test.filters.MediumTest;
 import androidx.test.runner.AndroidJUnit4;
 
 import com.android.bluetooth.BluetoothMetricsProto.BluetoothRemoteDeviceInformation;
+import com.android.bluetooth.BluetoothStatsLog;
 
 import com.google.common.hash.BloomFilter;
 import com.google.common.hash.Funnels;
@@ -37,13 +49,16 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.HashMap;
 import java.util.Map;
 
-/** Unit tests for {@link MetricsLogger} */
+/** Test cases for {@link MetricsLogger}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class MetricsLoggerTest {
@@ -234,6 +249,51 @@ public class MetricsLoggerTest {
     public void uploadEmptyDeviceName() throws IOException {
         initTestingBloomfilter();
         assertThat(mTestableMetricsLogger.logAllowlistedDeviceNameHash(1, "")).isEmpty();
+    }
+
+    @Test
+    public void testUpdateHearingDeviceActiveTime() {
+        BluetoothDevice bluetoothDevice = getTestDevice(0);
+        int day = BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__TIME_PERIOD__DAY;
+        int week = BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__TIME_PERIOD__WEEK;
+        int month = BluetoothStatsLog.HEARING_DEVICE_ACTIVE_EVENT_REPORTED__TIME_PERIOD__MONTH;
+        doReturn(ApplicationProvider.getApplicationContext().getContentResolver())
+                .when(mAdapterService)
+                .getContentResolver();
+
+        // last active time is 2 days ago, should update last active day
+        TestableMetricsLogger logger = spy(mTestableMetricsLogger);
+        prepareLastActiveTimeDaysAgo(2);
+        logger.updateHearingDeviceActiveTime(bluetoothDevice, 1);
+        verify(logger).logHearingDeviceActiveEvent(any(), anyInt(), eq(day));
+        verify(logger, never()).logHearingDeviceActiveEvent(any(), anyInt(), eq(week));
+        verify(logger, never()).logHearingDeviceActiveEvent(any(), anyInt(), eq(month));
+
+        // last active time is 8 days ago, should update last active day and week
+        Mockito.reset(logger);
+        prepareLastActiveTimeDaysAgo(8);
+        logger.updateHearingDeviceActiveTime(bluetoothDevice, 1);
+        verify(logger).logHearingDeviceActiveEvent(any(), anyInt(), eq(day));
+        verify(logger).logHearingDeviceActiveEvent(any(), anyInt(), eq(week));
+        verify(logger, never()).logHearingDeviceActiveEvent(any(), anyInt(), eq(month));
+
+        // last active time is 60 days ago, should update last active day, week and month
+        Mockito.reset(logger);
+        prepareLastActiveTimeDaysAgo(60);
+        logger.updateHearingDeviceActiveTime(bluetoothDevice, 1);
+        verify(logger).logHearingDeviceActiveEvent(any(), anyInt(), eq(day));
+        verify(logger).logHearingDeviceActiveEvent(any(), anyInt(), eq(week));
+        verify(logger).logHearingDeviceActiveEvent(any(), anyInt(), eq(month));
+    }
+
+    private static void prepareLastActiveTimeDaysAgo(int days) {
+        final ContentResolver contentResolver =
+                ApplicationProvider.getApplicationContext().getContentResolver();
+        final LocalDateTime now = LocalDateTime.now(ZoneId.systemDefault());
+        final String lastActive = now.minusDays(days).toString();
+        Settings.Secure.putString(contentResolver, "last_active_day", lastActive);
+        Settings.Secure.putString(contentResolver, "last_active_week", lastActive);
+        Settings.Secure.putString(contentResolver, "last_active_month", lastActive);
     }
 
     private void initTestingBloomfilter() throws IOException {

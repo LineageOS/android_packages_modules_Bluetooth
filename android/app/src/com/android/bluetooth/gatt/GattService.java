@@ -1025,8 +1025,7 @@ public class GattService extends ProfileService {
         if (!checkConnectPermissionForDataDelivery(this, source, TAG, "registerClient")) {
             return;
         }
-        if (Flags.gattClientDynamicAllocation()
-                && mClientMap.countByAppUid(Binder.getCallingUid()) >= GATT_CLIENT_LIMIT_PER_APP) {
+        if (mClientMap.countByAppUid(Binder.getCallingUid()) >= GATT_CLIENT_LIMIT_PER_APP) {
             Log.w(TAG, "registerClient() - failed due to too many clients");
             callbackToApp(() -> callback.onClientRegistered(BluetoothGatt.GATT_FAILURE, 0));
             return;
@@ -2320,21 +2319,14 @@ public class GattService extends ProfileService {
         int handle = 0;
         Integer connId = 0;
 
-        if (!Flags.gattServerRequestsFix()) {
-            HandleMap.Entry entry = mHandleMap.getByRequestId(requestId);
-            if (entry != null) {
-                handle = entry.mHandle;
-            }
-            connId = mServerMap.connIdByAddress(serverIf, address);
+        HandleMap.RequestData requestData = mHandleMap.getRequestDataByRequestId(requestId);
+        if (requestData != null) {
+            handle = requestData.handle();
+            connId = requestData.connId();
         } else {
-            HandleMap.RequestData requestData = mHandleMap.getRequestDataByRequestId(requestId);
-            if (requestData != null) {
-                handle = requestData.handle();
-                connId = requestData.connId();
-            } else {
-                connId = mServerMap.connIdByAddress(serverIf, address);
-            }
+            connId = mServerMap.connIdByAddress(serverIf, address);
         }
+
         mNativeInterface.gattServerSendResponse(
                 serverIf,
                 connId != null ? connId : 0,

@@ -65,6 +65,7 @@ import java.util.Map;
 import java.util.concurrent.FutureTask;
 import java.util.stream.Collectors;
 
+/** Test cases for {@link ProfileService}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class ProfileServiceTest {

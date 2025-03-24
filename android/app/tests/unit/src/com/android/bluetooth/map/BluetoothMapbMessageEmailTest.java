@@ -29,6 +29,7 @@ import org.junit.runner.RunWith;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
+/** Test cases for {@link BluetoothMapbMessageEmail}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothMapbMessageEmailTest {

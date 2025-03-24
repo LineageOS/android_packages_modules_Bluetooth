@@ -270,3 +270,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "unrelated_device_smp_cancellation"
+    namespace: "bluetooth"
+    description: "Don't cancel SMP pairing if encryption fails for unrelated device"
+    bug: "404658828"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

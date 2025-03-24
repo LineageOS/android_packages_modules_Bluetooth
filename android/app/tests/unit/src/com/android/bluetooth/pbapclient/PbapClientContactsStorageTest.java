@@ -67,6 +67,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+/** Test cases for {@link PbapClientContactsStorage}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class PbapClientContactsStorageTest {

@@ -2,16 +2,6 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "opp_ignore_content_observer_after_service_stop"
-    namespace: "bluetooth"
-    description: "When OppService.stop() is called, previously posted ContentObserver.onChange() should not run"
-    bug: "346467641"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "opp_set_insets_for_edge_to_edge"
     namespace: "bluetooth"
     description: "Set proper insets in BluetoothOppTransferHistory to adapt to edge-to-edge."
@@ -41,3 +31,20 @@ flag {
     }
 }
 
+flag {
+    name: "opp_device_picker_extra_intent_apis"
+    is_exported: true
+    namespace: "bluetooth"
+    description: "New API to get the original intent in Bluetooth Device Picker"
+    bug: "395796600"
+}
+
+flag {
+    name: "send_opp_device_picker_extra_intent"
+    namespace: "bluetooth"
+    description: "Send the original intent when opening Bluetooth device picker"
+    bug: "397852103"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

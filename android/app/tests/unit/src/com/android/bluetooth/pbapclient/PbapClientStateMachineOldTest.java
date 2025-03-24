@@ -53,6 +53,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 
+/** Test cases for {@link PbapClientStateMachineOld}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class PbapClientStateMachineOldTest {

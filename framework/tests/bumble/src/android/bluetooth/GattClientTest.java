@@ -422,7 +422,6 @@ public class GattClientTest {
     }
 
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_GATT_FIX_MULTIPLE_DIRECT_CONNECT)
     public void connectMultiple_closeOne_shouldSuccess() {
         BluetoothGattCallback gattCallback = mock(BluetoothGattCallback.class);
         BluetoothGattCallback gattCallback2 = mock(BluetoothGattCallback.class);
@@ -435,11 +434,11 @@ public class GattClientTest {
         BluetoothGatt gatt2 = device.connectGatt(mContext, false, gattCallback2);
 
         try {
-            gatt.disconnect();
-            gatt.close();
-
             verify(gattCallback2, timeout(1000))
                     .onConnectionStateChange(eq(gatt2), eq(GATT_SUCCESS), eq(STATE_CONNECTED));
+
+            gatt.disconnect();
+            gatt.close();
         } finally {
             gatt2.disconnect();
             gatt2.close();
@@ -696,7 +695,6 @@ public class GattClientTest {
 
     // Check if we can have 100 simultaneous clients
     @Test
-    @RequiresFlagsEnabled(Flags.FLAG_GATT_CLIENT_DYNAMIC_ALLOCATION)
     public void connectGatt_multipleClients() {
         registerGattService();
 

@@ -30,6 +30,7 @@ import org.junit.runner.RunWith;
 
 import java.nio.charset.StandardCharsets;
 
+/** Test cases for {@link BluetoothMapUtils}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothMapUtilsTest {

@@ -47,6 +47,7 @@ import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 
+/** Test cases for {@link AvrcpVolumeManager}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class AvrcpVolumeManagerTest {

@@ -35,6 +35,7 @@ import java.io.StringReader;
 import java.io.StringWriter;
 import java.text.SimpleDateFormat;
 
+/** Test cases for {@link BluetoothMapMessageListingElement}. */
 @RunWith(AndroidJUnit4.class)
 public class BluetoothMapMessageListingElementTest {
     private static final long TEST_CP_HANDLE = 1;

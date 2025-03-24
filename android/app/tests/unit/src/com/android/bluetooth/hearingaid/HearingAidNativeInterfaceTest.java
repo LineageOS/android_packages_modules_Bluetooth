@@ -40,6 +40,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 
+/** Test cases for {@link HearingAidNativeInterface}. */
 public class HearingAidNativeInterfaceTest {
 
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();

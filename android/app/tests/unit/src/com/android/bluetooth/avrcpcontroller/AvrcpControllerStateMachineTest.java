@@ -68,6 +68,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+/** Test cases for {@link AvrcpControllerStateMachine}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class AvrcpControllerStateMachineTest {

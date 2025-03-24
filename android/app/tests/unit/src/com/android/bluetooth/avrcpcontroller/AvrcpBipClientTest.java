@@ -42,6 +42,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 
+/** Test cases for {@link AvrcpBipClient}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class AvrcpBipClientTest {

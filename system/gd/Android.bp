@@ -194,7 +194,7 @@ cc_library_static {
         "packages/modules/Bluetooth/system",
     ],
     apex_available: ["com.android.bt"],
-    min_sdk_version: "31",
+    min_sdk_version: "33",
     static_libs: [
         "bluetooth_flags_c_lib",
         "libchrome",

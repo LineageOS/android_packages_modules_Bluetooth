@@ -80,6 +80,7 @@ import org.mockito.hamcrest.MockitoHamcrest;
 
 import java.util.List;
 
+/** Test cases for {@link HearingAidService}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class HearingAidServiceTest {
@@ -97,7 +98,7 @@ public class HearingAidServiceTest {
     private final BluetoothDevice mSingleDevice = getTestDevice(13);
 
     private HearingAidService mService;
-    private HearingAidService.BluetoothHearingAidBinder mBinder;
+    private HearingAidServiceBinder mBinder;
     private InOrder mInOrder;
     private TestLooper mLooper;
 
@@ -124,7 +125,7 @@ public class HearingAidServiceTest {
 
         mService = new HearingAidService(mAdapterService, mLooper.getLooper(), mNativeInterface);
         mService.setAvailable(true);
-        mBinder = (HearingAidService.BluetoothHearingAidBinder) mService.initBinder();
+        mBinder = (HearingAidServiceBinder) mService.initBinder();
     }
 
     @After

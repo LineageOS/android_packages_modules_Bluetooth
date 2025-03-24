@@ -20,10 +20,8 @@ cc_library_static {
         "packages/modules/Bluetooth/system/gd",
     ],
     srcs: [
-        "src/device_class.cc",
         "src/module.cc",
         "src/osi_module.cc",
-        "src/property.cc",
     ],
     header_libs: ["libbluetooth_headers"],
     static_libs: [
@@ -49,42 +47,4 @@ cc_library_headers {
         "com.android.bt",
     ],
     min_sdk_version: "30",
-}
-
-// Note: It's good to get the tests compiled both for the host and the target so
-// we get to test with both Bionic libc and glibc
-// libbtcore unit tests for target and host
-cc_test {
-    name: "net_test_btcore",
-    test_suites: ["general-tests"],
-    defaults: [
-        "fluoride_defaults",
-        "mts_defaults",
-    ],
-    local_include_dirs: ["include"],
-    include_dirs: ["packages/modules/Bluetooth/system"],
-    srcs: [
-        "test/device_class_test.cc",
-        "test/property_test.cc",
-    ],
-    shared_libs: [
-        "libbase",
-        "liblog",
-    ],
-    static_libs: [
-        "libbluetooth-types",
-        "libbluetooth_log",
-        "libbtcore",
-        "libchrome",
-        "libcom.android.sysprop.bluetooth.wrapped",
-        "libosi",
-    ],
-    host_supported: true,
-    test_options: {
-        unit_test: true,
-    },
-    sanitize: {
-        address: true,
-    },
-    header_libs: ["libbluetooth_headers"],
 }

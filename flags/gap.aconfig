@@ -50,33 +50,6 @@ flag {
 }
 
 flag {
-    name: "gatt_client_dynamic_allocation"
-    namespace: "bluetooth"
-    description: "Allocate GATT clients in heap to unlimit the number of clients"
-    bug: "348559823"
-}
-
-flag {
-    name: "gatt_fix_multiple_direct_connect"
-    namespace: "bluetooth"
-    description: "Do not remove device when multiple clients attempt to connect"
-    bug: "349232327"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "pan_use_identity_address"
-    namespace: "bluetooth"
-    description: "Use identity address when communicate with native interface"
-    bug: "351961492"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "android_os_identifier"
     namespace: "bluetooth"
     description: "Add a custom service to provide Android OS identifier"
@@ -91,33 +64,6 @@ flag {
     namespace: "bluetooth"
     description: "Invoke callbacks on early failure from the native stack"
     bug: "356550596"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "non_wake_alarm_for_rpa_rotation"
-    namespace: "bluetooth"
-    description: "Use non-wake alarm for LE RPA rotation. go/non-wake-alarm-for-rpa-rotation"
-    bug: "360743527"
-}
-
-flag {
-    name: "gatt_disconnect_fix"
-    namespace: "bluetooth"
-    description: "Fix GATT disconnect handling"
-    bug: "361538527"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "gatt_server_requests_fix"
-    namespace: "bluetooth"
-    description: "Fix GATT server handling"
-    bug: "361331170"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -193,16 +139,6 @@ flag {
     namespace: "bluetooth"
     description: "Cleans up BtaGattQueue when connected"
     bug: "379007400"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "drop_acl_fragment_on_disconnect"
-    namespace: "bluetooth"
-    description: "Drop pending ACL packet fragments for disconnected connection"
-    bug: "376379859"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -313,6 +249,33 @@ flag {
     namespace: "bluetooth"
     description: "Start discovery again when service change indication arrives."
     bug: "400828637"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "le_disconnect_notification_handling"
+    namespace: "bluetooth"
+    description: "Fix LE link disconnection notification to stack's upper layers"
+    bug: "403433488"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "rssi_scan_filter"
+    namespace: "bluetooth"
+    description: "Add RSSI ScanFilter"
+    bug: "404986559"
+}
+
+flag {
+    name: "fix_private_gatt_advertising_not_working"
+    namespace: "bluetooth"
+    description: "Fix that private GATT advertising is handled as a normal GATT"
+    bug: "405315235"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

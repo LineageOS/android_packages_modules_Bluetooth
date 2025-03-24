@@ -18,7 +18,7 @@ import math
 import os
 from threading import Thread
 
-# import numpy as np
+import numpy as np
 # from scipy.io import wavfile
 
 SINE_FREQUENCY = 440

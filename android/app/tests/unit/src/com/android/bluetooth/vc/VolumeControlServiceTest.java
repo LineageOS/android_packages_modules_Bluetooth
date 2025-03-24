@@ -96,6 +96,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
 
+/** Test cases for {@link VolumeControlService}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class VolumeControlServiceTest {
@@ -128,7 +129,7 @@ public class VolumeControlServiceTest {
 
     private AttributionSource mAttributionSource;
     private VolumeControlService mService;
-    private VolumeControlService.BluetoothVolumeControlBinder mBinder;
+    private VolumeControlServiceBinder mBinder;
     private InOrder mInOrder;
     private TestLooper mLooper;
 
@@ -174,7 +175,7 @@ public class VolumeControlServiceTest {
         mService.setAvailable(true);
 
         mService.mFactory = mServiceFactory;
-        mBinder = (VolumeControlService.BluetoothVolumeControlBinder) mService.initBinder();
+        mBinder = (VolumeControlServiceBinder) mService.initBinder();
     }
 
     @After

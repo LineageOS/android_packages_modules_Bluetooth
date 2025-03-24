@@ -26,8 +26,6 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTING;
 
-import static com.android.bluetooth.Utils.checkCallerTargetSdk;
-
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
 
@@ -44,15 +42,12 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothProfile;
 import android.bluetooth.BluetoothUuid;
 import android.bluetooth.BufferConstraints;
-import android.bluetooth.IBluetoothA2dp;
 import android.companion.CompanionDeviceManager;
-import android.content.AttributionSource;
 import android.content.Intent;
 import android.media.AudioDeviceCallback;
 import android.media.AudioDeviceInfo;
 import android.media.AudioManager;
 import android.media.BluetoothProfileConnectionInfo;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -63,7 +58,6 @@ import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.ServiceFactory;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
@@ -73,7 +67,6 @@ import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -132,7 +125,6 @@ public class A2dpService extends ProfileService {
                         nativeInterface,
                         () ->
                                 new A2dpNativeInterface(
-                                        adapterService,
                                         new A2dpNativeCallback(adapterService, this)));
         mDatabaseManager = requireNonNull(mAdapterService.getDatabase());
         mAudioManager = requireNonNull(getSystemService(AudioManager.class));
@@ -168,7 +160,7 @@ public class A2dpService extends ProfileService {
 
     @Override
     protected IProfileServiceBinder initBinder() {
-        return new BluetoothA2dpBinder(this);
+        return new A2dpServiceBinder(this);
     }
 
     @Override
@@ -201,6 +193,10 @@ public class A2dpService extends ProfileService {
         }
 
         mHandler.removeCallbacksAndMessages(null);
+    }
+
+    CompanionDeviceManager getCompanionDeviceManager() {
+        return mCompanionDeviceManager;
     }
 
     public static synchronized A2dpService getA2dpService() {
@@ -1001,13 +997,7 @@ public class A2dpService extends ProfileService {
                 return null;
             }
             Log.d(TAG, "Creating a new state machine for " + device);
-            sm =
-                    new A2dpStateMachine(
-                            this,
-                            device,
-                            mNativeInterface,
-                            mA2dpOffloadEnabled,
-                            mLooper);
+            sm = new A2dpStateMachine(this, device, mNativeInterface, mA2dpOffloadEnabled, mLooper);
             mStateMachines.put(device, sm);
             return sm;
         }
@@ -1343,320 +1333,6 @@ public class A2dpService extends ProfileService {
         return dbManager != null
                 ? dbManager.getMostRecentlyConnectedDevicesInList(getConnectedDevices())
                 : null;
-    }
-
-    /** Binder object: must be a static class or memory leak may occur. */
-    @VisibleForTesting
-    static class BluetoothA2dpBinder extends IBluetoothA2dp.Stub implements IProfileServiceBinder {
-        private A2dpService mService;
-
-        @RequiresPermission(BLUETOOTH_CONNECT)
-        private A2dpService getServiceAndEnforceConnect(AttributionSource source) {
-            // Cache mService because it can change while getService is called
-            A2dpService service = mService;
-
-            if (Utils.isInstrumentationTestMode()) {
-                return service;
-            }
-
-            if (!Utils.checkServiceAvailable(service, TAG)
-                    || !Utils.checkCallerIsSystemOrActiveOrManagedUser(service, TAG)
-                    || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
-                return null;
-            }
-            return service;
-        }
-
-        private A2dpService getService() {
-            // Cache mService because it can change while getService is called
-            A2dpService service = mService;
-
-            if (Utils.isInstrumentationTestMode()) {
-                return service;
-            }
-
-            if (!Utils.checkServiceAvailable(service, TAG)
-                    || !Utils.checkCallerIsSystemOrActiveOrManagedUser(service, TAG)) {
-                return null;
-            }
-            return service;
-        }
-
-        BluetoothA2dpBinder(A2dpService svc) {
-            mService = svc;
-        }
-
-        @Override
-        public void cleanup() {
-            mService = null;
-        }
-
-        @Override
-        public boolean connect(BluetoothDevice device, AttributionSource source) {
-            A2dpService service = getServiceAndEnforceConnect(source);
-            if (service == null) {
-                return false;
-            }
-
-            return service.connect(device);
-        }
-
-        @Override
-        public boolean disconnect(BluetoothDevice device, AttributionSource source) {
-            A2dpService service = getServiceAndEnforceConnect(source);
-            if (service == null) {
-                return false;
-            }
-
-            return service.disconnect(device);
-        }
-
-        @Override
-        public List<BluetoothDevice> getConnectedDevices(AttributionSource source) {
-            A2dpService service = getServiceAndEnforceConnect(source);
-            if (service == null) {
-                return Collections.emptyList();
-            }
-
-            return service.getConnectedDevices();
-        }
-
-        @Override
-        public List<BluetoothDevice> getDevicesMatchingConnectionStates(
-                int[] states, AttributionSource source) {
-            A2dpService service = getServiceAndEnforceConnect(source);
-            if (service == null) {
-                return Collections.emptyList();
-            }
-
-            return service.getDevicesMatchingConnectionStates(states);
-        }
-
-        @Override
-        public int getConnectionState(BluetoothDevice device, AttributionSource source) {
-            A2dpService service = getServiceAndEnforceConnect(source);
-            if (service == null) {
-                return STATE_DISCONNECTED;
-            }
-
-            return service.getConnectionState(device);
-        }
-
-        @Override
-        public boolean setActiveDevice(BluetoothDevice device, AttributionSource source) {
-            A2dpService service = getServiceAndEnforceConnect(source);
-            if (service == null) {
-                return false;
-            }
-
-            if (device == null) {
-                return service.removeActiveDevice(false);
-            } else {
-                return service.setActiveDevice(device);
-            }
-        }
-
-        @Override
-        public BluetoothDevice getActiveDevice(AttributionSource source) {
-            A2dpService service = getServiceAndEnforceConnect(source);
-            if (service == null) {
-                return null;
-            }
-
-            return service.getActiveDevice();
-        }
-
-        @Override
-        public boolean setConnectionPolicy(
-                BluetoothDevice device, int connectionPolicy, AttributionSource source) {
-            A2dpService service = getServiceAndEnforceConnect(source);
-            if (service == null) {
-                return false;
-            }
-
-            service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-
-            return service.setConnectionPolicy(device, connectionPolicy);
-        }
-
-        @Override
-        public int getConnectionPolicy(BluetoothDevice device, AttributionSource source) {
-            A2dpService service = getServiceAndEnforceConnect(source);
-            if (service == null) {
-                return CONNECTION_POLICY_UNKNOWN;
-            }
-
-            service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-
-            return service.getConnectionPolicy(device);
-        }
-
-        @Override
-        public void setAvrcpAbsoluteVolume(int volume, AttributionSource source) {
-            A2dpService service = getServiceAndEnforceConnect(source);
-            if (service == null) {
-                return;
-            }
-
-            service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-
-            service.setAvrcpAbsoluteVolume(volume);
-        }
-
-        @Override
-        public boolean isA2dpPlaying(BluetoothDevice device, AttributionSource source) {
-            A2dpService service = getServiceAndEnforceConnect(source);
-            if (service == null) {
-                return false;
-            }
-
-            return service.isA2dpPlaying(device);
-        }
-
-        @Override
-        public List<BluetoothCodecType> getSupportedCodecTypes() {
-            A2dpService service = getService();
-            if (service == null) {
-                return Collections.emptyList();
-            }
-
-            service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-
-            return service.getSupportedCodecTypes();
-        }
-
-        @Override
-        public BluetoothCodecStatus getCodecStatus(
-                BluetoothDevice device, AttributionSource source) {
-            requireNonNull(device);
-            A2dpService service = getServiceAndEnforceConnect(source);
-            if (service == null) {
-                return null;
-            }
-
-            Utils.enforceCdmAssociationIfNotBluetoothPrivileged(
-                    service, service.mCompanionDeviceManager, source, device);
-
-            return service.getCodecStatus(device);
-        }
-
-        @Override
-        public void setCodecConfigPreference(
-                BluetoothDevice device,
-                BluetoothCodecConfig codecConfig,
-                AttributionSource source) {
-            requireNonNull(device);
-            A2dpService service = getServiceAndEnforceConnect(source);
-            if (service == null) {
-                return;
-            }
-
-            Utils.enforceCdmAssociationIfNotBluetoothPrivileged(
-                    service, service.mCompanionDeviceManager, source, device);
-
-            service.setCodecConfigPreference(device, codecConfig);
-        }
-
-        @Override
-        public void enableOptionalCodecs(BluetoothDevice device, AttributionSource source) {
-            A2dpService service = getServiceAndEnforceConnect(source);
-            if (service == null) {
-                return;
-            }
-
-            if (checkCallerTargetSdk(
-                    mService, source.getPackageName(), Build.VERSION_CODES.TIRAMISU)) {
-                service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-            }
-            service.enableOptionalCodecs(device);
-        }
-
-        @Override
-        public void disableOptionalCodecs(BluetoothDevice device, AttributionSource source) {
-            A2dpService service = getServiceAndEnforceConnect(source);
-            if (service == null) {
-                return;
-            }
-
-            if (checkCallerTargetSdk(
-                    mService, source.getPackageName(), Build.VERSION_CODES.TIRAMISU)) {
-                service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-            }
-            service.disableOptionalCodecs(device);
-        }
-
-        @Override
-        public int isOptionalCodecsSupported(BluetoothDevice device, AttributionSource source) {
-            A2dpService service = getServiceAndEnforceConnect(source);
-            if (service == null) {
-                return BluetoothA2dp.OPTIONAL_CODECS_SUPPORT_UNKNOWN;
-            }
-
-            if (checkCallerTargetSdk(
-                    mService, source.getPackageName(), Build.VERSION_CODES.TIRAMISU)) {
-                service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-            }
-            return service.getSupportsOptionalCodecs(device);
-        }
-
-        @Override
-        public int isOptionalCodecsEnabled(BluetoothDevice device, AttributionSource source) {
-            A2dpService service = getServiceAndEnforceConnect(source);
-            if (service == null) {
-                return BluetoothA2dp.OPTIONAL_CODECS_PREF_UNKNOWN;
-            }
-
-            if (checkCallerTargetSdk(
-                    mService, source.getPackageName(), Build.VERSION_CODES.TIRAMISU)) {
-                service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-            }
-            return service.getOptionalCodecsEnabled(device);
-        }
-
-        @Override
-        public void setOptionalCodecsEnabled(
-                BluetoothDevice device, int value, AttributionSource source) {
-            A2dpService service = getServiceAndEnforceConnect(source);
-            if (service == null) {
-                return;
-            }
-
-            if (checkCallerTargetSdk(
-                    mService, source.getPackageName(), Build.VERSION_CODES.TIRAMISU)) {
-                service.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null);
-            }
-            service.setOptionalCodecsEnabled(device, value);
-        }
-
-        @Override
-        public int getDynamicBufferSupport(AttributionSource source) {
-            A2dpService service = getServiceAndEnforceConnect(source);
-            if (service == null) {
-                return BluetoothA2dp.DYNAMIC_BUFFER_SUPPORT_NONE;
-            }
-
-            return service.getDynamicBufferSupport();
-        }
-
-        @Override
-        public BufferConstraints getBufferConstraints(AttributionSource source) {
-            A2dpService service = getServiceAndEnforceConnect(source);
-            if (service == null) {
-                return null;
-            }
-
-            return service.getBufferConstraints();
-        }
-
-        @Override
-        public boolean setBufferLengthMillis(int codec, int value, AttributionSource source) {
-            A2dpService service = getServiceAndEnforceConnect(source);
-            if (service == null) {
-                return false;
-            }
-
-            return service.setBufferLengthMillis(codec, value);
-        }
     }
 
     @Override

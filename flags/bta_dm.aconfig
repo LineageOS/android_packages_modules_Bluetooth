@@ -9,16 +9,6 @@ flag {
 }
 
 flag {
-    name: "cancel_open_discovery_client"
-    namespace: "bluetooth"
-    description: "Cancel connection from discovery client correctly"
-    bug: "356168480"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "extend_and_randomize_role_switch_delay"
     namespace: "bluetooth"
     description: "Fix the possible conflicts between role switch and authentication"

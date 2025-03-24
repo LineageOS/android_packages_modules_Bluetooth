@@ -37,7 +37,7 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.kotlin.whenever
 
-/** Test cases for [AdvertiseBinder] */
+/** Test cases for [AdvertiseBinder]. */
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class AdvertiseBinderTest {

@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+/** Test cases for {@link BluetoothMapConvoListingElement}. */
 @RunWith(AndroidJUnit4.class)
 public class BluetoothMapConvoListingElementTest {
     private static final long TEST_ID = 1111;

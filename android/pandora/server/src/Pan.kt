@@ -67,6 +67,7 @@ class Pan(private val context: Context) : PANImplBase(), Closeable {
     }
 
     override fun close() {
+        mTetheringManager.stopTethering(TETHERING_BLUETOOTH)
         bluetoothAdapter.closeProfileProxy(BluetoothProfile.PAN, bluetoothPan)
         mScope.cancel()
     }

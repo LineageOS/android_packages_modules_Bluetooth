@@ -25,6 +25,7 @@ import androidx.test.runner.AndroidJUnit4;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+/** Test cases for {@link AvrcpControllerNativeInterface}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class AvrcpControllerNativeInterfaceTest {

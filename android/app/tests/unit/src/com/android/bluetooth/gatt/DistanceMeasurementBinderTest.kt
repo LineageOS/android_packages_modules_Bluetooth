@@ -42,7 +42,7 @@ import org.mockito.Mockito.mock
 import org.mockito.Mockito.verify
 import org.mockito.kotlin.whenever
 
-/** Test cases for [DistanceMeasurementBinder] */
+/** Test cases for [DistanceMeasurementBinder]. */
 @SmallTest
 @RunWith(AndroidJUnit4::class)
 class DistanceMeasurementBinderTest {

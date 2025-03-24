@@ -47,6 +47,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+/** Test cases for {@link AvrcpBipObexServer}. */
 @RunWith(AndroidJUnit4.class)
 public class AvrcpBipObexServerTest {
     private static final String TYPE_GET_LINKED_THUMBNAIL = "x-bt/img-thm";

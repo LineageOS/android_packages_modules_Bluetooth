@@ -97,6 +97,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 
+/** Test cases for {@link AdapterService}. */
 @MediumTest
 @RunWith(ParameterizedAndroidJunit4.class)
 public class AdapterServiceTest {

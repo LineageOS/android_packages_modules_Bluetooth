@@ -38,6 +38,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+/** Test cases for {@link PbapClientSocket}. */
 @RunWith(AndroidJUnit4.class)
 public class PbapClientSocketTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();

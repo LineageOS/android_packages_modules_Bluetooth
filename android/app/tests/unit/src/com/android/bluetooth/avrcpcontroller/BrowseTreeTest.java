@@ -28,6 +28,7 @@ import org.junit.Test;
 
 import java.util.Set;
 
+/** Test cases for {@link BrowseTree}. */
 public class BrowseTreeTest {
     private static final String ILLEGAL_ID = "illegal_id";
     private static final String TEST_HANDLE = "test_handle";

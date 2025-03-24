@@ -24,6 +24,7 @@ import androidx.test.runner.AndroidJUnit4;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+/** Test cases for {@link StackEvent}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class StackEventTest {

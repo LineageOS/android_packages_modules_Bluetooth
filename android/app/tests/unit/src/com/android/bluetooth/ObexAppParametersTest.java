@@ -30,6 +30,7 @@ import org.junit.runner.RunWith;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
+/** Test cases for {@link ObexAppParameters}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class ObexAppParametersTest {

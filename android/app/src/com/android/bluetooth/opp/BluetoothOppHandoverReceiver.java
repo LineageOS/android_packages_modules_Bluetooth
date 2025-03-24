@@ -25,7 +25,6 @@ import android.util.Log;
 
 import com.android.bluetooth.BluetoothMethodProxy;
 import com.android.bluetooth.Utils;
-import com.android.bluetooth.flags.Flags;
 
 import java.util.ArrayList;
 
@@ -82,10 +81,7 @@ public class BluetoothOppHandoverReceiver extends BroadcastReceiver {
             if (device == null) {
                 return;
             }
-            String brEdrAddress =
-                    Flags.identityAddressNullIfNotKnown()
-                            ? Utils.getBrEdrAddress(device)
-                            : device.getIdentityAddress();
+            String brEdrAddress = Utils.getBrEdrAddress(device);
             Log.d(TAG, "Adding " + brEdrAddress + " to acceptlist");
             BluetoothOppManager.getInstance(context).addToAcceptlist(brEdrAddress);
         } else if (action.equals(Constants.ACTION_STOP_HANDOVER)) {

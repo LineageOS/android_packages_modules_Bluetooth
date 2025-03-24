@@ -15,6 +15,8 @@
  */
 #pragma once
 
+#include <com_android_bluetooth_flags.h>
+
 #include <unordered_map>
 
 #include "module.h"
@@ -26,6 +28,13 @@ namespace metrics {
 class CounterMetrics : public bluetooth::Module {
 public:
   CounterMetrics(os::Handler* handler) : Module(handler) {}
+  ~CounterMetrics() {
+    if (!com::android::bluetooth::flags::same_handler_for_all_modules()) {
+      GetHandler()->Clear();
+      GetHandler()->WaitUntilStopped(std::chrono::milliseconds(2000));
+      delete GetHandler();
+    }
+  }
 
   bool CacheCount(int32_t key, int64_t value);
   virtual bool Count(int32_t key, int64_t count);

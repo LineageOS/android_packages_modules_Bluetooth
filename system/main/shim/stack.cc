@@ -67,9 +67,9 @@ namespace shim {
 
 struct Stack::impl {
   Acl* acl_ = nullptr;
-  metrics::CounterMetrics* counter_metrics_ = nullptr;
-  storage::StorageModule* storage_ = nullptr;
-  hal::SnoopLogger* snoop_logger_ = nullptr;
+  std::shared_ptr<metrics::CounterMetrics> counter_metrics_ = nullptr;
+  std::shared_ptr<storage::StorageModule> storage_ = nullptr;
+  std::shared_ptr<hal::SnoopLogger> snoop_logger_ = nullptr;
 };
 
 Stack::Stack() { pimpl_ = std::make_shared<Stack::impl>(); }
@@ -89,9 +89,16 @@ void Stack::StartEverything() {
     stack_thread_ = new os::Thread("gd_stack_thread", os::Thread::Priority::REAL_TIME);
     stack_handler_ = new os::Handler(stack_thread_);
 
-    pimpl_->counter_metrics_ = new metrics::CounterMetrics(new Handler(stack_thread_));
-    pimpl_->storage_ = new storage::StorageModule(new Handler(stack_thread_));
-    pimpl_->snoop_logger_ = new hal::SnoopLogger(new Handler(stack_thread_));
+    if (com::android::bluetooth::flags::same_handler_for_all_modules()) {
+      pimpl_->counter_metrics_ = std::make_shared<metrics::CounterMetrics>(stack_handler_);
+      pimpl_->storage_ = std::make_shared<storage::StorageModule>(stack_handler_);
+      pimpl_->snoop_logger_ = std::make_shared<hal::SnoopLogger>(stack_handler_);
+    } else {
+      pimpl_->counter_metrics_ =
+              std::make_shared<metrics::CounterMetrics>(new Handler(stack_thread_));
+      pimpl_->storage_ = std::make_shared<storage::StorageModule>(new Handler(stack_thread_));
+      pimpl_->snoop_logger_ = std::make_shared<hal::SnoopLogger>(new Handler(stack_thread_));
+    }
 
 #if TARGET_FLOSS
     modules.add<sysprops::SyspropsModule>();
@@ -119,6 +126,7 @@ void Stack::StartEverything() {
   }
 
   is_running_ = true;
+  log::info("GD stack is running");
 
   std::promise<void> promise;
   auto future = promise.get_future();
@@ -168,8 +176,12 @@ void Stack::Stop() {
 
   log::assert_that(is_running_, "Gd stack not running");
   is_running_ = false;
+  log::info("GD stack is not running");
 
   stack_handler_->Clear();
+  if(com::android::bluetooth::flags::same_handler_for_all_modules()) {
+    stack_handler_->WaitUntilStopped(bluetooth::kHandlerStopTimeout);
+  }
 
   WakelockManager::Get().Acquire();
 
@@ -217,19 +229,19 @@ Acl* Stack::GetAcl() const {
 metrics::CounterMetrics* Stack::GetCounterMetrics() const {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   log::assert_that(is_running_, "assert failed: is_running_");
-  return pimpl_->counter_metrics_;
+  return pimpl_->counter_metrics_.get();
 }
 
 storage::StorageModule* Stack::GetStorage() const {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   log::assert_that(is_running_, "assert failed: is_running_");
-  return pimpl_->storage_;
+  return pimpl_->storage_.get();
 }
 
 hal::SnoopLogger* Stack::GetSnoopLogger() const {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   log::assert_that(is_running_, "assert failed: is_running_");
-  return pimpl_->snoop_logger_;
+  return pimpl_->snoop_logger_.get();
 }
 
 os::Handler* Stack::GetHandler() {
@@ -265,9 +277,15 @@ void Stack::handle_start_up(ModuleList* modules, std::promise<void> promise) {
 
 void Stack::handle_shut_down(std::promise<void> promise) {
   registry_.StopAll();
+
   pimpl_->snoop_logger_->Stop();
   pimpl_->storage_->Stop();
   pimpl_->counter_metrics_->Stop();
+
+  pimpl_->snoop_logger_.reset();
+  pimpl_->storage_.reset();
+  pimpl_->counter_metrics_.reset();
+
   promise.set_value();
 }
 

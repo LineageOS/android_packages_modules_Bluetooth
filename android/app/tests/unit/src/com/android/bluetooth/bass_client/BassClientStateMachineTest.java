@@ -130,6 +130,7 @@ import java.util.List;
 import java.util.Random;
 import java.util.UUID;
 
+/** Test cases for {@link BassClientStateMachine}. */
 @MediumTest
 @RunWith(JUnit4.class)
 public class BassClientStateMachineTest {

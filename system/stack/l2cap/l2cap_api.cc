@@ -234,13 +234,6 @@ void bluetooth::stack::l2cap::Impl::L2CA_SetEcosystemBaseInterval(uint32_t base_
   return ::L2CA_IsLinkEstablished(bd_addr, transport);
 }
 
-void bluetooth::stack::l2cap::Impl::L2CA_SetDefaultSubrate(uint16_t subrate_min,
-                                                           uint16_t subrate_max,
-                                                           uint16_t max_latency, uint16_t cont_num,
-                                                           uint16_t timeout) {
-  ::L2CA_SetDefaultSubrate(subrate_min, subrate_max, max_latency, cont_num, timeout);
-}
-
 [[nodiscard]] bool bluetooth::stack::l2cap::Impl::L2CA_SubrateRequest(
         const RawAddress& rem_bda, uint16_t subrate_min, uint16_t subrate_max, uint16_t max_latency,
         uint16_t cont_num, uint16_t timeout) {

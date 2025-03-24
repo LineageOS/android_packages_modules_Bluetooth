@@ -21,6 +21,8 @@
 #include "include/hardware/bluetooth.h"
 #include "types/raw_address.h"
 
+struct HearingDevice;
+
 namespace bluetooth {
 namespace storage {
 
@@ -49,6 +51,11 @@ public:
   virtual void RemoveLeaudioHas(const RawAddress& address) = 0;
   virtual bt_status_t GetRemoteDeviceProperty(const RawAddress* address,
                                               bt_property_t* property) = 0;
+
+  virtual bool GetHearingAidProp(const RawAddress& address, uint8_t* capabilities,
+                                 uint64_t* hi_sync_id, uint16_t* render_delay,
+                                 uint16_t* preparation_delay, uint16_t* codecs) = 0;
+  virtual void AddHearingAid(const HearingDevice* dev_info) = 0;
 
   virtual ~BtifStorageInterface() = default;
 };
@@ -88,6 +95,11 @@ public:
   MOCK_METHOD((void), RemoveLeaudioHas, (const RawAddress& address), (override));
   MOCK_METHOD((bt_status_t), GetRemoteDeviceProperty,
               (const RawAddress* address, bt_property_t* property), (override));
+  MOCK_METHOD((bool), GetHearingAidProp,
+              (const RawAddress& address, uint8_t* capabilities, uint64_t* hi_sync_id,
+               uint16_t* render_delay, uint16_t* preparation_delay, uint16_t* codecs),
+              (override));
+  MOCK_METHOD((void), AddHearingAid, (const HearingDevice* dev_info), (override));
 };
 
 /**

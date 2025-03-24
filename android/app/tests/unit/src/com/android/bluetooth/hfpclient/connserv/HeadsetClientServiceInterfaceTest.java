@@ -39,6 +39,7 @@ import org.mockito.Mock;
 import java.util.List;
 import java.util.Set;
 
+/** Test cases for {@link HeadsetClientServiceInterface}. */
 @RunWith(AndroidJUnit4.class)
 public class HeadsetClientServiceInterfaceTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();

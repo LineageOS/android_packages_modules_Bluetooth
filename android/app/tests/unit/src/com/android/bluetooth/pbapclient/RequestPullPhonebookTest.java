@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+/** Test cases for {@link RequestPullPhonebook}. */
 @RunWith(AndroidJUnit4.class)
 public class RequestPullPhonebookTest {
 

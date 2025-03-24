@@ -407,27 +407,14 @@ static void gatt_process_exec_write_req(tGATT_TCB& tcb, uint16_t cid, uint8_t op
     trans_id = gatt_sr_enqueue_cmd(tcb, cid, op_code, 0);
     gatt_sr_copy_prep_cnt_to_cback_cnt(tcb);
 
-    if (com::android::bluetooth::flags::gatt_client_dynamic_allocation()) {
-      auto prep_cnt_it = tcb.prep_cnt_map.begin();
-      while (prep_cnt_it != tcb.prep_cnt_map.end()) {
-        gatt_if = prep_cnt_it->first;
-        conn_id = gatt_create_conn_id(tcb.tcb_idx, gatt_if);
-        tGATTS_DATA gatts_data;
-        gatts_data.exec_write = flag;
-        gatt_sr_send_req_callback(conn_id, trans_id, GATTS_REQ_TYPE_WRITE_EXEC, &gatts_data);
-        prep_cnt_it = tcb.prep_cnt_map.erase(prep_cnt_it);
-      }
-    } else {
-      for (uint8_t i = 0; i < GATT_MAX_APPS; i++) {
-        if (tcb.prep_cnt[i]) {
-          gatt_if = (tGATT_IF)(i + 1);
-          conn_id = gatt_create_conn_id(tcb.tcb_idx, gatt_if);
-          tGATTS_DATA gatts_data;
-          gatts_data.exec_write = flag;
-          gatt_sr_send_req_callback(conn_id, trans_id, GATTS_REQ_TYPE_WRITE_EXEC, &gatts_data);
-          tcb.prep_cnt[i] = 0;
-        }
-      }
+    auto prep_cnt_it = tcb.prep_cnt_map.begin();
+    while (prep_cnt_it != tcb.prep_cnt_map.end()) {
+      gatt_if = prep_cnt_it->first;
+      conn_id = gatt_create_conn_id(tcb.tcb_idx, gatt_if);
+      tGATTS_DATA gatts_data;
+      gatts_data.exec_write = flag;
+      gatt_sr_send_req_callback(conn_id, trans_id, GATTS_REQ_TYPE_WRITE_EXEC, &gatts_data);
+      prep_cnt_it = tcb.prep_cnt_map.erase(prep_cnt_it);
     }
   } else { /* nothing needs to be executed , send response now */
     log::warn("gatt_process_exec_write_req: no prepare write pending");
@@ -911,19 +898,10 @@ static void gatts_process_mtu_req(tGATT_TCB& tcb, uint16_t cid, uint16_t len, ui
   gatts_data.mtu = tcb.payload_size;
   /* Notify all registered application with new MTU size. Use a transaction ID */
   /* of 0, as no response is allowed from applications */
-  if (com::android::bluetooth::flags::gatt_client_dynamic_allocation()) {
-    for (auto& [i, p_reg] : gatt_cb.cl_rcb_map) {
-      if (p_reg->in_use) {
-        tCONN_ID conn_id = gatt_create_conn_id(tcb.tcb_idx, p_reg->gatt_if);
-        gatt_sr_send_req_callback(conn_id, 0, GATTS_REQ_TYPE_MTU, &gatts_data);
-      }
-    }
-  } else {
-    for (int i = 0; i < GATT_MAX_APPS; i++) {
-      if (gatt_cb.cl_rcb[i].in_use) {
-        tCONN_ID conn_id = gatt_create_conn_id(tcb.tcb_idx, gatt_cb.cl_rcb[i].gatt_if);
-        gatt_sr_send_req_callback(conn_id, 0, GATTS_REQ_TYPE_MTU, &gatts_data);
-      }
+  for (auto& [i, p_reg] : gatt_cb.cl_rcb_map) {
+    if (p_reg->in_use) {
+      tCONN_ID conn_id = gatt_create_conn_id(tcb.tcb_idx, p_reg->gatt_if);
+      gatt_sr_send_req_callback(conn_id, 0, GATTS_REQ_TYPE_MTU, &gatts_data);
     }
   }
 }

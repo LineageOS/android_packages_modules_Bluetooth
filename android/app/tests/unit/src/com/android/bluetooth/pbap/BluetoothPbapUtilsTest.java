@@ -60,6 +60,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
+/** Test cases for {@link BluetoothPbapUtils}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothPbapUtilsTest {

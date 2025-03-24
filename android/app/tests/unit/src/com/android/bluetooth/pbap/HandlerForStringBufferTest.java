@@ -40,6 +40,7 @@ import org.mockito.Mock;
 import java.io.IOException;
 import java.io.OutputStream;
 
+/** Test cases for {@link HandlerForStringBuffer}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class HandlerForStringBufferTest {

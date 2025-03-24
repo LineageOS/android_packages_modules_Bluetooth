@@ -48,6 +48,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 
+/** Test cases for {@link A2dpSinkStateMachine}. */
 @RunWith(AndroidJUnit4.class)
 public class A2dpSinkStateMachineTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();

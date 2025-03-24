@@ -16,7 +16,6 @@
 
 #include "hci/acl_manager/round_robin_scheduler.h"
 
-#include <com_android_bluetooth_flags.h>
 #include <gtest/gtest.h>
 
 #include "common/bidi_queue.h"
@@ -422,8 +421,6 @@ TEST_F(RoundRobinSchedulerTest, receive_le_credit_when_next_fragment_is_classic)
 }
 
 TEST_F(RoundRobinSchedulerTest, unregister_reclaim_credits) {
-  com::android::bluetooth::flags::provider_->drop_acl_fragment_on_disconnect(true);
-
   uint16_t handle = 0x01;
   auto connection_queue = std::make_shared<AclConnection::Queue>(20);
   auto new_connection_queue = std::make_shared<AclConnection::Queue>(20);

@@ -63,7 +63,6 @@ import com.android.bluetooth.BluetoothObexTransport;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.content_profiles.ContentProfileErrorReportUtils;
-import com.android.bluetooth.flags.Flags;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.obex.ObexTransport;
 
@@ -116,7 +115,8 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
                     Log.e(
                             TAG,
                             "device : "
-                                    + BluetoothUtils.toAnonymizedAddress(getBrEdrAddress(device))
+                                    + BluetoothUtils.toAnonymizedAddress(
+                                            Utils.getBrEdrAddress(device))
                                     + " mBatch :"
                                     + mBatch
                                     + " mCurrentShare :"
@@ -133,7 +133,8 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
                     Log.v(
                             TAG,
                             "Device :"
-                                    + BluetoothUtils.toAnonymizedAddress(getBrEdrAddress(device))
+                                    + BluetoothUtils.toAnonymizedAddress(
+                                            Utils.getBrEdrAddress(device))
                                     + "- OPP device: "
                                     + mBatch.mDestination
                                     + " \n mCurrentShare.mConfirm == "
@@ -180,8 +181,8 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
                                 3);
                         return;
                     }
-                    String deviceIdentityAddress = getBrEdrAddress(device);
-                    String transferDeviceIdentityAddress = getBrEdrAddress(mDevice);
+                    String deviceIdentityAddress = Utils.getBrEdrAddress(device);
+                    String transferDeviceIdentityAddress = Utils.getBrEdrAddress(mDevice);
                     if (deviceIdentityAddress == null
                             || transferDeviceIdentityAddress == null
                             || !deviceIdentityAddress.equalsIgnoreCase(
@@ -1007,12 +1008,5 @@ public class BluetoothOppTransfer implements BluetoothOppBatch.BluetoothOppBatch
                 Log.e(TAG, e.toString() + "\n" + Log.getStackTraceString(new Throwable()));
             }
         }
-    }
-
-    private static String getBrEdrAddress(BluetoothDevice device) {
-        if (Flags.identityAddressNullIfNotKnown()) {
-            return Utils.getBrEdrAddress(device);
-        }
-        return device.getIdentityAddress();
     }
 }

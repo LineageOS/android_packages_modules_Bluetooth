@@ -34,6 +34,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.mockito.Mock;
 
+/** Test cases for {@link HidDeviceNativeInterface}. */
 public class HidDeviceNativeInterfaceTest {
     private static final byte[] TEST_DEVICE_ADDRESS =
             new byte[] {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};

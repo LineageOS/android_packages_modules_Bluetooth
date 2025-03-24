@@ -52,6 +52,7 @@ import org.mockito.Mock;
 import java.util.HashMap;
 import java.util.UUID;
 
+/** Test cases for {@link MediaControlProfile}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class MediaControlProfileTest {

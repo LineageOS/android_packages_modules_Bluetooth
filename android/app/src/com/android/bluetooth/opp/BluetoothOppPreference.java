@@ -32,7 +32,6 @@
 
 package com.android.bluetooth.opp;
 
-import android.annotation.SuppressLint;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothUtils;
 import android.content.Context;
@@ -41,7 +40,6 @@ import android.content.SharedPreferences.Editor;
 import android.util.Log;
 
 import com.android.bluetooth.Utils;
-import com.android.bluetooth.flags.Flags;
 
 import java.util.HashMap;
 
@@ -87,11 +85,11 @@ public class BluetoothOppPreference {
     }
 
     private static String getChannelKey(BluetoothDevice remoteDevice, int uuid) {
-        return getBrEdrAddress(remoteDevice) + "_" + Integer.toHexString(uuid);
+        return Utils.getBrEdrAddress(remoteDevice) + "_" + Integer.toHexString(uuid);
     }
 
     public String getName(BluetoothDevice remoteDevice) {
-        String identityAddress = getBrEdrAddress(remoteDevice);
+        String identityAddress = Utils.getBrEdrAddress(remoteDevice);
         if (identityAddress != null && identityAddress.equals("FF:FF:FF:00:00:00")) {
             return "localhost";
         }
@@ -113,7 +111,8 @@ public class BluetoothOppPreference {
             Log.v(
                     TAG,
                     "getChannel for "
-                            + BluetoothUtils.toAnonymizedAddress(getBrEdrAddress(remoteDevice))
+                            + BluetoothUtils.toAnonymizedAddress(
+                                    Utils.getBrEdrAddress(remoteDevice))
                             + "_"
                             + Integer.toHexString(uuid)
                             + " as "
@@ -123,7 +122,7 @@ public class BluetoothOppPreference {
     }
 
     public void setName(BluetoothDevice remoteDevice, String name) {
-        String brEdrAddress = getBrEdrAddress(remoteDevice);
+        String brEdrAddress = Utils.getBrEdrAddress(remoteDevice);
         Log.v(
                 TAG,
                 "setName for " + BluetoothUtils.toAnonymizedAddress(brEdrAddress) + " to " + name);
@@ -139,7 +138,7 @@ public class BluetoothOppPreference {
         Log.v(
                 TAG,
                 "setChannel for "
-                        + BluetoothUtils.toAnonymizedAddress(getBrEdrAddress(remoteDevice))
+                        + BluetoothUtils.toAnonymizedAddress(Utils.getBrEdrAddress(remoteDevice))
                         + "_"
                         + Integer.toHexString(uuid)
                         + " to "
@@ -163,7 +162,7 @@ public class BluetoothOppPreference {
 
     public void removeName(BluetoothDevice remoteDevice) {
         Editor ed = mNamePreference.edit();
-        String key = getBrEdrAddress(remoteDevice);
+        String key = Utils.getBrEdrAddress(remoteDevice);
         ed.remove(key);
         ed.apply();
         mNames.remove(key);
@@ -174,13 +173,5 @@ public class BluetoothOppPreference {
         Log.d(TAG, mNames.toString());
         Log.d(TAG, "Dumping Channels:  ");
         Log.d(TAG, mChannels.toString());
-    }
-
-    @SuppressLint("AndroidFrameworkRequiresPermission")
-    private static String getBrEdrAddress(BluetoothDevice device) {
-        if (Flags.identityAddressNullIfNotKnown()) {
-            return Utils.getBrEdrAddress(device);
-        }
-        return device.getIdentityAddress();
     }
 }

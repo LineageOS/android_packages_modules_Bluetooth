@@ -23,7 +23,7 @@ import androidx.test.runner.AndroidJUnit4;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
-/** A test suite for the BipEncoding class */
+/** Test cases for {@link BipEncoding}. */
 @RunWith(AndroidJUnit4.class)
 public class BipEncodingTest {
 

@@ -660,7 +660,6 @@ TEST_F(EattTest, ChannelUnavailableWhileReconfiguring) {
 }
 
 TEST_F(EattTest, DisconnectChannelOnIndicationConfirmationTimeout) {
-  com::android::bluetooth::flags::provider_->gatt_disconnect_fix(true);
   ConnectDeviceEattSupported(1);
 
   eatt_instance_->StartIndicationConfirmationTimer(test_address, test_local_cids[0]);

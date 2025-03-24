@@ -41,7 +41,6 @@ group("bluetooth") {
 #if (use.test) {
   #group("bluetooth_tests") {
     #deps = [
-      #"//bt/system/btcore:net_test_btcore",
       #"//bt/system/common:bluetooth_test_common",
       #"//bt/system/profile/avrcp:net_test_avrcp",
       #"//bt/system/service:bluetoothtbd_test",

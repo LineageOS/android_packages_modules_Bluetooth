@@ -51,6 +51,7 @@ import org.mockito.Mock;
 
 import java.io.InputStream;
 
+/** Test cases for {@link Metadata}. */
 @RunWith(AndroidJUnit4.class)
 public class MetadataTest {
     private Context mTargetContext;

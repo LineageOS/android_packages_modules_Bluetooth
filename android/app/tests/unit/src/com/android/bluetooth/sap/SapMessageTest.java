@@ -55,6 +55,7 @@ import org.mockito.Mockito;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 
+/** Test cases for {@link SapMessage}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class SapMessageTest {

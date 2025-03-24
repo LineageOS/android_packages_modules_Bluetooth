@@ -62,6 +62,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+/** Test cases for {@link HeadsetClientService}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class HeadsetClientServiceTest {

@@ -25,7 +25,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Test for Bluetooth LE {@link ScanFilter}. */
+/** Test cases for {@link ScanFilter}. */
 @RunWith(JUnit4.class)
 public class ScanFilterTest {
 

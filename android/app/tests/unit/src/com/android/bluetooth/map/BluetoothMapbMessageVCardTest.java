@@ -31,6 +31,7 @@ import org.junit.runner.RunWith;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
+/** Test cases for {@link BluetoothMapbMessageVCard}. */
 @RunWith(AndroidJUnit4.class)
 public class BluetoothMapbMessageVCardTest {
     private static final String TEST_NAME = "test_name";

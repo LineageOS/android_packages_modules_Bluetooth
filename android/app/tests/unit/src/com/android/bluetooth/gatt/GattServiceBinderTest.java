@@ -42,6 +42,7 @@ import org.mockito.Mock;
 
 import java.util.UUID;
 
+/** Test cases for {@link GattServiceBinder}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class GattServiceBinderTest {

@@ -68,6 +68,7 @@ import org.mockito.Spy;
 
 import java.util.List;
 
+/** Test cases for {@link BluetoothPbapService}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothPbapServiceTest {

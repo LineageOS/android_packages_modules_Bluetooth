@@ -20,30 +20,10 @@ flag {
 }
 
 flag {
-    name: "serialize_hogp_and_dis"
-    namespace: "bluetooth"
-    description: "start HOGP service discovery only after DIS discovery is finished"
-    bug: "367910199"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "dont_send_hid_set_idle"
     namespace: "bluetooth"
     description: "Don't send the SET IDLE HID message"
     bug: "369310847"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "forward_get_set_report_failure_to_uhid"
-    namespace: "bluetooth"
-    description: "Forward GET/SET REPORT reply to UHID even when the request fails"
-    bug: "369748430"
     metadata {
         purpose: PURPOSE_BUGFIX
     }
@@ -114,6 +94,26 @@ flag {
     namespace: "bluetooth"
     description: "Allow early incoming HID connection"
     bug: "398105207"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "hh_state_update_race_fix"
+    namespace: "bluetooth"
+    description: "Fix stuck in connecting state due to race when updating state"
+    bug: "403420458"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "simpler_hid_connection_policy"
+    namespace: "bluetooth"
+    description: "Simplify native HID host connection policy enforcement"
+    bug: "404590499"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

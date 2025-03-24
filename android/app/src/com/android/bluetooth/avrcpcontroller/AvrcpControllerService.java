@@ -16,19 +16,14 @@
 
 package com.android.bluetooth.avrcpcontroller;
 
-import static android.Manifest.permission.BLUETOOTH_CONNECT;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
 import static java.util.Objects.requireNonNull;
 
-import android.annotation.RequiresPermission;
 import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothAvrcpPlayerSettings;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.IBluetoothAvrcpController;
-import android.content.AttributionSource;
 import android.content.Intent;
 import android.media.AudioManager;
 import android.support.v4.media.MediaBrowserCompat.MediaItem;
@@ -46,7 +41,6 @@ import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -366,90 +360,6 @@ public class AvrcpControllerService extends ProfileService {
     @Override
     protected IProfileServiceBinder initBinder() {
         return new AvrcpControllerServiceBinder(this);
-    }
-
-    // Binder object: Must be static class or memory leak may occur
-    @VisibleForTesting
-    static class AvrcpControllerServiceBinder extends IBluetoothAvrcpController.Stub
-            implements IProfileServiceBinder {
-        private AvrcpControllerService mService;
-
-        AvrcpControllerServiceBinder(AvrcpControllerService service) {
-            mService = service;
-        }
-
-        @Override
-        public void cleanup() {
-            mService = null;
-        }
-
-        @RequiresPermission(BLUETOOTH_CONNECT)
-        private AvrcpControllerService getService(AttributionSource source) {
-            // Cache mService because it can change while getService is called
-            AvrcpControllerService service = mService;
-
-            if (Utils.isInstrumentationTestMode()) {
-                return service;
-            }
-
-            if (!Utils.checkServiceAvailable(service, TAG)
-                    || !Utils.checkCallerIsSystemOrActiveOrManagedUser(service, TAG)
-                    || !Utils.checkConnectPermissionForDataDelivery(service, source, TAG)) {
-                return null;
-            }
-
-            return service;
-        }
-
-        @Override
-        public List<BluetoothDevice> getConnectedDevices(AttributionSource source) {
-            AvrcpControllerService service = getService(source);
-            if (service == null) {
-                return Collections.emptyList();
-            }
-            return service.getConnectedDevices();
-        }
-
-        @Override
-        public List<BluetoothDevice> getDevicesMatchingConnectionStates(
-                int[] states, AttributionSource source) {
-            AvrcpControllerService service = getService(source);
-            if (service == null) {
-                return Collections.emptyList();
-            }
-            return service.getDevicesMatchingConnectionStates(states);
-        }
-
-        @Override
-        public int getConnectionState(BluetoothDevice device, AttributionSource source) {
-            AvrcpControllerService service = getService(source);
-            if (service == null) {
-                return STATE_DISCONNECTED;
-            }
-            return service.getConnectionState(device);
-        }
-
-        @Override
-        public void sendGroupNavigationCmd(
-                BluetoothDevice device, int keyCode, int keyState, AttributionSource source) {
-            getService(source);
-            Log.w(TAG, "sendGroupNavigationCmd not implemented");
-        }
-
-        @Override
-        public void setPlayerApplicationSetting(
-                BluetoothAvrcpPlayerSettings settings, AttributionSource source) {
-            getService(source);
-            Log.w(TAG, "setPlayerApplicationSetting not implemented");
-        }
-
-        @Override
-        public BluetoothAvrcpPlayerSettings getPlayerSettings(
-                BluetoothDevice device, AttributionSource source) {
-            getService(source);
-            Log.w(TAG, "getPlayerSettings not implemented");
-            return null;
-        }
     }
 
     // Called by JNI when a device has connected or disconnected.

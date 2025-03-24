@@ -73,6 +73,7 @@ import org.mockito.Spy;
 
 import java.util.Arrays;
 
+/** Test cases for {@link SapRilReceiver}. */
 @LargeTest
 @RunWith(AndroidJUnit4.class)
 public class SapRilReceiverTest {

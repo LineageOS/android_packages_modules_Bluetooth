@@ -45,6 +45,7 @@ import org.mockito.Mock;
 import java.io.IOException;
 import java.io.InputStream;
 
+/** Test cases for {@link PbapStateMachine}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class PbapStateMachineTest {

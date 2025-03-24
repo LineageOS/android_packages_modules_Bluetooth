@@ -86,12 +86,6 @@ public:
   // Generates OnLeConnectSuccess if connected, or OnLeConnectFail otherwise
   virtual void CreateLeConnection(AddressWithType address_with_type, bool is_direct);
 
-  // Ask the controller for specific data parameters
-  virtual void SetLeSuggestedDefaultDataParameters(uint16_t octets, uint16_t time);
-
-  virtual void LeSetDefaultSubrate(uint16_t subrate_min, uint16_t subrate_max, uint16_t max_latency,
-                                   uint16_t cont_num, uint16_t sup_tout);
-
   virtual void SetPrivacyPolicyForInitiatorAddress(LeAddressManager::AddressPolicy address_policy,
                                                    AddressWithType fixed_address,
                                                    std::chrono::milliseconds minimum_rotation_time,

@@ -49,6 +49,7 @@ import org.mockito.Spy;
 import java.util.ArrayList;
 import java.util.List;
 
+/** Test cases for {@link BluetoothOppHandoverReceiver}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothOppHandoverReceiverTest {

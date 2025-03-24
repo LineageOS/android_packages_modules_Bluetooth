@@ -29,6 +29,7 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.TimeZone;
 
+/** Test cases for {@link ObexTime}. */
 @RunWith(AndroidJUnit4.class)
 @SuppressLint("UndefinedEquals")
 public class ObexTimeTest {

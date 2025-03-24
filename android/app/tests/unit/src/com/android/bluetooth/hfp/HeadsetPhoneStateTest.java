@@ -43,7 +43,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 
-/** Unit test to verify various methods in {@link HeadsetPhoneState} */
+/** Test cases for {@link HeadsetPhoneState}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class HeadsetPhoneStateTest {

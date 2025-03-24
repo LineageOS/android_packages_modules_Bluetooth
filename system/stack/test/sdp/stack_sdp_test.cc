@@ -62,7 +62,6 @@ protected:
     fake_osi_ = std::make_unique<test::fake::FakeOsi>();
     bluetooth::testing::stack::l2cap::set_interface(&mock_stack_l2cap_interface_);
 
-    tL2CAP_APPL_INFO l2cap_callbacks{};
     EXPECT_CALL(mock_stack_l2cap_interface_, L2CA_RegisterWithSecurity(_, _, _, _, _, _, _))
             .WillOnce(DoAll(SaveArg<1>(&l2cap_callbacks), ::testing::ReturnArg<0>()));
     EXPECT_CALL(mock_stack_l2cap_interface_, L2CA_Deregister(_));
@@ -73,6 +72,7 @@ protected:
     fake_osi_.reset();
   }
 
+  tL2CAP_APPL_INFO l2cap_callbacks{};
   bluetooth::testing::stack::l2cap::Mock mock_stack_l2cap_interface_;
   std::unique_ptr<test::fake::FakeOsi> fake_osi_;
 };

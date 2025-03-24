@@ -23,6 +23,7 @@ import androidx.test.runner.AndroidJUnit4;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+/** Test cases for {@link PbapPhonebookMetadata}. */
 @RunWith(AndroidJUnit4.class)
 public class PbapPhonebookMetadataTest {
     private static final int SIZE = 5;

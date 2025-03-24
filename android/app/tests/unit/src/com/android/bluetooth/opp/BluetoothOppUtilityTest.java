@@ -44,6 +44,7 @@ import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.ParcelFileDescriptor;
+import android.provider.Settings;
 
 import androidx.test.platform.app.InstrumentationRegistry;
 
@@ -63,6 +64,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/** Test cases for {@link BluetoothOppUtility}. */
 public class BluetoothOppUtilityTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
@@ -431,5 +433,23 @@ public class BluetoothOppUtilityTest {
         } catch (Exception e) {
             assertWithMessage("Exception should not happen. " + e).fail();
         }
+    }
+
+    @Test
+    public void grantPermissionToNearbyComponent() {
+        Uri originalUri = Uri.parse("content://test.provider/1");
+        Settings.Secure.putString(
+                mContext.getContentResolver(),
+                "nearby_sharing_component",
+                "com.example/.BComponent");
+        Context spiedContext = spy(new ContextWrapper(mContext));
+
+        BluetoothOppUtility.grantPermissionToNearbyComponent(spiedContext, List.of(originalUri));
+
+        verify(spiedContext)
+                .grantUriPermission(
+                        eq("com.example"),
+                        eq(originalUri),
+                        eq(Intent.FLAG_GRANT_READ_URI_PERMISSION));
     }
 }

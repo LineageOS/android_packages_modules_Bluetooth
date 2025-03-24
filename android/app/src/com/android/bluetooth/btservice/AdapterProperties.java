@@ -55,7 +55,6 @@ import androidx.annotation.VisibleForTesting;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties;
-import com.android.bluetooth.flags.Flags;
 import com.android.modules.utils.build.SdkLevel;
 
 import java.io.FileDescriptor;
@@ -531,10 +530,7 @@ class AdapterProperties {
 
     void cleanupPrevBondRecordsFor(BluetoothDevice device) {
         String address = device.getAddress();
-        String identityAddress =
-                Flags.identityAddressNullIfNotKnown()
-                        ? Utils.getBrEdrAddress(device, mService)
-                        : mService.getIdentityAddress(address);
+        String identityAddress = Utils.getBrEdrAddress(device, mService);
         int deviceType = mRemoteDevices.getDeviceProperties(device).getDeviceType();
         debugLog("cleanupPrevBondRecordsFor: " + device + ", device type: " + deviceType);
         if (identityAddress == null) {
@@ -547,10 +543,7 @@ class AdapterProperties {
 
         for (BluetoothDevice existingDevice : mBondedDevices) {
             String existingAddress = existingDevice.getAddress();
-            String existingIdentityAddress =
-                    Flags.identityAddressNullIfNotKnown()
-                            ? Utils.getBrEdrAddress(existingDevice, mService)
-                            : mService.getIdentityAddress(existingAddress);
+            String existingIdentityAddress = Utils.getBrEdrAddress(existingDevice, mService);
             int existingDeviceType =
                     mRemoteDevices.getDeviceProperties(existingDevice).getDeviceType();
 
@@ -1100,10 +1093,7 @@ class AdapterProperties {
         StringBuilder sb = new StringBuilder();
         for (BluetoothDevice device : mBondedDevices) {
             String address = device.getAddress();
-            String brEdrAddress =
-                    Flags.identityAddressNullIfNotKnown()
-                            ? Utils.getBrEdrAddress(device)
-                            : mService.getIdentityAddress(address);
+            String brEdrAddress = Utils.getBrEdrAddress(device);
             if (brEdrAddress.equals(address)) {
                 writer.println(
                         "    "

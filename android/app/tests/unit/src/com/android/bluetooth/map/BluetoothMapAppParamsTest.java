@@ -30,6 +30,7 @@ import org.junit.runner.RunWith;
 
 import java.nio.ByteBuffer;
 
+/** Test cases for {@link BluetoothMapAppParams}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class BluetoothMapAppParamsTest {

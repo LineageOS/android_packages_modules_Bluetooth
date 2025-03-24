@@ -30,15 +30,21 @@ import android.bluetooth.IBluetoothOobDataCallback;
 import android.content.AttributionSource;
 import android.os.ParcelUuid;
 
+import androidx.test.filters.SmallTest;
+import androidx.test.runner.AndroidJUnit4;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 
 import java.io.FileDescriptor;
 
 /** Test cases for {@link AdapterServiceBinder}. */
+@SmallTest
+@RunWith(AndroidJUnit4.class)
 public class AdapterServiceBinderTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 

@@ -58,6 +58,7 @@ import org.mockito.Mock;
 
 import java.util.Locale;
 
+/** Test cases for {@link BluetoothOppNotification}. */
 @RunWith(AndroidJUnit4.class)
 public class BluetoothOppNotificationTest {
     static final int TIMEOUT_MS = 3000;

@@ -48,7 +48,6 @@
 #include "btif_hf.h"
 #include "btm_iso_api.h"
 #include "common/message_loop_thread.h"
-#include "common/metrics.h"
 #include "common/repeating_timer.h"
 #include "common/time_util.h"
 #include "hardware/bt_av.h"
@@ -1302,8 +1301,7 @@ static void btm_read_rssi_cb(void* data) {
     return;
   }
 
-  bluetooth::shim::LogMetricReadRssiResult(result->rem_bda,
-                                           bluetooth::common::kUnknownConnectionHandle,
+  bluetooth::shim::LogMetricReadRssiResult(result->rem_bda, bluetooth::os::kUnknownConnectionHandle,
                                            result->hci_status, result->rssi);
 
   log::warn("device: {}, rssi: {}", result->rem_bda, result->rssi);
@@ -1321,7 +1319,7 @@ static void btm_read_failed_contact_counter_cb(void* data) {
     return;
   }
   bluetooth::shim::LogMetricReadFailedContactCounterResult(
-          result->rem_bda, bluetooth::common::kUnknownConnectionHandle, result->hci_status,
+          result->rem_bda, bluetooth::os::kUnknownConnectionHandle, result->hci_status,
           result->failed_contact_counter);
 
   log::warn("device: {}, Failed Contact Counter: {}", result->rem_bda,
@@ -1340,7 +1338,7 @@ static void btm_read_tx_power_cb(void* data) {
     return;
   }
   bluetooth::shim::LogMetricReadTxPowerLevelResult(result->rem_bda,
-                                                   bluetooth::common::kUnknownConnectionHandle,
+                                                   bluetooth::os::kUnknownConnectionHandle,
                                                    result->hci_status, result->tx_power);
 
   log::warn("device: {}, Tx Power: {}", result->rem_bda, result->tx_power);

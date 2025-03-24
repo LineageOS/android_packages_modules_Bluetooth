@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
+/** Test cases for {@link BrowsablePlayerConnector}. */
 @RunWith(AndroidJUnit4.class)
 public final class BrowsablePlayerConnectorTest {
     private static final int TIMEOUT_MS = 300;

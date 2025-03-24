@@ -49,6 +49,7 @@ import org.mockito.Mock;
 
 import java.util.ArrayList;
 
+/** Test cases for {@link MediaPlayerList}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class MediaPlayerListTest {

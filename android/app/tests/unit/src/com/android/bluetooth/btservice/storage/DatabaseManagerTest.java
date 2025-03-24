@@ -73,6 +73,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
+/** Test cases for {@link DatabaseManager}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public final class DatabaseManagerTest {

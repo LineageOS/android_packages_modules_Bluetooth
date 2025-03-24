@@ -88,6 +88,13 @@ filegroup {
 }
 
 filegroup {
+    name: "TestMockBtaHearingAidAudioSource",
+    srcs: [
+        "mock/mock_bta_hearing_aid_audio_source.cc",
+    ],
+}
+
+filegroup {
     name: "TestMockBtaHf",
     srcs: [
         "mock/mock_bta_hf*.cc",
@@ -184,6 +191,7 @@ filegroup {
         ":TestMockBtaHas",
         ":TestMockBtaHd",
         ":TestMockBtaHearingAid",
+        ":TestMockBtaHearingAidAudioSource",
         ":TestMockBtaHf",
         ":TestMockBtaHh",
         ":TestMockBtaJv",
@@ -453,6 +461,13 @@ filegroup {
     name: "TestMockStackGap",
     srcs: [
         "mock/mock_stack_gap*.cc",
+    ],
+}
+
+filegroup {
+    name: "TestMockStackGapConnInterface",
+    srcs: [
+        "mock/mock_stack_gap_conn_interface.cc",
     ],
 }
 

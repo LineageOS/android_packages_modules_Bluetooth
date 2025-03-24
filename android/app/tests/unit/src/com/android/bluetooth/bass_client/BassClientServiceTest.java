@@ -123,7 +123,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-/** Tests for {@link BassClientService} */
+/** Test cases for {@link BassClientService}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class BassClientServiceTest {

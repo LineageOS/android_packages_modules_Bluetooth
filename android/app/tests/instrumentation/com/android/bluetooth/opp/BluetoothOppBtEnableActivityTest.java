@@ -47,6 +47,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 
+/** Test cases for {@link BluetoothOppBtEnableActivity}. */
 public class BluetoothOppBtEnableActivityTest {
 
     Intent mIntent;

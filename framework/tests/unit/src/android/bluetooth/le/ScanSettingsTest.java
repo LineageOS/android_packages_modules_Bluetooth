@@ -41,7 +41,7 @@ import org.junit.rules.TestRule;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Test for Bluetooth LE {@link ScanSettings}. */
+/** Test cases for {@link ScanSettings}. */
 @RunWith(JUnit4.class)
 public class ScanSettingsTest {
     @Rule

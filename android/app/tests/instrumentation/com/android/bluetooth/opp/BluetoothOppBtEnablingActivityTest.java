@@ -51,6 +51,7 @@ import org.mockito.Spy;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
+/** Test cases for {@link BluetoothOppBtEnablingActivity}. */
 @RunWith(AndroidJUnit4.class)
 public class BluetoothOppBtEnablingActivityTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();

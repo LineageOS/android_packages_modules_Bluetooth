@@ -28,6 +28,7 @@ import org.junit.runners.JUnit4;
 
 import java.util.Random;
 
+/** Test cases for {@link PublicBroadcastData}. */
 @RunWith(JUnit4.class)
 public class PublicBroadcastDataTest {
 

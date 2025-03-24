@@ -25,7 +25,6 @@
 #define LOG_TAG "bt_bta_gattc"
 
 #include <bluetooth/log.h>
-#include <com_android_bluetooth_flags.h>
 
 #include <cstdint>
 
@@ -58,23 +57,11 @@ static uint8_t ble_acceptlist_size() {
  *
  ******************************************************************************/
 tBTA_GATTC_RCB* bta_gattc_cl_get_regcb(uint8_t client_if) {
-  if (com::android::bluetooth::flags::gatt_client_dynamic_allocation()) {
-    auto it = bta_gattc_cb.cl_rcb_map.find(client_if);
-    if (it == bta_gattc_cb.cl_rcb_map.end()) {
-      return NULL;
-    } else {
-      return it->second.get();
-    }
-  } else {
-    uint8_t i = 0;
-    tBTA_GATTC_RCB* p_clrcb = &bta_gattc_cb.cl_rcb[0];
-
-    for (i = 0; i < BTA_GATTC_CL_MAX; i++, p_clrcb++) {
-      if (p_clrcb->in_use && p_clrcb->client_if == client_if) {
-        return p_clrcb;
-      }
-    }
+  auto it = bta_gattc_cb.cl_rcb_map.find(client_if);
+  if (it == bta_gattc_cb.cl_rcb_map.end()) {
     return NULL;
+  } else {
+    return it->second.get();
   }
 }
 /*******************************************************************************
@@ -86,20 +73,7 @@ tBTA_GATTC_RCB* bta_gattc_cl_get_regcb(uint8_t client_if) {
  * Returns          pointer to the regcb
  *
  ******************************************************************************/
-uint8_t bta_gattc_num_reg_app(void) {
-  if (com::android::bluetooth::flags::gatt_client_dynamic_allocation()) {
-    return (uint8_t)bta_gattc_cb.cl_rcb_map.size();
-  } else {
-    uint8_t i = 0, j = 0;
-
-    for (i = 0; i < BTA_GATTC_CL_MAX; i++) {
-      if (bta_gattc_cb.cl_rcb[i].in_use) {
-        j++;
-      }
-    }
-    return j;
-  }
-}
+uint8_t bta_gattc_num_reg_app(void) { return (uint8_t)bta_gattc_cb.cl_rcb_map.size(); }
 /*******************************************************************************
  *
  * Function         bta_gattc_find_clcb_by_cif
@@ -111,21 +85,10 @@ uint8_t bta_gattc_num_reg_app(void) {
  ******************************************************************************/
 tBTA_GATTC_CLCB* bta_gattc_find_clcb_by_cif(uint8_t client_if, const RawAddress& remote_bda,
                                             tBT_TRANSPORT transport) {
-  if (com::android::bluetooth::flags::gatt_client_dynamic_allocation()) {
-    for (auto& p_clcb : bta_gattc_cb.clcb_set) {
-      if (p_clcb->in_use && p_clcb->p_rcb->client_if == client_if &&
-          p_clcb->transport == transport && p_clcb->bda == remote_bda) {
-        return p_clcb.get();
-      }
-    }
-  } else {
-    tBTA_GATTC_CLCB* p_clcb = &bta_gattc_cb.clcb[0];
-
-    for (size_t i = 0; i < BTA_GATTC_CLCB_MAX; i++, p_clcb++) {
-      if (p_clcb->in_use && p_clcb->p_rcb->client_if == client_if &&
-          p_clcb->transport == transport && p_clcb->bda == remote_bda) {
-        return p_clcb;
-      }
+  for (auto& p_clcb : bta_gattc_cb.clcb_set) {
+    if (p_clcb->in_use && p_clcb->p_rcb->client_if == client_if && p_clcb->transport == transport &&
+        p_clcb->bda == remote_bda) {
+      return p_clcb.get();
     }
   }
   return NULL;
@@ -140,19 +103,9 @@ tBTA_GATTC_CLCB* bta_gattc_find_clcb_by_cif(uint8_t client_if, const RawAddress&
  *
  ******************************************************************************/
 tBTA_GATTC_CLCB* bta_gattc_find_clcb_by_conn_id(tCONN_ID conn_id) {
-  if (com::android::bluetooth::flags::gatt_client_dynamic_allocation()) {
-    for (auto& p_clcb : bta_gattc_cb.clcb_set) {
-      if (p_clcb->in_use && p_clcb->bta_conn_id == conn_id) {
-        return p_clcb.get();
-      }
-    }
-  } else {
-    tBTA_GATTC_CLCB* p_clcb = &bta_gattc_cb.clcb[0];
-
-    for (size_t i = 0; i < BTA_GATTC_CLCB_MAX; i++, p_clcb++) {
-      if (p_clcb->in_use && p_clcb->bta_conn_id == conn_id) {
-        return p_clcb;
-      }
+  for (auto& p_clcb : bta_gattc_cb.clcb_set) {
+    if (p_clcb != NULL && p_clcb->in_use && p_clcb->bta_conn_id == conn_id) {
+      return p_clcb.get();
     }
   }
   return NULL;
@@ -171,63 +124,30 @@ tBTA_GATTC_CLCB* bta_gattc_clcb_alloc(tGATT_IF client_if, const RawAddress& remo
                                       tBT_TRANSPORT transport) {
   tBTA_GATTC_CLCB* p_clcb = NULL;
 
-  if (com::android::bluetooth::flags::gatt_client_dynamic_allocation()) {
-    bta_gattc_cleanup_clcb();
-    auto [p_clcb_i, b] = bta_gattc_cb.clcb_set.emplace(std::make_unique<tBTA_GATTC_CLCB>());
-    p_clcb = p_clcb_i->get();
+  bta_gattc_cleanup_clcb();
+  auto [p_clcb_i, b] = bta_gattc_cb.clcb_set.emplace(std::make_unique<tBTA_GATTC_CLCB>());
+  p_clcb = p_clcb_i->get();
 
-    p_clcb->in_use = true;
-    p_clcb->status = GATT_SUCCESS;
-    p_clcb->transport = transport;
-    p_clcb->bda = remote_bda;
-    p_clcb->p_q_cmd = NULL;
+  p_clcb->in_use = true;
+  p_clcb->status = GATT_SUCCESS;
+  p_clcb->transport = transport;
+  p_clcb->bda = remote_bda;
+  p_clcb->p_q_cmd = NULL;
 
-    p_clcb->p_rcb = bta_gattc_cl_get_regcb(client_if);
+  p_clcb->p_rcb = bta_gattc_cl_get_regcb(client_if);
 
-    p_clcb->p_srcb = bta_gattc_find_srcb(remote_bda);
-    if (p_clcb->p_srcb == NULL) {
-      p_clcb->p_srcb = bta_gattc_srcb_alloc(remote_bda);
-    }
+  p_clcb->p_srcb = bta_gattc_find_srcb(remote_bda);
+  if (p_clcb->p_srcb == NULL) {
+    p_clcb->p_srcb = bta_gattc_srcb_alloc(remote_bda);
+  }
 
-    if (p_clcb->p_rcb != NULL && p_clcb->p_srcb != NULL) {
-      p_clcb->p_srcb->num_clcb++;
-      p_clcb->p_rcb->num_clcb++;
-    } else {
-      /* release this clcb if clcb or srcb allocation failed */
-      bta_gattc_cb.clcb_set.erase(p_clcb_i);
-      p_clcb = NULL;
-    }
+  if (p_clcb->p_rcb != NULL && p_clcb->p_srcb != NULL) {
+    p_clcb->p_srcb->num_clcb++;
+    p_clcb->p_rcb->num_clcb++;
   } else {
-    for (int i_clcb = 0; i_clcb < BTA_GATTC_CLCB_MAX; i_clcb++) {
-      if (!bta_gattc_cb.clcb[i_clcb].in_use) {
-#if (BTA_GATT_DEBUG == TRUE)
-        log::verbose("found clcb:{} available", i_clcb);
-#endif
-        p_clcb = &bta_gattc_cb.clcb[i_clcb];
-        p_clcb->in_use = true;
-        p_clcb->status = GATT_SUCCESS;
-        p_clcb->transport = transport;
-        p_clcb->bda = remote_bda;
-        p_clcb->p_q_cmd = NULL;
-
-        p_clcb->p_rcb = bta_gattc_cl_get_regcb(client_if);
-
-        p_clcb->p_srcb = bta_gattc_find_srcb(remote_bda);
-        if (p_clcb->p_srcb == NULL) {
-          p_clcb->p_srcb = bta_gattc_srcb_alloc(remote_bda);
-        }
-
-        if (p_clcb->p_rcb != NULL && p_clcb->p_srcb != NULL) {
-          p_clcb->p_srcb->num_clcb++;
-          p_clcb->p_rcb->num_clcb++;
-        } else {
-          /* release this clcb if clcb or srcb allocation failed */
-          p_clcb->in_use = false;
-          p_clcb = NULL;
-        }
-        break;
-      }
-    }
+    /* release this clcb if clcb or srcb allocation failed */
+    bta_gattc_cb.clcb_set.erase(p_clcb_i);
+    p_clcb = NULL;
   }
   return p_clcb;
 }
@@ -330,9 +250,7 @@ void bta_gattc_clcb_dealloc(tBTA_GATTC_CLCB* p_clcb) {
   p_clcb->status = GATT_SUCCESS;
   // in bta_gattc_sm_execute(), p_clcb is accessed again so we dealloc clcb later.
   // it will be claned up when the client is deregistered or a new clcb is allocated.
-  if (com::android::bluetooth::flags::gatt_client_dynamic_allocation()) {
-    bta_gattc_cb.clcb_pending_dealloc.insert(p_clcb);
-  }
+  bta_gattc_cb.clcb_pending_dealloc.insert(p_clcb);
 }
 
 /*******************************************************************************
@@ -643,38 +561,20 @@ bool bta_gattc_mark_bg_conn(tGATT_IF client_if, const RawAddress& remote_bda_ptr
   for (i = 0; i < ble_acceptlist_size(); i++, p_bg_tck++) {
     if (p_bg_tck->in_use &&
         ((p_bg_tck->remote_bda == remote_bda_ptr) || (p_bg_tck->remote_bda.IsEmpty()))) {
-      if (com::android::bluetooth::flags::gatt_client_dynamic_allocation()) {
-        auto& p_cif_set = p_bg_tck->cif_set;
-        if (add) { /* mask on the cif bit */
-          p_cif_set.insert(client_if);
-        } else {
-          if (client_if != 0) {
-            p_cif_set.erase(client_if);
-          } else {
-            p_cif_set.clear();
-          }
-        }
-        /* no BG connection for this device, make it available */
-        if (p_bg_tck->cif_set.empty()) {
-          p_bg_tck->in_use = false;
-          p_bg_tck->remote_bda = RawAddress::kEmpty;
-        }
+      auto& p_cif_set = p_bg_tck->cif_set;
+      if (add) { /* mask on the cif bit */
+        p_cif_set.insert(client_if);
       } else {
-        p_cif_mask = &p_bg_tck->cif_mask;
-
-        if (add) { /* mask on the cif bit */
-          *p_cif_mask |= (1 << (client_if - 1));
+        if (client_if != 0) {
+          p_cif_set.erase(client_if);
         } else {
-          if (client_if != 0) {
-            *p_cif_mask &= (~(1 << (client_if - 1)));
-          } else {
-            *p_cif_mask = 0;
-          }
+          p_cif_set.clear();
         }
-        /* no BG connection for this device, make it available */
-        if (p_bg_tck->cif_mask == 0) {
-          *p_bg_tck = tBTA_GATTC_BG_TCK{};
-        }
+      }
+      /* no BG connection for this device, make it available */
+      if (p_bg_tck->cif_set.empty()) {
+        p_bg_tck->in_use = false;
+        p_bg_tck->remote_bda = RawAddress::kEmpty;
       }
       return true;
     }
@@ -688,12 +588,7 @@ bool bta_gattc_mark_bg_conn(tGATT_IF client_if, const RawAddress& remote_bda_ptr
         p_bg_tck->in_use = true;
         p_bg_tck->remote_bda = remote_bda_ptr;
 
-        if (com::android::bluetooth::flags::gatt_client_dynamic_allocation()) {
-          p_bg_tck->cif_set = {client_if};
-        } else {
-          p_cif_mask = &p_bg_tck->cif_mask;
-          *p_cif_mask = ((tBTA_GATTC_CIF_MASK)1 << (client_if - 1));
-        }
+        p_bg_tck->cif_set = {client_if};
         return true;
       }
     }
@@ -719,15 +614,8 @@ bool bta_gattc_check_bg_conn(tGATT_IF client_if, const RawAddress& remote_bda, u
   for (i = 0; i < ble_acceptlist_size() && !is_bg_conn; i++, p_bg_tck++) {
     if (p_bg_tck->in_use &&
         (p_bg_tck->remote_bda == remote_bda || p_bg_tck->remote_bda.IsEmpty())) {
-      if (com::android::bluetooth::flags::gatt_client_dynamic_allocation()) {
-        if (p_bg_tck->cif_set.contains(client_if) && role == HCI_ROLE_CENTRAL) {
-          is_bg_conn = true;
-        }
-      } else {
-        if (((p_bg_tck->cif_mask & ((tBTA_GATTC_CIF_MASK)1 << (client_if - 1))) != 0) &&
-            role == HCI_ROLE_CENTRAL) {
-          is_bg_conn = true;
-        }
+      if (p_bg_tck->cif_set.contains(client_if) && role == HCI_ROLE_CENTRAL) {
+        is_bg_conn = true;
       }
     }
   }
@@ -938,58 +826,28 @@ void bta_gatt_client_dump(int fd) {
 
   stream << "  -- used: " << entry_count << "\n";
   entry_count = 0;
-  if (com::android::bluetooth::flags::gatt_client_dynamic_allocation()) {
-    stream << " ->cl_rcb (dynamic)\n";
-    for (auto& [i, p_cl_rcb] : bta_gattc_cb.cl_rcb_map) {
-      entry_count++;
-      stream << "  client_if: " << +p_cl_rcb->client_if << "  app uuids: " << p_cl_rcb->app_uuid
-             << "  clcb_num: " << +p_cl_rcb->num_clcb;
-      stream << "\n";
-    }
-  } else {
-    stream << " ->cl_rcb (BTA_GATTC_CL_MAX=" << BTA_GATTC_CL_MAX << ")\n";
-    for (int i = 0; i < BTA_GATTC_CL_MAX; i++) {
-      tBTA_GATTC_RCB* p_cl_rcb = &bta_gattc_cb.cl_rcb[i];
-      if (!p_cl_rcb->in_use) {
-        continue;
-      }
-      entry_count++;
-      stream << "  client_if: " << +p_cl_rcb->client_if << "  app uuids: " << p_cl_rcb->app_uuid
-             << "  clcb_num: " << +p_cl_rcb->num_clcb;
-      stream << "\n";
-    }
+  stream << " ->cl_rcb (dynamic)\n";
+  for (auto& [i, p_cl_rcb] : bta_gattc_cb.cl_rcb_map) {
+    entry_count++;
+    stream << "  client_if: " << +p_cl_rcb->client_if << "  app uuids: " << p_cl_rcb->app_uuid
+           << "  clcb_num: " << +p_cl_rcb->num_clcb;
+    stream << "\n";
   }
 
   stream << "  -- used: " << entry_count << "\n";
   entry_count = 0;
 
-  if (com::android::bluetooth::flags::gatt_client_dynamic_allocation()) {
-    stream << " ->clcb (dynamic)\n";
-    for (auto& p_clcb : bta_gattc_cb.clcb_set) {
-      if (!p_clcb->in_use) {
-        continue;
-      }
-      entry_count++;
-      stream << "  conn_id: " << loghex(p_clcb->bta_conn_id)
-             << "  address: " << p_clcb->bda.ToRedactedStringForLogging()
-             << "  transport: " << bt_transport_text(p_clcb->transport)
-             << "  state: " << bta_clcb_state_text(p_clcb->state);
-      stream << "\n";
+  stream << " ->clcb (dynamic)\n";
+  for (auto& p_clcb : bta_gattc_cb.clcb_set) {
+    if (!p_clcb->in_use) {
+      continue;
     }
-  } else {
-    stream << " ->clcb (BTA_GATTC_CLCB_MAX=" << BTA_GATTC_CLCB_MAX << ")\n";
-    for (size_t i = 0; i < BTA_GATTC_CLCB_MAX; i++) {
-      tBTA_GATTC_CLCB* p_clcb = &bta_gattc_cb.clcb[i];
-      if (!p_clcb->in_use) {
-        continue;
-      }
-      entry_count++;
-      stream << "  conn_id: " << loghex(p_clcb->bta_conn_id)
-             << "  address: " << p_clcb->bda.ToRedactedStringForLogging()
-             << "  transport: " << bt_transport_text(p_clcb->transport)
-             << "  state: " << bta_clcb_state_text(p_clcb->state);
-      stream << "\n";
-    }
+    entry_count++;
+    stream << "  conn_id: " << loghex(p_clcb->bta_conn_id)
+           << "  address: " << p_clcb->bda.ToRedactedStringForLogging()
+           << "  transport: " << bt_transport_text(p_clcb->transport)
+           << "  state: " << bta_clcb_state_text(p_clcb->state);
+    stream << "\n";
   }
 
   stream << "  -- used: " << entry_count << "\n";

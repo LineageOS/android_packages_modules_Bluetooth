@@ -52,6 +52,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+/** Test cases for {@link TbsGeneric}. */
 @MediumTest
 @RunWith(AndroidJUnit4.class)
 public class TbsGenericTest {

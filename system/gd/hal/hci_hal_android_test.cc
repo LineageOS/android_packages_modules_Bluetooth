@@ -20,6 +20,7 @@
 #include <queue>
 #include <thread>
 
+#include "com_android_bluetooth_flags.h"
 #include "hal/hci_backend.h"
 #include "hal/hci_hal.h"
 #include "os/thread.h"
@@ -79,10 +80,13 @@ protected:
   }
 
   void TearDown() override {
-    fake_registry_.StopAll();
     handler_->Clear();
-    delete thread_;
+    if (com::android::bluetooth::flags::same_handler_for_all_modules()) {
+      handler_->WaitUntilStopped(bluetooth::kHandlerStopTimeout);
+    }
+    fake_registry_.StopAll();
     delete handler_;
+    delete thread_;
   }
 
   HciHal* hal;

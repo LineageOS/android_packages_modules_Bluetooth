@@ -45,6 +45,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 
+/** Test cases for {@link VolumeControlNativeCallback}. */
 @RunWith(AndroidJUnit4.class)
 public class VolumeControlNativeCallbackTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();

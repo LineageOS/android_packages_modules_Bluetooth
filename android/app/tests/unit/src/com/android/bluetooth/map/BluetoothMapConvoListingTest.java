@@ -31,6 +31,7 @@ import org.junit.runner.RunWith;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 
+/** Test cases for {@link BluetoothMapConvoListing}. */
 @RunWith(AndroidJUnit4.class)
 public class BluetoothMapConvoListingTest {
     private static final long TEST_LAST_ACTIVITY_EARLIEST = 0;

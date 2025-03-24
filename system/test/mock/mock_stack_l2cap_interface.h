@@ -64,9 +64,6 @@ public:
   MOCK_METHOD(bool, L2CA_GetPeerFeatures,
               (const RawAddress& bd_addr, uint32_t* p_ext_feat, uint8_t* p_chnl_mask));
   MOCK_METHOD(bool, L2CA_SetAclPriority, (const RawAddress& bd_addr, tL2CAP_PRIORITY priority));
-  MOCK_METHOD(void, L2CA_SetDefaultSubrate,
-              (uint16_t subrate_min, uint16_t subrate_max, uint16_t max_latency, uint16_t cont_num,
-               uint16_t timeout));
   MOCK_METHOD(void, L2CA_AdjustConnectionIntervals,
               (uint16_t* min_interval, uint16_t* max_interval, uint16_t floor_interval));
   MOCK_METHOD(void, L2CA_SetEcosystemBaseInterval, (uint32_t base_interval));

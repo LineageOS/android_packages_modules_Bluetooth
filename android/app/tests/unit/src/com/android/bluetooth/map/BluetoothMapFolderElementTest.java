@@ -24,6 +24,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+/** Test cases for {@link BluetoothMapFolderElement}. */
 @RunWith(AndroidJUnit4.class)
 public class BluetoothMapFolderElementTest {
     private static final boolean TEST_HAS_SMS_MMS_CONTENT = true;

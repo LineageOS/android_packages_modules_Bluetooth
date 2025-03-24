@@ -27,7 +27,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.runners.JUnit4;
 
-/** Unit test cases for {@link BluetoothUuid}. */
+/** Test cases for {@link BluetoothUuid}. */
 @RunWith(JUnit4.class)
 public class BluetoothUuidTest {
 

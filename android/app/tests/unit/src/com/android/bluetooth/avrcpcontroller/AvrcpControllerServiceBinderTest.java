@@ -24,6 +24,7 @@ import static com.android.bluetooth.TestUtils.getTestDevice;
 import static org.mockito.Mockito.verify;
 
 import android.bluetooth.BluetoothDevice;
+import android.content.AttributionSource;
 
 import androidx.test.filters.SmallTest;
 import androidx.test.runner.AndroidJUnit4;
@@ -34,52 +35,53 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 
+/** Test cases for {@link AvrcpControllerServiceBinder}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class AvrcpControllerServiceBinderTest {
+
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
     @Mock private AvrcpControllerService mService;
 
+    private final AttributionSource mAttributionSource = new AttributionSource.Builder(1).build();
     private final BluetoothDevice mDevice = getTestDevice(49);
 
-    AvrcpControllerService.AvrcpControllerServiceBinder mBinder;
+    private AvrcpControllerServiceBinder mBinder;
 
     @Before
     public void setUp() throws Exception {
-        mBinder = new AvrcpControllerService.AvrcpControllerServiceBinder(mService);
+        mBinder = new AvrcpControllerServiceBinder(mService);
     }
 
     @Test
     public void getConnectedDevices_callsServiceMethod() {
-        mBinder.getConnectedDevices(null);
-
+        mBinder.getConnectedDevices(mAttributionSource);
         verify(mService).getConnectedDevices();
     }
 
     @Test
     public void getDevicesMatchingConnectionStates_callsServiceMethod() {
         int[] states = new int[] {STATE_CONNECTED};
-        mBinder.getDevicesMatchingConnectionStates(states, null);
 
+        mBinder.getDevicesMatchingConnectionStates(states, mAttributionSource);
         verify(mService).getDevicesMatchingConnectionStates(states);
     }
 
     @Test
     public void getConnectionState_callsServiceMethod() {
-        mBinder.getConnectionState(mDevice, null);
-
+        mBinder.getConnectionState(mDevice, mAttributionSource);
         verify(mService).getConnectionState(mDevice);
     }
 
     @Test
     public void sendGroupNavigationCmd_notImplemented_doesNothing() {
-        mBinder.sendGroupNavigationCmd(mDevice, 1, 2, null);
+        mBinder.sendGroupNavigationCmd(mDevice, 1, 2, mAttributionSource);
     }
 
     @Test
     public void getPlayerSettings_notImplemented_doesNothing() {
-        mBinder.getPlayerSettings(mDevice, null);
+        mBinder.getPlayerSettings(mDevice, mAttributionSource);
     }
 
     @Test

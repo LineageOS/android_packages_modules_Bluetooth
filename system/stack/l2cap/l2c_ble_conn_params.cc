@@ -510,26 +510,6 @@ static void l2cble_start_subrate_change(tL2C_LCB* p_lcb) {
 
 /*******************************************************************************
  *
- *  Function        L2CA_SetDefaultSubrate
- *
- *  Description     BLE Set Default Subrate
- *
- *  Parameters:     Subrate parameters
- *
- *  Return value:   void
- *
- ******************************************************************************/
-void L2CA_SetDefaultSubrate(uint16_t subrate_min, uint16_t subrate_max, uint16_t max_latency,
-                            uint16_t cont_num, uint16_t timeout) {
-  log::verbose("subrate_min={}, subrate_max={}, max_latency={}, cont_num={}, timeout={}",
-               subrate_min, subrate_max, max_latency, cont_num, timeout);
-
-  bluetooth::shim::ACL_LeSetDefaultSubrate(subrate_min, subrate_max, max_latency, cont_num,
-                                           timeout);
-}
-
-/*******************************************************************************
- *
  *  Function        L2CA_SubrateRequest
  *
  *  Description     BLE Subrate request.

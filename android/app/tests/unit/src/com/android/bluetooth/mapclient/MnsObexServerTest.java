@@ -41,6 +41,7 @@ import org.mockito.Mock;
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
 
+/** Test cases for {@link MnsObexServer}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class MnsObexServerTest {

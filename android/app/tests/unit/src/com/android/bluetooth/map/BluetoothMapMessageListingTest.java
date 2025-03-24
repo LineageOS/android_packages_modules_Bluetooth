@@ -37,6 +37,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
+/** Test cases for {@link BluetoothMapMessageListing}. */
 @RunWith(AndroidJUnit4.class)
 public class BluetoothMapMessageListingTest {
     private static final long TEST_DATE_TIME_EARLIEST = 0;

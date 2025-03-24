@@ -26,6 +26,7 @@ import org.junit.runner.RunWith;
 
 import java.util.Calendar;
 
+/** Test cases for {@link MessagesFilter}. */
 @SmallTest
 @RunWith(AndroidJUnit4.class)
 public class MessagesFilterTest {
