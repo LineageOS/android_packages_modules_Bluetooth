@@ -23,7 +23,7 @@ import android.bluetooth.BluetoothDevice;
 
 import com.android.internal.annotations.VisibleForTesting;
 
-public class StackEvent {
+class StackEvent {
     // Type of event that signifies a native event and consumed by state machine
     public static final int STACK_EVENT = 100;
 

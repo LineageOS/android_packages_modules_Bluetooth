@@ -38,9 +38,6 @@ import java.util.Objects;
 class VendorCommandResponseProcessor {
     private static final String TAG = VendorCommandResponseProcessor.class.getSimpleName();
 
-    private final HeadsetClientService mService;
-    private final NativeInterface mNativeInterface;
-
     // Keys are AT commands (without payload), and values are the company IDs.
     private static final Map<String, Integer> SUPPORTED_VENDOR_AT_COMMANDS;
 
@@ -62,12 +59,15 @@ class VendorCommandResponseProcessor {
         SUPPORTED_VENDOR_EVENTS.put("+ANDROID:", BluetoothAssignedNumbers.GOOGLE);
     }
 
+    private final HeadsetClientService mService;
+    private final NativeInterface mNativeInterface;
+
     VendorCommandResponseProcessor(HeadsetClientService context, NativeInterface nativeInterface) {
         mService = context;
         mNativeInterface = nativeInterface;
     }
 
-    public boolean sendCommand(int vendorId, String atCommand, BluetoothDevice device) {
+    boolean sendCommand(int vendorId, String atCommand, BluetoothDevice device) {
         if (device == null) {
             Log.w(TAG, "processVendorCommand device is null");
             return false;
@@ -133,7 +133,7 @@ class VendorCommandResponseProcessor {
         return eventCode;
     }
 
-    public boolean isAndroidAtCommand(String atString) {
+    boolean isAndroidAtCommand(String atString) {
         String eventCode = getVendorIdFromAtCommand(atString);
         Integer vendorId = SUPPORTED_VENDOR_EVENTS.get(eventCode);
         if (vendorId == null) {
@@ -142,7 +142,7 @@ class VendorCommandResponseProcessor {
         return vendorId == BluetoothAssignedNumbers.GOOGLE;
     }
 
-    public boolean processEvent(String atString, BluetoothDevice device) {
+    boolean processEvent(String atString, BluetoothDevice device) {
         if (device == null) {
             Log.w(TAG, "processVendorEvent device is null");
             return false;
