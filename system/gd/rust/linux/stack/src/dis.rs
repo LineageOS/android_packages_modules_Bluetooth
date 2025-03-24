@@ -121,17 +121,14 @@ impl DeviceInformation {
                         value.extend_from_slice(&product_id.to_le_bytes()[0..2]);
                         value.extend_from_slice(&product_version.to_le_bytes()[0..2]);
 
-                        // SAFETY: Initialized all values of the BtGattResponse object
-                        unsafe {
-                            self.bluetooth_gatt.lock().unwrap().send_response(
-                                server_id,
-                                *addr,
-                                *trans_id,
-                                GattStatus::Success,
-                                *offset,
-                                value,
-                            );
-                        }
+                        self.bluetooth_gatt.lock().unwrap().send_response(
+                            server_id,
+                            *addr,
+                            *trans_id,
+                            GattStatus::Success,
+                            *offset,
+                            value,
+                        );
                     }
                 }
 

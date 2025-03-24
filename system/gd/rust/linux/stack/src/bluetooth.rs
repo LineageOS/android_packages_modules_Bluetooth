@@ -58,10 +58,6 @@ const MIN_ADV_INSTANCES_FOR_MULTI_ADV: u8 = 5;
 /// clear event should be sent to clients.
 const FOUND_DEVICE_FRESHNESS: Duration = Duration::from_secs(30);
 
-/// This is the value returned from Bluetooth Interface calls.
-// TODO(241930383): Add enum to topshim
-const BTM_SUCCESS: i32 = 0;
-
 const PID_DIR: &str = "/var/run/bluetooth";
 
 const DUMPSYS_LOG: &str = "/tmp/dumpsys.log";

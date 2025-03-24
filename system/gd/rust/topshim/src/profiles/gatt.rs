@@ -1501,8 +1501,8 @@ impl GattServer {
         status: i32,
         response: &BtGattResponse,
     ) -> BtStatus {
-        /// SAFETY: `handle` and `btgatt_value_t` support all byte sequences as valid values, but
-        /// said sequences must be preset to avoid undefined behavior.
+        // SAFETY: `handle` and `btgatt_value_t` support all byte sequences as valid values, but
+        // said sequences must be preset to avoid undefined behavior.
         unsafe {
             // TODO(b/383549885) Devise a method to print bound wrapper type BtGattResponse
             log::debug!(
