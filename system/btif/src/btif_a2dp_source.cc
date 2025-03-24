@@ -33,6 +33,7 @@
 #include <cstdint>
 #include <cstring>
 #include <future>
+#include <iomanip>
 #include <string>
 #include <utility>
 #include <vector>
@@ -644,9 +645,22 @@ static void btif_a2dp_source_setup_codec(const RawAddress& peer_address) {
           btif_a2dp_source_cb.encoder_interface->get_encoder_interval_ms();
 
   if (bluetooth::audio::a2dp::is_hal_enabled()) {
-    bluetooth::audio::a2dp::setup_codec(a2dp_codec_config,
-                                        btif_a2dp_get_peer_mtu(a2dp_codec_config),
-                                        bta_av_co_get_encoder_preferred_interval_us());
+    bluetooth::audio::a2dp::ahal_codec_configuration config = {
+            .peer_mtu = btif_a2dp_get_peer_mtu(a2dp_codec_config),
+            .preferred_encoding_interval_us = bta_av_co_get_encoder_preferred_interval_us(),
+            .codec_bitrate = a2dp_codec_config->getTrackBitRate(),
+            .codec_config = a2dp_codec_config->getCodecConfig(),
+    };
+    a2dp_codec_config->copyOutOtaCodecConfig(config.codec_specific_information_elements);
+
+    tBT_A2DP_OFFLOAD a2dp_codec_specific_config = {};
+    a2dp_codec_config->getCodecSpecificConfig(&a2dp_codec_specific_config);
+    memcpy(config.vendor_codec_info, a2dp_codec_specific_config.codec_info,
+           sizeof(a2dp_codec_specific_config.codec_info));
+
+    log::verbose("{}", config.ToString());
+
+    bluetooth::audio::a2dp::setup_codec(config);
   }
 }
 

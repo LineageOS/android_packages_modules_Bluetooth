@@ -163,11 +163,9 @@ void set_remote_delay(uint16_t delay_report) {
   inc_func_call_count(__func__);
   test::mock::audio_hal_interface_a2dp_encoding::set_remote_delay(delay_report);
 }
-bool setup_codec(A2dpCodecConfig* a2dp_config, uint16_t peer_mtu,
-                 int preferred_encoding_interval_us) {
+bool setup_codec(const ::bluetooth::audio::a2dp::ahal_codec_configuration& config) {
   inc_func_call_count(__func__);
-  return test::mock::audio_hal_interface_a2dp_encoding::setup_codec(a2dp_config, peer_mtu,
-                                                                    preferred_encoding_interval_us);
+  return test::mock::audio_hal_interface_a2dp_encoding::setup_codec(config);
 }
 std::optional<btav_a2dp_codec_index_t> provider::sink_codec_index(const uint8_t* p_codec_info) {
   inc_func_call_count(__func__);

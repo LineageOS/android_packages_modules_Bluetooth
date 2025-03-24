@@ -20,11 +20,54 @@
 
 #include "aidl/a2dp/a2dp_encoding_aidl.h"
 #include "hal_version_manager.h"
+#include "hardware/bt_av.h"
 #include "hidl/a2dp_encoding_hidl.h"
 
 namespace bluetooth {
 namespace audio {
 namespace a2dp {
+
+std::string ahal_codec_configuration::ToString() const {
+  std::string result_string;
+  auto out = std::back_inserter(result_string);
+
+  std::format_to(out,
+                 "ahal_codec_configuration: {{\n"
+                 "  codec_config: {{ {} }}\n"
+                 "  peer_mtu: {}\n"
+                 "  preferred_encoding_interval_us: {}\n"
+                 "  codec_bitrate: {}\n",
+                 codec_config.ToString(), peer_mtu, preferred_encoding_interval_us, codec_bitrate);
+
+  std::format_to(out, "  codec_specific_information_elements: [\n");
+
+  for (size_t i = 0; i < AVDT_CODEC_SIZE; ++i) {
+    std::format_to(out, "0x{:02x}",
+                   static_cast<unsigned int>(codec_specific_information_elements[i]));
+    if (i < AVDT_CODEC_SIZE - 1) {
+      std::format_to(out, ", ");
+      if ((i + 1) % 8 == 0) {
+        std::format_to(out, "\n    ");
+      }
+    }
+  }
+
+  std::format_to(out, "  ]\n  vendor_codec_info: [\n");
+
+  for (size_t i = 0; i < CODEC_INFO_LEN; ++i) {
+    std::format_to(out, "0x{:02x}", static_cast<unsigned int>(vendor_codec_info[i]));
+    if (i < CODEC_INFO_LEN - 1) {
+      std::format_to(out, ", ");
+      if ((i + 1) % 8 == 0) {
+        std::format_to(out, "\n    ");
+      }
+    }
+  }
+
+  std::format_to(out, "}}");
+
+  return result_string;
+}
 
 bool update_codec_offloading_capabilities(
         const std::vector<btav_a2dp_codec_config_t>& framework_preference,
@@ -71,12 +114,11 @@ void cleanup() {
 }
 
 // Set up the codec into BluetoothAudio HAL
-bool setup_codec(A2dpCodecConfig* a2dp_config, uint16_t peer_mtu,
-                 int preferred_encoding_interval_us) {
+bool setup_codec(const ahal_codec_configuration& config) {
   if (HalVersionManager::GetHalTransport() == BluetoothAudioHalTransport::HIDL) {
-    return hidl::a2dp::setup_codec(a2dp_config, peer_mtu, preferred_encoding_interval_us);
+    return hidl::a2dp::setup_codec(config);
   }
-  return aidl::a2dp::setup_codec(a2dp_config, peer_mtu, preferred_encoding_interval_us);
+  return aidl::a2dp::setup_codec(config);
 }
 
 // Send command to the BluetoothAudio HAL: StartSession, EndSession,

@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "a2dp_codec_api.h"
+#include "audio_hal_interface/a2dp_encoding.h"
 
 namespace bluetooth {
 namespace audio {
@@ -38,10 +39,14 @@ SampleRate A2dpCodecToHalSampleRate(const btav_a2dp_codec_config_t& a2dp_codec_c
 BitsPerSample A2dpCodecToHalBitsPerSample(const btav_a2dp_codec_config_t& a2dp_codec_config);
 ChannelMode A2dpCodecToHalChannelMode(const btav_a2dp_codec_config_t& a2dp_codec_config);
 
-bool A2dpSbcToHalConfig(CodecConfiguration* codec_config, A2dpCodecConfig* a2dp_config);
-bool A2dpAacToHalConfig(CodecConfiguration* codec_config, A2dpCodecConfig* a2dp_config);
-bool A2dpAptxToHalConfig(CodecConfiguration* codec_config, A2dpCodecConfig* a2dp_config);
-bool A2dpLdacToHalConfig(CodecConfiguration* codec_config, A2dpCodecConfig* a2dp_config);
+bool A2dpSbcToHalConfig(const ::bluetooth::audio::a2dp::ahal_codec_configuration& config,
+                        CodecConfiguration* codec_config);
+bool A2dpAacToHalConfig(const ::bluetooth::audio::a2dp::ahal_codec_configuration& config,
+                        CodecConfiguration* codec_config);
+bool A2dpAptxToHalConfig(const ::bluetooth::audio::a2dp::ahal_codec_configuration& config,
+                         CodecConfiguration* codec_config);
+bool A2dpLdacToHalConfig(const ::bluetooth::audio::a2dp::ahal_codec_configuration& config,
+                         CodecConfiguration* codec_config);
 
 bool UpdateOffloadingCapabilities(
         const std::vector<btav_a2dp_codec_config_t>& framework_preference);

@@ -59,8 +59,7 @@ void cleanup();
 /***
  * Set up the codec into BluetoothAudio HAL
  ***/
-bool setup_codec(A2dpCodecConfig* a2dp_config, uint16_t peer_mtu,
-                 int preferred_encoding_interval_us);
+bool setup_codec(const ::bluetooth::audio::a2dp::ahal_codec_configuration& config);
 
 /***
  * Send command to the BluetoothAudio HAL: StartSession, EndSession,

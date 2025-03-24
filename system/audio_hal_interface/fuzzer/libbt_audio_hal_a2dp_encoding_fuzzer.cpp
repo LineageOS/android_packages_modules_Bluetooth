@@ -101,8 +101,26 @@ void A2dpEncodingFuzzer::process(const uint8_t* data, size_t size) {
     return;
   }
 
-  if (!bluetooth::audio::a2dp::setup_codec(bta_av_get_a2dp_current_codec(), peer_mtu,
-                                           preferred_encoding_interval_us)) {
+  A2dpCodecConfig* a2dp_codec_config = bta_av_get_a2dp_current_codec();
+  if (a2dp_codec_config == nullptr) {
+    return;
+  }
+
+  bluetooth::audio::a2dp::ahal_codec_configuration config = {
+          .peer_mtu = peer_mtu,
+          .preferred_encoding_interval_us = preferred_encoding_interval_us,
+          .codec_bitrate = a2dp_codec_config->getTrackBitRate(),
+          .codec_config = a2dp_codec_config->getCodecConfig(),
+  };
+
+  a2dp_codec_config->copyOutOtaCodecConfig(config.codec_specific_information_elements);
+
+  tBT_A2DP_OFFLOAD a2dp_codec_specific_config = {};
+  a2dp_codec_config->getCodecSpecificConfig(&a2dp_codec_specific_config);
+  memcpy(config.vendor_codec_info, a2dp_codec_specific_config.codec_info,
+         sizeof(a2dp_codec_specific_config.codec_info));
+
+  if (!bluetooth::audio::a2dp::setup_codec(config)) {
     return;
   }
 
