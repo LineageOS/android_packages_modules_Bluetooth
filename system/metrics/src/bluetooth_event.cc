@@ -507,5 +507,20 @@ void LogMetricScoCodec(hci::Address address, uint16_t codec) {
                                          bluetooth::metrics::MapScoCodecToState(codec));
 }
 
+void LogMetricHfpStartStream(hci::Address address) {
+  bluetooth::os::LogMetricBluetoothEvent(address, EventType::SCO_SESSION,
+                                         State::AUDIO_PORT_START_STREAM);
+}
+
+void LogMetricHfpSuspendStream(hci::Address address) {
+  bluetooth::os::LogMetricBluetoothEvent(address, EventType::SCO_SESSION,
+                                         State::AUDIO_PORT_SUSPEND_STREAM);
+}
+
+void LogMetricHfpStreamStarted(hci::Address address) {
+  bluetooth::os::LogMetricBluetoothEvent(address, EventType::SCO_SESSION,
+                                         State::AUDIO_PROVIDER_STREAM_STARTED);
+}
+
 }  // namespace metrics
 }  // namespace bluetooth
