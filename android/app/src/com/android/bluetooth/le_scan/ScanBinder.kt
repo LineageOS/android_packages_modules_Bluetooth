@@ -26,27 +26,21 @@ import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
 import android.content.AttributionSource
 import android.os.WorkSource
-import android.util.Log
 
-class ScanBinder(private val mScanController: ScanController) : IBluetoothScan.Stub() {
+class ScanBinder(private val scanController: ScanController) : IBluetoothScan.Stub() {
 
     companion object {
         private val TAG = ScanBinder::class.java.simpleName
     }
 
-    @Volatile private var mIsAvailable = true
+    @Volatile private var isAvailable = true
 
     fun cleanup() {
-        mIsAvailable = false
+        isAvailable = false
     }
 
-    private fun getScanController(): ScanController? {
-        if (mIsAvailable) {
-            return mScanController
-        } else {
-            Log.e(TAG, "getScanController() - ScanController requested, but not available!")
-            return null
-        }
+    private fun getController(): ScanController? {
+        return if (isAvailable) scanController else null
     }
 
     override fun registerScanner(
@@ -54,15 +48,11 @@ class ScanBinder(private val mScanController: ScanController) : IBluetoothScan.S
         workSource: WorkSource?,
         source: AttributionSource,
     ) {
-        getScanController()?.let { scanController ->
-            scanController.registerScanner(callback, workSource, source)
-        }
+        getController()?.registerScanner(callback, workSource, source)
     }
 
     override fun unregisterScanner(scannerId: Int, source: AttributionSource) {
-        getScanController()?.let { scanController ->
-            scanController.unregisterScanner(scannerId, source)
-        }
+        getController()?.unregisterScanner(scannerId, source)
     }
 
     override fun startScan(
@@ -71,9 +61,7 @@ class ScanBinder(private val mScanController: ScanController) : IBluetoothScan.S
         filters: List<ScanFilter>?,
         source: AttributionSource,
     ) {
-        getScanController()?.let { scanController ->
-            scanController.startScan(scannerId, settings, filters, source)
-        }
+        getController()?.startScan(scannerId, settings, filters, source)
     }
 
     override fun startScanForIntent(
@@ -82,23 +70,19 @@ class ScanBinder(private val mScanController: ScanController) : IBluetoothScan.S
         filters: List<ScanFilter>?,
         source: AttributionSource,
     ) {
-        getScanController()?.let { scanController ->
-            scanController.registerPiAndStartScan(intent, settings, filters, source)
-        }
+        getController()?.registerPiAndStartScan(intent, settings, filters, source)
     }
 
     override fun stopScan(scannerId: Int, source: AttributionSource) {
-        getScanController()?.let { scanController -> scanController.stopScan(scannerId, source) }
+        getController()?.stopScan(scannerId, source)
     }
 
     override fun stopScanForIntent(intent: PendingIntent, source: AttributionSource) {
-        getScanController()?.let { scanController -> scanController.stopScan(intent, source) }
+        getController()?.stopScan(intent, source)
     }
 
     override fun flushPendingBatchResults(scannerId: Int, source: AttributionSource) {
-        getScanController()?.let { scanController ->
-            scanController.flushPendingBatchResults(scannerId, source)
-        }
+        getController()?.flushPendingBatchResults(scannerId, source)
     }
 
     override fun registerSync(
@@ -108,15 +92,11 @@ class ScanBinder(private val mScanController: ScanController) : IBluetoothScan.S
         callback: IPeriodicAdvertisingCallback,
         source: AttributionSource,
     ) {
-        getScanController()?.let { scanController ->
-            scanController.registerSync(scanResult, skip, timeout, callback, source)
-        }
+        getController()?.registerSync(scanResult, skip, timeout, callback, source)
     }
 
     override fun unregisterSync(callback: IPeriodicAdvertisingCallback, source: AttributionSource) {
-        getScanController()?.let { scanController ->
-            scanController.unregisterSync(callback, source)
-        }
+        getController()?.unregisterSync(callback, source)
     }
 
     override fun transferSync(
@@ -125,9 +105,7 @@ class ScanBinder(private val mScanController: ScanController) : IBluetoothScan.S
         syncHandle: Int,
         source: AttributionSource,
     ) {
-        getScanController()?.let { scanController ->
-            scanController.transferSync(device, serviceData, syncHandle, source)
-        }
+        getController()?.transferSync(device, serviceData, syncHandle, source)
     }
 
     override fun transferSetInfo(
@@ -137,14 +115,10 @@ class ScanBinder(private val mScanController: ScanController) : IBluetoothScan.S
         callback: IPeriodicAdvertisingCallback,
         source: AttributionSource,
     ) {
-        getScanController()?.let { scanController ->
-            scanController.transferSetInfo(device, serviceData, advHandle, callback, source)
-        }
+        getController()?.transferSetInfo(device, serviceData, advHandle, callback, source)
     }
 
     override fun numHwTrackFiltersAvailable(source: AttributionSource): Int {
-        return getScanController()?.let { scanController ->
-            scanController.numHwTrackFiltersAvailable(source)
-        } ?: 0
+        return getController()?.numHwTrackFiltersAvailable(source) ?: 0
     }
 }
