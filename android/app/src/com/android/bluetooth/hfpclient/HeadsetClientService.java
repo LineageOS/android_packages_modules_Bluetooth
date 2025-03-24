@@ -82,7 +82,7 @@ public class HeadsetClientService extends ProfileService {
     private final AdapterService mAdapterService;
     private final DatabaseManager mDatabaseManager;
     private final AudioManager mAudioManager;
-    private final NativeInterface mNativeInterface;
+    private final HeadsetClientNativeInterface mNativeInterface;
     private final BatteryManager mBatteryManager;
     private final int mMaxAmVcVol;
     private final int mMinAmVcVol;
@@ -98,7 +98,7 @@ public class HeadsetClientService extends ProfileService {
         mMinAmVcVol = mAudioManager.getStreamMinVolume(AudioManager.STREAM_VOICE_CALL);
 
         // Setup the JNI service
-        mNativeInterface = NativeInterface.getInstance();
+        mNativeInterface = HeadsetClientNativeInterface.getInstance();
         mNativeInterface.initialize();
 
         mBatteryManager = getSystemService(BatteryManager.class);

@@ -42,13 +42,13 @@ public class HfpNativeInterfaceTest {
     @Mock HeadsetClientService mService;
     @Mock AdapterService mAdapterService;
 
-    private NativeInterface mNativeInterface;
+    private HeadsetClientNativeInterface mNativeInterface;
 
     @Before
     public void setUp() {
         when(mService.isAvailable()).thenReturn(true);
         HeadsetClientService.setHeadsetClientService(mService);
-        mNativeInterface = new NativeInterface(mAdapterService);
+        mNativeInterface = new HeadsetClientNativeInterface(mAdapterService);
     }
 
     @After

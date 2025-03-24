@@ -60,9 +60,10 @@ class VendorCommandResponseProcessor {
     }
 
     private final HeadsetClientService mService;
-    private final NativeInterface mNativeInterface;
+    private final HeadsetClientNativeInterface mNativeInterface;
 
-    VendorCommandResponseProcessor(HeadsetClientService context, NativeInterface nativeInterface) {
+    VendorCommandResponseProcessor(
+            HeadsetClientService context, HeadsetClientNativeInterface nativeInterface) {
         mService = context;
         mNativeInterface = nativeInterface;
     }

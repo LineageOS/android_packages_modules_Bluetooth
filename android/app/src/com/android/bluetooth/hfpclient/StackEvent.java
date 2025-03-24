@@ -16,7 +16,7 @@
 
 // Defines an event that is sent via a callback from JNI -> Java.
 //
-// See examples in NativeInterface.java
+// See examples in HeadsetClientNativeInterface.java
 package com.android.bluetooth.hfpclient;
 
 import android.bluetooth.BluetoothDevice;

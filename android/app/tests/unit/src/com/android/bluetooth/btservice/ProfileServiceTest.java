@@ -44,7 +44,7 @@ import com.android.bluetooth.avrcpcontroller.AvrcpControllerNativeInterface;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
 import com.android.bluetooth.hearingaid.HearingAidNativeInterface;
 import com.android.bluetooth.hfp.HeadsetNativeInterface;
-import com.android.bluetooth.hfpclient.NativeInterface;
+import com.android.bluetooth.hfpclient.HeadsetClientNativeInterface;
 import com.android.bluetooth.hid.HidHostNativeInterface;
 import com.android.bluetooth.le_audio.LeAudioNativeInterface;
 import com.android.bluetooth.sdp.SdpManagerNativeInterface;
@@ -86,7 +86,7 @@ public class ProfileServiceTest {
     @Mock private AvrcpNativeInterface mAvrcpNativeInterface;
     @Mock private AvrcpControllerNativeInterface mAvrcpControllerNativeInterface;
     @Mock private HeadsetNativeInterface mHeadsetNativeInterface;
-    @Mock private NativeInterface mHeadsetClientNativeInterface;
+    @Mock private HeadsetClientNativeInterface mHeadsetClientNativeInterface;
     @Mock private HearingAidNativeInterface mHearingAidNativeInterface;
     @Mock private SdpManagerNativeInterface mSdpManagerNativeInterface;
     @Mock private HidHostNativeInterface mHidHostNativeInterface;
@@ -168,7 +168,7 @@ public class ProfileServiceTest {
         AvrcpNativeInterface.setInstance(mAvrcpNativeInterface);
         AvrcpControllerNativeInterface.setInstance(mAvrcpControllerNativeInterface);
         HeadsetNativeInterface.setInstance(mHeadsetNativeInterface);
-        /* HeadsetClient */ NativeInterface.setInstance(mHeadsetClientNativeInterface);
+        HeadsetClientNativeInterface.setInstance(mHeadsetClientNativeInterface);
         HearingAidNativeInterface.setInstance(mHearingAidNativeInterface);
         SdpManagerNativeInterface.setInstance(mSdpManagerNativeInterface);
         HidHostNativeInterface.setInstance(mHidHostNativeInterface);
@@ -185,7 +185,7 @@ public class ProfileServiceTest {
         AvrcpNativeInterface.setInstance(null);
         AvrcpControllerNativeInterface.setInstance(null);
         HeadsetNativeInterface.setInstance(null);
-        /* HeadsetClient */ NativeInterface.setInstance(null);
+        HeadsetClientNativeInterface.setInstance(null);
         HearingAidNativeInterface.setInstance(null);
         SdpManagerNativeInterface.setInstance(null);
         HidHostNativeInterface.setInstance(null);
