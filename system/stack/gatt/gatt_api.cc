@@ -329,8 +329,7 @@ tGATT_STATUS GATTS_AddService(tGATT_IF gatt_if, btgatt_db_element_t* service, in
         *p_uuid != Uuid::From16Bit(UUID_SERVCLASS_GTBS_SERVER)) {
       if ((com::android::bluetooth::flags::channel_sounding_in_stack() &&
            *p_uuid == Uuid::From16Bit(UUID_SERVCLASS_RAS)) ||
-          (com::android::bluetooth::flags::android_os_identifier() &&
-           *p_uuid == ANDROID_INFORMATION_SERVICE_UUID)) {
+          *p_uuid == ANDROID_INFORMATION_SERVICE_UUID) {
         elem.sdp_handle = 0;
       } else {
         elem.sdp_handle = gatt_add_sdp_record(*p_uuid, elem.s_hdl, elem.e_hdl);
