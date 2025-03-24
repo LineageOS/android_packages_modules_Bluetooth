@@ -4,7 +4,7 @@
 //! emitted from Rust or C/C++. In order to keep log levels in sync between the
 //! two, the |BluetoothLogging| struct will configure both the Rust logging and
 //! the C/C++ logging (via topshim).
-use bt_topshim::syslog::{set_default_log_level, set_log_level_for_tag, Level};
+use bt_topshim::syslog::{set_default_log_level, Level};
 use log::LevelFilter;
 use syslog::{BasicLogger, Error, Facility, Formatter3164};
 
@@ -38,6 +38,8 @@ pub struct BluetoothLogging {
     is_initialized: bool,
 }
 
+// TODO(b/371889111): Don't set log level for tag until b/371889111 is fixed.
+/*
 const VERBOSE_ONLY_LOG_TAGS: &[&str] = &[
     "bt_bta_av", // AV apis
     "btm_sco",   // SCO data path logs
@@ -46,6 +48,7 @@ const VERBOSE_ONLY_LOG_TAGS: &[&str] = &[
     "sco_hci",   // SCO over HCI
     "uipc",      // Userspace IPC implementation
 ];
+*/
 
 impl BluetoothLogging {
     pub fn new(is_debug: bool, is_verbose_debug: bool, log_output: &str) -> Self {

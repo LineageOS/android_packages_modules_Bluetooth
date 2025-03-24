@@ -151,15 +151,6 @@ pub fn set_default_adapter(hci: VirtualHciIndex) -> bool {
     .is_ok()
 }
 
-fn list_hci_devices_string() -> Vec<String> {
-    match std::fs::read_dir(HCI_DEVICES_DIR) {
-        Ok(entries) => entries
-            .map(|e| e.unwrap().path().file_name().unwrap().to_str().unwrap().to_string())
-            .collect::<Vec<_>>(),
-        _ => Vec::new(),
-    }
-}
-
 /// Check whether a certain hci device exists in sysfs.
 pub fn check_hci_device_exists(hci: RealHciIndex) -> bool {
     Path::new(format!("{}/hci{}", HCI_DEVICES_DIR, hci.to_i32()).as_str()).exists()

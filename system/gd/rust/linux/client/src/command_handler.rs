@@ -7,8 +7,7 @@ use std::time::Duration;
 use crate::bt_adv::AdvSet;
 use crate::bt_gatt::AuthReq;
 use crate::callbacks::{BtGattCallback, BtGattServerCallback};
-use crate::ClientContext;
-use crate::{console_red, console_yellow, print_error, print_info};
+use crate::{console_red, console_yellow, print_error, print_info, ClientContext};
 use bt_topshim::btif::{
     BtConnectionState, BtDiscMode, BtStatus, BtTransport, RawAddress, Uuid, INVALID_RSSI,
 };
@@ -1518,17 +1517,14 @@ impl CommandHandler {
                     None => return Err("No pending request to send response to".into()),
                     Some(r) => r,
                 };
-                // SAFETY: Initialized all values of the BtGattResponse object
-                unsafe {
-                    self.lock_context().gatt_dbus.as_mut().unwrap().send_response(
-                        server_id,
-                        request.address,
-                        request.id,
-                        status,
-                        request.offset,
-                        request.value.clone(),
-                    );
-                }
+                self.lock_context().gatt_dbus.as_mut().unwrap().send_response(
+                    server_id,
+                    request.address,
+                    request.id,
+                    status,
+                    request.offset,
+                    request.value.clone(),
+                );
 
                 self.lock_context().pending_gatt_request = None;
             }
