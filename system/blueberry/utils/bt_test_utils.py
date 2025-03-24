@@ -79,7 +79,8 @@ def create_vcf_from_vcard(output_path: str,
     return vcf_file_path
 
 
-def generate_id_by_size(size, chars=(string.ascii_lowercase + string.ascii_uppercase + string.digits)):
+def generate_id_by_size(size,
+                        chars=(string.ascii_lowercase + string.ascii_uppercase + string.digits)):
     """Generate random ascii characters of input size and input char types.
 
     Args:
@@ -109,7 +110,12 @@ def get_duration_seconds(wav_file_path):
     return duration
 
 
-def wait_until(timeout_sec, condition_func, func_args, expected_value, exception=None, interval_sec=0.5):
+def wait_until(timeout_sec,
+               condition_func,
+               func_args,
+               expected_value,
+               exception=None,
+               interval_sec=0.5):
     """Waits until a function returns a expected value or timeout is reached.
 
     Example usage:
@@ -147,8 +153,8 @@ def wait_until(timeout_sec, condition_func, func_args, expected_value, exception
             return True
         time.sleep(interval_sec)
     args_string = ', '.join(list(map(str, func_args)))
-    log.warning('Timed out after %.1fs waiting for "%s(%s)" to be "%s".', timeout_sec, condition_func.__name__,
-                args_string, expected_value)
+    log.warning('Timed out after %.1fs waiting for "%s(%s)" to be "%s".', timeout_sec,
+                condition_func.__name__, args_string, expected_value)
     if exception:
         raise exception
     return False

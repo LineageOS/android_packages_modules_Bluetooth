@@ -130,7 +130,8 @@ class HOGPProxy(ProfileProxy):
                 int(match.group("uuid"), base=16),
             ))
 
-        assert len(targets) == body.count("Characteristic Properties"), "safety check that regex is matching something"
+        assert len(targets) == body.count(
+            "Characteristic Properties"), "safety check that regex is matching something"
 
         services = self.gatt.DiscoverServices(connection=self.connection).services
 
@@ -164,7 +165,8 @@ class HOGPProxy(ProfileProxy):
                 int(match.group("uuid"), base=16),
             ))
 
-        assert len(targets) == body.count("uuid = "), "safety check that regex is matching something"
+        assert len(targets) == body.count(
+            "uuid = "), "safety check that regex is matching something"
 
         services = self.gatt.DiscoverServices(connection=self.connection).services
 
@@ -200,15 +202,16 @@ class HOGPProxy(ProfileProxy):
 
         services = self.gatt.DiscoverServices(connection=self.connection).services
 
-        assert len(
-            PATTERN.findall(body)) == body.count("Start Handle:"), "safety check that regex is matching something"
+        assert len(PATTERN.findall(body)) == body.count(
+            "Start Handle:"), "safety check that regex is matching something"
 
         for match in PATTERN.finditer(body):
             start_handle = match.group("start_handle")
 
             for service in services:
                 if service.handle == int(start_handle, base=16):
-                    assert (short_uuid(service.uuid) == target_uuid), "service UUID does not match expected type"
+                    assert (short_uuid(
+                        service.uuid) == target_uuid), "service UUID does not match expected type"
                     break
             else:
                 assert False, f"cannot find service with start handle {start_handle}"
@@ -256,7 +259,8 @@ class HOGPProxy(ProfileProxy):
             "HOGP/RH/HGRF/BV-12-I",
         ]
 
-        action = (self.gatt.ReadCharacteristicFromHandle if test in TESTS_READING_CHARACTERISTIC_NOT_DESCRIPTORS else
+        action = (self.gatt.ReadCharacteristicFromHandle
+                  if test in TESTS_READING_CHARACTERISTIC_NOT_DESCRIPTORS else
                   self.gatt.ReadCharacteristicDescriptorFromHandle)
 
         handle = int(handle, base=16)
@@ -315,9 +319,12 @@ class HOGPProxy(ProfileProxy):
             expected = bytes(expected)
 
             num_checks += 1
-            assert (expected == actual), f"Got unexpected value for handle {handle}: {repr(expected)} != {repr(actual)}"
+            assert (
+                expected == actual
+            ), f"Got unexpected value for handle {handle}: {repr(expected)} != {repr(actual)}"
 
-        assert (body.count("Handle:") == num_checks), "safety check that regex is matching something"
+        assert (
+            body.count("Handle:") == num_checks), "safety check that regex is matching something"
 
         return "OK"
 

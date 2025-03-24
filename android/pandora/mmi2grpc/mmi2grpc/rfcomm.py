@@ -45,7 +45,8 @@ class RFCOMMProxy(ProfileProxy):
         """
 
         try:
-            self.connection = self.rfcomm.ConnectToServer(address=pts_addr, uuid=self.SPP_UUID).connection
+            self.connection = self.rfcomm.ConnectToServer(address=pts_addr,
+                                                          uuid=self.SPP_UUID).connection
         except Exception as e:
             if test == "RFCOMM/DEVA/RFC/BV-01-C":
                 print(f'{test}: PTS disconnected as expected', file=sys.stderr)
@@ -82,12 +83,12 @@ class RFCOMMProxy(ProfileProxy):
             self.connection = self.rfcomm.AcceptConnection(server=self.server).connection
 
         if test in [
-            "RFCOMM/DEVA-DEVB/RFC/BV-03-C",
-            "RFCOMM/DEVA-DEVB/RFC/BV-11-C",
-            "RFCOMM/DEVA-DEVB/RFC/BV-15-C",
-            "RFCOMM/DEVA-DEVB/RFC/BV-17-C",
-            "RFCOMM/DEVA-DEVB/RFC/BV-19-C",
-            "RFCOMM/DEVB/RFC/BV-02-C",
+                "RFCOMM/DEVA-DEVB/RFC/BV-03-C",
+                "RFCOMM/DEVA-DEVB/RFC/BV-11-C",
+                "RFCOMM/DEVA-DEVB/RFC/BV-15-C",
+                "RFCOMM/DEVA-DEVB/RFC/BV-17-C",
+                "RFCOMM/DEVA-DEVB/RFC/BV-19-C",
+                "RFCOMM/DEVB/RFC/BV-02-C",
         ]:
             # For the tests listed above, the PTS does not complete the service
             # level connection but only executes part of the setup.

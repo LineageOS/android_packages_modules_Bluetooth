@@ -15,8 +15,9 @@
 from bumble.avdtp import Listener as AvdtpListener, MediaCodecCapabilities, AVDTP_AUDIO_MEDIA_TYPE
 from bumble.avrcp import Protocol as AvrcpProtocol, make_target_service_sdp_records, make_controller_service_sdp_records
 from bumble.a2dp import (A2DP_SBC_CODEC_TYPE, SBC_DUAL_CHANNEL_MODE, SBC_JOINT_STEREO_CHANNEL_MODE,
-                         SBC_LOUDNESS_ALLOCATION_METHOD, SBC_MONO_CHANNEL_MODE, SBC_SNR_ALLOCATION_METHOD,
-                         SBC_STEREO_CHANNEL_MODE, SbcMediaCodecInformation, make_audio_sink_service_sdp_records,
+                         SBC_LOUDNESS_ALLOCATION_METHOD, SBC_MONO_CHANNEL_MODE,
+                         SBC_SNR_ALLOCATION_METHOD, SBC_STEREO_CHANNEL_MODE,
+                         SbcMediaCodecInformation, make_audio_sink_service_sdp_records,
                          make_audio_source_service_sdp_records)
 from bumble.device import Device
 from pandora_experimental.avrcp_grpc_aio import AVRCPServicer

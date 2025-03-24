@@ -81,7 +81,8 @@ class GATTService(GATTServicer):
         del self.peers[connection.handle]
 
     @utils.rpc
-    async def ExchangeMTU(self, request: ExchangeMTURequest, context: grpc.ServicerContext) -> ExchangeMTUResponse:
+    async def ExchangeMTU(self, request: ExchangeMTURequest,
+                          context: grpc.ServicerContext) -> ExchangeMTUResponse:
         connection_handle = int.from_bytes(request.connection.cookie.value, 'big')
         logging.info(f"ExchangeMTU: {connection_handle}")
 
@@ -95,7 +96,8 @@ class GATTService(GATTServicer):
         return ExchangeMTUResponse()
 
     @utils.rpc
-    async def WriteAttFromHandle(self, request: WriteRequest, context: grpc.ServicerContext) -> WriteResponse:
+    async def WriteAttFromHandle(self, request: WriteRequest,
+                                 context: grpc.ServicerContext) -> WriteResponse:
         connection_handle = int.from_bytes(request.connection.cookie.value, 'big')
         logging.info(f"WriteAttFromHandle: {connection_handle}")
 
@@ -104,7 +106,8 @@ class GATTService(GATTServicer):
         peer = self.peers[connection.handle]
 
         try:
-            await peer.write_value(request.handle, request.value, with_response=True)  # type: ignore
+            await peer.write_value(request.handle, request.value,
+                                   with_response=True)  # type: ignore
             status: AttStatusCode = SUCCESS
         except ProtocolError as e:
             status = e.error_code  # type: ignore
@@ -125,7 +128,8 @@ class GATTService(GATTServicer):
 
         async def feed_service(service: ServiceProxy) -> None:
             characteristic: CharacteristicProxy
-            for characteristic in await peer.discover_characteristics(service=service):  # type: ignore
+            for characteristic in await peer.discover_characteristics(service=service
+                                                                     ):  # type: ignore
                 await characteristic.discover_descriptors()  # type: ignore[no-untyped-call]
 
         await asyncio.gather(*(feed_service(service) for service in services))
@@ -166,7 +170,8 @@ class GATTService(GATTServicer):
         services: List[ServiceProxy] = await peer.discover_services()  # type: ignore
 
         async def feed_service(service: ServiceProxy) -> None:
-            for characteristic in await peer.discover_characteristics(service=service):  # type: ignore
+            for characteristic in await peer.discover_characteristics(service=service
+                                                                     ):  # type: ignore
                 await characteristic.discover_descriptors()  # type: ignore
 
         await asyncio.gather(*(feed_service(service) for service in services))
@@ -198,13 +203,15 @@ class GATTService(GATTServicer):
     # TODO: implement `DiscoverServicesSdp`
 
     @utils.rpc
-    async def ClearCache(self, request: ClearCacheRequest, context: grpc.ServicerContext) -> ClearCacheResponse:
+    async def ClearCache(self, request: ClearCacheRequest,
+                         context: grpc.ServicerContext) -> ClearCacheResponse:
         logging.info("ClearCache")
         return ClearCacheResponse()
 
     @utils.rpc
-    async def ReadCharacteristicFromHandle(self, request: ReadCharacteristicRequest,
-                                           context: grpc.ServicerContext) -> ReadCharacteristicResponse:
+    async def ReadCharacteristicFromHandle(
+            self, request: ReadCharacteristicRequest,
+            context: grpc.ServicerContext) -> ReadCharacteristicResponse:
         connection_handle = int.from_bytes(request.connection.cookie.value, 'big')
         logging.info(f"ReadCharacteristicFromHandle: {connection_handle}")
 
@@ -222,8 +229,9 @@ class GATTService(GATTServicer):
         return ReadCharacteristicResponse(value=AttValue(value=value), status=status)
 
     @utils.rpc
-    async def ReadCharacteristicsFromUuid(self, request: ReadCharacteristicsFromUuidRequest,
-                                          context: grpc.ServicerContext) -> ReadCharacteristicsFromUuidResponse:
+    async def ReadCharacteristicsFromUuid(
+            self, request: ReadCharacteristicsFromUuidRequest,
+            context: grpc.ServicerContext) -> ReadCharacteristicsFromUuidResponse:
         connection_handle = int.from_bytes(request.connection.cookie.value, 'big')
         logging.info(f"ReadCharacteristicsFromUuid: {connection_handle}")
 
@@ -231,10 +239,14 @@ class GATTService(GATTServicer):
         assert connection
         peer = self.peers[connection.handle]
 
-        service_mock = type('', (), {'handle': request.start_handle, 'end_group_handle': request.end_handle})()
+        service_mock = type('', (), {
+            'handle': request.start_handle,
+            'end_group_handle': request.end_handle
+        })()
 
         try:
-            characteristics = await peer.read_characteristics_by_uuid(request.uuid, service_mock)  # type: ignore
+            characteristics = await peer.read_characteristics_by_uuid(request.uuid,
+                                                                      service_mock)  # type: ignore
 
             return ReadCharacteristicsFromUuidResponse(characteristics_read=[
                 ReadCharacteristicResponse(
@@ -245,7 +257,8 @@ class GATTService(GATTServicer):
 
         except ProtocolError as e:
             return ReadCharacteristicsFromUuidResponse(
-                characteristics_read=[ReadCharacteristicResponse(status=e.error_code)]  # type: ignore
+                characteristics_read=[ReadCharacteristicResponse(
+                    status=e.error_code)]  # type: ignore
             )
 
     @utils.rpc
@@ -294,8 +307,9 @@ class GATTService(GATTServicer):
         return RegisterServiceResponse()
 
     @utils.rpc
-    async def NotifyOnCharacteristic(self, request: NotifyOnCharacteristicRequest,
-                                     context: grpc.ServicerContext) -> NotifyOnCharacteristicResponse:
+    async def NotifyOnCharacteristic(
+            self, request: NotifyOnCharacteristicRequest,
+            context: grpc.ServicerContext) -> NotifyOnCharacteristicResponse:
         logging.info(f"NotifyOnCharacteristic")
 
         attr = self.device.gatt_server.get_attribute(request.handle)
@@ -305,8 +319,9 @@ class GATTService(GATTServicer):
         return NotifyOnCharacteristicResponse(status=SUCCESS)
 
     @utils.rpc
-    async def IndicateOnCharacteristic(self, request: IndicateOnCharacteristicRequest,
-                                       context: grpc.ServicerContext) -> IndicateOnCharacteristicResponse:
+    async def IndicateOnCharacteristic(
+            self, request: IndicateOnCharacteristicRequest,
+            context: grpc.ServicerContext) -> IndicateOnCharacteristicResponse:
         logging.info(f"IndicateOnCharacteristic")
 
         attr = self.device.gatt_server.get_attribute(request.handle)

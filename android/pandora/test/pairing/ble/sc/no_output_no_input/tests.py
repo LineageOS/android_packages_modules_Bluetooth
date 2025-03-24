@@ -20,6 +20,7 @@ from pairing.ble.test_base import BLEPairTestBaseWithGeneralAndDedicatedPairingT
 
 from pandora.security_pb2 import PairingEventAnswer
 
+
 class BLESCNoInputNoOutputTestClass(BLEPairTestBaseWithGeneralAndDedicatedPairingTests):
 
     def _setup_devices(self) -> None:
@@ -51,7 +52,8 @@ class BLESCNoInputNoOutputTestClass(BLEPairTestBaseWithGeneralAndDedicatedPairin
         ans = PairingEventAnswer(event=android_ev, confirm=True)
         self.android_pairing_stream.send_nowait(ans)
 
-        if (self.responder_pairing_event_stream == self.android_pairing_stream) and (self.acl_initiator == self.dut):
+        if (self.responder_pairing_event_stream
+                == self.android_pairing_stream) and (self.acl_initiator == self.dut):
             # in test_dedicated_pairing_dut_initiate_2
             # there is an additional user confirmation
             android_ev = await anext(self.android_pairing_stream)

@@ -88,9 +88,10 @@ def sdp_records(device, l2cap_psm, rfcomm_channel):
                     DataElement.sequence([
                         DataElement.uuid(BT_L2CAP_PROTOCOL_ID),
                     ]),
-                    DataElement.sequence(
-                        [DataElement.uuid(BT_RFCOMM_PROTOCOL_ID),
-                         DataElement.unsigned_integer_8(rfcomm_channel)]),
+                    DataElement.sequence([
+                        DataElement.uuid(BT_RFCOMM_PROTOCOL_ID),
+                        DataElement.unsigned_integer_8(rfcomm_channel)
+                    ]),
                     DataElement.sequence([
                         DataElement.uuid(BT_OBEX_PROTOCOL_ID),
                     ]),
@@ -132,7 +133,10 @@ class OppService(OppServicer):
         self.device = device
         self.l2cap_server = self.device.create_l2cap_server(ClassicChannelSpec())
         self.rfcomm_server = rfcomm_server
-        self.log = utils.BumbleServerLoggerAdapter(logging.getLogger(), {'service_name': 'opp', 'device': device})
+        self.log = utils.BumbleServerLoggerAdapter(logging.getLogger(), {
+            'service_name': 'opp',
+            'device': device
+        })
         self.setup_channel_and_sdp_records()
 
     def acceptor(self, dlc) -> None:
@@ -143,9 +147,11 @@ class OppService(OppServicer):
 
     def setup_channel_and_sdp_records(self):
         rfcomm_channel = self.rfcomm_server.listen(acceptor=self.acceptor)
-        self.device.sdp_service_records.update(sdp_records(self.device, self.l2cap_server.psm, rfcomm_channel))
+        self.device.sdp_service_records.update(
+            sdp_records(self.device, self.l2cap_server.psm, rfcomm_channel))
 
     @utils.rpc
-    async def AcceptPutOperation(self, request: Empty, context: grpc.ServicerContext) -> AcceptPutOperationResponse:
+    async def AcceptPutOperation(self, request: Empty,
+                                 context: grpc.ServicerContext) -> AcceptPutOperationResponse:
         self.log.info(f"AcceptPutOperation")
         return AcceptPutOperationResponse()

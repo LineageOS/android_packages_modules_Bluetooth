@@ -54,8 +54,10 @@ class BumbleConfigService(BumbleConfigServicer):
                 connection=connection,
                 service=SecurityService(self.device, self.server_config),
                 io_capability=BasePairingDelegate.IoCapability(request.io_capability),
-                local_initiator_key_distribution=parseProtoKeyDistribution(request.initiator_key_distribution),
-                local_responder_key_distribution=parseProtoKeyDistribution(request.responder_key_distribution),
+                local_initiator_key_distribution=parseProtoKeyDistribution(
+                    request.initiator_key_distribution),
+                local_responder_key_distribution=parseProtoKeyDistribution(
+                    request.responder_key_distribution),
             )
 
             pc_req = request.pairing_config

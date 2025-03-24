@@ -30,8 +30,10 @@ class DckGattService(TemplateService):
     UUID = CCC_DK_UUID
     UUID_SPSM = BumbleUUID("D3B5A130-9E23-4B3A-8BE4-6B1EE5F980A3", "Vehicle SPSM")
     UUID_SPSM_DK_VERSION = BumbleUUID("D3B5A130-9E23-4B3A-8BE4-6B1EE5B780A3", "DK version")
-    UUID_DEVICE_DK_VERSION = BumbleUUID("BD4B9502-3F54-11EC-B919-0242AC120005", "Device Selected DK version")
-    UUID_ANTENNA_IDENTIFIER = BumbleUUID("c6d7d4a1-e2b0-4e95-b576-df983d1a5d9f", "Vehicle Antenna Identifier")
+    UUID_DEVICE_DK_VERSION = BumbleUUID("BD4B9502-3F54-11EC-B919-0242AC120005",
+                                        "Device Selected DK version")
+    UUID_ANTENNA_IDENTIFIER = BumbleUUID("c6d7d4a1-e2b0-4e95-b576-df983d1a5d9f",
+                                         "Vehicle Antenna Identifier")
 
     def __init__(self, device: Device):
         logger = logging.getLogger(__name__)
@@ -89,7 +91,9 @@ class DckGattService(TemplateService):
         # CCC Specification Digital-Key R3-1.2.0-r14
         # 19.2 LE Procedures AdvData field of ADV_IND
 
-        return bytes(AdvertisingData([(AdvertisingData.SERVICE_DATA_16_BIT_UUID, bytes(DckGattService.CCC_DK_UUID))]))
+        return bytes(
+            AdvertisingData([(AdvertisingData.SERVICE_DATA_16_BIT_UUID,
+                              bytes(DckGattService.CCC_DK_UUID))]))
 
 
 class DckService(DckServicer):
@@ -97,7 +101,10 @@ class DckService(DckServicer):
     dck_gatt_service: Optional[DckGattService]
 
     def __init__(self, device: Device) -> None:
-        self.log = utils.BumbleServerLoggerAdapter(logging.getLogger(), {"service_name": "Dck", "device": device})
+        self.log = utils.BumbleServerLoggerAdapter(logging.getLogger(), {
+            "service_name": "Dck",
+            "device": device
+        })
         self.device = device
         self.dck_gatt_service = None
 

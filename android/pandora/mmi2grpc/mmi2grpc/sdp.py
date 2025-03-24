@@ -129,7 +129,8 @@ class SDPProxy(ProfileProxy):
         """
 
         uuid_list = uuids.split(", ")
-        reported_services = list(map(lambda uuid: UUID_TO_SERVICE_NAME.get(int(uuid, 16), uuid), uuid_list))
+        reported_services = list(
+            map(lambda uuid: UUID_TO_SERVICE_NAME.get(int(uuid, 16), uuid), uuid_list))
         test = unittest.TestCase()
 
         # yapf: disable
@@ -171,12 +172,15 @@ class SDPProxy(ProfileProxy):
         movable_services = list(filterfalse(optional_not_present, movable_services))
 
         # 1st: Check that the movable service are present in whatever order:
-        movable_services_names_without_optional = list(filter(lambda x: x in movable_services, reported_services))
+        movable_services_names_without_optional = list(
+            filter(lambda x: x in movable_services, reported_services))
         test.assertCountEqual(movable_services_names_without_optional, movable_services)
 
         # 2nd: Check that all the services except the movable are in the specified order
-        reported_services = list(filterfalse(lambda key: key in movable_services, reported_services))
-        expected_services_without_movable = list(filterfalse(lambda key: key in movable_services, expected_services))
+        reported_services = list(filterfalse(lambda key: key in movable_services,
+                                             reported_services))
+        expected_services_without_movable = list(
+            filterfalse(lambda key: key in movable_services, expected_services))
         test.assertEqual(reported_services, expected_services_without_movable)
 
         return "OK"

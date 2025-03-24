@@ -45,8 +45,12 @@ A2DP_PLAYBACK_DATA = {
     'sample_width': 2
 }
 
-SAMPLE_FORMATS = dict(S32_LE=dict(message='Signed 32-bit integer, little-endian', dtype_str='<i', size_bytes=4),
-                      S16_LE=dict(message='Signed 16-bit integer, little-endian', dtype_str='<i', size_bytes=2))
+SAMPLE_FORMATS = dict(S32_LE=dict(message='Signed 32-bit integer, little-endian',
+                                  dtype_str='<i',
+                                  size_bytes=4),
+                      S16_LE=dict(message='Signed 16-bit integer, little-endian',
+                                  dtype_str='<i',
+                                  size_bytes=2))
 
 
 @utils.dbus_safe(None)
@@ -96,7 +100,11 @@ def select_audio_output_node():
     return True
 
 
-def generate_audio_test_data(path, data_format=None, frequencies=None, duration_secs=None, volume_scale=None):
+def generate_audio_test_data(path,
+                             data_format=None,
+                             frequencies=None,
+                             duration_secs=None,
+                             volume_scale=None):
     """Generates audio test data with specified format and frequencies.
 
     Args:

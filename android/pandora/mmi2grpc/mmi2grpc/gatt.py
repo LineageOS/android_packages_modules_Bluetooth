@@ -25,14 +25,14 @@ from pandora.host_pb2 import PUBLIC, RANDOM
 from pandora.security_grpc import Security, SecurityStorage
 from pandora.security_pb2 import PairingEventAnswer
 from pandora_experimental.gatt_grpc import GATT
-from pandora_experimental.gatt_pb2 import (APPLICATION_ERROR, ATTRIBUTE_NOT_FOUND, ENABLE_INDICATION_VALUE,
-                                           ENABLE_NOTIFICATION_VALUE, INSUFFICIENT_AUTHENTICATION,
-                                           INVALID_ATTRIBUTE_LENGTH, INVALID_HANDLE, PERMISSION_NONE, PERMISSION_READ,
-                                           PERMISSION_READ_ENCRYPTED, PERMISSION_READ_ENCRYPTED_MITM, PERMISSION_WRITE,
-                                           PERMISSION_WRITE_ENCRYPTED, PERMISSION_WRITE_ENCRYPTED_MITM, PROPERTY_READ,
-                                           PROPERTY_WRITE, READ_NOT_PERMITTED, UNKNOWN_ERROR, WRITE_NOT_PERMITTED,
-                                           GattCharacteristicParams, GattDescriptorParams, GattServiceParams,
-                                           ReadCharacteristicResponse, ReadCharacteristicsFromUuidResponse)
+from pandora_experimental.gatt_pb2 import (
+    APPLICATION_ERROR, ATTRIBUTE_NOT_FOUND, ENABLE_INDICATION_VALUE, ENABLE_NOTIFICATION_VALUE,
+    INSUFFICIENT_AUTHENTICATION, INVALID_ATTRIBUTE_LENGTH, INVALID_HANDLE, PERMISSION_NONE,
+    PERMISSION_READ, PERMISSION_READ_ENCRYPTED, PERMISSION_READ_ENCRYPTED_MITM, PERMISSION_WRITE,
+    PERMISSION_WRITE_ENCRYPTED, PERMISSION_WRITE_ENCRYPTED_MITM, PROPERTY_READ, PROPERTY_WRITE,
+    READ_NOT_PERMITTED, UNKNOWN_ERROR, WRITE_NOT_PERMITTED, GattCharacteristicParams,
+    GattDescriptorParams, GattServiceParams, ReadCharacteristicResponse,
+    ReadCharacteristicsFromUuidResponse)
 
 # Tests that need GATT cache cleared before discovering services.
 NEEDS_CACHE_CLEARED = {

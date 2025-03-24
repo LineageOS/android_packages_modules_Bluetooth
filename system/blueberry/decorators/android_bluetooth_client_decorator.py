@@ -14,7 +14,7 @@ from mobly.controllers.android_device import AndroidDevice
 
 
 def decorate(ad, decorator):
-  """Utility to decorate an AndroidDevice.
+    """Utility to decorate an AndroidDevice.
 
   Args:
     ad: Device, must be of type AndroidDevice.
@@ -23,25 +23,24 @@ def decorate(ad, decorator):
     AndroidDevice object.
   """
 
-  if not isinstance(ad, AndroidDevice):
-    raise TypeError('Must apply AndroidBluetoothClientDecorator to an '
-                    'AndroidDevice')
-  decorator_module = camel_to_snake(decorator)
-  module = importlib.import_module(
-      'blueberry.decorators.%s' % decorator_module)
-  cls = getattr(module, decorator)
-  ad = cls(ad)
+    if not isinstance(ad, AndroidDevice):
+        raise TypeError('Must apply AndroidBluetoothClientDecorator to an '
+                        'AndroidDevice')
+    decorator_module = camel_to_snake(decorator)
+    module = importlib.import_module('blueberry.decorators.%s' % decorator_module)
+    cls = getattr(module, decorator)
+    ad = cls(ad)
 
-  return ad
+    return ad
 
 
 def camel_to_snake(cls_name):
-  """Utility to convert a class name from camel case to snake case.
+    """Utility to convert a class name from camel case to snake case.
 
   Args:
     cls_name: string
   Returns:
     string
   """
-  s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', cls_name)
-  return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', cls_name)
+    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()

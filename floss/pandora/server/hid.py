@@ -55,7 +55,8 @@ class HIDService(hid_grpc_aio.HIDServicer):
                 future.get_loop().call_soon_threadsafe(future.set_result, None)
 
         if not request.address:
-            await context.abort(grpc.StatusCode.INVALID_ARGUMENT, 'Request address field must be set.')
+            await context.abort(grpc.StatusCode.INVALID_ARGUMENT,
+                                'Request address field must be set.')
 
         address = utils.address_from(request.address)
 
