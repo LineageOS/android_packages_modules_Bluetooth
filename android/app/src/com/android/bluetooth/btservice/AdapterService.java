@@ -617,6 +617,12 @@ public class AdapterService extends Service {
     @SuppressLint("AndroidFrameworkRequiresPermission")
     private void init() {
         Log.d(TAG, "init()");
+
+        if (Flags.gattClearCacheOnFactoryReset()
+                && BluetoothProperties.factory_reset().orElse(false)) {
+            clearStorage();
+        }
+
         Config.init(this);
         mDeviceConfigListener.start();
 
@@ -3953,10 +3959,6 @@ public class AdapterService extends Service {
 
         if (mBtCompanionManager != null) {
             mBtCompanionManager.factoryReset();
-        }
-
-        if (Flags.gattClearCacheOnFactoryReset()) {
-            clearStorage();
         }
 
         return mNativeInterface.factoryReset();
