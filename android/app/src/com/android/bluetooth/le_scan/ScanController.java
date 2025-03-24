@@ -16,7 +16,6 @@
 
 package com.android.bluetooth.le_scan;
 
-import static android.Manifest.permission.UPDATE_DEVICE_STATS;
 import static android.bluetooth.BluetoothUtils.extractBytes;
 
 import static com.android.bluetooth.Utils.checkCallerTargetSdk;
@@ -24,8 +23,6 @@ import static com.android.bluetooth.flags.Flags.leaudioBassScanWithInternalScanC
 
 import static java.util.Objects.requireNonNull;
 
-import android.annotation.RequiresPermission;
-import android.annotation.SuppressLint;
 import android.app.AppOpsManager;
 import android.app.PendingIntent;
 import android.bluetooth.BluetoothAdapter;
@@ -1079,8 +1076,6 @@ public class ScanController {
 
     void registerScanner(
             IScannerCallback callback, WorkSource workSource, AttributionSource source) {
-        enforceImpersonationPermissionIfNeeded(workSource);
-
         AppScanStats app = mScannerMap.getAppScanStatsByUid(Binder.getCallingUid());
         if (app != null
                 && app.isScanningTooFrequently()
@@ -1430,22 +1425,6 @@ public class ScanController {
                 }
             }
             return null;
-        }
-    }
-
-    // Enforce caller has UPDATE_DEVICE_STATS permission, which allows the caller to blame other
-    // apps for Bluetooth usage. A {@link SecurityException} will be thrown if the caller app does
-    // not have UPDATE_DEVICE_STATS permission.
-    @RequiresPermission(UPDATE_DEVICE_STATS)
-    private void enforceImpersonationPermission() {
-        mAdapterService.enforceCallingOrSelfPermission(
-                UPDATE_DEVICE_STATS, "Need UPDATE_DEVICE_STATS permission");
-    }
-
-    @SuppressLint("AndroidFrameworkRequiresPermission")
-    private void enforceImpersonationPermissionIfNeeded(WorkSource workSource) {
-        if (workSource != null) {
-            enforceImpersonationPermission();
         }
     }
 

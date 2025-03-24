@@ -18,6 +18,7 @@ package com.android.bluetooth.le_scan
 
 import android.Manifest.permission.BLUETOOTH_PRIVILEGED
 import android.Manifest.permission.BLUETOOTH_SCAN
+import android.Manifest.permission.UPDATE_DEVICE_STATS
 import android.annotation.RequiresPermission
 import android.annotation.SuppressLint
 import android.app.PendingIntent
@@ -66,6 +67,9 @@ class ScanBinder(
         workSource: WorkSource?,
         source: AttributionSource,
     ) {
+        if (workSource != null) {
+            adapterService.enforceCallingOrSelfPermission(UPDATE_DEVICE_STATS, null)
+        }
         getController(source, "registerScanner")?.registerScanner(callback, workSource, source)
     }
 
