@@ -120,12 +120,12 @@ void shim::Acl::OnLeConnectFail(hci::AddressWithType /* address_with_type */,
 }
 
 void shim::Acl::DisconnectClassic(uint16_t /* handle */, tHCI_STATUS /* reason */,
-                                  std::string /* comment */) {
+                                  const std::string& /* comment */) {
   inc_func_call_count(__func__);
 }
 
 void shim::Acl::DisconnectLe(uint16_t /* handle */, tHCI_STATUS /* reason */,
-                             std::string /* comment */) {
+                             const std::string& /* comment */) {
   inc_func_call_count(__func__);
 }
 
