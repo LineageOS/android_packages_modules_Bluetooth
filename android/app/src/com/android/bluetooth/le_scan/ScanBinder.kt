@@ -88,7 +88,7 @@ class ScanBinder(
         getController(source, "startScan")?.startScan(scannerId, settings, filters, source)
     }
 
-    override fun startScanForIntent(
+    override fun registerPiAndStartScan(
         intent: PendingIntent,
         settings: ScanSettings?,
         filters: List<ScanFilter>?,
@@ -96,7 +96,7 @@ class ScanBinder(
     ) {
         enforcePrivilegedPermissionIfNeeded(settings)
         enforcePrivilegedPermissionIfNeeded(filters)
-        getController(source, "startScanForIntent")
+        getController(source, "registerPiAndStartScan")
             ?.registerPiAndStartScan(intent, settings, filters, source)
     }
 

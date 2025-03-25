@@ -270,7 +270,8 @@ public final class BluetoothLeScanner {
                 wrapper.startRegistration();
             } else {
                 try {
-                    scan.startScanForIntent(callbackIntent, settings, filters, mAttributionSource);
+                    scan.registerPiAndStartScan(
+                            callbackIntent, settings, filters, mAttributionSource);
                 } catch (RemoteException e) {
                     return ScanCallback.SCAN_FAILED_INTERNAL_ERROR;
                 }

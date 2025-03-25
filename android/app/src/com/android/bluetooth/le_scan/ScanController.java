@@ -1222,7 +1222,7 @@ public class ScanController {
             ScanSettings settings,
             List<ScanFilter> filters,
             AttributionSource source) {
-        Log.d(TAG, "Start scan with filters, for PendingIntent");
+        Log.d(TAG, "Register pendingIntent with filters and start scan");
         settings = enforceReportDelayFloor(settings);
         UUID uuid = UUID.randomUUID();
         String callingPackage = source.getPackageName();
