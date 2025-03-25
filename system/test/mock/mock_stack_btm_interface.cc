@@ -141,7 +141,7 @@ struct btm_client_interface_t default_btm_client_interface = {
                   return false;
                 },
                 .BTM_IsBonded = [](const RawAddress& /* bd_addr */,
-                                         tBT_TRANSPORT /* transport */) -> bool { return false; },
+                                   tBT_TRANSPORT /* transport */) -> bool { return false; },
                 .BTM_SetSecurityLevel = [](bool /* is_originator */, const char* /*p_name */,
                                            uint8_t /* service_id */, uint16_t /* sec_level */,
                                            uint16_t /* psm */, uint32_t /* mx_proto_id */,
@@ -181,7 +181,8 @@ struct btm_client_interface_t default_btm_client_interface = {
                   return tBTM_STATUS::BTM_SUCCESS;
                 },
                 .BTM_SetBleDataLength = [](const RawAddress& /* bd_addr */,
-                                           uint16_t /* tx_pdu_length */) -> tBTM_STATUS {
+                                           uint16_t /* tx_pdu_length */,
+                                           bool /* is_privileged_client */) -> tBTM_STATUS {
                   return tBTM_STATUS::BTM_SUCCESS;
                 },
                 .BTM_BleReadControllerFeatures =

@@ -884,7 +884,8 @@ static void gatts_process_mtu_req(tGATT_TCB& tcb, uint16_t cid, uint16_t len, ui
             tcb.payload_size);
 
   if (get_btm_client_interface().ble.BTM_SetBleDataLength(
-              tcb.peer_bda, tcb.payload_size + L2CAP_PKT_OVERHEAD) != tBTM_STATUS::BTM_SUCCESS) {
+              tcb.peer_bda, tcb.payload_size + L2CAP_PKT_OVERHEAD,
+              /*is_privileged_client*/ false) != tBTM_STATUS::BTM_SUCCESS) {
     log::warn("Unable to set BLE data length peer:{} mtu:{}", tcb.peer_bda,
               tcb.payload_size + L2CAP_PKT_OVERHEAD);
   }

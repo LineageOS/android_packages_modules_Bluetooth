@@ -447,6 +447,7 @@ public:
 
 private:
   bool is_bonding_{false}; /* True - link active only for bonding */
+  bool is_datalen_set_by_priv_client{false};
 
 public:
   bool IsBonding() const { return is_bonding_; }
@@ -455,6 +456,10 @@ public:
 
   uint16_t link_xmit_quota; /* Num outstanding pkts allowed */
   bool is_round_robin_scheduling() const { return link_xmit_quota == 0; }
+  bool is_datalen_set_by_privileged_client() const { return is_datalen_set_by_priv_client; }
+  void set_is_datalen_set_by_privileged_client(bool value) {
+    is_datalen_set_by_priv_client = value;
+  }
 
   uint16_t sent_not_acked; /* Num packets sent but not acked */
   void update_outstanding_packets(uint16_t packets_acked) {
