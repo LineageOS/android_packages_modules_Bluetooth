@@ -170,47 +170,15 @@ public:
       return;
     }
 
-    if (com::android::bluetooth::flags::hap_connect_only_requested_device()) {
-      auto device =
-              std::find_if(devices_.begin(), devices_.end(), HasDevice::MatchAddress(address));
-      if (device == devices_.end()) {
-        devices_.emplace_back(address, true);
+    auto device = std::find_if(devices_.begin(), devices_.end(), HasDevice::MatchAddress(address));
+    if (device == devices_.end()) {
+      devices_.emplace_back(address, true);
+      BTA_GATTC_Open(gatt_if_, address, BTM_BLE_DIRECT_CONNECTION, false);
+
+    } else {
+      device->is_connecting_actively = true;
+      if (!device->IsConnected()) {
         BTA_GATTC_Open(gatt_if_, address, BTM_BLE_DIRECT_CONNECTION, false);
-
-      } else {
-        device->is_connecting_actively = true;
-        if (!device->IsConnected()) {
-          BTA_GATTC_Open(gatt_if_, address, BTM_BLE_DIRECT_CONNECTION, false);
-        }
-      }
-      return;
-    }
-
-    std::vector<RawAddress> addresses = {address};
-    auto csis_api = CsisClient::Get();
-    if (csis_api != nullptr) {
-      // Connect entire CAS set of devices
-      auto group_id =
-              csis_api->GetGroupId(address, bluetooth::Uuid::From16Bit(UUID_COMMON_AUDIO_SERVICE));
-      addresses = csis_api->GetDeviceList(group_id);
-    }
-
-    if (addresses.empty()) {
-      log::warn("{} is not part of any set", address);
-      addresses = {address};
-    }
-
-    for (auto const& addr : addresses) {
-      auto device = std::find_if(devices_.begin(), devices_.end(), HasDevice::MatchAddress(addr));
-      if (device == devices_.end()) {
-        devices_.emplace_back(addr, true);
-        BTA_GATTC_Open(gatt_if_, addr, BTM_BLE_DIRECT_CONNECTION, false);
-
-      } else {
-        device->is_connecting_actively = true;
-        if (!device->IsConnected()) {
-          BTA_GATTC_Open(gatt_if_, addr, BTM_BLE_DIRECT_CONNECTION, false);
-        }
       }
     }
   }
@@ -235,75 +203,30 @@ public:
   void Disconnect(const RawAddress& address) override {
     log::debug("{}", address);
 
-    if (com::android::bluetooth::flags::hap_connect_only_requested_device()) {
-      auto device =
-              std::find_if(devices_.begin(), devices_.end(), HasDevice::MatchAddress(address));
-      if (device == devices_.end()) {
-        log::warn("Device not connected to profile{}", address);
-        return;
-      }
-
-      auto conn_id = device->conn_id;
-      auto is_connecting_actively = device->is_connecting_actively;
-
-      DoDisconnectCleanUp(*device);
-      devices_.erase(device);
-
-      if (conn_id != GATT_INVALID_CONN_ID) {
-        BTA_GATTC_Close(conn_id);
-        callbacks_->OnConnectionState(ConnectionState::DISCONNECTED, address);
-      } else {
-        /* Removes active connection. */
-        if (is_connecting_actively) {
-          BTA_GATTC_CancelOpen(gatt_if_, address, true);
-          callbacks_->OnConnectionState(ConnectionState::DISCONNECTED, address);
-        } else {
-          /* Removes all registrations for connection. */
-          BTA_GATTC_CancelOpen(gatt_if_, address, false);
-        }
-      }
+    auto device = std::find_if(devices_.begin(), devices_.end(), HasDevice::MatchAddress(address));
+    if (device == devices_.end()) {
+      log::warn("Device not connected to profile{}", address);
       return;
     }
 
-    std::vector<RawAddress> addresses = {address};
-    auto csis_api = CsisClient::Get();
-    if (csis_api != nullptr) {
-      // Disconnect entire CAS set of devices
-      auto group_id =
-              csis_api->GetGroupId(address, bluetooth::Uuid::From16Bit(UUID_COMMON_AUDIO_SERVICE));
-      addresses = csis_api->GetDeviceList(group_id);
-    }
+    auto conn_id = device->conn_id;
+    auto is_connecting_actively = device->is_connecting_actively;
 
-    if (addresses.empty()) {
-      log::warn("{} is not part of any set", address);
-      addresses = {address};
-    }
+    DoDisconnectCleanUp(*device);
+    devices_.erase(device);
 
-    for (auto const& addr : addresses) {
-      auto device = std::find_if(devices_.begin(), devices_.end(), HasDevice::MatchAddress(addr));
-      if (device == devices_.end()) {
-        log::warn("Device not connected to profile{}", addr);
-        return;
-      }
-
-      auto conn_id = device->conn_id;
-      auto is_connecting_actively = device->is_connecting_actively;
-      DoDisconnectCleanUp(*device);
-      devices_.erase(device);
-
-      if (conn_id != GATT_INVALID_CONN_ID) {
-        BTA_GATTC_Close(conn_id);
-        callbacks_->OnConnectionState(ConnectionState::DISCONNECTED, addr);
+    if (conn_id != GATT_INVALID_CONN_ID) {
+      BTA_GATTC_Close(conn_id);
+      callbacks_->OnConnectionState(ConnectionState::DISCONNECTED, address);
+    } else {
+      /* Removes active connection. */
+      if (is_connecting_actively) {
+        BTA_GATTC_CancelOpen(gatt_if_, address, true);
+        callbacks_->OnConnectionState(ConnectionState::DISCONNECTED, address);
       } else {
-        /* Removes active connection. */
-        if (is_connecting_actively) {
-          BTA_GATTC_CancelOpen(gatt_if_, addr, true);
-          callbacks_->OnConnectionState(ConnectionState::DISCONNECTED, addr);
-        }
+        /* Removes all registrations for connection. */
+        BTA_GATTC_CancelOpen(gatt_if_, address, false);
       }
-
-      /* Removes all registrations for connection. */
-      BTA_GATTC_CancelOpen(0, addr, false);
     }
   }
 

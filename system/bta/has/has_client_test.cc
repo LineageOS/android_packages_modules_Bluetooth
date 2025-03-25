@@ -1194,20 +1194,7 @@ TEST_F(HasClientTest, test_connect_after_remove) {
   Mock::VerifyAndClearExpectations(&callbacks);
 }
 
-TEST_F(HasClientTest,
-       test_disconnect_non_connected_without_hap_connect_only_requested_device_flag) {
-  com::android::bluetooth::flags::provider_->hap_connect_only_requested_device(false);
-  const RawAddress test_address = GetTestAddress(1);
-
-  /* Override the default action to prevent us sendind the connected event */
-  EXPECT_CALL(gatt_interface, Open(gatt_if, test_address, BTM_BLE_DIRECT_CONNECTION, _))
-          .WillOnce(Return());
-  HasClient::Get()->Connect(test_address);
-  TestDisconnect(test_address, GATT_INVALID_CONN_ID);
-}
-
 TEST_F(HasClientTest, test_disconnect_non_connected) {
-  com::android::bluetooth::flags::provider_->hap_connect_only_requested_device(true);
   const RawAddress test_address = GetTestAddress(1);
 
   /* Override the default action to prevent us sendind the connected event */
@@ -1229,24 +1216,7 @@ TEST_F(HasClientTest, test_has_connected) {
   TestConnect(test_address);
 }
 
-TEST_F(HasClientTest, test_disconnect_connected_without_hap_connect_only_requested_device_flag) {
-  /* TODO: this test shall be removed b/370405555 */
-  com::android::bluetooth::flags::provider_->hap_connect_only_requested_device(false);
-  const RawAddress test_address = GetTestAddress(1);
-  /* Minimal possible HA device (only feature flags) */
-  SetSampleDatabaseHasNoPresetChange(test_address,
-                                     bluetooth::has::kFeatureBitHearingAidTypeBinaural);
-
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::CONNECTED, test_address)).Times(1);
-  TestConnect(test_address);
-
-  EXPECT_CALL(*callbacks, OnConnectionState(ConnectionState::DISCONNECTED, test_address)).Times(1);
-  EXPECT_CALL(gatt_queue, Clean(1)).Times(AtLeast(1));
-  TestDisconnect(test_address, 1);
-}
-
 TEST_F(HasClientTest, test_disconnect_connected) {
-  com::android::bluetooth::flags::provider_->hap_connect_only_requested_device(true);
   const RawAddress test_address = GetTestAddress(1);
   /* Minimal possible HA device (only feature flags) */
   SetSampleDatabaseHasNoPresetChange(test_address,
