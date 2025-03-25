@@ -12,22 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package {
-    default_applicable_licenses: ["Android-Apache-2.0"],
-}
+//! LE Audio - Audio module
 
-aidl_interface {
-    name: "android.hardware.bluetooth.offload.leaudio",
-    vendor_available: true,
-    unstable: true,
-    srcs: ["android/hardware/bluetooth/offload/leaudio/*.aidl"],
-    backend: {
-        rust: {
-            enabled: true,
-        },
-    },
-    visibility: [
-        "//packages/modules/Bluetooth/offload/leaudio:__subpackages__",
-        "//system/tools/aidl/build",
-    ],
-}
+mod client;
+mod codec;
+mod ffi;
+mod streamer;
+
+#[cfg(feature = "lc3")]
+mod lc3;
+
+#[cfg(feature = "opus")]
+mod opus;
