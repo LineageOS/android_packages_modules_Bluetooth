@@ -39,6 +39,7 @@
  * Disconnecting + CONNECT : Defer Message
  *
  */
+
 package com.android.bluetooth.pbapclient;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;
