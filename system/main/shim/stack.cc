@@ -49,7 +49,6 @@
 #include "main/shim/hci_layer.h"
 #include "main/shim/le_advertising_manager.h"
 #include "main/shim/le_scanning_manager.h"
-#include "metrics/counter_metrics.h"
 #include "os/system_properties.h"
 #include "os/wakelock_manager.h"
 #include "storage/storage_module.h"
@@ -67,7 +66,6 @@ namespace shim {
 
 struct Stack::impl {
   Acl* acl_ = nullptr;
-  std::shared_ptr<metrics::CounterMetrics> counter_metrics_ = nullptr;
   std::shared_ptr<storage::StorageModule> storage_ = nullptr;
   std::shared_ptr<hal::SnoopLogger> snoop_logger_ = nullptr;
 };
@@ -90,12 +88,9 @@ void Stack::StartEverything() {
     stack_handler_ = new os::Handler(stack_thread_);
 
     if (com::android::bluetooth::flags::same_handler_for_all_modules()) {
-      pimpl_->counter_metrics_ = std::make_shared<metrics::CounterMetrics>(stack_handler_);
       pimpl_->storage_ = std::make_shared<storage::StorageModule>(stack_handler_);
       pimpl_->snoop_logger_ = std::make_shared<hal::SnoopLogger>(stack_handler_);
     } else {
-      pimpl_->counter_metrics_ =
-              std::make_shared<metrics::CounterMetrics>(new Handler(stack_thread_));
       pimpl_->storage_ = std::make_shared<storage::StorageModule>(new Handler(stack_thread_));
       pimpl_->snoop_logger_ = std::make_shared<hal::SnoopLogger>(new Handler(stack_thread_));
     }
@@ -226,12 +221,6 @@ Acl* Stack::GetAcl() const {
   return pimpl_->acl_;
 }
 
-metrics::CounterMetrics* Stack::GetCounterMetrics() const {
-  std::lock_guard<std::recursive_mutex> lock(mutex_);
-  log::assert_that(is_running_, "assert failed: is_running_");
-  return pimpl_->counter_metrics_.get();
-}
-
 storage::StorageModule* Stack::GetStorage() const {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   log::assert_that(is_running_, "assert failed: is_running_");
@@ -268,7 +257,6 @@ void Stack::Dump(int fd, std::promise<void> promise) const {
 }
 
 void Stack::handle_start_up(ModuleList* modules, std::promise<void> promise) {
-  pimpl_->counter_metrics_->Start();
   pimpl_->storage_->Start();
   pimpl_->snoop_logger_->Start();
   registry_.Start(modules, stack_thread_, stack_handler_);
@@ -280,11 +268,9 @@ void Stack::handle_shut_down(std::promise<void> promise) {
 
   pimpl_->snoop_logger_->Stop();
   pimpl_->storage_->Stop();
-  pimpl_->counter_metrics_->Stop();
 
   pimpl_->snoop_logger_.reset();
   pimpl_->storage_.reset();
-  pimpl_->counter_metrics_.reset();
 
   promise.set_value();
 }

@@ -373,8 +373,7 @@ void LogAclCompletionEvent(const hci::Address& address, ErrorCode reason,
                                          MapErrorCodeToState(reason));
 }
 
-void LogRemoteNameRequestCompletion(const RawAddress& raw_address, tHCI_STATUS hci_status) {
-  hci::Address address = bluetooth::ToGdAddress(raw_address);
+void LogRemoteNameRequestCompletion(const RawAddress& address, tHCI_STATUS hci_status) {
   bluetooth::os::LogMetricBluetoothEvent(
           address, EventType::REMOTE_NAME_REQUEST,
           MapHCIStatusToState(hci_status));
@@ -389,9 +388,7 @@ void LogAclDisconnectionEvent(const hci::Address& address, ErrorCode reason,
                                          MapErrorCodeToState(reason));
 }
 
-void LogAclAfterRemoteNameRequest(const RawAddress& raw_address, tBTM_STATUS status) {
-  hci::Address address = bluetooth::ToGdAddress(raw_address);
-
+void LogAclAfterRemoteNameRequest(const RawAddress& address, tBTM_STATUS status) {
   switch (status) {
     case tBTM_STATUS::BTM_SUCCESS:
       bluetooth::os::LogMetricBluetoothEvent(address, EventType::ACL_CONNECTION_INITIATOR,
@@ -407,8 +404,7 @@ void LogAclAfterRemoteNameRequest(const RawAddress& raw_address, tBTM_STATUS sta
   }
 }
 
-void LogAuthenticationComplete(const RawAddress& raw_address, tHCI_STATUS hci_status) {
-  hci::Address address = bluetooth::ToGdAddress(raw_address);
+void LogAuthenticationComplete(const RawAddress& address, tHCI_STATUS hci_status) {
   bluetooth::os::LogMetricBluetoothEvent(address,
                                          hci_status == tHCI_STATUS::HCI_SUCCESS
                                                  ? EventType::AUTHENTICATION_COMPLETE
@@ -416,8 +412,7 @@ void LogAuthenticationComplete(const RawAddress& raw_address, tHCI_STATUS hci_st
                                          MapHCIStatusToState(hci_status));
 }
 
-void LogSDPComplete(const RawAddress& raw_address, tBTA_STATUS status) {
-  hci::Address address = bluetooth::ToGdAddress(raw_address);
+void LogSDPComplete(const RawAddress& address, tBTA_STATUS status) {
   bluetooth::os::LogMetricBluetoothEvent(
           address, EventType::SERVICE_DISCOVERY,
           status == tBTA_STATUS::BTA_SUCCESS ? State::SUCCESS : State::FAIL);
@@ -432,8 +427,7 @@ void LogLeAclCompletionEvent(const hci::Address& address, hci::ErrorCode reason,
                                          MapErrorCodeToState(reason));
 }
 
-void LogLePairingFail(const RawAddress& raw_address, uint8_t failure_reason, bool is_outgoing) {
-  hci::Address address = bluetooth::ToGdAddress(raw_address);
+void LogLePairingFail(const RawAddress& address, uint8_t failure_reason, bool is_outgoing) {
   bluetooth::os::LogMetricBluetoothEvent(
           address, is_outgoing ? EventType::SMP_PAIRING_OUTGOING : EventType::SMP_PAIRING_INCOMING,
           MapSmpStatusCodeToState(static_cast<tSMP_STATUS>(failure_reason)));

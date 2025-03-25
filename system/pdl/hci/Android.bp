@@ -39,6 +39,7 @@ cc_library_static {
     // TODO remove this
     // Directly add the common library + the os library as a dependency that export their header_libs
     include_dirs: [
+        "packages/modules/Bluetooth/system",
         "packages/modules/Bluetooth/system/gd",
     ],
     host_supported: true,

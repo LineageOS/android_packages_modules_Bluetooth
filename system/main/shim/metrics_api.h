@@ -320,7 +320,7 @@ void LogMetricRfcommConnectionAtClose(const RawAddress& address,
  */
 void LogMetricLeConnectionRejected(hci::Address address);
 
-bool CountCounterMetrics(int32_t key, int64_t count);
+void CountCounterMetrics(android::bluetooth::CodePathCounterKeyEnum key, int64_t count);
 
 /**
  * Logs the AG version in a HFP session

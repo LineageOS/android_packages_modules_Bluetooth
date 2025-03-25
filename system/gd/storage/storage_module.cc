@@ -26,7 +26,6 @@
 #include <utility>
 
 #include "common/bind.h"
-#include "metrics/counter_metrics.h"
 #include "os/alarm.h"
 #include "os/files.h"
 #include "os/handler.h"

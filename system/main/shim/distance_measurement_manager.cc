@@ -79,7 +79,7 @@ public:
     hci::Role local_hci_role;
     uint16_t connection_handle = GetConnectionHandleAndRole(identity_addr, &local_hci_role);
     bluetooth::shim::GetDistanceMeasurementManager()->StartDistanceMeasurement(
-            bluetooth::ToGdAddress(identity_addr), connection_handle, local_hci_role, interval,
+            identity_addr, connection_handle, local_hci_role, interval,
             distance_measurement_method);
     if (distance_measurement_method == DistanceMeasurementMethod::METHOD_CS) {
       bluetooth::ras::GetRasClient()->Connect(identity_addr);
@@ -93,7 +93,7 @@ public:
 
   void DoStopDistanceMeasurement(RawAddress identity_addr, uint8_t method) {
     bluetooth::shim::GetDistanceMeasurementManager()->StopDistanceMeasurement(
-            bluetooth::ToGdAddress(identity_addr), GetConnectionHandleAndRole(identity_addr),
+            identity_addr, GetConnectionHandleAndRole(identity_addr),
             static_cast<DistanceMeasurementMethod>(method));
   }
 
@@ -192,8 +192,7 @@ public:
       hal_vendor_specific_characteristics.emplace_back(vendor_specific_characteristic);
     }
     bluetooth::shim::GetDistanceMeasurementManager()->HandleVendorSpecificReply(
-            bluetooth::ToGdAddress(address), GetConnectionHandleAndRole(address),
-            hal_vendor_specific_characteristics);
+            address, GetConnectionHandleAndRole(address), hal_vendor_specific_characteristics);
   }
 
   // Must be called from main_thread
@@ -202,7 +201,7 @@ public:
     hci::Role local_hci_role;
     uint16_t connection_handle = GetConnectionHandleAndRole(identity_address, &local_hci_role);
     bluetooth::shim::GetDistanceMeasurementManager()->HandleRasServerConnected(
-            bluetooth::ToGdAddress(identity_address), connection_handle, local_hci_role);
+            identity_address, connection_handle, local_hci_role);
   }
 
   // Must be called from main_thread
@@ -224,7 +223,7 @@ public:
   // Callbacks of bluetooth::ras::RasSeverCallbacks
   void OnRasServerDisconnected(const RawAddress& identity_address) override {
     bluetooth::shim::GetDistanceMeasurementManager()->HandleRasServerDisconnected(
-            bluetooth::ToGdAddress(identity_address), GetConnectionHandleAndRole(identity_address));
+            identity_address, GetConnectionHandleAndRole(identity_address));
   }
 
   // Must be called from main_thread
@@ -243,37 +242,37 @@ public:
     }
 
     bluetooth::shim::GetDistanceMeasurementManager()->HandleRasClientConnectedEvent(
-            bluetooth::ToGdAddress(address), GetConnectionHandleAndRole(address), att_handle,
+            address, GetConnectionHandleAndRole(address), att_handle,
             hal_vendor_specific_characteristics, conn_interval);
   }
 
   void OnConnIntervalUpdated(const RawAddress& address, uint16_t conn_interval) {
     bluetooth::shim::GetDistanceMeasurementManager()->HandleConnIntervalUpdated(
-            bluetooth::ToGdAddress(address), GetConnectionHandleAndRole(address), conn_interval);
+            address, GetConnectionHandleAndRole(address), conn_interval);
   }
 
   void OnDisconnected(const RawAddress& address,
                       const ras::RasDisconnectReason& ras_disconnect_reason) {
     bluetooth::shim::GetDistanceMeasurementManager()->HandleRasClientDisconnectedEvent(
-            bluetooth::ToGdAddress(address), ras_disconnect_reason);
+            address, ras_disconnect_reason);
   }
 
   // Must be called from main_thread
   void OnWriteVendorSpecificReplyComplete(const RawAddress& address, bool success) {
     bluetooth::shim::GetDistanceMeasurementManager()->HandleVendorSpecificReplyComplete(
-            bluetooth::ToGdAddress(address), GetConnectionHandleAndRole(address), success);
+            address, GetConnectionHandleAndRole(address), success);
   }
 
   // Must be called from main_thread
   void OnRemoteData(const RawAddress& address, const std::vector<uint8_t>& data) {
     bluetooth::shim::GetDistanceMeasurementManager()->HandleRemoteData(
-            bluetooth::ToGdAddress(address), GetConnectionHandleAndRole(address), data);
+            address, GetConnectionHandleAndRole(address), data);
   }
 
   // Must be called from main_thread
   void OnRemoteDataTimeout(const RawAddress& address) {
     bluetooth::shim::GetDistanceMeasurementManager()->HandleRemoteDataTimeout(
-            bluetooth::ToGdAddress(address), GetConnectionHandleAndRole(address));
+            address, GetConnectionHandleAndRole(address));
   }
 
 private:

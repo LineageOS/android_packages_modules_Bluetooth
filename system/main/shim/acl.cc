@@ -1073,7 +1073,7 @@ struct shim::Acl::impl {
   void get_advertising_set_connected_to(const RawAddress& remote_bda,
                                         std::promise<std::optional<uint8_t>> promise) {
     log::debug("get_advertising_set_connected_to {}", remote_bda);
-    auto remote_address = ToGdAddress(remote_bda);
+    bluetooth::hci::Address remote_address = remote_bda;
     for (auto& [handle, connection] : handle_to_le_connection_map_) {
       if (connection->GetRemoteAddressWithType().GetAddress() == remote_address) {
         promise.set_value(connection->GetAdvertisingSetConnectedTo());

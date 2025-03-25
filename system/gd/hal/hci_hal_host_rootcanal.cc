@@ -31,7 +31,6 @@
 #include "hal/hci_hal_host.h"
 #include "hal/snoop_logger.h"
 #include "main/shim/entry.h"
-#include "metrics/counter_metrics.h"
 #include "os/reactor.h"
 #include "os/thread.h"
 

@@ -783,15 +783,14 @@ tBTM_STATUS BTM_SecBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
   if ((transport == BT_TRANSPORT_LE && (dev_type & BT_DEVICE_TYPE_BLE) == 0) ||
       (transport == BT_TRANSPORT_BR_EDR && (dev_type & BT_DEVICE_TYPE_BREDR) == 0)) {
     log::warn("Requested transport and supported transport don't match");
-    bluetooth::os::LogMetricBluetoothEvent(ToGdAddress(bd_addr),
-                                           android::bluetooth::EventType::TRANSPORT_MATCH,
+    bluetooth::os::LogMetricBluetoothEvent(bd_addr, android::bluetooth::EventType::TRANSPORT_MATCH,
                                            android::bluetooth::State::FAIL);
   }
 
-  bluetooth::os::LogMetricBluetoothEvent(
-          ToGdAddress(bd_addr), android::bluetooth::EventType::TRANSPORT,
-          transport == BT_TRANSPORT_LE ? android::bluetooth::State::LE
-                                       : android::bluetooth::State::CLASSIC);
+  bluetooth::os::LogMetricBluetoothEvent(bd_addr, android::bluetooth::EventType::TRANSPORT,
+                                         transport == BT_TRANSPORT_LE
+                                                 ? android::bluetooth::State::LE
+                                                 : android::bluetooth::State::CLASSIC);
 
   return btm_sec_bond_by_transport(bd_addr, addr_type, transport);
 }
