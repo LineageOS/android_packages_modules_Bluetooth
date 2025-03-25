@@ -29,7 +29,6 @@ import static com.android.bluetooth.flags.Flags.leaudioBroadcastApiGetLocalMetad
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastPreventResumeInterruption;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastResyncHelper;
 import static com.android.bluetooth.flags.Flags.leaudioMonitorUnicastSourceWhenManagedByBroadcastDelegator;
-import static com.android.bluetooth.flags.Flags.leaudioSortScansToSyncByFails;
 
 import static java.util.Objects.requireNonNull;
 
@@ -545,8 +544,7 @@ public class BassClientService extends ProfileService {
                         return -1;
                     } else if (!ssr1.hasPriority && ssr2.hasPriority) {
                         return 1;
-                    } else if (leaudioSortScansToSyncByFails()
-                            && (ssr1.syncFailureCounter != ssr2.syncFailureCounter)) {
+                    } else if (ssr1.syncFailureCounter != ssr2.syncFailureCounter) {
                         return Integer.compare(ssr1.syncFailureCounter, ssr2.syncFailureCounter);
                     } else {
                         return Integer.compare(ssr2.getRssi(), ssr1.getRssi());
