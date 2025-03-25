@@ -1050,8 +1050,23 @@ void bta_hh_security_cmpl(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* /* p_buf */)
  *
  ******************************************************************************/
 void bta_hh_le_notify_enc_cmpl(tBTA_HH_DEV_CB* p_cb, const tBTA_HH_DATA* p_buf) {
-  if (p_cb == NULL || !p_cb->security_pending || p_buf == NULL ||
-      p_buf->le_enc_cmpl.client_if != bta_hh_cb.gatt_if) {
+  if (p_cb == NULL) {
+    log::error("p_cb is NULL");
+    return;
+  }
+
+  if (!p_cb->security_pending) {
+    log::error("Not waiting for security for {}", p_cb->link_spec);
+    return;
+  }
+
+  if (p_buf == NULL) {
+    log::error("Empty payload for {}", p_cb->link_spec);
+    return;
+  }
+
+  if (p_buf->le_enc_cmpl.client_if != bta_hh_cb.gatt_if) {
+    log::error("Unexpected client_if:{}", p_buf->le_enc_cmpl.client_if);
     return;
   }
 
