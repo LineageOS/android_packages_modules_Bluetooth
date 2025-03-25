@@ -69,16 +69,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_big_depends_on_audio_state"
-    namespace: "bluetooth"
-    description: "BIG creation/termination depends on audio resume/pause"
-    bug: "347204335"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "le_ase_read_multiple_variable"
     namespace: "bluetooth"
     description: "Use GATT read multiple variable length characteristic values"

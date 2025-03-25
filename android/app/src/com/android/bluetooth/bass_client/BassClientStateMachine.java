@@ -22,7 +22,6 @@ import static android.bluetooth.BluetoothProfile.STATE_CONNECTED;
 import static android.bluetooth.BluetoothProfile.STATE_CONNECTING;
 import static android.bluetooth.BluetoothProfile.STATE_DISCONNECTED;
 
-import static com.android.bluetooth.flags.Flags.leaudioBigDependsOnAudioState;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastReceiveStateProcessingRefactor;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastResyncHelper;
 
@@ -626,8 +625,7 @@ class BassClientStateMachine extends StateMachine {
         // Whenever receive state indicated code requested, assistant should set the broadcast code
         // Valid code will be checked later in convertRecvStateToSetBroadcastCodeByteArray
         if (recvState.getBigEncryptionState()
-                        == BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_CODE_REQUIRED
-                && (leaudioBigDependsOnAudioState() || mSetBroadcastCodePending)) {
+                == BluetoothLeBroadcastReceiveState.BIG_ENCRYPTION_STATE_CODE_REQUIRED) {
             log("Update the Broadcast now");
             if (mSetBroadcastPINMetadata != null) {
                 setCurrentBroadcastMetadata(recvState.getSourceId(), mSetBroadcastPINMetadata);

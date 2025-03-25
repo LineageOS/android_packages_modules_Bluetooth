@@ -4244,25 +4244,18 @@ public class BassClientServiceTest {
         injectRemoteSourceStateChanged(meta, /* isPaSynced */ true, /* isBisSynced */ false);
 
         List<BluetoothDevice> activeSinks = mBassClientService.getSyncedBroadcastSinks();
-        if (Flags.leaudioBigDependsOnAudioState()) {
-            // Verify getSyncedBroadcastSinks returns correct device list if no BIS synced
-            assertThat(activeSinks).hasSize(2);
-            assertThat(activeSinks.contains(mCurrentDevice)).isTrue();
-            assertThat(activeSinks.contains(mCurrentDevice1)).isTrue();
-        } else {
-            // Verify getSyncedBroadcastSinks returns empty device list if no BIS synced
-            assertThat(mBassClientService.getSyncedBroadcastSinks().isEmpty()).isTrue();
-        }
+        // Verify getSyncedBroadcastSinks returns correct device list if no BIS synced
+        assertThat(activeSinks).hasSize(2);
+        assertThat(activeSinks.contains(mCurrentDevice)).isTrue();
+        assertThat(activeSinks.contains(mCurrentDevice1)).isTrue();
 
         activeSinks.clear();
         // Verify getSyncedBroadcastSinks by broadcast id
         activeSinks = mBassClientService.getSyncedBroadcastSinks(TEST_BROADCAST_ID);
-        if (Flags.leaudioBigDependsOnAudioState()) {
-            // Verify getSyncedBroadcastSinks returns correct device list if no BIS synced
-            assertThat(activeSinks.size()).isEqualTo(2);
-            assertThat(activeSinks.contains(mCurrentDevice)).isTrue();
-            assertThat(activeSinks.contains(mCurrentDevice1)).isTrue();
-        }
+        // Verify getSyncedBroadcastSinks returns correct device list if no BIS synced
+        assertThat(activeSinks.size()).isEqualTo(2);
+        assertThat(activeSinks.contains(mCurrentDevice)).isTrue();
+        assertThat(activeSinks.contains(mCurrentDevice1)).isTrue();
 
         // Update receiver state with BIS sync
         injectRemoteSourceStateChanged(meta, /* isPaSynced */ true, /* isBisSynced */ true);
@@ -4324,15 +4317,12 @@ public class BassClientServiceTest {
     @Test
     public void testLocalAddSourceWhenBroadcastIsPlaying() throws RemoteException {
         doReturn(true).when(mLeAudioService).isPlaying(TEST_BROADCAST_ID);
-        if (Flags.leaudioBigDependsOnAudioState()) {
-            doReturn(false).when(mLeAudioService).isPaused(TEST_BROADCAST_ID);
-        }
+        doReturn(false).when(mLeAudioService).isPaused(TEST_BROADCAST_ID);
 
         prepareTwoSynchronizedDevicesForLocalBroadcast();
     }
 
     @Test
-    @EnableFlags({Flags.FLAG_LEAUDIO_BIG_DEPENDS_ON_AUDIO_STATE})
     public void testLocalAddSourceWhenBroadcastIsPaused() throws RemoteException {
         doReturn(false).when(mLeAudioService).isPlaying(TEST_BROADCAST_ID);
         doReturn(true).when(mLeAudioService).isPaused(TEST_BROADCAST_ID);
@@ -4343,9 +4333,7 @@ public class BassClientServiceTest {
     @Test
     public void testLocalAddSourceWhenBroadcastIsStopped() throws RemoteException {
         doReturn(false).when(mLeAudioService).isPlaying(TEST_BROADCAST_ID);
-        if (Flags.leaudioBigDependsOnAudioState()) {
-            doReturn(false).when(mLeAudioService).isPaused(TEST_BROADCAST_ID);
-        }
+        doReturn(false).when(mLeAudioService).isPaused(TEST_BROADCAST_ID);
 
         BluetoothLeBroadcastMetadata meta = createBroadcastMetadata(TEST_BROADCAST_ID);
 
@@ -4365,9 +4353,7 @@ public class BassClientServiceTest {
     public void testSinksDisconnectionWhenBroadcastIsPlaying() throws RemoteException {
         /* Imitate broadcast being active */
         doReturn(true).when(mLeAudioService).isPlaying(TEST_BROADCAST_ID);
-        if (Flags.leaudioBigDependsOnAudioState()) {
-            doReturn(false).when(mLeAudioService).isPaused(TEST_BROADCAST_ID);
-        }
+        doReturn(false).when(mLeAudioService).isPaused(TEST_BROADCAST_ID);
 
         prepareTwoSynchronizedDevicesForLocalBroadcast();
 
@@ -4379,7 +4365,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BIG_DEPENDS_ON_AUDIO_STATE)
     public void testSinksDisconnectionWhenBroadcastIsPaused() throws RemoteException {
         /* Imitate broadcast being active */
         doReturn(false).when(mLeAudioService).isPlaying(TEST_BROADCAST_ID);
@@ -4398,9 +4383,7 @@ public class BassClientServiceTest {
     public void testSinksDisconnectionWhenBroadcastIsStopped() throws RemoteException {
         /* Imitate broadcast being active */
         doReturn(true).when(mLeAudioService).isPlaying(TEST_BROADCAST_ID);
-        if (Flags.leaudioBigDependsOnAudioState()) {
-            doReturn(false).when(mLeAudioService).isPaused(TEST_BROADCAST_ID);
-        }
+        doReturn(false).when(mLeAudioService).isPaused(TEST_BROADCAST_ID);
 
         prepareTwoSynchronizedDevicesForLocalBroadcast();
 
@@ -4930,10 +4913,6 @@ public class BassClientServiceTest {
                 .isEqualTo(TEST_BROADCAST_ID);
         assertThat(mBassClientService.getBase(TEST_SYNC_HANDLE)).isNotNull();
 
-        if (!Flags.leaudioBigDependsOnAudioState()) {
-            onBigInfoAdvertisingReport();
-        }
-
         // Notified
         TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
         ArgumentCaptor<BluetoothLeBroadcastMetadata> metaData =
@@ -4952,7 +4931,6 @@ public class BassClientServiceTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BIG_DEPENDS_ON_AUDIO_STATE)
     public void notifySourceFound_without_public_announcement() throws RemoteException {
         prepareConnectedDeviceGroup();
         startSearchingForSources();
@@ -5081,18 +5059,12 @@ public class BassClientServiceTest {
                 .isEqualTo(TEST_BROADCAST_ID);
         assertThat(mBassClientService.getBase(TEST_SYNC_HANDLE)).isNotNull();
 
-        if (!Flags.leaudioBigDependsOnAudioState()) {
-            // onBigInfoAdvertisingReport causes notification
-            onBigInfoAdvertisingReport();
-        }
-
         // Notified
         TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
         inOrder.verify(mCallback).onSourceFound(any());
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BIG_DEPENDS_ON_AUDIO_STATE)
     public void notifySourceFound_periodic_after_wrong_periodic() throws RemoteException {
         prepareConnectedDeviceGroup();
         startSearchingForSources();
@@ -5184,10 +5156,6 @@ public class BassClientServiceTest {
         onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
 
         onPeriodicAdvertisingReport();
-        if (!Flags.leaudioBigDependsOnAudioState()) {
-            // onBigInfoAdvertisingReport causes notification
-            onBigInfoAdvertisingReport();
-        }
 
         // Notified
         TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
@@ -5206,10 +5174,6 @@ public class BassClientServiceTest {
         onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
 
         onPeriodicAdvertisingReport();
-        if (!Flags.leaudioBigDependsOnAudioState()) {
-            // onBigInfoAdvertisingReport causes notification
-            onBigInfoAdvertisingReport();
-        }
 
         // Notified
         TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
@@ -5219,10 +5183,7 @@ public class BassClientServiceTest {
         startSearchingForSources();
 
         onPeriodicAdvertisingReport();
-        if (!Flags.leaudioBigDependsOnAudioState()) {
-            // onBigInfoAdvertisingReport should notified again
-            onBigInfoAdvertisingReport();
-        }
+
         // Notified
         TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
         inOrder.verify(mCallback).onSourceFound(any());
