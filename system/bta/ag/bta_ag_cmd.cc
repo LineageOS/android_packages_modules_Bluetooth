@@ -37,6 +37,7 @@
 #include "bta_sys.h"
 #include "btm_api_types.h"
 #include "hardware/bt_hf.h"
+#include "metrics/bluetooth_event.h"
 #include "osi/include/alarm.h"
 
 #ifdef __ANDROID__
@@ -48,13 +49,12 @@
 #include "device/include/interop.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/helpers.h"
-#include "main/shim/metrics_api.h"
+#include "os/metrics.h"
 #include "osi/include/compat.h"
 #include "stack/btm/btm_sco_hfp_hal.h"
 #include "stack/include/port_api.h"
 
 using namespace bluetooth;
-using namespace bluetooth::shim;
 
 /*****************************************************************************
  *  Constants
@@ -1146,7 +1146,7 @@ void bta_ag_at_hfp_cback(tBTA_AG_SCB* p_scb, uint16_t cmd, uint8_t arg_type, cha
         }
       }
 
-      LogMetricHfpAgVersion(p_scb->peer_addr, p_scb->peer_version);
+      bluetooth::metrics::LogMetricHfpAgVersion(p_scb->peer_addr, p_scb->peer_version);
       log::verbose("BRSF HF: 0x{:x}, phone: 0x{:x}", p_scb->peer_features, p_scb->masked_features);
 
       /* send BRSF, send OK */

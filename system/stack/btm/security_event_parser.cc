@@ -24,7 +24,6 @@
 #include "btm_sec.h"
 #include "hci/hci_packets.h"
 #include "main/shim/helpers.h"
-#include "main/shim/metrics_api.h"
 #include "os/metrics.h"
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/hci_error_code.h"
@@ -45,7 +44,7 @@ static void log_address_and_status(const Address& bda, EventCode event_code,
   uint16_t reason = android::bluetooth::hci::STATUS_UNKNOWN;
   uint16_t handle = bluetooth::os::kUnknownConnectionHandle;
   int64_t value = 0;
-  bluetooth::shim::LogMetricClassicPairingEvent(
+  bluetooth::os::LogMetricClassicPairingEvent(
           ToRawAddress(bda), handle, cmd, static_cast<uint16_t>(event_code), status, reason, value);
 }
 static void log_address(const Address& bda, EventCode event_code) {
@@ -54,7 +53,7 @@ static void log_address(const Address& bda, EventCode event_code) {
   uint16_t reason = android::bluetooth::hci::STATUS_UNKNOWN;
   uint16_t handle = bluetooth::os::kUnknownConnectionHandle;
   int64_t value = 0;
-  bluetooth::shim::LogMetricClassicPairingEvent(
+  bluetooth::os::LogMetricClassicPairingEvent(
           ToRawAddress(bda), handle, cmd, static_cast<uint16_t>(event_code), status, reason, value);
 }
 static void parse_encryption_change(const EventView event) {
@@ -68,7 +67,7 @@ static void parse_encryption_change(const EventView event) {
 
   btm_sec_encryption_change_evt(handle, static_cast<tHCI_STATUS>(status),
                                 static_cast<uint8_t>(encr_enable), 0);
-  bluetooth::shim::LogMetricClassicPairingEvent(
+  bluetooth::os::LogMetricClassicPairingEvent(
           ToRawAddress(Address::kEmpty), handle, android::bluetooth::hci::CMD_UNKNOWN,
           static_cast<uint32_t>(change.GetEventCode()), static_cast<uint16_t>(status),
           android::bluetooth::hci::STATUS_UNKNOWN, 0);
@@ -85,7 +84,7 @@ static void parse_encryption_change_v2(const EventView event) {
 
   btm_sec_encryption_change_evt(handle, static_cast<tHCI_STATUS>(status),
                                 static_cast<uint8_t>(encr_enable), key_size);
-  bluetooth::shim::LogMetricClassicPairingEvent(
+  bluetooth::os::LogMetricClassicPairingEvent(
           ToRawAddress(Address::kEmpty), handle, android::bluetooth::hci::CMD_UNKNOWN,
           static_cast<uint32_t>(change.GetEventCode()), static_cast<uint16_t>(status),
           android::bluetooth::hci::STATUS_UNKNOWN, 0);
@@ -95,7 +94,7 @@ static void parse_change_connection_link_key_complete(const EventView event) {
   log::assert_that(complete_opt.has_value(), "assert failed: complete_opt.has_value()");
   auto complete = complete_opt.value();
 
-  bluetooth::shim::LogMetricClassicPairingEvent(
+  bluetooth::os::LogMetricClassicPairingEvent(
           ToRawAddress(Address::kEmpty), complete.GetConnectionHandle(),
           android::bluetooth::hci::CMD_UNKNOWN, static_cast<uint32_t>(complete.GetEventCode()),
           static_cast<uint16_t>(complete.GetStatus()), android::bluetooth::hci::STATUS_UNKNOWN, 0);

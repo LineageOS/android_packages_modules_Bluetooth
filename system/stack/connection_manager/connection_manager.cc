@@ -33,7 +33,8 @@
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
 #include "main/shim/le_scanning_manager.h"
-#include "main/shim/metrics_api.h"
+#include "metrics/bluetooth_event.h"
+#include "os/metrics.h"
 #include "osi/include/alarm.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/include/advertise_data_parser.h"
@@ -519,7 +520,7 @@ bool direct_connect_add(uint8_t app_id, const RawAddress& address, tBLE_ADDR_TYP
     // app already trying to connect to this particular device
     if (info.doing_direct_conn.count(app_id)) {
       log::info("attempt from app_id=0x{:x} to {} already in progress", app_id, address_with_type);
-      bluetooth::shim::LogMetricLeConnectionRejected(address);
+      bluetooth::metrics::LogMetricLeConnectionRejected(address);
       return false;
     }
 
