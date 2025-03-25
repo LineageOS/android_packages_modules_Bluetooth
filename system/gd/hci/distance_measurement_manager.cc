@@ -87,6 +87,7 @@ static constexpr uint8_t kAttHeaderSize = 5;         // Section 3.2.2.1 of RAS 1
 static constexpr uint8_t kRasSegmentHeaderSize = 1;
 static constexpr uint16_t kEnableSecurityTimeoutMs = 10000;  // 10s
 static constexpr uint16_t kProcedureScheduleGuardMs = 1000;  // 1s
+static constexpr double kConnIntervalUnitMs = 1.25;          // 1.25 ms
 
 struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
   struct CsProcedureData {
@@ -829,9 +830,9 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
         cs_requester_trackers_[connection_handle].interval_ms > 100) {
       // TODO(b/398253048): keep the burst mode for 'HIGH' for now. allow app to disable it.
       uint16_t measurement_interval_ms = cs_requester_trackers_[connection_handle].interval_ms;
-      min_procedure_interval = static_cast<uint16_t>(
-              std::round((double)measurement_interval_ms /
-                         cs_requester_trackers_[connection_handle].conn_interval_));
+      min_procedure_interval = static_cast<uint16_t>(std::round(
+              (double)measurement_interval_ms /
+              (cs_requester_trackers_[connection_handle].conn_interval_ * kConnIntervalUnitMs)));
     }
     log::debug("procedure params: min_int = {}", min_procedure_interval);
     hci_layer_->EnqueueCommand(
@@ -1299,7 +1300,7 @@ struct DistanceMeasurementManager::impl : bluetooth::hal::RangingHalCallback {
         uint32_t schedule_interval = live_tracker->interval_ms;
         if (live_tracker->n_procedure_count > 1) {
           schedule_interval = live_tracker->n_procedure_count * event_view.GetProcedureInterval() *
-                                      live_tracker->conn_interval_ +
+                                      live_tracker->conn_interval_ * kConnIntervalUnitMs +
                               kProcedureScheduleGuardMs;
           log::debug("guard interval is {} ms", schedule_interval);
         }

@@ -47,6 +47,7 @@ namespace {
 static constexpr auto kTimeout = std::chrono::seconds(1);
 static constexpr uint8_t kMaxRetryCounterForCreateConfig = 0x03;
 static constexpr uint8_t kMaxRetryCounterForCsEnable = 0x03;
+static constexpr uint8_t kConnInterval = 24;
 }
 
 namespace bluetooth {
@@ -318,7 +319,7 @@ protected:
             params.remote_address, params.connection_handle,
             /*att_handle=*/0,
             /*vendor_specific_data=*/std::vector<hal::VendorSpecificCharacteristic>(),
-            /*conn_interval=*/24);
+            /*conn_interval=*/kConnInterval);
   }
 
   void StartMeasurementTillReadRemoteCaps(const StartMeasurementParameters& params) {
@@ -364,7 +365,13 @@ protected:
   void StartMeasurementTillSetProcedureParameters(const StartMeasurementParameters& params) {
     StartMeasurementTillSecurityEnable(params);
 
-    test_hci_layer_->GetCommand(OpCode::LE_CS_SET_PROCEDURE_PARAMETERS);
+    auto command_view =
+            LeCsSetProcedureParametersView::Create(DistanceMeasurementCommandView::Create(
+                    test_hci_layer_->GetCommand(OpCode::LE_CS_SET_PROCEDURE_PARAMETERS)));
+    EXPECT_EQ(command_view.IsValid(), true);
+    auto expected_min_procedure_interval =
+            static_cast<uint16_t>(std::round(params.interval / (kConnInterval * 1.25)));
+    EXPECT_EQ(command_view.GetMinProcedureInterval(), expected_min_procedure_interval);
     test_hci_layer_->IncomingEvent(LeCsSetProcedureParametersCompleteBuilder::Create(
             /*num_hci_command_packets=*/static_cast<uint8_t>(0xEE), ErrorCode::SUCCESS,
             params.connection_handle));
