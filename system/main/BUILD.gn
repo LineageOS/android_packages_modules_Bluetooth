@@ -86,7 +86,6 @@ target(lib_type, "bluetooth") {
     "//bt/system/main/shim:LibBluetoothShimSources",
     "//bt/system/osi",
     "//bt/system/packet",
-    "//bt/system/rust:core_rs",
     "//bt/system/stack",
     "//bt/system/udrv",
   ]

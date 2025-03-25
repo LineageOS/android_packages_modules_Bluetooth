@@ -15,13 +15,17 @@
 //! The core event loop for Rust modules. Here Rust modules are started in
 //! dependency order.
 
+use gatt::arbiter::ffi::AclArbiter;
+use gatt::arbiter::RegisteredArbiter;
+
 use gatt::channel::AttTransport;
+use gatt::server::isolation_manager::IsolationManager;
 use gatt::GattCallbacks;
 use log::{info, warn};
 use tokio::task::LocalSet;
 
 use std::rc::Rc;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::thread::JoinHandle;
 use tokio::runtime::Builder;
 
@@ -43,6 +47,7 @@ enum RustModuleRunner {
     Running {
         thread: JoinHandle<()>,
         tx: mpsc::UnboundedSender<BoxedMainThreadCallback>,
+        arbiter: RegisteredArbiter,
     },
     DisabledInTest,
 }
@@ -73,6 +78,7 @@ impl RustModuleRunner {
     pub fn start(
         gatt_callbacks: impl GattCallbacks + Send + 'static,
         att_transport: impl AttTransport + Send + 'static,
+        acl_arbiter: &'static AclArbiter,
         on_started: impl FnOnce() + Send + 'static,
     ) {
         let mut runner = GLOBAL_MODULE_RUNNER.lock().unwrap();
@@ -82,18 +88,27 @@ impl RustModuleRunner {
         }
 
         let (tx, rx) = mpsc::unbounded_channel();
+
+        let arbiter = RegisteredArbiter::new(acl_arbiter);
+        let isolation_manager = Arc::clone(arbiter.isolation_manager());
         let thread = std::thread::spawn(move || {
-            RustModuleRunner::run(Rc::new(gatt_callbacks), Rc::new(att_transport), on_started, rx)
+            RustModuleRunner::run(
+                Rc::new(gatt_callbacks),
+                Rc::new(att_transport),
+                isolation_manager,
+                on_started,
+                rx,
+            )
         });
 
-        *runner = Self::Running { thread, tx };
+        *runner = Self::Running { thread, tx, arbiter };
     }
 
     /// Externally stop the global runner.
     pub fn stop() {
         match std::mem::replace(&mut *GLOBAL_MODULE_RUNNER.lock().unwrap(), Self::NotRunning) {
             Self::NotRunning => warn!("Already not running"),
-            Self::Running { thread, tx } => {
+            Self::Running { thread, tx, .. } => {
                 // Dropping the send end of the channel should cause the runner to stop.
                 std::mem::drop(tx);
 
@@ -115,6 +130,7 @@ impl RustModuleRunner {
     fn run(
         gatt_callbacks: Rc<dyn GattCallbacks>,
         att_transport: Rc<dyn AttTransport>,
+        isolation_manager: Arc<Mutex<IsolationManager>>,
         on_started: impl FnOnce(),
         mut rx: mpsc::UnboundedReceiver<BoxedMainThreadCallback>,
     ) {
@@ -126,15 +142,13 @@ impl RustModuleRunner {
             .expect("failed to start tokio runtime");
         let local = LocalSet::new();
 
-        // Setup FFI and C++ modules
-        let arbiter = gatt::arbiter::initialize_arbiter();
-
         // Now enter the runtime
         local.block_on(&rt, async move {
             // Then follow the pure-Rust modules
             let gatt_incoming_callbacks =
                 Rc::new(gatt::callbacks::CallbackTransactionManager::new(gatt_callbacks.clone()));
-            let gatt_module = &mut gatt::server::GattModule::new(att_transport.clone(), arbiter);
+            let gatt_module =
+                &mut gatt::server::GattModule::new(att_transport.clone(), isolation_manager);
 
             // All modules that are visible from incoming JNI / top-level interfaces should
             // be exposed here
@@ -157,8 +171,6 @@ impl RustModuleRunner {
         });
 
         info!("RustModuleRunner has stopped, shutting down executor thread");
-
-        gatt::arbiter::clean_arbiter();
     }
 
     #[allow(dead_code)]
@@ -166,6 +178,13 @@ impl RustModuleRunner {
         match self {
             Self::Running { tx, .. } => tx.send(f).map_err(|e| ("Failed to send".to_string(), e.0)),
             _ => Err((format!("Bad state {self:?}"), f)),
+        }
+    }
+
+    fn isolation_manager() -> Option<Arc<Mutex<IsolationManager>>> {
+        match &*GLOBAL_MODULE_RUNNER.lock().unwrap() {
+            Self::Running { arbiter, .. } => Some(Arc::clone(arbiter.isolation_manager())),
+            _ => None,
         }
     }
 }

@@ -207,7 +207,9 @@ const struct module_lookup module_table[] = {
         {GD_SHIM_MODULE, &gd_shim_module},
         {INTEROP_MODULE, &interop_module},
         {OSI_MODULE, &osi_module},
+#ifndef TARGET_FLOSS
         {RUST_MODULE, &rust_module},
+#endif
         {STACK_CONFIG_MODULE, &stack_config_module},
         {DEVICE_IOT_CONFIG_MODULE, &device_iot_config_module},
         {NULL, NULL},

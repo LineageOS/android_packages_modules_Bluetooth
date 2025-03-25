@@ -17,18 +17,19 @@
 #include <bluetooth/log.h>
 
 #include <cstdint>
+#include <memory>
 
 #include "include/hardware/bluetooth.h"
 #include "include/hardware/bt_common_types.h"
 #include "include/hardware/bt_gatt_client.h"
 #include "include/hardware/bt_gatt_server.h"
 #include "rust/cxx.h"
+#include "stack/arbiter/acl_arbiter.h"
 
 namespace bluetooth {
 namespace gatt {
 
-/// The GATT entity backing the value of a user-controlled
-/// attribute
+/// The GATT entity backing the value of a user-controlled attribute
 enum class AttributeBackingType {
   /// A GATT characteristic
   CHARACTERISTIC,
@@ -55,7 +56,41 @@ private:
   const btgatt_server_callbacks_t& callbacks;
 };
 
+struct Arbiter;
+
 }  // namespace gatt
+
+namespace shim::arbiter {
+
+// Wraps the Rust Arbiter and implements ArbiterInterface.
+class ArbiterShim : public ArbiterInterface {
+public:
+  ArbiterShim(const AclArbiter* acl_arbiter, const bluetooth::gatt::Arbiter* arbiter)
+      : acl_arbiter_(acl_arbiter), arbiter_(arbiter) {
+    acl_arbiter_->set_arbiter(this);
+  }
+  ~ArbiterShim() { acl_arbiter_->set_arbiter(nullptr); }
+
+  void OnLeConnect(uint8_t tcb_idx, uint16_t advertiser_id) override;
+  void OnLeDisconnect(uint8_t tcb_idx) override;
+  InterceptAction InterceptPacket(uint8_t tcb_idx, rust::Vec<uint8_t> buffer) override;
+  void OnOutgoingMtuReq(uint8_t tcb_idx) override;
+  void OnIncomingMtuResp(uint8_t tcb_idx, size_t mtu) override;
+  void OnIncomingMtuReq(uint8_t tcb_idx, size_t mtu) override;
+
+private:
+  const AclArbiter* acl_arbiter_;
+  const bluetooth::gatt::Arbiter* arbiter_;
+};
+
+// Registers `arbiter` with `acl_arbiter`.  The arbiter will be unregistered when the shim is
+// dropped.
+inline std::unique_ptr<ArbiterShim> RegisterArbiter(const AclArbiter* acl_arbiter,
+                                                    const bluetooth::gatt::Arbiter* arbiter) {
+  return std::make_unique<ArbiterShim>(acl_arbiter, arbiter);
+}
+
+}  // namespace shim::arbiter
 }  // namespace bluetooth
 
 namespace std {

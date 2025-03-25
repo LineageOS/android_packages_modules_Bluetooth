@@ -10,6 +10,7 @@ use std::pin::Pin;
 
 use cxx::UniquePtr;
 
+use crate::core::ffi::AclArbiter;
 use crate::gatt::ffi::{AttTransportImpl, GattCallbacksImpl};
 use crate::RustModuleRunner;
 
@@ -17,11 +18,17 @@ use self::ffi::{future_ready, Future, GattServerCallbacks};
 
 fn start(
     gatt_server_callbacks: UniquePtr<GattServerCallbacks>,
+    acl_arbiter: &'static AclArbiter,
     on_started: Pin<&'static mut Future>,
 ) {
-    RustModuleRunner::start(GattCallbacksImpl(gatt_server_callbacks), AttTransportImpl(), || {
-        future_ready(on_started);
-    });
+    RustModuleRunner::start(
+        GattCallbacksImpl(gatt_server_callbacks),
+        AttTransportImpl(),
+        acl_arbiter,
+        || {
+            future_ready(on_started);
+        },
+    );
 }
 
 fn stop() {

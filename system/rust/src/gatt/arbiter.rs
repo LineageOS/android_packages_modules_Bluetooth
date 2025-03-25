@@ -1,57 +1,118 @@
 //! This module handles "arbitration" of ATT packets, to determine whether they
 //! should be handled by the primary stack or by the Rust stack
 
-use pdl_runtime::Packet;
-use std::sync::{Arc, Mutex};
-
-use log::{error, trace, warn};
-use std::sync::RwLock;
-
-use crate::do_in_rust_thread;
-use crate::packets::att;
-
-use super::ffi::{InterceptAction, StoreCallbacksFromRust};
 use super::ids::{AdvertiserId, TransportIndex};
 use super::mtu::MtuEvent;
 use super::opcode_types::{classify_opcode, OperationType};
 use super::server::isolation_manager::IsolationManager;
+use crate::do_in_rust_thread;
+use crate::packets::att;
+use ffi::InterceptAction;
+use log::{error, trace};
+use pdl_runtime::Packet;
+use std::fmt;
+use std::ops::Deref;
+use std::pin::Pin;
+use std::sync::{Arc, Mutex};
 
-static ARBITER: RwLock<Option<Arc<Mutex<IsolationManager>>>> = RwLock::new(None);
+#[cxx::bridge]
+#[allow(clippy::missing_safety_doc)]
+#[allow(clippy::needless_maybe_sized)]
+#[allow(missing_docs)]
+pub mod ffi {
+    /// What action the arbiter should take in response to an incoming packet
+    #[namespace = "bluetooth::shim::arbiter"]
+    enum InterceptAction {
+        /// Forward the packet to the legacy stack
+        #[cxx_name = "FORWARD"]
+        Forward = 0u32,
+        /// Discard the packet (typically because it has been intercepted)
+        #[cxx_name = "DROP"]
+        Drop = 1u32,
+    }
 
-/// Initialize the Arbiter
-pub fn initialize_arbiter() -> Arc<Mutex<IsolationManager>> {
-    let arbiter = Arc::new(Mutex::new(IsolationManager::new()));
-    let mut lock = ARBITER.write().unwrap();
-    assert!(lock.is_none(), "Rust stack should only start up once");
-    *lock = Some(arbiter.clone());
+    #[namespace = "bluetooth::shim::arbiter"]
+    unsafe extern "C++" {
+        include!("src/gatt/ffi/gatt_shim.h");
 
-    StoreCallbacksFromRust(
-        on_le_connect,
-        on_le_disconnect,
-        intercept_packet,
-        |tcb_idx| on_mtu_event(TransportIndex(tcb_idx), MtuEvent::OutgoingRequest),
-        |tcb_idx, mtu| on_mtu_event(TransportIndex(tcb_idx), MtuEvent::IncomingResponse(mtu)),
-        |tcb_idx, mtu| on_mtu_event(TransportIndex(tcb_idx), MtuEvent::IncomingRequest(mtu)),
-    );
+        type InterceptAction;
+        type AclArbiter;
+        type ArbiterShim;
 
-    arbiter
+        #[cxx_name = "RegisterArbiter"]
+        /// # Safety
+        ///
+        /// The caller must meet the lifetime requirements for both `acl_arbiter` and `arbiter`:
+        /// neither must be dropped before the returned `ArbiterShim` is dropped.
+        unsafe fn register_arbiter(
+            acl_arbiter: *const AclArbiter,
+            arbiter: *const Arbiter,
+        ) -> UniquePtr<ArbiterShim>;
+    }
+
+    #[namespace = "bluetooth::gatt"]
+    extern "Rust" {
+        type Arbiter;
+
+        #[cxx_name = "OnLeConnect"]
+        fn on_le_connect(&self, tcb_idx: u8, advertiser: u8);
+        #[cxx_name = "OnLeDisconnect"]
+        fn on_le_disconnect(&self, tcb_idx: u8);
+        #[cxx_name = "InterceptPacket"]
+        fn intercept_packet(&self, tcb_idx: u8, packet: Vec<u8>) -> InterceptAction;
+        #[cxx_name = "OnOutgoingMtuReq"]
+        fn on_outgoing_mtu_req(&self, tcb_idx: u8);
+        #[cxx_name = "OnIncomingMtuResp"]
+        fn on_incoming_mtu_resp(&self, tcb_idx: u8, mtu: usize);
+        #[cxx_name = "OnIncomingMtuReq"]
+        fn on_incoming_mtu_req(&self, tcb_idx: u8, mtu: usize);
+    }
 }
 
-/// Clean the Arbiter
-pub fn clean_arbiter() {
-    let mut lock = ARBITER.write().unwrap();
-    *lock = None
+/// Arbiter handles "arbitration" of ATT packets, to determine whether they should be handled by the
+/// primary stack or by the Rust stack.
+pub struct Arbiter {
+    isolation_manager: Arc<Mutex<IsolationManager>>,
 }
 
-/// Acquire the mutex holding the Arbiter and provide a mutable reference to the
-/// supplied closure
-pub fn with_arbiter<T>(f: impl FnOnce(&mut IsolationManager) -> T) -> T {
-    f(ARBITER.read().unwrap().as_ref().expect("Rust stack is not started").lock().as_mut().unwrap())
+/// RegisteredArbiter registers `arbiter` and ensures it is unregistered when dropped.
+pub struct RegisteredArbiter {
+    // Rust drops fields in declaration order.  It's important `shim` comes *before* `arbiter`
+    // so that the arbiter is unregistered before `arbiter` is dropped.
+    _shim: cxx::UniquePtr<ffi::ArbiterShim>,
+
+    arbiter: Pin<Box<Arbiter>>,
 }
 
-/// Check if the Arbiter is initialized.
-pub fn has_arbiter() -> bool {
-    ARBITER.read().unwrap().is_some()
+impl fmt::Debug for RegisteredArbiter {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("RegisteredArbiter").finish()
+    }
+}
+
+// SAFETY: `ffi::ArbiterShim` contains pointers to the C++ `AclArbiter` and the Rust `Arbiter`.
+// Once created, the only thing it does is unregister the Rust `Arbiter` from the `AclArbiter` which
+// can be done from any thread.
+unsafe impl Send for RegisteredArbiter {}
+
+impl RegisteredArbiter {
+    /// Returns a new Arbiter.
+    pub fn new(acl_arbiter: &'static ffi::AclArbiter) -> Self {
+        let arbiter =
+            Box::pin(Arbiter { isolation_manager: Arc::new(Mutex::new(IsolationManager::new())) });
+        // SAFETY: Safe because `arbiter` is pinned, the shim will unregister the arbiter when
+        // dropped, and because we drop the shim before we drop the arbiter.
+        let shim = unsafe { ffi::register_arbiter(acl_arbiter, &*arbiter) };
+        Self { _shim: shim, arbiter }
+    }
+}
+
+impl Deref for RegisteredArbiter {
+    type Target = Arbiter;
+
+    fn deref(&self) -> &Arbiter {
+        &self.arbiter
+    }
 }
 
 /// Test to see if a buffer contains a valid ATT packet with an opcode we
@@ -77,77 +138,92 @@ fn try_parse_att_server_packet(
     }
 }
 
-fn on_le_connect(tcb_idx: u8, advertiser: u8) {
-    let tcb_idx = TransportIndex(tcb_idx);
-    let advertiser = AdvertiserId(advertiser);
-    let is_isolated = with_arbiter(|arbiter| arbiter.is_advertiser_isolated(advertiser));
-    if is_isolated {
-        do_in_rust_thread(move |modules| {
-            if let Err(err) = modules.gatt_module.on_le_connect(tcb_idx, Some(advertiser)) {
-                error!("{err:?}")
-            }
-        })
-    }
-}
-
-fn on_le_disconnect(tcb_idx: u8) {
-    // Events may be received after a FactoryReset
-    // is initiated for Bluetooth and the rust arbiter is taken
-    // down.
-    if !has_arbiter() {
-        warn!("arbiter is not yet initialized");
-        return;
+impl Arbiter {
+    /// Returns the isolation manager.
+    pub fn isolation_manager(&self) -> &Arc<Mutex<IsolationManager>> {
+        &self.isolation_manager
     }
 
-    let tcb_idx = TransportIndex(tcb_idx);
-    let was_isolated = with_arbiter(|arbiter| arbiter.is_connection_isolated(tcb_idx));
-    if was_isolated {
-        do_in_rust_thread(move |modules| {
-            if let Err(err) = modules.gatt_module.on_le_disconnect(tcb_idx) {
-                error!("{err:?}")
-            }
-        })
-    }
-}
-
-fn intercept_packet(tcb_idx: u8, packet: Vec<u8>) -> InterceptAction {
-    // Events may be received after a FactoryReset
-    // is initiated for Bluetooth and the rust arbiter is taken
-    // down.
-    if !has_arbiter() {
-        warn!("arbiter is not yet initialized");
-        return InterceptAction::Drop;
+    /// Acquire the mutex holding the Arbiter and provide a mutable reference to the
+    /// supplied closure
+    pub fn with_arbiter<T>(&self, f: impl FnOnce(&mut IsolationManager) -> T) -> T {
+        f(&mut self.isolation_manager.lock().unwrap())
     }
 
-    let tcb_idx = TransportIndex(tcb_idx);
-    if let Some(att) =
-        with_arbiter(|arbiter| try_parse_att_server_packet(arbiter, tcb_idx, &packet))
-    {
-        do_in_rust_thread(move |modules| {
-            trace!("pushing packet to GATT");
-            if let Some(bearer) = modules.gatt_module.get_bearer(tcb_idx) {
-                bearer.handle_packet(att)
-            } else {
-                error!("Bearer for {tcb_idx:?} not found");
-            }
-        });
-        InterceptAction::Drop
-    } else {
-        InterceptAction::Forward
+    /// Intercepts LE connected.
+    pub fn on_le_connect(&self, tcb_idx: u8, advertiser: u8) {
+        let tcb_idx = TransportIndex(tcb_idx);
+        let advertiser = AdvertiserId(advertiser);
+        let is_isolated = self.with_arbiter(|arbiter| arbiter.is_advertiser_isolated(advertiser));
+        if is_isolated {
+            do_in_rust_thread(move |modules| {
+                if let Err(err) = modules.gatt_module.on_le_connect(tcb_idx, Some(advertiser)) {
+                    error!("{err:?}")
+                }
+            })
+        }
     }
-}
 
-fn on_mtu_event(tcb_idx: TransportIndex, event: MtuEvent) {
-    if with_arbiter(|arbiter| arbiter.is_connection_isolated(tcb_idx)) {
-        do_in_rust_thread(move |modules| {
-            let Some(bearer) = modules.gatt_module.get_bearer(tcb_idx) else {
-                error!("Bearer for {tcb_idx:?} not found");
-                return;
-            };
-            if let Err(err) = bearer.handle_mtu_event(event) {
-                error!("{err:?}")
-            }
-        });
+    /// Intercepts LE disconnected.
+    pub fn on_le_disconnect(&self, tcb_idx: u8) {
+        let tcb_idx = TransportIndex(tcb_idx);
+        let was_isolated = self.with_arbiter(|arbiter| arbiter.is_connection_isolated(tcb_idx));
+        if was_isolated {
+            do_in_rust_thread(move |modules| {
+                if let Err(err) = modules.gatt_module.on_le_disconnect(tcb_idx) {
+                    error!("{err:?}")
+                }
+            })
+        }
+    }
+
+    /// Intercepts incoming packets.
+    pub fn intercept_packet(&self, tcb_idx: u8, packet: Vec<u8>) -> InterceptAction {
+        let tcb_idx = TransportIndex(tcb_idx);
+        if let Some(att) =
+            self.with_arbiter(|arbiter| try_parse_att_server_packet(arbiter, tcb_idx, &packet))
+        {
+            do_in_rust_thread(move |modules| {
+                trace!("pushing packet to GATT");
+                if let Some(bearer) = modules.gatt_module.get_bearer(tcb_idx) {
+                    bearer.handle_packet(att)
+                } else {
+                    error!("Bearer for {tcb_idx:?} not found");
+                }
+            });
+            InterceptAction::Drop
+        } else {
+            InterceptAction::Forward
+        }
+    }
+
+    /// Intercepts outgoing MTU requests.
+    pub fn on_outgoing_mtu_req(&self, tcb_idx: u8) {
+        self.on_mtu_event(TransportIndex(tcb_idx), MtuEvent::OutgoingRequest);
+    }
+
+    /// Intercepts incoming MTU responses.
+    pub fn on_incoming_mtu_resp(&self, tcb_idx: u8, mtu: usize) {
+        self.on_mtu_event(TransportIndex(tcb_idx), MtuEvent::IncomingResponse(mtu));
+    }
+
+    /// Intercepts incoming MTU requests.
+    pub fn on_incoming_mtu_req(&self, tcb_idx: u8, mtu: usize) {
+        self.on_mtu_event(TransportIndex(tcb_idx), MtuEvent::IncomingRequest(mtu));
+    }
+
+    fn on_mtu_event(&self, tcb_idx: TransportIndex, event: MtuEvent) {
+        if self.with_arbiter(|arbiter| arbiter.is_connection_isolated(tcb_idx)) {
+            do_in_rust_thread(move |modules| {
+                let Some(bearer) = modules.gatt_module.get_bearer(tcb_idx) else {
+                    error!("Bearer for {tcb_idx:?} not found");
+                    return;
+                };
+                if let Err(err) = bearer.handle_mtu_event(event) {
+                    error!("{err:?}")
+                }
+            });
+        }
     }
 }
 
