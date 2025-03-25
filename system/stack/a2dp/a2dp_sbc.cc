@@ -1015,20 +1015,6 @@ tA2DP_STATUS A2dpCodecConfigSbcBase::setCodecConfig(const uint8_t* p_peer_codec_
     goto fail;
   }
 
-  // Try using the prefered peer codec config (if valid), instead of the peer
-  // capability.
-  if (is_capability) {
-    if (A2DP_IsCodecValidSbc(ota_codec_peer_config_)) {
-      status =
-          A2DP_ParseInfoSbc(&peer_info_cie, ota_codec_peer_config_, false);
-    }
-    if (status != A2DP_SUCCESS) {
-      // Use the peer codec capability
-      status = A2DP_ParseInfoSbc(&peer_info_cie, p_peer_codec_info, is_capability);
-      log::assert_that(status == A2DP_SUCCESS, "assert failed: status == A2DP_SUCCESS");
-    }
-  }
-
   //
   // Build the preferred configuration
   //
