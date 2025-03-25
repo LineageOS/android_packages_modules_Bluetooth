@@ -73,19 +73,6 @@ object Utils {
     fun intentLogger(tag: String, intent: Intent) {
         val action = intent.getAction()
         when (action) {
-            BluetoothDevice.ACTION_UUID -> {
-                val uuids: Array<ParcelUuid> =
-                    intent.getParcelableArrayExtra(
-                        BluetoothDevice.EXTRA_UUID,
-                        ParcelUuid::class.java,
-                    )!!
-                Log.d("intentLogger", "$tag/$action: Uuid=${uuids.contentToString()}")
-            }
-            BluetoothDevice.ACTION_FOUND -> {
-                val device = intent.getBluetoothDeviceExtra()
-                val name = intent.getStringExtra(BluetoothDevice.EXTRA_NAME)
-                Log.d("intentLogger", "$tag/$action: device=$device - name=$name")
-            }
             BluetoothDevice.ACTION_ACL_CONNECTED,
             BluetoothDevice.ACTION_ACL_DISCONNECTED -> {
                 val device = intent.getBluetoothDeviceExtra()
@@ -94,7 +81,38 @@ object Utils {
                         BluetoothDevice.EXTRA_TRANSPORT,
                         BluetoothDevice.TRANSPORT_AUTO,
                     )
-                Log.d("intentLogger", "$tag/$action: device=$device - transport=$transport")
+                Log.d("intentLogger", "$tag/$action: $device - transport=$transport")
+            }
+            BluetoothDevice.ACTION_BOND_STATE_CHANGED -> {
+                val device = intent.getBluetoothDeviceExtra()
+                val state =
+                    intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, BluetoothAdapter.ERROR)
+                Log.d("intentLogger", "$tag/$action: $device - state=$state")
+            }
+            BluetoothDevice.ACTION_FOUND -> {
+                val device = intent.getBluetoothDeviceExtra()
+                val name = intent.getStringExtra(BluetoothDevice.EXTRA_NAME)
+                Log.d("intentLogger", "$tag/$action: $device - $name")
+            }
+            BluetoothDevice.ACTION_PAIRING_REQUEST -> {
+                val device = intent.getBluetoothDeviceExtra()
+                Log.d("intentLogger", "$tag/$action: $device")
+            }
+            BluetoothDevice.ACTION_UUID -> {
+                val uuids: Array<ParcelUuid> =
+                    intent.getParcelableArrayExtra(
+                        BluetoothDevice.EXTRA_UUID,
+                        ParcelUuid::class.java,
+                    )!!
+                Log.d("intentLogger", "$tag/$action: Uuid=${uuids.contentToString()}")
+            }
+            BluetoothHeadset.ACTION_CONNECTION_STATE_CHANGED -> {
+                val device = intent.getBluetoothDeviceExtra()
+                val state = intent.getIntExtra(BluetoothProfile.EXTRA_STATE, BluetoothAdapter.ERROR)
+                Log.d(
+                    "intentLogger",
+                    "$tag/$action: Headset: $device - ${getConnectionStateName(state)}",
+                )
             }
             BluetoothHidHost.ACTION_CONNECTION_STATE_CHANGED -> {
                 val device = intent.getBluetoothDeviceExtra()
@@ -106,7 +124,7 @@ object Utils {
                     )
                 Log.d(
                     "intentLogger",
-                    "$tag/$action: Hid: device=$device - state=${getConnectionStateName(state)} - transport=$transport",
+                    "$tag/$action: Hid: $device - ${getConnectionStateName(state)} - transport=$transport",
                 )
             }
             else -> throw IllegalArgumentException("Missing implementation for $action")
