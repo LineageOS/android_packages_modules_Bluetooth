@@ -57,7 +57,8 @@ async def serve(port):
             host_grpc_aio.add_HostServicer_to_server(host_service, server)
 
             security_storage_service = security.SecurityStorageService(bluetooth)
-            security_grpc_aio.add_SecurityStorageServicer_to_server(security_storage_service, server)
+            security_grpc_aio.add_SecurityStorageServicer_to_server(security_storage_service,
+                                                                    server)
 
             gatt_service = gatt.GATTService(bluetooth)
             gatt_grpc_aio.add_GATTServicer_to_server(gatt_service, server)

@@ -273,7 +273,8 @@ class FlossScannerClient(BluetoothScannerCallbacks):
             scanner_id: Scanner id of scanning set.
             status: floss_enums.GattStatus.
         """
-        logging.debug('on_scanner_registered: uuid: %s, scanner_id: %s status: %s', uuid, scanner_id, status)
+        logging.debug('on_scanner_registered: uuid: %s, scanner_id: %s status: %s', uuid,
+                      scanner_id, status)
 
         # The uuid is returned as a list of bytes (128-bit UUID) so
         # we need convert it to uuid object in order to store it in the
@@ -305,7 +306,8 @@ class FlossScannerClient(BluetoothScannerCallbacks):
             scanner_id: The scanner ID for scanner.
             scan_result: The struct of ScanResult.
         """
-        logging.debug('on_advertisement_found: scanner_id: %s, scan_result: %s', scanner_id, scan_result)
+        logging.debug('on_advertisement_found: scanner_id: %s, scan_result: %s', scanner_id,
+                      scan_result)
 
         # Update DeviceFound if the received address device exists in the
         # target_device list.
@@ -320,7 +322,8 @@ class FlossScannerClient(BluetoothScannerCallbacks):
             scanner_id: The scanner ID for scanner.
             scan_result: The struct of ScanResult.
         """
-        logging.debug('on_advertisement_lost: scanner_id: %s, scan_result: %s', scanner_id, scan_result)
+        logging.debug('on_advertisement_lost: scanner_id: %s, scan_result: %s', scanner_id,
+                      scan_result)
 
         # Update DeviceLost if the received address device exists in the
         # target_device list.
@@ -364,8 +367,8 @@ class FlossScannerClient(BluetoothScannerCallbacks):
         """
         return {'patterns': GLib.Variant('aa{sv}', patterns)}
 
-    def make_dbus_scan_filter(self, rssi_high_threshold, rssi_low_threshold, rssi_low_timeout, rssi_sampling_period,
-                              condition):
+    def make_dbus_scan_filter(self, rssi_high_threshold, rssi_low_threshold, rssi_low_timeout,
+                              rssi_sampling_period, condition):
         """Makes struct for scan filter D-Bus.
 
         Args:
@@ -380,7 +383,8 @@ class FlossScannerClient(BluetoothScannerCallbacks):
         """
         patterns = []
         for c in condition:
-            patterns.append(self.make_dbus_scan_filter_pattern(c['start_position'], c['ad_type'], c['content']))
+            patterns.append(
+                self.make_dbus_scan_filter_pattern(c['start_position'], c['ad_type'], c['content']))
         return {
             'rssi_high_threshold': GLib.Variant('y', rssi_high_threshold),
             'rssi_low_threshold': GLib.Variant('y', rssi_low_threshold),
@@ -517,7 +521,8 @@ class FlossScannerClient(BluetoothScannerCallbacks):
             return None
 
         if floss_enums.GattStatus(status) != floss_enums.GattStatus.SUCCESS:
-            logging.error('Failed to register the scanner with id: %s, status = %s', scanner_id, status)
+            logging.error('Failed to register the scanner with id: %s, status = %s', scanner_id,
+                          status)
             return None
         return scanner_id
 
@@ -549,7 +554,8 @@ class FlossScannerClient(BluetoothScannerCallbacks):
         status = self.proxy().StartScan(scanner_id, settings, scan_filter)
 
         if floss_enums.BtStatus(status) != floss_enums.BtStatus.SUCCESS:
-            logging.error('Failed to start the scanner with id: %s, status = %s', scanner_id, status)
+            logging.error('Failed to start the scanner with id: %s, status = %s', scanner_id,
+                          status)
             return False
         return True
 

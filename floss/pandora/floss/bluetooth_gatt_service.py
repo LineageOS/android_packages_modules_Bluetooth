@@ -44,7 +44,9 @@ class Service:
             'service_type': self.service_type,
             'uuid': self.uuid,
             'included_services': [service.to_dict() for service in self.included_services],
-            'characteristics': [characteristic.to_dict() for characteristic in self.characteristics],
+            'characteristics': [
+                characteristic.to_dict() for characteristic in self.characteristics
+            ],
             'value': self.value
         }
 
@@ -120,13 +122,18 @@ def create_gatt_service(service):
     Returns:
         Bluetooth GATT service object.
     """
-    return Service(
-        instance_id=service['instance_id'],
-        service_type=service['service_type'],
-        uuid=str(uuid.UUID(bytes=bytes(service['uuid']))).upper(),
-        included_services=[create_gatt_service(included_service) for included_service in service['included_services']],
-        characteristics=[create_gatt_characteristic(characteristic) for characteristic in service['characteristics']],
-        value=service.get('value'))
+    return Service(instance_id=service['instance_id'],
+                   service_type=service['service_type'],
+                   uuid=str(uuid.UUID(bytes=bytes(service['uuid']))).upper(),
+                   included_services=[
+                       create_gatt_service(included_service)
+                       for included_service in service['included_services']
+                   ],
+                   characteristics=[
+                       create_gatt_characteristic(characteristic)
+                       for characteristic in service['characteristics']
+                   ],
+                   value=service.get('value'))
 
 
 def create_gatt_characteristic(characteristic):
@@ -138,15 +145,17 @@ def create_gatt_characteristic(characteristic):
     Returns:
         Bluetooth GATT characteristic object.
     """
-    return Characteristic(
-        properties=characteristic['properties'],
-        permissions=characteristic['permissions'],
-        uuid=str(uuid.UUID(bytes=bytes(characteristic['uuid']))).upper(),
-        instance_id=characteristic['instance_id'],
-        descriptors=[create_gatt_characteristic_descriptor(descriptor) for descriptor in characteristic['descriptors']],
-        key_size=characteristic['key_size'],
-        write_type=characteristic['write_type'],
-        value=characteristic.get('value'))
+    return Characteristic(properties=characteristic['properties'],
+                          permissions=characteristic['permissions'],
+                          uuid=str(uuid.UUID(bytes=bytes(characteristic['uuid']))).upper(),
+                          instance_id=characteristic['instance_id'],
+                          descriptors=[
+                              create_gatt_characteristic_descriptor(descriptor)
+                              for descriptor in characteristic['descriptors']
+                          ],
+                          key_size=characteristic['key_size'],
+                          write_type=characteristic['write_type'],
+                          value=characteristic.get('value'))
 
 
 def create_gatt_characteristic_descriptor(descriptor):

@@ -31,7 +31,8 @@ class Modem(modem_grpc_aio.ModemServicer):
     def __init__(self, bluetooth: bluetooth_module.Bluetooth):
         self.bluetooth = bluetooth
 
-    async def Call(self, request: modem_pb2.CallRequest, context: grpc.ServicerContext) -> modem_pb2.CallResponse:
+    async def Call(self, request: modem_pb2.CallRequest,
+                   context: grpc.ServicerContext) -> modem_pb2.CallResponse:
         phone_number = request.phone_number
         if phone_number is None or len(phone_number) == 0:
             await context.abort(grpc.StatusCode.INVALID_ARGUMENT, 'Cannot call empty number.')
@@ -48,7 +49,8 @@ class Modem(modem_grpc_aio.ModemServicer):
         context.set_details('Method not implemented!')  # type: ignore
         raise NotImplementedError('Method not implemented!')
 
-    async def Close(self, request: modem_pb2.CloseRequest, context: grpc.ServicerContext) -> modem_pb2.CloseResponse:
+    async def Close(self, request: modem_pb2.CloseRequest,
+                    context: grpc.ServicerContext) -> modem_pb2.CloseResponse:
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
         context.set_details('Method not implemented!')  # type: ignore
         raise NotImplementedError('Method not implemented!')

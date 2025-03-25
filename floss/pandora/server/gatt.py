@@ -184,7 +184,10 @@ class GATTService(gatt_grpc_aio.GATTServicer):
             observers.append((name, observer))
 
             characteristics = asyncio.get_running_loop().create_future()
-            observer = ReadCharacteristicFromHandleObserver({'characteristics': characteristics, 'address': address})
+            observer = ReadCharacteristicFromHandleObserver({
+                'characteristics': characteristics,
+                'address': address
+            })
             name = utils.create_observer_name(observer)
             self.bluetooth.gatt_client.register_callback_observer(name, observer)
             observers.append((name, observer))
@@ -200,14 +203,17 @@ class GATTService(gatt_grpc_aio.GATTServicer):
                 name = utils.create_observer_name(observer)
                 self.bluetooth.gatt_client.register_callback_observer(name, observer)
                 observers.append((name, observer))
-                self.bluetooth.gatt_client.read_descriptor(address, request.handle, self.AUTHENTICATION_NONE)
+                self.bluetooth.gatt_client.read_descriptor(address, request.handle,
+                                                           self.AUTHENTICATION_NONE)
                 desc_status = await descriptors
                 if desc_status != floss_enums.GattStatus.SUCCESS:
                     valid_handle = False
                 else:
-                    self.bluetooth.write_descriptor(address, request.handle, self.AUTHENTICATION_NONE, request.value)
+                    self.bluetooth.write_descriptor(address, request.handle,
+                                                    self.AUTHENTICATION_NONE, request.value)
             else:
-                self.bluetooth.write_characteristic(address, request.handle, self.WRITE_TYPE_DEFAULT,
+                self.bluetooth.write_characteristic(address, request.handle,
+                                                    self.WRITE_TYPE_DEFAULT,
                                                     self.AUTHENTICATION_NONE, request.value)
             if valid_handle:
                 status, handle = await write_attribute
@@ -219,8 +225,9 @@ class GATTService(gatt_grpc_aio.GATTServicer):
             return gatt_pb2.WriteResponse(handle=handle, status=status)
         return gatt_pb2.WriteResponse(handle=request.handle, status=gatt_pb2.INVALID_HANDLE)
 
-    async def DiscoverServiceByUuid(self, request: gatt_pb2.DiscoverServiceByUuidRequest,
-                                    context: grpc.ServicerContext) -> gatt_pb2.DiscoverServicesResponse:
+    async def DiscoverServiceByUuid(
+            self, request: gatt_pb2.DiscoverServiceByUuidRequest,
+            context: grpc.ServicerContext) -> gatt_pb2.DiscoverServicesResponse:
 
         address = utils.connection_from(request.connection).address
         self.bluetooth.btif_gattc_discover_service_by_uuid(address, request.uuid)
@@ -263,8 +270,9 @@ class GATTService(gatt_grpc_aio.GATTServicer):
             self.bluetooth.gatt_client.unregister_callback_observer(name, observer)
         return response
 
-    async def DiscoverServicesSdp(self, request: gatt_pb2.DiscoverServicesSdpRequest,
-                                  context: grpc.ServicerContext) -> gatt_pb2.DiscoverServicesSdpResponse:
+    async def DiscoverServicesSdp(
+            self, request: gatt_pb2.DiscoverServicesSdpRequest,
+            context: grpc.ServicerContext) -> gatt_pb2.DiscoverServicesSdpResponse:
 
         class DiscoverySDPObserver(adapter_client.BluetoothCallbacks):
             """Observer to observe the SDP discovery service state."""
@@ -283,19 +291,23 @@ class GATTService(gatt_grpc_aio.GATTServicer):
         address = utils.address_from(request.address)
         try:
             uuids = self.bluetooth.get_remote_uuids(address)
-            if self.bluetooth.get_bond_state(address) == floss_enums.BondState.BONDING and (uuids is None or
-                                                                                            len(uuids)) == 0:
+            if self.bluetooth.get_bond_state(address) == floss_enums.BondState.BONDING and (
+                    uuids is None or len(uuids)) == 0:
                 logging.error('Failed to get UUIDs.')
                 return gatt_pb2.DiscoverServicesSdpResponse()
             if self.bluetooth.get_bond_state(address) != floss_enums.BondState.BONDING:
                 device_uuids_changed = asyncio.get_running_loop().create_future()
-                observer = DiscoverySDPObserver({'device_uuids_changed': device_uuids_changed, 'address': address})
+                observer = DiscoverySDPObserver({
+                    'device_uuids_changed': device_uuids_changed,
+                    'address': address
+                })
                 name = utils.create_observer_name(observer)
                 self.bluetooth.adapter_client.register_callback_observer(name, observer)
 
                 status = self.bluetooth.fetch_remote(address)
                 if not status:
-                    await context.abort(grpc.StatusCode.INTERNAL, f'Failed to fetch remote device {address} uuids.')
+                    await context.abort(grpc.StatusCode.INTERNAL,
+                                        f'Failed to fetch remote device {address} uuids.')
                 await device_uuids_changed
                 uuids = self.bluetooth.get_remote_uuids(address)
             response = gatt_pb2.DiscoverServicesSdpResponse()
@@ -339,8 +351,9 @@ class GATTService(gatt_grpc_aio.GATTServicer):
             self.bluetooth.gatt_client.unregister_callback_observer(name, observer)
         return gatt_pb2.ClearCacheResponse()
 
-    async def ReadCharacteristicFromHandle(self, request: gatt_pb2.ReadCharacteristicRequest,
-                                           context: grpc.ServicerContext) -> gatt_pb2.ReadCharacteristicResponse:
+    async def ReadCharacteristicFromHandle(
+            self, request: gatt_pb2.ReadCharacteristicRequest,
+            context: grpc.ServicerContext) -> gatt_pb2.ReadCharacteristicResponse:
 
         class ReadCharacteristicFromHandleObserver(gatt_client.GattClientCallbacks):
             """Observer to observe the read characteristic from handle state."""
@@ -372,7 +385,8 @@ class GATTService(gatt_grpc_aio.GATTServicer):
         finally:
             self.bluetooth.gatt_client.unregister_callback_observer(name, observer)
 
-        return gatt_pb2.ReadCharacteristicResponse(value=gatt_pb2.AttValue(handle=request.handle, value=bytes(value)),
+        return gatt_pb2.ReadCharacteristicResponse(value=gatt_pb2.AttValue(handle=request.handle,
+                                                                           value=bytes(value)),
                                                    status=status)
 
     async def ReadCharacteristicsFromUuid(
@@ -437,7 +451,8 @@ class GATTService(gatt_grpc_aio.GATTServicer):
             for serv in services:
                 for characteristic in serv['characteristics']:
                     if (str(UUID(bytes=bytes(characteristic['uuid']))).upper() == request.uuid and
-                            request.start_handle <= characteristic['instance_id'] <= request.end_handle):
+                            request.start_handle <= characteristic['instance_id'] <=
+                            request.end_handle):
                         self.bluetooth.read_using_characteristic_uuid(address, request.uuid,
                                                                       characteristic['instance_id'],
                                                                       characteristic['instance_id'],
@@ -445,12 +460,14 @@ class GATTService(gatt_grpc_aio.GATTServicer):
                         status, handle, value = await characteristic_from_uuid
                         characteristics.append((status, handle, value))
             if not characteristics:
-                self.bluetooth.read_using_characteristic_uuid(address, request.uuid, request.start_handle,
-                                                              request.end_handle, self.AUTHENTICATION_NONE)
+                self.bluetooth.read_using_characteristic_uuid(address, request.uuid,
+                                                              request.start_handle,
+                                                              request.end_handle,
+                                                              self.AUTHENTICATION_NONE)
                 status, handle, value = await characteristic_from_uuid
                 result = gatt_pb2.ReadCharacteristicsFromUuidResponse(characteristics_read=[
-                    gatt_pb2.ReadCharacteristicResponse(value=gatt_pb2.AttValue(value=bytes(value), handle=handle),
-                                                        status=status)
+                    gatt_pb2.ReadCharacteristicResponse(
+                        value=gatt_pb2.AttValue(value=bytes(value), handle=handle), status=status)
                 ])
             else:
                 result = gatt_pb2.ReadCharacteristicsFromUuidResponse(characteristics_read=[
@@ -498,8 +515,8 @@ class GATTService(gatt_grpc_aio.GATTServicer):
         finally:
             self.bluetooth.gatt_client.unregister_callback_observer(name, observer)
 
-        return gatt_pb2.ReadCharacteristicDescriptorResponse(value=gatt_pb2.AttValue(handle=request.handle,
-                                                                                     value=bytes(value)),
+        return gatt_pb2.ReadCharacteristicDescriptorResponse(value=gatt_pb2.AttValue(
+            handle=request.handle, value=bytes(value)),
                                                              status=status)
 
     async def RegisterService(self, request: gatt_pb2.RegisterServiceRequest,
@@ -568,7 +585,8 @@ class GATTService(gatt_grpc_aio.GATTServicer):
 
     async def SetCharacteristicNotificationFromHandle(
             self, request: gatt_pb2.SetCharacteristicNotificationFromHandleRequest,
-            context: grpc.ServicerContext) -> gatt_pb2.SetCharacteristicNotificationFromHandleResponse:
+            context: grpc.ServicerContext
+    ) -> gatt_pb2.SetCharacteristicNotificationFromHandleResponse:
 
         class DiscoveryObserver(gatt_client.GattClientCallbacks):
             """Observer to observe the discovery service state."""
@@ -625,7 +643,8 @@ class GATTService(gatt_grpc_aio.GATTServicer):
             self.bluetooth.read_descriptor(address, request.handle, self.AUTHENTICATION_NONE)
             value, status = await descriptor_futures['read_descriptor']
             if status != floss_enums.GattStatus.SUCCESS:
-                await context.abort(grpc.StatusCode.INTERNAL, 'Found no descriptor with supported handle.')
+                await context.abort(grpc.StatusCode.INTERNAL,
+                                    'Found no descriptor with supported handle.')
 
             search_services = asyncio.get_running_loop().create_future()
             observer = DiscoveryObserver({'search_services': search_services, 'address': address})
@@ -660,7 +679,8 @@ class GATTService(gatt_grpc_aio.GATTServicer):
             for name, observer in observers:
                 self.bluetooth.gatt_client.unregister_callback_observer(name, observer)
 
-        return gatt_pb2.SetCharacteristicNotificationFromHandleResponse(handle=request.handle, status=status)
+        return gatt_pb2.SetCharacteristicNotificationFromHandleResponse(handle=request.handle,
+                                                                        status=status)
 
     async def WaitCharacteristicNotification(
             self, request: gatt_pb2.WaitCharacteristicNotificationRequest,
@@ -711,7 +731,8 @@ class GATTService(gatt_grpc_aio.GATTServicer):
             self.bluetooth.read_descriptor(address, request.handle, self.AUTHENTICATION_NONE)
             value, status = await read_descriptor
             if status != floss_enums.GattStatus.SUCCESS:
-                await context.abort(grpc.StatusCode.INTERNAL, 'Found no descriptor with supported handle.')
+                await context.abort(grpc.StatusCode.INTERNAL,
+                                    'Found no descriptor with supported handle.')
 
             search_services = asyncio.get_running_loop().create_future()
             observer = DiscoveryObserver({'search_services': search_services, 'address': address})
@@ -750,9 +771,10 @@ class GATTService(gatt_grpc_aio.GATTServicer):
             [characteristic_handle].result())
 
     def create_gatt_characteristic_descriptor(self, descriptor):
-        return gatt_pb2.GattCharacteristicDescriptor(handle=descriptor['instance_id'],
-                                                     permissions=descriptor['permissions'],
-                                                     uuid=str(UUID(bytes=bytes(descriptor['uuid']))).upper())
+        return gatt_pb2.GattCharacteristicDescriptor(
+            handle=descriptor['instance_id'],
+            permissions=descriptor['permissions'],
+            uuid=str(UUID(bytes=bytes(descriptor['uuid']))).upper())
 
     def create_gatt_characteristic(self, characteristic):
         return gatt_pb2.GattCharacteristic(
@@ -761,17 +783,19 @@ class GATTService(gatt_grpc_aio.GATTServicer):
             uuid=str(UUID(bytes=bytes(characteristic['uuid']))).upper(),
             handle=characteristic['instance_id'],
             descriptors=[
-                self.create_gatt_characteristic_descriptor(descriptor) for descriptor in characteristic['descriptors']
+                self.create_gatt_characteristic_descriptor(descriptor)
+                for descriptor in characteristic['descriptors']
             ])
 
     def create_gatt_service(self, service):
-        return gatt_pb2.GattService(
-            handle=service['instance_id'],
-            type=service['service_type'],
-            uuid=str(UUID(bytes=bytes(service['uuid']))).upper(),
-            included_services=[
-                self.create_gatt_service(included_service) for included_service in service['included_services']
-            ],
-            characteristics=[
-                self.create_gatt_characteristic(characteristic) for characteristic in service['characteristics']
-            ])
+        return gatt_pb2.GattService(handle=service['instance_id'],
+                                    type=service['service_type'],
+                                    uuid=str(UUID(bytes=bytes(service['uuid']))).upper(),
+                                    included_services=[
+                                        self.create_gatt_service(included_service)
+                                        for included_service in service['included_services']
+                                    ],
+                                    characteristics=[
+                                        self.create_gatt_characteristic(characteristic)
+                                        for characteristic in service['characteristics']
+                                    ])

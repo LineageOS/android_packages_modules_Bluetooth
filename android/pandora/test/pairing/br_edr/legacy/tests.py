@@ -23,6 +23,7 @@ from avatar import asynchronous
 
 from pandora.security_pb2 import PairingEventAnswer
 
+
 class BREDRLegacyTestClass(BREDRPairTestBase):
 
     def _setup_devices(self) -> None:
@@ -32,12 +33,12 @@ class BREDRLegacyTestClass(BREDRPairTestBase):
         self.ref.config.setdefault('classic_ssp_enabled', False)
 
         self.ref.config.setdefault(
-                    'server',
-                    {
-                        # Android io_capability: display_yesno
-                        'io_capability': 'keyboard_input_only',
-                    },
-                )
+            'server',
+            {
+                # Android io_capability: display_yesno
+                'io_capability': 'keyboard_input_only',
+            },
+        )
 
     async def accept_pairing(self):
         expected_pairing_method = 'pin_code_request'
@@ -86,7 +87,8 @@ class BREDRLegacyTestClass(BREDRPairTestBase):
         bumble_res, android_res = await self.start_acl_connection()
 
         # bumble initiates the pairing
-        pairing_task = asyncio.create_task(self.start_pairing(bumble_res.connection, android_res.connection))
+        pairing_task = asyncio.create_task(
+            self.start_pairing(bumble_res.connection, android_res.connection))
 
         await self.accept_pairing()
 
@@ -116,7 +118,8 @@ class BREDRLegacyTestClass(BREDRPairTestBase):
         bumble_res, android_res = await self.start_acl_connection()
 
         # Android initiates the pairing
-        pairing_task = asyncio.create_task(self.start_pairing(android_res.connection, bumble_res.connection))
+        pairing_task = asyncio.create_task(
+            self.start_pairing(android_res.connection, bumble_res.connection))
 
         await self.accept_pairing()
 
@@ -170,7 +173,8 @@ class BREDRLegacyTestClass(BREDRPairTestBase):
         # first initiate an ACL connection from bumble to android
         android_res, bumble_res = await self.start_acl_connection()
 
-        service_access_task = asyncio.create_task(self.start_service_access(bumble_res.connection, android_res.connection))
+        service_access_task = asyncio.create_task(
+            self.start_service_access(bumble_res.connection, android_res.connection))
 
         # pairing will be started automatically when a secure service is
         # accessed

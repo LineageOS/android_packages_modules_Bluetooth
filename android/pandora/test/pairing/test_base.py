@@ -22,6 +22,7 @@ from avatar import BumblePandoraDevice, PandoraDevice, PandoraDevices
 from avatar.aio import asynchronous
 from typing import Optional
 
+
 class PairTestBase(ABC, base_test.BaseTestClass):  # type: ignore[misc]
 
     devices: Optional[PandoraDevices] = None

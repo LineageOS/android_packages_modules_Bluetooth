@@ -92,7 +92,8 @@ class GattServerCallbacks:
         """
         pass
 
-    def on_characteristic_write_request(self, addr, trans_id, offset, length, is_prep, need_rsp, handle, value):
+    def on_characteristic_write_request(self, addr, trans_id, offset, length, is_prep, need_rsp,
+                                        handle, value):
         """Called when there is a request to write a characteristic.
 
         Args:
@@ -107,7 +108,8 @@ class GattServerCallbacks:
         """
         pass
 
-    def on_descriptor_write_request(self, addr, trans_id, offset, length, is_prep, need_rsp, handle, value):
+    def on_descriptor_write_request(self, addr, trans_id, offset, length, is_prep, need_rsp, handle,
+                                    value):
         """Called when there is a request to write a descriptor.
 
         Args:
@@ -419,7 +421,8 @@ class FlossGattServer(GattServerCallbacks):
             for observer in self.observers.values():
                 observer.on_characteristic_read_request(addr, trans_id, offset, is_long, handle)
 
-        def OnCharacteristicWriteRequest(self, addr, trans_id, offset, length, is_prep, need_rsp, handle, value):
+        def OnCharacteristicWriteRequest(self, addr, trans_id, offset, length, is_prep, need_rsp,
+                                         handle, value):
             """Handles characteristic write request callback.
 
             Args:
@@ -433,8 +436,8 @@ class FlossGattServer(GattServerCallbacks):
                 value: The value that should be written to the descriptor.
             """
             for observer in self.observers.values():
-                observer.on_characteristic_write_request(addr, trans_id, offset, length, is_prep, need_rsp, handle,
-                                                         value)
+                observer.on_characteristic_write_request(addr, trans_id, offset, length, is_prep,
+                                                         need_rsp, handle, value)
 
         def OnDescriptorReadRequest(self, addr, trans_id, offset, is_long, handle):
             """Handles descriptor read request callback.
@@ -450,7 +453,8 @@ class FlossGattServer(GattServerCallbacks):
             for observer in self.observers.values():
                 observer.on_descriptor_read_request(addr, trans_id, offset, is_long, handle)
 
-        def OnDescriptorWriteRequest(self, addr, trans_id, offset, length, is_prep, need_rsp, handle, value):
+        def OnDescriptorWriteRequest(self, addr, trans_id, offset, length, is_prep, need_rsp,
+                                     handle, value):
             """Handles descriptor write request callback.
 
             Args:
@@ -464,7 +468,8 @@ class FlossGattServer(GattServerCallbacks):
                 value: The value that should be written to the descriptor.
             """
             for observer in self.observers.values():
-                observer.on_descriptor_write_request(addr, trans_id, offset, length, is_prep, need_rsp, handle, value)
+                observer.on_descriptor_write_request(addr, trans_id, offset, length, is_prep,
+                                                     need_rsp, handle, value)
 
         def OnExecuteWrite(self, addr, trans_id, exec_write):
             """Handles execute write callback.
@@ -594,7 +599,8 @@ class FlossGattServer(GattServerCallbacks):
         elif uuid == self.DESCRIPTOR_UUID:
             logging.debug('check_permissions: uuid == descriptor, return GATT_SUCCESS')
         elif uuid == self.UNAUTHORIZED_CHAR_UUID:
-            logging.debug('check_permissions: uuid == unauthorize_char, return GATT_INSUF_AUTHORIZATION')
+            logging.debug(
+                'check_permissions: uuid == unauthorize_char, return GATT_INSUF_AUTHORIZATION')
             return floss_enums.GattStatus.INSUF_AUTHORIZATION
         elif uuid == self.AUTHENTICATION_CHAR_UUID:
             logging.debug('check_permissions: uuid == authenticate_char, return GATT_SUCCESS')
@@ -777,7 +783,8 @@ class FlossGattServer(GattServerCallbacks):
 
         if status == floss_enums.GattStatus.SUCCESS:
             if is_prep:
-                self.write_requests.append((addr, trans_id, offset, length, is_prep, need_rsp, handle, value))
+                self.write_requests.append(
+                    (addr, trans_id, offset, length, is_prep, need_rsp, handle, value))
             else:
                 # write request.
                 status, value = self.generic_write(offset, length, handle, value)
@@ -917,7 +924,8 @@ class FlossGattServer(GattServerCallbacks):
         characteristic.properties = (floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_READ |
                                      floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_WRITE)
         characteristic.permissions = (
-            10 << 12) | floss_enums.GattPermission.PERM_READ_ENCRYPTED | floss_enums.GattPermission.PERM_WRITE_ENCRYPTED
+            10 << 12
+        ) | floss_enums.GattPermission.PERM_READ_ENCRYPTED | floss_enums.GattPermission.PERM_WRITE_ENCRYPTED
         characteristic.key_size = 10
         characteristic.write_type = floss_enums.GattWriteType.WRITE
         characteristic.descriptors = []
@@ -1016,8 +1024,9 @@ class FlossGattServer(GattServerCallbacks):
         characteristic.uuid = self.WRITE_NO_RESPONSE_CHAR_UUID
         characteristic.instance_id = 16
         # Write without response property.
-        characteristic.properties = (floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_READ |
-                                     floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_WRITE_NR)
+        characteristic.properties = (
+            floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_READ |
+            floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_WRITE_NR)
         characteristic.permissions = floss_enums.GattPermission.PERM_READ | floss_enums.GattPermission.PERM_WRITE
         characteristic.key_size = 0
         characteristic.write_type = floss_enums.GattWriteType.WRITE_NO_RSP
@@ -1029,8 +1038,9 @@ class FlossGattServer(GattServerCallbacks):
         descriptor = bluetooth_gatt_service.Descriptor()
         characteristic.uuid = self.NOTIFY_CHAR_UUID
         characteristic.instance_id = 17
-        characteristic.properties = (floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_NOTIFY |
-                                     floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_INDICATE)
+        characteristic.properties = (
+            floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_NOTIFY |
+            floss_enums.GattCharacteristicProprieties.CHAR_PROP_BIT_INDICATE)
         characteristic.permissions = floss_enums.GattPermission.PERM_READ | floss_enums.GattPermission.PERM_WRITE
         characteristic.key_size = 0
         characteristic.write_type = floss_enums.GattWriteType.WRITE
@@ -1108,8 +1118,9 @@ class FlossGattServer(GattServerCallbacks):
             connected: A boolean value that indicates whether the GATT server is connected.
             addr: Remote device MAC address.
         """
-        logging.debug('on_server_connection_state: server_id: %s, connection_state: %s, device address: %s', server_id,
-                      connected, addr)
+        logging.debug(
+            'on_server_connection_state: server_id: %s, connection_state: %s, device address: %s',
+            server_id, connected, addr)
 
     @utils.glib_callback()
     def on_service_added(self, status, service):
@@ -1169,12 +1180,13 @@ class FlossGattServer(GattServerCallbacks):
             handle: The descriptor handle.
         """
         logging.debug(
-            'on_descriptor_read_request: device address: %s, trans_id: %s, offset: %s, is_long: %s, handle: %s', addr,
-            trans_id, offset, is_long, handle)
+            'on_descriptor_read_request: device address: %s, trans_id: %s, offset: %s, is_long: %s, handle: %s',
+            addr, trans_id, offset, is_long, handle)
         self.on_attr_read(addr, trans_id, offset, is_long, handle)
 
     @utils.glib_callback()
-    def on_characteristic_write_request(self, addr, trans_id, offset, length, is_prep, need_rsp, handle, value):
+    def on_characteristic_write_request(self, addr, trans_id, offset, length, is_prep, need_rsp,
+                                        handle, value):
         """Handles the write request of the characteristic callback.
 
         Args:
@@ -1189,11 +1201,13 @@ class FlossGattServer(GattServerCallbacks):
         """
         logging.debug(
             'on_characteristic_write_request: device address: %s, trans_id: %s, offset: %s, length: %s, is_prep: %s, '
-            'need_rsp: %s, handle: %s, values: %s', addr, trans_id, offset, length, is_prep, need_rsp, handle, value)
+            'need_rsp: %s, handle: %s, values: %s', addr, trans_id, offset, length, is_prep,
+            need_rsp, handle, value)
         self.on_attr_write(addr, trans_id, offset, length, is_prep, need_rsp, handle, value)
 
     @utils.glib_callback()
-    def on_descriptor_write_request(self, addr, trans_id, offset, length, is_prep, need_rsp, handle, value):
+    def on_descriptor_write_request(self, addr, trans_id, offset, length, is_prep, need_rsp, handle,
+                                    value):
         """Handles the write request of the descriptor callback.
 
         Args:
@@ -1208,7 +1222,8 @@ class FlossGattServer(GattServerCallbacks):
         """
         logging.debug(
             'on_descriptor_write_request: device address: %s, trans_id: %s, offset: %s, length: %s, is_prep: %s, '
-            'need_rsp: %s, handle: %s, values: %s', addr, trans_id, offset, length, is_prep, need_rsp, handle, value)
+            'need_rsp: %s, handle: %s, values: %s', addr, trans_id, offset, length, is_prep,
+            need_rsp, handle, value)
         self.on_attr_write(addr, trans_id, offset, length, is_prep, need_rsp, handle, value)
 
     @utils.glib_callback()
@@ -1220,7 +1235,8 @@ class FlossGattServer(GattServerCallbacks):
             trans_id: Transaction id.
             exec_write: A boolean value that indicates whether the write operation should be executed or canceled.
         """
-        logging.debug('on_execute_write: device address: %s, trans_id: %s, exec_write: %s', addr, trans_id, exec_write)
+        logging.debug('on_execute_write: device address: %s, trans_id: %s, exec_write: %s', addr,
+                      trans_id, exec_write)
 
         if not exec_write:
             self.write_requests.clear()
@@ -1266,8 +1282,8 @@ class FlossGattServer(GattServerCallbacks):
             rx_phy: The new RX PHY for the connection.
             status: floss_enums.GattStatus.
         """
-        logging.debug('on_phy_update: device address: %s, tx_phy: %s, rx_phy: %s, status: %s', addr, tx_phy, rx_phy,
-                      status)
+        logging.debug('on_phy_update: device address: %s, tx_phy: %s, rx_phy: %s, status: %s', addr,
+                      tx_phy, rx_phy, status)
 
     @utils.glib_callback()
     def on_phy_read(self, addr, tx_phy, rx_phy, status):
@@ -1279,8 +1295,8 @@ class FlossGattServer(GattServerCallbacks):
             rx_phy: The current receive PHY for the connection.
             status: floss_enums.GattStatus.
         """
-        logging.debug('on_phy_read: device address: %s, tx_phy: %s, rx_phy: %s, status: %s', addr, tx_phy, rx_phy,
-                      status)
+        logging.debug('on_phy_read: device address: %s, tx_phy: %s, rx_phy: %s, status: %s', addr,
+                      tx_phy, rx_phy, status)
 
     @utils.glib_callback()
     def on_connection_updated(self, addr, interval, latency, timeout, status):
@@ -1293,8 +1309,9 @@ class FlossGattServer(GattServerCallbacks):
             timeout: Supervision timeout for this connection in milliseconds.
             status: floss_enums.GattStatus.
         """
-        logging.debug('on_connection_updated: device address: %s, interval: %s, latency: %s, timeout: %s, status: %s',
-                      addr, interval, latency, timeout, status)
+        logging.debug(
+            'on_connection_updated: device address: %s, interval: %s, latency: %s, timeout: %s, status: %s',
+            addr, interval, latency, timeout, status)
 
     @utils.glib_callback()
     def on_subrate_change(self, addr, subrate_factor, latency, cont_num, timeout, status):
@@ -1506,7 +1523,8 @@ class FlossGattServer(GattServerCallbacks):
             'permissions': GLib.Variant('i', permissions)
         }
 
-    def make_dbus_characteristic(self, uuid, instance_id, properties, permissions, key_size, write_type, descriptors):
+    def make_dbus_characteristic(self, uuid, instance_id, properties, permissions, key_size,
+                                 write_type, descriptors):
         """Makes struct for characteristic D-Bus.
 
         Args:
@@ -1547,8 +1565,9 @@ class FlossGattServer(GattServerCallbacks):
         characteristics = []
         for c in service['characteristics']:
             characteristics.append(
-                self.make_dbus_characteristic(c['uuid'], c['instance_id'], c['properties'], c['permissions'],
-                                              c['key_size'], c['write_type'], c['descriptors']))
+                self.make_dbus_characteristic(c['uuid'], c['instance_id'], c['properties'],
+                                              c['permissions'], c['key_size'], c['write_type'],
+                                              c['descriptors']))
 
         included_services = []
         for s in service['included_services']:

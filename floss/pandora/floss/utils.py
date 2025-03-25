@@ -120,7 +120,8 @@ def dbus_safe(default_return_value, return_error=False):
             try:
                 return wrapped_function(*args, **kwargs)
             except GLib.Error as e:
-                logging.debug('Exception while performing operation %s: %s', wrapped_function.__name__, e)
+                logging.debug('Exception while performing operation %s: %s',
+                              wrapped_function.__name__, e)
 
                 if return_error:
                     return (default_return_value, str(e))
@@ -231,7 +232,8 @@ def glib_call(default_result=None, timeout=GLIB_METHOD_CALL_TIMEOUT, thread_name
             Returns:
                 False so that glib doesn't reschedule this to run again.
             """
-            (event, method, args, kwargs) = (data['event'], data['method'], data['args'], data['kwargs'])
+            (event, method, args, kwargs) = (data['event'], data['method'], data['args'],
+                                             data['kwargs'])
             logging.info('%s: Running %s', threading.current_thread().name, str(method))
             err = None
             try:
@@ -287,7 +289,8 @@ def glib_call(default_result=None, timeout=GLIB_METHOD_CALL_TIMEOUT, thread_name
             if method_callback:
                 data['method_callback'] = method_callback
 
-            logging.info('%s: Adding %s to GLib.idle_add', threading.current_thread().name, str(method))
+            logging.info('%s: Adding %s to GLib.idle_add',
+                         threading.current_thread().name, str(method))
             GLib.idle_add(call_and_signal, data)
 
             if not method_callback:
@@ -486,7 +489,8 @@ def advertise_data_from(request_data: host_pb2.DataTypes):
     }
 
     # incomplete_service_class_uuids
-    if (request_data.incomplete_service_class_uuids16 or request_data.incomplete_service_class_uuids32 or
+    if (request_data.incomplete_service_class_uuids16 or
+            request_data.incomplete_service_class_uuids32 or
             request_data.incomplete_service_class_uuids128):
         raise NotImplementedError('Incomplete service class uuid not supported')
 
@@ -526,8 +530,8 @@ def advertise_data_from(request_data: host_pb2.DataTypes):
     # The name is derived from adapter directly in floss.
     if request_data.WhichOneof('shortened_local_name_oneof') in ('include_shortened_local_name',
                                                                  'include_complete_local_name'):
-        advertise_data['include_device_name'] = getattr(request_data,
-                                                        request_data.WhichOneof('shortened_local_name_oneof')).value
+        advertise_data['include_device_name'] = getattr(
+            request_data, request_data.WhichOneof('shortened_local_name_oneof')).value
 
     # The tx power level is decided by the lower layers.
     if request_data.WhichOneof('tx_power_level_oneof') == 'include_tx_power_level':
@@ -578,7 +582,8 @@ def parse_advertiging_data(adv_data: List[int]) -> host_pb2.DataTypes:
 
         # Extract data payload.
         if data_type == floss_enums.AdvertisingDataType.COMPLETE_LOCAL_NAME:
-            data.complete_local_name = parse_complete_local_name(adv_data[index:index + data_length - 1])
+            data.complete_local_name = parse_complete_local_name(adv_data[index:index +
+                                                                          data_length - 1])
             logging.info('complete_local_name: %s', data.complete_local_name)
         else:
             logging.debug('Unsupported advertising data type to parse: %s', data_type)

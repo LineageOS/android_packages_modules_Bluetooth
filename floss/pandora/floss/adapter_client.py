@@ -117,6 +117,7 @@ class BluetoothCallbacks:
         """
         pass
 
+
 class BluetoothConnectionCallbacks:
     """Callbacks for the Device Connection interface.
 
@@ -462,7 +463,8 @@ class FlossAdapterClient(BluetoothCallbacks, BluetoothConnectionCallbacks):
             'Discoverable': (self.proxy().GetDiscoverable, self.proxy().SetDiscoverable),
             'DiscoverableTimeout': (self.proxy().GetDiscoverableTimeout, None),
             'IsMultiAdvertisementSupported': (self.proxy().IsMultiAdvertisementSupported, None),
-            'IsLeExtendedAdvertisingSupported': (self.proxy().IsLeExtendedAdvertisingSupported, None)
+            'IsLeExtendedAdvertisingSupported':
+                (self.proxy().IsLeExtendedAdvertisingSupported, None)
         })
 
         self.remote_properties = utils.PropertySet({
@@ -571,8 +573,9 @@ class FlossAdapterClient(BluetoothCallbacks, BluetoothConnectionCallbacks):
             (success, devtuple) = FlossAdapterClient.parse_dbus_device(device)
             if success:
                 (address, name) = devtuple
-                dev = self.known_devices.get(address,
-                                             self._make_device(address, name, bond_state=floss_enums.BondState.BONDED))
+                dev = self.known_devices.get(
+                    address,
+                    self._make_device(address, name, bond_state=floss_enums.BondState.BONDED))
                 if dev['bond_state'] is None:
                     dev['bond_state'] = floss_enums.BondState.BONDED
                     logging.info('[%s:%s] initially bonded.', address, name)
@@ -888,19 +891,25 @@ class FlossAdapterClient(BluetoothCallbacks, BluetoothConnectionCallbacks):
     @utils.glib_call(False)
     def connect_all_enabled_profiles(self, address):
         """Connect all enabled profiles for target address."""
-        device = self._make_dbus_device(address, self.known_devices.get(address, {}).get('name', 'Test device'))
+        device = self._make_dbus_device(
+            address,
+            self.known_devices.get(address, {}).get('name', 'Test device'))
         return bool(self.proxy().ConnectAllEnabledProfiles(device))
 
     @utils.glib_call(False)
     def disconnect_all_enabled_profiles(self, address):
         """Disconnect all enabled profiles for target address."""
-        device = self._make_dbus_device(address, self.known_devices.get(address, {}).get('name', 'Test device'))
+        device = self._make_dbus_device(
+            address,
+            self.known_devices.get(address, {}).get('name', 'Test device'))
         return bool(self.proxy().DisconnectAllEnabledProfiles(device))
 
     @utils.glib_call(None)
     def get_connection_state(self, address):
         """Gets connection state."""
-        device = self._make_dbus_device(address, self.known_devices.get(address, {}).get('name', 'Test device'))
+        device = self._make_dbus_device(
+            address,
+            self.known_devices.get(address, {}).get('name', 'Test device'))
         return self.proxy().GetConnectionState(device)
 
     def wait_for_device_disconnected(self, address):
@@ -910,7 +919,8 @@ class FlossAdapterClient(BluetoothCallbacks, BluetoothConnectionCallbacks):
             return not self.known_devices.get(address, {}).get('connected', True)
 
         try:
-            utils.poll_for_condition(condition=(lambda: device_disconnected(self)), timeout=self.DISCONNECTION_TIMEOUT)
+            utils.poll_for_condition(condition=(lambda: device_disconnected(self)),
+                                     timeout=self.DISCONNECTION_TIMEOUT)
             return True
         except TimeoutError:
             logging.error('on_device_disconnected not called')
@@ -918,4 +928,5 @@ class FlossAdapterClient(BluetoothCallbacks, BluetoothConnectionCallbacks):
 
     def disconnect_device(self, address):
         """Disconnect a specific address."""
-        return self.disconnect_all_enabled_profiles(address) and self.wait_for_device_disconnected(address)
+        return self.disconnect_all_enabled_profiles(address) and self.wait_for_device_disconnected(
+            address)

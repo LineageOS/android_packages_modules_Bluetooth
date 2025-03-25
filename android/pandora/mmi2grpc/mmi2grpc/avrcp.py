@@ -618,7 +618,8 @@ class AVRCPProxy(ProfileProxy):
         return "OK"
 
     @assert_description
-    def TSC_AVRCP_mmi_iut_reject_list_player_application_setting_values_invalid_attribute(self, **kwargs):
+    def TSC_AVRCP_mmi_iut_reject_list_player_application_setting_values_invalid_attribute(
+            self, **kwargs):
         """
         PTS has sent a List Player Application Setting Values command with an
         invalid Attribute Id.  The IUT must respond with the error code: Invalid
@@ -646,7 +647,8 @@ class AVRCPProxy(ProfileProxy):
         return "OK"
 
     @assert_description
-    def TSC_AVRCP_mmi_iut_reject_get_current_player_application_setting_value_invalid_attribute(self, **kwargs):
+    def TSC_AVRCP_mmi_iut_reject_get_current_player_application_setting_value_invalid_attribute(
+            self, **kwargs):
         """
         PTS has sent a Get Current Player Application Setting Value command with
         an invalid Attribute.  The IUT must respond with the error code: Invalid
@@ -698,7 +700,8 @@ class AVRCPProxy(ProfileProxy):
         return "OK"
 
     @assert_description
-    def TSC_AVRCP_mmi_iut_initiate_register_notification_changed_player_application_setting_changed(self, **kwargs):
+    def TSC_AVRCP_mmi_iut_initiate_register_notification_changed_player_application_setting_changed(
+            self, **kwargs):
         """
         Take action to trigger a [Register Notification, Changed] response for
         <Player Application Setting Changed> to the PTS from the IUT.  This can
@@ -905,7 +908,8 @@ class AVRCPProxy(ProfileProxy):
         return "OK"
 
     @assert_description
-    def TSC_AVRCP_mmi_iut_initiate_register_notification_changed_now_playing_content_changed(self, **kwargs):
+    def TSC_AVRCP_mmi_iut_initiate_register_notification_changed_now_playing_content_changed(
+            self, **kwargs):
         """
         Take action to trigger a [Register Notification, Changed] response for
         <Now Playing Content Changed> to the PTS from the IUT.  This can be
@@ -1097,7 +1101,6 @@ class AVRCPProxy(ProfileProxy):
         """
 
         return "OK"
-
 
     @assert_description
     def TSC_AVRCP_mmi_user_queue_cover_art_element(self, **kwargs):

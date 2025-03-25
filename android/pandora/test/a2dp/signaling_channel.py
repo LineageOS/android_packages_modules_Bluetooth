@@ -107,7 +107,9 @@ class SignalingChannel(EventEmitter):
         await self.transport_channel.disconnect()
         self.transport_channel = None
 
-    async def expect_signal(self, expected_sig: Union[SignalingPacket, type], timeout: float = 3) -> SignalingPacket:
+    async def expect_signal(self,
+                            expected_sig: Union[SignalingPacket, type],
+                            timeout: float = 3) -> SignalingPacket:
         packet = await asyncio.wait_for(self.signaling_queue.get(), timeout=timeout)
         sig = SignalingPacket.parse_all(packet)
 
@@ -149,8 +151,8 @@ class SignalingChannel(EventEmitter):
         if self.signaling_channel:
             raise ValueError("Signaling L2CAP channel already exists")
         self.role = "initiator"
-        self.signaling_channel = await self.connection.create_l2cap_channel(spec=l2cap.ClassicChannelSpec(
-            psm=avdtp.AVDTP_PSM))
+        self.signaling_channel = await self.connection.create_l2cap_channel(
+            spec=l2cap.ClassicChannelSpec(psm=avdtp.AVDTP_PSM))
         # Register to receive PDUs from the channel
         self.signaling_channel.sink = self._on_pdu
 
@@ -160,8 +162,8 @@ class SignalingChannel(EventEmitter):
         self.role = "acceptor"
         avdtp_server = self.connection.device.l2cap_channel_manager.servers.get(avdtp.AVDTP_PSM)
         if not avdtp_server:
-            self.avdtp_server = self.connection.device.create_l2cap_server(spec=l2cap.ClassicChannelSpec(
-                psm=avdtp.AVDTP_PSM))
+            self.avdtp_server = self.connection.device.create_l2cap_server(
+                spec=l2cap.ClassicChannelSpec(psm=avdtp.AVDTP_PSM))
         else:
             self.avdtp_server = avdtp_server
         self.avdtp_server.on('connection', self._on_l2cap_connection)
@@ -207,11 +209,13 @@ class SignalingChannel(EventEmitter):
 
     async def accept_discover(self, seid_information: List[av.SeidInformation]):
         cmd = await self.expect_signal(av.DiscoverCommand(transaction_label=self.any))
-        self.send_signal(av.DiscoverResponse(transaction_label=cmd.transaction_label,
-                                             seid_information=seid_information))
+        self.send_signal(
+            av.DiscoverResponse(transaction_label=cmd.transaction_label,
+                                seid_information=seid_information))
 
     async def accept_get_all_capabilities(self, service_capabilities: List[ServiceCapability]):
-        cmd = await self.expect_signal(av.GetAllCapabilitiesCommand(acp_seid=self.any, transaction_label=self.any))
+        cmd = await self.expect_signal(
+            av.GetAllCapabilitiesCommand(acp_seid=self.any, transaction_label=self.any))
         self.send_signal(
             av.GetAllCapabilitiesResponse(transaction_label=cmd.transaction_label,
                                           service_capabilities=service_capabilities))
@@ -227,20 +231,27 @@ class SignalingChannel(EventEmitter):
         self.send_signal(SetConfigurationResponse(transaction_label=cmd.transaction_label))
 
     async def accept_open(self, timeout: float = 3.0):
-        cmd = await self.expect_signal(av.OpenCommand(transaction_label=self.any, acp_seid=self.any), timeout=timeout)
+        cmd = await self.expect_signal(av.OpenCommand(transaction_label=self.any,
+                                                      acp_seid=self.any),
+                                       timeout=timeout)
         self.send_signal(av.OpenResponse(transaction_label=cmd.transaction_label))
 
     async def accept_start(self, timeout: float = 3.0):
-        cmd = await self.expect_signal(av.StartCommand(transaction_label=self.any, acp_seid=self.any), timeout=timeout)
+        cmd = await self.expect_signal(av.StartCommand(transaction_label=self.any,
+                                                       acp_seid=self.any),
+                                       timeout=timeout)
         self.send_signal(av.StartResponse(transaction_label=cmd.transaction_label))
 
     async def accept_suspend(self, timeout: float = 3.0):
-        cmd = await self.expect_signal(av.SuspendCommand(transaction_label=self.any, acp_seid=self.any),
+        cmd = await self.expect_signal(av.SuspendCommand(transaction_label=self.any,
+                                                         acp_seid=self.any),
                                        timeout=timeout)
         self.send_signal(av.SuspendResponse(transaction_label=cmd.transaction_label))
 
     async def accept_close(self, timeout: float = 3.0):
-        cmd = await self.expect_signal(av.CloseCommand(transaction_label=self.any, acp_seid=self.any), timeout=timeout)
+        cmd = await self.expect_signal(av.CloseCommand(transaction_label=self.any,
+                                                       acp_seid=self.any),
+                                       timeout=timeout)
         self.send_signal(av.CloseResponse(transaction_label=cmd.transaction_label))
 
     async def accept_open_stream(self,
@@ -258,8 +269,8 @@ class SignalingChannel(EventEmitter):
 
         expected_configuration: List[ServiceCapability] = []
         for capability in service_capabilities:
-            if isinstance(capability, av.MediaTransportCapability) or isinstance(capability,
-                                                                                 av.DelayReportingCapability):
+            if isinstance(capability, av.MediaTransportCapability) or isinstance(
+                    capability, av.DelayReportingCapability):
                 expected_configuration.append(capability)
             else:
                 expected_configuration.append(self.any)
@@ -280,4 +291,5 @@ class SignalingChannel(EventEmitter):
                                   acp_seid=self.acp_seid,
                                   delay_msb=delay_msb,
                                   delay_lsb=delay_lsb))
-        await self.expect_signal(av.DelayReportResponse(transaction_label=self.any), timeout=timeout)
+        await self.expect_signal(av.DelayReportResponse(transaction_label=self.any),
+                                 timeout=timeout)

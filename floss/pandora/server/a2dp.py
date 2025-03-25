@@ -75,7 +75,8 @@ class A2DPService(a2dp_grpc_aio.A2DPServicer):
                 success = await asyncio.wait_for(open_source, timeout=10)
 
                 if not success:
-                    await context.abort(grpc.StatusCode.UNKNOWN, f'Failed to connect to the address {address}.')
+                    await context.abort(grpc.StatusCode.UNKNOWN,
+                                        f'Failed to connect to the address {address}.')
             except asyncio.TimeoutError as e:
                 logging.error(f'OpenSource: timeout for waiting A2DP connection. {e}')
             finally:
@@ -111,7 +112,8 @@ class A2DPService(a2dp_grpc_aio.A2DPServicer):
         connection = utils.connection_from(request.connection)
         address = connection.address
         if not address:
-            await context.abort(grpc.StatusCode.INVALID_ARGUMENT, 'Request address field must be set.')
+            await context.abort(grpc.StatusCode.INVALID_ARGUMENT,
+                                'Request address field must be set.')
 
         connected_devices = self.bluetooth.get_connected_audio_devices()
         if not self.bluetooth.is_connected(address) or address not in connected_devices:
@@ -148,13 +150,15 @@ class A2DPService(a2dp_grpc_aio.A2DPServicer):
         is_suspended = cras_utils.get_active_stream_count() == 0
         return wrappers_pb2.BoolValue(value=is_suspended)
 
-    async def Start(self, request: a2dp_pb2.StartRequest, context: grpc.ServicerContext) -> a2dp_pb2.StartResponse:
+    async def Start(self, request: a2dp_pb2.StartRequest,
+                    context: grpc.ServicerContext) -> a2dp_pb2.StartResponse:
 
         target = request.WhichOneof('target')
         address = utils.address_from(request.target.cookie)
         connected_audio_devices = self.bluetooth.get_connected_audio_devices()
         if address not in connected_audio_devices:
-            await context.abort(grpc.StatusCode.FAILED_PRECONDITION, 'A2dp device is not connected, cannot start')
+            await context.abort(grpc.StatusCode.FAILED_PRECONDITION,
+                                'A2dp device is not connected, cannot start')
 
         audio_data = json.dumps(audio_utils.A2DP_TEST_DATA)
         audio_data = json.loads(audio_data)
@@ -180,10 +184,12 @@ class A2DPService(a2dp_grpc_aio.A2DPServicer):
         address = utils.address_from(request.target.cookie)
         connected_audio_devices = self.bluetooth.get_connected_audio_devices()
         if address not in connected_audio_devices:
-            await context.abort(grpc.StatusCode.FAILED_PRECONDITION, 'A2dp device is not connected, cannot suspend')
+            await context.abort(grpc.StatusCode.FAILED_PRECONDITION,
+                                'A2dp device is not connected, cannot suspend')
 
         if cras_utils.get_active_stream_count() == 0:
-            await context.abort(grpc.StatusCode.FAILED_PRECONDITION, 'A2dp Device is already suspended, cannot suspend')
+            await context.abort(grpc.StatusCode.FAILED_PRECONDITION,
+                                'A2dp Device is already suspended, cannot suspend')
 
         if target == 'source':
             self._cras_test_client.stop_playing_subprocess()
@@ -192,7 +198,8 @@ class A2DPService(a2dp_grpc_aio.A2DPServicer):
 
         return a2dp_pb2.SuspendResponse(suspended=empty_pb2.Empty())
 
-    async def Close(self, request: a2dp_pb2.CloseRequest, context: grpc.ServicerContext) -> a2dp_pb2.CloseResponse:
+    async def Close(self, request: a2dp_pb2.CloseRequest,
+                    context: grpc.ServicerContext) -> a2dp_pb2.CloseResponse:
 
         class ConnectionObserver(media_client.BluetoothMediaCallbacks):
             """Observer to observe the A2DP profile connection state."""
@@ -211,7 +218,8 @@ class A2DPService(a2dp_grpc_aio.A2DPServicer):
         address = utils.address_from(request.target.cookie)
         connected_audio_devices = self.bluetooth.get_connected_audio_devices()
         if address not in connected_audio_devices:
-            await context.abort(grpc.StatusCode.FAILED_PRECONDITION, 'A2dp device is not connected, cannot close')
+            await context.abort(grpc.StatusCode.FAILED_PRECONDITION,
+                                'A2dp device is not connected, cannot close')
 
         try:
             close_stream = asyncio.get_running_loop().create_future()
@@ -247,8 +255,9 @@ class A2DPService(a2dp_grpc_aio.A2DPServicer):
         self._cras_test_client.play(audio_file)
         return a2dp_pb2.PlaybackAudioResponse()
 
-    async def CaptureAudio(self, request: a2dp_pb2.CaptureAudioRequest,
-                           context: grpc.ServicerContext) -> AsyncGenerator[a2dp_pb2.CaptureAudioResponse, None]:
+    async def CaptureAudio(
+            self, request: a2dp_pb2.CaptureAudioRequest,
+            context: grpc.ServicerContext) -> AsyncGenerator[a2dp_pb2.CaptureAudioResponse, None]:
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
         context.set_details('Method not implemented!')  # type: ignore
         raise NotImplementedError('Method not implemented!')

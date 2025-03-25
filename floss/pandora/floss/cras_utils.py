@@ -58,7 +58,12 @@ def capture(*args, **kargs):
     cmd_utils.execute(capture_cmd(*args, **kargs))
 
 
-def playback_cmd(playback_file, block_size=None, duration=None, pin_device=None, channels=2, rate=48000):
+def playback_cmd(playback_file,
+                 block_size=None,
+                 duration=None,
+                 pin_device=None,
+                 channels=2,
+                 rate=48000):
     """Gets a command to playback a file with given settings.
 
     Args:
@@ -330,11 +335,12 @@ def node_type_is_plugged(node_type, nodes_info):
 
 # Cras node types reported from Cras DBus control API.
 CRAS_OUTPUT_NODE_TYPES = [
-    'HEADPHONE', 'INTERNAL_SPEAKER', 'HDMI', 'USB', 'BLUETOOTH', 'LINEOUT', 'UNKNOWN', 'ALSA_LOOPBACK'
+    'HEADPHONE', 'INTERNAL_SPEAKER', 'HDMI', 'USB', 'BLUETOOTH', 'LINEOUT', 'UNKNOWN',
+    'ALSA_LOOPBACK'
 ]
 CRAS_INPUT_NODE_TYPES = [
-    'MIC', 'INTERNAL_MIC', 'USB', 'BLUETOOTH', 'POST_DSP_LOOPBACK', 'POST_MIX_LOOPBACK', 'UNKNOWN', 'KEYBOARD_MIC',
-    'HOTWORD', 'FRONT_MIC', 'REAR_MIC', 'ECHO_REFERENCE'
+    'MIC', 'INTERNAL_MIC', 'USB', 'BLUETOOTH', 'POST_DSP_LOOPBACK', 'POST_MIX_LOOPBACK', 'UNKNOWN',
+    'KEYBOARD_MIC', 'HOTWORD', 'FRONT_MIC', 'REAR_MIC', 'ECHO_REFERENCE'
 ]
 CRAS_NODE_TYPES = CRAS_OUTPUT_NODE_TYPES + CRAS_INPUT_NODE_TYPES
 
@@ -653,7 +659,8 @@ class CrasTestClient(object):
                                pin_device=pin_device,
                                channels=channels,
                                rate=rate)
-        result = self.start_subprocess(self._capturing_proc, proc_cmd, capture_file, self._capturing_msg)
+        result = self.start_subprocess(self._capturing_proc, proc_cmd, capture_file,
+                                       self._capturing_msg)
         if result:
             self._capturing_proc = self._proc
         return result

@@ -52,8 +52,10 @@ class LeFeatures:
     def __init__(self, le_features: int):
         self.mask = le_features
         self.ll_privacy = (le_features & hci.LLFeaturesBits.LL_PRIVACY) != 0
-        self.le_extended_advertising = (le_features & hci.LLFeaturesBits.LE_EXTENDED_ADVERTISING) != 0
-        self.le_periodic_advertising = (le_features & hci.LLFeaturesBits.LE_PERIODIC_ADVERTISING) != 0
+        self.le_extended_advertising = (le_features &
+                                        hci.LLFeaturesBits.LE_EXTENDED_ADVERTISING) != 0
+        self.le_periodic_advertising = (le_features &
+                                        hci.LLFeaturesBits.LE_PERIODIC_ADVERTISING) != 0
 
 
 def generate_rpa(irk: bytes) -> hci.Address:
@@ -90,8 +92,8 @@ class Controller:
         self.send_ll_callback = SEND_LL_FUNC(send_ll)
 
         # Create a c++ controller instance.
-        self.instance = rootcanal.ffi_controller_new(c_char_p(address.address), self.send_hci_callback,
-                                                     self.send_ll_callback)
+        self.instance = rootcanal.ffi_controller_new(c_char_p(address.address),
+                                                     self.send_hci_callback, self.send_ll_callback)
 
         self.address = address
         self.evt_queue = collections.deque()
@@ -130,18 +132,20 @@ class Controller:
     def send_cmd(self, cmd: hci.Command):
         print(f"--> sending HCI command {cmd.__class__.__name__}")
         data = cmd.serialize()
-        rootcanal.ffi_controller_receive_hci(c_void_p(self.instance), c_int(Idc.Cmd), c_char_p(data), c_int(len(data)))
+        rootcanal.ffi_controller_receive_hci(c_void_p(self.instance), c_int(Idc.Cmd),
+                                             c_char_p(data), c_int(len(data)))
 
     def send_iso(self, iso: hci.Iso):
         print(f"--> sending HCI iso pdu data={len(iso.payload)}[..]")
         data = iso.serialize()
-        rootcanal.ffi_controller_receive_hci(c_void_p(self.instance), c_int(Idc.Iso), c_char_p(data), c_int(len(data)))
+        rootcanal.ffi_controller_receive_hci(c_void_p(self.instance), c_int(Idc.Iso),
+                                             c_char_p(data), c_int(len(data)))
 
     def send_ll(self, pdu: ll.LinkLayerPacket, phy: Phy = Phy.LowEnergy, rssi: int = -90):
         print(f"--> sending LL pdu {pdu.__class__.__name__}")
         data = pdu.serialize()
-        rootcanal.ffi_controller_receive_ll(c_void_p(self.instance), c_char_p(data), c_int(len(data)), c_int(phy),
-                                            c_int(rssi))
+        rootcanal.ffi_controller_receive_ll(c_void_p(self.instance), c_char_p(data),
+                                            c_int(len(data)), c_int(phy), c_int(rssi))
 
     def send_llcp(self,
                   source_address: hci.Address,
@@ -154,8 +158,8 @@ class Controller:
                          destination_address=destination_address,
                          payload=pdu.serialize())
         data = ll_pdu.serialize()
-        rootcanal.ffi_controller_receive_ll(c_void_p(self.instance), c_char_p(data), c_int(len(data)), c_int(phy),
-                                            c_int(rssi))
+        rootcanal.ffi_controller_receive_ll(c_void_p(self.instance), c_char_p(data),
+                                            c_int(len(data)), c_int(phy), c_int(rssi))
 
     async def start(self):
 
@@ -252,11 +256,14 @@ class ControllerTest(unittest.IsolatedAsyncioTestCase):
 
         # Reset the controller and enable all events and LE events.
         controller.send_cmd(hci.Reset())
-        await controller.expect_evt(hci.ResetComplete(status=ErrorCode.SUCCESS, num_hci_command_packets=1))
+        await controller.expect_evt(
+            hci.ResetComplete(status=ErrorCode.SUCCESS, num_hci_command_packets=1))
         controller.send_cmd(hci.SetEventMask(event_mask=0xffffffffffffffff))
-        await controller.expect_evt(hci.SetEventMaskComplete(status=ErrorCode.SUCCESS, num_hci_command_packets=1))
+        await controller.expect_evt(
+            hci.SetEventMaskComplete(status=ErrorCode.SUCCESS, num_hci_command_packets=1))
         controller.send_cmd(hci.LeSetEventMask(le_event_mask=0xffffffffffffffff))
-        await controller.expect_evt(hci.LeSetEventMaskComplete(status=ErrorCode.SUCCESS, num_hci_command_packets=1))
+        await controller.expect_evt(
+            hci.LeSetEventMaskComplete(status=ErrorCode.SUCCESS, num_hci_command_packets=1))
 
         # Load the local supported features to be able to disable tests
         # that rely on unsupported features.
@@ -264,7 +271,9 @@ class ControllerTest(unittest.IsolatedAsyncioTestCase):
         evt = await self.expect_cmd_complete(hci.LeReadLocalSupportedFeaturesPage0Complete)
         controller.le_features = LeFeatures(evt.le_features)
 
-    async def expect_evt(self, expected_evt: typing.Union[hci.Event, type], timeout: int = 3) -> hci.Event:
+    async def expect_evt(self,
+                         expected_evt: typing.Union[hci.Event, type],
+                         timeout: int = 3) -> hci.Event:
         packet = await asyncio.wait_for(self.controller.receive_evt(), timeout=timeout)
         evt = hci.Event.parse_all(packet)
 
@@ -369,40 +378,45 @@ class ControllerTest(unittest.IsolatedAsyncioTestCase):
     async def enable_connected_isochronous_stream_host_support(self):
         """Enable Connected Isochronous Stream Host Support in the LE Feature mask."""
         self.controller.send_cmd(
-            hci.LeSetHostFeatureV1(bit_number=hci.LeHostFeatureBits.CONNECTED_ISO_STREAM_HOST_SUPPORT,
-                                   bit_value=hci.Enable.ENABLED))
+            hci.LeSetHostFeatureV1(
+                bit_number=hci.LeHostFeatureBits.CONNECTED_ISO_STREAM_HOST_SUPPORT,
+                bit_value=hci.Enable.ENABLED))
 
-        await self.expect_evt(hci.LeSetHostFeatureV1Complete(status=ErrorCode.SUCCESS, num_hci_command_packets=1))
+        await self.expect_evt(
+            hci.LeSetHostFeatureV1Complete(status=ErrorCode.SUCCESS, num_hci_command_packets=1))
 
     async def establish_le_connection_central(self, peer_address: hci.Address) -> int:
         """Establish a connection with the selected peer as Central.
         Returns the ACL connection handle for the opened link."""
         self.controller.send_cmd(
-            hci.LeExtendedCreateConnectionV1(initiator_filter_policy=hci.InitiatorFilterPolicy.USE_PEER_ADDRESS,
-                                             own_address_type=hci.OwnAddressType.PUBLIC_DEVICE_ADDRESS,
-                                             peer_address_type=hci.AddressType.PUBLIC_DEVICE_ADDRESS,
-                                             peer_address=peer_address,
-                                             initiating_phys=0x1,
-                                             initiating_phy_parameters=[
-                                                 hci.InitiatingPhyParameters(
-                                                     scan_interval=0x200,
-                                                     scan_window=0x100,
-                                                     connection_interval_min=0x200,
-                                                     connection_interval_max=0x200,
-                                                     max_latency=0x6,
-                                                     supervision_timeout=0xc80,
-                                                     min_ce_length=0,
-                                                     max_ce_length=0,
-                                                 )
-                                             ]))
+            hci.LeExtendedCreateConnectionV1(
+                initiator_filter_policy=hci.InitiatorFilterPolicy.USE_PEER_ADDRESS,
+                own_address_type=hci.OwnAddressType.PUBLIC_DEVICE_ADDRESS,
+                peer_address_type=hci.AddressType.PUBLIC_DEVICE_ADDRESS,
+                peer_address=peer_address,
+                initiating_phys=0x1,
+                initiating_phy_parameters=[
+                    hci.InitiatingPhyParameters(
+                        scan_interval=0x200,
+                        scan_window=0x100,
+                        connection_interval_min=0x200,
+                        connection_interval_max=0x200,
+                        max_latency=0x6,
+                        supervision_timeout=0xc80,
+                        min_ce_length=0,
+                        max_ce_length=0,
+                    )
+                ]))
 
         await self.expect_evt(
-            hci.LeExtendedCreateConnectionV1Status(status=ErrorCode.SUCCESS, num_hci_command_packets=1))
+            hci.LeExtendedCreateConnectionV1Status(status=ErrorCode.SUCCESS,
+                                                   num_hci_command_packets=1))
 
-        self.controller.send_ll(ll.LeLegacyAdvertisingPdu(source_address=peer_address,
-                                                          advertising_address_type=ll.AddressType.PUBLIC,
-                                                          advertising_type=ll.LegacyAdvertisingType.ADV_IND,
-                                                          advertising_data=[]),
+        self.controller.send_ll(ll.LeLegacyAdvertisingPdu(
+            source_address=peer_address,
+            advertising_address_type=ll.AddressType.PUBLIC,
+            advertising_type=ll.LegacyAdvertisingType.ADV_IND,
+            advertising_data=[]),
                                 rssi=-16)
 
         await self.expect_ll(
@@ -424,20 +438,22 @@ class ControllerTest(unittest.IsolatedAsyncioTestCase):
                                  conn_supervision_timeout=0xc80))
 
         connection_complete = await self.expect_evt(
-            hci.LeEnhancedConnectionCompleteV1(status=ErrorCode.SUCCESS,
-                                               connection_handle=self.Any,
-                                               role=hci.Role.CENTRAL,
-                                               peer_address_type=hci.AddressType.PUBLIC_DEVICE_ADDRESS,
-                                               peer_address=peer_address,
-                                               connection_interval=0x200,
-                                               peripheral_latency=0x6,
-                                               supervision_timeout=0xc80,
-                                               central_clock_accuracy=hci.ClockAccuracy.PPM_500))
+            hci.LeEnhancedConnectionCompleteV1(
+                status=ErrorCode.SUCCESS,
+                connection_handle=self.Any,
+                role=hci.Role.CENTRAL,
+                peer_address_type=hci.AddressType.PUBLIC_DEVICE_ADDRESS,
+                peer_address=peer_address,
+                connection_interval=0x200,
+                peripheral_latency=0x6,
+                supervision_timeout=0xc80,
+                central_clock_accuracy=hci.ClockAccuracy.PPM_500))
 
         acl_connection_handle = connection_complete.connection_handle
         await self.expect_evt(
-            hci.LeChannelSelectionAlgorithm(connection_handle=acl_connection_handle,
-                                            channel_selection_algorithm=hci.ChannelSelectionAlgorithm.ALGORITHM_1))
+            hci.LeChannelSelectionAlgorithm(
+                connection_handle=acl_connection_handle,
+                channel_selection_algorithm=hci.ChannelSelectionAlgorithm.ALGORITHM_1))
 
         return acl_connection_handle
 
@@ -445,19 +461,22 @@ class ControllerTest(unittest.IsolatedAsyncioTestCase):
         """Establish a connection with the selected peer as Peripheral.
         Returns the ACL connection handle for the opened link."""
         self.controller.send_cmd(
-            hci.LeSetAdvertisingParameters(advertising_interval_min=0x200,
-                                           advertising_interval_max=0x200,
-                                           advertising_type=hci.AdvertisingType.ADV_IND,
-                                           own_address_type=hci.OwnAddressType.PUBLIC_DEVICE_ADDRESS,
-                                           advertising_channel_map=0x7,
-                                           advertising_filter_policy=hci.AdvertisingFilterPolicy.ALL_DEVICES))
+            hci.LeSetAdvertisingParameters(
+                advertising_interval_min=0x200,
+                advertising_interval_max=0x200,
+                advertising_type=hci.AdvertisingType.ADV_IND,
+                own_address_type=hci.OwnAddressType.PUBLIC_DEVICE_ADDRESS,
+                advertising_channel_map=0x7,
+                advertising_filter_policy=hci.AdvertisingFilterPolicy.ALL_DEVICES))
 
         await self.expect_evt(
-            hci.LeSetAdvertisingParametersComplete(status=ErrorCode.SUCCESS, num_hci_command_packets=1))
+            hci.LeSetAdvertisingParametersComplete(status=ErrorCode.SUCCESS,
+                                                   num_hci_command_packets=1))
 
         self.controller.send_cmd(hci.LeSetAdvertisingEnable(advertising_enable=True))
 
-        await self.expect_evt(hci.LeSetAdvertisingEnableComplete(status=ErrorCode.SUCCESS, num_hci_command_packets=1))
+        await self.expect_evt(
+            hci.LeSetAdvertisingEnableComplete(status=ErrorCode.SUCCESS, num_hci_command_packets=1))
 
         self.controller.send_ll(ll.LeConnect(source_address=peer_address,
                                              destination_address=self.controller.address,
@@ -476,15 +495,16 @@ class ControllerTest(unittest.IsolatedAsyncioTestCase):
                                  conn_supervision_timeout=0x200))
 
         connection_complete = await self.expect_evt(
-            hci.LeEnhancedConnectionCompleteV1(status=ErrorCode.SUCCESS,
-                                               connection_handle=self.Any,
-                                               role=hci.Role.PERIPHERAL,
-                                               peer_address_type=hci.AddressType.PUBLIC_DEVICE_ADDRESS,
-                                               peer_address=peer_address,
-                                               connection_interval=0x200,
-                                               peripheral_latency=0x200,
-                                               supervision_timeout=0x200,
-                                               central_clock_accuracy=hci.ClockAccuracy.PPM_500))
+            hci.LeEnhancedConnectionCompleteV1(
+                status=ErrorCode.SUCCESS,
+                connection_handle=self.Any,
+                role=hci.Role.PERIPHERAL,
+                peer_address_type=hci.AddressType.PUBLIC_DEVICE_ADDRESS,
+                peer_address=peer_address,
+                connection_interval=0x200,
+                peripheral_latency=0x200,
+                supervision_timeout=0x200,
+                central_clock_accuracy=hci.ClockAccuracy.PPM_500))
 
         return connection_complete.connection_handle
 

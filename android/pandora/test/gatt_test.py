@@ -19,8 +19,9 @@ import logging
 
 from avatar import BumblePandoraDevice, PandoraDevice, PandoraDevices
 from bumble import pandora as bumble_server
-from bumble.gatt import (Characteristic, Service, GATT_VOLUME_CONTROL_SERVICE, GATT_AUDIO_INPUT_CONTROL_SERVICE,
-                         GATT_PRIMARY_SERVICE_ATTRIBUTE_TYPE, GATT_SECONDARY_SERVICE_ATTRIBUTE_TYPE, UUID)
+from bumble.gatt import (Characteristic, Service, GATT_VOLUME_CONTROL_SERVICE,
+                         GATT_AUDIO_INPUT_CONTROL_SERVICE, GATT_PRIMARY_SERVICE_ATTRIBUTE_TYPE,
+                         GATT_SECONDARY_SERVICE_ATTRIBUTE_TYPE, UUID)
 from bumble.l2cap import L2CAP_Control_Frame
 from bumble.pairing import PairingConfig
 from bumble_experimental.gatt import GATTService
@@ -47,8 +48,8 @@ class GattTest(base_test.BaseTestClass):  # type: ignore[misc]
 
     def setup_class(self) -> None:
         # Register experimental bumble servicers hook.
-        bumble_server.register_servicer_hook(
-            lambda bumble, _, server: add_GATTServicer_to_server(GATTService(bumble.device), server))
+        bumble_server.register_servicer_hook(lambda bumble, _, server: add_GATTServicer_to_server(
+            GATTService(bumble.device), server))
 
         self.devices = PandoraDevices(self)
         self.dut, self.ref, *_ = self.devices
@@ -63,7 +64,8 @@ class GattTest(base_test.BaseTestClass):  # type: ignore[misc]
 
     def test_print_dut_gatt_services(self) -> None:
         advertise = self.ref.host.Advertise(legacy=True, connectable=True)
-        dut_ref = self.dut.host.ConnectLE(public=self.ref.address, own_address_type=RANDOM).connection
+        dut_ref = self.dut.host.ConnectLE(public=self.ref.address,
+                                          own_address_type=RANDOM).connection
         assert_is_not_none(dut_ref)
         assert dut_ref
         advertise.cancel()
@@ -84,7 +86,8 @@ class GattTest(base_test.BaseTestClass):  # type: ignore[misc]
         dut = next((x for x in scan if b'pause cafe' in x.data.manufacturer_specific_data))
         scan.cancel()
 
-        ref_dut = self.ref.host.ConnectLE(own_address_type=RANDOM, **dut.address_asdict()).connection
+        ref_dut = self.ref.host.ConnectLE(own_address_type=RANDOM,
+                                          **dut.address_asdict()).connection
         assert_is_not_none(ref_dut)
         assert ref_dut
         advertise.cancel()
@@ -99,8 +102,9 @@ class GattTest(base_test.BaseTestClass):  # type: ignore[misc]
             connectable=True,
         )
 
-        dut_connection_to_ref = (await self.dut.aio.host.ConnectLE(public=self.ref.address,
-                                                                   own_address_type=RANDOM)).connection
+        dut_connection_to_ref = (await
+                                 self.dut.aio.host.ConnectLE(public=self.ref.address,
+                                                             own_address_type=RANDOM)).connection
         assert_is_not_none(dut_connection_to_ref)
         assert dut_connection_to_ref
 
@@ -142,7 +146,8 @@ class GattTest(base_test.BaseTestClass):  # type: ignore[misc]
 
         # act: initiate pairing from REF side (send a security request)
         async def ref_secure() -> SecureResponse:
-            return await self.ref.aio.security.Secure(connection=ref_connection_to_dut, le=LE_LEVEL3)
+            return await self.ref.aio.security.Secure(connection=ref_connection_to_dut,
+                                                      le=LE_LEVEL3)
 
         ref_secure_task = asyncio.create_task(ref_secure())
 
@@ -153,7 +158,8 @@ class GattTest(base_test.BaseTestClass):  # type: ignore[misc]
         dut_gatt = AioGATT(self.dut.aio.channel)
 
         async def dut_read() -> ReadCharacteristicsFromUuidResponse:
-            return await dut_gatt.ReadCharacteristicsFromUuid(dut_connection_to_ref, CHARACTERISTIC_UUID, 1, 0xFFFF)
+            return await dut_gatt.ReadCharacteristicsFromUuid(dut_connection_to_ref,
+                                                              CHARACTERISTIC_UUID, 1, 0xFFFF)
 
         dut_read_task = asyncio.create_task(dut_read())
 
@@ -251,10 +257,12 @@ class GattTest(base_test.BaseTestClass):  # type: ignore[misc]
         )
 
         scan = self.ref.aio.host.Scan()
-        dut = await anext((x async for x in scan if b'pause cafe' in x.data.manufacturer_specific_data))
+        dut = await anext(
+            (x async for x in scan if b'pause cafe' in x.data.manufacturer_specific_data))
         scan.cancel()
 
-        ref_dut = (await self.ref.aio.host.ConnectLE(own_address_type=RANDOM, **dut.address_asdict())).connection
+        ref_dut = (await self.ref.aio.host.ConnectLE(own_address_type=RANDOM,
+                                                     **dut.address_asdict())).connection
         assert_is_not_none(ref_dut)
         assert ref_dut
         advertise.cancel()
@@ -274,12 +282,14 @@ class GattTest(base_test.BaseTestClass):  # type: ignore[misc]
         ))
 
         fut = asyncio.get_running_loop().create_future()
-        setattr(self.ref.device.l2cap_channel_manager, "on_[0x18]", lambda _, _1, frame: fut.set_result(frame))
+        setattr(self.ref.device.l2cap_channel_manager, "on_[0x18]",
+                lambda _, _1, frame: fut.set_result(frame))
         self.ref.device.l2cap_channel_manager.send_control_frame(  # type:ignore
             connection, 0x05, connection_request)
         control_frame = await fut
 
-        assert_equal(bytes(control_frame)[10], 0x05)  # All connections refused – insufficient authentication
+        assert_equal(bytes(control_frame)[10],
+                     0x05)  # All connections refused – insufficient authentication
         assert_true(await is_connected(self.ref, ref_dut), "Device is no longer connected")
 
     @avatar.parameterized(
@@ -297,18 +307,23 @@ class GattTest(base_test.BaseTestClass):  # type: ignore[misc]
         self.ref.device.add_service(primary_service)  # type: ignore
 
         advertise = self.ref.host.Advertise(legacy=True, connectable=True)
-        dut_ref_connection = self.dut.host.ConnectLE(public=self.ref.address, own_address_type=RANDOM).connection
+        dut_ref_connection = self.dut.host.ConnectLE(public=self.ref.address,
+                                                     own_address_type=RANDOM).connection
         assert dut_ref_connection
         advertise.cancel()  # type: ignore
 
         dut_gatt = GATT(self.dut.channel)  # type: ignore
         services = dut_gatt.DiscoverServices(dut_ref_connection).services
 
-        filtered_services = [service for service in services if service.uuid == PRIMARY_SERVICE_UUID]
+        filtered_services = [
+            service for service in services if service.uuid == PRIMARY_SERVICE_UUID
+        ]
         assert len(filtered_services) == 1
         primary_service = filtered_services[0]
 
-        included_services_uuids = [included_service.uuid for included_service in primary_service.included_services]
+        included_services_uuids = [
+            included_service.uuid for included_service in primary_service.included_services
+        ]
         assert_in(INCLUDED_SERVICE_UUID, included_services_uuids)
 
 

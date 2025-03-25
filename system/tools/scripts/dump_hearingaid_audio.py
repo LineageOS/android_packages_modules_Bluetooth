@@ -54,11 +54,13 @@ DEBUG_DATA = "DEBUG_DATA"
 AUDIO_DATA_B = "AUDIO_DATA_B"
 
 # Debug packet header struct
-header_list_str = ["Event Processed", "Number Packet Nacked By Peripheral", "Number Packet Nacked By Central"]
+header_list_str = [
+    "Event Processed", "Number Packet Nacked By Peripheral", "Number Packet Nacked By Central"
+]
 # Debug frame information structs
 data_list_str = [
-    "Event Number", "Overrun", "Underrun", "Skips", "Rendered Audio Frame", "First PDU Option", "Second PDU Option",
-    "Third PDU Option"
+    "Event Number", "Overrun", "Underrun", "Skips", "Rendered Audio Frame", "First PDU Option",
+    "Second PDU Option", "Third PDU Option"
 ]
 
 AUDIO_CONTROL_POINT_UUID = "f0d4de7e4a88476c9d9f1937b0996cc0"
@@ -106,8 +108,10 @@ def parse_acl_ha_debug_buffer(data, result):
                 byte_data, data = unpack_data(data, 1)
                 if p == 1:
                     data_list_content.append(str(byte_data & 0x03).rjust(len(data_list_str[p])))
-                    data_list_content.append(str((byte_data >> 2) & 0x03).rjust(len(data_list_str[p + 1])))
-                    data_list_content.append(str((byte_data >> 4) & 0x0f).rjust(len(data_list_str[p + 2])))
+                    data_list_content.append(
+                        str((byte_data >> 2) & 0x03).rjust(len(data_list_str[p + 1])))
+                    data_list_content.append(
+                        str((byte_data >> 4) & 0x0f).rjust(len(data_list_str[p + 2])))
                     base = 2
                 else:
                     data_list_content.append(str(byte_data).rjust(len(data_list_str[p])))
@@ -191,7 +195,8 @@ def parse_acl_att_long_uuid(data, result):
     long_uuid = "".join(long_uuid_list)
     # Check long_uuid is AUDIO_CONTROL_POINT uuid to get the attr_handle.
     if long_uuid == AUDIO_CONTROL_POINT_UUID:
-        update_audio_data(CONNECTION_HANDLE, result[CONNECTION_HANDLE], AUDIO_CONTROL_ATTR_HANDLE, attr_handle)
+        update_audio_data(CONNECTION_HANDLE, result[CONNECTION_HANDLE], AUDIO_CONTROL_ATTR_HANDLE,
+                          attr_handle)
 
 
 def parse_acl_opcode(data, result):
@@ -329,7 +334,8 @@ def parse_packet(btsnoop_file):
             return False
         if packet_flag != 2 and drop == 0:
             packet_result[IS_SENT] = (packet_flag == 0)
-            packet_result[TIMESTAMP_STR_FORMAT], packet_result[TIMESTAMP_TIME_FORMAT] = convert_time_str(timestamp)
+            packet_result[TIMESTAMP_STR_FORMAT], packet_result[
+                TIMESTAMP_TIME_FORMAT] = convert_time_str(timestamp)
             parse_packet_data(packet_data, packet_result)
     else:
         return False
@@ -506,47 +512,49 @@ def convert_time_str(timestamp):
 
 def set_config():
     """This function is for set config by flag and check the argv is correct."""
-    argv_parser = argparse.ArgumentParser(description="Extracts Hearing Aid audio data from BTSNOOP.")
+    argv_parser = argparse.ArgumentParser(
+        description="Extracts Hearing Aid audio data from BTSNOOP.")
     argv_parser.add_argument("BTSNOOP", help="BLUETOOTH BTSNOOP file.")
     argv_parser.add_argument("-f", "--folder", help="select output folder.", dest="folder")
-    argv_parser.add_argument(
-        "-c1",
-        "--connection-handle1",
-        help="set a fake connection handle 1 to capture \
+    argv_parser.add_argument("-c1",
+                             "--connection-handle1",
+                             help="set a fake connection handle 1 to capture \
                            audio dump.",
-        dest="connection_handle1",
-        type=int)
-    argv_parser.add_argument(
-        "-c2",
-        "--connection-handle2",
-        help="set a fake connection handle 2 to capture \
+                             dest="connection_handle1",
+                             type=int)
+    argv_parser.add_argument("-c2",
+                             "--connection-handle2",
+                             help="set a fake connection handle 2 to capture \
                            audio dump.",
-        dest="connection_handle2",
-        type=int)
-    argv_parser.add_argument(
-        "-ns",
-        "--no-start",
-        help="No audio 'Start' cmd is \
+                             dest="connection_handle2",
+                             type=int)
+    argv_parser.add_argument("-ns",
+                             "--no-start",
+                             help="No audio 'Start' cmd is \
                            needed before extracting audio data.",
-        dest="no_start",
-        default="False")
-    argv_parser.add_argument(
-        "-dc",
-        "--default-codec",
-        help="set a default \
+                             dest="no_start",
+                             default="False")
+    argv_parser.add_argument("-dc",
+                             "--default-codec",
+                             help="set a default \
                            codec.",
-        dest="codec",
-        default="G722")
-    argv_parser.add_argument(
-        "-a",
-        "--attr-handle",
-        help="force to select audio control attr handle.",
-        dest="audio_control_attr_handle",
-        type=int)
-    argv_parser.add_argument(
-        "-d", "--debug", help="dump full debug buffer content.", dest="full_debug", default="False")
-    argv_parser.add_argument(
-        "-sd", "--simple-debug", help="dump debug buffer header content.", dest="simple_debug", default="False")
+                             dest="codec",
+                             default="G722")
+    argv_parser.add_argument("-a",
+                             "--attr-handle",
+                             help="force to select audio control attr handle.",
+                             dest="audio_control_attr_handle",
+                             type=int)
+    argv_parser.add_argument("-d",
+                             "--debug",
+                             help="dump full debug buffer content.",
+                             dest="full_debug",
+                             default="False")
+    argv_parser.add_argument("-sd",
+                             "--simple-debug",
+                             help="dump debug buffer header content.",
+                             dest="simple_debug",
+                             default="False")
     arg = argv_parser.parse_args()
 
     if arg.folder is not None:

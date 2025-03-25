@@ -53,7 +53,8 @@ class AicsTest(base_test.BaseTestClass):
 
     def connect_dut_to_ref(self):
         advertise = self.ref.host.Advertise(legacy=True, connectable=True)
-        dut_ref_connection = self.dut.host.ConnectLE(public=self.ref.address, own_address_type=RANDOM).connection
+        dut_ref_connection = self.dut.host.ConnectLE(public=self.ref.address,
+                                                     own_address_type=RANDOM).connection
         assert dut_ref_connection
         advertise.cancel()  # type: ignore
 
@@ -75,9 +76,13 @@ class AicsTest(base_test.BaseTestClass):
 
         services = dut_gatt.DiscoverServices(dut_ref_connection).services
 
-        filtered_services = [service for service in services if UUID(service.uuid) == GATT_VOLUME_CONTROL_SERVICE]
+        filtered_services = [
+            service for service in services if UUID(service.uuid) == GATT_VOLUME_CONTROL_SERVICE
+        ]
         assert len(filtered_services) == 1
         vcp_service = filtered_services[0]
 
-        included_services_uuids = [UUID(included_service.uuid) for included_service in vcp_service.included_services]
+        included_services_uuids = [
+            UUID(included_service.uuid) for included_service in vcp_service.included_services
+        ]
         assert_in(GATT_AUDIO_INPUT_CONTROL_SERVICE, included_services_uuids)
