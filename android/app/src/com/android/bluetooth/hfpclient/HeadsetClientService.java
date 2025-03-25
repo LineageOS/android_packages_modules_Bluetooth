@@ -47,6 +47,7 @@ import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.btservice.storage.DatabaseManager;
+import com.android.bluetooth.hfp.HeadsetService;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 
@@ -82,7 +83,6 @@ public class HeadsetClientService extends ProfileService {
     private final AudioManager mAudioManager;
     private final NativeInterface mNativeInterface;
     private final BatteryManager mBatteryManager;
-    private final HeadsetClientStateMachineFactory mSmFactory;
     private final int mMaxAmVcVol;
     private final int mMinAmVcVol;
 
@@ -107,7 +107,6 @@ public class HeadsetClientService extends ProfileService {
         // start AudioManager in a known state
         mAudioManager.setHfpEnabled(false);
 
-        mSmFactory = new HeadsetClientStateMachineFactory();
         synchronized (mStateMachineMap) {
             mStateMachineMap.clear();
         }
@@ -933,7 +932,13 @@ public class HeadsetClientService extends ProfileService {
 
             // Allocate a new SM
             Log.d(TAG, "Creating a new state machine");
-            sm = mSmFactory.make(mAdapterService, this, mSmThread, mNativeInterface);
+            sm =
+                    new HeadsetClientStateMachine(
+                            mAdapterService,
+                            this,
+                            HeadsetService.getHeadsetService(),
+                            mSmThread.getLooper(),
+                            mNativeInterface);
             mStateMachineMap.put(device, sm);
             return sm;
         }

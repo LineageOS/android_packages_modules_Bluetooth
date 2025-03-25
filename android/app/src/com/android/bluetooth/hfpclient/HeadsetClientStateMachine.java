@@ -69,7 +69,6 @@ import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.AdapterService;
-import com.android.bluetooth.btservice.MetricsLogger;
 import com.android.bluetooth.btservice.ProfileService;
 import com.android.bluetooth.flags.Flags;
 import com.android.bluetooth.hfp.HeadsetService;
@@ -892,13 +891,13 @@ public class HeadsetClientStateMachine extends StateMachine {
 
     HeadsetClientStateMachine(
             AdapterService adapterService,
-            HeadsetClientService context,
+            HeadsetClientService headsetClientService,
             HeadsetService headsetService,
             Looper looper,
             NativeInterface nativeInterface) {
         super(TAG, looper);
         mAdapterService = requireNonNull(adapterService);
-        mService = requireNonNull(context);
+        mService = requireNonNull(headsetClientService);
         mNativeInterface = nativeInterface;
         mAudioManager = mService.getAudioManager();
         mHeadsetService = headsetService;
@@ -911,7 +910,8 @@ public class HeadsetClientStateMachine extends StateMachine {
         mVoiceRecognitionActive = HeadsetClientHalConstants.VR_STATE_STOPPED;
 
         mAudioRouteAllowed =
-                context.getResources()
+                headsetClientService
+                        .getResources()
                         .getBoolean(R.bool.headset_client_initial_audio_route_allowed);
 
         mAudioRouteAllowed =
@@ -962,20 +962,7 @@ public class HeadsetClientStateMachine extends StateMachine {
         }
 
         setInitialState(mDisconnected);
-    }
-
-    static HeadsetClientStateMachine make(
-            AdapterService adapterService,
-            HeadsetClientService context,
-            HeadsetService headsetService,
-            Looper looper,
-            NativeInterface nativeInterface) {
-        Log.d(TAG, "make");
-        HeadsetClientStateMachine hfcsm =
-                new HeadsetClientStateMachine(
-                        adapterService, context, headsetService, looper, nativeInterface);
-        hfcsm.start();
-        return hfcsm;
+        start();
     }
 
     synchronized void routeHfpAudio(boolean enable) {

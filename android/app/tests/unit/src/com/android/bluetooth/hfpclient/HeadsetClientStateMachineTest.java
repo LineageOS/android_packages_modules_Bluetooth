@@ -139,7 +139,6 @@ public class HeadsetClientStateMachineTest {
                         mHeadsetService,
                         mTestLooper.getLooper(),
                         mNativeInterface);
-        mHeadsetClientStateMachine.start();
         mTestLooper.dispatchAll();
     }
 
