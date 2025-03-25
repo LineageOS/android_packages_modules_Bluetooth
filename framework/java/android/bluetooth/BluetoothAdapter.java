@@ -101,6 +101,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.WeakHashMap;
@@ -870,6 +871,7 @@ public final class BluetoothAdapter {
 
     private final IBluetoothManager mManagerService;
     private final AttributionSource mAttributionSource;
+    private final Optional<Context> mContext;
 
     // Yeah, keeping both mService and sService isn't pretty, but it's too late
     // in the current release for a major refactoring, so we leave them both
@@ -1076,13 +1078,13 @@ public final class BluetoothAdapter {
     @RequiresNoPermission
     public static synchronized BluetoothAdapter getDefaultAdapter() {
         if (sAdapter == null) {
-            sAdapter = createAdapter(AttributionSource.myAttributionSource());
+            sAdapter = createAdapter(null);
         }
         return sAdapter;
     }
 
     /** @hide */
-    public static BluetoothAdapter createAdapter(AttributionSource attributionSource) {
+    public static BluetoothAdapter createAdapter(Context context) {
         BluetoothServiceManager manager =
                 BluetoothFrameworkInitializer.getBluetoothServiceManager();
         if (manager == null) {
@@ -1093,16 +1095,28 @@ public final class BluetoothAdapter {
                 IBluetoothManager.Stub.asInterface(
                         manager.getBluetoothManagerServiceRegisterer().get());
         if (service != null) {
-            return new BluetoothAdapter(service, attributionSource);
+            return new BluetoothAdapter(service, context);
         } else {
             Log.e(TAG, "Bluetooth service is null");
             return null;
         }
     }
 
-    /** Use {@link #getDefaultAdapter} to get the BluetoothAdapter instance. */
-    BluetoothAdapter(IBluetoothManager managerService, AttributionSource attributionSource) {
+    private BluetoothAdapter(IBluetoothManager managerService, @Nullable Context context) {
+        this(
+                managerService,
+                context,
+                context != null
+                        ? context.getAttributionSource()
+                        : AttributionSource.myAttributionSource());
+    }
+
+    private BluetoothAdapter(
+            @NonNull IBluetoothManager managerService,
+            @Nullable Context context,
+            @NonNull AttributionSource attributionSource) {
         mManagerService = requireNonNull(managerService);
+        mContext = Optional.ofNullable(context);
         mAttributionSource = requireNonNull(attributionSource);
 
         mQualityCallbackWrapper =
@@ -1124,6 +1138,24 @@ public final class BluetoothAdapter {
         } finally {
             mServiceLock.writeLock().unlock();
         }
+    }
+
+    /**
+     * Early enforcing of permission in the framework is a courtesy for regular app developer. It is
+     * useless from security point of view, but when the binder operation is an oneway call, the
+     * SecurityException is lost (they are just logged). That mean, any android app developer will
+     * not be notified of the missing permission.
+     */
+    @SuppressLint("AndroidFrameworkRequiresPermission") // Enforcement in framework is never valid
+    private void enforcePermissionInFramework(String... permissions) {
+        mContext.ifPresent(
+                ctx -> {
+                    final int pid = Process.myPid();
+                    final int uid = Process.myUid();
+                    for (String permission : permissions) {
+                        ctx.enforcePermission(permission, pid, uid, null);
+                    }
+                });
     }
 
     /**
@@ -4729,6 +4761,7 @@ public final class BluetoothAdapter {
             @NonNull BluetoothConnectionCallback callback) {
         if (DBG) Log.d(TAG, "registerBluetoothConnectionCallback()");
 
+        enforcePermissionInFramework(BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED);
         mServiceLock.readLock().lock();
         try {
             mBluetoothConnectionCallbackWrapper.registerCallback(mService, callback, executor);
@@ -4752,6 +4785,8 @@ public final class BluetoothAdapter {
     public boolean unregisterBluetoothConnectionCallback(
             @NonNull BluetoothConnectionCallback callback) {
         if (DBG) Log.d(TAG, "unregisterBluetoothConnectionCallback()");
+
+        enforcePermissionInFramework(BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED);
         mServiceLock.readLock().lock();
         try {
             mBluetoothConnectionCallbackWrapper.unregisterCallback(mService, callback);
