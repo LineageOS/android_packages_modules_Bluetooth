@@ -3901,6 +3901,11 @@ public final class BluetoothAdapter {
      *
      * <p>Results of the scan are reported using the {@link LeScanCallback#onLeScan} callback.
      *
+     * <p>This method requires the calling app to have the {@link
+     * android.Manifest.permission#BLUETOOTH_SCAN} permission. Additionally, an app must have the
+     * {@link android.Manifest.permission#BLUETOOTH_PRIVILEGED} if it is used for BLE scan only mode
+     * (when the adapter state is not {@link BluetoothAdapter#STATE_ON}).
+     *
      * @param callback the callback LE scan results are delivered
      * @return true, if the scan was started successfully
      * @deprecated use {@link BluetoothLeScanner#startScan(List, ScanSettings, ScanCallback)}
@@ -3910,7 +3915,9 @@ public final class BluetoothAdapter {
     @RequiresLegacyBluetoothAdminPermission
     @RequiresBluetoothScanPermission
     @RequiresBluetoothLocationPermission
-    @RequiresPermission(BLUETOOTH_SCAN)
+    @RequiresPermission(
+            allOf = {BLUETOOTH_PRIVILEGED, BLUETOOTH_SCAN},
+            conditional = true)
     public boolean startLeScan(LeScanCallback callback) {
         return startLeScan(null, callback);
     }
@@ -3920,6 +3927,11 @@ public final class BluetoothAdapter {
      *
      * <p>Devices which advertise all specified services are reported using the {@link
      * LeScanCallback#onLeScan} callback.
+     *
+     * <p>This method requires the calling app to have the {@link
+     * android.Manifest.permission#BLUETOOTH_SCAN} permission. Additionally, an app must have the
+     * {@link android.Manifest.permission#BLUETOOTH_PRIVILEGED} if it is used for BLE scan only mode
+     * (when the adapter state is not {@link BluetoothAdapter#STATE_ON}).
      *
      * @param serviceUuids Array of services to look for
      * @param callback the callback LE scan results are delivered
@@ -3931,7 +3943,9 @@ public final class BluetoothAdapter {
     @RequiresLegacyBluetoothAdminPermission
     @RequiresBluetoothScanPermission
     @RequiresBluetoothLocationPermission
-    @RequiresPermission(BLUETOOTH_SCAN)
+    @RequiresPermission(
+            allOf = {BLUETOOTH_PRIVILEGED, BLUETOOTH_SCAN},
+            conditional = true)
     public boolean startLeScan(final UUID[] serviceUuids, final LeScanCallback callback) {
         Log.d(TAG, "startLeScan(): " + Arrays.toString(serviceUuids));
         if (callback == null) {
