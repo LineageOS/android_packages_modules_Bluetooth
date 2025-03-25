@@ -568,7 +568,6 @@ void btm_dev_consolidate_existing_connections(const RawAddress& bd_addr) {
  ******************************************************************************/
 tBTM_SEC_DEV_REC* btm_find_or_alloc_dev(const RawAddress& bd_addr) {
   tBTM_SEC_DEV_REC* p_dev_rec;
-  log::verbose("btm_find_or_alloc_dev");
   p_dev_rec = btm_find_dev(bd_addr);
   if (p_dev_rec == nullptr) {
     /* Allocate a new device record or reuse the oldest one */
