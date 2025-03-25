@@ -492,7 +492,6 @@ class RfcommTest {
      * - Enable page scan
      * - Create and connect to an RFCOMM socket - verify proper connection
      */
-    @RequiresFlagsEnabled(Flags.FLAG_RFCOMM_CANCEL_ONGOING_SDP_ON_CLOSE)
     @Test
     fun clientConnectToOpenServerSocketAfterPageTimeout() {
         updateSecurityConfig()
