@@ -40,3 +40,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "donot_collide_with_closed_port"
+    namespace: "bluetooth"
+    description: "Modify PORT_isCollisionDetected to report false when found port is CLOSED"
+    bug: "406250389"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
