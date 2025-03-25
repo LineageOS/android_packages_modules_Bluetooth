@@ -561,7 +561,7 @@ public class ScanManager {
             }
             if (client.mAppDied) {
                 Log.d(TAG, "app died, unregister scanner - " + client.mScannerId);
-                mScanController.unregisterScannerInternal(client.mScannerId);
+                mScanController.unregisterScanner(client.mScannerId);
             }
         }
 
