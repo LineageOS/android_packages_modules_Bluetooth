@@ -284,6 +284,9 @@ public:
   MOCK_METHOD((size_t), SendData, (uint8_t* data, uint16_t size), (override));
   MOCK_METHOD((void), ConfirmStreamingRequest, (), (override));
   MOCK_METHOD((void), CancelStreamingRequest, (), (override));
+  MOCK_METHOD((void), SetCodecPriority,
+              (const ::bluetooth::le_audio::types::LeAudioCodecId& codecId, int32_t priority),
+              (override));
   MOCK_METHOD((void), UpdateRemoteDelay, (uint16_t delay), (override));
   MOCK_METHOD((void), UpdateAudioConfigToHal, (const ::bluetooth::le_audio::stream_config&),
               (override));
@@ -304,6 +307,9 @@ public:
   MOCK_METHOD((void), Stop, (), (override));
   MOCK_METHOD((void), ConfirmStreamingRequest, (), (override));
   MOCK_METHOD((void), CancelStreamingRequest, (), (override));
+  MOCK_METHOD((void), SetCodecPriority,
+              (const ::bluetooth::le_audio::types::LeAudioCodecId& codecId, int32_t priority),
+              (override));
   MOCK_METHOD((void), UpdateRemoteDelay, (uint16_t delay), (override));
   MOCK_METHOD((void), UpdateAudioConfigToHal, (const ::bluetooth::le_audio::stream_config&),
               (override));
@@ -1497,6 +1503,7 @@ protected:
     com::android::bluetooth::flags::provider_->leaudio_use_context_type_manager(true);
     com::android::bluetooth::flags::provider_->leaudio_fix_stop_reconfiguration_timeout(true);
     com::android::bluetooth::flags::provider_->leaudio_use_aggressive_params(true);
+    com::android::bluetooth::flags::provider_->le_audio_update_config_preference_to_hal(true);
 
     // Enable flags
     com::android::bluetooth::flags::provider_->dsa_use_codec_extensibility(true);
@@ -3016,6 +3023,8 @@ protected:
     }
 
     if (set_before_streaming) {
+      EXPECT_CALL(*mock_le_audio_sink_hal_client_, SetCodecPriority(_, _)).Times(1);
+      EXPECT_CALL(*mock_le_audio_source_hal_client_, SetCodecPriority(_, _)).Times(1);
       do_in_main_thread(base::BindOnce(&LeAudioClient::SetCodecConfigPreference,
                                        base::Unretained(LeAudioClient::Get()), group_id,
                                        *preferred_codec_config_before_streaming,
@@ -3050,6 +3059,8 @@ protected:
       EXPECT_CALL(mock_state_machine_, StopStream(_)).Times(is_reconfig);
       EXPECT_CALL(*mock_le_audio_source_hal_client_, ReconfigurationComplete()).Times(is_reconfig);
 
+      EXPECT_CALL(*mock_le_audio_sink_hal_client_, SetCodecPriority(_, _)).Times(1);
+      EXPECT_CALL(*mock_le_audio_source_hal_client_, SetCodecPriority(_, _)).Times(1);
       do_in_main_thread(base::BindOnce(&LeAudioClient::SetCodecConfigPreference,
                                        base::Unretained(LeAudioClient::Get()), group_id,
                                        *preferred_codec_config_during_streaming,
@@ -7365,6 +7376,9 @@ TEST_F(UnicastTest, TestSetValidSingleOutputPreferredCodecConfig) {
   ASSERT_EQ(LeAudioClient::Get()->IsUsingPreferredCodecConfig(
                     group_id, static_cast<int>(types::LeAudioContextType::MEDIA)),
             false);
+
+  EXPECT_CALL(*mock_le_audio_sink_hal_client_, SetCodecPriority(_, _)).Times(1);
+  EXPECT_CALL(*mock_le_audio_source_hal_client_, SetCodecPriority(_, _)).Times(1);
   do_in_main_thread(base::BindOnce(&LeAudioClient::SetCodecConfigPreference,
                                    base::Unretained(LeAudioClient::Get()), group_id,
                                    empty_input_codec_config, preferred_output_codec_config));
@@ -7408,6 +7422,8 @@ TEST_F(UnicastTest, TestSetPreferredCodecConfigToNonActiveGroup) {
   EXPECT_CALL(mock_state_machine_, StopStream(_)).Times(0);
   EXPECT_CALL(*mock_le_audio_source_hal_client_, ReconfigurationComplete()).Times(0);
 
+  EXPECT_CALL(*mock_le_audio_sink_hal_client_, SetCodecPriority(_, _)).Times(0);
+  EXPECT_CALL(*mock_le_audio_source_hal_client_, SetCodecPriority(_, _)).Times(0);
   do_in_main_thread(base::BindOnce(&LeAudioClient::SetCodecConfigPreference,
                                    base::Unretained(LeAudioClient::Get()), group_id,
                                    preferred_codec_config, preferred_codec_config));
@@ -7418,8 +7434,11 @@ TEST_F(UnicastTest, TestSetPreferredCodecConfigToNonActiveGroup) {
             true);
   Mock::VerifyAndClearExpectations(&mock_state_machine_);
   Mock::VerifyAndClearExpectations(mock_le_audio_source_hal_client_);
+  Mock::VerifyAndClearExpectations(mock_le_audio_sink_hal_client_);
 
-  // Activate group 2 again
+  // Activate group 2 again and expect the codec preference to be updated to BT Audio HAL
+  EXPECT_CALL(*mock_le_audio_sink_hal_client_, SetCodecPriority(_, _)).Times(1);
+  EXPECT_CALL(*mock_le_audio_source_hal_client_, SetCodecPriority(_, _)).Times(1);
   do_in_main_thread(base::BindOnce(&LeAudioClient::GroupSetActive,
                                    base::Unretained(LeAudioClient::Get()), group_id));
   SyncOnMainLoop();

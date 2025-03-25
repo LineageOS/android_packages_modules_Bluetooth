@@ -121,6 +121,8 @@ public:
 
   virtual void UpdateRemoteDelay(uint16_t remote_delay_ms) = 0;
   virtual void UpdateAudioConfigToHal(const ::bluetooth::le_audio::stream_config& config) = 0;
+  virtual void SetCodecPriority(const ::bluetooth::le_audio::types::LeAudioCodecId& codecId,
+                                int32_t priority) = 0;
   virtual void SuspendedForReconfiguration() = 0;
   virtual void ReconfigurationComplete() = 0;
 
@@ -159,6 +161,8 @@ public:
   virtual void CancelStreamingRequest() = 0;
   virtual void UpdateRemoteDelay(uint16_t remote_delay_ms) = 0;
   virtual void UpdateAudioConfigToHal(const ::bluetooth::le_audio::stream_config& config) = 0;
+  virtual void SetCodecPriority(const ::bluetooth::le_audio::types::LeAudioCodecId& codecId,
+                                int32_t priority) = 0;
   virtual void UpdateBroadcastAudioConfigToHal(
           const ::bluetooth::le_audio::broadcast_offload_config& config) = 0;
   virtual void SuspendedForReconfiguration() = 0;

@@ -337,6 +337,8 @@ size_t BluetoothAudioSinkClientInterface::ReadAudioData(uint8_t* p_buf, uint32_t
   return 0;
 }
 
+void BluetoothAudioClientInterface::SetCodecPriority(CodecId /*codec_id*/, int32_t /*priority*/) {}
+
 BluetoothAudioSourceClientInterface::BluetoothAudioSourceClientInterface(
         IBluetoothSourceTransportInstance* source)
     : BluetoothAudioClientInterface{source}, source_(source) {}

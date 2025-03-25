@@ -95,6 +95,8 @@ private:
     virtual void ConfirmStreamingRequest() = 0;
     virtual void CancelStreamingRequest() = 0;
     virtual void UpdateAudioConfigToHal(const ::bluetooth::le_audio::stream_config& config) = 0;
+    virtual void SetCodecPriority(const ::bluetooth::le_audio::types::LeAudioCodecId& codecId,
+                                  int32_t priority) = 0;
     virtual void SuspendedForReconfiguration() = 0;
     virtual void ReconfigurationComplete() = 0;
   };
@@ -113,6 +115,8 @@ public:
     void ConfirmStreamingRequest() override;
     void CancelStreamingRequest() override;
     void UpdateAudioConfigToHal(const ::bluetooth::le_audio::stream_config& config) override;
+    void SetCodecPriority(const ::bluetooth::le_audio::types::LeAudioCodecId& codecId,
+                          int32_t priority) override;
     void UpdateBroadcastAudioConfigToHal(
             const ::bluetooth::le_audio::broadcast_offload_config& config);
     void SuspendedForReconfiguration() override;
@@ -144,6 +148,8 @@ public:
     void ConfirmStreamingRequest() override;
     void CancelStreamingRequest() override;
     void UpdateAudioConfigToHal(const ::bluetooth::le_audio::stream_config& config) override;
+    void SetCodecPriority(const ::bluetooth::le_audio::types::LeAudioCodecId& codecId,
+                          int32_t priority) override;
     void SuspendedForReconfiguration() override;
     void ReconfigurationComplete() override;
     // Source the given stream of bytes to be sinked into the upper layers

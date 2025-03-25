@@ -161,6 +161,20 @@ bluetooth::le_audio::btle_audio_codec_index_t translateLeAudioCodecIdToCodecType
   return bluetooth::le_audio::LE_AUDIO_CODEC_INDEX_SOURCE_INVALID;
 }
 
+types::LeAudioCodecId translateCodecTypeToLeAudioCodecId(btle_audio_codec_index_t codecIndex) {
+  switch (codecIndex) {
+    case bluetooth::le_audio::LE_AUDIO_CODEC_INDEX_SOURCE_LC3:
+      return types::LeAudioCodecIdLc3;
+    case bluetooth::le_audio::LE_AUDIO_CODEC_INDEX_SOURCE_OPUS:
+      return types::LeAudioCodecIdOpus;
+    default:
+      break;
+  }
+  log::warn("Unable to translate codec type index: {} to codecID.", +codecIndex);
+  return types::LeAudioCodecId({.coding_format = types::kLeAudioCodingFormatVendorSpecific,
+                                .vendor_company_id = types::kLeAudioVendorCompanyIdUndefined,
+                                .vendor_codec_id = types::kLeAudioVendorCodecIdUndefined});
+}
 bluetooth::le_audio::btle_audio_sample_rate_index_t translateToBtLeAudioCodecConfigSampleRate(
         uint32_t sample_rate) {
   log::info("{}", sample_rate);

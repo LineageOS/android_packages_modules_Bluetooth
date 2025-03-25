@@ -218,6 +218,11 @@ public:
           const bluetooth::le_audio::btle_audio_codec_config_t& output_codec_config) const;
   bool IsUsingPreferredAudioSetConfiguration(const types::LeAudioContextType& context_type) const;
   void ResetPreferredAudioSetConfiguration(void) const;
+  const types::BidirectionalPair<
+          std::unique_ptr<const bluetooth::le_audio::btle_audio_codec_config_t>>&
+  GetPreferredAudioSetConfiguration(void) const {
+    return preferred_config_;
+  }
   bool ReloadAudioLocations(void);
   bool ReloadAudioDirections(void);
   types::AudioContexts GetAllSupportedBidirectionalContextTypes(void) const;
