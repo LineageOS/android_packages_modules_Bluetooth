@@ -280,3 +280,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "remove_device_with_connection_manager"
+    namespace: "bluetooth"
+    description: "Remove device through connection_manager to sync accept list"
+    bug: "405283189"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
