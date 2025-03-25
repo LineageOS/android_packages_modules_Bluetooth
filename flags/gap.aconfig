@@ -40,16 +40,6 @@ flag {
 }
 
 flag {
-    name: "android_os_identifier"
-    namespace: "bluetooth"
-    description: "Add a custom service to provide Android OS identifier"
-    bug: "351860033"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "gatt_callback_on_failure"
     namespace: "bluetooth"
     description: "Invoke callbacks on early failure from the native stack"

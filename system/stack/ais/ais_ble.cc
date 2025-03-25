@@ -102,9 +102,6 @@ void ais_request_cback(tCONN_ID conn_id, uint32_t trans_id, tGATTS_REQ_TYPE type
  *
  ******************************************************************************/
 static void ais_attr_db_init(void) {
-  if (!com::android::bluetooth::flags::android_os_identifier()) {
-    return;
-  }
   api_level = bluetooth::os::GetSystemPropertyUint32(kPropertyAndroidAPILevel,
                                                      kPropertyAndroidAPILevelDefault);
   // Add Android OS identifier if API level is defined.
