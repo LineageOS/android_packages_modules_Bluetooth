@@ -28,22 +28,25 @@ import android.content.AttributionSource
 import android.content.Context
 import com.android.bluetooth.Utils
 
+private val TAG: String = AdvertiseBinder::class.java.simpleName
+
 class AdvertiseBinder(
-    private val mContext: Context,
-    private val mAdvertiseManager: AdvertiseManager,
+    private val context: Context,
+    private val advertiseManager: AdvertiseManager,
 ) : IBluetoothAdvertise.Stub() {
-    @Volatile private var mIsAvailable = true
+
+    @Volatile private var isAvailable = true
 
     fun cleanup() {
-        mIsAvailable = false
+        isAvailable = false
     }
 
     @RequiresPermission(BLUETOOTH_ADVERTISE)
     private fun getManager(source: AttributionSource): AdvertiseManager? {
-        if (!Utils.checkAdvertisePermissionForDataDelivery(mContext, source, "AdvertiseManager")) {
+        if (!isAvailable || !Utils.checkAdvertisePermissionForDataDelivery(context, source, TAG)) {
             return null
         }
-        return if (mIsAvailable) mAdvertiseManager else null
+        return advertiseManager
     }
 
     override fun startAdvertisingSet(
@@ -63,7 +66,7 @@ class AdvertiseBinder(
                 serverIf != 0 ||
                 parameters.isDirected
         ) {
-            mContext.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
+            context.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
         }
 
         getManager(source)?.let { manager ->
@@ -91,7 +94,7 @@ class AdvertiseBinder(
     }
 
     override fun getOwnAddress(advertiserId: Int, source: AttributionSource) {
-        mContext.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
+        context.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
         getManager(source)?.let { manager ->
             manager.doOnAdvertiseThread { manager.getOwnAddress(advertiserId) }
         }
@@ -140,7 +143,7 @@ class AdvertiseBinder(
             parameters.ownAddressType != AdvertisingSetParameters.ADDRESS_TYPE_DEFAULT ||
                 parameters.isDirected
         ) {
-            mContext.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
+            context.enforceCallingOrSelfPermission(BLUETOOTH_PRIVILEGED, null)
         }
         getManager(source)?.let { manager ->
             manager.doOnAdvertiseThread {
