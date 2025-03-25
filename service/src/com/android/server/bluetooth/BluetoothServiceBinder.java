@@ -210,6 +210,13 @@ class BluetoothServiceBinder extends IBluetoothManager.Stub {
     }
 
     @Override
+    public boolean factoryReset() {
+        BtPermissionUtils.enforcePrivileged(mContext);
+
+        return mBluetoothManagerService.factoryResetFromBinder();
+    }
+
+    @Override
     public boolean onFactoryReset(AttributionSource source) {
         requireNonNull(source, "AttributionSource cannot be null in onFactoryReset");
 
