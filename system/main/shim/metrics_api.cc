@@ -28,18 +28,14 @@ using bluetooth::hci::Address;
 
 namespace bluetooth {
 namespace shim {
-void LogMetricLinkLayerConnectionEvent(const RawAddress* raw_address, uint32_t connection_handle,
+void LogMetricLinkLayerConnectionEvent(const RawAddress& address, uint32_t connection_handle,
                                        android::bluetooth::DirectionEnum direction,
                                        uint16_t link_type, uint32_t hci_cmd, uint16_t hci_event,
                                        uint16_t hci_ble_event, uint16_t cmd_status,
                                        uint16_t reason_code) {
-  Address address = Address::kEmpty;
-  if (raw_address != nullptr) {
-    address = *raw_address;
-  }
-  bluetooth::os::LogMetricLinkLayerConnectionEvent(
-          raw_address == nullptr ? nullptr : &address, connection_handle, direction, link_type,
-          hci_cmd, hci_event, hci_ble_event, cmd_status, reason_code);
+  bluetooth::os::LogMetricLinkLayerConnectionEvent(address, connection_handle, direction, link_type,
+                                                   hci_cmd, hci_event, hci_ble_event, cmd_status,
+                                                   reason_code);
 }
 
 void LogMetricA2dpAudioUnderrunEvent(const RawAddress& address, uint64_t encoding_interval_millis,
