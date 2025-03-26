@@ -675,6 +675,7 @@ cc_test {
             ],
             shared_libs: [
                 "libbinder_ndk",
+                "libexpresslog",
                 "libstatssocket",
             ],
         },
