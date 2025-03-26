@@ -47,9 +47,7 @@ static_library("osi") {
     "//bt/system/stack/include",
   ]
 
-  cflags = [
-    "-DLIB_OSI_INTERNAL",
-  ]
+  cflags = [ "-DLIB_OSI_INTERNAL" ]
 
   deps = [
     "//bt/flags:bluetooth_flags_c_lib",
@@ -71,12 +69,11 @@ if (use.test) {
       "test/config_test.cc",
       "test/future_test.cc",
       "test/hash_map_utils_test.cc",
+      "test/internal/semaphore_test.cc",
       "test/list_test.cc",
       "test/properties_test.cc",
       "test/reactor_test.cc",
       "test/thread_test.cc",
-
-      "test/internal/semaphore_test.cc",
     ]
 
     include_dirs = [
@@ -85,9 +82,7 @@ if (use.test) {
       "//bt/system/osi/test",
     ]
 
-    cflags = [
-      "-DLIB_OSI_INTERNAL",
-    ]
+    cflags = [ "-DLIB_OSI_INTERNAL" ]
 
     deps = [
       "//bt/sysprop:libcom.android.sysprop.bluetooth",

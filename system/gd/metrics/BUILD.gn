@@ -22,8 +22,8 @@ source_set("BluetoothMetricsSources_chromeos") {
   ]
 
   deps = [
-    "//bt/system/gd:gd_default_deps",
     "//bt/floss/android-base:android-base",
+    "//bt/system/gd:gd_default_deps",
   ]
   configs += [
     "//bt/system/gd:gd_defaults",
@@ -41,8 +41,8 @@ source_set("BluetoothMetricsSources_linux") {
 
 source_set("BluetoothMetricsSources") {
   sources = [
+    "bluetooth_event.cc",
     "utils.cc",
-    "bluetooth_event.cc"
   ]
 
   configs += [

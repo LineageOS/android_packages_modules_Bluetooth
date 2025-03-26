@@ -17,8 +17,8 @@ source_set("BluetoothHciSources") {
   sources = [
     "acl_manager.cc",
     "acl_manager/acl_connection.cc",
-    "acl_manager/acl_scheduler.cc",
     "acl_manager/acl_fragmenter.cc",
+    "acl_manager/acl_scheduler.cc",
     "acl_manager/classic_acl_connection.cc",
     "acl_manager/le_acl_connection.cc",
     "acl_manager/round_robin_scheduler.cc",
@@ -40,8 +40,8 @@ source_set("BluetoothHciSources") {
 
   deps = [
     "//bt/flags:bluetooth_flags_c_lib",
-    "//bt/system/gd:gd_default_deps",
     "//bt/sysprop:libcom.android.sysprop.bluetooth",
+    "//bt/system/gd:gd_default_deps",
   ]
 
   configs += [
@@ -52,15 +52,11 @@ source_set("BluetoothHciSources") {
 
 if (use.test) {
   executable("hci_tests") {
-    sources = [
-      "hci_packets_test.cc",
-    ]
+    sources = [ "hci_packets_test.cc" ]
 
     include_dirs = [ "//bt/system/gd" ]
 
-    deps = [
-      "//bt/system/main:bluetooth-static",
-    ]
+    deps = [ "//bt/system/main:bluetooth-static" ]
 
     configs += [
       "//bt/system:target_defaults",
@@ -73,8 +69,6 @@ if (use.test) {
       "dl",
     ]
 
-    ldflags = [
-      "-lpthread"
-    ]
+    ldflags = [ "-lpthread" ]
   }
 }

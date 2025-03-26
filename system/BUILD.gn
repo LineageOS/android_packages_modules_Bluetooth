@@ -22,9 +22,8 @@
 
 group("all") {
   deps = [ ":bluetooth" ]
-
   #if (use.test) {
-    #deps += [ ":bluetooth_tests" ]
+  #deps += [ ":bluetooth_tests" ]
   #}
 }
 
@@ -33,29 +32,28 @@ group("bluetooth") {
   deps = [
     "//bt/system/main:bluetooth",
     "//bt/system/main:bluetooth-static",
+
     #"//bt/system/service:bluetoothtbd",
   ]
 }
 
 # TODO(b/190750167) - Re-enable once we're fully Bazel build
 #if (use.test) {
-  #group("bluetooth_tests") {
-    #deps = [
-      #"//bt/system/common:bluetooth_test_common",
-      #"//bt/system/profile/avrcp:net_test_avrcp",
-      #"//bt/system/service:bluetoothtbd_test",
-      #"//bt/system/stack:net_test_btm_iso",
-      #"//bt/system/types:net_test_types",
+#group("bluetooth_tests") {
+#deps = [
+#"//bt/system/common:bluetooth_test_common",
+#"//bt/system/profile/avrcp:net_test_avrcp",
+#"//bt/system/service:bluetoothtbd_test",
+#"//bt/system/stack:net_test_btm_iso",
+#"//bt/system/types:net_test_types",
 
-      ##"//bt/system/packet:net_test_btpackets",
-    #]
-  #}
+##"//bt/system/packet:net_test_btpackets",
+#]
+#}
 #}
 
 group("tools") {
-  deps = [
-    "//bt/system/gd/packet/parser:bluetooth_packetgen",
-  ]
+  deps = [ "//bt/system/gd/packet/parser:bluetooth_packetgen" ]
 }
 
 if (defined(use.android) && use.android) {

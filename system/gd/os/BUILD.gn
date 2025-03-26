@@ -25,9 +25,7 @@ source_set("BluetoothOsSources_chromeos") {
     "//bt/system/gd:gd_defaults",
     "//bt/system/log:log_defaults",
   ]
-  deps = [
-    "//bt/system:libbt-platform-protos-lite",
-  ]
+  deps = [ "//bt/system:libbt-platform-protos-lite" ]
 }
 
 source_set("BluetoothOsSources_linux") {
@@ -43,9 +41,7 @@ source_set("BluetoothOsSources_linux") {
     "//bt/system/gd:gd_defaults",
     "//bt/system/log:log_defaults",
   ]
-  deps = [
-    "//bt/system:libbt-platform-protos-lite",
-  ]
+  deps = [ "//bt/system:libbt-platform-protos-lite" ]
 }
 
 source_set("BluetoothOsSources_linux_generic") {

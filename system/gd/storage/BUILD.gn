@@ -31,7 +31,7 @@ source_set("BluetoothStorageSources") {
     "//bt/system/log:log_defaults",
   ]
   deps = [
-    "//bt/system/gd:gd_default_deps",
     "//bt/flags:bluetooth_flags_c_lib",
+    "//bt/system/gd:gd_default_deps",
   ]
 }

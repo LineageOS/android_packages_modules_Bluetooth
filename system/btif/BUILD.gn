@@ -32,7 +32,6 @@ static_library("btif") {
 
     # BTIF implementation
     "src/btif_a2dp.cc",
-
     "src/btif_a2dp_sink.cc",
     "src/btif_a2dp_source.cc",
     "src/btif_av.cc",
@@ -42,21 +41,19 @@ static_library("btif") {
     "src/btif_avrcp_audio_track_linux.cc",
     "src/btif_ble_scanner.cc",
     "src/btif_bqr.cc",
-    "src/btif_csis_client.cc",
     "src/btif_config.cc",
     "src/btif_core.cc",
+    "src/btif_csis_client.cc",
     "src/btif_debug_conn.cc",
     "src/btif_dm.cc",
     "src/btif_gatt.cc",
     "src/btif_gatt_client.cc",
     "src/btif_gatt_server.cc",
     "src/btif_gatt_util.cc",
-    "src/btif_hd.cc",
-    "src/btif_vc.cc",
-    "src/btif_le_audio_broadcaster.cc",
     "src/btif_has_client.cc",
-    "src/btif_hearing_aid.cc",
     "src/btif_hci_vs.cc",
+    "src/btif_hd.cc",
+    "src/btif_hearing_aid.cc",
     "src/btif_hf.cc",
     "src/btif_hf_client.cc",
     "src/btif_hh.cc",
@@ -64,6 +61,7 @@ static_library("btif") {
     "src/btif_jni_task.cc",
     "src/btif_keystore.cc",
     "src/btif_le_audio.cc",
+    "src/btif_le_audio_broadcaster.cc",
     "src/btif_pan.cc",
     "src/btif_profile_queue.cc",
     "src/btif_profile_storage.cc",
@@ -82,6 +80,7 @@ static_library("btif") {
     "src/btif_storage.cc",
     "src/btif_uid.cc",
     "src/btif_util.cc",
+    "src/btif_vc.cc",
     "src/stack_manager.cc",
   ]
 
@@ -109,9 +108,9 @@ static_library("btif") {
     "//bt/flags:bluetooth_flags_c_lib",
     "//bt/sysprop:libcom.android.sysprop.bluetooth",
     "//bt/system:libbt-platform-protos-lite",
+    "//bt/system/bta/aics:aics",
     "//bt/system/common",
     "//bt/system/profile/avrcp:profile_avrcp",
-    "//bt/system/bta/aics:aics",
   ]
 
   configs += [

@@ -38,13 +38,9 @@ static_library("profile_avrcp") {
     "device.cc",
   ]
 
-  deps = [
-    "//bt/flags:bluetooth_flags_c_lib",
-  ]
+  deps = [ "//bt/flags:bluetooth_flags_c_lib" ]
 
-  configs += [
-    ":avrcp_config"
-  ]
+  configs += [ ":avrcp_config" ]
 }
 
 if (use.test) {
