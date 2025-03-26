@@ -12,6 +12,16 @@ flag {
 }
 
 flag {
+    name: "factory_reset_from_the_system_server"
+    namespace: "bluetooth"
+    description: "make possible to factoryReset the Bluetooth when it is off"
+    bug: "406310419"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "kill_instead_of_exit"
     namespace: "bluetooth"
     description: "There is no value in pretending we are exiting properly. This is a kill and we should express it this way when finishing the process"
