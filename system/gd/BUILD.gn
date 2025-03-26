@@ -23,9 +23,7 @@ config("gd_defaults") {
     "-Wno-tautological-overlap-compare",
   ]
 
-  defines = [
-    "TARGET_FLOSS",
-  ]
+  defines = [ "TARGET_FLOSS" ]
 
   libs = [
     "ssl",
@@ -51,20 +49,18 @@ group("gd_default_deps") {
 }
 
 static_library("libbluetooth_gd") {
-  sources = [
-    "module.cc",
-  ]
+  sources = [ "module.cc" ]
 
   include_dirs = [ "." ]
   configs += [ ":gd_defaults" ]
   deps = [
-    "//bt/system/gd/rust/topshim:libbluetooth_topshim",
     "//bt/system/gd/common:BluetoothCommonSources",
     "//bt/system/gd/hal:BluetoothHalSources",
     "//bt/system/gd/hal:BluetoothHalSources_hci_host",
     "//bt/system/gd/hal:BluetoothHalSources_ranging_host",
     "//bt/system/gd/hal:BluetoothHalSources_socket_host",
     "//bt/system/gd/metrics:BluetoothMetricsSources",
+    "//bt/system/gd/rust/topshim:libbluetooth_topshim",
     "//bt/system/gd/storage:BluetoothStorageSources",
     "//bt/system/gd/sysprops:BluetoothSyspropsSources",
     "//bt/system/pdl:BluetoothGeneratedPackets_h",

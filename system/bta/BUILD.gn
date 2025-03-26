@@ -39,7 +39,6 @@ static_library("bta") {
     "csis/csis_client.cc",
     "dm/bta_dm_act.cc",
     "dm/bta_dm_api.cc",
-    "dm/bta_dm_sec_api.cc",
     "dm/bta_dm_cfg.cc",
     "dm/bta_dm_ci.cc",
     "dm/bta_dm_device_search.cc",
@@ -49,27 +48,31 @@ static_library("bta") {
     "dm/bta_dm_main.cc",
     "dm/bta_dm_pm.cc",
     "dm/bta_dm_sec.cc",
+    "dm/bta_dm_sec_api.cc",
     "gatt/bta_gattc_act.cc",
     "gatt/bta_gattc_api.cc",
-    "gatt/bta_gattc_db_storage.cc",
     "gatt/bta_gattc_cache.cc",
+    "gatt/bta_gattc_db_storage.cc",
     "gatt/bta_gattc_main.cc",
-    "gatt/bta_gattc_utils.cc",
     "gatt/bta_gattc_queue.cc",
+    "gatt/bta_gattc_utils.cc",
     "gatt/bta_gatts_act.cc",
     "gatt/bta_gatts_api.cc",
     "gatt/bta_gatts_main.cc",
     "gatt/bta_gatts_utils.cc",
     "gatt/database.cc",
     "gatt/database_builder.cc",
-    "groups/groups.cc",
     "gmap/gmap_client.cc",
     "gmap/gmap_server.cc",
+    "groups/groups.cc",
     "has/has_client.cc",
     "has/has_ctp.cc",
+    "has/has_journal.cc",
     "has/has_preset.cc",
     "has/has_types.cc",
-    "has/has_journal.cc",
+    "hd/bta_hd_act.cc",
+    "hd/bta_hd_api.cc",
+    "hd/bta_hd_main.cc",
     "hearing_aid/hearing_aid.cc",
     "hearing_aid/hearing_aid_audio_source.cc",
     "hf_client/bta_hf_client_act.cc",
@@ -77,8 +80,9 @@ static_library("bta") {
     "hf_client/bta_hf_client_at.cc",
     "hf_client/bta_hf_client_main.cc",
     "hf_client/bta_hf_client_rfc.cc",
-    "hf_client/bta_hf_client_sdp.cc",
     "hf_client/bta_hf_client_sco.cc",
+    "hf_client/bta_hf_client_sdp.cc",
+    "hfp/bta_hfp_api.cc",
     "hh/bta_hh_act.cc",
     "hh/bta_hh_api.cc",
     "hh/bta_hh_cfg.cc",
@@ -86,10 +90,6 @@ static_library("bta") {
     "hh/bta_hh_le.cc",
     "hh/bta_hh_main.cc",
     "hh/bta_hh_utils.cc",
-    "hfp/bta_hfp_api.cc",
-    "hd/bta_hd_act.cc",
-    "hd/bta_hd_api.cc",
-    "hd/bta_hd_main.cc",
     "jv/bta_jv_act.cc",
     "jv/bta_jv_api.cc",
     "le_audio/audio_hal_client/audio_sink_hal_client.cc",
@@ -166,35 +166,29 @@ static_library("bta") {
   deps = [
     "//bt/flags:bluetooth_flags_c_lib",
     "//bt/sysprop:libcom.android.sysprop.bluetooth",
+    "//bt/system:libbt-platform-protos-lite",
     "//bt/system/audio:libbt-audio-asrc",
-    "//bt/system/bta:LeAudioSetScenariosSchema_bfbs",
     "//bt/system/bta:LeAudioSetConfigsSchema_bfbs",
-    "//bt/system/bta:install_audio_set_scenarios_json",
+    "//bt/system/bta:LeAudioSetScenariosSchema_bfbs",
+    "//bt/system/bta:install_audio_set_configurations_bfbs",
     "//bt/system/bta:install_audio_set_configurations_json",
     "//bt/system/bta:install_audio_set_scenarios_bfbs",
-    "//bt/system/bta:install_audio_set_configurations_bfbs",
+    "//bt/system/bta:install_audio_set_scenarios_json",
     "//bt/system/bta/aics:aics",
-    "//bt/system:libbt-platform-protos-lite",
   ]
 
-  libs = [
-    "lc3",
-  ]
+  libs = [ "lc3" ]
 }
 
 bt_flatc_binary_schema("LeAudioSetScenariosSchema_bfbs") {
-  sources = [
-    "le_audio/audio_set_scenarios.fbs",
-  ]
+  sources = [ "le_audio/audio_set_scenarios.fbs" ]
 
   include_dir = "system"
   gen_header = true
 }
 
 bt_flatc_binary_schema("LeAudioSetConfigsSchema_bfbs") {
-  sources = [
-    "le_audio/audio_set_configurations.fbs",
-  ]
+  sources = [ "le_audio/audio_set_configurations.fbs" ]
 
   include_dir = "system"
   gen_header = true
@@ -224,8 +218,8 @@ if (use.test) {
   executable("net_test_bta") {
     sources = [
       "gatt/database_builder.cc",
-      "test/gatt/database_builder_test.cc",
       "test/gatt/database_builder_sample_device_test.cc",
+      "test/gatt/database_builder_test.cc",
       "test/gatt/database_test.cc",
     ]
 

@@ -23,7 +23,5 @@ source_set("BluetoothCommonSources") {
   ]
 
   configs += [ "//bt/system/gd:gd_defaults" ]
-  deps = [
-    "//bt/system/gd:gd_default_deps",
-  ]
+  deps = [ "//bt/system/gd:gd_default_deps" ]
 }

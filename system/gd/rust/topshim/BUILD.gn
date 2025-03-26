@@ -29,8 +29,8 @@ cxxbridge_header("btif_bridge_header") {
     "src/profiles/csis.rs",
     "src/profiles/gatt.rs",
     "src/profiles/hfp.rs",
-    "src/profiles/vc.rs",
     "src/profiles/le_audio.rs",
+    "src/profiles/vc.rs",
   ]
   all_dependent_configs = [ ":rust_topshim_config" ]
   deps = [ ":cxxlibheader" ]
@@ -45,8 +45,8 @@ cxxbridge_cc("btif_bridge_code") {
     "src/profiles/csis.rs",
     "src/profiles/gatt.rs",
     "src/profiles/hfp.rs",
-    "src/profiles/vc.rs",
     "src/profiles/le_audio.rs",
+    "src/profiles/vc.rs",
   ]
   deps = [
     ":btif_bridge_header",
@@ -70,9 +70,9 @@ source_set("btif_cxx_bridge_code") {
     "gatt/gatt_ble_scanner_shim.cc",
     "gatt/gatt_shim.cc",
     "hfp/hfp_shim.cc",
-    "vc/vc_shim.cc",
     "le_audio/le_audio_shim.cc",
     "metrics/metrics_shim.cc",
+    "vc/vc_shim.cc",
   ]
 
   deps = [
@@ -84,9 +84,7 @@ source_set("btif_cxx_bridge_code") {
     "//bt/system/gd:gd_defaults",
     "//bt/system/log:log_defaults",
   ]
-  include_dirs = [
-    "//bt/system/bta/aics/include",
-  ]
+  include_dirs = [ "//bt/system/bta/aics/include" ]
 }
 
 cxxbridge_libheader("cxxlibheader") {

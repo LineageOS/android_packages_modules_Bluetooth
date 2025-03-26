@@ -14,15 +14,11 @@
 #  limitations under the License.
 
 source_set("BluetoothLppOffloadSources") {
-  sources = [
-    "lpp_offload_manager.cc",
-  ]
+  sources = [ "lpp_offload_manager.cc" ]
 
   include_dirs = [ "//bt/system/gd" ]
 
-  deps = [
-    "//bt/system/gd:gd_default_deps",
-  ]
+  deps = [ "//bt/system/gd:gd_default_deps" ]
 
   configs += [
     "//bt/system:target_defaults",
