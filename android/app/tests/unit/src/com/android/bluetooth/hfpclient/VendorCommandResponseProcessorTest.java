@@ -45,7 +45,7 @@ import org.mockito.Mock;
 public class VendorCommandResponseProcessorTest {
     @Rule public final MockitoRule mMockitoRule = new MockitoRule();
 
-    @Mock private NativeInterface mNativeInterface;
+    @Mock private HeadsetClientNativeInterface mNativeInterface;
     @Mock private AdapterService mAdapterService;
     @Mock private HeadsetClientService mHeadsetClientService;
 

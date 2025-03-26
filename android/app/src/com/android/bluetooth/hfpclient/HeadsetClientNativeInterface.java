@@ -36,18 +36,18 @@ import com.android.internal.annotations.VisibleForTesting;
  * to/from the native stack. This file is registered for the native methods in corresponding CPP
  * file.
  */
-public class NativeInterface {
-    private static final String TAG = NativeInterface.class.getSimpleName();
+public class HeadsetClientNativeInterface {
+    private static final String TAG = HeadsetClientNativeInterface.class.getSimpleName();
 
     private final AdapterService mAdapterService;
 
     @GuardedBy("INSTANCE_LOCK")
-    private static NativeInterface sInstance;
+    private static HeadsetClientNativeInterface sInstance;
 
     private static final Object INSTANCE_LOCK = new Object();
 
     @VisibleForTesting
-    NativeInterface(AdapterService adapterService) {
+    HeadsetClientNativeInterface(AdapterService adapterService) {
         mAdapterService = requireNonNull(adapterService);
     }
 
@@ -56,10 +56,10 @@ public class NativeInterface {
      *
      * @return default instance
      */
-    public static NativeInterface getInstance() {
+    public static HeadsetClientNativeInterface getInstance() {
         synchronized (INSTANCE_LOCK) {
             if (sInstance == null) {
-                sInstance = new NativeInterface(AdapterService.getAdapterService());
+                sInstance = new HeadsetClientNativeInterface(AdapterService.getAdapterService());
             }
             return sInstance;
         }
@@ -67,7 +67,7 @@ public class NativeInterface {
 
     /** Set singleton instance. */
     @VisibleForTesting
-    public static void setInstance(NativeInterface instance) {
+    public static void setInstance(HeadsetClientNativeInterface instance) {
         synchronized (INSTANCE_LOCK) {
             sInstance = instance;
         }

@@ -200,7 +200,7 @@ public class HeadsetClientStateMachine extends StateMachine {
     private AudioFocusRequest mAudioFocusRequest;
 
     private final AudioManager mAudioManager;
-    private final NativeInterface mNativeInterface;
+    private final HeadsetClientNativeInterface mNativeInterface;
     private final VendorCommandResponseProcessor mVendorProcessor;
 
     // Accessor for the states, useful for reusing the state machines
@@ -894,7 +894,7 @@ public class HeadsetClientStateMachine extends StateMachine {
             HeadsetClientService headsetClientService,
             HeadsetService headsetService,
             Looper looper,
-            NativeInterface nativeInterface) {
+            HeadsetClientNativeInterface nativeInterface) {
         super(TAG, looper);
         mAdapterService = requireNonNull(adapterService);
         mService = requireNonNull(headsetClientService);
