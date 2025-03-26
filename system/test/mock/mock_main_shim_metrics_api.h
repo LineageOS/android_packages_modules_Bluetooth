@@ -45,15 +45,15 @@ namespace main_shim_metrics_api {
 // hci_cmd, uint16_t hci_event, uint16_t hci_ble_event, uint16_t cmd_status,
 // uint16_t reason_code Returns: void
 struct LogMetricLinkLayerConnectionEvent {
-  std::function<void(const RawAddress& raw_address, uint32_t connection_handle,
+  std::function<void(const RawAddress* raw_address, uint32_t connection_handle,
                      android::bluetooth::DirectionEnum direction, uint16_t link_type,
                      uint32_t hci_cmd, uint16_t hci_event, uint16_t hci_ble_event,
                      uint16_t cmd_status, uint16_t reason_code)>
-          body{[](const RawAddress& /* raw_address */, uint32_t /* connection_handle */,
+          body{[](const RawAddress* /* raw_address */, uint32_t /* connection_handle */,
                   android::bluetooth::DirectionEnum /* direction */, uint16_t /* link_type */,
                   uint32_t /* hci_cmd */, uint16_t /* hci_event */, uint16_t /* hci_ble_event */,
                   uint16_t /* cmd_status */, uint16_t /* reason_code */) {}};
-  void operator()(const RawAddress& raw_address, uint32_t connection_handle,
+  void operator()(const RawAddress* raw_address, uint32_t connection_handle,
                   android::bluetooth::DirectionEnum direction, uint16_t link_type, uint32_t hci_cmd,
                   uint16_t hci_event, uint16_t hci_ble_event, uint16_t cmd_status,
                   uint16_t reason_code) {

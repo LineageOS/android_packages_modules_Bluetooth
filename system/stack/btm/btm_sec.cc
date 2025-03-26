@@ -1923,7 +1923,7 @@ void btm_create_conn_cancel_complete(uint8_t status, const RawAddress bd_addr) {
   log::verbose("btm_create_conn_cancel_complete(): in State: {}  status:{}",
                tBTM_SEC_CB::btm_pair_state_descr(btm_sec_cb.pairing_state), status);
   bluetooth::shim::LogMetricLinkLayerConnectionEvent(
-          bd_addr, bluetooth::os::kUnknownConnectionHandle, android::bluetooth::DIRECTION_OUTGOING,
+          &bd_addr, bluetooth::os::kUnknownConnectionHandle, android::bluetooth::DIRECTION_OUTGOING,
           android::bluetooth::LINK_TYPE_ACL, android::bluetooth::hci::CMD_CREATE_CONNECTION_CANCEL,
           android::bluetooth::hci::EVT_COMMAND_COMPLETE, android::bluetooth::hci::BLE_EVT_UNKNOWN,
           status, android::bluetooth::hci::STATUS_UNKNOWN);
