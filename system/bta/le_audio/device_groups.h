@@ -212,6 +212,7 @@ public:
                                         bool use_preferred = false) const;
   CodecManager::UnicastConfigurationRequirements GetAudioSetConfigurationRequirements(
           types::LeAudioContextType ctx_type) const;
+  types::BidirectionalPair<bool> GetDirectionSupport(types::LeAudioContextType ctx_type) const;
   bool SetPreferredAudioSetConfiguration(
           const bluetooth::le_audio::btle_audio_codec_config_t& input_codec_config,
           const bluetooth::le_audio::btle_audio_codec_config_t& output_codec_config) const;
