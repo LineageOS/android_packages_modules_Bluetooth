@@ -10910,7 +10910,7 @@ TEST_F(UnicastTest, SwitchBetweenSoundEffectAndMicrophoneScenario) {
  * What we can do now is to keep streaming (and reconfigure if needed for the
  * use case).
  */
-TEST_F(UnicastTest, UpdateNotSupportedContextTypeUnspecifiedAvailable_SpeedUpReconfigFlagEnabled) {
+TEST_F(UnicastTest, UpdateNotSupportedContextTypeUnspecifiedAvailable) {
   const RawAddress test_address0 = GetTestAddress(0);
   int group_id = bluetooth::groups::kGroupUnknown;
 
@@ -10941,8 +10941,6 @@ TEST_F(UnicastTest, UpdateNotSupportedContextTypeUnspecifiedAvailable_SpeedUpRec
   uint8_t cis_count_out = 1;
   uint8_t cis_count_in = 0;
 
-  LeAudioClient::Get()->SetInCall(true);
-
   // Audio sessions are started only when device gets active
   EXPECT_CALL(*mock_le_audio_source_hal_client_, Start(_, _, _)).Times(1);
   EXPECT_CALL(*mock_le_audio_sink_hal_client_, Start(_, _, _)).Times(1);
@@ -10960,7 +10958,6 @@ TEST_F(UnicastTest, UpdateNotSupportedContextTypeUnspecifiedAvailable_SpeedUpRec
   // Verify Data transfer on one audio source cis
   TestAudioDataTransfer(group_id, cis_count_out, cis_count_in, 1920);
 
-  LeAudioClient::Get()->SetInCall(false);
   LocalAudioSinkSuspend();
 
   /* We should use GAME configuration, but do not send the GAME context type, as
