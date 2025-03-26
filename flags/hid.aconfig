@@ -128,3 +128,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "reconnect_on_hogp_connection_failure"
+    namespace: "bluetooth"
+    description: "Put the added HOGP device in the background connection list if the connection attempt failed"
+    bug: "406399172"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
