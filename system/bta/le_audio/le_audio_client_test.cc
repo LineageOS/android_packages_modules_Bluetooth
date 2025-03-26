@@ -2046,11 +2046,6 @@ protected:
     UpdateLocalSourceMetadata(usage, content_type, reconfigure_existing_stream);
     UpdateLocalSinkMetadata(audio_source);
 
-    /* Stream has been automatically restarted on UpdateLocalSourceMetadata */
-    if (reconfigure_existing_stream) {
-      return;
-    }
-
     LocalAudioSourceResume(expected_resume_confirmation);
     SyncOnMainLoop();
     Mock::VerifyAndClearExpectations(&mock_state_machine_);
