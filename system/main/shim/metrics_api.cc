@@ -141,6 +141,43 @@ void LogMetricManufacturerInfo(const RawAddress& address,
                                            manufacturer, model, hardware_version, software_version);
 }
 
+void LogMetricLePairingFail(const RawAddress& raw_address, uint8_t failure_reason,
+                            bool is_outgoing) {
+  bluetooth::metrics::LogLePairingFail(raw_address, failure_reason, is_outgoing);
+}
+
+void LogMetricLeConnectionStatus(hci::Address address, bool is_connect, hci::ErrorCode reason) {
+  bluetooth::os::LogMetricBluetoothEvent(
+          address,
+          is_connect ? android::bluetooth::EventType::GATT_CONNECT_NATIVE
+                     : android::bluetooth::EventType::GATT_DISCONNECT_NATIVE,
+          bluetooth::metrics::MapErrorCodeToState(reason));
+}
+
+void LogMetricLeDeviceInAcceptList(hci::Address address, bool is_add) {
+  bluetooth::os::LogMetricBluetoothEvent(
+          address, android::bluetooth::EventType::LE_DEVICE_IN_ACCEPT_LIST,
+          is_add ? android::bluetooth::State::START : android::bluetooth::State::END);
+}
+
+void LogMetricLeConnectionLifecycle(hci::Address address, bool is_connect, bool is_direct) {
+  if (is_connect) {
+    bluetooth::os::LogMetricBluetoothEvent(address,
+                                           android::bluetooth::EventType::GATT_CONNECT_NATIVE,
+                                           is_direct ? android::bluetooth::State::DIRECT_CONNECT
+                                                     : android::bluetooth::State::INDIRECT_CONNECT);
+  } else {
+    bluetooth::os::LogMetricBluetoothEvent(address,
+                                           android::bluetooth::EventType::GATT_DISCONNECT_NATIVE,
+                                           android::bluetooth::State::START);
+  }
+}
+
+void LogMetricLeConnectionCompletion(hci::Address address, hci::ErrorCode reason,
+                                     bool is_locally_initiated) {
+  bluetooth::metrics::LogLeAclCompletionEvent(address, reason, is_locally_initiated);
+}
+
 void LogMetricRfcommConnectionAtClose(const RawAddress& address,
                                       android::bluetooth::rfcomm::PortResult close_reason,
                                       android::bluetooth::rfcomm::SocketConnectionSecurity security,
@@ -154,8 +191,57 @@ void LogMetricRfcommConnectionAtClose(const RawAddress& address,
                                                   is_server, sdp_initiated, sdp_duration_ms);
 }
 
+void LogMetricLeConnectionRejected(hci::Address address) {
+  bluetooth::os::LogMetricBluetoothEvent(address,
+                                         android::bluetooth::EventType::LE_CONNECTION_REJECTED,
+                                         android::bluetooth::State::ATTEMPT_IN_PROGRESS);
+}
+
 void CountCounterMetrics(android::bluetooth::CodePathCounterKeyEnum key, int64_t count) {
   bluetooth::os::LogMetricBluetoothCodePathCounterMetrics(key, count);
+}
+
+void LogMetricHfpAgVersion(hci::Address address, uint16_t version) {
+  bluetooth::os::LogMetricBluetoothEvent(address, EventType::HFP_AG_VERSION,
+                                         bluetooth::metrics::MapHfpVersionToState(version));
+}
+
+void LogMetricHfpHfVersion(hci::Address address, uint16_t version) {
+  bluetooth::os::LogMetricBluetoothEvent(address, EventType::HFP_HF_VERSION,
+                                         bluetooth::metrics::MapHfpVersionToState(version));
+}
+
+void LogMetricHfpRfcommChannelFail(hci::Address address) {
+  bluetooth::os::LogMetricBluetoothEvent(address, EventType::HFP_SESSION,
+                                         State::HFP_RFCOMM_CHANNEL_FAIL);
+}
+
+void LogMetricHfpRfcommCollisionFail(hci::Address address) {
+  bluetooth::os::LogMetricBluetoothEvent(address, EventType::HFP_SESSION,
+                                         State::HFP_RFCOMM_COLLISION_FAIL);
+}
+
+void LogMetricHfpRfcommAgOpenFail(hci::Address address) {
+  bluetooth::os::LogMetricBluetoothEvent(address, EventType::HFP_SESSION,
+                                         State::HFP_RFCOMM_AG_OPEN_FAIL);
+}
+
+void LogMetricHfpSlcFail(hci::Address address) {
+  bluetooth::os::LogMetricBluetoothEvent(address, EventType::HFP_SESSION,
+                                         State::HFP_SLC_FAIL_CONNECTION);
+}
+
+void LogMetricScoLinkCreated(hci::Address address) {
+  bluetooth::os::LogMetricBluetoothEvent(address, EventType::SCO_SESSION, State::SCO_LINK_CREATED);
+}
+
+void LogMetricScoLinkRemoved(hci::Address address) {
+  bluetooth::os::LogMetricBluetoothEvent(address, EventType::SCO_SESSION, State::SCO_LINK_REMOVED);
+}
+
+void LogMetricScoCodec(hci::Address address, uint16_t codec) {
+  bluetooth::os::LogMetricBluetoothEvent(address, EventType::SCO_CODEC,
+                                         bluetooth::metrics::MapScoCodecToState(codec));
 }
 
 }  // namespace shim
