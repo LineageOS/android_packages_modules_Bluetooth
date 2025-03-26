@@ -49,12 +49,13 @@
 #include "device/include/interop.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/helpers.h"
-#include "os/metrics.h"
+#include "main/shim/metrics_api.h"
 #include "osi/include/compat.h"
 #include "stack/btm/btm_sco_hfp_hal.h"
 #include "stack/include/port_api.h"
 
 using namespace bluetooth;
+using namespace bluetooth::shim;
 
 /*****************************************************************************
  *  Constants

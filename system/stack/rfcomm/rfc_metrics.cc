@@ -22,7 +22,7 @@
 
 #include "bta/include/bta_jv_api.h"
 #include "common/time_util.h"
-#include "os/metrics.h"
+#include "main/shim/metrics_api.h"
 #include "stack/btm/security_device_record.h"
 #include "stack/include/btm_sec_api_types.h"
 #include "stack/include/port_api.h"
@@ -50,7 +50,7 @@ void port_collect_attempt_metrics(tPORT* p_port) {
   log::assert_that(sm_cb.state == RFC_STATE_CLOSED, "Assert failed: Port not closed");
   uint64_t open_duration_ms = (sm_cb.close_timestamp - sm_cb.open_timestamp) / 1000;
 
-  os::LogMetricRfcommConnectionAtClose(
+  shim::LogMetricRfcommConnectionAtClose(
           p_port->bd_addr, toPortResult(sm_cb.close_reason), toSecurity(p_port->sec_mask),
           toPortEvent(sm_cb.last_event), toPortState(sm_cb.state_prior),
           static_cast<int32_t>(open_duration_ms), static_cast<int32_t>(p_port->app_uid), sdp_status,

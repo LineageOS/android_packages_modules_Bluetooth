@@ -30,7 +30,7 @@
 #include "device_groups.h"
 #include "devices.h"
 #include "hardware/bt_le_audio.h"
-#include "os/metrics.h"
+#include "main/shim/metrics_api.h"
 #include "types/raw_address.h"
 
 using bluetooth::common::ToString;
@@ -338,7 +338,7 @@ private:
           return;
       }
     }
-    bluetooth::os::CountCounterMetrics(key, 1);
+    bluetooth::shim::CountCounterMetrics(key, 1);
   }
 
   void log_counter_metrics_for_group(LeAudioHealthGroupStatType type, bool in_allowlist) {
@@ -381,7 +381,7 @@ private:
           return;
       }
     }
-    bluetooth::os::CountCounterMetrics(key, 1);
+    bluetooth::shim::CountCounterMetrics(key, 1);
   }
 };
 }  // namespace bluetooth::le_audio

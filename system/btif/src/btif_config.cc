@@ -35,8 +35,8 @@
 #include "common/address_obfuscator.h"
 #include "main/shim/config.h"
 #include "main/shim/metric_id_api.h"
+#include "main/shim/metrics_api.h"
 #include "main/shim/shim.h"
-#include "os/metrics.h"
 #include "storage/config_keys.h"
 #include "types/raw_address.h"
 
