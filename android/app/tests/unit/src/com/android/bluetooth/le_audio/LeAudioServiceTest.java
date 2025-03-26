@@ -84,6 +84,7 @@ import androidx.test.filters.MediumTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.bluetooth.TestUtils;
+import com.android.bluetooth.Utils;
 import com.android.bluetooth.bass_client.BassClientService;
 import com.android.bluetooth.btservice.ActiveDeviceManager;
 import com.android.bluetooth.btservice.AdapterService;
@@ -160,6 +161,7 @@ public class LeAudioServiceTest {
     private final BluetoothDevice mRightDevice = getTestDevice(1);
     private final BluetoothDevice mSingleDevice = getTestDevice(2);
     private final BluetoothDevice mSingleDevice_2 = getTestDevice(3);
+    private final BluetoothDevice mBroadcastDevice = getTestDevice("FF:FF:FF:FF:FF:FF");
 
     private LeAudioService mService;
     private static final int TEST_GROUP_ID = 1;
@@ -263,6 +265,10 @@ public class LeAudioServiceTest {
 
         doReturn(true).when(mNativeInterface).connectLeAudio(any(BluetoothDevice.class));
         doReturn(true).when(mNativeInterface).disconnectLeAudio(any(BluetoothDevice.class));
+
+        doReturn(mBroadcastDevice)
+                .when(mAdapterService)
+                .getDeviceFromByte(Utils.getBytesFromAddress("FF:FF:FF:FF:FF:FF"));
 
         LeAudioBroadcasterNativeInterface.setInstance(mLeAudioBroadcasterNativeInterface);
         mService = new LeAudioService(mAdapterService, mNativeInterface);
