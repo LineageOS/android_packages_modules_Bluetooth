@@ -44,7 +44,7 @@
 #include "include/hardware/bt_sock.h"
 #include "lpp/lpp_offload_interface.h"
 #include "main/shim/entry.h"
-#include "main/shim/metrics_api.h"
+#include "os/metrics.h"
 #include "osi/include/allocator.h"
 #include "osi/include/compat.h"
 #include "osi/include/list.h"
@@ -909,7 +909,7 @@ static void on_rfc_close(tBTA_JV_RFCOMM_CLOSE* /* p_close */, uint32_t id) {
     log::warn("RFCOMM slot with id {} not found.", id);
     return;
   }
-  bluetooth::shim::LogMetricSocketConnectionState(
+  bluetooth::os::LogMetricSocketConnectionState(
           slot->addr, slot->id, BTSOCK_RFCOMM,
           android::bluetooth::SOCKET_CONNECTION_STATE_DISCONNECTING, 0, 0, slot->app_uid, slot->scn,
           slot->f.server ? android::bluetooth::SOCKET_ROLE_LISTEN
