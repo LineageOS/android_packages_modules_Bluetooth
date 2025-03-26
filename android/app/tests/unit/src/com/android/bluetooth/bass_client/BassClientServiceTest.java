@@ -5450,6 +5450,7 @@ public class BassClientServiceTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_LEAUDIO_BROADCAST_REMOVE_SINK_METADATA_ON_SWITCH_TO_LOCAL)
     public void sinkUnintentional_publicStopBigMonitoring_withoutScanning() {
         sinkUnintentionalWithoutScanning();
 
@@ -5459,6 +5460,7 @@ public class BassClientServiceTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_LEAUDIO_BROADCAST_REMOVE_SINK_METADATA_ON_SWITCH_TO_LOCAL)
     public void sinkUnintentional_publicStopBigMonitoring_duringScanning() {
         sinkUnintentionalDuringScanning();
 

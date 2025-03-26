@@ -26,6 +26,7 @@ import static android.bluetooth.IBluetoothLeAudio.LE_AUDIO_GROUP_ID_INVALID;
 import static com.android.bluetooth.flags.Flags.leaudioBassScanWithInternalScanController;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastApiGetLocalMetadata;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastPreventResumeInterruption;
+import static com.android.bluetooth.flags.Flags.leaudioBroadcastRemoveSinkMetadataOnSwitchToLocal;
 import static com.android.bluetooth.flags.Flags.leaudioMonitorUnicastSourceWhenManagedByBroadcastDelegator;
 
 import static java.util.Objects.requireNonNull;
@@ -3148,6 +3149,9 @@ public class BassClientService extends ProfileService {
                         // Add host intentional pause if previous broadcast is different than
                         // current
                         if (sourceMetadata.getBroadcastId() != metaData.getBroadcastId()) {
+                            if (leaudioBroadcastRemoveSinkMetadataOnSwitchToLocal()) {
+                                mPausedBroadcastSinks.remove(device);
+                            }
                             stopBigMonitoring(metaData.getBroadcastId(), /* hostInitiated */ true);
                         }
                     }
