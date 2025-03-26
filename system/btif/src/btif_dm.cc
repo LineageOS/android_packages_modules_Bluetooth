@@ -1126,7 +1126,7 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
           (p_auth_cmpl->key_type == HCI_LKEY_TYPE_CHANGED_COMB) ||
           (p_auth_cmpl->key_type == HCI_LKEY_TYPE_AUTH_COMB_P_256) ||
           pairing_cb.bond_type == BOND_TYPE_PERSISTENT) {
-        ASSERTC(bd_addr.IsEmpty(), "bd_addr is empty", BT_STATUS_PARM_INVALID);
+        ASSERTC(!bd_addr.IsEmpty(), "bd_addr is empty", BT_STATUS_PARM_INVALID);
         log::debug("Storing link key. key_type=0x{:x}, bond_type={}", p_auth_cmpl->key_type,
                    pairing_cb.bond_type);
         bt_status_t ret = btif_storage_add_bonded_device(
