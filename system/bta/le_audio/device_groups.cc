@@ -857,16 +857,16 @@ LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(types::LeAudioContextTy
     auto device = weak_dev_ptr.lock();
     BidirectionalPair<bool> has_location = {false, false};
 
-    for (auto direction : {types::kLeAudioDirectionSink, types::kLeAudioDirectionSource}) {
-      if (!device->audio_locations_.get(direction)) {
+    for (auto remote_direction : {types::kLeAudioDirectionSink, types::kLeAudioDirectionSource}) {
+      if (!device->audio_locations_.get(remote_direction)) {
         log::debug("Device {} has no audio allocation for direction: {}", device->address_,
-                   (int)direction);
+                   (int)remote_direction);
         continue;
       }
 
       // Do not put any requirements on the Source if Sink only scenario is used
       // Note: With the RINGTONE we should already prepare for a call.
-      if ((direction == types::kLeAudioDirectionSource) &&
+      if ((remote_direction == types::kLeAudioDirectionSource) &&
           ((types::kLeAudioContextAllRemoteSinkOnly.test(ctx_type) &&
             (ctx_type != types::LeAudioContextType::RINGTONE)) ||
            ctx_type == types::LeAudioContextType::UNSPECIFIED)) {
@@ -874,8 +874,9 @@ LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(types::LeAudioContextTy
         continue;
       }
 
-      if (device->GetAseCount(direction) == 0) {
-        log::warn("Device {} has no ASEs for direction: {}", device->address_, (int)direction);
+      if (device->GetAseCount(remote_direction) == 0) {
+        log::warn("Device {} has no ASEs for direction: {}", device->address_,
+                  (int)remote_direction);
         continue;
       }
 
@@ -885,7 +886,7 @@ LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(types::LeAudioContextTy
         // direction.
         auto group_contexts = GetSupportedContexts(types::kLeAudioDirectionBoth);
         if (group_contexts.test(ctx_type)) {
-          auto direction_contexs = device->GetSupportedContexts(direction);
+          auto direction_contexs = device->GetSupportedContexts(remote_direction);
           if (!direction_contexs.test(ctx_type)) {
             log::warn("Device {} has no {} context support", device->address_,
                       common::ToString(ctx_type));
@@ -894,14 +895,14 @@ LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(types::LeAudioContextTy
         }
       }
 
-      auto const& dev_locations = device->audio_locations_.get(direction);
+      auto const& dev_locations = device->audio_locations_.get(remote_direction);
       if (dev_locations == std::nullopt) {
         log::warn("Device {} has no specified locations for direction: {}", device->address_,
-                  (int)direction);
+                  (int)remote_direction);
       }
 
-      has_location.get(direction) = true;
-      auto& direction_req = (direction == types::kLeAudioDirectionSink)
+      has_location.get(remote_direction) = true;
+      auto& direction_req = (remote_direction == types::kLeAudioDirectionSink)
                                     ? new_req.sink_requirements
                                     : new_req.source_requirements;
       if (!direction_req) {
@@ -916,23 +917,23 @@ LeAudioDeviceGroup::GetAudioSetConfigurationRequirements(types::LeAudioContextTy
       CodecManager::UnicastConfigurationRequirements::DeviceDirectionRequirements config_req;
       config_req.params.Add(codec_spec_conf::kLeAudioLtvTypeAudioChannelAllocation,
                             (uint32_t)locations);
-      if (preferred_config_.get(direction) &&
-          preferred_config_.get(direction)->codec_priority != -1) {
+      if (preferred_config_.get(remote_direction) &&
+          preferred_config_.get(remote_direction)->codec_priority != -1) {
         config_req.params.Add(
                 codec_spec_conf::kLeAudioLtvTypeSamplingFreq,
                 UINT8_TO_VEC_UINT8(codec_spec_conf::SingleSamplingFreqCapability2Config(
-                        preferred_config_.get(direction)->sample_rate)));
+                        preferred_config_.get(remote_direction)->sample_rate)));
         config_req.params.Add(
                 codec_spec_conf::kLeAudioLtvTypeFrameDuration,
                 UINT8_TO_VEC_UINT8(codec_spec_conf::SingleFrameDurationCapability2Config(
-                        preferred_config_.get(direction)->frame_duration)));
+                        preferred_config_.get(remote_direction)->frame_duration)));
         config_req.params.Add(
                 codec_spec_conf::kLeAudioLtvTypeOctetsPerCodecFrame,
-                UINT16_TO_VEC_UINT8(preferred_config_.get(direction)->octets_per_frame));
+                UINT16_TO_VEC_UINT8(preferred_config_.get(remote_direction)->octets_per_frame));
       }
       config_req.target_latency = utils::GetTargetLatencyForAudioContext(ctx_type);
       log::warn("Device {} pushes requirement, location: {}, direction: {}", device->address_,
-                (int)locations, (int)direction);
+                (int)locations, (int)remote_direction);
       direction_req->push_back(std::move(config_req));
     }
 
