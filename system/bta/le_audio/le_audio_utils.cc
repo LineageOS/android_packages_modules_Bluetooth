@@ -20,7 +20,6 @@
 
 #include <cstdint>
 #include <sstream>
-#include <string>
 #include <type_traits>
 #include <vector>
 
@@ -33,17 +32,6 @@
 using bluetooth::common::ToString;
 using bluetooth::le_audio::types::AudioContexts;
 using bluetooth::le_audio::types::LeAudioContextType;
-
-namespace std {
-template <>
-struct formatter<audio_usage_t> : enum_formatter<audio_usage_t> {};
-template <>
-struct formatter<audio_content_type_t> : enum_formatter<audio_content_type_t> {};
-template <>
-struct formatter<audio_source_t> : enum_formatter<audio_source_t> {};
-template <>
-struct formatter<audio_devices_t> : enum_formatter<audio_devices_t> {};
-}  // namespace std
 
 namespace bluetooth::le_audio {
 namespace utils {
@@ -93,98 +81,6 @@ LeAudioContextType AudioContentToLeAudioContext(audio_content_type_t content_typ
   }
 
   return LeAudioContextType::MEDIA;
-}
-
-static std::string usageToString(audio_usage_t usage) {
-  switch (usage) {
-    case AUDIO_USAGE_UNKNOWN:
-      return "USAGE_UNKNOWN";
-    case AUDIO_USAGE_MEDIA:
-      return "USAGE_MEDIA";
-    case AUDIO_USAGE_VOICE_COMMUNICATION:
-      return "USAGE_VOICE_COMMUNICATION";
-    case AUDIO_USAGE_VOICE_COMMUNICATION_SIGNALLING:
-      return "USAGE_VOICE_COMMUNICATION_SIGNALLING";
-    case AUDIO_USAGE_ALARM:
-      return "USAGE_ALARM";
-    case AUDIO_USAGE_NOTIFICATION:
-      return "USAGE_NOTIFICATION";
-    case AUDIO_USAGE_NOTIFICATION_TELEPHONY_RINGTONE:
-      return "USAGE_NOTIFICATION_TELEPHONY_RINGTONE";
-    case AUDIO_USAGE_NOTIFICATION_COMMUNICATION_REQUEST:
-      return "USAGE_NOTIFICATION_COMMUNICATION_REQUEST";
-    case AUDIO_USAGE_NOTIFICATION_COMMUNICATION_INSTANT:
-      return "USAGE_NOTIFICATION_COMMUNICATION_INSTANT";
-    case AUDIO_USAGE_NOTIFICATION_COMMUNICATION_DELAYED:
-      return "USAGE_NOTIFICATION_COMMUNICATION_DELAYED";
-    case AUDIO_USAGE_NOTIFICATION_EVENT:
-      return "USAGE_NOTIFICATION_EVENT";
-    case AUDIO_USAGE_ASSISTANCE_ACCESSIBILITY:
-      return "USAGE_ASSISTANCE_ACCESSIBILITY";
-    case AUDIO_USAGE_ASSISTANCE_NAVIGATION_GUIDANCE:
-      return "USAGE_ASSISTANCE_NAVIGATION_GUIDANCE";
-    case AUDIO_USAGE_ASSISTANCE_SONIFICATION:
-      return "USAGE_ASSISTANCE_SONIFICATION";
-    case AUDIO_USAGE_GAME:
-      return "USAGE_GAME";
-    case AUDIO_USAGE_ASSISTANT:
-      return "USAGE_ASSISTANT";
-    case AUDIO_USAGE_CALL_ASSISTANT:
-      return "USAGE_CALL_ASSISTANT";
-    case AUDIO_USAGE_EMERGENCY:
-      return "USAGE_EMERGENCY";
-    case AUDIO_USAGE_SAFETY:
-      return "USAGE_SAFETY";
-    case AUDIO_USAGE_VEHICLE_STATUS:
-      return "USAGE_VEHICLE_STATUS";
-    case AUDIO_USAGE_ANNOUNCEMENT:
-      return "USAGE_ANNOUNCEMENT";
-    default:
-      return "unknown usage ";
-  }
-}
-
-static std::string contentTypeToString(audio_content_type_t content_type) {
-  switch (content_type) {
-    case AUDIO_CONTENT_TYPE_UNKNOWN:
-      return "CONTENT_TYPE_UNKNOWN";
-    case AUDIO_CONTENT_TYPE_SPEECH:
-      return "CONTENT_TYPE_SPEECH";
-    case AUDIO_CONTENT_TYPE_MUSIC:
-      return "CONTENT_TYPE_MUSIC";
-    case AUDIO_CONTENT_TYPE_MOVIE:
-      return "CONTENT_TYPE_MOVIE";
-    case AUDIO_CONTENT_TYPE_SONIFICATION:
-      return "CONTENT_TYPE_SONIFICATION";
-    default:
-      return "unknown content type ";
-  }
-}
-
-static const char* audioSourceToStr(audio_source_t source) {
-  const char* strArr[] = {"AUDIO_SOURCE_DEFAULT",           "AUDIO_SOURCE_MIC",
-                          "AUDIO_SOURCE_VOICE_UPLINK",      "AUDIO_SOURCE_VOICE_DOWNLINK",
-                          "AUDIO_SOURCE_VOICE_CALL",        "AUDIO_SOURCE_CAMCORDER",
-                          "AUDIO_SOURCE_VOICE_RECOGNITION", "AUDIO_SOURCE_VOICE_COMMUNICATION",
-                          "AUDIO_SOURCE_REMOTE_SUBMIX",     "AUDIO_SOURCE_UNPROCESSED",
-                          "AUDIO_SOURCE_VOICE_PERFORMANCE"};
-
-  if (static_cast<uint32_t>(source) < (sizeof(strArr) / sizeof(strArr[0]))) {
-    return strArr[source];
-  }
-  return "UNKNOWN";
-}
-
-static bool isMetadataTagPresent(const char* tags, const char* tag) {
-  std::istringstream iss(tags);
-  std::string t;
-  while (std::getline(iss, t, AUDIO_ATTRIBUTES_TAGS_SEPARATOR)) {
-    log::verbose("Tag {}", t);
-    if (t.compare(tag) == 0) {
-      return true;
-    }
-  }
-  return false;
 }
 
 AudioContexts GetAudioContextsFromSourceMetadata(
