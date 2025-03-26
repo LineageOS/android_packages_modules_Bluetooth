@@ -34,8 +34,7 @@
 #include "internal_include/bt_target.h"
 #include "internal_include/stack_config.h"
 #include "main/shim/helpers.h"
-#include "metrics/bluetooth_event.h"
-#include "os/metrics.h"
+#include "main/shim/metrics_api.h"
 #include "os/system_properties.h"
 #include "osi/include/allocator.h"
 #include "stack/arbiter/acl_arbiter.h"
@@ -1430,7 +1429,7 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE ad
     return true;
   }
 
-  bluetooth::metrics::LogMetricLeConnectionLifecycle(bd_addr, true /* is_connect */, is_direct);
+  bluetooth::shim::LogMetricLeConnectionLifecycle(bd_addr, true /* is_connect */, is_direct);
 
   bool ret = false;
   if (is_direct) {
@@ -1572,8 +1571,8 @@ tGATT_STATUS GATT_Disconnect(tCONN_ID conn_id) {
     return GATT_ILLEGAL_PARAMETER;
   }
 
-  bluetooth::metrics::LogMetricLeConnectionLifecycle(p_tcb->peer_bda, true /* is_connect */,
-                                                     false /* is_direct */);
+  bluetooth::shim::LogMetricLeConnectionLifecycle(p_tcb->peer_bda, true /* is_connect */,
+                                                  false /* is_direct */);
 
   tGATT_IF gatt_if = gatt_get_gatt_if(conn_id);
   gatt_update_app_use_link_flag(gatt_if, p_tcb, false, true);

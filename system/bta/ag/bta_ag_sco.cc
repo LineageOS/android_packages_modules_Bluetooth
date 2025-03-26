@@ -48,8 +48,7 @@
 #include "internal_include/bt_target.h"
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
-#include "metrics/bluetooth_event.h"
-#include "os/metrics.h"
+#include "main/shim/metrics_api.h"
 #include "osi/include/alarm.h"
 #include "osi/include/properties.h"
 #include "stack/btm/btm_int_types.h"
@@ -333,7 +332,7 @@ static bool bta_ag_remove_sco(tBTA_AG_SCB* p_scb, bool only_active) {
   if (p_scb->sco_idx != BTM_INVALID_SCO_INDEX) {
     if (!only_active || p_scb->sco_idx == bta_ag_cb.sco.cur_idx) {
       tBTM_STATUS status = get_btm_client_interface().sco.BTM_RemoveSco(p_scb->sco_idx);
-      bluetooth::metrics::LogMetricScoLinkRemoved(p_scb->peer_addr);
+      LogMetricScoLinkRemoved(p_scb->peer_addr);
       log::debug("Removed SCO index:0x{:04x} status:{}", p_scb->sco_idx, btm_status_text(status));
       if (status == tBTM_STATUS::BTM_CMD_STARTED) {
         /* SCO is connected; set current control block */
@@ -568,8 +567,8 @@ void bta_ag_create_sco(tBTA_AG_SCB* p_scb, bool is_orig) {
       bta_ag_cb.sco.cur_idx = p_scb->sco_idx;
       /* Configure input/output data. */
       hfp_hal_interface::set_codec_datapath(esco_codec);
-      bluetooth::metrics::LogMetricScoLinkCreated(p_scb->peer_addr);
-      bluetooth::metrics::LogMetricScoCodec(p_scb->peer_addr, p_scb->sco_codec);
+      LogMetricScoLinkCreated(p_scb->peer_addr);
+      LogMetricScoCodec(p_scb->peer_addr, p_scb->sco_codec);
       log::verbose("initiated SCO connection");
     }
 

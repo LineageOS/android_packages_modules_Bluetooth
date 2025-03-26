@@ -373,7 +373,6 @@ cc_fuzz {
         ":TestMockBtif",
         ":TestMockDevice",
         ":TestMockMainShim",
-        ":TestMockMainShimMetrics",
         ":TestMockStackBtm",
         ":TestMockStackL2cap",
         "fuzzers/sdp_fuzzer.cc",
@@ -413,8 +412,8 @@ cc_fuzz {
         ":TestMockBtif",
         ":TestMockDevice",
         ":TestMockMainShim",
+        ":TestMockMainShim",
         ":TestMockMainShimEntry",
-        ":TestMockMainShimMetrics",
         ":TestMockSrvcDis",
         ":TestMockStackAcl",
         ":TestMockStackArbiter",
@@ -481,7 +480,6 @@ cc_fuzz {
     ],
     shared_libs: [
         "libaconfig_storage_read_api_cc",
-        "libstatssocket",
         "server_configurable_flags",
     ],
     static_libs: [
@@ -489,13 +487,11 @@ cc_fuzz {
         "libbluetooth-types",
         "libbluetooth_core_rs_bridge",
         "libbluetooth_crypto_toolbox",
-        "libbluetooth_gd",
         "libbluetooth_hci_pdl",
         "libbluetooth_l2cap_pdl",
         "libbluetooth_log",
         "libbluetooth_smp_pdl",
         "libbt-platform-protos-lite",
-        "libstatslog_bt",
     ],
 }
 
@@ -530,14 +526,12 @@ cc_fuzz {
     ],
     shared_libs: [
         "libaconfig_storage_read_api_cc",
-        "libstatssocket",
         "server_configurable_flags",
     ],
     static_libs: [
         "bluetooth_flags_c_lib",
         "libbluetooth-types",
         "libbluetooth_crypto_toolbox",
-        "libbluetooth_gd",
         "libbluetooth_hci_pdl",
         "libbluetooth_l2cap_pdl",
         "libbluetooth_log",
@@ -545,7 +539,6 @@ cc_fuzz {
         "libbt-common",
         "libbt-platform-protos-lite",
         "libevent",
-        "libstatslog_bt",
     ],
 }
 
@@ -653,8 +646,8 @@ cc_fuzz {
         ":TestMockBtif",
         ":TestMockDevice",
         ":TestMockMainShim",
+        ":TestMockMainShim",
         ":TestMockMainShimEntry",
-        ":TestMockMainShimMetrics",
         ":TestMockStackAcl",
         ":TestMockStackBtm",
         ":TestMockStackHcic",
@@ -1818,7 +1811,6 @@ cc_test {
     srcs: [
         ":TestCommonMockFunctions",
         ":TestMockMainShim",
-        ":TestMockMainShimMetrics",
         ":TestMockStackBtm",
         ":TestMockStackL2cap",
         ":TestMockStackSdp",
@@ -1892,8 +1884,8 @@ cc_test {
         ":TestMockBtif",
         ":TestMockHci",
         ":TestMockMainShim",
+        ":TestMockMainShim",
         ":TestMockMainShimEntry",
-        ":TestMockMainShimMetrics",
         ":TestMockStackAcl",
         ":TestMockStackBtm",
         ":TestMockStackHcic",
@@ -2355,7 +2347,6 @@ cc_test {
         ":TestMockBta",
         ":TestMockBtif",
         ":TestMockMainShim",
-        ":TestMockMainShimMetrics",
         ":TestMockStackBtm",
         ":TestMockStackL2cap",
         "test/sdp/stack_sdp_api_test.cc",

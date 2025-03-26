@@ -125,7 +125,7 @@ void LogMetricReadTxPowerLevelResult(const Address& address, uint16_t handle, ui
 void LogMetricRemoteVersionInfo(uint16_t handle, uint8_t status, uint8_t version,
                                 uint16_t manufacturer_name, uint16_t subversion) {}
 
-void LogMetricLinkLayerConnectionEvent(const Address& address, uint32_t connection_handle,
+void LogMetricLinkLayerConnectionEvent(const Address* address, uint32_t connection_handle,
                                        android::bluetooth::DirectionEnum direction,
                                        uint16_t link_type, uint32_t hci_cmd, uint16_t hci_event,
                                        uint16_t hci_ble_event, uint16_t cmd_status,
@@ -200,7 +200,8 @@ void LogMetricBluetoothDisconnectionReasonReported(uint32_t reason, const Addres
 void LogMetricBluetoothRemoteSupportedFeatures(const Address& address, uint32_t page,
                                                uint64_t features, uint32_t connection_handle) {}
 
-void CountCounterMetrics(android::bluetooth::CodePathCounterKeyEnum key, int64_t count) {}
+void LogMetricBluetoothCodePathCounterMetrics(android::bluetooth::CodePathCounterKeyEnum key,
+                                              int64_t count) {}
 
 void LogMetricBluetoothLEConnection(os::LEConnectionSessionOptions /* session_options */) {}
 

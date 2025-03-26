@@ -62,8 +62,7 @@
 #include "include/hardware/bt_hf.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/helpers.h"
-#include "metrics/bluetooth_event.h"
-#include "os/metrics.h"
+#include "main/shim/metrics_api.h"
 #include "stack/btm/btm_sco_hfp_hal.h"
 #include "stack/include/bt_uuid16.h"
 #include "stack/include/btm_client_interface.h"
@@ -76,6 +75,7 @@
                   (number.size() > 2) ? number.size() - 2 : 0, '*') \
            .c_str())
 
+using namespace bluetooth::shim;
 namespace {
 constexpr char kBtmLogTag[] = "HFP";
 }
@@ -373,14 +373,14 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
           // Check if the incoming open event and the outgoing connection are
           // for the same device.
           if (p_data->open.bd_addr == btif_hf_cb[idx].connected_bda) {
-            bluetooth::metrics::LogMetricHfpRfcommChannelFail(p_data->open.bd_addr);
+            LogMetricHfpRfcommChannelFail(p_data->open.bd_addr);
             log::warn(
                     "btif_hf_cb state[{}] is not expected, possible connection "
                     "collision, ignoring AG open failure event for the same device "
                     "{}",
                     p_data->open.status, p_data->open.bd_addr);
           } else {
-            bluetooth::metrics::LogMetricHfpRfcommCollisionFail(p_data->open.bd_addr);
+            LogMetricHfpRfcommCollisionFail(p_data->open.bd_addr);
             log::warn(
                     "btif_hf_cb state[{}] is not expected, possible connection "
                     "collision, ignoring AG open failure event for the different "
@@ -389,7 +389,7 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
                     p_data->open.status, btif_hf_cb[idx].connected_bda, p_data->open.bd_addr);
             bt_hf_callbacks->ConnectionStateCallback(BTHF_CONNECTION_STATE_DISCONNECTED,
                                                      &(p_data->open.bd_addr));
-            bluetooth::os::CountCounterMetrics(
+            bluetooth::shim::CountCounterMetrics(
                     android::bluetooth::CodePathCounterKeyEnum::HFP_COLLISON_AT_AG_OPEN, 1);
           }
           break;
@@ -411,7 +411,7 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
                   btif_hf_cb[idx].connected_bda, p_data->open.bd_addr);
           bt_hf_callbacks->ConnectionStateCallback(BTHF_CONNECTION_STATE_DISCONNECTED,
                                                    &(btif_hf_cb[idx].connected_bda));
-          bluetooth::os::CountCounterMetrics(
+          bluetooth::shim::CountCounterMetrics(
                   android::bluetooth::CodePathCounterKeyEnum::HFP_COLLISON_AT_CONNECTING, 1);
           reset_control_block(&btif_hf_cb[idx]);
           btif_queue_advance();
@@ -441,7 +441,7 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
                     p_data->open.bd_addr);
           break;
         }
-        bluetooth::metrics::LogMetricHfpRfcommAgOpenFail(p_data->open.bd_addr);
+        LogMetricHfpRfcommAgOpenFail(p_data->open.bd_addr);
         log::error("self initiated AG open failed for {}, status {}", btif_hf_cb[idx].connected_bda,
                    p_data->open.status);
         RawAddress connected_bda = btif_hf_cb[idx].connected_bda;
@@ -471,7 +471,7 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
           bt_hf_callbacks->ConnectionStateCallback(btif_hf_cb[idx].state, &connected_bda);
         }
 
-        bluetooth::os::CountCounterMetrics(
+        bluetooth::shim::CountCounterMetrics(
                 android::bluetooth::CodePathCounterKeyEnum::HFP_SELF_INITIATED_AG_FAILED, 1);
         btif_queue_advance();
         if (btm_sec_is_a_bonded_dev(connected_bda)) {
@@ -495,10 +495,10 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
       bt_hf_callbacks->ConnectionStateCallback(btif_hf_cb[idx].state, &connected_bda);
       if (failed_to_setup_slc) {
         log::error("failed to setup SLC for {}", connected_bda);
-        bluetooth::os::CountCounterMetrics(
+        bluetooth::shim::CountCounterMetrics(
                 android::bluetooth::CodePathCounterKeyEnum::HFP_SLC_SETUP_FAILED, 1);
         btif_queue_advance();
-        bluetooth::metrics::LogMetricHfpSlcFail(p_data->open.bd_addr);
+        LogMetricHfpSlcFail(p_data->open.bd_addr);
         DEVICE_IOT_CONFIG_ADDR_INT_ADD_ONE(btif_hf_cb[idx].connected_bda,
                                            IOT_CONF_KEY_HFP_SLC_CONN_FAIL_COUNT);
       }

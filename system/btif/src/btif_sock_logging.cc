@@ -25,7 +25,7 @@
 
 #include "btif/include/btif_sock.h"
 #include "common/time_util.h"
-#include "os/metrics.h"
+#include "main/shim/metrics_api.h"
 #include "types/raw_address.h"
 
 #define SOCK_LOGGER_SIZE_MAX 16
@@ -79,7 +79,7 @@ void btif_sock_connection_logger(const RawAddress& address, int port, int type, 
   }
 
   clock_gettime(CLOCK_REALTIME, &connection_logger[index].timestamp);
-  bluetooth::os::LogMetricSocketConnectionState(
+  bluetooth::shim::LogMetricSocketConnectionState(
           address, port, type, toConnectionStateEnum(state), tx_bytes, rx_bytes, uid, server_port,
           toSocketRoleEnum(role), getConnectionDuration(connection_start_time_ms),
           toSocketErrorEnum(error_code), data_path == BTSOCK_DATA_PATH_HARDWARE_OFFLOAD);

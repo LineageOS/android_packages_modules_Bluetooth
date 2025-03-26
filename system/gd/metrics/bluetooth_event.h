@@ -27,12 +27,6 @@
 namespace bluetooth {
 namespace metrics {
 
-android::bluetooth::State MapErrorCodeToState(hci::ErrorCode reason);
-
-android::bluetooth::State MapHfpVersionToState(uint16_t version);
-
-android::bluetooth::State MapScoCodecToState(uint16_t codec);
-
 void LogIncomingAclStartEvent(const hci::Address& address);
 
 void LogAclCompletionEvent(const hci::Address& address, hci::ErrorCode reason,
@@ -54,90 +48,11 @@ void LogSDPComplete(const RawAddress& raw_address, tBTA_STATUS status);
 
 void LogLePairingFail(const RawAddress& raw_address, uint8_t failure_reason, bool is_outgoing);
 
-/**
- * Logs GATT connect/disconnect status
- * @param address Address of the device
- * @param is_connect indicates connection or disconnection
- * @param reason the reason/status for the connection event
- */
-void LogMetricLeConnectionStatus(hci::Address address, bool is_connect, hci::ErrorCode reason);
+android::bluetooth::State MapErrorCodeToState(hci::ErrorCode reason);
 
-/**
- * Logs LE filter accept list events
- * @param address Address of the device
- * @param is_add indicates addition or removal of the device in the accept list
- */
-void LogMetricLeDeviceInAcceptList(hci::Address address, bool is_connect);
+android::bluetooth::State MapHfpVersionToState(uint16_t version);
 
-/**
- * Logs GATT lifecycle events
- * @param address Address of the device
- * @param is_connect indicates connection or disconnection
- * @param is_direct indicates direct or background connection, ignored for disconnection
- */
-void LogMetricLeConnectionLifecycle(hci::Address address, bool is_connect, bool is_direct);
-
-/*Log LE Connection Rejected Event
- * @param address Address of the device
- */
-void LogMetricLeConnectionRejected(hci::Address address);
-
-/**
- * Logs the AG version in a HFP session
- * @param address of a device
- * @param version AG HFP version
- */
-void LogMetricHfpAgVersion(hci::Address address, uint16_t version);
-
-/**
- * Logs the HF version in a HFP session
- * @param address of a device
- * @param version HF HFP Version
- */
-void LogMetricHfpHfVersion(hci::Address address, uint16_t version);
-
-/**
- * Logs a RFCOMM channel failure in a HFP session
- * @param address of a device
- */
-void LogMetricHfpRfcommChannelFail(hci::Address address);
-
-/**
- * Logs a RFCOMM collision failure in a HFP session
- * @param address of a device
- */
-void LogMetricHfpRfcommCollisionFail(hci::Address address);
-
-/**
- * Logs a RFCOMM AG open failure in a HFP session
- * @param address of a device
- */
-void LogMetricHfpRfcommAgOpenFail(hci::Address address);
-
-/**
- * Logs a SLC failure in a HFP Session
- * @param address of a device
- */
-void LogMetricHfpSlcFail(hci::Address address);
-
-/**
- * Logs when a SCO link is created in HFP
- * @param address
- */
-void LogMetricScoLinkCreated(hci::Address address);
-
-/**
- * Logs when a SCO link is removed in HFP
- * @param address
- */
-void LogMetricScoLinkRemoved(hci::Address address);
-
-/**
- * Logs what codec the SCO is using
- * @param address
- * @param codec
- */
-void LogMetricScoCodec(hci::Address address, uint16_t codec);
+android::bluetooth::State MapScoCodecToState(uint16_t codec);
 
 }  // namespace metrics
 }  // namespace bluetooth
