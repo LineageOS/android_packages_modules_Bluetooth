@@ -5706,6 +5706,23 @@ public:
     return true;
   }
 
+  bool UpdateMetadata(LeAudioDeviceGroup* group, BidirectionalPair<AudioContexts> remote_contexts) {
+    if (!group->IsStreaming()) {
+      log::error("group_id: {} is not streaming.", group->group_id_);
+      return false;
+    }
+
+    log::info("group_id: {} Updating the metadata to sink={}, source={}", group->group_id_,
+              ToString(remote_contexts.sink), ToString(remote_contexts.source));
+
+    LeAudioLogHistory::Get()->AddLogHistory(kLogAfCallBt, active_group_id_, RawAddress::kEmpty,
+                                            kLogAfMetadataUpdate + "Updating...",
+                                            "Sink: " + ToString(remote_contexts.sink) +
+                                                    "Source: " + ToString(remote_contexts.source));
+
+    return GroupStream(group, configuration_context_type_, remote_contexts);
+  }
+
   /* Return true if stream is started */
   bool ReconfigureOrUpdateMetadata(LeAudioDeviceGroup* group,
                                    LeAudioContextType new_configuration_context,
@@ -5726,17 +5743,8 @@ public:
     }
 
     if (group->GetTargetState() == AseState::BTA_LE_AUDIO_ASE_STATE_STREAMING) {
-      log::info("The {} configuration did not change. Updating the metadata to sink={}, source={}",
-                ToString(configuration_context_type_), ToString(remote_contexts.sink),
-                ToString(remote_contexts.source));
-
-      LeAudioLogHistory::Get()->AddLogHistory(
-              kLogAfCallBt, active_group_id_, RawAddress::kEmpty,
-              kLogAfMetadataUpdate + "Updating...",
-              "Sink: " + ToString(remote_contexts.sink) +
-                      "Source: " + ToString(remote_contexts.source));
-
-      return GroupStream(group, configuration_context_type_, remote_contexts);
+      log::info("The {} configuration did not change", ToString(configuration_context_type_));
+      return UpdateMetadata(group, remote_contexts);
     }
     return false;
   }
