@@ -320,7 +320,7 @@ void smp_log_metrics(const RawAddress& bd_addr, bool is_outgoing, const uint8_t*
   uint8_t failure_reason = 0;
   if (raw_cmd == SMP_OPCODE_PAIRING_FAILED && buf_len >= 1) {
     STREAM_TO_UINT8(failure_reason, p_buf);
-    bluetooth::shim::LogMetricLePairingFail(bd_addr, failure_reason, is_outgoing);
+    bluetooth::metrics::LogLePairingFail(bd_addr, failure_reason, is_outgoing);
   }
   if (smp_cb.is_pair_cancel) {
     failure_reason = SMP_USER_CANCELLED;  // Tracking pairing cancellations
