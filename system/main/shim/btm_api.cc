@@ -71,8 +71,7 @@ tBTM_STATUS bluetooth::shim::BTM_AllowWakeByHid(
   // Allow classic HID wake.
   auto controller = GetController();
   for (auto device : classic_hid_devices) {
-    controller->SetEventFilterConnectionSetupAddress(bluetooth::ToGdAddress(device),
-                                                     hci::AutoAcceptFlag::AUTO_ACCEPT_OFF);
+    controller->SetEventFilterConnectionSetupAddress(device, hci::AutoAcceptFlag::AUTO_ACCEPT_OFF);
   }
 
   // Allow BLE HID

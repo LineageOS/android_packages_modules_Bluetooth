@@ -39,6 +39,7 @@ from mobly.asserts import assert_equal, assert_is_not_none, assert_raises, fail
 from pandora_experimental.rfcomm_grpc_aio import RFCOMM as AioRFCOMM
 from pandora.security_pb2 import PairingEventAnswer
 
+
 class ServiceAccessTempBondingTest(BREDRPairTestBase):  # type: ignore[misc]
     """
     This test verifies that access to services (on BR/EDR transport) from
@@ -103,18 +104,19 @@ class ServiceAccessTempBondingTest(BREDRPairTestBase):  # type: ignore[misc]
             self.start_pairing(
                 initiator_acl_connection=bumble_res.connection,
                 responder_acl_connection=android_res.connection,
-            )
-        )
+            ))
         await self.accept_pairing()
         await asyncio.wait_for(pairing_task, timeout=10.0)
 
-        android_addr = Address.from_string_for_transport(str(self.dut.address), Address.PUBLIC_DEVICE_ADDRESS)
+        android_addr = Address.from_string_for_transport(str(self.dut.address),
+                                                         Address.PUBLIC_DEVICE_ADDRESS)
         self.bumble_raw_acl_connection = self.ref.device.find_connection_by_bd_addr(android_addr)
 
     @asynchronous
     async def test_access_sdp_service(self):
         sdp_psm = 0x0001
-        sdp_channel = self.bumble_raw_acl_connection.create_l2cap_channel(spec=ClassicChannelSpec(psm=sdp_psm))
+        sdp_channel = self.bumble_raw_acl_connection.create_l2cap_channel(spec=ClassicChannelSpec(
+            psm=sdp_psm))
         try:
             _ = await sdp_channel
         except:
@@ -123,7 +125,8 @@ class ServiceAccessTempBondingTest(BREDRPairTestBase):  # type: ignore[misc]
     @asynchronous
     async def test_access_rfcomm_service(self):
         rfc_psm = 0x0003
-        rfcomm_channel = self.bumble_raw_acl_connection.create_l2cap_channel(spec=ClassicChannelSpec(psm=rfc_psm))
+        rfcomm_channel = self.bumble_raw_acl_connection.create_l2cap_channel(
+            spec=ClassicChannelSpec(psm=rfc_psm))
         try:
             _ = await rfcomm_channel
         except:
@@ -156,11 +159,13 @@ class ServiceAccessTempBondingTest(BREDRPairTestBase):  # type: ignore[misc]
 
         for attribute in attributes:
             print(f"attribute: {attribute.to_string(with_colors=True)}")
-            if attribute.id == SDP_PROTOCOL_DESCRIPTOR_LIST_ATTRIBUTE_ID and len(attribute.value.value) >= 2:
+            if attribute.id == SDP_PROTOCOL_DESCRIPTOR_LIST_ATTRIBUTE_ID and len(
+                    attribute.value.value) >= 2:
                 proto0 = attribute.value.value[0]
                 proto1 = attribute.value.value[1]
 
-                if proto0.value[0].value == BT_L2CAP_PROTOCOL_ID and proto1.value[0].value == BT_RFCOMM_PROTOCOL_ID:
+                if proto0.value[0].value == BT_L2CAP_PROTOCOL_ID and proto1.value[
+                        0].value == BT_RFCOMM_PROTOCOL_ID:
                     return proto1.value[1].value
 
         return None
@@ -177,7 +182,8 @@ class ServiceAccessTempBondingTest(BREDRPairTestBase):  # type: ignore[misc]
 
         ret = None
         for service_record_handle in service_record_handles:
-            attributes = await sdp_client.get_attributes(service_record_handle, [SDP_ALL_ATTRIBUTES_RANGE])
+            attributes = await sdp_client.get_attributes(service_record_handle,
+                                                         [SDP_ALL_ATTRIBUTES_RANGE])
 
             print(color(f'SERVICE {service_record_handle:04X} attributes:', 'yellow'))
             ret = self._parse_rfcomm_channel_from_sdp_service_attributes(attributes)
@@ -216,8 +222,7 @@ class ServiceAccessTempBondingTest(BREDRPairTestBase):  # type: ignore[misc]
         with assert_raises(ProtocolError):
             hid_control_psm = 0x0011
             connector_hid_control = self.bumble_raw_acl_connection.create_l2cap_channel(
-                spec=ClassicChannelSpec(psm=hid_control_psm)
-            )
+                spec=ClassicChannelSpec(psm=hid_control_psm))
             _ = await connector_hid_control
 
     @asynchronous
@@ -227,6 +232,5 @@ class ServiceAccessTempBondingTest(BREDRPairTestBase):  # type: ignore[misc]
         with assert_raises(ProtocolError):
             hid_interrupt_psm = 0x0013
             connector_hid_interrupt = self.bumble_raw_acl_connection.create_l2cap_channel(
-                spec=ClassicChannelSpec(psm=hid_interrupt_psm)
-            )
+                spec=ClassicChannelSpec(psm=hid_interrupt_psm))
             _ = await connector_hid_interrupt

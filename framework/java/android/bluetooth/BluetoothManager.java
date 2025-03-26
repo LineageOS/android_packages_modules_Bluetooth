@@ -69,7 +69,7 @@ public final class BluetoothManager {
         } else {
             mContext = context;
         }
-        mAdapter = BluetoothAdapter.createAdapter(mContext.getAttributionSource());
+        mAdapter = BluetoothAdapter.createAdapter(mContext);
     }
 
     /**

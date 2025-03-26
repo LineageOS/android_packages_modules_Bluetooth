@@ -92,9 +92,11 @@ class RFCOMMService(RFCOMMServicer):
                 self.saved_dlc = dlc
 
     @utils.rpc
-    async def ConnectToServer(self, request: ConnectionRequest, context: grpc.ServicerContext) -> ConnectionResponse:
+    async def ConnectToServer(self, request: ConnectionRequest,
+                              context: grpc.ServicerContext) -> ConnectionResponse:
         logging.info(f"ConnectToServer")
-        address = Address(address=bytes(reversed(request.address)), address_type=Address.PUBLIC_DEVICE_ADDRESS)
+        address = Address(address=bytes(reversed(request.address)),
+                          address_type=Address.PUBLIC_DEVICE_ADDRESS)
         acl_connection = self.device.find_connection_by_bd_addr(address, transport=0)  # BR/EDR
         if acl_connection is None:
             acl_connection = await self.device.connect(address, transport=0)  # BR/EDR transport
@@ -113,7 +115,8 @@ class RFCOMMService(RFCOMMServicer):
         return ConnectionResponse(connection=RfcommConnection(id=id))
 
     @utils.rpc
-    async def StartServer(self, request: StartServerRequest, context: grpc.ServicerContext) -> StartServerResponse:
+    async def StartServer(self, request: StartServerRequest,
+                          context: grpc.ServicerContext) -> StartServerResponse:
         uuid = core.UUID(request.uuid)
         logging.info(f"StartServer {uuid}")
 
@@ -127,7 +130,8 @@ class RFCOMMService(RFCOMMServicer):
         open_channel = self.server.listen(acceptor=server_port.acceptor, channel=self.next_scn)
         self.next_scn += 1
         handle = FIRST_SERVICE_RECORD_HANDLE + open_channel
-        self.device.sdp_service_records[handle] = make_service_sdp_records(handle, open_channel, uuid)
+        self.device.sdp_service_records[handle] = make_service_sdp_records(
+            handle, open_channel, uuid)
         self.server_ports[open_channel] = server_port
         return StartServerResponse(server=ServerId(id=open_channel))
 
@@ -145,7 +149,8 @@ class RFCOMMService(RFCOMMServicer):
         return AcceptConnectionResponse(connection=RfcommConnection(id=id))
 
     @utils.rpc
-    async def Disconnect(self, request: DisconnectionRequest, context: grpc.ServicerContext) -> DisconnectionResponse:
+    async def Disconnect(self, request: DisconnectionRequest,
+                         context: grpc.ServicerContext) -> DisconnectionResponse:
         logging.info(f"Disconnect")
         rfcomm_connection = self.connections[request.connection.id]
         assert rfcomm_connection is not None
@@ -155,7 +160,8 @@ class RFCOMMService(RFCOMMServicer):
         return DisconnectionResponse()
 
     @utils.rpc
-    async def StopServer(self, request: StopServerRequest, context: grpc.ServicerContext) -> StopServerResponse:
+    async def StopServer(self, request: StopServerRequest,
+                         context: grpc.ServicerContext) -> StopServerResponse:
         logging.info(f"StopServer")
         assert self.server_ports[request.server.id] is not None
         del self.server_ports[request.server.id]

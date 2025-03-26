@@ -846,8 +846,8 @@ void GATTC_UpdateUserAttMtuIfNeeded(const RawAddress& remote_bda, tBT_TRANSPORT 
   }
 
   p_tcb->max_user_mtu = user_mtu;
-  if (get_btm_client_interface().ble.BTM_SetBleDataLength(remote_bda, user_mtu) !=
-      tBTM_STATUS::BTM_SUCCESS) {
+  if (get_btm_client_interface().ble.BTM_SetBleDataLength(
+              remote_bda, user_mtu, /*is_privileged_client*/ false) != tBTM_STATUS::BTM_SUCCESS) {
     log::warn("Unable to set ble data length peer:{} mtu:{}", remote_bda, user_mtu);
   }
 }
@@ -1430,8 +1430,7 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE ad
     return true;
   }
 
-  bluetooth::shim::LogMetricLeConnectionLifecycle(ToGdAddress(bd_addr), true /* is_connect */,
-                                                  is_direct);
+  bluetooth::shim::LogMetricLeConnectionLifecycle(bd_addr, true /* is_connect */, is_direct);
 
   bool ret = false;
   if (is_direct) {
@@ -1573,8 +1572,8 @@ tGATT_STATUS GATT_Disconnect(tCONN_ID conn_id) {
     return GATT_ILLEGAL_PARAMETER;
   }
 
-  bluetooth::shim::LogMetricLeConnectionLifecycle(ToGdAddress(p_tcb->peer_bda),
-                                                  true /* is_connect */, false /* is_direct */);
+  bluetooth::shim::LogMetricLeConnectionLifecycle(p_tcb->peer_bda, true /* is_connect */,
+                                                  false /* is_direct */);
 
   tGATT_IF gatt_if = gatt_get_gatt_if(conn_id);
   gatt_update_app_use_link_flag(gatt_if, p_tcb, false, true);

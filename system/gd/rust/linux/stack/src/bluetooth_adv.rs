@@ -2,7 +2,7 @@
 
 use btif_macros::{btif_callback, btif_callbacks_dispatcher, log_cb_args};
 
-use bt_topshim::btif::{DisplayAddress, RawAddress, Uuid};
+use bt_topshim::btif::{RawAddress, Uuid};
 use bt_topshim::profiles::gatt::{AdvertisingStatus, Gatt, GattAdvCallbacks, LeDiscMode, LePhy};
 
 use itertools::Itertools;
@@ -214,7 +214,7 @@ impl From<AdvertisingSetParameters> for bt_topshim::profiles::gatt::AdvertisePar
     fn from(val: AdvertisingSetParameters) -> Self {
         let mut props: u16 = 0;
         let mut is_discoverable = false;
-        let mut address = RawAddress::default();
+        let address = RawAddress::default();
         if val.connectable {
             props |= 0x01;
         }

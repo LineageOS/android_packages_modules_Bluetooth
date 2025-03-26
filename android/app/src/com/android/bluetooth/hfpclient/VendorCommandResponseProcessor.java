@@ -18,6 +18,7 @@
  * Defines utility interface that is used by state machine/service to either send vendor specific AT
  * command or receive vendor specific response from the native stack.
  */
+
 package com.android.bluetooth.hfpclient;
 
 import static android.Manifest.permission.BLUETOOTH_CONNECT;

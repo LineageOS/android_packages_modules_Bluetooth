@@ -97,9 +97,8 @@ public class RemoteDevices {
     private static final int MESSAGE_UUID_STATUS_TIMEOUT = 1;
     private static final String LOG_SOURCE_DIS = "DIS";
 
-    private final HashMap<String, DeviceProperties> mDevices;
+    private final LinkedHashMap<String, DeviceProperties> mDevices;
     private final HashMap<String, String> mDualDevicesMap;
-    private final ArrayDeque<String> mDeviceQueue;
 
     /**
      * Bluetooth HFP v1.8 specifies the Battery Charge indicator of AG can take values from {@code
@@ -175,9 +174,8 @@ public class RemoteDevices {
         mAdapter = service.getSystemService(BluetoothManager.class).getAdapter();
         mAdapterService = service;
         mSdpTracker = new ArrayList<>();
-        mDevices = new HashMap<>();
+        mDevices = new LinkedHashMap<>(MAX_DEVICE_QUEUE_SIZE);
         mDualDevicesMap = new HashMap<>();
-        mDeviceQueue = new ArrayDeque<>();
         mHandler = new RemoteDevicesHandler(looper);
         mMainHandler = new Handler(Looper.getMainLooper());
     }
@@ -226,7 +224,6 @@ public class RemoteDevices {
         }
 
         mDualDevicesMap.clear();
-        mDeviceQueue.clear();
     }
 
     @Override
@@ -319,17 +316,26 @@ public class RemoteDevices {
 
             DeviceProperties pv = mDevices.put(key, prop);
 
-            if (pv == null) {
-                mDeviceQueue.offer(key);
-                if (mDeviceQueue.size() > MAX_DEVICE_QUEUE_SIZE) {
-                    String deleteKey = mDeviceQueue.poll();
-                    for (BluetoothDevice device : mAdapterService.getBondedDevices()) {
-                        if (device.getAddress().equals(deleteKey)) {
-                            return prop;
-                        }
+            // If new device causes overflow, remove the oldest non-bonded device
+            if (pv == null && mDevices.size() >= MAX_DEVICE_QUEUE_SIZE) {
+                String eldestAddress = null;
+                for (Map.Entry<String, DeviceProperties> entry : mDevices.entrySet()) {
+                    // Device to remove should not be bonded or same as the new device
+                    if (entry.getValue().getBondState() == BluetoothDevice.BOND_NONE
+                            && !entry.getKey().equals(key)) {
+                        eldestAddress = entry.getKey();
+                        break;
                     }
-                    debugLog("Removing device " + deleteKey + " from property map");
-                    mDevices.remove(deleteKey);
+                }
+
+                if (eldestAddress != null) {
+                    mDevices.remove(eldestAddress);
+                    debugLog(
+                            "Ejected "
+                                    + BluetoothUtils.toAnonymizedAddress(eldestAddress)
+                                    + " from property map");
+                } else {
+                    warnLog("No non-bonded device to eject");
                 }
             }
             return prop;
@@ -1557,7 +1563,6 @@ public class RemoteDevices {
 
         synchronized (mDevices) {
             mDevices.remove(address);
-            mDeviceQueue.remove(address); // Remove from LRU cache
 
             // Remove from dual mode device mappings
             mDualDevicesMap.values().remove(address);

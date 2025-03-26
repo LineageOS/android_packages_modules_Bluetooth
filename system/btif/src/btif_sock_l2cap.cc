@@ -44,6 +44,7 @@
 #include "osi/include/allocator.h"
 #include "osi/include/osi.h"
 #include "stack/include/bt_hdr.h"
+#include "stack/include/btm_client_interface.h"
 #include "stack/include/l2cdefs.h"
 #include "types/raw_address.h"
 
@@ -681,6 +682,14 @@ static void on_l2cap_connect(tBTA_JV* p_data, uint32_t id) {
         on_cl_l2cap_psm_connect_offload_l(psm_open, sock);
       } else {
         on_srv_l2cap_psm_connect_offload_l(psm_open, sock);
+      }
+    }
+    // Update data length to get better throughput on CoC
+    if (com::android::bluetooth::flags::set_max_data_length_for_lecoc()) {
+      if (get_btm_client_interface().ble.BTM_SetBleDataLength(
+                  le_open->rem_bda, BTM_BLE_DATA_SIZE_MAX,
+                  /*is_privileged_client*/ false) != tBTM_STATUS::BTM_SUCCESS) {
+        log::info("Unable to set ble data length:{}", BTM_BLE_DATA_SIZE_MAX);
       }
     }
   } else {

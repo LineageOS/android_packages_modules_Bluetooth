@@ -368,7 +368,7 @@ private:
             static_cast<bluetooth::hci::SecondaryPhyType>(params.secondary_advertising_phy);
     config.enable_scan_request_notifications =
             static_cast<bluetooth::hci::Enable>(params.scan_request_notification_enable);
-    config.peer_address = bluetooth::ToGdAddress(params.peer_address);
+    config.peer_address = params.peer_address;
     // Matching the ADDRESS_TYPE_* enums from Java
     switch (params.own_address_type) {
       case -1:

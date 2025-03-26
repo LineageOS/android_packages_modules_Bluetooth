@@ -52,7 +52,8 @@ def toBumblePreset(grpc_preset: grpcPresetRecord) -> PresetRecord:
             PresetRecord.Property.IsAvailable(grpc_preset.isAvailable)))  # type: ignore
 
 
-def toBumblePresetList(grpc_preset_list: List[grpcPresetRecord]) -> List[PresetRecord]:  # type: ignore
+def toBumblePresetList(
+        grpc_preset_list: List[grpcPresetRecord]) -> List[PresetRecord]:  # type: ignore
     return [toBumblePreset(grpc_preset) for grpc_preset in grpc_preset_list]  # type: ignore
 
 
@@ -87,13 +88,15 @@ class HapTest(base_test.BaseTestClass):
         self.logcat = OsAio(channel=self.dut.aio.channel)
         await self.logcat.Log("setup test")
         self.hap_grpc = HAP(channel=self.dut.aio.channel)
-        device_features = HearingAidFeatures(HearingAidType.MONAURAL_HEARING_AID,
-                                             PresetSynchronizationSupport.PRESET_SYNCHRONIZATION_IS_NOT_SUPPORTED,
-                                             IndependentPresets.IDENTICAL_PRESET_RECORD,
-                                             DynamicPresets.PRESET_RECORDS_DOES_NOT_CHANGE,
-                                             WritablePresetsSupport.WRITABLE_PRESET_RECORDS_SUPPORTED)
-        self.has = HearingAccessService(self.ref_left.device, device_features,
-                                        [foo_preset, bar_preset, longname_preset, unavailable_preset])
+        device_features = HearingAidFeatures(
+            HearingAidType.MONAURAL_HEARING_AID,
+            PresetSynchronizationSupport.PRESET_SYNCHRONIZATION_IS_NOT_SUPPORTED,
+            IndependentPresets.IDENTICAL_PRESET_RECORD,
+            DynamicPresets.PRESET_RECORDS_DOES_NOT_CHANGE,
+            WritablePresetsSupport.WRITABLE_PRESET_RECORDS_SUPPORTED)
+        self.has = HearingAccessService(
+            self.ref_left.device, device_features,
+            [foo_preset, bar_preset, longname_preset, unavailable_preset])
         self.dut_gatt = GATT(channel=self.dut.aio.channel)
 
         self.ref_left.device.add_service(self.has)  # type: ignore
@@ -115,7 +118,8 @@ class HapTest(base_test.BaseTestClass):
         :return: ScanningResponse for ASHA
         """
         dut_scan = self.dut.aio.host.Scan(RANDOM)  # type: ignore
-        scan_response = await anext((x async for x in dut_scan if HAP_UUID in x.data.incomplete_service_class_uuids16))
+        scan_response = await anext(
+            (x async for x in dut_scan if HAP_UUID in x.data.incomplete_service_class_uuids16))
         dut_scan.cancel()
         return scan_response
 
@@ -138,7 +142,8 @@ class HapTest(base_test.BaseTestClass):
     async def setupHapConnection(self):
         advertisement = await self.advertise_hap(self.ref_left)
         scan_response = await self.dut_scan_for_hap()
-        dut_connection_to_ref, ref_connection_to_dut = await self.dut_connect_to_ref(advertisement, scan_response)
+        dut_connection_to_ref, ref_connection_to_dut = await self.dut_connect_to_ref(
+            advertisement, scan_response)
 
         await self.dut_gatt.ExchangeMTU(mtu=512, connection=dut_connection_to_ref)
 
@@ -157,7 +162,8 @@ class HapTest(base_test.BaseTestClass):
 
     async def assertIdenticalPreset(self, dut_connection_to_ref: Connection) -> None:
         remote_preset = toBumblePresetList(
-            (await self.hap_grpc.GetAllPresetRecords(connection=dut_connection_to_ref)).preset_record_list)
+            (await self.hap_grpc.GetAllPresetRecords(connection=dut_connection_to_ref
+                                                    )).preset_record_list)
         assert remote_preset == get_server_preset_sorted(self.has)
 
     async def verify_no_crash(self, dut_connection_to_ref: Connection) -> None:
@@ -215,12 +221,14 @@ class HapTest(base_test.BaseTestClass):
 
     @asynchronous
     async def test__set_non_existing_preset_as_active__verify_no_crash_and_no_update(self) -> None:
-        await self.logcat.Log("test__set_non_existing_preset_as_active__verify_no_crash_and_no_update")
+        await self.logcat.Log(
+            "test__set_non_existing_preset_as_active__verify_no_crash_and_no_update")
         non_existing_preset_index = 79
         assert non_existing_preset_index not in self.has.preset_records.keys()  # type: ignore
         dut_connection_to_ref = await self.setupHapConnection()
         assert foo_preset == toBumblePreset(  # type: ignore
-            (await self.hap_grpc.GetActivePresetRecord(connection=dut_connection_to_ref)).preset_record)
+            (await
+             self.hap_grpc.GetActivePresetRecord(connection=dut_connection_to_ref)).preset_record)
 
         await self.logcat.Log("Notify active update to non existing index")
         # bypass the set_active_preset checks by sending an invalid index on purpose
@@ -229,11 +237,14 @@ class HapTest(base_test.BaseTestClass):
 
         await self.verify_no_crash(dut_connection_to_ref)
         assert foo_preset == toBumblePreset(
-            (await self.hap_grpc.GetActivePresetRecord(connection=dut_connection_to_ref)).preset_record)
+            (await
+             self.hap_grpc.GetActivePresetRecord(connection=dut_connection_to_ref)).preset_record)
 
     @asynchronous
-    async def test__set_non_existing_preset_as_available__verify_no_crash_and_no_update(self) -> None:
-        await self.logcat.Log("test__set_non_existing_preset_as_available__verify_no_crash_and_no_update")
+    async def test__set_non_existing_preset_as_available__verify_no_crash_and_no_update(
+            self) -> None:
+        await self.logcat.Log(
+            "test__set_non_existing_preset_as_available__verify_no_crash_and_no_update")
         non_existing_preset_index = 79
         assert non_existing_preset_index not in self.has.preset_records.keys()
         dut_connection_to_ref = await self.setupHapConnection()

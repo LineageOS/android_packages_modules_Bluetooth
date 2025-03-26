@@ -20,7 +20,6 @@ import android.annotation.Nullable;
 import android.os.RemoteException;
 import android.util.Log;
 
-import com.android.bluetooth.gatt.FilterParams;
 import com.android.internal.annotations.VisibleForTesting;
 
 import java.util.concurrent.CountDownLatch;

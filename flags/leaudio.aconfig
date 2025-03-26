@@ -69,16 +69,6 @@ flag {
 }
 
 flag {
-    name: "leaudio_big_depends_on_audio_state"
-    namespace: "bluetooth"
-    description: "BIG creation/termination depends on audio resume/pause"
-    bug: "347204335"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "le_ase_read_multiple_variable"
     namespace: "bluetooth"
     description: "Use GATT read multiple variable length characteristic values"
@@ -107,26 +97,6 @@ flag {
     namespace: "bluetooth"
     description: "enable Gaming Audio Profile"
     bug: "353978074"
-}
-
-flag {
-    name: "leaudio_broadcast_resync_helper"
-    namespace: "bluetooth"
-    description: "Helps sinks to resync to external broadcast when BIS or PA unsynced"
-    bug: "363168099"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "leaudio_sort_scans_to_sync_by_fails"
-    namespace: "bluetooth"
-    description: "Sort scan results for source sync by fails counter"
-    bug: "370639684"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
 }
 
 flag {

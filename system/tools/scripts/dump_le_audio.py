@@ -194,7 +194,8 @@ class Broadcast:
 
     def dump(self):
         for bis_index, iso_stream in self.bis.items():
-            print("bis_index: " + str(bis_index) + " bis handle: " + str(self.bis_index_handle_map[bis_index]))
+            print("bis_index: " + str(bis_index) + " bis handle: " +
+                  str(self.bis_index_handle_map[bis_index]))
             iso_stream.dump()
 
 
@@ -240,21 +241,28 @@ def generate_header(file, stream, is_cis):
         SAMPLE_FREQUENCY_384000: 2840,
     }
     fd_case = {FRAME_DURATION_7_5: 7.5, FRAME_DURATION_10: 10}
-    al_case = {AUDIO_LOCATION_MONO: 1, AUDIO_LOCATION_LEFT: 1, AUDIO_LOCATION_RIGHT: 1, AUDIO_LOCATION_CENTER: 2}
+    al_case = {
+        AUDIO_LOCATION_MONO: 1,
+        AUDIO_LOCATION_LEFT: 1,
+        AUDIO_LOCATION_RIGHT: 1,
+        AUDIO_LOCATION_CENTER: 2
+    }
 
     header = bytearray.fromhex('1ccc1200')
     if is_cis:
         for ase in stream.ase.values():
             header = header + struct.pack("<H", sf_case[ase.sampling_frequencies])
-            header = header + struct.pack("<H", int(ase.octets_per_frame * 8 * 10 / fd_case[ase.frame_duration]))
-            header = header + struct.pack("<HHHL", al_case[ase.channel_allocation], fd_case[ase.frame_duration] * 100,
-                                          0, 48000000)
+            header = header + struct.pack(
+                "<H", int(ase.octets_per_frame * 8 * 10 / fd_case[ase.frame_duration]))
+            header = header + struct.pack("<HHHL", al_case[ase.channel_allocation],
+                                          fd_case[ase.frame_duration] * 100, 0, 48000000)
             break
     else:
         header = header + struct.pack("<H", sf_case[stream.sampling_frequencies])
-        header = header + struct.pack("<H", int(stream.octets_per_frame * 8 * 10 / fd_case[stream.frame_duration]))
-        header = header + struct.pack("<HHHL", al_case[stream.channel_allocation], fd_case[stream.frame_duration] * 100,
-                                      0, 48000000)
+        header = header + struct.pack(
+            "<H", int(stream.octets_per_frame * 8 * 10 / fd_case[stream.frame_duration]))
+        header = header + struct.pack("<HHHL", al_case[stream.channel_allocation],
+                                      fd_case[stream.frame_duration] * 100, 0, 48000000)
     file.write(header)
 
 
@@ -314,7 +322,8 @@ def parse_att_write_cmd(packet, connection_handle, timestamp):
         opcode, packet = unpack_data(packet, 1, False)
         if opcode == OPCODE_CONFIG_CODEC:
             debug_print("config_codec")
-            (connection_map[connection_handle].number_of_ases, packet) = unpack_data(packet, 1, False)
+            (connection_map[connection_handle].number_of_ases,
+             packet) = unpack_data(packet, 1, False)
             for i in range(connection_map[connection_handle].number_of_ases):
                 ase_id, packet = unpack_data(packet, 1, False)
                 # ignore target_latency, target_phy, codec_id
@@ -336,7 +345,8 @@ def parse_att_write_cmd(packet, connection_handle, timestamp):
                     return
                 metadata_type, packet = unpack_data(packet, 1, False)
                 if metadata_type == TYPE_STREAMING_AUDIO_CONTEXTS:
-                    (connection_map[connection_handle].context, packet) = unpack_data(packet, 2, False)
+                    (connection_map[connection_handle].context,
+                     packet) = unpack_data(packet, 2, False)
                     break
 
             if opcode == OPCODE_ENABLE:
@@ -700,7 +710,8 @@ def parse_acl_packet(packet, flags, timestamp):
         return
 
     if debug_enable:
-        debug_print("ACL connection_handle - " + str(connection_handle) + " channel id - " + (str(channel_id)))
+        debug_print("ACL connection_handle - " + str(connection_handle) + " channel id - " +
+                    (str(channel_id)))
 
     # Gather EATT CID
     if channel_id == L2CAP_CID:
@@ -810,9 +821,10 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("btsnoop_file", help="btsnoop file contains LE audio start procedure")
     parser.add_argument("-v", "--verbose", help="Enable verbose log.", action="store_true")
-    parser.add_argument("--header",
-                        help="Add the header for LC3 Conformance Interoperability Test Software V.1.0.3.",
-                        action="store_true")
+    parser.add_argument(
+        "--header",
+        help="Add the header for LC3 Conformance Interoperability Test Software V.1.0.3.",
+        action="store_true")
     parser.add_argument("--ase_handle", help="Set the ASE handle manually.", type=int)
 
     argv = parser.parse_args()

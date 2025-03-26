@@ -41,7 +41,6 @@ source_set("BluetoothMetricsSources_linux") {
 
 source_set("BluetoothMetricsSources") {
   sources = [
-    "counter_metrics.cc",
     "utils.cc",
     "bluetooth_event.cc"
   ]

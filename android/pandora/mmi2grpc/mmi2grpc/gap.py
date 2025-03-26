@@ -20,8 +20,8 @@ from mmi2grpc._helpers import assert_description, match_description
 from mmi2grpc._proxy import ProfileProxy
 from mmi2grpc._rootcanal import Dongle
 from pandora.host_grpc import Host
-from pandora.host_pb2 import (DISCOVERABLE_GENERAL, DISCOVERABLE_LIMITED, NOT_CONNECTABLE, NOT_DISCOVERABLE, PUBLIC,
-                              RANDOM, DataTypes)
+from pandora.host_pb2 import (DISCOVERABLE_GENERAL, DISCOVERABLE_LIMITED, NOT_CONNECTABLE,
+                              NOT_DISCOVERABLE, PUBLIC, RANDOM, DataTypes)
 from pandora.security_grpc import Security, SecurityStorage
 from pandora.security_pb2 import LE_LEVEL3, LEVEL1, LEVEL2, PairingEventAnswer
 from pandora_experimental.gatt_grpc import GATT
@@ -183,7 +183,8 @@ class GAPProxy(ProfileProxy):
             if self.counter == 0:
                 self.counter += 1
                 self.security_storage.DeleteBond(public=pts_addr)
-                self.connection = self.host.ConnectLE(own_address_type=RANDOM, public=pts_addr).connection
+                self.connection = self.host.ConnectLE(own_address_type=RANDOM,
+                                                      public=pts_addr).connection
                 self.security.Secure(connection=self.connection, le=LE_LEVEL3)
                 return "OK"
 
@@ -260,10 +261,11 @@ class GAPProxy(ProfileProxy):
         Please prepare IUT to send an advertising report with Service UUID.
         """
 
-        self.advertise = self.host.Advertise(
-            legacy=True,
-            own_address_type=PUBLIC,
-            data=DataTypes(complete_service_class_uuids128=["955798ce-3022-455c-b759-ee8edcd73d1a"],))
+        self.advertise = self.host.Advertise(legacy=True,
+                                             own_address_type=PUBLIC,
+                                             data=DataTypes(complete_service_class_uuids128=[
+                                                 "955798ce-3022-455c-b759-ee8edcd73d1a"
+                                             ],))
         return "OK"
 
     @assert_description
@@ -306,7 +308,8 @@ class GAPProxy(ProfileProxy):
 
         self.advertise = self.host.Advertise(own_address_type=PUBLIC,
                                              legacy=True,
-                                             data=DataTypes(manufacturer_specific_data=b"d0n't b3 3v1l!",))
+                                             data=DataTypes(
+                                                 manufacturer_specific_data=b"d0n't b3 3v1l!",))
 
         return "OK"
 
@@ -413,7 +416,8 @@ class GAPProxy(ProfileProxy):
         return "Yes"
 
     @assert_description
-    def TSC_MMI_iut_send_advertising_report_event_general_discoverable_ok_to_continue(self, **kwargs):
+    def TSC_MMI_iut_send_advertising_report_event_general_discoverable_ok_to_continue(
+            self, **kwargs):
         """
         Please prepare IUT into general discoverable mode and send an
         advertising report. Press OK to continue.
@@ -523,7 +527,8 @@ class GAPProxy(ProfileProxy):
 
         for response in self.scan_responses:
             assert response.HasField("public")
-            if (response.public == pts_addr and response.data.le_discoverability_mode == DISCOVERABLE_LIMITED):
+            if (response.public == pts_addr and
+                    response.data.le_discoverability_mode == DISCOVERABLE_LIMITED):
                 self.scan_responses.cancel()
                 return "OK"
 
@@ -541,7 +546,8 @@ class GAPProxy(ProfileProxy):
             nonlocal discovered
             for response in self.scan_responses:
                 assert response.HasField("public")
-                if (response.public == pts_addr and response.data.le_discoverability_mode == DISCOVERABLE_GENERAL):
+                if (response.public == pts_addr and
+                        response.data.le_discoverability_mode == DISCOVERABLE_GENERAL):
                     self.scan_responses.cancel()
                     discovered = True
                     return
@@ -567,7 +573,8 @@ class GAPProxy(ProfileProxy):
             nonlocal discovered
             for response in self.scan_responses:
                 assert response.HasField("public")
-                if (response.public == pts_addr and response.data.le_discoverability_mode == DISCOVERABLE_LIMITED):
+                if (response.public == pts_addr and
+                        response.data.le_discoverability_mode == DISCOVERABLE_LIMITED):
                     self.inquiry_responses.cancel()
                     discovered = True
                     return
@@ -861,7 +868,8 @@ class GAPProxy(ProfileProxy):
         return "OK"
 
     @assert_description
-    def TSC_MMI_iut_send_advertising_report_event_non_discoverable_and_undirected_connectable(self, **kwargs):
+    def TSC_MMI_iut_send_advertising_report_event_non_discoverable_and_undirected_connectable(
+            self, **kwargs):
         """
         Please prepare IUT into non-discoverable and connectable mode and send
         an advertising report.
@@ -1005,7 +1013,8 @@ class GAPProxy(ProfileProxy):
         return "OK"
 
     @assert_description
-    def TSC_MMI_iut_enter_handle_for_insufficient_authentication_or_insufficient_encryption(self, **kwargs):
+    def TSC_MMI_iut_enter_handle_for_insufficient_authentication_or_insufficient_encryption(
+            self, **kwargs):
         """
         Please enter the handle to the characteristic in the IUT database where
         Insufficient Authentication or Insufficient Encryption error will be

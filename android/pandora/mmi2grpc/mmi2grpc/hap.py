@@ -63,8 +63,9 @@ class HAPProxy(ProfileProxy):
         def convert_frame(data):
             return LeAudioPlaybackAudioRequest(data=data)
 
-        self.audio = AudioSignal(lambda frames: self.le_audio.LeAudioPlaybackAudio(map(convert_frame, frames)),
-                                 AUDIO_SIGNAL_AMPLITUDE, AUDIO_SIGNAL_SAMPLING_RATE)
+        self.audio = AudioSignal(
+            lambda frames: self.le_audio.LeAudioPlaybackAudio(map(convert_frame, frames)),
+            AUDIO_SIGNAL_AMPLITUDE, AUDIO_SIGNAL_SAMPLING_RATE)
 
     def test_started(self, test: str, **kwargs):
         self.rootcanal.select_pts_dongle(Dongle.LAIRD_BL654)
@@ -205,7 +206,8 @@ class HAPProxy(ProfileProxy):
         return "OK"
 
     @match_description
-    def IUT_ORDER_WRITE_SET_ACTIVE_PRESET_INDEX_DO_NOT_EXPECT_TO_RECEIVE(self, test: str, index: str, **kwargs):
+    def IUT_ORDER_WRITE_SET_ACTIVE_PRESET_INDEX_DO_NOT_EXPECT_TO_RECEIVE(
+            self, test: str, index: str, **kwargs):
         """
         Please write Set Active Preset opcode with index: (?P<index>[0-9]*). Do not expect to
         receive the message

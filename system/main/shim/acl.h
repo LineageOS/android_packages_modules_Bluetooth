@@ -67,8 +67,8 @@ public:
 
   void CreateClassicConnection(const hci::Address& address);
   void CancelClassicConnection(const hci::Address& address);
-  void DisconnectClassic(uint16_t handle, tHCI_REASON reason, std::string comment);
-  void DisconnectLe(uint16_t handle, tHCI_REASON reason, std::string comment);
+  void DisconnectClassic(uint16_t handle, tHCI_REASON reason, const std::string& comment);
+  void DisconnectLe(uint16_t handle, tHCI_REASON reason, const std::string& comment);
   void UpdateConnectionParameters(uint16_t handle, uint16_t conn_int_min, uint16_t conn_int_max,
                                   uint16_t conn_latency, uint16_t conn_timeout, uint16_t min_ce_len,
                                   uint16_t max_ce_len);

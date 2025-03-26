@@ -250,11 +250,14 @@ class SeidInformation(Packet):
     def serialize(self, payload: bytes = None) -> bytes:
         _span = bytearray()
         if self.in_use > 1:
-            print(f"Invalid value for field SeidInformation::in_use: {self.in_use} > 1; the value will be truncated")
+            print(
+                f"Invalid value for field SeidInformation::in_use: {self.in_use} > 1; the value will be truncated"
+            )
             self.in_use &= 1
         if self.acp_seid > 63:
             print(
-                f"Invalid value for field SeidInformation::acp_seid: {self.acp_seid} > 63; the value will be truncated")
+                f"Invalid value for field SeidInformation::acp_seid: {self.acp_seid} > 63; the value will be truncated"
+            )
             self.acp_seid &= 63
         _value = (self.in_use << 1) | (self.acp_seid << 2)
         _span.append(_value)
@@ -347,7 +350,9 @@ class ServiceCapability(Packet):
         _span.append((self.service_category << 0))
         _payload_size = len(payload or self.payload or [])
         if _payload_size > 255:
-            print(f"Invalid length for payload field:  {_payload_size} > 255; the packet cannot be generated")
+            print(
+                f"Invalid length for payload field:  {_payload_size} > 255; the packet cannot be generated"
+            )
             raise Exception("Invalid payload length")
         _span.append((_payload_size << 0))
         _span.extend(payload or self.payload or [])
@@ -555,7 +560,9 @@ class MultiplexingCapability(ServiceCapability):
     def serialize(self, payload: bytes = None) -> bytes:
         _span = bytearray()
         if self.frag > 1:
-            print(f"Invalid value for field MultiplexingCapability::frag: {self.frag} > 1; the value will be truncated")
+            print(
+                f"Invalid value for field MultiplexingCapability::frag: {self.frag} > 1; the value will be truncated"
+            )
             self.frag &= 1
         _span.append((self.frag << 7))
         _span.extend(payload or self.payload or [])
@@ -570,7 +577,8 @@ class MultiplexingCapability(ServiceCapability):
 class MediaCodecCapability(ServiceCapability):
     media_type: int = field(kw_only=True, default=0)
     media_codec_type: int = field(kw_only=True, default=0)
-    media_codec_specific_information_elements: bytearray = field(kw_only=True, default_factory=bytearray)
+    media_codec_specific_information_elements: bytearray = field(kw_only=True,
+                                                                 default_factory=bytearray)
 
     def __post_init__(self):
         self.service_category = ServiceCategory.MEDIA_CODEC
@@ -636,7 +644,8 @@ class SignalingPacket(Packet):
     message_type: MessageType = field(kw_only=True, default=MessageType.COMMAND)
     packet_type: PacketType = field(kw_only=True, default=PacketType.SINGLE_PACKET)
     transaction_label: int = field(kw_only=True, default=0)
-    signal_identifier: SignalIdentifier = field(kw_only=True, default=SignalIdentifier.AVDTP_DISCOVER)
+    signal_identifier: SignalIdentifier = field(kw_only=True,
+                                                default=SignalIdentifier.AVDTP_DISCOVER)
 
     def __post_init__(self):
         pass
@@ -897,7 +906,8 @@ class SignalingPacket(Packet):
                 f"Invalid value for field SignalingPacket::transaction_label: {self.transaction_label} > 15; the value will be truncated"
             )
             self.transaction_label &= 15
-        _value = ((self.message_type << 0) | (self.packet_type << 2) | (self.transaction_label << 4))
+        _value = ((self.message_type << 0) | (self.packet_type << 2) |
+                  (self.transaction_label << 4))
         _span.append(_value)
         _span.append((self.signal_identifier << 0))
         _span.extend(payload or self.payload or [])
@@ -1510,7 +1520,9 @@ class OpenCommand(SignalingPacket):
     def serialize(self, payload: bytes = None) -> bytes:
         _span = bytearray()
         if self.acp_seid > 63:
-            print(f"Invalid value for field OpenCommand::acp_seid: {self.acp_seid} > 63; the value will be truncated")
+            print(
+                f"Invalid value for field OpenCommand::acp_seid: {self.acp_seid} > 63; the value will be truncated"
+            )
             self.acp_seid &= 63
         _span.append((self.acp_seid << 2))
         return SignalingPacket.serialize(self, payload=bytes(_span))
@@ -1594,7 +1606,9 @@ class StartCommand(SignalingPacket):
     def serialize(self, payload: bytes = None) -> bytes:
         _span = bytearray()
         if self.acp_seid > 63:
-            print(f"Invalid value for field StartCommand::acp_seid: {self.acp_seid} > 63; the value will be truncated")
+            print(
+                f"Invalid value for field StartCommand::acp_seid: {self.acp_seid} > 63; the value will be truncated"
+            )
             self.acp_seid &= 63
         _span.append((self.acp_seid << 2))
         return SignalingPacket.serialize(self, payload=bytes(_span))
@@ -1651,7 +1665,9 @@ class StartReject(SignalingPacket):
     def serialize(self, payload: bytes = None) -> bytes:
         _span = bytearray()
         if self.acp_seid > 63:
-            print(f"Invalid value for field StartReject::acp_seid: {self.acp_seid} > 63; the value will be truncated")
+            print(
+                f"Invalid value for field StartReject::acp_seid: {self.acp_seid} > 63; the value will be truncated"
+            )
             self.acp_seid &= 63
         _span.append((self.acp_seid << 2))
         _span.append((self.error_code << 0))
@@ -1684,7 +1700,9 @@ class CloseCommand(SignalingPacket):
     def serialize(self, payload: bytes = None) -> bytes:
         _span = bytearray()
         if self.acp_seid > 255:
-            print(f"Invalid value for field CloseCommand::acp_seid: {self.acp_seid} > 255; the value will be truncated")
+            print(
+                f"Invalid value for field CloseCommand::acp_seid: {self.acp_seid} > 255; the value will be truncated"
+            )
             self.acp_seid &= 255
         _span.append((self.acp_seid << 2))
         return SignalingPacket.serialize(self, payload=bytes(_span))
@@ -1769,7 +1787,8 @@ class SuspendCommand(SignalingPacket):
         _span = bytearray()
         if self.acp_seid > 63:
             print(
-                f"Invalid value for field SuspendCommand::acp_seid: {self.acp_seid} > 63; the value will be truncated")
+                f"Invalid value for field SuspendCommand::acp_seid: {self.acp_seid} > 63; the value will be truncated"
+            )
             self.acp_seid &= 63
         _span.append((self.acp_seid << 2))
         return SignalingPacket.serialize(self, payload=bytes(_span))
@@ -1826,7 +1845,9 @@ class SuspendReject(SignalingPacket):
     def serialize(self, payload: bytes = None) -> bytes:
         _span = bytearray()
         if self.acp_seid > 63:
-            print(f"Invalid value for field SuspendReject::acp_seid: {self.acp_seid} > 63; the value will be truncated")
+            print(
+                f"Invalid value for field SuspendReject::acp_seid: {self.acp_seid} > 63; the value will be truncated"
+            )
             self.acp_seid &= 63
         _span.append((self.acp_seid << 2))
         _span.append((self.error_code << 0))
@@ -1859,7 +1880,9 @@ class AbortCommand(SignalingPacket):
     def serialize(self, payload: bytes = None) -> bytes:
         _span = bytearray()
         if self.acp_seid > 63:
-            print(f"Invalid value for field AbortCommand::acp_seid: {self.acp_seid} > 63; the value will be truncated")
+            print(
+                f"Invalid value for field AbortCommand::acp_seid: {self.acp_seid} > 63; the value will be truncated"
+            )
             self.acp_seid &= 63
         _span.append((self.acp_seid << 2))
         return SignalingPacket.serialize(self, payload=bytes(_span))

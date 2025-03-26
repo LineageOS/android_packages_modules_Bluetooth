@@ -444,69 +444,8 @@ public class LeAudioBroadcastServiceTest {
         BluetoothLeBroadcastSettings settings = buildBroadcastSettingsFromMetadata(meta, code, 1);
         mService.createBroadcast(settings);
 
-        if (Flags.leaudioBigDependsOnAudioState()) {
-            verify(mCallbacks, timeout(CREATE_BROADCAST_TIMEOUT_MS))
-                    .onBroadcastStartFailed(eq(BluetoothStatusCodes.ERROR_TIMEOUT));
-        } else {
-            int broadcastId = 243;
-            // Test data with only one subgroup
-            int[] expectedQualityArray = {
-                settings.getSubgroupSettings().get(0).getPreferredQuality()
-            };
-            byte[][] expectedDataArray = {
-                settings.getSubgroupSettings().get(0).getContentMetadata().getRawMetadata()
-            };
-
-            verify(mLeAudioBroadcasterNativeInterface)
-                    .createBroadcast(
-                            eq(true),
-                            eq(TEST_BROADCAST_NAME),
-                            eq(code),
-                            eq(settings.getPublicBroadcastMetadata().getRawMetadata()),
-                            eq(expectedQualityArray),
-                            eq(expectedDataArray));
-
-            // Check if broadcast is started automatically when created
-            LeAudioStackEvent create_event =
-                    new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_BROADCAST_CREATED);
-            create_event.valueInt1 = broadcastId;
-            create_event.valueBool1 = true;
-            mService.messageFromNative(create_event);
-
-            // Verify if broadcast is auto-started on start
-            verify(mLeAudioBroadcasterNativeInterface).startBroadcast(eq(broadcastId));
-            TestUtils.waitForLooperToFinishScheduledTask(Looper.getMainLooper());
-
-            verify(mCallbacks)
-                    .onBroadcastStarted(
-                            eq(BluetoothStatusCodes.REASON_LOCAL_APP_REQUEST), anyInt());
-
-            // Notify initial paused state
-            LeAudioStackEvent state_event =
-                    new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_BROADCAST_STATE);
-            state_event.valueInt1 = broadcastId;
-            state_event.valueInt2 = LeAudioStackEvent.BROADCAST_STATE_PAUSED;
-            mService.messageFromNative(state_event);
-
-            // Check if broadcast is destroyed after timeout
-            verify(mLeAudioBroadcasterNativeInterface, timeout(CREATE_BROADCAST_TIMEOUT_MS))
-                    .destroyBroadcast(eq(broadcastId));
-
-            state_event = new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_BROADCAST_DESTROYED);
-            state_event.valueInt1 = broadcastId;
-            mService.messageFromNative(state_event);
-
-            // Verify broadcast audio session is logged when session failed to stream
-            verify(mMetricsLogger)
-                    .logLeAudioBroadcastAudioSession(
-                            eq(broadcastId),
-                            eq(new int[] {0x2}), // STATS_SESSION_AUDIO_QUALITY_HIGH
-                            eq(0),
-                            anyLong(),
-                            anyLong(),
-                            eq(0L),
-                            eq(0x5)); // STATS_SESSION_SETUP_STATUS_STREAMING_FAILED
-        }
+        verify(mCallbacks, timeout(CREATE_BROADCAST_TIMEOUT_MS))
+                .onBroadcastStartFailed(eq(BluetoothStatusCodes.ERROR_TIMEOUT));
     }
 
     @Test
@@ -838,8 +777,6 @@ public class LeAudioBroadcastServiceTest {
         int broadcastId = 243;
         byte[] code = {0x00, 0x01, 0x00, 0x02};
 
-        mSetFlagsRule.enableFlags(Flags.FLAG_LEAUDIO_BIG_DEPENDS_ON_AUDIO_STATE);
-
         initializeNative();
         prepareConnectedUnicastDevice(groupId, mDevice);
 
@@ -935,8 +872,6 @@ public class LeAudioBroadcastServiceTest {
     }
 
     private void prepareHandoverStreamingBroadcast(int groupId, int broadcastId, byte[] code) {
-        mSetFlagsRule.enableFlags(Flags.FLAG_LEAUDIO_BIG_DEPENDS_ON_AUDIO_STATE);
-
         synchronized (mService.mBroadcastCallbacks) {
             mService.mBroadcastCallbacks.register(mCallbacks);
         }
@@ -1126,10 +1061,8 @@ public class LeAudioBroadcastServiceTest {
                 .handleBluetoothActiveDeviceChanged(
                         eq(mBroadcastDevice), eq(null), any(BluetoothProfileConnectionInfo.class));
 
-        if (Flags.leaudioBigDependsOnAudioState()) {
-            /* Verify if broadcast triggers transition */
-            assertThat(mService.mBroadcastIdDeactivatedForUnicastTransition.isPresent()).isFalse();
-        }
+        /* Verify if broadcast triggers transition */
+        assertThat(mService.mBroadcastIdDeactivatedForUnicastTransition.isPresent()).isFalse();
 
         /* Verify if broadcast is auto-started on start */
         verify(mLeAudioBroadcasterNativeInterface, times(2)).startBroadcast(eq(broadcastId));
@@ -1220,17 +1153,14 @@ public class LeAudioBroadcastServiceTest {
                 .handleBluetoothActiveDeviceChanged(
                         eq(mBroadcastDevice), eq(null), any(BluetoothProfileConnectionInfo.class));
 
-        if (Flags.leaudioBigDependsOnAudioState()) {
-            /* Verify if broadcast triggers transition */
-            assertThat(mService.mBroadcastIdDeactivatedForUnicastTransition.isPresent()).isFalse();
-        }
+        /* Verify if broadcast triggers transition */
+        assertThat(mService.mBroadcastIdDeactivatedForUnicastTransition.isPresent()).isFalse();
 
         verify(mLeAudioBroadcasterNativeInterface, times(2)).startBroadcast(eq(broadcastId));
     }
 
     @Test
     public void testAudioModeDrivenBroadcastSwitchDuringInternalPause() {
-        mSetFlagsRule.enableFlags(Flags.FLAG_LEAUDIO_BIG_DEPENDS_ON_AUDIO_STATE);
         int groupId = 1;
         int broadcastId = 243;
         byte[] code = {0x00, 0x01, 0x00, 0x02};
@@ -1322,7 +1252,6 @@ public class LeAudioBroadcastServiceTest {
 
     @Test
     public void testBroadcastResumeUnicastGroupChangeRequestDrivenDuringInternalPause() {
-        mSetFlagsRule.enableFlags(Flags.FLAG_LEAUDIO_BIG_DEPENDS_ON_AUDIO_STATE);
         int groupId = 1;
         int broadcastId = 243;
         byte[] code = {0x00, 0x01, 0x00, 0x02};
@@ -1410,7 +1339,6 @@ public class LeAudioBroadcastServiceTest {
 
     @Test
     public void testCacheAndResumeSuspendingSources() {
-        mSetFlagsRule.enableFlags(Flags.FLAG_LEAUDIO_BIG_DEPENDS_ON_AUDIO_STATE);
         int groupId = 1;
         int broadcastId = 243;
         byte[] code = {0x00, 0x01, 0x00, 0x02};

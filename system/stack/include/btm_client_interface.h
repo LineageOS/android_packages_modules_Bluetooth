@@ -94,7 +94,8 @@ struct btm_client_interface_t {
                                                 tBTM_INQ_RESULTS_CB* p_results_cb,
                                                 tBTM_CMPL_CB* p_cmpl_cb);
     [[nodiscard]] tBTM_STATUS (*BTM_SetBleDataLength)(const RawAddress& bd_addr,
-                                                      uint16_t tx_pdu_length);
+                                                      uint16_t tx_pdu_length,
+                                                      bool is_privileged_client);
     void (*BTM_BleReadControllerFeatures)(tBTM_BLE_CTRL_FEATURES_CBACK* p_vsc_cback);
     void (*BTM_BleSetPhy)(const RawAddress& bd_addr, uint8_t tx_phys, uint8_t rx_phys,
                           uint16_t phy_options);

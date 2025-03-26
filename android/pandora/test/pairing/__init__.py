@@ -26,16 +26,13 @@ from pairing.ble.legacy.display_output_only.tests import BLELegDisplayOnlyTestCl
 from pairing.ble.legacy.keyboard_input_only.tests import BLELegKbdOnlyTestClass
 from pairing.ble.legacy.no_output_no_input.tests import BLELegNoInputNoOutputTestClass
 
-
 from pairing.ble.sc.display_output_and_keyboard_input.tests import BLESCDisplayKbdTestClass
 from pairing.ble.sc.display_output_and_yes_no_input.tests import BLESCDisplayYesNoTestClass
 from pairing.ble.sc.display_output_only.tests import BLESCDisplayOnlyTestClass
 from pairing.ble.sc.keyboard_input_only.tests import BLESCKbdOnlyTestClass
 from pairing.ble.sc.no_output_no_input.tests import BLESCNoInputNoOutputTestClass
 
-
 from pairing.smp_test import SmpTest
-
 
 _test_class_list = [
     BLELegDisplayKbdTestClass,

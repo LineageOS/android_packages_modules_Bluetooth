@@ -108,9 +108,6 @@ static bool btif_has_ble_keys(const std::string& bdstr);
  ******************************************************************************/
 
 static int btif_storage_get_user_id() {
-  if (!com::android::bluetooth::flags::guest_mode_bond()) {
-    return BTIF_STORAGE_RESTRICTED_USER_ID_DEFAULT;
-  }
 #ifdef TARGET_FLOSS
   return BTIF_STORAGE_RESTRICTED_USER_ID_DEFAULT;
 #else

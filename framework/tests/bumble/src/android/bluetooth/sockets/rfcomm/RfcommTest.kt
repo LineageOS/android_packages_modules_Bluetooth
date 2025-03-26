@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package android.bluetooth.sockets.rfcomm
 
 import android.Manifest
@@ -491,7 +492,6 @@ class RfcommTest {
      * - Enable page scan
      * - Create and connect to an RFCOMM socket - verify proper connection
      */
-    @RequiresFlagsEnabled(Flags.FLAG_RFCOMM_CANCEL_ONGOING_SDP_ON_CLOSE)
     @Test
     fun clientConnectToOpenServerSocketAfterPageTimeout() {
         updateSecurityConfig()

@@ -48,8 +48,8 @@ from pandora_experimental.gatt_grpc_aio import GATT as AioGATT
 
 from pandora_experimental.gatt_pb2 import DiscoverServicesRequest
 
-
 AUTHENTICATION_ERROR_RETURNED = [False, False]
+
 
 def _gatt_read_with_error(connection):
     if not connection.is_encrypted:
@@ -70,6 +70,7 @@ def _gatt_write_with_error(connection, _value):
         AUTHENTICATION_ERROR_RETURNED[1] = True
         raise ATT_Error(ATT_INSUFFICIENT_AUTHENTICATION_ERROR)
 
+
 class BLEPairTestBase(PairTestBase):
 
     async def start_acl_connection(self):
@@ -83,16 +84,15 @@ class BLEPairTestBase(PairTestBase):
         )
 
         # initiator starts scanning
-        init_scanning = self.acl_initiator.aio.host.Scan(own_address_type=PairingConfig.AddressType.RANDOM)
+        init_scanning = self.acl_initiator.aio.host.Scan(
+            own_address_type=PairingConfig.AddressType.RANDOM)
         init_scan_res = await anext(
-            (x async for x in init_scanning if adv_seed in x.data.manufacturer_specific_data)
-        )
+            (x async for x in init_scanning if adv_seed in x.data.manufacturer_specific_data))
         init_scanning.cancel()
 
         init_res, resp_res = await asyncio.gather(
-            self.acl_initiator.aio.host.ConnectLE(
-                own_address_type=PairingConfig.AddressType.RANDOM, **init_scan_res.address_asdict()
-            ),
+            self.acl_initiator.aio.host.ConnectLE(own_address_type=PairingConfig.AddressType.RANDOM,
+                                                  **init_scan_res.address_asdict()),
             anext(aiter(resp_advertisement)),
         )
 
@@ -108,8 +108,10 @@ class BLEPairTestBase(PairTestBase):
         responder_acl_connection,
     ):
         init_res, resp_res = await asyncio.gather(
-            self.pairing_initiator.aio.security.Secure(connection=initiator_acl_connection, le=LE_LEVEL3),
-            self.pairing_responder.aio.security.WaitSecurity(connection=responder_acl_connection, le=LE_LEVEL3),
+            self.pairing_initiator.aio.security.Secure(connection=initiator_acl_connection,
+                                                       le=LE_LEVEL3),
+            self.pairing_responder.aio.security.WaitSecurity(connection=responder_acl_connection,
+                                                             le=LE_LEVEL3),
         )
 
         # verify that pairing succeeded
@@ -137,16 +139,13 @@ class BLEPairTestBase(PairTestBase):
                 [
                     Characteristic(
                         char_uuid,
-                        Characteristic.Properties.READ
-                        | Characteristic.Properties.WRITE,
+                        Characteristic.Properties.READ | Characteristic.Properties.WRITE,
                         Characteristic.READABLE | Characteristic.WRITEABLE,
-                        CharacteristicValue(
-                            read=_gatt_read_with_error, write=_gatt_write_with_error
-                        ),
+                        CharacteristicValue(read=_gatt_read_with_error,
+                                            write=_gatt_write_with_error),
                     )
                 ],
-           )
-        )
+            ))
 
         dut_gatt = AioGATT(self.dut.aio.channel)
 
@@ -174,9 +173,10 @@ class BLEPairTestBaseWithGeneralPairingTests(BLEPairTestBase):
 
         self.prepare_pairing()
 
-        android_res, bumble_res= await self.start_acl_connection()
+        android_res, bumble_res = await self.start_acl_connection()
 
-        service_access_task = asyncio.create_task(self.start_service_access(android_res.connection, bumble_res.connection))
+        service_access_task = asyncio.create_task(
+            self.start_service_access(android_res.connection, bumble_res.connection))
 
         await self.accept_pairing()
 
@@ -209,7 +209,8 @@ class BLEPairTestBaseWithGeneralAndDedicatedPairingTests(BLEPairTestBaseWithGene
 
         bumble_res, android_res = await self.start_acl_connection()
 
-        pairing_task = asyncio.create_task(self.start_pairing(bumble_res.connection, android_res.connection))
+        pairing_task = asyncio.create_task(
+            self.start_pairing(bumble_res.connection, android_res.connection))
         await self.accept_pairing()
         await asyncio.wait_for(pairing_task, timeout=10.0)
 
@@ -234,7 +235,8 @@ class BLEPairTestBaseWithGeneralAndDedicatedPairingTests(BLEPairTestBaseWithGene
 
         bumble_res, android_res = await self.start_acl_connection()
 
-        pairing_task = asyncio.create_task(self.start_pairing(android_res.connection, bumble_res.connection))
+        pairing_task = asyncio.create_task(
+            self.start_pairing(android_res.connection, bumble_res.connection))
         await self.accept_pairing()
         await asyncio.wait_for(pairing_task, timeout=10.0)
 
@@ -259,7 +261,8 @@ class BLEPairTestBaseWithGeneralAndDedicatedPairingTests(BLEPairTestBaseWithGene
 
         android_res, bumble_res = await self.start_acl_connection()
 
-        pairing_task = asyncio.create_task(self.start_pairing(android_res.connection, bumble_res.connection))
+        pairing_task = asyncio.create_task(
+            self.start_pairing(android_res.connection, bumble_res.connection))
         await self.accept_pairing()
         await asyncio.wait_for(pairing_task, timeout=10.0)
 
@@ -284,6 +287,7 @@ class BLEPairTestBaseWithGeneralAndDedicatedPairingTests(BLEPairTestBaseWithGene
 
         android_res, bumble_res = await self.start_acl_connection()
 
-        pairing_task = asyncio.create_task(self.start_pairing(bumble_res.connection, android_res.connection))
+        pairing_task = asyncio.create_task(
+            self.start_pairing(bumble_res.connection, android_res.connection))
         await self.accept_pairing()
         await asyncio.wait_for(pairing_task, timeout=10.0)

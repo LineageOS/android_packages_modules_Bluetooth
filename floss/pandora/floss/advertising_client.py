@@ -298,8 +298,9 @@ class FlossAdvertisingClient(BluetoothAdvertisingCallbacks):
     @utils.glib_callback()
     def on_advertising_set_started(self, reg_id, advertiser_id, tx_power, status):
         """Handle advertising set started callback."""
-        logging.debug('on_advertising_set_started: reg_id: %s, advertiser_id: %s, '
-                      'tx_power: %s, status: %s', reg_id, advertiser_id, tx_power, status)
+        logging.debug(
+            'on_advertising_set_started: reg_id: %s, advertiser_id: %s, '
+            'tx_power: %s, status: %s', reg_id, advertiser_id, tx_power, status)
         self.start_adv_results[reg_id] = (advertiser_id, status)
         if floss_enums.GattStatus(status) != floss_enums.GattStatus.SUCCESS:
             return
@@ -327,40 +328,47 @@ class FlossAdvertisingClient(BluetoothAdvertisingCallbacks):
     @utils.glib_callback()
     def on_advertising_enabled(self, advertiser_id, enable, status):
         """Handle advertising enable callback."""
-        logging.debug('on_advertising_enabled: advertiser_id: %s, enable: %s status: %s', advertiser_id, enable, status)
+        logging.debug('on_advertising_enabled: advertiser_id: %s, enable: %s status: %s',
+                      advertiser_id, enable, status)
 
     @utils.glib_callback()
     def on_advertising_data_set(self, advertiser_id, status):
         """Handle advertising data set callback."""
-        logging.debug('on_advertising_data_set: advertiser_id: %s, status: %s', advertiser_id, status)
+        logging.debug('on_advertising_data_set: advertiser_id: %s, status: %s', advertiser_id,
+                      status)
 
     @utils.glib_callback()
     def on_scan_response_data_set(self, advertiser_id, status):
         """Handle scan response data set callback."""
-        logging.debug('on_scan_response_data_set: advertiser_id: %s, status: %s', advertiser_id, status)
+        logging.debug('on_scan_response_data_set: advertiser_id: %s, status: %s', advertiser_id,
+                      status)
 
     @utils.glib_callback()
     def on_advertising_parameters_updated(self, advertiser_id, tx_power, status):
         """Handle advertising parameters update callback."""
-        logging.debug('on_advertising_parameters_updated: advertiser_id: %s, '
-                      'tx_power: %s, status: %s', advertiser_id, tx_power, status)
+        logging.debug(
+            'on_advertising_parameters_updated: advertiser_id: %s, '
+            'tx_power: %s, status: %s', advertiser_id, tx_power, status)
 
     @utils.glib_callback()
     def on_periodic_advertising_parameters_updated(self, advertiser_id, status):
         """Handle periodic advertising parameters updated callback."""
-        logging.debug('on_periodic_advertising_parameters_updated: advertiser_id: '
-                      '%s, status: %s', advertiser_id, status)
+        logging.debug(
+            'on_periodic_advertising_parameters_updated: advertiser_id: '
+            '%s, status: %s', advertiser_id, status)
 
     @utils.glib_callback()
     def on_periodic_advertising_data_set(self, advertiser_id, status):
         """Handle periodic advertising data set callback."""
-        logging.debug('on_periodic_advertising_data_set: advertiser_id: %s status: %s', advertiser_id, status)
+        logging.debug('on_periodic_advertising_data_set: advertiser_id: %s status: %s',
+                      advertiser_id, status)
 
     @utils.glib_callback()
     def on_periodic_advertising_enabled(self, advertiser_id, enable, status):
         """Handle on periodic advertising enabled callback."""
-        logging.debug('on_periodic_advertising_enabled: advertiser_id: %s, enable: '
-                      '%s, status: %s', advertiser_id, enable, status)
+        logging.debug(
+            'on_periodic_advertising_enabled: advertiser_id: %s, enable: '
+            '%s, status: %s', advertiser_id, enable, status)
 
     def make_dbus_periodic_advertising_parameters(self, adv_periodic_parameters):
         """Makes a struct for periodic advertising parameters D-Bus.
@@ -377,7 +385,8 @@ class FlossAdvertisingClient(BluetoothAdvertisingCallbacks):
         if not adv_periodic_parameters:
             return {}
 
-        missing_periodic_parameters = {'include_tx_power', 'interval'} - set(adv_periodic_parameters.keys())
+        missing_periodic_parameters = {'include_tx_power', 'interval'} - set(
+            adv_periodic_parameters.keys())
 
         if missing_periodic_parameters:
             logging.error('Missing periodic advertisement parameters data with '
@@ -404,12 +413,13 @@ class FlossAdvertisingClient(BluetoothAdvertisingCallbacks):
             return {}
 
         missing_parameters = {
-            'connectable', 'scannable', 'is_legacy', 'is_anonymous', 'include_tx_power', 'primary_phy', 'secondary_phy',
-            'interval', 'tx_power_level', 'own_address_type'
+            'connectable', 'scannable', 'is_legacy', 'is_anonymous', 'include_tx_power',
+            'primary_phy', 'secondary_phy', 'interval', 'tx_power_level', 'own_address_type'
         } - set(adv_set_parameters.keys())
 
         if missing_parameters:
-            logging.error('Missing advertisement parameters with keys: %s', ','.join(missing_parameters))
+            logging.error('Missing advertisement parameters with keys: %s',
+                          ','.join(missing_parameters))
             return {}
 
         return {
@@ -440,8 +450,8 @@ class FlossAdvertisingClient(BluetoothAdvertisingCallbacks):
             return {}
 
         missing_data = {
-            'service_uuids', 'solicit_uuids', 'transport_discovery_data', 'manufacturer_data', 'service_data',
-            'include_tx_power_level', 'include_device_name'
+            'service_uuids', 'solicit_uuids', 'transport_discovery_data', 'manufacturer_data',
+            'service_data', 'include_tx_power_level', 'include_device_name'
         } - set(adv_data.keys())
 
         if missing_data:
@@ -456,9 +466,12 @@ class FlossAdvertisingClient(BluetoothAdvertisingCallbacks):
             'transport_discovery_data':
                 GLib.Variant('aay', adv_data['transport_discovery_data']),
             'manufacturer_data':
-                GLib.Variant('a{qay}', self.convert_manufacturer_data_to_bytearray(adv_data['manufacturer_data'])),
+                GLib.Variant(
+                    'a{qay}',
+                    self.convert_manufacturer_data_to_bytearray(adv_data['manufacturer_data'])),
             'service_data':
-                GLib.Variant('a{say}', self.convert_service_data_to_bytearray(adv_data['service_data'])),
+                GLib.Variant('a{say}',
+                             self.convert_service_data_to_bytearray(adv_data['service_data'])),
             'include_tx_power_level':
                 GLib.Variant('b', adv_data['include_tx_power_level']),
             'include_device_name':
@@ -526,8 +539,8 @@ class FlossAdvertisingClient(BluetoothAdvertisingCallbacks):
             self.callbacks.remove_observer(name, observer)
 
     @utils.glib_call(None)
-    def start_advertising_set(self, parameters, advertise_data, scan_response, periodic_parameters, periodic_data,
-                              duration, max_ext_adv_events):
+    def start_advertising_set(self, parameters, advertise_data, scan_response, periodic_parameters,
+                              periodic_data, duration, max_ext_adv_events):
         """Starts advertising set.
 
         Args:
@@ -550,8 +563,9 @@ class FlossAdvertisingClient(BluetoothAdvertisingCallbacks):
             The reg_id for the advertising set on success,
                  None otherwise.
         """
-        return self.proxy().StartAdvertisingSet(parameters, advertise_data, scan_response, periodic_parameters,
-                                                periodic_data, duration, max_ext_adv_events, self.callback_id)
+        return self.proxy().StartAdvertisingSet(parameters, advertise_data, scan_response,
+                                                periodic_parameters, periodic_data, duration,
+                                                max_ext_adv_events, self.callback_id)
 
     @utils.glib_call(False)
     def stop_advertising_set(self, advertiser_id):
@@ -779,8 +793,9 @@ class FlossAdvertisingClient(BluetoothAdvertisingCallbacks):
             logging.error('on_advertising_set_stopped not called')
             return False
 
-    def start_advertising_set_sync(self, parameters, advertise_data, scan_response, periodic_parameters, periodic_data,
-                                   duration, max_ext_adv_events):
+    def start_advertising_set_sync(self, parameters, advertise_data, scan_response,
+                                   periodic_parameters, periodic_data, duration,
+                                   max_ext_adv_events):
         """Starts advertising set sync.
 
         Args:
@@ -803,8 +818,9 @@ class FlossAdvertisingClient(BluetoothAdvertisingCallbacks):
             Advertiser_id for specific reg_id on success, None otherwise.
         """
 
-        reg_id = self.start_advertising_set(parameters, advertise_data, scan_response, periodic_parameters,
-                                            periodic_data, duration, max_ext_adv_events)
+        reg_id = self.start_advertising_set(parameters, advertise_data, scan_response,
+                                            periodic_parameters, periodic_data, duration,
+                                            max_ext_adv_events)
         if reg_id is None:
             logging.error('Failed to start advertisement set')
             return None
@@ -814,7 +830,8 @@ class FlossAdvertisingClient(BluetoothAdvertisingCallbacks):
             return None
 
         if floss_enums.GattStatus(status) != floss_enums.GattStatus.SUCCESS:
-            logging.error('Failed to start advertisement with id: %s, status = %s', advertise_id, status)
+            logging.error('Failed to start advertisement with id: %s, status = %s', advertise_id,
+                          status)
             return None
         return advertise_id
 
@@ -844,7 +861,8 @@ class FlossAdvertisingClient(BluetoothAdvertisingCallbacks):
                 failed_adv_ids.append(i)
 
         if failed_adv_ids:
-            logging.error('Failed to reset advertisement sets with ids: %s', ','.join(failed_adv_ids))
+            logging.error('Failed to reset advertisement sets with ids: %s',
+                          ','.join(failed_adv_ids))
             return False
         return True
 

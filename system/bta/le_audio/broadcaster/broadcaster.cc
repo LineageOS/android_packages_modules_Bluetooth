@@ -457,14 +457,12 @@ public:
         return;
       }
 
-      if (com::android::bluetooth::flags::leaudio_big_depends_on_audio_state()) {
-        // Append the Audio Active State
-        bool audio_active_state =
-                (audio_state_ == AudioState::ACTIVE) &&
-                (broadcasts_[broadcast_id]->GetState() == BroadcastStateMachine::State::STREAMING);
-        public_ltv.Add(bluetooth::le_audio::types::kLeAudioMetadataTypeAudioActiveState,
-                       audio_active_state);
-      }
+      // Append the Audio Active State
+      bool audio_active_state =
+              (audio_state_ == AudioState::ACTIVE) &&
+              (broadcasts_[broadcast_id]->GetState() == BroadcastStateMachine::State::STREAMING);
+      public_ltv.Add(bluetooth::le_audio::types::kLeAudioMetadataTypeAudioActiveState,
+                     audio_active_state);
 
       PublicBroadcastAnnouncementData pb_announcement = preparePublicAnnouncement(
               broadcasts_[broadcast_id]->GetPublicBroadcastAnnouncement().features, public_ltv);
@@ -539,10 +537,9 @@ public:
         return;
       }
 
-      if (com::android::bluetooth::flags::leaudio_big_depends_on_audio_state()) {
-        // Append the Audio Active State
-        public_ltv.Add(bluetooth::le_audio::types::kLeAudioMetadataTypeAudioActiveState, false);
-      }
+      // Append the Audio Active State
+      public_ltv.Add(bluetooth::le_audio::types::kLeAudioMetadataTypeAudioActiveState, false);
+
       // Prepare public features byte
       // bit 0 Encryption broadcast stream encrypted or not
       // bit 1 Standard quality audio configuration present or not
@@ -669,16 +666,14 @@ public:
     }
 
     /* Prepare Broadcast audio session */
-    if (com::android::bluetooth::flags::leaudio_big_depends_on_audio_state()) {
-      const auto& broadcast_config = msg.config;
-      auto is_started = instance->le_audio_source_hal_client_->Start(
-              broadcast_config.GetAudioHalClientConfig(), &audio_receiver_);
-      callbacks_->OnBroadcastAudioSessionCreated(is_started);
-      if (!is_started) {
-        log::error("Broadcast audio session can't be started");
-        callbacks_->OnBroadcastCreated(broadcast_id, false);
-        return;
-      }
+    const auto& broadcast_config = msg.config;
+    auto is_started = instance->le_audio_source_hal_client_->Start(
+            broadcast_config.GetAudioHalClientConfig(), &audio_receiver_);
+    callbacks_->OnBroadcastAudioSessionCreated(is_started);
+    if (!is_started) {
+      log::error("Broadcast audio session can't be started");
+      callbacks_->OnBroadcastCreated(broadcast_id, false);
+      return;
     }
 
     // If there is ongoing ISO traffic, it might be a unicast stream
@@ -711,13 +706,6 @@ public:
     log::info("broadcast_id={}", broadcast_id);
 
     if (broadcasts_.count(broadcast_id) != 0) {
-      if (!com::android::bluetooth::flags::leaudio_big_depends_on_audio_state()) {
-        log::info("Stopping AudioHalClient");
-        if (le_audio_source_hal_client_) {
-          le_audio_source_hal_client_->Stop();
-        }
-      }
-
       /* Block AF requests to resume/suspend stream */
       audio_state_ = AudioState::STOPPED;
       broadcasts_[broadcast_id]->SetMuted(true);
@@ -742,44 +730,8 @@ public:
   void StartAudioBroadcast(uint32_t broadcast_id) override {
     log::info("Starting broadcast_id={}", broadcast_id);
 
-    if (com::android::bluetooth::flags::leaudio_big_depends_on_audio_state()) {
-      /* Enable possibility for AF to drive stream */
-      audio_state_ = AudioState::SUSPENDED;
-    } else {
-      if (queued_start_broadcast_request_) {
-        log::error("Not processed yet start broadcast request");
-        return;
-      }
-
-      if (is_iso_running_) {
-        queued_start_broadcast_request_ = broadcast_id;
-        return;
-      }
-
-      if (IsAnyoneStreaming()) {
-        log::error("Stop the other broadcast first!");
-        return;
-      }
-
-      if (broadcasts_.count(broadcast_id) != 0) {
-        if (!le_audio_source_hal_client_) {
-          le_audio_source_hal_client_ = LeAudioSourceAudioHalClient::AcquireBroadcast();
-          if (!le_audio_source_hal_client_) {
-            log::error("Could not acquire le audio");
-            return;
-          }
-
-          auto result = CodecManager::GetInstance()->UpdateActiveBroadcastAudioHalClient(
-                  le_audio_source_hal_client_.get(), true);
-          log::assert_that(result, "Could not update session in codec manager");
-        }
-
-        broadcasts_[broadcast_id]->ProcessMessage(BroadcastStateMachine::Message::START, nullptr);
-        bluetooth::le_audio::MetricsCollector::Get()->OnBroadcastStateChanged(true);
-      } else {
-        log::error("No such broadcast_id={}", broadcast_id);
-      }
-    }
+    /* Enable possibility for AF to drive stream */
+    audio_state_ = AudioState::SUSPENDED;
   }
 
   void StopAudioBroadcast(uint32_t broadcast_id) override {
@@ -925,12 +877,6 @@ public:
         log::assert_that(broadcasts_.count(broadcast_id) != 0,
                          "assert failed: broadcasts_.count(broadcast_id) != 0");
         broadcasts_[broadcast_id]->HandleHciEvent(HCI_BLE_TERM_BIG_CPL_EVT, evt);
-        if (!com::android::bluetooth::flags::leaudio_big_depends_on_audio_state()) {
-          auto result = CodecManager::GetInstance()->UpdateActiveBroadcastAudioHalClient(
-                  le_audio_source_hal_client_.get(), false);
-          log::assert_that(result, "Could not update session in codec manager");
-          le_audio_source_hal_client_.reset();
-        }
       } break;
       default:
         log::error("Invalid event={}", event);
@@ -941,24 +887,14 @@ public:
     is_iso_running_ = is_active;
     log::info("is_iso_running: {}", is_iso_running_);
     if (!is_iso_running_) {
-      if (!com::android::bluetooth::flags::leaudio_big_depends_on_audio_state()) {
-        if (queued_start_broadcast_request_) {
-          auto broadcast_id = *queued_start_broadcast_request_;
-          queued_start_broadcast_request_ = std::nullopt;
+      // If audio resumes before ISO release, trigger broadcast start
+      if (audio_state_ == AudioState::ACTIVE) {
+        cancelBroadcastTimers();
+        UpdateAudioActiveStateInPublicAnnouncement();
 
-          log::info("Start queued broadcast.");
-          StartAudioBroadcast(broadcast_id);
-        }
-      } else {
-        // If audio resumes before ISO release, trigger broadcast start
-        if (audio_state_ == AudioState::ACTIVE) {
-          cancelBroadcastTimers();
-          UpdateAudioActiveStateInPublicAnnouncement();
-
-          for (auto& broadcast_pair : broadcasts_) {
-            auto& broadcast = broadcast_pair.second;
-            broadcast->ProcessMessage(BroadcastStateMachine::Message::START, nullptr);
-          }
+        for (auto& broadcast_pair : broadcasts_) {
+          auto& broadcast = broadcast_pair.second;
+          broadcast->ProcessMessage(BroadcastStateMachine::Message::START, nullptr);
         }
       }
 
@@ -1090,9 +1026,7 @@ private:
         case BroadcastStateMachine::State::CONFIGURING:
           break;
         case BroadcastStateMachine::State::CONFIGURED:
-          if (com::android::bluetooth::flags::leaudio_big_depends_on_audio_state()) {
-            instance->UpdateAudioActiveStateInPublicAnnouncement();
-          }
+          instance->UpdateAudioActiveStateInPublicAnnouncement();
           break;
         case BroadcastStateMachine::State::ENABLING:
           break;
@@ -1112,17 +1046,7 @@ private:
               audio_receiver_.CheckAndReconfigureEncoders(broadcast_config);
 
               broadcast->SetMuted(false);
-              if (!com::android::bluetooth::flags::leaudio_big_depends_on_audio_state()) {
-                auto is_started = instance->le_audio_source_hal_client_->Start(
-                        broadcast_config.GetAudioHalClientConfig(), &audio_receiver_);
-                if (!is_started) {
-                  /* Audio Source setup failed - stop the broadcast */
-                  instance->StopAudioBroadcast(broadcast_id);
-                  return;
-                }
-              } else {
-                instance->UpdateAudioActiveStateInPublicAnnouncement();
-              }
+              instance->UpdateAudioActiveStateInPublicAnnouncement();
             }
           }
           break;
@@ -1143,9 +1067,7 @@ private:
               std::bind(&LeAudioSourceAudioHalClient::UpdateBroadcastAudioConfigToHal,
                         instance->le_audio_source_hal_client_.get(), std::placeholders::_1));
 
-      if (com::android::bluetooth::flags::leaudio_big_depends_on_audio_state()) {
-        instance->le_audio_source_hal_client_->ConfirmStreamingRequest();
-      }
+      instance->le_audio_source_hal_client_->ConfirmStreamingRequest();
     }
 
     void OnAnnouncementUpdated(uint32_t broadcast_id) {
@@ -1365,10 +1287,8 @@ private:
       }
 
       instance->audio_state_ = AudioState::SUSPENDED;
-      if (com::android::bluetooth::flags::leaudio_big_depends_on_audio_state()) {
-        instance->UpdateAudioActiveStateInPublicAnnouncement();
-        instance->setBroadcastTimers();
-      }
+      instance->UpdateAudioActiveStateInPublicAnnouncement();
+      instance->setBroadcastTimers();
     }
 
     virtual void OnAudioResume(void) override {
@@ -1384,44 +1304,35 @@ private:
       }
 
       instance->audio_state_ = AudioState::ACTIVE;
-      if (com::android::bluetooth::flags::leaudio_big_depends_on_audio_state()) {
-        if (instance->broadcasts_.empty()) {
-          log::warn("No broadcasts are ready to resume (pending: {} broadcasts)",
-                    instance->pending_broadcasts_.size());
-          instance->le_audio_source_hal_client_->CancelStreamingRequest();
-          return;
-        }
+      if (instance->broadcasts_.empty()) {
+        log::warn("No broadcasts are ready to resume (pending: {} broadcasts)",
+                  instance->pending_broadcasts_.size());
+        instance->le_audio_source_hal_client_->CancelStreamingRequest();
+        return;
+      }
 
-        /* If there is ongoing ISO traffic, it might be not torn down unicast stream. Resume of
-         * broadcast stream would be triggered from IsoTrafficEventCb context, once ISO would be
-         * released.
-         */
-        if (!IsAnyoneStreaming() && instance->is_iso_running_) {
-          log::debug("iso is busy, skip resume request");
-          return;
-        }
+      /* If there is ongoing ISO traffic, it might be not torn down unicast stream. Resume of
+       * broadcast stream would be triggered from IsoTrafficEventCb context, once ISO would be
+       * released.
+       */
+      if (!IsAnyoneStreaming() && instance->is_iso_running_) {
+        log::debug("iso is busy, skip resume request");
+        return;
+      }
 
-        instance->cancelBroadcastTimers();
-        instance->UpdateAudioActiveStateInPublicAnnouncement();
+      instance->cancelBroadcastTimers();
+      instance->UpdateAudioActiveStateInPublicAnnouncement();
 
-        /* In case of double call of resume when broadcasts are already in streaming states */
-        if (IsAnyoneStreaming()) {
-          log::debug("broadcasts are already streaming");
-          instance->le_audio_source_hal_client_->ConfirmStreamingRequest();
-          return;
-        }
-
-        for (auto& broadcast_pair : instance->broadcasts_) {
-          auto& broadcast = broadcast_pair.second;
-          broadcast->ProcessMessage(BroadcastStateMachine::Message::START, nullptr);
-        }
-      } else {
-        if (!IsAnyoneStreaming()) {
-          instance->le_audio_source_hal_client_->CancelStreamingRequest();
-          return;
-        }
-
+      /* In case of double call of resume when broadcasts are already in streaming states */
+      if (IsAnyoneStreaming()) {
+        log::debug("broadcasts are already streaming");
         instance->le_audio_source_hal_client_->ConfirmStreamingRequest();
+        return;
+      }
+
+      for (auto& broadcast_pair : instance->broadcasts_) {
+        auto& broadcast = broadcast_pair.second;
+        broadcast->ProcessMessage(BroadcastStateMachine::Message::START, nullptr);
       }
     }
 

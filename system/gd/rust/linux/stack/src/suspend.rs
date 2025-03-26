@@ -1,8 +1,7 @@
 //! Suspend/Resume API.
 
 use crate::bluetooth::{
-    AdapterActions, Bluetooth, BluetoothDevice, BtifBluetoothCallbacks, IBluetooth,
-    IBluetoothConnectionCallback,
+    AdapterActions, Bluetooth, BluetoothDevice, IBluetooth, IBluetoothConnectionCallback,
 };
 use crate::bluetooth_media::BluetoothMedia;
 use crate::callbacks::Callbacks;
@@ -417,7 +416,7 @@ impl ISuspend for Suspend {
     }
 
     fn resume(&mut self) -> bool {
-        let mut suspend_state = self.suspend_state.lock().unwrap();
+        let suspend_state = self.suspend_state.lock().unwrap();
         // Suspend is not ready (e.g. aborted early), delay cleanup after SuspendReady.
         if suspend_state.suspend_expected {
             log::error!("Suspend is expected but not ready, abort resume.");

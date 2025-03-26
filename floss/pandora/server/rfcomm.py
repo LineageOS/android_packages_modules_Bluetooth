@@ -65,14 +65,20 @@ class RFCOMMService(rfcomm_grpc_aio.RFCOMMServicer):
                 self.task = task
 
             @utils.glib_callback()
-            def on_outgoing_connection_result(self, connecting_id, result, socket, *, dbus_unix_fd_list=None):
+            def on_outgoing_connection_result(self,
+                                              connecting_id,
+                                              result,
+                                              socket,
+                                              *,
+                                              dbus_unix_fd_list=None):
                 if connecting_id != self.task['connecting_id']:
                     return
 
                 future = self.task['create_rfcomm_channel']
                 if result is None or floss_enums.BtStatus(result) != floss_enums.BtStatus.SUCCESS:
-                    logging.error('Failed to create the RFCOMM channel with connecting_id: %s. Status: %s',
-                                  connecting_id, result)
+                    logging.error(
+                        'Failed to create the RFCOMM channel with connecting_id: %s. Status: %s',
+                        connecting_id, result)
                     future.get_loop().call_soon_threadsafe(future.set_result, None)
                     return
 
@@ -103,10 +109,12 @@ class RFCOMMService(rfcomm_grpc_aio.RFCOMMServicer):
         address = utils.address_from(request.address)
         uuid = list(uuid_module.UUID(request.uuid).bytes)
         try:
-            socket_result = self.bluetooth.create_insecure_rfcomm_socket_to_service_record(address, uuid)
+            socket_result = self.bluetooth.create_insecure_rfcomm_socket_to_service_record(
+                address, uuid)
             if socket_result is None:
-                await context.abort(grpc.StatusCode.INTERNAL,
-                                    'Failed to call create_insecure_rfcomm_socket_to_service_record.')
+                await context.abort(
+                    grpc.StatusCode.INTERNAL,
+                    'Failed to call create_insecure_rfcomm_socket_to_service_record.')
 
             connecting_id = socket_result['id']
             rfcomm_channel_creation = {
@@ -118,8 +126,9 @@ class RFCOMMService(rfcomm_grpc_aio.RFCOMMServicer):
             self.bluetooth.socket_manager.register_callback_observer(name, observer)
             fd = await asyncio.wait_for(rfcomm_channel_creation['create_rfcomm_channel'], timeout=5)
             if fd is None:
-                await context.abort(grpc.StatusCode.INTERNAL,
-                                    f'Failed to get the fd from RFCOMM socket with connecting_id: {connecting_id}')
+                await context.abort(
+                    grpc.StatusCode.INTERNAL,
+                    f'Failed to get the fd from RFCOMM socket with connecting_id: {connecting_id}')
 
             stream_id = self.new_stream_id()
             stream = socket_module.fromfd(fd, socket_module.AF_UNIX, socket_module.SOCK_STREAM)
@@ -161,7 +170,8 @@ class RFCOMMService(rfcomm_grpc_aio.RFCOMMServicer):
                     return
 
                 if reason is None or floss_enums.BtStatus(reason) != floss_enums.BtStatus.SUCCESS:
-                    logging.error('Failed to stop RFCOMM channel with listener_id: %s. Status: %s', listener_id, reason)
+                    logging.error('Failed to stop RFCOMM channel with listener_id: %s. Status: %s',
+                                  listener_id, reason)
 
                 future = self.task['stop_rfcomm_channel']
                 future.get_loop().call_soon_threadsafe(future.set_result, reason)
@@ -180,8 +190,10 @@ class RFCOMMService(rfcomm_grpc_aio.RFCOMMServicer):
 
             status = await asyncio.wait_for(rfcomm_channel_stop['stop_rfcomm_channel'], timeout=5)
             if status != floss_enums.BtStatus.SUCCESS:
-                await context.abort(grpc.StatusCode.INTERNAL,
-                                    f'Failed to stop RFCOMM channel with listener_id: {listener_id}. Status: {status}')
+                await context.abort(
+                    grpc.StatusCode.INTERNAL,
+                    f'Failed to stop RFCOMM channel with listener_id: {listener_id}. Status: {status}'
+                )
         finally:
             self.bluetooth.socket_manager.unregister_callback_observer(name, observer)
 
@@ -207,18 +219,21 @@ class RFCOMMService(rfcomm_grpc_aio.RFCOMMServicer):
 
                 future = self.task['start_rfcomm_server']
                 if status is None or floss_enums.BtStatus(status) != floss_enums.BtStatus.SUCCESS:
-                    logging.error('Failed listening to RFCOMM channel with socket_id: %s. Status: %s', listener_id,
-                                  status)
+                    logging.error(
+                        'Failed listening to RFCOMM channel with socket_id: %s. Status: %s',
+                        listener_id, status)
                     future.get_loop().call_soon_threadsafe(future.set_result, None)
                 else:
                     future.get_loop().call_soon_threadsafe(future.set_result, listener_id)
 
         try:
             uuid = list(uuid_module.UUID(request.uuid).bytes)
-            socket_result = self.bluetooth.listen_using_insecure_rfcomm_with_service_record(request.name, uuid)
+            socket_result = self.bluetooth.listen_using_insecure_rfcomm_with_service_record(
+                request.name, uuid)
             if socket_result is None:
-                await context.abort(grpc.StatusCode.INTERNAL,
-                                    'Failed to call listen_using_insecure_rfcomm_with_service_record.')
+                await context.abort(
+                    grpc.StatusCode.INTERNAL,
+                    'Failed to call listen_using_insecure_rfcomm_with_service_record.')
 
             rfcomm_channel_listener = {
                 'start_rfcomm_server': asyncio.get_running_loop().create_future(),
@@ -227,14 +242,16 @@ class RFCOMMService(rfcomm_grpc_aio.RFCOMMServicer):
             observer = StartServerObserver(rfcomm_channel_listener)
             name = utils.create_observer_name(observer)
             self.bluetooth.socket_manager.register_callback_observer(name, observer)
-            listener_id = await asyncio.wait_for(rfcomm_channel_listener['start_rfcomm_server'], timeout=5)
+            listener_id = await asyncio.wait_for(rfcomm_channel_listener['start_rfcomm_server'],
+                                                 timeout=5)
         finally:
             self.bluetooth.socket_manager.unregister_callback_observer(name, observer)
 
         return rfcomm_pb2.StartServerResponse(server=rfcomm_pb2.ServerId(id=listener_id))
 
-    async def AcceptConnection(self, request: rfcomm_pb2.AcceptConnectionRequest,
-                               context: grpc.ServicerContext) -> rfcomm_pb2.AcceptConnectionResponse:
+    async def AcceptConnection(
+            self, request: rfcomm_pb2.AcceptConnectionRequest,
+            context: grpc.ServicerContext) -> rfcomm_pb2.AcceptConnectionResponse:
 
         class AcceptConnectionObserver(socket_manager.SocketManagerCallbacks):
             """Observer to observe the accepted RFCOMM connection."""
@@ -243,7 +260,11 @@ class RFCOMMService(rfcomm_grpc_aio.RFCOMMServicer):
                 self.task = task
 
             @utils.glib_callback()
-            def on_handle_incoming_connection(self, listener_id, connection, *, dbus_unix_fd_list=None):
+            def on_handle_incoming_connection(self,
+                                              listener_id,
+                                              connection,
+                                              *,
+                                              dbus_unix_fd_list=None):
                 if listener_id != self.task['listener_id']:
                     return
 
@@ -284,13 +305,16 @@ class RFCOMMService(rfcomm_grpc_aio.RFCOMMServicer):
             accept_socket_status = self.bluetooth.accept_socket(listener_id, timeout_ms=5)
             if accept_socket_status != floss_enums.BtStatus.SUCCESS:
                 await context.abort(
-                    grpc.StatusCode.INTERNAL, f'Failed to accept the RFCOMM socket with listener_id: {listener_id}. '
+                    grpc.StatusCode.INTERNAL,
+                    f'Failed to accept the RFCOMM socket with listener_id: {listener_id}. '
                     f'Status: {accept_socket_status}.')
 
-            fd = await asyncio.wait_for(rfcomm_channel_acceptance['accept_rfcomm_channel'], timeout=5)
+            fd = await asyncio.wait_for(rfcomm_channel_acceptance['accept_rfcomm_channel'],
+                                        timeout=5)
             if fd is None:
-                await context.abort(grpc.StatusCode.INTERNAL,
-                                    f'Failed to get the fd from RFCOMM socket with listener_id: {listener_id}')
+                await context.abort(
+                    grpc.StatusCode.INTERNAL,
+                    f'Failed to get the fd from RFCOMM socket with listener_id: {listener_id}')
 
             stream_id = self.new_stream_id()
             stream = socket_module.fromfd(fd, socket_module.AF_UNIX, socket_module.SOCK_STREAM)
@@ -298,13 +322,16 @@ class RFCOMMService(rfcomm_grpc_aio.RFCOMMServicer):
 
         except asyncio.TimeoutError as e:
             logging.error('AcceptConnection: asyncio.TimeoutError %s', e)
-            return rfcomm_pb2.AcceptConnectionResponse(connection=rfcomm_pb2.RfcommConnection(id=None))
+            return rfcomm_pb2.AcceptConnectionResponse(connection=rfcomm_pb2.RfcommConnection(
+                id=None))
         finally:
             self.bluetooth.socket_manager.unregister_callback_observer(name, observer)
 
-        return rfcomm_pb2.AcceptConnectionResponse(connection=rfcomm_pb2.RfcommConnection(id=stream_id))
+        return rfcomm_pb2.AcceptConnectionResponse(connection=rfcomm_pb2.RfcommConnection(
+            id=stream_id))
 
-    async def Send(self, request: rfcomm_pb2.TxRequest, context: grpc.ServicerContext) -> rfcomm_pb2.TxResponse:
+    async def Send(self, request: rfcomm_pb2.TxRequest,
+                   context: grpc.ServicerContext) -> rfcomm_pb2.TxResponse:
         stream_id = request.connection.id
         output_stream = self.streams.get(stream_id)
         if output_stream:
@@ -314,11 +341,13 @@ class RFCOMMService(rfcomm_grpc_aio.RFCOMMServicer):
             except Exception as e:
                 logging.error('Exception during writing to output stream %s', e)
         else:
-            logging.error('Output stream: %s not found for the stream_id: %s', output_stream, stream_id)
+            logging.error('Output stream: %s not found for the stream_id: %s', output_stream,
+                          stream_id)
 
         return empty_pb2.Empty()
 
-    async def Receive(self, request: rfcomm_pb2.RxRequest, context: grpc.ServicerContext) -> rfcomm_pb2.RxResponse:
+    async def Receive(self, request: rfcomm_pb2.RxRequest,
+                      context: grpc.ServicerContext) -> rfcomm_pb2.RxResponse:
         stream_id = request.connection.id
         input_stream = self.streams.get(stream_id)
         if input_stream:
@@ -329,7 +358,8 @@ class RFCOMMService(rfcomm_grpc_aio.RFCOMMServicer):
             except Exception as e:
                 logging.error('Exception during reading from input stream %s', e)
         else:
-            logging.error('Input stream: %s not found for the stream_id: %s', input_stream, stream_id)
+            logging.error('Input stream: %s not found for the stream_id: %s', input_stream,
+                          stream_id)
 
         # Return an empty byte array.
         return rfcomm_pb2.RxResponse(data=b'')

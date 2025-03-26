@@ -22,16 +22,6 @@ flag {
 }
 
 flag {
-    name: "rfcomm_cancel_ongoing_sdp_on_close"
-    namespace: "bluetooth"
-    description: "Make sure the ongoing SDP is cleaned up when the socket is closed"
-    bug: "370916753"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "indicate_rfcomm_connection_complete_after_msc"
     namespace: "bluetooth"
     description: "Indicate RFCOMM connection complete after sending Modem Status Command"
@@ -46,6 +36,16 @@ flag {
     namespace: "bluetooth"
     description: "Properly handle incoming connections while connecting"
     bug: "399420482"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "donot_collide_with_closed_port"
+    namespace: "bluetooth"
+    description: "Modify PORT_isCollisionDetected to report false when found port is CLOSED"
+    bug: "406250389"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

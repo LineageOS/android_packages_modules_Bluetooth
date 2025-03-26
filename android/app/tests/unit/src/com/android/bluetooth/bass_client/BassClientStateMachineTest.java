@@ -2460,7 +2460,6 @@ public class BassClientStateMachineTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_LEAUDIO_BROADCAST_RESYNC_HELPER)
     public void sinkConnected_queueAddingSourceForReceiveStateReady() {
         mBassClientStateMachine.connectGatt(true);
         BluetoothGattCallback cb = mBassClientStateMachine.mGattCallback;

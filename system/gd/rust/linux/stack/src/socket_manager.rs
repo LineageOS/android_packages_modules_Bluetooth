@@ -6,10 +6,10 @@ use bt_topshim::btif::{
 use bt_topshim::profiles::socket;
 use log;
 use nix::sys::socket::{recvmsg, ControlMessageOwned};
-use nix::sys::uio::IoVec;
 use std::collections::HashMap;
 use std::convert::TryFrom;
 use std::fmt;
+use std::io::IoSliceMut;
 use std::os::unix;
 use std::os::unix::io::{AsRawFd, FromRawFd, IntoRawFd, RawFd};
 use std::sync::{Arc, Mutex};
@@ -23,8 +23,7 @@ use tokio::time;
 use crate::bluetooth::{Bluetooth, BluetoothDevice};
 use crate::bluetooth_admin::BluetoothAdminPolicyHelper;
 use crate::callbacks::Callbacks;
-use crate::Message;
-use crate::RPCProxy;
+use crate::{Message, RPCProxy};
 
 /// Type for unique identifier for each opened socket.
 pub type SocketId = u64;
@@ -863,16 +862,16 @@ impl BluetoothSocketManager {
                             let sock: std::io::Result<Option<BluetoothSocket>> =
                                 cstream.try_io(tokio::io::Interest::READABLE, || {
                                     let mut data = [0; socket::CONNECT_COMPLETE_SIZE];
-                                    let iov = [IoVec::from_mut_slice(&mut data)];
+                                    let mut iov = [IoSliceMut::new(&mut data)];
                                     let mut cspace = nix::cmsg_space!(RawFd);
-                                    let maybe_sock = match recvmsg(
+                                    let maybe_sock = match recvmsg::<()>(
                                         rawfd,
-                                        &iov,
+                                        &mut iov,
                                         Some(&mut cspace),
                                         nix::sys::socket::MsgFlags::MSG_DONTWAIT,
                                     ) {
                                         Ok(recv) => {
-                                            let fd = match recv.cmsgs().next() {
+                                            let fd = match recv.cmsgs()?.next() {
                                                 Some(ControlMessageOwned::ScmRights(fds)) => {
                                                     if fds.len() == 1 {
                                                         Some(fds[0])

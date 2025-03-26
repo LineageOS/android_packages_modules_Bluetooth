@@ -495,8 +495,9 @@ class FlossGattClient(GattClientCallbacks):
             connected: A boolean value representing whether the device is connected.
             addr: Remote device MAC address.
         """
-        logging.debug('on_client_connection_state: status: %s, client_id: %s, '
-                      'connected: %s, addr: %s', status, client_id, connected, addr)
+        logging.debug(
+            'on_client_connection_state: status: %s, client_id: %s, '
+            'connected: %s, addr: %s', status, client_id, connected, addr)
         if status != floss_enums.GattStatus.SUCCESS:
             return
         self.connected_clients[addr] = connected
@@ -511,7 +512,8 @@ class FlossGattClient(GattClientCallbacks):
             rx_phy: Receive physical type.
             status: floss_enums.GattStatus.
         """
-        logging.debug('on_phy_update: addr: %s, tx_phy: %s, rx_phy: %s, status: %s', addr, tx_phy, rx_phy, status)
+        logging.debug('on_phy_update: addr: %s, tx_phy: %s, rx_phy: %s, status: %s', addr, tx_phy,
+                      rx_phy, status)
 
     @utils.glib_callback()
     def on_phy_read(self, addr, tx_phy, rx_phy, status):
@@ -523,7 +525,8 @@ class FlossGattClient(GattClientCallbacks):
             rx_phy: Receive physical type.
             status: floss_enums.GattStatus.
         """
-        logging.debug('on_phy_read: addr: %s, tx_phy: %s, rx_phy: %s, status: %s', addr, tx_phy, rx_phy, status)
+        logging.debug('on_phy_read: addr: %s, tx_phy: %s, rx_phy: %s, status: %s', addr, tx_phy,
+                      rx_phy, status)
 
     @utils.glib_callback()
     def on_search_complete(self, addr, services, status):
@@ -534,7 +537,8 @@ class FlossGattClient(GattClientCallbacks):
             services: Bluetooth GATT services as list.
             status: floss_enums.GattStatus.
         """
-        logging.debug('on_search_complete: addr: %s, services: %s, status: %s', addr, services, status)
+        logging.debug('on_search_complete: addr: %s, services: %s, status: %s', addr, services,
+                      status)
         if status != floss_enums.GattStatus.SUCCESS:
             logging.error('Failed to complete search')
             return
@@ -562,7 +566,8 @@ class FlossGattClient(GattClientCallbacks):
             status: floss_enums.GattStatus.
             handle: Characteristic handle id.
         """
-        logging.debug('on_characteristic_write: addr: %s, status: %s, handle: %s', addr, status, handle)
+        logging.debug('on_characteristic_write: addr: %s, status: %s, handle: %s', addr, status,
+                      handle)
 
     @utils.glib_callback()
     def on_execute_write(self, addr, status):
@@ -584,7 +589,8 @@ class FlossGattClient(GattClientCallbacks):
             handle: Descriptor handle id.
             value: Descriptor value.
         """
-        logging.debug('on_descriptor_read: addr: %s, status: %s, handle: %s, value: %s', addr, status, handle, value)
+        logging.debug('on_descriptor_read: addr: %s, status: %s, handle: %s, value: %s', addr,
+                      status, handle, value)
 
     @utils.glib_callback()
     def on_descriptor_write(self, addr, status, handle):
@@ -641,8 +647,9 @@ class FlossGattClient(GattClientCallbacks):
             timeout: Timeout in ms.
             status: floss_enums.GattStatus.
         """
-        logging.debug('on_connection_updated: addr: %s, interval: %s, latency: %s, '
-                      'timeout: %s, status: %s', addr, interval, latency, timeout, status)
+        logging.debug(
+            'on_connection_updated: addr: %s, interval: %s, latency: %s, '
+            'timeout: %s, status: %s', addr, interval, latency, timeout, status)
 
     @utils.glib_callback()
     def on_service_changed(self, addr):
@@ -734,7 +741,8 @@ class FlossGattClient(GattClientCallbacks):
         Returns:
             True on success, False otherwise.
         """
-        self.proxy().ClientConnect(self.client_id, address, is_direct, transport, opportunistic, phy)
+        self.proxy().ClientConnect(self.client_id, address, is_direct, transport, opportunistic,
+                                   phy)
         return True
 
     @utils.glib_call(False)
@@ -833,7 +841,8 @@ class FlossGattClient(GattClientCallbacks):
         Returns:
             True on success, False otherwise.
         """
-        self.proxy().ReadUsingCharacteristicUuid(self.client_id, address, uuid, start_handle, end_handle, auth_req)
+        self.proxy().ReadUsingCharacteristicUuid(self.client_id, address, uuid, start_handle,
+                                                 end_handle, auth_req)
         return True
 
     @utils.glib_call(False)
@@ -881,7 +890,8 @@ class FlossGattClient(GattClientCallbacks):
         Returns:
             GattWriteRequestStatus on success, None otherwise.
         """
-        return self.proxy().WriteCharacteristic(self.client_id, address, handle, write_type, auth_req, value)
+        return self.proxy().WriteCharacteristic(self.client_id, address, handle, write_type,
+                                                auth_req, value)
 
     @utils.glib_call(False)
     def register_for_notification(self, address, handle, enable):
@@ -953,8 +963,8 @@ class FlossGattClient(GattClientCallbacks):
         return True
 
     @utils.glib_call(False)
-    def update_connection_parameter(self, address, min_interval, max_interval, latency, timeout, min_ce_len,
-                                    max_ce_len):
+    def update_connection_parameter(self, address, min_interval, max_interval, latency, timeout,
+                                    min_ce_len, max_ce_len):
         """Updates connection parameters.
 
         Args:
@@ -969,8 +979,8 @@ class FlossGattClient(GattClientCallbacks):
         Returns:
             True on success, False otherwise.
         """
-        self.proxy().ConnectionParameterUpdate(self.client_id, address, min_interval, max_interval, latency, timeout,
-                                               min_ce_len, max_ce_len)
+        self.proxy().ConnectionParameterUpdate(self.client_id, address, min_interval, max_interval,
+                                               latency, timeout, min_ce_len, max_ce_len)
         return True
 
     @utils.glib_call(False)

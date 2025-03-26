@@ -373,14 +373,14 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
           // Check if the incoming open event and the outgoing connection are
           // for the same device.
           if (p_data->open.bd_addr == btif_hf_cb[idx].connected_bda) {
-            LogMetricHfpRfcommChannelFail(ToGdAddress(p_data->open.bd_addr));
+            LogMetricHfpRfcommChannelFail(p_data->open.bd_addr);
             log::warn(
                     "btif_hf_cb state[{}] is not expected, possible connection "
                     "collision, ignoring AG open failure event for the same device "
                     "{}",
                     p_data->open.status, p_data->open.bd_addr);
           } else {
-            LogMetricHfpRfcommCollisionFail(ToGdAddress(p_data->open.bd_addr));
+            LogMetricHfpRfcommCollisionFail(p_data->open.bd_addr);
             log::warn(
                     "btif_hf_cb state[{}] is not expected, possible connection "
                     "collision, ignoring AG open failure event for the different "
@@ -441,7 +441,7 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
                     p_data->open.bd_addr);
           break;
         }
-        LogMetricHfpRfcommAgOpenFail(ToGdAddress(p_data->open.bd_addr));
+        LogMetricHfpRfcommAgOpenFail(p_data->open.bd_addr);
         log::error("self initiated AG open failed for {}, status {}", btif_hf_cb[idx].connected_bda,
                    p_data->open.status);
         RawAddress connected_bda = btif_hf_cb[idx].connected_bda;
@@ -498,7 +498,7 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
         bluetooth::shim::CountCounterMetrics(
                 android::bluetooth::CodePathCounterKeyEnum::HFP_SLC_SETUP_FAILED, 1);
         btif_queue_advance();
-        LogMetricHfpSlcFail(ToGdAddress(p_data->open.bd_addr));
+        LogMetricHfpSlcFail(p_data->open.bd_addr);
         DEVICE_IOT_CONFIG_ADDR_INT_ADD_ONE(btif_hf_cb[idx].connected_bda,
                                            IOT_CONF_KEY_HFP_SLC_CONN_FAIL_COUNT);
       }

@@ -255,7 +255,7 @@ class BtPermissionUtils {
     }
 
     /**
-     * Check ifthe packageName belongs to calling uid
+     * Check if the packageName belongs to calling uid
      *
      * <p>A null package belongs to any uid
      */

@@ -360,12 +360,12 @@ class BluetoothManagerService {
         return 0;
     }
 
-    private void delayModeChangedIfNeeded(Object token, Runnable r, String modechanged) {
+    private void delayModeChangedIfNeeded(Object token, Runnable r, String modeChanged) {
         final int state = getState();
         final int delayMs = estimateBusyTime(state);
         Log.d(
                 TAG,
-                ("delayModeChangedIfNeeded(" + modechanged + "):")
+                ("delayModeChangedIfNeeded(" + modeChanged + "):")
                         + (" state=" + nameForState(state))
                         + (" Airplane.isOnOverrode=" + AirplaneModeListener.isOnOverrode())
                         + (" Airplane.isOn=" + AirplaneModeListener.isOn())
@@ -376,7 +376,7 @@ class BluetoothManagerService {
 
         if (delayMs > 0) {
             mHandler.postDelayed(
-                    () -> delayModeChangedIfNeeded(token, r, modechanged), token, delayMs);
+                    () -> delayModeChangedIfNeeded(token, r, modeChanged), token, delayMs);
         } else {
             r.run();
         }
@@ -568,7 +568,7 @@ class BluetoothManagerService {
                         mContext.getSystemService(UserManager.class),
                         "UserManager system service cannot be null");
 
-        mBinder = new BluetoothServiceBinder(this, mLooper, mContext, mUserManager);
+        mBinder = new BluetoothServiceBinder(this, mContext, mUserManager);
         mHandler = new BluetoothHandler(mLooper);
 
         // Observe BLE scan only mode settings change.

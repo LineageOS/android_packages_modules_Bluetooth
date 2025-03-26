@@ -39,7 +39,8 @@ class HFPService(hfp_grpc_aio.HFPServicer):
         self.bluetooth.set_phone_ops_enabled(True)
         self.bluetooth.set_mps_qualification_enabled(True)
 
-    async def EnableSlc(self, request: hfp_pb2.EnableSlcRequest, context: grpc.ServicerContext) -> empty_pb2.Empty:
+    async def EnableSlc(self, request: hfp_pb2.EnableSlcRequest,
+                        context: grpc.ServicerContext) -> empty_pb2.Empty:
         self.enable_phone_for_testing()
         address = utils.connection_from(request.connection).address
         self.bluetooth.connect_device(address)
@@ -51,7 +52,8 @@ class HFPService(hfp_grpc_aio.HFPServicer):
         context.set_details("Method not implemented!")  # type: ignore
         raise NotImplementedError("Method not implemented!")
 
-    async def DisableSlc(self, request: hfp_pb2.DisableSlcRequest, context: grpc.ServicerContext) -> empty_pb2.Empty:
+    async def DisableSlc(self, request: hfp_pb2.DisableSlcRequest,
+                         context: grpc.ServicerContext) -> empty_pb2.Empty:
         address = utils.connection_from(request.connection).address
         self.bluetooth.disconnect_device(address)
         return empty_pb2.Empty()
@@ -68,8 +70,9 @@ class HFPService(hfp_grpc_aio.HFPServicer):
         self.bluetooth.hangup_call()
         return hfp_pb2.DeclineCallResponse()
 
-    async def DeclineCallAsHandsfree(self, request: hfp_pb2.DeclineCallAsHandsfreeRequest,
-                                     context: grpc.ServicerContext) -> hfp_pb2.DeclineCallAsHandsfreeResponse:
+    async def DeclineCallAsHandsfree(
+            self, request: hfp_pb2.DeclineCallAsHandsfreeRequest,
+            context: grpc.ServicerContext) -> hfp_pb2.DeclineCallAsHandsfreeResponse:
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
         context.set_details("Method not implemented!")  # type: ignore
         raise NotImplementedError("Method not implemented!")
@@ -82,8 +85,9 @@ class HFPService(hfp_grpc_aio.HFPServicer):
         self.bluetooth.set_battery_level(math.floor((request.battery_percentage / 100) * 5))
         return empty_pb2.Empty()
 
-    async def ConnectToAudioAsHandsfree(self, request: hfp_pb2.ConnectToAudioAsHandsfreeRequest,
-                                        context: grpc.ServicerContext) -> hfp_pb2.ConnectToAudioAsHandsfreeResponse:
+    async def ConnectToAudioAsHandsfree(
+            self, request: hfp_pb2.ConnectToAudioAsHandsfreeRequest,
+            context: grpc.ServicerContext) -> hfp_pb2.ConnectToAudioAsHandsfreeResponse:
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
         context.set_details("Method not implemented!")  # type: ignore
         raise NotImplementedError("Method not implemented!")
@@ -95,8 +99,9 @@ class HFPService(hfp_grpc_aio.HFPServicer):
         context.set_details("Method not implemented!")  # type: ignore
         raise NotImplementedError("Method not implemented!")
 
-    async def SetVoiceRecognition(self, request: hfp_pb2.SetVoiceRecognitionRequest,
-                                  context: grpc.ServicerContext) -> hfp_pb2.SetVoiceRecognitionResponse:
+    async def SetVoiceRecognition(
+            self, request: hfp_pb2.SetVoiceRecognitionRequest,
+            context: grpc.ServicerContext) -> hfp_pb2.SetVoiceRecognitionResponse:
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
         context.set_details("Method not implemented!")  # type: ignore
         raise NotImplementedError("Method not implemented!")
@@ -119,8 +124,9 @@ class HFPService(hfp_grpc_aio.HFPServicer):
             await context.abort(grpc.StatusCode.INTERNAL, 'Failed to make a call.')
         return hfp_pb2.MakeCallResponse()
 
-    async def MakeCallAsHandsfree(self, request: hfp_pb2.MakeCallAsHandsfreeRequest,
-                                  context: grpc.ServicerContext) -> hfp_pb2.MakeCallAsHandsfreeResponse:
+    async def MakeCallAsHandsfree(
+            self, request: hfp_pb2.MakeCallAsHandsfreeRequest,
+            context: grpc.ServicerContext) -> hfp_pb2.MakeCallAsHandsfreeResponse:
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
         context.set_details('Method not implemented!')  # type: ignore
         raise NotImplementedError('Method not implemented!')
@@ -133,8 +139,9 @@ class HFPService(hfp_grpc_aio.HFPServicer):
             await context.abort(grpc.StatusCode.INTERNAL, 'Failed to answer call.')
         return hfp_pb2.AnswerCallResponse()
 
-    async def AnswerCallAsHandsfree(self, request: hfp_pb2.AnswerCallAsHandsfreeRequest,
-                                    context: grpc.ServicerContext) -> hfp_pb2.AnswerCallAsHandsfreeResponse:
+    async def AnswerCallAsHandsfree(
+            self, request: hfp_pb2.AnswerCallAsHandsfreeRequest,
+            context: grpc.ServicerContext) -> hfp_pb2.AnswerCallAsHandsfreeResponse:
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
         context.set_details('Method not implemented!')  # type: ignore
         raise NotImplementedError('Method not implemented!')
@@ -172,20 +179,23 @@ class HFPService(hfp_grpc_aio.HFPServicer):
             await context.abort(grpc.StatusCode.INTERNAL, 'Failed to clear hall history.')
         return hfp_pb2.ClearCallHistoryResponse()
 
-    async def EndCallAsHandsfree(self, request: hfp_pb2.EndCallAsHandsfreeRequest,
-                                 context: grpc.ServicerContext) -> hfp_pb2.EndCallAsHandsfreeResponse:
+    async def EndCallAsHandsfree(
+            self, request: hfp_pb2.EndCallAsHandsfreeRequest,
+            context: grpc.ServicerContext) -> hfp_pb2.EndCallAsHandsfreeResponse:
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
         context.set_details('Method not implemented!')  # type: ignore
         raise NotImplementedError('Method not implemented!')
 
-    async def CallTransferAsHandsfree(self, request: hfp_pb2.CallTransferAsHandsfreeRequest,
-                                      context: grpc.ServicerContext) -> hfp_pb2.CallTransferAsHandsfreeResponse:
+    async def CallTransferAsHandsfree(
+            self, request: hfp_pb2.CallTransferAsHandsfreeRequest,
+            context: grpc.ServicerContext) -> hfp_pb2.CallTransferAsHandsfreeResponse:
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
         context.set_details('Method not implemented!')  # type: ignore
         raise NotImplementedError('Method not implemented!')
 
-    async def SendDtmfFromHandsfree(self, request: hfp_pb2.SendDtmfFromHandsfreeRequest,
-                                    context: grpc.ServicerContext) -> hfp_pb2.SendDtmfFromHandsfreeResponse:
+    async def SendDtmfFromHandsfree(
+            self, request: hfp_pb2.SendDtmfFromHandsfreeRequest,
+            context: grpc.ServicerContext) -> hfp_pb2.SendDtmfFromHandsfreeResponse:
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)  # type: ignore
         context.set_details('Method not implemented!')  # type: ignore
         raise NotImplementedError('Method not implemented!')

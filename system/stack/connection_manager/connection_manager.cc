@@ -519,7 +519,7 @@ bool direct_connect_add(uint8_t app_id, const RawAddress& address, tBLE_ADDR_TYP
     // app already trying to connect to this particular device
     if (info.doing_direct_conn.count(app_id)) {
       log::info("attempt from app_id=0x{:x} to {} already in progress", app_id, address_with_type);
-      bluetooth::shim::LogMetricLeConnectionRejected(bluetooth::ToGdAddress(address));
+      bluetooth::shim::LogMetricLeConnectionRejected(address);
       return false;
     }
 

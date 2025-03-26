@@ -1327,8 +1327,7 @@ static void btsock_rfc_signaled_flagged(int fd, int flags, uint32_t id) {
     // Clean up if there's no data pending.
     int size = 0;
     if (need_close || ioctl(slot->fd, FIONREAD, &size) != 0 || !size) {
-      if (com::android::bluetooth::flags::rfcomm_cancel_ongoing_sdp_on_close() &&
-          slot->f.doing_sdp_request) {
+      if (slot->f.doing_sdp_request) {
         BTA_JvCancelDiscovery(slot->id);
       }
       cleanup_rfc_slot(slot, error_code);
@@ -1382,8 +1381,7 @@ void btsock_rfc_signaled(int fd, int flags, uint32_t id) {
     // Clean up if there's no data pending.
     int size = 0;
     if (need_close || ioctl(slot->fd, FIONREAD, &size) != 0 || !size) {
-      if (com::android::bluetooth::flags::rfcomm_cancel_ongoing_sdp_on_close() &&
-          slot->f.doing_sdp_request) {
+      if (slot->f.doing_sdp_request) {
         BTA_JvCancelDiscovery(slot->id);
       }
       cleanup_rfc_slot(slot, error_code);

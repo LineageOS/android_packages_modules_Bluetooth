@@ -28,6 +28,8 @@
 #include "packet/custom_field_fixed_size_interface.h"
 #include "storage/serializable.h"
 
+class RawAddress;
+
 namespace bluetooth {
 namespace hci {
 
@@ -45,6 +47,7 @@ public:
   Address() = default;
   Address(const uint8_t (&addr)[kLength]);
   Address(std::initializer_list<uint8_t> l);
+  Address(const RawAddress& address);
 
   // CustomFieldFixedSizeInterface methods
   inline uint8_t* data() override { return address.data(); }

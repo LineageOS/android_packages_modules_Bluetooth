@@ -66,8 +66,14 @@ def main(grpc_port: int, rootcanal_port: int, transport: str, config: str) -> No
 def args_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Bumble command-line tool")
 
-    parser.add_argument('--grpc-port', type=int, default=BUMBLE_SERVER_GRPC_PORT, help='gRPC port to serve')
-    parser.add_argument('--rootcanal-port', type=int, default=ROOTCANAL_PORT_CUTTLEFISH, help='Rootcanal TCP port')
+    parser.add_argument('--grpc-port',
+                        type=int,
+                        default=BUMBLE_SERVER_GRPC_PORT,
+                        help='gRPC port to serve')
+    parser.add_argument('--rootcanal-port',
+                        type=int,
+                        default=ROOTCANAL_PORT_CUTTLEFISH,
+                        help='Rootcanal TCP port')
     parser.add_argument('--transport',
                         type=str,
                         default='tcp-client:127.0.0.1:<rootcanal-port>',
@@ -97,8 +103,9 @@ def register_experimental_services() -> None:
         lambda bumble, _, server: add_HIDServicer_to_server(HIDService(bumble.device), server))
     bumble_server.register_servicer_hook(
         lambda bumble, _, server: add_OOBServicer_to_server(OOBService(bumble.device), server))
-    bumble_server.register_servicer_hook(lambda bumble, config, server: add_BumbleConfigServicer_to_server(
-        BumbleConfigService(bumble.device, config), server))
+    bumble_server.register_servicer_hook(
+        lambda bumble, config, server: add_BumbleConfigServicer_to_server(
+            BumbleConfigService(bumble.device, config), server))
 
 
 def retrieve_config(config: str) -> Dict[str, Any]:
