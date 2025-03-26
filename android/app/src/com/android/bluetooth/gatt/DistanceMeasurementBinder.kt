@@ -31,15 +31,17 @@ import android.os.ParcelUuid
 import com.android.bluetooth.Utils
 import kotlin.concurrent.Volatile
 
+private val TAG: String = DistanceMeasurementBinder::class.java.simpleName
+
 class DistanceMeasurementBinder(
-    private val mContext: Context,
-    private val mDistanceMeasurementManager: DistanceMeasurementManager,
+    private val context: Context,
+    private val distanceMeasurementManager: DistanceMeasurementManager,
 ) : IDistanceMeasurement.Stub() {
 
-    @Volatile private var mIsAvailable = true
+    @Volatile private var isAvailable = true
 
     fun cleanup() {
-        mIsAvailable = false
+        isAvailable = false
     }
 
     @RequiresPermission(
@@ -47,22 +49,22 @@ class DistanceMeasurementBinder(
     )
     private fun getManager(source: AttributionSource, method: String): DistanceMeasurementManager? {
         if (
-            !mIsAvailable ||
+            !isAvailable ||
                 !Utils.callerIsSystemOrActiveOrManagedUser(
-                    mContext,
+                    context,
                     TAG,
                     "DistanceMeasurement $method",
                 ) ||
                 !Utils.checkConnectPermissionForDataDelivery(
-                    mContext,
+                    context,
                     source,
                     "DistanceMeasurement $method",
                 )
         ) {
             return null
         }
-        mContext.enforceCallingOrSelfPermission(Manifest.permission.BLUETOOTH_PRIVILEGED, null)
-        return mDistanceMeasurementManager
+        context.enforceCallingOrSelfPermission(Manifest.permission.BLUETOOTH_PRIVILEGED, null)
+        return distanceMeasurementManager
     }
 
     override fun getSupportedDistanceMeasurementMethods(
@@ -71,12 +73,9 @@ class DistanceMeasurementBinder(
         val manager: DistanceMeasurementManager =
             getManager(source, "getSupportedDistanceMeasurementMethods") ?: return emptyList()
 
-        val result =
-            manager.runOnDistanceMeasurementThreadAndWaitForResult {
-                manager.getSupportedDistanceMeasurementMethods()
-            }
-
-        return result ?: ArrayList()
+        return manager.runOnDistanceMeasurementThreadAndWaitForResult {
+            manager.getSupportedDistanceMeasurementMethods()
+        }
     }
 
     override fun startDistanceMeasurement(
@@ -99,34 +98,26 @@ class DistanceMeasurementBinder(
         method: Int,
         source: AttributionSource,
     ): Int {
-        if (!mIsAvailable) {
+        if (!isAvailable) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ENABLED
         } else if (
-            !Utils.callerIsSystemOrActiveOrManagedUser(mContext, TAG, "stopDistanceMeasurement")
+            !Utils.callerIsSystemOrActiveOrManagedUser(context, TAG, "stopDistanceMeasurement")
         ) {
             return BluetoothStatusCodes.ERROR_BLUETOOTH_NOT_ALLOWED
         } else if (
             !Utils.checkConnectPermissionForDataDelivery(
-                mContext,
+                context,
                 source,
                 "DistanceMeasurement stopDistanceMeasurement",
             )
         ) {
             return BluetoothStatusCodes.ERROR_MISSING_BLUETOOTH_CONNECT_PERMISSION
         }
-        mContext.enforceCallingOrSelfPermission(Manifest.permission.BLUETOOTH_PRIVILEGED, null)
+        context.enforceCallingOrSelfPermission(Manifest.permission.BLUETOOTH_PRIVILEGED, null)
 
-        val result =
-            mDistanceMeasurementManager.runOnDistanceMeasurementThreadAndWaitForResult {
-                mDistanceMeasurementManager.stopDistanceMeasurement(
-                    uuid.uuid,
-                    device,
-                    method,
-                    false,
-                )
-            }
-
-        return result ?: BluetoothStatusCodes.ERROR_UNKNOWN
+        return distanceMeasurementManager.runOnDistanceMeasurementThreadAndWaitForResult {
+            distanceMeasurementManager.stopDistanceMeasurement(uuid.uuid, device, method, false)
+        } ?: BluetoothStatusCodes.ERROR_UNKNOWN
     }
 
     override fun getChannelSoundingMaxSupportedSecurityLevel(
@@ -137,12 +128,9 @@ class DistanceMeasurementBinder(
             getManager(source, "getChannelSoundingMaxSupportedSecurityLevel")
                 ?: return ChannelSoundingParams.CS_SECURITY_LEVEL_UNKNOWN
 
-        val result =
-            manager.runOnDistanceMeasurementThreadAndWaitForResult {
-                manager.getChannelSoundingMaxSupportedSecurityLevel(remoteDevice)
-            }
-
-        return result ?: ChannelSoundingParams.CS_SECURITY_LEVEL_UNKNOWN
+        return manager.runOnDistanceMeasurementThreadAndWaitForResult {
+            manager.getChannelSoundingMaxSupportedSecurityLevel(remoteDevice)
+        } ?: ChannelSoundingParams.CS_SECURITY_LEVEL_UNKNOWN
     }
 
     override fun getLocalChannelSoundingMaxSupportedSecurityLevel(source: AttributionSource): Int {
@@ -150,12 +138,9 @@ class DistanceMeasurementBinder(
             getManager(source, "getLocalChannelSoundingMaxSupportedSecurityLevel")
                 ?: return ChannelSoundingParams.CS_SECURITY_LEVEL_UNKNOWN
 
-        val result =
-            manager.runOnDistanceMeasurementThreadAndWaitForResult {
-                manager.getLocalChannelSoundingMaxSupportedSecurityLevel()
-            }
-
-        return result ?: ChannelSoundingParams.CS_SECURITY_LEVEL_UNKNOWN
+        return manager.runOnDistanceMeasurementThreadAndWaitForResult {
+            manager.getLocalChannelSoundingMaxSupportedSecurityLevel()
+        } ?: ChannelSoundingParams.CS_SECURITY_LEVEL_UNKNOWN
     }
 
     override fun getChannelSoundingSupportedSecurityLevels(source: AttributionSource): IntArray {
@@ -165,12 +150,8 @@ class DistanceMeasurementBinder(
         val result =
             manager.runOnDistanceMeasurementThreadAndWaitForResult {
                 manager.getChannelSoundingSupportedSecurityLevels()
-            }
+            } ?: return IntArray(0)
 
-        return result?.stream()?.mapToInt { i -> i }?.toArray() ?: IntArray(0)
-    }
-
-    companion object {
-        private val TAG: String = DistanceMeasurementBinder::class.java.simpleName
+        return result.stream().mapToInt { i -> i }.toArray()
     }
 }
