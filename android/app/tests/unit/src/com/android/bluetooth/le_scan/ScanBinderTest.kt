@@ -92,7 +92,7 @@ class ScanBinderTest {
     }
 
     @Test
-    fun startScanForIntent() {
+    fun registerPiAndStartScan() {
         val intent =
             PendingIntent.getBroadcast(
                 InstrumentationRegistry.getInstrumentation().targetContext,
@@ -103,7 +103,7 @@ class ScanBinderTest {
         val settings = ScanSettings.Builder().build()
         val filters = listOf<ScanFilter>()
 
-        binder.startScanForIntent(intent, settings, filters, attributionSource)
+        binder.registerPiAndStartScan(intent, settings, filters, attributionSource)
         verify(scanController).registerPiAndStartScan(intent, settings, filters, attributionSource)
     }
 
