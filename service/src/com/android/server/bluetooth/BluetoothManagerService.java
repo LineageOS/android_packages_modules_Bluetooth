@@ -299,33 +299,36 @@ class BluetoothManagerService {
         return postAndWait(() -> factoryReset(0));
     }
 
-    private boolean factoryReset(int count) {
+    @VisibleForTesting
+    boolean factoryReset(int count) {
         if (count == 10 || mState.oneOf(STATE_OFF)) {
             Log.e(TAG, "factoryReset(" + count + "): Set property to retry when Bluetooth start");
             BluetoothProperties.factory_reset(true);
             return false;
         }
-        if (mState.oneOf(STATE_BLE_ON, STATE_ON)) {
-            Log.d(TAG, "factoryReset: Now performing service reset & restart");
-            try {
-                mAdapter.factoryReset(mContext.getAttributionSource());
-            } catch (RemoteException e) {
-                mHandler.postDelayed(() -> factoryReset(count + 1), 1_000);
-                return false;
-            }
 
-            clearBleApps();
-            ActiveLogs.add(ENABLE_DISABLE_REASON_FACTORY_RESET, false);
-            if (mState.oneOf(STATE_BLE_ON)) {
-                bleOnToOff();
-            } else {
-                onToBleOn();
-            }
-            return true;
+        if (!mState.oneOf(STATE_BLE_ON, STATE_ON)) {
+            // Bluetooth can not be toggled when it is in a transition state
+            mHandler.postDelayed(() -> factoryReset(count + 1), 1_000);
+            return false;
         }
 
-        mHandler.postDelayed(() -> factoryReset(count + 1), 1_000);
-        return false;
+        Log.d(TAG, "factoryReset: Now performing service reset & restart");
+        try {
+            mAdapter.factoryReset();
+        } catch (RemoteException e) {
+            mHandler.postDelayed(() -> factoryReset(count + 1), 1_000);
+            return false;
+        }
+
+        clearBleApps();
+        ActiveLogs.add(ENABLE_DISABLE_REASON_FACTORY_RESET, false);
+        if (mState.oneOf(STATE_BLE_ON)) {
+            bleOnToOff();
+        } else {
+            onToBleOn();
+        }
+        return true;
     }
 
     boolean onFactoryResetFromBinder() {
@@ -1432,22 +1435,29 @@ class BluetoothManagerService {
                                 Log.d(TAG, "Handling delayed airplane mode event");
                                 handleAirplaneModeChanged(AirplaneModeListener.isOnOverrode());
                             }
+                            // When performing FactoryReset, we currently depend on this to restart
                             if (mEnable && !isBinding()) {
                                 Log.d(TAG, "Entering STATE_OFF but mEnabled is true; restarting.");
                                 if (!Flags.systemServerRemoveExtraThreadJump()) {
                                     waitForState(STATE_OFF);
+                                    mHandler.sendEmptyMessageDelayed(
+                                            MESSAGE_RESTART_BLUETOOTH_SERVICE,
+                                            getServiceRestartMs());
+                                } else {
+                                    handleRestartMessage();
                                 }
-                                mHandler.sendEmptyMessageDelayed(
-                                        MESSAGE_RESTART_BLUETOOTH_SERVICE, getServiceRestartMs());
                             }
                         } else {
                             if (mEnable) {
                                 Log.d(TAG, "Entering STATE_OFF but mEnabled is true; restarting.");
                                 if (!Flags.systemServerRemoveExtraThreadJump()) {
                                     waitForState(STATE_OFF);
+                                    mHandler.sendEmptyMessageDelayed(
+                                            MESSAGE_RESTART_BLUETOOTH_SERVICE,
+                                            getServiceRestartMs());
+                                } else {
+                                    handleRestartMessage();
                                 }
-                                mHandler.sendEmptyMessageDelayed(
-                                        MESSAGE_RESTART_BLUETOOTH_SERVICE, getServiceRestartMs());
                             }
                         }
                     }
@@ -1496,22 +1506,7 @@ class BluetoothManagerService {
                     break;
 
                 case MESSAGE_RESTART_BLUETOOTH_SERVICE:
-                    mErrorRecoveryRetryCounter++;
-                    Log.d(
-                            TAG,
-                            "MESSAGE_RESTART_BLUETOOTH_SERVICE: retry count="
-                                    + mErrorRecoveryRetryCounter);
-                    if (mErrorRecoveryRetryCounter < MAX_ERROR_RESTART_RETRIES) {
-                        /* Enable without persisting the setting as
-                         * it doesn't change when IBluetooth
-                         * service restarts */
-                        mEnable = true;
-                        ActiveLogs.add(ENABLE_DISABLE_REASON_RESTARTED, true);
-                        handleEnable();
-                    } else {
-                        resetAdapter();
-                        Log.e(TAG, "Reach maximum retry to restart Bluetooth!");
-                    }
+                    handleRestartMessage();
                     break;
 
                 case MESSAGE_TIMEOUT_BIND:
@@ -1705,6 +1700,20 @@ class BluetoothManagerService {
             mEnable = false;
             onToBleOn();
         }
+    }
+
+    private void handleRestartMessage() {
+        mErrorRecoveryRetryCounter++;
+        Log.d(TAG, "handleRestartMessage: retry count=" + mErrorRecoveryRetryCounter);
+        if (mErrorRecoveryRetryCounter >= MAX_ERROR_RESTART_RETRIES) {
+            resetAdapter();
+            Log.e(TAG, "Reached maximum retry to restart Bluetooth!");
+            return;
+        }
+        // Enable without persisting the setting as it doesn't change when Bluetooth restarts
+        mEnable = true;
+        ActiveLogs.add(ENABLE_DISABLE_REASON_RESTARTED, true);
+        handleEnable();
     }
 
     private void bindToAdapter() {
