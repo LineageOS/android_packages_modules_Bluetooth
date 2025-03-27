@@ -17,9 +17,9 @@
 package com.android.bluetooth.btservice.bluetoothkeystore;
 
 import android.annotation.Nullable;
-import android.os.SystemProperties;
 import android.security.keystore.KeyGenParameterSpec;
 import android.security.keystore.KeyProperties;
+import android.sysprop.BluetoothProperties;
 import android.util.Log;
 
 import com.android.bluetooth.BluetoothKeystoreProto;
@@ -207,7 +207,7 @@ public class BluetoothKeystoreService {
         try {
             debugLog("loadConfigData");
 
-            if (isFactoryReset()) {
+            if (BluetoothProperties.factory_reset().orElse(false)) {
                 cleanupAll();
             }
 
@@ -244,10 +244,6 @@ public class BluetoothKeystoreService {
         } catch (NoSuchAlgorithmException e) {
             reportBluetoothKeystoreException(e, "could not find the algorithm: SHA256");
         }
-    }
-
-    private static boolean isFactoryReset() {
-        return SystemProperties.getBoolean("persist.bluetooth.factoryreset", false);
     }
 
     /** Init JNI */
