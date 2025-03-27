@@ -2451,7 +2451,7 @@ public class MediaControlGattService implements MediaControlGattServiceInterface
     public void dump(StringBuilder sb) {
         sb.append("\tMediaControlService instance current state:");
         sb.append("\n\t\tCcid = ").append(mCcid);
-        sb.append("\n\t\tFeatures:").append(ServiceFeature.featuresToString(mFeatures, "\n\t\t\t"));
+        sb.append("\n\t\tFeatures:").append(ServiceFeature.featuresToString(mFeatures));
 
         BluetoothGattCharacteristic characteristic = mCharacteristics.get(CharId.PLAYER_NAME);
         if (characteristic == null) {
