@@ -295,6 +295,39 @@ class BluetoothManagerService {
         }
     }
 
+    boolean factoryResetFromBinder() {
+        return postAndWait(() -> factoryReset(0));
+    }
+
+    private boolean factoryReset(int count) {
+        if (count == 10 || mState.oneOf(STATE_OFF)) {
+            Log.e(TAG, "factoryReset(" + count + "): Set property to retry when Bluetooth start");
+            BluetoothProperties.factory_reset(true);
+            return false;
+        }
+        if (mState.oneOf(STATE_BLE_ON, STATE_ON)) {
+            Log.d(TAG, "factoryReset: Now performing service reset & restart");
+            try {
+                mAdapter.factoryReset(mContext.getAttributionSource());
+            } catch (RemoteException e) {
+                mHandler.postDelayed(() -> factoryReset(count + 1), 1_000);
+                return false;
+            }
+
+            clearBleApps();
+            ActiveLogs.add(ENABLE_DISABLE_REASON_FACTORY_RESET, false);
+            if (mState.oneOf(STATE_BLE_ON)) {
+                bleOnToOff();
+            } else {
+                onToBleOn();
+            }
+            return true;
+        }
+
+        mHandler.postDelayed(() -> factoryReset(count + 1), 1_000);
+        return false;
+    }
+
     boolean onFactoryResetFromBinder() {
         // Wait for stable state if bluetooth is temporary state.
         int state = getState();

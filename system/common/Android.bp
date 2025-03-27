@@ -98,6 +98,9 @@ cc_test {
         cfi: false,
     },
     header_libs: ["libbluetooth_headers"],
+    visibility: [
+        "//platform_testing:__subpackages__",
+    ],
 }
 
 cc_test {

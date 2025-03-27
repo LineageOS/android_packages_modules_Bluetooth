@@ -643,7 +643,8 @@ public:
 
   void AseInitialStateReadRequest(LeAudioDevice* leAudioDevice) {
     int ases_num = leAudioDevice->ases_.size();
-    bool is_eatt_supported = gatt_profile_get_eatt_support_by_conn_id(leAudioDevice->conn_id_);
+    bool is_multiread_expected =
+            gatt_profile_get_eatt_support_by_conn_id(leAudioDevice->conn_id_) && ases_num > 1;
 
     void* notify_flag_ptr = NULL;
 
@@ -658,7 +659,8 @@ public:
         notify_flag_ptr = INT_TO_PTR(leAudioDevice->notify_connected_after_read_);
       }
 
-      if (!com::android::bluetooth::flags::le_ase_read_multiple_variable() || !is_eatt_supported) {
+      if (!com::android::bluetooth::flags::le_ase_read_multiple_variable() ||
+          !is_multiread_expected) {
         BtaGattQueue::ReadCharacteristic(leAudioDevice->conn_id_,
                                          leAudioDevice->ases_[i].hdls.val_hdl, OnGattReadRspStatic,
                                          notify_flag_ptr);

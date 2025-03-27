@@ -75,6 +75,9 @@ java_defaults {
 android_test {
     name: "BluetoothInstrumentationTests",
     defaults: ["BluetoothInstrumentationTestsDefaults"],
+    visibility: [
+        "//platform_testing:__subpackages__",
+    ],
 }
 
 android_test {
@@ -82,4 +85,7 @@ android_test {
     defaults: ["BluetoothInstrumentationTestsDefaults"],
     test_config: "GoogleAndroidTest.xml",
     instrumentation_target_package: "com.google.android.bluetooth",
+    visibility: [
+        "//platform_testing:__subpackages__",
+    ],
 }

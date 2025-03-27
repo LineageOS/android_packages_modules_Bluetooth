@@ -290,3 +290,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "non_bonded_device_properties"
+    namespace: "bluetooth"
+    description: "ACL disconnection should not remove device properties for devices which were never bonded"
+    bug: "406602074"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

@@ -55,6 +55,7 @@ import androidx.annotation.VisibleForTesting;
 import com.android.bluetooth.BluetoothStatsLog;
 import com.android.bluetooth.Utils;
 import com.android.bluetooth.btservice.RemoteDevices.DeviceProperties;
+import com.android.bluetooth.flags.Flags;
 import com.android.modules.utils.build.SdkLevel;
 
 import java.io.FileDescriptor;
@@ -1089,6 +1090,9 @@ class AdapterProperties {
         writer.println("  " + "Discovering: " + mDiscovering);
         writer.println("  " + "DiscoveryEndMs: " + mDiscoveryEndMs);
 
+        if (Flags.doNotDumpDevicesFromAdapterProperties()) {
+            return;
+        }
         writer.println("  " + "Bonded devices:");
         StringBuilder sb = new StringBuilder();
         for (BluetoothDevice device : mBondedDevices) {
@@ -1121,6 +1125,7 @@ class AdapterProperties {
         writer.println(sb.toString());
     }
 
+    // TODO(b/406319687): Remove when do_not_dump_devices_from_adapter_properties is shipped
     private static String dumpDeviceType(int deviceType) {
         switch (deviceType) {
             case BluetoothDevice.DEVICE_TYPE_UNKNOWN:

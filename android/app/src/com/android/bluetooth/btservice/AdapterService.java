@@ -619,6 +619,12 @@ public class AdapterService extends Service {
     @SuppressLint("AndroidFrameworkRequiresPermission")
     private void init() {
         Log.d(TAG, "init()");
+
+        if (Flags.gattClearCacheOnFactoryReset()
+                && BluetoothProperties.factory_reset().orElse(false)) {
+            clearStorage();
+        }
+
         Config.init(this);
         mDeviceConfigListener.start();
 
@@ -3964,10 +3970,6 @@ public class AdapterService extends Service {
             mBtCompanionManager.factoryReset();
         }
 
-        if (Flags.gattClearCacheOnFactoryReset()) {
-            clearStorage();
-        }
-
         return mNativeInterface.factoryReset();
     }
 
@@ -4465,6 +4467,7 @@ public class AdapterService extends Service {
 
         writer.println();
         mAdapterProperties.dump(fd, writer, args);
+        mRemoteDevices.dump(writer);
 
         writer.println("ScanMode: " + scanModeName(getScanMode()));
         StringBuilder sb = new StringBuilder();

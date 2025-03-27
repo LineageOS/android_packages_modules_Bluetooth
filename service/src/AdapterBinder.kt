@@ -84,6 +84,11 @@ class AdapterBinder(rawBinder: IBinder) {
         adapterBinder.unregAllGattClient(source)
     }
 
+    @Throws(RemoteException::class)
+    fun factoryReset(source: AttributionSource) {
+        adapterBinder.factoryReset(source)
+    }
+
     fun isMediaProfileConnected(source: AttributionSource): Boolean {
         try {
             return adapterBinder.isMediaProfileConnected(source)

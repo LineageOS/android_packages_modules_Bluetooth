@@ -65,6 +65,7 @@ import com.android.bluetooth.hfp.HeadsetHalConstants;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.modules.utils.build.SdkLevel;
 
+import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -2117,5 +2118,117 @@ public class RemoteDevices {
 
     private static void warnLog(String msg) {
         Log.w(TAG, msg);
+    }
+
+    private static String deviceTypeToString(int deviceType) {
+        switch (deviceType) {
+            case BluetoothDevice.DEVICE_TYPE_UNKNOWN:
+                return " ???? ";
+            case BluetoothDevice.DEVICE_TYPE_CLASSIC:
+                return "BR/EDR";
+            case BluetoothDevice.DEVICE_TYPE_LE:
+                return "  LE  ";
+            case BluetoothDevice.DEVICE_TYPE_DUAL:
+                return " DUAL ";
+            default:
+                return "Invalid device type: " + deviceType;
+        }
+    }
+
+    private static String addressTypeToString(int addressType) {
+        switch (addressType) {
+            case BluetoothDevice.ADDRESS_TYPE_PUBLIC:
+                return "Public ";
+            case BluetoothDevice.ADDRESS_TYPE_RANDOM:
+                return "Random ";
+            default:
+                return "Unknown";
+        }
+    }
+
+    protected void dump(PrintWriter writer) {
+        int bondedCount = 0;
+        int knownCount = 0;
+        StringBuilder sbBonded = new StringBuilder();
+        StringBuilder sbKnown = new StringBuilder();
+        for (Map.Entry<String, DeviceProperties> entry : mDevices.entrySet()) {
+            String address = entry.getKey();
+            DeviceProperties deviceProperties = entry.getValue();
+            if (address == null || deviceProperties == null) {
+                continue;
+            }
+
+            boolean bonded = deviceProperties.getBondState() == BluetoothDevice.BOND_BONDED;
+            String identityAddress = deviceProperties.getIdentityAddress();
+            String anonAddress = BluetoothUtils.toAnonymizedAddress(address);
+            String anonIdentityAddress =
+                    identityAddress != null
+                            ? BluetoothUtils.toAnonymizedAddress(identityAddress)
+                            : bonded ? anonAddress : "XX:XX:XX:XX:XX:XX";
+
+            boolean connectedBrEdr =
+                    deviceProperties.getConnectionHandle(BluetoothDevice.TRANSPORT_BREDR)
+                            != BluetoothDevice.ERROR;
+            boolean connectedLe =
+                    deviceProperties.getConnectionHandle(BluetoothDevice.TRANSPORT_LE)
+                            != BluetoothDevice.ERROR;
+
+            StringBuilder sb = bonded ? sbBonded : sbKnown;
+            sb.append("    ")
+                    .append(anonAddress)
+                    .append(" => ")
+                    .append(anonIdentityAddress)
+                    .append("(")
+                    .append(addressTypeToString(deviceProperties.getIdentityAddressType()))
+                    .append(")")
+                    .append(" [")
+                    .append(deviceTypeToString(deviceProperties.getDeviceType()))
+                    .append("] [0x")
+                    .append(String.format("%06X", deviceProperties.getBluetoothClass()))
+                    .append("] [ACL BR/EDR:")
+                    .append(connectedBrEdr ? "Y" : "N")
+                    .append(" LE:")
+                    .append(connectedLe ? "Y" : "N")
+                    .append("] ")
+                    .append(deviceProperties.getName())
+                    .append("\n");
+
+            ParcelUuid[] uuidsBrEdr = deviceProperties.getUuidsBrEdr();
+            if (uuidsBrEdr != null) {
+                sb.append("        [BR/EDR UUIDs]: ");
+                for (ParcelUuid uuid : deviceProperties.getUuidsBrEdr()) {
+                    sb.append(uuid.toString()).append(" ");
+                }
+                sb.append("\n");
+            }
+
+            ParcelUuid[] uuidsLe = deviceProperties.getUuidsLe();
+            if (uuidsLe != null) {
+                sb.append("        [LE UUIDs    ]: ");
+                for (ParcelUuid uuid : deviceProperties.getUuidsLe()) {
+                    sb.append(uuid.toString()).append(" ");
+                }
+                sb.append("\n");
+            }
+
+            String[] packages = deviceProperties.getPackages();
+            if (packages.length > 0) {
+                sb.append("        [Packages    ]: ").append(Arrays.toString(packages)).append("\n");
+            }
+
+            if (bonded) {
+                bondedCount++;
+            } else {
+                knownCount++;
+            }
+        }
+
+        writer.println("");
+        writer.println(TAG);
+        writer.println("  Bonded devices: " + bondedCount);
+        writer.println(sbBonded.toString());
+        writer.println("  Other devices: " + knownCount);
+        writer.println(sbKnown.toString());
+        writer.println("");
     }
 }

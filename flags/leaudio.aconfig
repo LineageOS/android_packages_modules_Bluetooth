@@ -287,3 +287,24 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_fix_stop_reconfiguration_timeout"
+    namespace: "bluetooth"
+    description: "Fix for stop the reconfiguration timeout"
+    bug: "406570963"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "leaudio_use_context_type_manager"
+    namespace: "bluetooth"
+    description: "Use brand new context type manager supporting bidirectional GAME use cases"
+    bug: "406589272"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+

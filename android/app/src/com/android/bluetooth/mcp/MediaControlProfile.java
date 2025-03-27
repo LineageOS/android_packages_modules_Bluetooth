@@ -787,7 +787,7 @@ public class MediaControlProfile implements MediaControlServiceCallbacks {
                     "Register MediaControlGattService instance ccid= "
                             + ccid
                             + ", features= "
-                            + ServiceFeature.featuresToString(SUPPORTED_FEATURES, "\n\t\t\t"));
+                            + ServiceFeature.featuresToString(SUPPORTED_FEATURES));
 
             MediaControlGattService svc = new MediaControlGattService(mMcpService, this, ccid);
             svc.init(

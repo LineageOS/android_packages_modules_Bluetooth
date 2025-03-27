@@ -216,10 +216,10 @@ source_set("stack") {
 
   deps = [
     ":nonstandard_codecs",
+    "//bt/floss/rust/topshim:cxxlibheader",
     "//bt/sysprop:libcom.android.sysprop.bluetooth",
     "//bt/system:libbt-platform-protos-lite",
     "//bt/system/gd/crypto_toolbox:crypto_toolbox",
-    "//bt/system/gd/rust/topshim:cxxlibheader",
     "//bt/system/stack/mmc",
     "//bt/system/types",
   ]

@@ -157,8 +157,9 @@ void ScalarField::GenValidator(std::ostream&) const {
 }
 
 void ScalarField::GenStringRepresentation(std::ostream& s, std::string accessor) const {
-  // Generate a static_cast to uint64_t (largest supported field type) in order
-  // to force hexadecimal formatting; uint8_t fields will be rendered as escaped
-  // characters otherwise.
-  s << "static_cast<uint64_t>(" << accessor << ")";
+  if (GetSize().bits() <= 8) {
+    // otherwise uint8_t fields will be rendered as escaped characters
+    s << "+";
+  }
+  s << accessor;
 }
