@@ -345,6 +345,9 @@ public class RemoteDevices {
 
     class DeviceProperties {
         private static final int MAX_PACKAGE_NAMES = 4;
+        private static final int BONDING_INITIATOR_NONE = 0;
+        private static final int BONDING_INITIATOR_LOCAL = 1;
+        private static final int BONDING_INITIATOR_REMOTE = 2;
         private String mName;
         private byte[] mAddress;
         private String mIdentityAddress;
@@ -356,7 +359,7 @@ public class RemoteDevices {
         private short mRssi;
         private String mAlias;
         private BluetoothDevice mDevice;
-        private boolean mIsBondingInitiatedLocally;
+        private int mBondingInitiator;
         private int mBatteryLevelFromHfp = BluetoothDevice.BATTERY_LEVEL_UNKNOWN;
         private int mBatteryLevelFromBatteryService = BluetoothDevice.BATTERY_LEVEL_UNKNOWN;
         private boolean mIsCoordinatedSetMember;
@@ -722,6 +725,11 @@ public class RemoteDevices {
                     mUuidsBrEdr = null;
                     mUuidsLe = null;
                     mAlias = null;
+                } else if (newBondState == BluetoothDevice.BOND_BONDED
+                        && getBondingInitiator() == BONDING_INITIATOR_NONE) {
+                    // Device bonded but not initiated locally. This may happen if remote device
+                    // initiated bonded or bonded device was loaded on BT restart.
+                    setBondingInitiatedLocally(false);
                 }
             }
         }
@@ -748,16 +756,29 @@ public class RemoteDevices {
          */
         void setBondingInitiatedLocally(boolean isBondingInitiatedLocally) {
             synchronized (mObject) {
-                this.mIsBondingInitiatedLocally = isBondingInitiatedLocally;
+                if (isBondingInitiatedLocally) {
+                    this.mBondingInitiator = BONDING_INITIATOR_LOCAL;
+                } else {
+                    this.mBondingInitiator = BONDING_INITIATOR_REMOTE;
+                }
             }
         }
 
         /**
-         * @return the isBondingInitiatedLocally
+         * @return the mBondingInitiator
+         */
+        int getBondingInitiator() {
+            synchronized (mObject) {
+                return mBondingInitiator;
+            }
+        }
+
+        /**
+         * @return whether the current bonding attempt is initiated locally
          */
         boolean isBondingInitiatedLocally() {
             synchronized (mObject) {
-                return mIsBondingInitiatedLocally;
+                return mBondingInitiator == BONDING_INITIATOR_LOCAL;
             }
         }
 
@@ -1421,7 +1442,12 @@ public class RemoteDevices {
                 // Send PAIRING_CANCEL intent to dismiss any dialog requesting bonding.
                 sendPairingCancelIntent(device);
             } else if (getBondState(device) == BluetoothDevice.BOND_NONE) {
-                removeAddressMapping(Utils.getAddressStringFromByte(address));
+                // Don't remove device properties if bonding never attempted
+                if (!Flags.nonBondedDeviceProperties()
+                        || deviceProperties.getBondingInitiator()
+                                != DeviceProperties.BONDING_INITIATOR_NONE) {
+                    removeDeviceProperties(Utils.getAddressStringFromByte(address));
+                }
             }
             if (state == BluetoothAdapter.STATE_ON || state == BluetoothAdapter.STATE_TURNING_OFF) {
                 mAdapterService.notifyAclDisconnected(device, transportLinkType);
@@ -1444,7 +1470,7 @@ public class RemoteDevices {
 
             if (mAdapterService.isAllProfilesUnknown(device)) {
                 DeviceProperties deviceProp = getDeviceProperties(device);
-                if (deviceProp != null) {
+                if (deviceProp != null && deviceProp.isBondingInitiatedLocally()) {
                     deviceProp.setBondingInitiatedLocally(false);
                 }
             }
@@ -1541,7 +1567,7 @@ public class RemoteDevices {
                 intent, BLUETOOTH_CONNECT, Utils.getTempBroadcastOptions().toBundle());
     }
 
-    private void removeAddressMapping(String address) {
+    private void removeDeviceProperties(String address) {
         DeviceProperties deviceProperties = mDevices.get(address);
         if (deviceProperties != null) {
             String pseudoAddress = mDualDevicesMap.get(address);
@@ -1562,6 +1588,8 @@ public class RemoteDevices {
             }
         }
 
+        Log.i(TAG, "removeDeviceProperties: " + BluetoothUtils.toAnonymizedAddress(address));
+
         synchronized (mDevices) {
             mDevices.remove(address);
 
@@ -1575,7 +1603,7 @@ public class RemoteDevices {
         String address = device.getAddress();
 
         if (newState == BluetoothDevice.BOND_NONE) {
-            removeAddressMapping(address);
+            removeDeviceProperties(address);
         }
     }
 
