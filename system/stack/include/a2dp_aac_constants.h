@@ -62,4 +62,16 @@
 // [Octet 4], [Bits 0-7] Bit Rate - Bits 8-15 in the 23-bit UiMsfb
 // [Octet 5], [Bits 0-7] Bit Rate - Bits 0-7 in the 23-bit UiMsfb
 
+/* Index of Codec Specific Information Element
+   starting from configuration length.
+*/
+#define A2DP_AAC_OBJECT_TYPE_IDX 3
+#define A2DP_AAC_SAMP_FREQ_OCT_0_IDX 4
+#define A2DP_AAC_SAMP_FREQ_OCT_1_IDX 5
+#define A2DP_AAC_CH_MD_IDX A2DP_AAC_SAMP_FREQ_OCT_1_IDX
+#define A2DP_AAC_VARIABLE_BIT_RATE_IDX 6
+#define A2DP_AAC_BIT_RATE_OCT_0_IDX A2DP_AAC_VARIABLE_BIT_RATE_IDX
+#define A2DP_AAC_BIT_RATE_OCT_1_IDX 7
+#define A2DP_AAC_BIT_RATE_OCT_2_IDX 8
+
 #endif  // A2DP_AAC_CONSTANTS_H

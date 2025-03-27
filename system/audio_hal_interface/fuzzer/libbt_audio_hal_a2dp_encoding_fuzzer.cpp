@@ -115,11 +115,6 @@ void A2dpEncodingFuzzer::process(const uint8_t* data, size_t size) {
 
   a2dp_codec_config->copyOutOtaCodecConfig(config.codec_specific_information_elements);
 
-  tBT_A2DP_OFFLOAD a2dp_codec_specific_config = {};
-  a2dp_codec_config->getCodecSpecificConfig(&a2dp_codec_specific_config);
-  memcpy(config.vendor_codec_info, a2dp_codec_specific_config.codec_info,
-         sizeof(a2dp_codec_specific_config.codec_info));
-
   if (!bluetooth::audio::a2dp::setup_codec(config)) {
     return;
   }

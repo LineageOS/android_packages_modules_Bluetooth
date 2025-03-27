@@ -214,7 +214,8 @@ bool A2dpSbcToHalConfig(const ahal_codec_configuration& config, CodecConfigurati
     log::error("Unknown SBC sample_rate={}", config.codec_config.sample_rate);
     return false;
   }
-  uint8_t channel_mode = config.vendor_codec_info[3] & A2DP_SBC_IE_CH_MD_MSK;
+  uint8_t channel_mode =
+          config.codec_specific_information_elements[A2DP_SBC_IE_CH_MD_IDX] & A2DP_SBC_IE_CH_MD_MSK;
   switch (channel_mode) {
     case A2DP_SBC_IE_CH_MD_JOINT:
       sbc_config.channelMode = SbcChannelMode::JOINT_STEREO;
@@ -233,7 +234,8 @@ bool A2dpSbcToHalConfig(const ahal_codec_configuration& config, CodecConfigurati
       sbc_config.channelMode = SbcChannelMode::UNKNOWN;
       return false;
   }
-  uint8_t block_length = config.vendor_codec_info[0] & A2DP_SBC_IE_BLOCKS_MSK;
+  uint8_t block_length = config.codec_specific_information_elements[A2DP_SBC_IE_BLOCKS_IDX] &
+                         A2DP_SBC_IE_BLOCKS_MSK;
   switch (block_length) {
     case A2DP_SBC_IE_BLOCKS_4:
       sbc_config.blockLength = 4;
@@ -251,7 +253,8 @@ bool A2dpSbcToHalConfig(const ahal_codec_configuration& config, CodecConfigurati
       log::error("Unknown SBC block_length={}", block_length);
       return false;
   }
-  uint8_t sub_bands = config.vendor_codec_info[0] & A2DP_SBC_IE_SUBBAND_MSK;
+  uint8_t sub_bands = config.codec_specific_information_elements[A2DP_SBC_IE_SUBBAND_IDX] &
+                      A2DP_SBC_IE_SUBBAND_MSK;
   switch (sub_bands) {
     case A2DP_SBC_IE_SUBBAND_4:
       sbc_config.numSubbands = 4;
@@ -263,7 +266,8 @@ bool A2dpSbcToHalConfig(const ahal_codec_configuration& config, CodecConfigurati
       log::error("Unknown SBC Subbands={}", sub_bands);
       return false;
   }
-  uint8_t alloc_method = config.vendor_codec_info[0] & A2DP_SBC_IE_ALLOC_MD_MSK;
+  uint8_t alloc_method = config.codec_specific_information_elements[A2DP_SBC_IE_ALLOC_MD_IDX] &
+                         A2DP_SBC_IE_ALLOC_MD_MSK;
   switch (alloc_method) {
     case A2DP_SBC_IE_ALLOC_MD_S:
       sbc_config.allocMethod = SbcAllocMethod::ALLOC_MD_S;
@@ -275,8 +279,8 @@ bool A2dpSbcToHalConfig(const ahal_codec_configuration& config, CodecConfigurati
       log::error("Unknown SBC alloc_method={}", alloc_method);
       return false;
   }
-  sbc_config.minBitpool = config.vendor_codec_info[1];
-  sbc_config.maxBitpool = config.vendor_codec_info[2];
+  sbc_config.minBitpool = config.codec_specific_information_elements[A2DP_SBC_IE_MIN_BITPOOL_IDX];
+  sbc_config.maxBitpool = config.codec_specific_information_elements[A2DP_SBC_IE_MAX_BITPOOL_IDX];
   sbc_config.bitsPerSample = A2dpCodecToHalBitsPerSample(config.codec_config);
   if (sbc_config.bitsPerSample <= 0) {
     log::error("Unknown SBC bits_per_sample={}", config.codec_config.bits_per_sample);
@@ -293,7 +297,7 @@ bool A2dpAacToHalConfig(const ahal_codec_configuration& config, CodecConfigurati
   }
   codec_config->codecType = CodecType::AAC;
   AacConfiguration aac_config = {};
-  uint8_t object_type = config.vendor_codec_info[0];
+  uint8_t object_type = config.codec_specific_information_elements[A2DP_AAC_OBJECT_TYPE_IDX];
   switch (object_type) {
     case A2DP_AAC_OBJECT_TYPE_MPEG2_LC:
       aac_config.objectType = AacObjectType::MPEG2_LC;
@@ -321,7 +325,8 @@ bool A2dpAacToHalConfig(const ahal_codec_configuration& config, CodecConfigurati
     log::error("Unknown AAC channel_mode={}", config.codec_config.channel_mode);
     return false;
   }
-  uint8_t vbr_enabled = config.vendor_codec_info[1] & A2DP_AAC_VARIABLE_BIT_RATE_MASK;
+  uint8_t vbr_enabled = config.codec_specific_information_elements[A2DP_AAC_VARIABLE_BIT_RATE_IDX] &
+                        A2DP_AAC_VARIABLE_BIT_RATE_MASK;
   switch (vbr_enabled) {
     case A2DP_AAC_VARIABLE_BIT_RATE_ENABLED:
       aac_config.variableBitRateEnabled = true;
@@ -383,7 +388,8 @@ bool A2dpLdacToHalConfig(const ahal_codec_configuration& config, CodecConfigurat
     log::error("Unknown LDAC sample_rate={}", config.codec_config.sample_rate);
     return false;
   }
-  switch (config.vendor_codec_info[7]) {
+  int channel_mode = config.codec_specific_information_elements[A2DP_LDAC_CHANNEL_MODE_IDX];
+  switch (channel_mode) {
     case A2DP_LDAC_CHANNEL_MODE_STEREO:
       ldac_config.channelMode = LdacChannelMode::STEREO;
       break;
@@ -394,11 +400,28 @@ bool A2dpLdacToHalConfig(const ahal_codec_configuration& config, CodecConfigurat
       ldac_config.channelMode = LdacChannelMode::MONO;
       break;
     default:
-      log::error("Unknown LDAC channel_mode={}", config.vendor_codec_info[7]);
+      log::error("Unknown LDAC channel_mode={}", channel_mode);
       ldac_config.channelMode = LdacChannelMode::UNKNOWN;
       return false;
   }
-  switch (config.vendor_codec_info[6]) {
+  int ldac_quality = A2DP_LDAC_QUALITY_ABR_OFFLOAD;
+  if (config.codec_config.codec_specific_1 != 0) {
+    switch (config.codec_config.codec_specific_1 % 10) {
+      case 0:
+        ldac_quality = A2DP_LDAC_QUALITY_HIGH;
+        break;
+      case 1:
+        ldac_quality = A2DP_LDAC_QUALITY_MID;
+        break;
+      case 2:
+        ldac_quality = A2DP_LDAC_QUALITY_LOW;
+        break;
+      default:
+        ldac_quality = A2DP_LDAC_QUALITY_ABR_OFFLOAD;
+        break;
+    }
+  }
+  switch (ldac_quality) {
     case A2DP_LDAC_QUALITY_HIGH:
       ldac_config.qualityIndex = LdacQualityIndex::HIGH;
       break;
@@ -412,7 +435,7 @@ bool A2dpLdacToHalConfig(const ahal_codec_configuration& config, CodecConfigurat
       ldac_config.qualityIndex = LdacQualityIndex::ABR;
       break;
     default:
-      log::error("Unknown LDAC QualityIndex={}", config.vendor_codec_info[6]);
+      log::error("Unknown LDAC QualityIndex={}", ldac_quality);
       return false;
   }
   ldac_config.bitsPerSample = A2dpCodecToHalBitsPerSample(config.codec_config);

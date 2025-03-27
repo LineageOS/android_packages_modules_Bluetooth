@@ -52,18 +52,6 @@ std::string ahal_codec_configuration::ToString() const {
     }
   }
 
-  std::format_to(out, "  ]\n  vendor_codec_info: [\n");
-
-  for (size_t i = 0; i < CODEC_INFO_LEN; ++i) {
-    std::format_to(out, "0x{:02x}", static_cast<unsigned int>(vendor_codec_info[i]));
-    if (i < CODEC_INFO_LEN - 1) {
-      std::format_to(out, ", ");
-      if ((i + 1) % 8 == 0) {
-        std::format_to(out, "\n    ");
-      }
-    }
-  }
-
   std::format_to(out, "}}");
 
   return result_string;

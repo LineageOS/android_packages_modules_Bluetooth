@@ -26,9 +26,6 @@
 #include "common/message_loop_thread.h"
 #include "hardware/bt_av.h"
 
-// Codec Specific Information Length
-#define CODEC_INFO_LEN 32
-
 namespace bluetooth {
 namespace audio {
 namespace a2dp {
@@ -66,7 +63,6 @@ struct ahal_codec_configuration {
   int preferred_encoding_interval_us;
   int codec_bitrate;
   uint8_t codec_specific_information_elements[AVDT_CODEC_SIZE];
-  uint8_t vendor_codec_info[CODEC_INFO_LEN];
   btav_a2dp_codec_config_t codec_config;
 
   std::string ToString() const;

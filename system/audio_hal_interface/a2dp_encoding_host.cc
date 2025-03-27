@@ -128,17 +128,6 @@ std::string ahal_codec_configuration::ToString() const {
     }
   }
 
-  std::string vendor_codec_info_str;
-  for (size_t i = 0; i < CODEC_INFO_LEN; ++i) {
-    vendor_codec_info_str += std::format("0x{:02x}", static_cast<int>(vendor_codec_info[i]));
-    if (i < CODEC_INFO_LEN - 1) {
-      vendor_codec_info_str += ", ";
-      if ((i + 1) % 8 == 0) {
-        vendor_codec_info_str += "\n    ";
-      }
-    }
-  }
-
   return std::format(
           "ahal_codec_configuration: {{\n"
           "  codec_config: {{ {} }}\n"
@@ -148,12 +137,9 @@ std::string ahal_codec_configuration::ToString() const {
           "  codec_specific_information_elements: [\n"
           "    {}\n"
           "  ]\n"
-          "  vendor_codec_info: [\n"
-          "    {}\n"
-          "  ]\n"
           "}}",
           codec_config.ToString(), peer_mtu, preferred_encoding_interval_us, codec_bitrate,
-          codec_specific_elements_str, vendor_codec_info_str);
+          codec_specific_elements_str);
 }
 
 // Invoked by audio server to set audio config (PCM for now)
