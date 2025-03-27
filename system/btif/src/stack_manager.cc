@@ -354,8 +354,10 @@ static void event_start_up_stack(bluetooth::core::CoreInterface* interface,
   }
 
   if (!com::android::bluetooth::flags::only_start_scan_during_ble_on()) {
+#ifndef TARGET_FLOSS
     info("Starting rust module");
     module_start_up(get_local_module(RUST_MODULE));
+#endif
     if (com::android::bluetooth::flags::channel_sounding_in_stack()) {
       bluetooth::ras::GetRasServer()->Initialize();
       bluetooth::ras::GetRasClient()->Initialize();
@@ -380,8 +382,10 @@ static void event_shut_down_stack(ProfileStopCallback stopProfiles) {
   stack_is_running = false;
 
   if (!com::android::bluetooth::flags::only_start_scan_during_ble_on()) {
+#ifndef TARGET_FLOSS
     info("Stopping rust module");
     module_shut_down(get_local_module(RUST_MODULE));
+#endif
   }
 
   do_in_main_thread(base::BindOnce(&btm_ble_scanner_cleanup));
