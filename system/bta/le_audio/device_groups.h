@@ -233,6 +233,7 @@ public:
   std::shared_ptr<const types::AudioSetConfiguration> GetCachedPreferredConfiguration(
           types::LeAudioContextType ctx_type) const;
   void InvalidateCachedConfigurations(void);
+  void InvalidateCachedConfigurations(types::LeAudioContextType context_type);
   void SetPendingConfiguration(void);
   void ClearPendingConfiguration(void);
   void AddToAllowListNotConnectedGroupMembers(int gatt_if);
