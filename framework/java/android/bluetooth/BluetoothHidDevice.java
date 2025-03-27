@@ -50,7 +50,7 @@ import java.util.concurrent.Executor;
 public final class BluetoothHidDevice implements BluetoothProfile {
     private static final String TAG = BluetoothHidDevice.class.getSimpleName();
 
-    private static final boolean DBG = false;
+    private static final boolean DBG = Log.isLoggable("bluetooth", Log.DEBUG);
 
     /**
      * Intent used to broadcast the change in connection state of the Input Host profile.

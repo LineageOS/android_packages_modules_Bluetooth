@@ -60,8 +60,7 @@ import java.util.Map;
 public final class BluetoothLeScanner {
     private static final String TAG = BluetoothLeScanner.class.getSimpleName();
 
-    private static final boolean DBG = true;
-    private static final boolean VDBG = false;
+    private static final boolean VDBG = Log.isLoggable("bluetooth", Log.VERBOSE);
 
     /**
      * Extra containing a list of ScanResults. It can have one or more results if there was no
@@ -288,7 +287,7 @@ public final class BluetoothLeScanner {
         synchronized (mLeScanClients) {
             BleScanCallbackWrapper wrapper = mLeScanClients.remove(callback);
             if (wrapper == null) {
-                if (DBG) Log.d(TAG, "could not find callback wrapper");
+                Log.d(TAG, "could not find callback wrapper");
                 return;
             }
             wrapper.stopLeScan();

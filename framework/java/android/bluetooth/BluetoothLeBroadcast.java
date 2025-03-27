@@ -58,8 +58,7 @@ import java.util.concurrent.Executor;
 public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfile {
     private static final String TAG = BluetoothLeBroadcast.class.getSimpleName();
 
-    private static final boolean DBG = true;
-    private static final boolean VDBG = false;
+    private static final boolean VDBG = Log.isLoggable("bluetooth", Log.VERBOSE);
 
     private final CloseGuard mCloseGuard;
 
@@ -366,7 +365,7 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
         requireNonNull(executor);
         requireNonNull(callback);
 
-        if (DBG) log("registerCallback");
+        log("registerCallback");
 
         synchronized (mCallbackExecutorMap) {
             // If the callback map is empty, we register the service-to-app callback
@@ -415,7 +414,7 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
     public void unregisterCallback(@NonNull Callback callback) {
         requireNonNull(callback);
 
-        if (DBG) log("unregisterCallback");
+        log("unregisterCallback");
 
         synchronized (mCallbackExecutorMap) {
             if (mCallbackExecutorMap.remove(callback) == null) {
@@ -486,11 +485,11 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
             throw new IllegalStateException("No callback was ever registered");
         }
 
-        if (DBG) log("startBroadcasting");
+        log("startBroadcasting");
         final IBluetoothLeAudio service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 service.startBroadcast(
@@ -519,11 +518,11 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
             throw new IllegalStateException("No callback was ever registered");
         }
 
-        if (DBG) log("startBroadcasting");
+        log("startBroadcasting");
         final IBluetoothLeAudio service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 service.startBroadcast(broadcastSettings, mAttributionSource);
@@ -556,11 +555,11 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
             throw new IllegalStateException("No callback was ever registered");
         }
 
-        if (DBG) log("updateBroadcast");
+        log("updateBroadcast");
         final IBluetoothLeAudio service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 service.updateBroadcast(
@@ -596,11 +595,11 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
             throw new IllegalStateException("No callback was ever registered");
         }
 
-        if (DBG) log("updateBroadcast");
+        log("updateBroadcast");
         final IBluetoothLeAudio service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 service.updateBroadcast(broadcastId, broadcastSettings, mAttributionSource);
@@ -629,11 +628,11 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
             throw new IllegalStateException("No callback was ever registered");
         }
 
-        if (DBG) log("disableBroadcastMode");
+        log("disableBroadcastMode");
         final IBluetoothLeAudio service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 service.stopBroadcast(broadcastId, mAttributionSource);
@@ -658,7 +657,7 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
         final IBluetoothLeAudio service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 return service.isPlaying(broadcastId, mAttributionSource);
@@ -683,7 +682,7 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
         final IBluetoothLeAudio service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 return service.getAllBroadcastMetadata(mAttributionSource);
@@ -706,7 +705,7 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
         final IBluetoothLeAudio service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 return service.getMaximumNumberOfBroadcasts();
@@ -729,7 +728,7 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
         final IBluetoothLeAudio service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 return service.getMaximumStreamsPerBroadcast();
@@ -755,7 +754,7 @@ public final class BluetoothLeBroadcast implements AutoCloseable, BluetoothProfi
         final IBluetoothLeAudio service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 return service.getMaximumSubgroupsPerBroadcast();

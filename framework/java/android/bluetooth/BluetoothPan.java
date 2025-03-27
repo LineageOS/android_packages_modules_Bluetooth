@@ -69,8 +69,7 @@ import java.util.concurrent.Executor;
 public final class BluetoothPan implements BluetoothProfile {
     private static final String TAG = BluetoothPan.class.getSimpleName();
 
-    private static final boolean DBG = true;
-    private static final boolean VDBG = false;
+    private static final boolean VDBG = Log.isLoggable("bluetooth", Log.VERBOSE);
 
     /**
      * Intent used to broadcast the change in connection state of the Pan profile.
@@ -304,11 +303,11 @@ public final class BluetoothPan implements BluetoothProfile {
                 BLUETOOTH_PRIVILEGED,
             })
     public boolean connect(BluetoothDevice device) {
-        if (DBG) log("connect(" + device + ")");
+        log("connect(" + device + ")");
         final IBluetoothPan service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return service.connect(device, mAttributionSource);
@@ -341,11 +340,11 @@ public final class BluetoothPan implements BluetoothProfile {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean disconnect(BluetoothDevice device) {
-        if (DBG) log("disconnect(" + device + ")");
+        log("disconnect(" + device + ")");
         final IBluetoothPan service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return service.disconnect(device, mAttributionSource);
@@ -377,11 +376,11 @@ public final class BluetoothPan implements BluetoothProfile {
             })
     public boolean setConnectionPolicy(
             @NonNull BluetoothDevice device, @ConnectionPolicy int connectionPolicy) {
-        if (DBG) log("setConnectionPolicy(" + device + ", " + connectionPolicy + ")");
+        log("setConnectionPolicy(" + device + ", " + connectionPolicy + ")");
         final IBluetoothPan service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()
                 && isValidDevice(device)
                 && (connectionPolicy == CONNECTION_POLICY_FORBIDDEN
@@ -413,7 +412,7 @@ public final class BluetoothPan implements BluetoothProfile {
         final IBluetoothPan service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 return Attributable.setAttributionSource(
@@ -443,7 +442,7 @@ public final class BluetoothPan implements BluetoothProfile {
         final IBluetoothPan service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 return Attributable.setAttributionSource(
@@ -474,7 +473,7 @@ public final class BluetoothPan implements BluetoothProfile {
         final IBluetoothPan service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return service.getConnectionState(device, mAttributionSource);
@@ -504,11 +503,11 @@ public final class BluetoothPan implements BluetoothProfile {
     @Deprecated
     public void setBluetoothTethering(boolean value) {
         String pkgName = mContext.getOpPackageName();
-        if (DBG) log("setBluetoothTethering(" + value + "), calling package:" + pkgName);
+        log("setBluetoothTethering(" + value + "), calling package:" + pkgName);
         final IBluetoothPan service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 service.setBluetoothTethering(null, 0, value, mAttributionSource);
@@ -552,7 +551,7 @@ public final class BluetoothPan implements BluetoothProfile {
         final IBluetoothPan service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             final IBluetoothPanCallback panCallback =
                     new IBluetoothPanCallback.Stub() {
@@ -594,7 +593,7 @@ public final class BluetoothPan implements BluetoothProfile {
         final IBluetoothPan service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 return service.isTetheringOn(mAttributionSource);

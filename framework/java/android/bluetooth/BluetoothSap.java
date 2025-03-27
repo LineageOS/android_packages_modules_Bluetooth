@@ -62,8 +62,7 @@ import java.util.List;
 public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
     private static final String TAG = BluetoothSap.class.getSimpleName();
 
-    private static final boolean DBG = true;
-    private static final boolean VDBG = false;
+    private static final boolean VDBG = Log.isLoggable("bluetooth", Log.VERBOSE);
 
     private final CloseGuard mCloseGuard;
 
@@ -121,7 +120,7 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
 
     /** Create a BluetoothSap proxy object. */
     /* package */ BluetoothSap(Context context, BluetoothAdapter adapter) {
-        if (DBG) Log.d(TAG, "Create BluetoothSap proxy object");
+        Log.d(TAG, "Create BluetoothSap proxy object");
         mAdapter = adapter;
         mAttributionSource = adapter.getAttributionSource();
         mService = null;
@@ -189,7 +188,7 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
         final IBluetoothSap service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 return service.getState(mAttributionSource);
@@ -214,7 +213,7 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
         final IBluetoothSap service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 return Attributable.setAttributionSource(
@@ -239,7 +238,7 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
         final IBluetoothSap service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 return service.isConnected(device, mAttributionSource);
@@ -257,7 +256,7 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
      */
     @RequiresNoPermission
     public boolean connect(BluetoothDevice device) {
-        if (DBG) log("connect(" + device + ")" + "not supported for SAPS");
+        log("connect(" + device + ")" + "not supported for SAPS");
         return false;
     }
 
@@ -272,11 +271,11 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean disconnect(BluetoothDevice device) {
-        if (DBG) log("disconnect(" + device + ")");
+        log("disconnect(" + device + ")");
         final IBluetoothSap service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return service.disconnect(device, mAttributionSource);
@@ -296,11 +295,11 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public List<BluetoothDevice> getConnectedDevices() {
-        if (DBG) log("getConnectedDevices()");
+        log("getConnectedDevices()");
         final IBluetoothSap service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 return Attributable.setAttributionSource(
@@ -321,11 +320,11 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public List<BluetoothDevice> getDevicesMatchingConnectionStates(int[] states) {
-        if (DBG) log("getDevicesMatchingStates()");
+        log("getDevicesMatchingStates()");
         final IBluetoothSap service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 return Attributable.setAttributionSource(
@@ -381,12 +380,10 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
                             IBluetoothSap service = IBluetoothSap.Stub.asInterface(pairQuery.first);
                             AttributionSource source = pairQuery.second.first;
                             BluetoothDevice device = pairQuery.second.second;
-                            if (DBG) {
-                                log(
-                                        "getConnectionState("
-                                                + device.getAnonymizedAddress()
-                                                + ") uncached");
-                            }
+                            log(
+                                    "getConnectionState("
+                                            + device.getAnonymizedAddress()
+                                            + ") uncached");
                             try {
                                 return service.getConnectionState(device, source);
                             } catch (RemoteException e) {
@@ -412,11 +409,11 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
     @RequiresPermission(BLUETOOTH_CONNECT)
     @SuppressLint("AndroidFrameworkRequiresPermission") // IpcDataCache prevent lint enforcement
     public int getConnectionState(BluetoothDevice device) {
-        if (DBG) log("getConnectionState(" + device + ")");
+        log("getConnectionState(" + device + ")");
         final IBluetoothSap service = getService();
         if (service == null) {
             Log.w(TAG, "BT not enabled. Cannot get connection state");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return sBluetoothConnectionCache.query(
@@ -444,7 +441,7 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public boolean setPriority(BluetoothDevice device, int priority) {
-        if (DBG) log("setPriority(" + device + ", " + priority + ")");
+        log("setPriority(" + device + ", " + priority + ")");
         return setConnectionPolicy(device, BluetoothAdapter.priorityToConnectionPolicy(priority));
     }
 
@@ -466,12 +463,12 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public boolean setConnectionPolicy(
             @NonNull BluetoothDevice device, @ConnectionPolicy int connectionPolicy) {
-        if (DBG) log("setConnectionPolicy(" + device + ", " + connectionPolicy + ")");
+        log("setConnectionPolicy(" + device + ", " + connectionPolicy + ")");
         requireNonNull(device);
         final IBluetoothSap service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()
                 && isValidDevice(device)
                 && (connectionPolicy == CONNECTION_POLICY_FORBIDDEN
@@ -522,7 +519,7 @@ public final class BluetoothSap implements BluetoothProfile, AutoCloseable {
         final IBluetoothSap service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return service.getConnectionPolicy(device, mAttributionSource);

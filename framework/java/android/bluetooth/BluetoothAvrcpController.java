@@ -48,8 +48,8 @@ import java.util.List;
 public final class BluetoothAvrcpController implements BluetoothProfile {
     private static final String TAG = BluetoothAvrcpController.class.getSimpleName();
 
-    private static final boolean DBG = false;
-    private static final boolean VDBG = false;
+    private static final boolean DBG = Log.isLoggable("bluetooth", Log.DEBUG);
+    private static final boolean VDBG = Log.isLoggable("bluetooth", Log.VERBOSE);
 
     /**
      * Intent used to broadcast the change in connection state of the AVRCP Controller profile.
