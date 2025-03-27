@@ -16,10 +16,10 @@
 
 static_library("device") {
   sources = [
-    "src/esco_parameters.cc",
-    "src/interop.cc",
     "src/device_iot_config.cc",
     "src/device_iot_config_int.cc",
+    "src/esco_parameters.cc",
+    "src/interop.cc",
   ]
 
   include_dirs = [
@@ -43,8 +43,8 @@ if (use.test) {
     include_dirs = [ "//bt/system" ]
 
     deps = [
-      "//bt/system/device",
       "//bt/system/btcore",
+      "//bt/system/device",
       "//bt/system/osi",
     ]
 
@@ -67,13 +67,11 @@ if (use.test) {
     ]
 
     deps = [
-      "//bt/system/device",
       "//bt/system/btcore",
+      "//bt/system/device",
     ]
 
-    configs += [
-      "//bt/system:target_defaults",
-    ]
+    configs += [ "//bt/system:target_defaults" ]
 
     libs = [
       "pthread",

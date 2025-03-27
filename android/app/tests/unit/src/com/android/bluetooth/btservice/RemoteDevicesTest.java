@@ -759,7 +759,6 @@ public class RemoteDevicesTest {
     }
 
     @Test
-    @EnableFlags(Flags.FLAG_FIX_ADD_DEVICE_PROPERTIES)
     public void testMultipleAddDeviceProperties() {
         // Verify that device property is null initially
         assertThat(mRemoteDevices.getDeviceProperties(mDevice)).isNull();

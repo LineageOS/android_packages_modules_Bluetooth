@@ -16,13 +16,11 @@
 
 source_set("libbt-audio-asrc") {
   sources = [
-    "asrc/asrc_tables.cc",
     "asrc/asrc_resampler.cc",
+    "asrc/asrc_tables.cc",
   ]
 
-  include_dirs = [
-    "asrc",
-  ]
+  include_dirs = [ "asrc" ]
 
   configs += [
     "//bt/system:target_defaults",
@@ -31,6 +29,6 @@ source_set("libbt-audio-asrc") {
 
   deps = [
     "//bt/flags:bluetooth_flags_c_lib",
-    "//bt/system/gd:gd_default_deps"
+    "//bt/system/gd:gd_default_deps",
   ]
 }

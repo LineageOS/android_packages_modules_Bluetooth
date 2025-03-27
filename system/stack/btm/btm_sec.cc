@@ -1923,7 +1923,7 @@ void btm_create_conn_cancel_complete(uint8_t status, const RawAddress bd_addr) {
   log::verbose("btm_create_conn_cancel_complete(): in State: {}  status:{}",
                tBTM_SEC_CB::btm_pair_state_descr(btm_sec_cb.pairing_state), status);
   bluetooth::shim::LogMetricLinkLayerConnectionEvent(
-          &bd_addr, bluetooth::os::kUnknownConnectionHandle, android::bluetooth::DIRECTION_OUTGOING,
+          bd_addr, bluetooth::os::kUnknownConnectionHandle, android::bluetooth::DIRECTION_OUTGOING,
           android::bluetooth::LINK_TYPE_ACL, android::bluetooth::hci::CMD_CREATE_CONNECTION_CANCEL,
           android::bluetooth::hci::EVT_COMMAND_COMPLETE, android::bluetooth::hci::BLE_EVT_UNKNOWN,
           status, android::bluetooth::hci::STATUS_UNKNOWN);
@@ -3890,12 +3890,11 @@ void btm_sec_disconnected(uint16_t handle, tHCI_REASON reason, std::string comme
     }
   }
 
-  log::debug(
-          "Disconnection complete device:{} name:{} state:{} reason:{} "
-          "sec_req:{:x}",
-          p_dev_rec->bd_addr, reinterpret_cast<char const*>(p_dev_rec->sec_bd_name),
-          tBTM_SEC_CB::btm_pair_state_descr(btm_sec_cb.pairing_state), hci_reason_code_text(reason),
-          p_dev_rec->sec_rec.security_required);
+  log::debug("device:{} name:{} state:{} reason:{} flag:0x{:x} bond_type:{} sec_req:0x{:x}",
+             p_dev_rec->bd_addr, reinterpret_cast<char const*>(p_dev_rec->sec_bd_name),
+             tBTM_SEC_CB::btm_pair_state_descr(btm_sec_cb.pairing_state),
+             hci_reason_code_text(reason), p_dev_rec->sec_rec.sec_flags,
+             bond_type_text(p_dev_rec->sec_rec.bond_type), p_dev_rec->sec_rec.security_required);
 
   // TODO Should this be gated by the transport check below ?
   btm_ble_update_mode_operation(HCI_ROLE_UNKNOWN, &p_dev_rec->bd_addr, HCI_SUCCESS);
@@ -3969,6 +3968,7 @@ void btm_sec_disconnected(uint16_t handle, tHCI_REASON reason, std::string comme
   p_dev_rec->sec_rec.security_required = BTM_SEC_NONE;
   if (com::android::bluetooth::flags::reset_security_flags_on_pairing_failure() &&
       !btm_sec_is_a_bonded_dev(p_dev_rec->bd_addr)) {
+    log::warn("Clearing security flags for unbonded device {}", p_dev_rec->bd_addr);
     p_dev_rec->sec_rec.sec_flags = 0;
   }
 

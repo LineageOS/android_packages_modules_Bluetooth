@@ -124,6 +124,36 @@ public class ScanManager {
     private static final int OPERATION_TIME_OUT_MILLIS = 500;
     private static final int MAX_IS_UID_FOREGROUND_MAP_SIZE = 500;
 
+    // Delivery mode defined in bt stack.
+    private static final int DELIVERY_MODE_IMMEDIATE = 0;
+    private static final int DELIVERY_MODE_ON_FOUND_LOST = 1;
+    private static final int DELIVERY_MODE_BATCH = 2;
+
+    private static final int ONFOUND_SIGHTINGS_AGGRESSIVE = 1;
+    private static final int ONFOUND_SIGHTINGS_STICKY = 4;
+
+    private static final int ALL_PASS_FILTER_INDEX_REGULAR_SCAN = 1;
+    private static final int ALL_PASS_FILTER_INDEX_BATCH_SCAN = 2;
+    private static final int ALL_PASS_FILTER_SELECTION = 0;
+
+    private static final int DISCARD_OLDEST_WHEN_BUFFER_FULL = 0;
+
+    /** Onfound/onlost for scan settings */
+    private static final int MATCH_MODE_AGGRESSIVE_TIMEOUT_FACTOR = (1);
+
+    private static final int MATCH_MODE_STICKY_TIMEOUT_FACTOR = (3);
+    private static final int ONLOST_FACTOR = 2;
+    private static final int ONLOST_ONFOUND_BASE_TIMEOUT_MS = 500;
+
+    // The logic is AND for each filter field.
+    private static final int LIST_LOGIC_TYPE = 0x1111111;
+    private static final int FILTER_LOGIC_TYPE = 1;
+
+    // MSFT-based hardware scan offload sysprop
+    private static final String MSFT_HCI_EXT_ENABLED = "bluetooth.core.le.use_msft_hci_ext";
+    // Hardcoded min number of hardware adv monitor slots for MSFT-enabled controllers
+    private static final int MIN_NUM_MSFT_MONITOR_SLOTS = 20;
+
     @VisibleForTesting final ClientHandler mHandler;
 
     private final Object mCurUsedTrackableAdvertisementsLock = new Object();
@@ -135,14 +165,34 @@ public class ScanManager {
             Collections.newSetFromMap(new ConcurrentHashMap<ScanClient, Boolean>());
     private final SparseIntArray mPriorityMap = new SparseIntArray();
     private final SparseBooleanArray mIsUidForegroundMap = new SparseBooleanArray();
-    private final AdapterService mAdapterService;
+
+    // Filter indices that are available to user. It's sad we need to maintain filter index.
+    private final Deque<Integer> mFilterIndexStack = new ArrayDeque<>();
+    // Map of scannerId and Filter indices used by client.
+    private final Map<Integer, Deque<Integer>> mClientFilterIndexMap = new HashMap<>();
+    // Keep track of the clients that uses ALL_PASS filters.
+    private final Set<Integer> mAllPassRegularClients = new HashSet<>();
+    private final Set<Integer> mAllPassBatchClients = new HashSet<>();
+
+    private final AtomicReference<BroadcastReceiver> mBatchAlarmReceiver = new AtomicReference<>();
+
+    // List of merged MSFT patterns
+    private final MsftAdvMonitorMergedPatternList mMsftAdvMonitorMergedPatternList =
+            new MsftAdvMonitorMergedPatternList();
+
     private final ScanController mScanController;
+    private final AdapterService mAdapterService;
     private final TimeProvider mTimeProvider;
-    private final BluetoothAdapterProxy mBluetoothAdapterProxy;
+    private final ScanNativeInterface mNativeInterface;
+    private final AlarmManager mAlarmManager;
+    private final PendingIntent mBatchScanIntervalIntent;
     private final DisplayManager mDisplayManager;
     private final ActivityManager mActivityManager;
     private final LocationManager mLocationManager;
+    private final BluetoothAdapterProxy mBluetoothAdapterProxy;
     private final BatchScanThrottler mBatchScanThrottler;
+    // Whether or not MSFT-based scanning hardware offload is available on this device
+    private final boolean mIsMsftSupported;
 
     @VisibleForTesting boolean mIsConnecting;
     @VisibleForTesting int mProfilesConnecting;
@@ -156,7 +206,10 @@ public class ScanManager {
     private int mCurUsedTrackableAdvertisements = 0;
 
     private boolean mScreenOn = false;
-    private int mProfilesConnected, mProfilesDisconnecting;
+    private int mProfilesConnected;
+    private int mProfilesDisconnecting;
+    // Whether or not MSFT-based scanning is currently enabled in the controller
+    private boolean mScanEnabledMsft = false;
 
     @VisibleForTesting
     record UidImportance(int uid, int importance) {}
@@ -172,8 +225,6 @@ public class ScanManager {
         mTimeProvider = timeProvider;
         mNativeInterface = ScanObjectsFactory.getInstance().getScanNativeInterface();
         mNativeInterface.init(scanController);
-        mFilterIndexStack = new ArrayDeque<Integer>();
-        mClientFilterIndexMap = new HashMap<Integer, Deque<Integer>>();
         mAlarmManager = mAdapterService.getSystemService(AlarmManager.class);
         Intent batchIntent = new Intent(ACTION_REFRESH_BATCHED_SCAN, null);
         mBatchScanIntervalIntent =
@@ -270,6 +321,23 @@ public class ScanManager {
         }
     }
 
+    @VisibleForTesting
+    BatchScanParams getBatchScanParams() {
+        return mBatchScanParams;
+    }
+
+    Set<ScanClient> getRegularScanQueue() {
+        return mRegularScanClients;
+    }
+
+    Set<ScanClient> getSuspendedScanQueue() {
+        return mSuspendedScanClients;
+    }
+
+    Set<ScanClient> getBatchScanQueue() {
+        return mBatchClients;
+    }
+
     void registerScanner(UUID uuid) {
         mNativeInterface.registerScanner(
                 uuid.getLeastSignificantBits(), uuid.getMostSignificantBits());
@@ -279,22 +347,6 @@ public class ScanManager {
         mNativeInterface.unregisterScanner(scannerId);
     }
 
-    /** Returns the regular scan queue. */
-    Set<ScanClient> getRegularScanQueue() {
-        return mRegularScanClients;
-    }
-
-    /** Returns the suspended scan queue. */
-    Set<ScanClient> getSuspendedScanQueue() {
-        return mSuspendedScanClients;
-    }
-
-    /** Returns batch scan queue. */
-    Set<ScanClient> getBatchScanQueue() {
-        return mBatchClients;
-    }
-
-    /** Returns a set of full batch scan clients. */
     Set<ScanClient> getFullBatchScanQueue() {
         // TODO: split full batch scan clients and truncated batch clients so we don't need to
         // construct this every time.
@@ -1019,7 +1071,6 @@ public class ScanManager {
         }
     }
 
-    /** Parameters for batch scans. */
     static class BatchScanParams {
         @VisibleForTesting int mScanMode;
         private int mFullScanScannerId;
@@ -1050,58 +1101,6 @@ public class ScanManager {
         }
     }
 
-    // Delivery mode defined in bt stack.
-    private static final int DELIVERY_MODE_IMMEDIATE = 0;
-    private static final int DELIVERY_MODE_ON_FOUND_LOST = 1;
-    private static final int DELIVERY_MODE_BATCH = 2;
-
-    private static final int ONFOUND_SIGHTINGS_AGGRESSIVE = 1;
-    private static final int ONFOUND_SIGHTINGS_STICKY = 4;
-
-    private static final int ALL_PASS_FILTER_INDEX_REGULAR_SCAN = 1;
-    private static final int ALL_PASS_FILTER_INDEX_BATCH_SCAN = 2;
-    private static final int ALL_PASS_FILTER_SELECTION = 0;
-
-    private static final int DISCARD_OLDEST_WHEN_BUFFER_FULL = 0;
-
-    /** Onfound/onlost for scan settings */
-    private static final int MATCH_MODE_AGGRESSIVE_TIMEOUT_FACTOR = (1);
-
-    private static final int MATCH_MODE_STICKY_TIMEOUT_FACTOR = (3);
-    private static final int ONLOST_FACTOR = 2;
-    private static final int ONLOST_ONFOUND_BASE_TIMEOUT_MS = 500;
-
-    // The logic is AND for each filter field.
-    private static final int LIST_LOGIC_TYPE = 0x1111111;
-    private static final int FILTER_LOGIC_TYPE = 1;
-
-    // MSFT-based hardware scan offload sysprop
-    private static final String MSFT_HCI_EXT_ENABLED = "bluetooth.core.le.use_msft_hci_ext";
-    // Hardcoded min number of hardware adv monitor slots for MSFT-enabled controllers
-    private static final int MIN_NUM_MSFT_MONITOR_SLOTS = 20;
-
-    // Filter indices that are available to user. It's sad we need to maintain filter index.
-    private final Deque<Integer> mFilterIndexStack;
-    // Map of scannerId and Filter indices used by client.
-    private final Map<Integer, Deque<Integer>> mClientFilterIndexMap;
-    // Keep track of the clients that uses ALL_PASS filters.
-    private final Set<Integer> mAllPassRegularClients = new HashSet<>();
-    private final Set<Integer> mAllPassBatchClients = new HashSet<>();
-
-    private final AtomicReference<BroadcastReceiver> mBatchAlarmReceiver = new AtomicReference<>();
-
-    private final AlarmManager mAlarmManager;
-    private final PendingIntent mBatchScanIntervalIntent;
-    private final ScanNativeInterface mNativeInterface;
-
-    // Whether or not MSFT-based scanning hardware offload is available on this device
-    private final boolean mIsMsftSupported;
-    // Whether or not MSFT-based scanning is currently enabled in the controller
-    private boolean mScanEnabledMsft = false;
-    // List of merged MSFT patterns
-    private final MsftAdvMonitorMergedPatternList mMsftAdvMonitorMergedPatternList =
-            new MsftAdvMonitorMergedPatternList();
-
     private void resetCountDownLatch() {
         mNativeInterface.resetCountDownLatch();
     }
@@ -1110,7 +1109,7 @@ public class ScanManager {
         return mNativeInterface.waitForCallback(OPERATION_TIME_OUT_MILLIS);
     }
 
-    void configureRegularScanParams() {
+    private void configureRegularScanParams() {
         Log.d(TAG, "configureRegularScanParams() - queue=" + mRegularScanClients.size());
         int newScanSetting1m = Integer.MIN_VALUE;
         int newScanSettingCoded = Integer.MIN_VALUE;
@@ -1263,7 +1262,7 @@ public class ScanManager {
         }
     }
 
-    void startRegularScan(ScanClient client) {
+    private void startRegularScan(ScanClient client) {
         if ((isFilteringSupported() || mIsMsftSupported)
                 && mFilterIndexStack.isEmpty()
                 && mClientFilterIndexMap.isEmpty()) {
@@ -1294,7 +1293,7 @@ public class ScanManager {
         return num;
     }
 
-    void startBatchScan(ScanClient client) {
+    private void startBatchScan(ScanClient client) {
         if (mFilterIndexStack.isEmpty() && isFilteringSupported()) {
             initFilterIndexStack();
         }
@@ -1476,7 +1475,7 @@ public class ScanManager {
                 mBatchScanIntervalIntent);
     }
 
-    void stopRegularScan(ScanClient client) {
+    private void stopRegularScan(ScanClient client) {
         // Remove scan filters and recycle filter indices.
         if (client == null) {
             return;
@@ -1516,7 +1515,7 @@ public class ScanManager {
         }
     }
 
-    void regularScanTimeout(ScanClient client) {
+    private void regularScanTimeout(ScanClient client) {
         if (!isExemptFromScanTimeout(client)
                 && (client.mStats == null || client.mStats.isScanningTooLong())) {
             Log.d(TAG, "regularScanTimeout - client scan time was too long");
@@ -1557,7 +1556,7 @@ public class ScanManager {
         }
     }
 
-    void setOpportunisticScanClient(ScanClient client) {
+    private static void setOpportunisticScanClient(ScanClient client) {
         // TODO: Add constructor to ScanSettings.Builder
         // that can copy values from an existing ScanSettings object
         ScanSettings.Builder builder = new ScanSettings.Builder();
@@ -1571,7 +1570,7 @@ public class ScanManager {
     }
 
     // Find the regular scan client information.
-    ScanClient getRegularScanClient(int scannerId) {
+    private ScanClient getRegularScanClient(int scannerId) {
         for (ScanClient client : mRegularScanClients) {
             if (client.mScannerId == scannerId) {
                 return client;
@@ -1580,7 +1579,7 @@ public class ScanManager {
         return null;
     }
 
-    ScanClient getSuspendedScanClient(int scannerId) {
+    private ScanClient getSuspendedScanClient(int scannerId) {
         for (ScanClient client : mSuspendedScanClients) {
             if (client.mScannerId == scannerId) {
                 return client;
@@ -1589,7 +1588,7 @@ public class ScanManager {
         return null;
     }
 
-    void stopBatchScan(ScanClient client) {
+    private void stopBatchScan(ScanClient client) {
         mBatchClients.remove(client);
         removeScanFilters(client.mScannerId);
         if (!isOpportunisticScanClient(client)) {
@@ -1597,7 +1596,7 @@ public class ScanManager {
         }
     }
 
-    void flushBatchResults(int scannerId) {
+    private void flushBatchResults(int scannerId) {
         Log.d(TAG, "flushBatchResults - scannerId = " + scannerId);
         if (mBatchScanParams.mFullScanScannerId != -1) {
             resetCountDownLatch();
@@ -2132,11 +2131,6 @@ public class ScanManager {
                 mNativeInterface.gattClientScan(true);
             }
         }
-    }
-
-    @VisibleForTesting
-    BatchScanParams getBatchScanParams() {
-        return mBatchScanParams;
     }
 
     private boolean isScreenOn() {

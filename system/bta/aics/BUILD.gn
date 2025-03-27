@@ -12,9 +12,7 @@
 # limitations under the License.
 
 config("aics_defaults") {
-  include_dirs = [
-    "include",
-  ]
+  include_dirs = [ "include" ]
   configs = [
     "//bt/system:target_defaults",
     "//bt/system/log:log_defaults",
@@ -22,12 +20,9 @@ config("aics_defaults") {
 }
 
 static_library("aics") {
-  sources = [
-    "aics.cc",
-  ]
-  configs += [
-    ":aics_defaults",
-  ]
+  sources = [ "aics.cc" ]
+  configs += [ ":aics_defaults" ]
+
   # include_dirs = [
   #   "include",
   # ]
@@ -37,4 +32,3 @@ static_library("aics") {
   #   "//bt/system/log:log_defaults",
   # ]
 }
-

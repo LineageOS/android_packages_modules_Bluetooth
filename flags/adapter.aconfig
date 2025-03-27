@@ -27,3 +27,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "remove_legacy_management_thread"
+    namespace: "bluetooth"
+    description: "Remove non-necessary management_thread"
+    bug: "406345320"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}

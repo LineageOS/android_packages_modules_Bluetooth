@@ -149,18 +149,16 @@ void BTM_SecAddBleDevice(const RawAddress& bd_addr, tBT_DEVICE_TYPE dev_type,
  *
  ******************************************************************************/
 bool BTM_GetRemoteDeviceName(const RawAddress& bd_addr, BD_NAME bd_name) {
-  log::verbose("bd_addr:{}", bd_addr);
-
-  bool ret = FALSE;
-  bt_bdname_t bdname;
+  bool ret = false;
+  bt_bdname_t bdname = {};
   bt_property_t prop_name;
   BTIF_STORAGE_FILL_PROPERTY(&prop_name, BT_PROPERTY_BDNAME, sizeof(bt_bdname_t), &bdname);
 
   if (btif_storage_get_remote_device_property(&bd_addr, &prop_name) == BT_STATUS_SUCCESS) {
-    log::verbose("NV name={}", reinterpret_cast<const char*>(bdname.name));
     bd_name_copy(bd_name, bdname.name);
-    ret = TRUE;
+    ret = true;
   }
+  log::verbose("bd_addr:{} name:{}", bd_addr, reinterpret_cast<const char*>(bdname.name));
   return ret;
 }
 

@@ -574,6 +574,7 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
     state = BT_BOND_STATE_NONE;
   } else if (com::android::bluetooth::flags::reset_security_flags_on_pairing_failure() &&
              state == BT_BOND_STATE_NONE) {
+    log::warn("Clearing security flags for {} on pairing failure", bd_addr);
     get_security_client_interface().BTM_SecClearSecurityFlags(bd_addr);
   }
 
@@ -1126,7 +1127,7 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
           (p_auth_cmpl->key_type == HCI_LKEY_TYPE_CHANGED_COMB) ||
           (p_auth_cmpl->key_type == HCI_LKEY_TYPE_AUTH_COMB_P_256) ||
           pairing_cb.bond_type == BOND_TYPE_PERSISTENT) {
-        ASSERTC(bd_addr.IsEmpty(), "bd_addr is empty", BT_STATUS_PARM_INVALID);
+        ASSERTC(!bd_addr.IsEmpty(), "bd_addr is empty", BT_STATUS_PARM_INVALID);
         log::debug("Storing link key. key_type=0x{:x}, bond_type={}", p_auth_cmpl->key_type,
                    pairing_cb.bond_type);
         bt_status_t ret = btif_storage_add_bonded_device(
@@ -2289,7 +2290,9 @@ void btif_dm_acl_evt(tBTA_DM_ACL_EVT event, tBTA_DM_ACL* p_data) {
 
     case BTA_DM_LINK_DOWN_EVT: {
       bd_addr = p_data->link_down.bd_addr;
-      btm_set_bond_type_dev(p_data->link_down.bd_addr, BOND_TYPE_UNKNOWN);
+      if (!com::android::bluetooth::flags::temporary_pairing_tracking()) {
+        btm_set_bond_type_dev(p_data->link_down.bd_addr, BOND_TYPE_UNKNOWN);
+      }
       GetInterfaceToProfiles()->onLinkDown(bd_addr, p_data->link_down.transport_link_type);
 
       bt_conn_direction_t direction;

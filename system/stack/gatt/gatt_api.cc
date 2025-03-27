@@ -35,6 +35,7 @@
 #include "internal_include/stack_config.h"
 #include "main/shim/helpers.h"
 #include "main/shim/metrics_api.h"
+#include "metrics/bluetooth_event.h"
 #include "os/system_properties.h"
 #include "osi/include/allocator.h"
 #include "stack/arbiter/acl_arbiter.h"
@@ -329,8 +330,7 @@ tGATT_STATUS GATTS_AddService(tGATT_IF gatt_if, btgatt_db_element_t* service, in
         *p_uuid != Uuid::From16Bit(UUID_SERVCLASS_GTBS_SERVER)) {
       if ((com::android::bluetooth::flags::channel_sounding_in_stack() &&
            *p_uuid == Uuid::From16Bit(UUID_SERVCLASS_RAS)) ||
-          (com::android::bluetooth::flags::android_os_identifier() &&
-           *p_uuid == ANDROID_INFORMATION_SERVICE_UUID)) {
+          *p_uuid == ANDROID_INFORMATION_SERVICE_UUID) {
         elem.sdp_handle = 0;
       } else {
         elem.sdp_handle = gatt_add_sdp_record(*p_uuid, elem.s_hdl, elem.e_hdl);
@@ -1430,7 +1430,7 @@ bool GATT_Connect(tGATT_IF gatt_if, const RawAddress& bd_addr, tBLE_ADDR_TYPE ad
     return true;
   }
 
-  bluetooth::shim::LogMetricLeConnectionLifecycle(bd_addr, true /* is_connect */, is_direct);
+  bluetooth::metrics::LogMetricLeConnectionLifecycle(bd_addr, true /* is_connect */, is_direct);
 
   bool ret = false;
   if (is_direct) {
@@ -1572,8 +1572,8 @@ tGATT_STATUS GATT_Disconnect(tCONN_ID conn_id) {
     return GATT_ILLEGAL_PARAMETER;
   }
 
-  bluetooth::shim::LogMetricLeConnectionLifecycle(p_tcb->peer_bda, true /* is_connect */,
-                                                  false /* is_direct */);
+  bluetooth::metrics::LogMetricLeConnectionLifecycle(p_tcb->peer_bda, true /* is_connect */,
+                                                     false /* is_direct */);
 
   tGATT_IF gatt_if = gatt_get_gatt_if(conn_id);
   gatt_update_app_use_link_flag(gatt_if, p_tcb, false, true);

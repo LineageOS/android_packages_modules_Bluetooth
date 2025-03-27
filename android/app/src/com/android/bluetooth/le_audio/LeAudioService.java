@@ -29,6 +29,7 @@ import static android.bluetooth.IBluetoothLeAudio.LE_AUDIO_GROUP_ID_INVALID;
 import static com.android.bluetooth.bass_client.BassConstants.INVALID_BROADCAST_ID;
 import static com.android.bluetooth.flags.Flags.doNotHardcodeTmapRoleMask;
 import static com.android.bluetooth.flags.Flags.leaudioBroadcastApiManagePrimaryGroup;
+import static com.android.bluetooth.flags.Flags.leaudioBroadcastRemoveSinkMetadataOnSwitchToLocal;
 import static com.android.bluetooth.flags.Flags.leaudioMonitorUnicastSourceWhenManagedByBroadcastDelegator;
 import static com.android.bluetooth.flags.Flags.leaudioUseAudioRecordingListener;
 import static com.android.modules.utils.build.SdkLevel.isAtLeastU;
@@ -2947,6 +2948,10 @@ public class LeAudioService extends ProfileService {
                 && isBroadcastAllowedToBeActivateInCurrentAudioMode();
     }
 
+    private BluetoothDevice getBroadcastBluetoothDevice() {
+        return mAdapterService.getDeviceFromByte(Utils.getBytesFromAddress("FF:FF:FF:FF:FF:FF"));
+    }
+
     private void handleGroupTransitToInactive(int groupId) {
         mGroupReadLock.lock();
         try {
@@ -2974,13 +2979,12 @@ public class LeAudioService extends ProfileService {
                 }
 
                 /* Update Broadcast device before streaming state in handover case to avoid switch
-                 * to non LE Audio device in Audio Manager e.g. Phone Speaker.
+                 * to non LE Audio device in Audio Manager e.g. Phone Speaker for broadcast to
+                 * unicast handover case.
                  */
-                BluetoothDevice device =
-                        mAdapterService.getDeviceFromByte(
-                                Utils.getBytesFromAddress("FF:FF:FF:FF:FF:FF"));
-                if (!device.equals(mActiveBroadcastAudioDevice)) {
-                    updateBroadcastActiveDevice(device, mActiveBroadcastAudioDevice, true);
+                BluetoothDevice broadcastDevice = getBroadcastBluetoothDevice();
+                if (!broadcastDevice.equals(mActiveBroadcastAudioDevice)) {
+                    updateBroadcastActiveDevice(broadcastDevice, mActiveBroadcastAudioDevice, true);
                 }
 
                 /* After group de-activation a fallback broadcast to unicast device would be
@@ -3833,6 +3837,14 @@ public class LeAudioService extends ProfileService {
                     mBroadcastSessionStats.put(broadcastId, sessionStats);
                 }
 
+                /* Update Broadcast device before streaming state in handover case to avoid switch
+                 * to non LE Audio device in Audio Manager e.g. Phone Speaker.
+                 */
+                BluetoothDevice broadcastDevice = getBroadcastBluetoothDevice();
+                if (!broadcastDevice.equals(mActiveBroadcastAudioDevice)) {
+                    updateBroadcastActiveDevice(broadcastDevice, mActiveBroadcastAudioDevice, true);
+                }
+
                 // Start sending the actual stream
                 startBroadcast(broadcastId);
             } else {
@@ -3876,6 +3888,13 @@ public class LeAudioService extends ProfileService {
                                 + broadcastId);
             } else {
                 mBroadcastDescriptors.remove(broadcastId);
+            }
+
+            /* Clean up the exposed broadcast device after destroy, skipping if a handover
+             * occurred.
+             */
+            if (!isAnyBroadcastInStreamingState() && (mActiveBroadcastAudioDevice != null)) {
+                updateBroadcastActiveDevice(null, mActiveBroadcastAudioDevice, true);
             }
 
             // TODO: Improve reason reporting or extend the native stack event with reason code
@@ -3936,9 +3955,12 @@ public class LeAudioService extends ProfileService {
 
                     /* Stop here if Broadcast was not in Streaming state before */
                     if (previousState != LeAudioStackEvent.BROADCAST_STATE_STREAMING) {
-                        // Stop Big Monitoring in case that was some actions on external broadcast
-                        if (bassClientService != null) {
-                            bassClientService.stopBigMonitoring();
+                        if (!leaudioBroadcastRemoveSinkMetadataOnSwitchToLocal()) {
+                            // Stop Big Monitoring in case that was some actions on external
+                            // broadcast
+                            if (bassClientService != null) {
+                                bassClientService.stopBigMonitoring();
+                            }
                         }
                         return;
                     }
@@ -3985,13 +4007,6 @@ public class LeAudioService extends ProfileService {
                     if (previousState == LeAudioStackEvent.BROADCAST_STATE_PAUSED) {
                         if (bassClientService != null) {
                             bassClientService.resumeReceiversSourceSynchronization();
-                        }
-                    }
-
-                    // Notify audio manager
-                    if (isAnyBroadcastInStreamingState()) {
-                        if (!Objects.equals(device, mActiveBroadcastAudioDevice)) {
-                            updateBroadcastActiveDevice(device, mActiveBroadcastAudioDevice, true);
                         }
                     }
                     break;

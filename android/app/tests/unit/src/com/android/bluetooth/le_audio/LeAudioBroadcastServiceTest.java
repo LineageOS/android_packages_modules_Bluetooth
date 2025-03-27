@@ -181,7 +181,7 @@ public class LeAudioBroadcastServiceTest {
     private final BluetoothDevice mDevice = getTestDevice(0);
     private final BluetoothDevice mDevice2 = getTestDevice(1);
 
-    private final BluetoothDevice mBroadcastDevice = getTestDevice(1);
+    private final BluetoothDevice mBroadcastDevice = getTestDevice("FF:FF:FF:FF:FF:FF");
 
     private LeAudioService mService;
     private InOrder mInOrder;
@@ -269,11 +269,15 @@ public class LeAudioBroadcastServiceTest {
                         eq(expectedDataArray));
 
         // Check if broadcast is started automatically when created
-        LeAudioStackEvent create_event =
-                new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_BROADCAST_CREATED);
-        create_event.valueInt1 = broadcastId;
-        create_event.valueBool1 = true;
-        mService.messageFromNative(create_event);
+        LeAudioStackEvent leAudioStackEvent =
+                new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_BROADCAST_AUDIO_SESSION_CREATED);
+        leAudioStackEvent.valueBool1 = true;
+        mService.messageFromNative(leAudioStackEvent);
+
+        leAudioStackEvent = new LeAudioStackEvent(LeAudioStackEvent.EVENT_TYPE_BROADCAST_CREATED);
+        leAudioStackEvent.valueInt1 = broadcastId;
+        leAudioStackEvent.valueBool1 = true;
+        mService.messageFromNative(leAudioStackEvent);
 
         verify(mLeAudioBroadcasterNativeInterface).startBroadcast(eq(broadcastId));
 
@@ -1613,6 +1617,38 @@ public class LeAudioBroadcastServiceTest {
             assertThat(mService.mBroadcastCallbacks.beginBroadcast()).isEqualTo(0);
             mService.mBroadcastCallbacks.finishBroadcast();
         }
+    }
+
+    @Test
+    public void testBroadcastNoPriorUnicastHandover() throws RemoteException {
+        int broadcastId = 243;
+        byte[] code = {0x00, 0x01, 0x00, 0x02};
+
+        synchronized (mService.mBroadcastCallbacks) {
+            mService.mBroadcastCallbacks.register(mCallbacks);
+        }
+
+        BluetoothLeAudioContentMetadata meta =
+                new BluetoothLeAudioContentMetadata.Builder()
+                        .setLanguage("pol")
+                        .setProgramInfo("Subgroup broadcast info")
+                        .build();
+
+        /* Start broadcast without prior unicast to broadcast handover, broadacst device should be
+         * exposed to AudioManager
+         */
+        verifyBroadcastStarted(broadcastId, buildBroadcastSettingsFromMetadata(meta, code, 1));
+        verify(mAudioManager)
+                .handleBluetoothActiveDeviceChanged(
+                        eq(mBroadcastDevice), eq(null), any(BluetoothProfileConnectionInfo.class));
+
+        /* Stop broadcast without prior broadcast to unicast handover, broadacst device should be
+         * cleaned in AudioManager
+         */
+        verifyBroadcastStopped(broadcastId);
+        verify(mAudioManager)
+                .handleBluetoothActiveDeviceChanged(
+                        eq(null), eq(mBroadcastDevice), any(BluetoothProfileConnectionInfo.class));
     }
 
     private static BluetoothLeBroadcastSettings buildBroadcastSettingsFromMetadata(

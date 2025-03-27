@@ -30,9 +30,7 @@ static_library("common") {
     "//bt/system/stack/include",
   ]
 
-  deps = [
-    "//bt/system:libbt-platform-protos-lite",
-  ]
+  deps = [ "//bt/system:libbt-platform-protos-lite" ]
 
   configs += [
     "//bt/system:target_defaults",

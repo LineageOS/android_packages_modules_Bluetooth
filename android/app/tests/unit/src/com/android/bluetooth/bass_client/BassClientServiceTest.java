@@ -720,7 +720,6 @@ public class BassClientServiceTest {
         // Add source to unsynced broadcast, causes synchronization first
         BluetoothLeBroadcastMetadata meta = createBroadcastMetadata(TEST_BROADCAST_ID);
         mBassClientService.addSource(mCurrentDevice, meta, /* isGroupOp */ true);
-        handleHandoverSupport();
         mInOrderMethodProxy
                 .verify(mMethodProxy)
                 .periodicAdvertisingManagerRegisterSync(
@@ -778,7 +777,6 @@ public class BassClientServiceTest {
         // Add source to not cached broadcast cause addFailed notification
         BluetoothLeBroadcastMetadata meta = createBroadcastMetadata(TEST_BROADCAST_ID);
         mBassClientService.addSource(mCurrentDevice, meta, /* isGroupOp */ true);
-        handleHandoverSupport();
         TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
         verify(mCallback)
                 .onSourceAddFailed(
@@ -798,7 +796,6 @@ public class BassClientServiceTest {
 
         // Add sync handle by add source
         mBassClientService.addSource(mCurrentDevice, meta, /* isGroupOp */ true);
-        handleHandoverSupport();
         mInOrderMethodProxy
                 .verify(mMethodProxy)
                 .periodicAdvertisingManagerRegisterSync(
@@ -811,7 +808,6 @@ public class BassClientServiceTest {
 
         // Add source to unsynced broadcast, causes synchronization first
         mBassClientService.addSource(mCurrentDevice, meta, /* isGroupOp */ true);
-        handleHandoverSupport();
         mInOrderMethodProxy
                 .verify(mMethodProxy)
                 .periodicAdvertisingManagerRegisterSync(
@@ -881,7 +877,6 @@ public class BassClientServiceTest {
 
         // Add source to unsynced broadcast, causes synchronization first
         mBassClientService.addSource(mCurrentDevice, meta, /* isGroupOp */ true);
-        handleHandoverSupport();
         mInOrderMethodProxy
                 .verify(mMethodProxy)
                 .periodicAdvertisingManagerRegisterSync(
@@ -902,7 +897,6 @@ public class BassClientServiceTest {
 
         // Add source to not cached broadcast causes addFailed notification
         mBassClientService.addSource(mCurrentDevice, meta, /* isGroupOp */ true);
-        handleHandoverSupport();
         TestUtils.waitForLooperToFinishScheduledTask(mBassClientService.getCallbacks().getLooper());
         inOrderCallback
                 .verify(mCallback)
@@ -924,7 +918,6 @@ public class BassClientServiceTest {
 
         // Add source to unsynced broadcast, causes synchronization first
         mBassClientService.addSource(mCurrentDevice, meta, /* isGroupOp */ true);
-        handleHandoverSupport();
         mInOrderMethodProxy
                 .verify(mMethodProxy)
                 .periodicAdvertisingManagerRegisterSync(
@@ -944,7 +937,6 @@ public class BassClientServiceTest {
 
         // Add source to unsynced broadcast, causes synchronization first
         mBassClientService.addSource(mCurrentDevice, meta, /* isGroupOp */ true);
-        handleHandoverSupport();
         mInOrderMethodProxy
                 .verify(mMethodProxy)
                 .periodicAdvertisingManagerRegisterSync(
@@ -970,7 +962,6 @@ public class BassClientServiceTest {
         // Sink1 aAdd source to unsynced broadcast, causes synchronization first
         BluetoothLeBroadcastMetadata meta = createBroadcastMetadata(TEST_BROADCAST_ID);
         mBassClientService.addSource(mCurrentDevice, meta, /* isGroupOp */ false);
-        handleHandoverSupport();
         mInOrderMethodProxy
                 .verify(mMethodProxy)
                 .periodicAdvertisingManagerRegisterSync(
@@ -978,7 +969,6 @@ public class BassClientServiceTest {
 
         // Sink2 add source to unsynced broadcast
         mBassClientService.addSource(mCurrentDevice1, meta, /* isGroupOp */ false);
-        handleHandoverSupport();
 
         // Sync established
         onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
@@ -1027,7 +1017,6 @@ public class BassClientServiceTest {
         // Sink1 aAdd source to unsynced broadcast, causes synchronization first
         BluetoothLeBroadcastMetadata meta = createBroadcastMetadata(TEST_BROADCAST_ID);
         mBassClientService.addSource(mCurrentDevice, meta, /* isGroupOp */ false);
-        handleHandoverSupport();
         mInOrderMethodProxy
                 .verify(mMethodProxy)
                 .periodicAdvertisingManagerRegisterSync(
@@ -1035,7 +1024,6 @@ public class BassClientServiceTest {
 
         // Sink2 add source to unsynced broadcast
         mBassClientService.addSource(mCurrentDevice1, meta, /* isGroupOp */ false);
-        handleHandoverSupport();
 
         // Error in syncEstablished causes sourceLost, sourceAddFailed notification for both sinks
         onSyncEstablishedFailed(mSourceDevice, TEST_SYNC_HANDLE);
@@ -1255,18 +1243,9 @@ public class BassClientServiceTest {
                 syncHandle, testDevice, TEST_ADVERTISER_SID, 0, 200, BluetoothGatt.GATT_FAILURE);
     }
 
-    private void handleHandoverSupport() {
-        /* Unicast finished streaming */
-        mBassClientService.handleUnicastSourceStreamStatusChange(
-                2 /* STATUS_LOCAL_STREAM_SUSPENDED */);
-    }
-
     private void verifyAddSourceForGroup(BluetoothLeBroadcastMetadata meta) {
         // Add broadcast source
         mBassClientService.addSource(mCurrentDevice, meta, /* isGroupOp */ true);
-
-        /* In case if device supports handover, Source stream status needs to be updated */
-        handleHandoverSupport();
 
         // Verify all group members getting ADD_BCAST_SOURCE message
         assertThat(mStateMachines).hasSize(2);
@@ -3128,7 +3107,6 @@ public class BassClientServiceTest {
 
         // Add source to unsynced broadcast, causes synchronization first
         mBassClientService.addSource(mCurrentDevice, meta, /* isGroupOp */ true);
-        handleHandoverSupport();
         mInOrderMethodProxy
                 .verify(mMethodProxy)
                 .periodicAdvertisingManagerRegisterSync(
@@ -3225,7 +3203,6 @@ public class BassClientServiceTest {
                                 BluetoothLeAudio.CONTEXTS_ALL
                                         & ~BluetoothLeAudio.CONTEXT_TYPE_SOUND_EFFECTS),
                         eq(BluetoothLeAudio.CONTEXTS_ALL));
-        handleHandoverSupport();
 
         // Verify all group members getting ADD_BCAST_SOURCE message
         assertThat(mStateMachines).hasSize(2);
@@ -3928,7 +3905,6 @@ public class BassClientServiceTest {
         mBassClientService.cacheSuspendingSources(TEST_BROADCAST_ID);
 
         mBassClientService.resumeReceiversSourceSynchronization();
-        handleHandoverSupport();
         verifyAllGroupMembersGettingUpdateOrAddSource(meta);
     }
 
@@ -5000,7 +4976,6 @@ public class BassClientServiceTest {
         // Add source to unsynced broadcast, causes synchronization first
         BluetoothLeBroadcastMetadata meta = createBroadcastMetadata(TEST_BROADCAST_ID);
         mBassClientService.addSource(mCurrentDevice, meta, /* isGroupOp */ true);
-        handleHandoverSupport();
 
         // Source synced
         onSyncEstablished(mSourceDevice, TEST_SYNC_HANDLE);
@@ -5450,6 +5425,7 @@ public class BassClientServiceTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_LEAUDIO_BROADCAST_REMOVE_SINK_METADATA_ON_SWITCH_TO_LOCAL)
     public void sinkUnintentional_publicStopBigMonitoring_withoutScanning() {
         sinkUnintentionalWithoutScanning();
 
@@ -5459,6 +5435,7 @@ public class BassClientServiceTest {
     }
 
     @Test
+    @DisableFlags(Flags.FLAG_LEAUDIO_BROADCAST_REMOVE_SINK_METADATA_ON_SWITCH_TO_LOCAL)
     public void sinkUnintentional_publicStopBigMonitoring_duringScanning() {
         sinkUnintentionalDuringScanning();
 

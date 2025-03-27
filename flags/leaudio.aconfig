@@ -267,3 +267,23 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "leaudio_broadcast_remove_sink_metadata_on_switch_to_local"
+    namespace: "bluetooth"
+    description: "Allow to remove sink metadata while switching to local broadcast"
+    bug: "404752913"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
+    name: "leaudio_broadcast_allow_monitoring_on_resume"
+    namespace: "bluetooth"
+    description: "Allow broadcast monitoring on resume from suspend"
+    bug: "404797794"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
