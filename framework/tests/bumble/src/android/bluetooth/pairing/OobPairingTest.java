@@ -81,6 +81,7 @@ public class OobPairingTest {
     private final BluetoothAdapter mAdapter =
             mContext.getSystemService(BluetoothManager.class).getAdapter();
     private OobDataResponse mRemoteOobData;
+    private String mDutAddr;
     private boolean mRemoteInitiator = false;
     private static final int TIMEOUT_ADVERTISING_MS = 1000;
 
@@ -146,6 +147,7 @@ public class OobPairingTest {
                     Log.d(TAG, "OobData: " + data);
                     data.getConfirmationHash();
                     data.getRandomizerHash();
+                    mDutAddr = getReveseAddressString(data.getDeviceAddressWithType());
                     byte[] localData =
                             Bytes.concat(data.getConfirmationHash(), data.getRandomizerHash());
                     OobDataRequest localOobData =
@@ -342,9 +344,12 @@ public class OobPairingTest {
         while (true) {
             if (scanningResponseIterator.hasNext()) {
                 ScanningResponse scanningResponse = scanningResponseIterator.next();
-                // select first available device with Random address type
-                deviceAddr = scanningResponse.getRandom();
-                if (deviceAddr != null) {
+                // Select DUT address from scan results
+                String scannedDevice =
+                        Utils.addressStringFromByteString(scanningResponse.getRandom());
+                Log.d(TAG, "Scanned Devices: " + scannedDevice);
+                if (scannedDevice.equals(mDutAddr)) {
+                    deviceAddr = scanningResponse.getRandom();
                     break;
                 }
             }
@@ -392,5 +397,11 @@ public class OobPairingTest {
                         .setRandomizerHash(randomizer)
                         .build();
         return p256;
+    }
+
+    private String getReveseAddressString(byte[] address) {
+        return String.format(
+                "%02X:%02X:%02X:%02X:%02X:%02X",
+                address[5], address[4], address[3], address[2], address[1], address[0]);
     }
 }
