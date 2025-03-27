@@ -1742,6 +1742,13 @@ public final class BluetoothAdapter {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public boolean clearBluetooth() {
+        if (Flags.factoryResetFromTheSystemServer()) {
+            try {
+                return mManagerService.factoryReset();
+            } catch (RemoteException e) {
+                throw e.rethrowFromSystemServer();
+            }
+        }
         mServiceLock.readLock().lock();
         try {
             if (mService != null) {
