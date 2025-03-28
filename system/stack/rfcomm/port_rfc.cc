@@ -997,7 +997,10 @@ uint32_t port_rfc_send_tx_data(tPORT* p_port) {
 
         log::verbose("Sending RFCOMM_DataReq tx.queue_size={}", p_port->tx.queue_size);
 
-        RFCOMM_DataReq(p_port->rfc.p_mcb, p_port->dlci, p_buf);
+        if (RFCOMM_DataReq(p_port->rfc.p_mcb, p_port->dlci, p_buf) != PORT_SUCCESS) {
+          log::warn("RFCOMM_DataReq failed");
+          break;
+        }
 
         events |= PORT_EV_TXCHAR;
 

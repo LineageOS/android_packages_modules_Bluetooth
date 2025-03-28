@@ -345,9 +345,16 @@ void RFCOMM_DlcReleaseReq(tRFC_MCB* p_mcb, uint8_t dlci) {
  *
  * Function         RFCOMM_DataReq
  *
- * Description      This function is called by the user app to send data buffer
+ * Description      This function is called by the user app to send data buffer.
+ *                  returns PORT_SUCCESS on success or appropriate error codes
  *
  ******************************************************************************/
-void RFCOMM_DataReq(tRFC_MCB* p_mcb, uint8_t dlci, BT_HDR* p_buf) {
-  rfc_port_sm_execute(port_find_mcb_dlci_port(p_mcb, dlci), RFC_PORT_EVENT_DATA, p_buf);
+tPORT_RESULT RFCOMM_DataReq(tRFC_MCB* p_mcb, uint8_t dlci, BT_HDR* p_buf) {
+  tPORT* p_port = port_find_mcb_dlci_port(p_mcb, dlci);
+  if (p_port == nullptr) {
+    log::warn("Unable to find DLCI port dlci:{}", dlci);
+    return PORT_LOCAL_CLOSED;
+  }
+  rfc_port_sm_execute(p_port, RFC_PORT_EVENT_DATA, p_buf);
+  return PORT_SUCCESS;
 }
