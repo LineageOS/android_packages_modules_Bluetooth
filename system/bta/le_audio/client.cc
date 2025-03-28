@@ -59,6 +59,7 @@
 #include "client_parser.h"
 #include "codec_interface.h"
 #include "codec_manager.h"
+#include "common/le_conn_params.h"
 #include "common/strings.h"
 #include "common/time_util.h"
 #include "content_control_id_keeper.h"
@@ -2492,6 +2493,75 @@ public:
     }
   }
 
+  static void lockConnParamsForStreaming(LeAudioDevice* leAudioDevice) {
+    // Lock the aggressive connection parameter to speed up audio transfer to buds
+    // in case of user takes the buds out of the case for active music or an incoming voice call
+    // Unlock when ASE is in streaming or timeout to unlock the ble connection parameters
+    // if current conn interval is greater than aggressive parameters, no need to lock
+    uint16_t currConnInterval =
+        stack::l2cap::get_interface().L2CA_GetBleConnInterval(leAudioDevice->address_);
+    if (currConnInterval > LeConnectionParameters::GetMaxConnIntervalAggressive()) {
+      return;
+    }
+    log::info("{}, lock conn params for conn/stream and unlock when streaming or timeout,"
+              ", current conn interval={}",
+              leAudioDevice->address_, currConnInterval);
+    if (!alarm_is_scheduled(leAudioDevice->update_to_relaxed_conn_interval_timer)) {
+      stack::l2cap::get_interface().L2CA_LockBleConnParamsForProfileConnection(
+          leAudioDevice->address_, true);
+      // After locking the parameters, update with the relaxed value,
+      // but this updating will be blocked and save the relaxed value.
+      // Then timeout will update the parameters to the relaxed.
+      stack::l2cap::get_interface().L2CA_UpdateBleConnParams(
+          leAudioDevice->address_,
+          LeConnectionParameters::GetMinConnIntervalRelaxed(),
+          LeConnectionParameters::GetMaxConnIntervalRelaxed(),
+          BTM_BLE_CONN_PERIPHERAL_LATENCY_DEF,
+          BTM_BLE_CONN_TIMEOUT_DEF, 0, 0);
+
+      alarm_set_on_mloop(
+          leAudioDevice->update_to_relaxed_conn_interval_timer,
+          kAudioUpdateRelaxedConnIntervalTimeoutMs,
+          [](void* data) {
+              LeAudioDevice *leaDev = (LeAudioDevice *)data;
+              if (leaDev != nullptr) {
+                log::info("address {}, update_to_relaxed_conn_interval_timer timeout",
+                    leaDev->address_);
+                stack::l2cap::get_interface().L2CA_LockBleConnParamsForProfileConnection(
+                        leaDev->address_, false);
+              }
+          },
+          leAudioDevice);
+    }
+  }
+
+  // when ASE is in streaming, unlock the ble connection parameters
+  static void unlockConnParamsForStreaming(LeAudioDeviceGroup* group) {
+    if (group == nullptr) {
+      return;
+    }
+    LeAudioDevice* leAudioDevice = group->GetFirstDevice();
+    while (leAudioDevice) {
+      if (alarm_is_scheduled(leAudioDevice->update_to_relaxed_conn_interval_timer)) {
+        uint16_t currConnInterval =
+            stack::l2cap::get_interface().L2CA_GetBleConnInterval(leAudioDevice->address_);
+        log::info("{}, unlock conn params for conn/stream, current conn interval={}.",
+                  leAudioDevice->address_, currConnInterval);
+        alarm_cancel(leAudioDevice->update_to_relaxed_conn_interval_timer);
+
+        stack::l2cap::get_interface().L2CA_UpdateBleConnParams(
+          leAudioDevice->address_,
+          currConnInterval,
+          currConnInterval,
+          BTM_BLE_CONN_PERIPHERAL_LATENCY_DEF,
+          BTM_BLE_CONN_TIMEOUT_DEF, 0, 0);
+        stack::l2cap::get_interface().
+          L2CA_LockBleConnParamsForProfileConnection(leAudioDevice->address_, false);
+      }
+      leAudioDevice = group->GetNextDevice(leAudioDevice);
+    };
+  }
+
   void OnGattConnected(tGATT_STATUS status, tCONN_ID conn_id, tGATT_IF /*client_if*/,
                        RawAddress address, tBT_TRANSPORT transport, uint16_t mtu) {
     LeAudioDevice* leAudioDevice = leAudioDevices_.FindByAddress(address);
@@ -2574,6 +2644,10 @@ public:
       leAudioDevice->SetConnectionState(DeviceConnectState::CONNECTED_AUTOCONNECT_GETTING_READY);
     } else {
       leAudioDevice->SetConnectionState(DeviceConnectState::CONNECTED_BY_USER_GETTING_READY);
+    }
+
+    if (com::android::bluetooth::flags::leaudio_use_aggressive_params()) {
+      lockConnParamsForStreaming(leAudioDevice);
     }
 
     /* Check if the device is in allow list and update the flag */
@@ -3699,8 +3773,10 @@ public:
     log::debug("{},  {}", leAudioDevice->address_,
                bluetooth::common::ToString(leAudioDevice->GetConnectionState()));
 
-    stack::l2cap::get_interface().L2CA_LockBleConnParamsForProfileConnection(
-            leAudioDevice->address_, false);
+    if (!com::android::bluetooth::flags::leaudio_use_aggressive_params()) {
+      stack::l2cap::get_interface().L2CA_LockBleConnParamsForProfileConnection(
+              leAudioDevice->address_, false);
+    }
 
     if (leAudioDevice->GetConnectionState() ==
                 DeviceConnectState::CONNECTED_BY_USER_GETTING_READY &&
@@ -6153,6 +6229,9 @@ public:
 
     switch (status) {
       case GroupStreamStatus::STREAMING: {
+        if (com::android::bluetooth::flags::leaudio_use_aggressive_params()) {
+          unlockConnParamsForStreaming(group);
+        }
         if (!is_active_group_operation) {
           log::error("Streaming group {} is no longer active. Stop the group.", group_id);
           GroupStop(group_id);
@@ -6478,6 +6557,7 @@ private:
   std::unique_ptr<LeAudioSinkAudioHalClient> le_audio_sink_hal_client_;
   static constexpr uint64_t kAudioSuspentKeepIsoAliveTimeoutMs = 500;
   static constexpr uint64_t kAudioDisableTimeoutMs = 3000;
+  static constexpr uint64_t kAudioUpdateRelaxedConnIntervalTimeoutMs = 15000;
   static constexpr char kAudioSuspentKeepIsoAliveTimeoutMsProp[] =
           "persist.bluetooth.leaudio.audio.suspend.timeoutms";
   static constexpr uint64_t kAudioReconfigurationTimeoutMs = 1500;
