@@ -270,3 +270,13 @@ flag {
         purpose: PURPOSE_BUGFIX
     }
 }
+
+flag {
+    name: "irk_scan_bond_check_update"
+    namespace: "bluetooth"
+    description: "Update bond state check in IRK scan to cover all identity address types."
+    bug: "406905829"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
