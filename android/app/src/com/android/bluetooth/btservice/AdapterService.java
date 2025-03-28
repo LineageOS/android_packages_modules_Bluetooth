@@ -160,6 +160,7 @@ import com.android.internal.annotations.VisibleForTesting;
 import com.android.modules.utils.BackgroundThread;
 import com.android.modules.utils.BytesMatcher;
 
+import java.io.File;
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -616,9 +617,20 @@ public class AdapterService extends Service {
     private void init() {
         Log.d(TAG, "init()");
 
-        if (Flags.gattClearCacheOnFactoryReset()
-                && BluetoothProperties.factory_reset().orElse(false)) {
-            clearStorage();
+        factoryResetIfNeeded();
+        if (Flags.factoryResetAtBluetoothStart()) {
+            try {
+                DataMigration.run(this);
+            } catch (Exception e) {
+                Log.e(TAG, "Migration failure: ", e);
+            }
+        }
+
+        if (!Flags.factoryResetAtBluetoothStart()) {
+            if (Flags.gattClearCacheOnFactoryReset()
+                    && BluetoothProperties.factory_reset().orElse(false)) {
+                clearStorage();
+            }
         }
 
         Config.init(this);
@@ -3955,7 +3967,43 @@ public class AdapterService extends Service {
         mAdapterStateMachine.sendMessage(AdapterState.BLE_TURN_OFF);
     }
 
+    private static void recursivelyDeleteDirectory(File file, boolean deleteDirectory) {
+        if (!file.isDirectory()) {
+            Log.i(TAG, "Deleting file: " + file.getPath());
+            file.delete();
+            return;
+        }
+
+        Log.i(TAG, "Deleting directory content: " + file.getPath());
+        for (File innerFile : file.listFiles()) {
+            recursivelyDeleteDirectory(innerFile, true);
+        }
+
+        if (deleteDirectory) {
+            Log.i(TAG, "Deleting empty directory: " + file.getPath());
+            file.delete();
+        }
+    }
+
+    private void factoryResetIfNeeded() {
+        if (!Flags.factoryResetAtBluetoothStart()) {
+            return;
+        }
+        if (!BluetoothProperties.factory_reset().orElse(false)) {
+            return;
+        }
+        Log.i(TAG, "factoryResetIfNeeded(): Starting");
+        BluetoothProperties.factory_reset(false);
+        recursivelyDeleteDirectory(getDataDir(), false);
+        recursivelyDeleteDirectory(Paths.get("/data/misc/bluedroid/").toFile(), false);
+        recursivelyDeleteDirectory(Paths.get("/data/misc/bluetooth/").toFile(), false);
+        Log.i(TAG, "factoryResetIfNeeded(): Completed");
+    }
+
     boolean factoryReset() {
+        if (Flags.factoryResetAtBluetoothStart()) {
+            throw new IllegalStateException("flag factoryResetAtBluetoothStart is enabled");
+        }
         mDatabaseManager.factoryReset();
 
         if (mBluetoothKeystoreService != null) {

@@ -29,6 +29,7 @@ import androidx.annotation.VisibleForTesting;
 
 import com.android.bluetooth.R;
 import com.android.bluetooth.Utils;
+import com.android.bluetooth.flags.Flags;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -385,6 +386,9 @@ public class CompanionManager {
 
     /** Method to reset the stored companion info */
     public void factoryReset() {
+        if (Flags.factoryResetAtBluetoothStart()) {
+            throw new IllegalStateException("flag factoryResetAtBluetoothStart is enabled");
+        }
         synchronized (mMetadataListeningDevices) {
             mCompanionDevice = null;
             mCompanionType = COMPANION_TYPE_NONE;
