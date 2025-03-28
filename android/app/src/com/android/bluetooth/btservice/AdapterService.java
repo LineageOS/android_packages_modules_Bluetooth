@@ -595,10 +595,6 @@ public class AdapterService extends Service {
             // The device with which the request was made. Used for sending the callback.
             BluetoothDevice device) {}
 
-    final @NonNull <T> T getNonNullSystemService(@NonNull Class<T> clazz) {
-        return requireNonNull(getSystemService(clazz));
-    }
-
     @Override
     public void onCreate() {
         super.onCreate();
@@ -608,11 +604,11 @@ public class AdapterService extends Service {
         mAdapterProperties = new AdapterProperties(this, mRemoteDevices, mLooper);
         mAdapterStateMachine = new AdapterState(this, mLooper);
         mBinder = new AdapterServiceBinder(this);
-        mUserManager = getNonNullSystemService(UserManager.class);
-        mAppOps = getNonNullSystemService(AppOpsManager.class);
-        mPowerManager = getNonNullSystemService(PowerManager.class);
-        mBatteryStatsManager = getNonNullSystemService(BatteryStatsManager.class);
-        mCompanionDeviceManager = getNonNullSystemService(CompanionDeviceManager.class);
+        mUserManager = requireNonNull(getSystemService(UserManager.class));
+        mAppOps = requireNonNull(getSystemService(AppOpsManager.class));
+        mPowerManager = requireNonNull(getSystemService(PowerManager.class));
+        mBatteryStatsManager = requireNonNull(getSystemService(BatteryStatsManager.class));
+        mCompanionDeviceManager = requireNonNull(getSystemService(CompanionDeviceManager.class));
         setAdapterService(this);
     }
 
@@ -633,7 +629,7 @@ public class AdapterService extends Service {
         clearDiscoveringPackages();
         mAdapter = BluetoothAdapter.getDefaultAdapter();
         boolean isCommonCriteriaMode =
-                getNonNullSystemService(DevicePolicyManager.class)
+                requireNonNull(getSystemService(DevicePolicyManager.class))
                         .isCommonCriteriaModeEnabled(null);
         mBluetoothKeystoreService =
                 new BluetoothKeystoreService(
