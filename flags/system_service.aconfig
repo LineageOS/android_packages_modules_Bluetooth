@@ -32,6 +32,16 @@ flag {
 }
 
 flag {
+    name: "publish_binder_on_start"
+    namespace: "bluetooth"
+    description: "As mentioned in SystemService.java, binder should be published during onStart"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+    bug: "407096751"
+}
+
+flag {
     name: "system_server_messenger"
     namespace: "bluetooth"
     description: "Replace binder call to the system server with a Messenger to enforce thread safety"
