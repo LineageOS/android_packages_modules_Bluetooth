@@ -16,14 +16,16 @@
 
 package com.android.server.bluetooth
 
-import android.bluetooth.BluetoothAdapter
 import android.content.Context
 import android.content.res.Resources
 import android.os.HandlerThread
 import android.os.UserManager
 import android.provider.Settings
+import com.android.bluetooth.flags.Flags
 import com.android.server.SystemService
 import com.android.server.SystemService.TargetUser
+
+val SERVICE_NAME = "bluetooth_manager" // See BluetoothServiceManager.BLUETOOTH_MANAGER_SERVICE
 
 class BluetoothService(context: Context) : SystemService(context) {
     private val mHandlerThread: HandlerThread
@@ -43,14 +45,19 @@ class BluetoothService(context: Context) : SystemService(context) {
         }
     }
 
-    override fun onStart() {}
+    override fun onStart() {
+        if (!Flags.publishBinderOnStart()) {
+            return
+        }
+        publishBinderService(SERVICE_NAME, mBluetoothManagerService.getBinder())
+    }
 
     override fun onBootPhase(phase: Int) {
+        if (Flags.publishBinderOnStart()) {
+            return
+        }
         if (phase == SystemService.PHASE_SYSTEM_SERVICES_READY) {
-            publishBinderService(
-                BluetoothAdapter.BLUETOOTH_MANAGER_SERVICE,
-                mBluetoothManagerService.getBinder(),
-            )
+            publishBinderService(SERVICE_NAME, mBluetoothManagerService.getBinder())
         }
     }
 
