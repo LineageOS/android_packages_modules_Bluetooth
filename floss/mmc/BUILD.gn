@@ -24,8 +24,8 @@ group("mmc") {
     ":install_system_service",
     ":install_tmpfiles_config",
     ":mmc_service",
-    "//bt/system/stack/mmc/codec_client:libcodec_client",
-    "//bt/system/stack/mmc/proto:mmc_config_proto",
+    "codec_client:libcodec_client",
+    "proto:mmc_config_proto",
   ]
   if (use.test) {
     deps += [
@@ -37,6 +37,7 @@ group("mmc") {
 
 pkg_config("target_defaults") {
   include_dirs = [
+    "//bt/floss",
     "//bt/system",
     "//bt/system/gd",
     "//bt/system/include",
@@ -87,12 +88,12 @@ source_set("libmmc") {
   ]
   sources = [ "daemon/service.cc" ]
   deps = [
+    "codec_server:libcodec_server_hfp_lc3",
+    "proto:mmc_service_proto",
     "//bt/system/common",
-    "//bt/system/stack/mmc/codec_server:libcodec_server_hfp_lc3",
-    "//bt/system/stack/mmc/proto:mmc_service_proto",
   ]
   if (defined(use.bt_nonstandard_codecs) && use.bt_nonstandard_codecs) {
-    deps += [ "//bt/system/stack/mmc/codec_server:libcodec_server_a2dp_aac" ]
+    deps += [ "codec_server:libcodec_server_a2dp_aac" ]
   }
 }
 
@@ -127,10 +128,10 @@ if (use.test) {
     ]
     libs = [ "fmt" ]
     deps = [
+      "proto:mmc_config_proto",
       "//bt/system/common",
       "//bt/system/log:libbluetooth_log",
       "//bt/system/osi",
-      "//bt/system/stack/mmc/proto:mmc_config_proto",
       "//bt/system/types",
     ]
   }
@@ -152,10 +153,10 @@ if (use.test) {
     ]
     libs = [ "fmt" ]
     deps = [
+      "proto:mmc_config_proto",
       "//bt/system/common",
       "//bt/system/log:libbluetooth_log",
       "//bt/system/osi",
-      "//bt/system/stack/mmc/proto:mmc_config_proto",
       "//bt/system/types",
     ]
   }
