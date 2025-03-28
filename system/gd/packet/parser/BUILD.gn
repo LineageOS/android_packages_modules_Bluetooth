@@ -23,7 +23,6 @@ config("pktgen_configs") {
   cflags = [ "-fPIC" ]
 
   cflags_cc = [
-    "-std=c++17",
     "-Wno-inconsistent-missing-override",
     "-Wno-implicit-fallthrough",
     "-Wno-poison-system-directories",
