@@ -75,10 +75,12 @@ import android.platform.test.annotations.EnableFlags;
 import android.platform.test.flag.junit.FlagsParameterization;
 import android.platform.test.flag.junit.SetFlagsRule;
 import android.provider.Settings;
+import android.sysprop.BluetoothProperties;
 
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.bluetooth.flags.Flags;
+import com.android.dx.mockito.inline.extended.ExtendedMockito;
 
 import org.hamcrest.Matcher;
 import org.hamcrest.core.AllOf;
@@ -91,6 +93,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.MockitoSession;
 import org.mockito.hamcrest.MockitoHamcrest;
 
 import platform.test.runner.parameterized.ParameterizedAndroidJunit4;
@@ -642,6 +645,35 @@ public class BluetoothManagerServiceTest {
         btCallback.onBluetoothStateChange(STATE_BLE_TURNING_OFF, STATE_OFF);
         syncHandler(MESSAGE_BLUETOOTH_STATE_CHANGE);
 
+        transition_offToOn();
+        assertThat(mManagerService.getState()).isEqualTo(STATE_ON);
+    }
+
+    @Test
+    public void factoryReset_whileBtOff_savePropertyForLater() throws Exception {
+        MockitoSession mockingSession =
+                ExtendedMockito.mockitoSession()
+                        .mockStatic(BluetoothProperties.class)
+                        .startMocking();
+        try {
+            mManagerService.factoryReset(0);
+            ExtendedMockito.verify(() -> BluetoothProperties.factory_reset(true));
+        } finally {
+            mockingSession.finishMocking();
+        }
+    }
+
+    @Test
+    @EnableFlags(Flags.FLAG_SYSTEM_SERVER_REMOVE_EXTRA_THREAD_JUMP)
+    public void factoryReset_whileBtOn_clearAndRestart() throws Exception {
+        mManagerService.enable("factoryReset_whileBtOn_clearAndRestart");
+        IBluetoothCallback btCallback = transition_offToOn();
+        assertThat(mManagerService.getState()).isEqualTo(STATE_ON);
+
+        mManagerService.factoryReset(0);
+
+        verify(mAdapterBinder).factoryReset();
+        transition_onToOff(btCallback);
         transition_offToOn();
         assertThat(mManagerService.getState()).isEqualTo(STATE_ON);
     }

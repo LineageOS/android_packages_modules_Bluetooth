@@ -85,8 +85,8 @@ class AdapterBinder(rawBinder: IBinder) {
     }
 
     @Throws(RemoteException::class)
-    fun factoryReset(source: AttributionSource) {
-        adapterBinder.factoryReset(source)
+    fun factoryReset() {
+        adapterBinder.onewayFactoryReset()
     }
 
     fun isMediaProfileConnected(source: AttributionSource): Boolean {
