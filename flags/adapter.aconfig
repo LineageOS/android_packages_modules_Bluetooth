@@ -19,6 +19,16 @@ flag {
 }
 
 flag {
+    name: "factory_reset_at_bluetooth_start"
+    namespace: "bluetooth"
+    description: "Regroup all data deletion to happen when Bluetooth start instead of sometimes at start and sometimes with a direct call"
+    bug: "406868063"
+    metadata {
+        purpose: PURPOSE_BUGFIX
+    }
+}
+
+flag {
     name: "empty_names_are_invalid"
     namespace: "bluetooth"
     description: "Make sure the names used in the stack are valid"
