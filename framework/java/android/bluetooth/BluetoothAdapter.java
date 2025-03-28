@@ -1739,7 +1739,7 @@ public final class BluetoothAdapter {
     public boolean clearBluetooth() {
         if (Flags.factoryResetFromTheSystemServer()) {
             try {
-                return mManagerService.factoryReset();
+                return mManagerService.factoryReset(mAttributionSource);
             } catch (RemoteException e) {
                 throw e.rethrowFromSystemServer();
             }
