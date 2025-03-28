@@ -77,7 +77,6 @@ source_set("btif_cxx_bridge_code") {
 
   deps = [
     ":btif_bridge_header",
-    "//bt/system/gd/metrics:BluetoothMetricsSources",
     "//bt/system/pdl:BluetoothGeneratedPackets_h",
   ]
   configs += [

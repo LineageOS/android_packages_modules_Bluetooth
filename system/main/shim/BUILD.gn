@@ -30,10 +30,6 @@ source_set("BluetoothStackManagerSources") {
 
   deps = [
     "//bt/floss/rust/topshim:libbluetooth_topshim",
-    "//bt/system/gd/common:BluetoothCommonSources",
-    "//bt/system/gd/hci:BluetoothHciSources",
-    "//bt/system/gd/lpp:BluetoothLppOffloadSources",
-    "//bt/system/gd/os:BluetoothOsSources_linux_generic",
     "//bt/system/gd/packet:BluetoothPacketSources",
     "//bt/system/osi",
     "//bt/system/pdl:BluetoothGeneratedPackets_h",
@@ -76,10 +72,6 @@ source_set("LibBluetoothShimSources") {
   deps = [
     "//bt/floss/rust/topshim:libbluetooth_topshim",
     "//bt/sysprop:libcom.android.sysprop.bluetooth",
-    "//bt/system/gd/common:BluetoothCommonSources",
-    "//bt/system/gd/hci:BluetoothHciSources",
-    "//bt/system/gd/lpp:BluetoothLppOffloadSources",
-    "//bt/system/gd/os:BluetoothOsSources_linux_generic",
     "//bt/system/gd/packet:BluetoothPacketSources",
     "//bt/system/osi",
     "//bt/system/pdl:BluetoothGeneratedPackets_h",
