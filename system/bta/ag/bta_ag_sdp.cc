@@ -44,8 +44,8 @@
 #include "device/include/interop_config.h"
 #include "internal_include/bt_target.h"
 #include "main/shim/helpers.h"
-#include "main/shim/metrics_api.h"
 #include "metrics/bluetooth_event.h"
+#include "os/metrics.h"
 #include "osi/include/allocator.h"
 #include "sdp_callback.h"
 #include "sdp_status.h"
@@ -62,7 +62,6 @@
 
 using namespace bluetooth::legacy::stack::sdp;
 using namespace bluetooth;
-using namespace bluetooth::shim;
 using bluetooth::Uuid;
 
 /* Number of protocol elements in protocol element list. */
