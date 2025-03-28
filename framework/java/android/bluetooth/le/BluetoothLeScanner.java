@@ -517,10 +517,11 @@ public final class BluetoothLeScanner {
         @Override
         public void onScanResult(final ScanResult scanResult) {
             Attributable.setAttributionSource(scanResult, mAttributionSource);
-            if (Log.isLoggable(TAG, Log.DEBUG)) {
+            if (VDBG) {
+                Log.d(TAG, "onScanResult() - " + scanResult.toString());
+            } else if (Log.isLoggable(TAG, Log.DEBUG)) {
                 Log.d(TAG, "onScanResult() - mScannerId=" + mScannerId);
             }
-            if (VDBG) Log.d(TAG, "onScanResult() - " + scanResult.toString());
 
             // Check null in case the scan has been stopped
             synchronized (this) {
