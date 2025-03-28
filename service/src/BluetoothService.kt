@@ -40,6 +40,7 @@ class BluetoothService(context: Context) : SystemService(context) {
 
     private fun initialize(user: TargetUser) {
         if (!mInitialized) {
+            Log.i("initialize($user)")
             mBluetoothManagerService.handleOnBootPhase(user.userHandle)
             mInitialized = true
         }
@@ -62,8 +63,14 @@ class BluetoothService(context: Context) : SystemService(context) {
     }
 
     private fun shouldInitializeBluetooth(): Boolean {
+        // HSUM can be simulated on phone with:
+        // adb shell cmd user set-system-user-mode-emulation headless
+        // and it can be restored with:
+        // adb shell cmd user set-system-user-mode-emulation default
+
         // Not HSUM, we can initialize Bluetooth on system user
         if (!UserManager.isHeadlessSystemUserMode()) {
+            Log.i("shouldInitializeBluetooth() -> true: Not HSUM")
             return true
         }
 
@@ -80,22 +87,26 @@ class BluetoothService(context: Context) : SystemService(context) {
                         0,
                     ) == 1
             ) {
+                Log.i("shouldInitializeBluetooth() -> true: HSUM provisioned")
                 return true
             }
         } catch (_e: Resources.NotFoundException) {
             // Config not found, assuming it's 0 so no need to initialize Bluetooth
         }
 
+        Log.i("shouldInitializeBluetooth() -> false: HSUM")
         return false
     }
 
     override fun onUserStarting(user: TargetUser) {
+        Log.d("onUserStarting($user)")
         if (shouldInitializeBluetooth()) {
             initialize(user)
         }
     }
 
     override fun onUserSwitching(_from: TargetUser?, to: TargetUser) {
+        Log.d("onUserSwitching($to)")
         if (!mInitialized) {
             initialize(to)
         } else {
