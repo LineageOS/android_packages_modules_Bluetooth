@@ -849,9 +849,14 @@ public:
       /* All the configurations should be recalculated for the new conditions */
       group->InvalidateCachedConfigurations();
       group->InvalidateGroupStrategy();
+      bool is_sink = group->audio_directions_ & bluetooth::le_audio::types::kLeAudioDirectionSink;
+      bool is_source =
+              group->audio_directions_ & bluetooth::le_audio::types::kLeAudioDirectionSource;
       callbacks_->OnAudioConf(group->audio_directions_, group->group_id_,
-                              group->audio_locations_.sink, group->audio_locations_.source,
+                              is_sink ? group->audio_locations_.sink : std::nullopt,
+                              is_source ? group->audio_locations_.source : std::nullopt,
                               group->GetAvailableContexts().value());
+      log::info("SENT  ");
     }
   }
 
@@ -1977,16 +1982,6 @@ public:
       leAudioDevice->audio_locations_.source->value = source_audio_location.value();
     }
 
-    /* Presence of PAC characteristic for a direction means support for that direction */
-    if (leAudioDevice->audio_locations_.source) {
-      leAudioDevice->audio_directions_ |= bluetooth::le_audio::types::kLeAudioDirectionSource;
-    }
-    if (leAudioDevice->audio_locations_.sink) {
-      leAudioDevice->audio_directions_ |= bluetooth::le_audio::types::kLeAudioDirectionSink;
-      callbacks_->OnSinkAudioLocationAvailable(leAudioDevice->address_,
-                                               leAudioDevice->audio_locations_.sink->value);
-    }
-
     if (!DeserializeSinkPacs(leAudioDevice, sink_pacs)) {
       /* If PACs are invalid, just say whole cache is invalid */
       leAudioDevice->known_service_handles_ = false;
@@ -2003,6 +1998,18 @@ public:
       /* If ASEs are invalid, just say whole cache is invalid */
       leAudioDevice->known_service_handles_ = false;
       log::warn("Could not load ases");
+    }
+
+    /* Presence of PAC characteristic for a direction means support for that direction */
+    if (leAudioDevice->audio_locations_.source &&
+        (leAudioDevice->GetAseCount(bluetooth::le_audio::types::kLeAudioDirectionSource) > 0)) {
+      leAudioDevice->audio_directions_ |= bluetooth::le_audio::types::kLeAudioDirectionSource;
+    }
+    if (leAudioDevice->audio_locations_.sink &&
+        (leAudioDevice->GetAseCount(bluetooth::le_audio::types::kLeAudioDirectionSink) > 0)) {
+      leAudioDevice->audio_directions_ |= bluetooth::le_audio::types::kLeAudioDirectionSink;
+      callbacks_->OnSinkAudioLocationAvailable(leAudioDevice->address_,
+                                               leAudioDevice->audio_locations_.sink->value);
     }
 
     if (gmap.size() != 0) {
@@ -2339,7 +2346,10 @@ public:
       /* Presence of PAC characteristic for source means support for source
        * audio location. Value of 0x00000000 means mono/unspecified
        */
-      leAudioDevice->audio_directions_ |= bluetooth::le_audio::types::kLeAudioDirectionSink;
+
+      if (leAudioDevice->GetAseCount(bluetooth::le_audio::types::kLeAudioDirectionSink) > 0) {
+        leAudioDevice->audio_directions_ |= bluetooth::le_audio::types::kLeAudioDirectionSink;
+      }
       leAudioDevice->audio_locations_.sink->value = snk_audio_locations;
 
       callbacks_->OnSinkAudioLocationAvailable(leAudioDevice->address_, snk_audio_locations);
@@ -2366,7 +2376,9 @@ public:
       /* Presence of PAC characteristic for source means support for source
        * audio location. Value of 0x00000000 means mono/unspecified
        */
-      leAudioDevice->audio_directions_ |= bluetooth::le_audio::types::kLeAudioDirectionSource;
+      if (leAudioDevice->GetAseCount(bluetooth::le_audio::types::kLeAudioDirectionSource) > 0) {
+        leAudioDevice->audio_directions_ |= bluetooth::le_audio::types::kLeAudioDirectionSource;
+      }
       leAudioDevice->audio_locations_.source->value = src_audio_locations;
 
       if (notify) {
