@@ -62,8 +62,7 @@ import java.util.List;
 public final class BluetoothA2dp implements BluetoothProfile {
     private static final String TAG = BluetoothA2dp.class.getSimpleName();
 
-    private static final boolean DBG = true;
-    private static final boolean VDBG = false;
+    private static final boolean VDBG = Log.isLoggable("bluetooth", Log.VERBOSE);
 
     /**
      * Intent used to broadcast the change in connection state of the A2DP profile.
@@ -337,11 +336,11 @@ public final class BluetoothA2dp implements BluetoothProfile {
     @RequiresPermission(BLUETOOTH_CONNECT)
     @UnsupportedAppUsage
     public boolean connect(BluetoothDevice device) {
-        if (DBG) log("connect(" + device + ")");
+        log("connect(" + device + ")");
         final IBluetoothA2dp service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return service.connect(device, mAttributionSource);
@@ -375,11 +374,11 @@ public final class BluetoothA2dp implements BluetoothProfile {
     @RequiresPermission(BLUETOOTH_CONNECT)
     @UnsupportedAppUsage
     public boolean disconnect(BluetoothDevice device) {
-        if (DBG) log("disconnect(" + device + ")");
+        log("disconnect(" + device + ")");
         final IBluetoothA2dp service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return service.disconnect(device, mAttributionSource);
@@ -399,7 +398,7 @@ public final class BluetoothA2dp implements BluetoothProfile {
         final IBluetoothA2dp service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 return Attributable.setAttributionSource(
@@ -420,7 +419,7 @@ public final class BluetoothA2dp implements BluetoothProfile {
         final IBluetoothA2dp service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 return Attributable.setAttributionSource(
@@ -442,7 +441,7 @@ public final class BluetoothA2dp implements BluetoothProfile {
         final IBluetoothA2dp service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return service.getConnectionState(device, mAttributionSource);
@@ -474,11 +473,11 @@ public final class BluetoothA2dp implements BluetoothProfile {
     @RequiresPermission(BLUETOOTH_CONNECT)
     @UnsupportedAppUsage(trackingBug = 171933273)
     public boolean setActiveDevice(@Nullable BluetoothDevice device) {
-        if (DBG) log("setActiveDevice(" + device + ")");
+        log("setActiveDevice(" + device + ")");
         final IBluetoothA2dp service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && ((device == null) || isValidDevice(device))) {
             try {
                 return service.setActiveDevice(device, mAttributionSource);
@@ -505,7 +504,7 @@ public final class BluetoothA2dp implements BluetoothProfile {
         final IBluetoothA2dp service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 return Attributable.setAttributionSource(
@@ -534,7 +533,7 @@ public final class BluetoothA2dp implements BluetoothProfile {
                 BLUETOOTH_PRIVILEGED,
             })
     public boolean setPriority(BluetoothDevice device, int priority) {
-        if (DBG) log("setPriority(" + device + ", " + priority + ")");
+        log("setPriority(" + device + ", " + priority + ")");
         return setConnectionPolicy(device, BluetoothAdapter.priorityToConnectionPolicy(priority));
     }
 
@@ -559,11 +558,11 @@ public final class BluetoothA2dp implements BluetoothProfile {
             })
     public boolean setConnectionPolicy(
             @NonNull BluetoothDevice device, @ConnectionPolicy int connectionPolicy) {
-        if (DBG) log("setConnectionPolicy(" + device + ", " + connectionPolicy + ")");
+        log("setConnectionPolicy(" + device + ", " + connectionPolicy + ")");
         final IBluetoothA2dp service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()
                 && isValidDevice(device)
                 && (connectionPolicy == CONNECTION_POLICY_FORBIDDEN
@@ -614,7 +613,7 @@ public final class BluetoothA2dp implements BluetoothProfile {
         final IBluetoothA2dp service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return service.getConnectionPolicy(device, mAttributionSource);
@@ -639,11 +638,11 @@ public final class BluetoothA2dp implements BluetoothProfile {
                 BLUETOOTH_PRIVILEGED,
             })
     public void setAvrcpAbsoluteVolume(int volume) {
-        if (DBG) Log.d(TAG, "setAvrcpAbsoluteVolume");
+        Log.d(TAG, "setAvrcpAbsoluteVolume");
         final IBluetoothA2dp service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 service.setAvrcpAbsoluteVolume(volume, mAttributionSource);
@@ -662,11 +661,11 @@ public final class BluetoothA2dp implements BluetoothProfile {
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean isA2dpPlaying(BluetoothDevice device) {
-        if (DBG) log("isA2dpPlaying(" + device + ")");
+        log("isA2dpPlaying(" + device + ")");
         final IBluetoothA2dp service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return service.isA2dpPlaying(device, mAttributionSource);
@@ -715,7 +714,7 @@ public final class BluetoothA2dp implements BluetoothProfile {
         final IBluetoothA2dp service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 return service.getSupportedCodecTypes();
@@ -746,12 +745,12 @@ public final class BluetoothA2dp implements BluetoothProfile {
             allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED},
             conditional = true)
     public @Nullable BluetoothCodecStatus getCodecStatus(@NonNull BluetoothDevice device) {
-        if (DBG) Log.d(TAG, "getCodecStatus(" + device + ")");
+        Log.d(TAG, "getCodecStatus(" + device + ")");
         verifyDeviceNotNull(device, "getCodecStatus");
         final IBluetoothA2dp service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return service.getCodecStatus(device, mAttributionSource);
@@ -783,7 +782,7 @@ public final class BluetoothA2dp implements BluetoothProfile {
             conditional = true)
     public void setCodecConfigPreference(
             @NonNull BluetoothDevice device, @NonNull BluetoothCodecConfig codecConfig) {
-        if (DBG) Log.d(TAG, "setCodecConfigPreference(" + device + ")");
+        Log.d(TAG, "setCodecConfigPreference(" + device + ")");
         verifyDeviceNotNull(device, "setCodecConfigPreference");
         if (codecConfig == null) {
             Log.e(TAG, "setCodecConfigPreference: Codec config can't be null");
@@ -792,7 +791,7 @@ public final class BluetoothA2dp implements BluetoothProfile {
         final IBluetoothA2dp service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 service.setCodecConfigPreference(device, codecConfig, mAttributionSource);
@@ -825,7 +824,7 @@ public final class BluetoothA2dp implements BluetoothProfile {
                 BLUETOOTH_PRIVILEGED,
             })
     public void enableOptionalCodecs(@NonNull BluetoothDevice device) {
-        if (DBG) Log.d(TAG, "enableOptionalCodecs(" + device + ")");
+        Log.d(TAG, "enableOptionalCodecs(" + device + ")");
         verifyDeviceNotNull(device, "enableOptionalCodecs");
         enableDisableOptionalCodecs(device, true);
     }
@@ -854,7 +853,7 @@ public final class BluetoothA2dp implements BluetoothProfile {
                 BLUETOOTH_PRIVILEGED,
             })
     public void disableOptionalCodecs(@NonNull BluetoothDevice device) {
-        if (DBG) Log.d(TAG, "disableOptionalCodecs(" + device + ")");
+        Log.d(TAG, "disableOptionalCodecs(" + device + ")");
         verifyDeviceNotNull(device, "disableOptionalCodecs");
         enableDisableOptionalCodecs(device, false);
     }
@@ -874,7 +873,7 @@ public final class BluetoothA2dp implements BluetoothProfile {
         final IBluetoothA2dp service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 if (enable) {
@@ -906,12 +905,12 @@ public final class BluetoothA2dp implements BluetoothProfile {
             })
     @OptionalCodecsSupportStatus
     public int isOptionalCodecsSupported(@NonNull BluetoothDevice device) {
-        if (DBG) log("isOptionalCodecsSupported(" + device + ")");
+        log("isOptionalCodecsSupported(" + device + ")");
         verifyDeviceNotNull(device, "isOptionalCodecsSupported");
         final IBluetoothA2dp service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return service.isOptionalCodecsSupported(device, mAttributionSource);
@@ -940,12 +939,12 @@ public final class BluetoothA2dp implements BluetoothProfile {
             })
     @OptionalCodecsPreferenceStatus
     public int isOptionalCodecsEnabled(@NonNull BluetoothDevice device) {
-        if (DBG) log("isOptionalCodecsEnabled(" + device + ")");
+        log("isOptionalCodecsEnabled(" + device + ")");
         verifyDeviceNotNull(device, "isOptionalCodecsEnabled");
         final IBluetoothA2dp service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return service.isOptionalCodecsEnabled(device, mAttributionSource);
@@ -975,7 +974,7 @@ public final class BluetoothA2dp implements BluetoothProfile {
             })
     public void setOptionalCodecsEnabled(
             @NonNull BluetoothDevice device, @OptionalCodecsPreferenceStatus int value) {
-        if (DBG) log("setOptionalCodecsEnabled(" + device + ")");
+        log("setOptionalCodecsEnabled(" + device + ")");
         verifyDeviceNotNull(device, "setOptionalCodecsEnabled");
         if (value != BluetoothA2dp.OPTIONAL_CODECS_PREF_UNKNOWN
                 && value != BluetoothA2dp.OPTIONAL_CODECS_PREF_DISABLED
@@ -986,7 +985,7 @@ public final class BluetoothA2dp implements BluetoothProfile {
         final IBluetoothA2dp service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 service.setOptionalCodecsEnabled(device, value, mAttributionSource);
@@ -1018,7 +1017,7 @@ public final class BluetoothA2dp implements BluetoothProfile {
         final IBluetoothA2dp service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 return service.getDynamicBufferSupport(mAttributionSource);
@@ -1050,7 +1049,7 @@ public final class BluetoothA2dp implements BluetoothProfile {
         final IBluetoothA2dp service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 return service.getBufferConstraints(mAttributionSource);
@@ -1086,7 +1085,7 @@ public final class BluetoothA2dp implements BluetoothProfile {
         final IBluetoothA2dp service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 return service.setBufferLengthMillis(codec, value, mAttributionSource);

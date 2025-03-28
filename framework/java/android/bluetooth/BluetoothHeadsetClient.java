@@ -65,8 +65,8 @@ import java.util.List;
 public final class BluetoothHeadsetClient implements BluetoothProfile, AutoCloseable {
     private static final String TAG = BluetoothHeadsetClient.class.getSimpleName();
 
-    private static final boolean DBG = true;
-    private static final boolean VDBG = false;
+    private static final boolean VDBG = Log.isLoggable("bluetooth", Log.VERBOSE);
+
     private final CloseGuard mCloseGuard;
 
     /**
@@ -682,11 +682,11 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean connect(BluetoothDevice device) {
-        if (DBG) log("connect(" + device + ")");
+        log("connect(" + device + ")");
         final IBluetoothHeadsetClient service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return service.connect(device, mAttributionSource);
@@ -709,11 +709,11 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean disconnect(BluetoothDevice device) {
-        if (DBG) log("disconnect(" + device + ")");
+        log("disconnect(" + device + ")");
         final IBluetoothHeadsetClient service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return service.disconnect(device, mAttributionSource);
@@ -738,7 +738,7 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
         final IBluetoothHeadsetClient service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 return Attributable.setAttributionSource(
@@ -765,7 +765,7 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
         final IBluetoothHeadsetClient service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 return Attributable.setAttributionSource(
@@ -792,7 +792,7 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
         final IBluetoothHeadsetClient service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return service.getConnectionState(device, mAttributionSource);
@@ -820,11 +820,11 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public boolean setConnectionPolicy(
             @NonNull BluetoothDevice device, @ConnectionPolicy int connectionPolicy) {
-        if (DBG) log("setConnectionPolicy(" + device + ", " + connectionPolicy + ")");
+        log("setConnectionPolicy(" + device + ", " + connectionPolicy + ")");
         final IBluetoothHeadsetClient service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()
                 && isValidDevice(device)
                 && (connectionPolicy == CONNECTION_POLICY_FORBIDDEN
@@ -857,7 +857,7 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
         final IBluetoothHeadsetClient service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return service.getConnectionPolicy(device, mAttributionSource);
@@ -882,11 +882,11 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean startVoiceRecognition(BluetoothDevice device) {
-        if (DBG) log("startVoiceRecognition()");
+        log("startVoiceRecognition()");
         final IBluetoothHeadsetClient service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return service.startVoiceRecognition(device, mAttributionSource);
@@ -910,11 +910,11 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean sendVendorAtCommand(BluetoothDevice device, int vendorId, String atCommand) {
-        if (DBG) log("sendVendorSpecificCommand()");
+        log("sendVendorSpecificCommand()");
         final IBluetoothHeadsetClient service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return service.sendVendorAtCommand(device, vendorId, atCommand, mAttributionSource);
@@ -939,11 +939,11 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean stopVoiceRecognition(BluetoothDevice device) {
-        if (DBG) log("stopVoiceRecognition()");
+        log("stopVoiceRecognition()");
         final IBluetoothHeadsetClient service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return service.stopVoiceRecognition(device, mAttributionSource);
@@ -965,11 +965,11 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public List<BluetoothHeadsetClientCall> getCurrentCalls(BluetoothDevice device) {
-        if (DBG) log("getCurrentCalls()");
+        log("getCurrentCalls()");
         final IBluetoothHeadsetClient service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return Attributable.setAttributionSource(
@@ -991,11 +991,11 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
     @RequiresBluetoothConnectPermission
     @RequiresPermission(allOf = {BLUETOOTH_CONNECT, BLUETOOTH_PRIVILEGED})
     public Bundle getCurrentAgEvents(BluetoothDevice device) {
-        if (DBG) log("getCurrentAgEvents()");
+        log("getCurrentAgEvents()");
         final IBluetoothHeadsetClient service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return service.getCurrentAgEvents(device, mAttributionSource);
@@ -1020,11 +1020,11 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean acceptCall(BluetoothDevice device, int flag) {
-        if (DBG) log("acceptCall()");
+        log("acceptCall()");
         final IBluetoothHeadsetClient service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return service.acceptCall(device, flag, mAttributionSource);
@@ -1046,11 +1046,11 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean holdCall(BluetoothDevice device) {
-        if (DBG) log("holdCall()");
+        log("holdCall()");
         final IBluetoothHeadsetClient service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return service.holdCall(device, mAttributionSource);
@@ -1076,11 +1076,11 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean rejectCall(BluetoothDevice device) {
-        if (DBG) log("rejectCall()");
+        log("rejectCall()");
         final IBluetoothHeadsetClient service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return service.rejectCall(device, mAttributionSource);
@@ -1110,11 +1110,11 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean terminateCall(BluetoothDevice device, BluetoothHeadsetClientCall call) {
-        if (DBG) log("terminateCall()");
+        log("terminateCall()");
         final IBluetoothHeadsetClient service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return service.terminateCall(device, call, mAttributionSource);
@@ -1142,11 +1142,11 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean enterPrivateMode(BluetoothDevice device, int index) {
-        if (DBG) log("enterPrivateMode()");
+        log("enterPrivateMode()");
         final IBluetoothHeadsetClient service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return service.enterPrivateMode(device, index, mAttributionSource);
@@ -1173,11 +1173,11 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean explicitCallTransfer(BluetoothDevice device) {
-        if (DBG) log("explicitCallTransfer()");
+        log("explicitCallTransfer()");
         final IBluetoothHeadsetClient service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return service.explicitCallTransfer(device, mAttributionSource);
@@ -1202,11 +1202,11 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public BluetoothHeadsetClientCall dial(BluetoothDevice device, String number) {
-        if (DBG) log("dial()");
+        log("dial()");
         final IBluetoothHeadsetClient service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return Attributable.setAttributionSource(
@@ -1232,11 +1232,11 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean sendDTMF(BluetoothDevice device, byte code) {
-        if (DBG) log("sendDTMF()");
+        log("sendDTMF()");
         final IBluetoothHeadsetClient service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return service.sendDTMF(device, code, mAttributionSource);
@@ -1262,11 +1262,11 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
     @RequiresBluetoothConnectPermission
     @RequiresPermission(BLUETOOTH_CONNECT)
     public boolean getLastVoiceTagNumber(BluetoothDevice device) {
-        if (DBG) log("getLastVoiceTagNumber()");
+        log("getLastVoiceTagNumber()");
         final IBluetoothHeadsetClient service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled() && isValidDevice(device)) {
             try {
                 return service.getLastVoiceTagNumber(device, mAttributionSource);
@@ -1292,7 +1292,7 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
         final IBluetoothHeadsetClient service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 return service.getAudioState(device, mAttributionSource);
@@ -1318,7 +1318,7 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
         final IBluetoothHeadsetClient service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 service.setAudioRouteAllowed(device, allowed, mAttributionSource);
@@ -1343,7 +1343,7 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
         final IBluetoothHeadsetClient service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 return service.getAudioRouteAllowed(device, mAttributionSource);
@@ -1371,7 +1371,7 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
         final IBluetoothHeadsetClient service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 return service.connectAudio(device, mAttributionSource);
@@ -1399,7 +1399,7 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
         final IBluetoothHeadsetClient service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 return service.disconnectAudio(device, mAttributionSource);
@@ -1424,7 +1424,7 @@ public final class BluetoothHeadsetClient implements BluetoothProfile, AutoClose
         final IBluetoothHeadsetClient service = getService();
         if (service == null) {
             Log.w(TAG, "Proxy not attached to service");
-            if (DBG) log(Log.getStackTraceString(new Throwable()));
+            log(Log.getStackTraceString(new Throwable()));
         } else if (isEnabled()) {
             try {
                 return service.getCurrentAgFeatures(device, mAttributionSource);

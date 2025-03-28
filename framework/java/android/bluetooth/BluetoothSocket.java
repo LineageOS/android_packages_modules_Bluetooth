@@ -96,8 +96,8 @@ import java.util.UUID;
 public final class BluetoothSocket implements Closeable {
     private static final String TAG = BluetoothSocket.class.getSimpleName();
 
-    private static final boolean DBG = Log.isLoggable(TAG, Log.DEBUG);
-    private static final boolean VDBG = Log.isLoggable(TAG, Log.VERBOSE);
+    private static final boolean DBG = Log.isLoggable("bluetooth", Log.DEBUG);
+    private static final boolean VDBG = Log.isLoggable("bluetooth", Log.VERBOSE);
 
     /** @hide */
     public static final int MAX_RFCOMM_CHANNEL = 30;
