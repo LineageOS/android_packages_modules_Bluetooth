@@ -19,6 +19,7 @@ from avatar import PandoraDevices, BumblePandoraDevice
 from mobly import base_test, signals
 from mobly.asserts import assert_in, assert_not_in  # type: ignore
 
+from pandora_experimental.os_grpc_aio import Os as OsAio
 from pandora.host_pb2 import RANDOM
 from pandora_experimental.gatt_grpc import GATT
 from pandora_experimental.gatt_pb2 import PRIMARY
@@ -45,11 +46,18 @@ class AicsTest(base_test.BaseTestClass):
     @avatar.asynchronous
     async def setup_test(self) -> None:
         await asyncio.gather(self.dut.reset(), self.ref.reset())
+        self.logcat = OsAio(channel=self.dut.aio.channel)
+        await self.logcat.Log(f'{self.current_test_info.name}: setup_test')
 
         aics_service = AICSService()
         volume_control_service = VolumeControlService(included_services=[aics_service])
         self.ref.device.add_service(aics_service)  # type: ignore
         self.ref.device.add_service(volume_control_service)  # type: ignore
+        await self.logcat.Log(f'{self.current_test_info.name}: completed setup_test')
+
+    @asynchronous
+    async def teardown_test(self) -> None:
+        await self.logcat.Log(f'{self.current_test_info.name}: completed teardown_test')
 
     def connect_dut_to_ref(self):
         advertise = self.ref.host.Advertise(legacy=True, connectable=True)

@@ -86,7 +86,7 @@ class HapTest(base_test.BaseTestClass):
     async def setup_test(self) -> None:
         await asyncio.gather(self.dut.reset(), self.ref_left.reset())
         self.logcat = OsAio(channel=self.dut.aio.channel)
-        await self.logcat.Log("setup test")
+        await self.logcat.Log(f'{self.current_test_info.name}: setup_test')
         self.hap_grpc = HAP(channel=self.dut.aio.channel)
         device_features = HearingAidFeatures(
             HearingAidType.MONAURAL_HEARING_AID,
@@ -100,6 +100,11 @@ class HapTest(base_test.BaseTestClass):
         self.dut_gatt = GATT(channel=self.dut.aio.channel)
 
         self.ref_left.device.add_service(self.has)  # type: ignore
+        await self.logcat.Log(f'{self.current_test_info.name}: completed setup_test')
+
+    @asynchronous
+    async def teardown_test(self) -> None:
+        await self.logcat.Log(f'{self.current_test_info.name}: completed teardown_test')
 
     async def advertise_hap(self, device: PandoraDevice) -> AioStream[AdvertiseResponse]:
         return device.aio.host.Advertise(
@@ -174,7 +179,6 @@ class HapTest(base_test.BaseTestClass):
 
     @asynchronous
     async def test_get_features(self) -> None:
-        await self.logcat.Log("test_get_features")
         dut_connection_to_ref = await self.setupHapConnection()
 
         features = hap.HearingAidFeatures_from_bytes(
@@ -183,14 +187,12 @@ class HapTest(base_test.BaseTestClass):
 
     @asynchronous
     async def test_get_preset(self) -> None:
-        await self.logcat.Log("test_get_preset")
         dut_connection_to_ref = await self.setupHapConnection()
 
         await self.assertIdenticalPreset(dut_connection_to_ref)
 
     @asynchronous
     async def test_preset__remove_preset__verify_dut_is_updated(self) -> None:
-        await self.logcat.Log("test_preset__remove_preset__verify_dut_is_updated")
         dut_connection_to_ref = await self.setupHapConnection()
 
         await self.assertIdenticalPreset(dut_connection_to_ref)
@@ -203,7 +205,6 @@ class HapTest(base_test.BaseTestClass):
 
     @asynchronous
     async def test__add_preset__verify_dut_is_updated(self) -> None:
-        await self.logcat.Log("test__add_preset__verify_dut_is_updated")
         dut_connection_to_ref = await self.setupHapConnection()
 
         await self.assertIdenticalPreset(dut_connection_to_ref)
@@ -221,8 +222,6 @@ class HapTest(base_test.BaseTestClass):
 
     @asynchronous
     async def test__set_non_existing_preset_as_active__verify_no_crash_and_no_update(self) -> None:
-        await self.logcat.Log(
-            "test__set_non_existing_preset_as_active__verify_no_crash_and_no_update")
         non_existing_preset_index = 79
         assert non_existing_preset_index not in self.has.preset_records.keys()  # type: ignore
         dut_connection_to_ref = await self.setupHapConnection()
@@ -243,8 +242,6 @@ class HapTest(base_test.BaseTestClass):
     @asynchronous
     async def test__set_non_existing_preset_as_available__verify_no_crash_and_no_update(
             self) -> None:
-        await self.logcat.Log(
-            "test__set_non_existing_preset_as_available__verify_no_crash_and_no_update")
         non_existing_preset_index = 79
         assert non_existing_preset_index not in self.has.preset_records.keys()
         dut_connection_to_ref = await self.setupHapConnection()
