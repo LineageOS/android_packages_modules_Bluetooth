@@ -973,7 +973,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
 
         # Stop streaming to RD1.
         await asyncio.gather(self.dut.a2dp.Suspend(source=dut_ref1_source),
-                             channel.accept_suspend())
+                             channel.accept_suspend(timeout=8.0))
 
     @avatar.asynchronous
     @enableFlag(AVDT_WAIT_FOR_INITIAL_DELAY_REPORT_AS_INITIATOR)
@@ -1045,7 +1045,7 @@ class A2dpTest(base_test.BaseTestClass):  # type: ignore[misc]
 
         # Stop streaming to RD1.
         await asyncio.gather(self.dut.a2dp.Suspend(source=dut_ref1_source),
-                             channel.accept_suspend())
+                             channel.accept_suspend(timeout=8.0))
 
 
 if __name__ == '__main__':
