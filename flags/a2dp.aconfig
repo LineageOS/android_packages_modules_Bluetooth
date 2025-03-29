@@ -2,37 +2,10 @@ package: "com.android.bluetooth.flags"
 container: "com.android.bt"
 
 flag {
-    name: "bta_av_use_peer_codec"
-    namespace: "bluetooth"
-    description: "Deprecate bta av codec state"
-    bug: "339264791"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
     name: "a2dp_ignore_started_when_responder"
     namespace: "bluetooth"
     description: "Ignore the event BTA_AV_START_EVT when source and responder"
     bug : "341178856"
-    metadata {
-        purpose: PURPOSE_BUGFIX
-    }
-}
-
-flag {
-    name: "a2dp_variable_aac_capability"
-    namespace: "bluetooth"
-    description: "Enable AAC 48 kHz sampling rate for sink devices in the allow list"
-    bug: "38443632"
-}
-
-flag {
-    name: "av_stream_reconfigure_fix"
-    namespace: "bluetooth"
-    description: "Handle AVDT stream reconfiguration in an event"
-    bug: "348351688"
     metadata {
         purpose: PURPOSE_BUGFIX
     }

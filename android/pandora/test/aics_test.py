@@ -55,7 +55,7 @@ class AicsTest(base_test.BaseTestClass):
         self.ref.device.add_service(volume_control_service)  # type: ignore
         await self.logcat.Log(f'{self.current_test_info.name}: completed setup_test')
 
-    @asynchronous
+    @avatar.asynchronous
     async def teardown_test(self) -> None:
         await self.logcat.Log(f'{self.current_test_info.name}: completed teardown_test')
 
