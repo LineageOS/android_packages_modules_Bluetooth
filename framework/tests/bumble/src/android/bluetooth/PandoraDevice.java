@@ -92,9 +92,12 @@ public final class PandoraDevice extends ExternalResource {
         mChannel = OkHttpChannelBuilder.forAddress(mNetworkAddress, mPort).usePlaintext().build();
         stub = HostGrpc.newBlockingStub(mChannel);
         HostProto.ReadLocalAddressResponse readLocalAddressResponse =
-                stub.withWaitForReady().readLocalAddress(Empty.getDefaultInstance());
+                stub.withWaitForReady()
+                        .withDeadlineAfter(10, TimeUnit.SECONDS)
+                        .readLocalAddress(Empty.getDefaultInstance());
         mPublicBluetoothAddress =
                 Utils.addressStringFromByteString(readLocalAddressResponse.getAddress());
+        Log.i(TAG, "factoryReset complete");
     }
 
     @Override
